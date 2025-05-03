@@ -216,6 +216,9 @@
       document.getElementById('quote').textContent = quotes[randomIndex];
     }
 
+    // Initial random quote on page load
+    getRandomQuote();
+
     // Update clock and greeting
     updateClock();
     setGreetingAndShadow();
