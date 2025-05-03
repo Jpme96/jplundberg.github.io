@@ -10,9 +10,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column; /* Stack the clock and greeting vertically */
       background-color: black;
       font-family: Arial, sans-serif;
-      background-image: url('../assets/img/bg.html.jpg');
+      background-image: url('assets/img/bg.html.jpg'); /* Your original background */
       background-size: cover;
       background-position: center;
       color: white;
@@ -23,19 +24,18 @@
       font-size: 100px;
       font-weight: bold;
       text-shadow: 0px 0px 20px white;
-      margin: 1px
     }
 
     #greeting {
       font-size: 2em;
-      margin-bottom: 20px;
+      margin-top: 0; /* No space between clock and greeting */
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div id="greeting"></div>
   <div id="clock"></div>
+  <div id="greeting"></div>
 
   <script>
     // Update Clock Function
