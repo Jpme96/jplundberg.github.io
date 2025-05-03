@@ -54,17 +54,22 @@
       let greeting = "";
       let shadowColor = "";
 
-      if (hour < 12) {
+      // Define greetings and shadows based on the time of day
+      if (hour < 6) {
+        greeting = "Good Night 🌙";
+        shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
+      } else if (hour < 12) {
         greeting = "Good Morning 🌅";
-        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light Yellow for morning
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
       } else if (hour < 18) {
         greeting = "Good Afternoon ☀️";
-        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light Orange for afternoon
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
       } else {
         greeting = "Good Evening 🌙";
-        shadowColor = "2px 2px 10px rgba(50, 50, 255, 0.7)"; // Dark Blue for evening
+        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
       }
 
+      // Set the greeting and shadow style dynamically
       document.getElementById("greeting").textContent = greeting;
       document.getElementById("greeting").style.textShadow = shadowColor;
     }
