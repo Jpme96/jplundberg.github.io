@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Clock</title>
+  <!-- Link to Google Fonts for a more elegant font -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -37,9 +39,10 @@
     }
 
     #quote {
-      font-size: 2.5vw;
+      font-family: 'Playfair Display', serif; /* Elegant font for quote */
+      font-size: 1.5vw; /* Smaller font size for the quote */
       font-style: italic;
-      margin-top: 20px; /* Space between greeting and quote */
+      margin-top: 40px; /* Increased space between greeting and quote */
       max-width: 80%;
       line-height: 1.5;
       text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7); /* Shadow for quote */
@@ -57,7 +60,7 @@
       }
 
       #quote {
-        font-size: 4.5vw; /* Larger quote for mobile */
+        font-size: 5.5vw; /* Larger quote for mobile */
       }
     }
 
@@ -72,7 +75,7 @@
       }
 
       #quote {
-        font-size: 3.5vw; /* Medium size quote for tablets */
+        font-size: 3vw; /* Medium size quote for tablets */
       }
     }
 
@@ -87,7 +90,7 @@
       }
 
       #quote {
-        font-size: 1.8em; /* Standard quote size for desktops */
+        font-size: 1.6em; /* Standard quote size for desktops */
       }
     }
   </style>
@@ -133,6 +136,7 @@
       document.getElementById("greeting").textContent = greeting;
       document.getElementById("greeting").style.textShadow = shadowColor;
       document.getElementById("clock").style.textShadow = shadowColor;  // Apply same shadow to clock
+      document.getElementById("quote").style.textShadow = shadowColor;  // Apply same shadow to quote
     }
 
     // 100 Random Inspirational Quotes
