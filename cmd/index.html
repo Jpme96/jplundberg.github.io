@@ -11,7 +11,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column; /* Stack the clock and greeting vertically */
+      flex-direction: column; /* Stack the clock, greeting, and quote vertically */
       background-color: black;
       font-family: Arial, sans-serif;
       background-image: url('/assets/img/bg.html.jpg'); /* Your original background */
@@ -34,6 +34,24 @@
       font-weight: bold;
     }
 
+    #quote {
+      font-size: 1.5em;
+      font-style: italic;
+      margin-top: 20px; /* Space between greeting and quote */
+      max-width: 80%;
+      line-height: 1.5;
+      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7); /* Shadow for quote */
+    }
+
+    #nameInput {
+      font-size: 1.2em;
+      padding: 5px;
+      margin-top: 20px;
+      color: black;
+      border-radius: 5px;
+      border: none;
+    }
+
     /* Media Query for smaller screens (phones/tablets) */
     @media (max-width: 600px) {
       #clock {
@@ -42,6 +60,14 @@
 
       #greeting {
         font-size: 1.5em; /* Smaller greeting for phones */
+      }
+
+      #quote {
+        font-size: 1.2em; /* Smaller quote for phones */
+      }
+
+      #nameInput {
+        font-size: 1em; /* Smaller input for phones */
       }
     }
 
@@ -54,12 +80,18 @@
       #greeting {
         font-size: 2.5em; /* Larger greeting for desktops */
       }
+
+      #quote {
+        font-size: 1.8em; /* Larger quote for desktops */
+      }
     }
   </style>
 </head>
 <body>
   <div id="clock"></div>
   <div id="greeting"></div>
+  <div id="quote"></div>
+  <input type="text" id="nameInput" placeholder="Enter your name" oninput="updateGreeting()">
 
   <script>
     // Update Clock Function
@@ -72,7 +104,7 @@
     }
 
     // Set Dynamic Greeting and Shadow Based on Time of Day
-    function setGreetingAndShadow() {
+    function setGreetingAndShadow(name) {
       const now = new Date();
       const hour = now.getHours();
       let greeting = "";
@@ -80,34 +112,13 @@
 
       // Set the greeting and shadow based on specific time ranges
       if (hour >= 0 && hour < 6) {
-        greeting = "Good Night 🌙";  // 12:00 AM - 5:59 AM
+        greeting = `Good Night, ${name} 🌙`;  // 12:00 AM - 5:59 AM
         shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
       } else if (hour >= 6 && hour < 12) {
-        greeting = "Good Morning 🌅";  // 6:00 AM - 11:59 AM
+        greeting = `Good Morning, ${name} 🌅`;  // 6:00 AM - 11:59 AM
         shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
       } else if (hour >= 12 && hour < 18) {
-        greeting = "Good Afternoon ☀️";  // 12:00 PM - 5:59 PM
+        greeting = `Good Afternoon, ${name} ☀️`;  // 12:00 PM - 5:59 PM
         shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
       } else {
-        greeting = "Good Evening 🌙";  // 6:00 PM - 11:59 PM
-        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
-      }
-
-      // Set the greeting and shadow dynamically
-      document.getElementById("greeting").textContent = greeting;
-      document.getElementById("greeting").style.textShadow = shadowColor;
-      document.getElementById("clock").style.textShadow = shadowColor;  // Apply same shadow to clock
-    }
-
-    // Update Greeting and Shadow immediately
-    setGreetingAndShadow();
-    updateClock();
-
-    // Update every second for clock and greeting
-    setInterval(() => {
-      updateClock();
-      setGreetingAndShadow();
-    }, 1000);
-  </script>
-</body>
-</html>
+        greeting = `Good Evening, ${name} 🌙`;  // 6:00 PM - 11:59 PM
