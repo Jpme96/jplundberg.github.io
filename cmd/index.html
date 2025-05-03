@@ -42,4 +42,187 @@
       margin-top: 20px; /* Space between greeting and quote */
       max-width: 80%;
       line-height: 1.5;
-      text-shadow
+      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7); /* Shadow for quote */
+      transition: all 0.3s ease; /* Smooth transition for quote size changes */
+    }
+
+    /* Mobile Styles (Phones/Tablets) */
+    @media (max-width: 600px) {
+      #clock {
+        font-size: 20vw; /* Larger clock for mobile */
+      }
+
+      #greeting {
+        font-size: 6vw; /* Larger greeting for mobile */
+      }
+
+      #quote {
+        font-size: 4.5vw; /* Larger quote for mobile */
+      }
+    }
+
+    /* Medium Devices (Tablets/Laptops) */
+    @media (min-width: 601px) and (max-width: 1024px) {
+      #clock {
+        font-size: 15vw; /* Medium size clock for tablets */
+      }
+
+      #greeting {
+        font-size: 5vw; /* Medium size greeting for tablets */
+      }
+
+      #quote {
+        font-size: 3.5vw; /* Medium size quote for tablets */
+      }
+    }
+
+    /* Larger Devices (Desktops/Big Screens) */
+    @media (min-width: 1025px) {
+      #clock {
+        font-size: 120px; /* Larger clock for desktops */
+      }
+
+      #greeting {
+        font-size: 2.5em; /* Standard greeting size for desktops */
+      }
+
+      #quote {
+        font-size: 1.8em; /* Standard quote size for desktops */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="clock"></div>
+  <div id="greeting"></div>
+  <div id="quote"></div>
+
+  <script>
+    // Update Clock Function
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Set Dynamic Greeting and Shadow Based on Time of Day
+    function setGreetingAndShadow() {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = "";
+      let shadowColor = "";
+
+      // Set the greeting and shadow based on specific time ranges
+      if (hour >= 0 && hour < 6) {
+        greeting = `Good Night 🌙`;  // 12:00 AM - 5:59 AM
+        shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
+      } else if (hour >= 6 && hour < 12) {
+        greeting = `Good Morning 🌅`;  // 6:00 AM - 11:59 AM
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
+      } else if (hour >= 12 && hour < 18) {
+        greeting = `Good Afternoon ☀️`;  // 12:00 PM - 5:59 PM
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
+      } else {
+        greeting = `Good Evening 🌙`;  // 6:00 PM - 11:59 PM
+        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
+      }
+
+      // Set the greeting and shadow dynamically
+      document.getElementById("greeting").textContent = greeting;
+      document.getElementById("greeting").style.textShadow = shadowColor;
+      document.getElementById("clock").style.textShadow = shadowColor;  // Apply same shadow to clock
+    }
+
+    // 100 Random Inspirational Quotes
+    const quotes = [
+      "The best time to plant a tree was 20 years ago. The second best time is now.",
+      "Believe you can and you're halfway there.",
+      "It does not matter how slowly you go as long as you do not stop.",
+      "You are never too old to set another goal or to dream a new dream.",
+      "The future belongs to those who believe in the beauty of their dreams.",
+      "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+      "Don’t watch the clock; do what it does. Keep going.",
+      "Keep your face always toward the sunshine—and shadows will fall behind you.",
+      "It always seems impossible until it's done.",
+      "The only way to do great work is to love what you do.",
+      "You miss 100% of the shots you don’t take.",
+      "In the middle of every difficulty lies opportunity.",
+      "What we achieve inwardly will change outer reality.",
+      "The only limit to our realization of tomorrow is our doubts of today.",
+      "Success is not in what you have, but who you are.",
+      "Opportunities don't happen, you create them.",
+      "Hardships often prepare ordinary people for an extraordinary destiny.",
+      "The best revenge is massive success.",
+      "Life is 10% what happens to us and 90% how we react to it.",
+      "Don’t wait for opportunity. Create it.",
+      "Happiness is not something ready-made. It comes from your own actions.",
+      "You are braver than you believe, stronger than you seem, and smarter than you think.",
+      "It does not matter how slowly you go as long as you do not stop.",
+      "The only place where success comes before work is in the dictionary.",
+      "Good things come to those who wait, but better things come to those who go out and get them.",
+      "The harder you work for something, the greater you’ll feel when you achieve it.",
+      "If you can dream it, you can do it.",
+      "The secret of getting ahead is getting started.",
+      "Success doesn’t just find you. You have to go out and get it.",
+      "Dream it. Wish it. Do it.",
+      "Don't stop when you're tired. Stop when you're done.",
+      "Wake up with determination. Go to bed with satisfaction.",
+      "Little things make big days.",
+      "It's going to be hard, but hard does not mean impossible.",
+      "Don't wait for opportunity. Create it.",
+      "Sometimes we're tested not to show our weaknesses, but to discover our strengths.",
+      "The key to success is to focus on goals, not obstacles.",
+      "Dream it. Believe it. Build it.",
+      "Everything you can imagine is real.",
+      "Success is the sum of small efforts, repeated day in and day out.",
+      "You are never too old to set another goal or to dream a new dream.",
+      "Success usually comes to those who are too busy to be looking for it.",
+      "The only way to do great work is to love what you do.",
+      "Success is walking from failure to failure with no loss of enthusiasm.",
+      "Don’t be afraid to give up the good to go for the great.",
+      "The only way to achieve the impossible is to believe it is possible.",
+      "Success doesn’t come from what you do occasionally, it comes from what you do consistently.",
+      "The harder you work, the luckier you get.",
+      "Success is a journey, not a destination.",
+      "Success is not about how high you have climbed, but how you make a positive difference to the world.",
+      "The best way to predict the future is to create it.",
+      "Dream big and dare to fail.",
+      "Don’t be pushed around by the fears in your mind. Be led by the dreams in your heart.",
+      "The only person you are destined to become is the person you decide to be.",
+      "In the end, we only regret the chances we didn’t take.",
+      "The difference between who you are and who you want to be is what you do.",
+      "The way to get started is to quit talking and begin doing.",
+      "There are no limits to what you can accomplish, except the limits you place on your own thinking.",
+      "You don't have to be great to start, but you have to start to be great.",
+      "Action is the foundational key to all success.",
+      "There are no shortcuts to any place worth going.",
+      "If you can’t do great things, do small things in a great way.",
+      "We may encounter many defeats, but we must not be defeated.",
+      "It always seems impossible until it's done.",
+      "Don't be afraid to give up the good to go for the great.",
+      "If you want to achieve greatness stop asking for permission.",
+      "Everything you’ve ever wanted is on the other side of fear."
+    ];
+
+    // Function to pick a random quote
+    function getRandomQuote() {
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      document.getElementById('quote').textContent = quotes[randomIndex];
+    }
+
+    // Update clock and greeting
+    updateClock();
+    setGreetingAndShadow();
+
+    // Change quote every 5 seconds
+    setInterval(() => {
+      getRandomQuote();
+    }, 5000);
+
+    // Update clock every second
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
