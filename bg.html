@@ -13,19 +13,29 @@
       background-color: black;
       font-family: Arial, sans-serif;
       background-position: center;
+      color: white;
+      text-align: center;
     }
 
     #clock {
-  font-size: 100px;
-  font-weight: bold;
-  color: #333;
-  text-shadow: 0px 0px 20px white;
-}
+      font-size: 100px;
+      font-weight: bold;
+      text-shadow: 0px 0px 20px white;
+    }
+
+    #greeting {
+      font-size: 2em;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
   </style>
 </head>
-  <body  style="background-image: url('assets/img/bg.html.jpg');  background-size: cover;">
-    <div id="clock"></div>
-     <script>
+<body id="body" style="background-image: url('assets/img/bg.jpg'); background-size: cover;">
+  <div id="greeting"></div>
+  <div id="clock"></div>
+
+  <script>
+    // Update Clock Function
     function updateClock() {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
@@ -34,9 +44,35 @@
       document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
     }
 
-    // Update clock immediately and then every second
+    // Set Dynamic Greeting Based on Time of Day
+    function setGreeting() {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = "";
+
+      if (hour < 12) {
+        greeting = "Good Morning 🌅";
+        document.body.style.backgroundImage = "url('assets/img/morning.jpg')";
+      } else if (hour < 18) {
+        greeting = "Good Afternoon ☀️";
+        document.body.style.backgroundImage = "url('assets/img/afternoon.jpg')";
+      } else {
+        greeting = "Good Evening 🌙";
+        document.body.style.backgroundImage = "url('assets/img/evening.jpg')";
+      }
+
+      document.getElementById("greeting").textContent = greeting;
+    }
+
+    // Update Greeting and Clock immediately
+    setGreeting();
     updateClock();
-    setInterval(updateClock, 1000);
+
+    // Update every second for clock and greeting
+    setInterval(() => {
+      updateClock();
+      setGreeting();
+    }, 1000);
   </script>
-  </body>
+</body>
 </html>
