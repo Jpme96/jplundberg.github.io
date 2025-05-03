@@ -47,31 +47,36 @@
       document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
     }
 
-    // Set Dynamic Greeting Based on Time of Day
-    function setGreeting() {
+    // Set Dynamic Greeting and Shadow Based on Time of Day
+    function setGreetingAndShadow() {
       const now = new Date();
       const hour = now.getHours();
       let greeting = "";
+      let shadowColor = "";
 
       if (hour < 12) {
         greeting = "Good Morning 🌅";
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light Yellow for morning
       } else if (hour < 18) {
         greeting = "Good Afternoon ☀️";
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light Orange for afternoon
       } else {
         greeting = "Good Evening 🌙";
+        shadowColor = "2px 2px 10px rgba(50, 50, 255, 0.7)"; // Dark Blue for evening
       }
 
       document.getElementById("greeting").textContent = greeting;
+      document.getElementById("greeting").style.textShadow = shadowColor;
     }
 
-    // Update Greeting and Clock immediately
-    setGreeting();
+    // Update Greeting and Shadow immediately
+    setGreetingAndShadow();
     updateClock();
 
     // Update every second for clock and greeting
     setInterval(() => {
       updateClock();
-      setGreeting();
+      setGreetingAndShadow();
     }, 1000);
   </script>
 </body>
