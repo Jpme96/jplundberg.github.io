@@ -40,7 +40,7 @@
 
     #quote {
       font-family: 'Playfair Display', serif; /* Elegant font for quote */
-      font-size: 1.5vw; /* Smaller font size for the quote */
+      font-size: 1.3vw; /* Slightly smaller font size for the quote */
       font-style: italic;
       margin-top: 40px; /* Increased space between greeting and quote */
       max-width: 80%;
@@ -75,7 +75,7 @@
       }
 
       #quote {
-        font-size: 1.3vw; /* Medium size quote for tablets */
+        font-size: 3vw; /* Medium size quote for tablets */
       }
     }
 
@@ -90,7 +90,7 @@
       }
 
       #quote {
-        font-size: 1.6em; /* Standard quote size for desktops */
+        font-size: 1.4em; /* Standard quote size for desktops */
       }
     }
   </style>
@@ -220,7 +220,7 @@
     updateClock();
     setGreetingAndShadow();
 
-    // Change quote every 5 seconds
+    // Change quote every 60 seconds (1 minute)
     setInterval(() => {
       getRandomQuote();
     }, 60000);
