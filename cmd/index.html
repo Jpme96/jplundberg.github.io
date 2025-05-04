@@ -24,6 +24,7 @@
       box-shadow: 0 0 10px rgba(255,255,255,0.2);
       transition: all 0.3s ease;
       overflow: hidden;
+      z-index: 10;
     }
 
     .task-header {
@@ -242,7 +243,7 @@
     <div class="task-details" id="taskContainer">
       <label>
         <strong>Note:</strong><br>
-        <textarea type="text" id="taskDesc" class="task-input">
+        <textarea type="text" id="taskDesc" class="task-input"></textarea>
       </label><br><br>
       <label>
         <strong>Due Date:</strong><br>
