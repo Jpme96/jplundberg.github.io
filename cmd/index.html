@@ -211,30 +211,46 @@
   <div id="quote"></div>
   <p id="musicButton"><i class="fas fa-play-circle"></i></p>
 
- <!-- Expandable & Editable Task -->
-<div class="task" id="task">
-  <div class="task-header" onclick="toggleTask()">📝 My Task</div>
-  <div class="task-details" id="taskContainer">
-    <label>
-      <strong>Description:</strong><br>
-      <input type="text" id="taskDesc" class="task-input">
-    </label><br><br>
-    <label>
-      <strong>Due Date:</strong><br>
-      <input type="date" id="taskDue" class="task-input">
-    </label><br><br>
-    <label>
-      <strong>Priority:</strong><br>
-      <select id="taskPriority" class="task-input">
-        <option>High</option>
-        <option>Medium</option>
-        <option>Low</option>
-      </select>
-    </label><br><br>
-    <button onclick="saveTask(event)">💾 Save Task</button>
+  <!-- Expandable & Editable Task -->
+  <div class="task" id="task">
+    <div class="task-header" onclick="toggleTask()">📝 My Task</div>
+    <div class="task-details" id="taskContainer">
+      <label>
+        <strong>Description:</strong><br>
+        <input type="text" id="taskDesc" class="task-input">
+      </label><br><br>
+      <label>
+        <strong>Due Date:</strong><br>
+        <input type="date" id="taskDue" class="task-input">
+      </label><br><br>
+      <label>
+        <strong>Priority:</strong><br>
+        <select id="taskPriority" class="task-input">
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+      </label><br><br>
+      <button onclick="saveTask(event)">💾 Save Task</button>
+      <button onclick="deleteTask(event)" style="background-color: red;">🗑️ Delete Task</button>
+    </div>
   </div>
-</div>
 
+  <script>
+    function deleteTask(event) {
+      event.stopPropagation(); // Prevent toggle on button click
+
+      // Clear task inputs
+      document.getElementById("taskDesc").value = "";
+      document.getElementById("taskDue").value = "";
+      document.getElementById("taskPriority").value = "High";
+
+      // Remove task from cookies
+      setCookie("myTask", "", -1);
+
+      alert("🗑️ Task deleted!");
+    }
+  </script>
 
   <!-- Audio element -->
   <audio id="music" loop>
