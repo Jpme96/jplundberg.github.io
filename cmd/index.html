@@ -137,7 +137,7 @@
   <div id="clock"></div>
   <div id="greeting"></div>
   <div id="quote"></div>
-  <button id="musicButton">Play Music</button>
+  <button id="musicButton"><i class="fa-solid fa-circle-play"></i></button>
 
   <!-- Audio element -->
   <audio id="music" loop>
@@ -223,13 +223,13 @@
 
       if (isMusicPlaying) {
         music.pause();
-        button.textContent = "Play Music"; // Change button text when paused
+        button.innerHTML = "<i class='fa-solid fa-circle-play'></i>"; // Change button text when paused
       } else {
         music.play().catch(err => {
           console.error('Error playing audio:', err);
           alert("Audio failed to play. Please allow media playback in your browser settings.");
         });
-        button.textContent = "<i class='fa-solid fa-circle-pause'></i>"; // Change button text when playing
+        button.innerHTML = "<i class='fa-solid fa-circle-pause'></i>"; // Change button text when playing
       }
       isMusicPlaying = !isMusicPlaying;
     }
