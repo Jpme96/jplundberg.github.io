@@ -64,7 +64,7 @@
       line-height: 1.5;
       text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
       transition: all 0.3s ease;
-      position:absolute; 
+      position: absolute; 
       bottom: 20px; 
     }
 
@@ -165,11 +165,11 @@
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
     }
-    
-// Initial call to update the date
+
+    // Initial call to update the date
     updateDate();
     updateDateAtMidnight();
-    
+
     // Function to update the date at midnight
     function updateDateAtMidnight() {
       const now = new Date();
@@ -182,7 +182,7 @@
         setInterval(updateDate, 86400000); // Update every 24 hours
       }, timeUntilMidnight);
     }
-    
+
     // Update Clock Function
     function updateClock() {
       const now = new Date();
@@ -274,10 +274,15 @@
     // Initial call to set greeting, shadow, and music
     setGreetingAndShadow();
 
-    // Change quote every 60 seconds (1 minute)
-    setInterval(() => {
-      getRandomQuote();
-    }, 60000);
+    // Show first quote when the page loads
+    window.onload = function() {
+      getRandomQuote();  // Display a random quote when the page opens
+
+      // Change quote every 60 seconds (1 minute)
+      setInterval(() => {
+        getRandomQuote();
+      }, 60000); // 60,000 milliseconds = 1 minute
+    };
 
     // Update clock every second
     setInterval(updateClock, 1000);
