@@ -31,6 +31,17 @@
       padding: 20px;
     }
 
+    /* Left side date */
+    #date {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      font-size: 1.5em;
+      color: white;
+      font-weight: bold;
+      z-index: 10;  /* Ensure it stays on top of the background */
+    }
+
     #clock {
       font-size: 12vw;
       font-weight: bold;
@@ -133,6 +144,7 @@
   </style>
 </head>
 <body>
+  <div id="date"></div>
   <div id="clock"></div>
   <div id="greeting"></div>
   <div id="quote"></div>
@@ -145,6 +157,26 @@
   </audio>
 
   <script>
+    // Update the date every day at midnight
+    function updateDate() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    // Function to update the date at midnight
+    function updateDateAtMidnight() {
+      const now = new Date();
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      const timeUntilMidnight = nextMidnight - now;
+
+      setTimeout(() => {
+        updateDate();
+        setInterval(updateDate, 86400000); // Update every 24 hours
+      }, timeUntilMidnight);
+    }
+    
     // Update Clock Function
     function updateClock() {
       const now = new Date();
