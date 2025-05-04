@@ -140,7 +140,7 @@
 
   <!-- Audio element -->
   <audio id="music" loop>
-    <source id="musicSource" src="assets/music/morning.mp3" type="audio/mp3">
+    <source id="musicSource" src="/assets/music/morning.mp3" type="audio/mp3">
     Your browser does not support the audio element.
   </audio>
 
@@ -166,19 +166,19 @@
       if (hour >= 0 && hour < 6) {
         greeting = `Good Night 🌙`;
         shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
-        musicSource = "assets/music/night.mp3";
+        musicSource = "/assets/music/night.mp3";
       } else if (hour >= 6 && hour < 12) {
         greeting = `Good Morning 🌅`;
         shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
-        musicSource = "assets/music/morning.mp3";
+        musicSource = "/assets/music/morning.mp3";
       } else if (hour >= 12 && hour < 18) {
         greeting = `Good Afternoon ☀️`;
         shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
-        musicSource = "assets/music/afternoon.mp3";
+        musicSource = "/assets/music/afternoon.mp3";
       } else {
         greeting = `Good Evening 🌙`;
         shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
-        musicSource = "assets/music/evening.mp3";
+        musicSource = "/assets/music/evening.mp3";
       }
 
       // Set the greeting, shadow, and music dynamically
