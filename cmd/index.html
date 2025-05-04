@@ -204,9 +204,22 @@
         font-size: 1.5em;
       }
     }
+
+    #home-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 2em;
+      color: white;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
   </style>
 </head>
 <body>
+  <a id="home-button" href="/index.html" class="home-button" title="Home">
+    <i class="fas fa-home"></i>
+  </a>  
   <div id="date"></div>
   <div id="clock">00:00:00</div>
   <div id="greeting"></div>
