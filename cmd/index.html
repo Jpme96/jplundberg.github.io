@@ -95,6 +95,9 @@
       padding: 20px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
+      max-height: 400px; /* Max height to make it scrollable */
+      overflow-y: auto; /* Enable scrolling when the content exceeds the max height */
+      display: none; /* Initially hidden */
     }
 
     .task-container h2 {
@@ -163,6 +166,24 @@
       font-size: 18px;
       cursor: pointer;
     }
+    
+    /* Button to toggle visibility */
+    #toggleTaskListButton {
+      position: fixed;
+      right: 20px;
+      bottom: 100px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #toggleTaskListButton:hover {
+      background-color: #2980b9;
+    }
   </style>
 </head>
 <body>
@@ -181,12 +202,15 @@
   </audio>
 
   <!-- Task List -->
-  <div class="task-container">
+  <div class="task-container" id="taskContainer">
     <h2>Task List</h2>
     <input type="text" id="taskInput" class="task-input" placeholder="Enter a new task" />
     <button class="task-btn" id="addTaskBtn">Add Task</button>
     <ul id="taskList" class="task-list"></ul>
   </div>
+
+  <!-- Button to toggle task list visibility -->
+  <button id="toggleTaskListButton">Toggle Task List</button>
 
   <script>
     // Load tasks from localStorage
@@ -231,7 +255,6 @@
       taskInput.value = ''; // Clear input field
 
       loadTasks(); // Reload tasks
-      showNotification('New task added!'); // Show notification
     }
 
     // Toggle task completion status
@@ -245,50 +268,12 @@
     // Delete task
     function deleteTask(index) {
       const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks.splice(index, 1); // Remove the task at the given index
+      tasks.splice(index, 1); // Remove task from array
       saveTasks(tasks);
       loadTasks(); // Reload tasks
     }
 
-    // Show notification
-    function showNotification(message) {
-      if (Notification.permission === 'granted') {
-        new Notification(message);
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            new Notification(message);
-          }
-        });
-      }
-    }
-
-    // Event listeners for task list
-    document.getElementById('addTaskBtn').addEventListener('click', addTask);
-
-    // Initial load
-    loadTasks();
-
-    // Update the date every day at midnight
-    function updateDate() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
-    }
-
-    updateDate();
-    updateDateAtMidnight();
-
-    // Update Clock Function
-    function updateClock() {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-    }
-
-    setInterval(updateClock, 1000);
-  </script>
-</body>
-</html>
+    // Toggle task list visibility
+    document.getElementById('toggleTaskListButton').addEventListener('click', () => {
+      const taskContainer = document.getElementById('taskContainer');
+      if (taskContainer.style.display === 'none' ||
