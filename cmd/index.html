@@ -6,6 +6,7 @@
   <title>Simple Clock with Music</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
   <style>
+    /* Basic Styles for body, clock, greeting, and quotes */
     * {
       margin: 0;
       padding: 0;
@@ -135,7 +136,7 @@
   <div id="clock"></div>
   <div id="greeting"></div>
   <div id="quote"></div>
-  <button id="musicButton" onclick="toggleMusic()">Play Music</button>
+  <button id="musicButton">Play Music</button>
 
   <!-- Audio element -->
   <audio id="music" loop>
@@ -242,6 +243,9 @@
 
     // Update clock every second
     setInterval(updateClock, 1000);
+
+    // Ensure music plays when the button is clicked
+    document.getElementById("musicButton").addEventListener("click", toggleMusic);
   </script>
 </body>
 </html>
