@@ -113,6 +113,10 @@
       text-shadow: 0px 0px 20px white;
     }
 
+    #clock.small {
+      font-size: 0.25em;
+    }
+
     #greeting {
       font-size: 3vw;
       margin-top: 0;
@@ -436,6 +440,8 @@
       taskContainer.classList.toggle("open");
       const task = document.getElementById("task");
       task.classList.toggle("open");
+      const clock = document.getElementById("clock");
+      task.classList.toggle("small");
     }
 
     function saveTask(event) {
