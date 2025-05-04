@@ -86,7 +86,7 @@
       text-align: center;
       overflow: hidden;
       padding: 20px;
-      background-blend-mode: darken;
+      background-blend-mode:;
 
     }
 
@@ -305,19 +305,19 @@
       // Set the greeting, shadow color, and music track based on specific time ranges
       if (hour >= 0 && hour < 6) {
         greeting = `Good Night, Lundberg 🌙`;
-        shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
+        shadowColor = "2px 2px 10px rgba(0, 0, 255, 1)"; // Dark blue for night
         musicSource = "/assets/music/night.mp3";
       } else if (hour >= 6 && hour < 12) {
         greeting = `Good Morning, Lundberg 🌅`;
-        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 1)"; // Light yellow for morning
         musicSource = "/assets/music/morning.mp3";
       } else if (hour >= 12 && hour < 18) {
         greeting = `Good Afternoon, Lundberg ☀️`;
-        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 1)"; // Light orange for afternoon
         musicSource = "/assets/music/afternoon.mp3";
       } else {
         greeting = `Good Evening, Lundberg 🌙`;
-        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
+        shadowColor = "2px 2px 10px rgba(128, 0, 128, 1)"; // Purple for evening
         musicSource = "/assets/music/evening.mp3";
       }
 
