@@ -85,11 +85,11 @@
       color: #149ddd;
     }
 
-    /* Left Side Note Styles */
+    /* Right Side Note Styles */
     .note-container {
       position: fixed;
-      left: 20px;
-      top: 150px;  /* Adjust the distance from top */
+      right: 20px;  /* Position the container 20px from the right */
+      top: 150px;   /* Keep it 150px from the top */
       width: 220px;
       background-color: #fff8c6;
       border: 1px solid #ccc;
@@ -100,6 +100,17 @@
     .note-container h3 {
       font-size: 1.2em;
       margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .note-container h3 button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2em;
+      color: #218a80;
     }
 
     .note-container textarea {
@@ -183,9 +194,12 @@
     Your browser does not support the audio element.
   </audio>
 
-  <!-- Left Side Note -->
+  <!-- Right Side Note -->
   <div class="note-container">
-    <h3>My Note</h3>
+    <h3>
+      My Note
+      <button id="toggleNote">-</button>
+    </h3>
     <textarea id="note"></textarea>
   </div>
 
@@ -311,6 +325,24 @@
       }
       isMusicPlaying = !isMusicPlaying;
     }
+
+    // Minimize/Maximize note functionality
+    const toggleNoteButton = document.getElementById('toggleNote');
+    const noteContainer = document.querySelector('.note-container');
+
+    toggleNoteButton.addEventListener('click', () => {
+      if (noteContainer.style.height === 'auto' || noteContainer.style.height === '') {
+        // Minimize note container
+        noteContainer.style.height = '50px';
+        toggleNoteButton.textContent = '+'; // Change button to maximize
+        note.style.display = 'none'; // Hide the note textarea
+      } else {
+        // Maximize note container
+        noteContainer.style.height = 'auto';
+        toggleNoteButton.textContent = '-'; // Change button to minimize
+        note.style.display = 'block'; // Show the note textarea
+      }
+    });
 
     // Initial call to set greeting, shadow, and music
     setGreetingAndShadow();
