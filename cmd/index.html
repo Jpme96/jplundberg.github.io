@@ -214,6 +214,16 @@
       text-decoration: none;
       transition: color 0.3s ease;
     }
+    #taskDesc {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.9em;
+      margin-top: 3px;
+      border-radius: 5px;
+      border: none;
+      background-color: #00000038;
+      color:#42bfb9b6;
+    }
   </style>
 </head>
 <body>
@@ -232,7 +242,7 @@
     <div class="task-details" id="taskContainer">
       <label>
         <strong>Note:</strong><br>
-        <input type="text" id="taskDesc" class="task-input">
+        <textarea type="text" id="taskDesc" class="task-input">
       </label><br><br>
       <label>
         <strong>Due Date:</strong><br>
