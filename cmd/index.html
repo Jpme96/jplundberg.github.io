@@ -9,7 +9,7 @@
     * {
       margin: 0;
       padding: 0;
-      box-sizing: border-box; /* Ensures padding and borders don't affect element size */
+      box-sizing: border-box;
     }
 
     body {
@@ -140,7 +140,6 @@
   <!-- Audio element -->
   <audio id="music" loop>
     <source id="musicSource" src="assets/music/morning.mp3" type="audio/mp3">
-    <!-- Fallback message for unsupported browsers -->
     Your browser does not support the audio element.
   </audio>
 
@@ -190,11 +189,7 @@
 
       // Reload the audio element to apply the new music
       const audio = document.getElementById("music");
-      audio.load();
-      audio.play().catch(err => {
-        console.error('Error playing audio:', err);
-        alert("Please allow audio to play. You might need to interact with the page first.");
-      });
+      audio.load();  // This ensures the new source is loaded
     }
 
     // 100 Random Inspirational Quotes
@@ -228,7 +223,10 @@
         music.pause();
         button.textContent = "Play Music"; // Change button text when paused
       } else {
-        music.play();
+        music.play().catch(err => {
+          console.error('Error playing audio:', err);
+          alert("Audio failed to play. Please allow media playback in your browser settings.");
+        });
         button.textContent = "Pause Music"; // Change button text when playing
       }
       isMusicPlaying = !isMusicPlaying;
