@@ -276,4 +276,19 @@
     // Toggle task list visibility
     document.getElementById('toggleTaskListButton').addEventListener('click', () => {
       const taskContainer = document.getElementById('taskContainer');
-      if (taskContainer.style.display === 'none' ||
+      if (taskContainer.style.display === 'none' || taskContainer.style.display === '') {
+        taskContainer.style.display = 'block'; // Show task list
+      } else {
+        taskContainer.style.display = 'none'; // Hide task list
+      }
+    });
+
+    // Add event listener to Add Task button
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+
+    // Load tasks on page load
+    window.onload = loadTasks;
+  </script>
+
+</body>
+</html>
