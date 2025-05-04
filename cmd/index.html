@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JP/CMD</title>
+  <title>Simple Clock with Music</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
@@ -66,8 +66,8 @@
       transition: all 0.3s ease;
       bottom: 20px; 
       width: 100%;
-      position: absolute;
       text-align: center;
+      position: absolute;
     }
 
     #musicButton {
@@ -85,110 +85,69 @@
       color: #149ddd;
     }
 
-    /* Task List */
-    .task-container {
-      position: absolute;
-      right: 20px;
-      bottom: 20px;
-      background-color: #fff;
-      width: 300px;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      max-height: 400px; /* Max height to make it scrollable */
-      overflow-y: auto; /* Enable scrolling when the content exceeds the max height */
-      display: none; /* Initially hidden */
+    /* Mobile Styles (Phones/Tablets) */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      #clock {
+        font-size: 12vw;
+      }
+
+      #greeting {
+        font-size: 6vw;
+      }
+
+      #quote {
+        font-size: 5.5vw;
+      }
+
+      #musicButton {
+        font-size: 2em;
+      }
     }
 
-    .task-container h2 {
-      text-align: center;
-      margin-bottom: 20px;
+    /* Medium Devices (Tablets/Laptops) */
+    @media (min-width: 601px) and (max-width: 1024px) {
+      #clock {
+        font-size: 15vw;
+      }
+
+      #greeting {
+        font-size: 5vw;
+      }
+
+      #quote {
+        font-size: 3vw;
+      }
+
+      #musicButton {
+        font-size: 1.8em;
+      }
     }
 
-    .task-input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
+    /* Larger Devices (Desktops/Big Screens) */
+    @media (min-width: 1025px) {
+      #clock {
+        font-size: 120px;
+      }
 
-    .task-btn {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+      #greeting {
+        font-size: 2.5em;
+      }
 
-    .task-btn:hover {
-      background-color: #45a049;
-    }
+      #quote {
+        font-size: 1.4em;
+      }
 
-    .task-list {
-      list-style-type: none;
-      padding: 0;
-      margin-top: 20px;
-    }
-
-    .task-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #f9f9f9;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .task-item.completed {
-      text-decoration: line-through;
-      background-color: #e0e0e0;
-    }
-
-    .delete-btn {
-      background-color: transparent;
-      border: none;
-      color: #e74c3c;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .complete-btn {
-      background-color: transparent;
-      border: none;
-      color: #3498db;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    
-    /* Button to toggle visibility */
-    #toggleTaskListButton {
-      position: fixed;
-      right: 20px;
-      bottom: 100px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #toggleTaskListButton:hover {
-      background-color: #2980b9;
+      #musicButton {
+        font-size: 1.5em;
+      }
     }
   </style>
 </head>
 <body>
-
-  <!-- Date, Clock, Greeting, and Quote -->
   <div id="date"></div>
   <div id="clock">00:00:00</div>
   <div id="greeting"></div>
@@ -201,94 +160,152 @@
     Your browser does not support the audio element.
   </audio>
 
-  <!-- Task List -->
-  <div class="task-container" id="taskContainer">
-    <h2>Task List</h2>
-    <input type="text" id="taskInput" class="task-input" placeholder="Enter a new task" />
-    <button class="task-btn" id="addTaskBtn">Add Task</button>
-    <ul id="taskList" class="task-list"></ul>
-  </div>
-
-  <!-- Button to toggle task list visibility -->
-  <button id="toggleTaskListButton">Toggle Task List</button>
-
   <script>
-    // Load tasks from localStorage
-    function loadTasks() {
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      const taskList = document.getElementById('taskList');
-      taskList.innerHTML = '';
-
-      tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        li.classList.add('task-item');
-        if (task.completed) li.classList.add('completed');
-
-        li.innerHTML = `
-          <span>${task.text}</span>
-          <div>
-            <button class="complete-btn" onclick="toggleCompletion(${index})">✔</button>
-            <button class="delete-btn" onclick="deleteTask(${index})">🗑️</button>
-          </div>
-        `;
-
-        taskList.appendChild(li);
-      });
+    // Update the date every day at midnight
+    function updateDate() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
     }
 
-    // Save tasks to localStorage
-    function saveTasks(tasks) {
-      localStorage.setItem('tasks', JSON.stringify(tasks));
+    // Initial call to update the date
+    updateDate();
+    updateDateAtMidnight();
+
+    // Function to update the date at midnight
+    function updateDateAtMidnight() {
+      const now = new Date();
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      const timeUntilMidnight = nextMidnight - now;
+
+      setTimeout(() => {
+        updateDate();
+        setInterval(updateDate, 86400000); // Update every 24 hours
+      }, timeUntilMidnight);
     }
 
-    // Add new task
-    function addTask() {
-      const taskInput = document.getElementById('taskInput');
-      const taskText = taskInput.value.trim();
-      if (!taskText) return;
-
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      const newTask = { text: taskText, completed: false };
-
-      tasks.push(newTask);
-      saveTasks(tasks);
-      taskInput.value = ''; // Clear input field
-
-      loadTasks(); // Reload tasks
+    // Update Clock Function
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
     }
 
-    // Toggle task completion status
-    function toggleCompletion(index) {
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks[index].completed = !tasks[index].completed;
-      saveTasks(tasks);
-      loadTasks(); // Reload tasks
-    }
+    // Set Dynamic Greeting and Shadow Based on Time of Day
+    function setGreetingAndShadow() {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = "";
+      let shadowColor = "";
+      let musicSource = "";
 
-    // Delete task
-    function deleteTask(index) {
-      const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-      tasks.splice(index, 1); // Remove task from array
-      saveTasks(tasks);
-      loadTasks(); // Reload tasks
-    }
-
-    // Toggle task list visibility
-    document.getElementById('toggleTaskListButton').addEventListener('click', () => {
-      const taskContainer = document.getElementById('taskContainer');
-      if (taskContainer.style.display === 'none' || taskContainer.style.display === '') {
-        taskContainer.style.display = 'block'; // Show task list
+      // Set the greeting, shadow color, and music track based on specific time ranges
+      if (hour >= 0 && hour < 6) {
+        greeting = `Good Night, Lundberg 🌙`;
+        shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
+        musicSource = "/assets/music/night.mp3";
+      } else if (hour >= 6 && hour < 12) {
+        greeting = `Good Morning, Lundberg 🌅`;
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
+        musicSource = "/assets/music/morning.mp3";
+      } else if (hour >= 12 && hour < 18) {
+        greeting = `Good Afternoon, Lundberg ☀️`;
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
+        musicSource = "/assets/music/afternoon.mp3";
       } else {
-        taskContainer.style.display = 'none'; // Hide task list
+        greeting = `Good Evening, Lundberg 🌙`;
+        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
+        musicSource = "/assets/music/evening.mp3";
       }
-    });
 
-    // Add event listener to Add Task button
-    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+      // Set the greeting, shadow, and music dynamically
+      document.getElementById("greeting").textContent = greeting;
+      document.getElementById("greeting").style.textShadow = shadowColor;
+      document.getElementById("clock").style.textShadow = shadowColor;
+      document.getElementById("quote").style.textShadow = shadowColor;
+      document.getElementById("musicSource").src = musicSource; // Update music source
 
-    // Load tasks on page load
-    window.onload = loadTasks;
+      // Reload the audio element to apply the new music
+      const audio = document.getElementById("music");
+      audio.load();  // This ensures the new source is loaded
+    }
+
+    // 100 Random Inspirational Quotes
+    const quotes = [
+      "The best time to plant a tree was 20 years ago. The second best time is now.",
+      "Believe you can and you're halfway there.",
+      "It does not matter how slowly you go as long as you do not stop.",
+      "You are never too old to set another goal or to dream a new dream.",
+      "The future belongs to those who believe in the beauty of their dreams.",
+      "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+      "Don’t watch the clock; do what it does. Keep going.",
+      "Keep your face always toward the sunshine—and shadows will fall behind you.",
+      "It always seems impossible until it's done.",
+      "The only way to do great work is to love what you do.",
+      "You have power over your mind, not outside events. Realize this, and you will find strength.",
+      "The happiness of your life depends upon the quality of your thoughts.",
+      "Waste no more time arguing about what a good man should be. Be one.",
+      "It is not death that a man should fear, but he should fear never beginning to live.",
+      "The soul becomes dyed with the color of its thoughts.",
+      "He who lives in harmony with himself lives in harmony with the universe.",
+      "What we do now echoes in eternity.",
+      "If it is not right, do not do it; if it is not true, do not say it.",
+      "You are a little soul carrying around a corpse.",
+      "How much time he gains who does not look to see what his neighbor says or does or thinks.",
+      "A man's worth is no greater than the worth of his ambitions.",
+      "The best revenge is to be unlike him who performed the injury.",
+      "Be tolerant with others and strict with yourself.",
+      "The universe is change; life is judgment.",
+      "The art of living is more like wrestling than dancing."
+      // Add more quotes as needed...
+    ];
+
+    // Function to pick a random quote
+    function getRandomQuote() {
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      document.getElementById('quote').textContent = quotes[randomIndex];
+    }
+
+    // Toggle play/pause functionality for music
+    let isMusicPlaying = false;
+    function toggleMusic() {
+      const music = document.getElementById("music");
+      const button = document.getElementById("musicButton");
+
+      if (isMusicPlaying) {
+        music.pause();
+        button.innerHTML = '<i class="fas fa-play-circle"></i>'; // Change button text when paused
+      } else {
+        music.play().catch(err => {
+          console.error('Error playing audio:', err);
+          alert("Audio failed to play. Please allow media playback in your browser settings.");
+        });
+        button.innerHTML = '<i class="fas fa-pause-circle"></i>'; // Change button text when playing
+      }
+      isMusicPlaying = !isMusicPlaying;
+    }
+
+    // Initial call to set greeting, shadow, and music
+    setGreetingAndShadow();
+
+    // Show first quote when the page loads
+    window.onload = function() {
+      getRandomQuote();  // Display a random quote when the page opens
+
+      // Change quote every 60 seconds (1 minute)
+      setInterval(() => {
+        getRandomQuote();
+      }, 60000); // 60,000 milliseconds = 1 minute
+    };
+
+    // Update clock every second
+    setInterval(updateClock, 1000);
+
+    // Ensure music plays when the button is clicked
+    document.getElementById("musicButton").addEventListener("click", toggleMusic);
   </script>
-
 </body>
 </html>
