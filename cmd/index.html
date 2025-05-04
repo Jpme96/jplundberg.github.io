@@ -279,6 +279,11 @@
       getRandomQuote();
     }, 60000);
 
+    // Immediately show a random quote when the page is opened
+    window.onload = function() {
+      // Show first quote when the page loads
+      getRandomQuote();
+
     // Update clock every second
     setInterval(updateClock, 1000);
 
