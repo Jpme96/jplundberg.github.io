@@ -13,6 +13,38 @@
       padding: 0;
       box-sizing: border-box;
     }
+    .task {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 20px;
+  width: 300px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.task-header {
+  padding: 10px 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.task-details {
+  display: none;
+  padding: 10px 15px;
+  font-size: 0.95em;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #ccc;
+}
+
+.task.open .task-details {
+  display: block;
+}
+
 
     body {
       display: flex;
@@ -153,6 +185,16 @@
   <div id="greeting"></div>
   <div id="quote"></div>
   <p id="musicButton"><i class="fas fa-play-circle"></i></p>
+
+  <!-- Task Component -->
+<div class="task" onclick="toggleTask(this)">
+  <div class="task-header">📝 My Task</div>
+  <div class="task-details">
+    <p><strong>Description:</strong> Finish coding the task UI.</p>
+    <p><strong>Due Date:</strong> Tomorrow</p>
+    <p><strong>Priority:</strong> High</p>
+  </div>
+</div>
 
   <!-- Audio element -->
   <audio id="music" loop>
@@ -300,6 +342,11 @@
         getRandomQuote();
       }, 60000); // 60,000 milliseconds = 1 minute
     };
+
+    function toggleTask(element) {
+  element.classList.toggle("open");
+}
+
 
     // Update clock every second
     setInterval(updateClock, 1000);
