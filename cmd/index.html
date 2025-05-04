@@ -14,64 +14,62 @@
       box-sizing: border-box;
     }
     .task {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  margin-top: 20px;
-  width: 300px;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(255,255,255,0.2);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 300px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
 
-.task-header {
-  padding: 10px 15px;
-  font-weight: bold;
-  font-size: 1.2em;
-  background-color: rgba(0, 0, 0, 0.3);
-}
+    .task-header {
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 1.2em;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
 
-.task-details {
-  display: none;
-  padding: 10px 15px;
-  font-size: 0.95em;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-top: 1px solid #ccc;
-}
+    .task-details {
+      display: none;
+      padding: 10px 15px;
+      font-size: 0.95em;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-top: 1px solid #ccc;
+    }
 
-.task-details.open {
-  display: block !important;
-}
+    .task-details.open {
+      display: block !important;
+    }
 
-.task-input {
-  width: 100%;
-  padding: 5px;
-  font-size: 0.9em;
-  margin-top: 3px;
-  border-radius: 5px;
-  border: none;
-  background-color: rgba(255,255,255,0.2);
-  color: white;
-}
+    .task-input {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.9em;
+      margin-top: 3px;
+      border-radius: 5px;
+      border: none;
+      background-color: rgba(255,255,255,0.2);
+      color: white;
+    }
 
-.task button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 5px;
-  background-color: #149ddd;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
+    .task button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #149ddd;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
 
-.task button:hover {
-  background-color: #117ca4;
-}
-
-
+    .task button:hover {
+      background-color: #117ca4;
+    }
 
     body {
       display: flex;
@@ -387,56 +385,51 @@
 
 
     function toggleTask() {
-  const task = document.getElementById("taskContainer");
-  task.classList.toggle("open");
-}
-
-function saveTask(event) {
-  event.stopPropagation(); // Prevent toggle on button click
-
-  const desc = document.getElementById("taskDesc").value;
-  const due = document.getElementById("taskDue").value;
-  const priority = document.getElementById("taskPriority").value;
-
-  const data = JSON.stringify({ desc, due, priority });
-  setCookie("myTask", data, 30);
-
-  alert("✅ Task saved in cookies!");
-}
-
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 86400000).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-}
-
-function getCookie(name) {
-  const cookies = document.cookie.split("; ");
-  for (const c of cookies) {
-    const [key, value] = c.split("=");
-    if (key === name) return decodeURIComponent(value);
-  }
-  return null;
-}
-
-// Load saved task on page load
-window.addEventListener("DOMContentLoaded", () => {
-  const stored = getCookie("myTask");
-  if (stored) {
-    try {
-      const { desc, due, priority } = JSON.parse(stored);
-      document.getElementById("taskDesc").value = desc;
-      document.getElementById("taskDue").value = due;
-      document.getElementById("taskPriority").value = priority;
-    } catch (e) {
-      console.error("Cookie parse error:", e);
+      const task = document.getElementById("taskContainer");
+      task.classList.toggle("open");
     }
-  }
-});
 
+    function saveTask(event) {
+      event.stopPropagation(); // Prevent toggle on button click
 
+      const desc = document.getElementById("taskDesc").value;
+      const due = document.getElementById("taskDue").value;
+      const priority = document.getElementById("taskPriority").value;
 
+      const data = JSON.stringify({ desc, due, priority });
+      setCookie("myTask", data, 30);
 
+      alert("✅ Task saved in cookies!");
+    }
 
+    function setCookie(name, value, days) {
+      const expires = new Date(Date.now() + days * 86400000).toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    }
+
+    function getCookie(name) {
+      const cookies = document.cookie.split("; ");
+      for (const c of cookies) {
+        const [key, value] = c.split("=");
+        if (key === name) return decodeURIComponent(value);
+      }
+      return null;
+    }
+
+    // Load saved task on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      const stored = getCookie("myTask");
+      if (stored) {
+        try {
+          const { desc, due, priority } = JSON.parse(stored);
+          document.getElementById("taskDesc").value = desc;
+          document.getElementById("taskDue").value = due;
+          document.getElementById("taskPriority").value = priority;
+        } catch (e) {
+          console.error("Cookie parse error:", e);
+        }
+      }
+    });
 
     // Update clock every second
     setInterval(updateClock, 1000);
