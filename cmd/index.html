@@ -85,6 +85,34 @@
       color: #149ddd;
     }
 
+    /* Left Side Note Styles */
+    .note-container {
+      position: fixed;
+      left: 20px;
+      top: 150px;  /* Adjust the distance from top */
+      width: 220px;
+      background-color: #fff8c6;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .note-container h3 {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+
+    .note-container textarea {
+      width: 100%;
+      height: 150px;
+      resize: none;
+      border: none;
+      background-color: #fff;
+      color: #333;
+      font-size: 1em;
+      padding: 8px;
+    }
+
     /* Mobile Styles (Phones/Tablets) */
     @media (max-width: 600px) {
       body {
@@ -106,6 +134,15 @@
       #musicButton {
         font-size: 2em;
       }
+
+      .note-container {
+        width: 180px;
+        top: 100px;
+      }
+
+      .note-container textarea {
+        height: 120px;
+      }
     }
 
     /* Medium Devices (Tablets/Laptops) */
@@ -125,24 +162,10 @@
       #musicButton {
         font-size: 1.8em;
       }
-    }
 
-    /* Larger Devices (Desktops/Big Screens) */
-    @media (min-width: 1025px) {
-      #clock {
-        font-size: 120px;
-      }
-
-      #greeting {
-        font-size: 2.5em;
-      }
-
-      #quote {
-        font-size: 1.4em;
-      }
-
-      #musicButton {
-        font-size: 1.5em;
+      .note-container {
+        top: 150px;
+        width: 220px;
       }
     }
   </style>
@@ -159,6 +182,12 @@
     <source id="musicSource" src="/assets/music/morning.mp3" type="audio/mp3">
     Your browser does not support the audio element.
   </audio>
+
+  <!-- Left Side Note -->
+  <div class="note-container">
+    <h3>My Note</h3>
+    <textarea id="note"></textarea>
+  </div>
 
   <script>
     // Update the date every day at midnight
@@ -233,6 +262,17 @@
       audio.load();  // This ensures the new source is loaded
     }
 
+    // Left side note functionality
+    const note = document.getElementById('note');
+
+    // Load saved note from localStorage
+    note.value = localStorage.getItem('leftNote') || '';
+
+    // Save the note to localStorage when user types
+    note.addEventListener('input', () => {
+      localStorage.setItem('leftNote', note.value);
+    });
+
     // 100 Random Inspirational Quotes
     const quotes = [
       "The best time to plant a tree was 20 years ago. The second best time is now.",
@@ -244,23 +284,7 @@
       "Don’t watch the clock; do what it does. Keep going.",
       "Keep your face always toward the sunshine—and shadows will fall behind you.",
       "It always seems impossible until it's done.",
-      "The only way to do great work is to love what you do.",
-      "You have power over your mind, not outside events. Realize this, and you will find strength.",
-      "The happiness of your life depends upon the quality of your thoughts.",
-      "Waste no more time arguing about what a good man should be. Be one.",
-      "It is not death that a man should fear, but he should fear never beginning to live.",
-      "The soul becomes dyed with the color of its thoughts.",
-      "He who lives in harmony with himself lives in harmony with the universe.",
-      "What we do now echoes in eternity.",
-      "If it is not right, do not do it; if it is not true, do not say it.",
-      "You are a little soul carrying around a corpse.",
-      "How much time he gains who does not look to see what his neighbor says or does or thinks.",
-      "A man's worth is no greater than the worth of his ambitions.",
-      "The best revenge is to be unlike him who performed the injury.",
-      "Be tolerant with others and strict with yourself.",
-      "The universe is change; life is judgment.",
-      "The art of living is more like wrestling than dancing."
-      // Add more quotes as needed...
+      "The only way to do great work is to love what you do."
     ];
 
     // Function to pick a random quote
