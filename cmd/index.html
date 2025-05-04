@@ -1,105 +1,457 @@
-<script>
-  let tasks = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Clock with Music</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    /* Basic Styles for body, clock, greeting, and quotes */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .task {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 300px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
 
-  // Load saved tasks from cookies or local storage
-  function loadTasks() {
-    const stored = getCookie("tasks");
-    if (stored) {
-      try {
-        tasks = JSON.parse(stored);
-        renderTasks();
-      } catch (e) {
-        console.error("Cookie parse error:", e);
+    .task-header {
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 1.2em;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .task-details {
+      display: none;
+      padding: 10px 15px;
+      font-size: 0.95em;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-top: 1px solid #ccc;
+    }
+
+    .task-details.open {
+      display: block !important;
+    }
+
+    .task-input {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.9em;
+      margin-top: 3px;
+      border-radius: 5px;
+      border: none;
+      background-color: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    .task button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #149ddd;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .task button:hover {
+      background-color: #117ca4;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: black;
+      font-family: Arial, sans-serif;
+      background-image: url('/assets/img/bg.html.jpg');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+      padding: 20px;
+    }
+
+    /* Left side date */
+    #date {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      font-size: 1.2em;
+      color: #218a80;
+      font-weight: bold;
+      z-index: 10;  /* Ensure it stays on top of the background */
+    }
+
+    #clock {
+      font-size: 12vw;
+      font-weight: bold;
+      text-shadow: 0px 0px 20px white;
+    }
+
+    #greeting {
+      font-size: 3vw;
+      margin-top: 0;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    #quote {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3vw;
+      font-style: italic;
+      margin-top: 40px;
+      max-width: 80%;
+      line-height: 1.5;
+      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
+      transition: all 0.3s ease;
+      bottom: 20px; 
+      width: 100%;
+      text-align: center;
+      position: absolute;
+    }
+
+    #musicButton {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1.5em;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #musicButton:hover {
+      color: #149ddd;
+    }
+
+    /* Mobile Styles (Phones/Tablets) */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      #clock {
+        font-size: 12vw;
+      }
+
+      #greeting {
+        font-size: 6vw;
+      }
+
+      #quote {
+        font-size: 5.5vw;
+      }
+
+      #musicButton {
+        font-size: 2em;
       }
     }
-  }
 
-  // Save tasks to cookies or local storage
-  function saveTasks() {
-    setCookie("tasks", JSON.stringify(tasks), 30);
-  }
+    /* Medium Devices (Tablets/Laptops) */
+    @media (min-width: 601px) and (max-width: 1024px) {
+      #clock {
+        font-size: 15vw;
+      }
 
-  // Render tasks in the task list
-  function renderTasks() {
-    const taskList = document.getElementById("taskList");
-    taskList.innerHTML = ""; // Clear the list
+      #greeting {
+        font-size: 5vw;
+      }
 
-    tasks.forEach((task, index) => {
-      const taskItem = document.createElement("div");
-      taskItem.className = "task";
-      taskItem.innerHTML = `
-        <div class="task-header" onclick="toggleTaskDetails(${index})">📝 ${task.desc}</div>
-        <div class="task-details" id="taskDetails${index}">
-          <p><strong>Due Date:</strong> ${task.due}</p>
-          <p><strong>Priority:</strong> ${task.priority}</p>
-          <button onclick="deleteTask(${index})" style="background-color: red;">🗑️ Delete Task</button>
-        </div>
-      `;
-      taskList.appendChild(taskItem);
+      #quote {
+        font-size: 3vw;
+      }
+
+      #musicButton {
+        font-size: 1.8em;
+      }
+    }
+
+    /* Larger Devices (Desktops/Big Screens) */
+    @media (min-width: 1025px) {
+      #clock {
+        font-size: 120px;
+      }
+
+      #greeting {
+        font-size: 2.5em;
+      }
+
+      #quote {
+        font-size: 1.4em;
+      }
+
+      #musicButton {
+        font-size: 1.5em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="date"></div>
+  <div id="clock">00:00:00</div>
+  <div id="greeting"></div>
+  <div id="quote"></div>
+  <p id="musicButton"><i class="fas fa-play-circle"></i></p>
+
+  <!-- Expandable & Editable Task -->
+  <div class="task" id="task">
+    <div class="task-header" onclick="toggleTask()">📝 My Task</div>
+    <div class="task-details" id="taskContainer">
+      <label>
+        <strong>Description:</strong><br>
+        <input type="text" id="taskDesc" class="task-input">
+      </label><br><br>
+      <label>
+        <strong>Due Date:</strong><br>
+        <input type="date" id="taskDue" class="task-input">
+      </label><br><br>
+      <label>
+        <strong>Priority:</strong><br>
+        <select id="taskPriority" class="task-input">
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+      </label><br><br>
+      <button onclick="saveTask(event)">💾 Save Task</button>
+      <button onclick="deleteTask(event)" style="background-color: red;">🗑️ Delete Task</button>
+    </div>
+  </div>
+
+  <script>
+    function deleteTask(event) {
+      event.stopPropagation(); // Prevent toggle on button click
+
+      // Clear task inputs
+      document.getElementById("taskDesc").value = "";
+      document.getElementById("taskDue").value = "";
+      document.getElementById("taskPriority").value = "High";
+
+      // Remove task from cookies
+      setCookie("myTask", "", -1);
+
+      alert("🗑️ Task deleted!");
+    }
+  </script>
+
+  <!-- Audio element -->
+  <audio id="music" loop>
+    <source id="musicSource" src="/assets/music/morning.mp3" type="audio/mp3">
+    Your browser does not support the audio element.
+  </audio>
+
+  <script>
+    // Update the date every day at midnight
+    function updateDate() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    // Initial call to update the date
+    updateDate();
+    updateDateAtMidnight();
+
+    // Function to update the date at midnight
+    function updateDateAtMidnight() {
+      const now = new Date();
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      const timeUntilMidnight = nextMidnight - now;
+
+      setTimeout(() => {
+        updateDate();
+        setInterval(updateDate, 86400000); // Update every 24 hours
+      }, timeUntilMidnight);
+    }
+
+    // Update Clock Function
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Set Dynamic Greeting and Shadow Based on Time of Day
+    function setGreetingAndShadow() {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = "";
+      let shadowColor = "";
+      let musicSource = "";
+
+      // Set the greeting, shadow color, and music track based on specific time ranges
+      if (hour >= 0 && hour < 6) {
+        greeting = `Good Night, Lundberg 🌙`;
+        shadowColor = "2px 2px 10px rgba(0, 0, 255, 0.7)"; // Dark blue for night
+        musicSource = "/assets/music/night.mp3";
+      } else if (hour >= 6 && hour < 12) {
+        greeting = `Good Morning, Lundberg 🌅`;
+        shadowColor = "2px 2px 10px rgba(255, 223, 0, 0.7)"; // Light yellow for morning
+        musicSource = "/assets/music/morning.mp3";
+      } else if (hour >= 12 && hour < 18) {
+        greeting = `Good Afternoon, Lundberg ☀️`;
+        shadowColor = "2px 2px 10px rgba(255, 100, 0, 0.7)"; // Light orange for afternoon
+        musicSource = "/assets/music/afternoon.mp3";
+      } else {
+        greeting = `Good Evening, Lundberg 🌙`;
+        shadowColor = "2px 2px 10px rgba(128, 0, 128, 0.7)"; // Purple for evening
+        musicSource = "/assets/music/evening.mp3";
+      }
+
+      // Set the greeting, shadow, and music dynamically
+      document.getElementById("greeting").textContent = greeting;
+      document.getElementById("greeting").style.textShadow = shadowColor;
+      document.getElementById("clock").style.textShadow = shadowColor;
+      document.getElementById("quote").style.textShadow = shadowColor;
+      document.getElementById("musicSource").src = musicSource; // Update music source
+
+      // Reload the audio element to apply the new music
+      const audio = document.getElementById("music");
+      audio.load();  // This ensures the new source is loaded
+    }
+
+    // 100 Random Inspirational Quotes
+    const quotes = [
+      "The best time to plant a tree was 20 years ago. The second best time is now.",
+      "Believe you can and you're halfway there.",
+      "It does not matter how slowly you go as long as you do not stop.",
+      "You are never too old to set another goal or to dream a new dream.",
+      "The future belongs to those who believe in the beauty of their dreams.",
+      "Success is not final, failure is not fatal: It is the courage to continue that counts.",
+      "Don’t watch the clock; do what it does. Keep going.",
+      "Keep your face always toward the sunshine—and shadows will fall behind you.",
+      "It always seems impossible until it's done.",
+      "The only way to do great work is to love what you do.",
+      "You have power over your mind, not outside events. Realize this, and you will find strength.",
+      "The happiness of your life depends upon the quality of your thoughts.",
+      "Waste no more time arguing about what a good man should be. Be one.",
+      "It is not death that a man should fear, but he should fear never beginning to live.",
+      "The soul becomes dyed with the color of its thoughts.",
+      "He who lives in harmony with himself lives in harmony with the universe.",
+      "What we do now echoes in eternity.",
+      "If it is not right, do not do it; if it is not true, do not say it.",
+      "You are a little soul carrying around a corpse.",
+      "How much time he gains who does not look to see what his neighbor says or does or thinks.",
+      "A man's worth is no greater than the worth of his ambitions.",
+      "The best revenge is to be unlike him who performed the injury.",
+      "Be tolerant with others and strict with yourself.",
+      "The universe is change; life is judgment.",
+      "The art of living is more like wrestling than dancing."
+      // Add more quotes as needed...
+    ];
+
+    // Function to pick a random quote
+    function getRandomQuote() {
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      document.getElementById('quote').textContent = quotes[randomIndex];
+    }
+
+    // Toggle play/pause functionality for music
+    let isMusicPlaying = false;
+    function toggleMusic() {
+      const music = document.getElementById("music");
+      const button = document.getElementById("musicButton");
+
+      if (isMusicPlaying) {
+        music.pause();
+        button.innerHTML = '<i class="fas fa-play-circle"></i>'; // Change button text when paused
+      } else {
+        music.play().catch(err => {
+          console.error('Error playing audio:', err);
+          alert("Audio failed to play. Please allow media playback in your browser settings.");
+        });
+        button.innerHTML = '<i class="fas fa-pause-circle"></i>'; // Change button text when playing
+      }
+      isMusicPlaying = !isMusicPlaying;
+    }
+
+    // Initial call to set greeting, shadow, and music
+    setGreetingAndShadow();
+
+    // Show first quote when the page loads
+    window.onload = function() {
+      getRandomQuote();  // Display a random quote when the page opens
+
+      // Change quote every 60 seconds (1 minute)
+      setInterval(() => {
+        getRandomQuote();
+      }, 60000); // 60,000 milliseconds = 1 minute
+    };
+
+
+    function toggleTask() {
+      const task = document.getElementById("taskContainer");
+      task.classList.toggle("open");
+    }
+
+    function saveTask(event) {
+      event.stopPropagation(); // Prevent toggle on button click
+
+      const desc = document.getElementById("taskDesc").value;
+      const due = document.getElementById("taskDue").value;
+      const priority = document.getElementById("taskPriority").value;
+
+      const data = JSON.stringify({ desc, due, priority });
+      setCookie("myTask", data, 30);
+
+    
+    }
+
+    function setCookie(name, value, days) {
+      const expires = new Date(Date.now() + days * 86400000).toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    }
+
+    function getCookie(name) {
+      const cookies = document.cookie.split("; ");
+      for (const c of cookies) {
+        const [key, value] = c.split("=");
+        if (key === name) return decodeURIComponent(value);
+      }
+      return null;
+    }
+
+    // Load saved task on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      const stored = getCookie("myTask");
+      if (stored) {
+        try {
+          const { desc, due, priority } = JSON.parse(stored);
+          document.getElementById("taskDesc").value = desc;
+          document.getElementById("taskDue").value = due;
+          document.getElementById("taskPriority").value = priority;
+        } catch (e) {
+          console.error("Cookie parse error:", e);
+        }
+      }
     });
-  }
 
-  // Add a new task
-  function addTask(event) {
-    event.stopPropagation(); // Prevent toggle on button click
+    // Update clock every second
+    setInterval(updateClock, 1000);
 
-    const desc = document.getElementById("taskDesc").value;
-    const due = document.getElementById("taskDue").value;
-    const priority = document.getElementById("taskPriority").value;
-
-    if (!desc || !due) {
-      alert("Please fill in all fields!");
-      return;
-    }
-
-    tasks.push({ desc, due, priority });
-    saveTasks();
-    renderTasks();
-
-    // Clear input fields
-    document.getElementById("taskDesc").value = "";
-    document.getElementById("taskDue").value = "";
-    document.getElementById("taskPriority").value = "High";
-
-    alert("✅ Task added!");
-  }
-
-  // Delete a task
-  function deleteTask(index) {
-    tasks.splice(index, 1);
-    saveTasks();
-    renderTasks();
-    alert("🗑️ Task deleted!");
-  }
-
-  // Toggle task details visibility
-  function toggleTaskDetails(index) {
-    const taskDetails = document.getElementById(`taskDetails${index}`);
-    taskDetails.classList.toggle("open");
-  }
-
-  // Set a cookie
-  function setCookie(name, value, days) {
-    const expires = new Date(Date.now() + days * 86400000).toUTCString();
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-  }
-
-  // Get a cookie
-  function getCookie(name) {
-    const cookies = document.cookie.split("; ");
-    for (const c of cookies) {
-      const [key, value] = c.split("=");
-      if (key === name) return decodeURIComponent(value);
-    }
-    return null;
-  }
-
-  // Load tasks on page load
-  window.addEventListener("DOMContentLoaded", loadTasks);
-</script>
-
-<!-- Task List -->
-<div id="taskList"></div>
-
-<!-- Add Task Button -->
-<button onclick="addTask(event)">➕ Add Task</button>
+    // Ensure music plays when the button is clicked
+    document.getElementById("musicButton").addEventListener("click", toggleMusic);
+  </script>
+</body>
+</html>
