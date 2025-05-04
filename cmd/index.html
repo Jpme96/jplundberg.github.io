@@ -163,7 +163,11 @@
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('date').textContent = now.toLocaleDateString('en-US', options);
     }
-
+    
+// Initial call to update the date
+    updateDate();
+    updateDateAtMidnight();
+    
     // Function to update the date at midnight
     function updateDateAtMidnight() {
       const now = new Date();
