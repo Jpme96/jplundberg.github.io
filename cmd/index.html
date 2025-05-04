@@ -384,19 +384,24 @@
         getRandomQuote();
       }, 60000); // 60,000 milliseconds = 1 minute
     };
+    function toggleTask() {
+  const task = document.getElementById("taskContainer");
+  task.classList.toggle("open");
+}
 
-    function saveTask(event) {
-  event.stopPropagation(); // prevent collapsing when clicking button
+function saveTask(event) {
+  event.stopPropagation(); // Prevent toggle on button click
 
   const desc = document.getElementById("taskDesc").value;
   const due = document.getElementById("taskDue").value;
   const priority = document.getElementById("taskPriority").value;
 
   const data = JSON.stringify({ desc, due, priority });
-  setCookie("myTask", data, 30); // Save cookie for 30 days
+  setCookie("myTask", data, 30);
 
   alert("✅ Task saved in cookies!");
 }
+
 function setCookie(name, value, days) {
   const expires = new Date(Date.now() + days * 86400000).toUTCString();
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
@@ -410,20 +415,22 @@ function getCookie(name) {
   }
   return null;
 }
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 86400000).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-}
 
-function getCookie(name) {
-  const cookies = document.cookie.split("; ");
-  for (const c of cookies) {
-    const [key, value] = c.split("=");
-    if (key === name) return decodeURIComponent(value);
+// Load saved task on page load
+window.addEventListener("DOMContentLoaded", () => {
+  const stored = getCookie("myTask");
+  if (stored) {
+    try {
+      const { desc, due, priority } = JSON.parse(stored);
+      document.getElementById("taskDesc").value = desc;
+      document.getElementById("taskDue").value = due;
+      document.getElementById("taskPriority").value = priority;
+    } catch (e) {
+      console.error("Cookie parse error:", e);
+    }
   }
-  return null;
-}
-const stored = getCookie("myTask");
+});
+
 
 
 
