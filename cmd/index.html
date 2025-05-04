@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Clock with Music</title>
-  <!-- Link to Google Fonts for a more elegant font -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
   <style>
     * {
@@ -17,48 +16,48 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column; /* Stack the clock, greeting, and quote vertically */
+      flex-direction: column;
       height: 100vh;
       background-color: black;
       font-family: Arial, sans-serif;
-      background-image: url('/assets/img/bg.html.jpg'); /* Your original background */
+      background-image: url('/assets/img/bg.html.jpg');
       background-size: cover;
       background-position: center;
       color: white;
       text-align: center;
       overflow: hidden;
-      padding: 20px; /* Add some padding to prevent elements from touching edges */
+      padding: 20px;
     }
 
     #clock {
-      font-size: 12vw; /* Dynamic font size based on the viewport width */
+      font-size: 12vw;
       font-weight: bold;
       text-shadow: 0px 0px 20px white;
     }
 
     #greeting {
       font-size: 3vw;
-      margin-top: 0; /* No space between clock and greeting */
+      margin-top: 0;
       font-weight: bold;
-      transition: all 0.3s ease; /* Smooth transition for greeting size changes */
+      transition: all 0.3s ease;
     }
 
     #quote {
-      font-family: 'Playfair Display', serif; /* Elegant font for quote */
-      font-size: 1.3vw; /* Slightly smaller font size for the quote */
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3vw;
       font-style: italic;
-      margin-top: 40px; /* Increased space between greeting and quote */
+      margin-top: 40px;
       max-width: 80%;
       line-height: 1.5;
-      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7); /* Shadow for quote */
-      transition: all 0.3s ease; /* Smooth transition for quote size changes */
+      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
+      transition: all 0.3s ease;
     }
 
     #musicButton {
       margin-top: 20px;
       padding: 15px 30px;
       font-size: 1.5em;
-      background-color: #55555500;
+      background-color: #333;
       color: white;
       border: none;
       border-radius: 5px;
@@ -73,61 +72,61 @@
     /* Mobile Styles (Phones/Tablets) */
     @media (max-width: 600px) {
       body {
-        padding: 10px; /* Less padding on small screens */
+        padding: 10px;
       }
 
       #clock {
-        font-size: 20vw; /* Larger clock for mobile */
+        font-size: 20vw;
       }
 
       #greeting {
-        font-size: 6vw; /* Larger greeting for mobile */
+        font-size: 6vw;
       }
 
       #quote {
-        font-size: 5.5vw; /* Larger quote for mobile */
+        font-size: 5.5vw;
       }
 
       #musicButton {
-        font-size: 2em; /* Larger button for mobile */
+        font-size: 2em;
       }
     }
 
     /* Medium Devices (Tablets/Laptops) */
     @media (min-width: 601px) and (max-width: 1024px) {
       #clock {
-        font-size: 15vw; /* Medium size clock for tablets */
+        font-size: 15vw;
       }
 
       #greeting {
-        font-size: 5vw; /* Medium size greeting for tablets */
+        font-size: 5vw;
       }
 
       #quote {
-        font-size: 3vw; /* Medium size quote for tablets */
+        font-size: 3vw;
       }
 
       #musicButton {
-        font-size: 1.8em; /* Medium button size for tablets */
+        font-size: 1.8em;
       }
     }
 
     /* Larger Devices (Desktops/Big Screens) */
     @media (min-width: 1025px) {
       #clock {
-        font-size: 120px; /* Larger clock for desktops */
+        font-size: 120px;
       }
 
       #greeting {
-        font-size: 2.5em; /* Standard greeting size for desktops */
+        font-size: 2.5em;
       }
 
       #quote {
-        font-size: 1.4em; /* Standard quote size for desktops */
+        font-size: 1.4em;
       }
 
       #musicButton {
-        font-size: 1.5em; /* Standard button size for desktops */
+        font-size: 1.5em;
       }
     }
   </style>
@@ -138,9 +137,11 @@
   <div id="quote"></div>
   <button id="musicButton" onclick="toggleMusic()">Play Music</button>
 
+  <!-- Audio element -->
   <audio id="music" loop>
-    <!-- Set your initial music track (for morning, as default) -->
     <source id="musicSource" src="assets/music/morning.mp3" type="audio/mp3">
+    <!-- Fallback message for unsupported browsers -->
+    Your browser does not support the audio element.
   </audio>
 
   <script>
@@ -188,8 +189,12 @@
       document.getElementById("musicSource").src = musicSource; // Update music source
 
       // Reload the audio element to apply the new music
-      document.getElementById("music").load();
-      document.getElementById("music").play();
+      const audio = document.getElementById("music");
+      audio.load();
+      audio.play().catch(err => {
+        console.error('Error playing audio:', err);
+        alert("Please allow audio to play. You might need to interact with the page first.");
+      });
     }
 
     // 100 Random Inspirational Quotes
