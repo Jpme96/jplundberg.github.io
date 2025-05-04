@@ -19,12 +19,16 @@
       border: 1px solid #ccc;
       border-radius: 10px;
       margin-top: 20px;
-      width: 100%;
+      width: 150px;
       cursor: pointer;
       box-shadow: 0 0 10px rgba(255,255,255,0.2);
       transition: all 0.3s ease;
       overflow: hidden;
       z-index: 10;
+    }
+
+    .task.open {
+      width: 100% !important;
     }
 
     .task-header {
@@ -427,7 +431,9 @@
 
 
     function toggleTask() {
-      const task = document.getElementById("taskContainer");
+      const taskContainer = document.getElementById("taskContainer");
+      taskContainer.classList.toggle("open");
+      const task = document.getElementById("task");
       task.classList.toggle("open");
     }
 
