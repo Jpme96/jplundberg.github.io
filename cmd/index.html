@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Clock with Music</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
     /* Basic Styles for body, clock, greeting, and quotes */
     * {
@@ -228,7 +229,7 @@
           console.error('Error playing audio:', err);
           alert("Audio failed to play. Please allow media playback in your browser settings.");
         });
-        button.textContent = "Pause Music"; // Change button text when playing
+        button.textContent = "<i class="fa-solid fa-circle-pause"></i>"; // Change button text when playing
       }
       isMusicPlaying = !isMusicPlaying;
     }
