@@ -28,7 +28,8 @@ function deleteTask(event) {
     function updateDateAtMidnight() {
       const now = new Date();
       const nextMidnight = new Date();
-      nextMidnight.setHours(24, 0, 0, 0);
+      nextMidnight.setHours(0, 0, 0, 0);
+      nextMidnight.setDate(nextMidnight.getDate() + 1);
       const timeUntilMidnight = nextMidnight - now;
 
       setTimeout(() => {
@@ -171,9 +172,8 @@ function deleteTask(event) {
       const priority = document.getElementById("taskPriority").value;
 
       const data = JSON.stringify({ desc, due, priority });
-      setCookie("myTask", data, 30);
+      document.cookie = "myTask=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-    
     }
 
     function setCookie(name, value, days) {
@@ -211,4 +211,9 @@ function deleteTask(event) {
     // Ensure music plays when the button is clicked
     document.getElementById("musicButton").addEventListener("click", toggleMusic);
 
+//Ensure elements exist before manipulation
+const quoteEl = document.getElementById('quote');
+if (quoteEl) {
+  quoteEl.textContent = quotes[randomIndex];
+}
   </script>
