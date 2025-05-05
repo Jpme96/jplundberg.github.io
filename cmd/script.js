@@ -186,7 +186,7 @@ function addTask() {
     const li = document.createElement("li");
     li.textContent = taskText;
     li.onclick = () => li.remove();
-    document.getElementById("taskList").appendChild(li);
+    document.getElementById("taskList").prepend(li);
     taskInput.value = "";
     const tasks= localStorage.getItem("taskList") || "";
     localStorage.setItem("taskList", tasks + taskText + ";");
@@ -212,7 +212,7 @@ function loadTasks() {
 }
 loadTasks(); // Load tasks when the page loads
 
-document.getElementById("textInput").addEventListener("keypress", function(event) {
+document.getElementById("taskInput").addEventListener("keypress", function(event) {
   if (event.key === "Enter") {  // Checks if Enter was pressed
       document.getElementById("submitButton").click(); // Simulates button click
   }

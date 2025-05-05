@@ -44,17 +44,7 @@
       display: block !important;
     }
 
-    .task-input {
-      width: 100%;
-      padding: 5px;
-      font-size: 0.9em;
-      margin-top: 3px;
-      border-radius: 5px;
-      border: none;
-      background-color: #00000038;
-      color:#42bfb9b6;
-    }
-
+    
     .task button {
       padding: 6px 12px;
       border: none;
@@ -255,3 +245,79 @@
       text-decoration: underline;
     }
   
+    #taskInput {
+      width: 300px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 2px solid #ccc;
+      background-color: #00000038;
+      color:#42bfb9b6;
+      transition:all 0.3s ease;
+      height: 40px;
+      padding:10px;
+    }
+
+   #submitButton {
+      border: none;
+      border-radius: 6px;
+      background-color: #42bfb9b6;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #taskList {
+      margin-top: 20px;
+      max-height: 200px;
+      height:100px;
+      overflow-y: auto;
+      background-color: #00000000;
+      border-radius: 5px;
+      font-size: 1em;
+      color:#42bfb9b6;
+    
+    }
+
+  /* Scrollbar width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Scrollbar track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+/* Scrollbar handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+li {
+  margin-bottom: 10px; /* Space between tasks */
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  margin-right: 5px;
+}
+
+.new-task {
+  background-color: yellow; /* Highlight */
+  transition: background-color 1s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+li {
+  animation: fadeIn 0.5s ease-in-out;
+}
