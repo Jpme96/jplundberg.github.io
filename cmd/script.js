@@ -216,4 +216,14 @@ const quoteEl = document.getElementById('quote');
 if (quoteEl) {
   quoteEl.textContent = quotes[randomIndex];
 }
+
+ document.addEventListener("DOMContentLoaded", () => {
+  setGreetingAndShadow();
+  getRandomQuote();
+
+  // Ensure event listeners are added AFTER elements exist
+  document.getElementById("musicButton").addEventListener("click", toggleMusic);
+});
+
+
   </script>
