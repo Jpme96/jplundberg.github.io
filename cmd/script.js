@@ -1,5 +1,4 @@
-<script>
-  
+
 function deleteTask(event) {
       event.stopPropagation(); // Prevent toggle on button click
 
@@ -219,5 +218,3 @@ function deleteTask(event) {
   document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
-
-  </script>
