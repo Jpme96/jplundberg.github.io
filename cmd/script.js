@@ -188,5 +188,32 @@ function addTask() {
     li.onclick = () => li.remove();
     document.getElementById("taskList").appendChild(li);
     taskInput.value = "";
+    const tasks= localStorage.getItem("taskList") || "";
+    localStorage.setItem("taskList", tasks + taskText + ";");
   }
 }
+
+function loadTasks() {
+  const tasks = localStorage.getItem("taskList") || "";
+  const taskArray = tasks.split(";").filter(task => task.trim() !== "");
+  const taskList = document.getElementById("taskList");
+  taskList.innerHTML = ""; // Clear existing tasks
+  taskArray.forEach(taskText => {
+    const li = document.createElement("li");
+    li.textContent = taskText;
+    li.onclick = () => {
+      li.remove();
+      const tasks = localStorage.getItem("taskList") || "";
+      const updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+      localStorage.setItem("taskList", updatedTasks + ";");
+    }
+    taskList.appendChild(li);
+  });
+}
+loadTasks(); // Load tasks when the page loads
+
+document.getElementById("textInput").addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {  // Checks if Enter was pressed
+      document.getElementById("submitButton").click(); // Simulates button click
+  }
+});
