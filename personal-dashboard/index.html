@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>John Paul Lundberg's Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="greeting">Hello, John Paul Lundberg!</h1>
+      <div id="clock">00:00:00</div>
+    </header>
+
+    <section class="quote">
+      <h2>Quote of the Moment</h2>
+      <p id="quote">Loading...</p>
+    </section>
+
+    <section class="music-player">
+      <h2>Music Player</h2>
+      <audio controls>
+        <source src="assets/music/sample.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    </section>
+
+    <section class="todo">
+      <h2>To-Do List</h2>
+      <input type="text" id="taskInput" placeholder="Add a task" />
+      <button onclick="addTask()">Add</button>
+      <ul id="taskList"></ul>
+    </section>
+
+    <section class="links">
+      <h2>Quick Email Links</h2>
+      <ul>
+        <li><a href="https://mail.google.com" target="_blank">Gmail</a></li>
+        <li><a href="https://outlook.live.com" target="_blank">Outlook</a></li>
+        <li><a href="https://mail.yahoo.com" target="_blank">Yahoo Mail</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
