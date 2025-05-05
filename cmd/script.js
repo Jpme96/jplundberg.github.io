@@ -1,4 +1,6 @@
-  function deleteTask(event) {
+<script>
+  
+function deleteTask(event) {
       event.stopPropagation(); // Prevent toggle on button click
 
       // Clear task inputs
