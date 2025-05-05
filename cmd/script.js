@@ -1,17 +1,4 @@
 
-function deleteTask(event) {
-      event.stopPropagation(); // Prevent toggle on button click
-
-      // Clear task inputs
-      document.getElementById("taskDesc").value = "";
-      document.getElementById("taskDue").value = "";
-      document.getElementById("taskPriority").value = "High";
-
-      // Remove task from cookies
-      setCookie("myTask", "", -1);
-    }
-  
-
     // Update the date every day at midnight
     function updateDate() {
       const now = new Date();
@@ -163,17 +150,6 @@ function deleteTask(event) {
       clock.classList.toggle("small");
     }
 
-    function saveTask(event) {
-      event.stopPropagation(); // Prevent toggle on button click
-
-      const desc = document.getElementById("taskDesc").value;
-      const due = document.getElementById("taskDue").value;
-      const priority = document.getElementById("taskPriority").value;
-
-      const data = JSON.stringify({ desc, due, priority });
-      document.cookie = "myTask=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-    }
 
     function setCookie(name, value, days) {
       const expires = new Date(Date.now() + days * 86400000).toUTCString();
@@ -189,21 +165,6 @@ function deleteTask(event) {
       return null;
     }
 
-    // Load saved task on page load
-    window.addEventListener("DOMContentLoaded", () => {
-      const stored = getCookie("myTask");
-      if (stored) {
-        try {
-          const { desc, due, priority } = JSON.parse(stored);
-          document.getElementById("taskDesc").value = desc;
-          document.getElementById("taskDue").value = due;
-          document.getElementById("taskPriority").value = priority;
-        } catch (e) {
-          console.error("Cookie parse error:", e);
-        }
-      }
-    });
-
     // Update clock every second
     setInterval(updateClock, 1000);
 
@@ -218,3 +179,14 @@ function deleteTask(event) {
   document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
+function addTask() {
+  const taskInput = document.getElementById("taskInput");
+  const taskText = taskInput.value.trim();
+  if (taskText) {
+    const li = document.createElement("li");
+    li.textContent = taskText;
+    li.onclick = () => li.remove();
+    document.getElementById("taskList").appendChild(li);
+    taskInput.value = "";
+  }
+}

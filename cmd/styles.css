@@ -65,10 +65,7 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-    .delete.task-button {
-       background-color: red;
-    }
-
+    
     .task button:hover {
       background-color: #00000038;
     }
@@ -221,14 +218,40 @@
       text-decoration: none;
       transition: color 0.3s ease;
     }
-    #taskDesc {
-      width: 100%;
-      padding: 5px;
-      font-size: 0.9em;
-      margin-top: 3px;
-      border-radius: 5px;
-      border: none;
-      background-color: #00000038;
-      color:#42bfb9b6;
+    
+    .todo input {
+      padding: 8px;
+      width: 70%;
+    }
+    
+    .todo button {
+      padding: 8px 12px;
+      margin-left: 10px;
+    }
+    
+    .todo ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .todo li {
+      background: #333;
+      margin-top: 5px;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    
+    .links ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .links li a {
+      color: #4db8ff;
+      text-decoration: none;
+    }
+    
+    .links li a:hover {
+      text-decoration: underline;
     }
   
