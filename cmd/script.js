@@ -211,12 +211,6 @@ function deleteTask(event) {
     // Ensure music plays when the button is clicked
     document.getElementById("musicButton").addEventListener("click", toggleMusic);
 
-//Ensure elements exist before manipulation
-const quoteEl = document.getElementById('quote');
-if (quoteEl) {
-  quoteEl.textContent = quotes[randomIndex];
-}
-
  document.addEventListener("DOMContentLoaded", () => {
   setGreetingAndShadow();
   getRandomQuote();
