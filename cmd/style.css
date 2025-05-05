@@ -65,6 +65,9 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+    .delete.task-button {
+       background-color: red;
+    }
 
     .task button:hover {
       background-color: #00000038;
