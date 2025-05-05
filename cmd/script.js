@@ -12,7 +12,7 @@ function deleteTask(event) {
       setCookie("myTask", "", -1);
     }
   
-  <script>
+
     // Update the date every day at midnight
     function updateDate() {
       const now = new Date();
