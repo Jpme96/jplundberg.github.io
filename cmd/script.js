@@ -1,4 +1,14 @@
-  </script>
+  function deleteTask(event) {
+      event.stopPropagation(); // Prevent toggle on button click
+
+      // Clear task inputs
+      document.getElementById("taskDesc").value = "";
+      document.getElementById("taskDue").value = "";
+      document.getElementById("taskPriority").value = "High";
+
+      // Remove task from cookies
+      setCookie("myTask", "", -1);
+    }
 
   <!-- Audio element -->
   <audio id="music" loop>
