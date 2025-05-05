@@ -1,0 +1,231 @@
+  <style>
+    /* Basic Styles for body, clock, greeting, and quotes */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .task {
+      background-color: rgba(0, 0, 0, 0.014);
+      color: white;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 150px;
+      max-width: 500px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .task.open {
+      max-width: 500px;
+      width: 100% !important;
+    }
+
+    .task-header {
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 1.2em;
+      background-color: #00000038;
+    }
+
+    .task-details {
+      display: none;
+      padding: 10px 15px;
+      font-size: 0.96em;
+      background-color: #00000038;
+      border-top: 1px solid #ccc;
+    }
+
+    .task-details.open {
+      display: block !important;
+    }
+
+    .task-input {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.9em;
+      margin-top: 3px;
+      border-radius: 5px;
+      border: none;
+      background-color: #00000038;
+      color:#42bfb9b6;
+    }
+
+    .task button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: rgb(168, 168, 168);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .task button:hover {
+      background-color: #00000038;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #00000038;
+      font-family: Arial, sans-serif;
+      background-image: url('/assets/img/bg.html.jpg');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+      padding: 20px;
+      background-blend-mode:darken;
+
+    }
+
+    /* Left side date */
+    #date {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      font-size: 1.2em;
+      color:#42bfb9b6;
+      font-weight: bold;
+      z-index: 10;  /* Ensure it stays on top of the background */
+    }
+
+    #clock {
+      font-size: 12vw;
+      font-weight: bold;
+      text-shadow: 0px 0px 20px white;
+      transition: all 0.3s ease;
+    }
+
+    #clock.small {
+      font-size: 6vw;
+    }
+
+    #greeting {
+      font-size: 3vw;
+      margin-top: 0;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    #quote {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-style: italic;
+      margin-top: 40px;
+      max-width: 100%;
+      line-height: 1.5;
+      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
+      transition: all 0.3s ease;
+      bottom: 20px; 
+      width: 100%;
+      text-align: center;
+      position: absolute;
+    }
+
+    #musicButton {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1.5em;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #musicButton:hover {
+      color: #149ddd;
+    }
+
+    /* Mobile Styles (Phones/Tablets) */
+    @media (max-width: 100%) {
+      body {
+        padding: 10px;
+      }
+
+      #clock {
+        font-size: 12vw;
+      }
+
+      #greeting {
+        font-size: 6vw;
+      }
+
+      #quote {
+        font-size: 5.5vw;
+      }
+
+      #musicButton {
+        font-size: 2em;
+      }
+    }
+
+    /* Medium Devices (Tablets/Laptops) */
+    @media (min-width: 601px) and (max-width: 100%) {
+      #clock {
+        font-size: 15vw;
+      }
+
+      #greeting {
+        font-size: 5vw;
+      }
+
+      #quote {
+        font-size: 3vw;
+      }
+
+      #musicButton {
+        font-size: 1.8em;
+      }
+    }
+
+    /* Larger Devices (Desktops/Big Screens) */
+    @media (min-width: 100%) {
+      #clock {
+        font-size: 120px;
+      }
+
+      #greeting {
+        font-size: 2.5em;
+      }
+
+      #quote {
+        font-size: 1.4em;
+      }
+
+      #musicButton {
+        font-size: 1.5em;
+      }
+    }
+
+    #home-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 1.5em;
+      color: white;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    #taskDesc {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.9em;
+      margin-top: 3px;
+      border-radius: 5px;
+      border: none;
+      background-color: #00000038;
+      color:#42bfb9b6;
+    }
+  </style>
