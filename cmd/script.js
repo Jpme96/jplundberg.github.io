@@ -45,19 +45,19 @@
       if (hour >= 0 && hour < 6) {
         greeting = `Good Night, Lundberg 🌙`;
         shadowColor = "2px 2px 10px rgba(0, 0, 255, 1)"; // Dark blue for night
-        musicSource = "cmd/assets/music/night.mp3";
+        musicSource = "/cmd/assets/music/night.mp3";
       } else if (hour >= 6 && hour < 12) {
         greeting = `Good Morning, Lundberg 🌅`;
         shadowColor = "2px 2px 10px rgba(255, 223, 0, 1)"; // Light yellow for morning
-        musicSource = "cmd/assets/music/morning.mp3";
+        musicSource = "/cmd/assets/music/morning.mp3";
       } else if (hour >= 12 && hour < 18) {
         greeting = `Good Afternoon, Lundberg ☀️`;
         shadowColor = "2px 2px 10px rgba(255, 100, 0, 1)"; // Light orange for afternoon
-        musicSource = "cmd/assets/music/afternoon.mp3";
+        musicSource = "/cmd/assets/music/afternoon.mp3";
       } else {
         greeting = `Good Evening, Lundberg 🌙`;
         shadowColor = "2px 2px 10px rgba(128, 0, 128, 1)"; // Purple for evening
-        musicSource = "cmd/assets/music/evening.mp3";
+        musicSource = "/cmd/assets/music/evening.mp3";
       }
 
       // Set the greeting, shadow, and music dynamically
