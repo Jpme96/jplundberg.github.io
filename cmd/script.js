@@ -210,4 +210,5 @@ function deleteTask(event) {
 
     // Ensure music plays when the button is clicked
     document.getElementById("musicButton").addEventListener("click", toggleMusic);
+
   </script>
