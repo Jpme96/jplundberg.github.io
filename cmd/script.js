@@ -11,13 +11,7 @@ function deleteTask(event) {
       // Remove task from cookies
       setCookie("myTask", "", -1);
     }
-
-  <!-- Audio element -->
-  <audio id="music" loop>
-    <source id="musicSource" src="/assets/music/morning.mp3" type="audio/mp3">
-    Your browser does not support the audio element.
-  </audio>
-
+  
   <script>
     // Update the date every day at midnight
     function updateDate() {
