@@ -867,12 +867,23 @@ body {
 
 
 .card.expand {
-  animation: expandCard 3s ease-out forwards;
-  transition: transform 1s ease-out, opacity 1s ease-out;
+  animation: expandCard 4s ease-out forwards;
+  transition: transform 1.5s ease-out, opacity 1.5s ease-out;
 }
 
 .fade-out {
 opacity: 0; 
+}
+
+
+#container-card {
+  background-color: rgba(0, 0, 0, 0.8); /* Dark background */
+  transition: background-color 6s ease-out, opacity 3s ease-out;
+}
+
+.fade-out-bg {
+  background-color: rgba(0, 0, 0, 0); /* Fully transparent */
+  opacity: 0; /* Fade out */
 }
 
 body {

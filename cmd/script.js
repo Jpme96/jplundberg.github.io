@@ -347,14 +347,19 @@ document
     }
   });
 
-document.querySelectorAll("#clickable-Card").forEach((card) => {
-  card.addEventListener("click", function () {
-    this.classList.add("expand"); // Start expansion animation
-    this.classList.add("fade-out"); // Start fade-out animation
-
-    // Wait for the animation to finish before hiding the card and redirecting
-    setTimeout(() => {
-      document.getElementById("container-card").style.display = "none"; // Hides the container
-    }, 800); // Ensures it disappears after the animation
+  document.querySelectorAll("#clickable-Card").forEach((card) => {
+    card.addEventListener("click", function () {
+      this.classList.add("expand"); // Start expansion animation
+      this.classList.add("fade-out"); // Start fade-out animation
+  
+      // Fade out the background
+      document.getElementById("container-card").classList.add("fade-out-bg");
+  
+      // Wait slightly longer before hiding elements
+      setTimeout(() => {
+        document.getElementById("container-card").style.display = "none"; 
+        this.style.display = "none";
+      }, 800);
+    });
   });
-});
+  
