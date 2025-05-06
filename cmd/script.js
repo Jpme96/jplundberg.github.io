@@ -180,7 +180,55 @@ document.getElementById("musicButton").addEventListener("click", toggleMusic);
 
 document.addEventListener("DOMContentLoaded", () => {
   loadTasks();
+  
+  // Listen for keypress events on the input field.
+  const taskInput = document.getElementById("taskInput");
+  taskInput.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+      // If editing an existing task, update it.
+      if (this.getAttribute("data-editing") !== null) {
+        saveEditedTask();
+      } else {
+        addTask();
+      }
+    }
+  });
 });
+
+function saveEditedTask() {
+  const taskInput = document.getElementById("taskInput");
+  const oldText = taskInput.getAttribute("data-editing");
+  const newText = taskInput.value.trim();
+
+  // If for some reason there's no old task, exit.
+  if (oldText === null) return;
+
+  // If the new text is empty, delete the task.
+  if (!newText) {
+    let tasks = localStorage.getItem("taskList") || "";
+    let updatedTasks = tasks
+      .split(";")
+      .filter(task => task.trim() !== oldText)
+      .join(";");
+    localStorage.setItem("taskList", updatedTasks);
+  } else {
+    // Replace the old text with the new text.
+    let tasks = localStorage.getItem("taskList") || "";
+    let updatedTasks = tasks
+      .split(";")
+      .map(task => (task.trim() === oldText ? newText : task))
+      .join(";");
+    // Ensure that if there are tasks, the storage ends with a semicolon.
+    if (updatedTasks && updatedTasks.slice(-1) !== ";") {
+      updatedTasks += ";";
+    }
+    localStorage.setItem("taskList", updatedTasks);
+  }
+
+  taskInput.value = "";
+  taskInput.removeAttribute("data-editing");
+  loadTasks();
+}
 
 function addTask() {
   const taskInput = document.getElementById("taskInput");
@@ -209,7 +257,7 @@ function addTask() {
     li.textContent = taskText;
   }
 
-  // Single click to edit: sets the task text in the input field
+  // Single click to edit: populate the input field and set the data-editing attribute.
   li.addEventListener("click", () => {
     taskInput.value = taskText;
     taskInput.setAttribute("data-editing", taskText);
@@ -219,7 +267,7 @@ function addTask() {
   let startX = 0;
   let currentX = 0;
   let holdTimeout = null; // will hold the deletion timeout
-  let isDragging = false; // for desktop: only true while dragging (mouse down)
+  let isDragging = false; // for mouse: true while dragging
   const deleteThreshold = window.innerWidth * 0.5; // 50% of screen width
 
   // --- Touch Handlers ---
@@ -243,7 +291,7 @@ function addTask() {
         if (!holdTimeout) {
           holdTimeout = setTimeout(() => {
             deleteTask(li, taskText);
-          }, 1000); // hold for 1 second before deletion
+          }, 1000);
         }
       }
     }
@@ -266,7 +314,6 @@ function addTask() {
     startX = event.clientX;
     li.classList.add("swiping");
     li.style.transition = "none";
-    // Attach mousemove/up handlers to the document so they work even if the mouse moves off the item.
     document.addEventListener("mousemove", mouseMoveHandler);
     document.addEventListener("mouseup", mouseUpHandler);
   });
@@ -348,7 +395,6 @@ function loadTasks() {
     let isDragging = false;
     const deleteThreshold = window.innerWidth * 0.5;
 
-    // Touch events
     li.addEventListener("touchstart", (event) => {
       startX = event.touches[0].clientX;
       li.classList.add("swiping");
@@ -386,7 +432,6 @@ function loadTasks() {
       li.classList.remove("swiping");
     });
 
-    // Mouse events
     li.addEventListener("mousedown", (event) => {
       isDragging = true;
       startX = event.clientX;
@@ -435,7 +480,7 @@ function loadTasks() {
   });
 }
 
-// Function to delete task from UI and update localStorage
+// Function to delete a task (updates localStorage and removes from UI)
 function deleteTask(li, taskText) {
   let tasks = localStorage.getItem("taskList") || "";
   let updatedTasks = tasks
@@ -445,6 +490,7 @@ function deleteTask(li, taskText) {
   localStorage.setItem("taskList", updatedTasks);
   li.remove();
 }
+
 
 
       
