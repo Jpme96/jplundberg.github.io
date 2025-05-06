@@ -412,8 +412,8 @@ body {
 .task.open {
   max-width: 500px;
   width: 100% !important;
-  transition: all 1s ease;
-  animation: fadeIn 
+  transition: all 1s ea se;
+  animation: fadeIn 1s ease-in-out;
 }
 
 .task-header {
