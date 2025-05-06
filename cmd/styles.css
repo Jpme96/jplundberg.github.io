@@ -276,7 +276,6 @@
       transition: all 0.3s ease-in-out; /* Smooth transition effect */
     }
 
-    }
     #taskList {
       margin-top: 20px;
       max-height: 200px;
