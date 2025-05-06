@@ -265,6 +265,15 @@
       font-weight: bold;
       cursor: pointer;
       transition: background 0.3s;
+      
+    }
+
+    #submitButton:hover {
+      background-color: #42bfb9b6; /* Example: Change background color */
+      color: #ffffff; /* Example: Change text color */
+      cursor: pointer; /* Make the cursor indicate it's clickable */
+      transform: scale(1.05); /* Slightly enlarge the button */
+      transition: all 0.3s ease-in-out; /* Smooth transition effect */
     }
 
     #taskList {
@@ -278,6 +287,8 @@
       color:#42bfb9b6;
     
     }
+
+  
 
   /* Scrollbar width */
 ::-webkit-scrollbar {
@@ -321,3 +332,49 @@ li {
 li {
   animation: fadeIn 0.5s ease-in-out;
 }
+
+li:hover {
+  background-color: #42bfb99d; /* Light background on hover */
+  cursor: pointer; /* Change cursor to indicate interactivity */
+  transform: scale(1.05); /* Slightly enlarge the task */
+  transition: all 0.3s ease-in-out; /* Smooth animation */
+  color:#ffffff
+}
+
+#taskinput:hover {
+  background-color: #42bfb99d; /* Light background on hover */
+  cursor: pointer; /* Change cursor to indicate interactivity */
+  transform: scale(1.05); /* Slightly enlarge the task */
+  transition: all 0.3s ease-in-out; /* Smooth animation */
+  color:#ffffff
+}
+
+
+/*change the colors of urls*/
+a {
+  color: red; /* Change link color */
+  text-decoration: none; /* Remove default underline */
+}
+
+a:hover {
+  color: blue; /* Change color when hovering */
+  text-decoration: underline; /* Add underline on hover */
+}
+
+.task-item {
+  position: relative;
+  padding: 10px;
+  border-radius: 5px;
+  background: #f9f9f9;
+  transition: transform 0.5s ease-out;
+}
+
+.task-item.swiping {
+  transition: none; /* Disable transition while dragging */
+}
+
+/* Prevent horizontal scrolling on the page */
+html, body {
+  overflow-x: hidden;
+}
+
