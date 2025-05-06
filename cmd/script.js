@@ -338,14 +338,19 @@ function deleteTask(li, index) {
 
 /*Keyboard Event for Enter Key*/
 // This event listener allows the user to press Enter to submit the task input
-document
-  .getElementById("taskInput")
-  .addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-      // Checks if Enter was pressed
-      document.getElementById("submitButton").click(); // Simulates button click
-    }
-  });
+document.getElementById("taskInput").addEventListener("keypress", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // Prevents default form submission
+    document.getElementById("submitButton").click(); // Simulates button click
+    this.blur(); // Hides the keyboard on mobile devices
+  }
+});
+
+// Ensure keyboard pops up when input is tapped
+document.getElementById("taskInput").addEventListener("focus", function () {
+  this.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
 
   document.querySelectorAll("#clickable-Card").forEach((card) => {
     card.addEventListener("click", function () {
