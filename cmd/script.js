@@ -211,33 +211,40 @@ function addTask() {
     taskInput.setAttribute("data-editing", taskText);
   });
 
-  // ✅ Enable swipe-to-delete on touch devices
-  let touchStartX = 0, touchEndX = 0;
-  
-  li.addEventListener("touchstart", (event) => {
-    touchStartX = event.touches[0].clientX;
-  });
+  // ✅ Swipe detection for both touch & mouse
+  let startX = 0;
+  let currentX = 0;
 
-  li.addEventListener("touchmove", (event) => {
-    touchEndX = event.touches[0].clientX;
-    if (Math.abs(touchEndX - touchStartX) > 50) { 
-      deleteTask(li, taskText); // ✅ Instant delete on swipe
+  function startSwipe(event) {
+    startX = event.touches ? event.touches[0].clientX : event.clientX;
+    li.classList.add("swiping");
+  }
+
+  function moveSwipe(event) {
+    currentX = event.touches ? event.touches[0].clientX : event.clientX;
+    const diff = currentX - startX;
+
+    if (diff > 20 && diff < window.innerWidth * 0.5) { 
+      li.style.transform = `translateX(${diff}px)`;
     }
-  });
+  }
 
-  // ✅ Enable swipe-to-delete on desktop (mouse drag)
-  let mouseStartX = 0, mouseEndX = 0;
-  
-  li.addEventListener("mousedown", (event) => {
-    mouseStartX = event.clientX;
-  });
-
-  li.addEventListener("mousemove", (event) => {
-    mouseEndX = event.clientX;
-    if (Math.abs(mouseEndX - mouseStartX) > 50) { 
-      deleteTask(li, taskText); // ✅ Instant delete on drag
+  function endSwipe() {
+    if (currentX - startX > window.innerWidth * 0.5) { // ✅ Full swipe → Delete
+      deleteTask(li, taskText);
+    } else {
+      li.style.transform = "translateX(0px)"; // ✅ Partial swipe → Reset position
     }
-  });
+    li.classList.remove("swiping");
+  }
+
+  li.addEventListener("touchstart", startSwipe);
+  li.addEventListener("touchmove", moveSwipe);
+  li.addEventListener("touchend", endSwipe);
+
+  li.addEventListener("mousedown", startSwipe);
+  li.addEventListener("mousemove", moveSwipe);
+  li.addEventListener("mouseup", endSwipe);
 
   document.getElementById("taskList").appendChild(li);
   
@@ -274,13 +281,52 @@ function loadTasks() {
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
     });
 
-    let touchStartX = 0, touchEndX = 0;
+    let startX = 0;
+    let currentX = 0;
 
-    li.addEventListener("touchstart", (event) => {
-      touchStartX = event.touches[0].clientX;
-    });
+    function startSwipe(event) {
+      startX = event.touches ? event.touches[0].clientX : event.clientX;
+      li.classList.add("swiping");
+    }
 
-    li.addEventListener("touchmove", (event) =>
+    function moveSwipe(event) {
+      currentX = event.touches ? event.touches[0].clientX : event.clientX;
+      const diff = currentX - startX;
+
+      if (diff > 20 && diff < window.innerWidth * 0.5) { 
+        li.style.transform = `translateX(${diff}px)`;
+      }
+    }
+
+    function endSwipe() {
+      if (currentX - startX > window.innerWidth * 0.5) { 
+        deleteTask(li, taskText);
+      } else {
+        li.style.transform = "translateX(0px)";
+      }
+      li.classList.remove("swiping");
+    }
+
+    li.addEventListener("touchstart", startSwipe);
+    li.addEventListener("touchmove", moveSwipe);
+    li.addEventListener("touchend", endSwipe);
+
+    li.addEventListener("mousedown", startSwipe);
+    li.addEventListener("mousemove", moveSwipe);
+    li.addEventListener("mouseup", endSwipe);
+
+    taskList.appendChild(li);
+  });
+}
+
+// ✅ Function to delete task from UI and localStorage
+function deleteTask(li, taskText) {
+  let tasks = localStorage.getItem("taskList") || "";
+  let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+  localStorage.setItem("taskList", updatedTasks);
+  li.remove();
+}
+
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed

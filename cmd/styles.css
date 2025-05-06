@@ -366,10 +366,11 @@ a:hover {
   padding: 10px;
   border-radius: 5px;
   background: #f9f9f9;
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  transition: transform 0.3s ease-out;
 }
 
-.task-item.swiped {
-  transform: translateX(100%); /* ✅ Task slides out */
-  opacity: 0; /* ✅ Task fades out */
+.task-item.swiping {
+  transition: none; /* Prevent animation while dragging */
 }
+
+
