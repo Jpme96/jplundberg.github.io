@@ -265,6 +265,7 @@
       font-weight: bold;
       cursor: pointer;
       transition: background 0.3s;
+      animation:submitbuttonanim
     }
 
     #taskList {
@@ -320,4 +321,10 @@ li {
 
 li {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+
+@keyframes submitbuttonanim{
+  from{rotate: 0deg ;}
+  To{rotate:360deg}
 }
