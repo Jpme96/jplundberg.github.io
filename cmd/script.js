@@ -172,7 +172,7 @@ setInterval(updateClock, 1000);
 document.addEventListener("DOMContentLoaded", () => {
 setGreetingAndShadow();
 getRandomQuote();
-loadtask()
+LoadTask();
 // Ensure event listeners are added AFTER elements exist
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
@@ -206,9 +206,9 @@ let tasks = localStorage.getItem("taskList") || "";
 let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
 localStorage.setItem("taskList", updatedTasks);
 li.remove();
-document.getElementById("taskInput").value = taskText;
 const taskInput = document.getElementById("taskInput");
 };
+ taskList.appendChild(li);
 });
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
