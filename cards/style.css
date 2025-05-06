@@ -59,3 +59,13 @@
   inset: 5px;
   border-radius: 15px;
 }
+
+
+@keyframes expandCard {
+  0% { transform: scale(1); }
+  100% { transform: scale(4); } /* Expands the card */
+}
+
+.card.expand { 
+  animation: expandCard 4s ease-out forwards;
+}

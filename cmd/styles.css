@@ -1,296 +1,289 @@
+/* Basic Styles for body, clock, greeting, and quotes */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.task {
+  background-color: rgba(0, 0, 0, 0.014);
+  color: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 20px;
+  width: 150px;
+  max-width: 500px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 10;
+}
 
-    /* Basic Styles for body, clock, greeting, and quotes */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    .task {
-      background-color: rgba(0, 0, 0, 0.014);
-      color: white;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      margin-top: 20px;
-      width: 150px;
-      max-width: 500px;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(255,255,255,0.2);
-      transition: all 0.3s ease;
-      overflow: hidden;
-      z-index: 10;
-    }
+.task.open {
+  max-width: 500px;
+  width: 100% !important;
+}
 
-    .task.open {
-      max-width: 500px;
-      width: 100% !important;
-    }
+.task-header {
+  padding: 10px 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+  background-color: #00000038;
+}
 
-    .task-header {
-      padding: 10px 15px;
-      font-weight: bold;
-      font-size: 1.2em;
-      background-color: #00000038;
-    }
+.task-details {
+  display: none;
+  padding: 10px 15px;
+  font-size: 0.96em;
+  background-color: #00000038;
+  border-top: 1px solid #ccc;
+}
 
-    .task-details {
-      display: none;
-      padding: 10px 15px;
-      font-size: 0.96em;
-      background-color: #00000038;
-      border-top: 1px solid #ccc;
-    }
+.task-details.open {
+  display: block !important;
+}
 
-    .task-details.open {
-      display: block !important;
-    }
+.task button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgb(168, 168, 168);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
 
-    
-    .task button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 5px;
-      background-color: rgb(168, 168, 168);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    
-    .task button:hover {
-      background-color: #00000038;
-    }
+.task button:hover {
+  background-color: #00000038;
+}
 
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
-      background-color: #00000038;
-      font-family: Arial, sans-serif;
-      background-image: url('assets/img/bg.jpg');
-      background-size: cover;
-      background-position: center;
-      color: white;
-      text-align: center;
-      overflow: hidden;
-      padding: 20px;
-      background-blend-mode:darken;
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #00000038;
+  font-family: Arial, sans-serif;
+  background-image: url("assets/img/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+  padding: 20px;
+  background-blend-mode: darken;
+}
 
-    }
+/* Left side date */
+#date {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  font-size: 1.2em;
+  color: #42bfb9b6;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of the background */
+}
 
-    /* Left side date */
-    #date {
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      font-size: 1.2em;
-      color:#42bfb9b6;
-      font-weight: bold;
-      z-index: 10;  /* Ensure it stays on top of the background */
-    }
+#clock {
+  font-size: 12vw;
+  font-weight: bold;
+  text-shadow: 0px 0px 20px white;
+  transition: all 0.3s ease;
+}
 
-    #clock {
-      font-size: 12vw;
-      font-weight: bold;
-      text-shadow: 0px 0px 20px white;
-      transition: all 0.3s ease;
-    }
+#clock.small {
+  font-size: 6vw;
+}
 
-    #clock.small {
-      font-size: 6vw;
-    }
+#greeting {
+  font-size: 3vw;
+  margin-top: 0;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
 
-    #greeting {
-      font-size: 3vw;
-      margin-top: 0;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
+#quote {
+  font-family: "Playfair Display", serif;
+  font-size: 20px;
+  font-style: italic;
+  margin-top: 40px;
+  max-width: 100%;
+  line-height: 1.5;
+  text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
+  transition: all 0.3s ease;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  position: absolute;
+}
 
-    #quote {
-      font-family: 'Playfair Display', serif;
-      font-size: 20px;
-      font-style: italic;
-      margin-top: 40px;
-      max-width: 100%;
-      line-height: 1.5;
-      text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
-      transition: all 0.3s ease;
-      bottom: 20px; 
-      width: 100%;
-      text-align: center;
-      position: absolute;
-    }
+#musicButton {
+  margin-top: 20px;
+  padding: 15px 30px;
+  font-size: 1.5em;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
-    #musicButton {
-      margin-top: 20px;
-      padding: 15px 30px;
-      font-size: 1.5em;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
+#musicButton:hover {
+  color: #149ddd;
+}
 
-    #musicButton:hover {
-      color: #149ddd;
-    }
+/* Mobile Styles (Phones/Tablets) */
+@media (max-width: 100%) {
+  body {
+    padding: 10px;
+  }
 
-    /* Mobile Styles (Phones/Tablets) */
-    @media (max-width: 100%) {
-      body {
-        padding: 10px;
-      }
+  #clock {
+    font-size: 12vw;
+  }
 
-      #clock {
-        font-size: 12vw;
-      }
+  #greeting {
+    font-size: 6vw;
+  }
 
-      #greeting {
-        font-size: 6vw;
-      }
+  #quote {
+    font-size: 5.5vw;
+  }
 
-      #quote {
-        font-size: 5.5vw;
-      }
+  #musicButton {
+    font-size: 2em;
+  }
+}
 
-      #musicButton {
-        font-size: 2em;
-      }
-    }
+/* Medium Devices (Tablets/Laptops) */
+@media (min-width: 601px) and (max-width: 100%) {
+  #clock {
+    font-size: 15vw;
+  }
 
-    /* Medium Devices (Tablets/Laptops) */
-    @media (min-width: 601px) and (max-width: 100%) {
-      #clock {
-        font-size: 15vw;
-      }
+  #greeting {
+    font-size: 5vw;
+  }
 
-      #greeting {
-        font-size: 5vw;
-      }
+  #quote {
+    font-size: 3vw;
+  }
 
-      #quote {
-        font-size: 3vw;
-      }
+  #musicButton {
+    font-size: 1.8em;
+  }
+}
 
-      #musicButton {
-        font-size: 1.8em;
-      }
-    }
+/* Larger Devices (Desktops/Big Screens) */
+@media (min-width: 100%) {
+  #clock {
+    font-size: 120px;
+  }
 
-    /* Larger Devices (Desktops/Big Screens) */
-    @media (min-width: 100%) {
-      #clock {
-        font-size: 120px;
-      }
+  #greeting {
+    font-size: 2.5em;
+  }
 
-      #greeting {
-        font-size: 2.5em;
-      }
+  #quote {
+    font-size: 1.4em;
+  }
 
-      #quote {
-        font-size: 1.4em;
-      }
+  #musicButton {
+    font-size: 1.5em;
+  }
+}
 
-      #musicButton {
-        font-size: 1.5em;
-      }
-    }
+#home-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.5em;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
 
-    #home-button {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 1.5em;
-      color: white;
-      text-decoration: none;
-      transition: color 0.3s ease;
-    }
-    
-    .todo input {
-      padding: 8px;
-      width: 70%;
-    }
-    
-    .todo button {
-      padding: 8px 12px;
-      margin-left: 10px;
-    }
-    
-    .todo ul {
-      list-style: none;
-      padding: 0;
-    }
-    
-    .todo li {
-      background: #333;
-      margin-top: 5px;
-      padding: 8px;
-      border-radius: 4px;
-    }
-    
-    .links ul {
-      list-style: none;
-      padding: 0;
-    }
-    
-    .links li a {
-      color: #4db8ff;
-      text-decoration: none;
-    }
-    
-    .links li a:hover {
-      text-decoration: underline;
-    }
-  
-    #taskInput {
-      width: 300px;
-      font-size: 1em;
-      border-radius: 5px;
-      border: 2px solid #ccc;
-      background-color: #00000038;
-      color:#42bfb9b6;
-      transition:all 0.3s ease;
-      height: 40px;
-      padding:10px;
-    }
+.todo input {
+  padding: 8px;
+  width: 70%;
+}
 
-   #submitButton {
-      border: none;
-      border-radius: 6px;
-      background-color: #42bfb9b6;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-      
-    }
+.todo button {
+  padding: 8px 12px;
+  margin-left: 10px;
+}
 
-    #submitButton:hover {
-      background-color: #42bfb9b6; /* Example: Change background color */
-      color: #ffffff; /* Example: Change text color */
-      cursor: pointer; /* Make the cursor indicate it's clickable */
-      transform: scale(1.05); /* Slightly enlarge the button */
-      transition: all 0.3s ease-in-out; /* Smooth transition effect */
-    }
+.todo ul {
+  list-style: none;
+  padding: 0;
+}
 
-    #taskList {
-      margin-top: 20px;
-      max-height: 200px;
-      height:100px;
-      overflow-y: auto;
-      background-color: #00000000;
-      border-radius: 5px;
-      font-size: 1em;
-      color:#42bfb9b6;
-    
-    }
+.todo li {
+  background: #333;
+  margin-top: 5px;
+  padding: 8px;
+  border-radius: 4px;
+}
 
-  
+.links ul {
+  list-style: none;
+  padding: 0;
+}
 
-  /* Scrollbar width */
+.links li a {
+  color: #4db8ff;
+  text-decoration: none;
+}
+
+.links li a:hover {
+  text-decoration: underline;
+}
+
+#taskInput {
+  width: 300px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 2px solid #ccc;
+  background-color: #00000038;
+  color: #42bfb9b6;
+  transition: all 0.3s ease;
+  height: 40px;
+  padding: 10px;
+}
+
+#submitButton {
+  border: none;
+  border-radius: 6px;
+  background-color: #42bfb9b6;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#submitButton:hover {
+  background-color: #42bfb9b6; /* Example: Change background color */
+  color: #ffffff; /* Example: Change text color */
+  cursor: pointer; /* Make the cursor indicate it's clickable */
+  transform: scale(1.05); /* Slightly enlarge the button */
+  transition: all 0.3s ease-in-out; /* Smooth transition effect */
+}
+
+#taskList {
+  margin-top: 20px;
+  max-height: 200px;
+  height: 100px;
+  overflow-y: auto;
+  background-color: #00000000;
+  border-radius: 5px;
+  font-size: 1em;
+  color: #42bfb9b6;
+}
+
+/* Scrollbar width */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -325,8 +318,14 @@ li {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 li {
@@ -338,7 +337,7 @@ li:hover {
   cursor: pointer; /* Change cursor to indicate interactivity */
   transform: scale(1.05); /* Slightly enlarge the task */
   transition: all 0.3s ease-in-out; /* Smooth animation */
-  color:#ffffff
+  color: #ffffff;
 }
 
 #taskinput:hover {
@@ -346,9 +345,8 @@ li:hover {
   cursor: pointer; /* Change cursor to indicate interactivity */
   transform: scale(1.05); /* Slightly enlarge the task */
   transition: all 0.3s ease-in-out; /* Smooth animation */
-  color:#ffffff
+  color: #ffffff;
 }
-
 
 /*change the colors of urls*/
 a {
@@ -374,7 +372,500 @@ a:hover {
 }
 
 /* Prevent horizontal scrolling on the page */
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(90deg, #07182e, #3d0a0a);
+}
+
+/* for the cards */
+
+/* Basic Styles for body, clock, greeting, and quotes */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.task {
+  background-color: rgba(0, 0, 0, 0.014);
+  color: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-top: 20px;
+  width: 150px;
+  max-width: 500px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.task.open {
+  max-width: 500px;
+  width: 100% !important;
+}
+
+.task-header {
+  padding: 10px 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+  background-color: #00000038;
+}
+
+.task-details {
+  display: none;
+  padding: 10px 15px;
+  font-size: 0.96em;
+  background-color: #00000038;
+  border-top: 1px solid #ccc;
+}
+
+.task-details.open {
+  display: block !important;
+}
+
+.task button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgb(168, 168, 168);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.task button:hover {
+  background-color: #00000038;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #00000038;
+  font-family: Arial, sans-serif;
+  background-image: url("assets/img/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+  padding: 20px;
+  background-blend-mode: darken;
+}
+
+/* Left side date */
+#date {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  font-size: 1.2em;
+  color: #42bfb9b6;
+  font-weight: bold;
+  z-index: 10; /* Ensure it stays on top of the background */
+}
+
+#clock {
+  font-size: 12vw;
+  font-weight: bold;
+  text-shadow: 0px 0px 20px white;
+  transition: all 0.3s ease;
+}
+
+#clock.small {
+  font-size: 6vw;
+}
+
+#greeting {
+  font-size: 3vw;
+  margin-top: 0;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+#quote {
+  font-family: "Playfair Display", serif;
+  font-size: 20px;
+  font-style: italic;
+  margin-top: 40px;
+  max-width: 100%;
+  line-height: 1.5;
+  text-shadow: 2px 2px 10px rgba(255, 223, 0, 0.7);
+  transition: all 0.3s ease;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  position: absolute;
+}
+
+#musicButton {
+  margin-top: 20px;
+  padding: 15px 30px;
+  font-size: 1.5em;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#musicButton:hover {
+  color: #149ddd;
+}
+
+/* Mobile Styles (Phones/Tablets) */
+@media (max-width: 100%) {
+  body {
+    padding: 10px;
+  }
+
+  #clock {
+    font-size: 12vw;
+  }
+
+  #greeting {
+    font-size: 6vw;
+  }
+
+  #quote {
+    font-size: 5.5vw;
+  }
+
+  #musicButton {
+    font-size: 2em;
+  }
+}
+
+/* Medium Devices (Tablets/Laptops) */
+@media (min-width: 601px) and (max-width: 100%) {
+  #clock {
+    font-size: 15vw;
+  }
+
+  #greeting {
+    font-size: 5vw;
+  }
+
+  #quote {
+    font-size: 3vw;
+  }
+
+  #musicButton {
+    font-size: 1.8em;
+  }
+}
+
+/* Larger Devices (Desktops/Big Screens) */
+@media (min-width: 100%) {
+  #clock {
+    font-size: 120px;
+  }
+
+  #greeting {
+    font-size: 2.5em;
+  }
+
+  #quote {
+    font-size: 1.4em;
+  }
+
+  #musicButton {
+    font-size: 1.5em;
+  }
+}
+
+#home-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.5em;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.todo input {
+  padding: 8px;
+  width: 70%;
+}
+
+.todo button {
+  padding: 8px 12px;
+  margin-left: 10px;
+}
+
+.todo ul {
+  list-style: none;
+  padding: 0;
+}
+
+.todo li {
+  background: #333;
+  margin-top: 5px;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.links ul {
+  list-style: none;
+  padding: 0;
+}
+
+.links li a {
+  color: #4db8ff;
+  text-decoration: none;
+}
+
+.links li a:hover {
+  text-decoration: underline;
+}
+
+#taskInput {
+  width: 300px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: 2px solid #ccc;
+  background-color: #00000038;
+  color: #42bfb9b6;
+  transition: all 0.3s ease;
+  height: 40px;
+  padding: 10px;
+}
+
+#submitButton {
+  border: none;
+  border-radius: 6px;
+  background-color: #42bfb9b6;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#submitButton:hover {
+  background-color: #42bfb9b6; /* Example: Change background color */
+  color: #ffffff; /* Example: Change text color */
+  cursor: pointer; /* Make the cursor indicate it's clickable */
+  transform: scale(1.05); /* Slightly enlarge the button */
+  transition: all 0.3s ease-in-out; /* Smooth transition effect */
+}
+
+#taskList {
+  margin-top: 20px;
+  max-height: 200px;
+  height: 100px;
+  overflow-y: auto;
+  background-color: #00000000;
+  border-radius: 5px;
+  font-size: 1em;
+  color: #42bfb9b6;
+}
+
+/* Scrollbar width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Scrollbar track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+/* Scrollbar handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+li {
+  margin-bottom: 10px; /* Space between tasks */
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  margin-right: 5px;
+}
+
+.new-task {
+  background-color: yellow; /* Highlight */
+  transition: background-color 1s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+li {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+li:hover {
+  background-color: #42bfb99d; /* Light background on hover */
+  cursor: pointer; /* Change cursor to indicate interactivity */
+  transform: scale(1.05); /* Slightly enlarge the task */
+  transition: all 0.3s ease-in-out; /* Smooth animation */
+  color: #ffffff;
+}
+
+#taskinput:hover {
+  background-color: #42bfb99d; /* Light background on hover */
+  cursor: pointer; /* Change cursor to indicate interactivity */
+  transform: scale(1.05); /* Slightly enlarge the task */
+  transition: all 0.3s ease-in-out; /* Smooth animation */
+  color: #ffffff;
+}
+
+/*change the colors of urls*/
+a {
+  color: red; /* Change link color */
+  text-decoration: none; /* Remove default underline */
+}
+
+a:hover {
+  color: blue; /* Change color when hovering */
+  text-decoration: underline; /* Add underline on hover */
+}
+
+.task-item {
+  position: relative;
+  padding: 10px;
+  border-radius: 5px;
+  background: #f9f9f9;
+  transition: transform 0.5s ease-out;
+}
+
+.task-item.swiping {
+  transition: none; /* Disable transition while dragging */
+}
+
+/* Prevent horizontal scrolling on the page */
+html,
+body {
+  overflow-x: hidden;
+}
+
+.container-card {
+  /* display: absolute; */
+  position: absolute;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(90deg, #07182e, #3d0a0a);
+  z-index: 9999999;
+  transition: all 1s ease;
+}
+
+/* for the cards */
+
+/* Reset */
+/* * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+} */
+
+/* Card styling */
+.card {
+  width: 190px;
+  height: 245px;
+  background: #07182e;
+  position: fixed; /* Ensures it stays on top */
+  top: 50%;
+  left: 50%;
+  transform-origin: center;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 20px;
+  z-index: 999999; /* Highest stacking order */
+}
+
+/* Card text */
+.card h2 {
+  z-index: 9999999;
+  color: white;
+  font-size: 2em;
+}
+
+/* Rotating gradient effect */
+.card::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 130%;
+  background-image: linear-gradient(
+    180deg,
+    rgb(0, 183, 255),
+    rgb(255, 48, 255)
+  );
+  animation: rotBGimg 3s linear infinite;
+  transition: all 0.6s ease;
+  z-index: 999998; /* Below the card text but above other elements */
+}
+
+/* Background rotation */
+@keyframes rotBGimg {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Inner overlay */
+.card::after {
+  content: "";
+  position: absolute;
+  background: #07182e;
+  inset: 5px;
+  border-radius: 15px;
+  z-index: 999999; /* Keeps it layered correctly */
+}
+
+@keyframes expandCard {
+  0% {
+    width: 200px;
+    height: 300px;
+  }
+  100% {
+    width: 600px;
+    height: 900px;
+  } /* Expands smoothly */
+}
+
+
+
+.card.expand {
+  animation: expandCard 2s ease-out forwards;
+}
+
+body {
+  overflow: hidden; /* Prevents scrolling */
+}

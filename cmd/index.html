@@ -1,43 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>John Paul Lundberg</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>John Paul Lundberg</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!---fjerne kort hvis det ikke fungerer-->
+    <div id="container-card" class="container-card">
+      <div class="card" id="clickable-Card">
+        <h2>Welcome</h2>
+      </div>
+    </div>
 
-  <!--homebutton to go to website-->
-  <a id="home-button" href="/index.html" class="home-button" title="Home">
-    <i class="fas fa-home"></i>
-  </a>  
-  
-  <div id="date"></div>
-  <div id="clock">00:00:00</div>
-  <div id="greeting"></div>
-  <div id="quote"></div>
-  <p id="musicButton"><i class="fas fa-play-circle"></i></p>
+    <!--homebutton to go to website-->
+    <a id="home-button" href="/index.html" class="home-button" title="Home">
+      <i class="fas fa-home"></i>
+    </a>
 
-  <!-- Expandable & Editable Task -->
-<div class="task" id="task">
-  <div class="task-header" onclick="toggleTask()">📝 Notes</div>
-  <div class="task-details" id="taskContainer">
-    <input type="text" id="taskInput" placeholder="Add a task" autocomplete="off" />
-    <button id="submitButton" onclick="addTask()">Add</button>
-    <ul id="taskList"></ul> 
-  </div>
-</div>
+    <div id="date"></div>
+    <div id="clock">00:00:00</div>
+    <div id="greeting"></div>
+    <div id="quote"></div>
+    <p id="musicButton"><i class="fas fa-play-circle"></i></p>
 
-  <!-- Audio element -->
-<audio id="music" loop>
-  <source id="musicSource" src="cmd/assets/music/morning.mp3" type="audio/mp3">
-  Your browser does not support the audio element.
-</audio>
-  
-  
-<script src="script.js"></script>  
-</body>
+    <!-- Expandable & Editable Task -->
+    <div class="task" id="task">
+      <div class="task-header" onclick="toggleTask()">📝 Notes</div>
+      <div class="task-details" id="taskContainer">
+        <input
+          type="text"
+          id="taskInput"
+          placeholder="Add a task"
+          autocomplete="off"
+        />
+        <button id="submitButton" onclick="addTask()">Add</button>
+        <ul id="taskList"></ul>
+      </div>
+    </div>
+
+    <!-- Audio element -->
+    <audio id="music" loop>
+      <source
+        id="musicSource"
+        src="cmd/assets/music/morning.mp3"
+        type="audio/mp3"
+      />
+      Your browser does not support the audio element.
+    </audio>
+
+    <script src="script.js"></script>
+  </body>
 </html>
