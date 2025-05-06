@@ -206,15 +206,13 @@ function addTask() {
     li.textContent = taskText;
   }
 
-  // ✅ Single-click to edit task
   li.addEventListener("click", () => {
     taskInput.value = taskText;
     taskInput.setAttribute("data-editing", taskText);
   });
 
-  // ✅ Swipe to instantly delete the task
-  let touchStartX = 0;
-  let touchEndX = 0;
+  // ✅ Enable swipe-to-delete on touch devices
+  let touchStartX = 0, touchEndX = 0;
   
   li.addEventListener("touchstart", (event) => {
     touchStartX = event.touches[0].clientX;
@@ -222,10 +220,22 @@ function addTask() {
 
   li.addEventListener("touchmove", (event) => {
     touchEndX = event.touches[0].clientX;
-    const diff = touchEndX - touchStartX;
+    if (Math.abs(touchEndX - touchStartX) > 50) { 
+      deleteTask(li, taskText); // ✅ Instant delete on swipe
+    }
+  });
 
-    if (Math.abs(diff) > 50) { // Detect swipe gesture
-      deleteTask(li, taskText); // ✅ Delete task immediately
+  // ✅ Enable swipe-to-delete on desktop (mouse drag)
+  let mouseStartX = 0, mouseEndX = 0;
+  
+  li.addEventListener("mousedown", (event) => {
+    mouseStartX = event.clientX;
+  });
+
+  li.addEventListener("mousemove", (event) => {
+    mouseEndX = event.clientX;
+    if (Math.abs(mouseEndX - mouseStartX) > 50) { 
+      deleteTask(li, taskText); // ✅ Instant delete on drag
     }
   });
 
@@ -264,34 +274,13 @@ function loadTasks() {
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
     });
 
-    let touchStartX = 0;
-    let touchEndX = 0;
+    let touchStartX = 0, touchEndX = 0;
 
     li.addEventListener("touchstart", (event) => {
       touchStartX = event.touches[0].clientX;
     });
 
-    li.addEventListener("touchmove", (event) => {
-      touchEndX = event.touches[0].clientX;
-      const diff = touchEndX - touchStartX;
-
-      if (Math.abs(diff) > 50) { 
-        deleteTask(li, taskText); // ✅ Instant delete
-      }
-    });
-
-    taskList.appendChild(li);
-  });
-}
-
-// ✅ Function to delete task from UI and localStorage
-function deleteTask(li, taskText) {
-  let tasks = localStorage.getItem("taskList") || "";
-  let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-  localStorage.setItem("taskList", updatedTasks);
-  li.remove();
-}
-
+    li.addEventListener("touchmove", (event) =>
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed
