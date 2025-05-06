@@ -257,82 +257,83 @@ function loadTasks() {
       taskInput.setAttribute("data-editing-index", index);
     });
 
-    // ----- Optimized Swipe Handling -----
-    let startX = 0;
-    let currentX = 0;
-    const deleteThreshold = 100;
-    let swipeInProgress = false;
-
-    function smoothSwipe(element, targetX, callback) {
-      let start = null;
-      let currentX = 0;
-
-      function step(timestamp) {
-        if (!start) start = timestamp;
-        let progress = timestamp - start;
-
-        currentX = Math.min(progress / 3, targetX); // Adjust speed
-        element.style.transform = `translateX(${currentX}px)`;
-
-        if (currentX < targetX) {
-          requestAnimationFrame(step);
-        } else {
-          callback(); // Delete after animation ends
-        }
-      }
-
-      requestAnimationFrame(step);
-    }
-
-    // Touch Handlers (Mobile)
-    li.addEventListener("touchstart", (event) => {
-      startX = event.touches[0].clientX;
-      swipeInProgress = false;
-    });
-
-    li.addEventListener("touchmove", (event) => {
-      currentX = event.touches[0].clientX;
-      const diff = currentX - startX;
-      if (diff > 20 && diff >= deleteThreshold && !swipeInProgress) {
-        swipeInProgress = true;
-        smoothSwipe(li, 200, () => deleteTask(li, index));
-      }
-    });
-
-    // Mouse Handlers (Desktop)
-    li.addEventListener("mousedown", (event) => {
-      startX = event.clientX;
-      swipeInProgress = false;
-      document.addEventListener("mousemove", mouseMoveHandler);
-      document.addEventListener("mouseup", mouseUpHandler);
-    });
-
-    function mouseMoveHandler(event) {
-      currentX = event.clientX;
-      const diff = currentX - startX;
-      if (diff > 20 && diff >= deleteThreshold && !swipeInProgress) {
-        swipeInProgress = true;
-        smoothSwipe(li, 200, () => deleteTask(li, index));
-      }
-    }
-
-    function mouseUpHandler() {
-      document.removeEventListener("mousemove", mouseMoveHandler);
-      document.removeEventListener("mouseup", mouseUpHandler);
-    }
-
     taskList.appendChild(li);
+
+    addSwipeHandlers(li, index);
   });
 }
 
+// ----- Swipe-to-Delete with Smooth Movement -----
+function addSwipeHandlers(task, index) {
+  let startX = 0;
+  let currentX = 0;
+  const deleteThreshold = 100;
+  let swipeInProgress = false;
+
+  // Mobile Touch Handling
+  task.addEventListener("touchstart", (event) => {
+    startX = event.touches[0].clientX;
+    task.style.transition = "none";
+  });
+
+  task.addEventListener("touchmove", (event) => {
+    currentX = event.touches[0].clientX;
+    let deltaX = currentX - startX;
+    task.style.transform = `translateX(${deltaX}px)`;
+  });
+
+  task.addEventListener("touchend", (event) => {
+    let deltaX = event.changedTouches[0].clientX - startX;
+
+    if (Math.abs(deltaX) > deleteThreshold) {
+      task.style.transition = "transform 0.3s ease-out";
+      task.style.transform = `translateX(${deltaX > 0 ? 200 : -200}px)`;
+      setTimeout(() => deleteTask(task, index), 300);
+    } else {
+      task.style.transition = "transform 0.3s ease-out";
+      task.style.transform = "translateX(0)";
+    }
+  });
+
+  // Mouse Handling for Desktop
+  task.addEventListener("mousedown", (event) => {
+    startX = event.clientX;
+    task.style.transition = "none";
+    document.addEventListener("mousemove", mouseMoveHandler);
+    document.addEventListener("mouseup", mouseUpHandler);
+  });
+
+  function mouseMoveHandler(event) {
+    currentX = event.clientX;
+    let deltaX = currentX - startX;
+    task.style.transform = `translateX(${deltaX}px)`;
+  }
+
+  function mouseUpHandler(event) {
+    let deltaX = event.clientX - startX;
+    document.removeEventListener("mousemove", mouseMoveHandler);
+    document.removeEventListener("mouseup", mouseUpHandler);
+
+    if (Math.abs(deltaX) > deleteThreshold) {
+      task.style.transition = "transform 0.3s ease-out";
+      task.style.transform = `translateX(${deltaX > 0 ? 200 : -200}px)`;
+      setTimeout(() => deleteTask(task, index), 300);
+    } else {
+      task.style.transition = "transform 0.3s ease-out";
+      task.style.transform = "translateX(0)";
+    }
+  }
+}
+
 // ----- Delete Task Function -----
-function deleteTask(li, index) {
+function deleteTask(task, index) {
   let tasks = localStorage.getItem("taskList") || "";
   let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
   taskArray.splice(index, 1);
   localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
-  li.remove();
+  task.remove();
 }
+
 
 
 
