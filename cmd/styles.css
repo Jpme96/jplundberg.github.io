@@ -360,3 +360,16 @@ a:hover {
   color: blue; /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
 }
+
+.task-item {
+  position: relative;
+  padding: 10px;
+  border-radius: 5px;
+  background: #f9f9f9;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.task-item.swiped {
+  transform: translateX(100%); /* ✅ Task slides out */
+  opacity: 0; /* ✅ Task fades out */
+}
