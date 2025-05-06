@@ -1,73 +1,62 @@
+/* Full-screen container to center the card */
+.container {
+  display: flex;
+  justify-content: center; /* Centers horizontally */
+  align-items: center; /* Centers vertically */
+  height: 100vh; /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+}
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: #ffffff;
+/* Card styling */
+.card {
+  width: 190px; 
+  height: 245px;
+  background: #07182E;
+  position: relative;
   display: flex;
   justify-content: center;
-  padding: 20px;
-}
-
-.container {
-  max-width: 800px;
-  width: 100%;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 20px;
 }
 
-#clock {
-  font-size: 1.5em;
+/* Card text */
+.card h2 {
+  z-index: 1;
+  color: white;
+  font-size: 2em;
 }
 
-section {
-  margin-bottom: 30px;
-  background: #1e1e1e;
-  padding: 20px;
-  border-radius: 8px;
+/* Rotating gradient effect */
+.card::before {
+  content: '';
+  position: absolute;
+  width: 120%; /* Expanded width for better coverage */
+  height: 130%;
+  background-image: linear-gradient(180deg, rgb(0,183,255), rgb(255,48,255));
+  animation: rotBGimg 3s linear infinite;
+  transition: all 0.2s ease;
 }
 
-h2 {
-  margin-top: 0;
+/* Background rotation */
+@keyframes rotBGimg {
+ from { transform: rotate(0deg); }
+ to { transform: rotate(360deg); }
 }
 
-.todo input {
-  padding: 8px;
-  width: 70%;
+/* Inner overlay */
+.card::after {
+  content: "";
+  position: absolute;
+  background: #07182E;
+  inset: 5px;
+  border-radius: 15px;
 }
 
-.todo button {
-  padding: 8px 12px;
-  margin-left: 10px;
-}
-
-.todo ul {
-  list-style: none;
-  padding: 0;
-}
-
-.todo li {
-  background: #333;
-  margin-top: 5px;
-  padding: 8px;
-  border-radius: 4px;
-}
-
-.links ul {
-  list-style: none;
-  padding: 0;
-}
-
-.links li a {
-  color: #4db8ff;
-  text-decoration: none;
-}
-
-.links li a:hover {
-  text-decoration: underline;
+/* Ensure responsiveness */
+@media (max-width: 600px) {
+  .card {
+      width: 150px;
+      height: 200px;
+  }
 }
