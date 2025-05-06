@@ -185,19 +185,20 @@ function addTask() {
   const taskInput = document.getElementById("taskInput");
   let taskText = taskInput.value.trim();
 
-  // Load existing tasks as an array
+  // Load tasks array from localStorage
   let tasks = localStorage.getItem("taskList") || "";
   let taskArray = tasks.split(";").filter(task => task.trim() !== "");
 
-  // Check for editing mode (by index)
+  // Check for editing mode by looking for a data-editing-index attribute:
   const editingIndex = taskInput.getAttribute("data-editing-index");
   if (editingIndex !== null) {
     const idx = parseInt(editingIndex, 10);
-    // If the edited text is empty, delete that task; otherwise, update it.
+
+    // If edited text is empty, remove the task; otherwise, update it.
     if (taskText === "") {
       taskArray.splice(idx, 1);
     } else {
-      // Auto-add "https://" if it looks like a domain and isn't already a URL.
+      // Auto-add "https://" for domain names, if needed.
       const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
       if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
         taskText = "https://" + taskText;
@@ -211,15 +212,16 @@ function addTask() {
     return;
   }
 
-  // New task addition: if the text is empty, do nothing.
+  // Not editing: If text is empty, do nothing.
   if (!taskText) return;
-  
-  // Auto-add "https://" for domain names.
+
+  // Auto-add "https://" for domain names if needed.
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
     taskText = "https://" + taskText;
   }
   
+  // Add the new task.
   taskArray.push(taskText);
   localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   taskInput.value = "";
@@ -236,7 +238,6 @@ function loadTasks() {
     const li = document.createElement("li");
     li.classList.add("task-item");
 
-    // If the task is a URL, create an anchor element.
     if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
       const a = document.createElement("a");
       a.href = taskText;
@@ -248,14 +249,14 @@ function loadTasks() {
       li.textContent = taskText;
     }
 
-    // Single click to edit: set input field text and record index.
+    // Single click to edit: set input value and record the index
     li.addEventListener("click", () => {
       const taskInput = document.getElementById("taskInput");
       taskInput.value = taskText;
       taskInput.setAttribute("data-editing-index", index);
     });
 
-    // ----- SWIPE HANDLING for Loaded Tasks (Touch & Mouse) -----
+    // ----- SWIPE HANDLING for loaded tasks (Touch & Mouse) -----
     let startX = 0;
     let currentX = 0;
     let holdTimeout = null;
@@ -340,7 +341,6 @@ function deleteTaskDesktop(li, index) {
   localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   li.remove();
 }
-
 
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed
