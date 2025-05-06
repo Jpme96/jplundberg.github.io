@@ -1,13 +1,19 @@
-/* Full-screen container to center the card */
-.container {
+.container{
   display: flex;
-  justify-content: center; /* Centers horizontally */
-  align-items: center; /* Centers vertically */
-  height: 100vh; /* Full viewport height */
-  width: 100vw; /* Full viewport width */
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(90deg, #07182E, #3d0a0a);
 }
 
+
 /* Card styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding:0;
+  font-family: 'Poppins', sans-serif;
+}
 .card {
   width: 190px; 
   height: 245px;
@@ -31,17 +37,18 @@
 .card::before {
   content: '';
   position: absolute;
-  width: 120%; /* Expanded width for better coverage */
+  width: 100px; 
   height: 130%;
   background-image: linear-gradient(180deg, rgb(0,183,255), rgb(255,48,255));
   animation: rotBGimg 3s linear infinite;
-  transition: all 0.2s ease;
+  transition: all 0.6s ease;
 }
 
 /* Background rotation */
 @keyframes rotBGimg {
  from { transform: rotate(0deg); }
  to { transform: rotate(360deg); }
+
 }
 
 /* Inner overlay */
@@ -51,12 +58,4 @@
   background: #07182E;
   inset: 5px;
   border-radius: 15px;
-}
-
-/* Ensure responsiveness */
-@media (max-width: 600px) {
-  .card {
-      width: 150px;
-      height: 200px;
-  }
 }
