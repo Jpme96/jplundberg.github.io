@@ -349,6 +349,8 @@ li:hover {
   color:#ffffff
 }
 
+
+/*change the colors of urls*/
 a {
   color: red; /* Change link color */
   text-decoration: none; /* Remove default underline */
