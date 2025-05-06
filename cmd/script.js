@@ -208,7 +208,6 @@ localStorage.setItem("taskList", updatedTasks);
 li.remove();
 document.getElementById("taskInput").value = taskText;
 const taskInput = document.getElementById("taskInput");
-taskInput.value = taskText; // Clear input field after removing task
 };
 });
       
