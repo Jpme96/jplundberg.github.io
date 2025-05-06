@@ -196,51 +196,36 @@ function addTask() {
   const taskInput = document.getElementById("taskInput");
   let taskText = taskInput.value.trim();
 
-  // Load tasks array from localStorage
   let tasks = localStorage.getItem("taskList") || "";
   let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
 
-  // Check for editing mode by looking for a data-editing-index attribute:
   const editingIndex = taskInput.getAttribute("data-editing-index");
   if (editingIndex !== null) {
     const idx = parseInt(editingIndex, 10);
-
-    // If edited text is empty, remove the task; otherwise, update it.
     if (taskText === "") {
       taskArray.splice(idx, 1);
     } else {
-      // Auto-add "https://" for domain names, if needed.
       const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
       if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
         taskText = "https://" + taskText;
       }
       taskArray[idx] = taskText;
     }
-    localStorage.setItem(
-      "taskList",
-      taskArray.join(";") + (taskArray.length ? ";" : "")
-    );
+    localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
     taskInput.removeAttribute("data-editing-index");
     taskInput.value = "";
     loadTasks();
     return;
   }
 
-  // Not editing: If text is empty, do nothing.
   if (!taskText) return;
-
-  // Auto-add "https://" for domain names if needed.
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
     taskText = "https://" + taskText;
   }
 
-  // Add the new task.
   taskArray.push(taskText);
-  localStorage.setItem(
-    "taskList",
-    taskArray.join(";") + (taskArray.length ? ";" : "")
-  );
+  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   taskInput.value = "";
   loadTasks();
 }
@@ -266,74 +251,72 @@ function loadTasks() {
       li.textContent = taskText;
     }
 
-    // Single click to edit: set input value and record the index
     li.addEventListener("click", () => {
       const taskInput = document.getElementById("taskInput");
       taskInput.value = taskText;
       taskInput.setAttribute("data-editing-index", index);
     });
 
-    // ----- SWIPE HANDLING for loaded tasks (Touch & Mouse) -----
+    // ----- Optimized Swipe Handling -----
     let startX = 0;
     let currentX = 0;
-    let holdTimeout = null;
-    const deleteThreshold = 100; // 50% of screen width
+    const deleteThreshold = 100;
+    let swipeInProgress = false;
+
+    function smoothSwipe(element, targetX, callback) {
+      let start = null;
+      let currentX = 0;
+
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        let progress = timestamp - start;
+
+        currentX = Math.min(progress / 3, targetX); // Adjust speed
+        element.style.transform = `translateX(${currentX}px)`;
+
+        if (currentX < targetX) {
+          requestAnimationFrame(step);
+        } else {
+          callback(); // Delete after animation ends
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
 
     // Touch Handlers (Mobile)
     li.addEventListener("touchstart", (event) => {
       startX = event.touches[0].clientX;
+      swipeInProgress = false;
     });
+
     li.addEventListener("touchmove", (event) => {
       currentX = event.touches[0].clientX;
       const diff = currentX - startX;
-      if (diff > 20) {
-        if (diff >= deleteThreshold && !holdTimeout) {
-          holdTimeout = setTimeout(() => {
-            deleteTaskMobile(li, index);
-          }, 1000);
-        } else if (diff < deleteThreshold && holdTimeout) {
-          clearTimeout(holdTimeout);
-          holdTimeout = null;
-        }
-      }
-    });
-    li.addEventListener("touchend", () => {
-      if (currentX - startX < deleteThreshold && holdTimeout) {
-        clearTimeout(holdTimeout);
-        holdTimeout = null;
+      if (diff > 20 && diff >= deleteThreshold && !swipeInProgress) {
+        swipeInProgress = true;
+        smoothSwipe(li, 200, () => deleteTask(li, index));
       }
     });
 
     // Mouse Handlers (Desktop)
-    let isDragging = false;
     li.addEventListener("mousedown", (event) => {
-      isDragging = true;
       startX = event.clientX;
+      swipeInProgress = false;
       document.addEventListener("mousemove", mouseMoveHandler);
       document.addEventListener("mouseup", mouseUpHandler);
     });
+
     function mouseMoveHandler(event) {
-      if (!isDragging) return;
       currentX = event.clientX;
       const diff = currentX - startX;
-      if (diff > 20) {
-        if (diff >= deleteThreshold && !holdTimeout) {
-          holdTimeout = setTimeout(() => {
-            deleteTaskDesktop(li, index);
-          }, 1000);
-        } else if (diff < deleteThreshold && holdTimeout) {
-          clearTimeout(holdTimeout);
-          holdTimeout = null;
-        }
+      if (diff > 20 && diff >= deleteThreshold && !swipeInProgress) {
+        swipeInProgress = true;
+        smoothSwipe(li, 200, () => deleteTask(li, index));
       }
     }
-    function mouseUpHandler(event) {
-      if (!isDragging) return;
-      if (currentX - startX < deleteThreshold && holdTimeout) {
-        clearTimeout(holdTimeout);
-        holdTimeout = null;
-      }
-      isDragging = false;
+
+    function mouseUpHandler() {
       document.removeEventListener("mousemove", mouseMoveHandler);
       document.removeEventListener("mouseup", mouseUpHandler);
     }
@@ -342,29 +325,19 @@ function loadTasks() {
   });
 }
 
-// ----- Delete Functions (using index) -----
-function deleteTaskMobile(li, index) {
+// ----- Delete Task Function -----
+function deleteTask(li, index) {
   let tasks = localStorage.getItem("taskList") || "";
   let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
   taskArray.splice(index, 1);
-  localStorage.setItem(
-    "taskList",
-    taskArray.join(";") + (taskArray.length ? ";" : "")
-  );
+  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   li.remove();
 }
 
-function deleteTaskDesktop(li, index) {
-  let tasks = localStorage.getItem("taskList") || "";
-  let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
-  taskArray.splice(index, 1);
-  localStorage.setItem(
-    "taskList",
-    taskArray.join(";") + (taskArray.length ? ";" : "")
-  );
-  li.remove();
-}
 
+
+/*Keyboard Event for Enter Key*/
+// This event listener allows the user to press Enter to submit the task input
 document
   .getElementById("taskInput")
   .addEventListener("keypress", function (event) {
