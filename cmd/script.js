@@ -190,7 +190,7 @@ function addTask() {
   const li = document.createElement("li");
   li.classList.add("task-item");
 
-  // ✅ Auto-add "https://" for domain names
+  // Auto-add "https://" for domain names
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
     taskText = "https://" + taskText;
@@ -202,58 +202,84 @@ function addTask() {
     a.textContent = new URL(taskText).hostname;
     a.target = "_blank";
     li.appendChild(a);
-  
+
+    // Double-click (or double-tap) to open the link in a new tab
     li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
   } else {
     li.textContent = taskText;
   }
 
+  // Single click to edit: sets the task text in the input field
   li.addEventListener("click", () => {
     taskInput.value = taskText;
     taskInput.setAttribute("data-editing", taskText);
   });
 
-  // ✅ Swipe detection for both touch & mouse
+  // ----- SWIPE HANDLING (for both touch and mouse) -----
   let startX = 0;
   let currentX = 0;
-  let hasSwiped = false;
+  let holdTimeout = null; // will hold the deletion timeout
+  const deleteThreshold = window.innerWidth * 0.5; // 50% of screen width
 
   function startSwipe(event) {
+    // Get the starting X position
     startX = event.touches ? event.touches[0].clientX : event.clientX;
     li.classList.add("swiping");
+    // Clear any previous transition so that movement is immediate
+    li.style.transition = "none";
   }
 
   function moveSwipe(event) {
     currentX = event.touches ? event.touches[0].clientX : event.clientX;
     const diff = currentX - startX;
 
-    if (diff > 20 && diff < window.innerWidth * 0.5) { 
-      li.style.transform = `translateX(${diff}px)`;
-      hasSwiped = true; // ✅ Track swipe movement
+    if (diff > 20) { // start moving the element if dragged more than 20px
+      if (diff < deleteThreshold) {
+        // Move the task following the finger or mouse as long as below threshold
+        li.style.transform = `translateX(${diff}px)`;
+        if (holdTimeout) {
+          clearTimeout(holdTimeout);
+          holdTimeout = null;
+        }
+      } else {
+        // Once the threshold is reached, fix the task at that position
+        li.style.transform = `translateX(${deleteThreshold}px)`;
+        // If not already set, start the 1-second deletion hold timer
+        if (!holdTimeout) {
+          holdTimeout = setTimeout(() => {
+            deleteTask(li, taskText);
+          }, 1000);
+        }
+      }
     }
   }
 
   function endSwipe() {
-    if (currentX - startX > window.innerWidth * 0.5) { 
-      deleteTask(li, taskText);
-    } else if (hasSwiped) { 
-      li.style.transition = "transform 0.3s ease-out"; // ✅ Smooth return animation
+    // When the swipe (or drag) ends:
+    if (currentX - startX < deleteThreshold) {
+      // Not swiped far enough—cancel any deletion and bring back the task
+      if (holdTimeout) {
+        clearTimeout(holdTimeout);
+        holdTimeout = null;
+      }
+      li.style.transition = "transform 0.5s ease-out";
       li.style.transform = "translateX(0px)";
-      hasSwiped = false; // ✅ Reset swipe tracking
     }
     li.classList.remove("swiping");
   }
 
+  // Touch events for mobile
   li.addEventListener("touchstart", startSwipe);
   li.addEventListener("touchmove", moveSwipe);
   li.addEventListener("touchend", endSwipe);
-
+  // Mouse events for desktop
   li.addEventListener("mousedown", startSwipe);
   li.addEventListener("mousemove", moveSwipe);
   li.addEventListener("mouseup", endSwipe);
 
   document.getElementById("taskList").appendChild(li);
-  
+
+  // Save the task to localStorage
   let tasks = localStorage.getItem("taskList") || "";
   localStorage.setItem("taskList", tasks + taskText + ";");
   taskInput.value = "";
@@ -263,7 +289,6 @@ function loadTasks() {
   const tasks = localStorage.getItem("taskList") || "";
   const taskArray = tasks.split(";").filter(task => task.trim() !== "");
   const taskList = document.getElementById("taskList");
-
   taskList.innerHTML = "";
 
   taskArray.forEach(taskText => {
@@ -287,32 +312,48 @@ function loadTasks() {
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
     });
 
+    // ----- SWIPE HANDLING (for both touch and mouse) -----
     let startX = 0;
     let currentX = 0;
-    let hasSwiped = false;
+    let holdTimeout = null;
+    const deleteThreshold = window.innerWidth * 0.5;
 
     function startSwipe(event) {
       startX = event.touches ? event.touches[0].clientX : event.clientX;
       li.classList.add("swiping");
+      li.style.transition = "none";
     }
 
     function moveSwipe(event) {
       currentX = event.touches ? event.touches[0].clientX : event.clientX;
       const diff = currentX - startX;
 
-      if (diff > 20 && diff < window.innerWidth * 0.5) { 
-        li.style.transform = `translateX(${diff}px)`;
-        hasSwiped = true;
+      if (diff > 20) {
+        if (diff < deleteThreshold) {
+          li.style.transform = `translateX(${diff}px)`;
+          if (holdTimeout) {
+            clearTimeout(holdTimeout);
+            holdTimeout = null;
+          }
+        } else {
+          li.style.transform = `translateX(${deleteThreshold}px)`;
+          if (!holdTimeout) {
+            holdTimeout = setTimeout(() => {
+              deleteTask(li, taskText);
+            }, 1000);
+          }
+        }
       }
     }
 
     function endSwipe() {
-      if (currentX - startX > window.innerWidth * 0.5) { 
-        deleteTask(li, taskText);
-      } else if (hasSwiped) { 
-        li.style.transition = "transform 0.3s ease-out"; 
+      if (currentX - startX < deleteThreshold) {
+        if (holdTimeout) {
+          clearTimeout(holdTimeout);
+          holdTimeout = null;
+        }
+        li.style.transition = "transform 0.5s ease-out";
         li.style.transform = "translateX(0px)";
-        hasSwiped = false;
       }
       li.classList.remove("swiping");
     }
@@ -329,10 +370,13 @@ function loadTasks() {
   });
 }
 
-// ✅ Function to delete task from UI and localStorage
+// Function to delete task from UI and update localStorage
 function deleteTask(li, taskText) {
   let tasks = localStorage.getItem("taskList") || "";
-  let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+  let updatedTasks = tasks
+    .split(";")
+    .filter(task => task.trim() !== taskText)
+    .join(";");
   localStorage.setItem("taskList", updatedTasks);
   li.remove();
 }

@@ -373,4 +373,7 @@ a:hover {
   transition: none; /* Prevent animation while dragging */
 }
 
+#taskContainer {
+  overflow-x: hidden;
+}
 
