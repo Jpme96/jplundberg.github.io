@@ -207,6 +207,7 @@ function loadTasks() {
       localStorage.setItem("taskList", updatedTasks + ";");
       const taskInput = document.getElementById("taskInput");
       taskInput.value = taskText; // Clear input field after removing task
+    li.remove();
     }
     taskList.appendChild(li);
   });
