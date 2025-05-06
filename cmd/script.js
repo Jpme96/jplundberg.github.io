@@ -260,7 +260,7 @@ function loadTasks() {
     let startX = 0;
     let currentX = 0;
     let holdTimeout = null;
-    const deleteThreshold = 150; // 50% of screen width
+    const deleteThreshold = 100; // 50% of screen width
 
     // Touch Handlers (Mobile)
     li.addEventListener("touchstart", (event) => {
