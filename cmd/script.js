@@ -177,7 +177,7 @@ document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadTasks(); 
+  loadTasks();
 });
 
 function addTask() {
@@ -186,8 +186,7 @@ function addTask() {
   if (!taskText) return;
 
   const li = document.createElement("li");
-  li.classList.add("task-item"); // Add class for styling
-  li.dataset.clicks = 0; // Track double-tap
+  li.classList.add("task-item");
 
   // ✅ Auto-add "https://" for domain names
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
@@ -195,33 +194,43 @@ function addTask() {
     taskText = "https://" + taskText;
   }
 
-  // ✅ Handle hyperlinks
   if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
     const a = document.createElement("a");
     a.href = taskText;
-    a.textContent = new URL(taskText).hostname; 
+    a.textContent = new URL(taskText).hostname;
     a.target = "_blank";
     li.appendChild(a);
-
-    // ✅ Double tap opens link
+  
     li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
   } else {
     li.textContent = taskText;
   }
 
-  // ✅ Single click → Edit task
+  // ✅ Single-click to edit task
   li.addEventListener("click", () => {
     taskInput.value = taskText;
     taskInput.setAttribute("data-editing", taskText);
   });
 
-  // ✅ Swipe right → Show delete button
-  li.addEventListener("touchstart", handleTouchStart, false);
-  li.addEventListener("touchmove", handleTouchMove, false);
-  li.addEventListener("touchend", handleTouchEnd, false);
+  // ✅ Swipe to instantly delete the task
+  let touchStartX = 0;
+  let touchEndX = 0;
+  
+  li.addEventListener("touchstart", (event) => {
+    touchStartX = event.touches[0].clientX;
+  });
+
+  li.addEventListener("touchmove", (event) => {
+    touchEndX = event.touches[0].clientX;
+    const diff = touchEndX - touchStartX;
+
+    if (Math.abs(diff) > 50) { // Detect swipe gesture
+      deleteTask(li, taskText); // ✅ Delete task immediately
+    }
+  });
 
   document.getElementById("taskList").appendChild(li);
-
+  
   let tasks = localStorage.getItem("taskList") || "";
   localStorage.setItem("taskList", tasks + taskText + ";");
   taskInput.value = "";
@@ -232,12 +241,11 @@ function loadTasks() {
   const taskArray = tasks.split(";").filter(task => task.trim() !== "");
   const taskList = document.getElementById("taskList");
 
-  taskList.innerHTML = ""; 
+  taskList.innerHTML = "";
 
   taskArray.forEach(taskText => {
     const li = document.createElement("li");
     li.classList.add("task-item");
-    li.dataset.clicks = 0;
 
     if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
       const a = document.createElement("a");
@@ -256,66 +264,33 @@ function loadTasks() {
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
     });
 
-    li.addEventListener("touchstart", handleTouchStart, false);
-    li.addEventListener("touchmove", handleTouchMove, false);
-    li.addEventListener("touchend", handleTouchEnd, false);
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    li.addEventListener("touchstart", (event) => {
+      touchStartX = event.touches[0].clientX;
+    });
+
+    li.addEventListener("touchmove", (event) => {
+      touchEndX = event.touches[0].clientX;
+      const diff = touchEndX - touchStartX;
+
+      if (Math.abs(diff) > 50) { 
+        deleteTask(li, taskText); // ✅ Instant delete
+      }
+    });
 
     taskList.appendChild(li);
   });
 }
 
-let touchStartX = 0;
-let touchEndX = 0;
-
-function handleTouchStart(event) {
-  touchStartX = event.touches[0].clientX;
+// ✅ Function to delete task from UI and localStorage
+function deleteTask(li, taskText) {
+  let tasks = localStorage.getItem("taskList") || "";
+  let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+  localStorage.setItem("taskList", updatedTasks);
+  li.remove();
 }
-
-function handleTouchMove(event) {
-  touchEndX = event.touches[0].clientX;
-}
-
-function handleTouchEnd(event) {
-  const li = event.target;
-  if (touchEndX - touchStartX > 50) { // ✅ Swiped right
-    let deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
-    deleteButton.classList.add("delete-btn");
-    deleteButton.onclick = () => {
-      let tasks = localStorage.getItem("taskList") || "";
-      let updatedTasks = tasks.split(";").filter(task => task.trim() !== li.textContent).join(";");
-      localStorage.setItem("taskList", updatedTasks);
-      li.remove();
-    };
-    li.appendChild(deleteButton);
-  }
-}
-
-document.getElementById("taskInput").addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {  
-    if (this.getAttribute("data-editing")) {
-      saveEditedTask();
-    } else {
-      addTask();
-    }
-  }
-});
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadTasks();
-});
-
-document.getElementById("taskInput").addEventListener("keypress", function(event) {
-  if (event.key === "Enter") {  
-    if (this.getAttribute("data-editing")) {
-      saveEditedTask();
-    } else {
-      addTask();
-    }
-  }
-});
-
 
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
