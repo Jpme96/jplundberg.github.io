@@ -208,8 +208,6 @@ function loadTasks() {
       const taskInput = document.getElementById("taskInput");
       taskInput.value = taskText; // Clear input field after removing task
     li.remove();
-    window.toggleTask = toggleTask;
-    window.deleteTask = deleteTask;
     }
     taskList.appendChild(li);
   });
