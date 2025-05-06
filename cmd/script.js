@@ -176,6 +176,8 @@ loadTasks();
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
+//behaviour for task, delete under here // 
+
 document.addEventListener("DOMContentLoaded", () => {
   loadTasks();
 });
@@ -214,6 +216,7 @@ function addTask() {
   // ✅ Swipe detection for both touch & mouse
   let startX = 0;
   let currentX = 0;
+  let hasSwiped = false;
 
   function startSwipe(event) {
     startX = event.touches ? event.touches[0].clientX : event.clientX;
@@ -226,14 +229,17 @@ function addTask() {
 
     if (diff > 20 && diff < window.innerWidth * 0.5) { 
       li.style.transform = `translateX(${diff}px)`;
+      hasSwiped = true; // ✅ Track swipe movement
     }
   }
 
   function endSwipe() {
-    if (currentX - startX > window.innerWidth * 0.5) { // ✅ Full swipe → Delete
+    if (currentX - startX > window.innerWidth * 0.5) { 
       deleteTask(li, taskText);
-    } else {
-      li.style.transform = "translateX(0px)"; // ✅ Partial swipe → Reset position
+    } else if (hasSwiped) { 
+      li.style.transition = "transform 0.3s ease-out"; // ✅ Smooth return animation
+      li.style.transform = "translateX(0px)";
+      hasSwiped = false; // ✅ Reset swipe tracking
     }
     li.classList.remove("swiping");
   }
@@ -283,6 +289,7 @@ function loadTasks() {
 
     let startX = 0;
     let currentX = 0;
+    let hasSwiped = false;
 
     function startSwipe(event) {
       startX = event.touches ? event.touches[0].clientX : event.clientX;
@@ -295,14 +302,17 @@ function loadTasks() {
 
       if (diff > 20 && diff < window.innerWidth * 0.5) { 
         li.style.transform = `translateX(${diff}px)`;
+        hasSwiped = true;
       }
     }
 
     function endSwipe() {
       if (currentX - startX > window.innerWidth * 0.5) { 
         deleteTask(li, taskText);
-      } else {
+      } else if (hasSwiped) { 
+        li.style.transition = "transform 0.3s ease-out"; 
         li.style.transform = "translateX(0px)";
+        hasSwiped = false;
       }
       li.classList.remove("swiping");
     }
