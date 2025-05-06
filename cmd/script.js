@@ -172,7 +172,7 @@ setInterval(updateClock, 1000);
 document.addEventListener("DOMContentLoaded", () => {
 setGreetingAndShadow();
 getRandomQuote();
-LoadTask();
+loadTask();
 // Ensure event listeners are added AFTER elements exist
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
@@ -210,6 +210,7 @@ const taskInput = document.getElementById("taskInput");
 };
  taskList.appendChild(li);
 });
+}
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed
