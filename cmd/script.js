@@ -176,65 +176,55 @@ loadTasks();
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  loadTasks(); 
+});
+
 function addTask() {
   const taskInput = document.getElementById("taskInput");
   let taskText = taskInput.value.trim();
-  if (!taskText) return; // Prevent empty tasks
+  if (!taskText) return;
 
   const li = document.createElement("li");
+  li.classList.add("task-item"); // Add class for styling
+  li.dataset.clicks = 0; // Track double-tap
 
-  // Automatically add "https://" if missing and detect domain names
+  // ✅ Auto-add "https://" for domain names
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
     taskText = "https://" + taskText;
   }
 
-  // Convert URLs into clickable hyperlinks and display only the domain name
+  // ✅ Handle hyperlinks
   if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
     const a = document.createElement("a");
     a.href = taskText;
-    a.textContent = new URL(taskText).hostname; // Display domain name only
+    a.textContent = new URL(taskText).hostname; 
     a.target = "_blank";
     li.appendChild(a);
 
-    // ✅ Double-click to open link
-    li.ondblclick = () => window.open(taskText, "_blank");
+    // ✅ Double tap opens link
+    li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
   } else {
     li.textContent = taskText;
   }
 
-  // ✅ Single click to edit task
-  li.onclick = () => {
+  // ✅ Single click → Edit task
+  li.addEventListener("click", () => {
     taskInput.value = taskText;
-    taskInput.setAttribute("data-editing", taskText); // Store original task for editing
-  };
+    taskInput.setAttribute("data-editing", taskText);
+  });
 
-  document.getElementById("taskList").prepend(li);
+  // ✅ Swipe right → Show delete button
+  li.addEventListener("touchstart", handleTouchStart, false);
+  li.addEventListener("touchmove", handleTouchMove, false);
+  li.addEventListener("touchend", handleTouchEnd, false);
 
-  // ✅ Save to local storage
+  document.getElementById("taskList").appendChild(li);
+
   let tasks = localStorage.getItem("taskList") || "";
   localStorage.setItem("taskList", tasks + taskText + ";");
-
-  taskInput.value = ""; // Clear input after adding task
-}
-
-function saveEditedTask() {
-  const taskInput = document.getElementById("taskInput");
-  const updatedText = taskInput.value.trim();
-  if (!updatedText) return;
-
-  const originalText = taskInput.getAttribute("data-editing");
-  if (!originalText) return;
-
-  let tasks = localStorage.getItem("taskList") || "";
-  let updatedTasks = tasks.split(";").map(task =>
-    task.trim() === originalText ? updatedText : task
-  ).join(";");
-
-  localStorage.setItem("taskList", updatedTasks);
-  taskInput.removeAttribute("data-editing");
   taskInput.value = "";
-  loadTasks(); // Reload updated list
 }
 
 function loadTasks() {
@@ -242,12 +232,13 @@ function loadTasks() {
   const taskArray = tasks.split(";").filter(task => task.trim() !== "");
   const taskList = document.getElementById("taskList");
 
-  taskList.innerHTML = ""; // Clear existing tasks
+  taskList.innerHTML = ""; 
 
   taskArray.forEach(taskText => {
     const li = document.createElement("li");
+    li.classList.add("task-item");
+    li.dataset.clicks = 0;
 
-    // Convert task into hyperlink if it's a URL
     if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
       const a = document.createElement("a");
       a.href = taskText;
@@ -255,21 +246,61 @@ function loadTasks() {
       a.target = "_blank";
       li.appendChild(a);
 
-      // ✅ Double-click to open link
-      li.ondblclick = () => window.open(taskText, "_blank");
+      li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
     } else {
       li.textContent = taskText;
     }
 
-    // ✅ Single click to edit task
-    li.onclick = () => {
+    li.addEventListener("click", () => {
       document.getElementById("taskInput").value = taskText;
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
-    };
+    });
+
+    li.addEventListener("touchstart", handleTouchStart, false);
+    li.addEventListener("touchmove", handleTouchMove, false);
+    li.addEventListener("touchend", handleTouchEnd, false);
 
     taskList.appendChild(li);
   });
 }
+
+let touchStartX = 0;
+let touchEndX = 0;
+
+function handleTouchStart(event) {
+  touchStartX = event.touches[0].clientX;
+}
+
+function handleTouchMove(event) {
+  touchEndX = event.touches[0].clientX;
+}
+
+function handleTouchEnd(event) {
+  const li = event.target;
+  if (touchEndX - touchStartX > 50) { // ✅ Swiped right
+    let deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.classList.add("delete-btn");
+    deleteButton.onclick = () => {
+      let tasks = localStorage.getItem("taskList") || "";
+      let updatedTasks = tasks.split(";").filter(task => task.trim() !== li.textContent).join(";");
+      localStorage.setItem("taskList", updatedTasks);
+      li.remove();
+    };
+    li.appendChild(deleteButton);
+  }
+}
+
+document.getElementById("taskInput").addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {  
+    if (this.getAttribute("data-editing")) {
+      saveEditedTask();
+    } else {
+      addTask();
+    }
+  }
+});
+
 
 document.addEventListener("DOMContentLoaded", () => {
   loadTasks();

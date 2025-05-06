@@ -359,3 +359,38 @@ a {
 a:hover {
   color: blue; /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
+}
+
+
+/*For the task swipe function*/
+ .task-item {
+  position: relative;
+   padding: 10px;
+   border-radius: 5px;
+  background: #f9f9f9;
+  transition: transform 0.3s ease-in-out;
+ }
+  
+.task-item .delete-btn {
+ position: absolute;
+  right: -60px; /* Initially hidden */
+  background: red;
+  color: white;
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+  transition: right 0.3s ease-in-out;
+  }
+  
+.task-item:hover {
+background: #ddd;
+  }
+  
+.task-item.swiped {
+ transform: translateX(50px); /* Moves task */
+ }
+  
+.task-item.swiped .delete-btn {
+right: 10px; /* Reveals delete button */
+}
+  
