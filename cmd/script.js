@@ -178,60 +178,109 @@ document.getElementById("musicButton").addEventListener("click", toggleMusic);
 
 function addTask() {
   const taskInput = document.getElementById("taskInput");
-  const taskText = taskInput.value.trim();
+  let taskText = taskInput.value.trim();
   if (!taskText) return; // Prevent empty tasks
 
   const li = document.createElement("li");
 
-  // Check if task contains a URL
+  // ✅ Automatically add "https://" if missing and detect domain names
+  const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/; // Matches simple domain formats (e.g., google.com)
+  if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
+    taskText = "https://" + taskText; // Convert domain name into full URL
+  }
+
+  // ✅ Convert URLs into clickable hyperlinks and display only the domain name
   if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
     const a = document.createElement("a");
     a.href = taskText;
-    a.textContent = taskText;
-    a.target = "_blank"; // Open link in new tab
+    a.textContent = new URL(taskText).hostname; // ✅ Shows only the domain name (e.g., "google.com")
+    a.target = "_blank"; // Open in a new tab
     li.appendChild(a);
   } else {
     li.textContent = taskText;
   }
 
+  // ✅ Allow task editing
   li.onclick = () => {
-    let tasks = localStorage.getItem("taskList") || "";
-    let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-    localStorage.setItem("taskList", updatedTasks);
-    li.remove();
+    taskInput.value = taskText;
+    taskInput.setAttribute("data-editing", taskText); // Store original task for editing
   };
 
   document.getElementById("taskList").prepend(li);
 
-  // Save to local storage
+  // ✅ Save to local storage
   let tasks = localStorage.getItem("taskList") || "";
   localStorage.setItem("taskList", tasks + taskText + ";");
 
   taskInput.value = ""; // Clear input after adding task
 }
 
+function saveEditedTask() {
+  const taskInput = document.getElementById("taskInput");
+  const updatedText = taskInput.value.trim();
+  if (!updatedText) return;
+
+  const originalText = taskInput.getAttribute("data-editing");
+  if (!originalText) return; // Ensure an actual task is being edited
+
+  let tasks = localStorage.getItem("taskList") || "";
+  let updatedTasks = tasks.split(";").map(task =>
+    task.trim() === originalText ? updatedText : task
+  ).join(";");
+
+  localStorage.setItem("taskList", updatedTasks);
+  taskInput.removeAttribute("data-editing"); // Remove editing mode
+  taskInput.value = ""; // Clear input
+  loadTasks(); // Reload updated list
+}
 
 function loadTasks() {
   const tasks = localStorage.getItem("taskList") || "";
   const taskArray = tasks.split(";").filter(task => task.trim() !== "");
   const taskList = document.getElementById("taskList");
+
   taskList.innerHTML = ""; // Clear existing tasks
 
   taskArray.forEach(taskText => {
     const li = document.createElement("li");
-    li.textContent = taskText;
 
+    // ✅ Convert URLs into clickable hyperlinks and display only the domain name
+    if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
+      const a = document.createElement("a");
+      a.href = taskText;
+      a.textContent = new URL(taskText).hostname; // ✅ Show domain name only
+      a.target = "_blank"; 
+      li.appendChild(a);
+    } else {
+      li.textContent = taskText;
+    }
+
+    // ✅ Allow task deletion from both UI & localStorage
     li.onclick = () => {
       let tasks = localStorage.getItem("taskList") || "";
       let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
       localStorage.setItem("taskList", updatedTasks);
-      li.remove();
-      document.getElementById("taskInput").value = taskText; 
+      li.remove(); // ✅ Remove from UI
     };
 
-    taskList.appendChild(li); 
+    taskList.appendChild(li);
   });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadTasks(); // ✅ Load tasks on page load
+});
+
+document.getElementById("taskInput").addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {  
+    if (this.getAttribute("data-editing")) {
+      saveEditedTask(); // ✅ Save edits if editing
+    } else {
+      addTask(); // ✅ Add new task
+    }
+  }
+});
+
 
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
