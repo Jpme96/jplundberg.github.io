@@ -752,7 +752,7 @@ a:hover {
   position: relative;
   padding: 10px;
   border-radius: 5px;
-  background: #f9f9f9;
+  background: #00000037;
   transition: transform 0.5s ease-out;
 }
 
@@ -775,7 +775,7 @@ body {
   width: 100vw;
   background: linear-gradient(90deg, #07182e, #3d0a0a);
   z-index: 9999999;
-  transition: all 1s ease;
+  transition: all s ease;
 }
 
 /* for the cards */
