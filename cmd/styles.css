@@ -265,9 +265,18 @@
       font-weight: bold;
       cursor: pointer;
       transition: background 0.3s;
-      animation:submitbuttonanim
+      
     }
 
+    #submitButton:hover {
+      background-color: #f0f0f0; /* Example: Change background color */
+      color: #333; /* Example: Change text color */
+      cursor: pointer; /* Make the cursor indicate it's clickable */
+      transform: scale(1.05); /* Slightly enlarge the button */
+      transition: all 0.3s ease-in-out; /* Smooth transition effect */
+    }
+
+    }
     #taskList {
       margin-top: 20px;
       max-height: 200px;
@@ -321,10 +330,4 @@ li {
 
 li {
   animation: fadeIn 0.5s ease-in-out;
-}
-
-
-@keyframes submitbuttonanim{
-  from{rotate: 0deg ;}
-  To{rotate:360deg}
 }
