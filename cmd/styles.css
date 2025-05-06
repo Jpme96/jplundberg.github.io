@@ -288,13 +288,7 @@
     
     }
 
-    #taskList:hover {
-      background-color: #f0f0f0; /* Example: Change background color */
-      color: #333; /* Example: Change text color */
-      cursor: pointer; /* Make the cursor indicate it's clickable */
-      transform: scale(1.05); /* Slightly enlarge the button */
-      transition: all 0.3s ease-in-out; /* Smooth transition effect */
-    }
+  
 
   /* Scrollbar width */
 ::-webkit-scrollbar {
@@ -337,4 +331,11 @@ li {
 
 li {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+li:hover {
+  background-color: #f0f0f0; /* Light background on hover */
+  cursor: pointer; /* Change cursor to indicate interactivity */
+  transform: scale(1.05); /* Slightly enlarge the task */
+  transition: all 0.3s ease-in-out; /* Smooth animation */
 }
