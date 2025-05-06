@@ -182,11 +182,12 @@ const taskText = taskInput.value.trim();
 if (taskText) {
 const li = document.createElement("li");
 li.textContent = taskText;
-li.onclick = () => 
+li.onclick = () => {
 let tasks = localStorage.getItem("taskList") || "";
 let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
 localStorage.setItem("taskList", updatedTasks);
 li.remove();
+};
 document.getElementById("taskList").prepend(li);
 taskInput.value = "";
 const tasks= localStorage.getItem("taskList") || "";
