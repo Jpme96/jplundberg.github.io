@@ -169,12 +169,10 @@ return null;
 setInterval(updateClock, 1000);
 
 // Ensure music plays when the button is clicked
-document.getElementById("musicButton").addEventListener("click", toggleMusic);
-
 document.addEventListener("DOMContentLoaded", () => {
 setGreetingAndShadow();
 getRandomQuote();
-
+loadtask()
 // Ensure event listeners are added AFTER elements exist
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
@@ -198,22 +196,22 @@ const tasks = localStorage.getItem("taskList") || "";
 const taskArray = tasks.split(";").filter(task => task.trim() !== "");
 const taskList = document.getElementById("taskList");
 taskList.innerHTML = ""; // Clear existing tasks
+      
 taskArray.forEach(taskText => {
 const li = document.createElement("li");
 li.textContent = taskText;
+      
 li.onclick = () => {
-      li.remove();
-const tasks = localStorage.getItem("taskList") || "";
-const updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-localStorage.setItem("taskList", updatedTasks + ";");
+let tasks = localStorage.getItem("taskList") || "";
+let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+localStorage.setItem("taskList", updatedTasks);
+li.remove();
+document.getElementById("taskInput").value = taskText;
 const taskInput = document.getElementById("taskInput");
 taskInput.value = taskText; // Clear input field after removing task
-}
-taskList.appendChild(li);
+};
 });
-}
-loadTasks(); // Load tasks when the page loads
-
+      
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed
 document.getElementById("submitButton").click(); // Simulates button click
