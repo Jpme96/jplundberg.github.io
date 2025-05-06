@@ -51,7 +51,8 @@
   color: white;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 2s ease-out;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 .task button:hover {
@@ -411,6 +412,8 @@ body {
 .task.open {
   max-width: 500px;
   width: 100% !important;
+  transition: all 1s ease;
+  animation: fadeIn 
 }
 
 .task-header {
