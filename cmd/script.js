@@ -192,10 +192,6 @@ function addTask() {
     localStorage.setItem("taskList", tasks + taskText + ";");
   }
 }
-li.onclick = () => {
-  const taskText = li.textContent;
-  document.getElementById("taskInput").value = taskText; // Move task to input field
-
   // Remove task from localStorage
   let tasks = localStorage.getItem("taskList") || "";
   let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
