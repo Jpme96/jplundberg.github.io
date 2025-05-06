@@ -177,23 +177,39 @@ document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
 function addTask() {
-const taskInput = document.getElementById("taskInput");
-const taskText = taskInput.value.trim();
-if (taskText) {
-const li = document.createElement("li");
-li.textContent = taskText;
-li.onclick = () => {
-let tasks = localStorage.getItem("taskList") || "";
-let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-localStorage.setItem("taskList", updatedTasks);
-li.remove();
-};
-document.getElementById("taskList").prepend(li);
-taskInput.value = "";
-const tasks= localStorage.getItem("taskList") || "";
-localStorage.setItem("taskList", tasks + taskText + ";");
+  const taskInput = document.getElementById("taskInput");
+  const taskText = taskInput.value.trim();
+  if (!taskText) return; // Prevent empty tasks
+
+  const li = document.createElement("li");
+
+  // Check if task contains a URL
+  if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
+    const a = document.createElement("a");
+    a.href = taskText;
+    a.textContent = taskText;
+    a.target = "_blank"; // Open link in new tab
+    li.appendChild(a);
+  } else {
+    li.textContent = taskText;
+  }
+
+  li.onclick = () => {
+    let tasks = localStorage.getItem("taskList") || "";
+    let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+    localStorage.setItem("taskList", updatedTasks);
+    li.remove();
+  };
+
+  document.getElementById("taskList").prepend(li);
+
+  // Save to local storage
+  let tasks = localStorage.getItem("taskList") || "";
+  localStorage.setItem("taskList", tasks + taskText + ";");
+
+  taskInput.value = ""; // Clear input after adding task
 }
-}
+
 
 function loadTasks() {
   const tasks = localStorage.getItem("taskList") || "";
