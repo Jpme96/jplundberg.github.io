@@ -172,7 +172,7 @@ setInterval(updateClock, 1000);
 document.addEventListener("DOMContentLoaded", () => {
 setGreetingAndShadow();
 getRandomQuote();
-loadTask();
+loadTasks();
 // Ensure event listeners are added AFTER elements exist
 document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
