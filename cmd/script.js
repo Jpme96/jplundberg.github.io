@@ -192,25 +192,27 @@ localStorage.setItem("taskList", tasks + taskText + ";");
 }
 
 function loadTasks() {
-const tasks = localStorage.getItem("taskList") || "";
-const taskArray = tasks.split(";").filter(task => task.trim() !== "");
-const taskList = document.getElementById("taskList");
-taskList.innerHTML = ""; // Clear existing tasks
-      
-taskArray.forEach(taskText => {
-const li = document.createElement("li");
-li.textContent = taskText;
-      
-li.onclick = () => {
-let tasks = localStorage.getItem("taskList") || "";
-let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-localStorage.setItem("taskList", updatedTasks);
-li.remove();
-const taskInput = document.getElementById("taskInput");
-};
- taskList.appendChild(li);
-});
+  const tasks = localStorage.getItem("taskList") || "";
+  const taskArray = tasks.split(";").filter(task => task.trim() !== "");
+  const taskList = document.getElementById("taskList");
+  taskList.innerHTML = ""; // Clear existing tasks
+
+  taskArray.forEach(taskText => {
+    const li = document.createElement("li");
+    li.textContent = taskText;
+
+    li.onclick = () => {
+      let tasks = localStorage.getItem("taskList") || "";
+      let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+      localStorage.setItem("taskList", updatedTasks);
+      li.remove();
+      document.getElementById("taskInput").value = taskText; 
+    };
+
+    taskList.appendChild(li); 
+  });
 }
+
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
 if (event.key === "Enter") {  // Checks if Enter was pressed
