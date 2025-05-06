@@ -183,24 +183,27 @@ function addTask() {
 
   const li = document.createElement("li");
 
-  // ✅ Automatically add "https://" if missing and detect domain names
-  const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/; // Matches simple domain formats (e.g., google.com)
+  // Automatically add "https://" if missing and detect domain names
+  const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
-    taskText = "https://" + taskText; // Convert domain name into full URL
+    taskText = "https://" + taskText;
   }
 
-  // ✅ Convert URLs into clickable hyperlinks and display only the domain name
+  // Convert URLs into clickable hyperlinks and display only the domain name
   if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
     const a = document.createElement("a");
     a.href = taskText;
-    a.textContent = new URL(taskText).hostname; // ✅ Shows only the domain name (e.g., "google.com")
-    a.target = "_blank"; // Open in a new tab
+    a.textContent = new URL(taskText).hostname; // Display domain name only
+    a.target = "_blank";
     li.appendChild(a);
+
+    // ✅ Double-click to open link
+    li.ondblclick = () => window.open(taskText, "_blank");
   } else {
     li.textContent = taskText;
   }
 
-  // ✅ Allow task editing
+  // ✅ Single click to edit task
   li.onclick = () => {
     taskInput.value = taskText;
     taskInput.setAttribute("data-editing", taskText); // Store original task for editing
@@ -221,7 +224,7 @@ function saveEditedTask() {
   if (!updatedText) return;
 
   const originalText = taskInput.getAttribute("data-editing");
-  if (!originalText) return; // Ensure an actual task is being edited
+  if (!originalText) return;
 
   let tasks = localStorage.getItem("taskList") || "";
   let updatedTasks = tasks.split(";").map(task =>
@@ -229,8 +232,8 @@ function saveEditedTask() {
   ).join(";");
 
   localStorage.setItem("taskList", updatedTasks);
-  taskInput.removeAttribute("data-editing"); // Remove editing mode
-  taskInput.value = ""; // Clear input
+  taskInput.removeAttribute("data-editing");
+  taskInput.value = "";
   loadTasks(); // Reload updated list
 }
 
@@ -244,23 +247,24 @@ function loadTasks() {
   taskArray.forEach(taskText => {
     const li = document.createElement("li");
 
-    // ✅ Convert URLs into clickable hyperlinks and display only the domain name
+    // Convert task into hyperlink if it's a URL
     if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
       const a = document.createElement("a");
       a.href = taskText;
-      a.textContent = new URL(taskText).hostname; // ✅ Show domain name only
-      a.target = "_blank"; 
+      a.textContent = new URL(taskText).hostname;
+      a.target = "_blank";
       li.appendChild(a);
+
+      // ✅ Double-click to open link
+      li.ondblclick = () => window.open(taskText, "_blank");
     } else {
       li.textContent = taskText;
     }
 
-    // ✅ Allow task deletion from both UI & localStorage
+    // ✅ Single click to edit task
     li.onclick = () => {
-      let tasks = localStorage.getItem("taskList") || "";
-      let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-      localStorage.setItem("taskList", updatedTasks);
-      li.remove(); // ✅ Remove from UI
+      document.getElementById("taskInput").value = taskText;
+      document.getElementById("taskInput").setAttribute("data-editing", taskText);
     };
 
     taskList.appendChild(li);
@@ -268,15 +272,15 @@ function loadTasks() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadTasks(); // ✅ Load tasks on page load
+  loadTasks();
 });
 
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
   if (event.key === "Enter") {  
     if (this.getAttribute("data-editing")) {
-      saveEditedTask(); // ✅ Save edits if editing
+      saveEditedTask();
     } else {
-      addTask(); // ✅ Add new task
+      addTask();
     }
   }
 });
