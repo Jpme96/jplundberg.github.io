@@ -192,6 +192,17 @@ function addTask() {
     localStorage.setItem("taskList", tasks + taskText + ";");
   }
 }
+li.onclick = () => {
+  const taskText = li.textContent;
+  document.getElementById("taskInput").value = taskText; // Move task to input field
+
+  // Remove task from localStorage
+  let tasks = localStorage.getItem("taskList") || "";
+  let updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
+  localStorage.setItem("taskList", updatedTasks); // Update storage
+
+  li.remove(); // Remove from UI after storage is updated
+};
 
 function loadTasks() {
   const tasks = localStorage.getItem("taskList") || "";
@@ -204,7 +215,7 @@ function loadTasks() {
     li.onclick = () => {
       const tasks = localStorage.getItem("taskList") || "";
       const updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
-      localStorage.setItem("taskList", updatedTasks + ";");
+      localStorage.setItem("taskList", updatedTasks);
       const taskInput = document.getElementById("taskInput");
       taskInput.value = taskText; // Clear input field after removing task
     li.remove();
