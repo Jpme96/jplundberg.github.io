@@ -348,3 +348,12 @@ li:hover {
   transition: all 0.3s ease-in-out; /* Smooth animation */
   color:#ffffff
 }
+
+a {
+  color: red; /* Change link color */
+  text-decoration: none; /* Remove default underline */
+}
+
+a:hover {
+  color: blue; /* Change color when hovering */
+  text-decoration: underline; /* Add underline on hover */
