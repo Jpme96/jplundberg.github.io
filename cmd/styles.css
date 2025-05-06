@@ -269,7 +269,7 @@
     }
 
     #submitButton:hover {
-      background-color: #f0f0f0; /* Example: Change background color */
+      background-color: #f0f0f000; /* Example: Change background color */
       color: #333; /* Example: Change text color */
       cursor: pointer; /* Make the cursor indicate it's clickable */
       transform: scale(1.05); /* Slightly enlarge the button */
@@ -338,4 +338,5 @@ li:hover {
   cursor: pointer; /* Change cursor to indicate interactivity */
   transform: scale(1.05); /* Slightly enlarge the task */
   transition: all 0.3s ease-in-out; /* Smooth animation */
+  color:#333
 }
