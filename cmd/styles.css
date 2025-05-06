@@ -366,14 +366,15 @@ a:hover {
   padding: 10px;
   border-radius: 5px;
   background: #f9f9f9;
-  transition: transform 0.6s ease-out;
+  transition: transform 0.5s ease-out;
 }
 
 .task-item.swiping {
-  transition: none; /* Prevent animation while dragging */
+  transition: none; /* Disable transition while dragging */
 }
 
-#taskContainer {
+/* Prevent horizontal scrolling on the page */
+html, body {
   overflow-x: hidden;
 }
 

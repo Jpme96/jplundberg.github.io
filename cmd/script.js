@@ -219,45 +219,37 @@ function addTask() {
   let startX = 0;
   let currentX = 0;
   let holdTimeout = null; // will hold the deletion timeout
+  let isDragging = false; // for desktop: only true while dragging (mouse down)
   const deleteThreshold = window.innerWidth * 0.5; // 50% of screen width
 
-  function startSwipe(event) {
-    // Get the starting X position
-    startX = event.touches ? event.touches[0].clientX : event.clientX;
+  // --- Touch Handlers ---
+  li.addEventListener("touchstart", (event) => {
+    startX = event.touches[0].clientX;
     li.classList.add("swiping");
-    // Clear any previous transition so that movement is immediate
     li.style.transition = "none";
-  }
-
-  function moveSwipe(event) {
-    currentX = event.touches ? event.touches[0].clientX : event.clientX;
+  });
+  li.addEventListener("touchmove", (event) => {
+    currentX = event.touches[0].clientX;
     const diff = currentX - startX;
-
-    if (diff > 20) { // start moving the element if dragged more than 20px
+    if (diff > 20) {
       if (diff < deleteThreshold) {
-        // Move the task following the finger or mouse as long as below threshold
         li.style.transform = `translateX(${diff}px)`;
         if (holdTimeout) {
           clearTimeout(holdTimeout);
           holdTimeout = null;
         }
       } else {
-        // Once the threshold is reached, fix the task at that position
         li.style.transform = `translateX(${deleteThreshold}px)`;
-        // If not already set, start the 1-second deletion hold timer
         if (!holdTimeout) {
           holdTimeout = setTimeout(() => {
             deleteTask(li, taskText);
-          }, 1000);
+          }, 1000); // hold for 1 second before deletion
         }
       }
     }
-  }
-
-  function endSwipe() {
-    // When the swipe (or drag) ends:
+  });
+  li.addEventListener("touchend", () => {
     if (currentX - startX < deleteThreshold) {
-      // Not swiped far enough—cancel any deletion and bring back the task
       if (holdTimeout) {
         clearTimeout(holdTimeout);
         holdTimeout = null;
@@ -266,16 +258,54 @@ function addTask() {
       li.style.transform = "translateX(0px)";
     }
     li.classList.remove("swiping");
-  }
+  });
 
-  // Touch events for mobile
-  li.addEventListener("touchstart", startSwipe);
-  li.addEventListener("touchmove", moveSwipe);
-  li.addEventListener("touchend", endSwipe);
-  // Mouse events for desktop
-  li.addEventListener("mousedown", startSwipe);
-  li.addEventListener("mousemove", moveSwipe);
-  li.addEventListener("mouseup", endSwipe);
+  // --- Mouse Handlers (Desktop) ---
+  li.addEventListener("mousedown", (event) => {
+    isDragging = true;
+    startX = event.clientX;
+    li.classList.add("swiping");
+    li.style.transition = "none";
+    // Attach mousemove/up handlers to the document so they work even if the mouse moves off the item.
+    document.addEventListener("mousemove", mouseMoveHandler);
+    document.addEventListener("mouseup", mouseUpHandler);
+  });
+  function mouseMoveHandler(event) {
+    if (!isDragging) return;
+    currentX = event.clientX;
+    const diff = currentX - startX;
+    if (diff > 20) {
+      if (diff < deleteThreshold) {
+        li.style.transform = `translateX(${diff}px)`;
+        if (holdTimeout) {
+          clearTimeout(holdTimeout);
+          holdTimeout = null;
+        }
+      } else {
+        li.style.transform = `translateX(${deleteThreshold}px)`;
+        if (!holdTimeout) {
+          holdTimeout = setTimeout(() => {
+            deleteTask(li, taskText);
+          }, 1000);
+        }
+      }
+    }
+  }
+  function mouseUpHandler(event) {
+    if (!isDragging) return;
+    if (currentX - startX < deleteThreshold) {
+      if (holdTimeout) {
+        clearTimeout(holdTimeout);
+        holdTimeout = null;
+      }
+      li.style.transition = "transform 0.5s ease-out";
+      li.style.transform = "translateX(0px)";
+    }
+    li.classList.remove("swiping");
+    isDragging = false;
+    document.removeEventListener("mousemove", mouseMoveHandler);
+    document.removeEventListener("mouseup", mouseUpHandler);
+  }
 
   document.getElementById("taskList").appendChild(li);
 
@@ -301,7 +331,6 @@ function loadTasks() {
       a.textContent = new URL(taskText).hostname;
       a.target = "_blank";
       li.appendChild(a);
-
       li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
     } else {
       li.textContent = taskText;
@@ -312,22 +341,64 @@ function loadTasks() {
       document.getElementById("taskInput").setAttribute("data-editing", taskText);
     });
 
-    // ----- SWIPE HANDLING (for both touch and mouse) -----
+    // ----- SWIPE HANDLING for loaded tasks (same as above) -----
     let startX = 0;
     let currentX = 0;
     let holdTimeout = null;
+    let isDragging = false;
     const deleteThreshold = window.innerWidth * 0.5;
 
-    function startSwipe(event) {
-      startX = event.touches ? event.touches[0].clientX : event.clientX;
+    // Touch events
+    li.addEventListener("touchstart", (event) => {
+      startX = event.touches[0].clientX;
       li.classList.add("swiping");
       li.style.transition = "none";
-    }
-
-    function moveSwipe(event) {
-      currentX = event.touches ? event.touches[0].clientX : event.clientX;
+    });
+    li.addEventListener("touchmove", (event) => {
+      currentX = event.touches[0].clientX;
       const diff = currentX - startX;
+      if (diff > 20) {
+        if (diff < deleteThreshold) {
+          li.style.transform = `translateX(${diff}px)`;
+          if (holdTimeout) {
+            clearTimeout(holdTimeout);
+            holdTimeout = null;
+          }
+        } else {
+          li.style.transform = `translateX(${deleteThreshold}px)`;
+          if (!holdTimeout) {
+            holdTimeout = setTimeout(() => {
+              deleteTask(li, taskText);
+            }, 1000);
+          }
+        }
+      }
+    });
+    li.addEventListener("touchend", () => {
+      if (currentX - startX < deleteThreshold) {
+        if (holdTimeout) {
+          clearTimeout(holdTimeout);
+          holdTimeout = null;
+        }
+        li.style.transition = "transform 0.5s ease-out";
+        li.style.transform = "translateX(0px)";
+      }
+      li.classList.remove("swiping");
+    });
 
+    // Mouse events
+    li.addEventListener("mousedown", (event) => {
+      isDragging = true;
+      startX = event.clientX;
+      li.classList.add("swiping");
+      li.style.transition = "none";
+      document.addEventListener("mousemove", mMoveHandler);
+      document.addEventListener("mouseup", mUpHandler);
+    });
+    function mMoveHandler(event) {
+      if (!isDragging) return;
+      currentX = event.clientX;
+      const diff = currentX - startX;
       if (diff > 20) {
         if (diff < deleteThreshold) {
           li.style.transform = `translateX(${diff}px)`;
@@ -345,8 +416,8 @@ function loadTasks() {
         }
       }
     }
-
-    function endSwipe() {
+    function mUpHandler(event) {
+      if (!isDragging) return;
       if (currentX - startX < deleteThreshold) {
         if (holdTimeout) {
           clearTimeout(holdTimeout);
@@ -356,16 +427,10 @@ function loadTasks() {
         li.style.transform = "translateX(0px)";
       }
       li.classList.remove("swiping");
+      isDragging = false;
+      document.removeEventListener("mousemove", mMoveHandler);
+      document.removeEventListener("mouseup", mUpHandler);
     }
-
-    li.addEventListener("touchstart", startSwipe);
-    li.addEventListener("touchmove", moveSwipe);
-    li.addEventListener("touchend", endSwipe);
-
-    li.addEventListener("mousedown", startSwipe);
-    li.addEventListener("mousemove", moveSwipe);
-    li.addEventListener("mouseup", endSwipe);
-
     taskList.appendChild(li);
   });
 }
@@ -380,6 +445,7 @@ function deleteTask(li, taskText) {
   localStorage.setItem("taskList", updatedTasks);
   li.remove();
 }
+
 
       
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
