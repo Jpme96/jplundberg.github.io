@@ -202,7 +202,6 @@ function loadTasks() {
     const li = document.createElement("li");
     li.textContent = taskText;
     li.onclick = () => {
-      li.remove();
       const tasks = localStorage.getItem("taskList") || "";
       const updatedTasks = tasks.split(";").filter(task => task.trim() !== taskText).join(";");
       localStorage.setItem("taskList", updatedTasks + ";");
