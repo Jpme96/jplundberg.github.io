@@ -177,7 +177,6 @@ document.getElementById("musicButton").addEventListener("click", toggleMusic);
 });
 
 //behaviour for task, delete under here // 
-
 document.addEventListener("DOMContentLoaded", () => {
   loadTasks();
 });
@@ -187,134 +186,35 @@ function addTask() {
   let taskText = taskInput.value.trim();
   if (!taskText) return;
 
-  const li = document.createElement("li");
-  li.classList.add("task-item");
-
   // Auto-add "https://" for domain names
   const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
   if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
     taskText = "https://" + taskText;
   }
 
-  if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
-    const a = document.createElement("a");
-    a.href = taskText;
-    a.textContent = new URL(taskText).hostname;
-    a.target = "_blank";
-    li.appendChild(a);
-
-    // Double-click (or double-tap) to open the link in a new tab
-    li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
-  } else {
-    li.textContent = taskText;
-  }
-
-  // Single click to edit: sets the task text in the input field
-  li.addEventListener("click", () => {
-    taskInput.value = taskText;
-    taskInput.setAttribute("data-editing", taskText);
-  });
-
-  // ----- SWIPE HANDLING (Touch & Mouse) -----
-  let startX = 0;
-  let currentX = 0;
-  let holdTimeout = null; // will hold the deletion timeout
-  let isDragging = false; // for mouse: only true while dragging
-  const deleteThreshold = window.innerWidth * 0.5; // 50% of screen width
-
-  // --- Touch Handlers (Mobile) ---
-  li.addEventListener("touchstart", (event) => {
-    startX = event.touches[0].clientX;
-    li.classList.add("swiping");
-    li.style.transition = "none";
-  });
-  li.addEventListener("touchmove", (event) => {
-    currentX = event.touches[0].clientX;
-    const diff = currentX - startX;
-    if (diff > 20) {
-      if (diff < deleteThreshold) {
-        li.style.transform = `translateX(${diff}px)`;
-        if (holdTimeout) {
-          clearTimeout(holdTimeout);
-          holdTimeout = null;
-        }
-      } else {
-        li.style.transform = `translateX(${deleteThreshold}px)`;
-        if (!holdTimeout) {
-          holdTimeout = setTimeout(() => {
-            // Call the mobile delete function
-            deleteTaskMobile(li, taskText);
-          }, 1000);
-        }
-      }
-    }
-  });
-  li.addEventListener("touchend", () => {
-    if (currentX - startX < deleteThreshold) {
-      if (holdTimeout) {
-        clearTimeout(holdTimeout);
-        holdTimeout = null;
-      }
-      li.style.transition = "transform 0.5s ease-out";
-      li.style.transform = "translateX(0px)";
-    }
-    li.classList.remove("swiping");
-  });
-
-  // --- Mouse Handlers (Desktop) ---
-  li.addEventListener("mousedown", (event) => {
-    isDragging = true;
-    startX = event.clientX;
-    li.classList.add("swiping");
-    li.style.transition = "none";
-    // Attach mousemove and mouseup handlers to the document.
-    document.addEventListener("mousemove", mouseMoveHandler);
-    document.addEventListener("mouseup", mouseUpHandler);
-  });
-  function mouseMoveHandler(event) {
-    if (!isDragging) return;
-    currentX = event.clientX;
-    const diff = currentX - startX;
-    if (diff > 20) {
-      if (diff < deleteThreshold) {
-        li.style.transform = `translateX(${diff}px)`;
-        if (holdTimeout) {
-          clearTimeout(holdTimeout);
-          holdTimeout = null;
-        }
-      } else {
-        li.style.transform = `translateX(${deleteThreshold}px)`;
-        if (!holdTimeout) {
-          holdTimeout = setTimeout(() => {
-            // Call the desktop delete function
-            deleteTaskDesktop(li, taskText);
-          }, 1000);
-        }
-      }
-    }
-  }
-  function mouseUpHandler(event) {
-    if (!isDragging) return;
-    if (currentX - startX < deleteThreshold) {
-      if (holdTimeout) {
-        clearTimeout(holdTimeout);
-        holdTimeout = null;
-      }
-      li.style.transition = "transform 0.5s ease-out";
-      li.style.transform = "translateX(0px)";
-    }
-    li.classList.remove("swiping");
-    isDragging = false;
-    document.removeEventListener("mousemove", mouseMoveHandler);
-    document.removeEventListener("mouseup", mouseUpHandler);
-  }
-
-  document.getElementById("taskList").appendChild(li);
-
-  // Save the task to localStorage
+  // Retrieve saved tasks and split them into an array
   let tasks = localStorage.getItem("taskList") || "";
-  localStorage.setItem("taskList", tasks + taskText + ";");
+  let taskArray = tasks.split(";").filter(task => task.trim() !== "");
+
+  // Check if we're editing an existing task
+  const editingIndex = taskInput.getAttribute("data-editing-index");
+  if (editingIndex !== null) {
+    const index = parseInt(editingIndex, 10);
+    if (index >= 0 && index < taskArray.length) {
+      taskArray[index] = taskText; // Update the task at that index
+    }
+  } else {
+    // Add as a new task if not in editing mode
+    taskArray.push(taskText);
+  }
+
+  // Save the tasks back to localStorage (append a trailing ";" if any tasks exist)
+  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   taskInput.value = "";
+  taskInput.removeAttribute("data-editing-index");
+
+  // Reload tasks list to update the UI
+  loadTasks();
 }
 
 function loadTasks() {
@@ -323,7 +223,7 @@ function loadTasks() {
   const taskList = document.getElementById("taskList");
   taskList.innerHTML = "";
 
-  taskArray.forEach(taskText => {
+  taskArray.forEach((taskText, index) => {
     const li = document.createElement("li");
     li.classList.add("task-item");
 
@@ -333,14 +233,18 @@ function loadTasks() {
       a.textContent = new URL(taskText).hostname;
       a.target = "_blank";
       li.appendChild(a);
+
+      // Double-click (or double-tap) to open the link in a new tab
       li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
     } else {
       li.textContent = taskText;
     }
 
+    // Single click to enable editing: populate the input field and mark the task index
     li.addEventListener("click", () => {
-      document.getElementById("taskInput").value = taskText;
-      document.getElementById("taskInput").setAttribute("data-editing", taskText);
+      const taskInput = document.getElementById("taskInput");
+      taskInput.value = taskText;
+      taskInput.setAttribute("data-editing-index", index);
     });
 
     // ----- SWIPE HANDLING for loaded tasks -----
@@ -348,9 +252,9 @@ function loadTasks() {
     let currentX = 0;
     let holdTimeout = null;
     let isDragging = false;
-    const deleteThreshold = window.innerWidth * 0.5;
+    const deleteThreshold = window.innerWidth * 0.5; // 50% of screen width
 
-    // Touch Handlers (Mobile)
+    // --- Touch Handlers (Mobile) ---
     li.addEventListener("touchstart", (event) => {
       startX = event.touches[0].clientX;
       li.classList.add("swiping");
@@ -370,7 +274,7 @@ function loadTasks() {
           li.style.transform = `translateX(${deleteThreshold}px)`;
           if (!holdTimeout) {
             holdTimeout = setTimeout(() => {
-              deleteTaskMobile(li, taskText);
+              deleteTaskMobile(li, index);
             }, 1000);
           }
         }
@@ -388,16 +292,16 @@ function loadTasks() {
       li.classList.remove("swiping");
     });
 
-    // Mouse Handlers (Desktop)
+    // --- Mouse Handlers (Desktop) ---
     li.addEventListener("mousedown", (event) => {
       isDragging = true;
       startX = event.clientX;
       li.classList.add("swiping");
       li.style.transition = "none";
-      document.addEventListener("mousemove", mMoveHandler);
-      document.addEventListener("mouseup", mUpHandler);
+      document.addEventListener("mousemove", mouseMoveHandler);
+      document.addEventListener("mouseup", mouseUpHandler);
     });
-    function mMoveHandler(event) {
+    function mouseMoveHandler(event) {
       if (!isDragging) return;
       currentX = event.clientX;
       const diff = currentX - startX;
@@ -412,13 +316,13 @@ function loadTasks() {
           li.style.transform = `translateX(${deleteThreshold}px)`;
           if (!holdTimeout) {
             holdTimeout = setTimeout(() => {
-              deleteTaskDesktop(li, taskText);
+              deleteTaskDesktop(li, index);
             }, 1000);
           }
         }
       }
     }
-    function mUpHandler(event) {
+    function mouseUpHandler(event) {
       if (!isDragging) return;
       if (currentX - startX < deleteThreshold) {
         if (holdTimeout) {
@@ -430,32 +334,31 @@ function loadTasks() {
       }
       li.classList.remove("swiping");
       isDragging = false;
-      document.removeEventListener("mousemove", mMoveHandler);
-      document.removeEventListener("mouseup", mUpHandler);
+      document.removeEventListener("mousemove", mouseMoveHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
     }
+
     taskList.appendChild(li);
   });
 }
 
-// ----- Separate Delete Functions -----
-function deleteTaskMobile(li, taskText) {
+// ----- Separate Delete Functions using index -----
+function deleteTaskMobile(li, index) {
   let tasks = localStorage.getItem("taskList") || "";
-  let updatedTasks = tasks
-    .split(";")
-    .filter(task => task.trim() !== taskText)
-    .join(";");
-  localStorage.setItem("taskList", updatedTasks);
+  let taskArray = tasks.split(";").filter(task => task.trim() !== "");
+  taskArray.splice(index, 1); // Remove the task at the given index
+  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   li.remove();
+  loadTasks();
 }
 
-function deleteTaskDesktop(li, taskText) {
+function deleteTaskDesktop(li, index) {
   let tasks = localStorage.getItem("taskList") || "";
-  let updatedTasks = tasks
-    .split(";")
-    .filter(task => task.trim() !== taskText)
-    .join(";");
-  localStorage.setItem("taskList", updatedTasks);
+  let taskArray = tasks.split(";").filter(task => task.trim() !== "");
+  taskArray.splice(index, 1);
+  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
   li.remove();
+  loadTasks();
 }
 
 document.getElementById("taskInput").addEventListener("keypress", function(event) {
