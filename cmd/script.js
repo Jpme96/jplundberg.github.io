@@ -356,15 +356,6 @@ document.addEventListener("click", function(event) {
     }
 });
 
-// Keyboard Event for Delete Key
-document.addEventListener("keydown", function(event) {
-    if (event.key === "Delete") {
-        let selectedTask = document.querySelector(".selected"); // Get selected task
-        if (selectedTask) {
-            selectedTask.remove(); // Remove the selected task
-        }
-    }
-});
 
 // Ensure keyboard pops up when input is tapped
 document.getElementById("taskInput").addEventListener("focus", function () {
