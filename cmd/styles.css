@@ -672,7 +672,7 @@ body {
   margin-top: 20px;
   max-height: 200px;
   height: 100px;
-  overflow-y: auto;
+  overflow-y: hidden;
   background-color: #00000000;
   border-radius: 5px;
   font-size: 1em;
