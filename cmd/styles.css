@@ -255,6 +255,7 @@ body {
   height: 40px;
   padding: 10px;
   overflow: hidden;
+  resize: none;
 }
 
 #submitButton {
