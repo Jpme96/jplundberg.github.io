@@ -211,7 +211,10 @@ function addTask() {
       }
       taskArray[idx] = taskText;
     }
-    localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
+    localStorage.setItem(
+      "taskList",
+      taskArray.join(";") + (taskArray.length ? ";" : "")
+    );
     taskInput.removeAttribute("data-editing-index");
     taskInput.value = "";
     loadTasks();
@@ -225,7 +228,10 @@ function addTask() {
   }
 
   taskArray.push(taskText);
-  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
+  localStorage.setItem(
+    "taskList",
+    taskArray.join(";") + (taskArray.length ? ";" : "")
+  );
   taskInput.value = "";
   loadTasks();
 }
@@ -330,52 +336,52 @@ function deleteTask(task, index) {
   let tasks = localStorage.getItem("taskList") || "";
   let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
   taskArray.splice(index, 1);
-  localStorage.setItem("taskList", taskArray.join(";") + (taskArray.length ? ";" : ""));
+  localStorage.setItem(
+    "taskList",
+    taskArray.join(";") + (taskArray.length ? ";" : "")
+  );
   task.remove();
 }
 
-
-
 /* Keyboard Event for Enter Key */
 // This event listener allows the user to press Enter to submit the task input
-document.getElementById("taskInput").addEventListener("keypress", function (event) {
+document
+  .getElementById("taskInput")
+  .addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
-        event.preventDefault(); // Prevents default form submission
-        document.getElementById("submitButton").click(); // Simulates button click
-        this.blur(); // Hides the keyboard on mobile devices
+      event.preventDefault(); // Prevents default form submission
+      document.getElementById("submitButton").click(); // Simulates button click
+      this.blur(); // Hides the keyboard on mobile devices
     }
-});
+  });
 
 // Event Listener for Selecting a Task on Click
-document.addEventListener("click", function(event) {
-    let tasks = document.querySelectorAll(".task"); // Assuming tasks have a "task" class
-    tasks.forEach(task => task.classList.remove("selected")); // Remove previous selection
-    
-    if (event.target.classList.contains("task")) {
-        event.target.classList.add("selected"); // Add selection to clicked task
-    }
-});
+document.addEventListener("click", function (event) {
+  let tasks = document.querySelectorAll(".task"); // Assuming tasks have a "task" class
+  tasks.forEach((task) => task.classList.remove("selected")); // Remove previous selection
 
+  if (event.target.classList.contains("task")) {
+    event.target.classList.add("selected"); // Add selection to clicked task
+  }
+});
 
 // Ensure keyboard pops up when input is tapped
 document.getElementById("taskInput").addEventListener("focus", function () {
   this.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
+document.querySelectorAll("#clickable-Card").forEach((card) => {
+  card.addEventListener("click", function () {
+    this.classList.add("expand"); // Start expansion animation
+    this.classList.add("fade-out"); // Start fade-out animation
 
-  document.querySelectorAll("#clickable-Card").forEach((card) => {
-    card.addEventListener("click", function () {
-      this.classList.add("expand"); // Start expansion animation
-      this.classList.add("fade-out"); // Start fade-out animation
-  
-      // Fade out the background
-      document.getElementById("container-card").classList.add("fade-out-bg");
-  
-      // Wait slightly longer before hiding elements
-      setTimeout(() => {
-        document.getElementById("container-card").style.display = "none"; 
-        this.style.display = "none";
-      }, 800);
-    });
+    // Fade out the background
+    document.getElementById("container-card").classList.add("fade-out-bg");
+
+    // Wait slightly longer before hiding elements
+    setTimeout(() => {
+      document.getElementById("container-card").style.display = "none";
+      this.style.display = "none";
+    }, 800);
   });
-  
+});
