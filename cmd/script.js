@@ -344,6 +344,16 @@ document.getElementById("taskInput").addEventListener("keypress", function (even
     event.preventDefault(); // Prevents default form submission
     document.getElementById("submitButton").click(); // Simulates button click
     this.blur(); // Hides the keyboard on mobile devices
+    //keydelete can delete t here 
+    document.addEventListener("keydown", function(event) {
+    if (event.key === "Delete") {
+        let selectedTask = document.querySelector(".selected"); // Assume tasks have a 'selected' class
+        if (selectedTask) {
+            selectedTask.remove();
+        }
+    }
+});
+
   }
 });
 
