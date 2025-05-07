@@ -1,24 +1,4 @@
 /* Basic Styles for body, clock, greeting, and quotes */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-.task {
-  background-color: rgba(0, 0, 0, 0.014);
-  color: white;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  margin-top: 20px;
-  width: 150px;
-  max-width: 500px;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  overflow: hidden;
-  z-index: 10;
-}
-
 
 .task.open {
   max-width: 500px;
@@ -54,10 +34,6 @@
   cursor: pointer;
   transition: background 2s ease-out;
   animation: fadeIn 0.5s ease-in-out;
-}
-
-.task button:hover {
-  background-color: #00000038;
 }
 
 body {
@@ -246,45 +222,18 @@ body {
 
 #taskInput {
   width: 300px;
-  font-size: 1em;
+  font-size: 1.1em;
   border-radius: 5px;
   border: 2px solid #ccc;
   background-color: #00000038;
   color: #42bfb9b6;
   transition: all 0.3s ease;
   height: 40px;
+  overflow-y: auto; /* Enable vertical scrolling */
   padding: 10px;
-  overflow: hidden;
-  resize: none;
-}
-
-#submitButton {
-  border: none;
-  border-radius: 6px;
-  background-color: #42bfb9b6;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-#submitButton:hover {
-  background-color: #42bfb9b6; /* Example: Change background color */
-  color: #ffffff; /* Example: Change text color */
-  cursor: pointer; /* Make the cursor indicate it's clickable */
-  transform: scale(1.05); /* Slightly enlarge the button */
-  transition: all 0.3s ease-in-out; /* Smooth transition effect */
-}
-
-#taskList {
-  margin-top: 20px;
-  max-height: 200px;
-  height: 100px;
-  overflow-y: auto;
-  background-color: #00000000;
-  border-radius: 5px;
-  font-size: 1em;
-  color: #42bfb9b6;
+  resize: none; /* Prevent resizing */
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+  word-wrap: break-word; /* Break long words */
 }
 
 /* Scrollbar width */
@@ -308,13 +257,6 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
-li {
-  margin-bottom: 10px; /* Space between tasks */
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 5px;
-  margin-right: 5px;
-}
 
 .new-task {
   background-color: yellow; /* Highlight */
@@ -332,14 +274,10 @@ li {
   }
 }
 
-li {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
 li:hover {
   background-color: #42bfb99d; /* Light background on hover */
   cursor: pointer; /* Change cursor to indicate interactivity */
-  transform: scale(1.05); /* Slightly enlarge the task */
+  transform: scale(1); /* Slightly enlarge the task */
   transition: all 0.3s ease-in-out; /* Smooth animation */
   color: #ffffff;
 }
@@ -354,21 +292,29 @@ li:hover {
 
 /*change the colors of urls*/
 a {
-  color: #42bfb99d; /* Change link color */
+  color: red; /* Change link color */
   text-decoration: none; /* Remove default underline */
 }
 
 a:hover {
-  color: rgba(226, 29, 210, 0.907); /* Change color when hovering */
+  color: blue; /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
 }
 
 .task-item {
+  font-size: 1.1em;
   position: relative;
   padding: 10px;
   border-radius: 5px;
-  background: #f9f9f9;
+  background: #00000038;
+  color: #42bfb9b6;
   transition: transform 0.5s ease-out;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  padding: 10px;
+  resize: none; /* Prevent resizing */
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+  word-wrap: break-word; /* Break long words */
 }
 
 .task-item.swiping {
@@ -415,7 +361,7 @@ body {
 .task.open {
   max-width: 500px;
   width: 100% !important;
-  transition: all 1s ea se;
+  transition: all 1s ease;
   animation: fadeIn 1s ease-in-out;
 }
 
@@ -438,15 +384,10 @@ body {
   display: block !important;
 }
 
-.task button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 5px;
-  background-color: rgb(168, 168, 168);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s;
+#taskEditor {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 .task button:hover {
@@ -553,7 +494,6 @@ body {
   }
 }
 
-  
 /* Medium Devices (Tablets/Laptops) */
 @media (min-width: 601px) and (max-width: 100%) {
   #clock {
@@ -638,18 +578,6 @@ body {
   text-decoration: underline;
 }
 
-#taskInput {
-  width: 300px;
-  font-size: 1em;
-  border-radius: 5px;
-  border: 2px solid #ccc;
-  background-color: #00000038;
-  color: #42bfb9b6;
-  transition: all 0.3s ease;
-  height: 40px;
-  padding: 10px;
-}
-
 #submitButton {
   border: none;
   border-radius: 6px;
@@ -658,6 +586,8 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: background 0.3s;
+  position: sticky;
+  top: 20px;
 }
 
 #submitButton:hover {
@@ -670,13 +600,12 @@ body {
 
 #taskList {
   margin-top: 20px;
-  max-height: 200px;
-  height: 100px;
   overflow-y: auto;
   background-color: #00000000;
   border-radius: 5px;
   font-size: 1em;
   color: #42bfb9b6;
+  max-height: 200px;;
 }
 
 /* Scrollbar width */
@@ -706,7 +635,7 @@ li {
   border: 2px solid #ccc;
   border-radius: 5px;
   margin-right: 5px;
-  overflow:auto
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 .new-task {
@@ -725,47 +654,15 @@ li {
   }
 }
 
-li {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-li:hover {
-  background-color: #42bfb99d; /* Light background on hover */
-  cursor: pointer; /* Change cursor to indicate interactivity */
-  transform: scale(1.05); /* Slightly enlarge the task */
-  transition: all 0.3s ease-in-out; /* Smooth animation */
-  color: #ffffff;
-}
-
-#taskinput:hover {
-  background-color: #42bfb99d; /* Light background on hover */
-  cursor: pointer; /* Change cursor to indicate interactivity */
-  transform: scale(1.05); /* Slightly enlarge the task */
-  transition: all 0.3s ease-in-out; /* Smooth animation */
-  color: #ffffff;
-}
-
 /*change the colors of urls*/
 a {
-  color: #42bfb99d; /* Change link color */
+  color: rgb(255, 0, 157); /* Change link color */
   text-decoration: none; /* Remove default underline */
 }
 
 a:hover {
-  color: rgba(0, 255, 179, 0.816); /* Change color when hovering */
-  text-decoration: underline; /* Add underline on hover */
-}
-
-.task-item {
-  position: relative;
-  padding: 10px;
-  border-radius: 5px;
-  background: #00000000;
-  transition: transform 0.5s ease-out;
-}
-
-.task-item.swiping {
-  transition: none; /* Disable transition while dragging */
+  color: rgb(0, 225, 255); /* Change color when hovering */
+  text-decoration: none; /* Add underline on hover */
 }
 
 /* Prevent horizontal scrolling on the page */
@@ -781,7 +678,7 @@ body {
   align-items: center;
   height: 100vh;
   width: 100vw;
-  animation:fadeIn 1s ease-in-forwards;
+  animation: fadeIn 1s ease-in-forwards;
   background: linear-gradient(90deg, #07182e, #3d0a0a);
   z-index: 9999999;
   transition: all 5s ease;
@@ -871,17 +768,14 @@ body {
   } /* Expands smoothly */
 }
 
-
-
 .card.expand {
   animation: expandCard 4s ease-out forwards;
   transition: transform 1.5s ease-out, opacity 1.5s ease-out;
 }
 
 .fade-out {
-opacity: 0; 
+  opacity: 0;
 }
-
 
 #container-card {
   background-color: rgba(0, 0, 0, 0.8); /* Dark background */

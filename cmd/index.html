@@ -40,13 +40,15 @@
     <div class="task" id="task">
       <div class="task-header" onclick="toggleTask()">📝 Notes</div>
       <div class="task-details" id="taskContainer">
-        <input
-          type="text"
-          id="taskInput"
-          placeholder="Add a task"
-          autocomplete="off"
-        ></input>
-        <button id="submitButton" onclick="addTask()">Add</button>
+        <div class="task-editor" id="taskEditor">
+          <textarea
+            type="text"
+            id="taskInput"
+            placeholder="Write something..."
+            autocomplete="off"
+          ></textarea>
+          <button id="submitButton" onclick="addTask()">Add</button>
+        </div>
         <ul id="taskList"></ul>
       </div>
     </div>
