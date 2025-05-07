@@ -354,12 +354,12 @@ li:hover {
 
 /*change the colors of urls*/
 a {
-  color: red; /* Change link color */
+  color: #42bfb99d; /* Change link color */
   text-decoration: none; /* Remove default underline */
 }
 
 a:hover {
-  color: blue; /* Change color when hovering */
+  color: rgba(226, 29, 210, 0.907); /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
 }
 
