@@ -366,12 +366,6 @@ document.addEventListener("keydown", function(event) {
     }
 });
 
-    }
-});
-
-  }
-});
-
 // Ensure keyboard pops up when input is tapped
 document.getElementById("taskInput").addEventListener("focus", function () {
   this.scrollIntoView({ behavior: "smooth", block: "center" });
