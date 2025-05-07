@@ -336,16 +336,26 @@ function deleteTask(task, index) {
 
 
 
-
-/*Keyboard Event for Enter Key*/
+/* Keyboard Event for Enter Key */
 // This event listener allows the user to press Enter to submit the task input
 document.getElementById("taskInput").addEventListener("keypress", function (event) {
-  if (event.key === "Enter") {
-    event.preventDefault(); // Prevents default form submission
-    document.getElementById("submitButton").click(); // Simulates button click
-    this.blur(); // Hides the keyboard on mobile devices
-  }
+    if (event.key === "Enter") {
+        event.preventDefault(); // Prevents default form submission
+        document.getElementById("submitButton").click(); // Simulates button click
+        this.blur(); // Hides the keyboard on mobile devices
+    }
 });
+
+// Event Listener for Selecting a Task on Click
+document.addEventListener("click", function(event) {
+    let tasks = document.querySelectorAll(".task"); // Assuming tasks have a "task" class
+    tasks.forEach(task => task.classList.remove("selected")); // Remove previous selection
+    
+    if (event.target.classList.contains("task")) {
+        event.target.classList.add("selected"); // Add selection to clicked task
+    }
+});
+
 
 // Ensure keyboard pops up when input is tapped
 document.getElementById("taskInput").addEventListener("focus", function () {

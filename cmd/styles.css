@@ -19,6 +19,7 @@
   z-index: 10;
 }
 
+
 .task.open {
   max-width: 500px;
   width: 100% !important;
@@ -253,6 +254,8 @@ body {
   transition: all 0.3s ease;
   height: 40px;
   padding: 10px;
+  overflow: hidden;
+  resize: none;
 }
 
 #submitButton {
@@ -351,12 +354,12 @@ li:hover {
 
 /*change the colors of urls*/
 a {
-  color: red; /* Change link color */
+  color: #42bfb99d; /* Change link color */
   text-decoration: none; /* Remove default underline */
 }
 
 a:hover {
-  color: blue; /* Change color when hovering */
+  color: rgba(226, 29, 210, 0.907); /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
 }
 
@@ -703,6 +706,7 @@ li {
   border: 2px solid #ccc;
   border-radius: 5px;
   margin-right: 5px;
+  overflow:auto
 }
 
 .new-task {
@@ -743,12 +747,12 @@ li:hover {
 
 /*change the colors of urls*/
 a {
-  color: red; /* Change link color */
+  color: #42bfb99d; /* Change link color */
   text-decoration: none; /* Remove default underline */
 }
 
 a:hover {
-  color: blue; /* Change color when hovering */
+  color: rgba(0, 255, 179, 0.816); /* Change color when hovering */
   text-decoration: underline; /* Add underline on hover */
 }
 
