@@ -1,0 +1,22 @@
+# Site settings used by GitHub Pages to build the articles section.
+title: John Paul Lundberg
+description: Maintenance Operation and Management engineer based in Oslo.
+url: "https://jplundberg.com"
+baseurl: ""
+
+collections:
+  articles:
+    output: true
+    permalink: /articles/:name/
+
+defaults:
+  - scope:
+      path: ""
+      type: articles
+    values:
+      layout: article
+
+exclude:
+  - Readme.txt
+  - forms/Readme.txt
+  - assets/scss/Readme.txt

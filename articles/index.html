@@ -1,0 +1,42 @@
+---
+layout: base
+title: Articles
+summary: Articles by John Paul Lundberg on maintenance, documentation, training and living well.
+---
+<section class="page-hero page-hero--short dark-background">
+  <img src="/assets/img/hero-bg.jpg" alt="">
+  <div class="container" data-aos="fade-up">
+    <div class="crumbs"><a href="/">Home</a> / Articles</div>
+    <h2>Articles</h2>
+    <p class="intro">Thoughts on maintenance, documentation, training and living well.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Latest</h2>
+  </div>
+
+  <div class="container">
+    {% assign items = site.articles | sort: "date" | reverse %}
+    {% if items.size == 0 %}
+      <p class="empty">No articles yet. Check back soon.</p>
+    {% else %}
+    <div class="article-cards">
+      {% for a in items %}
+      <a class="article-card" href="{{ a.url }}" data-aos="fade-up" data-aos-delay="{{ forloop.index0 | modulo: 3 | times: 100 }}">
+        <div class="thumb"{% if a.image %} style="background-image:url('{{ a.image }}')"{% endif %}>
+          {% if a.category %}<span>{{ a.category }}</span>{% endif %}
+        </div>
+        <div class="body">
+          <div class="date">{{ a.date | date: "%-d %B %Y" }}</div>
+          <h3>{{ a.title }}</h3>
+          {% if a.summary %}<p>{{ a.summary }}</p>{% endif %}
+          <span class="more">Read more <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>

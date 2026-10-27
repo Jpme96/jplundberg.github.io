@@ -1,0 +1,45 @@
+# Settings for the Pages CMS editor (https://pagescms.org).
+# This tells the editor where articles live and which fields to show.
+
+media:
+  input: assets/img/articles
+  output: /assets/img/articles
+
+content:
+  - name: articles
+    label: Articles
+    type: collection
+    path: _articles
+    filename: "{primary}.md"
+    view:
+      primary: title
+      fields: [title, date, category]
+      sort: [date, title]
+      default:
+        sort: date
+        order: desc
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: date
+        label: Date
+        type: date
+        required: true
+      - name: category
+        label: Category
+        type: select
+        options:
+          values: [Work, Training, Food, Life]
+      - name: summary
+        label: Short summary
+        description: One or two sentences shown on the articles list and at the top of the article.
+        type: text
+      - name: image
+        label: Cover image (optional)
+        description: Shown at the top of the article and on its card. Leave empty to use the default background.
+        type: image
+      - name: body
+        label: Article
+        type: rich-text

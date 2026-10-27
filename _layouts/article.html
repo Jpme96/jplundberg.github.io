@@ -1,0 +1,30 @@
+---
+layout: base
+---
+{% assign words = content | strip_html | number_of_words %}
+{% assign minutes = words | divided_by: 200 | plus: 1 %}
+<section class="page-hero dark-background">
+  <img src="{{ page.image | default: '/assets/img/hero-bg.jpg' }}" alt="">
+  <div class="container" data-aos="fade-up">
+    <div class="crumbs"><a href="/">Home</a> / <a href="/articles/">Articles</a></div>
+    {% if page.category %}<span class="tag">{{ page.category }}</span>{% endif %}
+    <h2>{{ page.title }}</h2>
+    <div class="meta">{{ page.date | date: "%-d %B %Y" }} · {{ minutes }} min read</div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <article class="article-body" data-aos="fade-up">
+      {% if page.summary %}<p class="lead">{{ page.summary }}</p>{% endif %}
+      {{ content }}
+
+      <div class="author">
+        <img src="/assets/img/my-profile-img.jpg" alt="">
+        <p><strong>John Paul Lundberg</strong><br>M.O.M engineer and document administrator based in Oslo. <a href="/#contact">Get in touch</a>.</p>
+      </div>
+
+      <a class="back" href="/articles/"><i class="bi bi-arrow-left"></i> All articles</a>
+    </article>
+  </div>
+</section>
