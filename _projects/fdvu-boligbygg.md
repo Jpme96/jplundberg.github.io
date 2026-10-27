@@ -16,12 +16,30 @@ stats:
     icon: file-earmark-text
 charts:
   - type: ring
-    title: Fremdrift mot målet
-    description: 55 % av målet er nådd, og arbeidet fortsetter.
+    title: Opprydding i anleggsstruktur
+    description: 55 % av byggene er ferdig strukturert, og arbeidet fortsetter.
     percent: 55
+  - type: line
+    title: Fremdrift gjennom 2026 (%)
+    description: Andel bygg ferdig strukturert, målt ved hver oppfølging.
+    points:
+      - label: "01.05"
+        value: 9
+      - label: "03.08"
+        value: 21
+      - label: "17.08"
+        value: 27.58
+      - label: "31.08"
+        value: 34.26
+      - label: "28.09"
+        value: 41.66
+      - label: "12.10"
+        value: 50.19
+      - label: "26.10"
+        value: 55.28
 ---
 
-God drift og godt vedlikehold forutsetter at dokumentasjonen om byggene er komplett, korrekt og lett å finne. I Boligbygg arbeider jeg med å få dette på plass. Så langt er 406 bygninger hentet ut for å få dokumentasjonen i riktig struktur, og vi har nådd 55 % av målet. Arbeidet har tre fokusområder.
+God drift og godt vedlikehold forutsetter at dokumentasjonen om byggene er komplett, korrekt og lett å finne. I Boligbygg arbeider jeg med å få dette på plass. Så langt er 406 bygninger hentet ut for å få dokumentasjonen i riktig struktur, og vi har nådd 55 % av målet. Fremdriften har økt jevnt, fra 9 % i mai til 55 % i oktober 2026. Arbeidet har tre fokusområder.
 
 ## Struktur og kvalitet i FDVU-systemet
 

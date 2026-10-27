@@ -795,7 +795,9 @@
   margin-top: 0;
 }
 
-.project .project-charts .chart--ring:only-child {
+.project .project-charts .chart--ring {
+  grid-column: 1 / -1;
+  width: 100%;
   max-width: 560px;
 }
 

@@ -16,12 +16,30 @@ stats:
     icon: file-earmark-text
 charts:
   - type: ring
-    title: Progress towards the goal
-    description: 55 % of the goal has been reached, and the work continues.
+    title: Asset structure clean-up
+    description: 55 % of the buildings are fully restructured, and the work continues.
     percent: 55
+  - type: line
+    title: Progress through 2026 (%)
+    description: Share of buildings fully restructured, measured at each follow-up.
+    points:
+      - label: "01.05"
+        value: 9
+      - label: "03.08"
+        value: 21
+      - label: "17.08"
+        value: 27.58
+      - label: "31.08"
+        value: 34.26
+      - label: "28.09"
+        value: 41.66
+      - label: "12.10"
+        value: 50.19
+      - label: "26.10"
+        value: 55.28
 ---
 
-Good operations and maintenance depend on building documentation that is complete, correct and easy to find. At Boligbygg, I work to put this in place. So far, 406 buildings have been selected to bring their documentation into the correct structure, and we have reached 55% of the goal. The work has three focus areas.
+Good operations and maintenance depend on building documentation that is complete, correct and easy to find. At Boligbygg, I work to put this in place. So far, 406 buildings have been selected to bring their documentation into the correct structure, and we have reached 55% of the goal. Progress has risen steadily, from 9% in May to 55% in October 2026. The work has three focus areas.
 
 ## Structure and quality in the FDVU system
 
