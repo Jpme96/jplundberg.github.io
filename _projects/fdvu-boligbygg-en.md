@@ -1,0 +1,36 @@
+---
+title: Structured FDVU documentation at Boligbygg
+lang: en
+date: 2025-10-01
+ref: fdvu-boligbygg
+role: FDVU Advisor
+organisation: Boligbygg Oslo KF
+period: 2025 – ongoing
+summary: A long-term effort to structure, quality-assure and digitalise the FDVU documentation for Boligbygg's properties.
+stats:
+  - value: "406"
+    label: buildings selected for restructuring
+    icon: buildings
+  - value: "NS 3451:2022"
+    label: shared structure
+    icon: file-earmark-text
+charts:
+  - type: ring
+    title: Progress towards the goal
+    description: 55 % of the goal has been reached, and the work continues.
+    percent: 55
+---
+
+Good operations and maintenance depend on building documentation that is complete, correct and easy to find. At Boligbygg, I work to put this in place. So far, 406 buildings have been selected to bring their documentation into the correct structure, and we have reached 55% of the goal. The work has three focus areas.
+
+## Structure and quality in the FDVU system
+
+Documentation in the FDVU system is reviewed, cleaned up and quality-assured, so that the information about each building can be trusted.
+
+## Shared practice
+
+A revised FDVU manual and clear routines based on NS 3451:2022 make sure documentation is handled the same way across properties and projects.
+
+## Skills
+
+Training for the people who use the system every day, so that good structure is also used correctly.

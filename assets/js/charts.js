@@ -133,7 +133,8 @@
       var total = items.reduce(function (a, p) { return a + num(p.value); }, 0) || 1;
       var rows = items.map(function (p, i) {
         var v = num(p.value);
-        return { label: p.label, v: v, share: v / total, color: PALETTE[i] };
+        var c = p.status ? 'var(--s-' + p.status + ')' : PALETTE[i];
+        return { label: p.label, v: v, share: v / total, color: c };
       });
 
       if (type === 'donut') {
@@ -249,16 +250,21 @@
       var head = el('div', { 'class': 'g-row g-head' }, g);
       el('span', { 'class': 'g-label' }, head);
       var axis = el('div', { 'class': 'g-axis' }, head);
-      for (var mi = 0; mi < months; mi += stepM) {
+      // First tick on a calendar boundary (January for years, quarter starts for quarters ...)
+      var firstOff = 0;
+      while (((min.getMonth() + firstOff) % Math.min(stepM, 12) !== 0 || (stepM === 24 && (min.getFullYear() + Math.floor((min.getMonth() + firstOff) / 12)) % 2 !== 0)) && firstOff < 24) firstOff++;
+      for (var mi = firstOff; mi < months; mi += stepM) {
         var md = new Date(min.getFullYear(), min.getMonth() + mi, 1);
-        el('span', { 'class': 'g-tick', style: 'left:' + pos(md) + '%', text: stepM >= 12 ? String(md.getFullYear()) : (mi === 0 || md.getMonth() === 0) ? shortFmt.format(md) : monthOnly.format(md) }, axis);
+        if (pos(md) > 90) continue; // too close to the right edge for a label
+        el('span', { 'class': 'g-tick', style: 'left:' + pos(md) + '%', text: stepM >= 12 ? String(md.getFullYear()) : (mi === firstOff || md.getMonth() === 0) ? shortFmt.format(md) : monthOnly.format(md) }, axis);
       }
       var today = new Date();
       rowsG.forEach(function (r, i) {
         var row = el('div', { 'class': 'g-row' }, g);
         el('span', { 'class': 'g-label', text: r.label }, row);
         var lane = el('div', { 'class': 'g-lane' }, row);
-        for (var mj = stepM; mj < months; mj += stepM) {
+        for (var mj = firstOff; mj < months; mj += stepM) {
+          if (mj === 0) continue;
           el('span', { 'class': 'g-grid', style: 'left:' + pos(new Date(min.getFullYear(), min.getMonth() + mj, 1)) + '%' }, lane);
         }
         var left = pos(r.start), width = Math.max(1.5, pos(r.end) - left);
