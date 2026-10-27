@@ -1310,20 +1310,36 @@ section,
 }
 
 .resume .highlights .stats-item {
-  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 24px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--default-color), transparent 95%);
   height: 100%;
 }
 
+.resume .highlights .stats-item i {
+  float: none;
+  flex-shrink: 0;
+  font-size: 34px;
+  line-height: 1;
+}
+
 .resume .highlights .stats-item .stat-value {
+  display: block;
   color: var(--heading-color);
   font-family: var(--heading-font);
-  font-size: 40px;
-  line-height: 40px;
-  display: block;
+  font-size: 34px;
   font-weight: 700;
-  margin-left: 60px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.resume .highlights .stats-item p {
+  margin: 6px 0 0;
+  padding: 0;
+  font-size: 14px;
 }
 
 .resume .timeline .resume-item {
