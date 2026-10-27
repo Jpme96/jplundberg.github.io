@@ -1800,8 +1800,8 @@ a[x-apple-data-detectors] {
   .header { view-transition-name: jpl-sidebar; }
 }
 
-.header-toggle { view-transition-name: jpl-menu-button; }
-.lang-switch-mobile { view-transition-name: jpl-language; }
+/* The floating buttons cross-fade with the page. Snapshotting them separately
+   made Safari draw their frosted-glass background as a plain box. */
 
 /* --- Reduce motion: everything still works, nothing moves --- */
 @media (prefers-reduced-motion: reduce) {
@@ -1822,4 +1822,18 @@ a[x-apple-data-detectors] {
   .hero p.hero-role {
     font-size: 18px;
   }
+}
+
+/* No grey box on tap in iOS Safari */
+.lang-switch,
+.lang-switch-mobile,
+.lang-switch *,
+.lang-switch-mobile * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lang-switch a:focus:not(:focus-visible),
+.lang-switch-mobile a:focus:not(:focus-visible),
+.header-toggle:focus:not(:focus-visible) {
+  outline: none;
 }
