@@ -11,17 +11,21 @@ stats:
   - value: 600 000
     label: FDV-dokumenter i omfang
     icon: file-earmark-text
-  - value: "400"
+  - value: "406"
     label: bygg
     icon: buildings
-  - value: 50 %
-    label: kvalitetskontrollert så langt
+  - value: 55 %
+    label: Strukturer så langt
     icon: check2-circle
 charts:
   - type: ring
     title: Fremdrift kvalitetskontroll
     description: Om lag 300 000 av 600 000 dokumenter kontrollert
-    percent: 50
+    percent: 55
+    points:
+      - label: Oppstart
+        start: 2026-05-01
+        end: 2026-12-31
 ---
 ## Utfordringen
 
@@ -37,4 +41,4 @@ Jeg leder kvalitetskontrollen av rundt 600 000 FDV-dokumenter fordelt på 400 by
 
 ## Resultat så langt
 
-Halvparten av porteføljen er kvalitetskontrollert, om lag 300 000 dokumenter. Arbeidet fortsetter bygg for bygg mot et komplett og pålitelig dokumentasjonsgrunnlag.
+For å oppnå vår mål med opprydding, må vi få en struktur for å få grunnmuren på plass.
