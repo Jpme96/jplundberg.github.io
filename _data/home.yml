@@ -34,11 +34,11 @@ en:
     I also handle reporting, compliance support and internal workflows. I make sure records are accurate, complete and easy to find,
     so nothing slips through the cracks and operations run smoothly over time.
   exp_title: Experience
-  exp_intro: Over five years in facility management, operations, maintenance and documentation in Oslo.
+  exp_intro: Over six years in facility management, operations, maintenance and documentation.
   stat1_value: 600–700k
   stat1_label: <strong>Documents</strong> under quality control in my current role
-  stat2_value: "2020"
-  stat2_label: <strong>Working with FDVU</strong> since 2020
+  stat2_value: "2018"
+  stat2_label: <strong>Working with FDVU</strong> since 2018
   jobs:
     - title: FDVU Advisor
       dates: November 2025 – Present
@@ -51,7 +51,7 @@ en:
       company: Akto Eiendom, Oslo
       points:
         - Coordinating operations, maintenance and FDV documentation across properties
-    - title: Operational Management
+    - title: Operations Technician
       dates: 2018 – 2019
       company: Hordaland fylkeskommune
       points: []
@@ -96,11 +96,11 @@ nb:
     Jeg jobber også med rapportering, etterlevelse og interne arbeidsflyter. Jeg sørger for at dokumentasjonen er korrekt, komplett og lett å finne,
     slik at ingenting faller mellom to stoler og driften går smidig over tid.
   exp_title: Erfaring
-  exp_intro: Over fem års erfaring med forvaltning, drift, vedlikehold og dokumentasjon i Oslo.
+  exp_intro: Over seks års erfaring med forvaltning, drift, vedlikehold og dokumentasjon.
   stat1_value: 600–700 000
   stat1_label: <strong>Dokumenter</strong> under kvalitetskontroll i nåværende stilling
-  stat2_value: "2020"
-  stat2_label: <strong>Jobbet med FDVU</strong> siden 2020
+  stat2_value: "2018"
+  stat2_label: <strong>Jobbet med FDVU</strong> siden 2018
   jobs:
     - title: FDVU-rådgiver
       dates: November 2025 – nå
@@ -113,7 +113,7 @@ nb:
       company: Akto Eiendom, Oslo
       points:
         - Koordinering av drift, vedlikehold og FDV-dokumentasjon på tvers av eiendommer
-    - title: Driftsledelse
+    - title: Driftsoperatør
       dates: 2018 – 2019
       company: Hordaland fylkeskommune
       points: []
