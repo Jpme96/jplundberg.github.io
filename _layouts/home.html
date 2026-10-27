@@ -163,24 +163,19 @@
           </div>
 
           <div class="timeline" data-aos="fade-up" data-aos-delay="100">
+            {% for job in t.jobs %}
             <div class="resume-item">
-              <h4>{{ t.job1_title }}</h4>
-              <h5>{{ t.job1_dates }}</h5>
-              <p class="company">{{ t.job1_company }}</p>
+              <h4>{{ job.title }}</h4>
+              <h5>{{ job.dates }}</h5>
+              <p class="company">{{ job.company }}</p>
+              {% if job.points.size > 0 %}
               <ul>
-                {% for point in t.job1_points %}<li>{{ point }}</li>
+                {% for point in job.points %}<li>{{ point }}</li>
                 {% endfor %}
               </ul>
+              {% endif %}
             </div>
-            <div class="resume-item">
-              <h4>{{ t.job2_title }}</h4>
-              <h5>{{ t.job2_dates }}</h5>
-              <p class="company">{{ t.job2_company }}</p>
-              <ul>
-                {% for point in t.job2_points %}<li>{{ point }}</li>
-                {% endfor %}
-              </ul>
-            </div>
+            {% endfor %}
           </div>
 
           <div class="systems" data-aos="fade-up" data-aos-delay="150">

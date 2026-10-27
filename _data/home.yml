@@ -39,17 +39,22 @@ en:
   stat1_label: <strong>Documents</strong> under quality control in my current role
   stat2_value: "2020"
   stat2_label: <strong>Working with FDVU</strong> since 2020
-  job1_title: FDVU Advisor
-  job1_dates: November 2025 – Present
-  job1_company: Boligbygg Oslo KF, Oslo
-  job1_points:
-    - Quality control of FDV documentation across 600,000–700,000 documents
-    - Making sure documentation is complete, correct and easy to find for operations and maintenance
-  job2_title: FDVU Coordinator
-  job2_dates: 2020 – 2025
-  job2_company: Akto Eiendom, Oslo
-  job2_points:
-    - Coordinating operations, maintenance and FDV documentation across properties
+  jobs:
+    - title: FDVU Advisor
+      dates: November 2025 – Present
+      company: Boligbygg Oslo KF, Oslo
+      points:
+        - Quality control of FDV documentation across 600,000–700,000 documents
+        - Making sure documentation is complete, correct and easy to find for operations and maintenance
+    - title: FDVU Coordinator
+      dates: 2020 – 2025
+      company: Akto Eiendom, Oslo
+      points:
+        - Coordinating operations, maintenance and FDV documentation across properties
+    - title: Operational Management
+      dates: 2018 – 2019
+      company: Hordaland fylkeskommune
+      points: []
   systems_title: Systems I've worked with
   contact_title: Contact
   contact_intro: >-
@@ -96,17 +101,22 @@ nb:
   stat1_label: <strong>Dokumenter</strong> under kvalitetskontroll i nåværende stilling
   stat2_value: "2020"
   stat2_label: <strong>Jobbet med FDVU</strong> siden 2020
-  job1_title: FDVU-rådgiver
-  job1_dates: November 2025 – nå
-  job1_company: Boligbygg Oslo KF, Oslo
-  job1_points:
-    - Kvalitetskontroll av FDV-dokumentasjon på tvers av 600 000–700 000 dokumenter
-    - Sørger for at dokumentasjonen er komplett, korrekt og lett å finne for drift og vedlikehold
-  job2_title: FDVU-koordinator
-  job2_dates: 2020 – 2025
-  job2_company: Akto Eiendom, Oslo
-  job2_points:
-    - Koordinering av drift, vedlikehold og FDV-dokumentasjon på tvers av eiendommer
+  jobs:
+    - title: FDVU-rådgiver
+      dates: November 2025 – nå
+      company: Boligbygg Oslo KF, Oslo
+      points:
+        - Kvalitetskontroll av FDV-dokumentasjon på tvers av 600 000–700 000 dokumenter
+        - Sørger for at dokumentasjonen er komplett, korrekt og lett å finne for drift og vedlikehold
+    - title: FDVU-koordinator
+      dates: 2020 – 2025
+      company: Akto Eiendom, Oslo
+      points:
+        - Koordinering av drift, vedlikehold og FDV-dokumentasjon på tvers av eiendommer
+    - title: Driftsledelse
+      dates: 2018 – 2019
+      company: Hordaland fylkeskommune
+      points: []
   systems_title: Systemer jeg har jobbet med
   contact_title: Kontakt
   contact_intro: >-
