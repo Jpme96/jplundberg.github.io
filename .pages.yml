@@ -1,5 +1,5 @@
 # Settings for the Pages CMS editor (https://pagescms.org).
-# This tells the editor where articles live and which fields to show.
+# This tells the editor where articles and projects live and which fields to show.
 
 media:
   input: assets/img/articles
@@ -61,4 +61,208 @@ content:
         type: image
       - name: body
         label: Article
+        type: rich-text
+
+  - name: projects
+    label: Projects
+    type: collection
+    path: _projects
+    filename: "{primary}.md"
+    view:
+      primary: title
+      fields: [title, lang, date]
+      sort: [date, title]
+      default:
+        sort: date
+        order: desc
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: lang
+        label: Language
+        description: The language the project is written in. Write a second version if you want it in both languages.
+        type: select
+        default: en
+        options:
+          values:
+            - value: en
+              label: English
+            - value: nb
+              label: Norsk
+      - name: date
+        label: Date
+        description: Used to sort projects, newest first. The start date works well.
+        type: date
+        required: true
+      - name: ref
+        label: Link between languages (optional)
+        description: Give the English and the Norsk version the same short word, for example "fdv-2025". Then each language only lists its own version, and the EN/NO switch jumps between them.
+        type: string
+      - name: role
+        label: Your role
+        type: string
+      - name: organisation
+        label: Organisation
+        type: string
+      - name: period
+        label: Period
+        description: Shown as written, for example "2025 – ongoing" or "2023 – 2024".
+        type: string
+      - name: summary
+        label: Short summary
+        description: One sentence shown on the project card and at the top of the page.
+        type: text
+      - name: image
+        label: Cover image (optional)
+        type: image
+
+      - name: stats
+        label: Key figures
+        description: Big numbers shown in boxes, for example 600 000 documents. The first one is also shown on the project card.
+        type: object
+        list: true
+        fields:
+          - name: value
+            label: Number
+            description: Written as you want it shown, for example "600 000" or "50 %".
+            type: string
+          - name: label
+            label: What it means
+            type: string
+          - name: icon
+            label: Icon
+            type: select
+            default: bar-chart
+            options:
+              values:
+                - value: file-earmark-text
+                  label: Document
+                - value: buildings
+                  label: Buildings
+                - value: building
+                  label: Building
+                - value: check2-circle
+                  label: Checkmark
+                - value: clock-history
+                  label: Time
+                - value: people
+                  label: People
+                - value: cash-coin
+                  label: Money
+                - value: graph-up-arrow
+                  label: Growth
+                - value: tools
+                  label: Tools
+                - value: bar-chart
+                  label: Chart
+
+      - name: charts
+        label: Charts
+        description: Add as many as you like. Each chart uses the fields that fit its type; leave the others empty.
+        type: object
+        list: true
+        fields:
+          - name: type
+            label: Chart type
+            type: select
+            default: bars
+            options:
+              values:
+                - value: ring
+                  label: Progress ring (one percentage)
+                - value: bars
+                  label: Bars (compare amounts)
+                - value: donut
+                  label: Donut (parts of a whole)
+                - value: split
+                  label: Split bar (parts of a whole, compact)
+                - value: line
+                  label: Line (change over time)
+                - value: gantt
+                  label: Gantt (phases over time)
+          - name: title
+            label: Chart title
+            type: string
+          - name: description
+            label: Short description (optional)
+            type: string
+          - name: percent
+            label: Percentage (progress ring only)
+            type: number
+            options:
+              min: 0
+              max: 100
+          - name: points
+            label: Data
+            description: "Bars, donut, split bar and line: fill in name and value. Gantt: fill in name, start and end. Leave Gantt data empty to use the sub-projects below."
+            type: object
+            list: true
+            fields:
+              - name: label
+                label: Name
+                description: For a line chart, the time, for example "Jan" or "Q1 2026".
+                type: string
+              - name: value
+                label: Value
+                type: number
+              - name: start
+                label: Start (Gantt)
+                type: date
+              - name: end
+                label: End (Gantt)
+                type: date
+              - name: status
+                label: Status (Gantt, optional)
+                type: select
+                options:
+                  values:
+                    - value: done
+                      label: Completed / Fullført
+                    - value: ongoing
+                      label: Ongoing / Pågår
+                    - value: planned
+                      label: Planned / Planlagt
+
+      - name: parts
+        label: Sub-projects
+        description: Smaller projects inside this project. They are shown as cards, and a Gantt chart with no data of its own draws them on a timeline.
+        type: object
+        list: true
+        fields:
+          - name: title
+            label: Name
+            type: string
+          - name: status
+            label: Status
+            type: select
+            default: ongoing
+            options:
+              values:
+                - value: done
+                  label: Completed / Fullført
+                - value: ongoing
+                  label: Ongoing / Pågår
+                - value: planned
+                  label: Planned / Planlagt
+          - name: start
+            label: Start
+            type: date
+          - name: end
+            label: End
+            type: date
+          - name: progress
+            label: Progress in % (optional)
+            type: number
+            options:
+              min: 0
+              max: 100
+          - name: description
+            label: Short description (optional)
+            type: text
+
+      - name: body
+        label: Story
+        description: The text of the project, for example the challenge, what you did and the result.
         type: rich-text

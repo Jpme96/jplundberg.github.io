@@ -1680,6 +1680,9 @@ a[x-apple-data-detectors] {
 .motion .article-cards .article-card:not(.shown),
 .motion .highlights > div:not(.shown),
 .motion .system-tags li:not(.shown),
+.motion .project-cards .project-card-link:not(.shown),
+.motion .project-stats > div:not(.shown),
+.motion .project-parts .project-part:not(.shown),
 .motion [data-aos]:not(.hero *):not(.page-hero *):not(.shown) {
   opacity: 0;
   transform: translateY(18px);

@@ -1,0 +1,32 @@
+---
+layout: base
+---
+{% assign lang = page.lang | default: 'en' %}{% assign u = site.data.ui[lang] %}{% assign h = site.data.home[lang] %}
+<section class="page-hero page-hero--short dark-background">
+  <img src="/assets/img/hero-bg.jpg" alt="">
+  <div class="container">
+    <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / {{ u.projects_title }}</div>
+    <h2>{{ u.projects_title }}</h2>
+    <p class="intro">{{ u.projects_intro }}</p>
+  </div>
+</section>
+
+<section class="section projects">
+  <div class="container">
+    {% assign items = site.projects | sort: "date" | reverse %}
+    {% if items.size == 0 %}
+      <p class="empty">{{ u.projects_empty }}</p>
+    {% else %}
+    <div class="project-cards">
+      {% for p in items %}
+        {% assign p_lang = p.lang | default: 'en' %}{% assign show = true %}
+        {% if p_lang != lang and p.ref %}
+          {% assign twins = site.projects | where: "ref", p.ref | where: "lang", lang %}
+          {% if twins.size > 0 %}{% assign show = false %}{% endif %}
+        {% endif %}
+        {% if show %}{% include project-card.html project=p lang=lang %}{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>

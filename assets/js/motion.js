@@ -14,7 +14,8 @@
   var animate = root.classList.contains('motion');
   try { sessionStorage.removeItem('jpl-skip-intro'); } catch (e) {}
 
-  var GROUPS = '.timeline .resume-item, .article-cards .article-card, .highlights > div, .system-tags li';
+  var GROUPS = '.timeline .resume-item, .article-cards .article-card, .highlights > div, .system-tags li, ' +
+               '.project-cards .project-card-link, .project-stats > div, .project-parts .project-part';
 
   if (animate) setupReveals();
   setupRotator();

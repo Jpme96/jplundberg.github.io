@@ -48,6 +48,8 @@
   <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
   <link href="/assets/css/main.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
+  <link href="/assets/css/articles.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
+  <link href="/assets/css/projects.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
 
   <!-- Based on the iPortfolio template by BootstrapMade.com (https://bootstrapmade.com/license/) -->
 </head>
@@ -80,6 +82,7 @@
         <li><a href="#hero" class="active"><i class="bi bi-house navicon"></i>{{ t.nav_home }}</a></li>
         <li><a href="#about"><i class="bi bi-person navicon"></i> {{ t.nav_about }}</a></li>
         <li><a href="#resume"><i class="bi bi-briefcase navicon"></i> {{ t.nav_experience }}</a></li>
+        <li><a href="{{ t.projects_url }}"><i class="bi bi-kanban navicon"></i> {{ t.nav_projects }}</a></li>
         <li><a href="{{ t.articles_url }}"><i class="bi bi-journal-text navicon"></i> {{ t.nav_articles }}</a></li>
         <li><a href="#contact"><i class="bi bi-envelope navicon"></i> {{ t.nav_contact }}</a></li>
       </ul>
@@ -211,6 +214,29 @@
 
     </section><!-- /Experience Section -->
 
+    {% assign home_projects = site.projects | sort: "date" | reverse %}
+    {% if home_projects.size > 0 %}
+    <!-- Projects Section -->
+    <section id="projects" class="projects section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.projects_home_title }}</h2>
+      </div>
+      <div class="container">
+        <div class="project-cards">
+          {% assign shown = 0 %}
+          {% for p in home_projects %}
+            {% assign p_lang = p.lang | default: 'en' %}
+            {% if p_lang == page.lang and shown < 3 %}
+              {% include project-card.html project=p lang=page.lang %}
+              {% assign shown = shown | plus: 1 %}
+            {% endif %}
+          {% endfor %}
+        </div>
+        <a class="more-link" href="{{ t.projects_url }}">{{ t.projects_home_link }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section><!-- /Projects Section -->
+    {% endif %}
+
     <!-- Contact Section -->
     <section id="contact" class="contact section">
 
@@ -253,6 +279,7 @@
   <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="/assets/js/motion.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/charts.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/menu.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/lang-switch.js?v={{ site.time | date: '%s' }}"></script>
 

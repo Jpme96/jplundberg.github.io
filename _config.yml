@@ -8,6 +8,9 @@ collections:
   articles:
     output: true
     permalink: /articles/:name/
+  projects:
+    output: true
+    permalink: /projects/:name/
 
 defaults:
   - scope:
@@ -15,6 +18,13 @@ defaults:
       type: articles
     values:
       layout: article
+      lang: en
+
+  - scope:
+      path: ""
+      type: projects
+    values:
+      layout: project
       lang: en
 
 exclude:

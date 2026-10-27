@@ -33,7 +33,7 @@
         var toNb = a.getAttribute('hreflang') === 'nb';
         show(toNb);
         // Keep the reader in the same section (e.g. #resume) on the home page
-        var url = a.href + (location.hash && !a.href.includes('/articles') ? location.hash : '');
+        var url = a.href + (location.hash && !/\/(articles|projects)\//.test(a.href) ? location.hash : '');
         try { sessionStorage.setItem('jpl-skip-intro', '1'); } catch (err) {}
         setTimeout(function () { location.href = url; }, reduceMotion ? 0 : 280);
       });

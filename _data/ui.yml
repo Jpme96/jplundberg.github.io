@@ -3,6 +3,26 @@
 en:
   articles_url: /articles/
   crumbs_home: Home
+  project_label: Project
+  projects_title: Projects
+  projects_url: /projects/
+  projects_intro: Selected work from facility management, operations and documentation.
+  projects_summary: Projects by John Paul Lundberg in facility management, operations, maintenance and documentation.
+  projects_empty: No projects yet. Check back soon.
+  role_label: Role
+  org_label: Organisation
+  period_label: Period
+  key_figures: Key figures
+  all_projects: All projects
+  view_project: View project
+  parts_title: Sub-projects
+  status:
+    planned: Planned
+    ongoing: Ongoing
+    done: Completed
+  chart_table: Chart data
+  today: Today
+  total: Total
   articles_title: Articles
   articles_intro: Thoughts on maintenance, documentation, training and living well.
   articles_summary: Articles by John Paul Lundberg on maintenance, documentation, training and living well.
@@ -27,6 +47,26 @@ en:
 nb:
   articles_url: /no/articles/
   crumbs_home: Hjem
+  project_label: Prosjekt
+  projects_title: Prosjekter
+  projects_url: /no/projects/
+  projects_intro: Utvalgt arbeid innen forvaltning, drift og dokumentasjon.
+  projects_summary: Prosjekter av John Paul Lundberg innen forvaltning, drift, vedlikehold og dokumentasjon.
+  projects_empty: Ingen prosjekter ennå. Kom gjerne tilbake senere.
+  role_label: Rolle
+  org_label: Virksomhet
+  period_label: Periode
+  key_figures: Nøkkeltall
+  all_projects: Alle prosjekter
+  view_project: Se prosjektet
+  parts_title: Delprosjekter
+  status:
+    planned: Planlagt
+    ongoing: Pågår
+    done: Fullført
+  chart_table: Data i diagrammet
+  today: I dag
+  total: Totalt
   articles_title: Artikler
   articles_intro: Tanker om vedlikehold, dokumentasjon, trening og et godt liv.
   articles_summary: Artikler av John Paul Lundberg om vedlikehold, dokumentasjon, trening og et godt liv.

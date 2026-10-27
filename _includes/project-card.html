@@ -1,0 +1,15 @@
+{% assign pc = include.project %}{% assign pc_lang = pc.lang | default: 'en' %}{% assign pu = site.data.ui[include.lang] %}
+{% assign pc_first = pc.stats | first %}
+<a class="project-card-link" href="{{ pc.url }}">
+  <div class="thumb"{% if pc.image %} style="background-image:url('{{ pc.image }}')"{% endif %}>
+    <span>{{ pu.project_label }}</span>
+    {% if pc_lang != include.lang %}<span class="lang-badge">{{ pu.lang_badge[pc_lang] }}</span>{% endif %}
+    {% if pc_first %}<div class="thumb-figure"><strong>{{ pc_first.value }}</strong><small>{{ pc_first.label }}</small></div>{% endif %}
+  </div>
+  <div class="body">
+    <div class="date">{% if pc.organisation %}{{ pc.organisation }}{% endif %}{% if pc.organisation and pc.period %} · {% endif %}{{ pc.period }}</div>
+    <h3>{{ pc.title }}</h3>
+    {% if pc.summary %}<p>{{ pc.summary }}</p>{% endif %}
+    <span class="more">{{ pu.view_project }} <i class="bi bi-arrow-right"></i></span>
+  </div>
+</a>

@@ -1,0 +1,85 @@
+---
+layout: base
+---
+{% assign lang = page.lang | default: 'en' %}{% assign u = site.data.ui[lang] %}{% assign h = site.data.home[lang] %}
+<section class="page-hero dark-background">
+  <img src="{{ page.image | default: '/assets/img/hero-bg.jpg' }}" alt="">
+  <div class="container">
+    <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / <a href="{{ u.projects_url }}">{{ u.projects_title }}</a></div>
+    <span class="tag">{{ u.project_label }}</span>
+    <h2>{{ page.title }}</h2>
+    {% if page.summary %}<p class="intro">{{ page.summary }}</p>{% endif %}
+  </div>
+</section>
+
+<section class="section project">
+  <div class="container">
+
+    {% if page.role or page.organisation or page.period %}
+    <dl class="project-facts" data-aos="fade-up">
+      {% if page.role %}<div><dt>{{ u.role_label }}</dt><dd>{{ page.role }}</dd></div>{% endif %}
+      {% if page.organisation %}<div><dt>{{ u.org_label }}</dt><dd>{{ page.organisation }}</dd></div>{% endif %}
+      {% if page.period %}<div><dt>{{ u.period_label }}</dt><dd>{{ page.period }}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
+
+    {% if page.stats.size > 0 %}
+    <h3 class="project-subtitle" data-aos="fade-up">{{ u.key_figures }}</h3>
+    <div class="row gy-4 project-stats">
+      {% for s in page.stats %}
+      <div class="col-md-4 project-stat-col">
+        <div class="project-stat">
+          <i class="bi bi-{{ s.icon | default: 'bar-chart' }}"></i>
+          <span class="value">{{ s.value }}</span>
+          <span class="label">{{ s.label }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if page.charts.size > 0 %}
+    <div class="project-charts">
+      {% for c in page.charts %}
+      <figure class="project-card chart chart--{{ c.type | default: 'bars' }}" data-aos="fade-up"
+              data-chart="{{ c | jsonify | escape }}"
+              data-parts="{{ page.parts | jsonify | escape }}"
+              data-lang="{{ lang }}"
+              data-i18n="{{ u | jsonify | escape }}">
+        {% if c.title %}<figcaption><h4>{{ c.title }}</h4>{% if c.description %}<p>{{ c.description }}</p>{% endif %}</figcaption>{% endif %}
+        <div class="chart-body"></div>
+      </figure>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if page.parts.size > 0 %}
+    <h3 class="project-subtitle" data-aos="fade-up">{{ u.parts_title }}</h3>
+    <div class="project-parts">
+      {% for part in page.parts %}
+      {% assign st = part.status | default: 'planned' %}
+      <div class="project-part">
+        <div class="part-head">
+          <h4>{{ part.title }}</h4>
+          <span class="status status--{{ st }}"><i class="bi {% if st == 'done' %}bi-check-circle-fill{% elsif st == 'ongoing' %}bi-arrow-repeat{% else %}bi-clock{% endif %}"></i> {{ u.status[st] }}</span>
+        </div>
+        {% if part.start or part.end %}<div class="part-dates" data-start="{{ part.start }}" data-end="{{ part.end }}" data-lang="{{ lang }}">{{ part.start }}{% if part.end %} – {{ part.end }}{% endif %}</div>{% endif %}
+        {% if part.description %}<p>{{ part.description }}</p>{% endif %}
+        {% if part.progress %}
+        <div class="part-progress" role="img" aria-label="{{ part.progress }}%">
+          <span class="part-track"><span class="part-fill" style="--p: {{ part.progress }}%"></span></span>
+          <span class="part-pct">{{ part.progress }}%</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <article class="article-body project-body" data-aos="fade-up">
+      {{ content }}
+      <a class="back" href="{{ u.projects_url }}"><i class="bi bi-arrow-left"></i> {{ u.all_projects }}</a>
+    </article>
+
+  </div>
+</section>

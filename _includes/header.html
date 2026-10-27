@@ -1,4 +1,12 @@
-{% assign lang = page.lang | default: 'en' %}{% assign h = site.data.home[lang] %}
+{% assign lang = page.lang | default: 'en' %}{% assign section_switch = 'articles' %}{% if page.layout == 'project' or page.layout == 'project_list' %}{% assign section_switch = 'projects' %}{% endif %}{% assign h = site.data.home[lang] %}
+{% assign en_url = site.data.home.en.articles_url %}{% assign nb_url = site.data.home.nb.articles_url %}
+{% if section_switch == 'projects' %}{% assign en_url = site.data.home.en.projects_url %}{% assign nb_url = site.data.home.nb.projects_url %}{% endif %}
+{% if page.layout == 'project' and page.ref %}
+  {% assign twin_en = site.projects | where: "ref", page.ref | where: "lang", "en" | first %}
+  {% assign twin_nb = site.projects | where: "ref", page.ref | where: "lang", "nb" | first %}
+  {% if twin_en %}{% assign en_url = twin_en.url %}{% endif %}
+  {% if twin_nb %}{% assign nb_url = twin_nb.url %}{% endif %}
+{% endif %}
 <header id="header" class="header dark-background d-flex flex-column">
 
   <div class="profile-img">
@@ -16,8 +24,8 @@
 
   <div class="lang-switch{% if lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
     <span class="seg-thumb" aria-hidden="true"></span>
-    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
-    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+    <a href="{{ en_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="{{ nb_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
   </div>
 
   <nav id="navmenu" class="navmenu">
@@ -25,7 +33,9 @@
       <li><a href="{{ h.url }}#hero"><i class="bi bi-house navicon"></i>{{ h.nav_home }}</a></li>
       <li><a href="{{ h.url }}#about"><i class="bi bi-person navicon"></i> {{ h.nav_about }}</a></li>
       <li><a href="{{ h.url }}#resume"><i class="bi bi-briefcase navicon"></i> {{ h.nav_experience }}</a></li>
-      <li><a href="{{ h.articles_url }}" class="active"><i class="bi bi-journal-text navicon"></i> {{ h.nav_articles }}</a></li>
+      {% assign section = 'articles' %}{% if page.layout == 'project' or page.layout == 'project_list' %}{% assign section = 'projects' %}{% endif %}
+      <li><a href="{{ h.projects_url }}"{% if section == 'projects' %} class="active"{% endif %}><i class="bi bi-kanban navicon"></i> {{ h.nav_projects }}</a></li>
+      <li><a href="{{ h.articles_url }}"{% if section == 'articles' %} class="active"{% endif %}><i class="bi bi-journal-text navicon"></i> {{ h.nav_articles }}</a></li>
       <li><a href="{{ h.url }}#contact"><i class="bi bi-envelope navicon"></i> {{ h.nav_contact }}</a></li>
     </ul>
   </nav>
@@ -35,7 +45,7 @@
   <i class="header-toggle d-xl-none bi bi-list" role="button" tabindex="0" aria-label="Menu" aria-controls="header" aria-expanded="false"></i>
   <div class="lang-switch-mobile d-xl-none{% if lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
     <span class="seg-thumb" aria-hidden="true"></span>
-    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
-    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+    <a href="{{ en_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="{{ nb_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
   </div>
   <div class="nav-backdrop d-xl-none" aria-hidden="true"></div>
