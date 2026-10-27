@@ -4,6 +4,13 @@
   <title>{% if page.title %}{{ page.title }} – {% endif %}{{ site.title }}</title>
   <meta content="{{ page.summary | default: site.description | strip_html | escape }}" name="description">
 
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://jplundberg.com{{ page.url }}">
+  <meta property="og:title" content="{{ page.title | default: site.title | escape }}">
+  <meta property="og:description" content="{{ page.summary | default: site.description | strip_html | escape }}">
+  <meta property="og:image" content="https://jplundberg.com{{ page.image | default: '/assets/img/my-profile-img.jpg' }}">
+  <meta name="twitter:card" content="summary">
+
   <link href="/assets/img/favicon.png" rel="icon">
   <link href="/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
