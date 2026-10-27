@@ -1,12 +1,5 @@
 {% assign lang = page.lang | default: 'en' %}{% assign h = site.data.home[lang] %}
 <header id="header" class="header dark-background d-flex flex-column">
-  <i class="header-toggle d-xl-none bi bi-list"></i>
-
-  <div class="lang-switch-mobile d-xl-none{% if lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
-      <span class="seg-thumb" aria-hidden="true"></span>
-    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
-    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
-  </div>
 
   <div class="profile-img">
     <img src="/assets/img/my-profile-img-firkant.jpg" alt="John Paul Lundberg" class="img-fluid rounded-circle">
@@ -22,7 +15,7 @@
   </div>
 
   <div class="lang-switch{% if lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
-      <span class="seg-thumb" aria-hidden="true"></span>
+    <span class="seg-thumb" aria-hidden="true"></span>
     <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
     <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
   </div>
@@ -37,3 +30,12 @@
     </ul>
   </nav>
 </header>
+
+  <!-- Phone/tablet menu controls (outside the sliding panel) -->
+  <i class="header-toggle d-xl-none bi bi-list" role="button" tabindex="0" aria-label="Menu" aria-controls="header" aria-expanded="false"></i>
+  <div class="lang-switch-mobile d-xl-none{% if lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
+    <span class="seg-thumb" aria-hidden="true"></span>
+    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+  </div>
+  <div class="nav-backdrop d-xl-none" aria-hidden="true"></div>

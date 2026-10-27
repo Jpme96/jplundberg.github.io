@@ -42,13 +42,6 @@
 <body class="index-page">
 
   <header id="header" class="header dark-background d-flex flex-column">
-    <i class="header-toggle d-xl-none bi bi-list"></i>
-
-    <div class="lang-switch-mobile d-xl-none{% if page.lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
-      <span class="seg-thumb" aria-hidden="true"></span>
-      <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
-      <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
-    </div>
 
     <div class="profile-img">
       <img src="/assets/img/my-profile-img-firkant.jpg" alt="John Paul Lundberg" class="img-fluid rounded-circle">
@@ -80,6 +73,15 @@
     </nav>
 
   </header>
+
+  <!-- Phone/tablet menu controls (outside the sliding panel) -->
+  <i class="header-toggle d-xl-none bi bi-list" role="button" tabindex="0" aria-label="Menu" aria-controls="header" aria-expanded="false"></i>
+  <div class="lang-switch-mobile d-xl-none{% if page.lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
+    <span class="seg-thumb" aria-hidden="true"></span>
+    <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+  </div>
+  <div class="nav-backdrop d-xl-none" aria-hidden="true"></div>
 
   <main class="main">
 
@@ -238,6 +240,7 @@
   <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
   <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/menu.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/lang-switch.js?v={{ site.time | date: '%s' }}"></script>
 
 </body>

@@ -1451,8 +1451,9 @@ section,
 }
 
 /* Keep the open phone menu clean: hide the floating switch while it is open */
-.header.header-show .lang-switch-mobile {
-  display: none;
+.header.header-show ~ .lang-switch-mobile {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /*--------------------------------------------------------------
@@ -1576,4 +1577,92 @@ a[x-apple-data-detectors] {
 .lang-switch.is-switching,
 .lang-switch-mobile.is-switching {
   pointer-events: none;
+}
+
+/*--------------------------------------------------------------
+# Phone/tablet menu: iOS-style slide-in panel
+--------------------------------------------------------------*/
+.header-toggle {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: var(--contrast-color);
+  background-color: var(--accent-color);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .2s cubic-bezier(.32, .72, 0, 1), background-color .3s;
+}
+
+.header-toggle:hover {
+  background-color: color-mix(in srgb, var(--accent-color) 90%, white 15%);
+}
+
+.header-toggle:active {
+  transform: scale(.9);
+}
+
+.lang-switch-mobile {
+  transition: opacity .25s ease;
+}
+
+.nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 996;
+  background: rgba(0, 0, 0, .5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .45s cubic-bezier(.32, .72, 0, 1);
+}
+
+@media (max-width: 1199px) {
+  .header,
+  .header.header-show {
+    left: 0;
+  }
+
+  .header {
+    transform: translateX(-100%);
+    visibility: hidden;
+    box-shadow: none;
+    will-change: transform;
+    transition: transform .45s cubic-bezier(.32, .72, 0, 1),
+                box-shadow .45s cubic-bezier(.32, .72, 0, 1),
+                visibility 0s linear .45s;
+  }
+
+  .header.header-show {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 16px 0 48px rgba(0, 0, 0, .5);
+    transition: transform .45s cubic-bezier(.32, .72, 0, 1),
+                box-shadow .45s cubic-bezier(.32, .72, 0, 1),
+                visibility 0s;
+  }
+
+  .header.header-show ~ .nav-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.menu-open {
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header,
+  .header.header-show,
+  .nav-backdrop,
+  .header-toggle {
+    transition: none;
+  }
 }
