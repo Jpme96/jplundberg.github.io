@@ -1303,9 +1303,7 @@ section,
 /*--------------------------------------------------------------
 # Experience: highlights, timeline and systems
 --------------------------------------------------------------*/
-.resume .experience-wrap {
-  max-width: 860px;
-}
+
 
 .resume .highlights {
   margin-bottom: 44px;
@@ -1395,4 +1393,17 @@ section,
   border-radius: 50px;
   border: 1px solid color-mix(in srgb, var(--accent-color), transparent 40%);
   background: color-mix(in srgb, var(--accent-color), transparent 88%);
+}
+
+/*--------------------------------------------------------------
+# Readable content width on large screens
+--------------------------------------------------------------*/
+@media (min-width: 1200px) {
+  .main .section > .container {
+    max-width: 1040px;
+  }
+}
+
+.section-title p {
+  max-width: 760px;
 }
