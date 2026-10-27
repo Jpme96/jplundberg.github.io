@@ -1407,3 +1407,12 @@ section,
 .section-title p {
   max-width: 760px;
 }
+
+/* Keep the About photo a sensible size on tablets and phones */
+@media (max-width: 991px) {
+  .about .about-photo {
+    display: block;
+    max-width: 340px;
+    width: 100%;
+  }
+}
