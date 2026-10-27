@@ -1432,3 +1432,33 @@ section,
     width: 100%;
   }
 }
+
+/* Language switch (EN | NO) in the sidebar */
+.header .lang-switch {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: -4px 0 18px;
+}
+
+.header .lang-switch a {
+  font-family: var(--nav-font);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  padding: 4px 12px;
+  border-radius: 50px;
+  color: var(--nav-color);
+  border: 1px solid color-mix(in srgb, var(--default-color), transparent 85%);
+}
+
+.header .lang-switch a:hover {
+  color: var(--nav-hover-color);
+  border-color: var(--accent-color);
+}
+
+.header .lang-switch a.active {
+  color: var(--contrast-color);
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}

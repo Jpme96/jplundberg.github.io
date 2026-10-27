@@ -1,0 +1,242 @@
+{% assign t = site.data.home[page.lang] %}<!DOCTYPE html>
+<html lang="{{ t.html_lang }}">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{{ t.title }}</title>
+  <meta content="{{ t.description }}" name="description">
+  <meta content="{{ t.keywords }}" name="keywords">
+  <link rel="canonical" href="https://jplundberg.com{{ t.url }}">
+  <link rel="alternate" hreflang="en" href="https://jplundberg.com/">
+  <link rel="alternate" hreflang="nb" href="https://jplundberg.com/no/">
+  <link rel="alternate" hreflang="x-default" href="https://jplundberg.com/">
+
+  <!-- Link previews (LinkedIn, Facebook, messages) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jplundberg.com{{ t.url }}">
+  <meta property="og:title" content="{{ t.title }}">
+  <meta property="og:description" content="{{ t.description }}">
+  <meta property="og:image" content="https://jplundberg.com/assets/img/my-profile-img.jpg">
+  <meta name="twitter:card" content="summary">
+
+  <link href="/assets/img/favicon.png" rel="icon">
+  <link href="/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link href="/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <link href="/assets/css/main.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
+
+  <!-- Based on the iPortfolio template by BootstrapMade.com (https://bootstrapmade.com/license/) -->
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header dark-background d-flex flex-column">
+    <i class="header-toggle d-xl-none bi bi-list"></i>
+
+    <div class="profile-img">
+      <img src="/assets/img/my-profile-img-firkant.jpg" alt="John Paul Lundberg" class="img-fluid rounded-circle">
+    </div>
+
+    <a href="{{ t.url }}" class="logo d-flex align-items-center justify-content-center">
+      <h1 class="sitename">John Paul Lundberg</h1>
+    </a>
+
+    <div class="social-links text-center">
+      <a href="https://www.instagram.com/jp.lundberg.official/" target="_blank" rel="noopener" class="instagram" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+      <a href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener" class="linkedin" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+    </div>
+
+    <div class="lang-switch" role="group" aria-label="Language">
+      <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+      <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+    </div>
+
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="#hero" class="active"><i class="bi bi-house navicon"></i>{{ t.nav_home }}</a></li>
+        <li><a href="#about"><i class="bi bi-person navicon"></i> {{ t.nav_about }}</a></li>
+        <li><a href="#resume"><i class="bi bi-briefcase navicon"></i> {{ t.nav_experience }}</a></li>
+        <li><a href="/articles/"><i class="bi bi-journal-text navicon"></i> {{ t.nav_articles }}</a></li>
+        <li><a href="#contact"><i class="bi bi-envelope navicon"></i> {{ t.nav_contact }}</a></li>
+      </ul>
+    </nav>
+
+  </header>
+
+  <main class="main">
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero section dark-background">
+      <img src="/assets/img/hero-bg.jpg" alt="" data-aos="fade-in">
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <h2>John Paul Lundberg</h2>
+        <p>{{ t.hero_prefix }} <span class="typed" data-typed-items="{{ t.hero_items }}">{{ t.hero_first }}</span><span class="typed-cursor typed-cursor--blink" aria-hidden="true"></span></p>
+      </div>
+    </section><!-- /Hero Section -->
+
+    <!-- About Section -->
+    <section id="about" class="about section">
+
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.about_title }}</h2>
+        <p>{{ t.about_intro }}</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4 align-items-center">
+          <div class="col-lg-4">
+            <img src="/assets/img/my-profile-img.jpg" class="img-fluid about-photo" alt="John Paul Lundberg">
+          </div>
+          <div class="col-lg-8 content">
+            <h2>{{ t.about_heading }}</h2>
+            <p class="py-2">{{ t.about_p1 }}</p>
+            <script>
+              function getAge(dateString) {
+                var today = new Date();
+                var birthDate = new Date(dateString);
+                var age = today.getFullYear() - birthDate.getFullYear();
+                var m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                return age;
+              }
+            </script>
+            <ul class="facts">
+              <li><i class="bi bi-geo-alt"></i> <strong>{{ t.fact_city_label }}:</strong> <span>{{ t.fact_city }}</span></li>
+              <li><i class="bi bi-person"></i> <strong>{{ t.fact_age_label }}:</strong> <span><script>document.write(getAge("1996-06-30"))</script></span></li>
+              <li><i class="bi bi-mortarboard"></i> <strong>{{ t.fact_degree_label }}:</strong> <span>{{ t.fact_degree }}</span></li>
+            </ul>
+            <p class="mb-0">{{ t.about_p2 }}</p>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /About Section -->
+
+    <!-- Experience Section -->
+    <section id="resume" class="resume section">
+
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.exp_title }}</h2>
+        <p>{{ t.exp_intro }}</p>
+      </div>
+
+      <div class="container">
+        <div class="experience-wrap">
+
+          <div class="row gy-4 stats highlights" data-aos="fade-up">
+            <div class="col-md-6">
+              <div class="stats-item">
+                <i class="bi bi-file-earmark-check"></i>
+                <div>
+                  <span class="stat-value">{{ t.stat1_value }}</span>
+                  <p>{{ t.stat1_label }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="stats-item">
+                <i class="bi bi-calendar-check"></i>
+                <div>
+                  <span class="stat-value">{{ t.stat2_value }}</span>
+                  <p>{{ t.stat2_label }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline" data-aos="fade-up" data-aos-delay="100">
+            <div class="resume-item">
+              <h4>{{ t.job1_title }}</h4>
+              <h5>{{ t.job1_dates }}</h5>
+              <p class="company">{{ t.job1_company }}</p>
+              <ul>
+                {% for point in t.job1_points %}<li>{{ point }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="resume-item">
+              <h4>{{ t.job2_title }}</h4>
+              <h5>{{ t.job2_dates }}</h5>
+              <p class="company">{{ t.job2_company }}</p>
+              <ul>
+                {% for point in t.job2_points %}<li>{{ point }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+
+          <div class="systems" data-aos="fade-up" data-aos-delay="150">
+            <h3 class="resume-title">{{ t.systems_title }}</h3>
+            <ul class="system-tags">
+              <li>Plania</li>
+              <li>Curotech</li>
+              <li>Famac</li>
+              <li>Propely</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+    </section><!-- /Experience Section -->
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact section">
+
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.contact_title }}</h2>
+        <p>{{ t.contact_intro }}</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="info-item d-flex">
+          <i class="bi bi-envelope flex-shrink-0"></i>
+          <div>
+            <h3>{{ t.email_label }}</h3>
+            <p><a href="mailto:contact@jplundberg.com">contact@jplundberg.com</a></p>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /Contact Section -->
+
+  </main>
+
+  <footer id="footer" class="footer position-relative light-background">
+    <div class="container">
+      <div class="copyright text-center">
+        <p>{{ site.time | date: "%Y" }} © <span>Copyright</span> John Paul Lundberg</p>
+        <p>{{ t.rights }}</p>
+      </div>
+    </div>
+  </footer>
+
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <div id="preloader"></div>
+
+  <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/vendor/aos/aos.js"></script>
+  <script src="/assets/vendor/typed.js/typed.umd.js"></script>
+  <script src="/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="/assets/vendor/waypoints/noframework.waypoints.js"></script>
+  <script src="/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+  <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="/assets/js/main.js"></script>
+
+</body>
+
+</html>

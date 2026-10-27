@@ -1,0 +1,114 @@
+# Text for the home page in each language.
+# English is used at jplundberg.com/ and Norwegian at jplundberg.com/no/
+
+en:
+  html_lang: en
+  url: /
+  title: John Paul Lundberg
+  description: John Paul Lundberg – FDVU Advisor and Maintenance Operation and Management (M.O.M) engineer based in Oslo, Norway.
+  keywords: John Paul Lundberg, FDVU, FDV, maintenance engineer, M.O.M engineer, document control, documentation, Oslo
+  nav_home: Home
+  nav_about: About
+  nav_experience: Experience
+  nav_articles: Articles
+  nav_contact: Contact
+  hero_prefix: "I'm a"
+  hero_items: FDVU Advisor, M.O.M Engineer, Document Control Specialist
+  hero_first: FDVU Advisor
+  about_title: About
+  about_intro: >-
+    I believe hard work and consistency can take you anywhere you want to go in life.
+    I choose a healthy lifestyle and train at the gym as often as I can.
+    I also believe in compassion, which shows in my work and in my vegan diet.
+  about_heading: FDVU &amp; Document Control
+  about_p1: >-
+    I'm an FDVU Advisor at Boligbygg Oslo KF and a Maintenance Operation and Management (M.O.M) engineer.
+    My work combines maintenance planning with documentation control, quality assurance and coordination across departments.
+  fact_city_label: City
+  fact_city: Oslo, Norway
+  fact_age_label: Age
+  fact_degree_label: Degree
+  fact_degree: Higher professional degree, engineering
+  about_p2: >-
+    I also handle reporting, compliance support and internal workflows. I make sure records are accurate, complete and easy to find,
+    so nothing slips through the cracks and operations run smoothly over time.
+  exp_title: Experience
+  exp_intro: Over five years in facility management, operations, maintenance and documentation in Oslo.
+  stat1_value: 600–700k
+  stat1_label: <strong>Documents</strong> under quality control in my current role
+  stat2_value: "2020"
+  stat2_label: <strong>Working with FDVU</strong> since 2020
+  job1_title: FDVU Advisor
+  job1_dates: November 2025 – Present
+  job1_company: Boligbygg Oslo KF, Oslo
+  job1_points:
+    - Quality control of FDV documentation across 600,000–700,000 documents
+    - Making sure documentation is complete, correct and easy to find for operations and maintenance
+  job2_title: FDVU Coordinator
+  job2_dates: 2020 – 2025
+  job2_company: Akto Eiendom, Oslo
+  job2_points:
+    - Coordinating operations, maintenance and FDV documentation across properties
+  systems_title: Systems I've worked with
+  contact_title: Contact
+  contact_intro: >-
+    If you're looking for a reliable professional in Maintenance Operation and Management with strong administrative and documentation skills,
+    feel free to get in touch. I'm open to new opportunities, collaborations, or any questions you might have.
+  email_label: Email
+  rights: All Rights Reserved
+
+nb:
+  html_lang: nb
+  url: /no/
+  title: John Paul Lundberg
+  description: John Paul Lundberg – FDVU-rådgiver og ingeniør innen drift og vedlikehold (M.O.M), basert i Oslo.
+  keywords: John Paul Lundberg, FDVU, FDV, FDVU-rådgiver, vedlikehold, dokumentkontroll, dokumentasjon, Oslo
+  nav_home: Hjem
+  nav_about: Om meg
+  nav_experience: Erfaring
+  nav_articles: Artikler
+  nav_contact: Kontakt
+  hero_prefix: Jeg er
+  hero_items: FDVU-rådgiver, M.O.M-ingeniør, dokumentkontroller
+  hero_first: FDVU-rådgiver
+  about_title: Om meg
+  about_intro: >-
+    Jeg tror hardt arbeid og stå-på-vilje kan ta deg dit du vil i livet.
+    Jeg velger en sunn livsstil og trener så ofte jeg kan.
+    Jeg tror også på medfølelse, noe som preger både arbeidet mitt og mitt veganske kosthold.
+  about_heading: FDVU og dokumentkontroll
+  about_p1: >-
+    Jeg er FDVU-rådgiver i Boligbygg Oslo KF og ingeniør innen drift og vedlikehold (Maintenance Operation and Management, M.O.M).
+    Arbeidet mitt kombinerer vedlikeholdsplanlegging med dokumentkontroll, kvalitetssikring og koordinering på tvers av avdelinger.
+  fact_city_label: By
+  fact_city: Oslo, Norge
+  fact_age_label: Alder
+  fact_degree_label: Utdanning
+  fact_degree: Høyere yrkesfaglig utdanning, ingeniørfag
+  about_p2: >-
+    Jeg jobber også med rapportering, etterlevelse og interne arbeidsflyter. Jeg sørger for at dokumentasjonen er korrekt, komplett og lett å finne,
+    slik at ingenting faller mellom to stoler og driften går smidig over tid.
+  exp_title: Erfaring
+  exp_intro: Over fem års erfaring med forvaltning, drift, vedlikehold og dokumentasjon i Oslo.
+  stat1_value: 600–700 000
+  stat1_label: <strong>Dokumenter</strong> under kvalitetskontroll i nåværende stilling
+  stat2_value: "2020"
+  stat2_label: <strong>Jobbet med FDVU</strong> siden 2020
+  job1_title: FDVU-rådgiver
+  job1_dates: November 2025 – nå
+  job1_company: Boligbygg Oslo KF, Oslo
+  job1_points:
+    - Kvalitetskontroll av FDV-dokumentasjon på tvers av 600 000–700 000 dokumenter
+    - Sørger for at dokumentasjonen er komplett, korrekt og lett å finne for drift og vedlikehold
+  job2_title: FDVU-koordinator
+  job2_dates: 2020 – 2025
+  job2_company: Akto Eiendom, Oslo
+  job2_points:
+    - Koordinering av drift, vedlikehold og FDV-dokumentasjon på tvers av eiendommer
+  systems_title: Systemer jeg har jobbet med
+  contact_title: Kontakt
+  contact_intro: >-
+    Ser du etter en pålitelig fagperson innen drift og vedlikehold med sterk kompetanse på administrasjon og dokumentasjon?
+    Ta gjerne kontakt. Jeg er åpen for nye muligheter, samarbeid eller spørsmål.
+  email_label: E-post
+  rights: Alle rettigheter forbeholdt
