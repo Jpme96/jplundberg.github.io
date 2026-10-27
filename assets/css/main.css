@@ -1506,8 +1506,15 @@ section,
   background-color: #0a0b0c;
 }
 
-/* Hide the floating language switch while the phone menu is open
-   (the menu has its own switch) */
+/* Phones and tablets: the language switch lives only in the floating
+   button at the top, not inside the menu */
+@media (max-width: 1199px) {
+  .header .lang-switch {
+    display: none;
+  }
+}
+
+/* Keep the open phone menu clean: hide the floating switch while it is open */
 .header.header-show .lang-switch-mobile {
   display: none;
 }
