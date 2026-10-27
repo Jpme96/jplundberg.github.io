@@ -3,6 +3,11 @@ title: John Paul Lundberg
 description: Maintenance Operation and Management engineer based in Oslo.
 url: "https://jplundberg.com"
 baseurl: ""
+timezone: Europe/Oslo
+
+# Publish articles and projects even if their date is later than the build time
+# (GitHub builds in UTC, which is behind Norwegian time).
+future: true
 
 collections:
   articles:
