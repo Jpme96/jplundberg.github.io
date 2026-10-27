@@ -237,6 +237,28 @@
     </section><!-- /Projects Section -->
     {% endif %}
 
+    {% assign home_articles = site.articles | sort: "date" | reverse %}
+    {% if home_articles.size > 0 %}
+    <!-- Latest Articles Section -->
+    <section id="articles" class="articles-teaser section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.articles_home_title }}</h2>
+      </div>
+      <div class="container">
+        <div class="article-cards">
+          {% assign shown_a = 0 %}
+          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
+            {% if a_lang == page.lang and shown_a < 3 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
+          {% endfor %}
+          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
+            {% if a_lang != page.lang and shown_a < 3 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
+          {% endfor %}
+        </div>
+        <a class="more-link" href="{{ t.articles_url }}">{{ t.articles_home_link }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section><!-- /Latest Articles Section -->
+    {% endif %}
+
     <!-- Contact Section -->
     <section id="contact" class="contact section">
 

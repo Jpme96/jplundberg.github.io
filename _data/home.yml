@@ -59,6 +59,8 @@ en:
   systems_title: Systems I've worked with
   projects_home_title: Selected projects
   projects_home_link: All projects
+  articles_home_title: Latest articles
+  articles_home_link: All articles
   contact_title: Contact
   contact_intro: >-
     If you're looking for a reliable professional in Maintenance Operation and Management with strong administrative and documentation skills,
@@ -124,6 +126,8 @@ nb:
   systems_title: Systemer jeg har jobbet med
   projects_home_title: Utvalgte prosjekter
   projects_home_link: Alle prosjekter
+  articles_home_title: Siste artikler
+  articles_home_link: Alle artikler
   contact_title: Kontakt
   contact_intro: >-
     Ser du etter en pålitelig fagperson innen drift og vedlikehold med sterk kompetanse på administrasjon og dokumentasjon?

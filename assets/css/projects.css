@@ -116,14 +116,14 @@
 }
 
 .project-card-link .more,
-.projects .more-link {
+.more-link {
   font-family: var(--nav-font);
   font-size: 14px;
   font-weight: 500;
   color: var(--accent-color);
 }
 
-.projects .more-link {
+.more-link {
   display: inline-flex;
   gap: 6px;
   margin-top: 26px;
@@ -769,6 +769,7 @@
 }
 
 /* Home page teaser: tighter gap under the heading */
-#projects .section-title {
+#projects .section-title,
+#articles .section-title {
   padding-bottom: 32px;
 }
