@@ -10,6 +10,7 @@
 
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var startsNb = document.documentElement.lang === 'nb';
+  var switching = false; // locked once a language has been chosen
 
   function show(nb) {
     switches.forEach(function (sw) {
@@ -26,7 +27,9 @@
     sw.querySelectorAll('a').forEach(function (a) {
       a.addEventListener('click', function (e) {
         e.preventDefault();
-        if (a.classList.contains('active')) return;
+        if (switching || a.classList.contains('active')) return;
+        switching = true;
+        switches.forEach(function (s) { s.classList.add('is-switching'); });
         var toNb = a.getAttribute('hreflang') === 'nb';
         show(toNb);
         // Keep the reader in the same section (e.g. #resume) on the home page
@@ -37,5 +40,9 @@
   });
 
   // Coming back with the browser's back button: put the highlight where it belongs
-  window.addEventListener('pageshow', function () { show(startsNb); });
+  window.addEventListener('pageshow', function () {
+    switching = false;
+    switches.forEach(function (s) { s.classList.remove('is-switching'); });
+    show(startsNb);
+  });
 })();
