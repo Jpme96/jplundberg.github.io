@@ -43,6 +43,11 @@
   <header id="header" class="header dark-background d-flex flex-column">
     <i class="header-toggle d-xl-none bi bi-list"></i>
 
+    <div class="lang-switch-mobile d-xl-none" role="group" aria-label="Language">
+      <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+      <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+    </div>
+
     <div class="profile-img">
       <img src="/assets/img/my-profile-img-firkant.jpg" alt="John Paul Lundberg" class="img-fluid rounded-circle">
     </div>

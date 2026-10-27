@@ -1462,3 +1462,41 @@ section,
   background: var(--accent-color);
   border-color: var(--accent-color);
 }
+
+/* Language switch on phones and tablets: top right, next to the menu button */
+.lang-switch-mobile {
+  position: fixed;
+  top: 15px;
+  right: 65px;
+  z-index: 9998;
+  display: flex;
+  height: 40px;
+  padding: 4px;
+  gap: 2px;
+  border-radius: 50px;
+  background: color-mix(in srgb, #040b14, transparent 25%);
+  border: 1px solid color-mix(in srgb, #ffffff, transparent 85%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.lang-switch-mobile a {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 50px;
+  font-family: var(--nav-font);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: #c9cbd3;
+}
+
+.lang-switch-mobile a:hover {
+  color: #ffffff;
+}
+
+.lang-switch-mobile a.active {
+  color: var(--contrast-color);
+  background: var(--accent-color);
+}
