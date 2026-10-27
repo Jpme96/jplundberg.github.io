@@ -2,6 +2,20 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <meta name="format-detection" content="telephone=no">
+  <script>
+    /* Decide early whether to animate, so content never flashes before its entrance */
+    (function () {
+      try {
+        var d = document.documentElement;
+        var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var skip = sessionStorage.getItem('jpl-skip-intro') === '1';
+        if (!reduce && !skip && 'IntersectionObserver' in window) {
+          d.classList.add('motion');
+          setTimeout(function () { if (!d.classList.contains('motion-ready')) d.classList.remove('motion'); }, 3000);
+        }
+      } catch (e) {}
+    })();
+  </script>
   <title>{% if page.title %}{{ page.title }} – {% endif %}{{ site.title }}</title>
   <meta content="{{ page.summary | default: site.description | strip_html | escape }}" name="description">
 
@@ -21,7 +35,6 @@
 
   <link href="/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 

@@ -13,9 +13,7 @@ en:
   nav_experience: Experience
   nav_articles: Articles
   nav_contact: Contact
-  hero_prefix: "I'm a"
   hero_items: FDVU Advisor, M.O.M Engineer, Document Control Specialist
-  hero_first: FDVU Advisor
   about_title: About
   about_intro: >-
     I believe hard work and consistency can take you anywhere you want to go in life.
@@ -76,9 +74,7 @@ nb:
   nav_experience: Erfaring
   nav_articles: Artikler
   nav_contact: Kontakt
-  hero_prefix: Jeg er
-  hero_items: FDVU-rådgiver, M.O.M-ingeniør, dokumentkontroller
-  hero_first: FDVU-rådgiver
+  hero_items: FDVU-rådgiver, M.O.M-ingeniør, Dokumentkontroller
   about_title: Om meg
   about_intro: >-
     Jeg tror hardt arbeid og stå-på-vilje kan ta deg dit du vil i livet.

@@ -5,6 +5,20 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <meta name="format-detection" content="telephone=no">
+  <script>
+    /* Decide early whether to animate, so content never flashes before its entrance */
+    (function () {
+      try {
+        var d = document.documentElement;
+        var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var skip = sessionStorage.getItem('jpl-skip-intro') === '1';
+        if (!reduce && !skip && 'IntersectionObserver' in window) {
+          d.classList.add('motion');
+          setTimeout(function () { if (!d.classList.contains('motion-ready')) d.classList.remove('motion'); }, 3000);
+        }
+      } catch (e) {}
+    })();
+  </script>
   <title>{{ t.title }}</title>
   <meta content="{{ t.description }}" name="description">
   <meta content="{{ t.keywords }}" name="keywords">
@@ -30,7 +44,6 @@
 
   <link href="/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
@@ -90,7 +103,8 @@
       <img src="/assets/img/hero-bg.jpg" alt="" data-aos="fade-in">
       <div class="container" data-aos="fade-up" data-aos-delay="100">
         <h2>John Paul Lundberg</h2>
-        <p>{{ t.hero_prefix }} <span class="typed" data-typed-items="{{ t.hero_items }}">{{ t.hero_first }}</span><span class="typed-cursor typed-cursor--blink" aria-hidden="true"></span></p>
+        {% assign roles = t.hero_items | split: ',' %}
+        <p class="hero-role"><span class="role-rotator" aria-hidden="true">{% for r in roles %}<span class="role{% if forloop.first %} is-active{% endif %}">{{ r | strip }}</span>{% endfor %}</span><span class="visually-hidden">{{ t.hero_items }}</span></p>
       </div>
     </section><!-- /Hero Section -->
 
@@ -231,14 +245,13 @@
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
   <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/vendor/aos/aos.js"></script>
-  <script src="/assets/vendor/typed.js/typed.umd.js"></script>
   <script src="/assets/vendor/purecounter/purecounter_vanilla.js"></script>
   <script src="/assets/vendor/waypoints/noframework.waypoints.js"></script>
   <script src="/assets/vendor/glightbox/js/glightbox.min.js"></script>
   <script src="/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
   <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
   <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="/assets/js/motion.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/menu.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/lang-switch.js?v={{ site.time | date: '%s' }}"></script>

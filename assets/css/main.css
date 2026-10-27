@@ -1666,3 +1666,160 @@ a[x-apple-data-detectors] {
     transition: none;
   }
 }
+
+/*--------------------------------------------------------------
+# Motion: one calm, iPhone-like system for the whole site
+--------------------------------------------------------------*/
+:root {
+  --ease-ios: cubic-bezier(.32, .72, 0, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* --- Scroll reveals (only when .motion is on) --- */
+.motion .timeline .resume-item:not(.shown),
+.motion .article-cards .article-card:not(.shown),
+.motion .highlights > div:not(.shown),
+.motion .system-tags li:not(.shown),
+.motion [data-aos]:not(.hero *):not(.page-hero *):not(.shown) {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.motion .shown:not(.done) {
+  transition: opacity .75s var(--ease-out), transform .75s var(--ease-out);
+}
+
+/* Timeline dots pop in after their job appears */
+.motion .timeline .resume-item:not(.shown)::before {
+  transform: scale(0);
+}
+
+.motion .timeline .resume-item.shown:not(.done)::before {
+  transition: transform .55s var(--ease-ios) .18s;
+}
+
+/* --- Opening: name and title rise into focus, photo settles --- */
+.motion .hero > img,
+.motion .page-hero > img {
+  transform: scale(1.08);
+}
+
+.motion .hero h2,
+.motion .hero .hero-role,
+.motion .page-hero .container > * {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(8px);
+}
+
+.motion.motion-ready .hero > img,
+.motion.motion-ready .page-hero > img {
+  transform: scale(1);
+  transition: transform 2.2s var(--ease-out);
+}
+
+.motion.motion-ready .hero h2,
+.motion.motion-ready .hero .hero-role,
+.motion.motion-ready .page-hero .container > * {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: opacity .9s var(--ease-out), transform .9s var(--ease-out), filter .9s var(--ease-out);
+}
+
+.motion.motion-ready .hero .hero-role { transition-delay: .15s; }
+.motion.motion-ready .page-hero .container > :nth-child(2) { transition-delay: .08s; }
+.motion.motion-ready .page-hero .container > :nth-child(3) { transition-delay: .16s; }
+.motion.motion-ready .page-hero .container > :nth-child(4) { transition-delay: .24s; }
+
+/* --- Title rotator (replaces the typing effect) --- */
+.hero p.hero-role {
+  margin-top: 8px;
+}
+
+.hero p.hero-role .role-rotator {
+  display: inline-grid;
+  border: 0;
+  letter-spacing: normal;
+}
+
+.hero p.hero-role .role {
+  grid-area: 1 / 1;
+  justify-self: start;
+  white-space: nowrap;
+  letter-spacing: 1px;
+  border-bottom: 2px solid var(--accent-color);
+  opacity: 0;
+  transform: translateY(55%);
+  filter: blur(6px);
+  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out), filter .6s var(--ease-out);
+}
+
+.hero p.hero-role .role.is-active {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.hero p.hero-role .role.is-leaving {
+  opacity: 0;
+  transform: translateY(-55%);
+  filter: blur(6px);
+}
+
+@media (max-width: 575px) {
+  .hero p.hero-role {
+    font-size: 21px;
+  }
+}
+
+/* --- Scroll-to-top button glides in --- */
+.scroll-top {
+  bottom: 15px;
+  transform: translateY(14px) scale(.85);
+  transition: opacity .35s var(--ease-out), transform .5s var(--ease-ios), visibility .35s, background-color .3s;
+}
+
+.scroll-top.active {
+  bottom: 15px;
+  transform: none;
+}
+
+/* --- Page-to-page: smooth cross-fade; sidebar and buttons stay put --- */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .32s;
+  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+
+@media (min-width: 1200px) {
+  .header { view-transition-name: jpl-sidebar; }
+}
+
+.header-toggle { view-transition-name: jpl-menu-button; }
+.lang-switch-mobile { view-transition-name: jpl-language; }
+
+/* --- Reduce motion: everything still works, nothing moves --- */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  .scroll-top,
+  .article-card,
+  .hero p.hero-role .role {
+    transition: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .hero p.hero-role {
+    font-size: 18px;
+  }
+}
