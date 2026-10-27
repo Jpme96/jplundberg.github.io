@@ -4,6 +4,7 @@
 en:
   html_lang: en
   url: /
+  articles_url: /articles/
   title: John Paul Lundberg
   description: John Paul Lundberg – FDVU Advisor and Maintenance Operation and Management (M.O.M) engineer based in Oslo, Norway.
   keywords: John Paul Lundberg, FDVU, FDV, maintenance engineer, M.O.M engineer, document control, documentation, Oslo
@@ -60,6 +61,7 @@ en:
 nb:
   html_lang: nb
   url: /no/
+  articles_url: /no/articles/
   title: John Paul Lundberg
   description: John Paul Lundberg – FDVU-rådgiver og ingeniør innen drift og vedlikehold (M.O.M), basert i Oslo.
   keywords: John Paul Lundberg, FDVU, FDV, FDVU-rådgiver, vedlikehold, dokumentkontroll, dokumentasjon, Oslo

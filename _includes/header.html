@@ -1,11 +1,17 @@
+{% assign lang = page.lang | default: 'en' %}{% assign h = site.data.home[lang] %}
 <header id="header" class="header dark-background d-flex flex-column">
   <i class="header-toggle d-xl-none bi bi-list"></i>
+
+  <div class="lang-switch-mobile d-xl-none" role="group" aria-label="Language">
+    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+  </div>
 
   <div class="profile-img">
     <img src="/assets/img/my-profile-img-firkant.jpg" alt="John Paul Lundberg" class="img-fluid rounded-circle">
   </div>
 
-  <a href="/" class="logo d-flex align-items-center justify-content-center">
+  <a href="{{ h.url }}" class="logo d-flex align-items-center justify-content-center">
     <h1 class="sitename">John Paul Lundberg</h1>
   </a>
 
@@ -14,13 +20,18 @@
     <a href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener" class="linkedin" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
   </div>
 
+  <div class="lang-switch" role="group" aria-label="Language">
+    <a href="{{ site.data.home.en.articles_url }}" hreflang="en" lang="en"{% if lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
+    <a href="{{ site.data.home.nb.articles_url }}" hreflang="nb" lang="nb"{% if lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
+  </div>
+
   <nav id="navmenu" class="navmenu">
     <ul>
-      <li><a href="/#hero"><i class="bi bi-house navicon"></i>Home</a></li>
-      <li><a href="/#about"><i class="bi bi-person navicon"></i> About</a></li>
-      <li><a href="/#resume"><i class="bi bi-briefcase navicon"></i> Experience</a></li>
-      <li><a href="/articles/" class="active"><i class="bi bi-journal-text navicon"></i> Articles</a></li>
-      <li><a href="/#contact"><i class="bi bi-envelope navicon"></i> Contact</a></li>
+      <li><a href="{{ h.url }}#hero"><i class="bi bi-house navicon"></i>{{ h.nav_home }}</a></li>
+      <li><a href="{{ h.url }}#about"><i class="bi bi-person navicon"></i> {{ h.nav_about }}</a></li>
+      <li><a href="{{ h.url }}#resume"><i class="bi bi-briefcase navicon"></i> {{ h.nav_experience }}</a></li>
+      <li><a href="{{ h.articles_url }}" class="active"><i class="bi bi-journal-text navicon"></i> {{ h.nav_articles }}</a></li>
+      <li><a href="{{ h.url }}#contact"><i class="bi bi-envelope navicon"></i> {{ h.nav_contact }}</a></li>
     </ul>
   </nav>
 </header>

@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+{% assign base_lang = page.lang | default: "en" %}<!DOCTYPE html>
+<html lang="{{ site.data.home[base_lang].html_lang }}">
 {% include head.html %}
 <body class="articles-page">
   {% include header.html %}

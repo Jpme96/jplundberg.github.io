@@ -19,21 +19,21 @@
 
 /* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
 :root { 
-  --background-color: #212529; /* Background color for the entire website, including individual sections */
-  --default-color: #f4fafd; /* Default color used for the majority of the text content across the entire website */
-  --heading-color: #f4fafd; /* Color for headings, subheadings and title throughout the website */
-  --accent-color: #149ddd; /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
-  --surface-color: #ffffff; /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
-  --contrast-color: #ffffff; /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
+  --background-color: #0e0f11; /* Background color for the entire website, including individual sections */
+  --default-color: #e7e7ea; /* Default color used for the majority of the text content across the entire website */
+  --heading-color: #ffffff; /* Color for headings, subheadings and title throughout the website */
+  --accent-color: #14b8a6; /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
+  --surface-color: #17181b; /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
+  --contrast-color: #0a0b0c; /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
 }
 
 /* Nav Menu Colors - The following color variables are used specifically for the navigation menu. They are separate from the global colors to allow for more customization options */
 :root {
-  --nav-color: #a8a9b4;  /* The default color of the main navmenu links */
+  --nav-color: #9a9ca3;  /* The default color of the main navmenu links */
   --nav-hover-color: #ffffff; /* Applied to main navmenu links when they are hovered over or active */
-  --nav-mobile-background-color: #040b14; /* Used as the background color for mobile navigation menu */
-  --nav-dropdown-background-color: #040b14; /* Used as the background color for dropdown items that appear when hovering over primary navigation items */
-  --nav-dropdown-color: #a8a9b4; /* Used for navigation links of the dropdown items in the navigation menu. */
+  --nav-mobile-background-color: #0a0b0c; /* Used as the background color for mobile navigation menu */
+  --nav-dropdown-background-color: #0a0b0c; /* Used as the background color for dropdown items that appear when hovering over primary navigation items */
+  --nav-dropdown-color: #9a9ca3; /* Used for navigation links of the dropdown items in the navigation menu. */
   --nav-dropdown-hover-color: #ffffff; /* Similar to --nav-hover-color, this color is applied to dropdown navigation links when they are hovered over. */
 }
 
@@ -1474,7 +1474,7 @@ section,
   padding: 4px;
   gap: 2px;
   border-radius: 50px;
-  background: color-mix(in srgb, #040b14, transparent 25%);
+  background: color-mix(in srgb, #0a0b0c, transparent 20%);
   border: 1px solid color-mix(in srgb, #ffffff, transparent 85%);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -1499,4 +1499,15 @@ section,
 .lang-switch-mobile a.active {
   color: var(--contrast-color);
   background: var(--accent-color);
+}
+
+/* Sidebar a shade darker than the page */
+.header {
+  background-color: #0a0b0c;
+}
+
+/* Hide the floating language switch while the phone menu is open
+   (the menu has its own switch) */
+.header.header-show .lang-switch-mobile {
+  display: none;
 }

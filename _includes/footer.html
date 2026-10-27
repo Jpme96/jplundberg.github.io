@@ -1,8 +1,8 @@
-<footer id="footer" class="footer position-relative light-background">
+{% assign footer_lang = page.lang | default: "en" %}<footer id="footer" class="footer position-relative light-background">
   <div class="container">
     <div class="copyright text-center">
       <p>{{ site.time | date: "%Y" }} © <span>Copyright</span> John Paul Lundberg</p>
-      <p>All Rights Reserved</p>
+      <p>{{ site.data.home[footer_lang].rights }}</p>
     </div>
   </div>
 </footer>

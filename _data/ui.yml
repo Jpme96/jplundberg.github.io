@@ -1,0 +1,39 @@
+# Text used on the article pages in each language.
+
+en:
+  articles_url: /articles/
+  crumbs_home: Home
+  articles_title: Articles
+  articles_intro: Thoughts on maintenance, documentation, training and living well.
+  articles_summary: Articles by John Paul Lundberg on maintenance, documentation, training and living well.
+  latest: Latest
+  empty: No articles yet. Check back soon.
+  read_more: Read more
+  min_read: min read
+  all_articles: All articles
+  author_bio: FDVU Advisor and M.O.M engineer based in Oslo.
+  get_in_touch: Get in touch
+  date_dot: ""
+  months: [January, February, March, April, May, June, July, August, September, October, November, December]
+  lang_badge:
+    en: English
+    nb: Norsk
+
+nb:
+  articles_url: /no/articles/
+  crumbs_home: Hjem
+  articles_title: Artikler
+  articles_intro: Tanker om vedlikehold, dokumentasjon, trening og et godt liv.
+  articles_summary: Artikler av John Paul Lundberg om vedlikehold, dokumentasjon, trening og et godt liv.
+  latest: Siste
+  empty: Ingen artikler ennå. Kom gjerne tilbake senere.
+  read_more: Les mer
+  min_read: min lesetid
+  all_articles: Alle artikler
+  author_bio: FDVU-rådgiver og ingeniør innen drift og vedlikehold, basert i Oslo.
+  get_in_touch: Ta kontakt
+  date_dot: "."
+  months: [januar, februar, mars, april, mai, juni, juli, august, september, oktober, november, desember]
+  lang_badge:
+    en: English
+    nb: Norsk

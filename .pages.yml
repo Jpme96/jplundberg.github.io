@@ -23,6 +23,17 @@ content:
         label: Title
         type: string
         required: true
+      - name: lang
+        label: Language
+        description: The language the article is written in. The page text around it (menu, dates, buttons) follows this.
+        type: select
+        default: en
+        options:
+          values:
+            - value: en
+              label: English
+            - value: nb
+              label: Norsk
       - name: date
         label: Date
         type: date
