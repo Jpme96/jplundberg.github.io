@@ -41,6 +41,10 @@ charts:
 
 Good operations and maintenance depend on building documentation that is complete, correct and easy to find. At Boligbygg, I work to put this in place. So far, 406 buildings have been selected to bring their documentation into the correct structure, and we have reached 55% of the goal. Progress has risen steadily, from 9% in May to 55% in October 2026. The work has three focus areas.
 
+## Why it matters
+
+Poor documentation costs more than most people think. When information is spread across several places, formats and versions, work becomes slow and much of it is done twice. The wrong version of a drawing or instruction can lead to poorer operations and maintenance, and when drawings are missing, new ones have to be produced. Small losses in daily work add up to large amounts across a whole portfolio. Read more in my article on [why digitalising FDVU pays off](/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/) (in Norwegian).
+
 ## Structure and quality in the FDVU system
 
 Documentation in the FDVU system is reviewed, cleaned up and quality-assured, so that the information about each building can be trusted.

@@ -41,6 +41,10 @@ charts:
 
 God drift og godt vedlikehold forutsetter at dokumentasjonen om byggene er komplett, korrekt og lett å finne. I Boligbygg arbeider jeg med å få dette på plass. Så langt er 406 bygninger hentet ut for å få dokumentasjonen i riktig struktur, og vi har nådd 55 % av målet. Fremdriften har økt jevnt, fra 9 % i mai til 55 % i oktober 2026. Arbeidet har tre fokusområder.
 
+## Hvorfor det er viktig
+
+Mangelfull dokumentasjon koster mer enn man tror. Når informasjonen er spredt på flere steder, i ulike formater og versjoner, blir det tungvint arbeid og mye dobbeltarbeid. Feil versjon av en tegning eller instruks kan gi dårligere drift og vedlikehold, og når tegninger mangler, må nye lages på nytt. Små tap i hverdagen blir store summer over en hel portefølje. Les mer i artikkelen min om [hvorfor det lønner seg å digitalisere FDVU](/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/).
+
 ## Struktur og kvalitet i FDVU-systemet
 
 Dokumentasjonen i FDVU-systemet gjennomgås, ryddes og kvalitetssikres, slik at informasjonen om hvert bygg er til å stole på.
