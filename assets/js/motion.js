@@ -55,7 +55,9 @@
           io.unobserve(el);
           reveal(el, Math.min(i, 6) * 70);
         });
-    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    // Reveal as soon as any part enters the screen. (A share-based threshold never
+    // triggers for blocks taller than the screen, such as long articles.)
+    }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
 
     targets.forEach(function (el) { io.observe(el); });
   }
