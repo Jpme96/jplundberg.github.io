@@ -44,7 +44,8 @@
   <header id="header" class="header dark-background d-flex flex-column">
     <i class="header-toggle d-xl-none bi bi-list"></i>
 
-    <div class="lang-switch-mobile d-xl-none" role="group" aria-label="Language">
+    <div class="lang-switch-mobile d-xl-none{% if page.lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
+      <span class="seg-thumb" aria-hidden="true"></span>
       <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
       <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
     </div>
@@ -62,7 +63,8 @@
       <a href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener" class="linkedin" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
     </div>
 
-    <div class="lang-switch" role="group" aria-label="Language">
+    <div class="lang-switch{% if page.lang == 'nb' %} is-nb{% endif %}" role="group" aria-label="Language">
+      <span class="seg-thumb" aria-hidden="true"></span>
       <a href="/" hreflang="en" lang="en"{% if page.lang == 'en' %} class="active" aria-current="page"{% endif %}>EN</a>
       <a href="/no/" hreflang="nb" lang="nb"{% if page.lang == 'nb' %} class="active" aria-current="page"{% endif %}>NO</a>
     </div>
@@ -225,7 +227,6 @@
   </footer>
 
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-  <div id="preloader"></div>
 
   <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/vendor/aos/aos.js"></script>
@@ -237,6 +238,7 @@
   <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
   <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/lang-switch.js?v={{ site.time | date: '%s' }}"></script>
 
 </body>
 

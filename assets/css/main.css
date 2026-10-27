@@ -1433,73 +1433,9 @@ section,
   }
 }
 
-/* Language switch (EN | NO) in the sidebar */
-.header .lang-switch {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin: -4px 0 18px;
-}
 
-.header .lang-switch a {
-  font-family: var(--nav-font);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: .04em;
-  padding: 4px 12px;
-  border-radius: 50px;
-  color: var(--nav-color);
-  border: 1px solid color-mix(in srgb, var(--default-color), transparent 85%);
-}
 
-.header .lang-switch a:hover {
-  color: var(--nav-hover-color);
-  border-color: var(--accent-color);
-}
 
-.header .lang-switch a.active {
-  color: var(--contrast-color);
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-}
-
-/* Language switch on phones and tablets: top right, next to the menu button */
-.lang-switch-mobile {
-  position: fixed;
-  top: 15px;
-  right: 65px;
-  z-index: 9998;
-  display: flex;
-  height: 40px;
-  padding: 4px;
-  gap: 2px;
-  border-radius: 50px;
-  background: color-mix(in srgb, #0a0b0c, transparent 20%);
-  border: 1px solid color-mix(in srgb, #ffffff, transparent 85%);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.lang-switch-mobile a {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border-radius: 50px;
-  font-family: var(--nav-font);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: .04em;
-  color: #c9cbd3;
-}
-
-.lang-switch-mobile a:hover {
-  color: #ffffff;
-}
-
-.lang-switch-mobile a.active {
-  color: var(--contrast-color);
-  background: var(--accent-color);
-}
 
 /* Sidebar a shade darker than the page */
 .header {
@@ -1533,4 +1469,105 @@ a[href^="tel"],
 a[x-apple-data-detectors] {
   color: inherit !important;
   text-decoration: none !important;
+}
+
+/*--------------------------------------------------------------
+# Language switch: iOS-style segmented control
+--------------------------------------------------------------*/
+.lang-switch,
+.lang-switch-mobile {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: 50px;
+  isolation: isolate;
+}
+
+/* Sidebar (computers) */
+.header .lang-switch {
+  align-self: center;
+  margin: -4px auto 18px;
+  background: color-mix(in srgb, var(--default-color), transparent 93%);
+  border: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+}
+
+/* Floating button (phones and tablets): top right, next to the menu button */
+.lang-switch-mobile {
+  position: fixed;
+  top: 15px;
+  right: 65px;
+  z-index: 9998;
+  height: 40px;
+  background: color-mix(in srgb, #0a0b0c, transparent 20%);
+  border: 1px solid color-mix(in srgb, #ffffff, transparent 88%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.lang-switch a,
+.lang-switch-mobile a {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-family: var(--nav-font);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--nav-color);
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .3s cubic-bezier(.32, .72, 0, 1);
+}
+
+.lang-switch a:hover,
+.lang-switch-mobile a:hover {
+  color: var(--nav-hover-color);
+}
+
+.lang-switch a.active,
+.lang-switch-mobile a.active {
+  color: var(--contrast-color);
+}
+
+/* The sliding highlight */
+.seg-thumb {
+  position: absolute;
+  z-index: 0;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 50px;
+  background: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+  transition: transform .36s cubic-bezier(.32, .72, 0, 1);
+}
+
+.is-nb .seg-thumb {
+  transform: translateX(100%);
+}
+
+/* Small press feedback, like on iPhone */
+.lang-switch:active .seg-thumb,
+.lang-switch-mobile:active .seg-thumb {
+  transform: scale(.94);
+}
+
+.is-nb.lang-switch:active .seg-thumb,
+.is-nb.lang-switch-mobile:active .seg-thumb {
+  transform: translateX(100%) scale(.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg-thumb,
+  .lang-switch a,
+  .lang-switch-mobile a {
+    transition: none;
+  }
 }
