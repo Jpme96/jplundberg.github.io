@@ -1273,3 +1273,50 @@ section,
 .starter-section {
   /* Add your styles here */
 }
+
+/*--------------------------------------------------------------
+# Experience: highlights and systems
+--------------------------------------------------------------*/
+.resume .highlights {
+  padding-bottom: 30px;
+}
+
+.resume .highlights .stats-item {
+  padding: 24px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--default-color), transparent 95%);
+  height: 100%;
+}
+
+.resume .highlights .stats-item .stat-value {
+  color: var(--heading-color);
+  font-family: var(--heading-font);
+  font-size: 40px;
+  line-height: 40px;
+  display: block;
+  font-weight: 700;
+  margin-left: 60px;
+}
+
+.resume .system-tags {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.resume .system-tags li {
+  font-family: var(--nav-font);
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 50px;
+  border: 1px solid color-mix(in srgb, var(--accent-color), transparent 40%);
+  background: color-mix(in srgb, var(--accent-color), transparent 88%);
+}
+
+.resume .system-note {
+  font-size: 15px;
+  color: color-mix(in srgb, var(--default-color), transparent 30%);
+}
