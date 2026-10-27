@@ -80,7 +80,7 @@
 .page-hero .meta,
 .page-hero .intro {
   font-size: 16px;
-  color: color-mix(in srgb, var(--default-color), transparent 15%);
+  color: color-mix(in srgb, var(--default-color), transparent 25%);
   margin: 0;
 }
 
@@ -140,7 +140,7 @@
 
 .article-card p {
   font-size: 15px;
-  color: color-mix(in srgb, var(--default-color), transparent 20%);
+  color: color-mix(in srgb, var(--default-color), transparent 25%);
   flex: 1;
 }
 
@@ -152,7 +152,7 @@
 }
 
 .empty {
-  color: color-mix(in srgb, var(--default-color), transparent 30%);
+  color: color-mix(in srgb, var(--default-color), transparent 25%);
 }
 
 /* Single article */
@@ -165,7 +165,7 @@
 .article-body .lead {
   font-size: 20px;
   font-style: italic;
-  color: color-mix(in srgb, var(--default-color), transparent 10%);
+  color: var(--default-color);
   margin-bottom: 28px;
 }
 

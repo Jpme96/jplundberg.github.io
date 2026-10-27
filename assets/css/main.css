@@ -1518,3 +1518,19 @@ section,
 .header.header-show .lang-switch-mobile {
   display: none;
 }
+
+/*--------------------------------------------------------------
+# Consistency fixes
+--------------------------------------------------------------*/
+/* Highlight box labels use the body font like all other body text */
+.resume .highlights .stats-item p {
+  font-family: var(--default-font);
+  color: color-mix(in srgb, var(--default-color), transparent 25%);
+}
+
+/* Never let phones style detected phone numbers as links */
+a[href^="tel"],
+a[x-apple-data-detectors] {
+  color: inherit !important;
+  text-decoration: none !important;
+}
