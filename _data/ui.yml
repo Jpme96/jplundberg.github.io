@@ -18,6 +18,11 @@ en:
   lang_badge:
     en: English
     nb: Norsk
+  categories:
+    Work: Work
+    Training: Training
+    Food: Food
+    Life: Life
 
 nb:
   articles_url: /no/articles/
@@ -37,3 +42,8 @@ nb:
   lang_badge:
     en: English
     nb: Norsk
+  categories:
+    Work: Arbeid
+    Training: Trening
+    Food: Mat
+    Life: Livet

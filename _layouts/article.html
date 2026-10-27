@@ -9,7 +9,7 @@ layout: base
   <img src="{{ page.image | default: '/assets/img/hero-bg.jpg' }}" alt="">
   <div class="container" data-aos="fade-up">
     <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / <a href="{{ u.articles_url }}">{{ u.articles_title }}</a></div>
-    {% if page.category %}<span class="tag">{{ page.category }}</span>{% endif %}
+    {% if page.category %}<span class="tag">{{ u.categories[page.category] | default: page.category }}</span>{% endif %}
     <h2>{{ page.title }}</h2>
     <div class="meta">{{ page.date | date: "%-d" }}{{ u.date_dot }} {{ u.months[month] }} {{ page.date | date: "%Y" }} · {{ minutes }} {{ u.min_read }}</div>
   </div>

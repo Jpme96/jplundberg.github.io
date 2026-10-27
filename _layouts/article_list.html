@@ -27,7 +27,7 @@ layout: base
       {% assign a_month = a.date | date: "%-m" | minus: 1 %}
       <a class="article-card" href="{{ a.url }}" data-aos="fade-up" data-aos-delay="{{ forloop.index0 | modulo: 3 | times: 100 }}">
         <div class="thumb"{% if a.image %} style="background-image:url('{{ a.image }}')"{% endif %}>
-          {% if a.category %}<span>{{ a.category }}</span>{% endif %}
+          {% if a.category %}<span>{{ u.categories[a.category] | default: a.category }}</span>{% endif %}
           {% if a_lang != lang %}<span class="lang-badge">{{ u.lang_badge[a_lang] }}</span>{% endif %}
         </div>
         <div class="body">

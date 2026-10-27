@@ -42,7 +42,15 @@ content:
         label: Category
         type: select
         options:
-          values: [Work, Training, Food, Life]
+          values:
+            - value: Work
+              label: Work / Arbeid
+            - value: Training
+              label: Training / Trening
+            - value: Food
+              label: Food / Mat
+            - value: Life
+              label: Life / Livet
       - name: summary
         label: Short summary
         description: One or two sentences shown on the articles list and at the top of the article.
