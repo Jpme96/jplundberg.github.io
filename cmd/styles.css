@@ -1548,3 +1548,59 @@ input:disabled { opacity: .55; }
 .glass .st-panel { background: rgba(var(--card-rgb), calc(.9 - var(--glass) * .35)); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 .glass .cl-sheet { background: rgba(var(--card-rgb), calc(.92 - var(--glass) * .3)); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 :root[data-theme="light"].glass { --card: rgba(255, 255, 255, calc(.8 - var(--glass) * .55)); }
+
+/* ---------- Card style, density and corners (Settings → Appearance → Cards) ---------- */
+.ap-sub { display: flex; align-items: center; gap: 7px; margin: 18px 4px 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.ap-page > .ap-sub:first-child { margin-top: 2px; }
+.ap-sub .bi { color: var(--accent); font-size: 13px; }
+.ap-page .st-group { margin-bottom: 4px; }
+.ap-page .st-col > span:first-child { display: block; margin-bottom: 8px; }
+
+.cst-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.cst-opts button {
+  display: grid; gap: 6px; justify-items: center; padding: 8px 6px 9px; border-radius: 14px; border: 1px solid var(--line);
+  background: rgba(var(--ink-rgb), .03); color: var(--text); font-size: 12.5px; font-weight: 500; cursor: pointer;
+}
+.cst-opts button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; color: var(--accent); }
+.cst-prev {
+  width: 100%; height: 52px; border-radius: 9px; display: grid; grid-template-rows: 1fr 1fr; gap: 5px; padding: 7px;
+  background: linear-gradient(135deg, #1f6f6b, #3b3f8f 60%, #a0466b);
+}
+:root[data-theme="light"] .cst-prev { background: linear-gradient(135deg, #9fd8d1, #b9bdf0 60%, #f0b9cd); }
+.cst-prev i { display: block; border-radius: 5px; }
+.p-solid i { background: rgb(var(--card-rgb)); border: 1px solid rgba(255, 255, 255, .16); border-radius: 3px; }
+.p-glass i { background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .28); backdrop-filter: blur(4px); }
+.p-minimal i { background: none; border-radius: 0; border-top: 1px solid rgba(255, 255, 255, .55); }
+.p-soft { padding: 8px 9px; gap: 7px; }
+.p-soft i { background: color-mix(in srgb, rgb(var(--card-rgb)) 88%, white); border-radius: 10px; box-shadow: 0 6px 12px rgba(0, 0, 0, .45); }
+@media (max-width: 380px) { .cst-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Minimal: no boxes, just lines between the sections */
+.card-minimal :is(.card, .fp-tile, .cl-lday, .tv-trip, .tv-nx, .tp-card, .dash-note) {
+  background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0;
+  -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; padding-left: 2px; padding-right: 2px;
+}
+.card-minimal :is(.cl-month, .cl-week) { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.card-minimal .kit-tile { background: transparent; border: 1px solid var(--line); }
+
+/* Soft: raised cards with soft shadows */
+.card-soft :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note) {
+  background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 14px 34px rgba(0, 0, 0, .3);
+}
+:root[data-theme="light"].card-soft :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note) {
+  box-shadow: 0 1px 2px rgba(24, 26, 31, .06), 0 12px 30px rgba(24, 26, 31, .1);
+}
+
+/* Compact: more on the screen */
+.dens-compact :is(.grid, .fin-grid, .kit-grid, .fp-grid, .fp-tiles, .kit-tiles) { gap: 9px; }
+.dens-compact :is(.card, .fp-tile, .tp-card) { padding: 13px 14px; }
+.dens-compact .card-head { margin-bottom: 8px; }
+.dens-compact .dash-sec + .dash-sec { margin-top: 20px; }
+.dens-compact .hero { padding-bottom: 8px; }
+.dens-compact .kit-main { padding: 7px 2px; }
+
+/* Sharp corners */
+.corners-sharp :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note, .st-group, .cl-sheet, .ws-tiles div) { border-radius: 8px; }
+.corners-sharp :is(.kit-tile, .kit-ic, .cl-chip, input, select, textarea) { border-radius: 6px; }
+.corners-sharp.card-soft :is(.card, .fp-tile) { border-radius: 10px; }

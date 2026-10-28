@@ -36,7 +36,11 @@
         var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
-        if (s.glass) { r.classList.add('glass'); r.style.setProperty('--glass', (+s.glassStrength || 60) / 100); }
+        var cst = ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid');
+        r.classList.add(cst === 'glass' ? 'glass' : 'card-' + cst);
+        if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
+        if (s.density === 'compact') r.classList.add('dens-compact');
+        if (s.corners === 'sharp') r.classList.add('corners-sharp');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -45,7 +49,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=30" rel="stylesheet">
+  <link href="styles.css?v=31" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -344,7 +348,8 @@
         <p class="st-foot muted">Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.</p>
       </div>
 
-      <div class="st-page" data-page="appearance" data-title="Appearance" hidden>
+      <div class="st-page ap-page" data-page="appearance" data-title="Appearance" hidden>
+      <p class="st-sub ap-sub"><i class="bi bi-palette"></i> Colours</p>
       <section class="st-group">
         <div class="st-row"><span>Theme</span>
           <div class="seg" role="group" aria-label="Theme">
@@ -355,23 +360,53 @@
         </div>
         <div class="st-col st-accent"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
         <div class="st-row st-hex" id="stAccentHex" hidden><span>Your colour<small></small></span><input class="st-input" maxlength="16" placeholder="#14B8A6 or 20, 184, 166" aria-label="Colour as hex or RGB"></div>
+      </section>
+
+      <p class="st-sub ap-sub"><i class="bi bi-image"></i> Background</p>
+      <section class="st-group">
         <div class="st-col">
-          <span>Background</span>
           <div class="bg-tiles" id="stBgTiles"></div>
           <input type="file" id="stBgFile" accept="image/*" hidden>
           <p class="st-note" id="stBgNote"></p>
         </div>
         <div class="st-col" id="stStrengthRow">
-          <span>Background strength</span>
+          <span>Strength</span>
           <div class="st-range"><i class="bi bi-circle"></i><input type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
         </div>
-        <label class="st-row"><span class="st-label">Glass<small>See-through, frosted cards</small></span><input type="checkbox" class="switch" id="stGlass"></label>
+      </section>
+
+      <p class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards</p>
+      <section class="st-group">
+        <div class="st-col">
+          <div class="cst-opts" id="stCardStyle" role="group" aria-label="Card style">
+            <button type="button" data-cardstyle="solid"><span class="cst-prev p-solid"><i></i><i></i></span>Solid</button>
+            <button type="button" data-cardstyle="glass"><span class="cst-prev p-glass"><i></i><i></i></span>Glass</button>
+            <button type="button" data-cardstyle="minimal"><span class="cst-prev p-minimal"><i></i><i></i></span>Minimal</button>
+            <button type="button" data-cardstyle="soft"><span class="cst-prev p-soft"><i></i><i></i></span>Soft</button>
+          </div>
+          <p class="st-note" id="stCardNote"></p>
+        </div>
         <div class="st-col" id="stGlassRow" hidden>
           <span>Glass strength</span>
           <div class="st-range"><i class="bi bi-square-fill"></i><input type="range" id="stGlassStr" min="10" max="100" step="1" aria-label="Glass strength"><i class="bi bi-droplet-half"></i></div>
-          <p class="st-note" id="stGlassNote"></p>
         </div>
-        <div class="st-row st-motion"><span class="st-label">Motion<small id="stMotionNote"></small></span>
+        <div class="st-row"><span>Density</span>
+          <div class="seg" role="group" aria-label="Density">
+            <button type="button" data-density="comfortable">Comfortable</button>
+            <button type="button" data-density="compact">Compact</button>
+          </div>
+        </div>
+        <div class="st-row"><span>Corners</span>
+          <div class="seg" role="group" aria-label="Corners">
+            <button type="button" data-corners="round">Round</button>
+            <button type="button" data-corners="sharp">Sharp</button>
+          </div>
+        </div>
+      </section>
+
+      <p class="st-sub ap-sub"><i class="bi bi-magic"></i> Motion</p>
+      <section class="st-group">
+        <div class="st-row st-motion"><span class="st-label">Animations<small id="stMotionNote"></small></span>
           <div class="seg" role="group" aria-label="Motion">
             <button type="button" data-motion-opt="full">Full</button>
             <button type="button" data-motion-opt="subtle">Subtle</button>
@@ -502,7 +537,7 @@
 
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=3"></script>
-  <script src="settings.js?v=13"></script>
+  <script src="settings.js?v=14"></script>
   <script src="website.js?v=3"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=9"></script>

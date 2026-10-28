@@ -52,7 +52,7 @@
   }
   /* perceived brightness 0–255: light colours get dark text, dark colours white text */
   function bright(c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; }
-  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60 };
+  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60, cardStyle: null, density: 'comfortable', corners: 'round' };
 
   /* Your own photo is kept on this device only (IndexedDB), resized to save space. */
   var customUrl = null, customLoaded = false;
@@ -114,6 +114,7 @@
   var media = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
 
   var media2 = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function cardStyleOf(s) { return ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid'); }
   function motionOf(s) { return s.motion || (media2 && media2.matches ? 'off' : 'full'); }
   function apply() {
     var s = get();
@@ -131,8 +132,12 @@
     root.setAttribute('data-bg', bg);
     if (s.bgStrength) root.style.setProperty('--bg-strength', s.bgStrength / 100);
     else root.style.removeProperty('--bg-strength');
-    root.classList.toggle('glass', !!s.glass);
+    var cst = cardStyleOf(s);
+    ['solid', 'minimal', 'soft'].forEach(function (k) { root.classList.toggle('card-' + k, cst === k); });
+    root.classList.toggle('glass', cst === 'glass');
     root.style.setProperty('--glass', (+s.glassStrength || 60) / 100);
+    root.classList.toggle('dens-compact', s.density === 'compact');
+    root.classList.toggle('corners-sharp', s.corners === 'sharp');
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f3f5' : '#0e0f11');
     CARDS.forEach(function (c) { root.classList.toggle('hide-' + c[0], !!s.hide[c[0]]); });
@@ -191,10 +196,14 @@
                    : 'Your photo is on another device. Add it here too, or pick another background.')
       : '';
     $('stStrengthRow').hidden = s.bgType === 'none';
-    $('stGlass').checked = !!s.glass;
-    $('stGlassRow').hidden = !s.glass;
+    var cst = cardStyleOf(s);
+    document.querySelectorAll('[data-cardstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cardstyle === cst)); });
+    document.querySelectorAll('[data-density]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.density === (s.density || 'comfortable'))); });
+    document.querySelectorAll('[data-corners]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.corners === (s.corners || 'round'))); });
+    $('stGlassRow').hidden = cst !== 'glass';
     if (document.activeElement !== $('stGlassStr')) $('stGlassStr').value = +s.glassStrength || 60;
-    $('stGlassNote').textContent = s.glass && s.bgType === 'none' ? 'Glass shows best on a background – pick one above.' : '';
+    $('stCardNote').textContent = { solid: 'Calm, dark cards – the original look.', glass: s.bgType === 'none' ? 'Frosted and see-through. Shows best on a background – pick one above.' : 'Frosted and see-through. Use the slider for how much.',
+      minimal: 'No boxes – just lines between sections.', soft: 'Raised cards with soft shadows, like phone widgets.' }[cst];
     var cs = getComputedStyle(document.querySelector('.bg'));
     $('stStrength').value = s.bgStrength || Math.round(parseFloat(cs.opacity) * 100) || 30;
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
@@ -221,7 +230,7 @@
     /* One-line summaries on the main menu */
     var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
-    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName + (s.glass ? ' · Glass' : '');
+    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName + ' · ' + { solid: 'Solid', glass: 'Glass', minimal: 'Minimal', soft: 'Soft' }[cardStyleOf(s)] + ' cards';
     var avail = CARDS.filter(function (c) { return featureOn(c[0]); });
     var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
     $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');
@@ -330,7 +339,9 @@
   });
   $('stStrength').addEventListener('change', function () { set({ bgStrength: +this.value }); });
   /* Glass: frosted, see-through cards. The slider previews live and saves when you let go. */
-  $('stGlass').addEventListener('change', function () { set({ glass: this.checked }); });
+  $('stCardStyle').addEventListener('click', function (e) { var b = e.target.closest('[data-cardstyle]'); if (b) set({ cardStyle: b.dataset.cardstyle, glass: b.dataset.cardstyle === 'glass' }); });
+  document.querySelectorAll('[data-density]').forEach(function (b) { b.addEventListener('click', function () { set({ density: b.dataset.density }); }); });
+  document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
   $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
   $('stGlassStr').addEventListener('change', function () { set({ glassStrength: +this.value }); });
   $('stName').addEventListener('change', function () { set({ name: this.value.trim() }); });
