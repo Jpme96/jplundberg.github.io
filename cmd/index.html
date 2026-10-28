@@ -26,6 +26,11 @@
                   pink: ['#d55181', '213, 81, 129'], orange: ['#e8743b', '232, 116, 59'], green: ['#22b35e', '34, 179, 94'] }[s.accent];
         var light = s.theme === 'light' || (s.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
         r.setAttribute('data-theme', light ? 'light' : 'dark');
+        if (s.accent === 'custom' && /^#[0-9a-f]{6}$/i.test(s.accentHex || '')) {
+          var h = s.accentHex, c = [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); });
+          a = [h, c.join(', ')];
+          r.style.setProperty('--on-accent', (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150 ? '#0a0b0c' : '#ffffff');
+        }
         if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
         var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
@@ -33,7 +38,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=14" rel="stylesheet">
+  <link href="styles.css?v=16" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -309,6 +314,7 @@
           <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="content"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-journal-check"></i></span><span class="st-label">Articles &amp; projects<small id="sumContent">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-foot muted">Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.</p>
@@ -323,7 +329,8 @@
             <button type="button" data-theme-opt="auto"><i class="bi bi-circle-half"></i> Auto</button>
           </div>
         </div>
-        <div class="st-row"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
+        <div class="st-col st-accent"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
+        <div class="st-row st-hex" id="stAccentHex" hidden><span>Your colour<small></small></span><input class="st-input" maxlength="16" placeholder="#14B8A6 or 20, 184, 166" aria-label="Colour as hex or RGB"></div>
         <div class="st-col">
           <span>Background</span>
           <div class="bg-tiles" id="stBgTiles"></div>
@@ -408,6 +415,11 @@
         </section>
       </div>
 
+      <div class="st-page" data-page="content" data-title="Articles &amp; projects" hidden>
+        <p class="st-intro">Hide an article or project from jplundberg.com, and show it again with one tap. The Norwegian and English versions follow each other. Changes are live in about a minute.</p>
+        <div id="wsContent"><p class="st-intro">Loading…</p></div>
+      </div>
+
       <div class="st-page ws-page" data-page="visitors" data-title="Visitors" hidden>
         <div class="seg ws-days" id="wsDays"><button type="button" data-days="7" aria-pressed="true">7 days</button><button type="button" data-days="30">30 days</button></div>
         <div id="wsVisitors"><p class="st-intro">Loading…</p></div>
@@ -423,8 +435,8 @@
   </div>
 
   <script src="lock.js?v=10"></script>
-  <script src="settings.js?v=5"></script>
-  <script src="website.js?v=1"></script>
+  <script src="settings.js?v=7"></script>
+  <script src="website.js?v=2"></script>
   <script src="script.js?v=5"></script>
   <script src="finance.js?v=4"></script>
   <script src="places.js?v=1"></script>

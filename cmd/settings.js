@@ -22,6 +22,18 @@
     ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
   var BGS = [['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
+  /* Your own colour: any hex value, with readable text on top */
+  function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(h || ''); }
+  function hexRgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }
+  function accentOf(s) {
+    if (s.accent === 'custom' && hexOk(s.accentHex)) {
+      var c = hexRgb(s.accentHex);
+      return { hex: s.accentHex, rgb: c.join(', '), name: 'Custom', custom: true, light: bright(c) > 150 };
+    }
+    return ACCENTS[s.accent] || ACCENTS.teal;
+  }
+  /* perceived brightness 0–255: light colours get dark text, dark colours white text */
+  function bright(c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; }
   var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60 };
 
   /* Your own photo is kept on this device only (IndexedDB), resized to save space. */
@@ -87,9 +99,11 @@
     var s = get();
     var theme = s.theme === 'auto' ? (media && media.matches ? 'light' : 'dark') : s.theme;
     root.setAttribute('data-theme', theme);
-    var a = ACCENTS[s.accent] || ACCENTS.teal;
+    var a = accentOf(s);
     root.style.setProperty('--accent', a.hex);
     root.style.setProperty('--accent-rgb', a.rgb);
+    if (a.custom) root.style.setProperty('--on-accent', a.light ? '#0a0b0c' : '#ffffff');
+    else root.style.removeProperty('--on-accent');
     var bg = s.bgType;
     if (bg === 'custom' && !customUrl) bg = 'moon';      // photo not on this device (yet)
     root.setAttribute('data-bg', bg);
@@ -115,10 +129,20 @@
     document.querySelectorAll('[data-theme-opt]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.themeOpt === s.theme));
     });
+    var own = accentOf(s);
     $('stAccents').innerHTML = Object.keys(ACCENTS).map(function (k) {
       return '<button type="button" class="swatch" data-accent="' + k + '" style="--sw:' + ACCENTS[k].hex + '" aria-label="' +
         ACCENTS[k].name + '" aria-pressed="' + (s.accent === k) + '"></button>';
-    }).join('');
+    }).join('') +
+      '<label class="swatch swatch-own' + (own.custom ? ' on' : '') + '"' + (own.custom ? ' style="--sw:' + own.hex + '"' : '') + ' title="Choose your own colour">' +
+      '<input type="color" id="stAccentPick" value="' + (hexOk(s.accentHex) ? s.accentHex : '#14b8a6') + '" aria-label="Choose your own accent colour"></label>';
+    $('stAccentHex').hidden = !own.custom;
+    if (own.custom) {
+      var c = hexRgb(own.hex), b = bright(c), dark = root.getAttribute('data-theme') !== 'light';
+      if (document.activeElement !== $('stAccentHex').querySelector('input')) $('stAccentHex').querySelector('input').value = own.hex.toUpperCase();
+      $('stAccentHex').querySelector('small').textContent = 'RGB ' + c.join(', ') +
+        (dark && b < 70 ? ' · very dark: text in this colour may be hard to read' : !dark && b > 200 ? ' · very light: text in this colour may be hard to read' : '');
+    }
     $('stBgTiles').innerHTML = BGS.map(function (b) {
       var k = b[0];
       var prev = k === 'none' ? '<i class="bi bi-slash-circle ico"></i>'
@@ -146,7 +170,7 @@
     $('stSync').innerHTML = sync ? sync.innerHTML : '';
 
     /* One-line summaries on the main menu */
-    var a = ACCENTS[s.accent] || ACCENTS.teal;
+    var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
     $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName;
     var shown = CARDS.filter(function (c) { return !s.hide[c[0]]; }).length;
@@ -207,6 +231,26 @@
   $('stAccents').addEventListener('click', function (e) {
     var b = e.target.closest('[data-accent]');
     if (b) set({ accent: b.dataset.accent });
+  });
+  /* live preview while dragging the colour picker, saved when you let go */
+  $('stAccents').addEventListener('input', function (e) {
+    if (e.target.id !== 'stAccentPick') return;
+    var h = e.target.value, c = hexRgb(h);
+    root.style.setProperty('--accent', h);
+    root.style.setProperty('--accent-rgb', c.join(', '));
+    root.style.setProperty('--on-accent', bright(c) > 150 ? '#0a0b0c' : '#ffffff');
+    e.target.parentNode.style.setProperty('--sw', h);
+  });
+  $('stAccents').addEventListener('change', function (e) {
+    if (e.target.id === 'stAccentPick') set({ accent: 'custom', accentHex: e.target.value.toLowerCase() });
+  });
+  $('stAccentHex').querySelector('input').addEventListener('change', function () {
+    var v = this.value.trim();
+    if (/^[0-9a-f]{6}$/i.test(v)) v = '#' + v;
+    var m = v.match(/^\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*$/);   // also accepts "20, 184, 166"
+    if (m) v = '#' + [m[1], m[2], m[3]].map(function (n) { return Math.min(255, +n).toString(16).padStart(2, '0'); }).join('');
+    if (hexOk(v)) { set({ accent: 'custom', accentHex: v.toLowerCase() }); this.value = v.toUpperCase(); this.blur(); }
+    else this.value = (get().accentHex || '').toUpperCase();
   });
   $('stBgTiles').addEventListener('click', function (e) {
     var t = e.target.closest('[data-bg]');

@@ -42,6 +42,11 @@ content:
         label: Date
         type: date
         required: true
+      - name: published
+        label: Published
+        description: Turn off to hide the article from the website. You can also do this from the dashboard (Settings → jplundberg.com → Articles & projects).
+        type: boolean
+        default: true
       - name: category
         label: Category
         type: select
@@ -100,6 +105,11 @@ content:
         description: Used to sort projects, newest first. The start date works well.
         type: date
         required: true
+      - name: published
+        label: Published
+        description: Turn off to hide the project from the website. You can also do this from the dashboard (Settings → jplundberg.com → Articles & projects).
+        type: boolean
+        default: true
       - name: ref
         label: Link between languages (optional)
         description: Give the English and the Norsk version the same short word, for example "fdv-2025". Then each language only lists its own version, and the EN/NO switch jumps between them.

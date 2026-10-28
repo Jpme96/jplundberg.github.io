@@ -257,13 +257,78 @@
     visitors();
   });
 
+  /* ---------- articles and projects: hide / show ---------- */
+  var items = null, itemsLoading = null, busyRef = '';
+  function loadItems() {
+    if (itemsLoading) return itemsLoading;
+    itemsLoading = fetch('api/content', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
+    }).then(function (j) {
+      itemsLoading = null;
+      if (!j.items) {
+        $('wsContent').innerHTML = '<p class="st-intro">' + (j._status === 503 ? 'Connect GitHub first (see the guide).' : j._status === 404 ? 'Update the Worker code to use this (see the guide).' : 'Couldn’t load your articles right now.') + '</p>';
+        $('sumContent').textContent = '–';
+        return;
+      }
+      items = j.items; drawItems();
+    }).catch(function () { itemsLoading = null; $('wsContent').innerHTML = '<p class="st-intro">Couldn’t load your articles. Check your connection.</p>'; });
+    return itemsLoading;
+  }
+  /* one row per article/project; language versions share a ref */
+  function grouped(col) {
+    var by = {};
+    items.filter(function (i) { return i.collection === col; }).forEach(function (i) {
+      var g = by[i.ref] || (by[i.ref] = { ref: i.ref, col: col, langs: [], title: '', date: '', published: false });
+      g.langs.push(i.lang === 'nb' ? 'NO' : 'EN');
+      if (!g.title || i.lang === 'en') g.title = i.title;
+      if (i.date > g.date) g.date = i.date;
+      if (i.published) g.published = true;
+    });
+    return Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.date.localeCompare(a.date); });
+  }
+  function drawItems() {
+    var html = [['articles', 'Articles', 'journal-text'], ['projects', 'Projects', 'kanban']].map(function (c) {
+      var rows = grouped(c[0]);
+      if (!rows.length) return '';
+      return '<p class="st-sub">' + c[1] + '</p><section class="st-group">' + rows.map(function (g) {
+        var busy = busyRef === c[0] + ':' + g.ref;
+        var d = g.date ? new Date(g.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+        return '<label class="st-row ws-item' + (g.published ? '' : ' off') + '"><span class="st-label"><span><i class="bi bi-' + c[2] + '"></i> ' + esc(g.title) + '</span>' +
+          '<small>' + (busy ? (g.published ? 'Hiding…' : 'Showing…') : (g.published ? 'Shown' : 'Hidden') + ' · ' + g.langs.sort().join(' + ') + (d ? ' · ' + d : '')) + '</small></span>' +
+          '<input type="checkbox" class="switch" data-col="' + c[0] + '" data-ref="' + esc(g.ref) + '"' + (g.published ? ' checked' : '') + (busyRef ? ' disabled' : '') +
+          ' aria-label="Show ' + esc(g.title) + ' on the website"></label>';
+      }).join('') + '</section>';
+    }).join('');
+    $('wsContent').innerHTML = html || '<p class="st-intro">No articles or projects yet.</p>';
+    var all = grouped('articles').concat(grouped('projects')), hidden = all.filter(function (g) { return !g.published; }).length;
+    $('sumContent').textContent = hidden ? hidden + ' hidden' : 'All shown';
+  }
+  $('wsContent').addEventListener('change', function (e) {
+    var c = e.target.closest('[data-ref]');
+    if (!c || busyRef) return;
+    var on = c.checked;
+    busyRef = c.dataset.col + ':' + c.dataset.ref;
+    drawItems();
+    fetch('api/content', {
+      method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection: c.dataset.col, ref: c.dataset.ref, published: on })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      busyRef = '';
+      if (j.items) { items = j.items; drawItems(); stMsg((on ? 'Shown again' : 'Hidden') + ' ✓ Live on jplundberg.com in about a minute', true); }
+      else { drawItems(); stMsg('Couldn’t change it (' + (j.error || 'error') + '). Try again.'); }
+    }).catch(function () { busyRef = ''; drawItems(); stMsg('Couldn’t change it. Check your connection.'); });
+  });
+  function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
+
   /* ---------- page changes in the settings panel ---------- */
   window.addEventListener('st:page', function (e) {
     current = e.detail;
     if (current === 'home' || EDIT_PAGES.indexOf(current) > -1) { if (!saved) load(); else { fill(); summary(); } }
     if (current === 'visitors') { if (!content) load(); visitors(); }
+    if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro">Loading…</p>'; loadItems(); } }
+    if (current === 'home' && !items) loadItems();
     bar();
     if (EDIT_PAGES.indexOf(current) > -1 && !saved) status(problem ? $('wsStatus').textContent : 'Loading…', !!problem);
   });
-  if (window.Vault) window.Vault.onLock(function () { saved = draft = sha = null; loading = null; vCache = {}; });
+  if (window.Vault) window.Vault.onLock(function () { saved = draft = sha = null; loading = null; vCache = {}; items = null; });
 })();

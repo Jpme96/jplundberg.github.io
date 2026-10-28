@@ -14,7 +14,7 @@
   --on-accent: #0a0b0c;
   --bg-solid: #17181b;
   --bg-opacity: .22;
-  --glow: rgba(255, 223, 0, .55);
+  --glow: rgba(var(--accent-rgb), .38);   /* the clock's glow follows your accent colour */
   --danger: #e66767;
   --ease-ios: cubic-bezier(.32, .72, 0, 1);
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -36,7 +36,7 @@
   --danger: #d14343;
   color-scheme: light;
 }
-:root[data-theme="light"] .clock { text-shadow: 0 0 24px var(--glow); }
+:root[data-theme="light"] .clock { text-shadow: 0 0 22px rgba(var(--accent-rgb), .22); }
 :root[data-theme="light"] .quote { color: rgba(24, 26, 31, .72); }
 :root[data-theme="light"][data-bg="moon"] .bg { filter: grayscale(1) invert(1); }
 
@@ -901,6 +901,7 @@ body.st-open { overflow: hidden; }
 
 /* Accent swatches */
 .swatches { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.st-accent .swatches { justify-content: flex-start; gap: 10px; }
 .swatch {
   width: 28px; height: 28px; border-radius: 50%;
   border: 2px solid transparent; background: var(--sw);
@@ -909,6 +910,15 @@ body.st-open { overflow: hidden; }
 }
 .swatch[aria-pressed="true"] { border-color: var(--sw); box-shadow: inset 0 0 0 3px var(--bg-solid); transform: scale(1.12); }
 .swatch:active { transform: scale(.88); }
+.swatch-own {
+  position: relative; overflow: hidden; cursor: pointer;
+  background: conic-gradient(#e60000, #e6c200, #22b35e, #11a5d6, #3987e5, #8a6fdf, #d55181, #e60000);
+}
+.swatch-own.on { background: var(--sw); border-color: var(--sw); box-shadow: inset 0 0 0 3px var(--bg-solid); transform: scale(1.12); }
+.swatch-own input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.st-hex > span { display: flex; flex-direction: column; line-height: 1.3; }
+.st-hex small { font-size: 12px; color: var(--muted); }
+.st-hex .st-input { text-transform: uppercase; font-variant-numeric: tabular-nums; }
 
 /* iOS-style switch */
 .switch {
@@ -1170,6 +1180,10 @@ select.st-wide { padding-right: 32px; }
 .ws-fixed i, .ws-sec > span:first-child i { color: var(--muted); width: 18px; text-align: center; }
 .ws-sec > span:first-child i { color: var(--accent); }
 .ws-sec.off > span:first-child { color: var(--muted); text-decoration: line-through; }
+.ws-item .st-label > span { display: inline-flex; align-items: center; gap: 8px; }
+.ws-item .st-label i { color: var(--accent); }
+.ws-item.off .st-label > span { color: var(--muted); }
+.ws-item { cursor: pointer; }
 .ws-tools { display: inline-flex; align-items: center; gap: 4px; }
 .ws-tools button {
   width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--text);

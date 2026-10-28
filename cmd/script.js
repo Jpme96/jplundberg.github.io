@@ -50,7 +50,6 @@
     if (p !== period || $('greeting').textContent !== greet) {
       period = p;
       $('greeting').textContent = greet;
-      document.documentElement.style.setProperty('--glow', p.glow);
     }
   }
   tick();
