@@ -712,8 +712,8 @@ select option { background: var(--bg-solid); }
 .pay-day { width: auto; max-width: 190px; padding: 8px 30px 8px 10px; font-size: 14px; }
 .pay-prev { font-size: 13px; align-self: center; }
 .pay-prev b { color: var(--heading); font-weight: 600; }
-.pay-next { margin: 12px 0 0; display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted); }
-.pay-next i { color: var(--accent); }
+.pay-next { margin: 12px 0 0; display: block; line-height: 1.5; font-size: 13.5px; color: var(--muted); }
+.pay-next i { color: var(--accent); margin-right: 6px; }
 .pay-next b { color: var(--heading); font-weight: 600; }
 .pill-btn.wide { width: auto; padding: 0 18px; border-radius: 20px; font-family: "Poppins", sans-serif; font-size: 14px; font-weight: 500; }
 
