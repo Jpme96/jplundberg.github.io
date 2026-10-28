@@ -11,7 +11,8 @@
   <meta name="format-detection" content="telephone=no">
   <title>Training &amp; habits</title>
   <link href="/assets/img/favicon.png?v=2" rel="icon">
-  <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
+  <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
+  <link href="/cmd/manifest.webmanifest" rel="manifest">
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
@@ -38,8 +39,9 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=19" rel="stylesheet">
+  <link href="../styles.css?v=22" rel="stylesheet">
   <link href="../finance/fin.css?v=2" rel="stylesheet">
+  <link href="../calendar/cal.css?v=2" rel="stylesheet">
   <link href="habits.css?v=2" rel="stylesheet">
 </head>
 <body>
@@ -83,6 +85,10 @@
 
     <section class="fp-tiles" id="hpTiles" aria-label="Key numbers"></section>
     <div id="hpHabits"></div>
+    <div class="kit-grid">
+      <div data-tool="training" hidden></div>
+      <div data-tool="journal" hidden></div>
+    </div>
     <p class="fp-empty" id="hpEmpty" hidden>No habits yet. Add one in “This week” on the dashboard.</p>
 
     <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Synced and encrypted with your passcode · <a href="../">Edit habits on the dashboard</a></p>
@@ -90,8 +96,12 @@
 
   <div class="fp-tip" id="fpTip" role="tooltip" hidden></div>
 
-  <script src="../lock.js?v=11"></script>
+  <script src="../lock.js?v=12"></script>
+  <script src="../features.js?v=1"></script>
   <script src="habits.js?v=1"></script>
-  <script src="../nav.js?v=3"></script>
+  <script src="../kit.js?v=1"></script>
+  <script src="../tools.js?v=1"></script>
+  <script src="../app.js?v=1"></script>
+  <script src="../nav.js?v=4"></script>
 </body>
 </html>

@@ -425,7 +425,10 @@
       var st = fromCache(f) || feedState[f.id];
       if (st && st.events) st.events.forEach(function (ev) { ev.color = f.color; ev.src = f.name; add(ev); });
     });
-    if (opts.all || !d.hidden.travel) travelEvents().forEach(add);
+    var Fe = window.Features;
+    if ((opts.all || !d.hidden.travel) && (!Fe || Fe.on('travel'))) travelEvents().forEach(add);
+    /* reminders from the tools in Settings → Features (renewals, warranties, certificates) */
+    if (Fe && (opts.all || !d.hidden.reminders)) Fe.events().forEach(add);
     list.sort(function (a, b) {
       if (a.allDay !== b.allDay && dkey(a.start) === dkey(b.start)) return a.allDay ? -1 : 1;
       return a.start - b.start || b.end - a.end || (a.title > b.title ? 1 : -1);

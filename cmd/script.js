@@ -362,8 +362,11 @@
   renderNotes();
 
   /* Called by lock.js when newer data arrives from another device. */
-  window.Dash = {
+  var prevDashReload = window.Dash && window.Dash.reload;      // features.js and others hook in too
+  window.Dash = window.Dash || {};
+  Object.assign(window.Dash, {
     reload: function () {
+      if (prevDashReload) prevDashReload();
       goals = load('dash.goals', goals);
       todos = load('dash.todos', todos);
       links = load('dash.links', links);
@@ -373,5 +376,5 @@
       if (window.DashSettings) window.DashSettings.apply();
       quotesOnOff(); tick();
     }
-  };
+  });
 })();

@@ -11,7 +11,8 @@
   <meta name="format-detection" content="telephone=no">
   <title>Dashboard</title>
   <link href="/assets/img/favicon.png?v=2" rel="icon">
-  <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
+  <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
+  <link href="/cmd/manifest.webmanifest" rel="manifest">
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
@@ -38,7 +39,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=21" rel="stylesheet">
+  <link href="styles.css?v=22" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -83,6 +84,7 @@
   </header>
 
   <main class="dash" id="dash">
+    <div class="dash-note" id="backupNote" role="status" hidden></div>
     <section class="dash-sec" data-sec="today" aria-labelledby="secToday">
       <div class="sec-head"><h2 class="sec-title" id="secToday"><i class="bi bi-sun"></i> Today</h2></div>
       <div class="grid">
@@ -127,6 +129,7 @@
         <p class="tr-foot muted" id="trFoot"></p>
       </section>
       <!-- Training & habits -->
+      <section class="card flex" id="flexCard" hidden></section>
       <section class="card habits" id="habitsCard">
         <div class="card-head"><h2><i class="bi bi-activity"></i> This week</h2>
           <div class="head-actions"><a class="text-btn" href="habits/">Details</a><button class="text-btn" id="hbAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div></div>
@@ -315,6 +318,7 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
@@ -362,6 +366,11 @@
         <p class="st-sub">Cards <span class="st-hint">Use the arrows (or drag) to change the order on your dashboard</span></p>
         <div id="stCards"></div>
       </section>
+      </div>
+
+      <div class="st-page" data-page="features" data-title="Features" hidden>
+        <p class="st-note ft-intro">Pick what you use. Switched-off parts disappear from the menu, the dashboard and the calendar. Your data stays, encrypted and synced, so switching back on brings everything back.</p>
+        <section class="st-group ft-group" id="ftList"></section>
       </div>
 
       <div class="st-page" data-page="security" data-title="Security" hidden>
@@ -455,18 +464,22 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=11"></script>
-  <script src="settings.js?v=9"></script>
+  <script src="lock.js?v=12"></script>
+  <script src="features.js?v=1"></script>
+  <script src="settings.js?v=10"></script>
   <script src="website.js?v=2"></script>
   <script src="texts.js?v=1"></script>
-  <script src="script.js?v=6"></script>
+  <script src="script.js?v=7"></script>
   <script src="finance.js?v=5"></script>
   <script src="places.js?v=2"></script>
   <script src="today.js?v=4"></script>
   <script src="flow.js?v=2"></script>
-  <script src="calendar/cal-core.js?v=3"></script>
+  <script src="calendar/cal-core.js?v=4"></script>
   <script src="cal-card.js?v=1"></script>
   <script src="upnext.js?v=2"></script>
-  <script src="nav.js?v=3"></script>
+  <script src="kit.js?v=1"></script>
+  <script src="tools.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+  <script src="nav.js?v=4"></script>
 </body>
 </html>

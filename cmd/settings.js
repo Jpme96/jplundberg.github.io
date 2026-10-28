@@ -17,16 +17,19 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Training & habits'],
+    ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Training & habits'], ['flex', 'Work today (flex time)'],
     ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
     ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
   /* Cards can be moved within their section; finances keep their own layout */
   var GROUPS = [
-    { id: 'today', name: 'Today', cards: ['weather', 'calendar', 'transit', 'habits'], move: true },
+    { id: 'today', name: 'Today', cards: ['weather', 'calendar', 'transit', 'habits', 'flex'], move: true },
     { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true },
     { id: 'money', name: 'Finances', cards: ['fin', 'bills'] }
   ];
+  /* cards that belong to a part you can switch off in Settings → Features */
+  var CARD_FEATURE = { calendar: 'calendar', transit: 'travel', habits: 'habits', flex: 'flex', fin: 'finance', bills: 'finance' };
+  function featureOn(id) { return !window.Features || !CARD_FEATURE[id] || window.Features.on(CARD_FEATURE[id]); }
   var CARD_NAME = {};
   CARDS.forEach(function (c) { CARD_NAME[c[0]] = c[1]; });
   function ordered(s, g) {
@@ -184,7 +187,8 @@
     $('stSeconds').checked = !!s.seconds;
     $('stQuotes').checked = !!s.quotes;
     $('stCards').innerHTML = GROUPS.map(function (g) {
-      var list = ordered(s, g);
+      var all = ordered(s, g), list = all.filter(featureOn);
+      if (!list.length) return '';
       return '<p class="st-cardgroup">' + g.name + '</p>' + list.map(function (id, i) {
         var tools = g.move
           ? '<button type="button" data-cmove="' + g.id + ':' + id + ':-1" aria-label="Move ' + CARD_NAME[id] + ' up"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-chevron-up"></i></button>' +
@@ -204,8 +208,9 @@
     var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
     $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName;
-    var shown = CARDS.filter(function (c) { return !s.hide[c[0]]; }).length;
-    $('sumDashboard').textContent = shown + ' of ' + CARDS.length + ' cards' + (s.name ? ' · ' + s.name : '');
+    var avail = CARDS.filter(function (c) { return featureOn(c[0]); });
+    var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
+    $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');
     var m = +s.lockMins;
     $('sumSecurity').textContent = 'Locks after ' + (m >= 1440 ? '1 day' : m >= 60 ? (m / 60) + ' hour' + (m > 60 ? 's' : '') : m + ' min');
     var st = sync ? sync.className : '';
@@ -331,8 +336,8 @@
     var b = e.target.closest('[data-cmove]');
     if (!b) return;
     var p = b.dataset.cmove.split(':'), g = GROUPS.filter(function (x) { return x.id === p[0]; })[0];
-    var i = ordered(get(), g).indexOf(p[1]);
-    moveCard(p[0], p[1], i + +p[2]);
+    var all = ordered(get(), g), vis = all.filter(featureOn), nb = vis[vis.indexOf(p[1]) + +p[2]];
+    if (nb) moveCard(p[0], p[1], all.indexOf(nb));
     var again = document.querySelector('[data-cmove="' + b.dataset.cmove + '"]');
     if (again && !again.disabled) again.focus();
   });
@@ -397,6 +402,7 @@
     });
   });
 
+  window.addEventListener('features:change', function () { if ($('settings') && !$('settings').hidden) fill(); });
   window.addEventListener('dash:local', function () { setTimeout(apply, 0); });
   if (window.Vault) window.Vault.onLock(closePanel);
 

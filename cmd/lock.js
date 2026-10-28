@@ -25,7 +25,7 @@
 
   var API = '/cmd/api/vault';
   var SYNC_KEY = 'dash.syncRev';
-  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings', 'dash.transit', 'dash.habits', 'dash.travel', 'dash.calendar'];
+  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings', 'dash.transit', 'dash.habits', 'dash.travel', 'dash.calendar', 'dash.tools'];
 
   var key = null;          // CryptoKey while unlocked, null when locked
   var salt = null;
@@ -501,6 +501,8 @@
         document.body.appendChild(a);
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        try { localStorage.setItem('dash.lastBackup', String(Date.now())); } catch (e) {}
+        window.dispatchEvent(new Event('dash:backup'));
       });
     },
     changePasscode: function (pass) {

@@ -75,6 +75,12 @@
     }).concat(upcoming.map(function (x) {
       return { lat: x.place.lat, lon: x.place.lon, label: '<b>' + esc(x.name) + '</b> (coming up)<br>' + esc(x.place.name + ', ' + x.place.country), color: '#0891b2' };
     }));
+    /* Places to visit (Settings → Features) */
+    var Fe = window.Features;
+    if (Fe && Fe.on('bucket')) Fe.list('bucket').forEach(function (b) {
+      if (b.visited || !b.geo || b.geo.lat == null) return;
+      pts.push({ lat: b.geo.lat, lon: b.geo.lon, label: '<b>' + esc(b.place) + '</b> (want to visit)<br>' + esc(b.geo.country || ''), color: '#c9a227' });
+    });
     var places = {};
     pts.forEach(function (p) { places[p.lat + ',' + p.lon] = 1; });
     $('hsPlaces').textContent = Object.keys(places).length ? Object.keys(places).length + ' place' + (Object.keys(places).length > 1 ? 's' : '') : '';
@@ -87,6 +93,7 @@
 
   window.addEventListener('travel:tab', function (e) { shown = e.detail === 'history'; render(); });
   window.addEventListener('travel:change', render);
+  window.addEventListener('tools:change', render);
   var prevReload = window.Dash && window.Dash.reload;
   window.Dash.reload = function () { if (prevReload) prevReload(); render(); };
 })();
