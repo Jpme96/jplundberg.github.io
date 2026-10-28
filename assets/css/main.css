@@ -1840,3 +1840,34 @@ a[x-apple-data-detectors] {
 .header-toggle:focus:not(:focus-visible) {
   outline: none;
 }
+
+/*--------------------------------------------------------------
+# Home page spotlight: other sections fade while you read one
+--------------------------------------------------------------*/
+.spot-on .main > section:not(.hero) > .container {
+  transition: opacity .6s var(--ease-out);
+}
+
+.spot-on .main > section:not(.hero):not(.is-focus) > .container {
+  opacity: .42;
+}
+
+/* Large screens show more at once, so the fade is lighter there */
+@media (min-width: 1200px) {
+  .spot-on .main > section:not(.hero):not(.is-focus) > .container {
+    opacity: .55;
+  }
+}
+
+/* On computers, pointing at a faded section brings it back */
+@media (hover: hover) and (pointer: fine) {
+  .spot-on .main > section:not(.hero):hover > .container {
+    opacity: 1;
+    transition-duration: .3s;
+  }
+}
+
+/* While the top banner is in view, nothing below is dimmed */
+.spot-on.spot-hero .main > section:not(.hero) > .container {
+  opacity: 1;
+}
