@@ -76,14 +76,19 @@
     var d = window.Vault.get();
     if (d && d.budget && (!Fe || Fe.on('finance'))) {
       var sum = function (l) { return (l || []).reduce(function (a, x) { return a + (+x.amount || 0); }, 0); };
-      var ym = today.slice(0, 7), income = sum(d.budget.income), fixed = sum(d.budget.fixed);
+      var Bu = window.Budget;
+      var ym = today.slice(0, 7), income = Bu ? Bu.income(d, ym) : sum(d.budget.income), fixed = sum(d.budget.fixed);
+      var pay = Bu ? Bu.nextPayday(d, now) : null;
       if (income > 0) {
         var spent = sum((d.expenses || []).filter(function (e) { return String(e.date).slice(0, 7) === ym; }));
         var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = income - fixed - spent;
-        var perDay = left / (dim - now.getDate() + 1);
+        var untilPay = pay && pay.days > 0 && pay.days <= dim;
+        var perDay = left / (untilPay ? pay.days : dim - now.getDate() + 1);
         add(left < 0 ? 8 : 50, 'wallet2', left < 0 ? '#e66767' : '#11a597', left < 0 ? kr(-left) + ' over budget' : kr(perDay) + ' to spend today',
-          left < 0 ? 'This month, after fixed costs' : kr(left) + ' left this month', '#fin');
+          left < 0 ? 'This month, after fixed costs' : kr(left) + ' left' + (untilPay ? ' until payday' : ' this month'), '#fin');
       }
+      if (pay && pay.days <= 2) add(pay.days === 0 ? 12 : 40, 'cash-stack', '#11a597', pay.days === 0 ? pay.title + ' today' : pay.title + ' ' + inDays(pay.days),
+        (pay.net ? kr(pay.net) + ' · ' : '') + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }), '#fin', { key: 'pay:' + ym });
       var paid = (d.paid && d.paid[ym]) || [];
       (d.budget.fixed || []).forEach(function (f) {
         if (!f.day || f.src === 'sub' || paid.indexOf(f.id) > -1) return;
@@ -158,7 +163,7 @@
     var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', other: 'Other' };
 
     if (d && (!Fe || Fe.on('finance'))) {
-      var ex = d.expenses || [], income = sum((d.budget || {}).income), fixed = sum((d.budget || {}).fixed);
+      var ex = d.expenses || [], income = window.Budget ? window.Budget.income(d, ym) : sum((d.budget || {}).income), fixed = sum((d.budget || {}).fixed);
       /* a category well above your usual pace (not counting travel) */
       if (day >= 7) Object.keys(NAMES).forEach(function (c) {
         var now_ = sum(ex.filter(function (e) { return e.cat === c && String(e.date).slice(0, 7) === ym; }));

@@ -48,6 +48,7 @@
     var p = key.split('-');
     return ym(new Date(+p[0], +p[1] - 1 + by, 1));
   }
+  function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
   function sum(list, f) { return list.reduce(function (a, x) { return a + ((f ? f(x) : x.amount) || 0); }, 0); }
 
   var D = null;            // decrypted data while unlocked
@@ -76,40 +77,121 @@
     return sum(D.expenses.filter(function (e) { return e.date.slice(0, 7) === key; }));
   }
 
+  var B = window.Budget;
+  var payEditing = null;             // id of the income being edited (or 'new')
+
   function renderBudget() {
-    var b = D.budget;
-    var income = sum(b.income), fixed = sum(b.fixed), spent = monthSpent(ym(new Date()));
+    var b = D.budget, key = ym(new Date());
+    var inc = B.incomeOf(D, key), income = inc.net, fixed = sum(b.fixed), spent = monthSpent(key);
     var left = income - fixed - spent;
     var box = $('budgetBody');
 
     if (budgetEditing) {
-      box.innerHTML = budgetEditor('income', 'Income', 'e.g. Salary') + budgetEditor('fixed', 'Fixed costs', 'e.g. Rent');
+      box.innerHTML = incomeEditor() + budgetEditor('fixed', 'Fixed costs', 'e.g. Rent');
       $('budgetEdit').textContent = 'Done';
+      var f = box.querySelector('.pay-form input[name="n"]');
+      if (f && payEditing === 'new' && !f.value) f.focus();
       return;
     }
     $('budgetEdit').textContent = income || fixed ? 'Edit' : 'Set up';
 
     if (!income && !fixed) {
-      box.innerHTML = '<p class="empty">Add your monthly income and fixed costs (rent, loans, subscriptions). Spending you log below is counted automatically.</p>';
+      box.innerHTML = '<p class="empty">Add your salary – net, or gross with tax and deductions – and your fixed costs (rent, loans, subscriptions). Spending you log below is counted automatically.</p>';
       return;
     }
     var base = Math.max(income, fixed + spent, 1);
     var w = function (v) { return Math.max(0, v / base * 100).toFixed(2) + '%'; };
+    var next = B.nextPayday(D), now = new Date(), dim = daysInMonth(now);
+    var until = next && next.days > 0 && next.days <= dim ? next.days : dim - now.getDate() + 1;
+    var perDay = left > 0 ? left / until : 0;
+    var payLine = next
+      ? '<p class="pay-next"><i class="bi bi-cash-stack"></i>' + (next.days === 0 ? '<b>' + esc(next.title) + ' today</b>' : '<b>' + esc(next.title) + '</b> ' +
+          next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + next.days + ' day' + (next.days === 1 ? '' : 's')) +
+          (next.net ? ' · ' + money(next.net) : '') + '</p>'
+      : '';
     box.innerHTML =
       '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>' +
-      '<div class="muted">' + (left < 0 ? 'over budget' : 'left this month') + ' · of ' + money(income) + ' income</div>' +
+      '<div class="muted">' + (left < 0 ? 'over budget' : 'left this month') + ' · of ' + money(income) + ' net income' +
+        (left > 0 ? ' · ' + money(perDay) + '/day' + (next && until === next.days ? ' until payday' : '') : '') +
+        (inc.note ? ' · ' + esc(inc.note) : '') + '</div>' +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span>' +
         '<span class="s-spent" style="width:' + w(spent) + '"></span>' +
         '<span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span>' +
       '</div>' +
       '<ul class="legend">' +
+        (inc.gross ? '<li><i class="dot" style="background:#8a6fdf"></i>Gross salary<b>' + money(inc.gross) + '</b></li>' +
+          '<li><i class="dot" style="background:#6b6d73"></i>Tax' + (inc.extra ? ' and deductions' : '') + '<b>' + money(inc.tax + inc.extra) + '</b></li>' : '') +
         '<li><i class="dot" style="background:#3987e5"></i>Fixed costs<b>' + money(fixed) + '</b></li>' +
-        '<li><i class="dot" style="background:#d95926"></i>Spent in ' + esc(monthName(ym(new Date()), true)) + '<b>' + money(spent) + '</b></li>' +
+        '<li><i class="dot" style="background:#d95926"></i>Spent in ' + esc(monthName(key, true)) + '<b>' + money(spent) + '</b></li>' +
         '<li><i class="dot" style="background:var(--accent)"></i>Left<b>' + money(left) + '</b></li>' +
-      '</ul>';
+      '</ul>' + payLine;
   }
 
+  /* ----- income: each row can be a plain net amount, or a payslip (gross, tax %, deductions, payday) ----- */
+  function dayLabel(day) { return !day ? '' : day === 'last' ? 'last day' : 'the ' + day + (day == 1 || day == 21 || day == 31 ? 'st' : day == 2 || day == 22 ? 'nd' : day == 3 || day == 23 ? 'rd' : 'th'); }
+  function incomeEditor() {
+    var list = D.budget.income, key = ym(new Date());
+    var rows = list.map(function (r) {
+      if (payEditing === r.id) return payForm(r);
+      var row = B.rowFor(r, key), bits = [];
+      if (r.gross > 0) bits.push('gross ' + kr(r.gross) + ' − ' + (+r.taxPct || 0) + ' % tax' + (row.extra ? ' − ' + kr(row.extra) : ''));
+      if (r.day) bits.push('paid ' + dayLabel(r.day));
+      if (row.note) bits.push(row.note.toLowerCase());
+      return '<li class="b-row b-pay"><button type="button" class="b-open" data-pedit="' + r.id + '"><span>' + esc(r.name) + '</span>' +
+        (bits.length ? '<small class="muted">' + esc(bits.join(' · ')) + '</small>' : '') + '</button>' + money(row.net) +
+        '<button class="del" type="button" data-bdel="income:' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+    return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
+      (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') + '</div>';
+  }
+  function payForm(r) {
+    var gross = r && r.gross > 0, days = '<option value="">Payday…</option>';
+    for (var d = 1; d <= 31; d++) days += '<option value="' + d + '"' + (r && +r.day === d ? ' selected' : '') + '>Paid on the ' + d + '.</option>';
+    days += '<option value="last"' + (r && r.day === 'last' ? ' selected' : '') + '>Paid on the last day</option>';
+    var ded = (r && r.deductions || []).map(function (x, i) {
+      return '<li class="pay-ded"><span>' + esc(x.name) + '</span><span class="muted">' + (x.pct ? esc(x.pct) + ' %' : esc(kr(x.amount))) + '</span>' +
+        '<button type="button" class="del" data-ddel="' + i + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+    return '<li class="pay-wrap"><form class="pay-form" data-pid="' + (r ? r.id : 'new') + '">' +
+      '<div class="add-row"><input name="n" placeholder="e.g. Salary" value="' + esc(r ? r.name : '') + '" required autocomplete="off">' +
+        '<select name="mode" class="pay-mode" aria-label="Net or gross"><option value="net"' + (gross ? '' : ' selected') + '>Net (paid out)</option><option value="gross"' + (gross ? ' selected' : '') + '>Gross (before tax)</option></select></div>' +
+      '<div class="pay-net"' + (gross ? ' hidden' : '') + '><input name="a" class="amt" placeholder="kr / month, after tax" inputmode="decimal" value="' + (r && !gross && r.amount ? r.amount : '') + '" autocomplete="off"></div>' +
+      '<div class="pay-gross"' + (gross ? '' : ' hidden') + '>' +
+        '<div class="row2"><label class="pay-field"><span>Gross, kr / month</span><input name="g" placeholder="52 000" inputmode="decimal" value="' + (gross ? r.gross : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span>Tax % (skattetrekk)</span><input name="t" placeholder="31" inputmode="decimal" value="' + (r && r.taxPct != null ? r.taxPct : '') + '" autocomplete="off"></label></div>' +
+        '<ul class="pay-deds">' + ded + '</ul>' +
+        '<div class="add-row pay-dadd"><input name="dn" placeholder="Deduction, e.g. Pension" autocomplete="off"><input name="da" class="amt" placeholder="2 % or 500 kr" inputmode="decimal" autocomplete="off">' +
+          '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction"><i class="bi bi-plus-lg"></i></button></div>' +
+        '<label class="pay-check"><input type="checkbox" name="py"' + (r && r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
+      '</div>' +
+      '<div class="add-row"><select name="day" class="pay-day" aria-label="Payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-pcancel>Cancel</button><span class="spacer"></span>' +
+        '<button class="pill-btn wide" type="submit">' + (r ? 'Save' : 'Add') + '</button></div></form></li>';
+  }
+  /* what the form adds up to, as you type */
+  function readPay(f) {
+    var r = { name: f.n.value.trim(), day: f.day.value === 'last' ? 'last' : (+f.day.value || null), deductions: f._ded || [] };
+    if (f.mode.value === 'gross') {
+      r.gross = num(f.g.value) || 0; r.taxPct = num(f.t.value) || 0; r.payYear = f.py.checked;
+      r.amount = Math.max(0, Math.round(B.ordinary(r)));
+    } else { r.amount = num(f.a.value) || 0; r.deductions = []; }
+    return r;
+  }
+  function previewPay(f) {
+    var r = readPay(f), p = f.querySelector('.pay-prev');
+    if (!p) return;
+    var row = B.rowFor(r, ym(new Date()));
+    p.innerHTML = r.gross > 0 ? '<b>' + esc(kr(row.net)) + '</b> net this month' + (row.note ? ' · ' + esc(row.note) : '') : (r.amount ? '<b>' + esc(kr(r.amount)) + '</b> per month' : '');
+  }
+  function openPay(id) {
+    payEditing = id; renderBudget();
+    var f = $('budgetBody').querySelector('.pay-form');
+    if (!f) return;
+    var r = id === 'new' ? null : D.budget.income.filter(function (x) { return x.id === id; })[0];
+    f._ded = r && r.deductions ? r.deductions.map(function (x) { return { name: x.name, amount: x.amount, pct: x.pct }; }) : [];
+    previewPay(f);
+  }
   function budgetEditor(kind, title, ph) {
     var rows = D.budget[kind].map(function (r) {
       if (r.src === 'sub') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
@@ -126,8 +208,21 @@
       '</form></div>';
   }
 
-  $('budgetEdit').addEventListener('click', function () { budgetEditing = !budgetEditing; renderBudget(); });
+  $('budgetEdit').addEventListener('click', function () { budgetEditing = !budgetEditing; payEditing = null; renderBudget(); });
   $('budgetBody').addEventListener('submit', function (e) {
+    var pf = e.target.closest('.pay-form');
+    if (pf) {
+      e.preventDefault();
+      var r = readPay(pf);
+      if (!r.name) { pf.n.focus(); return; }
+      if (!(r.amount > 0) && !(r.gross > 0)) { (pf.mode.value === 'gross' ? pf.g : pf.a).focus(); return; }
+      if (pf.dataset.pid === 'new') { r.id = uid(); D.budget.income.push(r); }
+      else D.budget.income = D.budget.income.map(function (x) { return x.id === pf.dataset.pid ? Object.assign({ id: x.id }, r) : x; });
+      payEditing = null;
+      persist(); renderBudget(); renderBills();
+      window.dispatchEvent(new Event('fin:change'));
+      return;
+    }
     var f = e.target.closest('.b-add');
     if (!f) return;
     e.preventDefault();
@@ -141,6 +236,31 @@
     if (again) again.focus();
   });
   $('budgetBody').addEventListener('click', function (e) {
+    var pe = e.target.closest('[data-pedit]');
+    if (pe) { openPay(pe.dataset.pedit); return; }
+    if (e.target.closest('[data-pcancel]')) { payEditing = null; renderBudget(); return; }
+    var f = e.target.closest('.pay-form');
+    if (f && e.target.closest('[data-dadd]')) {
+      var n = f.dn.value.trim(), v = f.da.value.trim();
+      if (!n || !v) { (n ? f.da : f.dn).focus(); return; }
+      var d = /%/.test(v) ? { name: n, pct: num(v) } : { name: n, amount: num(v) };
+      if (!(d.pct > 0 || d.amount > 0)) { f.da.focus(); return; }
+      f._ded = (f._ded || []).concat([d]);
+      var ul = f.querySelector('.pay-deds');
+      ul.insertAdjacentHTML('beforeend', '<li class="pay-ded"><span>' + esc(d.name) + '</span><span class="muted">' + (d.pct ? esc(d.pct) + ' %' : esc(kr(d.amount))) + '</span>' +
+        '<button type="button" class="del" data-ddel="' + (f._ded.length - 1) + '" aria-label="Remove"><i class="bi bi-x"></i></button></li>');
+      f.dn.value = ''; f.da.value = ''; f.dn.focus(); previewPay(f);
+      return;
+    }
+    if (f && e.target.closest('[data-ddel]')) {
+      var i = +e.target.closest('[data-ddel]').dataset.ddel;
+      f._ded.splice(i, 1);
+      f.querySelector('.pay-deds').innerHTML = f._ded.map(function (x, j) {
+        return '<li class="pay-ded"><span>' + esc(x.name) + '</span><span class="muted">' + (x.pct ? esc(x.pct) + ' %' : esc(kr(x.amount))) + '</span><button type="button" class="del" data-ddel="' + j + '" aria-label="Remove"><i class="bi bi-x"></i></button></li>';
+      }).join('');
+      previewPay(f);
+      return;
+    }
     var b = e.target.closest('[data-bdel]');
     if (!b) return;
     var p = b.dataset.bdel.split(':');
@@ -148,6 +268,18 @@
     persist();
     renderBudget();
     renderBills();
+    window.dispatchEvent(new Event('fin:change'));
+  });
+  $('budgetBody').addEventListener('input', function (e) { var f = e.target.closest('.pay-form'); if (f) previewPay(f); });
+  $('budgetBody').addEventListener('change', function (e) {
+    var f = e.target.closest('.pay-form');
+    if (!f) return;
+    if (e.target.name === 'mode') {
+      var g = e.target.value === 'gross';
+      f.querySelector('.pay-gross').hidden = !g; f.querySelector('.pay-net').hidden = g;
+      (g ? f.g : f.a).focus();
+    }
+    previewPay(f);
   });
 
   /* ================= Spending ================= */
@@ -409,7 +541,6 @@
 
   /* ================= Upcoming bills ================= */
   var billsEditing = false;
-  function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
 
   function renderBills() {
     var fixed = D.budget.fixed || [];
@@ -530,7 +661,7 @@
 
   window.Vault.onLock(function () {
     D = null;
-    budgetEditing = false;
+    budgetEditing = false; payEditing = null;
     billsEditing = false;
     showAll = false;
     closeSaving();

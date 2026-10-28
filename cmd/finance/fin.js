@@ -124,10 +124,10 @@
     var months = monthsOf(period);
     var prevMonths = months.map(function (m) { return shift(m, -months.length); });
     var ex = D.expenses || [];
-    var income = sum(D.budget.income), fixed = sum(D.budget.fixed);
+    var Bu = window.Budget, inc = Bu.incomeOf(D, NOW), income = inc.net, fixed = sum(D.budget.fixed);
     var spendable = income - fixed;
 
-    tiles(months, ex, income, fixed, spendable);
+    tiles(months, ex, income, fixed, spendable, inc);
     monthly(period === 'month' ? last(6) : months, ex, spendable);   // a single month shows the last 6 for context
     pace(ex, spendable);
     cats(months, prevMonths, ex);
@@ -138,7 +138,8 @@
   function last(n) { var out = []; for (var i = n - 1; i >= 0; i--) out.push(shift(NOW, -i)); return out; }
 
   /* Key numbers */
-  function tiles(months, ex, income, fixed, spendable) {
+  function tiles(months, ex, income, fixed, spendable, inc) {
+    var Bu = window.Budget, pay = Bu.nextPayday(D);
     var spentNow = sum(inMonths(ex, [NOW]));
     var left = spendable - spentNow;
     var spentP = sum(inMonths(ex, months));
@@ -149,15 +150,23 @@
     var prevKey = Object.keys(hist).sort().filter(function (k) { return k < NOW; }).pop();
     var change = prevKey !== undefined && D.accounts.length ? nw - hist[prevKey] : null;
     var day = new Date().getDate(), dim = daysIn(NOW);
-    var perDayLeft = left > 0 ? left / (dim - day + 1) : 0;
+    var untilPay = pay && pay.days > 0 && pay.days <= dim;
+    var perDayLeft = left > 0 ? left / (untilPay ? pay.days : dim - day + 1) : 0;
+    var ded = inc.rows.reduce(function (a, r) { return a.concat(r.items); }, []);
 
     var T = [
       { i: 'wallet2', l: 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
-        s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day for the rest of ' + esc(mName(NOW)) : 'Over budget') : 'Set up your budget on the dashboard' },
+        s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget on the dashboard' },
+      { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income) : '–',
+        s: !income ? 'Add your salary on the dashboard'
+          : inc.gross ? 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name.toLowerCase()) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '')
+          : pay ? (pay.days === 0 ? esc(pay.title) + ' today' : esc(pay.title) + ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' day' + (pay.days === 1 ? '' : 's')) : 'Net, after tax' },
       { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years'), v: money(spentP),
         s: months.length > 1 ? money(avg) + ' per month on average' : (spendable > 0 ? Math.round(spentNow / spendable * 100) + ' % of what you can spend' : '') },
       { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %',
-        s: rate === null ? 'Needs your income' : 'of income left after fixed costs and spending' },
+        s: rate === null ? 'Needs your income' : 'of net income left after fixed costs and spending' },
+      { i: 'calendar-event', l: 'Next payday', v: pay ? (pay.days === 0 ? 'Today' : pay.days === 1 ? 'Tomorrow' : 'In ' + pay.days + ' days') : '–',
+        s: pay ? esc(pay.title) + ' · ' + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + (pay.net ? ' · ' + esc(kr(pay.net)) : '') : 'Give your income a payday on the dashboard' },
       { i: 'graph-up-arrow', l: 'Net worth', v: D.accounts.length ? money(nw, nw < 0 ? 'neg' : '') : '–',
         s: change === null ? (D.accounts.length ? 'History builds month by month' : 'Add accounts on the dashboard')
           : '<span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) }

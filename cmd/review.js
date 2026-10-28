@@ -28,7 +28,12 @@
     var d = window.Vault.get() || {}, ex = (d.expenses || []).filter(function (e) { return test(String(e.date)); });
     var by = {}; ex.forEach(function (e) { var c = CATNAME[e.cat] ? e.cat : 'other'; by[c] = (by[c] || 0) + (+e.amount || 0); });
     var cats = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; });
-    var income = sum((d.budget || {}).income), fixed = sum((d.budget || {}).fixed);
+    /* income for the month (a year: the ordinary monthly net – June and December differ, so the year uses the sum) */
+    var Bu = window.Budget, income, yearNet = 0;
+    if (Bu && /^\d{4}-\d{2}$/.test(keyOf)) income = Bu.income(d, keyOf);
+    else if (Bu) { for (var i = 1; i <= 12; i++) yearNet += Bu.income(d, keyOf + '-' + String(i).padStart(2, '0')); income = yearNet / 12; }
+    else income = sum((d.budget || {}).income);
+    var fixed = sum((d.budget || {}).fixed);
     return { spent: sum(ex), by: by, cats: cats, income: income, fixed: fixed, list: ex };
   }
   function habitsIn(from, to) {          /* weeks on target and ticks between two day keys */

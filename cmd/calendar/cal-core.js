@@ -471,6 +471,12 @@
       } else if (!opts.all && d.hidden.reminders) return;
       add(ev);
     });
+    /* paydays from your budget (under Reminders) */
+    var Bu = window.Budget, vault = window.Vault && window.Vault.get();
+    if (Bu && vault && (!Fe || Fe.on('finance')) && (opts.all || !d.hidden.reminders)) Bu.paydays(vault, from, to).forEach(function (p) {
+      add({ id: 'pay:' + p.date.getTime(), title: p.title, allDay: true, start: p.date, days: 1, color: '#11a597', readOnly: true, reminder: true,
+        link: '/cmd/#fin', location: '', notes: (p.net ? 'About ' + Math.round(p.net).toLocaleString('nb-NO') + ' kr' + (p.row.note ? ' · ' + p.row.note : '') + '. ' : '') + 'From your budget on the dashboard.', exDays: {} });
+    });
     /* Norwegian public holidays */
     var p = prefs(d);
     if (Fe && p.holidays && (opts.all || !d.hidden.holidays)) {
