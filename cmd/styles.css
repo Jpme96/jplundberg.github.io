@@ -583,6 +583,15 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 
 .fin-title { font-size: 20px; }
+.fin-head .top-actions { align-items: center; }
+.fin-open {
+  display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px;
+  border-radius: 20px; border: 1px solid var(--line); background: rgba(var(--card-rgb), .7);
+  color: var(--accent); text-decoration: none; font-family: "Poppins", sans-serif; font-size: 13px; font-weight: 500;
+  transition: border-color .2s, transform .2s var(--ease-ios);
+}
+.fin-open:hover { border-color: var(--accent); }
+.fin-open:active { transform: scale(.95); }
 
 .fin-menu { margin-bottom: 14px; }
 .fin-menu-row { display: flex; flex-wrap: wrap; gap: 6px 16px; }
