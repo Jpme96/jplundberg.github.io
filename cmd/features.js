@@ -134,6 +134,10 @@
       var soon = addMonths(c.expires, -2);
       ev('learn2:' + c.id, 'Renew: ' + (c.title || 'certificate'), soon, 'Expires ' + c.expires, '/cmd/work/#learning');
     });
+    /* your birthday, from the profile */
+    var me = readJSON('dash.profile') || {};
+    if (isKey(me.birthday)) out.push({ id: 'rem:bday', title: 'Your birthday', allDay: true, start: fromKey(me.birthday), days: 1, color: '#d55181',
+      readOnly: true, reminder: true, link: '/cmd/?settings=profile', location: '', notes: '', exDays: {}, rule: { freq: 'YEARLY', interval: 1 } });
     if (on('health')) list('health').forEach(function (h) {
       var what = h.title || 'Health';
       if (isKey(h.date) && h.kind === 'checkup' && h.date >= addMonths(dkey(new Date()), -1)) {

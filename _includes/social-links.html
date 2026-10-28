@@ -1,0 +1,17 @@
+{%- comment -%}
+  Your social profiles. Set in the dashboard (Profile → Socials → Update jplundberg.com),
+  saved in _data/site.json. Falls back to LinkedIn + Instagram until then.
+  include.style: "icons" (default) or "list" (footer, with names)
+{%- endcomment -%}
+{%- assign _soc = site.data.site.socials -%}
+{%- if _soc == nil -%}{%- assign _soc = site.data.socials_default -%}{%- endif -%}
+{%- for s in _soc -%}
+{%- assign _n = site.data.socials_meta[s.net] -%}
+{%- if _n -%}
+{%- if include.style == "list" %}
+        <a href="{{ s.url | escape }}" target="_blank" rel="noopener me"><i class="bi bi-{{ _n.icon }}" aria-hidden="true"></i> {{ _n.name }}</a>
+{%- else %}
+    <a href="{{ s.url | escape }}" target="_blank" rel="noopener me" class="{{ s.net }}" aria-label="{{ _n.name }}"><i class="bi bi-{{ _n.icon }}"></i></a>
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}

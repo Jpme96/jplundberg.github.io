@@ -29,6 +29,9 @@ const KEY = 'vault';
 const MAX_BYTES = 5 * 1024 * 1024;
 const SITE_FILE = '_data/site.json';
 const SECTIONS = ['about', 'resume', 'projects', 'articles'];
+/* social profiles that may be shown on the site: network → allowed host */
+const SOCIALS = { linkedin: 'linkedin.com', instagram: 'instagram.com', facebook: 'facebook.com', tiktok: 'tiktok.com', x: 'x.com',
+  threads: 'threads.net', youtube: 'youtube.com', snapchat: 'snapchat.com', strava: 'strava.com', github: 'github.com' };
 
 export default {
   async fetch(request, env) {
@@ -128,10 +131,15 @@ function cleanSite(s) {
   SECTIONS.forEach(id => { if (!seen.has(id)) sections.push({ id, on: true }); });
   const ref = v => (/^[a-z0-9-]{0,80}$/.test(String(v || '')) ? String(v || '') : '');
   const f = s.featured || {};
+  const socials = (Array.isArray(s.socials) ? s.socials : []).filter(x => {
+    if (!x || !SOCIALS[x.net] || typeof x.url !== 'string' || x.url.length > 200) return false;
+    try { const u = new URL(x.url); const h = SOCIALS[x.net]; return u.protocol === 'https:' && (u.hostname === h || u.hostname.endsWith('.' + h)); } catch (e) { return false; }
+  }).slice(0, 10).map(x => ({ net: x.net, url: x.url }));
   return {
     announcement: { on: a.on === true, en: str(a.en, 180), nb: str(a.nb, 180), link },
     sections,
     featured: { article: ref(f.article), project: ref(f.project) },
+    socials,
     updated: str(s.updated, 40)
   };
 }

@@ -22,11 +22,11 @@
   nav.setAttribute('aria-label', 'Pages');
   function draw() {
     var list = visible();
-    nav.classList.toggle('tb-many', list.length > 5);
+    nav.classList.toggle('tb-many', list.length > 6);
     nav.innerHTML = list.map(function (it) {
       var on = it[0] === page;
       return '<a href="' + base + it[1] + '"' + (on ? ' aria-current="page"' : '') + '><i class="bi bi-' + it[2] + '"></i><span>' + it[3] + '</span></a>';
-    }).join('') + '<a href="' + base + (page === 'home' ? '#settings' : '?settings') + '" data-settings><i class="bi bi-gear"></i><span>Settings</span></a>';
+    }).join('');
   }
   draw();
   window.addEventListener('features:change', draw);
@@ -40,8 +40,12 @@
   /* Arriving from another page via "Settings": open the panel once unlocked */
   if (page === 'home' && /[?&]settings/.test(location.search) && window.Vault) {
     window.Vault.onUnlock(function () {
+      var m = location.search.match(/[?&]settings=([a-z]+)/);
       history.replaceState(null, '', location.pathname);
-      setTimeout(function () { var b = document.getElementById('settingsBtn'); if (b) b.click(); }, 300);
+      setTimeout(function () {
+        var b = document.getElementById('settingsBtn'); if (b) b.click();
+        if (m) setTimeout(function () { var g = document.querySelector('[data-go="' + m[1] + '"]'); if (g) g.click(); }, 80);
+      }, 300);
     });
   }
 })();

@@ -53,7 +53,7 @@
     var d = data();
     var items = C.CAT_ORDER.map(function (k) { return { id: k, name: C.CATS[k].name, color: C.CATS[k].color }; })
       .concat(!window.Features || window.Features.on('travel') ? [{ id: 'travel', name: 'Travel', color: C.TRAVEL_COLOR, icon: 'suitcase-lg' }] : [])
-      .concat(window.Features && ['learning', 'subs', 'warranty', 'health'].some(window.Features.on) ? [{ id: 'reminders', name: 'Reminders', color: window.Features.REMIND_COLOR, icon: 'bell' }] : [])
+      .concat(window.Features && window.Features.events().length ? [{ id: 'reminders', name: 'Reminders', color: window.Features.REMIND_COLOR, icon: 'bell' }] : [])
       .concat(C.prefs(d).holidays ? [{ id: 'holidays', name: 'Holidays', color: C.HOLIDAY_COLOR, icon: 'flag' }] : [])
       .concat(d.feeds.map(function (f) { return { id: 'feed:' + f.id, name: f.name, color: f.color, feed: true }; }));
     $('clCats').innerHTML = items.map(function (it) {

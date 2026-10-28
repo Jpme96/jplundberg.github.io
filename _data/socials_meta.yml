@@ -1,0 +1,11 @@
+# Names and icons for the social links (see _includes/social-links.html)
+linkedin: { name: LinkedIn, icon: linkedin }
+instagram: { name: Instagram, icon: instagram }
+facebook: { name: Facebook, icon: facebook }
+tiktok: { name: TikTok, icon: tiktok }
+x: { name: X, icon: twitter-x }
+threads: { name: Threads, icon: threads }
+youtube: { name: YouTube, icon: youtube }
+snapchat: { name: Snapchat, icon: snapchat }
+strava: { name: Strava, icon: strava }
+github: { name: GitHub, icon: github }
