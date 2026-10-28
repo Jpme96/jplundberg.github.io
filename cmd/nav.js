@@ -32,11 +32,24 @@
     root.classList.add('vt-active');
     e.viewTransition.finished.then(function () { root.classList.remove('vt-active'); }, function () { root.classList.remove('vt-active'); });
   });
-  window.addEventListener('pageshow', function (e) { if (e.persisted) document.documentElement.classList.remove('vt-active'); });
+  /* Only one page change at a time: extra taps while a page is on its way are ignored
+     (each tap used to start loading again, which made the change stutter). */
+  var leaving = false;
+  window.addEventListener('pageshow', function (e) {
+    leaving = false;
+    if (e.persisted) { document.documentElement.classList.remove('vt-active'); nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); }
+  });
   nav.addEventListener('click', function (e) {
     var a = e.target.closest('a[data-pg]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
-    if (a.getAttribute('aria-current')) { e.preventDefault(); return; }
+    if (leaving) { e.preventDefault(); return; }
+    /* the page you're on: back to the top instead of loading it again */
+    if (a.getAttribute('aria-current')) {
+      e.preventDefault();
+      if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: document.documentElement.classList.contains('mo-off') ? 'auto' : 'smooth' });
+      return;
+    }
+    leaving = true;
     nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
     var off = document.documentElement.classList.contains('mo-off');
     if (crossDoc || off) { document.documentElement.classList.add('vt-active'); return; }   // the browser does the rest
@@ -55,7 +68,7 @@
   function tabAt(x) { var l = tabs(); for (var i = 0; i < l.length; i++) { var r = l[i].getBoundingClientRect(); if (x < r.right) return l[i]; } return l[l.length - 1]; }
   nav.addEventListener('touchstart', function (e) {
     var t = e.touches[0], pill = nav.querySelector('.tb-pill');
-    if (!pill) return;
+    if (!pill || leaving) return;
     drag = { x0: t.clientX, moved: false, pill: pill, home: pill.parentNode, target: null };
   }, { passive: true });
   nav.addEventListener('touchmove', function (e) {
@@ -77,7 +90,8 @@
     if (!d.moved) return;                       // a normal tap: the click does the rest
     e.preventDefault();
     var a = d.target;
-    if (!a || a.getAttribute('aria-current')) { d.pill.style.transform = ''; d.pill.style.width = ''; nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); return; }
+    if (!a || a.getAttribute('aria-current') || leaving) { d.pill.style.transform = ''; d.pill.style.width = ''; nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); return; }
+    leaving = true;
     document.documentElement.classList.add('vt-active');
     setTimeout(function () { location.href = a.href; }, 120);
   });
