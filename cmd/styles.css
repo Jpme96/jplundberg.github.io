@@ -1876,18 +1876,14 @@ input:disabled { opacity: .55; }
 
 /* ---------- Quick add ---------- */
 .qa-btn {
-  width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent, #0a0b0c);
-  display: grid; place-items: center; font-size: 18px; cursor: pointer; flex-shrink: 0;
-  box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); transition: transform .2s var(--ease-ios), box-shadow .2s;
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent);
+  display: grid; place-items: center; font-size: 17px; cursor: pointer; flex-shrink: 0;
+  transition: transform .2s var(--ease-ios), background .2s, border-color .2s;
 }
-.qa-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(var(--accent-rgb), .45); }
+.qa-btn:hover { border-color: var(--accent); }
+.qa-open .qa-btn { opacity: 0; pointer-events: none; }
 .qa-btn:active { transform: scale(.92); }
 .locked:not(.resuming) .qa-btn { display: none; }
-@media (max-width: 759px) {
-  .qa-btn { position: fixed; z-index: 36; right: 16px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 78px); width: 54px; height: 54px; font-size: 24px; }
-  .cl-new { display: none !important; }         /* the calendar's own + is replaced by this one */
-  .qa-open .qa-btn { opacity: 0; pointer-events: none; }
-}
 .qa-bg { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0); transition: background .3s var(--ease-ios); display: flex; align-items: flex-end; justify-content: center; }
 .qa-bg.open { background: rgba(0, 0, 0, .45); }
 body.qa-open { overflow: hidden; }
