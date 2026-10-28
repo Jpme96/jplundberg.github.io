@@ -28,10 +28,10 @@
 
   /* ---------- Date, clock and greeting ---------- */
   var PERIODS = [
-    { from: 0, to: 6, text: 'Good night', icon: '🌙', glow: 'rgba(85, 152, 231, .6)' },
-    { from: 6, to: 12, text: 'Good morning', icon: '🌅', glow: 'rgba(255, 223, 0, .55)' },
-    { from: 12, to: 18, text: 'Good afternoon', icon: '☀️', glow: 'rgba(255, 140, 0, .55)' },
-    { from: 18, to: 24, text: 'Good evening', icon: '🌆', glow: 'rgba(160, 90, 220, .6)' }
+    { from: 0, to: 6, text: 'Good night' },
+    { from: 6, to: 12, text: 'Good morning' },
+    { from: 12, to: 18, text: 'Good afternoon' },
+    { from: 18, to: 24, text: 'Good evening' }
   ];
   var period = null;
   function prefs() { return window.DashSettings ? window.DashSettings.get() : { name: 'Lundberg', seconds: true, quotes: true }; }
@@ -46,7 +46,7 @@
     $('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     var p = PERIODS.filter(function (x) { return now.getHours() >= x.from && now.getHours() < x.to; })[0];
-    var greet = p.text + (pr.name ? ', ' + pr.name : '') + ' ' + p.icon;
+    var greet = p.text + (pr.name ? ', ' + pr.name : '');
     if (p !== period || $('greeting').textContent !== greet) {
       period = p;
       $('greeting').textContent = greet;
