@@ -1,0 +1,7 @@
+{%- comment -%} Background photo for page heads. The default photo also comes as WebP (smaller). {%- endcomment -%}
+{%- assign src = include.src | default: '/assets/img/hero-bg.jpg' -%}
+{%- if src == '/assets/img/hero-bg.jpg' -%}
+<picture><source srcset="/assets/img/hero-bg.webp" type="image/webp"><img src="/assets/img/hero-bg.jpg" alt=""{% if include.aos %} data-aos="{{ include.aos }}"{% endif %} fetchpriority="high"></picture>
+{%- else -%}
+<img src="{{ src }}" alt=""{% if include.aos %} data-aos="{{ include.aos }}"{% endif %} fetchpriority="high">
+{%- endif -%}

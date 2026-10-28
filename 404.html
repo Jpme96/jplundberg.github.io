@@ -1,0 +1,22 @@
+---
+layout: base
+lang: en
+title: Page not found
+permalink: /404.html
+sitemap: false
+---
+{% assign en = site.data.ui.en %}{% assign nb = site.data.ui.nb %}
+<section class="page-hero page-hero--short dark-background">
+  {% include hero-img.html %}
+  <div class="container">
+    <h2>404 · {{ en.nf_title }}</h2>
+    <p class="intro">{{ en.nf_text }}<br><span lang="nb">{{ nb.nf_title }}. {{ nb.nf_text }}</span></p>
+  </div>
+</section>
+<section class="section">
+  <div class="container nf-links">
+    <a class="cta-btn" href="/"><i class="bi bi-house"></i> {{ en.nf_home }}</a>
+    <a class="cta-btn ghost" href="/articles/"><i class="bi bi-journal-text"></i> {{ en.nf_articles }}</a>
+    <a class="cta-btn ghost" href="/no/" lang="nb"><i class="bi bi-house"></i> {{ nb.nf_home }}</a>
+  </div>
+</section>

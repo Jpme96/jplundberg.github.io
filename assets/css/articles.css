@@ -286,3 +286,23 @@
   background: rgba(10, 11, 12, .75);
   color: #ffffff;
 }
+
+/* End of article: share + get in touch */
+.article-body .share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 40px; font-size: 14px; }
+.article-body .share > span { color: color-mix(in srgb, var(--default-color), transparent 35%); margin-right: 4px; }
+.share-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-family: var(--nav-font); font-size: 13.5px; font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--default-color), transparent 80%); background: transparent; color: var(--default-color); text-decoration: none; cursor: pointer;
+}
+.share-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+.article-body .author { align-items: flex-start; margin-top: 20px; padding: 22px; border: 1px solid color-mix(in srgb, var(--accent-color), transparent 70%); }
+.article-body .author .cta-title { font-family: var(--heading-font); font-weight: 700; font-size: 18px; color: var(--heading-color); margin: 0 0 6px; line-height: 1.35; }
+.cta-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 999px; font-family: var(--nav-font); font-size: 14px; font-weight: 600;
+  background: var(--accent-color); color: var(--contrast-color); text-decoration: none; border: 1px solid var(--accent-color);
+}
+.cta-btn:hover { color: var(--contrast-color); filter: brightness(1.08); }
+.cta-btn.ghost { background: transparent; color: var(--accent-color); }
+@media (max-width: 576px) { .article-body .author { flex-direction: column; } }
+.nf-links { display: flex; flex-wrap: wrap; gap: 10px; }

@@ -32,8 +32,46 @@
   <meta property="og:url" content="https://jplundberg.com{{ t.url }}">
   <meta property="og:title" content="{{ t.title }}">
   <meta property="og:description" content="{{ t.description }}">
-  <meta property="og:image" content="https://jplundberg.com/assets/img/my-profile-img.jpg">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:site_name" content="John Paul Lundberg">
+  <meta property="og:locale" content="{% if page.lang == 'nb' %}nb_NO{% else %}en_GB{% endif %}">
+  <meta property="og:image" content="https://jplundberg.com/assets/img/og-default.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="John Paul Lundberg – FDVU Advisor in Oslo">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="John Paul Lundberg" href="{% if page.lang == 'nb' %}/no/feed.xml{% else %}/feed.xml{% endif %}">
+
+  <!-- Who this site is about, for search engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://jplundberg.com/#person",
+        "name": "John Paul Lundberg",
+        "url": "https://jplundberg.com/",
+        "image": "https://jplundberg.com/assets/img/my-profile-img.jpg",
+        "jobTitle": "FDVU Advisor",
+        "description": {{ t.description | strip_html | jsonify }},
+        "email": "mailto:contact@jplundberg.com",
+        "worksFor": { "@type": "Organization", "name": "Boligbygg Oslo KF" },
+        "address": { "@type": "PostalAddress", "addressLocality": "Oslo", "addressCountry": "NO" },
+        "knowsAbout": ["FDVU", "FDV documentation", "Facility management", "Maintenance planning", "Document control", "Property management"],
+        "knowsLanguage": ["nb", "en"],
+        "sameAs": ["https://www.linkedin.com/in/john-paul-lundberg-8a804623b/"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://jplundberg.com/#website",
+        "url": "https://jplundberg.com/",
+        "name": "John Paul Lundberg",
+        "inLanguage": ["en", "nb-NO"],
+        "publisher": { "@id": "https://jplundberg.com/#person" }
+      }
+    ]
+  }
+  </script>
 
   <link href="/assets/img/favicon.png?v=2" rel="icon">
   <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
@@ -106,7 +144,7 @@
 
     <!-- Hero Section -->
     <section id="hero" class="hero section dark-background">
-      <img src="/assets/img/hero-bg.jpg" alt="" data-aos="fade-in">
+      {% include hero-img.html aos='fade-in' %}
       <div class="container" data-aos="fade-up" data-aos-delay="100">
         <h2>John Paul Lundberg</h2>
         {% assign roles = t.hero_items | split: ',' %}

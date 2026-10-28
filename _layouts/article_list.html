@@ -3,7 +3,7 @@ layout: base
 ---
 {% assign lang = page.lang | default: 'en' %}{% assign u = site.data.ui[lang] %}{% assign h = site.data.home[lang] %}
 <section class="page-hero page-hero--short dark-background">
-  <img src="/assets/img/hero-bg.jpg" alt="">
+  {% include hero-img.html %}
   <div class="container" data-aos="fade-up">
     <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / {{ u.articles_title }}</div>
     <h2>{{ u.articles_title }}</h2>

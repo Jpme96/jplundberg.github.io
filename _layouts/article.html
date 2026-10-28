@@ -6,7 +6,7 @@ layout: base
 {% assign minutes = words | divided_by: 200 | plus: 1 %}
 {% assign month = page.date | date: "%-m" | minus: 1 %}
 <section class="page-hero dark-background">
-  <img src="{{ page.image | default: '/assets/img/hero-bg.jpg' }}" alt="">
+  {% include hero-img.html src=page.image %}
   <div class="container" data-aos="fade-up">
     <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / <a href="{{ u.articles_url }}">{{ u.articles_title }}</a></div>
     {% if page.category %}<span class="tag">{{ u.categories[page.category] | default: page.category }}</span>{% endif %}
@@ -21,10 +21,31 @@ layout: base
       {% if page.summary %}<p class="lead">{{ page.summary }}</p>{% endif %}
       {{ content }}
 
-      <div class="author">
-        <img src="/assets/img/my-profile-img.jpg" alt="">
-        <p><strong>John Paul Lundberg</strong><br>{{ u.author_bio }} <a href="{{ h.url }}#contact">{{ u.get_in_touch }}</a>.</p>
+      <div class="share" aria-label="{{ u.share_label }}">
+        <span>{{ u.share_label }}</span>
+        <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url={{ site.url | append: page.url | uri_escape }}" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> {{ u.share_linkedin }}</a>
+        <button class="share-btn" type="button" data-copy="{{ site.url }}{{ page.url }}" data-done="{{ u.share_copied }}"><i class="bi bi-link-45deg"></i> <span>{{ u.share_copy }}</span></button>
       </div>
+
+      <aside class="author">
+        <img src="/assets/img/avatar-160.jpg" alt="" width="80" height="80" loading="lazy">
+        <div>
+          <p class="cta-title">{{ u.cta_title }}</p>
+          <p><strong>John Paul Lundberg</strong> – {{ u.author_bio }} {{ u.cta_text }}</p>
+          <div class="cta-actions">
+            <a class="cta-btn" href="mailto:contact@jplundberg.com?subject={{ u.cta_mail_subject | append: ': ' | append: page.title | uri_escape }}"><i class="bi bi-envelope"></i> {{ u.cta_mail }}</a>
+            <a class="cta-btn ghost" href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
+          </div>
+        </div>
+      </aside>
+      <script>
+        document.querySelectorAll('[data-copy]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var done = function () { b.querySelector('span').textContent = b.dataset.done; b.querySelector('i').className = 'bi bi-check2'; };
+            if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(done, function () {});
+          });
+        });
+      </script>
 
       <a class="back" href="{{ u.articles_url }}"><i class="bi bi-arrow-left"></i> {{ u.all_articles }}</a>
     </article>

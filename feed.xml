@@ -1,0 +1,28 @@
+---
+layout: null
+sitemap: false
+feed_lang: en
+---
+<?xml version="1.0" encoding="UTF-8"?>
+{%- assign fl = page.feed_lang -%}{%- assign u = site.data.ui[fl] -%}
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>John Paul Lundberg – {{ u.articles_title }}</title>
+    <link>{{ site.url }}{{ u.articles_url }}</link>
+    <atom:link href="{{ site.url }}{{ page.url }}" rel="self" type="application/rss+xml"/>
+    <description>{{ u.articles_intro | strip_html | xml_escape }}</description>
+    <language>{% if fl == 'nb' %}nb-NO{% else %}en{% endif %}</language>
+    <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
+    {%- assign items = site.articles | where: "lang", fl | sort: "date" | reverse -%}
+    {%- for a in items limit: 30 %}
+    <item>
+      <title>{{ a.title | xml_escape }}</title>
+      <link>{{ site.url }}{{ a.url }}</link>
+      <guid isPermaLink="true">{{ site.url }}{{ a.url }}</guid>
+      <pubDate>{{ a.date | date_to_rfc822 }}</pubDate>
+      {%- if a.category %}<category>{{ u.categories[a.category] | default: a.category | xml_escape }}</category>{% endif %}
+      <description>{{ a.summary | default: a.excerpt | strip_html | strip_newlines | xml_escape }}</description>
+    </item>
+    {%- endfor %}
+  </channel>
+</rss>

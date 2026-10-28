@@ -1,0 +1,28 @@
+---
+layout: null
+sitemap: false
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+{%- comment -%} Pages in both languages (front page, articles list, projects list) {%- endcomment -%}
+{%- assign pairs = "/|/no/,/articles/|/no/articles/,/projects/|/no/projects/" | split: "," -%}
+{%- for pr in pairs -%}{%- assign p = pr | split: "|" -%}{%- for u in p %}
+  <url>
+    <loc>{{ site.url }}{{ u }}</loc>
+    <lastmod>{{ site.time | date_to_xmlschema }}</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="{{ site.url }}{{ p[0] }}"/>
+    <xhtml:link rel="alternate" hreflang="nb" href="{{ site.url }}{{ p[1] }}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ p[0] }}"/>
+  </url>
+{%- endfor -%}{%- endfor -%}
+{%- assign docs = site.articles | concat: site.projects -%}
+{%- for d in docs -%}{%- if d.published == false or d.sitemap == false -%}{%- continue -%}{%- endif %}
+  <url>
+    <loc>{{ site.url }}{{ d.url }}</loc>
+    <lastmod>{{ d.last_modified_at | default: d.date | date_to_xmlschema }}</lastmod>
+    {%- if d.ref -%}{%- assign twins = docs | where: "ref", d.ref -%}{%- if twins.size > 1 -%}{%- for tw in twins %}
+    <xhtml:link rel="alternate" hreflang="{{ tw.lang | default: 'en' }}" href="{{ site.url }}{{ tw.url }}"/>
+    {%- endfor -%}{%- endif -%}{%- endif %}
+  </url>
+{%- endfor %}
+</urlset>

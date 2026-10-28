@@ -1703,7 +1703,9 @@ a[x-apple-data-detectors] {
 
 /* --- Opening: name and title rise into focus, photo settles --- */
 .motion .hero > img,
-.motion .page-hero > img {
+.motion .page-hero > img,
+.motion .hero > picture > img,
+.motion .page-hero > picture > img {
   transform: scale(1.08);
 }
 
@@ -1716,7 +1718,9 @@ a[x-apple-data-detectors] {
 }
 
 .motion.motion-ready .hero > img,
-.motion.motion-ready .page-hero > img {
+.motion.motion-ready .page-hero > img,
+.motion.motion-ready .hero > picture > img,
+.motion.motion-ready .page-hero > picture > img {
   transform: scale(1);
   transition: transform 2.2s var(--ease-out);
 }
@@ -1923,3 +1927,7 @@ a.announce-text:hover { color: var(--accent-color); }
 .article-filter button:hover { color: var(--heading-color); border-color: var(--accent-color); }
 .article-filter button[aria-pressed="true"] { background: var(--accent-color); border-color: var(--accent-color); color: var(--contrast-color); }
 .article-card[hidden] { display: none !important; }
+
+/* Page-head photos come wrapped in <picture> (WebP with JPEG fallback) */
+.hero > picture, .page-hero > picture { display: contents; }
+.about picture { display: contents; }
