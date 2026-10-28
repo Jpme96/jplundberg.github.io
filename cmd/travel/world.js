@@ -196,6 +196,60 @@
     });
   }
 
+  /* ---------- a globe you can spin (d3-geo + Natural Earth countries, loaded when first shown) ---------- */
+  var globeLibs = null, worldData = null;
+  function loadGlobe() {
+    if (window.d3 && window.topojson && worldData) return Promise.resolve();
+    if (globeLibs) return globeLibs;
+    function script(src) { return new Promise(function (ok, fail) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { fail(new Error('globe')); }; document.head.appendChild(s); }); }
+    globeLibs = Promise.all([
+      window.d3 ? null : script('https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'),
+      window.topojson ? null : script('https://cdnjs.cloudflare.com/ajax/libs/topojson-client/3.1.0/topojson-client.min.js'),
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(function (r) { return r.json(); }).then(function (j) { worldData = j; })
+    ]).catch(function (e) { globeLibs = null; throw e; });
+    return globeLibs;
+  }
+  /* points: as for map(); opts.countries: ISO numeric or alpha-2 codes to shade as visited */
+  function globe(el, points, opts) {
+    opts = opts || {};
+    return loadGlobe().then(function () {
+      if (el._map) { el._map.remove(); el._map = null; }
+      if (el._globe) { el._globe.stop(); el._globe = null; }
+      el.innerHTML = '';
+      var d3 = window.d3, W = el.clientWidth || 600, H = el.clientHeight || 380, R = Math.min(W, H) / 2 - 8;
+      var land = window.topojson.feature(worldData, worldData.objects.countries), border = window.topojson.mesh(worldData, worldData.objects.countries, function (a, b) { return a !== b; });
+      var cc = {}; (opts.countries || []).forEach(function (c) { cc[String(c)] = 1; });
+      var pts = points.filter(function (p) { return p.lat != null && p.lon != null; });
+      var start = pts.length ? [-pts[0].lon, -pts[0].lat * .6] : [-10, -45];
+      var proj = d3.geoOrthographic().scale(R).translate([W / 2, H / 2]).rotate(start).clipAngle(90);
+      var path = d3.geoPath(proj);
+      var svg = d3.select(el).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('class', 'globe').attr('aria-label', 'Globe with the places you have been');
+      svg.append('circle').attr('class', 'globe-sea').attr('cx', W / 2).attr('cy', H / 2).attr('r', R);
+      var grat = svg.append('path').datum(d3.geoGraticule10()).attr('class', 'globe-grat');
+      var countries = svg.append('g').selectAll('path').data(land.features).enter().append('path').attr('class', function (f) { return 'globe-land' + (cc[f.id] ? ' been' : ''); });
+      var lines = svg.append('path').datum(border).attr('class', 'globe-border');
+      var dots = svg.append('g').selectAll('g').data(pts).enter().append('g').attr('class', 'globe-pt');
+      dots.append('circle').attr('r', 5).attr('fill', function (p) { return p.color || 'var(--accent)'; });
+      dots.append('title').text(function (p) { return String(p.label || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); });
+      function render() {
+        grat.attr('d', path); countries.attr('d', path); lines.attr('d', path);
+        dots.attr('transform', function (p) { var xy = proj([p.lon, p.lat]); return 'translate(' + xy[0] + ',' + xy[1] + ')'; })
+          .attr('display', function (p) { var r = proj.rotate(), c = d3.geoDistance([p.lon, p.lat], [-r[0], -r[1]]); return c > Math.PI / 2 ? 'none' : null; });
+      }
+      render();
+      /* drag to spin, and a slow turn while you don't */
+      var spinning = !document.documentElement.classList.contains('mo-off'), raf = null, last = performance.now();
+      function tick(t) { if (spinning) { var r = proj.rotate(); proj.rotate([r[0] + (t - last) * 0.004, r[1]]); render(); } last = t; raf = requestAnimationFrame(tick); }
+      raf = requestAnimationFrame(tick);
+      var v0, r0, q0;
+      svg.call(d3.drag().on('start', function (e) { spinning = false; v0 = [e.x, e.y]; r0 = proj.rotate(); })
+        .on('drag', function (e) { proj.rotate([r0[0] + (e.x - v0[0]) * 0.4, Math.max(-80, Math.min(80, r0[1] - (e.y - v0[1]) * 0.4))]); render(); })
+        .on('end', function () { setTimeout(function () { if (el._globe && el._globe.raf === raf) spinning = true; }, 4000); }));
+      el._globe = { raf: raf, stop: function () { cancelAnimationFrame(raf); } };
+      return el._globe;
+    });
+  }
+
   function osmLink(p) { return 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lon + '#map=12/' + p.lat + '/' + p.lon; }
   function gmapsLink(q) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
   /* Google Flights, filled in: from your city to the destination on the trip dates, prices in NOK */
@@ -208,7 +262,7 @@
 
   window.World = {
     search: search, weather: weather, wmo: wmo, currencyOf: currencyOf, rate: rate, timeInfo: timeInfo,
-    locate: locate, map: map, osmLink: osmLink, gmapsLink: gmapsLink, flightsLink: flightsLink, exploreLink: exploreLink, homeCity: homeCity,
+    locate: locate, map: map, globe: globe, osmLink: osmLink, gmapsLink: gmapsLink, flightsLink: flightsLink, exploreLink: exploreLink, homeCity: homeCity,
     inEEA: function (cc) { return EEA.indexOf(String(cc || '').toUpperCase()) > -1; },
     abroad: function (cc) { return !!cc && String(cc).toUpperCase() !== 'NO'; },
     addDays: addDays

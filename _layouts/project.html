@@ -41,8 +41,9 @@ layout: base
     {% if page.charts.size > 0 %}
     <div class="project-charts">
       {% for c in page.charts %}
+      {%- assign goal = nil %}{% if c.goal %}{% assign goal = site.data.site.goals | where: "name", c.goal | first %}{% endif %}
       <figure class="project-card chart chart--{{ c.type | default: 'bars' }}" data-aos="fade-up"
-              data-chart="{{ c | jsonify | escape }}"
+              data-chart="{{ c | jsonify | escape }}"{% if goal %} data-goal="{{ goal | jsonify | escape }}"{% endif %}
               data-parts="{{ page.parts | jsonify | escape }}"
               data-lang="{{ lang }}"
               data-i18n="{{ u | jsonify | escape }}">

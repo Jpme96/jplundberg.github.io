@@ -451,3 +451,16 @@
 .card-soft .hs-year { background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 22px; box-shadow: 0 10px 26px rgba(0, 0, 0, .26); }
 /* room for the search and profile buttons above the greeting on phones */
 @media (max-width: 759px) { .tv .tv-hero { padding-top: 50px; } }
+
+/* the globe */
+.globe { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.globe:active { cursor: grabbing; }
+.globe-sea { fill: rgba(var(--accent-rgb), .07); stroke: var(--line); }
+.globe-grat { fill: none; stroke: rgba(var(--ink-rgb), .08); stroke-width: .5; }
+.globe-land { fill: rgba(var(--ink-rgb), .16); stroke: none; }
+.globe-land.been { fill: rgba(var(--accent-rgb), .55); }
+.globe-border { fill: none; stroke: var(--bg-solid); stroke-width: .6; }
+.globe-pt circle { stroke: var(--bg-solid); stroke-width: 2; }
+.seg-sm button { padding: 5px 9px; font-size: 12px; }
+.seg-sm button i { font-size: 12px; }
+.hs-map { background: transparent; }

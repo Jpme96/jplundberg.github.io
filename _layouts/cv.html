@@ -1,0 +1,84 @@
+---
+layout: base
+---
+{% assign lang = page.lang | default: 'en' %}{% assign t = site.data.home[lang] %}{% assign u = site.data.ui[lang] %}{% assign S = site.data.site %}
+{%- if S.cv.on %}
+<section class="page-hero dark-background cv-hero">
+  <div class="container" data-aos="fade-up">
+    <div class="crumbs"><a href="{{ t.url }}">{{ u.crumbs_home }}</a> / {{ t.cv_title }}</div>
+    <h1>John Paul Lundberg</h1>
+    <p class="intro">{% include txt.html k='hero_items' %}</p>
+    <p class="cv-actions"><button type="button" class="cv-btn" onclick="window.print()"><i class="bi bi-download"></i> {{ t.cv_print }}</button></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <article class="cv" data-aos="fade-up">
+      <header class="cv-head">
+        <img src="/assets/img/my-profile-img-firkant.jpg" alt="" width="96" height="96">
+        <div>
+          <h2>John Paul Lundberg</h2>
+          <p class="cv-roles">{% include txt.html k='hero_items' %}</p>
+          <ul class="cv-contact">
+            <li><i class="bi bi-geo-alt"></i> {% include txt.html k='fact_city' %}</li>
+            <li><i class="bi bi-envelope"></i> <a href="mailto:contact@jplundberg.com">contact@jplundberg.com</a></li>
+            <li><i class="bi bi-globe2"></i> <a href="https://jplundberg.com{{ t.url }}">jplundberg.com</a></li>
+            {%- assign soc = S.socials | default: site.data.socials_default %}{% for sc in soc %}{% if sc.net == 'linkedin' %}<li><i class="bi bi-linkedin"></i> <a href="{{ sc.url }}">LinkedIn</a></li>{% endif %}{% endfor %}
+          </ul>
+        </div>
+      </header>
+
+      <h3>{{ t.cv_profile }}</h3>
+      <p>{% include txt.html k='about_p1' %}</p>
+      <p>{% include txt.html k='about_p2' %}</p>
+
+      <h3>{{ t.cv_experience }}</h3>
+      {%- for job in t.jobs %}
+      <div class="cv-job">
+        <div class="cv-job-head"><strong>{{ job.title }}</strong><span>{{ job.dates }}</span></div>
+        <div class="cv-job-org">{{ job.company }}</div>
+        {%- if job.points.size > 0 %}<ul>{% for p in job.points %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      {%- endfor %}
+
+      <h3>{{ t.cv_education }}</h3>
+      <p>{% include txt.html k='fact_degree' %}</p>
+
+      {%- assign cvc = S.courses | where: "cv", true %}
+      {%- if S.cv.courses and cvc and cvc.size > 0 %}
+      <h3>{{ t.courses_title }}</h3>
+      <ul class="cv-courses">
+        {%- for c in cvc %}<li><strong>{{ c.title | escape }}</strong>{% if c.org != '' %} · {{ c.org | escape }}{% endif %}{% if c.year != '' %} · {{ c.year | escape }}{% endif %}</li>{% endfor %}
+      </ul>
+      {%- endif %}
+
+      <h3>{{ t.cv_skills }}</h3>
+      <p>Plania · Curotech · Famac · Propely</p>
+
+      <h3>{{ t.cv_languages }}</h3>
+      <p>{{ t.cv_languages_list }}</p>
+
+      {%- assign pr = site.projects | where: "lang", lang | where_exp: "p", "p.published != false" | sort: "date" | reverse %}
+      {%- if S.cv.projects and pr and pr.size > 0 %}
+      <h3>{{ t.cv_projects }}</h3>
+      <ul class="cv-list">
+        {%- for p in pr limit: 4 %}<li><strong>{{ p.title }}</strong>{% if p.organisation %} · {{ p.organisation }}{% endif %}{% if p.period %} · {{ p.period }}{% endif %}{% if p.summary %}<br><span>{{ p.summary }}</span>{% endif %}</li>{% endfor %}
+      </ul>
+      {%- endif %}
+
+      {%- assign ar = site.articles | where: "lang", lang | where_exp: "a", "a.published != false" | sort: "date" | reverse %}
+      {%- if S.cv.articles and ar and ar.size > 0 %}
+      <h3>{{ t.cv_articles }}</h3>
+      <ul class="cv-list">
+        {%- for a in ar limit: 4 %}<li><strong>{{ a.title }}</strong> · <a href="{{ site.url }}{{ a.url }}">jplundberg.com{{ a.url }}</a></li>{% endfor %}
+      </ul>
+      {%- endif %}
+
+      <p class="cv-foot">{{ t.cv_updated }} {{ site.time | date: "%d.%m.%Y" }} · jplundberg.com{{ page.url }}</p>
+    </article>
+  </div>
+</section>
+{%- else %}
+<section class="page-hero dark-background"><div class="container"><h1>{{ t.cv_title }}</h1><p class="intro">{{ t.cv_off }}</p></div></section>
+{%- endif %}

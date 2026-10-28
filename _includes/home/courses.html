@@ -1,0 +1,24 @@
+{% assign t = site.data.home[page.lang] %}{% assign cl = site.data.site.courses %}
+{%- if cl and cl.size > 0 %}
+    <!-- Courses & certificates (published from the dashboard) -->
+    <section id="courses" class="courses section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.courses_title }}</h2>
+        <p>{{ t.courses_intro }}</p>
+      </div>
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <ul class="course-list">
+          {%- for c in cl %}
+          <li class="course-item">
+            <i class="bi {% if c.kind == 'certificate' %}bi-patch-check{% elsif c.kind == 'standard' %}bi-file-earmark-ruled{% elsif c.kind == 'book' %}bi-book{% else %}bi-mortarboard{% endif %}" aria-hidden="true"></i>
+            <div>
+              <strong>{{ c.title | escape }}</strong>
+              <span>{% if c.org and c.org != '' %}{{ c.org | escape }}{% endif %}{% if c.org and c.org != '' and c.year and c.year != '' %} · {% endif %}{{ c.year | escape }}</span>
+            </div>
+            <em class="course-kind">{% case c.kind %}{% when 'certificate' %}{{ t.kind_certificate }}{% when 'standard' %}{{ t.kind_standard }}{% when 'book' %}{{ t.kind_book }}{% when 'other' %}{{ t.kind_other }}{% else %}{{ t.kind_course }}{% endcase %}</em>
+          </li>
+          {%- endfor %}
+        </ul>
+      </div>
+    </section><!-- /Courses -->
+{%- endif %}

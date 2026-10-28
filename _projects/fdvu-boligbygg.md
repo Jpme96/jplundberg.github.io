@@ -17,6 +17,7 @@ stats:
     icon: file-earmark-text
 charts:
   - type: ring
+    goal: Asset structure clean-up (%)
     title: Opprydding i anleggsstruktur
     description: 55 % av byggene er ferdig strukturert, og arbeidet fortsetter.
     percent: 55

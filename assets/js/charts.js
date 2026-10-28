@@ -41,6 +41,13 @@
       data = JSON.parse(fig.getAttribute('data-chart')) || {};
       parts = JSON.parse(fig.getAttribute('data-parts') || 'null') || [];
       ui = JSON.parse(fig.getAttribute('data-i18n') || '{}') || {};
+      /* a goal on the dashboard keeps this chart current (published to _data/site.json) */
+      var goal = JSON.parse(fig.getAttribute('data-goal') || 'null');
+      if (goal && goal.target > 0) {
+        if (data.type === 'ring' || !data.type) data.percent = Math.round(goal.value / goal.target * 100);
+        var cap = fig.querySelector('figcaption p');
+        if (cap && goal.updated) cap.textContent = cap.textContent.replace(/\d+ ?%/, Math.round(goal.value / goal.target * 100) + ' %') + (/\d{4}-\d{2}-\d{2}/.test(goal.updated) ? ' (' + goal.updated.split('-').reverse().join('.') + ')' : '');
+      }
     } catch (e) { return; }
 
     var lang = fig.getAttribute('data-lang') === 'nb' ? 'nb-NO' : 'en-GB';

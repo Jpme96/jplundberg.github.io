@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=64" rel="stylesheet">
+  <link href="styles.css?v=65" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -276,6 +276,9 @@
           <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="texts"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-fonts"></i></span><span class="st-label">Texts<small id="sumTexts">About, roles, contact, footer</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="socials"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-share"></i></span><span class="st-label">Socials<small>Links in the header and footer</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="courses"><span class="st-ico" style="--c:#c98500"><i class="bi bi-mortarboard"></i></span><span class="st-label">Courses &amp; certificates<small id="sumCourses">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="progress"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bullseye"></i></span><span class="st-label">Project progress<small id="sumProgress">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="cv"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-file-earmark-person"></i></span><span class="st-label">CV<small id="sumCv">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="content"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-journal-check"></i></span><span class="st-label">Articles &amp; projects<small id="sumContent">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
@@ -440,6 +443,33 @@
       <div class="st-page" data-page="sections" data-title="Front page" hidden>
         <p class="st-intro">Choose which sections are shown on the front page, and in which order.</p>
         <section class="st-group" id="wsSections"></section>
+        <section class="st-group">
+          <h3>Right now</h3>
+          <p class="st-sub">One line under your name on the front page about what you’re working on. Leave it empty to hide it.</p>
+          <div class="st-col"><span>English</span><input id="wsNowEn" class="st-wide" maxlength="240" placeholder="e.g. Restructuring the FDVU documentation for 406 buildings at Boligbygg" autocomplete="off"></div>
+          <div class="st-col"><span>Norsk</span><input id="wsNowNb" class="st-wide" maxlength="240" placeholder="f.eks. Strukturerer FDVU-dokumentasjonen for 406 bygg i Boligbygg" autocomplete="off"></div>
+        </section>
+      </div>
+
+      <div class="st-page" data-page="courses" data-title="Courses &amp; certificates" hidden>
+        <p class="st-intro">Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses &amp; certificates” section on the front page – turn the section on under Front page) and in your CV. Nothing else from the list leaves the dashboard.</p>
+        <section class="st-group" id="wsCourses"></section>
+      </div>
+
+      <div class="st-page" data-page="progress" data-title="Project progress" hidden>
+        <p class="st-intro">A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (<code>goal:</code> in the project file). Only the name, the numbers and the date are published.</p>
+        <section class="st-group" id="wsGoals"></section>
+      </div>
+
+      <div class="st-page" data-page="cv" data-title="CV" hidden>
+        <p class="st-intro">A CV page built from your profile, experience, courses and projects – always up to date, and saved as PDF with one tap. It isn’t listed in search engines.</p>
+        <section class="st-group">
+          <label class="st-row"><span>CV page on jplundberg.com/cv/</span><input type="checkbox" class="switch" id="wsCvOn"></label>
+          <label class="st-row"><span>Include courses &amp; certificates marked “In CV”</span><input type="checkbox" class="switch" id="wsCvCourses"></label>
+          <label class="st-row"><span>Include projects</span><input type="checkbox" class="switch" id="wsCvProjects"></label>
+          <label class="st-row"><span>Include articles</span><input type="checkbox" class="switch" id="wsCvArticles"></label>
+        </section>
+        <p class="st-note"><a href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a></p>
       </div>
 
       <div class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
@@ -483,7 +513,7 @@
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=4"></script>
   <script src="settings.js?v=18"></script>
-  <script src="website.js?v=3"></script>
+  <script src="website.js?v=4"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
   <script src="budget.js?v=3"></script>

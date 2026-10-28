@@ -58,6 +58,28 @@ en:
       points:
         - Operation and management of a complex building facility for the tram system in Bergen
   systems_title: Systems I've worked with
+  now_title: Right now
+  courses_title: Courses & certificates
+  courses_intro: Training and certifications I've completed, and standards I work by.
+  cv_title: Curriculum vitae
+  cv_download: Download CV
+  cv_print: Save as PDF
+  cv_contact: Contact
+  cv_profile: Profile
+  cv_experience: Experience
+  cv_education: Education
+  cv_skills: Systems
+  cv_languages: Languages
+  cv_languages_list: Norwegian (native), English (fluent)
+  cv_projects: Selected projects
+  cv_articles: Articles
+  cv_updated: Updated
+  cv_off: The CV is not available right now.
+  kind_course: Course
+  kind_certificate: Certificate
+  kind_book: Book
+  kind_standard: Standard
+  kind_other: Other
   projects_home_title: Selected projects
   projects_home_link: All projects
   articles_home_title: Latest articles
@@ -131,6 +153,28 @@ nb:
       points:
         - Drift og forvaltning av et komplekst bygg for Bybanen i Bergen
   systems_title: Systemer jeg har jobbet med
+  now_title: Akkurat nå
+  courses_title: Kurs og sertifikater
+  courses_intro: Opplæring og sertifiseringer jeg har gjennomført, og standarder jeg jobber etter.
+  cv_title: CV
+  cv_download: Last ned CV
+  cv_print: Lagre som PDF
+  cv_contact: Kontakt
+  cv_profile: Profil
+  cv_experience: Erfaring
+  cv_education: Utdanning
+  cv_skills: Systemer
+  cv_languages: Språk
+  cv_languages_list: Norsk (morsmål), engelsk (flytende)
+  cv_projects: Utvalgte prosjekter
+  cv_articles: Artikler
+  cv_updated: Oppdatert
+  cv_off: CV-en er ikke tilgjengelig akkurat nå.
+  kind_course: Kurs
+  kind_certificate: Sertifikat
+  kind_book: Bok
+  kind_standard: Standard
+  kind_other: Annet
   projects_home_title: Utvalgte prosjekter
   projects_home_link: Alle prosjekter
   articles_home_title: Siste artikler

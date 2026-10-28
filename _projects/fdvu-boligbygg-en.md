@@ -17,6 +17,7 @@ stats:
     icon: file-earmark-text
 charts:
   - type: ring
+    goal: Asset structure clean-up (%)
     title: Asset structure clean-up
     description: 55 % of the buildings are fully restructured, and the work continues.
     percent: 55

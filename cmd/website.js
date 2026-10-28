@@ -11,14 +11,37 @@
     });
   }
   var SECTION = {
-    about: ['person', 'About'], resume: ['briefcase', 'Experience'],
+    about: ['person', 'About'], resume: ['briefcase', 'Experience'], courses: ['mortarboard', 'Courses & certificates'],
     projects: ['kanban', 'Projects'], articles: ['journal-text', 'Latest articles']
   };
-  var EDIT_PAGES = ['announce', 'sections', 'featured', 'socials'];
+  var EDIT_PAGES = ['announce', 'sections', 'featured', 'socials', 'courses', 'progress', 'cv'];
   var DEFAULT_SOCIALS = [{ net: 'linkedin', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' }, { net: 'instagram', url: 'https://www.instagram.com/jp.lundberg.official/' }];
   /* each page has its own Publish button; what it publishes, in words */
-  var PART = { announce: ['announcement', 'Announcement'], sections: ['sections', 'Front page'], featured: ['featured', 'Featured'], socials: ['socials', 'Socials'] };
-  function partDirty(key) { return saved && draft && JSON.stringify(saved[key] == null ? null : saved[key]) !== JSON.stringify(draft[key] == null ? null : draft[key]); }
+  var PART = { announce: [['announcement'], 'Announcement'], sections: [['sections', 'now'], 'Front page'], featured: [['featured'], 'Featured'], socials: [['socials'], 'Socials'],
+    courses: [['courses'], 'Courses & certificates'], progress: [['goals'], 'Project progress'], cv: [['cv'], 'CV'] };
+  function partDirty(keys) { return saved && draft && keys.some(function (key) { return JSON.stringify(saved[key] == null ? null : saved[key]) !== JSON.stringify(draft[key] == null ? null : draft[key]); }); }
+  function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  /* what the dashboard would publish right now: courses marked public, goals marked public */
+  function coursesNow() {
+    var F = window.Features; if (!F) return [];
+    return F.list('learning').filter(function (c) { return c.pub; }).sort(function (a, b) { return String(b.date || '') > String(a.date || '') ? 1 : -1; }).map(function (c) {
+      return { title: String(c.title || '').slice(0, 120), org: String(c.provider || '').slice(0, 120), year: String(c.date || '').slice(0, 4), kind: ['course', 'certificate', 'book', 'standard', 'other'].indexOf(c.kind) > -1 ? c.kind : 'course', cv: !!c.cv };
+    });
+  }
+  function goalsNow() {
+    return readJSON('dash.goals', []).filter(function (g) { return g.pub; }).map(function (g) {
+      return { name: String(g.name || '').slice(0, 120), value: +g.value || 0, target: +g.target || 0, updated: new Date().toISOString().slice(0, 10) };
+    });
+  }
+  /* the saved date is kept when the numbers haven't changed, so nothing looks "unpublished" by itself */
+  function syncDerived() {
+    if (!draft) return;
+    draft.courses = coursesNow();
+    draft.goals = goalsNow().map(function (g) {
+      var old = (saved.goals || []).filter(function (x) { return x.name === g.name; })[0];
+      return old && old.value === g.value && old.target === g.target ? old : g;
+    });
+  }
 
   var saved = null, draft = null, sha = null, content = null, loading = null, publishing = false, problem = '';
 
@@ -89,6 +112,24 @@
       }).join('') +
       '<div class="st-row ws-fixed"><span><i class="bi bi-envelope"></i> Contact</span><i class="bi bi-lock" title="Always last"></i></div>';
 
+    draft.now = draft.now || { en: '', nb: '' };
+    if (document.activeElement !== $('wsNowEn')) $('wsNowEn').value = draft.now.en || '';
+    if (document.activeElement !== $('wsNowNb')) $('wsNowNb').value = draft.now.nb || '';
+    draft.cv = draft.cv || { on: false, courses: true, projects: true, articles: false };
+    $('wsCvOn').checked = !!draft.cv.on; $('wsCvCourses').checked = draft.cv.courses !== false; $('wsCvProjects').checked = draft.cv.projects !== false; $('wsCvArticles').checked = !!draft.cv.articles;
+    syncDerived();
+    var F = window.Features, items = F ? F.list('learning').slice().sort(function (a, b) { return String(b.date || '') > String(a.date || '') ? 1 : -1; }) : [];
+    $('wsCourses').innerHTML = items.length ? items.map(function (c) {
+      return '<div class="st-row ws-course' + (c.pub ? '' : ' off') + '"><span class="st-label">' + esc(c.title || '') + '<small>' + esc([c.provider, String(c.date || '').slice(0, 4), c.status === 'done' ? '' : (c.status === 'progress' ? 'in progress' : 'planned')].filter(Boolean).join(' · ')) + '</small></span>' +
+        '<span class="ws-tools ws-course-sw"><label class="ws-mini"><input type="checkbox" class="switch" data-cpub="' + esc(c.id) + '"' + (c.pub ? ' checked' : '') + '> Site</label>' +
+        '<label class="ws-mini"' + (c.pub ? '' : ' hidden') + '><input type="checkbox" class="switch" data-ccv="' + esc(c.id) + '"' + (c.cv ? ' checked' : '') + '> CV</label></span></div>';
+    }).join('') : '<p class="st-note">No courses yet. Add them on the Work page (switch on “Courses & certificates” under Features).</p>';
+    var goals = readJSON('dash.goals', []);
+    $('wsGoals').innerHTML = goals.length ? goals.map(function (g) {
+      var pct = g.target > 0 ? Math.round((+g.value || 0) / g.target * 100) : 0;
+      return '<label class="st-row"><span class="st-label">' + esc(g.name || '') + '<small>' + esc(String(g.value || 0)) + ' / ' + esc(String(g.target || 0)) + ' · ' + pct + ' %</small></span><input type="checkbox" class="switch" data-gpub="' + esc(g.id) + '"' + (g.pub ? ' checked' : '') + '></label>';
+    }).join('') : '<p class="st-note">No goals yet. Add one on the dashboard’s Goals card.</p>';
+
     $('wsFeatArticle').innerHTML = '<option value="">Newest (automatic)</option>' + groupTitles(content.articles).map(function (x) {
       return '<option value="' + esc(x.ref) + '">' + esc(x.title) + '</option>';
     }).join('');
@@ -118,7 +159,7 @@
     var s = draft || saved;
     var mark = dirty() ? ' · not published' : '';
     if (!s) {
-      $('sumAnnounce').textContent = $('sumSections').textContent = $('sumFeatured').textContent = problem === 'setup' ? 'Needs GitHub connection' : '–';
+      $('sumAnnounce').textContent = $('sumSections').textContent = $('sumFeatured').textContent = $('sumCourses').textContent = $('sumProgress').textContent = $('sumCv').textContent = problem === 'setup' ? 'Needs GitHub connection' : '–';
       return;
     }
     $('sumAnnounce').textContent = (s.announcement.on ? 'On' : 'Off') + mark;
@@ -126,6 +167,11 @@
     $('sumSections').textContent = on + ' of ' + s.sections.length + ' sections shown' + mark;
     var f = [s.featured.article && 'article', s.featured.project && 'project'].filter(Boolean);
     $('sumFeatured').textContent = (f.length ? 'Pinned ' + f.join(' and ') : 'Newest first') + mark;
+    var nc = (s.courses || []).length, ncv = (s.courses || []).filter(function (c) { return c.cv; }).length;
+    $('sumCourses').textContent = (nc ? nc + ' on the site · ' + ncv + ' in the CV' : 'None published') + mark;
+    var ng = (s.goals || []).length;
+    $('sumProgress').textContent = (ng ? ng + ' goal' + (ng === 1 ? '' : 's') + ' published' : 'None published') + mark;
+    $('sumCv').textContent = (s.cv && s.cv.on ? 'On · jplundberg.com/cv' : 'Off') + mark;
   }
 
   /* ---------- edits ---------- */
@@ -157,6 +203,29 @@
     c.closest('.ws-sec').classList.toggle('off', !c.checked);
     changed();
   });
+  $('wsNowEn').addEventListener('input', function () { draft.now.en = this.value; changed(); });
+  $('wsNowNb').addEventListener('input', function () { draft.now.nb = this.value; changed(); });
+  ['wsCvOn', 'wsCvCourses', 'wsCvProjects', 'wsCvArticles'].forEach(function (id) {
+    $(id).addEventListener('change', function () { draft.cv[{ wsCvOn: 'on', wsCvCourses: 'courses', wsCvProjects: 'projects', wsCvArticles: 'articles' }[id]] = this.checked; changed(); });
+  });
+  /* which courses go public / in the CV: stored on the course itself (synced), published with the button */
+  $('wsCourses').addEventListener('change', function (e) {
+    var F = window.Features, el = e.target, id = el.dataset.cpub || el.dataset.ccv;
+    if (!F || !id) return;
+    var t = F.tools(); (t.learning || []).forEach(function (c) { if (c.id === id) { if (el.dataset.cpub) { c.pub = el.checked; if (!el.checked) c.cv = false; } else c.cv = el.checked; } });
+    F.saveTools(t);
+    fill(); changed();
+  });
+  $('wsGoals').addEventListener('change', function (e) {
+    var el = e.target; if (!el.dataset.gpub) return;
+    var goals = readJSON('dash.goals', []); goals.forEach(function (g) { if (g.id === el.dataset.gpub) g.pub = el.checked; });
+    try { localStorage.setItem('dash.goals', JSON.stringify(goals)); } catch (x) {}
+    window.dispatchEvent(new Event('dash:local'));
+    if (window.Dash && window.Dash.reload) window.Dash.reload();
+    syncDerived(); changed();
+  });
+  window.addEventListener('tools:change', function () { if (draft && current === 'courses') { fill(); changed(); } else if (draft) { syncDerived(); summary(); bar(); } });
+  window.addEventListener('dash:local', function () { if (draft) { syncDerived(); summary(); bar(); } });
   $('wsFeatArticle').addEventListener('change', function () { draft.featured.article = this.value; changed(); });
   $('wsFeatProject').addEventListener('change', function () { draft.featured.project = this.value; changed(); });
 
@@ -181,10 +250,10 @@
   }
   /* Undo only undoes this page */
   $('wsUndo').addEventListener('click', function () {
-    var k = PART[current] && PART[current][0];
-    if (!k) return;
-    if (saved[k] == null) delete draft[k]; else draft[k] = clone(saved[k]);
-    if (k === 'socials' && window.Profile) window.Profile.resetSocials(saved.socials);
+    var ks = PART[current] && PART[current][0];
+    if (!ks) return;
+    ks.forEach(function (k) { if (saved[k] == null) delete draft[k]; else draft[k] = clone(saved[k]); });
+    if (ks[0] === 'socials' && window.Profile) window.Profile.resetSocials(saved.socials);
     fill(); changed();
   });
   /* Socials come from Settings → jplundberg.com → Socials (profile.js) */

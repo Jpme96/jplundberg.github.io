@@ -28,7 +28,7 @@
 const KEY = 'vault';
 const MAX_BYTES = 5 * 1024 * 1024;
 const SITE_FILE = '_data/site.json';
-const SECTIONS = ['about', 'resume', 'projects', 'articles'];
+const SECTIONS = ['about', 'resume', 'courses', 'projects', 'articles'];
 /* social profiles that may be shown on the site: network → allowed host */
 const SOCIALS = { linkedin: 'linkedin.com', instagram: 'instagram.com', facebook: 'facebook.com', tiktok: 'tiktok.com', x: 'x.com',
   threads: 'threads.net', youtube: 'youtube.com', snapchat: 'snapchat.com', strava: 'strava.com', github: 'github.com' };
@@ -135,11 +135,24 @@ function cleanSite(s) {
     if (!x || !SOCIALS[x.net] || typeof x.url !== 'string' || x.url.length > 200) return false;
     try { const u = new URL(x.url); const h = SOCIALS[x.net]; return u.protocol === 'https:' && (u.hostname === h || u.hostname.endsWith('.' + h)); } catch (e) { return false; }
   }).slice(0, 10).map(x => ({ net: x.net, url: x.url }));
+  const now = s.now || {};
+  const KINDS = ['course', 'certificate', 'book', 'standard', 'other'];
+  const courses = (Array.isArray(s.courses) ? s.courses : []).filter(x => x && typeof x === 'object' && str(x.title, 120)).slice(0, 40).map(x => ({
+    title: str(x.title, 120), org: str(x.org, 120), year: str(x.year, 12), kind: KINDS.includes(x.kind) ? x.kind : 'course', cv: x.cv === true
+  }));
+  const goals = (Array.isArray(s.goals) ? s.goals : []).filter(x => x && typeof x === 'object' && str(x.name, 120)).slice(0, 20).map(x => ({
+    name: str(x.name, 120), value: Number(x.value) || 0, target: Number(x.target) || 0, updated: str(x.updated, 12)
+  }));
+  const cv = s.cv || {};
   return {
     announcement: { on: a.on === true, en: str(a.en, 180), nb: str(a.nb, 180), link },
     sections,
     featured: { article: ref(f.article), project: ref(f.project) },
     socials,
+    now: { en: str(now.en, 240), nb: str(now.nb, 240) },
+    courses,
+    goals,
+    cv: { on: cv.on === true, courses: cv.courses !== false, projects: cv.projects !== false, articles: cv.articles === true },
     updated: str(s.updated, 40)
   };
 }
