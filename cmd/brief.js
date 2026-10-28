@@ -35,7 +35,7 @@
     var out = [], now = new Date(), today = dkey(now);
     function add(pri, icon, color, title, sub, href, opt) {
       var it = { pri: pri, icon: icon, color: color, title: title, sub: sub, href: href };
-      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; }
+      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; }
       out.push(it);
     }
     ACTIONS = {};
@@ -80,12 +80,13 @@
       var ym = today.slice(0, 7), income = Bu ? Bu.income(d, ym) : sum(d.budget.income), fixed = sum(d.budget.fixed);
       var pay = Bu ? Bu.nextPayday(d, now) : null;
       if (income > 0) {
-        var spent = sum((d.expenses || []).filter(function (e) { return String(e.date).slice(0, 7) === ym; }));
-        var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = income - fixed - spent;
-        var untilPay = pay && pay.days > 0 && pay.days <= dim;
-        var perDay = left / (untilPay ? pay.days : dim - now.getDate() + 1);
+        var per = Bu ? Bu.period(d, now) : null;
+        var spent = per ? Bu.spent(d, per) : sum((d.expenses || []).filter(function (e) { return String(e.date).slice(0, 7) === ym; }));
+        var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = (per ? per.income : income) - fixed - spent;
+        var untilPay = (per && per.byPayday) || (pay && pay.days > 0 && pay.days <= dim);
+        var perDay = left / (per && per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1);
         add(left < 0 ? 8 : 50, 'wallet2', left < 0 ? '#e66767' : '#11a597', left < 0 ? kr(-left) + ' over budget' : kr(perDay) + ' to spend today',
-          left < 0 ? 'This month, after fixed costs' : kr(left) + ' left' + (untilPay ? ' until payday' : ' this month'), '#fin');
+          left < 0 ? (per && per.byPayday ? 'Until payday' : 'This month') + ', after fixed costs' : kr(left) + ' left' + (untilPay ? ' until payday' : ' this month'), '#fin');
       }
       if (pay && pay.days <= 2) add(pay.days === 0 ? 12 : 40, 'cash-stack', '#11a597', pay.days === 0 ? pay.title + ' today' : pay.title + ' ' + inDays(pay.days),
         (pay.net ? kr(pay.net) + ' · ' : '') + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }), '#fin', { key: 'pay:' + ym });
@@ -93,8 +94,8 @@
       (d.budget.fixed || []).forEach(function (f) {
         if (!f.day || f.src === 'sub' || paid.indexOf(f.id) > -1) return;
         var dd = Math.min(f.day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()) - now.getDate();
-        if (dd < 0) add(6, 'exclamation-circle', '#e66767', f.name + ' is overdue', kr(f.amount) + ' · was due ' + (-dd) + ' day' + (dd === -1 ? '' : 's') + ' ago', '#fin');
-        else if (dd <= 3) add(15, 'calendar-check', '#c98500', f.name + ' due ' + inDays(dd), kr(f.amount), '#fin');
+        if (dd < 0) add(6, 'exclamation-circle', '#e66767', f.name + ' is overdue', kr(f.amount) + ' · was due ' + (-dd) + ' day' + (dd === -1 ? '' : 's') + ' ago', '#fin', { badge: true });
+        else if (dd <= 3) add(15, 'calendar-check', '#c98500', f.name + ' due ' + inDays(dd), kr(f.amount), '#fin', { badge: dd === 0 });
       });
     }
 
@@ -125,7 +126,7 @@
       t.docs.forEach(function (doc) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(doc.expires || '')) return;
         var n3 = daysTo(doc.expires), beforeTrip = trip && doc.expires <= (trip.end || trip.start);
-        if (n3 < 0) add(7, 'person-vcard', '#e66767', (doc.name || 'A travel document') + ' has expired', 'Renew it', 'travel/#docs');
+        if (n3 < 0) add(7, 'person-vcard', '#e66767', (doc.name || 'A travel document') + ' has expired', 'Renew it', 'travel/#docs', { badge: true });
         else if (beforeTrip) add(9, 'person-vcard', '#e66767', (doc.name || 'A travel document') + ' runs out before ' + (trip.name || 'your trip'), 'Expires ' + inDays(n3), 'travel/#docs');
         else if (n3 <= 60) add(42, 'person-vcard', '#c98500', (doc.name || 'Document') + ' expires ' + inDays(n3), 'Time to renew', 'travel/#docs');
       });
@@ -220,6 +221,9 @@
   function render() {
     if (!unlocked) return;
     var list = items(), shown = showAll ? list : list.slice(0, 5);
+    /* the app icon shows how many things need you right now (overdue bills, bills due today, expired documents) */
+    var urgent = list.filter(function (x) { return x.badge; }).length;
+    try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
     box.innerHTML = list.length ? shown.map(function (x) {
       return '<li class="br-li' + (x.tip || x.act ? ' br-tip' : '') + '"><a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +

@@ -19,15 +19,15 @@
     if (!d) { box.innerHTML = ''; return; }
     var now = new Date(), key = ym(now), dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     var b = d.budget || { income: [], fixed: [] };
-    var income = B.income(d, key), fixed = sum(b.fixed), spent = sum((d.expenses || []).filter(function (e) { return String(e.date).slice(0, 7) === key; }));
+    var per = B.period(d, now), income = per.income, fixed = sum(b.fixed), spent = B.spent(d, per);
     var left = income - fixed - spent;
     if (!income && !fixed && !spent) {
       box.innerHTML = '<p class="empty">Set up your budget on the Finances page – salary, fixed costs – and this shows what you can spend each day.</p>' +
         '<div class="mo-acts"><a class="pill-btn wide" href="finance/#c=budget"><i class="bi bi-pie-chart"></i> Set up budget</a></div>';
       return;
     }
-    var pay = B.nextPayday(d, now), untilPay = pay && pay.days > 0 && pay.days <= dim;
-    var perDay = left > 0 ? left / (untilPay ? pay.days : dim - now.getDate() + 1) : 0;
+    var pay = B.nextPayday(d, now), untilPay = per.byPayday || (pay && pay.days > 0 && pay.days <= dim);
+    var perDay = left > 0 ? left / (per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1) : 0;
     var base = Math.max(income, fixed + spent, 1), w = function (v) { return Math.max(0, v / base * 100).toFixed(2) + '%'; };
 
     /* bills: overdue or due within a week */
@@ -42,7 +42,7 @@
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span><span class="s-spent" style="width:' + w(spent) + '"></span><span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span></div>' +
       '<ul class="mo-rows">' +
-        '<li><i class="bi bi-receipt"></i><span>Spent in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' })) + '</span>' + money(spent) + '</li>' +
+        '<li><i class="bi bi-receipt"></i><span>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' }))) + '</span>' + money(spent) + '</li>' +
         (pay ? '<li><i class="bi bi-cash-stack"></i><span>' + esc(pay.title) + (pay.days === 0 ? ' <b>today</b>' : pay.days === 1 ? ' <b>tomorrow</b>' : ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' days') + '</span>' + (pay.net ? money(pay.net) : '') + '</li>' : '') +
         due.map(function (x) {
           return '<li' + (x.diff < 0 ? ' class="late"' : '') + '><i class="bi bi-' + (x.diff < 0 ? 'exclamation-circle' : 'calendar-check') + '"></i><span>' + esc(x.f.name) +

@@ -374,8 +374,14 @@
     if (/^#(trip=|docs)/.test(location.hash)) t = 'trips';
     setTab(t, true);
     if (!fromHandoff()) {
-      var home = F.travel().places.home;
-      if (home && !from) { from = home; fromField.set(from); }
+      /* your routine: Home → Work in the morning, Work → Home from midday (weekdays), as soon as both are set */
+      var pl = F.travel().places, home = pl.home, work = pl.work, now = new Date(), wd = now.getDay() % 6 !== 0;
+      if (home && work && wd && !from && !to && t === 'journey') {
+        var morning = now.getHours() < 12;
+        from = morning ? home : work; to = morning ? work : home;
+        fromField.set(from); toField.set(to);
+        go();
+      } else if (home && !from) { from = home; fromField.set(from); }
       renderRecent();
     }
     renderNext();

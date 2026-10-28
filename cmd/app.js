@@ -79,8 +79,29 @@
     var id = e.target.dataset && e.target.dataset.feat;
     if (id) F.set(id, e.target.checked);
   });
-  window.addEventListener('st:page', function (e) { if (e.detail === 'features') render(); if (e.detail === 'home') summary(); });
-  window.addEventListener('features:change', summary);
+  /* ---------- Settings → Work (flex time preferences; shown when a Work part is on) ---------- */
+  function wkCfg() { var c = F.tools().flexcfg || {}; return { norm: +c.norm || 7.5, brk: +c.brk || 0, vacation: +c.vacation || 25 }; }
+  function wkFill() {
+    var row = $('stWorkRow'); if (!row) return;
+    var on = F.WORK.some(F.on), c = wkCfg();
+    row.hidden = !on;
+    $('sumWork').textContent = String(c.norm).replace('.', ',') + ' h day · ' + c.vacation + ' holiday days' + (c.brk ? ' · ' + c.brk + ' min break' : '');
+    if (document.activeElement !== $('wkNorm')) $('wkNorm').value = String(c.norm).replace('.', ',');
+    if (document.activeElement !== $('wkBrk')) $('wkBrk').value = c.brk || '';
+    if (document.activeElement !== $('wkVac')) $('wkVac').value = c.vacation;
+  }
+  ['wkNorm', 'wkBrk', 'wkVac'].forEach(function (id) {
+    var el = $(id); if (!el) return;
+    el.addEventListener('change', function () {
+      var v = parseFloat(String(el.value).replace(',', '.')), k = { wkNorm: 'norm', wkBrk: 'brk', wkVac: 'vacation' }[id];
+      if (!isFinite(v) || v < 0 || (k === 'norm' && !(v > 0 && v < 16))) { wkFill(); return; }
+      var t = F.tools(); t.flexcfg = t.flexcfg || {}; t.flexcfg[k] = v; F.saveTools(t); wkFill();
+    });
+  });
+  window.addEventListener('tools:change', wkFill);
+  window.addEventListener('st:page', function (e) { if (e.detail === 'features') render(); if (e.detail === 'home') { summary(); wkFill(); } if (e.detail === 'work') wkFill(); });
+  if (window.Vault) window.Vault.onUnlock(wkFill);
+  window.addEventListener('features:change', function () { summary(); wkFill(); });
   if (window.Vault) window.Vault.onUnlock(summary);
   summary();
 })();

@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=56" rel="stylesheet">
+  <link href="styles.css?v=58" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -147,6 +147,7 @@
           <label class="ps-wrap tr-pf"><i class="bi bi-record-circle" aria-hidden="true"></i><input id="trFrom" placeholder="From" aria-label="From"></label>
           <button type="button" class="tr-swap" id="trSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
           <label class="ps-wrap tr-pf"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><input id="trTo" placeholder="To" aria-label="To"></label>
+          <div class="tr-routine" id="trRoutine" hidden></div>
         </form>
         <p class="tr-sub" id="trSub"><span>Departures</span><a href="travel/">Plan a trip <i class="bi bi-arrow-right"></i></a></p>
         <div class="tr-edit" id="trEditBox" hidden>
@@ -265,6 +266,7 @@
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
@@ -377,6 +379,16 @@
         <div class="cs-box" id="csHome"></div>
       </div>
 
+      <div class="st-page" data-page="work" data-title="Work" hidden>
+        <p class="st-intro">Used by Flex time on the Work page and the “Work today” card.</p>
+        <div class="st-group">
+          <label class="st-row"><span>Normal working day</span><span class="st-unit"><input class="st-input st-num" id="wkNorm" inputmode="decimal" aria-label="Normal working day in hours"> h</span></label>
+          <label class="st-row"><span>Lunch break, taken off the day</span><span class="st-unit"><input class="st-input st-num" id="wkBrk" inputmode="numeric" aria-label="Break in minutes"> min</span></label>
+          <label class="st-row"><span>Holiday days a year</span><span class="st-unit"><input class="st-input st-num" id="wkVac" inputmode="numeric" aria-label="Holiday days per year"> days</span></label>
+        </div>
+        <p class="st-note">Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.</p>
+      </div>
+
       <div class="st-page" data-page="security" data-title="Security" hidden>
       <section class="st-group">
         <label class="st-row"><span>Lock after no activity</span>
@@ -474,24 +486,24 @@
   <script src="website.js?v=3"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
-  <script src="budget.js?v=1"></script>
-  <script src="money.js?v=1"></script>
+  <script src="budget.js?v=2"></script>
+  <script src="money.js?v=2"></script>
   <script src="places.js?v=2"></script>
-  <script src="today.js?v=5"></script>
+  <script src="today.js?v=6"></script>
   <script src="flow.js?v=2"></script>
   <script src="calendar/cal-core.js?v=7"></script>
   <script src="calendar/cal-settings.js?v=18"></script>
   <script src="cal-card.js?v=2"></script>
   <script src="upnext.js?v=2"></script>
   <script src="review.js?v=3"></script>
-  <script src="brief.js?v=4"></script>
+  <script src="brief.js?v=5"></script>
   <script src="kit.js?v=2"></script>
-  <script src="tools.js?v=3"></script>
+  <script src="tools.js?v=4"></script>
   <script src="profile.js?v=8"></script>
   <script src="links.js?v=3"></script>
   <script src="search.js?v=4"></script>
-  <script src="app.js?v=2"></script>
-  <script src="quick.js?v=1"></script>
+  <script src="app.js?v=3"></script>
+  <script src="quick.js?v=2"></script>
   <script src="tidy.js?v=1"></script>
   <script src="nav.js?v=16"></script>
 </body>

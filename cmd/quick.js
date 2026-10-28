@@ -209,5 +209,5 @@
     });
   })();
   window.Vault.onLock(close);
-  window.Quick = { open: open, close: close };
+  window.Quick = { open: open, close: close, toast: toast };
 })();

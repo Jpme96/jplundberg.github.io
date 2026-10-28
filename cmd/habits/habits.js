@@ -77,7 +77,7 @@
     });
     var bestCur = list.reduce(function (a, h) { var s = streaksOf(h); return s.cur > a.v ? { v: s.cur, n: h.name } : a; }, { v: 0, n: '' });
     var T = [
-      { i: 'calendar-week', l: 'This week', v: weekTarget ? weekDone + '<small>/ ' + weekTarget + '</small>' : '–', s: weekTarget ? Math.round(weekDone / weekTarget * 100) + ' % of your targets' : 'Add a habit on the dashboard' },
+      { i: 'calendar-week', l: 'This week', v: weekTarget ? weekDone + '<small>/ ' + weekTarget + '</small>' : '–', s: weekTarget ? (weekDone >= weekTarget ? 'All targets hit 🎉' : weekDone ? Math.round(weekDone / weekTarget * 100) + ' % of this week’s targets so far' : 'of this week’s targets so far') : 'Add a habit on the dashboard' },
       { i: 'fire', l: 'Longest current streak', v: bestCur.v + '<small>week' + (bestCur.v === 1 ? '' : 's') + '</small>', s: bestCur.v ? esc(bestCur.n) : 'Hit a weekly target to start one' },
       { i: 'clock-history', l: 'Last 30 days', v: String(last30), s: 'times in total' },
       { i: 'trophy', l: 'This year', v: String(yearTotal), s: 'times in ' + y }

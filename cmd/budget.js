@@ -80,5 +80,41 @@ window.Budget = (function () {
   }
   function hasPayday(d) { return ((d && d.budget && d.budget.income) || []).some(function (r) { return r.day; }); }
 
-  return { rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  /* The budget period: a calendar month, or – when d.budget.period is 'payday' and an income has a
+     payday – from one payday up to the day before the next. */
+  function dk(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function period(d, now) {
+    now = now || new Date();
+    var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var byPay = d && d.budget && d.budget.period === 'payday' && hasPayday(d);
+    var start, end, label, income;
+    if (byPay) {
+      var back = new Date(t0); back.setMonth(back.getMonth() - 2);
+      var fwd = new Date(t0); fwd.setMonth(fwd.getMonth() + 2);
+      /* boundaries follow the main income (the biggest one) */
+      var rows = d.budget.income.filter(function (r) { return r.day; });
+      var main = rows.slice().sort(function (a, b) { return ordinary(b) - ordinary(a); })[0];
+      var all = paydays(d, back, fwd), mine = all.filter(function (p) { return p.src === main; });
+      var prev = mine.filter(function (p) { return p.date <= t0; }).pop(), next = mine.filter(function (p) { return p.date > t0; })[0];
+      if (prev && next) {
+        start = prev.date; end = new Date(next.date); end.setDate(end.getDate() - 1);
+        income = all.filter(function (p) { return p.date >= start && p.date <= end; }).reduce(function (a, p) { return a + p.net; }, 0);
+        label = 'until payday';
+      }
+    }
+    if (!start) {
+      start = new Date(t0.getFullYear(), t0.getMonth(), 1); end = new Date(t0.getFullYear(), t0.getMonth() + 1, 0);
+      income = incomeOf(d, ym(t0)).net; label = 'this month'; byPay = false;
+    }
+    var sk = dk(start), ek = dk(end);
+    return {
+      byPayday: byPay, start: start, end: end, startKey: sk, endKey: ek, income: income, label: label,
+      days: Math.round((end - start) / 864e5) + 1, daysLeft: Math.round((end - t0) / 864e5) + 1,
+      has: function (dateStr) { var k = String(dateStr).slice(0, 10); return k >= sk && k <= ek; },
+      name: byPay ? start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : t0.toLocaleDateString('en-GB', { month: 'long' })
+    };
+  }
+  function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
+
+  return { period: period, spent: spent, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();

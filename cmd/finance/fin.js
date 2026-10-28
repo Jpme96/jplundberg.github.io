@@ -128,7 +128,7 @@
     var prevMonths = months.map(function (m) { return shift(m, -months.length); });
     var ex = D.expenses || [];
     var Bu = window.Budget, inc = Bu.incomeOf(D, NOW), income = inc.net, fixed = sum(D.budget.fixed);
-    var spendable = income - fixed;
+    var spendable = income - fixed;             // the month's budget line in the charts
 
     tiles(months, ex, income, fixed, spendable, inc);
     monthly(period === 'month' ? last(6) : months, ex, spendable);   // a single month shows the last 6 for context
@@ -143,8 +143,8 @@
   /* Key numbers */
   function tiles(months, ex, income, fixed, spendable, inc) {
     var Bu = window.Budget, pay = Bu.nextPayday(D);
-    var spentNow = sum(inMonths(ex, [NOW]));
-    var left = spendable - spentNow;
+    var per = Bu.period(D), spentNow = Bu.spent(D, per);
+    var left = per.income - fixed - spentNow;
     var spentP = sum(inMonths(ex, months));
     var avg = spentP / months.length;
     var rate = income > 0 ? (income - fixed - avg) / income : null;
@@ -153,12 +153,12 @@
     var prevKey = Object.keys(hist).sort().filter(function (k) { return k < NOW; }).pop();
     var change = prevKey !== undefined && D.accounts.length ? nw - hist[prevKey] : null;
     var day = new Date().getDate(), dim = daysIn(NOW);
-    var untilPay = pay && pay.days > 0 && pay.days <= dim;
-    var perDayLeft = left > 0 ? left / (untilPay ? pay.days : dim - day + 1) : 0;
+    var untilPay = per.byPayday || (pay && pay.days > 0 && pay.days <= dim);
+    var perDayLeft = left > 0 ? left / (per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - day + 1) : 0;
     var ded = inc.rows.reduce(function (a, r) { return a.concat(r.items); }, []);
 
     var T = [
-      { i: 'wallet2', l: 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
+      { i: 'wallet2', l: per.byPayday ? 'Left until payday' : 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
         s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget above' },
       { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income) : '–',
         s: !income ? 'Add your salary under Monthly budget'

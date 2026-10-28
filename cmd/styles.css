@@ -1938,3 +1938,32 @@ body.qa-open { overflow: hidden; }
   .qa-toast { bottom: 28px; }
 }
 .mo-off .qa-box, .mo-off .qa-bg, .mo-off .qa-toast { transition: none !important; }
+
+.st-unit { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+.st-num { width: 74px; max-width: 74px; }
+.b-period { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; font-size: 13.5px; color: var(--muted); flex-wrap: wrap; }
+.b-period .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.tr-routine { margin-top: 2px; }
+.tr-chip { border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--text); font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.tr-chip i { color: var(--accent); font-size: 13px; }
+.tr-chip span { color: var(--muted); margin-left: 4px; }
+.tr-chip:hover { border-color: var(--accent); }
+
+/* ---------- Bank import ---------- */
+.im-btn { margin-left: 2px; flex-shrink: 0; }
+@media (max-width: 420px) { .im-btn span { display: none; } .im-btn { padding: 4px 6px; } .spending .month-nav span { min-width: 92px; } }
+.im-box { max-width: 560px; }
+.im-h { font-size: 18px; margin: 0 0 8px; }
+.im-p { margin: 0 0 14px; line-height: 1.5; font-size: 14px; }
+.im-list { list-style: none; margin: 0 -4px 10px; padding: 0; max-height: 50vh; overflow-y: auto; }
+.im-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.im-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.im-row.off .im-x, .im-row.off .money { opacity: .45; }
+.im-x { display: grid; gap: 1px; min-width: 0; }
+.im-x b { font-weight: 500; color: var(--heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.im-x small { color: var(--muted); font-size: 12px; }
+.im-row select { width: auto; max-width: 128px; padding: 6px 26px 6px 8px; font-size: 13px; }
+.im-fixed { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; }
+.im-foot { position: sticky; bottom: 0; background: var(--bg-solid); padding-top: 10px; }
+@media (min-width: 481px) { .im-row .money { order: 4; } }
+@media (max-width: 480px) { .im-row { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: 6px; } .im-row select, .im-fixed { grid-column: 2; justify-self: start; } }

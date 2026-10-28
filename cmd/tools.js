@@ -112,7 +112,7 @@
     empty: 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.',
     afterRender: function (el) {
       var c = flexCfg();
-      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day <input class="kit-mini" data-flexcfg="norm" value="' + c.norm + '" inputmode="decimal" aria-label="Normal day in hours"> h · Holiday <input class="kit-mini" data-flexcfg="vacation" value="' + c.vacation + '" inputmode="numeric" aria-label="Holiday days per year"> days a year</p>');
+      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work">Change</a></p>');
     },
     onClick: function (e) { if (e.target.closest('[data-flex-clock]')) clock(); }
   });

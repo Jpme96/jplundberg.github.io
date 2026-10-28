@@ -198,7 +198,24 @@
     });
     $('trPlan').addEventListener('submit', function (e) { e.preventDefault(); openTrip(); });
   }
+  /* your usual trip: Home → Work before midday, Work → Home after (weekdays), one tap */
+  function routine() {
+    var el = $('trRoutine'); if (!el) return;
+    var pl = window.Flow && window.Flow.travel().places, now = new Date();
+    if (!pl || !pl.home || !pl.work || now.getDay() % 6 === 0) { el.hidden = true; return; }
+    var morning = now.getHours() < 12, a = morning ? pl.home : pl.work, b = morning ? pl.work : pl.home;
+    el.hidden = false;
+    el.innerHTML = '<button type="button" class="tr-chip" data-routine><i class="bi bi-' + (morning ? 'house-door' : 'briefcase') + '"></i> ' + (morning ? 'Home' : 'Work') +
+      ' <i class="bi bi-arrow-right"></i> <i class="bi bi-' + (morning ? 'briefcase' : 'house-door') + '"></i> ' + (morning ? 'Work' : 'Home') + ' <span>leave now</span></button>';
+    el.querySelector('[data-routine]').onclick = function () {
+      try { sessionStorage.setItem('dash.tripQuery', JSON.stringify({ from: a, to: b })); } catch (e) {}
+      location.href = 'travel/';
+    };
+  }
+  window.addEventListener('travel:change', routine);
+  setInterval(routine, 10 * 60e3);
   function planHint() {
+    routine();
     var s = activeStop();
     $('trFrom').placeholder = s ? 'From ' + s.name : 'From';
     $('trSub').hidden = !s;

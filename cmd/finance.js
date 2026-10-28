@@ -84,8 +84,8 @@
   var payEditing = null;             // id of the income being edited (or 'new')
 
   function renderBudget() {
-    var b = D.budget, key = ym(new Date());
-    var inc = B.incomeOf(D, key), income = inc.net, fixed = sum(b.fixed), spent = monthSpent(key);
+    var b = D.budget, key = ym(new Date()), per = B.period(D);
+    var inc = B.incomeOf(D, key), income = per.income, fixed = sum(b.fixed), spent = B.spent(D, per);
     var left = income - fixed - spent;
     var box = $('budgetBody');
 
@@ -105,7 +105,7 @@
     var base = Math.max(income, fixed + spent, 1);
     var w = function (v) { return Math.max(0, v / base * 100).toFixed(2) + '%'; };
     var next = B.nextPayday(D), now = new Date(), dim = daysInMonth(now);
-    var until = next && next.days > 0 && next.days <= dim ? next.days : dim - now.getDate() + 1;
+    var until = per.byPayday ? per.daysLeft : next && next.days > 0 && next.days <= dim ? next.days : dim - now.getDate() + 1;
     var perDay = left > 0 ? left / until : 0;
     var payLine = next
       ? '<p class="pay-next"><i class="bi bi-cash-stack"></i>' + (next.days === 0 ? '<b>' + esc(next.title) + ' today</b>' : '<b>' + esc(next.title) + '</b> ' +
@@ -114,8 +114,8 @@
       : '';
     box.innerHTML =
       '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>' +
-      '<div class="muted">' + (left < 0 ? 'over budget' : 'left this month') + ' · of ' + money(income) + ' net income' +
-        (left > 0 ? ' · ' + money(perDay) + '/day' + (next && until === next.days ? ' until payday' : '') : '') +
+      '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(income) + ' net income' + (per.byPayday ? ' · ' + esc(per.name) : '') +
+        (left > 0 ? ' · ' + money(perDay) + '/day' + (per.byPayday || (next && until === next.days) ? ' until payday' : '') : '') +
         (inc.note ? ' · ' + esc(inc.note) : '') + '</div>' +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span>' +
@@ -126,7 +126,7 @@
         (inc.gross ? '<li><i class="dot" style="background:#8a6fdf"></i>Gross salary<b>' + money(inc.gross) + '</b></li>' +
           '<li><i class="dot" style="background:#6b6d73"></i>Tax' + (inc.extra ? ' and deductions' : '') + '<b>' + money(inc.tax + inc.extra) + '</b></li>' : '') +
         '<li><i class="dot" style="background:#3987e5"></i>Fixed costs<b>' + money(fixed) + '</b></li>' +
-        '<li><i class="dot" style="background:#d95926"></i>Spent in ' + esc(monthName(key, true)) + '<b>' + money(spent) + '</b></li>' +
+        '<li><i class="dot" style="background:#d95926"></i>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(monthName(key, true))) + '<b>' + money(spent) + '</b></li>' +
         '<li><i class="dot" style="background:var(--accent)"></i>Left<b>' + money(left) + '</b></li>' +
       '</ul>' + payLine;
   }
@@ -145,8 +145,10 @@
         (bits.length ? '<small class="muted">' + esc(bits.join(' · ')) + '</small>' : '') + '</button>' + money(row.net) +
         '<button class="del" type="button" data-bdel="income:' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
+    var hasDay = B.hasPayday(D), mode = D.budget.period === 'payday' && hasDay ? 'payday' : 'month';
     return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
-      (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') + '</div>';
+      (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') +
+      (hasDay ? '<div class="b-period"><span>Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') + '</div>';
   }
   function payForm(r) {
     var gross = r && r.gross > 0, days = '<option value="">Payday…</option>';
@@ -241,6 +243,8 @@
   $('budgetBody').addEventListener('click', function (e) {
     var pe = e.target.closest('[data-pedit]');
     if (pe) { openPay(pe.dataset.pedit); return; }
+    var pm = e.target.closest('[data-period-mode]');
+    if (pm) { D.budget.period = pm.dataset.periodMode; persist(); renderBudget(); window.dispatchEvent(new Event('fin:change')); return; }
     if (e.target.closest('[data-pcancel]')) { payEditing = null; renderBudget(); return; }
     var f = e.target.closest('.pay-form');
     if (f && e.target.closest('[data-dadd]')) {
