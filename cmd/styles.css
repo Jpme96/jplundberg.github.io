@@ -450,6 +450,231 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 .foot { text-align: center; margin: 22px 0 0; }
 
+/* ---------- Lock screen ---------- */
+.locked .top, .locked .grid, .locked .fin, .locked .foot { display: none; }
+
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.lock-box {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  animation: rise .6s var(--ease-out) both;
+}
+
+.lock-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 18px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(20, 184, 166, .3);
+  box-shadow: 0 0 40px rgba(20, 184, 166, .18);
+}
+
+.lock h1 {
+  margin: 0 0 6px;
+  font-family: "Raleway", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.lock .muted { font-size: 14px; margin: 0 0 20px; }
+.lock form { display: grid; gap: 10px; }
+.lock input { text-align: center; font-size: 17px; padding: 13px 14px; border-radius: 14px; }
+.lock-submit { width: 100%; min-height: 48px; border-radius: 14px; font-size: 15px; }
+.lock-box.busy .lock-submit { opacity: .6; }
+.lock-box.busy .lock-icon i { animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity: .35; } }
+
+.lock-warn { margin: 2px 0 4px; font-size: 12.5px; line-height: 1.45; color: var(--muted); text-align: left; }
+.lock-warn i { color: var(--accent); }
+.lock-msg { min-height: 1.5em; margin: 12px 0 6px; font-size: 14px; color: var(--danger); }
+.lock-msg.ok { color: var(--accent); }
+.lock .text-btn { margin-top: 4px; }
+.lock-reset { display: grid; gap: 8px; }
+.danger-btn { background: var(--danger); color: #fff; min-height: 48px; border-radius: 14px; }
+
+.shake { animation: shake .42s var(--ease-out); }
+@keyframes shake {
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ---------- Finances ---------- */
+.fin { max-width: 1120px; margin: 34px auto 0; }
+
+.fin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 14px;
+}
+
+.fin-title { font-size: 20px; }
+
+.fin-menu { margin-bottom: 14px; }
+.fin-menu-row { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.fin-menu .inline-form { margin: 12px 0 0; }
+.fin-menu .muted:empty { display: none; }
+.fin-menu .muted { margin: 10px 6px 0; }
+
+.fin-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+@media (min-width: 760px) { .fin-grid { grid-template-columns: 1fr 1fr; } }
+
+select {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: rgba(231, 231, 234, .06);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='%23999'%3E%3Cpath d='M1.6 4.6a.6.6 0 0 1 .8 0L8 10.2l5.6-5.6a.6.6 0 1 1 .8.8l-6 6a.6.6 0 0 1-.8 0l-6-6a.6.6 0 0 1 0-.8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+select:focus { border-color: var(--accent); }
+select option { background: #17181b; }
+
+.money { font-variant-numeric: tabular-nums; white-space: nowrap; transition: filter .25s; }
+.fin-hidden .money { filter: blur(7px); }
+.neg { color: #ef8a6a; }
+
+.big-num {
+  font-family: "Raleway", sans-serif;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.15;
+  color: var(--heading);
+}
+.big-num:empty { display: none; }
+.big-num.neg { color: #ef8a6a; }
+
+.stack {
+  display: flex;
+  height: 12px;
+  margin: 16px 0 14px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(231, 231, 234, .08);
+  gap: 2px;
+}
+.stack span { display: block; height: 100%; transition: width .8s var(--ease-out); }
+.stack span[style*="width:0"] { display: none; }
+.s-fixed { background: #3987e5; }
+.s-spent { background: #d95926; }
+.s-left { background: var(--accent); }
+
+.legend { display: grid; gap: 6px; }
+.legend li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.legend b { margin-left: auto; font-weight: 500; color: var(--heading); }
+.legend .pct { font-size: 12px; }
+.dot { flex-shrink: 0; width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* Budget editor */
+.b-edit + .b-edit { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.b-edit h3 {
+  margin: 0 0 8px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+.b-edit h3 .muted { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--heading); }
+.b-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.b-row span:first-child { flex: 1; }
+.b-add { margin-top: 10px; }
+.b-add .amt { max-width: 130px; }
+
+/* Spending */
+.month-nav { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--muted); }
+.month-nav span { min-width: 104px; text-align: center; }
+.month-nav button {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: none; color: var(--accent);
+  display: grid; place-items: center;
+}
+.month-nav button:disabled { color: rgba(231, 231, 234, .2); cursor: default; }
+.sp-form #spDate { flex: 0 0 auto; width: 150px; color-scheme: dark; }
+@media (max-width: 420px) { .sp-form #spDate { width: 124px; padding-left: 8px; padding-right: 6px; font-size: 14px; } }
+
+.donut-wrap { position: relative; width: 168px; margin: 6px auto 16px; }
+.donut { width: 100%; display: block; transform: rotate(-90deg); }
+.donut circle { fill: none; stroke-width: 14; transition: stroke-dasharray .8s var(--ease-out); }
+.donut .track { stroke: rgba(231, 231, 234, .07); }
+.donut-mid {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; text-align: center;
+  font-family: "Raleway", sans-serif; font-weight: 700; font-size: 18px; color: var(--heading);
+}
+.donut-mid .muted { font-family: "Roboto", sans-serif; font-weight: 400; font-size: 12px; }
+
+.tx-list { margin-top: 14px; }
+.tx {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-top: 1px solid var(--line);
+  transition: opacity .25s, transform .25s var(--ease-ios);
+}
+.tx-text { flex: 1; min-width: 0; }
+.tx-text strong { display: block; font-weight: 500; color: var(--heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-text .muted { font-size: 12px; }
+.tx .del { margin-right: -6px; }
+.sp-more { display: block; margin: 8px auto 0; }
+
+/* Net worth */
+#nwSub { margin-top: 2px; }
+#nwSub .up { color: #3ddc97; }
+#nwSub .down { color: #ef8a6a; }
+.line { width: 100%; display: block; margin: 14px 0 4px; overflow: visible; }
+.line polyline { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.line .area { fill: url(#nwGrad); }
+.line circle { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
+.line text { fill: var(--muted); font-size: 10px; font-family: "Roboto", sans-serif; }
+
+.acc-list { margin-top: 14px; }
+.acc {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 8px; margin: 0 -8px;
+  border-radius: 12px; cursor: pointer;
+  transition: background .2s;
+}
+.acc:hover { background: rgba(231, 231, 234, .04); }
+.acc-ico {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; font-size: 16px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.acc-ico.debt { background: rgba(239, 138, 106, .14); color: #ef8a6a; }
+.acc-name { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.acc-name .muted { font-size: 12px; }
+.acc .money { font-weight: 500; color: var(--heading); }
+.acc .money.neg { color: #ef8a6a; }
+
+.foot i { color: var(--accent); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

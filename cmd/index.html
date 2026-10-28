@@ -16,15 +16,41 @@
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="styles.css?v=2" rel="stylesheet">
+  <script>document.documentElement.classList.add('locked');</script>
+  <link href="styles.css?v=3" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
+
+  <!-- Lock screen -->
+  <div class="lock" id="lock">
+    <div class="lock-box" id="lockBox">
+      <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
+      <h1 id="lockTitle">Welcome back</h1>
+      <p class="muted" id="lockSub">Enter your passcode to open the dashboard.</p>
+      <form id="lockForm" autocomplete="on">
+        <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+        <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
+        <input id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
+        <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> There is no recovery. If you forget the passcode, your finance data has to be erased. Let your password manager save it.</p>
+        <button class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
+      </form>
+      <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
+      <div class="lock-reset" id="lockReset" hidden>
+        <button class="pill-btn danger-btn" id="lockDoReset" type="button">Erase and start over</button>
+        <button class="text-btn" id="lockCancelReset" type="button">Cancel</button>
+      </div>
+      <button class="text-btn" id="lockForgot" type="button">Forgot passcode?</button>
+      <button class="text-btn" id="lockRestore" type="button" hidden><i class="bi bi-upload"></i> Restore from backup</button>
+      <input type="file" id="lockFile" accept="application/json,.json" hidden>
+    </div>
+  </div>
 
   <header class="top">
     <div class="top-bar">
       <div id="date" class="date"></div>
       <div class="top-actions">
+        <button class="icon-btn" id="lockNow" type="button" aria-label="Lock dashboard"><i class="bi bi-lock"></i></button>
         <a href="/" class="icon-btn" aria-label="Back to jplundberg.com"><i class="bi bi-house"></i></a>
       </div>
     </div>
@@ -108,8 +134,118 @@
 
   </main>
 
-  <p class="foot muted">Saved on this device only <i class="bi bi-lock"></i></p>
+  <!-- Finances (encrypted with your passcode) -->
+  <section class="fin" id="fin" aria-labelledby="finTitle">
+    <div class="fin-head">
+      <h2 id="finTitle" class="fin-title"><i class="bi bi-wallet2"></i> Finances</h2>
+      <div class="top-actions">
+        <button class="icon-btn" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button>
+        <button class="icon-btn" id="finMore" type="button" aria-label="Backup and passcode"><i class="bi bi-three-dots"></i></button>
+      </div>
+    </div>
 
-  <script src="script.js?v=2"></script>
+    <div class="card fin-menu" id="finMenu" hidden>
+      <div class="fin-menu-row">
+        <button class="text-btn" id="finBackup" type="button"><i class="bi bi-download"></i> Download encrypted backup</button>
+        <button class="text-btn" id="finChangePc" type="button"><i class="bi bi-key"></i> Change passcode</button>
+      </div>
+      <form class="inline-form" id="pcForm" hidden>
+        <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+        <div class="row2">
+          <input id="pcNew" type="password" placeholder="New passcode" autocomplete="new-password" required>
+          <input id="pcConfirm" type="password" placeholder="Repeat" autocomplete="new-password" required>
+        </div>
+        <div class="form-actions">
+          <span class="spacer"></span>
+          <button type="button" class="text-btn" id="pcCancel">Cancel</button>
+          <button type="submit" class="pill-btn">Save</button>
+        </div>
+      </form>
+      <p class="muted" id="finMenuMsg" role="status"></p>
+    </div>
+
+    <div class="fin-grid">
+      <!-- Budget -->
+      <section class="card budget">
+        <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
+        <div id="budgetBody"></div>
+      </section>
+
+      <!-- Spending -->
+      <section class="card spending">
+        <div class="card-head">
+          <h2><i class="bi bi-receipt"></i> Spending</h2>
+          <div class="month-nav">
+            <button type="button" id="spPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+            <span id="spMonth"></span>
+            <button type="button" id="spNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+          </div>
+        </div>
+        <form class="inline-form sp-form" id="spForm">
+          <div class="row2">
+            <input id="spAmount" placeholder="Amount, kr" inputmode="decimal" autocomplete="off" required>
+            <select id="spCat" aria-label="Category"></select>
+          </div>
+          <div class="add-row">
+            <input id="spNote" placeholder="What was it? (optional)" autocomplete="off">
+            <input id="spDate" type="date" aria-label="Date">
+            <button class="pill-btn" type="submit" aria-label="Add expense"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </form>
+        <div id="spChart"></div>
+        <ul class="tx-list" id="spList"></ul>
+        <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
+      </section>
+
+      <!-- Savings goals -->
+      <section class="card savings">
+        <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+        <form class="inline-form" id="svForm" hidden>
+          <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
+          <div class="row2">
+            <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
+            <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="svCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Save</button>
+          </div>
+        </form>
+        <ul class="goal-list" id="svList"></ul>
+        <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
+      </section>
+
+      <!-- Net worth -->
+      <section class="card networth">
+        <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
+        <form class="inline-form" id="nwForm" hidden>
+          <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
+          <div class="row2">
+            <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
+            <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="text-btn danger" id="nwDelete" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="nwCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Save</button>
+          </div>
+        </form>
+        <div class="big-num" id="nwBig"></div>
+        <div class="muted" id="nwSub"></div>
+        <div id="nwChart"></div>
+        <ul class="acc-list" id="nwList"></ul>
+        <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
+      </section>
+    </div>
+  </section>
+
+  <p class="foot muted"><i class="bi bi-shield-lock"></i> Saved on this device only · Finances encrypted with your passcode</p>
+
+  <script src="lock.js?v=1"></script>
+  <script src="script.js?v=3"></script>
+  <script src="finance.js?v=1"></script>
 </body>
 </html>
