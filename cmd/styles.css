@@ -1266,3 +1266,15 @@ select.st-wide { padding-right: 32px; }
 .un-leave { color: var(--accent); font-weight: 600; }
 .un-cta { flex-shrink: 0; font-family: "Poppins", sans-serif; font-size: 12.5px; font-weight: 500; color: var(--accent); }
 .un-go { color: var(--muted); }
+
+/* ---------- Settings: card order ---------- */
+.grid { grid-auto-flow: dense; }
+.st-hint { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.st-cardgroup { margin: 14px 0 2px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+.st-card > span:first-of-type { flex: 1; }
+.st-card.off > span:first-of-type { color: var(--muted); }
+.st-grip { color: var(--muted); font-size: 16px; cursor: grab; margin: 0 -4px 0 -6px; }
+.st-card[draggable="true"] { cursor: grab; }
+.st-card.dragging { opacity: .4; }
+.st-card.drop { box-shadow: inset 0 2px 0 var(--accent); }
+@media (hover: none) { .st-grip { display: none; } }

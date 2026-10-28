@@ -21,6 +21,21 @@
     ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
     ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
+  /* Cards can be moved within their section; finances keep their own layout */
+  var GROUPS = [
+    { id: 'today', name: 'Today', cards: ['weather', 'calendar', 'transit', 'habits'], move: true },
+    { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true },
+    { id: 'money', name: 'Finances', cards: ['fin', 'bills'] }
+  ];
+  var CARD_NAME = {};
+  CARDS.forEach(function (c) { CARD_NAME[c[0]] = c[1]; });
+  function ordered(s, g) {
+    var o = Array.isArray(s.order) ? s.order : [];
+    return g.cards.slice().sort(function (a, b) {
+      var ia = o.indexOf(a), ib = o.indexOf(b);
+      return (ia < 0 ? 99 + g.cards.indexOf(a) : ia) - (ib < 0 ? 99 + g.cards.indexOf(b) : ib);
+    });
+  }
   var BGS = [['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
   /* Your own colour: any hex value, with readable text on top */
   function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(h || ''); }
@@ -112,6 +127,13 @@
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f3f5' : '#0e0f11');
     CARDS.forEach(function (c) { root.classList.toggle('hide-' + c[0], !!s.hide[c[0]]); });
+    /* your order: CSS order inside each grid, so nothing on the page has to be rebuilt */
+    GROUPS.forEach(function (g) {
+      if (!g.move) return;
+      ordered(s, g).forEach(function (id, i) {
+        document.querySelectorAll('.grid > .card.' + id).forEach(function (el) { el.style.order = i; });
+      });
+    });
     /* Hide a section heading when every card in it is hidden */
     document.querySelectorAll('.dash-sec').forEach(function (sec) {
       var cards = sec.querySelectorAll('.card');
@@ -161,9 +183,18 @@
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
     $('stSeconds').checked = !!s.seconds;
     $('stQuotes').checked = !!s.quotes;
-    $('stCards').innerHTML = CARDS.map(function (c) {
-      return '<label class="st-row"><span>' + c[1] + '</span><input type="checkbox" class="switch" data-card="' + c[0] + '"' +
-        (s.hide[c[0]] ? '' : ' checked') + '></label>';
+    $('stCards').innerHTML = GROUPS.map(function (g) {
+      var list = ordered(s, g);
+      return '<p class="st-cardgroup">' + g.name + '</p>' + list.map(function (id, i) {
+        var tools = g.move
+          ? '<button type="button" data-cmove="' + g.id + ':' + id + ':-1" aria-label="Move ' + CARD_NAME[id] + ' up"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-chevron-up"></i></button>' +
+            '<button type="button" data-cmove="' + g.id + ':' + id + ':1" aria-label="Move ' + CARD_NAME[id] + ' down"' + (i === list.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>'
+          : '';
+        return '<div class="st-row st-card' + (s.hide[id] ? ' off' : '') + '" data-cid="' + id + '"' + (g.move ? ' draggable="true"' : '') + '>' +
+          (g.move ? '<i class="bi bi-grip-vertical st-grip" aria-hidden="true"></i>' : '') + '<span>' + CARD_NAME[id] + '</span>' +
+          '<span class="ws-tools">' + tools + '<input type="checkbox" class="switch" data-card="' + id + '" aria-label="Show ' + CARD_NAME[id] + '"' +
+          (s.hide[id] ? '' : ' checked') + '></span></div>';
+      }).join('');
     }).join('');
     $('stLock').value = String(s.lockMins);
     var sync = $('syncState');
@@ -285,6 +316,51 @@
     var hide = get().hide;
     hide[c] = !e.target.checked;
     set({ hide: hide });
+  });
+  /* move cards: arrows everywhere, drag and drop on a computer */
+  function moveCard(gid, id, to) {
+    var s = get(), g = GROUPS.filter(function (x) { return x.id === gid; })[0];
+    var list = ordered(s, g), from = list.indexOf(id);
+    if (from < 0 || to < 0 || to >= list.length || to === from) return;
+    list.splice(from, 1); list.splice(to, 0, id);
+    var order = [];
+    GROUPS.forEach(function (x) { order = order.concat(x.id === gid ? list : ordered(s, x)); });
+    set({ order: order });
+  }
+  $('stCards').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cmove]');
+    if (!b) return;
+    var p = b.dataset.cmove.split(':'), g = GROUPS.filter(function (x) { return x.id === p[0]; })[0];
+    var i = ordered(get(), g).indexOf(p[1]);
+    moveCard(p[0], p[1], i + +p[2]);
+    var again = document.querySelector('[data-cmove="' + b.dataset.cmove + '"]');
+    if (again && !again.disabled) again.focus();
+  });
+  var dragId = null;
+  function groupOf(id) { return GROUPS.filter(function (g) { return g.cards.indexOf(id) > -1; })[0]; }
+  $('stCards').addEventListener('dragstart', function (e) {
+    var row = e.target.closest('[data-cid]');
+    if (!row) return;
+    dragId = row.dataset.cid; row.classList.add('dragging');
+    try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); } catch (x) {}
+  });
+  $('stCards').addEventListener('dragover', function (e) {
+    var row = e.target.closest('[data-cid]');
+    if (!row || !dragId || groupOf(row.dataset.cid) !== groupOf(dragId)) return;
+    e.preventDefault();
+    document.querySelectorAll('.st-card.drop').forEach(function (r) { if (r !== row) r.classList.remove('drop'); });
+    row.classList.add('drop');
+  });
+  $('stCards').addEventListener('drop', function (e) {
+    var row = e.target.closest('[data-cid]');
+    if (!row || !dragId) return;
+    e.preventDefault();
+    var g = groupOf(dragId);
+    if (g === groupOf(row.dataset.cid)) moveCard(g.id, dragId, ordered(get(), g).indexOf(row.dataset.cid));
+  });
+  $('stCards').addEventListener('dragend', function () {
+    dragId = null;
+    document.querySelectorAll('.st-card.dragging, .st-card.drop').forEach(function (r) { r.classList.remove('dragging', 'drop'); });
   });
   $('stLock').addEventListener('change', function () { set({ lockMins: +this.value }); });
 
