@@ -33,12 +33,13 @@ layout: base
           <p class="cta-title">{{ u.cta_title }}</p>
           <p><strong>John Paul Lundberg</strong> – {{ u.author_bio }} {{ u.cta_text }}</p>
           <div class="cta-actions">
-            <a class="cta-btn" href="{{ h.url }}#contact"><i class="bi bi-chat-text"></i> {{ u.cta_form }}</a>
+            <a class="cta-btn" href="https://tally.so/r/{{ h.contact_form_id }}" target="_blank" rel="noopener" data-contact-form="{{ h.contact_form_id }}"><i class="bi bi-chat-text"></i> {{ u.cta_form }}</a>
             <a class="cta-btn ghost" href="mailto:contact@jplundberg.com?subject={{ u.cta_mail_subject | append: ': ' | append: page.title | uri_escape }}"><i class="bi bi-envelope"></i> {{ u.cta_mail }}</a>
             <a class="cta-btn ghost" href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
           </div>
         </div>
       </aside>
+      {% include tally-popup.html %}
       <script>
         document.querySelectorAll('[data-copy]').forEach(function (b) {
           b.addEventListener('click', function () {
