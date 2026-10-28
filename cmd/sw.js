@@ -1,8 +1,9 @@
 /* Service worker for the /cmd app.
-   Network first, always: you get the newest version whenever you're online, and the last
-   copy when you're not (on a plane, in the tunnel). The private API is never cached –
-   your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v1';
+   - Pages: network first – always the newest version online, the last copy offline.
+   - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
+     A new version has a new address, so it's fetched the first time it's needed.
+   - The private API is never cached – your data lives encrypted in the vault, not here. */
+var CACHE = 'cmd-v2';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
@@ -15,8 +16,30 @@ self.addEventListener('fetch', function (e) {
   var req = e.request, url = new URL(req.url);
   if (req.method !== 'GET') return;
   var same = url.origin === self.location.origin;
+  /* fonts: from the cache at once, refreshed in the background */
+  if (/^fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
+    e.respondWith(caches.open(CACHE).then(function (c) {
+      return c.match(req).then(function (hit) {
+        var net = fetch(req).then(function (res) { if (res.ok) c.put(req, res.clone()); return res; }).catch(function () { return hit; });
+        return hit || net;
+      });
+    }));
+    return;
+  }
   var mine = same && (url.pathname.indexOf('/cmd/') === 0 || url.pathname.indexOf('/assets/vendor/bootstrap-icons/') === 0 || url.pathname.indexOf('/assets/img/') === 0);
   if (!mine || url.pathname.indexOf('/cmd/api/') === 0) return;      // let the browser handle it
+  /* Scripts, styles and images with a version (…?v=12) never change: straight from the cache,
+     so changing page doesn't wait for 25 downloads. The pages themselves always come fresh. */
+  var fixed = /[?&]v=/.test(url.search) || url.pathname.indexOf('/assets/') > -1 || /\.(png|jpg|webp|woff2?)$/.test(url.pathname);
+  if (fixed && req.mode !== 'navigate') {
+    e.respondWith(caches.match(req).then(function (hit) {
+      return hit || fetch(req).then(function (res) {
+        if (res.ok && res.type === 'basic' && !res.redirected) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
+        return res;
+      });
+    }));
+    return;
+  }
   e.respondWith(
     fetch(req).then(function (res) {
       /* only keep normal, successful answers (not the Cloudflare Access login) */

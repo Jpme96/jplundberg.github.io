@@ -69,7 +69,7 @@
     nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
     slide(a);
     var off = document.documentElement.classList.contains('mo-off');
-    setTimeout(function () { location.href = a.href; }, off ? 0 : 260);       // let the glide finish first
+    setTimeout(function () { location.href = a.href; }, off ? 0 : 200);       // let the glide finish first
   });
 
   nav.addEventListener('click', function (e) {

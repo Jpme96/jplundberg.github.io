@@ -57,8 +57,13 @@
   }
   function hideTip() { tip.hidden = true; }
 
+  /* date formatting is slow when done hundreds of times – make the formatters once */
+  var F_LONG = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  var F_MON = new Intl.DateTimeFormat('en-GB', { month: 'short' });
   function render() {
     var list = hb.list || [];
+    var stCache = {};
+    var streaksOf = function (h) { return stCache[h.id] || (stCache[h.id] = streaks(h)); };
     $('hpEmpty').hidden = list.length > 0;
     var today = new Date(), tk = dkey(today), thisMon = monday(today);
 
@@ -70,7 +75,7 @@
       if (k.slice(0, 4) === y) yearTotal += n;
       if (k > dkey(addDays(today, -30))) last30 += n;
     });
-    var bestCur = list.reduce(function (a, h) { var s = streaks(h); return s.cur > a.v ? { v: s.cur, n: h.name } : a; }, { v: 0, n: '' });
+    var bestCur = list.reduce(function (a, h) { var s = streaksOf(h); return s.cur > a.v ? { v: s.cur, n: h.name } : a; }, { v: 0, n: '' });
     var T = [
       { i: 'calendar-week', l: 'This week', v: weekTarget ? weekDone + '<small>/ ' + weekTarget + '</small>' : '–', s: weekTarget ? Math.round(weekDone / weekTarget * 100) + ' % of your targets' : 'Add a habit on the dashboard' },
       { i: 'fire', l: 'Longest current streak', v: bestCur.v + '<small>week' + (bestCur.v === 1 ? '' : 's') + '</small>', s: bestCur.v ? esc(bestCur.n) : 'Hit a weekly target to start one' },
@@ -84,7 +89,7 @@
     /* one card per habit */
     var start = addDays(thisMon, -7 * (WEEKS - 1));
     $('hpHabits').innerHTML = list.map(function (h) {
-      var st = streaks(h);
+      var st = streaksOf(h);
       var wk = countWeek(h.id, thisMon);
       var met12 = 0;
       for (var w = 1; w <= 12; w++) if (countWeek(h.id, addDays(thisMon, -7 * w)) >= h.target) met12++;
@@ -99,14 +104,14 @@
       for (var c = 0; c < WEEKS; c++) {
         var mon = addDays(start, 7 * c);
         var m = mon.getMonth();
-        var label = m !== lastMonth ? mon.toLocaleDateString('en-GB', { month: 'short' }) : '';
+        var label = m !== lastMonth ? F_MON.format(mon) : '';
         lastMonth = m;
         var cells = '';
         for (var r = 0; r < 7; r++) {
           var d = addDays(mon, r), k = dkey(d), on = done(h.id, k);
           cells += '<button type="button" class="hp-cell' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (k > tk ? ' future' : '') + '"' +
             ' data-h="' + h.id + '" data-d="' + k + '" aria-pressed="' + on + '"' + (k > tk ? ' disabled tabindex="-1"' : '') +
-            ' aria-label="' + esc(h.name) + ', ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (on ? ', done' : '') + '"></button>';
+            ' aria-label="' + esc(h.name) + ', ' + F_LONG.format(d) + (on ? ', done' : '') + '"></button>';
         }
         weeks += '<div class="hp-week"><span class="hp-month">' + label + '</span>' + cells + '</div>';
       }

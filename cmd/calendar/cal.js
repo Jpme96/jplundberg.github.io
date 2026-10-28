@@ -64,6 +64,7 @@
   }
 
   /* ---------- month ---------- */
+  var F_DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   function renderMonth() {
     var first = new Date(cur.getFullYear(), cur.getMonth(), 1);
     var start = C.monday(first), last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
@@ -77,7 +78,7 @@
     for (var d = start; d < end; d = addDays(d, 1)) {
       var k = dkey(d), list = by[k] || [];
       var cls = 'cl-cell' + (d.getMonth() !== first.getMonth() ? ' out' : '') + (k === today ? ' today' : '') + (k === sel ? ' sel' : '');
-      var label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (list.length ? ', ' + list.length + ' event' + (list.length > 1 ? 's' : '') : '');
+      var label = F_DAY.format(d) + (list.length ? ', ' + list.length + ' event' + (list.length > 1 ? 's' : '') : '');
       h += '<button type="button" class="' + cls + '" data-day="' + k + '" aria-label="' + label + '"' + (k === sel ? ' aria-pressed="true"' : '') + '>' +
         '<span class="cl-num">' + d.getDate() + '</span>' + (wn && d.getDay() === 1 ? '<span class="cl-wkno" aria-hidden="true">W' + C.isoWeek(d) + '</span>' : '') +
         '<span class="cl-chips">' + list.slice(0, 3).map(function (o) {
