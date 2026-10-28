@@ -27,7 +27,7 @@
     shown.push(o);
     var sub = [];
     if (o.ev.location) sub.push(esc(o.ev.location));
-    if (o.ev.trip) sub.push('<i class="bi bi-suitcase-lg"></i> Travel');
+    if (o.ev.trip || o.ev.doc) sub.push('<i class="bi bi-suitcase-lg"></i> Travel');
     else if (o.ev.src) sub.push('<i class="bi bi-phone"></i> ' + esc(o.ev.src));
     else if (o.ev.rule) sub.push('<i class="bi bi-arrow-repeat"></i> Repeats');
     return '<li><button type="button" class="cl-ev" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' +
@@ -359,8 +359,9 @@
         (o.ev.notes ? '<p class="cl-notes">' + esc(o.ev.notes) + '</p>' : '') +
         '<div class="cl-acts">' + (o.ev.location && !o.allDay ? '<button type="button" class="pill-btn" data-route>' +
           '<i class="bi bi-signpost-split"></i> Get there on time</button>' : '') +
-        (o.ev.trip ? '<a class="pill-btn ghost" href="../travel/#trip=' + encodeURIComponent(o.ev.trip) + '"><i class="bi bi-suitcase-lg"></i> Open trip</a>' : '') + '</div>' +
-        (o.ev.trip ? '<p class="muted cl-src"><i class="bi bi-suitcase-lg"></i> Planned on the Travel page.</p>'
+        (o.ev.trip ? '<a class="pill-btn ghost" href="../travel/#trip=' + encodeURIComponent(o.ev.trip) + '"><i class="bi bi-suitcase-lg"></i> Open trip</a>' : '') +
+        (o.ev.doc ? '<a class="pill-btn ghost" href="../travel/#docs"><i class="bi bi-person-vcard"></i> Travel documents</a>' : '') + '</div>' +
+        (o.ev.trip || o.ev.doc ? '<p class="muted cl-src"><i class="bi bi-suitcase-lg"></i> Planned on the Travel page.</p>'
           : '<p class="muted cl-src"><i class="bi bi-phone"></i> From “' + esc(o.ev.src) + '”. Change it in that calendar.</p>');
       routeFor = o;
     } else {

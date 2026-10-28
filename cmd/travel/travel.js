@@ -31,7 +31,8 @@
     });
     $('paneJourney').hidden = t !== 'journey';
     $('paneTrips').hidden = t !== 'trips';
-    $('tvHead').textContent = t === 'trips' ? 'where are you going next?' : 'where do you want to go?';
+    $('paneHistory').hidden = t !== 'history';
+    $('tvHead').textContent = t === 'trips' ? 'where are you going next?' : t === 'history' ? 'where have you been?' : 'where do you want to go?';
     try { sessionStorage.setItem('dash.travelTab', t); } catch (e) {}
     if (!keepScroll) window.scrollTo({ top: 0 });
     window.dispatchEvent(new CustomEvent('travel:tab', { detail: t }));
@@ -370,7 +371,7 @@
     renderPlaces();
     var t = 'journey';
     try { t = sessionStorage.getItem('dash.travelTab') || 'journey'; } catch (e) {}
-    if (/^#trip=/.test(location.hash)) t = 'trips';
+    if (/^#(trip=|docs)/.test(location.hash)) t = 'trips';
     setTab(t, true);
     if (!fromHandoff()) {
       var home = F.travel().places.home;

@@ -19,6 +19,12 @@
     other: { name: 'Other', icon: 'pin-map', buffer: 10 }
   };
 
+  var DOCS = {
+    passport: { name: 'Passport', icon: 'passport' }, id: { name: 'National ID', icon: 'person-vcard' },
+    ehic: { name: 'EU health card', icon: 'heart-pulse' }, insurance: { name: 'Travel insurance', icon: 'shield-check' },
+    license: { name: 'Driving licence', icon: 'car-front' }, visa: { name: 'Visa', icon: 'globe2' }, other: { name: 'Other', icon: 'file-earmark-text' }
+  };
+
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
@@ -36,6 +42,7 @@
     t.recent = Array.isArray(t.recent) ? t.recent : [];
     t.trips = Array.isArray(t.trips) ? t.trips : [];
     t.places = t.places && typeof t.places === 'object' ? t.places : {};
+    t.docs = Array.isArray(t.docs) ? t.docs : [];
     return t;
   }
   function saveTravel(t) {
@@ -122,7 +129,7 @@
   }
 
   window.Flow = {
-    TRAVEL_COLOR: TRAVEL_COLOR, TYPES: TYPES,
+    TRAVEL_COLOR: TRAVEL_COLOR, TYPES: TYPES, DOCS: DOCS,
     travel: travel, saveTravel: saveTravel, when: when,
     route: route, addEvent: addEvent, logSpend: logSpend, unlogSpend: unlogSpend, leaveBy: leaveBy,
     uid: uid, dkey: dkey, hm: hm

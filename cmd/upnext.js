@@ -10,6 +10,27 @@
   function render() {
     if (!unlocked) return;
     var now = new Date(), t = F.travel(), rows = [];
+    /* online check-in is open (24 h before a flight) */
+    t.trips.forEach(function (tr) {
+      (tr.items || []).forEach(function (it) {
+        var w = F.when(it);
+        if (it.type !== 'flight' || !w || !w.timed || (tr.done && tr.done['checkin:' + it.id])) return;
+        if (now >= new Date(w.start.getTime() - 864e5) && now < w.start) {
+          rows.push('<a class="un-row un-alert" href="travel/#trip=' + encodeURIComponent(tr.id) + '" style="--c:#e8b43b"><i class="bi bi-airplane un-ic"></i>' +
+            '<span class="x"><b>Check in for ' + esc(it.title || 'your flight') + '</b><span class="s">Departs ' + C.hm(w.start) +
+            (C.sameDay(w.start, now) ? ' today' : ' tomorrow') + (it.ref ? ' · ref ' + esc(it.ref) : '') + '</span></span><i class="bi bi-chevron-right un-go"></i></a>');
+        }
+      });
+    });
+    /* a travel document that has run out or runs out soon */
+    t.docs.forEach(function (d) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.expires || '')) return;
+      var exp = C.fromKey(d.expires), soon = new Date(exp.getFullYear(), exp.getMonth() - 1, exp.getDate());
+      if (now < soon) return;
+      rows.push('<a class="un-row un-alert" href="travel/#docs" style="--c:var(--danger)"><i class="bi bi-person-vcard un-ic"></i>' +
+        '<span class="x"><b>' + esc(d.name || 'Document') + (exp < now ? ' has expired' : ' expires soon') + '</b><span class="s">' +
+        esc(exp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</span></span><i class="bi bi-chevron-right un-go"></i></a>');
+    });
     ev = C.occurrences(now, C.addDays(C.day0(now), 2)).filter(function (o) {
       return !o.allDay && o.ev.location && o.start > now && !(o.ev.item && o.ev.item.type === 'hotel');
     })[0] || null;

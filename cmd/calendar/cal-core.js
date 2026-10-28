@@ -383,7 +383,24 @@
         if (w.timed) { ev.allDay = false; ev.start = w.start; ev.dur = w.end ? w.end - w.start : 3600e3; }
         else { ev.allDay = true; ev.start = w.start; ev.days = 1; }
         out.push(ev);
+        /* online check-in opens 24 h before a flight */
+        if (it.type === 'flight' && w.timed && !(tr.done && tr.done['checkin:' + it.id])) {
+          out.push({ id: ev.id + ':checkin', title: 'Check-in opens: ' + (it.title || 'flight'), color: F.TRAVEL_COLOR, readOnly: true,
+            trip: tr.id, allDay: false, start: new Date(w.start.getTime() - 864e5), dur: 15 * 60e3, location: '',
+            notes: 'Check in online for ' + (it.title || 'your flight') + (it.ref ? ' (booking reference ' + it.ref + ')' : '') + '.', exDays: {} });
+        }
       });
+    });
+    /* travel documents: the expiry date, and a reminder to renew */
+    F.travel().docs.forEach(function (d) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.expires || '')) return;
+      var K = (F.DOCS[d.kind] || F.DOCS.other), name = d.name || K.name, exp = fromKey(d.expires);
+      out.push({ id: 'doc:' + d.id, title: name + ' expires', allDay: true, start: exp, days: 1, color: F.TRAVEL_COLOR, readOnly: true,
+        doc: d.id, location: '', notes: d.note || '', exDays: {} });
+      var months = +d.remind || 6, rem = new Date(exp.getFullYear(), exp.getMonth() - months, exp.getDate());
+      out.push({ id: 'doc:' + d.id + ':renew', title: 'Renew ' + name.charAt(0).toLowerCase() + name.slice(1), allDay: true, start: rem, days: 1,
+        color: F.TRAVEL_COLOR, readOnly: true, doc: d.id, location: '',
+        notes: name + ' expires ' + exp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '.', exDays: {} });
     });
     return out;
   }

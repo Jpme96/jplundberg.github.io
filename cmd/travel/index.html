@@ -41,7 +41,7 @@
   <link href="../styles.css?v=19" rel="stylesheet">
   <link href="../finance/fin.css?v=2" rel="stylesheet">
   <link href="../calendar/cal.css?v=2" rel="stylesheet">
-  <link href="travel.css?v=2" rel="stylesheet">
+  <link href="travel.css?v=3" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -83,6 +83,7 @@
     <div class="seg tv-tabs" id="tvTabs" role="tablist">
       <button type="button" role="tab" data-tab="journey"><i class="bi bi-signpost-split"></i> Journey</button>
       <button type="button" role="tab" data-tab="trips"><i class="bi bi-suitcase-lg"></i> Trips <span class="tv-count" id="tvTripCount"></span></button>
+      <button type="button" role="tab" data-tab="history"><i class="bi bi-clock-history"></i> History</button>
     </div>
 
     <!-- ============ Journey (Entur) ============ -->
@@ -129,35 +130,109 @@
         <div class="tp-bar"><h2>Your trips</h2><button class="pill-btn" type="button" id="tpNew"><i class="bi bi-plus-lg"></i> New trip</button></div>
         <div class="tp-cards" id="tpUpcoming"></div>
         <p class="empty tp-empty" id="tpEmpty" hidden>No trips planned yet. Add one to keep flights, hotels, packing and costs in one place – it shows up in your calendar too.</p>
-        <details class="tp-past" id="tpPastBox" hidden><summary>Past trips</summary><div class="tp-cards" id="tpPast"></div></details>
+
+        <section class="card tp-docs" id="tpDocsCard">
+          <div class="card-head"><h2><i class="bi bi-person-vcard"></i> Travel documents</h2><button class="text-btn" type="button" id="docAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <ul class="doc-list" id="docList"></ul>
+          <p class="muted doc-intro" id="docIntro">Add your passport, ID, EU health card and travel insurance with their expiry dates. You get a warning before a trip if something runs out, and a reminder in your calendar to renew.</p>
+        </section>
       </div>
 
       <div id="tpDetail" hidden>
         <button class="fp-back tp-back" type="button" id="tpBack"><i class="bi bi-chevron-left"></i> All trips</button>
         <header class="tp-head card" id="tpHead"></header>
-        <div class="tp-grid">
-          <section class="card tp-plan">
-            <div class="card-head"><h2><i class="bi bi-list-ol"></i> Plan</h2><button class="text-btn" type="button" id="tpAddItem"><i class="bi bi-plus-lg"></i> Add</button></div>
-            <div id="tpItems"></div>
-          </section>
-          <div class="tp-side">
-            <section class="card tp-pack">
-              <div class="card-head"><h2><i class="bi bi-luggage"></i> Packing</h2><span class="muted" id="tpPackCount"></span></div>
-              <form class="tp-pack-add" id="tpPackForm" autocomplete="off"><input id="tpPackIn" placeholder="Add something to pack" maxlength="80" aria-label="Add to packing list"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>
-              <ul class="tp-pack-list" id="tpPack"></ul>
-              <button class="text-btn" type="button" id="tpPackBasics" hidden><i class="bi bi-magic"></i> Add the usual things</button>
+        <div class="seg tp-tabs" id="tpTabs" role="tablist">
+          <button type="button" data-tp="overview">Overview</button>
+          <button type="button" data-tp="plan">Plan</button>
+          <button type="button" data-tp="prepare">Prepare <span class="tv-count" id="tpPrepCount"></span></button>
+          <button type="button" data-tp="money">Money</button>
+        </div>
+
+        <div class="tp-pane" data-pane="overview">
+          <div class="tp-grid">
+            <section class="card tp-dest" id="tpDest"></section>
+            <div class="tp-side">
+              <section class="card tp-glance" id="tpGlance"></section>
+              <section class="card tp-notes">
+                <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
+                <textarea id="tpNotes" placeholder="Addresses, opening hours, ideas…" maxlength="4000" rows="4" aria-label="Trip notes"></textarea>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="tp-pane" data-pane="plan" hidden>
+          <div class="tp-grid">
+            <section class="card tp-plan">
+              <div class="card-head"><h2><i class="bi bi-list-ol"></i> Plan</h2>
+                <div class="head-actions"><div class="seg tp-planview" id="tpPlanView"><button type="button" data-pv="list">Bookings</button><button type="button" data-pv="days">Day by day</button></div>
+                <button class="text-btn" type="button" id="tpAddItem"><i class="bi bi-plus-lg"></i> Add</button></div></div>
+              <div id="tpItems"></div>
             </section>
+            <div class="tp-side">
+              <section class="card tp-mapcard">
+                <div class="card-head"><h2><i class="bi bi-map"></i> Map</h2><a class="text-btn" id="tpMapOpen" target="_blank" rel="noopener" hidden>Open in Google Maps</a></div>
+                <div class="tp-map" id="tpMap"></div>
+                <p class="muted tp-map-note" id="tpMapNote"></p>
+              </section>
+              <section class="card tp-ideas">
+                <div class="card-head"><h2><i class="bi bi-lightbulb"></i> Ideas</h2><span class="muted" id="tpIdeaCount"></span></div>
+                <form class="tp-pack-add" id="tpIdeaForm" autocomplete="off"><input id="tpIdeaIn" placeholder="Something you want to see or do" maxlength="120" aria-label="Add idea"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>
+                <ul class="tp-idea-list" id="tpIdeas"></ul>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="tp-pane" data-pane="prepare" hidden>
+          <div class="tp-grid">
+            <section class="card tp-check">
+              <div class="card-head"><h2><i class="bi bi-check2-square"></i> Before you go</h2><span class="muted" id="tpCheckCount"></span></div>
+              <ul class="tp-check-list" id="tpChecks"></ul>
+              <form class="tp-pack-add" id="tpTodoForm" autocomplete="off"><input id="tpTodoIn" placeholder="Add a to-do before the trip" maxlength="100" aria-label="Add to-do"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>
+              <button class="text-btn" type="button" id="tpTodoIdeas"><i class="bi bi-magic"></i> Suggest to-dos</button>
+            </section>
+            <div class="tp-side">
+              <section class="card tp-pack">
+                <div class="card-head"><h2><i class="bi bi-luggage"></i> Packing</h2><span class="muted" id="tpPackCount"></span></div>
+                <form class="tp-pack-add" id="tpPackForm" autocomplete="off"><input id="tpPackIn" placeholder="Add something to pack" maxlength="80" aria-label="Add to packing list"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>
+                <ul class="tp-pack-list" id="tpPack"></ul>
+                <button class="text-btn" type="button" id="tpPackBasics" hidden><i class="bi bi-magic"></i> Add the usual things</button>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="tp-pane" data-pane="money" hidden>
+          <div class="tp-grid">
             <section class="card tp-money">
               <div class="card-head"><h2><i class="bi bi-cash-coin"></i> Money</h2></div>
               <div id="tpMoney"></div>
             </section>
-            <section class="card tp-notes">
-              <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
-              <textarea id="tpNotes" placeholder="Addresses, opening hours, ideas…" maxlength="4000" rows="4" aria-label="Trip notes"></textarea>
-            </section>
+            <div class="tp-side">
+              <section class="card tp-fx" id="tpFx"></section>
+            </div>
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ============ History ============ -->
+    <section class="tv-pane" id="paneHistory" role="tabpanel" hidden>
+      <section class="fp-tiles" id="hsTiles" aria-label="Travel in numbers"></section>
+      <div class="tp-grid">
+        <section class="card hs-mapcard">
+          <div class="card-head"><h2><i class="bi bi-globe-europe-africa"></i> Where you’ve been</h2><span class="muted" id="hsPlaces"></span></div>
+          <div class="tp-map hs-map" id="hsMap"></div>
+        </section>
+        <div class="tp-side">
+          <section class="card"><div class="card-head"><h2><i class="bi bi-bar-chart"></i> Year by year</h2></div><div id="hsYears"></div></section>
+          <section class="card"><div class="card-head"><h2><i class="bi bi-flag"></i> Countries</h2></div><div id="hsCountries"></div></section>
+        </div>
+      </div>
+      <div class="tp-bar hs-past-head"><h2>Past trips</h2></div>
+      <div class="tp-cards" id="tpPast"></div>
+      <p class="empty tp-empty" id="hsEmpty" hidden>Trips you’ve been on show up here, with days away, countries and what you spent.</p>
     </section>
 
     <p class="foot muted" id="tvFoot">Real-time journey data from Entur, the national travel planner for Norway.<br><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span> · <i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
@@ -173,7 +248,7 @@
       </div>
       <div class="cl-edit">
         <input class="cl-in-title" id="tsName" placeholder="Name, e.g. Berlin with Kari" maxlength="80" required aria-label="Trip name">
-        <input id="tsDest" placeholder="Destination, e.g. Berlin" maxlength="80" aria-label="Destination">
+        <label class="ps-wrap ts-dest"><input id="tsDest" placeholder="Destination city, e.g. Berlin" maxlength="80" aria-label="Destination"></label>
         <div class="cl-group">
           <label class="st-row"><span>From</span><span class="cl-dt"><input type="date" id="tsStart" required></span></label>
           <label class="st-row"><span>To</span><span class="cl-dt"><input type="date" id="tsEnd" required></span></label>
@@ -215,12 +290,36 @@
     </form>
   </div>
 
+  <!-- Travel document editor -->
+  <div class="cl-sheet-bg" id="docBg" hidden>
+    <form class="cl-sheet" id="docForm" role="dialog" aria-modal="true" aria-labelledby="docTitle" autocomplete="off">
+      <div class="cl-sheet-head">
+        <button class="text-btn" type="button" data-close>Cancel</button>
+        <h2 id="docTitle">Add document</h2>
+        <button class="pill-btn" type="submit">Save</button>
+      </div>
+      <div class="cl-edit">
+        <div class="tp-types doc-kinds" id="docKinds" role="group" aria-label="Kind"></div>
+        <input id="docName" placeholder="Name, e.g. Passport (Norway)" maxlength="60" aria-label="Name">
+        <div class="cl-group">
+          <label class="st-row"><span>Expires</span><span class="cl-dt"><input type="date" id="docExp"></span></label>
+          <label class="st-row"><span>Remind me</span><select id="docRemind" class="st-wide"><option value="1">1 month before</option><option value="3">3 months before</option><option value="6" selected>6 months before</option></select></label>
+        </div>
+        <div class="cl-group cl-group-text"><input id="docNote" placeholder="Note, e.g. insurer’s phone number (optional)" maxlength="120" aria-label="Note"></div>
+        <p class="muted doc-safe"><i class="bi bi-shield-lock"></i> Stored encrypted with your passcode. You don’t need to save document numbers here.</p>
+        <div class="cl-del" id="docDelBox" hidden><button class="text-btn danger" type="button" id="docDelete"><i class="bi bi-trash3"></i> Remove document</button></div>
+      </div>
+    </form>
+  </div>
+
   <script src="../lock.js?v=11"></script>
-  <script src="../places.js?v=1"></script>
-  <script src="../flow.js?v=1"></script>
-  <script src="../calendar/cal-core.js?v=2"></script>
-  <script src="travel.js?v=2"></script>
-  <script src="trips.js?v=1"></script>
+  <script src="../places.js?v=2"></script>
+  <script src="world.js?v=1"></script>
+  <script src="../flow.js?v=2"></script>
+  <script src="../calendar/cal-core.js?v=3"></script>
+  <script src="travel.js?v=3"></script>
+  <script src="trips.js?v=2"></script>
+  <script src="history.js?v=1"></script>
   <script src="../nav.js?v=3"></script>
 </body>
 </html>

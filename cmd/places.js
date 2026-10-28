@@ -103,7 +103,7 @@
       if (q.length < 2) { if (!q && opts.myLocation) show([]); else hide(); return; }
       timer = setTimeout(function () {
         var s = ++seq;
-        search(q, { layers: opts.layers }).then(function (rows) {
+        (opts.search || search)(q, { layers: opts.layers }).then(function (rows) {
           if (s !== seq) return;
           rows.length ? show(rows) : show([], 'No places found');
         }).catch(function () { if (s === seq) show([], 'Couldn’t search right now'); });
