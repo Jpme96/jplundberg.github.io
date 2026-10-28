@@ -807,3 +807,32 @@
     row-gap: 16px;
   }
 }
+
+/* Charts placed inside articles */
+.article-body .article-figure {
+  margin: 28px 0 30px;
+}
+
+.article-body .article-figure .project-card h4 {
+  margin: 0 0 4px;
+  padding: 0;
+  font-size: 17px;
+}
+
+.article-body .article-figure .project-card h4:after {
+  display: none;
+}
+
+.article-body .article-figure .project-card p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.article-body .article-figure .chart--ring {
+  max-width: 560px;
+}
+
+.article-body .article-figure .chart-legend,
+.article-body .article-figure .bars {
+  font-size: 15px;
+}
