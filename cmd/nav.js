@@ -1,4 +1,5 @@
-/* Page menu: tab bar at the bottom on phones, a floating pill at the top on larger screens. */
+/* Page menu: a floating pill – at the bottom on phones, at the top on larger screens.
+   The highlight slides to the page you tap, on every device (and from the last page on arrival). */
 (function () {
   "use strict";
   var path = location.pathname.replace(/index\.html$/, '');
@@ -25,15 +26,60 @@
   function draw() {
     var list = visible();
     nav.classList.toggle('tb-many', list.length > 6);
-    nav.innerHTML = list.map(function (it) {
+    nav.innerHTML = '<span class="tb-ind" aria-hidden="true"></span>' + list.map(function (it) {
       var on = it[0] === page;
-      return '<a href="' + base + it[1] + '"' + (on ? ' aria-current="page"' : '') + '><i class="bi bi-' + it[2] + '"></i><span>' + it[3] + '</span></a>';
+      return '<a href="' + base + it[1] + '" data-pg="' + it[0] + '"' + (on ? ' aria-current="page"' : '') + '><i class="bi bi-' + it[2] + '"></i><span>' + it[3] + '</span></a>';
     }).join('');
+    whenShown(function () { slide(nav.querySelector('[aria-current]'), true); });
+  }
+  /* the menu only shows once unlocked: measure it then */
+  function whenShown(fn) {
+    requestAnimationFrame(function () {
+      if (nav.offsetWidth) fn();
+      else if (window.Vault) window.Vault.onUnlock(function () { requestAnimationFrame(fn); });
+    });
+  }
+
+  /* ---------- the sliding highlight ---------- */
+  function slide(a, instant) {
+    var ind = nav.querySelector('.tb-ind');
+    if (!ind || !a) return;
+    if (instant) ind.classList.add('no-anim');
+    ind.style.width = a.offsetWidth + 'px';
+    ind.style.height = a.offsetHeight + 'px';
+    ind.style.transform = 'translate(' + a.offsetLeft + 'px,' + a.offsetTop + 'px)';
+    ind.classList.add('on');
+    if (instant) { void ind.offsetWidth; ind.classList.remove('no-anim'); }
   }
   draw();
   window.addEventListener('features:change', draw);
   document.body.appendChild(nav);
   document.documentElement.classList.add('has-tabbar');
+  window.addEventListener('resize', function () { slide(nav.querySelector('[aria-current]'), true); });
+
+  /* arriving from another page: start at that page's tab, then glide here */
+  var from = null;
+  try { from = sessionStorage.getItem('dash.tbFrom'); sessionStorage.removeItem('dash.tbFrom'); } catch (e) {}
+  if (from && from !== page) {
+    var start = function () {
+      var a = nav.querySelector('[data-pg="' + from + '"]'), cur = nav.querySelector('[aria-current]');
+      if (!a || !cur) return;
+      slide(a, true);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { slide(cur); }); });
+    };
+    whenShown(start);
+  }
+  /* tapping a tab: the highlight moves first, then the page changes */
+  nav.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-pg]');
+    if (!a || a.getAttribute('aria-current') || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    try { sessionStorage.setItem('dash.tbFrom', page); } catch (x) {}
+    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
+    slide(a);
+    var off = document.documentElement.classList.contains('mo-off');
+    setTimeout(function () { location.href = a.href; }, off ? 0 : 170);
+  });
 
   nav.addEventListener('click', function (e) {
     var s = e.target.closest('[data-settings]');

@@ -5,7 +5,11 @@
   var $ = function (id) { return document.getElementById(id); };
   var F = window.Flow, C = window.Cal, W = window.World, esc = C.esc;
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
-  var shown = false, mapSig = '';
+  var shown = false, mapSig = '', openYears = {};
+  document.addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (d.classList && d.classList.contains('hs-year')) openYears[d.dataset.y] = d.open;
+  }, true);
 
   function daysIn(tr, year, until) {
     var n = 0, d = tr.start, end = tr.end || tr.start;
@@ -25,6 +29,8 @@
     if (!shown) return;
     var t = F.travel(), td = F.dkey(new Date()), y = new Date().getFullYear();
     var taken = t.trips.filter(function (x) { return x.start <= td; }).sort(function (a, b) { return a.start > b.start ? -1 : 1; });
+    /* trips without a looked-up place (typed long ago, or only a name) count once we know where */
+    if (window.Trips && window.Trips.ensurePlace) t.trips.forEach(function (x) { if (!x.place) window.Trips.ensurePlace(x); });
     var past = taken.filter(function (x) { return (x.end || x.start) < td; });
     var thisYear = taken.filter(function (x) { return x.start.slice(0, 4) === String(y) || (x.end || x.start).slice(0, 4) === String(y); });
     var countries = {};
@@ -64,8 +70,23 @@
       return '<li><span class="cc">' + esc(c.cc) + '</span><span class="n">' + esc(c.name) + '</span><span class="v">' + c.trips + ' trip' + (c.trips > 1 ? 's' : '') + ' · ' + c.days + ' d</span></li>';
     }).join('') + '</ul>' : '<p class="muted">Trips with a destination show up here.</p>';
 
-    /* past trips */
-    $('tpPast').innerHTML = past.map(window.TripCard).join('');
+    /* past trips, a year at a time (the newest year open) – so the list never gets long */
+    var byYear = {};
+    past.forEach(function (x) { (byYear[x.start.slice(0, 4)] = byYear[x.start.slice(0, 4)] || []).push(x); });
+    var nf2 = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
+    $('tpPast').innerHTML = Object.keys(byYear).sort().reverse().map(function (yy, i) {
+      var list = byYear[yy], days = list.reduce(function (a, x) { return a + daysIn(x, null, td); }, 0);
+      var cost = list.reduce(function (a, x) { return a + (window.Trips ? window.Trips.planned(x) : 0); }, 0);
+      var open = openYears[yy] != null ? openYears[yy] : i === 0;
+      return '<details class="hs-year" data-y="' + yy + '"' + (open ? ' open' : '') + '><summary><b>' + yy + '</b><span class="muted">' + list.length + ' trip' + (list.length > 1 ? 's' : '') +
+        ' · ' + days + ' day' + (days === 1 ? '' : 's') + (cost ? ' · ' + esc(nf2.format(cost)) + ' kr' : '') + '</span><i class="bi bi-chevron-down"></i></summary>' +
+        '<ul class="hs-trips">' + list.map(function (x) {
+          var c = window.Trips ? window.Trips.planned(x) : 0;
+          return '<li><button type="button" class="hs-trip" data-trip="' + esc(x.id) + '"><span class="cc">' + esc(x.place && x.place.cc ? x.place.cc : '–') + '</span>' +
+            '<span class="x"><b>' + esc(x.name) + '</b><small>' + esc(window.TravelPage.rangeLabel(x)) + (x.place && x.place.country ? ', ' + esc(x.place.country) : '') + '</small></span>' +
+            (c ? '<span class="a">' + esc(nf2.format(c)) + ' kr</span>' : '') + '<i class="bi bi-chevron-right"></i></button></li>';
+        }).join('') + '</ul></details>';
+    }).join('');
     $('hsEmpty').hidden = past.length > 0;
 
     /* map: been (accent) and coming up (teal) */

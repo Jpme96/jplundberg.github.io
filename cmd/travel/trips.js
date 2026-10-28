@@ -169,12 +169,16 @@
   /* Older trips (or a typed destination) get their place looked up once */
   var placing = {};
   function ensurePlace(tr) {
-    if (tr.place || !tr.dest || placing[tr.id]) return;
+    /* no destination typed? try the trip's name ("Barcelona"), but only if it really is a place */
+    var q = tr.dest || String(tr.name || '').replace(/\b(19|20)\d\d\b/g, '').replace(/\b(trip|holiday|vacation|ferie|tur)\b/gi, '').trim();
+    if (tr.place || !q || placing[tr.id]) return;
     placing[tr.id] = true;
-    W.search(tr.dest).then(function (l) {
-      if (!l[0]) return;
+    W.search(q).then(function (l) {
+      var hit = l[0];
+      if (!hit) return;
+      if (!tr.dest && hit.name.toLowerCase() !== q.toLowerCase() && hit.country.toLowerCase() !== q.toLowerCase()) return;
       var t = all(), x = find(t, tr.id);
-      if (x && !x.place && x.dest === tr.dest) { x.place = l[0]; F.saveTravel(t); }
+      if (x && !x.place) { x.place = hit; if (!x.dest) x.dest = hit.name; F.saveTravel(t); }
     }).catch(function () {});
   }
 
@@ -832,7 +836,7 @@
   window.addEventListener('travel:change', refresh);
   var prevReload = window.Dash && window.Dash.reload;
   window.Dash.reload = function () { if (prevReload) prevReload(); refresh(); };
-  window.Trips = { docStatus: docStatus, tripDays: tripDays, planned: planned };
+  window.Trips = { docStatus: docStatus, tripDays: tripDays, planned: planned, ensurePlace: ensurePlace };
   window.Vault.onUnlock(function () { renderList(); fromHash(); });
   window.Vault.onLock(function () { closeTrip(); });
 })();
