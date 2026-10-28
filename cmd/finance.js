@@ -357,27 +357,81 @@
         }).join('') + '</ul>';
     }
 
-    /* the list: a few at first, then 25 more at a time, grouped by day so a long month stays readable */
-    var limit = showAll === true ? list.length : (showAll || 6), shown = list.slice(0, limit), lastDay = '';
-    $('spList').innerHTML = shown.map(function (e) {
-      var c = catById[e.cat] || catById.other;
-      var d = new Date(e.date + 'T12:00'), head = '';
-      if (shown.length > 8 && e.date !== lastDay) {
-        var dayTotal = list.filter(function (x) { return x.date === e.date; }).reduce(function (a, x) { return a + (x.amount || 0); }, 0);
-        head = '<li class="tx-day"><span>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</span><span class="money">' + esc(kr(dayTotal)) + '</span></li>';
+    /* the card shows the latest few; the whole month opens in a sheet (so the page never gets long) */
+    var shown = list.slice(0, 6);
+    $('spList').innerHTML = shown.map(function (e) { return txRow(e, true); }).join('');
+    $('spMore').hidden = list.length <= 6;
+    $('spMore').innerHTML = '<i class="bi bi-list-ul"></i> All ' + list.length + ' in ' + esc(monthName(viewMonth, true));
+    if (sheetOpen) renderSheet(list);
+  }
+  function txRow(e, withDate) {
+    var c = catById[e.cat] || catById.other, d = new Date(e.date + 'T12:00');
+    return '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
+      '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + '</span></span>' +
+      money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
+  }
+
+  /* ---------- the month in a sheet: grouped by day, searchable, delete or re-categorise ---------- */
+  var sheetOpen = false, sheetQ = '', sheetCat = '';
+  var sheet = document.createElement('div');
+  sheet.className = 'qa-bg sp-bg'; sheet.hidden = true;
+  sheet.innerHTML = '<div class="qa-box sp-box" role="dialog" aria-modal="true" aria-label="Spending"><div class="qa-handle"></div>' +
+    '<div class="sp-head"><h2 class="im-h"><i class="bi bi-receipt"></i> <span id="spSheetTitle"></span></h2><button type="button" class="icon-btn sm" data-close aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+    '<div class="sp-filter"><input id="spQ" type="search" placeholder="Search this month…" autocomplete="off"><select id="spCatF" aria-label="Category"><option value="">All categories</option>' + CATS.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('') + '</select></div>' +
+    '<p class="muted sp-sum" id="spSheetSum"></p><ul class="tx-list sp-sheet-list" id="spSheetList"></ul></div>';
+  document.body.appendChild(sheet);
+  function openSheet() {
+    sheetOpen = true; sheetQ = ''; sheetCat = ''; $('spQ').value = ''; $('spCatF').value = '';
+    renderSheet(D.expenses.filter(function (e) { return e.date.slice(0, 7) === viewMonth; }).sort(function (a, b) { return b.date.localeCompare(a.date) || b.t - a.t; }));
+    sheet.hidden = false; document.body.classList.add('qa-open');
+    requestAnimationFrame(function () { sheet.classList.add('open'); });
+  }
+  function closeSheet() {
+    sheetOpen = false; sheet.classList.remove('open'); document.body.classList.remove('qa-open');
+    setTimeout(function () { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 320);
+  }
+  function renderSheet(list) {
+    $('spSheetTitle').textContent = monthName(viewMonth);
+    var q = sheetQ.toLowerCase(), rows = list.filter(function (e) { return (!sheetCat || e.cat === sheetCat) && (!q || (e.note || '').toLowerCase().indexOf(q) > -1 || (catById[e.cat] || catById.other).name.toLowerCase().indexOf(q) > -1); });
+    $('spSheetSum').innerHTML = rows.length + ' expense' + (rows.length === 1 ? '' : 's') + ' · ' + money(sum(rows)) + (rows.length !== list.length ? ' <span class="muted">of ' + money(sum(list)) + '</span>' : '');
+    var lastDay = '', html = '';
+    rows.forEach(function (e) {
+      if (e.date !== lastDay) {
+        var d = new Date(e.date + 'T12:00'), dayTotal = sum(rows.filter(function (x) { return x.date === e.date; }));
+        html += '<li class="tx-day"><span>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</span><span class="money">' + esc(kr(dayTotal)) + '</span></li>';
         lastDay = e.date;
       }
-      return head + '<li class="tx"><i class="dot" style="background:' + c.color + '"></i>' +
-        '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' +
-        esc(c.name) + (shown.length > 8 ? '' : ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + '</span></span>' +
-        money(e.amount) +
-        '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
-    }).join('');
-    $('spMore').hidden = list.length <= 6;
-    $('spMore').innerHTML = shown.length >= list.length
-      ? (list.length > 6 ? '<i class="bi bi-chevron-up"></i> Show less' : '')
-      : 'Show ' + Math.min(25, list.length - shown.length) + ' more <span class="muted">· ' + (list.length - shown.length) + ' left</span>';
+      var c = catById[e.cat] || catById.other;
+      html += '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
+        '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><select class="tx-cat" data-xcat="' + e.id + '" aria-label="Category">' + CATS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === e.cat ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>' + (e.src === 'bank' ? ' <i class="bi bi-bank muted" title="From your bank"></i>' : '') + '</span>' +
+        money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
+    });
+    $('spSheetList').innerHTML = html || '<li class="empty">Nothing matches.</li>';
   }
+  sheet.addEventListener('click', function (e) {
+    if (e.target === sheet || e.target.closest('[data-close]')) { closeSheet(); return; }
+    var b = e.target.closest('[data-xdel]');
+    if (!b) return;
+    var li = b.closest('li'); li.classList.add('removing');
+    setTimeout(function () {
+      D.expenses = D.expenses.filter(function (x) { return x.id !== b.dataset.xdel; });
+      persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
+    }, 250);
+  });
+  sheet.addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-xcat]');
+    if (sel) {
+      D.expenses.forEach(function (x) { if (x.id === sel.dataset.xcat) x.cat = sel.value; });
+      D.catMemory = D.catMemory || {};
+      var ex = D.expenses.filter(function (x) { return x.id === sel.dataset.xcat; })[0];
+      if (ex && ex.note) D.catMemory[String(ex.note).toLowerCase().replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40)] = sel.value;   // the importer learns from it
+      persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
+    }
+    if (e.target.id === 'spCatF') { sheetCat = e.target.value; renderSpending(); }
+  });
+  sheet.addEventListener('input', function (e) { if (e.target.id === 'spQ') { sheetQ = e.target.value.trim(); renderSpending(); } });
+  document.addEventListener('keydown', function (e) { if (sheetOpen && e.key === 'Escape') closeSheet(); });
+  window.Vault.onLock(closeSheet);
 
   function donut(parts, total) {
     var r = 46, c = 2 * Math.PI * r, off = 0, gap = parts.length > 1 ? 2 : 0;
@@ -422,12 +476,7 @@
   });
   $('spPrev').addEventListener('click', function () { viewMonth = shiftMonth(viewMonth, -1); showAll = false; renderSpending(); });
   $('spNext').addEventListener('click', function () { viewMonth = shiftMonth(viewMonth, 1); showAll = false; renderSpending(); });
-  $('spMore').addEventListener('click', function () {
-    var list = D.expenses.filter(function (e) { return e.date.slice(0, 7) === viewMonth; }), cur = showAll === true ? list.length : (showAll || 6);
-    showAll = cur >= list.length ? false : (cur + 25 >= list.length ? true : cur + 25);
-    renderSpending();
-    if (showAll === false) $('spList').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  $('spMore').addEventListener('click', openSheet);
 
   /* ================= Savings goals ================= */
   var editingSaving = null;

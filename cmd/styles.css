@@ -2049,3 +2049,14 @@ input::-webkit-date-and-time-value { text-align: left; }
 .ws-job .b-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: none; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .ws-job .b-open small { font-size: 12px; }
 .ws-jobform { display: grid; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.sp-box { max-width: 620px; display: flex; flex-direction: column; overflow: hidden; }
+.sp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sp-head .im-h { margin: 0; }
+.sp-filter { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; margin-bottom: 6px; }
+.sp-sum { margin: 0 0 4px; font-size: 13px; }
+.sp-sheet-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.sp-sheet-list .tx { padding-right: 2px; }
+.tx-cat { width: auto; max-width: 150px; height: 28px; min-height: 28px; font-size: 12.5px; padding: 0 24px 0 8px; margin-top: 2px; background-position: right 8px center; }
+.tx-text .tx-cat { display: inline-block; }
+@media (min-width: 760px) { .sp-box { height: min(80vh, 760px); } }
+@media (max-width: 759px) { .sp-box { height: 88vh; height: 88dvh; } }
