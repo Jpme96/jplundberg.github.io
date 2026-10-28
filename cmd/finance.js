@@ -133,6 +133,7 @@
     D.budget[f.dataset.kind].push({ id: uid(), name: f.n.value.trim(), amount: a });
     persist();
     renderBudget();
+    renderBills();
     var again = $('budgetBody').querySelector('.b-add[data-kind="' + f.dataset.kind + '"] input');
     if (again) again.focus();
   });
@@ -143,6 +144,7 @@
     D.budget[p[0]] = D.budget[p[0]].filter(function (r) { return r.id !== p[1]; });
     persist();
     renderBudget();
+    renderBills();
   });
 
   /* ================= Spending ================= */
@@ -401,11 +403,96 @@
   });
 
   /* ================= Lock / unlock ================= */
-  function renderAll() { renderBudget(); renderSpending(); renderSavings(); renderNet(); }
+
+  /* ================= Upcoming bills ================= */
+  var billsEditing = false;
+  function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+
+  function renderBills() {
+    var fixed = D.budget.fixed || [];
+    var box = $('billsBody');
+    $('billsEdit').hidden = !fixed.length;
+    if (!fixed.length) {
+      box.innerHTML = '<p class="empty">Add your fixed costs (rent, loans, subscriptions) under Monthly budget, then give them a due date here.</p>';
+      return;
+    }
+    if (billsEditing) {
+      $('billsEdit').textContent = 'Done';
+      box.innerHTML = '<p class="bill-sum">Which day of the month is each one due?</p><ul>' + fixed.map(function (f) {
+        var opts = '<option value="">No date</option>';
+        for (var d = 1; d <= 31; d++) opts += '<option value="' + d + '"' + (f.day === d ? ' selected' : '') + '>' + d + '.</option>';
+        return '<li class="bill"><span></span><span class="bill-text"><strong>' + esc(f.name) + '</strong><span>' + esc(kr(f.amount)) + '</span></span>' +
+          '<select class="bill-day" data-day="' + f.id + '" aria-label="Due day for ' + esc(f.name) + '">' + opts + '</select></li>';
+      }).join('') + '</ul>';
+      return;
+    }
+    $('billsEdit').textContent = 'Due dates';
+
+    var now = new Date(), key = ym(now), today = now.getDate(), dim = daysInMonth(now);
+    var paid = (D.paid && D.paid[key]) || [];
+    var dated = fixed.filter(function (f) { return f.day; });
+    if (!dated.length) {
+      box.innerHTML = '<p class="empty">Tap “Due dates” to tell the dashboard when each fixed cost is due.</p>';
+      return;
+    }
+    var rows = dated.map(function (f) {
+      var day = Math.min(f.day, dim), isPaid = paid.indexOf(f.id) > -1;
+      return { f: f, day: day, paid: isPaid, diff: day - today };
+    }).sort(function (a, b) { return (a.paid - b.paid) || (a.day - b.day); });
+    var open = rows.filter(function (r) { return !r.paid; });
+    var mon = now.toLocaleDateString('en-GB', { month: 'long' });
+
+    var sum;
+    if (open.length) {
+      sum = '<b>' + open.length + '</b> left in ' + mon + ' · ' + money(open.reduce(function (a, r) { return a + r.f.amount; }, 0));
+    } else {
+      var next = dated.slice().sort(function (a, b) { return a.day - b.day; })[0];
+      var nd = new Date(now.getFullYear(), now.getMonth() + 1, Math.min(next.day, daysInMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))));
+      sum = 'All paid for ' + mon + ' 🎉 Next: <b>' + esc(next.name) + '</b> on ' + nd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+    box.innerHTML = '<p class="bill-sum">' + sum + '</p><ul>' + rows.map(function (r) {
+      var date = new Date(now.getFullYear(), now.getMonth(), r.day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      var when = r.paid ? 'Paid · due ' + date
+        : r.diff < 0 ? '<span class="late">Overdue by ' + (-r.diff) + ' day' + (r.diff === -1 ? '' : 's') + '</span> · ' + date
+        : r.diff === 0 ? '<span class="soon">Due today</span>'
+        : r.diff <= 3 ? '<span class="soon">Due in ' + r.diff + ' day' + (r.diff === 1 ? '' : 's') + '</span> · ' + date
+        : 'Due ' + date + ' · in ' + r.diff + ' days';
+      return '<li class="bill' + (r.paid ? ' paid' : '') + '">' +
+        '<button type="button" class="check" data-paid="' + r.f.id + '" aria-pressed="' + r.paid + '" aria-label="' + (r.paid ? 'Mark ' + esc(r.f.name) + ' as not paid' : 'Mark ' + esc(r.f.name) + ' as paid') + '"><i class="bi bi-check-lg"></i></button>' +
+        '<span class="bill-text"><strong>' + esc(r.f.name) + '</strong><span>' + when + '</span></span>' + money(r.f.amount) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  $('billsEdit').addEventListener('click', function () { billsEditing = !billsEditing; renderBills(); });
+  $('billsBody').addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-day]');
+    if (!sel) return;
+    D.budget.fixed.forEach(function (f) { if (f.id === sel.dataset.day) f.day = sel.value ? +sel.value : null; });
+    persist();
+  });
+  $('billsBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-paid]');
+    if (!b) return;
+    var key = ym(new Date());
+    D.paid = D.paid || {};
+    var list = D.paid[key] || (D.paid[key] = []);
+    var i = list.indexOf(b.dataset.paid);
+    if (i > -1) list.splice(i, 1); else list.push(b.dataset.paid);
+    /* keep only the last few months of ticks */
+    Object.keys(D.paid).forEach(function (k) { if (k < shiftMonth(key, -3)) delete D.paid[k]; });
+    persist();
+    renderBills();
+  });
+
+  function renderAll() { renderBudget(); renderBills(); renderSpending(); renderSavings(); renderNet(); }
 
   window.Vault.onUnlock(function (data) {
-    D = data && data.budget ? data : Object.assign(blank(), data || {});
-    if (!D.history) D.history = {};
+    /* Fill in any missing part (older data, or data from another device) */
+    D = data || {};
+    var b = blank();
+    Object.keys(b).forEach(function (k) { if (!D[k] || typeof D[k] !== typeof b[k]) D[k] = b[k]; });
+    D.budget.income = D.budget.income || [];
+    D.budget.fixed = D.budget.fixed || [];
     viewMonth = ym(new Date());
     snapshot();
     renderAll();
@@ -414,9 +501,10 @@
   window.Vault.onLock(function () {
     D = null;
     budgetEditing = false;
+    billsEditing = false;
     showAll = false;
     closeSaving();
     closeAcc();
-    ['budgetBody', 'spChart', 'spList', 'svList', 'nwBig', 'nwSub', 'nwChart', 'nwList'].forEach(function (id) { $(id).innerHTML = ''; });
+    ['budgetBody', 'billsBody', 'spChart', 'spList', 'svList', 'nwBig', 'nwSub', 'nwChart', 'nwList'].forEach(function (id) { $(id).innerHTML = ''; });
   });
 })();

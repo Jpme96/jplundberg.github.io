@@ -33,7 +33,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=9" rel="stylesheet">
+  <link href="styles.css?v=11" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -77,83 +77,118 @@
     </div>
   </header>
 
-  <main class="grid">
-
-    <!-- Weather -->
-    <section class="card weather" id="weatherCard">
-      <div class="card-head"><h2><i class="bi bi-cloud-sun"></i> Oslo</h2><span class="muted" id="weatherUpdated"></span></div>
-      <div class="weather-now">
-        <i id="wIcon" class="bi bi-cloud"></i>
-        <div>
-          <div class="w-temp" id="wTemp">–</div>
-          <div class="muted" id="wDesc">Loading weather…</div>
+  <main class="dash" id="dash">
+    <section class="dash-sec" data-sec="today" aria-labelledby="secToday">
+      <div class="sec-head"><h2 class="sec-title" id="secToday"><i class="bi bi-sun"></i> Today</h2></div>
+      <div class="grid">
+      <!-- Weather -->
+      <section class="card weather" id="weatherCard">
+        <div class="card-head"><h2><i class="bi bi-cloud-sun"></i> Oslo</h2><span class="muted" id="weatherUpdated"></span></div>
+        <div class="weather-now">
+          <i id="wIcon" class="bi bi-cloud"></i>
+          <div>
+            <div class="w-temp" id="wTemp">–</div>
+            <div class="muted" id="wDesc">Loading weather…</div>
+          </div>
         </div>
+        <ul class="w-days" id="wDays"></ul>
+      </section>
+      <!-- Departures (Entur / Ruter, real time) -->
+      <section class="card transit" id="transitCard">
+        <div class="card-head"><h2><i class="bi bi-bus-front"></i> <span id="trTitle">Departures</span></h2><button class="text-btn" id="trEdit" type="button">Stops</button></div>
+        <div class="tr-edit" id="trEditBox" hidden>
+          <ul class="tr-saved" id="trSaved"></ul>
+          <input id="trSearch" placeholder="Search for a stop, e.g. Jernbanetorget" autocomplete="off" aria-label="Search for a stop">
+          <ul class="tr-results" id="trResults"></ul>
+        </div>
+        <div class="seg tr-tabs" id="trTabs" hidden></div>
+        <ul class="tr-list" id="trList"></ul>
+        <p class="empty" id="trEmpty">Choose your stop to see the next departures in real time.</p>
+        <p class="tr-foot muted" id="trFoot"></p>
+      </section>
+      <!-- Training & habits -->
+      <section class="card habits" id="habitsCard">
+        <div class="card-head"><h2><i class="bi bi-activity"></i> This week</h2>
+          <div class="head-actions"><a class="text-btn" href="habits/">Details</a><button class="text-btn" id="hbAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div></div>
+        <form class="inline-form" id="hbForm" hidden>
+          <input id="hbName" placeholder="Habit, e.g. Training or Reading" required autocomplete="off">
+          <label class="hb-target"><span>Times per week</span>
+            <select id="hbTarget"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
+          <div class="form-actions">
+            <button type="button" class="text-btn danger" id="hbDelete" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="hbCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Save</button>
+          </div>
+        </form>
+        <div class="hb-week" id="hbWeek"></div>
+      </section>
       </div>
-      <ul class="w-days" id="wDays"></ul>
     </section>
 
-    <!-- Goals -->
-    <section class="card goals">
-      <div class="card-head"><h2><i class="bi bi-bullseye"></i> Goals</h2><button class="text-btn" id="goalAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
-      <form class="inline-form" id="goalForm" hidden>
-        <input id="goalName" placeholder="Goal, e.g. Gym this week" required>
-        <div class="row2">
-          <input id="goalValue" type="number" inputmode="decimal" placeholder="Now" step="any">
-          <input id="goalTarget" type="number" inputmode="decimal" placeholder="Target" step="any" required>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="text-btn danger" id="goalDelete" hidden>Delete</button>
-          <span class="spacer"></span>
-          <button type="button" class="text-btn" id="goalCancel">Cancel</button>
-          <button type="submit" class="pill-btn">Save</button>
-        </div>
-      </form>
-      <ul class="goal-list" id="goalList"></ul>
+    <section class="dash-sec" data-sec="tasks" aria-labelledby="secTasks">
+      <div class="sec-head"><h2 class="sec-title" id="secTasks"><i class="bi bi-check2-square"></i> Tasks &amp; notes</h2></div>
+      <div class="grid">
+      <!-- To-do -->
+      <section class="card todo">
+        <div class="card-head"><h2><i class="bi bi-check2-square"></i> To-do</h2><button class="text-btn" id="todoClear" type="button">Clear done</button></div>
+        <form class="add-row" id="todoForm">
+          <input id="todoInput" placeholder="Add a task…" autocomplete="off">
+          <button class="pill-btn" type="submit" aria-label="Add task"><i class="bi bi-plus-lg"></i></button>
+        </form>
+        <ul class="todo-list" id="todoList"></ul>
+        <p class="empty" id="todoEmpty">Nothing to do. Nice.</p>
+      </section>
+      <!-- Goals -->
+      <section class="card goals">
+        <div class="card-head"><h2><i class="bi bi-bullseye"></i> Goals</h2><button class="text-btn" id="goalAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+        <form class="inline-form" id="goalForm" hidden>
+          <input id="goalName" placeholder="Goal, e.g. Gym this week" required>
+          <div class="row2">
+            <input id="goalValue" type="number" inputmode="decimal" placeholder="Now" step="any">
+            <input id="goalTarget" type="number" inputmode="decimal" placeholder="Target" step="any" required>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="text-btn danger" id="goalDelete" hidden>Delete</button>
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="goalCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Save</button>
+          </div>
+        </form>
+        <ul class="goal-list" id="goalList"></ul>
+      </section>
+      <!-- Quick links -->
+      <section class="card links">
+        <div class="card-head"><h2><i class="bi bi-lightning-charge"></i> Quick links</h2><button class="text-btn" id="linkEditBtn" type="button">Edit</button></div>
+        <ul class="link-grid" id="linkGrid"></ul>
+        <form class="inline-form" id="linkForm" hidden>
+          <input id="linkName" placeholder="Name, e.g. Plania" required>
+          <input id="linkUrl" placeholder="Address, e.g. plania.no" required inputmode="url" autocapitalize="off">
+          <div class="form-actions">
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="linkCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Add link</button>
+          </div>
+        </form>
+      </section>
+      <!-- Notes -->
+      <section class="card notes">
+        <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
+        <form class="add-row" id="noteForm">
+          <textarea id="noteInput" rows="1" placeholder="Write something…" autocomplete="off"></textarea>
+          <button class="pill-btn" type="submit" id="noteSubmit" aria-label="Save note"><i class="bi bi-plus-lg"></i></button>
+        </form>
+        <ul class="note-list" id="noteList"></ul>
+        <p class="empty" id="noteEmpty">No notes yet. Tap a note to edit it.</p>
+      </section>
+      </div>
     </section>
-
-    <!-- To-do -->
-    <section class="card todo">
-      <div class="card-head"><h2><i class="bi bi-check2-square"></i> To-do</h2><button class="text-btn" id="todoClear" type="button">Clear done</button></div>
-      <form class="add-row" id="todoForm">
-        <input id="todoInput" placeholder="Add a task…" autocomplete="off">
-        <button class="pill-btn" type="submit" aria-label="Add task"><i class="bi bi-plus-lg"></i></button>
-      </form>
-      <ul class="todo-list" id="todoList"></ul>
-      <p class="empty" id="todoEmpty">Nothing to do. Nice.</p>
-    </section>
-
-    <!-- Quick links -->
-    <section class="card links">
-      <div class="card-head"><h2><i class="bi bi-lightning-charge"></i> Quick links</h2><button class="text-btn" id="linkEditBtn" type="button">Edit</button></div>
-      <ul class="link-grid" id="linkGrid"></ul>
-      <form class="inline-form" id="linkForm" hidden>
-        <input id="linkName" placeholder="Name, e.g. Plania" required>
-        <input id="linkUrl" placeholder="Address, e.g. plania.no" required inputmode="url" autocapitalize="off">
-        <div class="form-actions">
-          <span class="spacer"></span>
-          <button type="button" class="text-btn" id="linkCancel">Cancel</button>
-          <button type="submit" class="pill-btn">Add link</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- Notes -->
-    <section class="card notes">
-      <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
-      <form class="add-row" id="noteForm">
-        <textarea id="noteInput" rows="1" placeholder="Write something…" autocomplete="off"></textarea>
-        <button class="pill-btn" type="submit" id="noteSubmit" aria-label="Save note"><i class="bi bi-plus-lg"></i></button>
-      </form>
-      <ul class="note-list" id="noteList"></ul>
-      <p class="empty" id="noteEmpty">No notes yet. Tap a note to edit it.</p>
-    </section>
-
   </main>
 
   <!-- Finances (encrypted with your passcode) -->
   <section class="fin" id="fin" aria-labelledby="finTitle">
-    <div class="fin-head">
-      <h2 id="finTitle" class="fin-title"><i class="bi bi-wallet2"></i> Finances</h2>
+    <div class="fin-head sec-head">
+      <h2 id="finTitle" class="sec-title"><i class="bi bi-wallet2"></i> Finances</h2>
       <div class="top-actions">
         <a class="fin-open" href="finance/"><i class="bi bi-bar-chart-line"></i> Statistics</a>
         <button class="icon-btn" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button>
@@ -167,7 +202,12 @@
         <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
         <div id="budgetBody"></div>
       </section>
-      </div>
+
+      <!-- Upcoming bills -->
+      <section class="card bills">
+        <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Upcoming bills</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
+        <div id="billsBody"></div>
+      </section>
 
       <!-- Spending -->
       <section class="card spending">
@@ -194,7 +234,6 @@
         <ul class="tx-list" id="spList"></ul>
         <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
       </section>
-      </div>
 
       <!-- Savings goals -->
       <section class="card savings">
@@ -215,7 +254,6 @@
         <ul class="goal-list" id="svList"></ul>
         <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
       </section>
-      </div>
 
       <!-- Net worth -->
       <section class="card networth">
@@ -331,9 +369,10 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=8"></script>
-  <script src="settings.js?v=3"></script>
+  <script src="lock.js?v=9"></script>
+  <script src="settings.js?v=4"></script>
   <script src="script.js?v=5"></script>
-  <script src="finance.js?v=2"></script>
+  <script src="finance.js?v=4"></script>
+  <script src="today.js?v=2"></script>
 </body>
 </html>

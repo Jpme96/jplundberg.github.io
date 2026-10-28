@@ -17,8 +17,9 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['weather', 'Weather'], ['goals', 'Goals'], ['todo', 'To-do'],
-    ['links', 'Quick links'], ['notes', 'Notes'], ['fin', 'Finances']
+    ['weather', 'Weather'], ['transit', 'Departures'], ['habits', 'Training & habits'],
+    ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
+    ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
   var BGS = [['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
   var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60 };
@@ -97,6 +98,13 @@
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f3f5' : '#0e0f11');
     CARDS.forEach(function (c) { root.classList.toggle('hide-' + c[0], !!s.hide[c[0]]); });
+    /* Hide a section heading when every card in it is hidden */
+    document.querySelectorAll('.dash-sec').forEach(function (sec) {
+      var cards = sec.querySelectorAll('.card');
+      sec.hidden = cards.length > 0 && Array.prototype.every.call(cards, function (c) {
+        return CARDS.some(function (k) { return s.hide[k[0]] && c.classList.contains(k[0]); });
+      });
+    });
     if ($('settings') && !$('settings').hidden) fill();
   }
   if (media && media.addEventListener) media.addEventListener('change', apply);
