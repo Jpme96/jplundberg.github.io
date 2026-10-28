@@ -2,10 +2,11 @@
 (function () {
   "use strict";
   var path = location.pathname.replace(/index\.html$/, '');
-  var base = path.replace(/(finance|habits|travel)\/$/, '');          // the /cmd/ folder
-  var page = (path.match(/(finance|habits|travel)\/$/) || [, 'home'])[1];
+  var base = path.replace(/(finance|habits|travel|calendar)\/$/, '');          // the /cmd/ folder
+  var page = (path.match(/(finance|habits|travel|calendar)\/$/) || [, 'home'])[1];
   var items = [
     ['home', '', 'house-door', 'Home'],
+    ['calendar', 'calendar/', 'calendar3', 'Calendar'],
     ['travel', 'travel/', 'signpost-split', 'Travel'],
     ['finance', 'finance/', 'wallet2', 'Finances'],
     ['habits', 'habits/', 'activity', 'Habits']

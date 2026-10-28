@@ -9,6 +9,9 @@
    /cmd/api/visitors  visitor numbers from Cloudflare Web Analytics.
    /cmd/api/content   list articles and projects, and hide/show them
                       (sets "published: false" in the file's front matter).
+   /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
+                      calendar link) so the dashboard can show it. The link is
+                      stored encrypted in the vault and only passed through here.
 
    Settings (Worker → Settings → Bindings / Variables and secrets):
      VAULT           KV namespace binding
@@ -29,7 +32,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -41,6 +44,7 @@ export default {
     if (path === '/cmd/api/site') return site(request, env);
     if (path === '/cmd/api/visitors') return visitors(url, env);
     if (path === '/cmd/api/content') return contentApi(request, env);
+    if (path === '/cmd/api/calendar') return calendarFeed(request);
     return vault(request, env);
   }
 };
@@ -253,6 +257,31 @@ async function visitors(url, env) {
     referrers: rows(a.refs, 'refererHost'),
     countries: rows(a.countries, 'countryName')
   });
+}
+
+/* ---------- phone calendar (read only) ---------- */
+/* Only calendar services are fetched, so this can't be used to reach anything else. */
+const CAL_HOSTS = /^(p\d+-caldav\.icloud\.com|calendar\.google\.com|outlook\.office365\.com|outlook\.office\.com|outlook\.live\.com)$/i;
+const CAL_MAX = 4 * 1024 * 1024;
+
+async function calendarFeed(request) {
+  if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+  let body;
+  try { body = JSON.parse(await request.text()); } catch (e) { return json({ error: 'bad json' }, 400); }
+  let url;
+  try { url = new URL(String(body.url || '').trim().replace(/^webcals?:\/\//i, 'https://')); } catch (e) { return json({ error: 'not a link' }, 400); }
+  for (let hop = 0; hop < 4; hop++) {
+    if (url.protocol !== 'https:' || !CAL_HOSTS.test(url.hostname)) return json({ error: 'unsupported link' }, 400);
+    const r = await fetch(url.toString(), { redirect: 'manual', headers: { 'User-Agent': 'jplundberg-dashboard', 'Accept': 'text/calendar, */*' } });
+    if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { url = new URL(r.headers.get('location'), url); continue; }
+    if (r.status === 404 || r.status === 403 || r.status === 401) return json({ error: 'calendar not found' }, 404);
+    if (!r.ok) return json({ error: 'calendar ' + r.status }, 502);
+    const text = await r.text();
+    if (text.length > CAL_MAX) return json({ error: 'calendar too large' }, 413);
+    if (!/^\s*BEGIN:VCALENDAR/i.test(text)) return json({ error: 'not a calendar' }, 502);
+    return new Response(text, { headers: { 'content-type': 'text/calendar; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+  }
+  return json({ error: 'too many redirects' }, 502);
 }
 
 function hdrs() {

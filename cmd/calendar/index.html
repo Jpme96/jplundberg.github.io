@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0e0f11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dashboard">
+  <meta name="format-detection" content="telephone=no">
+  <title>Calendar</title>
+  <link href="/assets/img/favicon.png?v=2" rel="icon">
+  <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <script>
+    /* Lock first, and apply the saved theme before anything is drawn. */
+    (function (r) {
+      r.classList.add('locked');
+      try {
+        var s = JSON.parse(localStorage.getItem('dash.settings')) || {};
+        var a = { teal: ['#14b8a6', '20, 184, 166'], blue: ['#3987e5', '57, 135, 229'], purple: ['#8a6fdf', '138, 111, 223'],
+                  pink: ['#d55181', '213, 81, 129'], orange: ['#e8743b', '232, 116, 59'], green: ['#22b35e', '34, 179, 94'] }[s.accent];
+        var light = s.theme === 'light' || (s.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+        r.setAttribute('data-theme', light ? 'light' : 'dark');
+        if (s.accent === 'custom' && /^#[0-9a-f]{6}$/i.test(s.accentHex || '')) {
+          var h = s.accentHex, c = [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); });
+          a = [h, c.join(', ')];
+          r.style.setProperty('--on-accent', (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150 ? '#0a0b0c' : '#ffffff');
+        }
+        if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
+        var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
+        r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
+        if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
+      } catch (e) {}
+    })(document.documentElement);
+  </script>
+  <link href="../styles.css?v=17" rel="stylesheet">
+  <link href="../finance/fin.css?v=2" rel="stylesheet">
+  <link href="cal.css?v=1" rel="stylesheet">
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Lock screen -->
+  <div class="lock" id="lock">
+    <div class="lock-box" id="lockBox">
+      <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
+      <h1 id="lockTitle">Welcome back</h1>
+      <p class="muted" id="lockSub">Enter your passcode to open your calendar.</p>
+      <form id="lockForm" autocomplete="on">
+        <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+        <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
+        <input id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
+        <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> There is no recovery. If you forget the passcode, your finance data has to be erased. Let your password manager save it.</p>
+        <button class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
+      </form>
+      <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
+      <div class="lock-reset" id="lockReset" hidden>
+        <button class="pill-btn danger-btn" id="lockDoReset" type="button">Erase and start over</button>
+        <button class="text-btn" id="lockCancelReset" type="button">Cancel</button>
+      </div>
+      <button class="text-btn" id="lockForgot" type="button">Forgot passcode?</button>
+      <button class="text-btn" id="lockRestore" type="button" hidden><i class="bi bi-upload"></i> Restore from backup</button>
+      <input type="file" id="lockFile" accept="application/json,.json" hidden>
+    </div>
+  </div>
+
+
+  <main class="fp cl" id="fp">
+    <header class="fp-top">
+      <a class="fp-back" href="../"><i class="bi bi-chevron-left"></i> Dashboard</a>
+    </header>
+
+    <div class="fp-hero cl-hero">
+      <p class="fp-kicker"><i class="bi bi-calendar3"></i> Private</p>
+      <h1>Calendar</h1>
+    </div>
+
+    <div class="cl-bar">
+      <div class="cl-nav">
+        <button class="icon-btn" id="clPrev" type="button" aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+        <button class="cl-today" id="clToday" type="button">Today</button>
+        <button class="icon-btn" id="clNext" type="button" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+      </div>
+      <h2 class="cl-title" id="clTitle" aria-live="polite"></h2>
+      <div class="seg cl-views" id="clViews" role="group" aria-label="View">
+        <button type="button" data-view="month">Month</button>
+        <button type="button" data-view="week">Week</button>
+        <button type="button" data-view="list">List</button>
+      </div>
+      <button class="pill-btn cl-new" id="clNew" type="button"><i class="bi bi-plus-lg"></i> <span>New</span></button>
+    </div>
+
+    <div class="cl-cats" id="clCats" role="group" aria-label="Show calendars"></div>
+
+    <div class="cl-view" id="clView"></div>
+    <section class="cl-day card" id="clDay" hidden></section>
+
+    <section class="card cl-feeds" id="clFeeds">
+      <div class="card-head"><h2><i class="bi bi-phone"></i> Phone calendars</h2><button class="text-btn" id="clFeedRefresh" type="button"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+      <p class="muted cl-feeds-intro">Show your iPhone, Google or Outlook calendar here, read-only. The link is stored encrypted with your passcode.</p>
+      <ul class="cl-feed-list" id="clFeedList"></ul>
+      <form class="cl-feed-form" id="clFeedForm" autocomplete="off">
+        <input id="clFeedName" placeholder="Name, e.g. iPhone" maxlength="40" aria-label="Calendar name">
+        <input id="clFeedUrl" placeholder="Calendar link (webcal:// or https://)" required aria-label="Calendar link" inputmode="url" spellcheck="false">
+        <button class="pill-btn" type="submit">Add</button>
+      </form>
+      <p class="cl-feed-msg" id="clFeedMsg" role="status" aria-live="polite"></p>
+      <details class="cl-help">
+        <summary>Where do I find the link?</summary>
+        <div class="cl-help-body">
+          <p><b>iPhone (iCloud)</b> – open the Calendar app → <i>Calendars</i> → tap <i class="bi bi-info-circle"></i> next to the calendar → turn on <i>Public Calendar</i> → <i>Share Link…</i> → <i>Copy</i>. Do this for each calendar you want here.</p>
+          <p><b>Google</b> – calendar.google.com on a computer → <i>Settings</i> → pick the calendar → <i>Integrate calendar</i> → copy <i>Secret address in iCal format</i>.</p>
+          <p><b>Outlook</b> – outlook.com → <i>Settings</i> → <i>Calendar</i> → <i>Shared calendars</i> → <i>Publish a calendar</i> → <i>Can view all details</i> → copy the ICS link.</p>
+          <p class="muted">Anyone who has the link can read that calendar, so keep it private. You can turn the link off again in the same place. New events show up here within about 10 minutes.</p>
+        </div>
+      </details>
+    </section>
+
+    <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Synced and encrypted with your passcode</p>
+  </main>
+
+  <!-- Event editor -->
+  <div class="cl-sheet-bg" id="clSheetBg" hidden>
+    <form class="cl-sheet" id="clSheet" role="dialog" aria-modal="true" aria-labelledby="clSheetTitle" autocomplete="off">
+      <div class="cl-sheet-head">
+        <button class="text-btn" type="button" id="clCancel">Cancel</button>
+        <h2 id="clSheetTitle">New event</h2>
+        <button class="pill-btn" type="submit" id="clSave">Save</button>
+      </div>
+      <div class="cl-edit" id="clEdit">
+        <input class="cl-in-title" id="clTitleIn" placeholder="Title" maxlength="120" required aria-label="Title">
+        <div class="seg cl-cat-seg" id="clCatSeg" role="group" aria-label="Category"></div>
+        <div class="cl-group">
+          <label class="st-row"><span>All day</span><input type="checkbox" class="switch" id="clAllDay"></label>
+          <label class="st-row"><span>Starts</span><span class="cl-dt"><input type="date" id="clDate" required><input type="time" id="clStart" step="300"></span></label>
+          <label class="st-row"><span>Ends</span><span class="cl-dt"><input type="date" id="clEndDate"><input type="time" id="clStop" step="300"></span></label>
+        </div>
+        <div class="cl-group">
+          <label class="st-row"><span>Repeat</span><select id="clRepeat" class="st-wide"></select></label>
+          <label class="st-row" id="clUntilRow" hidden><span>End repeat</span><span class="cl-dt"><input type="date" id="clUntil"><button class="text-btn" type="button" id="clUntilClear">Never</button></span></label>
+        </div>
+        <div class="cl-group cl-group-text">
+          <input id="clLoc" placeholder="Location" maxlength="160" aria-label="Location">
+          <textarea id="clNotes" placeholder="Notes" maxlength="2000" rows="3" aria-label="Notes"></textarea>
+        </div>
+        <div class="cl-del" id="clDelBox" hidden>
+          <button class="text-btn danger" type="button" id="clDelete"><i class="bi bi-trash3"></i> Delete event</button>
+          <div class="cl-del-ask" id="clDelAsk" hidden>
+            <span class="muted">This event repeats.</span>
+            <button class="text-btn danger" type="button" id="clDelOne">Delete only this one</button>
+            <button class="text-btn danger" type="button" id="clDelAll">Delete all</button>
+          </div>
+        </div>
+      </div>
+      <div class="cl-read" id="clRead" hidden></div>
+    </form>
+  </div>
+
+  <script src="../lock.js?v=11"></script>
+  <script src="cal-core.js?v=1"></script>
+  <script src="cal.js?v=1"></script>
+  <script src="../nav.js?v=3"></script>
+</body>
+</html>

@@ -231,7 +231,7 @@ button { font: inherit; cursor: pointer; }
   .grid { grid-template-columns: repeat(3, 1fr); }
   .notes { grid-column: 1 / -1; }
 }
-@media (min-width: 760px) and (max-width: 1099px) {
+@media (min-width: 1100px) {
   .habits { grid-column: 1 / -1; }
 }
 
@@ -767,7 +767,7 @@ select option { background: var(--bg-solid); }
 /* ---------- Hidden cards (Settings → Dashboard) ---------- */
 .hide-weather .card.weather, .hide-goals .card.goals, .hide-todo .card.todo,
 .hide-links .card.links, .hide-notes .card.notes, .hide-fin #fin,
-.hide-transit .card.transit, .hide-habits .card.habits, .hide-bills .card.bills { display: none; }
+.hide-transit .card.transit, .hide-calendar .card.calendar, .hide-habits .card.habits, .hide-bills .card.bills { display: none; }
 
 /* ---------- Settings panel ---------- */
 .st-backdrop {
@@ -1221,3 +1221,32 @@ select.st-wide { padding-right: 32px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Calendar card ---------- */
+.cc-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin: -4px -4px 10px; }
+.cc-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0 5px; border-radius: 12px;
+  text-decoration: none; color: var(--muted); font-size: 11px; transition: background .15s;
+}
+.cc-day:hover { background: rgba(var(--ink-rgb), .05); }
+.cc-day b {
+  font-size: 15px; font-weight: 600; color: var(--heading); width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-variant-numeric: tabular-nums;
+}
+.cc-day.today { color: var(--accent); }
+.cc-day.today b { background: var(--accent); color: var(--on-accent); }
+.cc-dots { display: flex; gap: 3px; height: 5px; }
+.cc-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--c); }
+.cc-list { list-style: none; margin: 0; padding: 0; }
+.cc-h { font-size: 12px; font-weight: 500; color: var(--muted); margin: 8px 2px 2px; }
+.cc-h:first-child { margin-top: 0; }
+.cc-ev {
+  display: grid; grid-template-columns: 48px 3px 1fr; gap: 10px; align-items: center; padding: 6px 4px;
+  border-radius: 10px; color: var(--text); text-decoration: none; transition: background .15s;
+}
+.cc-ev:hover { background: rgba(var(--ink-rgb), .05); }
+.cc-ev .t { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cc-ev .bar { align-self: stretch; min-height: 26px; border-radius: 2px; background: var(--c); }
+.cc-ev .x { min-width: 0; display: grid; }
+.cc-ev b { font-weight: 500; font-size: 14.5px; color: var(--heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-ev small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

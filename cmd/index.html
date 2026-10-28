@@ -38,7 +38,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=16" rel="stylesheet">
+  <link href="styles.css?v=17" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -97,6 +97,14 @@
           </div>
         </div>
         <ul class="w-days" id="wDays"></ul>
+      </section>
+      <!-- Calendar (own events + phone calendars) -->
+      <section class="card calendar" id="calCard">
+        <div class="card-head"><h2><i class="bi bi-calendar3"></i> Calendar</h2>
+          <div class="head-actions"><a class="text-btn" href="calendar/">Open</a><a class="text-btn" href="calendar/#new"><i class="bi bi-plus-lg"></i> Add</a></div></div>
+        <div class="cc-strip" id="ccStrip"></div>
+        <ul class="cc-list" id="ccList"></ul>
+        <p class="empty" id="ccEmpty" hidden>Nothing planned the next 7 days.</p>
       </section>
       <!-- Departures (Entur / Ruter, real time) -->
       <section class="card transit" id="transitCard">
@@ -434,13 +442,15 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=10"></script>
-  <script src="settings.js?v=7"></script>
+  <script src="lock.js?v=11"></script>
+  <script src="settings.js?v=8"></script>
   <script src="website.js?v=2"></script>
   <script src="script.js?v=6"></script>
   <script src="finance.js?v=4"></script>
   <script src="places.js?v=1"></script>
   <script src="today.js?v=3"></script>
-  <script src="nav.js?v=2"></script>
+  <script src="calendar/cal-core.js?v=1"></script>
+  <script src="cal-card.js?v=1"></script>
+  <script src="nav.js?v=3"></script>
 </body>
 </html>

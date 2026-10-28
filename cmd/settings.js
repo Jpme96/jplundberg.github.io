@@ -17,7 +17,7 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['weather', 'Weather'], ['transit', 'Travel & departures'], ['habits', 'Training & habits'],
+    ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Training & habits'],
     ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
     ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
