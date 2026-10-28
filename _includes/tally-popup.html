@@ -21,7 +21,7 @@
       b.addEventListener('click', function (e) {
         e.preventDefault();
         var open = function () {
-          window.Tally.openPopup(b.dataset.contactForm, { layout: 'modal', width: 620, overlay: true, autoClose: 4000 });
+          window.Tally.openPopup(b.dataset.contactForm, { layout: 'modal', width: 480, hideTitle: true, overlay: true, autoClose: 4000 });
         };
         if (window.Tally) open();
         else load(function () { if (window.Tally) open(); else window.open(b.href, '_blank', 'noopener'); });
