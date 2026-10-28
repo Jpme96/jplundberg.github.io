@@ -140,15 +140,17 @@ button { font: inherit; cursor: pointer; }
 .top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
 }
 
 .date {
   font-family: "Poppins", sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
+  letter-spacing: .02em;
   color: var(--accent);
+  margin-bottom: 6px;
 }
 
 .top-actions { display: flex; gap: 8px; }
