@@ -1,0 +1,115 @@
+/* Travel page – builds on ../styles.css and ../finance/fin.css */
+.tv-hero { padding: 8px 2px 22px; }
+.tv-hello {
+  margin: 0; font-family: "Raleway", sans-serif; font-weight: 600;
+  font-size: clamp(26px, 6vw, 40px); line-height: 1.15; color: var(--muted);
+}
+.tv-hero h1 {
+  margin: 2px 0 0; font-family: "Raleway", sans-serif; font-weight: 700;
+  font-size: clamp(34px, 8.5vw, 60px); line-height: 1.08; color: var(--heading); letter-spacing: -.5px;
+}
+
+.tv-form { display: grid; gap: 12px; margin-bottom: 8px; }
+.tv-fields { display: grid; grid-template-columns: 1fr; gap: 8px; position: relative; }
+@media (min-width: 760px) { .tv-fields { grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; } }
+
+.tv-field {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  height: 58px; padding: 0 18px; border-radius: 16px;
+  background: var(--card); border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  transition: border-color .2s;
+}
+.tv-field:focus-within { border-color: var(--accent); }
+.tv-field input { border: 0; background: none; padding: 0; height: 100%; font-size: 17px; border-radius: 0; }
+.tv-field input:focus { border: 0; }
+.tv-from-ico, .tv-to-ico { font-size: 20px; color: var(--accent); flex-shrink: 0; }
+
+.tv-swap {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+  display: grid; place-items: center; font-size: 18px;
+  transition: transform .35s var(--ease-ios), border-color .2s;
+}
+.tv-swap:hover { border-color: var(--accent); color: var(--accent); }
+.tv-swap.spin { transform: rotate(180deg); }
+@media (max-width: 759px) {
+  .tv-swap { position: absolute; right: 14px; top: 50%; transform: translateY(-50%) rotate(90deg); z-index: 2; background: var(--bg-solid); }
+  .tv-swap.spin { transform: translateY(-50%) rotate(270deg); }
+  .tv-field { padding-right: 70px; }
+}
+
+.tv-opts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tv-time { width: auto; color-scheme: dark; }
+:root[data-theme="light"] .tv-time { color-scheme: light; }
+.tv-go { height: 44px; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px; }
+@media (max-width: 600px) { .tv-opts .spacer { display: none; } .tv-go { width: 100%; justify-content: center; } }
+
+.tv-msg { min-height: 1.4em; margin: 10px 2px; color: var(--muted); font-size: 14px; }
+.spin-i { display: inline-block; animation: spin 1s linear infinite; }
+.tv-label { margin: 6px 2px 8px; font-size: 13px; color: var(--muted); }
+.tv-recent { display: flex; flex-wrap: wrap; gap: 8px; }
+.tv-recent .tv-label { width: 100%; }
+.tv-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 22px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 14px;
+  transition: border-color .2s, transform .15s var(--ease-ios);
+}
+.tv-chip:hover { border-color: var(--accent); }
+.tv-chip:active { transform: scale(.96); }
+.tv-chip .bi-clock-history { color: var(--accent); }
+.tv-chip .bi-arrow-right { color: var(--muted); font-size: 12px; }
+
+/* Trip results */
+.tv-trips { display: grid; gap: 10px; }
+.tv-trip {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  animation: rise .45s var(--ease-out) both;
+}
+.tv-trip.open { border-color: rgba(var(--accent-rgb), .5); }
+.tv-sum {
+  width: 100%; text-align: left; border: 0; background: none; color: var(--text);
+  padding: 14px 16px; display: grid; gap: 8px; cursor: pointer;
+}
+.tv-times { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tv-times b { font-family: "Raleway", sans-serif; font-size: 20px; font-weight: 700; color: var(--heading); font-variant-numeric: tabular-nums; }
+.tv-dur { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.tv-legs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tv-sep { font-size: 10px; color: var(--muted); }
+.tv-line {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px; border-radius: 6px;
+  font-family: "Poppins", sans-serif; font-size: 12.5px; font-weight: 600;
+}
+.tv-line i { font-size: 12px; }
+.tv-walk { display: inline-flex; align-items: center; gap: 1px; color: var(--muted); font-size: 12px; }
+.tv-walk i { font-size: 15px; }
+.tv-meta { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.tv-soon { color: var(--accent); font-weight: 500; }
+.tv-late { color: #ef8a6a; }
+:root[data-theme="light"] .tv-late { color: #c2502c; }
+
+.tv-detail { padding: 0 16px 14px; }
+.tv-steps { list-style: none; margin: 0; padding: 4px 0 0; border-top: 1px solid var(--line); }
+.tv-steps li {
+  position: relative; display: grid; grid-template-columns: 48px 1fr; gap: 2px 12px;
+  padding: 10px 0 10px; font-size: 14px;
+}
+.tv-steps li::before {          /* the coloured line between stops */
+  content: ""; position: absolute; left: 58px; top: 26px; bottom: -10px; width: 4px; border-radius: 2px; background: var(--lc, var(--line));
+}
+.tv-steps li.walk::before { background: none; border-left: 3px dotted var(--muted); width: 0; left: 58.5px; }
+.tv-steps li.end::before { display: none; }
+.tv-steps .t { font-variant-numeric: tabular-nums; color: var(--heading); font-weight: 500; }
+.tv-steps .p { padding-left: 16px; position: relative; }
+.tv-steps .p::before {          /* stop marker */
+  content: ""; position: absolute; left: -5px; top: 5px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg-solid); border: 2px solid var(--accent);
+}
+.tv-steps .p b { font-weight: 500; color: var(--heading); }
+.tv-steps .p small { color: var(--muted); margin-left: 6px; }
+.tv-steps .how { grid-column: 2; padding-left: 16px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tv-more { display: block; margin: 12px auto 0; }
+
+/* ---- place search dropdown (also used on the dashboard) ---- */
+.ps-wrap { position: relative; }

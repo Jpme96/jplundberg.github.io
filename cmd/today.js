@@ -72,6 +72,7 @@
 
   function renderDepartures() {
     var stop = activeStop();
+    planHint();
     $('trEmpty').hidden = !!stop;
     $('trTabs').hidden = tr.stops.length < 2;
     $('trTabs').innerHTML = tr.stops.map(function (s, i) {
@@ -178,6 +179,29 @@
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && unlocked && Date.now() - lastFetch > 20000) fetchDepartures();
   });
+
+  /* Compact from/to: picking both opens the travel page with the trips */
+  var pf = null, pt = null;
+  function openTrip() {
+    var from = pf || (activeStop() ? { id: activeStop().id, name: activeStop().name, stop: true } : null);
+    if (!from || !pt) return;
+    try { sessionStorage.setItem('dash.tripQuery', JSON.stringify({ from: from, to: pt })); } catch (e) {}
+    location.href = 'travel/';
+  }
+  if (window.Places) {
+    var fromF = window.Places.field($('trFrom'), { myLocation: true, onPick: function (p) { pf = p; if (p) { if (pt) openTrip(); else $('trTo').focus(); } } });
+    var toF = window.Places.field($('trTo'), { onPick: function (p) { pt = p; if (p) openTrip(); } });
+    $('trSwap').addEventListener('click', function () {
+      var a = pf; pf = pt; pt = a; fromF.set(pf); toF.set(pt);
+      this.classList.remove('spin'); void this.offsetWidth; this.classList.add('spin');
+    });
+    $('trPlan').addEventListener('submit', function (e) { e.preventDefault(); openTrip(); });
+  }
+  function planHint() {
+    var s = activeStop();
+    $('trFrom').placeholder = s ? 'From ' + s.name : 'From';
+    $('trSub').hidden = !s;
+  }
 
   /* ================= Habits (this week) ================= */
   var hb = load('dash.habits', null) || { list: [{ id: uid(), name: 'Training', target: 3 }], log: {} };

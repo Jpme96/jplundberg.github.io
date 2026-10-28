@@ -25,7 +25,7 @@
 
   var API = '/cmd/api/vault';
   var SYNC_KEY = 'dash.syncRev';
-  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings', 'dash.transit', 'dash.habits'];
+  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings', 'dash.transit', 'dash.habits', 'dash.travel'];
 
   var key = null;          // CryptoKey while unlocked, null when locked
   var salt = null;

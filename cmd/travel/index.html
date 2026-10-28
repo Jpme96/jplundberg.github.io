@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0e0f11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dashboard">
+  <meta name="format-detection" content="telephone=no">
+  <title>Travel</title>
+  <link href="/assets/img/favicon.png?v=2" rel="icon">
+  <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <script>
+    /* Lock first, and apply the saved theme before anything is drawn. */
+    (function (r) {
+      r.classList.add('locked');
+      try {
+        var s = JSON.parse(localStorage.getItem('dash.settings')) || {};
+        var a = { teal: ['#14b8a6', '20, 184, 166'], blue: ['#3987e5', '57, 135, 229'], purple: ['#8a6fdf', '138, 111, 223'],
+                  pink: ['#d55181', '213, 81, 129'], orange: ['#e8743b', '232, 116, 59'], green: ['#22b35e', '34, 179, 94'] }[s.accent];
+        var light = s.theme === 'light' || (s.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+        r.setAttribute('data-theme', light ? 'light' : 'dark');
+        if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
+        var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
+        r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
+        if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
+      } catch (e) {}
+    })(document.documentElement);
+  </script>
+  <link href="../styles.css?v=13" rel="stylesheet">
+  <link href="../finance/fin.css?v=2" rel="stylesheet">
+  <link href="travel.css?v=1" rel="stylesheet">
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Lock screen -->
+  <div class="lock" id="lock">
+    <div class="lock-box" id="lockBox">
+      <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
+      <h1 id="lockTitle">Welcome back</h1>
+      <p class="muted" id="lockSub">Enter your passcode to plan a trip.</p>
+      <form id="lockForm" autocomplete="on">
+        <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+        <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
+        <input id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
+        <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> There is no recovery. If you forget the passcode, your finance data has to be erased. Let your password manager save it.</p>
+        <button class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
+      </form>
+      <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
+      <div class="lock-reset" id="lockReset" hidden>
+        <button class="pill-btn danger-btn" id="lockDoReset" type="button">Erase and start over</button>
+        <button class="text-btn" id="lockCancelReset" type="button">Cancel</button>
+      </div>
+      <button class="text-btn" id="lockForgot" type="button">Forgot passcode?</button>
+      <button class="text-btn" id="lockRestore" type="button" hidden><i class="bi bi-upload"></i> Restore from backup</button>
+      <input type="file" id="lockFile" accept="application/json,.json" hidden>
+    </div>
+  </div>
+
+
+  <main class="fp tv" id="fp">
+    <div class="tv-hero">
+      <p class="tv-hello" id="tvHello">Good morning,</p>
+      <h1>where do you want to go?</h1>
+    </div>
+
+    <form class="tv-form" id="tvForm" autocomplete="off">
+      <div class="tv-fields">
+        <label class="ps-wrap tv-field">
+          <i class="bi bi-record-circle tv-from-ico" aria-hidden="true"></i>
+          <input id="tvFrom" placeholder="From" aria-label="From">
+        </label>
+        <button type="button" class="tv-swap" id="tvSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
+        <label class="ps-wrap tv-field">
+          <i class="bi bi-geo-alt-fill tv-to-ico" aria-hidden="true"></i>
+          <input id="tvTo" placeholder="To" aria-label="To">
+        </label>
+      </div>
+      <div class="tv-opts">
+        <div class="seg" id="tvWhen">
+          <button type="button" data-when="now" aria-pressed="true">Leave now</button>
+          <button type="button" data-when="depart">Leave at</button>
+          <button type="button" data-when="arrive">Arrive by</button>
+        </div>
+        <input type="datetime-local" id="tvTime" class="tv-time" hidden aria-label="Time">
+        <span class="spacer"></span>
+        <button type="submit" class="pill-btn tv-go" id="tvGo"><i class="bi bi-search"></i> Find trips</button>
+      </div>
+    </form>
+
+    <p class="tv-msg" id="tvMsg" role="status" aria-live="polite"></p>
+    <div class="tv-recent" id="tvRecent"></div>
+    <ul class="tv-trips" id="tvTrips"></ul>
+    <button class="text-btn tv-more" id="tvMore" type="button" hidden>Later trips <i class="bi bi-chevron-down"></i></button>
+
+    <p class="foot muted">Real-time journey data from Entur, the national travel planner for Norway.<br><i class="bi bi-shield-lock"></i> Your recent trips are synced and encrypted with your passcode</p>
+  </main>
+
+  <script src="../lock.js?v=10"></script>
+  <script src="../places.js?v=1"></script>
+  <script src="travel.js?v=1"></script>
+  <script src="../nav.js?v=2"></script>
+</body>
+</html>

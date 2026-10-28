@@ -33,7 +33,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=11" rel="stylesheet">
+  <link href="styles.css?v=13" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -95,7 +95,13 @@
       </section>
       <!-- Departures (Entur / Ruter, real time) -->
       <section class="card transit" id="transitCard">
-        <div class="card-head"><h2><i class="bi bi-bus-front"></i> <span id="trTitle">Departures</span></h2><button class="text-btn" id="trEdit" type="button">Stops</button></div>
+        <div class="card-head"><h2><i class="bi bi-signpost-split"></i> <span id="trTitle">Travel</span></h2><button class="text-btn" id="trEdit" type="button">Stops</button></div>
+        <form class="tr-plan" id="trPlan" autocomplete="off">
+          <label class="ps-wrap tr-pf"><i class="bi bi-record-circle" aria-hidden="true"></i><input id="trFrom" placeholder="From" aria-label="From"></label>
+          <button type="button" class="tr-swap" id="trSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
+          <label class="ps-wrap tr-pf"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><input id="trTo" placeholder="To" aria-label="To"></label>
+        </form>
+        <p class="tr-sub" id="trSub"><span>Departures</span><a href="travel/">Plan a trip <i class="bi bi-arrow-right"></i></a></p>
         <div class="tr-edit" id="trEditBox" hidden>
           <ul class="tr-saved" id="trSaved"></ul>
           <input id="trSearch" placeholder="Search for a stop, e.g. Jernbanetorget" autocomplete="off" aria-label="Search for a stop">
@@ -103,7 +109,7 @@
         </div>
         <div class="seg tr-tabs" id="trTabs" hidden></div>
         <ul class="tr-list" id="trList"></ul>
-        <p class="empty" id="trEmpty">Choose your stop to see the next departures in real time.</p>
+        <p class="empty" id="trEmpty">Save a stop under “Stops” to see its next departures here.</p>
         <p class="tr-foot muted" id="trFoot"></p>
       </section>
       <!-- Training & habits -->
@@ -369,11 +375,12 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=9"></script>
+  <script src="lock.js?v=10"></script>
   <script src="settings.js?v=4"></script>
   <script src="script.js?v=5"></script>
   <script src="finance.js?v=4"></script>
-  <script src="today.js?v=2"></script>
-  <script src="nav.js?v=1"></script>
+  <script src="places.js?v=1"></script>
+  <script src="today.js?v=3"></script>
+  <script src="nav.js?v=2"></script>
 </body>
 </html>
