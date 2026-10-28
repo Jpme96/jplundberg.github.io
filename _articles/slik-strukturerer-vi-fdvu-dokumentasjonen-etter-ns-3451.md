@@ -7,7 +7,7 @@ category: Work
 summary: Dokumentasjon dør ikke av at den mangler. Den dør av at den ligger på feil sted, under feil navn, i feil versjon. Dette er hvordan vi bruker NS 3451 til å gi 406 bygninger én struktur – og hvorfor strukturen er det som gjør at dokumentasjonen overlever neste ombygging.
 ---
 
-I [en tidligere artikkel](/no/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/) spurte jeg dem som bruker FDVU-dokumentasjonen i hverdagen hvordan den fungerer. Svaret var tydelig: alle hadde opplevd dokumentasjon som var utdatert, feil eller umulig å finne, og de brukte i snitt over en time i uka på å lete. I [en annen](/no/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/) så jeg på hva det koster. Denne artikkelen handler om det tredje spørsmålet: hva gjør man med det?
+I [en tidligere artikkel](/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/) spurte jeg dem som bruker FDVU-dokumentasjonen i hverdagen hvordan den fungerer. Svaret var tydelig: alle hadde opplevd dokumentasjon som var utdatert, feil eller umulig å finne, og de brukte i snitt over en time i uka på å lete. I [en annen](/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/) så jeg på hva det koster. Denne artikkelen handler om det tredje spørsmålet: hva gjør man med det?
 
 Siden våren 2026 har jeg jobbet med å få FDVU-dokumentasjonen for Boligbyggs eiendommer inn i én felles struktur etter NS 3451:2022. Per oktober er 406 bygninger hentet ut for strukturering, og litt over halvparten er ferdige. Underveis har jeg blitt overbevist om én ting: struktur er ikke rydding. Struktur er det som avgjør om dokumentasjonen lever eller dør.
 
@@ -91,10 +91,10 @@ Kurven over viser at tempoet har økt utover året. Det er ikke fordi vi jobber 
 - Definer hva «ferdig» betyr før du begynner å telle. Ellers måler du en følelse.
 - Rydding setter dokumentasjonen i stand én gang. Struktur, manual og rutiner er det som holder den i live.
 
-Arbeidet fortsetter, og fremdriften oppdateres på [prosjektsiden](/no/projects/fdvu-boligbygg/).
+Arbeidet fortsetter, og fremdriften oppdateres på [prosjektsiden](/projects/fdvu-boligbygg/).
 
 ## Kilder
 
 1. Standard Norge (2022). *[NS 3451:2022 Bygningsdelstabell og systemkoder](https://online.standard.no/ns-3451-2022)*.
 2. Standard Norge (2012). *[NS 3424:2012 Tilstandsanalyse av byggverk – Innhold og gjennomføring](https://online.standard.no/ns-3424-2012)*.
-3. Lundberg, J. P. (2026). *[Hva sier de som bruker FDVU-dokumentasjonen?](/no/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/)*.
+3. Lundberg, J. P. (2026). *[Hva sier de som bruker FDVU-dokumentasjonen?](/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/)*.

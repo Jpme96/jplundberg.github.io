@@ -32,4 +32,4 @@ I Akto Eiendom var jeg bindeleddet mellom dem som drifter byggene, leverandøren
 
 ## Hva jeg tok med meg
 
-Den praktiske siden av FDVU: dokumentasjon er bare verdt noe når de som gjør jobben kan finne den, stole på den og holde den oppdatert. Det er tankegangen jeg tok med inn i struktureringsarbeidet i [Boligbygg](/no/projects/fdvu-boligbygg/).
+Den praktiske siden av FDVU: dokumentasjon er bare verdt noe når de som gjør jobben kan finne den, stole på den og holde den oppdatert. Det er tankegangen jeg tok med inn i struktureringsarbeidet i [Boligbygg](/projects/fdvu-boligbygg/).

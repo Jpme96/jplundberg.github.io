@@ -93,7 +93,7 @@ The curve above shows the pace picking up through the year. Not because we work 
 - Define what "done" means before you start counting. Otherwise you are measuring a feeling.
 - A clean-up puts documentation in order once. Structure, a manual and routines are what keep it alive.
 
-The work continues, and progress is updated on the [project page](/projects/fdvu-boligbygg/).
+The work continues, and progress is updated on the [project page](/projects/fdvu-boligbygg-en/).
 
 ## Sources
 
