@@ -346,6 +346,7 @@
     }).filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
 
     var chart = $('spChart');
+    if ($('spChartMonth')) $('spChartMonth').textContent = monthName(viewMonth, true);
     if (!total) {
       chart.innerHTML = '<p class="empty">No spending logged in ' + esc(monthName(viewMonth, true)) + '.</p>';
     } else {

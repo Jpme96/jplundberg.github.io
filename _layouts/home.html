@@ -153,9 +153,6 @@
         {%- if now_text and now_text != '' %}
         <p class="hero-now"><span class="now-dot" aria-hidden="true"></span><strong>{{ t.now_title }}:</strong> {{ now_text | escape }}</p>
         {%- endif %}
-        {%- if site.data.site.cv.on %}
-        <p class="hero-cv"><a class="cv-btn cv-btn-ghost" href="{% if page.lang == 'nb' %}/no/cv/{% else %}/cv/{% endif %}"><i class="bi bi-file-earmark-person"></i> {{ t.cv_download }}</a></p>
-        {%- endif %}
       </div>
     </section><!-- /Hero Section -->
 

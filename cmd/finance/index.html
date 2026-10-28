@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=69" rel="stylesheet">
+  <link href="../styles.css?v=70" rel="stylesheet">
   <link href="fin.css?v=7" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
 </head>
@@ -147,6 +147,12 @@
         </section>
 
         <!-- Net worth -->
+        <!-- By category (this month's spending) -->
+        <section class="card spcats">
+          <div class="card-head"><h2><i class="bi bi-pie-chart"></i> By category</h2><span class="muted" id="spChartMonth"></span></div>
+          <div id="spChart"></div>
+        </section>
+
         <section class="card networth">
           <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
           <form class="inline-form" id="nwForm" hidden>
@@ -191,7 +197,6 @@
               <button class="pill-btn" type="submit" aria-label="Add expense"><i class="bi bi-plus-lg"></i></button>
             </div>
           </form>
-          <div id="spChart"></div>
           <ul class="tx-list" id="spList"></ul>
           <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
         </section>
@@ -254,7 +259,7 @@
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=4"></script>
   <script src="../budget.js?v=4"></script>
-  <script src="../finance.js?v=16"></script>
+  <script src="../finance.js?v=17"></script>
   <script src="fin.js?v=12"></script>
   <script src="import.js?v=5"></script>
   <script src="../kit.js?v=2"></script>
