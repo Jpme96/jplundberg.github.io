@@ -43,7 +43,7 @@ Good operations and maintenance depend on building documentation that is complet
 
 ## Why it matters
 
-Poor documentation costs more than most people think. When information is spread across several places, formats and versions, work becomes slow and much of it is done twice. The wrong version of a drawing or instruction can lead to poorer operations and maintenance, and when drawings are missing, new ones have to be produced. Small losses in daily work add up to large amounts across a whole portfolio. Read more in my article on [why digitalising FDVU pays off](/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/) (in Norwegian).
+Poor documentation costs more than most people think. When information is spread across several places, formats and versions, work becomes slow and much of it is done twice. The wrong version of a drawing or instruction can lead to poorer operations and maintenance, and when drawings are missing, new ones have to be produced. Small losses in daily work add up to large amounts across a whole portfolio. Read more in my article on [why digitalising FDVU pays off](/articles/why-digitalising-fdvu-pays-off/).
 
 ## Structure and quality in the FDVU system
 

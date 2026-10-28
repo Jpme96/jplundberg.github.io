@@ -251,7 +251,10 @@
             {% if a_lang == page.lang and shown_a < 3 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
           {% endfor %}
           {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
-            {% if a_lang != page.lang and shown_a < 3 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
+            {% if a_lang != page.lang and shown_a < 3 %}
+              {% assign a_twins = 0 %}{% if a.ref %}{% assign a_twin_list = site.articles | where: "ref", a.ref | where: "lang", page.lang %}{% assign a_twins = a_twin_list.size %}{% endif %}
+              {% if a_twins == 0 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
+            {% endif %}
           {% endfor %}
         </div>
         <a class="more-link" href="{{ t.articles_url }}">{{ t.articles_home_link }} <i class="bi bi-arrow-right"></i></a>

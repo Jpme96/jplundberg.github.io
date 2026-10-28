@@ -22,7 +22,14 @@ layout: base
       <p class="empty">{{ u.empty }}</p>
     {% else %}
     <div class="article-cards">
-      {% for a in items %}{% include article-card.html article=a lang=lang %}{% endfor %}
+      {% for a in items %}
+        {% assign a_lang = a.lang | default: 'en' %}{% assign show = true %}
+        {% if a_lang != lang and a.ref %}
+          {% assign twins = site.articles | where: "ref", a.ref | where: "lang", lang %}
+          {% if twins.size > 0 %}{% assign show = false %}{% endif %}
+        {% endif %}
+        {% if show %}{% include article-card.html article=a lang=lang %}{% endif %}
+      {% endfor %}
     </div>
     {% endif %}
   </div>

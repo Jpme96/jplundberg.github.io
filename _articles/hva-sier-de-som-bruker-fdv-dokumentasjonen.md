@@ -1,7 +1,8 @@
 ---
 title: Hva sier de som bruker FDV-dokumentasjonen?
 lang: nb
-date: 2026-10-28
+ref: fdv-survey
+date: 2026-10-28 01:15:00 +0100
 category: Work
 summary: En spørreundersøkelse blant folk som jobber med FDVU-dokumentasjon viser at alle har opplevd dokumentasjon som var utdatert, feil eller vanskelig å finne, og at nesten alle mener det er viktig å gjøre noe med det.
 ---

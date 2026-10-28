@@ -1,9 +1,10 @@
 {% assign lang = page.lang | default: 'en' %}{% assign section_switch = 'articles' %}{% if page.layout == 'project' or page.layout == 'project_list' %}{% assign section_switch = 'projects' %}{% endif %}{% assign h = site.data.home[lang] %}
 {% assign en_url = site.data.home.en.articles_url %}{% assign nb_url = site.data.home.nb.articles_url %}
 {% if section_switch == 'projects' %}{% assign en_url = site.data.home.en.projects_url %}{% assign nb_url = site.data.home.nb.projects_url %}{% endif %}
-{% if page.layout == 'project' and page.ref %}
-  {% assign twin_en = site.projects | where: "ref", page.ref | where: "lang", "en" | first %}
-  {% assign twin_nb = site.projects | where: "ref", page.ref | where: "lang", "nb" | first %}
+{% if page.ref and page.layout == 'project' or page.ref and page.layout == 'article' %}
+  {% if page.layout == 'project' %}{% assign twins_pool = site.projects %}{% else %}{% assign twins_pool = site.articles %}{% endif %}
+  {% assign twin_en = twins_pool | where: "ref", page.ref | where: "lang", "en" | first %}
+  {% assign twin_nb = twins_pool | where: "ref", page.ref | where: "lang", "nb" | first %}
   {% if twin_en %}{% assign en_url = twin_en.url %}{% endif %}
   {% if twin_nb %}{% assign nb_url = twin_nb.url %}{% endif %}
 {% endif %}

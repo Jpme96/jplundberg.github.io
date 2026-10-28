@@ -34,6 +34,10 @@ content:
               label: English
             - value: nb
               label: Norsk
+      - name: ref
+        label: Link between languages (optional)
+        description: Give the English and the Norsk version the same short word, for example "fdvu-savings". Then each language only lists its own version, and the EN/NO switch jumps between them.
+        type: string
       - name: date
         label: Date
         type: date

@@ -1,7 +1,8 @@
 ---
 title: Derfor lønner det seg å digitalisere FDVU
 lang: nb
-date: 2026-10-28
+ref: fdvu-savings
+date: 2026-10-28 00:20:00 +0100
 category: Work
 summary: Et bygg koster mest etter at det står ferdig. Med digital og
   strukturert FDV-dokumentasjon blir driften billigere, vedlikeholdet bedre
