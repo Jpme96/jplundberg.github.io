@@ -1123,6 +1123,7 @@ body.st-open { overflow: hidden; }
 .tabbar a i { font-size: 19px; line-height: 1; }
 .tabbar a[aria-current="page"], .tabbar a.going { color: var(--accent); }
 .tabbar:has(a.going) a[aria-current="page"] { color: var(--muted); }
+.vt-in .tabbar a[aria-current="page"] { color: var(--muted); }   /* lights up as the highlight lands */
 .tabbar a:active:not([aria-current]) { transform: scale(.92); }
 .has-tabbar.unlocked body, .has-tabbar.resuming body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 

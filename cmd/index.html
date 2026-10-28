@@ -54,9 +54,17 @@
         try { if (+localStorage.getItem('dash.until') > Date.now()) r.classList.add('resuming'); } catch (e) {}
         try { if (sessionStorage.getItem('dash.seen')) r.classList.add('mo-seen'); sessionStorage.setItem('dash.seen', '1'); } catch (e) {}
       } catch (e) {}
+      /* while the browser slides this page in (Safari 18.2+, Chrome): the menu is drawn solid and the
+         new tab lights up when the highlight lands. Has to live here – it fires before the page scripts run. */
+      window.addEventListener('pagereveal', function (e) {
+        if (!e.viewTransition) { r.classList.remove('vt-active', 'vt-in'); return; }
+        r.classList.add('vt-active', 'vt-in');
+        var done = function () { r.classList.remove('vt-active', 'vt-in'); };
+        e.viewTransition.finished.then(done, done);
+      });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=52" rel="stylesheet">
+  <link href="styles.css?v=53" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -570,6 +578,6 @@
   <script src="links.js?v=3"></script>
   <script src="search.js?v=3"></script>
   <script src="app.js?v=2"></script>
-  <script src="nav.js?v=14"></script>
+  <script src="nav.js?v=16"></script>
 </body>
 </html>

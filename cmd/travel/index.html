@@ -54,9 +54,17 @@
         try { if (+localStorage.getItem('dash.until') > Date.now()) r.classList.add('resuming'); } catch (e) {}
         try { if (sessionStorage.getItem('dash.seen')) r.classList.add('mo-seen'); sessionStorage.setItem('dash.seen', '1'); } catch (e) {}
       } catch (e) {}
+      /* while the browser slides this page in (Safari 18.2+, Chrome): the menu is drawn solid and the
+         new tab lights up when the highlight lands. Has to live here – it fires before the page scripts run. */
+      window.addEventListener('pagereveal', function (e) {
+        if (!e.viewTransition) { r.classList.remove('vt-active', 'vt-in'); return; }
+        r.classList.add('vt-active', 'vt-in');
+        var done = function () { r.classList.remove('vt-active', 'vt-in'); };
+        e.viewTransition.finished.then(done, done);
+      });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=52" rel="stylesheet">
+  <link href="../styles.css?v=53" rel="stylesheet">
   <link href="../finance/fin.css?v=4" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
   <link href="travel.css?v=7" rel="stylesheet">
@@ -351,6 +359,6 @@
   <script src="../links.js?v=3"></script>
   <script src="../search.js?v=3"></script>
   <script src="../app.js?v=2"></script>
-  <script src="../nav.js?v=14"></script>
+  <script src="../nav.js?v=16"></script>
 </body>
 </html>

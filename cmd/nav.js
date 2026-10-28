@@ -26,12 +26,7 @@
   try { sessionStorage.removeItem('dash.tbFrom'); } catch (e) {}
   /* While pages swap, the menu is drawn solid: a frosted (blurred) background can't be carried
      through the animation and turned into a smear. */
-  window.addEventListener('pagereveal', function (e) {
-    var root = document.documentElement;
-    if (!e.viewTransition) { root.classList.remove('vt-active'); return; }
-    root.classList.add('vt-active');
-    e.viewTransition.finished.then(function () { root.classList.remove('vt-active'); }, function () { root.classList.remove('vt-active'); });
-  });
+  /* (the pagereveal listener that adds vt-active/vt-in lives in each page's head script) */
   /* Only one page change at a time: extra taps while a page is on its way are ignored
      (each tap used to start loading again, which made the change stutter). */
   var leaving = false;
@@ -50,9 +45,9 @@
       return;
     }
     leaving = true;
-    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
     var off = document.documentElement.classList.contains('mo-off');
-    if (crossDoc || off) { document.documentElement.classList.add('vt-active'); return; }   // the browser does the rest
+    if (crossDoc || off) { document.documentElement.classList.add('vt-active'); return; }   // the browser does the rest (the sliding highlight is the feedback)
+    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
     e.preventDefault();
     var pill = nav.querySelector('.tb-pill'), cur = pill && pill.parentNode;
     if (pill) {
