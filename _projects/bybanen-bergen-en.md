@@ -18,7 +18,7 @@ stats:
 ---
 *Draft – written from the facts on the front page. Add the systems you were responsible for and one or two situations you solved, then set `published: true`.*
 
-The Bybanen facility is not an ordinary building. It is a depot, a workshop and a technical plant that the city's light rail depends on, and it is where I started working with operations and FDV in 2017.
+The Bybanen facility is not an ordinary building. It is a depot, a workshop and a technical plant that the city's light rail depends on, and it is where I started working with operations and FDVU in 2017.
 
 ## What the role covered
 

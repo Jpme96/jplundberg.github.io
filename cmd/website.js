@@ -177,7 +177,7 @@
   }
   function eduForm(e, i) {
     return '<form class="ws-jobform" data-ei="' + i + '">' +
-      '<input name="title" placeholder="e.g. FDV Technician" value="' + esc(e ? e.title : '') + '" required autocomplete="off">' +
+      '<input name="title" placeholder="e.g. FDVU Technician" value="' + esc(e ? e.title : '') + '" required autocomplete="off">' +
       '<div class="row2"><input name="school" placeholder="School" value="' + esc(e ? e.school : '') + '" autocomplete="off"><input name="dates" placeholder="Dates" value="' + esc(e ? e.dates : '') + '" autocomplete="off"></div>' +
       '<input name="note" placeholder="Note (optional)" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
       '<div class="form-actions"><button type="button" class="text-btn" data-ecancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';

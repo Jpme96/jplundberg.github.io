@@ -1,5 +1,5 @@
 ---
-title: Operations, maintenance and FDV documentation across Akto's properties
+title: Operations, maintenance and FDVU documentation across Akto's properties
 lang: en
 date: 2025-10-01
 ref: akto-eiendom
@@ -7,7 +7,7 @@ role: FDVU Coordinator
 organisation: Akto Eiendom, Oslo
 period: 2020 – 2025
 published: false
-summary: Five years coordinating operations, maintenance and FDV documentation across a property portfolio – from the daily follow-up of suppliers to getting the documentation into a shape people could actually use.
+summary: Five years coordinating operations, maintenance and FDVU documentation across a property portfolio – from the daily follow-up of suppliers to getting the documentation into a shape people could actually use.
 stats:
   - value: "5"
     label: years as the coordinator between operations, maintenance and documentation
@@ -23,7 +23,7 @@ At Akto Eiendom I was the link between the people who run the buildings, the sup
 ## What the role covered
 
 - Coordinating operations and maintenance across the properties: planning, following up suppliers and service agreements, and handling deviations.
-- FDV documentation for the portfolio: collecting, structuring and quality-assuring documentation from projects and suppliers, and keeping it up to date through changes.
+- FDVU documentation for the portfolio: collecting, structuring and quality-assuring documentation from projects and suppliers, and keeping it up to date through changes.
 - Reporting and internal routines, so operations, finance and management worked from the same picture.
 
 ## What changed

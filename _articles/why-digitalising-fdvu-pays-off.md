@@ -13,7 +13,7 @@ When we talk about what a building costs, most people think of the construction 
 
 ## Operations are where the money goes
 
-A guide from RIF (the Norwegian association of consulting engineers) and Norges Bygg- og Eiendomsforening shows that facility management, operations and maintenance make up **25–50 percent of the total costs** over a building's life, depending on the type of building. The share is highest for hospitals and lowest for homes. For office buildings, operations alone account for around two thirds of the FDV costs, with cleaning and energy as the largest items [1].
+A guide from RIF (the Norwegian association of consulting engineers) and Norges Bygg- og Eiendomsforening shows that facility management, operations and maintenance make up **25–50 percent of the total costs** over a building's life, depending on the type of building. The share is highest for hospitals and lowest for homes. For office buildings, operations alone account for around two thirds of the FDVU costs, with cleaning and energy as the largest items [1].
 
 In other words: small improvements in how buildings are run have a big effect over time.
 
@@ -40,7 +40,7 @@ The gains rarely come from one big change. They come from many small improvement
 
 ## The gains don't come by themselves
 
-It is important to be honest: digitalisation on its own saves nothing. In a report on realising the benefits of BIM, Standard Norge writes that the literature expects the biggest gains in FDV, but that today there is "very little evidence of this" [7]. Many buildings have digital systems, but the documentation in them is incomplete, outdated or organised in different ways.
+It is important to be honest: digitalisation on its own saves nothing. In a report on realising the benefits of BIM, Standard Norge writes that the literature expects the biggest gains in FDVU, but that today there is "very little evidence of this" [7]. Many buildings have digital systems, but the documentation in them is incomplete, outdated or organised in different ways.
 
 That is why structure and quality matter at least as much as the tool:
 

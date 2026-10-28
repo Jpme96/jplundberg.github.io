@@ -59,7 +59,7 @@
         "email": "mailto:contact@jplundberg.com",
         "worksFor": { "@type": "Organization", "name": "Boligbygg Oslo KF" },
         "address": { "@type": "PostalAddress", "addressLocality": "Oslo", "addressCountry": "NO" },
-        "knowsAbout": ["FDVU", "FDV documentation", "Facility management", "Maintenance planning", "Document control", "Property management"],
+        "knowsAbout": ["FDVU", "FDVU documentation", "Facility management", "Maintenance planning", "Document control", "Property management"],
         "knowsLanguage": ["nb", "en"],
         {%- assign _soc = site.data.site.socials | default: site.data.socials_default %}
         "sameAs": [{% for s in _soc %}{{ s.url | jsonify }}{% unless forloop.last %}, {% endunless %}{% endfor %}]

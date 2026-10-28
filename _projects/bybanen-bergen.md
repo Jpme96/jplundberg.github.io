@@ -18,7 +18,7 @@ stats:
 ---
 *Utkast – skrevet ut fra fakta på forsiden. Legg til anleggene du hadde ansvar for og én–to situasjoner du løste, og sett `published: true`.*
 
-Bybanens anlegg er ikke et vanlig bygg. Det er depot, verksted og teknisk anlegg som byens bybane er avhengig av, og det var her jeg begynte å jobbe med drift og FDV i 2017.
+Bybanens anlegg er ikke et vanlig bygg. Det er depot, verksted og teknisk anlegg som byens bybane er avhengig av, og det var her jeg begynte å jobbe med drift og FDVU i 2017.
 
 ## Hva rollen omfattet
 

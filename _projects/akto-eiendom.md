@@ -1,5 +1,5 @@
 ---
-title: Drift, vedlikehold og FDV-dokumentasjon på tvers av Aktos eiendommer
+title: Drift, vedlikehold og FDVU-dokumentasjon på tvers av Aktos eiendommer
 lang: nb
 date: 2025-10-01
 ref: akto-eiendom
@@ -7,7 +7,7 @@ role: FDVU-koordinator
 organisation: Akto Eiendom, Oslo
 period: 2020 – 2025
 published: false
-summary: Fem år som koordinator for drift, vedlikehold og FDV-dokumentasjon i en eiendomsportefølje – fra daglig oppfølging av leverandører til å få dokumentasjonen i en form folk faktisk kunne bruke.
+summary: Fem år som koordinator for drift, vedlikehold og FDVU-dokumentasjon i en eiendomsportefølje – fra daglig oppfølging av leverandører til å få dokumentasjonen i en form folk faktisk kunne bruke.
 stats:
   - value: "5"
     label: år som bindeledd mellom drift, vedlikehold og dokumentasjon
@@ -23,7 +23,7 @@ I Akto Eiendom var jeg bindeleddet mellom dem som drifter byggene, leverandøren
 ## Hva rollen omfattet
 
 - Koordinering av drift og vedlikehold på tvers av eiendommene: planlegging, oppfølging av leverandører og serviceavtaler, og håndtering av avvik.
-- FDV-dokumentasjon for porteføljen: innhenting, strukturering og kvalitetssikring av dokumentasjon fra prosjekter og leverandører, og vedlikehold av den gjennom endringer.
+- FDVU-dokumentasjon for porteføljen: innhenting, strukturering og kvalitetssikring av dokumentasjon fra prosjekter og leverandører, og vedlikehold av den gjennom endringer.
 - Rapportering og interne rutiner, slik at drift, økonomi og ledelse jobbet ut fra samme bilde.
 
 ## Hva som ble annerledes

@@ -5,14 +5,14 @@ ref: fdvu-savings
 date: 2026-10-28 00:20:00 +0100
 category: Work
 summary: Et bygg koster mest etter at det står ferdig. Med digital og
-  strukturert FDV-dokumentasjon blir driften billigere, vedlikeholdet bedre
+  strukturert FDVU-dokumentasjon blir driften billigere, vedlikeholdet bedre
   planlagt og beslutningene tryggere.
 ---
 Når vi snakker om hva et bygg koster, tenker de fleste på byggeprosjektet. Men regningen slutter ikke å komme når nøkkelen overleveres. I hele levetiden skal bygget driftes, vedlikeholdes, repareres og utvikles. Det er her FDVU-dokumentasjonen gjør jobben sin, og det er her digitalisering kan spare mest.
 
 ## Driften er der pengene går
 
-En veileder fra RIF og Norges Bygg- og Eiendomsforening viser at forvaltning, drift og vedlikehold utgjør **25–50 prosent av de totale kostnadene** gjennom et byggs levetid, avhengig av byggtype. Høyest er andelen for sykehus, lavest for boliger. For kontorbygg er selve driften rundt to tredjedeler av FDV-kostnadene, med renhold og energi som de største postene [1].
+En veileder fra RIF og Norges Bygg- og Eiendomsforening viser at forvaltning, drift og vedlikehold utgjør **25–50 prosent av de totale kostnadene** gjennom et byggs levetid, avhengig av byggtype. Høyest er andelen for sykehus, lavest for boliger. For kontorbygg er selve driften rundt to tredjedeler av FDVU-kostnadene, med renhold og energi som de største postene [1].
 
 Med andre ord: små forbedringer i hvordan bygg driftes, gir store utslag over tid.
 
@@ -39,7 +39,7 @@ Gevinsten kommer sjelden fra én stor endring. Den kommer fra mange små forbedr
 
 ## Gevinsten kommer ikke av seg selv
 
-Det er viktig å være ærlig: digitalisering alene sparer ingenting. Standard Norge skriver i en rapport om gevinstrealisering med BIM at litteraturen forventer de største gevinstene i FDV, men at det i dag finnes «svært lite bevis for dette» [7]. Mange bygg har digitale systemer, men dokumentasjonen i dem er mangelfull, utdatert eller organisert på hver sin måte.
+Det er viktig å være ærlig: digitalisering alene sparer ingenting. Standard Norge skriver i en rapport om gevinstrealisering med BIM at litteraturen forventer de største gevinstene i FDVU, men at det i dag finnes «svært lite bevis for dette» [7]. Mange bygg har digitale systemer, men dokumentasjonen i dem er mangelfull, utdatert eller organisert på hver sin måte.
 
 Derfor er struktur og kvalitet minst like viktig som verktøyet:
 

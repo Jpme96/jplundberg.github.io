@@ -154,7 +154,7 @@
     mount: $t('meetings'), feature: 'meetings', key: 'meetings', title: 'Meeting notes', icon: 'people', addLabel: 'New',
     addTitle: 'New meeting note', editTitle: 'Edit meeting note',
     fields: [
-      { k: 'title', type: 'title', label: 'Title', ph: 'Meeting, e.g. Status FDV handover', req: true },
+      { k: 'title', type: 'title', label: 'Title', ph: 'Meeting, e.g. Status FDVU handover', req: true },
       { k: 'date', label: 'Date', type: 'date', req: true, def: today },
       { k: 'who', label: 'With', ph: 'Who was there' },
       { k: 'notes', label: 'Notes', type: 'textarea', rows: 6 },
