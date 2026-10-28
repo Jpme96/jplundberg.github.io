@@ -674,6 +674,11 @@ select option { background: #17181b; }
 .acc .money.neg { color: #ef8a6a; }
 
 .foot i { color: var(--accent); }
+.foot { line-height: 1.9; }
+.sync-offline i { color: #c98500; }
+.sync-off i { color: var(--muted); }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

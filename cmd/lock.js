@@ -1,7 +1,10 @@
 /* Lock screen + encrypted vault for the dashboard.
    Your passcode never leaves this device and is never stored. It is turned into an
    AES-256 key (PBKDF2-SHA-256, 310 000 rounds) that encrypts the finance data in
-   this browser's storage. Without the passcode the data cannot be read. */
+   this browser's storage. Without the passcode the data cannot be read.
+   Sync: if the Cloudflare worker (/_cloudflare/worker.js) is set up, the same
+   encrypted blob is copied to Cloudflare so every device you log in on gets it.
+   Cloudflare only ever sees the encrypted version. */
 (function () {
   "use strict";
 
@@ -16,6 +19,10 @@
   var $ = function (id) { return document.getElementById(id); };
   var root = document.documentElement;
 
+  var API = '/cmd/api/vault';
+  var SYNC_KEY = 'dash.syncRev';
+  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes'];
+
   var key = null;          // CryptoKey while unlocked, null when locked
   var salt = null;
   var data = null;         // decrypted vault contents while unlocked
@@ -23,6 +30,13 @@
   var idleTimer = null;
   var hiddenAt = 0;
   var unlockFns = [];
+  var remote = null;       // newest vault found on the server (while locked)
+  var remoteRev = null;    // rev on the server, if known
+  var ignoreRemote = false;
+  var syncState = 'off';
+  var available = false;   // true once the sync worker has answered
+  var pushTimer = null;
+  var pushing = false;
   var lockFns = [];
 
   /* ---------- helpers ---------- */
@@ -49,11 +63,32 @@
       });
   }
 
-  function seal(obj, k, s) {
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(JSON.stringify(obj)))
-      .then(function (ct) { return { v: 1, iter: ITER, salt: b64(s), iv: b64(iv), ct: b64(ct) }; });
+  function widgets() {
+    var w = {};
+    WIDGET_KEYS.forEach(function (k) { var v = readJSON(k); if (v !== null) w[k] = v; });
+    return w;
   }
+
+  function seal(obj, k, s, rev) {
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var plain = Object.assign({}, obj, { _w: widgets() });
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(JSON.stringify(plain)))
+      .then(function (ct) { return { v: 1, rev: rev || 0, iter: ITER, salt: b64(s), iv: b64(iv), ct: b64(ct) }; });
+  }
+
+  /* Takes widgets (to-dos, notes …) out of a decrypted vault and puts them on screen. */
+  function unpack(obj) {
+    obj = obj || {};
+    if (obj._w) {
+      var w = obj._w;
+      delete obj._w;
+      Object.keys(w).forEach(function (k) { if (WIDGET_KEYS.indexOf(k) > -1) writeJSON(k, w[k]); });
+      if (window.Dash && window.Dash.reload) window.Dash.reload();
+    }
+    return obj;
+  }
+  function localRev() { var v = readJSON(VAULT_KEY); return v && v.rev || 0; }
+  function syncedRev() { var n = readJSON(SYNC_KEY); return typeof n === 'number' ? n : -1; }
 
   function open(vault, k) {
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(vault.iv) }, k, unb64(vault.ct))
@@ -72,7 +107,7 @@
     $('lockSub').textContent = setup
       ? 'Choose at least 6 characters. It encrypts your finances on this device.'
       : m === 'reset'
-        ? 'This erases your encrypted finance data on this device. Your to-dos, notes and links stay.'
+        ? 'This erases your encrypted finance data on this device and on your other devices. To-dos, notes and links stay on this device.'
         : 'Enter your passcode to open the dashboard.';
     $('lockForm').hidden = m === 'reset';
     $('lockConfirm').hidden = !setup;
@@ -119,15 +154,27 @@
     writeJSON(FAIL_KEY, f);
   }
 
-  function showLocked() {
+  function showLocked(note) {
     root.classList.add('locked');
     root.classList.remove('unlocked');
     $('lock').hidden = false;
+    remote = null;
     setMode(isVault(readJSON(VAULT_KEY)) ? 'unlock' : 'setup');
+    if (note) msg(note);
+    /* Look for a newer synced version (e.g. made on your phone) before unlocking. */
+    getRemote().then(function (v) {
+      if (!v || ignoreRemote || key) return;
+      var local = readJSON(VAULT_KEY);
+      if (!isVault(local) || (v.rev || 0) > (local.rev || 0)) {
+        remote = v;
+        if (mode === 'setup') { setMode('unlock'); msg('Found your synced dashboard. Enter your passcode.', true); }
+      }
+    });
   }
 
   function finishUnlock() {
     removeKey(FAIL_KEY);
+    ignoreRemote = false;
     $('lockPass').value = '';
     $('lockConfirm').value = '';
     $('lockPass').blur();
@@ -135,16 +182,21 @@
     root.classList.add('unlocked');
     $('lock').hidden = true;
     resetIdle();
+    emit();
+    sync();
+  }
+  function emit() {
     unlockFns.forEach(function (fn) { try { fn(data); } catch (e) { console.error(e); } });
   }
 
-  function lock() {
+  function lock(note) {
+    if (key && pushTimer) { clearTimeout(pushTimer); pushTimer = null; push(); }
     key = null;
     data = null;
     salt = null;
     clearTimeout(idleTimer);
     lockFns.forEach(function (fn) { try { fn(); } catch (e) {} });
-    showLocked();
+    showLocked(typeof note === 'string' ? note : '');
   }
 
   $('lockForm').addEventListener('submit', function (e) {
@@ -159,25 +211,32 @@
       busy(true);
       salt = crypto.getRandomValues(new Uint8Array(16));
       derive(pass, salt, ITER)
-        .then(function (k) { key = k; data = {}; return seal(data, key, salt); })
+        .then(function (k) {
+          key = k; data = {};
+          return seal(data, key, salt, remoteRev !== null ? remoteRev + 1 : 1);
+        })
         .then(function (v) {
           busy(false);
           if (!writeJSON(VAULT_KEY, v)) { msg('This browser blocks storage (private mode?).'); key = null; return; }
+          if (remoteRev !== null) writeJSON(SYNC_KEY, remoteRev);
           finishUnlock();
         })
         .catch(function () { busy(false); msg('This browser can’t encrypt. Try Safari or Chrome.'); });
       return;
     }
 
-    var vault = readJSON(VAULT_KEY);
+    var vault = remote || readJSON(VAULT_KEY);
     if (!isVault(vault)) { setMode('setup'); return; }
+    var fromRemote = vault === remote;
     if (!pass) { shake(); return; }
     busy(true);
     var s = unb64(vault.salt), k;
     derive(pass, s, vault.iter || ITER)
       .then(function (kk) { k = kk; return open(vault, k); })
       .then(function (obj) {
-        key = k; salt = s; data = obj || {};
+        key = k; salt = s;
+        if (fromRemote) { writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
+        data = unpack(obj);
         busy(false);
         finishUnlock();
       })
@@ -196,6 +255,8 @@
   $('lockDoReset').addEventListener('click', function () {
     removeKey(VAULT_KEY);
     removeKey(FAIL_KEY);
+    remote = null;
+    ignoreRemote = true;
     setMode('setup');
     msg('Erased. Create a new passcode.', true);
   });
@@ -209,7 +270,10 @@
     file.text().then(function (t) {
       var v = JSON.parse(t);
       if (!isVault(v)) throw new Error('bad');
+      v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
       writeJSON(VAULT_KEY, v);
+      remote = null;
+      ignoreRemote = true;
       setMode('unlock');
       msg('Backup loaded. Enter the passcode it was made with.', true);
     }).catch(function () { msg('That file isn’t a dashboard backup.'); shake(); });
@@ -226,8 +290,102 @@
   });
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { hiddenAt = Date.now(); return; }
-    if (key && hiddenAt && Date.now() - hiddenAt > AWAY_MS) lock();
+    if (key && hiddenAt && Date.now() - hiddenAt > AWAY_MS) { lock(); return; }
+    if (key) sync();
   });
+  setInterval(function () { if (key && !document.hidden) sync(); }, 2 * 60 * 1000);
+  window.addEventListener('online', function () { if (key) sync(); });
+  /* To-dos, notes, goals and links changed: include them in the encrypted vault. */
+  window.addEventListener('dash:local', function () { if (key) window.Vault.save(data); });
+
+  /* ---------- sync with Cloudflare ---------- */
+  function setSync(state) {
+    syncState = state;
+    var el = $('syncState');
+    if (!el) return;
+    var t = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    el.innerHTML = {
+      off: '<i class="bi bi-phone"></i> Saved on this device only',
+      busy: '<i class="bi bi-arrow-repeat spin"></i> Syncing…',
+      ok: '<i class="bi bi-cloud-check"></i> Synced across your devices · ' + t,
+      offline: '<i class="bi bi-cloud-slash"></i> Offline. Changes sync when you’re back online'
+    }[state];
+    el.className = 'sync sync-' + state;
+  }
+
+  /* Returns the server's vault, null if there is none, or undefined if sync isn't available. */
+  function getRemote() {
+    return fetch(API, { cache: 'no-store', credentials: 'same-origin', headers: { accept: 'application/json' } })
+      .then(function (r) {
+        var isJson = (r.headers.get('content-type') || '').indexOf('json') > -1;
+        if (!isJson) { available = false; setSync('off'); return undefined; }   // worker not set up
+        if (r.status === 404) { available = true; remoteRev = null; return null; }  // set up, but empty
+        if (!r.ok) { available = r.status !== 401 && available; setSync(r.status === 401 ? 'off' : 'offline'); return undefined; }
+        available = true;
+        return r.json().then(function (v) {
+          if (!isVault(v)) return undefined;
+          remoteRev = v.rev || 0;
+          return v;
+        });
+      })
+      .catch(function () { setSync(available ? 'offline' : 'off'); return undefined; });
+  }
+
+  /* Takes a newer version from another device. */
+  function adopt(v) {
+    var k = key;
+    return open(v, k).then(function (obj) {
+      if (key !== k) return;
+      salt = unb64(v.salt);
+      writeJSON(VAULT_KEY, v);
+      writeJSON(SYNC_KEY, v.rev || 0);
+      data = unpack(obj);
+      emit();
+      setSync('ok');
+    }, function () {
+      /* Encrypted with another passcode: it was changed on another device. */
+      lock('Your passcode was changed on another device. Use the new one.');
+    });
+  }
+
+  function sync() {
+    if (!key) return Promise.resolve();
+    setSync('busy');
+    return getRemote().then(function (v) {
+      if (v === undefined || !key) return;
+      var lr = localRev();
+      if (v && (v.rev || 0) > lr) return adopt(v);
+      if (!v || lr > (v.rev || 0) || syncedRev() !== (v.rev || 0)) return push();
+      writeJSON(SYNC_KEY, v.rev || 0);
+      setSync('ok');
+    });
+  }
+
+  function schedulePush() {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(function () { pushTimer = null; push(); }, 1500);
+  }
+
+  function push() {
+    if (pushing || !available) { if (!available) setSync('off'); return Promise.resolve(); }
+    pushing = true;
+    setSync('busy');
+    return writing.then(function () {
+      var raw = localStorage.getItem(VAULT_KEY);
+      var v = JSON.parse(raw);
+      var base = remoteRev !== null ? remoteRev : syncedRev();
+      return fetch(API, {
+        method: 'PUT', credentials: 'same-origin', cache: 'no-store',
+        headers: { 'content-type': 'application/json', 'X-Base-Rev': String(base) },
+        body: raw
+      }).then(function (r) {
+        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); return; }
+        if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
+        setSync(r.status === 401 ? 'off' : 'offline');
+      });
+    }).catch(function () { setSync('offline'); })
+      .then(function () { pushing = false; });
+  }
   /* Coming back with the back button must not show an unlocked page from the cache. */
   window.addEventListener('pageshow', function (e) { if (e.persisted && key) lock(); });
 
@@ -242,12 +400,13 @@
       if (!key) return Promise.reject(new Error('locked'));
       data = obj;
       var k = key, s = salt;
-      writing = writing.then(function () { return seal(obj, k, s); })
-        .then(function (v) { if (key === k) writeJSON(VAULT_KEY, v); })
+      writing = writing.then(function () { return seal(obj, k, s, localRev() + 1); })
+        .then(function (v) { if (key === k) { writeJSON(VAULT_KEY, v); schedulePush(); } })
         .catch(function (e) { console.error(e); });
       return writing;
     },
     lock: lock,
+    sync: sync,
     backup: function () {
       return writing.then(function () {
         var raw = localStorage.getItem(VAULT_KEY);
@@ -265,9 +424,10 @@
       var s = crypto.getRandomValues(new Uint8Array(16));
       return writing.then(function () { return derive(pass, s, ITER); })
         .then(function (k) {
-          return seal(data, k, s).then(function (v) {
+          return seal(data, k, s, localRev() + 1).then(function (v) {
             writeJSON(VAULT_KEY, v);
             key = k; salt = s;
+            return push();
           });
         });
     }

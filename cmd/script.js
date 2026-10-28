@@ -9,8 +9,15 @@
     try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
     catch (e) { return fallback; }
   }
+  /* Saving a widget also tells lock.js, which adds it to the encrypted, synced vault. */
+  var SYNCED = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes'];
   function save(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    try {
+      var s = JSON.stringify(value);
+      if (localStorage.getItem(key) === s) return;
+      localStorage.setItem(key, s);
+      if (SYNCED.indexOf(key) > -1) window.dispatchEvent(new Event('dash:local'));
+    } catch (e) {}
   }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function esc(s) {
@@ -347,4 +354,16 @@
     renderNotes();
   });
   renderNotes();
+
+  /* Called by lock.js when newer data arrives from another device. */
+  window.Dash = {
+    reload: function () {
+      goals = load('dash.goals', goals);
+      todos = load('dash.todos', todos);
+      links = load('dash.links', links);
+      notes = load('dash.notes', notes);
+      if (editingNote && notes.indexOf(editingNote) < 0) editingNote = null;
+      renderGoals(); renderTodos(); renderLinks(); renderNotes();
+    }
+  };
 })();
