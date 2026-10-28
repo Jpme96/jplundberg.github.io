@@ -124,8 +124,8 @@
   document.body.appendChild(bg);
   var file = document.createElement('input'); file.type = 'file'; file.accept = '.csv,.txt,text/csv,text/plain'; file.hidden = true; document.body.appendChild(file);
   var btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'text-btn im-btn'; btn.innerHTML = '<i class="bi bi-upload"></i><span> Import</span>';
-  btn.setAttribute('aria-label', 'Import from your bank (CSV)');
+  btn.type = 'button'; btn.className = 'icon-btn sm im-btn'; btn.innerHTML = '<i class="bi bi-upload"></i>';
+  btn.setAttribute('aria-label', 'Import from your bank (CSV)'); btn.title = 'Import from your bank (CSV)';
   card.querySelector('.card-head').appendChild(btn);
   var found = null;
 

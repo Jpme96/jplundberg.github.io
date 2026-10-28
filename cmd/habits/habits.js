@@ -115,8 +115,20 @@
         }
         weeks += '<div class="hp-week"><span class="hp-month">' + label + '</span>' + cells + '</div>';
       }
+      /* the last two weeks as big tappable days – the easy way to fill in on a phone */
+      var recent = '';
+      [addDays(thisMon, -7), thisMon].forEach(function (wm, wi) {
+        var cells = '';
+        for (var r = 0; r < 7; r++) {
+          var d = addDays(wm, r), k = dkey(d), on = done(h.id, k), fut = k > tk;
+          cells += '<button type="button" class="hp-day' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (fut ? ' future' : '') + '" data-h="' + h.id + '" data-d="' + k + '" aria-pressed="' + on + '"' + (fut ? ' disabled' : '') +
+            ' aria-label="' + esc(h.name) + ', ' + F_LONG.format(d) + (on ? ', done' : '') + '"><small>' + 'MTWTFSS'[r] + '</small><b>' + d.getDate() + '</b><i class="bi bi-check-lg"></i></button>';
+        }
+        recent += '<div class="hp-recent-row"><span class="hp-recent-lbl">' + (wi ? 'This week' : 'Last week') + '<b>' + countWeek(h.id, wm) + '<small>/' + h.target + '</small></b></span><div class="hp-recent-days">' + cells + '</div></div>';
+      });
       return '<section class="card hp-card"><div class="card-head"><h2><i class="bi bi-activity"></i> ' + esc(h.name) + '<small>' + h.target + '× per week</small></h2></div>' +
         '<div class="hp-stats">' + stats + '</div>' +
+        '<div class="hp-recent">' + recent + '</div>' +
         '<div class="hp-heat"><div class="hp-heat-inner"><div class="hp-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>' +
         '<div class="hp-weeks">' + weeks + '</div></div></div>' +
         '<div class="hp-sub"><span>Last 26 weeks</span><span class="key"><span><i class="sw" style="background:rgba(var(--ink-rgb),.08)"></i>Not done</span><span><i class="sw" style="background:var(--accent)"></i>Done</span></span></div>' +
@@ -126,7 +138,7 @@
 
   /* Tap a day to fill in or undo */
   $('hpHabits').addEventListener('click', function (e) {
-    var c = e.target.closest('.hp-cell');
+    var c = e.target.closest('.hp-cell, .hp-day');
     if (!c || c.disabled) return;
     var l = hb.log[c.dataset.d] || (hb.log[c.dataset.d] = []);
     var i = l.indexOf(c.dataset.h);

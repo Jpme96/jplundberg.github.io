@@ -1946,7 +1946,9 @@ body.qa-open { overflow: hidden; }
 
 /* ---------- Bank import ---------- */
 .im-btn { margin-left: 2px; flex-shrink: 0; }
-@media (max-width: 420px) { .im-btn span { display: none; } .im-btn { padding: 4px 6px; } .spending .month-nav span { min-width: 92px; } }
+@media (max-width: 420px) { .spending .month-nav span { min-width: 92px; } }
+.spending .card-head { flex-wrap: nowrap; }
+.spending .card-head h2 { flex-shrink: 0; }
 .im-box { max-width: 560px; }
 .im-h { font-size: 18px; margin: 0 0 8px; }
 .im-p { margin: 0 0 14px; line-height: 1.5; font-size: 14px; }
