@@ -1609,3 +1609,4 @@ input:disabled { opacity: .55; }
 .bill.sub .sub-ic { display: grid; place-items: center; color: var(--muted); border-style: dashed; }
 .bill.sub .sub-ic i { opacity: 1; font-size: 13px; }
 [data-tool] > .kit-card { scroll-margin-top: 16px; }
+.b-linked .del { color: var(--accent); opacity: .8; text-decoration: none; display: grid; place-items: center; }

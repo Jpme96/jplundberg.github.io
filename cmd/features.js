@@ -134,6 +134,19 @@
       var soon = addMonths(c.expires, -2);
       ev('learn2:' + c.id, 'Renew: ' + (c.title || 'certificate'), soon, 'Expires ' + c.expires, '/cmd/work/#learning');
     });
+    /* workouts and courses show in the calendar, in the Training and Study categories */
+    var SPORT = { strength: 'Strength', run: 'Running', walk: 'Walking', bike: 'Cycling', swim: 'Swimming', ball: 'Ball sports', yoga: 'Yoga / mobility', other: 'Workout' };
+    if (on('training')) list('training').forEach(function (w) {
+      if (!isKey(w.date)) return;
+      out.push({ id: 'tool:wo:' + w.id, title: (SPORT[w.kind] || 'Workout') + (w.min ? ' · ' + w.min + ' min' : '') + (w.km ? ' · ' + String(w.km).replace('.', ',') + ' km' : ''),
+        allDay: true, start: fromKey(w.date), days: 1, cat: 'training', readOnly: true, tool: 'Training log', link: '/cmd/habits/#training',
+        location: '', notes: w.notes || '', exDays: {} });
+    });
+    if (on('learning')) list('learning').forEach(function (c) {
+      if (!isKey(c.date)) return;
+      out.push({ id: 'tool:co:' + c.id, title: (c.title || 'Course') + (c.status === 'done' ? ' ✓' : ''), allDay: true, start: fromKey(c.date), days: 1,
+        cat: 'study', readOnly: true, tool: 'Courses & certificates', link: '/cmd/work/#learning', location: c.provider || '', notes: c.notes || '', exDays: {} });
+    });
     /* your birthday, from the profile */
     var me = readJSON('dash.profile') || {};
     if (isKey(me.birthday)) out.push({ id: 'rem:bday', title: 'Your birthday', allDay: true, start: fromKey(me.birthday), days: 1, color: '#d55181',

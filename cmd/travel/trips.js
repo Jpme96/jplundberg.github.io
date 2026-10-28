@@ -505,6 +505,10 @@
   /* ---------- money: trip -> Finances ---------- */
   function renderMoney(tr) {
     var costs = sortItems(tr.items || []).filter(function (it) { return num(it.cost); });
+    /* deleted in Finances? then it's not in Finances any more */
+    var vd = window.Vault.get(), ids = {};
+    ((vd && vd.expenses) || []).forEach(function (x) { ids[x.id] = 1; });
+    costs.forEach(function (it) { if (it.spendId && vd && !ids[it.spendId]) { delete it.spendId; it.noFin = true; } });
     var total = planned(tr), budget = num(tr.budget), logged = costs.filter(function (it) { return it.spendId; });
     var pct = budget ? Math.min(100, Math.round(total / budget * 100)) : 0;
     var html = '<div class="tp-total"><div><span class="muted">Booked so far</span><b>' + esc(kr(total)) + '</b></div>' +
@@ -517,13 +521,14 @@
       html += '<ul class="tp-costs">' + costs.map(function (it) {
         var Ty = T[it.type] || T.other;
         return '<li><i class="bi bi-' + Ty.icon + '"></i><span class="n">' + esc(it.title || Ty.name) + '</span><span class="a">' + esc(kr(num(it.cost))) + '</span>' +
-          (it.spendId ? '<button type="button" class="text-btn tp-logged" data-unlog="' + esc(it.id) + '" title="Remove from Finances"><i class="bi bi-check2"></i> In Finances</button>'
+          (it.spendId ? '<button type="button" class="text-btn tp-logged" data-unlog="' + esc(it.id) + '" title="Keep this cost out of Finances"><i class="bi bi-link-45deg"></i> In Finances</button>'
             : '<button type="button" class="text-btn" data-log="' + esc(it.id) + '">Add to Finances</button>') + '</li>';
       }).join('') + '</ul>';
       var open = costs.length - logged.length;
       html += '<div class="tp-money-acts">' + (open > 1 ? '<button type="button" class="text-btn" data-logall><i class="bi bi-box-arrow-in-right"></i> Add all ' + open + ' to Finances</button>' : '') +
         (logged.length ? '<a class="text-btn" href="../finance/"><i class="bi bi-wallet2"></i> See in Finances</a>' : '') + '</div>';
-    } else html += '<p class="muted tp-hint">Put a cost on a booking and it adds up here. One tap sends it to your spending in Finances (category Travel).</p>';
+      html += '<p class="muted tp-hint">Costs go to your spending in Finances (category Travel) automatically, and follow when you change them. Tap “In Finances” to keep one out.</p>';
+    } else html += '<p class="muted tp-hint">Put a cost on a booking and it adds up here – and goes to your spending in Finances (category Travel) automatically.</p>';
     $('tpMoney').innerHTML = html;
   }
   $('tpMoney').addEventListener('click', function (e) {
@@ -533,8 +538,9 @@
       (tr.items || []).forEach(function (it) {
         if (!num(it.cost)) return;
         if ((b.dataset.log === it.id || b.hasAttribute('data-logall')) && !it.spendId) {
+          delete it.noFin;
           it.spendId = F.logSpend({ amount: num(it.cost), date: today(), cat: 'travel', note: tr.name + ': ' + (it.title || (T[it.type] || T.other).name) }) || undefined;
-        } else if (b.dataset.unlog === it.id && it.spendId) { F.unlogSpend(it.spendId); delete it.spendId; }
+        } else if (b.dataset.unlog === it.id && it.spendId) { F.unlogSpend(it.spendId); delete it.spendId; it.noFin = true; }
       });
     });
   });
@@ -673,6 +679,7 @@
   $('tsDelete').addEventListener('click', function () {
     if (!delArmed) { delArmed = true; this.innerHTML = '<i class="bi bi-trash3"></i> Tap again to delete the whole trip'; return; }
     var t = all();
+    (find(t, editingTrip) || { items: [] }).items.forEach(function (it) { if (it.spendId) F.unlogSpend(it.spendId); });   // its costs leave Finances too
     t.trips = t.trips.filter(function (x) { return x.id !== editingTrip; });
     F.saveTravel(t);
     closeSheet($('tsBg'));
@@ -738,12 +745,13 @@
         from: $('tiFrom').value.trim().slice(0, 120), to: $('tiTo').hidden ? '' : $('tiTo').value.trim().slice(0, 120),
         ref: $('tiRef').value.trim().slice(0, 40), cost: cost ? String(cost) : '', notes: $('tiNotes').value.trim().slice(0, 1000)
       });
-      /* a cost already in Finances follows the change */
-      if (it.spendId && window.Vault.get()) {
-        var d = window.Vault.get(), ex = (d.expenses || []).filter(function (x) { return x.id === it.spendId; })[0];
-        if (ex && cost) { ex.amount = cost; window.Vault.save(d); }
-        else if (ex && !cost) { F.unlogSpend(it.spendId); delete it.spendId; }
-      }
+      /* Finances follows automatically: a cost goes in as spending (Travel), changes follow,
+         removing the cost takes it out. "Keep out of Finances" on the Money tab stops it. */
+      var note = tr.name + ': ' + (it.title || (T[it.type] || T.other).name);
+      var d = window.Vault.get(), ex = it.spendId && d ? (d.expenses || []).filter(function (x) { return x.id === it.spendId; })[0] : null;
+      if (ex && cost) { ex.amount = cost; ex.note = note.slice(0, 80); window.Vault.save(d); }
+      else if (ex && !cost) { F.unlogSpend(it.spendId); delete it.spendId; }
+      else if (!ex && cost && !it.noFin) it.spendId = F.logSpend({ amount: cost, date: today(), cat: 'travel', note: note }) || undefined;
       /* a trip grows to fit what's planned */
       if (date < tr.start) tr.start = date;
       var last = it.endDate || date;

@@ -462,7 +462,15 @@
     var Fe = window.Features;
     if ((opts.all || !d.hidden.travel) && (!Fe || Fe.on('travel'))) travelEvents().forEach(add);
     /* reminders from the tools in Settings → Features (renewals, warranties, certificates) */
-    if (Fe && (opts.all || !d.hidden.reminders)) Fe.events().forEach(add);
+    /* from your tools: workouts and courses go in their category, the rest under Reminders */
+    if (Fe) Fe.events().forEach(function (ev) {
+      if (ev.cat) {
+        var cid = catOf(ev.cat);
+        if (!opts.all && d.hidden[cid]) return;
+        ev.color = CATS[cid].color;
+      } else if (!opts.all && d.hidden.reminders) return;
+      add(ev);
+    });
     /* Norwegian public holidays */
     var p = prefs(d);
     if (Fe && p.holidays && (opts.all || !d.hidden.holidays)) {
@@ -476,6 +484,7 @@
       if (o.ev.own) return !ch[o.ev.cat];
       if (o.ev.src) return !ch['feed:' + o.ev.feedId];
       if (o.ev.holiday) return !ch.holidays;
+      if (o.ev.tool) return !ch[catOf(o.ev.cat)];
       if (o.ev.reminder) return !ch.reminders;
       return !ch.travel;
     });

@@ -406,6 +406,8 @@
     NOW = ym(new Date());
     requestAnimationFrame(render);
   });
+  /* the budget changed elsewhere (e.g. a subscription) */
+  window.addEventListener('fin:change', function () { if (D) { D = window.Vault.get() || D; render(); } });
   window.Vault.onLock(function () {
     D = null;
     hideTip();

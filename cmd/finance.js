@@ -112,6 +112,8 @@
 
   function budgetEditor(kind, title, ph) {
     var rows = D.budget[kind].map(function (r) {
+      if (r.src === 'sub') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
+        '<a class="del" href="finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
       return '<li class="b-row"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
@@ -437,8 +439,9 @@
       return;
     }
     var rows = dated.map(function (f) {
-      var day = Math.min(f.day, dim), isPaid = paid.indexOf(f.id) > -1;
-      return { f: f, day: day, paid: isPaid, diff: day - today };
+      var day = Math.min(f.day, dim), auto = f.src === 'sub' && day <= today;      // subscriptions are charged automatically
+      var isPaid = paid.indexOf(f.id) > -1 || auto;
+      return { f: f, day: day, paid: isPaid, auto: auto, diff: day - today };
     }).sort(function (a, b) { return (a.paid - b.paid) || (a.day - b.day); });
     var open = rows.filter(function (r) { return !r.paid; });
     var mon = now.toLocaleDateString('en-GB', { month: 'long' });
@@ -453,7 +456,9 @@
     }
     box.innerHTML = '<p class="bill-sum">' + sum + '</p><ul>' + rows.map(function (r) {
       var date = new Date(now.getFullYear(), now.getMonth(), r.day).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-      var when = r.paid ? 'Paid · due ' + date
+      var when = r.auto ? 'Renewed automatically · ' + date
+        : r.f.src === 'sub' && !r.paid ? (r.diff === 0 ? '<span class="soon">Renews today</span>' : 'Renews ' + date + ' · in ' + r.diff + ' day' + (r.diff === 1 ? '' : 's'))
+        : r.paid ? 'Paid · due ' + date
         : r.diff < 0 ? '<span class="late">Overdue by ' + (-r.diff) + ' day' + (r.diff === -1 ? '' : 's') + '</span> · ' + date
         : r.diff === 0 ? '<span class="soon">Due today</span>'
         : r.diff <= 3 ? '<span class="soon">Due in ' + r.diff + ' day' + (r.diff === 1 ? '' : 's') + '</span> · ' + date
@@ -471,12 +476,12 @@
     var Fe = window.Features, box = $('billsBody');
     if (!Fe || !Fe.on('subs') || billsEditing) return;
     var today = Fe.dkey(new Date()), until = Fe.addMonths(today, 1);
-    var up = Fe.list('subs').filter(function (s) { return !s.paused && s.renews; })
+    var up = Fe.list('subs').filter(function (s) { return !s.paused && s.renews && (s.period || 'monthly') !== 'monthly'; })   // monthly ones are bills above
       .map(function (s) { return { s: s, k: Fe.nextRenewal(s) }; }).filter(function (x) { return x.k && x.k <= until; })
       .sort(function (a, b) { return a.k > b.k ? 1 : -1; });
     if (!up.length) return;
     var total = up.reduce(function (a, x) { return a + (+x.s.amount || 0); }, 0);
-    var html = '<p class="bill-sum bill-subs"><i class="bi bi-arrow-repeat"></i> Subscriptions next 30 days · ' + money(total) + ' <a href="finance/#subs">See all</a></p><ul>' +
+    var html = '<p class="bill-sum bill-subs"><i class="bi bi-arrow-repeat"></i> Yearly subscriptions next 30 days · ' + money(total) + ' <a href="finance/#subs">See all</a></p><ul>' +
       up.slice(0, 4).map(function (x) {
         var d = Fe.fromKey(x.k), diff = Math.round((d - Fe.fromKey(today)) / 864e5);
         return '<li class="bill sub"><span class="check sub-ic"><i class="bi bi-arrow-repeat"></i></span><span class="bill-text"><strong>' + esc(x.s.name) + '</strong><span>' +
@@ -486,6 +491,7 @@
     box.insertAdjacentHTML('beforeend', html);
   };
   window.addEventListener('tools:change', function () { if (D) renderBills(); });
+  window.addEventListener('fin:change', function () { if (D) { D = window.Vault.get() || D; renderAll(); } });
   window.addEventListener('features:change', function () { if (D) renderBills(); });
   $('billsEdit').addEventListener('click', function () { billsEditing = !billsEditing; renderBills(); });
   $('billsBody').addEventListener('change', function (e) {
