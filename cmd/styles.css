@@ -2016,3 +2016,4 @@ input::-webkit-date-and-time-value { text-align: left; }
 .sec-title, .sec-title i { font-size: 20px; }
 .card-head { gap: 8px; }
 .card-head .head-actions, .card-head .month-nav { flex-shrink: 0; }
+.im-sign { margin: -4px 0 12px; font-size: 13px; }
