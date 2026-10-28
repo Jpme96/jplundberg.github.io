@@ -41,11 +41,35 @@
   try { period = localStorage.getItem('dash.finPeriod') || 'month'; } catch (e) {}
   var NOW = ym(new Date());
 
+  /* Periods: this month, 3 or 12 months, this year, any earlier year ("y:2024") or all years */
+  function firstMonth() {
+    var first = NOW;
+    (D && D.expenses || []).forEach(function (e) { var m = String(e.date).slice(0, 7); if (/^\d{4}-\d{2}$/.test(m) && m < first) first = m; });
+    return first;
+  }
   function monthsOf(p) {
+    var out = [], i;
+    if (/^y:\d{4}$/.test(p)) {
+      var y = p.slice(2);
+      for (i = 1; i <= 12; i++) { var k = y + '-' + pad(i); if (k <= NOW) out.push(k); }
+      return out.length ? out : [y + '-01'];
+    }
+    if (p === 'all') {
+      var start = firstMonth(), k2 = shift(NOW, -11) < start ? shift(NOW, -11) : start;
+      for (; k2 <= NOW; k2 = shift(k2, 1)) out.push(k2);
+      return out;
+    }
     var n = p === 'month' ? 1 : p === '3m' ? 3 : p === '12m' ? 12 : new Date().getMonth() + 1;
-    var out = [];
-    for (var i = n - 1; i >= 0; i--) out.push(shift(NOW, -i));
+    for (i = n - 1; i >= 0; i--) out.push(shift(NOW, -i));
     return out;
+  }
+  function periodName(months) {
+    return period === 'month' ? mName(NOW, true) : /^y:/.test(period) ? period.slice(2) : period === 'all' ? 'All years' : months.length + ' months';
+  }
+  function years() {
+    var ys = {}; ys[NOW.slice(0, 4)] = 1;
+    (D && D.expenses || []).forEach(function (e) { var y = String(e.date).slice(0, 4); if (/^\d{4}$/.test(y)) ys[y] = 1; });
+    return Object.keys(ys).sort().reverse();
   }
   function inMonths(list, months) {
     return list.filter(function (e) { return months.indexOf(e.date.slice(0, 7)) > -1; });
@@ -76,13 +100,15 @@
   try { setHidden(localStorage.getItem('dash.finHide') === '1'); } catch (e) { setHidden(false); }
 
   /* ---------- period filter ---------- */
+  function setPeriod(p) {
+    period = p;
+    try { localStorage.setItem('dash.finPeriod', period); } catch (e) {}
+    render();
+  }
   document.querySelectorAll('[data-period]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      period = b.dataset.period;
-      try { localStorage.setItem('dash.finPeriod', period); } catch (e) {}
-      render();
-    });
+    b.addEventListener('click', function () { setPeriod(b.dataset.period); });
   });
+  $('fpYear').addEventListener('change', function () { if (this.value) setPeriod(this.value); });
 
   /* ================= render ================= */
   function render() {
@@ -90,6 +116,11 @@
     document.querySelectorAll('[data-period]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.period === period));
     });
+    var ys = years();
+    $('fpYear').innerHTML = '<option value="">Year…</option>' + ys.map(function (y) {
+      return '<option value="y:' + y + '"' + (period === 'y:' + y ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+    $('fpYear').classList.toggle('on', /^y:/.test(period));
     var months = monthsOf(period);
     var prevMonths = months.map(function (m) { return shift(m, -months.length); });
     var ex = D.expenses || [];
@@ -123,7 +154,7 @@
     var T = [
       { i: 'wallet2', l: 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
         s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day for the rest of ' + esc(mName(NOW)) : 'Over budget') : 'Set up your budget on the dashboard' },
-      { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + months.length + ' months', v: money(spentP),
+      { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years'), v: money(spentP),
         s: months.length > 1 ? money(avg) + ' per month on average' : (spendable > 0 ? Math.round(spentNow / spendable * 100) + ' % of what you can spend' : '') },
       { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %',
         s: rate === null ? 'Needs your income' : 'of income left after fixed costs and spending' },
@@ -139,14 +170,23 @@
   /* Spending per month: stacked bars by category, budget as a dashed reference line */
   function monthly(months, ex, spendable) {
     var el = $('fpMonths');
+    var byYear = months.length > 24;              /* many years: one bar per year */
+    $('fpMonthsTitle').innerHTML = '<i class="bi bi-bar-chart"></i> Spending per ' + (byYear ? 'year' : 'month');
+    if (byYear) {
+      var ys = {};
+      months.forEach(function (m) { ys[m.slice(0, 4)] = 1; });
+      months = Object.keys(ys).sort();
+      spendable = 0;
+    }
+    var label = function (k, long) { return byYear ? k : mName(k, long); };
     var rows = months.map(function (m) {
-      var list = inMonths(ex, [m]);
+      var list = byYear ? ex.filter(function (e) { return String(e.date).slice(0, 4) === m; }) : inMonths(ex, [m]);
       var by = {};
       CATS.forEach(function (c) { by[c.id] = sum(list.filter(function (e) { return (catById[e.cat] ? e.cat : 'other') === c.id; })); });
       return { m: m, by: by, total: sum(list) };
     });
     var used = CATS.filter(function (c) { return rows.some(function (r) { return r.by[c.id] > 0; }); });
-    $('fpMonthsNote').textContent = mName(months[0]) + ' – ' + mName(months[months.length - 1]);
+    $('fpMonthsNote').textContent = label(months[0]) + ' – ' + label(months[months.length - 1]);
     $('fpMonthsLegend').innerHTML = used.length > 1 ? used.map(function (c) { return '<span>' + dot(c.color) + esc(c.name) + '</span>'; }).join('') +
       (spendable > 0 ? '<span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" class="ref" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1.5"/></svg>Budget</span>' : '') : '';
 
@@ -185,17 +225,17 @@
         acc += r.by[c.id];
       });
       if ((i % every === 0 && (rows.length - 1 - i >= every || i === rows.length - 1)) || i === rows.length - 1) {
-        labels += '<text x="' + (x + barW / 2) + '" y="' + (H - 6) + '" text-anchor="middle"' + (r.m === NOW ? ' class="cur-lbl"' : '') + '>' + esc(mName(r.m)) + '</text>';
+        labels += '<text x="' + (x + barW / 2) + '" y="' + (H - 6) + '" text-anchor="middle"' + (r.m === NOW || r.m === NOW.slice(0, 4) ? ' class="cur-lbl"' : '') + '>' + esc(label(r.m)) + '</text>';
       }
       hits += '<rect class="hit" data-i="' + i + '" x="' + (P.l + i * bw) + '" y="' + P.t + '" width="' + bw + '" height="' + (H - P.t - P.b) + '"></rect>';
     });
     var ref = spendable > 0 ? '<line class="ref" x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + y(spendable) + '" y2="' + y(spendable) + '"></line>' : '';
-    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Spending per month, ' + esc(mName(months[0], true)) + ' to ' +
-      esc(mName(months[months.length - 1], true)) + '. Table below.">' + g + bars + ref + '<g class="axis">' + labels + '</g>' + hits + '</svg>';
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Spending per ' + (byYear ? 'year' : 'month') + ', ' + esc(label(months[0], true)) + ' to ' +
+      esc(label(months[months.length - 1], true)) + '. Table below.">' + g + bars + ref + '<g class="axis">' + labels + '</g>' + hits + '</svg>';
 
     el.querySelectorAll('.hit').forEach(function (h) {
       var r = rows[+h.dataset.i];
-      var html = '<b>' + esc(mName(r.m, true)) + '</b>' + used.filter(function (c) { return r.by[c.id] > 0; }).reverse().map(function (c) {
+      var html = '<b>' + esc(label(r.m, true)) + '</b>' + used.filter(function (c) { return r.by[c.id] > 0; }).reverse().map(function (c) {
         return '<div class="row"><span>' + dot(c.color) + esc(c.name) + '</span><span>' + esc(kr(r.by[c.id])) + '</span></div>';
       }).join('') + '<div class="row"><span>Total</span><b>' + esc(kr(r.total)) + '</b></div>' +
         (spendable > 0 ? '<div class="row muted"><span>Budget</span><span>' + esc(kr(spendable)) + '</span></div>' : '');
@@ -207,9 +247,9 @@
       h.addEventListener('pointerleave', function () { el.classList.remove('dim'); hideTip(); });
     });
 
-    $('fpMonthsTable').innerHTML = '<table><thead><tr><th>Month</th>' + used.map(function (c) { return '<th>' + esc(c.name) + '</th>'; }).join('') +
+    $('fpMonthsTable').innerHTML = '<table><thead><tr><th>' + (byYear ? 'Year' : 'Month') + '</th>' + used.map(function (c) { return '<th>' + esc(c.name) + '</th>'; }).join('') +
       '<th>Total</th></tr></thead><tbody>' + rows.map(function (r) {
-        return '<tr><td>' + esc(mName(r.m, true)) + '</td>' + used.map(function (c) { return '<td>' + money(r.by[c.id]) + '</td>'; }).join('') +
+        return '<tr><td>' + esc(label(r.m, true)) + '</td>' + used.map(function (c) { return '<td>' + money(r.by[c.id]) + '</td>'; }).join('') +
           '<td>' + money(r.total) + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
@@ -285,7 +325,8 @@
       var f = function (e) { return (catById[e.cat] ? e.cat : 'other') === c.id; };
       return { c: c, v: sum(cur.filter(f)), p: sum(prev.filter(f)) };
     }).filter(function (r) { return r.v > 0; }).sort(function (a, b) { return b.v - a.v; });
-    $('fpCatNote').textContent = months.length > 1 ? 'vs previous ' + months.length + ' months' : 'vs ' + mName(prevMonths[0]);
+    $('fpCatNote').textContent = period === 'all' ? 'all years' : /^y:/.test(period) ? 'vs ' + (+period.slice(2) - 1)
+      : months.length > 1 ? 'vs previous ' + months.length + ' months' : 'vs ' + mName(prevMonths[0]);
     if (!rows.length) { $('fpCats').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
     var max = rows[0].v;
     $('fpCats').innerHTML = rows.map(function (r) {
@@ -309,7 +350,9 @@
     var assets = sum(accs.filter(function (a) { return a.kind !== 'debt'; }), function (a) { return a.balance; });
     var debts = sum(accs.filter(function (a) { return a.kind === 'debt'; }), function (a) { return a.balance; });
     $('fpNetSub').innerHTML = accs.length ? 'Assets ' + money(assets) + ' · Debt ' + money(debts) : 'Add accounts and loans on the dashboard.';
-    var hist = D.history || {}, keys = Object.keys(hist).sort().slice(-12);
+    var hist = D.history || {}, keys = Object.keys(hist).sort();
+    if (period !== 'all') keys = /^y:/.test(period) ? keys.filter(function (k) { return k.slice(0, 4) === period.slice(2); }) : keys.slice(-12);
+    var long = keys.length > 12;
     var el = $('fpNetChart');
     if (keys.length < 2) { el.innerHTML = accs.length ? '<p class="fp-empty">The chart appears once you have two months of history.</p>' : ''; }
     else {
@@ -325,7 +368,7 @@
       g += '</g>';
       var pts = vals.map(function (v, i) { return x(i).toFixed(1) + ',' + y(v).toFixed(1); });
       var every = Math.ceil(keys.length / 6);
-      var lbl = keys.map(function (k, i) { var lastI = keys.length - 1; return (i % every || (i !== lastI && lastI - i < every)) && i !== lastI ? '' : '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? 'start' : i === keys.length - 1 ? 'end' : 'middle') + '">' + esc(mName(k)) + '</text>'; }).join('');
+      var lbl = keys.map(function (k, i) { var lastI = keys.length - 1; return (i % every || (i !== lastI && lastI - i < every)) && i !== lastI ? '' : '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? 'start' : i === keys.length - 1 ? 'end' : 'middle') + '">' + esc(long ? mName(k) + ' ' + k.slice(2, 4) : mName(k)) + '</text>'; }).join('');
       var hits = keys.map(function (k, i) {
         var w = (W - P.l - P.r) / (keys.length - 1);
         return '<rect class="hit" data-i="' + i + '" x="' + (x(i) - w / 2) + '" y="' + P.t + '" width="' + w + '" height="' + (H - P.t - P.b) + '"></rect>';
@@ -366,7 +409,7 @@
   /* Biggest expenses */
   function top(months, ex) {
     var list = inMonths(ex, months).slice().sort(function (a, b) { return b.amount - a.amount; }).slice(0, 8);
-    $('fpTopNote').textContent = period === 'month' ? mName(NOW, true) : months.length + ' months';
+    $('fpTopNote').textContent = periodName(months);
     if (!list.length) { $('fpTop').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
     $('fpTop').innerHTML = list.map(function (e) {
       var c = catById[e.cat] || catById.other;

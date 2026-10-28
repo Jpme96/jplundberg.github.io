@@ -17,13 +17,13 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
+    ['brief', 'At a glance'], ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
     ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
     ['bills', 'Upcoming bills'], ['fin', 'Finances']
   ];
   /* Cards can be moved within their section; finances keep their own layout */
   var GROUPS = [
-    { id: 'today', name: 'Today', cards: ['weather', 'calendar', 'transit', 'habits', 'flex'], move: true },
+    { id: 'today', name: 'Today', cards: ['brief', 'weather', 'calendar', 'transit', 'habits', 'flex'], move: true },
     { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true },
     { id: 'money', name: 'Finances', cards: ['fin', 'bills'] }
   ];

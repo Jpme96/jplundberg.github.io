@@ -52,7 +52,7 @@
     if (n <= 0) return 'Travelling now · day ' + (1 - n) + ' of ' + len;
     return (n === 1 ? 'Tomorrow' : 'In ' + n + ' days') + ' · ' + len + ' day' + (len > 1 ? 's' : '');
   }
-  function planned(tr) { return (tr.items || []).reduce(function (a, it) { return a + (num(it.cost) || 0); }, 0); }
+  function planned(tr) { return (tr.items || []).reduce(function (a, it) { return a + (num(it.cost) || 0); }, 0) + (num(tr.spent) || 0); }
   function abroad(tr) { return tr.place ? W.abroad(tr.place.cc) : false; }
 
   /* ================= travel documents ================= */
@@ -517,13 +517,14 @@
       '<p class="muted tp-left">' + (total > budget ? esc(kr(total - budget)) + ' over budget' : esc(kr(budget - total)) + ' left to spend') +
       (budget > total && tripDays(tr).length ? ' · about ' + esc(kr((budget - total) / tripDays(tr).length)) + ' a day' : '') + '</p>';
     else html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip>Set a budget</button> to see what’s left per day.</p>';
-    if (costs.length) {
+    if (costs.length || num(tr.spent)) {
       html += '<ul class="tp-costs">' + costs.map(function (it) {
         var Ty = T[it.type] || T.other;
         return '<li><i class="bi bi-' + Ty.icon + '"></i><span class="n">' + esc(it.title || Ty.name) + '</span><span class="a">' + esc(kr(num(it.cost))) + '</span>' +
           (it.spendId ? '<button type="button" class="text-btn tp-logged" data-unlog="' + esc(it.id) + '" title="Keep this cost out of Finances"><i class="bi bi-link-45deg"></i> In Finances</button>'
             : '<button type="button" class="text-btn" data-log="' + esc(it.id) + '">Add to Finances</button>') + '</li>';
-      }).join('') + '</ul>';
+      }).join('') + (num(tr.spent) ? '<li><i class="bi bi-bag"></i><span class="n">Other costs</span><span class="a">' + esc(kr(num(tr.spent))) + '</span>' +
+        '<span class="text-btn tp-logged"><i class="bi bi-link-45deg"></i> In Finances</span></li>' : '') + '</ul>';
       var open = costs.length - logged.length;
       html += '<div class="tp-money-acts">' + (open > 1 ? '<button type="button" class="text-btn" data-logall><i class="bi bi-box-arrow-in-right"></i> Add all ' + open + ' to Finances</button>' : '') +
         (logged.length ? '<a class="text-btn" href="../finance/"><i class="bi bi-wallet2"></i> See in Finances</a>' : '') + '</div>';
@@ -646,12 +647,20 @@
     $('tsStart').value = tr ? tr.start : start;
     $('tsEnd').value = tr ? (tr.end || tr.start) : F.dkey(C.addDays(C.fromKey(start), 3));
     $('tsBudget').value = tr && tr.budget ? tr.budget : '';
+    $('tsSpent').value = tr && tr.spent ? tr.spent : '';
     $('tsDelBox').hidden = !tr;
     $('tsDelete').innerHTML = '<i class="bi bi-trash3"></i> Delete trip';
     openSheet($('tsBg'));
     if (!tr && innerWidth >= 700) setTimeout(function () { $('tsName').focus(); }, 60);
   }
   $('tpNew').addEventListener('click', function () { openTripEditor(null); });
+  /* History tab: log a trip you've already been on */
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-newpast]')) return;
+    openTripEditor(null);
+    $('tsStart').value = ''; $('tsEnd').value = '';
+    setTimeout(function () { $('tsName').focus(); }, 60);
+  });
   /* "Cheap flights": Google Flights Explore from your city (Profile → City, else Oslo) */
   $('tpExplore').addEventListener('click', function () { this.href = W.exploreLink(); });
   $('tpHead').addEventListener('click', function (e) { if (e.target.closest('#tpEdit')) openTripEditor(current()); });
@@ -668,6 +677,8 @@
     else if (dest !== tr.dest) delete tr.place;          // looked up again when the trip opens
     if (!dest) delete tr.place;
     tr.name = name.slice(0, 80); tr.dest = dest; tr.start = start; tr.end = end;
+    var sp = num($('tsSpent').value);
+    if (sp) tr.spent = sp; else delete tr.spent;      // goes to Finances (links.js)
     var b = num($('tsBudget').value);
     if (b) tr.budget = b; else delete tr.budget;
     var cd = C.load();
@@ -679,7 +690,9 @@
   $('tsDelete').addEventListener('click', function () {
     if (!delArmed) { delArmed = true; this.innerHTML = '<i class="bi bi-trash3"></i> Tap again to delete the whole trip'; return; }
     var t = all();
-    (find(t, editingTrip) || { items: [] }).items.forEach(function (it) { if (it.spendId) F.unlogSpend(it.spendId); });   // its costs leave Finances too
+    var gone = find(t, editingTrip) || { items: [] };
+    (gone.items || []).forEach(function (it) { if (it.spendId) F.unlogSpend(it.spendId); });   // its costs leave Finances too
+    if (gone.spentId) F.unlogSpend(gone.spentId);
     t.trips = t.trips.filter(function (x) { return x.id !== editingTrip; });
     F.saveTravel(t);
     closeSheet($('tsBg'));

@@ -49,7 +49,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=35" rel="stylesheet">
+  <link href="styles.css?v=36" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -98,6 +98,11 @@
     <section class="dash-sec" data-sec="today" aria-labelledby="secToday">
       <div class="sec-head"><h2 class="sec-title" id="secToday"><i class="bi bi-sun"></i> Today</h2></div>
       <div class="grid">
+      <!-- Today at a glance: the important things from every part of the dashboard -->
+      <section class="card brief" id="briefCard">
+        <div class="card-head"><h2><i class="bi bi-stars"></i> At a glance</h2></div>
+        <ul class="br-list" id="briefList"></ul>
+      </section>
       <!-- Weather -->
       <section class="card weather" id="weatherCard">
         <div class="card-head"><h2><i class="bi bi-cloud-sun"></i> Oslo</h2><span class="muted" id="weatherUpdated"></span></div>
@@ -537,7 +542,7 @@
 
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=4"></script>
-  <script src="settings.js?v=15"></script>
+  <script src="settings.js?v=16"></script>
   <script src="website.js?v=3"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
@@ -549,10 +554,12 @@
   <script src="calendar/cal-settings.js?v=1"></script>
   <script src="cal-card.js?v=2"></script>
   <script src="upnext.js?v=2"></script>
+  <script src="brief.js?v=1"></script>
   <script src="kit.js?v=2"></script>
   <script src="tools.js?v=3"></script>
   <script src="profile.js?v=7"></script>
-  <script src="links.js?v=1"></script>
+  <script src="links.js?v=2"></script>
+  <script src="search.js?v=1"></script>
   <script src="app.js?v=2"></script>
   <script src="nav.js?v=7"></script>
 </body>

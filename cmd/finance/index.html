@@ -49,8 +49,8 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=35" rel="stylesheet">
-  <link href="fin.css?v=3" rel="stylesheet">
+  <link href="../styles.css?v=36" rel="stylesheet">
+  <link href="fin.css?v=4" rel="stylesheet">
   <link href="../calendar/cal.css?v=3" rel="stylesheet">
 </head>
 <body>
@@ -99,14 +99,16 @@
         <button type="button" data-period="3m">3 months</button>
         <button type="button" data-period="12m">12 months</button>
         <button type="button" data-period="ytd">This year</button>
+        <button type="button" data-period="all">All years</button>
       </div>
+      <select class="fp-year" id="fpYear" aria-label="Show one year"></select>
       <button class="text-btn" id="fpExport" type="button"><i class="bi bi-filetype-csv"></i> Export</button>
     </div>
 
     <section class="fp-tiles" id="fpTiles" aria-label="Key numbers"></section>
 
     <section class="card fp-card fp-wide">
-      <div class="card-head"><h2><i class="bi bi-bar-chart"></i> Spending per month</h2><span class="muted" id="fpMonthsNote"></span></div>
+      <div class="card-head"><h2 id="fpMonthsTitle"><i class="bi bi-bar-chart"></i> Spending per month</h2><span class="muted" id="fpMonthsNote"></span></div>
       <div class="fp-legend" id="fpMonthsLegend"></div>
       <div class="fp-chart" id="fpMonths"></div>
       <details class="fp-table"><summary>Show as table</summary><div id="fpMonthsTable"></div></details>
@@ -155,11 +157,12 @@
 
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=4"></script>
-  <script src="fin.js?v=5"></script>
+  <script src="fin.js?v=7"></script>
   <script src="../kit.js?v=2"></script>
   <script src="../tools.js?v=3"></script>
   <script src="../profile.js?v=2"></script>
-  <script src="../links.js?v=1"></script>
+  <script src="../links.js?v=2"></script>
+  <script src="../search.js?v=1"></script>
   <script src="../app.js?v=2"></script>
   <script src="../nav.js?v=7"></script>
 </body>

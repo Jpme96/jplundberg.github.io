@@ -49,7 +49,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=35" rel="stylesheet">
+  <link href="../styles.css?v=36" rel="stylesheet">
   <link href="../finance/fin.css?v=3" rel="stylesheet">
   <link href="../calendar/cal.css?v=3" rel="stylesheet">
   <link href="travel.css?v=4" rel="stylesheet">
@@ -242,9 +242,9 @@
           <section class="card"><div class="card-head"><h2><i class="bi bi-flag"></i> Countries</h2></div><div id="hsCountries"></div></section>
         </div>
       </div>
-      <div class="tp-bar hs-past-head"><h2>Past trips</h2></div>
+      <div class="tp-bar hs-past-head"><h2>Past trips</h2><button class="pill-btn" type="button" data-newpast><i class="bi bi-plus-lg"></i> Log a past trip</button></div>
       <div class="tp-cards" id="tpPast"></div>
-      <p class="empty tp-empty" id="hsEmpty" hidden>Trips you’ve been on show up here, with days away, countries and what you spent.</p>
+      <p class="empty tp-empty" id="hsEmpty" hidden>Trips you’ve been on show up here, with days away, countries and what you spent. Add older trips with “Log a past trip” – put what it cost under “Other costs” and it goes into Finances on that date.</p>
     </section>
 
     <p class="foot muted" id="tvFoot">Real-time journey data from Entur, the national travel planner for Norway.<br><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span> · <i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
@@ -266,6 +266,7 @@
           <label class="st-row"><span>To</span><span class="cl-dt"><input type="date" id="tsEnd" required></span></label>
         </div>
         <label class="st-row cl-group tp-budget-row"><span>Budget (kr)</span><input id="tsBudget" class="tp-inline" inputmode="decimal" placeholder="Optional" aria-label="Budget"></label>
+        <label class="st-row cl-group tp-budget-row"><span>Other costs (kr)<small class="muted tp-spent-help">Food, shopping, things not in a booking – or the whole trip, for old trips</small></span><input id="tsSpent" class="tp-inline" inputmode="decimal" placeholder="Optional" aria-label="Other costs"></label>
         <div class="cl-del" id="tsDelBox" hidden>
           <button class="text-btn danger" type="button" id="tsDelete"><i class="bi bi-trash3"></i> Delete trip</button>
         </div>
@@ -331,12 +332,13 @@
   <script src="../flow.js?v=2"></script>
   <script src="../calendar/cal-core.js?v=6"></script>
   <script src="travel.js?v=3"></script>
-  <script src="trips.js?v=4"></script>
+  <script src="trips.js?v=6"></script>
   <script src="history.js?v=2"></script>
   <script src="../kit.js?v=2"></script>
   <script src="../tools.js?v=3"></script>
   <script src="../profile.js?v=2"></script>
-  <script src="../links.js?v=1"></script>
+  <script src="../links.js?v=2"></script>
+  <script src="../search.js?v=1"></script>
   <script src="../app.js?v=2"></script>
   <script src="../nav.js?v=7"></script>
 </body>

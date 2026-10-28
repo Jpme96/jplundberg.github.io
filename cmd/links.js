@@ -2,8 +2,9 @@
    Runs on every dashboard page, after the vault is unlocked.
    - Subscriptions → Monthly budget: each active subscription is a fixed cost (per month;
      yearly and quarterly ones spread out), monthly ones also get a due day in Upcoming bills
+   - Trips → Finances: booking costs and a trip's other costs are spending (Travel), old trips too
    - Trips → Places to visit: a place you've now been to is ticked off as visited
-   (Trip costs → Finances is in travel/trips.js; workouts, courses and health → calendar in features.js) */
+   (workouts, courses and health → calendar in features.js) */
 (function () {
   "use strict";
   var F = window.Features;
@@ -51,9 +52,59 @@
     if (changed) F.saveTools(t);
   }
 
-  function run() { try { syncSubs(); } catch (e) { console.error(e); } try { syncBucket(); } catch (e) { console.error(e); } }
+  /* ---------- trips → Finances ----------
+     Every booking cost and a trip's "other costs" are spending in Finances (category Travel).
+     Older trips and bookings made before this was automatic are added too: past ones on
+     their own date, upcoming ones today (that's when you paid). Removed in Finances = left out. */
+  function num(v) {
+    var s = String(v == null ? '' : v).replace(/[\s kr]/gi, '');
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    var n = parseFloat(s.replace(',', '.'));
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+  var syncingTrips = false;
+  function syncTrips() {
+    var d = window.Vault.get(), Fl = window.Flow;
+    if (!d || !Fl || syncingTrips) return;
+    d.expenses = Array.isArray(d.expenses) ? d.expenses : [];
+    var byId = {}; d.expenses.forEach(function (e) { byId[e.id] = e; });
+    var today = F.dkey(new Date()), tr = Fl.travel(), finChanged = false, travelChanged = false;
+    function want(owner, idKey, amount, date, note, keepOutKey) {
+      var ex = owner[idKey] && byId[owner[idKey]];
+      if (owner[idKey] && !ex) { delete owner[idKey]; owner[keepOutKey] = true; travelChanged = true; return; }   // deleted in Finances
+      if (!amount) { if (ex) { d.expenses = d.expenses.filter(function (x) { return x !== ex; }); delete owner[idKey]; finChanged = travelChanged = true; } return; }
+      if (ex) {
+        if (ex.amount !== amount || ex.note !== note) { ex.amount = amount; ex.note = note; finChanged = true; }
+        return;
+      }
+      if (owner[keepOutKey]) return;
+      var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      d.expenses.push({ id: id, t: Date.now(), date: date, amount: Math.round(amount * 100) / 100, cat: 'travel', note: note, src: 'trip' });
+      owner[idKey] = id; finChanged = travelChanged = true;
+    }
+    tr.trips.forEach(function (t) {
+      var name = t.name || t.dest || 'Trip', past = (t.end || t.start || today) < today;
+      (t.items || []).forEach(function (it) {
+        var label = it.title || ({ flight: 'Flight', train: 'Train', bus: 'Bus', boat: 'Boat', car: 'Car', hotel: 'Hotel', activity: 'Activity' }[it.type] || 'Booking');
+        want(it, 'spendId', num(it.cost), past && /^\d{4}-\d{2}-\d{2}$/.test(it.date || '') ? it.date : today, (name + ': ' + label).slice(0, 80), 'noFin');
+      });
+      want(t, 'spentId', num(t.spent), past ? (t.start || today) : today, (name + ': other costs').slice(0, 80), 'noFinSpent');
+    });
+    if (!finChanged && !travelChanged) return;
+    syncingTrips = true;
+    try {
+      if (finChanged) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+      if (travelChanged) Fl.saveTravel(tr);
+    } finally { syncingTrips = false; }
+  }
+
+  function run() {
+    try { syncSubs(); } catch (e) { console.error(e); }
+    try { syncTrips(); } catch (e) { console.error(e); }
+    try { syncBucket(); } catch (e) { console.error(e); }
+  }
   window.Vault.onUnlock(function () { setTimeout(run, 0); });
   window.addEventListener('tools:change', function () { if (window.Vault.get()) syncSubs(); });
   window.addEventListener('features:change', function () { if (window.Vault.get()) run(); });
-  window.addEventListener('travel:change', function () { if (window.Vault.get()) syncBucket(); });
+  window.addEventListener('travel:change', function () { if (window.Vault.get()) { syncTrips(); syncBucket(); } });
 })();
