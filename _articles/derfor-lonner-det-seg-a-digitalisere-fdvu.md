@@ -3,9 +3,10 @@ title: Derfor lønner det seg å digitalisere FDVU
 lang: nb
 date: 2026-10-28
 category: Work
-summary: Et bygg koster mest etter at det står ferdig. Med digital og strukturert FDV-dokumentasjon blir driften billigere, vedlikeholdet bedre planlagt og beslutningene tryggere.
+summary: Et bygg koster mest etter at det står ferdig. Med digital og
+  strukturert FDV-dokumentasjon blir driften billigere, vedlikeholdet bedre
+  planlagt og beslutningene tryggere.
 ---
-
 Når vi snakker om hva et bygg koster, tenker de fleste på byggeprosjektet. Men regningen slutter ikke å komme når nøkkelen overleveres. I hele levetiden skal bygget driftes, vedlikeholdes, repareres og utvikles. Det er her FDVU-dokumentasjonen gjør jobben sin, og det er her digitalisering kan spare mest.
 
 ## Driften er der pengene går
@@ -47,7 +48,7 @@ Derfor er struktur og kvalitet minst like viktig som verktøyet:
 
 ## Oppsummert
 
-Digital FDVU handler ikke om å flytte papir inn i et system. Det handler om å gjøre informasjonen om byggene så komplett, korrekt og lett tilgjengelig at den faktisk blir brukt. Når det er på plats, blir driften billigere, vedlikeholdet bedre planlagt og beslutningene tryggere.
+Digital FDVU handler ikke om å flytte papir inn i et system. Det handler om å gjøre informasjonen om byggene så komplett, korrekt og lett tilgjengelig at den faktisk blir brukt. Når det er på plass, blir driften billigere, vedlikeholdet bedre planlagt og beslutningene tryggere.
 
 ## Kilder
 
@@ -58,3 +59,4 @@ Digital FDVU handler ikke om å flytte papir inn i et system. Det handler om å 
 5. Multiconsult (2025). *[Milliardbeløp må til: Oslo og Akershus står foran en stor utfordring](https://www.mynewsdesk.com/no/multiconsult/pressreleases/milliardbeloep-maa-til-oslo-og-akershus-staar-foran-en-stor-utfordring-3391133)*. Pressemelding om *Norges tilstand* (RIF), 10. juni 2025.
 6. Direktoratet for byggkvalitet (2015). *[Bruk av BIM i borettslag og sameier](https://www.dibk.no/verktoy-og-veivisere/andre-fagomrader/eiendomsforvaltning/Eksisterende-bygg-publikasjoner/bruk-av-bim-i-borettslag-og-sameier)*.
 7. Standard Norge (2020). *[Gevinstrealisering med BIM – barrierer og muligheter](https://standard.no/globalassets/fagomrader-sektorer/digital-byggeprosess-og-bim/standard_rapport-bim.pdf)*. Rapport P-800.
+
