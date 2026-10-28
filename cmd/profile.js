@@ -82,9 +82,7 @@
     var a = document.createElement('a');
     a.className = 'me-btn me-sub'; a.href = '/cmd/?settings'; a.setAttribute('data-me', '');
     a.setAttribute('aria-label', 'Profile and settings');
-    var top = main.querySelector('.fp-top');
-    if (top) { a.classList.remove('me-sub'); top.appendChild(a); }      // next to the page's own buttons
-    else main.insertBefore(a, main.firstChild);
+    document.body.appendChild(a);          // same spot as on the dashboard (top right), on every page
   }
   window.addEventListener('profile:change', paintButtons);
   if (window.Vault) window.Vault.onUnlock(paintButtons);

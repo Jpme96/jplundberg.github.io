@@ -208,6 +208,8 @@
       (ti ? '<li><i class="bi bi-clock"></i><span><b>' + esc(ti.now) + '</b> local time · ' + esc(ti.text) + '</span></li>' : '') +
       (cur && cur !== 'NOK' ? '<li><i class="bi bi-currency-exchange"></i><span id="tpRate">' + esc(cur) + '</span></li>' : '') +
       '<li><i class="bi bi-map"></i><span><a href="' + esc(W.osmLink(p)) + '" target="_blank" rel="noopener">Map</a> · <a href="' + esc(W.gmapsLink(p.name + ', ' + p.country)) + '" target="_blank" rel="noopener">Google Maps</a></span></li>' +
+      ((tr.end || tr.start) >= today() ? '<li><i class="bi bi-airplane"></i><span><a href="' + esc(W.flightsLink(p.name, tr.start, tr.end)) + '" target="_blank" rel="noopener">' +
+        ((tr.items || []).some(function (it) { return it.type === 'flight'; }) ? 'Compare flights' : 'Find flights') + '</a> on Google Flights · ' + esc(W.homeCity()) + ' → ' + esc(p.name) + '</span></li>' : '') +
       '</ul>';
     var id = tr.id;
     wxFor(tr).then(function (wx) {
@@ -644,6 +646,8 @@
     if (!tr && innerWidth >= 700) setTimeout(function () { $('tsName').focus(); }, 60);
   }
   $('tpNew').addEventListener('click', function () { openTripEditor(null); });
+  /* "Cheap flights": Google Flights Explore from your city (Profile → City, else Oslo) */
+  $('tpExplore').addEventListener('click', function () { this.href = W.exploreLink(); });
   $('tpHead').addEventListener('click', function (e) { if (e.target.closest('#tpEdit')) openTripEditor(current()); });
   $('tsStart').addEventListener('change', function () { if (!$('tsEnd').value || $('tsEnd').value < this.value) $('tsEnd').value = this.value; });
   $('tsForm').addEventListener('submit', function (e) {

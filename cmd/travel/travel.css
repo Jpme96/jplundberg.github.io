@@ -423,3 +423,6 @@
 .hs-countries .v { color: var(--muted); font-size: 12.5px; }
 .hs-past-head { margin-top: 22px; }
 #paneHistory .tp-grid { margin-bottom: 4px; }
+.tp-bar h2 { margin-right: auto; }
+.tp-explore { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+@media (max-width: 420px) { .tp-explore span { display: none; } }

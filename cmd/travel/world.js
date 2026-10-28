@@ -174,9 +174,11 @@
       if (el._map) { el._map.remove(); el._map = null; }
       var dark = document.documentElement.getAttribute('data-theme') !== 'light';
       var m = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, worldCopyJump: true });
-      L.tileLayer(dark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      /* OpenStreetMap's own tiles: free, no key. In dark mode they are inverted with CSS (.map-dark). */
+      el.classList.toggle('map-dark', dark);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(m);
       var ll = [];
       points.forEach(function (p) {
@@ -196,10 +198,17 @@
 
   function osmLink(p) { return 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lon + '#map=12/' + p.lat + '/' + p.lon; }
   function gmapsLink(q) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
+  /* Google Flights, filled in: from your city to the destination on the trip dates, prices in NOK */
+  function homeCity() { try { return (JSON.parse(localStorage.getItem('dash.profile')) || {}).city || 'Oslo'; } catch (e) { return 'Oslo'; } }
+  function flightsLink(to, start, end, from) {
+    var q = 'Flights from ' + (from || homeCity()) + ' to ' + to + (start ? ' on ' + start : '') + (end && end !== start ? ' through ' + end : start ? ' one way' : '');
+    return 'https://www.google.com/travel/flights?hl=en&curr=NOK&q=' + encodeURIComponent(q);
+  }
+  function exploreLink() { return 'https://www.google.com/travel/explore?hl=en&curr=NOK&q=' + encodeURIComponent('Flights from ' + homeCity()); }
 
   window.World = {
     search: search, weather: weather, wmo: wmo, currencyOf: currencyOf, rate: rate, timeInfo: timeInfo,
-    locate: locate, map: map, osmLink: osmLink, gmapsLink: gmapsLink,
+    locate: locate, map: map, osmLink: osmLink, gmapsLink: gmapsLink, flightsLink: flightsLink, exploreLink: exploreLink, homeCity: homeCity,
     inEEA: function (cc) { return EEA.indexOf(String(cc || '').toUpperCase()) > -1; },
     abroad: function (cc) { return !!cc && String(cc).toUpperCase() !== 'NO'; },
     addDays: addDays

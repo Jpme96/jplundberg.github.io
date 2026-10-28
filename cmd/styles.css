@@ -1435,8 +1435,8 @@ select.st-wide { padding-right: 32px; }
 .me-av.xl b { font-size: 28px; }
 .me-av.xl .bi { font-size: 34px; }
 .fp { position: relative; }
-.me-sub { position: absolute; top: 2px; right: 0; z-index: 5; }
-@media (max-width: 759px) { .me-sub { top: 0; } }
+.me-sub { position: absolute; z-index: 36; top: 16px; right: max(16px, calc((100% - 1120px) / 2)); }
+.locked:not(.resuming) .me-sub { display: none; }
 .st-profile {
   width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0 0 18px; text-align: left;
   border: 1px solid var(--line); border-radius: 18px; background: var(--card); color: var(--text); font: inherit; cursor: pointer;
@@ -1509,3 +1509,8 @@ select.st-wide { padding-right: 32px; }
 @media (min-width: 700px) { .cl-view:empty { min-height: 640px; } }
 .fp-tiles:empty { min-height: 196px; }
 @media (min-width: 900px) { .fp-tiles:empty { min-height: 118px; } }
+/* OpenStreetMap tiles in dark mode */
+.map-dark .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7); }
+.map-dark .leaflet-container, .map-dark.leaflet-container { background: #1b1d21; }
+.kit-acts { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.kit-acts a.text-btn { text-decoration: none; }
