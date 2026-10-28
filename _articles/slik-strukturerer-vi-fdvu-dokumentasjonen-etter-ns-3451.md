@@ -2,9 +2,8 @@
 title: Struktur er det som holder FDVU-dokumentasjonen i live
 lang: nb
 ref: ns3451-structure
-date: 2026-11-10 08:00:00 +0100
+date: 2026-10-28 22:35:00 +0100
 category: Work
-published: false
 summary: Dokumentasjon dør ikke av at den mangler. Den dør av at den ligger på feil sted, under feil navn, i feil versjon. Dette er hvordan vi bruker NS 3451 til å gi 406 bygninger én struktur – og hvorfor strukturen er det som gjør at dokumentasjonen overlever neste ombygging.
 ---
 
@@ -18,7 +17,7 @@ Dokumentasjon forsvinner sjelden i én stor hendelse. Den dør stille, i små jo
 
 En ventilasjonsvifte byttes. Serviceteknikeren legger igjen en ny FDV-perm, eller sender en PDF på e-post. Den som mottar den, er opptatt, og legger den der det er raskest: på skrivebordet, i en mappe som heter «Nytt», eller i FDVU-systemet under bygget, men ikke under anlegget. Den gamle dokumentasjonen blir liggende. Nå finnes det to versjoner, og ingen av dem er merket som gjeldende.
 
-Et år senere stopper viften om natten. Driftsteknikeren åpner FDVU-systemet, finner den gamle dokumentasjonen først, ringer feil leverandør og bestiller feil del. Det er ikke en dramatisk feil. Det er en time her og to timer der, og det var nøyaktig dette de som svarte på spørreundersøkelsen beskrev: dokumentasjon på mange ulike steder, under feil navn eller på feil anlegg, og tegninger som ikke oppdateres etter ombygginger.
+Et år senere stopper viften om natten. Driftsteknikeren åpner FDVU-systemet, finner den gamle dokumentasjonen først, ringer feil leverandør og bestiller feil del. Det er ikke en dramatisk feil. Det er en time her og to timer der, og det var nøyaktig dette de som svarte på spørreundersøkelsen beskrev [3]: dokumentasjon på mange ulike steder, under feil navn eller på feil anlegg, og tegninger som ikke oppdateres etter ombygginger.
 
 Legg merke til hva som gikk galt. Dokumentasjonen *fantes*. Den var til og med levert. Det som manglet, var et sted den åpenbart hørte hjemme, og en regel for hva som skjer med det gamle. Uten det er hver eneste innlegging en liten beslutning noen må ta alene, og alle tar den på sin måte. Alle måtene er fornuftige hver for seg. Summen er en struktur ingen kan forklare.
 
@@ -36,7 +35,7 @@ Det er derfor jeg mener at struktur ikke er et ryddeprosjekt. Rydding setter dok
 
 Første valg var hvilken struktur. Vi kunne lagd vår egen, men en egen inndeling er alltid logisk for dem som lagde den og uforståelig for dem som kommer etter. Vi trengte en struktur som ikke var *vår*.
 
-NS 3451:2022 *Bygningsdelstabell og systemkoder* er inndelingen av bygningsdeler og tekniske systemer som bransjen allerede bruker: i prosjektering, i kalkyler, i tilstandsanalyser etter NS 3424 og i FDVU-systemene selv. Bygning, VVS, elkraft, tele og automatisering, hver med sine undernivåer, slik at ventilasjonsanlegget alltid hører hjemme under 36 og ikke under «teknisk», «VVS – diverse» eller navnet på leverandøren.
+NS 3451:2022 *Bygningsdelstabell og systemkoder* er inndelingen av bygningsdeler og tekniske systemer som bransjen allerede bruker: i prosjektering, i kalkyler, i tilstandsanalyser etter NS 3424 og i FDVU-systemene selv [1][2]. Bygning, VVS, elkraft, tele og automatisering, hver med sine undernivåer, slik at ventilasjonsanlegget alltid hører hjemme under 36 og ikke under «teknisk», «VVS – diverse» eller navnet på leverandøren.
 
 Når dokumentasjonen følger samme inndeling som alt annet, skjer tre ting:
 
@@ -96,6 +95,6 @@ Arbeidet fortsetter, og fremdriften oppdateres på [prosjektsiden](/no/projects/
 
 ## Kilder
 
-[1] Standard Norge: NS 3451:2022 *Bygningsdelstabell og systemkoder*. https://standard.no/
-[2] Standard Norge: NS 3424:2012 *Tilstandsanalyse av byggverk – Innhold og gjennomføring*. https://standard.no/
-[3] John Paul Lundberg: [Hva sier de som bruker FDVU-dokumentasjonen?](/no/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/) (2026)
+1. Standard Norge (2022). *[NS 3451:2022 Bygningsdelstabell og systemkoder](https://online.standard.no/ns-3451-2022)*.
+2. Standard Norge (2012). *[NS 3424:2012 Tilstandsanalyse av byggverk – Innhold og gjennomføring](https://online.standard.no/ns-3424-2012)*.
+3. Lundberg, J. P. (2026). *[Hva sier de som bruker FDVU-dokumentasjonen?](/no/articles/hva-sier-de-som-bruker-fdv-dokumentasjonen/)*.

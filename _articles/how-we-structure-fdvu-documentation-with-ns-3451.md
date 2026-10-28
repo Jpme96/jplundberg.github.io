@@ -2,9 +2,8 @@
 title: Structure is what keeps FDVU documentation alive
 lang: en
 ref: ns3451-structure
-date: 2026-11-10 08:00:00 +0100
+date: 2026-10-28 22:35:00 +0100
 category: Work
-published: false
 summary: Documentation doesn't die because it's missing. It dies because it sits in the wrong place, under the wrong name, in the wrong version. This is how we use NS 3451 to give 406 buildings one structure – and why the structure is what lets the documentation survive the next refurbishment.
 ---
 
@@ -20,7 +19,7 @@ Documentation rarely disappears in one big event. It dies quietly, in small jobs
 
 A ventilation fan is replaced. The service technician leaves a new O&M binder, or emails a PDF. The person who receives it is busy and puts it wherever is quickest: on the desktop, in a folder called "New", or in the FDVU system under the building but not under the system it belongs to. The old documentation stays where it was. Now there are two versions, and neither is marked as current.
 
-A year later the fan stops in the middle of the night. The operations technician opens the FDVU system, finds the old documentation first, calls the wrong supplier and orders the wrong part. It is not a dramatic failure. It is an hour here and two hours there, and it is exactly what the people in the survey described: documentation in many different places, under the wrong name or on the wrong system, and drawings that aren't updated after refurbishments.
+A year later the fan stops in the middle of the night. The operations technician opens the FDVU system, finds the old documentation first, calls the wrong supplier and orders the wrong part. It is not a dramatic failure. It is an hour here and two hours there, and it is exactly what the people in the survey described [3]: documentation in many different places, under the wrong name or on the wrong system, and drawings that aren't updated after refurbishments.
 
 Notice what went wrong. The documentation *existed*. It had even been delivered. What was missing was a place where it obviously belonged, and a rule for what happens to the old one. Without those, every single filing is a small decision someone has to make alone, and everyone makes it their own way. Every way makes sense on its own. The sum is a structure nobody can explain.
 
@@ -38,7 +37,7 @@ That is why I don't think of structure as a clean-up project. A clean-up puts th
 
 The first choice was which structure. We could have made our own, but a home-made classification is always logical to the people who made it and baffling to the people who come after. We needed a structure that wasn't *ours*.
 
-NS 3451:2022, the Norwegian table of building elements and system codes, is the classification the industry already uses: in design, in cost estimates, in condition surveys under NS 3424, and in the FDVU systems themselves. Building, HVAC, electrical power, telecoms and automation, each with its own sub-levels, so the ventilation system always belongs under 36 and not under "technical", "HVAC – misc" or the supplier's name.
+NS 3451:2022, the Norwegian table of building elements and system codes, is the classification the industry already uses: in design, in cost estimates, in condition surveys under NS 3424, and in the FDVU systems themselves [1][2]. Building, HVAC, electrical power, telecoms and automation, each with its own sub-levels, so the ventilation system always belongs under 36 and not under "technical", "HVAC – misc" or the supplier's name.
 
 When the documentation follows the same classification as everything else, three things happen:
 
@@ -98,6 +97,8 @@ The work continues, and progress is updated on the [project page](/projects/fdvu
 
 ## Sources
 
-[1] Standard Norge: NS 3451:2022 *Bygningsdelstabell og systemkoder* (table of building elements and system codes). https://standard.no/
-[2] Standard Norge: NS 3424:2012 *Tilstandsanalyse av byggverk* (condition survey of construction works). https://standard.no/
-[3] John Paul Lundberg: [What do the people who use FDVU documentation say?](/articles/what-do-the-people-who-use-fdv-documentation-say/) (2026)
+The standards are in Norwegian.
+
+1. Standard Norge (2022). *[NS 3451:2022 Bygningsdelstabell og systemkoder](https://online.standard.no/ns-3451-2022)* (Table of building elements and system codes).
+2. Standard Norge (2012). *[NS 3424:2012 Tilstandsanalyse av byggverk – Innhold og gjennomføring](https://online.standard.no/ns-3424-2012)* (Condition survey of construction works).
+3. Lundberg, J. P. (2026). *[What do the people who use FDVU documentation say?](/articles/what-do-the-people-who-use-fdv-documentation-say/)*.
