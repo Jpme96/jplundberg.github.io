@@ -1,6 +1,6 @@
 {
   "announcement": {
-    "on": false,
+    "on": true,
     "en": "Hello",
     "nb": "Hello",
     "link": ""
@@ -27,5 +27,6 @@
     "article": "",
     "project": ""
   },
-  "updated": "2026-10-28T10:32:07.054Z"
+  "socials": [],
+  "updated": "2026-10-28T15:25:42.263Z"
 }
