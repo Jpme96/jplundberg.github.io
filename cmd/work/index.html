@@ -36,11 +36,16 @@
         var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
+        /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
+        var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
+        r.classList.add('mo-' + mo);
+        try { if (+localStorage.getItem('dash.until') > Date.now()) r.classList.add('resuming'); } catch (e) {}
+        try { if (sessionStorage.getItem('dash.seen')) r.classList.add('mo-seen'); sessionStorage.setItem('dash.seen', '1'); } catch (e) {}
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=24" rel="stylesheet">
-  <link href="../finance/fin.css?v=2" rel="stylesheet">
+  <link href="../styles.css?v=26" rel="stylesheet">
+  <link href="../finance/fin.css?v=3" rel="stylesheet">
   <link href="../calendar/cal.css?v=3" rel="stylesheet">
 </head>
 <body>
@@ -94,7 +99,7 @@
 
   <div class="fp-tip" id="fpTip" role="tooltip" hidden></div>
 
-  <script src="../lock.js?v=13"></script>
+  <script src="../lock.js?v=14"></script>
   <script src="../features.js?v=3"></script>
   <script src="../kit.js?v=1"></script>
   <script src="../tools.js?v=2"></script>

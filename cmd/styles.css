@@ -526,7 +526,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 .foot { text-align: center; margin: 22px 0 0; }
 
 /* ---------- Lock screen ---------- */
-.locked .top, .locked .dash, .locked .fin, .locked .foot { display: none; }
+.locked:not(.resuming) .top, .locked:not(.resuming) .dash, .locked:not(.resuming) .fin, .locked:not(.resuming) .foot { display: none; }
 
 .lock {
   position: fixed;
@@ -1056,7 +1056,7 @@ body.st-open { overflow: hidden; }
 
 /* ---------- Page menu ---------- */
 .tabbar { display: none; }
-.unlocked .tabbar {
+.unlocked .tabbar, .resuming .tabbar {
   display: flex;
   position: fixed;
   z-index: 35;
@@ -1089,10 +1089,10 @@ body.st-open { overflow: hidden; }
 .tabbar a i { font-size: 21px; line-height: 1; }
 .tabbar a[aria-current="page"] { color: var(--accent); }
 .tabbar a:active { transform: scale(.92); }
-.has-tabbar.unlocked body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.has-tabbar.unlocked body, .has-tabbar.resuming body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
 @media (min-width: 760px) {
-  .unlocked .tabbar {
+  .unlocked .tabbar, .resuming .tabbar {
     left: 50%;
     right: auto;
     bottom: auto;
@@ -1485,3 +1485,27 @@ select.st-wide { padding-right: 32px; }
 .me-ice b { color: var(--text); font-weight: 500; }
 .fp-top { gap: 8px; }
 .fp-top > .fp-back { margin-right: auto; }
+
+/* ---------- Motion and flow between pages ----------
+   - pages cross-fade into each other; the menu bar stays put
+   - coming back from another page (already unlocked) skips the lock screen
+   - cards rise in once per visit, not on every page change
+   - Settings → Appearance → Motion: Full, Subtle (no rising cards) or Off */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; animation-timing-function: var(--ease-out); }
+.unlocked .tabbar, .resuming .tabbar { view-transition-name: tabbar; }
+.resuming .lock-box { visibility: hidden; }
+@keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
+.mo-seen:is(.resuming, .unlocked) :is(.top, .dash, .fin, .fp) { animation: pagein .22s var(--ease-out) both; }
+.mo-seen :is(.card, .fp-tile, .tv-trip, .tv-nx, .tp-card),
+.mo-subtle :is(.card, .fp-tile, .tv-trip, .tv-nx, .tp-card, .cl-month, .cl-week, .cl-lday, .tp-pane, .lock-box) { animation: none; }
+.mo-subtle .links.editing .link-grid a { animation: none; }
+.mo-off *, .mo-off *::before, .mo-off *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+.mo-off::view-transition-group(*), .mo-off::view-transition-old(*), .mo-off::view-transition-new(*) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+.st-motion { gap: 12px; flex-wrap: wrap; } .st-motion .st-label { flex: 1 1 160px; }
+/* keep the layout steady while a page fills in its data */
+.cl-view:empty { min-height: 380px; }
+@media (min-width: 700px) { .cl-view:empty { min-height: 640px; } }
+.fp-tiles:empty { min-height: 196px; }
+@media (min-width: 900px) { .fp-tiles:empty { min-height: 118px; } }

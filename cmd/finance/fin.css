@@ -1,5 +1,5 @@
 /* Finance page – builds on ../styles.css (same theme, cards and lock screen) */
-.locked .fp { display: none; }
+.locked:not(.resuming) .fp { display: none; }
 
 .fp { max-width: 1120px; margin: 0 auto; }
 

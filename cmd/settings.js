@@ -113,8 +113,12 @@
 
   var media = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
 
+  var media2 = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function motionOf(s) { return s.motion || (media2 && media2.matches ? 'off' : 'full'); }
   function apply() {
     var s = get();
+    var mo = motionOf(s);
+    ['full', 'subtle', 'off'].forEach(function (m) { root.classList.toggle('mo-' + m, m === mo); });
     var theme = s.theme === 'auto' ? (media && media.matches ? 'light' : 'dark') : s.theme;
     root.setAttribute('data-theme', theme);
     var a = accentOf(s);
@@ -154,6 +158,10 @@
     document.querySelectorAll('[data-theme-opt]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.themeOpt === s.theme));
     });
+    var mo = motionOf(s);
+    document.querySelectorAll('[data-motion-opt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.motionOpt === mo)); });
+    $('stMotionNote').textContent = { full: 'Cards rise in, pages cross-fade.', subtle: 'Pages cross-fade, nothing else moves.', off: 'No animation at all.' }[mo] +
+      (!s.motion && media2 && media2.matches ? ' Your device asks for reduced motion.' : '');
     var own = accentOf(s);
     $('stAccents').innerHTML = Object.keys(ACCENTS).map(function (k) {
       return '<button type="button" class="swatch" data-accent="' + k + '" style="--sw:' + ACCENTS[k].hex + '" aria-label="' +
@@ -263,6 +271,9 @@
 
   document.querySelectorAll('[data-theme-opt]').forEach(function (b) {
     b.addEventListener('click', function () { set({ theme: b.dataset.themeOpt }); });
+  });
+  document.querySelectorAll('[data-motion-opt]').forEach(function (b) {
+    b.addEventListener('click', function () { set({ motion: b.dataset.motionOpt }); });
   });
   $('stAccents').addEventListener('click', function (e) {
     var b = e.target.closest('[data-accent]');

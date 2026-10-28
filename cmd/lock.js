@@ -163,7 +163,7 @@
 
   function showLocked(note) {
     root.classList.add('locked');
-    root.classList.remove('unlocked');
+    root.classList.remove('unlocked', 'resuming');
     $('lock').hidden = false;
     remote = null;
     setMode(isVault(readJSON(VAULT_KEY)) ? 'unlock' : 'setup');
@@ -189,7 +189,7 @@
     $('lockPass').value = '';
     $('lockConfirm').value = '';
     $('lockPass').blur();
-    root.classList.remove('locked');
+    root.classList.remove('locked', 'resuming');
     root.classList.add('unlocked');
     $('lock').hidden = true;
     $('lockBox').style.visibility = '';
@@ -328,8 +328,9 @@
     savedAt = Date.now();
     var rec = { key: key, salt: b64(salt), until: savedAt + idleMs() };
     idb('readwrite', function (st) { return st.put(rec, 'session'); }).catch(function () {});
+    try { localStorage.setItem('dash.until', String(rec.until)); } catch (e) {}     // lets the next page skip the lock screen flash
   }
-  function forget() { savedAt = 0; idb('readwrite', function (st) { return st.delete('session'); }).catch(function () {}); }
+  function forget() { savedAt = 0; try { localStorage.removeItem('dash.until'); } catch (e) {} idb('readwrite', function (st) { return st.delete('session'); }).catch(function () {}); }
   function recall() {
     if (!window.indexedDB) return Promise.resolve(null);
     return Promise.race([
