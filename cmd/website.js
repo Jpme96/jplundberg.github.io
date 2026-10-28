@@ -14,7 +14,11 @@
     about: ['person', 'About'], resume: ['briefcase', 'Experience'],
     projects: ['kanban', 'Projects'], articles: ['journal-text', 'Latest articles']
   };
-  var EDIT_PAGES = ['announce', 'sections', 'featured'];
+  var EDIT_PAGES = ['announce', 'sections', 'featured', 'socials'];
+  var DEFAULT_SOCIALS = [{ net: 'linkedin', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' }, { net: 'instagram', url: 'https://www.instagram.com/jp.lundberg.official/' }];
+  /* each page has its own Publish button; what it publishes, in words */
+  var PART = { announce: ['announcement', 'Announcement'], sections: ['sections', 'Front page'], featured: ['featured', 'Featured'], socials: ['socials', 'Socials'] };
+  function partDirty(key) { return saved && draft && JSON.stringify(saved[key] == null ? null : saved[key]) !== JSON.stringify(draft[key] == null ? null : draft[key]); }
 
   var saved = null, draft = null, sha = null, content = null, loading = null, publishing = false, problem = '';
 
@@ -38,7 +42,10 @@
         throw new Error(j.error || 'failed');
       }
       problem = '';
-      saved = j.settings; sha = j.sha; draft = clone(saved);
+      saved = j.settings; sha = j.sha;
+      /* nothing published yet: the site shows these (_data/socials_default.yml) */
+      if (!Array.isArray(saved.socials) || !saved.socials.length && !j.settings.updated) saved.socials = DEFAULT_SOCIALS.slice();
+      draft = clone(saved);
       fill(); summary(); status('');
     }).catch(function () {
       loading = null;
@@ -162,11 +169,30 @@
   function bar() {
     var show = EDIT_PAGES.indexOf(current) > -1;
     $('wsBar').hidden = !show;
-    $('wsPublish').disabled = !dirty() || publishing;
-    $('wsUndo').hidden = !dirty() || publishing;
-    if (show && !publishing && saved) status(dirty() ? 'Not published yet' : (saved.updated ? 'Live · last change ' + new Date(saved.updated).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Live'));
+    if (!show) return;
+    var P = PART[current], mine = partDirty(P[0]);
+    var others = Object.keys(PART).filter(function (k) { return k !== current && partDirty(PART[k][0]); }).map(function (k) { return PART[k][1].toLowerCase(); });
+    $('wsPublish').innerHTML = '<i class="bi bi-cloud-upload"></i> Publish ' + P[1].toLowerCase();
+    $('wsPublish').disabled = !mine || publishing;
+    $('wsUndo').hidden = !mine || publishing;
+    if (!publishing && saved) status(mine ? 'Not published yet' + (others.length ? ' · also includes your ' + others.join(' and ') + ' changes' : '')
+      : others.length ? 'Unpublished changes in ' + others.join(' and ')
+      : (saved.updated ? 'Live · last change ' + new Date(saved.updated).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Live'));
   }
-  $('wsUndo').addEventListener('click', function () { draft = clone(saved); fill(); changed(); });
+  /* Undo only undoes this page */
+  $('wsUndo').addEventListener('click', function () {
+    var k = PART[current] && PART[current][0];
+    if (!k) return;
+    if (saved[k] == null) delete draft[k]; else draft[k] = clone(saved[k]);
+    if (k === 'socials' && window.Profile) window.Profile.resetSocials(saved.socials);
+    fill(); changed();
+  });
+  /* Socials come from Settings → jplundberg.com → Socials (profile.js) */
+  window.addEventListener('socials:change', function () {
+    if (!draft || !window.Profile) return;
+    draft.socials = window.Profile.publicSocials();
+    changed();
+  });
   $('wsPublish').addEventListener('click', function () {
     if (!dirty()) return;
     publishing = true; bar();
@@ -323,7 +349,12 @@
   /* ---------- page changes in the settings panel ---------- */
   window.addEventListener('st:page', function (e) {
     current = e.detail;
-    if (current === 'home' || EDIT_PAGES.indexOf(current) > -1) { if (!saved) load(); else { fill(); summary(); } }
+    if (current === 'home' || EDIT_PAGES.indexOf(current) > -1) {
+      (saved ? Promise.resolve() : load()).then(function () {
+        if (current === 'socials' && draft && window.Profile) { draft.socials = window.Profile.publicSocials(); }
+        if (draft) { fill(); summary(); bar(); }
+      });
+    }
     if (current === 'visitors') { if (!content) load(); visitors(); }
     if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro">Loading…</p>'; loadItems(); } }
     if (current === 'home' && !items) loadItems();

@@ -47,13 +47,21 @@
   function load() {
     var p = readJSON(KEY);
     p = p && typeof p === 'object' ? p : {};
-    if (!Array.isArray(p.socials)) p.socials = START_SOCIALS.map(function (s) { return Object.assign({ id: uid() }, s); });
+    if (!Array.isArray(p.socials)) {
+      p.socials = START_SOCIALS.map(function (s) { return Object.assign({ id: uid() }, s); });
+      if (window.Vault && document.documentElement.classList.contains('unlocked')) {      /* keep the same ids from now on */
+        try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {}
+      }
+    }
     return p;
   }
   function save(p) {
+    var before = null;
+    try { before = JSON.stringify((JSON.parse(localStorage.getItem(KEY)) || {}).socials || null); } catch (e) {}
     try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {}
     window.dispatchEvent(new Event('dash:local'));
     window.dispatchEvent(new Event('profile:change'));
+    if (before !== JSON.stringify(p.socials || null)) window.dispatchEvent(new Event('socials:change'));
   }
   function initials(p) {
     var n = String(p.name || (readJSON('dash.settings') || {}).name || '').trim().split(/\s+/).filter(Boolean);
@@ -88,7 +96,20 @@
   if (window.Vault) window.Vault.onUnlock(paintButtons);
   paintButtons();
 
-  window.Profile = { load: load, save: save, avatar: avatar, NETS: NETS, socialUrl: socialUrl, age: age };
+  /* the links that should be on jplundberg.com (switched on, with a valid address) */
+  function publicSocials() {
+    return load().socials.filter(function (s) { return s.pub && socialUrl(s); }).map(function (s) { return { net: s.net, url: socialUrl(s) }; });
+  }
+  /* Undo on the Socials page: back to what's live */
+  function resetSocials(live) {
+    if (!Array.isArray(live)) return;
+    var p = load(), used = {};
+    p.socials.forEach(function (s) { var u = socialUrl(s); s.pub = live.some(function (l) { return l.url === u; }); used[u] = 1; });
+    live.forEach(function (l) { if (!used[l.url]) p.socials.push({ id: uid(), net: l.net, handle: l.url, pub: true }); });
+    save(p);
+    window.dispatchEvent(new Event('socials:reset'));
+  }
+  window.Profile = { load: load, save: save, avatar: avatar, NETS: NETS, socialUrl: socialUrl, age: age, publicSocials: publicSocials, resetSocials: resetSocials };
 
   /* ---------- Health page: medical info card ---------- */
   var med = $('meHealth');
@@ -187,6 +208,7 @@
   /* ---------- socials ---------- */
   var pubMsg = '';
   function renderSocials() { if (soBox) soBox.innerHTML = socialsHtml(load()); }
+  window.addEventListener('socials:reset', renderSocials);
   function socialsHtml(p) {
     var opts = function (cur) { return Object.keys(NETS).map(function (k) { return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + NETS[k].name + '</option>'; }).join(''); };
     return '<p class="st-sub"><i class="bi bi-share"></i> Your profiles <span class="st-hint">Username or link. The switch decides if it’s shown on jplundberg.com</span></p>' +
@@ -201,25 +223,8 @@
           '<button type="button" class="text-btn danger me-soc-del" data-sdel aria-label="Remove"><i class="bi bi-x-lg"></i></button></div>';
       }).join('') +
       (p.socials.length < 10 ? '<button type="button" class="st-row st-btn cs-add" data-sadd><span><i class="bi bi-plus-lg"></i> Add social</span></button>' : '') +
-      '</section><div class="me-pub"><button type="button" class="pill-btn" id="mePublish"><i class="bi bi-globe2"></i> Update jplundberg.com</button>' +
-      '<span class="st-note" id="mePubMsg">' + esc(pubMsg) + '</span></div>';
+      '</section>';
   }
-  function publishSocials() {
-    var list = load().socials.filter(function (s) { return s.pub && socialUrl(s); }).map(function (s) { return { net: s.net, url: socialUrl(s) }; });
-    var msg = $('mePubMsg'), btn = $('mePublish');
-    btn.disabled = true; msg.textContent = 'Publishing…';
-    fetch('/cmd/api/site', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j.settings) throw new Error(j.error || 'no settings');
-      j.settings.socials = list;
-      return fetch('/cmd/api/site', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: j.settings, sha: j.sha }) });
-    }).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j.ok) throw new Error(j.error || 'failed');
-      pubMsg = !j.settings.socials ? 'Saved, but the Worker in Cloudflare needs the new code before socials show on the site.'
-        : 'Done – live on jplundberg.com in about a minute (' + list.length + ' link' + (list.length === 1 ? '' : 's') + ').';
-    }).catch(function (e) { pubMsg = 'Couldn’t publish (' + e.message + '). Try again.'; })
-      .then(function () { btn.disabled = false; msg.textContent = pubMsg; });
-  }
-
   /* ---------- editing ---------- */
   var timer = null;
   area.addEventListener('input', function (e) {
@@ -261,7 +266,6 @@
     var p;
     if (e.target.closest('#mePick')) return $('meFile').click();
     if (e.target.closest('#meNoPhoto')) { p = load(); delete p.photo; save(p); render(); renderHead(); return; }
-    if (e.target.closest('#mePublish')) return publishSocials();
     if (e.target.closest('[data-sadd]')) {
       p = load(); var used = p.socials.map(function (s) { return s.net; });
       p.socials.push({ id: uid(), net: Object.keys(NETS).filter(function (k) { return used.indexOf(k) < 0; })[0] || 'instagram', handle: '', pub: false });
