@@ -17,7 +17,7 @@
   position: relative; display: flex; align-items: center; gap: 12px;
   height: 58px; padding: 0 18px; border-radius: 16px;
   background: var(--card); border: 1px solid var(--line);
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+ 
   transition: border-color .2s;
 }
 .tv-field:focus-within { border-color: var(--accent); }
@@ -64,7 +64,7 @@
 .tv-trips { display: grid; gap: 10px; }
 .tv-trip {
   background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+ 
   animation: rise .45s var(--ease-out) both;
 }
 .tv-trip.open { border-color: rgba(var(--accent-rgb), .5); }
@@ -126,7 +126,7 @@
 .tv-nx {
   scroll-snap-align: start; display: grid; gap: 3px; text-align: left; padding: 13px 15px; min-width: 0;
   border-radius: 16px; border: 1px solid var(--line); background: var(--card); color: var(--text);
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-left: 4px solid var(--c, var(--accent));
+  border-left: 4px solid var(--c, var(--accent));
   transition: border-color .2s, transform .15s var(--ease-ios); animation: rise .45s var(--ease-out) both;
 }
 .tv-nx:hover { border-color: rgba(var(--accent-rgb), .5); border-left-color: var(--c, var(--accent)); }
@@ -176,7 +176,7 @@
 .tp-card {
   position: relative; display: grid; gap: 3px; text-align: left; padding: 16px 44px 16px 18px; border-radius: 18px;
   border: 1px solid var(--line); background: var(--card); color: var(--text); border-left: 4px solid #0891b2;
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: rise .45s var(--ease-out) both;
+  animation: rise .45s var(--ease-out) both;
   transition: border-color .2s, transform .15s var(--ease-ios);
 }
 .tp-card:hover { border-color: rgba(var(--accent-rgb), .45); border-left-color: #0891b2; }
@@ -429,7 +429,7 @@
 
 /* Past trips, one year at a time */
 .hs-past { display: grid; gap: 10px; }
-.hs-year { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.hs-year { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
 .hs-year summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
 .hs-year summary::-webkit-details-marker { display: none; }
 .hs-year summary b { font-family: "Raleway", sans-serif; font-size: 20px; color: var(--heading); }

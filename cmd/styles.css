@@ -256,8 +256,6 @@ button { font: inherit; cursor: pointer; }
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 18px;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
   animation: rise .7s var(--ease-out) both;
 }
 
@@ -1804,3 +1802,17 @@ input:disabled { opacity: .55; }
 .fp-top { min-height: 40px; }
 .fp-top .sr-in { margin-left: 0; }
 .locked:not(.resuming) .fp-top :is(.me-in, .sr-in) { display: none; }
+
+/* ---------- Lighter on phones and tablets ----------
+   Frosted (blurred) layers are redrawn on every frame while you scroll – that's what made the
+   phone feel heavy. Solid, Minimal and Soft cards have no blur at all now; on touch screens the
+   menu is solid and Glass cards are see-through without the blur. */
+@media (hover: none) {
+  .unlocked .tabbar, .resuming .tabbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(var(--card-rgb), .96); }
+  :root[data-theme="light"] .tabbar { background: rgba(255, 255, 255, .96); }
+  .glass .unlocked .tabbar, .glass.unlocked .tabbar, .glass.resuming .tabbar { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); background: rgba(var(--card-rgb), calc(.86 - var(--glass) * .3)); }
+  .glass :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .lock-box, .dash-note) {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: rgba(var(--card-rgb), calc(.84 - var(--glass) * .5));
+  }
+}

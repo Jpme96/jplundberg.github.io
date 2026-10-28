@@ -58,7 +58,7 @@
 .cl-month {
   display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
   background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+ 
   animation: rise .45s var(--ease-out) both;
 }
 .cl-wd {
@@ -120,7 +120,7 @@
 /* ---------- list ---------- */
 .cl-lday {
   background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px 10px 8px;
-  margin-bottom: 10px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  margin-bottom: 10px;
   animation: rise .45s var(--ease-out) both;
 }
 .cl-lday h3 { margin: 0 8px 4px; font-size: 14px; font-weight: 600; color: var(--heading); }
@@ -131,7 +131,7 @@
 .cl-week {
   --gut: 52px;
   background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+ 
   animation: rise .45s var(--ease-out) both;
 }
 .cl-wk-head, .cl-wk-all, .cl-wk-grid { display: grid; grid-template-columns: var(--gut) repeat(var(--n), minmax(0, 1fr)); }
