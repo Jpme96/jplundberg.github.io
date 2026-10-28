@@ -1,68 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-    />
-    <title>John Paul Lundberg</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <!---fjerne kort hvis det ikke fungerer-->
-    <div id="container-card" class="container-card">
-      <div class="card" id="clickable-Card">
-        <h2>Welcome</h2>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0e0f11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dashboard">
+  <meta name="format-detection" content="telephone=no">
+  <title>Dashboard</title>
+  <link href="/assets/img/favicon.png?v=2" rel="icon">
+  <link href="/assets/img/apple-touch-icon.png?v=2" rel="apple-touch-icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="styles.css?v=2" rel="stylesheet">
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="top-bar">
+      <div id="date" class="date"></div>
+      <div class="top-actions">
+        <button id="musicButton" class="icon-btn" type="button" aria-label="Play music"><i class="bi bi-play-fill"></i></button>
+        <a href="/" class="icon-btn" aria-label="Back to jplundberg.com"><i class="bi bi-house"></i></a>
       </div>
     </div>
+    <div class="hero">
+      <div id="clock" class="clock">00:00</div>
+      <div id="greeting" class="greeting"></div>
+      <p id="quote" class="quote"></p>
+    </div>
+  </header>
 
-    <!--homebutton to go to website-->
-    <a id="home-button" href="/index.html" class="home-button" title="Home">
-      <i class="fas fa-home"></i>
-    </a>
+  <main class="grid">
 
-    <div id="date"></div>
-    <div id="clock">00:00:00</div>
-    <div id="greeting"></div>
-    <div id="quote"></div>
-    <p id="musicButton"><i class="fas fa-play-circle"></i></p>
-
-    <!-- Expandable & Editable Task -->
-    <div class="task" id="task">
-      <div class="task-header" onclick="toggleTask()">📝 Notes</div>
-      <div class="task-details" id="taskContainer">
-        <div class="task-editor" id="taskEditor">
-          <textarea
-            type="text"
-            id="taskInput"
-            placeholder="Write something..."
-            autocomplete="off"
-          ></textarea>
-          <button id="submitButton" onclick="addTask()">Add</button>
+    <!-- Weather -->
+    <section class="card weather" id="weatherCard">
+      <div class="card-head"><h2><i class="bi bi-cloud-sun"></i> Oslo</h2><span class="muted" id="weatherUpdated"></span></div>
+      <div class="weather-now">
+        <i id="wIcon" class="bi bi-cloud"></i>
+        <div>
+          <div class="w-temp" id="wTemp">–</div>
+          <div class="muted" id="wDesc">Loading weather…</div>
         </div>
-        <ul id="taskList"></ul>
       </div>
-    </div>
+      <ul class="w-days" id="wDays"></ul>
+    </section>
 
-    <!-- Audio element -->
-    <audio id="music" loop>
-      <source
-        id="musicSource"
-        src="cmd/assets/music/morning.mp3"
-        type="audio/mp3"
-      />
-      Your browser does not support the audio element.
-    </audio>
+    <!-- Goals -->
+    <section class="card goals">
+      <div class="card-head"><h2><i class="bi bi-bullseye"></i> Goals</h2><button class="text-btn" id="goalAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+      <form class="inline-form" id="goalForm" hidden>
+        <input id="goalName" placeholder="Goal, e.g. Gym this week" required>
+        <div class="row2">
+          <input id="goalValue" type="number" inputmode="decimal" placeholder="Now" step="any">
+          <input id="goalTarget" type="number" inputmode="decimal" placeholder="Target" step="any" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="text-btn danger" id="goalDelete" hidden>Delete</button>
+          <span class="spacer"></span>
+          <button type="button" class="text-btn" id="goalCancel">Cancel</button>
+          <button type="submit" class="pill-btn">Save</button>
+        </div>
+      </form>
+      <ul class="goal-list" id="goalList"></ul>
+    </section>
 
-    <script src="script.js"></script>
-  </body>
+    <!-- To-do -->
+    <section class="card todo">
+      <div class="card-head"><h2><i class="bi bi-check2-square"></i> To-do</h2><button class="text-btn" id="todoClear" type="button">Clear done</button></div>
+      <form class="add-row" id="todoForm">
+        <input id="todoInput" placeholder="Add a task…" autocomplete="off">
+        <button class="pill-btn" type="submit" aria-label="Add task"><i class="bi bi-plus-lg"></i></button>
+      </form>
+      <ul class="todo-list" id="todoList"></ul>
+      <p class="empty" id="todoEmpty">Nothing to do. Nice.</p>
+    </section>
+
+    <!-- Quick links -->
+    <section class="card links">
+      <div class="card-head"><h2><i class="bi bi-lightning-charge"></i> Quick links</h2><button class="text-btn" id="linkEditBtn" type="button">Edit</button></div>
+      <ul class="link-grid" id="linkGrid"></ul>
+      <form class="inline-form" id="linkForm" hidden>
+        <input id="linkName" placeholder="Name, e.g. Plania" required>
+        <input id="linkUrl" placeholder="Address, e.g. plania.no" required inputmode="url" autocapitalize="off">
+        <div class="form-actions">
+          <span class="spacer"></span>
+          <button type="button" class="text-btn" id="linkCancel">Cancel</button>
+          <button type="submit" class="pill-btn">Add link</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Notes -->
+    <section class="card notes">
+      <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
+      <form class="add-row" id="noteForm">
+        <textarea id="noteInput" rows="1" placeholder="Write something…" autocomplete="off"></textarea>
+        <button class="pill-btn" type="submit" id="noteSubmit" aria-label="Save note"><i class="bi bi-plus-lg"></i></button>
+      </form>
+      <ul class="note-list" id="noteList"></ul>
+      <p class="empty" id="noteEmpty">No notes yet. Tap a note to edit it.</p>
+    </section>
+
+  </main>
+
+  <p class="foot muted">Saved on this device only <i class="bi bi-lock"></i></p>
+
+  <audio id="music" loop preload="none"></audio>
+
+  <script src="script.js?v=2"></script>
+</body>
 </html>

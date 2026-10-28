@@ -1,387 +1,371 @@
-// Update the date every day at midnight
-function updateDate() {
-  const now = new Date();
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+/* Personal dashboard. Everything you enter is stored on this device only. */
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- Storage (never breaks the page if storage is blocked) ---------- */
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); }
+    catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------- Date, clock and greeting ---------- */
+  var PERIODS = [
+    { from: 0, to: 6, text: 'Good night, Lundberg', icon: '🌙', glow: 'rgba(85, 152, 231, .6)', music: 'night' },
+    { from: 6, to: 12, text: 'Good morning, Lundberg', icon: '🌅', glow: 'rgba(255, 223, 0, .55)', music: 'morning' },
+    { from: 12, to: 18, text: 'Good afternoon, Lundberg', icon: '☀️', glow: 'rgba(255, 140, 0, .55)', music: 'afternoon' },
+    { from: 18, to: 24, text: 'Good evening, Lundberg', icon: '🌆', glow: 'rgba(160, 90, 220, .6)', music: 'evening' }
+  ];
+  var period = null;
+
+  function tick() {
+    var now = new Date();
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    var ss = String(now.getSeconds()).padStart(2, '0');
+    $('clock').innerHTML = hh + ':' + mm + '<span class="sec">' + ss + '</span>';
+    $('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    var p = PERIODS.filter(function (x) { return now.getHours() >= x.from && now.getHours() < x.to; })[0];
+    if (p !== period) {
+      period = p;
+      $('greeting').textContent = p.text + ' ' + p.icon;
+      document.documentElement.style.setProperty('--glow', p.glow);
+      var audio = $('music');
+      var wasPlaying = !audio.paused;
+      audio.src = '/cmd/assets/music/' + p.music + '.mp3';
+      if (wasPlaying) audio.play().catch(function () {});
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ---------- Music ---------- */
+  $('musicButton').addEventListener('click', function () {
+    var audio = $('music'), btn = this;
+    if (audio.paused) {
+      audio.play().then(function () {
+        btn.classList.add('playing');
+        btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+        btn.setAttribute('aria-label', 'Pause music');
+      }).catch(function () {});
+    } else {
+      audio.pause();
+      btn.classList.remove('playing');
+      btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+      btn.setAttribute('aria-label', 'Play music');
+    }
+  });
+
+  /* ---------- Quotes ---------- */
+  var QUOTES = [
+    "The best time to plant a tree was 20 years ago. The second best time is now.",
+    "Believe you can and you're halfway there.",
+    "It does not matter how slowly you go as long as you do not stop.",
+    "You are never too old to set another goal or to dream a new dream.",
+    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "Don't watch the clock; do what it does. Keep going.",
+    "It always seems impossible until it's done.",
+    "The only way to do great work is to love what you do.",
+    "You have power over your mind, not outside events. Realize this, and you will find strength.",
+    "The happiness of your life depends upon the quality of your thoughts.",
+    "Waste no more time arguing about what a good man should be. Be one.",
+    "What we do now echoes in eternity.",
+    "If it is not right, do not do it; if it is not true, do not say it.",
+    "Be tolerant with others and strict with yourself.",
+    "The art of living is more like wrestling than dancing.",
+    "Well begun is half done.",
+    "Small daily improvements are the key to staggering long-term results.",
+    "Discipline is choosing between what you want now and what you want most.",
+    "We are what we repeatedly do.",
+    "Do the hard jobs first. The easy jobs will take care of themselves."
+  ];
+  var lastQuote = -1;
+  function newQuote() {
+    var i;
+    do { i = Math.floor(Math.random() * QUOTES.length); } while (i === lastQuote && QUOTES.length > 1);
+    lastQuote = i;
+    var q = $('quote');
+    q.classList.add('fading');
+    setTimeout(function () { q.textContent = QUOTES[i]; q.classList.remove('fading'); }, lastQuote === -1 ? 0 : 600);
+  }
+  $('quote').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  setInterval(newQuote, 60000);
+
+  /* ---------- Weather (Open-Meteo, no account needed) ---------- */
+  var WMO = {
+    0: ['Clear sky', 'sun'], 1: ['Mostly clear', 'sun'], 2: ['Partly cloudy', 'cloud-sun'], 3: ['Overcast', 'clouds'],
+    45: ['Fog', 'cloud-fog2'], 48: ['Freezing fog', 'cloud-fog2'],
+    51: ['Light drizzle', 'cloud-drizzle'], 53: ['Drizzle', 'cloud-drizzle'], 55: ['Heavy drizzle', 'cloud-drizzle'],
+    56: ['Freezing drizzle', 'cloud-sleet'], 57: ['Freezing drizzle', 'cloud-sleet'],
+    61: ['Light rain', 'cloud-rain'], 63: ['Rain', 'cloud-rain'], 65: ['Heavy rain', 'cloud-rain-heavy'],
+    66: ['Freezing rain', 'cloud-sleet'], 67: ['Freezing rain', 'cloud-sleet'],
+    71: ['Light snow', 'cloud-snow'], 73: ['Snow', 'cloud-snow'], 75: ['Heavy snow', 'snow'], 77: ['Snow grains', 'cloud-snow'],
+    80: ['Rain showers', 'cloud-rain'], 81: ['Rain showers', 'cloud-rain'], 82: ['Heavy showers', 'cloud-rain-heavy'],
+    85: ['Snow showers', 'cloud-snow'], 86: ['Snow showers', 'cloud-snow'],
+    95: ['Thunderstorm', 'cloud-lightning-rain'], 96: ['Thunderstorm', 'cloud-lightning-rain'], 99: ['Thunderstorm', 'cloud-lightning-rain']
   };
-  document.getElementById("date").textContent = now.toLocaleDateString(
-    "en-US",
-    options
-  );
-}
+  function wmo(code) { return WMO[code] || ['–', 'cloud']; }
+  var W_URL = 'https://api.open-meteo.com/v1/forecast?latitude=59.91&longitude=10.75' +
+    '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+    '&timezone=Europe%2FOslo&forecast_days=5&wind_speed_unit=ms';
 
-// Initial call to update the date
-updateDate();
-updateDateAtMidnight();
-
-// Function to update the date at midnight
-function updateDateAtMidnight() {
-  const now = new Date();
-  const nextMidnight = new Date();
-  nextMidnight.setHours(0, 0, 0, 0);
-  nextMidnight.setDate(nextMidnight.getDate() + 1);
-  const timeUntilMidnight = nextMidnight - now;
-
-  setTimeout(() => {
-    updateDate();
-    setInterval(updateDate, 86400000); // Update every 24 hours
-  }, timeUntilMidnight);
-}
-
-// Update Clock Function
-function updateClock() {
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
-  document.getElementById(
-    "clock"
-  ).textContent = `${hours}:${minutes}:${seconds}`;
-}
-
-// Set Dynamic Greeting and Shadow Based on Time of Day
-function setGreetingAndShadow() {
-  const now = new Date();
-  const hour = now.getHours();
-  let greeting = "";
-  let shadowColor = "";
-  let musicSource = "";
-
-  // Set the greeting, shadow color, and music track based on specific time ranges
-  if (hour >= 0 && hour < 6) {
-    greeting = `Good Night, Lundberg 🌙`;
-    shadowColor = "2px 2px 10px rgba(0, 0, 255, 1)"; // Dark blue for night
-    musicSource = "/cmd/assets/music/night.mp3";
-  } else if (hour >= 6 && hour < 12) {
-    greeting = `Good Morning, Lundberg 🌅`;
-    shadowColor = "2px 2px 10px rgba(255, 223, 0, 1)"; // Light yellow for morning
-    musicSource = "/cmd/assets/music/morning.mp3";
-  } else if (hour >= 12 && hour < 18) {
-    greeting = `Good Afternoon, Lundberg ☀️`;
-    shadowColor = "2px 2px 10px rgba(255, 100, 0, 1)"; // Light orange for afternoon
-    musicSource = "/cmd/assets/music/afternoon.mp3";
-  } else {
-    greeting = `Good Evening, Lundberg 🌙`;
-    shadowColor = "2px 2px 10px rgba(128, 0, 128, 1)"; // Purple for evening
-    musicSource = "/cmd/assets/music/evening.mp3";
+  function showWeather(d, time) {
+    var c = d.current, w = wmo(c.weather_code);
+    $('wIcon').className = 'bi bi-' + w[1];
+    $('wTemp').textContent = Math.round(c.temperature_2m) + '°';
+    $('wDesc').textContent = w[0] + ' · feels like ' + Math.round(c.apparent_temperature) + '° · wind ' + Math.round(c.wind_speed_10m) + ' m/s';
+    $('weatherUpdated').textContent = 'Updated ' + new Date(time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    var html = '';
+    for (var i = 0; i < Math.min(4, d.daily.time.length); i++) {
+      var day = i === 0 ? 'Today' : new Date(d.daily.time[i] + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short' });
+      var dw = wmo(d.daily.weather_code[i]);
+      var rain = d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[i] : null;
+      html += '<li><span class="d">' + day + '</span><i class="bi bi-' + dw[1] + '" title="' + dw[0] + '"></i>' +
+        '<span class="hi">' + Math.round(d.daily.temperature_2m_max[i]) + '°</span> <span class="lo">' + Math.round(d.daily.temperature_2m_min[i]) + '°</span>' +
+        (rain != null ? '<span class="rain"><i class="bi bi-droplet" style="display:inline;font-size:11px;color:inherit"></i> ' + rain + '%</span>' : '') + '</li>';
+    }
+    $('wDays').innerHTML = html;
   }
 
-  // Set the greeting, shadow, and music dynamically
-  document.getElementById("greeting").textContent = greeting;
-  document.getElementById("greeting").style.textShadow = shadowColor;
-  document.getElementById("clock").style.textShadow = shadowColor;
-  document.getElementById("quote").style.textShadow = shadowColor;
-  document.getElementById("musicSource").src = musicSource; // Update music source
-
-  // Reload the audio element to apply the new music
-  const audio = document.getElementById("music");
-  audio.load(); // This ensures the new source is loaded
-}
-
-// 100 Random Inspirational Quotes
-const quotes = [
-  "The best time to plant a tree was 20 years ago. The second best time is now.",
-  "Believe you can and you're halfway there.",
-  "It does not matter how slowly you go as long as you do not stop.",
-  "You are never too old to set another goal or to dream a new dream.",
-  "The future belongs to those who believe in the beauty of their dreams.",
-  "Success is not final, failure is not fatal: It is the courage to continue that counts.",
-  "Don’t watch the clock; do what it does. Keep going.",
-  "Keep your face always toward the sunshine—and shadows will fall behind you.",
-  "It always seems impossible until it's done.",
-  "The only way to do great work is to love what you do.",
-  "You have power over your mind, not outside events. Realize this, and you will find strength.",
-  "The happiness of your life depends upon the quality of your thoughts.",
-  "Waste no more time arguing about what a good man should be. Be one.",
-  "It is not death that a man should fear, but he should fear never beginning to live.",
-  "The soul becomes dyed with the color of its thoughts.",
-  "He who lives in harmony with himself lives in harmony with the universe.",
-  "What we do now echoes in eternity.",
-  "If it is not right, do not do it; if it is not true, do not say it.",
-  "You are a little soul carrying around a corpse.",
-  "How much time he gains who does not look to see what his neighbor says or does or thinks.",
-  "A man's worth is no greater than the worth of his ambitions.",
-  "The best revenge is to be unlike him who performed the injury.",
-  "Be tolerant with others and strict with yourself.",
-  "The universe is change; life is judgment.",
-  "The art of living is more like wrestling than dancing.",
-  // Add more quotes as needed...
-];
-
-// Function to pick a random quote
-function getRandomQuote() {
-  const randomIndex = Math.floor(Math.random() * quotes.length);
-  document.getElementById("quote").textContent = quotes[randomIndex];
-}
-
-// Toggle play/pause functionality for music
-let isMusicPlaying = false;
-function toggleMusic() {
-  const music = document.getElementById("music");
-  const button = document.getElementById("musicButton");
-
-  if (isMusicPlaying) {
-    music.pause();
-    button.innerHTML = '<i class="fas fa-play-circle"></i>'; // Change button text when paused
-  } else {
-    music.play().catch((err) => {
-      console.error("Error playing audio:", err);
-      alert(
-        "Audio failed to play. Please allow media playback in your browser settings."
-      );
+  function loadWeather() {
+    var cached = load('dash.weather', null);
+    if (cached && cached.data) showWeather(cached.data, cached.time);
+    if (cached && Date.now() - cached.time < 30 * 60 * 1000) return;
+    fetch(W_URL).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.current) throw new Error('no data');
+      var t = Date.now();
+      save('dash.weather', { data: d, time: t });
+      showWeather(d, t);
+    }).catch(function () {
+      if (!cached) $('wDesc').textContent = 'Weather is unavailable right now.';
     });
-    button.innerHTML = '<i class="fas fa-pause-circle"></i>'; // Change button text when playing
   }
-  isMusicPlaying = !isMusicPlaying;
-}
+  loadWeather();
+  setInterval(loadWeather, 30 * 60 * 1000);
 
-// Initial call to set greeting, shadow, and music
-setGreetingAndShadow();
+  /* ---------- Goals ---------- */
+  var goals = load('dash.goals', null) || [
+    { id: uid(), name: 'Asset structure clean-up (%)', value: 55, target: 100 },
+    { id: uid(), name: 'Gym sessions this week', value: 0, target: 4 }
+  ];
+  var editingGoal = null;
+  var RING = 2 * Math.PI * 24;
 
-// Show first quote when the page loads
-window.onload = function () {
-  getRandomQuote(); // Display a random quote when the page opens
+  function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString('en-GB'); }
 
-  // Change quote every 60 seconds (1 minute)
-  setInterval(() => {
-    getRandomQuote();
-  }, 60000); // 60,000 milliseconds = 1 minute
-};
-
-function toggleTask() {
-  const taskContainer = document.getElementById("taskContainer");
-  taskContainer.classList.toggle("open");
-  const task = document.getElementById("task");
-  task.classList.toggle("open");
-  const clock = document.getElementById("clock");
-  clock.classList.toggle("small");
-}
-
-function setCookie(name, value, days) {
-  const expires = new Date(Date.now() + days * 86400000).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(
-    value
-  )}; expires=${expires}; path=/`;
-}
-
-function getCookie(name) {
-  const cookies = document.cookie.split("; ");
-  for (const c of cookies) {
-    const [key, value] = c.split("=");
-    if (key === name) return decodeURIComponent(value);
+  function renderGoals() {
+    save('dash.goals', goals);
+    $('goalList').innerHTML = goals.map(function (g) {
+      var pct = g.target > 0 ? Math.max(0, Math.min(1, g.value / g.target)) : 0;
+      return '<li class="goal' + (pct >= 1 ? ' done' : '') + '" data-id="' + g.id + '">' +
+        '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
+        '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - pct)) + '"></circle></svg>' +
+        '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%</span></div>' +
+        '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div></li>';
+    }).join('');
   }
-  return null;
-}
 
-// Update clock every second
-setInterval(updateClock, 1000);
-
-// Ensure music plays when the button is clicked
-document.addEventListener("DOMContentLoaded", () => {
-  setGreetingAndShadow();
-  getRandomQuote();
-  loadTasks();
-  document.getElementById("musicButton").addEventListener("click", toggleMusic);
-});
-
-//behaviour for task, delete under here //
-document.addEventListener("DOMContentLoaded", () => {
-  loadTasks();
-});
-
-function addTask() {
-  const taskInput = document.getElementById("taskInput");
-  let taskText = taskInput.value.trim();
-
-  let tasks = localStorage.getItem("taskList") || "";
-  let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
-
-  const editingIndex = taskInput.getAttribute("data-editing-index");
-  if (editingIndex !== null) {
-    const idx = parseInt(editingIndex, 10);
-    if (taskText === "") {
-      taskArray.splice(idx, 1);
-    } else {
-      const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
-      if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
-        taskText = "https://" + taskText;
-      }
-      taskArray[idx] = taskText;
+  $('goalList').addEventListener('click', function (e) {
+    var li = e.target.closest('.goal'); if (!li) return;
+    var g = goals.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!g) return;
+    var stepBtn = e.target.closest('[data-step]');
+    if (stepBtn) {
+      var step = g.target >= 100 ? 5 : 1;
+      g.value = Math.max(0, Math.round((g.value + step * Number(stepBtn.dataset.step)) * 100) / 100);
+      renderGoals();
+      return;
     }
-    localStorage.setItem(
-      "taskList",
-      taskArray.join(";") + (taskArray.length ? ";" : "")
-    );
-    taskInput.removeAttribute("data-editing-index");
-    taskInput.value = "";
-    loadTasks();
-    return;
+    openGoalForm(g);
+  });
+
+  function openGoalForm(g) {
+    editingGoal = g || null;
+    $('goalName').value = g ? g.name : '';
+    $('goalValue').value = g ? g.value : '';
+    $('goalTarget').value = g ? g.target : '';
+    $('goalDelete').hidden = !g;
+    $('goalForm').hidden = false;
+    $('goalName').focus();
   }
+  function closeGoalForm() { $('goalForm').hidden = true; editingGoal = null; }
 
-  if (!taskText) return;
-  const domainPattern = /^[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
-  if (domainPattern.test(taskText) && !taskText.startsWith("http")) {
-    taskText = "https://" + taskText;
+  $('goalAddBtn').addEventListener('click', function () { openGoalForm(null); });
+  $('goalCancel').addEventListener('click', closeGoalForm);
+  $('goalDelete').addEventListener('click', function () {
+    if (!editingGoal) return;
+    goals = goals.filter(function (x) { return x !== editingGoal; });
+    closeGoalForm(); renderGoals();
+  });
+  $('goalForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('goalName').value.trim(), target = parseFloat($('goalTarget').value), value = parseFloat($('goalValue').value) || 0;
+    if (!name || !(target > 0)) return;
+    if (editingGoal) { editingGoal.name = name; editingGoal.target = target; editingGoal.value = value; }
+    else goals.push({ id: uid(), name: name, value: value, target: target });
+    closeGoalForm(); renderGoals();
+  });
+  renderGoals();
+
+  /* ---------- To-do ---------- */
+  var todos = load('dash.todos', []);
+  function renderTodos() {
+    save('dash.todos', todos);
+    $('todoList').innerHTML = todos.map(function (t) {
+      return '<li class="todo-item' + (t.done ? ' done' : '') + '" data-id="' + t.id + '">' +
+        '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
+        '<span class="label">' + esc(t.text) + '</span>' +
+        '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+    $('todoEmpty').hidden = todos.length > 0;
+    $('todoClear').hidden = !todos.some(function (t) { return t.done; });
   }
-
-  taskArray.push(taskText);
-  localStorage.setItem(
-    "taskList",
-    taskArray.join(";") + (taskArray.length ? ";" : "")
-  );
-  taskInput.value = "";
-  loadTasks();
-}
-
-function loadTasks() {
-  const tasks = localStorage.getItem("taskList") || "";
-  const taskArray = tasks.split(";").filter((task) => task.trim() !== "");
-  const taskList = document.getElementById("taskList");
-  taskList.innerHTML = "";
-
-  taskArray.forEach((taskText, index) => {
-    const li = document.createElement("li");
-    li.classList.add("task-item");
-
-    if (taskText.startsWith("http://") || taskText.startsWith("https://")) {
-      const a = document.createElement("a");
-      a.href = taskText;
-      a.textContent = new URL(taskText).hostname;
-      a.target = "_blank";
-      li.appendChild(a);
-      li.addEventListener("dblclick", () => window.open(taskText, "_blank"));
-    } else {
-      li.textContent = taskText;
+  $('todoForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('todoInput').value.trim(); if (!v) return;
+    todos.push({ id: uid(), text: v, done: false });
+    $('todoInput').value = '';
+    renderTodos();
+  });
+  $('todoList').addEventListener('click', function (e) {
+    var li = e.target.closest('.todo-item'); if (!li) return;
+    var t = todos.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!t) return;
+    if (e.target.closest('.del')) {
+      li.classList.add('removing');
+      setTimeout(function () { todos = todos.filter(function (x) { return x !== t; }); renderTodos(); }, 250);
+    } else if (e.target.closest('.check') || e.target.closest('.label')) {
+      t.done = !t.done; renderTodos();
     }
+  });
+  $('todoClear').addEventListener('click', function () {
+    todos = todos.filter(function (t) { return !t.done; }); renderTodos();
+  });
+  renderTodos();
 
-    li.addEventListener("click", () => {
-      const taskInput = document.getElementById("taskInput");
-      taskInput.value = taskText;
-      taskInput.setAttribute("data-editing-index", index);
+  /* ---------- Quick links ---------- */
+  var links = load('dash.links', null) || [
+    { name: 'Website', url: 'https://jplundberg.com/' },
+    { name: 'Site editor', url: 'https://app.pagescms.org/' },
+    { name: 'GitHub', url: 'https://github.com/Jpme96/jplundberg.github.io' },
+    { name: 'Tally', url: 'https://tally.so/dashboard' },
+    { name: 'LinkedIn', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' },
+    { name: 'Instagram', url: 'https://www.instagram.com/jp.lundberg.official/' },
+    { name: 'Claude', url: 'https://claude.ai/' }
+  ];
+  function linkIcon(url, name) {
+    var map = [['linkedin', 'linkedin'], ['instagram', 'instagram'], ['github', 'github'], ['jplundberg', 'house'],
+      ['pagescms', 'pencil-square'], ['tally', 'ui-checks'], ['claude', 'stars'], ['sharepoint', 'microsoft'],
+      ['office', 'microsoft'], ['outlook', 'envelope'], ['mail', 'envelope'], ['plania', 'buildings'], ['teams', 'microsoft-teams'],
+      ['youtube', 'youtube'], ['spotify', 'spotify'], ['google', 'google']];
+    var u = (url + ' ' + name).toLowerCase();
+    for (var i = 0; i < map.length; i++) if (u.indexOf(map[i][0]) > -1) return '<i class="bi bi-' + map[i][1] + '"></i>';
+    return esc((name || '?').trim().charAt(0).toUpperCase());
+  }
+  function renderLinks() {
+    save('dash.links', links);
+    $('linkGrid').innerHTML = links.map(function (l, i) {
+      return '<li><a href="' + esc(l.url) + '" target="_blank" rel="noopener"><span class="ico">' + linkIcon(l.url, l.name) + '</span><span class="name">' + esc(l.name) + '</span></a>' +
+        '<button type="button" class="remove" data-i="' + i + '" aria-label="Remove ' + esc(l.name) + '"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+  }
+  function setEditing(on) {
+    document.querySelector('.links').classList.toggle('editing', on);
+    $('linkForm').hidden = !on;
+    $('linkEditBtn').textContent = on ? 'Done' : 'Edit';
+  }
+  $('linkEditBtn').addEventListener('click', function () { setEditing(!document.querySelector('.links').classList.contains('editing')); });
+  $('linkCancel').addEventListener('click', function () { setEditing(false); });
+  $('linkGrid').addEventListener('click', function (e) {
+    var rm = e.target.closest('.remove');
+    if (rm) { e.preventDefault(); links.splice(Number(rm.dataset.i), 1); renderLinks(); return; }
+    if (document.querySelector('.links').classList.contains('editing') && e.target.closest('a')) e.preventDefault();
+  });
+  $('linkForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('linkName').value.trim(), url = $('linkUrl').value.trim();
+    if (!name || !url) return;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    links.push({ name: name, url: url });
+    $('linkName').value = ''; $('linkUrl').value = '';
+    renderLinks();
+  });
+  renderLinks();
+
+  /* ---------- Notes (your old notes are carried over once) ---------- */
+  var notes = load('dash.notes', null);
+  if (notes === null) {
+    notes = [];
+    try {
+      (localStorage.getItem('taskList') || '').split(';').forEach(function (t) {
+        if (t.trim()) notes.push({ id: uid(), text: t.trim() });
+      });
+    } catch (e) {}
+  }
+  var editingNote = null;
+
+  function linkify(text) {
+    return esc(text).replace(/(https?:\/\/[^\s<]+)/g, function (u) {
+      var label = u; try { label = new URL(u.replace(/&amp;/g, '&')).hostname; } catch (e) {}
+      return '<a href="' + u + '" target="_blank" rel="noopener">' + label + '</a>';
     });
-
-    taskList.appendChild(li);
-
-    addSwipeHandlers(li, index);
-  });
-}
-
-// ----- Swipe-to-Delete with Smooth Movement -----
-function addSwipeHandlers(task, index) {
-  let startX = 0;
-  let currentX = 0;
-  const deleteThreshold = 100;
-  let swipeInProgress = false;
-
-  // Mobile Touch Handling
-  task.addEventListener("touchstart", (event) => {
-    startX = event.touches[0].clientX;
-    task.style.transition = "none";
-  });
-
-  task.addEventListener("touchmove", (event) => {
-    currentX = event.touches[0].clientX;
-    let deltaX = currentX - startX;
-    task.style.transform = `translateX(${deltaX}px)`;
-  });
-
-  task.addEventListener("touchend", (event) => {
-    let deltaX = event.changedTouches[0].clientX - startX;
-
-    if (Math.abs(deltaX) > deleteThreshold) {
-      task.style.transition = "transform 0.3s ease-out";
-      task.style.transform = `translateX(${deltaX > 0 ? 200 : -200}px)`;
-      setTimeout(() => deleteTask(task, index), 300);
-    } else {
-      task.style.transition = "transform 0.3s ease-out";
-      task.style.transform = "translateX(0)";
-    }
-  });
-
-  // Mouse Handling for Desktop
-  task.addEventListener("mousedown", (event) => {
-    startX = event.clientX;
-    task.style.transition = "none";
-    document.addEventListener("mousemove", mouseMoveHandler);
-    document.addEventListener("mouseup", mouseUpHandler);
-  });
-
-  function mouseMoveHandler(event) {
-    currentX = event.clientX;
-    let deltaX = currentX - startX;
-    task.style.transform = `translateX(${deltaX}px)`;
   }
-
-  function mouseUpHandler(event) {
-    let deltaX = event.clientX - startX;
-    document.removeEventListener("mousemove", mouseMoveHandler);
-    document.removeEventListener("mouseup", mouseUpHandler);
-
-    if (Math.abs(deltaX) > deleteThreshold) {
-      task.style.transition = "transform 0.3s ease-out";
-      task.style.transform = `translateX(${deltaX > 0 ? 200 : -200}px)`;
-      setTimeout(() => deleteTask(task, index), 300);
-    } else {
-      task.style.transition = "transform 0.3s ease-out";
-      task.style.transform = "translateX(0)";
-    }
+  function renderNotes() {
+    save('dash.notes', notes);
+    $('noteList').innerHTML = notes.map(function (n) {
+      return '<li class="note' + (editingNote === n ? ' editing' : '') + '" data-id="' + n.id + '"><span class="body">' + linkify(n.text) + '</span>' +
+        '<button type="button" class="del" aria-label="Delete note"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+    $('noteEmpty').hidden = notes.length > 0;
   }
-}
-
-// ----- Delete Task Function -----
-function deleteTask(task, index) {
-  let tasks = localStorage.getItem("taskList") || "";
-  let taskArray = tasks.split(";").filter((task) => task.trim() !== "");
-  taskArray.splice(index, 1);
-  localStorage.setItem(
-    "taskList",
-    taskArray.join(";") + (taskArray.length ? ";" : "")
-  );
-  task.remove();
-}
-
-/* Keyboard Event for Enter Key */
-// This event listener allows the user to press Enter to submit the task input
-document
-  .getElementById("taskInput")
-  .addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-      event.preventDefault(); // Prevents default form submission
-      document.getElementById("submitButton").click(); // Simulates button click
-      this.blur(); // Hides the keyboard on mobile devices
+  function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+  $('noteInput').addEventListener('input', function () { grow(this); });
+  $('noteInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('noteForm').requestSubmit(); }
+  });
+  $('noteForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('noteInput').value.trim();
+    var url = /^[a-z0-9-]+(\.[a-z]{2,})+(\/\S*)?$/i;
+    if (url.test(v)) v = 'https://' + v;
+    if (editingNote) {
+      if (v) editingNote.text = v; else notes = notes.filter(function (x) { return x !== editingNote; });
+      editingNote = null;
+    } else if (v) {
+      notes.unshift({ id: uid(), text: v });
     }
+    $('noteInput').value = ''; grow($('noteInput'));
+    $('noteSubmit').innerHTML = '<i class="bi bi-plus-lg"></i>';
+    renderNotes();
   });
-
-// Event Listener for Selecting a Task on Click
-document.addEventListener("click", function (event) {
-  let tasks = document.querySelectorAll(".task"); // Assuming tasks have a "task" class
-  tasks.forEach((task) => task.classList.remove("selected")); // Remove previous selection
-
-  if (event.target.classList.contains("task")) {
-    event.target.classList.add("selected"); // Add selection to clicked task
-  }
-});
-
-// Ensure keyboard pops up when input is tapped
-document.getElementById("taskInput").addEventListener("focus", function () {
-  this.scrollIntoView({ behavior: "smooth", block: "center" });
-});
-
-document.querySelectorAll("#clickable-Card").forEach((card) => {
-  card.addEventListener("click", function () {
-    this.classList.add("expand"); // Start expansion animation
-    this.classList.add("fade-out"); // Start fade-out animation
-
-    // Fade out the background
-    document.getElementById("container-card").classList.add("fade-out-bg");
-
-    // Wait slightly longer before hiding elements
-    setTimeout(() => {
-      document.getElementById("container-card").style.display = "none";
-      this.style.display = "none";
-    }, 800);
+  $('noteList').addEventListener('click', function (e) {
+    var li = e.target.closest('.note'); if (!li) return;
+    if (e.target.closest('a')) return;
+    var n = notes.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!n) return;
+    if (e.target.closest('.del')) {
+      li.classList.add('removing');
+      setTimeout(function () {
+        notes = notes.filter(function (x) { return x !== n; });
+        if (editingNote === n) { editingNote = null; $('noteInput').value = ''; }
+        renderNotes();
+      }, 250);
+      return;
+    }
+    editingNote = n;
+    $('noteInput').value = n.text; grow($('noteInput'));
+    $('noteSubmit').innerHTML = '<i class="bi bi-check-lg"></i>';
+    $('noteInput').focus();
+    renderNotes();
   });
-});
+  renderNotes();
+})();
