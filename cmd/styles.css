@@ -727,7 +727,7 @@ select option { background: var(--bg-solid); }
 }
 .month-nav button:disabled { color: rgba(var(--ink-rgb), .2); cursor: default; }
 .sp-form #spDate { flex: 0 0 auto; width: 150px; color-scheme: dark; }
-@media (max-width: 420px) { .sp-form #spDate { width: 124px; padding-left: 8px; padding-right: 6px; font-size: 14px; } }
+@media (max-width: 420px) { .sp-form #spDate { width: 136px; padding-left: 8px; padding-right: 6px; } }
 
 .donut-wrap { position: relative; width: 168px; margin: 6px auto 16px; }
 .donut { width: 100%; display: block; transform: rotate(-90deg); }
@@ -1856,7 +1856,7 @@ input:disabled { opacity: .55; }
 .money .mo-acts .pill-btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; height: 38px; }
 .money .mo-acts .text-btn { margin-left: auto; }
 .money .stack { margin: 12px 0 0; }
-.icon-btn.sm { width: 32px; height: 32px; font-size: 14px; }
+.icon-btn.sm { width: 36px; height: 36px; font-size: 15px; }
 .head-actions .text-btn i { font-size: 11px; }
 .fp-fin { margin-top: 0; }
 .fp-fin .fin-grid { margin-bottom: 26px; }
@@ -1905,7 +1905,6 @@ body.qa-open { overflow: hidden; }
 .qa-form { display: grid; gap: 10px; }
 .qa-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
 .qa-row > .qa-check { grid-column: 1 / -1; }
-.qa-amt { font-size: 20px; font-weight: 600; font-family: "Raleway", sans-serif; }
 .qa-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
 .qa-check input { width: auto; accent-color: var(--accent); }
 .qa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1969,3 +1968,49 @@ body.qa-open { overflow: hidden; }
 .b-slip-hint { margin: 0; font-size: 13px; line-height: 1.45; }
 .slip-form { display: grid; gap: 8px; }
 .slip-form select { padding: 8px 30px 8px 10px; }
+
+/* ==================== One set of sizes everywhere ====================
+   Form fields: 44 px tall, 16 px text (16 px also stops iPhones zooming in on a field).
+   Round icon buttons: 40 px with a 16 px icon (36 px for the small ones in card headings).
+   Pill buttons: 44 px. Text buttons: 13 px. These rules come last on purpose. */
+:root { --field-h: 44px; --field-fs: 16px; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea {
+  font-size: var(--field-fs); line-height: 1.3; border-radius: 10px; box-sizing: border-box;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select {
+  height: var(--field-h); min-height: var(--field-h); padding-top: 0; padding-bottom: 0;
+}
+textarea { min-height: var(--field-h); padding-top: 11px; padding-bottom: 11px; }
+input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; }
+input::-webkit-date-and-time-value { text-align: left; }
+/* compact selects in toolbars match the segmented controls there (36 px) */
+.fp-filter .fp-year, .bill-day, .kit-head select, .cl-head select { height: 36px; min-height: 36px; font-size: 14px; }
+/* the big From/To fields on the Travel page keep their hero size, the search box keeps its own */
+.tv-field input { height: auto; min-height: 0; font-size: 17px; }
+.sr-top input { height: auto; min-height: 0; }
+.lock input { height: 50px; min-height: 50px; font-size: 17px; }
+.kit-mini { height: 32px; min-height: 32px; width: 58px; font-size: 14px; padding: 0 8px; }
+/* widths that used to be set per form */
+.st-input, .me-row .st-input, .pay-mode, .pay-day, select.st-select, .im-row select { font-size: var(--field-fs); }
+.pay-mode { max-width: 52%; }
+/* nothing in a two-column row may push its neighbour off the screen */
+.row2 > *, .add-row > *, .qa-row > *, .pay-form .add-row > *, .slip-form .add-row > * { min-width: 0; }
+.add-row > input, .add-row > label { flex: 1 1 0; }
+.add-row > .amt { flex: 0 1 140px; }
+/* buttons */
+.pill-btn { height: var(--field-h); min-height: var(--field-h); font-size: 14px; border-radius: 10px; }
+.pill-btn.wide { border-radius: 22px; }
+.icon-btn { width: 40px; height: 40px; font-size: 16px; }
+.icon-btn i { font-size: 16px; }
+.icon-btn.sm, .st-head #stClose, .cl-head .icon-btn { width: 36px; height: 36px; }
+.icon-btn.sm i, .st-head #stClose i, .cl-head .icon-btn i { font-size: 15px; }
+.qa-btn, .me-btn { width: 40px; height: 40px; }
+.qa-btn { font-size: 16px; }
+.text-btn { font-size: 13px; }
+.text-btn i { font-size: 13px; }
+.text-btn i.bi-chevron-right, .text-btn i.bi-chevron-left, .text-btn i.bi-chevron-down { font-size: 11px; }
+/* headings and their icons */
+.card-head h2, .card-head h2 i { font-size: 16px; }
+.sec-title, .sec-title i { font-size: 20px; }
+.card-head { gap: 8px; }
+.card-head .head-actions, .card-head .month-nav { flex-shrink: 0; }
