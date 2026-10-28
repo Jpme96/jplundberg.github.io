@@ -52,7 +52,7 @@
   }
   /* perceived brightness 0–255: light colours get dark text, dark colours white text */
   function bright(c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; }
-  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60 };
+  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60 };
 
   /* Your own photo is kept on this device only (IndexedDB), resized to save space. */
   var customUrl = null, customLoaded = false;
@@ -131,6 +131,8 @@
     root.setAttribute('data-bg', bg);
     if (s.bgStrength) root.style.setProperty('--bg-strength', s.bgStrength / 100);
     else root.style.removeProperty('--bg-strength');
+    root.classList.toggle('glass', !!s.glass);
+    root.style.setProperty('--glass', (+s.glassStrength || 60) / 100);
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f3f5' : '#0e0f11');
     CARDS.forEach(function (c) { root.classList.toggle('hide-' + c[0], !!s.hide[c[0]]); });
@@ -189,6 +191,10 @@
                    : 'Your photo is on another device. Add it here too, or pick another background.')
       : '';
     $('stStrengthRow').hidden = s.bgType === 'none';
+    $('stGlass').checked = !!s.glass;
+    $('stGlassRow').hidden = !s.glass;
+    if (document.activeElement !== $('stGlassStr')) $('stGlassStr').value = +s.glassStrength || 60;
+    $('stGlassNote').textContent = s.glass && s.bgType === 'none' ? 'Glass shows best on a background – pick one above.' : '';
     var cs = getComputedStyle(document.querySelector('.bg'));
     $('stStrength').value = s.bgStrength || Math.round(parseFloat(cs.opacity) * 100) || 30;
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
@@ -215,7 +221,7 @@
     /* One-line summaries on the main menu */
     var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
-    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName;
+    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName + (s.glass ? ' · Glass' : '');
     var avail = CARDS.filter(function (c) { return featureOn(c[0]); });
     var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
     $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');
@@ -323,6 +329,10 @@
     root.style.setProperty('--bg-strength', this.value / 100);
   });
   $('stStrength').addEventListener('change', function () { set({ bgStrength: +this.value }); });
+  /* Glass: frosted, see-through cards. The slider previews live and saves when you let go. */
+  $('stGlass').addEventListener('change', function () { set({ glass: this.checked }); });
+  $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
+  $('stGlassStr').addEventListener('change', function () { set({ glassStrength: +this.value }); });
   $('stName').addEventListener('change', function () { set({ name: this.value.trim() }); });
   $('stSeconds').addEventListener('change', function () { set({ seconds: this.checked }); });
   $('stQuotes').addEventListener('change', function () { set({ quotes: this.checked }); });
