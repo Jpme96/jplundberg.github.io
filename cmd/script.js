@@ -159,14 +159,42 @@
 
   function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString('en-GB'); }
 
+  /* A goal can follow a habit ("Gym sessions this week" ↔ the Training habit): it then counts this
+     week's ticks, and its target IS the habit's weekly target – change either one and both change. */
+  function habits() { return load('dash.habits', null) || { list: [], log: {} }; }
+  function weekCount(hb, id) {
+    var t = new Date(), mon = new Date(t.getFullYear(), t.getMonth(), t.getDate() - (t.getDay() + 6) % 7), n = 0;
+    for (var i = 0; i < 7; i++) { var d = new Date(mon); d.setDate(mon.getDate() + i); if (((hb.log || {})[dkey(d)] || []).indexOf(id) > -1) n++; }
+    return n;
+  }
+  function linkedHabit(g, hb) { return g.habit ? (hb.list || []).filter(function (h) { return h.id === g.habit; })[0] || null : null; }
+  /* one-time: link the existing gym/training goal to the training habit (once habits exist) */
+  function autoLink() {
+    var hb = habits();
+    if (!(hb.list || []).length || goals.every(function (x) { return x.linkChecked; })) return;
+    var h = (hb.list || []).filter(function (x) { return /train|trening|gym|workout|økt/i.test(x.name); })[0];
+    var g = goals.filter(function (x) { return !x.habit && !x.linkChecked && /gym|train|trening|workout|økt/i.test(x.name) && /week|uke/i.test(x.name); })[0];
+    goals.forEach(function (x) { x.linkChecked = true; });
+    if (h && g) {
+      g.habit = h.id;
+      if (g.target > 0 && g.target <= 7 && g.target !== h.target) { h.target = Math.round(g.target); save('dash.habits', hb); setTimeout(function () { window.dispatchEvent(new Event('habits:change')); }, 0); }
+    }
+  }
+  function dkey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
   function renderGoals() {
+    autoLink();
     save('dash.goals', goals);
+    var hb = habits();
     $('goalList').innerHTML = goals.map(function (g) {
+      var h = linkedHabit(g, hb);
+      if (h) { g = Object.assign({}, g, { value: weekCount(hb, h.id), target: h.target }); }
       var pct = g.target > 0 ? Math.max(0, Math.min(1, g.value / g.target)) : 0;
       return '<li class="goal' + (pct >= 1 ? ' done' : '') + '" data-id="' + g.id + '">' +
         '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - pct)) + '"></circle></svg>' +
-        '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%</span></div>' +
+        '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%' +
+        (h ? ' · <i class="bi bi-link-45deg"></i> ' + esc(h.name) + ' habit' : '') + '</span></div>' +
         '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div></li>';
     }).join('');
   }
@@ -175,6 +203,19 @@
     var li = e.target.closest('.goal'); if (!li) return;
     var g = goals.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!g) return;
     var stepBtn = e.target.closest('[data-step]');
+    var hb = habits(), h = linkedHabit(g, hb);
+    if (stepBtn && h) {           /* linked: + ticks today in the habit (or the latest free day this week), − removes the latest tick */
+      var t = new Date(), days = [];
+      for (var i = 0; i <= (t.getDay() + 6) % 7; i++) { var d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - i); days.push(dkey(d)); }
+      hb.log = hb.log || {};
+      var on = function (k) { return (hb.log[k] || []).indexOf(h.id) > -1; };
+      if (+stepBtn.dataset.step > 0) { var free = days.filter(function (k) { return !on(k); })[0]; if (free) (hb.log[free] = hb.log[free] || []).push(h.id); }
+      else { var last = days.filter(on)[0]; if (last) { hb.log[last] = hb.log[last].filter(function (x) { return x !== h.id; }); if (!hb.log[last].length) delete hb.log[last]; } }
+      save('dash.habits', hb);
+      window.dispatchEvent(new Event('habits:change'));
+      renderGoals();
+      return;
+    }
     if (stepBtn) {
       var step = g.target >= 100 ? 5 : 1;
       g.value = Math.max(0, Math.round((g.value + step * Number(stepBtn.dataset.step)) * 100) / 100);
@@ -187,8 +228,14 @@
   function openGoalForm(g) {
     editingGoal = g || null;
     $('goalName').value = g ? g.name : '';
-    $('goalValue').value = g ? g.value : '';
-    $('goalTarget').value = g ? g.target : '';
+    var hb = habits(), h = g ? linkedHabit(g, hb) : null;
+    $('goalValue').value = h ? weekCount(hb, h.id) : g ? g.value : '';
+    $('goalTarget').value = h ? h.target : g ? g.target : '';
+    $('goalValue').disabled = !!h;
+    $('goalHabit').innerHTML = '<option value="">Not linked</option>' + (hb.list || []).map(function (x) {
+      return '<option value="' + esc(x.id) + '"' + (g && g.habit === x.id ? ' selected' : '') + '>Count ticks in “' + esc(x.name) + '” this week</option>';
+    }).join('');
+    $('goalHabitRow').hidden = !(hb.list || []).length;
     $('goalDelete').hidden = !g;
     $('goalForm').hidden = false;
     $('goalName').focus();
@@ -206,11 +253,23 @@
     e.preventDefault();
     var name = $('goalName').value.trim(), target = parseFloat($('goalTarget').value), value = parseFloat($('goalValue').value) || 0;
     if (!name || !(target > 0)) return;
-    if (editingGoal) { editingGoal.name = name; editingGoal.target = target; editingGoal.value = value; }
-    else goals.push({ id: uid(), name: name, value: value, target: target });
+    var habitId = $('goalHabit').value, hb = habits();
+    var h = habitId ? (hb.list || []).filter(function (x) { return x.id === habitId; })[0] : null;
+    if (h) {                                   /* the target is the habit's weekly target */
+      target = Math.max(1, Math.min(7, Math.round(target)));
+      if (h.target !== target) { h.target = target; save('dash.habits', hb); window.dispatchEvent(new Event('habits:change')); }
+    }
+    if (editingGoal) { editingGoal.name = name; editingGoal.target = target; if (!h) editingGoal.value = value; editingGoal.habit = h ? h.id : undefined; }
+    else goals.push({ id: uid(), name: name, value: h ? 0 : value, target: target, habit: h ? h.id : undefined });
     closeGoalForm(); renderGoals();
   });
   renderGoals();
+  window.addEventListener('habits:change', renderGoals);
+  $('goalHabit').addEventListener('change', function () {
+    var hb = habits(), h = (hb.list || []).filter(function (x) { return x.id === this.value; }, this)[0];
+    $('goalValue').disabled = !!h;
+    if (h) { $('goalValue').value = weekCount(hb, h.id); $('goalTarget').value = h.target; }
+  });
 
   /* ---------- To-do ---------- */
   var todos = load('dash.todos', []);

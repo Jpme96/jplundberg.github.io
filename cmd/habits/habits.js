@@ -142,7 +142,9 @@
   /* Show the newest weeks first on narrow screens */
   function scrollToEnd() { document.querySelectorAll('.hp-heat').forEach(function (h) { h.scrollLeft = h.scrollWidth; }); }
 
-  window.Dash = { reload: function () { load(); render(); scrollToEnd(); } };   // newer data from another device
+  var prevReload = window.Dash && window.Dash.reload;      // newer data from another device (other parts hook in too)
+  window.Dash = window.Dash || {};
+  window.Dash.reload = function () { if (prevReload) prevReload(); load(); render(); scrollToEnd(); };
   window.Vault.onUnlock(function () { load(); render(); requestAnimationFrame(scrollToEnd); });
   window.Vault.onLock(function () { $('hpTiles').innerHTML = ''; $('hpHabits').innerHTML = ''; hideTip(); });
 })();

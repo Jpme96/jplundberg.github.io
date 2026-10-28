@@ -409,16 +409,69 @@
   }
 
   /* Takes a newer version from another device. */
+  /* ---------- merging changes from two devices ----------
+     After every sync this device remembers a fingerprint (hash) of each part of the data:
+     every widget (to-dos, habits, calendar …) and every top-level part of the finances.
+     If another device saved in the meantime, the parts changed HERE since the last sync are
+     kept, and everything else comes from the other device – instead of one side losing. */
+  var BASE_KEY = 'dash.syncBase';
+  function parts(obj, w) {
+    var out = {};
+    Object.keys(obj || {}).forEach(function (k) { if (k !== '_w') out['d:' + k] = obj[k]; });
+    WIDGET_KEYS.forEach(function (k) { out['w:' + k] = w[k] === undefined ? null : w[k]; });
+    return out;
+  }
+  function fingerprints(p) {
+    var keys = Object.keys(p);
+    return Promise.all(keys.map(function (k) {
+      return crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(p[k]))).then(function (h) { return b64(h).slice(0, 22); });
+    })).then(function (hs) { var o = {}; keys.forEach(function (k, i) { o[k] = hs[i]; }); return o; });
+  }
+  function recordBase(obj, w) {
+    return fingerprints(parts(obj, w || widgets())).then(function (h) { writeJSON(BASE_KEY, h); }).catch(function () {});
+  }
+  function localChanges() {
+    var base = readJSON(BASE_KEY);
+    if (!base || !data) return Promise.resolve([]);
+    return fingerprints(parts(data, widgets())).then(function (now) {
+      var keys = Object.keys(now).concat(Object.keys(base).filter(function (k) { return !(k in now); }));
+      return keys.filter(function (k) { return base[k] !== now[k]; });
+    });
+  }
+
   function adopt(v, failNote) {
     var k = key;
     return open(v, k).then(function (obj) {
       if (key !== k) return;
-      salt = unb64(v.salt);
-      writeJSON(VAULT_KEY, v);
-      writeJSON(SYNC_KEY, v.rev || 0);
-      data = unpack(obj);
-      emit();
-      setSync('ok');
+      return localChanges().catch(function () { return []; }).then(function (changed) {
+        if (key !== k) return;
+        salt = unb64(v.salt);
+        writeJSON(VAULT_KEY, v);
+        writeJSON(SYNC_KEY, v.rev || 0);
+        remoteRev = v.rev || 0;
+        var w = obj._w || {};
+        if (!changed.length || failNote) {           // nothing new here: take the other device's version
+          data = unpack(obj);
+          recordBase(data, w);
+          emit();
+          setSync('ok');
+          return;
+        }
+        /* both devices changed something: keep this device's changed parts */
+        recordBase(obj, w);                          // what the server has now (before merging)
+        w = JSON.parse(JSON.stringify(w));
+        var mine = widgets(), merged = {};
+        Object.keys(obj).forEach(function (x) { if (x !== '_w') merged[x] = obj[x]; });
+        changed.forEach(function (c) {
+          var name = c.slice(2);
+          if (c.indexOf('d:') === 0) { if (data && name in data) merged[name] = data[name]; else delete merged[name]; }
+          else if (mine[name] !== undefined) w[name] = mine[name]; else delete w[name];
+        });
+        merged._w = w;
+        data = unpack(merged);
+        emit();
+        return window.Vault.save(data);           // new version on top of the other device's, then upload
+      });
     }, function () {
       /* Encrypted with another passcode: it was changed on another device. */
       lock(failNote || 'Your passcode was changed on another device. Use the new one.');
@@ -440,6 +493,7 @@
       if (!v || lr > (v.rev || 0) || syncedRev() !== (v.rev || 0)) return push();
       writeJSON(SYNC_KEY, v.rev || 0);
       setSync('ok');
+      if (data && !readJSON(BASE_KEY)) recordBase(data);
     });
   }
 
@@ -463,7 +517,7 @@
         headers: { 'content-type': 'application/json', 'X-Base-Rev': String(base) },
         body: raw
       }).then(function (r) {
-        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); return; }
+        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); if (data) recordBase(data); return; }
         if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
         if (r.status === 401 || r.status === 503) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');

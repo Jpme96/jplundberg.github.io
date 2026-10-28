@@ -1514,3 +1514,12 @@ select.st-wide { padding-right: 32px; }
 .map-dark .leaflet-container, .map-dark.leaflet-container { background: #1b1d21; }
 .kit-acts { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .kit-acts a.text-btn { text-decoration: none; }
+.goal-habit { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.goal-habit select { flex: 1; min-width: 0; }
+.goal-text .bi-link-45deg { font-size: 14px; vertical-align: -2px; }
+input:disabled { opacity: .55; }
+.me-private { display: flex; gap: 10px; align-items: flex-start; margin: 0 4px 16px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--ink-rgb), .05); font-size: 13px; color: var(--muted); line-height: 1.45; }
+.me-private b { color: var(--text); font-weight: 600; }
+.me-private .bi { color: var(--accent); margin-top: 1px; }
+.so-intro { margin: 0 4px 12px; display: flex; gap: 8px; line-height: 1.45; }
+.so-intro .bi { color: var(--accent); }

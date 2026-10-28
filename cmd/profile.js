@@ -117,13 +117,14 @@
   });
 
   /* ---------- Profile & settings panel (dashboard only) ---------- */
-  var head = $('stProfile'), box = $('meBox');
+  var head = $('stProfile'), box = $('meBox'), soBox = $('soBox');
+  var area = box && (box.closest('.st-panel') || box);     // profile and socials pages share the handlers below
   if (!head || !box) return;
 
   function renderHead() {
     var p = load(), F = window.Features, sub = [p.role, p.employer].filter(Boolean).join(' · ');
     head.innerHTML = avatar(p, 'lg') + '<span class="st-label"><b>' + esc(p.name || 'Your profile') + '</b><small>' +
-      esc(sub || 'Add your details, photo and socials') + '</small></span><i class="bi bi-chevron-right"></i>';
+      esc(sub || 'Your details and photo – private') + '</small></span><i class="bi bi-chevron-right"></i>';
   }
 
   var FIELDS = [
@@ -146,6 +147,7 @@
   function flexNorm() { return window.Features ? +((window.Features.tools().flexcfg || {}).norm) || 7.5 : 7.5; }
 
   function render() {
+    renderSocials();
     var p = load();
     var photo = '<div class="me-photo">' + avatar(p, 'xl') + '<div><button type="button" class="pill-btn" id="mePick"><i class="bi bi-camera"></i> ' + (p.photo ? 'Change photo' : 'Add photo') + '</button>' +
       (p.photo ? '<button type="button" class="text-btn danger" id="meNoPhoto">Remove</button>' : '') +
@@ -168,7 +170,7 @@
         return '<label class="st-row me-row"><span>' + r[1] + '</span>' + input + '</label>';
       }).join('') + '</section>' + (S.note ? '<p class="st-note me-note">' + S.note + '</p>' : '');
     }).join('');
-    box.innerHTML = photo + secs + socialsHtml(p) +
+    box.innerHTML = '<p class="me-private"><i class="bi bi-lock"></i><span><b>Private.</b> Only you see this – nothing here is shown on jplundberg.com. What’s public is under Settings → jplundberg.com.</span></p>' + photo + secs +
       '<p class="st-sub"><i class="bi bi-pencil"></i> Notes</p><section class="st-group"><textarea class="me-notes" data-mk="notes" rows="3" maxlength="2000" placeholder="Anything else you want to keep handy">' + esc(p.notes || '') + '</textarea></section>';
     if (window.Places) box.querySelectorAll('[data-mplace]').forEach(function (inp) {
       window.Places.field(inp, { onPick: function (pl) {
@@ -184,9 +186,10 @@
 
   /* ---------- socials ---------- */
   var pubMsg = '';
+  function renderSocials() { if (soBox) soBox.innerHTML = socialsHtml(load()); }
   function socialsHtml(p) {
     var opts = function (cur) { return Object.keys(NETS).map(function (k) { return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + NETS[k].name + '</option>'; }).join(''); };
-    return '<p class="st-sub"><i class="bi bi-share"></i> Socials <span class="st-hint">Username or link. Switch on the ones to show on jplundberg.com</span></p>' +
+    return '<p class="st-sub"><i class="bi bi-share"></i> Your profiles <span class="st-hint">Username or link. The switch decides if it’s shown on jplundberg.com</span></p>' +
       '<section class="st-group me-socials">' + p.socials.map(function (s) {
         var url = socialUrl(s), N = NETS[s.net] || NETS.linkedin;
         return '<div class="st-row me-soc" data-sid="' + esc(s.id) + '">' +
@@ -219,7 +222,7 @@
 
   /* ---------- editing ---------- */
   var timer = null;
-  box.addEventListener('input', function (e) {
+  area.addEventListener('input', function (e) {
     var t = e.target, k = t.dataset.mk;
     if (k) {
       clearTimeout(timer);
@@ -236,7 +239,7 @@
       save(p2);
     }
   });
-  box.addEventListener('change', function (e) {
+  area.addEventListener('change', function (e) {
     var t = e.target, p = load(), row = t.closest('[data-sid]');
     if (t.dataset.mk) { p[t.dataset.mk] = t.value.trim(); save(p); flash(t); renderHead(); return; }
     if (t.hasAttribute('data-mnorm') && window.Features) {
@@ -254,7 +257,7 @@
       if (t.hasAttribute('data-snet')) render();
     }
   });
-  box.addEventListener('click', function (e) {
+  area.addEventListener('click', function (e) {
     var p;
     if (e.target.closest('#mePick')) return $('meFile').click();
     if (e.target.closest('#meNoPhoto')) { p = load(); delete p.photo; save(p); render(); renderHead(); return; }
@@ -263,7 +266,7 @@
       p = load(); var used = p.socials.map(function (s) { return s.net; });
       p.socials.push({ id: uid(), net: Object.keys(NETS).filter(function (k) { return used.indexOf(k) < 0; })[0] || 'instagram', handle: '', pub: false });
       save(p); render();
-      var last = box.querySelectorAll('[data-shandle]'); if (last.length) last[last.length - 1].focus();
+      var last = area.querySelectorAll('[data-shandle]'); if (last.length) last[last.length - 1].focus();
       return;
     }
     var del = e.target.closest('[data-sdel]');
@@ -274,7 +277,7 @@
     }
   });
   /* photo: cropped to a square and made small (about 20 KB) so it syncs quickly */
-  box.addEventListener('change', function (e) {
+  area.addEventListener('change', function (e) {
     if (e.target.id !== 'meFile' || !e.target.files[0]) return;
     var img = new Image(), url = URL.createObjectURL(e.target.files[0]);
     img.onload = function () {
@@ -287,7 +290,7 @@
     img.src = url;
   });
 
-  window.addEventListener('st:page', function (e) { if (e.detail === 'profile') render(); if (e.detail === 'home') renderHead(); });
+  window.addEventListener('st:page', function (e) { if (e.detail === 'profile' || e.detail === 'socials') render(); if (e.detail === 'home') renderHead(); });
   window.addEventListener('profile:change', renderHead);
   if (window.Vault) window.Vault.onUnlock(renderHead);
   renderHead();

@@ -244,6 +244,7 @@
       if (i > -1) list.splice(i, 1); else list.push(d.dataset.h);
       if (!list.length) delete hb.log[d.dataset.d];
       renderHabits();
+      window.dispatchEvent(new Event('habits:change'));
       return;
     }
     var n = e.target.closest('[data-edit]');
@@ -268,6 +269,7 @@
       if (!hb.log[k].length) delete hb.log[k];
     });
     closeHabit(); renderHabits();
+    window.dispatchEvent(new Event('habits:change'));
   });
   $('hbForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -276,6 +278,12 @@
     if (editingHabit) { editingHabit.name = name; editingHabit.target = t; }
     else hb.list.push({ id: uid(), name: name, target: t });
     closeHabit(); renderHabits();
+    window.dispatchEvent(new Event('habits:change'));
+  });
+  /* the Goals card changed a habit (linked goal) */
+  window.addEventListener('habits:change', function (e) {
+    var fresh = load('dash.habits', hb);
+    if (JSON.stringify(fresh) !== JSON.stringify(hb)) { hb = fresh; renderHabits(); }
   });
 
   /* A new day or a new week: redraw at midnight */
@@ -299,10 +307,10 @@
     renderDepartures();
   };
 
-  renderHabits();
+  renderHabits(); window.dispatchEvent(new Event("habits:change"));
   renderDepartures();
   if (window.Vault) {
-    window.Vault.onUnlock(function () { unlocked = true; renderHabits(); fetchDepartures(); });
+    window.Vault.onUnlock(function () { unlocked = true; renderHabits(); window.dispatchEvent(new Event('habits:change')); fetchDepartures(); });
     window.Vault.onLock(function () { unlocked = false; clearTimeout(fetchTimer); calls = []; });
   }
 })();
