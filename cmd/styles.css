@@ -1610,3 +1610,26 @@ input:disabled { opacity: .55; }
 .bill.sub .sub-ic i { opacity: 1; font-size: 13px; }
 [data-tool] > .kit-card { scroll-margin-top: 16px; }
 .b-linked .del { color: var(--accent); opacity: .8; text-decoration: none; display: grid; place-items: center; }
+
+/* ---------- Icon badges: one shape everywhere ----------
+   Round corners → round icons; Sharp corners → small squares. */
+:root { --ico-r: 50%; }
+.corners-sharp { --ico-r: 8px; }
+:root :is(.st-ico, .kit-ic, .me-soc-ic, .acc-ico, .tp-item .ic, .gl-next .ic, .doc-row .ic) { border-radius: var(--ico-r); }
+
+/* ---------- The settings panel follows Appearance too ---------- */
+.glass .st-group {
+  background: rgba(var(--card-rgb), calc(.6 - var(--glass) * .4));
+  border-color: rgba(255, 255, 255, calc(.05 + var(--glass) * .1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(.03 + var(--glass) * .1));
+}
+.card-soft .st-group { background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 22px; box-shadow: 0 1px 2px rgba(0, 0, 0, .22), 0 10px 26px rgba(0, 0, 0, .26); }
+:root[data-theme="light"].card-soft .st-group { box-shadow: 0 1px 2px rgba(24, 26, 31, .06), 0 10px 24px rgba(24, 26, 31, .08); }
+.card-minimal .st-group { background: transparent; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding-left: 2px; padding-right: 2px; }
+.card-minimal .st-profile { background: transparent; border-color: var(--line); }
+.dens-compact .st-row { min-height: 42px; padding: 3px 0; }
+.dens-compact .st-group { margin-bottom: 10px; }
+.dens-compact .st-menu .st-row { min-height: 52px; }
+.corners-sharp :is(.cst-opts button, .bg-tile, .seg, .st-profile) { border-radius: 8px; }
+.corners-sharp .seg button { border-radius: 6px; }
+.corners-sharp .cst-prev { border-radius: 5px; }
