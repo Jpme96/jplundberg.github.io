@@ -473,7 +473,7 @@
   /* Coming back with the back button must not show an unlocked page from the cache. */
   window.addEventListener('pageshow', function (e) { if (e.persisted && tooLongAway()) lock(); });
 
-  $('lockNow').addEventListener('click', lock);
+  if ($('lockNow')) $('lockNow').addEventListener('click', lock);
 
   /* ---------- public API used by finance.js ---------- */
   window.Vault = {

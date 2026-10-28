@@ -27,11 +27,13 @@
         var light = s.theme === 'light' || (s.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
         r.setAttribute('data-theme', light ? 'light' : 'dark');
         if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
-        if (s.bg === false) r.classList.add('no-bg');
+        var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
+        r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
+        if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=7" rel="stylesheet">
+  <link href="styles.css?v=8" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -65,7 +67,6 @@
       <div id="date" class="date"></div>
       <div class="top-actions">
         <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings"><i class="bi bi-gear"></i></button>
-        <button class="icon-btn" id="lockNow" type="button" aria-label="Lock dashboard"><i class="bi bi-lock"></i></button>
         <a href="/" class="icon-btn" aria-label="Back to jplundberg.com"><i class="bi bi-house"></i></a>
       </div>
     </div>
@@ -270,7 +271,16 @@
           </div>
         </div>
         <div class="st-row"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
-        <label class="st-row"><span>Moon background</span><input type="checkbox" class="switch" id="stBg"></label>
+        <div class="st-col">
+          <span>Background</span>
+          <div class="bg-tiles" id="stBgTiles"></div>
+          <input type="file" id="stBgFile" accept="image/*" hidden>
+          <p class="st-note" id="stBgNote"></p>
+        </div>
+        <div class="st-col" id="stStrengthRow">
+          <span>Background strength</span>
+          <div class="st-range"><i class="bi bi-circle"></i><input type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
+        </div>
       </section>
       </div>
 
@@ -320,8 +330,8 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=7"></script>
-  <script src="settings.js?v=2"></script>
+  <script src="lock.js?v=8"></script>
+  <script src="settings.js?v=3"></script>
   <script src="script.js?v=5"></script>
   <script src="finance.js?v=2"></script>
 </body>
