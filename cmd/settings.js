@@ -75,10 +75,43 @@
     $('stLock').value = String(s.lockMins);
     var sync = $('syncState');
     $('stSync').innerHTML = sync ? sync.innerHTML : '';
+
+    /* One-line summaries on the main menu */
+    var a = ACCENTS[s.accent] || ACCENTS.teal;
+    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name;
+    var shown = CARDS.filter(function (c) { return !s.hide[c[0]]; }).length;
+    $('sumDashboard').textContent = shown + ' of ' + CARDS.length + ' cards' + (s.name ? ' · ' + s.name : '');
+    var m = +s.lockMins;
+    $('sumSecurity').textContent = 'Locks after ' + (m >= 1440 ? '1 day' : m >= 60 ? (m / 60) + ' hour' + (m > 60 ? 's' : '') : m + ' min');
+    var st = sync ? sync.className : '';
+    $('sumData').textContent = /sync-ok/.test(st) ? 'Synced' : /sync-busy/.test(st) ? 'Syncing…' : /offline/.test(st) ? 'Offline' : 'This device only';
   }
+
+  /* ---------- pages (like iPhone Settings) ---------- */
+  var page = 'home';
+  function go(name, back) {
+    page = name;
+    document.querySelectorAll('.st-page').forEach(function (el) {
+      var on = el.dataset.page === name;
+      el.hidden = !on;
+      el.classList.remove('in-fwd', 'in-back');
+      if (on) { void el.offsetWidth; el.classList.add(back ? 'in-back' : 'in-fwd'); }
+    });
+    var cur = document.querySelector('.st-page[data-page="' + name + '"]');
+    $('stTitle').innerHTML = name === 'home' ? 'Settings' : cur.dataset.title;
+    $('stBack').hidden = name === 'home';
+    $('stMsg').textContent = '';
+    $('pcForm').hidden = true;
+    document.querySelector('.st-panel').scrollTop = 0;
+  }
+  document.querySelectorAll('[data-go]').forEach(function (b) {
+    b.addEventListener('click', function () { go(b.dataset.go); });
+  });
+  $('stBack').addEventListener('click', function () { fill(); go('home', true); });
 
   function openPanel() {
     fill();
+    go('home');
     $('settings').hidden = false;
     document.body.classList.add('st-open');
     requestAnimationFrame(function () { $('settings').classList.add('open'); });
@@ -95,7 +128,7 @@
   $('settingsBtn').addEventListener('click', openPanel);
   $('stClose').addEventListener('click', closePanel);
   $('settings').addEventListener('click', function (e) { if (e.target === this) closePanel(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('settings').hidden) closePanel(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('settings').hidden) { if (page !== 'home') { fill(); go('home', true); } else closePanel(); } });
 
   document.querySelectorAll('[data-theme-opt]').forEach(function (b) {
     b.addEventListener('click', function () { set({ theme: b.dataset.themeOpt }); });
