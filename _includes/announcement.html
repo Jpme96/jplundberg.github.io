@@ -1,0 +1,21 @@
+{% comment %} Announcement banner, switched on and written in the dashboard (Settings → jplundberg.com) {% endcomment %}
+{% assign ann = site.data.site.announcement %}{% assign ann_lang = page.lang | default: 'en' %}{% assign ann_text = ann[ann_lang] | default: ann.en | strip %}
+{% if ann.on and ann_text != '' %}{% assign ann_ui = site.data.ui[ann_lang] %}
+<div class="announce" id="announce" data-key="{{ ann_text | slugify | truncate: 60, '' }}" role="region" aria-label="Announcement">
+  <i class="bi bi-megaphone-fill" aria-hidden="true"></i>
+  {% if ann.link and ann.link != '' %}<a class="announce-text" href="{{ ann.link | escape }}">{{ ann_text | escape }} <i class="bi bi-arrow-right"></i></a>{% else %}<span class="announce-text">{{ ann_text | escape }}</span>{% endif %}
+  <button type="button" class="announce-x" aria-label="{{ ann_ui.announcement_close }}"><i class="bi bi-x-lg"></i></button>
+</div>
+<script>
+  (function () {
+    var el = document.getElementById('announce'), k = 'announce:' + el.dataset.key;
+    try { if (localStorage.getItem(k)) { el.remove(); return; } } catch (e) {}
+    document.documentElement.classList.add('has-announce');
+    el.querySelector('.announce-x').addEventListener('click', function () {
+      try { localStorage.setItem(k, '1'); } catch (e) {}
+      document.documentElement.classList.remove('has-announce');
+      el.remove();
+    });
+  })();
+</script>
+{% endif %}

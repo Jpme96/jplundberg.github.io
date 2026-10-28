@@ -1,0 +1,31 @@
+{
+  "announcement": {
+    "on": false,
+    "en": "",
+    "nb": "",
+    "link": ""
+  },
+  "sections": [
+    {
+      "id": "about",
+      "on": true
+    },
+    {
+      "id": "resume",
+      "on": true
+    },
+    {
+      "id": "projects",
+      "on": true
+    },
+    {
+      "id": "articles",
+      "on": true
+    }
+  ],
+  "featured": {
+    "article": "",
+    "project": ""
+  },
+  "updated": ""
+}

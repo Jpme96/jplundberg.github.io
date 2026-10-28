@@ -1,0 +1,40 @@
+{% assign t = site.data.home[page.lang] %}
+    <!-- About Section -->
+    <section id="about" class="about section">
+
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.about_title }}</h2>
+        <p>{{ t.about_intro }}</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4 align-items-center">
+          <div class="col-lg-4">
+            <img src="/assets/img/my-profile-img.jpg" class="img-fluid about-photo" alt="John Paul Lundberg">
+          </div>
+          <div class="col-lg-8 content">
+            <h2>{{ t.about_heading }}</h2>
+            <p class="py-2">{{ t.about_p1 }}</p>
+            <script>
+              function getAge(dateString) {
+                var today = new Date();
+                var birthDate = new Date(dateString);
+                var age = today.getFullYear() - birthDate.getFullYear();
+                var m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                return age;
+              }
+            </script>
+            <ul class="facts">
+              <li><i class="bi bi-geo-alt"></i> <strong>{{ t.fact_city_label }}:</strong> <span>{{ t.fact_city }}</span></li>
+              <li><i class="bi bi-person"></i> <strong>{{ t.fact_age_label }}:</strong> <span><script>document.write(getAge("1996-06-30"))</script></span></li>
+              <li><i class="bi bi-mortarboard"></i> <strong>{{ t.fact_degree_label }}:</strong> <span>{{ t.fact_degree }}</span></li>
+            </ul>
+            <p class="mb-0">{{ t.about_p2 }}</p>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /About Section -->

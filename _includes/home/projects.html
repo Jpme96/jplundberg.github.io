@@ -1,0 +1,26 @@
+{% assign t = site.data.home[page.lang] %}
+    {% assign home_projects = site.projects | sort: "date" | reverse %}
+    {% if home_projects.size > 0 %}
+    <!-- Projects Section -->
+    <section id="projects" class="projects section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.projects_home_title }}</h2>
+      </div>
+      <div class="container">
+        <div class="project-cards">
+          {% assign shown = 0 %}{% assign feat_ref = site.data.site.featured.project | default: '' %}
+          {% if feat_ref != '' %}{% assign feat = home_projects | where: "ref", feat_ref | where: "lang", page.lang | first %}{% unless feat %}{% assign feat = home_projects | where: "ref", feat_ref | first %}{% endunless %}
+            {% if feat %}{% include project-card.html project=feat lang=page.lang featured=true %}{% assign shown = 1 %}{% endif %}
+          {% endif %}
+          {% for p in home_projects %}
+            {% assign p_lang = p.lang | default: 'en' %}
+            {% if p_lang == page.lang and shown < 3 %}{% unless feat_ref != '' and p.ref == feat_ref %}
+              {% include project-card.html project=p lang=page.lang %}
+              {% assign shown = shown | plus: 1 %}
+            {% endunless %}{% endif %}
+          {% endfor %}
+        </div>
+        <a class="more-link" href="{{ t.projects_url }}">{{ t.projects_home_link }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section><!-- /Projects Section -->
+    {% endif %}

@@ -1866,3 +1866,49 @@ body {
     transition: opacity .3s var(--ease-out);
   }
 }
+
+/*--------------------------------------------------------------
+# Announcement banner (switched on from the dashboard)
+--------------------------------------------------------------*/
+.announce {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 52px 12px 20px;
+  background: color-mix(in srgb, var(--accent-color), #0a0b0c 78%);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-color), transparent 60%);
+  color: #f2f3f5;
+  font-family: var(--nav-font);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.announce > .bi { color: var(--accent-color); font-size: 16px; flex-shrink: 0; }
+.announce-text { color: inherit; text-decoration: none; }
+a.announce-text:hover { color: var(--accent-color); }
+.announce-text .bi { font-size: 12px; margin-left: 2px; }
+.announce-x {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; border-radius: 50%; border: 0; background: none;
+  color: rgba(242, 243, 245, .7); display: grid; place-items: center; font-size: 14px;
+}
+.announce-x:hover { color: #fff; background: rgba(255, 255, 255, .08); }
+@media (min-width: 1200px) {
+  .announce { margin-left: 300px; }
+}
+@media (max-width: 1199px) {
+  /* leave room for the floating menu and language buttons */
+  .announce { padding-top: 66px; }
+  .announce-x { top: 66px; transform: none; margin-top: -4px; }
+}
+
+/* "Featured" label on project and article cards */
+.feat-badge {
+  background: #0a0b0c !important;
+  color: #ffd166 !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+}
+.feat-badge .bi { font-size: 10px; }

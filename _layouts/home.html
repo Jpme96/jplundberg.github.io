@@ -55,6 +55,7 @@
 </head>
 
 <body class="index-page">
+  {% include announcement.html %}
 
   <header id="header" class="header dark-background d-flex flex-column">
 
@@ -80,8 +81,9 @@
     <nav id="navmenu" class="navmenu">
       <ul>
         <li><a href="#hero" class="active"><i class="bi bi-house navicon"></i>{{ t.nav_home }}</a></li>
-        <li><a href="#about"><i class="bi bi-person navicon"></i> {{ t.nav_about }}</a></li>
-        <li><a href="#resume"><i class="bi bi-briefcase navicon"></i> {{ t.nav_experience }}</a></li>
+        {% assign off_ids = "" %}{% for s in site.data.site.sections %}{% if s.on == false %}{% assign off_ids = off_ids | append: s.id | append: "," %}{% endif %}{% endfor %}
+        {% unless off_ids contains "about," %}<li><a href="#about"><i class="bi bi-person navicon"></i> {{ t.nav_about }}</a></li>{% endunless %}
+        {% unless off_ids contains "resume," %}<li><a href="#resume"><i class="bi bi-briefcase navicon"></i> {{ t.nav_experience }}</a></li>{% endunless %}
         <li><a href="{{ t.projects_url }}"><i class="bi bi-kanban navicon"></i> {{ t.nav_projects }}</a></li>
         <li><a href="{{ t.articles_url }}"><i class="bi bi-journal-text navicon"></i> {{ t.nav_articles }}</a></li>
         <li><a href="#contact"><i class="bi bi-envelope navicon"></i> {{ t.nav_contact }}</a></li>
@@ -111,156 +113,12 @@
       </div>
     </section><!-- /Hero Section -->
 
-    <!-- About Section -->
-    <section id="about" class="about section">
-
-      <div class="container section-title" data-aos="fade-up">
-        <h2>{{ t.about_title }}</h2>
-        <p>{{ t.about_intro }}</p>
-      </div>
-
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-        <div class="row gy-4 align-items-center">
-          <div class="col-lg-4">
-            <img src="/assets/img/my-profile-img.jpg" class="img-fluid about-photo" alt="John Paul Lundberg">
-          </div>
-          <div class="col-lg-8 content">
-            <h2>{{ t.about_heading }}</h2>
-            <p class="py-2">{{ t.about_p1 }}</p>
-            <script>
-              function getAge(dateString) {
-                var today = new Date();
-                var birthDate = new Date(dateString);
-                var age = today.getFullYear() - birthDate.getFullYear();
-                var m = today.getMonth() - birthDate.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                  age--;
-                }
-                return age;
-              }
-            </script>
-            <ul class="facts">
-              <li><i class="bi bi-geo-alt"></i> <strong>{{ t.fact_city_label }}:</strong> <span>{{ t.fact_city }}</span></li>
-              <li><i class="bi bi-person"></i> <strong>{{ t.fact_age_label }}:</strong> <span><script>document.write(getAge("1996-06-30"))</script></span></li>
-              <li><i class="bi bi-mortarboard"></i> <strong>{{ t.fact_degree_label }}:</strong> <span>{{ t.fact_degree }}</span></li>
-            </ul>
-            <p class="mb-0">{{ t.about_p2 }}</p>
-          </div>
-        </div>
-      </div>
-
-    </section><!-- /About Section -->
-
-    <!-- Experience Section -->
-    <section id="resume" class="resume section">
-
-      <div class="container section-title" data-aos="fade-up">
-        <h2>{{ t.exp_title }}</h2>
-        <p>{{ t.exp_intro }}</p>
-      </div>
-
-      <div class="container">
-        <div class="experience-wrap">
-
-          <div class="row gy-4 stats highlights" data-aos="fade-up">
-            <div class="col-md-6">
-              <div class="stats-item">
-                <i class="bi bi-file-earmark-check"></i>
-                <div>
-                  <span class="stat-value">{{ t.stat1_value }}</span>
-                  <p>{{ t.stat1_label }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="stats-item">
-                <i class="bi bi-calendar-check"></i>
-                <div>
-                  <span class="stat-value">{{ t.stat2_value }}</span>
-                  <p>{{ t.stat2_label }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="timeline" data-aos="fade-up" data-aos-delay="100">
-            {% for job in t.jobs %}
-            <div class="resume-item">
-              <h4>{{ job.title }}</h4>
-              <h5>{{ job.dates }}</h5>
-              <p class="company">{{ job.company }}</p>
-              {% if job.points.size > 0 %}
-              <ul>
-                {% for point in job.points %}<li>{{ point }}</li>
-                {% endfor %}
-              </ul>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-
-          <div class="systems" data-aos="fade-up" data-aos-delay="150">
-            <h3 class="resume-title">{{ t.systems_title }}</h3>
-            <ul class="system-tags">
-              <li>Plania</li>
-              <li>Curotech</li>
-              <li>Famac</li>
-              <li>Propely</li>
-            </ul>
-          </div>
-
-        </div>
-      </div>
-
-    </section><!-- /Experience Section -->
-
-    {% assign home_projects = site.projects | sort: "date" | reverse %}
-    {% if home_projects.size > 0 %}
-    <!-- Projects Section -->
-    <section id="projects" class="projects section">
-      <div class="container section-title" data-aos="fade-up">
-        <h2>{{ t.projects_home_title }}</h2>
-      </div>
-      <div class="container">
-        <div class="project-cards">
-          {% assign shown = 0 %}
-          {% for p in home_projects %}
-            {% assign p_lang = p.lang | default: 'en' %}
-            {% if p_lang == page.lang and shown < 3 %}
-              {% include project-card.html project=p lang=page.lang %}
-              {% assign shown = shown | plus: 1 %}
-            {% endif %}
-          {% endfor %}
-        </div>
-        <a class="more-link" href="{{ t.projects_url }}">{{ t.projects_home_link }} <i class="bi bi-arrow-right"></i></a>
-      </div>
-    </section><!-- /Projects Section -->
-    {% endif %}
-
-    {% assign home_articles = site.articles | sort: "date" | reverse %}
-    {% if home_articles.size > 0 %}
-    <!-- Latest Articles Section -->
-    <section id="articles" class="articles-teaser section">
-      <div class="container section-title" data-aos="fade-up">
-        <h2>{{ t.articles_home_title }}</h2>
-      </div>
-      <div class="container">
-        <div class="article-cards">
-          {% assign shown_a = 0 %}
-          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
-            {% if a_lang == page.lang and shown_a < 3 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
-          {% endfor %}
-          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
-            {% if a_lang != page.lang and shown_a < 3 %}
-              {% assign a_twins = 0 %}{% if a.ref %}{% assign a_twin_list = site.articles | where: "ref", a.ref | where: "lang", page.lang %}{% assign a_twins = a_twin_list.size %}{% endif %}
-              {% if a_twins == 0 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
-            {% endif %}
-          {% endfor %}
-        </div>
-        <a class="more-link" href="{{ t.articles_url }}">{{ t.articles_home_link }} <i class="bi bi-arrow-right"></i></a>
-      </div>
-    </section><!-- /Latest Articles Section -->
-    {% endif %}
+    {% comment %} Section order and visibility come from _data/site.json (edited in the dashboard) {% endcomment %}
+    {% assign home_sections = site.data.site.sections %}
+    {% if home_sections == nil or home_sections.size == 0 %}{% assign home_sections = "about,resume,projects,articles" | split: "," %}{% endif %}
+    {% for s in home_sections %}{% assign s_id = s.id | default: s %}{% assign s_on = true %}{% if s.on == false %}{% assign s_on = false %}{% endif %}
+      {% if s_on %}{% case s_id %}{% when "about" %}{% include home/about.html %}{% when "resume" %}{% include home/resume.html %}{% when "projects" %}{% include home/projects.html %}{% when "articles" %}{% include home/articles.html %}{% endcase %}{% endif %}
+    {% endfor %}
 
     <!-- Contact Section -->
     <section id="contact" class="contact section">

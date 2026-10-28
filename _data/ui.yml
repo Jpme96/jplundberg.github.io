@@ -29,6 +29,8 @@ en:
   latest: Latest
   empty: No articles yet. Check back soon.
   read_more: Read more
+  featured: Featured
+  announcement_close: Close announcement
   min_read: min read
   all_articles: All articles
   author_bio: FDVU Advisor and M.O.M engineer based in Oslo.
@@ -73,6 +75,8 @@ nb:
   latest: Siste
   empty: Ingen artikler ennå. Kom gjerne tilbake senere.
   read_more: Les mer
+  featured: Utvalgt
+  announcement_close: Lukk kunngjøring
   min_read: min lesetid
   all_articles: Alle artikler
   author_bio: FDVU-rådgiver og ingeniør innen drift og vedlikehold, basert i Oslo.

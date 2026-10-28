@@ -1,0 +1,28 @@
+{% assign t = site.data.home[page.lang] %}
+    {% assign home_articles = site.articles | sort: "date" | reverse %}
+    {% if home_articles.size > 0 %}
+    <!-- Latest Articles Section -->
+    <section id="articles" class="articles-teaser section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>{{ t.articles_home_title }}</h2>
+      </div>
+      <div class="container">
+        <div class="article-cards">
+          {% assign shown_a = 0 %}{% assign feat_a = site.data.site.featured.article | default: '' %}
+          {% if feat_a != '' %}{% assign fa = home_articles | where: "ref", feat_a | where: "lang", page.lang | first %}{% unless fa %}{% assign fa = home_articles | where: "ref", feat_a | first %}{% endunless %}
+            {% if fa %}{% include article-card.html article=fa lang=page.lang featured=true %}{% assign shown_a = 1 %}{% endif %}
+          {% endif %}
+          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
+            {% if a_lang == page.lang and shown_a < 3 %}{% unless feat_a != '' and a.ref == feat_a %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endunless %}{% endif %}
+          {% endfor %}
+          {% for a in home_articles %}{% assign a_lang = a.lang | default: 'en' %}
+            {% if a_lang != page.lang and shown_a < 3 %}{% unless feat_a != '' and a.ref == feat_a %}
+              {% assign a_twins = 0 %}{% if a.ref %}{% assign a_twin_list = site.articles | where: "ref", a.ref | where: "lang", page.lang %}{% assign a_twins = a_twin_list.size %}{% endif %}
+              {% if a_twins == 0 %}{% include article-card.html article=a lang=page.lang %}{% assign shown_a = shown_a | plus: 1 %}{% endif %}
+            {% endunless %}{% endif %}
+          {% endfor %}
+        </div>
+        <a class="more-link" href="{{ t.articles_url }}">{{ t.articles_home_link }} <i class="bi bi-arrow-right"></i></a>
+      </div>
+    </section><!-- /Latest Articles Section -->
+    {% endif %}

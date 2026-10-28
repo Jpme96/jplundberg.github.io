@@ -33,7 +33,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=13" rel="stylesheet">
+  <link href="styles.css?v=14" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -297,13 +297,21 @@
       </div>
 
       <div class="st-page" data-page="home">
+        <p class="st-grp"><i class="bi bi-grid-1x2"></i> Dashboard</p>
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-foot muted">Settings sync across your devices.</p>
+        <p class="st-grp"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span></p>
+        <nav class="st-group st-menu">
+          <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
+        </nav>
+        <p class="st-foot muted">Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.</p>
       </div>
 
       <div class="st-page" data-page="appearance" data-title="Appearance" hidden>
@@ -371,12 +379,52 @@
       </section>
       </div>
 
+
+      <!-- ===== jplundberg.com ===== -->
+      <div class="st-page" data-page="announce" data-title="Announcement" hidden>
+        <p class="st-intro">A short message at the top of every page on jplundberg.com. Visitors can close it.</p>
+        <section class="st-group">
+          <label class="st-row"><span>Show announcement</span><input type="checkbox" class="switch" id="wsAnnOn"></label>
+          <div class="st-col"><span>English</span><input id="wsAnnEn" class="st-wide" maxlength="180" placeholder="e.g. New article: What do FDV users say?"></div>
+          <div class="st-col"><span>Norwegian</span><input id="wsAnnNb" class="st-wide" maxlength="180" placeholder="f.eks. Ny artikkel: Hva sier FDV-brukerne?"></div>
+          <div class="st-col"><span>Link (optional)</span>
+            <select id="wsAnnPick" class="st-wide"><option value="">No link</option></select>
+            <input id="wsAnnLink" class="st-wide" maxlength="300" placeholder="/articles/… or https://…" hidden>
+          </div>
+        </section>
+        <div class="ws-preview" id="wsAnnPreview" hidden><i class="bi bi-megaphone-fill"></i><span></span></div>
+      </div>
+
+      <div class="st-page" data-page="sections" data-title="Front page" hidden>
+        <p class="st-intro">Choose which sections are shown on the front page, and in which order.</p>
+        <section class="st-group" id="wsSections"></section>
+      </div>
+
+      <div class="st-page" data-page="featured" data-title="Featured" hidden>
+        <p class="st-intro">Pin an article and a project first on the front page, with a “Featured” label. Choose “Newest” to show the latest as usual.</p>
+        <section class="st-group">
+          <div class="st-col"><span>Article</span><select id="wsFeatArticle" class="st-wide"></select></div>
+          <div class="st-col"><span>Project</span><select id="wsFeatProject" class="st-wide"></select></div>
+        </section>
+      </div>
+
+      <div class="st-page ws-page" data-page="visitors" data-title="Visitors" hidden>
+        <div class="seg ws-days" id="wsDays"><button type="button" data-days="7" aria-pressed="true">7 days</button><button type="button" data-days="30">30 days</button></div>
+        <div id="wsVisitors"><p class="st-intro">Loading…</p></div>
+      </div>
+
+      <div class="ws-bar" id="wsBar" hidden>
+        <span class="ws-status" id="wsStatus"></span>
+        <button type="button" class="text-btn" id="wsUndo" hidden>Undo</button>
+        <button type="button" class="pill-btn" id="wsPublish" disabled><i class="bi bi-cloud-upload"></i> Publish</button>
+      </div>
       <p class="st-msg" id="stMsg" role="status" aria-live="polite"></p>
     </aside>
   </div>
 
   <script src="lock.js?v=10"></script>
-  <script src="settings.js?v=4"></script>
+  <script src="settings.js?v=5"></script>
+  <script src="website.js?v=1"></script>
   <script src="script.js?v=5"></script>
   <script src="finance.js?v=4"></script>
   <script src="places.js?v=1"></script>

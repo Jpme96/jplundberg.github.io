@@ -173,6 +173,7 @@
     $('stMsg').textContent = '';
     $('pcForm').hidden = true;
     document.querySelector('.st-panel').scrollTop = 0;
+    window.dispatchEvent(new CustomEvent('st:page', { detail: name }));   // website.js listens
   }
   document.querySelectorAll('[data-go]').forEach(function (b) {
     b.addEventListener('click', function () { go(b.dataset.go); });

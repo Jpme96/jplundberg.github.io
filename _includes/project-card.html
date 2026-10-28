@@ -3,6 +3,7 @@
 <a class="project-card-link" href="{{ pc.url }}">
   <div class="thumb"{% if pc.image %} style="background-image:url('{{ pc.image }}')"{% endif %}>
     <span>{{ pu.project_label }}</span>
+    {% if include.featured %}<span class="feat-badge"><i class="bi bi-star-fill"></i> {{ pu.featured }}</span>{% endif %}
     {% if pc_lang != include.lang %}<span class="lang-badge">{{ pu.lang_badge[pc_lang] }}</span>{% endif %}
     {% if pc_first %}<div class="thumb-figure"><strong>{{ pc_first.value }}</strong><small>{{ pc_first.label }}</small></div>{% endif %}
   </div>
