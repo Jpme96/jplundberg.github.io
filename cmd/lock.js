@@ -11,8 +11,7 @@
   var VAULT_KEY = 'dash.vault';
   var FAIL_KEY = 'dash.fails';
   var ITER = 310000;
-  var IDLE_MS = 10 * 60 * 1000;   // lock after 10 minutes without activity
-  var AWAY_MS = 2 * 60 * 1000;    // lock if the app was in the background for 2 minutes
+  var IDLE_MS = 60 * 60 * 1000;   // stays unlocked on this device until 1 hour without activity
 
   var enc = new TextEncoder();
   var dec = new TextDecoder();
@@ -28,14 +27,16 @@
   var data = null;         // decrypted vault contents while unlocked
   var writing = Promise.resolve();
   var idleTimer = null;
-  var hiddenAt = 0;
+  var lastActive = 0;
+  var savedAt = 0;
   var unlockFns = [];
   var remote = null;       // newest vault found on the server (while locked)
   var remoteRev = null;    // rev on the server, if known
   var ignoreRemote = false;
   var syncState = 'off';
   var available = false;
-  var remoteCheck = Promise.resolve();   // true once the sync worker has answered
+  var remoteCheck = Promise.resolve();
+  var remoteSalt = null;  // salt of the synced vault, if known   // true once the sync worker has answered
   var pushTimer = null;
   var pushing = false;
   var lockFns = [];
@@ -186,7 +187,8 @@
     root.classList.remove('locked');
     root.classList.add('unlocked');
     $('lock').hidden = true;
-    resetIdle();
+    $('lockBox').style.visibility = '';
+    resetIdle(true);
     emit();
     sync();
   }
@@ -195,13 +197,16 @@
   }
 
   function lock(note) {
-    if (key && pushTimer) { clearTimeout(pushTimer); pushTimer = null; push(); }
+    if (typeof note !== 'string') note = '';
+    /* Normal lock: upload the last change first. Locked because of a passcode mismatch: never upload. */
+    if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; if (key && !note) push(); }
     key = null;
     data = null;
     salt = null;
     clearTimeout(idleTimer);
+    forget();
     lockFns.forEach(function (fn) { try { fn(); } catch (e) {} });
-    showLocked(typeof note === 'string' ? note : '');
+    showLocked(note);
   }
 
   $('lockForm').addEventListener('submit', function (e) {
@@ -289,17 +294,52 @@
   });
 
   /* ---------- auto-lock ---------- */
-  function resetIdle() {
+  function resetIdle(force) {
     if (!key) return;
+    lastActive = Date.now();
     clearTimeout(idleTimer);
     idleTimer = setTimeout(lock, IDLE_MS);
+    if (force === true || lastActive - savedAt > 60 * 1000) remember();
   }
+
+  /* ---------- stay unlocked on this device ----------
+     The key is kept in this browser's IndexedDB as a non-extractable CryptoKey:
+     the page can use it, but it can't be read out or copied. It expires after
+     an hour without activity, and the lock button deletes it at once. */
+  function idb(mode, fn) {
+    return new Promise(function (resolve, reject) {
+      var req = indexedDB.open('dash-lock', 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore('k'); };
+      req.onerror = function () { reject(req.error); };
+      req.onsuccess = function () {
+        var db = req.result, tx = db.transaction('k', mode), q = fn(tx.objectStore('k'));
+        tx.oncomplete = function () { db.close(); resolve(q && q.result); };
+        tx.onerror = function () { db.close(); reject(tx.error); };
+      };
+    });
+  }
+  function remember() {
+    if (!key || !salt) return;
+    savedAt = Date.now();
+    var rec = { key: key, salt: b64(salt), until: savedAt + IDLE_MS };
+    idb('readwrite', function (st) { return st.put(rec, 'session'); }).catch(function () {});
+  }
+  function forget() { savedAt = 0; idb('readwrite', function (st) { return st.delete('session'); }).catch(function () {}); }
+  function recall() {
+    if (!window.indexedDB) return Promise.resolve(null);
+    return Promise.race([
+      idb('readonly', function (st) { return st.get('session'); }),
+      new Promise(function (r) { setTimeout(function () { r(null); }, 1500); })
+    ]).catch(function () { return null; });
+  }
+
+  function tooLongAway() { return key && lastActive && Date.now() - lastActive > IDLE_MS; }
   ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
     window.addEventListener(ev, resetIdle, { passive: true });
   });
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) { hiddenAt = Date.now(); return; }
-    if (key && hiddenAt && Date.now() - hiddenAt > AWAY_MS) { lock(); return; }
+    if (document.hidden) return;
+    if (tooLongAway()) { lock(); return; }
     if (key) sync();
   });
   setInterval(function () { if (key && !document.hidden) sync(); }, 60 * 1000);
@@ -339,7 +379,7 @@
             return undefined;
           });
         }
-        if (r.status === 404) { available = true; remoteRev = null; return null; }  // set up, but empty
+        if (r.status === 404) { available = true; remoteRev = null; remoteSalt = null; return null; }  // set up, but empty
         if (!r.ok) {
           available = false;
           setSync('off', r.status === 401 ? 'Sync refused the login. Check TEAM_DOMAIN and POLICY_AUD'
@@ -351,6 +391,7 @@
         return r.json().then(function (v) {
           if (!isVault(v)) return undefined;
           remoteRev = v.rev || 0;
+          remoteSalt = v.salt;
           return v;
         });
       })
@@ -408,6 +449,8 @@
     return writing.then(function () {
       var raw = localStorage.getItem(VAULT_KEY);
       var v = JSON.parse(raw);
+      /* Never upload over a synced dashboard this device has never been part of. */
+      if ((syncedRev() === -1 && remoteSalt && v.salt !== remoteSalt && !ignoreRemote)) { setSync('off'); return; }
       var base = remoteRev !== null ? remoteRev : syncedRev();
       return fetch(API, {
         method: 'PUT', credentials: 'same-origin', cache: 'no-store',
@@ -423,7 +466,7 @@
       .then(function () { pushing = false; });
   }
   /* Coming back with the back button must not show an unlocked page from the cache. */
-  window.addEventListener('pageshow', function (e) { if (e.persisted && key) lock(); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted && tooLongAway()) lock(); });
 
   $('lockNow').addEventListener('click', lock);
 
@@ -463,6 +506,7 @@
           return seal(data, k, s, localRev() + 1).then(function (v) {
             writeJSON(VAULT_KEY, v);
             key = k; salt = s;
+            remember();
             return push();
           });
         });
@@ -475,5 +519,22 @@
     $('lockSubmit').disabled = true;
     return;
   }
-  showLocked();
+
+  /* Still unlocked from earlier on this device? Then open straight away. */
+  $('lockBox').style.visibility = 'hidden';
+  recall().then(function (rec) {
+    var vault = readJSON(VAULT_KEY);
+    if (!rec || !rec.key || rec.until < Date.now() || !isVault(vault) || vault.salt !== rec.salt) {
+      if (rec) forget();
+      throw new Error('locked');
+    }
+    return open(vault, rec.key).then(function (obj) {
+      key = rec.key; salt = unb64(vault.salt);
+      data = unpack(obj);
+      finishUnlock();
+    });
+  }).catch(function () {
+    $('lockBox').style.visibility = '';
+    if (!key) showLocked();
+  });
 })();
