@@ -9,6 +9,8 @@
    /cmd/api/visitors  visitor numbers from Cloudflare Web Analytics.
    /cmd/api/content   list articles and projects, and hide/show them
                       (sets "published: false" in the file's front matter).
+   /cmd/api/texts     the website texts you can edit (_data/texts.json in GitHub):
+                      about, roles, contact, footer … in English and Norwegian.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -32,7 +34,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -45,6 +47,7 @@ export default {
     if (path === '/cmd/api/visitors') return visitors(url, env);
     if (path === '/cmd/api/content') return contentApi(request, env);
     if (path === '/cmd/api/calendar') return calendarFeed(request);
+    if (path === '/cmd/api/texts') return textsApi(request, env);
     return vault(request, env);
   }
 };
@@ -257,6 +260,53 @@ async function visitors(url, env) {
     referrers: rows(a.refs, 'refererHost'),
     countries: rows(a.countries, 'countryName')
   });
+}
+
+/* ---------- website texts ---------- */
+/* Only these texts can be changed, each with a length limit. Empty = use the original text. */
+const TEXT_FILE = '_data/texts.json';
+const TEXT_KEYS = {
+  description: 200, hero_items: 200, about_intro: 700, about_heading: 80, about_p1: 900, about_p2: 900,
+  fact_city: 60, fact_degree: 120, exp_intro: 300, contact_intro: 700, contact_form_note: 200,
+  cta_title: 140, cta_text: 400, author_bio: 200, footer_tagline: 300
+};
+function cleanTexts(t) {
+  const out = { en: {}, nb: {} };
+  ['en', 'nb'].forEach(l => {
+    const src = (t && t[l]) || {};
+    Object.keys(TEXT_KEYS).forEach(k => {
+      const v = String(src[k] == null ? '' : src[k]).replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, TEXT_KEYS[k]);
+      if (v) out[l][k] = v;
+    });
+  });
+  return out;
+}
+async function textsApi(request, env) {
+  if (!env.GITHUB_TOKEN) return json({ error: 'github not configured' }, 503);
+  const api = repoApi(env) + TEXT_FILE, gh = ghHeaders(env);
+  if (request.method === 'GET') {
+    const r = await fetch(api + '?ref=main', { headers: gh });
+    if (r.status === 404) return json({ texts: cleanTexts({}), sha: null });
+    if (!r.ok) return json({ error: 'github ' + r.status }, 502);
+    const f = await r.json();
+    let t = {};
+    try { t = JSON.parse(fromB64(f.content)); } catch (e) {}
+    return json({ texts: cleanTexts(t), sha: f.sha });
+  }
+  if (request.method === 'PUT') {
+    let body;
+    try { body = JSON.parse(await request.text()); } catch (e) { return json({ error: 'bad json' }, 400); }
+    const texts = cleanTexts(body.texts);
+    const r = await fetch(api, {
+      method: 'PUT', headers: { ...gh, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Website texts from the dashboard', content: toB64(JSON.stringify(texts, null, 2) + '\n'), sha: body.sha || undefined, branch: 'main' })
+    });
+    if (r.status === 409 || r.status === 422) return json({ error: 'changed elsewhere' }, 409);
+    if (!r.ok) return json({ error: 'github ' + r.status }, 502);
+    const out = await r.json();
+    return json({ ok: true, texts, sha: out.content && out.content.sha });
+  }
+  return json({ error: 'method not allowed' }, 405);
 }
 
 /* ---------- phone calendar (read only) ---------- */

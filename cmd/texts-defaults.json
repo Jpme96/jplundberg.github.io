@@ -1,0 +1,8 @@
+---
+layout: null
+sitemap: false
+---
+{%- comment -%} The original website texts, so the dashboard can show them next to your own versions. {%- endcomment -%}
+{%- assign keys = "description,hero_items,about_intro,about_heading,about_p1,about_p2,fact_city,fact_degree,exp_intro,contact_intro,contact_form_note,cta_title,cta_text,author_bio,footer_tagline" | split: "," -%}
+{"en": { {%- for k in keys -%}{{ k | jsonify }}: {{ site.data.home.en[k] | default: site.data.ui.en[k] | default: '' | jsonify }}{% unless forloop.last %}, {% endunless %}{%- endfor -%} },
+ "nb": { {%- for k in keys -%}{{ k | jsonify }}: {{ site.data.home.nb[k] | default: site.data.ui.nb[k] | default: '' | jsonify }}{% unless forloop.last %}, {% endunless %}{%- endfor -%} }}

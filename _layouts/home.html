@@ -21,7 +21,8 @@
     })();
   </script>
   <title>{{ t.seo_title | default: t.title }}</title>
-  <meta content="{{ t.description }}" name="description">
+  {%- capture t_desc %}{% include txt.html k='description' %}{% endcapture %}
+  <meta content="{{ t_desc }}" name="description">
   <meta content="{{ t.keywords }}" name="keywords">
   <link rel="canonical" href="https://jplundberg.com{{ t.url }}">
   <link rel="alternate" hreflang="en" href="https://jplundberg.com/">
@@ -32,7 +33,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jplundberg.com{{ t.url }}">
   <meta property="og:title" content="{{ t.seo_title | default: t.title }}">
-  <meta property="og:description" content="{{ t.description }}">
+  <meta property="og:description" content="{{ t_desc }}">
   <meta property="og:site_name" content="John Paul Lundberg">
   <meta property="og:locale" content="{% if page.lang == 'nb' %}nb_NO{% else %}en_GB{% endif %}">
   <meta property="og:image" content="https://jplundberg.com/assets/img/og-default.jpg">
@@ -54,7 +55,7 @@
         "url": "https://jplundberg.com/",
         "image": "https://jplundberg.com/assets/img/my-profile-img.jpg",
         "jobTitle": "FDVU Advisor",
-        "description": {{ t.description | strip_html | jsonify }},
+        "description": {{ t_desc | replace: '&amp;', '&' | strip_html | jsonify }},
         "email": "mailto:contact@jplundberg.com",
         "worksFor": { "@type": "Organization", "name": "Boligbygg Oslo KF" },
         "address": { "@type": "PostalAddress", "addressLocality": "Oslo", "addressCountry": "NO" },
@@ -146,8 +147,8 @@
       {% include hero-img.html aos='fade-in' %}
       <div class="container" data-aos="fade-up" data-aos-delay="100">
         <h2>John Paul Lundberg</h2>
-        {% assign roles = t.hero_items | split: ',' %}
-        <p class="hero-role"><span class="role-rotator" aria-hidden="true">{% for r in roles %}<span class="role{% if forloop.first %} is-active{% endif %}">{{ r | strip }}</span>{% endfor %}</span><span class="visually-hidden">{{ t.hero_items }}</span></p>
+        {% capture t_roles %}{% include txt.html k='hero_items' %}{% endcapture %}{% assign roles = t_roles | split: ',' %}
+        <p class="hero-role"><span class="role-rotator" aria-hidden="true">{% for r in roles %}<span class="role{% if forloop.first %} is-active{% endif %}">{{ r | strip }}</span>{% endfor %}</span><span class="visually-hidden">{{ t_roles }}</span></p>
       </div>
     </section><!-- /Hero Section -->
 
@@ -163,7 +164,7 @@
 
       <div class="container section-title" data-aos="fade-up">
         <h2>{{ t.contact_title }}</h2>
-        <p>{{ t.contact_intro }}</p>
+        <p>{% include txt.html k='contact_intro' %}</p>
       </div>
 
       <div class="container" data-aos="fade-up" data-aos-delay="100">
@@ -171,7 +172,7 @@
           <a class="cc-card cc-primary" href="https://tally.so/r/{{ t.contact_form_id }}" target="_blank" rel="noopener"
              data-contact-form="{{ t.contact_form_id }}">
             <i class="bi bi-chat-text" aria-hidden="true"></i>
-            <span><b>{{ t.contact_form_title }}</b><small>{{ t.contact_form_note }}</small></span>
+            <span><b>{{ t.contact_form_title }}</b><small>{% include txt.html k='contact_form_note' %}</small></span>
             <i class="bi bi-arrow-right cc-go" aria-hidden="true"></i>
           </a>
           <a class="cc-card" href="mailto:contact@jplundberg.com">

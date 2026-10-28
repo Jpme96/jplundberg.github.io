@@ -4,7 +4,7 @@
 
       <div class="container section-title" data-aos="fade-up">
         <h2>{{ t.about_title }}</h2>
-        <p>{{ t.about_intro }}</p>
+        <p>{% include txt.html k='about_intro' %}</p>
       </div>
 
       <div class="container" data-aos="fade-up" data-aos-delay="100">
@@ -13,8 +13,8 @@
             <picture><source srcset="/assets/img/my-profile-img.webp" type="image/webp"><img src="/assets/img/my-profile-img.jpg" class="img-fluid about-photo" alt="John Paul Lundberg" width="1200" height="1006" loading="lazy"></picture>
           </div>
           <div class="col-lg-8 content">
-            <h2>{{ t.about_heading }}</h2>
-            <p class="py-2">{{ t.about_p1 }}</p>
+            <h2>{% include txt.html k='about_heading' %}</h2>
+            <p class="py-2">{% include txt.html k='about_p1' %}</p>
             <script>
               function getAge(dateString) {
                 var today = new Date();
@@ -28,11 +28,11 @@
               }
             </script>
             <ul class="facts">
-              <li><i class="bi bi-geo-alt"></i> <strong>{{ t.fact_city_label }}:</strong> <span>{{ t.fact_city }}</span></li>
+              <li><i class="bi bi-geo-alt"></i> <strong>{{ t.fact_city_label }}:</strong> <span>{% include txt.html k='fact_city' %}</span></li>
               <li><i class="bi bi-person"></i> <strong>{{ t.fact_age_label }}:</strong> <span><script>document.write(getAge("1996-06-30"))</script></span></li>
-              <li><i class="bi bi-mortarboard"></i> <strong>{{ t.fact_degree_label }}:</strong> <span>{{ t.fact_degree }}</span></li>
+              <li><i class="bi bi-mortarboard"></i> <strong>{{ t.fact_degree_label }}:</strong> <span>{% include txt.html k='fact_degree' %}</span></li>
             </ul>
-            <p class="mb-0">{{ t.about_p2 }}</p>
+            <p class="mb-0">{% include txt.html k='about_p2' %}</p>
           </div>
         </div>
       </div>

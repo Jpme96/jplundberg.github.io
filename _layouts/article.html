@@ -30,8 +30,8 @@ layout: base
       <aside class="author">
         <img src="/assets/img/avatar-160.jpg" alt="" width="80" height="80" loading="lazy">
         <div>
-          <p class="cta-title">{{ u.cta_title }}</p>
-          <p><strong>John Paul Lundberg</strong> – {{ u.author_bio }} {{ u.cta_text }}</p>
+          <p class="cta-title">{% include txt.html k='cta_title' %}</p>
+          <p><strong>John Paul Lundberg</strong> – {% include txt.html k='author_bio' %} {% include txt.html k='cta_text' %}</p>
           <div class="cta-actions">
             <a class="cta-btn" href="https://tally.so/r/{{ h.contact_form_id }}" target="_blank" rel="noopener" data-contact-form="{{ h.contact_form_id }}"><i class="bi bi-chat-text"></i> {{ u.cta_form }}</a>
             <a class="cta-btn ghost" href="mailto:contact@jplundberg.com?subject={{ u.cta_mail_subject | append: ': ' | append: page.title | uri_escape }}"><i class="bi bi-envelope"></i> {{ u.cta_mail }}</a>

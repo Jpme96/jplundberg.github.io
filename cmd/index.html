@@ -38,7 +38,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=19" rel="stylesheet">
+  <link href="styles.css?v=20" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -322,6 +322,7 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="texts"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-fonts"></i></span><span class="st-label">Texts<small id="sumTexts">About, roles, contact, footer</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="content"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-journal-check"></i></span><span class="st-label">Articles &amp; projects<small id="sumContent">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
@@ -416,6 +417,17 @@
         <section class="st-group" id="wsSections"></section>
       </div>
 
+      <div class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
+        <p class="st-intro">Change the texts on jplundberg.com. Empty a field (or tap <i>Original</i>) to go back to the original text. Changes are live about a minute after you publish.</p>
+        <div class="seg tx-lang" id="txLang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
+        <div id="txFields"><p class="st-intro">Loading…</p></div>
+        <div class="ws-bar tx-bar" id="txBar">
+          <span class="ws-status" id="txStatus"></span>
+          <button type="button" class="text-btn" id="txUndo" hidden>Undo</button>
+          <button type="button" class="pill-btn" id="txPublish" disabled><i class="bi bi-cloud-upload"></i> Publish</button>
+        </div>
+      </div>
+
       <div class="st-page" data-page="featured" data-title="Featured" hidden>
         <p class="st-intro">Pin an article and a project first on the front page, with a “Featured” label. Choose “Newest” to show the latest as usual.</p>
         <section class="st-group">
@@ -446,6 +458,7 @@
   <script src="lock.js?v=11"></script>
   <script src="settings.js?v=9"></script>
   <script src="website.js?v=2"></script>
+  <script src="texts.js?v=1"></script>
   <script src="script.js?v=6"></script>
   <script src="finance.js?v=5"></script>
   <script src="places.js?v=2"></script>
