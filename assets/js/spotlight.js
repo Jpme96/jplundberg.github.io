@@ -1,19 +1,19 @@
 /**
- * Home page spotlight: the section you are reading is shown at full strength,
- * the others fade gently. The menu highlights the same section.
- * Turned off for "reduce motion".
+ * Home page spotlight: the section in the middle of the screen is shown at full
+ * strength, and the others fade. The fade follows the scroll position
+ * continuously, so it moves with your finger. The menu highlights the section
+ * in focus. Turned off for "reduce motion".
  */
 (function () {
   "use strict";
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce || !('IntersectionObserver' in window)) return;
+  if (reduce) return;
 
   var sections = Array.prototype.slice.call(document.querySelectorAll('.index-page .main > section:not(.hero)'));
   if (sections.length < 2) return;
   var hero = document.querySelector('.index-page .main > section.hero');
   document.body.classList.add('spot-on');
 
-  // Menu link for each section: "#about"-style links, or the Projects/Articles pages
   function menuLink(id) {
     var nav = document.querySelector('#navmenu');
     if (!nav) return null;
@@ -22,33 +22,55 @@
     return nav.querySelector('a[href$="#' + id + '"]');
   }
 
-  var current;
+  var focusId = null;
   function markMenu() {
-    var link = menuLink(current ? current.id : 'hero');
+    var link = menuLink(focusId || 'hero');
     if (!link) return;
     document.querySelectorAll('#navmenu a.active').forEach(function (a) { if (a !== link) a.classList.remove('active'); });
     link.classList.add('active');
   }
 
-  function focus(sec) {
-    if (sec === current) return;
-    current = sec;
-    sections.forEach(function (s) { s.classList.toggle('is-focus', s === sec); });
-    document.body.classList.toggle('spot-hero', !sec);
+  // Lowest strength comes from the stylesheet (lighter on large screens)
+  function minLevel() {
+    var v = parseFloat(getComputedStyle(document.body).getPropertyValue('--spot-min'));
+    return isNaN(v) ? 0.42 : v;
+  }
+
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var vh = window.innerHeight;
+    var mid = vh * 0.5;
+    var range = vh * 0.38;            // distance over which a section fades out
+    var min = minLevel();
+    var atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+    var heroRect = hero ? hero.getBoundingClientRect() : null;
+    var heroInView = heroRect && heroRect.bottom > mid;
+
+    var best = null, bestDist = Infinity;
+    sections.forEach(function (s, i) {
+      var r = s.getBoundingClientRect();
+      // 0 when the section covers the middle line, otherwise how far its edge is from it
+      var dist = r.top > mid ? r.top - mid : (r.bottom < mid ? mid - r.bottom : 0);
+      if (atBottom && i === sections.length - 1) dist = 0;
+      var t = Math.min(1, dist / range);
+      var eased = t * t * (3 - 2 * t);  // smoothstep: gentle start and end
+      var level = heroInView ? 1 : 1 - (1 - min) * eased;
+      s.style.setProperty('--spot', level.toFixed(3));
+      if (dist < bestDist) { bestDist = dist; best = s; }
+    });
+
+    if (atBottom) best = sections[sections.length - 1];
+    var id = heroInView ? null : (best ? best.id : null);
+    if (id !== focusId) { focusId = id; }
     markMenu();
   }
 
-  // A thin band across the middle of the screen decides which section is in focus
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { if (e.isIntersecting) focus(e.target === hero ? null : e.target); });
-  }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
-  sections.forEach(function (s) { io.observe(s); });
-  if (hero) io.observe(hero);
-
-  window.addEventListener('scroll', function () {
-    // At the very bottom, the last section (Contact) takes focus even if it is short
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) focus(sections[sections.length - 1]);
-    // Runs after the template's own menu highlighting, so both always agree
-    markMenu();
-  }, { passive: true });
+  function onScroll() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  window.addEventListener('load', update);
+  update();
 })();
