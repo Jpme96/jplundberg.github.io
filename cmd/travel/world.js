@@ -174,11 +174,11 @@
       if (el._map) { el._map.remove(); el._map = null; }
       var dark = document.documentElement.getAttribute('data-theme') !== 'light';
       var m = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, worldCopyJump: true });
-      /* OpenStreetMap's own tiles: free, no key. In dark mode they are inverted with CSS (.map-dark). */
+      /* CARTO's basemaps (free, no key): a clean dark map in dark mode, a light one in light mode */
       el.classList.toggle('map-dark', dark);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19, subdomains: 'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
       }).addTo(m);
       var ll = [];
       points.forEach(function (p) {
