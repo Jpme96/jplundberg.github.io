@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=66" rel="stylesheet">
+  <link href="styles.css?v=68" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -469,7 +469,19 @@
           <label class="st-row"><span>Include projects</span><input type="checkbox" class="switch" id="wsCvProjects"></label>
           <label class="st-row"><span>Include articles</span><input type="checkbox" class="switch" id="wsCvArticles"></label>
         </section>
-        <p class="st-note"><a href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a></p>
+        <p class="st-note"><a href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a> · on the page, “Save as PDF” prints it to a file.</p>
+        <div class="seg ws-lang" id="cvLang"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
+        <section class="st-group">
+          <h3>Profile text</h3>
+          <p class="st-sub">The short text at the top of the CV. Empty = the About text from the website.</p>
+          <textarea id="cvProfile" rows="4" maxlength="1200" placeholder="Two or three sentences about what you do and what you’re good at."></textarea>
+        </section>
+        <section class="st-group">
+          <h3>Experience <span class="muted" id="cvExpNote"></span></h3>
+          <p class="st-sub">Used by the CV and the Experience section on the front page. Until you add something here, the site’s own list is shown.</p>
+          <div id="cvJobs"></div>
+          <div class="form-actions"><button type="button" class="text-btn" id="cvJobsImport">Start from the site’s list</button><span class="spacer"></span><button type="button" class="text-btn" id="cvJobAdd"><i class="bi bi-plus-lg"></i> Add job</button></div>
+        </section>
       </div>
 
       <div class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
@@ -513,7 +525,7 @@
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=4"></script>
   <script src="settings.js?v=18"></script>
-  <script src="website.js?v=4"></script>
+  <script src="website.js?v=5"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
   <script src="budget.js?v=4"></script>

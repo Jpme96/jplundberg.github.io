@@ -30,11 +30,16 @@ layout: base
       </header>
 
       <h3>{{ t.cv_profile }}</h3>
+      {%- assign cvp = S.cv.profile[lang] %}
+      {%- if cvp and cvp != '' %}<p>{{ cvp | escape | newline_to_br }}</p>
+      {%- else %}
       <p>{% include txt.html k='about_p1' %}</p>
       <p>{% include txt.html k='about_p2' %}</p>
+      {%- endif %}
 
       <h3>{{ t.cv_experience }}</h3>
-      {%- for job in t.jobs %}
+      {%- assign jobs = S.experience[lang] %}{% if jobs == nil or jobs.size == 0 %}{% assign jobs = t.jobs %}{% endif %}
+      {%- for job in jobs %}
       <div class="cv-job">
         <div class="cv-job-head"><strong>{{ job.title }}</strong><span>{{ job.dates }}</span></div>
         <div class="cv-job-org">{{ job.company }}</div>

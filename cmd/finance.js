@@ -357,18 +357,26 @@
         }).join('') + '</ul>';
     }
 
-    var shown = showAll ? list : list.slice(0, 6);
+    /* the list: a few at first, then 25 more at a time, grouped by day so a long month stays readable */
+    var limit = showAll === true ? list.length : (showAll || 6), shown = list.slice(0, limit), lastDay = '';
     $('spList').innerHTML = shown.map(function (e) {
       var c = catById[e.cat] || catById.other;
-      var d = new Date(e.date + 'T12:00');
-      return '<li class="tx"><i class="dot" style="background:' + c.color + '"></i>' +
+      var d = new Date(e.date + 'T12:00'), head = '';
+      if (shown.length > 8 && e.date !== lastDay) {
+        var dayTotal = list.filter(function (x) { return x.date === e.date; }).reduce(function (a, x) { return a + (x.amount || 0); }, 0);
+        head = '<li class="tx-day"><span>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</span><span class="money">' + esc(kr(dayTotal)) + '</span></li>';
+        lastDay = e.date;
+      }
+      return head + '<li class="tx"><i class="dot" style="background:' + c.color + '"></i>' +
         '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' +
-        esc(c.name) + ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</span></span>' +
+        esc(c.name) + (shown.length > 8 ? '' : ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + '</span></span>' +
         money(e.amount) +
         '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
     }).join('');
     $('spMore').hidden = list.length <= 6;
-    $('spMore').textContent = showAll ? 'Show less' : 'Show all ' + list.length;
+    $('spMore').innerHTML = shown.length >= list.length
+      ? (list.length > 6 ? '<i class="bi bi-chevron-up"></i> Show less' : '')
+      : 'Show ' + Math.min(25, list.length - shown.length) + ' more <span class="muted">· ' + (list.length - shown.length) + ' left</span>';
   }
 
   function donut(parts, total) {
@@ -414,7 +422,12 @@
   });
   $('spPrev').addEventListener('click', function () { viewMonth = shiftMonth(viewMonth, -1); showAll = false; renderSpending(); });
   $('spNext').addEventListener('click', function () { viewMonth = shiftMonth(viewMonth, 1); showAll = false; renderSpending(); });
-  $('spMore').addEventListener('click', function () { showAll = !showAll; renderSpending(); });
+  $('spMore').addEventListener('click', function () {
+    var list = D.expenses.filter(function (e) { return e.date.slice(0, 7) === viewMonth; }), cur = showAll === true ? list.length : (showAll || 6);
+    showAll = cur >= list.length ? false : (cur + 25 >= list.length ? true : cur + 25);
+    renderSpending();
+    if (showAll === false) $('spList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   /* ================= Savings goals ================= */
   var editingSaving = null;

@@ -15,10 +15,11 @@
     projects: ['kanban', 'Projects'], articles: ['journal-text', 'Latest articles']
   };
   var EDIT_PAGES = ['announce', 'sections', 'featured', 'socials', 'courses', 'progress', 'cv'];
+  var cvLang = 'en', jobEdit = null;
   var DEFAULT_SOCIALS = [{ net: 'linkedin', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' }, { net: 'instagram', url: 'https://www.instagram.com/jp.lundberg.official/' }];
   /* each page has its own Publish button; what it publishes, in words */
   var PART = { announce: [['announcement'], 'Announcement'], sections: [['sections', 'now'], 'Front page'], featured: [['featured'], 'Featured'], socials: [['socials'], 'Socials'],
-    courses: [['courses'], 'Courses & certificates'], progress: [['goals'], 'Project progress'], cv: [['cv'], 'CV'] };
+    courses: [['courses'], 'Courses & certificates'], progress: [['goals'], 'Project progress'], cv: [['cv', 'experience'], 'CV'] };
   function partDirty(keys) { return saved && draft && keys.some(function (key) { return JSON.stringify(saved[key] == null ? null : saved[key]) !== JSON.stringify(draft[key] == null ? null : draft[key]); }); }
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   /* what the dashboard would publish right now: courses marked public, goals marked public */
@@ -116,7 +117,10 @@
     if (document.activeElement !== $('wsNowEn')) $('wsNowEn').value = draft.now.en || '';
     if (document.activeElement !== $('wsNowNb')) $('wsNowNb').value = draft.now.nb || '';
     draft.cv = draft.cv || { on: false, courses: true, projects: true, articles: false };
+    draft.cv.profile = draft.cv.profile || { en: '', nb: '' };
+    draft.experience = draft.experience || { en: [], nb: [] };
     $('wsCvOn').checked = !!draft.cv.on; $('wsCvCourses').checked = draft.cv.courses !== false; $('wsCvProjects').checked = draft.cv.projects !== false; $('wsCvArticles').checked = !!draft.cv.articles;
+    fillCv();
     syncDerived();
     var F = window.Features, items = F ? F.list('learning').slice().sort(function (a, b) { return String(b.date || '') > String(a.date || '') ? 1 : -1; }) : [];
     $('wsCourses').innerHTML = items.length ? items.map(function (c) {
@@ -139,6 +143,52 @@
     $('wsFeatArticle').value = draft.featured.article;
     $('wsFeatProject').value = draft.featured.project;
   }
+
+  /* ---------- CV: profile text and experience, per language ---------- */
+  function fillCv() {
+    $('cvLang').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === cvLang)); });
+    if (document.activeElement !== $('cvProfile')) $('cvProfile').value = draft.cv.profile[cvLang] || '';
+    $('cvProfile').placeholder = content && content.profile && content.profile[cvLang] ? content.profile[cvLang].slice(0, 160) + '…' : 'Two or three sentences about what you do.';
+    var jobs = draft.experience[cvLang] || [];
+    $('cvExpNote').textContent = jobs.length ? jobs.length + ' job' + (jobs.length === 1 ? '' : 's') : 'from the site';
+    $('cvJobsImport').hidden = jobs.length > 0 || !(content && content.jobs && content.jobs[cvLang] && content.jobs[cvLang].length);
+    $('cvJobs').innerHTML = jobs.map(function (j, i) {
+      if (jobEdit === i) return jobForm(j, i);
+      return '<div class="st-row ws-job"><button type="button" class="b-open" data-jedit="' + i + '"><span>' + esc(j.title) + '</span><small class="muted">' + esc([j.company, j.dates].filter(Boolean).join(' · ')) + (j.points && j.points.length ? ' · ' + j.points.length + ' point' + (j.points.length === 1 ? '' : 's') : '') + '</small></button>' +
+        '<span class="ws-tools"><button type="button" data-jmove="' + i + ':-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-chevron-up"></i></button><button type="button" data-jmove="' + i + ':1" aria-label="Move down"' + (i === jobs.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>' +
+        '<button type="button" class="del" data-jdel="' + i + '" aria-label="Remove"><i class="bi bi-x"></i></button></span></div>';
+    }).join('') + (jobEdit === 'new' ? jobForm(null, 'new') : '');
+  }
+  function jobForm(j, i) {
+    return '<form class="ws-jobform" data-ji="' + i + '">' +
+      '<input name="title" placeholder="Title, e.g. FDVU Advisor" value="' + esc(j ? j.title : '') + '" required autocomplete="off">' +
+      '<div class="row2"><input name="company" placeholder="Company, city" value="' + esc(j ? j.company : '') + '" autocomplete="off"><input name="dates" placeholder="Dates, e.g. 2020 – 2025" value="' + esc(j ? j.dates : '') + '" autocomplete="off"></div>' +
+      '<textarea name="points" rows="3" placeholder="What you did – one point per line">' + esc(j && j.points ? j.points.join('\n') : '') + '</textarea>' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-jcancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
+  }
+  $('cvLang').addEventListener('click', function (e) { var b = e.target.closest('[data-lang]'); if (!b) return; cvLang = b.dataset.lang; jobEdit = null; fillCv(); });
+  $('cvProfile').addEventListener('input', function () { draft.cv.profile[cvLang] = this.value; changed(); });
+  $('cvJobsImport').addEventListener('click', function () {
+    draft.experience[cvLang] = clone(content.jobs[cvLang]).map(function (j) { return { title: j.title || '', dates: j.dates || '', company: j.company || '', points: j.points || [] }; });
+    fillCv(); changed();
+  });
+  $('cvJobAdd').addEventListener('click', function () { jobEdit = 'new'; fillCv(); var f = $('cvJobs').querySelector('input[name=title]'); if (f) f.focus(); });
+  $('cvJobs').addEventListener('click', function (e) {
+    var b;
+    if ((b = e.target.closest('[data-jedit]'))) { jobEdit = +b.dataset.jedit; fillCv(); return; }
+    if (e.target.closest('[data-jcancel]')) { jobEdit = null; fillCv(); return; }
+    if ((b = e.target.closest('[data-jdel]'))) { draft.experience[cvLang].splice(+b.dataset.jdel, 1); jobEdit = null; fillCv(); changed(); return; }
+    if ((b = e.target.closest('[data-jmove]'))) { var p = b.dataset.jmove.split(':'), i = +p[0], j = i + +p[1], l = draft.experience[cvLang]; if (j < 0 || j >= l.length) return; var x = l[i]; l[i] = l[j]; l[j] = x; fillCv(); changed(); }
+  });
+  $('cvJobs').addEventListener('submit', function (e) {
+    var f = e.target.closest('.ws-jobform'); if (!f) return;
+    e.preventDefault();
+    var j = { title: f.title.value.trim(), company: f.company.value.trim(), dates: f.dates.value.trim(), points: f.points.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean) };
+    if (!j.title) { f.title.focus(); return; }
+    var l = draft.experience[cvLang];
+    if (f.dataset.ji === 'new') l.push(j); else l[+f.dataset.ji] = j;
+    jobEdit = null; fillCv(); changed();
+  });
 
   /* one entry per article/project (Norwegian and English versions share a ref) */
   function groupTitles(list) {
@@ -171,7 +221,8 @@
     $('sumCourses').textContent = (nc ? nc + ' on the site · ' + ncv + ' in the CV' : 'None published') + mark;
     var ng = (s.goals || []).length;
     $('sumProgress').textContent = (ng ? ng + ' goal' + (ng === 1 ? '' : 's') + ' published' : 'None published') + mark;
-    $('sumCv').textContent = (s.cv && s.cv.on ? 'On · jplundberg.com/cv' : 'Off') + mark;
+    var ne = s.experience ? (s.experience.en || []).length : 0;
+    $('sumCv').textContent = (s.cv && s.cv.on ? 'On · jplundberg.com/cv' : 'Off') + (ne ? ' · ' + ne + ' jobs' : '') + mark;
   }
 
   /* ---------- edits ---------- */

@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=66" rel="stylesheet">
+  <link href="../styles.css?v=68" rel="stylesheet">
   <link href="fin.css?v=7" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
 </head>
@@ -111,19 +111,65 @@
 
   <section class="fin fp-fin" id="fin" aria-label="Budget, bills and spending">
 
-      <div class="fin-grid">
+      <div class="fin-grid fin-cols">
+        <div class="fin-col">
         <!-- Budget -->
         <section class="card budget">
           <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
           <div id="budgetBody"></div>
         </section>
 
+        <!-- Savings goals -->
+        <section class="card savings">
+          <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <form class="inline-form" id="svForm" hidden>
+            <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
+            <div class="row2">
+              <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
+              <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
+            </div>
+            <div class="form-actions">
+              <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
+              <span class="spacer"></span>
+              <button type="button" class="text-btn" id="svCancel">Cancel</button>
+              <button type="submit" class="pill-btn">Save</button>
+            </div>
+          </form>
+          <ul class="goal-list" id="svList"></ul>
+          <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
+        </section>
+        </div>
+        <div class="fin-col">
         <!-- Upcoming bills -->
         <section class="card bills">
           <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Upcoming bills</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
           <div id="billsBody"></div>
         </section>
 
+        <!-- Net worth -->
+        <section class="card networth">
+          <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
+          <form class="inline-form" id="nwForm" hidden>
+            <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
+            <div class="row2">
+              <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
+              <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="text-btn danger" id="nwDelete" hidden>Delete</button>
+              <span class="spacer"></span>
+              <button type="button" class="text-btn" id="nwCancel">Cancel</button>
+              <button type="submit" class="pill-btn">Save</button>
+            </div>
+          </form>
+          <div class="big-num" id="nwBig"></div>
+          <div class="muted" id="nwSub"></div>
+          <div id="nwChart"></div>
+          <ul class="acc-list" id="nwList"></ul>
+          <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
+        </section>
+        </div>
+        <div class="fin-col fin-col-wide">
         <!-- Spending -->
         <section class="card spending">
           <div class="card-head">
@@ -149,49 +195,7 @@
           <ul class="tx-list" id="spList"></ul>
           <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
         </section>
-
-        <!-- Savings goals -->
-        <section class="card savings">
-          <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
-          <form class="inline-form" id="svForm" hidden>
-            <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
-            <div class="row2">
-              <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
-              <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
-            </div>
-            <div class="form-actions">
-              <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
-              <span class="spacer"></span>
-              <button type="button" class="text-btn" id="svCancel">Cancel</button>
-              <button type="submit" class="pill-btn">Save</button>
-            </div>
-          </form>
-          <ul class="goal-list" id="svList"></ul>
-          <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
-        </section>
-
-        <!-- Net worth -->
-        <section class="card networth">
-          <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
-          <form class="inline-form" id="nwForm" hidden>
-            <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
-            <div class="row2">
-              <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
-              <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="text-btn danger" id="nwDelete" hidden>Delete</button>
-              <span class="spacer"></span>
-              <button type="button" class="text-btn" id="nwCancel">Cancel</button>
-              <button type="submit" class="pill-btn">Save</button>
-            </div>
-          </form>
-          <div class="big-num" id="nwBig"></div>
-          <div class="muted" id="nwSub"></div>
-          <div id="nwChart"></div>
-          <ul class="acc-list" id="nwList"></ul>
-          <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
-        </section>
+        </div>
       </div>
     </section>
 
@@ -250,7 +254,7 @@
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=4"></script>
   <script src="../budget.js?v=4"></script>
-  <script src="../finance.js?v=14"></script>
+  <script src="../finance.js?v=15"></script>
   <script src="fin.js?v=12"></script>
   <script src="import.js?v=5"></script>
   <script src="../kit.js?v=2"></script>

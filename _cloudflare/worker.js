@@ -144,6 +144,11 @@ function cleanSite(s) {
     name: str(x.name, 120), value: Number(x.value) || 0, target: Number(x.target) || 0, updated: str(x.updated, 12)
   }));
   const cv = s.cv || {};
+  const prof = cv.profile || {};
+  const jobs = l => (Array.isArray(l) ? l : []).slice(0, 12).filter(j => j && typeof j === 'object' && str(j.title, 120)).map(j => ({
+    title: str(j.title, 120), dates: str(j.dates, 60), company: str(j.company, 120), points: (Array.isArray(j.points) ? j.points : []).slice(0, 8).map(p => str(p, 240)).filter(Boolean)
+  }));
+  const ex = s.experience || {};
   return {
     announcement: { on: a.on === true, en: str(a.en, 180), nb: str(a.nb, 180), link },
     sections,
@@ -152,7 +157,8 @@ function cleanSite(s) {
     now: { en: str(now.en, 240), nb: str(now.nb, 240) },
     courses,
     goals,
-    cv: { on: cv.on === true, courses: cv.courses !== false, projects: cv.projects !== false, articles: cv.articles === true },
+    cv: { on: cv.on === true, courses: cv.courses !== false, projects: cv.projects !== false, articles: cv.articles === true, profile: { en: str(prof.en, 1200), nb: str(prof.nb, 1200) } },
+    experience: { en: jobs(ex.en), nb: jobs(ex.nb) },
     updated: str(s.updated, 40)
   };
 }

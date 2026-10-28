@@ -174,11 +174,11 @@
       if (el._map) { el._map.remove(); el._map = null; }
       var dark = document.documentElement.getAttribute('data-theme') !== 'light';
       var m = L.map(el, { zoomControl: true, attributionControl: true, scrollWheelZoom: false, worldCopyJump: true });
-      /* CARTO's basemaps (free, no key): a clean dark map in dark mode, a light one in light mode */
+      /* Esri's grey canvas maps (free, no key): dark in dark mode, light in light mode */
       el.classList.toggle('map-dark', dark);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (dark ? 'dark_all' : 'light_all') + '/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/' + (dark ? 'World_Dark_Gray_Base' : 'World_Light_Gray_Base') + '/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 16,
+        attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, OpenStreetMap contributors'
       }).addTo(m);
       var ll = [];
       points.forEach(function (p) {
@@ -196,56 +196,116 @@
     });
   }
 
-  /* ---------- a globe you can spin (d3-geo + Natural Earth countries, loaded when first shown) ---------- */
-  var globeLibs = null, worldData = null;
-  function loadGlobe() {
-    if (window.d3 && window.topojson && worldData) return Promise.resolve();
-    if (globeLibs) return globeLibs;
-    function script(src) { return new Promise(function (ok, fail) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { fail(new Error('globe')); }; document.head.appendChild(s); }); }
-    globeLibs = Promise.all([
-      window.d3 ? null : script('https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'),
-      window.topojson ? null : script('https://cdnjs.cloudflare.com/ajax/libs/topojson-client/3.1.0/topojson-client.min.js'),
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(function (r) { return r.json(); }).then(function (j) { worldData = j; })
-    ]).catch(function (e) { globeLibs = null; throw e; });
-    return globeLibs;
+  /* ---------- a globe you can spin ----------
+     Drawn on a canvas without any map library: the countries are painted once onto a flat
+     (equirectangular) picture, and each frame the visible half of the sphere is sampled from it.
+     The country outlines come from Natural Earth (world-atlas on jsdelivr, ~100 kB, fetched once). */
+  var worldData = null, worldLoad = null;
+  function loadWorld() {
+    if (worldData) return Promise.resolve(worldData);
+    if (worldLoad) return worldLoad;
+    worldLoad = fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json').then(function (r) { return r.json(); })
+      .then(function (topo) { worldData = topoCountries(topo); return worldData; })
+      .catch(function (e) { worldLoad = null; throw e; });
+    return worldLoad;
   }
-  /* points: as for map(); opts.countries: ISO numeric or alpha-2 codes to shade as visited */
+  /* TopoJSON → [{ id, rings: [[[lon, lat], …], …] }] */
+  function topoCountries(topo) {
+    var t = topo.transform, arcs = topo.arcs.map(function (arc) {
+      var x = 0, y = 0;
+      return arc.map(function (d) { x += d[0]; y += d[1]; return t ? [x * t.scale[0] + t.translate[0], y * t.scale[1] + t.translate[1]] : [x, y]; });
+    });
+    function ring(idx) {
+      var out = [];
+      idx.forEach(function (i) { var a = i < 0 ? arcs[~i].slice().reverse() : arcs[i]; out = out.concat(out.length ? a.slice(1) : a); });
+      return out;
+    }
+    return topo.objects.countries.geometries.map(function (g) {
+      var polys = g.type === 'Polygon' ? [g.arcs] : g.type === 'MultiPolygon' ? g.arcs : [];
+      return { id: String(g.id), rings: polys.map(function (p) { return ring(p[0]); }) };   // outer rings only (110m has no holes that matter)
+    });
+  }
+  /* points: as for map(); opts.countries: ISO numeric codes to shade as visited */
   function globe(el, points, opts) {
     opts = opts || {};
-    return loadGlobe().then(function () {
+    return loadWorld().then(function (countries) {
       if (el._map) { el._map.remove(); el._map = null; }
       if (el._globe) { el._globe.stop(); el._globe = null; }
       el.innerHTML = '';
-      var d3 = window.d3, W = el.clientWidth || 600, H = el.clientHeight || 380, R = Math.min(W, H) / 2 - 8;
-      var land = window.topojson.feature(worldData, worldData.objects.countries), border = window.topojson.mesh(worldData, worldData.objects.countries, function (a, b) { return a !== b; });
-      var cc = {}; (opts.countries || []).forEach(function (c) { cc[String(c)] = 1; });
+      var cs = getComputedStyle(document.documentElement);
+      var accent = cs.getPropertyValue('--accent').trim() || '#14b8a6', ink = cs.getPropertyValue('--ink-rgb').trim() || '255, 255, 255', bg = cs.getPropertyValue('--bg-solid').trim() || '#17181b';
+      var been = {}; (opts.countries || []).forEach(function (c) { been[String(c)] = 1; });
+      /* 1. the flat picture: 2048 × 1024 */
+      var FW = 2048, FH = 1024, flat = document.createElement('canvas'); flat.width = FW; flat.height = FH;
+      var fx = flat.getContext('2d');
+      fx.fillStyle = 'rgba(0,0,0,0)'; fx.clearRect(0, 0, FW, FH);
+      function fp(ll) { return [(ll[0] + 180) / 360 * FW, (90 - ll[1]) / 180 * FH]; }
+      countries.forEach(function (c) {
+        fx.beginPath();
+        c.rings.forEach(function (r) { r.forEach(function (ll, i) { var q = fp(ll); if (i) fx.lineTo(q[0], q[1]); else fx.moveTo(q[0], q[1]); }); fx.closePath(); });
+        fx.fillStyle = been[c.id] ? accent : 'rgba(' + ink + ', .2)';
+        fx.fill();
+        fx.strokeStyle = bg; fx.lineWidth = 1.2; fx.stroke();
+      });
+      var flatData = fx.getImageData(0, 0, FW, FH).data;
+      /* 2. the sphere */
+      var W = el.clientWidth || 600, H = el.clientHeight || 380, dpr = Math.min(2, window.devicePixelRatio || 1);
+      var cv = document.createElement('canvas'); cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; cv.className = 'globe';
+      cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Globe with the places you have been');
+      el.appendChild(cv);
+      var ctx = cv.getContext('2d');
+      var R = Math.min(W, H) / 2 - 10, cx = W / 2, cy = H / 2;
       var pts = points.filter(function (p) { return p.lat != null && p.lon != null; });
-      var start = pts.length ? [-pts[0].lon, -pts[0].lat * .6] : [-10, -45];
-      var proj = d3.geoOrthographic().scale(R).translate([W / 2, H / 2]).rotate(start).clipAngle(90);
-      var path = d3.geoPath(proj);
-      var svg = d3.select(el).append('svg').attr('viewBox', '0 0 ' + W + ' ' + H).attr('class', 'globe').attr('aria-label', 'Globe with the places you have been');
-      svg.append('circle').attr('class', 'globe-sea').attr('cx', W / 2).attr('cy', H / 2).attr('r', R);
-      var grat = svg.append('path').datum(d3.geoGraticule10()).attr('class', 'globe-grat');
-      var countries = svg.append('g').selectAll('path').data(land.features).enter().append('path').attr('class', function (f) { return 'globe-land' + (cc[f.id] ? ' been' : ''); });
-      var lines = svg.append('path').datum(border).attr('class', 'globe-border');
-      var dots = svg.append('g').selectAll('g').data(pts).enter().append('g').attr('class', 'globe-pt');
-      dots.append('circle').attr('r', 5).attr('fill', function (p) { return p.color || 'var(--accent)'; });
-      dots.append('title').text(function (p) { return String(p.label || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); });
+      var lon0 = pts.length ? pts[0].lon : 10, lat0 = pts.length ? pts[0].lat * .6 : 40;   // what faces you first
+      var sphere = ctx.createImageData(Math.ceil(R * 2 * dpr), Math.ceil(R * 2 * dpr)), SW = sphere.width;
+      var accentRGB = (function () { var m = (cs.getPropertyValue('--accent-rgb').trim() || '20, 184, 166').split(',').map(Number); return m; })();
       function render() {
-        grat.attr('d', path); countries.attr('d', path); lines.attr('d', path);
-        dots.attr('transform', function (p) { var xy = proj([p.lon, p.lat]); return 'translate(' + xy[0] + ',' + xy[1] + ')'; })
-          .attr('display', function (p) { var r = proj.rotate(), c = d3.geoDistance([p.lon, p.lat], [-r[0], -r[1]]); return c > Math.PI / 2 ? 'none' : null; });
+        var d = sphere.data, lam0 = lon0 * Math.PI / 180, phi0 = lat0 * Math.PI / 180, sp0 = Math.sin(phi0), cp0 = Math.cos(phi0);
+        var Rp = R * dpr, size = SW;
+        for (var yy = 0; yy < size; yy++) {
+          var y = (size / 2 - yy) / Rp;
+          for (var xx = 0; xx < size; xx++) {
+            var x = (xx - size / 2) / Rp, o = (yy * size + xx) * 4, rho2 = x * x + y * y;
+            if (rho2 > 1) { d[o + 3] = 0; continue; }
+            var rho = Math.sqrt(rho2), c = Math.asin(rho), sc = Math.sin(c), cc = Math.cos(c);
+            var phi = rho ? Math.asin(cc * sp0 + y * sc * cp0 / rho) : phi0;
+            var lam = lam0 + (rho ? Math.atan2(x * sc, rho * cp0 * cc - y * sp0 * sc) : 0);
+            var u = ((lam * 180 / Math.PI + 540) % 360) * FW / 360, v = (90 - phi * 180 / Math.PI) * FH / 180;
+            var fo = ((Math.min(FH - 1, v | 0)) * FW + (u | 0)) * 4, a = flatData[fo + 3];
+            var shade = 0.75 + 0.25 * cc;                              // a little darker towards the edge
+            if (a) { d[o] = flatData[fo] * shade; d[o + 1] = flatData[fo + 1] * shade; d[o + 2] = flatData[fo + 2] * shade; d[o + 3] = a; }
+            else { d[o] = accentRGB[0]; d[o + 1] = accentRGB[1]; d[o + 2] = accentRGB[2]; d[o + 3] = 22 + 16 * (1 - cc); }
+          }
+        }
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.putImageData(sphere, Math.round((cx - R) * dpr), Math.round((cy - R) * dpr));
+        /* outline and markers */
+        ctx.save(); ctx.scale(dpr, dpr);
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(' + ink + ', .18)'; ctx.lineWidth = 1; ctx.stroke();
+        pts.forEach(function (p) {
+          var lam = p.lon * Math.PI / 180, phi = p.lat * Math.PI / 180;
+          var cosc = sp0 * Math.sin(phi) + cp0 * Math.cos(phi) * Math.cos(lam - lam0);
+          if (cosc < 0.02) return;
+          var x = cx + R * Math.cos(phi) * Math.sin(lam - lam0), y = cy - R * (cp0 * Math.sin(phi) - sp0 * Math.cos(phi) * Math.cos(lam - lam0));
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fillStyle = p.color && p.color.charAt(0) === '#' ? p.color : accent; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = bg; ctx.stroke();
+        });
+        ctx.restore();
       }
       render();
-      /* drag to spin, and a slow turn while you don't */
-      var spinning = !document.documentElement.classList.contains('mo-off'), raf = null, last = performance.now();
-      function tick(t) { if (spinning) { var r = proj.rotate(); proj.rotate([r[0] + (t - last) * 0.004, r[1]]); render(); } last = t; raf = requestAnimationFrame(tick); }
+      /* a slow turn, and drag to spin it yourself */
+      var spinning = !document.documentElement.classList.contains('mo-off'), raf = null, last = performance.now(), alive = true;
+      function tick(t) { if (!alive) return; if (spinning) { lon0 += (t - last) * 0.004; render(); } last = t; raf = requestAnimationFrame(tick); }
       raf = requestAnimationFrame(tick);
-      var v0, r0, q0;
-      svg.call(d3.drag().on('start', function (e) { spinning = false; v0 = [e.x, e.y]; r0 = proj.rotate(); })
-        .on('drag', function (e) { proj.rotate([r0[0] + (e.x - v0[0]) * 0.4, Math.max(-80, Math.min(80, r0[1] - (e.y - v0[1]) * 0.4))]); render(); })
-        .on('end', function () { setTimeout(function () { if (el._globe && el._globe.raf === raf) spinning = true; }, 4000); }));
-      el._globe = { raf: raf, stop: function () { cancelAnimationFrame(raf); } };
+      var drag = null, resume = null;
+      cv.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, lon: lon0, lat: lat0 }; spinning = false; clearTimeout(resume); cv.setPointerCapture(e.pointerId); });
+      cv.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        lon0 = drag.lon + (e.clientX - drag.x) * 0.5; lat0 = Math.max(-80, Math.min(80, drag.lat + (e.clientY - drag.y) * 0.5)); render();
+      });
+      function up() { if (!drag) return; drag = null; resume = setTimeout(function () { spinning = true; }, 4000); }
+      cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+      el._globe = { stop: function () { alive = false; cancelAnimationFrame(raf); } };
       return el._globe;
     });
   }
