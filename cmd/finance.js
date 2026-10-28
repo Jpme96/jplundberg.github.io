@@ -172,7 +172,7 @@
         '<div class="donut-mid"><span class="muted">Total</span>' + money(total) + '</div></div>' +
         '<ul class="legend">' + byCat.map(function (x) {
           return '<li><i class="dot" style="background:' + x.c.color + '"></i>' + esc(x.c.name) +
-            '<span class="muted pct">' + Math.round(x.v / total * 100) + ' %</span><b>' + money(x.v) + '</b></li>';
+            '<span class="muted pct">' + Math.round(x.v / total * 100) + '\u00a0%</span><b>' + money(x.v) + '</b></li>';
         }).join('') + '</ul>';
     }
 
@@ -250,7 +250,7 @@
         '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + C.toFixed(2) + '" stroke-dashoffset="' + (C * (1 - pct)).toFixed(2) + '"></circle></svg>' +
         '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + money(g.saved) + ' of ' + money(g.target) +
-        ' · ' + Math.round(pct * 100) + ' %</span></div>' +
+        ' · ' + Math.round(pct * 100) + '\u00a0%</span></div>' +
         '<div class="stepper"><button type="button" data-sv="-1" aria-label="Take out ' + step(g.target) + ' kr">−</button>' +
         '<button type="button" data-sv="1" aria-label="Add ' + step(g.target) + ' kr">+</button></div></li>';
     }).join('');

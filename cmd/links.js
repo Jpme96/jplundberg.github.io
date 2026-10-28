@@ -4,6 +4,7 @@
      yearly and quarterly ones spread out), monthly ones also get a due day in Upcoming bills
    - Trips → Finances: booking costs and a trip's other costs are spending (Travel), old trips too
    - Trips → Places to visit: a place you've now been to is ticked off as visited
+   - Workouts → your training habit: a logged workout ticks the habit that day
    (workouts, courses and health → calendar in features.js) */
 (function () {
   "use strict";
@@ -98,13 +99,38 @@
     } finally { syncingTrips = false; }
   }
 
+  /* ---------- workouts → the training habit ----------
+     A logged workout ticks its habit that day (the one picked when logging, else your
+     training/gym habit). Only adds ticks – ticking a day by hand still works as before. */
+  function syncWorkouts() {
+    if (!F.on('training')) return;
+    var hb = null; try { hb = JSON.parse(localStorage.getItem('dash.habits')); } catch (e) {}
+    if (!hb || !Array.isArray(hb.list) || !hb.list.length) return;
+    var def = hb.list.filter(function (h) { return /train|trening|gym|workout|løp|run|exercise|økt/i.test(h.name); })[0];
+    var ids = {}; hb.list.forEach(function (h) { ids[h.id] = 1; });
+    hb.log = hb.log || {};
+    var changed = false;
+    F.list('training').forEach(function (w) {
+      var hid = w.habit === '' ? null : (w.habit && ids[w.habit] ? w.habit : def && def.id);
+      if (!hid || !/^\d{4}-\d{2}-\d{2}$/.test(w.date || '')) return;
+      var day = hb.log[w.date] = hb.log[w.date] || [];
+      if (day.indexOf(hid) < 0) { day.push(hid); changed = true; }
+    });
+    if (!changed) return;
+    try { localStorage.setItem('dash.habits', JSON.stringify(hb)); } catch (e) {}
+    window.dispatchEvent(new Event('dash:local'));
+    window.dispatchEvent(new Event('habits:change'));
+    if (window.Dash && window.Dash.reload) window.Dash.reload();
+  }
+
   function run() {
+    try { syncWorkouts(); } catch (e) { console.error(e); }
     try { syncSubs(); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
   }
   window.Vault.onUnlock(function () { setTimeout(run, 0); });
-  window.addEventListener('tools:change', function () { if (window.Vault.get()) syncSubs(); });
+  window.addEventListener('tools:change', function () { if (window.Vault.get()) { syncSubs(); syncWorkouts(); } });
   window.addEventListener('features:change', function () { if (window.Vault.get()) run(); });
   window.addEventListener('travel:change', function () { if (window.Vault.get()) { syncTrips(); syncBucket(); } });
 })();

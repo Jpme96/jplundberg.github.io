@@ -27,7 +27,9 @@
   display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   margin-bottom: 14px;
 }
-.fp-filter .seg { flex-wrap: wrap; }
+.fp-filter .seg { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.fp-filter .seg::-webkit-scrollbar { display: none; }
+.fp-filter .seg button { white-space: nowrap; flex-shrink: 0; }
 
 /* Key numbers */
 .fp-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px; }
