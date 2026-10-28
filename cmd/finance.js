@@ -138,7 +138,7 @@
     var rows = list.map(function (r) {
       if (payEditing === r.id) return payForm(r);
       var row = B.rowFor(r, key), bits = [];
-      if (r.gross > 0) bits.push('gross ' + kr(r.gross) + ' − ' + (+r.taxPct || 0) + ' % tax' + (row.extra ? ' − ' + kr(row.extra) : ''));
+      if (r.gross > 0) bits.push('gross ' + kr(r.gross) + ' − tax ' + kr(row.tax) + (row.extra ? ' − ' + kr(row.extra) : ''));
       if (r.day) bits.push('paid ' + dayLabel(r.day));
       if (row.note) bits.push(row.note.toLowerCase());
       return '<li class="b-row b-pay"><button type="button" class="b-open" data-pedit="' + r.id + '"><span>' + esc(r.name) + '</span>' +
@@ -148,7 +148,23 @@
     var hasDay = B.hasPayday(D), mode = D.budget.period === 'payday' && hasDay ? 'payday' : 'month';
     return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
       (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') +
-      (hasDay ? '<div class="b-period"><span>Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') + '</div>';
+      (hasDay ? '<div class="b-period"><span>Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') +
+      (list.some(function (r) { return r.gross > 0; }) ? slipEditor() : '') + '</div>';
+  }
+  /* log what each payslip actually said – that month then uses the real numbers, and the year adds up */
+  function slipEditor() {
+    var ps = D.budget.payslips || {}, keys = Object.keys(ps).sort().reverse();
+    var now = new Date(), opts = '';
+    for (var i = 0; i < 12; i++) { var k = ym(new Date(now.getFullYear(), now.getMonth() - i, 1)); opts += '<option value="' + k + '"' + (ps[k] ? ' disabled' : '') + '>' + esc(monthName(k, true)) + ' ' + k.slice(2, 4) + (ps[k] ? ' ✓' : '') + '</option>'; }
+    var y = B.yearSoFar(D), rows = keys.slice(0, 4).map(function (k) {
+      var p = ps[k];
+      return '<li class="pay-ded"><span>' + esc(monthName(k)) + '</span><span class="muted">net ' + esc(kr(p.net)) + (p.gross ? ' · gross ' + esc(kr(p.gross)) : '') + (p.tax ? ' · tax ' + esc(kr(p.tax)) : '') + '</span>' +
+        '<button type="button" class="del" data-sdel="' + k + '" aria-label="Remove payslip"><i class="bi bi-x"></i></button></li>';
+    }).join('');
+    return '<div class="b-slips"><p class="pay-sub">Payslips logged' + (y.logged ? ' · this year: net ' + esc(kr(y.net)) + ' · tax ' + esc(kr(y.tax)) : '') + '</p>' +
+      (rows ? '<ul class="pay-deds">' + rows + '</ul>' : '<p class="muted b-slip-hint">Type in the net, gross and tax from each payslip. That month then uses the real numbers (bonuses, overtime, a different tax table) and the year adds up correctly.</p>') +
+      '<form class="slip-form"><div class="row2"><select name="m" aria-label="Month">' + opts + '</select><input name="net" class="amt" placeholder="Net paid (Netto)" inputmode="decimal" required autocomplete="off"></div>' +
+      '<div class="add-row"><input name="g" placeholder="Gross (optional)" inputmode="decimal" autocomplete="off"><input name="t" placeholder="Tax (optional)" inputmode="decimal" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Save payslip"><i class="bi bi-check-lg"></i></button></div></form></div>';
   }
   function payForm(r) {
     var gross = r && r.gross > 0, days = '<option value="">Payday…</option>';
@@ -158,17 +174,24 @@
       return '<li class="pay-ded"><span>' + esc(x.name) + '</span><span class="muted">' + (x.pct ? esc(x.pct) + ' %' : esc(kr(x.amount))) + '</span>' +
         '<button type="button" class="del" data-ddel="' + i + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
+    var taxVal = r && r.taxKr > 0 ? String(Math.round(r.taxKr)) : (r && r.taxPct != null ? r.taxPct + ' %' : '');
     return '<li class="pay-wrap"><form class="pay-form" data-pid="' + (r ? r.id : 'new') + '">' +
       '<div class="add-row"><input name="n" placeholder="e.g. Salary" value="' + esc(r ? r.name : '') + '" required autocomplete="off">' +
-        '<select name="mode" class="pay-mode" aria-label="Net or gross"><option value="net"' + (gross ? '' : ' selected') + '>Net (paid out)</option><option value="gross"' + (gross ? ' selected' : '') + '>Gross (before tax)</option></select></div>' +
+        '<select name="mode" class="pay-mode" aria-label="Net or gross"><option value="net"' + (gross ? '' : ' selected') + '>Net (paid out)</option><option value="gross"' + (gross ? ' selected' : '') + '>Gross (payslip)</option></select></div>' +
       '<div class="pay-net"' + (gross ? ' hidden' : '') + '><input name="a" class="amt" placeholder="kr / month, after tax" inputmode="decimal" value="' + (r && !gross && r.amount ? r.amount : '') + '" autocomplete="off"></div>' +
       '<div class="pay-gross"' + (gross ? '' : ' hidden') + '>' +
-        '<div class="row2"><label class="pay-field"><span>Gross, kr / month</span><input name="g" placeholder="52 000" inputmode="decimal" value="' + (gross ? r.gross : '') + '" autocomplete="off"></label>' +
-          '<label class="pay-field"><span>Tax % (skattetrekk)</span><input name="t" placeholder="31" inputmode="decimal" value="' + (r && r.taxPct != null ? r.taxPct : '') + '" autocomplete="off"></label></div>' +
+        '<p class="pay-sub">From your payslip (lønnsslipp)</p>' +
+        '<div class="row2"><label class="pay-field"><span>Monthly salary, gross (Månedslønn)</span><input name="g" placeholder="80 775" inputmode="decimal" value="' + (gross ? r.gross : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span>Tax (Skattetrekk): % or kr</span><input name="t" placeholder="37 % or 29 621" value="' + esc(taxVal) + '" autocomplete="off"></label></div>' +
+        '<div class="row2"><label class="pay-field"><span>Extra tax, kr (Ekstra skattetrekk)</span><input name="tx" placeholder="0" inputmode="decimal" value="' + (r && r.taxExtra ? r.taxExtra : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span>Taxed benefits, not paid out (fordel)</span><input name="bf" placeholder="e.g. 90" inputmode="decimal" value="' + (r && r.benefits ? r.benefits : '') + '" autocomplete="off"></label></div>' +
+        '<p class="pay-sub">Deductions (union, pension, insurance)</p>' +
         '<ul class="pay-deds">' + ded + '</ul>' +
-        '<div class="add-row pay-dadd"><input name="dn" placeholder="Deduction, e.g. Pension" autocomplete="off"><input name="da" class="amt" placeholder="2 % or 500 kr" inputmode="decimal" autocomplete="off">' +
+        '<div class="add-row pay-dadd"><input name="dn" placeholder="e.g. Fagforening" autocomplete="off"><input name="da" class="amt" placeholder="681 or 2 %" inputmode="decimal" autocomplete="off">' +
           '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction"><i class="bi bi-plus-lg"></i></button></div>' +
-        '<label class="pay-check"><input type="checkbox" name="py"' + (r && r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
+        '<label class="pay-check"><input type="checkbox" name="py"' + (!r || r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
+        '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span>Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span>Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
       '</div>' +
       '<div class="add-row"><select name="day" class="pay-day" aria-label="Payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-pcancel>Cancel</button><span class="spacer"></span>' +
@@ -178,7 +201,11 @@
   function readPay(f) {
     var r = { name: f.n.value.trim(), day: f.day.value === 'last' ? 'last' : (+f.day.value || null), deductions: f._ded || [] };
     if (f.mode.value === 'gross') {
-      r.gross = num(f.g.value) || 0; r.taxPct = num(f.t.value) || 0; r.payYear = f.py.checked;
+      r.gross = num(f.g.value) || 0; r.taxExtra = num(f.tx.value) || 0; r.benefits = num(f.bf.value) || 0; r.payYear = f.py.checked;
+      var t = String(f.t.value || '').trim();
+      if (/%/.test(t) || (num(t) > 0 && num(t) <= 60)) { r.taxPct = num(t) || 0; r.taxKr = 0; }        // a percentage
+      else { r.taxKr = num(t) || 0; r.taxPct = r.gross + r.benefits > 0 ? Math.round(r.taxKr / (r.gross + r.benefits) * 10000) / 100 : 0; }   // the amount from the payslip
+      r.holidayPay = f.hp.value.trim() === '' ? null : num(f.hp.value) || 0; r.holidayWeeks = +f.hw.value || 5;
       r.amount = Math.max(0, Math.round(B.ordinary(r)));
     } else { r.amount = num(f.a.value) || 0; r.deductions = []; }
     return r;
@@ -186,8 +213,10 @@
   function previewPay(f) {
     var r = readPay(f), p = f.querySelector('.pay-prev');
     if (!p) return;
-    var row = B.rowFor(r, ym(new Date()));
-    p.innerHTML = r.gross > 0 ? '<b>' + esc(kr(row.net)) + '</b> net this month' + (row.note ? ' · ' + esc(row.note) : '') : (r.amount ? '<b>' + esc(kr(r.amount)) + '</b> per month' : '');
+    if (!(r.gross > 0)) { p.innerHTML = r.amount ? '<b>' + esc(kr(r.amount)) + '</b> per month' : ''; return; }
+    var y = new Date().getFullYear(), now = B.rowFor(r, ym(new Date())), jun = B.rowFor(r, y + '-06'), dec = B.rowFor(r, y + '-12');
+    p.innerHTML = '<b>' + esc(kr(now.net)) + '</b> net a month · tax ' + esc(kr(now.tax)) + (now.extra ? ' · deductions ' + esc(kr(now.extra)) : '') +
+      (r.payYear ? '<br>June ' + esc(kr(jun.net)) + ' · December ' + esc(kr(dec.net)) : '');
   }
   function openPay(id) {
     payEditing = id; renderBudget();
@@ -215,6 +244,15 @@
 
   $('budgetEdit').addEventListener('click', function () { budgetEditing = !budgetEditing; payEditing = null; renderBudget(); });
   $('budgetBody').addEventListener('submit', function (e) {
+    var sf = e.target.closest('.slip-form');
+    if (sf) {
+      e.preventDefault();
+      var net = num(sf.net.value); if (!(net > 0)) { sf.net.focus(); return; }
+      D.budget.payslips = D.budget.payslips || {};
+      D.budget.payslips[sf.m.value] = { net: net, gross: num(sf.g.value) || 0, tax: num(sf.t.value) || 0 };
+      persist(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
+      return;
+    }
     var pf = e.target.closest('.pay-form');
     if (pf) {
       e.preventDefault();
@@ -243,6 +281,8 @@
   $('budgetBody').addEventListener('click', function (e) {
     var pe = e.target.closest('[data-pedit]');
     if (pe) { openPay(pe.dataset.pedit); return; }
+    var sd = e.target.closest('[data-sdel]');
+    if (sd) { delete D.budget.payslips[sd.dataset.sdel]; persist(); renderBudget(); window.dispatchEvent(new Event('fin:change')); return; }
     var pm = e.target.closest('[data-period-mode]');
     if (pm) { D.budget.period = pm.dataset.periodMode; persist(); renderBudget(); window.dispatchEvent(new Event('fin:change')); return; }
     if (e.target.closest('[data-pcancel]')) { payEditing = null; renderBudget(); return; }
@@ -286,6 +326,7 @@
       f.querySelector('.pay-gross').hidden = !g; f.querySelector('.pay-net').hidden = g;
       (g ? f.g : f.a).focus();
     }
+    if (e.target.name === 'py') f.querySelector('.pay-hol').hidden = !e.target.checked;
     previewPay(f);
   });
 

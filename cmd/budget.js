@@ -11,25 +11,36 @@ window.Budget = (function () {
   function ym(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
   function daysIn(y, m) { return new Date(y, m, 0).getDate(); }
 
-  /* one income row → what it pays out in the month 'YYYY-MM' */
+  /* one income row → what it pays out in the month 'YYYY-MM'
+     r: { amount (net, ordinary month) | gross, taxPct, taxExtra (kr), benefits (taxable, not paid out),
+          deductions [{name, amount|pct}], payYear, holidayPay (kr, earned last year), holidayWeeks (4|5), day } */
   function rowFor(r, key) {
     var out = { name: r.name, net: +r.amount || 0, gross: 0, tax: 0, extra: 0, items: [], note: '', day: r.day || null, holiday: false };
     if (!(r.gross > 0)) return out;
-    var m = +key.slice(5, 7), gross = +r.gross, pct = +r.taxPct || 0;
+    var m = +key.slice(5, 7), gross = +r.gross, pct = +r.taxPct || 0, benefits = +r.benefits || 0, taxExtra = +r.taxExtra || 0;
     var ded = (r.deductions || []).map(function (x) {
       var v = x.pct ? gross * (+x.pct || 0) / 100 : +x.amount || 0;
       return { name: x.name, amount: v };
     });
     var extra = ded.reduce(function (a, x) { return a + x.amount; }, 0);
     out.items = ded; out.extra = extra;
-    if (r.payYear && m === 6) {                     // holiday pay: a share of last year's salary, not taxed
-      var hol = gross * 12 * ((+r.holidayPct || 12) / 100);
-      out.gross = hol; out.tax = 0; out.net = hol - extra; out.note = 'Holiday pay – no tax'; out.holiday = true;
-      return out;
+    var salary = gross, tax, note = '';
+    if (r.payYear && m === 6) {
+      /* June: holiday pay (earned last year, not taxed) is paid, and the salary for the holiday
+         weeks is held back – 30/26 of a month for 5 weeks, 25/26 for 4 */
+      var hol = r.holidayPay != null && r.holidayPay !== '' ? +r.holidayPay || 0 : gross * 12 * 0.12;
+      if (hol > 0) {
+        var held = gross * ((+r.holidayWeeks || 5) === 4 ? 25 : 30) / 26;
+        salary = gross - held;
+        tax = Math.max(0, (salary + benefits) * pct / 100);
+        out.gross = hol + salary; out.tax = tax; out.net = hol + salary - tax - extra; out.holiday = true; out.note = 'Holiday pay, no tax';
+        return out;
+      }
+      note = 'No holiday pay earned last year – a normal month';
     }
-    var tax = gross * pct / 100;
-    if (r.payYear && m === 12) { tax = tax / 2; out.note = 'Half tax in December'; }
-    out.gross = gross; out.tax = tax; out.net = gross - tax - extra;
+    tax = (salary + benefits) * pct / 100 + taxExtra;
+    if (r.payYear && m === 12) { tax = tax / 2; note = 'Half tax in December'; }
+    out.gross = salary; out.tax = tax; out.net = salary - tax - extra; out.note = note;
     return out;
   }
   /* the net amount in an ordinary month (what's stored as r.amount) */
@@ -37,14 +48,34 @@ window.Budget = (function () {
     var g = +r.gross || 0;
     if (!(g > 0)) return +r.amount || 0;
     var extra = (r.deductions || []).reduce(function (a, x) { return a + (x.pct ? g * (+x.pct || 0) / 100 : +x.amount || 0); }, 0);
-    return g - g * (+r.taxPct || 0) / 100 - extra;
+    return g - (g + (+r.benefits || 0)) * (+r.taxPct || 0) / 100 - (+r.taxExtra || 0) - extra;
   }
+  /* a logged payslip for a month overrides the model (d.budget.payslips['YYYY-MM'] = {net, gross, tax}) */
+  function slip(d, key) { var p = d && d.budget && d.budget.payslips; return p && p[key] && p[key].net > 0 ? p[key] : null; }
   /* all incomes for a month */
   function incomeOf(d, key) {
     var rows = ((d && d.budget && d.budget.income) || []).map(function (r) { return rowFor(r, key); });
-    var t = { net: 0, gross: 0, tax: 0, extra: 0, rows: rows, note: '' };
+    var t = { net: 0, gross: 0, tax: 0, extra: 0, rows: rows, note: '', logged: false };
     rows.forEach(function (r) { t.net += r.net; t.gross += r.gross; t.tax += r.tax; t.extra += r.extra; if (r.note && !t.note) t.note = r.note; });
+    var s = slip(d, key);
+    if (s) {
+      var others = rows.filter(function (r) { return !r.gross; }).reduce(function (a, r) { return a + r.net; }, 0);   // plain net incomes stay
+      t.net = (+s.net || 0) + others; t.logged = true;
+      if (s.gross > 0) { t.gross = +s.gross; t.tax = +s.tax || 0; t.extra = Math.max(0, +s.gross - (+s.tax || 0) - +s.net); }
+      t.note = 'From your payslip';
+    }
     return t;
+  }
+  /* this year so far: logged payslips where you have them, the model for the other months up to now */
+  function yearSoFar(d, now) {
+    now = now || new Date();
+    var y = now.getFullYear(), out = { gross: 0, tax: 0, net: 0, months: 0, logged: 0 };
+    for (var m = 1; m <= now.getMonth() + 1; m++) {
+      var key = y + '-' + pad(m), t = incomeOf(d, key);
+      if (!t.net) continue;
+      out.gross += t.gross; out.tax += t.tax; out.net += t.net; out.months++; if (t.logged) out.logged++;
+    }
+    return out;
   }
   function income(d, key) { return incomeOf(d, key || ym(new Date())).net; }
 
@@ -116,5 +147,5 @@ window.Budget = (function () {
   }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
 
-  return { period: period, spent: spent, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { period: period, spent: spent, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();

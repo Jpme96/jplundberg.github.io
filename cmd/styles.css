@@ -1963,3 +1963,9 @@ body.qa-open { overflow: hidden; }
 .im-foot { position: sticky; bottom: 0; background: var(--bg-solid); padding-top: 10px; }
 @media (min-width: 481px) { .im-row .money { order: 4; } }
 @media (max-width: 480px) { .im-row { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: 6px; } .im-row select, .im-fixed { grid-column: 2; justify-self: start; } }
+.pay-sub { margin: 4px 0 -2px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.pay-hol select { padding: 8px 30px 8px 10px; }
+.b-slips { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.b-slip-hint { margin: 0; font-size: 13px; line-height: 1.45; }
+.slip-form { display: grid; gap: 8px; }
+.slip-form select { padding: 8px 30px 8px 10px; }
