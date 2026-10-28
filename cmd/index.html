@@ -38,7 +38,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=17" rel="stylesheet">
+  <link href="styles.css?v=18" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -109,6 +109,7 @@
       <!-- Departures (Entur / Ruter, real time) -->
       <section class="card transit" id="transitCard">
         <div class="card-head"><h2><i class="bi bi-signpost-split"></i> <span id="trTitle">Travel</span></h2><button class="text-btn" id="trEdit" type="button">Stops</button></div>
+        <div class="un-list" id="trNext" hidden></div>
         <form class="tr-plan" id="trPlan" autocomplete="off">
           <label class="ps-wrap tr-pf"><i class="bi bi-record-circle" aria-hidden="true"></i><input id="trFrom" placeholder="From" aria-label="From"></label>
           <button type="button" class="tr-swap" id="trSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
@@ -446,11 +447,13 @@
   <script src="settings.js?v=8"></script>
   <script src="website.js?v=2"></script>
   <script src="script.js?v=6"></script>
-  <script src="finance.js?v=4"></script>
+  <script src="finance.js?v=5"></script>
   <script src="places.js?v=1"></script>
-  <script src="today.js?v=3"></script>
-  <script src="calendar/cal-core.js?v=1"></script>
+  <script src="today.js?v=4"></script>
+  <script src="flow.js?v=1"></script>
+  <script src="calendar/cal-core.js?v=2"></script>
   <script src="cal-card.js?v=1"></script>
+  <script src="upnext.js?v=1"></script>
   <script src="nav.js?v=3"></script>
 </body>
 </html>

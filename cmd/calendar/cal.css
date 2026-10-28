@@ -243,3 +243,7 @@
 .cl-notes { white-space: pre-wrap; padding: 10px 12px; background: rgba(var(--ink-rgb), .05); border-radius: 12px; font-size: 14px; }
 .cl-src { font-size: 13px; }
 .cl-modal body { overflow: hidden; }
+.cl-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.cl-acts .pill-btn { height: 40px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+.pill-btn.ghost { background: var(--accent-soft); color: var(--accent); }
+.cl-route { justify-self: start; }

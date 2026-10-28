@@ -38,9 +38,10 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=17" rel="stylesheet">
+  <link href="../styles.css?v=18" rel="stylesheet">
   <link href="../finance/fin.css?v=2" rel="stylesheet">
-  <link href="travel.css?v=1" rel="stylesheet">
+  <link href="../calendar/cal.css?v=2" rel="stylesheet">
+  <link href="travel.css?v=2" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -73,44 +74,153 @@
   <main class="fp tv" id="fp">
     <div class="tv-hero">
       <p class="tv-hello" id="tvHello">Good morning,</p>
-      <h1>where do you want to go?</h1>
+      <h1 id="tvHead">where do you want to go?</h1>
     </div>
 
-    <form class="tv-form" id="tvForm" autocomplete="off">
-      <div class="tv-fields">
-        <label class="ps-wrap tv-field">
-          <i class="bi bi-record-circle tv-from-ico" aria-hidden="true"></i>
-          <input id="tvFrom" placeholder="From" aria-label="From">
-        </label>
-        <button type="button" class="tv-swap" id="tvSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
-        <label class="ps-wrap tv-field">
-          <i class="bi bi-geo-alt-fill tv-to-ico" aria-hidden="true"></i>
-          <input id="tvTo" placeholder="To" aria-label="To">
-        </label>
-      </div>
-      <div class="tv-opts">
-        <div class="seg" id="tvWhen">
-          <button type="button" data-when="now" aria-pressed="true">Leave now</button>
-          <button type="button" data-when="depart">Leave at</button>
-          <button type="button" data-when="arrive">Arrive by</button>
+    <!-- What's coming up: links the journey planner, your trips and your calendar -->
+    <section class="tv-next" id="tvNext" aria-label="Coming up" hidden></section>
+
+    <div class="seg tv-tabs" id="tvTabs" role="tablist">
+      <button type="button" role="tab" data-tab="journey"><i class="bi bi-signpost-split"></i> Journey</button>
+      <button type="button" role="tab" data-tab="trips"><i class="bi bi-suitcase-lg"></i> Trips <span class="tv-count" id="tvTripCount"></span></button>
+    </div>
+
+    <!-- ============ Journey (Entur) ============ -->
+    <section class="tv-pane" id="paneJourney" role="tabpanel">
+      <div class="tv-context" id="tvContext" hidden></div>
+      <form class="tv-form" id="tvForm" autocomplete="off">
+        <div class="tv-fields">
+          <label class="ps-wrap tv-field">
+            <i class="bi bi-record-circle tv-from-ico" aria-hidden="true"></i>
+            <input id="tvFrom" placeholder="From" aria-label="From">
+          </label>
+          <button type="button" class="tv-swap" id="tvSwap" aria-label="Swap from and to"><i class="bi bi-arrow-left-right"></i></button>
+          <label class="ps-wrap tv-field">
+            <i class="bi bi-geo-alt-fill tv-to-ico" aria-hidden="true"></i>
+            <input id="tvTo" placeholder="To" aria-label="To">
+          </label>
         </div>
-        <input type="datetime-local" id="tvTime" class="tv-time" hidden aria-label="Time">
-        <span class="spacer"></span>
-        <button type="submit" class="pill-btn tv-go" id="tvGo"><i class="bi bi-search"></i> Find trips</button>
+        <div class="tv-places" id="tvPlaces"></div>
+        <div class="tv-place-set" id="tvPlaceSet" hidden>
+          <label class="ps-wrap tv-field tv-field-sm"><i class="bi bi-house-door" id="tvPlaceIco" aria-hidden="true"></i><input id="tvPlaceIn" placeholder="Search for your home address or stop" aria-label="Saved place"></label>
+          <button type="button" class="text-btn" id="tvPlaceCancel">Cancel</button>
+        </div>
+        <div class="tv-opts">
+          <div class="seg" id="tvWhen">
+            <button type="button" data-when="now" aria-pressed="true">Leave now</button>
+            <button type="button" data-when="depart">Leave at</button>
+            <button type="button" data-when="arrive">Arrive by</button>
+          </div>
+          <input type="datetime-local" id="tvTime" class="tv-time" hidden aria-label="Time">
+          <span class="spacer"></span>
+          <button type="submit" class="pill-btn tv-go" id="tvGo"><i class="bi bi-search"></i> Find trips</button>
+        </div>
+      </form>
+
+      <p class="tv-msg" id="tvMsg" role="status" aria-live="polite"></p>
+      <div class="tv-recent" id="tvRecent"></div>
+      <ul class="tv-trips" id="tvTrips"></ul>
+      <button class="text-btn tv-more" id="tvMore" type="button" hidden>Later trips <i class="bi bi-chevron-down"></i></button>
+    </section>
+
+    <!-- ============ Trips ============ -->
+    <section class="tv-pane" id="paneTrips" role="tabpanel" hidden>
+      <div id="tpList">
+        <div class="tp-bar"><h2>Your trips</h2><button class="pill-btn" type="button" id="tpNew"><i class="bi bi-plus-lg"></i> New trip</button></div>
+        <div class="tp-cards" id="tpUpcoming"></div>
+        <p class="empty tp-empty" id="tpEmpty" hidden>No trips planned yet. Add one to keep flights, hotels, packing and costs in one place – it shows up in your calendar too.</p>
+        <details class="tp-past" id="tpPastBox" hidden><summary>Past trips</summary><div class="tp-cards" id="tpPast"></div></details>
+      </div>
+
+      <div id="tpDetail" hidden>
+        <button class="fp-back tp-back" type="button" id="tpBack"><i class="bi bi-chevron-left"></i> All trips</button>
+        <header class="tp-head card" id="tpHead"></header>
+        <div class="tp-grid">
+          <section class="card tp-plan">
+            <div class="card-head"><h2><i class="bi bi-list-ol"></i> Plan</h2><button class="text-btn" type="button" id="tpAddItem"><i class="bi bi-plus-lg"></i> Add</button></div>
+            <div id="tpItems"></div>
+          </section>
+          <div class="tp-side">
+            <section class="card tp-pack">
+              <div class="card-head"><h2><i class="bi bi-luggage"></i> Packing</h2><span class="muted" id="tpPackCount"></span></div>
+              <form class="tp-pack-add" id="tpPackForm" autocomplete="off"><input id="tpPackIn" placeholder="Add something to pack" maxlength="80" aria-label="Add to packing list"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>
+              <ul class="tp-pack-list" id="tpPack"></ul>
+              <button class="text-btn" type="button" id="tpPackBasics" hidden><i class="bi bi-magic"></i> Add the usual things</button>
+            </section>
+            <section class="card tp-money">
+              <div class="card-head"><h2><i class="bi bi-cash-coin"></i> Money</h2></div>
+              <div id="tpMoney"></div>
+            </section>
+            <section class="card tp-notes">
+              <div class="card-head"><h2><i class="bi bi-journal-text"></i> Notes</h2></div>
+              <textarea id="tpNotes" placeholder="Addresses, opening hours, ideas…" maxlength="4000" rows="4" aria-label="Trip notes"></textarea>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="foot muted" id="tvFoot">Real-time journey data from Entur, the national travel planner for Norway.<br><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span> · <i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
+  </main>
+
+  <!-- Trip editor -->
+  <div class="cl-sheet-bg" id="tsBg" hidden>
+    <form class="cl-sheet" id="tsForm" role="dialog" aria-modal="true" aria-labelledby="tsTitle" autocomplete="off">
+      <div class="cl-sheet-head">
+        <button class="text-btn" type="button" data-close>Cancel</button>
+        <h2 id="tsTitle">New trip</h2>
+        <button class="pill-btn" type="submit">Save</button>
+      </div>
+      <div class="cl-edit">
+        <input class="cl-in-title" id="tsName" placeholder="Name, e.g. Berlin with Kari" maxlength="80" required aria-label="Trip name">
+        <input id="tsDest" placeholder="Destination, e.g. Berlin" maxlength="80" aria-label="Destination">
+        <div class="cl-group">
+          <label class="st-row"><span>From</span><span class="cl-dt"><input type="date" id="tsStart" required></span></label>
+          <label class="st-row"><span>To</span><span class="cl-dt"><input type="date" id="tsEnd" required></span></label>
+        </div>
+        <label class="st-row cl-group tp-budget-row"><span>Budget (kr)</span><input id="tsBudget" class="tp-inline" inputmode="decimal" placeholder="Optional" aria-label="Budget"></label>
+        <div class="cl-del" id="tsDelBox" hidden>
+          <button class="text-btn danger" type="button" id="tsDelete"><i class="bi bi-trash3"></i> Delete trip</button>
+        </div>
       </div>
     </form>
+  </div>
 
-    <p class="tv-msg" id="tvMsg" role="status" aria-live="polite"></p>
-    <div class="tv-recent" id="tvRecent"></div>
-    <ul class="tv-trips" id="tvTrips"></ul>
-    <button class="text-btn tv-more" id="tvMore" type="button" hidden>Later trips <i class="bi bi-chevron-down"></i></button>
-
-    <p class="foot muted">Real-time journey data from Entur, the national travel planner for Norway.<br><i class="bi bi-shield-lock"></i> Your recent trips are synced and encrypted with your passcode</p>
-  </main>
+  <!-- Booking / plan item editor -->
+  <div class="cl-sheet-bg" id="tiBg" hidden>
+    <form class="cl-sheet" id="tiForm" role="dialog" aria-modal="true" aria-labelledby="tiTitle" autocomplete="off">
+      <div class="cl-sheet-head">
+        <button class="text-btn" type="button" data-close>Cancel</button>
+        <h2 id="tiTitle">Add to plan</h2>
+        <button class="pill-btn" type="submit">Save</button>
+      </div>
+      <div class="cl-edit">
+        <div class="tp-types" id="tiTypes" role="group" aria-label="Type"></div>
+        <input class="cl-in-title" id="tiName" placeholder="Title" maxlength="100" aria-label="Title">
+        <div class="cl-group">
+          <label class="st-row"><span id="tiStartLbl">Departs</span><span class="cl-dt"><input type="date" id="tiDate" required><input type="time" id="tiTime" step="300"></span></label>
+          <label class="st-row"><span id="tiEndLbl">Arrives</span><span class="cl-dt"><input type="date" id="tiEndDate"><input type="time" id="tiEndTime" step="300"></span></label>
+        </div>
+        <div class="cl-group cl-group-text">
+          <input id="tiFrom" placeholder="From, e.g. Oslo lufthavn" maxlength="120" aria-label="From">
+          <input id="tiTo" placeholder="To, e.g. Berlin BER" maxlength="120" aria-label="To">
+        </div>
+        <div class="cl-group">
+          <label class="st-row"><span>Booking reference</span><input id="tiRef" class="tp-inline" maxlength="40" placeholder="Optional" aria-label="Booking reference"></label>
+          <label class="st-row"><span>Cost (kr)</span><input id="tiCost" class="tp-inline" inputmode="decimal" placeholder="Optional" aria-label="Cost"></label>
+        </div>
+        <div class="cl-group cl-group-text"><textarea id="tiNotes" placeholder="Notes" maxlength="1000" rows="2" aria-label="Notes"></textarea></div>
+        <div class="cl-del" id="tiDelBox" hidden><button class="text-btn danger" type="button" id="tiDelete"><i class="bi bi-trash3"></i> Remove from plan</button></div>
+      </div>
+    </form>
+  </div>
 
   <script src="../lock.js?v=11"></script>
   <script src="../places.js?v=1"></script>
-  <script src="travel.js?v=1"></script>
+  <script src="../flow.js?v=1"></script>
+  <script src="../calendar/cal-core.js?v=2"></script>
+  <script src="travel.js?v=2"></script>
+  <script src="trips.js?v=1"></script>
   <script src="../nav.js?v=3"></script>
 </body>
 </html>

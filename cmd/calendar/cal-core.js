@@ -362,6 +362,32 @@
     } catch (e) {}
   }
 
+  /* ---------- trips and bookings from the Travel page ---------- */
+  function travelEvents() {
+    if (!window.Flow) return [];
+    var F = window.Flow, out = [];
+    F.travel().trips.forEach(function (tr) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(tr.start || '')) {
+        var s = fromKey(tr.start), e = tr.end && tr.end >= tr.start ? fromKey(tr.end) : s;
+        out.push({ id: 'trip:' + tr.id, title: tr.name || tr.dest || 'Trip', allDay: true, start: s,
+          days: Math.round((e - s) / 864e5) + 1, color: F.TRAVEL_COLOR, readOnly: true, trip: tr.id,
+          location: '', notes: tr.dest ? 'Trip to ' + tr.dest : '', exDays: {} });
+      }
+      (tr.items || []).forEach(function (it) {
+        var w = F.when(it), T = F.TYPES[it.type] || F.TYPES.other;
+        if (!w) return;
+        var title = it.title || T.name;
+        if (T.move && it.from && it.to) title += ' · ' + it.from + ' → ' + it.to;
+        var ev = { id: 'trip:' + tr.id + ':' + it.id, title: title, color: F.TRAVEL_COLOR, readOnly: true, trip: tr.id, item: it,
+          location: it.from || it.to || '', notes: it.ref ? 'Booking reference: ' + it.ref : '', exDays: {}, buffer: T.buffer };
+        if (w.timed) { ev.allDay = false; ev.start = w.start; ev.dur = w.end ? w.end - w.start : 3600e3; }
+        else { ev.allDay = true; ev.start = w.start; ev.days = 1; }
+        out.push(ev);
+      });
+    });
+    return out;
+  }
+
   /* ---------- everything in a time window ---------- */
   function occurrences(from, to, opts) {
     opts = opts || {};
@@ -382,6 +408,7 @@
       var st = fromCache(f) || feedState[f.id];
       if (st && st.events) st.events.forEach(function (ev) { ev.color = f.color; ev.src = f.name; add(ev); });
     });
+    if (opts.all || !d.hidden.travel) travelEvents().forEach(add);
     list.sort(function (a, b) {
       if (a.allDay !== b.allDay && dkey(a.start) === dkey(b.start)) return a.allDay ? -1 : 1;
       return a.start - b.start || b.end - a.end || (a.title > b.title ? 1 : -1);
@@ -407,7 +434,7 @@
   }
 
   window.Cal = {
-    CATS: CATS, FEED_COLORS: FEED_COLORS, REPEAT_NAMES: REPEAT_NAMES,
+    CATS: CATS, TRAVEL_COLOR: '#0891b2', FEED_COLORS: FEED_COLORS, REPEAT_NAMES: REPEAT_NAMES,
     load: load, save: save, uid: uid, esc: esc,
     occurrences: occurrences, expand: expand, fromOwn: fromOwn, parseICS: parseICS,
     refreshFeeds: refreshFeeds, fetchFeed: fetchFeed, clearFeeds: clearFeeds,

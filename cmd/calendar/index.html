@@ -38,9 +38,9 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=17" rel="stylesheet">
+  <link href="../styles.css?v=18" rel="stylesheet">
   <link href="../finance/fin.css?v=2" rel="stylesheet">
-  <link href="cal.css?v=1" rel="stylesheet">
+  <link href="cal.css?v=2" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -148,6 +148,7 @@
           <input id="clLoc" placeholder="Location" maxlength="160" aria-label="Location">
           <textarea id="clNotes" placeholder="Notes" maxlength="2000" rows="3" aria-label="Notes"></textarea>
         </div>
+        <button class="text-btn cl-route" type="button" id="clRoute" hidden><i class="bi bi-signpost-split"></i> Get there on time (Entur)</button>
         <div class="cl-del" id="clDelBox" hidden>
           <button class="text-btn danger" type="button" id="clDelete"><i class="bi bi-trash3"></i> Delete event</button>
           <div class="cl-del-ask" id="clDelAsk" hidden>
@@ -162,8 +163,10 @@
   </div>
 
   <script src="../lock.js?v=11"></script>
-  <script src="cal-core.js?v=1"></script>
-  <script src="cal.js?v=1"></script>
+  <script src="../places.js?v=1"></script>
+  <script src="../flow.js?v=1"></script>
+  <script src="cal-core.js?v=2"></script>
+  <script src="cal.js?v=2"></script>
   <script src="../nav.js?v=3"></script>
 </body>
 </html>

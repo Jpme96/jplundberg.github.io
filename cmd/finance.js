@@ -13,6 +13,7 @@
     { id: 'shopping', name: 'Shopping', color: '#c98500' },
     { id: 'fun', name: 'Fun', color: '#d55181' },
     { id: 'health', name: 'Health', color: '#8a6fdf' },
+    { id: 'travel', name: 'Travel', color: '#0891b2' },
     { id: 'other', name: 'Other', color: '#6b6d73' }
   ];
   var catById = {};

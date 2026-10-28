@@ -183,7 +183,8 @@
   /* Compact from/to: picking both opens the travel page with the trips */
   var pf = null, pt = null;
   function openTrip() {
-    var from = pf || (activeStop() ? { id: activeStop().id, name: activeStop().name, stop: true } : null);
+    var home = window.Flow && window.Flow.travel().places.home;
+    var from = pf || home || (activeStop() ? { id: activeStop().id, name: activeStop().name, stop: true } : null);
     if (!from || !pt) return;
     try { sessionStorage.setItem('dash.tripQuery', JSON.stringify({ from: from, to: pt })); } catch (e) {}
     location.href = 'travel/';

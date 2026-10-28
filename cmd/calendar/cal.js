@@ -27,7 +27,8 @@
     shown.push(o);
     var sub = [];
     if (o.ev.location) sub.push(esc(o.ev.location));
-    if (o.ev.src) sub.push('<i class="bi bi-phone"></i> ' + esc(o.ev.src));
+    if (o.ev.trip) sub.push('<i class="bi bi-suitcase-lg"></i> Travel');
+    else if (o.ev.src) sub.push('<i class="bi bi-phone"></i> ' + esc(o.ev.src));
     else if (o.ev.rule) sub.push('<i class="bi bi-arrow-repeat"></i> Repeats');
     return '<li><button type="button" class="cl-ev" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' +
       '<span class="t">' + C.timeLabel(o, onDay) + '</span><span class="bar"></span>' +
@@ -49,10 +50,11 @@
   function renderCats() {
     var d = data();
     var items = Object.keys(C.CATS).map(function (k) { return { id: k, name: C.CATS[k].name, color: C.CATS[k].color }; })
+      .concat([{ id: 'travel', name: 'Travel', color: C.TRAVEL_COLOR, icon: 'suitcase-lg' }])
       .concat(d.feeds.map(function (f) { return { id: 'feed:' + f.id, name: f.name, color: f.color, feed: true }; }));
     $('clCats').innerHTML = items.map(function (it) {
       return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="' + !d.hidden[it.id] + '" style="--c:' + it.color + '">' +
-        '<i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : '') + esc(it.name) + '</button>';
+        '<i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : it.icon ? '<i class="bi bi-' + it.icon + '"></i>' : '') + esc(it.name) + '</button>';
     }).join('');
   }
 
@@ -286,6 +288,27 @@
 
   /* ---------- editor ---------- */
   var editing = null;        // { own event object or null, occDate, readOnly }
+  var routeFor = null;       // the occurrence the "Get there" button is for
+
+  /* Calendar -> journey planner: arrive in time for this event */
+  function routeTo(o, place) {
+    if (!window.Flow || !o) return;
+    var buffer = (o.ev.buffer || 0) * 60e3;
+    window.Flow.route({ toText: place || o.ev.location, arriveBy: new Date(o.start.getTime() - buffer),
+      context: { title: o.title, note: buffer ? 'be there ' + (o.ev.buffer) + ' min before ' + hm(o.start) : 'starts ' + hm(o.start) } });
+  }
+  $('clRead').addEventListener('click', function (e) { if (e.target.closest('[data-route]')) routeTo(routeFor); });
+  $('clRoute').addEventListener('click', function () {
+    var place = $('clLoc').value.trim();
+    if (!place) return;
+    var o = routeFor;
+    if (!o || !o.ev.own) {          // a new, unsaved event: use what's in the form
+      var t = ($('clStart').value || '09:00').split(':'), d = C.fromKey($('clDate').value || dkey(new Date()));
+      o = { start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), +t[0], +t[1]), title: $('clTitleIn').value.trim() || place, ev: {} };
+    }
+    routeTo(o, place);
+  });
+  $('clLoc').addEventListener('input', function () { $('clRoute').hidden = !this.value.trim() || $('clAllDay').checked; });
   $('clRepeat').innerHTML = Object.keys(C.REPEAT_NAMES).map(function (k) { return '<option value="' + k + '">' + C.REPEAT_NAMES[k] + '</option>'; }).join('');
   $('clCatSeg').innerHTML = Object.keys(C.CATS).map(function (k) {
     return '<button type="button" data-ecat="' + k + '" style="--c:' + C.CATS[k].color + '"><i class="dot"></i>' + C.CATS[k].name + '</button>';
@@ -334,10 +357,16 @@
         (o.allDay && o.ev.days > 1 ? ' · ' + o.ev.days + ' days' : '') + (o.ev.rule ? ' · repeats' : '') + '</span></p>' +
         (o.ev.location ? '<p><i class="bi bi-geo-alt"></i> ' + esc(o.ev.location) + '</p>' : '') +
         (o.ev.notes ? '<p class="cl-notes">' + esc(o.ev.notes) + '</p>' : '') +
-        '<p class="muted cl-src"><i class="bi bi-phone"></i> From “' + esc(o.ev.src) + '”. Change it in that calendar.</p>';
+        '<div class="cl-acts">' + (o.ev.location && !o.allDay ? '<button type="button" class="pill-btn" data-route>' +
+          '<i class="bi bi-signpost-split"></i> Get there on time</button>' : '') +
+        (o.ev.trip ? '<a class="pill-btn ghost" href="../travel/#trip=' + encodeURIComponent(o.ev.trip) + '"><i class="bi bi-suitcase-lg"></i> Open trip</a>' : '') + '</div>' +
+        (o.ev.trip ? '<p class="muted cl-src"><i class="bi bi-suitcase-lg"></i> Planned on the Travel page.</p>'
+          : '<p class="muted cl-src"><i class="bi bi-phone"></i> From “' + esc(o.ev.src) + '”. Change it in that calendar.</p>');
+      routeFor = o;
     } else {
       var e = o ? o.ev.own : null;
       editing = { own: e, occDate: o ? dkey(o.start) : null };
+      routeFor = o;
       $('clEdit').hidden = false; $('clRead').hidden = true; $('clSave').hidden = false;
       $('clCancel').textContent = 'Cancel';
       $('clSheetTitle').textContent = e ? 'Edit event' : 'New event';
@@ -359,6 +388,7 @@
       $('clNotes').value = e ? (e.notes || '') : '';
       $('clDelBox').hidden = !e;
       syncFields();
+      $('clRoute').hidden = !$('clLoc').value.trim() || $('clAllDay').checked;
     }
     bg.hidden = false;
     requestAnimationFrame(function () { bg.classList.add('open'); });
