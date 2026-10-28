@@ -1075,12 +1075,21 @@ body.st-open { overflow: hidden; }
   border-radius: 999px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
 }
-.tb-ind {
-  position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 999px; background: var(--accent-soft);
-  opacity: 0; pointer-events: none; will-change: transform; transition: transform .26s cubic-bezier(.3, .7, .2, 1), width .26s cubic-bezier(.3, .7, .2, 1), height .26s, opacity .2s;
+.tb-pill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%; z-index: -1; border-radius: 999px; background: var(--accent-soft);
+  view-transition-name: tb-pill;
+  transition: transform .42s cubic-bezier(.45, 0, .2, 1), width .42s cubic-bezier(.45, 0, .2, 1);   /* only used by browsers without page transitions */
 }
-.tb-ind.on { opacity: 1; }
-.tb-ind.no-anim { transition: none; }
+.tabbar a { isolation: isolate; }
+/* tabs for pages turned off in Settings → Features (the page you're on always shows) */
+.tab-off-calendar .tabbar a[data-pg=calendar]:not([aria-current]), .tab-off-travel .tabbar a[data-pg=travel]:not([aria-current]),
+.tab-off-finance .tabbar a[data-pg=finance]:not([aria-current]), .tab-off-habits .tabbar a[data-pg=habits]:not([aria-current]),
+.tab-off-work .tabbar a[data-pg=work]:not([aria-current]) { display: none; }
+/* the slide between pages */
+.vt-active .tabbar { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: var(--bg-solid) !important; }
+::view-transition-group(tb-pill) { animation-duration: .5s; animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+::view-transition-old(tb-pill) { animation: none; opacity: 0; }
+::view-transition-new(tb-pill) { animation: none; }
 .tabbar a {
   position: relative;
   flex: 1;
@@ -1440,6 +1449,7 @@ select.st-wide { padding-right: 32px; }
 .me-av b { font-family: "Poppins", sans-serif; font-weight: 600; font-size: 14px; letter-spacing: .02em; }
 .me-av .bi { font-size: 18px; }
 .me-av.lg { width: 54px; height: 54px; }
+.me-btn .me-av { width: 36px; height: 36px; }            /* ring included, it lines up with the 40px round buttons */
 .me-av.lg b { font-size: 18px; }
 .me-av.xl { width: 84px; height: 84px; }
 .me-av.xl b { font-size: 28px; }
@@ -1502,7 +1512,7 @@ select.st-wide { padding-right: 32px; }
    - cards rise in once per visit, not on every page change
    - Settings → Appearance → Motion: Full, Subtle (no rising cards) or Off */
 @view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .2s; animation-timing-function: var(--ease-out); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
 .unlocked .tabbar, .resuming .tabbar { view-transition-name: tabbar; }
 .resuming .lock-box { visibility: hidden; }
 @keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
@@ -1734,3 +1744,18 @@ input:disabled { opacity: .55; }
 /* "This week" makes room for "Work today" beside it when flex time is on */
 @media (min-width: 1100px) { .grid:has(> .card.flex:not([hidden])) > .card.habits { grid-column: span 2; } }
 @media (min-width: 760px) and (max-width: 1099px) { .grid:has(> .card.flex:not([hidden])) > .card.habits { grid-column: 1 / -1; } }
+
+/* ---------- Phone sizing ---------- */
+@media (max-width: 759px) {
+  .unlocked .tabbar, .resuming .tabbar { padding: 4px; gap: 0; left: 10px; right: 10px; }
+  .tabbar a { padding: 6px 0 5px; font-size: 10px; gap: 1px; }
+  .tabbar a i { font-size: 18px; }
+  /* a soft fade under the floating menu, so the page doesn't peek out below it */
+  .unlocked body::after, .resuming body::after {
+    content: ""; position: fixed; left: 0; right: 0; bottom: 0; z-index: 34; pointer-events: none;
+    height: calc(max(12px, env(safe-area-inset-bottom)) + 34px);
+    background: linear-gradient(to top, var(--bg-solid) 35%, transparent);
+  }
+  .hero { padding: 14px 0 18px; }
+  .sec-title { font-size: 19px; }
+}

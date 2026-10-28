@@ -42,6 +42,13 @@
         if (s.density === 'compact') r.classList.add('dens-compact');
         if (s.corners === 'sharp') r.classList.add('corners-sharp');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
+        /* which menu tabs show (Settings → Features) – decided before the first paint */
+        var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
+        var tabs = { calendar: on('calendar', true), travel: on('travel', true) || on('bucket', false),
+          finance: on('finance', true) || on('subs', false) || on('warranty', false),
+          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false),
+          work: on('flex', false) || on('meetings', false) || on('learning', false) };
+        Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
         try { if (+localStorage.getItem('dash.until') > Date.now()) r.classList.add('resuming'); } catch (e) {}
@@ -49,12 +56,13 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=41" rel="stylesheet">
+  <link href="../styles.css?v=45" rel="stylesheet">
   <link href="../finance/fin.css?v=3" rel="stylesheet">
   <link href="../calendar/cal.css?v=3" rel="stylesheet">
   <link href="habits.css?v=2" rel="stylesheet">
 </head>
 <body>
+  <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
   <div class="bg" aria-hidden="true"></div>
 
   <!-- Lock screen -->
@@ -117,6 +125,6 @@
   <script src="../links.js?v=3"></script>
   <script src="../search.js?v=2"></script>
   <script src="../app.js?v=2"></script>
-  <script src="../nav.js?v=10"></script>
+  <script src="../nav.js?v=13"></script>
 </body>
 </html>
