@@ -15,15 +15,15 @@
   var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
   /* merchant words → category (Norwegian everyday life first) */
   var RULES = [
-    ['groceries', /rema|kiwi|coop|extra|meny|joker|bunnpris|spar\b|obs\b|prix|matkroken|europris|oda\b|kolonial|nærbutikken|narvesen|7-eleven|deli de luca|bakeri|baker/i],
-    ['eating', /restaurant|cafe|café|kaffe|coffee|espresso|foodora|wolt|just eat|mcdonald|burger|pizza|sushi|kebab|bar\b|pub\b|bryggeri|vinmonopol|peppes|egon|olivia|starbucks|dominos|max\b|sesam|bistro|kantine|lunsj|lunch|bakehuset|kaffebrenneri/i],
-    ['transport', /ruter|vy\b|vy\.no|flytoget|sas\b|norwegian|widerøe|wideroe|bolt|uber|taxi|circle k|shell|esso|uno-x|yx\b|bompeng|autopass|fjellinjen|parker|parkering|easypark|apcoa|q-park|onepark|bane nor|entur|kolumbus|skyss|atb\b|voi\b|tier\b|ryde|bilxtra|biltema|nsb/i],
-    ['health', /apotek|vitus|boots|legesenter|lege\b|tannlege|tannhelse|sats|elixia|evo\b|fresh fitness|trening|fysio|kiropraktor|optiker|specsavers|brilleland|synsam|helse/i],
-    ['shopping', /zara|h&m|hm\.com|elkjøp|elkjop|power\b|ikea|clas ohlson|amazon|zalando|xxl|jernia|kid interiør|princess|dressmann|cubus|lindex|bik bok|jysk|komplett|apple|samsung|nille|normal\b|kitch'n|tilbords|bohus|skeidar|g-sport|intersport|stormberg|bergans|vinmonopolet/i],
-    ['fun', /kino|netflix|spotify|hbo|disney|viaplay|tv 2|steam|playstation|xbox|nintendo|ticketmaster|billett|konsert|teater|museum|bowling|tusenfryd|strawberry|youtube|apple\.com\/bill|patreon|twitch/i],
-    ['travel', /hotel|hotell|airbnb|booking\.com|hotels\.com|expedia|ryanair|lufthansa|klm|finnair|color line|fjord line|hurtigruten|avinor|gardermoen|scandic|thon|radisson|nordic choice|trip\.com|momondo|sixt|hertz|avis|europcar/i]
+    ['groceries', /rema|kiwi|coop|extra\b|meny|joker|bunnpris|spar\b|obs\b|prix|matkroken|europris|oda\.com|oda\b|kolonial|nærbutikken|narvesen|7-?eleven|mix\b|deli de luca|bakeri|baker|point\b/i],
+    ['eating', /restaurant|cafe|café|kaffe|coffee|espresso|foodora|wolt|just eat|mcdonald|burger|pizza|sushi|kebab|bar\b|pub\b|bryggeri|vinmonopol|peppes|egon|olivia|starbucks|dominos|max\b|sesam|bistro|kantine|eurest|iss\b|lunsj|lunch|bakehuset|kaffebrenneri|nordvegan|eathappy|vegan|chicken|subway|favrit|bit\b|kam nydalen|syng\b|grill|taco|thai|ramen|poke|bakery/i],
+    ['transport', /ruter|vy\b|vy app|vy\.no|flytoget|sas\b|norwegian|widerøe|wideroe|bolt\.eu|bolt\b|uber|taxi|circle k|shell|esso|uno-x|yx\b|bompeng|autopass|fjellinjen|parker|parkering|easypark|apcoa|q-park|onepark|bane nor|entur|kolumbus|skyss|atb\b|voi\b|tier\b|ryde|bilxtra|biltema|nsb/i],
+    ['health', /apotek|vitus|boots|legesenter|lege\b|tannlege|tannhelse|sats|elixia|evo\b|fresh fitness|trening|fysio|kiropraktor|optiker|specsavers|brilleland|synsam|lensway|solotica|linser|helse|volvat|aleris|dr\.dropin|bassenget|svømme|life\b|sunkost|lean studio|yoga|pilates/i],
+    ['shopping', /zara|h&m|hm\.com|elkj|power\b|ikea|clas ohlson|amazon|zalando|xxl|jernia|kid interiør|princess|dressmann|cubus|lindex|bik bok|jysk|komplett|apple|eplehuset|samsung|nille|normal\b|kitch'n|tilbords|bohus|skeidar|g-sport|intersport|stormberg|bergans|steen & strøm|steen & strom|klarna|volt\b|mestergr|kondomeriet|lego|boozt|asos|shein|temu|ebay|etsy|black ember|sniffer/i],
+    ['fun', /kino|netflix|spotify|hbo|disney|viaplay|tv 2|steam|playstation|xbox|nintendo|ticketmaster|billett|konsert|teater|museum|bowling|tusenfryd|strawberry|youtube|apple\.com\/bill|patreon|twitch|karaoke/i],
+    ['travel', /hotel|hotell|airbnb|booking\.com|hotels\.com|expedia|ryanair|lufthansa|klm|finnair|color line|fjord line|hurtigruten|avinor|gardermoen|scandic|thon|radisson|nordic choice|citybox|comfort hotel|quality|trip\.com|momondo|sixt|hertz|avis|europcar/i]
   ];
-  var TRANSFER = /overføring|overforing|til konto|fra konto|egen konto|sparing|spare|nettbank|vipps.*(til|fra)|innskudd|lønn|lonn|salary|skatt|nav\b|bsu|fond|aksje|nordnet|kron\b|renter|kredittkort|credit ?card|innbetaling|betaling mottatt|takk for betalingen|nedbetaling|avtalegiro.*(kort|card)/i;
+  var TRANSFER = /overføring|overforing|til konto|fra konto|egen konto|sparing|spare|nettbank|vipps\*[a-zæøå]+ [a-zæøå]+ [a-zæøå]+,|vipps.*(til|fra)|innskudd|lønn|lonn|salary|skatt|nav\b|bsu|fond|aksje|nordnet|kron\b|renter|kredittkort|credit ?card|innbetaling|betaling mottatt|takk for betalingen|nedbetaling|avtalegiro.*(kort|card)|revolut|svea|klarna\b.*faktura|penger tilbake/i;
 
   /* ---------- reading the file ---------- */
   function decode(buf) {
@@ -68,7 +68,7 @@
     var h = head.map(function (x) { return x.toLowerCase(); });
     function find(res) { for (var r = 0; r < res.length; r++) for (var i = 0; i < h.length; i++) if (res[r].test(h[i])) return i; return -1; }
     return {
-      date: find([/^bokf|^dato$|^date$|bokføringsdato|bokføringsdag|transaksjonsdato|^dato\b|date/]),
+      date: find([/kjøpsdato|kjopsdato|transaksjonsdato|purchase date|transaction date/, /^bokf|bokføringsdato|bokføringsdag|posteringsdato|booking/, /^dato$|^date$|^dato\b|dato|date|dag$/]),
       desc: find([/beskrivelse|forklaring|^tekst|description|^text|tittel|mottaker|merchant|navn|melding/]),
       amount: find([/^beløp$|^belop$|^amount$|beløp|amount|^sum$/]),
       out: find([/^ut\b|ut fra konto|debet|utgående|withdraw|debit/]),
@@ -83,8 +83,12 @@
   }
   function norm(s) { return String(s || '').toLowerCase().replace(/\d{2}[./]\d{2}([./]\d{2,4})?/g, '').replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
   function clean(desc) {
-    return String(desc || '').replace(/^\*?\d{4}\s+\d{2}\.\d{2}\s+/, '').replace(/^(varekjøp|varekjop|betaling|visa|mastercard|kortkjøp|bruk av kort)\s*/i, '')
-      .replace(/\s{2,}/g, ' ').replace(/\s+(nok|kurs).*$/i, '').trim().slice(0, 60);
+    var s = String(desc || '').replace(/^\*?\d{4}\s+\d{2}\.\d{2}\s+/, '').replace(/^(varekjøp|varekjop|betaling|visa|mastercard|kortkjøp|bruk av kort)\s*/i, '')
+      .replace(/^vipps\*/i, '').replace(/,\s*[^,]*,\s*[A-Z]{3}\s*$/, '')          // "…, Oslo, NOR"
+      .replace(/\s+\d{2,5}(\s|$)/g, ' ').replace(/[*\/]\s*[A-Z0-9]{6,}\s*$/i, '').replace(/\s+(?=[a-z0-9]*\d)(?=[a-z0-9]*[a-z])[a-z0-9]{6,}\s*$/i, '')  // shop numbers and booking codes
+      .replace(/\s{2,}/g, ' ').replace(/\s+(nok|kurs).*$/i, '').replace(/[,\s]+$/, '').trim();
+    if (s === s.toUpperCase() && /[A-ZÆØÅ]{3}/.test(s)) s = s.toLowerCase().replace(/(^|[\s\-&(])([a-zæøå])/g, function (m, a, b) { return a + b.toUpperCase(); });
+    return s.slice(0, 60);
   }
 
   /* ---------- turning rows into candidate expenses ---------- */
