@@ -113,7 +113,6 @@ button { font: inherit; cursor: pointer; }
 
 .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
 .icon-btn:active { transform: scale(.9); }
-.icon-btn.playing { color: var(--accent); border-color: var(--accent); }
 
 .hero { text-align: center; padding: 28px 0 26px; }
 

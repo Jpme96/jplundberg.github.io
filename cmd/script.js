@@ -21,10 +21,10 @@
 
   /* ---------- Date, clock and greeting ---------- */
   var PERIODS = [
-    { from: 0, to: 6, text: 'Good night, Lundberg', icon: '🌙', glow: 'rgba(85, 152, 231, .6)', music: 'night' },
-    { from: 6, to: 12, text: 'Good morning, Lundberg', icon: '🌅', glow: 'rgba(255, 223, 0, .55)', music: 'morning' },
-    { from: 12, to: 18, text: 'Good afternoon, Lundberg', icon: '☀️', glow: 'rgba(255, 140, 0, .55)', music: 'afternoon' },
-    { from: 18, to: 24, text: 'Good evening, Lundberg', icon: '🌆', glow: 'rgba(160, 90, 220, .6)', music: 'evening' }
+    { from: 0, to: 6, text: 'Good night, Lundberg', icon: '🌙', glow: 'rgba(85, 152, 231, .6)' },
+    { from: 6, to: 12, text: 'Good morning, Lundberg', icon: '🌅', glow: 'rgba(255, 223, 0, .55)' },
+    { from: 12, to: 18, text: 'Good afternoon, Lundberg', icon: '☀️', glow: 'rgba(255, 140, 0, .55)' },
+    { from: 18, to: 24, text: 'Good evening, Lundberg', icon: '🌆', glow: 'rgba(160, 90, 220, .6)' }
   ];
   var period = null;
 
@@ -41,31 +41,10 @@
       period = p;
       $('greeting').textContent = p.text + ' ' + p.icon;
       document.documentElement.style.setProperty('--glow', p.glow);
-      var audio = $('music');
-      var wasPlaying = !audio.paused;
-      audio.src = '/cmd/assets/music/' + p.music + '.mp3';
-      if (wasPlaying) audio.play().catch(function () {});
     }
   }
   tick();
   setInterval(tick, 1000);
-
-  /* ---------- Music ---------- */
-  $('musicButton').addEventListener('click', function () {
-    var audio = $('music'), btn = this;
-    if (audio.paused) {
-      audio.play().then(function () {
-        btn.classList.add('playing');
-        btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
-        btn.setAttribute('aria-label', 'Pause music');
-      }).catch(function () {});
-    } else {
-      audio.pause();
-      btn.classList.remove('playing');
-      btn.innerHTML = '<i class="bi bi-play-fill"></i>';
-      btn.setAttribute('aria-label', 'Play music');
-    }
-  });
 
   /* ---------- Quotes ---------- */
   var QUOTES = [
