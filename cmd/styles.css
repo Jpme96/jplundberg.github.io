@@ -1077,7 +1077,7 @@ body.st-open { overflow: hidden; }
 }
 .tb-ind {
   position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 999px; background: var(--accent-soft);
-  opacity: 0; pointer-events: none; transition: transform .38s var(--ease-ios), width .38s var(--ease-ios), opacity .2s;
+  opacity: 0; pointer-events: none; will-change: transform; transition: transform .26s cubic-bezier(.3, .7, .2, 1), width .26s cubic-bezier(.3, .7, .2, 1), height .26s, opacity .2s;
 }
 .tb-ind.on { opacity: 1; }
 .tb-ind.no-anim { transition: none; }
@@ -1507,6 +1507,8 @@ select.st-wide { padding-right: 32px; }
 .resuming .lock-box { visibility: hidden; }
 @keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
 .mo-seen:is(.resuming, .unlocked) :is(.top, .dash, .fin, .fp) { animation: pagein .22s var(--ease-out) both; }
+/* browsers that cross-fade pages themselves (Safari 18, Chrome): no second fade on top */
+@supports (view-transition-name: none) { .mo-seen:is(.resuming, .unlocked) :is(.top, .dash, .fin, .fp) { animation: none; } }
 .mo-seen :is(.card, .fp-tile, .tv-trip, .tv-nx, .tp-card),
 .mo-subtle :is(.card, .fp-tile, .tv-trip, .tv-nx, .tp-card, .cl-month, .cl-week, .cl-lday, .tp-pane, .lock-box) { animation: none; }
 .mo-subtle .links.editing .link-grid a { animation: none; }

@@ -57,28 +57,19 @@
   document.documentElement.classList.add('has-tabbar');
   window.addEventListener('resize', function () { slide(nav.querySelector('[aria-current]'), true); });
 
-  /* arriving from another page: start at that page's tab, then glide here */
-  var from = null;
-  try { from = sessionStorage.getItem('dash.tbFrom'); sessionStorage.removeItem('dash.tbFrom'); } catch (e) {}
-  if (from && from !== page) {
-    var start = function () {
-      var a = nav.querySelector('[data-pg="' + from + '"]'), cur = nav.querySelector('[aria-current]');
-      if (!a || !cur) return;
-      slide(a, true);
-      requestAnimationFrame(function () { requestAnimationFrame(function () { slide(cur); }); });
-    };
-    whenShown(start);
-  }
+  /* The highlight glides once – on the page you leave – and the next page opens with it
+     already in place. (Animating again on arrival made it jump back and slide twice.) */
+  try { sessionStorage.removeItem('dash.tbFrom'); } catch (e) {}
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { whenShown(function () { slide(nav.querySelector('[aria-current]'), true); }); });
   /* tapping a tab: the highlight moves first, then the page changes */
   nav.addEventListener('click', function (e) {
     var a = e.target.closest('a[data-pg]');
     if (!a || a.getAttribute('aria-current') || e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
-    try { sessionStorage.setItem('dash.tbFrom', page); } catch (x) {}
     nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
     slide(a);
     var off = document.documentElement.classList.contains('mo-off');
-    setTimeout(function () { location.href = a.href; }, off ? 0 : 170);
+    setTimeout(function () { location.href = a.href; }, off ? 0 : 260);       // let the glide finish first
   });
 
   nav.addEventListener('click', function (e) {
