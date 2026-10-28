@@ -16,8 +16,22 @@
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <script>document.documentElement.classList.add('locked');</script>
-  <link href="styles.css?v=5" rel="stylesheet">
+  <script>
+    /* Lock first, and apply the saved theme before anything is drawn. */
+    (function (r) {
+      r.classList.add('locked');
+      try {
+        var s = JSON.parse(localStorage.getItem('dash.settings')) || {};
+        var a = { teal: ['#14b8a6', '20, 184, 166'], blue: ['#3987e5', '57, 135, 229'], purple: ['#8a6fdf', '138, 111, 223'],
+                  pink: ['#d55181', '213, 81, 129'], orange: ['#e8743b', '232, 116, 59'], green: ['#22b35e', '34, 179, 94'] }[s.accent];
+        var light = s.theme === 'light' || (s.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+        r.setAttribute('data-theme', light ? 'light' : 'dark');
+        if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
+        if (s.bg === false) r.classList.add('no-bg');
+      } catch (e) {}
+    })(document.documentElement);
+  </script>
+  <link href="styles.css?v=6" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -50,6 +64,7 @@
     <div class="top-bar">
       <div id="date" class="date"></div>
       <div class="top-actions">
+        <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings"><i class="bi bi-gear"></i></button>
         <button class="icon-btn" id="lockNow" type="button" aria-label="Lock dashboard"><i class="bi bi-lock"></i></button>
         <a href="/" class="icon-btn" aria-label="Back to jplundberg.com"><i class="bi bi-house"></i></a>
       </div>
@@ -140,29 +155,9 @@
       <h2 id="finTitle" class="fin-title"><i class="bi bi-wallet2"></i> Finances</h2>
       <div class="top-actions">
         <button class="icon-btn" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button>
-        <button class="icon-btn" id="finMore" type="button" aria-label="Backup and passcode"><i class="bi bi-three-dots"></i></button>
       </div>
     </div>
 
-    <div class="card fin-menu" id="finMenu" hidden>
-      <div class="fin-menu-row">
-        <button class="text-btn" id="finBackup" type="button"><i class="bi bi-download"></i> Download encrypted backup</button>
-        <button class="text-btn" id="finChangePc" type="button"><i class="bi bi-key"></i> Change passcode</button>
-      </div>
-      <form class="inline-form" id="pcForm" hidden>
-        <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
-        <div class="row2">
-          <input id="pcNew" type="password" placeholder="New passcode" autocomplete="new-password" required>
-          <input id="pcConfirm" type="password" placeholder="Repeat" autocomplete="new-password" required>
-        </div>
-        <div class="form-actions">
-          <span class="spacer"></span>
-          <button type="button" class="text-btn" id="pcCancel">Cancel</button>
-          <button type="submit" class="pill-btn">Save</button>
-        </div>
-      </form>
-      <p class="muted" id="finMenuMsg" role="status"></p>
-    </div>
 
     <div class="fin-grid">
       <!-- Budget -->
@@ -243,9 +238,74 @@
   </section>
 
   <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
+  <!-- Settings -->
+  <div class="st-backdrop" id="settings" hidden>
+    <aside class="st-panel" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+      <div class="st-head">
+        <h2 id="stTitle"><i class="bi bi-gear"></i> Settings</h2>
+        <button class="icon-btn" id="stClose" type="button" aria-label="Close settings"><i class="bi bi-x-lg"></i></button>
+      </div>
 
-  <script src="lock.js?v=6"></script>
-  <script src="script.js?v=4"></script>
-  <script src="finance.js?v=1"></script>
+      <section class="st-group">
+        <h3>Appearance</h3>
+        <div class="st-row"><span>Theme</span>
+          <div class="seg" role="group" aria-label="Theme">
+            <button type="button" data-theme-opt="dark"><i class="bi bi-moon-stars"></i> Dark</button>
+            <button type="button" data-theme-opt="light"><i class="bi bi-sun"></i> Light</button>
+            <button type="button" data-theme-opt="auto"><i class="bi bi-circle-half"></i> Auto</button>
+          </div>
+        </div>
+        <div class="st-row"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
+        <label class="st-row"><span>Moon background</span><input type="checkbox" class="switch" id="stBg"></label>
+      </section>
+
+      <section class="st-group">
+        <h3>Dashboard</h3>
+        <label class="st-row"><span>Name in greeting</span><input id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
+        <label class="st-row"><span>Show seconds</span><input type="checkbox" class="switch" id="stSeconds"></label>
+        <label class="st-row"><span>Quotes</span><input type="checkbox" class="switch" id="stQuotes"></label>
+        <p class="st-sub">Cards</p>
+        <div id="stCards"></div>
+      </section>
+
+      <section class="st-group">
+        <h3>Security</h3>
+        <label class="st-row"><span>Lock after no activity</span>
+          <select id="stLock" class="st-select">
+            <option value="15">15 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="240">4 hours</option>
+            <option value="1440">1 day</option>
+          </select>
+        </label>
+        <button class="st-row st-btn" id="stChangePc" type="button"><span><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
+        <form class="inline-form" id="pcForm" hidden>
+          <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
+          <input id="pcNew" type="password" placeholder="New passcode (at least 6 characters)" autocomplete="new-password" required>
+          <input id="pcConfirm" type="password" placeholder="Repeat new passcode" autocomplete="new-password" required>
+          <div class="form-actions">
+            <span class="spacer"></span>
+            <button type="button" class="text-btn" id="pcCancel">Cancel</button>
+            <button type="submit" class="pill-btn">Save</button>
+          </div>
+        </form>
+        <button class="st-row st-btn" id="stLockNow" type="button"><span><i class="bi bi-lock"></i> Lock now</span><i class="bi bi-chevron-right"></i></button>
+      </section>
+
+      <section class="st-group">
+        <h3>Data &amp; sync</h3>
+        <div class="st-row st-sync"><span id="stSync"></span><button class="text-btn" id="stSyncNow" type="button">Sync now</button></div>
+        <button class="st-row st-btn" id="stBackup" type="button"><span><i class="bi bi-download"></i> Download encrypted backup</span><i class="bi bi-chevron-right"></i></button>
+      </section>
+
+      <p class="st-msg" id="stMsg" role="status" aria-live="polite"></p>
+      <p class="st-foot muted">Settings sync across your devices.</p>
+    </aside>
+  </div>
+
+  <script src="lock.js?v=7"></script>
+  <script src="settings.js?v=1"></script>
+  <script src="script.js?v=5"></script>
+  <script src="finance.js?v=2"></script>
 </body>
 </html>

@@ -400,36 +400,6 @@
     openAcc(D.accounts.filter(function (a) { return a.id === li.dataset.id; })[0]);
   });
 
-  /* ================= Backup and passcode ================= */
-  $('finMore').addEventListener('click', function () {
-    var m = $('finMenu');
-    m.hidden = !m.hidden;
-    $('pcForm').hidden = true;
-    $('finMenuMsg').textContent = '';
-  });
-  $('finBackup').addEventListener('click', function () {
-    window.Vault.backup().then(function () {
-      $('finMenuMsg').textContent = 'Backup downloaded. It’s encrypted, so it’s only readable with your passcode.';
-    });
-  });
-  $('finChangePc').addEventListener('click', function () {
-    $('pcForm').hidden = false;
-    $('pcNew').focus();
-  });
-  $('pcCancel').addEventListener('click', function () { $('pcForm').hidden = true; });
-  $('pcForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var p = $('pcNew').value;
-    if (p.length < 6) { $('finMenuMsg').textContent = 'Use at least 6 characters.'; return; }
-    if (p !== $('pcConfirm').value) { $('finMenuMsg').textContent = 'The two passcodes don’t match.'; return; }
-    window.Vault.changePasscode(p).then(function () {
-      $('pcNew').value = '';
-      $('pcConfirm').value = '';
-      $('pcForm').hidden = true;
-      $('finMenuMsg').textContent = 'Passcode changed. Old backups still need the old passcode.';
-    });
-  });
-
   /* ================= Lock / unlock ================= */
   function renderAll() { renderBudget(); renderSpending(); renderSavings(); renderNet(); }
 
@@ -447,7 +417,6 @@
     showAll = false;
     closeSaving();
     closeAcc();
-    $('finMenu').hidden = true;
     ['budgetBody', 'spChart', 'spList', 'svList', 'nwBig', 'nwSub', 'nwChart', 'nwList'].forEach(function (id) { $(id).innerHTML = ''; });
   });
 })();

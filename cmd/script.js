@@ -10,7 +10,7 @@
     catch (e) { return fallback; }
   }
   /* Saving a widget also tells lock.js, which adds it to the encrypted, synced vault. */
-  var SYNCED = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes'];
+  var SYNCED = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings'];
   function save(key, value) {
     try {
       var s = JSON.stringify(value);
@@ -28,25 +28,28 @@
 
   /* ---------- Date, clock and greeting ---------- */
   var PERIODS = [
-    { from: 0, to: 6, text: 'Good night, Lundberg', icon: '🌙', glow: 'rgba(85, 152, 231, .6)' },
-    { from: 6, to: 12, text: 'Good morning, Lundberg', icon: '🌅', glow: 'rgba(255, 223, 0, .55)' },
-    { from: 12, to: 18, text: 'Good afternoon, Lundberg', icon: '☀️', glow: 'rgba(255, 140, 0, .55)' },
-    { from: 18, to: 24, text: 'Good evening, Lundberg', icon: '🌆', glow: 'rgba(160, 90, 220, .6)' }
+    { from: 0, to: 6, text: 'Good night', icon: '🌙', glow: 'rgba(85, 152, 231, .6)' },
+    { from: 6, to: 12, text: 'Good morning', icon: '🌅', glow: 'rgba(255, 223, 0, .55)' },
+    { from: 12, to: 18, text: 'Good afternoon', icon: '☀️', glow: 'rgba(255, 140, 0, .55)' },
+    { from: 18, to: 24, text: 'Good evening', icon: '🌆', glow: 'rgba(160, 90, 220, .6)' }
   ];
   var period = null;
+  function prefs() { return window.DashSettings ? window.DashSettings.get() : { name: 'Lundberg', seconds: true, quotes: true }; }
 
   function tick() {
     var now = new Date();
     var hh = String(now.getHours()).padStart(2, '0');
     var mm = String(now.getMinutes()).padStart(2, '0');
     var ss = String(now.getSeconds()).padStart(2, '0');
-    $('clock').innerHTML = hh + ':' + mm + '<span class="sec">' + ss + '</span>';
+    var pr = prefs();
+    $('clock').innerHTML = hh + ':' + mm + (pr.seconds ? '<span class="sec">' + ss + '</span>' : '');
     $('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     var p = PERIODS.filter(function (x) { return now.getHours() >= x.from && now.getHours() < x.to; })[0];
-    if (p !== period) {
+    var greet = p.text + (pr.name ? ', ' + pr.name : '') + ' ' + p.icon;
+    if (p !== period || $('greeting').textContent !== greet) {
       period = p;
-      $('greeting').textContent = p.text + ' ' + p.icon;
+      $('greeting').textContent = greet;
       document.documentElement.style.setProperty('--glow', p.glow);
     }
   }
@@ -78,6 +81,7 @@
   ];
   var lastQuote = -1;
   function newQuote() {
+    if (!prefs().quotes) return;
     var i;
     do { i = Math.floor(Math.random() * QUOTES.length); } while (i === lastQuote && QUOTES.length > 1);
     lastQuote = i;
@@ -86,6 +90,9 @@
     setTimeout(function () { q.textContent = QUOTES[i]; q.classList.remove('fading'); }, lastQuote === -1 ? 0 : 600);
   }
   $('quote').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  function quotesOnOff() { $('quote').hidden = !prefs().quotes; }
+  quotesOnOff();
+  window.addEventListener('dash:settings', function () { quotesOnOff(); tick(); });
   setInterval(newQuote, 60000);
 
   /* ---------- Weather (Open-Meteo, no account needed) ---------- */
@@ -364,6 +371,8 @@
       notes = load('dash.notes', notes);
       if (editingNote && notes.indexOf(editingNote) < 0) editingNote = null;
       renderGoals(); renderTodos(); renderLinks(); renderNotes();
+      if (window.DashSettings) window.DashSettings.apply();
+      quotesOnOff(); tick();
     }
   };
 })();

@@ -11,7 +11,12 @@
   var VAULT_KEY = 'dash.vault';
   var FAIL_KEY = 'dash.fails';
   var ITER = 310000;
-  var IDLE_MS = 60 * 60 * 1000;   // stays unlocked on this device until 1 hour without activity
+  /* Stays unlocked on this device until this long without activity (Settings → Security). */
+  function idleMs() {
+    var m = 60;
+    try { m = (JSON.parse(localStorage.getItem('dash.settings')) || {}).lockMins || 60; } catch (e) {}
+    return Math.max(5, Math.min(m, 1440)) * 60 * 1000;
+  }
 
   var enc = new TextEncoder();
   var dec = new TextDecoder();
@@ -20,7 +25,7 @@
 
   var API = '/cmd/api/vault';
   var SYNC_KEY = 'dash.syncRev';
-  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes'];
+  var WIDGET_KEYS = ['dash.goals', 'dash.todos', 'dash.links', 'dash.notes', 'dash.settings'];
 
   var key = null;          // CryptoKey while unlocked, null when locked
   var salt = null;
@@ -298,7 +303,7 @@
     if (!key) return;
     lastActive = Date.now();
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(lock, IDLE_MS);
+    idleTimer = setTimeout(lock, idleMs());
     if (force === true || lastActive - savedAt > 60 * 1000) remember();
   }
 
@@ -321,7 +326,7 @@
   function remember() {
     if (!key || !salt) return;
     savedAt = Date.now();
-    var rec = { key: key, salt: b64(salt), until: savedAt + IDLE_MS };
+    var rec = { key: key, salt: b64(salt), until: savedAt + idleMs() };
     idb('readwrite', function (st) { return st.put(rec, 'session'); }).catch(function () {});
   }
   function forget() { savedAt = 0; idb('readwrite', function (st) { return st.delete('session'); }).catch(function () {}); }
@@ -333,7 +338,7 @@
     ]).catch(function () { return null; });
   }
 
-  function tooLongAway() { return key && lastActive && Date.now() - lastActive > IDLE_MS; }
+  function tooLongAway() { return key && lastActive && Date.now() - lastActive > idleMs(); }
   ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) {
     window.addEventListener(ev, resetIdle, { passive: true });
   });
