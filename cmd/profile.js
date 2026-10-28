@@ -91,7 +91,9 @@
     a.className = 'me-btn me-sub'; a.href = '/cmd/?settings'; a.setAttribute('data-me', '');
     a.addEventListener('click', function () { try { sessionStorage.setItem('dash.stFrom', location.pathname); } catch (e) {} });
     a.setAttribute('aria-label', 'Profile and settings');
-    document.body.appendChild(a);          // same spot as on the dashboard (top right), on every page
+    /* in the page's top row (same height as on the dashboard, below the iPhone status bar) */
+    var host = document.querySelector('#fp > .fp-top');
+    if (host) { a.classList.add('me-in'); host.appendChild(a); } else document.body.appendChild(a);
   }
   window.addEventListener('profile:change', paintButtons);
   if (window.Vault) window.Vault.onUnlock(paintButtons);

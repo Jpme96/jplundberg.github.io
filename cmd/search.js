@@ -133,7 +133,11 @@
   btn.innerHTML = '<i class="bi bi-search"></i>';
   var acts = document.querySelector('.top-actions');
   if (acts && document.getElementById('settingsBtn')) acts.insertBefore(btn, acts.firstChild);
-  else { btn.classList.add('sr-sub'); document.body.appendChild(btn); }
+  else {
+    var host = document.querySelector('#fp > .fp-top');
+    if (host) { btn.classList.add('sr-in'); var me = host.querySelector('[data-me]'); host.insertBefore(btn, me || null); }
+    else { btn.classList.add('sr-sub'); document.body.appendChild(btn); }
+  }
 
   /* arriving from a search on another page: the dashboard cards */
   function goHash() {
