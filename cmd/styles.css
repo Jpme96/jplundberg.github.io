@@ -1604,3 +1604,8 @@ input:disabled { opacity: .55; }
 .corners-sharp :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note, .st-group, .cl-sheet, .ws-tiles div) { border-radius: 8px; }
 .corners-sharp :is(.kit-tile, .kit-ic, .cl-chip, input, select, textarea) { border-radius: 6px; }
 .corners-sharp.card-soft :is(.card, .fp-tile) { border-radius: 10px; }
+.bill-subs { display: flex; align-items: center; gap: 6px; margin-top: 14px; }
+.bill-subs a { margin-left: auto; color: var(--accent); text-decoration: none; font-size: 13px; }
+.bill.sub .sub-ic { display: grid; place-items: center; color: var(--muted); border-style: dashed; }
+.bill.sub .sub-ic i { opacity: 1; font-size: 13px; }
+[data-tool] > .kit-card { scroll-margin-top: 16px; }

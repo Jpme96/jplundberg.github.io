@@ -464,6 +464,29 @@
     }).join('') + '</ul>';
   }
 
+  /* Subscriptions (Settings → Features) renewing in the next 30 days, under the bills */
+  var drawBills = renderBills;
+  renderBills = function () {
+    drawBills();
+    var Fe = window.Features, box = $('billsBody');
+    if (!Fe || !Fe.on('subs') || billsEditing) return;
+    var today = Fe.dkey(new Date()), until = Fe.addMonths(today, 1);
+    var up = Fe.list('subs').filter(function (s) { return !s.paused && s.renews; })
+      .map(function (s) { return { s: s, k: Fe.nextRenewal(s) }; }).filter(function (x) { return x.k && x.k <= until; })
+      .sort(function (a, b) { return a.k > b.k ? 1 : -1; });
+    if (!up.length) return;
+    var total = up.reduce(function (a, x) { return a + (+x.s.amount || 0); }, 0);
+    var html = '<p class="bill-sum bill-subs"><i class="bi bi-arrow-repeat"></i> Subscriptions next 30 days · ' + money(total) + ' <a href="finance/#subs">See all</a></p><ul>' +
+      up.slice(0, 4).map(function (x) {
+        var d = Fe.fromKey(x.k), diff = Math.round((d - Fe.fromKey(today)) / 864e5);
+        return '<li class="bill sub"><span class="check sub-ic"><i class="bi bi-arrow-repeat"></i></span><span class="bill-text"><strong>' + esc(x.s.name) + '</strong><span>' +
+          (diff === 0 ? '<span class="soon">Renews today</span>' : diff <= 3 ? '<span class="soon">Renews in ' + diff + ' day' + (diff === 1 ? '' : 's') + '</span>' : 'Renews ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
+          '</span></span>' + money(+x.s.amount || 0) + '</li>';
+      }).join('') + '</ul>';
+    box.insertAdjacentHTML('beforeend', html);
+  };
+  window.addEventListener('tools:change', function () { if (D) renderBills(); });
+  window.addEventListener('features:change', function () { if (D) renderBills(); });
   $('billsEdit').addEventListener('click', function () { billsEditing = !billsEditing; renderBills(); });
   $('billsBody').addEventListener('change', function (e) {
     var sel = e.target.closest('[data-day]');

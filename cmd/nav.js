@@ -14,8 +14,10 @@
   ];
   /* only the parts switched on in Settings → Features (the page you're on always shows) */
   var Fe = window.Features;
+  /* a page stays in the menu while anything on it is switched on */
+  var SHOWS = { habits: ['healthpage'], finance: ['finance', 'subs', 'warranty'], travel: ['travel', 'bucket'] };
   function visible() {
-    return items.filter(function (it) { return it[0] === 'home' || it[0] === page || !Fe || Fe.on(it[0] === 'habits' ? 'healthpage' : it[0]); });
+    return items.filter(function (it) { return it[0] === 'home' || it[0] === page || !Fe || (SHOWS[it[0]] || [it[0]]).some(Fe.on); });
   }
   var nav = document.createElement('nav');
   nav.className = 'tabbar';

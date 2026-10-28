@@ -139,7 +139,8 @@
       /* arriving from a calendar reminder (…/#subs): scroll to the card once */
       if (!scrolled && location.hash === '#' + cfg.key && document.documentElement.classList.contains('unlocked')) {
         scrolled = true;
-        setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120);
+        /* wait until the rest of the page has drawn (charts, lists), then scroll */
+        setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450);
       }
     }
     el.addEventListener('click', function (e) {

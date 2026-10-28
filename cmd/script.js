@@ -110,10 +110,29 @@
     95: ['Thunderstorm', 'cloud-lightning-rain'], 96: ['Thunderstorm', 'cloud-lightning-rain'], 99: ['Thunderstorm', 'cloud-lightning-rain']
   };
   function wmo(code) { return WMO[code] || ['–', 'cloud']; }
-  var W_URL = 'https://api.open-meteo.com/v1/forecast?latitude=59.91&longitude=10.75' +
-    '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
-    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
-    '&timezone=Europe%2FOslo&forecast_days=5&wind_speed_unit=ms';
+  /* Weather for the city in your profile (Oslo until you set one) */
+  var OSLO = { name: 'Oslo', lat: 59.91, lon: 10.75, tz: 'Europe/Oslo' };
+  function wUrl(c) {
+    return 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon +
+      '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&timezone=' + encodeURIComponent(c.tz || 'auto') + '&forecast_days=5&wind_speed_unit=ms';
+  }
+  function profileCity() { var p = load('dash.profile', null); return p && p.city ? String(p.city).trim() : ''; }
+  function weatherPlace() {
+    var name = profileCity();
+    if (!name || /^oslo$/i.test(name)) return Promise.resolve(OSLO);
+    var known = load('dash.weatherPlace', null);
+    if (known && known.q === name.toLowerCase()) return Promise.resolve(known);
+    return fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=' + encodeURIComponent(name))
+      .then(function (r) { return r.json(); }).then(function (j) {
+        var g = j.results && j.results[0];
+        if (!g) return OSLO;
+        var c = { q: name.toLowerCase(), name: g.name, lat: g.latitude, lon: g.longitude, tz: g.timezone };
+        save('dash.weatherPlace', c);
+        return c;
+      }).catch(function () { return OSLO; });
+  }
 
   function showWeather(d, time) {
     var c = d.current, w = wmo(c.weather_code);
@@ -134,18 +153,31 @@
   }
 
   function loadWeather() {
-    var cached = load('dash.weather', null);
-    if (cached && cached.data) showWeather(cached.data, cached.time);
+    var cached = load('dash.weather', null), want = (profileCity() || 'Oslo').toLowerCase();
+    if (cached && cached.city !== undefined && cached.city !== want) cached = null;     // you moved: fetch again
+    if (cached && cached.data) { showWeather(cached.data, cached.time); setCity(cached.name); }
     if (cached && Date.now() - cached.time < 30 * 60 * 1000) return;
-    fetch(W_URL).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.current) throw new Error('no data');
-      var t = Date.now();
-      save('dash.weather', { data: d, time: t });
-      showWeather(d, t);
+    weatherPlace().then(function (c) {
+      return fetch(wUrl(c)).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.current) throw new Error('no data');
+        var t = Date.now();
+        save('dash.weather', { data: d, time: t, city: want, name: c.name });
+        showWeather(d, t);
+        setCity(c.name);
+      });
     }).catch(function () {
       if (!cached) $('wDesc').textContent = 'Weather is unavailable right now.';
     });
   }
+  function setCity(n) { var h = document.querySelector('#weatherCard .card-head h2'); if (h) h.innerHTML = '<i class="bi bi-cloud-sun"></i> ' + esc(n || 'Oslo'); }
+  var cityTimer = null;
+  window.addEventListener('profile:change', function () {      /* wait until you've finished typing the city */
+    clearTimeout(cityTimer);
+    cityTimer = setTimeout(function () {
+      var c = load('dash.weather', null), want = (profileCity() || 'Oslo').toLowerCase();
+      if (!c || c.city !== want) loadWeather();
+    }, 1500);
+  });
   loadWeather();
   setInterval(loadWeather, 30 * 60 * 1000);
 

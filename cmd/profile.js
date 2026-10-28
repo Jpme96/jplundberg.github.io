@@ -89,6 +89,7 @@
   if (main && !$('settingsBtn')) {
     var a = document.createElement('a');
     a.className = 'me-btn me-sub'; a.href = '/cmd/?settings'; a.setAttribute('data-me', '');
+    a.addEventListener('click', function () { try { sessionStorage.setItem('dash.stFrom', location.pathname); } catch (e) {} });
     a.setAttribute('aria-label', 'Profile and settings');
     document.body.appendChild(a);          // same spot as on the dashboard (top right), on every page
   }
@@ -180,7 +181,7 @@
         var input;
         if (r[2] === 'place') {
           var tp = travelPlace(r[4]);
-          input = '<span class="ps-wrap me-place"><input data-mplace="' + k + '" data-tp="' + r[4] + '" value="' + esc((p[k] && p[k].name) || (tp && tp.name) || '') + '"' + ph + ' aria-label="' + r[1] + '"></span>';
+          input = '<span class="ps-wrap me-place"><input data-mplace="' + k + '" data-tp="' + r[4] + '" value="' + esc((tp && tp.name) || (p[k] && p[k].name) || '') + '"' + ph + ' aria-label="' + r[1] + '"></span>';
         } else if (r[2] === 'select') {
           input = '<select class="st-select" data-mk="' + k + '">' + r[3].map(function (o) { return '<option' + (o === (v || '') ? ' selected' : '') + ' value="' + o + '">' + (o || '–') + '</option>'; }).join('') + '</select>';
         } else if (r[2] === 'hours') {

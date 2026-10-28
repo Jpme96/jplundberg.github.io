@@ -277,6 +277,10 @@
     $('pcForm').hidden = true;
     $('stMsg').textContent = '';
     setTimeout(function () { if (!el.classList.contains('open')) el.hidden = true; }, 320);
+    /* opened from another page (the avatar there): go back to that page */
+    var back = null;
+    try { back = sessionStorage.getItem('dash.stFrom'); sessionStorage.removeItem('dash.stFrom'); } catch (e) {}
+    if (back && /^\/cmd\/[a-z]+\/$/.test(back)) setTimeout(function () { location.href = back; }, 180);
   }
 
   $('settingsBtn').addEventListener('click', openPanel);
