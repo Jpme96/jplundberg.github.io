@@ -39,10 +39,10 @@
   "courses": [],
   "goals": [],
   "cv": {
-    "on": false,
-    "courses": false,
-    "projects": false,
-    "articles": false,
+    "on": true,
+    "courses": true,
+    "projects": true,
+    "articles": true,
     "profile": {
       "en": "",
       "nb": ""
@@ -314,5 +314,5 @@
       }
     ]
   },
-  "updated": "2026-10-28T21:01:52.353Z"
+  "updated": "2026-10-28T21:04:11.504Z"
 }
