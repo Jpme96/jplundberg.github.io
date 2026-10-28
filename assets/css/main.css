@@ -1912,3 +1912,14 @@ a.announce-text:hover { color: var(--accent-color); }
   gap: 5px;
 }
 .feat-badge .bi { font-size: 10px; }
+
+/* Articles: category filter */
+.article-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.article-filter button {
+  font-family: var(--nav-font); font-size: 14px; font-weight: 500; padding: 8px 18px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--default-color), transparent 82%); background: transparent;
+  color: color-mix(in srgb, var(--default-color), transparent 25%); cursor: pointer; transition: .2s;
+}
+.article-filter button:hover { color: var(--heading-color); border-color: var(--accent-color); }
+.article-filter button[aria-pressed="true"] { background: var(--accent-color); border-color: var(--accent-color); color: var(--contrast-color); }
+.article-card[hidden] { display: none !important; }

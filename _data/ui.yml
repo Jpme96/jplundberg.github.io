@@ -40,6 +40,8 @@ en:
   lang_badge:
     en: English
     nb: Norsk
+  filter_all: All
+  filter_label: Filter articles by category
   categories:
     Work: Work
     Training: Training
@@ -86,6 +88,8 @@ nb:
   lang_badge:
     en: English
     nb: Norsk
+  filter_all: Alle
+  filter_label: Filtrer artikler etter kategori
   categories:
     Work: Arbeid
     Training: Trening

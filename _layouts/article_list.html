@@ -21,6 +21,26 @@ layout: base
     {% if items.size == 0 %}
       <p class="empty">{{ u.empty }}</p>
     {% else %}
+    {% comment %} Filter buttons: only the categories that have articles, and only when there are two or more {% endcomment %}
+    {% assign used = '|' %}
+    {% for a in items %}
+      {% assign a_lang = a.lang | default: 'en' %}{% assign show = true %}
+      {% if a_lang != lang and a.ref %}
+        {% assign twins = site.articles | where: "ref", a.ref | where: "lang", lang %}
+        {% if twins.size > 0 %}{% assign show = false %}{% endif %}
+      {% endif %}
+      {% if show and a.category %}{% assign key = '|' | append: a.category | append: '|' %}{% unless used contains key %}{% assign used = used | append: a.category | append: '|' %}{% endunless %}{% endif %}
+    {% endfor %}
+    {% assign used_list = used | split: '|' | compact %}
+    {% assign n_used = 0 %}{% for c in used_list %}{% if c != '' %}{% assign n_used = n_used | plus: 1 %}{% endif %}{% endfor %}
+    {% if n_used > 1 %}
+    <div class="article-filter" role="group" aria-label="{{ u.filter_label }}" data-aos="fade-up">
+      <button type="button" data-filter="" aria-pressed="true">{{ u.filter_all }}</button>
+      {% for c in u.categories %}{% assign key = '|' | append: c[0] | append: '|' %}{% if used contains key %}
+      <button type="button" data-filter="{{ c[0] | downcase }}" aria-pressed="false">{{ c[1] }}</button>
+      {% endif %}{% endfor %}
+    </div>
+    {% endif %}
     <div class="article-cards">
       {% for a in items %}
         {% assign a_lang = a.lang | default: 'en' %}{% assign show = true %}
@@ -31,6 +51,28 @@ layout: base
         {% if show %}{% include article-card.html article=a lang=lang %}{% endif %}
       {% endfor %}
     </div>
+    {% if n_used > 1 %}
+    <script>
+      /* Category filter. The choice is kept in the address (?category=work) so it can be shared. */
+      (function () {
+        var bar = document.querySelector('.article-filter');
+        if (!bar) return;
+        var cards = document.querySelectorAll('.article-cards .article-card');
+        function show(cat, push) {
+          bar.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.filter === cat)); });
+          cards.forEach(function (c) { c.hidden = !!cat && c.dataset.cat !== cat; });
+          if (push) {
+            var u = new URL(location.href);
+            if (cat) u.searchParams.set('category', cat); else u.searchParams.delete('category');
+            history.replaceState(null, '', u.pathname + u.search + u.hash);
+          }
+        }
+        bar.addEventListener('click', function (e) { var b = e.target.closest('[data-filter]'); if (b) show(b.dataset.filter, true); });
+        var start = (new URLSearchParams(location.search).get('category') || '').toLowerCase();
+        if (start && bar.querySelector('[data-filter="' + start + '"]')) show(start, false);
+      })();
+    </script>
+    {% endif %}
     {% endif %}
   </div>
 </section>

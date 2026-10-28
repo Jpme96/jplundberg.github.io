@@ -1,6 +1,6 @@
 {% assign ac = include.article %}{% assign ac_lang = ac.lang | default: 'en' %}{% assign au = site.data.ui[include.lang] %}
 {% assign ac_month = ac.date | date: "%-m" | minus: 1 %}
-<a class="article-card" href="{{ ac.url }}">
+<a class="article-card" href="{{ ac.url }}" data-cat="{{ ac.category | default: '' | downcase }}">
   <div class="thumb"{% if ac.image %} style="background-image:url('{{ ac.image }}')"{% endif %}>
     {% if ac.category %}<span>{{ au.categories[ac.category] | default: ac.category }}</span>{% endif %}
     {% if include.featured %}<span class="feat-badge"><i class="bi bi-star-fill"></i> {{ au.featured }}</span>{% endif %}
