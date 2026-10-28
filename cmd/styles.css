@@ -53,7 +53,7 @@ body {
   font-family: "Roboto", system-ui, -apple-system, sans-serif;
   font-size: 15px;
   line-height: 1.5;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding: max(16px, calc(env(safe-area-inset-top) + 12px)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -793,8 +793,9 @@ body.st-open { overflow: hidden; }
   background: var(--bg);
   border-left: 1px solid var(--line);
   padding: max(18px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+  overflow-x: hidden;
   transform: translateX(100%);
-  transition: transform .32s var(--ease-ios);
+  transition: transform .46s var(--ease-ios);
 }
 .st-backdrop.open .st-panel { transform: none; }
 
@@ -806,9 +807,13 @@ body.st-open { overflow: hidden; }
     max-height: 92vh;
     border-left: 0;
     border-top: 1px solid var(--line);
-    border-radius: 20px 20px 0 0;
+    height: 92vh; height: 92dvh;          /* stays the same size from page to page */
+    border-radius: 22px 22px 0 0;
     transform: translateY(100%);
+    padding-top: 22px;
   }
+  /* the little handle: pull down to close */
+  .st-panel::before { content: ""; position: absolute; top: 8px; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: 3px; background: rgba(var(--ink-rgb), .22); }
 }
 
 .st-head {
@@ -835,10 +840,17 @@ body.st-open { overflow: hidden; }
 .st-menu .st-btn .st-ico i { color: #fff; margin: 0; }
 .st-label { display: flex; flex-direction: column; line-height: 1.3; }
 .st-label small { font-size: 12.5px; color: var(--muted); }
-.st-page.in-fwd { animation: stFwd .3s var(--ease-ios) both; }
-.st-page.in-back { animation: stBackIn .3s var(--ease-ios) both; }
-@keyframes stFwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
-@keyframes stBackIn { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+.st-page.in-fwd { animation: stFwd .46s var(--ease-ios) both; }
+.st-page.in-back { animation: stBackIn .46s var(--ease-ios) both; }
+.st-page.out-fwd, .st-page.out-back { position: absolute; pointer-events: none; }
+.st-page.out-fwd { animation: stFwdOut .46s var(--ease-ios) both; }
+.st-page.out-back { animation: stBackOut .46s var(--ease-ios) both; }
+@keyframes stFwd { from { transform: translateX(105%); } to { transform: none; } }
+@keyframes stFwdOut { to { opacity: 0; transform: translateX(-30%); } }
+@keyframes stBackIn { from { opacity: 0; transform: translateX(-30%); } to { opacity: 1; transform: none; } }
+@keyframes stBackOut { to { transform: translateX(105%); } }
+.st-fade { animation: stFade .36s var(--ease-out) both; }
+@keyframes stFade { from { opacity: 0; } to { opacity: 1; } }
 
 .st-group {
   background: var(--card);
@@ -1297,7 +1309,7 @@ select.st-wide { padding-right: 32px; }
 .st-card[draggable="true"] { cursor: grab; }
 .st-card.dragging { opacity: .4; }
 .st-card.drop { box-shadow: inset 0 2px 0 var(--accent); }
-@media (hover: none) { .st-grip { display: none; } }
+
 
 /* ---------- Settings: website texts ---------- */
 .tx-lang { display: flex; margin: 0 0 10px; }
@@ -1449,7 +1461,7 @@ select.st-wide { padding-right: 32px; }
 .me-av b { font-family: "Poppins", sans-serif; font-weight: 600; font-size: 14px; letter-spacing: .02em; }
 .me-av .bi { font-size: 18px; }
 .me-av.lg { width: 54px; height: 54px; }
-.me-btn .me-av { width: 36px; height: 36px; }            /* ring included, it lines up with the 40px round buttons */
+.me-btn .me-av { width: 34px; height: 34px; }            /* ring included, it lines up with the 40px round buttons */
 .me-av.lg b { font-size: 18px; }
 .me-av.xl { width: 84px; height: 84px; }
 .me-av.xl b { font-size: 28px; }
@@ -1759,3 +1771,27 @@ input:disabled { opacity: .55; }
   .hero { padding: 14px 0 18px; }
   .sec-title { font-size: 19px; }
 }
+
+/* ---------- Settings: the dashboard's own look ---------- */
+/* tinted round icons, like At a glance and the cards */
+.st-ico { width: 34px; height: 34px; font-size: 16px; color: var(--c); background: color-mix(in srgb, var(--c) 17%, transparent); }
+.st-menu .st-btn .st-ico i, .st-ico i { color: var(--c); }
+/* section headings like "Today" */
+.st-grp { margin: 24px 4px 10px; font-family: "Raleway", sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--heading); gap: 8px; }
+.st-grp i { font-size: 16px; }
+.st-grp span { font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.st-group h3, .st-cardgroup { font-family: "Raleway", sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--heading); }
+.st-cardgroup { margin: 18px 0 4px; }
+/* rows: a little firmer and more compact */
+.st-row { font-size: 15px; }
+.st-label { font-weight: 500; font-size: 15px; }
+.st-label small { font-weight: 400; margin-top: 1px; }
+.st-menu .st-row { min-height: 58px; }
+/* card order: a grip to drag (finger or mouse); the arrows stay for the keyboard only */
+.st-card .ws-tools button[data-cmove]:not(:focus-visible) { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+.st-grip { display: inline-grid !important; place-items: center; width: 28px; height: 36px; margin: 0 2px 0 -6px; font-size: 17px; touch-action: none; }
+.st-card { transition: transform .2s var(--ease-ios), box-shadow .2s, background .2s; }
+.st-card.lifting { position: relative; z-index: 2; transition: none; background: rgb(var(--card-rgb)); border-radius: 12px; box-shadow: 0 10px 28px rgba(0, 0, 0, .35); }
+.st-card.drop-end { box-shadow: inset 0 -2px 0 var(--accent); }
+.mo-off .st-panel, .mo-off .st-page { transition: none !important; animation: none !important; }
+.st-card { gap: 8px; }
