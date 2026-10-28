@@ -40,6 +40,7 @@
   z-index: 3;
 }
 
+.page-hero h1,
 .page-hero h2 {
   font-size: 44px;
   font-weight: 700;
@@ -263,6 +264,7 @@
     min-height: 280px;
   }
 
+  .page-hero h1,
   .page-hero h2 {
     font-size: 30px;
   }
@@ -306,3 +308,17 @@
 .cta-btn.ghost { background: transparent; color: var(--accent-color); }
 @media (max-width: 576px) { .article-body .author { flex-direction: column; } }
 .nf-links { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Table of contents and more articles */
+.toc {
+  margin: 8px 0 32px; padding: 18px 22px; border-radius: 12px;
+  background: color-mix(in srgb, var(--default-color), transparent 95%); border-left: 3px solid var(--accent-color);
+}
+.toc-title { font-family: var(--nav-font); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-color); margin: 0 0 8px; }
+.toc ol { margin: 0; padding-left: 20px; }
+.toc li { margin: 4px 0; font-size: 15.5px; line-height: 1.45; }
+.toc a { color: var(--default-color); text-decoration: none; }
+.toc a:hover { color: var(--accent-color); }
+.article-body h2 { scroll-margin-top: 24px; }
+.more-articles { padding-top: 0; }
+.more-title { font-size: 26px; font-weight: 700; margin: 0 0 20px; }

@@ -174,7 +174,8 @@ h6 {
   margin-right: 8px;
 }
 
-.header .logo h1 {
+.header .logo h1,
+.header .logo .sitename {
   font-size: 24px;
   margin: 0;
   font-weight: 700;
@@ -1931,3 +1932,27 @@ a.announce-text:hover { color: var(--accent-color); }
 /* Page-head photos come wrapped in <picture> (WebP with JPEG fallback) */
 .hero > picture, .page-hero > picture { display: contents; }
 .about picture { display: contents; }
+
+.header .logo .sitename { display: block; font-family: var(--heading-font); line-height: 1.2; }
+
+/* Site footer: about, links, contact, follow */
+.site-footer { padding: 48px 0 28px; }
+.sf-grid { display: grid; gap: 28px 32px; grid-template-columns: 1fr; }
+@media (min-width: 768px) { .sf-grid { grid-template-columns: 1.6fr 1fr 1.2fr 1fr; } }
+.sf-name { font-family: var(--heading-font); font-weight: 700; font-size: 18px; color: var(--heading-color); margin: 0 0 8px; }
+.sf-about p:not(.sf-name) { margin: 0; line-height: 1.6; color: color-mix(in srgb, var(--default-color), transparent 25%); max-width: 360px; }
+.sf-col { display: flex; flex-direction: column; gap: 4px; }
+.sf-head { font-family: var(--nav-font); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-color); margin: 0 0 6px; }
+.sf-col a {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 0; min-height: 32px;
+  color: color-mix(in srgb, var(--default-color), transparent 15%); text-decoration: none; word-break: break-word;
+}
+.sf-col a:hover { color: var(--accent-color); }
+.sf-col a .bi { color: var(--accent-color); }
+.sf-bottom {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; margin-top: 32px; padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--default-color), transparent 90%); font-size: 13px;
+  color: color-mix(in srgb, var(--default-color), transparent 35%);
+}
+.sf-bottom .bi { color: var(--accent-color); margin-right: 4px; }
+.sf-bottom { padding-right: 64px; }

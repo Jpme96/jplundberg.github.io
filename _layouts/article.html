@@ -10,7 +10,7 @@ layout: base
   <div class="container" data-aos="fade-up">
     <div class="crumbs"><a href="{{ h.url }}">{{ u.crumbs_home }}</a> / <a href="{{ u.articles_url }}">{{ u.articles_title }}</a></div>
     {% if page.category %}<span class="tag">{{ u.categories[page.category] | default: page.category }}</span>{% endif %}
-    <h2>{{ page.title }}</h2>
+    <h1>{{ page.title }}</h1>
     <div class="meta">{{ page.date | date: "%-d" }}{{ u.date_dot }} {{ u.months[month] }} {{ page.date | date: "%Y" }} · {{ minutes }} {{ u.min_read }}</div>
   </div>
 </section>
@@ -51,3 +51,44 @@ layout: base
     </article>
   </div>
 </section>
+
+{%- comment -%} More articles in the same language (not this one or its translation) {%- endcomment -%}
+{%- assign others = site.articles | where: "lang", lang | sort: "date" | reverse -%}
+{%- assign shown_more = 0 -%}
+{%- capture more_cards -%}
+  {%- for a in others -%}
+    {%- if a.url == page.url or a.published == false -%}{%- continue -%}{%- endif -%}
+    {%- if page.ref and a.ref == page.ref -%}{%- continue -%}{%- endif -%}
+    {%- if shown_more < 2 -%}{%- include article-card.html article=a lang=lang -%}{%- assign shown_more = shown_more | plus: 1 -%}{%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+{%- if shown_more > 0 %}
+<section class="section more-articles">
+  <div class="container">
+    <h2 class="more-title">{{ u.more_articles }}</h2>
+    <div class="article-cards">{{ more_cards }}</div>
+  </div>
+</section>
+{%- endif %}
+
+<script>
+  /* Table of contents for longer articles (4+ sections) */
+  (function () {
+    var body = document.querySelector('.article-body');
+    if (!body) return;
+    var hs = Array.prototype.filter.call(body.querySelectorAll('h2'), function (h) { return !h.closest('.author'); });
+    if (hs.length < 4) return;
+    var nav = document.createElement('nav');
+    nav.className = 'toc';
+    nav.setAttribute('aria-label', {{ u.toc_title | jsonify }});
+    nav.innerHTML = '<p class="toc-title">' + {{ u.toc_title | jsonify }} + '</p><ol></ol>';
+    hs.forEach(function (h, i) {
+      if (!h.id) h.id = 's' + (i + 1);
+      var li = document.createElement('li'), a = document.createElement('a');
+      a.href = '#' + h.id; a.textContent = h.textContent;
+      li.appendChild(a); nav.querySelector('ol').appendChild(li);
+    });
+    var lead = body.querySelector('.lead');
+    body.insertBefore(nav, lead ? lead.nextSibling : body.firstChild);
+  })();
+</script>

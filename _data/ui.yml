@@ -44,6 +44,14 @@ en:
   share_copy: Copy link
   share_copied: Link copied
   nf_title: Page not found
+  toc_title: In this article
+  more_articles: More articles
+  footer_tagline: FDVU Advisor and M.O.M engineer in Oslo. Writing about FDV documentation, maintenance and digitalisation in the property sector.
+  footer_explore: Explore
+  footer_contact: Contact
+  footer_follow: Follow
+  footer_rss: Articles by RSS
+  footer_privacy: No cookies. Visits are counted anonymously.
   nf_text: The page may have moved, or the address has a typo.
   nf_home: Go to the front page
   nf_articles: Read the articles
@@ -104,6 +112,14 @@ nb:
   share_copy: Kopier lenke
   share_copied: Lenken er kopiert
   nf_title: Fant ikke siden
+  toc_title: I denne artikkelen
+  more_articles: Flere artikler
+  footer_tagline: FDVU-rådgiver og ingeniør innen drift og vedlikehold i Oslo. Skriver om FDV-dokumentasjon, vedlikehold og digitalisering i eiendomsbransjen.
+  footer_explore: Utforsk
+  footer_contact: Kontakt
+  footer_follow: Følg
+  footer_rss: Artikler via RSS
+  footer_privacy: Ingen informasjonskapsler. Besøk telles anonymt.
   nf_text: Siden kan ha flyttet, eller adressen har en skrivefeil.
   nf_home: Gå til forsiden
   nf_articles: Les artiklene

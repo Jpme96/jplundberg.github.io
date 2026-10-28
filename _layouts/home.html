@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#0e0f11">
   <script>
     /* Decide early whether to animate, so content never flashes before its entrance */
     (function () {
@@ -19,7 +20,7 @@
       } catch (e) {}
     })();
   </script>
-  <title>{{ t.title }}</title>
+  <title>{{ t.seo_title | default: t.title }}</title>
   <meta content="{{ t.description }}" name="description">
   <meta content="{{ t.keywords }}" name="keywords">
   <link rel="canonical" href="https://jplundberg.com{{ t.url }}">
@@ -30,7 +31,7 @@
   <!-- Link previews (LinkedIn, Facebook, messages) -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jplundberg.com{{ t.url }}">
-  <meta property="og:title" content="{{ t.title }}">
+  <meta property="og:title" content="{{ t.seo_title | default: t.title }}">
   <meta property="og:description" content="{{ t.description }}">
   <meta property="og:site_name" content="John Paul Lundberg">
   <meta property="og:locale" content="{% if page.lang == 'nb' %}nb_NO{% else %}en_GB{% endif %}">
@@ -82,8 +83,6 @@
 
   <link href="/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-  <link href="/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
   <link href="/assets/css/main.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
   <link href="/assets/css/articles.css?v={{ site.time | date: '%s' }}" rel="stylesheet">
@@ -181,24 +180,10 @@
 
   </main>
 
-  <footer id="footer" class="footer position-relative light-background">
-    <div class="container">
-      <div class="copyright text-center">
-        <p>{{ site.time | date: "%Y" }} © <span>Copyright</span> John Paul Lundberg</p>
-        <p>{{ t.rights }}</p>
-      </div>
-    </div>
-  </footer>
+{% include site-footer.html %}
 
-  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center" aria-label="Back to top"><i class="bi bi-arrow-up-short" aria-hidden="true"></i></a>
 
-  <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/vendor/purecounter/purecounter_vanilla.js"></script>
-  <script src="/assets/vendor/waypoints/noframework.waypoints.js"></script>
-  <script src="/assets/vendor/glightbox/js/glightbox.min.js"></script>
-  <script src="/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
-  <script src="/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
-  <script src="/assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="/assets/js/motion.js?v={{ site.time | date: '%s' }}"></script>
   <script src="/assets/js/main.js"></script>
   <script src="/assets/js/spotlight.js?v={{ site.time | date: '%s' }}"></script>

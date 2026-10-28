@@ -1,0 +1,33 @@
+{%- assign fl = page.lang | default: 'en' -%}{%- assign fh = site.data.home[fl] -%}{%- assign fu = site.data.ui[fl] -%}
+<footer id="footer" class="footer site-footer position-relative light-background">
+  <div class="container">
+    <div class="sf-grid">
+      <div class="sf-about">
+        <p class="sf-name">John Paul Lundberg</p>
+        <p>{{ fu.footer_tagline }}</p>
+      </div>
+      <nav class="sf-col" aria-label="{{ fu.footer_explore }}">
+        <p class="sf-head">{{ fu.footer_explore }}</p>
+        <a href="{{ fh.url }}#about">{{ fh.nav_about }}</a>
+        <a href="{{ fh.url }}#resume">{{ fh.nav_experience }}</a>
+        <a href="{{ fh.projects_url }}">{{ fh.nav_projects }}</a>
+        <a href="{{ fh.articles_url }}">{{ fh.nav_articles }}</a>
+      </nav>
+      <div class="sf-col">
+        <p class="sf-head">{{ fu.footer_contact }}</p>
+        <a href="mailto:contact@jplundberg.com"><i class="bi bi-envelope" aria-hidden="true"></i> contact@jplundberg.com</a>
+        <a href="https://www.linkedin.com/in/john-paul-lundberg-8a804623b/" target="_blank" rel="noopener"><i class="bi bi-linkedin" aria-hidden="true"></i> LinkedIn</a>
+        <a href="https://www.instagram.com/jp.lundberg.official/" target="_blank" rel="noopener"><i class="bi bi-instagram" aria-hidden="true"></i> Instagram</a>
+      </div>
+      <div class="sf-col">
+        <p class="sf-head">{{ fu.footer_follow }}</p>
+        <a href="{% if fl == 'nb' %}/no/feed.xml{% else %}/feed.xml{% endif %}"><i class="bi bi-rss" aria-hidden="true"></i> {{ fu.footer_rss }}</a>
+        <a href="{% if fl == 'nb' %}/{% else %}/no/{% endif %}" hreflang="{% if fl == 'nb' %}en{% else %}nb{% endif %}"><i class="bi bi-translate" aria-hidden="true"></i> {% if fl == 'nb' %}English{% else %}Norsk{% endif %}</a>
+      </div>
+    </div>
+    <div class="sf-bottom">
+      <span>© {{ site.time | date: "%Y" }} John Paul Lundberg · {{ fh.rights }}</span>
+      <span><i class="bi bi-shield-check" aria-hidden="true"></i> {{ fu.footer_privacy }}</span>
+    </div>
+  </div>
+</footer>
