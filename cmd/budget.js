@@ -138,8 +138,10 @@ window.Budget = (function () {
       income = incomeOf(d, ym(t0)).net; label = 'this month'; byPay = false;
     }
     var sk = dk(start), ek = dk(end);
+    /* money in that isn't salary – refunds, Vipps from friends, things you sold (from bank imports) */
+    var extra = ((d && d.extra) || []).filter(function (e) { var k = String(e.date || '').slice(0, 10); return k >= sk && k <= ek; }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0);
     return {
-      byPayday: byPay, start: start, end: end, startKey: sk, endKey: ek, income: income, label: label,
+      byPayday: byPay, start: start, end: end, startKey: sk, endKey: ek, income: income + extra, salary: income, extra: extra, label: label,
       days: Math.round((end - start) / 864e5) + 1, daysLeft: Math.round((end - t0) / 864e5) + 1,
       has: function (dateStr) { var k = String(dateStr).slice(0, 10); return k >= sk && k <= ek; },
       name: byPay ? start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : t0.toLocaleDateString('en-GB', { month: 'long' })

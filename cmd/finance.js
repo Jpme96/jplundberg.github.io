@@ -114,7 +114,7 @@
       : '';
     box.innerHTML =
       '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>' +
-      '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(income) + ' net income' + (per.byPayday ? ' · ' + esc(per.name) : '') +
+      '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(per.salary) + ' net income' + (per.extra ? ' + ' + money(per.extra) + ' in' : '') + (per.byPayday ? ' · ' + esc(per.name) : '') +
         (left > 0 ? ' · ' + money(perDay) + '/day' + (per.byPayday || (next && until === next.days) ? ' until payday' : '') : '') +
         (inc.note ? ' · ' + esc(inc.note) : '') + '</div>' +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
@@ -125,6 +125,7 @@
       '<ul class="legend">' +
         (inc.gross ? '<li><i class="dot" style="background:#8a6fdf"></i>Gross salary<b>' + money(inc.gross) + '</b></li>' +
           '<li><i class="dot" style="background:#6b6d73"></i>Tax' + (inc.extra ? ' and deductions' : '') + '<b>' + money(inc.tax + inc.extra) + '</b></li>' : '') +
+        (per.extra ? '<li><i class="dot" style="background:#22b35e"></i>Money in (refunds, Vipps)<b>+' + money(per.extra) + '</b></li>' : '') +
         '<li><i class="dot" style="background:#3987e5"></i>Fixed costs<b>' + money(fixed) + '</b></li>' +
         '<li><i class="dot" style="background:#d95926"></i>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(monthName(key, true))) + '<b>' + money(spent) + '</b></li>' +
         '<li><i class="dot" style="background:var(--accent)"></i>Left<b>' + money(left) + '</b></li>' +

@@ -43,6 +43,7 @@
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span><span class="s-spent" style="width:' + w(spent) + '"></span><span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span></div>' +
       '<ul class="mo-rows">' +
         '<li><i class="bi bi-receipt"></i><span>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' }))) + '</span>' + money(spent) + '</li>' +
+        (per.extra ? '<li><i class="bi bi-arrow-down-left-circle"></i><span>Money in (refunds, Vipps)</span><span class="money">+' + esc(kr(per.extra)) + '</span></li>' : '') +
         (pay ? '<li><i class="bi bi-cash-stack"></i><span>' + esc(pay.title) + (pay.days === 0 ? ' <b>today</b>' : pay.days === 1 ? ' <b>tomorrow</b>' : ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' days') + '</span>' + (pay.net ? money(pay.net) : '') + '</li>' : '') +
         due.map(function (x) {
           return '<li' + (x.diff < 0 ? ' class="late"' : '') + '><i class="bi bi-' + (x.diff < 0 ? 'exclamation-circle' : 'calendar-check') + '"></i><span>' + esc(x.f.name) +

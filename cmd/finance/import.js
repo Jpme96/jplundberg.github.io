@@ -127,12 +127,25 @@
     var pos = good.filter(function (x) { return x.amt > 0; }).length;
     /* a credit-card statement lists purchases as positive amounts (and the payments as negative) */
     var card = opts.card != null ? !!opts.card : (col.out < 0 && good.length >= 3 && pos / good.length >= 0.7);
+    var haveIn = {};
+    (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
+    var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
     var out = [], skipped = { income: 0, dup: 0, bad: 0 };
     parsed.forEach(function (x) {
       if (!x.ok) { skipped.bad++; return; }
       var spend = card ? x.amt > 0 : x.amt < 0;
-      if (!spend) { skipped.income++; return; }
-      var amount = Math.round(Math.abs(x.amt) * 100) / 100, note = clean(x.desc), ref = 'bank:' + x.date + '|' + amount + '|' + norm(x.desc);
+      var amount = Math.round(Math.abs(x.amt) * 100) / 100, note = clean(x.desc);
+      if (!spend) {
+        /* money in: salary is in the budget already and payments from your own account are not income –
+           refunds, Vipps from friends and the like count as extra money this month */
+        var salary = SALARY.test(x.desc), own = (OWN.test(x.desc) && !/tilbake|refusjon|refund|retur|tilbakebet/i.test(x.desc)) || (card && x.amt < 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc));
+        var rin = 'bankin:' + x.date + '|' + amount + '|' + norm(x.desc);
+        if (haveIn[rin]) { skipped.dup++; return; }
+        if (salary) { skipped.income++; return; }
+        out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own });
+        return;
+      }
+      var ref = 'bank:' + x.date + '|' + amount + '|' + norm(x.desc);
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
       var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
       var transfer = TRANSFER.test(x.desc);
@@ -214,33 +227,34 @@
   function preview(res) {
     found = res;
     var sk = res.skipped, note = [];
-    if (sk.dup) note.push(sk.dup + ' already in Spending');
-    if (sk.income) note.push(sk.income + ' money in');
+    if (sk.dup) note.push(sk.dup + ' already imported');
+    if (sk.income) note.push(sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
-    var rows = res.rows;
+    var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
     var signRow = '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Credit card statement (purchases are positive amounts)</label>';
     if (!rows.length) { open('<h2 class="im-h"><i class="bi bi-bank"></i> Nothing new</h2><p class="muted im-p">' + (sk.dup ? 'Every expense in that file is already in Spending' : 'No spending found in that file') + (note.length ? ' (' + note.join(', ') + ')' : '') + '.</p>' + signRow + '<div class="qa-acts"><span class="spacer"></span><button type="button" class="pill-btn wide" data-close>OK</button></div>'); return; }
-    var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + r.amount; }, 0);
-    open('<h2 class="im-h"><i class="bi bi-bank"></i> ' + rows.length + ' new expense' + (rows.length === 1 ? '' : 's') + '</h2>' +
-      '<p class="muted im-p">Check the categories – they’re guessed from the shop’s name and from what you’ve chosen before. A fixed cost (rent, power) isn’t added twice – it ticks the bill as paid instead. Transfers between your own accounts are left out unless you tick them.' + (note.length ? ' Skipped: ' + note.join(', ') + '.' : '') + '</p>' + signRow +
+    var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + (r.income ? -r.amount : r.amount); }, 0);
+    open('<h2 class="im-h"><i class="bi bi-bank"></i> ' + nOut + ' new expense' + (nOut === 1 ? '' : 's') + (nIn ? ' · ' + nIn + ' in' : '') + '</h2>' +
+      '<p class="muted im-p">Check the categories – they’re guessed from the shop’s name and from what you’ve chosen before. A fixed cost (rent, power) isn’t added twice – it ticks the bill as paid instead. Money in (refunds, Vipps from friends) is added to that month’s budget; your own transfers and card payments are left out unless you tick them.' + (note.length ? ' Skipped: ' + note.join(', ') + '.' : '') + '</p>' + signRow +
       '<ul class="im-list">' + rows.map(function (r, i) {
-        return '<li class="im-row' + (r.on ? '' : ' off') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
+        return '<li class="im-row' + (r.on ? '' : ' off') + (r.income ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
           '<span class="im-x"><b>' + esc(r.note) + '</b><small>' + esc(new Date(r.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
-          (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.transfer ? ' · transfer or income' : '') + '</small></span>' +
-          '<span class="money">' + esc(nf.format(r.amount)) + '</span>' +
-          (r.bill ? '<span class="im-fixed">Fixed cost</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') + '</li>';
+          (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · from your own account' : ' · adds to this month’s budget') : r.transfer ? ' · transfer' : '') + '</small></span>' +
+          '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
+          (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') + '</li>';
       }).join('') + '</ul>' +
       '<div class="qa-acts im-foot"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><span class="muted" id="imSum">' + esc(nf.format(total)) + '</span><button type="button" class="pill-btn wide" data-import>Import</button></div>');
   }
   function sumLine() {
-    var t = 0; found.rows.forEach(function (r) { if (r.on && !r.bill) t += r.amount; });
+    var t = 0; found.rows.forEach(function (r) { if (r.on && !r.bill) t += r.income ? -r.amount : r.amount; });
     var s = $('imSum'); if (s) s.textContent = nf.format(t);
   }
   function doImport() {
-    var d = window.Vault.get(); d.expenses = d.expenses || []; d.catMemory = d.catMemory || {}; d.paid = d.paid || {};
-    var n = 0, bills = 0, t0 = Date.now();
+    var d = window.Vault.get(); d.expenses = d.expenses || []; d.catMemory = d.catMemory || {}; d.paid = d.paid || {}; d.extra = d.extra || [];
+    var n = 0, bills = 0, nin = 0, t0 = Date.now();
     found.rows.forEach(function (r, i) {
       if (!r.on) return;
+      if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref }); nin++; return; }
       if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
       d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref });
       d.catMemory[norm(r.desc)] = r.cat; n++;
@@ -250,7 +264,7 @@
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
     close();
-    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> ' + n + ' expense' + (n === 1 ? '' : 's') + ' imported' + (bills ? ' · ' + bills + ' bill' + (bills === 1 ? '' : 's') + ' ticked as paid' : ''));
+    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> ' + n + ' expense' + (n === 1 ? '' : 's') + ' imported' + (nin ? ' · ' + nin + ' in' : '') + (bills ? ' · ' + bills + ' bill' + (bills === 1 ? '' : 's') + ' ticked as paid' : ''));
   }
 
   btn.addEventListener('click', intro);

@@ -160,9 +160,9 @@
     var T = [
       { i: 'wallet2', l: per.byPayday ? 'Left until payday' : 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
         s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget above' },
-      { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income) : '–',
+      { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income + (per.byPayday ? 0 : per.extra)) : '–',
         s: !income ? 'Add your salary under Monthly budget'
-          : inc.gross ? 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 || inc.logged ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name.toLowerCase()) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '') +
+          : inc.gross ? (per.extra && !per.byPayday ? '+' + esc(kr(per.extra)) + ' refunds and other money in · ' : '') + 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 || inc.logged ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name.toLowerCase()) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '') +
             (function () { var y = Bu.yearSoFar(D); return y.months > 1 ? ' · This year: net ' + esc(kr(y.net)) + ', tax ' + esc(kr(y.tax)) : ''; })()
           : pay ? (pay.days === 0 ? esc(pay.title) + ' today' : esc(pay.title) + ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' day' + (pay.days === 1 ? '' : 's')) : 'Net, after tax' },
       { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years'), v: money(spentP),
