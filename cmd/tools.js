@@ -49,7 +49,8 @@
       var es = by[k], open = es.some(function (e) { return (e.type === 'work' || e.type === 'course') && e.in && !e.out; });
       var w = es.reduce(function (a, e) { return a + worked(e, k === td); }, 0);
       var free = es.some(function (e) { return e.type === 'vacation' || e.type === 'sick' || e.type === 'holiday'; });
-      var delta = free ? 0 : w - norm;
+      var hol = F.holiday(k) && F.fromKey(k).getDay() % 6 !== 0;   // public holiday on a weekday: all work is extra
+      var delta = free ? 0 : hol ? w : w - norm;
       return { date: k, entries: es, worked: w, delta: delta, open: open, free: free };
     });
   }
@@ -59,8 +60,10 @@
     var t = days.filter(function (d) { return d.date === td; })[0];
     var week = days.filter(function (d) { return d.date >= mon && d.date <= td; });
     var weekWorked = week.reduce(function (a, d) { return a + d.worked; }, 0);
-    var weekFree = week.filter(function (d) { return d.free; }).length;
-    var wd = Math.min(5, ((new Date().getDay() + 6) % 7) + 1);
+    var wd = Math.min(5, ((new Date().getDay() + 6) % 7) + 1), off = {};
+    week.forEach(function (d) { if (d.free) off[d.date] = 1; });
+    for (var i = 0; i < wd; i++) { var hk = addDays(mon, i); if (F.holiday(hk)) off[hk] = 1; }
+    var weekFree = Object.keys(off).filter(function (k) { var g = F.fromKey(k).getDay(); return g > 0 && g < 6; }).length;
     var weekTarget = Math.max(0, wd - weekFree) * flexCfg().norm * 60;
     var vac = F.list('flex').filter(function (e) { return e.type === 'vacation' && String(e.date).slice(0, 4) === y; }).length;
     var openE = F.list('flex').filter(function (e) { return e.date === td && (e.type === 'work' || e.type === 'course') && e.in && !e.out; })[0];
@@ -281,6 +284,51 @@
         right: '<span class="kit-dots">' + [1, 2, 3, 4, 5].map(function (i) { return '<i class="' + (i <= +w.effort ? 'on' : '') + '"></i>'; }).join('') + '</span>' };
     },
     empty: 'Log a workout and it also ticks your training habit for that day.'
+  });
+
+  /* ================= HEALTH: check-ups, vaccines, medicine ================= */
+  var HKINDS = [['checkup', 'Appointment / check-up'], ['vaccine', 'Vaccine'], ['medicine', 'Medicine / prescription']];
+  var HICON = { checkup: 'clipboard2-pulse', vaccine: 'shield-plus', medicine: 'capsule' };
+  var HNEXT = { checkup: 'Next check-up', vaccine: 'Booster due', medicine: 'Renew by' };
+  function dueBadge(k, word) {
+    if (!k) return '';
+    var days = Math.round((F.fromKey(k) - F.fromKey(today())) / 864e5);
+    if (days < 0) return '<span class="kit-badge bad">' + word + ' overdue</span>';
+    if (days <= 60) return '<span class="kit-badge warn">' + word + ' ' + fmt(k, { day: 'numeric', month: 'short' }) + '</span>';
+    return '<span class="kit-badge">' + word + ' ' + fmt(k, { month: 'short', year: 'numeric' }) + '</span>';
+  }
+  K.collection({
+    mount: $t('health'), feature: 'health', key: 'health', title: 'Check-ups & medicine', icon: 'clipboard2-pulse',
+    addTitle: 'Add to health', editTitle: 'Edit',
+    fields: [
+      { k: 'title', type: 'title', label: 'What', ph: 'e.g. Dentist, Tetanus booster, Allergy pills', req: true },
+      { k: 'kind', label: 'Type', type: 'select', options: HKINDS, def: 'checkup' },
+      { k: 'date', label: 'Date', type: 'date', def: today, help: 'The appointment, when you took the vaccine, or when it was prescribed.' },
+      { k: 'time', label: 'Time', type: 'time', help: 'For appointments – it goes in your calendar.' },
+      { k: 'where', label: 'Where / who', ph: 'Clinic, doctor, pharmacy' },
+      { k: 'next', label: 'Next / renew by', type: 'date', help: 'Next check-up, when a booster is due, or when the prescription runs out. You get a reminder in your calendar.' },
+      { k: 'notes', label: 'Notes', type: 'textarea', rows: 3, help: 'Dose, what was said, questions for next time …' }
+    ],
+    sort: function (a, b) {
+      var ka = a.kind === 'checkup' && a.date >= today() ? a.date : (a.next || '9999'), kb = b.kind === 'checkup' && b.date >= today() ? b.date : (b.next || '9999');
+      return ka > kb ? 1 : ka < kb ? -1 : 0;
+    },
+    summary: function (items) {
+      if (!items.length) return '';
+      var td = today();
+      var up = items.filter(function (h) { return h.kind === 'checkup' && h.date >= td; }).sort(function (a, b) { return a.date > b.date ? 1 : -1; })[0];
+      var due = items.filter(function (h) { return h.next && h.next <= F.addMonths(td, 2); }).length;
+      var vac = items.filter(function (h) { return h.kind === 'vaccine'; }).length;
+      return '<div class="kit-tiles">' + tile('Next appointment', up ? fmt(up.date, { weekday: 'short', day: 'numeric', month: 'short' }) : '–', up ? esc(up.title) + (up.time ? ' · ' + esc(up.time) : '') : 'nothing booked') +
+        tile('Due soon', '<span class="' + (due ? 'neg' : '') + '">' + due + '</span>', 'within 2 months') + tile('Vaccines', vac, 'on record') + '</div>';
+    },
+    row: function (h) {
+      var past = h.kind === 'checkup' && h.date && h.date < today();
+      return { icon: HICON[h.kind] || 'clipboard2-pulse', color: '#e66767', title: h.title,
+        sub: [{ checkup: 'Check-up', vaccine: 'Vaccine', medicine: 'Medicine' }[h.kind] || '', h.date ? fmt(h.date) + (h.time && !past ? ' ' + esc(h.time) : '') : '', h.where ? esc(h.where) : ''].filter(Boolean).join(' · '),
+        right: dueBadge(h.next, h.kind === 'medicine' ? 'Renew' : h.kind === 'vaccine' ? 'Booster' : 'Next') };
+    },
+    empty: 'Doctor and dentist appointments, vaccines (useful before trips) and prescriptions. You get reminders in your calendar before things are due.'
   });
 
   /* ================= HABITS: journal ================= */

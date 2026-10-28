@@ -43,7 +43,9 @@
     var ss = String(now.getSeconds()).padStart(2, '0');
     var pr = prefs();
     $('clock').innerHTML = hh + ':' + mm + (pr.seconds ? '<span class="sec">' + ss + '</span>' : '');
-    $('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var hol = window.Features && window.Features.holiday(window.Features.dkey(now));
+    $('date').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+      (window.Cal && window.Cal.prefs().weekNums ? ' · Week ' + window.Cal.isoWeek(now) : '') + (hol && (!window.Cal || window.Cal.prefs().holidays) ? ' · ' + hol.name : '');
 
     var p = PERIODS.filter(function (x) { return now.getHours() >= x.from && now.getHours() < x.to; })[0];
     var greet = p.text + (pr.name ? ', ' + pr.name : '');

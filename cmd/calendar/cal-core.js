@@ -8,11 +8,42 @@
   var KEY = 'dash.calendar';
   var API = '/cmd/api/calendar';
   var FRESH_MS = 10 * 60 * 1000;
-  var CATS = {
-    work: { name: 'Work', color: '#3987e5', icon: 'briefcase' },
-    study: { name: 'Study', color: '#8a6fdf', icon: 'mortarboard' },
-    life: { name: 'Life', color: '#22b35e', icon: 'heart' }
-  };
+  /* Your categories (Calendar settings). These are the defaults; "Life" from before became "Personal". */
+  var DEFAULT_CATS = [
+    { id: 'work', name: 'Work', color: '#3987e5' },
+    { id: 'study', name: 'Study', color: '#8a6fdf' },
+    { id: 'training', name: 'Training', color: '#d55181' },
+    { id: 'social', name: 'Social', color: '#e8743b' },
+    { id: 'personal', name: 'Personal', color: '#22b35e' }
+  ];
+  var CATS = {};                 // id → {name, color}, kept up to date by load()
+  var CAT_ORDER = [];
+  function setCats(list) {
+    Object.keys(CATS).forEach(function (k) { delete CATS[k]; });
+    CAT_ORDER.length = 0;
+    list.forEach(function (c) { CATS[c.id] = { name: c.name, color: c.color }; CAT_ORDER.push(c.id); });
+  }
+  setCats(DEFAULT_CATS);
+  function catOf(id) {
+    if (CATS[id]) return id;
+    if (id === 'life' && CATS.personal) return 'personal';
+    return CATS.personal ? 'personal' : CAT_ORDER[CAT_ORDER.length - 1];
+  }
+  var HOLIDAY_COLOR = '#e66767';
+  var PREFS = { weekNums: true, holidays: true, view: 'last', dur: 60, cat: 'last', dayStart: 7, cardHide: {} };
+  function prefs(d) {
+    var p = (d || load()).prefs || {}, out = {};
+    Object.keys(PREFS).forEach(function (k) { out[k] = p[k] == null ? PREFS[k] : p[k]; });
+    if (!out.cardHide || typeof out.cardHide !== 'object') out.cardHide = {};
+    return out;
+  }
+  /* ISO week number (uke) */
+  function isoWeek(d) {
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var n = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - n);
+    return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+  }
   var FEED_COLORS = ['#e8743b', '#d55181', '#14b8a6', '#c9a227', '#7a8794'];
   var WD = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
@@ -39,6 +70,9 @@
     d.events = Array.isArray(d.events) ? d.events : [];
     d.feeds = Array.isArray(d.feeds) ? d.feeds : [];
     d.hidden = d.hidden && typeof d.hidden === 'object' ? d.hidden : {};
+    var ok = Array.isArray(d.cats) && d.cats.length && d.cats.every(function (c) { return c && c.id && c.name && /^#[0-9a-f]{6}$/i.test(c.color || ''); });
+    setCats(ok ? d.cats : DEFAULT_CATS);
+    if (d.hidden.life && !CATS.life) { d.hidden.personal = 1; delete d.hidden.life; }
     return d;
   }
   function save(d) {
@@ -61,7 +95,7 @@
   /* Turns a stored event into the common shape used for both sources */
   function fromOwn(e) {
     var base = fromKey(e.date);
-    var ev = { id: e.id, own: e, title: e.title || 'Untitled', cat: CATS[e.cat] ? e.cat : 'life', allDay: !!e.allDay,
+    var ev = { id: e.id, own: e, title: e.title || 'Untitled', cat: catOf(e.cat), allDay: !!e.allDay,
                location: e.location || '', notes: e.notes || '', exDays: {} };
     ev.color = CATS[ev.cat].color;
     if (ev.allDay) {
@@ -423,12 +457,28 @@
     d.feeds.forEach(function (f) {
       if (!opts.all && d.hidden['feed:' + f.id]) return;
       var st = fromCache(f) || feedState[f.id];
-      if (st && st.events) st.events.forEach(function (ev) { ev.color = f.color; ev.src = f.name; add(ev); });
+      if (st && st.events) st.events.forEach(function (ev) { ev.color = f.color; ev.src = f.name; ev.feedId = f.id; add(ev); });
     });
     var Fe = window.Features;
     if ((opts.all || !d.hidden.travel) && (!Fe || Fe.on('travel'))) travelEvents().forEach(add);
     /* reminders from the tools in Settings → Features (renewals, warranties, certificates) */
     if (Fe && (opts.all || !d.hidden.reminders)) Fe.events().forEach(add);
+    /* Norwegian public holidays */
+    var p = prefs(d);
+    if (Fe && p.holidays && (opts.all || !d.hidden.holidays)) {
+      for (var y = from.getFullYear(); y <= to.getFullYear(); y++) Fe.holidays(y).forEach(function (h) {
+        add({ id: 'hol:' + h.date, title: h.name, allDay: true, start: fromKey(h.date), days: 1, color: HOLIDAY_COLOR, readOnly: true,
+          holiday: true, location: '', notes: h.no + ' – a public holiday in Norway.', exDays: {} });
+      });
+    }
+    if (opts.card) list = list.filter(function (o) {
+      var ch = p.cardHide;
+      if (o.ev.own) return !ch[o.ev.cat];
+      if (o.ev.src) return !ch['feed:' + o.ev.feedId];
+      if (o.ev.holiday) return !ch.holidays;
+      if (o.ev.reminder) return !ch.reminders;
+      return !ch.travel;
+    });
     list.sort(function (a, b) {
       if (a.allDay !== b.allDay && dkey(a.start) === dkey(b.start)) return a.allDay ? -1 : 1;
       return a.start - b.start || b.end - a.end || (a.title > b.title ? 1 : -1);
@@ -454,7 +504,7 @@
   }
 
   window.Cal = {
-    CATS: CATS, TRAVEL_COLOR: '#0891b2', FEED_COLORS: FEED_COLORS, REPEAT_NAMES: REPEAT_NAMES,
+    CATS: CATS, CAT_ORDER: CAT_ORDER, DEFAULT_CATS: DEFAULT_CATS, catOf: catOf, prefs: prefs, isoWeek: isoWeek, HOLIDAY_COLOR: HOLIDAY_COLOR, TRAVEL_COLOR: '#0891b2', FEED_COLORS: FEED_COLORS, REPEAT_NAMES: REPEAT_NAMES,
     load: load, save: save, uid: uid, esc: esc,
     occurrences: occurrences, expand: expand, fromOwn: fromOwn, parseICS: parseICS,
     refreshFeeds: refreshFeeds, fetchFeed: fetchFeed, clearFeeds: clearFeeds,

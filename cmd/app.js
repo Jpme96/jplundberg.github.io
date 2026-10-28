@@ -48,11 +48,11 @@
   var F = window.Features;
   var box = $('ftList');
   if (!F || !box) return;
-  var GROUP_ICON = { Everyday: 'grid-1x2', Work: 'briefcase', Habits: 'activity', Travel: 'airplane', Finance: 'wallet2' };
+  var GROUP_ICON = { Everyday: 'grid-1x2', Work: 'briefcase', Health: 'heart-pulse', Travel: 'airplane', Finance: 'wallet2' };
   var GROUP_NOTE = {
     Everyday: 'The main parts. Switching one off hides its page, card and calendar items – nothing is deleted.',
     Work: 'Turning on any of these adds a Work page to the menu.',
-    Habits: 'Shown on the Habits page.',
+    Health: 'Shown on the Health page (the menu tab shows when any of these or Habits is on).',
     Travel: 'Shown under Trips on the Travel page.',
     Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.'
   };

@@ -29,6 +29,7 @@
     if (o.ev.location) sub.push(esc(o.ev.location));
     if (o.ev.trip || o.ev.doc) sub.push('<i class="bi bi-suitcase-lg"></i> Travel');
     else if (o.ev.reminder) sub.push('<i class="bi bi-bell"></i> Reminder');
+    else if (o.ev.holiday) sub.push('<i class="bi bi-flag"></i> Public holiday');
     else if (o.ev.src) sub.push('<i class="bi bi-phone"></i> ' + esc(o.ev.src));
     else if (o.ev.rule) sub.push('<i class="bi bi-arrow-repeat"></i> Repeats');
     return '<li><button type="button" class="cl-ev" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' +
@@ -50,9 +51,10 @@
   /* ---------- category / calendar filter ---------- */
   function renderCats() {
     var d = data();
-    var items = Object.keys(C.CATS).map(function (k) { return { id: k, name: C.CATS[k].name, color: C.CATS[k].color }; })
+    var items = C.CAT_ORDER.map(function (k) { return { id: k, name: C.CATS[k].name, color: C.CATS[k].color }; })
       .concat(!window.Features || window.Features.on('travel') ? [{ id: 'travel', name: 'Travel', color: C.TRAVEL_COLOR, icon: 'suitcase-lg' }] : [])
-      .concat(window.Features && ['learning', 'subs', 'warranty'].some(window.Features.on) ? [{ id: 'reminders', name: 'Reminders', color: window.Features.REMIND_COLOR, icon: 'bell' }] : [])
+      .concat(window.Features && ['learning', 'subs', 'warranty', 'health'].some(window.Features.on) ? [{ id: 'reminders', name: 'Reminders', color: window.Features.REMIND_COLOR, icon: 'bell' }] : [])
+      .concat(C.prefs(d).holidays ? [{ id: 'holidays', name: 'Holidays', color: C.HOLIDAY_COLOR, icon: 'flag' }] : [])
       .concat(d.feeds.map(function (f) { return { id: 'feed:' + f.id, name: f.name, color: f.color, feed: true }; }));
     $('clCats').innerHTML = items.map(function (it) {
       return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="' + !d.hidden[it.id] + '" style="--c:' + it.color + '">' +
@@ -66,9 +68,9 @@
     var start = C.monday(first), last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
     var end = addDays(C.monday(last), 7);
     var by = bucket(C.occurrences(start, end), start, end);
-    var today = dkey(new Date());
+    var today = dkey(new Date()), wn = C.prefs().weekNums;
     $('clTitle').textContent = first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    var h = '<div class="cl-month">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (w) {
+    var h = '<div class="cl-month' + (wn ? ' has-wk' : '') + '">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (w) {
       return '<div class="cl-wd">' + w + '</div>';
     }).join('');
     for (var d = start; d < end; d = addDays(d, 1)) {
@@ -76,7 +78,7 @@
       var cls = 'cl-cell' + (d.getMonth() !== first.getMonth() ? ' out' : '') + (k === today ? ' today' : '') + (k === sel ? ' sel' : '');
       var label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (list.length ? ', ' + list.length + ' event' + (list.length > 1 ? 's' : '') : '');
       h += '<button type="button" class="' + cls + '" data-day="' + k + '" aria-label="' + label + '"' + (k === sel ? ' aria-pressed="true"' : '') + '>' +
-        '<span class="cl-num">' + d.getDate() + '</span>' +
+        '<span class="cl-num">' + d.getDate() + '</span>' + (wn && d.getDay() === 1 ? '<span class="cl-wkno" aria-hidden="true">W' + C.isoWeek(d) + '</span>' : '') +
         '<span class="cl-chips">' + list.slice(0, 3).map(function (o) {
           var t = o.allDay || !C.sameDay(o.start, d) ? '' : '<b>' + hm(o.start) + '</b> ';
           return '<span class="cl-chip' + (o.allDay ? ' full' : '') + '" style="--c:' + o.color + '">' + t + esc(o.title) + '</span>';
@@ -108,6 +110,10 @@
     $('clTitle').textContent = start.getMonth() === endShown.getMonth()
       ? start.getDate() + '–' + endShown.getDate() + ' ' + endShown.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
       : start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' – ' + endShown.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (C.prefs().weekNums) {
+      var w1 = C.isoWeek(start), w2 = C.isoWeek(endShown);
+      $('clTitle').innerHTML = esc($('clTitle').textContent) + ' <span class="cl-wk-tag">Week ' + w1 + (w2 !== w1 ? '–' + w2 : '') + '</span>';
+    }
 
     var days = [];
     for (var i = 0; i < n; i++) days.push(addDays(start, i));
@@ -162,7 +168,7 @@
     else {
       var inView = list.length ? Math.min.apply(null, timed.reduce(function (a, s) { return a.concat(s.map(function (x) { return x.s.getHours(); })); }, [24])) : 24;
       var showNow = days.some(function (d) { return dkey(d) === today; }) ? now.getHours() - 1 : 24;
-      sc.scrollTop = Math.max(0, Math.max(0, Math.min(7, inView, showNow)) * HOUR - 10);
+      sc.scrollTop = Math.max(0, Math.max(0, Math.min(C.prefs().dayStart, inView, showNow)) * HOUR - 10);
       weekScrolled = true;
     }
   }
@@ -312,9 +318,11 @@
   });
   $('clLoc').addEventListener('input', function () { $('clRoute').hidden = !this.value.trim() || $('clAllDay').checked; });
   $('clRepeat').innerHTML = Object.keys(C.REPEAT_NAMES).map(function (k) { return '<option value="' + k + '">' + C.REPEAT_NAMES[k] + '</option>'; }).join('');
-  $('clCatSeg').innerHTML = Object.keys(C.CATS).map(function (k) {
-    return '<button type="button" data-ecat="' + k + '" style="--c:' + C.CATS[k].color + '"><i class="dot"></i>' + C.CATS[k].name + '</button>';
-  }).join('');
+  function catButtons() {
+    $('clCatSeg').innerHTML = C.CAT_ORDER.map(function (k) {
+      return '<button type="button" data-ecat="' + esc(k) + '" style="--c:' + C.CATS[k].color + '"><i class="dot"></i>' + esc(C.CATS[k].name) + '</button>';
+    }).join('');
+  }
   var ecat = 'work';
   function setCat(k) {
     ecat = k;
@@ -364,7 +372,8 @@
         (o.ev.trip ? '<a class="pill-btn ghost" href="../travel/#trip=' + encodeURIComponent(o.ev.trip) + '"><i class="bi bi-suitcase-lg"></i> Open trip</a>' : '') +
         (o.ev.doc ? '<a class="pill-btn ghost" href="../travel/#docs"><i class="bi bi-person-vcard"></i> Travel documents</a>' : '') +
         (o.ev.reminder && o.ev.link ? '<a class="pill-btn ghost" href="' + esc(o.ev.link) + '"><i class="bi bi-box-arrow-up-right"></i> Open</a>' : '') + '</div>' +
-        (o.ev.reminder ? '<p class="muted cl-src"><i class="bi bi-bell"></i> A reminder from your tools (Settings → Features).</p>'
+        (o.ev.holiday ? '<p class="muted cl-src"><i class="bi bi-flag"></i> Norwegian public holiday. Turn off in Calendar settings.</p>'
+          : o.ev.reminder ? '<p class="muted cl-src"><i class="bi bi-bell"></i> A reminder from your tools (Settings → Features).</p>'
           : o.ev.trip || o.ev.doc ? '<p class="muted cl-src"><i class="bi bi-suitcase-lg"></i> Planned on the Travel page.</p>'
           : '<p class="muted cl-src"><i class="bi bi-phone"></i> From “' + esc(o.ev.src) + '”. Change it in that calendar.</p>');
       routeFor = o;
@@ -378,15 +387,16 @@
       var date = preset.date || dkey(new Date());
       var startH = preset.hour != null ? preset.hour
         : (date === dkey(new Date()) ? Math.min(new Date().getHours() + 1, 23) : 9);
-      var last = 'work';
-      try { last = localStorage.getItem('dash.calLastCat') || 'work'; } catch (x) {}
+      var pf = C.prefs(), last = pf.cat;
+      if (last === 'last') { try { last = localStorage.getItem('dash.calLastCat') || ''; } catch (x) {} }
+      catButtons();
       $('clTitleIn').value = e ? e.title : '';
-      setCat(e ? (C.CATS[e.cat] ? e.cat : 'life') : (C.CATS[last] ? last : 'work'));
+      setCat(e ? C.catOf(e.cat) : (C.CATS[last] ? last : C.CAT_ORDER[0]));
       $('clAllDay').checked = e ? !!e.allDay : false;
       $('clDate').value = e ? e.date : date;
       $('clEndDate').value = e ? (e.end || e.date) : date;
       $('clStart').value = e ? (e.start || '09:00') : fromMin(startH * 60);
-      $('clStop').value = e ? (e.stop || fromMin(toMin(e.start || '09:00') + 60)) : fromMin(startH * 60 + 60);
+      $('clStop').value = e ? (e.stop || fromMin(toMin(e.start || '09:00') + 60)) : fromMin(Math.min(startH * 60 + pf.dur, 23 * 60 + 55));
       $('clRepeat').value = e ? (e.repeat || '') : '';
       $('clUntil').value = e ? (e.until || '') : '';
       $('clLoc').value = e ? (e.location || '') : '';
@@ -529,6 +539,28 @@
     renderFeeds();
   });
 
+  /* ---------- calendar settings (gear) ---------- */
+  var csBox = $('csBox'), cs = csBox && window.CalSettings ? window.CalSettings.mount(csBox) : null;
+  function openSettings() {
+    if (!cs) return;
+    cs.render();
+    var bg = $('csBg'); bg.hidden = false;
+    requestAnimationFrame(function () { bg.classList.add('open'); });
+    document.documentElement.classList.add('cl-modal');
+  }
+  function closeSettings() {
+    var bg = $('csBg'); if (!bg || bg.hidden) return;
+    bg.classList.remove('open');
+    document.documentElement.classList.remove('cl-modal');
+    setTimeout(function () { bg.hidden = true; }, 220);
+  }
+  if (cs) {
+    $('clSettings').addEventListener('click', openSettings);
+    $('csDone').addEventListener('click', closeSettings);
+    $('csBg').addEventListener('click', function (e) { if (e.target === this) closeSettings(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSettings(); });
+  }
+
   /* ---------- wiring ---------- */
   window.addEventListener('cal:change', render);
   var prevReload = window.Dash && window.Dash.reload;
@@ -553,7 +585,12 @@
   window.addEventListener('hashchange', fromHash);
 
   if (window.Vault) {
-    window.Vault.onUnlock(function () { unlocked = true; render(); fromHash(); C.refreshFeeds(false); });
+    window.Vault.onUnlock(function () {
+      unlocked = true;
+      var pv = C.prefs().view;
+      if (pv !== 'last' && !location.hash) view = pv;
+      render(); fromHash(); C.refreshFeeds(false);
+    });
     window.Vault.onLock(function () { unlocked = false; closeEditor(); });
   }
 })();

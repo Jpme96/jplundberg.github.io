@@ -26,7 +26,8 @@
   .cl-hero { padding-bottom: 4px; }
   .cl { padding-bottom: 70px; }
   .cl-bar { grid-template-columns: 1fr auto; }
-  .cl-title { grid-column: 1 / -1; grid-row: 1; font-size: 24px; }
+  .cl-title { grid-column: 1; grid-row: 1; font-size: 24px; }
+  .cl-gear { grid-column: 2; grid-row: 1; justify-self: end; }
   .cl-views { grid-column: 2; grid-row: 2; }
   .cl-nav { grid-row: 2; }
   .cl-new { position: fixed; z-index: 30; right: 18px; bottom: calc(92px + env(safe-area-inset-bottom));
@@ -35,7 +36,11 @@
   .cl-new span { display: none; }
   .cl-modal .cl-new { display: none; }
 }
-@media (min-width: 760px) { .cl-bar { grid-template-columns: auto 1fr auto auto; } }
+@media (min-width: 760px) { .cl-bar { grid-template-columns: auto 1fr auto auto auto; } }
+.cl-gear { width: 36px; height: 36px; font-size: 15px; }
+.cl-wk-tag { font-family: "Poppins", sans-serif; font-weight: 500; font-size: 13px; color: var(--muted); margin-left: 6px; vertical-align: middle; }
+.cl-wkno { position: absolute; top: 8px; right: 7px; font-size: 10.5px; font-weight: 500; color: var(--muted); opacity: .8; font-variant-numeric: tabular-nums; }
+@media (max-width: 699px) { .cl-wkno { top: 2px; right: auto; left: 4px; font-size: 8.5px; opacity: .6; } .cl-month.has-wk .cl-cell { padding-top: 12px; min-height: 60px; } }
 
 /* ---------- filter chips ---------- */
 .cl-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
@@ -219,8 +224,11 @@
 .cl-dt { min-width: 0; justify-content: flex-end; }
 .cl-dt input { min-width: 0; flex: 0 1 auto; }
 .cl-in-title { font-size: 18px; padding: 12px 14px; }
-.cl-cat-seg { display: flex; }
-.cl-cat-seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.cl-cat-seg { display: flex; flex-wrap: wrap; gap: 6px; background: none; border: 0; padding: 0; }
+.cl-cat-seg button { flex: 0 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); }
+.cl-cat-seg button[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--text); }
+
 .cl-group {
   background: rgba(var(--ink-rgb), .05); border-radius: 14px; padding: 0 14px;
 }
@@ -247,3 +255,5 @@
 .cl-acts .pill-btn { height: 40px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .pill-btn.ghost { background: var(--accent-soft); color: var(--accent); }
 .cl-route { justify-self: start; }
+
+.cs-sheet { width: min(520px, calc(100% - 32px)); }

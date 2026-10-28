@@ -9,7 +9,7 @@
   function render() {
     if (!unlocked) return;
     var now = new Date(), t0 = C.day0(now), end = C.addDays(t0, 7);
-    var list = C.occurrences(t0, end);
+    var list = C.occurrences(t0, end, { card: true });
     var by = {};
     list.forEach(function (o) {
       for (var d = C.day0(o.start < t0 ? t0 : o.start); d < end; d = C.addDays(d, 1)) {
@@ -36,6 +36,9 @@
         '<span class="bar"></span><span class="x"><b>' + esc(o.title) + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></a></li>';
     });
     $('ccStrip').innerHTML = strip;
+    var h2 = document.querySelector('#calCard .card-head h2'), wk = h2 && h2.querySelector('.cc-wk');
+    if (h2 && !wk) { wk = document.createElement('span'); wk.className = 'cc-wk'; h2.appendChild(wk); }
+    if (wk) wk.textContent = C.prefs().weekNums ? 'Week ' + C.isoWeek(now) : '';
     $('ccList').innerHTML = html;
     $('ccEmpty').hidden = next.length > 0;
   }

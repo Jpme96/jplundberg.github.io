@@ -39,7 +39,7 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=22" rel="stylesheet">
+  <link href="styles.css?v=23" rel="stylesheet">
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -319,6 +319,7 @@
           <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
@@ -371,6 +372,10 @@
       <div class="st-page" data-page="features" data-title="Features" hidden>
         <p class="st-note ft-intro">Pick what you use. Switched-off parts disappear from the menu, the dashboard and the calendar. Your data stays, encrypted and synced, so switching back on brings everything back.</p>
         <section class="st-group ft-group" id="ftList"></section>
+      </div>
+
+      <div class="st-page" data-page="calendar" data-title="Calendar" hidden>
+        <div class="cs-box" id="csHome"></div>
       </div>
 
       <div class="st-page" data-page="security" data-title="Security" hidden>
@@ -465,21 +470,22 @@
   </div>
 
   <script src="lock.js?v=12"></script>
-  <script src="features.js?v=1"></script>
-  <script src="settings.js?v=10"></script>
+  <script src="features.js?v=2"></script>
+  <script src="settings.js?v=11"></script>
   <script src="website.js?v=2"></script>
   <script src="texts.js?v=1"></script>
-  <script src="script.js?v=7"></script>
+  <script src="script.js?v=8"></script>
   <script src="finance.js?v=5"></script>
   <script src="places.js?v=2"></script>
   <script src="today.js?v=4"></script>
   <script src="flow.js?v=2"></script>
-  <script src="calendar/cal-core.js?v=4"></script>
-  <script src="cal-card.js?v=1"></script>
+  <script src="calendar/cal-core.js?v=5"></script>
+  <script src="calendar/cal-settings.js?v=1"></script>
+  <script src="cal-card.js?v=2"></script>
   <script src="upnext.js?v=2"></script>
   <script src="kit.js?v=1"></script>
-  <script src="tools.js?v=1"></script>
-  <script src="app.js?v=1"></script>
-  <script src="nav.js?v=4"></script>
+  <script src="tools.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+  <script src="nav.js?v=5"></script>
 </body>
 </html>

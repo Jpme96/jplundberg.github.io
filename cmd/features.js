@@ -10,17 +10,19 @@
     { id: 'calendar', group: 'Everyday', name: 'Calendar', icon: 'calendar3', c: '#3987e5', desc: 'Events, repeats and your phone calendar', def: true },
     { id: 'travel', group: 'Everyday', name: 'Travel', icon: 'signpost-split', c: '#0891b2', desc: 'Departures, journey planner, trips and documents', def: true },
     { id: 'finance', group: 'Everyday', name: 'Finances', icon: 'wallet2', c: '#11a597', desc: 'Budget, spending, savings and net worth', def: true },
-    { id: 'habits', group: 'Everyday', name: 'Habits', icon: 'activity', c: '#d55181', desc: 'Weekly habits with streaks', def: true },
+    { id: 'habits', group: 'Everyday', name: 'Habits', icon: 'activity', c: '#d55181', desc: 'Weekly habits with streaks, on the Health page', def: true },
     { id: 'flex', group: 'Work', name: 'Flex time', icon: 'stopwatch', c: '#e8743b', desc: 'Clock in and out, flex balance and holiday days (fleksitid)' },
     { id: 'meetings', group: 'Work', name: 'Meeting notes', icon: 'people', c: '#3987e5', desc: 'Notes with action points you can send to your to-do list' },
     { id: 'learning', group: 'Work', name: 'Courses & certificates', icon: 'mortarboard', c: '#8a6fdf', desc: 'What you learn, and certificates that need renewing' },
-    { id: 'training', group: 'Habits', name: 'Training log', icon: 'heart-pulse', c: '#d55181', desc: 'Workouts with time, distance and how it felt' },
-    { id: 'journal', group: 'Habits', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood' },
+    { id: 'training', group: 'Health', name: 'Training log', icon: 'heart-pulse', c: '#d55181', desc: 'Workouts with time, distance and how it felt' },
+    { id: 'health', group: 'Health', name: 'Check-ups & medicine', icon: 'clipboard2-pulse', c: '#e66767', desc: 'Doctor and dentist, vaccines and prescriptions – with reminders' },
+    { id: 'journal', group: 'Health', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood' },
     { id: 'bucket', group: 'Travel', name: 'Places to visit', icon: 'pin-map', c: '#0891b2', desc: 'Your bucket list, on the map – turn one into a trip' },
     { id: 'subs', group: 'Finance', name: 'Subscriptions', icon: 'arrow-repeat', c: '#11a597', desc: 'What you pay every month and when it renews' },
     { id: 'warranty', group: 'Finance', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out' }
   ];
   var WORK = ['flex', 'meetings', 'learning'];
+  var HEALTH = ['habits', 'training', 'health', 'journal'];       // the Health page shows if any is on
   var REMIND_COLOR = '#c9a227';
 
   function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
@@ -32,6 +34,7 @@
 
   function on(id) {
     if (id === 'work') return WORK.some(on);
+    if (id === 'healthpage') return HEALTH.some(on);
     var f = (readJSON('dash.settings') || {}).features || {};
     var d = byId(id);
     return Object.prototype.hasOwnProperty.call(f, id) ? !!f[id] : !!(d && d.def);
@@ -49,6 +52,7 @@
     var r = document.documentElement;
     LIST.forEach(function (x) { r.classList.toggle('feat-off-' + x.id, !on(x.id)); });
     r.classList.toggle('feat-off-work', !on('work'));
+    r.classList.toggle('feat-off-healthpage', !on('healthpage'));
   }
   apply();
   window.addEventListener('dash:settings', apply);
@@ -96,6 +100,27 @@
     return addMonths(w.bought, Math.round((+w.years || 2) * 12));
   }
 
+  /* ---------- Norwegian public holidays (helligdager) ---------- */
+  function easter(y) {          /* Gregorian Easter Sunday (Meeus/Jones/Butcher) */
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+      g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+      l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451), mo = Math.floor((h + l - 7 * m + 114) / 31);
+    return new Date(y, mo - 1, ((h + l - 7 * m + 114) % 31) + 1);
+  }
+  var holCache = {};
+  function holidays(y) {
+    if (holCache[y]) return holCache[y];
+    var E = easter(y), rel = function (n) { var d = new Date(E); d.setDate(d.getDate() + n); return dkey(d); };
+    var l = [[y + '-01-01', 'New Year’s Day', 'Første nyttårsdag'], [rel(-3), 'Maundy Thursday', 'Skjærtorsdag'], [rel(-2), 'Good Friday', 'Langfredag'],
+      [rel(0), 'Easter Sunday', 'Første påskedag'], [rel(1), 'Easter Monday', 'Andre påskedag'], [y + '-05-01', 'Labour Day', 'Arbeidernes dag'],
+      [y + '-05-17', 'Constitution Day', '17. mai'], [rel(39), 'Ascension Day', 'Kristi himmelfartsdag'], [rel(49), 'Whit Sunday', 'Første pinsedag'],
+      [rel(50), 'Whit Monday', 'Andre pinsedag'], [y + '-12-25', 'Christmas Day', 'Første juledag'], [y + '-12-26', 'Boxing Day', 'Andre juledag']];
+    return (holCache[y] = l.map(function (x) { return { date: x[0], name: x[1], no: x[2] }; }));
+  }
+  function holiday(k) {
+    return holidays(+String(k).slice(0, 4)).filter(function (h) { return h.date === k; })[0] || null;
+  }
+
   /* ---------- reminders for the calendar ---------- */
   function events() {
     var out = [];
@@ -108,6 +133,17 @@
       ev('learn:' + c.id, (c.title || 'Certificate') + ' expires', c.expires, c.provider ? 'From ' + c.provider : '', '/cmd/work/#learning');
       var soon = addMonths(c.expires, -2);
       ev('learn2:' + c.id, 'Renew: ' + (c.title || 'certificate'), soon, 'Expires ' + c.expires, '/cmd/work/#learning');
+    });
+    if (on('health')) list('health').forEach(function (h) {
+      var what = h.title || 'Health';
+      if (isKey(h.date) && h.kind === 'checkup' && h.date >= addMonths(dkey(new Date()), -1)) {
+        var start = fromKey(h.date), timed = /^\d{2}:\d{2}$/.test(h.time || '');
+        if (timed) { var t = h.time.split(':'); start.setHours(+t[0], +t[1]); }
+        out.push({ id: 'rem:hc:' + h.id, title: what + (h.where ? ' · ' + h.where : ''), allDay: !timed, start: start, days: 1, dur: 3600e3,
+          color: REMIND_COLOR, readOnly: true, reminder: true, link: '/cmd/habits/#health', location: h.where || '', notes: h.notes || '', exDays: {} });
+      }
+      if (isKey(h.next)) ev('hn:' + h.id, ({ checkup: 'Book check-up: ', vaccine: 'Vaccine due: ', medicine: 'Renew prescription: ' }[h.kind] || 'Due: ') + what,
+        h.next, h.where ? 'At ' + h.where : '', '/cmd/habits/#health');
     });
     if (on('warranty')) list('warranty').forEach(function (w) {
       var end = warrantyEnd(w);
@@ -125,7 +161,7 @@
   }
 
   window.Features = {
-    LIST: LIST, WORK: WORK, REMIND_COLOR: REMIND_COLOR,
+    LIST: LIST, WORK: WORK, HEALTH: HEALTH, REMIND_COLOR: REMIND_COLOR, holidays: holidays, holiday: holiday,
     on: on, set: set, apply: apply, byId: byId,
     tools: tools, saveTools: saveTools, list: list,
     events: events, nextRenewal: nextRenewal, warrantyEnd: warrantyEnd,

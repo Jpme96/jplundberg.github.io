@@ -9,13 +9,13 @@
     ['calendar', 'calendar/', 'calendar3', 'Calendar'],
     ['travel', 'travel/', 'signpost-split', 'Travel'],
     ['finance', 'finance/', 'wallet2', 'Finances'],
-    ['habits', 'habits/', 'activity', 'Habits'],
+    ['habits', 'habits/', 'heart-pulse', 'Health'],
     ['work', 'work/', 'briefcase', 'Work']
   ];
   /* only the parts switched on in Settings → Features (the page you're on always shows) */
   var Fe = window.Features;
   function visible() {
-    return items.filter(function (it) { return it[0] === 'home' || it[0] === page || !Fe || Fe.on(it[0]); });
+    return items.filter(function (it) { return it[0] === 'home' || it[0] === page || !Fe || Fe.on(it[0] === 'habits' ? 'healthpage' : it[0]); });
   }
   var nav = document.createElement('nav');
   nav.className = 'tabbar';

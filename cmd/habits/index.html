@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dashboard">
   <meta name="format-detection" content="telephone=no">
-  <title>Training &amp; habits</title>
+  <title>Health</title>
   <link href="/assets/img/favicon.png?v=2" rel="icon">
   <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
   <link href="/cmd/manifest.webmanifest" rel="manifest">
@@ -39,9 +39,9 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=22" rel="stylesheet">
+  <link href="../styles.css?v=23" rel="stylesheet">
   <link href="../finance/fin.css?v=2" rel="stylesheet">
-  <link href="../calendar/cal.css?v=2" rel="stylesheet">
+  <link href="../calendar/cal.css?v=3" rel="stylesheet">
   <link href="habits.css?v=2" rel="stylesheet">
 </head>
 <body>
@@ -52,7 +52,7 @@
     <div class="lock-box" id="lockBox">
       <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
       <h1 id="lockTitle">Welcome back</h1>
-      <p class="muted" id="lockSub">Enter your passcode to open your habits.</p>
+      <p class="muted" id="lockSub">Enter your passcode to open Health.</p>
       <form id="lockForm" autocomplete="on">
         <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
         <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
@@ -78,16 +78,17 @@
     </header>
 
     <div class="fp-hero">
-      <p class="fp-kicker"><i class="bi bi-activity"></i> Private</p>
-      <h1>Training &amp; habits</h1>
-      <p class="muted">Streaks, consistency and the last six months at a glance. Tap a day to fill in what you missed.</p>
+      <p class="fp-kicker"><i class="bi bi-heart-pulse"></i> Private</p>
+      <h1>Health</h1>
+      <p class="muted">Habits, training, check-ups and how your days feel. Tap a day in a habit to fill in what you missed.</p>
     </div>
 
     <section class="fp-tiles" id="hpTiles" aria-label="Key numbers"></section>
     <div id="hpHabits"></div>
     <div class="kit-grid">
       <div data-tool="training" hidden></div>
-      <div data-tool="journal" hidden></div>
+      <div data-tool="health" hidden></div>
+      <div data-tool="journal" class="kit-wide" hidden></div>
     </div>
     <p class="fp-empty" id="hpEmpty" hidden>No habits yet. Add one in “This week” on the dashboard.</p>
 
@@ -97,11 +98,11 @@
   <div class="fp-tip" id="fpTip" role="tooltip" hidden></div>
 
   <script src="../lock.js?v=12"></script>
-  <script src="../features.js?v=1"></script>
+  <script src="../features.js?v=2"></script>
   <script src="habits.js?v=1"></script>
   <script src="../kit.js?v=1"></script>
-  <script src="../tools.js?v=1"></script>
-  <script src="../app.js?v=1"></script>
-  <script src="../nav.js?v=4"></script>
+  <script src="../tools.js?v=2"></script>
+  <script src="../app.js?v=2"></script>
+  <script src="../nav.js?v=5"></script>
 </body>
 </html>
