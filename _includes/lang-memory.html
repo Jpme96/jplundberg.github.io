@@ -1,0 +1,14 @@
+{%- comment -%} Remember the language the reader chose with the EN | NO switch. If a link lands on the
+other language and this page has a translation, swap to it before anything is drawn. {%- endcomment -%}
+<script>
+  (function () {
+    try {
+      var want = localStorage.getItem('jpl-lang'), have = document.documentElement.lang === 'nb' ? 'nb' : 'en';
+      if (!want || want === have) return;
+      var l = document.querySelector('link[rel="alternate"][hreflang="' + want + '"]');
+      if (!l) return;
+      var to = new URL(l.getAttribute('href'), location.href);
+      if (to.pathname !== location.pathname) location.replace(to.pathname + location.search + location.hash);
+    } catch (e) {}
+  })();
+</script>

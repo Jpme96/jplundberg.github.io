@@ -40,6 +40,7 @@
   <link rel="alternate" hreflang="nb" href="{{ site.url }}{{ site.data.home.nb[k] }}">
   <link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ site.data.home.en[k] }}">
   {%- endif %}
+  {%- include lang-memory.html %}
   <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{% if h_lang == 'nb' %}/no/feed.xml{% else %}/feed.xml{% endif %}">
 
   <!-- Link previews (LinkedIn, Facebook, messages) -->

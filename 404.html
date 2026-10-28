@@ -6,6 +6,14 @@ permalink: /404.html
 sitemap: false
 ---
 {% assign en = site.data.ui.en %}{% assign nb = site.data.ui.nb %}
+<script>
+  /* Norwegian articles and projects live at /articles/… and /projects/…, not under /no/ – send old or
+     mistyped links there instead of showing this page */
+  (function () {
+    var m = location.pathname.match(/^\/no\/(articles|projects)\/(.+)$/);
+    if (m) location.replace('/' + m[1] + '/' + m[2] + location.search + location.hash);
+  })();
+</script>
 <section class="page-hero page-hero--short dark-background">
   {% include hero-img.html %}
   <div class="container">

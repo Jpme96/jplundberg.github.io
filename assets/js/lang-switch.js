@@ -35,6 +35,7 @@
         // Keep the reader in the same section (e.g. #resume) on the home page
         var url = a.href + (location.hash && !/\/(articles|projects)\//.test(a.href) ? location.hash : '');
         try { sessionStorage.setItem('jpl-skip-intro', '1'); } catch (err) {}
+        try { localStorage.setItem('jpl-lang', toNb ? 'nb' : 'en'); } catch (err) {}
         setTimeout(function () { location.href = url; }, reduceMotion ? 0 : 280);
       });
     });
