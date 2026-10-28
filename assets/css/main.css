@@ -1956,3 +1956,22 @@ a.announce-text:hover { color: var(--accent-color); }
 }
 .sf-bottom .bi { color: var(--accent-color); margin-right: 4px; }
 .sf-bottom { padding-right: 64px; }
+
+/* Contact: form + direct ways to reach me */
+.contact-grid { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 992px) { .contact-grid { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 32px; } }
+.contact-form-card {
+  background: var(--surface-color); border: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  border-radius: 18px; padding: 28px 28px 12px; box-shadow: 0 18px 50px rgba(0, 0, 0, .25);
+}
+@media (max-width: 575px) { .contact-form-card { padding: 22px 16px 6px; border-radius: 16px; } }
+.cf-title { font-size: 22px; font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 10px; }
+.cf-title .bi { color: var(--accent-color); }
+.cf-note { margin: 0 0 14px; color: color-mix(in srgb, var(--default-color), transparent 30%); font-size: 15px; }
+.contact-form-card iframe { display: block; border: 0; width: 100%; min-height: 560px; }
+.contact-direct { display: flex; flex-direction: column; gap: 6px; }
+.cd-head { font-family: var(--nav-font); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-color); margin: 4px 0 8px; }
+.contact-direct .info-item { text-decoration: none; padding: 14px 16px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--default-color), transparent 90%); margin-bottom: 8px; align-items: center; }
+.contact-direct a.info-item:hover { border-color: var(--accent-color); }
+.contact-direct .info-item h3 { margin-bottom: 2px; }
+.contact-direct .info-item p { margin: 0; color: color-mix(in srgb, var(--default-color), transparent 20%); }

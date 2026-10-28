@@ -37,7 +37,8 @@ en:
   get_in_touch: Get in touch
   cta_title: Working on FDV documentation or maintenance planning?
   cta_text: I'm happy to talk about how your organisation can get more out of its documentation.
-  cta_mail: Send an email
+  cta_form: Send a message
+  cta_mail: Email
   cta_mail_subject: About your article
   share_label: Share this article
   share_linkedin: Share on LinkedIn
@@ -105,7 +106,8 @@ nb:
   get_in_touch: Ta kontakt
   cta_title: Jobber du med FDV-dokumentasjon eller vedlikeholdsplanlegging?
   cta_text: Jeg tar gjerne en prat om hvordan dere kan få mer ut av dokumentasjonen.
-  cta_mail: Send en e-post
+  cta_form: Send en melding
+  cta_mail: E-post
   cta_mail_subject: Om artikkelen din
   share_label: Del artikkelen
   share_linkedin: Del på LinkedIn
