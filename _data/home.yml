@@ -108,15 +108,15 @@ nb:
   projects_url: /no/projects/
   title: John Paul Lundberg
   seo_title: John Paul Lundberg – FDVU-rådgiver i Oslo
-  description: John Paul Lundberg – FDVU-rådgiver og ingeniør innen drift og vedlikehold (M.O.M), basert i Oslo.
-  keywords: John Paul Lundberg, FDVU, FDV, FDVU-rådgiver, vedlikehold, dokumentkontroll, dokumentasjon, Oslo
+  description: John Paul Lundberg – FDVU-rådgiver og FDVU-ingeniør, basert i Oslo.
+  keywords: John Paul Lundberg, FDVU, FDV, FDVU-rådgiver, FDVU-ingeniør, vedlikehold, dokumentkontroll, dokumentasjon, Oslo
   nav_home: Hjem
   nav_about: Om meg
   nav_experience: Erfaring
   nav_projects: Prosjekter
   nav_articles: Artikler
   nav_contact: Kontakt
-  hero_items: FDVU-rådgiver, M.O.M-ingeniør, Dokumentkontroller
+  hero_items: FDVU-rådgiver, FDVU-ingeniør, Dokumentkontroller
   about_title: Om meg
   about_intro: >-
     Jeg tror hardt arbeid og stå-på-vilje kan ta deg dit du vil i livet.
@@ -124,7 +124,7 @@ nb:
     preger arbeidet mitt og samarbeidet med andre.
   about_heading: FDVU og dokumentkontroll
   about_p1: >-
-    Jeg er FDVU-rådgiver i Boligbygg Oslo KF og ingeniør innen drift og vedlikehold (Maintenance Operation and Management, M.O.M).
+    Jeg er FDVU-rådgiver i Boligbygg Oslo KF og FDVU-ingeniør.
     Arbeidet mitt kombinerer vedlikeholdsplanlegging med dokumentkontroll, kvalitetssikring og koordinering på tvers av avdelinger.
   fact_city_label: By
   fact_city: Oslo, Norge
