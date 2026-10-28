@@ -34,7 +34,8 @@
   var remoteRev = null;    // rev on the server, if known
   var ignoreRemote = false;
   var syncState = 'off';
-  var available = false;   // true once the sync worker has answered
+  var available = false;
+  var remoteCheck = Promise.resolve();   // true once the sync worker has answered
   var pushTimer = null;
   var pushing = false;
   var lockFns = [];
@@ -162,10 +163,14 @@
     setMode(isVault(readJSON(VAULT_KEY)) ? 'unlock' : 'setup');
     if (note) msg(note);
     /* Look for a newer synced version (e.g. made on your phone) before unlocking. */
-    getRemote().then(function (v) {
+    remoteCheck = Promise.race([
+      getRemote(),
+      new Promise(function (r) { setTimeout(r, 6000); })   // never wait forever when offline
+    ]).then(function (v) {
       if (!v || ignoreRemote || key) return;
       var local = readJSON(VAULT_KEY);
-      if (!isVault(local) || (v.rev || 0) > (local.rev || 0)) {
+      var foreign = isVault(local) && syncedRev() === -1 && v.salt !== local.salt;
+      if (!isVault(local) || foreign || (v.rev || 0) > (local.rev || 0)) {
         remote = v;
         if (mode === 'setup') { setMode('unlock'); msg('Found your synced dashboard. Enter your passcode.', true); }
       }
@@ -225,11 +230,15 @@
       return;
     }
 
-    var vault = remote || readJSON(VAULT_KEY);
-    if (!isVault(vault)) { setMode('setup'); return; }
-    var fromRemote = vault === remote;
     if (!pass) { shake(); return; }
     busy(true);
+    remoteCheck.then(function () { tryUnlock(pass); });
+  });
+
+  function tryUnlock(pass) {
+    var vault = remote || readJSON(VAULT_KEY);
+    if (!isVault(vault)) { busy(false); setMode('setup'); return; }
+    var fromRemote = vault === remote;
     var s = unb64(vault.salt), k;
     derive(pass, s, vault.iter || ITER)
       .then(function (kk) { k = kk; return open(vault, k); })
@@ -248,7 +257,7 @@
         msg(w > 0 ? 'Wrong passcode. Wait ' + Math.ceil(w / 1000) + ' s.' : 'Wrong passcode.');
         shake();
       });
-  });
+  }
 
   $('lockForgot').addEventListener('click', function () { setMode('reset'); });
   $('lockCancelReset').addEventListener('click', function () { setMode('unlock'); });
@@ -332,7 +341,7 @@
   }
 
   /* Takes a newer version from another device. */
-  function adopt(v) {
+  function adopt(v, failNote) {
     var k = key;
     return open(v, k).then(function (obj) {
       if (key !== k) return;
@@ -344,7 +353,7 @@
       setSync('ok');
     }, function () {
       /* Encrypted with another passcode: it was changed on another device. */
-      lock('Your passcode was changed on another device. Use the new one.');
+      lock(failNote || 'Your passcode was changed on another device. Use the new one.');
     });
   }
 
@@ -354,6 +363,11 @@
     return getRemote().then(function (v) {
       if (v === undefined || !key) return;
       var lr = localRev();
+      var local = readJSON(VAULT_KEY);
+      /* This device made its own vault before it ever synced: never overwrite the synced one. */
+      if (v && syncedRev() === -1 && local && v.salt !== local.salt) {
+        return adopt(v, 'You already have a synced dashboard. Enter its passcode to use it on this device.');
+      }
       if (v && (v.rev || 0) > lr) return adopt(v);
       if (!v || lr > (v.rev || 0) || syncedRev() !== (v.rev || 0)) return push();
       writeJSON(SYNC_KEY, v.rev || 0);
