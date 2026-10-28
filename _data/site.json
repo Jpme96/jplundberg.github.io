@@ -46,11 +46,273 @@
     "profile": {
       "en": "",
       "nb": ""
+    },
+    "education": {
+      "nb": [
+        {
+          "title": "FDVU-ingeniør",
+          "dates": "sep. 2025 – nå",
+          "school": "Fagskolen Innlandet",
+          "note": ""
+        },
+        {
+          "title": "FDV-tekniker",
+          "dates": "juli 2023 – mai 2025",
+          "school": "Fagskolen Innlandet",
+          "note": ""
+        },
+        {
+          "title": "Byggdrifterfaget (fagbrev)",
+          "dates": "juni 2018 – juli 2020",
+          "school": "Vestland fylkeskommune",
+          "note": ""
+        },
+        {
+          "title": "VG3 Automasjon",
+          "dates": "aug. 2015 – juni 2016",
+          "school": "Sotra videregående skole",
+          "note": ""
+        },
+        {
+          "title": "VG2 Automasjon",
+          "dates": "aug. 2014 – juni 2015",
+          "school": "Sotra videregående skole",
+          "note": ""
+        },
+        {
+          "title": "VG2 Elektrofag",
+          "dates": "aug. 2013 – juni 2014",
+          "school": "Osterøy videregående skole",
+          "note": ""
+        },
+        {
+          "title": "VG1 Elektro – elenergi",
+          "dates": "aug. 2012 – juni 2013",
+          "school": "Bergen maritime videregående skole",
+          "note": ""
+        }
+      ],
+      "en": [
+        {
+          "title": "FDVU Engineer (higher vocational degree)",
+          "dates": "Sept 2025 – present",
+          "school": "Fagskolen Innlandet",
+          "note": ""
+        },
+        {
+          "title": "FDV Technician",
+          "dates": "July 2023 – May 2025",
+          "school": "Fagskolen Innlandet",
+          "note": ""
+        },
+        {
+          "title": "Building operations trade certificate (byggdrifter)",
+          "dates": "June 2018 – July 2020",
+          "school": "Vestland County",
+          "note": ""
+        },
+        {
+          "title": "VG3 Automation",
+          "dates": "Aug 2015 – June 2016",
+          "school": "Sotra upper secondary school",
+          "note": ""
+        },
+        {
+          "title": "VG2 Automation",
+          "dates": "Aug 2014 – June 2015",
+          "school": "Sotra upper secondary school",
+          "note": ""
+        },
+        {
+          "title": "VG2 Electrical",
+          "dates": "Aug 2013 – June 2014",
+          "school": "Osterøy upper secondary school",
+          "note": ""
+        },
+        {
+          "title": "VG1 Electrical – power",
+          "dates": "Aug 2012 – June 2013",
+          "school": "Bergen Maritime upper secondary school",
+          "note": ""
+        }
+      ]
+    },
+    "skills": {
+      "nb": [
+        {
+          "name": "Datakunnskap",
+          "level": 90
+        },
+        {
+          "name": "Koordinering",
+          "level": 85
+        },
+        {
+          "name": "Teknisk forståelse",
+          "level": 85
+        },
+        {
+          "name": "Planlegging",
+          "level": 80
+        },
+        {
+          "name": "Dokumentkontroll",
+          "level": 90
+        }
+      ],
+      "en": [
+        {
+          "name": "IT & systems",
+          "level": 90
+        },
+        {
+          "name": "Coordination",
+          "level": 85
+        },
+        {
+          "name": "Technical understanding",
+          "level": 85
+        },
+        {
+          "name": "Planning",
+          "level": 80
+        },
+        {
+          "name": "Document control",
+          "level": 90
+        }
+      ]
+    },
+    "languages": {
+      "nb": [
+        {
+          "name": "Norsk",
+          "level": 100
+        },
+        {
+          "name": "Engelsk",
+          "level": 95
+        },
+        {
+          "name": "Filipinsk",
+          "level": 100
+        }
+      ],
+      "en": [
+        {
+          "name": "Norwegian",
+          "level": 100
+        },
+        {
+          "name": "English",
+          "level": 95
+        },
+        {
+          "name": "Filipino",
+          "level": 100
+        }
+      ]
+    },
+    "hobbies": {
+      "nb": [
+        "Trening",
+        "Matlaging",
+        "Musikk"
+      ],
+      "en": [
+        "Training",
+        "Cooking",
+        "Music"
+      ]
+    },
+    "contact": {
+      "phone": "",
+      "address": "",
+      "born": "",
+      "nationality": ""
     }
   },
   "experience": {
-    "en": [],
-    "nb": []
+    "nb": [
+      {
+        "title": "FDVU-rådgiver",
+        "dates": "nov. 2025 – nå",
+        "company": "Boligbygg Oslo KF, Oslo",
+        "points": [
+          "Kvalitetskontroll av FDV-dokumentasjon på tvers av 600 000–700 000 dokumenter",
+          "Sørger for at dokumentasjonen er komplett, korrekt og lett å finne for drift og vedlikehold"
+        ]
+      },
+      {
+        "title": "FDV-ansvarlig / FDV-tekniker",
+        "dates": "jan. 2022 – okt. 2025",
+        "company": "Akto Eiendom, Oslo",
+        "points": [
+          "Ansvar for FDV-dokumentasjonen på tvers av eiendommene",
+          "Koordinering av drift, vedlikehold og leverandører"
+        ]
+      },
+      {
+        "title": "Driftsleder",
+        "dates": "jan. 2021 – jan. 2022",
+        "company": "Akto Eiendom, Oslo",
+        "points": []
+      },
+      {
+        "title": "Byggdrifter",
+        "dates": "aug. 2020 – jan. 2021",
+        "company": "Akto Eiendom, Oslo",
+        "points": []
+      },
+      {
+        "title": "Lærling i byggdrifterfaget",
+        "dates": "juni 2018 – juli 2020",
+        "company": "Vestland fylkeskommune (Bybanen), Bergen",
+        "points": [
+          "Drift og forvaltning av et komplekst bygg for Bybanen i Bergen"
+        ]
+      }
+    ],
+    "en": [
+      {
+        "title": "FDVU Advisor",
+        "dates": "Nov 2025 – present",
+        "company": "Boligbygg Oslo KF, Oslo",
+        "points": [
+          "Quality control of FDV documentation across 600,000–700,000 documents",
+          "Making sure documentation is complete, correct and easy to find for operations and maintenance"
+        ]
+      },
+      {
+        "title": "FDV Manager / FDV Technician",
+        "dates": "Jan 2022 – Oct 2025",
+        "company": "Akto Eiendom, Oslo",
+        "points": [
+          "Responsible for the FDV documentation across the properties",
+          "Coordinating operations, maintenance and suppliers"
+        ]
+      },
+      {
+        "title": "Operations Manager",
+        "dates": "Jan 2021 – Jan 2022",
+        "company": "Akto Eiendom, Oslo",
+        "points": []
+      },
+      {
+        "title": "Building Operations Technician",
+        "dates": "Aug 2020 – Jan 2021",
+        "company": "Akto Eiendom, Oslo",
+        "points": []
+      },
+      {
+        "title": "Apprentice, building operations",
+        "dates": "June 2018 – July 2020",
+        "company": "Vestland County (Bybanen), Bergen",
+        "points": [
+          "Operation and management of a complex building facility for the tram system in Bergen"
+        ]
+      }
+    ]
   },
   "updated": "2026-10-28T20:50:17.673Z"
 }

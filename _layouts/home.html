@@ -149,14 +149,21 @@
         <h2>John Paul Lundberg</h2>
         {% capture t_roles %}{% include txt.html k='hero_items' %}{% endcapture %}{% assign roles = t_roles | split: ',' %}
         <p class="hero-role"><span class="role-rotator" aria-hidden="true">{% for r in roles %}<span class="role{% if forloop.first %} is-active{% endif %}">{{ r | strip }}</span>{% endfor %}</span><span class="visually-hidden">{{ t_roles }}</span></p>
+        {%- assign now_text = site.data.site.now[page.lang] %}{% if now_text == nil or now_text == '' %}{% assign now_text = site.data.site.now.en %}{% endif %}
+        {%- if now_text and now_text != '' %}
+        <p class="hero-now"><span class="now-dot" aria-hidden="true"></span><strong>{{ t.now_title }}:</strong> {{ now_text | escape }}</p>
+        {%- endif %}
+        {%- if site.data.site.cv.on %}
+        <p class="hero-cv"><a class="cv-btn cv-btn-ghost" href="{% if page.lang == 'nb' %}/no/cv/{% else %}/cv/{% endif %}"><i class="bi bi-file-earmark-person"></i> {{ t.cv_download }}</a></p>
+        {%- endif %}
       </div>
     </section><!-- /Hero Section -->
 
     {% comment %} Section order and visibility come from _data/site.json (edited in the dashboard) {% endcomment %}
     {% assign home_sections = site.data.site.sections %}
-    {% if home_sections == nil or home_sections.size == 0 %}{% assign home_sections = "about,resume,projects,articles" | split: "," %}{% endif %}
+    {% if home_sections == nil or home_sections.size == 0 %}{% assign home_sections = "about,resume,courses,projects,articles" | split: "," %}{% endif %}
     {% for s in home_sections %}{% assign s_id = s.id | default: s %}{% assign s_on = true %}{% if s.on == false %}{% assign s_on = false %}{% endif %}
-      {% if s_on %}{% case s_id %}{% when "about" %}{% include home/about.html %}{% when "resume" %}{% include home/resume.html %}{% when "projects" %}{% include home/projects.html %}{% when "articles" %}{% include home/articles.html %}{% endcase %}{% endif %}
+      {% if s_on %}{% case s_id %}{% when "about" %}{% include home/about.html %}{% when "resume" %}{% include home/resume.html %}{% when "courses" %}{% include home/courses.html %}{% when "projects" %}{% include home/projects.html %}{% when "articles" %}{% include home/articles.html %}{% endcase %}{% endif %}
     {% endfor %}
 
     <!-- Contact Section -->
@@ -183,6 +190,12 @@
             <i class="bi bi-linkedin" aria-hidden="true"></i>
             <span><b>LinkedIn</b><small>John Paul Lundberg</small></span>
           </a>
+          {%- if site.data.site.cv.on %}
+          <a class="cc-card" href="{% if page.lang == 'nb' %}/no/cv/{% else %}/cv/{% endif %}">
+            <i class="bi bi-file-earmark-person" aria-hidden="true"></i>
+            <span><b>{{ t.cv_title }}</b><small>{{ t.cv_contact_note }}</small></span>
+          </a>
+          {%- endif %}
         </div>
       </div>
       {% include tally-popup.html %}

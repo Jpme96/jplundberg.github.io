@@ -149,6 +149,12 @@ function cleanSite(s) {
     title: str(j.title, 120), dates: str(j.dates, 60), company: str(j.company, 120), points: (Array.isArray(j.points) ? j.points : []).slice(0, 8).map(p => str(p, 240)).filter(Boolean)
   }));
   const ex = s.experience || {};
+  const edu = l => (Array.isArray(l) ? l : []).slice(0, 12).filter(j => j && typeof j === 'object' && str(j.title, 120)).map(j => ({
+    title: str(j.title, 120), dates: str(j.dates, 60), school: str(j.school, 120), note: str(j.note, 160)
+  }));
+  const lvl = l => (Array.isArray(l) ? l : []).slice(0, 12).filter(x => x && typeof x === 'object' && str(x.name, 60)).map(x => ({ name: str(x.name, 60), level: Math.max(0, Math.min(100, Math.round(Number(x.level) || 0))) }));
+  const words = l => (Array.isArray(l) ? l : []).slice(0, 10).map(x => str(x, 40)).filter(Boolean);
+  const ed = cv.education || {}, sk = cv.skills || {}, lg = cv.languages || {}, hb = cv.hobbies || {}, ct = cv.contact || {};
   return {
     announcement: { on: a.on === true, en: str(a.en, 180), nb: str(a.nb, 180), link },
     sections,
@@ -157,7 +163,9 @@ function cleanSite(s) {
     now: { en: str(now.en, 240), nb: str(now.nb, 240) },
     courses,
     goals,
-    cv: { on: cv.on === true, courses: cv.courses !== false, projects: cv.projects !== false, articles: cv.articles === true, profile: { en: str(prof.en, 1200), nb: str(prof.nb, 1200) } },
+    cv: { on: cv.on === true, courses: cv.courses !== false, projects: cv.projects !== false, articles: cv.articles === true, profile: { en: str(prof.en, 1200), nb: str(prof.nb, 1200) },
+      education: { en: edu(ed.en), nb: edu(ed.nb) }, skills: { en: lvl(sk.en), nb: lvl(sk.nb) }, languages: { en: lvl(lg.en), nb: lvl(lg.nb) }, hobbies: { en: words(hb.en), nb: words(hb.nb) },
+      contact: { phone: str(ct.phone, 30), address: str(ct.address, 120), born: str(ct.born, 40), nationality: str(ct.nationality, 60) } },
     experience: { en: jobs(ex.en), nb: jobs(ex.nb) },
     updated: str(s.updated, 40)
   };

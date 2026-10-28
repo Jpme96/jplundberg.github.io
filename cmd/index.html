@@ -482,6 +482,29 @@
           <div id="cvJobs"></div>
           <div class="form-actions"><button type="button" class="text-btn" id="cvJobsImport">Start from the site’s list</button><span class="spacer"></span><button type="button" class="text-btn" id="cvJobAdd"><i class="bi bi-plus-lg"></i> Add job</button></div>
         </section>
+        <section class="st-group">
+          <h3>Education <span class="muted" id="cvEduNote"></span></h3>
+          <div id="cvEdu"></div>
+          <div class="form-actions"><span class="spacer"></span><button type="button" class="text-btn" id="cvEduAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
+        </section>
+        <section class="st-group">
+          <h3>Skills</h3>
+          <p class="st-sub">One per line, with a level 0–100 after a comma, e.g. <i>Coordination, 85</i>. Shown as bars in the sidebar.</p>
+          <textarea id="cvSkills" rows="5" placeholder="Coordination, 85"></textarea>
+          <h3>Languages</h3>
+          <textarea id="cvLangs" rows="3" placeholder="Norwegian, 100"></textarea>
+          <h3>Interests</h3>
+          <p class="st-sub">One per line.</p>
+          <textarea id="cvHobbies" rows="3" placeholder="Training"></textarea>
+        </section>
+        <section class="st-group">
+          <h3>Contact details on the CV</h3>
+          <p class="st-sub">Email and website are always there. Anything you add here is published to the website’s files, which are public – leave out what you don’t want online.</p>
+          <div class="st-col"><span>Phone</span><input id="cvPhone" class="st-wide" maxlength="30" autocomplete="off"></div>
+          <div class="st-col"><span>Address</span><input id="cvAddress" class="st-wide" maxlength="120" autocomplete="off"></div>
+          <div class="st-col"><span>Born</span><input id="cvBorn" class="st-wide" maxlength="40" placeholder="e.g. 30 June 1996" autocomplete="off"></div>
+          <div class="st-col"><span>Nationality</span><input id="cvNat" class="st-wide" maxlength="60" autocomplete="off"></div>
+        </section>
       </div>
 
       <div class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
@@ -525,7 +548,7 @@
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=4"></script>
   <script src="settings.js?v=18"></script>
-  <script src="website.js?v=5"></script>
+  <script src="website.js?v=6"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
   <script src="budget.js?v=4"></script>

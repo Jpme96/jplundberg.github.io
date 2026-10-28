@@ -68,13 +68,18 @@ en:
   cv_profile: Profile
   cv_experience: Experience
   cv_education: Education
-  cv_skills: Systems
+  cv_skills: Skills
+  cv_contact_note: Experience, education, courses – save as PDF
   cv_languages: Languages
   cv_languages_list: Norwegian (native), English (fluent)
   cv_projects: Selected projects
   cv_articles: Articles
   cv_updated: Updated
   cv_off: The CV is not available right now.
+  cv_hobbies: Interests
+  cv_born: Born
+  cv_nationality: Nationality
+  cv_website: Website
   kind_course: Course
   kind_certificate: Certificate
   kind_book: Book
@@ -163,13 +168,18 @@ nb:
   cv_profile: Profil
   cv_experience: Erfaring
   cv_education: Utdanning
-  cv_skills: Systemer
+  cv_skills: Ferdigheter
+  cv_contact_note: Erfaring, utdanning, kurs – lagre som PDF
   cv_languages: Språk
   cv_languages_list: Norsk (morsmål), engelsk (flytende)
   cv_projects: Utvalgte prosjekter
   cv_articles: Artikler
   cv_updated: Oppdatert
   cv_off: CV-en er ikke tilgjengelig akkurat nå.
+  cv_hobbies: Interesser
+  cv_born: Født
+  cv_nationality: Nasjonalitet
+  cv_website: Nettside
   kind_course: Kurs
   kind_certificate: Sertifikat
   kind_book: Bok

@@ -1,86 +1,104 @@
 ---
 layout: base
 ---
-{% assign lang = page.lang | default: 'en' %}{% assign t = site.data.home[lang] %}{% assign u = site.data.ui[lang] %}{% assign S = site.data.site %}
-{%- if S.cv.on %}
-<section class="page-hero dark-background cv-hero">
+{% assign lang = page.lang | default: 'en' %}{% assign t = site.data.home[lang] %}{% assign u = site.data.ui[lang] %}{% assign S = site.data.site %}{% assign C = S.cv %}
+{%- if C.on %}
+<section class="page-hero page-hero--short dark-background cv-hero">
   <div class="container" data-aos="fade-up">
     <div class="crumbs"><a href="{{ t.url }}">{{ u.crumbs_home }}</a> / {{ t.cv_title }}</div>
-    <h1>John Paul Lundberg</h1>
-    <p class="intro">{% include txt.html k='hero_items' %}</p>
     <p class="cv-actions"><button type="button" class="cv-btn" onclick="window.print()"><i class="bi bi-download"></i> {{ t.cv_print }}</button></p>
   </div>
 </section>
 
-<section class="section">
+<section class="section cv-section">
   <div class="container">
-    <article class="cv" data-aos="fade-up">
-      <header class="cv-head">
-        <img src="/assets/img/my-profile-img-firkant.jpg" alt="" width="96" height="96">
-        <div>
-          <h2>John Paul Lundberg</h2>
-          <p class="cv-roles">{% include txt.html k='hero_items' %}</p>
-          <ul class="cv-contact">
-            <li><i class="bi bi-geo-alt"></i> {% include txt.html k='fact_city' %}</li>
+    <article class="cv2" data-aos="fade-up">
+      <aside class="cv2-side">
+        <div class="cv2-photo"><img src="/assets/img/my-profile-img-firkant.jpg" alt="" width="150" height="150"></div>
+        {%- assign skills = C.skills[lang] %}{% if skills == nil or skills.size == 0 %}{% assign skills = C.skills.en %}{% endif %}
+        {%- if skills and skills.size > 0 %}
+        <h3>{{ t.cv_skills }}</h3>
+        <ul class="cv2-bars">{% for s in skills %}<li><span>{{ s.name | escape }}</span><i style="--p:{{ s.level }}%"></i></li>{% endfor %}</ul>
+        {%- endif %}
+        {%- assign langs = C.languages[lang] %}{% if langs == nil or langs.size == 0 %}{% assign langs = C.languages.en %}{% endif %}
+        {%- if langs and langs.size > 0 %}
+        <h3>{{ t.cv_languages }}</h3>
+        <ul class="cv2-bars">{% for s in langs %}<li><span>{{ s.name | escape }}</span><i style="--p:{{ s.level }}%"></i></li>{% endfor %}</ul>
+        {%- endif %}
+        {%- assign hobbies = C.hobbies[lang] %}{% if hobbies == nil or hobbies.size == 0 %}{% assign hobbies = C.hobbies.en %}{% endif %}
+        {%- if hobbies and hobbies.size > 0 %}
+        <h3>{{ t.cv_hobbies }}</h3>
+        <ul class="cv2-tags">{% for h in hobbies %}<li>{{ h | escape }}</li>{% endfor %}</ul>
+        {%- endif %}
+        <p class="cv2-foot">{{ t.cv_updated }} {{ site.time | date: "%d.%m.%Y" }}<br>jplundberg.com{{ page.url }}</p>
+      </aside>
+
+      <div class="cv2-main">
+        <header class="cv2-head">
+          <h1>John Paul Lundberg</h1>
+          <p class="cv2-roles">{% include txt.html k='hero_items' %}</p>
+          <ul class="cv2-contact">
             <li><i class="bi bi-envelope"></i> <a href="mailto:contact@jplundberg.com">contact@jplundberg.com</a></li>
+            {%- if C.contact.phone != '' %}<li><i class="bi bi-telephone"></i> {{ C.contact.phone | escape }}</li>{% endif %}
+            {%- if C.contact.address != '' %}<li><i class="bi bi-house-door"></i> {{ C.contact.address | escape }}</li>{% else %}<li><i class="bi bi-geo-alt"></i> {% include txt.html k='fact_city' %}</li>{% endif %}
+            {%- if C.contact.born != '' %}<li><i class="bi bi-calendar"></i> {{ C.contact.born | escape }}</li>{% endif %}
+            {%- if C.contact.nationality != '' %}<li><i class="bi bi-flag"></i> {{ C.contact.nationality | escape }}</li>{% endif %}
             <li><i class="bi bi-globe2"></i> <a href="https://jplundberg.com{{ t.url }}">jplundberg.com</a></li>
             {%- assign soc = S.socials | default: site.data.socials_default %}{% for sc in soc %}{% if sc.net == 'linkedin' %}<li><i class="bi bi-linkedin"></i> <a href="{{ sc.url }}">LinkedIn</a></li>{% endif %}{% endfor %}
           </ul>
+        </header>
+
+        {%- assign cvp = C.profile[lang] %}
+        {%- if cvp and cvp != '' %}
+        <h2 class="cv2-h">{{ t.cv_profile }}</h2>
+        <p class="cv2-p">{{ cvp | escape | newline_to_br }}</p>
+        {%- endif %}
+
+        {%- assign jobs = S.experience[lang] %}{% if jobs == nil or jobs.size == 0 %}{% assign jobs = t.jobs %}{% endif %}
+        <h2 class="cv2-h">{{ t.cv_experience }}</h2>
+        {%- for job in jobs %}
+        <div class="cv2-item">
+          <div class="cv2-row"><strong>{{ job.title }}</strong><span>{{ job.dates }}</span></div>
+          <div class="cv2-sub">{{ job.company }}</div>
+          {%- if job.points.size > 0 %}<ul class="cv2-points">{% for p in job.points %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
         </div>
-      </header>
+        {%- endfor %}
 
-      <h3>{{ t.cv_profile }}</h3>
-      {%- assign cvp = S.cv.profile[lang] %}
-      {%- if cvp and cvp != '' %}<p>{{ cvp | escape | newline_to_br }}</p>
-      {%- else %}
-      <p>{% include txt.html k='about_p1' %}</p>
-      <p>{% include txt.html k='about_p2' %}</p>
-      {%- endif %}
+        {%- assign edu = C.education[lang] %}{% if edu == nil or edu.size == 0 %}{% assign edu = C.education.en %}{% endif %}
+        <h2 class="cv2-h">{{ t.cv_education }}</h2>
+        {%- if edu and edu.size > 0 %}
+        {%- for e in edu %}
+        <div class="cv2-item">
+          <div class="cv2-row"><strong>{{ e.title | escape }}</strong><span>{{ e.dates | escape }}</span></div>
+          {%- if e.school != '' %}<div class="cv2-sub">{{ e.school | escape }}{% if e.note != '' %} · {{ e.note | escape }}{% endif %}</div>{% endif %}
+        </div>
+        {%- endfor %}
+        {%- else %}<p class="cv2-p">{% include txt.html k='fact_degree' %}</p>{% endif %}
 
-      <h3>{{ t.cv_experience }}</h3>
-      {%- assign jobs = S.experience[lang] %}{% if jobs == nil or jobs.size == 0 %}{% assign jobs = t.jobs %}{% endif %}
-      {%- for job in jobs %}
-      <div class="cv-job">
-        <div class="cv-job-head"><strong>{{ job.title }}</strong><span>{{ job.dates }}</span></div>
-        <div class="cv-job-org">{{ job.company }}</div>
-        {%- if job.points.size > 0 %}<ul>{% for p in job.points %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+        {%- assign cvc = S.courses | where: "cv", true %}
+        {%- if C.courses and cvc and cvc.size > 0 %}
+        <h2 class="cv2-h">{{ t.courses_title }}</h2>
+        {%- for c in cvc %}
+        <div class="cv2-item"><div class="cv2-row"><strong>{{ c.title | escape }}</strong><span>{{ c.year | escape }}</span></div>{% if c.org != '' %}<div class="cv2-sub">{{ c.org | escape }}</div>{% endif %}</div>
+        {%- endfor %}
+        {%- endif %}
+
+        {%- assign pr = site.projects | where: "lang", lang | sort: "date" | reverse %}
+        {%- if C.projects and pr and pr.size > 0 %}
+        <h2 class="cv2-h">{{ t.cv_projects }}</h2>
+        {%- for p in pr limit: 3 %}
+        <div class="cv2-item"><div class="cv2-row"><strong>{{ p.title }}</strong><span>{{ p.period }}</span></div><div class="cv2-sub">{% if p.organisation %}{{ p.organisation }}{% endif %}{% if p.summary %} · {{ p.summary }}{% endif %}</div></div>
+        {%- endfor %}
+        {%- endif %}
+
+        {%- assign ar = site.articles | where: "lang", lang | sort: "date" | reverse %}
+        {%- if C.articles and ar and ar.size > 0 %}
+        <h2 class="cv2-h">{{ t.cv_articles }}</h2>
+        {%- for a in ar limit: 3 %}
+        <div class="cv2-item"><div class="cv2-row"><strong>{{ a.title }}</strong><span>{{ a.date | date: "%Y" }}</span></div><div class="cv2-sub"><a href="{{ site.url }}{{ a.url }}">jplundberg.com{{ a.url }}</a></div></div>
+        {%- endfor %}
+        {%- endif %}
       </div>
-      {%- endfor %}
-
-      <h3>{{ t.cv_education }}</h3>
-      <p>{% include txt.html k='fact_degree' %}</p>
-
-      {%- assign cvc = S.courses | where: "cv", true %}
-      {%- if S.cv.courses and cvc and cvc.size > 0 %}
-      <h3>{{ t.courses_title }}</h3>
-      <ul class="cv-courses">
-        {%- for c in cvc %}<li><strong>{{ c.title | escape }}</strong>{% if c.org != '' %} · {{ c.org | escape }}{% endif %}{% if c.year != '' %} · {{ c.year | escape }}{% endif %}</li>{% endfor %}
-      </ul>
-      {%- endif %}
-
-      <h3>{{ t.cv_skills }}</h3>
-      <p>Plania · Curotech · Famac · Propely</p>
-
-      <h3>{{ t.cv_languages }}</h3>
-      <p>{{ t.cv_languages_list }}</p>
-
-      {%- assign pr = site.projects | where: "lang", lang | where_exp: "p", "p.published != false" | sort: "date" | reverse %}
-      {%- if S.cv.projects and pr and pr.size > 0 %}
-      <h3>{{ t.cv_projects }}</h3>
-      <ul class="cv-list">
-        {%- for p in pr limit: 4 %}<li><strong>{{ p.title }}</strong>{% if p.organisation %} · {{ p.organisation }}{% endif %}{% if p.period %} · {{ p.period }}{% endif %}{% if p.summary %}<br><span>{{ p.summary }}</span>{% endif %}</li>{% endfor %}
-      </ul>
-      {%- endif %}
-
-      {%- assign ar = site.articles | where: "lang", lang | where_exp: "a", "a.published != false" | sort: "date" | reverse %}
-      {%- if S.cv.articles and ar and ar.size > 0 %}
-      <h3>{{ t.cv_articles }}</h3>
-      <ul class="cv-list">
-        {%- for a in ar limit: 4 %}<li><strong>{{ a.title }}</strong> · <a href="{{ site.url }}{{ a.url }}">jplundberg.com{{ a.url }}</a></li>{% endfor %}
-      </ul>
-      {%- endif %}
-
-      <p class="cv-foot">{{ t.cv_updated }} {{ site.time | date: "%d.%m.%Y" }} · jplundberg.com{{ page.url }}</p>
     </article>
   </div>
 </section>

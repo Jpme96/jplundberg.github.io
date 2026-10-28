@@ -15,7 +15,7 @@
     projects: ['kanban', 'Projects'], articles: ['journal-text', 'Latest articles']
   };
   var EDIT_PAGES = ['announce', 'sections', 'featured', 'socials', 'courses', 'progress', 'cv'];
-  var cvLang = 'en', jobEdit = null;
+  var cvLang = 'en', jobEdit = null, eduEdit = null;
   var DEFAULT_SOCIALS = [{ net: 'linkedin', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' }, { net: 'instagram', url: 'https://www.instagram.com/jp.lundberg.official/' }];
   /* each page has its own Publish button; what it publishes, in words */
   var PART = { announce: [['announcement'], 'Announcement'], sections: [['sections', 'now'], 'Front page'], featured: [['featured'], 'Featured'], socials: [['socials'], 'Socials'],
@@ -118,6 +118,8 @@
     if (document.activeElement !== $('wsNowNb')) $('wsNowNb').value = draft.now.nb || '';
     draft.cv = draft.cv || { on: false, courses: true, projects: true, articles: false };
     draft.cv.profile = draft.cv.profile || { en: '', nb: '' };
+    ['education', 'skills', 'languages', 'hobbies'].forEach(function (k) { draft.cv[k] = draft.cv[k] || { en: [], nb: [] }; });
+    draft.cv.contact = draft.cv.contact || { phone: '', address: '', born: '', nationality: '' };
     draft.experience = draft.experience || { en: [], nb: [] };
     $('wsCvOn').checked = !!draft.cv.on; $('wsCvCourses').checked = draft.cv.courses !== false; $('wsCvProjects').checked = draft.cv.projects !== false; $('wsCvArticles').checked = !!draft.cv.articles;
     fillCv();
@@ -158,7 +160,52 @@
         '<span class="ws-tools"><button type="button" data-jmove="' + i + ':-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-chevron-up"></i></button><button type="button" data-jmove="' + i + ':1" aria-label="Move down"' + (i === jobs.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>' +
         '<button type="button" class="del" data-jdel="' + i + '" aria-label="Remove"><i class="bi bi-x"></i></button></span></div>';
     }).join('') + (jobEdit === 'new' ? jobForm(null, 'new') : '');
+    /* education, skills, languages, interests, contact */
+    var edu = draft.cv.education[cvLang] || [];
+    $('cvEduNote').textContent = edu.length ? edu.length + ' entr' + (edu.length === 1 ? 'y' : 'ies') : '';
+    $('cvEdu').innerHTML = edu.map(function (e, i) {
+      if (eduEdit === i) return eduForm(e, i);
+      return '<div class="st-row ws-job"><button type="button" class="b-open" data-eedit="' + i + '"><span>' + esc(e.title) + '</span><small class="muted">' + esc([e.school, e.dates].filter(Boolean).join(' · ')) + '</small></button>' +
+        '<span class="ws-tools"><button type="button" data-emove="' + i + ':-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '><i class="bi bi-chevron-up"></i></button><button type="button" data-emove="' + i + ':1" aria-label="Move down"' + (i === edu.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>' +
+        '<button type="button" class="del" data-edel="' + i + '" aria-label="Remove"><i class="bi bi-x"></i></button></span></div>';
+    }).join('') + (eduEdit === 'new' ? eduForm(null, 'new') : '');
+    var lines = function (l) { return (l || []).map(function (x) { return x.name + ', ' + x.level; }).join('\n'); };
+    if (document.activeElement !== $('cvSkills')) $('cvSkills').value = lines(draft.cv.skills[cvLang]);
+    if (document.activeElement !== $('cvLangs')) $('cvLangs').value = lines(draft.cv.languages[cvLang]);
+    if (document.activeElement !== $('cvHobbies')) $('cvHobbies').value = (draft.cv.hobbies[cvLang] || []).join('\n');
+    [['cvPhone', 'phone'], ['cvAddress', 'address'], ['cvBorn', 'born'], ['cvNat', 'nationality']].forEach(function (x) { if (document.activeElement !== $(x[0])) $(x[0]).value = draft.cv.contact[x[1]] || ''; });
   }
+  function eduForm(e, i) {
+    return '<form class="ws-jobform" data-ei="' + i + '">' +
+      '<input name="title" placeholder="e.g. FDV Technician" value="' + esc(e ? e.title : '') + '" required autocomplete="off">' +
+      '<div class="row2"><input name="school" placeholder="School" value="' + esc(e ? e.school : '') + '" autocomplete="off"><input name="dates" placeholder="Dates" value="' + esc(e ? e.dates : '') + '" autocomplete="off"></div>' +
+      '<input name="note" placeholder="Note (optional)" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-ecancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';
+  }
+  function levels(text) {
+    return String(text || '').split('\n').map(function (l) { var m = l.match(/^(.*?)(?:[,;:\s]\s*(\d{1,3})\s*%?)?\s*$/); return m && m[1].trim() ? { name: m[1].trim().slice(0, 60), level: Math.max(0, Math.min(100, +m[2] || 80)) } : null; }).filter(Boolean).slice(0, 12);
+  }
+  $('cvSkills').addEventListener('input', function () { draft.cv.skills[cvLang] = levels(this.value); changed(); });
+  $('cvLangs').addEventListener('input', function () { draft.cv.languages[cvLang] = levels(this.value); changed(); });
+  $('cvHobbies').addEventListener('input', function () { draft.cv.hobbies[cvLang] = this.value.split('\n').map(function (x) { return x.trim().slice(0, 40); }).filter(Boolean).slice(0, 10); changed(); });
+  [['cvPhone', 'phone'], ['cvAddress', 'address'], ['cvBorn', 'born'], ['cvNat', 'nationality']].forEach(function (x) { $(x[0]).addEventListener('input', function () { draft.cv.contact[x[1]] = this.value.trim(); changed(); }); });
+  $('cvEduAdd').addEventListener('click', function () { eduEdit = 'new'; fillCv(); var f = $('cvEdu').querySelector('input[name=title]'); if (f) f.focus(); });
+  $('cvEdu').addEventListener('click', function (e) {
+    var b;
+    if ((b = e.target.closest('[data-eedit]'))) { eduEdit = +b.dataset.eedit; fillCv(); return; }
+    if (e.target.closest('[data-ecancel]')) { eduEdit = null; fillCv(); return; }
+    if ((b = e.target.closest('[data-edel]'))) { draft.cv.education[cvLang].splice(+b.dataset.edel, 1); eduEdit = null; fillCv(); changed(); return; }
+    if ((b = e.target.closest('[data-emove]'))) { var p = b.dataset.emove.split(':'), i = +p[0], j = i + +p[1], l = draft.cv.education[cvLang]; if (j < 0 || j >= l.length) return; var x = l[i]; l[i] = l[j]; l[j] = x; fillCv(); changed(); }
+  });
+  $('cvEdu').addEventListener('submit', function (e) {
+    var f = e.target.closest('.ws-jobform'); if (!f || f.dataset.ei == null) return;
+    e.preventDefault();
+    var en = { title: f.title.value.trim(), school: f.school.value.trim(), dates: f.dates.value.trim(), note: f.note.value.trim() };
+    if (!en.title) { f.title.focus(); return; }
+    var l = draft.cv.education[cvLang];
+    if (f.dataset.ei === 'new') l.push(en); else l[+f.dataset.ei] = en;
+    eduEdit = null; fillCv(); changed();
+  });
   function jobForm(j, i) {
     return '<form class="ws-jobform" data-ji="' + i + '">' +
       '<input name="title" placeholder="Title, e.g. FDVU Advisor" value="' + esc(j ? j.title : '') + '" required autocomplete="off">' +
@@ -166,7 +213,7 @@
       '<textarea name="points" rows="3" placeholder="What you did – one point per line">' + esc(j && j.points ? j.points.join('\n') : '') + '</textarea>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-jcancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
   }
-  $('cvLang').addEventListener('click', function (e) { var b = e.target.closest('[data-lang]'); if (!b) return; cvLang = b.dataset.lang; jobEdit = null; fillCv(); });
+  $('cvLang').addEventListener('click', function (e) { var b = e.target.closest('[data-lang]'); if (!b) return; cvLang = b.dataset.lang; jobEdit = null; eduEdit = null; fillCv(); });
   $('cvProfile').addEventListener('input', function () { draft.cv.profile[cvLang] = this.value; changed(); });
   $('cvJobsImport').addEventListener('click', function () {
     draft.experience[cvLang] = clone(content.jobs[cvLang]).map(function (j) { return { title: j.title || '', dates: j.dates || '', company: j.company || '', points: j.points || [] }; });

@@ -48,9 +48,6 @@
             {% endfor %}
           </div>
 
-          {%- if site.data.site.cv.on %}
-          <p class="cv-link" data-aos="fade-up" data-aos-delay="120"><a class="cv-btn" href="{% if page.lang == 'nb' %}/no/cv/{% else %}/cv/{% endif %}"><i class="bi bi-file-earmark-person"></i> {{ t.cv_download }}</a></p>
-          {%- endif %}
           <div class="systems" data-aos="fade-up" data-aos-delay="150">
             <h3 class="resume-title">{{ t.systems_title }}</h3>
             <ul class="system-tags">
