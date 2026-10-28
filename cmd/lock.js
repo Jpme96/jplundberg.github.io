@@ -302,13 +302,14 @@
     if (key && hiddenAt && Date.now() - hiddenAt > AWAY_MS) { lock(); return; }
     if (key) sync();
   });
-  setInterval(function () { if (key && !document.hidden) sync(); }, 2 * 60 * 1000);
+  setInterval(function () { if (key && !document.hidden) sync(); }, 60 * 1000);
+  document.addEventListener('click', function (e) { if (key && e.target.closest('#syncState')) sync(); });
   window.addEventListener('online', function () { if (key) sync(); });
   /* To-dos, notes, goals and links changed: include them in the encrypted vault. */
   window.addEventListener('dash:local', function () { if (key) window.Vault.save(data); });
 
   /* ---------- sync with Cloudflare ---------- */
-  function setSync(state) {
+  function setSync(state, why) {
     syncState = state;
     var el = $('syncState');
     if (!el) return;
@@ -318,7 +319,7 @@
       busy: '<i class="bi bi-arrow-repeat spin"></i> Syncing…',
       ok: '<i class="bi bi-cloud-check"></i> Synced across your devices · ' + t,
       offline: '<i class="bi bi-cloud-slash"></i> Offline. Changes sync when you’re back online'
-    }[state];
+    }[state] + (why ? '<span class="sync-why">' + why + ' · tap to retry</span>' : '');
     el.className = 'sync sync-' + state;
   }
 
@@ -327,9 +328,25 @@
     return fetch(API, { cache: 'no-store', credentials: 'same-origin', headers: { accept: 'application/json' } })
       .then(function (r) {
         var isJson = (r.headers.get('content-type') || '').indexOf('json') > -1;
-        if (!isJson) { available = false; setSync('off'); return undefined; }   // worker not set up
+        if (!isJson) {
+          available = false;
+          return r.text().then(function (t) {
+            /* Tells you which part of the Cloudflare setup is missing. */
+            var why = /hello world/i.test(t) ? 'Sync worker still has the Hello World code. Paste in the sync code and deploy'
+              : r.status === 404 ? 'Sync route not active (jplundberg.com/cmd/api/*)'
+              : 'Sync worker didn’t answer (' + r.status + ')';
+            setSync('off', why);
+            return undefined;
+          });
+        }
         if (r.status === 404) { available = true; remoteRev = null; return null; }  // set up, but empty
-        if (!r.ok) { available = r.status !== 401 && available; setSync(r.status === 401 ? 'off' : 'offline'); return undefined; }
+        if (!r.ok) {
+          available = false;
+          setSync('off', r.status === 401 ? 'Sync refused the login. Check TEAM_DOMAIN and POLICY_AUD'
+            : r.status === 503 ? 'Sync worker is missing VAULT, TEAM_DOMAIN or POLICY_AUD'
+            : 'Sync error ' + r.status);
+          return undefined;
+        }
         available = true;
         return r.json().then(function (v) {
           if (!isVault(v)) return undefined;
@@ -337,7 +354,11 @@
           return v;
         });
       })
-      .catch(function () { setSync(available ? 'offline' : 'off'); return undefined; });
+      .catch(function () {
+        if (available) setSync('offline');
+        else setSync('off', navigator.onLine === false ? 'No internet' : 'Cloudflare login expired. Reload the page');
+        return undefined;
+      });
   }
 
   /* Takes a newer version from another device. */
@@ -395,7 +416,8 @@
       }).then(function (r) {
         if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); return; }
         if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
-        setSync(r.status === 401 ? 'off' : 'offline');
+        if (r.status === 401 || r.status === 503) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
+        else setSync('offline');
       });
     }).catch(function () { setSync('offline'); })
       .then(function () { pushing = false; });

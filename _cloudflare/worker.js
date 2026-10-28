@@ -20,8 +20,11 @@ export default {
     if (!env.VAULT || !env.TEAM_DOMAIN || !env.POLICY_AUD) {
       return json({ error: 'worker not configured' }, 503);
     }
-    const ok = await verifyAccess(request, env).catch(() => false);
-    if (!ok) return json({ error: 'unauthorized' }, 401);
+    const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
+    if (!check.ok) {
+      console.log('unauthorized', check);
+      return json({ error: 'unauthorized', ...check }, 401);
+    }
 
     if (request.method === 'GET') {
       const v = await env.VAULT.get(KEY);
@@ -61,26 +64,29 @@ let certCache = { at: 0, keys: [] };
 
 async function verifyAccess(request, env) {
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
-  if (!token) return false;
+  if (!token) return { ok: false, reason: 'no Access token on the request (is the Access app covering /cmd?)' };
   const [h, p, s] = token.split('.');
-  if (!h || !p || !s) return false;
+  if (!h || !p || !s) return { ok: false, reason: 'malformed token' };
   const header = JSON.parse(dec(h));
   const payload = JSON.parse(dec(p));
 
-  const team = env.TEAM_DOMAIN.replace(/\/$/, '');
+  const team = env.TEAM_DOMAIN.trim().replace(/\/+$/, '');
+  const wantAud = env.POLICY_AUD.trim();
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (payload.iss !== team) return false;
-  if (!aud.includes(env.POLICY_AUD)) return false;
-  if (!payload.exp || payload.exp * 1000 < Date.now()) return false;
+  if (payload.iss !== team) return { ok: false, reason: 'TEAM_DOMAIN does not match', expected: payload.iss, configured: team };
+  if (!aud.includes(wantAud)) return { ok: false, reason: 'POLICY_AUD does not match', expected: aud, configured: wantAud };
+  if (!payload.exp || payload.exp * 1000 < Date.now()) return { ok: false, reason: 'login expired, reload the page' };
 
   if (Date.now() - certCache.at > 3600 * 1000 || !certCache.keys.some(k => k.kid === header.kid)) {
     const res = await fetch(team + '/cdn-cgi/access/certs');
     certCache = { at: Date.now(), keys: (await res.json()).keys || [] };
   }
   const jwk = certCache.keys.find(k => k.kid === header.kid);
-  if (!jwk) return false;
-  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-  return crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(s), new TextEncoder().encode(h + '.' + p));
+  if (!jwk) return { ok: false, reason: 'signing key not found' };
+  const { alg, use, kid, ...pub } = jwk;
+  const key = await crypto.subtle.importKey('jwk', pub, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
+  const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(s), new TextEncoder().encode(h + '.' + p));
+  return valid ? { ok: true } : { ok: false, reason: 'bad signature' };
 }
 
 function b64url(s) { return s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '='); }

@@ -677,6 +677,8 @@ select option { background: #17181b; }
 .foot { line-height: 1.9; }
 .sync-offline i { color: #c98500; }
 .sync-off i { color: var(--muted); }
+.sync { cursor: pointer; }
+.sync-why { display: block; font-size: 12px; color: #c98500; line-height: 1.4; margin: 2px 0 4px; }
 .spin { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
