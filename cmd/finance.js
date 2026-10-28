@@ -4,6 +4,7 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
+  if (!$('budgetBody')) return;           // the cards live on the Finances page
   var NS = 'http://www.w3.org/2000/svg';
 
   var CATS = [
@@ -63,14 +64,16 @@
   /* ---------- Hide amounts (for when someone looks over your shoulder) ---------- */
   function setHidden(on) {
     document.body.classList.toggle('fin-hidden', on);
+    if (!$('finHide')) return;
     $('finHide').innerHTML = '<i class="bi bi-eye' + (on ? '-slash' : '') + '"></i>';
     $('finHide').setAttribute('aria-label', on ? 'Show amounts' : 'Hide amounts');
     try { localStorage.setItem('dash.finHide', on ? '1' : '0'); } catch (e) {}
   }
-  $('finHide').addEventListener('click', function () {
-    setHidden(!document.body.classList.contains('fin-hidden'));
-  });
-  try { setHidden(localStorage.getItem('dash.finHide') === '1'); } catch (e) { setHidden(false); }
+  if ($('finHide') && !$('finHide').dataset.bound) {
+    $('finHide').dataset.bound = '1';
+    $('finHide').addEventListener('click', function () { setHidden(!document.body.classList.contains('fin-hidden')); });
+    try { setHidden(localStorage.getItem('dash.finHide') === '1'); } catch (e) { setHidden(false); }
+  }
 
   /* ================= Budget ================= */
   function monthSpent(key) {

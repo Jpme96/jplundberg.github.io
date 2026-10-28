@@ -96,8 +96,11 @@
     $('finHide').setAttribute('aria-label', on ? 'Show amounts' : 'Hide amounts');
     try { localStorage.setItem('dash.finHide', on ? '1' : '0'); } catch (e) {}
   }
-  $('finHide').addEventListener('click', function () { setHidden(!document.body.classList.contains('fin-hidden')); });
-  try { setHidden(localStorage.getItem('dash.finHide') === '1'); } catch (e) { setHidden(false); }
+  if (!$('finHide').dataset.bound) {
+    $('finHide').dataset.bound = '1';
+    $('finHide').addEventListener('click', function () { setHidden(!document.body.classList.contains('fin-hidden')); });
+    try { setHidden(localStorage.getItem('dash.finHide') === '1'); } catch (e) { setHidden(false); }
+  }
 
   /* ---------- period filter ---------- */
   function setPeriod(p) {
@@ -156,9 +159,9 @@
 
     var T = [
       { i: 'wallet2', l: 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
-        s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget on the dashboard' },
+        s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget above' },
       { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income) : '–',
-        s: !income ? 'Add your salary on the dashboard'
+        s: !income ? 'Add your salary under Monthly budget'
           : inc.gross ? 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name.toLowerCase()) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '')
           : pay ? (pay.days === 0 ? esc(pay.title) + ' today' : esc(pay.title) + ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' day' + (pay.days === 1 ? '' : 's')) : 'Net, after tax' },
       { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years'), v: money(spentP),
@@ -166,9 +169,9 @@
       { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %',
         s: rate === null ? 'Needs your income' : 'of net income left after fixed costs and spending' },
       { i: 'calendar-event', l: 'Next payday', v: pay ? (pay.days === 0 ? 'Today' : pay.days === 1 ? 'Tomorrow' : 'In ' + pay.days + ' days') : '–',
-        s: pay ? esc(pay.title) + ' · ' + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + (pay.net ? ' · ' + esc(kr(pay.net)) : '') : 'Give your income a payday on the dashboard' },
+        s: pay ? esc(pay.title) + ' · ' + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + (pay.net ? ' · ' + esc(kr(pay.net)) : '') : 'Give your income a payday under Monthly budget' },
       { i: 'graph-up-arrow', l: 'Net worth', v: D.accounts.length ? money(nw, nw < 0 ? 'neg' : '') : '–',
-        s: change === null ? (D.accounts.length ? 'History builds month by month' : 'Add accounts on the dashboard')
+        s: change === null ? (D.accounts.length ? 'History builds month by month' : 'Add accounts under Net worth')
           : '<span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) }
     ];
     $('fpTiles').innerHTML = T.map(function (t) {
@@ -289,7 +292,7 @@
       ? (acc <= expected
         ? '<span class="up">' + money(expected - acc) + ' under</span> an even pace for ' + esc(mName(NOW, true).split(' ')[0]) + '.'
         : '<span class="down">' + money(acc - expected) + ' over</span> an even pace for ' + esc(mName(NOW, true).split(' ')[0]) + '.')
-      : 'Add income and fixed costs on the dashboard to compare with a budget.';
+      : 'Add income and fixed costs under Monthly budget to compare with a budget.';
     if (!acc && !(spendable > 0)) { el.innerHTML = '<p class="fp-empty">No spending this month yet.</p>'; return; }
 
     var W = Math.max(280, el.clientWidth || 500), H = 190;
@@ -353,6 +356,7 @@
     return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
   }
   function net() {
+    if (!$('fpNet')) return;               // the editable Net worth card is on the page instead
     var accs = D.accounts || [];
     var nw = netWorth();
     $('fpNet').innerHTML = accs.length ? money(nw, nw < 0 ? 'neg' : '') : '';
@@ -405,6 +409,7 @@
 
   /* Savings goals */
   function goals() {
+    if (!$('fpGoals')) return;
     var list = D.savings || [];
     if (!list.length) { $('fpGoals').innerHTML = '<li class="fp-empty">No savings goals yet. Add them on the dashboard.</li>'; return; }
     $('fpGoals').innerHTML = list.map(function (g) {
@@ -463,6 +468,6 @@
   window.Vault.onLock(function () {
     D = null;
     hideTip();
-    ['fpTiles', 'fpMonths', 'fpMonthsTable', 'fpPace', 'fpCats', 'fpNet', 'fpNetSub', 'fpNetChart', 'fpAccs', 'fpGoals', 'fpTop'].forEach(function (id) { $(id).innerHTML = ''; });
+    ['fpTiles', 'fpMonths', 'fpMonthsTable', 'fpPace', 'fpCats', 'fpNet', 'fpNetSub', 'fpNetChart', 'fpAccs', 'fpGoals', 'fpTop'].forEach(function (id) { if ($(id)) $(id).innerHTML = ''; });
   });
 })();

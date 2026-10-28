@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=54" rel="stylesheet">
+  <link href="styles.css?v=55" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -161,6 +161,11 @@
       </section>
       <!-- Training & habits -->
       <section class="card flex" id="flexCard" hidden></section>
+      <!-- Money: what's left, the next payday and bills due soon (everything else is on the Finances page) -->
+      <section class="card money" id="fin">
+        <div class="card-head"><h2><i class="bi bi-wallet2"></i> Money</h2><div class="head-actions"><button class="icon-btn sm" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button><a class="text-btn" href="finance/">Open <i class="bi bi-chevron-right"></i></a></div></div>
+        <div id="moneyBody"></div>
+      </section>
       <section class="card habits" id="habitsCard">
         <div class="card-head"><h2><i class="bi bi-activity"></i> This week</h2>
           <div class="head-actions"><a class="text-btn" href="habits/">Details</a><button class="text-btn" id="hbAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div></div>
@@ -241,99 +246,6 @@
   </main>
 
   <!-- Finances (encrypted with your passcode) -->
-  <section class="fin" id="fin" aria-labelledby="finTitle">
-    <div class="fin-head sec-head">
-      <h2 id="finTitle" class="sec-title"><i class="bi bi-wallet2"></i> Finances</h2>
-      <div class="top-actions">
-        <a class="fin-open" href="finance/"><i class="bi bi-bar-chart-line"></i> Statistics</a>
-        <button class="icon-btn" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button>
-      </div>
-    </div>
-
-
-    <div class="fin-grid">
-      <!-- Budget -->
-      <section class="card budget">
-        <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
-        <div id="budgetBody"></div>
-      </section>
-
-      <!-- Upcoming bills -->
-      <section class="card bills">
-        <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Upcoming bills</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
-        <div id="billsBody"></div>
-      </section>
-
-      <!-- Spending -->
-      <section class="card spending">
-        <div class="card-head">
-          <h2><i class="bi bi-receipt"></i> Spending</h2>
-          <div class="month-nav">
-            <button type="button" id="spPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
-            <span id="spMonth"></span>
-            <button type="button" id="spNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
-          </div>
-        </div>
-        <form class="inline-form sp-form" id="spForm">
-          <div class="row2">
-            <input id="spAmount" placeholder="Amount, kr" inputmode="decimal" autocomplete="off" required>
-            <select id="spCat" aria-label="Category"></select>
-          </div>
-          <div class="add-row">
-            <input id="spNote" placeholder="What was it? (optional)" autocomplete="off">
-            <input id="spDate" type="date" aria-label="Date">
-            <button class="pill-btn" type="submit" aria-label="Add expense"><i class="bi bi-plus-lg"></i></button>
-          </div>
-        </form>
-        <div id="spChart"></div>
-        <ul class="tx-list" id="spList"></ul>
-        <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
-      </section>
-
-      <!-- Savings goals -->
-      <section class="card savings">
-        <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
-        <form class="inline-form" id="svForm" hidden>
-          <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
-          <div class="row2">
-            <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
-            <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
-          </div>
-          <div class="form-actions">
-            <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
-            <span class="spacer"></span>
-            <button type="button" class="text-btn" id="svCancel">Cancel</button>
-            <button type="submit" class="pill-btn">Save</button>
-          </div>
-        </form>
-        <ul class="goal-list" id="svList"></ul>
-        <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
-      </section>
-
-      <!-- Net worth -->
-      <section class="card networth">
-        <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
-        <form class="inline-form" id="nwForm" hidden>
-          <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
-          <div class="row2">
-            <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
-            <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="text-btn danger" id="nwDelete" hidden>Delete</button>
-            <span class="spacer"></span>
-            <button type="button" class="text-btn" id="nwCancel">Cancel</button>
-            <button type="submit" class="pill-btn">Save</button>
-          </div>
-        </form>
-        <div class="big-num" id="nwBig"></div>
-        <div class="muted" id="nwSub"></div>
-        <div id="nwChart"></div>
-        <ul class="acc-list" id="nwList"></ul>
-        <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
-      </section>
-    </div>
-  </section>
 
   <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
   <!-- Settings -->
@@ -558,17 +470,17 @@
 
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=4"></script>
-  <script src="settings.js?v=17"></script>
+  <script src="settings.js?v=18"></script>
   <script src="website.js?v=3"></script>
   <script src="texts.js?v=1"></script>
   <script src="script.js?v=10"></script>
   <script src="budget.js?v=1"></script>
-  <script src="finance.js?v=10"></script>
+  <script src="money.js?v=1"></script>
   <script src="places.js?v=2"></script>
   <script src="today.js?v=5"></script>
   <script src="flow.js?v=2"></script>
   <script src="calendar/cal-core.js?v=7"></script>
-  <script src="calendar/cal-settings.js?v=17"></script>
+  <script src="calendar/cal-settings.js?v=18"></script>
   <script src="cal-card.js?v=2"></script>
   <script src="upnext.js?v=2"></script>
   <script src="review.js?v=3"></script>
@@ -577,8 +489,10 @@
   <script src="tools.js?v=3"></script>
   <script src="profile.js?v=8"></script>
   <script src="links.js?v=3"></script>
-  <script src="search.js?v=3"></script>
+  <script src="search.js?v=4"></script>
   <script src="app.js?v=2"></script>
+  <script src="quick.js?v=1"></script>
+  <script src="tidy.js?v=1"></script>
   <script src="nav.js?v=16"></script>
 </body>
 </html>

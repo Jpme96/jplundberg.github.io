@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=54" rel="stylesheet">
+  <link href="../styles.css?v=55" rel="stylesheet">
   <link href="fin.css?v=7" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
 </head>
@@ -106,9 +106,96 @@
     <div class="fp-hero">
       <p class="fp-kicker"><i class="bi bi-wallet2"></i> Private</p>
       <h1>Finances</h1>
-      <p class="muted" id="fpSub">Your budget, spending and net worth at a glance.</p>
+      <p class="muted" id="fpSub">Budget, bills, what you spend and what you own – and the statistics behind it.</p>
     </div>
 
+  <section class="fin fp-fin" id="fin" aria-label="Budget, bills and spending">
+
+      <div class="fin-grid">
+        <!-- Budget -->
+        <section class="card budget">
+          <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
+          <div id="budgetBody"></div>
+        </section>
+
+        <!-- Upcoming bills -->
+        <section class="card bills">
+          <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Upcoming bills</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
+          <div id="billsBody"></div>
+        </section>
+
+        <!-- Spending -->
+        <section class="card spending">
+          <div class="card-head">
+            <h2><i class="bi bi-receipt"></i> Spending</h2>
+            <div class="month-nav">
+              <button type="button" id="spPrev" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+              <span id="spMonth"></span>
+              <button type="button" id="spNext" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+            </div>
+          </div>
+          <form class="inline-form sp-form" id="spForm">
+            <div class="row2">
+              <input id="spAmount" placeholder="Amount, kr" inputmode="decimal" autocomplete="off" required>
+              <select id="spCat" aria-label="Category"></select>
+            </div>
+            <div class="add-row">
+              <input id="spNote" placeholder="What was it? (optional)" autocomplete="off">
+              <input id="spDate" type="date" aria-label="Date">
+              <button class="pill-btn" type="submit" aria-label="Add expense"><i class="bi bi-plus-lg"></i></button>
+            </div>
+          </form>
+          <div id="spChart"></div>
+          <ul class="tx-list" id="spList"></ul>
+          <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
+        </section>
+
+        <!-- Savings goals -->
+        <section class="card savings">
+          <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <form class="inline-form" id="svForm" hidden>
+            <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
+            <div class="row2">
+              <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
+              <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
+            </div>
+            <div class="form-actions">
+              <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
+              <span class="spacer"></span>
+              <button type="button" class="text-btn" id="svCancel">Cancel</button>
+              <button type="submit" class="pill-btn">Save</button>
+            </div>
+          </form>
+          <ul class="goal-list" id="svList"></ul>
+          <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
+        </section>
+
+        <!-- Net worth -->
+        <section class="card networth">
+          <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
+          <form class="inline-form" id="nwForm" hidden>
+            <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
+            <div class="row2">
+              <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
+              <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="text-btn danger" id="nwDelete" hidden>Delete</button>
+              <span class="spacer"></span>
+              <button type="button" class="text-btn" id="nwCancel">Cancel</button>
+              <button type="submit" class="pill-btn">Save</button>
+            </div>
+          </form>
+          <div class="big-num" id="nwBig"></div>
+          <div class="muted" id="nwSub"></div>
+          <div id="nwChart"></div>
+          <ul class="acc-list" id="nwList"></ul>
+          <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
+        </section>
+      </div>
+    </section>
+
+    <div class="sec-head fp-stats-head"><h2 class="sec-title" id="fpStatsTitle"><i class="bi bi-bar-chart-line"></i> Statistics</h2></div>
     <div class="fp-filter" role="group" aria-label="Period">
       <div class="seg" id="fpPeriod">
         <button type="button" data-period="month">This month</button>
@@ -142,18 +229,7 @@
         <ul class="fp-cats" id="fpCats"></ul>
       </section>
 
-      <section class="card fp-card">
-        <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2></div>
-        <div class="fp-big" id="fpNet"></div>
-        <div class="muted" id="fpNetSub"></div>
-        <div class="fp-chart" id="fpNetChart"></div>
-        <ul class="fp-accs" id="fpAccs"></ul>
-      </section>
 
-      <section class="card fp-card">
-        <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2></div>
-        <ul class="fp-goals" id="fpGoals"></ul>
-      </section>
 
       <section class="card fp-card fp-wide2">
         <div class="card-head"><h2><i class="bi bi-receipt"></i> Biggest expenses</h2><span class="muted" id="fpTopNote"></span></div>
@@ -166,7 +242,7 @@
       <div data-tool="warranty" hidden></div>
     </div>
 
-    <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Encrypted with your passcode · <a href="../">Add spending on the dashboard</a></p>
+    <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
   </main>
 
   <div class="fp-tip" id="fpTip" role="tooltip" hidden></div>
@@ -174,13 +250,15 @@
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=4"></script>
   <script src="../budget.js?v=1"></script>
-  <script src="fin.js?v=8"></script>
+  <script src="../finance.js?v=11"></script>
+  <script src="fin.js?v=9"></script>
   <script src="../kit.js?v=2"></script>
   <script src="../tools.js?v=3"></script>
   <script src="../profile.js?v=8"></script>
   <script src="../links.js?v=3"></script>
-  <script src="../search.js?v=3"></script>
+  <script src="../search.js?v=4"></script>
   <script src="../app.js?v=2"></script>
+  <script src="../quick.js?v=1"></script>
   <script src="../nav.js?v=16"></script>
 </body>
 </html>

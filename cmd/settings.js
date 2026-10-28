@@ -18,17 +18,15 @@
   };
   var CARDS = [
     ['brief', 'At a glance'], ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
-    ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes'],
-    ['bills', 'Upcoming bills'], ['fin', 'Finances']
+    ['fin', 'Money'], ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes']
   ];
   /* Cards can be moved within their section; finances keep their own layout */
   var GROUPS = [
-    { id: 'today', name: 'Today', cards: ['brief', 'weather', 'calendar', 'transit', 'habits', 'flex'], move: true },
-    { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true },
-    { id: 'money', name: 'Finances', cards: ['fin', 'bills'] }
+    { id: 'today', name: 'Today', cards: ['brief', 'weather', 'calendar', 'transit', 'habits', 'flex', 'fin'], move: true },
+    { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true }
   ];
   /* cards that belong to a part you can switch off in Settings → Features */
-  var CARD_FEATURE = { calendar: 'calendar', transit: 'travel', habits: 'habits', flex: 'flex', fin: 'finance', bills: 'finance' };
+  var CARD_FEATURE = { calendar: 'calendar', transit: 'travel', habits: 'habits', flex: 'flex', fin: 'finance' };
   function featureOn(id) { return !window.Features || !CARD_FEATURE[id] || window.Features.on(CARD_FEATURE[id]); }
   var CARD_NAME = {};
   CARDS.forEach(function (c) { CARD_NAME[c[0]] = c[1]; });
