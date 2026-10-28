@@ -836,3 +836,92 @@
 .article-body .article-figure .bars {
   font-size: 15px;
 }
+
+/*--------------------------------------------------------------
+# Home page teasers: compact cards, swipeable row on phones
+--------------------------------------------------------------*/
+#projects .project-card-link .thumb,
+#articles .article-card .thumb {
+  height: 120px;
+}
+
+.project-card-link p,
+.article-card p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  #projects .project-cards,
+  #articles .article-cards {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 16px;
+    margin: 0 -16px;
+    padding: 4px 16px 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #projects .project-cards::-webkit-scrollbar,
+  #articles .article-cards::-webkit-scrollbar {
+    display: none;
+  }
+
+  #projects .project-cards > *,
+  #articles .article-cards > * {
+    flex: 0 0 82%;
+    scroll-snap-align: start;
+  }
+
+  #projects .project-cards > :only-child,
+  #articles .article-cards > :only-child {
+    flex-basis: 100%;
+  }
+
+  #projects .project-card-link:hover,
+  #articles .article-card:hover {
+    transform: none;
+  }
+
+  #projects .project-card-link .thumb,
+  #articles .article-card .thumb {
+    height: 104px;
+  }
+
+  #projects .project-card-link .thumb-figure strong {
+    font-size: 28px;
+  }
+
+  #projects .project-card-link .body,
+  #articles .article-card .body {
+    padding: 16px 18px 18px;
+  }
+
+  #projects .project-card-link h3,
+  #articles .article-card h3 {
+    font-size: 18px;
+  }
+
+  #projects .more-link,
+  #articles .more-link {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 767px) {
+  #projects .section-title,
+  #articles .section-title {
+    padding-bottom: 18px;
+  }
+
+  #projects.section,
+  #articles.section {
+    padding-bottom: 36px;
+  }
+}
