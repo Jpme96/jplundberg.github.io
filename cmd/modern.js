@@ -11,6 +11,7 @@
   "use strict";
   if (!window.Vault) return;
   var root = document.documentElement, nav = document.getElementById('tabbar');
+  if (/[?&]fresh=/.test(location.search)) history.replaceState(null, '', location.pathname + location.search.replace(/[?&]fresh=\d+/, '').replace(/^&/, '?') + location.hash);
   var page = (location.pathname.match(/\/cmd\/([a-z]+)\//) || [])[1] || 'home';
   var wideMQ = matchMedia('(min-width: 760px)');
   function modern() { return root.classList.contains('modern'); }

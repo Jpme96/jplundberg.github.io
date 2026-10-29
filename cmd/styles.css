@@ -1116,7 +1116,7 @@ body.st-open { overflow: hidden; }
   box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
 }
 .tb-pill {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 100%; z-index: -1; border-radius: 999px; background: var(--accent-soft);
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%; z-index: -1; border-radius: 999px; background: var(--accent-soft); pointer-events: none;
   view-transition-name: tb-pill;
   transition: transform .42s cubic-bezier(.45, 0, .2, 1), width .42s cubic-bezier(.45, 0, .2, 1);   /* only used by browsers without page transitions */
 }

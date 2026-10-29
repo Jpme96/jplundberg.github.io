@@ -70,8 +70,24 @@
   var leaving = false;
   window.addEventListener('pageshow', function (e) {
     leaving = false;
-    if (e.persisted) { document.documentElement.classList.remove('vt-active'); nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); }
+    if (e.persisted) { document.documentElement.classList.remove('vt-active'); var pl = nav.querySelector('.tb-pill'); if (pl) { pl.style.transform = ''; pl.style.width = ''; } nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); }
   });
+  /* Instant answer to a tap: the highlight starts moving the moment your finger touches the tab,
+     while the next page loads – so the menu never feels like it's waiting. */
+  function slideTo(a) {
+    var pill = nav.querySelector('.tb-pill'), home = pill && pill.parentNode; if (!pill) return;
+    var h = home.getBoundingClientRect(), r = a.getBoundingClientRect();
+    pill.style.transition = 'transform .26s cubic-bezier(.3,.7,.2,1), width .26s cubic-bezier(.3,.7,.2,1)';
+    pill.style.transform = 'translateX(' + (r.left - h.left) + 'px)'; pill.style.width = r.width + 'px';
+    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
+  }
+  function unslide() { var pill = nav.querySelector('.tb-pill'); if (pill) { pill.style.transform = ''; pill.style.width = ''; } nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); }
+  var pressed = null;
+  nav.addEventListener('pointerdown', function (e) {
+    var a = e.target.closest('a[data-pg]'); if (!a || a.getAttribute('aria-current') || leaving || e.button > 0) return;
+    pressed = a; slideTo(a);
+  });
+  nav.addEventListener('pointercancel', function () { if (pressed && !leaving) unslide(); pressed = null; });
   nav.addEventListener('click', function (e) {
     var a = e.target.closest('a[data-pg]');
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
@@ -84,15 +100,11 @@
     }
     leaving = true;
     var off = document.documentElement.classList.contains('mo-off');
-    if (crossDoc || off) { document.documentElement.classList.add('vt-active'); return; }   // the browser does the rest (the sliding highlight is the feedback)
-    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
+    if (pressed !== a) slideTo(a);              // keyboard or a click without a press first
+    pressed = null;
+    if (crossDoc || off) { document.documentElement.classList.add('vt-active'); return; }   // the browser does the rest
     e.preventDefault();
-    var pill = nav.querySelector('.tb-pill'), cur = pill && pill.parentNode;
-    if (pill) {
-      pill.style.transform = 'translateX(' + (a.offsetLeft - cur.offsetLeft) + 'px)';
-      pill.style.width = a.offsetWidth + 'px';
-    }
-    setTimeout(function () { location.href = a.href; }, 400);
+    setTimeout(function () { location.href = a.href; }, 160);
   });
 
   /* Slide your finger along the menu: the highlight follows, let go to open that page */

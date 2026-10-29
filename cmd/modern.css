@@ -193,10 +193,11 @@
     left: 50%; right: auto; transform: translateX(-50%); width: auto; max-width: calc(100vw - 24px);
     padding: 6px; gap: 4px; border-radius: 24px; justify-content: center;
   }
-  .modern .tabbar a { flex: none; flex-direction: row; gap: 7px; height: 46px; padding: 0 14px; border-radius: 19px; font-size: 13.5px; font-weight: 600; }
+  /* fixed widths: the bar never changes size between pages, so moving between them is one smooth slide */
+  .modern .tabbar a { flex: none; flex-direction: row; justify-content: center; gap: 7px; height: 46px; width: 50px; padding: 0; border-radius: 19px; font-size: 13.5px; font-weight: 600; }
   .modern .tabbar a > span:last-child { display: none; }
-  .modern .tabbar a[aria-current="page"] > span:last-child { display: inline; }
-  .modern .tabbar a[aria-current="page"] { padding: 0 17px; }
+  .modern .tabbar a[aria-current="page"] > span:last-child { display: inline; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
+  .modern .tabbar a[aria-current="page"] { width: 112px; }
   .modern .tabbar a i { font-size: 19px; }
   .modern .tabbar .tb-pill { border-radius: 19px; background: var(--accent); }
   .modern .tabbar a[aria-current="page"], .modern .tabbar a.going { color: var(--on-accent); }
@@ -248,3 +249,9 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 /* the hero has Plan my day – At a glance doesn't need its own button */
 .modern .card.brief .card-head [data-plan] { display: none; }
 .modern .fp-top .fp-back { display: none; }   /* Home is in the menu */
+
+/* page changes: short and light – the bars are drawn solid while pages swap (blur is expensive to animate on a phone) */
+.modern.vt-active .mbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg-solid); }
+.modern::view-transition-old(root), .modern::view-transition-new(root) { animation-duration: .2s; }
+.modern::view-transition-group(tb-pill) { animation-duration: .3s; }
+.modern .tabbar a.going { color: var(--on-accent); }

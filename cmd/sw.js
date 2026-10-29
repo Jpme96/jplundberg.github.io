@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v4';
+var CACHE = 'cmd-v5';
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */
@@ -54,6 +54,25 @@ self.addEventListener('fetch', function (e) {
       return hit || fetch(req).then(function (res) {
         if (res.ok && res.type === 'basic' && !res.redirected) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
         return res;
+      });
+    }));
+    return;
+  }
+  /* Pages: the copy you already have opens at once (no waiting for the network on every tab),
+     and a fresh copy is fetched in the background for next time. Scripts are versioned, so a page
+     never mixes old and new code. */
+  if (req.mode === 'navigate' && PAGES.indexOf(url.pathname) > -1 && !url.search) {
+    e.respondWith(caches.open(CACHE).then(function (c) {
+      return Promise.all([c.match(url.pathname), c.match('/cmd/__login')]).then(function (x) {
+        var hit = x[0], login = x[1];
+        var net = fetch(req).then(function (res) {
+          if (res.ok && res.type === 'basic' && !res.redirected) { c.put(url.pathname, res.clone()); c.delete('/cmd/__login'); }
+          /* Cloudflare wants you to log in again: the next page comes from the network, so you see the login */
+          else if (res.redirected || res.type === 'opaqueredirect' || res.status === 401 || res.status === 403) c.put('/cmd/__login', new Response('1'));
+          return res;
+        });
+        if (hit && !login) { e.waitUntil(net.catch(function () {})); return hit; }
+        return net.catch(function () { return c.match('/cmd/').then(function (h) { return h || Response.error(); }); });
       });
     }));
     return;
