@@ -255,3 +255,23 @@
 .cl-route { justify-self: start; }
 
 .cs-sheet { width: min(520px, calc(100% - 32px)); }
+
+/* ---------- Filter: one button, hidden calendars as chips, the rest in a panel ---------- */
+.cl-cats { position: relative; align-items: center; }
+.cl-filter { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; }
+.cl-filter .bi-chevron-down, .cl-filter .bi-chevron-up { font-size: 11px; color: var(--muted); }
+.cl-filter.on { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); color: var(--heading); }
+.cl-filter.on .bi-funnel-fill { color: var(--accent); }
+.clf-panel { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: min(360px, 100%); max-height: min(70vh, 520px); overflow-y: auto; padding: 8px 14px 10px;
+  border-radius: 16px; border: 1px solid var(--line); background: var(--bg-solid); box-shadow: 0 18px 40px rgba(0, 0, 0, .35); }
+.clf-top { display: flex; justify-content: space-between; padding: 2px 0 4px; }
+.clf-h { margin: 10px 0 2px; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.clf-row { display: flex; align-items: center; gap: 9px; min-height: 46px; border-top: 1px solid var(--line); }
+.clf-h + .clf-row { border-top: 0; }
+.clf-row .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.clf-row.off .dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+.clf-row .bi { font-size: 13px; color: var(--muted); }
+.clf-name { flex: 1; min-width: 0; font-size: 14.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clf-row.off .clf-name { color: var(--muted); }
+.clf-only { font-size: 12.5px; }
+@media (max-width: 480px) { .clf-panel { position: fixed; left: 12px; right: 12px; width: auto; top: auto; bottom: calc(84px + env(safe-area-inset-bottom)); max-height: 62vh; } }

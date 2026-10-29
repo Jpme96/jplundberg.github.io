@@ -57,11 +57,23 @@
       .concat(window.Features && window.Features.events().some(function (e) { return !e.cat; }) ? [{ id: 'reminders', name: 'Reminders', color: window.Features.REMIND_COLOR, icon: 'bell' }] : [])
       .concat(C.prefs(d).holidays ? [{ id: 'holidays', name: 'Holidays', color: C.HOLIDAY_COLOR, icon: 'flag' }] : [])
       .concat(d.feeds.map(function (f) { return { id: 'feed:' + f.id, name: f.name, color: f.color, feed: true }; }));
-    $('clCats').innerHTML = items.map(function (it) {
-      return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="' + !d.hidden[it.id] + '" style="--c:' + it.color + '">' +
-        '<i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : it.icon ? '<i class="bi bi-' + it.icon + '"></i>' : '') + esc(it.name) + '</button>';
-    }).join('');
+    /* one row: a Filter button that says what's shown, and the hidden calendars as chips to bring back.
+       Everything else lives in the filter panel (switches, "Only" and Show all / Hide all). */
+    var shown = items.filter(function (it) { return !d.hidden[it.id]; }), off = items.filter(function (it) { return d.hidden[it.id]; });
+    var label = !off.length ? 'All calendars' : shown.length === 1 ? 'Only ' + shown[0].name : !shown.length ? 'Nothing shown' : shown.length + ' of ' + items.length;
+    var row = function (it) {
+      return '<div class="clf-row' + (d.hidden[it.id] ? ' off' : '') + '" style="--c:' + it.color + '"><i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : it.icon ? '<i class="bi bi-' + it.icon + '"></i>' : '') +
+        '<span class="clf-name">' + esc(it.name) + '</span><button type="button" class="text-btn clf-only" data-only="' + esc(it.id) + '">Only</button>' +
+        '<input type="checkbox" class="switch" data-catsw="' + esc(it.id) + '"' + (d.hidden[it.id] ? '' : ' checked') + ' aria-label="Show ' + esc(it.name) + '"></div>';
+    };
+    var groups = [['Your calendars', items.filter(function (it) { return C.CATS[it.id]; })], ['From the dashboard', items.filter(function (it) { return /^(travel|reminders|holidays)$/.test(it.id); })], ['Phone calendars', items.filter(function (it) { return it.feed; })]];
+    $('clCats').innerHTML = '<button type="button" class="cl-filter' + (off.length ? ' on' : '') + '" data-clfilter aria-expanded="' + filterOpen + '"><i class="bi bi-funnel' + (off.length ? '-fill' : '') + '"></i> ' + esc(label) + ' <i class="bi bi-chevron-' + (filterOpen ? 'up' : 'down') + '"></i></button>' +
+      off.map(function (it) { return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="false" style="--c:' + it.color + '" title="Show ' + esc(it.name) + '"><i class="dot"></i>' + esc(it.name) + '</button>'; }).join('') +
+      (filterOpen ? '<div class="clf-panel" role="group" aria-label="Filter calendars"><div class="clf-top"><button type="button" class="text-btn" data-clall="show">Show all</button><button type="button" class="text-btn" data-clall="hide">Hide all</button></div>' +
+        groups.filter(function (g) { return g[1].length; }).map(function (g) { return '<p class="clf-h">' + g[0] + '</p>' + g[1].map(row).join(''); }).join('') + '</div>' : '');
+    renderCats.items = items;
   }
+  var filterOpen = false;
 
   /* ---------- month ---------- */
   var F_DAY = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -244,12 +256,22 @@
   function sameWeekToday() { var s = weekStart(), t = new Date(); return t >= s && t < addDays(s, nWeekDays()); }
 
   $('clCats').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-cat]');
-    if (!b) return;
-    var d = data();
-    if (d.hidden[b.dataset.cat]) delete d.hidden[b.dataset.cat]; else d.hidden[b.dataset.cat] = 1;
-    C.save(d);
+    var d = data(), b;
+    if (e.target.closest('[data-clfilter]')) { filterOpen = !filterOpen; renderCats(); return; }
+    if ((b = e.target.closest('[data-only]'))) {
+      var id = b.dataset.only, items = renderCats.items || [], solo = items.every(function (it) { return it.id === id ? !d.hidden[it.id] : d.hidden[it.id]; });
+      d.hidden = {}; if (!solo) items.forEach(function (it) { if (it.id !== id) d.hidden[it.id] = 1; });   // tap again: everything back
+      C.save(d); return;
+    }
+    if ((b = e.target.closest('[data-clall]'))) { d.hidden = {}; if (b.dataset.clall === 'hide') (renderCats.items || []).forEach(function (it) { d.hidden[it.id] = 1; }); C.save(d); return; }
+    if ((b = e.target.closest('[data-cat]'))) { if (d.hidden[b.dataset.cat]) delete d.hidden[b.dataset.cat]; else d.hidden[b.dataset.cat] = 1; C.save(d); }
   });
+  $('clCats').addEventListener('change', function (e) {
+    var sw = e.target.closest('[data-catsw]'); if (!sw) return;
+    var d = data(); if (sw.checked) delete d.hidden[sw.dataset.catsw]; else d.hidden[sw.dataset.catsw] = 1; C.save(d);
+  });
+  document.addEventListener('click', function (e) { if (filterOpen && e.target.isConnected && !e.target.closest('#clCats')) { filterOpen = false; renderCats(); } });
+  document.addEventListener('keydown', function (e) { if (filterOpen && e.key === 'Escape') { filterOpen = false; renderCats(); var f = document.querySelector('[data-clfilter]'); if (f) f.focus(); } });
 
   $('clView').addEventListener('click', function (e) {
     var t;
