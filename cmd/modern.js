@@ -288,10 +288,28 @@
     setInterval(drawHero, 30000);
   }
 
+  /* ================= a card left alone on the last row takes the full width (Work, Health, Finances) ================= */
+  function lone() {
+    document.querySelectorAll('.kit-grid').forEach(function (g) {
+      var vis = Array.prototype.filter.call(g.children, function (c) { return !c.hidden && c.offsetParent !== null && !c.classList.contains('pk-off') && c.firstElementChild; });
+      var cols = getComputedStyle(g).gridTemplateColumns.split(' ').filter(Boolean).length, used = 0;
+      var want = [];
+      if (cols >= 2) vis.forEach(function (c, i) {
+        if (c.classList.contains('kit-wide')) { used = 0; return; }
+        if (used === 0 && (i === vis.length - 1 || vis[i + 1].classList.contains('kit-wide'))) want.push(c);
+        used = (used + 1) % cols;
+      });
+      Array.prototype.forEach.call(g.children, function (c) { var w = want.indexOf(c) > -1; if (c.classList.contains('kit-span') !== w) c.classList.toggle('kit-span', w); });   // only real changes (no loop)
+    });
+  }
+  var lq = false; function loneSoon() { if (!lq) { lq = true; setTimeout(function () { lq = false; lone(); }, 60); } }
+  ['tools:change', 'features:change', 'resize', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, loneSoon); });
+  document.querySelectorAll('.kit-grid').forEach(function (g) { new MutationObserver(loneSoon).observe(g, { childList: true, attributes: true, attributeFilter: ['hidden', 'class'] }); });
+
   /* ================= switching between Modern and Classic ================= */
   var was = modern();
   new MutationObserver(function () { var m = modern(); if (m !== was) { was = m; build(); iconify(); drawHero(); } }).observe(root, { attributes: true, attributeFilter: ['class'] });
-  window.Vault.onUnlock(function () { setTimeout(function () { build(); iconify(); drawHero(); }, 30); setTimeout(fit, 400); });
+  window.Vault.onUnlock(function () { setTimeout(function () { build(); iconify(); drawHero(); loneSoon(); }, 30); setTimeout(fit, 400); });
   window.addEventListener('profile:change', who);
   build(); iconify();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);

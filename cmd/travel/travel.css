@@ -1,5 +1,6 @@
 /* Travel page – builds on ../styles.css and ../finance/fin.css */
 .tv-hero { padding: 8px 2px 22px; }
+.modern .tv-hero { padding-top: 18px; }
 .tv-hello {
   margin: 0; font-family: "Raleway", sans-serif; font-weight: 600;
   font-size: clamp(26px, 6vw, 40px); line-height: 1.15; color: var(--muted);
