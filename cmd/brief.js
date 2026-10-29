@@ -35,7 +35,9 @@
     var out = [], now = new Date(), today = dkey(now);
     function add(pri, icon, color, title, sub, href, opt) {
       var it = { pri: pri, icon: icon, color: color, title: title, sub: sub, href: href };
-      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; }
+      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; if (opt.run && opt.act) ACTIONS[opt.act.id] = opt.run; }
+      /* anything can be put away for today (hover ×, or swipe it left on a phone) */
+      it.day = 'd:' + today + ':' + title; if (!it.key && dismissed(it.day)) return;
       out.push(it);
     }
     ACTIONS = {};
@@ -344,7 +346,8 @@
       return '<li class="br-li' + (x.tip || x.act ? ' br-tip' : '') + '"><a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
-        (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>' : '') + '</li>';
+        (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>'
+          : x.day && !x.badge ? '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>' : '') + '</li>';
     }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + main.length) + '</button></li>' : '')
       : '<li class="br-calm"><i class="bi bi-check2-circle"></i> Nothing needs you right now. Enjoy the day.</li>';
   }
@@ -352,7 +355,7 @@
     var b;
     if (e.target.closest('[data-brmore]')) { showAll = !showAll; render(); return; }
     if (e.target.closest('[data-brfold]')) { tipsOpen = !tipsOpen; render(); return; }
-    if ((b = e.target.closest('[data-brx]'))) { dismiss(b.dataset.brx); var li = b.closest('li'); li.classList.add('br-gone'); setTimeout(render, 220); return; }
+    if ((b = e.target.closest('[data-brx]'))) { dismiss(b.dataset.brx, /^d:/.test(b.dataset.brx) ? 1 : undefined); var li = b.closest('li'); li.classList.add('br-gone'); setTimeout(render, 220); return; }
     if ((b = e.target.closest('[data-bract]'))) { if (ACTIONS[b.dataset.bract]) ACTIONS[b.dataset.bract](); dismiss(b.dataset.bract, 365); b.textContent = 'Done ✓'; setTimeout(render, 700); return; }
     var ck = e.target.closest('a[href="#checkin"]');
     if (ck) { e.preventDefault(); if (window.Checkin) window.Checkin.open(); return; }
@@ -361,6 +364,21 @@
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
+  /* phone: swipe a line to the left to hide it for today */
+  (function () {
+    var sw = null;
+    box.addEventListener('touchstart', function (e) { var li = e.target.closest('.br-li'); if (!li || !li.querySelector('[data-brx]') || e.touches.length > 1) { sw = null; return; } sw = { li: li, x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, on: false }; }, { passive: true });
+    box.addEventListener('touchmove', function (e) {
+      if (!sw) return; var dx = e.touches[0].clientX - sw.x, dy = e.touches[0].clientY - sw.y;
+      if (!sw.on) { if (Math.abs(dy) > 10) { sw = null; return; } if (dx < -12) sw.on = true; else return; }
+      sw.dx = Math.min(0, dx); sw.li.style.transform = 'translateX(' + sw.dx + 'px)'; sw.li.style.opacity = String(1 + sw.dx / 260);
+    }, { passive: true });
+    box.addEventListener('touchend', function () {
+      if (!sw) return; var s = sw; sw = null;
+      if (s.dx < -90) { var b = s.li.querySelector('[data-brx]'); dismiss(b.dataset.brx, /^d:/.test(b.dataset.brx) ? 1 : undefined); s.li.classList.add('br-gone'); setTimeout(render, 200); }
+      else { s.li.style.transform = ''; s.li.style.opacity = ''; }
+    });
+  })();
   ['brief:refresh', 'review:seen', 'plan:change', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });

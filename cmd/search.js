@@ -78,13 +78,38 @@
     (window.CommandExtra || []).forEach(function (f) { try { f().forEach(function (c) { cmd(c.i, c.t, c.s, c.k || '', c.run, c.x); }); } catch (e) {} });
     return out;
   }
+  /* one or two letters wrong, missing or extra (two only for longer words) */
+  function dist(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    var prev = [], cur, i, j;
+    for (j = 0; j <= b.length; j++) prev[j] = j;
+    for (i = 1; i <= a.length; i++) {
+      cur = [i]; var low = i;
+      for (j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); if (cur[j] < low) low = cur[j]; }
+      if (low > max) return max + 1;
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  function near(w, hay) {
+    if (w.length < 4) return false;
+    var max = w.length >= 7 ? 2 : 1, toks = hay.split(/[^\p{L}\p{N}]+/u);
+    for (var i = 0; i < toks.length; i++) {
+      var tk = toks[i]; if (!tk || Math.abs(tk.length - w.length) > max && tk.length < w.length) continue;
+      if (dist(w, tk.slice(0, w.length + max), max) <= max || dist(w, tk, max) <= max) return true;
+    }
+    return false;
+  }
   function search(q) {
     var words = q.toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return [];
     return index().map(function (r) {
       var hay = (r.t + ' ' + r.s + ' ' + r.x + ' ' + r.g).toLowerCase(), t = r.t.toLowerCase(), score = 0;
       for (var i = 0; i < words.length; i++) {
-        if (hay.indexOf(words[i]) < 0) return null;
+        if (hay.indexOf(words[i]) < 0) {
+          if (!near(words[i], hay)) return null;      // a typo ("tannlge") still finds tannlege
+          score += .5; continue;
+        }
         score += t.indexOf(words[i]) === 0 ? 6 : t.indexOf(words[i]) > -1 ? 4 : 1;
       }
       if (r.g === 'Settings') score -= .5;

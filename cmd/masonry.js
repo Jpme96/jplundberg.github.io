@@ -95,7 +95,7 @@
       var ix = cards.map(function (c, i) { return { c: c, o: parseInt(getComputedStyle(c).order, 10) || 0, i: i }; });   // your card order (CSS order), then the page's
       cards = ix.sort(function (a, b) { return a.o - b.o || a.i - b.i; }).map(function (x) { return x.c; });
       Array.prototype.forEach.call(g.children, function (c) {
-        c.classList.remove('msn-fill', 'msn-wide');
+        c.classList.remove('msn-fill', 'msn-wide'); c.style.minHeight = '';
         c.style.gridRow = ''; c.style.gridRowEnd = '';
         c.style.gridColumn = wide && STRETCH.some(function (k) { return c.classList.contains(k); }) ? 'auto' : '';   // their own width is one column; two only when chosen
         delete c.dataset.msnR; delete c.dataset.msnC;
@@ -133,7 +133,8 @@
         if (done[L.i]) return; done[L.i] = 1;
         for (var t = p.c; t < p.c + p.w; t++) if (lastIn[t].i !== L.i) return;     // a wide card only when it's last in all its columns
         if (cards[L.i].classList.contains('card-folded')) return;          // a folded card stays one line
-        if (short > 1 && short <= 180 && p.w < n) { cards[L.i].style.gridRow = p.r + ' / span ' + (bottom - p.r); cards[L.i].classList.add('msn-fill'); }
+        /* reach down with a minimum height (not by stretching), so the card can still grow – and be measured again – when its content grows */
+        if (short > 1 && short <= 180 && p.w < n) { cards[L.i].style.gridRow = p.r + ' / span ' + (bottom - p.r); cards[L.i].style.minHeight = ((bottom - p.r) * ROW - gap) + 'px'; cards[L.i].classList.add('msn-fill'); }
       });
     });
   }

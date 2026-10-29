@@ -451,6 +451,21 @@
     [/^Last (\d+)×(\d+) @ (.+) kg · try (.+)$/, 'Sist $1×$2 @ $3 kg · prøv $4'], [/^Last (\d+)×(\d+) @ (.+) kg$/, 'Sist $1×$2 @ $3 kg'], [/^Workout saved – (\d+) exercises?$/, function (m, n) { return 'Økten er lagret – ' + n + (n === '1' ? ' øvelse' : ' øvelser'); }],
     [/^(\d+) things added(.*)$/, function (m, n, r) { return n + ' ting lagt til' + r.replace('weather from the season – forecast comes 2 weeks before', 'vær fra årstiden – varselet kommer 2 uker før').replace('rain likely', 'trolig regn'); }]
   );
+  (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
+    'Add a stop': 'Legg til et stopp', 'to see its next departures here – the one by home, work or the gym.': 'for å se neste avganger her – det ved hjemme, jobb eller treningssenteret.',
+    'Pin note to the top': 'Fest notatet øverst', 'Unpin note': 'Løsne notatet', 'Pin to the top': 'Fest øverst', 'Unpin': 'Løsne', 'Note deleted': 'Notatet er slettet', 'Goal deleted': 'Målet er slettet',
+    'No notes yet. Tap a note to edit it, pin the ones you need, and start lines with “- [ ]” for a checklist.': 'Ingen notater ennå. Trykk på et notat for å endre det, fest de du trenger, og start linjer med «- [ ]» for en sjekkliste.',
+    'Steps': 'Steg', 'Add steps': 'Legg til steg', 'Add a step': 'Legg til et steg', 'Add step': 'Legg til steg', 'Remove step': 'Fjern steg', 'Break it into small steps – tick them off as you go.': 'Del det opp i små steg – kryss av underveis.',
+    'Hide for today': 'Skjul i dag', 'Clock in?': 'Stemple inn?', 'Not clocked in yet today': 'Ikke stemplet inn i dag', 'Saved': 'Lagret', 'Earlier versions': 'Tidligere versjoner', 'Kept on your server, one a day for 30 days': 'Lagret på serveren, én per dag i 30 dager',
+    'as it was at the start of the day': 'slik det var ved starten av dagen', 'Looking …': 'Ser etter …', 'None yet – the first one is kept tomorrow, after your first change.': 'Ingen ennå – den første lagres i morgen, etter første endring.',
+    'Paste the newest worker.js into your Worker to keep daily versions on the server.': 'Lim inn nyeste worker.js i Workeren for å ta vare på daglige versjoner på serveren.', 'Couldn’t get that version right now.': 'Fikk ikke hentet den versjonen nå.',
+    'Apple Health': 'Apple Health', 'Steps today': 'Skritt i dag', 'Steps this week': 'Skritt denne uken', 'Exercise minutes today': 'Treningsminutter i dag', 'Exercise minutes this week': 'Treningsminutter denne uken', 'Active calories today': 'Aktive kalorier i dag',
+    'Distance this week (km)': 'Distanse denne uken (km)', 'Sleep, 7-night average (h)': 'Søvn, snitt 7 netter (t)', 'Weight, latest (kg) – lower is better': 'Vekt, siste (kg) – lavere er bedre', 'Resting pulse, latest – lower is better': 'Hvilepuls, siste – lavere er bedre'
+  });
+  P.push(
+    [/^Clock (in|out) (\d\d:\d\d)$/, function (m, a, t) { return (a === 'in' ? 'Stemple inn ' : 'Stemple ut ') + t; }], [/^Worked (\d+) h (\d+) min – clock out\?$/, 'Jobbet $1 t $2 min – stemple ut?'],
+    [/^This is your dashboard as it was on (.+)\. It opens with the passcode you had then\.$/, 'Dette er dashbordet slik det var $1. Det åpnes med koden du hadde da.'], [/^(.+) removed$/, '$1 er fjernet']
+  );
   /* the Modern look: menu bar, More, the home hero */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
     'Good morning': 'God morgen', 'Good afternoon': 'God ettermiddag', 'Good evening': 'God kveld', 'Good night': 'God natt',

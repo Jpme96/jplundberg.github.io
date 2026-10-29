@@ -299,6 +299,25 @@
     add(r.level === 'rest' ? 11 : 32, 'battery-half', r.level === 'rest' ? '#e66767' : '#c98500', r.level === 'rest' ? 'Take a rest day' : 'Go easy today', r.why.slice(0, 2).join(' · ') + ' · readiness ' + r.score, '/cmd/habits/#rest', { key: 'rest:' + dkey(new Date()) });
   });
 
+  /* ================= Flex time: clock in / out reminders ================= */
+  window.BriefExtra.push(function (add, now, tk) {
+    if (!on('flex') || !Fe) return;
+    var d = now.getDay(); if (d === 0 || d === 6 || (Fe.holiday && Fe.holiday(tk))) return;
+    var es = Fe.list('flex').filter(function (e) { return e.date === tk; });
+    if (es.some(function (e) { return e.type && e.type !== 'work' && e.type !== 'course'; })) return;     // holiday, sick, day off
+    var open = es.filter(function (e) { return e.in && !e.out; })[0], hmNow = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    var clock = function (fn) { return function () { var t = Fe.tools(); t.flex = t.flex || []; fn(t.flex); Fe.saveTools(t); toast('<i class="bi bi-stopwatch"></i> Saved'); }; };
+    if (!es.length && now.getHours() >= 7 && now.getHours() < 11)
+      add(14, 'stopwatch', '#e8743b', 'Clock in?', 'Not clocked in yet today', '/cmd/work/', { act: { id: 'clockin:' + tk, label: 'Clock in ' + hmNow }, run: clock(function (l) { l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: tk, type: 'work', in: hmNow, out: '', brk: +((Fe.tools().flexcfg || {}).brk) || 0 }); }) });
+    if (open) {
+      var mins = now.getHours() * 60 + now.getMinutes() - toMin(open.in);
+      var norm = ((+((Fe.tools().flexcfg || {}).norm)) || 7.5) * 60;
+      if (mins >= norm + 30) add(13, 'stopwatch', '#e8743b', 'Worked ' + Math.floor(mins / 60) + ' h ' + pad(mins % 60) + ' min – clock out?', 'Clocked in at ' + open.in, '/cmd/work/', { act: { id: 'clockout:' + tk, label: 'Clock out ' + hmNow }, run: clock(function (l) { l.forEach(function (e) { if (e.id === open.id) e.out = hmNow; }); }) });
+    }
+  });
+
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-tredit]')) { var b = document.getElementById('trEdit'); if (b) b.click(); } });
+
   /* ---------- clicks on At a glance lines ---------- */
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[href^="#prep"], a[href="#shutdown"]');

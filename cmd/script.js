@@ -199,6 +199,19 @@
     for (var i = 0; i < 7; i++) { var d = new Date(mon); d.setDate(mon.getDate() + i); if (((hb.log || {})[dkey(d)] || []).indexOf(id) > -1) n++; }
     return n;
   }
+  /* … or follow an Apple Health number: steps today, exercise this week, sleep (7-night average), weight */
+  var AH = { 'steps:today': ['Steps today', 'steps'], 'steps:week': ['Steps this week', 'steps'], 'exercise:today': ['Exercise minutes today', 'exercise'], 'exercise:week': ['Exercise minutes this week', 'exercise'],
+    'active:today': ['Active calories today', 'active'], 'distance:week': ['Distance this week (km)', 'distance'], 'sleep:avg7': ['Sleep, 7-night average (h)', 'sleep'], 'weight:latest': ['Weight, latest (kg) – lower is better', 'weight'], 'rhr:latest': ['Resting pulse, latest – lower is better', 'rhr'] };
+  function ahDays() { return ((window.Vault && window.Vault.get() || {}).health || {}).days || {}; }
+  function ahValue(key) {
+    var D = ahDays(), f = AH[key] && AH[key][1], p = key.split(':')[1], t = new Date(), tk = dkey(t); if (!f) return null;
+    if (p === 'today') return D[tk] && D[tk][f] != null ? +D[tk][f] : 0;
+    if (p === 'week') { var mon = new Date(t.getFullYear(), t.getMonth(), t.getDate() - (t.getDay() + 6) % 7), n = 0; for (var i = 0; i < 7; i++) { var d = new Date(mon); d.setDate(mon.getDate() + i); var x = D[dkey(d)]; if (x && x[f] != null) n += +x[f]; } return Math.round(n * 10) / 10; }
+    if (p === 'avg7') { var v = []; for (var j = 1; j <= 7; j++) { var dd = new Date(t); dd.setDate(t.getDate() - j + 1); var y = D[dkey(dd)]; if (y && y[f] != null) v.push(+y[f]); } return v.length ? Math.round(v.reduce(function (a, b) { return a + b; }, 0) / v.length * 10) / 10 : null; }
+    var ks = Object.keys(D).sort().reverse(); for (var k = 0; k < ks.length; k++) if (D[ks[k]][f] != null) return +D[ks[k]][f];
+    return null;
+  }
+  function ahLower(key) { return /^(weight|rhr):/.test(key || ''); }
   function linkedHabit(g, hb) { return g.habit ? (hb.list || []).filter(function (h) { return h.id === g.habit; })[0] || null : null; }
   /* one-time: link the existing gym/training goal to the training habit (once habits exist) */
   function autoLink() {
@@ -219,18 +232,20 @@
     var hb = habits();
     /* a goal that follows a habit stores the habit's numbers too, so Settings → Project progress and
        what is published on jplundberg.com show the same as this card */
-    goals.forEach(function (g) { var h = linkedHabit(g, hb); if (h) { g.value = weekCount(hb, h.id); g.target = h.target; } });
+    goals.forEach(function (g) { var h = linkedHabit(g, hb); if (h) { g.value = weekCount(hb, h.id); g.target = h.target; } else if (g.ah && AH[g.ah]) { var v = ahValue(g.ah); if (v != null) g.value = v; } });
     save('dash.goals', goals);
     $('goalList').innerHTML = goals.map(function (g) {
       var h = linkedHabit(g, hb);
       if (h) { g = Object.assign({}, g, { value: weekCount(hb, h.id), target: h.target }); }
-      var pct = g.target > 0 ? Math.max(0, Math.min(1, g.value / g.target)) : 0;
+      var ahk = !h && g.ah && AH[g.ah] ? g.ah : null;
+      if (ahk) { var av = ahValue(ahk); g = Object.assign({}, g, { value: av == null ? 0 : av }); }
+      var pct = g.target > 0 ? Math.max(0, Math.min(1, ahLower(ahk) ? (g.value ? g.target / g.value : 0) : g.value / g.target)) : 0;
       return '<li class="goal' + (pct >= 1 ? ' done' : '') + '" data-id="' + g.id + '">' +
         '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - pct)) + '"></circle></svg>' +
         '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%' +
-        (h ? ' · <i class="bi bi-link-45deg"></i> ' + esc(h.name) + ' habit' : '') + '</span></div>' +
-        '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div></li>';
+        (h ? ' · <i class="bi bi-link-45deg"></i> ' + esc(h.name) + ' habit' : '') + (ahk ? ' · <i class="bi bi-apple"></i> Apple Health' : '') + '</span></div>' +
+        (ahk ? '' : '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div>') + '</li>';
     }).join('');
   }
 
@@ -267,10 +282,13 @@
     $('goalValue').value = h ? weekCount(hb, h.id) : g ? g.value : '';
     $('goalTarget').value = h ? h.target : g ? g.target : '';
     $('goalValue').disabled = !!h;
+    var D = ahDays(), have = {}; Object.keys(D).forEach(function (k) { Object.keys(D[k]).forEach(function (f) { have[f] = 1; }); });
+    var ahOpts = window.Features && window.Features.on('ahealth') ? Object.keys(AH).filter(function (k) { return have[AH[k][1]]; }) : [];
     $('goalHabit').innerHTML = '<option value="">Not linked</option>' + (hb.list || []).map(function (x) {
       return '<option value="' + esc(x.id) + '"' + (g && g.habit === x.id ? ' selected' : '') + '>Count ticks in “' + esc(x.name) + '” this week</option>';
-    }).join('');
-    $('goalHabitRow').hidden = !(hb.list || []).length;
+    }).join('') + (ahOpts.length ? '<optgroup label="Apple Health">' + ahOpts.map(function (k) { return '<option value="ah:' + k + '"' + (g && g.ah === k ? ' selected' : '') + '>' + esc(AH[k][0]) + '</option>'; }).join('') + '</optgroup>' : '');
+    $('goalHabitRow').hidden = !(hb.list || []).length && !ahOpts.length;
+    if (g && g.ah) { $('goalValue').disabled = true; $('goalValue').value = ahValue(g.ah) || 0; }
     $('goalDelete').hidden = !g;
     $('goalForm').hidden = false;
     $('goalName').focus();
@@ -281,28 +299,33 @@
   $('goalCancel').addEventListener('click', closeGoalForm);
   $('goalDelete').addEventListener('click', function () {
     if (!editingGoal) return;
-    goals = goals.filter(function (x) { return x !== editingGoal; });
+    var gone = editingGoal, at = goals.indexOf(gone);
+    goals = goals.filter(function (x) { return x !== gone; });
     closeGoalForm(); renderGoals();
+    if (window.Quick) window.Quick.toast('<i class="bi bi-trash3"></i> Goal deleted', function () { goals.splice(Math.min(at, goals.length), 0, gone); renderGoals(); });
   });
   $('goalForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var name = $('goalName').value.trim(), target = parseFloat($('goalTarget').value), value = parseFloat($('goalValue').value) || 0;
     if (!name || !(target > 0)) return;
-    var habitId = $('goalHabit').value, hb = habits();
+    var habitId = $('goalHabit').value, hb = habits(), ah = /^ah:/.test(habitId) ? habitId.slice(3) : null;
+    if (ah) habitId = '';
     var h = habitId ? (hb.list || []).filter(function (x) { return x.id === habitId; })[0] : null;
     if (h) {                                   /* the target is the habit's weekly target */
       target = Math.max(1, Math.min(7, Math.round(target)));
       if (h.target !== target) { h.target = target; save('dash.habits', hb); window.dispatchEvent(new Event('habits:change')); }
     }
-    if (editingGoal) { editingGoal.name = name; editingGoal.target = target; if (!h) editingGoal.value = value; editingGoal.habit = h ? h.id : undefined; }
-    else goals.push({ id: uid(), name: name, value: h ? 0 : value, target: target, habit: h ? h.id : undefined });
+    if (editingGoal) { editingGoal.name = name; editingGoal.target = target; if (!h && !ah) editingGoal.value = value; editingGoal.habit = h ? h.id : undefined; if (ah) editingGoal.ah = ah; else delete editingGoal.ah; }
+    else goals.push({ id: uid(), name: name, value: h || ah ? 0 : value, target: target, habit: h ? h.id : undefined, ah: ah || undefined });
     closeGoalForm(); renderGoals();
   });
   renderGoals();
   window.addEventListener('habits:change', renderGoals);
+  window.addEventListener('health:change', renderGoals);
   $('goalHabit').addEventListener('change', function () {
-    var hb = habits(), h = (hb.list || []).filter(function (x) { return x.id === this.value; }, this)[0];
-    $('goalValue').disabled = !!h;
+    var hb = habits(), h = (hb.list || []).filter(function (x) { return x.id === this.value; }, this)[0], ah = /^ah:/.test(this.value) ? this.value.slice(3) : null;
+    $('goalValue').disabled = !!h || !!ah;
+    if (ah) { $('goalValue').value = ahValue(ah) || 0; if (!$('goalName').value) $('goalName').value = AH[ah][0]; }
     if (h) { $('goalValue').value = weekCount(hb, h.id); $('goalTarget').value = h.target; }
   });
 
@@ -331,6 +354,37 @@
   }
   var todoAll = false;
   document.addEventListener('click', function (e) { if (e.target.closest('[data-tdall]')) { todoAll = !todoAll; renderTodos(); } });
+  /* steps inside a task ("Book tannlege → call, confirm"): from the task menu; the chip shows how far you are */
+  function stepsChip(t) {
+    var st = t.steps || []; if (!st.length) return '';
+    var d = st.filter(function (x) { return x.d; }).length;
+    return ' <span class="td-steps' + (d === st.length ? ' all' : '') + '" data-tdsteps title="Steps"><i class="bi bi-list-check"></i> ' + d + '/' + st.length + '</span>';
+  }
+  function stepsSheet(t) {
+    var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
+    bg.innerHTML = '<div class="fo-box lf-box" role="dialog" aria-modal="true" aria-label="Steps"></div>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var box = bg.firstChild;
+    function close() { bg.remove(); document.removeEventListener('keydown', key, true); renderTodos(); }
+    function key(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    document.addEventListener('keydown', key, true);
+    function draw() {
+      var st = t.steps || [];
+      box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-list-check"></i> ' + esc(t.text) + '</h3><button type="button" class="icon-btn sm" data-stclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+        '<p class="muted lf-sub">Break it into small steps – tick them off as you go.</p>' +
+        st.map(function (x, i) { return '<div class="td-step"><label class="lf-check"><input type="checkbox" data-st="' + i + '"' + (x.d ? ' checked' : '') + '> <span' + (x.d ? ' class="dn"' : '') + '>' + esc(x.t) + '</span></label><button type="button" class="icon-btn sm" data-stdel="' + i + '" aria-label="Remove step"><i class="bi bi-x"></i></button></div>'; }).join('') +
+        '<form class="add-row td-stadd"><input placeholder="Add a step" maxlength="120" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add step"><i class="bi bi-plus-lg"></i></button></form>';
+    }
+    box.addEventListener('click', function (e) {
+      var b;
+      if (e.target === bg || e.target.closest('[data-stclose]')) return close();
+      if ((b = e.target.closest('[data-stdel]'))) { t.steps.splice(+b.dataset.stdel, 1); if (!t.steps.length) delete t.steps; save('dash.todos', todos); draw(); }
+    });
+    bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+    box.addEventListener('change', function (e) { var i = e.target.dataset.st; if (i == null) return; t.steps[+i].d = e.target.checked; save('dash.todos', todos); draw(); });
+    box.addEventListener('submit', function (e) { e.preventDefault(); var inp = box.querySelector('.td-stadd input'), v = inp.value.trim(); if (!v) return; t.steps = t.steps || []; t.steps.push({ t: v, d: false }); save('dash.todos', todos); draw(); box.querySelector('.td-stadd input').focus(); });
+    draw(); setTimeout(function () { var i = box.querySelector('.td-stadd input'); if (i) i.focus(); }, 40);
+  }
   function renderTodos() {
     save('dash.todos', todos);
     /* the soonest few; the rest fold away so the card stays about as tall as Goals and Quick links */
@@ -338,7 +392,7 @@
     $('todoList').innerHTML = all.map(function (t, i) {
       return '<li class="todo-item' + (t.done ? ' done' : '') + (i >= TOP && !todoAll ? ' td-more' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
-        '<span class="label">' + (t.today === dkey(new Date()) && !t.done ? '<span class="td-rank" title="Top 3 today">' + (t.rank || '•') + '</span> ' : '') + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
+        '<span class="label">' + (t.today === dkey(new Date()) && !t.done ? '<span class="td-rank" title="Top 3 today">' + (t.rank || '•') + '</span> ' : '') + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + stepsChip(t) + '</span>' +
         '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
     }).join('') + (more > 0 ? '<li class="td-toggle"><button type="button" class="text-btn" data-tdall><i class="bi bi-chevron-' + (todoAll ? 'up' : 'down') + '"></i> ' + (todoAll ? 'Show fewer' : more + ' more task' + (more === 1 ? '' : 's')) + '</button></li>' : '');
     $('todoEmpty').hidden = todos.length > 0;
@@ -367,6 +421,8 @@
         todos = todos.filter(function (x) { return x !== t; }); renderTodos();
         if (window.Quick) window.Quick.toast('<i class="bi bi-trash3"></i> Task deleted', function () { todos = load('dash.todos', todos); todos.splice(Math.min(at, todos.length), 0, t); renderTodos(); });
       }, 250);
+    } else if (e.target.closest('[data-tdsteps]')) {
+      stepsSheet(t);
     } else if (e.target.closest('.check') || e.target.closest('.label')) {
       /* a repeating task moves on to its next day instead of being done */
       if (!t.done && t.repeat && window.Smart) {
@@ -427,6 +483,7 @@
       ['done', t.done ? 'arrow-counterclockwise' : 'check2', t.done ? 'Not done' : 'Done'],
       t.done ? null : ['top', 'trophy', inTop ? 'Remove from top 3' : 'Top 3 today'],
       ['today', 'sun', 'Today'], ['tomorrow', 'sunrise', 'Tomorrow'], ['week', 'calendar-week', 'Next week'], ['nodate', 'calendar-x', 'No date'],
+      t.done ? null : ['steps', 'list-check', (t.steps || []).length ? 'Steps' : 'Add steps'],
       t.done || !window.Focus ? null : ['timer', 'stopwatch', 'Focus timer – 25 min'],
       ['focus', 'star', t.focus ? 'Not focus' : 'Focus this week'], ['del', 'trash3', 'Delete']
     ].filter(Boolean);
@@ -450,6 +507,7 @@
       else if (a === 'nodate') moveTodo(t, null, 'no date');
       else if (a === 'focus') { t.focus = !t.focus; renderTodos(); }
       else if (a === 'timer') window.Focus.start(t.text, t.id);
+      else if (a === 'steps') stepsSheet(t);
       else if (a === 'top') {
         if (inTop) { delete t.today; delete t.rank; }
         else { var n = todos.filter(function (z) { return z.today === td && !z.done; }).length; if (n >= 3) { if (window.Quick) window.Quick.toast('<i class="bi bi-trophy"></i> Top 3 is full – take one out in Plan my day'); return; } t.today = td; t.rank = n + 1; }
@@ -484,7 +542,8 @@
     var map = [['linkedin', 'linkedin'], ['instagram', 'instagram'], ['github', 'github'], ['jplundberg', 'house'],
       ['pagescms', 'pencil-square'], ['tally', 'ui-checks'], ['claude', 'stars'], ['sharepoint', 'microsoft'],
       ['office', 'microsoft'], ['outlook', 'envelope'], ['mail', 'envelope'], ['plania', 'buildings'], ['teams', 'microsoft-teams'],
-      ['youtube', 'youtube'], ['spotify', 'spotify'], ['google', 'google']];
+      ['youtube', 'youtube'], ['spotify', 'spotify'], ['google', 'google'], ['facebook', 'facebook'], ['strava', 'activity'], ['notion', 'journal-text'],
+      ['dnb', 'bank'], ['nordea', 'bank'], ['sparebank', 'bank'], ['vipps', 'phone'], ['finn.no', 'tag'], ['ruter', 'bus-front'], ['entur', 'train-front'], ['yr.no', 'cloud-sun'], ['altinn', 'building'], ['nav.no', 'building'], ['helsenorge', 'heart-pulse'], ['chatgpt', 'chat-dots'], ['drive.google', 'google'], ['dropbox', 'dropbox'], ['slack', 'slack'], ['whatsapp', 'whatsapp'], ['x.com', 'twitter-x'], ['netflix', 'film']];
     var u = (url + ' ' + name).toLowerCase();
     for (var i = 0; i < map.length; i++) if (u.indexOf(map[i][0]) > -1) return '<i class="bi bi-' + map[i][1] + '"></i>';
     return esc((name || '?').trim().charAt(0).toUpperCase());
@@ -505,7 +564,7 @@
   $('linkCancel').addEventListener('click', function () { setEditing(false); });
   $('linkGrid').addEventListener('click', function (e) {
     var rm = e.target.closest('.remove');
-    if (rm) { e.preventDefault(); links.splice(Number(rm.dataset.i), 1); renderLinks(); return; }
+    if (rm) { e.preventDefault(); var at = Number(rm.dataset.i), gone = links.splice(at, 1)[0]; renderLinks(); if (window.Quick && gone) window.Quick.toast('<i class="bi bi-trash3"></i> ' + esc(gone.name) + ' removed', function () { links.splice(Math.min(at, links.length), 0, gone); renderLinks(); }); return; }
     if (document.querySelector('.links').classList.contains('editing') && e.target.closest('a')) e.preventDefault();
   });
   $('linkForm').addEventListener('submit', function (e) {
@@ -537,10 +596,23 @@
       return '<a href="' + u + '" target="_blank" rel="noopener">' + label + '</a>';
     });
   }
+  /* lines like "- [ ] milk" become tick boxes; tick one and the note remembers it */
+  function noteBody(n) {
+    var lines = String(n.text).split('\n'), hasCheck = lines.some(function (l) { return /^\s*[-*]\s*\[( |x|X)\]/.test(l); });
+    if (!hasCheck) return linkify(n.text);
+    return lines.map(function (l, i) {
+      var m = /^\s*[-*]\s*\[( |x|X)\]\s?(.*)$/.exec(l);
+      if (!m) return '<span class="nl">' + linkify(l) + '</span>';
+      var on = m[1] !== ' ';
+      return '<label class="nl-check' + (on ? ' on' : '') + '"><input type="checkbox" data-nline="' + i + '"' + (on ? ' checked' : '') + '> <span>' + linkify(m[2]) + '</span></label>';
+    }).join('');
+  }
   function renderNotes() {
     save('dash.notes', notes);
-    $('noteList').innerHTML = notes.map(function (n) {
-      return '<li class="note' + (editingNote === n ? ' editing' : '') + '" data-id="' + n.id + '"><span class="body">' + linkify(n.text) + '</span>' +
+    var order = notes.slice().sort(function (a, b) { return (b.pin ? 1 : 0) - (a.pin ? 1 : 0); });
+    $('noteList').innerHTML = order.map(function (n) {
+      return '<li class="note' + (editingNote === n ? ' editing' : '') + (n.pin ? ' pinned' : '') + '" data-id="' + n.id + '"><span class="body">' + noteBody(n) + '</span>' +
+        '<button type="button" class="pin" aria-label="' + (n.pin ? 'Unpin note' : 'Pin note to the top') + '" title="' + (n.pin ? 'Unpin' : 'Pin to the top') + '"><i class="bi bi-pin' + (n.pin ? '-fill' : '') + '"></i></button>' +
         '<button type="button" class="del" aria-label="Delete note"><i class="bi bi-x"></i></button></li>';
     }).join('');
     $('noteEmpty').hidden = notes.length > 0;
@@ -569,12 +641,23 @@
     var li = e.target.closest('.note'); if (!li) return;
     if (e.target.closest('a')) return;
     var n = notes.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!n) return;
+    if (e.target.closest('.nl-check')) {
+      var cb = e.target.closest('.nl-check').querySelector('input');
+      if (e.target !== cb) return;                 // the label passes the click on to the box
+      var lines = String(n.text).split('\n'), i = +cb.dataset.nline;
+      lines[i] = lines[i].replace(/\[( |x|X)\]/, cb.checked ? '[x]' : '[ ]');
+      n.text = lines.join('\n'); save('dash.notes', notes); cb.closest('.nl-check').classList.toggle('on', cb.checked);
+      return;
+    }
+    if (e.target.closest('.pin')) { n.pin = !n.pin; if (!n.pin) delete n.pin; renderNotes(); return; }
     if (e.target.closest('.del')) {
       li.classList.add('removing');
+      var at = notes.indexOf(n);
       setTimeout(function () {
         notes = notes.filter(function (x) { return x !== n; });
         if (editingNote === n) { editingNote = null; $('noteInput').value = ''; }
         renderNotes();
+        if (window.Quick) window.Quick.toast('<i class="bi bi-trash3"></i> Note deleted', function () { notes = load('dash.notes', notes); notes.splice(Math.min(at, notes.length), 0, n); renderNotes(); });
       }, 250);
       return;
     }

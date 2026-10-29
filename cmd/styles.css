@@ -2475,7 +2475,6 @@ a.st-btn .st-label { flex: 1; }
   .dash-sec .grid.masonry > * { align-self: start; }
   .dash-sec .grid.masonry > .notes, .dash-sec .grid.masonry > .card.habits { grid-column: auto; }   /* masonry.js decides: one column, or two when that fills better */
 }
-@media (min-width: 760px) { .dash-sec .grid.masonry > .msn-fill { align-self: stretch; margin-bottom: 14px; } .dens-compact .dash-sec .grid.masonry > .msn-fill { margin-bottom: 9px; } }
 
 /* ---------- Plan my day (plan.js) ---------- */
 @media (min-width: 760px) { .qa-box.pl-box { width: min(640px, 100%); } }
@@ -2683,3 +2682,24 @@ kbd, .sr-k { white-space: nowrap; display: inline-grid; place-items: center; min
 .rd-why { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text); line-height: 1.6; }
 .lf-sec h4 small { text-transform: none; letter-spacing: 0; margin-left: 6px; font-weight: 500; }
 .st-snaps li { justify-content: space-between; align-items: center; } .st-snaps li > span { min-width: 0; }
+/* notes: pin and checklists */
+.note .pin { border: 0; background: none; color: var(--muted); width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; opacity: 0; transition: opacity .2s; padding: 0; }
+.note:hover .pin, .note.pinned .pin, .note .pin:focus-visible { opacity: 1; }
+@media (hover: none) { .note .pin { opacity: .55; } }
+.note.pinned { background: var(--accent-soft); } .note.pinned .pin { color: var(--accent); }
+.note .body .nl { display: block; }
+.nl-check { display: flex; gap: 8px; align-items: flex-start; white-space: normal; padding: 2px 0; cursor: pointer; }
+.nl-check input { width: 17px; height: 17px; margin: 3px 0 0; flex: none; accent-color: var(--accent); }
+.nl-check.on span { color: var(--muted); text-decoration: line-through; }
+/* At a glance: hide a line for today (× on hover, swipe left on a phone) */
+.br-x-btn.br-soft { opacity: 0; width: 24px; margin-left: -4px; transition: opacity .15s; }
+.br-li:hover .br-x-btn.br-soft, .br-x-btn.br-soft:focus-visible { opacity: .7; }
+@media (hover: none) { .br-x-btn.br-soft { display: none; } }
+.br-li { transition: transform .2s var(--ease-out), opacity .2s; }
+/* steps inside a task */
+.td-steps { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: rgba(var(--ink-rgb), .07); color: var(--muted); margin-left: 4px; cursor: pointer; vertical-align: 1px; }
+.td-steps.all { color: #22b35e; }
+.td-step { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.td-step .lf-check { flex: 1; } .td-step .dn { color: var(--muted); text-decoration: line-through; }
+.td-stadd { margin-top: 12px; }
+.link-btn { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
