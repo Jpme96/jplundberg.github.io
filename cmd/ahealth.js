@@ -315,6 +315,7 @@
     var hb = readJSON('dash.habits', { list: [] }), D = days(), n = Object.keys(D).length;
     $('ahStatus').textContent = n ? n + ' day' + (n === 1 ? '' : 's') + ' from Apple Health · last ' + new Date(((window.Vault.get() || {}).health || {}).last || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Nothing received yet';
     $('ahOn').checked = Fe ? Fe.on('ahealth') : true;
+    if ($('ahSetup') && !settingsPage.done) { $('ahSetup').open = !n; settingsPage.done = true; }   // set-up open until numbers arrive
     $('ahHabits').innerHTML = (hb.list || []).length ? hb.list.map(function (h) {
       var a = h.auto || {};
       return '<div class="st-row ah-rule"><span class="st-label">' + esc(h.name) + '<small>Tick it automatically when…</small></span><span class="ah-rule-in">' +

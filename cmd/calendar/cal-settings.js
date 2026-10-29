@@ -23,7 +23,7 @@
       var hours = ''; for (var h = 5; h <= 10; h++) hours += opt(h, String(h).padStart(2, '0') + ':00', p.dayStart);
       var feeds = d.feeds || [];
       box.innerHTML =
-        '<p class="st-sub">View</p><section class="st-group">' +
+        '<p class="st-sub"><i class="bi bi-eye"></i> View</p><section class="st-group">' +
         '<label class="st-row"><span>Open in</span><select class="st-select" data-cs="view">' +
           opt('last', 'Last used', p.view) + opt('month', 'Month', p.view) + opt('week', 'Week', p.view) + opt('list', 'List', p.view) + '</select></label>' +
         sw('weekNums', p.weekNums, 'Week numbers', 'Like “Week 44” in the month and week views') +
@@ -31,14 +31,14 @@
         sw('holidays', p.holidays, 'Norwegian public holidays', '17. mai, Easter, Christmas … also counted in Flex time') +
         '</section>' +
 
-        '<p class="st-sub">New events</p><section class="st-group">' +
+        '<p class="st-sub"><i class="bi bi-plus-circle"></i> New events</p><section class="st-group">' +
         '<label class="st-row"><span>Length</span><select class="st-select" data-cs="dur">' +
           [15, 30, 45, 60, 90, 120].map(function (m) { return opt(m, m < 60 ? m + ' min' : (m / 60) + ' hour' + (m > 60 ? 's' : ''), p.dur); }).join('') + '</select></label>' +
         '<label class="st-row"><span>Category</span><select class="st-select" data-cs="cat">' + opt('last', 'Last used', p.cat) +
           cs.map(function (c) { return opt(c.id, c.name, p.cat); }).join('') + '</select></label>' +
         '</section>' +
 
-        '<p class="st-sub">Categories <span class="st-hint">Tap the colour to change it</span></p><section class="st-group cs-cats">' +
+        '<p class="st-sub"><i class="bi bi-tags"></i> Categories <span class="st-hint">Tap the colour to change it</span></p><section class="st-group cs-cats">' +
         cs.map(function (c) {
           return '<div class="st-row cs-cat" data-cid="' + esc(c.id) + '">' +
             '<label class="cs-col" style="--c:' + c.color + '" title="Colour"><input type="color" value="' + c.color + '" data-ccol="' + esc(c.id) + '" aria-label="Colour for ' + esc(c.name) + '"></label>' +
@@ -49,7 +49,7 @@
         (cs.length < 8 ? '<button type="button" class="st-row st-btn cs-add" data-cadd><span><i class="bi bi-plus-lg"></i> Add category</span></button>' : '') +
         '</section><p class="st-note">Events in a deleted category move to ' + esc((C.CATS.personal || C.CATS[C.CAT_ORDER[C.CAT_ORDER.length - 1]]).name) + '.</p>' +
 
-        '<p class="st-sub">Dashboard card <span class="st-hint">What the calendar card on the dashboard shows</span></p><section class="st-group">' +
+        '<p class="st-sub"><i class="bi bi-grid-1x2"></i> Dashboard card <span class="st-hint">What the calendar card on the dashboard shows</span></p><section class="st-group">' +
         cs.map(function (c) { return sw('card:' + c.id, !p.cardHide[c.id], '<i class="dot" style="--c:' + c.color + '"></i> ' + esc(c.name)); }).join('') +
         feeds.map(function (f) { return sw('card:feed:' + f.id, !p.cardHide['feed:' + f.id], '<i class="bi bi-phone"></i> ' + esc(f.name)); }).join('') +
         sw('card:travel', !p.cardHide.travel, '<i class="bi bi-suitcase-lg"></i> Travel') +

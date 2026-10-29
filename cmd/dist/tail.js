@@ -1407,6 +1407,7 @@ try {
     var hb = readJSON('dash.habits', { list: [] }), D = days(), n = Object.keys(D).length;
     $('ahStatus').textContent = n ? n + ' day' + (n === 1 ? '' : 's') + ' from Apple Health · last ' + new Date(((window.Vault.get() || {}).health || {}).last || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Nothing received yet';
     $('ahOn').checked = Fe ? Fe.on('ahealth') : true;
+    if ($('ahSetup') && !settingsPage.done) { $('ahSetup').open = !n; settingsPage.done = true; }   // set-up open until numbers arrive
     $('ahHabits').innerHTML = (hb.list || []).length ? hb.list.map(function (h) {
       var a = h.auto || {};
       return '<div class="st-row ah-rule"><span class="st-label">' + esc(h.name) + '<small>Tick it automatically when…</small></span><span class="ah-rule-in">' +
@@ -1744,9 +1745,10 @@ try {
     var box = document.getElementById('stNav'); if (!box) return;
     var name = function (k) { var a = nav.querySelector('a[data-pg="' + k + '"] span:last-child'); return a ? a.textContent : k; };
     var icon = function (k) { var i = nav.querySelector('a[data-pg="' + k + '"] .bi'); return i ? i.className : 'bi bi-circle'; };
-    box.innerHTML = '<div class="st-row st-nav-row is-fixed"><span class="st-label"><i class="' + icon('home') + '"></i> ' + name('home') + '<small>Always first</small></span></div>' +
+    var ico = function (k) { return '<span class="st-ico" style="--c:var(--accent)"><i class="' + icon(k) + '"></i></span>'; };
+    box.innerHTML = '<div class="st-row st-nav-row is-fixed">' + ico('home') + '<span class="st-label">' + name('home') + '<small>Always first</small></span></div>' +
       list.map(function (k, i) {
-        return '<div class="st-row st-nav-row"><span class="st-label"><i class="' + icon(k) + '"></i> ' + name(k) + '</span><span class="pk-mv">' +
+        return '<div class="st-row st-nav-row">' + ico(k) + '<span class="st-label">' + name(k) + '</span><span class="pk-mv">' +
           '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="-1" aria-label="Move ' + name(k) + ' left"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +
           '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="1" aria-label="Move ' + name(k) + ' right"' + (i < list.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
       }).join('');

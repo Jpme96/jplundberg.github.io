@@ -67,7 +67,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=88" rel="stylesheet">
+  <link href="styles.css?v=90" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -264,17 +264,28 @@
       <div class="st-page" data-page="home">
         <button type="button" class="st-profile" data-go="profile" id="stProfile"></button>
         <p class="st-grp"><i class="bi bi-lock"></i> Dashboard <span>Private, only you</span></p>
+        <p class="st-minor">Look and layout</p>
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="layout"><span class="st-ico" style="--c:#11a597"><i class="bi bi-menu-button-wide"></i></span><span class="st-label">Menu &amp; pages<small>The order of pages, sections and cards</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
+        </nav>
+        <p class="st-minor">Pages</p>
+        <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
+        </nav>
+        <p class="st-minor">With your iPhone</p>
+        <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="notify"><span class="st-ico" style="--c:#e66767"><i class="bi bi-bell"></i></span><span class="st-label">Notifications<small id="sumNotify">Off</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="ahealth"><span class="st-ico" style="--c:#e66767"><i class="bi bi-apple"></i></span><span class="st-label">Apple Health<small>Steps, sleep and more from your iPhone</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="shortcuts"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-lightning-charge"></i></span><span class="st-label">Siri &amp; Shortcuts<small>Log things without opening the app</small></span><i class="bi bi-chevron-right"></i></button>
+        </nav>
+        <p class="st-minor">Privacy and data</p>
+        <nav class="st-group st-menu">
+          <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-grp"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span></p>
         <nav class="st-group st-menu">
@@ -346,6 +357,10 @@
             <button type="button" data-corners="sharp">Sharp</button>
           </div>
         </div>
+      </section>
+
+      <p class="st-sub ap-sub"><i class="bi bi-fonts"></i> Text and language</p>
+      <section class="st-group">
         <div class="st-row"><span class="st-label">Language<small>For the dashboard – the website has its own switch</small></span>
           <div class="seg" role="group" aria-label="Language">
             <button type="button" data-langopt="en">English</button>
@@ -373,7 +388,8 @@
       </section>
       </div>
 
-      <div class="st-page" data-page="dashboard" data-title="Dashboard" hidden>
+      <div class="st-page ap-page" data-page="dashboard" data-title="Dashboard" hidden>
+      <p class="st-sub ap-sub"><i class="bi bi-house"></i> Home screen</p>
       <section class="st-group">
         <label class="st-row"><span>Name in greeting</span><input id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
         <div class="st-row"><span class="st-label">Clock<small>Compact puts At a glance on the first screen of your phone</small></span>
@@ -392,17 +408,23 @@
           </div>
         </div>
         <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
-        <p class="st-sub">Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
-        <div id="stLists"></div>
-        <p class="st-sub">Pages <span class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
+      </section>
+      <p class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
+      <section class="st-group"><div id="stCards"></div></section>
+      <p class="st-sub ap-sub"><i class="bi bi-house-gear"></i> Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
+      <section class="st-group"><div id="stLists"></div></section>
+      </div>
+
+      <div class="st-page ap-page" data-page="layout" data-title="Menu &amp; pages" hidden>
+      <p class="st-sub ap-sub"><i class="bi bi-menu-button-wide"></i> Menu <span class="st-hint">The order of the pages in the menu</span></p>
+      <section class="st-group"><div id="stNav"></div></section>
+      <p class="st-sub ap-sub"><i class="bi bi-layout-text-window-reverse"></i> Pages <span class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
+      <section class="st-group">
         <a class="st-row st-btn" href="finance/?customize"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-wallet2"></i></span><span class="st-label">Customize Finances</span><i class="bi bi-chevron-right"></i></a>
         <a class="st-row st-btn" href="habits/?customize"><span class="st-ico" style="--c:#e66767"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Customize Health</span><i class="bi bi-chevron-right"></i></a>
         <a class="st-row st-btn" href="work/?customize"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-briefcase"></i></span><span class="st-label">Customize Work</span><i class="bi bi-chevron-right"></i></a>
-        <p class="st-sub">Menu <span class="st-hint">The order of the pages in the menu</span></p>
-        <div id="stNav"></div>
-        <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
-        <div id="stCards"></div>
       </section>
+      <p class="st-note st-pad">Number tiles (Finances, Health, Travel) each have their own Customize button under them.</p>
       </div>
 
       <div class="st-page" data-page="features" data-title="Features" hidden>
@@ -491,12 +513,13 @@
       </div>
 
       <div class="st-page" data-page="ahealth" data-title="Apple Health" hidden id="ahSet">
-        <p class="st-intro">Steps, sleep, resting heart rate, exercise and weight from your iPhone, once a day. A Shortcut sends the numbers to your server; the dashboard picks them up, keeps them encrypted with the rest and deletes them from the server.</p>
+        <p class="st-intro">Steps, sleep, heart rate, exercise, weight and more from your iPhone, once a day. A Shortcut sends the numbers to your server; the dashboard picks them up, keeps them encrypted with the rest and deletes them from the server.</p>
         <section class="st-group">
           <label class="st-row"><span class="st-label">Show Apple Health<small id="ahStatus">Nothing received yet</small></span><input type="checkbox" class="switch" id="ahOn"></label>
         </section>
         <p class="st-sub">Habits that tick themselves</p>
         <section class="st-group" id="ahHabits"></section>
+        <details class="st-setup" id="ahSetup"><summary class="st-sub"><i class="bi bi-tools"></i> How to set it up <span class="st-hint">About 10 minutes, once – Cloudflare first, then your iPhone</span></summary>
         <p class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
         <section class="st-group sc-steps">
           <ol>
@@ -525,6 +548,7 @@
           </ol>
           <p class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
         </section>
+        </details>
         <section class="st-group"><button class="st-row st-btn" id="ahClear" type="button"><span class="danger-txt"><i class="bi bi-trash3"></i> Remove Apple Health data from the dashboard</span><i class="bi bi-chevron-right"></i></button></section>
       </div>
 
@@ -551,7 +575,7 @@
             <button class="st-row st-btn" id="ntTest" type="button"><span><i class="bi bi-send"></i> Send a test notification</span><i class="bi bi-chevron-right"></i></button>
           </section>
         </div>
-        <p class="muted st-foot" id="ntHelp"></p>
+        <p class="st-note st-pad" id="ntHelp"></p>
       </div>
 
       <!-- ===== jplundberg.com ===== -->
@@ -675,9 +699,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=c39e568cd0"></script>
-  <script src="dist/page-home.js?v=6be9079dfe"></script>
-  <script src="dist/tail.js?v=bcbc85aee9"></script>
+  <script src="dist/head.js?v=652db2ab5b"></script>
+  <script src="dist/page-home.js?v=33489280e2"></script>
+  <script src="dist/tail.js?v=87911c860a"></script>
   <!-- /scripts -->
 </body>
 </html>

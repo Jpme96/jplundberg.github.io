@@ -2359,9 +2359,6 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 .tabbar a[data-pg="finance"] { order: var(--nav-finance, 3); }
 .tabbar a[data-pg="habits"] { order: var(--nav-habits, 4); }
 .tabbar a[data-pg="work"] { order: var(--nav-work, 5); }
-.st-nav-row .st-label { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.st-nav-row .st-label small { flex-basis: 100%; margin-left: 26px; }
-.st-nav-row.is-fixed { opacity: .7; }
 
 /* ---------- customize a page (pagekit.js) ---------- */
 .pk-off { display: none !important; }
@@ -2390,3 +2387,26 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 }
 a.st-btn { text-decoration: none; color: var(--text); text-align: left; }
 a.st-btn .st-label { flex: 1; }
+
+/* ---------- Settings tidy-up (Oct 2026): one look for every page ---------- */
+/* section labels outside a group look the same everywhere: small caps, accent icon, hint underneath */
+.st-page .st-sub:not(.st-group .st-sub) { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; margin: 18px 4px 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--muted); }
+.st-page > .st-sub:first-child, .st-page > .st-intro + .st-sub { margin-top: 2px; }
+.st-page .st-sub:not(.st-group .st-sub) > .bi { color: var(--accent); font-size: 13px; }
+.st-page .st-sub:not(.st-group .st-sub) > .st-hint { flex-basis: 100%; margin-top: 2px; font-size: 12.5px; }
+/* the main list: small labels between the groups */
+.st-minor { margin: 14px 6px 6px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.st-grp + .st-minor { margin-top: 2px; }
+.st-menu + .st-minor { margin-top: 16px; }
+/* notes under a group, left-aligned like the intro */
+.st-note.st-pad { margin: 8px 6px 0; }
+/* Apple Health set-up folds away once numbers arrive */
+.st-setup > summary { cursor: pointer; list-style: none; }
+.st-setup > summary::-webkit-details-marker { display: none; }
+.st-setup > summary::after { content: "\F282"; font-family: "bootstrap-icons"; margin-left: auto; font-size: 12px; color: var(--muted); transition: transform .2s; order: 2; }
+.st-setup[open] > summary::after { transform: rotate(180deg); }
+.st-setup > summary .st-hint { order: 3; }
+.st-sync #stSyncNow { white-space: nowrap; flex-shrink: 0; }
+/* menu order rows */
+.st-nav-row .st-label { flex: 1; }
+.st-nav-row.is-fixed .st-ico { opacity: .7; }
