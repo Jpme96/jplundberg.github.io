@@ -2469,3 +2469,9 @@ a.st-btn .st-label { flex: 1; }
 #settings[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
 #settings[hidden] .st-panel { transition: none; }
 .st-panel { will-change: transform; contain: layout paint style; }
+/* masonry on the home page (masonry.js): rows of 2 px, each card spans its own height */
+@media (min-width: 760px) {
+  .dash-sec .grid.masonry { grid-auto-rows: 2px; row-gap: 0; align-items: start; }
+  .dash-sec .grid.masonry > * { align-self: start; }
+}
+@media (min-width: 760px) { .dash-sec .grid.masonry > .msn-fill { align-self: stretch; margin-bottom: 14px; } .dens-compact .dash-sec .grid.masonry > .msn-fill { margin-bottom: 9px; } }
