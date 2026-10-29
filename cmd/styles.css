@@ -2225,7 +2225,7 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 .ah-l .bi { color: var(--c); }
 .ah-tile b { font-family: "Poppins", sans-serif; font-size: 18px; font-weight: 600; color: var(--heading); white-space: nowrap; }
 .ah-tile small { font-size: 11.5px; color: var(--muted); }
-.ah-tile .up { color: #22b35e; } .ah-tile .dn { color: #e8743b; }
+.ah-tile .up { color: #22b35e; } .ah-tile .dn { color: #e8743b; } .ah-tile .nt { color: var(--muted); }
 @media (max-width: 639px) {
   .ah-tiles.many { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .ah-tiles.many .ah-tile { padding: 8px 9px; }

@@ -13,9 +13,9 @@
   var $ = function (id) { return document.getElementById(id); };
   var Fe = window.Features;
   var API = '/cmd/api/health';
-  var F = ['steps', 'sleep', 'exercise', 'active', 'stand', 'distance', 'flights', 'rhr', 'hrv', 'vo2', 'weight', 'mindful', 'water', 'daylight'];
+  var F = ['steps', 'sleep', 'exercise', 'active', 'stand', 'distance', 'flights', 'hr', 'rhr', 'hrv', 'vo2', 'weight', 'mindful', 'water', 'daylight'];
   var LABEL = { steps: 'Steps', sleep: 'Sleep', rhr: 'Resting heart rate', active: 'Active energy', exercise: 'Exercise', weight: 'Weight', distance: 'Walking + running', flights: 'Flights climbed',
-    stand: 'Stand hours', hrv: 'Heart rate variability', vo2: 'Cardio fitness', mindful: 'Mindfulness', water: 'Water', daylight: 'Time in daylight' };
+    hr: 'Heart rate', stand: 'Stand hours', hrv: 'Heart rate variability', vo2: 'Cardio fitness', mindful: 'Mindfulness', water: 'Water', daylight: 'Time in daylight' };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -32,7 +32,7 @@
   function fmt(f, v) {
     if (v == null) return '–';
     if (f === 'sleep') return hm(v);
-    if (f === 'rhr') return Math.round(v) + ' bpm';
+    if (f === 'rhr' || f === 'hr') return Math.round(v) + ' bpm';
     if (f === 'active') return nf.format(v) + ' kcal';
     if (f === 'exercise') return Math.round(v) + ' min';
     if (f === 'weight') return nf1.format(v) + ' kg';
@@ -47,7 +47,7 @@
   }
 
   /* 0 h sleep, 0 bpm or 0 kg means the Shortcut found nothing – treat it as no number, not a real one */
-  var ZERO_IS_EMPTY = { sleep: 1, rhr: 1, weight: 1, hrv: 1, vo2: 1 };
+  var ZERO_IS_EMPTY = { sleep: 1, hr: 1, rhr: 1, weight: 1, hrv: 1, vo2: 1 };
   function days() {
     var d = window.Vault.get() || {}, D = (d.health && d.health.days) || {}, out = {};
     Object.keys(D).forEach(function (k) { var x = {}; Object.keys(D[k]).forEach(function (f) { if (!(ZERO_IS_EMPTY[f] && D[k][f] === 0)) x[f] = D[k][f]; }); out[k] = x; });
@@ -137,10 +137,12 @@
   /* ---------- the card on the Health page ---------- */
   var METRICS = [['steps', 'Steps', 'person-walking', '#22b35e'], ['sleep', 'Sleep', 'moon-stars', '#8a6fdf'], ['exercise', 'Exercise', 'activity', '#e8743b'],
     ['active', 'Energy', 'fire', '#c98500'], ['stand', 'Stand', 'person-standing', '#2aa7c9'], ['distance', 'Distance', 'signpost-split', '#3fa36b'], ['flights', 'Flights', 'bar-chart-steps', '#9b7b4f'],
-    ['rhr', 'Resting HR', 'heart', '#e66767'], ['hrv', 'HRV', 'heart-pulse', '#d0568f'], ['vo2', 'Fitness', 'lungs', '#e0577a'], ['weight', 'Weight', 'speedometer', '#3987e5'],
+    ['hr', 'Heart rate', 'heart-pulse-fill', '#e0475b'], ['rhr', 'Resting HR', 'heart', '#e66767'], ['hrv', 'HRV', 'heart-pulse', '#d0568f'], ['vo2', 'Fitness', 'lungs', '#e0577a'], ['weight', 'Weight', 'speedometer', '#3987e5'],
     ['mindful', 'Mindful', 'flower1', '#5bb5a2'], ['water', 'Water', 'droplet', '#3b9de0'], ['daylight', 'Daylight', 'sun', '#d9a400']];
   /* lower is better for these */
   var LOWER = { rhr: 1, weight: 1 };
+  /* no better or worse direction: the change is shown without colour */
+  var NEUTRAL = { hr: 1 };
   var chartM = 'steps', range = 14, selDay = null, editGoal = false;
   try { range = +localStorage.getItem('dash.ahRange') || 14; } catch (e) {}
   /* goals: the dashed line, the tile progress and "Goal reached" – change them on the card */
@@ -174,7 +176,7 @@
         '<b>' + esc(l ? fmt(m[0], l.v) : '–') + '</b>' +
         (pct != null ? '<span class="ah-prog' + (pct >= 100 ? ' full' : '') + '" title="' + Math.round(pct) + '% of ' + esc(fmt(m[0], g)) + '"><i style="width:' + pct.toFixed(1) + '%"></i></span>' : '') +
         '<small>' + (a != null ? '7-day avg ' + esc(fmt(m[0], a)) : '') +
-        (diff != null && Math.abs(diff) >= .05 ? ' <span class="' + ((diff > 0) === !LOWER[m[0]] ? 'up' : 'dn') + '">' + (diff > 0 ? '+' : '−') + Math.round(Math.abs(diff) * 100) + '%</span>' : '') + '</small></button>';
+        (diff != null && Math.abs(diff) >= .05 ? ' <span class="' + (NEUTRAL[m[0]] ? 'nt' : (diff > 0) === !LOWER[m[0]] ? 'up' : 'dn') + '">' + (diff > 0 ? '+' : '−') + Math.round(Math.abs(diff) * 100) + '%</span>' : '') + '</small></button>';
     }).join('');
 
     /* the chart: 7, 14 or 30 days; tap a bar to see that day */
