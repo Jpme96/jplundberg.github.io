@@ -172,6 +172,8 @@
       var open = Fe.list('flex').filter(function (e) { return e.date === today && e.in && !e.out; })[0];
       if (open) add(25, 'stopwatch', '#e8743b', 'Clocked in at ' + open.in, 'Remember to clock out', 'work/');
     }
+    /* lines from the optional features (Meeting prep, Trip budget, Rest day, Strømpris …) */
+    (window.BriefExtra || []).forEach(function (fn) { try { fn(add, now, today); } catch (e) {} });
     suggestions(add, now, today);
     return out.sort(function (a, b) { return a.pri - b.pri; });
   }
@@ -359,7 +361,7 @@
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
-  ['review:seen', 'plan:change', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
+  ['brief:refresh', 'review:seen', 'plan:change', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });
   window.Vault.onLock(function () { unlocked = false; box.innerHTML = ''; });

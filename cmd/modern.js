@@ -166,7 +166,16 @@
     });
   }
   var iq = false;
-  new MutationObserver(function () { if (!iq) { iq = true; requestAnimationFrame(function () { iq = false; iconify(); }); } }).observe(document.body, { childList: true, subtree: true });
+  /* only when a card's heading changed (the clock and lists change all the time – those are skipped) */
+  function headChange(recs) {
+    for (var i = 0; i < recs.length; i++) {
+      var r = recs[i], t = r.target;
+      if (t.nodeType === 1 && t.closest('.card-head')) return true;
+      for (var j = 0; j < r.addedNodes.length; j++) { var n = r.addedNodes[j]; if (n.nodeType === 1 && (n.matches('.card-head, .card') || n.querySelector('.card-head'))) return true; }
+    }
+    return false;
+  }
+  new MutationObserver(function (recs) { if (!iq && headChange(recs)) { iq = true; requestAnimationFrame(function () { iq = false; iconify(); }); } }).observe(document.body, { childList: true, subtree: true });
 
   /* ================= home: the hero ================= */
   var hero = null;

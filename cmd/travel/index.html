@@ -51,8 +51,8 @@
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
         var tabs = { calendar: on('calendar', true), travel: on('travel', true) || on('bucket', false),
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
-          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false),
-          work: on('flex', false) || on('meetings', false) || on('learning', false) };
+          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
+          work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) };
         Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -69,8 +69,8 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=104" rel="stylesheet">
-  <link href="../modern.css?v=1" rel="stylesheet">
+  <link href="../styles.css?v=105" rel="stylesheet">
+  <link href="../modern.css?v=2" rel="stylesheet">
   <link href="../finance/fin.css?v=9" rel="stylesheet">
   <link href="../calendar/cal.css?v=10" rel="stylesheet">
   <link href="travel.css?v=9" rel="stylesheet">
@@ -351,9 +351,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=ff75daa042"></script>
+  <script src="../dist/head.js?v=b3dc9b915f"></script>
   <script src="../dist/page-travel.js?v=fff833655b"></script>
-  <script src="../dist/tail.js?v=70971ac287"></script>
+  <script src="../dist/tail.js?v=8c6c4d4c68"></script>
   <!-- /scripts -->
 </body>
 </html>

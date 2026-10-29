@@ -20,10 +20,22 @@
     { id: 'journal', group: 'Health', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood' },
     { id: 'bucket', group: 'Travel', name: 'Places to visit', icon: 'pin-map', c: '#0891b2', desc: 'Your bucket list, on the map – turn one into a trip' },
     { id: 'subs', group: 'Finance', name: 'Subscriptions', icon: 'arrow-repeat', c: '#11a597', desc: 'What you pay every month and when it renews' },
-    { id: 'warranty', group: 'Finance', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out' }
+    { id: 'warranty', group: 'Finance', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out' },
+    { id: 'voice', group: 'Everyday', name: 'Talk to add', icon: 'mic', c: '#8a6fdf', desc: 'Say it and it’s added – “149 Rema”, “gym tomorrow 7”' },
+    { id: 'findtime', group: 'Everyday', name: 'Find time', icon: 'calendar2-range', c: '#3987e5', desc: 'Finds a free slot this week for anything, and books it' },
+    { id: 'shutdown', group: 'Work', name: 'Shutdown ritual', icon: 'moon-stars', c: '#6b4bc4', desc: 'End the workday in one go: clock out, move what’s left, pick tomorrow’s top 3' },
+    { id: 'prep', group: 'Work', name: 'Meeting prep', icon: 'clipboard-check', c: '#3987e5', desc: 'Before a meeting: notes and open action points from last time' },
+    { id: 'fdv', group: 'Work', name: 'FDV inspection notes', icon: 'building-check', c: '#0891b2', desc: 'Findings with TG per building part – and a tidy summary to send' },
+    { id: 'holiday', group: 'Work', name: 'Holiday planner', icon: 'sun', c: '#e8743b', desc: 'Holiday days left, and where to put them for the longest breaks' },
+    { id: 'gym', group: 'Health', name: 'Gym log', icon: 'person-arms-up', c: '#d55181', desc: 'Sets, reps and kg per exercise, progress, and next session’s weight' },
+    { id: 'rest', group: 'Health', name: 'Rest-day advisor', icon: 'battery-half', c: '#22b35e', desc: 'Tells you when to rest – from sleep, heart rate and your training' },
+    { id: 'tripbudget', group: 'Travel', name: 'Trip budget mode', icon: 'cash-coin', c: '#0891b2', desc: 'While you’re away: what you can spend today' },
+    { id: 'smartpack', group: 'Travel', name: 'Smart packing', icon: 'bag-check', c: '#0891b2', desc: 'A packing list from the trip’s length and the weather there' },
+    { id: 'power', group: 'Finance', name: 'Strømpris', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours' },
+    { id: 'jars', group: 'Finance', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left' }
   ];
-  var WORK = ['flex', 'meetings', 'learning'];
-  var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth'];       // the Health page shows if any is on
+  var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday'];
+  var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth', 'gym', 'rest'];       // the Health page shows if any is on
   var REMIND_COLOR = '#c9a227';
 
   function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }

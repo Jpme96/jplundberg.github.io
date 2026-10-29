@@ -394,6 +394,63 @@
     '· on the page, “Save as PDF” prints it to a file.': '· på siden skriver «Lagre som PDF» den til en fil.', 'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
     'CSV': 'CSV', 'PDF': 'PDF'
   });
+  /* optional features: Talk to add, Shutdown, Find time, Meeting prep, Trip budget, Rest day, Strømpris, Jars, FDV, Holiday planner, Gym log, Smart packing */
+  (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
+    'Talk to add': 'Snakk inn', 'Say it and it’s added – “149 Rema”, “gym tomorrow 7”': 'Si det, så legges det til – «149 Rema», «trening i morgen 7»', 'Say it, and it’s added': 'Si det, så legges det til',
+    'Find time': 'Finn tid', 'Finds a free slot this week for anything, and books it': 'Finner ledig tid denne uken til hva som helst, og booker den', 'A free slot this week for anything': 'Ledig tid denne uken til hva som helst',
+    'Shutdown ritual': 'Avslutt arbeidsdagen', 'End the workday in one go: clock out, move what’s left, pick tomorrow’s top 3': 'Avslutt arbeidsdagen på én gang: stemple ut, flytt det som er igjen, velg morgendagens topp 3',
+    'Meeting prep': 'Møteforberedelse', 'Before a meeting: notes and open action points from last time': 'Før et møte: notater og åpne oppgaver fra sist',
+    'FDV inspection notes': 'FDV-befaringsnotater', 'Findings with TG per building part – and a tidy summary to send': 'Funn med TG per bygningsdel – og et ryddig sammendrag å sende',
+    'Holiday planner': 'Ferieplanlegger', 'Holiday days left, and where to put them for the longest breaks': 'Feriedager igjen, og hvor de gir lengst fri',
+    'Gym log': 'Treningslogg (styrke)', 'Sets, reps and kg per exercise, progress, and next session’s weight': 'Sett, reps og kg per øvelse, fremgang og vekt til neste økt',
+    'Rest-day advisor': 'Hviledagsråd', 'Tells you when to rest – from sleep, heart rate and your training': 'Sier fra når du bør hvile – ut fra søvn, puls og treningen din',
+    'Trip budget mode': 'Reisebudsjett', 'While you’re away: what you can spend today': 'Mens du er borte: hva du kan bruke i dag',
+    'Smart packing': 'Smart pakking', 'A packing list from the trip’s length and the weather there': 'En pakkeliste ut fra reisens lengde og været der',
+    'Strømpris': 'Strømpris', 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours': 'Strømprisen i Oslo (NO1) time for time – og de billigste timene',
+    'Savings jars': 'Sparekrukker', 'Your savings goals as jars that fill up, with weeks left': 'Sparemålene som krukker som fylles opp, med uker igjen',
+    'End your workday': 'Avslutt arbeidsdagen', 'End my workday': 'Avslutt arbeidsdagen', 'End my day': 'Avslutt dagen', 'Close today in one go – and know what tomorrow holds.': 'Avslutt i dag på én gang – og vit hva morgendagen bringer.',
+    'Work time': 'Arbeidstid', 'Left from today': 'Igjen fra i dag', 'Nothing left – nice work.': 'Ingenting igjen – bra jobbet.', 'Tomorrow’s top 3': 'Morgendagens topp 3', 'No open tasks.': 'Ingen åpne oppgaver.',
+    'Not now': 'Ikke nå', 'Move what’s left and pick tomorrow’s top 3': 'Flytt det som er igjen og velg morgendagens topp 3', 'Clock out, move what’s left, pick tomorrow’s top 3': 'Stemple ut, flytt det som er igjen, velg morgendagens topp 3',
+    'Three is the limit – take one out first': 'Tre er maks – ta ut én først',
+    'What do you need time for?': 'Hva trenger du tid til?', 'Work hours': 'Arbeidstid', 'Evenings': 'Kvelder', 'Any time': 'Når som helst', 'This week': 'Denne uken', 'Next week': 'Neste uke', '2 weeks': '2 uker', 'Weekends too': 'Helger også',
+    'No free slot that long – try a shorter time, or more days.': 'Ingen ledig tid så lenge – prøv kortere tid eller flere dager.',
+    'In the event': 'I hendelsen', 'Open action points': 'Åpne oppgaver', 'All action points done.': 'Alle oppgaver er gjort.', 'Ready': 'Klar', 'Meeting notes': 'Møtenotater', 'Notes in the event': 'Notater i hendelsen', 'notes ready': 'notater klare',
+    'Take a rest day': 'Ta en hviledag', 'Go easy today': 'Ta det rolig i dag', 'Ready to train': 'Klar for trening', 'Slept well': 'Sov godt', 'HRV above your normal': 'HRV over det normale',
+    'Your body is recovered – a good day for a hard session.': 'Kroppen er restituert – en god dag for en hard økt.', 'Train light: technique, mobility, a walk or an easy run.': 'Tren lett: teknikk, mobilitet, en tur eller en rolig løpetur.',
+    'Rest, sleep early and eat well – you’ll come back stronger.': 'Hvil, legg deg tidlig og spis godt – du kommer sterkere tilbake.',
+    'Needs a few days of sleep, heart rate (HRV, resting pulse) from Apple Health, or your training log, to know your normal.': 'Trenger noen dager med søvn og puls (HRV, hvilepuls) fra Apple Health, eller treningsloggen, for å kjenne ditt normale nivå.',
+    'Today': 'I dag', 'Tomorrow': 'I morgen', 'Cheap': 'Billig', 'Normal': 'Normal', 'Expensive': 'Dyrt', 'I have Norgespris': 'Jeg har Norgespris', 'You pay 50 øre with Norgespris': 'Du betaler 50 øre med Norgespris',
+    'Spot price in NO1 with VAT, before grid rent (nettleie). Prices from hvakosterstrommen.no.': 'Spotpris i NO1 med mva, før nettleie. Priser fra hvakosterstrommen.no.',
+    'Getting today’s prices …': 'Henter dagens priser …', 'Couldn’t reach the price service right now – try again later.': 'Fikk ikke kontakt med pristjenesten nå – prøv igjen senere.',
+    'Good time to wash, dry or charge': 'Lurt å vaske, tørke eller lade nå', 'Full 🎉': 'Full 🎉',
+    'New inspection': 'Ny befaring', 'Edit inspection': 'Rediger befaring', 'Building': 'Bygg', 'Building or property, e.g. Storgata 12': 'Bygg eller eiendom, f.eks. Storgata 12', 'Address': 'Adresse', 'Street, town': 'Gate, sted', 'Client': 'Oppdragsgiver', 'Who it’s for': 'Hvem det er for',
+    'Copy summary': 'Kopier sammendrag', 'Share': 'Del', 'TG 2–3 to to-do': 'TG 2–3 til gjøremål', 'Add finding': 'Legg til funn', 'Photo': 'Bilde', 'Photo ✓': 'Bilde ✓', 'Summary copied': 'Sammendraget er kopiert', 'Finding removed': 'Funnet er fjernet', 'Remove finding': 'Fjern funn',
+    'No findings yet – add the first one below.': 'Ingen funn ennå – legg til det første under.', 'What you found, e.g. Cracked sealant around window, 2nd floor': 'Hva du fant, f.eks. sprukken fuge rundt vindu, 2. etg', 'What should be done (optional)': 'Hva bør gjøres (valgfritt)',
+    'Walk a building, note each finding with its condition grade (TG) and a photo – and get a tidy summary you can send or paste into a report.': 'Gå gjennom et bygg, noter hvert funn med tilstandsgrad (TG) og bilde – og få et ryddig sammendrag du kan sende eller lime inn i en rapport.',
+    'Roof': 'Tak', 'Facade': 'Fasade', 'Windows and doors': 'Vinduer og dører', 'Wet rooms': 'Våtrom', 'Kitchen': 'Kjøkken', 'Electrical': 'Elektro', 'Plumbing (VVS)': 'VVS', 'Ventilation': 'Ventilasjon', 'Heating': 'Oppvarming', 'Fire safety': 'Brannsikring', 'Structure': 'Konstruksjon', 'Outdoor areas': 'Utomhus', 'Other': 'Annet',
+    'No issues': 'Ingen avvik', 'Minor issues': 'Mindre avvik', 'Significant issues': 'Vesentlige avvik', 'Serious issues': 'Store eller alvorlige avvik', 'Not examined': 'Ikke undersøkt',
+    'Longest breaks for the fewest days': 'Lengst fri for færrest dager', 'Plan it': 'Planlegg', 'In calendar': 'I kalenderen', 'days off': 'dager fri', 'Next public holiday': 'Neste helligdag', 'No clever breaks in the next 12 months.': 'Ingen lure fridager de neste 12 månedene.',
+    'Start workout': 'Start økt', 'Workout': 'Økt', 'Edit workout': 'Rediger økt', 'Save workout': 'Lagre økten', 'Progress': 'Fremgang', 'Recent': 'Siste', 'Next': 'Neste', 'Volume': 'Volum', 'New bests': 'Nye rekorder', 'last 30 days': 'siste 30 dager', 'reps': 'reps', 'Set': 'Sett', 'Reps': 'Reps', 'Kilos': 'Kilo',
+    'Add exercise, e.g. Bench press': 'Legg til øvelse, f.eks. benkpress', 'Workout deleted': 'Økten er slettet', 'Remove set': 'Fjern sett',
+    'Log sets, reps and kilos per exercise. It shows your progress and suggests the weight for next time.': 'Logg sett, reps og kilo per øvelse. Den viser fremgangen og foreslår vekt til neste gang.',
+    'Bench press': 'Benkpress', 'Squat': 'Knebøy', 'Deadlift': 'Markløft', 'Overhead press': 'Skulderpress', 'Barbell row': 'Stangroing', 'Pull-ups': 'Pull-ups', 'Lat pulldown': 'Nedtrekk', 'Leg press': 'Beinpress', 'Lunges': 'Utfall', 'Romanian deadlift': 'Rumensk markløft', 'Biceps curl': 'Bicepscurl', 'Triceps pushdown': 'Triceps pushdown', 'Dips': 'Dips', 'Seated row': 'Sittende roing', 'Leg curl': 'Lårcurl', 'Calf raise': 'Tåhev', 'Plank': 'Planke',
+    'Smart list': 'Smart liste', 'Checking the weather …': 'Sjekker været …', 'Allow the microphone for this site to talk to add': 'Gi siden tilgang til mikrofonen for å snakke inn'
+  });
+  P.push(
+    [/^(\d+) of 3$/, '$1 av 3'], [/^Move (.+) to tomorrow$/, 'Flytt $1 til i morgen'], [/^Clock out now \((\d\d:\d\d)\) – clocked in at (\d\d:\d\d)$/, 'Stemple ut nå ($1) – stemplet inn $2'],
+    [/^Workday closed(?: · (\d+) moved to tomorrow)?\. See you tomorrow\.$/, function (m, n) { return 'Arbeidsdagen er avsluttet' + (n ? ' · ' + n + ' flyttet til i morgen' : '') + '. Vi ses i morgen.'; }],
+    [/^Prep: (.+) at (\d\d:\d\d)$/, 'Forbered: $1 kl. $2'], [/^Last time (.+)$/, 'Sist $1'], [/^(\d+) open actions?$/, function (m, n) { return n + (n === '1' ? ' åpen oppgave' : ' åpne oppgaver'); }],
+    [/^(.+): (.+) left today$/, '$1: $2 igjen i dag'], [/^(.+): (.+) over today$/, '$1: $2 over i dag'], [/^(.+) a day$/, '$1 om dagen'], [/^(\d+) days? left$/, function (m, n) { return n + (n === '1' ? ' dag' : ' dager') + ' igjen'; }],
+    [/^HRV (\d+) % below your normal$/, 'HRV $1 % under det normale'], [/^Resting pulse \+(\d+) bpm$/, 'Hvilepuls +$1 slag/min'], [/^Slept ([\d,]+) h$/, 'Sov $1 t'], [/^(\d+) training days in a row$/, '$1 treningsdager på rad'], [/^readiness (\d+)$/, 'form $1'],
+    [/^Now, (\d+)–(\d+)$/, 'Nå, $1–$2'], [/^Average (today|tomorrow)$/, function (m, a) { return 'Snitt ' + (a === 'today' ? 'i dag' : 'i morgen'); }], [/^≈ (\d+) øre after strømstøtte$/, '≈ $1 øre etter strømstøtte'],
+    [/^Cheapest (.+)$/, 'Billigst $1'], [/^Most expensive (.+)$/, 'Dyrest $1'], [/^Average (\d+) øre$/, 'Snitt $1 øre'], [/^Cheap power now – (\d+) øre$/, 'Billig strøm nå – $1 øre'], [/^until (\d\d:\d\d)$/, 'til $1'], [/^Cheapest power (.+)$/, 'Billigst strøm $1'], [/^now (\d+) øre$/, 'nå $1 øre'],
+    [/^(\d+) weeks? to go$/, function (m, n) { return n + (n === '1' ? ' uke' : ' uker') + ' igjen'; }], [/^(.+) to go$/, '$1 igjen'],
+    [/^(\d+) findings?$/, function (m, n) { return n + ' funn'; }], [/^(\d+) tasks? added to your to-do list$/, '$1 lagt til i gjøremål'],
+    [/^Days left (\d{4})$/, 'Dager igjen $1'], [/^(\d+) used$/, '$1 brukt'], [/^(\d+) planned$/, '$1 planlagt'], [/^Take (\d+) days?: (.+)$/, function (m, n, r) { return 'Ta ' + n + (n === '1' ? ' dag' : ' dager') + ': ' + r; }], [/^Off (.+)$/, 'Fri $1'],
+    [/^(.+) break in your calendar( and flex time)?$/, function (m, a, f) { return a + ' er lagt i kalenderen' + (f ? ' og fleksitiden' : ''); }],
+    [/^Last (\d+)×(\d+) @ (.+) kg · try (.+)$/, 'Sist $1×$2 @ $3 kg · prøv $4'], [/^Last (\d+)×(\d+) @ (.+) kg$/, 'Sist $1×$2 @ $3 kg'], [/^Workout saved – (\d+) exercises?$/, function (m, n) { return 'Økten er lagret – ' + n + (n === '1' ? ' øvelse' : ' øvelser'); }],
+    [/^(\d+) things added(.*)$/, function (m, n, r) { return n + ' ting lagt til' + r.replace('weather from the season – forecast comes 2 weeks before', 'vær fra årstiden – varselet kommer 2 uker før').replace('rain likely', 'trolig regn'); }]
+  );
   /* the Modern look: menu bar, More, the home hero */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
     'Good morning': 'God morgen', 'Good afternoon': 'God ettermiddag', 'Good evening': 'God kveld', 'Good night': 'God natt',

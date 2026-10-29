@@ -16,6 +16,8 @@
     "focus.js",
     "keys.js",
     "nav.js",
+    "life.js",
+    "life-pages.js",
     "modern.js"
   ],
   "pages": {

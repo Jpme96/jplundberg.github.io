@@ -75,6 +75,7 @@
     if (K.theme) cmd(document.documentElement.getAttribute('data-theme') === 'light' ? 'moon-stars' : 'sun', document.documentElement.getAttribute('data-theme') === 'light' ? 'Dark mode' : 'Light mode', 'Switch the look', 'D', K.theme, 'theme dark light mørk lys');
     cmd('lock', 'Lock now', 'Lock the dashboard on this device', 'L', function () { window.Vault.lock(); }, 'lock lås');
     if (K.help) cmd('keyboard', 'Keyboard shortcuts', 'All the keys', '?', K.help, 'keys shortcuts hurtigtaster');
+    (window.CommandExtra || []).forEach(function (f) { try { f().forEach(function (c) { cmd(c.i, c.t, c.s, c.k || '', c.run, c.x); }); } catch (e) {} });
     return out;
   }
   function search(q) {
