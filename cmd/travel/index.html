@@ -48,7 +48,7 @@
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
         var tabs = { calendar: on('calendar', true), travel: on('travel', true) || on('bucket', false),
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
-          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false),
+          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) };
         Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
@@ -66,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=73" rel="stylesheet">
+  <link href="../styles.css?v=74" rel="stylesheet">
   <link href="../finance/fin.css?v=7" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
   <link href="travel.css?v=9" rel="stylesheet">
@@ -346,24 +346,10 @@
     </form>
   </div>
 
-  <script src="../lock.js?v=15"></script>
-  <script src="../features.js?v=5"></script>
-  <script src="../places.js?v=2"></script>
-  <script src="world.js?v=5"></script>
-  <script src="../flow.js?v=2"></script>
-  <script src="../calendar/cal-core.js?v=8"></script>
-  <script src="travel.js?v=4"></script>
-  <script src="trips.js?v=9"></script>
-  <script src="history.js?v=4"></script>
-  <script src="../kit.js?v=2"></script>
-  <script src="../tools.js?v=5"></script>
-  <script src="../profile.js?v=8"></script>
-  <script src="../links.js?v=4"></script>
-  <script src="../smart.js?v=2"></script>
-  <script src="../search.js?v=6"></script>
-  <script src="../app.js?v=3"></script>
-  <script src="../quick.js?v=4"></script>
-  <script src="../notify.js?v=1"></script>
-  <script src="../nav.js?v=16"></script>
+  <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
+  <script src="../dist/head.js?v=835a9b5c9e"></script>
+  <script src="../dist/page-travel.js?v=f1a377395c"></script>
+  <script src="../dist/tail.js?v=568994b9d1"></script>
+  <!-- /scripts -->
 </body>
 </html>

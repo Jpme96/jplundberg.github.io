@@ -16,13 +16,14 @@
     { id: 'learning', group: 'Work', name: 'Courses & certificates', icon: 'mortarboard', c: '#8a6fdf', desc: 'What you learn, and certificates that need renewing' },
     { id: 'training', group: 'Health', name: 'Training log', icon: 'heart-pulse', c: '#d55181', desc: 'Workouts with time, distance and how it felt' },
     { id: 'health', group: 'Health', name: 'Check-ups & medicine', icon: 'clipboard2-pulse', c: '#e66767', desc: 'Doctor and dentist, vaccines and prescriptions – with reminders' },
+    { id: 'ahealth', group: 'Health', name: 'Apple Health', icon: 'apple', c: '#e66767', desc: 'Steps, sleep, heart rate and exercise from your iPhone' },
     { id: 'journal', group: 'Health', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood' },
     { id: 'bucket', group: 'Travel', name: 'Places to visit', icon: 'pin-map', c: '#0891b2', desc: 'Your bucket list, on the map – turn one into a trip' },
     { id: 'subs', group: 'Finance', name: 'Subscriptions', icon: 'arrow-repeat', c: '#11a597', desc: 'What you pay every month and when it renews' },
     { id: 'warranty', group: 'Finance', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out' }
   ];
   var WORK = ['flex', 'meetings', 'learning'];
-  var HEALTH = ['habits', 'training', 'health', 'journal'];       // the Health page shows if any is on
+  var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth'];       // the Health page shows if any is on
   var REMIND_COLOR = '#c9a227';
 
   function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }

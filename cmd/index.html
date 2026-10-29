@@ -48,7 +48,7 @@
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
         var tabs = { calendar: on('calendar', true), travel: on('travel', true) || on('bucket', false),
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
-          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false),
+          habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) };
         Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
@@ -66,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=73" rel="stylesheet">
+  <link href="styles.css?v=74" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -272,6 +272,7 @@
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="notify"><span class="st-ico" style="--c:#e66767"><i class="bi bi-bell"></i></span><span class="st-label">Notifications<small id="sumNotify">Off</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="ahealth"><span class="st-ico" style="--c:#e66767"><i class="bi bi-apple"></i></span><span class="st-label">Apple Health<small>Steps, sleep and more from your iPhone</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="shortcuts"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-lightning-charge"></i></span><span class="st-label">Siri &amp; Shortcuts<small>Log things without opening the app</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-grp"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span></p>
@@ -344,6 +345,12 @@
             <button type="button" data-corners="sharp">Sharp</button>
           </div>
         </div>
+        <div class="st-row"><span class="st-label">Language<small>For the dashboard – the website has its own switch</small></span>
+          <div class="seg" role="group" aria-label="Language">
+            <button type="button" data-langopt="en">English</button>
+            <button type="button" data-langopt="nb">Norsk</button>
+          </div>
+        </div>
         <div class="st-row"><span class="st-label">Text size<small>Everything – text, buttons and icons – grows or shrinks together</small></span>
           <div class="seg" role="group" aria-label="Text size">
             <button type="button" data-textsize="s">Small</button>
@@ -384,6 +391,8 @@
           </div>
         </div>
         <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
+        <p class="st-sub">Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
+        <div id="stLists"></div>
         <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
         <div id="stCards"></div>
       </section>
@@ -445,8 +454,15 @@
       <div class="st-page" data-page="data" data-title="Data &amp; sync" hidden>
       <section class="st-group">
         <div class="st-row st-sync"><span id="stSync"></span><button class="text-btn" id="stSyncNow" type="button">Sync now</button></div>
-        <button class="st-row st-btn" id="stBackup" type="button"><span><i class="bi bi-download"></i> Download encrypted backup</span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stBackup" type="button"><span class="st-label"><span><i class="bi bi-download"></i> Download encrypted backup</span><small id="stBackupWhen"></small></span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span><i class="bi bi-upload"></i> Restore from a backup</span><small>Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
+        <input type="file" id="stRestoreFile" accept=".json,application/json" hidden>
       </section>
+      <p class="st-intro st-after">Your data is encrypted with your passcode, synced through your server and kept in this browser. A backup file is a third copy – keep it in Files, iCloud Drive or on your computer. At a glance reminds you once a month.</p>
+      <div class="st-confirm" id="stRestoreAsk" hidden>
+        <p><b>Restore this backup?</b> <span id="stRestoreInfo"></span> Everything on the dashboard is replaced by it, on all your devices. Download a backup of what you have now first if you might want it back.</p>
+        <div class="qa-acts"><button type="button" class="text-btn" id="stRestoreNo">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" id="stRestoreYes">Restore</button></div>
+      </div>
       </div>
 
 
@@ -465,6 +481,39 @@
           <p class="muted">The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.</p>
           <p class="muted">Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it's the same as in the app.</p>
         </section>
+      </div>
+
+      <div class="st-page" data-page="ahealth" data-title="Apple Health" hidden id="ahSet">
+        <p class="st-intro">Steps, sleep, resting heart rate, exercise and weight from your iPhone, once a day. A Shortcut sends the numbers to your server; the dashboard picks them up, keeps them encrypted with the rest and deletes them from the server.</p>
+        <section class="st-group">
+          <label class="st-row"><span class="st-label">Show Apple Health<small id="ahStatus">Nothing received yet</small></span><input type="checkbox" class="switch" id="ahOn"></label>
+        </section>
+        <p class="st-sub">Habits that tick themselves</p>
+        <section class="st-group" id="ahHabits"></section>
+        <p class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
+        <section class="st-group sc-steps">
+          <ol>
+            <li>Paste the newest <code>worker.js</code> into the Worker, if you haven't.</li>
+            <li>Zero Trust → <b>Access → Service auth → Create service token</b>. Name: <i>iPhone Shortcut</i>, duration: non-expiring. Copy the <b>Client ID</b> and <b>Client Secret</b> straight into the Shortcut below – nowhere else.</li>
+            <li><b>Access → Applications</b> → your dashboard → <b>Policies → Add a policy</b>. Action: <b>Service Auth</b>. Include: <b>Service Token</b> → <i>iPhone Shortcut</i>. Save.</li>
+          </ol>
+          <p class="muted">The token can only hand in health numbers – it can't read or change anything else.</p>
+        </section>
+        <p class="st-sub"><i class="bi bi-2-circle"></i> On your iPhone (5 minutes)</p>
+        <section class="st-group sc-steps">
+          <ol>
+            <li>Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
+            <li><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
+            <li><b>Find Health Samples</b> – Type: Sleep Analysis, Start Date: is in the last 1 day (and Value is not In Bed, if offered). Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
+            <li>The same for <b>Resting Heart Rate</b> (Average), <b>Exercise Time</b> (Sum) and, if you like, <b>Weight</b> (Sort by Start Date, Latest First, Limit 1).</li>
+            <li><b>Current Date</b> → <b>Format Date</b>, Custom: <code>yyyy-MM-dd</code>.</li>
+            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> with <code>date</code>, <code>steps</code>, <code>sleep</code>, <code>rhr</code>, <code>exercise</code>, <code>weight</code> – each set to the result above.</li>
+            <li>Run it once. Open the dashboard – a note says what arrived.</li>
+            <li>Shortcuts → <b>Automation → +</b> → Time of Day, 22:30, Daily → <b>Run Immediately</b> → Health to dashboard.</li>
+          </ol>
+          <p class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
+        </section>
+        <section class="st-group"><button class="st-row st-btn" id="ahClear" type="button"><span class="danger-txt"><i class="bi bi-trash3"></i> Remove Apple Health data from the dashboard</span><i class="bi bi-chevron-right"></i></button></section>
       </div>
 
       <div class="st-page" data-page="notify" data-title="Notifications" hidden>
@@ -613,34 +662,10 @@
     </aside>
   </div>
 
-  <script src="lock.js?v=15"></script>
-  <script src="features.js?v=5"></script>
-  <script src="settings.js?v=20"></script>
-  <script src="website.js?v=6"></script>
-  <script src="texts.js?v=1"></script>
-  <script src="script.js?v=12"></script>
-  <script src="budget.js?v=6"></script>
-  <script src="money.js?v=4"></script>
-  <script src="places.js?v=2"></script>
-  <script src="today.js?v=6"></script>
-  <script src="flow.js?v=2"></script>
-  <script src="calendar/cal-core.js?v=8"></script>
-  <script src="calendar/cal-settings.js?v=18"></script>
-  <script src="cal-card.js?v=3"></script>
-  <script src="upnext.js?v=2"></script>
-  <script src="review.js?v=3"></script>
-  <script src="brief.js?v=7"></script>
-  <script src="checkin.js?v=2"></script>
-  <script src="kit.js?v=2"></script>
-  <script src="tools.js?v=5"></script>
-  <script src="profile.js?v=8"></script>
-  <script src="links.js?v=4"></script>
-  <script src="smart.js?v=2"></script>
-  <script src="search.js?v=6"></script>
-  <script src="app.js?v=3"></script>
-  <script src="quick.js?v=4"></script>
-  <script src="notify.js?v=1"></script>
-  <script src="tidy.js?v=1"></script>
-  <script src="nav.js?v=16"></script>
+  <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
+  <script src="dist/head.js?v=835a9b5c9e"></script>
+  <script src="dist/page-home.js?v=a832d33c70"></script>
+  <script src="dist/tail.js?v=568994b9d1"></script>
+  <!-- /scripts -->
 </body>
 </html>

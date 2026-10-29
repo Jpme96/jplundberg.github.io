@@ -329,7 +329,7 @@
     $('todoList').innerHTML = shownTodos().map(function (t) {
       return '<li class="todo-item' + (t.done ? ' done' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
-        '<span class="label">' + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
+        '<span class="label">' + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
         '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
     }).join('');
     $('todoEmpty').hidden = todos.length > 0;

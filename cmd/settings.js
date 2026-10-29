@@ -214,6 +214,7 @@
     document.querySelectorAll('[data-density]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.density === (s.density || 'comfortable'))); });
     document.querySelectorAll('[data-corners]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.corners === (s.corners || 'round'))); });
     document.querySelectorAll('[data-textsize]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.textsize === (s.textSize || 'm'))); });
+    document.querySelectorAll('[data-langopt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.langopt === (s.lang === 'nb' ? 'nb' : 'en'))); });
     document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.clockstyle === (s.clock || 'big'))); });
     document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tipsmode === (s.tips || 'fold'))); });
     $('stGlassRow').hidden = cst !== 'glass';
@@ -388,6 +389,12 @@
   document.querySelectorAll('[data-density]').forEach(function (b) { b.addEventListener('click', function () { set({ density: b.dataset.density }); }); });
   document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
   document.querySelectorAll('[data-textsize]').forEach(function (b) { b.addEventListener('click', function () { set({ textSize: b.dataset.textsize }); }); });
+  /* language: the page reloads in the new language (settings are saved and synced first) */
+  document.querySelectorAll('[data-langopt]').forEach(function (b) { b.addEventListener('click', function () {
+    var was = (get().lang === 'nb' ? 'nb' : 'en'); if (b.dataset.langopt === was) return;
+    set({ lang: b.dataset.langopt });
+    setTimeout(function () { location.href = location.pathname + '?settings=appearance'; }, 600);
+  }); });
   document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.addEventListener('click', function () { set({ clock: b.dataset.clockstyle }); }); });
   document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.addEventListener('click', function () { set({ tips: b.dataset.tipsmode }); window.dispatchEvent(new Event('tips:change')); }); });
   $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
@@ -580,6 +587,34 @@
     window.Vault.sync().then(function () { setTimeout(fill, 300); });
     setTimeout(fill, 50);
   });
+  /* restore: pick the file, check it, ask, then replace */
+  var restoreText = null;
+  function backupWhen() {
+    var d = window.Vault && window.Vault.get(), t = (d && d.lastBackup) || +localStorage.getItem('dash.lastBackup') || 0;
+    if ($('stBackupWhen')) $('stBackupWhen').textContent = t ? 'Last one ' + new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'You haven’t taken one yet';
+  }
+  window.addEventListener('dash:backup', backupWhen);
+  if (window.Vault) window.Vault.onUnlock(function () { setTimeout(backupWhen, 0); });
+  $('stRestore').addEventListener('click', function () { $('stRestoreFile').value = ''; $('stRestoreFile').click(); });
+  $('stRestoreFile').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    f.text().then(function (t) {
+      var v = JSON.parse(t);
+      if (!v || v.v !== 1 || !v.ct || !v.iv || !v.salt) throw new Error('bad');
+      restoreText = t;
+      var m = String(f.name).match(/(\d{4}-\d{2}-\d{2})/);
+      $('stRestoreInfo').textContent = 'The file is ' + (m ? 'from ' + new Date(m[1] + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '“' + f.name + '”') + '.';
+      $('stRestoreAsk').hidden = false;
+      $('stRestoreAsk').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }).catch(function () { stMsg('That file isn’t a dashboard backup.', false); });
+  });
+  $('stRestoreNo').addEventListener('click', function () { restoreText = null; $('stRestoreAsk').hidden = true; });
+  $('stRestoreYes').addEventListener('click', function () {
+    if (!restoreText) return;
+    var t = restoreText; restoreText = null; $('stRestoreAsk').hidden = true;
+    window.Vault.restore(t).catch(function (e) { stMsg(e.message || 'Couldn’t restore that file.', false); });
+  });
+
   $('stBackup').addEventListener('click', function () {
     window.Vault.backup().then(function () {
       stMsg('Backup downloaded. It’s encrypted, so only your passcode can open it.', true);

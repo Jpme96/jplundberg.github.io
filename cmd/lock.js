@@ -546,6 +546,22 @@
     },
     lock: lock,
     sync: sync,
+    /* restore a backup file from Settings → Data & sync: it replaces this dashboard (and, after
+       unlocking, the synced copy), then asks for the passcode the backup was made with */
+    restore: function (text) {
+      var v = JSON.parse(text);
+      if (!isVault(v)) return Promise.reject(new Error('That file isn’t a dashboard backup.'));
+      return writing.then(function () {
+        v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
+        if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
+        writeJSON(VAULT_KEY, v);
+        remote = null;
+        ignoreRemote = true;
+        lock('Backup restored');
+        setMode('unlock');
+        msg('Backup restored. Unlock with the passcode it was made with.', true);
+      });
+    },
     backup: function () {
       return writing.then(function () {
         var raw = localStorage.getItem(VAULT_KEY);
@@ -557,6 +573,8 @@
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
         try { localStorage.setItem('dash.lastBackup', String(Date.now())); } catch (e) {}
+        /* remembered in the vault too, so every device knows when you last took one */
+        if (data) { data.lastBackup = Date.now(); window.Vault.save(data); }
         window.dispatchEvent(new Event('dash:backup'));
       });
     },

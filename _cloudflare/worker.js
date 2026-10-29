@@ -15,6 +15,10 @@
                       the dashboard sends the reminders it planned for the next 7 days, and a
                       cron trigger (every 5 minutes) sends each one at its time with Web Push.
                       "Private" reminders contain no titles or amounts.
+   /cmd/api/health    numbers from Apple Health, sent by an iPhone Shortcut with an Access
+                      service token. They wait here (numbers only – steps, sleep, heart rate …)
+                      until the dashboard picks them up, puts them in your encrypted vault and
+                      deletes them. A service token can only use this endpoint.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -42,7 +46,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -51,6 +55,9 @@ export default {
       return json({ error: 'unauthorized', ...check }, 401);
     }
 
+    /* a service token (the iPhone Shortcut) may only hand in health numbers */
+    if (check.service && !(path === '/cmd/api/health' && request.method === 'POST')) return json({ error: 'not allowed for a service token' }, 403);
+    if (path === '/cmd/api/health') return healthApi(request, env);
     if (path === '/cmd/api/site') return site(request, env);
     if (path === '/cmd/api/visitors') return visitors(url, env);
     if (path === '/cmd/api/content') return contentApi(request, env);
@@ -64,6 +71,37 @@ export default {
     ctx.waitUntil(sendDue(env));
   }
 };
+
+/* ---------- Apple Health inbox ---------- */
+const HEALTH_KEY = 'health:inbox';
+const HEALTH_FIELDS = ['steps', 'sleep', 'rhr', 'active', 'exercise', 'weight', 'distance', 'flights'];
+function hnum(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
+  return isFinite(n) && n >= 0 && n < 1e7 ? Math.round(n * 100) / 100 : null;
+}
+function hday(o) {
+  const k = /^\d{4}-\d{2}-\d{2}/.test(String(o.date || '')) ? String(o.date).slice(0, 10) : new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
+  const out = { date: k };
+  HEALTH_FIELDS.forEach(f => { const n = hnum(o[f]); if (n !== null) out[f] = n; });
+  return Object.keys(out).length > 1 ? out : null;
+}
+async function healthApi(request, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  const cur = JSON.parse(await env.VAULT.get(HEALTH_KEY) || '[]');
+  if (request.method === 'GET') return json({ items: cur });
+  if (request.method === 'DELETE') { await env.VAULT.delete(HEALTH_KEY); return json({ ok: true }); }
+  if (request.method === 'POST') {
+    let body;
+    try { body = JSON.parse(await request.text() || '{}'); } catch (e) { return json({ error: 'bad json' }, 400); }
+    const days = (Array.isArray(body.days) ? body.days : [body]).map(hday).filter(Boolean);
+    if (!days.length) return json({ error: 'no numbers in the request' }, 400);
+    const next = cur.concat(days.map(d => ({ ...d, t: Date.now() }))).slice(-120);
+    await env.VAULT.put(HEALTH_KEY, JSON.stringify(next));
+    return json({ ok: true, days: days.length });
+  }
+  return json({ error: 'method not allowed' }, 405);
+}
 
 /* ---------- notifications (Web Push, RFC 8030/8291/8292) ---------- */
 const PUSH_PREFIX = 'push:dev:';
@@ -519,7 +557,7 @@ async function verifyAccess(request, env) {
   const { alg, use, kid, ...pub } = jwk;
   const key = await crypto.subtle.importKey('jwk', pub, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
   const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(s), new TextEncoder().encode(h + '.' + p));
-  return valid ? { ok: true } : { ok: false, reason: 'bad signature' };
+  return valid ? { ok: true, service: !payload.email && !!payload.common_name } : { ok: false, reason: 'bad signature' };
 }
 
 function b64url(s) { return s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '='); }

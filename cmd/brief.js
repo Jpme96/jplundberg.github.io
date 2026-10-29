@@ -211,6 +211,26 @@
       });
     }
 
+    /* Apple Health: a short night, or the Shortcut has gone quiet */
+    if (window.AHealth && Fe && Fe.on('ahealth')) {
+      var AH = window.AHealth, sl = AH.latest('sleep'), lastH = ((d || {}).health || {}).last;
+      if (sl && sl.date >= dkey(new Date(now.getTime() - 864e5)) && sl.v < 6 && sl.v > 0)
+        add(57, 'moon-stars', '#8a6fdf', 'Short night: ' + AH.fmt('sleep', sl.v), 'Go easy today – and maybe to bed a bit earlier', 'habits/', { key: 'sleep:' + sl.date, tip: true });
+      if (lastH && Date.now() - lastH > 3 * 864e5)
+        add(64, 'apple', '#e66767', 'Nothing from Apple Health for ' + Math.floor((Date.now() - lastH) / 864e5) + ' days', 'Check that the Shortcut automation still runs', '?settings=ahealth', { key: 'ahstale:' + today, tip: true });
+    }
+
+    /* a backup once a month (the encrypted file, kept wherever you like) */
+    if (d) {
+      var lb = d.lastBackup || +localStorage.getItem('dash.lastBackup') || 0, age = lb ? Math.floor((Date.now() - lb) / 864e5) : null;
+      var much = (d.expenses || []).length + (readJSON('dash.todos') || []).length > 8;
+      if ((age === null && much) || age >= 30) {
+        ACTIONS['backup:' + ym] = function () { window.Vault.backup(); };
+        add(56, 'shield-check', '#11a597', 'Time for a backup', age === null ? 'You haven’t downloaded one yet – it takes a second' : 'Last one ' + age + ' days ago', '?settings=data',
+          { key: 'backupx:' + ym, act: { id: 'backup:' + ym, label: 'Download' } });
+      }
+    }
+
     /* habits going well */
     var hb = readJSON('dash.habits');
     if (hb && hb.list) hb.list.forEach(function (h) {
@@ -331,7 +351,7 @@
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
-  ['review:seen', 'checkin:done', 'tips:change', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
+  ['review:seen', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });
   window.Vault.onLock(function () { unlocked = false; box.innerHTML = ''; });

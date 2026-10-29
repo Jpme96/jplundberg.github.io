@@ -67,10 +67,16 @@
       '</div>' +
       '<div class="ci-imp"><i class="bi bi-bank"></i><span>' + (impDays == null ? 'You haven’t imported from your bank yet.' : 'Last bank import ' + (impDays === 0 ? 'today' : impDays === 1 ? 'yesterday' : impDays + ' days ago') + '.') + '</span>' +
         (impDays == null || impDays >= 3 ? '<a class="pill-btn" href="finance/#import"><i class="bi bi-upload"></i> Import</a>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>' +
+      backupHtml(d) +
       (unsorted.length ? '<p class="muted ci-p">These are filed under Other – pick a category and the bank import remembers the shop next time.</p><ul class="ci-sort">' + unsorted.map(function (e) {
         return '<li><span class="ci-x"><b>' + esc(e.note || 'Expense') + '</b><small>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · <span class="money">' + esc(kr(e.amount)) + '</span></small></span>' +
           '<select data-ciexp="' + esc(e.id) + '" aria-label="Category for ' + esc(e.note || 'expense') + '">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === e.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></li>';
       }).join('') + '</ul>' : '') + '</section>';
+  }
+  function backupHtml(d) {
+    var lb = d.lastBackup || +localStorage.getItem('dash.lastBackup') || 0, age = lb ? Math.floor((Date.now() - lb) / 864e5) : null;
+    return '<div class="ci-imp"><i class="bi bi-shield-check"></i><span>' + (age === null ? 'No backup downloaded yet.' : 'Last backup ' + (age === 0 ? 'today' : age === 1 ? 'yesterday' : age + ' days ago') + '.') + '</span>' +
+      (age === null || age >= 30 ? '<button type="button" class="pill-btn" data-cibackup><i class="bi bi-download"></i> Backup</button>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>';
   }
   function aheadHtml() {
     var start = new Date().getDay() === 0 ? addDays(new Date(), 1) : day0(new Date()), rows = '';
@@ -103,7 +109,12 @@
   function habitsHtml() {
     var hb = readJSON('dash.habits', { list: [], log: {} });
     if (!hb.list || !hb.list.length || (Fe && !Fe.on('habits'))) return '';
-    return '<section class="rv-sec"><h3><span class="ci-n">4</span> Habits last week</h3><ul class="ci-hab">' + hb.list.map(function (h) {
+    var AH = window.AHealth, ah = '';
+    if (AH && (!Fe || Fe.on('ahealth'))) {
+      var st = AH.stats(dkey(wk.mon), dkey(wk.sun));
+      if (st.n) ah = '<p class="ci-health"><i class="bi bi-apple"></i> ' + [st.steps.avg != null ? AH.fmt('steps', st.steps.avg) + ' steps a day' : '', st.sleep.avg != null ? AH.fmt('sleep', st.sleep.avg) + ' sleep' : '', st.exercise.avg != null ? AH.fmt('exercise', st.exercise.sum) + ' exercise' : ''].filter(Boolean).join(' · ') + '</p>';
+    }
+    return '<section class="rv-sec"><h3><span class="ci-n">4</span> Habits last week</h3>' + ah + '<ul class="ci-hab">' + hb.list.map(function (h) {
       var n = 0;
       for (var i = 0; i < 7; i++) if (((hb.log || {})[dkey(addDays(wk.mon, i))] || []).indexOf(h.id) > -1) n++;
       var ok = n >= h.target;
@@ -142,6 +153,7 @@
         else { t.done = true; t.focus = false; }
       }); }); draw(); }, 220); return;
     }
+    if (e.target.closest('[data-cibackup]')) { window.Vault.backup().then(function () { setTimeout(draw, 300); }); return; }
     if (e.target.closest('[data-cidone]')) {
       var d = window.Vault.get(); d.checkins = (d.checkins || []).concat(wk.key).slice(-30); window.Vault.save(d);
       window.dispatchEvent(new Event('checkin:done'));

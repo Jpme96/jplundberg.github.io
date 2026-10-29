@@ -99,6 +99,13 @@
     if (wo.length) tiles += big('heart-pulse', '#d55181', wo.length, 'workouts', hm(sum(wo, function (w) { return w.min; })) + (sum(wo, function (w) { return w.km; }) ? ' · ' + Math.round(sum(wo, function (w) { return w.km; })) + ' km' : ''));
     var fx = flexMinutes(from, to);
     if (fx.worked) tiles += big('stopwatch', '#e8743b', (fx.delta >= 0 ? '+' : '') + hm(fx.delta), 'flex', hm(fx.worked) + ' worked');
+    /* Apple Health: steps and sleep for the month */
+    var AH = window.AHealth;
+    if (AH && (!Fe || Fe.on('ahealth'))) {
+      var ah = AH.stats(from, to);
+      if (ah.steps.n) tiles += big('person-walking', '#22b35e', AH.fmt('steps', ah.steps.avg), 'steps a day', ah.sleep.n ? AH.fmt('sleep', ah.sleep.avg) + ' sleep a night' : '');
+      else if (ah.sleep.n) tiles += big('moon-stars', '#8a6fdf', AH.fmt('sleep', ah.sleep.avg), 'sleep a night', '');
+    }
     html += tiles ? '<div class="rv-grid">' + tiles + '</div>' : '<p class="muted">Not much logged this month yet.</p>';
     if (M.cats.length) html += section('Where the money went', 'pie-chart', bars(M.cats.slice(0, 5).map(function (c) {
       var p = sum(prev3, function (m) { return m.by[c] || 0; }) / 3, diff = p ? Math.round((M.by[c] - p) / p * 100) : null;

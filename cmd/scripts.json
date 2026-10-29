@@ -1,0 +1,88 @@
+{
+  "head": [
+    "i18n.js",
+    "lock.js",
+    "features.js"
+  ],
+  "tail": [
+    "smart.js",
+    "search.js",
+    "app.js",
+    "quick.js",
+    "notify.js",
+    "ahealth.js",
+    "nav.js"
+  ],
+  "pages": {
+    "index.html": [
+      "settings.js",
+      "website.js",
+      "texts.js",
+      "script.js",
+      "budget.js",
+      "money.js",
+      "places.js",
+      "today.js",
+      "flow.js",
+      "calendar/cal-core.js",
+      "calendar/cal-settings.js",
+      "cal-card.js",
+      "upnext.js",
+      "review.js",
+      "brief.js",
+      "checkin.js",
+      "checklists.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js",
+      "tidy.js"
+    ],
+    "calendar/index.html": [
+      "budget.js",
+      "places.js",
+      "flow.js",
+      "calendar/cal-core.js",
+      "calendar/cal-settings.js",
+      "calendar/cal.js",
+      "profile.js",
+      "links.js"
+    ],
+    "finance/index.html": [
+      "budget.js",
+      "finance.js",
+      "finance/fin.js",
+      "finance/import.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "habits/index.html": [
+      "habits/habits.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "travel/index.html": [
+      "places.js",
+      "travel/world.js",
+      "flow.js",
+      "calendar/cal-core.js",
+      "travel/travel.js",
+      "travel/trips.js",
+      "travel/history.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "work/index.html": [
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ]
+  }
+}

@@ -34,5 +34,6 @@ defaults:
 
 exclude:
   - Readme.txt
+  - cmd/build.py
   - forms/Readme.txt
   - assets/scss/Readme.txt
