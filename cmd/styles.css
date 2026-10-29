@@ -2226,13 +2226,60 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 .ah-tile b { font-family: "Poppins", sans-serif; font-size: 18px; font-weight: 600; color: var(--heading); white-space: nowrap; }
 .ah-tile small { font-size: 11.5px; color: var(--muted); }
 .ah-tile .up { color: #22b35e; } .ah-tile .dn { color: #e8743b; }
-.ah-bars { position: relative; display: grid; grid-template-columns: repeat(14, 1fr); gap: 5px; height: 120px; align-items: end; margin-top: 14px; }
-.ah-bars span { display: grid; grid-template-rows: 1fr auto; height: 100%; text-align: center; }
-.ah-bars i { align-self: end; display: block; border-radius: 4px 4px 2px 2px; background: rgba(var(--accent-rgb), .45); min-height: 0; }
-.ah-bars i.hit { background: var(--accent); }
-.ah-bars small { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
-.ah-goal { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(var(--ink-rgb), .3); pointer-events: none; }
-.ah-foot { margin: 8px 0 0; font-size: 12px; }
+@media (max-width: 639px) {
+  .ah-tiles.many { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .ah-tiles.many .ah-tile { padding: 8px 9px; }
+  .ah-tiles.many .ah-l { font-size: 11px; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .ah-tiles.many .ah-l em { display: none; }
+  .ah-tiles.many .ah-tile b { font-size: 15px; }
+  .ah-tiles.many .ah-tile small { font-size: 10.5px; }
+}
+.ah-l em { font-style: normal; opacity: .8; }
+.ah-tile:hover { border-color: color-mix(in srgb, var(--c) 55%, var(--line)); }
+.ah-tile:focus-visible, .ah-bar:focus-visible, .ah-chip:focus-visible { outline: 2px solid var(--c, var(--accent)); outline-offset: 2px; }
+.ah-prog { display: block; width: 100%; height: 4px; border-radius: 4px; background: rgba(var(--ink-rgb), .08); margin: 4px 0 2px; overflow: hidden; }
+.ah-prog i { display: block; height: 100%; border-radius: 4px; background: color-mix(in srgb, var(--c) 70%, transparent); transition: width .4s ease; }
+.ah-prog.full i { background: var(--c); }
+.ah-ctl { display: flex; justify-content: flex-end; margin-top: 14px; }
+.ah-ctl .seg button { font-size: 13px; }
+.ah-chart { position: relative; margin-top: 10px; }
+.ah-bars { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; height: 150px; }
+.ah-bars.r14 { grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 5px; }
+.ah-bars.r30 { grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 2px; }
+.ah-bar { display: grid; grid-template-rows: 1fr 18px; height: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; min-width: 0; border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+.ah-col { position: relative; display: flex; align-items: flex-end; height: 100%; border-radius: 6px 6px 3px 3px; transition: background .15s; }
+.ah-bar:hover .ah-col, .ah-bar.sel .ah-col { background: rgba(var(--ink-rgb), .05); }
+.ah-col i { display: block; width: 100%; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--c) 45%, transparent); transition: height .35s ease, background .15s; }
+.ah-bar.hit .ah-col i { background: color-mix(in srgb, var(--c) 80%, transparent); }
+.ah-bar.sel .ah-col i { background: var(--c); }
+.ah-bar.none .ah-col i { height: 3px !important; background: rgba(var(--ink-rgb), .12); }
+.ah-bar small { font-size: 10.5px; color: var(--muted); line-height: 18px; white-space: nowrap; overflow: hidden; }
+.ah-bar.today small { color: var(--heading); font-weight: 600; }
+.ah-bar.sel small { color: var(--c); font-weight: 600; }
+.ah-goal { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(var(--ink-rgb), .32); pointer-events: none; font-style: normal; }
+.ah-goal span { position: absolute; right: 0; bottom: 2px; font-size: 10.5px; color: var(--muted); background: var(--bg-solid); padding: 0 4px; border-radius: 4px; }
+.ah-day { margin-top: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .025); }
+.ah-day-h { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.ah-day-h b { font-family: "Poppins", sans-serif; font-weight: 600; color: var(--heading); font-size: 15px; min-width: 0; }
+.ah-day-h .icon-btn:disabled { opacity: .3; cursor: default; }
+.ah-ok, .ah-left { margin-left: auto; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+.ah-ok { color: #22b35e; } .ah-left { color: var(--muted); }
+.ah-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ah-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13.5px; cursor: pointer; }
+.ah-chip .bi { color: var(--c); }
+.ah-chip.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.ah-nodata { margin: 8px 0 0; font-size: 13px; }
+.ah-ticks { margin-top: 8px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ah-tick { color: #22b35e; display: inline-flex; gap: 3px; align-items: center; }
+.ah-ins { margin: 10px 0 0; font-size: 13px; color: var(--text); }
+.ah-grow { margin: 6px 0 0; font-size: 12.5px; display: flex; gap: 6px; align-items: baseline; }
+.ah-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 0; font-size: 12px; }
+.ah-goalbtn { font-size: 13px; }
+.ah-goaledit { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.ah-goaledit input { width: 90px; height: 36px; min-height: 36px; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .ah-col i, .ah-prog i { transition: none; } }
+.ah-keys { display: grid; gap: 4px; margin: 6px 0 2px; font-size: 13px; }
+.ah-keys code { display: inline-block; min-width: 72px; }
 .ah-rule { gap: 10px; }
 .ah-rule-in { display: flex; gap: 6px; flex-shrink: 0; }
 .ah-rule-in select { width: 150px; height: 36px; min-height: 36px; font-size: 14px; }

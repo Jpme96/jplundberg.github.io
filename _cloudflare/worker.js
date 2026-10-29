@@ -74,7 +74,6 @@ export default {
 
 /* ---------- Apple Health inbox ---------- */
 const HEALTH_KEY = 'health:inbox';
-const HEALTH_FIELDS = ['steps', 'sleep', 'rhr', 'active', 'exercise', 'weight', 'distance', 'flights'];
 function hnum(v) {
   if (v == null || v === '') return null;
   const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
@@ -83,7 +82,8 @@ function hnum(v) {
 function hday(o) {
   const k = /^\d{4}-\d{2}-\d{2}/.test(String(o.date || '')) ? String(o.date).slice(0, 10) : new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
   const out = { date: k };
-  HEALTH_FIELDS.forEach(f => { const n = hnum(o[f]); if (n !== null) out[f] = n; });
+  /* the known numbers, plus any other short name (up to 30) – new numbers need no Worker update */
+  Object.keys(o).filter(f => f !== 'date' && /^[a-z][a-z0-9]{0,15}$/.test(f)).slice(0, 30).forEach(f => { const n = hnum(o[f]); if (n !== null) out[f] = n; });
   return Object.keys(out).length > 1 ? out : null;
 }
 async function healthApi(request, env) {

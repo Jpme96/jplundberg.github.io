@@ -66,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=74" rel="stylesheet">
+  <link href="styles.css?v=76" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -504,10 +504,15 @@
           <ol>
             <li>Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
             <li><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
-            <li><b>Find Health Samples</b> – Type: Sleep Analysis, Start Date: is in the last 1 day (and Value is not In Bed, if offered). Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
-            <li>The same for <b>Resting Heart Rate</b> (Average), <b>Exercise Time</b> (Sum) and, if you like, <b>Weight</b> (Sort by Start Date, Latest First, Limit 1).</li>
-            <li><b>Current Date</b> → <b>Format Date</b>, Custom: <code>yyyy-MM-dd</code>.</li>
-            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> with <code>date</code>, <code>steps</code>, <code>sleep</code>, <code>rhr</code>, <code>exercise</code>, <code>weight</code> – each set to the result above.</li>
+            <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Asleep</b> and <b>Value is not Awake</b> (keeps the Watch's Core, Deep and REM, so a night isn't counted twice). Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
+            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
+            <li><b>More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
+              <div class="ah-keys">
+                <span><code>exercise</code> Exercise Minutes · Sum</span><span><code>active</code> Active Energy · Sum</span><span><code>stand</code> Stand Hours · Sum</span>
+                <span><code>distance</code> Walking + Running Distance · Sum</span><span><code>flights</code> Flights Climbed · Sum</span><span><code>daylight</code> Time in Daylight · Sum</span>
+                <span><code>rhr</code> Resting Heart Rate · Average</span><span><code>hrv</code> Heart Rate Variability · Average</span><span><code>vo2</code> Cardio Fitness (VO₂ max) · Average, last 30 days</span>
+                <span><code>weight</code> Weight · Average, last 30 days</span><span><code>mindful</code> Mindful Minutes · Sum</span><span><code>water</code> Water · Sum</span>
+              </div></li>
             <li>Run it once. Open the dashboard – a note says what arrived.</li>
             <li>Shortcuts → <b>Automation → +</b> → Time of Day, 22:30, Daily → <b>Run Immediately</b> → Health to dashboard.</li>
           </ol>
@@ -663,9 +668,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=835a9b5c9e"></script>
+  <script src="dist/head.js?v=2eb998e14d"></script>
   <script src="dist/page-home.js?v=a832d33c70"></script>
-  <script src="dist/tail.js?v=a482cc4c14"></script>
+  <script src="dist/tail.js?v=d957530b15"></script>
   <!-- /scripts -->
 </body>
 </html>
