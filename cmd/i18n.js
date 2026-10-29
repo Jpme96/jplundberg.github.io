@@ -394,6 +394,28 @@
     '· on the page, “Save as PDF” prints it to a file.': '· på siden skriver «Lagre som PDF» den til en fil.', 'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
     'CSV': 'CSV', 'PDF': 'PDF'
   });
+  /* the Modern look: menu bar, More, the home hero */
+  (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
+    'Good morning': 'God morgen', 'Good afternoon': 'God ettermiddag', 'Good evening': 'God kveld', 'Good night': 'God natt',
+    'More': 'Mer', 'More pages': 'Flere sider', 'All pages': 'Alle sider', 'Choose what\u2019s in the bar': 'Velg hva som er i menyen', 'Choose your 4 in the bar': 'Velg dine 4 i menyen',
+    'Today\u2019s top 3': 'Dagens topp 3', 'A clear day,': 'En rolig dag,', 'Top 3 done today,': 'Topp 3 er gjort i dag,', 'One task left today,': 'Én oppgave igjen i dag,',
+    'and an early start tomorrow.': 'og tidlig start i morgen.', 'enjoy the evening.': 'nyt kvelden.', 'make it a good one.': 'gjør den til en god en.', 'keep it going.': 'fortsett sånn.',
+    'You\u2019re on track with money this month.': 'Du ligger godt an med pengene denne måneden.', 'You\u2019re over budget this month – take it easy on spending.': 'Du er over budsjett denne måneden – ta det rolig med forbruket.',
+    'Everything is in order.': 'Alt er i orden.', 'left today': 'igjen i dag', 'steps': 'skritt', 'focused': 'fokus',
+    'Pick the three things that matter most today and give them a time.': 'Velg de tre tingene som betyr mest i dag, og gi dem et tidspunkt.',
+    'Nothing on your list. Add a task, or enjoy the free time.': 'Ingenting på listen. Legg til en oppgave, eller nyt fritiden.',
+    'Mark as not done': 'Merk som ikke gjort', 'Your day': 'Dagen din', 'Look': 'Utseende', 'Modern': 'Moderne', 'Classic': 'Klassisk', 'Calm': 'Rolig',
+    'Your colours, background and card style apply on top': 'Farger, bakgrunn og kortstil legges oppå', 'The original look, with the big clock': 'Det opprinnelige utseendet, med den store klokken'
+  });
+  P.push(
+    [/^(Two|Three|Four|Five|Six|Seven|Eight|Nine|\d+) tasks left today,$/, function (m, n) { return ({ Two: 'To', Three: 'Tre', Four: 'Fire', Five: 'Fem', Six: 'Seks', Seven: 'Sju', Eight: 'Åtte', Nine: 'Ni' }[n] || n) + ' oppgaver igjen i dag,'; }],
+    [/^next up: (.+) at (\d\d:\d\d)\.$/, 'neste: $1 kl. $2.'], [/^(.+) at (\d\d:\d\d) tomorrow\.$/, '$1 kl. $2 i morgen.'],
+    [/^(.+) in (\d+) days?\.$/, function (m, a, n) { return a + ' om ' + n + (n === '1' ? ' dag.' : ' dager.'); }],
+    [/^in (\d+) days?$/, function (m, n) { return 'om ' + n + (n === '1' ? ' dag' : ' dager'); }],
+    [/^One more (.+) session hits your weekly goal\.$/, 'Én økt til med $1, så når du ukemålet.'],
+    [/^(\d+) more (.+) sessions this week to hit your goal\.$/, '$1 økter til med $2 denne uken for å nå målet.'],
+    [/^week (\d+)$/, 'uke $1'], [/^(\d+) of (\d+) done$/, '$1 av $2 gjort'], [/^(\d+) min focused$/, '$1 min fokus']
+  );
   /* Plan my day, gestures, keyboard, focus timer (only words not already above) */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
     'Plan day': 'Planlegg dagen', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',

@@ -51,7 +51,7 @@ try {
     var first = list.filter(function (id) { return id === 'brief'; }), boosted = up.filter(function (id) { return list.indexOf(id) > -1; });
     return first.concat(boosted, list.filter(function (id) { return id !== 'brief' && boosted.indexOf(id) < 0; }));
   }
-  var BGS = [['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
+  var BGS = [['calm', 'Calm'], ['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
   /* Your own colour: any hex value, with readable text on top */
   function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(h || ''); }
   function hexRgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }
@@ -112,6 +112,7 @@ try {
     try { s = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
     if (!s.bgType && s.bg === false) s.bgType = 'none';
     var out = Object.assign({}, DEFAULTS, s);
+    if (!s.bgType) out.bgType = s.look === 'classic' ? 'moon' : 'calm';      // the modern look starts on the calm glow
     out.hide = Object.assign({}, s.hide || {});
     return out;
   }
@@ -144,6 +145,7 @@ try {
     root.setAttribute('data-bg', bg);
     if (s.bgStrength) root.style.setProperty('--bg-strength', s.bgStrength / 100);
     else root.style.removeProperty('--bg-strength');
+    root.classList.toggle('modern', s.look !== 'classic'); root.classList.toggle('classic', s.look === 'classic');
     var cst = cardStyleOf(s);
     ['solid', 'minimal', 'soft'].forEach(function (k) { root.classList.toggle('card-' + k, cst === k); });
     root.classList.toggle('glass', cst === 'glass');
@@ -212,6 +214,8 @@ try {
                    : 'Your photo is on another device. Add it here too, or pick another background.')
       : '';
     $('stStrengthRow').hidden = s.bgType === 'none';
+    document.querySelectorAll('[data-look-opt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lookOpt === (s.look === 'classic' ? 'classic' : 'modern'))); });
+    if ($('stLookNote')) $('stLookNote').textContent = s.look === 'classic' ? 'The original look, with the big clock' : 'Your colours, background and card style apply on top';
     var cst = cardStyleOf(s);
     document.querySelectorAll('[data-cardstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cardstyle === cst)); });
     document.querySelectorAll('[data-density]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.density === (s.density || 'comfortable'))); });
@@ -388,6 +392,9 @@ try {
   });
   $('stStrength').addEventListener('change', function () { set({ bgStrength: +this.value }); });
   /* Glass: frosted, see-through cards. The slider previews live and saves when you let go. */
+  document.querySelectorAll('[data-look-opt]').forEach(function (b) { b.addEventListener('click', function () { set({ look: b.dataset.lookOpt === 'classic' ? 'classic' : undefined }); }); });
+  /* once: the new look starts on the calm background (any background can still be picked) */
+  if (window.Vault) window.Vault.onUnlock(function () { var s = get(); if (!s.lookV) set({ lookV: 1, bgType: s.look === 'classic' ? s.bgType : 'calm' }); });
   $('stCardStyle').addEventListener('click', function (e) { var b = e.target.closest('[data-cardstyle]'); if (b) set({ cardStyle: b.dataset.cardstyle, glass: b.dataset.cardstyle === 'glass' }); });
   document.querySelectorAll('[data-density]').forEach(function (b) { b.addEventListener('click', function () { set({ density: b.dataset.density }); }); });
   document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });

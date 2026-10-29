@@ -15,7 +15,7 @@
   <link href="/cmd/manifest.webmanifest" rel="manifest">
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <script>
     /* Lock first, and apply the saved theme before anything is drawn. */
@@ -34,7 +34,9 @@
         }
         if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
         if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
-        var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
+        /* the look: Modern (the base) or Classic (Settings → Appearance) */
+        var modern = s.look !== 'classic'; r.classList.add(modern ? 'modern' : 'classic');
+        var bg = s.bgType || (s.bg === false ? 'none' : modern ? 'calm' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
         var cst = ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid');
@@ -68,6 +70,7 @@
     })(document.documentElement);
   </script>
   <link href="../styles.css?v=104" rel="stylesheet">
+  <link href="../modern.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=9" rel="stylesheet">
   <link href="cal.css?v=10" rel="stylesheet">
 </head>
@@ -201,9 +204,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=38aac2fcc8"></script>
+  <script src="../dist/head.js?v=ff75daa042"></script>
   <script src="../dist/page-calendar.js?v=f9e1683103"></script>
-  <script src="../dist/tail.js?v=c3501bf7b7"></script>
+  <script src="../dist/tail.js?v=70971ac287"></script>
   <!-- /scripts -->
 </body>
 </html>

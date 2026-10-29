@@ -15,7 +15,8 @@
     "pagekit.js",
     "focus.js",
     "keys.js",
-    "nav.js"
+    "nav.js",
+    "modern.js"
   ],
   "pages": {
     "index.html": [
