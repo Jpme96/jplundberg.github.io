@@ -2410,3 +2410,32 @@ a.st-btn .st-label { flex: 1; }
 /* menu order rows */
 .st-nav-row .st-label { flex: 1; }
 .st-nav-row.is-fixed .st-ico { opacity: .7; }
+
+/* ---------- One tile look in every card style (Oct 2026) ----------
+   Number tiles inside a card (Apple Health, Training, Subscriptions …) were boxes with borders in
+   Solid/Glass/Soft and a different size from card to card. Now they share one size and a quiet fill,
+   like Minimal – only the chosen Apple Health tile gets a coloured ring. */
+.kit-tile, .ah-tile { border: 0; border-radius: 14px; padding: 12px 14px; background: rgba(var(--ink-rgb), .045); box-shadow: none; }
+.kit-tile > span, .ah-tile .ah-l { font-size: 12px; }
+.kit-tile > b, .ah-tile b { font-size: 18px; margin-top: 2px; }
+.kit-tile > small, .ah-tile small { font-size: 11.5px; }
+.ah-tile { transition: background .2s, box-shadow .2s; }
+.ah-tile:hover { background: rgba(var(--ink-rgb), .07); }
+.ah-tile.on { background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 75%, transparent); }
+.glass :is(.kit-tile, .ah-tile) { background: rgba(255, 255, 255, calc(.04 + var(--glass, .6) * .04)); }
+.glass .ah-tile.on { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.card-soft :is(.kit-tile, .ah-tile) { border-radius: 16px; background: rgba(var(--ink-rgb), .05); }
+/* Minimal: no fill, a line on top – like the cards themselves */
+.card-minimal :is(.kit-tile, .ah-tile) { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 2px 4px; }
+.card-minimal .ah-tile.on { box-shadow: inset 0 2px 0 var(--c); background: transparent; }
+.card-minimal .ah-tile:hover { background: transparent; box-shadow: inset 0 2px 0 color-mix(in srgb, var(--c) 45%, transparent); }
+.corners-sharp :is(.kit-tile, .ah-tile) { border-radius: 8px; }
+.corners-sharp.card-minimal :is(.kit-tile, .ah-tile) { border-radius: 0; }
+/* the page's own key numbers (Finances, Health, Travel) keep the card style, with the same inner spacing everywhere */
+.fp-tile { padding: 14px 16px; }
+.dens-compact :is(.kit-tile, .ah-tile) { padding: 9px 11px; }
+/* every tile in a group the same height, row after row */
+.ah-tiles, .kit-tiles, .fp-tiles { grid-auto-rows: 1fr; }
+.ah-tiles.editing { grid-auto-rows: auto; }
+.ah-tile small { margin-top: auto; }
+.ah-tile { justify-content: flex-start; }
