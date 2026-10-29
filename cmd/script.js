@@ -216,8 +216,11 @@
 
   function renderGoals() {
     autoLink();
-    save('dash.goals', goals);
     var hb = habits();
+    /* a goal that follows a habit stores the habit's numbers too, so Settings → Project progress and
+       what is published on jplundberg.com show the same as this card */
+    goals.forEach(function (g) { var h = linkedHabit(g, hb); if (h) { g.value = weekCount(hb, h.id); g.target = h.target; } });
+    save('dash.goals', goals);
     $('goalList').innerHTML = goals.map(function (g) {
       var h = linkedHabit(g, hb);
       if (h) { g = Object.assign({}, g, { value: weekCount(hb, h.id), target: h.target }); }
