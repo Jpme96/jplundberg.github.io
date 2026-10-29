@@ -3,9 +3,27 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v3';
+var CACHE = 'cmd-v4';
 
-self.addEventListener('install', function () { self.skipWaiting(); });
+/* on install: keep a copy of every page, so the dashboard opens even without a connection
+   (pages behind the Cloudflare login that answer with a redirect are skipped) */
+var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/'];
+self.addEventListener('install', function (e) {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(function (c) {
+    return Promise.all(PAGES.map(function (u) {
+      return fetch(u, { credentials: 'same-origin', redirect: 'manual' }).then(function (res) {
+        if (!res.ok || res.type !== 'basic') return;
+        return res.clone().text().then(function (html) {
+          /* and the scripts and styles that page needs */
+          var deps = [], re = /(?:src|href)="([^"]+\?v=[^"]+)"/g, m;
+          while ((m = re.exec(html))) deps.push(new URL(m[1], self.location.origin + u).toString());
+          return Promise.all([c.put(u, res)].concat(deps.map(function (d) { return c.match(d).then(function (hit) { return hit || fetch(d).then(function (r) { if (r.ok) return c.put(d, r); }); }).catch(function () {}); })));
+        });
+      }).catch(function () {});
+    }));
+  }));
+});
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
     return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
