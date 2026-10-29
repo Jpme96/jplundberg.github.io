@@ -1129,7 +1129,13 @@ try {
     return nf.format(v);
   }
 
-  function days() { var d = window.Vault.get() || {}; return (d.health && d.health.days) || {}; }
+  /* 0 h sleep, 0 bpm or 0 kg means the Shortcut found nothing – treat it as no number, not a real one */
+  var ZERO_IS_EMPTY = { sleep: 1, rhr: 1, weight: 1 };
+  function days() {
+    var d = window.Vault.get() || {}, D = (d.health && d.health.days) || {}, out = {};
+    Object.keys(D).forEach(function (k) { var x = {}; Object.keys(D[k]).forEach(function (f) { if (!(ZERO_IS_EMPTY[f] && D[k][f] === 0)) x[f] = D[k][f]; }); out[k] = x; });
+    return out;
+  }
   /* put days in the vault, tick habits that follow a number, tell the rest of the dashboard */
   function merge(list, source) {
     var d = window.Vault.get(); if (!d || !list.length) return 0;
@@ -1138,7 +1144,7 @@ try {
     list.forEach(function (x) {
       var k = /^\d{4}-\d{2}-\d{2}/.test(String(x.date || '')) ? String(x.date).slice(0, 10) : dkey(new Date());
       var cur = d.health.days[k] || {}, ch = false;
-      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : num(x[f]); if (v != null) { cur[f] = Math.round(v * 100) / 100; ch = true; } });
+      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : num(x[f]); if (v === 0 && ZERO_IS_EMPTY[f]) v = null; if (v != null) { cur[f] = Math.round(v * 100) / 100; ch = true; } });
       if (ch) { cur.t = Date.now(); d.health.days[k] = cur; n++; }
     });
     var keys = Object.keys(d.health.days).sort(); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.health.days[k]; });
@@ -1150,7 +1156,7 @@ try {
     if (n && window.Quick) {
       var last = list[list.length - 1], bits = [];
       if (last.steps != null) bits.push(fmt('steps', num(last.steps)) + ' steps');
-      if (last.sleep != null) bits.push(fmt('sleep', hours(last.sleep)) + ' sleep');
+      if (hours(last.sleep)) bits.push(fmt('sleep', hours(last.sleep)) + ' sleep');
       window.Quick.toast('<i class="bi bi-heart-pulse"></i> Apple Health' + (n > 1 ? ': ' + n + ' days' : bits.length ? ': ' + esc(bits.join(' · ')) : ' updated'));
     }
     return n;
