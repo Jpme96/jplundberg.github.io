@@ -204,7 +204,7 @@
     var r = F.travel().recent;
     $('tvRecent').hidden = !r.length || shown.length > 0;
     $('tvRecent').innerHTML = r.length ? '<p class="tv-label">Recent</p>' + r.map(function (x, i) {
-      return '<button type="button" class="tv-chip" data-r="' + i + '"><i class="bi bi-clock-history"></i>' + esc(x.from.name) + ' <i class="bi bi-arrow-right"></i> ' + esc(x.to.name) + '</button>';
+      return '<button type="button" class="tv-chip" data-r="' + i + '"><i class="bi bi-clock-history"></i><span class="tv-rn">' + esc(x.from.name) + '</span><i class="bi bi-arrow-right"></i><span class="tv-rn">' + esc(x.to.name) + '</span></button>';
     }).join('') : '';
   }
   $('tvRecent').addEventListener('click', function (e) {

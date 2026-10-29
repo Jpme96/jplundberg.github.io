@@ -459,3 +459,7 @@
 .seg-sm button { padding: 5px 9px; font-size: 12px; }
 .seg-sm button i { font-size: 12px; }
 .hs-map { background: transparent; }
+/* recent journeys: long stop names shorten instead of running off the screen */
+.tv-recent .tv-chip { max-width: 100%; min-width: 0; }
+.tv-recent .tv-chip .bi { flex: none; }
+.tv-rn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
