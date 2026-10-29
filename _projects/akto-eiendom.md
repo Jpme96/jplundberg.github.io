@@ -3,7 +3,7 @@ title: Drift, vedlikehold og FDVU-dokumentasjon på tvers av Aktos eiendommer
 lang: nb
 date: 2025-10-01
 ref: akto-eiendom
-role: FDVU-koordinator
+role: Byggdrifter, driftsleder og FDVU-ansvarlig
 organisation: Akto Eiendom, Oslo
 period: 2020 – 2025
 published: false

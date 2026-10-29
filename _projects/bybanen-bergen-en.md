@@ -3,9 +3,9 @@ title: Running the Bybanen tram facility in Bergen
 lang: en
 date: 2019-12-01
 ref: bybanen-bergen
-role: Operations Technician
-organisation: Hordaland fylkeskommune, Bergen
-period: 2017 – 2019
+role: Operations technician / apprentice, building operations
+organisation: Hordaland and Vestland County (Bybanen), Bergen
+period: 2017 – 2020
 published: false
 summary: Operation and management of the complex building facility behind Bergen's light rail – where the depot, workshop and technical systems have to work every day for the trams to run.
 stats:

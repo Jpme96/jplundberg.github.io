@@ -71,3 +71,5 @@ En revidert FDVU-manual og tydelige rutiner etter NS 3451:2022 sørger for at do
 ## Kompetanse
 
 Opplæring av dem som bruker systemet i hverdagen, slik at god struktur også blir brukt riktig.
+
+Hvordan vi har gått fram, og hvorfor struktur er det som holder dokumentasjonen i live, har jeg skrevet om i artikkelen [Struktur er det som holder FDVU-dokumentasjonen i live](/articles/slik-strukturerer-vi-fdvu-dokumentasjonen-etter-ns-3451/).

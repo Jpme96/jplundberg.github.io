@@ -8,15 +8,15 @@ en:
   projects_url: /projects/
   title: John Paul Lundberg
   seo_title: John Paul Lundberg – FDVU Advisor in Oslo
-  description: John Paul Lundberg – FDVU Advisor and Maintenance Operation and Management (M.O.M) engineer based in Oslo, Norway.
-  keywords: John Paul Lundberg, FDVU, maintenance engineer, M.O.M engineer, document control, documentation, Oslo
+  description: John Paul Lundberg – FDVU Advisor and FDVU engineer based in Oslo, Norway.
+  keywords: John Paul Lundberg, FDVU, FDVU engineer, maintenance engineer, document control, documentation, Oslo
   nav_home: Home
   nav_about: About
   nav_experience: Experience
   nav_projects: Projects
   nav_articles: Articles
   nav_contact: Contact
-  hero_items: FDVU Advisor, M.O.M Engineer, Document Control Specialist
+  hero_items: FDVU Advisor, FDVU Engineer, Document Control Specialist
   about_title: About
   about_intro: >-
     I believe hard work and consistency can take you anywhere you want to go in life.
@@ -24,7 +24,7 @@ en:
     care and compassion to my work and the people I work with.
   about_heading: FDVU &amp; Document Control
   about_p1: >-
-    I'm an FDVU Advisor at Boligbygg Oslo KF and a Maintenance Operation and Management (M.O.M) engineer.
+    I'm an FDVU Advisor at Boligbygg Oslo KF and an FDVU engineer.
     My work combines maintenance planning with documentation control, quality assurance and coordination across departments.
   fact_city_label: City
   fact_city: Oslo, Norway
@@ -35,7 +35,7 @@ en:
     I also handle reporting, compliance support and internal workflows. I make sure records are accurate, complete and easy to find,
     so nothing slips through the cracks and operations run smoothly over time.
   exp_title: Experience
-  exp_intro: Over seven years in facility management, operations, maintenance and documentation.
+  exp_intro: Over nine years in facility management, operations, maintenance and documentation.
   stat1_value: 600–700k
   stat1_label: <strong>Documents</strong> under quality control in my current role
   stat2_value: "2017"
@@ -47,14 +47,14 @@ en:
       points:
         - Quality control of FDVU documentation across 600,000–700,000 documents
         - Making sure documentation is complete, correct and easy to find for operations and maintenance
-    - title: FDVU Coordinator
+    - title: FDVU Manager / FDVU Technician
       dates: 2020 – 2025
       company: Akto Eiendom, Oslo
       points:
         - Coordinating operations, maintenance and FDVU documentation across properties
-    - title: Operations Technician
-      dates: 2017 – 2019
-      company: Hordaland fylkeskommune, Bergen
+    - title: Operations technician / apprentice, building operations
+      dates: 2017 – 2020
+      company: Bybanen, Bergen
       points:
         - Operation and management of a complex building facility for the tram system in Bergen
   systems_title: Systems I've worked with
@@ -135,7 +135,7 @@ nb:
     Jeg jobber også med rapportering, etterlevelse og interne arbeidsflyter. Jeg sørger for at dokumentasjonen er korrekt, komplett og lett å finne,
     slik at ingenting faller mellom to stoler og driften går smidig over tid.
   exp_title: Erfaring
-  exp_intro: Over sju års erfaring med forvaltning, drift, vedlikehold og dokumentasjon.
+  exp_intro: Over ni års erfaring med forvaltning, drift, vedlikehold og dokumentasjon.
   stat1_value: 600–700 000
   stat1_label: <strong>Dokumenter</strong> under kvalitetskontroll i nåværende stilling
   stat2_value: "2017"
@@ -147,14 +147,14 @@ nb:
       points:
         - Kvalitetskontroll av FDVU-dokumentasjon på tvers av 600 000–700 000 dokumenter
         - Sørger for at dokumentasjonen er komplett, korrekt og lett å finne for drift og vedlikehold
-    - title: FDVU-koordinator
+    - title: FDVU-ansvarlig / FDVU-tekniker
       dates: 2020 – 2025
       company: Akto Eiendom, Oslo
       points:
         - Koordinering av drift, vedlikehold og FDVU-dokumentasjon på tvers av eiendommer
-    - title: Driftsoperatør
-      dates: 2017 – 2019
-      company: Hordaland fylkeskommune, Bergen
+    - title: Driftsoperatør / lærling i byggdrifterfaget
+      dates: 2017 – 2020
+      company: Bybanen, Bergen
       points:
         - Drift og forvaltning av et komplekst bygg for Bybanen i Bergen
   systems_title: Systemer jeg har jobbet med

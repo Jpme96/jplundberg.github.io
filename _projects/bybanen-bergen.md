@@ -3,9 +3,9 @@ title: Drift av Bybanens anlegg i Bergen
 lang: nb
 date: 2019-12-01
 ref: bybanen-bergen
-role: Driftsoperatør
-organisation: Hordaland fylkeskommune, Bergen
-period: 2017 – 2019
+role: Driftsoperatør / lærling i byggdrifterfaget
+organisation: Hordaland og Vestland fylkeskommune (Bybanen), Bergen
+period: 2017 – 2020
 published: false
 summary: Drift og forvaltning av det komplekse bygningsanlegget bak Bybanen i Bergen – der depot, verksted og tekniske anlegg må fungere hver dag for at vognene skal gå.
 stats:

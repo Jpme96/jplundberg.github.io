@@ -71,3 +71,5 @@ A revised FDVU manual and clear routines based on NS 3451:2022 make sure documen
 ## Skills
 
 Training for the people who use the system every day, so that good structure is also used correctly.
+
+How we have gone about it, and why structure is what keeps documentation alive, is the subject of my article [Structure is what keeps FDVU documentation alive](/articles/how-we-structure-fdvu-documentation-with-ns-3451/).
