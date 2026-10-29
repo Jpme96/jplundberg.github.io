@@ -1664,14 +1664,18 @@ try {
       return dx < dy ? -1 : dx > dy ? 1 : a.i - b.i;
     }).map(function (x) { return x.t; });
   }
+  var todoAll = false;
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-tdall]')) { todoAll = !todoAll; renderTodos(); } });
   function renderTodos() {
     save('dash.todos', todos);
-    $('todoList').innerHTML = shownTodos().map(function (t) {
-      return '<li class="todo-item' + (t.done ? ' done' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
+    /* the soonest few; the rest fold away so the card stays about as tall as Goals and Quick links */
+    var all = shownTodos(), TOP = 7, more = all.length - TOP;
+    $('todoList').innerHTML = all.map(function (t, i) {
+      return '<li class="todo-item' + (t.done ? ' done' : '') + (i >= TOP && !todoAll ? ' td-more' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
         '<span class="label">' + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
         '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
-    }).join('');
+    }).join('') + (more > 0 ? '<li class="td-toggle"><button type="button" class="text-btn" data-tdall><i class="bi bi-chevron-' + (todoAll ? 'up' : 'down') + '"></i> ' + (todoAll ? 'Show fewer' : more + ' more task' + (more === 1 ? '' : 's')) + '</button></li>' : '');
     $('todoEmpty').hidden = todos.length > 0;
     $('todoClear').hidden = !todos.some(function (t) { return t.done; });
     window.dispatchEvent(new Event('todos:change'));

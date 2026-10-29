@@ -2449,3 +2449,23 @@ a.st-btn .st-label { flex: 1; }
   .dens-compact .fin-even .fin-col { gap: 9px; }
   .fin-even .fin-col > .card:not([hidden]):last-of-type { flex-grow: 1; }
 }
+
+/* ---------- Cards side by side are the same height (Oct 2026) ----------
+   A short card next to a long one used to stop halfway down. Now every card in a row reaches the
+   bottom of that row – on the dashboard, Finances statistics, Health, Work and Travel. A folded
+   card stays small. */
+@media (min-width: 760px) { .dash-sec .grid { align-items: stretch; } }
+@media (min-width: 900px) { .kit-grid { align-items: stretch; } }
+@media (min-width: 700px) { main .fp-grid, main .tp-grid { align-items: stretch; } }
+.kit-grid > [data-tool] > .card, .kit-grid > [data-tool] > section { height: 100%; box-sizing: border-box; }
+.card-folded, .kit-grid > [data-tool]:has(> .card-folded) { align-self: start; }
+.fp-cats li.fp-cat-toggle { display: flex; justify-content: center; padding-top: 2px; }
+
+.todo-item.td-more { display: none; }
+#todoList .td-toggle { list-style: none; display: flex; justify-content: center; padding: 6px 0 0; border: 0; }
+
+/* Settings opens smoothly: the panel stays laid out while closed (just invisible), so opening
+   only slides it in instead of building the whole panel in the first frame. */
+#settings[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#settings[hidden] .st-panel { transition: none; }
+.st-panel { will-change: transform; contain: layout paint style; }

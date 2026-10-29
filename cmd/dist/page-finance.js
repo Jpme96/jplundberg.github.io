@@ -1335,16 +1335,29 @@ try {
     $('fpCatNote').textContent = period === 'all' ? 'all years' : /^y:/.test(period) ? 'vs ' + (+period.slice(2) - 1)
       : months.length > 1 ? 'vs previous ' + months.length + ' months' : 'vs ' + mName(prevMonths[0]);
     if (!rows.length) { $('fpCats').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
-    var max = rows[0].v;
-    $('fpCats').innerHTML = rows.map(function (r) {
-      var ch = r.p > 0 ? (r.v - r.p) / r.p : null;
-      var meta = Math.round(r.v / total * 100) + ' % of spending' + (months.length > 1 ? ' · ' + esc(kr(r.v / months.length)) + '/month' : '') +
-        (ch === null ? ' · new' : ' · <span class="' + (ch <= 0 ? 'up' : 'down') + '">' + (ch > 0 ? '+' : '') + Math.round(ch * 100) + ' %</span>');
-      return '<li><span class="name">' + dot(r.c.color) + esc(r.c.name) + '</span><span class="amt">' + money(r.v) + '</span>' +
-        '<span class="bar"><span style="width:' + (r.v / max * 100).toFixed(1) + '%;background:' + r.c.color + '"></span></span>' +
-        '<span class="meta">' + meta + '</span></li>';
-    }).join('');
+    /* a chart: one line per category – this period's bar, a tick where the previous period ended,
+       and the change. Lower spending than before is green. */
+    var cmp = period !== 'all', max = Math.max.apply(null, rows.map(function (r) { return Math.max(r.v, cmp ? r.p : 0); }));
+    var per = months.length > 1;
+    $('fpCats').innerHTML = (cmp && rows.some(function (r) { return r.p > 0; }) ? '<li class="fc-key"><span><i class="fc-sw"></i> ' + esc(periodName(months)) + '</span><span><i class="fc-tk"></i> ' + esc(prevName(months)) + '</span></li>' : '') +
+      rows.map(function (r) {
+        var ch = r.p > 0 ? (r.v - r.p) / r.p : null, share = Math.round(r.v / total * 100);
+        var tip = r.c.name + ': ' + kr(r.v) + ' · ' + share + ' % of spending' + (per ? ' · ' + kr(r.v / months.length) + '/month' : '') + (cmp && r.p > 0 ? ' · before ' + kr(r.p) : '');
+        var chg = !cmp ? '<span class="fc-ch muted">' + share + ' %</span>' : ch === null ? '<span class="fc-ch muted">new</span>' : '<span class="fc-ch ' + (ch <= 0 ? 'up' : 'down') + '">' + (ch > 0 ? '+' : '−') + Math.abs(Math.round(ch * 100)) + ' %</span>';
+        return '<li class="fc-row" title="' + esc(tip) + '"><span class="fc-name">' + dot(r.c.color) + esc(r.c.name) + '</span>' +
+          '<span class="fc-track"><span class="fc-fill" style="width:' + (r.v / max * 100).toFixed(1) + '%;background:' + r.c.color + '"></span>' +
+          (cmp && r.p > 0 ? '<span class="fc-prev" style="left:' + (r.p / max * 100).toFixed(1) + '%"></span>' : '') + '</span>' +
+          '<span class="fc-amt">' + money(r.v) + '</span>' + chg + '</li>';
+      }).join('');
   }
+  function prevName(months) { return /^y:/.test(period) ? String(+period.slice(2) - 1) : period === 'month' ? 'Last month' : period === 'year' ? 'Last year' : 'The ' + months.length + ' months before'; }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fpcats]'); if (!b) return;
+    var open = b.getAttribute('aria-expanded') !== 'true', n = b.dataset.fpcats;
+    document.querySelectorAll('#fpCats .fp-cat-more').forEach(function (li) { li.hidden = !open; });
+    b.setAttribute('aria-expanded', String(open));
+    b.innerHTML = open ? '<i class="bi bi-chevron-up"></i> Show fewer' : '<i class="bi bi-chevron-down"></i> ' + n + ' more categor' + (n === '1' ? 'y' : 'ies');
+  });
 
   /* Net worth */
   function netWorth() {
