@@ -56,6 +56,8 @@
     Travel: 'Shown under Trips on the Travel page.',
     Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.'
   };
+  /* added in October 2026 – marked until you've tried them */
+  var NEW = { voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1 };
   function render() {
     var groups = [];
     F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
@@ -63,7 +65,7 @@
       return '<p class="st-cardgroup"><i class="bi bi-' + GROUP_ICON[g] + '"></i> ' + g + '</p>' +
         F.LIST.filter(function (x) { return x.group === g; }).map(function (x) {
           return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
-            '<span class="st-label">' + x.name + '<small>' + x.desc + '</small></span>' +
+            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new">New</span>' : '') + '<small>' + x.desc + '</small></span>' +
             '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
         }).join('') + '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>';
     }).join('');
