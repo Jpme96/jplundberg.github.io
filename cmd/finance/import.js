@@ -111,6 +111,10 @@
     if (hi < 0) return { error: 'Couldn’t find the date, text and amount columns. The first line reads: “' + rows[0].join(' ; ').slice(0, 120) + '”. Send me that line and I’ll add the layout.' };
     var col = columns(rows[hi]);
     var d = window.Vault.get() || {}, have = {}, memory = d.catMemory || {}, fixed = (d.budget && d.budget.fixed) || [];
+    /* expenses you logged yourself (quick add, the Spending form): the bank row for the same purchase
+       shouldn't count twice – same amount, within three days */
+    var manual = (d.expenses || []).filter(function (e) { return (!e.src || e.src === 'trip') && !e.ref && +e.amount > 0; }), claimed = {};
+    function dayN(k) { return Math.round(new Date(k + 'T12:00') / 864e5); }
     (d.expenses || []).forEach(function (e) {
       if (e.ref) have[e.ref] = 1;
       have[e.date + '|' + Math.round(e.amount) + '|' + norm(e.note)] = 1;
@@ -150,7 +154,10 @@
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
       var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
       var transfer = TRANSFER.test(x.desc);
-      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : guessCat(x.desc, memory), ref: ref, on: !transfer, bill: bill || null, transfer: transfer });
+      var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+m.amount - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
+        .sort(function (a, b) { return Math.abs(dayN(a.date) - dayN(x.date)) - Math.abs(dayN(b.date) - dayN(x.date)); })[0] || null;
+      if (mine) { claimed[mine.id] = 1; skipped.mine = (skipped.mine || 0) + 1; }
+      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, mine: mine });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
     return { rows: out, skipped: skipped, memory: memory, card: card, source: rows };
@@ -229,6 +236,7 @@
     found = res;
     var sk = res.skipped, note = [];
     if (sk.dup) note.push(sk.dup + ' already imported');
+    if (sk.mine) note.push(sk.mine + ' you logged yourself (left unticked so they don’t count twice)');
     if (sk.income) note.push(sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
@@ -240,6 +248,7 @@
       '<ul class="im-list">' + rows.map(function (r, i) {
         return '<li class="im-row' + (r.on ? '' : ' off') + (r.income ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
           '<span class="im-x"><b>' + esc(r.note) + '</b><small>' + esc(new Date(r.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
+          (r.mine ? ' · <i class="bi bi-person-check"></i> you logged it already: ' + esc(r.mine.note || 'expense') + ', ' + esc(new Date(String(r.mine.date).slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') +
           (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · from your own account' : ' · adds to this month’s budget') : r.transfer ? ' · transfer' : '') + '</small></span>' +
           '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
           (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') + '</li>';
@@ -254,6 +263,8 @@
     var d = window.Vault.get(); d.expenses = d.expenses || []; d.catMemory = d.catMemory || {}; d.paid = d.paid || {}; d.extra = d.extra || [];
     var n = 0, bills = 0, nin = 0, t0 = Date.now();
     found.rows.forEach(function (r, i) {
+      /* a purchase you logged yourself: remember the bank row on it, so the next file skips it too */
+      if (r.mine && !r.on) { (d.expenses || []).forEach(function (e) { if (e.id === r.mine.id && !e.ref) e.ref = r.ref; }); return; }
       if (!r.on) return;
       if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref }); nin++; return; }
       if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
