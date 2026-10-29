@@ -1,5 +1,5 @@
 /* Customize a page: change the order of its sections and cards, and hide the ones you don't use.
-   Opened from Settings → Dashboard → Pages (…/finance/?customize), shown at the top of the page.
+   Opened from Settings → Menu & pages (…/finance/?customize), shown at the top of the page.
 
    Sections (data-pk on the page) move up and down the page; cards move inside their group
    (Apple Health, Training, Check-ups … or Pace, Change by category …). Saved per page in
@@ -79,7 +79,7 @@
     if (!editing) { bar.innerHTML = ''; return; }
     var C = conf();
     bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> Customize this page</h2></div>' +
-      '<p class="muted pk-intro">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Dashboard → Pages.</p>' +
+      '<p class="muted pk-intro">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Menu & pages.</p>' +
       zones().map(function (z) {
         var list = items(z); if (list.length < 2 && z.key !== 'main') return '';
         var off = (C[z.key] || {}).off || [];
