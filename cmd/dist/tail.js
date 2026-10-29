@@ -1570,7 +1570,7 @@ try {
 /* ===== pagekit.js ===== */
 try {
 /* Customize a page: change the order of its sections and cards, and hide the ones you don't use.
-   "Customize this page" at the bottom of Finances, Health and Work.
+   Opened from Settings → Dashboard → Pages (…/finance/?customize), shown at the top of the page.
 
    Sections (data-pk on the page) move up and down the page; cards move inside their group
    (Apple Health, Training, Check-ups … or Pace, Change by category …). Saved per page in
@@ -1643,13 +1643,14 @@ try {
 
   /* the button at the bottom of the page and the editor it opens */
   var bar = document.createElement('div'); bar.className = 'pk-bar';
-  var foot = main.querySelector(':scope > .foot'); main.insertBefore(bar, foot || null);
+  var hero = main.querySelector(':scope > .fp-hero, :scope > .tv-hero'); main.insertBefore(bar, hero ? hero.nextSibling : main.firstChild);
+  editing = /[?&]customize/.test(location.search);
   function draw() {
-    bar.hidden = !zones().some(function (z) { return items(z).length > 1; });
-    if (!editing) { bar.innerHTML = '<button type="button" class="text-btn pk-btn" data-pkedit><i class="bi bi-layout-text-window-reverse"></i> Customize this page</button>'; return; }
+    bar.hidden = !editing;
+    if (!editing) { bar.innerHTML = ''; return; }
     var C = conf();
     bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> Customize this page</h2></div>' +
-      '<p class="muted pk-intro">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button.</p>' +
+      '<p class="muted pk-intro">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Dashboard → Pages.</p>' +
       zones().map(function (z) {
         var list = items(z); if (list.length < 2 && z.key !== 'main') return '';
         var off = (C[z.key] || {}).off || [];
@@ -1661,15 +1662,15 @@ try {
             '<input type="checkbox" class="switch" data-pkshow="' + esc(k) + '" data-z="' + esc(z.key) + '"' + (on ? ' checked' : '') + ' aria-label="Show ' + esc(nameOf(el)) + '"></div>';
         }).join('');
       }).join('') +
+      (zones().some(function (z) { return items(z).length > 1; }) ? '' : '<p class="muted pk-intro">Nothing to arrange on this page yet – switch on more cards under Settings → Features.</p>') +
       '<div class="pk-foot"><button type="button" class="text-btn" data-pkreset>Reset</button><button type="button" class="pill-btn" data-pkedit>Done</button></div></section>';
   }
   function zoneBy(key) { return zones().filter(function (z) { return z.key === key; })[0]; }
 
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-pkedit]')) {
-      editing = !editing; draw();
-      if (editing) bar.scrollIntoView({ behavior: document.documentElement.classList.contains('mo-off') ? 'auto' : 'smooth', block: 'start' });
-      var b = bar.querySelector('button'); if (b) b.focus({ preventScroll: true });
+      editing = false; draw();
+      history.replaceState(null, '', location.pathname + location.hash);
       return;
     }
     var mv = e.target.closest('[data-pkmove]');

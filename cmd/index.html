@@ -67,7 +67,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=86" rel="stylesheet">
+  <link href="styles.css?v=88" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -394,6 +394,10 @@
         <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
         <p class="st-sub">Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
         <div id="stLists"></div>
+        <p class="st-sub">Pages <span class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
+        <a class="st-row st-btn" href="finance/?customize"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-wallet2"></i></span><span class="st-label">Customize Finances</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="habits/?customize"><span class="st-ico" style="--c:#e66767"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Customize Health</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="work/?customize"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-briefcase"></i></span><span class="st-label">Customize Work</span><i class="bi bi-chevron-right"></i></a>
         <p class="st-sub">Menu <span class="st-hint">The order of the pages in the menu</span></p>
         <div id="stNav"></div>
         <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
@@ -671,9 +675,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=493b21ccfb"></script>
+  <script src="dist/head.js?v=c39e568cd0"></script>
   <script src="dist/page-home.js?v=6be9079dfe"></script>
-  <script src="dist/tail.js?v=bb3a55c752"></script>
+  <script src="dist/tail.js?v=bcbc85aee9"></script>
   <!-- /scripts -->
 </body>
 </html>

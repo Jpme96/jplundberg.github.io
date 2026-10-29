@@ -2365,7 +2365,7 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 
 /* ---------- customize a page (pagekit.js) ---------- */
 .pk-off { display: none !important; }
-.pk-bar { display: flex; justify-content: center; margin: 18px 0 6px; }
+.pk-bar { display: flex; justify-content: center; margin: 0 0 18px; }
 .pk-btn { font-size: 13px; }
 .pk-editor { width: 100%; max-width: 640px; margin: 0 auto; text-align: left; }
 .pk-intro { margin: 0 0 6px; font-size: 13.5px; }
@@ -2388,3 +2388,5 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
   .spending .card-head .month-nav { order: 3; width: 100%; justify-content: space-between; }
   .spending .card-head .im-btn { margin-left: auto; }
 }
+a.st-btn { text-decoration: none; color: var(--text); text-align: left; }
+a.st-btn .st-label { flex: 1; }
