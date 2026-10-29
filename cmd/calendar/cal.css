@@ -279,3 +279,7 @@
 .cl-swl > * { animation: clSwL .28s var(--ease-ios); } .cl-swr > * { animation: clSwR .28s var(--ease-ios); }
 @keyframes clSwL { from { opacity: .3; transform: translateX(28px); } } @keyframes clSwR { from { opacity: .3; transform: translateX(-28px); } }
 .mo-off .cl-swl > *, .mo-off .cl-swr > * { animation: none; }
+/* week view: drag to move, bottom edge to resize */
+@media (hover: hover) { .cl-blk::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize; } }
+.cl-blk.dragging { z-index: 5; box-shadow: 0 10px 26px rgba(0, 0, 0, .4); opacity: .95; transition: none; cursor: grabbing; }
+.cl-dragging, .cl-dragging * { -webkit-user-select: none; user-select: none; }

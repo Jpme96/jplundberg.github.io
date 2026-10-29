@@ -292,6 +292,66 @@
       return openEditor(null, { date: t.dataset.col, hour: Math.max(0, Math.min(23, Math.floor(y / HOUR))) });
     }
   });
+  /* ---------- week view: drag an event to move it, drag its bottom edge to change the length ----------
+     Your own one-off events only (not phone calendars, repeats or reminders). Mouse: just drag.
+     Touch: hold the event a moment first, so scrolling still works. Snaps to 15 minutes; Undo in the toast. */
+  (function () {
+    var drag = null, SNAP = 15, holdT = null;
+    function movable(o) { return o && o.ev && o.ev.own && !o.ev.rule && !o.allDay && !o.ev.readOnly && !o.ev.own.end; }
+    function colAt(x, y) { var el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('.cl-wk-col') : null; }
+    function hmStr(m) { m = Math.max(0, Math.min(1439, m)); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+    function begin(e, blk, o) {
+      var r = blk.getBoundingClientRect(), resize = e.clientY > r.bottom - 10;
+      var startMin = o.start.getHours() * 60 + o.start.getMinutes(), dur = Math.round((o.end - o.start) / 6e4);
+      drag = { blk: blk, o: o, x0: e.clientX, y0: e.clientY, startMin: startMin, dur: dur, resize: resize, col: blk.closest('.cl-wk-col'), on: false, id: e.pointerId, touch: e.pointerType !== 'mouse' };
+    }
+    function show(e) {
+      var dy = e.clientY - drag.y0, dm = Math.round(dy / HOUR * 60 / SNAP) * SNAP;
+      if (drag.resize) { drag.nDur = Math.max(SNAP, drag.dur + dm); drag.blk.style.height = (drag.nDur / 60 * HOUR - 2) + 'px'; drag.blk.querySelector('.tm').textContent = hmStr(drag.startMin) + '–' + hmStr(drag.startMin + drag.nDur); return; }
+      drag.nStart = Math.max(0, Math.min(24 * 60 - drag.dur, drag.startMin + dm));
+      var c = colAt(e.clientX, e.clientY) || drag.col; drag.nCol = c;
+      if (c !== drag.blk.parentNode) c.appendChild(drag.blk);
+      drag.blk.style.top = (drag.nStart / 60 * HOUR) + 'px'; drag.blk.style.left = '2px'; drag.blk.style.width = 'calc(100% - 4px)';
+      drag.blk.querySelector('.tm').textContent = hmStr(drag.nStart) + '–' + hmStr(drag.nStart + drag.dur);
+    }
+    function drop() {
+      var d = drag; drag = null; document.documentElement.classList.remove('cl-dragging');
+      if (!d.on) return;
+      d.blk.classList.remove('dragging'); swallow = Date.now();
+      var data = C.load(), ev = data.events.filter(function (x) { return x.id === d.o.ev.own.id; })[0]; if (!ev) return render();
+      var before = { date: ev.date, start: ev.start, stop: ev.stop };
+      if (d.resize) { if (d.nDur == null) return render(); ev.stop = hmStr(d.startMin + d.nDur); }
+      else { if (d.nStart == null) return render(); ev.date = (d.nCol || d.col).dataset.col; ev.start = hmStr(d.nStart); ev.stop = hmStr(d.nStart + d.dur); }
+      if (before.date === ev.date && before.start === ev.start && before.stop === ev.stop) return render();
+      C.save(data); render();
+      if (window.Quick) window.Quick.toast('<i class="bi bi-calendar-check"></i> ' + esc(ev.title) + ' · ' + esc(C.fromKey(ev.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' ' + ev.start + '–' + ev.stop, function () {
+        var d2 = C.load(); d2.events.forEach(function (x) { if (x.id === ev.id) Object.assign(x, before); }); C.save(d2); render();
+      });
+    }
+    var swallow = 0;
+    $('clView').addEventListener('click', function (e) { if (Date.now() - swallow < 400) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    $('clView').addEventListener('pointerdown', function (e) {
+      if (view !== 'week' || e.button > 0) return;
+      var blk = e.target.closest('.cl-blk'); if (!blk) return;
+      var o = shown[+blk.dataset.occ]; if (!movable(o)) return;
+      begin(e, blk, o);
+      if (drag.touch) holdT = setTimeout(function () { if (drag && !drag.on) { drag.on = true; drag.blk.classList.add('dragging'); document.documentElement.classList.add('cl-dragging'); if (navigator.vibrate) navigator.vibrate(8); } }, 380);
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.on) {
+        if (drag.touch) { if (Math.abs(e.clientX - drag.x0) > 8 || Math.abs(e.clientY - drag.y0) > 8) { clearTimeout(holdT); drag = null; } return; }
+        if (Math.abs(e.clientX - drag.x0) < 4 && Math.abs(e.clientY - drag.y0) < 4) return;
+        drag.on = true; drag.blk.classList.add('dragging'); document.documentElement.classList.add('cl-dragging');
+      }
+      e.preventDefault(); show(e);
+    }, { passive: false });
+    window.addEventListener('pointerup', function (e) { clearTimeout(holdT); if (drag && e.pointerId === drag.id) drop(); });
+    window.addEventListener('pointercancel', function () { clearTimeout(holdT); if (drag) { drag = null; document.documentElement.classList.remove('cl-dragging'); render(); } });
+    /* while dragging on a phone, the week doesn't scroll under your finger */
+    document.addEventListener('touchmove', function (e) { if (drag && drag.on) e.preventDefault(); }, { passive: false });
+  })();
+
   $('clDay').addEventListener('click', function (e) {
     var t;
     if ((t = e.target.closest('[data-occ]'))) return openEditor(shown[+t.dataset.occ]);
