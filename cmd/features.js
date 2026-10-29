@@ -147,6 +147,12 @@
       out.push({ id: 'tool:co:' + c.id, title: (c.title || 'Course') + (c.status === 'done' ? ' ✓' : ''), allDay: true, start: fromKey(c.date), days: 1,
         cat: 'study', readOnly: true, tool: 'Courses & certificates', link: '/cmd/work/#learning', location: c.provider || '', notes: c.notes || '', exDays: {} });
     });
+    /* to-dos with a day (not done yet) */
+    (readJSON('dash.todos') || []).forEach(function (t) {
+      if (!t || t.done || !isKey(t.due)) return;
+      out.push({ id: 'todo:' + t.id, title: '☐ ' + (t.text || 'Task'), allDay: true, start: fromKey(t.due), days: 1, color: '#22b35e',
+        readOnly: true, reminder: true, link: '/cmd/#c=todo', location: '', notes: '', exDays: {} });
+    });
     /* your birthday, from the profile */
     var me = readJSON('dash.profile') || {};
     if (isKey(me.birthday)) out.push({ id: 'rem:bday', title: 'Your birthday', allDay: true, start: fromKey(me.birthday), days: 1, color: '#d55181',

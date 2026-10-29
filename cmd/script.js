@@ -304,37 +304,66 @@
   });
 
   /* ---------- To-do ---------- */
+  /* A task can have a due day – type it ("kjøp melk i morgen", "betale strøm 15.11") and it's
+     picked up. Due ones come first, and show in the calendar and in At a glance. */
   var todos = load('dash.todos', []);
+  function tkey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function dueChip(t) {
+    if (!t.due || t.done) return '';
+    var n = Math.round((new Date(t.due + 'T12:00') - new Date(tkey(new Date()) + 'T12:00')) / 864e5);
+    var txt = n < 0 ? (n === -1 ? 'Yesterday' : -n + ' days ago') : n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 7 ? new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }) : new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return '<span class="due' + (n < 0 ? ' late' : n === 0 ? ' now' : '') + '"><i class="bi bi-calendar-event"></i> ' + esc(txt) + '</span>';
+  }
+  function shownTodos() {
+    var big = '9999-99-99';
+    return todos.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
+      var x = a.t, y = b.t;
+      if (!!x.done !== !!y.done) return x.done ? 1 : -1;
+      if (!!x.focus !== !!y.focus) return x.focus ? -1 : 1;
+      var dx = x.due || big, dy = y.due || big;
+      return dx < dy ? -1 : dx > dy ? 1 : a.i - b.i;
+    }).map(function (x) { return x.t; });
+  }
   function renderTodos() {
     save('dash.todos', todos);
-    $('todoList').innerHTML = todos.map(function (t) {
-      return '<li class="todo-item' + (t.done ? ' done' : '') + '" data-id="' + t.id + '">' +
+    $('todoList').innerHTML = shownTodos().map(function (t) {
+      return '<li class="todo-item' + (t.done ? ' done' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
-        '<span class="label">' + esc(t.text) + '</span>' +
+        '<span class="label">' + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
         '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
     }).join('');
     $('todoEmpty').hidden = todos.length > 0;
     $('todoClear').hidden = !todos.some(function (t) { return t.done; });
+    window.dispatchEvent(new Event('todos:change'));
   }
   $('todoForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var v = $('todoInput').value.trim(); if (!v) return;
-    todos.push({ id: uid(), text: v, done: false });
+    var p = window.Smart ? window.Smart.todo(v) : { text: v, due: null }, item = { id: uid(), text: p.text, done: false };
+    if (p.due) item.due = p.due;
+    todos.push(item);
     $('todoInput').value = '';
     renderTodos();
+    if (p.due && window.Quick) window.Quick.toast('<i class="bi bi-calendar-event"></i> Due ' + esc(window.Smart.when(p.due)) + ' – it’s in your calendar');
   });
   $('todoList').addEventListener('click', function (e) {
     var li = e.target.closest('.todo-item'); if (!li) return;
     var t = todos.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!t) return;
     if (e.target.closest('.del')) {
       li.classList.add('removing');
-      setTimeout(function () { todos = todos.filter(function (x) { return x !== t; }); renderTodos(); }, 250);
+      var at = todos.indexOf(t);
+      setTimeout(function () {
+        todos = todos.filter(function (x) { return x !== t; }); renderTodos();
+        if (window.Quick) window.Quick.toast('<i class="bi bi-trash3"></i> Task deleted', function () { todos = load('dash.todos', todos); todos.splice(Math.min(at, todos.length), 0, t); renderTodos(); });
+      }, 250);
     } else if (e.target.closest('.check') || e.target.closest('.label')) {
       t.done = !t.done; renderTodos();
     }
   });
   $('todoClear').addEventListener('click', function () {
+    var before = todos.slice();
     todos = todos.filter(function (t) { return !t.done; }); renderTodos();
+    if (window.Quick) window.Quick.toast('<i class="bi bi-check2-all"></i> Done tasks cleared', function () { todos = before; renderTodos(); });
   });
   renderTodos();
 

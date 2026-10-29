@@ -36,12 +36,20 @@
       .map(function (f) { return { f: f, diff: Math.min(f.day, dim) - today }; })
       .filter(function (x) { return x.diff <= 7; }).sort(function (a, b) { return a.diff - b.diff; }).slice(0, 3);
 
+    /* where the period ends up at this pace, and what today has cost */
+    var pc = B.pace ? B.pace(d, now) : null, tk = key + '-' + String(now.getDate()).padStart(2, '0');
+    var todaySum = sum((d.expenses || []).filter(function (e) { return e.date === tk; }));
+    var paceHtml = !pc || left < 0 ? '' : pc.ok
+      ? '<p class="mo-pace ok"><i class="bi bi-check-circle"></i><span>On track – about ' + money(pc.end) + ' left ' + (per.byPayday ? 'at payday' : 'at the end of the month') + '</span></p>'
+      : '<p class="mo-pace warn"><i class="bi bi-speedometer2"></i><span>At this pace ' + money(-pc.end) + ' over ' + (per.byPayday ? 'by payday' : 'this month') + ' · keep to ' + money(Math.max(0, (pc.room - pc.spent) / per.daysLeft)) + '/day</span></p>';
     box.innerHTML =
       '<div class="mo-top"><div><div class="big-num' + (left < 0 ? ' neg' : '') + '">' + money(left) + '</div>' +
         '<div class="muted">' + (left < 0 ? 'over budget this month' : 'left' + (untilPay ? ' until payday' : ' this month') + (left > 0 ? ' · ' + money(perDay) + '/day' : '')) + '</div></div></div>' +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span><span class="s-spent" style="width:' + w(spent) + '"></span><span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span></div>' +
+      paceHtml +
       '<ul class="mo-rows">' +
+        (todaySum > 0 ? '<li><i class="bi bi-bag"></i><span>Spent today</span>' + money(todaySum) + '</li>' : '') +
         '<li><i class="bi bi-receipt"></i><span>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' }))) + '</span>' + money(spent) + '</li>' +
         (per.extra ? '<li><i class="bi bi-arrow-down-left-circle"></i><span>Money in (refunds, Vipps)</span><span class="money">+' + esc(kr(per.extra)) + '</span></li>' : '') +
         (pay ? '<li><i class="bi bi-cash-stack"></i><span>' + esc(pay.title) + (pay.days === 0 ? ' <b>today</b>' : pay.days === 1 ? ' <b>tomorrow</b>' : ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' days') + '</span>' + (pay.net ? money(pay.net) : '') + '</li>' : '') +

@@ -44,6 +44,7 @@
   }
 
   window.addEventListener('cal:change', render);
+  window.addEventListener('todos:change', function () { setTimeout(render, 0); });
   var prevReload = window.Dash && window.Dash.reload;
   window.Dash = window.Dash || {};
   window.Dash.reload = function () { if (prevReload) prevReload(); render(); };

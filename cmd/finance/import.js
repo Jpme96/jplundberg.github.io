@@ -76,6 +76,7 @@
     };
   }
   function guessCat(desc, memory) {
+    if (window.Smart) return window.Smart.guessCat(desc, memory);       // the same shop rules as quick add
     var key = norm(desc);
     if (memory[key]) return memory[key];
     for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(desc)) return RULES[i][0];
@@ -260,6 +261,7 @@
       d.catMemory[norm(r.desc)] = r.cat; n++;
     });
     /* keep the memory of merchants small */
+    var tn = new Date(); d.lastImport = tn.getFullYear() + '-' + String(tn.getMonth() + 1).padStart(2, '0') + '-' + String(tn.getDate()).padStart(2, '0');
     var keys = Object.keys(d.catMemory); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.catMemory[k]; });
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
@@ -296,5 +298,9 @@
   });
   document.addEventListener('keydown', function (e) { if (!bg.hidden && e.key === 'Escape') close(); });
   window.Vault.onLock(close);
+  /* …/finance/#import (from the weekly check-in or search) opens it straight away */
+  function fromHash() { if (location.hash === '#import') { history.replaceState(null, '', location.pathname + location.search); setTimeout(intro, 350); } }
+  window.Vault.onUnlock(fromHash);
+  window.addEventListener('hashchange', fromHash);
   window.BankImport = { analyse: analyse };     // for tests
 })();

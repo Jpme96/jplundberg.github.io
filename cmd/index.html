@@ -64,7 +64,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=70" rel="stylesheet">
+  <link href="styles.css?v=71" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -193,7 +193,7 @@
       <section class="card todo">
         <div class="card-head"><h2><i class="bi bi-check2-square"></i> To-do</h2><button class="text-btn" id="todoClear" type="button">Clear done</button></div>
         <form class="add-row" id="todoForm">
-          <input id="todoInput" placeholder="Add a task…" autocomplete="off">
+          <input id="todoInput" placeholder="Add a task – add “fri” or “15.11” to give it a day" autocomplete="off">
           <button class="pill-btn" type="submit" aria-label="Add task"><i class="bi bi-plus-lg"></i></button>
         </form>
         <ul class="todo-list" id="todoList"></ul>
@@ -359,6 +359,7 @@
         <label class="st-row"><span>Name in greeting</span><input id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
         <label class="st-row"><span>Show seconds</span><input type="checkbox" class="switch" id="stSeconds"></label>
         <label class="st-row"><span>Quotes</span><input type="checkbox" class="switch" id="stQuotes"></label>
+        <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
         <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
         <div id="stCards"></div>
       </section>
@@ -546,29 +547,31 @@
   </div>
 
   <script src="lock.js?v=15"></script>
-  <script src="features.js?v=4"></script>
-  <script src="settings.js?v=18"></script>
+  <script src="features.js?v=5"></script>
+  <script src="settings.js?v=19"></script>
   <script src="website.js?v=6"></script>
   <script src="texts.js?v=1"></script>
-  <script src="script.js?v=10"></script>
-  <script src="budget.js?v=4"></script>
-  <script src="money.js?v=3"></script>
+  <script src="script.js?v=11"></script>
+  <script src="budget.js?v=5"></script>
+  <script src="money.js?v=4"></script>
   <script src="places.js?v=2"></script>
   <script src="today.js?v=6"></script>
   <script src="flow.js?v=2"></script>
   <script src="calendar/cal-core.js?v=7"></script>
   <script src="calendar/cal-settings.js?v=18"></script>
-  <script src="cal-card.js?v=2"></script>
+  <script src="cal-card.js?v=3"></script>
   <script src="upnext.js?v=2"></script>
   <script src="review.js?v=3"></script>
-  <script src="brief.js?v=5"></script>
+  <script src="brief.js?v=6"></script>
+  <script src="checkin.js?v=1"></script>
   <script src="kit.js?v=2"></script>
   <script src="tools.js?v=4"></script>
   <script src="profile.js?v=8"></script>
   <script src="links.js?v=3"></script>
-  <script src="search.js?v=4"></script>
+  <script src="smart.js?v=1"></script>
+  <script src="search.js?v=5"></script>
   <script src="app.js?v=3"></script>
-  <script src="quick.js?v=2"></script>
+  <script src="quick.js?v=3"></script>
   <script src="tidy.js?v=1"></script>
   <script src="nav.js?v=16"></script>
 </body>

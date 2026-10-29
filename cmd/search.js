@@ -56,6 +56,8 @@
       tool('subs', 'Finances', 'arrow-repeat', function (s) { return s.name; }, function (s) { return kr(s.amount) + ' · ' + (s.period || 'monthly'); }, 'finance/#subs', '', function (s) { return s.notes; });
       tool('warranty', 'Finances', 'receipt-cutoff', function (w) { return w.item; }, function (w) { return [w.store, fmt(w.bought), w.receipt ? 'receipt: ' + w.receipt : ''].filter(Boolean).join(' · '); }, 'finance/#warranty', 'bought', function (w) { return (w.store || '') + ' ' + (w.notes || '') + ' ' + (w.receipt || ''); });
     }
+    add('Reviews', 'clipboard-check', 'Weekly check-in', 'Spending, the week ahead, focus and habits', home + '#checkin', '', 'review week weekly sunday plan uke');
+    add('Do', 'upload', 'Import from bank', 'CSV or Excel from your bank or credit card', home + 'finance/#import', '', 'import bank csv excel kort sparebank dnb nordea');
     add('Reviews', 'calendar-heart', 'Monthly check-in', 'Last month and the month ahead', home + '#review=month', '', 'review month summary');
     add('Reviews', 'stars', 'Year in review', 'Trips, money, workouts and habits', home + '#review=year', '', 'review year summary annual');
     SETTINGS.forEach(function (s) { add('Settings', 'gear', s[1], s[2], home + '?settings=' + s[0], '', s[2]); });
@@ -83,10 +85,21 @@
     '<button type="button" class="text-btn" data-srclose>Close</button></div><div class="sr-res" id="srRes"></div></div>';
   document.body.appendChild(bg);
   var input = bg.querySelector('#srIn'), res = bg.querySelector('#srRes'), active = -1, results = [];
+  /* typed something that reads like a thing to add ("149 rema", "fre 18 middag")? offer it */
+  function addRow(q) {
+    var S = window.Smart; if (!S || !window.Quick || !window.Quick.add) return null;
+    var p = S.parse(q, { memory: ((window.Vault.get() || {}).catMemory) || {} });
+    if (!p || !p.strong || p.kind === 'note') return null;
+    var dsc = S.describe(p);
+    return { g: 'Add', i: dsc.icon, t: 'Add ' + dsc.label.toLowerCase() + ': ' + dsc.bits[0], s: dsc.bits.slice(1).join(' · '), h: '#', act: p };
+  }
   function draw() {
     var q = input.value.trim();
-    results = search(q); active = results.length ? 0 : -1;
-    if (!q) { res.innerHTML = '<p class="sr-hint">Try “Lisbon”, “dentist”, “Spotify”, “passport” or “glass”.</p>'; return; }
+    results = search(q);
+    var ad = q ? addRow(q) : null;
+    if (ad) { if (results.length) results.push(ad); else results = [ad]; }
+    active = results.length ? 0 : -1;
+    if (!q) { res.innerHTML = '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>'; return; }
     if (!results.length) { res.innerHTML = '<p class="sr-hint">Nothing found for “' + esc(q) + '”.</p>'; return; }
     var last = '', html = '';
     results.forEach(function (r, i) {
@@ -113,6 +126,11 @@
   bg.addEventListener('click', function (e) {
     if (e.target === bg || e.target.closest('[data-srclose]')) return close();
     var a = e.target.closest('.sr-item');
+    if (a && results[+a.dataset.i] && results[+a.dataset.i].act) {
+      e.preventDefault();
+      if (window.Quick.add(results[+a.dataset.i].act)) { close(); setTimeout(function () { if (window.Dash && window.Dash.reload) window.Dash.reload(); }, 0); }
+      return;
+    }
     if (a) {
       var h = a.getAttribute('href');
       if (/[?&]settings=/.test(h)) { try { if (location.pathname !== '/cmd/') sessionStorage.setItem('dash.stFrom', location.pathname); } catch (x) {} }

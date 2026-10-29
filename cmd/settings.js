@@ -37,6 +37,17 @@
       return (ia < 0 ? 99 + g.cards.indexOf(a) : ia) - (ib < 0 ? 99 + g.cards.indexOf(b) : ib);
     });
   }
+  /* The time of day moves a few Today cards up, right under At a glance (your order stays as it is):
+     mornings – departures and weather; evenings – habits and money. Off in Settings → Dashboard. */
+  var TIME_UP = { morning: ['transit', 'weather'], evening: ['habits', 'fin'] };
+  function partOfDay(h) { return h >= 5 && h < 10 ? 'morning' : h >= 17 && h < 24 ? 'evening' : ''; }
+  function byTime(s, g, list) {
+    if (g.id !== 'today' || s.adapt === false) return list;
+    var up = TIME_UP[partOfDay(new Date().getHours())];
+    if (!up) return list;
+    var first = list.filter(function (id) { return id === 'brief'; }), boosted = up.filter(function (id) { return list.indexOf(id) > -1; });
+    return first.concat(boosted, list.filter(function (id) { return id !== 'brief' && boosted.indexOf(id) < 0; }));
+  }
   var BGS = [['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
   /* Your own colour: any hex value, with readable text on top */
   function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(h || ''); }
@@ -142,8 +153,8 @@
     /* your order: CSS order inside each grid, so nothing on the page has to be rebuilt */
     GROUPS.forEach(function (g) {
       if (!g.move) return;
-      ordered(s, g).forEach(function (id, i) {
-        document.querySelectorAll('.grid > .card.' + id).forEach(function (el) { el.style.order = i; });
+      byTime(s, g, ordered(s, g)).forEach(function (id, i) {
+        document.querySelectorAll(id === 'fin' ? '.grid > #fin' : '.grid > .card.' + id).forEach(function (el) { el.style.order = i; });   // the Money card is #fin
       });
     });
     /* Hide a section heading when every card in it is hidden */
@@ -154,6 +165,7 @@
       });
     });
     if ($('settings') && !$('settings').hidden) fill();
+    if (typeof balanceSoon === 'function') balanceSoon();
   }
   if (media && media.addEventListener) media.addEventListener('change', apply);
 
@@ -207,6 +219,7 @@
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
     $('stSeconds').checked = !!s.seconds;
     $('stQuotes').checked = !!s.quotes;
+    if ($('stAdapt')) $('stAdapt').checked = s.adapt !== false;
     $('stCards').innerHTML = GROUPS.map(function (g) {
       var all = ordered(s, g), list = all.filter(featureOn);
       if (!list.length) return '';
@@ -373,6 +386,39 @@
   $('stName').addEventListener('change', function () { set({ name: this.value.trim() }); });
   $('stSeconds').addEventListener('change', function () { set({ seconds: this.checked }); });
   $('stQuotes').addEventListener('change', function () { set({ quotes: this.checked }); });
+  if ($('stAdapt')) $('stAdapt').addEventListener('change', function () { set({ adapt: this.checked }); });
+  /* No lonely card at the end of Today: "This week" (habits) only spans two columns when that fills the rows */
+  function balance() {
+    var br = document.querySelector('.grid > .card.brief'), g = br && br.parentNode, hb = g && g.querySelector(':scope > .card.habits');
+    if (!hb) return;
+    hb.classList.remove('hb-narrow');
+    var cols = getComputedStyle(g).gridTemplateColumns.split(' ').length;
+    if (cols < 2 || !hb.offsetParent) return;
+    function units() {
+      var n = 0;
+      Array.prototype.forEach.call(g.children, function (c) {
+        if (!c.offsetParent || c === br) return;
+        var r = c.getBoundingClientRect(), w = g.getBoundingClientRect().width;
+        n += Math.max(1, Math.round(r.width / (w / cols)));
+      });
+      return n;
+    }
+    if (units() % cols === 0) return;
+    hb.classList.add('hb-narrow');
+    if (units() % cols !== 0) hb.classList.remove('hb-narrow');
+  }
+  var balT = null;
+  function balanceSoon() { clearTimeout(balT); balT = setTimeout(balance, 60); }
+  window.addEventListener('resize', balanceSoon);
+  ['features:change', 'tools:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, balanceSoon); });
+  if (window.Vault) { window.Vault.onUnlock(function () { setTimeout(balance, 150); setTimeout(balance, 900); }); }
+  window.Dash = window.Dash || {};
+  var prevBal = window.Dash.reload;
+  window.Dash.reload = function () { if (prevBal) prevBal(); balanceSoon(); };
+
+  /* the part of the day changes while the page is open */
+  var lastPart = partOfDay(new Date().getHours());
+  setInterval(function () { var p = partOfDay(new Date().getHours()); if (p !== lastPart) { lastPart = p; apply(); } }, 5 * 60000);
   $('stCards').addEventListener('change', function (e) {
     var c = e.target.dataset.card;
     if (!c) return;

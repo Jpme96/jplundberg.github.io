@@ -35,7 +35,7 @@
     var out = [], now = new Date(), today = dkey(now);
     function add(pri, icon, color, title, sub, href, opt) {
       var it = { pri: pri, icon: icon, color: color, title: title, sub: sub, href: href };
-      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; }
+      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; }
       out.push(it);
     }
     ACTIONS = {};
@@ -101,7 +101,7 @@
 
     /* reminders from your tools: renewals, expiring certificates, warranties, health, birthday */
     if (Fe) Fe.events().forEach(function (ev) {
-      if (ev.cat) return;
+      if (ev.cat || ev.id.indexOf('todo:') === 0) return;
       var start = ev.start, k = dkey(start), n = daysTo(k);
       if (ev.rule) { var nx = ev.id.indexOf('sub:') > -1 ? Fe.nextRenewal(Fe.list('subs').filter(function (s) { return 'rem:sub:' + s.id === ev.id; })[0] || {}) : null;
         if (ev.id === 'rem:bday') { var b = new Date(now.getFullYear(), start.getMonth(), start.getDate()); if (b < new Date(now.getFullYear(), now.getMonth(), now.getDate())) b.setFullYear(b.getFullYear() + 1); nx = dkey(b); }
@@ -147,6 +147,18 @@
       });
     }
 
+    /* to-dos with a day: overdue, today – and tomorrow's in the evening */
+    (readJSON('dash.todos') || []).forEach(function (t) {
+      if (!t || t.done || !/^\d{4}-\d{2}-\d{2}$/.test(t.due || '')) return;
+      var n5 = daysTo(t.due);
+      if (n5 < 0) add(13, 'exclamation-square', '#e66767', t.text, 'To-do · was due ' + inDays(n5), '#c=todo');
+      else if (n5 === 0) add(22, 'check2-square', '#22b35e', t.text, 'To-do · today', '#c=todo');
+      else if (n5 === 1 && now.getHours() >= 17) add(44, 'check2-square', '#22b35e', t.text, 'To-do · tomorrow', '#c=todo');
+    });
+
+    /* the weekly check-in: Sunday afternoon and Monday */
+    if (window.Checkin) { var ci = window.Checkin.due(now); if (ci) add(26, 'clipboard-check', '#8a6fdf', 'Weekly check-in', ci.sub, '#checkin', { checkin: true }); }
+
     /* work: clocked in */
     if (Fe && Fe.on('flex')) {
       var open = Fe.list('flex').filter(function (e) { return e.date === today && e.in && !e.out; })[0];
@@ -173,12 +185,11 @@
         if (avg > 0 && now_ > expected * 1.3 && now_ - expected > 500)
           add(58, 'graph-up-arrow', '#e8743b', NAMES[c] + ': ' + Math.round((now_ / expected - 1) * 100) + '% more than usual', kr(now_) + ' so far this month · usually about ' + kr(expected) + ' by now', '#fin', { key: 'sp:' + c + ':' + ym, tip: true });
       });
-      /* at this pace … */
-      if (income > 0 && day >= 10 && day < dim) {
-        var spent = sum(ex.filter(function (e) { return String(e.date).slice(0, 7) === ym && e.cat !== 'travel'; }));
-        var pace = spent / day * dim, room = income - fixed;
-        if (pace > room && room > 0) add(54, 'speedometer2', '#e66767', 'At this pace: ' + kr(pace - room) + ' over budget', 'By the end of ' + now.toLocaleDateString('en-GB', { month: 'long' }) + ' (travel not counted)', '#fin', { key: 'pace:' + ym, tip: true });
-      }
+      /* at this pace … (the same period as the Money card: the month, or payday to payday) */
+      var pc = window.Budget && window.Budget.pace ? window.Budget.pace(d, now) : null;
+      if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', 'At this pace: ' + kr(-pc.end) + ' over by ' + (pc.per.byPayday ? 'payday' : 'the end of the month'),
+        'You spend about ' + kr(pc.perDay) + ' a day – ' + kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) + ' a day keeps you on budget', '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500), tip: true });
+      recurring(add, d, now);
       if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', 'Set up your monthly budget', 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
     }
 
@@ -217,6 +228,69 @@
       add(65, 'journal-bookmark', '#c9a227', 'How was today?', 'One line in your journal', 'habits/#journal', { key: 'journal:' + today, tip: true });
   }
 
+  /* charges that come back every month: a subscription you haven't added – or one whose price went up */
+  function recurring(add, d, now) {
+    var S = window.Smart; if (!S) return;
+    var since = dkey(new Date(now.getFullYear(), now.getMonth() - 3, 1)), by = {};
+    (d.expenses || []).forEach(function (e) {
+      if (!e.note || String(e.date) < since || e.cat === 'groceries' || e.cat === 'travel') return;
+      var k = S.norm(e.note); if (k.length < 3) return;
+      (by[k] = by[k] || []).push(e);
+    });
+    var subs = Fe && Fe.on('subs') ? Fe.list('subs') : [], fixed = (d.budget && d.budget.fixed) || [];
+    var known = function (k) { return subs.concat(fixed).some(function (x) { var n = S.norm(x.name); return n && (k.indexOf(n) > -1 || n.indexOf(k) > -1); }); };
+    var subOf = function (k) { return subs.filter(function (x) { var n = S.norm(x.name); return n && !x.paused && (k.indexOf(n) > -1 || n.indexOf(k) > -1); })[0]; };
+    Object.keys(by).forEach(function (k) {
+      var l = by[k].sort(function (a, b) { return a.date > b.date ? 1 : -1; }), months = {};
+      l.forEach(function (e) { var m = String(e.date).slice(0, 7); months[m] = (months[m] || 0) + 1; });
+      var ms = Object.keys(months);
+      if (ms.length < 2 || ms.some(function (m) { return months[m] > 1; })) return;          // once a month, at least twice
+      var last = l[l.length - 1], prev = l[l.length - 2], days = l.map(function (e) { return +String(e.date).slice(8, 10); });
+      if (Math.max.apply(null, days) - Math.min.apply(null, days) > 6) return;               // around the same day
+      var amts = l.map(function (e) { return +e.amount; }), lo = Math.min.apply(null, amts), hi = Math.max.apply(null, amts);
+      var sub = subOf(k), name = last.note;
+      if (sub) {
+        if (Math.abs(+sub.amount - last.amount) >= 5 && Math.abs(+sub.amount - last.amount) / last.amount > .03) {
+          var id1 = 'subprice:' + sub.id + ':' + Math.round(last.amount);
+          ACTIONS[id1] = function () { var t = Fe.tools(); (t.subs || []).forEach(function (x) { if (x.id === sub.id) x.amount = last.amount; }); Fe.saveTools(t); };
+          add(46, 'tags', '#e8743b', sub.name + ' now costs ' + kr(last.amount), 'Your subscription says ' + kr(+sub.amount) + ' – your bank says ' + kr(last.amount), '#fin', { key: id1, act: { id: id1, label: 'Update price' } });
+        }
+        return;
+      }
+      if (known(k)) return;
+      if (ms.length < 3 && !(last.cat === 'fun' || hi === lo)) return;                     // two months is enough only for the obvious ones
+      if (hi - lo > lo * .1 && hi - lo >= 10) {
+        /* not steady enough for a subscription – but did it just get more expensive? */
+        if (l.length >= 2 && last.amount > prev.amount * 1.03 && last.amount - prev.amount >= 5 && Math.abs(prev.amount - l[0].amount) <= prev.amount * .03)
+          add(60, 'tags', '#e8743b', name + ' went up', kr(prev.amount) + ' → ' + kr(last.amount) + ' a month', '#fin', { key: 'up:' + k + ':' + Math.round(last.amount), tip: true });
+        return;
+      }
+      var id = 'recur:' + k, day = +String(last.date).slice(8, 10);
+      ACTIONS[id] = function () {
+        var dd = window.Vault.get(), per = window.Budget ? window.Budget.period(dd, now) : null;
+        /* from now on it's a fixed cost: this period's charge is already counted by it */
+        if (per) dd.expenses = (dd.expenses || []).filter(function (e) { return !(e.note && S.norm(e.note) === k && per.has(e.date)); });
+        if (Fe && Fe.on('subs')) {
+          var nx = new Date(now.getFullYear(), now.getMonth() + (day <= now.getDate() ? 1 : 0), day);
+          window.Vault.save(dd);
+          var t = Fe.tools(); t.subs = t.subs || [];
+          t.subs.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, amount: last.amount, period: 'monthly', renews: dkey(nx), cat: last.cat === 'fun' ? 'streaming' : 'other', notes: 'Found in your bank import' });
+          Fe.saveTools(t);
+        } else {
+          dd.budget = dd.budget || { income: [], fixed: [] }; dd.budget.fixed = dd.budget.fixed || [];
+          var fid = Date.now().toString(36);
+          dd.budget.fixed.push({ id: fid, name: name, amount: Math.round(last.amount), day: day });
+          /* this month's charge has been paid already */
+          if (String(last.date).slice(0, 7) === dkey(now).slice(0, 7)) { dd.paid = dd.paid || {}; var pk = dkey(now).slice(0, 7); (dd.paid[pk] = dd.paid[pk] || []).push(fid); }
+          window.Vault.save(dd);
+        }
+        window.dispatchEvent(new Event('fin:change'));
+      };
+      add(47, 'arrow-repeat', '#11a597', name + ' looks like a subscription', kr(last.amount) + ' around the ' + day + '. every month · ' + ms.length + ' months so far', '#fin',
+        { key: id, act: { id: id, label: Fe && Fe.on('subs') ? 'Add to subscriptions' : 'Make it a fixed cost' } });
+    });
+  }
+
   var unlocked = false, showAll = false;
   function render() {
     if (!unlocked) return;
@@ -237,10 +311,14 @@
     if (e.target.closest('[data-brmore]')) { showAll = !showAll; render(); return; }
     if ((b = e.target.closest('[data-brx]'))) { dismiss(b.dataset.brx); var li = b.closest('li'); li.classList.add('br-gone'); setTimeout(render, 220); return; }
     if ((b = e.target.closest('[data-bract]'))) { if (ACTIONS[b.dataset.bract]) ACTIONS[b.dataset.bract](); dismiss(b.dataset.bract, 365); b.textContent = 'Done ✓'; setTimeout(render, 700); return; }
+    var ck = e.target.closest('a[href="#checkin"]');
+    if (ck) { e.preventDefault(); if (window.Checkin) window.Checkin.open(); return; }
+    var td = e.target.closest('a[href="#c=todo"]');
+    if (td) { e.preventDefault(); var tc = document.querySelector('.card.todo'); if (tc) { tc.scrollIntoView({ behavior: 'smooth', block: 'center' }); tc.classList.add('sr-flash'); setTimeout(function () { tc.classList.remove('sr-flash'); }, 1600); } return; }
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
-  ['review:seen', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
+  ['review:seen', 'checkin:done', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });
   window.Vault.onLock(function () { unlocked = false; box.innerHTML = ''; });

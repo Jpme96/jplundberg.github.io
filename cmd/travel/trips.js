@@ -21,6 +21,7 @@
     return isFinite(n) && n >= 0 ? n : null;
   }
   function today() { return F.dkey(new Date()); }
+  function fmtD(k) { return new Date(k + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
   function fmt(k, o) { return C.fromKey(k).toLocaleDateString('en-GB', o || { day: 'numeric', month: 'short', year: 'numeric' }); }
   var openId = null, pane = 'overview', planView = 'list';
   try { planView = localStorage.getItem('dash.tpPlanView') || 'list'; } catch (e) {}
@@ -534,6 +535,21 @@
         (logged.length ? '<a class="text-btn" href="../finance/"><i class="bi bi-wallet2"></i> See in Finances</a>' : '') + '</div>';
       html += '<p class="muted tp-hint">Costs go to your spending in Finances (category Travel) automatically, and follow when you change them. Tap “In Finances” to keep one out.</p>';
     } else html += '<p class="muted tp-hint">Put a cost on a booking and it adds up here – and goes to your spending in Finances (category Travel) automatically.</p>';
+    /* what you spent while you were away – card purchases and the rest you logged on those days */
+    if (tr.start && tr.start <= today() && vd) {
+      var to = tr.end || tr.start, linked = {};
+      costs.forEach(function (it) { if (it.spendId) linked[it.spendId] = 1; });
+      if (tr.spentId) linked[tr.spentId] = 1;
+      var during = (vd.expenses || []).filter(function (x) { return x.date >= tr.start && x.date <= to && !linked[x.id]; });
+      if (during.length) {
+        var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+        var by = {}, all = 0; during.forEach(function (x) { by[x.cat] = (by[x.cat] || 0) + (+x.amount || 0); all += +x.amount || 0; });
+        var cats = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }), nd = Math.max(1, Math.min(tripDays(tr).length || 1, Math.round((new Date(Math.min(new Date(to + 'T12:00'), new Date())) - new Date(tr.start + 'T12:00')) / 864e5) + 1));
+        html += '<div class="tp-during"><div class="tp-total"><div><span class="muted">Spent during the trip</span><b>' + esc(kr(all)) + '</b></div><div class="r"><span class="muted">Per day</span><b>' + esc(kr(all / nd)) + '</b></div></div>' +
+          '<ul class="tp-costs">' + cats.slice(0, 5).map(function (c) { return '<li><i class="bi bi-tag"></i><span class="n">' + esc(NAMES[c] || 'Other') + '</span><span class="a">' + esc(kr(by[c])) + '</span></li>'; }).join('') + '</ul>' +
+          '<p class="muted tp-hint">Everything in Finances dated ' + esc(fmtD(tr.start)) + (to !== tr.start ? ' – ' + esc(fmtD(to)) : '') + ', bookings not counted twice. Grand total ' + esc(kr(all + total)) + '.</p></div>';
+      }
+    }
     $('tpMoney').innerHTML = html;
   }
   $('tpMoney').addEventListener('click', function (e) {

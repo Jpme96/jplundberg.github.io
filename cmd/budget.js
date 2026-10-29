@@ -147,7 +147,18 @@ window.Budget = (function () {
       name: byPay ? start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : t0.toLocaleDateString('en-GB', { month: 'long' })
     };
   }
+  /* pace: where this period ends up if you keep spending like you have so far
+     { projected, room, end (what's left at the end), perDay, elapsed, ok } – null early in the period */
+  function pace(d, now) {
+    now = now || new Date();
+    var per = period(d, now), fixed = ((d && d.budget && d.budget.fixed) || []).reduce(function (a, f) { return a + (+f.amount || 0); }, 0);
+    if (!(per.income > 0)) return null;
+    var elapsed = per.days - per.daysLeft + 1, sp = spent(d, per), room = per.income - fixed;
+    if (elapsed < 5 || per.daysLeft < 2) return null;
+    var projected = sp / elapsed * per.days;
+    return { per: per, spent: sp, room: room, projected: projected, end: room - projected, perDay: sp / elapsed, elapsed: elapsed, ok: projected <= room };
+  }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
 
-  return { period: period, spent: spent, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
