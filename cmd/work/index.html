@@ -41,6 +41,8 @@
         if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
         if (s.density === 'compact') r.classList.add('dens-compact');
         if (s.corners === 'sharp') r.classList.add('corners-sharp');
+        if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 's') r.classList.add('text-sm');
+        if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
         /* which menu tabs show (Settings → Features) – decided before the first paint */
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
@@ -64,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=72" rel="stylesheet">
+  <link href="../styles.css?v=73" rel="stylesheet">
   <link href="../finance/fin.css?v=7" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
 </head>
@@ -123,13 +125,14 @@
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=5"></script>
   <script src="../kit.js?v=2"></script>
-  <script src="../tools.js?v=4"></script>
+  <script src="../tools.js?v=5"></script>
   <script src="../profile.js?v=8"></script>
-  <script src="../links.js?v=3"></script>
-  <script src="../smart.js?v=1"></script>
-  <script src="../search.js?v=5"></script>
+  <script src="../links.js?v=4"></script>
+  <script src="../smart.js?v=2"></script>
+  <script src="../search.js?v=6"></script>
   <script src="../app.js?v=3"></script>
-  <script src="../quick.js?v=3"></script>
+  <script src="../quick.js?v=4"></script>
+  <script src="../notify.js?v=1"></script>
   <script src="../nav.js?v=16"></script>
 </body>
 </html>

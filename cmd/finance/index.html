@@ -41,6 +41,8 @@
         if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
         if (s.density === 'compact') r.classList.add('dens-compact');
         if (s.corners === 'sharp') r.classList.add('corners-sharp');
+        if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 's') r.classList.add('text-sm');
+        if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
         /* which menu tabs show (Settings → Features) – decided before the first paint */
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
@@ -64,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=72" rel="stylesheet">
+  <link href="../styles.css?v=73" rel="stylesheet">
   <link href="fin.css?v=8" rel="stylesheet">
   <link href="../calendar/cal.css?v=4" rel="stylesheet">
 </head>
@@ -128,6 +130,12 @@
               <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
               <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
             </div>
+            <div class="row2">
+              <label class="sv-by"><span>Reach it by</span><input id="svBy" type="date" aria-label="Reach it by (optional)"></label>
+              <label class="sv-by"><span>Or per month</span><input id="svMonthly" placeholder="kr a month" inputmode="decimal" autocomplete="off"></label>
+            </div>
+            <label class="qa-check sv-aside"><input type="checkbox" id="svAside"> Set it aside in the monthly budget</label>
+            <p class="muted sv-hint" id="svHint"></p>
             <div class="form-actions">
               <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
               <span class="spacer"></span>
@@ -258,18 +266,19 @@
 
   <script src="../lock.js?v=15"></script>
   <script src="../features.js?v=5"></script>
-  <script src="../budget.js?v=5"></script>
-  <script src="../finance.js?v=17"></script>
-  <script src="fin.js?v=13"></script>
+  <script src="../budget.js?v=6"></script>
+  <script src="../finance.js?v=18"></script>
+  <script src="fin.js?v=14"></script>
   <script src="import.js?v=7"></script>
   <script src="../kit.js?v=2"></script>
-  <script src="../tools.js?v=4"></script>
+  <script src="../tools.js?v=5"></script>
   <script src="../profile.js?v=8"></script>
-  <script src="../links.js?v=3"></script>
-  <script src="../smart.js?v=1"></script>
-  <script src="../search.js?v=5"></script>
+  <script src="../links.js?v=4"></script>
+  <script src="../smart.js?v=2"></script>
+  <script src="../search.js?v=6"></script>
   <script src="../app.js?v=3"></script>
-  <script src="../quick.js?v=3"></script>
+  <script src="../quick.js?v=4"></script>
+  <script src="../notify.js?v=1"></script>
   <script src="../nav.js?v=16"></script>
 </body>
 </html>

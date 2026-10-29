@@ -61,7 +61,7 @@
   }
   /* perceived brightness 0–255: light colours get dark text, dark colours white text */
   function bright(c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; }
-  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60, cardStyle: null, density: 'comfortable', corners: 'round' };
+  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60, cardStyle: null, density: 'comfortable', corners: 'round', textSize: 'm', clock: 'big', tips: 'fold' };
 
   /* Your own photo is kept on this device only (IndexedDB), resized to save space. */
   var customUrl = null, customLoaded = false;
@@ -147,6 +147,9 @@
     root.style.setProperty('--glass', (+s.glassStrength || 60) / 100);
     root.classList.toggle('dens-compact', s.density === 'compact');
     root.classList.toggle('corners-sharp', s.corners === 'sharp');
+    root.classList.toggle('text-lg', s.textSize === 'l');
+    root.classList.toggle('text-sm', s.textSize === 's');
+    root.classList.toggle('clock-compact', s.clock === 'compact');
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme === 'light' ? '#f2f3f5' : '#0e0f11');
     CARDS.forEach(function (c) { root.classList.toggle('hide-' + c[0], !!s.hide[c[0]]); });
@@ -210,6 +213,9 @@
     document.querySelectorAll('[data-cardstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cardstyle === cst)); });
     document.querySelectorAll('[data-density]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.density === (s.density || 'comfortable'))); });
     document.querySelectorAll('[data-corners]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.corners === (s.corners || 'round'))); });
+    document.querySelectorAll('[data-textsize]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.textsize === (s.textSize || 'm'))); });
+    document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.clockstyle === (s.clock || 'big'))); });
+    document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tipsmode === (s.tips || 'fold'))); });
     $('stGlassRow').hidden = cst !== 'glass';
     if (document.activeElement !== $('stGlassStr')) $('stGlassStr').value = +s.glassStrength || 60;
     $('stCardNote').textContent = { solid: 'Calm, dark cards – the original look.', glass: s.bgType === 'none' ? 'Frosted and see-through. Shows best on a background – pick one above.' : 'Frosted and see-through. Use the slider for how much.',
@@ -381,6 +387,9 @@
   $('stCardStyle').addEventListener('click', function (e) { var b = e.target.closest('[data-cardstyle]'); if (b) set({ cardStyle: b.dataset.cardstyle, glass: b.dataset.cardstyle === 'glass' }); });
   document.querySelectorAll('[data-density]').forEach(function (b) { b.addEventListener('click', function () { set({ density: b.dataset.density }); }); });
   document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
+  document.querySelectorAll('[data-textsize]').forEach(function (b) { b.addEventListener('click', function () { set({ textSize: b.dataset.textsize }); }); });
+  document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.addEventListener('click', function () { set({ clock: b.dataset.clockstyle }); }); });
+  document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.addEventListener('click', function () { set({ tips: b.dataset.tipsmode }); window.dispatchEvent(new Event('tips:change')); }); });
   $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
   $('stGlassStr').addEventListener('change', function () { set({ glassStrength: +this.value }); });
   $('stName').addEventListener('change', function () { set({ name: this.value.trim() }); });

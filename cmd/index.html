@@ -41,6 +41,8 @@
         if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
         if (s.density === 'compact') r.classList.add('dens-compact');
         if (s.corners === 'sharp') r.classList.add('corners-sharp');
+        if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 's') r.classList.add('text-sm');
+        if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
         /* which menu tabs show (Settings → Features) – decided before the first paint */
         var fe = s.features || {}, on = function (k, d) { return k in fe ? !!fe[k] : d; };
@@ -64,7 +66,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=72" rel="stylesheet">
+  <link href="styles.css?v=73" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -269,6 +271,8 @@
           <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="notify"><span class="st-ico" style="--c:#e66767"><i class="bi bi-bell"></i></span><span class="st-label">Notifications<small id="sumNotify">Off</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="shortcuts"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-lightning-charge"></i></span><span class="st-label">Siri &amp; Shortcuts<small>Log things without opening the app</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-grp"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span></p>
         <nav class="st-group st-menu">
@@ -340,6 +344,13 @@
             <button type="button" data-corners="sharp">Sharp</button>
           </div>
         </div>
+        <div class="st-row"><span class="st-label">Text size<small>Everything – text, buttons and icons – grows or shrinks together</small></span>
+          <div class="seg" role="group" aria-label="Text size">
+            <button type="button" data-textsize="s">Small</button>
+            <button type="button" data-textsize="m">Normal</button>
+            <button type="button" data-textsize="l">Large</button>
+          </div>
+        </div>
       </section>
 
       <p class="st-sub ap-sub"><i class="bi bi-magic"></i> Motion</p>
@@ -357,8 +368,21 @@
       <div class="st-page" data-page="dashboard" data-title="Dashboard" hidden>
       <section class="st-group">
         <label class="st-row"><span>Name in greeting</span><input id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
+        <div class="st-row"><span class="st-label">Clock<small>Compact puts At a glance on the first screen of your phone</small></span>
+          <div class="seg" role="group" aria-label="Clock">
+            <button type="button" data-clockstyle="big">Big</button>
+            <button type="button" data-clockstyle="compact">Compact</button>
+          </div>
+        </div>
         <label class="st-row"><span>Show seconds</span><input type="checkbox" class="switch" id="stSeconds"></label>
         <label class="st-row"><span>Quotes</span><input type="checkbox" class="switch" id="stQuotes"></label>
+        <div class="st-row"><span class="st-label">Tips in At a glance<small>Streaks, unusual spending and suggestions</small></span>
+          <div class="seg" role="group" aria-label="Tips">
+            <button type="button" data-tipsmode="show">Show</button>
+            <button type="button" data-tipsmode="fold">Fold</button>
+            <button type="button" data-tipsmode="off">Off</button>
+          </div>
+        </div>
         <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
         <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
         <div id="stCards"></div>
@@ -425,6 +449,49 @@
       </section>
       </div>
 
+
+      <div class="st-page" data-page="shortcuts" data-title="Siri &amp; Shortcuts" hidden>
+        <p class="st-intro">Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you press Add.</p>
+        <section class="st-group sc-list" id="scList"></section>
+        <p class="st-sub"><i class="bi bi-mic"></i> “Hey Siri, log expense” – 2 minutes</p>
+        <section class="st-group sc-steps">
+          <ol>
+            <li>Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
+            <li>Add the action <b>Ask for Input</b>. Type: Text. Prompt: <i>What did you buy?</i> – you'll say or type e.g. “149 rema”.</li>
+            <li>Add <b>URL</b> and paste the first link above (the one that ends in <code>?add=</code>). Then tap after it and insert <b>Provided Input</b> from the variables bar.</li>
+            <li>Add <b>Open URLs</b>.</li>
+            <li>Rename the shortcut to <b>Log expense</b>. Now say “Hey Siri, log expense”.</li>
+          </ol>
+          <p class="muted">The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.</p>
+          <p class="muted">Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it's the same as in the app.</p>
+        </section>
+      </div>
+
+      <div class="st-page" data-page="notify" data-title="Notifications" hidden>
+        <p class="st-intro" id="ntIntro">Reminders on this device, even when the dashboard is closed. Off until you switch it on, and you choose what they say.</p>
+        <section class="st-group">
+          <label class="st-row"><span class="st-label">Notifications on this device<small id="ntState">Off</small></span><input type="checkbox" class="switch" id="ntOn"></label>
+        </section>
+        <div id="ntMore" hidden>
+          <p class="st-sub">What to remind you of</p>
+          <section class="st-group">
+            <div class="st-row"><span class="st-label">Events<small>Before things in your calendar</small></span>
+              <div class="seg" role="group" aria-label="Before events"><button type="button" data-ntev="0">Off</button><button type="button" data-ntev="15">15 min</button><button type="button" data-ntev="30">30 min</button><button type="button" data-ntev="60">1 h</button></div></div>
+            <label class="st-row"><span class="st-label">Bills<small>On the day they're due, 09:00</small></span><input type="checkbox" class="switch" data-ntk="bills"></label>
+            <label class="st-row"><span class="st-label">Tasks with a day<small>09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="tasks"></label>
+            <label class="st-row"><span class="st-label">Payday<small>08:00</small></span><input type="checkbox" class="switch" data-ntk="pay"></label>
+            <label class="st-row"><span class="st-label">Trips<small>The evening before you leave, 19:00</small></span><input type="checkbox" class="switch" data-ntk="trips"></label>
+            <label class="st-row"><span class="st-label">Weekly check-in<small>Sunday 18:00</small></span><input type="checkbox" class="switch" data-ntk="checkin"></label>
+          </section>
+          <p class="st-sub">What they say</p>
+          <section class="st-group">
+            <div class="st-row"><span class="st-label">Text<small id="ntDetailNote"></small></span>
+              <div class="seg" role="group" aria-label="Notification text"><button type="button" data-ntdetail="private">Private</button><button type="button" data-ntdetail="full">Full</button></div></div>
+            <button class="st-row st-btn" id="ntTest" type="button"><span><i class="bi bi-send"></i> Send a test notification</span><i class="bi bi-chevron-right"></i></button>
+          </section>
+        </div>
+        <p class="muted st-foot" id="ntHelp"></p>
+      </div>
 
       <!-- ===== jplundberg.com ===== -->
       <div class="st-page" data-page="announce" data-title="Announcement" hidden>
@@ -548,30 +615,31 @@
 
   <script src="lock.js?v=15"></script>
   <script src="features.js?v=5"></script>
-  <script src="settings.js?v=19"></script>
+  <script src="settings.js?v=20"></script>
   <script src="website.js?v=6"></script>
   <script src="texts.js?v=1"></script>
-  <script src="script.js?v=11"></script>
-  <script src="budget.js?v=5"></script>
+  <script src="script.js?v=12"></script>
+  <script src="budget.js?v=6"></script>
   <script src="money.js?v=4"></script>
   <script src="places.js?v=2"></script>
   <script src="today.js?v=6"></script>
   <script src="flow.js?v=2"></script>
-  <script src="calendar/cal-core.js?v=7"></script>
+  <script src="calendar/cal-core.js?v=8"></script>
   <script src="calendar/cal-settings.js?v=18"></script>
   <script src="cal-card.js?v=3"></script>
   <script src="upnext.js?v=2"></script>
   <script src="review.js?v=3"></script>
-  <script src="brief.js?v=6"></script>
-  <script src="checkin.js?v=1"></script>
+  <script src="brief.js?v=7"></script>
+  <script src="checkin.js?v=2"></script>
   <script src="kit.js?v=2"></script>
-  <script src="tools.js?v=4"></script>
+  <script src="tools.js?v=5"></script>
   <script src="profile.js?v=8"></script>
-  <script src="links.js?v=3"></script>
-  <script src="smart.js?v=1"></script>
-  <script src="search.js?v=5"></script>
+  <script src="links.js?v=4"></script>
+  <script src="smart.js?v=2"></script>
+  <script src="search.js?v=6"></script>
   <script src="app.js?v=3"></script>
-  <script src="quick.js?v=3"></script>
+  <script src="quick.js?v=4"></script>
+  <script src="notify.js?v=1"></script>
   <script src="tidy.js?v=1"></script>
   <script src="nav.js?v=16"></script>
 </body>

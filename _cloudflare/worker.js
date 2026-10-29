@@ -11,6 +11,10 @@
                       (sets "published: false" in the file's front matter).
    /cmd/api/texts     the website texts you can edit (_data/texts.json in GitHub):
                       about, roles, contact, footer … in English and Norwegian.
+   /cmd/api/push      notifications (Settings → Notifications, off until switched on on a device):
+                      the dashboard sends the reminders it planned for the next 7 days, and a
+                      cron trigger (every 5 minutes) sends each one at its time with Web Push.
+                      "Private" reminders contain no titles or amounts.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -23,7 +27,8 @@
      GITHUB_REPO     optional, default Jpme96/jplundberg.github.io
      CF_API_TOKEN    secret: API token with Account Analytics: Read
      CF_ACCOUNT_ID   your Cloudflare account ID
-     CF_SITE_TAG     the site tag of jplundberg.com in Web Analytics            */
+     CF_SITE_TAG     the site tag of jplundberg.com in Web Analytics
+   Settings → Triggers → Cron Triggers: "Every 5 minutes" (only needed for notifications)   */
 
 const KEY = 'vault';
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -37,7 +42,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -51,9 +56,120 @@ export default {
     if (path === '/cmd/api/content') return contentApi(request, env);
     if (path === '/cmd/api/calendar') return calendarFeed(request);
     if (path === '/cmd/api/texts') return textsApi(request, env);
+    if (path === '/cmd/api/push') return pushApi(request, env);
     return vault(request, env);
+  },
+  /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendDue(env));
   }
 };
+
+/* ---------- notifications (Web Push, RFC 8030/8291/8292) ---------- */
+const PUSH_PREFIX = 'push:dev:';
+async function pushApi(request, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (request.method === 'GET') return json({ key: (await vapid(env)).pub });
+  let body = {};
+  try { body = JSON.parse(await request.text() || '{}'); } catch (e) { return json({ error: 'bad json' }, 400); }
+  const id = String(body.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 40);
+  if (!id) return json({ error: 'no device' }, 400);
+  if (request.method === 'DELETE') { await env.VAULT.delete(PUSH_PREFIX + id); return json({ ok: true }); }
+  if (request.method === 'PUT') {
+    const sub = body.sub || {};
+    if (!/^https:\/\//.test(sub.endpoint || '') || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return json({ error: 'bad subscription' }, 400);
+    const old = JSON.parse(await env.VAULT.get(PUSH_PREFIX + id) || '{}');
+    const sent = (old.sent || []).filter(x => x.t > Date.now() - 2 * 864e5);
+    const items = (Array.isArray(body.items) ? body.items : []).slice(0, 100).map(x => ({
+      id: String(x.id || '').slice(0, 120), at: +x.at || 0, title: String(x.title || 'Dashboard').slice(0, 120),
+      body: String(x.body || '').slice(0, 240), url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : '/cmd/'
+    })).filter(x => x.id && x.at > Date.now() - 600e3);
+    await env.VAULT.put(PUSH_PREFIX + id, JSON.stringify({ sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, items, sent, updated: Date.now() }));
+    return json({ ok: true, items: items.length });
+  }
+  if (request.method === 'POST' && body.test) {
+    const rec = JSON.parse(await env.VAULT.get(PUSH_PREFIX + id) || 'null');
+    if (!rec) return json({ error: 'switch notifications on first' }, 404);
+    const r = await webPush(env, rec.sub, { title: 'Dashboard', body: 'Notifications work on this device.', url: '/cmd/', tag: 'test' });
+    if (r.status === 404 || r.status === 410) { await env.VAULT.delete(PUSH_PREFIX + id); return json({ error: 'this device’s subscription expired – switch notifications off and on' }, 410); }
+    return r.ok ? json({ ok: true }) : json({ error: 'push service ' + r.status }, 502);
+  }
+  return json({ error: 'method not allowed' }, 405);
+}
+
+async function sendDue(env) {
+  if (!env.VAULT) return;
+  const now = Date.now();
+  let cursor;
+  do {
+    const list = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor });
+    for (const k of list.keys) {
+      const rec = JSON.parse(await env.VAULT.get(k.name) || 'null');
+      if (!rec || !rec.sub) continue;
+      const done = new Set((rec.sent || []).map(x => x.id));
+      /* due now, and not more than 20 minutes late (a reminder after the fact is no use) */
+      const due = rec.items.filter(x => x.at <= now && x.at > now - 20 * 60e3 && !done.has(x.id));
+      if (!due.length) continue;
+      let gone = false;
+      for (const x of due) {
+        const r = await webPush(env, rec.sub, { title: x.title, body: x.body, url: x.url, tag: x.id.slice(0, 60) });
+        if (r.status === 404 || r.status === 410) { gone = true; break; }
+        rec.sent = (rec.sent || []).concat({ id: x.id, t: now });
+      }
+      if (gone) { await env.VAULT.delete(k.name); continue; }
+      rec.items = rec.items.filter(x => x.at > now - 20 * 60e3);
+      rec.sent = rec.sent.filter(x => x.t > now - 2 * 864e5);
+      await env.VAULT.put(k.name, JSON.stringify(rec));
+    }
+    cursor = list.list_complete ? null : list.cursor;
+  } while (cursor);
+}
+
+/* the server's own key pair for Web Push (made once, kept in KV) */
+async function vapid(env) {
+  const have = await env.VAULT.get('push:vapid');
+  if (have) return JSON.parse(have);
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  const pub = b64u(new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey)));
+  const v = { jwk, pub };
+  await env.VAULT.put('push:vapid', JSON.stringify(v));
+  return v;
+}
+function b64u(u8) { let s = ''; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function cat(...parts) { const n = parts.reduce((a, p) => a + p.length, 0), out = new Uint8Array(n); let o = 0; parts.forEach(p => { out.set(p, o); o += p.length; }); return out; }
+async function hkdf(salt, ikm, info, len) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, len * 8));
+}
+/* encrypt the message for one browser (RFC 8291, aes128gcm) */
+async function encryptPush(sub, text) {
+  const te = new TextEncoder(), uaPub = bytes(sub.keys.p256dh), auth = bytes(sub.keys.auth);
+  const as = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', as.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, as.privateKey, 256));
+  const ikm = await hkdf(auth, ecdh, cat(te.encode('WebPush: info\0'), uaPub, asPub), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, te.encode('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, te.encode('Content-Encoding: nonce\0'), 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(te.encode(text), new Uint8Array([2]))));
+  const rs = new Uint8Array([0, 0, 16, 0]);                 // record size 4096
+  return cat(salt, rs, new Uint8Array([asPub.length]), asPub, ct);
+}
+async function webPush(env, sub, msg) {
+  const v = await vapid(env), aud = new URL(sub.endpoint).origin, te = new TextEncoder();
+  const h = b64u(te.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const p = b64u(te.encode(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 50 * 60, sub: 'https://jplundberg.com' })));
+  const key = await crypto.subtle.importKey('jwk', v.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, te.encode(h + '.' + p)));
+  const body = await encryptPush(sub, JSON.stringify(msg));
+  return fetch(sub.endpoint, { method: 'POST', body, headers: {
+    'Authorization': 'vapid t=' + h + '.' + p + '.' + b64u(sig) + ', k=' + v.pub,
+    'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', 'TTL': '3600', 'Urgency': 'normal'
+  } });
+}
 
 /* ---------- encrypted dashboard data ---------- */
 async function vault(request, env) {

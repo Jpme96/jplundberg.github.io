@@ -158,7 +158,18 @@ window.Budget = (function () {
     var projected = sp / elapsed * per.days;
     return { per: per, spent: sp, room: room, projected: projected, end: room - projected, perDay: sp / elapsed, elapsed: elapsed, ok: projected <= room };
   }
+  /* a savings goal: what to put aside each month – your own amount, or worked out from "reach it by" */
+  function saveMonthly(g, now) {
+    now = now || new Date();
+    var left = (+g.target || 0) - (+g.saved || 0);
+    if (!(left > 0)) return 0;
+    if (+g.monthly > 0) return Math.min(+g.monthly, left);
+    if (!/^\d{4}-\d{2}/.test(g.by || '')) return 0;
+    var y = +g.by.slice(0, 4), m = +g.by.slice(5, 7) - 1;
+    var months = Math.max(1, (y - now.getFullYear()) * 12 + (m - now.getMonth()) + 1);
+    return Math.ceil(left / months / 10) * 10;
+  }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
 
-  return { period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { saveMonthly: saveMonthly, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();

@@ -22,6 +22,8 @@
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
   var SPEND = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
+  var REPEATS = [['', 'Doesn’t repeat'], ['daily', 'Every day'], ['weekdays', 'Every weekday'], ['weekly', 'Every week'], ['2weeks', 'Every 2 weeks'], ['monthly', 'Every month'], ['quarterly', 'Every 3 months'], ['yearly', 'Every year']];
+  function repeatSelect(v) { return '<select name="rep" aria-label="Repeat">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (v || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'; }
   var SPORTS = [['strength', 'Strength'], ['run', 'Running'], ['walk', 'Walking'], ['bike', 'Cycling'], ['swim', 'Swimming'], ['ball', 'Ball sports'], ['yoga', 'Yoga / mobility'], ['other', 'Other']];
 
   /* ---------- the button ---------- */
@@ -105,9 +107,9 @@
     if (!parsed) return;
     var p = parsed, pre = {};
     if (p.kind === 'expense') pre = { a: p.amount, c: p.cat, n: p.note, d: p.date };
-    else if (p.kind === 'event') pre = { t: p.title, d: p.date, s: p.start, all: p.allDay, l: p.location };
+    else if (p.kind === 'event') pre = { t: p.title, d: p.date, s: p.start, all: p.allDay, l: p.location, rep: p.repeat };
     else if (p.kind === 'workout') pre = { k: p.sport, m: p.min, km: p.km, d: p.date };
-    else if (p.kind === 'todo') pre = { t: p.text, due: p.due };
+    else if (p.kind === 'todo') pre = { t: p.text, due: p.due, rep: p.repeat };
     else if (p.kind === 'note') pre = { t: p.text };
     open(p.kind, pre, '');
   }
@@ -163,6 +165,7 @@
         '<div class="qa-row"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"><input name="s" type="time" value="' + esc(hh) + '" aria-label="Start"' + (p.all ? ' disabled' : '') + '><label class="qa-check"><input type="checkbox" name="all"' + (p.all ? ' checked' : '') + '> All day</label></div>' +
         '<div class="qa-row"><select name="c" aria-label="Category">' + cats.map(function (c) { return '<option value="' + esc(c[0]) + '"' + (c[0] === last ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>' +
           '<input name="l" placeholder="Where (optional)" autocomplete="off" value="' + esc(p.l || '') + '"></div>' +
+        '<div class="qa-row qa-row1">' + repeatSelect(p.rep).replace(/<option value="quarterly"[^<]*<\/option>/, '') + '</div>' +
         '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Add event</button></div></form>';
     },
     workout: function (p) {
@@ -177,7 +180,7 @@
     },
     todo: function (p) {
       return '<form class="qa-form" data-kind="todo"><input name="t" placeholder="Something to do…" autocomplete="off" required value="' + esc(p.t || '') + '">' +
-        '<div class="qa-row"><label class="qa-lbl" for="qaDue">Due</label><input id="qaDue" name="due" type="date" value="' + esc(p.due || '') + '" aria-label="Due date (optional)"></div>' +
+        '<div class="qa-row"><input id="qaDue" name="due" type="date" value="' + esc(p.due || '') + '" aria-label="Due date (optional)">' + repeatSelect(p.rep) + '</div>' +
         '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Add task</button></div></form>';
     },
     note: function (p) {
@@ -210,6 +213,7 @@
       if (!cat) { try { cat = localStorage.getItem('dash.calLastCat') || ''; } catch (e) {} }
       if (window.Cal && !window.Cal.CATS[cat]) cat = window.Cal.CAT_ORDER[0];
       var ev = { id: uid(), title: t.slice(0, 120), cat: cat || 'personal', date: date, allDay: all, location: String(p.location || '').trim().slice(0, 160), notes: '' };
+      if (p.repeat) ev.repeat = p.repeat;
       if (!all) { var s = /^\d{2}:\d{2}$/.test(p.start) ? p.start : '09:00'; ev.start = s; var m = +s.slice(0, 2) * 60 + +s.slice(3) + 60; ev.stop = pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60); }
       function store(fn) {
         if (window.Cal) { var cd = window.Cal.load(); fn(cd); window.Cal.save(cd); }
@@ -240,8 +244,9 @@
       var t = String(p.text || '').trim(); if (!t) return false;
       var todos = readJSON('dash.todos', []), item = { id: uid(), text: t.slice(0, 200), done: false };
       if (/^\d{4}-\d{2}-\d{2}$/.test(p.due || '')) item.due = p.due;
+      if (p.repeat) { item.repeat = p.repeat; if (!item.due) item.due = today(); if (p.rday) item.rday = p.rday; }
       todos.push(item); writeJSON('dash.todos', todos);
-      toast('<i class="bi bi-check-lg"></i> Task added' + (item.due && window.Smart ? ' · due ' + window.Smart.when(item.due) : ''), function () {
+      toast('<i class="bi bi-check-lg"></i> Task added' + (item.repeat && window.Smart ? ' · ' + window.Smart.REPEAT_NAME[item.repeat] : item.due && window.Smart ? ' · due ' + window.Smart.when(item.due) : ''), function () {
         writeJSON('dash.todos', readJSON('dash.todos', []).filter(function (x) { return x.id !== item.id; }));
       });
       return true;
@@ -256,9 +261,9 @@
   /* the forms → ADD */
   var SAVE = {
     expense: function (f) { var a = num(f.a.value); if (!(a > 0)) { f.a.focus(); return false; } return ADD.expense({ amount: a, cat: f.c.value, note: f.n.value, date: f.d.value }); },
-    event: function (f) { if (!f.t.value.trim()) { f.t.focus(); return false; } return ADD.event({ title: f.t.value, date: f.d.value, start: f.all.checked ? null : f.s.value, allDay: f.all.checked, cat: f.c.value, location: f.l.value }); },
+    event: function (f) { if (!f.t.value.trim()) { f.t.focus(); return false; } return ADD.event({ title: f.t.value, date: f.d.value, start: f.all.checked ? null : f.s.value, allDay: f.all.checked, cat: f.c.value, location: f.l.value, repeat: f.rep.value }); },
     workout: function (f) { if (!(+f.m.value > 0)) { f.m.focus(); return false; } return ADD.workout({ sport: f.k.value, min: +f.m.value, km: num(f.km.value), date: f.d.value, effort: f.e.value }); },
-    todo: function (f) { return ADD.todo({ text: f.t.value, due: f.due.value }); },
+    todo: function (f) { return ADD.todo({ text: f.t.value, due: f.due.value, repeat: f.rep.value }); },
     note: function (f) { return ADD.note({ text: f.t.value }); }
   };
 

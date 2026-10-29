@@ -231,6 +231,8 @@
     var rows = D.budget[kind].map(function (r) {
       if (r.src === 'sub') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<a class="del" href="finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
+      if (r.src === 'save') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
+        '<a class="del" href="finance/#c=savings" title="From Savings goals – change it there" aria-label="' + esc(r.name) + ' comes from Savings goals"><i class="bi bi-link-45deg"></i></a></li>';
       return '<li class="b-row"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
@@ -494,11 +496,27 @@
         '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + C.toFixed(2) + '" stroke-dashoffset="' + (C * (1 - pct)).toFixed(2) + '"></circle></svg>' +
         '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + money(g.saved) + ' of ' + money(g.target) +
-        ' · ' + Math.round(pct * 100) + '\u00a0%</span></div>' +
+        ' · ' + Math.round(pct * 100) + '\u00a0%</span>' + planLine(g) + '</div>' +
         '<div class="stepper"><button type="button" data-sv="-1" aria-label="Take out ' + step(g.target) + ' kr">−</button>' +
         '<button type="button" data-sv="1" aria-label="Add ' + step(g.target) + ' kr">+</button></div></li>';
     }).join('');
   }
+
+  /* "1 200 kr a month until Mar 2027 · in the budget" */
+  function planLine(g) {
+    var B = window.Budget, mo = B && B.saveMonthly ? B.saveMonthly(g) : 0;
+    if (!mo && !g.by) return '';
+    var by = g.by ? new Date(g.by + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '';
+    return '<small class="sv-plan">' + (mo ? money(mo) + ' a month' : '') + (by ? (mo ? ' until ' : 'By ') + esc(by) : '') +
+      (g.aside && mo ? ' · <i class="bi bi-link-45deg"></i> in the budget' : '') + '</small>';
+  }
+  function svHint() {
+    var g = { target: num($('svTarget').value), saved: num($('svSaved').value) || 0, by: $('svBy').value, monthly: num($('svMonthly').value) };
+    var mo = window.Budget && window.Budget.saveMonthly ? window.Budget.saveMonthly(g) : 0;
+    $('svHint').textContent = mo ? 'About ' + nfK(mo) + ' a month' + ($('svAside').checked ? ' – counted as a fixed cost in your monthly budget' : '') : $('svAside').checked ? 'Give a date or an amount a month to set money aside' : '';
+  }
+  function nfK(n) { return Math.round(n).toLocaleString('nb-NO') + ' kr'; }
+  ['svTarget', 'svSaved', 'svBy', 'svMonthly', 'svAside'].forEach(function (id) { $(id).addEventListener('input', svHint); $(id).addEventListener('change', svHint); });
 
   function openSaving(g) {
     editingSaving = g ? g.id : null;
@@ -506,6 +524,10 @@
     $('svName').value = g ? g.name : '';
     $('svSaved').value = g ? g.saved : '';
     $('svTarget').value = g ? g.target : '';
+    $('svBy').value = g && g.by ? g.by : '';
+    $('svMonthly').value = g && g.monthly ? g.monthly : '';
+    $('svAside').checked = !!(g && g.aside);
+    svHint();
     $('svDelete').hidden = !g;
     $('svName').focus();
   }
@@ -517,19 +539,21 @@
     e.preventDefault();
     var t = num($('svTarget').value), s = num($('svSaved').value) || 0;
     if (!(t > 0)) { $('svTarget').focus(); return; }
-    var name = $('svName').value.trim();
+    var name = $('svName').value.trim(), extra = { by: /^\d{4}-\d{2}-\d{2}$/.test($('svBy').value) ? $('svBy').value : '', monthly: num($('svMonthly').value) || 0, aside: $('svAside').checked };
     if (editingSaving) {
-      D.savings.forEach(function (g) { if (g.id === editingSaving) { g.name = name; g.saved = s; g.target = t; } });
+      D.savings.forEach(function (g) { if (g.id === editingSaving) { g.name = name; g.saved = s; g.target = t; Object.assign(g, extra); } });
     } else {
-      D.savings.push({ id: uid(), name: name, saved: s, target: t });
+      D.savings.push(Object.assign({ id: uid(), name: name, saved: s, target: t }, extra));
     }
     persist();
+    if (window.Links) setTimeout(window.Links.syncSave, 0);
     closeSaving();
     renderSavings();
   });
   $('svDelete').addEventListener('click', function () {
     D.savings = D.savings.filter(function (g) { return g.id !== editingSaving; });
     persist();
+    if (window.Links) setTimeout(window.Links.syncSave, 0);
     closeSaving();
     renderSavings();
   });
@@ -542,6 +566,7 @@
     if (b) {
       g.saved = Math.max(0, g.saved + step(g.target) * +b.dataset.sv);
       persist();
+      if (window.Links) setTimeout(window.Links.syncSave, 0);
       renderSavings();
       return;
     }

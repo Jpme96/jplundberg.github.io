@@ -90,6 +90,46 @@ window.Smart = (function () {
     function ok(h, mi, used) { h = +h; mi = +(mi || 0); if (h > 23 || mi > 59) return null; return { hm: pad(h) + ':' + pad(mi), used: used }; }
   }
 
+  /* ---------- repeats: "hver mandag", "every month", "hvert kvartal", "den 15. hver måned" ---------- */
+  var REPEAT_NAME = { daily: 'every day', weekdays: 'every weekday', weekly: 'every week', '2weeks': 'every 2 weeks', monthly: 'every month', quarterly: 'every 3 months', yearly: 'every year' };
+  function takeRepeat(s, now) {
+    var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()), m;
+    function nextWd(w, step) { var df = (w - t0.getDay() + 7) % 7; return { key: dkey(addDays(t0, df)) }; }
+    function out(key, used, first, extra) { var o = { key: key, used: used, first: first || dkey(t0) }; if (extra) for (var k in extra) o[k] = extra[k]; return o; }
+    if ((m = s.match(new RegExp(B + '(?:annenhver|hver\\s+annen|every\\s+other)\\s+(' + WDS + ')' + E, 'i')))) return out('2weeks', m[0], nextWd(WD[m[1].toLowerCase()]).key);
+    if ((m = s.match(new RegExp(B + '(?:hver|hvert|alle|every|each)\\s+(' + WDS + ')' + E, 'i')))) return out('weekly', m[0], nextWd(WD[m[1].toLowerCase()]).key);
+    if ((m = s.match(/(?:^|\s)(?:annenhver\s+uke|hver\s+annen\s+uke|hver\s+2\.\s*uke|every\s+other\s+week|every\s+2\s+weeks|biweekly)(?=$|[\s,.!?])/i))) return out('2weeks', m[0]);
+    if ((m = s.match(/(?:^|\s)(?:alle\s+hverdager|hver\s+hverdag|hverdager|every\s+weekday|weekdays)(?=$|[\s,.!?])/i))) {
+      var d = t0; while (d.getDay() === 0 || d.getDay() === 6) d = addDays(d, 1); return out('weekdays', m[0], dkey(d));
+    }
+    if ((m = s.match(/(?:^|\s)(?:hver\s+dag|daglig|alle\s+dager|every\s+day|daily)(?=$|[\s,.!?])/i))) return out('daily', m[0]);
+    if ((m = s.match(/(?:^|\s)(?:hver\s+uke|ukentlig|every\s+week|weekly)(?=$|[\s,.!?])/i))) return out('weekly', m[0]);
+    if ((m = s.match(/(?:^|\s)(?:den\s+)?(\d{1,2})\.\s*(?:hver\s+måned|i\s+måneden|hver\s+mnd)(?=$|[\s,.!?])/i)) || (m = s.match(/(?:^|\s)hver\s+(\d{1,2})\.(?=$|[\s,!?])/i)) ||
+        (m = s.match(/(?:^|\s)(?:on\s+the\s+)?(\d{1,2})(?:st|nd|rd|th)\s+(?:of\s+)?every\s+month(?=$|[\s,.!?])/i))) {
+      var md = Math.min(31, Math.max(1, +m[1])), f = new Date(t0.getFullYear(), t0.getMonth(), Math.min(md, new Date(t0.getFullYear(), t0.getMonth() + 1, 0).getDate()));
+      if (f < t0) f = new Date(t0.getFullYear(), t0.getMonth() + 1, Math.min(md, new Date(t0.getFullYear(), t0.getMonth() + 2, 0).getDate()));
+      return out('monthly', m[0], dkey(f), { rday: md });
+    }
+    if ((m = s.match(/(?:^|\s)(?:hver\s+måned|hver\s+mnd|månedlig|every\s+month|monthly)(?=$|[\s,.!?])/i))) return out('monthly', m[0]);
+    if ((m = s.match(/(?:^|\s)(?:hvert\s+kvartal|kvartalsvis|hver\s+3\.\s*måned|every\s+quarter|quarterly|every\s+3\s+months)(?=$|[\s,.!?])/i))) return out('quarterly', m[0]);
+    if ((m = s.match(/(?:^|\s)(?:hvert\s+år|årlig|every\s+year|yearly|annually)(?=$|[\s,.!?])/i))) return out('yearly', m[0]);
+    return null;
+  }
+  /* the next time after `key` (YYYY-MM-DD); monthly ones keep their day (31 → 30 in shorter months → 31 again) */
+  function nextDue(key, rep, rday) {
+    var d = new Date(String(key).slice(0, 10) + 'T12:00'), y = d.getFullYear(), mo = d.getMonth(), day = rday || d.getDate();
+    function mAdd(n) { var t = new Date(y, mo + n, 1, 12); return new Date(t.getFullYear(), t.getMonth(), Math.min(day, new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()), 12); }
+    if (rep === 'daily') d.setDate(d.getDate() + 1);
+    else if (rep === 'weekdays') { do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6); }
+    else if (rep === 'weekly') d.setDate(d.getDate() + 7);
+    else if (rep === '2weeks') d.setDate(d.getDate() + 14);
+    else if (rep === 'monthly') d = mAdd(1);
+    else if (rep === 'quarterly') d = mAdd(3);
+    else if (rep === 'yearly') d = new Date(y + 1, mo, Math.min(day, new Date(y + 1, mo + 1, 0).getDate()), 12);
+    else return null;
+    return dkey(d);
+  }
+
   /* ---------- workouts ---------- */
   var SPORT = [['run', /\b(løp|løpe|løping|løpetur|jogg|jogge|jogging|run|ran|running)\b/i], ['strength', /\b(gym|styrke|styrketrening|vekter|strength|weights|crossfit)\b/i],
     ['bike', /\b(sykkel|sykle|syklet|sykling|spinning|bike|biking|cycling)\b/i], ['swim', /\b(svøm|svømme|svømte|svømming|swim|swimming)\b/i],
@@ -119,6 +159,8 @@ window.Smart = (function () {
     if ((m = raw.match(/^(?:todo|to-do|task|oppgave|gjøre|gjør)\s*[:\-]\s*(.+)/i))) { s = ' ' + m[1] + ' '; forceTodo = true; }
     else if ((m = raw.match(/^(?:husk(?:\s+å)?|remember\s+to|remind\s+me\s+to)\s+(.+)/i))) { s = ' ' + m[1] + ' '; forceTodo = true; }
 
+    var rep = takeRepeat(s, now);
+    if (rep) s = strip(s, rep.used);
     var date = takeDate(s, now);
     if (date) s = strip(s, date.used);
     var rest = s;
@@ -131,7 +173,19 @@ window.Smart = (function () {
       if (time && /^\s*\d{1,2}\s*$/.test(time.used) && /^\s*\d{1,2}\s*(kr|,-)/i.test(tail)) time = null;   // "i går 149 kr"
       if (time) rest = strip(rest, time.used);
     }
+    if (!time && !forceTodo && rep) {
+      var ri = (' ' + raw + ' ').toLowerCase().indexOf(rep.used.toLowerCase()), rt = takeTime((' ' + raw + ' ').slice(ri + rep.used.length), true);
+      if (rt) { time = rt; rest = strip(rest, rt.used); }
+    }
     if (!time && !forceTodo) { time = takeTime(rest, false); if (time) rest = strip(rest, time.used); }
+    /* something that repeats is a task (or an event when it has a time) – never an expense or a workout */
+    if (rep) {
+      var rtext = cap(rest.replace(/^\s*å\s+/i, ' '));
+      if (!rtext) return null;
+      var first = date ? date.key : rep.first;
+      if (time && !forceTodo) return { kind: 'event', title: rtext, date: first, start: time.hm, allDay: false, location: '', repeat: rep.key, strong: true };
+      return { kind: 'todo', text: rtext, due: first, repeat: rep.key, rday: rep.rday || null, strong: true };
+    }
 
     /* workout */
     var sport = null;
@@ -193,20 +247,24 @@ window.Smart = (function () {
   function describe(p) {
     if (!p) return null;
     if (p.kind === 'expense') return { icon: 'receipt', label: 'Expense', bits: [nf.format(p.amount) + ' kr', CAT_NAME[p.cat] || 'Other', p.note, when(p.date)].filter(Boolean) };
-    if (p.kind === 'event') return { icon: 'calendar-plus', label: 'Event', bits: [p.title, when(p.date) + (p.start ? ' ' + p.start : ' · all day'), p.location].filter(Boolean) };
+    if (p.kind === 'event') return { icon: 'calendar-plus', label: 'Event', bits: [p.title, (p.repeat ? 'from ' : '') + when(p.date) + (p.start ? ' ' + p.start : ' · all day'), p.repeat ? REPEAT_NAME[p.repeat] : '', p.location].filter(Boolean) };
     if (p.kind === 'workout') return { icon: 'heart-pulse', label: 'Workout', bits: [SPORT_NAME[p.sport], p.min + ' min', p.km ? String(p.km).replace('.', ',') + ' km' : '', when(p.date)].filter(Boolean) };
-    if (p.kind === 'todo') return { icon: 'check2-square', label: 'Task', bits: [p.text, p.due ? 'due ' + when(p.due) : ''].filter(Boolean) };
+    if (p.kind === 'todo') return { icon: p.repeat ? 'arrow-repeat' : 'check2-square', label: 'Task', bits: [p.text, p.repeat ? REPEAT_NAME[p.repeat] + ' · first ' + when(p.due) : p.due ? 'due ' + when(p.due) : ''].filter(Boolean) };
     if (p.kind === 'note') return { icon: 'journal-text', label: 'Note', bits: [p.text.slice(0, 60)] };
     return null;
   }
 
   /* to-dos: "kjøp melk i morgen" → { text, due } */
   function todo(text, now) {
-    var s = ' ' + String(text || '').trim() + ' ', d = takeDate(s, now || new Date());
-    if (!d) return { text: String(text || '').trim(), due: null };
-    var t = cap(strip(s, d.used));
-    return t ? { text: t, due: d.key } : { text: String(text || '').trim(), due: null };
+    now = now || new Date();
+    var s = ' ' + String(text || '').trim() + ' ', rp = takeRepeat(s, now);
+    if (rp) s = strip(s, rp.used);
+    var d = takeDate(s, now);
+    if (d) s = strip(s, d.used);
+    var t = cap(s);
+    if (!t) return { text: String(text || '').trim(), due: null };
+    return { text: t, due: d ? d.key : rp ? rp.first : null, repeat: rp ? rp.key : null, rday: rp && rp.rday || null };
   }
 
-  return { parse: parse, describe: describe, todo: todo, when: when, guessCat: guessCat, norm: norm, RULES: RULES, CAT_NAME: CAT_NAME, SPORT_NAME: SPORT_NAME, dkey: dkey };
+  return { nextDue: nextDue, REPEAT_NAME: REPEAT_NAME, parse: parse, describe: describe, todo: todo, when: when, guessCat: guessCat, norm: norm, RULES: RULES, CAT_NAME: CAT_NAME, SPORT_NAME: SPORT_NAME, dkey: dkey };
 })();

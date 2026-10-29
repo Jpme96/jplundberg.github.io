@@ -88,9 +88,10 @@
     weekly: { freq: 'WEEKLY', interval: 1 },
     '2weeks': { freq: 'WEEKLY', interval: 2 },
     monthly: { freq: 'MONTHLY', interval: 1 },
+    quarterly: { freq: 'MONTHLY', interval: 3 },
     yearly: { freq: 'YEARLY', interval: 1 }
   };
-  var REPEAT_NAMES = { '': 'Never', daily: 'Every day', weekdays: 'Every weekday (Mon–Fri)', weekly: 'Every week', '2weeks': 'Every 2 weeks', monthly: 'Every month', yearly: 'Every year' };
+  var REPEAT_NAMES = { '': 'Never', daily: 'Every day', weekdays: 'Every weekday (Mon–Fri)', weekly: 'Every week', '2weeks': 'Every 2 weeks', monthly: 'Every month', quarterly: 'Every 3 months', yearly: 'Every year' };
 
   /* Turns a stored event into the common shape used for both sources */
   function fromOwn(e) {

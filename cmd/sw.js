@@ -57,3 +57,24 @@ self.addEventListener('fetch', function (e) {
     })
   );
 });
+
+/* ---------- notifications (Settings → Notifications, off until you switch them on) ---------- */
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Dashboard', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Dashboard', {
+    body: d.body || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/' },
+    icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png'
+  }));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || '/cmd/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.url.indexOf('/cmd/') > -1 && 'focus' in c) { if ('navigate' in c) c.navigate(url).catch(function () {}); return c.focus(); }
+    }
+    return self.clients.openWindow(url);
+  }));
+});

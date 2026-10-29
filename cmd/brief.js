@@ -188,7 +188,7 @@
       /* at this pace … (the same period as the Money card: the month, or payday to payday) */
       var pc = window.Budget && window.Budget.pace ? window.Budget.pace(d, now) : null;
       if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', 'At this pace: ' + kr(-pc.end) + ' over by ' + (pc.per.byPayday ? 'payday' : 'the end of the month'),
-        'You spend about ' + kr(pc.perDay) + ' a day – ' + kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) + ' a day keeps you on budget', '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500), tip: true });
+        'You spend about ' + kr(pc.perDay) + ' a day – ' + kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) + ' a day keeps you on budget', '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500) });
       recurring(add, d, now);
       if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', 'Set up your monthly budget', 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
     }
@@ -291,24 +291,37 @@
     });
   }
 
-  var unlocked = false, showAll = false;
+  var unlocked = false, showAll = false, tipsOpen = false;
+  /* tips (streaks, unusual spending, suggestions): shown, folded into one line, or off – Settings → Dashboard */
+  function tipsMode() { var s = readJSON('dash.settings') || {}; return s.tips === 'show' || s.tips === 'off' ? s.tips : 'fold'; }
   function render() {
     if (!unlocked) return;
-    var list = items(), shown = showAll ? list : list.slice(0, 5);
+    var all = items(), mode = tipsMode(), folding = mode !== 'show';
+    var tips = folding ? all.filter(function (x) { return x.tip || x.act; }) : [];
+    var main = folding ? all.filter(function (x) { return !(x.tip || x.act); }) : all;
+    var shown = showAll ? main.slice() : main.slice(0, 5);
+    if (mode === 'fold' && tips.length) {
+      shown.push({ fold: true, icon: 'lightbulb', color: '#c9a227', title: tips.length + ' tip' + (tips.length === 1 ? '' : 's'),
+        sub: tips.slice(0, 2).map(function (x) { return x.title; }).join(' · ') + (tips.length > 2 ? ' …' : '') });
+      if (tipsOpen) shown = shown.concat(tips);
+    }
     /* the app icon shows how many things need you right now (overdue bills, bills due today, expired documents) */
-    var urgent = list.filter(function (x) { return x.badge; }).length;
+    var urgent = all.filter(function (x) { return x.badge; }).length;
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
-    box.innerHTML = list.length ? shown.map(function (x) {
+    box.innerHTML = shown.length ? shown.map(function (x) {
+      if (x.fold) return '<li class="br-li br-fold"><button type="button" class="br-item" data-brfold aria-expanded="' + tipsOpen + '" style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
+        '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(tipsOpen ? 'Tap to fold them away' : x.sub) + '</small></span><i class="bi bi-chevron-' + (tipsOpen ? 'up' : 'down') + ' br-go"></i></button></li>';
       return '<li class="br-li' + (x.tip || x.act ? ' br-tip' : '') + '"><a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
         (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>' : '') + '</li>';
-    }).join('') + (list.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + list.length) + '</button></li>' : '')
+    }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + main.length) + '</button></li>' : '')
       : '<li class="br-calm"><i class="bi bi-check2-circle"></i> Nothing needs you right now. Enjoy the day.</li>';
   }
   box.addEventListener('click', function (e) {
     var b;
     if (e.target.closest('[data-brmore]')) { showAll = !showAll; render(); return; }
+    if (e.target.closest('[data-brfold]')) { tipsOpen = !tipsOpen; render(); return; }
     if ((b = e.target.closest('[data-brx]'))) { dismiss(b.dataset.brx); var li = b.closest('li'); li.classList.add('br-gone'); setTimeout(render, 220); return; }
     if ((b = e.target.closest('[data-bract]'))) { if (ACTIONS[b.dataset.bract]) ACTIONS[b.dataset.bract](); dismiss(b.dataset.bract, 365); b.textContent = 'Done ✓'; setTimeout(render, 700); return; }
     var ck = e.target.closest('a[href="#checkin"]');
@@ -318,7 +331,7 @@
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
-  ['review:seen', 'checkin:done', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
+  ['review:seen', 'checkin:done', 'tips:change', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });
   window.Vault.onLock(function () { unlocked = false; box.innerHTML = ''; });

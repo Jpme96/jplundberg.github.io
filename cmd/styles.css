@@ -2164,3 +2164,47 @@ input::-webkit-date-and-time-value { text-align: left; }
 @media (min-width: 760px) { .dash-sec .grid { align-items: start; } }
 /* four key numbers fill the row (Health) */
 @media (min-width: 900px) { .fp-tiles:has(> :nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- Text size and compact clock (Settings → Appearance / Dashboard) ---------- */
+html.text-lg body { zoom: 1.1; }
+html.text-sm body { zoom: .94; }
+.clock-compact .hero {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "date date" "clock greet" "quote quote";
+  column-gap: 14px; align-items: center; text-align: left; max-width: 1120px; margin: 0 auto; padding: 6px 0 14px;
+}
+.clock-compact .clock { grid-area: clock; font-size: 54px; letter-spacing: -1px; text-shadow: 0 0 18px var(--glow); }
+.clock-compact .clock .sec { font-size: .34em; margin-left: 4px; vertical-align: 1.2em; }
+.clock-compact .date { grid-area: date; margin: 0 0 2px; font-size: 13.5px; }
+.clock-compact .greeting { grid-area: greet; margin: 0; font-size: 18px; line-height: 1.25; }
+.clock-compact .quote { grid-area: quote; text-align: left; margin: 10px 0 0; min-height: 0; max-width: none; font-size: 14px; }
+.clock-compact .quote:empty { display: none; }
+@media (min-width: 760px) { .clock-compact .clock { font-size: 72px; } .clock-compact .greeting { font-size: 22px; } }
+button.br-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.br-fold .br-ic { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.qa-row.qa-row1 { grid-template-columns: minmax(0, 1fr); }
+.todo-item.ticked .check { background: var(--accent); border-color: var(--accent); } .todo-item.ticked .check i { opacity: 1; } .todo-item.ticked .label { color: var(--muted); }
+.sv-by { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.sv-aside { margin-top: 2px; }
+.sv-hint { margin: 0; font-size: 12.5px; min-height: 0; }
+.sv-hint:empty { display: none; }
+.sv-plan { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sv-plan .bi { color: var(--accent); }
+.fr-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 2px 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.fr-bar .muted { display: inline-flex; align-items: center; gap: 6px; }
+.fr-bar .fr-month { width: auto; height: 36px; min-height: 36px; font-size: 14px; padding: 0 30px 0 10px; }
+.fp-foldhead { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.fp-foldhead .fp-chev { margin-left: 4px; font-size: 13px; color: var(--muted); transition: transform .25s var(--ease-ios); }
+.fp-card.folded .fp-chev { transform: rotate(-90deg); }
+.fp-card.folded > :not(.card-head) { display: none !important; }
+.fp-card.folded .card-head { margin-bottom: 0; }
+.tp-during:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+/* Siri & Shortcuts */
+.sc-row { align-items: center; gap: 12px; }
+.sc-row .st-label { flex: 1; min-width: 0; }
+.sc-url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px !important; color: var(--accent) !important; overflow-wrap: anywhere; }
+.sc-row .text-btn { flex-shrink: 0; }
+.sc-steps { padding: 14px 16px; }
+.sc-steps ol { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; line-height: 1.5; }
+.sc-steps code { font-size: 12.5px; color: var(--accent); }
+.sc-steps p { font-size: 13px; line-height: 1.5; margin: 8px 0 0; }
+.fr-bar .muted { flex-basis: 100%; }

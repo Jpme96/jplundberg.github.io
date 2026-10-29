@@ -136,7 +136,11 @@
     if ((b = e.target.closest('[data-cistar]'))) { todos(function (l) { l.forEach(function (t) { if (t.id === b.dataset.cistar) t.focus = !t.focus; }); }); draw(); return; }
     if ((b = e.target.closest('[data-citick]'))) {
       var li = b.closest('li'); li.classList.add('gone');
-      setTimeout(function () { todos(function (l) { l.forEach(function (t) { if (t.id === b.dataset.citick) { t.done = true; t.focus = false; } }); }); draw(); }, 220); return;
+      setTimeout(function () { todos(function (l) { l.forEach(function (t) {
+        if (t.id !== b.dataset.citick) return;
+        if (t.repeat && window.Smart) { var nx = window.Smart.nextDue(t.due || dkey(new Date()), t.repeat, t.rday); while (nx && nx < dkey(new Date())) nx = window.Smart.nextDue(nx, t.repeat, t.rday); t.due = nx; }   // repeating: on to the next time
+        else { t.done = true; t.focus = false; }
+      }); }); draw(); }, 220); return;
     }
     if (e.target.closest('[data-cidone]')) {
       var d = window.Vault.get(); d.checkins = (d.checkins || []).concat(wk.key).slice(-30); window.Vault.save(d);

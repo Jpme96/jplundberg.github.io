@@ -466,6 +466,27 @@
   });
   /* the budget changed elsewhere (e.g. a subscription) */
   window.addEventListener('fin:change', function () { if (D) { D = window.Vault.get() || D; render(); } });
+  /* the statistics fold away: tap a heading to open or close it – remembered on this device.
+     On phones they start folded, so the page is short; on larger screens they start open. */
+  (function () {
+    var cards = document.querySelectorAll('.fp-card'), store = {};
+    try { store = JSON.parse(localStorage.getItem('dash.fpFold')) || {}; } catch (e) {}
+    var small = matchMedia('(max-width: 759px)').matches;
+    cards.forEach(function (c, i) {
+      var id = 'c' + i, head = c.querySelector('.card-head'); if (!head) return;
+      head.classList.add('fp-foldhead'); head.setAttribute('role', 'button'); head.setAttribute('tabindex', '0');
+      head.insertAdjacentHTML('beforeend', '<i class="bi bi-chevron-down fp-chev" aria-hidden="true"></i>');
+      var folded = id in store ? store[id] : small;
+      function set(f, save) {
+        c.classList.toggle('folded', f); head.setAttribute('aria-expanded', String(!f));
+        if (save) { store[id] = f; try { localStorage.setItem('dash.fpFold', JSON.stringify(store)); } catch (e) {} }
+        if (!f) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 30);   // charts draw at their real width
+      }
+      set(folded, false);
+      head.addEventListener('click', function (e) { if (e.target.closest('a, button, select, input')) return; set(!c.classList.contains('folded'), true); });
+      head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); set(!c.classList.contains('folded'), true); } });
+    });
+  })();
   window.Vault.onLock(function () {
     D = null;
     hideTip();

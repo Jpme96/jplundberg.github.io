@@ -516,12 +516,13 @@
     costs.forEach(function (it) { if (it.spendId && vd && !ids[it.spendId]) { delete it.spendId; it.noFin = true; } });
     var total = planned(tr), budget = num(tr.budget), logged = costs.filter(function (it) { return it.spendId; });
     var pct = budget ? Math.min(100, Math.round(total / budget * 100)) : 0;
-    var html = '<div class="tp-total"><div><span class="muted">Booked so far</span><b>' + esc(kr(total)) + '</b></div>' +
+    var over = (tr.end || tr.start) < today();
+    var html = over && !total && !budget ? '' : '<div class="tp-total"><div><span class="muted">' + (over ? 'Booked' : 'Booked so far') + '</span><b>' + esc(kr(total)) + '</b></div>' +
       (budget ? '<div class="r"><span class="muted">Budget</span><b>' + esc(kr(budget)) + '</b></div>' : '') + '</div>';
     if (budget) html += '<div class="tp-progress' + (total > budget ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>' +
       '<p class="muted tp-left">' + (total > budget ? esc(kr(total - budget)) + ' over budget' : esc(kr(budget - total)) + ' left to spend') +
       (budget > total && tripDays(tr).length ? ' · about ' + esc(kr((budget - total) / tripDays(tr).length)) + ' a day' : '') + '</p>';
-    else html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip>Set a budget</button> to see what’s left per day.</p>';
+    else if ((tr.end || tr.start) >= today()) html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip>Set a budget</button> to see what’s left per day.</p>';
     if (costs.length || num(tr.spent)) {
       html += '<ul class="tp-costs">' + costs.map(function (it) {
         var Ty = T[it.type] || T.other;
@@ -534,7 +535,7 @@
       html += '<div class="tp-money-acts">' + (open > 1 ? '<button type="button" class="text-btn" data-logall><i class="bi bi-box-arrow-in-right"></i> Add all ' + open + ' to Finances</button>' : '') +
         (logged.length ? '<a class="text-btn" href="../finance/"><i class="bi bi-wallet2"></i> See in Finances</a>' : '') + '</div>';
       html += '<p class="muted tp-hint">Costs go to your spending in Finances (category Travel) automatically, and follow when you change them. Tap “In Finances” to keep one out.</p>';
-    } else html += '<p class="muted tp-hint">Put a cost on a booking and it adds up here – and goes to your spending in Finances (category Travel) automatically.</p>';
+    } else if ((tr.end || tr.start) >= today()) html += '<p class="muted tp-hint">Put a cost on a booking and it adds up here – and goes to your spending in Finances (category Travel) automatically.</p>';
     /* what you spent while you were away – card purchases and the rest you logged on those days */
     if (tr.start && tr.start <= today() && vd) {
       var to = tr.end || tr.start, linked = {};
@@ -550,6 +551,7 @@
           '<p class="muted tp-hint">Everything in Finances dated ' + esc(fmtD(tr.start)) + (to !== tr.start ? ' – ' + esc(fmtD(to)) : '') + ', bookings not counted twice. Grand total ' + esc(kr(all + total)) + '.</p></div>';
       }
     }
+    if (!html) html = '<p class="muted tp-hint">No costs logged for this trip.</p>';
     $('tpMoney').innerHTML = html;
   }
   $('tpMoney').addEventListener('click', function (e) {

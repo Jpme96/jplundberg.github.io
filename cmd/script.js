@@ -312,7 +312,7 @@
     if (!t.due || t.done) return '';
     var n = Math.round((new Date(t.due + 'T12:00') - new Date(tkey(new Date()) + 'T12:00')) / 864e5);
     var txt = n < 0 ? (n === -1 ? 'Yesterday' : -n + ' days ago') : n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 7 ? new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }) : new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    return '<span class="due' + (n < 0 ? ' late' : n === 0 ? ' now' : '') + '"><i class="bi bi-calendar-event"></i> ' + esc(txt) + '</span>';
+    return '<span class="due' + (n < 0 ? ' late' : n === 0 ? ' now' : '') + '"><i class="bi bi-' + (t.repeat ? 'arrow-repeat' : 'calendar-event') + '"></i> ' + esc(txt) + '</span>';
   }
   function shownTodos() {
     var big = '9999-99-99';
@@ -341,10 +341,12 @@
     var v = $('todoInput').value.trim(); if (!v) return;
     var p = window.Smart ? window.Smart.todo(v) : { text: v, due: null }, item = { id: uid(), text: p.text, done: false };
     if (p.due) item.due = p.due;
+    if (p.repeat) { item.repeat = p.repeat; if (p.rday) item.rday = p.rday; }
     todos.push(item);
     $('todoInput').value = '';
     renderTodos();
-    if (p.due && window.Quick) window.Quick.toast('<i class="bi bi-calendar-event"></i> Due ' + esc(window.Smart.when(p.due)) + ' – it’s in your calendar');
+    if (p.repeat && window.Quick) window.Quick.toast('<i class="bi bi-arrow-repeat"></i> ' + esc(window.Smart.REPEAT_NAME[p.repeat]) + ', first ' + esc(window.Smart.when(p.due)));
+    else if (p.due && window.Quick) window.Quick.toast('<i class="bi bi-calendar-event"></i> Due ' + esc(window.Smart.when(p.due)) + ' – it’s in your calendar');
   });
   $('todoList').addEventListener('click', function (e) {
     var li = e.target.closest('.todo-item'); if (!li) return;
@@ -357,6 +359,18 @@
         if (window.Quick) window.Quick.toast('<i class="bi bi-trash3"></i> Task deleted', function () { todos = load('dash.todos', todos); todos.splice(Math.min(at, todos.length), 0, t); renderTodos(); });
       }, 250);
     } else if (e.target.closest('.check') || e.target.closest('.label')) {
+      /* a repeating task moves on to its next day instead of being done */
+      if (!t.done && t.repeat && window.Smart) {
+        var was = t.due, nx = window.Smart.nextDue(t.due || tkey(new Date()), t.repeat, t.rday);
+        /* if it was long overdue, the next one is the first after today */
+        while (nx && nx < tkey(new Date())) nx = window.Smart.nextDue(nx, t.repeat, t.rday);
+        li.classList.add('ticked');
+        setTimeout(function () {
+          t.due = nx; renderTodos();
+          if (window.Quick) window.Quick.toast('<i class="bi bi-arrow-repeat"></i> Done – next ' + esc(window.Smart.when(nx)), function () { t.due = was; renderTodos(); });
+        }, 260);
+        return;
+      }
       t.done = !t.done; renderTodos();
     }
   });

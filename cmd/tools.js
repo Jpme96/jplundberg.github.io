@@ -112,10 +112,75 @@
     empty: 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.',
     afterRender: function (el) {
       var c = flexCfg();
-      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work">Change</a></p>');
+      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work">Change</a></p>' +
+        '<div class="fr-bar"><span class="muted"><i class="bi bi-file-earmark-text"></i> Monthly report</span><select class="fr-month" aria-label="Month for the report">' + reportMonths() + '</select>' +
+        '<button type="button" class="text-btn" data-frcsv>CSV</button><button type="button" class="text-btn" data-frpdf>PDF</button></div>');
     },
-    onClick: function (e) { if (e.target.closest('[data-flex-clock]')) clock(); }
+    onClick: function (e) {
+      if (e.target.closest('[data-flex-clock]')) clock();
+      var m = e.target.closest('.kit-card') && e.target.closest('.kit-card').querySelector('.fr-month');
+      if (e.target.closest('[data-frcsv]') && m) reportCsv(m.value);
+      if (e.target.closest('[data-frpdf]') && m) reportPdf(m.value);
+    }
   });
+
+  /* ---------- monthly report: every day, hours, flex and days off – CSV or a printable page (Save as PDF) ---------- */
+  function reportMonths() {
+    var out = '', d = new Date(), have = {};
+    F.list('flex').forEach(function (e) { have[String(e.date).slice(0, 7)] = 1; });
+    for (var i = 0; i < 13; i++) {
+      var x = new Date(d.getFullYear(), d.getMonth() - i, 1), k = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0');
+      if (i > 0 && !have[k]) continue;
+      out += '<option value="' + k + '">' + x.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) + '</option>';
+    }
+    return out;
+  }
+  function report(ym) {
+    var c = flexCfg(), days = flexDays(), inM = days.filter(function (d) { return d.date.slice(0, 7) === ym; });
+    var end = ym + '-31', bal = days.filter(function (d) { return d.date <= end && !d.open; }).reduce(function (a, d) { return a + d.delta; }, 0);
+    var rows = [];
+    inM.forEach(function (d) {
+      d.entries.forEach(function (e) {
+        rows.push({ date: d.date, wd: F.fromKey(d.date).toLocaleDateString('en-GB', { weekday: 'short' }), type: FLEX_TYPES[e.type] || 'Work', in: e.in || '', out: e.out || '', brk: +e.brk || 0, worked: worked(e, false), note: e.note || '' });
+      });
+    });
+    var tot = inM.reduce(function (a, d) { return a + d.worked; }, 0), delta = inM.reduce(function (a, d) { return a + d.delta; }, 0);
+    var count = function (t) { return F.list('flex').filter(function (e) { return e.type === t && String(e.date).slice(0, 7) === ym; }).length; };
+    return { ym: ym, name: new Date(ym + '-15').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }), rows: rows, total: tot, delta: delta, balance: bal, norm: c.norm,
+      vacation: count('vacation'), sick: count('sick'), flexoff: count('flexoff'), days: inM.filter(function (d) { return d.worked > 0; }).length };
+  }
+  function hmPlain(m) { var s = m < 0 ? '-' : ''; m = Math.abs(Math.round(m)); return s + Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); }
+  function download(name, type, text) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function reportCsv(ym) {
+    var r = report(ym), q = function (v) { v = String(v == null ? '' : v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [['Date', 'Day', 'Type', 'In', 'Out', 'Break (min)', 'Worked (h:mm)', 'Note'].join(';')]
+      .concat(r.rows.map(function (x) { return [x.date, x.wd, x.type, x.in, x.out, x.brk, hmPlain(x.worked), x.note].map(q).join(';'); }))
+      .concat(['', 'Total worked;' + hmPlain(r.total), 'Flex this month;' + hmPlain(r.delta), 'Flex balance at month end;' + hmPlain(r.balance),
+        'Holiday days;' + r.vacation, 'Sick days;' + r.sick, 'Flex days off;' + r.flexoff, 'Normal day (h);' + String(r.norm).replace('.', ',')]);
+    download('flex-' + ym + '.csv', 'text/csv;charset=utf-8', '\ufeff' + lines.join('\r\n'));
+  }
+  function reportPdf(ym) {
+    var r = report(ym), me = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();
+    var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flex time ' + esc(r.name) + '</title><style>' +
+      'body{font:14px/1.45 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:32px auto;max-width:760px;padding:0 20px}h1{font-size:22px;margin:0 0 2px}p.s{color:#555;margin:0 0 18px}' +
+      'table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #ddd}th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#555}td.n{text-align:right;font-variant-numeric:tabular-nums}' +
+      '.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}.sum div{border:1px solid #ddd;border-radius:8px;padding:10px}.sum b{display:block;font-size:18px}.sum span{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.04em}' +
+      '.tip{color:#555;font-size:12px;margin-top:24px}.wrap{overflow-x:auto}@media (max-width:600px){body{margin:20px auto}th,td{padding:5px 4px;font-size:12px}.sum b{font-size:16px}}@media print{.tip{display:none}body{margin:0 auto}}</style></head><body>' +
+      '<h1>Flex time – ' + esc(r.name) + '</h1><p class="s">' + esc(me.name || 'John Paul Lundberg') + (me.employer ? ' · ' + esc(me.employer) : '') + ' · normal day ' + String(r.norm).replace('.', ',') + ' h</p>' +
+      '<div class="sum"><div><span>Worked</span><b>' + hmPlain(r.total) + '</b>' + r.days + ' days</div><div><span>Flex this month</span><b>' + (r.delta > 0 ? '+' : '') + hmPlain(r.delta) + '</b>balance ' + (r.balance > 0 ? '+' : '') + hmPlain(r.balance) + '</div>' +
+      '<div><span>Days off</span><b>' + r.vacation + '</b>holiday · ' + r.sick + ' sick · ' + r.flexoff + ' flex</div></div>' +
+      '<div class="wrap"><table><thead><tr><th>Date</th><th>Type</th><th>In</th><th>Out</th><th class="n">Break</th><th class="n">Worked</th><th>Note</th></tr></thead><tbody>' +
+      (r.rows.length ? r.rows.map(function (x) { return '<tr><td>' + esc(x.wd + ' ' + x.date.slice(8) + '.' + x.date.slice(5, 7)) + '</td><td>' + esc(x.type) + '</td><td>' + esc(x.in) + '</td><td>' + esc(x.out) + '</td><td class="n">' + (x.brk ? x.brk + ' min' : '') + '</td><td class="n">' + (x.worked ? hmPlain(x.worked) : '') + '</td><td>' + esc(x.note) + '</td></tr>'; }).join('') : '<tr><td colspan="7">Nothing logged this month.</td></tr>') +
+      '</tbody></table></div><p class="tip">Use Print → Save as PDF (on iPhone: Share → Print, then pinch out on the preview to get the PDF).</p>' +
+      '<script>setTimeout(function(){try{window.print()}catch(e){}},400)<\/script></body></html>';
+    var w = null;
+    try { w = window.open('', '_blank'); } catch (e) {}
+    if (w && w.document) { w.document.open(); w.document.write(html); w.document.close(); }
+    else download('flex-' + ym + '.html', 'text/html;charset=utf-8', html);
+  }
   document.addEventListener('change', function (e) {
     var k = e.target.dataset && e.target.dataset.flexcfg;
     if (!k) return;

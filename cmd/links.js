@@ -32,6 +32,23 @@
     window.dispatchEvent(new Event('fin:change'));
   }
 
+  /* ---------- savings goals → budget: "set aside every month" becomes a fixed cost ---------- */
+  function syncSave() {
+    var d = window.Vault.get(), B = window.Budget;
+    if (!d || !B || !B.saveMonthly) return;
+    d.budget = d.budget || { income: [], fixed: [] };
+    var fixed = Array.isArray(d.budget.fixed) ? d.budget.fixed : [];
+    var want = (d.savings || []).filter(function (g) { return g.aside; }).map(function (g) {
+      return { id: 'save-' + g.id, name: 'Savings: ' + (g.name || 'goal'), amount: B.saveMonthly(g), day: null, src: 'save' };
+    }).filter(function (f) { return f.amount > 0; });
+    var before = JSON.stringify(fixed.filter(function (f) { return f.src === 'save'; }));
+    if (before === JSON.stringify(want)) return;
+    d.budget.fixed = fixed.filter(function (f) { return f.src !== 'save'; }).concat(want);
+    window.Vault.save(d);
+    window.dispatchEvent(new Event('fin:change'));
+  }
+  window.Links = { syncSave: syncSave };
+
   /* ---------- trips → places to visit ---------- */
   function near(a, b) {
     if (!a || !b || a.lat == null || b.lat == null) return false;
@@ -126,6 +143,7 @@
   function run() {
     try { syncWorkouts(); } catch (e) { console.error(e); }
     try { syncSubs(); } catch (e) { console.error(e); }
+    try { syncSave(); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
   }
