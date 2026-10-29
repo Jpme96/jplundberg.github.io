@@ -10,7 +10,7 @@ Which files each page uses, and in which order, is in cmd/scripts.json:
   tail  – loaded last on every page (search, quick add, notifications, menu …)
   pages – what each page loads in between
 Each file is wrapped so an error in one can't stop the others, like separate files. """
-import hashlib, io, json, os, re, sys
+import hashlib, io, json, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 M = json.load(io.open(os.path.join(HERE, 'scripts.json'), encoding='utf-8'))
@@ -18,12 +18,27 @@ DIST = os.path.join(HERE, 'dist')
 check = '--check' in sys.argv
 
 
+ESBUILD = None if os.environ.get('NOMINIFY') else next((x for x in [os.environ.get('ESBUILD'), '/opt/npm-tools/node_modules/esbuild/bin/esbuild', shutil.which('esbuild')] if x and os.path.exists(x)), None)
+
+
+def minify(text):
+    """Smaller files load and start faster on a phone. Uses esbuild when it's installed;
+    without it the bundles stay readable (and work the same)."""
+    if not ESBUILD:
+        return text
+    r = subprocess.run([ESBUILD, '--minify', '--loader=js', '--charset=utf8', '--legal-comments=none', '--target=es2018'],
+                       input=text.encode('utf-8'), capture_output=True)
+    if r.returncode:
+        sys.stderr.write(r.stderr.decode('utf-8', 'replace')); sys.exit('minify failed')
+    return '/* Built by cmd/build.py – edit the source files listed in cmd/scripts.json, not this one. */\n' + r.stdout.decode('utf-8')
+
+
 def bundle(files):
     out = ['/* Built by cmd/build.py from: ' + ', '.join(files) + ' – edit those files, not this one. */']
     for f in files:
         src = io.open(os.path.join(HERE, f), encoding='utf-8').read()
         out.append('/* ===== %s ===== */\ntry {\n%s\n} catch (e) { console.error(%s, e); }' % (f, src.rstrip(), json.dumps(f)))
-    return '\n'.join(out) + '\n'
+    return minify('\n'.join(out) + '\n')
 
 
 def write(name, text):

@@ -13,9 +13,8 @@
   <link href="/assets/img/favicon.png?v=2" rel="icon">
   <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
   <link href="/cmd/manifest.webmanifest" rel="manifest">
-  <link href="https://fonts.googleapis.com" rel="preconnect">
-  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link rel="preload" href="../assets/fonts/inter-Regular.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../assets/fonts/inter-SemiBold.woff" as="font" type="font/woff" crossorigin>
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <script>
     /* Lock first, and apply the saved theme before anything is drawn. */
@@ -36,6 +35,8 @@
         if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
         /* the look: Modern (the base) or Classic (Settings → Appearance) */
         var modern = s.look !== 'classic'; r.classList.add(modern ? 'modern' : 'classic');
+        /* the Classic look's fonts (Modern uses Inter from this site, so it doesn't wait for Google) */
+        if (!modern) document.write('<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">');
         var bg = s.bgType || (s.bg === false ? 'none' : modern ? 'calm' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
@@ -61,16 +62,22 @@
       } catch (e) {}
       /* while the browser slides this page in (Safari 18.2+, Chrome): the menu is drawn solid and the
          new tab lights up when the highlight lands. Has to live here – it fires before the page scripts run. */
+      /* a skipped page animation is not an error (it happens when a page is quick to load, or on a double tap) */
+      var quiet = function (vt) { if (vt) ['ready', 'finished', 'updateCallbackDone'].forEach(function (k) { if (vt[k] && vt[k].catch) vt[k].catch(function () {}); }); };
+      window.addEventListener('pageswap', function (e) { quiet(e.viewTransition); });
+      window.addEventListener('unhandledrejection', function (e) { var x = e.reason; if (x && x.name === 'InvalidStateError' && /ViewTransition|Transition was/.test(x.message || '')) e.preventDefault(); });
       window.addEventListener('pagereveal', function (e) {
         if (!e.viewTransition) { r.classList.remove('vt-active', 'vt-in'); return; }
+        quiet(e.viewTransition);
         r.classList.add('vt-active', 'vt-in');
         var done = function () { r.classList.remove('vt-active', 'vt-in'); };
         e.viewTransition.finished.then(done, done);
+        e.viewTransition.ready.catch(done);          // skipped by the browser (too quick, or tapped twice): the page simply appears
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=105" rel="stylesheet">
-  <link href="../modern.css?v=2" rel="stylesheet">
+  <link href="../styles.css?v=106" rel="stylesheet">
+  <link href="../modern.css?v=3" rel="stylesheet">
   <link href="../finance/fin.css?v=9" rel="stylesheet">
   <link href="../calendar/cal.css?v=10" rel="stylesheet">
   <link href="travel.css?v=9" rel="stylesheet">
@@ -351,9 +358,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=b3dc9b915f"></script>
-  <script src="../dist/page-travel.js?v=fff833655b"></script>
-  <script src="../dist/tail.js?v=8c6c4d4c68"></script>
+  <script src="../dist/head.js?v=7f3d3984e3"></script>
+  <script src="../dist/page-travel.js?v=33c5153db5"></script>
+  <script src="../dist/tail.js?v=09d4fb756b"></script>
   <!-- /scripts -->
 </body>
 </html>
