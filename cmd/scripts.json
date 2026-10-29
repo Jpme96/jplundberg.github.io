@@ -11,6 +11,7 @@
     "quick.js",
     "notify.js",
     "ahealth.js",
+    "tilekit.js",
     "nav.js"
   ],
   "pages": {

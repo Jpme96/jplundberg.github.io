@@ -48,7 +48,7 @@
       { i: 'cash-coin', l: 'Spent on travel ' + y, v: esc(nf.format(spent)), s: 'Travel in Finances' }
     ];
     $('hsTiles').innerHTML = T.map(function (x) {
-      return '<div class="fp-tile"><div class="lbl"><i class="bi bi-' + x.i + '"></i>' + x.l + '</div><div class="val">' + x.v + '</div><div class="sub">' + x.s + '</div></div>';
+      return '<div class="fp-tile" data-tk="' + x.l.replace(/\b(19|20)\d\d\b/g, 'Y') + '"><div class="lbl"><i class="bi bi-' + x.i + '"></i>' + x.l + '</div><div class="val">' + x.v + '</div><div class="sub">' + x.s + '</div></div>';
     }).join('');
 
     /* year by year */

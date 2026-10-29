@@ -185,7 +185,7 @@ try {
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   function monday(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
   function addDays(k, n) { var d = F.fromKey(k); d.setDate(d.getDate() + n); return F.dkey(d); }
-  function tile(label, value, sub) { return '<div class="kit-tile"><span>' + label + '</span><b>' + value + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
+  function tile(label, value, sub) { return '<div class="kit-tile" data-tk="' + String(label).replace(/\b(19|20)\d\d\b/g, 'Y').replace(/"/g, '') + '"><span>' + label + '</span><b>' + value + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
   function hm(min) {
     var neg = min < 0; min = Math.abs(Math.round(min));
     var h = Math.floor(min / 60), m = min % 60;
