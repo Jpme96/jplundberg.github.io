@@ -2473,6 +2473,7 @@ a.st-btn .st-label { flex: 1; }
 @media (min-width: 760px) {
   .dash-sec .grid.masonry { grid-auto-rows: 2px; row-gap: 0; align-items: start; }
   .dash-sec .grid.masonry > * { align-self: start; }
+  .dash-sec .grid.masonry > .notes, .dash-sec .grid.masonry > .card.habits { grid-column: auto; }   /* masonry.js decides: one column, or two when that fills better */
 }
 @media (min-width: 760px) { .dash-sec .grid.masonry > .msn-fill { align-self: stretch; margin-bottom: 14px; } .dens-compact .dash-sec .grid.masonry > .msn-fill { margin-bottom: 9px; } }
 

@@ -408,6 +408,7 @@
     var br = document.querySelector('.grid > .card.brief'), g = br && br.parentNode, hb = g && g.querySelector(':scope > .card.habits');
     if (!hb) return;
     hb.classList.remove('hb-narrow');
+    if (g.classList.contains('masonry')) return;            // on computers masonry.js arranges the cards
     var cols = getComputedStyle(g).gridTemplateColumns.split(' ').length;
     if (cols < 2 || !hb.offsetParent) return;
     function units() {
