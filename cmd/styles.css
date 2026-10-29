@@ -2442,3 +2442,10 @@ a.st-btn .st-label { flex: 1; }
 .st-inv { list-style: none; margin: 0; padding: 6px 0; display: grid; gap: 8px; font-size: 14px; }
 .st-inv li { display: flex; gap: 10px; align-items: baseline; }
 .st-inv .bi { color: var(--accent); width: 16px; text-align: center; flex-shrink: 0; }
+/* Finances on wide screens: three columns that end on one line (fin.js shares the cards out) */
+@media (min-width: 1040px) {
+  .fp-fin .fin-grid.fin-even { align-items: stretch; }
+  .fin-even .fin-col { display: flex !important; flex-direction: column; gap: 14px; }
+  .dens-compact .fin-even .fin-col { gap: 9px; }
+  .fin-even .fin-col > .card:not([hidden]):last-of-type { flex-grow: 1; }
+}

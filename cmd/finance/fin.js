@@ -493,3 +493,55 @@
     ['fpTiles', 'fpMonths', 'fpMonthsTable', 'fpPace', 'fpCats', 'fpNet', 'fpNetSub', 'fpNetChart', 'fpAccs', 'fpGoals', 'fpTop'].forEach(function (id) { if ($(id)) $(id).innerHTML = ''; });
   });
 })();
+
+/* ---------- Even columns on wide screens ----------
+   Budget, savings, bills, categories and net worth are shared between the two left columns so
+   they end at about the same height as Spending; the last card in each column stretches the
+   rest of the way, so the three columns end on one line however long a card gets. */
+(function () {
+  "use strict";
+  var grid = document.querySelector('.fp-fin .fin-cols'); if (!grid) return;
+  var cols = grid.querySelectorAll(':scope > .fin-col'); if (cols.length < 3) return;
+  var ORDER = ['budget', 'savings', 'bills', 'spcats', 'networth'];
+  var busy = false, timer = null;
+  function cardsIn() { return ORDER.map(function (c) { return grid.querySelector('.card.' + c); }).filter(Boolean); }
+  function balance() {
+    if (busy) return; busy = true;
+    var wide = matchMedia('(min-width: 1040px)').matches, cards = cardsIn();
+    if (!wide) { grid.classList.remove('fin-even'); if (window.FinSpending) window.FinSpending.rows(6); busy = false; return; }
+    grid.classList.remove('fin-even');                 // measure the cards at their own height, not stretched
+    if (window.FinSpending && window.FinSpending.get() !== 6) window.FinSpending.rows(6);
+    /* heights as they are now (the two left columns are the same width, so moving doesn't change them) */
+    var h = cards.map(function (c) { return c.hidden ? 0 : c.getBoundingClientRect().height; });
+    var gap = parseFloat(getComputedStyle(cols[0]).rowGap) || 14;
+    var right = cols[2].getBoundingClientRect().height;
+    /* try every split that keeps the order inside each column; pick the one with the lowest tallest column */
+    var best = null;
+    for (var mask = 0; mask < (1 << cards.length); mask++) {
+      var a = 0, b = 0, na = 0, nb = 0;
+      for (var i = 0; i < cards.length; i++) { if (mask & (1 << i)) { b += h[i]; nb++; } else { a += h[i]; na++; } }
+      if (!na || !nb) continue;
+      a += gap * (na - 1); b += gap * (nb - 1);
+      var score = Math.max(a, b, right) * 10 + Math.abs(a - b) + (mask & 1 ? 1e6 : 0);   // budget stays top left
+      if (!best || score < best.score) best = { score: score, mask: mask };
+    }
+    if (best) {
+      var want = [[], []]; cards.forEach(function (c, i) { want[best.mask & (1 << i) ? 1 : 0].push(c); });
+      var same = [0, 1].every(function (k) { var now = Array.prototype.filter.call(cols[k].children, function (x) { return cards.indexOf(x) >= 0; }); return now.length === want[k].length && now.every(function (x, j) { return x === want[k][j]; }); });
+      if (!same) [0, 1].forEach(function (k) { want[k].forEach(function (c) { cols[k].appendChild(c); }); });   // only touch the page when something has to move
+      /* …and Spending shows more of the month instead of ending early */
+      var tallest = Math.max(cols[0].getBoundingClientRect().height, cols[1].getBoundingClientRect().height);
+      var sp = grid.querySelector('.card.spending'), row = sp && sp.querySelector('#spList > li');
+      if (sp && row && window.FinSpending) {
+        var room = tallest - sp.getBoundingClientRect().height, rh = row.getBoundingClientRect().height || 60;
+        if (room > rh * .8) window.FinSpending.rows(6 + Math.floor(room / rh));
+      }
+    }
+    grid.classList.add('fin-even');
+    busy = false;
+  }
+  function soon() { clearTimeout(timer); timer = setTimeout(balance, 120); }
+  new ResizeObserver(soon).observe(grid);
+  ['fin:change', 'features:change', 'resize'].forEach(function (e) { window.addEventListener(e, soon); });
+  if (window.Vault) window.Vault.onUnlock(function () { setTimeout(balance, 300); });
+})();

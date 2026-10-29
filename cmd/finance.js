@@ -335,6 +335,8 @@
 
   /* ================= Spending ================= */
   var showAll = false;
+  var spRows = 6;
+  window.FinSpending = { rows: function (n) { n = Math.max(6, Math.min(20, n | 0)); if (n !== spRows) { spRows = n; if (D) renderSpending(); } return spRows; }, get: function () { return spRows; } };
 
   function renderSpending() {
     $('spMonth').textContent = monthName(viewMonth);
@@ -361,9 +363,9 @@
     }
 
     /* the card shows the latest few; the whole month opens in a sheet (so the page never gets long) */
-    var shown = list.slice(0, 6);
+    var rows = spRows || 6, shown = list.slice(0, rows);      // wide screens: as many as fit next to the other cards (fin.js)
     $('spList').innerHTML = shown.map(function (e) { return txRow(e, true); }).join('');
-    $('spMore').hidden = list.length <= 6;
+    $('spMore').hidden = list.length <= rows;
     $('spMore').innerHTML = '<i class="bi bi-list-ul"></i> All ' + list.length + ' in ' + esc(monthName(viewMonth, true));
     if (sheetOpen) renderSheet(list);
   }

@@ -20,6 +20,13 @@ try {
     var orig = Date.prototype[fn];
     Date.prototype[fn] = function (loc, opt) { return orig.call(this, !loc || en.test(String(loc)) ? 'nb-NO' : loc, opt); };
   });
+  /* …also the date formatters some pages make once and reuse (Intl.DateTimeFormat('en-GB', …)) */
+  try {
+    var DTF = Intl.DateTimeFormat;
+    var NbDTF = function (loc, opt) { return new DTF(!loc || en.test(String(loc)) ? 'nb-NO' : loc, opt); };
+    NbDTF.prototype = DTF.prototype; NbDTF.supportedLocalesOf = DTF.supportedLocalesOf;
+    Intl.DateTimeFormat = NbDTF;
+  } catch (e) {}
 
   /* ---------- the words ---------- */
   var D = {
@@ -258,6 +265,145 @@ try {
     [/^(.+) · this week: (great|good|OK|meh|bad)$/, function (m, a, b) { return tr(a) + ' · denne uka: ' + tr(b); }]
   ];
   var busy = false;
+  /* ---------- more words (sweep of every page, empty and filled, Oct 2026) ---------- */
+  Object.assign(D, {
+    'Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you press Add.': 'Lenker som åpner dashbordet med noe klart til å legges til. Bruk dem i Snarveier-appen, med Siri («Hei Siri, log expense») eller Bakpå-trykk (trykk to ganger på baksiden av telefonen). Ingenting lagres før du trykker Legg til.',
+    'The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.': 'Det samme virker for hendelser («tor 14 tannlege»), oppgaver («betale strøm hver måned») og økter («løp 5 km») – linjen forstår alle. For Bakpå-trykk: iPhone-innstillinger → Tilgjengelighet → Berøring → Bakpå-trykk → Dobbelttrykk → velg snarveien.',
+    'Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses & certificates” section on the front page – turn the section on under Front page) and in your CV. Nothing else from the list leaves the dashboard.': 'Kursene og sertifikatene dine fra Jobb-siden. Slå på dem som kan vises på jplundberg.com (en «Kurs og sertifikater»-seksjon på forsiden – slå på seksjonen under Forside) og i CV-en din. Ingenting annet fra listen forlater dashbordet.',
+    '(DNB, Sparebank 1, Nordea and the others have it under the account’s history) and pick the file here.': '(DNB, Sparebank 1, Nordea og de andre har det under kontohistorikken) og velg filen her.',
+    'Only what you spent is imported – salary, card payments and transfers are left out – and rows you already have are skipped. Nothing leaves your browser.': 'Bare det du har brukt importeres – lønn, kortbetalinger og overføringer utelates – og rader du allerede har hoppes over. Ingenting forlater nettleseren din.',
+    'or credit card': 'eller kredittkortet', 'as': 'som', 'CSV or Excel': 'CSV eller Excel', 'Choose file': 'Velg fil',
+    'These are filed under Other – pick a category and the bank import remembers the shop next time.': 'Disse ligger under Annet – velg en kategori, så husker bankimporten butikken neste gang.',
+    'Over budget': 'Over budsjett', 'This month, after fixed costs': 'Denne måneden, etter faste kostnader', 'net income': 'netto inntekt', 'over at month end': 'over ved månedsslutt', 'From your bank': 'Fra banken',
+    /* Finances – empty states and statistics */
+    'Add your salary – net, or gross with tax and deductions – and your fixed costs (rent, loans, subscriptions). Spending you log below is counted automatically.': 'Legg inn lønnen din – netto, eller brutto med skatt og trekk – og de faste kostnadene dine (husleie, lån, abonnementer). Det du fører inn nedenfor, regnes med automatisk.',
+    'Add your fixed costs (rent, loans, subscriptions) under Monthly budget, then give them a due date here.': 'Legg inn de faste kostnadene dine (husleie, lån, abonnementer) under Månedsbudsjett, og gi dem en forfallsdato her.',
+    'Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.': 'Legg inn kontoer og lån. Oppdater saldoene nå og da, så viser diagrammet hvordan nettoformuen din utvikler seg måned for måned.',
+    'Add income and fixed costs under Monthly budget to compare with a budget.': 'Legg inn inntekt og faste kostnader under Månedsbudsjett for å sammenligne med et budsjett.',
+    'Add your salary under Monthly budget': 'Legg inn lønnen din under Månedsbudsjett', 'Set up your budget above': 'Sett opp budsjettet ovenfor', 'Set up budget': 'Sett opp budsjett',
+    'Set up your monthly budget': 'Sett opp månedsbudsjettet', 'Needs your income': 'Trenger inntekten din',
+    'Set up your budget on the Finances page – salary, fixed costs – and this shows what you can spend each day.': 'Sett opp budsjettet på Økonomi-siden – lønn og faste kostnader – så viser dette hva du kan bruke hver dag.',
+    'No spending logged in this period yet.': 'Ingen utgifter ført i denne perioden ennå.', 'No spending this month yet.': 'Ingen utgifter denne måneden ennå.', 'Nothing logged in this period.': 'Ingenting ført i denne perioden.',
+    'Budget': 'Budsjett', 'under': 'under', 'net': 'netto', 'kr / month': 'kr / måned', 'Period': 'Periode', 'Show one year': 'Vis ett år', 'Previous month': 'Forrige måned', 'Next month': 'Neste måned',
+    'Export the transactions from your bank account': 'Eksporter transaksjonene fra bankkontoen din',
+    'Endring per kategori': 'Endring per kategori', 'Bergen trip': 'Bergen trip',
+    /* Home, tasks, glance */
+    'No open tasks. Add one with + or in the To-do card.': 'Ingen åpne oppgaver. Legg til en med + eller i Gjøremål-kortet.', 'Nothing to do': 'Ingenting å gjøre', 'Nothing yet.': 'Ingenting ennå.',
+    'Nothing planned in the next 6 weeks.': 'Ingenting planlagt de neste 6 ukene.', 'Show 6 more weeks': 'Vis 6 uker til', 'Tomorrow': 'I morgen', 'Upcoming': 'Kommende', 'Reminder': 'Påminnelse', 'Show more': 'Vis mer',
+    'Hit a weekly target to start one': 'Nå et ukemål for å starte en', 'Delete task': 'Slett oppgave', 'Mark as done': 'Merk som ferdig', 'From a checklist': 'Fra en sjekkliste', 'Increase': 'Øk', 'Decrease': 'Mink',
+    'Change the day': 'Endre dagen', 'Tips': 'Tips', 'Your name': 'Navnet ditt', 'Travel & departures': 'Reise og avganger', 'Work today (flex time)': 'Jobb i dag (fleksitid)',
+    'Synced and encrypted with your passcode ·': 'Synkronisert og kryptert med koden din ·', 'Time for a backup': 'På tide med en sikkerhetskopi',
+    /* Calendar */
+    'Calendars': 'Kalendere', 'Show calendars': 'Vis kalendere', 'View': 'Visning', 'Dashboard card': 'Kort på dashbordet', 'Day starts': 'Dagen starter', 'Length': 'Varighet', 'New events': 'Nye hendelser', 'Open in': 'Åpne i',
+    'Tap the colour to change it': 'Trykk på fargen for å endre den', 'What the calendar card on the dashboard shows': 'Hva kalenderkortet på dashbordet viser', 'Where the week view opens': 'Hvor ukevisningen åpner',
+    'Like “Week 44” in the month and week views': 'Som «Uke 44» i måneds- og ukevisningen', 'Events in a deleted category move to Personal.': 'Hendelser i en slettet kategori flyttes til Personlig.',
+    '17. mai, Easter, Christmas … also counted in Flex time': '17. mai, påske, jul … regnes også med i fleksitid', 'Colour': 'Farge',
+    'iPhone (iCloud)': 'iPhone (iCloud)', '– open the Calendar app →': '– åpne Kalender-appen →', '→ tap': '→ trykk', 'next to the calendar → turn on': 'ved siden av kalenderen → slå på',
+    '. Do this for each calendar you want here.': '. Gjør dette for hver kalender du vil ha her.', '– calendar.google.com on a computer →': '– calendar.google.com på en datamaskin →', '→ pick the calendar →': '→ velg kalenderen →',
+    '→ copy': '→ kopier', '– outlook.com →': '– outlook.com →', '→ copy the ICS link.': '→ kopier ICS-lenken.',
+    'Anyone who has the link can read that calendar, so keep it private. You can turn the link off again in the same place. New events show up here within about 10 minutes.': 'Alle som har lenken kan lese den kalenderen, så hold den privat. Du kan slå av lenken igjen samme sted. Nye hendelser dukker opp her innen omtrent 10 minutter.',
+    /* Travel */
+    'Add a destination to your trips': 'Legg til et reisemål på turene dine', 'Trips with a destination show up here.': 'Turer med et reisemål vises her.',
+    'No trips planned yet. Add one to keep flights, hotels, packing and costs in one place – it shows up in your calendar too.': 'Ingen turer planlagt ennå. Legg til en for å samle fly, hotell, pakking og kostnader på ett sted – den vises i kalenderen også.',
+    'Trips you’ve been on show up here, with days away, countries and what you spent. Add older trips with “Log a past trip” – put what it cost under “Other costs” and it goes into Finances on that date.': 'Turer du har vært på vises her, med dager borte, land og hva du brukte. Legg til eldre turer med «Før en tidligere tur» – legg det den kostet under «Andre kostnader», så havner det i Økonomi på den datoen.',
+    'Add your passport, ID, EU health card and travel insurance with their expiry dates. You get a warning before a trip if something runs out, and a reminder in your calendar to renew.': 'Legg inn pass, ID, europeisk helsetrygdkort og reiseforsikring med utløpsdato. Du får et varsel før en tur hvis noe går ut, og en påminnelse i kalenderen om å fornye.',
+    'Cheap flights': 'Billige flyreiser', 'Check documents': 'Sjekk dokumenter', 'Countries visited': 'Land besøkt', 'Log a past trip': 'Før en tidligere tur', 'Travel in Finances': 'Reise i Økonomi', 'Where you’ve been': 'Hvor du har vært',
+    'Year by year': 'År for år', 'counting today': 'medregnet i dag', 'outside Norway': 'utenfor Norge', 'where are you going next?': 'hvor skal du neste gang?', 'where have you been?': 'hvor har du vært?', 'Map or globe': 'Kart eller globus', 'Travel in numbers': 'Reise i tall',
+    /* Work */
+    'Lunch break, taken off the day': 'Lunsjpause, trekkes fra dagen', 'Holiday days a year': 'Feriedager i året', 'Break in minutes': 'Pause i minutter', 'Holiday days per year': 'Feriedager per år', 'Month for the report': 'Måned for rapporten',
+    'Used by Flex time on the Work page and the “Work today” card.': 'Brukes av fleksitid på Jobb-siden og «Jobb i dag»-kortet.', 'days': 'dager', 'min': 'min',
+    'Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.': 'Helligdager kommer fra kalenderinnstillingen og regnes ikke som jobb. Normaldagen ligger også i profilen din.',
+    'Nothing switched on here. Go to': 'Ingenting er slått på her. Gå til', 'Settings → Features': 'Innstillinger → Funksjoner', 'and turn on Flex time, Meeting notes or Courses & certificates.': 'og slå på fleksitid, møtenotater eller kurs og sertifikater.',
+    /* Settings: main list and pages */
+    'Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.': 'Dashbordinnstillingene synkroniseres på enhetene dine. Endringer på nettsiden er ute på jplundberg.com omtrent ett minutt etter at du publiserer.',
+    '5 categories · week numbers · holidays': '5 kategorier · ukenummer · helligdager', 'About, roles, contact, footer': 'Om, roller, kontakt, bunntekst', 'Links in the header and footer': 'Lenker i toppen og bunnen', 'Newest first': 'Nyeste først', 'None published': 'Ingen publisert', 'Last 7 days': 'Siste 7 dager',
+    'Colours': 'Farger', 'Auto': 'Auto', 'Full': 'Full', 'Glass': 'Glass', 'Minimal': 'Minimal', 'Normal': 'Normal', 'English': 'English', 'Norsk': 'Norsk', 'Moon': 'Måne', 'Aurora': 'Nordlys', 'Dusk': 'Skumring', 'Forest': 'Skog', 'Ocean': 'Hav',
+    'For the dashboard – the website has its own switch': 'For dashbordet – nettsiden har sin egen bryter', 'Cards rise in, pages cross-fade.': 'Kortene glir inn, sidene toner over.', 'Calm, dark cards – the original look.': 'Rolige, mørke kort – det opprinnelige utseendet.',
+    'Raised cards with soft shadows, like phone widgets.': 'Hevede kort med myke skygger, som widgeter på telefonen.', 'Choose your own colour': 'Velg din egen farge', 'Choose your own accent colour': 'Velg din egen aksentfarge',
+    'Teal': 'Blågrønn', 'Blue': 'Blå', 'Purple': 'Lilla', 'Pink': 'Rosa', 'Orange': 'Oransje', 'Green': 'Grønn',
+    'Pick what you use. Switched-off parts disappear from the menu, the dashboard and the calendar. Your data stays, encrypted and synced, so switching back on brings everything back.': 'Velg det du bruker. Det du slår av forsvinner fra menyen, dashbordet og kalenderen. Dataene dine blir liggende, kryptert og synkronisert, så alt kommer tilbake når du slår det på igjen.',
+    'The main parts. Switching one off hides its page, card and calendar items – nothing is deleted.': 'Hoveddelene. Slår du av en, skjules siden, kortet og kalenderelementene – ingenting slettes.',
+    'Turning on any of these adds a Work page to the menu.': 'Slår du på en av disse, får menyen en Jobb-side.', 'Shown on the Health page (the menu tab shows when any of these or Habits is on).': 'Vises på Helse-siden (fanen i menyen vises når en av disse eller Vaner er på).',
+    'Shown under Trips on the Travel page.': 'Vises under Turer på Reise-siden.', 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.': 'Vises på Økonomi-siden. Fornyelser og garantidatoer legges også i kalenderen.',
+    'Reminders on this device, even when the dashboard is closed. Off until you switch it on, and you choose what they say.': 'Påminnelser på denne enheten, også når dashbordet er lukket. Av til du slår det på, og du velger hva de sier.',
+    'Reminders are planned 7 days ahead each time you open the dashboard. Haven’t opened it for a week? Then they pause until you do.': 'Påminnelsene planlegges 7 dager fram hver gang du åpner dashbordet. Har du ikke åpnet det på en uke, tar de pause til du gjør det.',
+    'Your data is encrypted with your passcode, synced through your server and kept in this browser. A backup file is a third copy – keep it in Files, iCloud Drive or on your computer. At a glance reminds you once a month.': 'Dataene dine er kryptert med koden din, synkronisert via serveren din og lagret i denne nettleseren. En sikkerhetskopi er en tredje kopi – legg den i Filer, iCloud Drive eller på datamaskinen. Kort fortalt minner deg på det én gang i måneden.',
+    /* Profile */
+    'About you': 'Om deg', 'Add photo': 'Legg til bilde', 'Address': 'Adresse', 'Allergies': 'Allergier', 'Birthday': 'Fødselsdag', 'Blood type': 'Blodtype', 'City': 'By', 'Email': 'E-post', 'Emergency contact': 'Nødkontakt', 'Employer': 'Arbeidsgiver',
+    'GP (fastlege)': 'Fastlege', 'Medicines': 'Medisiner', 'Name': 'Navn', 'Normal working day': 'Normal arbeidsdag', 'Normal working day in hours': 'Normal arbeidsdag i timer', 'Office': 'Kontor', 'Phone': 'Telefon', 'Private.': 'Privat.', 'Relation': 'Relasjon', 'Role': 'Rolle',
+    'Saved encrypted, only for you.': 'Lagret kryptert, bare for deg.', 'Shirts & jackets': 'Skjorter og jakker', 'Shoes': 'Sko', 'Trousers': 'Bukser', 'Sizes': 'Størrelser',
+    'Only you see this – nothing here is shown on jplundberg.com. What’s public is under Settings → jplundberg.com.': 'Bare du ser dette – ingenting her vises på jplundberg.com. Det som er offentlig ligger under Innstillinger → jplundberg.com.',
+    'Becomes “Home” in Travel, so departures and “leave by” start from here.': 'Blir «Hjem» i Reise, så avganger og «dra senest» regnes herfra.', 'Shown with your travel documents and on the Health page.': 'Vises sammen med reisedokumentene og på Helse-siden.',
+    'The office becomes “Work” in Travel. The working day is what Flex time counts against.': 'Kontoret blir «Jobb» i Reise. Arbeidsdagen er det fleksitiden regnes mot.',
+    'Anything else you want to keep handy': 'Annet du vil ha for hånden', 'Anything you take regularly': 'Det du tar fast', 'Company': 'Firma', 'Full name': 'Fullt navn', 'Job title': 'Stilling', 'Name and clinic': 'Navn og legekontor', 'Ring, hat …': 'Ring, lue …',
+    'Search for the office address': 'Søk etter kontoradressen', 'Search for your address': 'Søk etter adressen din', 'e.g. Mother, partner': 'f.eks. mor, partner',
+    /* Siri & Shortcuts */
+    'Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you tap Add.': 'Lenker som åpner dashbordet med noe klart til å legges til. Bruk dem i Snarveier-appen, med Siri («Hei Siri, før utgift») eller Bakpå-trykk (trykk to ganger på baksiden av telefonen). Ingenting lagres før du trykker Legg til.',
+    '“Hey Siri, log expense” – 2 minutes': '«Hei Siri, før utgift» – 2 minutter', 'Add what you say after it: “149 rema”, “fre 18 middag”, “løp 5 km”': 'Legg til det du sier etterpå: «149 rema», «fre 18 middag», «løp 5 km»',
+    'Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it\'s the same as in the app.': 'Lenkene åpnes i Safari. Første gang låser du opp der med koden din; dataene er synkronisert, så alt er likt som i appen.',
+    'Open the': 'Åpne', 'app →': '-appen →', '(new shortcut).': '(ny snarvei).', 'Add the action': 'Legg til handlingen', '. Type: Text. Prompt:': '. Type: Tekst. Spørsmål:', '– you\'ll say or type e.g. “149 rema”.': '– du sier eller skriver f.eks. «149 rema».',
+    'and paste the first link above (the one that ends in': 'og lim inn den første lenken over (den som slutter på', '). Then tap after it and insert': '). Trykk så etter den og sett inn', 'from the variables bar.': 'fra variabelfeltet.',
+    'Rename the shortcut to': 'Gi snarveien navnet', '. Now say “Hey Siri, log expense”.': '. Si nå «Hei Siri, log expense».', 'What did you buy?': 'Hva kjøpte du?',
+    /* Apple Health set-up */
+    'On your iPhone (5 minutes)': 'På iPhonen (5 minutter)', 'Once, in Cloudflare (3 minutes)': 'Én gang, i Cloudflare (3 minutter)', 'Paste the newest': 'Lim inn nyeste', 'into the Worker, if you haven\'t.': 'i Workeren, hvis du ikke har gjort det.',
+    ', duration: non-expiring. Copy the': ', varighet: utløper ikke. Kopier', 'straight into the Shortcut below – nowhere else.': 'rett inn i snarveien nedenfor – ingen andre steder.', '. Name:': '. Navn:', '. Action:': '. Handling:', '. Include:': '. Inkluder:', '. Save.': '. Lagre.',
+    'The token can only hand in health numbers – it can\'t read or change anything else.': 'Nøkkelen kan bare levere helsetall – den kan ikke lese eller endre noe annet.', ', name it': ', gi den navnet', '– Type: Steps, Start Date: is today. Then': '– Type: Steps, Start Date: is today. Så',
+    '→ Sum.': '→ Sum.', '– Type: Sleep, Start Date: is in the last 1 day,': '– Type: Sleep, Start Date: is in the last 1 day,', 'and': 'og',
+    '(keeps the Watch\'s Core, Deep and REM, so a night isn\'t counted twice). Then': '(beholder klokkens kjerne-, dyp- og REM-søvn, så en natt ikke telles to ganger). Så', '→ Duration, and': '→ Duration, og',
+    '. Headers:': '. Headers:', 'with your two values. Request Body:': 'med de to verdiene dine. Request Body:', 'fields': '-felt', ', each set with': ', hver satt med', '→ the blue': '→ den blå',
+    'under its own Calculate action. No date needed – today\'s is used.': 'under sin egen Calculate-handling. Ingen dato trengs – dagens brukes.', 'More numbers': 'Flere tall', '(optional): one': '(valgfritt): én', '(Start Date is today) + one': '(Start Date is today) + én',
+    'each, and a Number field with this name. Each gets its own tile, chart and goal.': 'hver, og et Number-felt med dette navnet. Hver får sin egen flis, sitt eget diagram og mål.',
+    'Run it once. Open the dashboard – a note says what arrived.': 'Kjør den én gang. Åpne dashbordet – en melding sier hva som kom inn.', '→ Time of Day, 22:30, Daily →': '→ Time of Day, 22:30, Daily →', '→ Health to dashboard.': '→ Health to dashboard.',
+    'Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.': 'Søvn kan komme som timer, minutter eller sekunder – dashbordet finner ut av det. Tall som mangler blir bare utelatt.',
+    'Number for Training': 'Tall for Trening', 'Threshold': 'Grense', 'Shortcuts →': 'Snarveier →',
+    /* jplundberg.com pages */
+    'A short message at the top of every page on jplundberg.com. Visitors can close it.': 'En kort melding øverst på hver side på jplundberg.com. Besøkende kan lukke den.', 'Link (optional)': 'Lenke (valgfritt)', 'Live': 'Publisert', 'Norwegian': 'Norsk',
+    'Publish announcement': 'Publiser kunngjøring', 'Show announcement': 'Vis kunngjøring', 'e.g. New article: What do FDVU users say?': 'f.eks. New article: What do FDVU users say?',
+    'Choose which sections are shown on the front page, and in which order.': 'Velg hvilke seksjoner som vises på forsiden, og i hvilken rekkefølge.', 'About': 'Om', 'Contact': 'Kontakt', 'Intro (name and title)': 'Intro (navn og tittel)', 'Latest articles': 'Siste artikler', 'Projects': 'Prosjekter',
+    'Publish front page': 'Publiser forsiden', 'Right now': 'Akkurat nå', 'Always last': 'Alltid sist', 'One line under your name on the front page about what you’re working on. Leave it empty to hide it.': 'Én linje under navnet ditt på forsiden om hva du jobber med. La den stå tom for å skjule den.',
+    'Articles': 'Artikler', 'Article': 'Artikkel', 'Project': 'Prosjekt', 'Publish featured': 'Publiser utvalgte',
+    'Hide an article or project from jplundberg.com, and show it again with one tap. The Norwegian and English versions follow each other. Changes are live in about a minute.': 'Skjul en artikkel eller et prosjekt fra jplundberg.com, og vis det igjen med ett trykk. Den norske og engelske versjonen følger hverandre. Endringer er ute om omtrent ett minutt.',
+    'Pin an article and a project first on the front page, with a “Featured” label. Choose “Newest” to show the latest as usual.': 'Fest en artikkel og et prosjekt først på forsiden, med merket «Utvalgt». Velg «Nyeste» for å vise de siste som vanlig.',
+    'No courses yet. Add them on the Work page (switch on “Courses & certificates” under Features).': 'Ingen kurs ennå. Legg dem til på Jobb-siden (slå på «Kurs og sertifikater» under Funksjoner).', 'Publish courses & certificates': 'Publiser kurs og sertifikater',
+    'Publish project progress': 'Publiser prosjektfremdrift', 'Publish cv': 'Publiser CV', 'Add job': 'Legg til jobb', 'Born': 'Født', 'CV page on jplundberg.com/cv/': 'CV-side på jplundberg.com/cv/', 'Contact details on the CV': 'Kontaktinfo på CV-en',
+    'Include articles': 'Ta med artikler', 'Include courses & certificates marked “In CV”': 'Ta med kurs og sertifikater merket «I CV»', 'Include projects': 'Ta med prosjekter', 'Nationality': 'Nasjonalitet', 'One per line.': 'Én per linje.', 'Open the CV': 'Åpne CV-en', 'Profile text': 'Profiltekst',
+    'One per line, with a level 0–100 after a comma, e.g.': 'Én per linje, med et nivå 0–100 etter et komma, f.eks.', '. Shown as bars in the sidebar.': '. Vises som stolper i sidefeltet.', 'from the site': 'fra nettsiden',
+    'The short text at the top of the CV. Empty = the About text from the website.': 'Den korte teksten øverst på CV-en. Tom = Om-teksten fra nettsiden.', 'Used by the CV and the Experience section on the front page. Until you add something here, the site’s own list is shown.': 'Brukes av CV-en og Erfaring-seksjonen på forsiden. Til du legger inn noe her, vises nettsidens egen liste.',
+    'Email and website are always there. Anything you add here is published to the website’s files, which are public – leave out what you don’t want online.': 'E-post og nettside er alltid med. Det du legger inn her publiseres i nettsidens filer, som er offentlige – utelat det du ikke vil ha på nett.',
+    'Two or three sentences about what you do.': 'To eller tre setninger om hva du gjør.', 'e.g. 30 June 1996': 'f.eks. 30. juni 1996',
+    'Add social': 'Legg til profil', 'Publish socials': 'Publiser profiler', 'Your profiles': 'Profilene dine', 'Network': 'Nettverk', 'username': 'brukernavn',
+    'Public: the profiles switched on here show on jplundberg.com (sidebar, front page and footer) after you tap Publish.': 'Offentlig: profilene som er slått på her vises på jplundberg.com (sidefelt, forside og bunntekst) når du trykker Publiser.',
+    'Username or link. The switch decides if it’s shown on jplundberg.com': 'Brukernavn eller lenke. Bryteren bestemmer om den vises på jplundberg.com',
+    'Change the texts on jplundberg.com. Empty a field (or tap': 'Endre tekstene på jplundberg.com. Tøm et felt (eller trykk', ') to go back to the original text. Changes are live about a minute after you publish.': ') for å gå tilbake til originalteksten. Endringer er ute omtrent ett minutt etter at du publiserer.',
+    'Couldn’t load the texts. Check your connection and try again.': 'Klarte ikke å laste tekstene. Sjekk tilkoblingen og prøv igjen.', 'Original': 'Original', 'Publish texts': 'Publiser tekster',
+    'A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (': 'Et mål på dashbordet kan holde en prosjektside på jplundberg.com oppdatert. Publiser et mål her, og gi prosjektets diagram målets navn (',
+    'in the project file). Only the name, the numbers and the date are published.': 'i prosjektfilen). Bare navnet, tallene og datoen publiseres.',
+    'From Cloudflare Web Analytics · no cookies, no personal data.': 'Fra Cloudflare Web Analytics · ingen informasjonskapsler, ingen personopplysninger.', 'Front page (English)': 'Forside (engelsk)', 'Front page (Norwegian)': 'Forside (norsk)',
+    'Most read pages': 'Mest leste sider', 'Page views': 'Sidevisninger', 'Visits': 'Besøk', 'Where visitors come from': 'Hvor besøkende kommer fra', 'Norway': 'Norge', 'Sweden': 'Sverige',
+    'A CV page built from your profile, experience, courses and projects – always up to date, and saved as PDF with one tap. It isn’t listed in search engines.': 'En CV-side laget av profilen, erfaringen, kursene og prosjektene dine – alltid oppdatert, og lagret som PDF med ett trykk. Den vises ikke i søkemotorer.',
+    'Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses & certificates” section on the front page – turn the section on under Front page).': 'Kursene og sertifikatene dine fra Jobb-siden. Slå på dem som kan vises på jplundberg.com (en «Kurs og sertifikater»-seksjon på forsiden – slå på seksjonen under Forside).',
+    '· on the page, “Save as PDF” prints it to a file.': '· på siden skriver «Lagre som PDF» den til en fil.', 'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
+    'CSV': 'CSV', 'PDF': 'PDF'
+  });
+  P.push(
+    [/^No spending logged in (.+)\.$/, 'Ingen utgifter ført i $1.'], [/^Spent, all years$/, 'Brukt, alle år'], [/^Spent, (.+)$/, function (m, a) { return 'Brukt, ' + tr(a).toLowerCase(); }],
+    [/^(\d+) % of spending( · new)?( ·)?$/, function (m, n, nw, d) { return n + ' % av forbruket' + (nw ? ' · ny' : '') + (d || ''); }],
+    [/^Spending so far this month: (.+) of a (.+) budget$/, 'Brukt hittil denne måneden: $1 av et budsjett på $2'], [/^Fixed (.+), spent (.+), left (.+)$/, 'Faste $1, brukt $2, igjen $3'],
+    [/^Spending per month, (.+) to (.+)\. Table below\.$/, 'Forbruk per måned, $1 til $2. Tabell nedenfor.'], [/^Visits per day, (.+)$/, function (m, a) { return 'Besøk per dag, ' + tr(a).toLowerCase(); }],
+    [/^(\d+) trips?$/, function (m, n) { return n + (n === '1' ? ' tur' : ' turer'); }], [/^(\d+) in total$/, '$1 totalt'], [/^(\d+) places?$/, function (m, n) { return n + (n === '1' ? ' sted' : ' steder'); }],
+    [/^Trips in (\d{4})$/, 'Turer i $1'], [/^Days away in (\d{4})$/, 'Dager borte i $1'], [/^Spent on travel (\d{4})$/, 'Brukt på reise i $1'],
+    [/^Training: (\d+) of (\d+) this week$/, 'Trening: $1 av $2 denne uka'], [/^(.+): (\d+) of (\d+) this week$/, function (m, a, x, y) { return tr(a) + ': ' + x + ' av ' + y + ' denne uka'; }],
+    [/^(\d+) more · (\d+) days left – today counts$/, '$1 til · $2 dager igjen – i dag teller'], [/^an even pace for (.+)\.$/, 'et jevnt tempo for $1.'], [/^av this week’s targets so far$/, 'av ukas mål så langt'], [/^of this week’s targets so far$/, 'av ukas mål så langt'],
+    [/^(\d+) tips$/, '$1 tips'], [/^(.+) er over fristen$/, '$1 er over fristen'], [/^Rent is overdue$/, 'Husleien er over fristen'],
+    [/^Shown · (.+)$/, 'Vises · $1'], [/^Hidden · (.+)$/, 'Skjult · $1'], [/^Show (.+) on the website$/, function (m, a) { return 'Vis ' + a + ' på nettsiden'; }], [/^Show (.+) on jplundberg\.com$/, function (m, a) { return 'Vis ' + a + ' på jplundberg.com'; }],
+    [/^(Instagram|LinkedIn|GitHub|Facebook|X|YouTube|TikTok) username or link$/, 'Brukernavn eller lenke for $1'], [/^Open (Instagram|LinkedIn|GitHub|Facebook|X|YouTube|TikTok)$/, 'Åpne $1'],
+    [/^Colour for (.+)$/, function (m, a) { return 'Farge for ' + tr(a); }], [/^Number for (.+)$/, 'Tall for $1'],
+    [/^(.+) workdays? during (.+)$/, function (m, n, a) { return n + ' arbeidsdager under ' + a; }],
+    [/^(\d+) hidden$/, '$1 skjult'], [/^(\d+) of (\d+) sections shown$/, '$1 av $2 seksjoner vises'], [/^(\d+) % of this week’s targets so far$/, '$1 % av ukas mål så langt'],
+    [/^(.+) kr more than usual$/, '$1 kr mer enn vanlig'], [/^Category for (.+)$/, 'Kategori for $1'],
+    [/^You spend about (.+) a day – (.+) a day keeps you on budget$/, 'Du bruker omtrent $1 om dagen – $2 om dagen holder deg innenfor budsjettet']
+  );
+
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;
