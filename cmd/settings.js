@@ -635,6 +635,26 @@
       $('stRestoreAsk').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }).catch(function () { stMsg('That file isn’t a dashboard backup.', false); });
   });
+  /* the daily snapshots on the server (worker.js): undo a mistake by going back a day or more */
+  function snaps() {
+    var box = $('stSnaps'); if (!box) return;
+    fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
+      var l = (d.snaps || []).slice(0, 14);
+      box.innerHTML = l.length ? l.map(function (k) {
+        return '<li><span>' + new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '<small class="muted"> · as it was at the start of the day</small></span><button type="button" class="text-btn" data-snap="' + k + '">Restore</button></li>';
+      }).join('') : '<li class="muted">None yet – the first one is kept tomorrow, after your first change.</li>';
+    }).catch(function () { box.innerHTML = '<li class="muted">Paste the newest worker.js into your Worker to keep daily versions on the server.</li>'; });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-snap]'); if (!b) return;
+    b.disabled = true;
+    fetch('/cmd/api/vault?snap=' + b.dataset.snap, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) {
+      restoreText = t;
+      $('stRestoreInfo').textContent = 'This is your dashboard as it was on ' + new Date(b.dataset.snap + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + '. It opens with the passcode you had then.';
+      $('stRestoreAsk').hidden = false; $('stRestoreAsk').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }).catch(function () { stMsg('Couldn’t get that version right now.', false); }).then(function () { b.disabled = false; });
+  });
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-go="data"]')) setTimeout(snaps, 50); });
   $('stRestoreNo').addEventListener('click', function () { restoreText = null; $('stRestoreAsk').hidden = true; });
   $('stRestoreYes').addEventListener('click', function () {
     if (!restoreText) return;

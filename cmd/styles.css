@@ -2682,3 +2682,4 @@ kbd, .sr-k { white-space: nowrap; display: inline-grid; place-items: center; min
 .rd-t { font-size: 18px; } .rd-tip { margin: 4px 0 8px; color: var(--muted); font-size: 14px; line-height: 1.45; }
 .rd-why { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text); line-height: 1.6; }
 .lf-sec h4 small { text-transform: none; letter-spacing: 0; margin-left: 6px; font-weight: 500; }
+.st-snaps li { justify-content: space-between; align-items: center; } .st-snaps li > span { min-width: 0; }

@@ -48,7 +48,10 @@
     if (pwLoading[k]) return null;
     pwLoading[k] = true;
     var d = fromKey(k), url = 'https://www.hvakosterstrommen.no/api/v1/prices/' + d.getFullYear() + '/' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '_NO1.json';
-    fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (l) {
+    /* through your Worker (cached, no browser limits); straight from the source if the Worker is older */
+    var get = function (u) { return fetch(u, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); };
+    get('/cmd/api/power?date=' + k).catch(function () { return get(url); }).then(function (l) {
+      if (!Array.isArray(l)) throw new Error('bad');
       /* by the hour (the market gives 15-minute prices since autumn 2025) – incl. 25 % VAT, in øre */
       var h = []; for (var i = 0; i < 24; i++) h.push([]);
       l.forEach(function (x) { var t = new Date(x.time_start); if (dkey(t) === k) h[t.getHours()].push(x.NOK_per_kWh * 125); });

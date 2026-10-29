@@ -19,6 +19,10 @@
                       service token. They wait here (numbers only – steps, sleep, heart rate …)
                       until the dashboard picks them up, puts them in your encrypted vault and
                       deletes them. A service token can only use this endpoint.
+   /cmd/api/power     electricity prices for Oslo (NO1) from hvakosterstrommen.no, cached at the edge.
+   /cmd/api/ping      a quick health check: is the worker up, and which vault version does it hold.
+   Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
+                      the last 30 days), so a mistake can be undone from Settings → Data & sync.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -35,6 +39,7 @@
    Settings → Triggers → Cron Triggers: "Every 5 minutes" (only needed for notifications)   */
 
 const KEY = 'vault';
+const SNAP = 'vault:snap:';
 const MAX_BYTES = 5 * 1024 * 1024;
 const SITE_FILE = '_data/site.json';
 const SECTIONS = ['about', 'resume', 'courses', 'projects', 'articles'];
@@ -43,10 +48,21 @@ const SOCIALS = { linkedin: 'linkedin.com', instagram: 'instagram.com', facebook
   threads: 'threads.net', youtube: 'youtube.com', snapchat: 'snapchat.com', strava: 'strava.com', github: 'github.com' };
 
 export default {
+  /* every request gets a clear JSON answer – also when GitHub, Cloudflare or a calendar is down */
   async fetch(request, env) {
+    try { return await route(request, env); }
+    catch (e) { console.log('error', request.method, new URL(request.url).pathname, e && e.stack || e); return json({ error: 'server error', detail: String(e && e.message || e).slice(0, 200) }, 500); }
+  },
+  /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendDue(env));
+  }
+};
+
+async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -64,13 +80,10 @@ export default {
     if (path === '/cmd/api/calendar') return calendarFeed(request);
     if (path === '/cmd/api/texts') return textsApi(request, env);
     if (path === '/cmd/api/push') return pushApi(request, env);
+    if (path === '/cmd/api/power') return powerApi(url);
+    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
     return vault(request, env);
-  },
-  /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendDue(env));
-  }
-};
+}
 
 /* ---------- Apple Health inbox ---------- */
 const HEALTH_KEY = 'health:inbox';
@@ -213,6 +226,18 @@ async function webPush(env, sub, msg) {
 async function vault(request, env) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') {
+    const u = new URL(request.url);
+    /* the daily snapshots: list them, or fetch one to restore */
+    if (u.searchParams.has('snaps')) {
+      const l = await env.VAULT.list({ prefix: SNAP });
+      return json({ snaps: l.keys.map(k => k.name.slice(SNAP.length)).sort().reverse() });
+    }
+    if (u.searchParams.has('snap')) {
+      const d = String(u.searchParams.get('snap'));
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return json({ error: 'bad date' }, 400);
+      const sv = await env.VAULT.get(SNAP + d);
+      return sv ? new Response(sv, { headers: hdrs() }) : json({ error: 'not found' }, 404);
+    }
     const v = await env.VAULT.get(KEY);
     return v ? new Response(v, { headers: hdrs() }) : json({ error: 'empty' }, 404);
   }
@@ -229,10 +254,31 @@ async function vault(request, env) {
     const cur = await env.VAULT.get(KEY);
     const curRev = cur ? JSON.parse(cur).rev || 0 : -1;
     if (cur && base !== curRev) return new Response(cur, { status: 409, headers: hdrs() });
+    /* first save of the day: keep yesterday's last version (30 days back) */
+    if (cur) {
+      const day = new Date().toISOString().slice(0, 10);
+      if (!(await env.VAULT.get(SNAP + day))) {
+        await env.VAULT.put(SNAP + day, cur, { expirationTtl: 31 * 864e2 });
+      }
+    }
     await env.VAULT.put(KEY, body);
     return json({ ok: true, rev: next.rev });
   }
   return json({ error: 'method not allowed' }, 405);
+}
+
+/* ---------- electricity prices (NO1), cached for an hour at the edge ---------- */
+async function powerApi(url) {
+  const d = String(url.searchParams.get('date') || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return json({ error: 'bad date' }, 400);
+  let r;
+  try {
+    r = await fetch('https://www.hvakosterstrommen.no/api/v1/prices/' + d.slice(0, 4) + '/' + d.slice(5, 7) + '-' + d.slice(8) + '_NO1.json',
+      { cf: { cacheTtl: 3600, cacheEverything: true }, headers: { 'User-Agent': 'jplundberg-dashboard' } });
+  } catch (e) { return json({ error: 'price service unreachable' }, 502); }
+  if (r.status === 404) return json({ error: 'not published yet' }, 404);
+  if (!r.ok) return json({ error: 'prices ' + r.status }, 502);
+  return new Response(await r.text(), { headers: { 'content-type': 'application/json', 'cache-control': 'private, max-age=900', 'x-robots-tag': 'noindex' } });
 }
 
 /* ---------- website settings in GitHub ---------- */
