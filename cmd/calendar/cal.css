@@ -25,16 +25,14 @@
   .cl-hero h1 { display: none; }
   .cl-hero { padding-bottom: 4px; }
   .cl { padding-bottom: 70px; }
-  .cl-bar { grid-template-columns: 1fr auto; }
+  .cl-bar { grid-template-columns: 1fr auto auto; }
   .cl-title { grid-column: 1; grid-row: 1; font-size: 24px; }
-  .cl-gear { grid-column: 2; grid-row: 1; justify-self: end; }
-  .cl-views { grid-column: 2; grid-row: 2; }
+  /* phones: "New event" sits next to the settings – no floating button over the calendar (+ in the top row adds anything) */
+  .cl-new { grid-column: 3; grid-row: 1; justify-self: end; margin-right: 46px; width: 36px; min-width: 0 !important; height: 36px !important; min-height: 36px !important; padding: 0 !important; border-radius: 50% !important; justify-content: center; font-size: 15px; }
+  .cl-gear { grid-column: 3; grid-row: 1; justify-self: end; }
+  .cl-views { grid-column: 2 / 4; grid-row: 2; }
   .cl-nav { grid-row: 2; }
-  .cl-new { position: fixed; z-index: 30; right: 18px; bottom: calc(92px + env(safe-area-inset-bottom));
-    width: 54px; height: 54px; padding: 0; border-radius: 50%; justify-content: center; font-size: 22px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
   .cl-new span { display: none; }
-  .cl-modal .cl-new { display: none; }
 }
 @media (min-width: 760px) { .cl-bar { grid-template-columns: auto 1fr auto auto auto; } }
 .cl-gear { width: 36px; height: 36px; font-size: 15px; }

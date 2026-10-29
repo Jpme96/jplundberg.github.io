@@ -423,7 +423,7 @@
 
   /* Biggest expenses */
   function top(months, ex) {
-    var list = inMonths(ex, months).slice().sort(function (a, b) { return b.amount - a.amount; }).slice(0, 8);
+    var list = inMonths(ex, months).slice().sort(function (a, b) { return b.amount - a.amount; }).slice(0, 5);
     $('fpTopNote').textContent = periodName(months);
     if (!list.length) { $('fpTop').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
     $('fpTop').innerHTML = list.map(function (e) {
