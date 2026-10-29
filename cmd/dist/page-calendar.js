@@ -1432,7 +1432,7 @@ try {
   $('clView').addEventListener('touchend', function (e) {
     if (!touch || view === 'list') return;
     var p = e.changedTouches[0], dx = p.clientX - touch.x, dy = p.clientY - touch.y;
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - touch.t < 600) step(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - touch.t < 600) { step(dx < 0 ? 1 : -1); var v = $('clView'); v.classList.remove('cl-swl', 'cl-swr'); void v.offsetWidth; v.classList.add(dx < 0 ? 'cl-swl' : 'cl-swr'); }
     touch = null;
   }, { passive: true });
 

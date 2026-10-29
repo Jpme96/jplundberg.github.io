@@ -313,6 +313,19 @@
   })();
   window.Vault.onLock(close);
 
+  /* shared from another app (Android share sheet → Dashboard): /cmd/?stitle=…&stext=…&surl=… opens a new task with it */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (!q.has('stitle') && !q.has('stext') && !q.has('surl')) return;
+    var u = (q.get('surl') || '').trim(), x = (q.get('stext') || '').trim(), ti = (q.get('stitle') || '').trim();
+    if (!u) { var m = x.match(/https?:\/\/\S+/); if (m) { u = m[0]; x = x.replace(m[0], '').trim(); } }
+    var text = [ti, x].filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' – ') || u;
+    if (u && text !== u) text += ' ' + u;
+    ['stitle', 'stext', 'surl'].forEach(function (k) { q.delete(k); });
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    window.Vault.onUnlock(function () { setTimeout(function () { open('todo', { t: text.slice(0, 300) }, ''); }, 350); });
+  })();
+
   /* links from Siri, Shortcuts or Back Tap: /cmd/?add=… opens the sheet filled in, ready to confirm */
   (function () {
     var q = new URLSearchParams(location.search), a = q.get('add');

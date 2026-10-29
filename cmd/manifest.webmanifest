@@ -9,13 +9,50 @@
   "background_color": "#0e0f11",
   "theme_color": "#0e0f11",
   "icons": [
-    { "src": "/cmd/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/cmd/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/cmd/assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/cmd/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cmd/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cmd/assets/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Calendar", "url": "/cmd/calendar/" },
-    { "name": "Travel", "url": "/cmd/travel/" },
-    { "name": "Finances", "url": "/cmd/finance/" }
-  ]
+    {
+      "name": "Plan my day",
+      "url": "/cmd/#plan"
+    },
+    {
+      "name": "New task",
+      "url": "/cmd/?add=task"
+    },
+    {
+      "name": "Calendar",
+      "url": "/cmd/calendar/"
+    },
+    {
+      "name": "Finances",
+      "url": "/cmd/finance/"
+    }
+  ],
+  "share_target": {
+    "action": "/cmd/",
+    "method": "GET",
+    "params": {
+      "title": "stitle",
+      "text": "stext",
+      "url": "surl"
+    }
+  }
 }

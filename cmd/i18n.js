@@ -394,6 +394,33 @@
     '· on the page, “Save as PDF” prints it to a file.': '· på siden skriver «Lagre som PDF» den til en fil.', 'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
     'CSV': 'CSV', 'PDF': 'PDF'
   });
+  /* Plan my day, gestures, keyboard, focus timer (only words not already above) */
+  (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
+    'Plan day': 'Planlegg dagen', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',
+    'Pick a task below, or type a new one': 'Velg en oppgave under, eller skriv en ny', 'Schedule': 'Sett av tid', 'Pick a slot': 'Velg et tidspunkt', 'Put it here': 'Legg den her',
+    'Take it out of the calendar': 'Ta den ut av kalenderen', 'Tasks': 'Oppgaver', 'New task – it goes straight into your top 3': 'Ny oppgave – den går rett inn i topp 3',
+    'No other open tasks.': 'Ingen andre åpne oppgaver.', 'Your day': 'Dagen din', 'Fill my day': 'Fyll dagen', 'Nothing left of today.': 'Ikke mer igjen av dagen.', 'Habits today': 'Vaner i dag',
+    'Free': 'Ledig', 'Done': 'Ferdig', 'Not done': 'Ikke ferdig', 'Next week': 'Neste uke', 'No date': 'Ingen dato', 'Focus this week': 'Fokus denne uken', 'Not focus': 'Ikke fokus', 'Delete': 'Slett',
+    'Top 3 done 🎉': 'Topp 3 ferdig 🎉', 'in your calendar': 'i kalenderen', 'Pick your top 3 and give them a time – 1 minute': 'Velg topp 3 og gi dem et tidspunkt – 1 minutt',
+    'Plan my day: one place in the morning for what today holds – and what you\'ll get done.': 'Planlegg dagen: ett sted om morgenen for hva dagen bringer – og hva du skal få gjort.',
+    'Top 3 is full – take one out in Plan my day': 'Topp 3 er full – ta ut én i Planlegg dagen',
+    'Commands': 'Kommandoer', 'Go to': 'Gå til', 'Pick your top 3 and put them in the calendar': 'Velg topp 3 og legg dem i kalenderen', 'New task': 'Ny oppgave',
+    'Add something to your to-do list': 'Legg noe til på gjøremålslisten', 'Quick add': 'Legg til raskt', 'Expense, event, workout, task or note': 'Utgift, hendelse, trening, oppgave eller notat',
+    'Start a focus timer': 'Start fokustimer', 'Pause or resume the focus timer': 'Pause eller fortsett fokustimeren', '25 minutes on one task, then a break': '25 minutter på én oppgave, så en pause',
+    'Light mode': 'Lyst tema', 'Dark mode': 'Mørkt tema', 'Switch the look': 'Bytt utseende', 'Lock now': 'Lås nå', 'Lock the dashboard on this device': 'Lås dashbordet på denne enheten',
+    'Keyboard shortcuts': 'Hurtigtaster', 'All the keys': 'Alle tastene', 'Everywhere': 'Overalt', 'Search and commands': 'Søk og kommandoer', 'Quick add – expense, event, note …': 'Legg til raskt – utgift, hendelse, notat …',
+    'Focus timer – start or pause': 'Fokustimer – start eller pause', 'Dark or light': 'Mørkt eller lyst', 'Lock': 'Lås', 'Previous / next': 'Forrige / neste', 'Task menu – top 3, move, focus': 'Oppgavemeny – topp 3, flytt, fokus',
+    'Right-click': 'Høyreklikk', 'Focus timer – 25 min': 'Fokustimer – 25 min', 'Focus': 'Fokus', 'Break': 'Pause', 'Pause': 'Pause', 'Resume': 'Fortsett', 'Stop': 'Stopp', 'Stopped': 'Stoppet',
+    'Focus for 25 minutes': 'Fokus i 25 minutter', 'Pick a task – or just start.': 'Velg en oppgave – eller bare start.', 'Just start': 'Bare start', 'Start a focus timer ': 'Start fokustimer',
+    'Well done – take a 5-minute break.': 'Bra jobbet – ta 5 minutter pause.', 'Break over – ready for the next one?': 'Pausen er over – klar for neste?', 'More numbers – swipe': 'Flere tall – sveip'
+  });
+  P.push(
+    [/^(\d+) events?$/, function (m, n) { return n + (n === '1' ? ' hendelse' : ' hendelser'); }], [/^(\d+) tasks? due$/, function (m, n) { return n + (n === '1' ? ' oppgave' : ' oppgaver') + ' forfaller'; }],
+    [/^(\d+) habits? left$/, function (m, n) { return n + (n === '1' ? ' vane' : ' vaner') + ' igjen'; }], [/^(\d+) of 3 picked$/, '$1 av 3 valgt'], [/^(\d+) in the calendar$/, '$1 i kalenderen'],
+    [/^(\d+) more in To-do$/, '$1 til i Gjøremål'], [/^(\d+) of (\d+) done$/, '$1 av $2 ferdig'], [/^Today: (.+)$/, 'I dag: $1'], [/^Done today: (.+)$/, 'Ferdig i dag: $1'],
+    [/^(.+) → (today|tomorrow|next week|no date)$/, function (m, a, w) { return a + ' → ' + { today: 'i dag', tomorrow: 'i morgen', 'next week': 'neste uke', 'no date': 'ingen dato' }[w]; }],
+    [/^(\d+) min focused today$/, '$1 min fokus i dag'], [/^(.+) – (\d+:\d\d) left$/, function (m, a, t) { return tr(a) + ' – ' + t + ' igjen'; }]
+  );
   P.push(
     [/^No spending logged in (.+)\.$/, 'Ingen utgifter ført i $1.'], [/^Spent, all years$/, 'Brukt, alle år'], [/^Spent, (.+)$/, function (m, a) { return 'Brukt, ' + tr(a).toLowerCase(); }],
     [/^(\d+) % of spending( · new)?( ·)?$/, function (m, n, nw, d) { return n + ' % av forbruket' + (nw ? ' · ny' : '') + (d || ''); }],

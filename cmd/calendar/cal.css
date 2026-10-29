@@ -275,3 +275,7 @@
 .clf-row.off .clf-name { color: var(--muted); }
 .clf-only { font-size: 12.5px; }
 @media (max-width: 480px) { .clf-panel { position: fixed; left: 12px; right: 12px; width: auto; top: auto; bottom: calc(84px + env(safe-area-inset-bottom)); max-height: 62vh; } }
+/* swiping between months on a phone */
+.cl-swl > * { animation: clSwL .28s var(--ease-ios); } .cl-swr > * { animation: clSwR .28s var(--ease-ios); }
+@keyframes clSwL { from { opacity: .3; transform: translateX(28px); } } @keyframes clSwR { from { opacity: .3; transform: translateX(-28px); } }
+.mo-off .cl-swl > *, .mo-off .cl-swr > * { animation: none; }

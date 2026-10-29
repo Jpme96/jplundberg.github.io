@@ -1,4 +1,4 @@
-/* Built by cmd/build.py from: smart.js, search.js, app.js, quick.js, notify.js, ahealth.js, tilekit.js, pagekit.js, nav.js – edit those files, not this one. */
+/* Built by cmd/build.py from: smart.js, search.js, app.js, quick.js, notify.js, ahealth.js, tilekit.js, pagekit.js, focus.js, keys.js, nav.js – edit those files, not this one. */
 /* ===== smart.js ===== */
 try {
 /* Smart: understands a line you type, in Norwegian or English, and works out what it is.
@@ -300,7 +300,7 @@ try {
     ['announce', 'Announcement', 'Banner on jplundberg.com'], ['sections', 'Front page', 'Sections on jplundberg.com'], ['texts', 'Texts', 'Website texts'],
     ['featured', 'Featured', 'Pinned article and project'], ['content', 'Articles & projects', 'Show or hide'], ['visitors', 'Visitors', 'Website statistics']];
   function index() {
-    var out = [];
+    var out = commands().filter(function (c) { return c.g === 'Commands'; });
     function add(group, icon, title, sub, href, date, extra) { out.push({ g: group, i: icon, t: String(title || ''), s: sub || '', h: href, d: date || '', x: String(extra || '').toLowerCase() }); }
     var cal = readJSON('dash.calendar') || {};
     (cal.events || []).forEach(function (e) { add('Calendar', 'calendar-event', e.title, fmt(e.date) + (e.start && !e.allDay ? ' ' + e.start : '') + (e.location ? ' · ' + e.location : ''), home + 'calendar/#d=' + e.date, e.date, (e.location || '') + ' ' + (e.notes || '')); });
@@ -339,6 +339,20 @@ try {
     SETTINGS.forEach(function (s) { add('Settings', 'gear', s[1], s[2], home + '?settings=' + s[0], '', s[2]); });
     return out;
   }
+  /* things to do, not find: shown when the box is empty, and found by name ("plan", "focus", "dark") */
+  function commands() {
+    var K = window.Keys || {}, Q = window.Quick, out = [];
+    function cmd(i, t, s, k, run, x) { out.push({ g: 'Commands', i: i, t: t, s: s, k: k, run: run, h: '#', x: (x || '').toLowerCase(), d: '' }); }
+    cmd('sunrise', 'Plan my day', 'Pick your top 3 and put them in the calendar', 'P', function () { K.plan ? K.plan() : (location.href = home + '#plan'); }, 'plan day top 3 schedule planlegg dagen');
+    cmd('check2-square', 'New task', 'Add something to your to-do list', 'N', function () { K.newTask ? K.newTask() : Q && Q.open('todo'); }, 'todo task oppgave');
+    if (Q) cmd('plus-lg', 'Quick add', 'Expense, event, workout, task or note', 'A', function () { Q.open(); }, 'add expense event note utgift');
+    if (window.Focus) cmd('stopwatch', window.Focus.running() ? 'Pause or resume the focus timer' : 'Start a focus timer', '25 minutes on one task, then a break', 'F', function () { window.Focus.pick(); }, 'focus pomodoro timer fokus');
+    (K.pages ? K.pages() : []).forEach(function (a, n) { var nm = (a.textContent || '').trim(); out.push({ g: 'Go to', i: (((a.querySelector('i.bi') || {}).className || '').match(/bi-([a-z0-9-]+)/) || [0, 'arrow-right'])[1], t: nm, s: '', k: String(n + 1), h: a.getAttribute('href'), x: 'go page ' + nm.toLowerCase(), d: '' }); });
+    if (K.theme) cmd(document.documentElement.getAttribute('data-theme') === 'light' ? 'moon-stars' : 'sun', document.documentElement.getAttribute('data-theme') === 'light' ? 'Dark mode' : 'Light mode', 'Switch the look', 'D', K.theme, 'theme dark light mørk lys');
+    cmd('lock', 'Lock now', 'Lock the dashboard on this device', 'L', function () { window.Vault.lock(); }, 'lock lås');
+    if (K.help) cmd('keyboard', 'Keyboard shortcuts', 'All the keys', '?', K.help, 'keys shortcuts hurtigtaster');
+    return out;
+  }
   function search(q) {
     var words = q.toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return [];
@@ -369,21 +383,23 @@ try {
     var dsc = S.describe(p);
     return { g: 'Add', i: dsc.icon, t: 'Add ' + dsc.label.toLowerCase() + ': ' + dsc.bits[0], s: dsc.bits.slice(1).join(' · '), h: '#', act: p };
   }
+  var kbd = matchMedia('(hover: hover) and (pointer: fine)').matches;
   function draw() {
     var q = input.value.trim();
     results = search(q);
     var ad = q ? addRow(q) : null;
     if (ad) { if (results.length) results.push(ad); else results = [ad]; }
+    if (!q) results = commands();
     active = results.length ? 0 : -1;
-    if (!q) { res.innerHTML = '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>'; return; }
+    var hint = q ? '' : '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>';
     if (!results.length) { res.innerHTML = '<p class="sr-hint">Nothing found for “' + esc(q) + '”.</p>'; return; }
     var last = '', html = '';
     results.forEach(function (r, i) {
       if (r.g !== last) { html += '<p class="sr-g">' + esc(r.g) + '</p>'; last = r.g; }
       html += '<a class="sr-item' + (i === active ? ' on' : '') + '" data-i="' + i + '" href="' + esc(r.h) + '"' + (/^https?:/.test(r.h) && r.h.indexOf(location.host) < 0 ? ' target="_blank" rel="noopener"' : '') + '>' +
-        '<span class="sr-ic"><i class="bi bi-' + r.i + '"></i></span><span class="sr-x"><b>' + esc(r.t) + '</b><small>' + esc(r.s) + '</small></span></a>';
+        '<span class="sr-ic"><i class="bi bi-' + r.i + '"></i></span><span class="sr-x"><b>' + esc(r.t) + '</b>' + (r.s ? '<small>' + esc(r.s) + '</small>' : '') + '</span>' + (r.k && kbd ? '<kbd class="sr-k">' + esc(r.k) + '</kbd>' : '') + '</a>';
     });
-    res.innerHTML = html;
+    res.innerHTML = hint + html;
   }
   function mark() { res.querySelectorAll('.sr-item').forEach(function (a) { a.classList.toggle('on', +a.dataset.i === active); }); var on = res.querySelector('.sr-item.on'); if (on) on.scrollIntoView({ block: 'nearest' }); }
   function open() {
@@ -402,6 +418,7 @@ try {
   bg.addEventListener('click', function (e) {
     if (e.target === bg || e.target.closest('[data-srclose]')) return close();
     var a = e.target.closest('.sr-item');
+    if (a && results[+a.dataset.i] && results[+a.dataset.i].run) { e.preventDefault(); var fn = results[+a.dataset.i].run; close(); setTimeout(fn, 200); return; }
     if (a && results[+a.dataset.i] && results[+a.dataset.i].act) {
       e.preventDefault();
       if (window.Quick.add(results[+a.dataset.i].act)) { close(); setTimeout(function () { if (window.Dash && window.Dash.reload) window.Dash.reload(); }, 0); }
@@ -875,6 +892,19 @@ try {
     });
   })();
   window.Vault.onLock(close);
+
+  /* shared from another app (Android share sheet → Dashboard): /cmd/?stitle=…&stext=…&surl=… opens a new task with it */
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (!q.has('stitle') && !q.has('stext') && !q.has('surl')) return;
+    var u = (q.get('surl') || '').trim(), x = (q.get('stext') || '').trim(), ti = (q.get('stitle') || '').trim();
+    if (!u) { var m = x.match(/https?:\/\/\S+/); if (m) { u = m[0]; x = x.replace(m[0], '').trim(); } }
+    var text = [ti, x].filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' – ') || u;
+    if (u && text !== u) text += ' ' + u;
+    ['stitle', 'stext', 'surl'].forEach(function (k) { q.delete(k); });
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    window.Vault.onUnlock(function () { setTimeout(function () { open('todo', { t: text.slice(0, 300) }, ''); }, 350); });
+  })();
 
   /* links from Siri, Shortcuts or Back Tap: /cmd/?add=… opens the sheet filled in, ready to confirm */
   (function () {
@@ -1708,6 +1738,203 @@ try {
   window.PageKit = { apply: apply };
 })();
 } catch (e) { console.error("pagekit.js", e); }
+/* ===== focus.js ===== */
+try {
+/* Focus timer: 25 minutes on one task, then a 5-minute break (Pomodoro).
+   Start it from a task's menu (long-press or right-click), from Plan my day, from search/⌘K or with F.
+   A small pill floats above the menu bar on every page and keeps counting when you change page,
+   because the timer is a start time saved on this device (dash.focus), not a ticking script.
+   Finished sessions are kept in dash.focusLog (this device only) so the pill can say how long
+   you focused today. */
+(function () {
+  "use strict";
+  if (!window.Vault) return;
+  var KEY = 'dash.focus', LOG = 'dash.focusLog', WORK = 25, REST = 5;
+  function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function writeJSON(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function toast(h) { if (window.Quick && window.Quick.toast) window.Quick.toast(h); }
+
+  /* state: { text, id, mode: 'work'|'rest', end (ms), paused (ms left) } */
+  function st() { return readJSON(KEY, null); }
+  function left(s) { return s.paused != null ? s.paused : Math.max(0, s.end - Date.now()); }
+  function minsToday() { return (readJSON(LOG, []) || []).filter(function (x) { return x.d === today(); }).reduce(function (a, x) { return a + (x.m || 0); }, 0); }
+
+  function start(text, id, mins) {
+    writeJSON(KEY, { text: text || '', id: id || null, mode: 'work', mins: mins || WORK, end: Date.now() + (mins || WORK) * 60000 });
+    if (window.Notification && Notification.permission === 'default') { try { Notification.requestPermission(); } catch (e) {} }
+    draw(); tick();
+  }
+  function stop(logIt) {
+    var s = st(); if (!s) return;
+    if (logIt && s.mode === 'work') { var done = Math.round(((s.mins || WORK) * 60000 - left(s)) / 60000); if (done >= 1) logMins(done, s.text); }
+    writeJSON(KEY, null); draw();
+  }
+  function logMins(m, text) { var l = readJSON(LOG, []) || []; l.push({ d: today(), m: m, t: text || '' }); writeJSON(LOG, l.slice(-300)); }
+  function pause() { var s = st(); if (!s) return; if (s.paused != null) { s.end = Date.now() + s.paused; delete s.paused; } else s.paused = left(s); writeJSON(KEY, s); draw(); }
+
+  function ring(msg) {
+    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+    try { if (window.Notification && Notification.permission === 'granted' && document.hidden) new Notification('Focus', { body: msg, icon: '/cmd/assets/icons/icon-192.png', tag: 'focus' }); } catch (e) {}
+    toast('<i class="bi bi-stopwatch"></i> ' + esc(msg));
+  }
+  /* one step forward when a session runs out: work → break → done */
+  function roll() {
+    var s = st(); if (!s || s.paused != null || s.end > Date.now()) return;
+    if (s.mode === 'work') {
+      logMins(s.mins || WORK, s.text);
+      writeJSON(KEY, { text: s.text, id: s.id, mode: 'rest', mins: REST, end: s.end + REST * 60000 });
+      if (Date.now() < s.end + REST * 60000) ring('Well done – take a ' + REST + '-minute break.');
+      roll();
+    } else { writeJSON(KEY, null); if (Date.now() - s.end < 60000) ring('Break over – ready for the next one?'); }
+  }
+
+  /* ---------- the pill ---------- */
+  var pill = document.createElement('div'); pill.className = 'fo-pill'; pill.hidden = true; pill.setAttribute('role', 'timer');
+  document.body.appendChild(pill);
+  function mmss(ms) { var t = Math.ceil(ms / 1000), m = Math.floor(t / 60), x = t % 60; return m + ':' + String(x).padStart(2, '0'); }
+  function draw() {
+    roll();
+    var s = st(), unlocked = document.documentElement.classList.contains('unlocked');
+    pill.hidden = !s || !unlocked;
+    document.documentElement.classList.toggle('fo-on', !pill.hidden);
+    if (!s) { pill.innerHTML = ''; return; }
+    var ms = left(s), tot = (s.mins || (s.mode === 'rest' ? REST : WORK)) * 60000, pct = Math.max(0, Math.min(1, 1 - ms / tot));
+    var label = s.mode === 'rest' ? 'Break' : (s.text || 'Focus');
+    var html = '<span class="fo-ring" style="--p:' + pct.toFixed(3) + '"><i class="bi bi-' + (s.mode === 'rest' ? 'cup-hot' : 'stopwatch') + '"></i></span>' +
+      '<span class="fo-x"><b class="fo-time">' + mmss(ms) + '</b><small>' + esc(label) + '</small></span>' +
+      '<button type="button" class="icon-btn" data-fopause aria-label="' + (s.paused != null ? 'Resume' : 'Pause') + '"><i class="bi bi-' + (s.paused != null ? 'play-fill' : 'pause-fill') + '"></i></button>' +
+      '<button type="button" class="icon-btn" data-fostop aria-label="Stop"><i class="bi bi-stop-fill"></i></button>';
+    if (pill.dataset.k !== s.mode + (s.paused != null) + label) { pill.innerHTML = html; pill.dataset.k = s.mode + (s.paused != null) + label; pill.classList.toggle('rest', s.mode === 'rest'); pill.classList.toggle('paused', s.paused != null); }
+    else { pill.querySelector('.fo-time').textContent = mmss(ms); pill.querySelector('.fo-ring').style.setProperty('--p', pct.toFixed(3)); }
+    pill.setAttribute('aria-label', label + ' – ' + mmss(ms) + ' left');
+  }
+  var timer = null;
+  function tick() { clearInterval(timer); if (st()) timer = setInterval(function () { draw(); if (!st()) clearInterval(timer); }, 1000); }
+  pill.addEventListener('click', function (e) {
+    if (e.target.closest('[data-fopause]')) return pause();
+    if (e.target.closest('[data-fostop]')) { var s = st(); stop(true); var m = minsToday(); toast('<i class="bi bi-stopwatch"></i> Stopped' + (m ? ' · ' + m + ' min focused today' : '')); return; }
+  });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) { draw(); tick(); } });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) draw(); });
+  window.Vault.onUnlock(function () { draw(); tick(); });
+  if (window.Vault.onLock) window.Vault.onLock(function () { pill.hidden = true; });
+
+  /* ---------- choose what to focus on ---------- */
+  function pick() {
+    var s = st(); if (s) { pause(); return; }
+    var td = today(), list = (readJSON('dash.todos', []) || []).filter(function (t) { return !t.done; });
+    list.sort(function (a, b) { var ra = a.today === td ? (a.rank || 4) : 9, rb = b.today === td ? (b.rank || 4) : 9; return ra - rb; });
+    var top = list.slice(0, 5);
+    var bg = document.createElement('div'); bg.className = 'fo-bg';
+    bg.innerHTML = '<div class="fo-box" role="dialog" aria-modal="true" aria-label="Start a focus timer"><h3><i class="bi bi-stopwatch"></i> Focus for ' + WORK + ' minutes</h3>' +
+      '<p class="muted">Pick a task – or just start.</p>' +
+      top.map(function (t) { return '<button type="button" class="fo-opt" data-fotask="' + esc(t.id) + '">' + (t.today === td && t.rank ? '<span class="td-rank">' + t.rank + '</span> ' : '') + esc(t.text) + '</button>'; }).join('') +
+      '<button type="button" class="fo-opt" data-fotask=""><i class="bi bi-play-fill"></i> Just start</button>' +
+      '<div class="fo-foot"><button type="button" class="text-btn" data-foclose>Cancel</button></div></div>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var first = bg.querySelector('.fo-opt'); if (first) first.focus();
+    function close() { bg.remove(); document.removeEventListener('keydown', key, true); }
+    function key(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    document.addEventListener('keydown', key, true);
+    bg.addEventListener('click', function (e) {
+      if (e.target === bg || e.target.closest('[data-foclose]')) return close();
+      var b = e.target.closest('[data-fotask]'); if (!b) return;
+      var t = top.filter(function (x) { return x.id === b.dataset.fotask; })[0];
+      close(); start(t ? t.text : '', t ? t.id : null);
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-focus]'); if (!b) return;
+    e.preventDefault(); if (window.Plan && window.Plan.isOpen()) window.Plan.close();
+    if (b.dataset.focus) start(b.dataset.focusText || '', b.dataset.focus); else pick();
+  });
+  window.Focus = { start: start, stop: stop, pause: pause, pick: pick, running: function () { return !!st(); }, minsToday: minsToday };
+  draw(); tick();
+})();
+} catch (e) { console.error("focus.js", e); }
+/* ===== keys.js ===== */
+try {
+/* Keyboard shortcuts on a computer. Press ? to see them all.
+     ⌘K or /   search and commands        1–6   go to a page (in menu order)
+     N         new task                    P     plan my day
+     A         quick add                   F     focus timer (start / pause)
+     ,         settings                    D     dark / light
+     L         lock                        ?     this list
+   Single keys only work when you are not typing in a field and no window is open.
+   The calendar keeps its own keys (← → T N). */
+(function () {
+  "use strict";
+  if (!window.Vault) return;
+  var page = (location.pathname.match(/\/cmd\/([a-z]+)\//) || [])[1] || 'home';
+  var home = '/cmd/';
+  function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
+
+  function pages() {
+    var nav = document.querySelector('nav'); if (!nav) return [];
+    return Array.prototype.filter.call(nav.querySelectorAll('a[data-pg]'), function (a) { return a.offsetWidth || a.offsetHeight; })
+      .sort(function (a, b) { var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); return (ra.top - rb.top) || (ra.left - rb.left); });
+  }
+  function plan() { if (window.Plan) window.Plan.open(); else location.href = home + '#plan'; }
+  function newTask() {
+    var i = document.getElementById('todoInput');
+    if (i && i.offsetParent) { i.scrollIntoView({ block: 'center', behavior: 'smooth' }); i.focus({ preventScroll: true }); }
+    else if (window.Quick) window.Quick.open('todo');
+  }
+  function settings() { var b = document.getElementById('settingsBtn'); if (b) b.click(); else location.href = home + '?settings'; }
+  function theme() {
+    var s = readJSON('dash.settings', {}) || {}, cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    var b = document.querySelector('[data-theme-opt="' + (cur === 'light' ? 'dark' : 'light') + '"]');
+    if (b) { b.click(); return; }
+    s.theme = cur === 'light' ? 'dark' : 'light'; writeJSON('dash.settings', s); document.documentElement.setAttribute('data-theme', s.theme);
+  }
+  var ACT = { n: newTask, p: plan, a: function () { if (window.Quick) window.Quick.open(); }, f: function () { if (window.Focus) window.Focus.pick(); },
+    ',': settings, d: theme, l: function () { window.Vault.lock(); }, '?': help };
+
+  /* is a window open on top of the page? then single keys are left alone */
+  function busy() {
+    var r = document.documentElement;
+    if (r.classList.contains('cl-modal')) return true;
+    if (document.querySelector('.qa-bg:not([hidden]), .fo-bg, .kb-bg, .td-menu')) return true;
+    if (document.body.classList.contains('st-open') || (window.Plan && window.Plan.isOpen())) return true;
+    return false;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (!document.documentElement.classList.contains('unlocked')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    var t = e.target; if (/INPUT|TEXTAREA|SELECT/.test(t.tagName || '') || t.isContentEditable) return;
+    if (busy()) return;
+    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (page === 'calendar' && (k === 'n' || k === 't')) return;            // the calendar's own keys
+    if (/^[1-9]$/.test(k)) { var l = pages()[+k - 1]; if (l) { e.preventDefault(); l.click(); } return; }
+    if (ACT[k]) { e.preventDefault(); ACT[k](); }
+  });
+
+  /* ---------- the list (?) ---------- */
+  var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  function help() {
+    if (document.querySelector('.kb-bg')) return;
+    var names = pages().map(function (a, i) { return [String(i + 1), (a.textContent || '').trim()]; });
+    var rows = [[(mac ? '⌘' : 'Ctrl') + ' K', 'Search and commands'], ['/', 'Search'], ['N', 'New task'], ['A', 'Quick add – expense, event, note …'], ['P', 'Plan my day'], ['F', 'Focus timer – start or pause'], [',', 'Settings'], ['D', 'Dark or light'], ['L', 'Lock'], ['?', 'Keyboard shortcuts']];
+    var cal = [['← →', 'Previous / next'], ['T', 'Today'], ['N', 'New event']];
+    var kb = function (r) { return '<div class="kb-row"><span>' + r[1] + '</span><span>' + r[0].split(' ').map(function (x) { return '<kbd>' + x + '</kbd>'; }).join('') + '</span></div>'; };
+    var bg = document.createElement('div'); bg.className = 'kb-bg';
+    bg.innerHTML = '<div class="kb-box" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"><div class="kb-head"><h3><i class="bi bi-keyboard"></i> Keyboard shortcuts</h3><button type="button" class="icon-btn" data-kbclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+      '<div class="kb-cols"><div><p class="st-sub">Everywhere</p>' + rows.map(kb).join('') + '</div><div><p class="st-sub">Go to</p>' + names.map(function (n) { return kb([n[0], n[1]]); }).join('') +
+      '<p class="st-sub">Calendar</p>' + cal.map(kb).join('') + '<p class="st-sub">To-do</p>' + kb(['Right-click', 'Task menu – top 3, move, focus']) + '</div></div></div>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var x = bg.querySelector('[data-kbclose]'); x.focus();
+    function close() { bg.remove(); document.removeEventListener('keydown', key, true); }
+    function key(e) { if (e.key === 'Escape' || e.key === '?') { e.preventDefault(); e.stopPropagation(); close(); } }
+    document.addEventListener('keydown', key, true);
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-kbclose]')) close(); });
+  }
+  window.Keys = { help: help, plan: plan, newTask: newTask, theme: theme, settings: settings, pages: pages };
+})();
+} catch (e) { console.error("keys.js", e); }
 /* ===== nav.js ===== */
 try {
 /* Page menu: a floating pill – at the bottom on phones, at the top on larger screens.

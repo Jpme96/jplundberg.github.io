@@ -319,6 +319,8 @@
     return todos.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) {
       var x = a.t, y = b.t;
       if (!!x.done !== !!y.done) return x.done ? 1 : -1;
+      var td = dkey(new Date()), tx = x.today === td ? x.rank || 9 : 99, ty = y.today === td ? y.rank || 9 : 99;   // today's top 3 first
+      if (tx !== ty) return tx - ty;
       if (!!x.focus !== !!y.focus) return x.focus ? -1 : 1;
       var dx = x.due || big, dy = y.due || big;
       return dx < dy ? -1 : dx > dy ? 1 : a.i - b.i;
@@ -333,7 +335,7 @@
     $('todoList').innerHTML = all.map(function (t, i) {
       return '<li class="todo-item' + (t.done ? ' done' : '') + (i >= TOP && !todoAll ? ' td-more' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
-        '<span class="label">' + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
+        '<span class="label">' + (t.today === dkey(new Date()) && !t.done ? '<span class="td-rank" title="Top 3 today">' + (t.rank || '•') + '</span> ' : '') + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + '</span>' +
         '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
     }).join('') + (more > 0 ? '<li class="td-toggle"><button type="button" class="text-btn" data-tdall><i class="bi bi-chevron-' + (todoAll ? 'up' : 'down') + '"></i> ' + (todoAll ? 'Show fewer' : more + ' more task' + (more === 1 ? '' : 's')) + '</button></li>' : '');
     $('todoEmpty').hidden = todos.length > 0;
@@ -378,6 +380,86 @@
       t.done = !t.done; renderTodos();
     }
   });
+  /* ---------- gestures: swipe right = done, swipe left = tomorrow, hold (or right-click) = menu ---------- */
+  function moveTodo(t, due, label) {
+    var was = t.due; if (due) t.due = due; else delete t.due; renderTodos();
+    if (window.Quick) window.Quick.toast('<i class="bi bi-calendar-event"></i> ' + esc(t.text) + ' → ' + esc(label), function () { if (was) t.due = was; else delete t.due; renderTodos(); });
+  }
+  function dayFrom(n) { var d = new Date(); d.setDate(d.getDate() + n); return tkey(d); }
+  function nextMonday() { var d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return tkey(d); }
+  var sw = null;
+  $('todoList').addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse') return;
+    var li = e.target.closest('.todo-item'); if (!li || e.target.closest('.del')) return;
+    sw = { li: li, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
+    sw.hold = setTimeout(function () { if (sw && !sw.on && Math.abs(sw.dx) < 8) { var it = sw.li; sw = null; swEnd.justSwiped = Date.now() + 1200; if (navigator.vibrate) navigator.vibrate(10); todoMenu(it, e.clientX, e.clientY); } }, 520);
+  });
+  $('todoList').addEventListener('pointermove', function (e) {
+    if (!sw || e.pointerId !== sw.id) return;
+    var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (!sw.on) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { clearTimeout(sw.hold); sw = null; return; } if (Math.abs(dx) < 12) { sw.dx = dx; return; } sw.on = true; clearTimeout(sw.hold); sw.li.classList.add('swiping'); }
+    sw.dx = dx; sw.li.style.setProperty('--sx', dx + 'px');
+    sw.li.classList.toggle('sw-done', dx > 70); sw.li.classList.toggle('sw-later', dx < -70);
+  });
+  function swEnd() {
+    if (!sw) return; clearTimeout(sw.hold);
+    var li = sw.li, dx = sw.dx, on = sw.on; sw = null;
+    if (!on) return;
+    li.classList.remove('swiping'); li.style.removeProperty('--sx'); li.classList.remove('sw-done', 'sw-later');
+    var t = todos.filter(function (x) { return x.id === li.dataset.id; })[0]; if (!t) return;
+    if (dx > 90) { var c = li.querySelector('.check'); if (c) c.click(); }
+    else if (dx < -90 && !t.done) moveTodo(t, dayFrom(1), 'tomorrow');
+    swEnd.justSwiped = Date.now();
+  }
+  $('todoList').addEventListener('pointerup', swEnd);
+  $('todoList').addEventListener('pointercancel', function () { if (sw) { clearTimeout(sw.hold); sw.li.classList.remove('swiping', 'sw-done', 'sw-later'); sw.li.style.removeProperty('--sx'); sw = null; } });
+  /* a swipe isn't also a tap */
+  $('todoList').addEventListener('click', function (e) { if (swEnd.justSwiped && Date.now() - swEnd.justSwiped < 350) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  $('todoList').addEventListener('contextmenu', function (e) { var li = e.target.closest('.todo-item'); if (!li) return; e.preventDefault(); todoMenu(li, e.clientX, e.clientY); });
+  function todoMenu(li, x, y) {
+    var t = todos.filter(function (z) { return z.id === li.dataset.id; })[0]; if (!t) return;
+    closeMenu();
+    var td = tkey(new Date()), inTop = t.today === td && !t.done;
+    var items = [
+      ['done', t.done ? 'arrow-counterclockwise' : 'check2', t.done ? 'Not done' : 'Done'],
+      t.done ? null : ['top', 'trophy', inTop ? 'Remove from top 3' : 'Top 3 today'],
+      ['today', 'sun', 'Today'], ['tomorrow', 'sunrise', 'Tomorrow'], ['week', 'calendar-week', 'Next week'], ['nodate', 'calendar-x', 'No date'],
+      t.done || !window.Focus ? null : ['timer', 'stopwatch', 'Focus timer – 25 min'],
+      ['focus', 'star', t.focus ? 'Not focus' : 'Focus this week'], ['del', 'trash3', 'Delete']
+    ].filter(Boolean);
+    var m = document.createElement('div'); m.className = 'td-menu'; m.id = 'tdMenu'; m.dataset.y = scrollY; m.setAttribute('role', 'menu');
+    m.innerHTML = '<p class="td-menu-t">' + esc(t.text) + '</p>' + items.map(function (i) { return '<button type="button" role="menuitem" data-tdm="' + i[0] + '"' + (i[0] === 'del' ? ' class="danger"' : '') + '><i class="bi bi-' + i[1] + '"></i> ' + i[2] + '</button>'; }).join('');
+    document.body.appendChild(m);
+    /* keep it on screen and above the menu bar at the bottom of a phone */
+    var low = innerHeight - 8, under = document.elementFromPoint(innerWidth / 2, innerHeight - 4);
+    var bar = under && under.closest('nav'); if (bar && getComputedStyle(bar).position === 'fixed') low = Math.min(low, bar.getBoundingClientRect().top - 8);
+    var r = m.getBoundingClientRect(), px = Math.min(Math.max(8, x - r.width / 2), innerWidth - r.width - 8), py = y + 12 + r.height > low ? Math.max(8, Math.min(y - r.height - 12, low - r.height)) : y + 12;
+    m.style.left = px + 'px'; m.style.top = py + 'px';
+    m.querySelector('button').focus();
+    m.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tdm]'); if (!b) return; closeMenu();
+      var a = b.dataset.tdm;
+      if (a === 'done') { var c = li.querySelector('.check'); if (c) c.click(); }
+      else if (a === 'del') { var d = li.querySelector('.del'); if (d) d.click(); }
+      else if (a === 'today') moveTodo(t, td, 'today');
+      else if (a === 'tomorrow') moveTodo(t, dayFrom(1), 'tomorrow');
+      else if (a === 'week') moveTodo(t, nextMonday(), 'next week');
+      else if (a === 'nodate') moveTodo(t, null, 'no date');
+      else if (a === 'focus') { t.focus = !t.focus; renderTodos(); }
+      else if (a === 'timer') window.Focus.start(t.text, t.id);
+      else if (a === 'top') {
+        if (inTop) { delete t.today; delete t.rank; }
+        else { var n = todos.filter(function (z) { return z.today === td && !z.done; }).length; if (n >= 3) { if (window.Quick) window.Quick.toast('<i class="bi bi-trophy"></i> Top 3 is full – take one out in Plan my day'); return; } t.today = td; t.rank = n + 1; }
+        todos.filter(function (z) { return z.today === td && !z.done; }).sort(function (p, q) { return (p.rank || 9) - (q.rank || 9); }).forEach(function (z, i) { z.rank = i + 1; });
+        renderTodos(); window.dispatchEvent(new Event('plan:change'));
+      }
+    });
+  }
+  function closeMenu() { var m = document.getElementById('tdMenu'); if (m) m.remove(); }
+  document.addEventListener('pointerdown', function (e) { if (!e.target.closest('#tdMenu')) closeMenu(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+  window.addEventListener('scroll', function () { var m = document.getElementById('tdMenu'); if (m && Math.abs(scrollY - (+m.dataset.y || 0)) > 40) closeMenu(); }, { passive: true });
+
   $('todoClear').addEventListener('click', function () {
     var before = todos.slice();
     todos = todos.filter(function (t) { return !t.done; }); renderTodos();

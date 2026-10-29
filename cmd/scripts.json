@@ -13,6 +13,8 @@
     "ahealth.js",
     "tilekit.js",
     "pagekit.js",
+    "focus.js",
+    "keys.js",
     "nav.js"
   ],
   "pages": {
@@ -32,6 +34,7 @@
       "cal-card.js",
       "upnext.js",
       "review.js",
+      "plan.js",
       "brief.js",
       "checkin.js",
       "checklists.js",

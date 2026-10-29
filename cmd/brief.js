@@ -149,6 +149,7 @@
 
     /* to-dos with a day: overdue, today – and tomorrow's in the evening */
     (readJSON('dash.todos') || []).forEach(function (t) {
+      if (window.Plan && t.today === dkey(now) && !t.done) return;      // already in today's top 3 line
       if (!t || t.done || !/^\d{4}-\d{2}-\d{2}$/.test(t.due || '')) return;
       var n5 = daysTo(t.due);
       if (n5 < 0) add(13, 'exclamation-square', '#e66767', t.text, 'To-do · was due ' + inDays(n5), '#c=todo');
@@ -158,6 +159,13 @@
 
     /* the weekly check-in: Sunday afternoon and Monday */
     if (window.Checkin) { var ci = window.Checkin.due(now); if (ci) add(26, 'clipboard-check', '#8a6fdf', 'Weekly check-in', ci.sub, '#checkin', { checkin: true }); }
+    /* Plan my day: in the morning until you've planned; after that, today's top 3 */
+    if (window.Plan) {
+      var tk = dkey(now), all3 = (readJSON('dash.todos', []) || []).filter(function (t) { return t.today === tk; }), open3 = all3.filter(function (t) { return !t.done; });
+      if (all3.length) add(open3.length ? 12 : 40, open3.length ? 'trophy' : 'trophy-fill', '#c98500', open3.length ? 'Today: ' + open3.sort(function (a, b) { return (a.rank || 9) - (b.rank || 9); }).map(function (t) { return t.text; }).join(' · ') : 'Top 3 done 🎉',
+        (all3.length - open3.length) + ' of ' + all3.length + ' done' + (open3.some(function (t) { return t.block; }) ? ' · in your calendar' : ''), '#plan');
+      else if (now.getHours() >= 5 && now.getHours() < 13) { var seen = ''; try { seen = localStorage.getItem('dash.planSeen'); } catch (e) {} if (seen !== tk) add(14, 'sunrise', '#c98500', 'Plan your day', 'Pick your top 3 and give them a time – 1 minute', '#plan'); }
+    }
 
     /* work: clocked in */
     if (Fe && Fe.on('flex')) {
@@ -351,7 +359,7 @@
     var a = e.target.closest('a[href="#fin"]');
     if (a) { e.preventDefault(); var f = document.getElementById('fin'); if (f) f.scrollIntoView({ behavior: 'smooth' }); }
   });
-  ['review:seen', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
+  ['review:seen', 'plan:change', 'checkin:done', 'tips:change', 'dash:backup', 'todos:change', 'cal:change', 'tools:change', 'travel:change', 'fin:change', 'habits:change', 'features:change', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(render, 0); }); });
   setInterval(render, 60000);
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(render, 50); });
   window.Vault.onLock(function () { unlocked = false; box.innerHTML = ''; });

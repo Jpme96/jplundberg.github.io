@@ -24,7 +24,7 @@
     ['announce', 'Announcement', 'Banner on jplundberg.com'], ['sections', 'Front page', 'Sections on jplundberg.com'], ['texts', 'Texts', 'Website texts'],
     ['featured', 'Featured', 'Pinned article and project'], ['content', 'Articles & projects', 'Show or hide'], ['visitors', 'Visitors', 'Website statistics']];
   function index() {
-    var out = [];
+    var out = commands().filter(function (c) { return c.g === 'Commands'; });
     function add(group, icon, title, sub, href, date, extra) { out.push({ g: group, i: icon, t: String(title || ''), s: sub || '', h: href, d: date || '', x: String(extra || '').toLowerCase() }); }
     var cal = readJSON('dash.calendar') || {};
     (cal.events || []).forEach(function (e) { add('Calendar', 'calendar-event', e.title, fmt(e.date) + (e.start && !e.allDay ? ' ' + e.start : '') + (e.location ? ' · ' + e.location : ''), home + 'calendar/#d=' + e.date, e.date, (e.location || '') + ' ' + (e.notes || '')); });
@@ -63,6 +63,20 @@
     SETTINGS.forEach(function (s) { add('Settings', 'gear', s[1], s[2], home + '?settings=' + s[0], '', s[2]); });
     return out;
   }
+  /* things to do, not find: shown when the box is empty, and found by name ("plan", "focus", "dark") */
+  function commands() {
+    var K = window.Keys || {}, Q = window.Quick, out = [];
+    function cmd(i, t, s, k, run, x) { out.push({ g: 'Commands', i: i, t: t, s: s, k: k, run: run, h: '#', x: (x || '').toLowerCase(), d: '' }); }
+    cmd('sunrise', 'Plan my day', 'Pick your top 3 and put them in the calendar', 'P', function () { K.plan ? K.plan() : (location.href = home + '#plan'); }, 'plan day top 3 schedule planlegg dagen');
+    cmd('check2-square', 'New task', 'Add something to your to-do list', 'N', function () { K.newTask ? K.newTask() : Q && Q.open('todo'); }, 'todo task oppgave');
+    if (Q) cmd('plus-lg', 'Quick add', 'Expense, event, workout, task or note', 'A', function () { Q.open(); }, 'add expense event note utgift');
+    if (window.Focus) cmd('stopwatch', window.Focus.running() ? 'Pause or resume the focus timer' : 'Start a focus timer', '25 minutes on one task, then a break', 'F', function () { window.Focus.pick(); }, 'focus pomodoro timer fokus');
+    (K.pages ? K.pages() : []).forEach(function (a, n) { var nm = (a.textContent || '').trim(); out.push({ g: 'Go to', i: (((a.querySelector('i.bi') || {}).className || '').match(/bi-([a-z0-9-]+)/) || [0, 'arrow-right'])[1], t: nm, s: '', k: String(n + 1), h: a.getAttribute('href'), x: 'go page ' + nm.toLowerCase(), d: '' }); });
+    if (K.theme) cmd(document.documentElement.getAttribute('data-theme') === 'light' ? 'moon-stars' : 'sun', document.documentElement.getAttribute('data-theme') === 'light' ? 'Dark mode' : 'Light mode', 'Switch the look', 'D', K.theme, 'theme dark light mørk lys');
+    cmd('lock', 'Lock now', 'Lock the dashboard on this device', 'L', function () { window.Vault.lock(); }, 'lock lås');
+    if (K.help) cmd('keyboard', 'Keyboard shortcuts', 'All the keys', '?', K.help, 'keys shortcuts hurtigtaster');
+    return out;
+  }
   function search(q) {
     var words = q.toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return [];
@@ -93,21 +107,23 @@
     var dsc = S.describe(p);
     return { g: 'Add', i: dsc.icon, t: 'Add ' + dsc.label.toLowerCase() + ': ' + dsc.bits[0], s: dsc.bits.slice(1).join(' · '), h: '#', act: p };
   }
+  var kbd = matchMedia('(hover: hover) and (pointer: fine)').matches;
   function draw() {
     var q = input.value.trim();
     results = search(q);
     var ad = q ? addRow(q) : null;
     if (ad) { if (results.length) results.push(ad); else results = [ad]; }
+    if (!q) results = commands();
     active = results.length ? 0 : -1;
-    if (!q) { res.innerHTML = '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>'; return; }
+    var hint = q ? '' : '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>';
     if (!results.length) { res.innerHTML = '<p class="sr-hint">Nothing found for “' + esc(q) + '”.</p>'; return; }
     var last = '', html = '';
     results.forEach(function (r, i) {
       if (r.g !== last) { html += '<p class="sr-g">' + esc(r.g) + '</p>'; last = r.g; }
       html += '<a class="sr-item' + (i === active ? ' on' : '') + '" data-i="' + i + '" href="' + esc(r.h) + '"' + (/^https?:/.test(r.h) && r.h.indexOf(location.host) < 0 ? ' target="_blank" rel="noopener"' : '') + '>' +
-        '<span class="sr-ic"><i class="bi bi-' + r.i + '"></i></span><span class="sr-x"><b>' + esc(r.t) + '</b><small>' + esc(r.s) + '</small></span></a>';
+        '<span class="sr-ic"><i class="bi bi-' + r.i + '"></i></span><span class="sr-x"><b>' + esc(r.t) + '</b>' + (r.s ? '<small>' + esc(r.s) + '</small>' : '') + '</span>' + (r.k && kbd ? '<kbd class="sr-k">' + esc(r.k) + '</kbd>' : '') + '</a>';
     });
-    res.innerHTML = html;
+    res.innerHTML = hint + html;
   }
   function mark() { res.querySelectorAll('.sr-item').forEach(function (a) { a.classList.toggle('on', +a.dataset.i === active); }); var on = res.querySelector('.sr-item.on'); if (on) on.scrollIntoView({ block: 'nearest' }); }
   function open() {
@@ -126,6 +142,7 @@
   bg.addEventListener('click', function (e) {
     if (e.target === bg || e.target.closest('[data-srclose]')) return close();
     var a = e.target.closest('.sr-item');
+    if (a && results[+a.dataset.i] && results[+a.dataset.i].run) { e.preventDefault(); var fn = results[+a.dataset.i].run; close(); setTimeout(fn, 200); return; }
     if (a && results[+a.dataset.i] && results[+a.dataset.i].act) {
       e.preventDefault();
       if (window.Quick.add(results[+a.dataset.i].act)) { close(); setTimeout(function () { if (window.Dash && window.Dash.reload) window.Dash.reload(); }, 0); }
