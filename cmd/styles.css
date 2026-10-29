@@ -2439,3 +2439,6 @@ a.st-btn .st-label { flex: 1; }
 .ah-tiles.editing { grid-auto-rows: auto; }
 .ah-tile small { margin-top: auto; }
 .ah-tile { justify-content: flex-start; }
+.st-inv { list-style: none; margin: 0; padding: 6px 0; display: grid; gap: 8px; font-size: 14px; }
+.st-inv li { display: flex; gap: 10px; align-items: baseline; }
+.st-inv .bi { color: var(--accent); width: 16px; text-align: center; flex-shrink: 0; }

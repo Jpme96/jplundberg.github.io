@@ -597,6 +597,25 @@ try {
     if ($('stBackupWhen')) $('stBackupWhen').textContent = t ? 'Last one ' + new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'You haven’t taken one yet';
   }
   window.addEventListener('dash:backup', backupWhen);
+  /* What's saved: a quick count, so you can see your data is there (and where a CSV import went) */
+  function inventory() {
+    var box = $('stInventory'); if (!box || !window.Vault) return;
+    var d = window.Vault.get() || {}, ex = d.expenses || [], bank = ex.filter(function (e) { return e.src === 'bank'; });
+    var dates = ex.map(function (e) { return e.date; }).filter(Boolean).sort();
+    var mon = function (k) { return new Date(k + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+    var rd = function (k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } };
+    var todos = rd('dash.todos') || [], cal = rd('dash.calendar') || {}, evs = (cal.events || cal.list || []).length;
+    var lines = [
+      ['wallet2', ex.length ? ex.length + ' expense' + (ex.length === 1 ? '' : 's') + (dates.length ? ' · ' + (mon(dates[0]) === mon(dates[dates.length - 1]) ? mon(dates[0]) : mon(dates[0]) + ' – ' + mon(dates[dates.length - 1])) : '') : 'No expenses'],
+      ['upload', bank.length ? bank.length + ' from bank files' + (d.lastImport ? ' · last import ' + new Date(d.lastImport + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') : (d.lastImport ? 'Bank file imported ' + new Date(d.lastImport + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' – no expenses kept' : 'No bank file imported')],
+      ['pie-chart', d.budget && ((d.budget.income || []).length || (d.budget.fixed || []).length) ? 'Budget set up' : 'No budget yet'],
+      ['check2-square', todos.length + ' to-do' + (todos.length === 1 ? '' : 's') + (evs ? ' · ' + evs + ' calendar events' : '')],
+      ['heart-pulse', d.health && d.health.days ? Object.keys(d.health.days).length + ' days from Apple Health' : 'No Apple Health data']
+    ];
+    box.innerHTML = lines.map(function (l) { return '<li><i class="bi bi-' + l[0] + '"></i> ' + l[1] + '</li>'; }).join('');
+  }
+  window.addEventListener('st:page', function (e) { if (e.detail === 'data') inventory(); });
+  window.addEventListener('fin:change', inventory);
   if (window.Vault) window.Vault.onUnlock(function () { setTimeout(backupWhen, 0); });
   $('stRestore').addEventListener('click', function () { $('stRestoreFile').value = ''; $('stRestoreFile').click(); });
   $('stRestoreFile').addEventListener('change', function () {

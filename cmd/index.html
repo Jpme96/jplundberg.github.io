@@ -67,7 +67,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=92" rel="stylesheet">
+  <link href="styles.css?v=93" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -487,6 +487,8 @@
         <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span><i class="bi bi-upload"></i> Restore from a backup</span><small>Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
         <input type="file" id="stRestoreFile" accept=".json,application/json" hidden>
       </section>
+      <p class="st-sub ap-sub"><i class="bi bi-box-seam"></i> What’s saved <span class="st-hint">Counted on this device, from your encrypted data</span></p>
+      <section class="st-group"><ul class="st-inv" id="stInventory"></ul></section>
       <p class="st-intro st-after">Your data is encrypted with your passcode, synced through your server and kept in this browser. A backup file is a third copy – keep it in Files, iCloud Drive or on your computer. At a glance reminds you once a month.</p>
       <div class="st-confirm" id="stRestoreAsk" hidden>
         <p><b>Restore this backup?</b> <span id="stRestoreInfo"></span> Everything on the dashboard is replaced by it, on all your devices. Download a backup of what you have now first if you might want it back.</p>
@@ -699,8 +701,8 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=0ad854d341"></script>
-  <script src="dist/page-home.js?v=33489280e2"></script>
+  <script src="dist/head.js?v=03ee73a29c"></script>
+  <script src="dist/page-home.js?v=8c81b474bd"></script>
   <script src="dist/tail.js?v=855f99eace"></script>
   <!-- /scripts -->
 </body>
