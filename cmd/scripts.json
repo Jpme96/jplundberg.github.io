@@ -12,6 +12,7 @@
     "notify.js",
     "ahealth.js",
     "tilekit.js",
+    "pagekit.js",
     "nav.js"
   ],
   "pages": {

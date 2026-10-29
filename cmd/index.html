@@ -33,6 +33,7 @@
           r.style.setProperty('--on-accent', (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150 ? '#0a0b0c' : '#ffffff');
         }
         if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
+        if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
         var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
@@ -66,7 +67,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=83" rel="stylesheet">
+  <link href="styles.css?v=86" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a></nav>
@@ -393,6 +394,8 @@
         <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
         <p class="st-sub">Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
         <div id="stLists"></div>
+        <p class="st-sub">Menu <span class="st-hint">The order of the pages in the menu</span></p>
+        <div id="stNav"></div>
         <p class="st-sub">Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
         <div id="stCards"></div>
       </section>
@@ -668,9 +671,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=f7528788cf"></script>
+  <script src="dist/head.js?v=493b21ccfb"></script>
   <script src="dist/page-home.js?v=6be9079dfe"></script>
-  <script src="dist/tail.js?v=14f2f4ab26"></script>
+  <script src="dist/tail.js?v=bb3a55c752"></script>
   <!-- /scripts -->
 </body>
 </html>

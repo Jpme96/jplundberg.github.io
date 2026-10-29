@@ -210,7 +210,7 @@
         return '<div class="ah-edit-row" style="--c:' + m[3] + '"><span class="ah-l"><i class="bi bi-' + m[2] + '"></i> ' + m[1] + '</span>' +
           '<span class="seg" role="group" aria-label="' + esc(m[1]) + '">' + [['tile', 'Tile'], ['stack', 'Stack'], ['off', 'Hide']].map(function (o) { return '<button type="button" data-ahwhere="' + k + '" data-v="' + o[0] + '" aria-pressed="' + (wv === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</span>' +
           '<span class="ah-edit-mv"><button type="button" class="icon-btn" data-ahmove="' + k + '" data-d="-1" aria-label="Move ' + esc(m[1]) + ' up"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button><button type="button" class="icon-btn" data-ahmove="' + k + '" data-d="1" aria-label="Move ' + esc(m[1]) + ' down"' + (i < LY.order.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
-      }).join('') + '<div class="ah-edit-foot"><button type="button" class="text-btn" data-ahlayreset>Reset</button><button type="button" class="btn-primary" data-ahlayout>Done</button></div></div>';
+      }).join('') + '<div class="ah-edit-foot"><button type="button" class="text-btn" data-ahlayreset>Reset</button><button type="button" class="pill-btn" data-ahlayout>Done</button></div></div>';
     }
 
     /* the chart: 7, 14 or 30 days; tap a bar to see that day */

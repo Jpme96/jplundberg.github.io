@@ -16,6 +16,43 @@
   }
   draw();
   window.addEventListener('features:change', draw);
+
+  /* ---------- your own menu order (Settings → Dashboard → Menu). Home stays first. ----------
+     The head script sets --nav-<page> before the first frame; here the links are also put in that
+     order, so keyboard and screen readers follow what you see. */
+  function navOrder() { try { var o = (JSON.parse(localStorage.getItem('dash.settings')) || {}).navOrder; return Array.isArray(o) ? o : null; } catch (e) { return null; } }
+  function pages() { return Array.prototype.map.call(nav ? nav.querySelectorAll('a[data-pg]') : [], function (a) { return a.dataset.pg; }).filter(function (k) { return k !== 'home'; }); }
+  function sortedPages() {
+    var o = navOrder() || [], def = ['calendar', 'travel', 'finance', 'habits', 'work'];
+    return pages().sort(function (a, b) { var ia = o.indexOf(a), ib = o.indexOf(b); return (ia < 0 ? 50 + def.indexOf(a) : ia) - (ib < 0 ? 50 + def.indexOf(b) : ib); });
+  }
+  function applyOrder() {
+    if (!nav) return;
+    var r = document.documentElement, list = sortedPages();
+    list.forEach(function (k, i) { r.style.setProperty('--nav-' + k, i + 1); var a = nav.querySelector('a[data-pg="' + k + '"]'); if (a) nav.appendChild(a); });
+    var box = document.getElementById('stNav'); if (!box) return;
+    var name = function (k) { var a = nav.querySelector('a[data-pg="' + k + '"] span:last-child'); return a ? a.textContent : k; };
+    var icon = function (k) { var i = nav.querySelector('a[data-pg="' + k + '"] .bi'); return i ? i.className : 'bi bi-circle'; };
+    box.innerHTML = '<div class="st-row st-nav-row is-fixed"><span class="st-label"><i class="' + icon('home') + '"></i> ' + name('home') + '<small>Always first</small></span></div>' +
+      list.map(function (k, i) {
+        return '<div class="st-row st-nav-row"><span class="st-label"><i class="' + icon(k) + '"></i> ' + name(k) + '</span><span class="pk-mv">' +
+          '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="-1" aria-label="Move ' + name(k) + ' left"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +
+          '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="1" aria-label="Move ' + name(k) + ' right"' + (i < list.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
+      }).join('');
+  }
+  applyOrder();
+  window.addEventListener('dash:local', function () { var o = JSON.stringify(navOrder()); if (o !== applyOrder.last) { applyOrder.last = o; applyOrder(); } });
+  applyOrder.last = JSON.stringify(navOrder());
+  if (window.Vault) window.Vault.onUnlock(function () { setTimeout(applyOrder, 0); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-navmove]'); if (!b) return;
+    var list = sortedPages(), ix = list.indexOf(b.dataset.navmove), to = ix + (+b.dataset.d);
+    if (to < 0 || to >= list.length) return;
+    list.splice(to, 0, list.splice(ix, 1)[0]);
+    try { var st = JSON.parse(localStorage.getItem('dash.settings')) || {}; st.navOrder = list; localStorage.setItem('dash.settings', JSON.stringify(st)); } catch (x) {}
+    applyOrder.last = JSON.stringify(list); applyOrder(); window.dispatchEvent(new Event('dash:local'));
+    var nb = document.querySelector('[data-navmove="' + b.dataset.navmove + '"][data-d="' + b.dataset.d + '"]'); if (nb && !nb.disabled) nb.focus();
+  });
   document.documentElement.classList.add('has-tabbar');
 
   /* ---------- the highlight: one continuous slide to the page you tap ----------
@@ -59,7 +96,7 @@
 
   /* Slide your finger along the menu: the highlight follows, let go to open that page */
   var drag = null;
-  function tabs() { return Array.prototype.filter.call(nav.querySelectorAll('a[data-pg]'), function (a) { return a.offsetWidth; }); }
+  function tabs() { return Array.prototype.filter.call(nav.querySelectorAll('a[data-pg]'), function (a) { return a.offsetWidth; }).sort(function (a, b) { return a.getBoundingClientRect().left - b.getBoundingClientRect().left; }); }
   function tabAt(x) { var l = tabs(); for (var i = 0; i < l.length; i++) { var r = l[i].getBoundingClientRect(); if (x < r.right) return l[i]; } return l[l.length - 1]; }
   nav.addEventListener('touchstart', function (e) {
     var t = e.touches[0], pill = nav.querySelector('.tb-pill');

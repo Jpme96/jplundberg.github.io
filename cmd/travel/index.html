@@ -33,6 +33,7 @@
           r.style.setProperty('--on-accent', (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) > 150 ? '#0a0b0c' : '#ffffff');
         }
         if (a) { r.style.setProperty('--accent', a[0]); r.style.setProperty('--accent-rgb', a[1]); }
+        if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
         var bg = s.bgType || (s.bg === false ? 'none' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
         if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
@@ -66,9 +67,9 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=83" rel="stylesheet">
+  <link href="../styles.css?v=86" rel="stylesheet">
   <link href="../finance/fin.css?v=7" rel="stylesheet">
-  <link href="../calendar/cal.css?v=4" rel="stylesheet">
+  <link href="../calendar/cal.css?v=8" rel="stylesheet">
   <link href="travel.css?v=9" rel="stylesheet">
 </head>
 <body>
@@ -347,9 +348,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=f7528788cf"></script>
+  <script src="../dist/head.js?v=493b21ccfb"></script>
   <script src="../dist/page-travel.js?v=fff833655b"></script>
-  <script src="../dist/tail.js?v=14f2f4ab26"></script>
+  <script src="../dist/tail.js?v=bb3a55c752"></script>
   <!-- /scripts -->
 </body>
 </html>
