@@ -541,6 +541,79 @@
     [/^You spend about (.+) a day – (.+) a day keeps you on budget$/, 'Du bruker omtrent $1 om dagen – $2 om dagen holder deg innenfor budsjettet']
   );
 
+  /* Home life pages, Time per client, the FDV report */
+  (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
+    'House': 'Bolig', 'People': 'Personer', 'Food': 'Mat', 'Home life': 'Hjemme',
+    'Upkeep that comes round again, bin days, meter readings and the things worth knowing about your home.': 'Vedlikehold som kommer igjen, tømmedager, strømmåler og det som er greit å vite om boligen.',
+    'Birthdays, who you haven’t talked to in a while, and gift ideas – so nobody slips.': 'Bursdager, hvem du ikke har snakket med på en stund, og gaveideer – så ingen blir glemt.',
+    'This week’s dinners, the shopping list and your recipes – plan once, shop once.': 'Ukas middager, handlelista og oppskriftene dine – planlegg én gang, handle én gang.',
+    'Time per client': 'Tid per kunde', 'A timer per client or project, hours per week and a list to invoice from': 'En timer per kunde eller prosjekt, timer per uke og en liste å fakturere fra',
+    'A page for upkeep that comes round again, bin days, meter readings and home info': 'En side for vedlikehold, tømmedager, strømmåler og boliginfo',
+    'A page for birthdays, keeping in touch and gift ideas': 'En side for bursdager, å holde kontakten og gaveideer',
+    'A page for the week’s dinners, the shopping list and your recipes': 'En side for ukas middager, handlelista og oppskriftene dine',
+    'Upkeep': 'Vedlikehold', 'New upkeep task': 'Ny vedlikeholdsoppgave', 'Edit upkeep task': 'Endre vedlikeholdsoppgave', 'Task': 'Oppgave', 'How often': 'Hvor ofte', 'Last done': 'Sist gjort',
+    'Leave empty if it’s never been done – then it’s due now.': 'La stå tom hvis det aldri er gjort – da er det på tide nå.', 'How / notes': 'Hvordan / notater',
+    'Every month': 'Hver måned', 'Every 2 months': 'Hver 2. måned', 'Every 3 months': 'Hver 3. måned', 'Every 6 months': 'Hvert halvår', 'Every year': 'Hvert år', 'Every 2 years': 'Hvert 2. år', 'Every 5 years': 'Hvert 5. år',
+    'Overdue': 'Over tiden', 'Next 30 days': 'Neste 30 dager', 'Next up': 'Neste', 'Done today': 'Gjort i dag', 'Add the usual ones': 'Legg til de vanlige', 'not done yet': 'ikke gjort ennå',
+    'Things that need doing every few months – filters, drains, smoke alarms. You get a nudge when they’re due.': 'Ting som må gjøres med noen måneders mellomrom – filtre, sluk, røykvarslere. Du får et lite dytt når det er på tide.',
+    'Test the smoke alarms': 'Test røykvarslerne', 'New batteries in the smoke alarms': 'Nye batterier i røykvarslerne', 'Check the fire extinguisher': 'Sjekk brannslukkeren',
+    'Clean the heat pump filters': 'Rens filtrene i varmepumpa', 'Clean the shower and sink drains (sluk)': 'Rens sluk i dusj og vask', 'Change the ventilation filter': 'Bytt ventilasjonsfilter',
+    'Check under and around the water heater': 'Sjekk under og rundt varmtvannsberederen',
+    'Bin days': 'Tømmedager', 'New bin': 'Ny dunk', 'Edit bin': 'Endre dunk', 'Bin': 'Dunk', 'A pickup day': 'En tømmedag', 'Remind me the evening before': 'Påminnelse kvelden før',
+    'Any day it was (or will be) picked up – the rest follow from it.': 'En dag den ble (eller blir) tømt – resten regnes ut fra den.',
+    'Every week': 'Hver uke', 'Every 2 weeks': 'Annenhver uke', 'Every 3 weeks': 'Hver 3. uke', 'Every 4 weeks': 'Hver 4. uke', 'Every 8 weeks': 'Hver 8. uke',
+    'Add each bin once with a day it was picked up – you get a reminder the evening before.': 'Legg inn hver dunk én gang med en dag den ble tømt – du får en påminnelse kvelden før.',
+    'Picked up tomorrow': 'Tømmes i morgen', 'Out by 7 if it isn’t already': 'Ut innen kl. 7 hvis den ikke står ute',
+    'Electricity meter': 'Strømmåler', 'Reading': 'Avlesning', 'New reading': 'Ny avlesning', 'Edit reading': 'Endre avlesning', 'Meter shows': 'Måleren viser', 'New meter reading': 'Ny måleravlesning',
+    'Per day, lately': 'Per dag, nylig', 'Per day, avg': 'Per dag, snitt', 'last 12 months': 'siste 12 måneder', 'Per year': 'Per år', 'at that pace': 'i det tempoet', 'First reading': 'Første avlesning',
+    'Add one more reading to see how much you use.': 'Legg inn én avlesning til for å se hvor mye du bruker.', 'Read the electricity meter': 'Les av strømmåleren',
+    'Read the meter now and then (or copy the number from the app) – you see how much you use per day and per year.': 'Les av måleren av og til (eller kopier tallet fra appen) – så ser du hvor mye du bruker per dag og per år.',
+    'Good to know': 'Greit å vite', 'New note': 'Nytt notat', 'Edit note': 'Endre notat', 'What': 'Hva', 'Details': 'Detaljer',
+    'Where the stopcock and the fuse box are, the Wi-Fi password, paint colours, the landlord’s number – encrypted like the rest.': 'Hvor stoppekranen og sikringsskapet er, Wi-Fi-passordet, malingsfarger, nummeret til utleier – kryptert som alt annet.',
+    'New person': 'Ny person', 'Edit person': 'Endre person', 'Who': 'Hvem', 'Family': 'Familie', 'Friend': 'Venn', 'Birthday': 'Bursdag', 'Keep in touch': 'Hold kontakten', 'Last talked': 'Sist snakket',
+    'No reminder': 'Ingen påminnelse', 'Every month ': 'Hver måned', 'Once a year': 'Én gang i året', 'Gift ideas': 'Gaveideer', 'Talked today': 'Snakket i dag', 'Call': 'Ring', 'Message': 'Melding', 'Talked': 'Snakket',
+    'With the year, you also see how old they turn.': 'Med årstall ser du også hvor gammel de blir.', 'Jot them down when you hear them – one per line.': 'Skriv dem ned når du hører dem – én per linje.',
+    'Partner’s and kids’ names, allergies, what they’re up to.': 'Navn på partner og barn, allergier, hva de holder på med.',
+    'Birthdays': 'Bursdager', 'next 30 days': 'neste 30 dager', 'Catch up': 'Ta kontakt', 'it’s been a while': 'det er en stund siden', 'Coming up': 'Snart', 'No birthdays in the next four months.': 'Ingen bursdager de neste fire månedene.',
+    'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.': 'Legg inn de som betyr noe – med bursdag får du beskjed en uke før, med «hold kontakten» et dytt når det har gått for lenge.',
+    'Noted': 'Notert', 'Say hi': 'Si hei', 'Send a greeting': 'Send en hilsen',
+    'Dinners': 'Middager', 'What’s for dinner?': 'Hva blir det til middag?', 'Ingredients to the shopping list': 'Ingrediensene til handlelista', 'Fill the empty days': 'Fyll de tomme dagene',
+    'Previous week': 'Forrige uke', 'Next week': 'Neste uke', 'This week': 'Denne uka', 'Open the recipe': 'Åpne oppskriften', 'Nothing planned tonight': 'Ingenting planlagt i kveld', 'Planned for tonight': 'Planlagt i kveld',
+    'Shopping list': 'Handleliste', 'Add – milk, eggs, coffee': 'Legg til – melk, egg, kaffe', 'Add to the shopping list': 'Legg til i handlelista', 'Removed': 'Fjernet', 'Cleared': 'Fjernet', 'List copied': 'Lista er kopiert',
+    'Nothing to buy. Add things here, or send a week of recipes over from the dinners.': 'Ingenting å kjøpe. Legg til her, eller send ukas oppskrifter over fra middagene.',
+    'It’s all on the list already': 'Alt står på lista allerede', 'Already on the list': 'Står allerede på lista',
+    'Recipes': 'Oppskrifter', 'New recipe': 'Ny oppskrift', 'Edit recipe': 'Endre oppskrift', 'Name': 'Navn', 'Time': 'Tid', 'Ingredients': 'Ingredienser', 'How': 'Slik gjør du', 'Link': 'Lenke',
+    'One per line – they go to the shopping list as they are.': 'Én per linje – de havner på handlelista som de står.', 'Dinner today': 'Middag i dag', 'To the list': 'Til lista', 'Open': 'Åpne',
+    'Your go-to dinners. Plan them into the week and their ingredients go on the shopping list in one tap.': 'Favorittmiddagene dine. Legg dem inn i uka, og ingrediensene havner på handlelista med ett trykk.',
+    'Client': 'Kunde', 'Add time': 'Legg til tid', 'New client or project': 'Ny kunde eller prosjekt', 'Edit client or project': 'Endre kunde eller prosjekt', 'Who pays': 'Hvem betaler', 'Hourly rate': 'Timepris',
+    'Optional – shows what the hours are worth.': 'Valgfritt – viser hva timene er verdt.', 'Finished (hide it)': 'Ferdig (skjul)', 'Client / project': 'Kunde / prosjekt', 'hours': 'timer', 'e.g. 1,5 for an hour and a half': 'f.eks. 1,5 for en og en halv time',
+    'What you did': 'Hva du gjorde', 'Optional': 'Valgfritt', 'Edit time': 'Endre tid', 'Last week': 'Forrige uke', 'This month': 'Denne måneden', 'Worth': 'Verdi', 'at your rates': 'med dine timepriser', 'Clients': 'Kunder', 'with hours': 'med timer',
+    'Stop': 'Stopp', 'Edit clients': 'Endre kunder', 'Clients and projects': 'Kunder og prosjekter', 'Done': 'Ferdig', 'Stop the timer': 'Stopp timeren', 'Under a minute – not saved': 'Under ett minutt – ikke lagret', 'Summary copied': 'Sammendraget er kopiert',
+    'Add a client or project, then start a timer when you work on it – or add the hours afterwards. You get hours per week and a list to invoice from.': 'Legg til en kunde eller et prosjekt, og start en timer når du jobber med det – eller før timene etterpå. Du får timer per uke og en liste å fakturere fra.',
+    'PDF report': 'PDF-rapport', 'Close': 'Lukk', 'Photos': 'Bilder', 'Intro': 'Innledning', 'Save as PDF': 'Lagre som PDF', 'FDV inspection report': 'Tilstandsrapport – FDV-befaring', 'Worst grade': 'Verste grad',
+    'Date': 'Dato', 'Inspected by': 'Befart av', 'Company': 'Firma', 'Summary': 'Sammendrag', 'What should be done': 'Hva bør gjøres', 'Grade': 'Grad', 'Building part': 'Bygningsdel', 'Finding': 'Funn', 'Action': 'Tiltak',
+    'Findings by building part': 'Funn per bygningsdel', 'No findings were recorded.': 'Ingen funn registrert.', 'Notes': 'Notater', 'Condition grades': 'Tilstandsgrader',
+    'No issues': 'Ingen avvik', 'Minor issues': 'Mindre avvik', 'Significant issues': 'Vesentlige avvik', 'Serious issues': 'Store eller alvorlige avvik', 'Not examined': 'Ikke undersøkt',
+    'No signs of wear or damage.': 'Ingen tegn på slitasje eller skade.', 'Normal wear; some maintenance may be needed.': 'Normal slitasje; noe vedlikehold kan være nødvendig.',
+    'Significant wear or damage – should be followed up.': 'Vesentlig slitasje eller skade – bør følges opp.', 'Serious damage or risk – needs action now.': 'Alvorlig skade eller risiko – krever tiltak nå.', 'Not examined (no access).': 'Ikke undersøkt (ingen tilgang).',
+    'A short introduction at the top of the report – purpose, scope, weather, what you couldn’t access': 'En kort innledning øverst i rapporten – formål, omfang, vær, hva du ikke fikk tilgang til',
+    'Show 2 more': 'Vis 2 til', 'Recent': 'Siste'
+  });
+  P.unshift(
+    [/^Birthday (.+?)( \((\d+)\))?$/, function (m, a, b, n) { return 'Bursdag ' + a + (n ? ' (' + n + ')' : ''); }], [/^(.+)’s birthday today$/, '$1 har bursdag i dag'], [/^(.+)’s birthday (in \d+ days|tomorrow)$/, function (m, a, w) { return a + ' har bursdag ' + tr(w).toLowerCase(); }],
+    [/^(.+) · turns (\d+)( ·)?$/, function (m, a, n, d) { return tr(a) + ' · blir ' + n + (d || ''); }]
+  );
+  P.push(
+    [/^Action: (.+)$/, 'Tiltak: $1'], [/^Next time: (.+)$/, 'Neste gang: $1'], [/^last (\d.+)$/, 'sist $1'], [/^(.+) · turns (\d+)( · )?$/, function (m, a, n, d) { return tr(a) + ' · blir ' + n + (d || ''); }],
+    [/^talked (.+)$/, function (m, a) { return 'snakket ' + tr(a).toLowerCase(); }], [/^Last talked (.+)$/, function (m, a) { return 'Sist snakket ' + tr(a).toLowerCase(); }],
+    [/^(\d+) (days|weeks|months|years) ago$/, function (m, n, u) { return n + ' ' + { days: 'dager', weeks: 'uker', months: 'måneder', years: 'år' }[u] + ' siden'; }],
+    [/^Turns (\d+)$/, 'Blir $1'], [/ – turns (\d+)/, ' – blir $1'], [/^Gift idea: (.+)$/, 'Gaveidé: $1'], [/^Catch up with (.+)$/, 'Ta kontakt med $1'],
+    [/^Put out (.+) tonight$/, 'Sett ut $1 i kveld'], [/^(.+) is picked up today$/, '$1 tømmes i dag'], [/^Bin day: (.+)$/, 'Tømming: $1'], [/^\s*Next:\s*$/, ' Neste: '],
+    [/^Overdue since (.+)$/, 'Over tiden siden $1'], [/^Due (in \d+ days|today|tomorrow)$/, function (m, w) { return 'Frist ' + tr(w).toLowerCase(); }],
+    [/^Dinners · week (\d+)$/, 'Middager · uke $1'], [/^(\d) of 7 planned$/, '$1 av 7 planlagt'], [/^Dinner: (.+)$/, 'Middag: $1'], [/^(\d+) on the shopping list$/, '$1 på handlelista'],
+    [/^Since (\d\d:\d\d)$/, 'Siden $1'], [/^Start timer: (.+)$/, 'Start timer: $1'], [/^Export (this week|last week|this month) \(CSV\)$/, function (m, a) { return 'Eksporter ' + tr(a.charAt(0).toUpperCase() + a.slice(1)).toLowerCase() + ' (CSV)'; }],
+    [/^(\d+) finished$/, '$1 ferdige'], [/^(\d+) ingredients?$/, '$1 ingredienser'], [/^Show (\d+) more$/, 'Vis $1 til'], [/^Last reading (.+)$/, function (m, a) { return 'Sist lest av ' + tr(a).toLowerCase(); }]
+  );
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;

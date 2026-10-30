@@ -103,7 +103,7 @@
 
     /* reminders from your tools: renewals, expiring certificates, warranties, health, birthday */
     if (Fe) Fe.events().forEach(function (ev) {
-      if (ev.cat || ev.id.indexOf('todo:') === 0) return;
+      if (ev.cat || ev.noBrief || ev.id.indexOf('todo:') === 0) return;
       var start = ev.start, k = dkey(start), n = daysTo(k);
       if (ev.rule) { var nx = ev.id.indexOf('sub:') > -1 ? Fe.nextRenewal(Fe.list('subs').filter(function (s) { return 'rem:sub:' + s.id === ev.id; })[0] || {}) : null;
         if (ev.id === 'rem:bday') { var b = new Date(now.getFullYear(), start.getMonth(), start.getDate()); if (b < new Date(now.getFullYear(), now.getMonth(), now.getDate())) b.setFullYear(b.getFullYear() + 1); nx = dkey(b); }

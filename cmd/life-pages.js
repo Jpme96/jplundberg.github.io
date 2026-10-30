@@ -192,6 +192,7 @@
       (r.notes ? '<p class="kit-notes">' + esc(r.notes) + '</p>' : '') +
       '<div class="fdv-acts"><button type="button" class="text-btn" data-fdvcopy="' + esc(r.id) + '"><i class="bi bi-clipboard"></i> Copy summary</button>' +
       (navigator.share ? '<button type="button" class="text-btn" data-fdvshare="' + esc(r.id) + '"><i class="bi bi-share"></i> Share</button>' : '') +
+      '<button type="button" class="text-btn" data-fdvpdf="' + esc(r.id) + '"><i class="bi bi-file-earmark-pdf"></i> PDF report</button>' +
       '<button type="button" class="text-btn" data-fdvtodo="' + esc(r.id) + '"><i class="bi bi-box-arrow-in-right"></i> TG 2–3 to to-do</button>' +
       '<button type="button" class="text-btn" data-fdvedit="' + esc(r.id) + '"><i class="bi bi-pencil"></i> Edit</button></div></div>';
   }
@@ -245,6 +246,89 @@
     if (!item.text) return;
     var go = function () { saveFdv(id, function (r) { r.findings = r.findings || []; r.findings.push(item); }); };
     if (file) shrink(file).then(function (bl) { item.photo = 'ph-' + fid; return putPhoto(item.photo, bl); }).then(go, go); else go();
+  });
+
+  /* ---------- FDV report: a tidy A4 report – print it, or "Save as PDF" from the print sheet ---------- */
+  var RP = { photos: true };
+  function report(r) {
+    var f = r.findings || [], me = readJSON('dash.profile', {}) || {};
+    var by = function (t) { return f.filter(function (x) { return String(x.tg) === t; }); };
+    var worst = ['3', '2', '1', '0'].filter(function (t) { return by(t).length; })[0];
+    var tgb = function (t) { return '<span class="rp-tg" style="--c:' + TG[t][2] + '">' + TG[t][0] + '</span>'; };
+    var todo = f.filter(function (x) { return x.tg === '3' || x.tg === '2'; }).sort(function (a, b) { return a.tg < b.tg ? 1 : -1; });
+    var parts = PARTS.filter(function (p) { return f.some(function (x) { return x.part === p; }); });
+    var h = '<header class="rp-head"><div><p class="rp-kick">FDV inspection report</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
+      (r.address ? '<p class="rp-addr">' + esc(r.address) + '</p>' : '') + '</div>' +
+      (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small>Worst grade</small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
+      '<table class="rp-meta"><tr><th>Date</th><td>' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + '</td><th>Client</th><td>' + esc(r.client || '–') + '</td></tr>' +
+      '<tr><th>Inspected by</th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th>Company</th><td>' + esc(me.employer || '–') + '</td></tr></table>' +
+      (r.intro ? '<p class="rp-intro">' + esc(r.intro).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<h2>Summary</h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
+        return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + TG[t][1] + '</small></div>';
+      }).join('') + '</div>' +
+      (todo.length ? '<h2>What should be done</h2><table class="rp-todo"><thead><tr><th>Grade</th><th>Building part</th><th>Finding</th><th>Action</th></tr></thead><tbody>' + todo.map(function (x) {
+        return '<tr><td>' + tgb(x.tg) + '</td><td>' + esc(x.part) + '</td><td>' + esc(x.text) + '</td><td>' + esc(x.action || '–') + '</td></tr>';
+      }).join('') + '</tbody></table>' : '') +
+      '<h2>Findings by building part</h2>' + (parts.length ? parts.map(function (p) {
+        return '<section class="rp-part"><h3>' + esc(p) + '</h3>' + f.filter(function (x) { return x.part === p; }).map(function (x) {
+          return '<div class="rp-f">' + tgb(x.tg) + '<div class="rp-ft"><p>' + esc(x.text) + '</p>' + (x.action ? '<p class="rp-act">Action: ' + esc(x.action) + '</p>' : '') + '</div>' +
+            (x.photo && RP.photos ? '<img class="rp-ph" data-rph="' + esc(x.photo) + '" alt="">' : '') + '</div>';
+        }).join('') + '</section>';
+      }).join('') : '<p>No findings were recorded.</p>') +
+      (r.notes ? '<h2>Notes</h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<h2>Condition grades</h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
+        return '<tr><td>' + tgb(t) + '</td><td>' + ({ 0: 'No signs of wear or damage.', 1: 'Normal wear; some maintenance may be needed.', 2: 'Significant wear or damage – should be followed up.', 3: 'Serious damage or risk – needs action now.', iu: 'Not examined (no access).' }[t]) + '</td></tr>';
+      }).join('') + '</table>' +
+      '<footer class="rp-foot">' + esc(r.building || '') + ' · ' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + (me.email ? ' · ' + esc(me.email) : '') + (me.phone ? ' · ' + esc(me.phone) : '') + '</footer>';
+    return h;
+  }
+  function openReport(r) {
+    var bg = document.createElement('div'); bg.className = 'rp-bg';
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rpclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span>' +
+      '<label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> Photos</label>' +
+      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> Intro</button>' +
+      '<button type="button" class="pill-btn" data-rpprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
+      '<p class="rp-hint">In the print window, choose <b>Save as PDF</b> (on iPhone: pinch out on the preview, then Share).</p><textarea class="rp-introbox" rows="3" maxlength="1500" placeholder="A short introduction at the top of the report – purpose, scope, weather, what you couldn’t access" hidden></textarea><article class="rp-doc"></article>';
+    document.body.appendChild(bg); document.body.classList.add('rp-open');
+    var doc = bg.querySelector('.rp-doc');
+    function draw() {
+      doc.innerHTML = report(r);
+      doc.querySelectorAll('img[data-rph]').forEach(function (im) {
+        getPhoto(im.dataset.rph).then(function (b) {
+          if (!b) return im.remove();
+          var fr = new FileReader(); fr.onload = function () { im.src = fr.result; }; fr.readAsDataURL(b);       // a data URL survives printing
+        });
+      });
+    }
+    draw();
+    function close() { bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }
+    function key(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', key);
+    var ib = bg.querySelector('.rp-introbox'); ib.value = r.intro || '';
+    ib.addEventListener('input', function () { r.intro = ib.value.trim(); clearTimeout(draw.t); draw.t = setTimeout(function () { draw(); saveFdv(r.id, function (x) { x.intro = r.intro; }); }, 400); });
+    bg.addEventListener('change', function (e) { if (e.target.matches('[data-rpphotos]')) { RP.photos = e.target.checked; draw(); } });
+    bg.addEventListener('click', function (e) {
+      if (e.target.closest('[data-rpclose]')) return close();
+      if (e.target.closest('[data-rpintro]')) { var ta = bg.querySelector('.rp-introbox'); ta.hidden = !ta.hidden; if (!ta.hidden) ta.focus(); return; }
+      if (e.target.closest('[data-rpprint]')) {
+        var imgs = [].slice.call(doc.querySelectorAll('img[data-rph]')).filter(function (im) { return !im.complete || !im.src; });
+        var title = document.title;
+        var go = function () {
+          document.title = ('FDV ' + (r.building || '') + ' ' + (r.date || '')).trim();
+          document.body.classList.add('rp-printing');
+          var done = function () { document.body.classList.remove('rp-printing'); document.title = title; window.removeEventListener('afterprint', done); };
+          window.addEventListener('afterprint', done);
+          window.print();
+          setTimeout(done, 60000);
+        };
+        if (imgs.length) setTimeout(go, 400); else go();
+      }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fdvpdf]'); if (!b) return;
+    var r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvpdf; })[0];
+    if (r) openReport(r);
   });
 
   /* ======================= Holiday planner ======================= */

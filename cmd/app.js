@@ -48,7 +48,7 @@
   var F = window.Features;
   var box = $('ftList');
   if (!F || !box) return;
-  var GROUP_ICON = { Everyday: 'grid-1x2', Work: 'briefcase', Health: 'heart-pulse', Travel: 'airplane', Finance: 'wallet2' };
+  var GROUP_ICON = { Everyday: 'grid-1x2', Work: 'briefcase', Health: 'heart-pulse', Travel: 'airplane', Finance: 'wallet2', 'Home life': 'house-heart' };
   var GROUP_NOTE = {
     Everyday: 'The main parts. Switching one off hides its page, card and calendar items – nothing is deleted.',
     Work: 'Turning on any of these adds a Work page to the menu.',
@@ -57,7 +57,7 @@
     Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.'
   };
   /* added in October 2026 – marked until you've tried them */
-  var NEW = { voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1 };
+  var NEW = { voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1 };
   function render() {
     var groups = [];
     F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });

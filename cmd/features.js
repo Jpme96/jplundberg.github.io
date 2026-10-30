@@ -32,9 +32,13 @@
     { id: 'tripbudget', group: 'Travel', name: 'Trip budget mode', icon: 'cash-coin', c: '#0891b2', desc: 'While you’re away: what you can spend today' },
     { id: 'smartpack', group: 'Travel', name: 'Smart packing', icon: 'bag-check', c: '#0891b2', desc: 'A packing list from the trip’s length and the weather there' },
     { id: 'power', group: 'Finance', name: 'Strømpris', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours' },
-    { id: 'jars', group: 'Finance', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left' }
+    { id: 'jars', group: 'Finance', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left' },
+    { id: 'ptime', group: 'Work', name: 'Time per client', icon: 'hourglass-split', c: '#e8743b', desc: 'A timer per client or project, hours per week and a list to invoice from' },
+    { id: 'house', group: 'Home life', name: 'House', icon: 'house-gear', c: '#22b35e', desc: 'A page for upkeep that comes round again, bin days, meter readings and home info' },
+    { id: 'people', group: 'Home life', name: 'People', icon: 'people', c: '#d55181', desc: 'A page for birthdays, keeping in touch and gift ideas' },
+    { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes' }
   ];
-  var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday'];
+  var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday', 'ptime'];
   var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth', 'gym', 'rest'];       // the Health page shows if any is on
   var REMIND_COLOR = '#c9a227';
 
@@ -186,6 +190,26 @@
       if (!end) return;
       ev('war:' + w.id, 'Warranty ends: ' + (w.item || 'item'), end, w.store ? 'Bought at ' + w.store + (w.receipt ? '. Receipt: ' + w.receipt : '') : '', '/cmd/finance/#warranty');
     });
+    /* Home life: birthdays, bin days and upkeep (their own lines in At a glance come from home-life.js) */
+    var HL = window.HomeLife;
+    if (HL && on('people')) list('people').forEach(function (p) {
+      var b = HL.bday(p); if (!b) return;
+      out.push({ id: 'rem:pb:' + p.id, title: '🎈 ' + (p.name || 'Birthday') + (b.y ? ' (' + (fromKey(b.next).getFullYear() - b.y) + ')' : ''), allDay: true,
+        start: new Date(b.y && b.y > 1900 ? b.y : new Date().getFullYear() - 1, b.m - 1, b.d), days: 1, color: '#d55181', readOnly: true, reminder: true, noBrief: true,
+        link: '/cmd/people/', location: '', notes: p.gifts ? 'Gift ideas: ' + p.gifts : '', exDays: {}, rule: { freq: 'YEARLY', interval: 1 } });
+    });
+    if (HL && on('house')) {
+      list('hbins').forEach(function (b) {
+        if (!isKey(b.first)) return;
+        out.push({ id: 'rem:bin:' + b.id, title: 'Bin day: ' + (b.title || 'bin'), allDay: true, start: fromKey(b.first), days: 1, color: '#7a8794', readOnly: true, reminder: true, noBrief: true,
+          link: '/cmd/house/', location: '', notes: '', exDays: {}, rule: { freq: 'WEEKLY', interval: +b.every || 1 } });
+      });
+      list('hmaint').forEach(function (m) {
+        var k = HL.nextDue(m); if (!k || k < dkey(new Date())) return;
+        out.push({ id: 'rem:hm:' + m.id, title: '🔧 ' + (m.title || 'Upkeep'), allDay: true, start: fromKey(k), days: 1, color: REMIND_COLOR, readOnly: true, reminder: true, noBrief: true,
+          link: '/cmd/house/', location: '', notes: m.notes || '', exDays: {} });
+      });
+    }
     if (on('subs')) list('subs').forEach(function (s) {
       if (!isKey(s.renews) || s.paused) return;
       out.push({ id: 'rem:sub:' + s.id, title: 'Renews: ' + (s.name || 'subscription') + (s.amount ? ' · ' + Math.round(+s.amount) + ' kr' : ''),

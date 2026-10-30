@@ -18,6 +18,7 @@
     "nav.js",
     "life.js",
     "life-pages.js",
+    "home-life.js",
     "modern.js"
   ],
   "pages": {
@@ -88,6 +89,24 @@
       "links.js"
     ],
     "work/index.html": [
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "house/index.html": [
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "people/index.html": [
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "food/index.html": [
       "kit.js",
       "tools.js",
       "profile.js",
