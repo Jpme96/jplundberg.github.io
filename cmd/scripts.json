@@ -24,6 +24,7 @@
   "pages": {
     "index.html": [
       "settings.js",
+      "stsearch.js",
       "website.js",
       "texts.js",
       "script.js",
@@ -117,6 +118,7 @@
     "calendar/cal-core.js",
     "calendar/cal-settings.js",
     "settings.js",
+    "stsearch.js",
     "website.js",
     "texts.js",
     "checklists.js"

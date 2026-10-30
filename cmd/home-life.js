@@ -784,7 +784,9 @@
         var r = document.getElementById('stRow-' + k); if (r) r.hidden = !on(k);
         var c = document.querySelector('[data-hlcust="' + k + '"]'); if (c) c.hidden = !on(k);
         var s = document.getElementById('sum-' + k); if (s) s.textContent = summary(k);
+        var bx = document.getElementById('hlSet-' + k); if (bx && on(k) && !bx.contains(document.activeElement)) fill(k);
       });
+      work();
     }
     function fill(k) { var box = document.getElementById('hlSet-' + k); if (box && PAGES[k]) box.innerHTML = PAGES[k](); }
     /* Work: Time per client settings, under the flex time ones */
