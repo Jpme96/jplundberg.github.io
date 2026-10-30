@@ -61,9 +61,10 @@
     list.forEach(function (x) {
       var k = /^\d{4}-\d{2}-\d{2}/.test(String(x.date || '')) ? String(x.date).slice(0, 10) : dkey(new Date());
       var cur = d.health.days[k] || {}, ch = false;
-      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : norm(f, num(x[f])); if (v === 0 && ZERO_IS_EMPTY[f]) v = null; if (v != null) { cur[f] = Math.round(v * 100) / 100; ch = true; } });
+      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : norm(f, num(x[f])); if (v === 0 && ZERO_IS_EMPTY[f]) v = null; if (v != null) { v = Math.round(v * 100) / 100; if (cur[f] !== v) { cur[f] = v; ch = true; } } });
       if (ch) { cur.t = Date.now(); d.health.days[k] = cur; n++; }
     });
+    if (!n) return 0;                                                  // nothing new: no save, no toast
     var keys = Object.keys(d.health.days).sort(); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.health.days[k]; });
     d.health.last = Date.now();
     window.Vault.save(d);
@@ -98,8 +99,10 @@
     if (!window.Vault.get()) return;
     fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (!j || !j.items || !j.items.length) return;
+      /* the inbox is kept on the server (last 120 sendings), so every device – and a device that
+         was locked before its save reached the server – picks up every day; numbers only change
+         when they're new, so taking them again does nothing */
       merge(j.items, 'server');
-      return fetch(API, { method: 'DELETE', credentials: 'same-origin' });
     }).catch(function () {});
   }
   /* …or a link: ?health=1&steps=…&sleep=… */
@@ -118,7 +121,31 @@
     try { localStorage.removeItem('dash.healthPending'); } catch (e) {}
     merge(p, 'link');
   }
-  window.Vault.onUnlock(function () { setTimeout(function () { pending(); pull(); }, 600); });
+  /* days that went missing (two devices saving at once, before the merge got smarter): look in the
+     server's daily snapshots of the last two weeks and take back any day this copy doesn't have. Once a day. */
+  function recover() {
+    var tk = dkey(new Date()); if (localStorage.getItem('dash.healthRecover') === tk || !window.Vault.peek) return;
+    try { localStorage.setItem('dash.healthRecover', tk); } catch (e) {}
+    fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var list = ((j && (j.snaps || j.items || j)) || []); if (!Array.isArray(list)) return;
+      var dates = list.map(function (x) { return typeof x === 'string' ? x : x.date; }).filter(function (x) { return /^\d{4}-\d{2}-\d{2}$/.test(x || ''); }).sort().reverse().slice(0, 14);
+      return dates.reduce(function (p, dt) {
+        return p.then(function (found) {
+          return fetch('/cmd/api/vault?snap=' + dt, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (v) { return v ? window.Vault.peek(v) : null; }).then(function (obj) {
+              var hd = obj && obj.health && obj.health.days; if (!hd) return found;
+              var cur = (window.Vault.get().health || {}).days || {};
+              Object.keys(hd).forEach(function (k) { if (!cur[k] && !found[k]) found[k] = Object.assign({ date: k }, hd[k]); });
+              return found;
+            }).catch(function () { return found; });
+        });
+      }, Promise.resolve({})).then(function (found) {
+        var l = Object.keys(found).map(function (k) { return found[k]; });
+        if (l.length) merge(l, 'snapshot');
+      });
+    }).catch(function () {});
+  }
+  window.Vault.onUnlock(function () { setTimeout(function () { pending(); pull(); }, 600); setTimeout(recover, 5000); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && window.Vault.get()) pull(); });
 
   /* ---------- summaries other parts use ---------- */

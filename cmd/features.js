@@ -216,6 +216,14 @@
           link: '/cmd/house/', location: '', notes: m.notes || '', exDays: {} });
       });
     }
+    /* when to leave for events with a place (worked out by flow.js) */
+    var lv = {}; try { lv = JSON.parse(localStorage.getItem('dash.leaveBlocks')) || {}; } catch (e) {}
+    Object.keys(lv).forEach(function (k) {
+      var x = lv[k], st = new Date(x.leave); if (!(st > new Date(Date.now() - 6 * 3600e3))) return;
+      out.push({ id: 'rem:lv:' + k, title: 'Leave for ' + (x.title || 'your event'), allDay: false, start: st, days: 1, dur: x.mins * 60e3, color: '#7a8794',
+        readOnly: true, reminder: true, noBrief: true, leave: true, link: '/cmd/travel/', location: (x.from === 'work' ? 'From work' : 'From home') + (x.lines && x.lines.length ? ' · ' + x.lines.join(', ') : '') + ' · ' + x.mins + ' min',
+        notes: 'Public transport to ' + (x.loc || '') + ', planned with Entur', exDays: {} });
+    });
     if (on('subs')) list('subs').forEach(function (s) {
       if (!isKey(s.renews) || s.paused) return;
       out.push({ id: 'rem:sub:' + s.id, title: 'Renews: ' + (s.name || 'subscription') + (s.amount ? ' · ' + Math.round(+s.amount) + ' kr' : ''),

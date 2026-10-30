@@ -35,6 +35,7 @@
         if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
         /* the look: Modern (the base) or Classic (Settings → Appearance) */
         var modern = s.look !== 'classic'; r.classList.add(modern ? 'modern' : 'classic');
+        if (s.lockStyle) r.setAttribute('data-lock', s.lockStyle);   /* the lock screen's look (Settings → Appearance) */
         /* arriving from another page's Settings button: the panel is already open on the first frame */
         if (/[?&]settings/.test(location.search)) r.classList.add('st-boot');
         /* the Classic look's fonts (Modern uses Inter from this site, so it doesn't wait for Google) */
@@ -79,7 +80,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=114" rel="stylesheet">
+  <link href="styles.css?v=116" rel="stylesheet">
   <link href="modern.css?v=4" rel="stylesheet">
 </head>
 <body>
@@ -523,6 +524,7 @@
           </select>
         </label>
         <button class="st-row st-btn" id="stChangePc" type="button"><span><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery code</span><small id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
         <form class="inline-form" id="pcForm" hidden>
           <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
           <input id="pcNew" type="password" placeholder="New passcode (at least 6 characters)" autocomplete="new-password" required>
@@ -764,9 +766,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=45a2e193e5"></script>
-  <script src="dist/page-home.js?v=5d25fe28e6"></script>
-  <script src="dist/tail.js?v=25258d4032"></script>
+  <script src="dist/head.js?v=563cb51078"></script>
+  <script src="dist/page-home.js?v=a94ab7a46a"></script>
+  <script src="dist/tail.js?v=c2e45b053d"></script>
   <!-- /scripts -->
 </body>
 </html>

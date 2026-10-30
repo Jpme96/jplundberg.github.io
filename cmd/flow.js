@@ -128,7 +128,44 @@
     }).catch(function () { return null; });
   }
 
+  /* ---------- "leave by" blocks before events with a place (next 3 days) ----------
+     Worked out here (Entur), kept in localStorage dash.leaveBlocks, and shown by Features.events()
+     in the calendar, on Today and in the plan of your day. Calendar settings → "When to leave". */
+  var LV_KEY = 'dash.leaveBlocks', lvBusy = false, lvLast = 0;
+  function leaveBlocks() { try { return JSON.parse(localStorage.getItem(LV_KEY)) || {}; } catch (e) { return {}; } }
+  function planLeaves(force) {
+    var C = window.Cal, pl = travel().places || {};
+    if (!C || !C.occurrences || !window.Places || !pl.home || lvBusy || (!force && Date.now() - lvLast < 90e3)) return;
+    if (C.prefs && C.prefs().leave === false) { if (localStorage.getItem(LV_KEY)) { localStorage.removeItem(LV_KEY); window.dispatchEvent(new Event('cal:change')); } return; }
+    lvBusy = true; lvLast = Date.now();
+    var now = new Date(), end = new Date(now.getTime() + 3 * 864e5), old = leaveBlocks(), keep = {}, jobs = [];
+    var occ = [];
+    try { occ = C.occurrences(now, end, {}); } catch (e) {}
+    occ.filter(function (o) { return !o.allDay && o.start > now && o.ev.location && !o.ev.reminder && !o.ev.holiday && !o.ev.trip && !o.ev.leave &&
+        !/\b(teams|zoom|meet|skype|webex|online|digital|telefon|phone)\b|https?:/i.test(o.ev.location); })
+      .slice(0, 8).forEach(function (o) {
+        var key = o.ev.id + '@' + o.start.getTime(), c = old[key];
+        var h = o.start.getHours(), wd = o.start.getDay() % 6 !== 0, from = wd && h >= 9 && h < 16 && pl.work ? 'work' : 'home';
+        if (c && c.loc === o.ev.location && c.from === from && Date.now() - c.at < 3 * 3600e3) { keep[key] = c; return; }
+        jobs.push(leaveBy(o.ev.location, new Date(o.start.getTime() - 5 * 60e3), pl[from]).then(function (r) {
+          if (r && r.minutes >= 6) keep[key] = { at: Date.now(), loc: o.ev.location, leave: r.leave, mins: r.minutes, title: o.title, from: from, lines: r.lines || [] };
+        }));
+      });
+    Promise.all(jobs).then(function () {
+      lvBusy = false;
+      var sig = function (x) { return JSON.stringify(Object.keys(x).sort().map(function (k) { return [k, x[k].leave, x[k].mins]; })); };
+      try { localStorage.setItem(LV_KEY, JSON.stringify(keep)); } catch (e) {}
+      if (sig(keep) !== sig(old)) window.dispatchEvent(new Event('cal:change'));
+    });
+  }
+  if (window.Vault) {
+    window.Vault.onUnlock(function () { setTimeout(planLeaves, 1500); });
+    window.addEventListener('cal:change', function () { clearTimeout(planLeaves.t); planLeaves.t = setTimeout(planLeaves, 4000); });
+    setInterval(function () { if (!document.hidden) planLeaves(true); }, 30 * 60e3);
+  }
+
   window.Flow = {
+    leaveBlocks: leaveBlocks, planLeaves: planLeaves,
     TRAVEL_COLOR: TRAVEL_COLOR, TYPES: TYPES, DOCS: DOCS,
     travel: travel, saveTravel: saveTravel, when: when,
     route: route, addEvent: addEvent, logSpend: logSpend, unlogSpend: unlogSpend, leaveBy: leaveBy,

@@ -187,6 +187,7 @@
         L.marker([p.lat, p.lon], { icon: icon, title: p.label || '' }).addTo(m).bindPopup(p.label || '');
         ll.push([p.lat, p.lon]);
       });
+      if (opts.route && ll.length > 1) L.polyline(ll, { color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#14b8a6', weight: 3, opacity: .75, dashArray: '6 8' }).addTo(m);
       if (ll.length > 1) m.fitBounds(ll, { padding: [36, 36], maxZoom: opts.maxZoom || 14 });
       else if (ll.length) m.setView(ll[0], opts.zoom || 12);
       else m.setView([59.91, 10.75], 4);

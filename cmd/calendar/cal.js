@@ -164,7 +164,7 @@
       segs.forEach(function (x) {
         shown.push(x.o);
         var top = (x.s - days[i]) / 36e5 * HOUR, ht = Math.max((x.e - x.s) / 36e5 * HOUR, 22);
-        h += '<button type="button" class="cl-blk' + (ht < 40 ? ' short' : '') + '" data-occ="' + (shown.length - 1) + '" style="--c:' + x.o.color +
+        h += '<button type="button" class="cl-blk' + (ht < 40 ? ' short' : '') + (x.o.ev.leave ? ' leave' : '') + '" data-occ="' + (shown.length - 1) + '" style="--c:' + x.o.color +
           ';top:' + top + 'px;height:' + (ht - 2) + 'px;left:calc(' + x.col / x.cols * 100 + '% + 2px);width:calc(' + 100 / x.cols + '% - 4px)">' +
           '<b>' + esc(x.o.title) + '</b><span class="tm">' + C.timeLabel(x.o, days[i]) + (x.o.ev.location ? ' · ' + esc(x.o.ev.location) : '') + '</span></button>';
       });
@@ -172,8 +172,27 @@
       return h + '</div>';
     }).join('');
 
+    /* the week in hours: booked time per category (your own and phone calendars; not reminders) */
+    var sum = '';
+    if (C.prefs().weekSum) {
+      var per = {}, tot = 0, meta = {};
+      timed.forEach(function (segs) { segs.forEach(function (x) {
+        if (x.o.ev.reminder || x.o.ev.leave || x.o.ev.holiday) return;
+        var k = x.o.ev.cat && C.CATS[x.o.ev.cat] ? x.o.ev.cat : x.o.ev.feed ? 'feed:' + x.o.ev.feed : x.o.ev.trip ? 'travel' : 'other';
+        var m = (x.e - x.s) / 6e4; per[k] = (per[k] || 0) + m; tot += m;
+        meta[k] = meta[k] || { n: C.CATS[k] ? C.CATS[k].name : x.o.ev.src || (k === 'travel' ? 'Travel' : 'Other'), c: C.CATS[k] ? C.CATS[k].color : x.o.color || '#7a8794' };
+      }); });
+      if (tot > 0) {
+        var name = function (k) { return meta[k].n; }, col = function (k) { return meta[k].c; };
+        var ks = Object.keys(per).sort(function (a, b) { return per[b] - per[a]; }), h1 = function (m) { var h = Math.round(m / 6) / 10; return String(h).replace('.', ',') + ' h'; };
+        var awake = n * 16 * 60;
+        sum = '<div class="cl-wksum"><div class="cl-wksum-bar" role="img" aria-label="Booked this week: ' + h1(tot) + '">' + ks.map(function (k) { return '<i style="--c:' + col(k) + ';width:' + (per[k] / awake * 100).toFixed(2) + '%"></i>'; }).join('') + '</div>' +
+          '<div class="cl-wksum-l">' + ks.map(function (k) { return '<span style="--c:' + col(k) + '"><i></i>' + esc(name(k)) + ' <b>' + h1(per[k]) + '</b></span>'; }).join('') +
+          '<span class="cl-wksum-free">Booked ' + h1(tot) + ' of ' + (n * 16) + ' waking hours</span></div></div>';
+      }
+    }
     var sc = $('clWkScroll'), keep = sc ? sc.scrollTop : null;
-    $('clView').innerHTML = '<div class="cl-week" style="--n:' + n + '">' +
+    $('clView').innerHTML = sum + todoStrip() + '<div class="cl-week" style="--n:' + n + '">' +
       '<div class="cl-wk-head">' + head + '</div>' + all +
       '<div class="cl-wk-scroll" id="clWkScroll"><div class="cl-wk-grid" style="height:' + 24 * HOUR + 'px">' +
       '<div class="cl-gut cl-hours">' + hours + '</div>' + cols + '</div></div></div>';
@@ -186,6 +205,54 @@
       weekScrolled = true;
     }
   }
+  /* ---------- to-dos: drag one into the week (computer) ---------- */
+  var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  function openTodos() {
+    var l = []; try { l = JSON.parse(localStorage.getItem('dash.todos')) || []; } catch (e) {}
+    return l.filter(function (t) { return t && !t.done && !t.block; }).sort(function (a, b) { return (a.today ? 0 : 1) - (b.today ? 0 : 1) || ((a.due || '9') < (b.due || '9') ? -1 : (a.due || '9') > (b.due || '9') ? 1 : 0); }).slice(0, 12);
+  }
+  function todoStrip() {
+    if (!fine || innerWidth < 900) return '';
+    var l = openTodos(); if (!l.length) return '';
+    return '<div class="cl-todos"><span class="cl-todos-h"><i class="bi bi-check2-square"></i> Drag a task into the week</span>' + l.map(function (t) {
+      return '<span class="cl-todo" draggable="true" data-todo="' + esc(t.id) + '" title="Drag to a time">' + (t.today ? '<i class="bi bi-trophy"></i>' : '') + esc(t.text) + '</span>';
+    }).join('') + '</div>';
+  }
+  function guessCat(text) { var w = /\b(møte|meeting|rapport|report|kunde|client|fdv|befaring|dokument|e-?post|email|jobb|work|prosjekt|project)\b/i; return w.test(text) && C.CATS.work ? 'work' : (C.CATS.personal ? 'personal' : C.CAT_ORDER[0]); }
+  if (fine) {
+    var dragTodo = null;
+    $('clView').addEventListener('dragstart', function (e) { var t = e.target.closest && e.target.closest('[data-todo]'); if (!t) return; dragTodo = t.dataset.todo; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', t.textContent); } catch (x) {} t.classList.add('dragging'); });
+    $('clView').addEventListener('dragend', function (e) { var t = e.target.closest && e.target.closest('[data-todo]'); if (t) t.classList.remove('dragging'); document.querySelectorAll('.cl-drop').forEach(function (x) { x.remove(); }); dragTodo = null; });
+    function slot(col, e) { var r = col.getBoundingClientRect(); return Math.max(0, Math.min(23 * 60 + 45, Math.round(((e.clientY - r.top) / HOUR * 60) / 15) * 15)); }
+    $('clView').addEventListener('dragover', function (e) {
+      var col = dragTodo && e.target.closest('.cl-wk-col'); if (!col) return;
+      e.preventDefault();
+      var m = slot(col, e), g = col.querySelector('.cl-drop');
+      if (!g) { g = document.createElement('div'); g.className = 'cl-drop'; document.querySelectorAll('.cl-drop').forEach(function (x) { x.remove(); }); col.appendChild(g); }
+      g.style.top = (m / 60 * HOUR) + 'px'; g.style.height = (C.prefs().dur / 60 * HOUR - 2) + 'px';
+      g.textContent = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    });
+    $('clView').addEventListener('drop', function (e) {
+      var col = dragTodo && e.target.closest('.cl-wk-col'); if (!col) return;
+      e.preventDefault();
+      var m = slot(col, e), len = C.prefs().dur || 60, id = dragTodo, date = col.dataset.col;
+      var l = []; try { l = JSON.parse(localStorage.getItem('dash.todos')) || []; } catch (x) {}
+      var t = l.filter(function (x) { return x.id === id; })[0]; if (!t) return;
+      var p2 = function (n) { return String(n).padStart(2, '0'); }, fm = function (x) { x = Math.min(x, 1439); return p2(Math.floor(x / 60)) + ':' + p2(x % 60); };
+      var d = C.load(), ev = { id: C.uid(), title: String(t.text).slice(0, 120), cat: guessCat(t.text), date: date, allDay: false, start: fm(m), stop: fm(m + len), todo: t.id };
+      d.events.push(ev); if (d.hidden[ev.cat]) delete d.hidden[ev.cat]; C.save(d);
+      t.block = ev.id; if (!t.due || t.due > date) t.due = date;
+      try { localStorage.setItem('dash.todos', JSON.stringify(l)); } catch (x) {}
+      window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('todos:change'));
+      dragTodo = null; render();
+      if (window.Quick) window.Quick.toast('<i class="bi bi-calendar-check"></i> ' + esc(ev.title) + ' · ' + ev.start + '–' + ev.stop, function () {
+        var d2 = C.load(); d2.events = d2.events.filter(function (x) { return x.id !== ev.id; }); C.save(d2);
+        var l2 = []; try { l2 = JSON.parse(localStorage.getItem('dash.todos')) || []; } catch (x) {}
+        l2.forEach(function (x) { if (x.id === id) delete x.block; }); localStorage.setItem('dash.todos', JSON.stringify(l2)); window.dispatchEvent(new Event('dash:local')); render();
+      });
+    });
+  }
+
   /* side by side when events overlap */
   function layout(segs) {
     segs.sort(function (a, b) { return a.s - b.s || b.e - a.e; });

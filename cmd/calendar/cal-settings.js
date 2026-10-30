@@ -29,6 +29,8 @@
         sw('weekNums', p.weekNums, 'Week numbers', 'Like “Week 44” in the month and week views') +
         '<label class="st-row"><span class="st-label">Day starts<small>Where the week view opens</small></span><select class="st-select" data-cs="dayStart">' + hours + '</select></label>' +
         sw('holidays', p.holidays, 'Norwegian public holidays', '17. mai, Easter, Christmas … also counted in Flex time') +
+        sw('leave', p.leave, 'When to leave', 'A block before events with a place – by public transport from home (from work in the daytime)') +
+        sw('weekSum', p.weekSum, 'Week summary', 'Hours per category above the week view') +
         '</section>' +
 
         '<p class="st-sub"><i class="bi bi-plus-circle"></i> New events</p><section class="st-group">' +

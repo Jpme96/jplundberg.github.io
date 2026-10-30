@@ -35,6 +35,7 @@
         if (Array.isArray(s.navOrder)) s.navOrder.forEach(function (k, i) { if (/^[a-z]+$/.test(k)) r.style.setProperty('--nav-' + k, i + 1); });
         /* the look: Modern (the base) or Classic (Settings → Appearance) */
         var modern = s.look !== 'classic'; r.classList.add(modern ? 'modern' : 'classic');
+        if (s.lockStyle) r.setAttribute('data-lock', s.lockStyle);   /* the lock screen's look (Settings → Appearance) */
         /* the Classic look's fonts (Modern uses Inter from this site, so it doesn't wait for Google) */
         if (!modern) document.write('<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&family=Raleway:wght@500;600;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">');
         var bg = s.bgType || (s.bg === false ? 'none' : modern ? 'calm' : 'moon');
@@ -77,10 +78,10 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=114" rel="stylesheet">
+  <link href="../styles.css?v=116" rel="stylesheet">
   <link href="../modern.css?v=4" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
-  <link href="../calendar/cal.css?v=11" rel="stylesheet">
+  <link href="../calendar/cal.css?v=12" rel="stylesheet">
 </head>
 <body>
   <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a><a href="/cmd/house/" data-pg="house" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-gear"></i><span>House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span>People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span>Food</span></a></nav>
@@ -391,6 +392,7 @@
           </select>
         </label>
         <button class="st-row st-btn" id="stChangePc" type="button"><span><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery code</span><small id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
         <form class="inline-form" id="pcForm" hidden>
           <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
           <input id="pcNew" type="password" placeholder="New passcode (at least 6 characters)" autocomplete="new-password" required>
@@ -633,9 +635,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=45a2e193e5"></script>
-  <script src="../dist/page-house.js?v=eade7f65a8"></script>
-  <script src="../dist/tail.js?v=25258d4032"></script>
+  <script src="../dist/head.js?v=563cb51078"></script>
+  <script src="../dist/page-house.js?v=3bf271c58a"></script>
+  <script src="../dist/tail.js?v=c2e45b053d"></script>
   <!-- /scripts -->
 </body>
 </html>

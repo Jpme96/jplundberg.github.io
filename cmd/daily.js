@@ -32,9 +32,10 @@
           if (o.allDay) {
             var ic = /^rem:pb:/.test(o.ev.id) ? 'balloon' : /^rem:bin:/.test(o.ev.id) ? 'trash3' : /^rem:hm:/.test(o.ev.id) ? 'tools' : /^todo:/.test(o.ev.id) ? 'check2-square' : /^rem:ml:/.test(o.ev.id) ? 'egg-fried' : o.ev.trip ? 'suitcase-lg' : o.ev.reminder ? 'bell' : 'calendar-check';
             if (/^rem:ml:/.test(o.ev.id)) return;                                   // dinner gets its own place at 18:00
-            allDay.push({ icon: ic, c: o.color || 'var(--accent)', title: String(o.title).replace(/^[☐🎈🔧]\s*/, ''), href: href });
+            allDay.push({ icon: ic, c: o.color || 'var(--accent)', title: String(o.title).replace(/^(?:☐|🎈|🔧|🍽️?)\s*/, ''), href: href });
             return;
           }
+          if (o.ev.leave) { push(o.start, 'signpost-split', '#7a8794', o.title, hm(o.start) + ' · ' + (o.ev.location || ''), 'travel/', 'leave'); return; }
           push(o.start, 'calendar-event', o.color, o.title, hm(o.start) + '–' + hm(o.end) + (o.ev.location ? ' · ' + o.ev.location : ''), href, 'event');
         });
       } catch (e) {}
@@ -61,6 +62,30 @@
     out.sort(function (a, b) { return a.t - b.t; });
     return { list: out, allDay: allDay, now: now };
   }
+  /* evenings: what got done, and how tomorrow starts */
+  function evening(now) {
+    var tk = dkey(now), t1 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), t2 = new Date(t1); t2.setDate(t2.getDate() + 1);
+    var todos = readJSON('dash.todos', []) || [], done = todos.filter(function (t) { return t.done && t.doneAt === tk; }).length;
+    var FT = window.FlexTime, worked = FT && Fe && Fe.on('flex') ? FT.stats().today : 0, bits = [];
+    if (done) bits.push('<span><i class="bi bi-check2-circle"></i><b>' + done + '</b> task' + (done === 1 ? '' : 's') + ' done</span>');
+    if (worked) bits.push('<span><i class="bi bi-stopwatch"></i><b>' + Math.floor(worked / 60) + ' h ' + pad(Math.round(worked % 60)) + '</b> at work</span>');
+    var fm = (readJSON('dash.focusLog', []) || []).filter(function (x) { return x.d === tk; }).reduce(function (s, x) { return s + (+x.m || 0); }, 0);
+    if (fm) bits.push('<span><i class="bi bi-bullseye"></i><b>' + fm + ' min</b> focus</span>');
+    var tm = [];
+    if (C && C.occurrences && on('calendar')) try {
+      C.occurrences(t1, t2, { card: true }).forEach(function (o) {
+        if (o.ev.holiday) return;
+        tm.push({ t: o.allDay ? null : o.start, title: String(o.title).replace(/^(?:☐|🎈|🔧|🍽️?)\s*/, ''), icon: o.ev.leave ? 'signpost-split' : o.allDay ? 'calendar-check' : 'calendar-event', c: o.color });
+      });
+    } catch (e) {}
+    var top = todos.filter(function (t) { return !t.done && t.due === dkey(t1); }).slice(0, 3);
+    tm.sort(function (a, b) { return (a.t ? +a.t : 0) - (b.t ? +b.t : 0); });
+    var list = tm.slice(0, 4).map(function (x) { return '<li style="--c:' + esc(x.c || 'var(--accent)') + '"><span class="tl-t">' + (x.t ? hm(x.t) : 'All day') + '</span><i class="bi bi-' + x.icon + '"></i><span>' + esc(x.title) + '</span></li>'; }).join('') +
+      top.map(function (t) { return '<li style="--c:#22b35e"><span class="tl-t">Task</span><i class="bi bi-check2-square"></i><span>' + esc(t.text) + '</span></li>'; }).join('');
+    return '<div class="tl-eve">' + (bits.length ? '<p class="tl-done">' + bits.join('') + '</p>' : '') +
+      '<p class="tl-sub"><i class="bi bi-sunrise"></i> Tomorrow, ' + esc(t1.toLocaleDateString('en-GB', { weekday: 'long' })) + '</p>' +
+      (list ? '<ul class="tl-tm">' + list + '</ul>' : '<p class="muted tl-free">Nothing planned yet.</p>') + '</div>';
+  }
   function drawToday() {
     if (!card || !unlocked) return;
     var r = items(), now = r.now, html = '', placed = false;
@@ -71,11 +96,17 @@
         '<a class="tl-x" href="' + esc(x.href || '#') + '"><b>' + esc(x.title) + '</b>' + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</a></li>';
     });
     if (!placed) html += '<li class="tl-now"><span class="tl-t">' + hm(now) + '</span><span class="tl-nowline"></span></li>';
-    var empty = !r.list.length && !r.allDay.length;
+    var empty = !r.list.length && !r.allDay.length, eve = now.getHours() >= 17 ? evening(now) : '';
     card.innerHTML = '<div class="card-head"><h2><i class="bi bi-list-columns-reverse"></i> Today</h2><span class="muted tl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>' +
       (r.allDay.length ? '<div class="tl-all">' + r.allDay.map(function (x) { return '<a class="tl-chip" href="' + esc(x.href) + '" style="--c:' + esc(x.c) + '"><i class="bi bi-' + x.icon + '"></i>' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') +
-      (empty ? '<p class="empty">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>');
+      (empty ? '<p class="empty">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>') + eve;
+    clearTimeout(keepSnap.t); keepSnap.t = setTimeout(keepSnap, 500);
   }
+  /* coming back to an open session: paint the last Today straight away (this tab only, no amounts in it) */
+  if (card && document.documentElement.classList.contains('resuming')) {
+    try { var snap = JSON.parse(sessionStorage.getItem('dash.tlSnap') || 'null'); if (snap && snap.d === dkey(new Date())) card.innerHTML = snap.h; } catch (e) {}
+  }
+  function keepSnap() { try { sessionStorage.setItem('dash.tlSnap', JSON.stringify({ d: dkey(new Date()), h: card.innerHTML })); } catch (e) {} }
   if (card) {
     ['cal:change', 'tools:change', 'todos:change', 'features:change', 'plan:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawToday.t); drawToday.t = setTimeout(drawToday, 60); }); });
     setInterval(function () { if (!document.hidden) drawToday(); }, 60000);
@@ -155,6 +186,6 @@
   }
 
   window.Vault.onUnlock(function () { unlocked = true; setTimeout(function () { drawToday(); drawCommute(); }, 80); });
-  window.Vault.onLock(function () { unlocked = false; if (card) card.innerHTML = ''; if (cm) { cm.hidden = true; cm.innerHTML = ''; } });
+  window.Vault.onLock(function () { unlocked = false; try { sessionStorage.removeItem('dash.tlSnap'); } catch (e) {} if (card) card.innerHTML = ''; if (cm) { cm.hidden = true; cm.innerHTML = ''; } });
   window.Daily = { today: drawToday, commute: drawCommute };
 })();

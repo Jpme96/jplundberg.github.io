@@ -998,5 +998,18 @@
     window.Vault.onUnlock(rows);
   })();
 
+  /* ======================= the avatar: a ring for today's top 3 ======================= */
+  function ring() {
+    var tk = today(), l = readJSON('dash.todos', []) || [], top = l.filter(function (t) { return t.today === tk; }).slice(0, 3);
+    var done = top.filter(function (t) { return t.done; }).length;
+    document.querySelectorAll('.me-btn[data-me]').forEach(function (b) {
+      b.classList.toggle('me-ring', top.length > 0); b.classList.toggle('all', top.length > 0 && done === top.length);
+      if (top.length) { b.style.setProperty('--ring', (done / top.length).toFixed(3)); b.title = 'Top 3 today: ' + done + ' of ' + top.length + ' done'; }
+      else { b.style.removeProperty('--ring'); b.removeAttribute('title'); }
+    });
+  }
+  ['todos:change', 'plan:change', 'dash:local', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(ring.t); ring.t = setTimeout(ring, 50); }); });
+  window.Vault.onUnlock(function () { setTimeout(ring, 200); });
+
   window.HomeLife = { cfg: cfg, meals: meals, bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT };
 })();

@@ -80,7 +80,35 @@
     var iv = crypto.getRandomValues(new Uint8Array(12));
     var plain = Object.assign({}, obj, { _w: widgets() });
     return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(JSON.stringify(plain)))
-      .then(function (ct) { return { v: 1, rev: rev || 0, iter: ITER, salt: b64(s), iv: b64(iv), ct: b64(ct) }; });
+      .then(function (ct) {
+        var out = { v: 1, rev: rev || 0, iter: ITER, salt: b64(s), iv: b64(iv), ct: b64(ct) };
+        var rec = recNext !== undefined ? recNext : (readJSON(VAULT_KEY) || {}).rec;
+        if (rec) out.rec = rec;
+        return out;
+      });
+  }
+
+  /* ---------- recovery code ----------
+     A code you keep somewhere safe (printed, in your password manager) that opens the dashboard if
+     you forget the passcode. It locks a copy of the passcode (rec in the vault file, encrypted with a
+     key made from the code – the server can't read it). The code itself is kept inside the encrypted
+     vault, so changing the passcode updates the copy. */
+  var recNext;                 // undefined: keep what the vault file has; null: remove; object: new
+  var REC_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function recNorm(code) { return String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  function recWrap(code, pass) {
+    var rs = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    return derive(recNorm(code), rs, ITER).then(function (rk) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, rk, enc.encode(pass)); })
+      .then(function (ct) { return { salt: b64(rs), iv: b64(iv), ct: b64(ct) }; });
+  }
+  function recUnwrap(code, rec) {
+    return derive(recNorm(code), unb64(rec.salt), ITER).then(function (rk) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv) }, rk, unb64(rec.ct)); })
+      .then(function (pt) { return dec.decode(pt); });
+  }
+  function recNew() {
+    var r = crypto.getRandomValues(new Uint8Array(20)), c = '';
+    for (var i = 0; i < 20; i++) { c += REC_ABC[r[i] % REC_ABC.length]; if (i % 4 === 3 && i < 19) c += '-'; }
+    return c;
   }
 
   /* Takes widgets (to-dos, notes …) out of a decrypted vault and puts them on screen. */
@@ -269,8 +297,39 @@
       });
   }
 
-  $('lockForgot').addEventListener('click', function () { setMode('reset'); });
-  $('lockCancelReset').addEventListener('click', function () { setMode('unlock'); });
+  $('lockForgot').addEventListener('click', function () { setMode('reset'); recForm(); });
+  function recVault() { var v = remote || readJSON(VAULT_KEY); return isVault(v) && v.rec ? v : null; }
+  function recForm() {
+    var old = $('lockRec'); if (old) old.remove();
+    var v = recVault(); if (!v) return;
+    var f = document.createElement('form'); f.id = 'lockRec'; f.className = 'lock-rec'; f.autocomplete = 'off';
+    f.innerHTML = '<p class="lock-rec-h"><i class="bi bi-key"></i> Have your recovery code?</p>' +
+      '<input id="lockRecIn" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" aria-label="Recovery code" required>' +
+      '<button class="pill-btn lock-submit" type="submit">Open with the code</button><p class="lock-rec-or muted">Or start over:</p>';
+    $('lockReset').parentNode.insertBefore(f, $('lockReset'));
+    $('lockSub').textContent = 'Use your recovery code to get in – then choose a new passcode. Without it, the only way is to start over.';
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var w = waitLeft(); if (w > 0) { msg('Wait ' + Math.ceil(w / 1000) + ' s.'); return; }
+      busy(true);
+      recUnwrap($('lockRecIn').value, v.rec).then(function (pass) {
+        f.remove(); setMode('unlock'); busy(true);
+        try { sessionStorage.setItem('dash.recUsed', '1'); } catch (x) {}
+        tryUnlock(pass);
+      }).catch(function () { busy(false); addFail(); msg('That code doesn’t fit. Check it and try again.'); shake(); });
+    });
+  }
+  /* opened with the recovery code: go straight to choosing a new passcode */
+  unlockFns.push(function () {
+    var used = false; try { used = sessionStorage.getItem('dash.recUsed') === '1'; sessionStorage.removeItem('dash.recUsed'); } catch (e) {}
+    if (!used) return;
+    setTimeout(function () {
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-key"></i> Opened with your recovery code – choose a new passcode');
+      var b = $('settingsBtn'); if (!b) return; b.click();
+      setTimeout(function () { var g = document.querySelector('[data-go="security"]'); if (g) g.click(); setTimeout(function () { var c = $('stChangePc'); if (c && $('pcForm').hidden) c.click(); }, 300); }, 300);
+    }, 700);
+  });
+  $('lockCancelReset').addEventListener('click', function () { var r = $('lockRec'); if (r) r.remove(); setMode('unlock'); });
   $('lockDoReset').addEventListener('click', function () {
     removeKey(VAULT_KEY);
     removeKey(FAIL_KEY);
@@ -415,11 +474,33 @@
      If another device saved in the meantime, the parts changed HERE since the last sync are
      kept, and everything else comes from the other device – instead of one side losing. */
   var BASE_KEY = 'dash.syncBase';
+  /* Settings, tool data, profile and travel are compared one level deeper (each setting, each tool),
+     and Apple Health day by day – so a change on the phone to one setting doesn't undo a change made
+     on the computer to another, and health numbers from two devices both stay. */
+  var DEEP_W = { 'dash.settings': 1, 'dash.tools': 1, 'dash.profile': 1, 'dash.travel': 1 };
+  function isObj(v) { return v && typeof v === 'object' && !Array.isArray(v); }
   function parts(obj, w) {
     var out = {};
-    Object.keys(obj || {}).forEach(function (k) { if (k !== '_w') out['d:' + k] = obj[k]; });
-    WIDGET_KEYS.forEach(function (k) { out['w:' + k] = w[k] === undefined ? null : w[k]; });
+    Object.keys(obj || {}).forEach(function (k) {
+      if (k === '_w') return;
+      if (k === 'health' && isObj(obj.health)) {
+        Object.keys(obj.health).forEach(function (s) {
+          if (s === 'days' && isObj(obj.health.days)) Object.keys(obj.health.days).forEach(function (dk) { out['d:health/days/' + dk] = obj.health.days[dk]; });
+          else out['d:health/' + s] = obj.health[s];
+        });
+      } else out['d:' + k] = obj[k];
+    });
+    WIDGET_KEYS.forEach(function (k) {
+      var v = w[k] === undefined ? null : w[k];
+      if (DEEP_W[k] && isObj(v)) Object.keys(v).forEach(function (s) { out['w:' + k + '/' + s] = v[s]; });
+      else out['w:' + k] = v;
+    });
     return out;
+  }
+  function getPath(o, p) { for (var i = 0; i < p.length; i++) { if (!isObj(o)) return undefined; o = o[p[i]]; } return o; }
+  function setPath(o, p, v) {
+    for (var i = 0; i < p.length - 1; i++) { if (!isObj(o[p[i]])) o[p[i]] = {}; o = o[p[i]]; }
+    if (v === undefined) delete o[p[p.length - 1]]; else o[p[p.length - 1]] = JSON.parse(JSON.stringify(v));
   }
   function fingerprints(p) {
     var keys = Object.keys(p);
@@ -433,9 +514,19 @@
   function localChanges() {
     var base = readJSON(BASE_KEY);
     if (!base || !data) return Promise.resolve([]);
-    return fingerprints(parts(data, widgets())).then(function (now) {
-      var keys = Object.keys(now).concat(Object.keys(base).filter(function (k) { return !(k in now); }));
-      return keys.filter(function (k) { return base[k] !== now[k]; });
+    var w = widgets(), p = parts(data, w), whole = {};
+    /* a base saved before the deeper comparison: judge new deeper parts by their whole part */
+    Object.keys(DEEP_W).forEach(function (k) { whole['w:' + k] = w[k] === undefined ? null : w[k]; });
+    whole['d:health'] = data.health;
+    Object.keys(whole).forEach(function (k) { p['~' + k] = whole[k]; });
+    return fingerprints(p).then(function (now) {
+      var keys = Object.keys(now).filter(function (k) { return k[0] !== '~'; });
+      Object.keys(base).forEach(function (k) { if (!(k in now) && !(k in whole)) keys.push(k); });   // gone here (old whole parts are now compared deeper)
+      return keys.filter(function (k) {
+        if (base[k] === now[k]) return false;
+        if (!(k in base)) { var parent = k.split('/')[0]; if (parent !== k && (parent in base)) return base[parent] !== now['~' + parent]; }
+        return true;
+      });
     });
   }
 
@@ -463,9 +554,14 @@
         var mine = widgets(), merged = {};
         Object.keys(obj).forEach(function (x) { if (x !== '_w') merged[x] = obj[x]; });
         changed.forEach(function (c) {
-          var name = c.slice(2);
-          if (c.indexOf('d:') === 0) { if (data && name in data) merged[name] = data[name]; else delete merged[name]; }
-          else if (mine[name] !== undefined) w[name] = mine[name]; else delete w[name];
+          var name = c.slice(2), path = name.split('/');
+          if (c.indexOf('d:') === 0) {
+            if (path.length > 1) setPath(merged, path, getPath(data, path));
+            else if (data && name in data) merged[name] = data[name]; else delete merged[name];
+          } else if (path.length > 1) {
+            if (!isObj(w[path[0]])) w[path[0]] = {};
+            setPath(w[path[0]], path.slice(1), getPath(mine[path[0]], path.slice(1)));
+          } else if (mine[name] !== undefined) w[name] = mine[name]; else delete w[name];
         });
         merged._w = w;
         data = unpack(merged);
@@ -546,6 +642,8 @@
     },
     lock: lock,
     sync: sync,
+    /* read an older copy (a daily snapshot) with this passcode, without switching to it */
+    peek: function (v) { if (!key || !isVault(v)) return Promise.reject(new Error('locked')); return open(v, key); },
     /* restore a backup file from Settings → Data & sync: it replaces this dashboard (and, after
        unlocking, the synced copy), then asks for the passcode the backup was made with */
     restore: function (text) {
@@ -578,12 +676,36 @@
         window.dispatchEvent(new Event('dash:backup'));
       });
     },
+    recovery: {
+      has: function () { return !!(data && data._recCode); },
+      code: function () { return data && data._recCode || null; },
+      /* needs the passcode once (it's never stored) */
+      create: function (pass) {
+        if (!key) return Promise.reject(new Error('locked'));
+        var vault = readJSON(VAULT_KEY);
+        return derive(pass, unb64(vault.salt), vault.iter || ITER).then(function (k) { return open(vault, k); })
+          .then(function () {
+            var code = recNew();
+            return recWrap(code, pass).then(function (r) {
+              recNext = r; data._recCode = code;
+              return window.Vault.save(data).then(function () { recNext = undefined; return code; });
+            });
+          }, function () { throw new Error('wrong'); });
+      },
+      remove: function () {
+        if (!key) return Promise.reject(new Error('locked'));
+        recNext = null; delete data._recCode;
+        return window.Vault.save(data).then(function () { recNext = undefined; });
+      }
+    },
     changePasscode: function (pass) {
       if (!key) return Promise.reject(new Error('locked'));
       var s = crypto.getRandomValues(new Uint8Array(16));
-      return writing.then(function () { return derive(pass, s, ITER); })
+      return writing.then(function () { return data && data._recCode ? recWrap(data._recCode, pass).then(function (r) { recNext = r; }) : null; })
+        .then(function () { return derive(pass, s, ITER); })
         .then(function (k) {
           return seal(data, k, s, localRev() + 1).then(function (v) {
+            recNext = undefined;
             writeJSON(VAULT_KEY, v);
             key = k; salt = s;
             remember();

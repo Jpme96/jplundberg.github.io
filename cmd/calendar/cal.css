@@ -283,3 +283,22 @@
 @media (hover: hover) { .cl-blk::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize; } }
 .cl-blk.dragging { z-index: 5; box-shadow: 0 10px 26px rgba(0, 0, 0, .4); opacity: .95; transition: none; cursor: grabbing; }
 .cl-dragging, .cl-dragging * { -webkit-user-select: none; user-select: none; }
+/* when to leave: a quiet dashed block before events with a place */
+.cl-blk.leave { background: repeating-linear-gradient(135deg, rgba(var(--ink-rgb), .05) 0 6px, transparent 6px 12px); border: 1px dashed rgba(var(--ink-rgb), .3); border-left: 3px solid #7a8794; color: var(--muted); }
+.cl-blk.leave b { font-weight: 500; }
+/* the week in hours */
+.cl-wksum { margin: 0 0 10px; }
+.cl-wksum-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(var(--ink-rgb), .07); }
+.cl-wksum-bar i { display: block; height: 100%; background: var(--c); }
+.cl-wksum-l { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+.cl-wksum-l span { display: inline-flex; align-items: center; gap: 5px; }
+.cl-wksum-l i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.cl-wksum-l b { color: var(--text); font-weight: 600; }
+.cl-wksum-free { margin-left: auto; }
+/* to-dos to drag into the week (computer) */
+.cl-todos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
+.cl-todos-h { font-size: 12.5px; color: var(--muted); margin-right: 4px; } .cl-todos-h .bi { color: var(--accent); }
+.cl-todo { display: inline-flex; align-items: center; gap: 5px; max-width: 260px; padding: 5px 10px; border-radius: 999px; border: 1px dashed rgba(var(--accent-rgb), .55); background: rgba(var(--accent-rgb), .08); font-size: 12.5px; cursor: grab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; }
+.cl-todo .bi { color: #c98500; }
+.cl-todo.dragging { opacity: .4; }
+.cl-drop { position: absolute; left: 2px; right: 2px; border-radius: 8px; border: 2px dashed var(--accent); background: rgba(var(--accent-rgb), .12); color: var(--accent); font-size: 11.5px; font-weight: 700; padding: 2px 6px; pointer-events: none; z-index: 5; }

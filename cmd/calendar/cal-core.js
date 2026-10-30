@@ -30,7 +30,7 @@
     return CATS.personal ? 'personal' : CAT_ORDER[CAT_ORDER.length - 1];
   }
   var HOLIDAY_COLOR = '#e66767';
-  var PREFS = { weekNums: true, holidays: true, view: 'last', dur: 60, cat: 'last', dayStart: 7, cardHide: {} };
+  var PREFS = { weekNums: true, holidays: true, view: 'last', dur: 60, cat: 'last', dayStart: 7, cardHide: {}, leave: true, weekSum: true };
   function prefs(d) {
     var p = (d || load()).prefs || {}, out = {};
     Object.keys(PREFS).forEach(function (k) { out[k] = p[k] == null ? PREFS[k] : p[k]; });

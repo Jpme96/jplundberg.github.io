@@ -39,8 +39,8 @@
     });
   }
   /* The time of day moves a few Today cards up, right under At a glance (your order stays as it is):
-     mornings – departures and weather; evenings – habits and money. Off in Settings → Dashboard. */
-  var TIME_UP = { morning: ['transit', 'weather'], evening: ['habits', 'fin'] };
+     mornings – today's line, weather and departures; evenings – today's line (with tomorrow), habits and money. Off in Settings → Dashboard. */
+  var TIME_UP = { morning: ['timeline', 'weather', 'transit'], evening: ['timeline', 'habits', 'fin'] };
   function partOfDay(h) { return h >= 5 && h < 10 ? 'morning' : h >= 17 && h < 24 ? 'evening' : ''; }
   function byTime(s, g, list) {
     if (g.id !== 'today' || s.adapt === false) return list;

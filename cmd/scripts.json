@@ -2,6 +2,7 @@
   "head": [
     "i18n.js",
     "lock.js",
+    "lockui.js",
     "features.js"
   ],
   "tail": [

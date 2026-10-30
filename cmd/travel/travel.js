@@ -204,13 +204,18 @@
     var r = F.travel().recent;
     $('tvRecent').hidden = !r.length || shown.length > 0;
     var extra = recentAll ? 0 : Math.max(0, r.length - 3);
-    $('tvRecent').innerHTML = r.length ? '<p class="tv-label">Recent</p>' + r.slice(0, r.length - extra).map(function (x, i) {
+    $('tvRecent').innerHTML = r.length ? '<p class="tv-label tv-label-row"><span>Recent</span><button type="button" class="link-btn tv-clear" data-rclear>Clear</button></p>' + r.slice(0, r.length - extra).map(function (x, i) {
       return '<button type="button" class="tv-chip" data-r="' + i + '"><i class="bi bi-clock-history"></i><span class="tv-rn">' + esc(x.from.name) + '</span><i class="bi bi-arrow-right"></i><span class="tv-rn">' + esc(x.to.name) + '</span></button>';
     }).join('') + (extra ? '<button type="button" class="tv-more" data-rmore>' + 'Show ' + extra + ' more' + '</button>' : '') : '';
   }
   var recentAll = false;
   $('tvRecent').addEventListener('click', function (e) {
     if (e.target.closest('[data-rmore]')) { recentAll = true; renderRecent(); return; }
+    if (e.target.closest('[data-rclear]')) {
+      var t0 = F.travel(), was = (t0.recent || []).slice(); t0.recent = []; F.saveTravel(t0); recentAll = false; renderRecent();
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-clock-history"></i> Recent journeys cleared', function () { var t1 = F.travel(); t1.recent = was; F.saveTravel(t1); renderRecent(); });
+      return;
+    }
     var b = e.target.closest('[data-r]');
     if (!b) return;
     var r = F.travel().recent[+b.dataset.r];

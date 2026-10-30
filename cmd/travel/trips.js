@@ -23,7 +23,7 @@
   function today() { return F.dkey(new Date()); }
   function fmtD(k) { return new Date(k + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
   function fmt(k, o) { return C.fromKey(k).toLocaleDateString('en-GB', o || { day: 'numeric', month: 'short', year: 'numeric' }); }
-  var openId = null, pane = 'overview', planView = 'list';
+  var openId = null, pane = 'overview', planView = 'list', mapDay = '';
   try { planView = localStorage.getItem('dash.tpPlanView') || 'list'; } catch (e) {}
 
   function all() { return F.travel(); }
@@ -119,15 +119,30 @@
     if (stays) bits.push('<span><i class="bi bi-building"></i>' + stays + '</span>');
     if (pack.length) bits.push('<span><i class="bi bi-luggage"></i>' + packed + '/' + pack.length + '</span>');
     if (cost) bits.push('<span><i class="bi bi-cash-coin"></i>' + esc(kr(cost)) + '</span>');
-    return '<button type="button" class="tp-card" data-trip="' + esc(tr.id) + '">' +
+    var nd = Math.round((C.fromKey(tr.start) - C.day0(new Date())) / 864e5), live = tr.start <= today() && (tr.end || tr.start) >= today();
+    var cd = live ? '<span class="tp-cd live"><b>Day ' + (tripDays(tr).indexOf(today()) + 1) + '</b><small>of ' + tripDays(tr).length + '</small></span>'
+      : nd > 0 && nd <= 99 ? '<span class="tp-cd"><b>' + nd + '</b><small>' + (nd === 1 ? 'day' : 'days') + '</small></span>' : '';
+    return '<button type="button" class="tp-card' + (cd ? ' has-cd' : '') + '" data-trip="' + esc(tr.id) + '">' + cd +
       '<span class="k">' + esc(relDays(tr)) + '</span><b>' + esc(tr.name) + '</b>' +
       '<span class="s">' + esc(window.TravelPage.rangeLabel(tr)) + (tr.place && tr.place.country && tr.place.country !== tr.dest ? ', ' + esc(tr.place.country) : '') + '</span>' +
-      (bits.length ? '<span class="tp-bits">' + bits.join('') + '</span>' : '') + '<i class="bi bi-chevron-right tp-go"></i></button>';
+      (bits.length ? '<span class="tp-bits">' + bits.join('') + '</span>' : '') +
+      (tr.place && nd <= 16 && (tr.end || tr.start) >= today() ? '<span class="tp-cwx" data-cwx="' + esc(tr.id) + '"></span>' : '') + '<i class="bi bi-chevron-right tp-go"></i></button>';
+  }
+  /* the forecast on the trip cards, once it's within reach */
+  function cardWeather() {
+    document.querySelectorAll('[data-cwx]').forEach(function (el) {
+      var tr = find(all(), el.dataset.cwx); if (!tr) return;
+      wxFor(tr).then(function (wx) {
+        var days = tripDays(tr).filter(function (d) { return d >= today() && wx[d] && wx[d].kind === 'forecast'; }).slice(0, 4);
+        if (days.length) el.innerHTML = days.map(function (d) { var w = wx[d], x = W.wmo(w.code); return '<span title="' + esc(x[0]) + '"><small>' + esc(fmt(d, { weekday: 'short' })) + '</small><i class="bi bi-' + x[1] + '"></i>' + Math.round(w.max) + '°</span>'; }).join('');
+      });
+    });
   }
   function renderList() {
     var t = all(), td = today();
     var up = t.trips.filter(function (x) { return (x.end || x.start) >= td; }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
     $('tpUpcoming').innerHTML = up.map(card).join('');
+    cardWeather();
     $('tpEmpty').hidden = up.length > 0;
     $('tvTripCount').textContent = up.length ? up.length : '';
     renderDocs();
@@ -307,7 +322,8 @@
       var its = items.filter(function (it) { return it.date === d; });
       var stay = items.filter(function (it) { return it.type === 'hotel' && it.date < d && (it.endDate || it.date) > d; })[0];
       var ids = ideas.filter(function (x) { return x.day === d; });
-      return '<section class="tp-dd" data-day="' + d + '"><header><span class="n">Day ' + (i + 1) + '</span><b>' + esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'short' })) + '</b><span class="wxs" data-wx="' + d + '"></span></header>' +
+      return '<section class="tp-dd" data-day="' + d + '"><header><span class="n">Day ' + (i + 1) + '</span><b>' + esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'short' })) + '</b><span class="wxs" data-wx="' + d + '"></span>' +
+        '<button type="button" class="text-btn tp-dd-map' + (mapDay === d ? ' on' : '') + '" data-mapday="' + d + '" aria-pressed="' + (mapDay === d) + '"><i class="bi bi-geo-alt"></i> Map</button></header>' +
         its.map(function (it) { return itemRow(it, mapNo[it.id]); }).join('') +
         ids.map(function (x) { return '<div class="tp-dd-idea' + (x.done ? ' done' : '') + '"><i class="bi bi-lightbulb"></i><span>' + esc(x.text) + '</span></div>'; }).join('') +
         (stay ? '<p class="tp-dd-stay"><i class="bi bi-building"></i> ' + esc(stay.title || 'Your stay') + '</p>' : '') +
@@ -321,14 +337,19 @@
   $('tpPlanView').addEventListener('click', function (e) {
     var b = e.target.closest('[data-pv]');
     if (!b) return;
-    planView = b.dataset.pv;
+    planView = b.dataset.pv; if (planView !== 'days') mapDay = '';
     try { localStorage.setItem('dash.tpPlanView', planView); } catch (x) {}
-    renderPlan(current());
+    renderPlan(current()); renderMap(current());
   });
   $('tpItems').addEventListener('click', function (e) {
     var b;
     if ((b = e.target.closest('[data-edit]'))) return openItem(b.dataset.edit);
     if ((b = e.target.closest('[data-quick]'))) return openItem(null, b.dataset.quick);
+    if ((b = e.target.closest('[data-mapday]'))) {
+      mapDay = mapDay === b.dataset.mapday ? '' : b.dataset.mapday;
+      var tr = current(); renderPlan(tr); renderMap(tr);
+      var mc = document.querySelector('.tp-mapcard'); if (mc && innerWidth < 900) mc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   });
   $('tpAddItem').addEventListener('click', function () { openItem(null); });
 
@@ -350,25 +371,44 @@
   }
   var mapSig = '', locating = {};
   function renderMap(tr) {
-    var items = sortItems(tr.items || []), pts = [], n = 0, missing = 0;
+    var items = sortItems(tr.items || []), pts = [], n = 0, missing = 0, day = planView === 'days' ? mapDay : '';
     mapNo = {};
+    if (day) items = items.filter(function (it) { return it.date === day; });
     items.forEach(function (it) {
       var q = mapQuery(it, tr);
       if (!q) return;
       if (it.geo && it.geo.q === q) { n++; mapNo[it.id] = n; pts.push({ lat: it.geo.lat, lon: it.geo.lon, n: n, label: esc(it.title || (T[it.type] || T.other).name) + '<br><small>' + esc(q) + '</small>', color: '#0891b2' }); }
       else if (!(it.geo && it.geo.q === q && it.geo.none)) { missing++; locateItem(tr.id, it.id, q); }
     });
-    if (tr.place) pts.unshift({ lat: tr.place.lat, lon: tr.place.lon, label: esc(tr.place.name), color: 'var(--accent)' });
+    /* ideas with a day are places too */
+    (tr.ideas || []).filter(function (x) { return x.day && (!day || x.day === day); }).forEach(function (x) {
+      var q = x.text + (tr.place ? ', ' + tr.place.name : '');
+      if (x.geo && x.geo.q === q && !x.geo.none) { n++; pts.push({ lat: x.geo.lat, lon: x.geo.lon, n: n, label: esc(x.text), color: '#c98500' }); }
+      else if (!(x.geo && x.geo.q === q && x.geo.none)) { missing++; locateIdea(tr.id, x.id, q); }
+    });
+    if (tr.place && !day) pts.unshift({ lat: tr.place.lat, lon: tr.place.lon, label: esc(tr.place.name), color: 'var(--accent)' });
     $('tpMapOpen').hidden = !tr.place;
     if (tr.place) $('tpMapOpen').href = W.gmapsLink(tr.place.name + ', ' + tr.place.country);
     $('tpMapNote').textContent = missing ? 'Finding ' + missing + ' place' + (missing > 1 ? 's' : '') + ' on the map…'
-      : n ? 'Numbers match the bookings in your plan.' : tr.place ? 'Addresses in your plan (hotel, activities, arrival station) are shown here.' : 'Add a destination to see a map.';
-    var sig = JSON.stringify(pts.map(function (p) { return [p.lat, p.lon, p.n]; })) + document.documentElement.getAttribute('data-theme');
+      : day ? 'Day ' + (tripDays(tr).indexOf(day) + 1) + ', ' + fmt(day, { weekday: 'long' }) + ': ' + n + ' stop' + (n === 1 ? '' : 's') + ' in order. Tap Map on the day again for the whole trip.'
+      : n ? 'Numbers match the bookings in your plan. In “Day by day”, tap Map on a day to see just that day.' : tr.place ? 'Addresses in your plan (hotel, activities, arrival station) are shown here.' : 'Add a destination to see a map.';
+    var sig = JSON.stringify(pts.map(function (p) { return [p.lat, p.lon, p.n]; })) + document.documentElement.getAttribute('data-theme') + day;
     if (!pts.length) { $('tpMap').hidden = true; mapSig = ''; return; }
     $('tpMap').hidden = false;
     if (sig === mapSig && $('tpMap')._map) { setTimeout(function () { $('tpMap')._map.invalidateSize(); }, 50); return; }
     mapSig = sig;
-    W.map($('tpMap'), pts, { zoom: 11 }).catch(function () { $('tpMapNote').textContent = 'The map couldn’t load right now.'; });
+    W.map($('tpMap'), pts, { zoom: 11, route: !!day && pts.length > 1 }).catch(function () { $('tpMapNote').textContent = 'The map couldn’t load right now.'; });
+  }
+  function locateIdea(tripId, ideaId, q) {
+    var key = 'i' + ideaId + '|' + q;
+    if (locating[key]) return;
+    locating[key] = true;
+    W.locate(q).then(function (r) {
+      var t = all(), tr = find(t, tripId), x = tr && (tr.ideas || []).filter(function (y) { return y.id === ideaId; })[0];
+      if (!x) return;
+      x.geo = r ? { q: q, lat: r.lat, lon: r.lon } : { q: q, none: true };
+      F.saveTravel(t);
+    });
   }
   function locateItem(tripId, itemId, q) {
     var key = itemId + '|' + q;
@@ -515,13 +555,20 @@
     ((vd && vd.expenses) || []).forEach(function (x) { ids[x.id] = 1; });
     costs.forEach(function (it) { if (it.spendId && vd && !ids[it.spendId]) { delete it.spendId; it.noFin = true; } });
     var total = planned(tr), budget = num(tr.budget), logged = costs.filter(function (it) { return it.spendId; });
-    var pct = budget ? Math.min(100, Math.round(total / budget * 100)) : 0;
+    /* what you've spent while away counts against the budget too */
+    var dLinked = {}; costs.forEach(function (it) { if (it.spendId) dLinked[it.spendId] = 1; }); if (tr.spentId) dLinked[tr.spentId] = 1;
+    var away = tr.start && tr.start <= today() && vd ? (vd.expenses || []).filter(function (x) { return x.date >= tr.start && x.date <= (tr.end || tr.start) && !dLinked[x.id]; }).reduce(function (a, x) { return a + (+x.amount || 0); }, 0) : 0;
+    var used = total + away, ongoing = tr.start <= today() && (tr.end || tr.start) >= today();
+    var pct = budget ? Math.min(100, Math.round(used / budget * 100)) : 0;
     var over = (tr.end || tr.start) < today();
     var html = over && !total && !budget ? '' : '<div class="tp-total"><div><span class="muted">' + (over ? 'Booked' : 'Booked so far') + '</span><b>' + esc(kr(total)) + '</b></div>' +
       (budget ? '<div class="r"><span class="muted">Budget</span><b>' + esc(kr(budget)) + '</b></div>' : '') + '</div>';
-    if (budget) html += '<div class="tp-progress' + (total > budget ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>' +
-      '<p class="muted tp-left">' + (total > budget ? esc(kr(total - budget)) + ' over budget' : esc(kr(budget - total)) + ' left to spend') +
-      (budget > total && tripDays(tr).length ? ' · about ' + esc(kr((budget - total) / tripDays(tr).length)) + ' a day' : '') + '</p>';
+    var daysLeft = ongoing ? tripDays(tr).filter(function (d) { return d >= today(); }).length : tripDays(tr).length;
+    if (budget) html += '<div class="tp-progress' + (used > budget ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>' +
+      '<p class="muted tp-left">' + (used > budget ? esc(kr(used - budget)) + ' over budget' : esc(kr(budget - used)) + ' left to spend') +
+      (away ? ' · ' + esc(kr(away)) + ' spent while away' : '') +
+      (budget > used && daysLeft ? ' · about ' + esc(kr((budget - used) / daysLeft)) + ' a day' : '') + '</p>';
+    if (ongoing) html += '<div class="tp-money-acts"><button type="button" class="pill-btn" data-quick="expense"><i class="bi bi-plus-lg"></i> Log a cost</button><span class="muted tp-hint">Goes to Finances and counts against this trip.</span></div>';
     else if ((tr.end || tr.start) >= today()) html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip>Set a budget</button> to see what’s left per day.</p>';
     if (costs.length || num(tr.spent)) {
       html += '<ul class="tp-costs">' + costs.map(function (it) {
