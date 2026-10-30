@@ -112,5 +112,13 @@
       "profile.js",
       "links.js"
     ]
-  }
+  },
+  "settings": [
+    "calendar/cal-core.js",
+    "calendar/cal-settings.js",
+    "settings.js",
+    "website.js",
+    "texts.js",
+    "checklists.js"
+  ]
 }

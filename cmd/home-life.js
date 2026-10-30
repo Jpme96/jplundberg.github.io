@@ -15,6 +15,7 @@
   function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function num(v) { var x = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(x) ? x : null; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function pad(n) { return String(n).padStart(2, '0'); }
   var dkey = Fe.dkey, fromKey = Fe.fromKey, addMonths = Fe.addMonths;
@@ -51,57 +52,107 @@
   window.BriefExtra = window.BriefExtra || [];
   window.CommandExtra = window.CommandExtra || [];
 
+  /* ---------- settings per page (Settings → Pages → House / People / Food, and Work) ---------- */
+  var DEF = {
+    housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true },
+    peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true },
+    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'added', calendar: false },
+    ptcfg: { round: 0, long: 4 }
+  };
+  function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
+  function setCfg(k, patch) { var t = Fe.tools(); t[k] = Object.assign({}, t[k] || {}, patch); Fe.saveTools(t); }
+  function gear(page) { return '<a class="text-btn" href="/cmd/?settings=' + page + '" aria-label="Settings"><i class="bi bi-sliders"></i> Settings</a>'; }
+
+  /* a small centred sheet (pick a kind, manage a list) */
+  function dialog(html, onClick) {
+    var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
+    bg.innerHTML = '<div class="fo-box lf-box hl-box" role="dialog" aria-modal="true">' + html + '</div>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    function close() { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); document.removeEventListener('keydown', key, true); }
+    function key(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    document.addEventListener('keydown', key, true);
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-hlclose]')) return close(); if (onClick) onClick(e, close); });
+    return { el: bg.firstChild, close: close };
+  }
+  function dhead(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-hlclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
+  function picker(icon, title, sub, opts, pick) {
+    dialog(dhead(icon, title, sub) + '<div class="hl-pick">' + opts.map(function (o, i) {
+      return '<button type="button" data-hlpick="' + i + '" style="--c:' + o.c + '"><span class="kit-ic" style="--c:' + o.c + '"><i class="bi bi-' + o.i + '"></i></span><span><b>' + esc(o.n) + '</b>' + (o.s ? '<small>' + esc(o.s) + '</small>' : '') + '</span></button>';
+    }).join('') + '</div>', function (e, close) { var b = e.target.closest('[data-hlpick]'); if (b) { close(); setTimeout(function () { pick(opts[+b.dataset.hlpick]); }, 120); } });
+  }
+  /* catch a card's own "+" / "Edit" before Kit does (to ask what kind first, or use that kind's form) */
+  function intercept(el, fn) { if (el) el.addEventListener('click', function (e) { if (fn(e) === false) { e.stopPropagation(); e.preventDefault(); } }, true); }
+  function withDefaults(base, defs) { return Object.assign({}, base, { fields: base.fields.map(function (f) { return f.k in defs ? Object.assign({}, f, { def: defs[f.k] }) : f; }) }); }
+
+  /* the numbers at the top of each page */
+  function heroTile(icon, label, value, sub, href, c) {
+    return '<a class="fp-tile hl-tile" href="' + href + '"' + (c ? ' style="--c:' + c + '"' : '') + '><div class="lbl"><i class="bi bi-' + icon + '"></i>' + label + '</div><div class="val">' + value + '</div><div class="sub">' + (sub || '&nbsp;') + '</div></a>';
+  }
+  var heroes = {};
+  function drawHero() {
+    var el = document.getElementById('hlTiles'); if (!el || !PAGE || !heroes[PAGE]) return;
+    if (!on(PAGE)) { el.innerHTML = ''; el.hidden = true; return; }
+    el.hidden = false;
+    var h = heroes[PAGE](); if (el.innerHTML !== h) el.innerHTML = h;
+  }
+  ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawHero.t); drawHero.t = setTimeout(drawHero, 20); }); });
+  window.Vault.onUnlock(drawHero);
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('.hl-tile[href^="#"]'); if (!a) return;
+    e.preventDefault(); var c = document.getElementById(a.getAttribute('href').slice(1)); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   /* ============================== HOUSE ============================== */
   /* ---- upkeep that comes round again ---- */
   var EVERY = [[1, 'Every month'], [2, 'Every 2 months'], [3, 'Every 3 months'], [6, 'Every 6 months'], [12, 'Every year'], [24, 'Every 2 years'], [60, 'Every 5 years']];
   function everyName(m) { var x = EVERY.filter(function (e) { return e[0] === +m; })[0]; return x ? x[1] : 'Every ' + m + ' months'; }
   function nextDue(it) { return isKey(it.last) ? addMonths(it.last, +it.every || 12) : today(); }
   var USUAL = [
-    ['Test the smoke alarms', 3, 'Press the test button on each one.'],
-    ['New batteries in the smoke alarms', 12, '1 December is smoke alarm day (røykvarslerens dag).'],
-    ['Check the fire extinguisher', 12, 'Turn it upside down a few times; the needle should be in the green.'],
-    ['Clean the heat pump filters', 3, 'Rinse in lukewarm water, let them dry.'],
-    ['Clean the shower and sink drains (sluk)', 3, ''],
-    ['Change the ventilation filter', 6, ''],
-    ['Check under and around the water heater', 12, 'Look for damp or rust; check the leak guard if you have one.']
+    ['Test the smoke alarms', 3, 'Press the test button on each one.', 'alarm'],
+    ['New batteries in the smoke alarms', 12, '1 December is smoke alarm day (røykvarslerens dag).', 'battery-charging'],
+    ['Check the fire extinguisher', 12, 'Turn it upside down a few times; the needle should be in the green.', 'fire'],
+    ['Clean the heat pump filters', 3, 'Rinse in lukewarm water, let them dry.', 'fan'],
+    ['Clean the shower and sink drains (sluk)', 3, '', 'droplet'],
+    ['Change the ventilation filter', 6, '', 'wind'],
+    ['Check under and around the water heater', 12, 'Look for damp or rust; check the leak guard if you have one.', 'thermometer-half'],
+    ['Clean the gutters', 12, 'Autumn, after the leaves have fallen.', 'house'],
+    ['Check the sealant in the bathroom', 12, 'Cracked or dark sealant lets water in behind the tiles.', 'bucket']
   ];
   var HM = { key: 'hmaint', addTitle: 'New upkeep task', editTitle: 'Edit upkeep task', fields: [
     { k: 'title', type: 'title', label: 'Task', ph: 'e.g. Clean the heat pump filters', req: true },
     { k: 'every', label: 'How often', type: 'select', options: EVERY, def: 12 },
     { k: 'last', label: 'Last done', type: 'date', def: today, help: 'Leave empty if it’s never been done – then it’s due now.' },
     { k: 'notes', label: 'How / notes', type: 'textarea', rows: 2 }] };
+  function hmIcon(t) { var u = USUAL.filter(function (x) { return x[0] === t; })[0]; return u ? u[3] : /røyk|smoke/i.test(t) ? 'alarm' : /filter|vent/i.test(t) ? 'wind' : /sluk|drain|vann|water/i.test(t) ? 'droplet' : 'tools'; }
   col({
     mount: $t('hmaint'), feature: 'house', key: 'hmaint', icon: 'tools', title: 'Upkeep', addLabel: 'Add', limit: 10,
     addTitle: HM.addTitle, editTitle: HM.editTitle, fields: HM.fields,
+    headExtra: function () { return gear('house'); },
     empty: 'Things that need doing every few months – filters, drains, smoke alarms. You get a nudge when they’re due.',
     sort: function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; },
-    summary: function (l) {
-      if (!l.length) return '';
-      var over = l.filter(function (x) { return daysTo(nextDue(x)) < 0; }).length, soon = l.filter(function (x) { var n = daysTo(nextDue(x)); return n >= 0 && n <= 30; }).length;
-      var nx = l.slice().sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; })[0];
-      return '<div class="kit-tiles">' + tile('Overdue', '<span class="' + (over ? 'neg' : '') + '">' + over + '</span>') + tile('Next 30 days', soon) +
-        tile('Next up', daysTo(nextDue(nx)) < 0 ? '<span class="neg">Overdue</span>' : esc(cap(inDays(daysTo(nextDue(nx))))), esc(nx.title)) + '</div>';
-    },
-    above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-hmseed><i class="bi bi-magic"></i> Add the usual ones</button>'; },
+    above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-hmseed><i class="bi bi-magic"></i> Pick from the usual ones</button>'; },
     row: function (it) {
       var n = daysTo(nextDue(it)), c = n < 0 ? RED : n <= 14 ? AMBER : GREEN;
-      return { icon: 'tools', color: c, title: it.title, sub: esc(everyName(it.every) + (isKey(it.last) ? ' · last ' + fmt(it.last) : ' · not done yet')),
+      return { icon: hmIcon(it.title), color: c, title: it.title, sub: esc(everyName(it.every) + (isKey(it.last) ? ' · last ' + fmt(it.last) : ' · not done yet')),
         right: chip(n < 0 ? 'Overdue' : cap(inDays(n)), c) };
     },
     detail: function (it) {
       return (it.notes ? '<p class="kit-notes">' + esc(it.notes) + '</p>' : '') +
         '<p class="muted hl-small">Next time: ' + esc(fmt(nextDue(it), { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
-        '<button type="button" class="pill-btn" data-hmdone="' + esc(it.id) + '"><i class="bi bi-check2"></i> Done today</button> ';
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-hmdone="' + esc(it.id) + '"><i class="bi bi-check2"></i> Done today</button></div>';
     },
-    onClick: function (e) {
-      var b;
-      if (e.target.closest('[data-hmseed]')) {
-        saveList('hmaint', function (l) { USUAL.forEach(function (u) { l.push({ id: uid(), title: u[0], every: u[1], last: today(), notes: u[2] }); }); });
-        toast('<i class="bi bi-tools"></i> ' + USUAL.length + ' tasks added – set when each was last done');
-      }
-      if ((b = e.target.closest('[data-hmdone]'))) hmDone(b.dataset.hmdone);
-    }
+    onClick: function (e) { var b = e.target.closest('[data-hmdone]'); if (b) hmDone(b.dataset.hmdone); }
   });
+  /* "+": a usual one (with its interval and how-to filled in) or your own */
+  function hmPick() {
+    var have = Fe.list('hmaint').map(function (x) { return x.title; });
+    var opts = USUAL.filter(function (u) { return have.indexOf(u[0]) < 0; }).map(function (u) { return { n: u[0], s: everyName(u[1]), i: u[3], c: GREEN, u: u }; });
+    opts.push({ n: 'Something else', s: 'Write your own', i: 'pencil', c: '#7a8794' });
+    picker('tools', 'New upkeep task', 'Pick one – it comes with how often and how to', opts, function (o) {
+      K.edit(o.u ? withDefaults(HM, { title: o.u[0], every: o.u[1], notes: o.u[2] }) : HM, null);
+    });
+  }
+  intercept($t('hmaint'), function (e) { if (e.target.closest('[data-kit-add], [data-hmseed]')) { hmPick(); return false; } });
   function hmDone(id) {
     var old = snapshot('hmaint');
     saveList('hmaint', function (l) { l.forEach(function (x) { if (x.id === id) x.last = today(); }); });
@@ -110,18 +161,24 @@
   }
   window.BriefExtra.push(function (add) {
     if (!on('house')) return;
-    Fe.list('hmaint').filter(function (x) { return daysTo(nextDue(x)) <= 2; }).sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; }).slice(0, 2).forEach(function (x) {
+    var lead = +cfg('housecfg').lead || 0;
+    Fe.list('hmaint').filter(function (x) { return daysTo(nextDue(x)) <= lead; }).sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; }).slice(0, 2).forEach(function (x) {
       var n = daysTo(nextDue(x));
-      add(n < 0 ? 33 : 46, 'tools', n < 0 ? RED : AMBER, x.title, n < 0 ? 'Overdue since ' + fmt(nextDue(x)) : 'Due ' + inDays(n), '/cmd/house/',
+      add(n < 0 ? 33 : 46, hmIcon(x.title), n < 0 ? RED : AMBER, x.title, n < 0 ? 'Overdue since ' + fmt(nextDue(x)) : 'Due ' + inDays(n), '/cmd/house/',
         { act: { id: 'hm:' + x.id + ':' + today(), label: 'Done' }, run: function () { hmDone(x.id); } });
     });
   });
 
   /* ---- bin days (renovasjon) ---- */
+  var BIN_TYPES = [
+    ['Restavfall', '#7a8794', 'trash3'], ['Papir og papp', BLUE, 'newspaper'], ['Plastemballasje', '#8a6fdf', 'bag'],
+    ['Matavfall', GREEN, 'apple'], ['Glass- og metallemballasje', '#0891b2', 'cup-straw'], ['Hageavfall', '#5d9c3a', 'tree']
+  ];
+  var EVERY_WK = [[1, 'Every week'], [2, 'Every 2 weeks'], [3, 'Every 3 weeks'], [4, 'Every 4 weeks'], [6, 'Every 6 weeks'], [8, 'Every 8 weeks']];
   var BINS = { key: 'hbins', addTitle: 'New bin', editTitle: 'Edit bin', fields: [
     { k: 'title', type: 'title', label: 'Bin', ph: 'Restavfall, Papir, Plast, Glass og metall …', req: true },
-    { k: 'first', label: 'A pickup day', type: 'date', req: true, def: today, help: 'Any day it was (or will be) picked up – the rest follow from it.' },
-    { k: 'every', label: 'How often', type: 'select', options: [[1, 'Every week'], [2, 'Every 2 weeks'], [3, 'Every 3 weeks'], [4, 'Every 4 weeks'], [8, 'Every 8 weeks']], def: 2 },
+    { k: 'first', label: 'Next pickup', type: 'date', req: true, def: function () { return addDays(today(), 1); }, help: 'Or any day it was picked up – the rest follow from it. Your kommune’s app or website has the dates.' },
+    { k: 'every', label: 'How often', type: 'select', options: EVERY_WK, def: 2 },
     { k: 'night', label: 'Remind me the evening before', type: 'check', def: true }] };
   function nextPickup(b, from) {
     if (!isKey(b.first)) return null;
@@ -130,31 +187,43 @@
     var k = n <= 0 ? 0 : Math.ceil(n / step);
     return addDays(b.first, k * step);
   }
-  var BIN_C = function (t) { return /papir|paper|papp/i.test(t) ? BLUE : /plast/i.test(t) ? '#8a6fdf' : /glass|metall/i.test(t) ? '#0891b2' : /mat|food|bio/i.test(t) ? GREEN : '#7a8794'; };
+  function binType(t) { return BIN_TYPES.filter(function (x) { return x[0] === t; })[0] || (/papir|paper|papp/i.test(t) ? BIN_TYPES[1] : /plast/i.test(t) ? BIN_TYPES[2] : /mat|food|bio/i.test(t) ? BIN_TYPES[3] : /glass|metall/i.test(t) ? BIN_TYPES[4] : /hage|garden/i.test(t) ? BIN_TYPES[5] : BIN_TYPES[0]); }
+  function nextBins() {
+    var nx = Fe.list('hbins').map(function (b) { return [nextPickup(b), b]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+    if (!nx.length) return null;
+    return { k: nx[0][0], names: nx.filter(function (x) { return x[0] === nx[0][0]; }).map(function (x) { return x[1].title; }) };
+  }
   col({
     mount: $t('hbins'), feature: 'house', key: 'hbins', icon: 'trash3', title: 'Bin days', addLabel: 'Add',
     addTitle: BINS.addTitle, editTitle: BINS.editTitle, fields: BINS.fields,
-    empty: 'Add each bin once with a day it was picked up – you get a reminder the evening before.',
+    empty: 'Add each bin once with its next pickup – you get a reminder the evening before.',
     sort: function (a, b) { return (nextPickup(a) || '9') < (nextPickup(b) || '9') ? -1 : 1; },
-    summary: function (l) {
-      var nx = l.map(function (b) { return [nextPickup(b), b]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
-      if (!nx.length) return '';
-      var same = nx.filter(function (x) { return x[0] === nx[0][0]; }).map(function (x) { return x[1].title; });
-      return '<p class="hl-lead"><i class="bi bi-truck"></i> Next: <b>' + esc(same.join(' + ')) + '</b> ' + esc(inDays(daysTo(nx[0][0]))) + ' · ' + esc(fmt(nx[0][0], { weekday: 'long' })) + '</p>';
+    summary: function () {
+      var n = nextBins(); if (!n) return '';
+      return '<p class="hl-lead"><i class="bi bi-truck"></i> Next: <b>' + esc(n.names.join(' + ')) + '</b> ' + esc(inDays(daysTo(n.k))) + ' · ' + esc(fmt(n.k, { weekday: 'long' })) + '</p>';
     },
     row: function (b) {
-      var k = nextPickup(b), n = k ? daysTo(k) : null;
-      return { icon: 'trash3', color: BIN_C(b.title), title: b.title, sub: esc((({ 1: 'Every week', 2: 'Every 2 weeks', 3: 'Every 3 weeks', 4: 'Every 4 weeks', 8: 'Every 8 weeks' })[b.every] || '') + (k ? ' · ' + fmt(k, { weekday: 'long' }) : '')),
+      var k = nextPickup(b), n = k ? daysTo(k) : null, bt = binType(b.title);
+      var ev = (EVERY_WK.filter(function (x) { return x[0] === +b.every; })[0] || [0, ''])[1];
+      return { icon: bt[2], color: bt[1], title: b.title, sub: esc(ev + (k ? ' · ' + fmt(k, { weekday: 'long' }) : '') + (b.night === false ? ' · no reminder' : '')),
         right: k ? chip(cap(inDays(n)), n <= 1 ? AMBER : '#7a8794') : '' };
     }
   });
+  intercept($t('hbins'), function (e) {
+    if (!e.target.closest('[data-kit-add]')) return;
+    var have = Fe.list('hbins').map(function (x) { return x.title; });
+    var opts = BIN_TYPES.filter(function (b) { return have.indexOf(b[0]) < 0; }).map(function (b) { return { n: b[0], i: b[2], c: b[1] }; });
+    opts.push({ n: 'Another bin', s: 'Write your own', i: 'pencil', c: '#7a8794' });
+    picker('trash3', 'New bin', 'Which one?', opts, function (o) { K.edit(o.s ? BINS : withDefaults(BINS, { title: o.n }), null); });
+    return false;
+  });
   window.BriefExtra.push(function (add, now) {
     if (!on('house')) return;
-    var tk = today(), tm = addDays(tk, 1), h = now.getHours();
+    var c = cfg('housecfg'), tk = today(), tm = addDays(tk, 1), h = now.getHours();
     var tonight = Fe.list('hbins').filter(function (b) { return b.night !== false && nextPickup(b, tm) === tm; }).map(function (b) { return b.title; });
     var tod = Fe.list('hbins').filter(function (b) { return nextPickup(b) === tk; }).map(function (b) { return b.title; });
-    if (tonight.length && h >= 14) add(17, 'trash3', AMBER, 'Put out ' + tonight.join(' + ') + ' tonight', 'Picked up tomorrow', '/cmd/house/');
-    else if (tod.length && h < 10) add(19, 'trash3', AMBER, tod.join(' + ') + ' is picked up today', 'Out by 7 if it isn’t already', '/cmd/house/');
+    if (tonight.length && h >= (+c.binHour || 14)) add(17, 'trash3', AMBER, 'Put out ' + tonight.join(' + ') + ' tonight', 'Picked up tomorrow', '/cmd/house/');
+    else if (tod.length && c.binMorning && h < 10) add(19, 'trash3', AMBER, tod.join(' + ') + ' is picked up today', 'Out by 7 if it isn’t already', '/cmd/house/');
   });
 
   /* ---- meter readings ---- */
@@ -166,18 +235,20 @@
     var avg = yr.length > 1 ? per(yr[0], yr[yr.length - 1]) : null;
     return { r: r, last: last, avg: avg, prev: function (x) { var i = r.map(function (y) { return y.id; }).indexOf(x.id); return i > 0 ? r[i - 1] : null; }, per: per };
   }
+  var METER = { key: 'hmeter', addTitle: 'New reading', editTitle: 'Edit reading', fields: [
+    { k: 'date', label: 'Date', type: 'date', req: true, def: today },
+    { k: 'value', label: 'Meter shows', type: 'number', req: true, suffix: 'kWh', help: 'The big number on the meter, or the latest one in your power company’s app.' },
+    { k: 'notes', label: 'Notes', type: 'textarea', rows: 2 }] };
   col({
     mount: $t('hmeter'), feature: 'house', key: 'hmeter', icon: 'speedometer2', title: 'Electricity meter', addLabel: 'Reading', limit: 6,
-    addTitle: 'New reading', editTitle: 'Edit reading', fields: [
-      { k: 'date', label: 'Date', type: 'date', req: true, def: today },
-      { k: 'value', label: 'Meter shows', type: 'number', req: true, suffix: 'kWh' },
-      { k: 'notes', label: 'Notes', type: 'textarea', rows: 2 }],
+    addTitle: METER.addTitle, editTitle: METER.editTitle, fields: METER.fields,
     empty: 'Read the meter now and then (or copy the number from the app) – you see how much you use per day and per year.',
     sort: function (a, b) { return a.date < b.date ? 1 : -1; },
     summary: function (l) {
       var s = meterStats(l); if (s.r.length < 2) return s.r.length ? '<p class="muted hl-small">Add one more reading to see how much you use.</p>' : '';
+      var pr = +cfg('housecfg').price || 0;
       return '<div class="kit-tiles">' + tile('Per day, lately', nf1.format(s.last) + ' <small>kWh</small>') + tile('Per day, avg', nf1.format(s.avg) + ' <small>kWh</small>', 'last 12 months') +
-        tile('Per year', nf.format(s.avg * 365) + ' <small>kWh</small>', 'at that pace') + '</div>';
+        (pr ? tile('Per month', '≈ ' + nf.format(s.avg * 30.4 * pr / 100) + ' <small>kr</small>', 'at ' + nf.format(pr) + ' øre/kWh') : tile('Per year', nf.format(s.avg * 365) + ' <small>kWh</small>', 'at that pace')) + '</div>';
     },
     row: function (x) {
       var s = meterStats(Fe.list('hmeter')), p = s.prev(x), d = p ? s.per(p, x) : null;
@@ -186,28 +257,90 @@
     }
   });
   window.BriefExtra.push(function (add) {
-    if (!on('house')) return;
+    if (!on('house') || !cfg('housecfg').meterNudge) return;
     var r = meterStats(Fe.list('hmeter')).r; if (!r.length) return;
     var n = -daysTo(r[r.length - 1].date);
-    if (n >= 35 && new Date().getDate() <= 3) add(70, 'speedometer2', AMBER, 'Read the electricity meter', 'Last reading ' + ago(r[r.length - 1].date), '/cmd/house/');
+    if (n >= 28 && new Date().getDate() <= 3) add(70, 'speedometer2', AMBER, 'Read the electricity meter', 'Last reading ' + ago(r[r.length - 1].date), '/cmd/house/');
   });
-  window.CommandExtra.push(function () { return on('house') ? [{ i: 'speedometer2', t: 'New meter reading', s: 'House', run: function () { if ($t('hmeter')) K.edit({ key: 'hmeter', addTitle: 'New reading', fields: [{ k: 'date', label: 'Date', type: 'date', req: true, def: today }, { k: 'value', label: 'Meter shows', type: 'number', req: true, suffix: 'kWh' }] }, null); else location.href = '/cmd/house/#hmeter'; }, x: 'meter strøm måler kwh avlesning' }] : []; });
+  window.CommandExtra.push(function () { return on('house') ? [{ i: 'speedometer2', t: 'New meter reading', s: 'House', run: function () { if ($t('hmeter') && K) K.edit(METER, null); else location.href = '/cmd/house/#hmeter'; }, x: 'meter strøm måler kwh avlesning' }] : []; });
 
-  /* ---- home info ---- */
+  /* ---- good to know: a form per kind ---- */
+  var LINE = function (k, label, o) { return Object.assign({ k: k, label: label }, o || {}); };
+  var NOTES = LINE('notes', 'Notes', { type: 'textarea', rows: 3 });
+  var INFO = {
+    wifi: { n: 'Wi-Fi', s: 'Network and password', i: 'wifi', c: BLUE, f: [LINE('title', 'Name', { type: 'title', def: 'Wi-Fi', req: true }), LINE('ssid', 'Network name', { ph: 'Lundberg-5G' }), LINE('pass', 'Password', { secret: true }), LINE('guest', 'Guest network', { ph: 'Name / password' }), LINE('router', 'Router', { ph: 'Where it is, admin login' }), NOTES] },
+    water: { n: 'Water & stopcock', s: 'Where to turn the water off', i: 'droplet', c: '#0891b2', f: [LINE('title', 'Name', { type: 'title', def: 'Stopcock (stoppekran)', req: true }), LINE('where', 'Where it is', { ph: 'Under the kitchen sink, behind the panel' }), LINE('heater', 'Water heater', { ph: 'Size, year, where' }), NOTES] },
+    power: { n: 'Fuse box & power', s: 'Fuses, meter, supplier', i: 'lightning-charge', c: AMBER, f: [LINE('title', 'Name', { type: 'title', def: 'Fuse box (sikringsskap)', req: true }), LINE('where', 'Where it is', { ph: 'Hallway cupboard' }), LINE('fuses', 'Which fuse is what', { type: 'textarea', rows: 3, ph: '1 Kitchen, 2 Bathroom floor heating …' }), LINE('supplier', 'Power company'), LINE('meter', 'Meter / målepunkt-ID', { secret: false }), NOTES] },
+    contact: { n: 'Contact', s: 'Landlord, plumber, the board (styret)', i: 'person-lines-fill', c: '#d55181', f: [LINE('title', 'Who', { type: 'title', ph: 'Landlord, plumber, styret …', req: true }), LINE('name', 'Name'), LINE('phone', 'Phone', { type: 'tel', ph: '+47' }), LINE('email', 'Email', { type: 'email' }), NOTES] },
+    appliance: { n: 'Appliance', s: 'Model, serial, warranty, manual', i: 'plug', c: '#8a6fdf', f: [LINE('title', 'What', { type: 'title', ph: 'Dishwasher, heat pump …', req: true }), LINE('model', 'Brand & model', { ph: 'Bosch SMV4HVX31E' }), LINE('serial', 'Serial number'), LINE('bought', 'Bought', { type: 'date' }), LINE('years', 'Complaint period', { type: 'select', options: [[2, '2 years'], [5, '5 years (things meant to last)']], def: 5 }), LINE('manual', 'Manual', { type: 'url', ph: 'https://' }), NOTES] },
+    paint: { n: 'Paint & materials', s: 'Colour codes, tiles, flooring', i: 'palette', c: '#e8743b', f: [LINE('title', 'Where', { type: 'title', ph: 'Living room walls', req: true }), LINE('product', 'Brand & colour', { ph: 'Jotun Lady Pure Color – 1024 Ullhvit' }), LINE('finish', 'Gloss / type', { ph: 'Matt 5' }), LINE('amount', 'Amount used', { ph: '2 × 2,7 l' }), NOTES] },
+    code: { n: 'Codes & keys', s: 'Door, alarm, storage room', i: 'key', c: '#7a8794', f: [LINE('title', 'What', { type: 'title', ph: 'Door code, alarm, bike room …', req: true }), LINE('code', 'Code', { secret: true }), LINE('keys', 'Who has keys'), NOTES] },
+    other: { n: 'Something else', s: 'A free note', i: 'info-circle', c: GREEN, f: [LINE('title', 'What', { type: 'title', req: true }), LINE('text', 'Details', { type: 'textarea', rows: 4 })] }
+  };
+  function infoCfg(kind) {
+    var k = INFO[kind] ? kind : 'other', x = INFO[k];
+    return { key: 'hinfo', addTitle: x.n, editTitle: x.n, fields: x.f, beforeSave: function (it) { it.kind = k; } };
+  }
+  function infoLine(x) {
+    var k = INFO[x.kind] ? x.kind : 'other';
+    if (k === 'wifi') return x.ssid || '';
+    if (k === 'contact') return [x.name, x.phone].filter(Boolean).join(' · ');
+    if (k === 'appliance') return [x.model, x.bought ? 'bought ' + fmt(x.bought, { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ');
+    if (k === 'paint') return [x.product, x.finish].filter(Boolean).join(' · ');
+    if (k === 'code') return x.keys ? 'Keys: ' + x.keys : (x.code ? '••••' : '');
+    if (k === 'water' || k === 'power') return x.where || '';
+    return String(x.text || x.notes || '').split('\n')[0].slice(0, 80);
+  }
+  function infoDetail(x) {
+    var k = INFO[x.kind] ? x.kind : 'other', rows = '';
+    INFO[k].f.forEach(function (f) {
+      var v = x[f.k]; if (f.k === 'title' || f.k === 'notes' || v == null || v === '') return;
+      var val = esc(f.type === 'select' ? ((f.options.filter(function (o) { return String(o[0]) === String(v); })[0] || [, v])[1]) : f.type === 'date' ? fmt(v, { day: 'numeric', month: 'long', year: 'numeric' }) : v), act = '';
+      if (f.secret) { val = '<span class="hl-secret" data-sec="' + esc(v) + '">••••••••</span>'; act = '<button type="button" class="text-btn" data-hlshow>Show</button>'; }
+      if (f.type === 'tel') act = '<a class="text-btn" href="tel:' + esc(String(v).replace(/[^\d+]/g, '')) + '"><i class="bi bi-telephone"></i> Call</a>';
+      if (f.type === 'email') act = '<a class="text-btn" href="mailto:' + esc(v) + '"><i class="bi bi-envelope"></i></a>';
+      if (f.type === 'url' && /^https?:\/\//.test(v)) { val = 'Link'; act = '<a class="text-btn" href="' + esc(v) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a>'; }
+      if (f.type !== 'url' && f.type !== 'tel' && f.type !== 'email' && f.type !== 'select' && f.type !== 'date' && f.type !== 'textarea') act += '<button type="button" class="icon-btn sm" data-hlcopy="' + esc(v) + '" aria-label="Copy"><i class="bi bi-clipboard"></i></button>';
+      rows += '<div class="hl-kv"><span>' + esc(f.label) + '</span><b class="' + (f.type === 'textarea' ? 'hl-pre' : '') + '">' + val + '</b><span class="hl-kva">' + act + '</span></div>';
+    });
+    if (k === 'appliance' && isKey(x.bought)) {
+      var end = addMonths(x.bought, 12 * (+x.years || 5)), n = daysTo(end);
+      rows += '<div class="hl-kv"><span>Complaint period</span><b>' + (n >= 0 ? 'Until ' + esc(fmt(end, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Ended ' + esc(fmt(end, { month: 'short', year: 'numeric' }))) + '</b><span></span></div>';
+    }
+    return (rows ? '<div class="hl-kvs">' + rows + '</div>' : '') + (x.notes ? '<p class="kit-notes hl-pre">' + esc(x.notes) + '</p>' : '');
+  }
   col({
-    mount: $t('hinfo'), feature: 'house', key: 'hinfo', icon: 'info-circle', title: 'Good to know', addLabel: 'Add',
-    addTitle: 'New note', editTitle: 'Edit note', fields: [
-      { k: 'title', type: 'title', label: 'What', ph: 'Stopcock, fuse box, Wi-Fi, landlord, paint colours …', req: true },
-      { k: 'text', label: 'Details', type: 'textarea', rows: 4 }],
-    empty: 'Where the stopcock and the fuse box are, the Wi-Fi password, paint colours, the landlord’s number – encrypted like the rest.',
-    sort: function (a, b) { return a.title.localeCompare(b.title, 'nb'); },
-    row: function (x) { return { icon: /wi-?fi|nett/i.test(x.title) ? 'wifi' : /sikring|fuse|strøm/i.test(x.title) ? 'lightning' : /vann|water|stopp/i.test(x.title) ? 'droplet' : 'info-circle', color: '#22b35e', title: x.title, sub: esc(String(x.text || '').split('\n')[0].slice(0, 80)) }; },
-    detail: function (x) { return x.text ? '<p class="kit-notes hl-pre">' + esc(x.text) + '</p><button type="button" class="text-btn" data-hicopy="' + esc(x.id) + '"><i class="bi bi-clipboard"></i> Copy</button> ' : ''; },
+    mount: $t('hinfo'), feature: 'house', key: 'hinfo', icon: 'info-circle', title: 'Good to know', addLabel: 'Add', limit: 12,
+    addTitle: 'New', editTitle: 'Edit', fields: INFO.other.f,
+    empty: 'Wi-Fi, where the stopcock and the fuse box are, codes, the landlord’s number, paint colours, appliance models – encrypted like the rest.',
+    sort: function (a, b) { var o = Object.keys(INFO); return o.indexOf(a.kind || 'other') - o.indexOf(b.kind || 'other') || a.title.localeCompare(b.title, 'nb'); },
+    row: function (x) { var k = INFO[x.kind] ? x.kind : 'other'; return { icon: INFO[k].i, color: INFO[k].c, title: x.title, sub: esc(infoLine(x)) }; },
+    detail: infoDetail,
     onClick: function (e) {
-      var b = e.target.closest('[data-hicopy]'); if (!b) return;
-      var x = byId('hinfo', b.dataset.hicopy); if (x && navigator.clipboard) navigator.clipboard.writeText(x.text).then(function () { toast('<i class="bi bi-clipboard-check"></i> Copied'); });
+      var b;
+      if ((b = e.target.closest('[data-hlcopy]')) && navigator.clipboard) { navigator.clipboard.writeText(b.dataset.hlcopy).then(function () { toast('<i class="bi bi-clipboard-check"></i> Copied'); }); return; }
+      if ((b = e.target.closest('[data-hlshow]'))) { var s = b.closest('.hl-kv').querySelector('.hl-secret'); var shown = s.textContent !== '••••••••'; s.textContent = shown ? '••••••••' : s.dataset.sec; b.textContent = shown ? 'Show' : 'Hide'; }
     }
   });
+  intercept($t('hinfo'), function (e) {
+    var b;
+    if (e.target.closest('[data-kit-add]')) {
+      var ks = Object.keys(INFO);
+      picker('info-circle', 'Add to Good to know', 'What is it?', ks.map(function (k) { return { n: INFO[k].n, s: INFO[k].s, i: INFO[k].i, c: INFO[k].c, k: k }; }), function (o) { K.edit(infoCfg(o.k), null); });
+      return false;
+    }
+    if ((b = e.target.closest('[data-kit-edit]'))) { var x = byId('hinfo', b.dataset.kitEdit); if (x) K.edit(infoCfg(x.kind), x); return false; }
+  });
+
+  heroes.house = function () {
+    var nb = nextBins(), up = Fe.list('hmaint'), over = up.filter(function (x) { return daysTo(nextDue(x)) < 0; });
+    var nx = up.slice().sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; })[0];
+    var ms = meterStats(Fe.list('hmeter')), pr = +cfg('housecfg').price || 0, info = Fe.list('hinfo');
+    return heroTile('trash3', 'Next bin', nb ? esc(cap(inDays(daysTo(nb.k)))) : '–', nb ? esc(nb.names.join(' + ')) : 'Add your bins', '#hbins') +
+      heroTile('tools', 'Upkeep', over.length ? '<span class="neg">' + over.length + ' overdue</span>' : nx ? esc(cap(inDays(daysTo(nextDue(nx))))) : '–', nx ? esc(nx.title) : 'Nothing added yet', '#hmaint') +
+      heroTile('lightning-charge', 'Power', ms.avg != null ? nf1.format(ms.last != null ? ms.last : ms.avg) + ' <small>kWh/day</small>' : '–', ms.avg != null ? (pr ? '≈ ' + nf.format(ms.avg * 30.4 * pr / 100) + ' kr a month' : nf.format(ms.avg * 365) + ' kWh a year') : 'Add two readings', '#hmeter') +
+      heroTile('info-circle', 'Good to know', info.length, info.length ? esc(info.slice(0, 3).map(function (x) { return x.title; }).join(', ')) : 'Wi-Fi, codes, contacts', '#hinfo');
+  };
 
   /* ============================== PEOPLE ============================== */
   var REL = [['family', 'Family'], ['friend', 'Friend'], ['work', 'Work'], ['other', 'Other']];
@@ -228,7 +361,7 @@
     { k: 'name', type: 'title', label: 'Name', ph: 'Name', req: true },
     { k: 'rel', label: 'Who', type: 'select', options: REL, def: 'friend' },
     { k: 'bday', label: 'Birthday', ph: '24.12 or 24.12.1990', help: 'With the year, you also see how old they turn.' },
-    { k: 'every', label: 'Keep in touch', type: 'select', options: KEEP, def: 0 },
+    { k: 'every', label: 'Keep in touch', type: 'select', options: KEEP, def: function () { return cfg('peoplecfg').defEvery; } },
     { k: 'last', label: 'Last talked', type: 'date' },
     { k: 'phone', label: 'Phone', type: 'tel', ph: '+47' },
     { k: 'gifts', label: 'Gift ideas', type: 'textarea', rows: 2, help: 'Jot them down when you hear them – one per line.' },
@@ -241,16 +374,12 @@
   col({
     mount: $t('people'), feature: 'people', key: 'people', icon: 'people', title: 'People', addLabel: 'Add', limit: 12,
     addTitle: PP.addTitle, editTitle: PP.editTitle, fields: PP.fields,
+    headExtra: function () { return gear('people'); },
     empty: 'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.',
     sort: function (a, b) {
       var oa = overdue(a), ob = overdue(b), ba = bday(a), bb = bday(b);
       var sa = ba && ba.n <= 14 ? ba.n : oa != null ? 20 : 100 + (ba ? ba.n : 400), sb = bb && bb.n <= 14 ? bb.n : ob != null ? 20 : 100 + (bb ? bb.n : 400);
       return sa - sb || String(a.name).localeCompare(b.name, 'nb');
-    },
-    summary: function (l) {
-      if (!l.length) return '';
-      var b30 = l.filter(function (p) { var b = bday(p); return b && b.n <= 30; }).length, due = l.filter(function (p) { return overdue(p) != null; }).length;
-      return '<div class="kit-tiles">' + tile('Birthdays', b30, 'next 30 days') + tile('Catch up', '<span class="' + (due ? 'neg' : '') + '">' + due + '</span>', 'it’s been a while') + tile('People', l.length) + '</div>';
     },
     row: function (p) {
       var b = bday(p), o = overdue(p), subs = [];
@@ -287,18 +416,27 @@
   })();
   window.BriefExtra.push(function (add) {
     if (!on('people')) return;
-    var l = Fe.list('people');
+    var l = Fe.list('people'), pc = cfg('peoplecfg');
     l.forEach(function (p) {
-      var b = bday(p); if (!b || b.n > 7) return;
+      var b = bday(p); if (!b || b.n > +pc.lead) return;
       var tel = String(p.phone || '').replace(/[^\d+]/g, '');
       if (b.n === 0) add(8, 'balloon', '#d55181', p.name + '’s birthday today', (b.age ? 'Turns ' + b.age : 'Send a greeting') , tel ? 'sms:' + tel : '/cmd/people/', { badge: true });
       else add(b.n <= 2 ? 24 : 40, 'balloon', '#d55181', p.name + '’s birthday ' + inDays(b.n), p.gifts ? 'Gift idea: ' + String(p.gifts).split('\n')[0] : (b.age ? 'Turns ' + b.age + ' · ' : '') + 'no gift ideas yet', '/cmd/people/');
     });
-    l.filter(function (p) { return overdue(p) != null; }).sort(function (a, b) { return overdue(b) - overdue(a); }).slice(0, 1).forEach(function (p) {
+    if (pc.catchup) l.filter(function (p) { return overdue(p) != null; }).sort(function (a, b) { return overdue(b) - overdue(a); }).slice(0, +pc.catchupMax || 1).forEach(function (p) {
       add(58, 'chat-heart', AMBER, 'Catch up with ' + p.name, isKey(p.last) ? 'Last talked ' + ago(p.last) : 'Say hi', '/cmd/people/',
         { act: { id: 'pp:' + p.id + ':' + today(), label: 'Talked' }, run: function () { talked(p.id); } });
     });
   });
+
+  heroes.people = function () {
+    var l = Fe.list('people'), bs = l.map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0].n - b[0].n; });
+    var due = l.filter(function (p) { return overdue(p) != null; }), m = new Date().getMonth() + 1, mon = bs.filter(function (x) { return x[0].m === m; });
+    return heroTile('balloon', 'Next birthday', bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', '#d55181') +
+      heroTile('chat-heart', 'Catch up', due.length ? '<span class="neg">' + due.length + '</span>' : '0', due.length ? esc(due.slice(0, 3).map(function (p) { return p.name; }).join(', ')) : 'All in touch', '#people') +
+      heroTile('calendar-heart', 'This month', mon.length, mon.length ? esc(mon.map(function (x) { return x[1].name; }).join(', ')) : 'No birthdays', '#pdates') +
+      heroTile('people', 'People', l.length, l.filter(function (p) { return +p.every; }).length + ' to keep in touch with', '#people');
+  };
 
   /* ============================== FOOD ============================== */
   function meals() { var m = Fe.tools().meals; return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; }
@@ -324,7 +462,7 @@
       var days = []; for (var i = 0; i < 7; i++) days.push(addDays(m0, i));
       var planned = days.filter(function (k) { return m[k]; }), withR = planned.filter(function (k) { return recipeFor(m[k]); });
       el.innerHTML = '<section class="card kit-card" id="meals"><div class="card-head"><h2><i class="bi bi-calendar-week"></i> Dinners · week ' + weekNo(m0) + '</h2>' +
-        '<div class="head-actions"><button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week"><i class="bi bi-chevron-left"></i></button>' +
+        '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week"><i class="bi bi-chevron-left"></i></button>' +
         (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0">This week</button>' : '') +
         '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week"><i class="bi bi-chevron-right"></i></button></div></div>' +
         '<ul class="hl-meals">' + days.map(function (k) {
@@ -353,7 +491,7 @@
       }
       if (e.target.closest('[data-mlfill]')) {
         var t = Fe.tools(); t.meals = meals();
-        var used = {}; Object.keys(t.meals).forEach(function (k) { if (k >= addDays(today(), -14)) used[String(t.meals[k]).toLowerCase()] = 1; });
+        var used = {}; Object.keys(t.meals).forEach(function (k) { var rep = +cfg('foodcfg').repeat || 0; if (rep && k >= addDays(today(), -rep)) used[String(t.meals[k]).toLowerCase()] = 1; });
         var pool = Fe.list('recipes').map(function (r) { return r.title; }), fresh = pool.filter(function (x) { return !used[x.toLowerCase()]; });
         var bag = (fresh.length ? fresh : pool).slice().sort(function () { return Math.random() - .5; }), f0 = monday(ML.wk), filled = 0;
         for (var j = 0; j < 7 && bag.length; j++) { var kk = addDays(f0, j); if (kk < today() || t.meals[kk]) continue; t.meals[kk] = bag[filled % bag.length]; filled++; }
@@ -372,6 +510,7 @@
     function draw() {
       var ok = on('food'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
       var l = list(), open = l.filter(function (x) { return !x.done; }), done = l.filter(function (x) { return x.done; });
+      if (cfg('foodcfg').sort === 'abc') open.sort(function (a, b) { return a.text.localeCompare(b.text, 'nb'); });
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
         '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
@@ -440,11 +579,20 @@
   window.BriefExtra.push(function (add, now) {
     if (!on('food')) return;
     var m = meals()[today()], h = now.getHours(), shop = (Fe.tools().shop || []).filter(function (x) { return !x.done; }).length;
+    var fc = cfg('foodcfg');
     if (m && h < 20) {
       var r = recipeFor(m);
       add(h >= 14 ? 34 : 64, 'egg-fried', AMBER, 'Dinner: ' + m, r && r.mins ? r.mins + ' min' + (shop ? ' · ' + shop + ' on the shopping list' : '') : shop ? shop + ' on the shopping list' : 'Planned for tonight', '/cmd/food/');
-    } else if (!m && h >= 13 && h < 18) add(56, 'egg-fried', '#7a8794', 'What’s for dinner?', 'Nothing planned tonight' + (shop ? ' · ' + shop + ' on the shopping list' : ''), '/cmd/food/');
+    } else if (!m && fc.nudge && h >= (+fc.nudgeHour || 13) && h < 19) add(56, 'egg-fried', '#7a8794', 'What’s for dinner?', 'Nothing planned tonight' + (shop ? ' · ' + shop + ' on the shopping list' : ''), '/cmd/food/');
   });
+  heroes.food = function () {
+    var m = meals(), tk = today(), m0 = monday(0), n = 0, i; for (i = 0; i < 7; i++) if (m[addDays(m0, i)]) n++;
+    var shop = (Fe.tools().shop || []).filter(function (x) { return !x.done; }), r = recipeFor(m[tk]);
+    return heroTile('egg-fried', 'Tonight', m[tk] ? esc(m[tk]) : '–', m[tk] ? (r && r.mins ? r.mins + ' min' : 'Planned') : 'Nothing planned', '#meals', AMBER) +
+      heroTile('calendar-week', 'This week', n + ' <small>/ 7</small>', 'dinners planned', '#meals') +
+      heroTile('cart3', 'Shopping list', shop.length, shop.length ? esc(shop.slice(0, 3).map(function (x) { return x.text; }).join(', ')) : 'Nothing to buy', '#shop') +
+      heroTile('journal-text', 'Recipes', Fe.list('recipes').length, 'to plan from', '#recipes');
+  };
   window.CommandExtra.push(function () { return on('food') ? [{ i: 'cart3', t: 'Shopping list', s: 'Food', run: function () { location.href = '/cmd/food/#shop'; }, x: 'handleliste shopping list groceries butikk' }] : []; });
 
   /* ======================= Time per client / project (Work) ======================= */
@@ -474,7 +622,8 @@
   }
   function stopT(quiet) {
     var t = Fe.tools(), r = t.ptrun; if (!r) return;
-    var mins = Math.round((Date.now() - r.start) / 60000);
+    var mins = Math.round((Date.now() - r.start) / 60000), rd = +cfg('ptcfg').round || 0;
+    if (rd && mins >= 1) mins = Math.max(rd, Math.ceil(mins / rd) * rd);
     t.ptrun = null;
     if (mins >= 1) { t.ptime = Array.isArray(t.ptime) ? t.ptime : []; t.ptime.push({ id: uid(), pid: r.pid, date: dkey(new Date(r.start)), mins: mins, note: r.note || '' }); }
     Fe.saveTools(t);
@@ -497,7 +646,7 @@
       var todayM = Fe.list('ptime').filter(function (e) { return e.date === today(); }).reduce(function (s, e) { return s + e.mins; }, 0);
       var max = Math.max.apply(null, [1].concat(Object.keys(per).map(function (k) { return per[k]; })));
       var h = '<section class="card kit-card" id="ptime"><div class="card-head"><h2><i class="bi bi-hourglass-split"></i> Time per client</h2><div class="head-actions">' +
-        '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> Client</button>' +
+        gear('work') + '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> Client</button>' +
         (live.length ? '<button type="button" class="text-btn" data-ptadd><i class="bi bi-clock-history"></i> Add time</button>' : '') + '</div></div>';
       if (!ps.length) h += '<p class="empty kit-empty">Add a client or project, then start a timer when you work on it – or add the hours afterwards. You get hours per week and a list to invoice from.</p>';
       else {
@@ -558,14 +707,10 @@
     /* editing clients: one list in a small sheet, tap one to edit */
     function manage() {
       var ps = Fe.list('pproj');
-      var box = document.createElement('div'); box.className = 'fo-bg'; box.innerHTML = '<div class="fo-box lf-box"><h3>Clients and projects</h3><ul class="kit-list">' + ps.map(function (p) {
+      dialog(dhead('briefcase', 'Clients and projects', 'Tap one to change its name, rate or mark it finished') + '<ul class="kit-list">' + ps.map(function (p) {
         return '<li class="kit-item"><button type="button" class="kit-main" data-pm="' + esc(p.id) + '"><span class="kit-ic" style="--c:' + p.color + '"><i class="bi bi-briefcase"></i></span><span class="kit-x"><b>' + esc(p.name) + '</b><small>' + esc([p.client, p.rate ? nf.format(p.rate) + ' kr/h' : '', p.archived ? 'finished' : ''].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-right"></i></button></li>';
-      }).join('') + '</ul><button type="button" class="pill-btn wide" data-pmclose>Done</button></div>';
-      document.body.appendChild(box);
-      box.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-pm]');
-        if (b) { box.remove(); K.edit(PROJ, byId('pproj', b.dataset.pm)); return; }
-        if (e.target === box || e.target.closest('[data-pmclose]')) box.remove();
+      }).join('') + '</ul><button type="button" class="pill-btn wide" data-hlclose>Done</button>', function (e, close) {
+        var b = e.target.closest('[data-pm]'); if (b) { close(); K.edit(PROJ, byId('pproj', b.dataset.pm)); }
       });
     }
     ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, draw); });
@@ -575,7 +720,8 @@
     if (!on('ptime')) return;
     var r = run(); if (!r) return;
     var m = (Date.now() - r.start) / 60000, p = proj(r.pid);
-    add(m > 240 ? 11 : 27, 'hourglass-split', m > 240 ? RED : '#e8743b', 'Timer: ' + p.name, hm(m) + (m > 240 ? ' – still working on it?' : ' so far'), '/cmd/work/#ptime',
+    var lg = (+cfg('ptcfg').long || 4) * 60;
+    add(m > lg ? 11 : 27, 'hourglass-split', m > lg ? RED : '#e8743b', 'Timer: ' + p.name, hm(m) + (m > lg ? ' – still working on it?' : ' so far'), '/cmd/work/#ptime',
       { act: { id: 'ptstop:' + r.start, label: 'Stop' }, run: function () { stopT(); } });
   });
   window.CommandExtra.push(function () {
@@ -586,5 +732,85 @@
     }));
   });
 
-  window.HomeLife = { bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT };
+  /* ======================= Settings → Pages → House / People / Food (and Work) ======================= */
+  (function () {
+    if (!document.getElementById('settings')) return;
+    function sel(k, f, label, opts, sub) {
+      var v = String(cfg(k)[f]);
+      return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" data-hlcfg="' + k + ':' + f + '">' +
+        opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
+    }
+    function sw(k, f, label, sub) {
+      return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" class="switch" data-hlcfg="' + k + ':' + f + '"' + (cfg(k)[f] ? ' checked' : '') + '></label>';
+    }
+    function numIn(k, f, label, unit, sub) {
+      var v = cfg(k)[f];
+      return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><span class="st-unit"><input class="st-input st-num" inputmode="decimal" data-hlcfg="' + k + ':' + f + '" value="' + (v ? esc(String(v).replace('.', ',')) : '') + '" placeholder="–"> ' + unit + '</span></label>';
+    }
+    function sub(icon, t) { return '<p class="st-sub ap-sub"><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</p>'; }
+    function link(href, icon, t) { return '<a class="st-row st-btn" href="' + href + '"><span><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</span><i class="bi bi-chevron-right"></i></a>'; }
+    var HOURS = [12, 14, 16, 17, 18, 19, 20].map(function (h) { return [h, 'From ' + pad(h) + ':00']; });
+    var PAGES = {
+      house: function () {
+        return '<p class="st-intro">Reminders and estimates for the House page. Your bins, upkeep and notes are on the page itself.</p>' +
+          sub('trash3', 'Bin days') + '<div class="st-group">' + sel('housecfg', 'binHour', 'Evening-before reminder', HOURS, 'In At a glance') + sw('housecfg', 'binMorning', 'Also on the morning of pickup') + '</div>' +
+          sub('tools', 'Upkeep') + '<div class="st-group">' + sel('housecfg', 'lead', 'Remind me', [[0, 'On the day'], [2, '2 days before'], [7, 'A week before'], [14, '2 weeks before']]) + '</div>' +
+          sub('lightning-charge', 'Electricity') + '<div class="st-group">' + numIn('housecfg', 'price', 'Price for estimates', 'øre/kWh', 'Power + grid rent, incl. VAT – shows ≈ kr a month') + sw('housecfg', 'meterNudge', 'Remind me to read the meter', 'At the start of each month') + '</div>' +
+          sub('calendar3', 'Calendar') + '<div class="st-group">' + sw('housecfg', 'calendar', 'Bin days and upkeep in the calendar') + '</div>' +
+          '<div class="st-group">' + link('/cmd/house/', 'house-gear', 'Open House') + link('/cmd/house/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+      },
+      people: function () {
+        return '<p class="st-intro">How People reminds you about birthdays and keeping in touch.</p>' +
+          sub('balloon', 'Birthdays') + '<div class="st-group">' + sel('peoplecfg', 'lead', 'Heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before'], [14, '2 weeks before']], 'In At a glance') + sw('peoplecfg', 'calendar', 'Birthdays in the calendar') + '</div>' +
+          sub('chat-heart', 'Keeping in touch') + '<div class="st-group">' + sw('peoplecfg', 'catchup', 'Nudges in At a glance') + sel('peoplecfg', 'catchupMax', 'At most', [[1, '1 person at a time'], [2, '2 people'], [3, '3 people']]) +
+          sel('peoplecfg', 'defEvery', 'For new people', KEEP, 'What “Keep in touch” starts at') + '</div>' +
+          '<div class="st-group">' + link('/cmd/people/', 'people', 'Open People') + link('/cmd/people/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+      },
+      food: function () {
+        return '<p class="st-intro">The dinner plan, shopping list and reminders.</p>' +
+          sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
+          sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
+          sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['added', 'As added'], ['abc', 'A–Å']]) + '</div>' +
+          '<div class="st-group">' + link('/cmd/food/', 'basket', 'Open Food') + link('/cmd/food/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+      }
+    };
+    function summary(k) {
+      if (k === 'house') { var h = cfg('housecfg'); return 'Bins from ' + pad(h.binHour) + ':00 · upkeep ' + (+h.lead ? h.lead + ' days before' : 'on the day') + (+h.price ? ' · ' + h.price + ' øre/kWh' : ''); }
+      if (k === 'people') { var p = cfg('peoplecfg'); return 'Birthdays ' + (+p.lead ? p.lead + ' days before' : 'on the day') + (p.catchup ? ' · catch-up nudges' : ''); }
+      var f = cfg('foodcfg'); return (f.nudge ? 'Dinner nudge from ' + pad(f.nudgeHour) + ':00' : 'No dinner nudge') + ' · list ' + (f.sort === 'abc' ? 'A–Å' : 'as added');
+    }
+    function rows() {
+      ['house', 'people', 'food'].forEach(function (k) {
+        var r = document.getElementById('stRow-' + k); if (r) r.hidden = !on(k);
+        var c = document.querySelector('[data-hlcust="' + k + '"]'); if (c) c.hidden = !on(k);
+        var s = document.getElementById('sum-' + k); if (s) s.textContent = summary(k);
+      });
+    }
+    function fill(k) { var box = document.getElementById('hlSet-' + k); if (box && PAGES[k]) box.innerHTML = PAGES[k](); }
+    /* Work: Time per client settings, under the flex time ones */
+    function work() {
+      var pg = document.querySelector('.st-page[data-page="work"]'); if (!pg) return;
+      var box = document.getElementById('hlSet-ptime');
+      if (!on('ptime')) { if (box) box.remove(); return; }
+      if (!box) { box = document.createElement('div'); box.id = 'hlSet-ptime'; pg.appendChild(box); }
+      box.innerHTML = sub('hourglass-split', 'Time per client') + '<div class="st-group">' +
+        sel('ptcfg', 'round', 'Round timers up to', [[0, 'Exact minutes'], [5, '5 minutes'], [15, '15 minutes'], [30, '30 minutes']]) +
+        sel('ptcfg', 'long', 'Ask if a timer runs longer than', [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>';
+      var r = document.getElementById('stWorkRow'); if (r && on('ptime')) r.hidden = false;
+    }
+    document.addEventListener('change', function (e) {
+      var i = e.target.closest('[data-hlcfg]'); if (!i) return;
+      var q = i.dataset.hlcfg.split(':'), v;
+      if (i.type === 'checkbox') v = i.checked;
+      else if (i.classList.contains('st-num')) { v = num(i.value); if (v == null || v < 0) v = 0; }
+      else v = /^\d+$/.test(i.value) ? +i.value : i.value;
+      var patch = {}; patch[q[1]] = v; setCfg(q[0], patch);
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> Saved');
+    });
+    window.addEventListener('st:page', function (e) { var k = e.detail; if (PAGES[k]) fill(k); if (k === 'work') work(); if (k === 'home' || k === 'layout') rows(); });
+    ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, rows); });
+    window.Vault.onUnlock(rows);
+  })();
+
+  window.HomeLife = { cfg: cfg, meals: meals, bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT };
 })();

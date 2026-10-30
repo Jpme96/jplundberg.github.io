@@ -79,7 +79,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=111" rel="stylesheet">
+  <link href="styles.css?v=112" rel="stylesheet">
   <link href="modern.css?v=4" rel="stylesheet">
 </head>
 <body>
@@ -288,6 +288,9 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="house" id="stRow-house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span class="st-label">House<small id="sum-house"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="people" id="stRow-people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span class="st-label">People<small id="sum-people"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="food" id="stRow-food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span class="st-label">Food<small id="sum-food"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-minor">With your iPhone</p>
         <nav class="st-group st-menu">
@@ -442,6 +445,9 @@
         <a class="st-row st-btn" href="finance/?customize"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-wallet2"></i></span><span class="st-label">Customize Finances</span><i class="bi bi-chevron-right"></i></a>
         <a class="st-row st-btn" href="habits/?customize"><span class="st-ico" style="--c:#e66767"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Customize Health</span><i class="bi bi-chevron-right"></i></a>
         <a class="st-row st-btn" href="work/?customize"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-briefcase"></i></span><span class="st-label">Customize Work</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="house/?customize" data-hlcust="house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span class="st-label">Customize House</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="people/?customize" data-hlcust="people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span class="st-label">Customize People</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="food/?customize" data-hlcust="food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span class="st-label">Customize Food</span><i class="bi bi-chevron-right"></i></a>
       </section>
       <p class="st-note st-pad">Number tiles (Finances, Health, Travel) each have their own Customize button under them.</p>
       </div>
@@ -472,6 +478,18 @@
           <label class="st-row"><span>Holiday days a year</span><span class="st-unit"><input class="st-input st-num" id="wkVac" inputmode="numeric" aria-label="Holiday days per year"> days</span></label>
         </div>
         <p class="st-note">Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.</p>
+      </div>
+
+      <div class="st-page" data-page="house" data-title="House" hidden>
+        <div id="hlSet-house"></div>
+      </div>
+
+      <div class="st-page" data-page="people" data-title="People" hidden>
+        <div id="hlSet-people"></div>
+      </div>
+
+      <div class="st-page" data-page="food" data-title="Food" hidden>
+        <div id="hlSet-food"></div>
       </div>
 
       <div class="st-page" data-page="security" data-title="Security" hidden>
@@ -722,9 +740,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=d0f487e4bc"></script>
-  <script src="dist/page-home.js?v=edc76e546f"></script>
-  <script src="dist/tail.js?v=f8358c7b95"></script>
+  <script src="dist/head.js?v=9389d5ab13"></script>
+  <script src="dist/page-home.js?v=f96b488a89"></script>
+  <script src="dist/tail.js?v=c5e4e27e82"></script>
   <!-- /scripts -->
 </body>
 </html>

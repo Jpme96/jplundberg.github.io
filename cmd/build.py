@@ -52,12 +52,27 @@ def write(name, text):
     return hashlib.sha1(text.encode('utf-8')).hexdigest()[:10]
 
 
+# Settings everywhere: the panel's markup is written once in index.html and copied into every other
+# page (links made absolute), and its scripts go into every page's bundle – so the avatar opens
+# Settings right where you are instead of going to the dashboard first.
+HOME = io.open(os.path.join(HERE, 'index.html'), encoding='utf-8').read()
+_m = re.search(r'  <!-- Settings -->\n(.*?)\n\n  <!-- scripts: built', HOME, re.S)
+if not _m: sys.exit('no <!-- Settings --> block in index.html')
+def _abs(m):
+    u = m.group(2)
+    if re.match(r'(/|#|[a-z]+:|\.\./)', u): return m.group(0)
+    return '%s="/cmd/%s"' % (m.group(1), u)
+SETTINGS = ('  <!-- settings: copied from index.html by cmd/build.py – edit it there -->\n' +
+            re.sub(r'(href|src)="([^"]*)"', _abs, _m.group(1)) + '\n  <!-- /settings -->\n\n')
+SET_JS = M.get('settings', [])
+
 stale = False
 head_v = write('head.js', bundle(M['head']))
 tail_v = write('tail.js', bundle(M['tail']))
 stale |= head_v is None or tail_v is None
 for page, files in M['pages'].items():
     name = 'page-' + (os.path.dirname(page) or 'home') + '.js'
+    if os.path.dirname(page): files = files + [f for f in SET_JS if f not in files]
     v = write(name, bundle(files))
     if v is None: stale = True; continue
     html_path = os.path.join(HERE, page)
@@ -69,6 +84,9 @@ for page, files in M['pages'].items():
              '  <script src="%sdist/tail.js?v=%s"></script>\n'
              '  <!-- /scripts -->\n') % (pre, head_v, pre, name, v, pre, tail_v)
     new = re.sub(r'  <!-- scripts: built by cmd/build\.py[^\n]*-->\n(?:.*\n)*?  <!-- /scripts -->\n', lambda m: block, html)
+    if os.path.dirname(page):
+        new = re.sub(r'  <!-- settings: copied.*?<!-- /settings -->\n\n', '', new, flags=re.S)
+        new = new.replace('  <!-- scripts: built by cmd/build.py', SETTINGS + '  <!-- scripts: built by cmd/build.py', 1)
     if new == html and '<!-- scripts:' not in html:
         print('no script block in', page); stale = True; continue
     if new != html:

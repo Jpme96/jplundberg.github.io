@@ -192,13 +192,19 @@
     });
     /* Home life: birthdays, bin days and upkeep (their own lines in At a glance come from home-life.js) */
     var HL = window.HomeLife;
-    if (HL && on('people')) list('people').forEach(function (p) {
+    if (HL && on('people') && HL.cfg('peoplecfg').calendar) list('people').forEach(function (p) {
       var b = HL.bday(p); if (!b) return;
       out.push({ id: 'rem:pb:' + p.id, title: '🎈 ' + (p.name || 'Birthday') + (b.y ? ' (' + (fromKey(b.next).getFullYear() - b.y) + ')' : ''), allDay: true,
         start: new Date(b.y && b.y > 1900 ? b.y : new Date().getFullYear() - 1, b.m - 1, b.d), days: 1, color: '#d55181', readOnly: true, reminder: true, noBrief: true,
         link: '/cmd/people/', location: '', notes: p.gifts ? 'Gift ideas: ' + p.gifts : '', exDays: {}, rule: { freq: 'YEARLY', interval: 1 } });
     });
-    if (HL && on('house')) {
+    if (HL && on('food') && HL.cfg('foodcfg').calendar) {
+      var ml = HL.meals(); Object.keys(ml).forEach(function (k) {
+        if (!isKey(k) || k < addMonths(dkey(new Date()), -1)) return;
+        out.push({ id: 'rem:ml:' + k, title: '🍽 ' + ml[k], allDay: true, start: fromKey(k), days: 1, color: '#c98500', readOnly: true, reminder: true, noBrief: true, link: '/cmd/food/', location: '', notes: '', exDays: {} });
+      });
+    }
+    if (HL && on('house') && HL.cfg('housecfg').calendar) {
       list('hbins').forEach(function (b) {
         if (!isKey(b.first)) return;
         out.push({ id: 'rem:bin:' + b.id, title: 'Bin day: ' + (b.title || 'bin'), allDay: true, start: fromKey(b.first), days: 1, color: '#7a8794', readOnly: true, reminder: true, noBrief: true,

@@ -87,9 +87,11 @@
   /* other pages: a small avatar in the top corner that opens Profile & settings */
   var main = $('fp');
   if (main && !$('settingsBtn')) {
-    var a = document.createElement('a');
-    a.className = 'me-btn me-sub'; a.href = '/cmd/?settings'; a.setAttribute('data-me', '');
-    a.addEventListener('click', function () { try { sessionStorage.setItem('dash.stFrom', location.pathname); } catch (e) {} });
+    /* Settings is on this page too: the avatar opens it right here */
+    var a = document.createElement($('settings') ? 'button' : 'a');
+    a.className = 'me-btn me-sub'; a.setAttribute('data-me', '');
+    if ($('settings')) { a.id = 'settingsBtn'; a.type = 'button'; }
+    else { a.href = '/cmd/?settings'; a.addEventListener('click', function () { try { sessionStorage.setItem('dash.stFrom', location.pathname); } catch (e) {} }); }
     a.setAttribute('aria-label', 'Profile and settings');
     /* in the page's top row (same height as on the dashboard, below the iPhone status bar) */
     var host = document.querySelector('#fp > .fp-top');

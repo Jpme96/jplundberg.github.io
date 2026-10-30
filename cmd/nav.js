@@ -142,12 +142,17 @@
   });
   nav.addEventListener('touchcancel', function () { if (drag) { drag.pill.style.transform = ''; drag.pill.style.width = ''; drag = null; } });
 
-  nav.addEventListener('click', function (e) {
-    var s = e.target.closest('[data-settings]');
-    if (s && page === 'home' && document.getElementById('settingsBtn')) { e.preventDefault(); document.getElementById('settingsBtn').click(); }
+  /* Settings lives on every page: links to it (…/?settings=features) open the panel right here */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-settings], a[href*="?settings"]'), btn = document.getElementById('settingsBtn'), panel = document.getElementById('settings');
+    if (!a || !btn || !panel || e.metaKey || e.ctrlKey) return;
+    var m = (a.getAttribute('href') || '').match(/[?&]settings(?:=([a-z]+))?/); if (!m && !a.hasAttribute('data-settings')) return;
+    e.preventDefault();
+    if (panel.hidden || !panel.classList.contains('open')) btn.click();
+    if (m && m[1]) { var g = panel.querySelector('[data-go="' + m[1] + '"]'); if (g) g.click(); }
   });
   /* Arriving from another page via "Settings": open the panel once unlocked */
-  if (page === 'home' && /[?&]settings/.test(location.search) && window.Vault) {
+  if (document.getElementById('settings') && /[?&]settings/.test(location.search) && window.Vault) {
     window.Vault.onUnlock(function () {
       var m = location.search.match(/[?&]settings=([a-z]+)/);
       history.replaceState(null, '', location.pathname);
