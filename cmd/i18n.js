@@ -513,7 +513,7 @@
     [/^(\d+) habits? left$/, function (m, n) { return n + (n === '1' ? ' vane' : ' vaner') + ' igjen'; }], [/^(\d+) of 3 picked$/, '$1 av 3 valgt'], [/^(\d+) in the calendar$/, '$1 i kalenderen'],
     [/^(\d+) more in To-do$/, '$1 til i Gjøremål'], [/^(\d+) of (\d+) done$/, '$1 av $2 ferdig'], [/^Today: (.+)$/, 'I dag: $1'], [/^Done today: (.+)$/, 'Ferdig i dag: $1'],
     [/^(.+) → (today|tomorrow|next week|no date)$/, function (m, a, w) { return a + ' → ' + { today: 'i dag', tomorrow: 'i morgen', 'next week': 'neste uke', 'no date': 'ingen dato' }[w]; }],
-    [/^(\d+) min focused today$/, '$1 min fokus i dag'], [/^(.+) – (\d+:\d\d) left$/, function (m, a, t) { return tr(a) + ' – ' + t + ' igjen'; }]
+    [/^(\d+) min focused today$/, '$1 min fokus i dag'], [/^Show (\d+) more$/, 'Vis $1 til'], [/^(.+) – (\d+:\d\d) left$/, function (m, a, t) { return tr(a) + ' – ' + t + ' igjen'; }]
   );
   P.push(
     [/^No spending logged in (.+)\.$/, 'Ingen utgifter ført i $1.'], [/^Spent, all years$/, 'Brukt, alle år'], [/^Spent, (.+)$/, function (m, a) { return 'Brukt, ' + tr(a).toLowerCase(); }],

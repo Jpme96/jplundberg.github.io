@@ -203,11 +203,14 @@
   function renderRecent() {
     var r = F.travel().recent;
     $('tvRecent').hidden = !r.length || shown.length > 0;
-    $('tvRecent').innerHTML = r.length ? '<p class="tv-label">Recent</p>' + r.map(function (x, i) {
+    var extra = recentAll ? 0 : Math.max(0, r.length - 3);
+    $('tvRecent').innerHTML = r.length ? '<p class="tv-label">Recent</p>' + r.slice(0, r.length - extra).map(function (x, i) {
       return '<button type="button" class="tv-chip" data-r="' + i + '"><i class="bi bi-clock-history"></i><span class="tv-rn">' + esc(x.from.name) + '</span><i class="bi bi-arrow-right"></i><span class="tv-rn">' + esc(x.to.name) + '</span></button>';
-    }).join('') : '';
+    }).join('') + (extra ? '<button type="button" class="tv-more" data-rmore>' + 'Show ' + extra + ' more' + '</button>' : '') : '';
   }
+  var recentAll = false;
   $('tvRecent').addEventListener('click', function (e) {
+    if (e.target.closest('[data-rmore]')) { recentAll = true; renderRecent(); return; }
     var b = e.target.closest('[data-r]');
     if (!b) return;
     var r = F.travel().recent[+b.dataset.r];

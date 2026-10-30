@@ -60,6 +60,7 @@
 .tv-chip:active { transform: scale(.96); }
 .tv-chip .bi-clock-history { color: var(--accent); }
 .tv-chip .bi-arrow-right { color: var(--muted); font-size: 12px; }
+.tv-more { border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; padding: 8px 6px; cursor: pointer; }
 
 /* Trip results */
 .tv-trips { display: grid; gap: 10px; }
