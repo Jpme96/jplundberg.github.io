@@ -29,6 +29,48 @@ layout: base
       </header>
 
       <div class="cv3-body">
+        <aside class="cv3-side">
+          {%- assign skills = C.skills[lang] %}{% if skills == nil or skills.size == 0 %}{% assign skills = C.skills.en %}{% endif %}
+          {%- if skills and skills.size > 0 %}
+          <div class="cv3-sec">
+            <h2>{{ t.cv_skills }}</h2>
+            <ul class="cv3-list">{% for s in skills %}<li>{{ s.name | escape }}</li>{% endfor %}</ul>
+          </div>
+          {%- endif %}
+
+          {%- assign langs = C.languages[lang] %}{% if langs == nil or langs.size == 0 %}{% assign langs = C.languages.en %}{% endif %}
+          {%- if langs and langs.size > 0 %}
+          <div class="cv3-sec">
+            <h2>{{ t.cv_languages }}</h2>
+            <ul class="cv3-langs">{% for s in langs %}{% assign lv = s.level | plus: 0 %}<li><span>{{ s.name | escape }}</span><em>{% if lang == 'nb' %}{% if lv >= 100 %}Morsmål{% elsif lv >= 85 %}Flytende{% elsif lv >= 60 %}Godt{% else %}Grunnleggende{% endif %}{% else %}{% if lv >= 100 %}Native{% elsif lv >= 85 %}Fluent{% elsif lv >= 60 %}Good{% else %}Basic{% endif %}{% endif %}</em></li>{% endfor %}</ul>
+          </div>
+          {%- endif %}
+
+          {%- assign cvc = S.courses | where: "cv", true %}
+          {%- if C.courses and cvc and cvc.size > 0 %}
+          <div class="cv3-sec">
+            <h2>{{ t.courses_title }}</h2>
+            <ul class="cv3-courses">{% for c in cvc %}<li><strong>{{ c.title | escape }}</strong><span>{% if c.org and c.org != '' %}{{ c.org | escape }} · {% endif %}{{ c.year | escape }}</span></li>{% endfor %}</ul>
+          </div>
+          {%- endif %}
+
+          {%- assign ar = site.articles | where: "lang", lang | sort: "date" | reverse %}
+          {%- if C.articles and ar and ar.size > 0 %}
+          <div class="cv3-sec">
+            <h2>{{ t.cv_articles }}</h2>
+            <ul class="cv3-courses">{% for a in ar limit: 3 %}<li><strong><a href="{{ site.url }}{{ a.url }}">{{ a.title }}</a></strong><span>{{ a.date | date: "%Y" }}</span></li>{% endfor %}</ul>
+          </div>
+          {%- endif %}
+
+          {%- assign hobbies = C.hobbies[lang] %}{% if hobbies == nil or hobbies.size == 0 %}{% assign hobbies = C.hobbies.en %}{% endif %}
+          {%- if hobbies and hobbies.size > 0 %}
+          <div class="cv3-sec">
+            <h2>{{ t.cv_hobbies }}</h2>
+            <p class="cv3-p">{{ hobbies | join: ' · ' | escape }}</p>
+          </div>
+          {%- endif %}
+        </aside>
+
         <div class="cv3-main">
           {%- assign cvp = C.profile[lang] %}
           {%- if cvp and cvp != '' %}
@@ -74,47 +116,6 @@ layout: base
           {%- endif %}
         </div>
 
-        <aside class="cv3-side">
-          {%- assign skills = C.skills[lang] %}{% if skills == nil or skills.size == 0 %}{% assign skills = C.skills.en %}{% endif %}
-          {%- if skills and skills.size > 0 %}
-          <div class="cv3-sec">
-            <h2>{{ t.cv_skills }}</h2>
-            <ul class="cv3-list">{% for s in skills %}<li>{{ s.name | escape }}</li>{% endfor %}</ul>
-          </div>
-          {%- endif %}
-
-          {%- assign langs = C.languages[lang] %}{% if langs == nil or langs.size == 0 %}{% assign langs = C.languages.en %}{% endif %}
-          {%- if langs and langs.size > 0 %}
-          <div class="cv3-sec">
-            <h2>{{ t.cv_languages }}</h2>
-            <ul class="cv3-langs">{% for s in langs %}{% assign lv = s.level | plus: 0 %}<li><span>{{ s.name | escape }}</span><em>{% if lang == 'nb' %}{% if lv >= 100 %}Morsmål{% elsif lv >= 85 %}Flytende{% elsif lv >= 60 %}Godt{% else %}Grunnleggende{% endif %}{% else %}{% if lv >= 100 %}Native{% elsif lv >= 85 %}Fluent{% elsif lv >= 60 %}Good{% else %}Basic{% endif %}{% endif %}</em></li>{% endfor %}</ul>
-          </div>
-          {%- endif %}
-
-          {%- assign cvc = S.courses | where: "cv", true %}
-          {%- if C.courses and cvc and cvc.size > 0 %}
-          <div class="cv3-sec">
-            <h2>{{ t.courses_title }}</h2>
-            <ul class="cv3-courses">{% for c in cvc %}<li><strong>{{ c.title | escape }}</strong><span>{% if c.org and c.org != '' %}{{ c.org | escape }} · {% endif %}{{ c.year | escape }}</span></li>{% endfor %}</ul>
-          </div>
-          {%- endif %}
-
-          {%- assign ar = site.articles | where: "lang", lang | sort: "date" | reverse %}
-          {%- if C.articles and ar and ar.size > 0 %}
-          <div class="cv3-sec">
-            <h2>{{ t.cv_articles }}</h2>
-            <ul class="cv3-courses">{% for a in ar limit: 3 %}<li><strong><a href="{{ site.url }}{{ a.url }}">{{ a.title }}</a></strong><span>{{ a.date | date: "%Y" }}</span></li>{% endfor %}</ul>
-          </div>
-          {%- endif %}
-
-          {%- assign hobbies = C.hobbies[lang] %}{% if hobbies == nil or hobbies.size == 0 %}{% assign hobbies = C.hobbies.en %}{% endif %}
-          {%- if hobbies and hobbies.size > 0 %}
-          <div class="cv3-sec">
-            <h2>{{ t.cv_hobbies }}</h2>
-            <p class="cv3-p">{{ hobbies | join: ' · ' | escape }}</p>
-          </div>
-          {%- endif %}
-        </aside>
       </div>
       <footer class="cv3-foot">{{ t.cv_updated }} {{ site.time | date: "%d.%m.%Y" }} · jplundberg.com{{ page.url }}</footer>
     </article>

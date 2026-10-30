@@ -2033,7 +2033,8 @@ a.announce-text:hover { color: var(--accent-color); }
 .cv3-contact li { display: inline-flex; align-items: center; gap: 6px; }
 .cv3-contact .bi { color: var(--accent); font-size: 13px; }
 .cv3-contact a { color: var(--ink); }
-.cv3-body { display: grid; grid-template-columns: minmax(0, 1fr) 250px; }
+.cv3-body { display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-areas: "main side"; }
+.cv3-main { grid-area: main; } .cv3-side { grid-area: side; }
 .cv3-main { padding: 26px 40px 30px 48px; }
 .cv3-side { padding: 26px 32px 30px; background: var(--soft); border-left: 1px solid var(--rule); }
 .cv3-sec + .cv3-sec { margin-top: 24px; }
@@ -2062,35 +2063,35 @@ a.announce-text:hover { color: var(--accent-color); }
   .cv3-head { flex-direction: column; align-items: flex-start; gap: 16px; padding: 28px 22px 22px; }
   .cv3-photo { width: 88px; height: 88px; }
   .cv3-head h1 { font-size: 26px; }
-  .cv3-body { grid-template-columns: 1fr; }
+  .cv3-body { grid-template-columns: 1fr; grid-template-areas: "main" "side"; }
   .cv3-main { padding: 22px; }
   .cv3-side { padding: 22px; border-left: 0; border-top: 1px solid var(--rule); }
   .cv3-row { flex-direction: column; gap: 0; }
   .cv3-foot { padding: 12px 22px; }
 }
 @media print {
-  @page { size: A4; margin: 12mm 0; }
-  @page :first { margin-top: 0; }
+  /* margins on every page (nothing touches the paper edge); the side column is a float, which every browser can split over pages */
+  @page { size: A4; margin: 11mm 12mm; }
   html, body { background: #fff !important; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .header, .header-toggle, .lang-switch-mobile, .nav-backdrop, .page-hero, .announcement, .site-footer, .footer, #scroll-top, .cv-actions { display: none !important; }
-  .main, .section, .container, .cv-section { margin: 0 !important; padding: 0 !important; max-width: none !important; background: #fff !important; }
-  .cv3 { max-width: none; border-radius: 0; box-shadow: none; font-size: 9.3pt; line-height: 1.45; overflow: visible; }
-  .cv3-head { padding: 10mm 14mm 6mm; gap: 7mm; }
-  .cv3-photo { width: 26mm; height: 26mm; }
-  .cv3-head h1 { font-size: 22pt; }
-  .cv3-roles { margin: 3px 0 8px; font-size: 10.5pt; }
-  .cv3-sec + .cv3-sec { margin-top: 13px; }
-  .cv3-sec h2 { margin-bottom: 8px; }
-  .cv3-item { margin-bottom: 9px; } .cv3-item--tight { margin-bottom: 5px; }
-  .cv3-row h3 { font-size: 10pt; } .cv3-date, .cv3-org, .cv3-courses span, .cv3-langs em { font-size: 8.8pt; }
-  .cv3-points { margin-top: 3px; } .cv3-points li { margin-bottom: 1px; }
-  .cv3-body { grid-template-columns: minmax(0, 1fr) 58mm; }
-  .cv3-main { padding: 7mm 9mm 6mm 14mm; }
-  .cv3-side { padding: 7mm 10mm 6mm 7mm; }
-  .cv3-foot { padding: 4mm 14mm; }
+  .main, .section, .container, .cv-section { margin: 0 !important; padding: 0 !important; max-width: none !important; width: auto !important; background: #fff !important; }
+  .cv3 { max-width: none; border-radius: 0; box-shadow: none; font-size: 9pt; line-height: 1.42; overflow: visible; }
+  .cv3-head { padding: 0 0 5mm; gap: 6mm; border-top: 0; border-bottom: 1.5px solid var(--accent); }
+  .cv3-photo { width: 24mm; height: 24mm; }
+  .cv3-head h1 { font-size: 21pt; }
+  .cv3-roles { margin: 2px 0 7px; font-size: 10.5pt; }
+  .cv3-contact { font-size: 9pt; gap: 3px 14px; }
+  .cv3-body { display: block; padding-top: 5mm; }
+  .cv3-side { float: right; width: 52mm; margin: 0 0 4mm 7mm; padding: 0 0 0 6mm; background: none; border-left: 1px solid var(--rule); border-top: 0; }
+  .cv3-main { display: flow-root; padding: 0; }
+  .cv3-foot { clear: both; padding: 4mm 0 0; border-top: 0; }
+  .cv3-sec + .cv3-sec { margin-top: 12px; }
+  .cv3-sec h2 { margin-bottom: 7px; break-after: avoid; page-break-after: avoid; }
+  .cv3-item { margin-bottom: 8px; break-inside: avoid; page-break-inside: avoid; } .cv3-item--tight { margin-bottom: 5px; }
+  .cv3-row h3 { font-size: 9.8pt; } .cv3-date, .cv3-org, .cv3-courses span, .cv3-langs em { font-size: 8.6pt; }
+  .cv3-points { margin-top: 2px; } .cv3-points li { margin-bottom: 1px; }
   .cv3 a { color: inherit; }
-  .cv3-sec h2 { break-after: avoid; }
 }
 
 .hero-cv { margin: 16px 0 0; }
