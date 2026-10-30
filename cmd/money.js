@@ -42,12 +42,27 @@
     var paceHtml = !pc || left < 0 ? '' : pc.ok
       ? '<p class="mo-pace ok"><i class="bi bi-check-circle"></i><span>On track – about ' + money(pc.end) + ' left ' + (per.byPayday ? 'at payday' : 'at the end of the month') + '</span></p>'
       : '<p class="mo-pace warn"><i class="bi bi-speedometer2"></i><span>At this pace ' + money(-pc.end) + ' over ' + (per.byPayday ? 'by payday' : 'this month') + ' · keep to ' + money(Math.max(0, (pc.room - pc.spent) / per.daysLeft)) + '/day</span></p>';
+    /* a small chart: spending so far, an even pace to the budget, and where this pace ends */
+    var spark = '';
+    if (pc && pc.room > 0) {
+      var W = 300, H = 64, P = 4, cum = [], acc = 0, byDay = {};
+      (d.expenses || []).forEach(function (e) { if (per.has(e.date)) { var k = String(e.date).slice(0, 10); byDay[k] = (byDay[k] || 0) + (+e.amount || 0); } });
+      for (var i = 0; i < pc.elapsed; i++) { var dd = new Date(per.start); dd.setDate(dd.getDate() + i); acc += byDay[dd.getFullYear() + '-' + pad(dd.getMonth() + 1) + '-' + pad(dd.getDate())] || 0; cum.push(acc); }
+      var mx = Math.max(pc.room, pc.projected, acc) * 1.05 || 1, X = function (i) { return P + i / Math.max(1, per.days - 1) * (W - 2 * P); }, Y = function (v) { return H - P - v / mx * (H - 2 * P); };
+      var pts = cum.map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ');
+      spark = '<svg class="mo-spark' + (pc.ok ? '' : ' warn') + '" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Spending so far against the budget">' +
+        '<line class="ref" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(per.days - 1) + '" y2="' + Y(pc.room) + '"/>' +
+        '<polyline class="ln" points="' + pts + '"/>' +
+        '<line class="proj" x1="' + X(pc.elapsed - 1) + '" y1="' + Y(acc) + '" x2="' + X(per.days - 1) + '" y2="' + Y(pc.projected) + '"/>' +
+        '</svg>' +
+        '<div class="mo-spark-l"><span><i class="ln"></i>Spent</span><span><i class="ref"></i>Budget pace</span><span><i class="proj"></i>At this pace</span></div>';
+    }
     box.innerHTML =
       '<div class="mo-top"><div><div class="big-num' + (left < 0 ? ' neg' : '') + '">' + money(left) + '</div>' +
         '<div class="muted">' + (left < 0 ? 'over budget this month' : 'left' + (untilPay ? ' until payday' : ' this month') + (left > 0 ? ' · ' + money(perDay) + '/day' : '')) + '</div></div></div>' +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span><span class="s-spent" style="width:' + w(spent) + '"></span><span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span></div>' +
-      paceHtml +
+      paceHtml + spark +
       '<ul class="mo-rows">' +
         (todaySum > 0 ? '<li><i class="bi bi-bag"></i><span>Spent today</span>' + money(todaySum) + '</li>' : '') +
         '<li><i class="bi bi-receipt"></i><span>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' }))) + '</span>' + money(spent) + '</li>' +

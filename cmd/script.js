@@ -386,6 +386,8 @@
     draw(); setTimeout(function () { var i = box.querySelector('.td-stadd input'); if (i) i.focus(); }, 40);
   }
   function renderTodos() {
+    var tdk = dkey(new Date());
+    todos.forEach(function (t) { if (t.done && !t.doneAt) t.doneAt = tdk; else if (!t.done && t.doneAt) delete t.doneAt; });   // for the day's work report
     save('dash.todos', todos);
     /* the soonest few; the rest fold away so the card stays about as tall as Goals and Quick links */
     var all = shownTodos(), TOP = 7, more = all.length - TOP;

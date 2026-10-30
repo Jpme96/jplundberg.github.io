@@ -289,16 +289,20 @@
       cum.push(acc);
     }
     var expected = spendable > 0 ? spendable * today / dim : null;
+    /* where the month ends at this pace (from day 3, so one big day early on doesn't run away) */
+    var proj = today >= 3 && today < dim && acc > 0 ? acc / today * dim : null;
     $('fpPaceLead').innerHTML = spendable > 0
       ? (acc <= expected
         ? '<span class="up">' + money(expected - acc) + ' under</span> an even pace for ' + esc(mName(NOW, true).split(' ')[0]) + '.'
         : '<span class="down">' + money(acc - expected) + ' over</span> an even pace for ' + esc(mName(NOW, true).split(' ')[0]) + '.')
       : 'Add income and fixed costs under Monthly budget to compare with a budget.';
+    if (proj != null && spendable > 0) $('fpPaceLead').innerHTML += ' At this pace you end the month ' + (proj <= spendable
+      ? 'with <span class="up">' + money(spendable - proj) + ' left</span>.' : '<span class="down">' + money(proj - spendable) + ' over</span>.');
     if (!acc && !(spendable > 0)) { el.innerHTML = '<p class="fp-empty">No spending this month yet.</p>'; return; }
 
     var W = Math.max(280, el.clientWidth || 500), H = 190;
     var P = { l: 44, r: 10, t: 12, b: 24 };
-    var max = Math.max(spendable > 0 ? spendable : 0, acc) * 1.08 || 1;
+    var max = Math.max(spendable > 0 ? spendable : 0, acc, proj || 0) * 1.08 || 1;
     var step = niceStep(max / 4);
     max = Math.ceil(max / step) * step;
     var x = function (day) { return P.l + (day - 1) / (dim - 1) * (W - P.l - P.r); };
@@ -313,7 +317,9 @@
       '<text class="ref-lbl" x="' + (x(dim) - 4) + '" y="' + (y(spendable) - 6) + '" text-anchor="end">Budget ' + esc(nfc.format(spendable)) + '</text>' : '';
     var pts = cum.map(function (v, i) { return x(i + 1).toFixed(1) + ',' + y(v).toFixed(1); });
     var line = pts.length > 1 ? '<path class="area" d="M' + x(1) + ',' + y(0) + ' L' + pts.join(' L') + ' L' + x(today) + ',' + y(0) + 'Z"></path><polyline class="ln" points="' + pts.join(' ') + '"></polyline>' : '';
-    var end = '<circle class="dot" r="4.5" cx="' + x(today) + '" cy="' + y(acc) + '"></circle>';
+    var end = (proj != null ? '<line class="proj" x1="' + x(today) + '" y1="' + y(acc) + '" x2="' + x(dim) + '" y2="' + y(proj) + '"></line>' +
+      '<text class="proj-lbl" x="' + (x(dim) - 4) + '" y="' + (y(proj) + (proj > spendable ? -8 : 16)) + '" text-anchor="end">≈ ' + esc(nfc.format(Math.round(proj))) + '</text>' : '') +
+      '<circle class="dot" r="4.5" cx="' + x(today) + '" cy="' + y(acc) + '"></circle>';
     el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Spending so far this month: ' + esc(kr(acc)) + (spendable > 0 ? ' of a ' + esc(kr(spendable)) + ' budget' : '') + '">' +
       g + ref + line + end + '<g class="axis">' + ticks + '</g><line class="cross" id="paceX" visibility="hidden" y1="' + P.t + '" y2="' + (H - P.b) + '" x1="-10" x2="-10"></line>' +
       '<rect class="hit" x="' + P.l + '" y="' + P.t + '" width="' + (W - P.l - P.r) + '" height="' + (H - P.t - P.b) + '"></rect></svg>';
@@ -324,7 +330,8 @@
       cross.setAttribute('x1', x(day)); cross.setAttribute('x2', x(day)); cross.setAttribute('visibility', 'visible');
       var html = '<b>' + day + '. ' + esc(mName(NOW, true)) + '</b>' +
         (day <= today ? '<div class="row"><span>' + dot('var(--accent)') + 'Spent so far</span><span>' + esc(kr(cum[day - 1])) + '</span></div>' : '<div class="row muted"><span>Not yet</span></div>') +
-        (spendable > 0 ? '<div class="row muted"><span>Even pace</span><span>' + esc(kr(spendable * day / dim)) + '</span></div>' : '');
+        (spendable > 0 ? '<div class="row muted"><span>Even pace</span><span>' + esc(kr(spendable * day / dim)) + '</span></div>' : '') +
+        (proj != null && day > today ? '<div class="row muted"><span>At this pace</span><span>≈ ' + esc(kr(acc / today * day)) + '</span></div>' : '');
       showTip(html, e.clientX, e.clientY);
     });
     hit.addEventListener('pointerleave', function () { cross.setAttribute('visibility', 'hidden'); hideTip(); });

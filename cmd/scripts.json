@@ -38,6 +38,7 @@
       "calendar/cal-settings.js",
       "cal-card.js",
       "upnext.js",
+      "daily.js",
       "review.js",
       "plan.js",
       "brief.js",

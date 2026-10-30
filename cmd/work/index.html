@@ -77,9 +77,9 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=113" rel="stylesheet">
+  <link href="../styles.css?v=114" rel="stylesheet">
   <link href="../modern.css?v=4" rel="stylesheet">
-  <link href="../finance/fin.css?v=9" rel="stylesheet">
+  <link href="../finance/fin.css?v=10" rel="stylesheet">
   <link href="../calendar/cal.css?v=11" rel="stylesheet">
 </head>
 <body>
@@ -124,6 +124,7 @@
 
     <div class="kit-grid">
       <div data-tool="flex" class="kit-wide" hidden></div>
+      <div data-tool="wkday" class="kit-wide" hidden></div>
       <div data-tool="ptime" class="kit-wide" hidden></div>
       <div data-tool="fdv" class="kit-wide" hidden></div>
       <div data-tool="meetings" hidden></div>
@@ -497,6 +498,10 @@
             <label class="st-row"><span class="st-label">Payday<small>08:00</small></span><input type="checkbox" class="switch" data-ntk="pay"></label>
             <label class="st-row"><span class="st-label">Trips<small>The evening before you leave, 19:00</small></span><input type="checkbox" class="switch" data-ntk="trips"></label>
             <label class="st-row"><span class="st-label">Weekly check-in<small>Sunday 18:00</small></span><input type="checkbox" class="switch" data-ntk="checkin"></label>
+            <label class="st-row" data-ntfeat="house"><span class="st-label">Bins and upkeep<small>Bins the evening before, upkeep on the day</small></span><input type="checkbox" class="switch" data-ntk="house"></label>
+            <label class="st-row" data-ntfeat="people"><span class="st-label">Birthdays<small>The evening before, and 09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="people"></label>
+            <label class="st-row" data-ntfeat="ptime"><span class="st-label">Client timer still running<small>When it has run longer than you set under Work</small></span><input type="checkbox" class="switch" data-ntk="timer"></label>
+            <label class="st-row" data-ntfeat="travel"><span class="st-label">Time to leave for work<small>Weekdays, 10 minutes before your usual departure</small></span><input type="checkbox" class="switch" data-ntk="commute"></label>
           </section>
           <p class="st-sub">What they say</p>
           <section class="st-group">
@@ -630,9 +635,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=b3e7584ea2"></script>
-  <script src="../dist/page-work.js?v=68a0cab06b"></script>
-  <script src="../dist/tail.js?v=281740fe86"></script>
+  <script src="../dist/head.js?v=45a2e193e5"></script>
+  <script src="../dist/page-work.js?v=eade7f65a8"></script>
+  <script src="../dist/tail.js?v=25258d4032"></script>
   <!-- /scripts -->
 </body>
 </html>

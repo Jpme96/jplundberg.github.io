@@ -17,7 +17,7 @@
   function at(key, hh, mm) { var p = String(key).split('-'); return new Date(+p[0], p[1] - 1, +p[2], hh, mm || 0).getTime(); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
-  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true }, detail: 'private' };
+  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, house: true, people: true, timer: true, commute: false }, detail: 'private' };
   function prefs() { var p = readJSON(KEY, {}); var o = Object.assign({}, DEF, p); o.k = Object.assign({}, DEF.k, p.k || {}); return o; }
   function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function devId() { var p = prefs(); if (!p.id) { p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save(p); } return p.id; }
@@ -101,6 +101,8 @@
       var wk = window.Checkin.weekOf(sun);
       if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), 'Weekly check-in', '5 minutes: spending, the week ahead and habits', '/cmd/#checkin');
     }
+    /* more from the other parts (House, People, client timer …): window.NotifyExtra */
+    (window.NotifyExtra || []).forEach(function (fn) { try { fn(add, { full: full, k: p.k, now: now, end: end, at: at, dkey: dkey }); } catch (e) {} });
     return out.sort(function (a, b) { return a.at - b.at; }).slice(0, 80);
   }
 

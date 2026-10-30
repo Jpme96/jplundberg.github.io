@@ -17,12 +17,12 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['brief', 'At a glance'], ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
+    ['brief', 'At a glance'], ['timeline', 'Today'], ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
     ['fin', 'Money'], ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes']
   ];
   /* Cards can be moved within their section; finances keep their own layout */
   var GROUPS = [
-    { id: 'today', name: 'Today', cards: ['brief', 'weather', 'calendar', 'transit', 'habits', 'flex', 'fin'], move: true },
+    { id: 'today', name: 'Today', cards: ['brief', 'timeline', 'weather', 'calendar', 'transit', 'habits', 'flex', 'fin'], move: true },
     { id: 'tasks', name: 'Tasks & notes', cards: ['todo', 'goals', 'links', 'notes'], move: true }
   ];
   /* cards that belong to a part you can switch off in Settings → Features */
@@ -32,6 +32,7 @@
   CARDS.forEach(function (c) { CARD_NAME[c[0]] = c[1]; });
   function ordered(s, g) {
     var o = Array.isArray(s.order) ? s.order : [];
+    if (o.length && o.indexOf('timeline') < 0 && o.indexOf('brief') > -1) { o = o.slice(); o.splice(o.indexOf('brief') + 1, 0, 'timeline'); }   // new card: right under At a glance
     return g.cards.slice().sort(function (a, b) {
       var ia = o.indexOf(a), ib = o.indexOf(b);
       return (ia < 0 ? 99 + g.cards.indexOf(a) : ia) - (ib < 0 ? 99 + g.cards.indexOf(b) : ib);

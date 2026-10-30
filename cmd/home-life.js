@@ -56,7 +56,7 @@
   var DEF = {
     housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true },
     peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true },
-    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'added', calendar: false },
+    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false },
     ptcfg: { round: 0, long: 4 }
   };
   function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
@@ -502,24 +502,70 @@
     ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, draw); });
     window.Vault.onUnlock(draw);
   })();
-  /* ---- shopping list ---- */
+  /* ---- shopping list, in the order you walk the shop ---- */
+  var AISLES = [
+    ['veg', 'Fruit & veg', 'apple', '#22b35e', /eple|banan|appelsin|sitron|lime|frukt|bær|druer|avokado|tomat|agurk|salat|paprika|løk|hvitløk|potet|gulrot|brokkoli|blomkål|kål|spinat|sopp|squash|mais|ingefær|chili|urter|basilikum|koriander|persille|purre|selleri|fruit|apple|banana|lemon|berr|grape|avocado|tomato|cucumber|lettuce|pepper|onion|garlic|potato|carrot|broccoli|cabbage|mushroom|herb/],
+    ['bread', 'Bread', 'basket', '#c98500', /brød|rundstykk|baguett|lompe|tortilla|wraps?|knekkebrød|boller|croissant|pita|bread|bun|roll|bagel|crispbread/],
+    ['dairy', 'Dairy & eggs', 'egg', '#3987e5', /melk|fløte|rømme|yoghurt|skyr|smør|margarin|ost|egg|kesam|cottage|crème|creme|milk|cream|butter|cheese|yogurt/],
+    ['meat', 'Meat & fish', 'fire', '#e66767', /kjøtt|kylling|svin|storfe|lam|bacon|pølse|skinke|karbonade|kjøttdeig|fisk|laks|torsk|sei|reker|tunfisk|makrell|chicken|beef|pork|lamb|sausage|ham|mince|fish|salmon|cod|shrimp|prawn|tuna/],
+    ['cold', 'Chilled & ready', 'snow2', '#0891b2', /pålegg|leverpostei|hummus|pesto|ferdig|pizza|lasagne|taco ?saus|salsa|juice|smoothie|spread|ready/],
+    ['dry', 'Pasta, rice & tins', 'box-seam', '#8a6fdf', /pasta|spaghetti|ris|nudler|mel|sukker|havre|gryn|müsli|musli|frokostblanding|bønner|linser|kikerter|hermetikk|tomater på boks|buljong|kokosmelk|olje|eddik|nøtter|rice|noodle|flour|sugar|oat|cereal|beans|lentil|chickpea|tin|stock|oil|vinegar|nut/],
+    ['spice', 'Spices & sauces', 'droplet-half', '#c98500', /salt|pepper\b|krydder|kanel|paprikapulver|karri|soya|ketchup|sennep|majones|dressing|saus|sauce|spice|curry|mustard|mayo/],
+    ['frozen', 'Frozen', 'snow', '#3987e5', /frys|frossen|is\b|iskrem|frozen|ice ?cream|peas|erter/],
+    ['drink', 'Drinks', 'cup-straw', '#0891b2', /kaffe|te\b|brus|cola|vann|øl|vin|saft|coffee|tea|soda|water|beer|wine|squash/],
+    ['snack', 'Snacks & sweets', 'cookie', '#d55181', /sjokolade|godteri|chips|kjeks|snacks|popcorn|nøtteblanding|chocolate|candy|sweets|crisps|biscuit|cookie/],
+    ['home', 'Household', 'house', '#7a8794', /dopapir|tørkerull|oppvask|vaskemiddel|såpe|søppelpose|poser|folie|bakepapir|batteri|lyspære|servietter|toilet paper|kitchen roll|dish|detergent|soap|bin bags|foil|battery|napkin/],
+    ['care', 'Toiletries & pharmacy', 'bandaid', '#d55181', /sjampo|balsam|tannkrem|tannbørste|deodorant|bind|tamponger|bleier|plaster|paracet|ibux|vitamin|shampoo|toothpaste|toothbrush|deo|nappies|diaper|plaster|painkiller/],
+    ['other', 'Other', 'three-dots', '#7a8794', /$^/]
+  ];
+  var AISLE = {}; AISLES.forEach(function (a, i) { AISLE[a[0]] = { i: i, n: a[1], ic: a[2], c: a[3] }; });
+  function aisleOf(text) {
+    var own = (Fe.tools().shopcat || {})[String(text).toLowerCase().trim()]; if (own && AISLE[own]) return own;
+    var t = ' ' + String(text).toLowerCase() + ' ';
+    for (var i = 0; i < AISLES.length - 1; i++) if (AISLES[i][4].test(t)) return AISLES[i][0];
+    return 'other';
+  }
+  /* the order you walk the shop: learned from the order you tick things off */
+  function aisleRank(a) { var r = (Fe.tools().shoprank || {})[a]; return r != null ? r : AISLE[a].i; }
+  function learn(a) {
+    var t = Fe.tools(), now = Date.now(), tr = t.shoptrip && now - t.shoptrip.at < 3 * 3600e3 ? t.shoptrip : { n: 0, seen: {} };
+    if (!tr.seen[a]) {
+      var pos = tr.n++, r = t.shoprank || {}, scale = AISLES.length / 6;          // position in this trip, on the same scale as the default order
+      r[a] = r[a] != null ? Math.round((r[a] * .65 + pos * scale * .35) * 100) / 100 : pos * scale;
+      t.shoprank = r; tr.seen[a] = 1;
+    }
+    tr.at = now; t.shoptrip = tr;
+    return t;
+  }
   (function () {
     var el = $t('shop'); if (!el) return;
     function list() { var l = Fe.tools().shop; return Array.isArray(l) ? l : []; }
-    function save(fn) { var t = Fe.tools(); t.shop = list(); fn(t.shop); Fe.saveTools(t); }
+    function save(fn, t) { t = t || Fe.tools(); t.shop = Array.isArray(t.shop) ? t.shop : []; fn(t.shop); Fe.saveTools(t); }
+    function row(x) {
+      var a = AISLE[aisleOf(x.text)];
+      return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-shx="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' +
+        (x.done ? '' : '<button type="button" class="icon-btn sm sh-aisle" data-shaisle="' + esc(x.id) + '" aria-label="Section: ' + esc(a.n) + '" style="--c:' + a.c + '"><i class="bi bi-' + a.ic + '"></i></button>') +
+        '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-x"></i></button></li>';
+    }
     function draw() {
       var ok = on('food'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
-      var l = list(), open = l.filter(function (x) { return !x.done; }), done = l.filter(function (x) { return x.done; });
-      if (cfg('foodcfg').sort === 'abc') open.sort(function (a, b) { return a.text.localeCompare(b.text, 'nb'); });
+      var l = list(), open = l.filter(function (x) { return !x.done; }), done = l.filter(function (x) { return x.done; }), mode = cfg('foodcfg').sort, body;
+      if (mode === 'aisle') {
+        var by = {}; open.forEach(function (x) { var a = aisleOf(x.text); (by[a] = by[a] || []).push(x); });
+        body = Object.keys(by).sort(function (a, b) { return aisleRank(a) - aisleRank(b); }).map(function (a) {
+          return '<li class="sh-grp" style="--c:' + AISLE[a].c + '"><i class="bi bi-' + AISLE[a].ic + '"></i> ' + esc(AISLE[a].n) + '</li>' + by[a].map(row).join('');
+        }).join('') + done.map(row).join('');
+      } else {
+        if (mode === 'abc') open.sort(function (a, b) { return a.text.localeCompare(b.text, 'nb'); });
+        body = open.concat(done).map(row).join('');
+      }
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
         '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
         (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> Clear done</button>' : '') + '</div></div>' +
         '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
-        (l.length ? '<ul class="hl-shop">' + open.concat(done).map(function (x) {
-          return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-shx="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' +
-            '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-x"></i></button></li>';
-        }).join('') + '</ul>' : '<p class="empty kit-empty">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
+        (l.length ? '<ul class="hl-shop">' + body + '</ul>' + (mode === 'aisle' && open.length ? '<p class="muted hl-small">Sorted by section, in the order you tick things off in the shop. Tap a section icon to move an item.</p>' : '')
+          : '<p class="empty kit-empty">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
       var inp = el.querySelector('.hl-shopadd input'); inp.value = typed; if (focus) inp.focus();
     }
     el.addEventListener('submit', function (e) {
@@ -530,14 +576,30 @@
     el.addEventListener('change', function (e) {
       var c = e.target.closest('[data-shx]'); if (!c) return;
       var li = c.closest('li'); li.classList.toggle('done', c.checked);
-      setTimeout(function () { save(function (l) { l.forEach(function (x) { if (x.id === c.dataset.shx) x.done = c.checked; }); }); }, c.checked ? 280 : 0);
+      setTimeout(function () {
+        var t = Fe.tools(), it = (t.shop || []).filter(function (x) { return x.id === c.dataset.shx; })[0];
+        if (c.checked && it) t = learn(aisleOf(it.text));
+        save(function (l) { l.forEach(function (x) { if (x.id === c.dataset.shx) x.done = c.checked; }); }, t);
+      }, c.checked ? 280 : 0);
     });
     el.addEventListener('click', function (e) {
       var b;
+      if ((b = e.target.closest('[data-shaisle]'))) {
+        var it = list().filter(function (x) { return x.id === b.dataset.shaisle; })[0]; if (!it) return;
+        picker('signpost', it.text, 'Which section is it in?', AISLES.map(function (a) { return { n: a[1], i: a[2], c: a[3], k: a[0] }; }), function (o) {
+          var t = Fe.tools(); t.shopcat = t.shopcat || {}; t.shopcat[it.text.toLowerCase().trim()] = o.k; Fe.saveTools(t);
+          toast('<i class="bi bi-signpost"></i> ' + esc(it.text) + ' → ' + esc(o.n) + ' – remembered');
+        });
+        return;
+      }
       if ((b = e.target.closest('[data-shdel]'))) { var old = snapshot('shop'); save(function (l) { for (var i = l.length - 1; i >= 0; i--) if (l[i].id === b.dataset.shdel) l.splice(i, 1); }); toast('<i class="bi bi-trash3"></i> Removed', function () { restore('shop', old); }); return; }
       if (e.target.closest('[data-shclear]')) { var o2 = snapshot('shop'); save(function (l) { for (var i = l.length - 1; i >= 0; i--) if (l[i].done) l.splice(i, 1); }); toast('<i class="bi bi-check2-all"></i> Cleared', function () { restore('shop', o2); }); return; }
       if (e.target.closest('[data-shshare]')) {
-        var txt = list().filter(function (x) { return !x.done; }).map(function (x) { return '• ' + x.text; }).join('\n');
+        var open = list().filter(function (x) { return !x.done; }), txt;
+        if (cfg('foodcfg').sort === 'aisle') {
+          var by = {}; open.forEach(function (x) { var a = aisleOf(x.text); (by[a] = by[a] || []).push(x.text); });
+          txt = Object.keys(by).sort(function (a, b) { return aisleRank(a) - aisleRank(b); }).map(function (a) { return AISLE[a].n + '\n' + by[a].map(function (x) { return '• ' + x; }).join('\n'); }).join('\n\n');
+        } else txt = open.map(function (x) { return '• ' + x.text; }).join('\n');
         if (navigator.share) navigator.share({ title: 'Shopping list', text: txt }).catch(function () {});
         else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('<i class="bi bi-clipboard-check"></i> List copied'); });
       }
@@ -732,6 +794,122 @@
     }));
   });
 
+  /* ======================= The day at work: one report (Work page, ⌘K) ======================= */
+  var RPT = { day: 0 };
+  function workReport(k) {
+    var FT = window.FlexTime, lines = [], parts = [], d = fromKey(k), dur = function (m) { return FT ? FT.dur(m) : hm(m); };
+    var title = 'Work – ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    /* flex time */
+    if (on('flex')) {
+      var es = Fe.list('flex').filter(function (e) { return e.date === k; }), day = FT ? FT.days().filter(function (x) { return x.date === k; })[0] : null;
+      if (es.length) {
+        var w = es.filter(function (e) { return e.in; }).map(function (e) { return e.in + '–' + (e.out || 'now'); }).join(', ');
+        var other = es.filter(function (e) { return e.type && e.type !== 'work' && e.type !== 'course'; }).map(function (e) { return ({ vacation: 'Holiday', sick: 'Sick', flexoff: 'Flex day off', holiday: 'Public holiday' })[e.type] || e.type; });
+        var st = FT ? FT.stats() : null;
+        parts.push({ h: 'Hours', i: 'stopwatch', l: [(w ? w + (day && !day.open ? ' · ' + dur(day.worked) + ' worked' : day && day.open ? ' · still at work' : '') : other.join(', ')) + (day && !day.free && !day.open && day.delta ? ' (' + (day.delta > 0 ? '+' : '') + dur(day.delta) + ' flex)' : ''), st ? 'Flex balance: ' + (st.balance > 0 ? '+' : '') + dur(st.balance) : ''].filter(Boolean) });
+      }
+    }
+    /* client time */
+    if (on('ptime')) {
+      var per = {}; Fe.list('ptime').filter(function (e) { return e.date === k; }).forEach(function (e) { per[e.pid] = per[e.pid] || { m: 0, n: [] }; per[e.pid].m += e.mins; if (e.note) per[e.pid].n.push(e.note); });
+      var r = run(); if (r && dkey(new Date(r.start)) === k) { per[r.pid] = per[r.pid] || { m: 0, n: [] }; per[r.pid].m += (Date.now() - r.start) / 60000; per[r.pid].live = true; }
+      var ks = Object.keys(per);
+      if (ks.length) parts.push({ h: 'Clients', i: 'hourglass-split', l: ks.sort(function (a, b) { return per[b].m - per[a].m; }).map(function (id) { var p = proj(id); return p.name + (p.client ? ' (' + p.client + ')' : '') + ': ' + nf1.format(per[id].m / 60) + ' h' + (per[id].live ? ' (timer running)' : '') + (per[id].n.length ? ' – ' + per[id].n.join('; ') : ''); }) });
+    }
+    /* meetings */
+    if (on('meetings')) {
+      var ms = Fe.list('meetings').filter(function (m) { return m.date === k; });
+      if (ms.length) parts.push({ h: 'Meetings', i: 'people', l: ms.map(function (m) {
+        var acts = String(m.actions || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean), open = acts.filter(function (_, i) { return !(m.done || {})[i]; });
+        return m.title + (m.who ? ' – with ' + m.who : '') + (open.length ? '. To do: ' + open.join('; ') : '');
+      }) });
+    }
+    /* inspections */
+    if (on('fdv')) {
+      var fs = Fe.list('fdv').filter(function (r) { return r.date === k; });
+      if (fs.length) parts.push({ h: 'Inspections', i: 'building-check', l: fs.map(function (r) {
+        var f = r.findings || [], c = function (t) { return f.filter(function (x) { return String(x.tg) === t; }).length; };
+        return (r.building || 'Inspection') + (r.client ? ' (' + r.client + ')' : '') + ': ' + f.length + ' finding' + (f.length === 1 ? '' : 's') + (c('3') ? ', ' + c('3') + ' × TG 3' : '') + (c('2') ? ', ' + c('2') + ' × TG 2' : '');
+      }) });
+    }
+    /* tasks ticked off that day */
+    var done = (readJSON('dash.todos', []) || []).filter(function (t) { return t.done && t.doneAt === k; });
+    if (done.length) parts.push({ h: 'Done', i: 'check2-square', l: done.map(function (t) { return t.text; }) });
+    /* focus sessions */
+    var fm = (readJSON('dash.focusLog', []) || []).filter(function (x) { return x.d === k; }).reduce(function (s, x) { return s + (+x.m || 0); }, 0);
+    if (fm) parts.push({ h: 'Focus', i: 'bullseye', l: [dur(fm) + ' of focused work'] });
+    lines.push(title, '');
+    parts.forEach(function (p) { lines.push(p.h.toUpperCase()); p.l.forEach(function (l) { lines.push('• ' + l); }); lines.push(''); });
+    return { title: title, parts: parts, text: lines.join('\n').trim() };
+  }
+  (function () {
+    var el = $t('wkday'); if (!el) return;
+    function draw() {
+      var ok = on('work'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
+      var k = addDays(today(), -RPT.day), r = workReport(k);
+      el.innerHTML = '<section class="card kit-card" id="wkday"><div class="card-head"><h2><i class="bi bi-clipboard-data"></i> Day report</h2><div class="head-actions">' +
+        '<div class="seg lp-seg"><button type="button" data-rpday="0" aria-pressed="' + (RPT.day === 0) + '">Today</button><button type="button" data-rpday="1" aria-pressed="' + (RPT.day === 1) + '">Yesterday</button></div></div></div>' +
+        (r.parts.length ? '<div class="wr-parts">' + r.parts.map(function (p) {
+          return '<div class="wr-p"><h3><i class="bi bi-' + p.i + '"></i> ' + esc(p.h) + '</h3><ul>' + p.l.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></div>';
+        }).join('') + '</div>' +
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-wrcopy><i class="bi bi-clipboard"></i> Copy</button>' +
+        (navigator.share ? '<button type="button" class="text-btn" data-wrshare><i class="bi bi-share"></i> Share</button>' : '') +
+        '<a class="text-btn" href="mailto:?subject=' + encodeURIComponent(r.title) + '&body=' + encodeURIComponent(r.text) + '"><i class="bi bi-envelope"></i> Email</a></div>'
+          : '<p class="empty kit-empty">Nothing logged ' + (RPT.day ? 'yesterday' : 'yet today') + '. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.</p>') + '</section>';
+    }
+    el.addEventListener('click', function (e) {
+      var b, r = workReport(addDays(today(), -RPT.day));
+      if ((b = e.target.closest('[data-rpday]'))) { RPT.day = +b.dataset.rpday; return draw(); }
+      if (e.target.closest('[data-wrcopy]') && navigator.clipboard) return navigator.clipboard.writeText(r.text).then(function () { toast('<i class="bi bi-clipboard-check"></i> Report copied'); });
+      if (e.target.closest('[data-wrshare]')) navigator.share({ title: r.title, text: r.text }).catch(function () {});
+    });
+    ['tools:change', 'features:change', 'todos:change'].forEach(function (ev) { window.addEventListener(ev, draw); });
+    window.Vault.onUnlock(draw);
+    setInterval(function () { if (!document.hidden && run()) draw(); }, 60000);
+  })();
+  window.CommandExtra.push(function () { return on('work') ? [{ i: 'clipboard-data', t: 'Work report for today', s: 'Copy the day at work', run: function () {
+    var r = workReport(today());
+    if (navigator.clipboard) navigator.clipboard.writeText(r.text).then(function () { toast('<i class="bi bi-clipboard-check"></i> Report copied'); });
+  }, x: 'report rapport dag work day summary' }] : []; });
+
+  /* ======================= Notifications on your phone (Settings → Notifications) ======================= */
+  window.NotifyExtra = window.NotifyExtra || [];
+  window.NotifyExtra.push(function (add, o) {
+    var tk = today(), full = o.full;
+    for (var i = 0; i < 8; i++) {
+      var k = addDays(tk, i), nk = addDays(k, 1);
+      if (o.k.house && on('house')) {
+        var hc = cfg('housecfg');
+        var bins = Fe.list('hbins').filter(function (b) { return b.night !== false && nextPickup(b, nk) === nk; }).map(function (b) { return b.title; });
+        if (bins.length) add('bin:' + nk, o.at(k, Math.max(17, +hc.binHour || 18)), full ? 'Put out ' + bins.join(' + ') + ' tonight' : 'A bin goes out tonight', full ? 'Picked up tomorrow' : 'Open House to see which', '/cmd/house/');
+        Fe.list('hmaint').forEach(function (m) { if (nextDue(m) === k) add('hm:' + m.id + ':' + k, o.at(k, 10), full ? m.title : 'Upkeep is due today', full ? 'Due today' : 'Open House to see what', '/cmd/house/'); });
+      }
+      if (o.k.people && on('people')) Fe.list('people').forEach(function (p) {
+        var b = bday(p); if (!b) return;
+        if (b.next === nk) add('pb1:' + p.id + ':' + nk, o.at(k, 19), full ? p.name + '’s birthday tomorrow' : 'A birthday tomorrow', full ? (b.age ? 'Turns ' + b.age : '') + (p.gifts ? (b.age ? ' · ' : '') + 'Gift idea: ' + String(p.gifts).split('\n')[0] : '') : 'Open People to see who', '/cmd/people/');
+        if (b.next === k) add('pb0:' + p.id + ':' + k, o.at(k, 9), full ? p.name + '’s birthday today' : 'A birthday today', full ? 'Send a greeting' : 'Open People to see who', '/cmd/people/');
+      });
+    }
+    /* a client timer that's been left running */
+    if (o.k.timer && on('ptime')) { var r = run(); if (r) add('pt:' + r.start, r.start + (+cfg('ptcfg').long || 4) * 3600e3, full ? 'Timer still running: ' + proj(r.pid).name : 'A timer is still running', 'Stop it if you’re done', '/cmd/work/#ptime'); }
+    /* time to leave for work: your usual clock-in (from Flex time) minus the trip */
+    if (o.k.commute && on('travel')) {
+      var usual = usualStart(), trip = +localStorage.getItem('dash.commuteMins') || 0;
+      if (usual != null && trip) for (var j = 0; j < 7; j++) {
+        var dk = addDays(tk, j), wd = fromKey(dk).getDay(); if (wd === 0 || wd === 6 || Fe.holiday(dk)) continue;
+        if (Fe.list('flex').some(function (e) { return e.date === dk && ((e.type && e.type !== 'work' && e.type !== 'course') || e.in); })) continue;   // a day off, or already at work
+        var leave = usual - trip - 10;
+        add('cm:' + dk, o.at(dk, Math.floor(leave / 60), leave % 60), 'Time to leave for work', 'About ' + trip + ' min to work – open the dashboard for the next departures', '/cmd/');
+      }
+    }
+  });
+  /* the time you usually clock in (median of the last 15 work days), in minutes after midnight */
+  function usualStart() {
+    var l = Fe.list('flex').filter(function (e) { return e.type === 'work' && /^\d{1,2}:\d{2}$/.test(e.in || ''); }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 15)
+      .map(function (e) { var p = e.in.split(':'); return +p[0] * 60 + +p[1]; }).sort(function (a, b) { return a - b; });
+    return l.length >= 5 ? l[Math.floor(l.length / 2)] : null;
+  }
+
   /* ======================= Settings → Pages → House / People / Food (and Work) ======================= */
   (function () {
     if (!document.getElementById('settings')) return;
@@ -770,19 +948,20 @@
         return '<p class="st-intro">The dinner plan, shopping list and reminders.</p>' +
           sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
           sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
-          sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['added', 'As added'], ['abc', 'A–Å']]) + '</div>' +
+          sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['aisle', 'By section in the shop'], ['added', 'As added'], ['abc', 'A–Å']]) + '<button type="button" class="st-row st-btn" data-shreset><span><i class="bi bi-arrow-counterclockwise"></i> Forget the learned shop order</span></button>' + '</div>' +
           '<div class="st-group">' + link('/cmd/food/', 'basket', 'Open Food') + link('/cmd/food/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       }
     };
     function summary(k) {
       if (k === 'house') { var h = cfg('housecfg'); return 'Bins from ' + pad(h.binHour) + ':00 · upkeep ' + (+h.lead ? h.lead + ' days before' : 'on the day') + (+h.price ? ' · ' + h.price + ' øre/kWh' : ''); }
       if (k === 'people') { var p = cfg('peoplecfg'); return 'Birthdays ' + (+p.lead ? p.lead + ' days before' : 'on the day') + (p.catchup ? ' · catch-up nudges' : ''); }
-      var f = cfg('foodcfg'); return (f.nudge ? 'Dinner nudge from ' + pad(f.nudgeHour) + ':00' : 'No dinner nudge') + ' · list ' + (f.sort === 'abc' ? 'A–Å' : 'as added');
+      var f = cfg('foodcfg'); return (f.nudge ? 'Dinner nudge from ' + pad(f.nudgeHour) + ':00' : 'No dinner nudge') + ' · list ' + (f.sort === 'abc' ? 'A–Å' : f.sort === 'aisle' ? 'by section' : 'as added');
     }
     function rows() {
       ['house', 'people', 'food'].forEach(function (k) {
         var r = document.getElementById('stRow-' + k); if (r) r.hidden = !on(k);
         var c = document.querySelector('[data-hlcust="' + k + '"]'); if (c) c.hidden = !on(k);
+        document.querySelectorAll('[data-ntfeat]').forEach(function (r) { r.hidden = !on(r.dataset.ntfeat); });
         var s = document.getElementById('sum-' + k); if (s) s.textContent = summary(k);
         var bx = document.getElementById('hlSet-' + k); if (bx && on(k) && !bx.contains(document.activeElement)) fill(k);
       });
@@ -800,6 +979,11 @@
         sel('ptcfg', 'long', 'Ask if a timer runs longer than', [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>';
       var r = document.getElementById('stWorkRow'); if (r && on('ptime')) r.hidden = false;
     }
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-shreset]')) return;
+      var t = Fe.tools(); delete t.shoprank; delete t.shoptrip; Fe.saveTools(t);
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-arrow-counterclockwise"></i> Back to the usual shop order');
+    });
     document.addEventListener('change', function (e) {
       var i = e.target.closest('[data-hlcfg]'); if (!i) return;
       var q = i.dataset.hlcfg.split(':'), v;

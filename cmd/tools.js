@@ -541,4 +541,5 @@
   var wkEmpty = document.getElementById('wkEmpty');
   function workEmpty() { if (wkEmpty) wkEmpty.hidden = F.on('work'); }
   if (wkEmpty) { window.addEventListener('features:change', workEmpty); workEmpty(); }
+  window.FlexTime = { stats: flexStats, days: flexDays, dur: hm };
 })();

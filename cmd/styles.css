@@ -795,7 +795,7 @@ select option { background: var(--bg-solid); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Hidden cards (Settings → Dashboard) ---------- */
-.hide-weather .card.weather, .hide-goals .card.goals, .hide-todo .card.todo,
+.hide-timeline .card.timeline, .hide-weather .card.weather, .hide-goals .card.goals, .hide-todo .card.todo,
 .hide-links .card.links, .hide-notes .card.notes, .hide-fin #fin,
 .hide-transit .card.transit, .hide-calendar .card.calendar, .hide-habits .card.habits, .hide-bills .card.bills { display: none; }
 
@@ -2855,3 +2855,65 @@ body.rp-open { overflow: hidden; }
 @keyframes st-flash { 0%, 60% { background: color-mix(in srgb, var(--accent) 18%, transparent); } 100% { background: transparent; } }
 .st-flash { animation: st-flash 1.6s ease-out; border-radius: 10px; }
 #stMenu > .st-grp:first-child { margin-top: 22px; }
+
+/* ---------- Today: one line through the day ---------- */
+.tl-date { font-size: 12.5px; }
+.tl-all { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.tl-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; color: inherit; text-decoration: none; background: color-mix(in srgb, var(--c) 13%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-chip .bi { color: var(--c); }
+.tl { list-style: none; margin: 0; padding: 0; position: relative; }
+.tl::before { content: ""; position: absolute; left: 61px; top: 10px; bottom: 10px; width: 2px; border-radius: 1px; background: var(--line); }
+.tl li { position: relative; display: grid; grid-template-columns: 44px 36px minmax(0, 1fr); align-items: center; gap: 0 4px; min-height: 42px; }
+.tl-t { font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); text-align: right; padding-right: 2px; }
+.tl-dot { justify-self: center; z-index: 1; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--card-solid, var(--bg)); box-shadow: inset 0 0 0 2px var(--c); color: var(--c); font-size: 12px; }
+.tl-x { min-width: 0; padding: 6px 4px 6px 8px; border-radius: 10px; color: inherit; text-decoration: none; }
+.tl-x:hover { background: rgba(var(--ink-rgb), .04); }
+.tl-x b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-x small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-it.past { opacity: .5; }
+.tl-it.past .tl-dot { box-shadow: inset 0 0 0 2px var(--line); color: var(--muted); }
+.tl-now { min-height: 18px !important; }
+.tl-now .tl-t { color: var(--danger); font-weight: 600; }
+.tl-nowline { grid-column: 2 / 4; height: 2px; background: var(--danger); border-radius: 1px; position: relative; }
+.tl-nowline::before { content: ""; position: absolute; left: 12px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
+
+/* ---------- Commute (Travel card) ---------- */
+.tr-off { display: none !important; }
+.cm { margin: 0 0 12px; padding: 12px; border-radius: 14px; background: rgba(var(--ink-rgb), .04); }
+.cm-head { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.cm-head .bi { color: var(--accent); } .cm-head .bi-arrow-right { color: var(--muted); }
+.cm-plan { margin-left: auto; font-weight: 500; font-size: 12.5px; }
+.cm-list { list-style: none; margin: 0; padding: 0; }
+.cm-list li { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.cm-list li:first-child { border-top: 0; }
+.cm-when { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 15px; }
+.cm-list li.first .cm-when { color: var(--accent); font-size: 18px; }
+.cm-x { min-width: 0; } .cm-x b { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-x small { display: block; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-line { display: inline-block; min-width: 26px; padding: 1px 5px; border-radius: 5px; text-align: center; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--lc); }
+.cm-ok, .cm-late, .cm-bad { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.cm-ok { color: var(--muted); } .cm-late { color: #c98500; } .cm-bad { color: var(--danger); }
+.cm-list li.cancel .cm-when, .cm-list li.cancel .cm-x b { text-decoration: line-through; color: var(--danger); }
+.cm-msg { margin: 4px 0 0; font-size: 13px; }
+/* Money card: spending against the budget, and where this pace ends */
+.mo-spark { display: block; width: 100%; height: 64px; margin: 10px 0 2px; overflow: visible; }
+.mo-spark .ln { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.mo-spark .ref { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; opacity: .7; }
+.mo-spark .proj { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: .8; }
+.mo-spark.warn .ln, .mo-spark.warn .proj { stroke: var(--danger); }
+.mo-spark .dot { fill: var(--accent); } .mo-spark.warn .dot { fill: var(--danger); }
+.mo-spark-l { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.mo-spark-l span { display: inline-flex; align-items: center; gap: 5px; }
+.mo-spark-l i { display: inline-block; width: 14px; height: 0; border-top: 2.5px solid var(--accent); }
+.mo-spark-l i.ref { border-top: 1.5px dashed var(--muted); } .mo-spark-l i.proj { border-top: 2px dotted var(--accent); }
+.fin-hidden .mo-spark, .fin-hidden .mo-spark-l { filter: blur(6px); }
+/* Work: day report */
+.wr-parts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.wr-p h3 { margin: 0 0 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.wr-p h3 .bi { color: var(--accent); }
+.wr-p ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.wr-p li { margin: 2px 0; }
+.hl-shop li.sh-grp { display: flex; gap: 6px; align-items: center; padding: 12px 0 4px; border-bottom: 0; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.hl-shop li.sh-grp .bi { color: var(--c); font-size: 13px; }
+.hl-shop li.sh-grp:first-child { padding-top: 2px; }
+.sh-aisle .bi { color: var(--c); opacity: .75; }
