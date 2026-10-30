@@ -54,10 +54,10 @@
 
   /* ---------- settings per page (Settings → Pages → House / People / Food, and Work) ---------- */
   var DEF = {
-    housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true },
+    housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true, seasonNudge: true, illu: true },
     peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true },
     foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false },
-    ptcfg: { round: 0, long: 4 }
+    ptcfg: { round: 0, long: 4, vat: true, payDays: 14, org: '', account: '', addr: '', invNext: 1 }
   };
   function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
   function setCfg(k, patch) { var t = Fe.tools(); t[k] = Object.assign({}, t[k] || {}, patch); Fe.saveTools(t); }
@@ -734,7 +734,8 @@
         if (es.length) h += '<div class="hl-acts"><button type="button" class="text-btn" data-ptcsv><i class="bi bi-filetype-csv"></i> Export ' + rg[2].toLowerCase() + ' (CSV)</button>' +
           '<button type="button" class="text-btn" data-ptcopy><i class="bi bi-clipboard"></i> Copy summary</button></div>';
         var arch = ps.filter(function (p) { return p.archived; }).length;
-        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage>Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') + '</p>';
+        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage>Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
+          (window.WorkPlus && Fe.list('ptime').length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> Invoice draft</button>' : '') + '</p>';
       }
       el.innerHTML = h + '</section>';
       clearInterval(tick);
@@ -926,6 +927,7 @@
       return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><span class="st-unit"><input class="st-input st-num" inputmode="decimal" data-hlcfg="' + k + ':' + f + '" value="' + (v ? esc(String(v).replace('.', ',')) : '') + '" placeholder="–"> ' + unit + '</span></label>';
     }
     function sub(icon, t) { return '<p class="st-sub ap-sub"><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</p>'; }
+    function txt(k, f, label, ph) { return '<label class="st-row"><span>' + esc(label) + '</span><input class="st-input" data-hlcfg="' + k + ':' + f + '" value="' + esc(cfg(k)[f] || '') + '" placeholder="' + esc(ph || '') + '" maxlength="80"></label>'; }
     function link(href, icon, t) { return '<a class="st-row st-btn" href="' + href + '"><span><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</span><i class="bi bi-chevron-right"></i></a>'; }
     var HOURS = [12, 14, 16, 17, 18, 19, 20].map(function (h) { return [h, 'From ' + pad(h) + ':00']; });
     var PAGES = {
@@ -935,6 +937,7 @@
           sub('tools', 'Upkeep') + '<div class="st-group">' + sel('housecfg', 'lead', 'Remind me', [[0, 'On the day'], [2, '2 days before'], [7, 'A week before'], [14, '2 weeks before']]) + '</div>' +
           sub('lightning-charge', 'Electricity') + '<div class="st-group">' + numIn('housecfg', 'price', 'Price for estimates', 'øre/kWh', 'Power + grid rent, incl. VAT – shows ≈ kr a month') + sw('housecfg', 'meterNudge', 'Remind me to read the meter', 'At the start of each month') + '</div>' +
           sub('calendar3', 'Calendar') + '<div class="st-group">' + sw('housecfg', 'calendar', 'Bin days and upkeep in the calendar') + '</div>' +
+          sub('tree', 'Seasons and the house') + '<div class="st-group">' + sw('housecfg', 'seasonNudge', 'Season checklist in At a glance', 'The first weeks of autumn, winter, spring and summer') + sw('housecfg', 'illu', 'House picture at the top', 'Shows what’s due – tap a part to go there') + '</div>' +
           '<div class="st-group">' + link('/cmd/house/', 'house-gear', 'Open House') + link('/cmd/house/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       },
       people: function () {
@@ -976,7 +979,10 @@
       if (!box) { box = document.createElement('div'); box.id = 'hlSet-ptime'; pg.appendChild(box); }
       box.innerHTML = sub('hourglass-split', 'Time per client') + '<div class="st-group">' +
         sel('ptcfg', 'round', 'Round timers up to', [[0, 'Exact minutes'], [5, '5 minutes'], [15, '15 minutes'], [30, '30 minutes']]) +
-        sel('ptcfg', 'long', 'Ask if a timer runs longer than', [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>';
+        sel('ptcfg', 'long', 'Ask if a timer runs longer than', [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>' +
+        sub('receipt', 'Invoice drafts') + '<div class="st-group">' + txt('ptcfg', 'org', 'Organisation number', 'e.g. 912 345 678') + txt('ptcfg', 'account', 'Bank account', 'e.g. 1234 56 78901') +
+        txt('ptcfg', 'addr', 'Your address on invoices', 'Street, postcode and town') + sel('ptcfg', 'payDays', 'Payment terms', [[10, '10 days'], [14, '14 days'], [20, '20 days'], [30, '30 days']]) +
+        sw('ptcfg', 'vat', 'Add 25 % VAT (MVA)') + numIn('ptcfg', 'invNext', 'Next invoice number', '') + '</div>';
       var r = document.getElementById('stWorkRow'); if (r && on('ptime')) r.hidden = false;
     }
     document.addEventListener('click', function (e) {

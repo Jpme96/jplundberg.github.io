@@ -717,6 +717,60 @@
     [/^(\d+) workout templates?$/, function (m, n) { return n + (+n === 1 ? ' øktmal' : ' øktmaler'); }], [/^Update “(.+)”$/, 'Oppdater «$1»'],
     [/^Template “(.+)” saved – (\d+) exercises?$/, function (m, a, n) { return 'Malen «' + a + '» er lagret – ' + n + (+n === 1 ? ' øvelse' : ' øvelser'); }], [/^Template “(.+)” deleted$/, 'Malen «$1» er slettet']
   );
+  /* batch 4: FDV phrases, offline, invoice draft, season checklist, power by month, home inventory, house picture (Oct 2026) */
+  Object.assign(D, {
+    'Save phrase': 'Lagre frase', 'Save what you’ve typed as a phrase for this part': 'Lagre det du har skrevet som en frase for denne delen', 'Remove phrase': 'Fjern frasen',
+    'Type the finding first, then save it as a phrase': 'Skriv funnet først, og lagre det så som en frase', 'Phrase removed': 'Frasen er fjernet',
+    'Back online – syncing …': 'Tilkoblet igjen – synkroniserer …', 'Inspection synced ✓': 'Befaringen er synkronisert ✓',
+    'Invoice draft': 'Fakturautkast', 'Invoice drafts': 'Fakturautkast', 'Month': 'Måned', 'Invoice no.': 'Fakturanr.', 'Rate': 'Sats', 'Each entry': 'Hver føring', 'Per day': 'Per dag', 'One line': 'Én linje',
+    '25 % VAT': '25 % MVA', 'Copy as text': 'Kopier som tekst', 'A draft to check before you send it – in the print window, choose': 'Et utkast du sjekker før du sender det – i utskriftsvinduet velger du',
+    '. Your details are in Settings → Work.': '. Opplysningene dine ligger i Innstillinger → Jobb.', 'Invoice': 'Faktura', 'Your name': 'Navnet ditt', 'To': 'Til', 'Invoice date': 'Fakturadato',
+    'Due date': 'Forfallsdato', 'Pay to': 'Betal til', 'Description': 'Beskrivelse', 'Amount': 'Beløp', 'Total excl. VAT': 'Sum eks. MVA', 'VAT 25 %': 'MVA 25 %', 'Amount due': 'Å betale',
+    'No hourly rate for this client – add one above, or on the client in Time per client.': 'Ingen timepris for denne kunden – legg den inn over, eller på kunden i Tid per kunde.',
+    'From Time per client': 'Fra Tid per kunde', 'Organisation number': 'Organisasjonsnummer', 'Bank account': 'Kontonummer', 'Your address on invoices': 'Adressen din på fakturaer',
+    'Street, postcode and town': 'Gate, postnummer og sted', 'Payment terms': 'Betalingsfrist', '10 days': '10 dager', '14 days': '14 dager', '20 days': '20 dager', '30 days': '30 dager',
+    'Add 25 % VAT (MVA)': 'Legg til 25 % MVA', 'Next invoice number': 'Neste fakturanummer', 'FDV inspections': 'FDV-befaringer', 'Your own building parts': 'Egne bygningsdeler',
+    'One per line, e.g. Garage, Balcony, Lift': 'Én per linje, f.eks. Garasje, Balkong, Heis', 'They’re added to the list of parts in every inspection.': 'De legges til i listen over deler i hver befaring.',
+    'Your phrases': 'Frasene dine', 'Save one with ☆ in an inspection': 'Lagre en med ☆ i en befaring', 'In the print window, choose': 'I utskriftsvinduet velger du',
+    'Season checklist': 'Sesongliste', 'Spring': 'Vår', 'Summer': 'Sommer', 'Autumn': 'Høst', 'Winter': 'Vinter',
+    'Clean the gutters and downpipes': 'Rens takrenner og nedløp', 'Turn off and drain the outdoor taps': 'Steng og tøm utekranene', 'Change to winter tyres': 'Bytt til vinterdekk',
+    'Put away garden furniture and the hose': 'Sett bort hagemøbler og hageslange', 'Check the roof for loose tiles': 'Sjekk taket for løse takstein', 'Rake the leaves off the lawn': 'Rak løv av plenen',
+    'Find the snow shovel and ice grips': 'Finn fram snøskuffe og brodder', 'Check the seals on doors and windows': 'Sjekk tettelistene på dører og vinduer', 'Bleed the radiators': 'Luft radiatorene',
+    'New batteries in the smoke alarms (1 December)': 'Nye batterier i røykvarslerne (1. desember)', 'Keep snow and ice off the roof edge': 'Hold takkanten fri for snø og is',
+    'Keep the heat pump’s outdoor unit free of snow': 'Hold utedelen til varmepumpen fri for snø', 'Clear snow from vents and the chimney': 'Mak snø bort fra ventiler og pipe', 'Check pipes in cold rooms for frost': 'Sjekk rør i kalde rom for frost',
+    'Change to summer tyres': 'Bytt til sommerdekk', 'Clean the gutters after the winter': 'Rens takrennene etter vinteren', 'Look for winter damage on the roof and facade': 'Se etter vinterskader på tak og fasade',
+    'Turn the outdoor taps back on and check for leaks': 'Åpne utekranene og se etter lekkasjer', 'Wash the windows': 'Vask vinduene', 'Service the lawnmower': 'Gi gressklipperen service',
+    'Check that water runs away from the house': 'Sjekk at vannet renner bort fra huset', 'Clean the heat pump filters': 'Rens filtrene i varmepumpen',
+    'Paint or stain the facade or deck where needed': 'Mal eller beis fasade eller terrasse der det trengs', 'Wash and oil the deck': 'Vask og olj terrassen', 'Clean the ventilation valves': 'Rens ventilene',
+    'Wash the facade': 'Vask fasaden', 'Check the roof and flashings': 'Sjekk tak og beslag', 'Add your own, e.g. Take in the boat': 'Legg til egne, f.eks. Ta opp båten', 'Bring back the usual ones': 'Hent tilbake de vanlige',
+    'Power use by month': 'Strømforbruk per måned', 'With two or more meter readings, this shows how many kWh you use each month – next to the same month last year.': 'Med to eller flere måleravlesninger ser du hvor mange kWh du bruker hver måned – ved siden av samme måned i fjor.',
+    'Last year': 'I fjor', 'no readings then': 'ingen avlesninger da', 'Last 12 months': 'Siste 12 måneder', 'This year': 'I år', 'Same month last year': 'Samme måned i fjor', 'so far': 'så langt',
+    'Home inventory': 'Innboliste', 'Item': 'Gjenstand', 'New item': 'Ny gjenstand', 'Edit item': 'Endre gjenstand', 'Kind': 'Type', 'Room': 'Rom', 'Price paid': 'Kjøpspris', 'Bought': 'Kjøpt',
+    'Brand and model': 'Merke og modell', 'Serial number': 'Serienummer', 'Where the receipt is, the shop, warranty …': 'Hvor kvitteringen er, butikken, garanti …', 'e.g. MacBook Pro 14″, Sofa, Bike': 'f.eks. MacBook Pro 14″, sofa, sykkel',
+    'Living room': 'Stue', 'Bedroom': 'Soverom', 'Office': 'Kontor', 'Bathroom': 'Bad', 'Hall': 'Gang', 'Storage or attic': 'Bod eller loft', 'Garage or shed': 'Garasje eller uthus', 'Outdoors': 'Ute',
+    'Electronics': 'Elektronikk', 'Appliance': 'Hvitevarer', 'Furniture': 'Møbler', 'Jewellery and watches': 'Smykker og klokker', 'Bikes and sport': 'Sykler og sport', 'Tools': 'Verktøy', 'Art and design': 'Kunst og design',
+    'Clothes and bags': 'Klær og vesker', 'Instruments': 'Instrumenter',
+    'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.': 'Før opp verdisakene dine med bilde, pris og kvittering – blir det brann eller innbrudd, er listen til forsikringsselskapet klar.',
+    'Insurance list': 'Liste til forsikringen', 'Items': 'Gjenstander', 'Total value': 'Total verdi', 'price paid': 'kjøpspris', 'Receipts': 'Kvitteringer', 'add the rest': 'legg til resten', 'all saved': 'alle lagret',
+    'Receipt saved': 'Kvittering lagret', 'Photo saved': 'Bilde lagret', 'New photo': 'Nytt bilde', 'New receipt': 'Ny kvittering', 'Add photo': 'Legg til bilde', 'Add receipt': 'Legg til kvittering',
+    'Couldn’t read that picture': 'Kunne ikke lese bildet', '. Photos and receipts come from this device.': '. Bilder og kvitteringer hentes fra denne enheten.', 'Contents': 'Innbo',
+    'receipt saved': 'kvittering lagret', 'no receipt': 'ingen kvittering', 'Your house': 'Huset ditt', 'Read the meter': 'Les av måleren', 'Nothing due – the house is in good shape.': 'Ingenting å gjøre – huset er i god stand.',
+    'Seasons and the house': 'Sesonger og huset', 'Season checklist in At a glance': 'Sesongliste i Kort fortalt', 'The first weeks of autumn, winter, spring and summer': 'De første ukene av høst, vinter, vår og sommer',
+    'House picture at the top': 'Bilde av huset øverst', 'Shows what’s due – tap a part to go there': 'Viser hva som må gjøres – trykk på en del for å gå dit'
+  });
+  var SEAS = { spring: 'våren', summer: 'sommeren', autumn: 'høsten', winter: 'vinteren' }, SEAC = { Spring: 'Vår', Summer: 'Sommer', Autumn: 'Høst', Winter: 'Vinter' };
+  P.push(
+    [/^Phrase saved for (.+)$/, function (m, a) { return 'Frase lagret for ' + tr(a); }],
+    [/^– findings and photos are saved on this phone(?: \((\d+) new\))?\. They sync by themselves when you’re back online\.$/, function (m, n) { return '– funn og bilder er lagret på denne telefonen' + (n ? ' (' + n + ' nye)' : '') + '. De synkroniseres av seg selv når du er på nett igjen.'; }],
+    [/^Synced ✓ (.+) · photos stay on this phone$/, 'Synkronisert ✓ $1 · bildene blir på denne telefonen'], [/^Org\. no\. (.+)$/, 'Org.nr. $1'], [/^Account (.+)$/, 'Konto $1'],
+    [/^(.+) \(so far\)$/, '$1 (så langt)'], [/^(\d+) saved – remove them on the chips in an inspection$/, '$1 lagret – fjern dem på knappene i en befaring'],
+    [/^done this (spring|summer|autumn|winter)$/, function (m, s) { return 'ferdig denne ' + SEAS[s].replace(/en$/, 'en'); }], [/^done for (spring|summer|autumn|winter) (\d{4})$/, function (m, s, y) { return 'ferdig for ' + SEAS[s] + ' ' + y; }],
+    [/^(Spring|Summer|Autumn|Winter) checklist: (\d+) of (\d+) done$/, function (m, s, a, b) { return 'Sesongliste for ' + SEAC[s].toLowerCase() + ': ' + a + ' av ' + b + ' ferdig'; }],
+    [/^(Spring|Summer|Autumn|Winter) checklist: (\d+) left$/, function (m, s, a) { return 'Sesongliste for ' + SEAC[s].toLowerCase() + ': ' + a + ' igjen'; }],
+    [/^([−+]\d+%) vs the year before$/, '$1 mot året før'], [/^Up to the last reading, (.+)$/, 'Fram til siste avlesning, $1'], [/^(\d+) with a photo$/, '$1 med bilde'], [/^Serial (.+)$/, 'Serienr. $1'],
+    [/^(Photo|Receipt) saved on this device$/, function (m, a) { return (a === 'Photo' ? 'Bildet' : 'Kvitteringen') + ' er lagret på denne enheten'; }], [/^(\d+) items?$/, function (m, n) { return n + (+n === 1 ? ' gjenstand' : ' gjenstander'); }],
+    [/^(\d+) with receipt$/, '$1 med kvittering'], [/^made (.+)$/, 'laget $1'], [/^bought (.+)$/, 'kjøpt $1'], [/^serial (.+)$/, 'serienr. $1'], [/^(.+) – (today|tomorrow)$/, function (m, a, w) { return a + ' – ' + (w === 'today' ? 'i dag' : 'i morgen'); }]
+  );
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;

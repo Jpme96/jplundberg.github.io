@@ -426,6 +426,7 @@
       offline: '<i class="bi bi-cloud-slash"></i> Offline. Changes sync when you’re back online'
     }[state] + (why ? '<span class="sync-why">' + why + ' · tap to retry</span>' : '');
     el.className = 'sync sync-' + state;
+    try { window.dispatchEvent(new CustomEvent('sync:state', { detail: state })); } catch (e) {}
   }
 
   /* Returns the server's vault, null if there is none, or undefined if sync isn't available. */
@@ -631,6 +632,7 @@
     onUnlock: function (fn) { unlockFns.push(fn); if (key) fn(data); },
     onLock: function (fn) { lockFns.push(fn); },
     get: function () { return data; },
+    syncState: function () { return syncState; },
     save: function (obj) {
       if (!key) return Promise.reject(new Error('locked'));
       data = obj;
