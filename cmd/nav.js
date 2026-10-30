@@ -151,10 +151,10 @@
     window.Vault.onUnlock(function () {
       var m = location.search.match(/[?&]settings=([a-z]+)/);
       history.replaceState(null, '', location.pathname);
-      setTimeout(function () {
-        var b = document.getElementById('settingsBtn'); if (b) b.click();
-        if (m) setTimeout(function () { var g = document.querySelector('[data-go="' + m[1] + '"]'); if (g) g.click(); }, 80);
-      }, 300);
+      var b = document.getElementById('settingsBtn'); if (b) b.click();
+      if (m) { var g = document.querySelector('[data-go="' + m[1] + '"]'); if (g) g.click(); }
+      /* the panel is open now: hand back to the normal transitions after it has painted */
+      requestAnimationFrame(function () { requestAnimationFrame(function () { document.documentElement.classList.remove('st-boot'); }); });
     });
   }
 })();

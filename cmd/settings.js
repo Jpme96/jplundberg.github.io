@@ -317,6 +317,7 @@
   }
   function closePanel() {
     var el = $('settings');
+    document.documentElement.classList.remove('st-boot');
     el.classList.remove('open');
     var pn = el.querySelector('.st-panel'); pn.style.transition = ''; pn.style.transform = ''; el.style.background = '';
     document.body.classList.remove('st-open');
