@@ -203,8 +203,11 @@
 .tp-head .muted { margin: 4px 0 0; font-size: 14px; }
 .tp-head-acts { display: flex; gap: 4px; }
 .tp-head-acts .text-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-.tp-grid { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: start; }
-@media (min-width: 900px) { .tp-grid { grid-template-columns: 1.35fr 1fr; } }
+.tp-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .tp-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+/* a long trip's weather row scrolls sideways inside its card – it must never make the page wider */
+.tp-grid > *, .tp-dest, .tp-wx { min-width: 0; max-width: 100%; }
+.wx-row { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 .tp-side { display: grid; gap: 14px; }
 
 .tp-day { margin: 14px 2px 6px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
