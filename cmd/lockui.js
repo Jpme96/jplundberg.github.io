@@ -1,7 +1,7 @@
-/* The lock screen's look, and recovery by email.
+/* The lock screen's look, and the recovery code.
      Look      Settings → Appearance → Lock screen: the dashboard's background, a photo of your own
                (kept on this device only), or a style – and a big clock with the date.
-     Recovery  Settings → Security → Recovery by email: turn on (needs the passcode once), test email, new key, turn off.
+     Recovery  Settings → Security → Recovery code: create (needs the passcode once), show, replace, remove.
                On the lock screen: "Forgot passcode?" → "Open with the code" (lock.js). */
 (function () {
   "use strict";
@@ -103,13 +103,12 @@
     });
   }
 
-  /* ============================== recovery by email ============================== */
-  function R() { return window.Vault && window.Vault.recovery; }
+  /* ============================== recovery code ============================== */
   function recState() {
-    var el = $('stRecState'); if (!el || !R()) return;
-    var m = R().mode();
-    el.textContent = m === 'email' ? 'On – forgot the passcode? Get a code by email' : m === 'code' ? 'Old printed code – switch to a code by email' : 'Not set up – if you forget the passcode, everything is lost';
-    var b = $('stRecovery'); if (b) b.classList.toggle('st-warnrow', m !== 'email');
+    var el = $('stRecState'); if (!el || !window.Vault || !window.Vault.recovery) return;
+    var on = window.Vault.recovery.has();
+    el.textContent = on ? 'Set up – keep the code somewhere safe' : 'Not set up – if you forget the passcode, everything is lost';
+    var b = $('stRecovery'); if (b) b.classList.toggle('st-warnrow', !on);
   }
   function dialog(html, onClick) {
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
@@ -120,64 +119,50 @@
     return { el: bg.firstChild, close: close };
   }
   function head(t, sub) { return '<div class="lf-head"><h3><i class="bi bi-life-preserver"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-rcclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
-  function showOn() {
-    var d = dialog(head('Email recovery', 'If you forget the passcode: lock screen → Forgot passcode? → Email me a code. The code works for 15 minutes, then you choose a new passcode.') +
-      '<p class="rc-state" id="rcState"><i class="bi bi-hourglass-split"></i> Checking the server…</p>' +
-      '<div class="rc-acts"><button type="button" class="pill-btn" data-rctest><i class="bi bi-envelope-check"></i> Send a test email</button></div>' +
-      '<p class="lock-msg" id="rcMsg"></p>' +
-      '<div class="rc-more"><button type="button" class="text-btn" data-rcnew><i class="bi bi-arrow-repeat"></i> Make a new key</button><button type="button" class="text-btn danger" data-rcdel><i class="bi bi-trash3"></i> Turn off</button></div>',
+  function showCode(code, fresh) {
+    dialog(head(fresh ? 'Your recovery code' : 'Recovery code', fresh ? 'Save it now – print it, or put it in your password manager. Anyone with it can open your dashboard.' : 'Anyone with this code can open your dashboard.') +
+      '<p class="rc-code" id="rcCode">' + esc(code) + '</p>' +
+      '<div class="rc-acts"><button type="button" class="pill-btn" data-rccopy><i class="bi bi-clipboard"></i> Copy</button>' +
+      (navigator.share ? '<button type="button" class="text-btn" data-rcshare><i class="bi bi-share"></i> Save to…</button>' : '') +
+      '<button type="button" class="text-btn" data-rcprint><i class="bi bi-printer"></i> Print</button></div>' +
+      '<p class="muted rc-note">On the lock screen: <b>Forgot passcode?</b> → enter this code → choose a new passcode.</p>' +
+      (fresh ? '<button type="button" class="pill-btn wide" data-rcclose>I’ve saved it</button>' : '<div class="rc-more"><button type="button" class="text-btn" data-rcnew><i class="bi bi-arrow-repeat"></i> Make a new code</button><button type="button" class="text-btn danger" data-rcdel><i class="bi bi-trash3"></i> Turn off</button></div>'),
       function (e, close) {
-        var t = e.target.closest('[data-rctest]');
-        if (t) {
-          t.disabled = true; $('rcMsg').classList.remove('ok'); $('rcMsg').textContent = '';
-          R().test().then(function (j) {
-            t.disabled = false;
-            $('rcMsg').classList.toggle('ok', !!j.ok);
-            $('rcMsg').textContent = j.ok ? 'Sent – check your inbox (and spam).' : R().error(j);
-          }, function () { t.disabled = false; $('rcMsg').textContent = R().error(null); });
-          return;
+        if (e.target.closest('[data-rccopy]') && navigator.clipboard) return navigator.clipboard.writeText(code).then(function () { toast('<i class="bi bi-clipboard-check"></i> Recovery code copied'); });
+        if (e.target.closest('[data-rcshare]')) return navigator.share({ title: 'Dashboard recovery code', text: 'jplundberg.com/cmd recovery code: ' + code }).catch(function () {});
+        if (e.target.closest('[data-rcprint]')) {
+          var w = window.open('', '_blank'); if (!w) return;
+          w.document.write('<!doctype html><title>Recovery code</title><body style="font:16px system-ui;padding:40px"><h2>Dashboard recovery code</h2><p>jplundberg.com/cmd</p><p style="font:600 26px ui-monospace,monospace;letter-spacing:.06em">' + esc(code) + '</p><p>Lock screen → Forgot passcode? → enter this code.</p><script>print()<\/script>');
+          w.document.close(); return;
         }
         if (e.target.closest('[data-rcnew]')) { close(); setTimeout(function () { create(true); }, 200); return; }
-        var b = e.target.closest('[data-rcdel]');
-        if (b) {
+        if (e.target.closest('[data-rcdel]')) {
+          var b = e.target.closest('[data-rcdel]');
           if (!b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = '<i class="bi bi-trash3"></i> Tap again to turn off'; return; }
-          R().remove().then(function () { close(); recState(); toast('<i class="bi bi-life-preserver"></i> Email recovery turned off'); });
+          window.Vault.recovery.remove().then(function () { close(); recState(); toast('<i class="bi bi-life-preserver"></i> Recovery code turned off'); });
         }
       });
-    R().status().then(function (j) {
-      var el = d.el.querySelector('#rcState'); if (!el) return;
-      if (!j._s) { el.innerHTML = '<i class="bi bi-wifi-off"></i> ' + esc('Offline – can’t check the server now.'); return; }
-      if (!j.on) { el.className = 'rc-state warn'; el.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + esc('The server doesn’t have the key. Tap “Make a new key”.'); return; }
-      el.className = 'rc-state' + (j.email ? ' ok' : ' warn');
-      el.innerHTML = j.email ? '<i class="bi bi-check-circle"></i> ' + esc('Ready – the key is on the server and email is set up.')
-        : '<i class="bi bi-exclamation-triangle"></i> ' + esc('The key is saved, but the Worker can’t send email yet. Add the Send email binding EMAIL (see the setup notes).');
-    }, function () {});
   }
   function create(replace) {
-    var old = R().mode() === 'code';
-    var d = dialog(head(replace ? 'Make a new key' : 'Set up email recovery', 'Enter your passcode once. If you ever forget it, the lock screen can email you a 6-digit code that opens the dashboard.' + (old ? ' Your old printed code stops working.' : replace ? ' Codes already sent stop working.' : '')) +
+    var d = dialog(head(replace ? 'New recovery code' : 'Set up a recovery code', 'Enter your passcode once. You get a code that opens the dashboard if you ever forget it.' + (replace ? ' The old code stops working.' : '')) +
       '<form class="rc-form" autocomplete="off"><input type="text" name="username" value="dashboard" autocomplete="username" hidden>' +
       '<input type="password" id="rcPass" placeholder="Your passcode" autocomplete="current-password" required aria-label="Your passcode">' +
-      '<p class="lock-msg" id="rcMsg"></p><button type="submit" class="pill-btn wide">Turn on</button></form>');
+      '<p class="lock-msg" id="rcMsg"></p><button type="submit" class="pill-btn wide">Make the code</button></form>');
     setTimeout(function () { var i = $('rcPass'); if (i) i.focus(); }, 80);
     d.el.querySelector('form').addEventListener('submit', function (e) {
       e.preventDefault();
-      var btn = d.el.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Turning on…';
-      R().create($('rcPass').value).then(function () {
-        d.close(); recState(); toast('<i class="bi bi-envelope-check"></i> Email recovery is on'); setTimeout(showOn, 200);
-      }).catch(function (err) {
-        btn.disabled = false; btn.textContent = 'Turn on';
-        if (err && err.message === 'server') { $('rcMsg').textContent = R().error(err.info); return; }
-        $('rcMsg').textContent = 'Wrong passcode.'; $('rcPass').value = ''; $('rcPass').focus();
-      });
+      var btn = d.el.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Making it…';
+      window.Vault.recovery.create($('rcPass').value).then(function (code) {
+        d.close(); recState(); setTimeout(function () { showCode(code, true); }, 200);
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Make the code'; $('rcMsg').textContent = 'Wrong passcode.'; $('rcPass').value = ''; $('rcPass').focus(); });
     });
   }
   function mountRecovery() {
     var b = $('stRecovery'); if (!b || b.dataset.bound) return;
     b.dataset.bound = '1';
     b.addEventListener('click', function () {
-      if (!R()) return;
-      if (R().mode() === 'email') showOn(); else create(false);
+      if (!window.Vault || !window.Vault.recovery) return;
+      if (window.Vault.recovery.has()) showCode(window.Vault.recovery.code(), false); else create(false);
     });
   }
 

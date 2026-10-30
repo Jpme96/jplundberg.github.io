@@ -105,35 +105,6 @@
     return derive(recNorm(code), unb64(rec.salt), ITER).then(function (rk) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv) }, rk, unb64(rec.ct)); })
       .then(function (pt) { return dec.decode(pt); });
   }
-  /* Email recovery (rec.m = 'email'): a random key opens the copy of the passcode. The key waits on the
-     server (KV rec:key) and is only handed out for a 6-digit code sent to your email. The key is also
-     kept inside the vault, so changing the passcode re-locks the copy – and makes a new key. */
-  var REC_API = '/cmd/api/recovery';
-  function recApi(method, body) {
-    return fetch(REC_API, { method: method, cache: 'no-store', credentials: 'same-origin', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: body ? JSON.stringify(body) : undefined })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j._s = r.status; return j; }); });
-  }
-  function rawKey(kb) { return crypto.subtle.importKey('raw', unb64(kb), 'AES-GCM', false, ['encrypt', 'decrypt']); }
-  function recKeyNew() { return b64(crypto.getRandomValues(new Uint8Array(32))); }
-  function recWrapKey(kb, pass) {
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    return rawKey(kb).then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(pass)); })
-      .then(function (ct) { return { m: 'email', iv: b64(iv), ct: b64(ct) }; });
-  }
-  function recUnwrapKey(kb, rec) {
-    return rawKey(kb).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(rec.iv) }, k, unb64(rec.ct)); })
-      .then(function (pt) { return dec.decode(pt); });
-  }
-  function recErr(j) {
-    if (!j || !j._s) return 'No connection. Email recovery needs the internet.';
-    if (j.error === 'wait') return 'Wait ' + (j.s || 60) + ' s before asking for a new code.';
-    if (j.error === 'too many') return 'Too many codes today. Try again tomorrow.';
-    if (j.error === 'email not set up') return 'Email isn’t set up in the Worker yet.';
-    if (j.error === 'off') return 'Email recovery isn’t set up.';
-    if (j.error === 'email failed') return 'The email couldn’t be sent. Try again in a minute.';
-    if (j._s === 401 || j._s === 403) return 'Sign in again and try once more.';
-    return 'Something went wrong. Try again.';
-  }
   function recNew() {
     var r = crypto.getRandomValues(new Uint8Array(20)), c = '';
     for (var i = 0; i < 20; i++) { c += REC_ABC[r[i] % REC_ABC.length]; if (i % 4 === 3 && i < 19) c += '-'; }
@@ -331,8 +302,6 @@
   function recForm() {
     var old = $('lockRec'); if (old) old.remove();
     var v = recVault(); if (!v) return;
-    $('lockTitle').textContent = 'Forgot your passcode?';
-    if (v.rec.m === 'email') return recEmailForm(v);
     var f = document.createElement('form'); f.id = 'lockRec'; f.className = 'lock-rec'; f.autocomplete = 'off';
     f.innerHTML = '<p class="lock-rec-h"><i class="bi bi-key"></i> Have your recovery code?</p>' +
       '<input id="lockRecIn" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false" aria-label="Recovery code" required>' +
@@ -343,52 +312,11 @@
       e.preventDefault();
       var w = waitLeft(); if (w > 0) { msg('Wait ' + Math.ceil(w / 1000) + ' s.'); return; }
       busy(true);
-      recUnwrap($('lockRecIn').value, v.rec).then(function (pass) { recOpen(pass, f); }).catch(function () { busy(false); addFail(); msg('That code doesn’t fit. Check it and try again.'); shake(); });
-    });
-  }
-  function recOpen(pass, f) {
-    if (f) f.remove(); setMode('unlock'); busy(true);
-    try { sessionStorage.setItem('dash.recUsed', '1'); } catch (x) {}
-    tryUnlock(pass);
-  }
-  function recEmailForm(v) {
-    var f = document.createElement('form'); f.id = 'lockRec'; f.className = 'lock-rec'; f.autocomplete = 'off';
-    f.innerHTML = '<p class="lock-rec-h"><i class="bi bi-envelope"></i> Get a code by email</p>' +
-      '<button class="pill-btn lock-submit" type="button" id="lockRecSend"><i class="bi bi-send"></i> Email me a code</button>' +
-      '<div class="lock-rec-step" id="lockRecStep" hidden>' +
-      '<input id="lockRecIn" class="lock-rec-otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" placeholder="000000" spellcheck="false" aria-label="Code from the email">' +
-      '<button class="pill-btn lock-submit" type="submit" id="lockRecGo">Open</button>' +
-      '<button class="text-btn" type="button" id="lockRecAgain">Send a new code</button></div>' +
-      '<p class="lock-rec-or muted">Or start over:</p>';
-    $('lockReset').parentNode.insertBefore(f, $('lockReset'));
-    $('lockSub').textContent = 'We email you a 6-digit code. It opens the dashboard – then you choose a new passcode.';
-    var inp = f.querySelector('#lockRecIn'), go = f.querySelector('#lockRecGo'), sendB = f.querySelector('#lockRecSend'), step = f.querySelector('#lockRecStep');
-    function wait(on, b) { (b || go).disabled = on; $('lockBox').classList.toggle('busy', on); }
-    function send(b) {
-      wait(true, b); msg('');
-      recApi('POST', { send: true }).then(function (j) {
-        wait(false, b);
-        if (!j.ok) { msg(recErr(j)); shake(); return; }
-        sendB.hidden = true; step.hidden = false; inp.value = '';
-        msg('Code sent – check your email. It works for 15 minutes.', true);
-        setTimeout(function () { try { inp.focus({ preventScroll: true }); } catch (e) {} }, 60);
-      }, function () { wait(false, b); msg(recErr(null)); });
-    }
-    sendB.addEventListener('click', function () { send(sendB); });
-    f.querySelector('#lockRecAgain').addEventListener('click', function (e) { send(e.currentTarget); });
-    inp.addEventListener('input', function () { if (inp.value.replace(/\D/g, '').length === 6 && !go.disabled) f.requestSubmit ? f.requestSubmit() : go.click(); });
-    f.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var code = inp.value.replace(/\D/g, '');
-      if (code.length !== 6) { msg('The code has 6 digits.'); return; }
-      wait(true);
-      recApi('POST', { code: code }).then(function (j) {
-        if (j.key) return recUnwrapKey(j.key, v.rec).then(function (pass) { recOpen(pass, f); }, function () { wait(false); msg('The code was right, but this device has an older copy. Open the dashboard online and try again.'); });
-        wait(false); shake(); inp.value = '';
-        if (j.error === 'wrong') msg('That code doesn’t fit. ' + j.tries + (j.tries === 1 ? ' try' : ' tries') + ' left.');
-        else if (j.error === 'expired') { msg('That code has run out. Send a new one.'); step.hidden = true; sendB.hidden = false; }
-        else msg(recErr(j));
-      }, function () { wait(false); msg(recErr(null)); });
+      recUnwrap($('lockRecIn').value, v.rec).then(function (pass) {
+        f.remove(); setMode('unlock'); busy(true);
+        try { sessionStorage.setItem('dash.recUsed', '1'); } catch (x) {}
+        tryUnlock(pass);
+      }).catch(function () { busy(false); addFail(); msg('That code doesn’t fit. Check it and try again.'); shake(); });
     });
   }
   /* opened with the recovery code: go straight to choosing a new passcode */
@@ -396,7 +324,7 @@
     var used = false; try { used = sessionStorage.getItem('dash.recUsed') === '1'; sessionStorage.removeItem('dash.recUsed'); } catch (e) {}
     if (!used) return;
     setTimeout(function () {
-      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-key"></i> Opened with recovery – choose a new passcode');
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-key"></i> Opened with your recovery code – choose a new passcode');
       var b = $('settingsBtn'); if (!b) return; b.click();
       setTimeout(function () { var g = document.querySelector('[data-go="security"]'); if (g) g.click(); setTimeout(function () { var c = $('stChangePc'); if (c && $('pcForm').hidden) c.click(); }, 300); }, 300);
     }, 700);
@@ -751,49 +679,31 @@
       });
     },
     recovery: {
-      has: function () { return !!(data && (data._recKey || data._recCode)); },
-      mode: function () { return data && data._recKey ? 'email' : data && data._recCode ? 'code' : null; },
+      has: function () { return !!(data && data._recCode); },
       code: function () { return data && data._recCode || null; },
-      status: function () { return recApi('GET'); },
-      test: function () { return recApi('POST', { test: true }); },
-      error: recErr,
-      /* needs the passcode once (it's never stored). Turns on email recovery; replaces an old printed code. */
+      /* needs the passcode once (it's never stored) */
       create: function (pass) {
         if (!key) return Promise.reject(new Error('locked'));
-        var vault = readJSON(VAULT_KEY), kb = recKeyNew(), info;
+        var vault = readJSON(VAULT_KEY);
         return derive(pass, unb64(vault.salt), vault.iter || ITER).then(function (k) { return open(vault, k); })
           .then(function () {
-            return recApi('PUT', { key: kb }).then(function (j) {
-              if (!j.ok) { var e = new Error('server'); e.info = j; throw e; }
-              info = j; return recWrapKey(kb, pass);
-            }, function () { var e = new Error('server'); e.info = null; throw e; });
-          }, function () { throw new Error('wrong'); })
-          .then(function (r) {
-            recNext = r; data._recKey = kb; delete data._recCode;
-            return window.Vault.save(data).then(function () { recNext = undefined; return { email: !!info.email }; });
-          });
+            var code = recNew();
+            return recWrap(code, pass).then(function (r) {
+              recNext = r; data._recCode = code;
+              return window.Vault.save(data).then(function () { recNext = undefined; return code; });
+            });
+          }, function () { throw new Error('wrong'); });
       },
       remove: function () {
         if (!key) return Promise.reject(new Error('locked'));
-        var server = data._recKey ? recApi('DELETE').catch(function () {}) : Promise.resolve();
-        return server.then(function () {
-          recNext = null; delete data._recCode; delete data._recKey;
-          return window.Vault.save(data).then(function () { recNext = undefined; });
-        });
+        recNext = null; delete data._recCode;
+        return window.Vault.save(data).then(function () { recNext = undefined; });
       }
     },
     changePasscode: function (pass) {
       if (!key) return Promise.reject(new Error('locked'));
       var s = crypto.getRandomValues(new Uint8Array(16));
-      return writing.then(function () {
-        if (data && data._recKey) {
-          /* a new key on the server, so a code used to get in can't be used again; offline: keep the old key */
-          var kb = recKeyNew();
-          return recApi('PUT', { key: kb }).then(function (j) { return j.ok ? kb : data._recKey; }, function () { return data._recKey; })
-            .then(function (k) { data._recKey = k; return recWrapKey(k, pass); }).then(function (r) { recNext = r; });
-        }
-        return data && data._recCode ? recWrap(data._recCode, pass).then(function (r) { recNext = r; }) : null;
-      })
+      return writing.then(function () { return data && data._recCode ? recWrap(data._recCode, pass).then(function (r) { recNext = r; }) : null; })
         .then(function () { return derive(pass, s, ITER); })
         .then(function (k) {
           return seal(data, k, s, localRev() + 1).then(function (v) {

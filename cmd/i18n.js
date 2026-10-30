@@ -771,36 +771,6 @@
     [/^(Photo|Receipt) saved on this device$/, function (m, a) { return (a === 'Photo' ? 'Bildet' : 'Kvitteringen') + ' er lagret på denne enheten'; }], [/^(\d+) items?$/, function (m, n) { return n + (+n === 1 ? ' gjenstand' : ' gjenstander'); }],
     [/^(\d+) with receipt$/, '$1 med kvittering'], [/^made (.+)$/, 'laget $1'], [/^bought (.+)$/, 'kjøpt $1'], [/^serial (.+)$/, 'serienr. $1'], [/^(.+) – (today|tomorrow)$/, function (m, a, w) { return a + ' – ' + (w === 'today' ? 'i dag' : 'i morgen'); }]
   );
-  /* recovery by email (Oct 2026) */
-  Object.assign(D, {
-    'Recovery by email': 'Gjenoppretting på e-post', 'Email recovery': 'Gjenoppretting på e-post', 'Set up email recovery': 'Slå på gjenoppretting på e-post', 'Make a new key': 'Lag en ny nøkkel',
-    'Turn on': 'Slå på', 'Turning on…': 'Slår på …', 'Send a test email': 'Send en test-e-post', 'Turn off': 'Slå av', 'Tap again to turn off': 'Trykk igjen for å slå av',
-    'On – forgot the passcode? Get a code by email': 'På – glemt koden? Få en kode på e-post', 'Old printed code – switch to a code by email': 'Gammel utskrevet kode – bytt til kode på e-post',
-    'Not set up – if you forget the passcode, everything is lost': 'Ikke satt opp – glemmer du koden, er alt tapt',
-    'If you forget the passcode: lock screen → Forgot passcode? → Email me a code. The code works for 15 minutes, then you choose a new passcode.': 'Glemmer du koden: låseskjermen → Glemt koden? → Send meg en kode på e-post. Koden virker i 15 minutter, så velger du en ny kode.',
-    'Enter your passcode once. If you ever forget it, the lock screen can email you a 6-digit code that opens the dashboard.': 'Skriv koden din én gang. Glemmer du den, kan låseskjermen sende deg en sekssifret kode på e-post som åpner dashbordet.',
-    'Enter your passcode once. If you ever forget it, the lock screen can email you a 6-digit code that opens the dashboard. Your old printed code stops working.': 'Skriv koden din én gang. Glemmer du den, kan låseskjermen sende deg en sekssifret kode på e-post som åpner dashbordet. Den gamle utskrevne koden slutter å virke.',
-    'Enter your passcode once. If you ever forget it, the lock screen can email you a 6-digit code that opens the dashboard. Codes already sent stop working.': 'Skriv koden din én gang. Glemmer du den, kan låseskjermen sende deg en sekssifret kode på e-post som åpner dashbordet. Koder som alt er sendt, slutter å virke.',
-    'Checking the server…': 'Sjekker serveren …', 'Offline – can’t check the server now.': 'Frakoblet – kan ikke sjekke serveren nå.',
-    'The server doesn’t have the key. Tap “Make a new key”.': 'Serveren har ikke nøkkelen. Trykk «Lag en ny nøkkel».',
-    'Ready – the key is on the server and email is set up.': 'Klar – nøkkelen er på serveren, og e-post er satt opp.',
-    'The key is saved, but the Worker can’t send email yet. Add the Send email binding EMAIL (see the setup notes).': 'Nøkkelen er lagret, men Workeren kan ikke sende e-post ennå. Legg til Send email-bindingen EMAIL (se oppsettsnotatene).',
-    'Sent – check your inbox (and spam).': 'Sendt – sjekk innboksen (og søppelpost).', 'Email recovery is on': 'Gjenoppretting på e-post er på', 'Email recovery turned off': 'Gjenoppretting på e-post er slått av',
-    'Get a code by email': 'Få en kode på e-post', 'Forgot your passcode?': 'Glemt koden?', 'Wrong passcode.': 'Feil kode.', 'Email me a code': 'Send meg en kode', 'Send a new code': 'Send en ny kode', 'Code from the email': 'Koden fra e-posten',
-    'We email you a 6-digit code. It opens the dashboard – then you choose a new passcode.': 'Vi sender deg en sekssifret kode på e-post. Den åpner dashbordet – så velger du en ny kode.',
-    'Code sent – check your email. It works for 15 minutes.': 'Koden er sendt – sjekk e-posten. Den virker i 15 minutter.', 'The code has 6 digits.': 'Koden har seks sifre.',
-    'That code has run out. Send a new one.': 'Koden har gått ut. Send en ny.', 'Too many codes today. Try again tomorrow.': 'For mange koder i dag. Prøv igjen i morgen.',
-    'No connection. Email recovery needs the internet.': 'Ingen tilkobling. Gjenoppretting på e-post trenger internett.', 'Email isn’t set up in the Worker yet.': 'E-post er ikke satt opp i Workeren ennå.',
-    'Email recovery isn’t set up.': 'Gjenoppretting på e-post er ikke satt opp.', 'The email couldn’t be sent. Try again in a minute.': 'E-posten kunne ikke sendes. Prøv igjen om et minutt.',
-    'Sign in again and try once more.': 'Logg inn på nytt og prøv igjen.', 'Something went wrong. Try again.': 'Noe gikk galt. Prøv igjen.',
-    'The code was right, but this device has an older copy. Open the dashboard online and try again.': 'Koden var riktig, men denne enheten har en eldre kopi. Åpne dashbordet på nett og prøv igjen.',
-    'Opened with recovery – choose a new passcode': 'Åpnet med gjenoppretting – velg en ny kode',
-    'Let your password manager save it. Afterwards, turn on Settings → Security → Recovery by email, so a forgotten passcode doesn’t mean starting over.': 'La passordbehandleren lagre den. Slå etterpå på Innstillinger → Sikkerhet → Gjenoppretting på e-post, så betyr ikke en glemt kode at du må starte på nytt.'
-  });
-  P.push(
-    [/^That code doesn’t fit\. (\d+) tr(?:y|ies) left\.$/, function (m, n) { return 'Koden stemmer ikke. ' + n + (+n === 1 ? ' forsøk' : ' forsøk') + ' igjen.'; }],
-    [/^Wait (\d+) s before asking for a new code\.$/, 'Vent $1 s før du ber om en ny kode.']
-  );
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;

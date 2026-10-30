@@ -80,7 +80,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=119" rel="stylesheet">
+  <link href="styles.css?v=120" rel="stylesheet">
   <link href="modern.css?v=4" rel="stylesheet">
 </head>
 <body>
@@ -97,7 +97,7 @@
         <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
         <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
         <input id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
-        <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> Let your password manager save it. Afterwards, turn on Settings → Security → Recovery by email, so a forgotten passcode doesn’t mean starting over.</p>
+        <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> There is no recovery. If you forget the passcode, your finance data has to be erased. Let your password manager save it.</p>
         <button class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
       </form>
       <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
@@ -534,7 +534,7 @@
           </select>
         </label>
         <button class="st-row st-btn" id="stChangePc" type="button"><span><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
-        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery by email</span><small id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery code</span><small id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
         <form class="inline-form" id="pcForm" hidden>
           <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
           <input id="pcNew" type="password" placeholder="New passcode (at least 6 characters)" autocomplete="new-password" required>
@@ -776,7 +776,7 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=9bae3ab255"></script>
+  <script src="dist/head.js?v=26e1c8ca9e"></script>
   <script src="dist/page-home.js?v=519a5c8392"></script>
   <script src="dist/tail.js?v=6677fde4d4"></script>
   <!-- /scripts -->

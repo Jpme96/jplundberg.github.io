@@ -23,9 +23,6 @@
    /cmd/api/ping      a quick health check: is the worker up, and which vault version does it hold.
    Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
                       the last 30 days), so a mistake can be undone from Settings → Data & sync.
-   /cmd/api/recovery  forgot the passcode: emails you a 6-digit code (valid 15 min, 5 tries). The right
-                      code returns the recovery key, which opens the copy of your passcode that is
-                      locked inside the vault file. Needs the Send email binding EMAIL below.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -39,9 +36,6 @@
      CF_API_TOKEN    secret: API token with Account Analytics: Read
      CF_ACCOUNT_ID   your Cloudflare account ID
      CF_SITE_TAG     the site tag of jplundberg.com in Web Analytics
-     EMAIL           Send email binding, destination address = your own (verified in Email Routing),
-                     only needed for passcode recovery by email
-     MAIL_FROM       optional, sender address on jplundberg.com (default dashboard@jplundberg.com)
    Settings → Triggers → Cron Triggers: "Every 5 minutes" (only needed for notifications)   */
 
 const KEY = 'vault';
@@ -68,7 +62,7 @@ export default {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping|recovery)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -87,68 +81,8 @@ async function route(request, env) {
     if (path === '/cmd/api/texts') return textsApi(request, env);
     if (path === '/cmd/api/push') return pushApi(request, env);
     if (path === '/cmd/api/power') return powerApi(url);
-    if (path === '/cmd/api/recovery') return recoveryApi(request, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
     return vault(request, env);
-}
-
-/* ---------- passcode recovery by email ----------
-   rec:key   the recovery key (random, made in the browser). It opens a copy of the passcode that is
-             stored, encrypted, in the vault file. It never leaves here without a code from your email.
-   rec:otp   {h: sha-256 of the code, exp, tries, sent}  – one code at a time, 15 minutes, 5 tries
-   rec:day:<date>  emails sent that day (max 5)                                                     */
-const REC_KEY = 'rec:key', REC_OTP = 'rec:otp', REC_DAY = 'rec:day:';
-async function sha(t) { const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join(''); }
-function sameStr(a, b) { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
-async function mail(env, subject, text) {
-  if (!env.EMAIL) throw Object.assign(new Error('email not set up'), { code: 'nomail' });
-  const from = env.MAIL_FROM || 'dashboard@jplundberg.com';
-  return env.EMAIL.send({ from: { email: from, name: 'jplundberg.com dashboard' }, subject, text });   // "to" comes from the binding
-}
-async function recoveryApi(request, env) {
-  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
-  const m = request.method;
-  if (m === 'GET') return json({ on: !!(await env.VAULT.get(REC_KEY)), email: !!env.EMAIL });
-  let body = {};
-  try { body = JSON.parse(await request.text() || '{}'); } catch (e) { return json({ error: 'bad json' }, 400); }
-  if (m === 'PUT') {
-    if (!/^[A-Za-z0-9+/]{43}=$/.test(body.key || '')) return json({ error: 'bad key' }, 400);
-    await env.VAULT.put(REC_KEY, body.key); await env.VAULT.delete(REC_OTP);
-    return json({ ok: true, email: !!env.EMAIL });
-  }
-  if (m === 'DELETE') { await env.VAULT.delete(REC_KEY); await env.VAULT.delete(REC_OTP); return json({ ok: true }); }
-  if (m !== 'POST') return json({ error: 'method not allowed' }, 405);
-  const now = Date.now();
-  if (body.test) {
-    try { await mail(env, 'Dashboard: email recovery is on', 'Email recovery for jplundberg.com/cmd works.\n\nIf you forget the passcode: lock screen → Forgot passcode? → Email me a code.\n\nNorsk: Gjenoppretting på e-post virker. Glemt koden? Låseskjermen → Glemt koden? → Send meg en kode.'); }
-    catch (e) { return json({ error: e.code === 'nomail' ? 'email not set up' : 'email failed', detail: String(e.code || e.message || e).slice(0, 120) }, 502); }
-    return json({ ok: true });
-  }
-  if (!(await env.VAULT.get(REC_KEY))) return json({ error: 'off' }, 404);
-  const otp = JSON.parse(await env.VAULT.get(REC_OTP) || 'null');
-  if (body.send) {
-    if (otp && now - otp.sent < 60e3) return json({ error: 'wait', s: Math.ceil((60e3 - (now - otp.sent)) / 1000) }, 429);
-    const dk = REC_DAY + new Date(now).toISOString().slice(0, 10), n = +(await env.VAULT.get(dk) || 0);
-    if (n >= 5) return json({ error: 'too many' }, 429);
-    const r = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000, code = String(r).padStart(6, '0');
-    try {
-      await mail(env, 'Dashboard code: ' + code, 'Your code for jplundberg.com/cmd: ' + code + '\n\nIt works for 15 minutes. Then choose a new passcode.\nIf you didn’t ask for it, don’t use it – someone got past your Cloudflare login, so check Zero Trust → Access.\n\nNorsk: Koden din er ' + code + '. Den virker i 15 minutter.');
-    } catch (e) { return json({ error: e.code === 'nomail' ? 'email not set up' : 'email failed', detail: String(e.code || e.message || e).slice(0, 120) }, 502); }
-    await env.VAULT.put(REC_OTP, JSON.stringify({ h: await sha(code), exp: now + 15 * 60e3, tries: 0, sent: now }), { expirationTtl: 1200 });
-    await env.VAULT.put(dk, String(n + 1), { expirationTtl: 2 * 86400 });
-    return json({ ok: true, min: 15 });
-  }
-  const code = String(body.code || '').replace(/\D/g, '');
-  if (!code) return json({ error: 'no code' }, 400);
-  if (!otp || otp.exp < now) return json({ error: 'expired' }, 410);
-  if (!sameStr(await sha(code), otp.h)) {
-    otp.tries++;
-    if (otp.tries >= 5) { await env.VAULT.delete(REC_OTP); return json({ error: 'expired', tries: 0 }, 410); }
-    await env.VAULT.put(REC_OTP, JSON.stringify(otp), { expirationTtl: 1200 });
-    return json({ error: 'wrong', tries: 5 - otp.tries }, 403);
-  }
-  await env.VAULT.delete(REC_OTP);
-  return json({ key: await env.VAULT.get(REC_KEY) });
 }
 
 /* ---------- Apple Health inbox ---------- */
