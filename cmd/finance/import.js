@@ -118,6 +118,7 @@
     (d.expenses || []).forEach(function (e) {
       if (e.ref) have[e.ref] = 1;
       have[e.date + '|' + Math.round(e.amount) + '|' + norm(e.note)] = 1;
+      if (e.full != null) have[e.date + '|' + Math.round(e.full) + '|' + norm(e.note)] = 1;     // split with someone: the bank shows the whole amount
       if (e.note && e.cat && !e.src) memory[norm(e.note)] = memory[norm(e.note)] || e.cat;
     });
     /* read every row first; then decide which sign means spending */
@@ -154,7 +155,7 @@
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
       var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
       var transfer = TRANSFER.test(x.desc);
-      var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+m.amount - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
+      var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+(m.full != null ? m.full : m.amount) - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
         .sort(function (a, b) { return Math.abs(dayN(a.date) - dayN(x.date)) - Math.abs(dayN(b.date) - dayN(x.date)); })[0] || null;
       if (mine) { claimed[mine.id] = 1; skipped.mine = (skipped.mine || 0) + 1; }
       out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, mine: mine });

@@ -404,6 +404,7 @@
     var h = history(name); if (!h.length) return null;
     var last = h[h.length - 1], top = Math.max.apply(null, last.sets.map(function (s) { return +s.kg || 0; }));
     var topSets = last.sets.filter(function (s) { return (+s.kg || 0) === top; }), reps = Math.min.apply(null, topSets.map(function (s) { return +s.r || 0; }));
+    if (!top) return { last: last, text: topSets.length + '×' + reps, next: 0, reps: reps + 1, up: false, bw: true };   // body weight (dips, pull-ups …): one more rep
     var step = top >= 40 ? 2.5 : top >= 10 ? 1 : .5, up = reps >= 8;
     return { last: last, text: topSets.length + '×' + reps + ' @ ' + nf1.format(top) + ' kg', next: up ? top + step : top, reps: up ? Math.max(5, reps - 2) : reps + 1, up: up };
   }
@@ -419,14 +420,39 @@
         var h = history(n).slice(-10), mx = Math.max.apply(null, h.map(function (x) { return x.best; })), mn = Math.min.apply(null, h.map(function (x) { return x.best; })), sg = suggest(n);
         var pts = h.map(function (x, i) { return (h.length === 1 ? 50 : i / (h.length - 1) * 100).toFixed(1) + ',' + (mx === mn ? 50 : 90 - (x.best - mn) / (mx - mn) * 80).toFixed(1); }).join(' ');
         return '<li><div class="gym-x"><b>' + esc(n) + '</b><small>' + esc(sg ? 'Last ' + sg.text : '') + '</small></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="gym-spark" aria-hidden="true"><polyline points="' + pts + '"/></svg>' +
-          '<div class="gym-next"><small>Next</small><b>' + (sg ? nf1.format(sg.next) + ' kg × ' + sg.reps : '–') + '</b></div></li>';
+          '<div class="gym-next"><small>Next</small><b>' + (sg ? (sg.bw ? '' : nf1.format(sg.next) + ' kg ') + '× ' + sg.reps : '–') + '</b></div></li>';
       }).join('') + '</ul>' : '') +
       (l.length ? '<h3 class="lp-h3">Recent</h3><ul class="kit-list">' + l.slice(0, 4).map(function (s) { return '<li class="kit-item"><button type="button" class="kit-main" data-gymedit="' + esc(s.id) + '"><span class="kit-ic" style="--c:#d55181"><i class="bi bi-person-arms-up"></i></span><span class="kit-x"><b>' + esc(fmt(s.date, { weekday: 'long', day: 'numeric', month: 'short' })) + '</b><small>' + esc((s.ex || []).map(function (x) { return x.n + ' ' + (x.sets || []).length + '×'; }).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>' :
         '<p class="empty kit-empty">Log sets, reps and kilos per exercise. It shows your progress and suggests the weight for next time.</p>');
-    el.innerHTML = card('gym', 'person-arms-up', 'Gym log', '<button type="button" class="text-btn" data-gymstart><i class="bi bi-play-fill"></i> Start workout</button>', body, 'lp-gym');
+    var tpls = templates();
+    var tplRow = '<div class="gym-tpls" aria-label="Workout templates"><span class="gym-tpl-l"><i class="bi bi-collection"></i> Start</span>' + (tpls.length ? tpls.map(function (t) {
+        return '<span class="gym-tpl' + (tplEdit ? ' editing' : '') + '"><button type="button" class="lf-chip" data-gymtpl="' + esc(t.id) + '" title="' + esc(t.ex.map(function (x) { return x.n; }).join(', ')) + '">' + esc(t.name) + ' <small>' + t.ex.length + '</small></button>' +
+          (tplEdit ? '<button type="button" class="icon-btn sm" data-gymtpldel="' + esc(t.id) + '" aria-label="Delete ' + esc(t.name) + '"><i class="bi bi-x"></i></button>' : '') + '</span>';
+      }).join('') + '<button type="button" class="icon-btn sm" data-gymtpledit aria-pressed="' + tplEdit + '" aria-label="' + (tplEdit ? 'Done' : 'Edit templates') + '" title="' + (tplEdit ? 'Done' : 'Edit templates') + '"><i class="bi bi-' + (tplEdit ? 'check2' : 'pencil') + '"></i></button>'
+      : '<button type="button" class="lf-chip" data-gymstarter><i class="bi bi-plus-lg"></i> Push · Pull · Legs</button><small class="muted">or save any workout as a template</small>') + '</div>';
+    el.innerHTML = card('gym', 'person-arms-up', 'Gym log', '<button type="button" class="text-btn" data-gymstart><i class="bi bi-play-fill"></i> Start workout</button>', tplRow + body, 'lp-gym');
   });
-  function gymSheet(sess) {
-    var s = sess ? JSON.parse(JSON.stringify(sess)) : { id: uid(), date: dkey(new Date()), ex: [] }, isNew = !sess;
+  /* ---------- templates: Push / Pull / Legs … – saved from a workout, started with one tap ---------- */
+  var tplEdit = false;
+  function templates() { var l = Fe.tools().gymtpl; return Array.isArray(l) ? l.filter(function (t) { return t && t.name && Array.isArray(t.ex); }) : []; }
+  function saveTpls(l) { var t = Fe.tools(); t.gymtpl = l; Fe.saveTools(t); }
+  var STARTER = [['Push', ['Bench press', 'Overhead press', 'Dips', 'Triceps pushdown']], ['Pull', ['Pull-ups', 'Barbell row', 'Lat pulldown', 'Biceps curl']], ['Legs', ['Squat', 'Romanian deadlift', 'Leg press', 'Calf raise']]];
+  function starter() {
+    var l = templates();
+    STARTER.forEach(function (s) { if (!l.some(function (t) { return t.name.toLowerCase() === s[0].toLowerCase(); })) l.push({ id: uid(), name: s[0], ex: s[1].map(function (n) { return { n: n, sets: 3, r: 8 }; }) }); });
+    saveTpls(l); toast('<i class="bi bi-collection"></i> Push, Pull and Legs added – tap one to start');
+  }
+  function fromTpl(t) {
+    return { id: uid(), date: dkey(new Date()), tpl: t.id, ex: t.ex.map(function (x) {
+      var sg = suggest(x.n), n = Math.max(1, Math.min(10, +x.sets || 3)), out = [];
+      for (var i = 0; i < n; i++) out.push({ r: sg ? sg.reps : (+x.r || 8), kg: sg && !sg.bw ? sg.next : '' });
+      return { n: x.n, sets: out };
+    }) };
+  }
+  function tplOf(s) { return { n: s.n, sets: (s.sets || []).length || 3, r: Math.max.apply(null, (s.sets || [{ r: 8 }]).map(function (t) { return +t.r || 0; })) || 8 }; }
+  window.GymTpl = { list: templates, starter: starter };
+  function gymSheet(sess, tpl) {
+    var s = sess ? JSON.parse(JSON.stringify(sess)) : tpl ? fromTpl(tpl) : { id: uid(), date: dkey(new Date()), ex: [] }, isNew = !sess, naming = false;
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
     bg.innerHTML = '<div class="fo-box lf-box gym-box" role="dialog" aria-modal="true" aria-label="Workout"></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
@@ -435,27 +461,41 @@
     function key(e) { if (e.key === 'Escape' && !e.target.closest('input')) { e.stopPropagation(); close(); } }
     document.addEventListener('keydown', key, true);
     function draw() {
-      box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-person-arms-up"></i> ' + (isNew ? 'Workout' : 'Edit workout') + '</h3><button type="button" class="icon-btn sm" data-gclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+      var T = s.tpl ? templates().filter(function (t) { return t.id === s.tpl; })[0] : null;
+      box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-person-arms-up"></i> ' + (T ? esc(T.name) : isNew ? 'Workout' : 'Edit workout') + '</h3><button type="button" class="icon-btn sm" data-gclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
         '<label class="gym-date">Date <input type="date" data-gdate value="' + s.date + '"></label>' +
         s.ex.map(function (x, xi) {
           var sg = suggest(x.n);
-          return '<section class="gym-ex"><div class="gym-exh"><b>' + esc(x.n) + '</b>' + (sg ? '<small>Last ' + esc(sg.text) + ' · try <b>' + nf1.format(sg.next) + ' kg × ' + sg.reps + '</b>' + (sg.up ? ' ↑' : '') + '</small>' : '') + '<button type="button" class="icon-btn sm" data-gexdel="' + xi + '" aria-label="Remove ' + esc(x.n) + '"><i class="bi bi-trash3"></i></button></div>' +
+          return '<section class="gym-ex"><div class="gym-exh"><b>' + esc(x.n) + '</b>' + (sg ? '<small>Last ' + esc(sg.text) + ' · try <b>' + (sg.bw ? '' : nf1.format(sg.next) + ' kg ') + '× ' + sg.reps + '</b>' + (sg.up ? ' ↑' : '') + '</small>' : '') + '<button type="button" class="icon-btn sm" data-gexdel="' + xi + '" aria-label="Remove ' + esc(x.n) + '"><i class="bi bi-trash3"></i></button></div>' +
             '<div class="gym-sets">' + x.sets.map(function (t, si) {
               return '<div class="gym-set"><span>' + (si + 1) + '</span><input inputmode="numeric" data-gs="' + xi + ':' + si + ':r" value="' + esc(t.r) + '" aria-label="Reps"><em>reps</em><input inputmode="decimal" data-gs="' + xi + ':' + si + ':kg" value="' + esc(t.kg) + '" aria-label="Kilos"><em>kg</em><button type="button" class="icon-btn sm" data-gsdel="' + xi + ':' + si + '" aria-label="Remove set"><i class="bi bi-x"></i></button></div>';
             }).join('') + '</div><button type="button" class="text-btn" data-gsadd="' + xi + '"><i class="bi bi-plus-lg"></i> Set</button></section>';
         }).join('') +
         '<form class="gym-addex"><input list="gymEx" name="n" placeholder="Add exercise, e.g. Bench press" autocomplete="off" maxlength="60"><datalist id="gymEx">' + Object.keys(EX.concat(sessions().reduce(function (a, q) { return a.concat((q.ex || []).map(function (x) { return x.n; })); }, [])).reduce(function (o, n) { o[n] = 1; return o; }, {})).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist><button class="pill-btn" type="submit" aria-label="Add exercise"><i class="bi bi-plus-lg"></i></button></form>' +
+        (s.ex.length ? (naming ? '<div class="gym-tplname"><input data-gtplname placeholder="Template name, e.g. Push" maxlength="30" value="' + esc(T ? T.name : '') + '" autocomplete="off"><button type="button" class="pill-btn sm" data-gtplsave>Save</button><button type="button" class="icon-btn sm" data-gtplx aria-label="Cancel"><i class="bi bi-x"></i></button></div>'
+          : '<div class="gym-tplbar">' + (T ? '<button type="button" class="text-btn" data-gtplupd><i class="bi bi-arrow-repeat"></i> Update “' + esc(T.name) + '”</button>' : '') + '<button type="button" class="text-btn" data-gtplnew><i class="bi bi-collection"></i> Save as template</button></div>') : '') +
         '<div class="lf-foot">' + (isNew ? '<span class="spacer"></span>' : '<button type="button" class="text-btn danger" data-gdel><i class="bi bi-trash3"></i> Delete</button>') + '<button type="button" class="pill-btn wide" data-gsave><i class="bi bi-check2"></i> Save workout</button></div>';
     }
+    box.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('[data-gtplname]')) { e.preventDefault(); var b = box.querySelector('[data-gtplsave]'); if (b) b.click(); } });
     box.addEventListener('submit', function (e) {
       e.preventDefault(); var n = e.target.n.value.trim(); if (!n) return;
-      var sg = suggest(n); s.ex.push({ n: n, sets: [{ r: sg ? sg.reps : 8, kg: sg ? sg.next : '' }] }); draw();
+      var sg = suggest(n); s.ex.push({ n: n, sets: [{ r: sg ? sg.reps : 8, kg: sg && !sg.bw ? sg.next : '' }] }); draw();
       var last = box.querySelectorAll('[data-gs$=":kg"]'); if (last.length) last[last.length - 1].focus();
     });
     box.addEventListener('input', function (e) { var g = e.target.dataset.gs; if (g) { var q = g.split(':'); s.ex[+q[0]].sets[+q[1]][q[2]] = q[2] === 'kg' ? (num(e.target.value) == null ? '' : num(e.target.value)) : (parseInt(e.target.value, 10) || ''); } if (e.target.matches('[data-gdate]')) s.date = e.target.value || s.date; });
     box.addEventListener('click', function (e) {
       var b;
       if (e.target.closest('[data-gclose]')) return close();
+      if (e.target.closest('[data-gtplnew]')) { naming = true; draw(); var ni = box.querySelector('[data-gtplname]'); if (ni) ni.focus(); return; }
+      if (e.target.closest('[data-gtplx]')) { naming = false; draw(); return; }
+      if (e.target.closest('[data-gtplsave]') || e.target.closest('[data-gtplupd]')) {
+        var upd = !!e.target.closest('[data-gtplupd]'), nm = upd ? '' : (box.querySelector('[data-gtplname]').value || '').trim();
+        if (!upd && !nm) { box.querySelector('[data-gtplname]').focus(); return; }
+        var L = templates(), ex = s.ex.filter(function (x) { return x.n; }).map(tplOf), same = upd ? L.filter(function (t) { return t.id === s.tpl; })[0] : L.filter(function (t) { return t.name.toLowerCase() === nm.toLowerCase(); })[0];
+        if (same) { same.ex = ex; if (nm) same.name = nm; } else { same = { id: uid(), name: nm.slice(0, 30), ex: ex }; L.push(same); }
+        s.tpl = same.id; saveTpls(L); naming = false; draw();
+        toast('<i class="bi bi-collection"></i> Template “' + esc(same.name) + '” saved – ' + ex.length + ' exercise' + (ex.length === 1 ? '' : 's')); return;
+      }
       if ((b = e.target.closest('[data-gsadd]'))) { var x = s.ex[+b.dataset.gsadd], l = x.sets[x.sets.length - 1] || { r: 8, kg: '' }; x.sets.push({ r: l.r, kg: l.kg }); draw(); return; }
       if ((b = e.target.closest('[data-gsdel]'))) { var q = b.dataset.gsdel.split(':'); s.ex[+q[0]].sets.splice(+q[1], 1); if (!s.ex[+q[0]].sets.length) s.ex.splice(+q[0], 1); draw(); return; }
       if ((b = e.target.closest('[data-gexdel]'))) { s.ex.splice(+b.dataset.gexdel, 1); draw(); return; }
@@ -476,6 +516,10 @@
   document.addEventListener('click', function (e) {
     var b;
     if (e.target.closest('[data-gymstart]')) return gymSheet(null);
+    if ((b = e.target.closest('[data-gymtpl]'))) { var tp = templates().filter(function (t) { return t.id === b.dataset.gymtpl; })[0]; if (tp) gymSheet(null, tp); return; }
+    if (e.target.closest('[data-gymstarter]')) return starter();
+    if (e.target.closest('[data-gymtpledit]')) { tplEdit = !tplEdit; drawAll(); return; }
+    if ((b = e.target.closest('[data-gymtpldel]'))) { var all = templates(), gone = all.filter(function (t) { return t.id === b.dataset.gymtpldel; })[0]; saveTpls(all.filter(function (t) { return t !== gone; })); if (gone) toast('<i class="bi bi-trash3"></i> Template “' + esc(gone.name) + '” deleted', function () { saveTpls(templates().concat([gone])); }); return; }
     if ((b = e.target.closest('[data-gymedit]'))) gymSheet(Fe.list('gym').filter(function (x) { return x.id === b.dataset.gymedit; })[0]);
   });
 

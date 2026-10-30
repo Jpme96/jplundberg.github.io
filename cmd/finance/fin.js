@@ -72,8 +72,73 @@
     return Object.keys(ys).sort().reverse();
   }
   function inMonths(list, months) {
-    return list.filter(function (e) { return months.indexOf(e.date.slice(0, 7)) > -1; });
+    var set = {}; months.forEach(function (m) { set[m] = 1; });
+    return list.filter(function (e) { return set[String(e.date).slice(0, 7)] === 1; });
   }
+
+  /* ---------- the sums behind every chart, worked out once (batch 3) ----------
+     One pass over all expenses gives totals per month, per category and per day; the charts read
+     from that instead of filtering the whole list again and again. It's kept until the data changes
+     (a cheap fingerprint), and with many years of bank imports it's built in a background worker so
+     the page keeps scrolling while it works. */
+  var IDX = null, IDXkey = '', BIG = 2500, worker = null, waiting = '';
+  function fingerprint(ex) {
+    var h = ex.length | 0;
+    for (var i = 0; i < ex.length; i++) {
+      var e = ex[i], dt = String(e.date || ''), c = String(e.cat || '');
+      h = (h * 31 + Math.round((+e.amount || 0) * 100)) | 0;
+      h = (h * 31 + (dt.charCodeAt(3) | 0) * 1000 + (dt.charCodeAt(6) | 0) * 100 + (dt.charCodeAt(8) | 0) * 10 + (dt.charCodeAt(9) | 0)) | 0;
+      h = (h * 31 + (c.charCodeAt(0) | 0) + c.length) | 0;
+    }
+    return ex.length + ':' + h;
+  }
+  function buildIndex(ex, cats) {
+    var known = {}; cats.forEach(function (c) { known[c] = 1; });
+    var months = {}, years = {};
+    for (var i = 0; i < ex.length; i++) {
+      var e = ex[i], dt = String(e.date || ''), m = dt.slice(0, 7), yr = dt.slice(0, 4), a = +e.amount || 0, c = known[e.cat] ? e.cat : 'other';
+      if (!/^\d{4}-\d{2}$/.test(m)) continue;
+      var M = months[m] || (months[m] = { total: 0, by: {}, days: {}, n: 0 });
+      M.total += a; M.n++; M.by[c] = (M.by[c] || 0) + a; var dd = +dt.slice(8, 10) || 0; M.days[dd] = (M.days[dd] || 0) + a;
+      var Y = years[yr] || (years[yr] = { total: 0, by: {} }); Y.total += a; Y.by[c] = (Y.by[c] || 0) + a;
+    }
+    return { months: months, years: years };
+  }
+  var CAT_IDS = CATS.map(function (c) { return c.id; });
+  function index() {
+    var ex = (D && D.expenses) || [], k = fingerprint(ex);
+    if (k === IDXkey && IDX) return IDX;
+    if (ex.length >= BIG && typeof Worker !== 'undefined' && idxAsync(ex, k)) return null;   // comes back in a moment
+    IDX = buildIndex(ex, CAT_IDS); IDXkey = k; return IDX;
+  }
+  function idxAsync(ex, k) {
+    if (waiting === k) return true;
+    try {
+      if (!worker) {
+        var src = 'var buildIndex = ' + buildIndex.toString() + ';\nonmessage = function (e) { postMessage({ k: e.data.k, idx: buildIndex(e.data.ex, e.data.cats) }); };';
+        worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+        worker.onmessage = function (e) { if (e.data.k !== waiting) return; waiting = ''; IDX = e.data.idx; IDXkey = e.data.k; schedule(); };
+        worker.onerror = function () { worker = null; waiting = ''; BIG = Infinity; schedule(); };
+      }
+      waiting = k;
+      worker.postMessage({ k: k, cats: CAT_IDS, ex: ex.map(function (e) { return { date: e.date, amount: e.amount, cat: e.cat }; }) });
+      return true;
+    } catch (er) { BIG = Infinity; return false; }
+  }
+  function sumMonths(idx, months, cat) {
+    var t = 0; months.forEach(function (m) { var M = idx.months[m]; if (M) t += cat ? (M.by[cat] || 0) : M.total; }); return t;
+  }
+  /* draw what's on screen first and the rest when the browser has a moment; folded cards wait until opened */
+  var idle = window.requestIdleCallback ? function (f) { return requestIdleCallback(f, { timeout: 300 }); } : function (f) { return setTimeout(f, 16); };
+  var queued = false, dirty = {};
+  function schedule() { if (queued) return; queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
+  function folded(id) { var el = $(id), c = el && el.closest('.fp-card'); return !!(c && c.classList.contains('folded')); }
+  function later(id, fn) {
+    if (folded(id)) { dirty[id] = fn; return; }
+    delete dirty[id];
+    idle(function () { if (D) fn(); });
+  }
+  window.addEventListener('fp:unfold', function () { Object.keys(dirty).forEach(function (id) { if (!folded(id)) { var f = dirty[id]; delete dirty[id]; if (D) f(); } }); });
 
   /* ---------- tooltip ---------- */
   var tip = $('fpTip');
@@ -129,23 +194,28 @@
     var ex = D.expenses || [];
     var Bu = window.Budget, inc = Bu.incomeOf(D, NOW), income = inc.net, fixed = sum(D.budget.fixed);
     var spendable = income - fixed;             // the month's budget line in the charts
-
-    tiles(months, ex, income, fixed, spendable, inc);
-    monthly(period === 'month' ? last(6) : months, ex, spendable);   // a single month shows the last 6 for context
-    pace(ex, spendable);
-    cats(months, prevMonths, ex);
+    var idx = index();
+    if (!idx) {                                 // being worked out in the background
+      ['fpMonths', 'fpPace', 'fpCats', 'fpTop'].forEach(function (id) { var el = $(id); if (el && !el.querySelector('.fp-busy')) el.innerHTML = '<p class="fp-empty fp-busy"><i class="bi bi-hourglass-split"></i> Working it out …</p>'; });
+      return;
+    }
+    tiles(months, ex, income, fixed, spendable, inc, idx);
     net();
     goals();
-    top(months, ex);
+    var mm = period === 'month' ? last(6) : months;   // a single month shows the last 6 for context
+    later('fpMonths', function () { monthly(mm, ex, spendable, idx); });
+    later('fpPace', function () { pace(ex, spendable, idx); });
+    later('fpCats', function () { cats(months, prevMonths, ex, idx); });
+    later('fpTop', function () { top(months, ex); });
   }
   function last(n) { var out = []; for (var i = n - 1; i >= 0; i--) out.push(shift(NOW, -i)); return out; }
 
   /* Key numbers */
-  function tiles(months, ex, income, fixed, spendable, inc) {
+  function tiles(months, ex, income, fixed, spendable, inc, idx) {
     var Bu = window.Budget, pay = Bu.nextPayday(D);
     var per = Bu.period(D), spentNow = Bu.spent(D, per);
     var left = per.income - fixed - spentNow;
-    var spentP = sum(inMonths(ex, months));
+    var spentP = idx ? sumMonths(idx, months) : sum(inMonths(ex, months));
     var avg = spentP / months.length;
     var rate = income > 0 ? (income - fixed - avg) / income : null;
     var nw = netWorth();
@@ -181,7 +251,7 @@
   }
 
   /* Spending per month: stacked bars by category, budget as a dashed reference line */
-  function monthly(months, ex, spendable) {
+  function monthly(months, ex, spendable, idx) {
     var el = $('fpMonths');
     var byYear = months.length > 24;              /* many years: one bar per year */
     $('fpMonthsTitle').innerHTML = '<i class="bi bi-bar-chart"></i> Spending per ' + (byYear ? 'year' : 'month');
@@ -193,10 +263,9 @@
     }
     var label = function (k, long) { return byYear ? k : mName(k, long); };
     var rows = months.map(function (m) {
-      var list = byYear ? ex.filter(function (e) { return String(e.date).slice(0, 4) === m; }) : inMonths(ex, [m]);
-      var by = {};
-      CATS.forEach(function (c) { by[c.id] = sum(list.filter(function (e) { return (catById[e.cat] ? e.cat : 'other') === c.id; })); });
-      return { m: m, by: by, total: sum(list) };
+      var X = (byYear ? idx.years[m] : idx.months[m]) || { total: 0, by: {} }, by = {};
+      CATS.forEach(function (c) { by[c.id] = X.by[c.id] || 0; });
+      return { m: m, by: by, total: X.total };
     });
     var used = CATS.filter(function (c) { return rows.some(function (r) { return r.by[c.id] > 0; }); });
     $('fpMonthsNote').textContent = label(months[0]) + ' – ' + label(months[months.length - 1]);
@@ -279,13 +348,13 @@
   }
 
   /* This month's pace: cumulative spending vs an even pace to the budget */
-  function pace(ex, spendable) {
+  function pace(ex, spendable, idx) {
     var el = $('fpPace');
     var dim = daysIn(NOW), today = new Date().getDate();
-    var list = inMonths(ex, [NOW]);
+    var days = (idx.months[NOW] || { days: {} }).days;
     var cum = [], acc = 0;
     for (var d = 1; d <= today; d++) {
-      acc += sum(list.filter(function (e) { return +e.date.slice(8, 10) === d; }));
+      acc += days[d] || 0;
       cum.push(acc);
     }
     var expected = spendable > 0 ? spendable * today / dim : null;
@@ -338,12 +407,10 @@
   }
 
   /* Categories: sorted bars with change vs the previous period */
-  function cats(months, prevMonths, ex) {
-    var cur = inMonths(ex, months), prev = inMonths(ex, prevMonths);
-    var total = sum(cur);
+  function cats(months, prevMonths, ex, idx) {
+    var total = sumMonths(idx, months);
     var rows = CATS.map(function (c) {
-      var f = function (e) { return (catById[e.cat] ? e.cat : 'other') === c.id; };
-      return { c: c, v: sum(cur.filter(f)), p: sum(prev.filter(f)) };
+      return { c: c, v: sumMonths(idx, months, c.id), p: sumMonths(idx, prevMonths, c.id) };
     }).filter(function (r) { return r.v > 0; }).sort(function (a, b) { return b.v - a.v; });
     $('fpCatNote').textContent = period === 'all' ? 'all years' : /^y:/.test(period) ? 'vs ' + (+period.slice(2) - 1)
       : months.length > 1 ? 'vs previous ' + months.length + ' months' : 'vs ' + mName(prevMonths[0]);
@@ -485,7 +552,7 @@
     requestAnimationFrame(render);
   });
   /* the budget changed elsewhere (e.g. a subscription) */
-  window.addEventListener('fin:change', function () { if (D) { D = window.Vault.get() || D; render(); } });
+  window.addEventListener('fin:change', function () { if (D) { D = window.Vault.get() || D; schedule(); } });
   /* the statistics fold away: tap a heading to open or close it – remembered on this device.
      On phones they start folded, so the page is short; on larger screens they start open. */
   (function () {
@@ -500,7 +567,7 @@
       function set(f, save) {
         c.classList.toggle('folded', f); head.setAttribute('aria-expanded', String(!f));
         if (save) { store[id] = f; try { localStorage.setItem('dash.fpFold', JSON.stringify(store)); } catch (e) {} }
-        if (!f) setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 30);   // charts draw at their real width
+        if (!f) setTimeout(function () { window.dispatchEvent(new Event('fp:unfold')); window.dispatchEvent(new Event('resize')); }, 30);   // charts draw at their real width
       }
       set(folded, false);
       head.addEventListener('click', function (e) { if (e.target.closest('a, button, select, input')) return; set(!c.classList.contains('folded'), true); });

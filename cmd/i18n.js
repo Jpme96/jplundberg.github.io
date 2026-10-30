@@ -647,6 +647,76 @@
     [/^Since (\d\d:\d\d)$/, 'Siden $1'], [/^Start timer: (.+)$/, 'Start timer: $1'], [/^Export (this week|last week|this month) \(CSV\)$/, function (m, a) { return 'Eksporter ' + tr(a.charAt(0).toUpperCase() + a.slice(1)).toLowerCase() + ' (CSV)'; }],
     [/^(\d+) finished$/, '$1 ferdige'], [/^From (\d\d:00)$/, 'Fra $1'], [/^Leave for (.+)$/, 'Dra til $1'], [/^Booked (.+) of (\d+) waking hours$/, 'Booket $1 av $2 våkne timer'], [/^Tomorrow, (.+)$/, function (m, a) { return 'I morgen, ' + a; }], [/^Top 3 today: (\d) of (\d) done$/, 'Topp 3 i dag: $1 av $2 ferdig'], [/^(.+) spent while away$/, '$1 brukt på turen'], [/^Day (\d+), (.+): (\d+) stops? in order\. Tap Map on the day again for the whole trip\.$/, function (m, d, w, n) { return 'Dag ' + d + ', ' + w + ': ' + n + ' stopp i rekkefølge. Trykk Kart på dagen igjen for hele turen.'; }], [/^Leave (\d\d:\d\d) · there (\d\d:\d\d)(.*)$/, function (m, a, b, r) { return 'Dra ' + a + ' · fremme ' + b + r.replace(' · from ', ' · fra '); }], [/^(\d+) min$/, '$1 min'], [/^Running since (.+)$/, 'Går siden $1'], [/^Worked (.+)$/, 'Jobbet $1'], [/^Put out (.+)$/, 'Sett ut $1'], [/^Work – (.+)$/, 'Jobb – $1'], [/^(.+) of focused work$/, '$1 fokusert arbeid'], [/^Flex balance: (.+)$/, 'Fleksisaldo: $1'], [/ At this pace you end the month /, ' I dette tempoet ender måneden '], [/^Nothing found for “(.+)”\.$/, 'Fant ingenting for «$1».'], [/^(\d+) overdue$/, '$1 over tiden'], [/^Every 6 weeks$/, 'Hver 6. uke'], [/^(\d+) to keep in touch with$/, '$1 å holde kontakten med'], [/^Until (.+)$/, 'Til $1'], [/^Ended (.+)$/, 'Gikk ut $1'], [/^Keys: (.+)$/, 'Nøkler: $1'], [/^Bins from (\d\d:00)(.*)$/, function (m, a, r) { return 'Dunker fra ' + a + r.replace(' · upkeep ', ' · vedlikehold ').replace('days before', 'dager før').replace('on the day', 'samme dag'); }], [/^(\d+) ingredients?$/, '$1 ingredienser'], [/^Show (\d+) more$/, 'Vis $1 til'], [/^Last reading (.+)$/, function (m, a) { return 'Sist lest av ' + tr(a).toLowerCase(); }]
   );
+  /* batch 3: recurring payments, shared expenses, weekly health report, habit year, gym templates (Oct 2026) */
+  Object.assign(D, {
+    'Recurring payments': 'Gjentakende betalinger', 'Found': 'Funnet', 'repeating payment': 'gjentakende betaling', 'repeating payments': 'gjentakende betalinger', 'Per month': 'Per måned',
+    'still running': 'fortsatt aktive', 'Not added': 'Ikke lagt til', 'to the budget yet': 'i budsjettet ennå', 'all in the budget': 'alt er i budsjettet', 'Subscription': 'Abonnement', 'Fixed cost': 'Fast kostnad',
+    'Not a repeating payment': 'Ikke en gjentakende betaling', 'Show again': 'Vis igjen', 'Nothing left to look at.': 'Ingenting mer å se på.',
+    'When the same shop or service charges you about once a month at the same price – in a bank import or what you log – it shows up here, so you can add it to the budget in one tap.': 'Når samme butikk eller tjeneste trekker deg omtrent én gang i måneden til samme pris – i en bankimport eller det du fører selv – dukker det opp her, så du kan legge det i budsjettet med ett trykk.',
+    'Shared expenses': 'Delte utgifter', 'Owed to you': 'Du har til gode', 'You owe': 'Du skylder', 'Your share': 'Din del', 'this month': 'denne måneden', 'all square': 'alt er oppgjort', 'nothing': 'ingenting',
+    'settled up': 'gjort opp', 'Settled up': 'Gjort opp', 'Settle up': 'Gjør opp', 'Latest': 'Siste', 'you paid': 'du betalte', 'Split': 'Del',
+    'Paid for dinner, a cabin or the groceries with someone? Split it here – only your share counts in your spending, and you see who owes what until you settle up.': 'Betalt middag, hytte eller matvarer sammen med noen? Del det her – bare din del teller i forbruket, og du ser hvem som skylder hva til dere gjør opp.',
+    'Split a payment': 'Del en betaling', 'Shared payment': 'Delt betaling', 'From your spending': 'Fra forbruket ditt', 'From your spending – it will count only your share': 'Fra forbruket ditt – bare din del teller',
+    'What was it? e.g. Dinner at Lofoten': 'Hva var det? F.eks. middag på Lofoten', 'Total, kr': 'Totalt, kr', 'Shared with': 'Delt med', 'New person': 'Ny person', 'Add person': 'Legg til person',
+    'Who paid?': 'Hvem betalte?', 'You': 'Du', 'Equally': 'Likt', 'By amount': 'Etter beløp', 'Add your share to Spending': 'Legg din del til i forbruket', 'Pick who you shared it with.': 'Velg hvem du delte med.',
+    'The amounts add up to more than the total.': 'Beløpene blir mer enn totalen.', 'Removed': 'Fjernet', 'Won’t suggest it again': 'Foreslås ikke igjen', 'Price updated': 'Prisen er oppdatert',
+    'Copied – paste it in a message': 'Kopiert – lim det inn i en melding', 'Send a reminder': 'Send en påminnelse', 'Mark as paid': 'Marker som betalt', 'Message': 'Melding', 'Delete payment': 'Slett betalingen',
+    'Payment removed': 'Betalingen er fjernet', 'settle up when it suits': 'gjør opp når det passer', 'Shared – your share': 'Delt – din del', 'Working it out …': 'Regner ut …',
+    'Recurring payments, shared expenses': 'Gjentakende betalinger, delte utgifter', 'Extras on the Finances page. Everything is worked out on this device from your own entries.': 'Ekstra på Økonomi-siden. Alt regnes ut på denne enheten fra det du har ført.',
+    'Show the card': 'Vis kortet', 'Charges that come back every month': 'Trekk som kommer igjen hver måned', 'Look back': 'Se tilbake', '6 months': '6 måneder', '12 months': '12 måneder',
+    'Suggest new ones in At a glance': 'Foreslå nye i Kort fortalt', 'Split payments and see who owes what': 'Del betalinger og se hvem som skylder hva', 'New splits start': 'Nye delinger starter',
+    'Remind me in At a glance': 'Minn meg på i Kort fortalt', 'When someone owes you, or you owe them': 'Når noen skylder deg, eller du skylder dem', 'Any amount': 'Alle beløp', 'Open Finances': 'Åpne Økonomi',
+    'They can be suggested again': 'De kan foreslås igjen',
+    'Charges that come back every month – add them to the budget in one tap': 'Trekk som kommer igjen hver måned – legg dem i budsjettet med ett trykk',
+    'Split a payment with someone, see who owes what and settle up': 'Del en betaling med noen, se hvem som skylder hva og gjør opp',
+    'Weekly health report': 'Ukentlig helserapport', 'Every Sunday: sleep, steps, training and mood compared with last week': 'Hver søndag: søvn, skritt, trening og humør sammenlignet med forrige uke',
+    'Weekly report': 'Ukerapport', 'Week before': 'Uken før', 'Week after': 'Uken etter', 'Share the report': 'Del rapporten', 'Much the same as the week before.': 'Omtrent som uken før.',
+    'Your first week – next week shows how it compares.': 'Din første uke – neste uke viser hvordan den står seg.', 'Workouts': 'Økter', 'Mood': 'Humør', 'Habits on target': 'Vaner på mål',
+    'a night': 'per natt', 'a day': 'per dag', 'in total': 'totalt', 'average': 'snitt', 'a night ·': 'per natt ·', 'a day ·': 'per dag ·', 'in total ·': 'totalt ·', 'average ·': 'snitt ·',
+    'vs last week': 'mot forrige uke', 'no week before': 'ingen uke før', 'same as last week': 'som forrige uke',
+    'Nothing logged this week. With Apple Health, the training log, the journal or habits, the report fills itself.': 'Ingenting ført denne uken. Med Apple Helse, treningsloggen, dagboken eller vaner fyller rapporten seg selv.',
+    'Sleep, steps, training and mood vs last week': 'Søvn, skritt, trening og humør mot forrige uke', 'Weekly report, habit calendar, gym templates': 'Ukerapport, vanekalender, øktmaler',
+    'Report on Sundays': 'Rapport på søndager', 'Report on Mondays': 'Rapport på mandager', 'No weekly report': 'Ingen ukerapport', 'habits 26 weeks': 'vaner 26 uker', 'habits by year': 'vaner per år',
+    'The Health page: the weekly report, the habit calendar and the gym log.': 'Helse-siden: ukerapporten, vanekalenderen og treningsloggen.', 'Show the weekly report': 'Vis ukerapporten',
+    'Report day': 'Rapportdag', 'Sunday': 'Søndag', 'Monday': 'Mandag', 'Show it in At a glance': 'Vis den i Kort fortalt', 'Habit calendar': 'Vanekalender', 'Each habit shows': 'Hver vane viser',
+    'The last 26 weeks': 'De siste 26 ukene', 'The whole year': 'Hele året', 'Change it on a habit too': 'Kan også endres på vanen', 'Mini charts on the number tiles': 'Små grafer på tallflisene',
+    'The last 7 days': 'De siste 7 dagene', 'Workout templates': 'Øktmaler', 'Save Push, Pull, Legs … and start one with a tap': 'Lagre Push, Pull, Legs … og start en med ett trykk',
+    'Add Push, Pull and Legs': 'Legg til Push, Pull og Legs', 'Open Health': 'Åpne Helse', 'or save any workout as a template': 'eller lagre en økt som mal', 'Edit templates': 'Endre maler',
+    'Save as template': 'Lagre som mal', 'Template name, e.g. Push': 'Navn på malen, f.eks. Push', 'Push, Pull and Legs added – tap one to start': 'Push, Pull og Legs er lagt til – trykk på en for å starte'
+  });
+  var HW = { 'more sleep': 'mer søvn', 'more steps': 'flere skritt', 'more exercise': 'mer trening', 'more workouts': 'flere økter', 'a lower resting pulse': 'lavere hvilepuls', 'a better mood': 'bedre humør',
+    'more habits on target': 'flere vaner på mål', 'less sleep': 'mindre søvn', 'fewer steps': 'færre skritt', 'less exercise': 'mindre trening', 'fewer workouts': 'færre økter', 'a higher resting pulse': 'høyere hvilepuls',
+    'a lower mood': 'lavere humør', 'fewer habits on target': 'færre vaner på mål' };
+  function hw(s) { return s.split(/( and |, )/).map(function (x) { return x === ' and ' ? ' og ' : HW[x] || x; }).join(''); }
+  function headNb(h) {
+    var m;
+    if ((m = h.match(/^A good week: (.+?)\.?$/))) return 'En god uke: ' + hw(m[1]) + '.';
+    if ((m = h.match(/^A quieter week: (.+?)\.?$/))) return 'En roligere uke: ' + hw(m[1]) + '.';
+    if ((m = h.match(/^Better: (.+) · Watch: (.+?)\.?$/))) return 'Bedre: ' + hw(m[1]) + ' · Følg med: ' + hw(m[2]) + '.';
+    return null;
+  }
+  P.unshift(
+    [/^(.+ kr) · around the (\d+)(?:st|nd|rd|th) · (\d+) months · (next ≈|last) (.+)$/, function (m, a, d, n, w, dt) { return a + ' · rundt den ' + d + '. · ' + n + ' måneder · ' + (w === 'last' ? 'sist ' : 'neste ≈ ') + dt; }],
+    [/^You owe (.+?) ([\d\s  ]+ kr)\. How much was paid\?$/, 'Du skylder $1 $2. Hvor mye ble betalt?'],
+    [/^(.+) owes you (.+)\. How much was paid\?$/, '$1 skylder deg $2. Hvor mye ble betalt?'],
+    [/^Your week in health: (.+)$/, function (m, h) { var x = headNb(h + '.') || tr(h + '.'); return 'Uken din: ' + String(x).replace(/\.$/, ''); }],
+    [/^((?:A good week|A quieter week|Better): .+)$/, function (m, all) { return headNb(all); }]
+  );
+  P.push(
+    [/^↑ from (.+)$/, '↑ fra $1'], [/^(Show|Hide) (\d+) not repeating$/, function (m, a, n) { return (a === 'Show' ? 'Vis ' : 'Skjul ') + n + ' som ikke gjentas'; }],
+    [/^Update price to (.+)$/, 'Oppdater prisen til $1'], [/^by (\d+) (person|people)$/, function (m, n, p) { return 'fra ' + n + (p === 'person' ? ' person' : ' personer'); }],
+    [/^to (\d+) (person|people)$/, function (m, n, p) { return 'til ' + n + (p === 'person' ? ' person' : ' personer'); }],
+    [/^owes you (.+)$/, 'skylder deg $1'], [/^you owe (.+)$/, 'du skylder $1'], [/^Owes you (.+)$/, 'Skylder deg $1'], [/^(.+) owes you$/, '$1 skylder deg'], [/^(.+) owes you (.+)$/, '$1 skylder deg $2'],
+    [/^You owe (.+)$/, 'Du skylder $1'], [/^paid by (.+)$/, 'betalt av $1'], [/^shared with (.+)$/, 'delt med $1'], [/^· your share (.+)$/, '· din del $1'], [/^your share (.+)$/, 'din del $1'],
+    [/^Split saved – your share (.+)$/, 'Delingen er lagret – din del $1'], [/^Saved – your share (.+)$/, 'Lagret – din del $1'], [/^(.+) added to subscriptions$/, '$1 er lagt til i abonnementer'],
+    [/^(.+) is now a fixed cost$/, '$1 er nå en fast kostnad'], [/^(.+) marked as paid$/, '$1 markert som betalt'], [/^Settle up with (.+)$/, 'Gjør opp med $1'], [/^You paid (.+)$/, 'Du betalte $1'],
+    [/^(.+) paid you$/, '$1 betalte deg'], [/^(.+ kr) in total$/, '$1 totalt'], [/^of (.+ kr)$/, 'av $1'], [/^Suggest the (\d+) I waved away again$/, 'Foreslå de $1 jeg avviste igjen'],
+    [/^(.+) km and (.+) of training logged$/, '$1 km og $2 trening ført'], [/^(\d+ h \d+|\d+ min) sleep( \(.+\))?$/, function (m, a, b) { return a + ' søvn' + (b || ''); }], [/^([\d\s\u00a0\u202f]+) steps( \(.+\))?$/, function (m, a, b) { return a + ' skritt' + (b || ''); }],
+    [/^(\d+) workouts?( \(.+\))?$/, function (m, a, b) { return a + (+a === 1 ? ' økt' : ' økter') + (b || ''); }], [/^mood (\d.*)$/, 'humør $1'], [/^Health (\d.+)$/, 'Helse $1'],
+    [/^• (.+?): (.+)$/, function (m, a, b) { return '• ' + tr(a) + ': ' + b; }], [/^(\d+) days? in (\d{4})$/, function (m, n, y) { return n + (+n === 1 ? ' dag' : ' dager') + ' i ' + y; }],
+    [/^(\d+) workout templates?$/, function (m, n) { return n + (+n === 1 ? ' øktmal' : ' øktmaler'); }], [/^Update “(.+)”$/, 'Oppdater «$1»'],
+    [/^Template “(.+)” saved – (\d+) exercises?$/, function (m, a, n) { return 'Malen «' + a + '» er lagret – ' + n + (+n === 1 ? ' øvelse' : ' øvelser'); }], [/^Template “(.+)” deleted$/, 'Malen «$1» er slettet']
+  );
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;

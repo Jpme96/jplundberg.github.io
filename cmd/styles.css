@@ -2982,3 +2982,91 @@ body.rp-open { overflow: hidden; }
 .rc-acts, .rc-more { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 10px; }
 .rc-note { font-size: 13px; }
 .rc-form { display: grid; gap: 10px; margin-top: 10px; }
+
+/* ---------- batch 3: recurring payments, shared expenses (money-plus.js) ---------- */
+.pill-btn.sm { padding: 6px 12px; font-size: 13px; min-height: 0; }
+.mp-list { list-style: none; margin: 0; padding: 0; }
+.mp-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); min-width: 0; }
+.mp-list > .mp-row:first-child { border-top: 0; }
+.mp-row > .kit-main { flex: 1; min-width: 0; padding: 0; border: 0; background: none; }
+.mp-row > .kit-main:hover { background: none; }
+.mp-row .kit-x small { white-space: normal; }
+.mp-row.is-done .kit-x b { color: var(--muted); }
+.mp-row.is-old { opacity: .7; }
+.mp-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+.mp-card .mp-acts :is(.pill-btn, .text-btn) { padding: 5px 12px; font-size: 13px; min-height: 32px; line-height: 1.2; }
+.mp-card .mp-acts .icon-btn.sm { width: 32px; height: 32px; font-size: 14px; }
+.mp-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.mp-tag.ok { color: #22b35e; }
+.mp-up { color: #e8743b; }
+.mp-pos { color: #22b35e !important; } .mp-neg { color: #e8743b !important; }
+.mp-av { font-weight: 600; font-size: 15px; border-radius: 50% !important; }
+.mp-more { margin-top: 6px; }
+.mp-recent .money { font-variant-numeric: tabular-nums; color: var(--heading); flex: none; margin-left: auto; }
+.mp-recent .kit-main { display: flex; align-items: center; gap: 10px; text-align: left; color: var(--text); font: inherit; cursor: pointer; }
+.mp-row > .kit-main { display: flex; align-items: center; gap: 10px; text-align: left; color: var(--text); font: inherit; cursor: pointer; }
+.mp-lbl { margin: 12px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.mp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-top: 10px; }
+.mp-grid > input[name="note"] { grid-column: 1 / -1; }
+.mp-grid > * { min-width: 0; width: 100%; box-sizing: border-box; }
+.mp-chips { align-items: center; }
+.mp-newp { display: inline-flex; align-items: center; gap: 4px; }
+.mp-newp input { width: 130px; padding: 6px 10px; font-size: 13.5px; border-radius: 999px; }
+.mp-amts { display: grid; gap: 6px; margin-top: 8px; }
+.mp-amts label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.mp-amts input { width: 110px; text-align: right; }
+.mp-prev { margin: 12px 0 0; font-size: 14px; color: var(--muted); min-height: 1.4em; }
+.mp-prev b { color: var(--heading); }
+.mp-from { margin: 10px 0 0; font-size: 13px; }
+.mp-bal { font-size: 18px; font-weight: 600; margin: 6px 0 8px; color: var(--heading); }
+.mp-box .lf-foot { flex-wrap: wrap; }
+.mp-row .money.mp-pos, .mp-row .money.mp-neg { flex: none; font-variant-numeric: tabular-nums; }
+@media (max-width: 420px) { .mp-row { flex-wrap: wrap; } .mp-row .mp-acts { margin-left: 44px; max-width: calc(100% - 44px); flex-wrap: wrap; } .mp-recent .mp-row, .mp-row:has(> .kit-main) { flex-wrap: nowrap; } }
+
+/* ---------- batch 3: the weekly health report (health-plus.js) ---------- */
+.hr-wrap { margin: 14px 0; }
+.hr-wrap[hidden] { display: none; }
+.hr-card .card-head h2 { flex-wrap: wrap; row-gap: 0; }
+.hr-card .card-head h2 small { font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 6px; }
+@media (max-width: 560px) { .hr-card .card-head h2 small { flex-basis: 100%; margin: 2px 0 0 26px; } }
+@media (max-width: 639px) { .hr-grid > .hr-m:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+.hr-card .head-actions { display: flex; align-items: center; gap: 2px; }
+.hr-lead { margin: 2px 0 12px; font-size: 15px; color: var(--heading); }
+.hr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 640px) { .hr-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .hr-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+.hr-m { display: flex; flex-direction: column; gap: 2px; padding: 11px 13px; border-radius: 14px; background: rgba(var(--ink-rgb), .045); min-width: 0; }
+.hr-l { font-size: 12px; color: var(--muted); display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hr-l .bi { color: var(--c); }
+.hr-m b { font-size: 18px; font-weight: 600; color: var(--heading); white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.hr-m small { font-size: 11.5px; color: var(--muted); }
+.hr-m .up { color: #22b35e; } .hr-m .dn { color: #e8743b; } .hr-m .nt { color: var(--muted); }
+.hr-foot { margin: 10px 0 0; font-size: 13px; }
+@media (max-width: 380px) { .hr-m b { font-size: 16px; } .hr-m { padding: 10px 11px; } }
+
+/* ---------- batch 3: gym templates (life-pages.js) ---------- */
+.gym-tpls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+.gym-tpl-l { font-size: 12px; color: var(--muted); display: inline-flex; gap: 5px; align-items: center; margin-right: 2px; }
+.gym-tpl { display: inline-flex; align-items: center; gap: 2px; }
+.gym-tpl .lf-chip { cursor: pointer; font-weight: 500; }
+.gym-tpl .lf-chip small { color: var(--muted); font-weight: 400; margin-left: 3px; }
+.gym-tpl .lf-chip:hover { border-color: var(--accent); }
+.gym-tpls > .lf-chip { cursor: pointer; }
+.gym-tpls > small { font-size: 12px; }
+.gym-tplbar { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; }
+.gym-tplname { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.gym-tplname input { flex: 1; min-width: 0; }
+
+/* ---------- batch 3: 7-day mini charts on the Apple Health tiles ---------- */
+.ah-lrow { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; min-width: 0; }
+.ah-lrow .ah-l { min-width: 0; overflow: hidden; white-space: nowrap; }
+.ah-spark { width: 44px; height: 16px; flex: none; overflow: visible; }
+.ah-spark polyline { fill: none; stroke: var(--c); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; opacity: .85; }
+.ah-spark circle { fill: var(--c); }
+.ah-spark.bars rect { fill: var(--c); opacity: .35; }
+.ah-spark.bars rect.now { opacity: .95; }
+@media (max-width: 380px) { .ah-tiles > .ah-tile .ah-spark { display: none; } }
+
+/* ---------- batch 3: statistics being worked out ---------- */
+.fp-busy { opacity: .75; } .fp-busy .bi { margin-right: 4px; }
+.mp-grid > input[name="date"] { grid-column: 1 / -1; }

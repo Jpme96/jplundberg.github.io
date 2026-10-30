@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=116" rel="stylesheet">
+  <link href="../styles.css?v=117" rel="stylesheet">
   <link href="../modern.css?v=4" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
   <link href="../calendar/cal.css?v=12" rel="stylesheet">
@@ -165,6 +165,8 @@
         <p class="st-minor">Page settings</p>
         <nav class="st-group st-menu" id="stPagesNav">
           <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="finance" id="stRow-finance"><span class="st-ico" style="--c:#11a597"><i class="bi bi-wallet2"></i></span><span class="st-label">Finances<small id="sum-finance">Recurring payments, shared expenses</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="health" id="stRow-health"><span class="st-ico" style="--c:#d55181"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Health<small id="sum-health">Weekly report, habit calendar, gym templates</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="house" id="stRow-house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span class="st-label">House<small id="sum-house"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="people" id="stRow-people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span class="st-label">People<small id="sum-people"></small></span><i class="bi bi-chevron-right"></i></button>
@@ -367,6 +369,14 @@
           <label class="st-row"><span>Holiday days a year</span><span class="st-unit"><input class="st-input st-num" id="wkVac" inputmode="numeric" aria-label="Holiday days per year"> days</span></label>
         </div>
         <p class="st-note">Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.</p>
+      </div>
+
+      <div class="st-page" data-page="finance" data-title="Finances" hidden>
+        <div id="mpSet"></div>
+      </div>
+
+      <div class="st-page" data-page="health" data-title="Health" hidden>
+        <div id="hpSet"></div>
       </div>
 
       <div class="st-page" data-page="house" data-title="House" hidden>
@@ -635,9 +645,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=563cb51078"></script>
+  <script src="../dist/head.js?v=3149c8c217"></script>
   <script src="../dist/page-house.js?v=3bf271c58a"></script>
-  <script src="../dist/tail.js?v=c2e45b053d"></script>
+  <script src="../dist/tail.js?v=008c72c59c"></script>
   <!-- /scripts -->
 </body>
 </html>

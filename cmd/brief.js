@@ -263,10 +263,12 @@
   /* charges that come back every month: a subscription you haven't added – or one whose price went up */
   function recurring(add, d, now) {
     var S = window.Smart; if (!S) return;
+    var MP = window.MoneyPlus, ign = MP ? MP.ignored() : [];
+    if (MP && !MP.cfg().recurGlance) return;
     var since = dkey(new Date(now.getFullYear(), now.getMonth() - 3, 1)), by = {};
     (d.expenses || []).forEach(function (e) {
-      if (!e.note || String(e.date) < since || e.cat === 'groceries' || e.cat === 'travel') return;
-      var k = S.norm(e.note); if (k.length < 3) return;
+      if (!e.note || String(e.date) < since || e.cat === 'groceries' || e.cat === 'travel' || e.shared) return;
+      var k = S.norm(e.note); if (k.length < 3 || ign.indexOf(k) > -1) return;
       (by[k] = by[k] || []).push(e);
     });
     var subs = Fe && Fe.on('subs') ? Fe.list('subs') : [], fixed = (d.budget && d.budget.fixed) || [];
@@ -318,7 +320,7 @@
         }
         window.dispatchEvent(new Event('fin:change'));
       };
-      add(47, 'arrow-repeat', '#11a597', name + ' looks like a subscription', kr(last.amount) + ' around the ' + day + '. every month · ' + ms.length + ' months so far', '#fin',
+      add(47, 'arrow-repeat', '#11a597', name + ' looks like a subscription', kr(last.amount) + ' around the ' + day + '. every month · ' + ms.length + ' months so far', Fe && Fe.on('recur') ? 'finance/#recur' : '#fin',
         { key: id, act: { id: id, label: Fe && Fe.on('subs') ? 'Add to subscriptions' : 'Make it a fixed cost' } });
     });
   }

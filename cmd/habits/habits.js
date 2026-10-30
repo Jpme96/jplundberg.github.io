@@ -47,6 +47,18 @@
     return { cur: cur, best: best };
   }
 
+  /* which range each habit's calendar shows: picked on the card (this device), else Settings → Pages → Health */
+  function rangeOf(id) {
+    var r = null; try { r = (JSON.parse(localStorage.getItem('dash.hpRange')) || {})[id]; } catch (e) {}
+    if (r === '26' || /^\d{4}$/.test(r || '')) return r;
+    var c = window.Features ? (window.Features.tools().healthcfg || {}) : {};
+    return c.heat === 'year' ? String(new Date().getFullYear()) : '26';
+  }
+  function setRange(id, v) {
+    var o = {}; try { o = JSON.parse(localStorage.getItem('dash.hpRange')) || {}; } catch (e) {}
+    o[id] = v; try { localStorage.setItem('dash.hpRange', JSON.stringify(o)); } catch (e) {}
+  }
+
   /* ---------- tooltip ---------- */
   var tip = $('fpTip');
   function showTip(html, x, y) {
@@ -87,8 +99,15 @@
     }).join('');
 
     /* one card per habit */
-    var start = addDays(thisMon, -7 * (WEEKS - 1));
+    var ys = {}; ys[y] = 1; Object.keys(hb.log).forEach(function (k) { if (/^\d{4}-/.test(k)) ys[k.slice(0, 4)] = 1; });
+    var yearList = Object.keys(ys).sort().reverse();
     $('hpHabits').innerHTML = list.map(function (h) {
+      /* the calendar: the last 26 weeks, or a whole year (Settings → Pages → Health, or the picker on the card) */
+      var rg = rangeOf(h.id), yr = rg === '26' ? null : rg, start, nW;
+      if (yr) { var j1 = new Date(+yr, 0, 1), d31 = new Date(+yr, 11, 31); start = monday(j1); nW = Math.round((monday(d31) - start) / (7 * 864e5)) + 1; }
+      else { start = addDays(thisMon, -7 * (WEEKS - 1)); nW = WEEKS; }
+      var yearDone = 0;
+      if (yr) Object.keys(hb.log).forEach(function (k) { if (k.slice(0, 4) === yr && hb.log[k].indexOf(h.id) > -1) yearDone++; });
       var st = streaksOf(h);
       var wk = countWeek(h.id, thisMon);
       var met12 = 0;
@@ -101,16 +120,18 @@
       ].map(function (s) { return '<div class="hp-stat"><div class="k">' + s[0] + '</div><div class="v">' + s[1] + '</div></div>'; }).join('');
 
       var weeks = '', lastMonth = -1;
-      for (var c = 0; c < WEEKS; c++) {
+      for (var c = 0; c < nW; c++) {
         var mon = addDays(start, 7 * c);
-        var m = mon.getMonth();
-        var label = m !== lastMonth ? F_MON.format(mon) : '';
+        /* a year: the month starts in the week that holds its 1st */
+        var lblDay = yr ? (function () { for (var q = 0; q < 7; q++) { var z = addDays(mon, q); if (z.getDate() === 1 && String(z.getFullYear()) === yr) return z; } return c === 0 ? new Date(+yr, 0, 1) : null; })() : mon;
+        var m = lblDay ? lblDay.getMonth() : lastMonth;
+        var label = lblDay && m !== lastMonth ? F_MON.format(lblDay) : '';
         lastMonth = m;
         var cells = '';
         for (var r = 0; r < 7; r++) {
-          var d = addDays(mon, r), k = dkey(d), on = done(h.id, k);
-          cells += '<button type="button" class="hp-cell' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (k > tk ? ' future' : '') + '"' +
-            ' data-h="' + h.id + '" data-d="' + k + '" aria-pressed="' + on + '"' + (k > tk ? ' disabled tabindex="-1"' : '') +
+          var d = addDays(mon, r), k = dkey(d), on = done(h.id, k), out = yr && String(d.getFullYear()) !== yr;
+          cells += '<button type="button" class="hp-cell' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (k > tk ? ' future' : '') + (out ? ' out' : '') + '"' +
+            ' data-h="' + h.id + '" data-d="' + k + '" aria-pressed="' + on + '"' + (k > tk || out ? ' disabled tabindex="-1"' : '') +
             ' aria-label="' + esc(h.name) + ', ' + F_LONG.format(d) + (on ? ', done' : '') + '"></button>';
         }
         weeks += '<div class="hp-week"><span class="hp-month">' + label + '</span>' + cells + '</div>';
@@ -129,9 +150,11 @@
       return '<section class="card hp-card"><div class="card-head"><h2><i class="bi bi-activity"></i> ' + esc(h.name) + '<small>' + h.target + '× per week</small></h2></div>' +
         '<div class="hp-stats">' + stats + '</div>' +
         '<div class="hp-recent">' + recent + '</div>' +
-        '<div class="hp-heat"><div class="hp-heat-inner"><div class="hp-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>' +
+        '<div class="hp-heat"><div class="hp-heat-inner' + (yr ? ' year' : '') + '"><div class="hp-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>' +
         '<div class="hp-weeks">' + weeks + '</div></div></div>' +
-        '<div class="hp-sub"><span>Last 26 weeks</span><span class="key"><span><i class="sw" style="background:rgba(var(--ink-rgb),.08)"></i>Not done</span><span><i class="sw" style="background:var(--accent)"></i>Done</span></span></div>' +
+        '<div class="hp-sub"><label class="hp-range"><select data-hprange="' + h.id + '" aria-label="Show">' + '<option value="26"' + (!yr ? ' selected' : '') + '>Last 26 weeks</option>' +
+          yearList.map(function (yy) { return '<option value="' + yy + '"' + (yr === yy ? ' selected' : '') + '>' + yy + '</option>'; }).join('') + '</select></label>' +
+          (yr ? '<span class="hp-ytot">' + yearDone + ' day' + (yearDone === 1 ? '' : 's') + ' in ' + yr + '</span>' : '') + '<span class="key"><span><i class="sw" style="background:rgba(var(--ink-rgb),.08)"></i>Not done</span><span><i class="sw" style="background:var(--accent)"></i>Done</span></span></div>' +
         '</section>';
     }).join('');
   }
@@ -146,6 +169,18 @@
     if (!l.length) delete hb.log[c.dataset.d];
     save();
     render();
+  });
+  $('hpHabits').addEventListener('change', function (e) {
+    var sel = e.target.closest('[data-hprange]'); if (!sel) return;
+    setRange(sel.dataset.hprange, sel.value); render();
+    var card = $('hpHabits').querySelector('[data-hprange="' + sel.dataset.hprange + '"]');
+    var heat = card && card.closest('.hp-card').querySelector('.hp-heat');
+    if (heat) heat.scrollLeft = sel.value === '26' || sel.value === String(new Date().getFullYear()) ? heat.scrollWidth : 0;
+  });
+  var lastHeat = null;
+  window.addEventListener('tools:change', function () {
+    var h = ((window.Features && window.Features.tools().healthcfg) || {}).heat || '26'; if (h === lastHeat) return; lastHeat = h;
+    if (hb && window.Vault.get()) { render(); scrollToEnd(); }
   });
   $('hpHabits').addEventListener('pointerover', function (e) {
     var c = e.target.closest('.hp-cell');

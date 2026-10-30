@@ -196,6 +196,23 @@
     if (k === addDays(today, -1)) return 'Yesterday';
     return new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
   }
+  /* the last 7 days as a tiny line (bars for daily totals) – the newest day is the dot */
+  function sparkOf(f, D, today) {
+    var v = []; for (var i = 6; i >= 0; i--) { var x = D[addDays(today, -i)]; v.push(x && x[f] != null ? x[f] : null); }
+    var have = v.filter(function (x) { return x != null; }); if (have.length < 2) return '';
+    var lo = Math.min.apply(null, have), hi = Math.max.apply(null, have), W = 48, H = 18;
+    var line = LINE_DEF[f];
+    if (line) {
+      var pts = [], last = null;
+      v.forEach(function (x, i) { if (x == null) return; var px = (i / 6 * (W - 4) + 2), py = hi === lo ? H / 2 : H - 3 - (x - lo) / (hi - lo) * (H - 6); pts.push(px.toFixed(1) + ',' + py.toFixed(1)); last = [px, py]; });
+      return '<svg class="ah-spark" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polyline points="' + pts.join(' ') + '"/>' + (last ? '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2"/>' : '') + '</svg>';
+    }
+    var bw = W / 7;
+    return '<svg class="ah-spark bars" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' + v.map(function (x, i) {
+      if (x == null) return ''; var h = hi > 0 ? Math.max(1.5, x / hi * (H - 2)) : 1.5;
+      return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + (bw - 2).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="1"' + (i === 6 ? ' class="now"' : '') + '/>';
+    }).join('') + '</svg>';
+  }
   function card() {
     var host = document.querySelector('.kit-grid'), box = $('ahCard');
     var onP = Fe ? Fe.on('ahealth') : true;
@@ -214,11 +231,12 @@
     var LY = layout(have), byKey = {}; have.forEach(function (m) { byKey[m[0]] = m; });
     var visible = LY.tile.concat(LY.stack);
     if (visible.length && visible.indexOf(chartM) < 0) { chartM = visible[0]; M = byKey[chartM]; goal = G[chartM] || null; }
+    var spark = ((Fe && Fe.tools().healthcfg) || {}).spark !== false;
     var tileOf = function (m) {
       var l = latest(m[0]), a = w[m[0]].avg, pa = pw[m[0]].avg, diff = a != null && pa ? (a - pa) / pa : null, g = G[m[0]];
       var pct = g && l ? Math.min(100, (LOWER[m[0]] ? g / l.v : l.v / g) * 100) : null;
-      return '<button type="button" class="ah-tile' + (m[0] === chartM ? ' on' : '') + '" data-ahm="' + m[0] + '" aria-pressed="' + (m[0] === chartM) + '" style="--c:' + m[3] + '"><span class="ah-l"><i class="bi bi-' + m[2] + '"></i> ' + m[1] + (l && l.date !== today ? ' <em>· ' + esc(l.date === addDays(today, -1) ? 'yesterday' : new Date(l.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</em>' : '') + '</span>' +
-        '<b>' + esc(l ? fmt(m[0], l.v) : '–') + '</b>' +
+      return '<button type="button" class="ah-tile' + (m[0] === chartM ? ' on' : '') + '" data-ahm="' + m[0] + '" aria-pressed="' + (m[0] === chartM) + '" style="--c:' + m[3] + '">' + (spark ? '<span class="ah-lrow">' : '') + '<span class="ah-l"><i class="bi bi-' + m[2] + '"></i> ' + m[1] + (l && l.date !== today ? ' <em>· ' + esc(l.date === addDays(today, -1) ? 'yesterday' : new Date(l.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</em>' : '') + '</span>' +
+        (spark ? sparkOf(m[0], D, today) + '</span>' : '') + '<b>' + esc(l ? fmt(m[0], l.v) : '–') + '</b>' +
         (pct != null ? '<span class="ah-prog' + (pct >= 100 ? ' full' : '') + '" title="' + Math.round(pct) + '% of ' + esc(fmt(m[0], g)) + '"><i style="width:' + pct.toFixed(1) + '%"></i></span>' : '') +
         '<small>' + (a != null ? '7-day avg ' + esc(fmt(m[0], a)) : '') +
         (diff != null && Math.abs(diff) >= .05 ? ' <span class="' + (NEUTRAL[m[0]] ? 'nt' : (diff > 0) === !LOWER[m[0]] ? 'up' : 'dn') + '">' + (diff > 0 ? '+' : '−') + Math.round(Math.abs(diff) * 100) + '%</span>' : '') + '</small></button>';

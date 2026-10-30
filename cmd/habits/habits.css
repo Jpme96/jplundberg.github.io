@@ -58,3 +58,12 @@
 @media (min-width: 700px) { .hp-recent { grid-template-columns: 1fr 1fr; gap: 14px; } .hp-recent-days { gap: 8px; } }
 /* the 26-week overview below is just that – an overview */
 .hp-heat { opacity: .9; }
+/* a whole year (batch 3): 53 columns, scrolls sideways on a phone */
+.hp-heat-inner.year { min-width: 720px; max-width: none; }
+.hp-heat-inner.year .hp-cell { min-width: 9px; border-radius: 2.5px; }
+.hp-heat-inner.year .hp-weeks { gap: 2px; grid-auto-columns: minmax(0, 1fr); }
+.hp-heat-inner.year .hp-month { width: 0; } .hp-heat-inner.year .hp-week { gap: 2px; }
+.hp-cell.out { visibility: hidden; }
+.hp-sub { align-items: center; }
+.hp-range select { font: inherit; font-size: 13px; color: var(--text); background: rgba(var(--ink-rgb), .05); border: 1px solid var(--line); border-radius: 999px; padding: 4px 26px 4px 10px; width: auto; min-height: 0; }
+.hp-ytot { color: var(--heading); font-weight: 500; }

@@ -372,7 +372,7 @@
   function txRow(e, withDate) {
     var c = catById[e.cat] || catById.other, d = new Date(e.date + 'T12:00');
     return '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
-      '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + '</span></span>' +
+      '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + (e.shared ? ' · <i class="bi bi-people" title="Shared – your share"></i>' + (e.full != null ? ' of ' + esc(kr(e.full)) : '') : '') + '</span></span>' +
       money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
   }
 
