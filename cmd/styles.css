@@ -2967,6 +2967,10 @@ body.rp-open { overflow: hidden; }
 .lock-rec-h { margin: 0; font-weight: 600; } .lock-rec-h .bi { color: var(--accent); }
 .lock-rec input { text-transform: uppercase; letter-spacing: .06em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
 .lock-rec-or { margin: 6px 0 0; text-align: center; font-size: 13px; }
+.lock-rec-step { display: grid; gap: 10px; }
+.lock-rec-step[hidden], .lock-rec .lock-submit[hidden] { display: none; }
+.lock-rec input.lock-rec-otp { font-size: 26px; letter-spacing: .35em; text-indent: .35em; padding-block: 12px; }
+.lock-rec .text-btn { justify-self: center; min-height: 44px; }
 /* Settings: lock screen tiles, recovery code */
 .lk-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
 .lk-tile { display: grid; gap: 6px; justify-items: center; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; text-align: center; line-height: 1.25; }
@@ -2982,6 +2986,8 @@ body.rp-open { overflow: hidden; }
 .rc-acts, .rc-more { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 10px; }
 .rc-note { font-size: 13px; }
 .rc-form { display: grid; gap: 10px; margin-top: 10px; }
+.rc-state { margin: 12px 0; padding: 12px 14px; border-radius: 12px; background: rgba(var(--accent-rgb), .08); font-size: 14px; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start; }
+.rc-state.ok .bi { color: #22a35a; } .rc-state.warn { background: rgba(201, 133, 0, .12); } .rc-state.warn .bi { color: #c98500; }
 
 /* ---------- batch 3: recurring payments, shared expenses (money-plus.js) ---------- */
 .pill-btn.sm { padding: 6px 12px; font-size: 13px; min-height: 0; }
