@@ -55,7 +55,7 @@
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
           habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) || on('ptime', false),
-          house: on('house', false), people: on('people', false), food: on('food', false) };
+          house: on('house', false), people: on('people', false), food: on('food', false), admin: (s.admin || {}).tab !== false };
         Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -78,14 +78,14 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=138" rel="stylesheet">
+  <link href="../styles.css?v=139" rel="stylesheet">
   <link href="../modern.css?v=10" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
   <link href="../calendar/cal.css?v=12" rel="stylesheet">
 </head>
 <body>
-  <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-briefcase"></i><span>Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span>House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span>People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span>Food</span></a></nav>
+  <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-briefcase"></i><span>Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span>House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span>People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span>Food</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
   <div class="bg" aria-hidden="true"></div>
 
   <!-- Lock screen -->
@@ -188,6 +188,7 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="adminset" data-owner><span class="st-ico" style="--c:#3987e5"><i class="bi bi-speedometer2"></i></span><span class="st-label">Admin page<small id="sumAdmin">Panels, checks, warnings, key dates</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="diag" data-adv><span class="st-ico" style="--c:#6b7280"><i class="bi bi-clipboard2-pulse"></i></span><span class="st-label">Diagnostics<small>Errors, sync status, daily self-check</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <div class="st-web" id="stWeb" data-owner>
@@ -435,6 +436,7 @@
       </section>
       </div>
 
+      <div class="st-page" data-page="adminset" data-title="Admin page" hidden><div id="adSet"></div></div>
       <div class="st-page" data-page="touches" data-title="Pictures &amp; touches" hidden><div id="dlSet"></div></div>
       <div class="st-page" data-page="data" data-title="Data &amp; sync" hidden>
       <section class="st-group">
@@ -673,9 +675,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=492d6552c7"></script>
-  <script src="../dist/page-work.js?v=2813171783"></script>
-  <script src="../dist/tail.js?v=a14629dad8"></script>
+  <script src="../dist/head.js?v=197069c8c6"></script>
+  <script src="../dist/page-work.js?v=cd54219872"></script>
+  <script src="../dist/tail.js?v=341f9f0c00"></script>
   <!-- /scripts -->
 </body>
 </html>

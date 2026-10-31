@@ -3,8 +3,8 @@
 (function () {
   "use strict";
   var path = location.pathname.replace(/index\.html$/, '');
-  var base = path.replace(/(finance|habits|travel|calendar|work|house|people|food)\/$/, '');          // the /cmd/ folder
-  var page = (path.match(/(finance|habits|travel|calendar|work|house|people|food)\/$/) || [, 'home'])[1];
+  var base = path.replace(/(finance|habits|travel|calendar|work|house|people|food|admin)\/$/, '');          // the /cmd/ folder
+  var page = (path.match(/(finance|habits|travel|calendar|work|house|people|food|admin)\/$/) || [, 'home'])[1];
   var Fe = window.Features;
   /* The menu is written into every page (so it's there from the very first frame and the
      highlight can glide between pages). Here it only follows Settings → Features. */
@@ -13,6 +13,7 @@
   function draw() {
     if (!Fe) return;
     Object.keys(SHOWS).forEach(function (k) { document.documentElement.classList.toggle('tab-off-' + k, !SHOWS[k].some(Fe.on)); });
+    var ad = {}; try { ad = (JSON.parse(localStorage.getItem('dash.settings')) || {}).admin || {}; } catch (e) {} document.documentElement.classList.toggle('tab-off-admin', ad.tab === false);
   }
   draw();
   window.addEventListener('features:change', draw);
@@ -23,7 +24,7 @@
   function navOrder() { try { var o = (JSON.parse(localStorage.getItem('dash.settings')) || {}).navOrder; return Array.isArray(o) ? o : null; } catch (e) { return null; } }
   function pages() { return Array.prototype.map.call(nav ? nav.querySelectorAll('a[data-pg]') : [], function (a) { return a.dataset.pg; }).filter(function (k) { return k !== 'home'; }); }
   function sortedPages() {
-    var o = navOrder() || [], def = ['calendar', 'travel', 'finance', 'habits', 'work', 'house', 'people', 'food'];
+    var o = navOrder() || [], def = ['calendar', 'travel', 'finance', 'habits', 'work', 'house', 'people', 'food', 'admin'];
     return pages().sort(function (a, b) { var ia = o.indexOf(a), ib = o.indexOf(b); return (ia < 0 ? 50 + def.indexOf(a) : ia) - (ib < 0 ? 50 + def.indexOf(b) : ib); });
   }
   function applyOrder() {

@@ -137,7 +137,7 @@
       .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); })
       .then(function (j) {
         busy = false;
-        if (j.ok) { saved = { en: j.texts.en, nb: j.texts.nb }; draft = clone(saved); sha = j.sha; draw(); bar(); status('Published · live on jplundberg.com in about a minute'); return; }
+        if (j.ok) { saved = { en: j.texts.en, nb: j.texts.nb }; draft = clone(saved); sha = j.sha; draw(); bar(); status('Published · live on jplundberg.com in about a minute'); try { window.dispatchEvent(new CustomEvent('site:published', { detail: 'website texts' })); } catch (e) {} return; }
         if (j._status === 409) { status('Changed somewhere else. Reloading the latest version…', true); saved = null; loading = null; load(); return; }
         bar(); status('Couldn’t publish (' + (j.error || j._status) + ').', true);
       }).catch(function () { busy = false; bar(); status('Couldn’t publish. Check your connection.', true); });

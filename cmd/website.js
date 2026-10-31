@@ -406,6 +406,7 @@
         saved = j.settings; sha = j.sha; draft = clone(saved);
         fill(); summary(); bar();
         status('Published ✓ Live on jplundberg.com in about a minute');
+        try { window.dispatchEvent(new CustomEvent('site:published', { detail: (PART[current] ? PART[current][1].toLowerCase() : 'website settings') })); } catch (e) {}
       } else if (j._status === 409) {
         loading = null;
         status('The settings changed somewhere else. Loading the newest version…', true);

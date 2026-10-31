@@ -3,7 +3,8 @@
     "diag.js",
     "i18n.js",
     "lock.js",
-    "lockui.js", "passkey.js",
+    "lockui.js",
+    "passkey.js",
     "features.js",
     "sidenav.js"
   ],
@@ -31,7 +32,8 @@
     "backup-mail.js",
     "delight.js",
     "scenes.js",
-    "avatar.js", "alive.js",
+    "avatar.js",
+    "alive.js",
     "modern.js",
     "steady.js"
   ],
@@ -127,6 +129,11 @@
       "tools.js",
       "profile.js",
       "links.js"
+    ],
+    "admin/index.html": [
+      "kit.js",
+      "profile.js",
+      "admin.js"
     ]
   },
   "settings": [
@@ -136,6 +143,7 @@
     "stsearch.js",
     "website.js",
     "texts.js",
-    "checklists.js"
+    "checklists.js",
+    "admin-set.js"
   ]
 }
