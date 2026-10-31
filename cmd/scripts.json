@@ -21,10 +21,13 @@
     "life.js",
     "life-pages.js",
     "home-life.js",
+    "people-plus.js",
+    "food-plus.js",
     "house-plus.js",
     "work-plus.js",
     "health-plus.js",
     "money-plus.js",
+    "backup-mail.js",
     "modern.js"
   ],
   "pages": {

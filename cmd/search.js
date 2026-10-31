@@ -1,5 +1,6 @@
 /* Search everything: calendar, trips and bookings, to-dos, notes, goals, links, spending,
-   subscriptions, meetings, courses, health, journal, places, warranties – and the settings.
+   subscriptions, meetings, courses, health, journal, places, warranties, people and gifts, recipes,
+   Good to know (never codes or passwords), FDV inspections and findings – and the settings.
    Opens with the magnifier, "/" or Ctrl/⌘ K. Nothing leaves this browser. */
 (function () {
   "use strict";
@@ -54,6 +55,31 @@
       tool('journal', 'Health', 'journal-bookmark', function (j) { return j.line; }, function (j) { return 'Journal · ' + fmt(j.date); }, 'habits/#journal', 'date', function (j) { return j.notes; });
       tool('bucket', 'Trips', 'pin-map', function (b) { return b.place; }, function (b) { return b.visited ? 'Visited' : 'Want to visit'; }, 'travel/#bucket', '', function (b) { return b.notes; });
       tool('subs', 'Finances', 'arrow-repeat', function (s) { return s.name; }, function (s) { return kr(s.amount) + ' · ' + (s.period || 'monthly'); }, 'finance/#subs', '', function (s) { return s.notes; });
+      /* Home life and FDV: people, recipes, Good to know, inspections and their findings */
+      if (Fe.on('people')) (T.people || []).forEach(function (pp) {
+        var bd = window.HomeLife && window.HomeLife.bday(pp);
+        add('People', 'person', pp.name, [bd ? 'Birthday ' + fmt(bd.next).replace(/ \d{4}$/, '') : '', pp.phone].filter(Boolean).join(' · ') || 'Person', home + 'people/#people=' + pp.id, '',
+          [pp.rel, pp.notes, pp.gifts, pp.phone, pp.dates, (pp.log || []).map(function (x) { return x.t || ''; }).join(' ')].join(' '));
+      });
+      if (Fe.on('people')) (T.gifts || []).forEach(function (g) {
+        var who = (T.people || []).filter(function (pp) { return pp.id === g.pid; })[0];
+        add('People', 'gift', g.what, 'Gift' + (who ? ' to ' + who.name : '') + ' · ' + fmt(g.date) + (+g.cost ? ' · ' + kr(g.cost) : ''), home + 'people/#pgifts', g.date, (who ? who.name : '') + ' gift gave');
+      });
+      if (Fe.on('food')) (T.recipes || []).forEach(function (r) {
+        var ing = String(r.ingr || '').split('\n').filter(Boolean);
+        add('Recipes', 'journal-text', r.title, [r.mins ? r.mins + ' min' : '', ing.length ? ing.length + ' ingredients' : ''].filter(Boolean).join(' · ') || 'Recipe', home + 'food/#recipes=' + r.id, '', ing.join(' ') + ' ' + (r.steps || '').slice(0, 400) + ' oppskrift recipe');
+      });
+      if (Fe.on('house')) (T.hinfo || []).forEach(function (x) {
+        /* codes and passwords are never put in the index */
+        var vis = Object.keys(x).filter(function (k) { return !/^(id|kind|title|pass|code|guest)$/.test(k) && typeof x[k] === 'string'; }).map(function (k) { return x[k]; });
+        add('Good to know', 'info-circle', x.title, vis.filter(function (v) { return v && v.length < 80 && !/^\d{4}-\d{2}-\d{2}$/.test(v); }).slice(0, 2).join(' · ') || 'House', home + 'house/#hinfo=' + x.id, '', vis.join(' ') + ' ' + (x.kind || ''));
+      });
+      if (Fe.on('fdv')) (T.fdv || []).forEach(function (r) {
+        add('FDV', 'building-check', r.building, ['Inspection ' + fmt(r.date), r.address, r.client].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (r.address || '') + ' ' + (r.client || '') + ' ' + (r.notes || '') + ' fdv befaring inspection');
+        (r.findings || []).forEach(function (f) {
+          add('FDV', 'clipboard-check', (f.part ? f.part + ': ' : '') + f.text, [String(f.tg).toUpperCase() === 'IU' ? 'TG IU' : 'TG' + f.tg, r.building, fmt(r.date)].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (f.action || '') + ' ' + r.building + ' funn finding');
+        });
+      });
       tool('warranty', 'Finances', 'receipt-cutoff', function (w) { return w.item; }, function (w) { return [w.store, fmt(w.bought), w.receipt ? 'receipt: ' + w.receipt : ''].filter(Boolean).join(' · '); }, 'finance/#warranty', 'bought', function (w) { return (w.store || '') + ' ' + (w.notes || '') + ' ' + (w.receipt || ''); });
     }
     add('Reviews', 'clipboard-check', 'Weekly check-in', 'Spending, the week ahead, focus and habits', home + '#checkin', '', 'review week weekly sunday plan uke');
@@ -121,7 +147,7 @@
   var bg = document.createElement('div');
   bg.className = 'sr-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="sr-box" role="dialog" aria-modal="true" aria-label="Search"><div class="sr-top"><i class="bi bi-search"></i>' +
-    '<input id="srIn" type="search" placeholder="Search everything – trips, events, notes, spending…" autocomplete="off" spellcheck="false" aria-label="Search">' +
+    '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" autocomplete="off" spellcheck="false" aria-label="Search">' +
     '<button type="button" class="text-btn" data-srclose>Close</button></div><div class="sr-res" id="srRes"></div></div>';
   document.body.appendChild(bg);
   var input = bg.querySelector('#srIn'), res = bg.querySelector('#srRes'), active = -1, results = [];

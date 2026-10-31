@@ -38,6 +38,7 @@
   function drawAll() { mounts.forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); }
   ['tools:change', 'features:change', 'fin:change', 'habits:change', 'health:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawAll.t); drawAll.t = setTimeout(drawAll, 30); }); });
   window.Vault.onUnlock(function () { setTimeout(drawAll, 60); });
+  window.addEventListener('hashchange', function () { if (/^#fdv=/.test(location.hash)) drawAll(); });
 
   /* ======================= Strømpris (NO1) ======================= */
   var PW = { day: 'today' }, pwLoading = {};
@@ -165,6 +166,9 @@
   }
   mount('fdv', function (el) {
     var list = (Fe.list('fdv') || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    /* from search: …/work/#fdv=<id> opens that inspection */
+    var hm = location.hash.match(/^#fdv=([\w-]+)$/), goTo = null;
+    if (hm && list.some(function (r) { return r.id === hm[1]; }) && document.documentElement.classList.contains('unlocked')) { fdvOpen = goTo = hm[1]; window.history.replaceState(null, '', location.pathname + location.search); }
     var body = list.length ? '<ul class="kit-list">' + list.map(function (r) {
       var f = r.findings || [], worst = ['3', '2', '1', '0'].filter(function (t) { return f.some(function (x) { return String(x.tg) === t; }); })[0];
       var open = fdvOpen === r.id;
@@ -175,6 +179,7 @@
     }).join('') + '</ul>' : '<p class="empty kit-empty">Walk a building, note each finding with its condition grade (TG) and a photo – and get a tidy summary you can send or paste into a report.</p>';
     el.innerHTML = card('fdv', 'building-check', 'FDV inspection notes', '<button type="button" class="text-btn" data-fdvnew><i class="bi bi-plus-lg"></i> New</button>', body, 'lp-fdv');
     el.querySelectorAll('img[data-ph]').forEach(function (im) { getPhoto(im.dataset.ph).then(function (b) { if (b) im.src = URL.createObjectURL(b); else im.closest('.fdv-ph').remove(); }); });
+    if (goTo) { var li = el.querySelector('.kit-item.open'); if (li) setTimeout(function () { li.scrollIntoView({ behavior: 'smooth', block: 'start' }); li.classList.add('sr-flash'); setTimeout(function () { li.classList.remove('sr-flash'); }, 1600); }, 350); }
   });
   function fdvDetail(r) {
     var f = r.findings || [];

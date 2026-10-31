@@ -255,3 +255,9 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern::view-transition-old(root), .modern::view-transition-new(root) { animation-duration: .2s; }
 .modern::view-transition-group(tb-pill) { animation-duration: .3s; }
 .modern .tabbar a.going { color: var(--on-accent); }
+
+/* batch 5 consistency: every card's head buttons are the same small squares (week/year arrows too) */
+.modern .card-head .head-actions .icon-btn { width: 30px; height: 30px; border-radius: 9px; font-size: 14px; color: var(--muted); }
+.modern .card-head .head-actions .icon-btn i { font-size: 14px; }
+.modern .card-head .head-actions .icon-btn:hover { color: var(--accent); }
+.modern .card-head .head-actions .icon-btn[disabled] { opacity: .35; pointer-events: none; }

@@ -777,6 +777,72 @@
     'The side bar needs the Modern look': 'Sidepanelet trenger Moderne utseende', 'At the top on a computer, at the bottom on a phone': 'Øverst på en datamaskin, nederst på en telefon',
     'On wider screens – iPad across and computers. Phones keep the bottom bar.': 'På bredere skjermer – iPad på tvers og datamaskiner. Telefoner beholder linjen nederst.'
   });
+  /* batch 5: gifts, contacts import, talk notes, name days, pantry, recipe from a link, servings, weekly backup email (Oct 2026) */
+  Object.assign(D, {
+    'Birthdays, name days, who you haven’t talked to in a while, and gifts – so nobody slips.': 'Bursdager, navnedager, hvem du ikke har snakket med på en stund, og gaver – så ingen blir glemt.',
+    'This week’s dinners, the shopping list, recipes and the pantry – plan once, shop once.': 'Ukas middager, handlelista, oppskrifter og matskapet – planlegg én gang, handle én gang.',
+    'Name day': 'Navnedag', 'Gave it': 'Ga den', 'Gifts given': 'Gaver du har gitt', 'Note a gift': 'Før opp en gave', 'Nothing noted yet – then you never give the same twice.': 'Ingenting ført ennå – da gir du aldri det samme to ganger.',
+    'Talked': 'Snakket', 'Change the note': 'Endre notatet', 'Add a note': 'Legg til et notat', 'What did you talk about? One line is plenty – it builds a short history.': 'Hva snakket dere om? Én linje holder – det blir en kort historikk.',
+    'e.g. New job in Bergen, wants to meet in December': 'f.eks. Ny jobb i Bergen, vil møtes i desember', 'Skip': 'Hopp over',
+    'What you gave – e.g. a book, concert tickets': 'Hva du ga – f.eks. en bok, konsertbilletter', 'Occasion': 'Anledning', 'Cost': 'Pris', 'Christmas': 'Jul', 'Other occasion': 'Annen anledning',
+    'Edit gift': 'Endre gave', 'Gift noted': 'Gaven er ført', 'Add the person first': 'Legg til personen først', 'Gifts': 'Gaver', 'No budget set': 'Ikke noe budsjett', 'None yet': 'Ingen ennå',
+    'Christmas gifts sorted': 'julegaver i boks', 'Christmas gifts': 'Julegaver', 'Nothing yet': 'Ingenting ennå', 'Previous year': 'Forrige år', 'Next year': 'Neste år',
+    'Note what you give – then you never give the same twice, and you see what Christmas and birthdays cost. Put people on the Christmas list from their card (Edit → On the Christmas gift list).': 'Før opp det du gir – da gir du aldri det samme to ganger, og du ser hva jul og bursdager koster. Sett folk på julelista fra kortet deres (Endre → På julegavelista).',
+    'Gratulerer med navnedagen!': 'Gratulerer med navnedagen!', 'Import contacts': 'Importer kontakter', 'From your iPhone, with birthdays. The list stays on this device until you pick who to add.': 'Fra iPhonen, med bursdager. Listen blir på denne enheten til du har valgt hvem som skal med.',
+    'From the iPhone Shortcut': 'Fra snarveien på iPhone', 'Paste here – one person per line: Name; 24.12.1990; +47 912 34 567': 'Lim inn her – én person per linje: Navn; 24.12.1990; +47 912 34 567',
+    'Read the list': 'Les listen', 'Paste': 'Lim inn', 'From a contact file': 'Fra en kontaktfil', 'Choose a .vcf file': 'Velg en .vcf-fil', 'The clipboard is empty.': 'Utklippstavlen er tom.',
+    'Couldn’t read the clipboard – paste into the box instead.': 'Fikk ikke lest utklippstavlen – lim inn i feltet i stedet.', 'No names found – one person per line: Name; 24.12.1990; +47 …': 'Fant ingen navn – én person per linje: Navn; 24.12.1990; +47 …',
+    'No contacts in that file.': 'Ingen kontakter i den filen.', 'Only those with a birthday': 'Bare de med bursdag', 'Already there': 'Finnes allerede', 'No birthday': 'Ingen bursdag', 'Back': 'Tilbake',
+    'Ask for a note after “Talked today”': 'Spør om et notat etter «Snakket i dag»', 'One line, kept as a short history': 'Én linje, tatt vare på som en kort historikk',
+    'Name days and anniversaries': 'Navnedager og merkedager', 'Name days': 'Navnedager', 'From the Norwegian almanac, by first name – in At a glance on the day': 'Fra almanakken, etter fornavn – i Kort fortalt på dagen',
+    'Anniversaries: heads-up': 'Merkedager: varsel', 'Name days and anniversaries in the calendar': 'Navnedager og merkedager i kalenderen', 'Christmas budget': 'Julebudsjett', 'For all Christmas gifts together': 'For alle julegavene til sammen',
+    'Birthday gift budget': 'Budsjett for bursdagsgaver', 'Per gift': 'Per gave', 'Other occasions': 'Andre anledninger', 'Per gift – weddings, christenings, thank-yous': 'Per gave – bryllup, dåp, takk for hjelpen',
+    'Christmas gift list in At a glance': 'Julegavelista i Kort fortalt', 'From 15 November': 'Fra 15. november', 'Add gifts to Finances': 'Før gaver i Økonomi', 'As spending (Shopping) when you note a gift with a price': 'Som forbruk (Shopping) når du fører en gave med pris',
+    'On the Christmas gift list': 'På julegavelista', 'Other dates': 'Andre datoer', 'Wedding 12.06.2015\nStarted school 19.08.2024': 'Bryllup 12.06.2015\nBegynte på skolen 19.08.2024',
+    'Anniversaries and other yearly days – one per line, a name and a date. Name days come by themselves from the Norwegian almanac.': 'Merkedager og andre årlige dager – én per linje, et navn og en dato. Navnedager kommer av seg selv fra almanakken.',
+    'Nothing in the next four months – add birthdays and other dates to the people in your list.': 'Ingenting de neste fire månedene – legg inn bursdager og andre datoer på personene dine.', 'Wedding': 'Bryllup', 'Anniversary': 'Merkedag',
+    'Servings': 'Porsjoner', 'Fewer servings': 'Færre porsjoner', 'More servings': 'Flere porsjoner', 'Pantry': 'Matskap', 'all in stock': 'alt på lager', 'On the list': 'På lista', 'Got it': 'Har det',
+    'Running out': 'Snart tom', 'The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk «Snart tom», så havner den på handlelista – krysset av der, er den på lager igjen.',
+    'Add the usual basics': 'Legg til de vanlige basisvarene', 'Add a basic – e.g. oats, coffee filters': 'Legg til en basisvare – f.eks. havregryn, kaffefilter', 'Add to the pantry': 'Legg til i matskapet',
+    'Add the usual basics you don’t have': 'Legg til de vanlige du ikke har', 'Recipe from a link': 'Oppskrift fra en lenke', 'From a link': 'Fra en lenke',
+    'Paste the address of a recipe page – the name, ingredients and steps are read from it.': 'Lim inn adressen til en oppskriftsside – navn, ingredienser og fremgangsmåte hentes fra den.',
+    'Recipe link': 'Lenke til oppskriften', 'Get it': 'Hent', 'Reading …': 'Leser …', 'You have this one already.': 'Du har denne fra før.', 'Open it': 'Åpne den', 'Add it by hand': 'Legg den inn selv',
+    'Your server doesn’t know this yet – paste the newest worker.js into the Worker (Settings → Data & sync has the details).': 'Serveren kjenner ikke dette ennå – lim inn nyeste worker.js i Workeren (detaljer i Innstillinger → Data og synk).',
+    'That link can’t be read – use the address of a public web page.': 'Den lenken kan ikke leses – bruk adressen til en offentlig nettside.', 'No connection – try again when you’re online.': 'Ingen forbindelse – prøv igjen når du er på nett.',
+    'Save recipe': 'Lagre oppskriften', 'Recipe saved': 'Oppskriften er lagret', 'Serves': 'Porsjoner', 'people': 'personer', 'How many the ingredients are for – then you can scale it up or down.': 'Hvor mange ingrediensene er beregnet for – så kan du skalere opp eller ned.',
+    'Usually cooking for': 'Lager vanligvis mat til', 'As the recipe says': 'Som oppskriften sier', '1 person': '1 person', 'Recipes open scaled to this, and the week’s shopping list too': 'Oppskrifter åpnes regnet om til dette, og ukas handleliste også',
+    'Back in stock when ticked off the shopping list': 'På lager igjen når den krysses av på handlelista', 'Skip basics you have when adding recipes': 'Hopp over basisvarer du har når oppskrifter legges til',
+    'Salt, oil, rice … stay off the list while they’re in stock': 'Salt, olje, ris … holdes unna lista så lenge de er på lager',
+    'Weekly backup by email': 'Ukentlig sikkerhetskopi på e-post', 'Encrypted, to your inbox': 'Kryptert, til innboksen din', 'Email me a backup every week': 'Send meg en sikkerhetskopi hver uke', 'None sent yet': 'Ingen sendt ennå',
+    'Day': 'Dag', 'Send one now': 'Send en nå', 'Sending …': 'Sender …', 'Backup sent – check your inbox': 'Sikkerhetskopien er sendt – sjekk innboksen', 'Couldn’t send': 'Fikk ikke sendt', 'Offline – try again later': 'Frakoblet – prøv igjen senere',
+    'Couldn’t save': 'Fikk ikke lagret', 'Offline – not saved': 'Frakoblet – ikke lagret', 'nothing to back up yet': 'ingenting å ta sikkerhetskopi av ennå', 'not set up': 'ikke satt opp',
+    'Tuesday': 'Tirsdag', 'Wednesday': 'Onsdag', 'Thursday': 'Torsdag', 'Friday': 'Fredag', 'Saturday': 'Lørdag', 'Recipes': 'Oppskrifter', 'People': 'Personer',
+    'Client time': 'Kundetid', 'Action points': 'Oppfølgingspunkter', 'open from meetings': 'åpne fra møter', 'All done': 'Alt gjort', 'this week': 'denne uka', 'Next renewal': 'Neste fornyelse', 'No certificates expiring': 'Ingen sertifikater som utløper', 'Holiday left': 'Ferie igjen', 'days this year': 'dager i år', 'None yet': 'Ingen ennå',
+    'Search everything – people, recipes, trips, notes, spending…': 'Søk i alt – personer, oppskrifter, reiser, notater, forbruk …', 'Person': 'Person', 'Recipe': 'Oppskrift', 'Gift': 'Gave', 'FDV': 'FDV', 'Inspection': 'Befaring'
+  });
+  var ADDS = { birthday: 'bursdag', phone: 'telefon' };
+  /* first in the list: these sentences carry names ("Edit Hansen") that older, wider patterns would grab */
+  P.unshift(
+    [/^Left: (.+)$/, function (m, a) { return 'Igjen: ' + a.split(' · ').map(function (x) { return tr(x); }).join(' · '); }], [/^Name day: (.+)$/, 'Navnedag: $1'], [/^Name day (.+)$/, function (m, a) { return 'Navnedag ' + a.split(' · ').map(function (x) { return tr(x); }).join(' · '); }],
+    [/^(.+) – (\d+) years$/, '$1 – $2 år'], [/^(\d+) years$/, '$1 år'], [/^Talked with (.+)$/, 'Snakket med $1'],
+    [/^(\d{4}) · (\d+) gifts?$/, function (m, y, n) { return y + ' · ' + n + (+n === 1 ? ' gave' : ' gaver'); }], [/^(\d+) gifts?$/, function (m, n) { return n + (+n === 1 ? ' gave' : ' gaver'); }],
+    [/^(\d+) of (\d+) sorted$/, '$1 av $2 i boks'], [/^budget (.+) each$/, 'budsjett $1 hver'], [/^(.+ kr) left$/, '$1 igjen'], [/^(.+ kr) over$/, '$1 over'], [/^Idea: (.+)$/, 'Idé: $1'],
+    [/^Note a Christmas gift for (.+)$/, 'Før opp en julegave til $1'], [/^Given in (\d{4})$/, 'Gitt i $1'], [/^(.+)’s name day today$/, 'Navnedag i dag: $1'],
+    [/^(.+: .+) (today|tomorrow)$/, function (m, a, w) { return a + (w === 'today' ? ' i dag' : ' i morgen'); }],
+    [/^Christmas gifts: (\d+) of (\d+) sorted$/, 'Julegaver: $1 av $2 i boks'],
+    [/^(\d+) found · (\d+) with a birthday$/, '$1 funnet · $2 med bursdag'], [/^Adds (.+)$/, function (m, a) { return 'Legger til ' + a.split(' + ').map(function (x) { return ADDS[x] || x; }).join(' + '); }],
+    [/^Import (\d+)$/, 'Importer $1'], [/^(\d+) added(?:, (\d+) updated)?$/, function (m, a, b) { return a + ' lagt til' + (b ? ', ' + b + ' oppdatert' : ''); }], [/^(\d+) updated$/, '$1 oppdatert'],
+    [/^scaled from (\d+)$/, 'regnet om fra $1'], [/^(\d+) basics$/, '$1 basisvarer'], [/^(\d+) running out$/, '$1 snart tomme'], [/^(.+) is running out$/, '$1 er snart tom'],
+    [/^(.+) is on the shopping list$/, '$1 er på handlelista'], [/^(.+) – in stock$/, '$1 – på lager'], [/^(\d+) basics added$/, '$1 basisvarer lagt til'], [/^(\d+) basics? skipped$/, '$1 basisvarer hoppet over'],
+    [/^(\d+) (?:things? )?added to the shopping list((?: · .+)?)$/, function (m, n, r) { return n + ' lagt på handlelista' + (r ? ' · ' + r.slice(3).split(' · ').map(function (x) { return tr(x); }).join(' · ') : ''); }], [/^Already on the list$/, 'Står allerede på lista'], [/^It’s all on the list already$/, 'Alt står på lista allerede'],
+    [/^Serves (\d+)$/, 'Til $1'], [/^serves (\d+)$/, 'til $1'], [/^(\d+) steps$/, '$1 trinn'], [/^and (\d+) more$/, 'og $1 til'], [/^(\d+) people$/, '$1 personer'],
+    [/^There’s no recipe data on that page(.*)\. Many blogs don’t include it\.$/, 'Siden har ingen oppskriftsdata$1. Mange blogger har ikke det.'],
+    [/^Couldn’t read the page(.*)\. Try again, or add it by hand\.$/, 'Fikk ikke lest siden$1. Prøv igjen, eller legg den inn selv.'],
+    [/^Last one sent (.+?)(?: to (.+))?$/, function (m, a, b) { return 'Siste sendt ' + a + (b ? ' til ' + b : ''); }],
+    [/^Timer running: (.+)$/, 'Tidtaker går: $1'],
+    [/^Birthday (\d.+)$/, 'Bursdag $1'], [/^Gift to (.+)$/, 'Gave til $1'], [/^Inspection (.+)$/, 'Befaring $1'], [/^(\d+) ingredients$/, '$1 ingredienser']
+  );
+  P.push([/^(\d.*) this week$/, '$1 denne uka']);
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;
@@ -795,7 +861,7 @@
   }
   window.I18N.t = function (s) { return tr(s); };
   /* never touch your own words */
-  var SKIP = 'script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b';
+  var SKIP = '[data-tool="people"] .kit-x b,.pp5-t b,script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b';
   var ATTR = ['placeholder', 'aria-label', 'title', 'data-title'];
   function textNode(n) {
     var p = n.parentElement; if (!p || p.closest(SKIP)) return;

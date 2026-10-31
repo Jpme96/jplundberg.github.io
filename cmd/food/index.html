@@ -78,8 +78,8 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=120" rel="stylesheet">
-  <link href="../modern.css?v=4" rel="stylesheet">
+  <link href="../styles.css?v=121" rel="stylesheet">
+  <link href="../modern.css?v=5" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
   <link href="../calendar/cal.css?v=12" rel="stylesheet">
@@ -121,7 +121,7 @@
     <div class="fp-hero">
       <p class="fp-kicker"><i class="bi bi-basket"></i> Private</p>
       <h1>Food</h1>
-      <p class="muted">This week’s dinners, the shopping list and your recipes – plan once, shop once.</p>
+      <p class="muted">This week’s dinners, the shopping list, recipes and the pantry – plan once, shop once.</p>
     </div>
 
     <section class="fp-tiles hl-tiles" id="hlTiles" aria-label="Key numbers" data-pk="numbers" data-pk-name="Key numbers"></section>
@@ -129,6 +129,7 @@
       <div data-tool="meals" class="kit-wide" hidden></div>
       <div data-tool="shop" hidden></div>
       <div data-tool="recipes" hidden></div>
+      <div data-tool="pantry" hidden></div>
     </div>
     <p class="fp-empty" data-pgempty="food" hidden>Food is switched off. Turn it on in <a href="../?settings=features">Settings → Features</a>.</p>
 
@@ -430,6 +431,8 @@
         <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span><i class="bi bi-upload"></i> Restore from a backup</span><small>Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
         <input type="file" id="stRestoreFile" accept=".json,application/json" hidden>
       </section>
+      <p class="st-sub ap-sub"><i class="bi bi-envelope-paper"></i> Weekly backup by email <span class="st-hint">Encrypted, to your inbox</span></p>
+      <section class="st-group" id="stMailBk"><div class="st-row"><span class="muted">Looking …</span></div></section>
       <p class="st-sub ap-sub"><i class="bi bi-box-seam"></i> What’s saved <span class="st-hint">Counted on this device, from your encrypted data</span></p>
       <section class="st-group"><ul class="st-inv" id="stInventory"></ul></section>
       <p class="st-sub ap-sub"><i class="bi bi-clock-history"></i> Earlier versions <span class="st-hint">Kept on your server, one a day for 30 days</span></p>
@@ -651,9 +654,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=e21fba125c"></script>
-  <script src="../dist/page-food.js?v=3bf271c58a"></script>
-  <script src="../dist/tail.js?v=6677fde4d4"></script>
+  <script src="../dist/head.js?v=610dd6e023"></script>
+  <script src="../dist/page-food.js?v=fada320673"></script>
+  <script src="../dist/tail.js?v=546d86dc93"></script>
   <!-- /scripts -->
 </body>
 </html>

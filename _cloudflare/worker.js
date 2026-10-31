@@ -23,6 +23,12 @@
    /cmd/api/ping      a quick health check: is the worker up, and which vault version does it hold.
    Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
                       the last 30 days), so a mistake can be undone from Settings → Data & sync.
+   /cmd/api/recipe    reads a recipe page you link to (POST {url}) and hands back its name, ingredients,
+                      steps, servings and time from the page's schema.org Recipe data. Only public
+                      http(s) addresses, at most 3 MB, nothing is stored.
+   /cmd/api/backup    the weekly encrypted backup by email (Settings → Data & sync): the vault as it is
+                      stored here (still encrypted with your passcode) is mailed to you with Resend.
+                      GET = status, PUT = on/off, day and hour, POST = send one now.
    /cmd/api/calendar  fetches your phone calendar (iCloud, Google or Outlook
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
@@ -36,7 +42,11 @@
      CF_API_TOKEN    secret: API token with Account Analytics: Read
      CF_ACCOUNT_ID   your Cloudflare account ID
      CF_SITE_TAG     the site tag of jplundberg.com in Web Analytics
-   Settings → Triggers → Cron Triggers: "Every 5 minutes" (only needed for notifications)   */
+     RESEND_API_KEY  secret, optional: an API key from resend.com (only for the weekly backup email)
+     BACKUP_EMAIL    optional: where the weekly backup goes (your own address)
+     BACKUP_FROM     optional: sender, default "Dashboard <onboarding@resend.dev>" (fine for your own
+                     Resend address; use e.g. backup@jplundberg.com once the domain is verified in Resend)
+   Settings → Triggers → Cron Triggers: "Every 5 minutes" (notifications and the weekly backup)   */
 
 const KEY = 'vault';
 const SNAP = 'vault:snap:';
@@ -55,14 +65,14 @@ export default {
   },
   /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(sendDue(env));
+    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e))]));
   }
 };
 
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -81,6 +91,8 @@ async function route(request, env) {
     if (path === '/cmd/api/texts') return textsApi(request, env);
     if (path === '/cmd/api/push') return pushApi(request, env);
     if (path === '/cmd/api/power') return powerApi(url);
+    if (path === '/cmd/api/recipe') return recipeApi(request);
+    if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
     return vault(request, env);
 }
@@ -545,6 +557,151 @@ async function textsApi(request, env) {
 }
 
 /* ---------- phone calendar (read only) ---------- */
+/* ---------- recipe import: read schema.org Recipe data from a page you link to ---------- */
+const RECIPE_MAX = 3 * 1024 * 1024;
+/* only public addresses – never this worker's own network, localhost or private ranges */
+function publicHost(h) {
+  h = String(h || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h || h.indexOf('.') < 0 || /^(localhost|.*\.local|.*\.internal|.*\.localhost)$/.test(h)) return false;
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) {
+    const [a, b] = h.split('.').map(Number);
+    if (a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224) return false;
+  }
+  if (h.indexOf(':') > -1) return false;       // no raw IPv6 addresses
+  return true;
+}
+function unhtml(s) {
+  return String(s == null ? '' : s).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+    .replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(+d))
+    .replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    .replace(/[ \t]+/g, ' ').trim();
+}
+function isRecipe(n) { const t = n && n['@type']; return Array.isArray(t) ? t.some(x => /recipe$/i.test(x)) : /recipe$/i.test(String(t || '')); }
+function findRecipe(n, depth = 0) {
+  if (!n || typeof n !== 'object' || depth > 6) return null;
+  if (Array.isArray(n)) { for (const x of n) { const r = findRecipe(x, depth + 1); if (r) return r; } return null; }
+  if (isRecipe(n)) return n;
+  for (const k of ['@graph', 'mainEntity', 'mainEntityOfPage', 'itemListElement', 'item']) { const r = findRecipe(n[k], depth + 1); if (r) return r; }
+  return null;
+}
+function isoMins(s) {
+  const m = String(s || '').match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/i);
+  if (!m) return null;
+  const n = (+m[1] || 0) * 1440 + (+m[2] || 0) * 60 + (+m[3] || 0);
+  return n > 0 && n < 10000 ? n : null;
+}
+function steps(x, out = []) {
+  if (!x) return out;
+  if (typeof x === 'string') { unhtml(x).split(/\n+/).map(s => s.trim()).filter(Boolean).forEach(s => out.push(s)); return out; }
+  if (Array.isArray(x)) { x.forEach(y => steps(y, out)); return out; }
+  if (typeof x === 'object') {
+    if (x.itemListElement) { if (x.name) out.push(unhtml(x.name) + ':'); return steps(x.itemListElement, out); }
+    steps(x.text || x.name || '', out);
+  }
+  return out;
+}
+function servingsOf(y) {
+  const l = Array.isArray(y) ? y : [y];
+  for (const v of l) { const m = String(v == null ? '' : v).match(/(\d+)/); if (m && +m[1] > 0 && +m[1] < 100) return +m[1]; }
+  return null;
+}
+async function recipeApi(request) {
+  if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+  let body;
+  try { body = JSON.parse(await request.text()); } catch (e) { return json({ error: 'bad json' }, 400); }
+  let url;
+  try { url = new URL(String(body.url || '').trim()); } catch (e) { return json({ error: 'not a link' }, 400); }
+  let r;
+  for (let hop = 0; ; hop++) {
+    if (hop > 4) return json({ error: 'too many redirects' }, 502);
+    if (!/^https?:$/.test(url.protocol) || !publicHost(url.hostname) || (url.port && !/^(80|443)$/.test(url.port))) return json({ error: 'unsupported link' }, 400);
+    try {
+      r = await fetch(url.toString(), { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (compatible; jplundberg-dashboard recipe import)', 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'nb-NO,nb;q=0.9,en;q=0.8' } });
+    } catch (e) { return json({ error: 'page unreachable' }, 502); }
+    if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { url = new URL(r.headers.get('location'), url); continue; }
+    break;
+  }
+  if (!r.ok) return json({ error: 'page ' + r.status }, 502);
+  if (+(r.headers.get('content-length') || 0) > RECIPE_MAX) return json({ error: 'page too large' }, 413);
+  const html = (await r.text()).slice(0, RECIPE_MAX);
+  let rec = null;
+  const re = /<script[^>]*type\s*=\s*["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while (!rec && (m = re.exec(html))) {
+    const raw = m[1].trim().replace(/^<!--|-->$/g, '').replace(/^\/\*<!\[CDATA\[\*\/|\/\*\]\]>\*\/$/g, '');
+    try { rec = findRecipe(JSON.parse(raw)); } catch (e) { /* a broken block: try the next one */ }
+  }
+  const title = unhtml(((html.match(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)/i) || [])[1]) || ((html.match(/<title[^>]*>([^<]*)/i) || [])[1]) || '');
+  if (!rec) return json({ error: 'no recipe', title: title.slice(0, 120) }, 422);
+  const ingr = (Array.isArray(rec.recipeIngredient) ? rec.recipeIngredient : Array.isArray(rec.ingredients) ? rec.ingredients : [rec.recipeIngredient || rec.ingredients].filter(Boolean))
+    .map(unhtml).filter(Boolean).slice(0, 80).map(s => s.slice(0, 160));
+  const img = rec.image && (typeof rec.image === 'string' ? rec.image : Array.isArray(rec.image) ? (typeof rec.image[0] === 'string' ? rec.image[0] : rec.image[0] && rec.image[0].url) : rec.image.url);
+  return json({
+    name: unhtml(rec.name || title).slice(0, 120), ingredients: ingr, steps: steps(rec.recipeInstructions).slice(0, 60).map(s => s.slice(0, 600)),
+    servings: servingsOf(rec.recipeYield), mins: isoMins(rec.totalTime) || ((isoMins(rec.prepTime) || 0) + (isoMins(rec.cookTime) || 0)) || null,
+    image: /^https?:\/\//.test(img || '') ? String(img).slice(0, 500) : null, url: url.toString()
+  });
+}
+
+/* ---------- weekly encrypted backup by email (Resend) ---------- */
+const BK_CFG = 'backup:cfg', BK_LAST = 'backup:last';
+function bkReady(env) { return !!(env.RESEND_API_KEY && env.BACKUP_EMAIL); }
+function mask(e) { const m = String(e || '').match(/^(.)(.*)(@.+)$/); return m ? m[1] + '•••' + m[3] : ''; }
+function oslo(d = new Date()) {
+  const p = {}; new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Oslo', weekday: 'short', hour: '2-digit', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(d).forEach(x => { p[x.type] = x.value; });
+  return { day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday), hour: +p.hour, date: p.year + '-' + p.month + '-' + p.day };
+}
+async function bkCfg(env) { const c = JSON.parse(await env.VAULT.get(BK_CFG) || 'null') || {}; return { on: !!c.on, day: Number.isInteger(c.day) ? c.day : 0, hour: Number.isInteger(c.hour) ? c.hour : 20 }; }
+async function backupApi(request, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (request.method === 'GET') return json({ ready: bkReady(env), to: mask(env.BACKUP_EMAIL), cfg: await bkCfg(env), last: JSON.parse(await env.VAULT.get(BK_LAST) || 'null') });
+  let body;
+  try { body = JSON.parse(await request.text() || '{}'); } catch (e) { return json({ error: 'bad json' }, 400); }
+  if (request.method === 'PUT') {
+    const c = { on: !!body.on, day: Math.min(6, Math.max(0, parseInt(body.day, 10) || 0)), hour: Math.min(23, Math.max(0, parseInt(body.hour, 10) || 0)) };
+    await env.VAULT.put(BK_CFG, JSON.stringify(c));
+    return json({ ok: true, cfg: c });
+  }
+  if (request.method === 'POST') {
+    if (!bkReady(env)) return json({ error: 'not set up' }, 503);
+    const last = await sendBackup(env, 'now');
+    return json(last, last.ok ? 200 : 502);
+  }
+  return json({ error: 'method not allowed' }, 405);
+}
+function b64ascii(str) {
+  const u8 = new TextEncoder().encode(str); let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+async function sendBackup(env, why) {
+  const v = await env.VAULT.get(KEY);
+  if (!v) { const l = { at: Date.now(), ok: false, err: 'nothing to back up yet', why }; await env.VAULT.put(BK_LAST, JSON.stringify(l)); return l; }
+  const d = oslo().date;
+  let r, err = null;
+  try {
+    r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({
+      from: env.BACKUP_FROM || 'Dashboard <onboarding@resend.dev>', to: [env.BACKUP_EMAIL], subject: 'Dashboard backup ' + d,
+      text: 'Your weekly dashboard backup is attached (dashboard-backup-' + d + '.json).\n\nIt is encrypted with your passcode – nobody can read it without it. To use it: Settings → Data & sync → Restore from a backup, then unlock with the passcode you had when it was made.\n\nKeep a few of these mails; you can switch the weekly mail off under Settings → Data & sync.',
+      attachments: [{ filename: 'dashboard-backup-' + d + '.json', content: b64ascii(v) }] }) });
+    if (!r.ok) err = 'email service ' + r.status + ': ' + (await r.text()).slice(0, 140);
+  } catch (e) { err = 'email service unreachable'; }
+  const last = { at: Date.now(), ok: !err, err, size: v.length, rev: JSON.parse(v).rev || null, why };
+  await env.VAULT.put(BK_LAST, JSON.stringify(last));
+  return last;
+}
+/* from the cron trigger: once a week, on your day, from your hour (Norwegian time) */
+async function weeklyBackup(env) {
+  if (!env.VAULT || !bkReady(env)) return;
+  const c = await bkCfg(env); if (!c.on) return;
+  const now = oslo(); if (now.day !== c.day || now.hour < c.hour) return;
+  const last = JSON.parse(await env.VAULT.get(BK_LAST) || 'null');
+  if (last && last.ok && Date.now() - last.at < 6 * 864e5) return;
+  if (last && !last.ok && Date.now() - last.at < 3 * 3600e3) return;       // a failed try waits 3 hours
+  await sendBackup(env, 'weekly');
+}
+
 /* Only calendar services are fetched, so this can't be used to reach anything else. */
 const CAL_HOSTS = /^(p\d+-caldav\.icloud\.com|calendar\.google\.com|outlook\.office365\.com|outlook\.office\.com|outlook\.live\.com)$/i;
 const CAL_MAX = 4 * 1024 * 1024;

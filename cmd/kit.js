@@ -136,6 +136,16 @@
         (items.length > lim ? '<button class="text-btn kit-more" type="button" data-kit-more>' + (showAll ? 'Show less' : 'Show all ' + items.length) + '</button>' : '') +
         '</section>';
       if (cfg.afterRender) cfg.afterRender(el, items);
+      /* arriving from search (…/#people=<id>): open that one, show all, scroll to it */
+      var hm = location.hash.match(new RegExp('^#' + cfg.key + '=([\\w-]+)$'));
+      if (hm && document.documentElement.classList.contains('unlocked') && items.some(function (x) { return x.id === hm[1]; })) {
+        openId = hm[1]; showAll = true; scrolled = true;
+        history.replaceState(null, '', location.pathname + location.search);
+        render();
+        var li = el.querySelector('.kit-item[data-id="' + hm[1] + '"]');
+        if (li) setTimeout(function () { li.scrollIntoView({ behavior: 'smooth', block: 'center' }); li.classList.add('sr-flash'); setTimeout(function () { li.classList.remove('sr-flash'); }, 1600); }, 350);
+        return;
+      }
       /* arriving from a calendar reminder (…/#subs): scroll to the card once */
       if (!scrolled && location.hash === '#' + cfg.key && document.documentElement.classList.contains('unlocked')) {
         scrolled = true;
@@ -153,6 +163,7 @@
     });
     window.addEventListener('tools:change', render);
     window.addEventListener('features:change', render);
+    window.addEventListener('hashchange', function () { if (location.hash.indexOf('#' + cfg.key + '=') === 0) render(); });
     var prevReload = window.Dash && window.Dash.reload;
     window.Dash = window.Dash || {};
     window.Dash.reload = function () { if (prevReload) prevReload(); render(); };

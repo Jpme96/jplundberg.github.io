@@ -234,6 +234,8 @@
         location: '', notes: s.notes || '', exDays: {},
         rule: { freq: 'MONTHLY', interval: PERIOD_MONTHS[s.period] || 1, clamp: true } });
     });
+    /* more reminders from other parts (name days and anniversaries in People, …) */
+    (window.EventsExtra || []).forEach(function (f) { try { out = out.concat(f() || []); } catch (e) {} });
     return out;
   }
 

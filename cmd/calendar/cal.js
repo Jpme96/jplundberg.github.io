@@ -110,7 +110,7 @@
     if (box.hidden) return;
     var d = C.fromKey(sel), list = by && by[sel];
     if (!list) list = C.occurrences(d, addDays(d, 1));
-    box.innerHTML = '<div class="card-head"><h2>' + esc(C.dayLabel(d, true)) + '</h2>' +
+    box.innerHTML = '<div class="card-head"><h2><i class="bi bi-calendar-day"></i> ' + esc(C.dayLabel(d, true)) + '</h2>' +
       '<button class="text-btn" type="button" data-new-day="' + sel + '"><i class="bi bi-plus-lg"></i> Add</button></div>' +
       (list.length ? '<ul class="cl-agenda">' + list.map(function (o) { return row(o, d); }).join('') + '</ul>'
         : '<p class="empty">Nothing planned.</p>');

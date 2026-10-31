@@ -43,7 +43,7 @@
   var RED = '#e66767', AMBER = '#c98500', GREEN = '#22b35e', BLUE = '#3987e5';
 
   /* the page itself is switched off: say so instead of an empty page */
-  var PAGE = (location.pathname.match(/\/cmd\/(house|people|food)\/$/) || [])[1];
+  var PAGE = (location.pathname.match(/\/cmd\/(house|people|food|work)\/$/) || [])[1];
   if (PAGE) {
     var pgEmpty = function () { var e = document.querySelector('[data-pgempty]'); if (e) e.hidden = on(PAGE); };
     pgEmpty(); window.addEventListener('features:change', pgEmpty); window.Vault.onUnlock(pgEmpty);
@@ -55,8 +55,9 @@
   /* ---------- settings per page (Settings → Pages → House / People / Food, and Work) ---------- */
   var DEF = {
     housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true, seasonNudge: true, illu: true },
-    peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true },
-    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false },
+    peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true, askNote: true, namedays: true, ndCal: true, annLead: 3,
+      gbXmas: 0, gbBday: 0, gbOther: 0, xmasNudge: true, giftFin: false },
+    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false, servings: 0, pantryBack: true, pantrySkip: true },
     ptcfg: { round: 0, long: 4, vat: true, payDays: 14, org: '', account: '', addr: '', invNext: 1 }
   };
   function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
@@ -365,16 +366,25 @@
     { k: 'last', label: 'Last talked', type: 'date' },
     { k: 'phone', label: 'Phone', type: 'tel', ph: '+47' },
     { k: 'gifts', label: 'Gift ideas', type: 'textarea', rows: 2, help: 'Jot them down when you hear them – one per line.' },
+    { k: 'xmas', label: 'On the Christmas gift list', type: 'check' },
+    { k: 'dates', label: 'Other dates', type: 'textarea', rows: 2, ph: 'Wedding 12.06.2015\nStarted school 19.08.2024', help: 'Anniversaries and other yearly days – one per line, a name and a date. Name days come by themselves from the Norwegian almanac.' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Partner’s and kids’ names, allergies, what they’re up to.' }] };
-  function talked(id) {
+  /* "Talked today": the date, a line in the person's history – and (from the card) a one-line note */
+  function talked(id, ask) {
     var old = snapshot('people');
-    saveList('people', function (l) { l.forEach(function (x) { if (x.id === id) x.last = today(); }); });
+    saveList('people', function (l) { l.forEach(function (x) {
+      if (x.id !== id) return;
+      x.last = today(); x.log = Array.isArray(x.log) ? x.log : [];
+      if (!x.log.length || x.log[0].d !== today()) x.log.unshift({ d: today() });
+      x.log = x.log.slice(0, 40);
+    }); });
+    if (ask && window.PeoplePlus && window.PeoplePlus.askNote(id, old)) return;
     toast('<i class="bi bi-chat-heart"></i> Noted', function () { restore('people', old); });
   }
   col({
     mount: $t('people'), feature: 'people', key: 'people', icon: 'people', title: 'People', addLabel: 'Add', limit: 12,
     addTitle: PP.addTitle, editTitle: PP.editTitle, fields: PP.fields,
-    headExtra: function () { return gear('people'); },
+    headExtra: function () { return (window.PeoplePlus ? window.PeoplePlus.importBtn() : '') + gear('people'); },
     empty: 'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.',
     sort: function (a, b) {
       var oa = overdue(a), ob = overdue(b), ba = bday(a), bb = bday(b);
@@ -391,25 +401,29 @@
     detail: function (p) {
       var tel = String(p.phone || '').replace(/[^\d+]/g, ''), b = bday(p);
       return (b ? '<p class="hl-small muted"><i class="bi bi-balloon"></i> ' + esc(fmt(b.next, { weekday: 'long', day: 'numeric', month: 'long' })) + (b.age ? ' – turns ' + b.age : '') + ' · ' + esc(inDays(b.n)) + '</p>' : '') +
-        (p.gifts ? '<div class="hl-gifts"><b><i class="bi bi-gift"></i> Gift ideas</b><ul>' + String(p.gifts).split('\n').filter(Boolean).map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul></div>' : '') +
+        (window.PeoplePlus ? window.PeoplePlus.days(p) : '') +
+        (p.gifts ? '<div class="hl-gifts"><b><i class="bi bi-gift"></i> Gift ideas</b><ul>' + String(p.gifts).split('\n').filter(Boolean).map(function (g, i) { return '<li><span data-noi18n>' + esc(g) + '</span>' + (window.PeoplePlus ? ' <button type="button" class="text-btn pp5-gave" data-ppgave="' + esc(p.id) + '|' + i + '">Gave it</button>' : '') + '</li>'; }).join('') + '</ul></div>' : '') +
         (p.notes ? '<p class="kit-notes hl-pre">' + esc(p.notes) + '</p>' : '') +
+        (window.PeoplePlus ? window.PeoplePlus.detail(p) : '') +
         '<div class="hl-acts"><button type="button" class="pill-btn" data-pptalk="' + esc(p.id) + '"><i class="bi bi-chat-heart"></i> Talked today</button>' +
         (tel ? '<a class="text-btn" href="tel:' + esc(tel) + '"><i class="bi bi-telephone"></i> Call</a><a class="text-btn" href="sms:' + esc(tel) + '"><i class="bi bi-chat"></i> Message</a>' : '') + '</div>';
     },
-    onClick: function (e) { var b = e.target.closest('[data-pptalk]'); if (b) talked(b.dataset.pptalk); }
+    onClick: function (e) { var b = e.target.closest('[data-pptalk]'); if (b) talked(b.dataset.pptalk, true); }
   });
   /* the next birthdays, as a calendar strip */
   (function () {
     var el = $t('pdates'); if (!el) return;
     function draw() {
       var ok = on('people'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
-      var l = Fe.list('people').map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0] && x[0].n <= 120; }).sort(function (a, b) { return a[0].n - b[0].n; }).slice(0, 8);
+      var l = Fe.list('people').map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0] && x[0].n <= 120; });
+      if (window.PeoplePlus) l = l.concat(window.PeoplePlus.upcoming(120));          // name days and anniversaries
+      l = l.sort(function (a, b) { return a[0].n - b[0].n || (a[0].kind ? 1 : 0) - (b[0].kind ? 1 : 0); }).slice(0, 8);
       el.innerHTML = '<section class="card kit-card" id="pdates"><div class="card-head"><h2><i class="bi bi-balloon"></i> Coming up</h2></div>' +
         (l.length ? '<ul class="hl-dates">' + l.map(function (x) {
           var b = x[0], d = fromKey(b.next);
           return '<li' + (b.n <= 7 ? ' class="soon"' : '') + '><span class="hl-day"><b>' + d.getDate() + '</b><small>' + esc(d.toLocaleDateString('en-GB', { month: 'short' })) + '</small></span>' +
-            '<span class="hl-dx"><b>' + esc(x[1].name) + '</b><small>' + esc(cap(inDays(b.n)) + (b.age ? ' · turns ' + b.age : '')) + (x[1].gifts ? ' · <i class="bi bi-gift"></i> ' + esc(String(x[1].gifts).split('\n')[0]) : '') + '</small></span></li>';
-        }).join('') + '</ul>' : '<p class="empty kit-empty">No birthdays in the next four months.</p>') + '</section>';
+            '<span class="hl-dx"><b><span data-noi18n>' + esc(x[1].name) + '</span>' + (b.kind ? ' <span class="pp5-kind" style="--c:' + b.c + '"><i class="bi bi-' + b.icon + '"></i> ' + esc(b.label) + '</span>' : '') + '</b><small>' + esc(cap(inDays(b.n)) + (b.age ? ' · turns ' + b.age : '') + (b.years ? ' · ' + b.years + ' years' : '')) + (!b.kind && x[1].gifts ? ' · <i class="bi bi-gift"></i> ' + esc(String(x[1].gifts).split('\n')[0]) : '') + '</small></span></li>';
+        }).join('') + '</ul>' : '<p class="empty kit-empty">Nothing in the next four months – add birthdays and other dates to the people in your list.</p>') + '</section>';
     }
     ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, draw); });
     window.Vault.onUnlock(draw);
@@ -446,9 +460,15 @@
   function addShop(items, from) {
     var t = Fe.tools(), l = Array.isArray(t.shop) ? t.shop : [], have = {}, n = 0;
     l.forEach(function (x) { if (!x.done) have[x.text.toLowerCase()] = 1; });
-    items.forEach(function (s) { s = String(s).trim().slice(0, 120); if (!s || have[s.toLowerCase()]) return; have[s.toLowerCase()] = 1; l.push({ id: uid(), text: s, done: false, from: from || '' }); n++; });
+    addShop.skipped = [];
+    items.forEach(function (s) {
+      s = String(s).trim().slice(0, 120); if (!s || have[s.toLowerCase()]) return;
+      if (from && from !== 'pantry' && window.FoodPlus && window.FoodPlus.inPantry(s)) { addShop.skipped.push(s); return; }   // basics you have at home
+      have[s.toLowerCase()] = 1; l.push({ id: uid(), text: s, done: false, from: from || '' }); n++;
+    });
     t.shop = l; Fe.saveTools(t); return n;
   }
+  function skippedNote() { var k = addShop.skipped || []; return k.length ? ' · ' + k.length + ' basic' + (k.length === 1 ? '' : 's') + ' skipped' : ''; }
   /* ---- the week's dinners ---- */
   var ML = { wk: 0 };
   function monday(off) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 + off * 7); return dkey(d); }
@@ -484,9 +504,9 @@
       if ((b = e.target.closest('[data-mlrec]'))) { RC.open(b.dataset.mlrec); var c = $t('recipes'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if (e.target.closest('[data-mlshop]')) {
         var m = meals(), m0 = monday(ML.wk), all = [];
-        for (var i = 0; i < 7; i++) { var k = addDays(m0, i); if (k >= today() || ML.wk > 0) all = all.concat(ingredients(recipeFor(m[k]))); }
+        for (var i = 0; i < 7; i++) { var k = addDays(m0, i), rr = recipeFor(m[k]); if (rr && (k >= today() || ML.wk > 0)) all = all.concat(window.FoodPlus ? window.FoodPlus.lines(rr, 'week') : ingredients(rr)); }
         var n = addShop(all, 'week');
-        toast('<i class="bi bi-cart-check"></i> ' + (n ? n + ' thing' + (n === 1 ? '' : 's') + ' added to the shopping list' : 'It’s all on the list already'));
+        toast('<i class="bi bi-cart-check"></i> ' + (n ? n + ' thing' + (n === 1 ? '' : 's') + ' added to the shopping list' : 'It’s all on the list already') + skippedNote());
         return;
       }
       if (e.target.closest('[data-mlfill]')) {
@@ -514,7 +534,7 @@
     ['frozen', 'Frozen', 'snow', '#3987e5', /frys|frossen|is\b|iskrem|frozen|ice ?cream|peas|erter/],
     ['drink', 'Drinks', 'cup-straw', '#0891b2', /kaffe|te\b|brus|cola|vann|øl|vin|saft|coffee|tea|soda|water|beer|wine|squash/],
     ['snack', 'Snacks & sweets', 'cookie', '#d55181', /sjokolade|godteri|chips|kjeks|snacks|popcorn|nøtteblanding|chocolate|candy|sweets|crisps|biscuit|cookie/],
-    ['home', 'Household', 'house', '#7a8794', /dopapir|tørkerull|oppvask|vaskemiddel|såpe|søppelpose|poser|folie|bakepapir|batteri|lyspære|servietter|toilet paper|kitchen roll|dish|detergent|soap|bin bags|foil|battery|napkin/],
+    ['home', 'Household', 'house', '#7a8794', /dopapir|tørkerull|oppvask|vaskemiddel|såpe|søppelpose|poser|folie|bakepapir|batteri|lyspære|servietter|toilet paper|kitchen roll|washing-up|dish|detergent|soap|bin bags|foil|battery|napkin/],
     ['care', 'Toiletries & pharmacy', 'bandaid', '#d55181', /sjampo|balsam|tannkrem|tannbørste|deodorant|bind|tamponger|bleier|plaster|paracet|ibux|vitamin|shampoo|toothpaste|toothbrush|deo|nappies|diaper|plaster|painkiller/],
     ['other', 'Other', 'three-dots', '#7a8794', /$^/]
   ];
@@ -522,6 +542,8 @@
   function aisleOf(text) {
     var own = (Fe.tools().shopcat || {})[String(text).toLowerCase().trim()]; if (own && AISLE[own]) return own;
     var t = ' ' + String(text).toLowerCase() + ' ';
+    /* household first: "toilet paper" shouldn't land with the oil */
+    for (var j = 0; j < AISLES.length - 1; j++) if (AISLES[j][0] === 'home' && AISLES[j][4].test(t)) return AISLES[j][0];
     for (var i = 0; i < AISLES.length - 1; i++) if (AISLES[i][4].test(t)) return AISLES[i][0];
     return 'other';
   }
@@ -611,9 +633,11 @@
   var RC = { open: function () {} };
   col({
     mount: $t('recipes'), feature: 'food', key: 'recipes', icon: 'journal-text', title: 'Recipes', addLabel: 'Add', limit: 10,
+    headExtra: function () { return window.FoodPlus ? window.FoodPlus.importBtn() : ''; },
     addTitle: 'New recipe', editTitle: 'Edit recipe', fields: [
       { k: 'title', type: 'title', label: 'Name', ph: 'e.g. Fish tacos', req: true },
       { k: 'mins', label: 'Time', type: 'number', suffix: 'min' },
+      { k: 'serves', label: 'Serves', type: 'number', suffix: 'people', help: 'How many the ingredients are for – then you can scale it up or down.' },
       { k: 'ingr', label: 'Ingredients', type: 'textarea', rows: 5, help: 'One per line – they go to the shopping list as they are.' },
       { k: 'steps', label: 'How', type: 'textarea', rows: 4 },
       { k: 'link', label: 'Link', type: 'url', ph: 'https://' }],
@@ -621,11 +645,11 @@
     sort: function (a, b) { return String(a.title).localeCompare(b.title, 'nb'); },
     row: function (r) {
       var n = ingredients(r).length;
-      return { icon: 'journal-text', color: AMBER, title: r.title, sub: esc([r.mins ? r.mins + ' min' : '', n ? n + ' ingredient' + (n === 1 ? '' : 's') : ''].filter(Boolean).join(' · ')) };
+      return { icon: 'journal-text', color: AMBER, title: r.title, sub: esc([r.mins ? r.mins + ' min' : '', +r.serves ? 'serves ' + r.serves : '', n ? n + ' ingredient' + (n === 1 ? '' : 's') : ''].filter(Boolean).join(' · ')) };
     },
     detail: function (r) {
       var ing = ingredients(r), link = /^https?:\/\//.test(r.link || '') ? r.link : '';
-      return (ing.length ? '<ul class="hl-ingr">' + ing.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+      return (window.FoodPlus ? window.FoodPlus.ingrBlock(r) : ing.length ? '<ul class="hl-ingr">' + ing.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
         (r.steps ? '<p class="kit-notes hl-pre">' + esc(r.steps) + '</p>' : '') +
         '<div class="hl-acts"><button type="button" class="pill-btn" data-rctoday="' + esc(r.id) + '"><i class="bi bi-calendar-check"></i> Dinner today</button>' +
         (ing.length ? '<button type="button" class="text-btn" data-rcshop="' + esc(r.id) + '"><i class="bi bi-cart-plus"></i> To the list</button>' : '') +
@@ -634,7 +658,7 @@
     onClick: function (e) {
       var b, r;
       if ((b = e.target.closest('[data-rctoday]')) && (r = byId('recipes', b.dataset.rctoday))) { setMeal(today(), r.title); toast('<i class="bi bi-calendar-check"></i> ' + esc(r.title) + ' tonight'); }
-      if ((b = e.target.closest('[data-rcshop]')) && (r = byId('recipes', b.dataset.rcshop))) { var n = addShop(ingredients(r), r.title); toast('<i class="bi bi-cart-check"></i> ' + (n ? n + ' added to the shopping list' : 'Already on the list')); }
+      if ((b = e.target.closest('[data-rcshop]')) && (r = byId('recipes', b.dataset.rcshop))) { var n = addShop(window.FoodPlus ? window.FoodPlus.lines(r) : ingredients(r), r.title); toast('<i class="bi bi-cart-check"></i> ' + (n ? n + ' added to the shopping list' : 'Already on the list') + skippedNote()); }
     }
   });
   RC.open = function (id) { var c = $t('recipes'), b = c && c.querySelector('[data-kit-toggle="' + id + '"]'); if (b && !b.closest('li').classList.contains('open')) b.click(); };
@@ -944,13 +968,20 @@
         return '<p class="st-intro">How People reminds you about birthdays and keeping in touch.</p>' +
           sub('balloon', 'Birthdays') + '<div class="st-group">' + sel('peoplecfg', 'lead', 'Heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before'], [14, '2 weeks before']], 'In At a glance') + sw('peoplecfg', 'calendar', 'Birthdays in the calendar') + '</div>' +
           sub('chat-heart', 'Keeping in touch') + '<div class="st-group">' + sw('peoplecfg', 'catchup', 'Nudges in At a glance') + sel('peoplecfg', 'catchupMax', 'At most', [[1, '1 person at a time'], [2, '2 people'], [3, '3 people']]) +
-          sel('peoplecfg', 'defEvery', 'For new people', KEEP, 'What “Keep in touch” starts at') + '</div>' +
+          sel('peoplecfg', 'defEvery', 'For new people', KEEP, 'What “Keep in touch” starts at') + sw('peoplecfg', 'askNote', 'Ask for a note after “Talked today”', 'One line, kept as a short history') + '</div>' +
+          sub('calendar-heart', 'Name days and anniversaries') + '<div class="st-group">' + sw('peoplecfg', 'namedays', 'Name days', 'From the Norwegian almanac, by first name – in At a glance on the day') +
+          sel('peoplecfg', 'annLead', 'Anniversaries: heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before']]) + sw('peoplecfg', 'ndCal', 'Name days and anniversaries in the calendar') + '</div>' +
+          sub('gift', 'Gifts') + '<div class="st-group">' + numIn('peoplecfg', 'gbXmas', 'Christmas budget', 'kr', 'For all Christmas gifts together') + numIn('peoplecfg', 'gbBday', 'Birthday gift budget', 'kr', 'Per gift') +
+          numIn('peoplecfg', 'gbOther', 'Other occasions', 'kr', 'Per gift – weddings, christenings, thank-yous') + sw('peoplecfg', 'xmasNudge', 'Christmas gift list in At a glance', 'From 15 November') +
+          sw('peoplecfg', 'giftFin', 'Add gifts to Finances', 'As spending (Shopping) when you note a gift with a price') + '</div>' +
           '<div class="st-group">' + link('/cmd/people/', 'people', 'Open People') + link('/cmd/people/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       },
       food: function () {
         return '<p class="st-intro">The dinner plan, shopping list and reminders.</p>' +
           sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
           sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
+          sub('journal-text', 'Recipes') + '<div class="st-group">' + sel('foodcfg', 'servings', 'Usually cooking for', [[0, 'As the recipe says'], [1, '1 person'], [2, '2 people'], [3, '3 people'], [4, '4 people'], [5, '5 people'], [6, '6 people'], [8, '8 people']], 'Recipes open scaled to this, and the week’s shopping list too') + '</div>' +
+          sub('box-seam', 'Pantry') + '<div class="st-group">' + sw('foodcfg', 'pantryBack', 'Back in stock when ticked off the shopping list') + sw('foodcfg', 'pantrySkip', 'Skip basics you have when adding recipes', 'Salt, oil, rice … stay off the list while they’re in stock') + '</div>' +
           sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['aisle', 'By section in the shop'], ['added', 'As added'], ['abc', 'A–Å']]) + '<button type="button" class="st-row st-btn" data-shreset><span><i class="bi bi-arrow-counterclockwise"></i> Forget the learned shop order</span></button>' + '</div>' +
           '<div class="st-group">' + link('/cmd/food/', 'basket', 'Open Food') + link('/cmd/food/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       }
@@ -1017,5 +1048,36 @@
   ['todos:change', 'plan:change', 'dash:local', 'profile:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(ring.t); ring.t = setTimeout(ring, 50); }); });
   window.Vault.onUnlock(function () { setTimeout(ring, 200); });
 
-  window.HomeLife = { cfg: cfg, meals: meals, bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT };
+  /* the numbers at the top of the Work page – the same tiles as House, People and Food (batch 5) */
+  heroes.work = function () {
+    var out = [], tk = today();
+    if (on('flex') && window.FlexTime) {
+      var st = window.FlexTime.stats(), sg = st.balance < 0 ? '−' : st.balance > 0 ? '+' : '', h = window.FlexTime.dur(Math.abs(st.balance));
+      out.push(heroTile('stopwatch', 'Flex balance', '<span class="' + (st.balance < 0 ? 'neg' : 'pos') + '">' + sg + esc(h) + '</span>', esc(window.FlexTime.dur(st.week)) + ' this week', '#flex', '#e8743b'));
+    }
+    if (on('ptime')) {
+      var m0 = monday(0), mins = Fe.list('ptime').filter(function (x) { return x.date >= m0 && x.date <= tk; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0), r = run();
+      out.push(heroTile('hourglass-split', 'Client time', esc(hm(mins)), r ? 'Timer running: ' + esc(proj(r.pid).name) : 'this week', '#ptime'));
+    }
+    if (on('meetings')) {
+      var open = 0; Fe.list('meetings').forEach(function (m) { String(m.actions || '').split('\n').forEach(function (x, i) { if (x.trim() && !(m.done || {})[i]) open++; }); });
+      out.push(heroTile('people', 'Action points', open ? '<span class="neg">' + open + '</span>' : '0', open ? 'open from meetings' : 'All done', '#meetings'));
+    }
+    if (on('fdv')) {
+      var fl = Fe.list('fdv'), last = fl.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0], tg = 0;
+      fl.forEach(function (x) { (x.findings || []).forEach(function (f) { if (String(f.tg) === '3') tg++; }); });
+      out.push(heroTile('building-check', 'Inspections', fl.length, last ? esc(last.building) + (tg ? ' · ' + tg + ' TG 3' : '') : 'None yet', '#fdv'));
+    }
+    if (on('learning') && out.length < 4) {
+      var ex = Fe.list('learning').filter(function (c) { return isKey(c.expires) && c.expires >= tk; }).sort(function (a, b) { return a.expires < b.expires ? -1 : 1; })[0];
+      out.push(heroTile('mortarboard', 'Next renewal', ex ? esc(cap(inDays(daysTo(ex.expires)))) : '–', ex ? esc(ex.title) : 'No certificates expiring', '#learning'));
+    }
+    if (on('holiday') && out.length < 4 && window.FlexTime) {
+      var s2 = window.FlexTime.stats(), tot = +((Fe.tools().flexcfg || {}).vacation) || 25;
+      out.push(heroTile('sun', 'Holiday left', Math.max(0, tot - s2.vac) + ' <small>/ ' + tot + '</small>', 'days this year', '#holiday'));
+    }
+    return out.slice(0, 4).join('');
+  };
+  window.HomeLife = { cfg: cfg, setCfg: setCfg, meals: meals, bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT,
+    aisleOf: aisleOf, AISLE: AISLE, ingredients: ingredients, talked: talked, dialog: dialog, dhead: dhead, overdue: overdue, recipeFor: recipeFor, gear: gear };
 })();
