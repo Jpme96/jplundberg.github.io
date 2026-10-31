@@ -3737,3 +3737,5 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 .aw-bar .ws-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .aw-bar .ws-bar .pill-btn { flex: none; white-space: nowrap; }
 .aw-bar .ws-bar, .aw-bar #wsBar { position: static; }
+/* the preview stays in place next to the editor (it no longer follows the page scroll) */
+.aw-pv, .aw-nav { position: static !important; }
