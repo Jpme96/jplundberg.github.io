@@ -771,6 +771,12 @@
     [/^(Photo|Receipt) saved on this device$/, function (m, a) { return (a === 'Photo' ? 'Bildet' : 'Kvitteringen') + ' er lagret på denne enheten'; }], [/^(\d+) items?$/, function (m, n) { return n + (+n === 1 ? ' gjenstand' : ' gjenstander'); }],
     [/^(\d+) with receipt$/, '$1 med kvittering'], [/^made (.+)$/, 'laget $1'], [/^bought (.+)$/, 'kjøpt $1'], [/^serial (.+)$/, 'serienr. $1'], [/^(.+) – (today|tomorrow)$/, function (m, a, w) { return a + ' – ' + (w === 'today' ? 'i dag' : 'i morgen'); }]
   );
+  /* side bar (Oct 2026) */
+  Object.assign(D, {
+    'Bar': 'Linje', 'Side bar': 'Sidepanel', 'Icons only': 'Bare ikoner', 'Show page names': 'Vis sidenavn', 'Hide the side bar': 'Skjul sidepanelet', 'Show the side bar': 'Vis sidepanelet',
+    'The side bar needs the Modern look': 'Sidepanelet trenger Moderne utseende', 'At the top on a computer, at the bottom on a phone': 'Øverst på en datamaskin, nederst på en telefon',
+    'On wider screens – iPad across and computers. Phones keep the bottom bar.': 'På bredere skjermer – iPad på tvers og datamaskiner. Telefoner beholder linjen nederst.'
+  });
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;

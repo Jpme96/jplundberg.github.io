@@ -3,7 +3,8 @@
     "i18n.js",
     "lock.js",
     "lockui.js",
-    "features.js"
+    "features.js",
+    "sidenav.js"
   ],
   "tail": [
     "smart.js",

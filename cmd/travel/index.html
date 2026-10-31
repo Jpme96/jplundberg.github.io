@@ -80,6 +80,7 @@
   </script>
   <link href="../styles.css?v=120" rel="stylesheet">
   <link href="../modern.css?v=4" rel="stylesheet">
+  <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
   <link href="../calendar/cal.css?v=12" rel="stylesheet">
   <link href="travel.css?v=14" rel="stylesheet">
@@ -439,6 +440,12 @@
           <div class="seg" role="group" aria-label="Look">
             <button type="button" data-look-opt="modern"><i class="bi bi-stars"></i> Modern</button>
             <button type="button" data-look-opt="classic"><i class="bi bi-clock-history"></i> Classic</button>
+          </div>
+        </div>
+        <div class="st-row" id="stNavRow"><span>Menu<small id="stNavNote"></small></span>
+          <div class="seg" role="group" aria-label="Menu">
+            <button type="button" data-nav-opt="bar"><i class="bi bi-window-dock"></i> Bar</button>
+            <button type="button" data-nav-opt="side"><i class="bi bi-layout-sidebar"></i> Side bar</button>
           </div>
         </div>
         <div class="st-row"><span>Theme</span>
@@ -867,7 +874,7 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=26e1c8ca9e"></script>
+  <script src="../dist/head.js?v=e21fba125c"></script>
   <script src="../dist/page-travel.js?v=4c5c299895"></script>
   <script src="../dist/tail.js?v=6677fde4d4"></script>
   <!-- /scripts -->
