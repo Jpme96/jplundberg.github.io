@@ -14,17 +14,29 @@ sitemap: false
     if (m) location.replace('/' + m[1] + '/' + m[2] + location.search + location.hash);
   })();
 </script>
+<style>.nf-nb{display:none}html.nf-is-nb .nf-nb{display:revert}html.nf-is-nb .nf-en{display:none}</style>
+<script>
+  /* one language only: Norwegian for /no/ addresses, the language you picked on the site, or a Norwegian browser */
+  (function () {
+    var want = null; try { want = localStorage.getItem('jpl-lang'); } catch (e) {}
+    var nb = /^\/no(\/|$)/.test(location.pathname) || want === 'nb' || (!want && /^(nb|nn|no)\b/i.test(navigator.language || ''));
+    if (nb) { document.documentElement.classList.add('nf-is-nb'); document.documentElement.lang = 'nb'; document.title = document.title.replace('{{ en.nf_title }}', '{{ nb.nf_title }}'); }
+  })();
+</script>
 <section class="page-hero page-hero--short dark-background">
   {% include hero-img.html %}
   <div class="container">
-    <h1>404 · {{ en.nf_title }}</h1>
-    <p class="intro">{{ en.nf_text }}<br><span lang="nb">{{ nb.nf_title }}. {{ nb.nf_text }}</span></p>
+    <h1>404 · <span class="nf-en">{{ en.nf_title }}</span><span class="nf-nb" lang="nb">{{ nb.nf_title }}</span></h1>
+    <p class="intro"><span class="nf-en">{{ en.nf_text }}</span><span class="nf-nb" lang="nb">{{ nb.nf_text }}</span></p>
   </div>
 </section>
 <section class="section">
-  <div class="container nf-links">
+  <div class="container nf-links nf-en">
     <a class="cta-btn" href="/"><i class="bi bi-house"></i> {{ en.nf_home }}</a>
     <a class="cta-btn ghost" href="/articles/"><i class="bi bi-journal-text"></i> {{ en.nf_articles }}</a>
-    <a class="cta-btn ghost" href="/no/" lang="nb"><i class="bi bi-house"></i> {{ nb.nf_home }}</a>
+  </div>
+  <div class="container nf-links nf-nb" lang="nb">
+    <a class="cta-btn" href="/no/"><i class="bi bi-house"></i> {{ nb.nf_home }}</a>
+    <a class="cta-btn ghost" href="/no/articles/"><i class="bi bi-journal-text"></i> {{ nb.nf_articles }}</a>
   </div>
 </section>
