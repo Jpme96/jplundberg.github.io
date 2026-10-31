@@ -59,6 +59,13 @@
     var points = (data.points || []).filter(function (p) { return p && (p.label || p.start); });
 
     var body = fig.querySelector('.chart-body');
+    if (!body) {   /* a chart pasted into an article as a bare <figure>: add its heading and drawing area */
+      if (data.title && !fig.querySelector('figcaption')) {
+        var cap = el('figcaption', {}, fig); el('h4', {}, cap).textContent = data.title;
+        if (data.description) el('p', {}, cap).textContent = data.description;
+      }
+      body = el('div', { 'class': 'chart-body' }, fig);
+    }
     body.innerHTML = '';
 
     // Shared tooltip
