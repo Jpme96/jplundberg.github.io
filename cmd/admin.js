@@ -20,7 +20,7 @@
   function ago(ts) {
     if (!ts) return L('never', 'aldri');
     var s = (Date.now() - ts) / 1000;
-    return s < 90 ? L('just now', 'nå nettopp') : s < 3600 ? Math.round(s / 60) + L(' min ago', ' min siden') : s < 86400 ? Math.round(s / 3600) + L(' h ago', ' t siden') : Math.round(s / 86400) + L(' days ago', ' dager siden');
+    return s < 90 ? L('just now', 'nå nettopp') : s < 3600 ? Math.round(s / 60) + L(' min ago', ' min siden') : s < 86400 ? Math.round(s / 3600) + L(' h ago', ' t siden') : Math.round(s / 86400) === 1 ? L('yesterday', 'i går') : Math.round(s / 86400) + L(' days ago', ' dager siden');
   }
   function toast(h) { if (window.Quick && window.Quick.toast) window.Quick.toast(h); }
 
@@ -185,7 +185,7 @@
     if (P.health) {
       var last = h.slice(-40), sp = S.speed;
       html += card('uptime', 'activity', L('Uptime & speed', 'Oppetid og fart'), '', '<div class="ad-kpis"><div><b>' + (up == null ? '–' : String(up).replace('.', NB ? ',' : '.') + ' %') + '</b><small>' + L('up · 30 days', 'oppe · 30 dager') + '</small></div><div><b>' + (sp && sp.ms != null ? sp.ms + ' ms' : '–') + '</b><small>' + L('front page', 'forsiden') + '</small></div><div><b>' + (S.ping && S.ping.ms != null ? S.ping.ms + ' ms' : '–') + '</b><small>' + L('server', 'server') + '</small></div></div>' +
-        spark(last.map(function (x) { return x.web; })) + '<p class="ad-sub">' + d30.length + L(' checks from this device (every time Admin is open and refreshing)', ' sjekker fra denne enheten (hver gang Admin er åpen og oppdaterer)') + '</p>');
+        spark(last.map(function (x) { return x.web; })) + '<p class="ad-sub">' + d30.length + (d30.length === 1 ? L(' check', ' sjekk') : L(' checks', ' sjekker')) + L(' from this device (every time Admin is open and refreshing)', ' sjekker fra denne enheten (hver gang Admin er åpen og oppdaterer)') + '</p>');
       var lk = S.links || rj('dash.adminLinks', null);
       html += card('links', 'link-45deg', L('Broken links', 'Brutte lenker'), '<button type="button" class="icon-btn sm" data-adlinks aria-label="' + L('Check all pages', 'Sjekk alle sider') + '"' + (S.busy.links ? ' disabled' : '') + '><i class="bi bi-arrow-clockwise' + (S.busy.links ? ' ad-spin' : '') + '"></i></button>',
         !lk ? '<p class="muted">' + L('Checks every page in the sitemap for errors.', 'Sjekker alle sider i sitemapet for feil.') + '</p><button type="button" class="text-btn" data-adlinks><i class="bi bi-play"></i> ' + L('Run the check', 'Kjør sjekken') + '</button>'
