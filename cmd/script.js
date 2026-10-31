@@ -628,8 +628,16 @@
         '<button type="button" class="pin" aria-label="' + (n.pin ? 'Unpin note' : 'Pin note to the top') + '" title="' + (n.pin ? 'Unpin' : 'Pin to the top') + '"><i class="bi bi-pin' + (n.pin ? '-fill' : '') + '"></i></button>' +
         '<button type="button" class="del" aria-label="Delete note"><i class="bi bi-x"></i></button></li>';
     }).join('');
+    /* long lists fold: pinned notes plus the newest few, then "Show all" */
+    var cap = Math.max(4, order.filter(function (n) { return n.pin; }).length), lis = $('noteList').children;
+    for (var i = 0; i < lis.length; i++) lis[i].hidden = !notesAll && i >= cap && !lis[i].classList.contains('editing');
+    var more = document.getElementById('noteMore');
+    if (!more) { more = document.createElement('button'); more.type = 'button'; more.id = 'noteMore'; more.className = 'text-btn note-more'; $('noteList').parentNode.insertBefore(more, $('noteList').nextSibling); more.addEventListener('click', function () { notesAll = !notesAll; renderNotes(); }); }
+    more.hidden = order.length <= cap;
+    more.innerHTML = notesAll ? '<i class="bi bi-chevron-up"></i> Show fewer' : '<i class="bi bi-chevron-down"></i> Show all ' + order.length + ' notes';
     $('noteEmpty').hidden = notes.length > 0;
   }
+  var notesAll = false;
   function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
   $('noteInput').addEventListener('input', function () { grow(this); });
   $('noteInput').addEventListener('keydown', function (e) {

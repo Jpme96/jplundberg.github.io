@@ -216,10 +216,13 @@
         out.push({ id: 'rem:bin:' + b.id, title: 'Bin day: ' + (b.title || 'bin'), allDay: true, start: fromKey(b.first), days: 1, color: '#7a8794', readOnly: true, reminder: true, noBrief: true,
           link: '/cmd/house/', location: '', notes: '', exDays: {}, rule: { freq: 'WEEKLY', interval: +b.every || 1 } });
       });
-      list('hmaint').forEach(function (m) {
-        var k = HL.nextDue(m); if (!k || k < dkey(new Date())) return;
-        out.push({ id: 'rem:hm:' + m.id, title: '🔧 ' + (m.title || 'Upkeep'), allDay: true, start: fromKey(k), days: 1, color: REMIND_COLOR, readOnly: true, reminder: true, noBrief: true,
-          link: '/cmd/house/', location: '', notes: m.notes || '', exDays: {} });
+      /* upkeep: one entry per day – several jobs due the same day become "🔧 Upkeep · 4 jobs" instead of a long column */
+      var hmDay = {};
+      list('hmaint').forEach(function (m) { var k = HL.nextDue(m); if (!k || k < dkey(new Date())) return; (hmDay[k] = hmDay[k] || []).push(m); });
+      Object.keys(hmDay).forEach(function (k) {
+        var ms = hmDay[k], one = ms.length === 1;
+        out.push({ id: 'rem:hm:' + (one ? ms[0].id : 'day:' + k), title: one ? '🔧 ' + (ms[0].title || 'Upkeep') : '🔧 Upkeep · ' + ms.length + ' jobs', allDay: true, start: fromKey(k), days: 1, color: REMIND_COLOR, readOnly: true, reminder: true, noBrief: true,
+          link: '/cmd/house/#hmaint', location: '', notes: one ? (ms[0].notes || '') : ms.map(function (m) { return '• ' + (m.title || 'Upkeep'); }).join('\n'), exDays: {} });
       });
     }
     /* when to leave for events with a place (worked out by flow.js) */

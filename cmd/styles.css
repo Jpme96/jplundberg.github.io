@@ -3405,3 +3405,18 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 .pn-chip.pn-flash { animation: pnflash 1.2s ease; }
 @keyframes pnflash { 0%, 60% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: none; } }
 .pn-tip { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Shopping list: compact rows, actions behind ⋯, ticked items folded (home-life.js) */
+.hl-shop label { padding: 7px 0; }
+.hl-shop .sh-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+.hl-shop .sh-more { color: var(--muted); background: transparent; }
+.hl-shop li.more { background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 10px; padding: 0 4px; margin: 0 -4px; }
+.hl-shop li.sh-donehead { border-bottom: 0; padding: 8px 0 2px; }
+.hl-shop li.sh-donehead .text-btn { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+/* notes: long notes clamp to five lines until you open them; the list folds after the newest four */
+#noteList .note:not(.editing) .body { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+#noteList .note[hidden] { display: none; }
+.note-more { margin: 6px 0 0; font-size: 13px; }
+.hl-shop label { padding: 5px 0; }
+.hl-shop .sh-more { width: 30px; height: 30px; min-width: 30px; border: 0; background: none !important; box-shadow: none; }
+.hl-shop li.sh-grp { padding-top: 10px; }

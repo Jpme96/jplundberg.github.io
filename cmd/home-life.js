@@ -573,12 +573,17 @@
     var el = $t('shop'); if (!el) return;
     function list() { var l = Fe.tools().shop; return Array.isArray(l) ? l : []; }
     function save(fn, t) { t = t || Fe.tools(); t.shop = Array.isArray(t.shop) ? t.shop : []; fn(t.shop); Fe.saveTools(t); }
+    var shMore = null, shDoneOpen = false;
     function row(x) {
       var a = AISLE[aisleOf(x.text)];
-      return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-shx="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' +
-        (x.done ? '' : '<button type="button" class="icon-btn sm sh-aisle" data-shaisle="' + esc(x.id) + '" aria-label="Section: ' + esc(a.n) + '" style="--c:' + a.c + '"><i class="bi bi-' + a.ic + '"></i></button>') +
-        (window.FoodPlus ? window.FoodPlus.shopBtn(x) : '') +
-        '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-x"></i></button></li>';
+      /* compact: tick + name; section, pantry and remove sit behind one ⋯ (ticked items just get ×) */
+      var more = !x.done && shMore === x.id;
+      return '<li class="' + (x.done ? 'done' : '') + (more ? ' more' : '') + '"><label><input type="checkbox" data-shx="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' +
+        (x.done ? '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-x"></i></button>'
+          : '<span class="sh-acts">' + (more ? '<button type="button" class="icon-btn sm sh-aisle" data-shaisle="' + esc(x.id) + '" aria-label="Section: ' + esc(a.n) + '" title="Move to another section" style="--c:' + a.c + '"><i class="bi bi-' + a.ic + '"></i></button>' +
+            (window.FoodPlus ? window.FoodPlus.shopBtn(x) : '') +
+            '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-trash3"></i></button>' : '') +
+            '<button type="button" class="icon-btn sm sh-more" data-shmore="' + esc(x.id) + '" aria-expanded="' + more + '" aria-label="More for ' + esc(x.text) + '"><i class="bi bi-' + (more ? 'x-lg' : 'three-dots') + '"></i></button></span>') + '</li>';
     }
     function draw() {
       var ok = on('food'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
@@ -587,17 +592,19 @@
         var by = {}; open.forEach(function (x) { var a = aisleOf(x.text); (by[a] = by[a] || []).push(x); });
         body = Object.keys(by).sort(function (a, b) { return aisleRank(a) - aisleRank(b); }).map(function (a) {
           return '<li class="sh-grp" style="--c:' + AISLE[a].c + '"><i class="bi bi-' + AISLE[a].ic + '"></i> ' + esc(AISLE[a].n) + '</li>' + by[a].map(row).join('');
-        }).join('') + done.map(row).join('');
+        }).join('');
       } else {
         if (mode === 'abc') open.sort(function (a, b) { return a.text.localeCompare(b.text, 'nb'); });
-        body = open.concat(done).map(row).join('');
+        body = open.map(row).join('');
       }
+      /* ticked items fold into one line at the bottom */
+      if (done.length) body += '<li class="sh-donehead"><button type="button" class="text-btn" data-shdonetog aria-expanded="' + shDoneOpen + '"><i class="bi bi-chevron-' + (shDoneOpen ? 'down' : 'right') + '"></i> In the cart · ' + done.length + '</button></li>' + (shDoneOpen ? done.map(row).join('') : '');
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
         '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
         (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> Clear done</button>' : '') + '</div></div>' +
         '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
-        (l.length ? '<ul class="hl-shop">' + body + '</ul>' + (mode === 'aisle' && open.length ? '<p class="muted hl-small">Sorted by section, in the order you tick things off in the shop. Tap a section icon to move an item.</p>' : '')
+        (l.length ? '<ul class="hl-shop">' + body + '</ul>'
           : '<p class="empty kit-empty">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
       var inp = el.querySelector('.hl-shopadd input'); inp.value = typed; if (focus) inp.focus();
     }
@@ -617,6 +624,8 @@
     });
     el.addEventListener('click', function (e) {
       var b;
+      if ((b = e.target.closest('[data-shmore]'))) { shMore = shMore === b.dataset.shmore ? null : b.dataset.shmore; draw(); return; }
+      if ((b = e.target.closest('[data-shdonetog]'))) { shDoneOpen = !shDoneOpen; draw(); return; }
       if ((b = e.target.closest('[data-shaisle]'))) {
         var it = list().filter(function (x) { return x.id === b.dataset.shaisle; })[0]; if (!it) return;
         picker('signpost', it.text, 'Which section is it in?', AISLES.map(function (a) { return { n: a[1], i: a[2], c: a[3], k: a[0] }; }), function (o) {
