@@ -220,6 +220,7 @@
     var ok = hero && on('avatar') && root.classList.contains('unlocked');
     if (!ok) { if (box) box.remove(); if (hero) hero.classList.remove('has-av'); return; }
     var l = current(), withM = l.filter(function (x) { return x.m; });
+    if (react && Date.now() < react.until) { l = [{ m: react.m, say: react.say }].concat(l); idx = 0; withM = l; }
     if (!withM.length) return;
     var main = withM[0], pick = l[idx % l.length] || main, m = pick.m || main.m, hr = new Date().getHours();
     if ((hr >= 19 || hr < 6) && m.sky === 'sun') m = Object.assign({}, m, { sky: 'moon', bg: '#121426' });       /* the sky follows the clock */
@@ -229,6 +230,32 @@
     if (box.innerHTML !== html) box.innerHTML = html;
     badge(main.m);
   }
+  /* ---------- he reacts to what you do: a task done, a habit ticked, a workout or an expense logged ---------- */
+  var react = null, seen = null;
+  function counts() {
+    var td = today(), T = Fe ? Fe.tools() : {}, d = window.Vault && window.Vault.get ? window.Vault.get() || {} : {};
+    var todos = readJSON('dash.todos', []) || [], hb = readJSON('dash.habits', { log: {} }) || {};
+    return { done: todos.filter(function (t) { return t.done; }).length, top: todos.filter(function (t) { return t.today === td; }).every(function (t) { return t.done; }) && todos.some(function (t) { return t.today === td; }),
+      ticks: ((hb.log || {})[td] || []).length, train: (T.training || []).length + (T.gym || []).length, exp: (d.expenses || []).length };
+  }
+  function reactTo(kind) {
+    var M = { top: [MOMENTS.win, L('All of today’s top 3 – you did it!', 'Hele dagens topp 3 – du klarte det!')], task: [MOMENTS.win, L('Nice, one less thing!', 'Fint, én ting mindre!')],
+      habit: [MOMENTS.day, L('Habit ticked – keep the streak going.', 'Vane krysset av – hold rekka gående.')], train: [MOMENTS.gym, L('Workout logged 💪', 'Økt logget 💪')], exp: [MOMENTS.day, L('Logged. Your budget is up to date.', 'Logget. Budsjettet er oppdatert.')] }[kind];
+    if (!M) return;
+    react = { m: M[0], say: M[1], until: Date.now() + 4500 };
+    drawHome(); var f = document.querySelector('#avHome .av-fig'); if (f) { f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
+    clearTimeout(reactTo.t); reactTo.t = setTimeout(function () { react = null; drawHome(); }, 4600);
+  }
+  function watch() {
+    if (!root.classList.contains('unlocked')) return;
+    var c = counts(); if (!seen) { seen = c; return; }
+    var k = c.top && !seen.top ? 'top' : c.train > seen.train ? 'train' : c.done > seen.done ? 'task' : c.ticks > seen.ticks ? 'habit' : c.exp > seen.exp ? 'exp' : null;
+    seen = c; if (k && document.getElementById('avHome')) reactTo(k);
+  }
+  ['todos:change', 'habits:change', 'tools:change', 'fin:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(watch, 120); }); });
+  window.Vault.onUnlock(function () { seen = null; setTimeout(watch, 600); });
+  window.Vault.onLock && window.Vault.onLock(function () { seen = null; react = null; });
+
   /* ---------- the badge on your photo in the top bar ---------- */
   function badge(m) {
     if (!m) { var l = current().filter(function (x) { return x.m; }); m = l[0] && l[0].m; }

@@ -31,7 +31,7 @@
     "backup-mail.js",
     "delight.js",
     "scenes.js",
-    "avatar.js",
+    "avatar.js", "alive.js",
     "modern.js",
     "steady.js"
   ],
