@@ -556,7 +556,6 @@ async function textsApi(request, env) {
   return json({ error: 'method not allowed' }, 405);
 }
 
-/* ---------- phone calendar (read only) ---------- */
 /* ---------- recipe import: read schema.org Recipe data from a page you link to ---------- */
 const RECIPE_MAX = 3 * 1024 * 1024;
 /* only public addresses – never this worker's own network, localhost or private ranges */
@@ -702,6 +701,7 @@ async function weeklyBackup(env) {
   await sendBackup(env, 'weekly');
 }
 
+/* ---------- phone calendar (read only) ---------- */
 /* Only calendar services are fetched, so this can't be used to reach anything else. */
 const CAL_HOSTS = /^(p\d+-caldav\.icloud\.com|calendar\.google\.com|outlook\.office365\.com|outlook\.office\.com|outlook\.live\.com)$/i;
 const CAL_MAX = 4 * 1024 * 1024;
