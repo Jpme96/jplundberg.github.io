@@ -1,3 +1,32 @@
+/* "Review" before publishing: every changed field, before → after, so a typo never goes live unseen */
+(function () {
+  var NB = window.I18N && window.I18N.lang === 'nb';
+  function L(en, nb) { return NB ? nb : en; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function flat(o, p, out) {
+    out = out || {};
+    if (o && typeof o === 'object') { Object.keys(o).forEach(function (k) { var v = o[k], lab = Array.isArray(o) && v && typeof v === 'object' ? (v.title || v.name || v.label || v.id || (+k + 1)) : k; flat(v, p ? p + ' › ' + lab : String(lab), out); }); if (!Object.keys(o).length && p) out[p] = ''; }
+    else out[p] = o == null ? '' : o === true ? L('On', 'På') : o === false ? L('Off', 'Av') : String(o);
+    return out;
+  }
+  function nice(path) { return path.replace(/\ben\b/g, 'English').replace(/\bnb\b/g, 'Norsk').replace(/_/g, ' ').replace(/ › (\d+)/g, function (m, n) { return ' #' + (+n + 1); }); }
+  function show(title, before, after) {
+    var a = flat(before || {}), b = flat(after || {}), keys = {}, rows = [];
+    Object.keys(a).concat(Object.keys(b)).forEach(function (k) { keys[k] = 1; });
+    Object.keys(keys).sort().forEach(function (k) { if (k === 'updated') return; var x = a[k] == null ? '' : a[k], y = b[k] == null ? '' : b[k]; if (x !== y) rows.push([k, x, y]); });
+    var box = document.getElementById('siteReview');
+    if (!box) { box = document.createElement('div'); box.id = 'siteReview'; box.className = 'spv-sheet'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); document.body.appendChild(box);
+      box.addEventListener('click', function (e) { if (e.target === box || e.target.closest('[data-srclose]')) box.hidden = true; }); }
+    box.innerHTML = '<div class="spv-card"><div class="spv-head"><b>' + esc(title) + '</b><button type="button" class="icon-btn sm" data-srclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button></div>' +
+      (rows.length ? '<p class="muted spv-sub">' + rows.length + L(' change' + (rows.length === 1 ? '' : 's') + ' – read them once before you publish', (rows.length === 1 ? ' endring' : ' endringer') + ' – les gjennom før du publiserer') + '</p><div class="spv-list">' + rows.slice(0, 80).map(function (r) {
+        return '<div class="spv-row"><span class="spv-k">' + esc(nice(r[0])) + '</span>' + (r[1] ? '<del>' + esc(r[1]) + '</del>' : '<i class="muted">' + L('(empty)', '(tom)') + '</i>') + '<ins>' + (r[2] ? esc(r[2]) : '<i>' + L('(removed – the original is used)', '(fjernet – originalen brukes)') + '</i>') + '</ins></div>';
+      }).join('') + '</div>' : '<p class="muted">' + L('Nothing changed.', 'Ingenting er endret.') + '</p>') +
+      '<div class="spv-foot"><a class="text-btn" href="/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> ' + L('Open the live site', 'Åpne nettstedet') + '</a><button type="button" class="pill-btn" data-srclose>' + L('Done', 'Ferdig') + '</button></div></div>';
+    box.hidden = false;
+  }
+  window.SiteReview = { show: show };
+})();
+
 /* Settings → jplundberg.com: announcement, front page sections, featured content, visitors.
    Changes are saved by the dashboard's Cloudflare Worker to _data/site.json in GitHub,
    and GitHub Pages publishes them in about a minute. */
@@ -342,6 +371,7 @@
     var others = Object.keys(PART).filter(function (k) { return k !== current && partDirty(PART[k][0]); }).map(function (k) { return PART[k][1].toLowerCase(); });
     $('wsPublish').innerHTML = '<i class="bi bi-cloud-upload"></i> Publish ' + P[1].toLowerCase();
     $('wsPublish').disabled = !mine || publishing;
+    if ($('wsReview')) $('wsReview').hidden = !dirty() || publishing;
     $('wsUndo').hidden = !mine || publishing;
     if (!publishing && saved) status(mine ? 'Not published yet' + (others.length ? ' · also includes your ' + others.join(' and ') + ' changes' : '')
       : others.length ? 'Unpublished changes in ' + others.join(' and ')
@@ -361,6 +391,7 @@
     draft.socials = window.Profile.publicSocials();
     changed();
   });
+  if ($('wsReview')) $('wsReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show('Changes to jplundberg.com', saved, draft); });
   $('wsPublish').addEventListener('click', function () {
     if (!dirty()) return;
     publishing = true; bar();

@@ -40,3 +40,35 @@ sitemap: false
     <a class="cta-btn ghost" href="/no/articles/"><i class="bi bi-journal-text"></i> {{ nb.nf_articles }}</a>
   </div>
 </section>
+{%- assign he = site.data.home.en -%}{%- assign hn = site.data.home.nb -%}
+<script>
+  /* Norwegian 404: the menu and footer follow too (texts and links swapped once the page has loaded) */
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!document.documentElement.classList.contains('nf-is-nb')) return;
+    var pairs = [
+      [{{ he.nav_home | jsonify }}, {{ hn.nav_home | jsonify }}], [{{ he.nav_about | jsonify }}, {{ hn.nav_about | jsonify }}],
+      [{{ he.nav_experience | jsonify }}, {{ hn.nav_experience | jsonify }}], [{{ he.nav_projects | jsonify }}, {{ hn.nav_projects | jsonify }}],
+      [{{ he.nav_articles | jsonify }}, {{ hn.nav_articles | jsonify }}], [{{ he.nav_contact | jsonify }}, {{ hn.nav_contact | jsonify }}],
+      [{{ en.footer_explore | jsonify }}, {{ nb.footer_explore | jsonify }}], [{{ en.footer_contact | jsonify }}, {{ nb.footer_contact | jsonify }}],
+      [{{ en.footer_follow | jsonify }}, {{ nb.footer_follow | jsonify }}], [{{ en.footer_rss | jsonify }}, {{ nb.footer_rss | jsonify }}],
+      [{{ en.footer_privacy | jsonify }}, {{ nb.footer_privacy | jsonify }}], [{{ he.rights | jsonify }}, {{ hn.rights | jsonify }}],
+      [{% capture tle %}{% include txt.html k='footer_tagline' l='en' %}{% endcapture %}{{ tle | strip | jsonify }}, {% capture tln %}{% include txt.html k='footer_tagline' l='nb' %}{% endcapture %}{{ tln | strip | jsonify }}],
+      ['Norsk', 'English']
+    ];
+    var map = {}; pairs.forEach(function (p) { if (p[0] && p[1]) map[String(p[0]).trim()] = p[1]; });
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), n, todo = [];
+    while ((n = walk.nextNode())) { if (n.parentNode.closest('.nf-en, .nf-nb, script, style')) continue; var t = n.nodeValue.trim(); if (!t) continue;
+      if (map[t]) todo.push([n, n.nodeValue.replace(t, map[t])]);
+      else Object.keys(map).forEach(function (k) { if (k.length > 12 && n.nodeValue.indexOf(k) >= 0) todo.push([n, n.nodeValue.replace(k, map[k])]); }); }
+    todo.forEach(function (x) { x[0].nodeValue = x[1]; });
+    var U = [[{{ he.articles_url | jsonify }}, {{ hn.articles_url | jsonify }}], [{{ he.projects_url | jsonify }}, {{ hn.projects_url | jsonify }}], ['/feed.xml', '/no/feed.xml']];
+    document.querySelectorAll('#header a[href], #footer a[href]').forEach(function (a) {
+      if (a.closest('.lang-switch, .lang-switch-mobile')) return;
+      var h = a.getAttribute('href'), done = false;
+      U.forEach(function (u) { if (!done && h === u[0]) { a.setAttribute('href', u[1]); done = true; } });
+      if (!done && /^\/(#|$)/.test(h)) a.setAttribute('href', '/no/' + h.slice(1));
+      else if (!done && h === '/no/' && a.getAttribute('hreflang') === 'nb') { a.setAttribute('href', '/'); a.setAttribute('hreflang', 'en'); }
+    });
+    document.querySelectorAll('.lang-switch, .lang-switch-mobile').forEach(function (sw) { sw.classList.add('is-nb'); sw.querySelectorAll('a').forEach(function (a) { var nbA = a.getAttribute('hreflang') === 'nb'; a.classList.toggle('active', nbA); if (nbA) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); });
+  });
+</script>

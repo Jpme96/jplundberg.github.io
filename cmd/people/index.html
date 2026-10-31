@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=126" rel="stylesheet">
+  <link href="../styles.css?v=127" rel="stylesheet">
   <link href="../modern.css?v=7" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
@@ -198,6 +198,7 @@
         <p class="st-minor">About you</p>
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="socials"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-share"></i></span><span class="st-label">Socials<small>Links in the header and footer</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="cv" data-scroll="cvJobs"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-briefcase"></i></span><span class="st-label">Experience<small>Jobs on the front page and the CV</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="cv"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-file-earmark-person"></i></span><span class="st-label">CV<small id="sumCv">–</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="courses"><span class="st-ico" style="--c:#c98500"><i class="bi bi-mortarboard"></i></span><span class="st-label">Courses &amp; certificates<small id="sumCourses">–</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
@@ -437,8 +438,8 @@
         <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span><i class="bi bi-upload"></i> Restore from a backup</span><small>Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
         <input type="file" id="stRestoreFile" accept=".json,application/json" hidden>
       </section>
-      <p class="st-sub ap-sub"><i class="bi bi-envelope-paper"></i> Weekly backup by email <span class="st-hint">Encrypted, to your inbox</span></p>
-      <section class="st-group" id="stMailBk"><div class="st-row"><span class="muted">Looking …</span></div></section>
+      <p class="st-sub ap-sub" data-owner><i class="bi bi-envelope-paper"></i> Weekly backup by email <span class="st-hint">Encrypted, to your inbox</span></p>
+      <section class="st-group" id="stMailBk" data-owner><div class="st-row"><span class="muted">Looking …</span></div></section>
       <p class="st-sub ap-sub"><i class="bi bi-box-seam"></i> What’s saved <span class="st-hint">Counted on this device, from your encrypted data</span></p>
       <section class="st-group"><ul class="st-inv" id="stInventory"></ul></section>
       <p class="st-sub ap-sub"><i class="bi bi-clock-history"></i> Earlier versions <span class="st-hint">Kept on your server, one a day for 30 days</span></p>
@@ -632,6 +633,7 @@
         <div class="ws-bar tx-bar" id="txBar">
           <span class="ws-status" id="txStatus"></span>
           <button type="button" class="text-btn" id="txUndo" hidden>Undo</button>
+          <button type="button" class="text-btn" id="txReview" hidden><i class="bi bi-eye"></i> Review</button>
           <button type="button" class="pill-btn" id="txPublish" disabled><i class="bi bi-cloud-upload"></i> Publish texts</button>
         </div>
       </div>
@@ -657,6 +659,7 @@
       <div class="ws-bar" id="wsBar" hidden>
         <span class="ws-status" id="wsStatus"></span>
         <button type="button" class="text-btn" id="wsUndo" hidden>Undo</button>
+        <button type="button" class="text-btn" id="wsReview" hidden><i class="bi bi-eye"></i> Review</button>
         <button type="button" class="pill-btn" id="wsPublish" disabled><i class="bi bi-cloud-upload"></i> Publish</button>
       </div>
       <p class="st-msg" id="stMsg" role="status" aria-live="polite"></p>
@@ -665,9 +668,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=b42ad7e795"></script>
-  <script src="../dist/page-people.js?v=b3b565d7a5"></script>
-  <script src="../dist/tail.js?v=8277d1059c"></script>
+  <script src="../dist/head.js?v=3e02093a8c"></script>
+  <script src="../dist/page-people.js?v=2813171783"></script>
+  <script src="../dist/tail.js?v=7fbc7781c9"></script>
   <!-- /scripts -->
 </body>
 </html>

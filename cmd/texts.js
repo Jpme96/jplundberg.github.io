@@ -120,6 +120,7 @@
   function bar() {
     $('txPublish').disabled = !dirty() || busy;
     $('txUndo').hidden = !dirty() || busy;
+    if ($('txReview')) $('txReview').hidden = !dirty() || busy;
     if (!busy && saved) {
       var own = Object.keys(saved.en).length + Object.keys(saved.nb).length;
       status(dirty() ? 'Not published yet' : own ? 'Live · ' + own + ' text' + (own > 1 ? 's' : '') + ' changed' : 'Live · original texts');
@@ -127,6 +128,7 @@
     var n = draft ? Object.keys(draft.en).length + Object.keys(draft.nb).length : 0;
     if ($('sumTexts')) $('sumTexts').textContent = n ? n + ' text' + (n > 1 ? 's' : '') + ' changed' : 'About, roles, contact, footer';
   }
+  if ($('txReview')) $('txReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show('Changes to the website texts', saved, draft); });
   $('txUndo').addEventListener('click', function () { draft = clone(saved); draw(); bar(); });
   $('txPublish').addEventListener('click', function () {
     if (!dirty() || busy) return;

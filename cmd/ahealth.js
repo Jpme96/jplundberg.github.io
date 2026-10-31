@@ -248,7 +248,7 @@
     var host = document.querySelector('.kit-grid'), box = $('ahCard');
     var onP = Fe ? Fe.on('ahealth') : true;
     if (!host || !/\/habits\//.test(location.pathname)) return;
-    if (!box) { box = document.createElement('section'); box.className = 'card ah-card kit-wide'; box.id = 'ahCard'; host.insertBefore(box, host.firstChild); }
+    if (!box) { box = document.createElement('section'); box.className = 'card ah-card kit-wide'; box.id = 'ahCard'; box.setAttribute('data-owner', ''); host.insertBefore(box, host.firstChild); }
     box.hidden = !onP; if (!onP) return;
     var D = days(), keys = Object.keys(D).sort(), today = dkey(new Date()), G = goals();
     var head = '<div class="card-head"><h2><i class="bi bi-apple"></i> Apple Health</h2><span class="ah-head-btns">' + (keys.length ? '<button type="button" class="text-btn" data-ahlayout aria-pressed="' + editLayout + '"><i class="bi bi-grid-1x2"></i> ' + (editLayout ? 'Done' : 'Customize') + '</button>' : '') + '<a class="text-btn" href="../?settings=ahealth">' + (keys.length ? 'Settings' : 'Set up') + '</a></span></div>';

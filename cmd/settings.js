@@ -258,7 +258,12 @@
     var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
     $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');
     var m = +s.lockMins;
-    $('sumSecurity').textContent = 'Locks after ' + (m >= 1440 ? '1 day' : m >= 60 ? (m / 60) + ' hour' + (m > 60 ? 's' : '') : m + ' min');
+    var lockTxt = 'Locks after ' + (m >= 1440 ? '1 day' : m >= 60 ? (m / 60) + ' hour' + (m > 60 ? 's' : '') : m + ' min');
+    var secBits = [];
+    try { if (localStorage.getItem('dash.pk')) secBits.push('Face ID on'); } catch (e) {}
+    var recSt = document.getElementById('stRecState'); if (recSt && !/^Not set up/.test(recSt.textContent)) secBits.push('recovery code set');
+    if (window.I18N && window.I18N.lang === 'nb') { lockTxt = 'Låses etter ' + (m >= 1440 ? '1 dag' : m >= 60 ? (m / 60) + ' time' + (m > 60 ? 'r' : '') : m + ' min'); secBits = secBits.map(function (b) { return b === 'Face ID on' ? 'Face ID på' : 'gjenopprettingskode satt'; }); }
+    $('sumSecurity').textContent = lockTxt + (secBits.length ? ' · ' + secBits.join(' · ') : '');
     var st = sync ? sync.className : '';
     $('sumData').textContent = /sync-ok/.test(st) ? 'Synced' : /sync-busy/.test(st) ? 'Syncing…' : /offline/.test(st) ? 'Offline' : 'This device only';
   }
@@ -399,6 +404,8 @@
   document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
   document.querySelectorAll('[data-textsize]').forEach(function (b) { b.addEventListener('click', function () { set({ textSize: b.dataset.textsize }); }); });
   /* language: the page reloads in the new language (settings are saved and synced first) */
+  /* a menu row can open a page at one section (Experience → the jobs on the CV page) */
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-go][data-scroll]'); if (!b) return; var id = b.dataset.scroll; setTimeout(function () { var el = document.getElementById(id); if (el) { (el.closest('.st-group') || el).scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, 380); });
   /* jplundberg.com settings fold away (closed by default, remembered on this device); search still finds them */
   (function () {
     var w = document.getElementById('stWeb'), b = document.getElementById('stWebBtn'); if (!w || !b) return;

@@ -3361,3 +3361,20 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .st-web.closed .st-webbody { display: none; }
 .st-grpbtn + .st-webbody > .st-minor:first-child { margin-top: 2px; }
 html[data-role="guest"] [data-owner] { display: none !important; }
+
+/* Review website changes before publishing (website.js SiteReview) */
+.spv-sheet { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; padding: 16px; }
+.spv-sheet[hidden] { display: none; }
+@media (min-width: 700px) { .spv-sheet { align-items: center; } }
+.spv-card { width: min(640px, 100%); max-height: 86vh; overflow: auto; background: var(--surface, #16181d); color: var(--text, #eee); border-radius: 18px; padding: 16px 18px; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.spv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.spv-sub { position: static; margin: 6px 0 12px; font-size: .88em; }
+.spv-row { display: grid; gap: 3px; padding: 10px 0; border-top: 1px solid var(--line, rgba(255,255,255,.08)); overflow-wrap: anywhere; }
+.spv-k { display: block; background: none; border: 0; padding: 0; text-align: left; font-size: .78em; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #999); }
+.spv-row del { color: #e66767; text-decoration: line-through; opacity: .85; }
+.spv-row ins { color: #22b35e; text-decoration: none; }
+.spv-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+/* weather card without a forecast: hide the big dash and the icon, keep one line */
+#weatherCard.w-off .w-temp, #weatherCard.w-off #wIcon, #weatherCard.w-off #wDays { display: none; }
+#weatherCard.w-off #wDesc { padding: 4px 0; }

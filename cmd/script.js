@@ -162,11 +162,16 @@
         if (!d || !d.current) throw new Error('no data');
         var t = Date.now();
         save('dash.weather', { data: d, time: t, city: want, name: c.name });
+        var wc0 = document.getElementById('weatherCard'); if (wc0) wc0.classList.remove('w-off');
         showWeather(d, t);
         setCity(c.name);
       });
     }).catch(function () {
-      if (!cached) $('wDesc').textContent = 'Weather is unavailable right now.';
+      if (cached) return;
+      /* no forecast: one calm line with a retry, instead of a big dash */
+      var wc = document.getElementById('weatherCard'); if (wc) wc.classList.add('w-off');
+      $('wDesc').innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry">Try again</button>';
+      var rb = document.getElementById('wRetry'); if (rb) rb.addEventListener('click', function () { $('wDesc').textContent = 'Loading weather…'; loadWeather(); });
     });
   }
   function setCity(n) { var h = document.querySelector('#weatherCard .card-head h2'); if (h) h.innerHTML = '<i class="bi bi-cloud-sun"></i> ' + esc(n || 'Oslo'); }
