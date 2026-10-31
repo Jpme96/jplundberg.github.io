@@ -14,6 +14,7 @@ stats:
   - value: "?"
     label: technical systems followed up (fill in)
     icon: gear
+published: false
 ---
 *Draft – written from the facts on the front page. Add the systems you were responsible for and one or two situations you solved, then set `published: true`.*
 
