@@ -3601,3 +3601,25 @@ html.simple #stMenu [data-adv] { display: none; }
 .cr-strip { display: flex; align-items: center; gap: 10px; margin: -6px 0 14px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--card-rgb, 24, 25, 29), .7); color: var(--text); text-decoration: none; font-size: 13.5px; min-width: 0; }
 .cr-strip .cr-dot { position: static; width: 8px; height: 8px; border-radius: 50%; flex: none; background: #d9a400; box-shadow: 0 0 8px #d9a400; } .cr-strip.cr-bad .cr-dot { background: #e66767; box-shadow: 0 0 8px #e66767; }
 .cr-strip span:not(.cr-dot) { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+/* Articles & projects: staged switches + the writer (website.js, writer.js) */
+.ws-write { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+.ws-item.staged { background: color-mix(in srgb, #d9a400 10%, transparent); border-radius: 10px; } .ws-item.staged small { color: #d9a400; }
+.ws-stage { position: sticky; bottom: 80px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, #d9a400 45%, var(--line)); background: rgba(var(--card-rgb, 24, 25, 29), .96); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.ws-stage > span { flex: 1; min-width: 140px; font-size: 13px; color: var(--muted); } .ws-stage b { color: var(--text); }
+.ws-edit { margin-left: 4px; }
+.cr-pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--line); color: var(--muted); vertical-align: middle; } .cr-pill.on { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); } .cr-pill.off { background: color-mix(in srgb, #d9a400 16%, transparent); color: #d9a400; }
+.wr-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; } .wr-kind { flex: 1; font-weight: 600; display: inline-flex; gap: 8px; align-items: center; } .wr-kind .bi { color: var(--accent); }
+.wr-state { font-size: 11.5px; padding: 3px 9px; border-radius: 99px; background: var(--line); color: var(--muted); } .wr-state.on { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); } .wr-state.draft { background: color-mix(in srgb, #d9a400 16%, transparent); color: #d9a400; }
+.wr-hint { font-size: 12.5px; color: var(--muted); margin: 0 0 10px; display: flex; gap: 6px; align-items: center; }
+.wr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.wr-f { display: flex; flex-direction: column; gap: 4px; min-width: 0; } .wr-f.wide { grid-column: 1 / -1; } .wr-f > span:first-child { font-size: 12px; color: var(--muted); }
+.wr-f input, .wr-f textarea, .wr-body, .wr-adv textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.12); color: var(--text); font: inherit; font-size: 14px; padding: 8px 10px; }
+.wr-img { display: flex; gap: 8px; } .wr-img input { flex: 1; }
+.wr-tools { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; padding: 4px; border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; }
+.wr-count { margin-left: auto; font-size: 11.5px; color: var(--muted); padding-right: 6px; }
+.wr-body { border-radius: 0 0 10px 10px; min-height: 320px; line-height: 1.55; resize: vertical; font-size: 15px; }
+.wr-adv { margin-top: 10px; font-size: 13px; } .wr-adv summary { cursor: pointer; color: var(--muted); } .wr-adv textarea { margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.wr-bar { position: sticky; bottom: 80px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--card-rgb, 24, 25, 29), .96); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.wr-msg { flex: 1; min-width: 140px; font-size: 12.5px; color: var(--muted); }
+.wr-warn { padding: 14px; border-radius: 12px; background: color-mix(in srgb, #d9a400 12%, transparent); } .wr-warn p { margin: 6px 0 0; font-size: 13.5px; }
+:root[data-theme="light"] .wr-f input, :root[data-theme="light"] .wr-f textarea, :root[data-theme="light"] .wr-body, :root[data-theme="light"] .wr-adv textarea { background: #fff; }

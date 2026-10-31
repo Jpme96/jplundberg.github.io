@@ -72,7 +72,7 @@ export default {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|calendar|texts|push|health|power|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -87,6 +87,7 @@ async function route(request, env) {
     if (path === '/cmd/api/site') return site(request, env);
     if (path === '/cmd/api/visitors') return visitors(url, env);
     if (path === '/cmd/api/content') return contentApi(request, env);
+    if (path === '/cmd/api/article') return articleApi(request, url, env);
     if (path === '/cmd/api/calendar') return calendarFeed(request);
     if (path === '/cmd/api/texts') return textsApi(request, env);
     if (path === '/cmd/api/push') return pushApi(request, env);
@@ -440,6 +441,52 @@ async function listItems(env) {
     });
   }
   return items;
+}
+
+/* ---------- write articles and projects from the dashboard (Admin → Website) ----------
+   GET  ?path=_articles/x.md          → { path, sha, text }
+   PUT  { collection, file, text, sha? } → create or update one Markdown file in _articles/ or _projects/
+   POST { name, b64 }                 → upload an image to assets/img/uploads/ (jpg/png/webp, max 3 MB) → { url }
+   Only those folders, only .md / images – nothing else in the repository can be touched from here. */
+async function articleApi(request, url, env) {
+  if (!env.GITHUB_TOKEN) return json({ error: 'github not configured' }, 503);
+  const gh = ghHeaders(env);
+  const okPath = p => /^_(articles|projects)\/[a-z0-9][a-z0-9-]{0,90}\.md$/.test(p);
+  try {
+    if (request.method === 'GET') {
+      const p = String(url.searchParams.get('path') || '');
+      if (!okPath(p)) return json({ error: 'bad path' }, 400);
+      const r = await fetch(repoApi(env) + p + '?ref=main', { headers: gh });
+      if (r.status === 404) return json({ error: 'not found' }, 404);
+      if (!r.ok) return json({ error: 'github ' + r.status }, 502);
+      const f = await r.json();
+      return json({ path: p, sha: f.sha, text: fromB64(f.content || '') });
+    }
+    let body; try { body = JSON.parse(await request.text()); } catch (e) { return json({ error: 'bad json' }, 400); }
+    if (request.method === 'PUT') {
+      const dir = COLLECTIONS[String(body.collection || '')], file = String(body.file || ''), text = String(body.text || '');
+      if (!dir || !/^[a-z0-9][a-z0-9-]{0,90}\.md$/.test(file)) return json({ error: 'bad name' }, 400);
+      if (!/^---\n[\s\S]*?\n---/.test(text) || text.length > 200000) return json({ error: 'the file needs front matter and must be under 200 kB' }, 400);
+      const p = dir + '/' + file;
+      let sha = body.sha ? String(body.sha) : null;
+      if (!sha) { const ex = await fetch(repoApi(env) + p + '?ref=main', { headers: gh }); if (ex.ok) return json({ error: 'exists', path: p }, 409); }
+      const title = ((text.match(/\ntitle:\s*"?([^"\n]+)/) || [])[1] || file).slice(0, 80);
+      const r = await fetch(repoApi(env) + p, { method: 'PUT', headers: { ...gh, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: (sha ? 'Update ' : 'New ') + body.collection.slice(0, -1) + ' "' + title + '" (dashboard)', content: toB64(text), branch: 'main', ...(sha ? { sha } : {}) }) });
+      if (!r.ok) return json({ error: 'github ' + r.status }, r.status === 409 || r.status === 422 ? 409 : 502);
+      const j = await r.json();
+      return json({ ok: true, path: p, sha: j.content && j.content.sha });
+    }
+    if (request.method === 'POST') {
+      const m = String(body.name || '').toLowerCase().match(/^([a-z0-9][a-z0-9-]{0,60})\.(jpg|jpeg|png|webp)$/), b64 = String(body.b64 || '').replace(/^data:[^,]+,/, '');
+      if (!m || !b64 || b64.length > 4200000) return json({ error: 'jpg, png or webp under 3 MB' }, 400);
+      const p = 'assets/img/uploads/' + m[1] + '-' + Date.now().toString(36) + '.' + m[2];
+      const r = await fetch(repoApi(env) + p, { method: 'PUT', headers: { ...gh, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Image for an article (dashboard)', content: b64, branch: 'main' }) });
+      if (!r.ok) return json({ error: 'github ' + r.status }, 502);
+      return json({ ok: true, url: '/' + p });
+    }
+    return json({ error: 'method not allowed' }, 405);
+  } catch (e) { return json({ error: String(e.message || e).slice(0, 200) }, 502); }
 }
 
 async function contentApi(request, env) {

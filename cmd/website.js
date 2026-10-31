@@ -513,38 +513,57 @@
     });
     return Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.date.localeCompare(a.date); });
   }
+  /* switches are staged: nothing changes on jplundberg.com until you press "Publish changes" */
+  var stage = {};
   function drawItems() {
-    var html = [['articles', 'Articles', 'journal-text'], ['projects', 'Projects', 'kanban']].map(function (c) {
+    var html = '<div class="ws-write"><button type="button" class="pill-btn" data-wsnew="articles"><i class="bi bi-pencil-square"></i> New article</button><button type="button" class="text-btn" data-wsnew="projects"><i class="bi bi-plus-lg"></i> New project</button></div>' +
+      [['articles', 'Articles', 'journal-text'], ['projects', 'Projects', 'kanban']].map(function (c) {
       var rows = grouped(c[0]);
       if (!rows.length) return '';
       return '<p class="st-sub">' + c[1] + '</p><section class="st-group">' + rows.map(function (g) {
-        var busy = busyRef === c[0] + ':' + g.ref;
+        var key = c[0] + ':' + g.ref, busy = busyRef === key, st = key in stage ? stage[key] : null, on = st == null ? g.published : st;
         var d = g.date ? new Date(g.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-        return '<label class="st-row ws-item' + (g.published ? '' : ' off') + '"><span class="st-label"><span><i class="bi bi-' + c[2] + '"></i> ' + esc(g.title) + '</span>' +
-          '<small>' + (busy ? (g.published ? 'Hiding…' : 'Showing…') : (g.published ? 'Shown' : 'Hidden') + ' · ' + g.langs.sort().join(' + ') + (d ? ' · ' + d : '')) + '</small></span>' +
-          '<input type="checkbox" class="switch" data-col="' + c[0] + '" data-ref="' + esc(g.ref) + '"' + (g.published ? ' checked' : '') + (busyRef ? ' disabled' : '') +
-          ' aria-label="Show ' + esc(g.title) + ' on the website"></label>';
+        return '<div class="st-row ws-item' + (on ? '' : ' off') + (st != null ? ' staged' : '') + '"><span class="st-label"><span><i class="bi bi-' + c[2] + '"></i> ' + esc(g.title) + '</span>' +
+          '<small>' + (busy ? (on ? 'Showing…' : 'Hiding…') : st != null ? (st ? 'Will be shown' : 'Will be hidden') + ' – not published yet' : (g.published ? 'Shown' : 'Hidden') + ' · ' + g.langs.sort().join(' + ') + (d ? ' · ' + d : '')) + '</small></span>' +
+          '<button type="button" class="icon-btn sm" data-wsedit="' + esc(c[0] + '|' + g.ref) + '" aria-label="Edit ' + esc(g.title) + '" title="Edit"><i class="bi bi-pencil"></i></button>' +
+          '<input type="checkbox" class="switch" data-col="' + c[0] + '" data-ref="' + esc(g.ref) + '"' + (on ? ' checked' : '') + (busyRef ? ' disabled' : '') +
+          ' aria-label="Show ' + esc(g.title) + ' on the website"></div>';
       }).join('') + '</section>';
     }).join('');
-    $('wsContent').innerHTML = html || '<p class="st-intro">No articles or projects yet.</p>';
+    var n = Object.keys(stage).length;
+    html += n ? '<div class="ws-stage"><span><b>' + n + (n === 1 ? ' change' : ' changes') + '</b> not published yet</span><button type="button" class="text-btn" data-wsstage="undo">Cancel</button><button type="button" class="pill-btn" data-wsstage="go"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-cloud-upload"></i> Publish changes</button></div>' : '';
+    $('wsContent').innerHTML = html;
     var all = grouped('articles').concat(grouped('projects')), hidden = all.filter(function (g) { return !g.published; }).length;
-    $('sumContent').textContent = hidden ? hidden + ' hidden' : 'All shown';
+    $('sumContent').textContent = (n ? n + ' not published · ' : '') + (hidden ? hidden + ' hidden' : 'All shown');
   }
   $('wsContent').addEventListener('change', function (e) {
     var c = e.target.closest('[data-ref]');
     if (!c || busyRef) return;
-    var on = c.checked;
-    busyRef = c.dataset.col + ':' + c.dataset.ref;
+    var key = c.dataset.col + ':' + c.dataset.ref, g = grouped(c.dataset.col).filter(function (x) { return x.ref === c.dataset.ref; })[0];
+    if (g && c.checked === g.published) delete stage[key]; else stage[key] = c.checked;
     drawItems();
-    fetch('/cmd/api/content', {
-      method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection: c.dataset.col, ref: c.dataset.ref, published: on })
-    }).then(function (r) { return r.json(); }).then(function (j) {
-      busyRef = '';
-      if (j.items) { items = j.items; drawItems(); stMsg((on ? 'Shown again' : 'Hidden') + ' ✓ Live on jplundberg.com in about a minute', true); }
-      else { drawItems(); stMsg('Couldn’t change it (' + (j.error || 'error') + '). Try again.'); }
-    }).catch(function () { busyRef = ''; drawItems(); stMsg('Couldn’t change it. Check your connection.'); });
   });
+  $('wsContent').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-wsstage], [data-wsedit], [data-wsnew]'); if (!b) return;
+    if ((b.dataset.wsedit || b.dataset.wsnew) && !window.ArticleWriter) { location.href = '/cmd/admin/#write=' + (b.dataset.wsedit ? b.dataset.wsedit : 'new-' + b.dataset.wsnew); return; }
+    if (b.dataset.wsedit || b.dataset.wsnew) { window.dispatchEvent(new CustomEvent('article:open', { detail: b.dataset.wsedit ? { col: b.dataset.wsedit.split('|')[0], ref: b.dataset.wsedit.split('|')[1] } : { col: b.dataset.wsnew, isNew: true } })); return; }
+    if (b.dataset.wsstage === 'undo') { stage = {}; drawItems(); return; }
+    var keys = Object.keys(stage); if (!keys.length) return;
+    var done = 0, failed = 0;
+    (function next() {
+      if (!keys.length) {
+        busyRef = ''; stage = {}; drawItems();
+        stMsg(failed ? 'Some changes didn’t go through – try again.' : done + (done === 1 ? ' change' : ' changes') + ' published ✓ Live on jplundberg.com in about a minute', !failed);
+        try { window.dispatchEvent(new CustomEvent('site:published', { detail: done + ' article/project switch' + (done === 1 ? '' : 'es') })); } catch (x) {}
+        return;
+      }
+      var k = keys.shift(), q = k.split(':'), on = stage[k]; busyRef = k; drawItems();
+      fetch('/cmd/api/content', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ collection: q[0], ref: q[1], published: on }) })
+        .then(function (r) { return r.json(); }).then(function (j) { if (j.items) { items = j.items; done++; } else failed++; delete stage[k]; next(); })
+        .catch(function () { failed++; next(); });
+    })();
+  });
+  window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; } };
   function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 
   /* ---------- page changes in the settings panel ---------- */

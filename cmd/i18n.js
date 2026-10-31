@@ -908,6 +908,11 @@
   P.push([/^(\d+) at home$/, '$1 hjemme'], [/^(\d+) added to the pantry$/, '$1 lagt til i matskapet'], [/^(.+) – tap if it’s running out$/, '$1 – trykk hvis det går tomt'], [/^(.+) – on the shopping list, tap when you have it again$/, '$1 – på handlelisten, trykk når du har det igjen'], [/^Got (.+) again$/, 'Har $1 igjen']);
   P.push([/^Keep (.+) in the pantry$/, 'Ha $1 i matskapet'], [/^Keep in the pantry$/, 'Ha i matskapet'], [/^(.+) is in the pantry$/, '$1 er i matskapet'], [/^(.+) – in the pantry, on the list$/, '$1 – i matskapet, på lista']);
   P.push([/^Clocked in at (.+)$/, 'Stemplet inn kl. $1'], [/^Remember to clock out$/, 'Husk å stemple ut']);
+  P.push([/^Will be shown – not published yet$/, 'Blir vist – ikke publisert ennå'], [/^Will be hidden – not published yet$/, 'Blir skjult – ikke publisert ennå'], [/^(\d+) changes?$/, function (m, n) { return n + (n === '1' ? ' endring' : ' endringer'); }],
+    [/^(\d+) changes? published ✓ Live on jplundberg\.com in about a minute$/, function (m, n) { return n + (n === '1' ? ' endring' : ' endringer') + ' publisert ✓ Live på jplundberg.com om ca. ett minutt'; }],
+    [/^(\d+) not published · (.+)$/, function (m, n, r) { return n + ' ikke publisert · ' + tr(r); }], [/^(\d+) hidden$/, '$1 skjult']);
+  [['not published yet', 'ikke publisert ennå'], ['Publish changes', 'Publiser endringer'], ['New article', 'Ny artikkel'], ['New project', 'Nytt prosjekt'], ['Cancel', 'Avbryt'], ['Showing…', 'Viser…'], ['Hiding…', 'Skjuler…'], ['All shown', 'Alt vises'],
+    ['Some changes didn’t go through – try again.', 'Noen endringer gikk ikke gjennom – prøv igjen.'], ['Edit', 'Rediger']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
   function tr(s) {

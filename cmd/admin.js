@@ -213,11 +213,11 @@
       if (items) items.forEach(function (x) { var k = x.collection + '|' + x.ref; (by[k] = by[k] || []).push(x); });
       var rows = items ? Object.keys(by).map(function (k) { var l = by[k], en = l.filter(function (x) { return x.lang === 'en'; })[0] || l[0]; return { k: k, col: en.collection, ref: en.ref, title: en.title, date: en.date, on: l.every(function (x) { return x.published; }), langs: l.map(function (x) { return x.lang; }).sort().join(' · ').toUpperCase() }; })
         .sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); }) : [];
-      C['content'] = card('content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter'), items ? '<span class="muted cr-count">' + rows.filter(function (r) { return r.on; }).length + ' / ' + rows.length + L(' live', ' live') + '</span>' : '',
+      C['content'] = card('content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter'), (items ? '<span class="muted cr-count">' + rows.filter(function (r) { return r.on; }).length + ' / ' + rows.length + L(' live', ' live') + '</span>' : '') + '<button type="button" class="icon-btn sm" data-crnew="articles" aria-label="' + L('New article', 'Ny artikkel') + '"><i class="bi bi-pencil-square"></i></button><button type="button" class="icon-btn sm" data-crmanage aria-label="' + L('Show / hide', 'Vis / skjul') + '"><i class="bi bi-toggles"></i></button>',
         !S.content ? '<p class="muted">' + L('Loading …', 'Laster …') + '</p>' : !items ? '<p class="muted">' + L('Couldn’t load the list (GitHub key?).', 'Fikk ikke lastet listen (GitHub-nøkkel?).') + '</p>'
           : '<ul class="cr-items">' + rows.map(function (r) {
             return '<li><i class="bi bi-' + (r.col === 'projects' ? 'kanban' : 'journal-text') + '"></i><span class="cr-it"><b>' + esc(r.title) + '</b><small>' + esc((r.date || '') + ' · ' + r.langs) + '</small></span>' +
-              '<label class="cr-sw"><span class="' + (r.on ? 'on' : '') + '">' + (r.on ? L('Live', 'Live') : L('Hidden', 'Skjult')) + '</span><input type="checkbox" class="switch" data-crpub="' + esc(r.col + '|' + r.ref) + '"' + (r.on ? ' checked' : '') + (S.busy['pub' + r.k] ? ' disabled' : '') + ' aria-label="' + esc(r.title) + '"></label></li>';
+              '<span class="cr-pill' + (r.on ? ' on' : '') + '">' + (r.on ? L('Live', 'Live') : L('Hidden', 'Skjult')) + '</span><button type="button" class="icon-btn sm" data-credit="' + esc(r.col + '|' + r.ref) + '" aria-label="' + L('Edit', 'Rediger') + ' ' + esc(r.title) + '"><i class="bi bi-pencil"></i></button></li>';
           }).join('') + '</ul>', true);
     }
     /* system */
@@ -327,8 +327,19 @@
   }
   function openEd(k) {
     var ed = document.getElementById('awEd'); if (!ed) return;
+    var wasWrite = edCur === 'write';
     /* give the previous page back to the settings panel, take the new one */
     ed.querySelectorAll('.st-page').forEach(function (pg) { var h = home[pg.dataset.page]; pg.hidden = true; if (h) h.appendChild(pg); });
+    var wr = document.getElementById('crWrite');
+    if (k === 'write') {   /* the article/project writer (writer.js) draws here and uses the preview frame */
+      if (!wr) { wr = document.createElement('div'); wr.id = 'crWrite'; ed.appendChild(wr); }
+      edCur = k; document.querySelectorAll('[data-awed]').forEach(function (x) { x.setAttribute('aria-current', String(x.dataset.awed === 'content')); });
+      var bar0 = document.getElementById('awBar'); if (bar0) bar0.hidden = true;
+      return;
+    }
+    if (wr) wr.remove();
+    var slot0 = document.getElementById('awBar'); if (slot0) slot0.hidden = false;
+    if (wasWrite) { var nt = document.getElementById('awNote'); if (nt) nt.textContent = L('Your unpublished changes are shown in yellow. Sections you switch on appear after publishing.', 'Upubliserte endringer vises i gult. Seksjoner du slår på vises etter publisering.'); loadPv(); }
     var pg = document.querySelector('#settings .st-page[data-page="' + k + '"]'); if (!pg) return;
     home[k] = pg.parentNode; ed.appendChild(pg); pg.hidden = false; edCur = k;
     var bar = document.getElementById('wsBar'), slot = document.getElementById('awBar');
@@ -339,8 +350,9 @@
   }
   /* preview: the real page in a frame, with your drafts written into it */
   var pvLang = 'en', pvT = null;
-  function loadPv() { var f = document.getElementById('awFrame'); if (!f) return; f.onload = function () { setTimeout(applyPv, 60); }; f.src = (pvLang === 'nb' ? '/no/' : '/') + '?preview=' + Date.now(); }
+  function loadPv() { var f = document.getElementById('awFrame'); if (!f) return; if (edCur === 'write') return; f.removeAttribute('srcdoc'); f.onload = function () { setTimeout(applyPv, 60); }; f.src = (pvLang === 'nb' ? '/no/' : '/') + '?preview=' + Date.now(); }
   function applyPv() {
+    if (edCur === 'write') return;
     var f = document.getElementById('awFrame'), d = f && f.contentDocument; if (!d || !d.body) return;
     var mark = function (el) { if (el && el.style) { el.style.outline = '2px dashed #d9a400'; el.style.outlineOffset = '3px'; el.style.background = 'rgba(217,164,0,.12)'; } };
     var td = window.SiteDraftTexts ? window.SiteDraftTexts() : null;
@@ -366,6 +378,10 @@
       (dr.sections || []).forEach(function (x) { var sec = d.getElementById(x.id); if (sec && x.on === false) { sec.style.opacity = '.25'; sec.style.filter = 'grayscale(1)'; mark(sec); } });
     }
   }
+  window.CrWorkspace = { open: function (k) {
+    if (TAB !== 'website') { TAB = 'website'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); }
+    mountWs(); openEd(k); var w = document.getElementById('crWs'); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } };
   window.addEventListener('site:draft', function () { clearTimeout(pvT); pvT = setTimeout(function () { applyPv(); var b = document.querySelector('[data-crtab="website"]'); if (b) draw(); }, 400); });
   window.addEventListener('site:published', function () { setTimeout(loadPv, 2500); });
   /* on this page, Settings → jplundberg.com rows open the Website tab instead */
@@ -386,6 +402,9 @@
     var b;
     if ((b = e.target.closest('[data-crtab]'))) { TAB = b.dataset.crtab; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); if (TAB === 'website') runContent(); return; }
     if (e.target.closest('[data-crrun]')) { refreshAll(); logIt(L('Ran all checks', 'Kjørte alle sjekker'), 'arrow-clockwise'); return; }
+    if ((b = e.target.closest('[data-credit]'))) { var q0 = b.dataset.credit.split('|'); window.dispatchEvent(new CustomEvent('article:open', { detail: { col: q0[0], ref: q0[1] } })); return; }
+    if ((b = e.target.closest('[data-crnew]'))) { window.dispatchEvent(new CustomEvent('article:open', { detail: { col: b.dataset.crnew, isNew: true } })); return; }
+    if (e.target.closest('[data-crmanage]')) { TAB = 'website'; draw(); setTimeout(function () { openEd('content'); var w = document.getElementById('crWs'); if (w) w.scrollIntoView({ behavior: 'smooth' }); }, 60); return; }
     if (e.target.closest('[data-crlinks]')) { runLinks(); return; }
     if (e.target.closest('[data-crself]')) { if (window.Diag && window.Diag.selfCheck) { Promise.resolve(window.Diag.selfCheck(true)).then(function () { draw(); toast('<i class="bi bi-heart-pulse"></i> ' + L('Self-check done', 'Selvsjekk ferdig')); }); } return; }
     if ((b = e.target.closest('[data-crtododel]'))) { var t1 = Fe.tools(); t1.admintodo = todos().filter(function (x) { return x.id !== b.dataset.crtododel; }); Fe.saveTools(t1); return; }

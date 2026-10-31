@@ -134,7 +134,8 @@
     "admin/index.html": [
       "kit.js",
       "profile.js",
-      "admin.js"
+      "admin.js",
+      "writer.js"
     ]
   },
   "settings": [
