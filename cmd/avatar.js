@@ -57,6 +57,8 @@
   ];
   function figure(m, L) {
     L = L || look();
+    /* light mode: the moment's colour becomes a soft tint instead of a dark night-sky box */
+    if (m && m.bg && !m.plain && document.documentElement.getAttribute('data-theme') === 'light') m = Object.assign({}, m, { bg: shade(m.bg, .8) });
     var S = L.skin, S2 = shade(L.skin, -.14), H = L.hairC, bare = L.top === 'none', T = bare ? L.skin : m.k === 'gym' ? '#2f7a55' : L.topC, T2 = shade(T, -.18), P = L.legs, top = bare ? 'none' : m.k === 'gym' ? 'tee' : m.k === 'night' ? 'hoodie' : L.top;
     /* body shape: the torso and legs get narrower or wider, the arms move with the shoulders */
     var MU = L.build === 'muscular', SX = { slim: .76, regular: .86, athletic: .9, muscular: 1, broad: 1.02 }[L.build] || .86,

@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v37';
+var CACHE = 'cmd-v38';
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */

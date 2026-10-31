@@ -3500,3 +3500,13 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 .sc-jarg { stroke: rgba(var(--ink-rgb), .62); } .sc-bar { fill: #9aa6b2; } .sc-plate2 { fill: #7d8996; }
 .hs-wall { fill: color-mix(in srgb, var(--accent) 20%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .5); } .hs-roof { fill: color-mix(in srgb, #c45a3c 85%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .45); } .hs-door { fill: color-mix(in srgb, #8b5a44 75%, var(--bg-solid)); }
 .tod-night .hs-wall { filter: brightness(.9); }
+
+/* light mode: pictures keep their contrast on a light page */
+[data-theme="light"] .sc-plane { fill: #4f5d70; filter: none; }
+[data-theme="light"] .sc-route { stroke: rgba(60, 72, 90, .55); }
+[data-theme="light"] .sc-cloud ellipse { fill: rgba(120, 140, 170, .28); }
+[data-theme="light"] .hs-smoke circle { fill: rgba(90, 100, 115, .22); }
+[data-theme="light"] .sc-cup { fill: #fff; stroke: rgba(40, 45, 55, .35); stroke-width: 1; } [data-theme="light"] .sc-cuph { stroke: rgba(40, 45, 55, .45); }
+[data-theme="light"] .sc-steam { stroke: rgba(60, 70, 85, .35); }
+[data-theme="light"] .sc-bubs circle { fill: rgba(255, 255, 255, .75); }
+[data-theme="light"] .sc-wheel { fill: #6b7280; }
