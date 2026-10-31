@@ -3200,6 +3200,7 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .hs-trunk { fill: #8b5a44; } .hs-crown { opacity: .9; }
 .hs-part { cursor: pointer; transition: opacity .2s; }
 .hs-part:not(.hot) { opacity: .8; }
+.hs-part.sc-me { opacity: 1; }
 .hs-part.hot { animation: hsglow 2.4s ease-in-out infinite; }
 @keyframes hsglow { 50% { filter: drop-shadow(0 0 5px rgba(232, 116, 59, .9)); } }
 .mo-off .hs-part.hot, .mo-reduced .hs-part.hot { animation: none; filter: drop-shadow(0 0 4px rgba(232, 116, 59, .9)); }

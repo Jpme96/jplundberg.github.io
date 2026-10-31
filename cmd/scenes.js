@@ -136,7 +136,7 @@
     var C = 2 * Math.PI * 30, ring = '<ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ring"/><ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ringv" stroke-dasharray="' + (C * pct).toFixed(1) + ' ' + C.toFixed(1) + '"/>';
     var svg = ground() + deco('health') +
       part('ahealth', '', ring) +
-      part('ahealth', mood === 'tired' ? 'hot' : '', '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
+      part('ahealth', window.Avatar ? 'sc-me' : mood === 'tired' ? 'hot' : '', window.Avatar ? window.Avatar.figure({ k: mood === 'good' ? 'day' : 'plain', mood: mood, plain: true, bg: '#000', sky: 'none', attrs: ' x="72" y="10" width="96" height="124" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"') : '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
       part('training', trained ? 'hot lit' : '', '<rect x="176" y="114" width="34" height="3" rx="1.5" class="sc-bar"/><rect x="174" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/><rect x="207" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/>') +
       part('hpHabits', '', '<path d="M50 70 c-6 -8 -18 -2 -12 8 l12 12 12 -12 c6 -10 -6 -16 -12 -8z" class="sc-heart"/>');
     var list = [];

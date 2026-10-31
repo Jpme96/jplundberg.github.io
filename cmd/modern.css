@@ -287,7 +287,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .av-fig .eyes { animation: avblink 5.5s infinite; transform-box: fill-box; transform-origin: center; } @keyframes avblink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
 .av-fig .bob { animation: avbob 3.6s ease-in-out infinite; } @keyframes avbob { 50% { transform: translateY(-1.5px); } }
 :is(.av-fig, .av-prev) .steam { animation: scsteam 2.4s ease-in-out infinite; }
-:is(.av-fig, .av-prev) .z { animation: avz 2.6s ease-in-out infinite; } @keyframes avz { 50% { opacity: .3; transform: translate(2px, -3px); } }
+:is(.av-fig, .av-prev, .sc-me) .z { animation: avz 2.6s ease-in-out infinite; } @keyframes avz { 50% { opacity: .3; transform: translate(2px, -3px); } }
 :is(.av-fig, .av-prev) .rain line { animation: avrain .8s linear infinite; } @keyframes avrain { to { transform: translate(-4px, 12px); } }
 .mo-off :is(.av-fig, .av-prev) * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { :is(.av-fig, .av-prev) * { animation: none !important; } }

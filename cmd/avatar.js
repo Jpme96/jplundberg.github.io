@@ -128,14 +128,16 @@
       bun: '<circle cx="101" cy="31" r="7" fill="' + H + '"/><path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-2-8-8-13-18-13s-16 5-19 13z" fill="' + H + '"/>'
     }[L.hair];
     var brows = '<path d="M90 56q4-2.5 8 0M104 56q4-2.5 8 0" stroke="' + (L.hair === 'bald' ? shade(S, -.45) : H) + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
-    var eyes = sleep ? '<path d="M91 62q3 2 6 0M105 62q3 2 6 0" stroke="#2b211b" stroke-width="2" fill="none" stroke-linecap="round"/>' : '<g class="eyes"><circle cx="94" cy="62" r="2.2" fill="#2b211b"/><circle cx="108" cy="62" r="2.2" fill="#2b211b"/></g>';
+    var tired = m.mood === 'tired', meh = m.mood === 'ok';
+    if (tired) brows = '<path d="M90 55.5q4 1.5 8 1.5M104 57q4 0 8-1.5" stroke="' + (L.hair === 'bald' ? shade(S, -.45) : H) + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    var eyes = tired ? '<g><circle cx="94" cy="63" r="2" fill="#2b211b"/><circle cx="108" cy="63" r="2" fill="#2b211b"/><path d="M90.5 61.6h7M104.5 61.6h7" stroke="' + S + '" stroke-width="2.6" stroke-linecap="round"/><path d="M90.5 61.4q3.5-1 7 0M104.5 61.4q3.5-1 7 0" stroke="#2b211b" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M91 67q3 1.4 6 0M105 67q3 1.4 6 0" stroke="' + shade(S, -.28) + '" stroke-width="1.2" fill="none" stroke-linecap="round"/></g>' : sleep ? '<path d="M91 62q3 2 6 0M105 62q3 2 6 0" stroke="#2b211b" stroke-width="2" fill="none" stroke-linecap="round"/>' : '<g class="eyes"><circle cx="94" cy="62" r="2.2" fill="#2b211b"/><circle cx="108" cy="62" r="2.2" fill="#2b211b"/></g>';
     var nose = '<path d="M101 64c-1.6 3-2 5 .6 5.6" stroke="' + S2 + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
-    var mouth = sleep ? '<path d="M98 74q3 1.5 6 0" stroke="#8a4636" stroke-width="1.8" fill="none" stroke-linecap="round"/>' : '<path d="M95 72q6 6 12 0" fill="#fff" stroke="#8a4636" stroke-width="1.8" stroke-linejoin="round"/>';
+    var mouth = tired ? '<path d="M97 74.5q2-1.6 4 0t4 0" stroke="#8a4636" stroke-width="1.8" fill="none" stroke-linecap="round"/>' : meh ? '<path d="M96.5 73q4.5 2.4 9 0" stroke="#8a4636" stroke-width="1.8" fill="none" stroke-linecap="round"/>' : sleep ? '<path d="M98 74q3 1.5 6 0" stroke="#8a4636" stroke-width="1.8" fill="none" stroke-linecap="round"/>' : '<path d="M95 72q6 6 12 0" fill="#fff" stroke="#8a4636" stroke-width="1.8" stroke-linejoin="round"/>';
     var beard = { none: '', stubble: '<path d="M84 66c2 12 9 18 17 18s15-6 17-18c-3 6-9 9-17 9s-14-3-17-9z" fill="' + H + '" opacity=".22"/>',
       short: '<path d="M84 64c1 14 9 21 17 21s16-7 17-21c-2 5-6 8-9 8-2-2-5-3-8-3s-6 1-8 3c-3 0-7-3-9-8z" fill="' + H + '"/>',
       full: '<path d="M82 60c0 18 8 29 19 29s19-11 19-29c-2 8-6 12-10 12-2-2-5-3-9-3s-7 1-9 3c-4 0-8-4-10-12z" fill="' + H + '"/>',
       moustache: '<path d="M94 70.5q7-4 14 0q-3.5 2-7 .6-3.5 1.4-7-.6z" fill="' + H + '"/>' }[L.beard];
-    var mouthOver = L.beard === 'short' || L.beard === 'full' ? (sleep ? '' : '<path d="M96 73q5 4 10 0" fill="#fff" stroke="#8a4636" stroke-width="1.6"/>') : mouth;
+    var mouthOver = L.beard === 'short' || L.beard === 'full' ? (sleep ? '' : tired || meh ? mouth : '<path d="M96 73q5 4 10 0" fill="#fff" stroke="#8a4636" stroke-width="1.6"/>') : mouth;
     var glasses = L.glasses === 'round' ? '<g fill="rgba(255,255,255,.08)" stroke="#1d1d1d" stroke-width="1.5"><circle cx="94" cy="62" r="5"/><circle cx="108" cy="62" r="5"/><path d="M99 62h4M89 61l-6-2M113 61l6-2" fill="none"/></g>'
       : L.glasses === 'sun' ? '<g><path d="M86 58.5h13v4.5c0 2.5-2 4-4.5 4h-4c-2.5 0-4.5-1.5-4.5-4z" fill="#141414"/><path d="M103 58.5h13v4.5c0 2.5-2 4-4.5 4h-4c-2.5 0-4.5-1.5-4.5-4z" fill="#141414"/><path d="M99 60h4M86 59.5l-4-1.5M116 59.5l4-1.5" stroke="#141414" stroke-width="1.6"/><path d="M88.5 60.5l3 0M105.5 60.5l3 0" stroke="rgba(255,255,255,.4)" stroke-width="1.2" stroke-linecap="round"/></g>'
       : L.glasses === 'square' ? '<g fill="rgba(255,255,255,.08)" stroke="#1d1d1d" stroke-width="1.5"><rect x="88" y="58" width="11" height="8" rx="2"/><rect x="103" y="58" width="11" height="8" rx="2"/><path d="M99 61h4M88 61l-5-2M114 61l5-2" fill="none"/></g>' : '';
@@ -149,7 +151,9 @@
     var head = '<g class="bob">' + hairBack + neck + face + beard + brows + eyes + nose + mouthOver + hairTop + (m.k === 'trip' ? '' : glasses) + hat + buds + '</g>';
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
     var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + detail + extra + '</g>';
-    return '<svg viewBox="0 0 200 200"><rect width="200" height="200" rx="20" fill="' + m.bg + '"/>' + sky + lamp + ground + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)">' + behind + '</g>' + legs + body +
+    if (m.plain) { sky = ''; lamp = ''; ground = '<ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>'; }
+    if (tired) prop += '<text class="z" x="124" y="40" font-size="13" font-weight="800" fill="#9a9ca5">z</text><text class="z" x="133" y="29" font-size="9" font-weight="800" fill="#9a9ca5">z</text>';
+    return '<svg viewBox="0 0 200 200"' + (m.attrs || '') + '>' + (m.plain ? '' : '<rect width="200" height="200" rx="20" fill="' + m.bg + '"/>') + sky + lamp + ground + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)">' + behind + '</g>' + legs + body +
       '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)">' + armsL + '</g><g transform="translate(' + (-DX).toFixed(1) + ' 0)">' + arms + '</g>' + head + '</g><g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')">' + prop + '</g><g transform="translate(0 -9)">' + front + '</g></svg>';
   }
   
