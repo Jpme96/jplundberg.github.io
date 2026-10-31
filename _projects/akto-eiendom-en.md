@@ -6,7 +6,6 @@ ref: akto-eiendom
 role: Building operator, operations manager and FDVU manager
 organisation: Akto Eiendom, Oslo
 period: 2020 – 2025
-published: false
 summary: Five years coordinating operations, maintenance and FDVU documentation across a property portfolio – from the daily follow-up of suppliers to getting the documentation into a shape people could actually use.
 stats:
   - value: "5"
