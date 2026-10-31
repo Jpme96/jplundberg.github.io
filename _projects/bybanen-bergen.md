@@ -6,7 +6,6 @@ ref: bybanen-bergen
 role: Driftsoperatør / lærling i byggdrifterfaget
 organisation: Hordaland og Vestland fylkeskommune (Bybanen), Bergen
 period: 2017 – 2020
-published: false
 summary: Drift og forvaltning av det komplekse bygningsanlegget bak Bybanen i Bergen – der depot, verksted og tekniske anlegg må fungere hver dag for at vognene skal gå.
 stats:
   - value: "24/7"
