@@ -140,14 +140,23 @@
   }
 
   /* preview: the article in the site's own styles – drawn here, never public */
-  var pvT = null;
+  var pvT = null, CSS = '', CSS_FILES = ['/assets/vendor/bootstrap/css/bootstrap.site.min.css?v=1', '/assets/vendor/bootstrap-icons/bootstrap-icons.css', '/assets/css/main.css', '/assets/css/articles.css', '/assets/css/projects.css'], cssLoading = false;
+  /* the site's styles are fetched once and written into the preview itself (Safari doesn't always load linked styles in a srcdoc frame) */
+  function loadCss() {
+    if (CSS || cssLoading) return; cssLoading = true;
+    Promise.all(CSS_FILES.map(function (u) { return fetch(u, { cache: 'force-cache' }).then(function (r) { return r.ok ? r.text() : ''; }).catch(function () { return ''; }); })).then(function (a) {
+      var t = a.map(function (x, i) { var dir = CSS_FILES[i].replace(/[^/]*$/, ''); return x.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, function (m, q, path) { return 'url(' + location.origin + dir + path + ')'; }).replace(/url\((['"]?)\//g, 'url($1' + location.origin + '/'); }).join('\n');
+      if (t.length > 1000) { CSS = t; if (W) preview(); } cssLoading = false;
+    });
+  }
   function preview() {
+    loadCss();
     clearTimeout(pvT); pvT = setTimeout(function () {
       var f = document.getElementById('awFrame'); if (!f || !W) return;
       var d = W[W.lang].d, fm = d.fm, nbx = W.lang === 'nb';
       var date = fm.date ? new Date(String(fm.date).slice(0, 10) + 'T12:00').toLocaleDateString(nbx ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
       var html = '<!doctype html><html lang="' + (nbx ? 'nb' : 'en') + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="' + location.origin + '/">' +
-        '<link href="/assets/vendor/bootstrap/css/bootstrap.site.min.css?v=1" rel="stylesheet"><link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet"><link href="/assets/css/main.css" rel="stylesheet"><link href="/assets/css/articles.css" rel="stylesheet"><link href="/assets/css/projects.css" rel="stylesheet">' +
+        '<style>html,body{background:#0e0f11;color:#e7e7ea;margin:0}</style>' + (CSS ? '<style>' + CSS + '</style>' : CSS_FILES.map(function (u) { return '<link href="' + location.origin + u + '" rel="stylesheet">'; }).join('')) +
         '<style>.wr-raw{padding:12px;border:1px dashed #888;border-radius:8px;color:#999;font-size:13px;margin:1em 0}.wr-draftbadge{position:fixed;top:10px;right:10px;z-index:9;background:#d9a400;color:#111;font:600 12px/1 system-ui;padding:6px 10px;border-radius:99px}</style></head><body class="' + (W.col === 'projects' ? 'project-page' : 'article-page') + '">' +
         '<span class="wr-draftbadge">' + (nbx ? 'Forhåndsvisning – ikke publisert' : 'Preview – not published') + '</span><main class="main">' +
         '<section class="page-hero dark-background">' + (fm.image ? '<img src="' + esc(fm.image) + '" alt="">' : '<picture><img src="/assets/img/hero-bg.jpg" alt=""></picture>') + '<div class="container">' +
