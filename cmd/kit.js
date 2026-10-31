@@ -107,6 +107,13 @@
     if (isNew && innerWidth >= 700) setTimeout(function () { var first = s.fields.querySelector('input,textarea'); if (first) first.focus(); }, 60);
   }
 
+  /* one odd item (an old format, a missing number) must not break the card: each part is drawn on its
+     own, a failing row shows as "Couldn't show this one" (still editable), and stray NaN/undefined become – */
+  function tidyOut(h) { return typeof h === 'string' ? h.replace(/\bNaN\b|\bundefined\b|\[object Object\]|Invalid Date/g, '–') : h; }
+  function safe(fn, args, fb, what) {
+    try { return tidyOut(fn.apply(null, args)); }
+    catch (e) { if (window.Diag) window.Diag.log('render', (e && e.message) || String(e), what); return fb; }
+  }
   /* ---------- a collection card ---------- */
   function collection(cfg) {
     var el = cfg.mount, showAll = false, openId = null, scrolled = false;
@@ -116,21 +123,23 @@
       el.hidden = !on;
       if (!on) { el.innerHTML = ''; return; }
       var items = F.list(cfg.key).slice();
-      if (cfg.sort) items.sort(cfg.sort);
+      if (cfg.sort) try { items.sort(cfg.sort); } catch (e) {}
+      var kw = 'kit:' + cfg.key;
       var lim = cfg.limit || 8, shown = showAll ? items : items.slice(0, lim);
       el.innerHTML = '<section class="card kit-card" id="' + cfg.key + '">' +
         '<div class="card-head"><h2><i class="bi bi-' + cfg.icon + '"></i> ' + esc(cfg.title) + '</h2>' +
-        '<div class="head-actions">' + (cfg.headExtra ? cfg.headExtra(items) : '') + '<button class="text-btn" type="button" data-kit-add><i class="bi bi-plus-lg"></i> ' + esc(cfg.addLabel || 'Add') + '</button></div></div>' +
-        (cfg.summary ? '<div class="kit-sum">' + cfg.summary(items) + '</div>' : '') +
-        (cfg.above ? cfg.above(items) : '') +
+        '<div class="head-actions">' + (cfg.headExtra ? safe(cfg.headExtra, [items], '', kw) : '') + '<button class="text-btn" type="button" data-kit-add><i class="bi bi-plus-lg"></i> ' + esc(cfg.addLabel || 'Add') + '</button></div></div>' +
+        (cfg.summary ? '<div class="kit-sum">' + safe(cfg.summary, [items], '', kw) + '</div>' : '') +
+        (cfg.above ? safe(cfg.above, [items], '', kw) : '') +
         (items.length ? '<ul class="kit-list">' + shown.map(function (it) {
-          var r = cfg.row(it);
+          var r = (function () { try { return cfg.row(it) || {}; } catch (e) { if (window.Diag) window.Diag.log('render', e.message, kw); return { icon: 'exclamation-circle', title: it.title || it.name || 'Couldn’t show this one', sub: 'Tap to edit' }; } })();
+          r = { icon: r.icon, color: r.color, cls: r.cls, title: tidyOut(r.title == null ? '' : String(r.title)), sub: tidyOut(r.sub), right: tidyOut(r.right) };
           return '<li class="kit-item' + (r.cls ? ' ' + r.cls : '') + (openId === it.id ? ' open' : '') + '" data-id="' + esc(it.id) + '">' +
             '<button type="button" class="kit-main" data-kit-' + (cfg.detail ? 'toggle' : 'edit') + '="' + esc(it.id) + '">' +
             (r.icon ? '<span class="kit-ic" style="--c:' + (r.color || 'var(--accent)') + '"><i class="bi bi-' + r.icon + '"></i></span>' : '') +
             '<span class="kit-x"><b>' + esc(r.title) + '</b>' + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</span>' +
             (r.right ? '<span class="kit-r">' + r.right + '</span>' : '') + '</button>' +
-            (cfg.detail && openId === it.id ? '<div class="kit-detail">' + cfg.detail(it) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> Edit</button></div>' : '') +
+            (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> Edit</button></div>' : '') +
             '</li>';
         }).join('') + '</ul>' : '<p class="empty kit-empty">' + esc(cfg.empty || 'Nothing here yet.') + '</p>') +
         (items.length > lim ? '<button class="text-btn kit-more" type="button" data-kit-more>' + (showAll ? 'Show less' : 'Show all ' + items.length) + '</button>' : '') +

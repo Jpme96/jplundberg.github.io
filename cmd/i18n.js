@@ -842,6 +842,12 @@
     [/^Timer running: (.+)$/, 'Tidtaker går: $1'],
     [/^Birthday (\d.+)$/, 'Bursdag $1'], [/^Gift to (.+)$/, 'Gave til $1'], [/^Inspection (.+)$/, 'Befaring $1'], [/^(\d+) ingredients$/, '$1 ingredienser']
   );
+  /* audit 31 Oct 2026: diagnostics */
+  Object.assign(D, {
+    'Diagnostics': 'Diagnostikk', 'Errors, sync status, daily self-check': 'Feil, synkstatus, daglig sjekk',
+    'How the dashboard is doing on this device: sync, Apple Health, the daily self-check and recent errors. It checks itself once a day and only tells you when something is wrong.': 'Hvordan dashbordet har det på denne enheten: synkronisering, Apple Helse, den daglige sjekken og siste feil. Det sjekker seg selv én gang om dagen og sier bare fra når noe er galt.',
+    'Couldn’t show this one': 'Klarte ikke å vise denne', 'Tap to edit': 'Trykk for å endre'
+  });
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
   function tr(s) {
     var t = String(s).trim(); if (!t) return s;

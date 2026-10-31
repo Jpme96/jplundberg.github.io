@@ -84,16 +84,19 @@
   if (window.Vault) window.Vault.onUnlock(function () { apply(); window.dispatchEvent(new Event('features:change')); window.dispatchEvent(new Event('tools:change')); });
 
   /* ---------- tool data ---------- */
+  /* one bad item (null, or an old-format entry) must never break a page: lists come back without holes */
   function tools() {
     var t = readJSON('dash.tools');
-    return t && typeof t === 'object' ? t : {};
+    if (!t || typeof t !== 'object' || Array.isArray(t)) return {};
+    Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && t[k].some(function (x) { return x == null; })) t[k] = t[k].filter(function (x) { return x != null; }); });
+    return t;
   }
   function saveTools(t) {
     writeJSON('dash.tools', t);
     window.dispatchEvent(new Event('tools:change'));
     window.dispatchEvent(new Event('cal:change'));
   }
-  function list(key) { var t = tools(); return Array.isArray(t[key]) ? t[key] : []; }
+  function list(key) { var t = tools(); return Array.isArray(t[key]) ? t[key].filter(function (x) { return x && typeof x === 'object'; }) : []; }
 
   /* ---------- small date helpers ---------- */
   function pad(n) { return String(n).padStart(2, '0'); }

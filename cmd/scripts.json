@@ -1,5 +1,6 @@
 {
   "head": [
+    "diag.js",
     "i18n.js",
     "lock.js",
     "lockui.js",

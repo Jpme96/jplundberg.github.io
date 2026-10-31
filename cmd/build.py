@@ -37,7 +37,7 @@ def bundle(files):
     out = ['/* Built by cmd/build.py from: ' + ', '.join(files) + ' – edit those files, not this one. */']
     for f in files:
         src = io.open(os.path.join(HERE, f), encoding='utf-8').read()
-        out.append('/* ===== %s ===== */\ntry {\n%s\n} catch (e) { console.error(%s, e); }' % (f, src.rstrip(), json.dumps(f)))
+        out.append('/* ===== %s ===== */\ntry {\n%s\n} catch (e) { console.error(%s, e); if (window.__dlog) window.__dlog(e, %s); }' % (f, src.rstrip(), json.dumps(f), json.dumps(f)))
     return minify('\n'.join(out) + '\n')
 
 

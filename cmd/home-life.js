@@ -254,7 +254,7 @@
     row: function (x) {
       var s = meterStats(Fe.list('hmeter')), p = s.prev(x), d = p ? s.per(p, x) : null;
       return { icon: 'speedometer2', color: AMBER, title: fmt(x.date, { day: 'numeric', month: 'short', year: 'numeric' }),
-        sub: p ? esc('+' + nf.format(x.value - p.value) + ' kWh' + (d != null ? ' · ' + nf1.format(d) + ' kWh/day' : '')) : 'First reading', right: esc(nf.format(x.value)) };
+        sub: p ? esc('+' + nf.format(x.value - p.value) + ' kWh' + (d != null ? ' · ' + nf1.format(d) + ' kWh/day' : '')) : 'First reading', right: typeof x.value === 'number' ? esc(nf.format(x.value)) : '–' };
     }
   });
   window.BriefExtra.push(function (add) {
@@ -453,7 +453,13 @@
   };
 
   /* ============================== FOOD ============================== */
-  function meals() { var m = Fe.tools().meals; return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; }
+  /* a dinner is a line of text; an older/odd entry ({text}, {name}, a number) is read as its text */
+  function mealText(v) { return v == null ? '' : typeof v === 'string' ? v : typeof v === 'object' ? String(v.text || v.name || v.title || '') : String(v); }
+  function meals() {
+    var m = Fe.tools().meals; if (!m || typeof m !== 'object' || Array.isArray(m)) return {};
+    Object.keys(m).forEach(function (k) { if (typeof m[k] !== 'string') { var t = mealText(m[k]); if (t) m[k] = t; else delete m[k]; } });
+    return m;
+  }
   function setMeal(k, v) { var t = Fe.tools(); t.meals = meals(); if (v) t.meals[k] = v; else delete t.meals[k]; Object.keys(t.meals).forEach(function (x) { if (x < addDays(today(), -60)) delete t.meals[x]; }); Fe.saveTools(t); }
   function recipeFor(name) { var n = String(name || '').trim().toLowerCase(); return n ? Fe.list('recipes').filter(function (r) { return String(r.title).trim().toLowerCase() === n; })[0] : null; }
   function ingredients(r) { return String((r && r.ingr) || '').split('\n').map(function (x) { return x.replace(/^[-•*\s]+/, '').trim(); }).filter(Boolean); }
@@ -689,6 +695,7 @@
     { k: 'rate', label: 'Hourly rate', type: 'number', suffix: 'kr', help: 'Optional – shows what the hours are worth.' },
     { k: 'archived', label: 'Finished (hide it)', type: 'check' }],
     beforeSave: function (it, isNew) { if (isNew) it.color = PCOL[Fe.list('pproj').length % PCOL.length]; } };
+  function ptList() { return Fe.list('ptime').map(function (e) { var m = +e.mins; if (isFinite(m) && e.mins != null) return e; return Object.assign({}, e, { mins: +e.min || +e.minutes || Math.round((+e.hours || 0) * 60) || 0 }); }); }
   var ENTRY = { key: 'ptime', addTitle: 'Add time', editTitle: 'Edit time', fields: [
     { k: 'pid', label: 'Client / project', type: 'select', options: function () { return Fe.list('pproj').filter(function (p) { return !p.archived; }).map(function (p) { return [p.id, p.name]; }); }, req: true },
     { k: 'date', label: 'Date', type: 'date', req: true, def: today },
@@ -727,9 +734,9 @@
     function draw() {
       var ok = on('ptime'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
       var ps = Fe.list('pproj'), live = ps.filter(function (p) { return !p.archived; }), r = run(), rg = range(PT.range);
-      var es = Fe.list('ptime').filter(function (e) { return e.date >= rg[0] && e.date <= rg[1]; }), tot = 0, val = 0, per = {};
+      var es = ptList().filter(function (e) { return e.date >= rg[0] && e.date <= rg[1]; }), tot = 0, val = 0, per = {};
       es.forEach(function (e) { tot += e.mins; per[e.pid] = (per[e.pid] || 0) + e.mins; var p = proj(e.pid); if (p.rate) val += e.mins / 60 * p.rate; });
-      var todayM = Fe.list('ptime').filter(function (e) { return e.date === today(); }).reduce(function (s, e) { return s + e.mins; }, 0);
+      var todayM = ptList().filter(function (e) { return e.date === today(); }).reduce(function (s, e) { return s + e.mins; }, 0);
       var max = Math.max.apply(null, [1].concat(Object.keys(per).map(function (k) { return per[k]; })));
       var h = '<section class="card kit-card" id="ptime"><div class="card-head"><h2><i class="bi bi-hourglass-split"></i> Time per client</h2><div class="head-actions">' +
         gear('work') + '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> Client</button>' +
@@ -759,7 +766,7 @@
           '<button type="button" class="text-btn" data-ptcopy><i class="bi bi-clipboard"></i> Copy summary</button></div>';
         var arch = ps.filter(function (p) { return p.archived; }).length;
         h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage>Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
-          (window.WorkPlus && Fe.list('ptime').length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> Invoice draft</button>' : '') + '</p>';
+          (window.WorkPlus && ptList().length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> Invoice draft</button>' : '') + '</p>';
       }
       el.innerHTML = h + '</section>';
       clearInterval(tick);
@@ -775,7 +782,7 @@
       if ((b = e.target.closest('[data-ptrange]'))) { PT.range = b.dataset.ptrange; return draw(); }
       if ((b = e.target.closest('[data-ptedit]'))) { var en = byId('ptime', b.dataset.ptedit); if (en) K.edit(ENTRY, Object.assign({}, en, { hours: Math.round(en.mins / 60 * 100) / 100 })); return; }
       if (e.target.closest('[data-ptmanage]')) { manage(); return; }
-      var rg = range(PT.range), es = Fe.list('ptime').filter(function (x) { return x.date >= rg[0] && x.date <= rg[1]; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var rg = range(PT.range), es = ptList().filter(function (x) { return x.date >= rg[0] && x.date <= rg[1]; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       if (e.target.closest('[data-ptcsv]')) {
         var rows = [['Date', 'Client', 'Project', 'Hours', 'Note']].concat(es.map(function (x) { var p = proj(x.pid); return [x.date, p.client || '', p.name, String(Math.round(x.mins / 60 * 100) / 100).replace('.', ','), x.note || '']; }));
         var blob = new Blob(['﻿' + csv(rows)], { type: 'text/csv;charset=utf-8' }), name = 'hours-' + rg[0] + '-' + rg[1] + '.csv';
@@ -836,7 +843,7 @@
     }
     /* client time */
     if (on('ptime')) {
-      var per = {}; Fe.list('ptime').filter(function (e) { return e.date === k; }).forEach(function (e) { per[e.pid] = per[e.pid] || { m: 0, n: [] }; per[e.pid].m += e.mins; if (e.note) per[e.pid].n.push(e.note); });
+      var per = {}; ptList().filter(function (e) { return e.date === k; }).forEach(function (e) { per[e.pid] = per[e.pid] || { m: 0, n: [] }; per[e.pid].m += e.mins; if (e.note) per[e.pid].n.push(e.note); });
       var r = run(); if (r && dkey(new Date(r.start)) === k) { per[r.pid] = per[r.pid] || { m: 0, n: [] }; per[r.pid].m += (Date.now() - r.start) / 60000; per[r.pid].live = true; }
       var ks = Object.keys(per);
       if (ks.length) parts.push({ h: 'Clients', i: 'hourglass-split', l: ks.sort(function (a, b) { return per[b].m - per[a].m; }).map(function (id) { var p = proj(id); return p.name + (p.client ? ' (' + p.client + ')' : '') + ': ' + nf1.format(per[id].m / 60) + ' h' + (per[id].live ? ' (timer running)' : '') + (per[id].n.length ? ' – ' + per[id].n.join('; ') : ''); }) });
@@ -1056,7 +1063,7 @@
       out.push(heroTile('stopwatch', 'Flex balance', '<span class="' + (st.balance < 0 ? 'neg' : 'pos') + '">' + sg + esc(h) + '</span>', esc(window.FlexTime.dur(st.week)) + ' this week', '#flex', '#e8743b'));
     }
     if (on('ptime')) {
-      var m0 = monday(0), mins = Fe.list('ptime').filter(function (x) { return x.date >= m0 && x.date <= tk; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0), r = run();
+      var m0 = monday(0), mins = ptList().filter(function (x) { return x.date >= m0 && x.date <= tk; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0), r = run();
       out.push(heroTile('hourglass-split', 'Client time', esc(hm(mins)), r ? 'Timer running: ' + esc(proj(r.pid).name) : 'this week', '#ptime'));
     }
     if (on('meetings')) {

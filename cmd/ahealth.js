@@ -95,15 +95,35 @@
   }
 
   /* ---------- picking up what the Shortcut sent ---------- */
-  function pull() {
-    if (!window.Vault.get()) return;
-    fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+  /* a failed fetch is tried again (5 s, 20 s, 1 min); after that one calm message with Try again.
+     Nothing is lost while it waits: the server keeps every sending until it's picked up. */
+  var pulling = false;
+  function pull(manual) {
+    if (!window.Vault.get() || pulling) return;
+    pulling = true;
+    var D = window.Diag, once = function () {
+      return fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+        if (r.status === 404 || r.status === 403) return null;          // no inbox / the Worker doesn't know it: not an outage
+        if (!r.ok) throw new Error('health ' + r.status);
+        return r.json();
+      });
+    };
+    (D ? D.retry(once, { waits: [5000, 20000, 60000], stop: function () { return navigator.onLine === false; } }) : once()).then(function (j) {
+      pulling = false;
+      if (D) { D.mark('healthPull'); D.hide('health'); }
       if (!j || !j.items || !j.items.length) return;
       /* the inbox is kept on the server (last 120 sendings), so every device – and a device that
          was locked before its save reached the server – picks up every day; numbers only change
          when they're new, so taking them again does nothing */
       merge(j.items, 'server');
-    }).catch(function () {});
+    }, function (e) {
+      pulling = false;
+      if (!D) return;
+      D.mark('healthFail'); D.log('health', (e && e.message) || 'fetch failed', 'ahealth.js');
+      if (navigator.onLine === false || !(Fe && Fe.on('ahealth'))) return;   // offline: sync's message covers it
+      var nbl = window.I18N && window.I18N.lang === 'nb';
+      D.notice('health', nbl ? 'Fikk ikke hentet tallene fra Apple Helse. De ligger trygt på serveren til neste gang.' : 'Couldn’t fetch your Apple Health numbers. They wait safely on your server until next time.', nbl ? 'Prøv igjen' : 'Try again', function () { pull(true); }, 'heart-pulse');
+    });
   }
   /* …or a link: ?health=1&steps=…&sleep=… */
   (function () {
@@ -125,8 +145,8 @@
      server's daily snapshots of the last two weeks and take back any day this copy doesn't have. Once a day. */
   function recover() {
     var tk = dkey(new Date()); if (localStorage.getItem('dash.healthRecover') === tk || !window.Vault.peek) return;
-    try { localStorage.setItem('dash.healthRecover', tk); } catch (e) {}
     fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j) try { localStorage.setItem('dash.healthRecover', tk); } catch (e) {}     // done for today only once the server answered
       var list = ((j && (j.snaps || j.items || j)) || []); if (!Array.isArray(list)) return;
       var dates = list.map(function (x) { return typeof x === 'string' ? x : x.date; }).filter(function (x) { return /^\d{4}-\d{2}-\d{2}$/.test(x || ''); }).sort().reverse().slice(0, 14);
       return dates.reduce(function (p, dt) {

@@ -112,17 +112,32 @@
   }
 
   /* Takes widgets (to-dos, notes …) out of a decrypted vault and puts them on screen. */
+  /* Holes in lists (null items, from an old version or a half-written save) are dropped, two levels
+     deep, so one bad item can't stop a page from drawing. Expenses get a number for an amount. */
+  function tidy(v, depth) {
+    if (Array.isArray(v)) {
+      if (v.some(function (x) { return x == null; })) v = v.filter(function (x) { return x != null; });
+      if (depth > 0) for (var i = 0; i < v.length; i++) v[i] = tidy(v[i], depth - 1);
+    } else if (v && typeof v === 'object' && depth > 0) Object.keys(v).forEach(function (k) { v[k] = tidy(v[k], depth - 1); });
+    return v;
+  }
   function unpack(obj) {
-    obj = obj || {};
+    obj = obj && typeof obj === 'object' ? obj : {};
+    Object.keys(obj).forEach(function (k) { if (k !== '_w' && k !== 'health') obj[k] = tidy(obj[k], 2); });
+    if (Array.isArray(obj.expenses)) obj.expenses = obj.expenses.filter(function (e) { return e && typeof e === 'object'; }).map(function (e) {
+      if (typeof e.amount === 'string' && isFinite(+e.amount.replace(',', '.'))) e.amount = +e.amount.replace(',', '.');
+      return e;
+    });
     if (obj._w) {
       var w = obj._w;
       delete obj._w;
-      Object.keys(w).forEach(function (k) { if (WIDGET_KEYS.indexOf(k) > -1) writeJSON(k, w[k]); });
+      Object.keys(w).forEach(function (k) { if (WIDGET_KEYS.indexOf(k) > -1) writeJSON(k, tidy(w[k], 3)); });
       if (window.Dash && window.Dash.reload) window.Dash.reload();
     }
     return obj;
   }
-  function localRev() { var v = readJSON(VAULT_KEY); return v && v.rev || 0; }
+  var memVault = null;          // the newest sealed copy when localStorage is full (see save)
+  function localRev() { var v = memVault || readJSON(VAULT_KEY); return v && v.rev || 0; }
   function syncedRev() { var n = readJSON(SYNC_KEY); return typeof n === 'number' ? n : -1; }
 
   function open(vault, k) {
@@ -282,7 +297,7 @@
       .then(function (kk) { k = kk; return open(vault, k); })
       .then(function (obj) {
         key = k; salt = s;
-        if (fromRemote) { writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
+        if (fromRemote) { memVault = null; writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
         data = unpack(obj);
         busy(false);
         finishUnlock();
@@ -349,7 +364,7 @@
       var v = JSON.parse(t);
       if (!isVault(v)) throw new Error('bad');
       v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
-      writeJSON(VAULT_KEY, v);
+      memVault = null; writeJSON(VAULT_KEY, v);
       remote = null;
       ignoreRemote = true;
       setMode('unlock');
@@ -427,6 +442,32 @@
     }[state] + (why ? '<span class="sync-why">' + why + ' · tap to retry</span>' : '');
     el.className = 'sync sync-' + state;
     try { window.dispatchEvent(new CustomEvent('sync:state', { detail: state })); } catch (e) {}
+    retryCheck(state, why);
+  }
+  /* A failed sync is tried again by itself – after 4 s, 12 s, 30 s, 1½ min, then every 4 min – and
+     after the third miss one calm message says what's going on, with Try again. Edits are always
+     saved on this device first, so nothing is lost while it waits. */
+  var retryN = 0, retryT = null, told = false;
+  function retryCheck(state, why) {
+    var D = window.Diag;
+    if (state === 'ok') { retryN = 0; clearTimeout(retryT); retryT = null; if (told && D) D.hide('sync'); told = false; return; }
+    if (state === 'busy' || !key) return;
+    if (state === 'off' && !why && syncedRev() === -1) return;           // this device has never synced: nothing to retry
+    clearTimeout(retryT);
+    var wait = [4, 12, 30, 90, 240][Math.min(retryN, 4)] * 1000;
+    retryN++;
+    retryT = setTimeout(function () { retryT = null; if (key) sync(); }, wait);
+    if (D && retryN === 1) D.log('sync', state + (why ? ': ' + why : ''), 'lock.js');
+    if (D && retryN === 3 && !told) {
+      told = true;
+      var unsynced = localRev() > syncedRev();
+      var nbl = window.I18N && window.I18N.lang === 'nb';
+      var t = navigator.onLine === false
+        ? (nbl ? 'Du er frakoblet. ' + (unsynced ? 'Endringene dine er trygt lagret her og synkroniseres når nettet er tilbake.' : 'Alt er lagret her.') : 'You’re offline. ' + (unsynced ? 'Your changes are safe on this device and will sync when you’re back online.' : 'Everything is saved here.'))
+        : /^(the server|serveren)/.test(why || '') ? why.charAt(0).toUpperCase() + why.slice(1) + (nbl ? '. Endringene er lagret på denne enheten og sendes når den svarer.' : '. Your changes are saved on this device and go up when it answers.')
+        : (nbl ? 'Synkroniseringen virker ikke' + (why ? ': ' + why : '') + '. Endringene er lagret på denne enheten.' : 'Sync isn’t working' + (why ? ': ' + why : '') + '. Your changes are saved on this device.');
+      D.notice('sync', t, nbl ? 'Prøv igjen' : 'Try again', function () { retryN = 0; sync(); });
+    }
   }
 
   /* Returns the server's vault, null if there is none, or undefined if sync isn't available. */
@@ -448,10 +489,15 @@
         if (r.status === 404) { available = true; remoteRev = null; remoteSalt = null; return null; }  // set up, but empty
         if (!r.ok) {
           available = false;
-          setSync('off', r.status === 401 ? 'Sync refused the login. Check TEAM_DOMAIN and POLICY_AUD'
-            : r.status === 503 ? 'Sync worker is missing VAULT, TEAM_DOMAIN or POLICY_AUD'
-            : 'Sync error ' + r.status);
-          return undefined;
+          /* 503 is a setup problem only when the Worker says so; otherwise the server is just busy for a moment */
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            var nbl = window.I18N && window.I18N.lang === 'nb';
+            setSync('off', r.status === 401 ? 'Sync refused the login. Check TEAM_DOMAIN and POLICY_AUD'
+              : r.status === 503 && /not configured/.test(j && j.error || '') ? 'Sync worker is missing VAULT, TEAM_DOMAIN or POLICY_AUD'
+              : r.status >= 500 ? (nbl ? 'serveren svarer ikke akkurat nå' : 'the server isn’t answering right now') + ' (' + r.status + ')'
+              : 'Sync error ' + r.status);
+            return undefined;
+          });
         }
         available = true;
         return r.json().then(function (v) {
@@ -462,8 +508,8 @@
         });
       })
       .catch(function () {
-        if (available) setSync('offline');
-        else setSync('off', navigator.onLine === false ? 'No internet' : 'Cloudflare login expired. Reload the page');
+        if (available || navigator.onLine === false) setSync('offline');
+        else setSync('off', 'Cloudflare login expired. Reload the page');
         return undefined;
       });
   }
@@ -538,7 +584,7 @@
       return localChanges().catch(function () { return []; }).then(function (changed) {
         if (key !== k) return;
         salt = unb64(v.salt);
-        writeJSON(VAULT_KEY, v);
+        memVault = null; writeJSON(VAULT_KEY, v);
         writeJSON(SYNC_KEY, v.rev || 0);
         remoteRev = v.rev || 0;
         var w = obj._w || {};
@@ -599,12 +645,14 @@
     pushTimer = setTimeout(function () { pushTimer = null; push(); }, 1500);
   }
 
+  var pushAgain = false;
   function push() {
-    if (pushing || !available) { if (!available) setSync('off'); return Promise.resolve(); }
+    if (pushing) { pushAgain = true; return Promise.resolve(); }
+    if (!available) { if (navigator.onLine === false) setSync('offline'); else if (syncState !== 'off') setSync('off'); else retryCheck('off'); return Promise.resolve(); }
     pushing = true;
     setSync('busy');
     return writing.then(function () {
-      var raw = localStorage.getItem(VAULT_KEY);
+      var raw = memVault ? JSON.stringify(memVault) : localStorage.getItem(VAULT_KEY);
       var v = JSON.parse(raw);
       /* Never upload over a synced dashboard this device has never been part of. */
       if ((syncedRev() === -1 && remoteSalt && v.salt !== remoteSalt && !ignoreRemote)) { setSync('off'); return; }
@@ -616,11 +664,11 @@
       }).then(function (r) {
         if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); if (data) recordBase(data); return; }
         if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
-        if (r.status === 401 || r.status === 503) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
+        if (r.status === 401) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');
       });
     }).catch(function () { setSync('offline'); })
-      .then(function () { pushing = false; });
+      .then(function () { pushing = false; if (pushAgain) { pushAgain = false; if (key && localRev() > syncedRev()) schedulePush(); } });
   }
   /* Coming back with the back button must not show an unlocked page from the cache. */
   window.addEventListener('pageshow', function (e) { if (e.persisted && tooLongAway()) lock(); });
@@ -638,7 +686,20 @@
       data = obj;
       var k = key, s = salt;
       writing = writing.then(function () { return seal(obj, k, s, localRev() + 1); })
-        .then(function (v) { if (key === k) { writeJSON(VAULT_KEY, v); schedulePush(); } })
+        .then(function (v) {
+          if (key !== k) return;
+          if (writeJSON(VAULT_KEY, v)) memVault = null;
+          else {
+            /* this browser's storage is full: keep the newest copy in memory and upload it */
+            memVault = v;
+            if (window.Diag) {
+              window.Diag.log('storage', 'vault save failed: storage full', 'lock.js');
+              var nbl = window.I18N && window.I18N.lang === 'nb';
+              window.Diag.notice('storage', nbl ? 'Lagringsplassen i nettleseren er full. Endringen er sendt til serveren – last ned en sikkerhetskopi og fjern gamle bilder.' : 'This browser’s storage is full. The change was sent to your server – download a backup and remove old photos.', null, null, 'device-hdd');
+            }
+          }
+          schedulePush();
+        })
         .catch(function (e) { console.error(e); });
       return writing;
     },
@@ -654,7 +715,7 @@
       return writing.then(function () {
         v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
         if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
-        writeJSON(VAULT_KEY, v);
+        memVault = null; writeJSON(VAULT_KEY, v);
         remote = null;
         ignoreRemote = true;
         lock('Backup restored');
@@ -708,7 +769,7 @@
         .then(function (k) {
           return seal(data, k, s, localRev() + 1).then(function (v) {
             recNext = undefined;
-            writeJSON(VAULT_KEY, v);
+            memVault = null; writeJSON(VAULT_KEY, v);
             key = k; salt = s;
             remember();
             return push();
@@ -728,7 +789,9 @@
   $('lockBox').style.visibility = 'hidden';
   recall().then(function (rec) {
     var vault = readJSON(VAULT_KEY);
-    if (!rec || !rec.key || rec.until < Date.now() || !isVault(vault) || vault.salt !== rec.salt) {
+    /* "Lock now" removes dash.until at once (the stored key is deleted a moment later), so a reload right after locking stays locked */
+    var until = null; try { until = localStorage.getItem('dash.until'); } catch (e) {}
+    if (!rec || !rec.key || rec.until < Date.now() || !until || !isVault(vault) || vault.salt !== rec.salt) {
       if (rec) forget();
       throw new Error('locked');
     }

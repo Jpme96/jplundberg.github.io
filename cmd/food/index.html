@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=121" rel="stylesheet">
+  <link href="../styles.css?v=122" rel="stylesheet">
   <link href="../modern.css?v=5" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
@@ -183,6 +183,7 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="diag"><span class="st-ico" style="--c:#6b7280"><i class="bi bi-clipboard2-pulse"></i></span><span class="st-label">Diagnostics<small>Errors, sync status, daily self-check</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-grp"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span></p>
         <p class="st-minor">Front page</p>
@@ -445,6 +446,11 @@
       </div>
 
 
+      <div class="st-page" data-page="diag" data-title="Diagnostics" hidden>
+        <p class="st-intro">How the dashboard is doing on this device: sync, Apple Health, the daily self-check and recent errors. It checks itself once a day and only tells you when something is wrong.</p>
+        <div id="dgBody"><p class="muted">Looking …</p></div>
+      </div>
+
       <div class="st-page" data-page="shortcuts" data-title="Siri &amp; Shortcuts" hidden>
         <p class="st-intro">Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you press Add.</p>
         <section class="st-group sc-list" id="scList"></section>
@@ -654,9 +660,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=610dd6e023"></script>
-  <script src="../dist/page-food.js?v=fada320673"></script>
-  <script src="../dist/tail.js?v=546d86dc93"></script>
+  <script src="../dist/head.js?v=1049bd7ce3"></script>
+  <script src="../dist/page-food.js?v=c3aa4247eb"></script>
+  <script src="../dist/tail.js?v=e4a23d04e1"></script>
   <!-- /scripts -->
 </body>
 </html>

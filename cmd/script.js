@@ -453,7 +453,7 @@
     if (e.pointerType === 'mouse') return;
     var li = e.target.closest('.todo-item'); if (!li || e.target.closest('.del')) return;
     sw = { li: li, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
-    sw.hold = setTimeout(function () { if (sw && !sw.on && Math.abs(sw.dx) < 8) { var it = sw.li; sw = null; swEnd.justSwiped = Date.now() + 1200; if (navigator.vibrate) navigator.vibrate(10); todoMenu(it, e.clientX, e.clientY); } }, 520);
+    sw.hold = setTimeout(function () { if (sw && !sw.on && Math.abs(sw.dx) < 8) { var it = sw.li; sw = null; swEnd.justSwiped = Date.now() + 1200; if (navigator.vibrate) navigator.vibrate(10); todoMenu(it, e.clientX, e.clientY, true); } }, 520);
   });
   $('todoList').addEventListener('pointermove', function (e) {
     if (!sw || e.pointerId !== sw.id) return;
@@ -477,7 +477,7 @@
   /* a swipe isn't also a tap */
   $('todoList').addEventListener('click', function (e) { if (swEnd.justSwiped && Date.now() - swEnd.justSwiped < 350) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   $('todoList').addEventListener('contextmenu', function (e) { var li = e.target.closest('.todo-item'); if (!li) return; e.preventDefault(); todoMenu(li, e.clientX, e.clientY); });
-  function todoMenu(li, x, y) {
+  function todoMenu(li, x, y, held) {
     var t = todos.filter(function (z) { return z.id === li.dataset.id; })[0]; if (!t) return;
     closeMenu();
     var td = tkey(new Date()), inTop = t.today === td && !t.done;
@@ -498,8 +498,14 @@
     var r = m.getBoundingClientRect(), px = Math.min(Math.max(8, x - r.width / 2), innerWidth - r.width - 8), py = y + 12 + r.height > low ? Math.max(8, Math.min(y - r.height - 12, low - r.height)) : y + 12;
     m.style.left = px + 'px'; m.style.top = py + 'px';
     m.querySelector('button').focus();
+    /* opened by holding a finger down: lifting that finger must not "tap" the item under it –
+       an item only reacts after a new touch on the menu (or the keyboard) */
+    var armed = !held;
+    m.addEventListener('pointerdown', function () { armed = true; });
     m.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-tdm]'); if (!b) return; closeMenu();
+      var b = e.target.closest('[data-tdm]'); if (!b) return;
+      if (!armed && e.detail !== 0) { e.preventDefault(); return; }
+      closeMenu();
       var a = b.dataset.tdm;
       if (a === 'done') { var c = li.querySelector('.check'); if (c) c.click(); }
       else if (a === 'del') { var d = li.querySelector('.del'); if (d) d.click(); }

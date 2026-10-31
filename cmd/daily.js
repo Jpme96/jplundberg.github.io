@@ -135,7 +135,10 @@
         if (!j.data || !j.data.trip) throw new Error('no trips');
         CM.list = j.data.trip.tripPatterns || []; CM.at = Date.now(); CM.err = false;
         if (r.from === 'Home' && CM.list[0]) try { localStorage.setItem('dash.commuteMins', String(Math.round(CM.list[0].duration / 60))); } catch (e) {}   // for the "time to leave" notification
-      }).catch(function () { CM.err = true; CM.at = Date.now(); }).then(function () { CM.busy = false; drawCommute(); });
+      }).catch(function () {
+        /* no answer: try again by itself after 15 s, then 45 s, then the normal minute */
+        CM.err = true; CM.fails = (CM.fails || 0) + 1; CM.at = Date.now() - (CM.fails < 3 ? (CM.fails === 1 ? 45000 : 15000) : 0);
+      }).then(function () { if (!CM.err) CM.fails = 0; CM.busy = false; drawCommute(); });
   }
   function drawCommute() {
     if (!cm) return;
@@ -156,7 +159,7 @@
       '<button type="button" class="link-btn cm-plan" data-cmplan>All trips</button></div>';
     var body;
     if (!CM.list && !CM.err) body = '<p class="muted cm-msg">Finding departures …</p>';
-    else if (!rows.length) body = '<p class="muted cm-msg">' + (CM.err ? 'No connection to Entur right now.' : 'No trips found.') + '</p>';
+    else if (!rows.length) body = '<p class="muted cm-msg">' + (CM.err ? 'No connection to Entur right now. <button type="button" class="link-btn" data-cmretry>Try again</button>' : 'No trips found.') + '</p>';
     else body = '<ul class="cm-list">' + rows.map(function (x, i) {
       var l = x.first, line = l && l.line, col = line && line.presentation && line.presentation.colour ? '#' + line.presentation.colour : 'var(--accent)';
       var dest = l && l.fromEstimatedCall && l.fromEstimatedCall.destinationDisplay ? l.fromEstimatedCall.destinationDisplay.frontText : '';
@@ -170,6 +173,7 @@
   }
   if (cm) {
     cm.addEventListener('click', function (e) {
+      if (e.target.closest('[data-cmretry]')) { var rr = route(); CM.fails = 0; if (rr) { CM.list = null; CM.err = false; drawCommute(); fetchCommute(rr); } return; }
       if (!e.target.closest('[data-cmplan]')) return;
       var r = route(); if (!r) return;
       try { sessionStorage.setItem('dash.tripQuery', JSON.stringify({ from: r.a, to: r.b })); } catch (x) {}
