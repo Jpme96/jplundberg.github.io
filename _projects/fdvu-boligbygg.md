@@ -53,6 +53,7 @@ charts:
         value: 55.28
         start: 2026-10-28
         end: 2026-10-28
+published: false
 ---
 God drift og godt vedlikehold forutsetter at dokumentasjonen om byggene er komplett, korrekt og lett å finne. I Boligbygg arbeider jeg med å få dette på plass. Så langt er 406 bygninger hentet ut for å få dokumentasjonen i riktig struktur, og vi har nådd 55 % av målet. Fremdriften har økt jevnt, fra 9 % i mai til 55 % i oktober 2026. Arbeidet har tre fokusområder.
 
