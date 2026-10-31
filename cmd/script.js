@@ -248,7 +248,7 @@
       return '<li class="goal' + (pct >= 1 ? ' done' : '') + '" data-id="' + g.id + '">' +
         '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle>' +
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - pct)) + '"></circle></svg>' +
-        '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%' +
+        '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + (g.target > 0 && !ahLower(ahk) && g.value > g.target ? fmt(g.value) + ' · goal ' + fmt(g.target) + ' reached' : fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%') +
         (h ? ' · <i class="bi bi-link-45deg"></i> ' + esc(h.name) + ' habit' : '') + (ahk ? ' · <i class="bi bi-apple"></i> Apple Health' : '') + '</span></div>' +
         (ahk ? '' : '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div>') + '</li>';
     }).join('');

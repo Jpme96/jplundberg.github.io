@@ -200,6 +200,12 @@
     var perDay = left / (per && per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1);
     return { left: left, perDay: perDay };
   }
+  /* the same rule as At a glance: a fixed cost with a day that has passed this month and isn't ticked as paid */
+  function overdueBills(now) {
+    var d = window.Vault && window.Vault.get ? window.Vault.get() : null; if (!d || !d.budget || (window.Features && !window.Features.on('finance'))) return [];
+    var ym = now.getFullYear() + '-' + pad(now.getMonth() + 1), paid = (d.paid && d.paid[ym]) || [], last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return (d.budget.fixed || []).filter(function (f) { return f.day && f.src !== 'sub' && paid.indexOf(f.id) < 0 && Math.min(f.day, last) < now.getDate(); }).map(function (f) { return f.name || 'A bill'; });
+  }
   function nextEvents(now) {
     var C = window.Cal; if (!C || !C.occurrences || (window.Features && !window.Features.on('calendar'))) return [];
     var to = new Date(now); to.setDate(to.getDate() + 2); to.setHours(23, 59);
@@ -227,8 +233,12 @@
       : now.getHours() >= 17 ? 'enjoy the evening.' : now.getHours() < 12 ? 'make it a good one.' : 'keep it going.';
     var sub = [];
     if (firstTom) sub.push(firstTom.title + ' at ' + tm(firstTom) + ' tomorrow.');
-    var m = moneyToday();
-    if (m) sub.push(m.left < 0 ? 'You’re over budget this month – take it easy on spending.' : 'You’re on track with money this month.');
+    var m = moneyToday(), late = overdueBills(now);
+    /* an overdue bill comes first – never "on track" while something is unpaid (names only, no amounts on the big headline) */
+    if (late.length === 1) sub.unshift(late[0] + ' is overdue – pay it when you can.');
+    else if (late.length > 1) sub.unshift(late.length + ' bills are overdue: ' + late.slice(0, 3).join(', ') + '.');
+    if (m && !late.length) sub.push(m.left < 0 ? 'You’re over budget this month – take it easy on spending.' : 'You’re on track with money this month.');
+    else if (m && m.left < 0) sub.push('You’re over budget this month – take it easy on spending.');
     var hb = readJSON('dash.habits', { list: [], log: {} }) || {}, mon = new Date(now); mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
     var habitLine = '';
     (hb.list || []).some(function (h) {

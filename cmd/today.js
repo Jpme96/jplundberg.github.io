@@ -249,7 +249,7 @@
           (future ? ' disabled' : '') + ' aria-pressed="' + on + '" aria-label="' + esc(h.name) + ', ' + d.toLocaleDateString('en-GB', { weekday: 'long' }) + '"><i class="bi bi-check-lg"></i></button>';
       }).join('');
       return '<div class="hb-item"><div class="hb-top"><button type="button" class="hb-name" data-edit="' + h.id + '" title="Edit ' + esc(h.name) + '">' + esc(h.name) + '</button>' +
-        '<span class="hb-count' + (n >= h.target ? ' met' : '') + '">' + (n >= h.target ? '<i class="bi bi-check-circle-fill"></i> ' : '') + n + ' of ' + h.target + '</span></div>' +
+        '<span class="hb-count' + (n >= h.target ? ' met' : '') + '">' + (n >= h.target ? '<i class="bi bi-check-circle-fill"></i> ' : '') + (n > h.target ? n + ' · goal ' + h.target : n + ' of ' + h.target) + '</span></div>' +
         '<div class="hb-days">' + cells + '</div></div>';
     }).join('');
   }

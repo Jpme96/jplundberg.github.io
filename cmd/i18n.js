@@ -813,7 +813,7 @@
     'Anniversaries and other yearly days – one per line, a name and a date. Name days come by themselves from the Norwegian almanac.': 'Merkedager og andre årlige dager – én per linje, et navn og en dato. Navnedager kommer av seg selv fra almanakken.',
     'Nothing in the next four months – add birthdays and other dates to the people in your list.': 'Ingenting de neste fire månedene – legg inn bursdager og andre datoer på personene dine.', 'Wedding': 'Bryllup', 'Anniversary': 'Merkedag',
     'Servings': 'Porsjoner', 'Fewer servings': 'Færre porsjoner', 'More servings': 'Flere porsjoner', 'Pantry': 'Matskap', 'all in stock': 'alt på lager', 'On the list': 'På lista', 'Got it': 'Har det',
-    'Running out': 'Snart tom', 'The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk «Snart tom», så havner den på handlelista – krysset av der, er den på lager igjen.',
+    'Running out': 'Snart tom', 'Running out · on your shopping list': 'Snart tomt · på handlelisten', 'Tap when it’s back in the cupboard': 'Trykk når det er tilbake i skapet', 'Tap anything that’s running out – it goes on the shopping list.': 'Trykk på det som er i ferd med å gå tomt – det havner på handlelisten.', 'Find or add – e.g. oats': 'Finn eller legg til – f.eks. havregryn', 'Find or add to the pantry': 'Finn eller legg til i matskapet', 'Or add your own – e.g. oats': 'Eller legg til din egen – f.eks. havregryn', 'The basics you always keep at home. Tap one when it’s running out and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk på en når den er i ferd med å gå tom, så havner den på handlelisten – krysset av der, er den tilbake på lager.', 'The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk «Snart tom», så havner den på handlelista – krysset av der, er den på lager igjen.',
     'Add the usual basics': 'Legg til de vanlige basisvarene', 'Add a basic – e.g. oats, coffee filters': 'Legg til en basisvare – f.eks. havregryn, kaffefilter', 'Add to the pantry': 'Legg til i matskapet',
     'Add the usual basics you don’t have': 'Legg til de vanlige du ikke har', 'Recipe from a link': 'Oppskrift fra en lenke', 'From a link': 'Fra en lenke',
     'Paste the address of a recipe page – the name, ingredients and steps are read from it.': 'Lim inn adressen til en oppskriftsside – navn, ingredienser og fremgangsmåte hentes fra den.',
@@ -887,6 +887,8 @@
     'Update the Worker code to use this (see the guide).': 'Oppdater Worker-koden for å bruke dette (se veiledningen).',
     'Pick today’s top 3 and give them a time.': 'Velg dagens topp 3 og gi dem et tidspunkt.', 'Nothing on your list – enjoy the free time.': 'Ingenting på lista – nyt fritiden.'
   });
+  P.unshift([/^([\d,.]+) · goal ([\d,.]+) reached$/, '$1 · målet på $2 er nådd'], [/^(\d+) · goal (\d+)$/, '$1 · mål $2']);
+  P.unshift([/^(.+) is overdue – pay it when you can\.$/, '$1 er forfalt – betal den når du kan.'], [/^(\d+) bills are overdue: (.+)\.$/, '$1 regninger er forfalt: $2.']);
   P.unshift(
     [/^in (\d+) days?( ·)?$/, function (m, n, d) { return 'om ' + n + ' dag' + (n === '1' ? '' : 'er') + (d || ''); }],
     [/^(\d+) days? ago( ·)?$/, function (m, n, d) { return 'for ' + n + ' dag' + (n === '1' ? '' : 'er') + ' siden' + (d || ''); }],
@@ -900,6 +902,7 @@
     [/^Couldn’t publish \((.+)\)\.( Try again\.)?$/, function (m, a, b) { return 'Klarte ikke å publisere (' + a + ').' + (b ? ' Prøv igjen.' : ''); }]
   );
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
+  P.push([/^(\d+) at home$/, '$1 hjemme'], [/^(\d+) added to the pantry$/, '$1 lagt til i matskapet'], [/^(.+) – tap if it’s running out$/, '$1 – trykk hvis det går tomt'], [/^(.+) – on the shopping list, tap when you have it again$/, '$1 – på handlelisten, trykk når du har det igjen'], [/^Got (.+) again$/, 'Har $1 igjen']);
   P.push([/^Keep (.+) in the pantry$/, 'Ha $1 i matskapet'], [/^Keep in the pantry$/, 'Ha i matskapet'], [/^(.+) is in the pantry$/, '$1 er i matskapet'], [/^(.+) – in the pantry, on the list$/, '$1 – i matskapet, på lista']);
   P.push([/^Clocked in at (.+)$/, 'Stemplet inn kl. $1'], [/^Remember to clock out$/, 'Husk å stemple ut']);
   /* the same texts come round again and again (dates, buttons): remember what each became */

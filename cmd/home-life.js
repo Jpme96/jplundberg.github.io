@@ -550,6 +550,10 @@
     var t = ' ' + String(text).toLowerCase() + ' ';
     /* household first: "toilet paper" shouldn't land with the oil */
     for (var j = 0; j < AISLES.length - 1; j++) if (AISLES[j][0] === 'home' && AISLES[j][4].test(t)) return AISLES[j][0];
+    /* tins and plain salt/pepper before fruit & veg: "tinned tomatoes" isn't fresh, "pepper" alone is the spice */
+    if (/kaffefilter|coffee filter|filterpapir/.test(t)) return 'home';
+    if (/tinned|canned|hermetisk|på boks|hakkede tomater|chopped tomatoes|buljong|stock cube/.test(t)) return 'dry';
+    if (/^ (salt|pepper|sort pepper|black pepper|kvernet pepper) $/.test(t)) return 'spice';
     for (var i = 0; i < AISLES.length - 1; i++) if (AISLES[i][4].test(t)) return AISLES[i][0];
     return 'other';
   }

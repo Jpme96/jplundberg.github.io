@@ -95,25 +95,38 @@
     var keep = el.querySelector('.fp5-padd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
     var by = {}; l.forEach(function (x) { var a = HL.aisleOf(x.name); (by[a] = by[a] || []).push(x); });
     var groups = Object.keys(by).sort(function (a, b) { return HL.AISLE[a].i - HL.AISLE[b].i; });
-    var body = l.length ? '<p class="muted hl-small fp5-sum"><span>' + l.length + ' basics</span> · ' + (low.length ? '<b class="fp5-lowc">' + low.length + ' running out</b>' : '<span>all in stock</span>') + '</p>' +
-      '<div class="fp5-grid">' + groups.map(function (a) {
+    /* a tidy pantry: what's running out on top, then everything as tap-able chips by shop section */
+    var sorted = function (arr) { return arr.slice().sort(function (x, y) { return x.name.localeCompare(y.name, 'nb'); }); };
+    var chip = function (x) {
+      var lw = x.state === 'low';
+      if (editP) return '<span class="pn-chip edit" data-noi18n>' + esc(x.name) + '<button type="button" data-fpdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></span>';
+      return '<button type="button" class="pn-chip' + (lw ? ' low' : '') + '" ' + (lw ? 'data-fpok' : 'data-fplow') + '="' + esc(x.id) + '" data-pn="' + esc(x.name.toLowerCase()) + '" aria-label="' + esc(x.name) + (lw ? ' – on the shopping list, tap when you have it again' : ' – tap if it’s running out') + '">' +
+        (lw ? '<i class="bi bi-cart3"></i>' : '') + '<span data-noi18n>' + esc(x.name) + '</span></button>';
+    };
+    var body = l.length ? (low.length && !editP ? '<div class="pn-low"><p><i class="bi bi-cart3"></i> Running out · on your shopping list</p><div class="pn-chips">' + sorted(low).map(function (x) {
+        return '<button type="button" class="pn-chip low" data-fpok="' + esc(x.id) + '" aria-label="Got ' + esc(x.name) + ' again"><span data-noi18n>' + esc(x.name) + '</span><i class="bi bi-check2"></i></button>'; }).join('') + '</div><p class="pn-tip">Tap when it’s back in the cupboard</p></div>' : '') +
+      '<div class="pn-groups">' + groups.map(function (a) {
         var A = HL.AISLE[a];
-        return '<div class="fp5-grp"><p class="sh-grp" style="--c:' + A.c + '"><i class="bi bi-' + A.ic + '"></i> ' + esc(A.n) + '</p><ul class="fp5-pl">' + by[a].sort(function (x, y) { return x.name.localeCompare(y.name, 'nb'); }).map(function (x) {
-          var lw = x.state === 'low';
-          return '<li class="' + (lw ? 'low' : '') + '"><span class="fp5-n" data-noi18n>' + esc(x.name) + '</span>' +
-            (editP ? '<button type="button" class="icon-btn sm" data-fpdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button>'
-              : lw ? '<span class="hl-chip" style="--c:#c98500"><i class="bi bi-cart3"></i> On the list</span><button type="button" class="text-btn" data-fpok="' + esc(x.id) + '">Got it</button>'
-                : '<button type="button" class="text-btn fp5-run" data-fplow="' + esc(x.id) + '" aria-label="' + esc(x.name) + ' is running out"><i class="bi bi-cart-plus"></i> Running out</button>') + '</li>';
-        }).join('') + '</ul></div>';
-      }).join('') + '</div>'
-      : '<p class="empty kit-empty">The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics</button></div>';
-    el.innerHTML = '<section class="card kit-card" id="pantry"><div class="card-head"><h2><i class="bi bi-box-seam"></i> Pantry' + (low.length ? ' <span class="hl-count">' + low.length + '</span>' : '') + '</h2>' +
-      '<div class="head-actions">' + (l.length ? '<button type="button" class="text-btn" data-fpedit aria-pressed="' + editP + '"><i class="bi bi-' + (editP ? 'check2' : 'pencil') + '"></i> ' + (editP ? 'Done' : 'Edit') + '</button>' : '') + '</div></div>' +
-      body + '<form class="hl-shopadd fp5-padd"><input placeholder="Add a basic – e.g. oats, coffee filters" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Add to the pantry"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
+        return '<div class="pn-grp" data-pngrp><p class="pn-h" style="--c:' + A.c + '"><i class="bi bi-' + A.ic + '"></i> ' + esc(A.n) + ' <span>' + by[a].length + '</span></p><div class="pn-chips">' + sorted(by[a]).map(chip).join('') + '</div></div>';
+      }).join('') + '</div>' + (editP ? '' : '<p class="pn-tip">Tap anything that’s running out – it goes on the shopping list.</p>')
+      : '<p class="empty kit-empty">The basics you always keep at home. Tap one when it’s running out and it goes on the shopping list – ticked off there, it’s back in stock.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics</button></div>';
+    el.innerHTML = '<section class="card kit-card pn-card" id="pantry"><div class="card-head"><h2><i class="bi bi-box-seam"></i> Pantry' + (low.length ? ' <span class="hl-count">' + low.length + '</span>' : '') + '</h2>' +
+      '<div class="head-actions">' + (l.length ? '<span class="muted pn-sum">' + l.length + ' at home</span><button type="button" class="text-btn" data-fpedit aria-pressed="' + editP + '"><i class="bi bi-' + (editP ? 'check2' : 'pencil') + '"></i> ' + (editP ? 'Done' : 'Edit') + '</button>' : '') + '</div></div>' +
+      (l.length ? '<form class="hl-shopadd fp5-padd pn-find"><i class="bi bi-search" aria-hidden="true"></i><input placeholder="Find or add – e.g. oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Find or add to the pantry"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
+      body + (!l.length ? '<form class="hl-shopadd fp5-padd"><input placeholder="Or add your own – e.g. oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Add to the pantry"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
       (editP && l.length < BASICS.length ? '<button type="button" class="text-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics you don’t have</button>' : '') + '</section>';
+    filterPantry(el, typed);
     var inp = el.querySelector('.fp5-padd input'); inp.value = typed; if (focus) inp.focus();
     if (location.hash === '#pantry' && document.documentElement.classList.contains('unlocked')) { history.replaceState(null, '', location.pathname + location.search); setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 400); }
   }
+  /* typing in "Find or add" narrows the chips; Enter adds it when it isn't there */
+  function filterPantry(el, q) {
+    q = String(q || '').trim().toLowerCase();
+    el.querySelectorAll('.pn-groups [data-pn]').forEach(function (c) { c.hidden = !!q && c.dataset.pn.indexOf(q) < 0; });
+    el.querySelectorAll('[data-pngrp]').forEach(function (g) { g.hidden = !!q && !g.querySelector('[data-pn]:not([hidden])'); });
+    var low = el.querySelector('.pn-low'); if (low) low.hidden = !!q;
+  }
+  document.addEventListener('input', function (e) { var i = e.target.closest && e.target.closest('.pn-find input'); if (i) filterPantry($t('pantry'), i.value); });
   function setState(id, st) { var t = Fe.tools(); (t.pantry || []).forEach(function (x) { if (x.id === id) x.state = st; }); Fe.saveTools(t); }
   /* bought (ticked off) or cleared from the shopping list → back in stock */
   function syncShop() {
@@ -131,8 +144,14 @@
     e.preventDefault();
     var inp = f.querySelector('input'), names = inp.value.split(/,|\n/).map(function (x) { return x.trim().slice(0, 60); }).filter(Boolean); inp.value = '';
     var t = Fe.tools(), l = Array.isArray(t.pantry) ? t.pantry : [], have = {}; l.forEach(function (x) { have[x.name.toLowerCase()] = 1; });
-    names.forEach(function (n) { if (!have[n.toLowerCase()]) { l.push({ id: uid(), name: n, state: 'ok' }); have[n.toLowerCase()] = 1; } });
-    t.pantry = l; Fe.saveTools(t); setTimeout(function () { var i = document.querySelector('.fp5-padd input'); if (i) i.focus(); }, 60);
+    var added = 0, already = [];
+    names.forEach(function (n) { if (!have[n.toLowerCase()]) { l.push({ id: uid(), name: n.charAt(0).toUpperCase() + n.slice(1), state: 'ok' }); have[n.toLowerCase()] = 1; added++; } else already.push(n.toLowerCase()); });
+    var el = $t('pantry'); if (el) filterPantry(el, '');
+    if (added) { t.pantry = l; Fe.saveTools(t); toast('<i class="bi bi-box-seam"></i> ' + (added === 1 ? esc(names[0]) + ' is in the pantry' : added + ' added to the pantry')); }
+    setTimeout(function () {
+      already.forEach(function (n) { var c = document.querySelector('.pn-groups [data-pn="' + n.replace(/"/g, '') + '"]'); if (c) { c.classList.remove('pn-flash'); void c.offsetWidth; c.classList.add('pn-flash'); c.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } });
+      var i = document.querySelector('.fp5-padd input'); if (i) i.focus();
+    }, 80);
   });
   document.addEventListener('click', function (e) {
     var b;
