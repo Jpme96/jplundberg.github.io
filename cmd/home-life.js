@@ -573,6 +573,7 @@
       var a = AISLE[aisleOf(x.text)];
       return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-shx="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' +
         (x.done ? '' : '<button type="button" class="icon-btn sm sh-aisle" data-shaisle="' + esc(x.id) + '" aria-label="Section: ' + esc(a.n) + '" style="--c:' + a.c + '"><i class="bi bi-' + a.ic + '"></i></button>') +
+        (window.FoodPlus ? window.FoodPlus.shopBtn(x) : '') +
         '<button type="button" class="icon-btn sm" data-shdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.text) + '"><i class="bi bi-x"></i></button></li>';
     }
     function draw() {

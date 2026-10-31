@@ -72,6 +72,21 @@
     var t = String(s).toLowerCase();
     return pantry().some(function (x) { return x.state !== 'low' && keys(x).some(function (k) { return word(k).test(t); }); });
   }
+  /* does a shopping list line ("2 dl melk") mean this pantry item ("Melk")? */
+  function matches(x, text) { var t = String(text).toLowerCase(); return t === String(x.name).toLowerCase() || keys(x).some(function (k) { return word(k).test(t); }); }
+  function inList(text) { return pantry().filter(function (x) { return matches(x, text); })[0]; }
+  /* "2 dl melk" → "Melk", "1 boks hakkede tomater" → "Hakkede tomater" */
+  var UNITS = /^(g|gram|kg|hg|dl|cl|ml|l|liter|ss|ts|spiseskje|teskje|stk|pk|pakke|pakker|boks|bokser|glass|bunt|fedd|klype|never|skive|skiver|tbsp|tsp|cups?|oz|lb|pcs|pack|packs|tins?|cans?|jars?|bunch|cloves?|x)\.?\s+/i;
+  function cleanName(text) {
+    var t = String(text).trim().replace(QRX, '').trim().replace(UNITS, '').replace(/^(av|of)\s+/i, '').trim();
+    if (!t) t = String(text).trim();
+    return (t.charAt(0).toUpperCase() + t.slice(1)).slice(0, 60);
+  }
+  /* on a shopping list row: keep it in the pantry from now on (bought → in stock, still to buy → on the list) */
+  function shopBtn(x) {
+    if (!on() || inList(x.text)) return '';
+    return '<button type="button" class="icon-btn sm fp5-topan" data-fptopan="' + esc(x.id) + '" aria-label="Keep ' + esc(cleanName(x.text)) + ' in the pantry" title="Keep in the pantry"><i class="bi bi-box-arrow-in-down"></i></button>';
+  }
   var editP = false;
   function drawPantry() {
     var el = $t('pantry'); if (!el) return;
@@ -106,7 +121,7 @@
     var t = Fe.tools(), shop = Array.isArray(t.shop) ? t.shop : [], ch = false;
     (t.pantry || []).forEach(function (x) {
       if (x.state !== 'low') return;
-      var it = shop.filter(function (s) { return s.text.toLowerCase() === x.name.toLowerCase(); });
+      var it = shop.filter(function (s) { return matches(x, s.text); });
       if (!it.length || it.every(function (s) { return s.done; })) { x.state = 'ok'; ch = true; }
     });
     if (ch) Fe.saveTools(t);
@@ -126,6 +141,14 @@
       var oldS = snapshot('shop'), oldP = snapshot('pantry');
       HL.addShop([x.name], 'pantry'); setState(x.id, 'low');
       toast('<i class="bi bi-cart-plus"></i> ' + esc(x.name) + ' is on the shopping list', function () { restore('shop', oldS); restore('pantry', oldP); });
+      return;
+    }
+    if ((b = e.target.closest('[data-fptopan]'))) {
+      var si = (Fe.tools().shop || []).filter(function (q) { return q.id === b.dataset.fptopan; })[0]; if (!si) return;
+      var o3 = snapshot('pantry'), t4 = Fe.tools(), nm = cleanName(si.text);
+      t4.pantry = Array.isArray(t4.pantry) ? t4.pantry : [];
+      t4.pantry.push({ id: uid(), name: nm, state: si.done ? 'ok' : 'low' }); Fe.saveTools(t4);
+      toast('<i class="bi bi-box-seam"></i> ' + esc(nm) + (si.done ? ' is in the pantry' : ' – in the pantry, on the list'), function () { restore('pantry', o3); });
       return;
     }
     if ((b = e.target.closest('[data-fpok]'))) {
@@ -222,7 +245,7 @@
   }
   window.addEventListener('hashchange', function () { if (document.documentElement.classList.contains('unlocked')) fromHash(); });
 
-  window.FoodPlus = { inPantry: inPantry, lines: lines, ingrBlock: ingrBlock, scale: scaleLine, openImport: openImport, pantry: pantry,
+  window.FoodPlus = { shopBtn: shopBtn, cleanName: cleanName, inPantry: inPantry, lines: lines, ingrBlock: ingrBlock, scale: scaleLine, openImport: openImport, pantry: pantry,
     importBtn: function () { return '<button type="button" class="text-btn" data-fpimport aria-label="Recipe from a link"><i class="bi bi-link-45deg"></i> From a link</button>'; } };
   window.CommandExtra = window.CommandExtra || [];
   window.CommandExtra.push(function () { return on() ? [

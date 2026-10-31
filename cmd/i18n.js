@@ -900,6 +900,7 @@
     [/^Couldn’t publish \((.+)\)\.( Try again\.)?$/, function (m, a, b) { return 'Klarte ikke å publisere (' + a + ').' + (b ? ' Prøv igjen.' : ''); }]
   );
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
+  P.push([/^Keep (.+) in the pantry$/, 'Ha $1 i matskapet'], [/^Keep in the pantry$/, 'Ha i matskapet'], [/^(.+) is in the pantry$/, '$1 er i matskapet'], [/^(.+) – in the pantry, on the list$/, '$1 – i matskapet, på lista']);
   P.push([/^Clocked in at (.+)$/, 'Stemplet inn kl. $1'], [/^Remember to clock out$/, 'Husk å stemple ut']);
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
