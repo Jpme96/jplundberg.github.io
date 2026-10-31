@@ -259,7 +259,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .fp-top .fp-back { display: none; }   /* Home is in the menu */
 
 /* page changes: short and light – the bars are drawn solid while pages swap (blur is expensive to animate on a phone) */
-.modern.vt-active .mbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg-solid); }
+@media (min-width: 760px) { .modern.vt-active .mbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg-solid); } }   /* phones: the top bar has no background, so nothing to swap */
 .modern::view-transition-old(root), .modern::view-transition-new(root) { animation-duration: .2s; }
 .modern::view-transition-group(tb-pill) { animation-duration: .3s; }
 .modern .tabbar a.going { color: var(--on-accent); }
