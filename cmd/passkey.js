@@ -139,7 +139,7 @@
   function errText(err) {
     var w = err && err.message;
     return w === 'wrong' ? L('That isn’t the passcode.', 'Det er ikke koden.')
-      : w === 'noprf' ? L('This phone or browser can’t keep the key safely yet – it needs iOS 18 or newer (or a recent Chrome/Safari). Update and try again.', 'Denne telefonen eller nettleseren kan ikke ta vare på nøkkelen ennå – det krever iOS 18 eller nyere (eller en nyere Chrome/Safari). Oppdater og prøv igjen.')
+      : w === 'noprf' ? L('The place it was saved can’t give back the key this needs. Try again and save it in Passwords (iCloud Keychain) instead of another password manager – it needs iOS 18 or newer.', 'Stedet den ble lagret kan ikke gi tilbake nøkkelen dette trenger. Prøv igjen og lagre i Passord (iCloud-nøkkelring) i stedet for en annen passordbehandler – det krever iOS 18 eller nyere.')
       : err && err.name === 'NotAllowedError' ? L('Face ID was cancelled or timed out. Try again – and tap the button straight after typing the passcode.', 'Face ID ble avbrutt eller tok for lang tid. Prøv igjen – og trykk på knappen rett etter at du har skrevet koden.')
       : err && err.name === 'InvalidStateError' ? L('This device already has a passkey for the dashboard. Turn the switch off and on again.', 'Denne enheten har allerede en passkey for dashbordet. Slå bryteren av og på igjen.')
       : err && err.name === 'SecurityError' ? L('The browser blocked it (it only works on jplundberg.com, opened in Safari or the Home Screen app).', 'Nettleseren stoppet det (det virker bare på jplundberg.com, i Safari eller appen på Hjem-skjermen).')
@@ -149,11 +149,12 @@
     if (!e.target || e.target.id !== 'pkForm') return;
     e.preventDefault();
     var m = $('pkMsg'), pass = $('pkPass').value;
-    m.textContent = L('Look at the phone / touch the sensor …', 'Se på telefonen / berør sensoren …');
-    enable(pass).then(function (st) {
+    m.textContent = L('Your phone asks where to save the passkey – choose Passwords (iCloud Keychain), then Face ID.', 'Telefonen spør hvor passkeyen skal lagres – velg Passord (iCloud-nøkkelring), deretter Face ID.');
+    var hint = setTimeout(function () { if (!saved()) m.textContent = L('If a password manager (1Password, Bitwarden …) opened: tap “Other options” and save in Passwords (iCloud Keychain) – other managers can’t give back the key this needs.', 'Hvis en passordbehandler (1Password, Bitwarden …) åpnet seg: trykk «Andre valg» og lagre i Passord (iCloud-nøkkelring) – andre passordbehandlere kan ikke gi tilbake nøkkelen dette trenger.'); }, 9000);
+    enable(pass).then(function (st) { clearTimeout(hint);
       if (st === 'done') { paint(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock is on', NAME + '-opplåsing er på')); return; }
       m.innerHTML = esc(L('Almost there – one more Face ID to finish.', 'Nesten ferdig – én Face ID til for å fullføre.')) + ' <button type="button" class="pill-btn" data-pkfinish>' + esc(L('Finish with ' + NAME, 'Fullfør med ' + NAME)) + '</button>';
-    }).catch(function (err) { m.textContent = errText(err); });
+    }).catch(function (err) { clearTimeout(hint); m.textContent = errText(err); });
   });
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-pkfinish]')) return;
