@@ -340,3 +340,8 @@
   .article-body h2, .article-body h3 { font-size: 21px; margin-top: 34px; }
   .more-title { font-size: 20px; }
 }
+
+/* key figures and charts made in the dashboard's writer */
+.article-body .article-stats { margin: 1.6rem 0 .6rem; }
+.article-body .article-charts { margin: 1.4rem 0 2rem; }
+.article-body figure.chart-inline { margin: 2rem 0; }

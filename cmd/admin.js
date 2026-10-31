@@ -254,11 +254,11 @@
           : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
-    var TABS = { overview: ['site', 'todo', 'log'], website: ['content', 'links', 'preview', 'changes'], system: ['uptime', 'system', 'storage'] };
+    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'system', 'storage'] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
     var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
       return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
-    var grid = '<div class="cr-grid">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
+    var grid = (TAB === 'website' ? '<p class="cr-sec"><i class="bi bi-activity"></i> ' + L('Site health', 'Nettstedets helse') + '</p>' : '') + '<div class="cr-grid">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
     var top = TAB === 'overview' ? html : html.replace(/<div class="cr-lights">[\s\S]*$/, '');
     if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crCards"></div>';
     var keep = document.activeElement && document.activeElement.closest && document.activeElement.closest('#crCards form') ? { sel: document.activeElement.closest('form').className, v: document.activeElement.value } : null;
@@ -333,12 +333,13 @@
     var wr = document.getElementById('crWrite');
     if (k === 'write') {   /* the article/project writer (writer.js) draws here and uses the preview frame */
       if (!wr) { wr = document.createElement('div'); wr.id = 'crWrite'; ed.appendChild(wr); }
-      edCur = k; document.querySelectorAll('[data-awed]').forEach(function (x) { x.setAttribute('aria-current', String(x.dataset.awed === 'content')); });
+      edCur = k; box.classList.add('cr-writing'); document.querySelectorAll('[data-awed]').forEach(function (x) { x.setAttribute('aria-current', String(x.dataset.awed === 'content')); });
       var bar0 = document.getElementById('awBar'); if (bar0) bar0.hidden = true;
       return;
     }
-    if (wr) wr.remove();
+    if (wr) wr.remove(); box.classList.remove('cr-writing');
     var slot0 = document.getElementById('awBar'); if (slot0) slot0.hidden = false;
+    edCur = k;
     if (wasWrite) { var nt = document.getElementById('awNote'); if (nt) nt.textContent = L('Your unpublished changes are shown in yellow. Sections you switch on appear after publishing.', 'Upubliserte endringer vises i gult. Seksjoner du slår på vises etter publisering.'); loadPv(); }
     var pg = document.querySelector('#settings .st-page[data-page="' + k + '"]'); if (!pg) return;
     home[k] = pg.parentNode; ed.appendChild(pg); pg.hidden = false; edCur = k;

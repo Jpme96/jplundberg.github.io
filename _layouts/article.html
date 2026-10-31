@@ -19,6 +19,27 @@ layout: base
   <div class="container">
     <article class="article-body" data-aos="fade-up">
       {% if page.summary %}<p class="lead">{{ page.summary }}</p>{% endif %}
+      {%- comment -%} Key figures and charts made in the dashboard's writer (a [chart 2] line in the text moves chart 2 there) {%- endcomment -%}
+      {% if page.stats.size > 0 %}
+      <div class="row gy-4 project-stats article-stats">
+        {% for s in page.stats %}
+        <div class="col-md-4 project-stat-col"><div class="project-stat"><i class="bi bi-{{ s.icon | default: 'bar-chart' }}"></i><span class="value">{{ s.value }}</span><span class="label">{{ s.label }}</span></div></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if page.charts.size > 0 %}
+      <div class="project-charts article-charts">
+        {% for c in page.charts %}
+        {%- assign goal = nil %}{% if c.goal %}{% assign goal = site.data.site.goals | where: "name", c.goal | first %}{% endif %}
+        <figure class="project-card chart chart--{{ c.type | default: 'bars' }}" data-n="{{ forloop.index }}"
+                data-chart="{{ c | jsonify | escape }}"{% if goal %} data-goal="{{ goal | jsonify | escape }}"{% endif %}
+                data-parts="[]" data-lang="{{ lang }}" data-i18n="{{ u | jsonify | escape }}">
+          {% if c.title %}<figcaption><h4>{{ c.title }}</h4>{% if c.description %}<p>{{ c.description }}</p>{% endif %}</figcaption>{% endif %}
+          <div class="chart-body"></div>
+        </figure>
+        {% endfor %}
+      </div>
+      {% endif %}
       {{ content }}
 
       <div class="share" aria-label="{{ u.share_label }}">

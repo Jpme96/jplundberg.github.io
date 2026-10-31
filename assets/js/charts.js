@@ -307,6 +307,13 @@
     });
   }
 
+  /* "[chart 2]" on a line of its own in the text puts chart 2 right there (written by the dashboard's article writer) */
+  Array.prototype.forEach.call(document.querySelectorAll('.article-body p'), function (p) {
+    var m = p.textContent.trim().match(/^\[(?:chart|diagram|graf|figur) (\d+)\]$/i); if (!m) return;
+    var f = document.querySelector('figure.chart[data-n="' + m[1] + '"]');
+    if (f) { p.parentNode.replaceChild(f, p); f.classList.add('chart-inline'); } else p.parentNode.removeChild(p);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.project-charts'), function (c) { if (!c.querySelector('figure')) c.parentNode.removeChild(c); });
   var figs = Array.prototype.slice.call(document.querySelectorAll('figure.chart[data-chart]'));
   figs.forEach(draw);
   formatPartDates();
