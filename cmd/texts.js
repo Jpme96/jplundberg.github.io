@@ -48,10 +48,10 @@
     if (loading) return loading;
     status('Loading…');
     loading = Promise.all([
-      fetch('api/texts', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      fetch('/cmd/api/texts', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
       }),
-      fetch('texts-defaults.json', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.json(); })
+      fetch('/cmd/texts-defaults.json', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.json(); })
     ]).then(function (res) {
       var j = res[0];
       defaults = { en: {}, nb: {} };
@@ -60,7 +60,8 @@
       problem = '';
       saved = { en: j.texts.en || {}, nb: j.texts.nb || {} }; sha = j.sha; draft = clone(saved);
       draw(); bar();
-    }).catch(function () {
+    }).catch(function (e) {
+      if (window.Diag && e && e.message !== 'load' && e.message !== 'failed') window.Diag.log('website', e.message, 'texts.js');
       loading = null;
       $('txFields').innerHTML = '<p class="st-intro">' + (problem === 'worker'
         ? 'Update the Worker code to use this (Worker → Edit code → paste the new code → Deploy).'
@@ -130,7 +131,7 @@
   $('txPublish').addEventListener('click', function () {
     if (!dirty() || busy) return;
     busy = true; bar(); status('Publishing…');
-    fetch('api/texts', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texts: draft, sha: sha }) })
+    fetch('/cmd/api/texts', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texts: draft, sha: sha }) })
       .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); })
       .then(function (j) {
         busy = false;

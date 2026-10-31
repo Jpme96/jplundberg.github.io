@@ -876,6 +876,15 @@
     'For appointments – it goes in your calendar.': 'For timer – den havner i kalenderen.', 'Next / renew by': 'Neste / forny innen',
     'Next check-up, when a booster is due, or when the prescription runs out. You get a reminder in your calendar.': 'Neste kontroll, når en oppfriskningsdose skal tas, eller når resepten går ut. Du får en påminnelse i kalenderen.',
     'Dose, what was said, questions for next time …': 'Dose, hva som ble sagt, spørsmål til neste gang …', 'you@example.com': 'deg@eksempel.no',
+    'Couldn’t load the website settings. Check your connection and try again.': 'Klarte ikke å laste nettstedsinnstillingene. Sjekk tilkoblingen og prøv igjen.',
+    'Connect GitHub first: add GITHUB_TOKEN to the Worker (see the guide).': 'Koble til GitHub først: legg GITHUB_TOKEN inn i Workeren (se veiledningen).',
+    'Couldn’t publish. Check your connection.': 'Klarte ikke å publisere. Sjekk tilkoblingen.', 'Publishing…': 'Publiserer …', 'Not published yet': 'Ikke publisert ennå',
+    'Published · live on jplundberg.com in about a minute': 'Publisert · synlig på jplundberg.com om omtrent ett minutt', 'Published ✓ Live on jplundberg.com in about a minute': 'Publisert ✓ Synlig på jplundberg.com om omtrent ett minutt',
+    'Changed somewhere else. Reloading the latest version…': 'Endret et annet sted. Henter den nyeste versjonen …', 'The settings changed somewhere else. Loading the newest version…': 'Innstillingene ble endret et annet sted. Henter den nyeste versjonen …',
+    'Live': 'Publisert', 'Live · original texts': 'Publisert · originaltekster', 'Couldn’t load statistics. Check your connection.': 'Klarte ikke å laste statistikken. Sjekk tilkoblingen.',
+    'Couldn’t load statistics right now.': 'Klarte ikke å laste statistikken akkurat nå.', 'Couldn’t load your articles right now.': 'Klarte ikke å laste artiklene akkurat nå.',
+    'Couldn’t load your articles. Check your connection.': 'Klarte ikke å laste artiklene. Sjekk tilkoblingen.', 'Connect GitHub first (see the guide).': 'Koble til GitHub først (se veiledningen).',
+    'Update the Worker code to use this (see the guide).': 'Oppdater Worker-koden for å bruke dette (se veiledningen).',
     'Pick today’s top 3 and give them a time.': 'Velg dagens topp 3 og gi dem et tidspunkt.', 'Nothing on your list – enjoy the free time.': 'Ingenting på lista – nyt fritiden.'
   });
   P.unshift(
@@ -886,7 +895,9 @@
     [/^Birthdays on the day( · catch-up nudges)?$/, function (m, c) { return 'Bursdager på dagen' + (c ? ' · påminnelser om å ta kontakt' : ''); }],
     [/^Dinner nudge from (\d\d:\d\d) · list (by section|as added|A–Å)$/, function (m, h, l) { return 'Middagspåminnelse fra ' + h + ' · liste ' + ({ 'by section': 'etter avdeling', 'as added': 'slik lagt inn', 'A–Å': 'A–Å' })[l]; }],
     [/^No dinner nudge · list (by section|as added|A–Å)$/, function (m, l) { return 'Ingen middagspåminnelse · liste ' + ({ 'by section': 'etter avdeling', 'as added': 'slik lagt inn', 'A–Å': 'A–Å' })[l]; }],
-    [/^(\d+) visits · last (\d+) days$/, '$1 besøk · siste $2 dager']
+    [/^(\d+) visits · last (\d+) days$/, '$1 besøk · siste $2 dager'],
+    [/^Live · last change (.+)$/, 'Publisert · sist endret $1'], [/^Live · (\d+) texts? changed$/, 'Publisert · $1 tekst(er) endret'],
+    [/^Couldn’t publish \((.+)\)\.( Try again\.)?$/, function (m, a, b) { return 'Klarte ikke å publisere (' + a + ').' + (b ? ' Prøv igjen.' : ''); }]
   );
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
   /* the same texts come round again and again (dates, buttons): remember what each became */

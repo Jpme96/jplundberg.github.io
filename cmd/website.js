@@ -54,10 +54,10 @@
     if (loading) return loading;
     status('Loading…');
     loading = Promise.all([
-      fetch('api/site', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+      fetch('/cmd/api/site', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
       }),
-      fetch('content.json', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { return { articles: [], projects: [] }; })
+      fetch('/cmd/content.json', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.json(); }).catch(function () { return { articles: [], projects: [] }; })
     ]).then(function (res) {
       var j = res[0];
       content = res[1];
@@ -71,7 +71,8 @@
       if (!Array.isArray(saved.socials) || !saved.socials.length && !j.settings.updated) saved.socials = DEFAULT_SOCIALS.slice();
       draft = clone(saved);
       fill(); summary(); status('');
-    }).catch(function () {
+    }).catch(function (e) {
+      if (window.Diag && e && e.message !== 'load' && e.message !== 'failed') window.Diag.log('website', e.message, 'website.js');
       loading = null;
       status(problem === 'setup'
         ? 'Connect GitHub first: add GITHUB_TOKEN to the Worker (see the guide).'
@@ -364,7 +365,7 @@
     if (!dirty()) return;
     publishing = true; bar();
     status('Publishing…');
-    fetch('api/site', {
+    fetch('/cmd/api/site', {
       method: 'PUT', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ settings: draft, sha: sha })
@@ -388,7 +389,7 @@
     var box = $('wsVisitors');
     if (vCache[days]) return drawVisitors(vCache[days]);
     box.innerHTML = '<p class="st-intro">Loading…</p>';
-    fetch('api/visitors?days=' + days, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+    fetch('/cmd/api/visitors?days=' + days, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
     }).then(function (j) {
       if (j._status === 503) {
@@ -454,7 +455,7 @@
   var items = null, itemsLoading = null, busyRef = '';
   function loadItems() {
     if (itemsLoading) return itemsLoading;
-    itemsLoading = fetch('api/content', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
+    itemsLoading = fetch('/cmd/api/content', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
     }).then(function (j) {
       itemsLoading = null;
@@ -502,7 +503,7 @@
     var on = c.checked;
     busyRef = c.dataset.col + ':' + c.dataset.ref;
     drawItems();
-    fetch('api/content', {
+    fetch('/cmd/api/content', {
       method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ collection: c.dataset.col, ref: c.dataset.ref, published: on })
     }).then(function (r) { return r.json(); }).then(function (j) {
