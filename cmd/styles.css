@@ -3442,3 +3442,45 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 .mo-off .sc-mingle .sc-sway, .mo-reduced .sc-mingle .sc-sway, .mo-off .sc-flick, .mo-reduced .sc-flick { animation: none; }
 .mo-off .sc-mingle .sc-say, .mo-reduced .sc-mingle .sc-say { transition: none; }
 @media (prefers-reduced-motion: reduce) { .sc-mingle .sc-sway, .sc-flick { animation: none; } .sc-mingle .sc-say { transition: none; } }
+
+/* ---- page pictures come alive (scenes.js, house-plus.js) ---- */
+.hs-illu svg { overflow: visible; }
+.sc-clouds { display: none; }
+.tod-morning .sc-clouds, .tod-day .sc-clouds { display: inline; }
+.sc-cloud ellipse { fill: rgba(var(--ink-rgb), .2); }
+.sc-cloud.a { animation: sccloud 46s linear infinite; } .sc-cloud.b { animation: sccloud 64s linear infinite; animation-delay: -30s; }
+@keyframes sccloud { from { transform: translate(-20px, 22px); } to { transform: translate(262px, 22px); } }
+.sc-cloud.b { animation-name: sccloudb; } @keyframes sccloudb { from { transform: translate(-20px, 40px); } to { transform: translate(262px, 40px); } }
+/* avatar figures inside the pictures breathe and blink too */
+.hs-illu .av-all { animation: avbreath 4.2s ease-in-out infinite; transform-box: view-box; transform-origin: 101px 160px; }
+.hs-illu .eyes { animation: avblink 5.5s infinite; transform-box: fill-box; transform-origin: center; }
+/* health: the heart beats, the step ring glows */
+.sc-heart { animation: scbeat 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes scbeat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.14); } 24% { transform: scale(.98); } 36% { transform: scale(1.08); } }
+.sc-ringv { animation: scring 3s ease-in-out infinite; } @keyframes scring { 50% { opacity: .6; } }
+/* travel: the plane rocks along, the route marches, the pin bobs */
+.sc-fly { animation: scfly 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes scfly { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2px) rotate(-3deg); } }
+.sc-route { animation: scroute 2.2s linear infinite; } @keyframes scroute { to { stroke-dashoffset: -14; } }
+.sc-pin { animation: scpin 2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; } @keyframes scpin { 50% { transform: translateY(-2.5px); } }
+/* finance: bubbles rise in the jar, the money gently sloshes */
+.sc-bubs circle { fill: rgba(255, 255, 255, .35); animation: scbub 3.4s ease-in infinite; }
+@keyframes scbub { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(var(--h, -40px)); opacity: 0; } }
+.sc-money { animation: scslosh 4s ease-in-out infinite; } @keyframes scslosh { 50% { transform: translateY(-1.2px); } }
+/* work: a ticking second hand, the screen softly alive */
+.sc-sec { stroke: #e66767; stroke-width: .8; stroke-linecap: round; animation: sctick 60s steps(60) infinite; transform-box: view-box; transform-origin: 200px 38px; }
+@keyframes sctick { to { transform: rotate(360deg); } }
+.sc-screen { animation: scscreen 5s ease-in-out infinite; } @keyframes scscreen { 50% { opacity: .82; } }
+/* food: the lid rattles while dinner cooks */
+.sc-rattle { animation: scrattle .5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes scrattle { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-1px) rotate(-2deg); } 60% { transform: translateY(-.5px) rotate(2deg); } }
+/* house: smoke from the chimney, the tree sways, lit windows flicker in the evening */
+.hs-smoke circle { fill: rgba(var(--ink-rgb), .22); animation: hssmoke 4.5s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.hs-smoke circle:nth-child(2) { animation-delay: -1.5s; } .hs-smoke circle:nth-child(3) { animation-delay: -3s; }
+@keyframes hssmoke { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(10px, -22px) scale(2.2); opacity: 0; } }
+.hs-crown { animation: hssway 6s ease-in-out infinite; transform-box: view-box; transform-origin: 203px 110px; }
+@keyframes hssway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+.tod-evening .hs-win, .tod-night .hs-win { animation: hsflick 7s ease-in-out infinite; } @keyframes hsflick { 0%, 100% { opacity: 1; } 48% { opacity: .82; } 52% { opacity: 1; } }
+/* motion off / reduced motion: everything stands still */
+.mo-off .hs-illu *, .mo-reduced .hs-illu * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .hs-illu * { animation: none !important; } }

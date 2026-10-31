@@ -27,7 +27,14 @@
   function deco(k) { return window.SceneDeco ? window.SceneDeco(k) : ''; }
   function badge(n, x, y) { return n ? '<g class="hs-b" transform="translate(' + x + ' ' + y + ')"><circle r="9"/><text y="3.6" text-anchor="middle">' + (n > 9 ? '9+' : n) + '</text></g>' : ''; }
   function part(go, cls, inner) { return '<g class="hs-part' + (cls ? ' ' + cls : '') + '" data-scgo="' + esc(go) + '">' + inner + '</g>'; }
-  function ground() { return '<rect x="0" y="128" width="240" height="22" class="hs-ground"/>'; }
+  /* soft ground: a patch of grass that fades out at the edges (no hard strip), and two clouds drifting by in the daytime */
+  function ground() {
+    return '<defs><radialGradient id="scGnd" cx=".5" cy=".3" r=".62"><stop offset="0" stop-color="#22b35e" stop-opacity=".3"/><stop offset=".65" stop-color="#22b35e" stop-opacity=".14"/><stop offset="1" stop-color="#22b35e" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="120" cy="135" rx="122" ry="17" fill="url(#scGnd)"/>' +
+      '<g class="sc-clouds"><g class="sc-cloud a"><ellipse cx="0" cy="0" rx="11" ry="4.5"/><ellipse cx="7" cy="-2.5" rx="7" ry="4.5"/><ellipse cx="-6" cy="-1.5" rx="6" ry="3.5"/></g>' +
+      '<g class="sc-cloud b"><ellipse cx="0" cy="0" rx="8" ry="3.4"/><ellipse cx="5" cy="-2" rx="5" ry="3.4"/></g></g>';
+  }
+  window.SceneGround = ground;
 
   var PAGE = (location.pathname.match(/\/cmd\/(people|food|work|habits|finance|travel)\/$/) || [])[1];
   if (!PAGE) return;
@@ -124,7 +131,7 @@
     svg += part('pantry', low.length ? 'hot' : '', jarsSvg || '<text x="102" y="68" text-anchor="middle" class="sc-empty sm">' + L('pantry', 'matskap') + '</text>') + badge(low.length, 140, 58);
     svg += part('shop', shop.length ? '' : '', '<path d="M148 108 h20 l-2 20 h-16z" class="sc-bag"/><path d="M152 108 q6 -10 12 0" class="sc-bagh"/>') + badge(shop.length, 168, 102);
     svg += part('meals', dinner ? 'hot' : '', '<rect x="178" y="98" width="52" height="30" rx="3" class="sc-stove"/><circle cx="192" cy="113" r="5" class="sc-knob2"/><circle cx="214" cy="113" r="5" class="sc-knob2"/>' +
-      '<rect x="186" y="84" width="34" height="14" rx="3" class="sc-pot"/><rect x="182" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="220" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="190" y="81" width="26" height="3" rx="1.5" class="sc-pot"/>' +
+      '<rect x="186" y="84" width="34" height="14" rx="3" class="sc-pot"/><rect x="182" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="220" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="190" y="81" width="26" height="3" rx="1.5" class="sc-pot' + (dinner ? ' sc-rattle' : '') + '"/>' +
       (dinner ? '<path d="M196 77 q-3 -6 0 -12 M204 77 q-3 -6 0 -12 M212 77 q-3 -6 0 -12" class="sc-steam"/>' : ''));
     var list = [];
     if (dinner) list.push({ t: L('Tonight: ', 'I kveld: ') + dinner, h: '#meals' }); else list.push({ t: L('Nothing planned tonight', 'Ingenting planlagt i kveld'), h: '#meals', late: false });
@@ -151,7 +158,8 @@
     var stack = Math.min(6, open), papers = '';
     for (var i = 0; i < Math.max(1, stack); i++) papers += '<rect x="' + (114 + (i % 2)) + '" y="' + (93 - i * 3) + '" width="26" height="3" rx="1" class="sc-paper"/>';
     svg += part('meetings', open ? '' : '', papers) + badge(open, 142, 74 - stack * 3);
-    svg += part('flex', '', '<path d="M150 80 h16 l-2 16 h-12z" class="sc-cup"/><clipPath id="scCup"><path d="M150 80 h16 l-2 16 h-12z"/></clipPath><rect x="148" y="' + (96 - 16 * fill).toFixed(1) + '" width="20" height="16" class="sc-coffee" clip-path="url(#scCup)"/><path d="M166 84 q6 0 5 5 q-1 4 -6 4" class="sc-cuph"/>');
+    svg += part('flex', '', '<path d="M150 80 h16 l-2 16 h-12z" class="sc-cup"/><clipPath id="scCup"><path d="M150 80 h16 l-2 16 h-12z"/></clipPath><rect x="148" y="' + (96 - 16 * fill).toFixed(1) + '" width="20" height="16" class="sc-coffee" clip-path="url(#scCup)"/><path d="M166 84 q6 0 5 5 q-1 4 -6 4" class="sc-cuph"/>' + (fill > .05 ? '<path d="M155 76 q-2 -4 0 -8 M161 76 q-2 -4 0 -8" class="sc-steam"/>' : ''));
+    svg += '<line x1="200" y1="38" x2="200" y2="25" class="sc-sec" style="animation-delay:-' + new Date().getSeconds() + 's"/>';
     if (insp.length) svg += part('fdv', 'hot', '<path d="M176 96 q0 -14 14 -14 q14 0 14 14z" fill="#f2c94c"/><rect x="172" y="94" width="36" height="3" rx="1.5" fill="#d9a400"/>') + badge(insp.length, 206, 80);
     var list = [];
     if (st) list.push({ t: L('Flex ', 'Fleksi ') + bal, h: '#flex' });
@@ -196,6 +204,7 @@
     var svg = ground() + deco('finance') +
       part('fin', state !== 'ok' ? 'hot' : '', '<clipPath id="scJar"><path d="M92 46 h56 q6 0 6 8 v62 q0 10 -10 10 h-48 q-10 0 -10 -10 v-62 q0 -8 6 -8z"/></clipPath>' +
         '<rect x="80" y="' + fy.toFixed(1) + '" width="80" height="90" class="sc-money ' + state + '" clip-path="url(#scJar)"/>' +
+        (ratio > .05 ? '<g clip-path="url(#scJar)" class="sc-bubs">' + [[104, 0], [121, 1.1], [136, 2.3], [113, 3.2]].map(function (b) { return '<circle cx="' + b[0] + '" cy="124" r="1.6" style="animation-delay:-' + b[1] + 's;--h:' + (-(124 - fy - 4)).toFixed(0) + 'px"/>'; }).join('') + '</g>' : '') +
         '<path d="M92 46 h56 q6 0 6 8 v62 q0 10 -10 10 h-48 q-10 0 -10 -10 v-62 q0 -8 6 -8z" class="sc-jarg"/><rect x="96" y="36" width="48" height="10" rx="3" class="sc-lid"/>' +
         (room > 0 ? '<text x="120" y="92" text-anchor="middle" class="sc-jtxt">' + esc(kr(left)) + '</text>' : '')) +
       part('fin', '', '<rect x="30" y="92" width="34" height="34" rx="4" class="sc-cal"/><rect x="30" y="92" width="34" height="9" rx="3" fill="#e66767"/><text x="47" y="120" text-anchor="middle" class="sc-calt">' + per.daysLeft + '</text>') +
@@ -225,7 +234,7 @@
         (t ? '<path d="M92 82 l8 6" class="sc-strap"/><rect x="96" y="86" width="22" height="13" rx="2" class="sc-tag"/><text x="107" y="95.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
       '<path d="M112 112 Q150 30 222 40" class="sc-route"/>' +
       (t ? '<g class="sc-pin"><path d="M222 40 c-6 0 -8 -5 -8 -8 a8 8 0 0 1 16 0 c0 3 -2 8 -8 8z" fill="#e66767"/><circle cx="222" cy="31" r="3" fill="#fff"/></g>' : '') +
-      part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" class="sc-plane"/></g>');
+      part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path class="sc-fly" d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" class="sc-plane"/></g>');
     var list = [];
     if (t) {
       list.push({ t: (t.name || t.dest) + ' – ' + (away ? L('you’re away', 'du er borte') : inDays(n)), h: '#trip=' + t.id });

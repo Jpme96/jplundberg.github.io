@@ -283,7 +283,8 @@
     var badge = function (k, x, y) { return d[k].length ? '<g class="hs-b" transform="translate(' + x + ' ' + y + ')"><circle r="9"/><text y="3.6" text-anchor="middle">' + d[k].length + '</text></g>' : ''; };
     var leaf = { spring: '#5fc27e', summer: '#2f9e57', autumn: '#e8743b', winter: '#cfe3f2' }[sid];
     var svg = '<svg viewBox="0 0 240 150" role="img" aria-label="Your house">' +
-      '<rect x="0" y="128" width="240" height="22" class="hs-ground"/>' +
+      (window.SceneGround ? window.SceneGround() : '<rect x="0" y="128" width="240" height="22" class="hs-ground"/>') +
+      '<g class="hs-smoke"><circle cx="146" cy="28" r="3"/><circle cx="146" cy="28" r="3"/><circle cx="146" cy="28" r="3"/></g>' +
       (sid === 'winter' ? '<path d="M0 128 Q60 122 120 127 T240 126 V132 H0Z" class="hs-snow"/>' : '') +
       /* tree */
       '<g class="hs-part' + hot('garden') + '" data-hsgo="hseason"><rect x="200" y="96" width="6" height="32" class="hs-trunk"/><circle cx="203" cy="88" r="20" fill="' + leaf + '" class="hs-crown"/>' + (sid === 'autumn' ? '<circle cx="190" cy="124" r="2.5" fill="#e8743b"/><circle cx="215" cy="126" r="2" fill="#c98500"/>' : '') + '</g>' +
