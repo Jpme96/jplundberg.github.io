@@ -343,6 +343,7 @@
     if (wasWrite) { var nt = document.getElementById('awNote'); if (nt) nt.textContent = L('Your unpublished changes are shown in yellow. Sections you switch on appear after publishing.', 'Upubliserte endringer vises i gult. Seksjoner du slår på vises etter publisering.'); loadPv(); }
     var pg = document.querySelector('#settings .st-page[data-page="' + k + '"]'); if (!pg) return;
     home[k] = pg.parentNode; ed.appendChild(pg); pg.hidden = false; edCur = k;
+    pvJump = ''; var awEl = document.querySelector('#crWs .aw'); if (awEl) awEl.classList.toggle('aw-follow', /^(cv|courses|sections|featured|progress|content|texts)$/.test(k));
     var bar = document.getElementById('wsBar'), slot = document.getElementById('awBar');
     if (bar && slot && bar.parentNode !== slot) { home.__bar = home.__bar || bar.parentNode; slot.appendChild(bar); }
     document.querySelectorAll('[data-awed]').forEach(function (x) { x.setAttribute('aria-current', String(x.dataset.awed === k)); });
@@ -351,19 +352,35 @@
   }
   /* preview: the real page in a frame, with your drafts written into it */
   var pvLang = 'en', pvT = null;
-  function loadPv() { var f = document.getElementById('awFrame'); if (!f) return; if (edCur === 'write') return; f.removeAttribute('srcdoc'); f.onload = function () { setTimeout(applyPv, 60); }; f.src = (pvLang === 'nb' ? '/no/' : '/') + '?preview=' + Date.now(); }
+  function loadPv() { var f = document.getElementById('awFrame'); if (!f) return; if (edCur === 'write') return; pvJump = ''; f.removeAttribute('srcdoc'); f.onload = function () { setTimeout(applyPv, 60); }; f.src = (pvLang === 'nb' ? '/no/' : '/') + '?preview=' + Date.now(); }
+  var PV_SEC = { cv: 'resume', courses: 'courses', featured: 'projects', progress: 'projects', socials: 'contact', content: 'articles' }, pvJump = '';
+  function jumpPv() {
+    var f = document.getElementById('awFrame'), d = f && f.contentDocument, id = PV_SEC[edCur];
+    if (!d || !d.body || !id || pvJump === edCur + pvLang) return;
+    var el = d.getElementById(id); if (!el) return;
+    pvJump = edCur + pvLang;
+    try { d.documentElement.style.scrollBehavior = 'auto'; (d.scrollingElement || d.documentElement).scrollTop = el.getBoundingClientRect().top + (d.scrollingElement || d.documentElement).scrollTop - 10; } catch (e) {}
+  }
   function applyPv() {
     if (edCur === 'write') return;
+    setTimeout(jumpPv, 50);
     var f = document.getElementById('awFrame'), d = f && f.contentDocument; if (!d || !d.body) return;
     var mark = function (el) { if (el && el.style) { el.style.outline = '2px dashed #d9a400'; el.style.outlineOffset = '3px'; el.style.background = 'rgba(217,164,0,.12)'; } };
     var td = window.SiteDraftTexts ? window.SiteDraftTexts() : null;
     if (td && td.draft && td.defaults) {
       var live = Object.assign({}, td.defaults[pvLang] || {}, (td.saved || {})[pvLang] || {}), want = Object.assign({}, td.defaults[pvLang] || {}, td.draft[pvLang] || {});
+      /* one walk over the page; a text we already swapped remembers its key, so typing keeps updating it */
+      var nodes = [], w = d.createTreeWalker(d.body, 4), n;
+      while ((n = w.nextNode())) if (n.nodeValue.trim()) nodes.push(n);
       Object.keys(want).forEach(function (k) {
-        var a = String(live[k] || '').trim(), b = String(want[k] || '').trim(); if (!a || a === b) return;
-        var w = d.createTreeWalker(d.body, 4), n, hits = [];
-        while ((n = w.nextNode())) { var t = n.nodeValue.replace(/\s+/g, ' ').trim(); if (t && (t === a || (a.length > 30 && t.indexOf(a.slice(0, 30)) === 0))) hits.push(n); }
-        hits.forEach(function (n) { n.nodeValue = b; mark(n.parentElement); });
+        var a = String(live[k] || '').trim(), b = String(want[k] || '').trim(); if (!a) return;
+        nodes.forEach(function (n) {
+          var t = n.__pvKey === k ? null : n.nodeValue.replace(/\s+/g, ' ').trim();
+          if (n.__pvKey === k || (a !== b && !n.__pvKey && (t === a || (a.length > 30 && t.indexOf(a.slice(0, 30)) === 0)))) {
+            if (n.nodeValue !== b) n.nodeValue = b || a; n.__pvKey = k;
+            if (a !== b) mark(n.parentElement); else if (n.parentElement && n.parentElement.style) { n.parentElement.style.outline = ''; n.parentElement.style.background = ''; }
+          }
+        });
       });
     }
     var sd = window.SiteDraftSite ? window.SiteDraftSite() : null;
@@ -376,6 +393,12 @@
       }
       var nw = dr.now || {}, nt = nw[pvLang] || nw.en, hn = d.querySelector('.hero-now');
       if (JSON.stringify(nw) !== JSON.stringify(sv.now || {}) && hn) { var strong = hn.querySelector('strong'); hn.innerHTML = '<span class="now-dot"></span>' + (strong ? strong.outerHTML : '') + ' '; hn.appendChild(d.createTextNode(nt || '')); hn.style.display = nt ? '' : 'none'; mark(hn); }
+      /* jobs (CV & experience): the Experience timeline on the front page is drawn from your draft */
+      var exD = (dr.experience || {})[pvLang] || [], exS = (sv.experience || {})[pvLang] || [], tl = d.querySelector('#resume .timeline');
+      if (tl && exD.length && JSON.stringify(exD) !== JSON.stringify(exS)) {
+        tl.innerHTML = exD.map(function (j) { return '<div class="resume-item"><h4>' + esc(j.title) + '</h4><h5>' + esc(j.dates) + '</h5><p class="company">' + esc(j.company) + '</p>' + ((j.points || []).length ? '<ul>' + j.points.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>'; }).join('');
+        mark(tl);
+      }
       (dr.sections || []).forEach(function (x) { var sec = d.getElementById(x.id); if (sec && x.on === false) { sec.style.opacity = '.25'; sec.style.filter = 'grayscale(1)'; mark(sec); } });
     }
   }
@@ -383,7 +406,17 @@
     if (TAB !== 'website') { TAB = 'website'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); }
     mountWs(); openEd(k); var w = document.getElementById('crWs'); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } };
-  window.addEventListener('site:draft', function () { clearTimeout(pvT); pvT = setTimeout(function () { applyPv(); var b = document.querySelector('[data-crtab="website"]'); if (b) draw(); }, 400); });
+  /* typing: the preview updates almost at once; the tab's change count is updated without redrawing the whole page */
+  var cntT = null;
+  window.addEventListener('site:draft', function () {
+    clearTimeout(pvT); pvT = setTimeout(applyPv, 120);
+    clearTimeout(cntT); cntT = setTimeout(function () {
+      var b = document.querySelector('[data-crtab="website"]'); if (!b) return;
+      var n = pendingCount(), c = b.querySelector('.hl-count');
+      if (n && !c) { c = document.createElement('span'); c.className = 'hl-count'; b.appendChild(document.createTextNode(' ')); b.appendChild(c); }
+      if (c) { if (n) c.textContent = n; else c.remove(); }
+    }, 600);
+  });
   window.addEventListener('site:published', function () { setTimeout(loadPv, 2500); });
   /* on this page, Settings → jplundberg.com rows open the Website tab instead */
   document.addEventListener('click', function (e) {

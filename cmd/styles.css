@@ -3739,3 +3739,5 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 .aw-bar .ws-bar, .aw-bar #wsBar { position: static; }
 /* the preview stays in place next to the editor (it no longer follows the page scroll) */
 .aw-pv, .aw-nav { position: static !important; }
+/* long editors (CV, courses …): the preview follows you down, and jumps to the matching part of the site */
+@media (min-width: 900px) { .aw.aw-follow .aw-pv { position: sticky !important; top: 84px; } }

@@ -3,6 +3,7 @@ other language and this page has a translation, swap to it before anything is dr
 <script>
   (function () {
     try {
+      if (/[?&]preview=/.test(location.search)) return;   /* the dashboard's preview asks for one language on purpose */
       var want = localStorage.getItem('jpl-lang'), have = document.documentElement.lang === 'nb' ? 'nb' : 'en';
       if (!want || want === have) return;
       var l = document.querySelector('link[rel="alternate"][hreflang="' + want + '"]');
