@@ -526,6 +526,7 @@
         return '<div class="st-row ws-item' + (on ? '' : ' off') + (st != null ? ' staged' : '') + '"><span class="st-label"><span><i class="bi bi-' + c[2] + '"></i> ' + esc(g.title) + '</span>' +
           '<small>' + (busy ? (on ? 'Showing…' : 'Hiding…') : st != null ? (st ? 'Will be shown' : 'Will be hidden') + ' – not published yet' : (g.published ? 'Shown' : 'Hidden') + ' · ' + g.langs.sort().join(' + ') + (d ? ' · ' + d : '')) + '</small></span>' +
           '<button type="button" class="icon-btn sm" data-wsedit="' + esc(c[0] + '|' + g.ref) + '" aria-label="Edit ' + esc(g.title) + '" title="Edit"><i class="bi bi-pencil"></i></button>' +
+          '<button type="button" class="icon-btn sm ws-del" data-wsdel="' + esc(c[0] + '|' + g.ref) + '" aria-label="Delete ' + esc(g.title) + '" title="Delete"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-trash3"></i></button>' +
           '<input type="checkbox" class="switch" data-col="' + c[0] + '" data-ref="' + esc(g.ref) + '"' + (on ? ' checked' : '') + (busyRef ? ' disabled' : '') +
           ' aria-label="Show ' + esc(g.title) + ' on the website"></div>';
       }).join('') + '</section>';
@@ -544,7 +545,8 @@
     drawItems();
   });
   $('wsContent').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-wsstage], [data-wsedit], [data-wsnew]'); if (!b) return;
+    var b = e.target.closest('[data-wsstage], [data-wsedit], [data-wsnew], [data-wsdel]'); if (!b) return;
+    if (b.dataset.wsdel) { var qd = b.dataset.wsdel.split('|'); removeItem(qd[0], qd[1]); return; }
     if ((b.dataset.wsedit || b.dataset.wsnew) && !window.ArticleWriter) { location.href = '/cmd/admin/#write=' + (b.dataset.wsedit ? b.dataset.wsedit : 'new-' + b.dataset.wsnew); return; }
     if (b.dataset.wsedit || b.dataset.wsnew) { window.dispatchEvent(new CustomEvent('article:open', { detail: b.dataset.wsedit ? { col: b.dataset.wsedit.split('|')[0], ref: b.dataset.wsedit.split('|')[1] } : { col: b.dataset.wsnew, isNew: true } })); return; }
     if (b.dataset.wsstage === 'undo') { stage = {}; drawItems(); return; }
@@ -563,7 +565,35 @@
         .catch(function () { failed++; next(); });
     })();
   });
-  window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; } };
+  /* delete an article/project (every language version) – asks first; it can be brought back from the git history */
+  function removeItem(col, ref, done) {
+    var mine = (items || []).filter(function (i) { return i.collection === col && i.ref === ref; });
+    if (!mine.length || busyRef) return;
+    var g = grouped(col).filter(function (x) { return x.ref === ref; })[0] || { title: ref, langs: [] };
+    var nb = document.documentElement.lang === 'nb' || (window.I18N && window.I18N.lang === 'nb');
+    var what = col === 'projects' ? (nb ? 'prosjektet' : 'project') : (nb ? 'artikkelen' : 'article');
+    if (!confirm(nb ? 'Slette ' + what + ' «' + g.title + '»' + (mine.length > 1 ? ' (begge språk)' : '') + '?\n\nDen fjernes fra jplundberg.com om ca. ett minutt. Dette kan ikke angres herfra.'
+      : 'Delete the ' + what + ' “' + g.title + '”' + (mine.length > 1 ? ' (both languages)' : '') + '?\n\nIt’s removed from jplundberg.com in about a minute. This can’t be undone from here.')) return;
+    var key = col + ':' + ref; busyRef = key; delete stage[key]; drawItems();
+    fetch('/cmd/api/article', { method: 'DELETE', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths: mine.map(function (i) { return i.path; }) }) })
+      .then(function (r) { return r.json().then(function (j) { j._s = r.status; return j; }, function () { return { _s: r.status, error: r.status === 404 ? 'old-worker' : 'bad answer' }; }); })
+      .then(function (j) {
+        busyRef = '';
+        if (j.ok) {
+          items = items.filter(function (i) { return !(i.collection === col && i.ref === ref); }); drawItems();
+          try { localStorage.removeItem('dash.writer:' + col + '|' + ref); } catch (x) {}
+          var msg = (col === 'projects' ? 'Project' : 'Article') + ' deleted – gone from jplundberg.com in about a minute';
+          stMsg(msg, true); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> ' + msg);
+          try { window.dispatchEvent(new CustomEvent('site:published', { detail: 'deleted “' + g.title + '”' })); } catch (x) {}
+          if (done) done(true);
+        } else {
+          drawItems(); var em = j.error === 'old-worker' || j._s === 405 ? 'Update the Worker first (paste the newest worker.js in Cloudflare)' : 'Couldn’t delete (' + (j.error || j._s) + ')';
+          stMsg(em, false); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-exclamation-triangle"></i> ' + em);
+          if (done) done(false);
+        }
+      }).catch(function () { busyRef = ''; drawItems(); stMsg('No connection – nothing was deleted', false); if (done) done(false); });
+  }
+  window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; }, remove: removeItem };
   function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 
   /* ---------- page changes in the settings panel ---------- */

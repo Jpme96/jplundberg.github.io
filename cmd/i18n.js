@@ -913,6 +913,8 @@
     [/^(\d+) not published · (.+)$/, function (m, n, r) { return n + ' ikke publisert · ' + tr(r); }], [/^(\d+) hidden$/, '$1 skjult']);
   [['not published yet', 'ikke publisert ennå'], ['Publish changes', 'Publiser endringer'], ['New article', 'Ny artikkel'], ['New project', 'Nytt prosjekt'], ['Cancel', 'Avbryt'], ['Showing…', 'Viser…'], ['Hiding…', 'Skjuler…'], ['All shown', 'Alt vises'],
     ['Some changes didn’t go through – try again.', 'Noen endringer gikk ikke gjennom – prøv igjen.'], ['Edit', 'Rediger']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
+  P.push([/^(Article|Project) deleted – gone from jplundberg\.com in about a minute$/, function (m, a) { return (a === 'Project' ? 'Prosjektet' : 'Artikkelen') + ' er slettet – borte fra jplundberg.com om ca. ett minutt'; }], [/^Couldn’t delete \((.+)\)$/, 'Klarte ikke å slette ($1)'], [/^Delete (.+)$/, 'Slett $1']);
+  [['Update the Worker first (paste the newest worker.js in Cloudflare)', 'Oppdater Workeren først (lim inn den nyeste worker.js i Cloudflare)'], ['No connection – nothing was deleted', 'Ingen forbindelse – ingenting ble slettet'], ['Delete', 'Slett']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
   function tr(s) {

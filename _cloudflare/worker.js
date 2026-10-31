@@ -485,6 +485,21 @@ async function articleApi(request, url, env) {
       if (!r.ok) return json({ error: 'github ' + r.status }, 502);
       return json({ ok: true, url: '/' + p });
     }
+    if (request.method === 'DELETE') {   /* {paths: ['_articles/x.md', ...]} – every language version of one item; it stays in the git history */
+      const paths = Array.isArray(body.paths) ? body.paths.map(String).filter(okPath).slice(0, 4) : [];
+      if (!paths.length) return json({ error: 'bad path' }, 400);
+      const deleted = [];
+      for (const p of paths) {
+        const ex = await fetch(repoApi(env) + p + '?ref=main', { headers: gh });
+        if (ex.status === 404) continue;
+        if (!ex.ok) return json({ error: 'github ' + ex.status, deleted }, 502);
+        const f = await ex.json();
+        const r = await fetch(repoApi(env) + p, { method: 'DELETE', headers: { ...gh, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Delete ' + p.replace(/^_/, '') + ' (dashboard)', sha: f.sha, branch: 'main' }) });
+        if (!r.ok) return json({ error: 'github ' + r.status, deleted }, 502);
+        deleted.push(p);
+      }
+      return json({ ok: true, deleted });
+    }
     return json({ error: 'method not allowed' }, 405);
   } catch (e) { return json({ error: String(e.message || e).slice(0, 200) }, 502); }
 }

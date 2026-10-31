@@ -3624,3 +3624,5 @@ html.simple #stMenu [data-adv] { display: none; }
 .wr-warn { padding: 14px; border-radius: 12px; background: color-mix(in srgb, #d9a400 12%, transparent); } .wr-warn p { margin: 6px 0 0; font-size: 13.5px; }
 :root[data-theme="light"] .wr-f input, :root[data-theme="light"] .wr-f textarea, :root[data-theme="light"] .wr-body, :root[data-theme="light"] .wr-adv textarea { background: #fff; }
 .wr-reset { color: var(--muted); } .wr-reset:hover { color: var(--bad, #e66767); }
+.ws-del, .wr-del { color: var(--muted); } .ws-del:hover, .wr-del:hover { color: var(--bad, #e66767); }
+.wr-gone { text-align: center; padding: 40px 10px; color: var(--muted); } .wr-gone > .bi { font-size: 28px; } .wr-gone p { margin: 8px 0 14px; }
