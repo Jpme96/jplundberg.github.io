@@ -143,7 +143,8 @@
   function detail(p) {
     var gl = gifts().filter(function (g) { return g.pid === p.id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var log = Array.isArray(p.log) ? p.log : [], all = OPENLOG[p.id];
-    return '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-gift"></i> Gifts given</b><button type="button" class="text-btn" data-ppgift="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> Note a gift</button></div>' +
+    var lookSec = window.Avatar && window.Avatar.personLook ? '<div class="pp5-sec pp5-look"><span class="pp5-face">' + window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' width="56" height="56"' }, window.Avatar.personLook(p)).replace('viewBox="0 0 200 200"', 'viewBox="66 22 70 70"') + '</span><span class="muted hl-small">' + (p.look ? 'Their look in the People picture' : 'Picked from the name – make it look like them') + '</span><button type="button" class="text-btn" data-pplook="' + esc(p.id) + '"><i class="bi bi-person-bounding-box"></i> ' + (p.look ? 'Change look' : 'Customize look') + '</button></div>' : '';
+    return lookSec + '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-gift"></i> Gifts given</b><button type="button" class="text-btn" data-ppgift="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> Note a gift</button></div>' +
       (gl.length ? '<ul class="pp5-list">' + gl.slice(0, all ? 50 : 4).map(function (g) {
         var o = occ(g.occ);
         return '<li><span class="pp5-d">' + esc(fmt(g.date, { month: 'short', year: 'numeric' })) + '</span><span class="pp5-t"><i class="bi bi-' + o[2] + '" style="color:' + o[3] + '"></i> <span data-noi18n>' + esc(g.what) + '</span></span>' + (+g.cost ? '<span class="pp5-k">' + kr(g.cost) + '</span>' : '') + '</li>';
@@ -220,6 +221,14 @@
 
   document.addEventListener('click', function (e) {
     var b;
+    if ((b = e.target.closest('[data-pplook]')) && window.Avatar && window.Avatar.editor) {
+      var pl = person(b.dataset.pplook); if (!pl) return;
+      window.Avatar.editor(pl.name, window.Avatar.personLook(pl), function (lk) {
+        var t = Fe.tools(); (t.people || []).forEach(function (x) { if (x.id === pl.id) x.look = lk; }); Fe.saveTools(t);
+        toast('<i class="bi bi-person-bounding-box"></i> ' + esc(pl.name) + (NB ? ' har fått nytt utseende' : '’s look is saved'));
+      });
+      return;
+    }
     if ((b = e.target.closest('[data-ppgift]'))) {
       var q = b.dataset.ppgift.split('|'), p = q[0] && person(q[0]);
       return newGift(p ? { pid: p.id, occ: q[1] || guessOcc(p) } : {});

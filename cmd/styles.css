@@ -3420,3 +3420,13 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 .hl-shop label { padding: 5px 0; }
 .hl-shop .sh-more { width: 30px; height: 30px; min-width: 30px; border: 0; background: none !important; box-shadow: none; }
 .hl-shop li.sh-grp { padding-top: 10px; }
+/* People: a person's look (people-plus.js) and the look editor (avatar.js) */
+.pp5-look { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pp5-face { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: var(--surface-2, rgba(255,255,255,.05)); flex: none; display: grid; place-items: center; }
+.pp5-look .hl-small { flex: 1; min-width: 120px; }
+.ave { display: grid; gap: 10px; max-width: 520px; }
+.ave-head { display: flex; align-items: center; justify-content: space-between; }
+.ave-prev { max-width: 200px; margin: 0 auto; }
+.ave-prev svg { width: 100%; height: auto; }
+.ave .av-acts { display: flex; align-items: center; gap: 8px; }
+.ave .av-acts .spacer { flex: 1; }

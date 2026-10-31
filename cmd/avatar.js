@@ -271,5 +271,39 @@
   ['brief:items', 'tools:change', 'dash:local', 'touch:change', 'avatar:change', 'profile:change', 'todos:change'].forEach(function (ev) { window.addEventListener(ev, soon); });
   window.Vault.onUnlock(function () { setTimeout(soon, 300); });
   setInterval(soon, 5 * 60e3);
-  window.Avatar = { figure: figure, look: look, moments: moments };
+  /* ---------- friends: a look per person (people[].look), picked from the name until you change it ---------- */
+  function hashOf(t) { var h = 2166136261; t = String(t || ''); for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return h >>> 0; }
+  function seedLook(seed, topC) {
+    var h = hashOf(seed), pick = function (arr, sh) { return arr[(h >>> sh) % arr.length]; };
+    return { build: pick(['slim', 'regular', 'athletic', 'regular'], 2), skin: pick(OPTS.skin.o, 5)[0], hair: pick(['short', 'side', 'quiff', 'curly', 'buzz'], 8), hairC: pick(OPTS.hairC.o.slice(0, 6), 11)[0],
+      beard: pick(['none', 'none', 'stubble', 'none'], 14), glasses: pick(['none', 'none', 'none', 'round'], 17), top: pick(['tee', 'sweater', 'hoodie', 'shirt'], 20), topC: topC || pick(OPTS.topC.o, 23)[0],
+      bottom: 'trousers', legs: pick(OPTS.legs.o.slice(0, 4), 26)[0], extra: 'none' };
+  }
+  var RELC = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
+  function personLook(p, topC) { return Object.assign({}, seedLook((p && (p.id || p.name)) || '', topC || (p && RELC[p.rel]) || '#3987e5'), (p && p.look) || {}); }
+  /* the same maker as yours, in a sheet – onSave(look) gets the full look */
+  function editor(title, start, onSave) {
+    var H = window.HomeLife; if (!H || !H.dialog) return;
+    var cur = Object.assign({}, start), pm = 'day';
+    var html = function () {
+      return '<div class="ave"><div class="ave-head"><b>' + esc(title) + '</b><button type="button" class="icon-btn sm" data-aveclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button></div>' +
+        '<div class="av-prev ave-prev">' + figure(MOMENTS[pm], cur) + '</div>' +
+        '<div class="av-acts"><button type="button" class="text-btn" data-averand><i class="bi bi-shuffle"></i> ' + L('Surprise me', 'Overrask meg') + '</button><span class="spacer"></span><button type="button" class="pill-btn" data-avesave>' + L('Save', 'Lagre') + '</button></div>' +
+        Object.keys(OPTS).filter(function (k) { return k !== 'extra'; }).map(function (k) { var g = OPTS[k];
+          return '<div class="av-grp"><span>' + esc(g.t) + '</span><div class="av-opts">' + g.o.map(function (o) {
+            return g.dots ? '<button type="button" class="av-dot" data-avek="' + k + '" data-avev="' + o[0] + '" aria-pressed="' + (cur[k] === o[0]) + '" aria-label="' + esc(g.t) + '" style="--c:' + o[0] + '"></button>'
+              : '<button type="button" data-avek="' + k + '" data-avev="' + o[0] + '" aria-pressed="' + (cur[k] === o[0]) + '">' + esc(o[1]) + '</button>';
+          }).join('') + '</div></div>'; }).join('') + '</div>';
+    };
+    var box;
+    var dg = H.dialog('<div class="ave-host" data-noi18n></div>', function (e, close) {
+      var b = e.target.closest('[data-avek]');
+      if (b) { cur[b.dataset.avek] = b.dataset.avev; box.innerHTML = html(); return; }
+      if (e.target.closest('[data-averand]')) { Object.keys(OPTS).forEach(function (k) { if (k === 'extra' || k === 'bottom') return; var o = OPTS[k].o; cur[k] = o[Math.floor(Math.random() * o.length)][0]; }); box.innerHTML = html(); return; }
+      if (e.target.closest('[data-avesave]')) { onSave(cur); close(); return; }
+      if (e.target.closest('[data-aveclose]')) close();
+    });
+    box = dg && dg.el.querySelector('.ave-host'); if (box) box.innerHTML = html();
+  }
+  window.Avatar = { figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS };
 })();
