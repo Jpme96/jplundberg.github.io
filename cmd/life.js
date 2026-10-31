@@ -283,6 +283,7 @@
     var why = [], score = 100, data = 0;
     if (day && day.hrv != null) { data++; var bh = base('hrv'); if (bh) { var drop = (bh - day.hrv) / bh * 100; if (drop > 5) { score -= Math.min(40, drop * 1.5); why.push('HRV ' + Math.round(drop) + ' % below your normal'); } else if (drop < -5) why.push('HRV above your normal'); } }
     if (day && day.rhr != null) { data++; var br = base('rhr'); if (br) { var rise = day.rhr - br; if (rise > 2) { score -= Math.min(25, rise * 4); why.push('Resting pulse +' + Math.round(rise) + ' bpm'); } } }
+    var ln = window.AHealth && window.AHealth.lastNight ? window.AHealth.lastNight() : null; if (ln && !ln.partial) day = Object.assign({}, day || {}, { sleep: ln.v }); else if (ln && day) { day = Object.assign({}, day); delete day.sleep; }
     if (day && day.sleep != null) { data++; if (day.sleep < 7) { score -= (7 - day.sleep) * 12; why.push('Slept ' + String(Math.round(day.sleep * 10) / 10).replace('.', ',') + ' h'); } else why.push('Slept well'); }
     /* training: days in a row with a workout or a gym session */
     var trained = {};

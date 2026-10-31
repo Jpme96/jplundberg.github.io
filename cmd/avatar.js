@@ -160,6 +160,9 @@
   /* ---------- what's going on: the moment and the line it says ---------- */
   function firstName() { var p = readJSON('dash.profile', {}) || {}; return String(p.name || '').trim().split(/\s+/)[0] || ''; }
   function wxCode() { var c = readJSON('dash.wxNow', null); return c && Date.now() - c.at < 3 * 3600e3 ? c.code : null; }
+  /* what the bubble may say: everything, everything but money (default – it's on screen for anyone nearby), or only the fun moments */
+  function sayMode() { var d = window.Delight && window.Delight.get ? window.Delight.get() : {}; return d.avSay === 'all' || d.avSay === 'fun' ? d.avSay : 'nomoney'; }
+  function isMoney(x) { return /finance|budget|#fin|bill|money/i.test(String(x.href || '') + ' ' + String(x.key || '')) || /wallet|cash|coin|receipt|piggy|credit|bank|currency/.test(String(x.icon || '')) || /\bkr\b|\d\s?kr|NOK/.test(String(x.title || '') + ' ' + String(x.sub || '')); }
   function moments() {
     var out = [], h = new Date().getHours(), td = today(), T = Fe ? Fe.tools() : {}, name = firstName();
     var add = function (k, say, w) { out.push({ m: MOMENTS[k], say: say, w: w }); };
@@ -190,7 +193,7 @@
       add('bday', bd.n === 0 ? L(p.name + '’s birthday today!', p.name + ' har bursdag i dag!') : L(p.name + '’s birthday ' + (bd.n === 1 ? 'tomorrow' : 'in 2 days') + (p.gifts ? ' – idea: ' + String(p.gifts).split('\n')[0] : ''), p.name + ' har bursdag ' + (bd.n === 1 ? 'i morgen' : 'om 2 dager') + (p.gifts ? ' – idé: ' + String(p.gifts).split('\n')[0] : '')), bd.n === 0 ? 2.5 : 6);
     });
     /* the time of day, with the top things from At a glance */
-    var items = (window.BriefItems || []).filter(function (x) { return !x.fold && x.title; }).slice(0, 3);
+    var mode = sayMode(), items = mode === 'fun' ? [] : (window.BriefItems || []).filter(function (x) { return !x.fold && x.title && (mode === 'all' || !isMoney(x)); }).slice(0, 3);
     var tr = function (s) { return window.I18N && window.I18N.t ? window.I18N.t(s) : s; };
     if (h >= 5 && h < 11) add('morning', L('Morning' + (name ? ', ' + name : '') + '!', 'God morgen' + (name ? ', ' + name : '') + '!') + (items[0] ? ' ' + tr(items[0].title) + '.' : L(' Nothing pressing today.', ' Ingenting som haster i dag.')), 8);
     else if (h >= 11 && h < 17) add('day', items[0] ? tr(items[0].title) : L('All good – enjoy the day.', 'Alt vel – nyt dagen.'), 8);
@@ -242,7 +245,9 @@
     var Lk = look(), sw = function (k, label, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" class="switch" data-dltouch="' + k + '"' + (on(k) ? ' checked' : '') + '></label>'; };
     box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-person-bounding-box"></i> ' + L('Your avatar', 'Avataren din') + '</p><div class="st-group">' +
       sw('avatar', L('Avatar on Home', 'Avatar på Hjem'), L('A little you that follows your day', 'En liten deg som følger dagen din')) +
-      sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) + '</div>' +
+      sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) +
+      '<label class="st-row"><span>' + L('What it says', 'Hva den sier') + '<small class="st-rsub">' + L('The speech bubble is on screen for anyone nearby', 'Snakkeboblen vises for alle i nærheten') + '</small></span><select class="st-select" data-avsay>' +
+        [['nomoney', L('All but money', 'Alt unntatt penger')], ['all', L('Everything', 'Alt')], ['fun', L('Only the fun bits', 'Bare det morsomme')]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sayMode() ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>' +
       '<div class="st-group av-maker"><div class="av-prev">' + figure(MOMENTS[prevM], Lk) + '<div class="av-pm">' + ['morning', 'rain', 'gym', 'trip', 'night'].map(function (k) { return '<button type="button" data-avpm="' + k + '" aria-pressed="' + (k === prevM) + '" aria-label="' + k + '"><i class="bi bi-' + MOMENTS[k].i + '"></i></button>'; }).join('') + '</div>' +
       '<div class="av-acts"><button type="button" class="text-btn" data-avrand><i class="bi bi-shuffle"></i> ' + L('Surprise me', 'Overrask meg') + '</button><button type="button" class="text-btn" data-avreset>' + L('Start over', 'Start på nytt') + '</button></div></div>' +
       Object.keys(OPTS).map(function (k) { var g = OPTS[k];
@@ -257,6 +262,7 @@
     if (e.target.closest('[data-avrand]')) { var r = {}; Object.keys(OPTS).forEach(function (k) { var o = OPTS[k].o; r[k] = o[Math.floor(Math.random() * o.length)][0]; }); setLook(r); maker(); return; }
     if (e.target.closest('[data-avreset]')) { var s = readJSON('dash.settings', {}) || {}; delete s.avatar; try { localStorage.setItem('dash.settings', JSON.stringify(s)); } catch (x) {} window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('avatar:change')); maker(); }
   });
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-avsay]') && window.Delight && window.Delight.set) { window.Delight.set({ avSay: e.target.value }); idx = 0; } });
   window.addEventListener('st:page', function (e) { if (e.detail === 'touches') setTimeout(maker, 0); });
   window.addEventListener('touch:change', function () { if (document.getElementById('avSet')) setTimeout(maker, 0); });
 

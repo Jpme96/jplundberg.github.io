@@ -225,8 +225,8 @@
 
     /* Apple Health: a short night, or the Shortcut has gone quiet */
     if (window.AHealth && Fe && Fe.on('ahealth')) {
-      var AH = window.AHealth, sl = AH.latest('sleep'), lastH = ((d || {}).health || {}).last;
-      if (sl && sl.date >= dkey(new Date(now.getTime() - 864e5)) && sl.v < 6 && sl.v > 0)
+      var AH = window.AHealth, sl = AH.lastNight ? AH.lastNight() : AH.latest('sleep'), lastH = ((d || {}).health || {}).last;
+      if (sl && sl.date >= dkey(new Date(now.getTime() - 864e5)) && sl.v < 6 && sl.v > 0 && !sl.partial)
         add(57, 'moon-stars', '#8a6fdf', 'Short night: ' + AH.fmt('sleep', sl.v), 'Go easy today – and maybe to bed a bit earlier', 'habits/', { key: 'sleep:' + sl.date, tip: true });
       if (lastH && Date.now() - lastH > 3 * 864e5)
         add(64, 'apple', '#e66767', 'Nothing from Apple Health for ' + Math.floor((Date.now() - lastH) / 864e5) + ' days', 'Check that the Shortcut automation still runs', '?settings=ahealth', { key: 'ahstale:' + today, tip: true });

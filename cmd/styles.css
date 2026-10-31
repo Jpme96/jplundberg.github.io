@@ -3348,3 +3348,16 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .dl-line { margin: 0 0 10px; font-size: 14px; line-height: 1.45; color: var(--text); } .dl-line b { color: var(--heading); }
 .dl-pbox { width: min(460px, 100%); } .dl-pimg { width: 100%; border-radius: 14px; margin: 8px 0 10px; display: block; }
 .dl-pbtn { margin: 0 0 12px; }
+
+/* Face ID / fingerprint unlock (passkey.js) */
+.lock-pk { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 10px; font-weight: 600; }
+.lock-pk[hidden], #lockConfirm:not([hidden]) ~ .lock-pk { display: none; }
+#pkForm .pk-msg { margin: 6px 0 0; font-size: .85em; min-height: 1em; }
+
+/* Settings: the website group folds (remembered per device); owner-only parts hide for a guest dashboard later */
+.st-grpbtn { display: flex; align-items: center; width: calc(100% - 8px); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.st-grpbtn .st-grpchev { margin-left: 8px; color: var(--muted) !important; font-size: 13px !important; transition: transform .2s; }
+.st-web.closed .st-grpchev { transform: rotate(-90deg); }
+.st-web.closed .st-webbody { display: none; }
+.st-grpbtn + .st-webbody > .st-minor:first-child { margin-top: 2px; }
+html[data-role="guest"] [data-owner] { display: none !important; }

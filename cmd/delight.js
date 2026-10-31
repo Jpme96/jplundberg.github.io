@@ -24,7 +24,7 @@
 
   /* ---------- settings ---------- */
   var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, tod: true, wx: 'home', season: true, confetti: true,
-    flames: true, morning: true, evening: true, badgeHouse: true, badgeBday: true, poster: true, swipe: true, avatar: true, avBadge: true };
+    flames: true, morning: true, evening: true, badgeHouse: true, badgeBday: true, poster: true, swipe: true, avatar: true, avBadge: true, avSay: 'nomoney' };
   function all() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, DEF, s.touch || {}); }
   function on(k) { return !!all()[k]; }
   function set(patch) {

@@ -399,8 +399,29 @@
   document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
   document.querySelectorAll('[data-textsize]').forEach(function (b) { b.addEventListener('click', function () { set({ textSize: b.dataset.textsize }); }); });
   /* language: the page reloads in the new language (settings are saved and synced first) */
+  /* jplundberg.com settings fold away (closed by default, remembered on this device); search still finds them */
+  (function () {
+    var w = document.getElementById('stWeb'), b = document.getElementById('stWebBtn'); if (!w || !b) return;
+    var open = false; try { open = localStorage.getItem('dash.stWeb') === 'open'; } catch (e) {}
+    var paintW = function () { w.classList.toggle('closed', !open); b.setAttribute('aria-expanded', String(open)); };
+    paintW();
+    b.addEventListener('click', function () { open = !open; try { localStorage.setItem('dash.stWeb', open ? 'open' : 'closed'); } catch (e) {} paintW(); });
+  })();
+  /* who is using this dashboard: always the owner today; a guest copy (/dashboard) will set data-role="guest" and hide [data-owner] parts */
+  if (!document.documentElement.dataset.role) document.documentElement.dataset.role = 'owner';
+  /* the habit and goals the dashboard made for you at the start follow the language – only while they still have the starter name */
+  function renameStarters(to) {
+    var N = [['Training', 'Trening'], ['Gym sessions this week', 'Treningsøkter denne uken'], ['Asset structure clean-up (%)', 'Opprydding i eiendelsstruktur (%)']];
+    var fix = function (key, listOf) { try { var v = JSON.parse(localStorage.getItem(key)); if (!v) return; var l = listOf(v), ch = false;
+      (l || []).forEach(function (x) { N.forEach(function (n) { var from = to === 'nb' ? n[0] : n[1], dest = to === 'nb' ? n[1] : n[0]; if (x && x.name === from) { x.name = dest; ch = true; } }); });
+      if (ch) localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} };
+    fix('dash.habits', function (v) { return v.list; }); fix('dash.goals', function (v) { return v; });
+    window.dispatchEvent(new Event('dash:local'));
+  }
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(function () { if (get().lang === 'nb') { var a = localStorage.getItem('dash.habits') + localStorage.getItem('dash.goals'); if (/"name":"(Training|Gym sessions this week|Asset structure clean-up \(%\))"/.test(a)) renameStarters('nb'); } }, 1500); });
   document.querySelectorAll('[data-langopt]').forEach(function (b) { b.addEventListener('click', function () {
     var was = (get().lang === 'nb' ? 'nb' : 'en'); if (b.dataset.langopt === was) return;
+    renameStarters(b.dataset.langopt);
     set({ lang: b.dataset.langopt });
     setTimeout(function () { location.href = location.pathname + '?settings=appearance'; }, 600);
   }); });

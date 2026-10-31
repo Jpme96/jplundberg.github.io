@@ -769,8 +769,15 @@
         return window.Vault.save(data).then(function () { recNext = undefined; });
       }
     },
+    /* for the Face ID / fingerprint unlock (passkey.js): check a passcode without unlocking, then unlock with it */
+    tryPass: function (pass) {
+      var vault = remote || readJSON(VAULT_KEY); if (!isVault(vault)) return Promise.resolve(false);
+      return derive(pass, unb64(vault.salt), vault.iter || ITER).then(function (k) { return open(vault, k); }).then(function () { return true; }, function () { return false; });
+    },
+    unlockWith: function (pass) { if (key) return; busy(true); remoteCheck.then(function () { tryUnlock(pass); }); },
     changePasscode: function (pass) {
       if (!key) return Promise.reject(new Error('locked'));
+      try { window.dispatchEvent(new CustomEvent('passcode:change')); } catch (e) {}
       var s = crypto.getRandomValues(new Uint8Array(16));
       return writing.then(function () { return data && data._recCode ? recWrap(data._recCode, pass).then(function (r) { recNext = r; }) : null; })
         .then(function () { return derive(pass, s, ITER); })

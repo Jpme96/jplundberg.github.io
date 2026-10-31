@@ -3,7 +3,7 @@
     "diag.js",
     "i18n.js",
     "lock.js",
-    "lockui.js",
+    "lockui.js", "passkey.js",
     "features.js",
     "sidenav.js"
   ],

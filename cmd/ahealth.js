@@ -179,6 +179,17 @@
     F.forEach(function (f) { out[f].avg = out[f].n ? out[f].sum / out[f].n : null; });
     return out;
   }
+  /* last night's sleep: a Shortcut run before the night is fully recorded (or mid-day) can send only a
+     part of it – under 3 h today, while yesterday had a real night, counts as a partial and is not trusted */
+  function lastNight() {
+    var D = days(), n = new Date(), p2 = function (x) { return String(x).padStart(2, '0'); }, k = function (d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); };
+    var td = k(n), yd = k(new Date(n.getTime() - 864e5)), t = D[td] && D[td].sleep, y = D[yd] && D[yd].sleep;
+    t = t > 0 ? +t : null; y = y > 0 ? +y : null;
+    if (t != null && (t >= 3 || y == null)) return { date: td, v: t, partial: t < 3 && n.getHours() < 20 };
+    if (t != null) return { date: t > y ? td : yd, v: Math.max(t, y), partial: false, skipped: t };
+    if (y != null) return { date: yd, v: y, partial: false };
+    return null;
+  }
   function latest(f) { var D = days(), ks = Object.keys(D).sort().reverse(); for (var i = 0; i < ks.length; i++) if (D[ks[i]][f] != null) return { date: ks[i], v: D[ks[i]][f] }; return null; }
 
   /* ---------- the card on the Health page ---------- */
@@ -410,5 +421,5 @@
 
   window.Vault.onUnlock(function () { setTimeout(function () { card(); settingsPage(); }, 50); });
   ['health:change', 'features:change', 'habits:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(function () { card(); settingsPage(); }, 0); }); });
-  window.AHealth = { days: days, stats: stats, latest: latest, fmt: fmt, merge: merge, pull: pull };
+  window.AHealth = { days: days, stats: stats, latest: latest, lastNight: lastNight, fmt: fmt, merge: merge, pull: pull };
 })();

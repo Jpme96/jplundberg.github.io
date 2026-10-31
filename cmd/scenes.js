@@ -35,6 +35,25 @@
   var FEAT = { people: 'people', food: 'food', work: 'work', habits: 'healthpage', finance: 'finance', travel: 'travel' }[PAGE];
 
   /* ---------------- People ---------------- */
+  /* a person at the table in the same style as your avatar: look picked from the name, shirt in the relation colour */
+  var SKINS = ['#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27'], HAIRS = ['#1e140d', '#4a2f1d', '#7a4b2a', '#b98a4f', '#e2c27d', '#9a9a9a', '#a8432f'];
+  function hash(t) { var h = 7; t = String(t || ''); for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; }
+  function bust(x, p, c, ini) {
+    var h = hash(p.id || p.name), S = SKINS[h % 6], H = HAIRS[(h >> 3) % 7], style = (h >> 6) % 5;
+    var hair = [
+      '<path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-1-6-4-10-8-12-6 3-16 3-23 0-3 3-5 7-6 12z" fill="' + H + '"/>',
+      '<path d="M81 63c-3-18 7-27 20-27 14 0 22 10 19 27-3-8-8-13-14-14-8 4-18 4-25 0z" fill="' + H + '"/>',
+      '<g fill="' + H + '"><circle cx="86" cy="52" r="6.5"/><circle cx="94" cy="44" r="7"/><circle cx="104" cy="42" r="7.5"/><circle cx="113" cy="46" r="7"/><circle cx="118" cy="54" r="6"/><circle cx="83" cy="60" r="4.5"/><circle cx="120" cy="61" r="4.5"/></g>',
+      '<circle cx="101" cy="31" r="7" fill="' + H + '"/><path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-2-8-8-13-18-13s-16 5-19 13z" fill="' + H + '"/>',
+      '<path d="M82 63c-3-18 7-27 20-27 14 0 20 10 18 24-8-8-20-12-30-8-4 2-6 6-8 11z" fill="' + H + '"/>'][style];
+    var back = style === 1 ? '<path d="M80 60c-2-16 8-24 21-24s23 8 21 24v24c-4 4-8 0-8-6V62H88v16c0 6-4 10-8 6z" fill="' + H + '"/>' : '';
+    var g = '<path d="M74 118v-12c0-12 12-18 27-18s27 6 27 18v12z" fill="' + c + '"/><path d="M93 88l8 9 8-9" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>' +
+      back + '<rect x="95" y="80" width="12" height="10" rx="3" fill="' + S + '"/>' +
+      '<path d="M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z" fill="' + S + '"/><ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + S + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + S + '"/>' +
+      '<circle cx="94" cy="62" r="2.2" fill="#2b211b"/><circle cx="108" cy="62" r="2.2" fill="#2b211b"/><path d="M95 72q6 6 12 0" fill="#fff" stroke="#8a4636" stroke-width="1.8" stroke-linejoin="round"/>' + hair +
+      '<text x="101" y="112" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(255,255,255,.9)">' + esc(ini) + '</text>';
+    return '<g transform="translate(' + (x - 101 * .5).toFixed(1) + ' 39) scale(.5)">' + g + '</g>';
+  }
   function people() {
     var HL = window.HomeLife, PP = window.PeoplePlus; if (!HL) return null;
     var l = Fe.list('people'), m = new Date().getMonth(), d = new Date().getDate(), y = today().slice(0, 4);
@@ -60,8 +79,8 @@
         if (mk.k === 'talk') icon = '<rect x="' + (x - 10) + '" y="46" width="20" height="13" rx="5" class="sc-bubble"/><path d="M' + (x - 3) + ' 59 l-2 5 6-5z" class="sc-bubble"/><circle cx="' + (x - 5) + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + x + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + (x + 5) + '" cy="52.5" r="1.3" class="sc-dot"/>';
         if (mk.k === 'star') icon = '<path d="M' + x + ' 46 l2.4 5 5.4.6 -4 3.6 1.2 5.4 -5-2.8 -5 2.8 1.2-5.4 -4-3.6 5.4-.6z" class="sc-star"/>';
       }
-      svg += part('people=' + r.p.id, hot, icon + '<path d="M' + (x - 13) + ' 98 q0 -16 13 -16 q13 0 13 16z" fill="' + c + '" opacity=".85"/><circle cx="' + x + '" cy="74" r="9" fill="' + c + '"/><text x="' + x + '" y="77.5" text-anchor="middle" class="sc-ini">' + esc(ini) + '</text>') +
-        (r.marks.length > 1 ? badge(r.marks.length, x + 10, 64) : '');
+      svg += part('people=' + r.p.id, hot, (icon ? '<g transform="translate(0 -15)">' + icon + '</g>' : '') + bust(x, r.p, c, ini)) +
+        (r.marks.length > 1 ? badge(r.marks.length, x + 12, 52) : '');
     });
     if (!n) svg += '<text x="120" y="80" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>';
     else svg += '<circle cx="' + (64) + '" cy="96" r="0" />' + [0, 1, 2].map(function (i) { return '<ellipse cx="' + (84 + i * 36) + '" cy="97" rx="9" ry="2.2" class="sc-plate"/>'; }).join('');
@@ -107,6 +126,7 @@
     var svg = ground() + deco('work') +
       part('flex', st ? '' : '', '<circle cx="200" cy="38" r="16" class="sc-clock"/>' + hand(ha, 8, 'sc-hh') + hand(ma, 12, 'sc-mh') + '<circle cx="200" cy="38" r="1.6" class="sc-dot"/>' +
         (st ? '<text x="200" y="66" text-anchor="middle" class="sc-lbl' + (st.balance < 0 ? ' neg' : '') + '">' + esc(bal) + '</text>' : '')) +
+      (window.Avatar ? '<g class="sc-me">' + window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="98" y="40" width="50" height="60"' }).replace('viewBox="0 0 200 200"', 'viewBox="56 24 90 108"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '') + '</g>' : '') +
       '<rect x="24" y="96" width="192" height="6" rx="2" class="sc-wood"/><rect x="34" y="102" width="5" height="26" class="sc-wood"/><rect x="201" y="102" width="5" height="26" class="sc-wood"/>' +
       part('ptime', timer ? 'hot' : '', '<rect x="54" y="70" width="44" height="26" rx="2" class="sc-screen' + (timer ? ' lit' : '') + '"/><path d="M48 96 h56 l-4 -3 h-48z" class="sc-kbd"/>' + (timer ? '<path d="M72 78 l8 5 -8 5z" class="sc-play"/>' : ''));
     var stack = Math.min(6, open), papers = '';
@@ -126,7 +146,7 @@
   /* ---------------- Health ---------------- */
   function health() {
     var d = window.Vault.get() || {}, D = (d.health && d.health.days) || {}, td = today(), yd = dkey(new Date(Date.now() - 864e5));
-    var day = D[td] || {}, sleep = day.sleep || (D[yd] || {}).sleep || 0, steps = day.steps || 0;
+    var day = D[td] || {}, ln = window.AHealth && window.AHealth.lastNight ? window.AHealth.lastNight() : null, sleep = ln ? (ln.partial ? 0 : ln.v) : (day.sleep || (D[yd] || {}).sleep || 0), steps = day.steps || 0;
     var s = readJSON('dash.settings', {}) || {}, goal = +((s.ahGoals || {}).steps) || 10000, pct = Math.min(1, steps / goal);
     var T = Fe.tools(), trained = (T.training || []).some(function (w) { return w.date === td; }) || (T.gym || []).some(function (g) { return String(g.date || '').slice(0, 10) === td; });
     var mood = !sleep ? 'ok' : sleep >= 7 ? 'good' : sleep >= 6 ? 'ok' : 'tired';
