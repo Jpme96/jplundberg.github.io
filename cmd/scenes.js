@@ -93,7 +93,7 @@
       }
       if (ks.indexOf('gift') > -1) extra += '<g transform="translate(' + (x + (x <= 120 ? -1 : 1) * W * 0.36) + ' 119)"><rect x="-6" y="0" width="12" height="10" rx="1.5" fill="#22b35e"/><rect x="-1" y="0" width="2" height="10" fill="#f2c94c"/><path d="M-3.5 -1 q3.5 -4 3.5 1 q0 -5 3.5 -1" stroke="#f2c94c" fill="none" stroke-width="1.3"/></g>';
       if (ks.indexOf('star') > -1) above = '<path transform="translate(' + x + ' ' + (headTop - 9) + ')" d="M0 -6 l1.8 3.8 4.2.5 -3.1 2.8 .9 4.1 -3.8-2.2 -3.8 2.2 .9-4.1 -3.1-2.8 4.2-.5z" class="sc-star"/>';
-      var bubble = ks.indexOf('talk') > -1 ? 'sc-say on' : i === talk ? 'sc-say' : '';
+      var bubble = ks.indexOf('talk') > -1 ? 'sc-say on' : n > 1 ? 'sc-say' + (i === talk ? ' show' : '') : '';
       if (bubble) above += '<g class="' + bubble + '" transform="translate(' + (x + W * 0.28) + ' ' + (headTop - 4) + ')"><rect x="-9" y="-12" width="18" height="11" rx="5" class="sc-bubble"/><path d="M-3 -1 l-1.5 4 5 -4z" class="sc-bubble"/><circle cx="-4.5" cy="-6.5" r="1.1" class="sc-dot"/><circle cx="0" cy="-6.5" r="1.1" class="sc-dot"/><circle cx="4.5" cy="-6.5" r="1.1" class="sc-dot"/></g>';
       var who = AV ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="' + (x - W / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + W.toFixed(1) + '" height="' + Hs.toFixed(1) + '"' }, window.Avatar.personLook(r.p, r.p.look ? null : c))
           .replace('viewBox="0 0 200 200"', 'viewBox="40 22 122 142"')
@@ -260,6 +260,14 @@
     e.preventDefault(); go(g ? g.dataset.scgo : a.getAttribute('href').slice(1));
   });
   var t = null;
+  /* the chat in the People picture: every ~1.8 s a random other person gets the "…" bubble */
+  var chatT = setInterval(function () {
+    var rt = document.documentElement.classList; if (rt.contains('mo-off') || rt.contains('mo-reduced') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var b = document.querySelectorAll('#scIllu .sc-mingle .sc-say:not(.on)'); if (b.length < 2 || document.hidden) return;
+    var cur = -1; b.forEach(function (x, i) { if (x.classList.contains('show')) cur = i; });
+    var next = Math.floor(Math.random() * (b.length - 1)); if (next >= cur && cur > -1) next++;
+    b.forEach(function (x, i) { x.classList.toggle('show', i === next); });
+  }, 1800);
   function soon() { clearTimeout(t); t = setTimeout(draw, 60); }
   ['tools:change', 'features:change', 'touch:change', 'fin:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, soon); });
   window.Vault.onUnlock(function () { setTimeout(draw, 120); });

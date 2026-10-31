@@ -3434,11 +3434,11 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 /* People picture: a gathering – gentle sway, one person talking at a time, a flickering birthday candle */
 .sc-mingle .sc-sway { animation: scsway 5.2s ease-in-out infinite; transform-box: view-box; }
 @keyframes scsway { 0%, 100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg) translateY(-.6px); } }
-.sc-mingle .sc-say { opacity: 0; animation: scsay 6s ease-in-out infinite; }
-.sc-mingle .sc-say.on { opacity: 1; animation: none; }
+.sc-mingle .sc-say { opacity: 0; transition: opacity .25s ease; }
+.sc-mingle .sc-say.show, .sc-mingle .sc-say.on { opacity: 1; }
 @keyframes scsay { 0%, 15% { opacity: 0; } 22%, 70% { opacity: 1; } 78%, 100% { opacity: 0; } }
 .sc-flick { animation: scflick .9s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
 @keyframes scflick { from { transform: scaleY(1); } to { transform: scaleY(.75) translateX(.3px); } }
 .mo-off .sc-mingle .sc-sway, .mo-reduced .sc-mingle .sc-sway, .mo-off .sc-flick, .mo-reduced .sc-flick { animation: none; }
-.mo-off .sc-mingle .sc-say, .mo-reduced .sc-mingle .sc-say { animation: none; opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .sc-mingle .sc-sway, .sc-flick { animation: none; } .sc-mingle .sc-say { animation: none; opacity: 1; } }
+.mo-off .sc-mingle .sc-say, .mo-reduced .sc-mingle .sc-say { transition: none; }
+@media (prefers-reduced-motion: reduce) { .sc-mingle .sc-sway, .sc-flick { animation: none; } .sc-mingle .sc-say { transition: none; } }
