@@ -3577,3 +3577,27 @@ html.simple #stMenu [data-adv] { display: none; }
 .ad-log { list-style: none; margin: 0; padding: 0; } .ad-log li { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .ad-log li:last-child { border-bottom: 0; } .ad-log .bi { color: var(--accent); } .ad-log small { color: var(--muted); font-size: 11.5px; white-space: nowrap; } .ad-log span { min-width: 0; overflow-wrap: anywhere; }
 .mo-off .ad-pulse, .mo-reduced .ad-pulse { animation: none; }
+
+/* Admin tabs + Website workspace (admin.js) */
+.ad-tabs { display: flex; gap: 4px; padding: 4px; margin: 0 0 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--card-rgb, 24, 25, 29), .6); overflow-x: auto; }
+.ad-tabs button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 12px; border: 0; border-radius: 10px; background: none; color: var(--muted); font: inherit; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
+.ad-tabs button[aria-selected="true"] { background: var(--accent); color: var(--on-accent, #062b27); }
+.aw { display: grid; grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1.05fr); gap: 14px; margin-bottom: 16px; align-items: start; }
+.aw-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 90px; }
+.aw-nav button { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0; border-radius: 10px; background: none; color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.aw-nav button .bi { color: var(--muted); } .aw-nav button[aria-current="true"] { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); } .aw-nav button[aria-current="true"] .bi { color: var(--accent); }
+.aw-main { min-width: 0; }
+.aw-ed { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: rgba(var(--card-rgb, 24, 25, 29), .6); }
+.aw-ed .st-page { display: block; position: static; transform: none; opacity: 1; padding: 0; max-height: none; overflow: visible; }
+.aw-bar .ws-bar, .aw-bar #wsBar { position: sticky; bottom: 80px; margin-top: 10px; border-radius: 14px; }
+.aw-pv { position: sticky; top: 90px; min-width: 0; }
+.aw-pvh { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; } .aw-pvh b { flex: 1; font-size: 13.5px; }
+.aw-lang { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; } .aw-lang button { border: 0; background: none; color: var(--muted); padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; } .aw-lang button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #062b27); }
+.aw-frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; height: 68vh; background: #0e0f11; }
+.aw-frame iframe { width: 166.6%; height: 166.6%; border: 0; transform: scale(.6); transform-origin: 0 0; display: block; }
+@media (max-width: 1099px) { .aw { grid-template-columns: 170px minmax(0, 1fr); } .aw-pv { grid-column: 1 / -1; position: static; } .aw-frame { height: 60vh; } }
+@media (max-width: 699px) { .aw { grid-template-columns: 1fr; } .aw-nav { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 4px; } .aw-nav button { flex: none; border: 1px solid var(--line); border-radius: 99px; padding: 7px 12px; } .aw-frame { height: 70vh; } .aw-frame iframe { width: 100%; height: 100%; transform: none; } }
+/* status strip on Home (admin-set.js) */
+.ad-strip { display: flex; align-items: center; gap: 10px; margin: -6px 0 14px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--card-rgb, 24, 25, 29), .7); color: var(--text); text-decoration: none; font-size: 13.5px; min-width: 0; }
+.ad-strip .ad-dot { position: static; width: 8px; height: 8px; border-radius: 50%; flex: none; background: #d9a400; box-shadow: 0 0 8px #d9a400; } .ad-strip.ad-bad .ad-dot { background: #e66767; box-shadow: 0 0 8px #e66767; }
+.ad-strip span:not(.ad-dot) { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }

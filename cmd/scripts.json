@@ -60,6 +60,7 @@
       "brief.js",
       "checkin.js",
       "checklists.js",
+      "admin-set.js",
       "kit.js",
       "tools.js",
       "profile.js",

@@ -303,7 +303,8 @@
   }
 
   /* ---------- edits ---------- */
-  function changed() { preview(); summary(); bar(); }
+  function changed() { preview(); summary(); bar(); try { window.dispatchEvent(new Event('site:draft')); } catch (e) {} }
+  window.SiteDraftSite = function () { return { saved: saved, draft: draft }; };
   $('wsAnnOn').addEventListener('change', function () { draft.announcement.on = this.checked; changed(); });
   $('wsAnnEn').addEventListener('input', function () { draft.announcement.en = this.value; changed(); });
   $('wsAnnNb').addEventListener('input', function () { draft.announcement.nb = this.value; changed(); });

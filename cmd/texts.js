@@ -72,6 +72,7 @@
     return loading;
   }
 
+  window.SiteDraftTexts = function () { return { saved: saved, draft: draft, defaults: defaults }; };
   function value(k) { return draft[lang][k] != null ? draft[lang][k] : defaults[lang][k]; }
   function isOwn(k) { return draft[lang][k] != null && draft[lang][k] !== defaults[lang][k]; }
 
@@ -97,6 +98,7 @@
     if (!t) return;
     var k = t.dataset.k, v = t.value.replace(/\s+/g, ' ');
     if (!v.trim() || v.trim() === defaults[lang][k]) delete draft[lang][k]; else draft[lang][k] = v.trim();
+    try { window.dispatchEvent(new Event('site:draft')); } catch (x) {}
     grow(t);
     var f = fieldOf(k), c = document.querySelector('[data-count="' + k + '"]');
     if (c) { c.textContent = count(f, t.value); c.classList.toggle('warn', !!(f.warn && t.value.length > f.warn)); }
