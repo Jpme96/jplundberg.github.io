@@ -85,6 +85,12 @@
     }
   });
   window.addEventListener('st:page', function (e) { if (e.detail === 'adminset') fill(); });
+  /* opened straight onto this page (a link, a reload): fill it when it becomes visible, whatever the order of events */
+  (function () {
+    var pg = document.querySelector('.st-page[data-page="adminset"]'); if (!pg || !window.MutationObserver) return;
+    var go = function () { if (!pg.hidden && !document.querySelector('#adSet .st-row')) fill(); };
+    new MutationObserver(go).observe(pg, { attributes: true, attributeFilter: ['hidden'] }); setTimeout(go, 500);
+  })();
 
   /* a small status strip on Home when something needs you (from the last Admin check) */
   function strip() {
