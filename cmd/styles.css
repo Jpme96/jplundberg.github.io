@@ -3524,3 +3524,6 @@ html:not(.rings-done) .goal circle.val { animation: ringfill 1.1s cubic-bezier(.
 .mo-paused *, .mo-paused *::before, .mo-paused *::after, .is-away, .is-away * { animation-play-state: paused !important; }
 .mo-saver .hs-illu *, .mo-saver #avHome *, .mo-saver #dlWx * { animation: none !important; }
 .mo-off .todo-item.td-pop *, .mo-reduced .todo-item.td-pop * { animation: none; }
+/* Simple mode: advanced settings rows step aside (search still finds them) */
+html.simple #stMenu [data-adv] { display: none; }
+.ft-simple { border-bottom: 1px solid var(--line); margin-bottom: 6px; }

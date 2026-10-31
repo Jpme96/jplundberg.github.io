@@ -52,7 +52,11 @@
   }
   function byId(id) { return LIST.filter(function (x) { return x.id === id; })[0]; }
 
+  /* Simple mode (Settings → Features): the extras below are hidden – your own switches are kept and come back when Simple is off */
+  var ADV = ['voice', 'findtime', 'shutdown', 'prep', 'holiday', 'rest', 'hreport', 'tripbudget', 'smartpack', 'power', 'jars', 'recur', 'shared', 'warranty'];
+  function simple() { return !!((readJSON('dash.settings') || {}).simple); }
   function on(id) {
+    if (simple() && ADV.indexOf(id) > -1) return false;
     if (id === 'work') return WORK.some(on);
     if (id === 'healthpage') return HEALTH.some(on);
     var f = (readJSON('dash.settings') || {}).features || {};
@@ -68,9 +72,14 @@
     window.dispatchEvent(new Event('features:change'));
     window.dispatchEvent(new Event('cal:change'));
   }
+  function setSimple(v) {
+    var s = readJSON('dash.settings') || {}; s.simple = !!v; writeJSON('dash.settings', s);
+    apply(); window.dispatchEvent(new Event('features:change')); window.dispatchEvent(new Event('cal:change'));
+  }
   function apply() {
     var r = document.documentElement;
     LIST.forEach(function (x) { r.classList.toggle('feat-off-' + x.id, !on(x.id)); });
+    r.classList.toggle('simple', simple());
     r.classList.toggle('feat-off-work', !on('work'));
     r.classList.toggle('feat-off-healthpage', !on('healthpage'));
   }
@@ -247,7 +256,7 @@
 
   window.Features = {
     LIST: LIST, WORK: WORK, HEALTH: HEALTH, REMIND_COLOR: REMIND_COLOR, holidays: holidays, holiday: holiday,
-    on: on, set: set, apply: apply, byId: byId,
+    on: on, set: set, apply: apply, byId: byId, ADV: ADV, simple: simple, setSimple: setSimple,
     tools: tools, saveTools: saveTools, list: list,
     events: events, nextRenewal: nextRenewal, warrantyEnd: warrantyEnd,
     dkey: dkey, fromKey: fromKey, addMonths: addMonths

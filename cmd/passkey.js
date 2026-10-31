@@ -12,6 +12,7 @@
   var $ = function (id) { return document.getElementById(id); };
   function b64(buf) { var s = '', a = new Uint8Array(buf); for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
   function unb64(s) { var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function rnd(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   function saved() { try { var v = JSON.parse(localStorage.getItem(KEY)); return v && v.id && v.ct ? v : null; } catch (e) { return null; } }
   function drop() { try { localStorage.removeItem(KEY); } catch (e) {} paint(); }
@@ -35,29 +36,44 @@
       .then(function (a) { var r = a && a.getClientExtensionResults().prf; if (!r || !r.results || !r.results.first) throw new Error('noprf'); return r.results.first; });
   }
 
-  /* ---------- turn on ---------- */
-  function enable(pass) {
-    var salt = rnd(32), id;
-    return window.Vault.tryPass(pass).then(function (ok) {
-      if (!ok) throw new Error('wrong');
-      return navigator.credentials.create({ publicKey: {
-        challenge: rnd(32), rp: { name: 'Dashboard', id: location.hostname },
-        user: { id: rnd(16), name: 'Dashboard', displayName: 'Dashboard' },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' },
-        timeout: 60000, extensions: { prf: { eval: { first: salt } } } } });
-    }).then(function (c) {
-      id = new Uint8Array(c.rawId);
-      var r = c.getClientExtensionResults().prf;
-      if (r && r.enabled === false) throw new Error('noprf');
-      if (r && r.results && r.results.first) return r.results.first;
-      return prfGet(id, salt);       /* most platforms only give the secret on the first sign-in */
-    }).then(aesFrom).then(function (k) {
+  /* ---------- turn on ----------
+     iPhone/Safari only allows Face ID straight after a tap: create() is called first, in the tap itself (the passcode
+     is checked afterwards). Most devices only hand out the secret on a sign-in, not when the passkey is made –
+     then a second tap ("Finish with Face ID") does that sign-in. */
+  function userId() { var u = null; try { u = localStorage.getItem('dash.pkUser'); } catch (e) {} if (!u) { u = b64(rnd(16)); try { localStorage.setItem('dash.pkUser', u); } catch (e) {} } return unb64(u); }
+  var pending = null;   /* { id, salt, pass } in memory only, between the two taps */
+  function store(prf, id, salt, pass) {
+    return aesFrom(prf).then(function (k) {
       var iv = rnd(12);
       return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(pass)).then(function (ct) {
         localStorage.setItem(KEY, JSON.stringify({ id: b64(id), salt: b64(salt), iv: b64(iv), ct: b64(ct), at: Date.now() }));
       });
     });
+  }
+  function enable(pass) {
+    var salt = rnd(32), id, first = null;
+    var made = navigator.credentials.create({ publicKey: {
+      challenge: rnd(32), rp: { name: 'Dashboard', id: location.hostname },
+      user: { id: userId(), name: 'Dashboard', displayName: 'Dashboard' },   /* the same id every time, so a retry replaces the passkey instead of piling up new ones */
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' },
+      timeout: 60000, extensions: { prf: { eval: { first: salt } } } } });
+    return made.then(function (c) {
+      id = new Uint8Array(c.rawId);
+      var r = c.getClientExtensionResults().prf;
+      if (r && r.enabled === false) throw new Error('noprf');
+      first = r && r.results && r.results.first;
+      return window.Vault.tryPass(pass);
+    }).then(function (ok) {
+      if (!ok) throw new Error('wrong');
+      if (first) return store(first, id, salt, pass).then(function () { return 'done'; });
+      pending = { id: id, salt: salt, pass: pass };
+      return 'finish';
+    });
+  }
+  function finish() {
+    var p = pending; if (!p) return Promise.reject(new Error('gone'));
+    return prfGet(p.id, p.salt).then(function (prf) { return store(prf, p.id, p.salt, p.pass); }).then(function () { pending = null; });
   }
 
   /* ---------- unlock ---------- */
@@ -120,16 +136,30 @@
     sw.checked = false; var f = $('pkForm'); if (f) { f.hidden = false; setTimeout(function () { $('pkPass').focus(); }, 30); }
   });
   document.addEventListener('click', function (e) { if (e.target.closest('[data-pkcancel]')) { var f = $('pkForm'); if (f) f.hidden = true; } });
+  function errText(err) {
+    var w = err && err.message;
+    return w === 'wrong' ? L('That isn’t the passcode.', 'Det er ikke koden.')
+      : w === 'noprf' ? L('This phone or browser can’t keep the key safely yet – it needs iOS 18 or newer (or a recent Chrome/Safari). Update and try again.', 'Denne telefonen eller nettleseren kan ikke ta vare på nøkkelen ennå – det krever iOS 18 eller nyere (eller en nyere Chrome/Safari). Oppdater og prøv igjen.')
+      : err && err.name === 'NotAllowedError' ? L('Face ID was cancelled or timed out. Try again – and tap the button straight after typing the passcode.', 'Face ID ble avbrutt eller tok for lang tid. Prøv igjen – og trykk på knappen rett etter at du har skrevet koden.')
+      : err && err.name === 'InvalidStateError' ? L('This device already has a passkey for the dashboard. Turn the switch off and on again.', 'Denne enheten har allerede en passkey for dashbordet. Slå bryteren av og på igjen.')
+      : err && err.name === 'SecurityError' ? L('The browser blocked it (it only works on jplundberg.com, opened in Safari or the Home Screen app).', 'Nettleseren stoppet det (det virker bare på jplundberg.com, i Safari eller appen på Hjem-skjermen).')
+      : L('It didn’t work: ', 'Det virket ikke: ') + (err && ((err.name || '') + ' ' + (err.message || ''))).trim();
+  }
   document.addEventListener('submit', function (e) {
     if (!e.target || e.target.id !== 'pkForm') return;
     e.preventDefault();
-    var m = $('pkMsg'); m.textContent = L('Look at the phone / touch the sensor …', 'Se på telefonen / berør sensoren …');
-    enable($('pkPass').value).then(function () { paint(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock is on', NAME + '-opplåsing er på')); })
-      .catch(function (err) {
-        var w = err && err.message;
-        m.textContent = w === 'wrong' ? L('That isn’t the passcode.', 'Det er ikke koden.') : w === 'noprf' ? L('This browser can’t keep the key safely yet (needs iOS 18 / a recent Chrome or Safari).', 'Denne nettleseren kan ikke ta vare på nøkkelen ennå (krever iOS 18 / nyere Chrome eller Safari).')
-          : err && err.name === 'NotAllowedError' ? L('Cancelled.', 'Avbrutt.') : L('It didn’t work: ', 'Det virket ikke: ') + (err && (err.name || err.message) || '');
-      });
+    var m = $('pkMsg'), pass = $('pkPass').value;
+    m.textContent = L('Look at the phone / touch the sensor …', 'Se på telefonen / berør sensoren …');
+    enable(pass).then(function (st) {
+      if (st === 'done') { paint(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock is on', NAME + '-opplåsing er på')); return; }
+      m.innerHTML = esc(L('Almost there – one more Face ID to finish.', 'Nesten ferdig – én Face ID til for å fullføre.')) + ' <button type="button" class="pill-btn" data-pkfinish>' + esc(L('Finish with ' + NAME, 'Fullfør med ' + NAME)) + '</button>';
+    }).catch(function (err) { m.textContent = errText(err); });
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-pkfinish]')) return;
+    var m = $('pkMsg');
+    finish().then(function () { paint(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock is on', NAME + '-opplåsing er på')); })
+      .catch(function (err) { if (m) m.textContent = errText(err); });
   });
   window.addEventListener('passcode:change', function () { if (saved()) { drop(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock was turned off – turn it on again in Security.', NAME + '-opplåsing ble slått av – slå den på igjen under Sikkerhet.')); } });
   window.Vault.onLock(function () { setTimeout(lockBtn, 0); });
