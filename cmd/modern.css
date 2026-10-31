@@ -269,3 +269,42 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .card-head .head-actions .icon-btn i { font-size: 14px; }
 .modern .card-head .head-actions .icon-btn:hover { color: var(--accent); }
 .modern .card-head .head-actions .icon-btn[disabled] { opacity: .35; pointer-events: none; }
+
+/* batch 6: your avatar on Home (cmd/avatar.js) */
+.mhero.has-av .av-home { display: flex; align-items: center; gap: 12px; min-width: 0; }
+@media (min-width: 900px) {
+  .mhero.has-av .mh-txt { grid-row: 1 / span 2; }
+  .mhero.has-av .av-home { grid-column: 2; flex-direction: column; gap: 8px; }
+  .mhero.has-av .av-fig { width: 190px; }
+}
+@media (max-width: 899px) { .mhero.has-av .av-home { order: 1; } .mhero.has-av .mh-top3 { order: 2; } .mhero.has-av .av-fig { width: 104px; flex: none; } }
+.av-fig { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 20px; display: block; -webkit-tap-highlight-color: transparent; }
+.av-fig svg { width: 100%; height: auto; display: block; border-radius: 20px; }
+.av-fig.hop { animation: avhop .45s var(--ease-ios, ease); } @keyframes avhop { 40% { transform: translateY(-6px) scale(1.02); } }
+.av-say { position: relative; margin: 0; padding: 9px 13px; border-radius: 14px; background: rgba(var(--card-rgb), .85); border: 1px solid var(--line); font-size: 13.5px; line-height: 1.4; color: var(--text); max-width: 320px; text-align: center; }
+@media (max-width: 899px) { .av-say { text-align: left; } }
+.av-dots { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: 2px; } .av-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(var(--ink-rgb), .25); } .av-dots i.on { background: var(--accent); }
+.av-fig .eyes { animation: avblink 5.5s infinite; transform-box: fill-box; transform-origin: center; } @keyframes avblink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+.av-fig .bob { animation: avbob 3.6s ease-in-out infinite; } @keyframes avbob { 50% { transform: translateY(-1.5px); } }
+:is(.av-fig, .av-prev) .steam { animation: scsteam 2.4s ease-in-out infinite; }
+:is(.av-fig, .av-prev) .z { animation: avz 2.6s ease-in-out infinite; } @keyframes avz { 50% { opacity: .3; transform: translate(2px, -3px); } }
+:is(.av-fig, .av-prev) .rain line { animation: avrain .8s linear infinite; } @keyframes avrain { to { transform: translate(-4px, 12px); } }
+.mo-off :is(.av-fig, .av-prev) * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { :is(.av-fig, .av-prev) * { animation: none !important; } }
+/* the moment badge on your photo */
+.me-btn { position: relative; }
+.av-badge { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--bg-solid, #111); border: 1.5px solid var(--c); color: var(--c); font-size: 10px; line-height: 1; pointer-events: none; }
+.av-badge .bi { font-size: 10px; }
+/* the maker in Settings */
+.av-maker { padding: 12px; }
+.av-prev { display: grid; justify-items: center; gap: 8px; margin-bottom: 8px; }
+.av-prev > svg { width: 170px; height: auto; border-radius: 18px; }
+.av-pm, .av-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.av-pm button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--chip, rgba(255,255,255,.05)); color: var(--muted); display: grid; place-items: center; }
+.av-pm button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.av-grp { margin: 10px 0 0; } .av-grp > span { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.av-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.av-opts button { border: 1px solid var(--line); background: var(--chip, rgba(255,255,255,.05)); color: var(--text); border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 13px; }
+.av-opts button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.av-opts .av-dot { width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--c); border: 2px solid rgba(255,255,255,.15); }
+.av-opts .av-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg-solid, #111), 0 0 0 4px var(--accent); background: var(--c); }
