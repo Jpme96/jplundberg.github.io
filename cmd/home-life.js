@@ -166,7 +166,7 @@
     Fe.list('hmaint').filter(function (x) { return daysTo(nextDue(x)) <= lead; }).sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; }).slice(0, 2).forEach(function (x) {
       var n = daysTo(nextDue(x));
       add(n < 0 ? 33 : 46, hmIcon(x.title), n < 0 ? RED : AMBER, x.title, n < 0 ? 'Overdue since ' + fmt(nextDue(x)) : 'Due ' + inDays(n), '/cmd/house/',
-        { act: { id: 'hm:' + x.id + ':' + today(), label: 'Done' }, run: function () { hmDone(x.id); } });
+        { act: { id: 'hm:' + x.id + ':' + today(), label: 'Done' }, run: function () { hmDone(x.id); }, badge: n < 0 && !!(window.Delight && window.Delight.on('badgeHouse')) });
     });
   });
 
@@ -434,7 +434,7 @@
     l.forEach(function (p) {
       var b = bday(p); if (!b || b.n > +pc.lead) return;
       var tel = String(p.phone || '').replace(/[^\d+]/g, '');
-      if (b.n === 0) add(8, 'balloon', '#d55181', p.name + '’s birthday today', (b.age ? 'Turns ' + b.age : 'Send a greeting') , tel ? 'sms:' + tel : '/cmd/people/', { badge: true });
+      if (b.n === 0) add(8, 'balloon', '#d55181', p.name + '’s birthday today', (b.age ? 'Turns ' + b.age : 'Send a greeting') , tel ? 'sms:' + tel : '/cmd/people/', { badge: !window.Delight || window.Delight.on('badgeBday') });
       else add(b.n <= 2 ? 24 : 40, 'balloon', '#d55181', p.name + '’s birthday ' + inDays(b.n), p.gifts ? 'Gift idea: ' + String(p.gifts).split('\n')[0] : (b.age ? 'Turns ' + b.age + ' · ' : '') + 'no gift ideas yet', '/cmd/people/');
     });
     if (pc.catchup) l.filter(function (p) { return overdue(p) != null; }).sort(function (a, b) { return overdue(b) - overdue(a); }).slice(0, +pc.catchupMax || 1).forEach(function (p) {

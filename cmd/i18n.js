@@ -828,7 +828,7 @@
     'Day': 'Dag', 'Send one now': 'Send en nå', 'Sending …': 'Sender …', 'Backup sent – check your inbox': 'Sikkerhetskopien er sendt – sjekk innboksen', 'Couldn’t send': 'Fikk ikke sendt', 'Offline – try again later': 'Frakoblet – prøv igjen senere',
     'Couldn’t save': 'Fikk ikke lagret', 'Offline – not saved': 'Frakoblet – ikke lagret', 'nothing to back up yet': 'ingenting å ta sikkerhetskopi av ennå', 'not set up': 'ikke satt opp',
     'Tuesday': 'Tirsdag', 'Wednesday': 'Onsdag', 'Thursday': 'Torsdag', 'Friday': 'Fredag', 'Saturday': 'Lørdag', 'Recipes': 'Oppskrifter', 'People': 'Personer',
-    'Client time': 'Kundetid', 'Action points': 'Oppfølgingspunkter', 'open from meetings': 'åpne fra møter', 'All done': 'Alt gjort', 'this week': 'denne uka', 'Next renewal': 'Neste fornyelse', 'No certificates expiring': 'Ingen sertifikater som utløper', 'Holiday left': 'Ferie igjen', 'days this year': 'dager i år', 'None yet': 'Ingen ennå',
+    'Pictures & touches': 'Bilder og detaljer', 'Pictures on each page, weather, seasons, swipes': 'Bilder på hver side, vær, årstider, sveip', 'Client time': 'Kundetid', 'Action points': 'Oppfølgingspunkter', 'open from meetings': 'åpne fra møter', 'All done': 'Alt gjort', 'this week': 'denne uka', 'Next renewal': 'Neste fornyelse', 'No certificates expiring': 'Ingen sertifikater som utløper', 'Holiday left': 'Ferie igjen', 'days this year': 'dager i år', 'None yet': 'Ingen ennå',
     'Search everything – people, recipes, trips, notes, spending…': 'Søk i alt – personer, oppskrifter, reiser, notater, forbruk …', 'Person': 'Person', 'Recipe': 'Oppskrift', 'Gift': 'Gave', 'FDV': 'FDV', 'Inspection': 'Befaring'
   });
   var ADDS = { birthday: 'bursdag', phone: 'telefon' };
@@ -900,6 +900,7 @@
     [/^Couldn’t publish \((.+)\)\.( Try again\.)?$/, function (m, a, b) { return 'Klarte ikke å publisere (' + a + ').' + (b ? ' Prøv igjen.' : ''); }]
   );
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
+  P.push([/^Clocked in at (.+)$/, 'Stemplet inn kl. $1'], [/^Remember to clock out$/, 'Husk å stemple ut']);
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
   function tr(s) {

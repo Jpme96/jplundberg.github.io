@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=122" rel="stylesheet">
+  <link href="../styles.css?v=123" rel="stylesheet">
   <link href="../modern.css?v=6" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -303,6 +303,7 @@
           <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="layout"><span class="st-ico" style="--c:#11a597"><i class="bi bi-menu-button-wide"></i></span><span class="st-label">Menu &amp; pages<small>The order of pages, sections and cards</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="touches"><span class="st-ico" style="--c:#d55181"><i class="bi bi-stars"></i></span><span class="st-label">Pictures &amp; touches<small id="sumTouches">Pictures on each page, weather, seasons, swipes</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <p class="st-minor">What’s switched on</p>
         <nav class="st-group st-menu">
@@ -570,6 +571,7 @@
       </section>
       </div>
 
+      <div class="st-page" data-page="touches" data-title="Pictures &amp; touches" hidden><div id="dlSet"></div></div>
       <div class="st-page" data-page="data" data-title="Data &amp; sync" hidden>
       <section class="st-group">
         <div class="st-row st-sync"><span id="stSync"></span><button class="text-btn" id="stSyncNow" type="button">Sync now</button></div>
@@ -805,9 +807,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=4e59bf4ab1"></script>
+  <script src="../dist/head.js?v=f53e376825"></script>
   <script src="../dist/page-finance.js?v=33e6c16072"></script>
-  <script src="../dist/tail.js?v=8ed87c250a"></script>
+  <script src="../dist/tail.js?v=27fd1750f4"></script>
   <!-- /scripts -->
 </body>
 </html>

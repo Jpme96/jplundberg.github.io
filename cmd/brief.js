@@ -341,6 +341,8 @@
     }
     /* the app icon shows how many things need you right now (overdue bills, bills due today, expired documents) */
     var urgent = all.filter(function (x) { return x.badge; }).length;
+    window.BriefItems = all;                       /* the morning briefing (delight.js) reads these */
+    window.dispatchEvent(new Event('brief:items'));
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
     box.innerHTML = shown.length ? shown.map(function (x) {
       if (x.fold) return '<li class="br-li br-fold"><button type="button" class="br-item" data-brfold aria-expanded="' + tipsOpen + '" style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
