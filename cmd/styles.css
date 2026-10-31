@@ -3484,3 +3484,19 @@ html[data-role="guest"] [data-owner] { display: none !important; }
 /* motion off / reduced motion: everything stands still */
 .mo-off .hs-illu *, .mo-reduced .hs-illu * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .hs-illu * { animation: none !important; } }
+
+/* pictures a bit brighter: less mixing towards the background, stronger outlines, nothing dimmed by default */
+.hs-part:not(.hot) { opacity: 1; }
+.sc-plane { fill: #eef2f8; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+.sc-route { stroke: rgba(var(--ink-rgb), .62); }
+.sc-case { fill: color-mix(in srgb, #3987e5 42%, var(--bg-solid)); } .sc-casef { fill: color-mix(in srgb, #3987e5 72%, var(--bg-solid)); }
+.sc-caseo { stroke: rgba(var(--ink-rgb), .6); } .sc-handle2 { stroke: rgba(var(--ink-rgb), .7); } .sc-strap { stroke: rgba(var(--ink-rgb), .5); } .sc-wheel { fill: #5a5f68; }
+.sc-fridge { fill: color-mix(in srgb, var(--accent) 16%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .55); } .sc-handle { fill: rgba(var(--ink-rgb), .65); } .sc-line { stroke: rgba(var(--ink-rgb), .5); }
+.sc-stove { fill: color-mix(in srgb, var(--text) 22%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .55); } .sc-knob2 { fill: rgba(var(--ink-rgb), .5); } .sc-pot { fill: color-mix(in srgb, #8d9aa8 88%, var(--bg-solid)); }
+.sc-lid { fill: color-mix(in srgb, #8b5a44 75%, var(--bg-solid)); } .sc-wood { fill: color-mix(in srgb, #8b5a44 78%, var(--bg-solid)); }
+.sc-bag { fill: color-mix(in srgb, #c98500 75%, var(--bg-solid)); } .sc-bagh { stroke: color-mix(in srgb, #c98500 88%, var(--bg-solid)); }
+.sc-clock, .sc-cal { fill: color-mix(in srgb, var(--text) 10%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .65); }
+.sc-kbd { fill: rgba(var(--ink-rgb), .55); } .sc-screen { stroke: rgba(var(--ink-rgb), .65); }
+.sc-jarg { stroke: rgba(var(--ink-rgb), .62); } .sc-bar { fill: #9aa6b2; } .sc-plate2 { fill: #7d8996; }
+.hs-wall { fill: color-mix(in srgb, var(--accent) 20%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .5); } .hs-roof { fill: color-mix(in srgb, #c45a3c 85%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .45); } .hs-door { fill: color-mix(in srgb, #8b5a44 75%, var(--bg-solid)); }
+.tod-night .hs-wall { filter: brightness(.9); }

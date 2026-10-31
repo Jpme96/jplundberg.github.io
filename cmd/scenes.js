@@ -234,7 +234,7 @@
         (t ? '<path d="M92 82 l8 6" class="sc-strap"/><rect x="96" y="86" width="22" height="13" rx="2" class="sc-tag"/><text x="107" y="95.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
       '<path d="M112 112 Q150 30 222 40" class="sc-route"/>' +
       (t ? '<g class="sc-pin"><path d="M222 40 c-6 0 -8 -5 -8 -8 a8 8 0 0 1 16 0 c0 3 -2 8 -8 8z" fill="#e66767"/><circle cx="222" cy="31" r="3" fill="#fff"/></g>' : '') +
-      part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path class="sc-fly" d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" class="sc-plane"/></g>');
+      part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path class="sc-plane sc-fly" d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" /></g>');
     var list = [];
     if (t) {
       list.push({ t: (t.name || t.dest) + ' – ' + (away ? L('you’re away', 'du er borte') : inDays(n)), h: '#trip=' + t.id });
