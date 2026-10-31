@@ -53,7 +53,6 @@ charts:
         value: 55.28
         start: 2026-10-28
         end: 2026-10-28
-published: false
 ---
 Good operations and maintenance depend on building documentation that is complete, correct and easy to find. At Boligbygg, I work to put this in place. So far, 406 buildings have been selected to bring their documentation into the correct structure, and we have reached 55% of the goal. Progress has risen steadily, from 9% in May to 55% in October 2026. The work has three focus areas.
 
