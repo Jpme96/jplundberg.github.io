@@ -7,7 +7,7 @@
    Local only: dash.adminChecks (check history, this device), dash.tools.admintodo / adminlog (synced). */
 (function () {
   "use strict";
-  var box = document.getElementById('adRoot');
+  var box = document.getElementById('crRoot');
   if (!box || !window.Vault) return;
   var NB = window.I18N && window.I18N.lang === 'nb';
   function L(en, nb) { return NB ? nb : en; }
@@ -145,24 +145,24 @@
   /* ---------- drawing ---------- */
   var LAB = { ok: L('OK', 'OK'), warn: L('Check', 'Sjekk'), bad: L('Needs you', 'Trenger deg'), wait: '…' };
   function card(id, icon, title, head, body, wide) {
-    return '<section class="card ad-card' + (wide ? ' ad-wide' : '') + '" id="ad-' + id + '"><div class="card-head"><h2><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h2><div class="head-actions">' + (head || '') + '</div></div>' + body + '</section>';
+    return '<section class="card cr-card' + (wide ? ' cr-wide' : '') + '" id="cr-' + id + '"><div class="card-head"><h2><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h2><div class="head-actions">' + (head || '') + '</div></div>' + body + '</section>';
   }
   function spark(vals, h) {
     var v = vals.filter(function (x) { return x != null; }); if (v.length < 2) return '';
     var max = Math.max.apply(null, v), W = 220, H = h || 36, n = vals.length;
     var pts = vals.map(function (x, i) { return x == null ? null : [(i / (n - 1)) * W, H - 3 - (x / max) * (H - 8)]; });
     var d = ''; pts.forEach(function (p) { if (p) d += (d ? ' L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); });
-    return '<svg class="ad-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '"/></svg>';
+    return '<svg class="cr-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '"/></svg>';
   }
   function bars(rows, key) {
     if (!rows || !rows.length) return '';
     var max = Math.max.apply(null, rows.map(function (r) { return r[key]; }).concat([1]));
-    return '<div class="ad-bars">' + rows.map(function (r) { return '<span style="height:' + Math.max(4, Math.round(r[key] / max * 100)) + '%" title="' + esc(r.name) + ': ' + r[key] + '"></span>'; }).join('') + '</div>';
+    return '<div class="cr-bars">' + rows.map(function (r) { return '<span style="height:' + Math.max(4, Math.round(r[key] / max * 100)) + '%" title="' + esc(r.name) + ': ' + r[key] + '"></span>'; }).join('') + '</div>';
   }
   function draw() {
     try { drawInner(); } catch (err) {
       if (window.Diag && window.Diag.log) window.Diag.log('error', 'admin: ' + (err && err.message), 'admin.js');
-      box.innerHTML = '<div class="ad-bar ad-bad"><span class="ad-pulse"></span><b>' + esc(L('Admin couldn’t draw everything', 'Admin klarte ikke å vise alt')) + '</b><span class="ad-meta">' + esc(String(err && err.message || err).slice(0, 160)) + '</span><button type="button" class="pill-btn" onclick="location.reload()">' + esc(L('Reload', 'Last inn på nytt')) + '</button></div>';
+      box.innerHTML = '<div class="cr-bar cr-bad"><span class="cr-pulse"></span><b>' + esc(L('Admin couldn’t draw everything', 'Admin klarte ikke å vise alt')) + '</b><span class="cr-meta">' + esc(String(err && err.message || err).slice(0, 160)) + '</span><button type="button" class="pill-btn" onclick="location.reload()">' + esc(L('Reload', 'Last inn på nytt')) + '</button></div>';
     }
   }
   function drawInner() {
@@ -170,42 +170,42 @@
     var up = d30.length ? Math.round(d30.filter(function (x) { return x.api != null && x.web != null; }).length / d30.length * 1000) / 10 : null;
     var html = '', C = {};
     /* command bar */
-    html += '<div class="ad-bar ad-' + ov + '"><span class="ad-pulse" aria-hidden="true"></span><b>' + esc(ov === 'ok' ? L('All systems normal', 'Alle systemer normale') : ov === 'warn' ? L('Something to look at', 'Noe å se på') : ov === 'bad' ? L('Something needs you', 'Noe trenger deg') : L('Checking …', 'Sjekker …')) + '</b>' +
-      '<span class="ad-meta">' + (S.checkedAt ? L('Checked ', 'Sjekket ') + ago(S.checkedAt) : '') + (c.refresh ? ' · ' + L('auto every ', 'automatisk hvert ') + c.refresh + ' min' : '') + '</span>' +
-      '<button type="button" class="pill-btn ad-run" data-adrun' + (S.busy.core ? ' disabled' : '') + '><i class="bi bi-arrow-clockwise' + (S.busy.core ? ' ad-spin' : '') + '"></i> ' + L('Check everything', 'Sjekk alt') + '</button></div>';
-    if (P.status) html += '<div class="ad-lights">' + ls.map(function (x) {
-      return '<div class="ad-light ad-' + x[3] + '"><i class="bi bi-' + x[0] + '"></i><div><b>' + esc(x[1]) + '</b><small>' + esc(x[2]) + '</small></div><span class="ad-dot" title="' + LAB[x[3]] + '"></span></div>';
+    html += '<div class="cr-bar cr-' + ov + '"><span class="cr-pulse" aria-hidden="true"></span><b>' + esc(ov === 'ok' ? L('All systems normal', 'Alle systemer normale') : ov === 'warn' ? L('Something to look at', 'Noe å se på') : ov === 'bad' ? L('Something needs you', 'Noe trenger deg') : L('Checking …', 'Sjekker …')) + '</b>' +
+      '<span class="cr-meta">' + (S.checkedAt ? L('Checked ', 'Sjekket ') + ago(S.checkedAt) : '') + (c.refresh ? ' · ' + L('auto every ', 'automatisk hvert ') + c.refresh + ' min' : '') + '</span>' +
+      '<button type="button" class="pill-btn cr-run" data-crrun' + (S.busy.core ? ' disabled' : '') + '><i class="bi bi-arrow-clockwise' + (S.busy.core ? ' cr-spin' : '') + '"></i> ' + L('Check everything', 'Sjekk alt') + '</button></div>';
+    if (P.status) html += '<div class="cr-lights">' + ls.map(function (x) {
+      return '<div class="cr-light cr-' + x[3] + '"><i class="bi bi-' + x[0] + '"></i><div><b>' + esc(x[1]) + '</b><small>' + esc(x[2]) + '</small></div><span class="cr-dot" title="' + LAB[x[3]] + '"></span></div>';
     }).join('') + '</div>';
-    if (P.actions) html += '<div class="ad-actions">' + [
-      ['globe2', L('Open the site', 'Åpne nettstedet'), 'data-adact="site"'], ['cloud-upload', L('Publish website', 'Publiser nettstedet'), 'data-adact="publish"'], ['download', L('Download backup', 'Last ned sikkerhetskopi'), 'data-adact="backup"'],
-      ['lock', L('Lock now', 'Lås nå'), 'data-adact="lock"'], ['clipboard2-pulse', L('Copy report', 'Kopier rapport'), 'data-adact="report"'], ['sliders', L('Admin settings', 'Admin-innstillinger'), 'data-adact="settings"']
-    ].map(function (a) { return '<button type="button" class="ad-act" ' + a[2] + '><i class="bi bi-' + a[0] + '"></i><span>' + esc(a[1]) + '</span></button>'; }).join('') + '</div>';
+    if (P.actions) html += '<div class="cr-actions">' + [
+      ['globe2', L('Open the site', 'Åpne nettstedet'), 'data-cract="site"'], ['cloud-upload', L('Publish website', 'Publiser nettstedet'), 'data-cract="publish"'], ['download', L('Download backup', 'Last ned sikkerhetskopi'), 'data-cract="backup"'],
+      ['lock', L('Lock now', 'Lås nå'), 'data-cract="lock"'], ['clipboard2-pulse', L('Copy report', 'Kopier rapport'), 'data-cract="report"'], ['sliders', L('Admin settings', 'Admin-innstillinger'), 'data-cract="settings"']
+    ].map(function (a) { return '<button type="button" class="cr-act" ' + a[2] + '><i class="bi bi-' + a[0] + '"></i><span>' + esc(a[1]) + '</span></button>'; }).join('') + '</div>';
     /* website: visitors */
     if (P.site) {
       var v = S.visitors && S.visitors.json, body;
       if (!S.visitors) body = '<p class="muted">' + L('Loading …', 'Laster …') + '</p>';
       else if (!S.visitors.ok || !v) body = '<p class="muted">' + L('Visitor numbers aren’t available (Cloudflare analytics not set up or not answering).', 'Besøkstall er ikke tilgjengelig (Cloudflare-statistikk ikke satt opp eller svarer ikke).') + '</p>';
-      else body = '<div class="ad-kpis"><div><b data-cu>' + nf.format(v.visits || 0) + '</b><small>' + L('visits · 7 days', 'besøk · 7 dager') + '</small></div><div><b>' + nf.format(v.views || 0) + '</b><small>' + L('page views', 'sidevisninger') + '</small></div></div>' + bars(v.perDay, 'visits') +
-        ((v.pages || []).length ? '<ul class="ad-list">' + v.pages.slice(0, 5).map(function (p) { return '<li><span>' + esc(p.name || '/') + '</span><b>' + p.visits + '</b></li>'; }).join('') + '</ul>' : '') +
-        ((v.referrers || []).filter(function (r) { return r.name; }).length ? '<p class="ad-sub">' + L('From', 'Fra') + ': ' + v.referrers.filter(function (r) { return r.name; }).slice(0, 4).map(function (r) { return esc(r.name) + ' (' + r.visits + ')'; }).join(' · ') + '</p>' : '');
+      else body = '<div class="cr-kpis"><div><b data-cu>' + nf.format(v.visits || 0) + '</b><small>' + L('visits · 7 days', 'besøk · 7 dager') + '</small></div><div><b>' + nf.format(v.views || 0) + '</b><small>' + L('page views', 'sidevisninger') + '</small></div></div>' + bars(v.perDay, 'visits') +
+        ((v.pages || []).length ? '<ul class="cr-list">' + v.pages.slice(0, 5).map(function (p) { return '<li><span>' + esc(p.name || '/') + '</span><b>' + p.visits + '</b></li>'; }).join('') + '</ul>' : '') +
+        ((v.referrers || []).filter(function (r) { return r.name; }).length ? '<p class="cr-sub">' + L('From', 'Fra') + ': ' + v.referrers.filter(function (r) { return r.name; }).slice(0, 4).map(function (r) { return esc(r.name) + ' (' + r.visits + ')'; }).join(' · ') + '</p>' : '');
       C['site'] = card('site', 'bar-chart-line', L('Visitors', 'Besøkende'), '<a class="icon-btn sm" href="https://jplundberg.com/" target="_blank" rel="noopener" aria-label="' + L('Open the site', 'Åpne nettstedet') + '"><i class="bi bi-box-arrow-up-right"></i></a>', body);
     }
     /* uptime + speed */
     if (P.health) {
       var last = h.slice(-40), sp = S.speed;
-      C['uptime'] = card('uptime', 'activity', L('Uptime & speed', 'Oppetid og fart'), '', '<div class="ad-kpis"><div><b>' + (up == null ? '–' : String(up).replace('.', NB ? ',' : '.') + ' %') + '</b><small>' + L('up · 30 days', 'oppe · 30 dager') + '</small></div><div><b>' + (sp && sp.ms != null ? sp.ms + ' ms' : '–') + '</b><small>' + L('front page', 'forsiden') + '</small></div><div><b>' + (S.ping && S.ping.ms != null ? S.ping.ms + ' ms' : '–') + '</b><small>' + L('server', 'server') + '</small></div></div>' +
-        spark(last.map(function (x) { return x.web; })) + '<p class="ad-sub">' + d30.length + (d30.length === 1 ? L(' check', ' sjekk') : L(' checks', ' sjekker')) + L(' from this device (every time Admin is open and refreshing)', ' sjekker fra denne enheten (hver gang Admin er åpen og oppdaterer)') + '</p>');
+      C['uptime'] = card('uptime', 'activity', L('Uptime & speed', 'Oppetid og fart'), '', '<div class="cr-kpis"><div><b>' + (up == null ? '–' : String(up).replace('.', NB ? ',' : '.') + ' %') + '</b><small>' + L('up · 30 days', 'oppe · 30 dager') + '</small></div><div><b>' + (sp && sp.ms != null ? sp.ms + ' ms' : '–') + '</b><small>' + L('front page', 'forsiden') + '</small></div><div><b>' + (S.ping && S.ping.ms != null ? S.ping.ms + ' ms' : '–') + '</b><small>' + L('server', 'server') + '</small></div></div>' +
+        spark(last.map(function (x) { return x.web; })) + '<p class="cr-sub">' + d30.length + (d30.length === 1 ? L(' check', ' sjekk') : L(' checks', ' sjekker')) + L(' from this device (every time Admin is open and refreshing)', ' sjekker fra denne enheten (hver gang Admin er åpen og oppdaterer)') + '</p>');
       var lk = S.links || rj('dash.adminLinks', null);
-      C['links'] = card('links', 'link-45deg', L('Broken links', 'Brutte lenker'), '<button type="button" class="icon-btn sm" data-adlinks aria-label="' + L('Check all pages', 'Sjekk alle sider') + '"' + (S.busy.links ? ' disabled' : '') + '><i class="bi bi-arrow-clockwise' + (S.busy.links ? ' ad-spin' : '') + '"></i></button>',
-        !lk ? '<p class="muted">' + L('Checks every page in the sitemap for errors.', 'Sjekker alle sider i sitemapet for feil.') + '</p><button type="button" class="text-btn" data-adlinks><i class="bi bi-play"></i> ' + L('Run the check', 'Kjør sjekken') + '</button>'
-          : S.busy.links ? '<div class="ad-prog"><span style="width:' + (lk.total ? Math.round(lk.done / lk.total * 100) : 5) + '%"></span></div><p class="ad-sub">' + lk.done + ' / ' + (lk.total || '…') + '</p>'
-            : lk.bad.length ? '<ul class="ad-list bad">' + lk.bad.slice(0, 8).map(function (b) { return '<li><span>' + esc(b.u) + '</span><b>' + (b.s || L('no answer', 'ikke svar')) + '</b></li>'; }).join('') + '</ul>'
-              : '<p class="ad-okline"><i class="bi bi-check-circle-fill"></i> ' + lk.total + L(' pages, all fine', ' sider, alle i orden') + ' · ' + ago(lk.at) + '</p>');
+      C['links'] = card('links', 'link-45deg', L('Broken links', 'Brutte lenker'), '<button type="button" class="icon-btn sm" data-crlinks aria-label="' + L('Check all pages', 'Sjekk alle sider') + '"' + (S.busy.links ? ' disabled' : '') + '><i class="bi bi-arrow-clockwise' + (S.busy.links ? ' cr-spin' : '') + '"></i></button>',
+        !lk ? '<p class="muted">' + L('Checks every page in the sitemap for errors.', 'Sjekker alle sider i sitemapet for feil.') + '</p><button type="button" class="text-btn" data-crlinks><i class="bi bi-play"></i> ' + L('Run the check', 'Kjør sjekken') + '</button>'
+          : S.busy.links ? '<div class="cr-prog"><span style="width:' + (lk.total ? Math.round(lk.done / lk.total * 100) : 5) + '%"></span></div><p class="cr-sub">' + lk.done + ' / ' + (lk.total || '…') + '</p>'
+            : lk.bad.length ? '<ul class="cr-list bad">' + lk.bad.slice(0, 8).map(function (b) { return '<li><span>' + esc(b.u) + '</span><b>' + (b.s || L('no answer', 'ikke svar')) + '</b></li>'; }).join('') + '</ul>'
+              : '<p class="cr-okline"><i class="bi bi-check-circle-fill"></i> ' + lk.total + L(' pages, all fine', ' sider, alle i orden') + ' · ' + ago(lk.at) + '</p>');
       var pv = S.preview;
-      C['preview'] = card('preview', 'share', L('Link preview', 'Lenkeforhåndsvisning'), '', '<form class="ad-pvf"><input placeholder="/articles/… ' + L('or a full link', 'eller en hel lenke') + '" value="' + esc(pv ? pv.path : '/') + '" aria-label="' + L('Page to preview', 'Side å forhåndsvise') + '"><button type="submit" class="icon-btn" aria-label="' + L('Preview', 'Forhåndsvis') + '"><i class="bi bi-eye"></i></button></form>' +
-        (!pv ? '<p class="ad-sub">' + L('See what LinkedIn, Messages and Facebook will show before you share a page.', 'Se hva LinkedIn, Meldinger og Facebook viser før du deler en side.') + '</p>'
+      C['preview'] = card('preview', 'share', L('Link preview', 'Lenkeforhåndsvisning'), '', '<form class="cr-pvf"><input placeholder="/articles/… ' + L('or a full link', 'eller en hel lenke') + '" value="' + esc(pv ? pv.path : '/') + '" aria-label="' + L('Page to preview', 'Side å forhåndsvise') + '"><button type="submit" class="icon-btn" aria-label="' + L('Preview', 'Forhåndsvis') + '"><i class="bi bi-eye"></i></button></form>' +
+        (!pv ? '<p class="cr-sub">' + L('See what LinkedIn, Messages and Facebook will show before you share a page.', 'Se hva LinkedIn, Meldinger og Facebook viser før du deler en side.') + '</p>'
           : pv.loading ? '<p class="muted">' + L('Loading …', 'Laster …') + '</p>' : pv.err ? '<p class="muted">' + L('Couldn’t read that page.', 'Fikk ikke lest den siden.') + '</p>'
-            : '<div class="ad-og">' + (pv.img ? '<img src="' + esc(pv.img) + '" alt="" loading="lazy">' : '<div class="ad-og-noimg">' + L('No image', 'Ingen bilde') + '</div>') + '<div><small>JPLUNDBERG.COM</small><b>' + esc(pv.title) + '</b><p>' + esc(pv.desc || L('No description – add a summary to the page.', 'Ingen beskrivelse – legg til et sammendrag på siden.')) + '</p></div></div>'));
+            : '<div class="cr-og">' + (pv.img ? '<img src="' + esc(pv.img) + '" alt="" loading="lazy">' : '<div class="cr-og-noimg">' + L('No image', 'Ingen bilde') + '</div>') + '<div><small>JPLUNDBERG.COM</small><b>' + esc(pv.title) + '</b><p>' + esc(pv.desc || L('No description – add a summary to the page.', 'Ingen beskrivelse – legg til et sammendrag på siden.')) + '</p></div></div>'));
     }
     /* articles & projects */
     if (P.content) {
@@ -213,59 +213,59 @@
       if (items) items.forEach(function (x) { var k = x.collection + '|' + x.ref; (by[k] = by[k] || []).push(x); });
       var rows = items ? Object.keys(by).map(function (k) { var l = by[k], en = l.filter(function (x) { return x.lang === 'en'; })[0] || l[0]; return { k: k, col: en.collection, ref: en.ref, title: en.title, date: en.date, on: l.every(function (x) { return x.published; }), langs: l.map(function (x) { return x.lang; }).sort().join(' · ').toUpperCase() }; })
         .sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); }) : [];
-      C['content'] = card('content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter'), items ? '<span class="muted ad-count">' + rows.filter(function (r) { return r.on; }).length + ' / ' + rows.length + L(' live', ' live') + '</span>' : '',
+      C['content'] = card('content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter'), items ? '<span class="muted cr-count">' + rows.filter(function (r) { return r.on; }).length + ' / ' + rows.length + L(' live', ' live') + '</span>' : '',
         !S.content ? '<p class="muted">' + L('Loading …', 'Laster …') + '</p>' : !items ? '<p class="muted">' + L('Couldn’t load the list (GitHub key?).', 'Fikk ikke lastet listen (GitHub-nøkkel?).') + '</p>'
-          : '<ul class="ad-items">' + rows.map(function (r) {
-            return '<li><i class="bi bi-' + (r.col === 'projects' ? 'kanban' : 'journal-text') + '"></i><span class="ad-it"><b>' + esc(r.title) + '</b><small>' + esc((r.date || '') + ' · ' + r.langs) + '</small></span>' +
-              '<label class="ad-sw"><span class="' + (r.on ? 'on' : '') + '">' + (r.on ? L('Live', 'Live') : L('Hidden', 'Skjult')) + '</span><input type="checkbox" class="switch" data-adpub="' + esc(r.col + '|' + r.ref) + '"' + (r.on ? ' checked' : '') + (S.busy['pub' + r.k] ? ' disabled' : '') + ' aria-label="' + esc(r.title) + '"></label></li>';
+          : '<ul class="cr-items">' + rows.map(function (r) {
+            return '<li><i class="bi bi-' + (r.col === 'projects' ? 'kanban' : 'journal-text') + '"></i><span class="cr-it"><b>' + esc(r.title) + '</b><small>' + esc((r.date || '') + ' · ' + r.langs) + '</small></span>' +
+              '<label class="cr-sw"><span class="' + (r.on ? 'on' : '') + '">' + (r.on ? L('Live', 'Live') : L('Hidden', 'Skjult')) + '</span><input type="checkbox" class="switch" data-crpub="' + esc(r.col + '|' + r.ref) + '"' + (r.on ? ' checked' : '') + (S.busy['pub' + r.k] ? ' disabled' : '') + ' aria-label="' + esc(r.title) + '"></label></li>';
           }).join('') + '</ul>', true);
     }
     /* system */
     if (P.system) {
       var D = window.Diag, errs = D && D.list ? D.list() : [], dst = D && D.state ? D.state() : {}, chk = dst.check || null;
-      C['system'] = card('system', 'cpu', L('System', 'System'), '<button type="button" class="icon-btn sm" data-adself aria-label="' + L('Run the self-check', 'Kjør selvsjekken') + '"><i class="bi bi-heart-pulse"></i></button>',
-        '<ul class="ad-list">' +
+      C['system'] = card('system', 'cpu', L('System', 'System'), '<button type="button" class="icon-btn sm" data-crself aria-label="' + L('Run the self-check', 'Kjør selvsjekken') + '"><i class="bi bi-heart-pulse"></i></button>',
+        '<ul class="cr-list">' +
         '<li><span>' + L('Daily self-check', 'Daglig selvsjekk') + '</span><b class="' + (chk && (chk.issues || []).length ? 'neg' : '') + '">' + (chk ? ((chk.issues || []).length ? (chk.issues || []).length + L(' issue(s)', ' problem(er)') : L('Fine', 'Fint')) + ' · ' + ago(chk.t) : '–') + '</b></li>' +
         '<li><span>' + L('Errors logged', 'Feil logget') + '</span><b class="' + (errs.length ? 'neg' : '') + '">' + errs.length + '</b></li>' +
         '<li><span>Apple Health</span><b>' + (Fe && Fe.on('ahealth') ? ago(dst.healthPull) : L('off', 'av')) + '</b></li>' +
-        '<li><span>' + L('App version', 'App-versjon') + '</span><b id="adVer">…</b></li></ul>' +
-        (errs.length ? '<ul class="ad-errs">' + errs.slice(0, 4).map(function (e) { return '<li>' + esc(String(e.msg || e.m || e.message || e).slice(0, 110)) + (e.n > 1 ? ' ×' + e.n : '') + '</li>'; }).join('') + '</ul>' : ''));
-      C['storage'] = card('storage', 'database', L('Storage', 'Lagring'), '', '<div id="adStore"><p class="muted">' + L('Counting …', 'Teller …') + '</p></div>');
+        '<li><span>' + L('App version', 'App-versjon') + '</span><b id="crVer">…</b></li></ul>' +
+        (errs.length ? '<ul class="cr-errs">' + errs.slice(0, 4).map(function (e) { return '<li>' + esc(String(e.msg || e.m || e.message || e).slice(0, 110)) + (e.n > 1 ? ' ×' + e.n : '') + '</li>'; }).join('') + '</ul>' : ''));
+      C['storage'] = card('storage', 'database', L('Storage', 'Lagring'), '', '<div id="crStore"><p class="muted">' + L('Counting …', 'Teller …') + '</p></div>');
     }
     /* admin to-do */
     if (P.todo) {
       var tl = todos(), open = tl.filter(function (x) { return !x.done; });
       C['todo'] = card('todo', 'list-check', L('Admin to-do', 'Admin-gjøremål'), open.length ? '<span class="hl-count">' + open.length + '</span>' : '',
-        '<ul class="ad-todo">' + tl.slice(0, 12).map(function (x) {
-          return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-adtodo="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' + (x.auto ? '<span class="ad-auto" title="' + L('Added for you', 'Lagt til for deg') + '"><i class="bi bi-magic"></i></span>' : '<button type="button" class="icon-btn sm" data-adtododel="' + esc(x.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x"></i></button>') + '</li>';
-        }).join('') + '</ul>' + (!tl.length ? '<p class="ad-okline"><i class="bi bi-check-circle-fill"></i> ' + L('Nothing to do – things that need you appear here by themselves.', 'Ingenting å gjøre – ting som trenger deg dukker opp her av seg selv.') + '</p>' : '') +
-        '<form class="hl-shopadd ad-tdf"><input placeholder="' + L('Add – e.g. update the CV', 'Legg til – f.eks. oppdater CV-en') + '" maxlength="140" aria-label="' + L('Add an admin task', 'Legg til en admin-oppgave') + '"><button type="submit" class="icon-btn" aria-label="' + L('Add', 'Legg til') + '"><i class="bi bi-plus-lg"></i></button></form>');
+        '<ul class="cr-todo">' + tl.slice(0, 12).map(function (x) {
+          return '<li class="' + (x.done ? 'done' : '') + '"><label><input type="checkbox" data-crtodo="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '><span>' + esc(x.text) + '</span></label>' + (x.auto ? '<span class="cr-auto" title="' + L('Added for you', 'Lagt til for deg') + '"><i class="bi bi-magic"></i></span>' : '<button type="button" class="icon-btn sm" data-crtododel="' + esc(x.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x"></i></button>') + '</li>';
+        }).join('') + '</ul>' + (!tl.length ? '<p class="cr-okline"><i class="bi bi-check-circle-fill"></i> ' + L('Nothing to do – things that need you appear here by themselves.', 'Ingenting å gjøre – ting som trenger deg dukker opp her av seg selv.') + '</p>' : '') +
+        '<form class="hl-shopadd cr-tdf"><input placeholder="' + L('Add – e.g. update the CV', 'Legg til – f.eks. oppdater CV-en') + '" maxlength="140" aria-label="' + L('Add an admin task', 'Legg til en admin-oppgave') + '"><button type="submit" class="icon-btn" aria-label="' + L('Add', 'Legg til') + '"><i class="bi bi-plus-lg"></i></button></form>');
     }
     /* activity log */
     if (P.log) {
       var lg = Array.isArray(T().adminlog) ? T().adminlog : [];
-      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="ad-log">' + lg.slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(x.t) + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
+      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="cr-log">' + lg.slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(x.t) + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
     }
     /* changelog */
     if (P.changes) {
       var cm = S.commits;
       C['changes'] = card('changes', 'git', L('Changes to the site & dashboard', 'Endringer i nettsted og dashbord'), '<a class="icon-btn sm" href="https://github.com/Jpme96/jplundberg.github.io/commits/main" target="_blank" rel="noopener" aria-label="GitHub"><i class="bi bi-box-arrow-up-right"></i></a>',
         cm == null ? '<p class="muted">' + L('Loading …', 'Laster …') + '</p>' : cm === 'off' ? '<p class="muted">' + L('GitHub didn’t answer – open the list on GitHub instead.', 'GitHub svarte ikke – åpne listen på GitHub i stedet.') + '</p>'
-          : '<ul class="ad-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
+          : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
     var TABS = { overview: ['site', 'todo', 'log'], website: ['content', 'links', 'preview', 'changes'], system: ['uptime', 'system', 'storage'] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
-    var tabbar = '<div class="ad-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
-      return '<button type="button" role="tab" data-adtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
-    var grid = '<div class="ad-grid">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
-    var top = TAB === 'overview' ? html : html.replace(/<div class="ad-lights">[\s\S]*$/, '');
-    if (!document.getElementById('adTop')) box.innerHTML = '<div id="adTop"></div><div id="adWs" hidden></div><div id="adCards"></div>';
-    var keep = document.activeElement && document.activeElement.closest && document.activeElement.closest('#adCards form') ? { sel: document.activeElement.closest('form').className, v: document.activeElement.value } : null;
-    document.getElementById('adTop').innerHTML = top + tabbar;
-    document.getElementById('adCards').innerHTML = grid;
-    var wsEl = document.getElementById('adWs'); wsEl.hidden = TAB !== 'website'; if (TAB === 'website') mountWs();
-    if (keep) { var f = box.querySelector('#adCards form.' + keep.sel.split(' ').join('.') + ' input'); if (f) { f.value = keep.v; f.focus(); } }
+    var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
+      return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
+    var grid = '<div class="cr-grid">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
+    var top = TAB === 'overview' ? html : html.replace(/<div class="cr-lights">[\s\S]*$/, '');
+    if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crCards"></div>';
+    var keep = document.activeElement && document.activeElement.closest && document.activeElement.closest('#crCards form') ? { sel: document.activeElement.closest('form').className, v: document.activeElement.value } : null;
+    document.getElementById('crTop').innerHTML = top + tabbar;
+    document.getElementById('crCards').innerHTML = grid;
+    var wsEl = document.getElementById('crWs'); wsEl.hidden = TAB !== 'website'; if (TAB === 'website') mountWs();
+    if (keep) { var f = box.querySelector('#crCards form.' + keep.sel.split(' ').join('.') + ' input'); if (f) { f.value = keep.v; f.focus(); } }
     fillAsync();
     autoTodos(ls);
     report(ls, ov);
@@ -282,16 +282,16 @@
     try { new Notification(L('Admin: ', 'Admin: ') + fresh.map(function (x) { return x[1]; }).join(', '), { body: fresh.map(function (x) { return x[1] + ' – ' + x[2]; }).join('\n'), tag: 'dash-admin', icon: '/cmd/assets/icons/icon-192.png' }); } catch (e) {}
   }
   function fillAsync() {
-    var ver = document.getElementById('adVer');
+    var ver = document.getElementById('crVer');
     if (ver && window.caches) caches.keys().then(function (k) { var v = k.filter(function (x) { return /^cmd-v/.test(x); }).sort().pop(); ver.textContent = v || '–'; }).catch(function () {});
-    var st = document.getElementById('adStore'); if (!st) return;
+    var st = document.getElementById('crStore'); if (!st) return;
     var ls = 0; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); ls += (k.length + (localStorage.getItem(k) || '').length) * 2; } } catch (e) {}
     var vault = (localStorage.getItem('dash.vault') || '').length;
     var mb = function (b) { return b > 1048576 ? (b / 1048576).toFixed(1).replace('.', NB ? ',' : '.') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' kB'; };
     var done = function (est) {
-      st.innerHTML = '<ul class="ad-list"><li><span>' + L('Encrypted data', 'Kryptert data') + '</span><b>' + mb(vault) + '</b></li><li><span>' + L('Everything in this browser', 'Alt i denne nettleseren') + '</span><b>' + mb(ls) + '</b></li>' +
+      st.innerHTML = '<ul class="cr-list"><li><span>' + L('Encrypted data', 'Kryptert data') + '</span><b>' + mb(vault) + '</b></li><li><span>' + L('Everything in this browser', 'Alt i denne nettleseren') + '</span><b>' + mb(ls) + '</b></li>' +
         (est ? '<li><span>' + L('Photos & files on this device', 'Bilder og filer på denne enheten') + '</span><b>' + mb(Math.max(0, (est.usage || 0) - ls)) + '</b></li>' : '') + '</ul>' +
-        '<div class="ad-prog"><span style="width:' + Math.min(100, Math.round(vault / (25 * 1048576) * 100) || 1) + '%"></span></div><p class="ad-sub">' + L('Server limit per value: 25 MB – you use ', 'Servergrense per verdi: 25 MB – du bruker ') + Math.max(1, Math.round(vault / (25 * 1048576) * 100)) + ' %</p>';
+        '<div class="cr-prog"><span style="width:' + Math.min(100, Math.round(vault / (25 * 1048576) * 100) || 1) + '%"></span></div><p class="cr-sub">' + L('Server limit per value: 25 MB – you use ', 'Servergrense per verdi: 25 MB – du bruker ') + Math.max(1, Math.round(vault / (25 * 1048576) * 100)) + ' %</p>';
     };
     if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(done, function () { done(null); }); else done(null);
   }
@@ -309,13 +309,13 @@
     return n;
   }
   function mountWs() {
-    var ws = document.getElementById('adWs'); if (!ws) return;
+    var ws = document.getElementById('crWs'); if (!ws) return;
     if (!ws.firstChild) {
       ws.innerHTML = '<div class="aw"><nav class="aw-nav" aria-label="' + L('Website parts', 'Deler av nettstedet') + '">' + ED.map(function (e) { return '<button type="button" data-awed="' + e[0] + '"><i class="bi bi-' + e[1] + '"></i><span>' + esc(e[2]) + '</span></button>'; }).join('') + '</nav>' +
         '<div class="aw-main"><div class="aw-ed st-panelish" id="awEd"></div><div class="aw-bar" id="awBar"></div></div>' +
         '<div class="aw-pv"><div class="aw-pvh"><b><i class="bi bi-eye"></i> ' + L('Preview', 'Forhåndsvisning') + '</b><span class="aw-lang"><button type="button" data-awlang="en" aria-pressed="true">EN</button><button type="button" data-awlang="nb" aria-pressed="false">NO</button></span>' +
         '<button type="button" class="icon-btn sm" data-awreload aria-label="' + L('Reload', 'Last inn på nytt') + '"><i class="bi bi-arrow-clockwise"></i></button></div>' +
-        '<div class="aw-frame"><iframe id="awFrame" title="' + L('Preview of jplundberg.com', 'Forhåndsvisning av jplundberg.com') + '" loading="lazy"></iframe></div><p class="ad-sub" id="awNote">' + L('Your unpublished changes are shown in yellow. Sections you switch on appear after publishing.', 'Upubliserte endringer vises i gult. Seksjoner du slår på vises etter publisering.') + '</p></div></div>';
+        '<div class="aw-frame"><iframe id="awFrame" title="' + L('Preview of jplundberg.com', 'Forhåndsvisning av jplundberg.com') + '" loading="lazy"></iframe></div><p class="cr-sub" id="awNote">' + L('Your unpublished changes are shown in yellow. Sections you switch on appear after publishing.', 'Upubliserte endringer vises i gult. Seksjoner du slår på vises etter publisering.') + '</p></div></div>';
       ws.addEventListener('click', function (e) {
         var b;
         if ((b = e.target.closest('[data-awed]'))) { openEd(b.dataset.awed); return; }
@@ -366,7 +366,7 @@
       (dr.sections || []).forEach(function (x) { var sec = d.getElementById(x.id); if (sec && x.on === false) { sec.style.opacity = '.25'; sec.style.filter = 'grayscale(1)'; mark(sec); } });
     }
   }
-  window.addEventListener('site:draft', function () { clearTimeout(pvT); pvT = setTimeout(function () { applyPv(); var b = document.querySelector('[data-adtab="website"]'); if (b) draw(); }, 400); });
+  window.addEventListener('site:draft', function () { clearTimeout(pvT); pvT = setTimeout(function () { applyPv(); var b = document.querySelector('[data-crtab="website"]'); if (b) draw(); }, 400); });
   window.addEventListener('site:published', function () { setTimeout(loadPv, 2500); });
   /* on this page, Settings → jplundberg.com rows open the Website tab instead */
   document.addEventListener('click', function (e) {
@@ -382,15 +382,15 @@
     var a = document.createElement('a'); a.href = '/cmd/?settings=' + page; document.body.appendChild(a); a.click(); a.remove();
   }
   box.addEventListener('click', function (e) {
-    if (e.target.closest('#adWs')) return;
+    if (e.target.closest('#crWs')) return;
     var b;
-    if ((b = e.target.closest('[data-adtab]'))) { TAB = b.dataset.adtab; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); if (TAB === 'website') runContent(); return; }
-    if (e.target.closest('[data-adrun]')) { refreshAll(); logIt(L('Ran all checks', 'Kjørte alle sjekker'), 'arrow-clockwise'); return; }
-    if (e.target.closest('[data-adlinks]')) { runLinks(); return; }
-    if (e.target.closest('[data-adself]')) { if (window.Diag && window.Diag.selfCheck) { Promise.resolve(window.Diag.selfCheck(true)).then(function () { draw(); toast('<i class="bi bi-heart-pulse"></i> ' + L('Self-check done', 'Selvsjekk ferdig')); }); } return; }
-    if ((b = e.target.closest('[data-adtododel]'))) { var t1 = Fe.tools(); t1.admintodo = todos().filter(function (x) { return x.id !== b.dataset.adtododel; }); Fe.saveTools(t1); return; }
-    if ((b = e.target.closest('[data-adact]'))) {
-      var k = b.dataset.adact;
+    if ((b = e.target.closest('[data-crtab]'))) { TAB = b.dataset.crtab; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); if (TAB === 'website') runContent(); return; }
+    if (e.target.closest('[data-crrun]')) { refreshAll(); logIt(L('Ran all checks', 'Kjørte alle sjekker'), 'arrow-clockwise'); return; }
+    if (e.target.closest('[data-crlinks]')) { runLinks(); return; }
+    if (e.target.closest('[data-crself]')) { if (window.Diag && window.Diag.selfCheck) { Promise.resolve(window.Diag.selfCheck(true)).then(function () { draw(); toast('<i class="bi bi-heart-pulse"></i> ' + L('Self-check done', 'Selvsjekk ferdig')); }); } return; }
+    if ((b = e.target.closest('[data-crtododel]'))) { var t1 = Fe.tools(); t1.admintodo = todos().filter(function (x) { return x.id !== b.dataset.crtododel; }); Fe.saveTools(t1); return; }
+    if ((b = e.target.closest('[data-cract]'))) {
+      var k = b.dataset.cract;
       if (k === 'site') window.open('https://jplundberg.com/', '_blank', 'noopener');
       if (k === 'publish') openSettings('sections');
       if (k === 'settings') openSettings('adminset');
@@ -400,11 +400,11 @@
     }
   });
   box.addEventListener('change', function (e) {
-    if (e.target.closest('#adWs')) return;
+    if (e.target.closest('#crWs')) return;
     var t = e.target;
-    if (t.dataset.adtodo) { var tt = Fe.tools(); (tt.admintodo || []).forEach(function (x) { if (x.id === t.dataset.adtodo) { x.done = t.checked; x.doneAt = t.checked ? Date.now() : null; } }); Fe.saveTools(tt); if (t.checked) logIt(L('Done: ', 'Gjort: ') + ((tt.admintodo || []).filter(function (x) { return x.id === t.dataset.adtodo; })[0] || {}).text, 'check2'); return; }
-    if (t.dataset.adpub) {
-      var q = t.dataset.adpub.split('|'), on = t.checked, key = 'pub' + q[0] + '|' + q[1];
+    if (t.dataset.crtodo) { var tt = Fe.tools(); (tt.admintodo || []).forEach(function (x) { if (x.id === t.dataset.crtodo) { x.done = t.checked; x.doneAt = t.checked ? Date.now() : null; } }); Fe.saveTools(tt); if (t.checked) logIt(L('Done: ', 'Gjort: ') + ((tt.admintodo || []).filter(function (x) { return x.id === t.dataset.crtodo; })[0] || {}).text, 'check2'); return; }
+    if (t.dataset.crpub) {
+      var q = t.dataset.crpub.split('|'), on = t.checked, key = 'pub' + q[0] + '|' + q[1];
       S.busy[key] = true;
       fetch('/cmd/api/content', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ collection: q[0], ref: q[1], published: on }) })
         .then(function (r) { return r.json().then(function (j) { j._s = r.status; return j; }); }).then(function (j) {
@@ -417,11 +417,11 @@
     }
   });
   box.addEventListener('submit', function (e) {
-    if (e.target.closest('#adWs')) return;
+    if (e.target.closest('#crWs')) return;
     e.preventDefault();
     var f = e.target, inp = f.querySelector('input'), v = inp ? inp.value.trim() : '';
-    if (f.classList.contains('ad-pvf')) { runPreview(v || '/'); return; }
-    if (f.classList.contains('ad-tdf') && v) { var tt = Fe.tools(); tt.admintodo = todos().concat([{ id: uid(), text: v.slice(0, 140) }]); Fe.saveTools(tt); inp.value = ''; }
+    if (f.classList.contains('cr-pvf')) { runPreview(v || '/'); return; }
+    if (f.classList.contains('cr-tdf') && v) { var tt = Fe.tools(); tt.admintodo = todos().concat([{ id: uid(), text: v.slice(0, 140) }]); Fe.saveTools(tt); inp.value = ''; }
   });
 
   /* ---------- refresh ---------- */
