@@ -3623,3 +3623,4 @@ html.simple #stMenu [data-adv] { display: none; }
 .wr-msg { flex: 1; min-width: 140px; font-size: 12.5px; color: var(--muted); }
 .wr-warn { padding: 14px; border-radius: 12px; background: color-mix(in srgb, #d9a400 12%, transparent); } .wr-warn p { margin: 6px 0 0; font-size: 13.5px; }
 :root[data-theme="light"] .wr-f input, :root[data-theme="light"] .wr-f textarea, :root[data-theme="light"] .wr-body, :root[data-theme="light"] .wr-adv textarea { background: #fff; }
+.wr-reset { color: var(--muted); } .wr-reset:hover { color: var(--bad, #e66767); }

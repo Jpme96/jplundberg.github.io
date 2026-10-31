@@ -134,6 +134,7 @@
       '<details class="wr-adv"><summary>' + L('Advanced – the rest of the front matter (stats, charts …)', 'Avansert – resten av front matter (tall, diagrammer …)') + '</summary><textarea data-wrk="__rest" rows="8" spellcheck="false">' + esc(d.rest) + '</textarea>' +
         '<p class="ad-sub cr-sub">ref: <b>' + esc(d.fm.ref || W.ref || L('(from the title)', '(fra tittelen)')) + '</b>' + (cur.path ? ' · ' + esc(cur.path) : '') + '</p></details>' +
       '<div class="wr-bar"><span class="wr-msg" id="wrMsg">' + L('Autosaved on this device', 'Lagres automatisk på denne enheten') + '</span>' +
+        '<button type="button" class="text-btn wr-reset" data-wrreset><i class="bi bi-arrow-counterclockwise"></i> ' + (W.isNew ? L('Start over', 'Start på nytt') : L('Discard changes', 'Forkast endringer')) + '</button>' +
         '<button type="button" class="text-btn" data-wrsave="draft"><i class="bi bi-file-earmark"></i> ' + (pubd ? L('Unpublish (draft)', 'Avpubliser (utkast)') : L('Save draft', 'Lagre utkast')) + '</button>' +
         '<button type="button" class="pill-btn" data-wrsave="pub"><i class="bi bi-cloud-upload"></i> ' + (pubd ? L('Publish changes', 'Publiser endringer') : L('Publish', 'Publiser')) + '</button></div></div>';
     preview();
@@ -204,7 +205,8 @@
   }
   document.addEventListener('click', function (e) {
     if (!W || !e.target.closest) return;
-    var b = e.target.closest('#crWrite [data-wrlang], #crWrite [data-wrt], #crWrite [data-wrsave], #crWrite [data-wrup]'); if (!b) return;
+    var b = e.target.closest('#crWrite [data-wrlang], #crWrite [data-wrt], #crWrite [data-wrsave], #crWrite [data-wrup], #crWrite [data-wrreset]'); if (!b) return;
+    if (b.hasAttribute('data-wrreset')) { reset(); return; }
     var ta = document.querySelector('#crWrite .wr-body');
     if (b.dataset.wrlang) { W.lang = b.dataset.wrlang; draw(); return; }
     if (b.dataset.wrup) { upload(function (u) { W[W.lang].d.fm.image = u; autosave(); draw(); }); return; }
@@ -218,6 +220,17 @@
     }
     if (b.dataset.wrsave) save(b.dataset.wrsave === 'pub');
   });
+
+  /* ---------- start over (new) / discard changes (existing): drops the autosaved copy ---------- */
+  function reset() {
+    var isNew = W.isNew;
+    if (!confirm(isNew ? L('Start over? Everything you’ve written here (both languages) is cleared.', 'Starte på nytt? Alt du har skrevet her (begge språk) slettes.')
+      : L('Discard your unpublished changes and go back to the saved version?', 'Forkaste de upubliserte endringene og gå tilbake til den lagrede versjonen?'))) return;
+    try { localStorage.removeItem(key()); } catch (x) {}
+    if (isNew) { var col = W.col; W = { col: col, ref: '', isNew: true, lang: W.lang, en: blank(col, 'en'), nb: blank(col, 'nb'), loading: false }; draw(); var t = document.querySelector('#crWrite [data-wrk="title"]'); if (t) t.focus(); }
+    else { var d = { col: W.col, ref: W.ref }; W = null; open(d); }
+    toast('<i class="bi bi-arrow-counterclockwise"></i> ' + (isNew ? L('Cleared – start fresh', 'Tømt – begynn på nytt') : L('Back to the saved version', 'Tilbake til den lagrede versjonen')));
+  }
 
   /* ---------- save / publish: every language that has a title is written ---------- */
   function save(pub) {
