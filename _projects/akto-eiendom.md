@@ -6,7 +6,6 @@ ref: akto-eiendom
 role: Byggdrifter, driftsleder og FDVU-ansvarlig
 organisation: Akto Eiendom, Oslo
 period: 2020 – 2025
-published: false
 summary: Fem år som koordinator for drift, vedlikehold og FDVU-dokumentasjon i en eiendomsportefølje – fra daglig oppfølging av leverandører til å få dokumentasjonen i en form folk faktisk kunne bruke.
 stats:
   - value: "5"
