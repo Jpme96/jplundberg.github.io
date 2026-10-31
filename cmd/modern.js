@@ -268,9 +268,11 @@
       }).join('') + '</ul><div class="mh-prog"><div class="mh-bar"><i style="width:' + Math.round(done / top.length * 100) + '%"></i></div>' + done + ' of ' + top.length + ' done' + (fm ? ' · ' + fm + ' min focused' : '') + '</div>';
     } else {
       var n = todos.filter(function (t) { return !t.done; }).length;
-      body = '<p class="mh-empty">' + (n ? 'Pick the three things that matter most today and give them a time.' : 'Nothing on your list. Add a task, or enjoy the free time.') + '</p>' +
-        '<button type="button" class="pill-btn wide mh-plan" data-plan><i class="bi bi-sunrise"></i> Plan my day</button>';
+      /* nothing picked yet: one compact row, so At a glance and Today stay on the first screen of a phone */
+      body = '<div class="mh-erow"><i class="bi bi-trophy"></i><p class="mh-empty">' + (n ? 'Pick today’s top 3 and give them a time.' : 'Nothing on your list – enjoy the free time.') + '</p>' +
+        '<button type="button" class="pill-btn mh-plan" data-plan><i class="bi bi-sunrise"></i> Plan my day</button></div>';
     }
+    hero.querySelector('.mh-top3').classList.toggle('mh-e', !top.length);
     var bx = hero.querySelector('.mh-body'); if (bx.innerHTML !== body) bx.innerHTML = body;
     hero.querySelector('.mh-planbtn').hidden = !top.length;
   }

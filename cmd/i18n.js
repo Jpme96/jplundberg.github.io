@@ -13,9 +13,20 @@
 
   /* ---------- every date in Norwegian ---------- */
   var en = /^en(-|$)/i;
+  /* formatting a date makes a new formatter every time, which is slow on a phone when a page shows
+     hundreds of dates: the Norwegian formatters are made once per set of options and reused */
+  var DTF0 = Intl.DateTimeFormat, FMT = {};
+  var NEED = { toLocaleDateString: /"(weekday|era|year|month|day)"/, toLocaleTimeString: /"(hour|minute|second|dayPeriod|fractionalSecondDigits)"/, toLocaleString: /"(weekday|era|year|month|day|hour|minute|second|dayPeriod)"/ };
   ['toLocaleDateString', 'toLocaleString', 'toLocaleTimeString'].forEach(function (fn) {
     var orig = Date.prototype[fn];
-    Date.prototype[fn] = function (loc, opt) { return orig.call(this, !loc || en.test(String(loc)) ? 'nb-NO' : loc, opt); };
+    Date.prototype[fn] = function (loc, opt) {
+      if (loc && !en.test(String(loc))) return orig.call(this, loc, opt);
+      if (opt && typeof opt === 'object' && !isNaN(this)) {
+        var k; try { k = fn + JSON.stringify(opt); } catch (e) {}
+        if (k && NEED[fn].test(k) && !/Style"/.test(k)) { try { return (FMT[k] || (FMT[k] = new DTF0('nb-NO', opt))).format(this); } catch (e) {} }
+      }
+      return orig.call(this, 'nb-NO', opt);
+    };
   });
   /* …also the date formatters some pages make once and reuse (Intl.DateTimeFormat('en-GB', …)) */
   try {
@@ -846,10 +857,47 @@
   Object.assign(D, {
     'Diagnostics': 'Diagnostikk', 'Errors, sync status, daily self-check': 'Feil, synkstatus, daglig sjekk',
     'How the dashboard is doing on this device: sync, Apple Health, the daily self-check and recent errors. It checks itself once a day and only tells you when something is wrong.': 'Hvordan dashbordet har det på denne enheten: synkronisering, Apple Helse, den daglige sjekken og siste feil. Det sjekker seg selv én gang om dagen og sier bare fra når noe er galt.',
-    'Couldn’t show this one': 'Klarte ikke å vise denne', 'Tap to edit': 'Trykk for å endre'
+    'Couldn’t show this one': 'Klarte ikke å vise denne', 'Tap to edit': 'Trykk for å endre', 'Try again': 'Prøv igjen',
+    'left until payday ·': 'igjen til lønning ·', 'left this month ·': 'igjen denne måneden ·', 'left until payday': 'igjen til lønning', 'left this month': 'igjen denne måneden', 'next': 'neste',
+    'Keep track of what you bought, where the receipt is, and when you can no longer complain. You get a reminder in your calendar.': 'Hold styr på hva du har kjøpt, hvor kvitteringen er, og når reklamasjonsfristen går ut. Du får en påminnelse i kalenderen.',
+    'Doctor and dentist appointments, vaccines (useful before trips) and prescriptions. You get reminders in your calendar before things are due.': 'Lege- og tannlegetimer, vaksiner (nyttig før reiser) og resepter. Du får påminnelser i kalenderen før noe forfaller.',
+    'Courses you want to take, certificates that need renewing (like varme arbeider or first aid), and standards you’re reading up on.': 'Kurs du vil ta, sertifikater som må fornyes (som varme arbeider eller førstehjelp) og standarder du leser deg opp på.',
+    'Nothing logged yet today. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.': 'Ingenting ført i dag ennå. Stemple inn, start en kundetidtaker, skriv møtenotater eller en befaring – alt samles her i én oppsummering du kan sende.',
+    'Nothing logged yesterday. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.': 'Ingenting ført i går. Stemple inn, start en kundetidtaker, skriv møtenotater eller en befaring – alt samles her i én oppsummering du kan sende.',
+    'Same as the dashboard': 'Som dashbordet', 'Your photo': 'Ditt bilde', 'Clock and date': 'Klokke og dato', 'Big, above the passcode': 'Stort, over koden',
+    'Not set up – if you forget the passcode, everything is lost': 'Ikke satt opp – glemmer du koden, er alt tapt', 'Set up – keep the code somewhere safe': 'Satt opp – ta vare på koden et trygt sted',
+    '· as it was at the start of the day': '· slik det var ved starten av dagen', 'No dinner nudge': 'Ingen middagspåminnelse', 'on the day': 'på dagen',
+    'With': 'Med', 'One per line. Tick them off here or send them to your to-do list.': 'Én per linje. Kryss dem av her eller send dem til oppgavelista.',
+    'Add course or certificate': 'Legg til kurs eller sertifikat', 'When you took it or plan to.': 'Når du tok det, eller planlegger å ta det.',
+    'For certificates that must be renewed – you get a reminder in your calendar 2 months before.': 'For sertifikater som må fornyes – du får en påminnelse i kalenderen 2 måneder før.',
+    'Next payment': 'Neste betaling', 'It shows in your calendar every time it renews.': 'Det vises i kalenderen hver gang det fornyes.', 'e.g. how to cancel, or the account it’s on.': 'f.eks. hvordan du sier opp, eller hvilken konto det trekkes fra.',
+    'Add a purchase': 'Legg til et kjøp', 'In Norway you can complain (reklamere) for 2 years, or 5 years for things meant to last much longer.': 'I Norge kan du reklamere i 2 år, eller 5 år for ting som er ment å vare mye lenger.',
+    'Where you bought it': 'Hvor du kjøpte det', 'Add to health': 'Legg til i helse', 'The appointment, when you took the vaccine, or when it was prescribed.': 'Timen, når du tok vaksinen, eller når den ble skrevet ut.',
+    'For appointments – it goes in your calendar.': 'For timer – den havner i kalenderen.', 'Next / renew by': 'Neste / forny innen',
+    'Next check-up, when a booster is due, or when the prescription runs out. You get a reminder in your calendar.': 'Neste kontroll, når en oppfriskningsdose skal tas, eller når resepten går ut. Du får en påminnelse i kalenderen.',
+    'Dose, what was said, questions for next time …': 'Dose, hva som ble sagt, spørsmål til neste gang …', 'you@example.com': 'deg@eksempel.no',
+    'Pick today’s top 3 and give them a time.': 'Velg dagens topp 3 og gi dem et tidspunkt.', 'Nothing on your list – enjoy the free time.': 'Ingenting på lista – nyt fritiden.'
   });
+  P.unshift(
+    [/^in (\d+) days?( ·)?$/, function (m, n, d) { return 'om ' + n + ' dag' + (n === '1' ? '' : 'er') + (d || ''); }],
+    [/^(\d+) days? ago( ·)?$/, function (m, n, d) { return 'for ' + n + ' dag' + (n === '1' ? '' : 'er') + ' siden' + (d || ''); }],
+    [/^Add ([\d\s ]+) kr$/, 'Legg til $1 kr'],
+    [/^Birthdays (\d+) days before( · catch-up nudges)?$/, function (m, n, c) { return 'Bursdager ' + n + ' dager før' + (c ? ' · påminnelser om å ta kontakt' : ''); }],
+    [/^Birthdays on the day( · catch-up nudges)?$/, function (m, c) { return 'Bursdager på dagen' + (c ? ' · påminnelser om å ta kontakt' : ''); }],
+    [/^Dinner nudge from (\d\d:\d\d) · list (by section|as added|A–Å)$/, function (m, h, l) { return 'Middagspåminnelse fra ' + h + ' · liste ' + ({ 'by section': 'etter avdeling', 'as added': 'slik lagt inn', 'A–Å': 'A–Å' })[l]; }],
+    [/^No dinner nudge · list (by section|as added|A–Å)$/, function (m, l) { return 'Ingen middagspåminnelse · liste ' + ({ 'by section': 'etter avdeling', 'as added': 'slik lagt inn', 'A–Å': 'A–Å' })[l]; }],
+    [/^(\d+) visits · last (\d+) days$/, '$1 besøk · siste $2 dager']
+  );
   P.push([/^(\d.*) this week$/, '$1 denne uka']);
+  /* the same texts come round again and again (dates, buttons): remember what each became */
+  var MEMO = new Map();
   function tr(s) {
+    var c = MEMO.get(s); if (c !== undefined) return c;
+    var r = tr0(s);
+    if (MEMO.size > 5000) MEMO.clear();
+    MEMO.set(s, r); return r;
+  }
+  function tr0(s) {
     var t = String(s).trim(); if (!t) return s;
     var r = Object.prototype.hasOwnProperty.call(D, t) ? D[t] : null;
     if (r == null) for (var i = 0; i < P.length; i++) {

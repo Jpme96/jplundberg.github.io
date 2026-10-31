@@ -131,8 +131,16 @@
     if (obj._w) {
       var w = obj._w;
       delete obj._w;
-      Object.keys(w).forEach(function (k) { if (WIDGET_KEYS.indexOf(k) > -1) writeJSON(k, tidy(w[k], 3)); });
-      if (window.Dash && window.Dash.reload) window.Dash.reload();
+      /* only what differs from this browser's copy is written, and the page only redraws when something
+         did – unlocking on the same device used to draw every part twice (slow to open on a phone) */
+      var changed = false;
+      Object.keys(w).forEach(function (k) {
+        if (WIDGET_KEYS.indexOf(k) < 0) return;
+        var v = JSON.stringify(tidy(w[k], 3)), cur = null;
+        try { cur = localStorage.getItem(k); } catch (e) {}
+        if (cur !== v) { changed = true; try { localStorage.setItem(k, v); } catch (e) {} }
+      });
+      if (changed && window.Dash && window.Dash.reload) window.Dash.reload();
     }
     return obj;
   }

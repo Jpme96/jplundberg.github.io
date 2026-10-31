@@ -166,7 +166,7 @@
       var tk = dkey(now), all3 = (readJSON('dash.todos', []) || []).filter(function (t) { return t.today === tk; }), open3 = all3.filter(function (t) { return !t.done; });
       if (all3.length) add(open3.length ? 12 : 40, open3.length ? 'trophy' : 'trophy-fill', '#c98500', open3.length ? 'Today: ' + open3.sort(function (a, b) { return (a.rank || 9) - (b.rank || 9); }).map(function (t) { return t.text; }).join(' · ') : 'Top 3 done 🎉',
         (all3.length - open3.length) + ' of ' + all3.length + ' done' + (open3.some(function (t) { return t.block; }) ? ' · in your calendar' : ''), '#plan');
-      else if (now.getHours() >= 5 && now.getHours() < 13) { var seen = ''; try { seen = localStorage.getItem('dash.planSeen'); } catch (e) {} if (seen !== tk) add(14, 'sunrise', '#c98500', 'Plan your day', 'Pick your top 3 and give them a time – 1 minute', '#plan'); }
+      else if (now.getHours() >= 5 && now.getHours() < 13) { var seen = ''; try { seen = localStorage.getItem('dash.planSeen'); } catch (e) {} if (seen !== tk && !document.querySelector('.modern .mh-top3.mh-e')) add(14, 'sunrise', '#c98500', 'Plan your day', 'Pick your top 3 and give them a time – 1 minute', '#plan'); }   /* the Modern hero already asks */
     }
 
     /* work: clocked in */

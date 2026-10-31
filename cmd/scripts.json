@@ -29,7 +29,8 @@
     "health-plus.js",
     "money-plus.js",
     "backup-mail.js",
-    "modern.js"
+    "modern.js",
+    "steady.js"
   ],
   "pages": {
     "index.html": [

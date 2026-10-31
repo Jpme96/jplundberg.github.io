@@ -124,7 +124,8 @@
     ['tools:change', 'features:change', 'habits:change', 'health:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(t); t = setTimeout(card, 60); }); });
     var prevReload = window.Dash && window.Dash.reload; window.Dash = window.Dash || {};
     window.Dash.reload = function () { if (prevReload) prevReload(); clearTimeout(t); t = setTimeout(card, 60); };
-    window.Vault.onUnlock(function () { setTimeout(function () { card(); if (location.hash === '#hreport') { var c = document.getElementById('hreport'); if (c) c.scrollIntoView({ block: 'start' }); } }, 150); });
+    /* drawn in the same frame as the page appears, so the habits below don't jump down a moment later */
+    window.Vault.onUnlock(function () { try { card(); } catch (e) { if (window.Diag) window.Diag.log('render', e.message, 'health-plus.js'); } setTimeout(function () { if (location.hash === '#hreport') { var c = document.getElementById('hreport'); if (c) c.scrollIntoView({ block: 'start' }); } }, 150); });
     host.addEventListener('click', function (e) {
       var b;
       if ((b = e.target.closest('[data-hrnav]'))) { shown = addDays(shown, 7 * +b.dataset.hrnav); card(); return; }
