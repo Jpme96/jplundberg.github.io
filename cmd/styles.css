@@ -3732,3 +3732,7 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 .cr-eq > .cr-card > :not(.card-head) { min-height: 0; }
 .cr-eq .cr-log { flex: 1; overflow-y: auto; overscroll-behavior: contain; margin-right: -6px; padding-right: 6px; scrollbar-width: thin; }
 @media (max-width: 699px) { .cr-eq > .cr-card { height: auto; } .cr-eq .cr-log { max-height: 260px; } }
+/* the publish bar inside the Website workspace stays inside its column */
+.aw-bar .ws-bar, .aw-bar #wsBar { margin: 10px 0 0; padding: 10px 12px 10px 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(var(--card-rgb, 24, 25, 29), .96); box-shadow: 0 8px 24px rgba(0,0,0,.25); box-sizing: border-box; width: 100%; }
+.aw-bar .ws-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.aw-bar .ws-bar .pill-btn { flex: none; white-space: nowrap; }
