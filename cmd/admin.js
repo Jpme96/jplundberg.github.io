@@ -160,6 +160,12 @@
     return '<div class="ad-bars">' + rows.map(function (r) { return '<span style="height:' + Math.max(4, Math.round(r[key] / max * 100)) + '%" title="' + esc(r.name) + ': ' + r[key] + '"></span>'; }).join('') + '</div>';
   }
   function draw() {
+    try { drawInner(); } catch (err) {
+      if (window.Diag && window.Diag.log) window.Diag.log('error', 'admin: ' + (err && err.message), 'admin.js');
+      box.innerHTML = '<div class="ad-bar ad-bad"><span class="ad-pulse"></span><b>' + esc(L('Admin couldn’t draw everything', 'Admin klarte ikke å vise alt')) + '</b><span class="ad-meta">' + esc(String(err && err.message || err).slice(0, 160)) + '</span><button type="button" class="pill-btn" onclick="location.reload()">' + esc(L('Reload', 'Last inn på nytt')) + '</button></div>';
+    }
+  }
+  function drawInner() {
     var c = cfg(), P = c.panels, ls = lights(), ov = overall(ls), h = history(), d30 = h.filter(function (x) { return Date.now() - x.at < 30 * 864e5; });
     var up = d30.length ? Math.round(d30.filter(function (x) { return x.api != null && x.web != null; }).length / d30.length * 1000) / 10 : null;
     var html = '', C = {};
@@ -425,11 +431,15 @@
     clearInterval(timer); var m = cfg().refresh;
     if (m > 0) timer = setInterval(function () { if (!document.hidden && root.classList.contains('unlocked')) runCore(); }, m * 60000);
   }
+  var started = false;
   function start() {
+    started = true;
     draw(); refreshAll(); schedule();
     if (cfg().linkCheck === 'open') { var lk = rj('dash.adminLinks', null); if (!lk || Date.now() - (lk.at || 0) > 864e5) setTimeout(runLinks, 1500); }
   }
   window.Vault.onUnlock(function () { setTimeout(start, 100); });
+  /* safety net: if the page was opened already unlocked and nothing started, start anyway */
+  setTimeout(function () { if (!started && root.classList.contains('unlocked')) start(); else if (!box.innerHTML.trim() && root.classList.contains('unlocked')) draw(); }, 2500);
   if (root.classList.contains('unlocked')) start();
   var soon = function () { clearTimeout(soon.t); soon.t = setTimeout(draw, 120); };
   ['tools:change', 'dash:local', 'sync:state'].forEach(function (ev) { window.addEventListener(ev, soon); });
