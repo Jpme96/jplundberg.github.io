@@ -14,6 +14,7 @@ stats:
   - value: "?"
     label: properties followed up (fill in)
     icon: buildings
+published: false
 ---
 *Draft – written from the facts on the front page. Fill in the numbers and the three focus areas below, then set `published: true`.*
 
