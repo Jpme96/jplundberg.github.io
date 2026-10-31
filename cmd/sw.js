@@ -3,7 +3,10 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v53';
+var CACHE = 'cmd-v54';
+/* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
+   a new version of the app only downloads the files that actually changed */
+var ASSETS = 'cmd-assets';
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */
@@ -18,7 +21,7 @@ self.addEventListener('install', function (e) {
           /* and the scripts and styles that page needs */
           var deps = [], re = /(?:src|href)="([^"]+\?v=[^"]+)"/g, m;
           while ((m = re.exec(html))) deps.push(new URL(m[1], self.location.origin + u).toString());
-          return Promise.all([c.put(u, res)].concat(deps.map(function (d) { return c.match(d).then(function (hit) { return hit || fetch(d).then(function (r) { if (r.ok) return c.put(d, r); }); }).catch(function () {}); })));
+          return caches.open(ASSETS).then(function (a) { return Promise.all([c.put(u, res)].concat(deps.map(function (d) { return a.match(d).then(function (hit) { return hit || fetch(d).then(function (r) { if (r.ok) return a.put(d, r); }); }).catch(function () {}); }))); });
         });
       }).catch(function () {});
     }));
@@ -26,7 +29,9 @@ self.addEventListener('install', function (e) {
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+    return Promise.all(keys.filter(function (k) { return k !== CACHE && k !== ASSETS; }).map(function (k) { return caches.delete(k); }));
+  }).then(function () {   /* keep the asset cache from growing forever: the newest 250 files stay */
+    return caches.open(ASSETS).then(function (a) { return a.keys().then(function (ks) { return Promise.all(ks.slice(0, Math.max(0, ks.length - 250)).map(function (k) { return a.delete(k); })); }); });
   }).then(function () { return self.clients.claim(); }));
 });
 
@@ -52,7 +57,7 @@ self.addEventListener('fetch', function (e) {
   if (fixed && req.mode !== 'navigate') {
     e.respondWith(caches.match(req).then(function (hit) {
       return hit || fetch(req).then(function (res) {
-        if (res.ok && res.type === 'basic' && !res.redirected) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(req, copy); }); }
+        if (res.ok && res.type === 'basic' && !res.redirected) { var copy = res.clone(); caches.open(ASSETS).then(function (c) { c.put(req, copy); }); }
         return res;
       });
     }));
