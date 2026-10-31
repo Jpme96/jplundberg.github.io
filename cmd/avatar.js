@@ -152,9 +152,16 @@
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
     var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + detail + extra + '</g>';
     if (m.plain) { sky = ''; lamp = ''; ground = '<ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>'; }
+    /* soft: no box – a glow in the moment's colour that fades into the page, and a patch of grass instead of a strip */
+    var bgEl = m.plain ? '' : m.soft ? '<defs><radialGradient id="avSoft" cx="50%" cy="52%" r="50%"><stop offset="0" stop-color="' + m.bg + '" stop-opacity=".95"/><stop offset=".62" stop-color="' + m.bg + '" stop-opacity=".55"/><stop offset="1" stop-color="' + m.bg + '" stop-opacity="0"/></radialGradient></defs><circle cx="100" cy="98" r="98" fill="url(#avSoft)"/>' : '<rect width="200" height="200" rx="20" fill="' + m.bg + '"/>';
+    if (m.soft) ground = '<ellipse cx="101" cy="161" rx="66" ry="10" fill="rgba(34,179,94,.16)"/><ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>';
     if (tired) prop += '<text class="z" x="124" y="40" font-size="13" font-weight="800" fill="#9a9ca5">z</text><text class="z" x="133" y="29" font-size="9" font-weight="800" fill="#9a9ca5">z</text>';
-    return '<svg viewBox="0 0 200 200"' + (m.attrs || '') + '>' + (m.plain ? '' : '<rect width="200" height="200" rx="20" fill="' + m.bg + '"/>') + sky + lamp + ground + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)">' + behind + '</g>' + legs + body +
-      '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)">' + armsL + '</g><g transform="translate(' + (-DX).toFixed(1) + ' 0)">' + arms + '</g>' + head + '</g><g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')">' + prop + '</g><g transform="translate(0 -9)">' + front + '</g></svg>';
+    if (m.k === 'day' || m.k === 'win') arms = '<g class="av-wave">' + arms + '</g>';
+    /* every part that moves sits in its own group (CSS animates the group, the SVG transform stays on the parent);
+       --rx/--lx are the shoulders in picture coordinates, so arms swing from the right place on every body type */
+    var rx = (123 - DX).toFixed(1), lx = (79 + DX).toFixed(1);
+    return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + '" style="--rx:' + rx + 'px;--lx:' + lx + 'px"' + (m.attrs || '') + '>' + bgEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + '<g class="av-all">' + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)"><g class="av-behind">' + behind + '</g></g>' + legs + body +
+      '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)"><g class="av-armL">' + armsL + '</g></g><g transform="translate(' + (-DX).toFixed(1) + ' 0)"><g class="av-armR">' + arms + '</g></g>' + head + '</g><g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')"><g class="av-prop">' + prop + '</g></g><g transform="translate(0 -9)"><g class="av-front">' + front + '</g></g></g></svg>';
   }
   
   /* ---------- what's going on: the moment and the line it says ---------- */
@@ -215,7 +222,7 @@
     var main = withM[0], pick = l[idx % l.length] || main, m = pick.m || main.m, hr = new Date().getHours();
     if ((hr >= 19 || hr < 6) && m.sky === 'sun') m = Object.assign({}, m, { sky: 'moon', bg: '#121426' });       /* the sky follows the clock */
     if (!box) { box = document.createElement('div'); box.id = 'avHome'; box.className = 'av-home'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-av'); }
-    var html = '<button type="button" class="av-fig" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + figure(m).replace('viewBox="0 0 200 200"', 'viewBox="26 16 148 150"') + '</button>' +
+    var html = '<button type="button" class="av-fig" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + figure(Object.assign({}, m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"') + '</button>' +
       '<p class="av-say" role="status">' + esc(pick.say) + (l.length > 1 ? ' <span class="av-dots">' + l.map(function (_, i) { return '<i' + (i === idx % l.length ? ' class="on"' : '') + '></i>'; }).join('') + '</span>' : '') + '</p>';
     if (box.innerHTML !== html) box.innerHTML = html;
     badge(main.m);
@@ -230,6 +237,17 @@
       var h = '<i class="bi bi-' + m.i + '"></i>'; if (el.innerHTML !== h) el.innerHTML = h; el.style.setProperty('--c', m.c);
     });
   }
+  (function idle() {
+    setTimeout(function () {
+      var f = document.querySelector('#avHome .av-fig'), rt = document.documentElement.classList;
+      if (f && !document.hidden && !rt.contains('mo-off') && !rt.contains('mo-reduced') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        var fx = ['hop', 'av-look', 'av-stretch'][Math.floor(Math.random() * 3)];
+        f.classList.remove('hop', 'av-look', 'av-stretch'); void f.offsetWidth; f.classList.add(fx);
+        setTimeout(function () { f.classList.remove(fx); }, 1600);
+      }
+      idle();
+    }, 9000 + Math.random() * 6000);
+  })();
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-avnext]')) return;
     idx++; drawHome();
