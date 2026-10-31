@@ -70,30 +70,39 @@
     var seat = rows.slice(0, 5), n = seat.length, REL = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
     var svg = ground() + deco('people') +
       '';
-    /* everyone drawn like your avatar (their own look from People → a person → Customize look), seated behind the table */
-    var AV = window.Avatar && window.Avatar.personLook, W = [0, 60, 54, 48, 42, 36][n] || 36, H = W / 0.9;
-    var xs = seat.map(function (r, i) { return 120 + (i - (n - 1) / 2) * W * 0.96; });
-    seat.forEach(function (r, i) {
+    /* a little get-together: everyone standing on the grass, drawn like your avatar with their own look,
+       gently swaying and taking turns to talk. A birthday person has a cake on a small table beside them. */
+    var AV = window.Avatar && window.Avatar.personLook, H = [0, 104, 100, 94, 88, 82][n] || 82, W = H * 0.86;
+    var gap = Math.min(W * 0.92, 210 / Math.max(1, n)), xs = seat.map(function (r, i) { return 120 + (i - (n - 1) / 2) * gap; });
+    var talk = n > 1 ? (new Date().getMinutes() % n) : -1;
+    svg += '<g class="sc-mingle">';
+    /* a bit of depth: every other person stands a step back (smaller, higher); the back row is drawn first */
+    var order = seat.map(function (r, i) { return i; }).sort(function (a, b) { return (b % 2) - (a % 2); });
+    order.forEach(function (i) {
+      var r = seat[i], back = n > 2 && i % 2 === 1, Hs = back ? H * 0.9 : H, Ws = Hs * 0.86, feet = back ? 131 : 136;
       var x = xs[i], c = REL[r.p.rel] || '#3987e5', ini = ((String(r.p.name || '').match(/\p{L}/u) || [''])[0]).toUpperCase();
-      var mk = r.marks[0], hot = r.marks.some(function (q) { return q.hot; }) ? 'hot' : '';
-      var top = 101 - H, headTop = AV ? top + 0.09 * H : 59, icon = '';
-      if (mk) {
-        if (mk.k === 'cake') icon = '<rect x="' + (x - 8) + '" y="52" width="16" height="10" rx="2" fill="#f2b8c6"/><rect x="' + (x - 8) + '" y="56" width="16" height="2" fill="#d55181"/><line x1="' + x + '" y1="46" x2="' + x + '" y2="52" stroke="#f2c94c" stroke-width="1.6"/><circle cx="' + x + '" cy="44.5" r="1.8" class="sc-flame"/>';
-        if (mk.k === 'gift') icon = '<rect x="' + (x - 7) + '" y="49" width="14" height="12" rx="1.5" fill="#22b35e"/><rect x="' + (x - 1.2) + '" y="49" width="2.4" height="12" fill="#f2c94c"/><path d="M' + (x - 4) + ' 47 q4 -4 4 2 q0 -6 4 -2" stroke="#f2c94c" fill="none" stroke-width="1.4"/>';
-        if (mk.k === 'talk') icon = '<rect x="' + (x - 10) + '" y="46" width="20" height="13" rx="5" class="sc-bubble"/><path d="M' + (x - 3) + ' 59 l-2 5 6-5z" class="sc-bubble"/><circle cx="' + (x - 5) + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + x + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + (x + 5) + '" cy="52.5" r="1.3" class="sc-dot"/>';
-        if (mk.k === 'star') icon = '<path d="M' + x + ' 46 l2.4 5 5.4.6 -4 3.6 1.2 5.4 -5-2.8 -5 2.8 1.2-5.4 -4-3.6 5.4-.6z" class="sc-star"/>';
+      var hot = r.marks.some(function (q) { return q.hot; }) ? 'hot' : '', ks = r.marks.map(function (q) { return q.k; });
+      var W = Ws, top = feet - Hs * 0.975, headTop = top + 0.065 * Hs, extra = '', above = '';
+      if (ks.indexOf('cake') > -1) {           /* cake on a little round table, at the side facing the middle */
+        /* the cake stands on a little table right in front of the birthday person */
+        var cx = x, ty = feet - Hs * 0.36, k = Math.max(.7, Hs / 100);
+        extra += '<g class="sc-cake" transform="translate(' + cx.toFixed(1) + ' ' + ty.toFixed(1) + ') scale(' + k.toFixed(2) + ')">' +
+          '<rect x="-1.4" y="0" width="2.8" height="' + ((feet - ty) / k).toFixed(1) + '" fill="#6b4a36"/><ellipse cx="0" cy="' + ((feet - ty) / k).toFixed(1) + '" rx="6" ry="1.5" fill="rgba(0,0,0,.25)"/><ellipse cx="0" cy="0" rx="13" ry="3" fill="#8a5d43"/>' +
+          '<rect x="-9" y="-11" width="18" height="10.5" rx="2.5" fill="#f2b8c6"/><rect x="-9" y="-7.5" width="18" height="2.4" fill="#d55181"/>' +
+          '<line x1="0" y1="-17" x2="0" y2="-11" stroke="#f2c94c" stroke-width="1.8"/><ellipse class="sc-flame sc-flick" cx="0" cy="-18.6" rx="1.6" ry="2.6"/></g>';
       }
-      var who = AV ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="' + (x - W / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + W.toFixed(1) + '" height="' + H.toFixed(1) + '" style="overflow:hidden"' }, window.Avatar.personLook(r.p, r.p.look ? null : c))
-          .replace('viewBox="0 0 200 200"', 'viewBox="56 22 90 100"')
-        : bust(x, r.p, c, ini, n > 4 ? .44 : .5);
-      svg += part('people=' + r.p.id, hot, (icon ? '<g transform="translate(0 ' + (headTop - 62).toFixed(1) + ')">' + icon + '</g>' : '') + who) +
-        (r.marks.length > 1 ? badge(r.marks.length, x + W / 2 - 6, headTop + 2) : '');
+      if (ks.indexOf('gift') > -1) extra += '<g transform="translate(' + (x + (x <= 120 ? -1 : 1) * W * 0.36) + ' 119)"><rect x="-6" y="0" width="12" height="10" rx="1.5" fill="#22b35e"/><rect x="-1" y="0" width="2" height="10" fill="#f2c94c"/><path d="M-3.5 -1 q3.5 -4 3.5 1 q0 -5 3.5 -1" stroke="#f2c94c" fill="none" stroke-width="1.3"/></g>';
+      if (ks.indexOf('star') > -1) above = '<path transform="translate(' + x + ' ' + (headTop - 9) + ')" d="M0 -6 l1.8 3.8 4.2.5 -3.1 2.8 .9 4.1 -3.8-2.2 -3.8 2.2 .9-4.1 -3.1-2.8 4.2-.5z" class="sc-star"/>';
+      var bubble = ks.indexOf('talk') > -1 ? 'sc-say on' : i === talk ? 'sc-say' : '';
+      if (bubble) above += '<g class="' + bubble + '" transform="translate(' + (x + W * 0.28) + ' ' + (headTop - 4) + ')"><rect x="-9" y="-12" width="18" height="11" rx="5" class="sc-bubble"/><path d="M-3 -1 l-1.5 4 5 -4z" class="sc-bubble"/><circle cx="-4.5" cy="-6.5" r="1.1" class="sc-dot"/><circle cx="0" cy="-6.5" r="1.1" class="sc-dot"/><circle cx="4.5" cy="-6.5" r="1.1" class="sc-dot"/></g>';
+      var who = AV ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="' + (x - W / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + W.toFixed(1) + '" height="' + Hs.toFixed(1) + '"' }, window.Avatar.personLook(r.p, r.p.look ? null : c))
+          .replace('viewBox="0 0 200 200"', 'viewBox="40 22 122 142"')
+        : bust(x, r.p, c, ini, .5);
+      svg += part('people=' + r.p.id, hot, '<g class="sc-sway" style="animation-delay:-' + (i * 1.3).toFixed(1) + 's;transform-origin:' + x.toFixed(1) + 'px ' + feet + 'px">' + who + '</g>' + extra + above) +
+        (r.marks.length > 1 ? badge(r.marks.length, x + W / 2 - 4, headTop + 4) : '');
     });
+    svg += '</g>';
     if (!n) svg += '<text x="120" y="80" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>';
-    /* the table goes in front, sized to the people at it; plates on the table top */
-    var tw = Math.max(80, n * W + 30), tx = 120 - tw / 2;
-    svg += '<rect x="' + tx.toFixed(1) + '" y="97" width="' + tw.toFixed(1) + '" height="7" rx="3" class="sc-wood"/><rect x="' + tx.toFixed(1) + '" y="102" width="' + tw.toFixed(1) + '" height="2.5" fill="rgba(0,0,0,.25)"/><rect x="' + (tx + 10).toFixed(1) + '" y="104" width="5" height="24" class="sc-wood"/><rect x="' + (tx + tw - 15).toFixed(1) + '" y="104" width="5" height="24" class="sc-wood"/>';
-    xs.forEach(function (x) { svg += '<ellipse cx="' + x.toFixed(1) + '" cy="98.6" rx="' + Math.min(9, W / 5).toFixed(1) + '" ry="1.6" class="sc-plate"/>'; });
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
     return { svg: svg, label: L('Your people', 'Personene dine'), list: list, empty: n ? L('Everyone’s fine – nothing coming up this week.', 'Alle har det fint – ingenting denne uka.') : '' };
