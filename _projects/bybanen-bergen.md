@@ -14,6 +14,7 @@ stats:
   - value: "?"
     label: tekniske anlegg fulgt opp (fyll inn)
     icon: gear
+published: false
 ---
 *Utkast – skrevet ut fra fakta på forsiden. Legg til anleggene du hadde ansvar for og én–to situasjoner du løste, og sett `published: true`.*
 
