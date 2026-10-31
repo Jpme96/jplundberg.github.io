@@ -1,0 +1,4 @@
+Roboto – Copyright 2011 The Roboto Project Authors (https://github.com/googlefonts/roboto-classic)
+Raleway – Copyright 2010 The Raleway Project Authors (https://github.com/impallari/Raleway)
+Both licensed under the SIL Open Font License, Version 1.1 – https://openfontlicense.org
+Latin and Latin Extended subsets as served by Google Fonts, hosted on jplundberg.com. No other changes.
