@@ -14,6 +14,7 @@ stats:
   - value: "?"
     label: eiendommer fulgt opp (fyll inn)
     icon: buildings
+published: false
 ---
 *Utkast – skrevet ut fra fakta på forsiden. Fyll inn tallene og de tre fokusområdene under, og sett `published: true`.*
 
