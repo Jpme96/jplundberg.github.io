@@ -340,7 +340,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 :is(.av-fig, .av-prev) .av-armL { transform-origin: 79px 96px; }
 /* morning coffee / evening tea: lift the cup for a sip now and then */
 :is(.av-fig, .av-prev) :is(.av-m-morning, .av-m-evening) :is(.av-armR, .av-prop) { animation: avsip 5s ease-in-out infinite; }
-@keyframes avsip { 0%, 30%, 100% { transform: rotate(0); } 42%, 62% { transform: rotate(-38deg) translate(-4px, -6px); } }
+@keyframes avsip { 0%, 30%, 100% { transform: none; } 42%, 62% { transform: translate(-1px, -9px) rotate(-8deg); } }
 /* gym: dumbbell curls, left and right taking turns */
 :is(.av-fig, .av-prev) .av-m-gym :is(.av-armR, .av-prop) { animation: avcurlR 1.8s ease-in-out infinite; }
 :is(.av-fig, .av-prev) .av-m-gym .av-armL { animation: avcurlL 1.8s ease-in-out infinite; }
