@@ -37,9 +37,9 @@
   /* ---------------- People ---------------- */
   /* a person at the table in the same style as your avatar: look picked from the name, shirt in the relation colour */
   var SKINS = ['#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27'], HAIRS = ['#1e140d', '#4a2f1d', '#7a4b2a', '#b98a4f', '#e2c27d', '#9a9a9a', '#a8432f'];
-  function hash(t) { var h = 7; t = String(t || ''); for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; }
-  function bust(x, p, c, ini) {
-    var h = hash(p.id || p.name), S = SKINS[h % 6], H = HAIRS[(h >> 3) % 7], style = (h >> 6) % 5;
+  function hash(t) { var h = 2166136261; t = String(t || ''); for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; return h >>> 0; }
+  function bust(x, p, c, ini, sc) {
+    var h = hash(p.id || p.name), S = SKINS[h % 6], H = HAIRS[(h >>> 8) % 7], style = (h >>> 16) % 5;
     var hair = [
       '<path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-1-6-4-10-8-12-6 3-16 3-23 0-3 3-5 7-6 12z" fill="' + H + '"/>',
       '<path d="M81 63c-3-18 7-27 20-27 14 0 22 10 19 27-3-8-8-13-14-14-8 4-18 4-25 0z" fill="' + H + '"/>',
@@ -47,12 +47,13 @@
       '<circle cx="101" cy="31" r="7" fill="' + H + '"/><path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-2-8-8-13-18-13s-16 5-19 13z" fill="' + H + '"/>',
       '<path d="M82 63c-3-18 7-27 20-27 14 0 20 10 18 24-8-8-20-12-30-8-4 2-6 6-8 11z" fill="' + H + '"/>'][style];
     var back = style === 1 ? '<path d="M80 60c-2-16 8-24 21-24s23 8 21 24v24c-4 4-8 0-8-6V62H88v16c0 6-4 10-8 6z" fill="' + H + '"/>' : '';
-    var g = '<path d="M74 118v-12c0-12 12-18 27-18s27 6 27 18v12z" fill="' + c + '"/><path d="M93 88l8 9 8-9" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>' +
+    var g = '<rect x="80" y="70" width="42" height="64" rx="8" fill="#3a2a20"/><path d="M74 132v-26c0-12 12-18 27-18s27 6 27 18v26z" fill="' + c + '"/><path d="M93 88l8 9 8-9" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>' +
       back + '<rect x="95" y="80" width="12" height="10" rx="3" fill="' + S + '"/>' +
       '<path d="M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z" fill="' + S + '"/><ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + S + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + S + '"/>' +
       '<circle cx="94" cy="62" r="2.2" fill="#2b211b"/><circle cx="108" cy="62" r="2.2" fill="#2b211b"/><path d="M95 72q6 6 12 0" fill="#fff" stroke="#8a4636" stroke-width="1.8" stroke-linejoin="round"/>' + hair +
-      '<text x="101" y="112" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(255,255,255,.9)">' + esc(ini) + '</text>';
-    return '<g transform="translate(' + (x - 101 * .5).toFixed(1) + ' 39) scale(.5)">' + g + '</g>';
+      (ini ? '<text x="101" y="113" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(255,255,255,.9)">' + esc(ini) + '</text>' : '');
+    sc = sc || .5;
+    return '<g transform="translate(' + (x - 101 * sc).toFixed(1) + ' ' + (98 - 118 * sc).toFixed(1) + ') scale(' + sc + ')">' + g + '</g>';
   }
   function people() {
     var HL = window.HomeLife, PP = window.PeoplePlus; if (!HL) return null;
@@ -68,9 +69,9 @@
     }).sort(function (a, b) { return a.w - b.w; });
     var seat = rows.slice(0, 5), n = seat.length, REL = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
     var svg = ground() + deco('people') +
-      '<rect x="44" y="98" width="152" height="8" rx="3" class="sc-wood"/><rect x="54" y="106" width="5" height="22" class="sc-wood"/><rect x="181" y="106" width="5" height="22" class="sc-wood"/>';
+      '';
     seat.forEach(function (r, i) {
-      var x = n === 1 ? 120 : 64 + i * (112 / Math.max(1, n - 1)), c = REL[r.p.rel] || '#3987e5', ini = String(r.p.name || '?').trim().charAt(0).toUpperCase();
+      var x = n === 1 ? 120 : 64 + i * (112 / Math.max(1, n - 1)), c = REL[r.p.rel] || '#3987e5', ini = ((String(r.p.name || '').match(/\p{L}/u) || [''])[0]).toUpperCase();
       var mk = r.marks[0], hot = r.marks.some(function (q) { return q.hot; }) ? 'hot' : '';
       var icon = '';
       if (mk) {
@@ -79,11 +80,13 @@
         if (mk.k === 'talk') icon = '<rect x="' + (x - 10) + '" y="46" width="20" height="13" rx="5" class="sc-bubble"/><path d="M' + (x - 3) + ' 59 l-2 5 6-5z" class="sc-bubble"/><circle cx="' + (x - 5) + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + x + '" cy="52.5" r="1.3" class="sc-dot"/><circle cx="' + (x + 5) + '" cy="52.5" r="1.3" class="sc-dot"/>';
         if (mk.k === 'star') icon = '<path d="M' + x + ' 46 l2.4 5 5.4.6 -4 3.6 1.2 5.4 -5-2.8 -5 2.8 1.2-5.4 -4-3.6 5.4-.6z" class="sc-star"/>';
       }
-      svg += part('people=' + r.p.id, hot, (icon ? '<g transform="translate(0 -15)">' + icon + '</g>' : '') + bust(x, r.p, c, ini)) +
+      svg += part('people=' + r.p.id, hot, (icon ? '<g transform="translate(0 -15)">' + icon + '</g>' : '') + bust(x, r.p, c, ini, n > 4 ? .44 : .5)) +
         (r.marks.length > 1 ? badge(r.marks.length, x + 12, 52) : '');
     });
     if (!n) svg += '<text x="120" y="80" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>';
-    else svg += '<circle cx="' + (64) + '" cy="96" r="0" />' + [0, 1, 2].map(function (i) { return '<ellipse cx="' + (84 + i * 36) + '" cy="97" rx="9" ry="2.2" class="sc-plate"/>'; }).join('');
+    /* the table goes in front, so everyone sits behind it; plates on the table top */
+    svg += '<rect x="40" y="97" width="160" height="7" rx="3" class="sc-wood"/><rect x="40" y="102" width="160" height="2.5" fill="rgba(0,0,0,.25)"/><rect x="52" y="104" width="5" height="24" class="sc-wood"/><rect x="183" y="104" width="5" height="24" class="sc-wood"/>';
+    if (n) seat.forEach(function (r, i) { var x = n === 1 ? 120 : 64 + i * (112 / Math.max(1, n - 1)); svg += '<ellipse cx="' + x.toFixed(1) + '" cy="98.6" rx="' + (n > 4 ? 6 : 8) + '" ry="1.6" class="sc-plate"/>'; });
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
     return { svg: svg, label: L('Your people', 'Personene dine'), list: list, empty: n ? L('Everyone’s fine – nothing coming up this week.', 'Alle har det fint – ingenting denne uka.') : '' };
