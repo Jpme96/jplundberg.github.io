@@ -252,7 +252,7 @@
     box.hidden = !onP; if (!onP) return;
     var D = days(), keys = Object.keys(D).sort(), today = dkey(new Date()), G = goals();
     var head = '<div class="card-head"><h2><i class="bi bi-apple"></i> Apple Health</h2><span class="ah-head-btns">' + (keys.length ? '<button type="button" class="text-btn" data-ahlayout aria-pressed="' + editLayout + '"><i class="bi bi-grid-1x2"></i> ' + (editLayout ? 'Done' : 'Customize') + '</button>' : '') + '<a class="text-btn" href="../?settings=ahealth">' + (keys.length ? 'Settings' : 'Set up') + '</a></span></div>';
-    if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="../?settings=ahealth">Set it up</a> (about 10 minutes, once).</p>'; return; }
+    if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="/cmd/?settings=ahealth">Set it up</a> (about 10 minutes, once).</p>'; return; }
     var w = stats(addDays(today, -6), today), pw = stats(addDays(today, -13), addDays(today, -7));
     var have = METRICS.filter(function (m) { return keys.some(function (k) { return D[k][m[0]] != null; }); });
     if (!have.some(function (m) { return m[0] === chartM; })) chartM = have[0] ? have[0][0] : 'steps';

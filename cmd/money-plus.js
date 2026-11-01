@@ -215,7 +215,7 @@
     function sync() { var f = box; ['note', 'total', 'date', 'cat'].forEach(function (n) { var i = f.querySelector('[name="' + n + '"]'); if (i) x[n] = n === 'total' ? i.value : i.value || x[n]; }); var a = f.querySelector('[name="add"]'); if (a) x.add = a.checked; var np = f.querySelector('[name="np"]'); if (np) newPerson = np.value; }
     function addPerson() {
       var n = newPerson.trim(); if (!n) return;
-      var p = s.people.filter(function (q) { return q.name.toLowerCase() === n.toLowerCase(); })[0];
+      var p = s.people.filter(function (q) { return String(q.name || '').toLowerCase() === n.toLowerCase(); })[0];
       if (!p) { p = { id: uid(), name: n.slice(0, 30) }; s.people.push(p); }
       if (withIds.indexOf(p.id) < 0) withIds.push(p.id); newPerson = ''; draw();
     }

@@ -328,7 +328,7 @@
         if (d) r.bday = d; else if (isPhone(f)) { if (!r.phone) r.phone = f; } else if (!r.name) r.name = f.slice(0, 80);
       });
       if (!r.name) { var prev = out[out.length - 1]; if (prev) { if (r.phone && !prev.phone) prev.phone = r.phone; if (r.bday && !prev.bday) prev.bday = r.bday; } return; }
-      var k = r.name.toLowerCase(); if (seen[k]) return; seen[k] = 1;
+      var k = String(r.name || '').toLowerCase(); if (seen[k]) return; seen[k] = 1;
       out.push(r);
     });
     return out;

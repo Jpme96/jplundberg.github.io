@@ -108,7 +108,7 @@
     out.push(['arrow-repeat', L('Sync', 'Synk'), st === 'off' && !last ? L('Not syncing (this device only)', 'Synker ikke (bare denne enheten)') : (st === 'ok' ? L('Synced ', 'Synket ') : st === 'offline' ? L('Offline · last ', 'Frakoblet · sist ') : L('Last synced ', 'Sist synket ')) + ago(last),
       st === 'off' && !last ? 'warn' : st === 'offline' || hrs > c.syncWarn * 2 ? 'bad' : hrs > c.syncWarn ? 'warn' : 'ok']);
     /* backups */
-    var bk = +(localStorage.getItem('dash.lastBackup') || 0), bd = bk ? (Date.now() - bk) / 864e5 : 999;
+    var bk = Math.max(+(localStorage.getItem('dash.lastBackup') || 0), +((window.Vault && window.Vault.get() || {}).lastBackup || 0)), bd = bk ? (Date.now() - bk) / 864e5 : 999;
     out.push(['cloud-arrow-down', L('Backup', 'Sikkerhetskopi'), bk ? L('Downloaded ', 'Lastet ned ') + ago(bk) : L('Never downloaded', 'Aldri lastet ned'), bd > c.backupWarn * 2 ? 'bad' : bd > c.backupWarn ? 'warn' : 'ok']);
     /* security */
     var pk = !!localStorage.getItem('dash.pk'), rec = !!d._recCode;
@@ -186,8 +186,8 @@
       if (!S.visitors) body = '<p class="muted">' + L('Loading …', 'Laster …') + '</p>';
       else if (!S.visitors.ok || !v) body = '<p class="muted">' + L('Visitor numbers aren’t available (Cloudflare analytics not set up or not answering).', 'Besøkstall er ikke tilgjengelig (Cloudflare-statistikk ikke satt opp eller svarer ikke).') + '</p>';
       else body = '<div class="cr-kpis"><div><b data-cu>' + nf.format(v.visits || 0) + '</b><small>' + L('visits · 7 days', 'besøk · 7 dager') + '</small></div><div><b>' + nf.format(v.views || 0) + '</b><small>' + L('page views', 'sidevisninger') + '</small></div></div>' + bars(v.perDay, 'visits') +
-        ((v.pages || []).length ? '<ul class="cr-list">' + v.pages.slice(0, 5).map(function (p) { return '<li><span>' + esc(p.name || '/') + '</span><b>' + p.visits + '</b></li>'; }).join('') + '</ul>' : '') +
-        ((v.referrers || []).filter(function (r) { return r.name; }).length ? '<p class="cr-sub">' + L('From', 'Fra') + ': ' + v.referrers.filter(function (r) { return r.name; }).slice(0, 4).map(function (r) { return esc(r.name) + ' (' + r.visits + ')'; }).join(' · ') + '</p>' : '');
+        ((v.pages || []).length ? '<ul class="cr-list">' + v.pages.slice(0, 5).map(function (p) { return '<li><span>' + esc(p.name || '/') + '</span><b>' + nf.format(p.views || p.visits || 0) + '</b></li>';   /* page views: Cloudflare counts a visit only on the page people land on, so other pages showed 0 */ }).join('') + '</ul>' : '') +
+        ((v.referrers || []).filter(function (r) { return r.name; }).length ? '<p class="cr-sub">' + L('From', 'Fra') + ': ' + v.referrers.filter(function (r) { return r.name; }).slice(0, 4).map(function (r) { return esc(r.name) + ' (' + nf.format(r.visits || r.views || 0) + ')'; }).join(' · ') + '</p>' : '');
       C['site'] = card('site', 'bar-chart-line', L('Visitors', 'Besøkende'), '<a class="icon-btn sm" href="https://jplundberg.com/" target="_blank" rel="noopener" aria-label="' + L('Open the site', 'Åpne nettstedet') + '"><i class="bi bi-box-arrow-up-right"></i></a>', body);
     }
     /* uptime + speed */

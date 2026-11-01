@@ -230,9 +230,9 @@
   function budgetEditor(kind, title, ph) {
     var rows = D.budget[kind].map(function (r) {
       if (r.src === 'sub') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
-        '<a class="del" href="finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
+        '<a class="del" href="/cmd/finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
       if (r.src === 'save') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
-        '<a class="del" href="finance/#c=savings" title="From Savings goals – change it there" aria-label="' + esc(r.name) + ' comes from Savings goals"><i class="bi bi-link-45deg"></i></a></li>';
+        '<a class="del" href="/cmd/finance/#c=savings" title="From Savings goals – change it there" aria-label="' + esc(r.name) + ' comes from Savings goals"><i class="bi bi-link-45deg"></i></a></li>';
       return '<li class="b-row"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
@@ -751,7 +751,7 @@
       .sort(function (a, b) { return a.k > b.k ? 1 : -1; });
     if (!up.length) return;
     var total = up.reduce(function (a, x) { return a + (+x.s.amount || 0); }, 0);
-    var html = '<p class="bill-sum bill-subs"><i class="bi bi-arrow-repeat"></i> Yearly subscriptions next 30 days · ' + money(total) + ' <a href="finance/#subs">See all</a></p><ul>' +
+    var html = '<p class="bill-sum bill-subs"><i class="bi bi-arrow-repeat"></i> Yearly subscriptions next 30 days · ' + money(total) + ' <a href="/cmd/finance/#subs">See all</a></p><ul>' +
       up.slice(0, 4).map(function (x) {
         var d = Fe.fromKey(x.k), diff = Math.round((d - Fe.fromKey(today)) / 864e5);
         return '<li class="bill sub"><span class="check sub-ic"><i class="bi bi-arrow-repeat"></i></span><span class="bill-text"><strong>' + esc(x.s.name) + '</strong><span>' +

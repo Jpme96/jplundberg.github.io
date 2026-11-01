@@ -885,6 +885,10 @@
     'Couldn’t load statistics right now.': 'Klarte ikke å laste statistikken akkurat nå.', 'Couldn’t load your articles right now.': 'Klarte ikke å laste artiklene akkurat nå.',
     'Couldn’t load your articles. Check your connection.': 'Klarte ikke å laste artiklene. Sjekk tilkoblingen.', 'Connect GitHub first (see the guide).': 'Koble til GitHub først (se veiledningen).',
     'Update the Worker code to use this (see the guide).': 'Oppdater Worker-koden for å bruke dette (se veiledningen).',
+    'Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest.': 'Skritt, søvn, hvilepuls og trening fra iPhonen – sendt av en snarvei hver kveld og lagret kryptert sammen med resten.',
+    'Set it up': 'Sett det opp', '(about 10 minutes, once).': '(omtrent 10 minutter, én gang).',
+    'Your roles': 'Rollene dine', 'Separated by commas. They rotate under your name.': 'Skilt med komma. De veksler under navnet ditt.', 'Text above the contact cards': 'Tekst over kontaktkortene',
+    'End of each article': 'Slutten av hver artikkel', 'About you, in the footer': 'Om deg, i bunnteksten', 'Start from the site’s list': 'Start fra nettstedets liste',
     'Pick today’s top 3 and give them a time.': 'Velg dagens topp 3 og gi dem et tidspunkt.', 'Nothing on your list – enjoy the free time.': 'Ingenting på lista – nyt fritiden.'
   });
   P.unshift([/^([\d,.]+) · goal ([\d,.]+) reached$/, '$1 · målet på $2 er nådd'], [/^(\d+) · goal (\d+)$/, '$1 · mål $2']);

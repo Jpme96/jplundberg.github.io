@@ -465,7 +465,7 @@
   function ingredients(r) { return String((r && r.ingr) || '').split('\n').map(function (x) { return x.replace(/^[-•*\s]+/, '').trim(); }).filter(Boolean); }
   function addShop(items, from) {
     var t = Fe.tools(), l = Array.isArray(t.shop) ? t.shop : [], have = {}, n = 0;
-    l.forEach(function (x) { if (!x.done) have[x.text.toLowerCase()] = 1; });
+    l.forEach(function (x) { if (!x.done) have[String(x.text || '').toLowerCase()] = 1; });
     addShop.skipped = [];
     items.forEach(function (s) {
       s = String(s).trim().slice(0, 120); if (!s || have[s.toLowerCase()]) return;
@@ -629,7 +629,7 @@
       if ((b = e.target.closest('[data-shaisle]'))) {
         var it = list().filter(function (x) { return x.id === b.dataset.shaisle; })[0]; if (!it) return;
         picker('signpost', it.text, 'Which section is it in?', AISLES.map(function (a) { return { n: a[1], i: a[2], c: a[3], k: a[0] }; }), function (o) {
-          var t = Fe.tools(); t.shopcat = t.shopcat || {}; t.shopcat[it.text.toLowerCase().trim()] = o.k; Fe.saveTools(t);
+          var t = Fe.tools(); t.shopcat = t.shopcat || {}; t.shopcat[String(it.text || '').toLowerCase().trim()] = o.k; Fe.saveTools(t);
           toast('<i class="bi bi-signpost"></i> ' + esc(it.text) + ' → ' + esc(o.n) + ' – remembered');
         });
         return;

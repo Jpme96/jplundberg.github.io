@@ -45,7 +45,7 @@
   function phrasesFor(part) {
     var mine = myPhrases().filter(function (x) { return x.part === part; }).map(function (x) { return { id: x.id, text: x.text, action: x.action || '', tg: x.tg || '', mine: true }; });
     var b = (BUILT[partKey(part)] || []).map(function (x, i) { return { id: 'b' + i, text: nb() ? x[1] : x[0], action: nb() ? x[3] : x[2], tg: x[4] }; });
-    var seen = {}; return mine.concat(b).filter(function (x) { var k = x.text.toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
+    var seen = {}; return mine.concat(b).filter(function (x) { var k = String(x.text || '').toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
   }
   var last = { part: null, tg: null };
   function decorate(form) {
@@ -95,7 +95,7 @@
       if (e.target.closest('[data-fdvphsave]') && f) {
         var text = f.text.value.trim(); if (!text) { f.text.focus(); toast('<i class="bi bi-info-circle"></i> Type the finding first, then save it as a phrase'); return; }
         var t = Fe.tools(); t.fdvph = Array.isArray(t.fdvph) ? t.fdvph : [];
-        if (!t.fdvph.some(function (q) { return q.part === f.part.value && q.text.toLowerCase() === text.toLowerCase(); })) t.fdvph.push({ id: uid(), part: f.part.value, text: text.slice(0, 300), action: f.action.value.trim().slice(0, 200), tg: f.tg.value });
+        if (!t.fdvph.some(function (q) { return q.part === f.part.value && String(q.text || '').toLowerCase() === text.toLowerCase(); })) t.fdvph.push({ id: uid(), part: f.part.value, text: text.slice(0, 300), action: f.action.value.trim().slice(0, 200), tg: f.tg.value });
         var keep = { text: f.text.value, action: f.action.value };
         Fe.saveTools(t);
         setTimeout(function () { var f2 = host.querySelector('form.fdv-add'); if (f2) { f2.text.value = keep.text; f2.action.value = keep.action; } }, 80);

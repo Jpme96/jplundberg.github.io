@@ -63,7 +63,8 @@
     ['Butter', 'Smør', ['smør', 'butter']], ['Eggs', 'Egg', ['egg', 'eggs']], ['Milk', 'Melk', ['melk', 'milk']], ['Onions', 'Løk', ['løk', 'onion', 'onions']], ['Garlic', 'Hvitløk', ['hvitløk', 'garlic']],
     ['Tinned tomatoes', 'Hermetiske tomater', ['hakkede tomater', 'tomater på boks', 'tinned tomatoes', 'chopped tomatoes']], ['Stock cubes', 'Buljong', ['buljong', 'buljongterning', 'stock cube']], ['Soy sauce', 'Soyasaus', ['soyasaus', 'soy sauce']],
     ['Toilet paper', 'Dopapir', ['dopapir', 'toilet paper']], ['Washing-up liquid', 'Oppvaskmiddel', ['oppvaskmiddel', 'washing-up liquid']]];
-  function pantry() { return Fe.list('pantry'); }
+  /* an item without a name (old format, half-saved) is skipped, so it can't stop the card from drawing */
+  function pantry() { return Fe.list('pantry').filter(function (x) { return typeof x.name === 'string' && x.name.trim(); }); }
   function word(k) { try { return new RegExp('(^|[^\\p{L}])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'iu'); } catch (e) { return new RegExp('\\b' + k + '\\b', 'i'); } }
   function keys(x) { return [String(x.name || '').toLowerCase()].concat(x.alt || []).filter(Boolean); }
   /* an ingredient line that is one of your basics, in stock → stays off the shopping list */
@@ -96,11 +97,11 @@
     var by = {}; l.forEach(function (x) { var a = HL.aisleOf(x.name); (by[a] = by[a] || []).push(x); });
     var groups = Object.keys(by).sort(function (a, b) { return HL.AISLE[a].i - HL.AISLE[b].i; });
     /* a tidy pantry: what's running out on top, then everything as tap-able chips by shop section */
-    var sorted = function (arr) { return arr.slice().sort(function (x, y) { return x.name.localeCompare(y.name, 'nb'); }); };
+    var sorted = function (arr) { return arr.slice().sort(function (x, y) { return String(x.name || '').localeCompare(String(y.name || ''), 'nb'); }); };
     var chip = function (x) {
       var lw = x.state === 'low';
       if (editP) return '<span class="pn-chip edit" data-noi18n>' + esc(x.name) + '<button type="button" data-fpdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></span>';
-      return '<button type="button" class="pn-chip' + (lw ? ' low' : '') + '" ' + (lw ? 'data-fpok' : 'data-fplow') + '="' + esc(x.id) + '" data-pn="' + esc(x.name.toLowerCase()) + '" aria-label="' + esc(x.name) + (lw ? ' – on the shopping list, tap when you have it again' : ' – tap if it’s running out') + '">' +
+      return '<button type="button" class="pn-chip' + (lw ? ' low' : '') + '" ' + (lw ? 'data-fpok' : 'data-fplow') + '="' + esc(x.id) + '" data-pn="' + esc(String(x.name || '').toLowerCase()) + '" aria-label="' + esc(x.name) + (lw ? ' – on the shopping list, tap when you have it again' : ' – tap if it’s running out') + '">' +
         (lw ? '<i class="bi bi-cart3"></i>' : '') + '<span data-noi18n>' + esc(x.name) + '</span></button>';
     };
     var body = l.length ? (low.length && !editP ? '<div class="pn-low"><p><i class="bi bi-cart3"></i> Running out · on your shopping list</p><div class="pn-chips">' + sorted(low).map(function (x) {
@@ -143,7 +144,7 @@
     var f = e.target.closest('.fp5-padd'); if (!f) return;
     e.preventDefault();
     var inp = f.querySelector('input'), names = inp.value.split(/,|\n/).map(function (x) { return x.trim().slice(0, 60); }).filter(Boolean); inp.value = '';
-    var t = Fe.tools(), l = Array.isArray(t.pantry) ? t.pantry : [], have = {}; l.forEach(function (x) { have[x.name.toLowerCase()] = 1; });
+    var t = Fe.tools(), l = Array.isArray(t.pantry) ? t.pantry : [], have = {}; l.forEach(function (x) { have[String(x.name || '').toLowerCase()] = 1; });
     var added = 0, already = [];
     names.forEach(function (n) { if (!have[n.toLowerCase()]) { l.push({ id: uid(), name: n.charAt(0).toUpperCase() + n.slice(1), state: 'ok' }); have[n.toLowerCase()] = 1; added++; } else already.push(n.toLowerCase()); });
     var el = $t('pantry'); if (el) filterPantry(el, '');
@@ -172,7 +173,7 @@
     }
     if ((b = e.target.closest('[data-fpok]'))) {
       var id = b.dataset.fpok, p = pantry().filter(function (q) { return q.id === id; })[0]; if (!p) return;
-      var t = Fe.tools(); (t.shop || []).forEach(function (s) { if (s.from === 'pantry' && s.text.toLowerCase() === p.name.toLowerCase()) s.done = true; });
+      var t = Fe.tools(); (t.shop || []).forEach(function (s) { if (s.from === 'pantry' && String(s.text || '').toLowerCase() === String(p.name || '').toLowerCase()) s.done = true; });
       (t.pantry || []).forEach(function (q) { if (q.id === id) q.state = 'ok'; }); Fe.saveTools(t);
       toast('<i class="bi bi-check2"></i> ' + esc(p.name) + ' – in stock'); return;
     }

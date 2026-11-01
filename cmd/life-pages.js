@@ -444,7 +444,7 @@
   var STARTER = [['Push', ['Bench press', 'Overhead press', 'Dips', 'Triceps pushdown']], ['Pull', ['Pull-ups', 'Barbell row', 'Lat pulldown', 'Biceps curl']], ['Legs', ['Squat', 'Romanian deadlift', 'Leg press', 'Calf raise']]];
   function starter() {
     var l = templates();
-    STARTER.forEach(function (s) { if (!l.some(function (t) { return t.name.toLowerCase() === s[0].toLowerCase(); })) l.push({ id: uid(), name: s[0], ex: s[1].map(function (n) { return { n: n, sets: 3, r: 8 }; }) }); });
+    STARTER.forEach(function (s) { if (!l.some(function (t) { return String(t.name || '').toLowerCase() === s[0].toLowerCase(); })) l.push({ id: uid(), name: s[0], ex: s[1].map(function (n) { return { n: n, sets: 3, r: 8 }; }) }); });
     saveTpls(l); toast('<i class="bi bi-collection"></i> Push, Pull and Legs added – tap one to start');
   }
   function fromTpl(t) {
@@ -496,7 +496,7 @@
       if (e.target.closest('[data-gtplsave]') || e.target.closest('[data-gtplupd]')) {
         var upd = !!e.target.closest('[data-gtplupd]'), nm = upd ? '' : (box.querySelector('[data-gtplname]').value || '').trim();
         if (!upd && !nm) { box.querySelector('[data-gtplname]').focus(); return; }
-        var L = templates(), ex = s.ex.filter(function (x) { return x.n; }).map(tplOf), same = upd ? L.filter(function (t) { return t.id === s.tpl; })[0] : L.filter(function (t) { return t.name.toLowerCase() === nm.toLowerCase(); })[0];
+        var L = templates(), ex = s.ex.filter(function (x) { return x.n; }).map(tplOf), same = upd ? L.filter(function (t) { return t.id === s.tpl; })[0] : L.filter(function (t) { return String(t.name || '').toLowerCase() === nm.toLowerCase(); })[0];
         if (same) { same.ex = ex; if (nm) same.name = nm; } else { same = { id: uid(), name: nm.slice(0, 30), ex: ex }; L.push(same); }
         s.tpl = same.id; saveTpls(L); naming = false; draw();
         toast('<i class="bi bi-collection"></i> Template “' + esc(same.name) + '” saved – ' + ex.length + ' exercise' + (ex.length === 1 ? '' : 's')); return;
@@ -566,7 +566,7 @@
         if (/work|jobb|kurs|conference|konferanse|møte/i.test((tr.name || '') + ' ' + (tr.notes || ''))) L.push('Laptop and charger', 'Smart clothes', 'Business cards');
         if (/ski|hytte|cabin|fjell/i.test((tr.name || '') + ' ' + (tr.dest || '') + ' ' + (tr.notes || ''))) L.push('Wool layer', 'Ski goggles', 'Thermos');
         tr.pack = tr.pack || []; var added = 0;
-        L.forEach(function (x) { var base = x.replace(/^\d+ × /, '').toLowerCase(); if (!tr.pack.some(function (q) { return q.text.toLowerCase().replace(/^\d+ × /, '') === base; })) { tr.pack.push({ id: uid(), text: x, done: false }); added++; } });
+        L.forEach(function (x) { var base = x.replace(/^\d+ × /, '').toLowerCase(); if (!tr.pack.some(function (q) { return String(q.text || '').toLowerCase().replace(/^\d+ × /, '') === base; })) { tr.pack.push({ id: uid(), text: x, done: false }); added++; } });
         F.saveTravel(data); window.dispatchEvent(new Event('travel:change'));
         sp.disabled = false; sp.innerHTML = '<i class="bi bi-bag-check"></i> Smart list';
         toast('<i class="bi bi-bag-check"></i> ' + added + ' things added' + (w.guess ? ' (weather from the season – forecast comes 2 weeks before)' : ' · ' + Math.round(w.min) + '–' + Math.round(w.max) + '°' + (w.rain >= 50 ? ', rain likely' : '')));

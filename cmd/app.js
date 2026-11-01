@@ -20,7 +20,9 @@
   function backupNote() {
     var el = $('backupNote');
     if (!el) return;
-    var last = +lsGet('dash.lastBackup') || 0, snooze = +lsGet('dash.backupSnooze') || 0, now = Date.now();
+    /* a backup taken on another device counts too */
+    var vd = window.Vault && window.Vault.get && window.Vault.get();
+    var last = Math.max(+lsGet('dash.lastBackup') || 0, +(vd && vd.lastBackup) || 0), snooze = +lsGet('dash.backupSnooze') || 0, now = Date.now();
     var first = +lsGet('dash.firstUse') || 0;
     if (!first) { lsSet('dash.firstUse', String(now)); first = now; }
     var due = last ? now - last > 30 * DAY : now - first > 7 * DAY;     // give a new setup a week first
