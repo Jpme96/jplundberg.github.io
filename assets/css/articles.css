@@ -345,3 +345,9 @@
 .article-body .article-stats { margin: 1.6rem 0 .6rem; }
 .article-body .article-charts { margin: 1.4rem 0 2rem; }
 .article-body figure.chart-inline { margin: 2rem 0; }
+
+/* touch screens: breadcrumb, "All articles/projects" and back links get a finger-sized tap area without moving anything (audit 2 Nov 2026) */
+@media (pointer: coarse) {
+  .page-hero .crumbs a, .more-link, .article-body .back { position: relative; }
+  .page-hero .crumbs a::after, .more-link::after, .article-body .back::after { content: ""; position: absolute; inset: -12px -6px; }
+}
