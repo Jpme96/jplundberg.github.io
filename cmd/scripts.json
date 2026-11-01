@@ -135,7 +135,8 @@
       "kit.js",
       "profile.js",
       "admin.js",
-      "writer.js"
+      "writer.js",
+      "diag-ui.js"
     ]
   },
   "settings": [

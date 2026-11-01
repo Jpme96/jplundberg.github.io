@@ -3743,3 +3743,33 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 @media (min-width: 900px) { .aw.aw-follow .aw-pv { position: sticky !important; top: 84px; } }
 /* one "+": on the calendar the top "+" adds events (with "More options" for the full editor), so the extra New button goes */
 #clNew { display: none !important; }
+/* Diagnostics in Admin → System (diag-ui.js) */
+.dgu-top { margin-bottom: 14px; }
+.dgu-ans { display: flex; gap: 14px; align-items: flex-start; }
+.dgu-ans b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -.01em; } .dgu-ans small { color: var(--muted); font-size: 12.5px; }
+.dgu-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 7px; background: var(--ok, #22b35e); box-shadow: 0 0 12px var(--ok, #22b35e); }
+.dgu-top.bad .dgu-dot { background: #e0a100; box-shadow: 0 0 12px #e0a100; }
+.dgu-needs { list-style: none; margin: 12px 0 0; padding: 0; } .dgu-needs li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.dgu-needs li > .bi { color: #e0a100; flex: none; } .dgu-needs li > span { flex: 1; min-width: 0; } .dgu-needs .text-btn { flex: none; white-space: nowrap; }
+.dgu-acts { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.dgu-probs { list-style: none; margin: 0; padding: 0; } .dgu-probs li { padding: 10px 0; border-bottom: 1px solid var(--line); } .dgu-probs li:last-child { border-bottom: 0; }
+.dgu-probs li.need .dgu-ph b::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e0a100; margin-right: 7px; vertical-align: middle; }
+.dgu-ph b { display: block; font-size: 14px; } .dgu-ph small { color: var(--muted); font-size: 12px; }
+.dgu-probs p { margin: 4px 0 2px; font-size: 13px; color: var(--muted); }
+.dgu-probs details summary { cursor: pointer; font-size: 12px; color: var(--muted); } .dgu-probs code { display: block; margin-top: 4px; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); }
+.dgu-ok { color: var(--ok, #22b35e); }
+.dgu-steps { margin-top: 10px; padding: 12px; border-radius: 12px; background: color-mix(in srgb, #e0a100 10%, transparent); } .dgu-steps ol { margin: 6px 0 10px; padding-left: 18px; font-size: 13px; }
+.dgu-sph { margin-top: 12px; } .dgu-speed { list-style: none; margin: 4px 0 0; padding: 0; } .dgu-speed li { display: grid; grid-template-columns: 90px 1fr 48px; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
+.dgu-speed i { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; } .dgu-speed em { display: block; height: 100%; border-radius: 99px; background: var(--accent); } .dgu-speed em.slow { background: #e0a100; } .dgu-speed b { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.dgu-test { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
+.dgu-test li { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; min-width: 0; } .dgu-test li span { color: var(--muted); font-size: 12.5px; min-width: 0; overflow-wrap: anywhere; }
+.dgu-test li.ok > .bi { color: var(--ok, #22b35e); } .dgu-test li.bad > .bi { color: var(--bad, #e66767); } .dgu-test li.skip > .bi { color: var(--muted); }
+.dgu-frame { position: fixed; left: -12000px; top: 0; border: 0; visibility: hidden; pointer-events: none; }
+.dgu-sheet { position: fixed; inset: 0; z-index: 2100; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.55); }
+.dgu-box { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: rgb(var(--card-rgb, 24, 25, 29)); box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+.dgu-box h3 { margin: 0 0 6px; font-size: 18px; display: flex; gap: 8px; align-items: center; } .dgu-box p { font-size: 13px; margin: 0 0 10px; }
+.dgu-box textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.04); color: var(--text); font: inherit; font-size: 15px; padding: 10px 12px; resize: vertical; }
+.dgu-chk { display: flex; gap: 8px; align-items: center; font-size: 13.5px; margin: 10px 0 6px; }
+.dgu-peek summary { cursor: pointer; font-size: 12.5px; color: var(--muted); } .dgu-peek pre { max-height: 200px; overflow: auto; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(0,0,0,.2); border-radius: 10px; padding: 10px; color: var(--muted); }
+.dgu-sbar { display: flex; align-items: center; gap: 8px; margin-top: 12px; } .dgu-sbar > span { flex: 1; }
+:root[data-theme="light"] .dgu-box textarea { background: #fff; }

@@ -606,13 +606,16 @@
       setTimeout(function () { window.dispatchEvent(new CustomEvent('admin:goto', { detail: k })); }, 60);
       return;
     }
-    location.href = '/cmd/admin/' + (k === 'write' ? '#write=new-articles' : k === 'overview' || k === 'visitors' ? '#overview' : '#ws=' + k);
+    location.href = '/cmd/admin/' + (k === 'write' ? '#write=new-articles' : k === 'overview' || k === 'visitors' ? '#overview' : k === 'system' || k === 'report' ? '#' + k : '#ws=' + k);
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-goadmin]'); if (!b) return;
     e.preventDefault(); goAdmin(b.dataset.goadmin);
   });
-  if (!ON_ADMIN) window.addEventListener('st:page', function (e) { if (WEB_KEYS.indexOf(e.detail) > -1) goAdmin(e.detail); });
+  window.addEventListener('st:page', function (e) {
+    if (e.detail === 'diag') { goAdmin('system'); return; }            /* Diagnostics lives in Admin → System */
+    if (!ON_ADMIN && WEB_KEYS.indexOf(e.detail) > -1) goAdmin(e.detail);
+  });
 
   /* ---------- page changes in the settings panel ---------- */
   window.addEventListener('st:page', function (e) {

@@ -9,7 +9,7 @@
    Loaded first on every page (head bundle), so it sees errors in everything after it. */
 (function () {
   "use strict";
-  var LOG = 'dash.errlog', ST = 'dash.diag', MAX = 40;
+  var LOG = 'dash.errlog', ST = 'dash.diag', MAX = 60;
   var nb = function () { return !!(window.I18N && window.I18N.lang === 'nb'); };
   function L(en, no) { return nb() ? no : en; }
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
@@ -32,12 +32,14 @@
     if (file) { var f = String(file).split('?')[0].split('/').pop(); return f + (line ? ':' + line : ''); }
     return '';
   }
-  function log(kind, msg, at) {
+  /* log(kind, message, where, opts): opts.raw keeps numbers (only for our own messages, e.g. page times), opts.p = page */
+  function log(kind, msg, at, opts) {
+    opts = opts || {};
     var l = readJSON(LOG, []); if (!Array.isArray(l)) l = [];
-    var m = scrub(msg), a = String(at || '').slice(0, 60), now = Date.now();
+    var m = opts.raw ? String(msg).slice(0, 180) : scrub(msg), a = String(at || '').slice(0, 90), now = Date.now(), pg = opts.p || page();
     var hit = l.filter(function (x) { return x.k === kind && x.m === m && x.a === a; })[0];
-    if (hit) { hit.n = (hit.n || 1) + 1; hit.t = now; hit.p = page(); }
-    else l.push({ k: kind, m: m, a: a, p: page(), t: now, n: 1 });
+    if (hit) { hit.n = (hit.n || 1) + 1; hit.t = now; hit.p = pg; }
+    else l.push({ k: kind, m: m, a: a, p: pg, t: now, n: 1 });
     l.sort(function (x, y) { return x.t - y.t; });
     writeJSON(LOG, l.slice(-MAX));
     try { window.dispatchEvent(new Event('diag:log')); } catch (e) {}
@@ -59,6 +61,193 @@
   });
   /* the bundles wrap each file in try/catch (cmd/build.py) and report here */
   window.__dlog = function (e, file) { log('script', (e && e.message) || String(e), file + (e && e.stack ? ' ' + where(e.stack) : '')); };
+
+  var IN_TEST = /[?&]selftest=1/.test(location.search) || window !== window.top;   /* Admin's "Test everything" runs pages in a frame */
+  function root() { return document.documentElement; }
+  function unlocked() { return root().classList.contains('unlocked'); }
+
+  /* ---------- the last few taps, as element names only (never the text on them) ---------- */
+  var crumbs = [];
+  function label(el) {
+    if (!el || !el.tagName) return '';
+    var t = (el.closest && el.closest('button, a, input, select, textarea, label, summary, [role="button"], [data-go], [data-tab]')) || el;
+    var s = t.tagName.toLowerCase();
+    if (t.id) s += '#' + t.id;
+    var da = Array.prototype.filter.call(t.attributes || [], function (a) { return /^data-/.test(a.name) && !/^data-(noi18n|aos|i18n)/.test(a.name); }).slice(0, 2)
+      .map(function (a) { return '[' + a.name.slice(5) + (a.value && a.value.length < 26 && /^[\w\-\/:.|]+$/.test(a.value) ? '=' + a.value : '') + ']'; }).join('');
+    if (!t.id && !da && typeof t.className === 'string' && t.className.trim()) s += '.' + t.className.trim().split(/\s+/).slice(0, 2).join('.');
+    if (t.tagName === 'A') { var h = t.getAttribute('href') || ''; if (/^(\/cmd\/|[a-z]+\/$|#)/.test(h)) s += '[' + h.split('?')[0].slice(0, 30) + ']'; }
+    return (s + da).slice(0, 80);
+  }
+  document.addEventListener('click', function (e) { crumbs.push({ t: Date.now(), a: label(e.target), p: page() }); if (crumbs.length > 10) crumbs.shift(); }, true);
+
+  /* ---------- freezes: a watchdog while the page is open, and a heartbeat that notices a page that died ---------- */
+  var HB = 'dash.hb';
+  function beat(closed) {
+    if (IN_TEST) return;
+    try { sessionStorage.setItem(HB, JSON.stringify({ t: Date.now(), p: page(), v: document.visibilityState === 'visible', c: crumbs.slice(-3).map(function (x) { return x.a; }), x: !!closed })); } catch (e) {}
+  }
+  if (!IN_TEST) {
+    try {
+      var prev = JSON.parse(sessionStorage.getItem(HB) || 'null'), gap = prev ? Date.now() - prev.t : 0;
+      /* the last page was visible, never said goodbye and stopped beating: it froze (or the system closed it) */
+      if (prev && !prev.x && prev.v && gap > 2500 && gap < 15 * 6e4) {
+        log('freeze', 'The page stopped responding or was closed while open', prev.c && prev.c.length ? L('after ', 'etter ') + prev.c.join(' › ') : '', { p: prev.p, raw: true });
+        setTimeout(function () { notice('freeze', L('The dashboard stopped responding last time. It has been noted – want to send a report?', 'Dashbordet sluttet å svare sist. Det er notert – vil du sende en rapport?'), L('Report', 'Rapporter'), function () { openPanel('report'); }, 'bug'); }, 2500);
+      }
+    } catch (e) {}
+    beat(false);
+    var lastTick = Date.now(), lastVis = !document.hidden;
+    setInterval(function () {
+      var now = Date.now(), vis = !document.hidden, g = now - lastTick;
+      /* a long gap while visible both before and after = the page was stuck (gaps over 2 minutes are a sleeping computer) */
+      if (vis && lastVis && g > 4000 && g < 120000) log('freeze', 'The page was stuck for ' + Math.round(g / 1000) + ' s', crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '', { raw: true });
+      lastTick = now; lastVis = vis; beat(false);
+    }, 1000);
+    document.addEventListener('visibilitychange', function () { lastTick = Date.now(); lastVis = !document.hidden; beat(false); });
+    window.addEventListener('pagehide', function () { beat(true); });
+  }
+
+  /* ---------- server calls that fail (own Worker and the outside services) ---------- */
+  var SERVICES = { 'api.entur.io': 'Entur', 'api.open-meteo.com': 'Weather', 'geocoding-api.open-meteo.com': 'Weather search', 'api.frankfurter.app': 'Exchange rates', 'api.frankfurter.dev': 'Exchange rates',
+    'nominatim.openstreetmap.org': 'Addresses', 'api.github.com': 'GitHub', 'raw.githubusercontent.com': 'GitHub', 'hvakosterstrommen.no': 'Power prices' };
+  function svc(url) {
+    var u; try { u = new URL(url, location.href); } catch (e) { return null; }
+    if (u.origin === location.origin) { var m = u.pathname.match(/^\/cmd\/api\/([a-z]+)/); return m ? 'api/' + m[1] : null; }
+    return SERVICES[u.hostname.replace(/^www\./, '')] || null;
+  }
+  var netOk = {};
+  function netCheck(url, status, init) {
+    var s = svc(url); if (!s) return;
+    var hd = init && init.headers; if (hd && (hd['X-Diag-Probe'] || (hd.get && hd.get('X-Diag-Probe')))) return;
+    var method = String((init && init.method) || 'GET').toUpperCase();
+    if (status >= 200 && status < 400) { netOk[s] = Date.now(); return; }
+    if (!status && navigator.onLine === false) return;                     // offline: the sync notice already says so
+    if (s === 'api/vault' && status === 404) return;                         // nothing saved on the server yet
+    if (status === 409 || status === 412) return;                            // "changed elsewhere" – handled where it happens
+    log('net', s + ' ' + method + ' ' + (status || 'no answer'), '', { raw: true });
+  }
+  if (window.fetch) {
+    var of = window.fetch;
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      var pr = of.apply(this, arguments);
+      try { pr.then(function (r) { netCheck(url, r.status, init); }, function (e) { if (!e || e.name !== 'AbortError') netCheck(url, 0, init); }); } catch (e) {}
+      return pr;
+    };
+  }
+
+  /* ---------- how fast each page opens on this device (only when it unlocks by itself) ---------- */
+  var SPEED = 'dash.speed';
+  (function () {
+    var typed = false, done = false;
+    document.addEventListener('input', function (e) { if (e.target && /^lock/.test(e.target.id || '')) typed = true; }, true);
+    document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#lockPk, #lockSubmit')) typed = true; }, true);
+    function check() {
+      if (done || !unlocked()) return; done = true;
+      var ms = Math.round(performance.now());
+      if (typed || IN_TEST || ms > 15000) return;
+      var all = readJSON(SPEED, {}), pg = page(), list = Array.isArray(all[pg]) ? all[pg] : [];
+      if (list.length >= 5) {
+        var med = list.slice().sort(function (a, b) { return a - b; })[Math.floor(list.length / 2)];
+        if (ms > Math.max(1500, med * 1.8)) log('slow', 'Opened in ' + (ms / 1000).toFixed(1) + ' s (usually ' + (med / 1000).toFixed(1) + ' s)', '', { raw: true });
+      }
+      list.push(ms); all[pg] = list.slice(-20); writeJSON(SPEED, all);
+    }
+    new MutationObserver(check).observe(root(), { attributes: true, attributeFilter: ['class'] });
+    check();
+  })();
+
+  /* ---------- broken things on the page: "undefined", "NaN", pictures that don't load, out-of-place bars ---------- */
+  var seen = {};
+  function once(sig) { if (seen[sig]) return false; seen[sig] = 1; return true; }
+  function spot(el) {
+    var c = el.closest && el.closest('[data-tool], section[id], .card[id], [id]');
+    if (!c) return L('the page', 'siden');
+    return c.dataset && c.dataset.tool ? 'card ' + c.dataset.tool : '#' + c.id;
+  }
+  var BAD = /(^|[^\w])(undefined|NaN|\[object Object\]|Invalid Date)([^\w]|$)/;
+  function overlayOpen() {
+    var r = root(), b = document.body;
+    return r.classList.contains('wrs-open') || (b && (b.classList.contains('qa-open') || b.classList.contains('st-open') || b.classList.contains('rp-open'))) || !!document.querySelector('dialog[open], .sheet.open, .kit-sheet.open, #settings.open, .st-panel.open');
+  }
+  function scanContent(found) {
+    var main = document.querySelector('main') || document.body; if (!main) return;
+    var w = document.createTreeWalker(main, 4), n, hits = 0;
+    while ((n = w.nextNode()) && hits < 4) {
+      var v = n.nodeValue; if (!v || v.length > 240) continue;
+      var m = v.match(BAD); if (!m) continue;
+      var el = n.parentElement;
+      if (!el || !el.offsetParent || el.closest('script, style, textarea, code, pre, input, [contenteditable], .dg-errs, .cr-errs, .dgu, #wrStudio')) continue;
+      hits++; var sig = 'c|' + m[2] + '|' + spot(el);
+      if (once(sig)) { log('content', 'Shows "' + m[2] + '" in ' + spot(el), '', { raw: true }); found.push(sig); }
+    }
+    Array.prototype.forEach.call(document.images, function (img) {
+      var src = img.getAttribute('src') || '';
+      if (!src || /^data:/.test(src) || !img.complete || img.naturalWidth || !img.offsetParent) return;
+      var sig = 'i|' + src.split('?')[0].slice(-60);
+      if (once(sig)) { log('content', 'A picture didn’t load in ' + spot(img), src.split('?')[0].replace(/^https?:\/\/[^/]+/, '').slice(0, 80), { raw: true }); found.push(sig); }
+    });
+  }
+  function scanLayout(found) {
+    var iw = innerWidth, over = root().scrollWidth - iw;
+    if (over > 4 && !overlayOpen()) {
+      var cul = null, els = (document.querySelector('main') || document.body).getElementsByTagName('*');
+      for (var i = 0; i < els.length && i < 4000; i++) {
+        var r = els[i].getBoundingClientRect(); if (!r.width || r.right <= iw + 4) continue;
+        var p = els[i].parentElement, pr = p && p.getBoundingClientRect();
+        if (!pr || pr.right <= iw + 1) { cul = els[i]; break; }
+      }
+      var sig = 'w|' + (cul ? label(cul) : '');
+      if (once(sig)) { log('layout', 'The page is ' + over + ' px wider than the screen', cul ? label(cul) + ' · ' + spot(cul) : '', { raw: true }); found.push(sig); }
+    }
+    /* bars (sticky/fixed) that stick out of their box, or fixed buttons sitting on top of each other */
+    var fixed = [], all = document.body.getElementsByTagName('*');
+    for (var j = 0; j < all.length && j < 4000; j++) {
+      var e = all[j], cs = getComputedStyle(e), pos = cs.position;
+      if (pos !== 'sticky' && pos !== 'fixed') continue;
+      if (!e.offsetParent && pos !== 'fixed') continue;
+      var rr = e.getBoundingClientRect(); if (rr.width < 20 || rr.height < 14) continue;
+      if (pos === 'sticky' && e.parentElement) {
+        var pb = e.parentElement.getBoundingClientRect();
+        var out = Math.max(pb.left - rr.left, rr.right - pb.right);
+        if (out > 8 && pb.width > 0) { var s1 = 's|' + label(e); if (once(s1)) { log('layout', 'A bar sticks out of its box by ' + Math.round(out) + ' px', label(e) + ' · ' + spot(e), { raw: true }); found.push(s1); } }
+      } else if (pos === 'fixed' && rr.bottom > 0 && rr.top < innerHeight && cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity > .2 && e.querySelector('button, a')) fixed.push([e, rr]);
+    }
+    if (!overlayOpen()) for (var a = 0; a < fixed.length; a++) for (var b2 = a + 1; b2 < fixed.length; b2++) {
+      var A = fixed[a], B = fixed[b2]; if (A[0].contains(B[0]) || B[0].contains(A[0])) continue;
+      var ix = Math.max(0, Math.min(A[1].right, B[1].right) - Math.max(A[1].left, B[1].left)), iy = Math.max(0, Math.min(A[1].bottom, B[1].bottom) - Math.max(A[1].top, B[1].top));
+      var small = Math.min(A[1].width * A[1].height, B[1].width * B[1].height);
+      if (ix * iy > small * .3) { var s2 = 'o|' + label(A[0]) + '|' + label(B[0]); if (once(s2)) { log('layout', 'Two things on the screen cover each other', label(A[0]) + ' + ' + label(B[0]), { raw: true }); found.push(s2); } }
+    }
+  }
+  function scanNow() {
+    var found = [];
+    if (document.hidden || !unlocked() || !document.body) return found;
+    try { scanContent(found); } catch (e) {}
+    try { scanLayout(found); } catch (e) {}
+    return found;
+  }
+  var scanT = null, lastScan = 0;
+  function later() {
+    clearTimeout(scanT);
+    scanT = setTimeout(function () {
+      var go = function () { lastScan = Date.now(); scanNow(); };
+      if (Date.now() - lastScan < 20000) { later(); return; }
+      if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else go();
+    }, 5000);
+  }
+  function startScans() {
+    if (!document.body) { document.addEventListener('DOMContentLoaded', startScans); return; }
+    new MutationObserver(function (list) {
+      if (!unlocked()) return;
+      if (list.every(function (m) { var t = m.target; return t.closest && t.closest('#dgNote, .dgu'); })) return;
+      later();
+    }).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', later);
+    later();
+  }
+  startScans();
 
   /* status marks (no personal data): last good sync, health pull, self-check … */
   function mark(k, v) { var s = readJSON(ST, {}); s[k] = v === undefined ? Date.now() : v; writeJSON(ST, s); }
@@ -162,9 +351,11 @@
         navigator.serviceWorker.ready.then(function (r) { r.showNotification(L('Dashboard check', 'Dashbord-sjekk'), { body: L('Something needs a look – open Settings → Diagnostics.', 'Noe bør sjekkes – åpne Innstillinger → Diagnostikk.'), tag: 'selfcheck', icon: '/cmd/assets/icons/icon-192.png' }); });
     } catch (e) {}
   }
-  function openPanel() {
-    var b = document.getElementById('settingsBtn') || document.querySelector('.me-btn');
-    if (b) { b.click(); setTimeout(function () { var g = document.querySelector('[data-go="diag"]'); if (g) g.click(); }, 320); }
+  /* Diagnostics lives in Admin → System */
+  function openPanel(what) {
+    what = what === 'report' ? 'report' : 'system';
+    if (/^\/cmd\/admin\//.test(location.pathname)) { try { window.dispatchEvent(new CustomEvent('admin:goto', { detail: what })); } catch (e) {} return; }
+    location.href = '/cmd/admin/#' + what;
   }
   function startCheck() {
     var s = state(); if (s.check && s.check.d === dkey(new Date())) return;
@@ -251,6 +442,7 @@
   function fallback(t) { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
   window.addEventListener('diag:log', function () { var pg = document.querySelector('.st-page[data-page="diag"]'); if (pg && !pg.hidden) render(); });
 
-  window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); }, mark: mark, state: state,
-    notice: notice, hide: hide, retry: retry, selfCheck: selfCheck, report: report, scrub: scrub, render: render };
+  window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, mark: mark, state: state,
+    notice: notice, hide: hide, retry: retry, selfCheck: selfCheck, report: report, scrub: scrub, render: render,
+    crumbs: function () { return crumbs.slice(); }, speed: function () { return readJSON(SPEED, {}); }, scanNow: scanNow, label: label, page: page, open: openPanel, netOk: function () { return netOk; } };
 })();

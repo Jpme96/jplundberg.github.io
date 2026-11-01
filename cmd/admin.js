@@ -254,17 +254,18 @@
           : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
-    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'system', 'storage'] };
+    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage'] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
     var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
       return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
     var grid = (TAB === 'website' ? '<p class="cr-sec"><i class="bi bi-activity"></i> ' + L('Site health', 'Nettstedets helse') + '</p>' : '') + '<div class="cr-grid' + (TAB === 'website' ? ' cr-eq' : '') + '">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
     var top = TAB === 'overview' ? html : html.replace(/<div class="cr-lights">[\s\S]*$/, '');
-    if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crCards"></div>';
+    if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crDiag" hidden></div><div id="crCards"></div>';
     var keep = document.activeElement && document.activeElement.closest && document.activeElement.closest('#crCards form') ? { sel: document.activeElement.closest('form').className, v: document.activeElement.value } : null;
     document.getElementById('crTop').innerHTML = top + tabbar;
     document.getElementById('crCards').innerHTML = grid;
     var wsEl = document.getElementById('crWs'); wsEl.hidden = TAB !== 'website'; if (TAB === 'website') mountWs();
+    var dgEl = document.getElementById('crDiag'); dgEl.hidden = TAB !== 'system'; if (TAB === 'system' && window.DiagUI) window.DiagUI.mount(dgEl);
     if (keep) { var f = box.querySelector('#crCards form.' + keep.sel.split(' ').join('.') + ' input'); if (f) { f.value = keep.v; f.focus(); } }
     fillAsync();
     autoTodos(ls);
@@ -302,6 +303,7 @@
   var wsHash = location.hash.match(/^#ws=([a-z]+)$/), startEd = null;
   if (wsHash) { TAB = 'website'; startEd = wsHash[1]; window.history.replaceState(null, '', location.pathname); }
   else if (location.hash === '#overview') { TAB = 'overview'; window.history.replaceState(null, '', location.pathname); }
+  else if (/^#(system|report)$/.test(location.hash)) { TAB = 'system'; var wantReport = location.hash === '#report'; window.history.replaceState(null, '', location.pathname); if (wantReport) window.Vault.onUnlock(function () { setTimeout(function () { if (window.DiagUI) window.DiagUI.report(''); }, 900); }); }
   var ED = [['sections', 'layout-text-sidebar', L('Front page', 'Forside')], ['announce', 'megaphone', L('Announcement', 'Kunngjøring')], ['featured', 'star', L('Featured', 'Fremhevet')], ['texts', 'fonts', L('Texts', 'Tekster')],
     ['cv', 'file-earmark-person', L('CV & experience', 'CV og erfaring')], ['courses', 'mortarboard', L('Courses', 'Kurs')], ['socials', 'share', L('Socials', 'Sosiale medier')], ['progress', 'bullseye', L('Project progress', 'Prosjektfremdrift')], ['content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter')]];
   var edCur = startEd && ED.some(function (x) { return x[0] === startEd; }) ? startEd : 'sections', home = {};   /* where each settings page lived, to give it back */
@@ -409,6 +411,7 @@
   window.addEventListener('admin:goto', function (e) {
     var k = e.detail;
     if (k === 'write') { if (window.ArticleWriter) window.ArticleWriter.open({ col: 'articles', isNew: true }); return; }
+    if (k === 'system' || k === 'report') { TAB = 'system'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); if (k === 'report' && window.DiagUI) setTimeout(function () { window.DiagUI.report(''); }, 200); return; }
     if (k === 'overview' || k === 'visitors') { TAB = 'overview'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     window.CrWorkspace.open(ED.some(function (x) { return x[0] === k; }) ? k : 'sections');
   });
@@ -442,7 +445,7 @@
     var a = document.createElement('a'); a.href = '/cmd/?settings=' + page; document.body.appendChild(a); a.click(); a.remove();
   }
   box.addEventListener('click', function (e) {
-    if (e.target.closest('#crWs')) return;
+    if (e.target.closest('#crWs, #crDiag')) return;
     var b;
     if ((b = e.target.closest('[data-crtab]'))) { TAB = b.dataset.crtab; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); if (TAB === 'website') runContent(); return; }
     if (e.target.closest('[data-crrun]')) { refreshAll(); logIt(L('Ran all checks', 'Kjørte alle sjekker'), 'arrow-clockwise'); return; }
@@ -463,7 +466,7 @@
     }
   });
   box.addEventListener('change', function (e) {
-    if (e.target.closest('#crWs')) return;
+    if (e.target.closest('#crWs, #crDiag')) return;
     var t = e.target;
     if (t.dataset.crtodo) { var tt = Fe.tools(); (tt.admintodo || []).forEach(function (x) { if (x.id === t.dataset.crtodo) { x.done = t.checked; x.doneAt = t.checked ? Date.now() : null; } }); Fe.saveTools(tt); if (t.checked) logIt(L('Done: ', 'Gjort: ') + ((tt.admintodo || []).filter(function (x) { return x.id === t.dataset.crtodo; })[0] || {}).text, 'check2'); return; }
     if (t.dataset.crpub) {
@@ -480,7 +483,7 @@
     }
   });
   box.addEventListener('submit', function (e) {
-    if (e.target.closest('#crWs')) return;
+    if (e.target.closest('#crWs, #crDiag')) return;
     e.preventDefault();
     var f = e.target, inp = f.querySelector('input'), v = inp ? inp.value.trim() : '';
     if (f.classList.contains('cr-pvf')) { runPreview(v || '/'); return; }
