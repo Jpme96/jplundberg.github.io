@@ -166,7 +166,7 @@
         '<div class="qa-row"><select name="c" aria-label="Category">' + cats.map(function (c) { return '<option value="' + esc(c[0]) + '"' + (c[0] === last ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>' +
           '<input name="l" placeholder="Where (optional)" autocomplete="off" value="' + esc(p.l || '') + '"></div>' +
         '<div class="qa-row qa-row1">' + repeatSelect(p.rep).replace(/<option value="quarterly"[^<]*<\/option>/, '') + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Add event</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button>' + (document.getElementById('clNew') ? '<button type="button" class="text-btn" data-qafull><i class="bi bi-sliders"></i> More options</button>' : '') + '<span class="spacer"></span><button class="pill-btn wide" type="submit">Add event</button></div></form>';
     },
     workout: function (p) {
       return '<form class="qa-form" data-kind="workout">' +
@@ -268,13 +268,19 @@
   };
 
   /* ---------- wiring ---------- */
-  btn.addEventListener('click', function () { open(); });
+  /* one "+" for everything: it opens on what fits the page you're on (Calendar → event, Finances → expense …) */
+  function pageKind() {
+    var p = location.pathname;
+    return /\/calendar\//.test(p) ? 'event' : /\/finance\//.test(p) ? 'expense' : /\/habits\//.test(p) ? 'workout' : /\/work\//.test(p) ? 'todo' : null;
+  }
+  btn.addEventListener('click', function () { open(pageKind()); });
   document.addEventListener('click', function (e) {
     var q = e.target.closest('[data-quick]');
     if (q) { e.preventDefault(); open(q.dataset.quick); }
   });
   bg.addEventListener('click', function (e) {
     if (e.target === bg || e.target.closest('[data-close]')) { close(); return; }
+    if (e.target.closest('[data-qafull]')) { close(); var nw = document.getElementById('clNew'); if (nw) setTimeout(function () { nw.click(); }, 120); return; }
     var tab = e.target.closest('[data-tab]');
     if (tab) { kind = tab.dataset.tab; try { localStorage.setItem('dash.quickKind', kind); } catch (x) {} open(kind); return; }
     if (e.target.closest('[data-addline]')) { if (addLine()) { close(); setTimeout(reload, 0); } return; }

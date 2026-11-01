@@ -61,8 +61,10 @@
   /* a group whose rows are all switched off disappears with its heading */
   function groups() {
     menu.querySelectorAll('nav.st-group').forEach(function (n) {
-      var any = Array.prototype.some.call(n.querySelectorAll('[data-go]'), function (b) { return !b.hidden; });
-      n.hidden = !any; var h = n.previousElementSibling; if (h && h.classList.contains('st-minor')) h.hidden = !any;
+      var any = Array.prototype.some.call(n.querySelectorAll('[data-go], [data-goadmin]'), function (b) { return !b.hidden; });
+      /* only touch "hidden" when it changes – setting it again would wake this observer forever */
+      if (n.hidden !== !any) n.hidden = !any;
+      var h = n.previousElementSibling; if (h && h.classList.contains('st-minor') && h.hidden !== !any) h.hidden = !any;
     });
   }
   new MutationObserver(groups).observe(menu, { subtree: true, attributes: true, attributeFilter: ['hidden'] });

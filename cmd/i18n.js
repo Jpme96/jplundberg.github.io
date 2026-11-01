@@ -919,6 +919,8 @@
     ['Some changes didn’t go through – try again.', 'Noen endringer gikk ikke gjennom – prøv igjen.'], ['Edit', 'Rediger']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   P.push([/^(Article|Project) deleted – gone from jplundberg\.com in about a minute$/, function (m, a) { return (a === 'Project' ? 'Prosjektet' : 'Artikkelen') + ' er slettet – borte fra jplundberg.com om ca. ett minutt'; }], [/^Couldn’t delete \((.+)\)$/, 'Klarte ikke å slette ($1)'], [/^Delete (.+)$/, 'Slett $1']);
   [['Update the Worker first (paste the newest worker.js in Cloudflare)', 'Oppdater Workeren først (lim inn den nyeste worker.js i Cloudflare)'], ['No connection – nothing was deleted', 'Ingen forbindelse – ingenting ble slettet'], ['Delete', 'Slett']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
+  [['Edit the website', 'Rediger nettsiden'], ['Front page, texts, CV, courses, articles – in Admin', 'Forside, tekster, CV, kurs, artikler – i Admin'], ['Write an article', 'Skriv en artikkel'], ['Opens the writing studio', 'Åpner skrivestudioet'],
+    ['Visitors and status', 'Besøkende og status'], ['Admin → Overview', 'Admin → Oversikt'], ['More options', 'Flere valg']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
   function tr(s) {

@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=152" rel="stylesheet">
+  <link href="../styles.css?v=153" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=1" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -335,6 +335,12 @@
         <div class="st-web" id="stWeb" data-owner>
         <button type="button" class="st-grp st-grpbtn" id="stWebBtn" aria-expanded="true" aria-controls="stWebBody"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span><i class="bi bi-chevron-down st-grpchev"></i></button>
         <div class="st-webbody" id="stWebBody">
+        <nav class="st-group st-menu">
+          <button type="button" class="st-row st-btn" data-goadmin="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-window-sidebar"></i></span><span class="st-label">Edit the website<small>Front page, texts, CV, courses, articles – in Admin</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="write"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-pencil-square"></i></span><span class="st-label">Write an article<small>Opens the writing studio</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="overview"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors and status<small>Admin → Overview</small></span><i class="bi bi-chevron-right"></i></button>
+        </nav>
+        <div class="st-webold" hidden>
         <p class="st-minor">Front page</p>
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
@@ -358,6 +364,7 @@
         <nav class="st-group st-menu">
           <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
+        </div>
         </div>
         </div>
         </div>
@@ -816,9 +823,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=e38acec016"></script>
-  <script src="../dist/page-finance.js?v=b7e3686bb1"></script>
-  <script src="../dist/tail.js?v=6bda11fe11"></script>
+  <script src="../dist/head.js?v=4cbd8f4c13"></script>
+  <script src="../dist/page-finance.js?v=d1f2d15a54"></script>
+  <script src="../dist/tail.js?v=ec8d8937ac"></script>
   <!-- /scripts -->
 </body>
 </html>

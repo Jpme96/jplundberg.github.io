@@ -3741,3 +3741,5 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 .aw-pv, .aw-nav { position: static !important; }
 /* long editors (CV, courses …): the preview follows you down, and jumps to the matching part of the site */
 @media (min-width: 900px) { .aw.aw-follow .aw-pv { position: sticky !important; top: 84px; } }
+/* one "+": on the calendar the top "+" adds events (with "More options" for the full editor), so the extra New button goes */
+#clNew { display: none !important; }

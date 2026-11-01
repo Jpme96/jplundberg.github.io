@@ -299,9 +299,12 @@
   /* ---------- the Website tab: the editors from Settings → jplundberg.com, a live preview and one publish bar ---------- */
   var TAB = 'overview'; try { TAB = sessionStorage.getItem('adTab') || (location.hash === '#website' ? 'website' : 'overview'); } catch (e) {}
   if (/^#(links|preview)$/.test(location.hash)) TAB = 'website';
+  var wsHash = location.hash.match(/^#ws=([a-z]+)$/), startEd = null;
+  if (wsHash) { TAB = 'website'; startEd = wsHash[1]; window.history.replaceState(null, '', location.pathname); }
+  else if (location.hash === '#overview') { TAB = 'overview'; window.history.replaceState(null, '', location.pathname); }
   var ED = [['sections', 'layout-text-sidebar', L('Front page', 'Forside')], ['announce', 'megaphone', L('Announcement', 'Kunngjøring')], ['featured', 'star', L('Featured', 'Fremhevet')], ['texts', 'fonts', L('Texts', 'Tekster')],
     ['cv', 'file-earmark-person', L('CV & experience', 'CV og erfaring')], ['courses', 'mortarboard', L('Courses', 'Kurs')], ['socials', 'share', L('Socials', 'Sosiale medier')], ['progress', 'bullseye', L('Project progress', 'Prosjektfremdrift')], ['content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter')]];
-  var edCur = 'sections', home = {};   /* where each settings page lived, to give it back */
+  var edCur = startEd && ED.some(function (x) { return x[0] === startEd; }) ? startEd : 'sections', home = {};   /* where each settings page lived, to give it back */
   function pendingCount() {
     var n = 0, sd = window.SiteDraftSite ? window.SiteDraftSite() : null, td = window.SiteDraftTexts ? window.SiteDraftTexts() : null;
     if (sd && sd.saved && sd.draft) Object.keys(sd.draft).forEach(function (k) { if (k !== 'updated' && JSON.stringify(sd.draft[k]) !== JSON.stringify(sd.saved[k])) n++; });
@@ -402,6 +405,13 @@
       (dr.sections || []).forEach(function (x) { var sec = d.getElementById(x.id); if (sec && x.on === false) { sec.style.opacity = '.25'; sec.style.filter = 'grayscale(1)'; mark(sec); } });
     }
   }
+  /* from the Settings panel's website rows (website.js) */
+  window.addEventListener('admin:goto', function (e) {
+    var k = e.detail;
+    if (k === 'write') { if (window.ArticleWriter) window.ArticleWriter.open({ col: 'articles', isNew: true }); return; }
+    if (k === 'overview' || k === 'visitors') { TAB = 'overview'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    window.CrWorkspace.open(ED.some(function (x) { return x[0] === k; }) ? k : 'sections');
+  });
   window.CrWorkspace = { open: function (k) {
     if (TAB !== 'website') { TAB = 'website'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); }
     mountWs(); openEd(k); var w = document.getElementById('crWs'); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });

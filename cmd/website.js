@@ -596,6 +596,24 @@
   window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; }, remove: removeItem };
   function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 
+  /* ---------- one place to edit the website: Admin → Website ----------
+     Settings rows, the settings search and ?settings=… links for website parts all open Admin instead. */
+  var ON_ADMIN = /^\/cmd\/admin\//.test(location.pathname);
+  var WEB_KEYS = ['announce', 'sections', 'featured', 'texts', 'socials', 'cv', 'courses', 'content', 'progress', 'visitors'];
+  function goAdmin(k) {
+    if (ON_ADMIN) {
+      var close = document.querySelector('#settings [data-close], #stClose'); if (close) close.click();
+      setTimeout(function () { window.dispatchEvent(new CustomEvent('admin:goto', { detail: k })); }, 60);
+      return;
+    }
+    location.href = '/cmd/admin/' + (k === 'write' ? '#write=new-articles' : k === 'overview' || k === 'visitors' ? '#overview' : '#ws=' + k);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-goadmin]'); if (!b) return;
+    e.preventDefault(); goAdmin(b.dataset.goadmin);
+  });
+  if (!ON_ADMIN) window.addEventListener('st:page', function (e) { if (WEB_KEYS.indexOf(e.detail) > -1) goAdmin(e.detail); });
+
   /* ---------- page changes in the settings panel ---------- */
   window.addEventListener('st:page', function (e) {
     current = e.detail;
