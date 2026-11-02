@@ -122,6 +122,7 @@
       var legs = p.legs || [];
       var rides = legs.filter(function (l) { return l.mode !== 'foot'; });
       var first = rides[0];
+      if (i === 0 && first) try { localStorage.setItem('dash.tvMode', String(first.mode || (first.line && first.line.transportMode) || 'bus')); } catch (e) {}   /* the picture at the top shows this vehicle */
       var late = first && first.aimedStartTime ? Math.round((new Date(first.expectedStartTime) - new Date(first.aimedStartTime)) / 60000) : 0;
       var changes = Math.max(0, rides.length - 1);
       var leaveIn = Math.round((new Date(p.expectedStartTime) - Date.now()) / 60000);

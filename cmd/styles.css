@@ -3778,3 +3778,19 @@ input, select, textarea { min-width: 0; max-width: 100%; }
 input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { box-sizing: border-box; min-width: 0; }
 label > input[type="date"], label > input[type="time"], .sv-by > input, .qa-row > input, .row2 input, .add-row input { width: 100%; }
 input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
+/* Travel picture, Journey tab (scenes.js journey()): your bus/tram/metro/train/boat pulls in at the stop and leaves */
+.sc-veh { transform: translateX(56px); animation: scveh 9s infinite; }
+@keyframes scveh { 0% { transform: translateX(-160px); animation-timing-function: cubic-bezier(.2,.7,.35,1); } 30% { transform: translateX(56px); } 64% { transform: translateX(56px); animation-timing-function: cubic-bezier(.55,0,.8,.4); } 100% { transform: translateX(300px); } }
+.sc-veh-water { animation-name: scboat; } @keyframes scboat { 0% { transform: translate(-160px, 0); animation-timing-function: cubic-bezier(.2,.7,.35,1); } 30% { transform: translate(56px, 1px); } 47% { transform: translate(56px, -1px); } 64% { transform: translate(56px, 1px); animation-timing-function: cubic-bezier(.55,0,.8,.4); } 100% { transform: translate(300px, 0); } }
+.sc-wait { animation: scwait 9s infinite; } @keyframes scwait { 0%, 38% { opacity: 1; } 44%, 96% { opacity: 0; } 100% { opacity: 1; } }
+.sc-vbody { filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35)); }
+.sc-vwin { fill: rgba(205, 232, 255, .92); }
+.sc-vdoor { fill: rgba(20, 24, 32, .55); }
+.sc-wheel2 { fill: #22252c; stroke: #8a8f99; stroke-width: 1.4; } .sc-spoke { stroke: #8a8f99; stroke-width: 1.2; }
+.sc-road { fill: rgba(var(--ink-rgb), .16); } .sc-lane { stroke: rgba(255, 255, 255, .55); stroke-width: 1.2; stroke-dasharray: 8 7; }
+.sc-rail { stroke: rgba(var(--ink-rgb), .5); stroke-width: 2; } .sc-sleeper { stroke: rgba(var(--ink-rgb), .3); stroke-width: 2; }
+.sc-wave { fill: none; stroke: rgba(80, 160, 230, .7); stroke-width: 2; animation: scwave 3s linear infinite; } .sc-wave2 { opacity: .5; animation-duration: 4.5s; } @keyframes scwave { to { transform: translateX(-24px); } }
+.sc-pole { stroke: rgba(var(--ink-rgb), .55); stroke-width: 2.2; } .sc-stopt { font: 700 9px/1 system-ui, sans-serif; fill: #fff; }
+.sc-skin { fill: #e8b893; } .sc-coat { fill: var(--accent); } .sc-leg { stroke: #2a2d35; stroke-width: 2.4; stroke-linecap: round; }
+.sc-panto { fill: none; stroke: rgba(var(--ink-rgb), .6); stroke-width: 1.4; }
+:root[data-theme="light"] .sc-lane { stroke: rgba(255, 255, 255, .9); } :root[data-theme="light"] .sc-wheel2 { stroke: #5b616c; }

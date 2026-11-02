@@ -244,7 +244,38 @@
     return { svg: svg, label: L('Your next trip', 'Neste reise'), list: list, empty: L('No trip planned – plan one under Trips.', 'Ingen reise planlagt – planlegg en under Reiser.') };
   }
 
-  var MAKE = { people: people, food: food, work: work, habits: health, finance: finance, travel: travel };
+  /* Journey tab: your everyday ride – bus, tram, metro, train or boat (the one your last search started with) pulls in at the stop */
+  function travelTab() {
+    var t = 'journey'; try { t = sessionStorage.getItem('dash.travelTab') || 'journey'; } catch (e) {}
+    var b = document.querySelector('#tvTabs [aria-selected="true"]'); return b ? b.dataset.tab : t;
+  }
+  var VEH = { bus: ['#e60000', L('By bus', 'Med buss')], coach: ['#75a300', L('By coach', 'Med ekspressbuss')], tram: ['#0b91ef', L('By tram', 'Med trikk')], metro: ['#ec700c', L('By metro', 'Med T-bane')],
+    rail: ['#2f5fb3', L('By train', 'Med tog')], water: ['#682c88', L('By boat', 'Med båt')] };
+  function vehicle(mode, col) {
+    var win = function (x0, n, w, y, h) { var o = ''; for (var i = 0; i < n; i++) o += '<rect x="' + (x0 + i * (w + 4)) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" class="sc-vwin"/>'; return o; };
+    var wheels = function (xs, y) { return xs.map(function (x) { return '<g class="sc-vwh" transform="translate(' + x + ' ' + y + ')"><circle r="5" class="sc-wheel2"/><line x1="-3.5" y1="0" x2="3.5" y2="0" class="sc-spoke"/></g>'; }).join(''); };
+    if (mode === 'water') return '<path d="M0 104 h96 l-10 14 h-78z" fill="' + col + '" class="sc-vbody"/><rect x="18" y="88" width="56" height="16" rx="3" fill="#f1f3f7" class="sc-vbody"/>' + win(23, 6, 6, 92, 7) + '<rect x="40" y="80" width="10" height="9" fill="' + col + '"/>';
+    if (mode === 'rail') return '<g transform="translate(-16 0)"><path d="M0 82 h108 q14 0 18 14 v14 h-126z" fill="' + col + '" class="sc-vbody"/><rect x="0" y="104" width="126" height="4" fill="rgba(0,0,0,.25)"/>' + win(6, 6, 11, 87, 9) + '<path d="M108 86 q10 1 14 12 h-14z" class="sc-vwin"/>' + wheels([14, 30, 84, 100], 113) + '</g>';
+    if (mode === 'tram' || mode === 'metro') return (mode === 'tram' ? '<path d="M44 80 l8 -10 h10" class="sc-panto"/>' : '') + '<path d="M0 80 h96 q10 0 12 10 v20 h-108z" fill="' + col + '" class="sc-vbody"/>' + win(5, 6, 10, 85, 10) + '<path d="M96 84 q7 1 8 10 h-8z" class="sc-vwin"/><rect x="0" y="102" width="108" height="3" fill="rgba(0,0,0,.25)"/>' + wheels([16, 34, 74, 92], 113);
+    return '<rect x="0" y="80" width="92" height="30" rx="6" fill="' + col + '" class="sc-vbody"/>' + win(6, 5, 11, 85, 10) + '<rect x="78" y="85" width="10" height="20" rx="1.5" class="sc-vwin"/><rect x="62" y="92" width="10" height="17" class="sc-vdoor"/>' +
+      '<rect x="86" y="98" width="6" height="3" rx="1" fill="#ffe08a" class="sc-vlamp"/>' + wheels([18, 72], 112);
+  }
+  function journey() {
+    var tv = readJSON('dash.travel', {}) || {}, mode = 'bus'; try { mode = localStorage.getItem('dash.tvMode') || 'bus'; } catch (e) {}
+    if (mode === 'air' || mode === 'foot' || !VEH[mode]) mode = 'bus';
+    var v = VEH[mode], track = mode === 'rail' || mode === 'tram' || mode === 'metro';
+    var road = mode === 'water' ? '<path d="M-10 118 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave"/><path d="M-10 126 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave sc-wave2"/>'
+      : track ? '<line x1="0" y1="119" x2="240" y2="119" class="sc-rail"/>' + Array.apply(null, Array(16)).map(function (_, i) { return '<line x1="' + (i * 16 + 2) + '" y1="117" x2="' + (i * 16 + 10) + '" y2="121" class="sc-sleeper"/>'; }).join('')
+      : '<rect x="0" y="116" width="240" height="10" class="sc-road"/><line x1="0" y1="121" x2="240" y2="121" class="sc-lane"/>';
+    var stop = '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + v[0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + (mode === 'rail' ? 'T' : mode === 'water' ? '⚓' : mode === 'metro' ? 'T' : 'H') + '</text></g>' +
+      '<g class="sc-wait"><circle cx="196" cy="88" r="5" class="sc-skin"/><path d="M190 112 v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/><line x1="193" y1="112" x2="193" y2="116" class="sc-leg"/><line x1="199" y1="112" x2="199" y2="116" class="sc-leg"/></g>';
+    var rec = (tv.recent || [])[0];
+    var svg = ground() + deco('travel') + road + stop + part('paneJourney', '', '<g class="sc-veh sc-veh-' + mode + '">' + vehicle(mode, v[0]) + '</g>');
+    var list = [{ t: v[1], h: '#paneJourney' }];
+    if (rec && rec.from && rec.to) list.push({ t: rec.from + ' → ' + rec.to, h: '#paneJourney' });
+    return { svg: svg, label: L('Your everyday journey', 'Den daglige reisen din'), list: list, empty: '' };
+  }
+  var MAKE = { people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
   function draw() {
     var hero = document.querySelector('.fp-hero, .tv-hero'); if (!hero) return;
     var box = document.getElementById('scIllu');
@@ -279,6 +310,7 @@
   }, 1800);
   function soon() { clearTimeout(t); t = setTimeout(draw, 60); }
   ['tools:change', 'features:change', 'touch:change', 'fin:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, soon); });
+  window.addEventListener('travel:tab', soon);
   window.Vault.onUnlock(function () { setTimeout(draw, 120); });
   setInterval(draw, 60e3);       // the clock hands and the coffee
 })();
