@@ -268,7 +268,9 @@
       : track ? '<line x1="0" y1="119" x2="240" y2="119" class="sc-rail"/>' + Array.apply(null, Array(16)).map(function (_, i) { return '<line x1="' + (i * 16 + 2) + '" y1="117" x2="' + (i * 16 + 10) + '" y2="121" class="sc-sleeper"/>'; }).join('')
       : '<rect x="0" y="116" width="240" height="10" class="sc-road"/><line x1="0" y1="121" x2="240" y2="121" class="sc-lane"/>';
     var stop = '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + v[0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + (mode === 'rail' ? 'T' : mode === 'water' ? '⚓' : mode === 'metro' ? 'T' : 'H') + '</text></g>' +
-      '<g class="sc-wait"><circle cx="196" cy="88" r="5" class="sc-skin"/><path d="M190 112 v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/><line x1="193" y1="112" x2="193" y2="116" class="sc-leg"/><line x1="199" y1="112" x2="199" y2="116" class="sc-leg"/></g>';
+      /* you, in the same drawn style as your avatar, waiting at the stop (it gets on, then the next ride comes) */
+      '<g class="sc-wait">' + (window.Avatar ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="180" y="62" width="40" height="56" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
+        : '<circle cx="196" cy="88" r="5" class="sc-skin"/><path d="M190 112 v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/><line x1="193" y1="112" x2="193" y2="116" class="sc-leg"/><line x1="199" y1="112" x2="199" y2="116" class="sc-leg"/>') + '</g>';
     var rec = (tv.recent || [])[0];
     var svg = ground() + deco('travel') + road + stop + part('paneJourney', '', '<g class="sc-veh sc-veh-' + mode + '">' + vehicle(mode, v[0]) + '</g>');
     var list = [{ t: v[1], h: '#paneJourney' }];
