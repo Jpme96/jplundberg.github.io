@@ -344,11 +344,13 @@
     window.BriefItems = all;                       /* the morning briefing (delight.js) reads these */
     window.dispatchEvent(new Event('brief:items'));
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
+    /* amounts get .money so "hide amounts" blurs them (only the number, not the sentence) */
+    var amt = function (h) { return String(h).replace(/[−-]?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:[.,]\d+)?\s?kr\b/g, function (m) { return '<span class="money">' + m + '</span>'; }); };
     box.innerHTML = shown.length ? shown.map(function (x) {
       if (x.fold) return '<li class="br-li br-fold"><button type="button" class="br-item" data-brfold aria-expanded="' + tipsOpen + '" style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(tipsOpen ? 'Tap to fold them away' : x.sub) + '</small></span><i class="bi bi-chevron-' + (tipsOpen ? 'up' : 'down') + ' br-go"></i></button></li>';
       return '<li class="br-li' + (x.tip || x.act ? ' br-tip' : '') + '"><a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
-        '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
+        '<span class="br-x"><b>' + amt(esc(x.title)) + '</b><small>' + amt(esc(x.sub)) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
         (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>'
           : x.day && !x.badge ? '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>' : '') + '</li>';

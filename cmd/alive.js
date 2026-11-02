@@ -29,6 +29,8 @@
   var lastVal = new WeakMap(), seenOnce = new WeakSet();
   function scanNums(scope) {
     (scope || document).querySelectorAll(NUM).forEach(function (el) {
+      /* count inside the number itself – replacing a box's whole text dropped the inner .money span, so "hide amounts" missed it */
+      if (el.children.length) { var inner = el.querySelector('.money'); if (!inner || inner.children.length) return; el = inner; }
       if (el.dataset.cuRun || el.closest('[data-cu-off]')) return;
       var p = parse(el.textContent); if (!p) return;
       var v = p.n, key = (el.closest('[id]') || {}).id + '|' + (el.className || '') + '|' + p.pre + '|' + p.post;

@@ -3805,3 +3805,6 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .b-fixedit { list-style: none; padding: 8px 0; border-bottom: 1px solid var(--line); } .b-fixedit .add-row { margin-bottom: 6px; } .b-fixedit select { width: 100%; }
 .b-row .b-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: none; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .b-row .b-open small { font-size: 12px; } .b-row .b-open:hover span:first-child { color: var(--accent); }
+/* Hide amounts: every big number, number tile and the Finances picture (jar amount, caption) too */
+.fin-hidden .big-num, .fin-hidden .tk-v, .fin-hidden .stat-value, .fin-hidden .hl-tile b, .fin-hidden .mh-chip b,
+.fin-hidden #scIllu text, .fin-hidden #scIllu figcaption a, .fin-hidden .mo-big, .fin-hidden [data-money] { filter: blur(7px); }
