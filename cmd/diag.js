@@ -201,6 +201,15 @@
       var sig = 'w|' + (cul ? label(cul) : '');
       if (once(sig)) { log('layout', 'The page is ' + over + ' px wider than the screen', cul ? label(cul) + ' · ' + spot(cul) : '', { raw: true }); found.push(sig); }
     }
+    /* form fields that spill out of their box into the next one (Safari's date fields did) */
+    Array.prototype.forEach.call(document.querySelectorAll('input, select, textarea'), function (f) {
+      if (!f.offsetParent || f.type === 'checkbox' || f.type === 'radio' || f.type === 'hidden') return;
+      var fr = f.getBoundingClientRect(), pe = f.parentElement; if (!pe || !fr.width) return;
+      var pr2 = pe.getBoundingClientRect(), ov = getComputedStyle(pe).overflowX;
+      if (ov !== 'visible' || !pr2.width) return;
+      var out2 = Math.max(pr2.left - fr.left, fr.right - pr2.right);
+      if (out2 > 3) { var s0 = 'f|' + label(f); if (once(s0)) { log('layout', 'A field sticks out of its box by ' + Math.round(out2) + ' px', label(f) + ' · ' + spot(f), { raw: true }); found.push(s0); } }
+    });
     /* bars (sticky/fixed) that stick out of their box, or fixed buttons sitting on top of each other */
     var fixed = [], all = document.body.getElementsByTagName('*');
     for (var j = 0; j < all.length && j < 4000; j++) {
