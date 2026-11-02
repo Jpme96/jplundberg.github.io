@@ -172,7 +172,7 @@
     return r.classList.contains('wrs-open') || (b && (b.classList.contains('qa-open') || b.classList.contains('st-open') || b.classList.contains('rp-open'))) || !!document.querySelector('dialog[open], .sheet.open, .kit-sheet.open, #settings.open, .st-panel.open');
   }
   function scanContent(found) {
-    var main = document.querySelector('main') || document.body; if (!main) return;
+    var main = document.body; if (!main) return;   /* the whole page – page heroes sit outside <main> */
     var w = document.createTreeWalker(main, 4), n, hits = 0;
     while ((n = w.nextNode()) && hits < 4) {
       var v = n.nodeValue; if (!v || v.length > 240) continue;

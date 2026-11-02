@@ -320,7 +320,8 @@
     try { legs = JSON.parse(localStorage.getItem('dash.tvLegs') || '[]'); } catch (e) {}
     legs = (Array.isArray(legs) ? legs : []).map(function (m) { return m === 'coach' ? 'coach' : m; }).filter(function (m) { return VEH[m]; }).slice(0, 4);
     if (!legs.length) { var m1 = ''; try { m1 = localStorage.getItem('dash.tvMode') || ''; } catch (e) {} legs = VEH[m1] ? [m1] : ['bus', 'metro', 'rail']; }
-    var rec = (tv.recent || [])[0], to = rec && rec.to ? String(rec.to) : '';
+    var rec = (tv.recent || [])[0], nm = function (x) { return !x ? '' : typeof x === 'string' ? x : String(x.name || x.label || ''); };   /* saved places are objects {name, …} */
+    var from = rec ? nm(rec.from) : '', to = rec ? nm(rec.to) : '';
     /* where it ends: home or work – from your last search, otherwise like the commute: to work in the morning, home later */
     var toWork = /^(work|jobb|arbeid|office|kontor)/i.test(to) ? true : /^(home|hjem)/i.test(to) ? false : new Date().getHours() < 12;
     var N = legs.length, SL = 100 / (N + 1), D = (N + 1) * 6, id = 'sj' + legs.join('') + (toWork ? 'w' : 'h');
@@ -357,9 +358,10 @@
       : '<path d="M160 82 l30 -24 l30 24" fill="#b5523b" stroke="#7d3426" stroke-width="1.6" stroke-linejoin="round"/><rect x="164" y="80" width="52" height="38" rx="2" fill="#efe3cc" stroke="#9c8a6a" stroke-width="1.6"/>' +
         '<rect x="200" y="64" width="7" height="12" fill="#8a5a44" stroke="#5e3b2c" stroke-width="1.2"/><rect x="170" y="88" width="13" height="11" rx="1.5" class="sj-lit" style="animation:' + id + 'l ' + D + 's infinite"/><rect x="188" y="96" width="12" height="22" rx="1.5" fill="#6b4a35"/><circle cx="197" cy="108" r="1" fill="#ffd56b"/>';
     layers += '<g style="animation:' + id + 'h ' + D + 's infinite;opacity:0">' + track('road') + place + '<g style="animation:' + id + 'w ' + D + 's infinite;opacity:0">' + me(150, 62, 40, 56) + '</g></g>';
-    var svg = '<style>' + css + '</style>' + ground() + deco('travel') + layers;
+    /* everything that moves stays inside the picture (the pictures draw with overflow visible, so rides waiting off-stage showed up over the page) */
+    var svg = '<style>' + css + '</style><clipPath id="' + id + 'c"><rect x="0" y="0" width="240" height="150"/></clipPath>' + ground() + deco('travel') + '<g clip-path="url(#' + id + 'c)">' + layers + '</g>';
     var list = [{ t: legs.map(function (m) { return VEH[m][2]; }).join(' → ') + ' → ' + (toWork ? L('Work', 'Jobb') : L('Home', 'Hjem')), h: '#paneJourney' }];
-    if (rec && rec.from && rec.to) list.push({ t: rec.from + ' → ' + rec.to, h: '#paneJourney' });
+    if (from && to) list.push({ t: from + ' → ' + to, h: '#paneJourney' });
     return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, empty: '' };
   }
   var MAKE = { people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
