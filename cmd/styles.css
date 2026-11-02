@@ -3794,3 +3794,9 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .sc-skin { fill: #e8b893; } .sc-coat { fill: var(--accent); } .sc-leg { stroke: #2a2d35; stroke-width: 2.4; stroke-linecap: round; }
 .sc-panto { fill: none; stroke: rgba(var(--ink-rgb), .6); stroke-width: 1.4; }
 :root[data-theme="light"] .sc-lane { stroke: rgba(255, 255, 255, .9); } :root[data-theme="light"] .sc-wheel2 { stroke: #5b616c; }
+/* vehicles v2 */
+.sc-vglass { fill: #1d2a3b; } .sc-vshine { stroke: rgba(255, 255, 255, .35); stroke-width: 2; stroke-linecap: round; fill: none; }
+.sc-tyre { fill: #23262d; } .sc-hub { fill: #aeb4be; }
+.sc-vlamp { fill: #ffe08a; filter: drop-shadow(0 0 2px #ffe08a); }
+.sc-vbody { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .3)); }
+:root[data-theme="light"] .sc-vglass { fill: #2c3e55; }

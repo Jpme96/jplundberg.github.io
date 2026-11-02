@@ -251,14 +251,59 @@
   }
   var VEH = { bus: ['#e60000', L('By bus', 'Med buss')], coach: ['#75a300', L('By coach', 'Med ekspressbuss')], tram: ['#0b91ef', L('By tram', 'Med trikk')], metro: ['#ec700c', L('By metro', 'Med T-bane')],
     rail: ['#2f5fb3', L('By train', 'Med tog')], water: ['#682c88', L('By boat', 'Med båt')] };
+  /* the vehicles, drawn like the rest of the pictures: soft outline, roof highlight, dark glass with a shine, people inside, wheel arches */
+  function shadeC(hex, f) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255; var m = function (c) { return Math.max(0, Math.min(255, Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f))); }; return '#' + [m(r), m(g), m(b)].map(function (c) { return c.toString(16).padStart(2, '0'); }).join(''); }
   function vehicle(mode, col) {
-    var win = function (x0, n, w, y, h) { var o = ''; for (var i = 0; i < n; i++) o += '<rect x="' + (x0 + i * (w + 4)) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" class="sc-vwin"/>'; return o; };
-    var wheels = function (xs, y) { return xs.map(function (x) { return '<g class="sc-vwh" transform="translate(' + x + ' ' + y + ')"><circle r="5" class="sc-wheel2"/><line x1="-3.5" y1="0" x2="3.5" y2="0" class="sc-spoke"/></g>'; }).join(''); };
-    if (mode === 'water') return '<path d="M0 104 h96 l-10 14 h-78z" fill="' + col + '" class="sc-vbody"/><rect x="18" y="88" width="56" height="16" rx="3" fill="#f1f3f7" class="sc-vbody"/>' + win(23, 6, 6, 92, 7) + '<rect x="40" y="80" width="10" height="9" fill="' + col + '"/>';
-    if (mode === 'rail') return '<g transform="translate(-16 0)"><path d="M0 82 h108 q14 0 18 14 v14 h-126z" fill="' + col + '" class="sc-vbody"/><rect x="0" y="104" width="126" height="4" fill="rgba(0,0,0,.25)"/>' + win(6, 6, 11, 87, 9) + '<path d="M108 86 q10 1 14 12 h-14z" class="sc-vwin"/>' + wheels([14, 30, 84, 100], 113) + '</g>';
-    if (mode === 'tram' || mode === 'metro') return (mode === 'tram' ? '<path d="M44 80 l8 -10 h10" class="sc-panto"/>' : '') + '<path d="M0 80 h96 q10 0 12 10 v20 h-108z" fill="' + col + '" class="sc-vbody"/>' + win(5, 6, 10, 85, 10) + '<path d="M96 84 q7 1 8 10 h-8z" class="sc-vwin"/><rect x="0" y="102" width="108" height="3" fill="rgba(0,0,0,.25)"/>' + wheels([16, 34, 74, 92], 113);
-    return '<rect x="0" y="80" width="92" height="30" rx="6" fill="' + col + '" class="sc-vbody"/>' + win(6, 5, 11, 85, 10) + '<rect x="78" y="85" width="10" height="20" rx="1.5" class="sc-vwin"/><rect x="62" y="92" width="10" height="17" class="sc-vdoor"/>' +
-      '<rect x="86" y="98" width="6" height="3" rx="1" fill="#ffe08a" class="sc-vlamp"/>' + wheels([18, 72], 112);
+    var dk = shadeC(col, -.38), lt = shadeC(col, .32), o = '';
+    var glass = function (x, y, w, h, r) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (r || 2.5) + '" class="sc-vglass"/><path d="M' + (x + 3) + ' ' + (y + h - 2) + ' l' + Math.min(9, w * .4) + ' ' + (-(h - 4)) + '" class="sc-vshine"/>'; };
+    var strip = function (x0, x1, y, h, step, heads) {   /* a run of windows with posts, and a few people sitting inside */
+      var r = glass(x0, y, x1 - x0, h, 3);
+      for (var x = x0 + step; x < x1 - 3; x += step) r += '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (y + h) + '" stroke="' + col + '" stroke-width="2.4"/>';
+      (heads || []).forEach(function (hx, k) { r += '<path d="M' + (hx - 4) + ' ' + (y + h) + ' q0 -5 4 -5 q4 0 4 5z" fill="' + ['#3a4a6b', '#6b3a4a', '#3a6b52'][k % 3] + '"/><circle cx="' + hx + '" cy="' + (y + h - 7.5) + '" r="2.6" fill="' + ['#e8b893', '#c68b61', '#f1cfb0'][k % 3] + '"/>'; });
+      return r;
+    };
+    var wheel = function (x, y, rr) { rr = rr || 6; return '<circle cx="' + x + '" cy="' + y + '" r="' + (rr + 1.6) + '" fill="' + dk + '"/><circle cx="' + x + '" cy="' + y + '" r="' + rr + '" class="sc-tyre"/><circle cx="' + x + '" cy="' + y + '" r="' + (rr * .45) + '" class="sc-hub"/>'; };
+    var body = function (d) { return '<path d="' + d + '" fill="' + col + '" stroke="' + dk + '" stroke-width="1.6" stroke-linejoin="round" class="sc-vbody"/>'; };
+    if (mode === 'water') {
+      return '<path d="M2 102 h100 q-4 10 -14 16 h-74 q-8 -6 -12 -16z" fill="' + col + '" stroke="' + dk + '" stroke-width="1.6" stroke-linejoin="round" class="sc-vbody"/><path d="M6 106 h93" stroke="#fff" stroke-width="1.6" opacity=".8"/>' +
+        '<rect x="16" y="84" width="64" height="18" rx="4" fill="#f4f6fa" stroke="#9aa3b2" stroke-width="1.2"/>' + strip(21, 75, 88, 9, 9, [30, 57]) +
+        '<rect x="34" y="74" width="26" height="11" rx="3" fill="#f4f6fa" stroke="#9aa3b2" stroke-width="1.2"/>' + glass(38, 77, 18, 5, 1.5) + '<rect x="44" y="66" width="7" height="9" rx="1.5" fill="' + col + '" stroke="' + dk + '" stroke-width="1.2"/>';
+    }
+    if (mode === 'rail') {   /* a regional train: long body, sloped nose, a light stripe, two bogies */
+      o += body('M0 78 h104 q20 0 26 22 v8 q0 4 -4 4 h-122 q-4 0 -4 -4z');
+      o += '<path d="M2 80 h102 q12 0 18 9 h-120z" fill="' + lt + '" opacity=".55"/>';
+      o += strip(6, 98, 84, 13, 13, [19, 45, 71, 84]);
+      o += '<path d="M106 82 q12 2 17 16 h-17z" class="sc-vglass"/><path d="M109 86 l5 8" class="sc-vshine"/>';
+      o += '<rect x="0" y="100" width="128" height="3" fill="#fff" opacity=".85"/><rect x="0" y="103" width="128" height="2" fill="#f2c94c" opacity=".9"/>';
+      o += '<rect x="120" y="104" width="6" height="3" rx="1.5" class="sc-vlamp"/>';
+      o += '<rect x="8" y="111" width="30" height="4" rx="2" fill="' + dk + '"/><rect x="88" y="111" width="30" height="4" rx="2" fill="' + dk + '"/>' + wheel(15, 114, 4.5) + wheel(31, 114, 4.5) + wheel(95, 114, 4.5) + wheel(111, 114, 4.5);
+      return o;
+    }
+    if (mode === 'tram' || mode === 'metro') {   /* two linked cars with rounded ends; trams get a pantograph */
+      var tram = mode === 'tram';
+      if (tram) o += '<path d="M50 74 l9 -9 h12 M59 65 l4 -6" fill="none" stroke="rgba(var(--ink-rgb),.6)" stroke-width="1.4"/><rect x="42" y="72" width="22" height="4" rx="1.5" fill="' + dk + '"/>';
+      o += body('M6 76 h104 q10 0 12 12 v18 q0 4 -4 4 h-114 q-4 0 -4 -4 v-24 q0 -6 6 -6z');
+      o += '<path d="M8 78 h100 q8 0 10 6 h-114 q0 -6 4 -6z" fill="' + lt + '" opacity=".55"/>';
+      o += strip(6, 54, 83, 14, 12, [12, 37]) + strip(62, 108, 83, 14, 11, [79]);
+      o += '<line x1="58" y1="77" x2="58" y2="109" stroke="' + dk + '" stroke-width="2"/>';
+      o += '<path d="M110 82 q8 1 10 14 h-10z" class="sc-vglass"/>';
+      o += '<rect x="0" y="101" width="122" height="3" fill="' + dk + '" opacity=".6"/>';
+      if (!tram) o += '<circle cx="86" cy="104.5" r="0" />';
+      o += '<rect x="116" y="103" width="5" height="3" rx="1.5" class="sc-vlamp"/>' + wheel(20, 112, 4.5) + wheel(36, 112, 4.5) + wheel(84, 112, 4.5) + wheel(100, 112, 4.5);
+      return o;
+    }
+    /* bus (and coach): a city bus with a destination sign, two doors, wheel arches */
+    o += body('M4 74 h86 q12 0 14 12 v20 q0 4 -4 4 h-96 q-4 0 -4 -4 v-28 q0 -4 4 -4z');
+    o += '<path d="M6 76 h84 q8 0 10 4 h-98 q0 -4 4 -4z" fill="' + lt + '" opacity=".6"/>';
+    o += strip(6, 62, 81, 14, 14, [13, 41, 54]);
+    o += '<path d="M90 79 q10 1 12 14 h-12z" class="sc-vglass"/><path d="M93 82 l3 8" class="sc-vshine"/>';
+    o += '<rect x="78" y="76" width="18" height="3.5" rx="1" fill="#1b1f27"/><rect x="80" y="76.8" width="13" height="2" rx=".8" fill="#ffb300" class="sc-vsign"/>';
+    o += glass(65, 81, 10, 27, 1.5) + '<line x1="70" y1="82" x2="70" y2="107" stroke="' + dk + '" stroke-width="1.2"/>' + glass(80, 95, 8, 13, 1.5);
+    o += '<path d="M0 98 h102" stroke="' + dk + '" stroke-width="1" opacity=".5"/>';
+    o += '<path d="M10 110 a10 10 0 0 1 20 0z M70 110 a10 10 0 0 1 20 0z" fill="#1b1f27"/>';
+    o += '<rect x="99" y="102" width="5" height="3" rx="1.5" class="sc-vlamp"/><rect x="0" y="101" width="3" height="5" rx="1" fill="#d63a3a"/>';
+    o += wheel(20, 111, 5.5) + wheel(80, 111, 5.5);
+    return o;
   }
   function journey() {
     var tv = readJSON('dash.travel', {}) || {}, mode = 'bus'; try { mode = localStorage.getItem('dash.tvMode') || 'bus'; } catch (e) {}
@@ -272,7 +317,7 @@
       '<g class="sc-wait">' + (window.Avatar ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="180" y="62" width="40" height="56" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
         : '<circle cx="196" cy="88" r="5" class="sc-skin"/><path d="M190 112 v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/><line x1="193" y1="112" x2="193" y2="116" class="sc-leg"/><line x1="199" y1="112" x2="199" y2="116" class="sc-leg"/>') + '</g>';
     var rec = (tv.recent || [])[0];
-    var svg = ground() + deco('travel') + road + stop + part('paneJourney', '', '<g class="sc-veh sc-veh-' + mode + '">' + vehicle(mode, v[0]) + '</g>');
+    var svg = ground() + deco('travel') + road + stop + part('paneJourney', '', '<g class="sc-veh sc-veh-' + mode + '"><g transform="translate(' + ({ tram: -18, metro: -18, rail: -28 }[mode] || 0) + ' 0)">' + vehicle(mode, v[0]) + '</g></g>');
     var list = [{ t: v[1], h: '#paneJourney' }];
     if (rec && rec.from && rec.to) list.push({ t: rec.from + ' → ' + rec.to, h: '#paneJourney' });
     return { svg: svg, label: L('Your everyday journey', 'Den daglige reisen din'), list: list, empty: '' };
