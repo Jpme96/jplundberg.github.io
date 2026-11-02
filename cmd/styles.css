@@ -3800,3 +3800,8 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .sc-vlamp { fill: #ffe08a; filter: drop-shadow(0 0 2px #ffe08a); }
 .sc-vbody { filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .3)); }
 :root[data-theme="light"] .sc-vglass { fill: #2c3e55; }
+/* Monthly budget: fixed costs can be changed in place */
+.b-legbtn { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; } .b-legpen { font-size: 11px; color: var(--muted); }
+.b-fixedit { list-style: none; padding: 8px 0; border-bottom: 1px solid var(--line); } .b-fixedit .add-row { margin-bottom: 6px; } .b-fixedit select { width: 100%; }
+.b-row .b-open { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: none; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.b-row .b-open small { font-size: 12px; } .b-row .b-open:hover span:first-child { color: var(--accent); }

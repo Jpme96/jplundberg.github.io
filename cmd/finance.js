@@ -54,7 +54,7 @@
 
   var D = null;            // decrypted data while unlocked
   var viewMonth = ym(new Date());
-  var budgetEditing = false;
+  var budgetEditing = false, fixEditing = null;
 
   function blank() {
     return { budget: { income: [], fixed: [] }, expenses: [], savings: [], accounts: [], history: {} };
@@ -126,7 +126,7 @@
         (inc.gross ? '<li><i class="dot" style="background:#8a6fdf"></i>Gross salary<b>' + money(inc.gross) + '</b></li>' +
           '<li><i class="dot" style="background:#6b6d73"></i>Tax' + (inc.extra ? ' and deductions' : '') + '<b>' + money(inc.tax + inc.extra) + '</b></li>' : '') +
         (per.extra ? '<li><i class="dot" style="background:#22b35e"></i>Money in (refunds, Vipps)<b>+' + money(per.extra) + '</b></li>' : '') +
-        '<li><i class="dot" style="background:#3987e5"></i>Fixed costs<b>' + money(fixed) + '</b></li>' +
+        '<li><button type="button" class="b-legbtn" data-fixopen aria-label="Change fixed costs"><i class="dot" style="background:#3987e5"></i>Fixed costs <i class="bi bi-pencil b-legpen"></i></button><b>' + money(fixed) + '</b></li>' +
         '<li><i class="dot" style="background:#d95926"></i>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(monthName(key, true))) + '<b>' + money(spent) + '</b></li>' +
         '<li><i class="dot" style="background:var(--accent)"></i>Left<b>' + money(left) + '</b></li>' +
       '</ul>' + payLine;
@@ -146,7 +146,7 @@
         (bits.length ? '<small class="muted">' + esc(bits.join(' · ')) + '</small>' : '') + '</button>' + money(row.net) +
         '<button class="del" type="button" data-bdel="income:' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
-    var hasDay = B.hasPayday(D), mode = D.budget.period === 'payday' && hasDay ? 'payday' : 'month';
+    var hasDay = B.hasPayday(D), mode = (D.budget.period === 'payday' || D.budget.period == null) && hasDay ? 'payday' : 'month';
     return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
       (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') +
       (hasDay ? '<div class="b-period"><span>Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') +
@@ -233,7 +233,13 @@
         '<a class="del" href="/cmd/finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
       if (r.src === 'save') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<a class="del" href="/cmd/finance/#c=savings" title="From Savings goals – change it there" aria-label="' + esc(r.name) + ' comes from Savings goals"><i class="bi bi-link-45deg"></i></a></li>';
-      return '<li class="b-row"><span>' + esc(r.name) + '</span>' + money(r.amount) +
+      if (kind === 'fixed' && fixEditing === r.id) {   /* change name, amount and due day in place */
+        var opts = '<option value="">No due day</option>'; for (var dd = 1; dd <= 31; dd++) opts += '<option value="' + dd + '"' + (+r.day === dd ? ' selected' : '') + '>Due on the ' + dd + '.</option>';
+        return '<li class="b-fixedit"><form class="fx-edit" data-fid="' + r.id + '"><div class="add-row"><input name="n" value="' + esc(r.name) + '" required autocomplete="off" aria-label="Name"><input name="a" class="amt" value="' + esc(String(r.amount)) + '" inputmode="decimal" required autocomplete="off" aria-label="kr / month"></div>' +
+          '<div class="add-row"><select name="day" aria-label="Due day">' + opts + '</select></div>' +
+          '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit">Save</button></div></form></li>';
+      }
+      return '<li class="b-row"><button type="button" class="b-open" data-fedit="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day ? '<small class="muted">due the ' + esc(r.day) + '.</small>' : '') + '</button>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
     return '<div class="b-edit"><h3>' + title + ' <span class="muted">' + money(sum(D.budget[kind])) + '</span></h3>' +
@@ -245,7 +251,7 @@
       '</form></div>';
   }
 
-  $('budgetEdit').addEventListener('click', function () { budgetEditing = !budgetEditing; payEditing = null; renderBudget(); });
+  $('budgetEdit').addEventListener('click', function () { budgetEditing = !budgetEditing; payEditing = null; fixEditing = null; renderBudget(); });
   $('budgetBody').addEventListener('submit', function (e) {
     var sf = e.target.closest('.slip-form');
     if (sf) {
@@ -269,6 +275,14 @@
       window.dispatchEvent(new Event('fin:change'));
       return;
     }
+    var fx = e.target.closest('.fx-edit');
+    if (fx) {
+      e.preventDefault();
+      var av = num(fx.a.value); if (!(av > 0)) { fx.a.focus(); return; }
+      D.budget.fixed.forEach(function (r) { if (r.id === fx.dataset.fid) { r.name = fx.n.value.trim() || r.name; r.amount = av; r.day = fx.day.value ? +fx.day.value : null; } });
+      fixEditing = null; persist(); renderBudget(); renderBills(); window.dispatchEvent(new Event('fin:change'));
+      return;
+    }
     var f = e.target.closest('.b-add');
     if (!f) return;
     e.preventDefault();
@@ -282,6 +296,10 @@
     if (again) again.focus();
   });
   $('budgetBody').addEventListener('click', function (e) {
+    var fe = e.target.closest('[data-fedit]');
+    if (fe) { fixEditing = fe.dataset.fedit; renderBudget(); var i0 = $('budgetBody').querySelector('.fx-edit input[name="a"]'); if (i0) { i0.focus(); i0.select(); } return; }
+    if (e.target.closest('[data-fxcancel]')) { fixEditing = null; renderBudget(); return; }
+    if (e.target.closest('[data-fixopen]')) { budgetEditing = true; payEditing = null; renderBudget(); var fl = $('budgetBody').querySelectorAll('.b-edit')[1]; if (fl) fl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
     var pe = e.target.closest('[data-pedit]');
     if (pe) { openPay(pe.dataset.pedit); return; }
     var sd = e.target.closest('[data-sdel]');

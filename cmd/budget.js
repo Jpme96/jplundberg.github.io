@@ -117,7 +117,9 @@ window.Budget = (function () {
   function period(d, now) {
     now = now || new Date();
     var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var byPay = d && d.budget && d.budget.period === 'payday' && hasPayday(d);
+    /* default: when your salary has a payday, the budget runs payday → payday (you live on last month's salary until the next one);
+       "Calendar month" in Edit switches it back */
+    var byPay = d && d.budget && (d.budget.period === 'payday' || d.budget.period == null) && hasPayday(d);
     var start, end, label, income;
     if (byPay) {
       var back = new Date(t0); back.setMonth(back.getMonth() - 2);
