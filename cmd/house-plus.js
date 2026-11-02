@@ -302,7 +302,7 @@
     var list = []; Object.keys(d).forEach(function (k) { d[k].forEach(function (x) { list.push(x); }); });
     var cap = n ? list.slice(0, 3).map(function (x) { return '<a href="' + x.href + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (list.length > 3 ? ' · +' + (list.length - 3) : '') : 'Nothing due – the house is in good shape.';
     var html = svg + '<figcaption>' + cap + '</figcaption>';
-    if (box.innerHTML !== html) box.innerHTML = html;
+    if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
   }
   document.addEventListener('click', function (e) {
     var g = e.target.closest('[data-hsgo]'), a = e.target.closest('#hsIllu a[href^="#"]');

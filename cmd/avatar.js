@@ -227,7 +227,7 @@
     if (!box) { box = document.createElement('div'); box.id = 'avHome'; box.className = 'av-home'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-av'); }
     var html = '<button type="button" class="av-fig" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + figure(Object.assign({}, m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"') + '</button>' +
       '<p class="av-say" role="status">' + esc(pick.say) + (l.length > 1 ? ' <span class="av-dots">' + l.map(function (_, i) { return '<i' + (i === idx % l.length ? ' class="on"' : '') + '></i>'; }).join('') + '</span>' : '') + '</p>';
-    if (box.innerHTML !== html) box.innerHTML = html;
+    if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
     badge(main.m);
   }
   /* ---------- he reacts to what you do: a task done, a habit ticked, a workout or an expense logged ---------- */

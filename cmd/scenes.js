@@ -249,8 +249,8 @@
     var t = 'journey'; try { t = sessionStorage.getItem('dash.travelTab') || 'journey'; } catch (e) {}
     var b = document.querySelector('#tvTabs [aria-selected="true"]'); return b ? b.dataset.tab : t;
   }
-  var VEH = { bus: ['#e60000', L('By bus', 'Med buss')], coach: ['#75a300', L('By coach', 'Med ekspressbuss')], tram: ['#0b91ef', L('By tram', 'Med trikk')], metro: ['#ec700c', L('By metro', 'Med T-bane')],
-    rail: ['#2f5fb3', L('By train', 'Med tog')], water: ['#682c88', L('By boat', 'Med båt')] };
+  var VEH = { bus: ['#e60000', L('By bus', 'Med buss'), L('Bus', 'Buss')], coach: ['#75a300', L('By coach', 'Med ekspressbuss'), L('Coach', 'Ekspressbuss')], tram: ['#0b91ef', L('By tram', 'Med trikk'), L('Tram', 'Trikk')], metro: ['#ec700c', L('By metro', 'Med T-bane'), L('Metro', 'T-bane')],
+    rail: ['#2f5fb3', L('By train', 'Med tog'), L('Train', 'Tog')], water: ['#682c88', L('By boat', 'Med båt'), L('Boat', 'Båt')] };
   /* the vehicles, drawn like the rest of the pictures: soft outline, roof highlight, dark glass with a shine, people inside, wheel arches */
   function shadeC(hex, f) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255; var m = function (c) { return Math.max(0, Math.min(255, Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f))); }; return '#' + [m(r), m(g), m(b)].map(function (c) { return c.toString(16).padStart(2, '0'); }).join(''); }
   function vehicle(mode, col) {
@@ -305,22 +305,62 @@
     o += wheel(20, 111, 5.5) + wheel(80, 111, 5.5);
     return o;
   }
+  /* the whole trip as a little film: you wait, the first ride takes you, you change to the next one … and walk home at the end.
+     The rides come from your last search (bus → metro → train …); one 6-second scene per ride + one for arriving. */
+  function track(kind) {
+    if (kind === 'water') return '<path d="M-10 118 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave"/><path d="M-10 126 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave sc-wave2"/>';
+    if (kind === 'track') return '<line x1="0" y1="119" x2="240" y2="119" class="sc-rail"/>' + Array.apply(null, Array(16)).map(function (_, i) { return '<line x1="' + (i * 16 + 2) + '" y1="117" x2="' + (i * 16 + 10) + '" y2="121" class="sc-sleeper"/>'; }).join('');
+    return '<rect x="0" y="116" width="240" height="10" class="sc-road"/><line x1="0" y1="121" x2="240" y2="121" class="sc-lane"/>';
+  }
+  function kindOf(m) { return m === 'water' ? 'water' : (m === 'rail' || m === 'tram' || m === 'metro') ? 'track' : 'road'; }
+  function me(x, y, w, h) { return window.Avatar ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
+    : '<circle cx="' + (x + w / 2) + '" cy="' + (y + 26) + '" r="5" class="sc-skin"/><path d="M' + (x + w / 2 - 6) + ' ' + (y + h - 6) + ' v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/>'; }
   function journey() {
-    var tv = readJSON('dash.travel', {}) || {}, mode = 'bus'; try { mode = localStorage.getItem('dash.tvMode') || 'bus'; } catch (e) {}
-    if (mode === 'air' || mode === 'foot' || !VEH[mode]) mode = 'bus';
-    var v = VEH[mode], track = mode === 'rail' || mode === 'tram' || mode === 'metro';
-    var road = mode === 'water' ? '<path d="M-10 118 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave"/><path d="M-10 126 q12 -4 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" class="sc-wave sc-wave2"/>'
-      : track ? '<line x1="0" y1="119" x2="240" y2="119" class="sc-rail"/>' + Array.apply(null, Array(16)).map(function (_, i) { return '<line x1="' + (i * 16 + 2) + '" y1="117" x2="' + (i * 16 + 10) + '" y2="121" class="sc-sleeper"/>'; }).join('')
-      : '<rect x="0" y="116" width="240" height="10" class="sc-road"/><line x1="0" y1="121" x2="240" y2="121" class="sc-lane"/>';
-    var stop = '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + v[0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + (mode === 'rail' ? 'T' : mode === 'water' ? '⚓' : mode === 'metro' ? 'T' : 'H') + '</text></g>' +
-      /* you, in the same drawn style as your avatar, waiting at the stop (it gets on, then the next ride comes) */
-      '<g class="sc-wait">' + (window.Avatar ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="180" y="62" width="40" height="56" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
-        : '<circle cx="196" cy="88" r="5" class="sc-skin"/><path d="M190 112 v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/><line x1="193" y1="112" x2="193" y2="116" class="sc-leg"/><line x1="199" y1="112" x2="199" y2="116" class="sc-leg"/>') + '</g>';
-    var rec = (tv.recent || [])[0];
-    var svg = ground() + deco('travel') + road + stop + part('paneJourney', '', '<g class="sc-veh sc-veh-' + mode + '"><g transform="translate(' + ({ tram: -18, metro: -18, rail: -28 }[mode] || 0) + ' 0)">' + vehicle(mode, v[0]) + '</g></g>');
-    var list = [{ t: v[1], h: '#paneJourney' }];
+    var tv = readJSON('dash.travel', {}) || {}, legs = [];
+    try { legs = JSON.parse(localStorage.getItem('dash.tvLegs') || '[]'); } catch (e) {}
+    legs = (Array.isArray(legs) ? legs : []).map(function (m) { return m === 'coach' ? 'coach' : m; }).filter(function (m) { return VEH[m]; }).slice(0, 4);
+    if (!legs.length) { var m1 = ''; try { m1 = localStorage.getItem('dash.tvMode') || ''; } catch (e) {} legs = VEH[m1] ? [m1] : ['bus', 'metro', 'rail']; }
+    var rec = (tv.recent || [])[0], to = rec && rec.to ? String(rec.to) : '';
+    /* where it ends: home or work – from your last search, otherwise like the commute: to work in the morning, home later */
+    var toWork = /^(work|jobb|arbeid|office|kontor)/i.test(to) ? true : /^(home|hjem)/i.test(to) ? false : new Date().getHours() < 12;
+    var N = legs.length, SL = 100 / (N + 1), D = (N + 1) * 6, id = 'sj' + legs.join('') + (toWork ? 'w' : 'h');
+    var P = function (k, f) { return Math.min(100, k * SL + f * SL); }, f2 = function (x) { return x.toFixed(2) + '%'; };
+    /* instant on/off: visible inside the given [from, to] ranges (in %) */
+    var vis = function (name, ranges) {
+      var k = '0%{opacity:' + (ranges[0][0] <= 0 ? 1 : 0) + '}';
+      ranges.forEach(function (r) { if (r[0] > 0) k += f2(r[0]) + '{opacity:0}' + f2(r[0] + .05) + '{opacity:1}'; k += f2(Math.max(r[0] + .06, r[1])) + '{opacity:1}' + (r[1] < 100 ? f2(r[1] + .05) + '{opacity:0}' : ''); });
+      return '@keyframes ' + name + '{' + k + '100%{opacity:' + (ranges[ranges.length - 1][1] >= 100 ? 1 : 0) + '}}';
+    };
+    var css = '', layers = '';
+    var stopChar = function (m) { return m === 'water' ? '⚓' : m === 'rail' || m === 'metro' ? 'T' : 'H'; };
+    legs.forEach(function (m, i) {
+      var a = P(i, 0), b = P(i + 1, 0), v = VEH[m];
+      /* the scene: ground + the stop for this ride */
+      css += vis(id + 'g' + i, [[a, b]]);
+      layers += '<g class="sj-on" style="animation:' + id + 'g' + i + ' ' + D + 's infinite' + (i ? ';opacity:0' : '') + '">' + track(kindOf(m)) +
+        '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + v[0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + stopChar(m) + '</text></g></g>';
+      /* you wait, then get on */
+      css += vis(id + 'm' + i, [[a, P(i, .42)]]);
+      layers += '<g style="animation:' + id + 'm' + i + ' ' + D + 's infinite' + (i ? ';opacity:0' : '') + '">' + me(180, 62, 40, 56) + '</g>';
+      /* the ride: in from the left, stops, leaves to the right */
+      var off = { tram: -18, metro: -18, rail: -28 }[m] || 0;
+      css += '@keyframes ' + id + 'v' + i + '{0%{transform:translateX(-180px)}' + f2(a) + '{transform:translateX(-180px);animation-timing-function:cubic-bezier(.2,.7,.35,1)}' + f2(P(i, .32)) + '{transform:translateX(56px)}' +
+        f2(P(i, .56)) + '{transform:translateX(56px);animation-timing-function:cubic-bezier(.55,0,.8,.4)}' + f2(P(i, .9)) + '{transform:translateX(300px)}100%{transform:translateX(300px)}}';
+      layers += part('paneJourney', '', '<g class="sj-veh' + (m === 'water' ? ' sj-boat' : '') + '" style="animation:' + id + 'v' + i + ' ' + D + 's infinite;transform:translateX(' + (i ? 300 : 56) + 'px)"><g transform="translate(' + off + ' 0)">' + vehicle(m, v[0]) + '</g></g>');
+    });
+    /* arriving: home (or work), you walk to the door and the light comes on */
+    var a2 = P(N, 0);
+    css += vis(id + 'h', [[a2, 100]]) + '@keyframes ' + id + 'w{0%{transform:translateX(-150px);opacity:0}' + f2(a2) + '{transform:translateX(-150px);opacity:1}' + f2(P(N, .55)) + '{transform:translateX(0);opacity:1}' + f2(P(N, .62)) + '{transform:translateX(4px);opacity:0}100%{opacity:0}}' +
+      '@keyframes ' + id + 'l{0%,' + f2(P(N, .6)) + '{fill:#1d2a3b}' + f2(P(N, .64)) + ',100%{fill:#ffd56b}}';
+    var place = toWork
+      ? '<rect x="168" y="44" width="54" height="74" rx="3" fill="#8fa3bf" stroke="#4f5f78" stroke-width="1.6"/>' + [0, 1, 2, 3, 4].map(function (r) { return [0, 1, 2].map(function (c) { return '<rect x="' + (174 + c * 16) + '" y="' + (50 + r * 11) + '" width="10" height="7" rx="1" class="sj-lit" style="animation:' + id + 'l ' + D + 's infinite"/>'; }).join(''); }).join('') + '<rect x="188" y="104" width="14" height="14" fill="#3b4a60"/>'
+      : '<path d="M160 82 l30 -24 l30 24" fill="#b5523b" stroke="#7d3426" stroke-width="1.6" stroke-linejoin="round"/><rect x="164" y="80" width="52" height="38" rx="2" fill="#efe3cc" stroke="#9c8a6a" stroke-width="1.6"/>' +
+        '<rect x="200" y="64" width="7" height="12" fill="#8a5a44" stroke="#5e3b2c" stroke-width="1.2"/><rect x="170" y="88" width="13" height="11" rx="1.5" class="sj-lit" style="animation:' + id + 'l ' + D + 's infinite"/><rect x="188" y="96" width="12" height="22" rx="1.5" fill="#6b4a35"/><circle cx="197" cy="108" r="1" fill="#ffd56b"/>';
+    layers += '<g style="animation:' + id + 'h ' + D + 's infinite;opacity:0">' + track('road') + place + '<g style="animation:' + id + 'w ' + D + 's infinite;opacity:0">' + me(150, 62, 40, 56) + '</g></g>';
+    var svg = '<style>' + css + '</style>' + ground() + deco('travel') + layers;
+    var list = [{ t: legs.map(function (m) { return VEH[m][2]; }).join(' → ') + ' → ' + (toWork ? L('Work', 'Jobb') : L('Home', 'Hjem')), h: '#paneJourney' }];
     if (rec && rec.from && rec.to) list.push({ t: rec.from + ' → ' + rec.to, h: '#paneJourney' });
-    return { svg: svg, label: L('Your everyday journey', 'Den daglige reisen din'), list: list, empty: '' };
+    return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, empty: '' };
   }
   var MAKE = { people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
   function draw() {
@@ -333,7 +373,7 @@
     if (!box) { box = document.createElement('figure'); box.id = 'scIllu'; box.className = 'hs-illu sc-illu'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-illu'); }
     var cap = s.list.length ? s.list.slice(0, 3).map(function (x) { return '<a href="' + esc(x.h) + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (s.list.length > 3 ? ' · +' + (s.list.length - 3) : '') : esc(s.empty || '');
     var html = '<svg viewBox="0 0 240 150" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';
-    if (box.innerHTML !== html) box.innerHTML = html;
+    if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
   }
   function go(target) {
     if (/=/.test(target)) { location.hash = target; return; }
