@@ -129,17 +129,40 @@
   }
   document.addEventListener('input', function (e) { var i = e.target.closest && e.target.closest('.pn-find input'); if (i) filterPantry($t('pantry'), i.value); });
   function setState(id, st) { var t = Fe.tools(); (t.pantry || []).forEach(function (x) { if (x.id === id) x.state = st; }); Fe.saveTools(t); }
-  /* bought (ticked off) or cleared from the shopping list → back in stock */
+  /* the shopping list and the pantry follow each other:
+     - something you keep at home that's on the list (not ticked) → running out
+     - bought (ticked off) or cleared from the list → back in stock
+     - anything else you tick off the list goes into the pantry by itself (Undo = never add that one again) */
   function syncShop() {
-    if (!on() || !fcfg().pantryBack) return;
-    var t = Fe.tools(), shop = Array.isArray(t.shop) ? t.shop : [], ch = false;
-    (t.pantry || []).forEach(function (x) {
-      if (x.state !== 'low') return;
-      var it = shop.filter(function (s) { return matches(x, s.text); });
-      if (!it.length || it.every(function (s) { return s.done; })) { x.state = 'ok'; ch = true; }
+    if (!on()) return;
+    var t = Fe.tools(), shop = Array.isArray(t.shop) ? t.shop : [], ch = false, cfg = fcfg(), added = [];
+    t.pantry = Array.isArray(t.pantry) ? t.pantry : [];
+    t.pantry.forEach(function (x) {
+      if (!x) return;
+      var it = shop.filter(function (s) { return s && matches(x, s.text); });
+      if (x.state === 'low' && cfg.pantryBack && (!it.length || it.every(function (s) { return s.done; }))) { x.state = 'ok'; ch = true; }
+      else if (x.state !== 'low' && cfg.pantryLow !== false && it.some(function (s) { return !s.done; })) { x.state = 'low'; ch = true; }
     });
+    if (cfg.shopToPantry !== false) {
+      var no = Array.isArray(t.pantryNo) ? t.pantryNo : [];
+      if (!t.shopPanInit) { shop.forEach(function (s) { if (s && s.done) s.pan = 1; }); t.shopPanInit = 1; ch = true; }   /* what was ticked before this existed stays out */
+      else shop.forEach(function (s) {
+        if (!s || !s.done || s.pan) return;
+        s.pan = 1; ch = true;
+        if (t.pantry.some(function (x) { return x && matches(x, s.text); })) return;
+        var nm = cleanName(s.text); if (!nm || no.indexOf(nm.toLowerCase()) > -1) return;
+        var it = { id: uid(), name: nm, state: 'ok' }; t.pantry.push(it); added.push(it);
+      });
+    }
     if (ch) Fe.saveTools(t);
+    if (added.length) toast('<i class="bi bi-box-seam"></i> ' + (added.length === 1 ? esc(added[0].name) + ' is in the pantry' : added.length + ' added to the pantry'), function () {
+      var t2 = Fe.tools(), ids = added.map(function (x) { return x.id; });
+      t2.pantry = (t2.pantry || []).filter(function (x) { return x && ids.indexOf(x.id) < 0; });
+      t2.pantryNo = (Array.isArray(t2.pantryNo) ? t2.pantryNo : []).concat(added.map(function (x) { return x.name.toLowerCase(); })).slice(-200);
+      Fe.saveTools(t2);
+    });
   }
+  function allow(name) { var t = Fe.tools(); if (Array.isArray(t.pantryNo)) { var n = String(name || '').toLowerCase(), l = t.pantryNo.filter(function (x) { return x !== n; }); if (l.length !== t.pantryNo.length) { t.pantryNo = l; Fe.saveTools(t); } } }
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('.fp5-padd'); if (!f) return;
     e.preventDefault();
@@ -147,6 +170,7 @@
     var t = Fe.tools(), l = Array.isArray(t.pantry) ? t.pantry : [], have = {}; l.forEach(function (x) { have[String(x.name || '').toLowerCase()] = 1; });
     var added = 0, already = [];
     names.forEach(function (n) { if (!have[n.toLowerCase()]) { l.push({ id: uid(), name: n.charAt(0).toUpperCase() + n.slice(1), state: 'ok' }); have[n.toLowerCase()] = 1; added++; } else already.push(n.toLowerCase()); });
+    if (Array.isArray(t.pantryNo)) { var lw = names.map(function (n) { return n.toLowerCase(); }); t.pantryNo = t.pantryNo.filter(function (x) { return lw.indexOf(x) < 0; }); }
     var el = $t('pantry'); if (el) filterPantry(el, '');
     if (added) { t.pantry = l; Fe.saveTools(t); toast('<i class="bi bi-box-seam"></i> ' + (added === 1 ? esc(names[0]) + ' is in the pantry' : added + ' added to the pantry')); }
     setTimeout(function () {
@@ -167,7 +191,7 @@
       var si = (Fe.tools().shop || []).filter(function (q) { return q.id === b.dataset.fptopan; })[0]; if (!si) return;
       var o3 = snapshot('pantry'), t4 = Fe.tools(), nm = cleanName(si.text);
       t4.pantry = Array.isArray(t4.pantry) ? t4.pantry : [];
-      t4.pantry.push({ id: uid(), name: nm, state: si.done ? 'ok' : 'low' }); Fe.saveTools(t4);
+      t4.pantry.push({ id: uid(), name: nm, state: si.done ? 'ok' : 'low' }); if (Array.isArray(t4.pantryNo)) t4.pantryNo = t4.pantryNo.filter(function (x) { return x !== nm.toLowerCase(); }); Fe.saveTools(t4);
       toast('<i class="bi bi-box-seam"></i> ' + esc(nm) + (si.done ? ' is in the pantry' : ' – in the pantry, on the list'), function () { restore('pantry', o3); });
       return;
     }
@@ -177,7 +201,7 @@
       (t.pantry || []).forEach(function (q) { if (q.id === id) q.state = 'ok'; }); Fe.saveTools(t);
       toast('<i class="bi bi-check2"></i> ' + esc(p.name) + ' – in stock'); return;
     }
-    if ((b = e.target.closest('[data-fpdel]'))) { var o = snapshot('pantry'), t2 = Fe.tools(); t2.pantry = (t2.pantry || []).filter(function (q) { return q.id !== b.dataset.fpdel; }); Fe.saveTools(t2); toast('<i class="bi bi-trash3"></i> Removed', function () { restore('pantry', o); }); return; }
+    if ((b = e.target.closest('[data-fpdel]'))) { var o = snapshot('pantry'), t2 = Fe.tools(), gone = (t2.pantry || []).filter(function (q) { return q.id === b.dataset.fpdel; })[0]; t2.pantry = (t2.pantry || []).filter(function (q) { return q.id !== b.dataset.fpdel; }); if (gone && gone.name) t2.pantryNo = (Array.isArray(t2.pantryNo) ? t2.pantryNo : []).concat([String(gone.name).toLowerCase()]).slice(-200); Fe.saveTools(t2); toast('<i class="bi bi-trash3"></i> Removed', function () { restore('pantry', o); }); return; }
     if (e.target.closest('[data-fpedit]')) { editP = !editP; return drawPantry(); }
     if (e.target.closest('[data-fpbasics]')) {
       var o2 = snapshot('pantry'), t3 = Fe.tools(), l = Array.isArray(t3.pantry) ? t3.pantry : [], n = 0;

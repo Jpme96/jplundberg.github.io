@@ -921,6 +921,8 @@
   [['Update the Worker first (paste the newest worker.js in Cloudflare)', 'Oppdater Workeren først (lim inn den nyeste worker.js i Cloudflare)'], ['No connection – nothing was deleted', 'Ingen forbindelse – ingenting ble slettet'], ['Delete', 'Slett']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   [['Edit the website', 'Rediger nettsiden'], ['Front page, texts, CV, courses, articles – in Admin', 'Forside, tekster, CV, kurs, artikler – i Admin'], ['Write an article', 'Skriv en artikkel'], ['Opens the writing studio', 'Åpner skrivestudioet'],
     ['Visitors and status', 'Besøkende og status'], ['Admin → Overview', 'Admin → Oversikt'], ['More options', 'Flere valg']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
+  [['Bought items go into the pantry', 'Det du kjøper havner i matskapet'], ['Tick something off the shopping list and it’s in stock at home', 'Kryss av noe på handlelista, så er det på lager hjemme'],
+    ['On the shopping list = running out', 'På handlelista = går tomt'], ['Adding something you keep at home marks it as running low', 'Legger du til noe du har hjemme, merkes det som snart tomt']].forEach(function (x) { if (!Object.prototype.hasOwnProperty.call(D, x[0])) D[x[0]] = x[1]; });
   /* the same texts come round again and again (dates, buttons): remember what each became */
   var MEMO = new Map();
   function tr(s) {

@@ -57,7 +57,7 @@
     housecfg: { binHour: 14, binMorning: true, lead: 2, price: 0, meterNudge: true, calendar: true, seasonNudge: true, illu: true },
     peoplecfg: { lead: 7, catchup: true, catchupMax: 1, defEvery: 0, calendar: true, askNote: true, namedays: true, ndCal: true, annLead: 3,
       gbXmas: 0, gbBday: 0, gbOther: 0, xmasNudge: true, giftFin: false },
-    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false, servings: 0, pantryBack: true, pantrySkip: true },
+    foodcfg: { nudge: true, nudgeHour: 13, repeat: 14, sort: 'aisle', calendar: false, servings: 0, pantryBack: true, pantrySkip: true, shopToPantry: true, pantryLow: true },
     ptcfg: { round: 0, long: 4, vat: true, payDays: 14, org: '', account: '', addr: '', invNext: 1 }
   };
   function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
@@ -1002,7 +1002,7 @@
           sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
           sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
           sub('journal-text', 'Recipes') + '<div class="st-group">' + sel('foodcfg', 'servings', 'Usually cooking for', [[0, 'As the recipe says'], [1, '1 person'], [2, '2 people'], [3, '3 people'], [4, '4 people'], [5, '5 people'], [6, '6 people'], [8, '8 people']], 'Recipes open scaled to this, and the week’s shopping list too') + '</div>' +
-          sub('box-seam', 'Pantry') + '<div class="st-group">' + sw('foodcfg', 'pantryBack', 'Back in stock when ticked off the shopping list') + sw('foodcfg', 'pantrySkip', 'Skip basics you have when adding recipes', 'Salt, oil, rice … stay off the list while they’re in stock') + '</div>' +
+          sub('box-seam', 'Pantry') + '<div class="st-group">' + sw('foodcfg', 'shopToPantry', 'Bought items go into the pantry', 'Tick something off the shopping list and it’s in stock at home') + sw('foodcfg', 'pantryBack', 'Back in stock when ticked off the shopping list') + sw('foodcfg', 'pantryLow', 'On the shopping list = running out', 'Adding something you keep at home marks it as running low') + sw('foodcfg', 'pantrySkip', 'Skip basics you have when adding recipes', 'Salt, oil, rice … stay off the list while they’re in stock') + '</div>' +
           sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['aisle', 'By section in the shop'], ['added', 'As added'], ['abc', 'A–Å']]) + '<button type="button" class="st-row st-btn" data-shreset><span><i class="bi bi-arrow-counterclockwise"></i> Forget the learned shop order</span></button>' + '</div>' +
           '<div class="st-group">' + link('/cmd/food/', 'basket', 'Open Food') + link('/cmd/food/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       }
