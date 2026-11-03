@@ -70,6 +70,7 @@
       (d.expenses || []).forEach(function (e) { if (e.ref && /^bank:/.test(e.ref)) delete e.ref; });   // your own entries forget the bank row they were matched to
       d.extra = (d.extra || []).filter(function (e) { return e.src !== 'bank'; });
       delete d.bankFiles; delete d.lastImport; delete b.ccPaid;
+      if (b.payslips) Object.keys(b.payslips).forEach(function (k) { if (b.payslips[k] && b.payslips[k].src === 'bank') delete b.payslips[k]; });   // salaries read from imports
       done.push(n + ' imported');
     }
     if (P.balances) { (b.acctList || []).forEach(function (a) { a.bal = null; a.balAt = null; a.balSrc = null; }); done.push('balances'); }

@@ -153,7 +153,7 @@
     var haveIn = {};
     (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
     var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
-    var out = [], skipped = { income: 0, dup: 0, bad: 0 };
+    var out = [], skipped = { income: 0, dup: 0, bad: 0 }, salaries = [];
     parsed.forEach(function (x) {
       if (!x.ok) { skipped.bad++; return; }
       var spend = card ? x.amt > 0 : x.amt < 0;
@@ -164,7 +164,12 @@
         var salary = SALARY.test(x.desc), own = (OWN.test(x.desc) && !/tilbake|refusjon|refund|retur|tilbakebet/i.test(x.desc)) || (card && x.amt < 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc));
         var rin = 'bankin:' + x.date + '|' + amount + '|' + norm(x.desc);
         if (haveIn[rin]) { skipped.dup++; return; }
-        if (salary) { skipped.income++; return; }
+        if (salary) {
+          skipped.income++;
+          /* the salary that actually came in: it becomes that month's pay in the budget (instead of the estimate) */
+          if (kind !== 'credit' && amount >= 1000 && /lønn|lonn|salary/i.test(x.desc)) salaries.push({ date: x.date, amount: amount, desc: x.desc });
+          return;
+        }
         if ((kind === 'card' || kind === 'savings') && !/tilbake|refusjon|refund|retur|vipps/i.test(x.desc)) own = true;          // money in on the card account is your own transfer
         if (kind === 'credit' && x.amt !== 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc)) own = true;  // money in on the credit card is the bill being paid
         out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own, why: own ? (kind === 'credit' ? 'paying the card' : 'from your own account') : '' });
@@ -201,7 +206,9 @@
       }
       if (bal) bal.from = A0.bal;
     }
-    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows, bal: bal };
+    /* one amount per month (a salary split in two rows is added up) */
+    var pay = {}; salaries.forEach(function (x) { var k = x.date.slice(0, 7); pay[k] = (pay[k] || 0) + x.amount; });
+    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows, bal: bal, pay: pay };
   }
 
   /* ---------- Excel files (.xlsx): a zip of XML, read without any library ---------- */
@@ -292,7 +299,8 @@
     var sk = res.skipped, note = [];
     if (sk.dup) note.push(sk.dup + ' already imported');
     if (sk.mine) note.push(sk.mine + ' you logged yourself (left unticked so they don’t count twice)');
-    if (sk.income) note.push(sk.income + ' salary (already in your budget)');
+    var payKeys = Object.keys(res.pay || {}).sort();
+    if (sk.income) note.push(payKeys.length ? 'your salary (' + payKeys.map(function (k) { return new Date(k + '-15T12:00').toLocaleDateString('en-GB', { month: 'short' }) + ' ' + nf.format(res.pay[k]); }).join(', ') + ') – used as that month’s pay in the budget' : sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
     var signRow = '<div class="im-acct"><span>' + (res.acct ? 'From <b>' + esc((acctList().filter(function (a) { return a.id === res.acct; })[0] || {}).label || '') + '</b> – change it here if that’s wrong' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
@@ -341,6 +349,12 @@
       var c = ccs.filter(function (a) { return a.name && r.desc.toLowerCase().indexOf(a.name.toLowerCase().split(' ')[0]) > -1; })[0] || ccs[0];
       d.budget = d.budget || {}; d.budget.ccPaid = d.budget.ccPaid || {}; d.budget.ccPaid[c.id + ':' + r.date.slice(0, 7)] = true;
     });
+    /* the salary seen in the file is the real pay for that month – unless you typed in a payslip for it */
+    var pk = Object.keys(found.pay || {});
+    if (pk.length) {
+      d.budget = d.budget || {}; d.budget.payslips = d.budget.payslips || {};
+      pk.forEach(function (k) { var cur = d.budget.payslips[k]; if (!cur || cur.src === 'bank') d.budget.payslips[k] = { net: Math.round(found.pay[k]), src: 'bank' }; });
+    }
     if (found.bal && found.acct) {
       d.budget = d.budget || {}; var L = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
       var ae = L.filter(function (x) { return x.id === found.acct; })[0];

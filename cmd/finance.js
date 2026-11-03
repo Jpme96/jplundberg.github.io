@@ -155,7 +155,8 @@
     var list = D.budget.income, key = ym(new Date());
     var rows = list.map(function (r) {
       if (payEditing === r.id) return payForm(r);
-      var row = B.rowFor(r, key), bits = [];
+      var row = B.rowFor(r, key), bits = [], sl = B.slip(D, key), isMain = B.mainIncome && B.mainIncome(D) === r;
+      if (sl && isMain) { bits.push('this month ' + kr(sl.net) + (sl.src === 'bank' ? ' from your bank' : ' from your payslip') + ' (estimate ' + kr(row.net) + ')'); row = Object.assign({}, row, { net: +sl.net }); }
       if (r.gross > 0) bits.push('gross ' + kr(r.gross) + ' − tax ' + kr(row.tax) + (row.extra ? ' − ' + kr(row.extra) : ''));
       if (r.day) bits.push('paid ' + dayLabel(r.day));
       if (row.note) bits.push(row.note.toLowerCase());
@@ -176,7 +177,7 @@
     for (var i = 0; i < 12; i++) { var k = ym(new Date(now.getFullYear(), now.getMonth() - i, 1)); opts += '<option value="' + k + '"' + (ps[k] ? ' disabled' : '') + '>' + esc(monthName(k, true)) + ' ' + k.slice(2, 4) + (ps[k] ? ' ✓' : '') + '</option>'; }
     var y = B.yearSoFar(D), rows = keys.slice(0, 4).map(function (k) {
       var p = ps[k];
-      return '<li class="pay-ded"><span>' + esc(monthName(k)) + '</span><span class="muted">net ' + esc(kr(p.net)) + (p.gross ? ' · gross ' + esc(kr(p.gross)) : '') + (p.tax ? ' · tax ' + esc(kr(p.tax)) : '') + '</span>' +
+      return '<li class="pay-ded"><span>' + esc(monthName(k)) + '</span><span class="muted">' + (p.src === 'bank' ? 'from bank · ' : '') + 'net ' + esc(kr(p.net)) + (p.gross ? ' · gross ' + esc(kr(p.gross)) : '') + (p.tax ? ' · tax ' + esc(kr(p.tax)) : '') + '</span>' +
         '<button type="button" class="del" data-sdel="' + k + '" aria-label="Remove payslip"><i class="bi bi-x"></i></button></li>';
     }).join('');
     return '<div class="b-slips"><p class="pay-sub">Payslips logged' + (y.logged ? ' · this year: net ' + esc(kr(y.net)) + ' · tax ' + esc(kr(y.tax)) : '') + '</p>' +

@@ -58,17 +58,21 @@ window.Budget = (function () {
   }
   /* a logged payslip for a month overrides the model (d.budget.payslips['YYYY-MM'] = {net, gross, tax}) */
   function slip(d, key) { var p = d && d.budget && d.budget.payslips; return p && p[key] && p[key].net > 0 ? p[key] : null; }
+  /* the main income (the biggest) – a payslip or the salary seen in a bank import replaces its amount for that month */
+  function mainIncome(d) { return ((d && d.budget && d.budget.income) || []).slice().sort(function (a, b) { return ordinary(b) - ordinary(a); })[0] || null; }
   /* all incomes for a month */
   function incomeOf(d, key) {
-    var rows = ((d && d.budget && d.budget.income) || []).map(function (r) { return rowFor(r, key); });
+    var src = ((d && d.budget && d.budget.income) || []), main = mainIncome(d);
+    var rows = src.map(function (r) { var o = rowFor(r, key); o.main = r === main; return o; });
     var t = { net: 0, gross: 0, tax: 0, extra: 0, rows: rows, note: '', logged: false };
     rows.forEach(function (r) { t.net += r.net; t.gross += r.gross; t.tax += r.tax; t.extra += r.extra; if (r.note && !t.note) t.note = r.note; });
     var s = slip(d, key);
     if (s) {
-      var others = rows.filter(function (r) { return !r.gross; }).reduce(function (a, r) { return a + r.net; }, 0);   // plain net incomes stay
+      var others = rows.filter(function (r) { return !r.main; }).reduce(function (a, r) { return a + r.net; }, 0);   // the other incomes stay
       t.net = (+s.net || 0) + others; t.logged = true;
+      rows.forEach(function (r) { if (r.main) { r.planned = r.net; r.net = +s.net || 0; r.note = s.src === 'bank' ? 'From your bank' : 'From your payslip'; } });
       if (s.gross > 0) { t.gross = +s.gross; t.tax = +s.tax || 0; t.extra = Math.max(0, +s.gross - (+s.tax || 0) - +s.net); }
-      t.note = 'From your payslip';
+      t.note = s.src === 'bank' ? 'Salary from your bank import' : 'From your payslip';
     }
     return t;
   }
@@ -94,13 +98,14 @@ window.Budget = (function () {
     return dt;
   }
   function paydays(d, from, to) {
-    var out = [], rows = (d && d.budget && d.budget.income) || [];
+    var out = [], rows = (d && d.budget && d.budget.income) || [], main = mainIncome(d);
     for (var y = from.getFullYear(); y <= to.getFullYear(); y++) {
       for (var m = 1; m <= 12; m++) rows.forEach(function (r) {
         var dt = paydayIn(r, y, m);
         if (!dt || dt < from || dt > to) return;
-        var row = rowFor(r, y + '-' + pad(m));
-        out.push({ date: dt, row: row, src: r, title: row.holiday ? 'Holiday pay' : 'Payday' + (rows.length > 1 ? ' · ' + r.name : ''), net: row.net });
+        var key = y + '-' + pad(m), row = rowFor(r, key), s = r === main ? slip(d, key) : null;
+        var net = s ? +s.net : row.net;            // the real amount for that month, when you have it
+        out.push({ date: dt, row: row, src: r, title: row.holiday ? 'Holiday pay' : 'Payday' + (rows.length > 1 ? ' · ' + r.name : ''), net: net, real: !!s });
       });
     }
     return out.sort(function (a, b) { return a.date - b.date; });
@@ -193,7 +198,7 @@ window.Budget = (function () {
   }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
 
-  return { saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
 
 /* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
