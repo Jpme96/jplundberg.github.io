@@ -102,51 +102,21 @@
       box.innerHTML = '<p class="empty">Add your accounts, your salary and what goes out each month – then this shows what you can really spend.</p><div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button></div>';
       return;
     }
-    var base = Math.max(income, fixed + spent, 1);
-    var w = function (v) { return Math.max(0, v / base * 100).toFixed(2) + '%'; };
-    var next = B.nextPayday(D), now = new Date(), dim = daysInMonth(now);
-    var until = per.byPayday ? per.daysLeft : next && next.days > 0 && next.days <= dim ? next.days : dim - now.getDate() + 1;
-    var perDay = left > 0 ? left / until : 0;
-    var payLine = next
-      ? '<p class="pay-next"><i class="bi bi-cash-stack"></i>' + (next.days === 0 ? '<b>' + esc(next.title) + ' today</b>' : '<b>' + esc(next.title) + '</b> ' +
-          next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + next.days + ' day' + (next.days === 1 ? '' : 's')) +
-          (next.net ? ' · ' + money(next.net) : '') + '</p>'
-      : '';
-    /* with the balances of your accounts filled in, the big number is what you can actually use until payday */
-    var real = B.real ? B.real(D) : null;
-    var realHtml = '';
-    if (real) {
-      var ago = real.oldest ? Math.round((new Date(today() + 'T12:00') - new Date(real.oldest + 'T12:00')) / 864e5) : null;
-      realHtml = '<div class="big-num ' + (real.free < 0 ? 'neg' : '') + '">' + money(real.free) + '</div>' +
-        '<div class="muted">' + (real.free < 0 ? 'short until payday' : 'free to use ' + (per.byPayday ? 'until payday' : 'this month')) + (real.free > 0 ? ' · ' + money(real.perDay) + '/day' : '') + ' · from your accounts' +
-          (ago != null && ago > 3 ? ' · <span class="soon">balances ' + ago + ' days old</span>' : '') + '</div>' +
-        '<ul class="legend b-real">' +
-          '<li><i class="dot" style="background:#8a6fdf"></i>In your accounts<b>' + money(real.cash) + '</b></li>' +
-          (real.owed ? '<li><i class="dot" style="background:#d95926"></i>Owed on credit cards<b>−' + money(real.owed) + '</b></li>' : '') +
-          (real.bills ? '<li><i class="dot" style="background:#3987e5"></i>Bills still due before payday<small>' + esc(real.billList.slice(0, 3).map(function (x) { return x.name; }).join(', ') + (real.billList.length > 3 ? ' …' : '')) + '</small><b>−' + money(real.bills) + '</b></li>' : '') +
-          (real.saveLeft ? '<li><i class="dot" style="background:#22b35e"></i>Savings still to move<b>−' + money(real.saveLeft) + '</b></li>' : '') +
-        '</ul>' +
-        '<p class="b-plan-h">The plan for ' + esc(per.byPayday ? 'this pay period' : 'this month') + ' · ' + money(left) + ' left after fixed costs and spending</p>';
-    }
-    box.innerHTML = realHtml + (real ? '' :
-      '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>') +
-      (real ? '' : '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(per.salary) + ' net income' + (per.extra ? ' + ' + money(per.extra) + ' in' : '') + (per.byPayday ? ' · ' + esc(per.name) : '') +
-        (left > 0 ? ' · ' + money(perDay) + '/day' + (per.byPayday || (next && until === next.days) ? ' until payday' : '') : '') +
-        (inc.note ? ' · ' + esc(inc.note) : '') + '</div>') +
-      (real ? '' : '<p class="b-tip"><i class="bi bi-bank"></i> Put in what’s in your accounts and this becomes what you can really use. <button type="button" class="text-btn" data-fsopen="0">Set up step by step</button></p>') +
-      '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
-        '<span class="s-fixed" style="width:' + w(fixed) + '"></span>' +
-        '<span class="s-spent" style="width:' + w(spent) + '"></span>' +
-        '<span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span>' +
-      '</div>' +
-      '<ul class="legend">' +
-        (inc.gross ? '<li><i class="dot" style="background:#8a6fdf"></i>Gross salary<b>' + money(inc.gross) + '</b></li>' +
-          '<li><i class="dot" style="background:#6b6d73"></i>Tax' + (inc.extra ? ' and deductions' : '') + '<b>' + money(inc.tax + inc.extra) + '</b></li>' : '') +
-        (per.extra ? '<li><i class="dot" style="background:#22b35e"></i>Money in (refunds, Vipps)<b>+' + money(per.extra) + '</b></li>' : '') +
-        '<li><button type="button" class="b-legbtn" data-fixopen aria-label="Change fixed costs"><i class="dot" style="background:#3987e5"></i>Fixed costs <i class="bi bi-pencil b-legpen"></i></button><b>' + money(fixed) + '</b></li>' +
-        '<li><i class="dot" style="background:#d95926"></i>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(monthName(key, true))) + '<b>' + money(spent) + '</b></li>' +
-        '<li><i class="dot" style="background:var(--accent)"></i>Left<b>' + money(left) + '</b></li>' +
-      '</ul>' + payLine;
+    /* Setup → Income & fixed costs: what the numbers on Now are made of (the one number itself is on Now) */
+    var mainR = B.mainIncome ? B.mainIncome(D) : null, sl = B.slip(D, key);
+    var incRows = inc.rows.map(function (r, i) {
+      var src = D.budget.income[i] || {}, real = r.main && sl;
+      return '<li><span>' + esc(r.name || 'Income') + '<small>' + [src.day ? 'paid ' + dayLabel(src.day) : 'no payday', src.gross > 0 ? 'gross ' + kr(src.gross) + ' − tax ' + kr(r.tax) : 'after tax',
+        real ? (sl.src === 'bank' ? 'this month from your bank' : 'this month from your payslip') : r.note ? r.note.toLowerCase() : ''].filter(Boolean).map(esc).join(' · ') + '</small></span>' + money(r.net) + '</li>';
+    }).join('');
+    var mine = b.fixed.filter(function (f) { return !f.src || f.src === 'loan'; }), linked = b.fixed.filter(function (f) { return f.src && f.src !== 'loan'; });
+    var next = B.nextPayday(D);
+    box.innerHTML =
+      '<ul class="is-list">' + incRows + '<li class="is-tot"><span>Income ' + esc(monthName(key, true)) + '</span>' + money(inc.net) + '</li></ul>' +
+      (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> Next payday ' + esc(next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · ' + esc(per.byPayday ? 'the budget runs payday to payday' : 'the budget runs by calendar month') + '</p>' : '') +
+      '<ul class="is-list is-fix"><li><span>Fixed costs<small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' – by account below</small></span>' + money(fixed) + '</li>' +
+        '<li class="is-tot"><span>Left after fixed costs</span>' + money(inc.net - fixed) + '</li></ul>' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-fsopen="1"><i class="bi bi-magic"></i> Step by step</button><span class="spacer"></span><button type="button" class="pill-btn" data-bopen>Edit income &amp; costs</button></div>';
   }
 
   /* ----- income: each row can be a plain net amount, or a payslip (gross, tax %, deductions, payday) ----- */
@@ -332,7 +302,8 @@
   });
   $('budgetBody').addEventListener('click', function (e) {
     var fe = e.target.closest('[data-fedit]');
-    if (fe) { fixEditing = fe.dataset.fedit; renderBudget(); var i0 = $('budgetBody').querySelector('.fx-edit input[name="a"]'); if (i0) { i0.focus(); i0.select(); } return; }
+    if (e.target.closest('[data-bopen]')) { budgetEditing = true; payEditing = null; fixEditing = null; renderBudget(); return; }
+    if (fe) { fixEditing = fe.dataset.fedit; budgetEditing = true; renderBudget(); var i0 = $('budgetBody').querySelector('.fx-edit input[name="a"]'); if (i0) { i0.focus(); i0.select(); } return; }
     if (e.target.closest('[data-fxcancel]')) { fixEditing = null; renderBudget(); return; }
     if (e.target.closest('[data-fixopen]')) { budgetEditing = true; payEditing = null; renderBudget(); var fl = $('budgetBody').querySelectorAll('.b-edit')[1]; if (fl) fl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
     var pe = e.target.closest('[data-pedit]');

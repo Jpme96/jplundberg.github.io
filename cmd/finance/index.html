@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=172" rel="stylesheet">
+  <link href="../styles.css?v=175" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -113,7 +113,7 @@
   </div>
 
 
-  <main class="fp" id="fp" data-tab="overview">
+  <main class="fp" id="fp" data-tab="now">
     <header class="fp-top">
       <a class="fp-back" href="../"><i class="bi bi-chevron-left"></i> Dashboard</a>
       <button class="icon-btn" id="finHide" type="button" aria-label="Hide amounts"><i class="bi bi-eye"></i></button>
@@ -122,62 +122,56 @@
     <div class="fp-hero">
       <p class="fp-kicker"><i class="bi bi-wallet2"></i> Private</p>
       <h1>Finances</h1>
-      <p class="muted" id="fpSub">Budget, bills, what you spend and what you own – and the statistics behind it.</p>
+      <p class="muted" id="fpSub">What you can use, what’s coming, and where your money goes.</p>
     </div>
 
   <nav class="fp-tabs" id="fpTabs" role="tablist" aria-label="Finance views">
-    <button type="button" role="tab" data-ftab-go="overview" aria-selected="true"><i class="bi bi-speedometer"></i><span>Overview</span></button>
-    <button type="button" role="tab" data-ftab-go="tx" aria-selected="false"><i class="bi bi-receipt"></i><span>Transactions</span></button>
-    <button type="button" role="tab" data-ftab-go="plan" aria-selected="false"><i class="bi bi-calculator"></i><span>Plan</span></button>
-    <button type="button" role="tab" data-ftab-go="wealth" aria-selected="false"><i class="bi bi-graph-up-arrow"></i><span>Wealth</span></button>
+    <button type="button" role="tab" data-ftab-go="now" aria-selected="true"><i class="bi bi-speedometer"></i><span>Now</span></button>
+    <button type="button" role="tab" data-ftab-go="tx" aria-selected="false"><i class="bi bi-receipt"></i><span>Spending</span></button>
+    <button type="button" role="tab" data-ftab-go="insights" aria-selected="false"><i class="bi bi-graph-up-arrow"></i><span>Insights</span></button>
+    <button type="button" role="tab" data-ftab-go="setup" aria-selected="false"><i class="bi bi-sliders"></i><span>Setup</span></button>
   </nav>
 
-  <section class="fin fp-fin" id="fin" aria-label="Budget, bills and spending" data-pk="budget" data-pk-name="Budget, bills and spending">
+  <section class="fin fp-fin" id="fin" aria-label="Your money" data-pk="budget" data-pk-name="Your money">
 
-      <!-- Overview: what you can spend, where the salary goes, what's due -->
-      <div class="fin-grid fpt" data-ftab="overview">
+      <!-- Now: what you can use, what's coming, where the money is -->
+      <div class="fin-grid fpt" data-ftab="now">
         <div class="fin-col">
-        <!-- Budget -->
-        <section class="card budget">
-          <div class="card-head"><h2><i class="bi bi-pie-chart"></i> Monthly budget</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
-          <div id="budgetBody"></div>
+        <!-- the one number (fin-now.js) -->
+        <section class="card fnhero" id="fnHeroCard">
+          <div id="fnHero"></div>
         </section>
-
-        <!-- Your accounts: what's actually in them (fin-plan.js) -->
+        <!-- things the dashboard noticed and wants you to confirm (fin-now.js) -->
+        <section class="card needs" id="fnNeedsCard" hidden>
+          <div class="card-head"><h2><i class="bi bi-lightbulb"></i> Needs you</h2><span class="muted" id="fnNeedsN"></span></div>
+          <div id="fnNeeds"></div>
+        </section>
+        <!-- the next 14 days (fin-now.js) -->
+        <section class="card next" id="fnNextCard">
+          <div class="card-head"><h2><i class="bi bi-calendar-week"></i> Next 14 days</h2><span class="muted" id="fnNextNote"></span></div>
+          <div id="fnNext"></div>
+        </section>
+        </div>
+        <div class="fin-col">
         <section class="card myaccts" id="fpMoneyCard">
           <div class="card-head"><h2><i class="bi bi-bank2"></i> Your accounts</h2><button class="text-btn" type="button" id="fpMoneyEdit">Update</button></div>
           <div id="fpMoney"></div>
         </section>
-
-        <!-- Payday plan (fin-plan.js) -->
         <section class="card flow" id="fpFlowCard">
-          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> This month</h2><button class="text-btn" type="button" data-ftab-go="plan" data-fp-to="accounts">Accounts</button></div>
+          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> This month</h2><button class="text-btn" type="button" data-ftab-go="setup" data-fp-to="accounts">Accounts</button></div>
           <div id="fpFlow"></div>
         </section>
-        </div>
-        <div class="fin-col">
-        <!-- Spending limits per category (fin-plan.js) -->
-        <section class="card limits" id="fpLimitCard">
-          <div class="card-head"><h2><i class="bi bi-sliders"></i> Spending limits</h2><button class="text-btn" type="button" id="fpLimitEdit">Set limits</button></div>
-          <div id="fpLimits"></div>
-        </section>
-
-        <!-- Upcoming bills -->
-        <section class="card bills">
-          <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Upcoming bills</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
-          <div id="billsBody"></div>
-        </section>
-
-        <!-- By category (this period's spending) -->
-        <section class="card spcats">
-          <div class="card-head"><h2><i class="bi bi-pie-chart"></i> By category</h2><span class="muted" id="spChartMonth"></span></div>
-          <div id="spChart"></div>
+        <!-- how the last pay period went (fin-now.js, the first days after payday) -->
+        <section class="card review" id="fnReviewCard" hidden>
+          <div class="card-head"><h2><i class="bi bi-clipboard-check"></i> Last period</h2><span class="muted" id="fnReviewNote"></span></div>
+          <div id="fnReview"></div>
         </section>
         </div>
       </div>
 
-      <!-- Transactions: everything you spent, from imports, receipts and by hand -->
-      <div class="fin-grid fpt fpt-one" data-ftab="tx">
+      <!-- Spending: everything you spent, by category and against your limits -->
+      <div class="fin-grid fpt" data-ftab="tx">
+        <div class="fin-col fin-col-wide">
         <section class="card spending">
           <div class="card-head">
             <h2><i class="bi bi-receipt"></i> Spending</h2>
@@ -202,69 +196,22 @@
           <button class="text-btn sp-more" id="spMore" type="button" hidden></button>
           <button class="text-btn sp-reset" type="button" data-frreset="imports"><i class="bi bi-arrow-counterclockwise"></i> Remove imported transactions …</button>
         </section>
-      </div>
-
-      <!-- Plan: accounts, fixed costs, loans, savings, tax and holiday pay -->
-      <div class="fin-grid fpt" data-ftab="plan">
-        <div class="fin-col">
-        <section class="card accounts" id="fpAcctCard">
-          <div class="card-head"><h2><i class="bi bi-bank"></i> Accounts &amp; fixed costs</h2></div>
-          <div id="fpAcct"></div>
-        </section>
-        <section class="card yearly" id="fpYearlyCard">
-          <div class="card-head"><h2><i class="bi bi-calendar2-range"></i> Yearly costs</h2><button class="text-btn" type="button" id="fpYearlyAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
-          <div id="fpYearly"></div>
-        </section>
-        <section class="card loans" id="fpLoanCard">
-          <div class="card-head"><h2><i class="bi bi-house-door"></i> Loans</h2><button class="text-btn" type="button" id="fpLoanAdd"><i class="bi bi-plus-lg"></i> Loan</button></div>
-          <div id="fpLoans"></div>
-        </section>
         </div>
         <div class="fin-col">
-        <!-- Buffer / emergency fund (fin-plan.js) -->
-        <section class="card buffer" id="fpBufCard">
-          <div class="card-head"><h2><i class="bi bi-shield-check"></i> Buffer</h2><span class="muted" id="fpBufNote"></span></div>
-          <div id="fpBuf"></div>
+        <section class="card limits" id="fpLimitCard">
+          <div class="card-head"><h2><i class="bi bi-sliders"></i> Spending limits</h2><button class="text-btn" type="button" id="fpLimitEdit">Set limits</button></div>
+          <div id="fpLimits"></div>
         </section>
-        <!-- Savings goals -->
-        <section class="card savings">
-          <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
-          <form class="inline-form" id="svForm" hidden>
-            <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
-            <div class="row2">
-              <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
-              <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
-            </div>
-            <div class="row2">
-              <label class="sv-by"><span>Reach it by</span><input id="svBy" type="date" aria-label="Reach it by (optional)"></label>
-              <label class="sv-by"><span>Or per month</span><input id="svMonthly" placeholder="kr a month" inputmode="decimal" autocomplete="off"></label>
-            </div>
-            <div class="row2">
-              <label class="sv-by"><span>Interest, % a year</span><input id="svRate" placeholder="Optional" inputmode="decimal" autocomplete="off"></label>
-              <label class="qa-check sv-bsu"><input type="checkbox" id="svBsu"> BSU account (10 % tax deduction)</label>
-            </div>
-            <label class="qa-check sv-aside"><input type="checkbox" id="svAside"> A fixed cost every month (in the budget and the payday checklist)</label>
-            <label class="sv-by sv-to" id="svToRow"><span>Goes to</span><select id="svTo" aria-label="The account the money goes to"></select></label>
-            <p class="muted sv-hint" id="svHint"></p>
-            <div class="form-actions">
-              <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
-              <span class="spacer"></span>
-              <button type="button" class="text-btn" id="svCancel">Cancel</button>
-              <button type="submit" class="pill-btn">Save</button>
-            </div>
-          </form>
-          <ul class="goal-list" id="svList"></ul>
-          <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
-        </section>
-        <section class="card taxyear" id="fpYearCard">
-          <div class="card-head"><h2><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
-          <div id="fpYearAhead"></div>
+        <section class="card spcats">
+          <div class="card-head"><h2><i class="bi bi-pie-chart"></i> By category</h2><span class="muted" id="spChartMonth"></span></div>
+          <div id="spChart"></div>
         </section>
         </div>
       </div>
 
-      <!-- Wealth: net worth (statistics follow below) -->
-      <div class="fin-grid fpt fpt-one" data-ftab="wealth">
+      <!-- Insights: net worth and the year ahead (statistics follow below) -->
+      <div class="fin-grid fpt" data-ftab="insights">
+        <div class="fin-col">
         <section class="card networth">
           <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
           <form class="inline-form" id="nwForm" hidden>
@@ -302,10 +249,77 @@
           <ul class="acc-list" id="nwList"></ul>
           <p class="empty" id="nwEmpty">Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage – with +.</p>
         </section>
+        </div>
+        <div class="fin-col">
+        <section class="card taxyear" id="fpYearCard">
+          <div class="card-head"><h2><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
+          <div id="fpYearAhead"></div>
+        </section>
+        </div>
+      </div>
+
+      <!-- Setup: accounts, income, bills, loans, savings – everything the numbers are made of -->
+      <div class="fin-grid fpt" data-ftab="setup">
+        <div class="fin-col">
+        <section class="card budget">
+          <div class="card-head"><h2><i class="bi bi-cash-stack"></i> Income &amp; fixed costs</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
+          <div id="budgetBody"></div>
+        </section>
+        <section class="card accounts" id="fpAcctCard">
+          <div class="card-head"><h2><i class="bi bi-bank"></i> Accounts &amp; fixed costs</h2></div>
+          <div id="fpAcct"></div>
+        </section>
+        
+        
+        <section class="card loans" id="fpLoanCard">
+          <div class="card-head"><h2><i class="bi bi-house-door"></i> Loans</h2><button class="text-btn" type="button" id="fpLoanAdd"><i class="bi bi-plus-lg"></i> Loan</button></div>
+          <div id="fpLoans"></div>
+        </section>
+        </div>
+        <div class="fin-col">
+        <section class="card savings">
+          <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <form class="inline-form" id="svForm" hidden>
+            <input id="svName" placeholder="Goal, e.g. Buffer account" required autocomplete="off">
+            <div class="row2">
+              <input id="svSaved" placeholder="Saved, kr" inputmode="decimal" autocomplete="off">
+              <input id="svTarget" placeholder="Target, kr" inputmode="decimal" required autocomplete="off">
+            </div>
+            <div class="row2">
+              <label class="sv-by"><span>Reach it by</span><input id="svBy" type="date" aria-label="Reach it by (optional)"></label>
+              <label class="sv-by"><span>Or per month</span><input id="svMonthly" placeholder="kr a month" inputmode="decimal" autocomplete="off"></label>
+            </div>
+            <div class="row2">
+              <label class="sv-by"><span>Interest, % a year</span><input id="svRate" placeholder="Optional" inputmode="decimal" autocomplete="off"></label>
+              <label class="qa-check sv-bsu"><input type="checkbox" id="svBsu"> BSU account (10 % tax deduction)</label>
+            </div>
+            <label class="qa-check sv-aside"><input type="checkbox" id="svAside"> A fixed cost every month (in the budget and the payday checklist)</label>
+            <label class="sv-by sv-to" id="svToRow"><span>Goes to</span><select id="svTo" aria-label="The account the money goes to"></select></label>
+            <p class="muted sv-hint" id="svHint"></p>
+            <div class="form-actions">
+              <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
+              <span class="spacer"></span>
+              <button type="button" class="text-btn" id="svCancel">Cancel</button>
+              <button type="submit" class="pill-btn">Save</button>
+            </div>
+          </form>
+          <div id="fpBuf" class="sv-buf"></div>
+          <ul class="goal-list" id="svList"></ul>
+          <p class="empty" id="svEmpty">No savings goals yet. Add one, like a buffer account or a trip.</p>
+        </section>
+        <section class="card yearly" id="fpYearlyCard">
+          <div class="card-head"><h2><i class="bi bi-calendar2-range"></i> Yearly costs</h2><button class="text-btn" type="button" id="fpYearlyAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <div id="fpYearly"></div>
+        </section>
+        <section class="card bills" hidden>
+          <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Bills this month</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
+          <div id="billsBody"></div>
+        </section>
+        </div>
       </div>
     </section>
 
-    <div class="fp-stats" data-ftab="wealth" data-pk="stats" data-pk-name="Statistics">
+    <div class="fp-stats" data-ftab="insights" data-pk="stats" data-pk-name="Statistics">
     <div class="sec-head fp-stats-head"><h2 class="sec-title" id="fpStatsTitle"><i class="bi bi-bar-chart-line"></i> Statistics</h2></div>
     <div class="fp-filter" role="group" aria-label="Period">
       <div class="seg" id="fpPeriod">
@@ -903,8 +917,8 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=240cd2769b"></script>
-  <script src="../dist/tail.js?v=6d2bdb0ae7"></script>
+  <script src="../dist/page-finance.js?v=6adf04a0c0"></script>
+  <script src="../dist/tail.js?v=898214719b"></script>
   <!-- /scripts -->
 </body>
 </html>

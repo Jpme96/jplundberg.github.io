@@ -106,6 +106,7 @@
   }
   var CARDPAY = /kredittkort|credit ?card|visa.*(faktura|innbetaling)|mastercard.*faktura|kortfaktura|trumf visa|remember|bank norwegian|komplett bank|sas eurobonus|santander|re:member|coop mastercard|lånekassen nei|faktura.*kort/i;
   var OWNOUT = /til (egen|annen) konto|overføring til|overforing til|egen konto|mellom egne|brukskonto|regningskonto|sparekonto|til sparing|bsu/i;
+  function shiftKey(k, by) { var y = +k.slice(0, 4), m = +k.slice(5, 7) - 1 + by; var dt = new Date(y, m, 1); return dt.getFullYear() + '-' + pad(dt.getMonth() + 1); }
   function signature(rows, hi) {
     var top = rows.slice(0, hi + 1).map(function (r) { return r.join(' '); }).join(' ');
     var nums = (top.match(/\b\d{4}[ .]?\d{2}[ .]?\d{5}\b/g) || []).map(function (n) { return n.replace(/\D/g, ''); });
@@ -189,7 +190,13 @@
       var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+(m.full != null ? m.full : m.amount) - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
         .sort(function (a, b) { return Math.abs(dayN(a.date) - dayN(x.date)) - Math.abs(dayN(b.date) - dayN(x.date)); })[0] || null;
       if (mine) { claimed[mine.id] = 1; skipped.mine = (skipped.mine || 0) + 1; }
-      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
+      /* the same shop, about the same amount, in two or more of the last three months → looks like a monthly bill */
+      var rk = norm(x.desc), recur = false;
+      if (!bill && !transfer && rk.length >= 3 && !(d.budget && (d.budget.notBills || []).indexOf(rk) > -1)) {
+        var ms = {}; (d.expenses || []).forEach(function (e) { if (e.note && norm(e.ref ? String(e.ref).split('|').slice(2).join('|') : e.note) === rk || (e.note && norm(e.note) === norm(note))) { var mk = String(e.date).slice(0, 7); if (mk < x.date.slice(0, 7) && Math.abs(+e.amount - amount) <= Math.max(15, amount * .15)) ms[mk] = 1; } });
+        recur = Object.keys(ms).filter(function (mk) { return mk >= shiftKey(x.date.slice(0, 7), -3); }).length >= 2;
+      }
+      out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
     /* the account's balance after this file: the file's own balance column if it has one, otherwise the
@@ -313,16 +320,35 @@
     if (!rows.length) { open('<h2 class="im-h"><i class="bi bi-bank"></i> Nothing new</h2><p class="muted im-p">' + (sk.dup ? 'Every expense in that file is already in Spending' : 'No spending found in that file') + (note.length ? ' (' + note.join(', ') + ')' : '') + '.</p>' + signRow + '<div class="qa-acts"><span class="spacer"></span><button type="button" class="pill-btn wide" data-close>OK</button></div>'); return; }
     var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + (r.income ? -r.amount : r.amount); }, 0);
     open('<h2 class="im-h"><i class="bi bi-bank"></i> ' + nOut + ' new expense' + (nOut === 1 ? '' : 's') + (nIn ? ' · ' + nIn + ' in' : '') + '</h2>' +
-      '<p class="muted im-p">Check the categories – they’re guessed from the shop’s name and from what you’ve chosen before. A fixed cost (rent, power) isn’t added twice – it ticks the bill as paid instead. Money in (refunds, Vipps from friends) is added to that month’s budget; your own transfers and card payments are left out unless you tick them.' + (note.length ? ' Skipped: ' + note.join(', ') + '.' : '') + '</p>' + signRow + perLine +
-      '<ul class="im-list">' + rows.map(function (r, i) {
+      signRow + perLine + (note.length ? '<p class="muted im-p im-small">Skipped: ' + note.join(', ') + '.</p>' : '') +
+      summary(rows) + groups(rows, function (r, i) {
         return '<li class="im-row' + (r.on ? '' : ' off') + (r.income ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
           '<span class="im-x"><b>' + esc(r.note) + '</b><small>' + esc(new Date(r.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
           (r.mine ? ' · <i class="bi bi-person-check"></i> you logged it already: ' + esc(r.mine.note || 'expense') + ', ' + esc(new Date(String(r.mine.date).slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') +
           (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · ' + esc(r.why || 'from your own account') : ' · adds to this period’s budget') : r.transfer ? ' · ' + esc(r.why || 'transfer') : '') + '</small></span>' +
           '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
-          (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') + '</li>';
-      }).join('') + '</ul>' +
+          (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') +
+          (r.recur && r.on && !r.bill && !r.income ? '<label class="im-mk"><input type="checkbox" data-mk="' + i + '"' + (r.mk ? ' checked' : '') + '> Comes every month – make it a fixed cost</label>' : '') + '</li>';
+      }) +
       '<div class="qa-acts im-foot"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><span class="muted" id="imSum">' + esc(nf.format(total)) + '</span><button type="button" class="pill-btn wide" data-import>Import</button></div>');
+  }
+  /* the file at a glance, then the rows in groups – the ones worth a look first */
+  function summary(rows) {
+    var sp = rows.filter(function (r) { return r.on && !r.bill && !r.income; }), bills = rows.filter(function (r) { return r.on && r.bill; }), inn = rows.filter(function (r) { return r.on && r.income; }), off = rows.filter(function (r) { return !r.on; });
+    var t = function (n, label, v, cls) { return n ? '<span class="' + (cls || '') + '"><b>' + n + '</b> ' + label + (v != null ? '<small>' + esc(nf.format(v)) + '</small>' : '') + '</span>' : ''; };
+    return '<div class="im-sum">' + t(sp.length, 'spending', sp.reduce(function (a, r) { return a + r.amount; }, 0)) + t(bills.length, 'bills paid', bills.reduce(function (a, r) { return a + r.amount; }, 0)) +
+      t(inn.length, 'money in', inn.reduce(function (a, r) { return a + r.amount; }, 0), 'in') + t(off.length, 'left out', null, 'off') + '</div>';
+  }
+  function groups(rows, row) {
+    var G = [['check', 'Worth a look', 'Guessed as Other, or looks like a monthly bill', true], ['spend', 'Spending', '', false], ['bill', 'Bills ticked as paid', '', false], ['in', 'Money in', '', false], ['off', 'Left out', 'Transfers between your accounts, card payments, things you logged yourself', false]];
+    var of = function (r) { return !r.on ? 'off' : r.bill ? 'bill' : r.income ? 'in' : (r.cat === 'other' || r.recur) ? 'check' : 'spend'; };
+    return G.map(function (g) {
+      var idx = []; rows.forEach(function (r, i) { if (of(r) === g[0]) idx.push(i); });
+      if (!idx.length) return '';
+      var tot = idx.reduce(function (a, i) { return a + rows[i].amount; }, 0);
+      return '<details class="im-g im-g-' + g[0] + '"' + (g[3] || (g[0] === 'spend' && idx.length <= 12) ? ' open' : '') + '><summary><b>' + g[1] + '</b> · ' + idx.length + '<span class="muted">' + esc(nf.format(tot)) + '</span></summary>' +
+        (g[2] ? '<p class="muted im-gp">' + g[2] + '</p>' : '') + '<ul class="im-list">' + idx.map(function (i) { return row(rows[i], i); }).join('') + '</ul></details>';
+    }).join('');
   }
   function sumLine() {
     var t = 0; found.rows.forEach(function (r) { if (r.on && !r.bill) t += r.income ? -r.amount : r.amount; });
@@ -339,6 +365,14 @@
       if (!r.on) return;
       if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined }); nin++; return; }
       if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
+      if (r.mk) {
+        /* a new fixed cost from now on; this period's charge is the bill being paid (no double counting) */
+        d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || [];
+        var have = d.budget.fixed.filter(function (f) { return norm(f.name) === norm(r.note); })[0], fid = have ? have.id : uid();
+        if (!have) d.budget.fixed.push({ id: fid, name: r.note, amount: Math.round(r.amount), day: Math.min(28, +r.date.slice(8, 10)), acct: found.acct || undefined });
+        var per0 = window.Budget && window.Budget.period(d);
+        if (per0 && per0.has(r.date)) { var k2 = r.date.slice(0, 7), l2 = d.paid[k2] = d.paid[k2] || []; if (l2.indexOf(fid) < 0) l2.push(fid); bills++; return; }
+      }
       d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
       d.catMemory[norm(r.desc)] = r.cat; n++;
     });
@@ -384,6 +418,8 @@
   bg.addEventListener('change', function (e) {
     var cb = e.target.closest('input[data-i]');
     if (cb) { found.rows[+cb.dataset.i].on = cb.checked; cb.closest('li').classList.toggle('off', !cb.checked); sumLine(); return; }
+    var mk = e.target.closest('input[data-mk]');
+    if (mk) { found.rows[+mk.dataset.mk].mk = mk.checked; return; }
     var sel = e.target.closest('select[data-cat]');
     if (sel) { found.rows[+sel.dataset.cat].cat = sel.value; return; }
     var cc = e.target.closest('input[data-card]');

@@ -60,7 +60,7 @@
       var nx = fromKey(last.date); nx.setMonth(nx.getMonth() + 1);
       var sub = match(k, subs), fx = sub ? null : match(k, fixed);
       out.push({ key: k, name: last.note, amount: +last.amount, prev: +prev.amount, avg: amts.reduce(function (a, x) { return a + x; }, 0) / amts.length, day: day, n: l.length, last: last.date, next: dkey(nx),
-        cat: last.cat || 'other', bank: l.some(function (e) { return e.src === 'bank'; }), up: priceUp, sub: sub || null, fixed: fx || null, ignored: ign.indexOf(k) > -1,
+        cat: last.cat || 'other', acct: last.acct || null, bank: l.some(function (e) { return e.src === 'bank'; }), up: priceUp, sub: sub || null, fixed: fx || null, ignored: ign.indexOf(k) > -1,
         active: dayN(dkey(now)) - dayN(last.date) <= 40 });
     });
     return out.sort(function (a, b) { return (a.sub || a.fixed ? 1 : 0) - (b.sub || b.fixed ? 1 : 0) || b.amount - a.amount; });
@@ -79,7 +79,7 @@
       Fe.saveTools(t);
     } else {
       dd.budget = dd.budget || { income: [], fixed: [] }; dd.budget.fixed = dd.budget.fixed || [];
-      var fid = uid(); dd.budget.fixed.push({ id: fid, name: r.name, amount: Math.round(r.amount), day: Math.min(r.day, 28) });
+      var fid = uid(); dd.budget.fixed.push({ id: fid, name: r.name, amount: Math.round(r.amount), day: Math.min(r.day, 28), acct: r.acct || undefined });
       var ym = dkey(now).slice(0, 7);
       if (String(r.last).slice(0, 7) === ym) { dd.paid = dd.paid || {}; (dd.paid[ym] = dd.paid[ym] || []).push(fid); }
       window.Vault.save(dd);
@@ -411,5 +411,5 @@
     window.Vault.onUnlock(function () { row(); fill(); });
   })();
 
-  window.MoneyPlus = { detect: detect, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
+  window.MoneyPlus = { detect: detect, addAs: addAs, setIgnore: setIgnore, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
 })();

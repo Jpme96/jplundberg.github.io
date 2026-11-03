@@ -27,10 +27,11 @@
   function acctName(d, k) { var a = window.Accts.get(d, k); return a ? a.label : 'By hand'; }
 
   /* ================= the four views ================= */
-  var VIEWS = ['overview', 'tx', 'plan', 'wealth'];
-  function current() { return main.dataset.tab || 'overview'; }
+  var VIEWS = ['now', 'tx', 'insights', 'setup'], OLD = { overview: 'now', plan: 'setup', wealth: 'insights' };
+  function current() { return main.dataset.tab || 'now'; }
   function show(tab, opts) {
-    if (VIEWS.indexOf(tab) < 0) tab = 'overview';
+    if (OLD[tab]) tab = OLD[tab];
+    if (VIEWS.indexOf(tab) < 0) tab = 'now';
     var was = current();
     main.dataset.tab = tab;
     tabsEl.querySelectorAll('[data-ftab-go]').forEach(function (b) { var on = b.dataset.ftabGo === tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
@@ -65,7 +66,7 @@
   }
   window.addEventListener('hashchange', fromHash);
   if (/[?&]customize/.test(location.search)) main.classList.add('fp-all');      // customizing shows every card
-  (function () { var t = null; try { t = localStorage.getItem('dash.finTab'); } catch (e) {} show(t || 'overview', { keep: true }); fromHash(); })();
+  (function () { var t = null; try { t = localStorage.getItem('dash.finTab'); } catch (e) {} show(t || 'now', { keep: true }); fromHash(); })();
   /* search results and other links that scroll to a card on another view */
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[href*="#c="]'); if (!a) return;
@@ -79,7 +80,7 @@
     var box = $('fpFlow'); if (!box) return;
     var p = plan(d), inc = p.per.income, by = p.by;
     if (!(inc > 0)) {
-      box.innerHTML = '<p class="empty">Add your salary under Monthly budget → Edit, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="plan" data-fp-to="accounts">Plan → Accounts</button>. Then this shows what to move where on payday.</p>';
+      box.innerHTML = '<p class="empty">Add your salary under Setup → Income &amp; fixed costs, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="setup" data-fp-to="accounts">Plan → Accounts</button>. Then this shows what to move where on payday.</p>';
       return;
     }
     /* the month as you'd work it out yourself: salary − credit cards − loans − other bills − savings = left */
@@ -104,21 +105,14 @@
       (p.moves.length ? '<p class="pf-h">Payday checklist' + (openN ? ' · <span class="' + (payday ? 'pf-due' : '') + '">' + openN + ' to do</span>' : ' · <span class="pf-ok"><i class="bi bi-check2-all"></i> all done</span>') + '</p><ul class="pf-moves pf-check">' + p.moves.map(function (m) {
         return '<li class="' + (m.done ? 'done' : '') + '"><button type="button" class="check" data-pfmove="' + esc(m.id) + '" aria-pressed="' + m.done + '" aria-label="' + esc(m.label) + (m.done ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></button><span>' + esc(m.label) + '<small>' + esc(m.sub) + '</small></span><b>' + money(m.amount) + '</b></li>';
       }).join('') + '</ul>' : '') +
-      cards.map(ccLine).join('') +
-      '<p class="pf-h">This period · ' + esc(p.per.name) + '</p>' +
-      '<ul class="pf-moves pf-spent">' +
-        p.list.concat([{ id: 'hand', label: 'Logged by hand', icon: 'pencil' }]).filter(function (a) { return p.perAcct[a.id] > 0; }).map(function (a) {
-          return '<li><i class="bi bi-' + a.icon + '"' + (a.c ? ' style="color:' + a.c + '"' : '') + '></i><span>' + esc(a.label) + '</span><b>' + money(p.perAcct[a.id]) + '</b></li>';
-        }).join('') +
-        (function () { var rl = B.real && B.real(d), L = rl ? rl.free : p.left, pd = rl ? rl.perDay : p.perDay;
-          return '<li class="pf-left' + (L < 0 ? ' neg' : '') + '"><i class="bi bi-wallet2"></i><span>' + (L < 0 ? 'Short until payday' : rl ? 'Free to use (your accounts)' : 'Safe to spend') + '<small>' + (L > 0 ? esc(kr(pd)) + ' a day for ' + p.per.daysLeft + ' day' + (p.per.daysLeft === 1 ? '' : 's') : 'spend less until payday') + '</small></span><b>' + money(L) + '</b></li>'; })() +
-      '</ul>';
+      '';
   }
+  window.FinCC = function (c) { return ccLine(c); };       // used by Next 14 days
   /* one credit card's bill this month: amount, due day, paid in full (and what paying only part would cost) */
   function ccLine(c) {
     if (!c.amount && !c.due) return '';
     var late = c.due && !c.paid && c.days < 0, soon = c.due && !c.paid && c.days >= 0 && c.days <= 5;
-    var when = !c.due ? '<button type="button" class="text-btn" data-ftab-go="plan" data-fp-to="accounts">Set the due day</button>' :
+    var when = !c.due ? '<button type="button" class="text-btn" data-ftab-go="setup" data-fp-to="accounts">Set the due day</button>' :
       c.paid ? 'Paid in full' : late ? '<span class="late">' + (-c.days) + ' day' + (c.days === -1 ? '' : 's') + ' overdue</span>' : c.days === 0 ? '<span class="soon">Due today</span>' : 'Due ' + c.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' · in ' + c.days + ' day' + (c.days === 1 ? '' : 's');
     return '<div class="pf-cc' + (c.paid ? ' paid' : late ? ' late' : soon ? ' soon' : '') + '"><button type="button" class="check" data-pfcc="' + esc(c.acct.id) + '" aria-pressed="' + c.paid + '" aria-label="' + esc(c.acct.label) + (c.paid ? ' – paid in full' : ' – mark as paid in full') + '"><i class="bi bi-check-lg"></i></button>' +
       '<span><b>' + esc(c.acct.label) + ' bill</b><small>' + when + (c.known ? (c.owedNow ? ' · what you owe now' : '') : ' · put in what you owe under Your accounts') + '</small></span>' + money(c.amount) + '</div>' +
@@ -351,7 +345,7 @@
   }
   function win(c, cx) { return '<i class="bi bi-stars"></i> Paid off <b>' + esc(cx.endLabel.split(' (')[0]) + '</b> – ' + (c.months - cx.months) + ' months sooner, <b>' + money(c.interestLeft - cx.interestLeft) + '</b> less interest'; }
   function editLoan(id) {
-    show('wealth', { keep: true });
+    show('insights', { keep: true });
     setTimeout(function () {
       if (id) { var li = document.querySelector('#nwList .acc[data-id="' + id + '"]'); if (li) li.click(); }
       else { if ($('nwForm').hidden) $('nwAddBtn').click(); $('nwKind').value = 'debt'; $('nwKind').dispatchEvent(new Event('change')); }
@@ -564,26 +558,18 @@
     var box = $('fpBuf'); if (!box) return;
     var n = monthNeed(d), months = +d.budget.bufMonths || 3, target = Math.ceil(n.total * months / 1000) * 1000;
     var g = (d.savings || []).filter(function (x) { return x.buffer; })[0];
-    $('fpBufNote').textContent = '';
+    if (!(n.total > 0)) { box.innerHTML = ''; return; }
     var seg = '<div class="seg bf-seg" role="group" aria-label="How many months">' + [1, 2, 3, 4, 6].map(function (m) { return '<button type="button" data-bfm="' + m + '" aria-pressed="' + (m === months) + '">' + m + ' mo</button>'; }).join('') + '</div>';
-    if (!(n.total > 0)) { box.innerHTML = '<p class="empty">Add your fixed costs (and some spending) first – then the buffer you need is worked out here.</p>'; return; }
-    var need = '<p class="muted bf-p">A month costs you about <b>' + money(n.total) + '</b> – ' + money(n.fixed) + ' fixed + ' + money(n.every) + ' ' + (Object.keys(usual(d)).length ? 'usual spending' : 'spending limits') + '.</p>';
     if (!g) {
-      box.innerHTML = need + seg + '<div class="bf-goal"><span>Your buffer for ' + months + ' month' + (months === 1 ? '' : 's') + '</span><b>' + money(target) + '</b></div>' +
-        '<p class="muted bf-p">Money for the unexpected – losing the job, the car, the dentist – so it never goes on the credit card. 3 months is the usual advice.</p>' +
-        '<div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-bfmake><i class="bi bi-plus-lg"></i> Make it a savings goal</button></div>';
+      box.innerHTML = '<div class="bf-tip"><i class="bi bi-shield-check"></i><span><b>A buffer</b> – money for the unexpected, so it never goes on the card. ' + months + ' month' + (months === 1 ? '' : 's') + ' of your costs (' + money(n.total) + ' a month) = <b>' + money(target) + '</b>.</span>' +
+        '<button type="button" class="pill-btn" data-bfmake>Add it</button></div>';
       return;
     }
     if (g.autoT !== false && Math.abs((+g.target || 0) - target) > 500) { g.target = target; window.Vault.save(d); setTimeout(function () { window.dispatchEvent(new Event('fin:change')); }, 0); }
     var cov = n.total ? (+g.saved || 0) / n.total : 0, pct = Math.min(1, cov / months);
-    var fc = B.saveForecast && +g.monthly > 0 ? B.saveForecast(g) : null, mo = B.saveMonthly ? B.saveMonthly(g) : 0;
-    box.innerHTML = need + seg +
-      '<div class="bf-big"><b>' + (cov >= 10 ? Math.round(cov) : cov.toFixed(1).replace('.', ',')) + '</b><span>month' + (cov === 1 ? '' : 's') + ' covered<small>' + money(g.saved) + ' of ' + money(g.target) + '</small></span></div>' +
-      '<div class="bf-bar"><i style="width:' + (pct * 100).toFixed(1) + '%"></i>' + Array.apply(null, Array(months - 1)).map(function (x, i) { return '<b style="left:' + ((i + 1) / months * 100).toFixed(1) + '%"></b>'; }).join('') + '</div>' +
-      '<p class="muted bf-p">' + (pct >= 1 ? '<i class="bi bi-check2-circle" style="color:var(--accent)"></i> Full – anything more can go to other goals.' :
-        mo ? 'Saving ' + money(mo) + ' a month' + (fc && fc.label ? ' gets you there ' + esc(fc.label) : g.by ? ' gets you there by ' + esc(new Date(g.by + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + '.' :
-        'Give the goal an amount a month (Savings goals → Buffer) to see when it’s full.') +
-        (g.autoT === false ? ' · Your own target – <button type="button" class="text-btn" data-bfauto>follow the maths</button>' : '') + '</p>';
+    box.innerHTML = '<div class="bf-row"><span class="bf-ic"><i class="bi bi-shield-check"></i></span><span class="bf-t"><b>Buffer · ' + (cov >= 10 ? Math.round(cov) : cov.toFixed(1).replace('.', ',')) + ' of ' + months + ' months covered</b>' +
+      '<small>' + money(g.saved) + ' of ' + money(g.target) + ' · a month costs you ' + money(n.total) + (g.autoT === false ? ' · <button type="button" class="text-btn" data-bfauto>follow the maths</button>' : '') + '</small>' +
+      '<span class="bf-bar"><i style="width:' + (pct * 100).toFixed(1) + '%"></i>' + Array.apply(null, Array(months - 1)).map(function (x, i) { return '<b style="left:' + ((i + 1) / months * 100).toFixed(1) + '%"></b>'; }).join('') + '</span></span></div>' + seg;
   }
   document.addEventListener('click', function (e) {
     if (!e.target.closest('#fpBuf')) return;
