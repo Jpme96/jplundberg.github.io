@@ -207,6 +207,7 @@
         '<ul class="pay-deds">' + ded + '</ul>' +
         '<div class="add-row pay-dadd"><input name="dn" placeholder="e.g. Fagforening" autocomplete="off"><input name="da" class="amt" placeholder="681 or 2 %" inputmode="decimal" autocomplete="off">' +
           '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction"><i class="bi bi-plus-lg"></i></button></div>' +
+        '<div class="row2"><label class="pay-field"><span>Tax card (skattekort)</span><select name="tc"><option value="table"' + (!r || r.taxCard !== 'pct' ? ' selected' : '') + '>Table (tabelltrekk)</option><option value="pct"' + (r && r.taxCard === 'pct' ? ' selected' : '') + '>Percentage (prosenttrekk)</option></select></label><span></span></div>' +
         '<label class="pay-check"><input type="checkbox" name="py"' + (!r || r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
         '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span>Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
           '<label class="pay-field"><span>Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
@@ -219,7 +220,7 @@
   function readPay(f) {
     var r = { name: f.n.value.trim(), day: f.day.value === 'last' ? 'last' : (+f.day.value || null), deductions: f._ded || [] };
     if (f.mode.value === 'gross') {
-      r.gross = num(f.g.value) || 0; r.taxExtra = num(f.tx.value) || 0; r.benefits = num(f.bf.value) || 0; r.payYear = f.py.checked;
+      r.gross = num(f.g.value) || 0; r.taxExtra = num(f.tx.value) || 0; r.benefits = num(f.bf.value) || 0; r.payYear = f.py.checked; r.taxCard = f.tc && f.tc.value === 'pct' ? 'pct' : 'table';
       var t = String(f.t.value || '').trim();
       if (/%/.test(t) || (num(t) > 0 && num(t) <= 60)) { r.taxPct = num(t) || 0; r.taxKr = 0; }        // a percentage
       else { r.taxKr = num(t) || 0; r.taxPct = r.gross + r.benefits > 0 ? Math.round(r.taxKr / (r.gross + r.benefits) * 10000) / 100 : 0; }   // the amount from the payslip
@@ -232,9 +233,21 @@
     var r = readPay(f), p = f.querySelector('.pay-prev');
     if (!p) return;
     if (!(r.gross > 0)) { p.innerHTML = r.amount ? '<b>' + esc(kr(r.amount)) + '</b> per month' : ''; return; }
-    var y = new Date().getFullYear(), now = B.rowFor(r, ym(new Date())), jun = B.rowFor(r, y + '-06'), dec = B.rowFor(r, y + '-12');
-    p.innerHTML = '<b>' + esc(kr(now.net)) + '</b> net a month · tax ' + esc(kr(now.tax)) + (now.extra ? ' · deductions ' + esc(kr(now.extra)) : '') +
-      (r.payYear ? '<br>June ' + esc(kr(jun.net)) + ' · December ' + esc(kr(dec.net)) : '');
+    var y = new Date().getFullYear(), ord = B.rowFor(r, y + '-03'), jun = B.rowFor(r, y + '-06'), dec = B.rowFor(r, y + '-12');
+    /* the sum as it stands on the payslip, so you can check it line by line */
+    var line = function (t, v, neg) { return '<li><span>' + t + '</span><b>' + (neg ? '− ' : '') + esc(kr(v)) + '</b></li>'; };
+    p.innerHTML = '<ul class="pay-sum">' + line('Gross salary', r.gross) + (r.benefits ? line('(taxed benefit, not paid out ' + esc(kr(r.benefits)) + ')', 0) : '') +
+        line('Tax ' + (r.taxPct ? String(r.taxPct).replace('.', ',') + ' %' : ''), ord.baseTax || 0, true) + (r.taxExtra ? line('Extra tax', r.taxExtra, true) : '') +
+        ord.items.map(function (x) { return line(esc(x.name), x.amount, true); }).join('') +
+        '<li class="pay-eq"><span>Paid out a normal month</span><b>' + esc(kr(ord.net)) + '</b></li></ul>' +
+      (r.payYear ? '<p class="pay-yr"><b>June</b> ' + esc(kr(jun.net)) + (jun.holiday ? ' = holiday pay ' + esc(kr(jun.holPay)) + ' + salary ' + esc(kr(jun.salaryLeft)) + ' after ' + esc(kr(jun.held)) + ' held back for the holiday' + (jun.tax ? ' − tax ' + esc(kr(jun.tax)) : '') : '') +
+        '<br><b>December</b> ' + esc(kr(dec.net)) + (dec.note ? ' – ' + esc(dec.note.toLowerCase()) : ' – full tax (percentage card)') + '</p>' : '');
+    /* the Income total at the top follows what you type */
+    var h = $('budgetBody').querySelector('.b-edit h3 .muted');
+    if (h) {
+      var others = D.budget.income.filter(function (x) { return x.id !== f.dataset.pid; }).reduce(function (a, x) { return a + B.rowFor(x, ym(new Date())).net; }, 0);
+      h.innerHTML = money(others + B.rowFor(r, ym(new Date())).net) + ' net <small>(not saved yet)</small>';
+    }
   }
   function openPay(id) {
     payEditing = id; renderBudget();

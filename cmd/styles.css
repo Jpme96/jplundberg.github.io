@@ -4092,3 +4092,14 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .im-pick button[aria-checked="true"] .im-tick { opacity: 1; }
 .im-small { font-size: 12px; }
 .qa-acts .pill-btn[disabled] { opacity: .4; }
+/* payslip preview: the sum line by line */
+.pay-form .add-row:has(.pay-prev) { flex-wrap: wrap; }
+.pay-prev { flex: 1 1 100%; }
+.pay-sum { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13px; }
+.pay-sum li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; color: var(--muted); }
+.pay-sum li b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.pay-sum .pay-eq { border-top: 1px solid var(--line); margin-top: 3px; padding-top: 6px; color: var(--heading); font-weight: 600; }
+.pay-sum .pay-eq b { color: var(--accent); font-weight: 700; font-size: 15px; }
+.pay-yr { margin: 8px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.pay-yr b { color: var(--text); }
+.b-edit h3 small { font-weight: 400; font-size: 11px; color: var(--muted); }

@@ -18,6 +18,7 @@ window.Budget = (function () {
     var out = { name: r.name, net: +r.amount || 0, gross: 0, tax: 0, extra: 0, items: [], note: '', day: r.day || null, holiday: false };
     if (!(r.gross > 0)) return out;
     var m = +key.slice(5, 7), gross = +r.gross, pct = +r.taxPct || 0, benefits = +r.benefits || 0, taxExtra = +r.taxExtra || 0;
+    var table = r.taxCard !== 'pct';          // tabelltrekk (most employees) – prosenttrekk has no tax-free June and no half tax in December
     var ded = (r.deductions || []).map(function (x) {
       var v = x.pct ? gross * (+x.pct || 0) / 100 : +x.amount || 0;
       return { name: x.name, amount: v };
@@ -26,21 +27,26 @@ window.Budget = (function () {
     out.items = ded; out.extra = extra;
     var salary = gross, tax, note = '';
     if (r.payYear && m === 6) {
-      /* June: holiday pay (earned last year, not taxed) is paid, and the salary for the holiday
-         weeks is held back – 30/26 of a month for 5 weeks, 25/26 for 4 */
-      var hol = r.holidayPay != null && r.holidayPay !== '' ? +r.holidayPay || 0 : gross * 12 * 0.12;
+      /* June: holiday pay (earned last year) is paid, and the salary for the holiday days is held back
+         (5 weeks = 25 days ≈ 25/21.67 of a month, 4 weeks + 1 day = 21 days) */
+      var weeks = (+r.holidayWeeks || 5) === 4 ? 4 : 5;
+      var hol = r.holidayPay != null && r.holidayPay !== '' ? +r.holidayPay || 0 : gross * 12 * (weeks === 4 ? 0.102 : 0.12);
       if (hol > 0) {
-        var held = gross * ((+r.holidayWeeks || 5) === 4 ? 25 : 30) / 26;
+        var held = gross / 21.67 * (weeks === 4 ? 21 : 25);
         salary = gross - held;
-        tax = Math.max(0, (salary + benefits) * pct / 100);
-        out.gross = hol + salary; out.tax = tax; out.net = hol + salary - tax - extra; out.holiday = true; out.note = 'Holiday pay, no tax';
+        /* tabelltrekk: no tax on holiday pay, and the June table takes nothing from the rest; prosenttrekk: the % of everything */
+        tax = table ? taxExtra : Math.max(0, (hol + salary + benefits) * pct / 100) + taxExtra;
+        out.gross = hol + salary; out.tax = tax; out.net = hol + salary - tax - extra; out.holiday = true;
+        out.held = held; out.holPay = hol; out.salaryLeft = salary;
+        out.note = table ? 'Holiday pay, no tax' : 'Holiday pay, taxed (percentage card)';
         return out;
       }
       note = 'No holiday pay earned last year – a normal month';
     }
-    tax = (salary + benefits) * pct / 100 + taxExtra;
-    if (r.payYear && m === 12) { tax = tax / 2; note = 'Half tax in December'; }
-    out.gross = salary; out.tax = tax; out.net = salary - tax - extra; out.note = note;
+    var base = (salary + benefits) * pct / 100;
+    if (r.payYear && m === 12 && table) { base = base / 2; note = 'Half tax in December'; }
+    tax = base + taxExtra;
+    out.gross = salary; out.tax = tax; out.net = salary - tax - extra; out.note = note; out.baseTax = base; out.extraTax = taxExtra;
     return out;
   }
   /* the net amount in an ordinary month (what's stored as r.amount) */
