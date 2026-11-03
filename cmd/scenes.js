@@ -198,6 +198,7 @@
     var B = window.Budget, d = window.Vault.get() || {}; if (!B) return null;
     var per = B.period(d), fixed = ((d.budget && d.budget.fixed) || []).reduce(function (a, f) { return a + (+f.amount || 0); }, 0);
     var room = per.income - fixed, spent = B.spent(d, per), left = room - spent, pace = B.pace(d);
+    var rl = B.real && B.real(d); if (rl) { left = rl.free; room = Math.max(room, rl.cash, 1); }      // with balances: what's really there
     var ratio = room > 0 ? Math.max(0, Math.min(1, left / room)) : 0, state = left < 0 ? 'neg' : pace && !pace.ok ? 'warn' : 'ok';
     var payday = false; try { var np = B.nextPayday && B.nextPayday(d); payday = !!(np && np.days === 0); } catch (e) {}
     var H = 74, fy = 120 - H * ratio;

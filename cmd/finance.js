@@ -99,7 +99,7 @@
     $('budgetEdit').textContent = income || fixed ? 'Edit' : 'Set up';
 
     if (!income && !fixed) {
-      box.innerHTML = '<p class="empty">Add your salary – net, or gross with tax and deductions – and your fixed costs (rent, loans, subscriptions). Spending you log below is counted automatically.</p>';
+      box.innerHTML = '<p class="empty">Add your accounts, your salary and what goes out each month – then this shows what you can really spend.</p><div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button></div>';
       return;
     }
     var base = Math.max(income, fixed + spent, 1);
@@ -112,11 +112,28 @@
           next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + next.days + ' day' + (next.days === 1 ? '' : 's')) +
           (next.net ? ' · ' + money(next.net) : '') + '</p>'
       : '';
-    box.innerHTML =
-      '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>' +
-      '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(per.salary) + ' net income' + (per.extra ? ' + ' + money(per.extra) + ' in' : '') + (per.byPayday ? ' · ' + esc(per.name) : '') +
+    /* with the balances of your accounts filled in, the big number is what you can actually use until payday */
+    var real = B.real ? B.real(D) : null;
+    var realHtml = '';
+    if (real) {
+      var ago = real.oldest ? Math.round((new Date(today() + 'T12:00') - new Date(real.oldest + 'T12:00')) / 864e5) : null;
+      realHtml = '<div class="big-num ' + (real.free < 0 ? 'neg' : '') + '">' + money(real.free) + '</div>' +
+        '<div class="muted">' + (real.free < 0 ? 'short until payday' : 'free to use ' + (per.byPayday ? 'until payday' : 'this month')) + (real.free > 0 ? ' · ' + money(real.perDay) + '/day' : '') + ' · from your accounts' +
+          (ago != null && ago > 3 ? ' · <span class="soon">balances ' + ago + ' days old</span>' : '') + '</div>' +
+        '<ul class="legend b-real">' +
+          '<li><i class="dot" style="background:#8a6fdf"></i>In your accounts<b>' + money(real.cash) + '</b></li>' +
+          (real.owed ? '<li><i class="dot" style="background:#d95926"></i>Owed on credit cards<b>−' + money(real.owed) + '</b></li>' : '') +
+          (real.bills ? '<li><i class="dot" style="background:#3987e5"></i>Bills still due before payday<small>' + esc(real.billList.slice(0, 3).map(function (x) { return x.name; }).join(', ') + (real.billList.length > 3 ? ' …' : '')) + '</small><b>−' + money(real.bills) + '</b></li>' : '') +
+          (real.saveLeft ? '<li><i class="dot" style="background:#22b35e"></i>Savings still to move<b>−' + money(real.saveLeft) + '</b></li>' : '') +
+        '</ul>' +
+        '<p class="b-plan-h">The plan for ' + esc(per.byPayday ? 'this pay period' : 'this month') + ' · ' + money(left) + ' left after fixed costs and spending</p>';
+    }
+    box.innerHTML = realHtml + (real ? '' :
+      '<div class="big-num ' + (left < 0 ? 'neg' : '') + '">' + money(left) + '</div>') +
+      (real ? '' : '<div class="muted">' + (left < 0 ? 'over budget' : 'left ' + per.label) + ' · of ' + money(per.salary) + ' net income' + (per.extra ? ' + ' + money(per.extra) + ' in' : '') + (per.byPayday ? ' · ' + esc(per.name) : '') +
         (left > 0 ? ' · ' + money(perDay) + '/day' + (per.byPayday || (next && until === next.days) ? ' until payday' : '') : '') +
-        (inc.note ? ' · ' + esc(inc.note) : '') + '</div>' +
+        (inc.note ? ' · ' + esc(inc.note) : '') + '</div>') +
+      (real ? '' : '<p class="b-tip"><i class="bi bi-bank"></i> Put in what’s in your accounts and this becomes what you can really use. <button type="button" class="text-btn" data-fsopen="0">Set up step by step</button></p>') +
       '<div class="stack" role="img" aria-label="Fixed ' + esc(kr(fixed)) + ', spent ' + esc(kr(spent)) + ', left ' + esc(kr(left)) + '">' +
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span>' +
         '<span class="s-spent" style="width:' + w(spent) + '"></span>' +

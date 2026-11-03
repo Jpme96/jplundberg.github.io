@@ -72,7 +72,8 @@
       desc: find([/beskrivelse|forklaring|^tekst|description|^text|tittel|mottaker|merchant|navn|melding/]),
       amount: find([/^beløp$|^belop$|^amount$|beløp|amount|^sum$/]),
       out: find([/^ut\b|ut fra konto|debet|utgående|withdraw|debit/]),
-      inn: find([/^inn\b|inn på konto|kredit|innskudd|deposit|credit/])
+      inn: find([/^inn\b|inn på konto|kredit|innskudd|deposit|credit/]),
+      bal: find([/^saldo$|^balance$|saldo|balance|disponibelt/])
     };
   }
   function guessCat(desc, memory) {
@@ -138,7 +139,7 @@
       var date = dateKey(r[col.date]), desc = r[col.desc] || '', amt = NaN;
       if (col.amount > -1 && !isNaN(num(r[col.amount]))) amt = num(r[col.amount]);
       else if (col.out > -1) { var o = num(r[col.out]), i = col.inn > -1 ? num(r[col.inn]) : NaN; amt = !isNaN(o) && o !== 0 ? -Math.abs(o) : !isNaN(i) ? Math.abs(i) : NaN; }
-      parsed.push({ date: date, desc: desc, amt: amt, ok: !!(date && !isNaN(amt) && desc) });
+      parsed.push({ date: date, desc: desc, amt: amt, ok: !!(date && !isNaN(amt) && desc), saldo: col.bal > -1 && col.bal !== col.amount ? num(r[col.bal]) : NaN });
     });
     var good = parsed.filter(function (x) { return x.ok && x.amt !== 0; });
     var pos = good.filter(function (x) { return x.amt > 0; }).length;
@@ -186,7 +187,21 @@
       out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
-    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows };
+    /* the account's balance after this file: the file's own balance column if it has one, otherwise the
+       balance you typed in moved on by every row after that day (transfers and salary too – they're real money) */
+    var bal = null, A0 = acct && AC ? AC.get(d, acct) : null;
+    if (A0) {
+      var withSaldo = good.filter(function (x) { return !isNaN(x.saldo); }), newest = good.reduce(function (m, x) { return x.date > m ? x.date : m; }, '');
+      if (withSaldo.length) {
+        var top = withSaldo.filter(function (x) { return x.date === withSaldo.reduce(function (m, y) { return y.date > m ? y.date : m; }, ''); })[0];
+        bal = { to: kind === 'credit' ? Math.abs(top.saldo) : top.saldo, at: top.date, how: 'the balance in the file' };
+      } else if (A0.bal != null) {
+        var moveIn = good.filter(function (x) { return !A0.balAt || x.date > A0.balAt; }).reduce(function (m, x) { return m + (card ? -x.amt : x.amt); }, 0);
+        if (moveIn) bal = { to: kind === 'credit' ? Math.max(0, A0.bal - moveIn) : A0.bal + moveIn, at: newest, how: 'your balance from ' + (A0.balAt ? new Date(A0.balAt + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'before') + ' + the rows after it' };
+      }
+      if (bal) bal.from = A0.bal;
+    }
+    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows, bal: bal };
   }
 
   /* ---------- Excel files (.xlsx): a zip of XML, read without any library ---------- */
@@ -275,7 +290,8 @@
         '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.kind] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
       '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
     var per = window.Budget && window.Budget.period(window.Vault.get() || {}), inPer = per ? rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0) : 0;
-    var perLine = per ? '<p class="muted im-p im-per"><i class="bi bi-pie-chart"></i> <span id="imPer">' + esc(nf.format(inPer)) + '</span> of this counts in your budget now (' + esc(per.name) + ') – the rest is in earlier periods and shows in the statistics.</p>' : '';
+    var balLine = res.bal ? '<p class="muted im-p im-per"><i class="bi bi-bank2"></i> ' + (res.kind === 'credit' ? 'Owed on the card' : 'Balance') + ' after this file: <b>' + esc(nf.format(res.bal.to)) + '</b> (' + esc(res.bal.how) + ')</p>' : '';
+    var perLine = balLine + (per ? '<p class="muted im-p im-per"><i class="bi bi-pie-chart"></i> <span id="imPer">' + esc(nf.format(inPer)) + '</span> of this counts in your budget now (' + esc(per.name) + ') – the rest is in earlier periods and shows in the statistics.</p>' : '');
     if (!rows.length) { open('<h2 class="im-h"><i class="bi bi-bank"></i> Nothing new</h2><p class="muted im-p">' + (sk.dup ? 'Every expense in that file is already in Spending' : 'No spending found in that file') + (note.length ? ' (' + note.join(', ') + ')' : '') + '.</p>' + signRow + '<div class="qa-acts"><span class="spacer"></span><button type="button" class="pill-btn wide" data-close>OK</button></div>'); return; }
     var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + (r.income ? -r.amount : r.amount); }, 0);
     open('<h2 class="im-h"><i class="bi bi-bank"></i> ' + nOut + ' new expense' + (nOut === 1 ? '' : 's') + (nIn ? ' · ' + nIn + ' in' : '') + '</h2>' +
@@ -315,6 +331,12 @@
       var c = ccs.filter(function (a) { return a.name && r.desc.toLowerCase().indexOf(a.name.toLowerCase().split(' ')[0]) > -1; })[0] || ccs[0];
       d.budget = d.budget || {}; d.budget.ccPaid = d.budget.ccPaid || {}; d.budget.ccPaid[c.id + ':' + r.date.slice(0, 7)] = true;
     });
+    if (found.bal && found.acct) {
+      d.budget = d.budget || {}; var L = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+      var ae = L.filter(function (x) { return x.id === found.acct; })[0];
+      if (!ae) { ae = { id: found.acct, kind: found.kind || found.acct }; L.push(ae); }
+      if (!ae.balAt || found.bal.at >= ae.balAt) { ae.bal = Math.round(found.bal.to * 100) / 100; ae.balAt = found.bal.at; ae.balSrc = 'import'; }
+    }
     if (found.acct && found.sig) { d.bankFiles = d.bankFiles || {}; d.bankFiles[found.sig.head] = found.acct; if (found.sig.num) d.bankFiles[found.sig.num] = found.acct; }
     /* keep the memory of merchants small */
     var tn = new Date(); d.lastImport = tn.getFullYear() + '-' + String(tn.getMonth() + 1).padStart(2, '0') + '-' + String(tn.getDate()).padStart(2, '0');

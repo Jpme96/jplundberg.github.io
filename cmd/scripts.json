@@ -84,6 +84,7 @@
       "finance/fin.js",
       "finance/import.js",
       "finance/fin-plan.js",
+      "finance/fin-setup.js",
       "kit.js",
       "tools.js",
       "profile.js",

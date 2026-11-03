@@ -28,6 +28,7 @@
     }
     var pay = B.nextPayday(d, now), untilPay = per.byPayday || (pay && pay.days > 0 && pay.days <= dim);
     var perDay = left > 0 ? left / (per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1) : 0;
+    var rl = B.real && B.real(d); if (rl) { left = rl.free; perDay = rl.perDay; }          // with account balances: what you can really use
     var base = Math.max(income, fixed + spent, 1), w = function (v) { return Math.max(0, v / base * 100).toFixed(2) + '%'; };
 
     /* bills: overdue or due within a week */

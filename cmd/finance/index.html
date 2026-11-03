@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=161" rel="stylesheet">
+  <link href="../styles.css?v=165" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -143,9 +143,15 @@
           <div id="budgetBody"></div>
         </section>
 
+        <!-- Your accounts: what's actually in them (fin-plan.js) -->
+        <section class="card myaccts" id="fpMoneyCard">
+          <div class="card-head"><h2><i class="bi bi-bank2"></i> Your accounts</h2><button class="text-btn" type="button" id="fpMoneyEdit">Update</button></div>
+          <div id="fpMoney"></div>
+        </section>
+
         <!-- Payday plan (fin-plan.js) -->
         <section class="card flow" id="fpFlowCard">
-          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> Payday plan</h2><button class="text-btn" type="button" data-ftab-go="plan" data-fp-to="accounts">Accounts</button></div>
+          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> This month</h2><button class="text-btn" type="button" data-ftab-go="plan" data-fp-to="accounts">Accounts</button></div>
           <div id="fpFlow"></div>
         </section>
         </div>
@@ -895,8 +901,8 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=435dff0861"></script>
-  <script src="../dist/tail.js?v=722723d66e"></script>
+  <script src="../dist/page-finance.js?v=e558914e08"></script>
+  <script src="../dist/tail.js?v=6d2bdb0ae7"></script>
   <!-- /scripts -->
 </body>
 </html>

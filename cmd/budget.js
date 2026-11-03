@@ -242,28 +242,57 @@ window.Accts = (function () {
     salary: { name: 'Salary account', icon: 'cash-stack', c: '#8a6fdf' },
     credit: { name: 'Credit card', icon: 'credit-card', c: '#d95926' },
     card: { name: 'Card account', icon: 'credit-card-2-front', c: '#3987e5' },
-    savings: { name: 'Savings account', icon: 'piggy-bank', c: '#22b35e' }
+    savings: { name: 'Savings account', icon: 'piggy-bank', c: '#22b35e' },
+    fund: { name: 'Fund account', icon: 'graph-up-arrow', c: '#0891b2' }
   };
   var EXTRA_C = ['#0891b2', '#c98500', '#d55181', '#6b6d73', '#11a597'];
   function list(d) {
     var b = (d && d.budget) || {}, names = b.accts || {}, own = Array.isArray(b.acctList) ? b.acctList : [];
+    /* the three you start with can be renamed, given another type or removed (o.off) like any other */
     var base = ['salary', 'credit', 'card'].map(function (id) {
       var o = own.filter(function (a) { return a.id === id; })[0] || {};
-      return { id: id, kind: id, name: o.name || names[id] || '', due: o.due || (id === 'credit' ? b.ccDue : null) || null, buffer: id === 'card' ? (o.buffer != null ? +o.buffer : +b.cardBuffer || 0) : +o.buffer || 0, builtin: true };
+      if (o.off) return null;
+      return { id: id, kind: KINDS[o.kind] ? o.kind : id, name: o.name || names[id] || '', due: o.due || (id === 'credit' ? b.ccDue : null) || null, buffer: id === 'card' ? (o.buffer != null ? +o.buffer : +b.cardBuffer || 0) : +o.buffer || 0, builtin: true,
+        bal: o.bal != null && o.bal !== '' ? +o.bal : null, balAt: o.balAt || null, balSrc: o.balSrc || null, limit: +o.limit || 0 };
+    }).filter(Boolean);
+    var more = own.filter(function (a) { return a && a.id && !a.off && ['salary', 'credit', 'card'].indexOf(a.id) < 0; }).map(function (a, i) {
+      return { id: a.id, kind: KINDS[a.kind] ? a.kind : 'card', name: a.name || '', due: a.due || null, buffer: +a.buffer || 0, extra: true, ci: i,
+        bal: a.bal != null && a.bal !== '' ? +a.bal : null, balAt: a.balAt || null, balSrc: a.balSrc || null, limit: +a.limit || 0 };
     });
-    var more = own.filter(function (a) { return a && a.id && ['salary', 'credit', 'card'].indexOf(a.id) < 0; }).map(function (a, i) {
-      return { id: a.id, kind: KINDS[a.kind] ? a.kind : 'card', name: a.name || '', due: a.due || null, buffer: +a.buffer || 0, extra: true, ci: i };
-    });
-    return base.concat(more).map(function (a) {
-      var k = KINDS[a.kind];
-      a.label = a.name || (a.extra ? k.name + ' ' + (a.ci + 2) : k.name);
+    var all = base.concat(more);
+    if (!all.some(function (a) { return a.kind === 'salary'; })) all.unshift({ id: 'salary', kind: 'salary', name: names.salary || '', builtin: true, buffer: 0 });   // the salary has to land somewhere
+    var seen = {};
+    return all.map(function (a) {
+      var k = KINDS[a.kind], n = seen[a.kind] = (seen[a.kind] || 0) + 1;
+      a.label = a.name || (n > 1 ? k.name + ' ' + n : k.name);
       a.icon = k.icon; a.c = a.extra ? EXTRA_C[a.ci % EXTRA_C.length] : k.c;
       return a;
     });
   }
   function get(d, id) { return list(d).filter(function (a) { return a.id === id; })[0] || null; }
+  /* what's in the accounts right now (the balances you typed in, moved on by imports):
+     cash = salary + card accounts (money you can use), owed = credit cards, saved = savings + funds */
+  function money(d) {
+    var out = { cash: 0, owed: 0, saved: 0, limit: 0, known: false, cashKnown: false, oldest: null };
+    list(d).forEach(function (a) {
+      if (a.limit && a.kind === 'credit') out.limit += a.limit;
+      if (a.bal == null) return;
+      out.known = true;
+      if (!out.oldest || (a.balAt && a.balAt < out.oldest)) out.oldest = a.balAt;
+      if (a.kind === 'credit') out.owed += Math.max(0, a.bal);
+      else if (a.kind === 'savings' || a.kind === 'fund') out.saved += a.bal;
+      else { out.cash += a.bal; out.cashKnown = true; }
+    });
+    out.net = out.cash + out.saved - out.owed;
+    return out;
+  }
+  /* the accounts you have, the first time: salary, credit card, bills account, savings, fund, a second credit card */
+  var STARTER = [
+    { id: 'salary', kind: 'salary', name: 'Lønnskonto' }, { id: 'credit', kind: 'credit', name: 'Kredittkort' }, { id: 'card', kind: 'card', name: 'Regningskonto' },
+    { id: 'acsav', kind: 'savings', name: 'Sparekonto' }, { id: 'acfund', kind: 'fund', name: 'Fondskonto' }, { id: 'acbn', kind: 'credit', name: 'Bank Norwegian' }
+  ];
   function kind(d, id) { var a = get(d, id); return a ? a.kind : null; }
-  return { KINDS: KINDS, list: list, get: get, kind: kind };
+  return { KINDS: KINDS, list: list, get: get, kind: kind, money: money, STARTER: STARTER };
 })();
 
 /* The payday plan: where this period's income goes, account by account, and what to move on payday.
@@ -279,7 +308,7 @@ window.Budget.payPlan = function (d, now) {
     var v = +f.amount || 0;
     if (f.src === 'save') { save += v; return; }
     if (f.src === 'year') { yearly += v; return; }
-    if (f.src === 'loan') loans += v;
+    if (f.src === 'loan' || /\blån|lån\b|\bloan|boliglån|billån|studielån|lånekassen/i.test(f.name || '')) loans += v;
     var id = ids[f.acct] ? f.acct : main.id; by[id] += v;
   });
   var fixedAll = fixed.reduce(function (a, f) { return a + (+f.amount || 0); }, 0);
@@ -291,7 +320,7 @@ window.Budget.payPlan = function (d, now) {
   /* moves on payday: to every account that pays bills (not the credit card – that's a bill of its own), to savings */
   var moves = [], buffers = 0;
   list.forEach(function (a) {
-    if (a.kind === 'salary' || a.kind === 'credit') return;
+    if (a.kind === 'salary' || a.kind === 'credit' || (a.kind === 'fund' && !(saveTo && saveTo.id === a.id))) return;
     var amt = by[a.id] + (a.buffer || 0) + (saveTo && saveTo.id === a.id ? save + yearly : 0);
     buffers += a.buffer || 0;
     if (amt > 0) moves.push({ id: 'to:' + a.id, to: a.id, label: 'Move to ' + a.label, amount: amt, sub: [by[a.id] ? 'bills ' + Math.round(by[a.id]) + ' kr' : '', a.buffer ? 'buffer ' + Math.round(a.buffer) + ' kr' : '', saveTo && saveTo.id === a.id && save + yearly ? 'savings ' + Math.round(save + yearly) + ' kr' : ''].filter(Boolean).join(' + ') });
@@ -322,9 +351,9 @@ window.Budget.cardBills = function (d, now) {
     var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), day = a.due ? Math.min(+a.due, dim) : null;
     var dt = day ? new Date(now.getFullYear(), now.getMonth(), day) : null, days = dt ? Math.round((dt - t0) / 864e5) : null;
     var paid = !!(((d.budget && d.budget.ccPaid) || {})[a.id + ':' + ymk]);
-    var amount = buys + bills;
-    return { acct: a, month: ymk, from: pk, buys: buys, bills: bills, amount: amount, due: day, date: dt, days: days, paid: paid,
-      interest: amount * 0.22 / 12, known: buys > 0 };
+    var owedNow = a.bal != null, amount = owedNow ? Math.max(0, a.bal) : buys + bills;      // what you said you owe beats the estimate
+    return { acct: a, month: ymk, from: pk, buys: buys, bills: bills, amount: amount, due: day, date: dt, days: days, paid: paid, owedNow: owedNow,
+      interest: amount * 0.22 / 12, known: owedNow || buys > 0, limit: a.limit || 0 };
   });
 };
 
@@ -352,3 +381,34 @@ window.Budget.cardBills = function (d, now) {
     });
   });
 })();
+
+/* The budget, checked against your accounts: what you can actually use until payday.
+   free = money in the salary and card accounts − what you owe on credit cards − bills still due before payday
+          (paid from those accounts; card-paid bills land on the card) − savings moves not done yet. */
+window.Budget.real = function (d, now) {
+  "use strict";
+  now = now || new Date();
+  var A = window.Accts, B = window.Budget, m = A.money(d);
+  if (!m.cashKnown) return null;
+  var p = B.payPlan(d, now), per = p.per, list = A.list(d), ids = {}; list.forEach(function (a) { ids[a.id] = a; });
+  var pad = function (n) { return String(n).padStart(2, '0'); }, t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var due = [], seen = {};
+  /* each fixed cost with a due day, from today up to the end of the period, not ticked as paid */
+  for (var dt = new Date(t0); dt <= per.end; dt.setDate(dt.getDate() + 1)) {
+    var ymk = dt.getFullYear() + '-' + pad(dt.getMonth() + 1), dim = new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate(), paid = (d.paid && d.paid[ymk]) || [];
+    ((d.budget && d.budget.fixed) || []).forEach(function (f) {
+      if (!f.day || f.src === 'save' || f.src === 'year' || paid.indexOf(f.id) > -1) return;
+      if (Math.min(+f.day, dim) !== dt.getDate() || seen[f.id + ymk]) return;
+      var a = ids[f.acct] || p.main;
+      if (a.kind === 'credit') return;                                       // goes on the card – already counted when you pay the card
+      if (f.src === 'sub' && dt <= t0) return;
+      seen[f.id + ymk] = 1; due.push({ name: f.name, amount: +f.amount || 0, date: new Date(dt) });
+    });
+  }
+  var bills = due.reduce(function (s, x) { return s + x.amount; }, 0);
+  var saveLeft = p.moves.filter(function (mv) { return !mv.done && (mv.id === 'save' || mv.id === 'year' || (mv.to && ids[mv.to] && (ids[mv.to].kind === 'savings' || ids[mv.to].kind === 'fund'))); })
+    .reduce(function (s, mv) { return s + mv.amount; }, 0);
+  var free = m.cash - m.owed - bills - saveLeft;
+  return { cash: m.cash, owed: m.owed, bills: bills, billList: due, saveLeft: saveLeft, free: free, perDay: free > 0 ? free / Math.max(1, per.daysLeft) : 0,
+    per: per, oldest: m.oldest, money: m };
+};

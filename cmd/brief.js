@@ -87,6 +87,7 @@
         var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = (per ? per.income : income) - fixed - spent;
         var untilPay = (per && per.byPayday) || (pay && pay.days > 0 && pay.days <= dim);
         var perDay = left / (per && per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1);
+        var rl = Bu && Bu.real && Bu.real(d); if (rl) { left = rl.free; perDay = rl.perDay; }
         add(left < 0 ? 8 : 50, 'wallet2', left < 0 ? '#e66767' : '#11a597', left < 0 ? kr(-left) + ' over budget' : kr(perDay) + ' to spend today',
           left < 0 ? (per && per.byPayday ? 'Until payday' : 'This month') + ', after fixed costs' : kr(left) + ' left' + (untilPay ? ' until payday' : ' this month'), '#fin');
       }

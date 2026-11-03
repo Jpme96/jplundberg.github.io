@@ -207,6 +207,7 @@
     var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = (per ? per.income : income) - fixed - spent;
     var untilPay = (per && per.byPayday) || (pay && pay.days > 0 && pay.days <= dim);
     var perDay = left / (per && per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - now.getDate() + 1);
+    var rl = Bu && Bu.real && Bu.real(d); if (rl) { left = rl.free; perDay = rl.perDay; }
     return { left: left, perDay: perDay };
   }
   /* the same rule as At a glance: a fixed cost with a day that has passed this month and isn't ticked as paid */
