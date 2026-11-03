@@ -271,11 +271,21 @@
 
   function open(html) { $('imBody').innerHTML = html; bg.hidden = false; document.body.classList.add('qa-open'); requestAnimationFrame(function () { bg.classList.add('open'); }); }
   function close() { bg.classList.remove('open'); document.body.classList.remove('qa-open'); setTimeout(function () { if (!bg.classList.contains('open')) bg.hidden = true; }, 320); }
+  /* step 1: which account the file is from – picked before the file, so it's never a guess */
+  var chosen = null;
   function intro() {
+    var list = acctList();
+    if (!chosen || !list.some(function (a) { return a.id === chosen; })) { try { chosen = localStorage.getItem('dash.imAcct'); } catch (e) {} }
+    if (!list.some(function (a) { return a.id === chosen; })) chosen = null;
     open('<h2 class="im-h"><i class="bi bi-bank"></i> Import from your bank</h2>' +
-      '<p class="muted im-p">Export the transactions from your bank account <b>or credit card</b> as <b>CSV or Excel</b> (DNB, Sparebank 1, Nordea and the others have it under the account’s history) and pick the file here. ' +
-      'Import each of your accounts – the salary account, the credit card and the card account – and say which one the file is from (it’s remembered). Only what you spent counts: salary, card payments and transfers between your own accounts are left out, and rows you already have are skipped. Nothing leaves your browser.</p>' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick><i class="bi bi-file-earmark-arrow-up"></i> Choose file</button></div>');
+      '<p class="muted im-p">Export the transactions as <b>CSV or Excel</b> in your bank app or online bank (under the account’s history), then pick the account the file is from and choose the file. Nothing leaves your browser.</p>' +
+      '<p class="im-q">Which account is the file from?</p>' +
+      '<div class="im-pick" role="radiogroup" aria-label="Account">' + list.map(function (a) {
+        return '<button type="button" role="radio" data-pickacct="' + esc(a.id) + '" aria-checked="' + (chosen === a.id) + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span><b>' + esc(a.label) + '</b><small>' +
+          ({ salary: 'Salary lands here', credit: 'Credit card', card: 'Bills and other payments', savings: 'Savings', fund: 'Fund' }[a.kind] || '') + (a.bal != null ? ' · ' + esc(nf.format(a.kind === 'credit' ? -a.bal : a.bal)) : '') + '</small></span><i class="bi bi-check-circle-fill im-tick"></i></button>';
+      }).join('') + '</div>' +
+      '<p class="muted im-p im-small">Salary, card payments and transfers between your own accounts are left out, and rows you already have are skipped. The account’s balance is moved on by the file.</p>' +
+      '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick' + (chosen ? '' : ' disabled') + '><i class="bi bi-file-earmark-arrow-up"></i> Choose file</button></div>');
   }
   function preview(res) {
     found = res;
@@ -285,7 +295,7 @@
     if (sk.income) note.push(sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
-    var signRow = '<div class="im-acct"><span>' + (res.acct ? 'This file is from' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
+    var signRow = '<div class="im-acct"><span>' + (res.acct ? 'From <b>' + esc((acctList().filter(function (a) { return a.id === res.acct; })[0] || {}).label || '') + '</b> – change it here if that’s wrong' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
         acctList().map(function (a) { return '<button type="button" data-acct="' + esc(a.id) + '" aria-pressed="' + (res.acct === a.id) + '"><i class="bi bi-' + a.icon + '"></i> ' + esc(a.label) + '</button>'; }).join('') + '</div>' +
         '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.kind] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
       '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
@@ -350,10 +360,12 @@
   btn.addEventListener('click', intro);
   bg.addEventListener('click', function (e) {
     if (e.target === bg || e.target.closest('[data-close]')) { close(); return; }
-    if (e.target.closest('[data-pick]')) { file.value = ''; file.click(); return; }
+    var pa = e.target.closest('[data-pickacct]');
+    if (pa) { chosen = pa.dataset.pickacct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} bg.querySelectorAll('[data-pickacct]').forEach(function (b) { b.setAttribute('aria-checked', b === pa); }); var pk = bg.querySelector('[data-pick]'); if (pk) pk.disabled = false; return; }
+    if (e.target.closest('[data-pick]')) { if (!chosen && bg.querySelector('[data-pickacct]')) return; file.value = ''; file.click(); return; }
     if (e.target.closest('[data-import]')) { doImport(); return; }
     var ab = e.target.closest('[data-acct]');
-    if (ab && found && found.source) { preview(analyse(found.source, { acct: ab.dataset.acct })); return; }
+    if (ab && found && found.source) { chosen = ab.dataset.acct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} preview(analyse(found.source, { acct: chosen })); return; }
   });
   bg.addEventListener('change', function (e) {
     var cb = e.target.closest('input[data-i]');
@@ -369,7 +381,7 @@
       var u8 = new Uint8Array(buf), isZip = u8[0] === 0x50 && u8[1] === 0x4b;
       return isZip ? readXlsx(buf) : decode(buf);
     }).then(function (rows) {
-      var res = analyse(rows);
+      var res = analyse(rows, chosen ? { acct: chosen } : {});
       if (res.error) open('<h2 class="im-h"><i class="bi bi-bank"></i> Couldn’t read that file</h2><p class="muted im-p">' + esc(res.error) + '</p><div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick>Try another file</button></div>');
       else preview(res);
     }).catch(function (e) {

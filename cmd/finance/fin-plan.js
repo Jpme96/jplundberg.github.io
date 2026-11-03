@@ -179,15 +179,16 @@
       var cr = a.kind === 'credit', v = a.bal;
       if (monEditing) return '<li class="mn-row ed"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + (cr ? 'What you owe now' : 'What’s in it now') + '</small></span>' +
         '<input data-mnbal="' + esc(a.id) + '" inputmode="decimal" value="' + esc(v != null ? String(v).replace('.', ',') : '') + '" placeholder="kr" aria-label="' + esc((cr ? 'Owed on ' : 'Balance of ') + a.label) + '" autocomplete="off">' +
-        (cr ? '<input class="mn-lim" data-mnlim="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.limit || '') + '" placeholder="Limit, kr" aria-label="Credit limit of ' + esc(a.label) + '" autocomplete="off">' : '') + '</li>';
+        (cr ? '<input class="mn-lim" data-mnlim="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.limit || '') + '" placeholder="Limit, kr" aria-label="Credit limit of ' + esc(a.label) + '" autocomplete="off">' : '') +
+        '<label class="mn-nw"><input type="checkbox" data-mnnw="' + esc(a.id) + '"' + (a.nw ? ' checked' : '') + '> In net worth</label></li>';
       var lim = cr && a.limit ? '<span class="mn-bar"><i style="width:' + Math.min(100, (v || 0) / a.limit * 100).toFixed(1) + '%;background:' + ((v || 0) / a.limit > .8 ? 'var(--danger)' : (v || 0) / a.limit > .5 ? '#c98500' : a.c) + '"></i></span>' : '';
       var sub = v == null ? '<button type="button" class="text-btn" data-mnedit>Add the balance</button>' :
-        (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · from import' : '');
+        (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · from import' : '') + (a.nw ? '' : ' · not in net worth');
       return '<li class="mn-row' + (v == null ? ' none' : '') + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + sub + '</small>' + lim + '</span>' +
         (v == null ? '<span class="muted">–</span>' : money(cr ? -Math.max(0, v) : v, cr && v > 0 ? 'neg' : '')) + '</li>';
     };
     box.innerHTML = setup + '<ul class="mn-list">' + list.map(row).join('') + '</ul>' +
-      (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '</div>' : '') +
+      (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '<span>Net worth<b>' + money(m.worth) + '</b></span></div>' : '') +
       (seeded(d) && !monEditing ? '<button type="button" class="text-btn mn-wiz" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button>' : '') +
       (monEditing ? '<p class="muted mn-p">Type what your bank shows now. Importing a file afterwards moves the balance on by itself (or takes the balance column, when the file has one).</p>' :
         !m.known ? '<p class="muted mn-p">Add what’s in each account – then the budget shows what you can really use, not just what the plan says.</p>' : '');
@@ -214,8 +215,9 @@
     }
   });
   document.addEventListener('change', function (e) {
-    var t = e.target; if (!t.dataset || !(t.dataset.mnbal || t.dataset.mnlim)) return;
+    var t = e.target; if (!t.dataset || !(t.dataset.mnbal || t.dataset.mnlim || t.dataset.mnnw)) return;
     var d = data(); if (!d) return;
+    if (t.dataset.mnnw) { setBal(d, t.dataset.mnnw, { nw: t.checked }); window.Vault.save(d); setTimeout(function () { window.dispatchEvent(new Event('fin:change')); }, 0); return; }
     var v = num(t.value), k = new Date(), key = k.getFullYear() + '-' + pad(k.getMonth() + 1) + '-' + pad(k.getDate());
     if (t.dataset.mnbal) setBal(d, t.dataset.mnbal, t.value.trim() === '' ? { bal: null, balAt: null, balSrc: null } : isFinite(v) ? { bal: Math.round(v * 100) / 100, balAt: key, balSrc: 'hand' } : {});
     else setBal(d, t.dataset.mnlim, { limit: Math.max(0, Math.round(num(t.value) || 0)) });

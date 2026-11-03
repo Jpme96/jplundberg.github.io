@@ -29,7 +29,7 @@
     var d = window.Vault.get() || {}, b = d.budget || {}, A = window.Accts;
     var have = Array.isArray(b.acctList) && b.acctList.some(function (a) { return a.bal != null || ['salary', 'credit', 'card'].indexOf(a.id) < 0; });
     var accts = (have ? A.list(d) : A.STARTER.map(function (s) { var cur = A.get(d, s.id); return Object.assign({}, s, cur && cur.name ? { name: cur.name } : {}, cur ? { bal: cur.bal, limit: cur.limit, due: cur.due } : {}); }))
-      .map(function (a) { return { id: a.id, kind: a.kind, name: a.name || a.label || '', bal: a.bal != null ? a.bal : '', limit: a.limit || '', due: a.due || '' }; });
+      .map(function (a) { return { id: a.id, kind: a.kind, name: a.name || a.label || '', bal: a.bal != null ? a.bal : '', limit: a.limit || '', due: a.due || '', nw: a.nw !== false }; });
     var inc = (b.income || [])[0] || null;
     var fixed = (b.fixed || []).map(function (f) { return Object.assign({}, f); });
     return { accts: accts, salary: inc ? { id: inc.id, amount: inc.gross > 0 ? '' : inc.amount, day: inc.day || '', gross: inc.gross > 0, net: window.Budget ? window.Budget.ordinary(inc) : inc.amount, name: inc.name } : { id: null, amount: '', day: '', gross: false },
@@ -43,7 +43,7 @@
       var list = draft.accts.filter(function (a) { return a.name.trim() || a.bal !== '' || ['salary', 'credit', 'card'].indexOf(a.id) > -1; }).map(function (a) {
         var o = old.filter(function (x) { return x.id === a.id; })[0] || {}, bal = a.bal === '' ? null : num(a.bal);
         keep[a.id] = 1;
-        var rec = Object.assign({}, o, { id: a.id, kind: a.kind, name: a.name.trim().slice(0, 40), limit: a.kind === 'credit' ? Math.max(0, Math.round(num(a.limit) || 0)) : 0, due: a.kind === 'credit' ? (+a.due || null) : null });
+        var rec = Object.assign({}, o, { id: a.id, kind: a.kind, name: a.name.trim().slice(0, 40), limit: a.kind === 'credit' ? Math.max(0, Math.round(num(a.limit) || 0)) : 0, due: a.kind === 'credit' ? (+a.due || null) : null, nw: a.nw !== false });
         delete rec.off;
         if (bal == null || !isFinite(bal)) { rec.bal = null; rec.balAt = null; rec.balSrc = null; }
         else if (o.bal !== bal) { rec.bal = Math.round(bal * 100) / 100; rec.balAt = todayKey(); rec.balSrc = 'hand'; }
@@ -99,7 +99,7 @@
           '<div class="fs-r2"><select data-fa="kind" data-i="' + i + '" aria-label="Type">' + Object.keys(K).map(function (k) { return '<option value="' + k + '"' + (a.kind === k ? ' selected' : '') + '>' + K[k].name + '</option>'; }).join('') + '</select>' +
           '<label><span>' + (cr ? 'You owe' : 'In it now') + '</span><input data-fa="bal" data-i="' + i + '" inputmode="decimal" value="' + esc(a.bal) + '" placeholder="kr" autocomplete="off"></label>' +
           (cr ? '<label><span>Limit</span><input data-fa="limit" data-i="' + i + '" inputmode="decimal" value="' + esc(a.limit) + '" placeholder="kr" autocomplete="off"></label><label><span>Bill due</span><select data-fa="due" data-i="' + i + '">' + dayOptions(a.due) + '</select></label>' : '') +
-          '</div></li>';
+          '</div><label class="qa-check fs-nw"><input type="checkbox" data-fanw="' + i + '"' + (a.nw !== false ? ' checked' : '') + '> Count it in my net worth</label></li>';
       }).join('') + '</ul><button type="button" class="text-btn" data-faadd><i class="bi bi-plus-lg"></i> Add an account</button>' + foot('Next: salary');
   }
   function stepSalary() {
@@ -167,6 +167,7 @@
   });
   bg.addEventListener('change', function (e) {
     var t = e.target, i = +t.dataset.i;
+    if (t.dataset.fanw != null) { draft.accts[+t.dataset.fanw].nw = t.checked; return; }
     if (t.dataset.fa) { draft.accts[i][t.dataset.fa] = t.value; if (t.dataset.fa === 'kind') draw(); }
     else if (t.dataset.ff) draft.fixed[i][t.dataset.ff] = t.value;
     else if (t.dataset.fs) draft.salary[t.dataset.fs] = t.value;
@@ -177,7 +178,7 @@
     if (t.closest('[data-fsnext]')) { saveStep(); if (step >= STEPS.length - 1) { close(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> Finances set up'); return; } step++; draft = Object.assign(load(), {}); draw(); return; }
     if (t.closest('[data-fsback]')) { saveStep(); step--; draft = load(); draw(); return; }
     var go = t.closest('[data-fsgo]'); if (go) { saveStep(); step = +go.dataset.fsgo; draft = load(); draw(); return; }
-    if (t.closest('[data-faadd]')) { draft.accts.push({ id: 'ac' + uid(), kind: 'card', name: '', bal: '', limit: '', due: '' }); draw(); var ins = bg.querySelectorAll('[data-fa="name"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+    if (t.closest('[data-faadd]')) { draft.accts.push({ id: 'ac' + uid(), kind: 'card', name: '', bal: '', limit: '', due: '', nw: true }); draw(); var ins = bg.querySelectorAll('[data-fa="name"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
     var del = t.closest('[data-fadel]');
     if (del) {
       var a = draft.accts[+del.dataset.fadel];

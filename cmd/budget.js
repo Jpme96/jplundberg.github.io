@@ -253,11 +253,11 @@ window.Accts = (function () {
       var o = own.filter(function (a) { return a.id === id; })[0] || {};
       if (o.off) return null;
       return { id: id, kind: KINDS[o.kind] ? o.kind : id, name: o.name || names[id] || '', due: o.due || (id === 'credit' ? b.ccDue : null) || null, buffer: id === 'card' ? (o.buffer != null ? +o.buffer : +b.cardBuffer || 0) : +o.buffer || 0, builtin: true,
-        bal: o.bal != null && o.bal !== '' ? +o.bal : null, balAt: o.balAt || null, balSrc: o.balSrc || null, limit: +o.limit || 0 };
+        bal: o.bal != null && o.bal !== '' ? +o.bal : null, balAt: o.balAt || null, balSrc: o.balSrc || null, limit: +o.limit || 0, nw: o.nw !== false };
     }).filter(Boolean);
     var more = own.filter(function (a) { return a && a.id && !a.off && ['salary', 'credit', 'card'].indexOf(a.id) < 0; }).map(function (a, i) {
       return { id: a.id, kind: KINDS[a.kind] ? a.kind : 'card', name: a.name || '', due: a.due || null, buffer: +a.buffer || 0, extra: true, ci: i,
-        bal: a.bal != null && a.bal !== '' ? +a.bal : null, balAt: a.balAt || null, balSrc: a.balSrc || null, limit: +a.limit || 0 };
+        bal: a.bal != null && a.bal !== '' ? +a.bal : null, balAt: a.balAt || null, balSrc: a.balSrc || null, limit: +a.limit || 0, nw: a.nw !== false };
     });
     var all = base.concat(more);
     if (!all.some(function (a) { return a.kind === 'salary'; })) all.unshift({ id: 'salary', kind: 'salary', name: names.salary || '', builtin: true, buffer: 0 });   // the salary has to land somewhere
@@ -273,17 +273,19 @@ window.Accts = (function () {
   /* what's in the accounts right now (the balances you typed in, moved on by imports):
      cash = salary + card accounts (money you can use), owed = credit cards, saved = savings + funds */
   function money(d) {
-    var out = { cash: 0, owed: 0, saved: 0, limit: 0, known: false, cashKnown: false, oldest: null };
+    var out = { cash: 0, owed: 0, saved: 0, limit: 0, known: false, cashKnown: false, oldest: null, worth: 0, counted: 0, missing: [], left: [] };
     list(d).forEach(function (a) {
       if (a.limit && a.kind === 'credit') out.limit += a.limit;
-      if (a.bal == null) return;
+      if (a.bal == null) { if (a.nw) out.missing.push(a); return; }
+      /* net worth: the accounts you've said count (all of them unless you switched one off) */
+      if (a.nw) { out.worth += a.kind === 'credit' ? -Math.max(0, a.bal) : a.bal; out.counted++; } else out.left.push(a);
       out.known = true;
       if (!out.oldest || (a.balAt && a.balAt < out.oldest)) out.oldest = a.balAt;
       if (a.kind === 'credit') out.owed += Math.max(0, a.bal);
       else if (a.kind === 'savings' || a.kind === 'fund') out.saved += a.bal;
       else { out.cash += a.bal; out.cashKnown = true; }
     });
-    out.net = out.cash + out.saved - out.owed;
+    out.net = out.worth;
     return out;
   }
   /* the accounts you have, the first time: salary, credit card, bills account, savings, fund, a second credit card */

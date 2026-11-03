@@ -269,7 +269,8 @@
           (other ? ' · first ' + esc(other.src.name) + ' ' + esc(kr(other.net)) + ' on ' + other.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') : 'Give your income a payday under Monthly budget' },
       { i: 'graph-up-arrow', l: 'Net worth', v: nwAcc || am.known ? money(nw, nw < 0 ? 'neg' : '') : '–',
         s: !(nwAcc || am.known) ? 'Add your balances under Your accounts' :
-          (am.known ? 'Accounts ' + esc(kr(am.net)) + (nwAcc ? ' + assets & loans ' + esc(kr(netWorth())) : '') : '') +
+          (am.known ? am.counted + ' account' + (am.counted === 1 ? '' : 's') + ' ' + esc(kr(am.net)) + (nwAcc ? ' + assets & loans ' + esc(kr(netWorth())) : '') +
+            (am.missing.length ? ' · no balance yet: ' + esc(am.missing.map(function (a) { return a.label; }).join(', ')) : '') : '') +
           (change !== null ? ' · <span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) : '') }
     ];
     $('fpTiles').innerHTML = T.map(function (t) {

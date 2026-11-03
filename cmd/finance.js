@@ -635,7 +635,7 @@
   /* net worth = Your accounts (the balances on Overview: money in them − what you owe on cards) + other things you
      own or owe added here (a house, a car, a mortgage, a student loan) */
   function bankNet() { var m = window.Accts ? window.Accts.money(D) : null; return m && m.known ? m.net : 0; }
-  function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.known); }
+  function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.counted); }
   function netWorth() {
     return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
   }
@@ -663,9 +663,12 @@
     $('nwEmpty').hidden = D.accounts.length > 0;
     $('nwEmpty').textContent = hasBank() ? 'Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage, a student loan – with +.' :
       'Your accounts (Overview → Your accounts) are counted by themselves once they have a balance. Add other things you own or owe – a house, a car, a mortgage – with +.';
-    var bankRows = window.Accts ? window.Accts.list(D).filter(function (a) { return a.bal != null; }).map(function (a) {
-      var cr = a.kind === 'credit', v = cr ? -Math.max(0, a.bal) : a.bal;
-      return '<li class="acc acc-bank"><i class="bi bi-' + a.icon + ' acc-ico' + (cr ? ' debt' : '') + '"></i><span class="acc-name">' + esc(a.label) + '<span class="muted">' + (cr ? 'Credit card' : 'Account') + ' · from Your accounts</span></span>' + money(v, v < 0 ? 'neg' : '') + '</li>';
+    /* every bank account: counted ones with their balance, ones without a balance yet, and ones you left out */
+    var bankRows = window.Accts ? window.Accts.list(D).map(function (a) {
+      var cr = a.kind === 'credit', has = a.bal != null, v = has ? (cr ? -Math.max(0, a.bal) : a.bal) : 0;
+      var note = !a.nw ? 'Not counted · change under Your accounts → Update' : !has ? 'No balance yet – add it under Your accounts' : (cr ? 'Credit card' : a.kind === 'fund' ? 'Fund' : a.kind === 'savings' ? 'Savings' : 'Account') + ' · from Your accounts';
+      return '<li class="acc acc-bank' + (!a.nw || !has ? ' acc-off' : '') + '"><i class="bi bi-' + a.icon + ' acc-ico' + (cr ? ' debt' : '') + '"></i><span class="acc-name">' + esc(a.label) + '<span class="muted">' + note + '</span></span>' +
+        (has && a.nw ? money(v, v < 0 ? 'neg' : '') : '<span class="muted">' + (has ? esc(kr(v)) : '–') + '</span>') + '</li>';
     }).join('') : '';
     $('nwList').innerHTML = bankRows + D.accounts.slice().sort(function (a, b) {
       return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance;
