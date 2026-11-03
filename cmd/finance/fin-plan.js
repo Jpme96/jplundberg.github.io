@@ -227,43 +227,37 @@
   var acctAdding = false;
   function renderAcct(d) {
     var box = $('fpAcct'); if (!box) return;
-    if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;   // don't redraw under your fingers
-    var A = window.Accts, list = A.list(d), fixed = d.budget.fixed;
+    if (box.contains(document.activeElement) && document.activeElement.matches('input, select')) return;
+    var A = window.Accts, list = A.list(d), fixed = d.budget.fixed, p = plan(d);
     var opt = function (sel, filter) { return list.filter(filter || function () { return true; }).map(function (a) { return '<option value="' + a.id + '"' + (sel === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join(''); };
-    var dayOpts = function (v) { var o = '<option value="">Due day?</option>'; for (var i = 1; i <= 31; i++) o += '<option value="' + i + '"' + (+v === i ? ' selected' : '') + '>Due the ' + i + '.</option>'; return o; };
-    var p = plan(d);
-    var groups = list.map(function (a) {
-      var rows = fixed.filter(function (f) { return f.src !== 'save' && f.src !== 'year' && (list.some(function (x) { return x.id === f.acct; }) ? f.acct : p.main.id) === a.id; });
-      return '<div class="pa-grp"><p class="pa-h"><i class="bi bi-' + a.icon + '" style="color:' + a.c + '"></i> ' + esc(a.label) + '<b>' + money(sum(rows)) + '</b></p>' +
-        (rows.length ? '<ul class="pa-list">' + rows.map(function (f) {
-          return '<li><span>' + esc(f.name) + (f.day ? '<small>the ' + esc(f.day) + '.</small>' : '') + '</span>' + money(f.amount) +
-            '<select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings'; }) + '</select></li>';
-        }).join('') + '</ul>' : '<p class="muted pa-none">' + (a.kind === 'savings' ? 'Savings and yearly costs can go here (below)' : 'Nothing paid from here') + '</p>') + '</div>';
+    var ofAcct = function (f) { return list.some(function (x) { return x.id === f.acct; }) ? f.acct : p.main.id; };
+    var used = [], empty = [];
+    list.forEach(function (a) {
+      var rows = fixed.filter(function (f) { return f.src !== 'save' && f.src !== 'year' && ofAcct(f) === a.id; });
+      (rows.length ? used : empty).push({ a: a, rows: rows });
+    });
+    /* savings goals and yearly costs: shown under the account they go to */
+    var saves = fixed.filter(function (f) { return f.src === 'save' || f.src === 'year'; });
+    var groups = used.map(function (g) {
+      var a = g.a;
+      return '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' + esc(a.label) +
+        '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
+        '<ul class="pa-list">' + g.rows.map(function (f) {
+          return '<li><span>' + esc(f.name) + '<small>' + (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + '</small></span>' + money(f.amount) +
+            '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
+        }).join('') + '</ul></div>';
     }).join('');
-    var salaries = list.filter(function (x) { return x.kind === 'salary'; }).length;
-    var row = function (a) {
-      var lastSalary = a.kind === 'salary' && salaries < 2;
-      return '<div class="pa-acct" data-paid="' + esc(a.id) + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' +
-        '<input data-paname="' + esc(a.id) + '" value="' + esc(a.name) + '" placeholder="' + esc(a.kind === 'salary' ? 'e.g. DNB brukskonto' : a.kind === 'credit' ? 'e.g. Trumf Visa' : a.kind === 'savings' ? 'e.g. Sparekonto' : 'e.g. Regningskonto') + '" aria-label="Name of ' + esc(a.label) + '" autocomplete="off">' +
-        '<button type="button" class="icon-btn sm" data-padel="' + esc(a.id) + '"' + (lastSalary ? ' disabled title="Your salary has to land somewhere – add another salary account first"' : '') + ' aria-label="Remove ' + esc(a.label) + '"><i class="bi bi-trash3"></i></button>' +
-        '<select class="pa-type" data-pakind="' + esc(a.id) + '" aria-label="Type of ' + esc(a.label) + '"' + (lastSalary ? ' disabled' : '') + '>' + Object.keys(A.KINDS).map(function (k) { return '<option value="' + k + '"' + (a.kind === k ? ' selected' : '') + '>' + A.KINDS[k].name + '</option>'; }).join('') + '</select>' +
-        (a.kind === 'credit' ? '<select data-padue="' + esc(a.id) + '" aria-label="Bill due day">' + dayOpts(a.due) + '</select>' :
-          a.kind === 'card' || a.kind === 'savings' ? '<input data-pabuf="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.buffer || '') + '" placeholder="+ kr/payday" aria-label="Extra to ' + esc(a.label) + ' each payday" autocomplete="off">' : '<span class="muted pa-kind">Salary lands here</span>') +
-        '</div>';
-    };
     box.innerHTML =
-      '<button type="button" class="pill-btn pa-wiz" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button>' +
-      '<p class="muted pa-p">Your salary lands on the salary account and is spread out from there. Name your accounts, say which one pays each fixed cost – the payday plan then tells you what to move where. Credit cards: the day the bill is due. Other accounts: an extra amount to move each payday (optional).</p>' +
-      '<div class="pa-accts">' + list.map(row).join('') + '</div>' +
-      (acctAdding ? '<form class="pa-add" id="paAdd"><input name="n" placeholder="Name, e.g. Felleskonto" required autocomplete="off"><select name="k" aria-label="Type">' +
-          Object.keys(A.KINDS).map(function (k) { return '<option value="' + k + '"' + (k === 'card' ? ' selected' : '') + '>' + A.KINDS[k].name + '</option>'; }).join('') + '</select>' +
-          '<button type="button" class="text-btn" data-paaddx>Cancel</button><button type="submit" class="pill-btn">Add</button></form>'
-        : '<button type="button" class="text-btn pa-more" data-paaddgo><i class="bi bi-plus-lg"></i> Add an account</button>') +
-      '<div class="pa-names">' +
-        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings'; }) + '</select></label>' +
-        '<label><span><i class="bi bi-piggy-bank"></i> Savings and yearly costs go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
-      '</div>' + groups +
-      '<p class="muted pa-p">Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>' +
+      '<p class="muted pa-p">Which account pays each bill. Tap <i class="bi bi-arrow-left-right"></i> to move one to another account.</p>' +
+      '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> Edit accounts</button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-plus-lg"></i> Add or change bills</button></div>' +
+      (groups || '<p class="empty">No fixed costs yet.</p>') +
+      (saves.length ? '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#22b35e"><i class="bi bi-piggy-bank"></i></span>Savings<b>' + money(sum(saves)) + '</b></p><ul class="pa-list pa-ro">' + saves.map(function (f) {
+          var to = A.get(d, f.to) || p.saveTo; return '<li><span>' + esc(f.name) + '<small>' + (to ? '→ ' + esc(to.label) : 'no account chosen') + '</small></span>' + money(f.amount) + '</li>'; }).join('') + '</ul></div>' : '') +
+      (empty.length ? '<p class="muted pa-none">No bills from ' + esc(empty.map(function (g) { return g.a.label; }).join(', ')) + '</p>' : '') +
+      '<div class="pa-set">' +
+        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label>' +
+        '<label><span><i class="bi bi-piggy-bank"></i> Savings go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
+      '</div>' +
       '<div class="pa-reset"><button type="button" class="text-btn danger" data-frreset><i class="bi bi-arrow-counterclockwise"></i> Reset finances …</button></div>';
   }
   function setAcct(d, id, patch) {

@@ -632,11 +632,15 @@
   /* ================= Net worth ================= */
   var editingAcc = null;
 
+  /* net worth = Your accounts (the balances on Overview: money in them − what you owe on cards) + other things you
+     own or owe added here (a house, a car, a mortgage, a student loan) */
+  function bankNet() { var m = window.Accts ? window.Accts.money(D) : null; return m && m.known ? m.net : 0; }
+  function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.known); }
   function netWorth() {
-    return sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
+    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
   }
   function snapshot() {
-    if (D.accounts.length) D.history[ym(new Date())] = netWorth();
+    if (D.accounts.length || hasBank()) D.history[ym(new Date())] = netWorth();
   }
 
   function renderNet() {
@@ -645,9 +649,11 @@
     var prevKey = keys.filter(function (k) { return k < ym(new Date()); }).pop();
     var change = prevKey !== undefined ? net - D.history[prevKey] : null;
 
-    $('nwBig').innerHTML = D.accounts.length ? money(net) : '';
+    var any = D.accounts.length || hasBank();
+    if (any) { var hk = ym(new Date()); if (D.history[hk] !== net) { D.history[hk] = net; persist(); keys = Object.keys(D.history).sort(); } }
+    $('nwBig').innerHTML = any ? money(net) : '';
     $('nwBig').className = 'big-num' + (net < 0 ? ' neg' : '');
-    $('nwSub').innerHTML = !D.accounts.length ? '' :
+    $('nwSub').innerHTML = !any ? '' :
       change === null ? 'Net worth · history builds month by month' :
       '<span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' +
       money(Math.abs(change)) + '</span> since ' + esc(monthName(prevKey, true));
@@ -655,7 +661,13 @@
     $('nwChart').innerHTML = keys.length >= 2 ? line(keys.slice(-12)) : '';
 
     $('nwEmpty').hidden = D.accounts.length > 0;
-    $('nwList').innerHTML = D.accounts.slice().sort(function (a, b) {
+    $('nwEmpty').textContent = hasBank() ? 'Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage, a student loan – with +.' :
+      'Your accounts (Overview → Your accounts) are counted by themselves once they have a balance. Add other things you own or owe – a house, a car, a mortgage – with +.';
+    var bankRows = window.Accts ? window.Accts.list(D).filter(function (a) { return a.bal != null; }).map(function (a) {
+      var cr = a.kind === 'credit', v = cr ? -Math.max(0, a.bal) : a.bal;
+      return '<li class="acc acc-bank"><i class="bi bi-' + a.icon + ' acc-ico' + (cr ? ' debt' : '') + '"></i><span class="acc-name">' + esc(a.label) + '<span class="muted">' + (cr ? 'Credit card' : 'Account') + ' · from Your accounts</span></span>' + money(v, v < 0 ? 'neg' : '') + '</li>';
+    }).join('') : '';
+    $('nwList').innerHTML = bankRows + D.accounts.slice().sort(function (a, b) {
       return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance;
     }).map(function (a) {
       var debt = a.kind === 'debt';
@@ -760,6 +772,7 @@
   $('nwList').addEventListener('click', function (e) {
     var li = e.target.closest('.acc');
     if (!li) return;
+    if (li.classList.contains('acc-bank')) { if (window.FinTabs) window.FinTabs.go('.card.myaccts'); return; }   // changed under Your accounts
     openAcc(D.accounts.filter(function (a) { return a.id === li.dataset.id; })[0]);
   });
 

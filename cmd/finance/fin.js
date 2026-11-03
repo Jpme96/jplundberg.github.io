@@ -212,38 +212,65 @@
 
   /* Key numbers */
   function tiles(months, ex, income, fixed, spendable, inc, idx) {
-    var Bu = window.Budget, pay = Bu.nextPayday(D);
-    var per = Bu.period(D), spentNow = Bu.spent(D, per);
-    var left = per.income - fixed - spentNow;
+    var Bu = window.Budget, per = Bu.period(D), spentNow = Bu.spent(D, per), real = Bu.real ? Bu.real(D) : null;
+    var plan = per.income - fixed - spentNow, left = real ? real.free : plan;
     var spentP = idx ? sumMonths(idx, months) : sum(inMonths(ex, months));
     var avg = spentP / months.length;
-    var rate = income > 0 ? (income - fixed - avg) / income : null;
-    var nw = netWorth();
+    /* the main income's payday (the biggest one), and any smaller income that comes first */
+    var rows = (D.budget.income || []).filter(function (r) { return r.day; }), main = rows.slice().sort(function (a, b) { return Bu.ordinary(b) - Bu.ordinary(a); })[0];
+    var t0 = new Date(); t0 = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
+    var ahead = Bu.paydays(D, t0, new Date(t0.getFullYear(), t0.getMonth() + 2, t0.getDate()));
+    var mp = ahead.filter(function (x) { return x.src === main; })[0] || ahead[0] || null, other = mp ? ahead.filter(function (x) { return x.src !== mp.src && x.date < mp.date; })[0] : null;
+    var dIn = function (x) { return Math.round((x.date - t0) / 864e5); };
+    /* savings rate: what goes to savings (the goals that are fixed costs) + what's left of the income after
+       fixed costs and spending – for this period that's the budget plan; for longer periods the real months */
+    var toSave = sum((D.budget.fixed || []).filter(function (f) { return f.src === 'save'; }));
+    var rate = null, rateSub = '';
+    if (income > 0) {
+      if (months.length > 1) {
+        var full = months.filter(function (m) { return m < NOW; }), n = full.length || 1, sp = idx ? sumMonths(idx, full.length ? full : months) : spentP;
+        var incN = (full.length ? full : months).reduce(function (a, m) { return a + Bu.incomeOf(D, m).net; }, 0) || income * n;
+        var fixN = (fixed - toSave) * (full.length || months.length);
+        rate = (incN - fixN - sp) / incN; rateSub = 'of your income not spent – ' + (full.length || months.length) + ' full month' + ((full.length || months.length) === 1 ? '' : 's');
+      } else {
+        /* this period, at the pace you spend: income − fixed costs (savings not counted as a cost) − the spending you're heading for */
+        var pc = Bu.pace ? Bu.pace(D) : null, proj = pc ? pc.projected : null;
+        if (proj == null) { var lm = shift(NOW, -1); proj = idx ? sumMonths(idx, [lm]) : sum(inMonths(ex, [lm])); }
+        var kept = per.income - (fixed - toSave) - proj;
+        rate = kept / per.income;
+        rateSub = money(Math.max(0, kept)) + ' kept of ' + money(per.income) + (pc ? ' at the pace you spend' : ' (spending like last month)') + (toSave ? ' · ' + money(toSave) + ' of it to savings goals' : '');
+      }
+    }
+    /* net worth: Net worth's assets and loans + the balances in Your accounts */
+    var am = window.Accts ? window.Accts.money(D) : { known: false, net: 0 };
+    var nwAcc = D.accounts.length, nw = netWorth() + (am.known ? am.net : 0);       // fin.js netWorth() = the Net worth card's own items
     var hist = D.history || {};
     var prevKey = Object.keys(hist).sort().filter(function (k) { return k < NOW; }).pop();
-    var change = prevKey !== undefined && D.accounts.length ? nw - hist[prevKey] : null;
-    var day = new Date().getDate(), dim = daysIn(NOW);
-    var untilPay = per.byPayday || (pay && pay.days > 0 && pay.days <= dim);
-    var perDayLeft = left > 0 ? left / (per.byPayday ? per.daysLeft : untilPay ? pay.days : dim - day + 1) : 0;
+    var change = prevKey !== undefined && (nwAcc || am.known) ? nw - hist[prevKey] : null;
     var ded = inc.rows.reduce(function (a, r) { return a.concat(r.items); }, []);
+    var spentLbl = per.byPayday && period === 'month' ? 'Spent since payday' : period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years');
+    var spentV = per.byPayday && period === 'month' ? spentNow : spentP;
+    var room = per.income - fixed;
 
     var T = [
       { i: 'wallet2', l: per.byPayday ? 'Left until payday' : 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
-        s: income || fixed ? (left >= 0 ? money(perDayLeft) + ' per day ' + (untilPay ? 'until payday' : 'for the rest of ' + esc(mName(NOW))) : 'Over budget') : 'Set up your budget above' },
+        s: !(income || fixed) ? 'Set up your budget above' : left < 0 ? (real ? 'Short – from your accounts' : 'Over budget') :
+          money(real ? real.perDay : left / Math.max(1, per.daysLeft)) + ' a day for ' + per.daysLeft + ' day' + (per.daysLeft === 1 ? '' : 's') + (real ? ' · from your accounts (plan: ' + esc(kr(plan)) + ')' : '') },
       { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income + (per.byPayday ? 0 : per.extra)) : '–',
         s: !income ? 'Add your salary under Monthly budget'
-          : inc.gross ? (per.extra && !per.byPayday ? '+' + esc(kr(per.extra)) + ' refunds and other money in · ' : '') + 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 || inc.logged ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name.toLowerCase()) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '') +
-            (function () { var y = Bu.yearSoFar(D); return y.months > 1 ? ' · This year: net ' + esc(kr(y.net)) + ', tax ' + esc(kr(y.tax)) : ''; })()
-          : pay ? (pay.days === 0 ? esc(pay.title) + ' today' : esc(pay.title) + ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' day' + (pay.days === 1 ? '' : 's')) : 'Net, after tax' },
-      { i: 'receipt', l: period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years'), v: money(spentP),
-        s: months.length > 1 ? money(avg) + ' per month on average' : (spendable > 0 ? Math.round(spentNow / spendable * 100) + ' % of what you can spend' : '') },
-      { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %',
-        s: rate === null ? 'Needs your income' : 'of net income left after fixed costs and spending' },
-      { i: 'calendar-event', l: 'Next payday', v: pay ? (pay.days === 0 ? 'Today' : pay.days === 1 ? 'Tomorrow' : 'In ' + pay.days + ' days') : '–',
-        s: pay ? esc(pay.title) + ' · ' + pay.date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + (pay.net ? ' · ' + esc(kr(pay.net)) : '') : 'Give your income a payday under Monthly budget' },
-      { i: 'graph-up-arrow', l: 'Net worth', v: D.accounts.length ? money(nw, nw < 0 ? 'neg' : '') : '–',
-        s: change === null ? (D.accounts.length ? 'History builds month by month' : 'Add accounts under Net worth')
-          : '<span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) }
+          : inc.rows.length > 1 ? esc(inc.rows.filter(function (r) { return r.net; }).map(function (r) { return r.name + ' ' + kr(r.net); }).join(' + ')) + (inc.gross ? ' · tax ' + esc(kr(inc.tax)) : '')
+          : inc.gross ? 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 || inc.logged ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '')
+          : 'After tax' },
+      { i: 'receipt', l: spentLbl, v: money(spentV),
+        s: months.length > 1 ? money(avg) + ' per month on average' : (room > 0 ? Math.round(spentNow / room * 100) + ' % of what you can spend (' + esc(kr(room)) + ')' : '') },
+      { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %', s: rate === null ? 'Needs your income' : rateSub },
+      { i: 'calendar-event', l: 'Next payday', v: mp ? (dIn(mp) === 0 ? 'Today' : dIn(mp) === 1 ? 'Tomorrow' : 'In ' + dIn(mp) + ' days') : '–',
+        s: mp ? esc(mp.src.name || 'Salary') + ' · ' + mp.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + (mp.net ? ' · ' + esc(kr(mp.net)) : '') +
+          (other ? ' · first ' + esc(other.src.name) + ' ' + esc(kr(other.net)) + ' on ' + other.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') : 'Give your income a payday under Monthly budget' },
+      { i: 'graph-up-arrow', l: 'Net worth', v: nwAcc || am.known ? money(nw, nw < 0 ? 'neg' : '') : '–',
+        s: !(nwAcc || am.known) ? 'Add your balances under Your accounts' :
+          (am.known ? 'Accounts ' + esc(kr(am.net)) + (nwAcc ? ' + assets & loans ' + esc(kr(netWorth())) : '') : '') +
+          (change !== null ? ' · <span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) : '') }
     ];
     $('fpTiles').innerHTML = T.map(function (t) {
       return '<div class="fp-tile" data-tk="' + t.l.replace(/\b(19|20)\d\d\b/g, 'Y') + '"><div class="lbl"><i class="bi bi-' + t.i + '"></i>' + t.l + '</div><div class="val">' + t.v + '</div><div class="sub">' + t.s + '</div></div>';

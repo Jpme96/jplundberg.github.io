@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=167" rel="stylesheet">
+  <link href="../styles.css?v=168" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -268,7 +268,7 @@
         <section class="card networth">
           <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
           <form class="inline-form" id="nwForm" hidden>
-            <input id="nwName" placeholder="Name, e.g. Savings account or Mortgage" required autocomplete="off">
+            <input id="nwName" placeholder="Name, e.g. House, Car or Mortgage" required autocomplete="off">
             <div class="row2">
               <input id="nwBal" placeholder="Balance, kr" inputmode="decimal" required autocomplete="off">
               <select id="nwKind" aria-label="Type"><option value="asset">Asset</option><option value="debt">Debt / loan</option></select>
@@ -300,7 +300,7 @@
           <div class="muted" id="nwSub"></div>
           <div id="nwChart"></div>
           <ul class="acc-list" id="nwList"></ul>
-          <p class="empty" id="nwEmpty">Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.</p>
+          <p class="empty" id="nwEmpty">Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage – with +.</p>
         </section>
       </div>
     </section>
@@ -903,7 +903,7 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=4ba2776190"></script>
+  <script src="../dist/page-finance.js?v=c5d004553d"></script>
   <script src="../dist/tail.js?v=6d2bdb0ae7"></script>
   <!-- /scripts -->
 </body>
