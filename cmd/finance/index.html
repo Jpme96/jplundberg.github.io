@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=166" rel="stylesheet">
+  <link href="../styles.css?v=167" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -243,7 +243,8 @@
               <label class="sv-by"><span>Interest, % a year</span><input id="svRate" placeholder="Optional" inputmode="decimal" autocomplete="off"></label>
               <label class="qa-check sv-bsu"><input type="checkbox" id="svBsu"> BSU account (10 % tax deduction)</label>
             </div>
-            <label class="qa-check sv-aside"><input type="checkbox" id="svAside"> Set it aside in the monthly budget</label>
+            <label class="qa-check sv-aside"><input type="checkbox" id="svAside"> A fixed cost every month (in the budget and the payday checklist)</label>
+            <label class="sv-by sv-to" id="svToRow"><span>Goes to</span><select id="svTo" aria-label="The account the money goes to"></select></label>
             <p class="muted sv-hint" id="svHint"></p>
             <div class="form-actions">
               <button type="button" class="text-btn danger" id="svDelete" hidden>Delete</button>
@@ -902,7 +903,7 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=755186a780"></script>
+  <script src="../dist/page-finance.js?v=4ba2776190"></script>
   <script src="../dist/tail.js?v=6d2bdb0ae7"></script>
   <!-- /scripts -->
 </body>

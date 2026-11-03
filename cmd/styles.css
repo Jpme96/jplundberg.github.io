@@ -4062,3 +4062,5 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .fr-undo .bi-check-lg { color: var(--accent); }
 .pa-reset { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
 .sp-reset { display: block; margin: 10px auto 0; font-size: 13px; color: var(--muted); }
+.sv-to { margin-top: 2px; }
+.sv-to[hidden] { display: none; }

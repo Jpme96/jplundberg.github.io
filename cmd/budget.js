@@ -319,16 +319,19 @@ window.Budget.payPlan = function (d, now) {
   var saveTo = ids[d.budget && d.budget.saveAcct] ? ids[d.budget.saveAcct] : list.filter(function (a) { return a.kind === 'savings'; })[0] || null;
   /* moves on payday: to every account that pays bills (not the credit card – that's a bill of its own), to savings */
   var moves = [], buffers = 0;
-  list.forEach(function (a) {
-    if (a.kind === 'salary' || a.kind === 'credit' || (a.kind === 'fund' && !(saveTo && saveTo.id === a.id))) return;
-    var amt = by[a.id] + (a.buffer || 0) + (saveTo && saveTo.id === a.id ? save + yearly : 0);
-    buffers += a.buffer || 0;
-    if (amt > 0) moves.push({ id: 'to:' + a.id, to: a.id, label: 'Move to ' + a.label, amount: amt, sub: [by[a.id] ? 'bills ' + Math.round(by[a.id]) + ' kr' : '', a.buffer ? 'buffer ' + Math.round(a.buffer) + ' kr' : '', saveTo && saveTo.id === a.id && save + yearly ? 'savings ' + Math.round(save + yearly) + ' kr' : ''].filter(Boolean).join(' + ') });
+  /* each savings goal is its own move, to the account it goes to (the goal's own, else "Savings and yearly costs go to") */
+  var goals = fixed.filter(function (f) { return f.src === 'save' && +f.amount > 0; }).map(function (f) {
+    var to = ids[f.to] || saveTo || null, g = ((d && d.savings) || []).filter(function (x) { return x.id === f.goal || 'save-' + x.id === f.id; })[0];
+    return { id: 'sv:' + (f.goal || f.id), goal: g ? g.id : null, to: to ? to.id : null, label: (to ? 'Move to ' + to.label : 'Move to savings') + ' · ' + String(f.name || '').replace(/^Savings: /, ''), amount: +f.amount, sub: 'savings goal' + (g && g.target ? ' · ' + Math.round(g.saved || 0).toLocaleString('nb-NO') + ' of ' + Math.round(g.target).toLocaleString('nb-NO') + ' kr' : ''), kind: 'save' };
   });
-  if (!saveTo) {
-    if (save > 0) moves.push({ id: 'save', label: 'Move to savings', amount: save, sub: 'your savings goals' });
-    if (yearly > 0) moves.push({ id: 'year', label: 'Put aside for yearly costs', amount: yearly, sub: 'insurance and the like' });
-  }
+  list.forEach(function (a) {
+    if (a.kind === 'salary' || a.kind === 'credit') return;
+    var amt = by[a.id] + (a.buffer || 0) + (saveTo && saveTo.id === a.id ? yearly : 0);
+    buffers += a.buffer || 0;
+    if (amt > 0) moves.push({ id: 'to:' + a.id, to: a.id, label: 'Move to ' + a.label, amount: amt, sub: [by[a.id] ? 'bills ' + Math.round(by[a.id]) + ' kr' : '', a.buffer ? 'buffer ' + Math.round(a.buffer) + ' kr' : '', saveTo && saveTo.id === a.id && yearly ? 'yearly costs ' + Math.round(yearly) + ' kr' : ''].filter(Boolean).join(' + ') });
+  });
+  moves = moves.concat(goals);
+  if (!saveTo && yearly > 0) moves.push({ id: 'year', label: 'Put aside for yearly costs', amount: yearly, sub: 'insurance and the like' });
   var done = ((d.budget && d.budget.payDone) || {})[per.startKey] || {};
   moves.forEach(function (m) { m.done = !!done[m.id]; });
   return { per: per, list: list, main: main, by: by, save: save, yearly: yearly, loans: loans, fixed: fixedAll, room: room, spent: spent, left: left,
@@ -406,7 +409,7 @@ window.Budget.real = function (d, now) {
     });
   }
   var bills = due.reduce(function (s, x) { return s + x.amount; }, 0);
-  var saveLeft = p.moves.filter(function (mv) { return !mv.done && (mv.id === 'save' || mv.id === 'year' || (mv.to && ids[mv.to] && (ids[mv.to].kind === 'savings' || ids[mv.to].kind === 'fund'))); })
+  var saveLeft = p.moves.filter(function (mv) { return !mv.done && (mv.kind === 'save' || mv.id === 'year' || (mv.to && ids[mv.to] && (ids[mv.to].kind === 'savings' || ids[mv.to].kind === 'fund'))); })
     .reduce(function (s, mv) { return s + mv.amount; }, 0);
   var free = m.cash - m.owed - bills - saveLeft;
   return { cash: m.cash, owed: m.owed, bills: bills, billList: due, saveLeft: saveLeft, free: free, perDay: free > 0 ? free / Math.max(1, per.daysLeft) : 0,

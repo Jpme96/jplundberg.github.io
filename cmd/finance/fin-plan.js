@@ -128,8 +128,29 @@
     var mv = e.target.closest('[data-pfmove]'), cc = e.target.closest('[data-pfcc]'); if (!mv && !cc) return;
     var d = data(); if (!d) return;
     if (mv) {
-      var k = B.period(d).startKey, all = d.budget.payDone = d.budget.payDone || {}, m = all[k] = all[k] || {};
-      if (m[mv.dataset.pfmove]) delete m[mv.dataset.pfmove]; else m[mv.dataset.pfmove] = true;
+      var k = B.period(d).startKey, all = d.budget.payDone = d.budget.payDone || {}, m = all[k] = all[k] || {}, id = mv.dataset.pfmove;
+      var pp = B.payPlan(d), move = pp.moves.filter(function (x) { return x.id === id; })[0];
+      /* ticking a move moves the money: out of the salary account, into the account it goes to, onto the savings goal.
+         What was moved is remembered on the tick, so unticking puts it back exactly. */
+      var shift = function (rec, sign) {
+        if (!rec || typeof rec !== 'object') return;
+        var L = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+        var bump = function (aid, v) { var a = L.filter(function (x) { return x.id === aid; })[0]; if (a && a.bal != null) a.bal = Math.round((+a.bal + v) * 100) / 100; };
+        if (rec.from) bump(rec.from, -sign * rec.amt);
+        if (rec.to) bump(rec.to, sign * rec.amt);
+        if (rec.goal) (d.savings || []).forEach(function (g) {
+          if (g.id !== rec.goal) return;
+          g.saved = Math.max(0, (+g.saved || 0) + sign * rec.amt);
+          var y = String(new Date().getFullYear()); g.yr = g.yr || {}; g.yr[y] = Math.max(0, (+g.yr[y] || 0) + sign * rec.amt);
+        });
+      };
+      if (m[id]) { shift(m[id], -1); delete m[id]; }
+      else {
+        var rec = move ? { amt: Math.round(move.amount), from: pp.main && pp.main.id, to: move.to || null, goal: move.goal || null } : true;
+        m[id] = rec; shift(rec, 1);
+        if (move && (move.goal || move.to)) setTimeout(function () { if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> ' + esc(kr(move.amount)) + ' moved' + (move.goal ? ' – added to the goal' : '')); }, 0);
+      }
+      if (window.Links) setTimeout(window.Links.syncSave, 0);              // a goal that grew may need less a month
       Object.keys(all).sort().slice(0, -6).forEach(function (x) { delete all[x]; });        // keep the last six periods
     } else {
       var now = new Date(), key = cc.dataset.pfcc + ':' + now.getFullYear() + '-' + pad(now.getMonth() + 1), pd = d.budget.ccPaid = d.budget.ccPaid || {};

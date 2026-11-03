@@ -551,7 +551,7 @@
     if (!mo && !g.by) return '';
     var by = g.by ? new Date(g.by + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '';
     return '<small class="sv-plan">' + (mo ? money(mo) + ' a month' : '') + (by ? (mo ? ' until ' : 'By ') + esc(by) : '') +
-      (g.aside && mo ? ' · <i class="bi bi-link-45deg"></i> in the budget' : '') + '</small>';
+      (g.aside && mo ? ' · <i class="bi bi-link-45deg"></i> a fixed cost' + (function () { var A = window.Accts, a = A && (A.get(D, g.to) || (D.budget && A.get(D, D.budget.saveAcct))); return a ? ' → ' + esc(a.label) : ''; })() : '') + '</small>';
   }
   function svHint() {
     var g = { target: num($('svTarget').value), saved: num($('svSaved').value) || 0, by: $('svBy').value, monthly: num($('svMonthly').value), rate: num($('svRate').value) || 0 };
@@ -559,6 +559,14 @@
     var B = window.Budget, end = B && B.saveForecast && +g.monthly > 0 && !g.by ? B.saveForecast(g) : null;
     $('svHint').textContent = (mo ? 'About ' + nfK(mo) + ' a month' + (g.rate > 0 ? ' with ' + String(g.rate).replace('.', ',') + ' % interest' : '') + (end && end.label ? ' – there ' + end.label : '') + ($('svAside').checked ? ' – counted as a fixed cost in your monthly budget' : '') : $('svAside').checked ? 'Give a date or an amount a month to set money aside' : '') +
       ($('svBsu').checked ? (mo || $('svAside').checked ? ' · ' : '') + 'BSU: up to 27 500 kr a year gives 10 % back on the tax' : '');
+  }
+  /* "Goes to": your savings, fund and other accounts (Plan → Accounts) */
+  function svAccts(sel) {
+    var A = window.Accts, list = A ? A.list(D).filter(function (a) { return a.kind !== 'credit' && a.kind !== 'salary'; }) : [];
+    var def = (D.budget && D.budget.saveAcct) || (list.filter(function (a) { return a.kind === 'savings'; })[0] || {}).id || '';
+    $('svTo').innerHTML = '<option value="">Not set</option>' + list.map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.label) + '</option>'; }).join('');
+    $('svTo').value = sel != null && sel !== '' && list.some(function (a) { return a.id === sel; }) ? sel : def;
+    $('svToRow').hidden = !list.length;
   }
   function nfK(n) { return Math.round(n).toLocaleString('nb-NO') + ' kr'; }
   ['svTarget', 'svSaved', 'svBy', 'svMonthly', 'svAside', 'svRate', 'svBsu'].forEach(function (id) { $(id).addEventListener('input', svHint); $(id).addEventListener('change', svHint); });
@@ -571,7 +579,8 @@
     $('svTarget').value = g ? g.target : '';
     $('svBy').value = g && g.by ? g.by : '';
     $('svMonthly').value = g && g.monthly ? g.monthly : '';
-    $('svAside').checked = !!(g && g.aside);
+    $('svAside').checked = g ? !!g.aside : true;                 // new goals are a fixed cost by default
+    svAccts(g && g.to);
     $('svRate').value = g && g.rate ? String(g.rate).replace('.', ',') : '';
     $('svBsu').checked = !!(g && g.bsu);
     svHint();
@@ -586,7 +595,7 @@
     e.preventDefault();
     var t = num($('svTarget').value), s = num($('svSaved').value) || 0;
     if (!(t > 0)) { $('svTarget').focus(); return; }
-    var name = $('svName').value.trim(), extra = { by: /^\d{4}-\d{2}-\d{2}$/.test($('svBy').value) ? $('svBy').value : '', monthly: num($('svMonthly').value) || 0, aside: $('svAside').checked, rate: num($('svRate').value) || 0, bsu: $('svBsu').checked };
+    var name = $('svName').value.trim(), extra = { by: /^\d{4}-\d{2}-\d{2}$/.test($('svBy').value) ? $('svBy').value : '', monthly: num($('svMonthly').value) || 0, aside: $('svAside').checked, to: $('svTo').value || '', rate: num($('svRate').value) || 0, bsu: $('svBsu').checked };
     if (editingSaving) {
       D.savings.forEach(function (g) { if (g.id === editingSaving) { putIn(g, s - (+g.saved || 0)); g.name = name; g.saved = s; g.target = t; Object.assign(g, extra); } });
     } else {

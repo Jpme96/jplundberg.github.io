@@ -39,7 +39,7 @@
     d.budget = d.budget || { income: [], fixed: [] };
     var fixed = Array.isArray(d.budget.fixed) ? d.budget.fixed : [];
     var want = (d.savings || []).filter(function (g) { return g.aside; }).map(function (g) {
-      return { id: 'save-' + g.id, name: 'Savings: ' + (g.name || 'goal'), amount: B.saveMonthly(g), day: null, src: 'save' };
+      return { id: 'save-' + g.id, name: 'Savings: ' + (g.name || 'goal'), amount: B.saveMonthly(g), day: null, src: 'save', goal: g.id, to: g.to || '' };
     }).filter(function (f) { return f.amount > 0; });
     var before = JSON.stringify(fixed.filter(function (f) { return f.src === 'save'; }));
     if (before === JSON.stringify(want)) return;
