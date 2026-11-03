@@ -47,7 +47,21 @@
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
   }
-  window.Links = { syncSave: syncSave };
+  /* loans (Net worth → a debt with a monthly payment) → fixed costs, so the budget knows the payment */
+  function syncLoans() {
+    var d = window.Vault.get(); if (!d) return;
+    d.budget = d.budget || { income: [], fixed: [] };
+    var fixed = Array.isArray(d.budget.fixed) ? d.budget.fixed : [];
+    var want = (d.accounts || []).filter(function (a) { return a.kind === 'debt' && a.fixed !== false && +a.pay > 0; }).map(function (a) {
+      return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan'), amount: Math.round(+a.pay + (+a.fee || 0)), day: a.day || null, src: 'loan', acct: a.from || 'salary' };
+    });
+    var before = JSON.stringify(fixed.filter(function (f) { return f.src === 'loan'; }));
+    if (before === JSON.stringify(want)) return;
+    d.budget.fixed = fixed.filter(function (f) { return f.src !== 'loan'; }).concat(want);
+    window.Vault.save(d);
+    window.dispatchEvent(new Event('fin:change'));
+  }
+  window.Links = { syncSave: syncSave, syncLoans: syncLoans };
 
   /* ---------- trips → places to visit ---------- */
   function near(a, b) {
@@ -144,6 +158,7 @@
     try { syncWorkouts(); } catch (e) { console.error(e); }
     try { syncSubs(); } catch (e) { console.error(e); }
     try { syncSave(); } catch (e) { console.error(e); }
+    try { syncLoans(); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
   }

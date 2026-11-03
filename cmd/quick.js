@@ -153,7 +153,7 @@
         (chips.length ? '<div class="qa-chips">' + chips.map(function (e) {
           return '<button type="button" data-chip data-a="' + esc(e.amount) + '" data-c="' + esc(e.cat) + '" data-n="' + esc(e.note) + '">' + esc(e.note) + ' <b>' + esc(nf.format(e.amount)) + '</b></button>';
         }).join('') + '</div>' : '') +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Log expense</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Log expense</button></div></form>';
     },
     event: function (p) {
       var cats = window.Cal ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) :

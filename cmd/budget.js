@@ -169,9 +169,64 @@ window.Budget = (function () {
     if (!/^\d{4}-\d{2}/.test(g.by || '')) return 0;
     var y = +g.by.slice(0, 4), m = +g.by.slice(5, 7) - 1;
     var months = Math.max(1, (y - now.getFullYear()) * 12 + (m - now.getMonth()) + 1);
+    var i = (+g.rate || 0) / 100 / 12;
+    if (i > 0) {          // with interest: what grows on what you have, plus a fixed amount each month
+      var f = Math.pow(1 + i, months), need = (+g.target || 0) - (+g.saved || 0) * f;
+      return need > 0 ? Math.ceil(need * i / (f - 1) / 10) * 10 : 0;
+    }
     return Math.ceil(left / months / 10) * 10;
+  }
+  /* a goal with an amount a month: when you get there (with interest, if it earns any) */
+  function saveForecast(g, now) {
+    now = now || new Date();
+    var p = +g.monthly || 0, have = +g.saved || 0, t = +g.target || 0, i = (+g.rate || 0) / 100 / 12, n = 0;
+    if (!(t > have) || !(p > 0)) return null;
+    while (have < t && n < 600) { have = have * (1 + i) + p; n++; }
+    var d = new Date(now.getFullYear(), now.getMonth() + n, 1);
+    return { months: n, date: d, label: n >= 600 ? '' : 'in ' + n + ' month' + (n === 1 ? '' : 's') + ' (' + d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + ')' };
   }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
 
-  return { saveMonthly: saveMonthly, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+})();
+
+/* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
+   l = { balance, rate (% a year), pay (kr a month, without the fee), fee, asOf (YYYY-MM-DD the balance was entered) } */
+window.Loans = (function () {
+  "use strict";
+  var TAX = 0.22;        // rentefradrag: interest is deducted from ordinary income, taxed at 22 %
+  function payment(bal, ratePct, months) {
+    var i = (+ratePct || 0) / 1200; months = Math.max(1, Math.round(months));
+    return i > 0 ? bal * i / (1 - Math.pow(1 + i, -months)) : bal / months;
+  }
+  function run(bal, i, p, max) {        // month by month until it's paid: months and the interest paid
+    var n = 0, paid = 0, year = 0;
+    while (bal > 0.5 && n < (max || 1200)) { var r = bal * i; if (n < 12) year += r; paid += r; bal = bal + r - p; n++; }
+    return { months: n, interest: paid, year: year, done: bal <= 0.5 };
+  }
+  function label(n, now) {
+    var d = new Date(now.getFullYear(), now.getMonth() + n, 1), y = Math.floor(n / 12), m = n % 12;
+    return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + ' (in ' + (y ? y + ' yr' + (y === 1 ? '' : 's') + (m ? ' ' : '') : '') + (m || !y ? m + ' mo' : '') + ')';
+  }
+  /* where the loan is now, from the balance you entered and the payments since */
+  function balanceNow(l, now) {
+    now = now || new Date();
+    var bal = +l.balance || 0, i = (+l.rate || 0) / 1200, p = +l.pay || 0;
+    if (!l.asOf || !(p > 0)) return bal;
+    var a = new Date(l.asOf + 'T12:00'), m = (now.getFullYear() - a.getFullYear()) * 12 + now.getMonth() - a.getMonth();
+    if (l.day && now.getDate() < +l.day) m--;
+    for (var k = 0; k < m && bal > 0; k++) bal = bal * (1 + i) - p;
+    return Math.max(0, bal);
+  }
+  function calc(l, extra, now) {
+    now = now || new Date();
+    var bal = balanceNow(l, now), i = (+l.rate || 0) / 1200, p = (+l.pay || 0) + (+extra || 0);
+    if (!(bal > 0) || !(p > 0)) return null;
+    var interest = bal * i, principal = p - interest;
+    if (principal <= 0) return { balance: bal, never: true, interest: interest };
+    var r = run(bal, i, p);
+    return { balance: bal, interest: interest, principal: principal, months: r.months, interestLeft: r.interest, yearInterest: r.year,
+      taxBack: r.year * TAX, end: new Date(now.getFullYear(), now.getMonth() + r.months, 1), endLabel: label(r.months, now), never: false };
+  }
+  return { payment: payment, calc: calc, balanceNow: balanceNow, label: label, TAX: TAX };
 })();

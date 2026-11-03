@@ -231,6 +231,10 @@
     var rows = D.budget[kind].map(function (r) {
       if (r.src === 'sub') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<a class="del" href="/cmd/finance/#subs" title="From Subscriptions – change it there" aria-label="' + esc(r.name) + ' comes from Subscriptions"><i class="bi bi-link-45deg"></i></a></li>';
+      if (r.src === 'loan') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
+        '<a class="del" href="/cmd/finance/#c=loans" title="From Loans – change it there" aria-label="' + esc(r.name) + ' comes from Loans"><i class="bi bi-link-45deg"></i></a></li>';
+      if (r.src === 'year') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
+        '<a class="del" href="/cmd/finance/#c=yearly" title="From Yearly costs – change it there" aria-label="' + esc(r.name) + ' comes from Yearly costs"><i class="bi bi-link-45deg"></i></a></li>';
       if (r.src === 'save') return '<li class="b-row b-linked"><span>' + esc(r.name) + '</span>' + money(r.amount) +
         '<a class="del" href="/cmd/finance/#c=savings" title="From Savings goals – change it there" aria-label="' + esc(r.name) + ' comes from Savings goals"><i class="bi bi-link-45deg"></i></a></li>';
       if (kind === 'fixed' && fixEditing === r.id) {   /* change name, amount and due day in place */
@@ -504,6 +508,8 @@
   /* ================= Savings goals ================= */
   var editingSaving = null;
 
+  /* what went into a goal this year (BSU: the tax deduction is 10 % of this year's deposits) */
+  function putIn(g, diff) { if (!diff) return; var y = String(new Date().getFullYear()); g.yr = g.yr || {}; g.yr[y] = Math.max(0, (+g.yr[y] || 0) + diff); }
   function step(target) { return target >= 50000 ? 1000 : target >= 5000 ? 500 : 100; }
 
   function renderSavings() {
@@ -531,12 +537,14 @@
       (g.aside && mo ? ' · <i class="bi bi-link-45deg"></i> in the budget' : '') + '</small>';
   }
   function svHint() {
-    var g = { target: num($('svTarget').value), saved: num($('svSaved').value) || 0, by: $('svBy').value, monthly: num($('svMonthly').value) };
+    var g = { target: num($('svTarget').value), saved: num($('svSaved').value) || 0, by: $('svBy').value, monthly: num($('svMonthly').value), rate: num($('svRate').value) || 0 };
     var mo = window.Budget && window.Budget.saveMonthly ? window.Budget.saveMonthly(g) : 0;
-    $('svHint').textContent = mo ? 'About ' + nfK(mo) + ' a month' + ($('svAside').checked ? ' – counted as a fixed cost in your monthly budget' : '') : $('svAside').checked ? 'Give a date or an amount a month to set money aside' : '';
+    var B = window.Budget, end = B && B.saveForecast && +g.monthly > 0 && !g.by ? B.saveForecast(g) : null;
+    $('svHint').textContent = (mo ? 'About ' + nfK(mo) + ' a month' + (g.rate > 0 ? ' with ' + String(g.rate).replace('.', ',') + ' % interest' : '') + (end && end.label ? ' – there ' + end.label : '') + ($('svAside').checked ? ' – counted as a fixed cost in your monthly budget' : '') : $('svAside').checked ? 'Give a date or an amount a month to set money aside' : '') +
+      ($('svBsu').checked ? (mo || $('svAside').checked ? ' · ' : '') + 'BSU: up to 27 500 kr a year gives 10 % back on the tax' : '');
   }
   function nfK(n) { return Math.round(n).toLocaleString('nb-NO') + ' kr'; }
-  ['svTarget', 'svSaved', 'svBy', 'svMonthly', 'svAside'].forEach(function (id) { $(id).addEventListener('input', svHint); $(id).addEventListener('change', svHint); });
+  ['svTarget', 'svSaved', 'svBy', 'svMonthly', 'svAside', 'svRate', 'svBsu'].forEach(function (id) { $(id).addEventListener('input', svHint); $(id).addEventListener('change', svHint); });
 
   function openSaving(g) {
     editingSaving = g ? g.id : null;
@@ -547,6 +555,8 @@
     $('svBy').value = g && g.by ? g.by : '';
     $('svMonthly').value = g && g.monthly ? g.monthly : '';
     $('svAside').checked = !!(g && g.aside);
+    $('svRate').value = g && g.rate ? String(g.rate).replace('.', ',') : '';
+    $('svBsu').checked = !!(g && g.bsu);
     svHint();
     $('svDelete').hidden = !g;
     $('svName').focus();
@@ -559,9 +569,9 @@
     e.preventDefault();
     var t = num($('svTarget').value), s = num($('svSaved').value) || 0;
     if (!(t > 0)) { $('svTarget').focus(); return; }
-    var name = $('svName').value.trim(), extra = { by: /^\d{4}-\d{2}-\d{2}$/.test($('svBy').value) ? $('svBy').value : '', monthly: num($('svMonthly').value) || 0, aside: $('svAside').checked };
+    var name = $('svName').value.trim(), extra = { by: /^\d{4}-\d{2}-\d{2}$/.test($('svBy').value) ? $('svBy').value : '', monthly: num($('svMonthly').value) || 0, aside: $('svAside').checked, rate: num($('svRate').value) || 0, bsu: $('svBsu').checked };
     if (editingSaving) {
-      D.savings.forEach(function (g) { if (g.id === editingSaving) { g.name = name; g.saved = s; g.target = t; Object.assign(g, extra); } });
+      D.savings.forEach(function (g) { if (g.id === editingSaving) { putIn(g, s - (+g.saved || 0)); g.name = name; g.saved = s; g.target = t; Object.assign(g, extra); } });
     } else {
       D.savings.push(Object.assign({ id: uid(), name: name, saved: s, target: t }, extra));
     }
@@ -584,7 +594,7 @@
     if (!g) return;
     var b = e.target.closest('[data-sv]');
     if (b) {
-      g.saved = Math.max(0, g.saved + step(g.target) * +b.dataset.sv);
+      var was = g.saved; g.saved = Math.max(0, g.saved + step(g.target) * +b.dataset.sv); putIn(g, g.saved - was);
       persist();
       if (window.Links) setTimeout(window.Links.syncSave, 0);
       renderSavings();
@@ -658,10 +668,30 @@
     $('nwName').value = a ? a.name : '';
     $('nwBal').value = a ? a.balance : '';
     $('nwKind').value = a ? a.kind : 'asset';
+    $('nwRate').value = a && a.rate ? String(a.rate).replace('.', ',') : '';
+    $('nwPay').value = a && a.pay ? a.pay : '';
+    $('nwYears').value = '';
+    $('nwFee').value = a && a.fee ? a.fee : '';
+    $('nwDay').value = a && a.day ? a.day : '';
+    $('nwFrom').value = a && a.from ? a.from : 'salary';
+    $('nwFixed').checked = !a || a.fixed !== false;
+    loanUi();
     $('nwDelete').hidden = !a;
     $('nwName').focus();
   }
   function closeAcc() { $('nwForm').hidden = true; editingAcc = null; }
+  /* a debt can be a loan: interest, monthly payment (or years left, and the payment is worked out), fee and due day */
+  function loanUi() {
+    var debt = $('nwKind').value === 'debt'; $('nwLoan').hidden = !debt;
+    if (!debt || !window.Loans) { $('nwHint').textContent = ''; return; }
+    var l = { balance: Math.abs(num($('nwBal').value) || 0), rate: num($('nwRate').value) || 0, pay: num($('nwPay').value) || 0 };
+    var yrs = num($('nwYears').value);
+    if (yrs > 0 && l.balance > 0) { l.pay = Math.round(window.Loans.payment(l.balance, l.rate, yrs * 12)); $('nwPay').value = l.pay; }
+    var c = window.Loans.calc(l);
+    $('nwHint').textContent = !c ? '' : c.never ? 'The payment doesn’t cover the interest (' + nfK(c.interest) + ' a month) – the loan never gets smaller' :
+      'Paid off ' + c.endLabel + ' · ' + nfK(c.interestLeft) + ' in interest left · this month ' + nfK(c.interest) + ' interest + ' + nfK(c.principal) + ' repayment';
+  }
+  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
 
   $('nwAddBtn').addEventListener('click', function () { $('nwForm').hidden ? openAcc(null) : closeAcc(); });
   $('nwCancel').addEventListener('click', closeAcc);
@@ -670,14 +700,26 @@
     var bal = num($('nwBal').value);
     if (!isFinite(bal)) { $('nwBal').focus(); return; }
     var rec = { name: $('nwName').value.trim(), balance: Math.abs(bal), kind: $('nwKind').value };
+    if (rec.kind === 'debt') {
+      var day = Math.round(num($('nwDay').value));
+      Object.assign(rec, { rate: num($('nwRate').value) || 0, pay: Math.round(num($('nwPay').value) || 0), fee: Math.round(num($('nwFee').value) || 0),
+        day: day >= 1 && day <= 31 ? day : null, from: $('nwFrom').value, fixed: $('nwFixed').checked, asOf: today() });
+    }
     if (editingAcc) {
-      D.accounts.forEach(function (a) { if (a.id === editingAcc) { a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind; } });
+      D.accounts.forEach(function (a) {
+        if (a.id !== editingAcc) return;
+        if (a.balance !== rec.balance && rec.kind === 'debt') a.asOf = today();
+        ['rate', 'pay', 'fee', 'day', 'from', 'fixed'].forEach(function (k) { if (rec.kind !== 'debt') delete a[k]; else a[k] = rec[k]; });
+        if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
+        a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
+      });
     } else {
       rec.id = uid();
       D.accounts.push(rec);
     }
     snapshot();
     persist();
+    if (window.Links && window.Links.syncLoans) setTimeout(window.Links.syncLoans, 0);
     closeAcc();
     renderNet();
   });
@@ -685,6 +727,7 @@
     D.accounts = D.accounts.filter(function (a) { return a.id !== editingAcc; });
     snapshot();
     persist();
+    if (window.Links && window.Links.syncLoans) setTimeout(window.Links.syncLoans, 0);
     closeAcc();
     renderNet();
   });

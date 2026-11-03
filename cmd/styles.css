@@ -3808,3 +3808,133 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 /* Hide amounts: every big number, number tile and the Finances picture (jar amount, caption) too */
 .fin-hidden .big-num, .fin-hidden .tk-v, .fin-hidden .stat-value, .fin-hidden .hl-tile b, .fin-hidden .mh-chip b,
 .fin-hidden #scIllu text, .fin-hidden #scIllu figcaption a, .fin-hidden .mo-big, .fin-hidden [data-money] { filter: blur(7px); }
+
+/* ---------- Finances in four views (finance/fin-plan.js) ---------- */
+.fp-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 4px; margin: 4px 0 16px; border-radius: 14px; background: rgba(var(--ink-rgb), .07); }
+.fp-tabs button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 4px; border: 0; border-radius: 11px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s; }
+.fp-tabs button .bi { font-size: 17px; }
+.fp-tabs button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-tabs button[aria-selected="true"] { background: var(--bg-solid); color: var(--heading); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+.fp-tabs button[aria-selected="true"] .bi { color: var(--accent); }
+@media (min-width: 640px) { .fp-tabs { display: inline-grid; grid-template-columns: repeat(4, auto); } .fp-tabs button { flex-direction: row; gap: 7px; padding: 8px 16px; font-size: 14px; } .fp-tabs button .bi { font-size: 15px; } }
+#fp:not(.fp-all)[data-tab] [data-ftab] { display: none; }
+#fp:not(.fp-all)[data-tab="overview"] [data-ftab="overview"], #fp:not(.fp-all)[data-tab="tx"] [data-ftab="tx"],
+#fp:not(.fp-all)[data-tab="plan"] [data-ftab="plan"], #fp:not(.fp-all)[data-tab="wealth"] [data-ftab="wealth"] { display: revert; }
+#fp:not(.fp-all) .fin-grid.fpt[data-ftab] { display: none; }
+#fp:not(.fp-all)[data-tab="overview"] .fin-grid[data-ftab="overview"], #fp:not(.fp-all)[data-tab="tx"] .fin-grid[data-ftab="tx"],
+#fp:not(.fp-all)[data-tab="plan"] .fin-grid[data-ftab="plan"], #fp:not(.fp-all)[data-tab="wealth"] .fin-grid[data-ftab="wealth"] { display: grid; }
+.fp-all .fp-tabs { display: none; }
+.fpt .fin-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.dens-compact .fpt .fin-col { gap: 9px; }
+.fp-fin .fin-grid.fpt { grid-template-columns: minmax(0, 1fr); margin-bottom: 18px; }
+@media (min-width: 900px) { .fp-fin .fin-grid.fpt:not(.fpt-one) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 899px) { .fpt .fin-col { display: contents; } }
+.fpt-one .card.spending, .fpt-one .card.networth { grid-column: 1 / -1; }
+
+/* payday plan */
+.pf-in { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; color: var(--muted); }
+.pf-in b { font-size: 22px; color: var(--heading); font-weight: 700; }
+.pf-in .bi { color: #8a6fdf; }
+.pf-bar { margin: 10px 0 6px; }
+.pf-h { margin: 14px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.pf-moves { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.pf-moves li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.pf-moves li:first-child { border-top: 0; }
+.pf-moves .bi { color: var(--accent); font-size: 16px; }
+.pf-moves span small { display: block; color: var(--muted); font-size: 12px; }
+.pf-moves b { font-variant-numeric: tabular-nums; }
+.pf-left b { font-size: 18px; color: var(--accent); }
+.pf-left.neg b, .pf-left.neg .bi { color: var(--danger); }
+.pf-note .bi { color: #d95926; }
+
+/* accounts & fixed costs */
+.pa-p { font-size: 13px; margin: 0 0 12px; }
+.pa-names { display: grid; gap: 8px; margin-bottom: 14px; }
+.pa-names label { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; align-items: center; font-size: 13px; }
+.pa-names label > span { min-width: 0; }
+.pa-grp { margin-top: 10px; }
+.pa-h { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--heading); }
+.pa-h b { margin-left: auto; }
+.pa-list { list-style: none; margin: 0 0 6px; padding: 0; }
+.pa-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 120px); gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.pa-list li span small { display: block; color: var(--muted); font-size: 12px; }
+.pa-list select { font-size: 13px; padding: 5px 6px; }
+.pa-none { font-size: 13px; margin: 0 0 6px; }
+
+/* loans */
+.ln-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.ln { padding: 12px; border-radius: 12px; background: rgba(var(--ink-rgb), .04); border: 1px solid var(--line); }
+.ln-top { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.ln-name small { display: block; color: var(--muted); font-size: 12px; }
+.ln-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; margin-top: 12px; }
+.ln-grid span { display: grid; gap: 1px; min-width: 0; font-size: 14px; }
+.ln-grid small { color: var(--muted); font-size: 12px; }
+.ln-grid em { font-style: normal; color: var(--muted); font-size: 12px; }
+.ln-bar { margin-top: 10px; height: 6px; }
+.ln-try { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.ln-try input { width: 100%; accent-color: var(--accent); }
+.ln-try b { color: var(--heading); min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.ln-p { margin: 8px 0 0; font-size: 13px; }
+.ln-win { color: var(--heading); } .ln-win .bi { color: #c98500; }
+.ln-p.neg { color: var(--danger); }
+.ln-sum { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.ln-sum .bi { color: #8a6fdf; }
+
+/* the year ahead */
+.ya-bars { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 5px; height: 130px; align-items: end; padding-bottom: 0; }
+.ya-m { position: relative; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding-bottom: 18px; }
+.ya-m i { display: block; height: 0; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: .6; }
+.ya-m i.ya-tax { background: #22b35e; margin-bottom: 2px; order: -1; opacity: .9; }
+.ya-m.hol i:not(.ya-tax) { background: #c98500; opacity: 1; }
+.ya-m.half i:not(.ya-tax) { background: #3987e5; opacity: 1; }
+.ya-m.now i:not(.ya-tax) { opacity: 1; }
+.ya-m small { position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--muted); }
+.ya-m.now small { color: var(--heading); font-weight: 700; }
+.ya-fixed { position: absolute; left: -2px; right: -2px; height: 0; border-top: 2px dashed rgba(var(--ink-rgb), .7); pointer-events: none; z-index: 1; }
+.ya-leg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; margin: 8px 0 0; }
+.ya-leg .dot { margin-right: -4px; }
+.ya-line { display: inline-block; width: 16px; border-top: 1.5px dashed rgba(var(--ink-rgb), .45); margin-right: -4px; }
+.ya-facts { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.ya-facts li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
+.ya-facts .bi { font-size: 16px; margin-top: 1px; }
+.ya-facts small { display: block; color: var(--muted); font-size: 13px; }
+.ya-p { font-size: 13px; margin: 12px 0 0; }
+.ya-tb { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sv-bsu { align-self: end; padding-bottom: 8px; font-size: 13px; }
+.nw-loan { display: grid; gap: 8px; }
+
+/* import: which account the file is from */
+.im-acct { display: grid; gap: 6px; margin: 4px 0 10px; font-size: 14px; }
+.im-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+.im-seg button { padding: 8px 4px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.im-acct small { font-size: 12px; }
+.im-per { margin-top: 0; }
+.im-per .bi { color: var(--accent); }
+/* spending limits */
+.lm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lm { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; }
+.lm-n { font-size: 14px; font-weight: 600; color: var(--heading); min-width: 0; }
+.lm-n small, .lm-v small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.lm-v { text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; }
+.lm-bar { grid-column: 1 / -1; position: relative; height: 6px; border-radius: 4px; background: rgba(var(--ink-rgb), .08); }
+.lm-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.lm-bar b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--heading); opacity: .45; border-radius: 1px; }
+.lm.over .lm-n small { color: var(--danger); }
+.lm-fast { color: #c98500; }
+.lm-room { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.lm-room .bi { color: var(--accent); } .lm-room.neg, .lm-room.neg .bi { color: var(--danger); }
+.lm-edit { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lm-edit li { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 10px; align-items: center; font-size: 14px; }
+.lm-edit small { display: block; font-size: 12px; color: var(--muted); }
+.lm-acts { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+/* yearly costs */
+.yr-sum { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+.yr-sum b { color: var(--heading); font-size: 16px; }
+.yr-list { list-style: none; margin: 0; padding: 0; }
+.yr { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; cursor: pointer; }
+.yr small { display: block; color: var(--muted); font-size: 12px; }
+.yr-form { margin-bottom: 10px; }
+.qa-scan { white-space: nowrap; }
+.qa-scanst { font-size: 13px; margin: 2px 0 8px; }
+.qa-scanst .bi { color: var(--accent); }
+@media (max-width: 380px) { .qa-scan { font-size: 0; padding-inline: 8px; } .qa-scan .bi { font-size: 18px; } }

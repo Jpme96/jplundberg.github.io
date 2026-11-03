@@ -103,6 +103,15 @@
     }
     return score >= 3 ? best : -1;
   }
+  var CARDPAY = /kredittkort|credit ?card|visa.*(faktura|innbetaling)|mastercard.*faktura|kortfaktura|trumf visa|remember|bank norwegian|komplett bank|sas eurobonus|santander|re:member|coop mastercard|lånekassen nei|faktura.*kort/i;
+  var OWNOUT = /til (egen|annen) konto|overføring til|overforing til|egen konto|mellom egne|brukskonto|regningskonto|sparekonto|til sparing|bsu/i;
+  function signature(rows, hi) {
+    var top = rows.slice(0, hi + 1).map(function (r) { return r.join(' '); }).join(' ');
+    var nums = (top.match(/\b\d{4}[ .]?\d{2}[ .]?\d{5}\b/g) || []).map(function (n) { return n.replace(/\D/g, ''); });
+    var d = window.Vault.get() || {}, known = Object.keys(d.bankFiles || {}).filter(function (k) { return /^\d{11}$/.test(k); });
+    return { head: 'h:' + rows[hi].join('|').toLowerCase().slice(0, 120), num: nums[0] || '', others: known.filter(function (k) { return k !== nums[0]; }) };
+  }
+  var ACCTS = [['salary', 'Salary account', 'bi-cash-stack'], ['credit', 'Credit card', 'bi-credit-card'], ['card', 'Card account', 'bi-credit-card-2-front']];
   function analyse(rows, opts) {
     opts = opts || {};
     if (typeof rows === 'string') rows = parseCSV(rows);
@@ -110,6 +119,8 @@
     var hi = headerIndex(rows);
     if (hi < 0) return { error: 'Couldn’t find the date, text and amount columns. The first line reads: “' + rows[0].join(' ; ').slice(0, 120) + '”. Send me that line and I’ll add the layout.' };
     var col = columns(rows[hi]);
+    /* which of your accounts the file is from – remembered by the file's layout and any account number in it */
+    var sig = signature(rows, hi), mem = (window.Vault.get() || {}).bankFiles || {};
     var d = window.Vault.get() || {}, have = {}, memory = d.catMemory || {}, fixed = (d.budget && d.budget.fixed) || [];
     /* expenses you logged yourself (quick add, the Spending form): the bank row for the same purchase
        shouldn't count twice – same amount, within three days */
@@ -132,7 +143,10 @@
     var good = parsed.filter(function (x) { return x.ok && x.amt !== 0; });
     var pos = good.filter(function (x) { return x.amt > 0; }).length;
     /* a credit-card statement lists purchases as positive amounts (and the payments as negative) */
-    var card = opts.card != null ? !!opts.card : (col.out < 0 && good.length >= 3 && pos / good.length >= 0.7);
+    var looksCard = col.out < 0 && good.length >= 3 && pos / good.length >= 0.7;
+    var acct = opts.acct || mem[sig.num] || mem[sig.head] || (looksCard ? 'credit' : null);
+    /* a credit-card file with one amount column usually lists purchases as positive numbers */
+    var card = opts.card != null ? !!opts.card : acct === 'credit' ? col.out < 0 && pos / Math.max(1, good.length) >= 0.5 : acct ? false : looksCard;
     var haveIn = {};
     (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
     var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
@@ -148,20 +162,28 @@
         var rin = 'bankin:' + x.date + '|' + amount + '|' + norm(x.desc);
         if (haveIn[rin]) { skipped.dup++; return; }
         if (salary) { skipped.income++; return; }
-        out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own });
+        if (acct === 'card' && !/tilbake|refusjon|refund|retur|vipps/i.test(x.desc)) own = true;          // money in on the card account is your own transfer
+        if (acct === 'credit' && x.amt !== 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc)) own = true;  // money in on the credit card is the bill being paid
+        out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own, why: own ? (acct === 'credit' ? 'paying the card' : 'from your own account') : '' });
         return;
       }
       var ref = 'bank:' + x.date + '|' + amount + '|' + norm(x.desc);
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
       var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
-      var transfer = TRANSFER.test(x.desc);
+      var transfer = TRANSFER.test(x.desc), why = transfer ? 'transfer' : '';
+      /* the salary account pays the credit card and moves money to the card account: not spending –
+         the purchases themselves come from the card's own file */
+      if ((acct === 'salary' || acct === 'card') && !bill) {
+        if (CARDPAY.test(x.desc)) { transfer = true; why = 'pays the credit card – its purchases count from the card’s file'; }
+        else if (OWNOUT.test(x.desc) || (sig.others.length && sig.others.some(function (n) { return x.desc.replace(/\D/g, '').indexOf(n) > -1; }))) { transfer = true; why = 'to your own account'; }
+      }
       var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+(m.full != null ? m.full : m.amount) - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
         .sort(function (a, b) { return Math.abs(dayN(a.date) - dayN(x.date)) - Math.abs(dayN(b.date) - dayN(x.date)); })[0] || null;
       if (mine) { claimed[mine.id] = 1; skipped.mine = (skipped.mine || 0) + 1; }
-      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, mine: mine });
+      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
-    return { rows: out, skipped: skipped, memory: memory, card: card, source: rows };
+    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, sig: sig, source: rows };
   }
 
   /* ---------- Excel files (.xlsx): a zip of XML, read without any library ---------- */
@@ -223,6 +245,10 @@
   btn.type = 'button'; btn.className = 'icon-btn sm im-btn'; btn.innerHTML = '<i class="bi bi-upload"></i>';
   btn.setAttribute('aria-label', 'Import from your bank (CSV)'); btn.title = 'Import from your bank (CSV)';
   card.querySelector('.card-head').appendChild(btn);
+  var scan = document.createElement('button');          /* receipt.js: photo of a receipt → the expense form, filled in */
+  scan.type = 'button'; scan.className = 'icon-btn sm im-btn'; scan.setAttribute('data-qascan', ''); scan.innerHTML = '<i class="bi bi-camera"></i>';
+  scan.setAttribute('aria-label', 'Scan a receipt'); scan.title = 'Scan a receipt';
+  card.querySelector('.card-head').insertBefore(scan, btn);
   var found = null;
 
   function open(html) { $('imBody').innerHTML = html; bg.hidden = false; document.body.classList.add('qa-open'); requestAnimationFrame(function () { bg.classList.add('open'); }); }
@@ -230,7 +256,7 @@
   function intro() {
     open('<h2 class="im-h"><i class="bi bi-bank"></i> Import from your bank</h2>' +
       '<p class="muted im-p">Export the transactions from your bank account <b>or credit card</b> as <b>CSV or Excel</b> (DNB, Sparebank 1, Nordea and the others have it under the account’s history) and pick the file here. ' +
-      'Only what you spent is imported – salary, card payments and transfers are left out – and rows you already have are skipped. Nothing leaves your browser.</p>' +
+      'Import each of your accounts – the salary account, the credit card and the card account – and say which one the file is from (it’s remembered). Only what you spent counts: salary, card payments and transfers between your own accounts are left out, and rows you already have are skipped. Nothing leaves your browser.</p>' +
       '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick><i class="bi bi-file-earmark-arrow-up"></i> Choose file</button></div>');
   }
   function preview(res) {
@@ -241,16 +267,21 @@
     if (sk.income) note.push(sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
-    var signRow = '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Credit card statement (purchases are positive amounts)</label>';
+    var signRow = '<div class="im-acct"><span>' + (res.acct ? 'This file is from' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
+        ACCTS.map(function (a) { return '<button type="button" data-acct="' + a[0] + '" aria-pressed="' + (res.acct === a[0]) + '"><i class="bi ' + a[2] + '"></i> ' + a[1] + '</button>'; }).join('') + '</div>' +
+        '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.acct] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
+      '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
+    var per = window.Budget && window.Budget.period(window.Vault.get() || {}), inPer = per ? rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0) : 0;
+    var perLine = per ? '<p class="muted im-p im-per"><i class="bi bi-pie-chart"></i> <span id="imPer">' + esc(nf.format(inPer)) + '</span> of this counts in your budget now (' + esc(per.name) + ') – the rest is in earlier periods and shows in the statistics.</p>' : '';
     if (!rows.length) { open('<h2 class="im-h"><i class="bi bi-bank"></i> Nothing new</h2><p class="muted im-p">' + (sk.dup ? 'Every expense in that file is already in Spending' : 'No spending found in that file') + (note.length ? ' (' + note.join(', ') + ')' : '') + '.</p>' + signRow + '<div class="qa-acts"><span class="spacer"></span><button type="button" class="pill-btn wide" data-close>OK</button></div>'); return; }
     var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + (r.income ? -r.amount : r.amount); }, 0);
     open('<h2 class="im-h"><i class="bi bi-bank"></i> ' + nOut + ' new expense' + (nOut === 1 ? '' : 's') + (nIn ? ' · ' + nIn + ' in' : '') + '</h2>' +
-      '<p class="muted im-p">Check the categories – they’re guessed from the shop’s name and from what you’ve chosen before. A fixed cost (rent, power) isn’t added twice – it ticks the bill as paid instead. Money in (refunds, Vipps from friends) is added to that month’s budget; your own transfers and card payments are left out unless you tick them.' + (note.length ? ' Skipped: ' + note.join(', ') + '.' : '') + '</p>' + signRow +
+      '<p class="muted im-p">Check the categories – they’re guessed from the shop’s name and from what you’ve chosen before. A fixed cost (rent, power) isn’t added twice – it ticks the bill as paid instead. Money in (refunds, Vipps from friends) is added to that month’s budget; your own transfers and card payments are left out unless you tick them.' + (note.length ? ' Skipped: ' + note.join(', ') + '.' : '') + '</p>' + signRow + perLine +
       '<ul class="im-list">' + rows.map(function (r, i) {
         return '<li class="im-row' + (r.on ? '' : ' off') + (r.income ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
           '<span class="im-x"><b>' + esc(r.note) + '</b><small>' + esc(new Date(r.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
           (r.mine ? ' · <i class="bi bi-person-check"></i> you logged it already: ' + esc(r.mine.note || 'expense') + ', ' + esc(new Date(String(r.mine.date).slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') +
-          (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · from your own account' : ' · adds to this month’s budget') : r.transfer ? ' · transfer' : '') + '</small></span>' +
+          (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · ' + esc(r.why || 'from your own account') : ' · adds to this period’s budget') : r.transfer ? ' · ' + esc(r.why || 'transfer') : '') + '</small></span>' +
           '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
           (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') + '</li>';
       }).join('') + '</ul>' +
@@ -259,6 +290,8 @@
   function sumLine() {
     var t = 0; found.rows.forEach(function (r) { if (r.on && !r.bill) t += r.income ? -r.amount : r.amount; });
     var s = $('imSum'); if (s) s.textContent = nf.format(t);
+    var per = window.Budget && window.Budget.period(window.Vault.get() || {}), p = $('imPer');
+    if (per && p) p.textContent = nf.format(found.rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0));
   }
   function doImport() {
     var d = window.Vault.get(); d.expenses = d.expenses || []; d.catMemory = d.catMemory || {}; d.paid = d.paid || {}; d.extra = d.extra || [];
@@ -267,11 +300,12 @@
       /* a purchase you logged yourself: remember the bank row on it, so the next file skips it too */
       if (r.mine && !r.on) { (d.expenses || []).forEach(function (e) { if (e.id === r.mine.id && !e.ref) e.ref = r.ref; }); return; }
       if (!r.on) return;
-      if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref }); nin++; return; }
+      if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined }); nin++; return; }
       if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
-      d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref });
+      d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
       d.catMemory[norm(r.desc)] = r.cat; n++;
     });
+    if (found.acct && found.sig) { d.bankFiles = d.bankFiles || {}; d.bankFiles[found.sig.head] = found.acct; if (found.sig.num) d.bankFiles[found.sig.num] = found.acct; }
     /* keep the memory of merchants small */
     var tn = new Date(); d.lastImport = tn.getFullYear() + '-' + String(tn.getMonth() + 1).padStart(2, '0') + '-' + String(tn.getDate()).padStart(2, '0');
     var keys = Object.keys(d.catMemory); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.catMemory[k]; });
@@ -286,6 +320,8 @@
     if (e.target === bg || e.target.closest('[data-close]')) { close(); return; }
     if (e.target.closest('[data-pick]')) { file.value = ''; file.click(); return; }
     if (e.target.closest('[data-import]')) { doImport(); return; }
+    var ab = e.target.closest('[data-acct]');
+    if (ab && found && found.source) { preview(analyse(found.source, { acct: ab.dataset.acct })); return; }
   });
   bg.addEventListener('change', function (e) {
     var cb = e.target.closest('input[data-i]');
@@ -293,7 +329,7 @@
     var sel = e.target.closest('select[data-cat]');
     if (sel) { found.rows[+sel.dataset.cat].cat = sel.value; return; }
     var cc = e.target.closest('input[data-card]');
-    if (cc && found && found.source) preview(analyse(found.source, { card: cc.checked }));
+    if (cc && found && found.source) preview(analyse(found.source, { card: cc.checked, acct: found.acct || undefined }));
   });
   file.addEventListener('change', function () {
     var f = file.files && file.files[0]; if (!f) return;

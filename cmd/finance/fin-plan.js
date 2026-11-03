@@ -1,0 +1,419 @@
+/* Finances, reorganised in four views – and the money maths behind them.
+   · Overview      what you can spend, where the salary goes on payday, what's due, by category
+   · Transactions  everything you spent (bank files from all three accounts, receipts, by hand) and the recurring cards
+   · Plan          your three accounts and which one pays each fixed cost, loans, savings goals, the year ahead
+                   (holiday pay in June, half tax in December, BSU, interest deduction, the tax settlement)
+   · Wealth        net worth and the statistics
+   The three accounts JP uses: the salary account (salary lands here and is spread out), the credit card
+   (bills, groceries, everyday) and the card account (some bills). Everything is read from the vault and
+   written back the same way finance.js does. */
+(function () {
+  "use strict";
+  var main = document.getElementById('fp'), tabsEl = document.getElementById('fpTabs');
+  if (!main || !tabsEl || !window.Vault) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var B = window.Budget, Lo = window.Loans;
+  var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
+  function kr(n) { return nf.format(Math.round(n || 0)); }
+  function money(n, cls) { return '<span class="money' + (cls ? ' ' + cls : '') + '">' + esc(kr(n)) + '</span>'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function num(v) { var s = String(v == null ? '' : v).replace(/[\s kr]/gi, '').replace('−', '-'); if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); var n = parseFloat(s.replace(',', '.')); return isFinite(n) ? n : NaN; }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ym(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function sum(l, f) { return l.reduce(function (a, x) { return a + (+(f ? f(x) : x.amount) || 0); }, 0); }
+  function data() { var d = window.Vault.get(); if (!d) return null; d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || []; return d; }
+  function save(d) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+
+  var ACCT = { salary: { name: 'Salary account', icon: 'cash-stack', c: '#8a6fdf' }, credit: { name: 'Credit card', icon: 'credit-card', c: '#d95926' }, card: { name: 'Card account', icon: 'credit-card-2-front', c: '#3987e5' } };
+  function acctName(d, k) { var n = (d.budget.accts || {})[k]; return n || (ACCT[k] || {}).name || 'By hand'; }
+  function acctOf(f) { return f.acct || (f.src === 'save' ? 'salary' : 'salary'); }
+
+  /* ================= the four views ================= */
+  var VIEWS = ['overview', 'tx', 'plan', 'wealth'];
+  function current() { return main.dataset.tab || 'overview'; }
+  function show(tab, opts) {
+    if (VIEWS.indexOf(tab) < 0) tab = 'overview';
+    var was = current();
+    main.dataset.tab = tab;
+    tabsEl.querySelectorAll('[data-ftab-go]').forEach(function (b) { var on = b.dataset.ftabGo === tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    try { localStorage.setItem('dash.finTab', tab); } catch (e) {}
+    if (window.FinSpending) window.FinSpending.rows(tab === 'tx' ? 20 : 6);
+    if (was !== tab) {
+      window.dispatchEvent(new Event('resize'));        // charts that were hidden measure themselves again
+      if (!(opts && opts.keep)) { var top = tabsEl.getBoundingClientRect().top + scrollY - 70; if (scrollY > top) window.scrollTo(0, Math.max(0, top)); }
+    }
+  }
+  function tabOf(el) { var p = el && el.closest('[data-ftab]'); return p ? p.dataset.ftab : null; }
+  function goCard(sel) {
+    var el = typeof sel === 'string' ? document.querySelector(sel) : sel; if (!el) return;
+    var t = tabOf(el); if (t) show(t, { keep: true });
+    setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  }
+  tabsEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var i = VIEWS.indexOf(current()) + (e.key === 'ArrowRight' ? 1 : -1); i = (i + VIEWS.length) % VIEWS.length;
+    show(VIEWS[i]); var b = tabsEl.querySelector('[data-ftab-go="' + VIEWS[i] + '"]'); if (b) b.focus();
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ftab-go]'); if (!b || !main.contains(b)) return;
+    if (b.dataset.fpTo) { goCard('.card.' + b.dataset.fpTo); return; }
+    show(b.dataset.ftabGo);
+  });
+  /* arriving with #c=savings, #c=loans … (search, the budget's link icons, the dashboard) or #import */
+  function fromHash() {
+    var m = location.hash.match(/^#c=([a-z]+)$/);
+    if (m) { var c = document.querySelector('#fp .card.' + m[1]); if (c && tabOf(c)) show(tabOf(c), { keep: true }); }
+    else if (location.hash === '#import' || location.hash === '#scan') show('tx', { keep: true });
+  }
+  window.addEventListener('hashchange', fromHash);
+  if (/[?&]customize/.test(location.search)) main.classList.add('fp-all');      // customizing shows every card
+  (function () { var t = null; try { t = localStorage.getItem('dash.finTab'); } catch (e) {} show(t || 'overview', { keep: true }); fromHash(); })();
+  /* search results and other links that scroll to a card on another view */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href*="#c="]'); if (!a) return;
+    var m = a.getAttribute('href').match(/#c=([a-z]+)$/), c = m && document.querySelector('#fp .card.' + m[1]);
+    if (c && /\/finance\//.test(a.pathname || location.pathname) && a.pathname === location.pathname) { e.preventDefault(); goCard(c); }
+  });
+
+  /* ================= Payday plan (Overview) ================= */
+  function plan(d) {
+    var per = B.period(d), fixed = d.budget.fixed, spent = B.spent(d, per);
+    var by = { salary: 0, credit: 0, card: 0 }, save = 0, loans = 0, yearly = 0;
+    fixed.forEach(function (f) {
+      var a = +f.amount || 0;
+      if (f.src === 'save') { save += a; return; }
+      if (f.src === 'year') { yearly += a; return; }
+      if (f.src === 'loan') loans += a;
+      by[acctOf(f)] = (by[acctOf(f)] || 0) + a;
+    });
+    var fixedAll = sum(fixed), room = per.income - fixedAll, left = room - spent;
+    var buffer = +d.budget.cardBuffer || 0, daily = d.budget.daily || 'credit';
+    /* spent this period, per account (imports carry the account; what you log yourself has none) */
+    var perAcct = { salary: 0, credit: 0, card: 0, hand: 0 };
+    (d.expenses || []).forEach(function (e) { if (per.has(e.date)) perAcct[e.acct && perAcct[e.acct] != null ? e.acct : 'hand'] += +e.amount || 0; });
+    return { per: per, by: by, save: save, yearly: yearly, loans: loans, fixed: fixedAll, room: room, spent: spent, left: left, buffer: buffer, daily: daily, perAcct: perAcct,
+      perDay: left > 0 ? left / Math.max(1, per.daysLeft) : 0 };
+  }
+  function renderFlow(d) {
+    var box = $('fpFlow'); if (!box) return;
+    var p = plan(d), inc = p.per.income;
+    if (!(inc > 0)) {
+      box.innerHTML = '<p class="empty">Add your salary under Monthly budget → Edit, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="plan" data-fp-to="accounts">Plan → Accounts</button>. Then this shows what to move where on payday.</p>';
+      return;
+    }
+    var segs = [
+      ['Bills from the salary account', p.by.salary, ACCT.salary.c],
+      ['To the card account', p.by.card + p.buffer, ACCT.card.c],
+      ['Bills on the credit card', p.by.credit, ACCT.credit.c],
+      ['To savings', p.save, '#22b35e'],
+      ['Set aside for yearly costs', p.yearly, '#0891b2'],
+      ['Everyday spending', Math.max(0, p.room - p.buffer), 'var(--accent)']
+    ].filter(function (s) { return s[1] > 0; });
+    var tot = Math.max(inc, sum(segs, function (s) { return s[1]; }), 1);
+    var moves = [];
+    if (p.by.card + p.buffer > 0) moves.push(['card', 'Move to ' + acctName(d, 'card'), p.by.card + p.buffer, (p.buffer ? 'bills ' + kr(p.by.card) + ' + buffer ' + kr(p.buffer) : 'its bills')]);
+    if (p.save > 0) moves.push(['save', 'Move to savings', p.save, 'your savings goals']);
+    if (p.yearly > 0) moves.push(['year', 'Put aside for yearly costs', p.yearly, 'insurance and the like – a buffer or savings account']);
+    var cardBill = p.by.credit + (p.daily === 'credit' ? p.perAcct.credit + p.perAcct.hand : p.perAcct.credit);
+    box.innerHTML =
+      '<div class="pf-in"><span><i class="bi bi-' + ACCT.salary.icon + '"></i> ' + esc(acctName(d, 'salary')) + ' gets</span><b>' + money(inc) + '</b></div>' +
+      '<div class="stack pf-bar" role="img" aria-label="Where the salary goes">' + segs.map(function (s) { return '<span style="width:' + (s[1] / tot * 100).toFixed(2) + '%;background:' + s[2] + '"></span>'; }).join('') + '</div>' +
+      '<ul class="legend pf-leg">' + segs.map(function (s) { return '<li><i class="dot" style="background:' + s[2] + '"></i>' + esc(s[0]) + '<b>' + money(s[1]) + '</b></li>'; }).join('') + '</ul>' +
+      (moves.length ? '<p class="pf-h">On payday</p><ul class="pf-moves">' + moves.map(function (m) {
+        return '<li><i class="bi bi-arrow-right-circle"></i><span>' + esc(m[1]) + '<small>' + esc(m[3]) + '</small></span><b>' + money(m[2]) + '</b></li>';
+      }).join('') + '</ul>' : '') +
+      '<p class="pf-h">This period · ' + esc(p.per.name) + '</p>' +
+      '<ul class="pf-moves pf-spent">' +
+        ['credit', 'card', 'salary', 'hand'].filter(function (k) { return p.perAcct[k] > 0; }).map(function (k) {
+          return '<li><i class="bi bi-' + (ACCT[k] ? ACCT[k].icon : 'pencil') + '"></i><span>' + esc(k === 'hand' ? 'Logged by hand' : acctName(d, k)) + '</span><b>' + money(p.perAcct[k]) + '</b></li>';
+        }).join('') +
+        (cardBill > 0 ? '<li class="pf-note"><i class="bi bi-receipt"></i><span>Next credit card bill, so far<small>card bills ' + esc(kr(p.by.credit)) + ' + everyday on the card</small></span><b>' + money(cardBill) + '</b></li>' : '') +
+        '<li class="pf-left' + (p.left < 0 ? ' neg' : '') + '"><i class="bi bi-wallet2"></i><span>' + (p.left < 0 ? 'Over budget' : 'Safe to spend') + '<small>' + (p.left > 0 ? esc(kr(p.perDay)) + ' a day for ' + p.per.daysLeft + ' day' + (p.per.daysLeft === 1 ? '' : 's') : 'spend less until payday') + '</small></span><b>' + money(p.left) + '</b></li>' +
+      '</ul>';
+  }
+
+  /* ================= Accounts & fixed costs (Plan) ================= */
+  function renderAcct(d) {
+    var box = $('fpAcct'); if (!box) return;
+    if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;   // don't redraw under your fingers
+    var a = d.budget.accts || {}, fixed = d.budget.fixed;
+    var opt = function (sel) { return Object.keys(ACCT).map(function (k) { return '<option value="' + k + '"' + (sel === k ? ' selected' : '') + '>' + esc(acctName(d, k)) + '</option>'; }).join(''); };
+    var groups = Object.keys(ACCT).map(function (k) {
+      var rows = fixed.filter(function (f) { return f.src !== 'save' && acctOf(f) === k; });
+      return '<div class="pa-grp"><p class="pa-h"><i class="bi bi-' + ACCT[k].icon + '" style="color:' + ACCT[k].c + '"></i> ' + esc(acctName(d, k)) + '<b>' + money(sum(rows)) + '</b></p>' +
+        (rows.length ? '<ul class="pa-list">' + rows.map(function (f) {
+          return '<li><span>' + esc(f.name) + (f.day ? '<small>the ' + esc(f.day) + '.</small>' : '') + '</span>' + money(f.amount) +
+            '<select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(k) + '</select></li>';
+        }).join('') + '</ul>' : '<p class="muted pa-none">Nothing paid from here</p>') + '</div>';
+    }).join('');
+    box.innerHTML =
+      '<p class="muted pa-p">Your salary lands on the salary account and is spread out from there. Say which account pays each fixed cost – the payday plan then tells you what to move where.</p>' +
+      '<div class="pa-names">' + Object.keys(ACCT).map(function (k) {
+        return '<label><span><i class="bi bi-' + ACCT[k].icon + '" style="color:' + ACCT[k].c + '"></i> ' + ACCT[k].name + '</span><input data-paname="' + k + '" value="' + esc(a[k] || '') + '" placeholder="Name, e.g. ' + (k === 'salary' ? 'DNB brukskonto' : k === 'credit' ? 'Trumf Visa' : 'Regningskonto') + '" autocomplete="off"></label>';
+      }).join('') +
+        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(d.budget.daily || 'credit') + '</select></label>' +
+        '<label><span><i class="bi bi-plus-slash-minus"></i> Extra to the card account each payday</span><input data-pabuf inputmode="decimal" value="' + esc(d.budget.cardBuffer || '') + '" placeholder="kr, optional" autocomplete="off"></label>' +
+      '</div>' + groups +
+      '<p class="muted pa-p">' + (fixed.some(function (f) { return f.src === 'save'; }) ? 'Savings goals set aside in the budget are moved from the salary account. ' : '') + 'Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>';
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('#fpAcct')) return;
+    var d = data(); if (!d) return;
+    if (t.dataset.pafrom) {
+      var id = t.dataset.pafrom, f = d.budget.fixed.filter(function (x) { return String(x.id) === id; })[0];
+      if (f && f.src === 'loan') { (d.accounts || []).forEach(function (a) { if ('loan-' + a.id === id) a.from = t.value; }); }
+      if (f) f.acct = t.value;
+    } else if (t.dataset.paname) { d.budget.accts = d.budget.accts || {}; d.budget.accts[t.dataset.paname] = t.value.trim().slice(0, 40); }
+    else if (t.hasAttribute('data-padaily')) d.budget.daily = t.value;
+    else if (t.hasAttribute('data-pabuf')) d.budget.cardBuffer = Math.max(0, Math.round(num(t.value) || 0));
+    else return;
+    save(d);
+    setTimeout(function () { if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#fpAcct')) document.activeElement.blur(); renderAcct(data()); }, 0);
+  });
+
+  /* ================= Loans (Plan) ================= */
+  var tryExtra = {};
+  function renderLoans(d) {
+    var box = $('fpLoans'); if (!box || !Lo) return;
+    var loans = (d.accounts || []).filter(function (a) { return a.kind === 'debt'; });
+    if (!loans.length) {
+      box.innerHTML = '<p class="empty">Add a mortgage, car loan or student loan with its interest and monthly payment. You see when it’s paid off, what the interest costs, the tax deduction – and what paying a bit more would save. The payment goes into your fixed costs by itself.</p>';
+      return;
+    }
+    var yearTax = 0;
+    box.innerHTML = '<ul class="ln-list">' + loans.map(function (l) {
+      var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null;
+      if (c && !c.never) yearTax += c.taxBack;
+      var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + (l.pay ? esc(kr(l.pay)) + ' a month' + (l.fee ? ' + ' + esc(kr(l.fee)) + ' fee' : '') : 'no payment set') +
+        (l.fixed !== false && l.pay ? ' · <i class="bi bi-link-45deg"></i> in fixed costs' : '') + '</small></span>' + money(c ? -c.balance : -l.balance, 'neg') +
+        '<button type="button" class="icon-btn sm" data-lnedit="' + esc(l.id) + '" aria-label="Change ' + esc(l.name) + '"><i class="bi bi-pencil"></i></button></div>';
+      if (!c) return '<li class="ln">' + head + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
+      if (c.never) return '<li class="ln">' + head + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
+      var paidPct = l.orig > 0 ? Math.min(1, 1 - c.balance / l.orig) : null;
+      return '<li class="ln">' + head +
+        '<div class="ln-grid">' +
+          '<span><small>Paid off</small><b>' + esc(c.endLabel) + '</b></span>' +
+          '<span><small>This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
+          '<span><small>Interest left</small><b>' + money(c.interestLeft) + '</b></span>' +
+          '<span><small>Tax deduction</small><b>' + money(c.taxBack) + '</b><em>next 12 months, 22 %</em></span>' +
+        '</div>' +
+        (paidPct != null ? '<div class="stack ln-bar"><span style="width:' + (paidPct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' : '') +
+        '<label class="ln-try"><span>Pay more each month</span><input type="range" min="0" max="' + Math.max(2000, Math.ceil(l.pay / 1000) * 1000) + '" step="250" value="' + x + '" data-lntry="' + esc(l.id) + '" aria-label="Extra a month for ' + esc(l.name) + '"><b class="ln-x">' + (x ? '+' + esc(kr(x)) : '+0 kr') + '</b></label>' +
+        '<p class="ln-p ln-win"' + (cx && !cx.never ? '' : ' hidden') + '>' + (cx && !cx.never ? win(c, cx) : '') + '</p>' +
+        (l.asOf ? '<p class="muted ln-p">Balance worked out from ' + esc(kr(l.balance)) + ' on ' + esc(new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' and the payments since – update it under Wealth now and then.</p>' : '') +
+      '</li>';
+    }).join('') + '</ul>' +
+      (yearTax > 0 ? '<p class="ln-sum"><i class="bi bi-percent"></i> All loans: about ' + money(yearTax) + ' less tax over the next 12 months (rentefradrag)</p>' : '');
+  }
+  function win(c, cx) { return '<i class="bi bi-stars"></i> Paid off <b>' + esc(cx.endLabel.split(' (')[0]) + '</b> – ' + (c.months - cx.months) + ' months sooner, <b>' + money(c.interestLeft - cx.interestLeft) + '</b> less interest'; }
+  function editLoan(id) {
+    show('wealth', { keep: true });
+    setTimeout(function () {
+      if (id) { var li = document.querySelector('#nwList .acc[data-id="' + id + '"]'); if (li) li.click(); }
+      else { if ($('nwForm').hidden) $('nwAddBtn').click(); $('nwKind').value = 'debt'; $('nwKind').dispatchEvent(new Event('change')); }
+      var f = $('nwForm'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-lnedit]'); if (b) { editLoan(b.dataset.lnedit); return; }
+    if (e.target.closest('#fpLoanAdd')) editLoan(null);
+  });
+  document.addEventListener('input', function (e) {
+    var r = e.target.closest && e.target.closest('[data-lntry]'); if (!r) return;
+    var x = tryExtra[r.dataset.lntry] = +r.value || 0, d = data(); if (!d) return;
+    var l = (d.accounts || []).filter(function (a) { return String(a.id) === r.dataset.lntry; })[0]; if (!l) return;
+    var li = r.closest('.ln'), c = Lo.calc(l), cx = x ? Lo.calc(l, x) : null, w = li.querySelector('.ln-win');     // only the numbers change – the slider keeps moving
+    li.querySelector('.ln-x').textContent = '+' + kr(x);
+    w.hidden = !(cx && !cx.never && c && !c.never); w.innerHTML = w.hidden ? '' : win(c, cx);
+  });
+  /* the first time a loan gets a balance, remember it as the starting point for "how much is paid" */
+  function originals(d) {
+    var ch = false;
+    (d.accounts || []).forEach(function (a) { if (a.kind === 'debt' && !(a.orig > 0) && a.balance > 0 && a.pay > 0) { a.orig = a.balance; ch = true; } });
+    if (ch) window.Vault.save(d);
+  }
+
+  /* ================= The year ahead (Plan) ================= */
+  function renderYear(d) {
+    var box = $('fpYearAhead'); if (!box) return;
+    if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;
+    var now = new Date(), rows = d.budget.income || [], modelled = rows.some(function (r) { return +r.gross > 0; });
+    var fixed = sum(d.budget.fixed), months = [];
+    for (var i = 0; i < 12; i++) {
+      var dt = new Date(now.getFullYear(), now.getMonth() + i, 1), key = ym(dt), inc = B.incomeOf(d, key);
+      months.push({ key: key, dt: dt, net: inc.net, note: inc.note, hol: inc.rows.some(function (r) { return r.holiday; }), half: /Half tax/.test(inc.note || '') });
+    }
+    var tb = d.budget.taxBack || {};
+    if (tb.amount && /^\d{4}-\d{2}$/.test(tb.month || '')) months.forEach(function (m) { if (m.key === tb.month) m.tax = +tb.amount; });
+    var ord = rows.reduce(function (a, r) { return a + B.ordinary(r); }, 0);
+    var max = Math.max.apply(null, months.map(function (m) { return m.net + Math.max(0, m.tax || 0); }).concat([fixed, 1]));
+    var y = String(now.getFullYear());
+    var bsu = (d.savings || []).filter(function (g) { return g.bsu; }), bsuIn = sum(bsu, function (g) { return (g.yr || {})[y] || 0; });
+    var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack : 0); }, 0) : 0;
+    var june = months.filter(function (m) { return m.hol; })[0], dec = months.filter(function (m) { return m.half; })[0];
+    var facts = [];
+    if (june) facts.push(['sun', '#c98500', 'Holiday pay in ' + june.dt.toLocaleDateString('en-GB', { month: 'long' }), money(june.net) + ' paid out – ' + money(Math.abs(june.net - ord)) + (june.net >= ord ? ' more' : ' less') + ' than a normal month, no tax on the holiday pay']);
+    if (dec) facts.push(['snow', '#3987e5', 'Half tax in December', money(dec.net) + ' – ' + money(Math.max(0, dec.net - ord)) + ' more than usual']);
+    if (bsu.length) facts.push(['house-heart', '#22b35e', 'BSU this year', money(Math.min(bsuIn, 27500)) + ' of 27 500 kr put in → ' + money(Math.min(bsuIn, 27500) * 0.1) + ' less tax' + (bsuIn < 27500 ? ' · ' + money(27500 - bsuIn) + ' more fills it up' : ' · full for ' + y)]);
+    if (loanTax > 0) facts.push(['percent', '#8a6fdf', 'Interest deduction', 'About ' + money(loanTax) + ' less tax over the next 12 months from your loans']);
+    if (tb.amount) facts.push(['bank', tb.amount > 0 ? '#22b35e' : '#e66767', 'Tax settlement', (tb.amount > 0 ? money(tb.amount) + ' back' : money(-tb.amount) + ' to pay') + (tb.month ? ' in ' + new Date(tb.month + '-15T12:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : '')]);
+    $('fpYearNote').textContent = modelled ? '' : 'net salary';
+    box.innerHTML =
+      '<div class="ya-bars" role="img" aria-label="Income month by month for the next 12 months">' + months.map(function (m) {
+        var h = m.net / max * 100, th = m.tax > 0 ? m.tax / max * 100 : 0;
+        return '<span class="ya-m' + (m.hol ? ' hol' : '') + (m.half ? ' half' : '') + (m.key === ym(now) ? ' now' : '') + '" title="' + esc(m.dt.toLocaleDateString('en-GB', { month: 'long' }) + ': ' + kr(m.net) + (m.note ? ' · ' + m.note : '') + (m.tax ? ' · tax settlement ' + kr(m.tax) : '')) + '">' +
+          '<i style="height:' + (h * .82).toFixed(1) + '%"></i>' + (th ? '<i class="ya-tax" style="height:' + (th * .82).toFixed(1) + '%"></i>' : '') + '<small>' + esc(m.dt.toLocaleDateString('en-GB', { month: 'narrow' })) + '</small></span>';
+      }).join('') + '<b class="ya-fixed" style="bottom:calc((100% - 18px) * ' + (fixed / max * .82).toFixed(3) + ' + 18px)" title="Fixed costs ' + esc(kr(fixed)) + '"></b></div>' +
+      '<p class="muted ya-leg"><i class="dot" style="background:var(--accent)"></i> Net pay <i class="dot" style="background:#c98500"></i> Holiday pay <i class="dot" style="background:#3987e5"></i> Half tax <span class="ya-line"></span> Fixed costs</p>' +
+      (facts.length ? '<ul class="ya-facts">' + facts.map(function (f) { return '<li><i class="bi bi-' + f[0] + '" style="color:' + f[1] + '"></i><span><b>' + esc(f[2]) + '</b><small>' + f[3] + '</small></span></li>'; }).join('') + '</ul>' : '') +
+      (!modelled ? '<p class="muted ya-p"><i class="bi bi-info-circle"></i> Enter your salary as <b>gross with tax %</b> (Monthly budget → Edit → the salary) and tick “paid by the year” – then holiday pay in June and half tax in December are worked out here and in the budget.</p>' : '') +
+      '<div class="ya-tb"><p class="pa-h">Tax settlement (skatteoppgjør)</p><div class="row2">' +
+        '<label class="sv-by"><span>Back (+) or to pay (−), kr</span><input data-yatb inputmode="decimal" value="' + esc(tb.amount || '') + '" placeholder="From the tax return" autocomplete="off"></label>' +
+        '<label class="sv-by"><span>When</span><input data-yatbm type="month" value="' + esc(tb.month || '') + '"></label></div></div>';
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('#fpYearAhead')) return;
+    var d = data(); if (!d) return;
+    d.budget.taxBack = d.budget.taxBack || {};
+    if (t.hasAttribute('data-yatb')) d.budget.taxBack.amount = Math.round(num(t.value) || 0);
+    else if (t.hasAttribute('data-yatbm')) d.budget.taxBack.month = t.value;
+    else return;
+    save(d); setTimeout(function () { renderYear(data()); }, 0);
+  });
+
+  /* ================= Spending limits per category (Overview) =================
+     d.budget.limits = { groceries: 5000, eating: 1500, … } – kr per budget period (payday → payday, or the month) */
+  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', '#3987e5', 'bus-front'], ['shopping', 'Shopping', '#c98500', 'bag'],
+    ['fun', 'Fun', '#d55181', 'controller'], ['health', 'Health', '#8a6fdf', 'heart-pulse'], ['travel', 'Travel', '#0891b2', 'airplane'], ['other', 'Other', '#6b6d73', 'three-dots']];
+  var limEditing = false;
+  /* what you usually spend per category in a budget period: the average of the last three full months */
+  function usual(d) {
+    var now = new Date(), from = ym(new Date(now.getFullYear(), now.getMonth() - 3, 1)), to = ym(new Date(now.getFullYear(), now.getMonth() - 1, 1)), out = {}, months = {};
+    (d.expenses || []).forEach(function (e) { var k = String(e.date).slice(0, 7); if (k < from || k > to) return; months[k] = 1; out[e.cat] = (out[e.cat] || 0) + (+e.amount || 0); });
+    var n = Math.max(1, Object.keys(months).length);
+    Object.keys(out).forEach(function (k) { out[k] = Math.ceil(out[k] / n / 100) * 100; });
+    return out;
+  }
+  function renderLimits(d) {
+    var box = $('fpLimits'); if (!box) return;
+    if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;
+    var lim = d.budget.limits || {}, per = B.period(d), p = plan(d), have = Object.keys(lim).filter(function (k) { return +lim[k] > 0; });
+    var spent = {}; (d.expenses || []).forEach(function (e) { if (per.has(e.date)) spent[e.cat] = (spent[e.cat] || 0) + (+e.amount || 0); });
+    var elapsed = Math.max(1, per.days - per.daysLeft + 1), share = elapsed / per.days, total = sum(have, function (k) { return lim[k]; });
+    $('fpLimitEdit').textContent = limEditing ? 'Done' : have.length ? 'Change' : 'Set limits';
+    if (limEditing) {
+      var u = usual(d);
+      box.innerHTML = '<p class="muted pa-p">How much may each kind of spending take ' + (per.byPayday ? 'from payday to payday' : 'a month') + '? Leave it empty for no limit. <i>Usually</i> is what you spent on average the last three months.</p>' +
+        '<ul class="lm-edit">' + CATS.map(function (c) {
+          return '<li><span><i class="bi bi-' + c[3] + '" style="color:' + c[2] + '"></i> ' + c[1] + (u[c[0]] ? '<small>usually ' + esc(kr(u[c[0]])) + '</small>' : '') + '</span>' +
+            '<input data-lim="' + c[0] + '" inputmode="decimal" value="' + esc(lim[c[0]] || '') + '" placeholder="' + (u[c[0]] ? esc(String(u[c[0]])) : 'No limit') + '" aria-label="Limit for ' + c[1] + '" autocomplete="off"></li>';
+        }).join('') + '</ul>' +
+        '<div class="lm-acts">' + (Object.keys(u).length ? '<button type="button" class="text-btn" data-limusual><i class="bi bi-magic"></i> Use what I usually spend</button>' : '') + '<span class="spacer"></span><button type="button" class="pill-btn" data-limdone>Done</button></div>' +
+        lmRoom(p, total);
+      return;
+    }
+    if (!have.length) {
+      box.innerHTML = '<p class="empty">Give groceries, eating out and the rest a limit for the period. You see what’s left in each, how much a day – and if you’re spending faster than the days go.</p>';
+      return;
+    }
+    var rows = CATS.filter(function (c) { return +lim[c[0]] > 0 || spent[c[0]] > 0; }).map(function (c) {
+      var L = +lim[c[0]] || 0, sp = spent[c[0]] || 0, left = L - sp, pct = L ? Math.min(1, sp / L) : 1, pace = L ? sp / (L * share) : 0;
+      var state = !L ? 'free' : left < 0 ? 'over' : pace > 1.15 && share < .95 ? 'fast' : 'ok';
+      var note = !L ? 'no limit' : left < 0 ? money(-left) + ' over' : money(left) + ' left · ' + money(left / Math.max(1, per.daysLeft)) + '/day' + (state === 'fast' ? ' · <span class="lm-fast">faster than the days</span>' : '');
+      return '<li class="lm ' + state + '"><span class="lm-n"><i class="bi bi-' + c[3] + '" style="color:' + c[2] + '"></i> ' + c[1] + '<small>' + note + '</small></span>' +
+        '<span class="lm-v">' + money(sp) + (L ? '<small>of ' + esc(kr(L)) + '</small>' : '') + '</span>' +
+        (L ? '<span class="lm-bar"><i style="width:' + (pct * 100).toFixed(1) + '%;background:' + (state === 'over' ? 'var(--danger)' : state === 'fast' ? '#c98500' : c[2]) + '"></i><b style="left:' + (Math.min(1, share) * 100).toFixed(1) + '%" title="Where you’d be if you spent evenly"></b></span>' : '') + '</li>';
+    }).join('');
+    box.innerHTML = '<ul class="lm-list">' + rows + '</ul>' + lmRoom(p, total);
+  }
+  function lmRoom(p, total) {
+    if (!(p.per.income > 0)) return '';
+    var free = p.room - total;
+    return '<p class="lm-room' + (free < 0 ? ' neg' : '') + '"><i class="bi bi-' + (free < 0 ? 'exclamation-triangle' : 'shield-check') + '"></i> ' +
+      (free < 0 ? 'Your limits are ' + money(-free) + ' more than you have after fixed costs (' + money(p.room) + ')' : money(free) + ' after fixed costs isn’t given to a category – your buffer') + '</p>';
+  }
+  $('fpLimitEdit') && $('fpLimitEdit').addEventListener('click', function () { limEditing = !limEditing; var d = data(); if (d) renderLimits(d); if (limEditing) { var i = document.querySelector('#fpLimits input'); if (i) i.focus(); } });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#fpLimits')) return;
+    var d = data(); if (!d) return;
+    if (e.target.closest('[data-limdone]')) { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); limEditing = false; renderLimits(d); return; }
+    if (e.target.closest('[data-limusual]')) { d.budget.limits = usual(d); save(d); setTimeout(function () { renderLimits(data()); }, 0); }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.dataset || !t.dataset.lim) return;
+    var d = data(); if (!d) return;
+    d.budget.limits = d.budget.limits || {};
+    var v = Math.round(num(t.value) || 0); if (v > 0) d.budget.limits[t.dataset.lim] = v; else delete d.budget.limits[t.dataset.lim];
+    save(d);
+    var r = document.querySelector('#fpLimits .lm-room'); if (r) r.outerHTML = lmRoom(plan(d), sum(Object.keys(d.budget.limits), function (k) { return d.budget.limits[k]; }));
+  });
+
+  /* ================= Yearly costs (Plan) =================
+     Insurance, car service, the TV licence, Christmas … paid once or twice a year. A twelfth of the
+     total is set aside every month as one fixed cost, so the month they're due doesn't break the budget.
+     d.budget.yearly = [{ id, name, amount, month (1–12) }] */
+  var yrEditing = null;
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function syncYearly(d) {
+    var list = d.budget.yearly || [], total = sum(list), fixed = d.budget.fixed;
+    var want = total > 0 ? [{ id: 'year-all', name: 'Yearly costs (set aside)', amount: Math.ceil(total / 12 / 10) * 10, day: null, src: 'year', acct: (d.budget.yearAcct || 'salary') }] : [];
+    if (JSON.stringify(fixed.filter(function (f) { return f.src === 'year'; })) === JSON.stringify(want)) return false;
+    d.budget.fixed = fixed.filter(function (f) { return f.src !== 'year'; }).concat(want);
+    return true;
+  }
+  function renderYearly(d) {
+    var box = $('fpYearly'); if (!box) return;
+    if (box.contains(document.activeElement) && document.activeElement.matches('input, select')) return;
+    var list = (d.budget.yearly || []).slice(), total = sum(list), now = new Date(), m0 = now.getMonth() + 1;
+    list.sort(function (a, b) { return ((a.month - m0 + 12) % 12) - ((b.month - m0 + 12) % 12); });
+    var form = function (y) {
+      return '<form class="inline-form yr-form" data-yrid="' + (y ? esc(y.id) : 'new') + '"><input name="n" placeholder="e.g. Car insurance" value="' + esc(y ? y.name : '') + '" required autocomplete="off">' +
+        '<div class="row2"><input name="a" placeholder="kr a year" inputmode="decimal" value="' + esc(y ? y.amount : '') + '" required autocomplete="off"><select name="m" aria-label="Month it’s paid">' +
+        MONTHS.map(function (n, i) { return '<option value="' + (i + 1) + '"' + ((y ? y.month : m0) === i + 1 ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
+        '<div class="form-actions">' + (y ? '<button type="button" class="text-btn danger" data-yrdel>Delete</button>' : '') + '<span class="spacer"></span><button type="button" class="text-btn" data-yrcancel>Cancel</button><button type="submit" class="pill-btn">Save</button></div></form>';
+    };
+    box.innerHTML = (yrEditing === 'new' ? form(null) : '') +
+      (list.length ? '<p class="yr-sum"><b>' + money(Math.ceil(total / 12 / 10) * 10) + '</b> a month set aside · ' + money(total) + ' a year · <i class="bi bi-link-45deg"></i> in fixed costs</p>' +
+        '<ul class="yr-list">' + list.map(function (y) {
+          if (yrEditing === y.id) return '<li>' + form(y) + '</li>';
+          var inM = (y.month - m0 + 12) % 12;
+          return '<li class="yr" data-yr="' + esc(y.id) + '"><span><b>' + esc(y.name) + '</b><small>' + MONTHS[y.month - 1] + (inM === 0 ? ' · this month' : inM === 1 ? ' · next month' : ' · in ' + inM + ' months') + '</small></span>' + money(y.amount) + '</li>';
+        }).join('') + '</ul>'
+      : yrEditing ? '' : '<p class="empty">Bills that come once a year – insurance, car service, the TV licence, Christmas presents. A twelfth is set aside each month, so the month they’re due is like any other.</p>');
+    var f = box.querySelector('.yr-form input[name="n"]'); if (f && !f.value) f.focus();
+  }
+  $('fpYearlyAdd') && $('fpYearlyAdd').addEventListener('click', function () { yrEditing = yrEditing === 'new' ? null : 'new'; var d = data(); if (d) renderYearly(d); });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#fpYearly')) return;
+    var d = data(); if (!d) return;
+    if (e.target.closest('[data-yrcancel]')) { yrEditing = null; renderYearly(d); return; }
+    if (e.target.closest('[data-yrdel]')) {
+      var id = e.target.closest('form').dataset.yrid; d.budget.yearly = (d.budget.yearly || []).filter(function (y) { return y.id !== id; });
+      yrEditing = null; syncYearly(d); save(d); return;
+    }
+    var li = e.target.closest('[data-yr]'); if (li) { yrEditing = li.dataset.yr; renderYearly(d); }
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest && e.target.closest('.yr-form'); if (!f) return;
+    e.preventDefault();
+    var d = data(); if (!d) return;
+    var a = Math.round(num(f.a.value) || 0); if (!(a > 0)) { f.a.focus(); return; }
+    var rec = { name: f.n.value.trim().slice(0, 50), amount: a, month: +f.m.value };
+    d.budget.yearly = d.budget.yearly || [];
+    if (f.dataset.yrid === 'new') d.budget.yearly.push(Object.assign({ id: Date.now().toString(36) }, rec));
+    else d.budget.yearly.forEach(function (y) { if (y.id === f.dataset.yrid) Object.assign(y, rec); });
+    yrEditing = null; document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    syncYearly(d); save(d);
+  });
+
+  /* ================= drawing ================= */
+  function render() {
+    var d = data(); if (!d) return;
+    try { originals(d); if (syncYearly(d)) { save(d); return; } renderFlow(d); renderLimits(d); renderAcct(d); renderYearly(d); renderLoans(d); renderYear(d); } catch (e) { console.error(e); }
+  }
+  window.addEventListener('fin:change', function () { setTimeout(render, 0); });
+  window.addEventListener('features:change', render);
+  window.Vault.onUnlock(function () { render(); fromHash(); });
+  window.Vault.onLock(function () { ['fpFlow', 'fpLimits', 'fpAcct', 'fpYearly', 'fpLoans', 'fpYearAhead'].forEach(function (id) { if ($(id)) $(id).innerHTML = ''; }); });
+  window.FinTabs = { show: show, current: current, go: goCard, plan: function () { var d = data(); return d ? plan(d) : null; } };
+})();
