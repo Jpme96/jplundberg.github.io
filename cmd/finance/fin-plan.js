@@ -242,7 +242,8 @@
         '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings'; }) + '</select></label>' +
         '<label><span><i class="bi bi-piggy-bank"></i> Savings and yearly costs go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
       '</div>' + groups +
-      '<p class="muted pa-p">Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>';
+      '<p class="muted pa-p">Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>' +
+      '<div class="pa-reset"><button type="button" class="text-btn danger" data-frreset><i class="bi bi-arrow-counterclockwise"></i> Reset finances …</button></div>';
   }
   function setAcct(d, id, patch) {
     var list = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
