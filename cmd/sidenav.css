@@ -43,6 +43,12 @@
     width: auto; height: auto; min-height: 42px; padding: 10px 12px; border-radius: 12px;
     font-size: 14px; font-weight: 500; color: var(--t2); white-space: nowrap; position: relative; transition: background .18s, color .18s;
   }
+  /* pages switched off in Settings → Features stay out of the side bar too */
+  :root.side-nav.tab-off-calendar .tabbar a[data-pg=calendar]:not([aria-current]), :root.side-nav.tab-off-travel .tabbar a[data-pg=travel]:not([aria-current]),
+  :root.side-nav.tab-off-finance .tabbar a[data-pg=finance]:not([aria-current]), :root.side-nav.tab-off-habits .tabbar a[data-pg=habits]:not([aria-current]),
+  :root.side-nav.tab-off-work .tabbar a[data-pg=work]:not([aria-current]), :root.side-nav.tab-off-house .tabbar a[data-pg=house]:not([aria-current]),
+  :root.side-nav.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), :root.side-nav.tab-off-food .tabbar a[data-pg=food]:not([aria-current]),
+  :root.side-nav.tab-off-admin .tabbar a[data-pg=admin]:not([aria-current]) { display: none !important; }
   :root.side-nav .mbar .tabbar a > span:last-child { display: inline !important; overflow: hidden; text-overflow: ellipsis; }
   :root.side-nav .mbar .tabbar a i { flex: none; width: 20px; text-align: center; font-size: 17px; }
   :root.side-nav .mbar .tabbar .tb-pill, :root.side-nav .mbar .tabbar .tb-more { display: none !important; }

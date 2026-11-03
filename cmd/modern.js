@@ -69,7 +69,14 @@
     more.setAttribute('aria-haspopup', 'true'); more.innerHTML = '<i class="bi bi-grid-3x3-gap-fill"></i><span>More</span>';
     nav.appendChild(more);
   }
-  function tabs() { return Array.prototype.filter.call(nav.querySelectorAll('a[data-pg]'), function (a) { return getComputedStyle(a).display !== 'none' || a.classList.contains('tb-hide'); }); }
+  /* the pages that are switched on (Settings → Features) – the ones folded into More count too */
+  function tabs() {
+    var r = document.documentElement;
+    return Array.prototype.filter.call(nav.querySelectorAll('a[data-pg]'), function (a) {
+      if (r.classList.contains('tab-off-' + a.dataset.pg) && !a.getAttribute('aria-current')) return false;
+      return a.classList.contains('tb-hide') || getComputedStyle(a).display !== 'none';
+    });
+  }
   function fit() {
     if (!nav || !more) return;
     if (more.nextSibling) nav.appendChild(more);          // More is always last (the menu order may have moved the tabs)
@@ -119,6 +126,8 @@
     return true;
   }
   if (more) more.addEventListener('click', openMore);
+  /* a page switched off or on in Features: refit the bar (and the open More menu) straight away */
+  window.addEventListener('features:change', function () { requestAnimationFrame(function () { var o = closeMore(); fit(); if (o && more) more.click(); }); });
   /* the menu order can change (Settings, another device): keep More last and fit again */
   if (nav) new MutationObserver(function () { if (more.nextSibling) requestAnimationFrame(fit); }).observe(nav, { childList: true });
   document.addEventListener('click', function (e) { if (!e.target.closest('#tbMenu, .tb-more')) closeMore(); });
