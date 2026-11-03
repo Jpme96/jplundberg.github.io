@@ -230,3 +230,125 @@ window.Loans = (function () {
   }
   return { payment: payment, calc: calc, balanceNow: balanceNow, label: label, TAX: TAX };
 })();
+
+/* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.
+   The first three always exist (ids salary / credit / card – older data uses these ids); you can add more
+   (another card, a savings or bills account, a shared account) – d.budget.acctList = [{ id, kind, name, due?, buffer? }].
+   kind: salary (salary lands here and is spread out) · credit (credit card – a bill each month) ·
+         card (an account with a card that pays some bills) · savings (money you move away and keep). */
+window.Accts = (function () {
+  "use strict";
+  var KINDS = {
+    salary: { name: 'Salary account', icon: 'cash-stack', c: '#8a6fdf' },
+    credit: { name: 'Credit card', icon: 'credit-card', c: '#d95926' },
+    card: { name: 'Card account', icon: 'credit-card-2-front', c: '#3987e5' },
+    savings: { name: 'Savings account', icon: 'piggy-bank', c: '#22b35e' }
+  };
+  var EXTRA_C = ['#0891b2', '#c98500', '#d55181', '#6b6d73', '#11a597'];
+  function list(d) {
+    var b = (d && d.budget) || {}, names = b.accts || {}, own = Array.isArray(b.acctList) ? b.acctList : [];
+    var base = ['salary', 'credit', 'card'].map(function (id) {
+      var o = own.filter(function (a) { return a.id === id; })[0] || {};
+      return { id: id, kind: id, name: o.name || names[id] || '', due: o.due || (id === 'credit' ? b.ccDue : null) || null, buffer: id === 'card' ? (o.buffer != null ? +o.buffer : +b.cardBuffer || 0) : +o.buffer || 0, builtin: true };
+    });
+    var more = own.filter(function (a) { return a && a.id && ['salary', 'credit', 'card'].indexOf(a.id) < 0; }).map(function (a, i) {
+      return { id: a.id, kind: KINDS[a.kind] ? a.kind : 'card', name: a.name || '', due: a.due || null, buffer: +a.buffer || 0, extra: true, ci: i };
+    });
+    return base.concat(more).map(function (a) {
+      var k = KINDS[a.kind];
+      a.label = a.name || (a.extra ? k.name + ' ' + (a.ci + 2) : k.name);
+      a.icon = k.icon; a.c = a.extra ? EXTRA_C[a.ci % EXTRA_C.length] : k.c;
+      return a;
+    });
+  }
+  function get(d, id) { return list(d).filter(function (a) { return a.id === id; })[0] || null; }
+  function kind(d, id) { var a = get(d, id); return a ? a.kind : null; }
+  return { KINDS: KINDS, list: list, get: get, kind: kind };
+})();
+
+/* The payday plan: where this period's income goes, account by account, and what to move on payday.
+   Moves are ticked off per budget period in d.budget.payDone[<period start>] = { <move id>: true }. */
+window.Budget.payPlan = function (d, now) {
+  "use strict";
+  var B = window.Budget, A = window.Accts, per = B.period(d, now), fixed = (d.budget && d.budget.fixed) || [], list = A.list(d);
+  var ids = {}; list.forEach(function (a) { ids[a.id] = a; });
+  var main = list.filter(function (a) { return a.kind === 'salary'; })[0];
+  var by = {}, save = 0, yearly = 0, loans = 0;
+  list.forEach(function (a) { by[a.id] = 0; });
+  fixed.forEach(function (f) {
+    var v = +f.amount || 0;
+    if (f.src === 'save') { save += v; return; }
+    if (f.src === 'year') { yearly += v; return; }
+    if (f.src === 'loan') loans += v;
+    var id = ids[f.acct] ? f.acct : main.id; by[id] += v;
+  });
+  var fixedAll = fixed.reduce(function (a, f) { return a + (+f.amount || 0); }, 0);
+  var spent = B.spent(d, per), room = per.income - fixedAll, left = room - spent;
+  var perAcct = { hand: 0 }; list.forEach(function (a) { perAcct[a.id] = 0; });
+  ((d && d.expenses) || []).forEach(function (e) { if (per.has(e.date)) perAcct[e.acct && perAcct[e.acct] != null ? e.acct : 'hand'] += +e.amount || 0; });
+  var daily = ids[d.budget && d.budget.daily] ? d.budget.daily : 'credit';
+  var saveTo = ids[d.budget && d.budget.saveAcct] ? ids[d.budget.saveAcct] : list.filter(function (a) { return a.kind === 'savings'; })[0] || null;
+  /* moves on payday: to every account that pays bills (not the credit card – that's a bill of its own), to savings */
+  var moves = [], buffers = 0;
+  list.forEach(function (a) {
+    if (a.kind === 'salary' || a.kind === 'credit') return;
+    var amt = by[a.id] + (a.buffer || 0) + (saveTo && saveTo.id === a.id ? save + yearly : 0);
+    buffers += a.buffer || 0;
+    if (amt > 0) moves.push({ id: 'to:' + a.id, to: a.id, label: 'Move to ' + a.label, amount: amt, sub: [by[a.id] ? 'bills ' + Math.round(by[a.id]) + ' kr' : '', a.buffer ? 'buffer ' + Math.round(a.buffer) + ' kr' : '', saveTo && saveTo.id === a.id && save + yearly ? 'savings ' + Math.round(save + yearly) + ' kr' : ''].filter(Boolean).join(' + ') });
+  });
+  if (!saveTo) {
+    if (save > 0) moves.push({ id: 'save', label: 'Move to savings', amount: save, sub: 'your savings goals' });
+    if (yearly > 0) moves.push({ id: 'year', label: 'Put aside for yearly costs', amount: yearly, sub: 'insurance and the like' });
+  }
+  var done = ((d.budget && d.budget.payDone) || {})[per.startKey] || {};
+  moves.forEach(function (m) { m.done = !!done[m.id]; });
+  return { per: per, list: list, main: main, by: by, save: save, yearly: yearly, loans: loans, fixed: fixedAll, room: room, spent: spent, left: left,
+    buffers: buffers, daily: daily, saveTo: saveTo, perAcct: perAcct, moves: moves, open: moves.filter(function (m) { return !m.done; }),
+    perDay: left > 0 ? left / Math.max(1, per.daysLeft) : 0 };
+};
+
+/* Credit card bills: what's due this month on each credit card – last month's purchases on it (from
+   imports) + the fixed costs it pays – the due day, and whether you've marked it paid in full
+   (d.budget.ccPaid[<acct>:<YYYY-MM>] = true; an import of the payment from another account sets it too). */
+window.Budget.cardBills = function (d, now) {
+  "use strict";
+  now = now || new Date();
+  var A = window.Accts, pad = function (n) { return String(n).padStart(2, '0'); };
+  var ymk = now.getFullYear() + '-' + pad(now.getMonth() + 1), prev = new Date(now.getFullYear(), now.getMonth() - 1, 1), pk = prev.getFullYear() + '-' + pad(prev.getMonth() + 1);
+  var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return A.list(d).filter(function (a) { return a.kind === 'credit'; }).map(function (a) {
+    var buys = ((d && d.expenses) || []).filter(function (e) { return e.acct === a.id && String(e.date).slice(0, 7) === pk; }).reduce(function (s, e) { return s + (+e.amount || 0); }, 0);
+    var bills = ((d.budget && d.budget.fixed) || []).filter(function (f) { return f.acct === a.id; }).reduce(function (s, f) { return s + (+f.amount || 0); }, 0);
+    var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), day = a.due ? Math.min(+a.due, dim) : null;
+    var dt = day ? new Date(now.getFullYear(), now.getMonth(), day) : null, days = dt ? Math.round((dt - t0) / 864e5) : null;
+    var paid = !!(((d.budget && d.budget.ccPaid) || {})[a.id + ':' + ymk]);
+    var amount = buys + bills;
+    return { acct: a, month: ymk, from: pk, buys: buys, bills: bills, amount: amount, due: day, date: dt, days: days, paid: paid,
+      interest: amount * 0.22 / 12, known: buys > 0 };
+  });
+};
+
+/* At a glance: the payday checklist (the first days of a period while moves are open) and credit card bills
+   due within 3 days or overdue, not yet marked paid. */
+(function () {
+  "use strict";
+  var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
+  window.BriefExtra = window.BriefExtra || [];
+  window.BriefExtra.push(function (add) {
+    var d = window.Vault && window.Vault.get && window.Vault.get(); if (!d || !d.budget) return;
+    if (window.Features && !window.Features.on('finance')) return;
+    var fin = /\/cmd\/(?:index\.html)?$/.test(location.pathname) ? 'finance/' : '/cmd/finance/';
+    var p = window.Budget.payPlan(d), into = p.per.days - p.per.daysLeft;
+    if (p.per.income > 0 && p.open.length && into <= 6)
+      add(into <= 1 ? 11 : 19, 'list-check', '#11a597', 'Payday: ' + p.open.length + ' move' + (p.open.length === 1 ? '' : 's') + ' to do',
+        p.open.slice(0, 2).map(function (m) { return nf.format(Math.round(m.amount)) + ' → ' + m.label.replace(/^Move to |^Put aside for /, ''); }).join(' · ') + (p.open.length > 2 ? ' …' : ''),
+        fin + '#c=flow', { key: 'paymv:' + p.per.startKey + ':' + p.open.length, badge: into <= 1 });
+    window.Budget.cardBills(d).forEach(function (c) {
+      if (!c.due || c.paid || c.days > 3) return;
+      var late = c.days < 0;
+      add(late ? 5 : c.days === 0 ? 8 : 16, 'credit-card', late ? '#e66767' : '#c98500',
+        c.acct.label + ' bill ' + (late ? 'is ' + (-c.days) + ' day' + (c.days === -1 ? '' : 's') + ' overdue' : c.days === 0 ? 'is due today' : 'due in ' + c.days + ' day' + (c.days === 1 ? '' : 's')),
+        (c.amount ? 'About ' + nf.format(Math.round(c.amount)) + ' – ' : '') + 'pay it in full to avoid card interest', fin + '#c=flow', { key: 'cc:' + c.acct.id + ':' + c.month + (late ? ':late' : ''), badge: late || c.days === 0 });
+    });
+  });
+})();

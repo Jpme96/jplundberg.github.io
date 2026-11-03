@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=160" rel="stylesheet">
+  <link href="../styles.css?v=161" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -214,6 +214,11 @@
         </section>
         </div>
         <div class="fin-col">
+        <!-- Buffer / emergency fund (fin-plan.js) -->
+        <section class="card buffer" id="fpBufCard">
+          <div class="card-head"><h2><i class="bi bi-shield-check"></i> Buffer</h2><span class="muted" id="fpBufNote"></span></div>
+          <div id="fpBuf"></div>
+        </section>
         <!-- Savings goals -->
         <section class="card savings">
           <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
@@ -890,8 +895,8 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=1f58b06462"></script>
-  <script src="../dist/tail.js?v=eb8d271125"></script>
+  <script src="../dist/page-finance.js?v=435dff0861"></script>
+  <script src="../dist/tail.js?v=722723d66e"></script>
   <!-- /scripts -->
 </body>
 </html>

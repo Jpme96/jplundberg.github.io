@@ -111,7 +111,7 @@
     var d = window.Vault.get() || {}, known = Object.keys(d.bankFiles || {}).filter(function (k) { return /^\d{11}$/.test(k); });
     return { head: 'h:' + rows[hi].join('|').toLowerCase().slice(0, 120), num: nums[0] || '', others: known.filter(function (k) { return k !== nums[0]; }) };
   }
-  var ACCTS = [['salary', 'Salary account', 'bi-cash-stack'], ['credit', 'Credit card', 'bi-credit-card'], ['card', 'Card account', 'bi-credit-card-2-front']];
+  function acctList() { return window.Accts ? window.Accts.list(window.Vault.get() || {}) : [{ id: 'salary', label: 'Salary account', icon: 'cash-stack' }, { id: 'credit', label: 'Credit card', icon: 'credit-card' }, { id: 'card', label: 'Card account', icon: 'credit-card-2-front' }]; }
   function analyse(rows, opts) {
     opts = opts || {};
     if (typeof rows === 'string') rows = parseCSV(rows);
@@ -144,9 +144,11 @@
     var pos = good.filter(function (x) { return x.amt > 0; }).length;
     /* a credit-card statement lists purchases as positive amounts (and the payments as negative) */
     var looksCard = col.out < 0 && good.length >= 3 && pos / good.length >= 0.7;
-    var acct = opts.acct || mem[sig.num] || mem[sig.head] || (looksCard ? 'credit' : null);
+    var AC = window.Accts, acct = opts.acct || mem[sig.num] || mem[sig.head] || (looksCard ? 'credit' : null);
+    if (acct && AC && !AC.get(d, acct)) acct = null;                       // an account you've since removed
+    var kind = acct ? (AC ? AC.kind(d, acct) : acct) : null;
     /* a credit-card file with one amount column usually lists purchases as positive numbers */
-    var card = opts.card != null ? !!opts.card : acct === 'credit' ? col.out < 0 && pos / Math.max(1, good.length) >= 0.5 : acct ? false : looksCard;
+    var card = opts.card != null ? !!opts.card : kind === 'credit' ? col.out < 0 && pos / Math.max(1, good.length) >= 0.5 : kind ? false : looksCard;
     var haveIn = {};
     (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
     var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
@@ -162,9 +164,9 @@
         var rin = 'bankin:' + x.date + '|' + amount + '|' + norm(x.desc);
         if (haveIn[rin]) { skipped.dup++; return; }
         if (salary) { skipped.income++; return; }
-        if (acct === 'card' && !/tilbake|refusjon|refund|retur|vipps/i.test(x.desc)) own = true;          // money in on the card account is your own transfer
-        if (acct === 'credit' && x.amt !== 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc)) own = true;  // money in on the credit card is the bill being paid
-        out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own, why: own ? (acct === 'credit' ? 'paying the card' : 'from your own account') : '' });
+        if ((kind === 'card' || kind === 'savings') && !/tilbake|refusjon|refund|retur|vipps/i.test(x.desc)) own = true;          // money in on the card account is your own transfer
+        if (kind === 'credit' && x.amt !== 0 && !/tilbake|refusjon|refund|retur/i.test(x.desc)) own = true;  // money in on the credit card is the bill being paid
+        out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: 'in', ref: rin, on: !own, income: true, transfer: own, why: own ? (kind === 'credit' ? 'paying the card' : 'from your own account') : '' });
         return;
       }
       var ref = 'bank:' + x.date + '|' + amount + '|' + norm(x.desc);
@@ -173,17 +175,18 @@
       var transfer = TRANSFER.test(x.desc), why = transfer ? 'transfer' : '';
       /* the salary account pays the credit card and moves money to the card account: not spending –
          the purchases themselves come from the card's own file */
-      if ((acct === 'salary' || acct === 'card') && !bill) {
-        if (CARDPAY.test(x.desc)) { transfer = true; why = 'pays the credit card – its purchases count from the card’s file'; }
+      var ccpay = false;
+      if ((kind === 'salary' || kind === 'card' || kind === 'savings') && !bill) {
+        if (CARDPAY.test(x.desc)) { transfer = true; ccpay = true; why = 'pays the credit card – its purchases count from the card’s file'; }
         else if (OWNOUT.test(x.desc) || (sig.others.length && sig.others.some(function (n) { return x.desc.replace(/\D/g, '').indexOf(n) > -1; }))) { transfer = true; why = 'to your own account'; }
       }
       var mine = bill ? null : manual.filter(function (m) { return !claimed[m.id] && Math.abs(+(m.full != null ? m.full : m.amount) - amount) < 1 && Math.abs(dayN(String(m.date).slice(0, 10)) - dayN(x.date)) <= 3; })
         .sort(function (a, b) { return Math.abs(dayN(a.date) - dayN(x.date)) - Math.abs(dayN(b.date) - dayN(x.date)); })[0] || null;
       if (mine) { claimed[mine.id] = 1; skipped.mine = (skipped.mine || 0) + 1; }
-      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct });
+      out.push({ date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
-    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, sig: sig, source: rows };
+    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows };
   }
 
   /* ---------- Excel files (.xlsx): a zip of XML, read without any library ---------- */
@@ -268,8 +271,8 @@
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
     var signRow = '<div class="im-acct"><span>' + (res.acct ? 'This file is from' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
-        ACCTS.map(function (a) { return '<button type="button" data-acct="' + a[0] + '" aria-pressed="' + (res.acct === a[0]) + '"><i class="bi ' + a[2] + '"></i> ' + a[1] + '</button>'; }).join('') + '</div>' +
-        '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.acct] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
+        acctList().map(function (a) { return '<button type="button" data-acct="' + esc(a.id) + '" aria-pressed="' + (res.acct === a.id) + '"><i class="bi bi-' + a.icon + '"></i> ' + esc(a.label) + '</button>'; }).join('') + '</div>' +
+        '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.kind] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
       '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
     var per = window.Budget && window.Budget.period(window.Vault.get() || {}), inPer = per ? rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0) : 0;
     var perLine = per ? '<p class="muted im-p im-per"><i class="bi bi-pie-chart"></i> <span id="imPer">' + esc(nf.format(inPer)) + '</span> of this counts in your budget now (' + esc(per.name) + ') – the rest is in earlier periods and shows in the statistics.</p>' : '';
@@ -304,6 +307,13 @@
       if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
       d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
       d.catMemory[norm(r.desc)] = r.cat; n++;
+    });
+    /* a credit-card payment found in the salary/card account file marks that month's card bill as paid */
+    var ccs = acctList().filter(function (a) { return a.kind === 'credit'; });
+    found.rows.forEach(function (r) {
+      if (!r.ccpay || !ccs.length) return;
+      var c = ccs.filter(function (a) { return a.name && r.desc.toLowerCase().indexOf(a.name.toLowerCase().split(' ')[0]) > -1; })[0] || ccs[0];
+      d.budget = d.budget || {}; d.budget.ccPaid = d.budget.ccPaid || {}; d.budget.ccPaid[c.id + ':' + r.date.slice(0, 7)] = true;
     });
     if (found.acct && found.sig) { d.bankFiles = d.bankFiles || {}; d.bankFiles[found.sig.head] = found.acct; if (found.sig.num) d.bankFiles[found.sig.num] = found.acct; }
     /* keep the memory of merchants small */

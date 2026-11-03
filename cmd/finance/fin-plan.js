@@ -24,9 +24,7 @@
   function data() { var d = window.Vault.get(); if (!d) return null; d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || []; return d; }
   function save(d) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
 
-  var ACCT = { salary: { name: 'Salary account', icon: 'cash-stack', c: '#8a6fdf' }, credit: { name: 'Credit card', icon: 'credit-card', c: '#d95926' }, card: { name: 'Card account', icon: 'credit-card-2-front', c: '#3987e5' } };
-  function acctName(d, k) { var n = (d.budget.accts || {})[k]; return n || (ACCT[k] || {}).name || 'By hand'; }
-  function acctOf(f) { return f.acct || (f.src === 'save' ? 'salary' : 'salary'); }
+  function acctName(d, k) { var a = window.Accts.get(d, k); return a ? a.label : 'By hand'; }
 
   /* ================= the four views ================= */
   var VIEWS = ['overview', 'tx', 'plan', 'wealth'];
@@ -75,100 +73,152 @@
     if (c && /\/finance\//.test(a.pathname || location.pathname) && a.pathname === location.pathname) { e.preventDefault(); goCard(c); }
   });
 
-  /* ================= Payday plan (Overview) ================= */
-  function plan(d) {
-    var per = B.period(d), fixed = d.budget.fixed, spent = B.spent(d, per);
-    var by = { salary: 0, credit: 0, card: 0 }, save = 0, loans = 0, yearly = 0;
-    fixed.forEach(function (f) {
-      var a = +f.amount || 0;
-      if (f.src === 'save') { save += a; return; }
-      if (f.src === 'year') { yearly += a; return; }
-      if (f.src === 'loan') loans += a;
-      by[acctOf(f)] = (by[acctOf(f)] || 0) + a;
-    });
-    var fixedAll = sum(fixed), room = per.income - fixedAll, left = room - spent;
-    var buffer = +d.budget.cardBuffer || 0, daily = d.budget.daily || 'credit';
-    /* spent this period, per account (imports carry the account; what you log yourself has none) */
-    var perAcct = { salary: 0, credit: 0, card: 0, hand: 0 };
-    (d.expenses || []).forEach(function (e) { if (per.has(e.date)) perAcct[e.acct && perAcct[e.acct] != null ? e.acct : 'hand'] += +e.amount || 0; });
-    return { per: per, by: by, save: save, yearly: yearly, loans: loans, fixed: fixedAll, room: room, spent: spent, left: left, buffer: buffer, daily: daily, perAcct: perAcct,
-      perDay: left > 0 ? left / Math.max(1, per.daysLeft) : 0 };
-  }
+  /* ================= Payday plan + checklist (Overview) ================= */
+  function plan(d) { return B.payPlan(d); }
   function renderFlow(d) {
     var box = $('fpFlow'); if (!box) return;
-    var p = plan(d), inc = p.per.income;
+    var p = plan(d), inc = p.per.income, by = p.by;
     if (!(inc > 0)) {
       box.innerHTML = '<p class="empty">Add your salary under Monthly budget → Edit, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="plan" data-fp-to="accounts">Plan → Accounts</button>. Then this shows what to move where on payday.</p>';
       return;
     }
-    var segs = [
-      ['Bills from the salary account', p.by.salary, ACCT.salary.c],
-      ['To the card account', p.by.card + p.buffer, ACCT.card.c],
-      ['Bills on the credit card', p.by.credit, ACCT.credit.c],
-      ['To savings', p.save, '#22b35e'],
-      ['Set aside for yearly costs', p.yearly, '#0891b2'],
-      ['Everyday spending', Math.max(0, p.room - p.buffer), 'var(--accent)']
-    ].filter(function (s) { return s[1] > 0; });
+    var segs = [];
+    p.list.forEach(function (a) {
+      var v = by[a.id] + (a.kind === 'salary' || a.kind === 'credit' ? 0 : a.buffer || 0);
+      if (v > 0) segs.push([a.kind === 'salary' ? 'Bills from ' + a.label : a.kind === 'credit' ? 'Bills on ' + a.label : 'To ' + a.label, v, a.c]);
+    });
+    segs.push(['To savings', p.save, '#22b35e'], ['Set aside for yearly costs', p.yearly, '#0891b2'], ['Everyday spending', Math.max(0, p.room - p.buffers), 'var(--accent)']);
+    segs = segs.filter(function (s) { return s[1] > 0; });
     var tot = Math.max(inc, sum(segs, function (s) { return s[1]; }), 1);
-    var moves = [];
-    if (p.by.card + p.buffer > 0) moves.push(['card', 'Move to ' + acctName(d, 'card'), p.by.card + p.buffer, (p.buffer ? 'bills ' + kr(p.by.card) + ' + buffer ' + kr(p.buffer) : 'its bills')]);
-    if (p.save > 0) moves.push(['save', 'Move to savings', p.save, 'your savings goals']);
-    if (p.yearly > 0) moves.push(['year', 'Put aside for yearly costs', p.yearly, 'insurance and the like – a buffer or savings account']);
-    var cardBill = p.by.credit + (p.daily === 'credit' ? p.perAcct.credit + p.perAcct.hand : p.perAcct.credit);
+    var openN = p.open.length, payday = p.per.byPayday && p.per.days - p.per.daysLeft < 7;
+    var cards = B.cardBills(d);
     box.innerHTML =
-      '<div class="pf-in"><span><i class="bi bi-' + ACCT.salary.icon + '"></i> ' + esc(acctName(d, 'salary')) + ' gets</span><b>' + money(inc) + '</b></div>' +
+      '<div class="pf-in"><span><i class="bi bi-' + p.main.icon + '"></i> ' + esc(p.main.label) + ' gets</span><b>' + money(inc) + '</b></div>' +
       '<div class="stack pf-bar" role="img" aria-label="Where the salary goes">' + segs.map(function (s) { return '<span style="width:' + (s[1] / tot * 100).toFixed(2) + '%;background:' + s[2] + '"></span>'; }).join('') + '</div>' +
       '<ul class="legend pf-leg">' + segs.map(function (s) { return '<li><i class="dot" style="background:' + s[2] + '"></i>' + esc(s[0]) + '<b>' + money(s[1]) + '</b></li>'; }).join('') + '</ul>' +
-      (moves.length ? '<p class="pf-h">On payday</p><ul class="pf-moves">' + moves.map(function (m) {
-        return '<li><i class="bi bi-arrow-right-circle"></i><span>' + esc(m[1]) + '<small>' + esc(m[3]) + '</small></span><b>' + money(m[2]) + '</b></li>';
+      (p.moves.length ? '<p class="pf-h">Payday checklist' + (openN ? ' · <span class="' + (payday ? 'pf-due' : '') + '">' + openN + ' to do</span>' : ' · <span class="pf-ok"><i class="bi bi-check2-all"></i> all done</span>') + '</p><ul class="pf-moves pf-check">' + p.moves.map(function (m) {
+        return '<li class="' + (m.done ? 'done' : '') + '"><button type="button" class="check" data-pfmove="' + esc(m.id) + '" aria-pressed="' + m.done + '" aria-label="' + esc(m.label) + (m.done ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></button><span>' + esc(m.label) + '<small>' + esc(m.sub) + '</small></span><b>' + money(m.amount) + '</b></li>';
       }).join('') + '</ul>' : '') +
+      cards.map(ccLine).join('') +
       '<p class="pf-h">This period · ' + esc(p.per.name) + '</p>' +
       '<ul class="pf-moves pf-spent">' +
-        ['credit', 'card', 'salary', 'hand'].filter(function (k) { return p.perAcct[k] > 0; }).map(function (k) {
-          return '<li><i class="bi bi-' + (ACCT[k] ? ACCT[k].icon : 'pencil') + '"></i><span>' + esc(k === 'hand' ? 'Logged by hand' : acctName(d, k)) + '</span><b>' + money(p.perAcct[k]) + '</b></li>';
+        p.list.concat([{ id: 'hand', label: 'Logged by hand', icon: 'pencil' }]).filter(function (a) { return p.perAcct[a.id] > 0; }).map(function (a) {
+          return '<li><i class="bi bi-' + a.icon + '"' + (a.c ? ' style="color:' + a.c + '"' : '') + '></i><span>' + esc(a.label) + '</span><b>' + money(p.perAcct[a.id]) + '</b></li>';
         }).join('') +
-        (cardBill > 0 ? '<li class="pf-note"><i class="bi bi-receipt"></i><span>Next credit card bill, so far<small>card bills ' + esc(kr(p.by.credit)) + ' + everyday on the card</small></span><b>' + money(cardBill) + '</b></li>' : '') +
         '<li class="pf-left' + (p.left < 0 ? ' neg' : '') + '"><i class="bi bi-wallet2"></i><span>' + (p.left < 0 ? 'Over budget' : 'Safe to spend') + '<small>' + (p.left > 0 ? esc(kr(p.perDay)) + ' a day for ' + p.per.daysLeft + ' day' + (p.per.daysLeft === 1 ? '' : 's') : 'spend less until payday') + '</small></span><b>' + money(p.left) + '</b></li>' +
       '</ul>';
   }
+  /* one credit card's bill this month: amount, due day, paid in full (and what paying only part would cost) */
+  function ccLine(c) {
+    if (!c.amount && !c.due) return '';
+    var late = c.due && !c.paid && c.days < 0, soon = c.due && !c.paid && c.days >= 0 && c.days <= 5;
+    var when = !c.due ? '<button type="button" class="text-btn" data-ftab-go="plan" data-fp-to="accounts">Set the due day</button>' :
+      c.paid ? 'Paid in full' : late ? '<span class="late">' + (-c.days) + ' day' + (c.days === -1 ? '' : 's') + ' overdue</span>' : c.days === 0 ? '<span class="soon">Due today</span>' : 'Due ' + c.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' · in ' + c.days + ' day' + (c.days === 1 ? '' : 's');
+    return '<div class="pf-cc' + (c.paid ? ' paid' : late ? ' late' : soon ? ' soon' : '') + '"><button type="button" class="check" data-pfcc="' + esc(c.acct.id) + '" aria-pressed="' + c.paid + '" aria-label="' + esc(c.acct.label) + (c.paid ? ' – paid in full' : ' – mark as paid in full') + '"><i class="bi bi-check-lg"></i></button>' +
+      '<span><b>' + esc(c.acct.label) + ' bill</b><small>' + when + (c.known ? '' : ' · import last month’s card file for the exact amount') + '</small></span>' + money(c.amount) + '</div>' +
+      (!c.paid && c.amount > 0 ? '<p class="pf-warn"><i class="bi bi-exclamation-diamond"></i> Pay the <b>whole</b> bill – card interest is often 20–25 % a year, about ' + money(c.interest) + ' a month on this amount.</p>' : '');
+  }
+  document.addEventListener('click', function (e) {
+    var mv = e.target.closest('[data-pfmove]'), cc = e.target.closest('[data-pfcc]'); if (!mv && !cc) return;
+    var d = data(); if (!d) return;
+    if (mv) {
+      var k = B.period(d).startKey, all = d.budget.payDone = d.budget.payDone || {}, m = all[k] = all[k] || {};
+      if (m[mv.dataset.pfmove]) delete m[mv.dataset.pfmove]; else m[mv.dataset.pfmove] = true;
+      Object.keys(all).sort().slice(0, -6).forEach(function (x) { delete all[x]; });        // keep the last six periods
+    } else {
+      var now = new Date(), key = cc.dataset.pfcc + ':' + now.getFullYear() + '-' + pad(now.getMonth() + 1), pd = d.budget.ccPaid = d.budget.ccPaid || {};
+      if (pd[key]) delete pd[key]; else pd[key] = true;
+      Object.keys(pd).sort(function (a, b) { return a.slice(-7) < b.slice(-7) ? -1 : 1; }).slice(0, -24).forEach(function (x) { delete pd[x]; });
+    }
+    save(d);
+  });
 
   /* ================= Accounts & fixed costs (Plan) ================= */
+  var acctAdding = false;
   function renderAcct(d) {
     var box = $('fpAcct'); if (!box) return;
     if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;   // don't redraw under your fingers
-    var a = d.budget.accts || {}, fixed = d.budget.fixed;
-    var opt = function (sel) { return Object.keys(ACCT).map(function (k) { return '<option value="' + k + '"' + (sel === k ? ' selected' : '') + '>' + esc(acctName(d, k)) + '</option>'; }).join(''); };
-    var groups = Object.keys(ACCT).map(function (k) {
-      var rows = fixed.filter(function (f) { return f.src !== 'save' && acctOf(f) === k; });
-      return '<div class="pa-grp"><p class="pa-h"><i class="bi bi-' + ACCT[k].icon + '" style="color:' + ACCT[k].c + '"></i> ' + esc(acctName(d, k)) + '<b>' + money(sum(rows)) + '</b></p>' +
+    var A = window.Accts, list = A.list(d), fixed = d.budget.fixed;
+    var opt = function (sel, filter) { return list.filter(filter || function () { return true; }).map(function (a) { return '<option value="' + a.id + '"' + (sel === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join(''); };
+    var dayOpts = function (v) { var o = '<option value="">Due day?</option>'; for (var i = 1; i <= 31; i++) o += '<option value="' + i + '"' + (+v === i ? ' selected' : '') + '>Due the ' + i + '.</option>'; return o; };
+    var p = plan(d);
+    var groups = list.map(function (a) {
+      var rows = fixed.filter(function (f) { return f.src !== 'save' && f.src !== 'year' && (list.some(function (x) { return x.id === f.acct; }) ? f.acct : p.main.id) === a.id; });
+      return '<div class="pa-grp"><p class="pa-h"><i class="bi bi-' + a.icon + '" style="color:' + a.c + '"></i> ' + esc(a.label) + '<b>' + money(sum(rows)) + '</b></p>' +
         (rows.length ? '<ul class="pa-list">' + rows.map(function (f) {
           return '<li><span>' + esc(f.name) + (f.day ? '<small>the ' + esc(f.day) + '.</small>' : '') + '</span>' + money(f.amount) +
-            '<select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(k) + '</select></li>';
-        }).join('') + '</ul>' : '<p class="muted pa-none">Nothing paid from here</p>') + '</div>';
+            '<select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings'; }) + '</select></li>';
+        }).join('') + '</ul>' : '<p class="muted pa-none">' + (a.kind === 'savings' ? 'Savings and yearly costs can go here (below)' : 'Nothing paid from here') + '</p>') + '</div>';
     }).join('');
+    var row = function (a) {
+      var k = A.KINDS[a.kind];
+      return '<div class="pa-acct" data-paid="' + esc(a.id) + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' +
+        '<input data-paname="' + esc(a.id) + '" value="' + esc(a.name) + '" placeholder="' + esc(a.extra ? k.name : a.kind === 'salary' ? 'e.g. DNB brukskonto' : a.kind === 'credit' ? 'e.g. Trumf Visa' : 'e.g. Regningskonto') + '" aria-label="Name of ' + esc(a.label) + '" autocomplete="off">' +
+        (a.kind === 'credit' ? '<select data-padue="' + esc(a.id) + '" aria-label="Bill due day">' + dayOpts(a.due) + '</select>' :
+          a.kind === 'card' || a.kind === 'savings' ? '<input data-pabuf="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.buffer || '') + '" placeholder="+ kr/payday" aria-label="Extra to ' + esc(a.label) + ' each payday" autocomplete="off">' : '<span class="muted pa-kind">' + k.name + '</span>') +
+        (a.extra ? '<button type="button" class="icon-btn sm" data-padel="' + esc(a.id) + '" aria-label="Remove ' + esc(a.label) + '"><i class="bi bi-x-lg"></i></button>' : '<span></span>') + '</div>';
+    };
     box.innerHTML =
-      '<p class="muted pa-p">Your salary lands on the salary account and is spread out from there. Say which account pays each fixed cost – the payday plan then tells you what to move where.</p>' +
-      '<div class="pa-names">' + Object.keys(ACCT).map(function (k) {
-        return '<label><span><i class="bi bi-' + ACCT[k].icon + '" style="color:' + ACCT[k].c + '"></i> ' + ACCT[k].name + '</span><input data-paname="' + k + '" value="' + esc(a[k] || '') + '" placeholder="Name, e.g. ' + (k === 'salary' ? 'DNB brukskonto' : k === 'credit' ? 'Trumf Visa' : 'Regningskonto') + '" autocomplete="off"></label>';
-      }).join('') +
-        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(d.budget.daily || 'credit') + '</select></label>' +
-        '<label><span><i class="bi bi-plus-slash-minus"></i> Extra to the card account each payday</span><input data-pabuf inputmode="decimal" value="' + esc(d.budget.cardBuffer || '') + '" placeholder="kr, optional" autocomplete="off"></label>' +
+      '<p class="muted pa-p">Your salary lands on the salary account and is spread out from there. Name your accounts, say which one pays each fixed cost – the payday plan then tells you what to move where. Credit cards: the day the bill is due. Other accounts: an extra amount to move each payday (optional).</p>' +
+      '<div class="pa-accts">' + list.map(row).join('') + '</div>' +
+      (acctAdding ? '<form class="pa-add" id="paAdd"><input name="n" placeholder="Name, e.g. Felleskonto" required autocomplete="off"><select name="k" aria-label="Type">' +
+          Object.keys(A.KINDS).filter(function (k) { return k !== 'salary'; }).map(function (k) { return '<option value="' + k + '">' + A.KINDS[k].name + '</option>'; }).join('') + '</select>' +
+          '<button type="button" class="text-btn" data-paaddx>Cancel</button><button type="submit" class="pill-btn">Add</button></form>'
+        : '<button type="button" class="text-btn pa-more" data-paaddgo><i class="bi bi-plus-lg"></i> Add an account</button>') +
+      '<div class="pa-names">' +
+        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings'; }) + '</select></label>' +
+        '<label><span><i class="bi bi-piggy-bank"></i> Savings and yearly costs go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
       '</div>' + groups +
-      '<p class="muted pa-p">' + (fixed.some(function (f) { return f.src === 'save'; }) ? 'Savings goals set aside in the budget are moved from the salary account. ' : '') + 'Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>';
+      '<p class="muted pa-p">Add or change fixed costs under Overview → Monthly budget → Edit. Loans come in by themselves from Loans below.</p>';
+  }
+  function setAcct(d, id, patch) {
+    var list = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+    var a = list.filter(function (x) { return x.id === id; })[0];
+    if (!a) { a = { id: id, kind: id }; list.push(a); }
+    Object.assign(a, patch);
   }
   document.addEventListener('change', function (e) {
-    var t = e.target; if (!t.closest || !t.closest('#fpAcct')) return;
+    var t = e.target; if (!t.closest || !t.closest('#fpAcct') || t.closest('#paAdd')) return;
     var d = data(); if (!d) return;
     if (t.dataset.pafrom) {
       var id = t.dataset.pafrom, f = d.budget.fixed.filter(function (x) { return String(x.id) === id; })[0];
       if (f && f.src === 'loan') { (d.accounts || []).forEach(function (a) { if ('loan-' + a.id === id) a.from = t.value; }); }
       if (f) f.acct = t.value;
-    } else if (t.dataset.paname) { d.budget.accts = d.budget.accts || {}; d.budget.accts[t.dataset.paname] = t.value.trim().slice(0, 40); }
+    } else if (t.dataset.paname) { var nm = t.value.trim().slice(0, 40); setAcct(d, t.dataset.paname, { name: nm }); if (['salary', 'credit', 'card'].indexOf(t.dataset.paname) > -1) { d.budget.accts = d.budget.accts || {}; d.budget.accts[t.dataset.paname] = nm; } }
+    else if (t.dataset.padue) setAcct(d, t.dataset.padue, { due: +t.value || null });
+    else if (t.dataset.pabuf) { var v = Math.max(0, Math.round(num(t.value) || 0)); setAcct(d, t.dataset.pabuf, { buffer: v }); if (t.dataset.pabuf === 'card') d.budget.cardBuffer = v; }
     else if (t.hasAttribute('data-padaily')) d.budget.daily = t.value;
-    else if (t.hasAttribute('data-pabuf')) d.budget.cardBuffer = Math.max(0, Math.round(num(t.value) || 0));
+    else if (t.hasAttribute('data-pasave')) d.budget.saveAcct = t.value || null;
     else return;
     save(d);
     setTimeout(function () { if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#fpAcct')) document.activeElement.blur(); renderAcct(data()); }, 0);
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#fpAcct')) return;
+    var d = data(); if (!d) return;
+    if (e.target.closest('[data-paaddgo]')) { acctAdding = true; renderAcct(d); var i = document.querySelector('#paAdd input'); if (i) i.focus(); return; }
+    if (e.target.closest('[data-paaddx]')) { acctAdding = false; renderAcct(d); return; }
+    var del = e.target.closest('[data-padel]');
+    if (del) {
+      var id = del.dataset.padel, a = window.Accts.get(d, id); if (!a) return;
+      if (!confirm('Remove ' + a.label + '? Fixed costs paid from it move to the salary account. Expenses imported from it keep their amounts.')) return;
+      d.budget.acctList = (d.budget.acctList || []).filter(function (x) { return x.id !== id; });
+      d.budget.fixed.forEach(function (f) { if (f.acct === id) f.acct = 'salary'; });
+      (d.accounts || []).forEach(function (l) { if (l.from === id) l.from = 'salary'; });
+      if (d.budget.saveAcct === id) d.budget.saveAcct = null;
+      if (d.budget.daily === id) d.budget.daily = 'credit';
+      save(d);
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest && e.target.closest('#paAdd'); if (!f) return;
+    e.preventDefault();
+    var d = data(); if (!d) return;
+    var name = f.n.value.trim().slice(0, 40); if (!name) { f.n.focus(); return; }
+    d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+    d.budget.acctList.push({ id: 'ac' + Date.now().toString(36), kind: f.k.value, name: name });
+    acctAdding = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    save(d);
   });
 
   /* ================= Loans (Plan) ================= */
@@ -406,14 +456,90 @@
     syncYearly(d); save(d);
   });
 
+  /* ================= Buffer (Plan) =================
+     An emergency fund: N months (d.budget.bufMonths, default 3) of what a month costs you – fixed costs
+     (not savings) plus what you usually spend. It's a savings goal marked buffer; its target follows the
+     maths (g.autoT) until you change the target yourself. */
+  function monthNeed(d) {
+    var fixed = sum(d.budget.fixed.filter(function (f) { return f.src !== 'save'; }));
+    var u = usual(d), every = sum(Object.keys(u), function (k) { return u[k]; });
+    if (!every) { var lim = d.budget.limits || {}; every = sum(Object.keys(lim), function (k) { return lim[k]; }); }
+    return { fixed: fixed, every: every, total: fixed + every };
+  }
+  function renderBuf(d) {
+    var box = $('fpBuf'); if (!box) return;
+    var n = monthNeed(d), months = +d.budget.bufMonths || 3, target = Math.ceil(n.total * months / 1000) * 1000;
+    var g = (d.savings || []).filter(function (x) { return x.buffer; })[0];
+    $('fpBufNote').textContent = '';
+    var seg = '<div class="seg bf-seg" role="group" aria-label="How many months">' + [1, 2, 3, 4, 6].map(function (m) { return '<button type="button" data-bfm="' + m + '" aria-pressed="' + (m === months) + '">' + m + ' mo</button>'; }).join('') + '</div>';
+    if (!(n.total > 0)) { box.innerHTML = '<p class="empty">Add your fixed costs (and some spending) first – then the buffer you need is worked out here.</p>'; return; }
+    var need = '<p class="muted bf-p">A month costs you about <b>' + money(n.total) + '</b> – ' + money(n.fixed) + ' fixed + ' + money(n.every) + ' ' + (Object.keys(usual(d)).length ? 'usual spending' : 'spending limits') + '.</p>';
+    if (!g) {
+      box.innerHTML = need + seg + '<div class="bf-goal"><span>Your buffer for ' + months + ' month' + (months === 1 ? '' : 's') + '</span><b>' + money(target) + '</b></div>' +
+        '<p class="muted bf-p">Money for the unexpected – losing the job, the car, the dentist – so it never goes on the credit card. 3 months is the usual advice.</p>' +
+        '<div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-bfmake><i class="bi bi-plus-lg"></i> Make it a savings goal</button></div>';
+      return;
+    }
+    if (g.autoT !== false && Math.abs((+g.target || 0) - target) > 500) { g.target = target; window.Vault.save(d); setTimeout(function () { window.dispatchEvent(new Event('fin:change')); }, 0); }
+    var cov = n.total ? (+g.saved || 0) / n.total : 0, pct = Math.min(1, cov / months);
+    var fc = B.saveForecast && +g.monthly > 0 ? B.saveForecast(g) : null, mo = B.saveMonthly ? B.saveMonthly(g) : 0;
+    box.innerHTML = need + seg +
+      '<div class="bf-big"><b>' + (cov >= 10 ? Math.round(cov) : cov.toFixed(1).replace('.', ',')) + '</b><span>month' + (cov === 1 ? '' : 's') + ' covered<small>' + money(g.saved) + ' of ' + money(g.target) + '</small></span></div>' +
+      '<div class="bf-bar"><i style="width:' + (pct * 100).toFixed(1) + '%"></i>' + Array.apply(null, Array(months - 1)).map(function (x, i) { return '<b style="left:' + ((i + 1) / months * 100).toFixed(1) + '%"></b>'; }).join('') + '</div>' +
+      '<p class="muted bf-p">' + (pct >= 1 ? '<i class="bi bi-check2-circle" style="color:var(--accent)"></i> Full – anything more can go to other goals.' :
+        mo ? 'Saving ' + money(mo) + ' a month' + (fc && fc.label ? ' gets you there ' + esc(fc.label) : g.by ? ' gets you there by ' + esc(new Date(g.by + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + '.' :
+        'Give the goal an amount a month (Savings goals → Buffer) to see when it’s full.') +
+        (g.autoT === false ? ' · Your own target – <button type="button" class="text-btn" data-bfauto>follow the maths</button>' : '') + '</p>';
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#fpBuf')) return;
+    var d = data(); if (!d) return;
+    var m = e.target.closest('[data-bfm]');
+    if (m) { d.budget.bufMonths = +m.dataset.bfm; save(d); return; }
+    if (e.target.closest('[data-bfauto]')) { (d.savings || []).forEach(function (g) { if (g.buffer) g.autoT = true; }); save(d); return; }
+    if (e.target.closest('[data-bfmake]')) {
+      var n = monthNeed(d), months = +d.budget.bufMonths || 3;
+      d.savings = d.savings || [];
+      var nid = Date.now().toString(36) + 'b';
+      d.savings.unshift({ id: nid, name: 'Buffer', saved: 0, target: Math.ceil(n.total * months / 1000) * 1000, buffer: true, autoT: true, monthly: 0, aside: false });
+      save(d);
+      var tries = 0;
+      (function openIt() {             // open it (once Savings goals has drawn it) to set how much a month
+        var li = document.querySelector('#svList .goal[data-id="' + nid + '"]');
+        if (li) { li.click(); var f = $('svForm'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); var m = $('svMonthly'); if (m) setTimeout(function () { m.focus(); }, 300); }
+        else if (tries++ < 20) setTimeout(openIt, 60);
+      })();
+    }
+  });
+  /* changing the buffer goal's target by hand stops it following the maths */
+  document.addEventListener('submit', function (e) {
+    if (!e.target.closest || !e.target.closest('#svForm')) return;
+    var d0 = data(), before = {}; if (!d0) return;
+    (d0.savings || []).forEach(function (g) { if (g.buffer) before[g.id] = +g.target; });
+    setTimeout(function () {
+      var d = data(); if (!d) return; var ch = false;
+      (d.savings || []).forEach(function (g) { if (g.buffer && before[g.id] != null && +g.target !== before[g.id] && g.autoT !== false) { g.autoT = false; ch = true; } });
+      if (ch) save(d); else render();
+    }, 0);
+  }, true);
+  /* savings goals and net worth save without telling anyone – redraw what depends on them */
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#svList [data-sv], #svDelete, #nwDelete')) setTimeout(render, 0); });
+  document.addEventListener('submit', function (e) { if (e.target.closest && e.target.closest('#nwForm')) setTimeout(render, 50); });
+  /* the loan form's "Paid from" lists your accounts */
+  function fillFrom(d) {
+    var s = $('nwFrom'); if (!s) return;
+    var v = s.value, html = window.Accts.list(d).filter(function (a) { return a.kind !== 'savings'; }).map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.label) + '</option>'; }).join('');
+    if (s._h !== html) { s.innerHTML = html; s._h = html; s.value = v || 'salary'; }
+  }
+
   /* ================= drawing ================= */
   function render() {
     var d = data(); if (!d) return;
-    try { originals(d); if (syncYearly(d)) { save(d); return; } renderFlow(d); renderLimits(d); renderAcct(d); renderYearly(d); renderLoans(d); renderYear(d); } catch (e) { console.error(e); }
+    try { originals(d); if (syncYearly(d)) { save(d); return; } fillFrom(d); renderFlow(d); renderLimits(d); renderAcct(d); renderBuf(d); renderYearly(d); renderLoans(d); renderYear(d); } catch (e) { console.error(e); }
   }
   window.addEventListener('fin:change', function () { setTimeout(render, 0); });
   window.addEventListener('features:change', render);
   window.Vault.onUnlock(function () { render(); fromHash(); });
-  window.Vault.onLock(function () { ['fpFlow', 'fpLimits', 'fpAcct', 'fpYearly', 'fpLoans', 'fpYearAhead'].forEach(function (id) { if ($(id)) $(id).innerHTML = ''; }); });
+  window.Vault.onLock(function () { ['fpFlow', 'fpLimits', 'fpAcct', 'fpBuf', 'fpYearly', 'fpLoans', 'fpYearAhead'].forEach(function (id) { if ($(id)) $(id).innerHTML = ''; }); });
   window.FinTabs = { show: show, current: current, go: goCard, plan: function () { var d = data(); return d ? plan(d) : null; } };
 })();

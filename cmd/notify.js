@@ -85,7 +85,24 @@
     });
     /* payday */
     if (p.k.pay && Bu && on('finance', true)) {
-      try { Bu.paydays(d, new Date(), new Date(end)).forEach(function (x) { var k = dkey(x.date); add('pay:' + k, at(k, 8), x.title + ' today', full && x.net ? 'About ' + kr(x.net) : '', '/cmd/#fin'); }); } catch (e) {}
+      try {
+        /* the payday checklist: what to move where (the plan as it stands now) */
+        var mv = Bu.payPlan ? Bu.payPlan(d).moves : [];
+        var mvTxt = mv.length ? (full ? mv.slice(0, 3).map(function (m) { return kr(m.amount) + ' → ' + m.label.replace(/^Move to |^Put aside for /, ''); }).join(', ') : mv.length + ' move' + (mv.length === 1 ? '' : 's') + ' on your payday checklist') : '';
+        Bu.paydays(d, new Date(), new Date(end)).forEach(function (x) { var k = dkey(x.date); add('pay:' + k, at(k, 8), x.title + ' today', (full && x.net ? 'About ' + kr(x.net) + (mvTxt ? ' · ' : '') : '') + mvTxt, mv.length ? '/cmd/finance/#c=flow' : '/cmd/#fin'); });
+      } catch (e) {}
+    }
+    /* credit card bills: the day before and on the due day, until marked paid in full */
+    if (p.k.bills && Bu && Bu.cardBills && on('finance', true)) {
+      try {
+        Bu.cardBills(d).forEach(function (c) {
+          if (!c.due || c.paid || c.days < 0 || c.days > 8) return;
+          var k = dkey(c.date), pre = new Date(c.date); pre.setDate(pre.getDate() - 1);
+          var body = full ? (c.amount ? 'About ' + kr(c.amount) + ' – ' : '') + 'pay the whole bill' : 'Pay the whole bill to avoid interest';
+          if (c.days >= 1) add('cc1:' + c.acct.id + ':' + k, at(dkey(pre), 18), full ? c.acct.label + ' bill due tomorrow' : 'A card bill is due tomorrow', body, '/cmd/finance/#c=flow');
+          add('cc0:' + c.acct.id + ':' + k, at(k, 9), full ? c.acct.label + ' bill due today' : 'A card bill is due today', body, '/cmd/finance/#c=flow');
+        });
+      } catch (e) {}
     }
     /* trips: the evening before */
     if (p.k.trips && Fl && on('travel', true)) {
