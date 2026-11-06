@@ -200,23 +200,30 @@
     },
     detail: function (x) {
       return '<div class="inv-ph">' + ['photo', 'receipt'].map(function (k) {
-        return '<div class="inv-slot">' + (x[k] ? '<img data-invimg="' + esc(x[k]) + '" alt="">' : '<span class="inv-none"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i></span>') +
+        return '<div class="inv-slot">' + (x[k] && k === 'receipt' && x.receiptPdf ? '<a class="inv-pdf" target="_blank" rel="noopener" data-invpdfopen="' + esc(x[k]) + '"><i class="bi bi-file-earmark-pdf"></i><span>Open the PDF receipt</span></a>' : x[k] ? '<img data-invimg="' + esc(x[k]) + '" alt="">' : '<span class="inv-none"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i></span>') +
           '<label class="text-btn"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i> ' + (x[k] ? (k === 'photo' ? 'New photo' : 'New receipt') : (k === 'photo' ? 'Add photo' : 'Add receipt')) +
-          '<input type="file" accept="image/*" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label></div>';
+          '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label></div>';
       }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '');
     },
-    afterRender: function (el) { el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
-    onClick: function (e) { if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register(); }
+    afterRender: function (el) {
+      el.querySelectorAll('a[data-invpdfopen]').forEach(function (a) { getPh(a.dataset.invpdfopen).then(function (b) { if (b) a.href = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'application/pdf' })); else a.querySelector('span').textContent = 'PDF receipt saved on another device'; }); });
+      el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
+    onClick: function (e) {
+      if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register(); }
   }) : null;
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-invfile]'); if (!i || !i.files.length) return;
     var q = i.dataset.invfile.split('|'), it = Fe.list('hinv').filter(function (x) { return x.id === q[0]; })[0]; if (!it) return;
     var pid = 'inv-' + q[1] + '-' + q[0] + '-' + Date.now().toString(36);
-    shrink(i.files[0]).then(function (b) { return putPh(pid, b); }).then(function () {
+    var file = i.files[0], isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    /* a PDF receipt (most web shops send one) is kept as it is; pictures are made smaller */
+    if (isPdf && file.size > 15e6) { toast('<i class="bi bi-exclamation-triangle"></i> That PDF is over 15 MB – try a smaller one'); i.value = ''; return; }
+    (isPdf ? Promise.resolve(file) : shrink(file)).then(function (b) { return putPh(pid, b); }).then(function () {
       if (it[q[1]]) delPh(it[q[1]]);
-      var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) x[q[1]] = pid; }); Fe.saveTools(t);
-      toast('<i class="bi bi-check2"></i> ' + (q[1] === 'photo' ? 'Photo' : 'Receipt') + ' saved on this device');
-    }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> Couldn’t read that picture'); });
+      var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) { x[q[1]] = pid; if (q[1] === 'receipt') { if (isPdf) x.receiptPdf = 1; else delete x.receiptPdf; } } }); Fe.saveTools(t);
+      toast('<i class="bi bi-check2"></i> ' + (q[1] === 'photo' ? 'Photo' : isPdf ? 'PDF receipt' : 'Receipt') + ' saved on this device');
+    }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> Couldn’t read that file – a photo (JPG, PNG, HEIC) or a PDF works'); });
+    i.value = '';
   });
   /* the list for the insurance company: A4, with photos – Save as PDF from the print sheet */
   /* the household register (samboerkontrakt, Appendix B): each item, its price and who owns it, to sign */
@@ -279,7 +286,7 @@
           return '<h2>' + esc(r) + ' <small class="il-sum">' + esc(kr(rl.reduce(function (a, x) { return a + (+x.price || 0); }, 0))) + '</small></h2>' + rl.map(function (x) {
             return '<div class="rp-f il-f">' + (withPh && x.photo ? '<img class="il-ph" data-ilimg="' + esc(x.photo) + '" alt="">' : '<span class="il-ph il-noph"></span>') +
               '<div class="rp-ft"><p><b>' + esc(x.name) + '</b>' + (x.brand ? ' – ' + esc(x.brand) : '') + '</p><p class="rp-act">' + esc([cat(x.cat)[1], x.bought ? 'bought ' + fromKey(x.bought).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '', x.serial ? 'serial ' + x.serial : '', x.receipt ? 'receipt saved' : 'no receipt'].filter(Boolean).join(' · ')) + '</p>' + (x.notes ? '<p class="rp-act">' + esc(x.notes) + '</p>' : '') + '</div>' +
-              '<b class="il-price">' + (x.price ? esc(kr(x.price)) : '–') + '</b>' + (withPh && x.receipt ? '<img class="il-rc" data-ilimg="' + esc(x.receipt) + '" alt="">' : '') + '</div>';
+              '<b class="il-price">' + (x.price ? esc(kr(x.price)) : '–') + '</b>' + (withPh && x.receipt && !x.receiptPdf ? '<img class="il-rc" data-ilimg="' + esc(x.receipt) + '" alt="">' : withPh && x.receiptPdf ? '<span class="il-rc il-rcpdf"><i class="bi bi-file-earmark-pdf"></i> PDF receipt</span>' : '') + '</div>';
           }).join('');
         }).join('') + '<footer class="rp-foot">Home inventory · ' + esc(me.name || '') + ' · ' + esc(today()) + '</footer>';
       doc.querySelectorAll('img[data-ilimg]').forEach(function (im) { getPh(im.dataset.ilimg).then(function (b) { if (!b) return im.remove(); var fr = new FileReader(); fr.onload = function () { im.src = fr.result; }; fr.readAsDataURL(b); }); });

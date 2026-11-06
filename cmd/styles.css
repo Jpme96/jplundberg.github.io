@@ -4399,3 +4399,6 @@ html:not(.feat-off-house) #fp .fp-houseable { display: none !important; }   /* p
 .pt-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 .pt-tabs { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
 @media (min-width: 640px) { .pt-tabs { grid-template-columns: repeat(var(--n, 4), auto); } }
+.inv-pdf { text-decoration: none; display: grid; place-items: center; gap: 6px; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.inv-pdf .bi { font-size: 30px; color: #e66767; }
+.il-rcpdf { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #555; }
