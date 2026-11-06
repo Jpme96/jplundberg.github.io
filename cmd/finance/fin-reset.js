@@ -76,7 +76,7 @@
     if (P.balances) { (b.acctList || []).forEach(function (a) { a.bal = null; a.balAt = null; a.balSrc = null; }); done.push('balances'); }
     if (P.setup) {
       b.acctList = []; b.accts = {}; b.income = []; b.fixed = (b.fixed || []).filter(function (f) { return f.src === 'sub' || f.src === 'save' || f.src === 'loan'; });
-      ['limits', 'yearly', 'cardBuffer', 'daily', 'saveAcct', 'payDone', 'ccPaid', 'ccDue', 'bufMonths', 'taxBack', 'payslips', 'period'].forEach(function (k) { delete b[k]; });
+      ['later', 'ended', 'limits', 'yearly', 'cardBuffer', 'daily', 'saveAcct', 'payDone', 'ccPaid', 'ccDue', 'bufMonths', 'taxBack', 'payslips', 'period'].forEach(function (k) { delete b[k]; });
       d.paid = {};
       done.push('the setup');
     }

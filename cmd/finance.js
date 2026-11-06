@@ -657,6 +657,8 @@
       (am2.missing.length ? ' · no balance yet: ' + esc(am2.missing.map(function (a) { return a.label; }).join(', ')) : '') + ' · on Now</span></span>' + money(am2.worth, am2.worth < 0 ? 'neg' : '') + '</li>' : '';
     /* a mortgage without the home's value makes net worth look far too low */
     var noHome = D.accounts.filter(function (a) { return a.kind === 'debt' && (a.inner || a.share) && !a.plan && !(a.home && +a.home.value > 0) && (+a.balance || 0) > 500000; })[0];
+    var lowHome = D.accounts.filter(function (a) { return a.kind === 'debt' && a.home && +a.home.value > 0 && +a.home.value < (+a.balance || 0) / 2; })[0];
+    if (lowHome) bankRows += '<li class="acc acc-hint" data-id="' + lowHome.id + '"><i class="bi bi-exclamation-triangle acc-ico"></i><span class="acc-name">Check the home’s value<span class="muted">' + esc(kr(lowHome.home.value)) + ' is less than half of “' + esc(lowHome.name) + '” (' + esc(kr(lowHome.balance)) + ') – is a zero missing?</span></span><i class="bi bi-chevron-right"></i></li>';
     if (noHome) bankRows += '<li class="acc acc-hint" data-id="' + noHome.id + '"><i class="bi bi-house-add acc-ico"></i><span class="acc-name">Add the home’s value<span class="muted">Net worth counts your part of “' + esc(noHome.name) + '” but not your part of the home – tap to add it</span></span><i class="bi bi-chevron-right"></i></li>';
     $('nwList').innerHTML = bankRows + D.accounts.slice().sort(function (a, b) {
       return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance;
@@ -802,6 +804,8 @@
       } else { rec.share = null; rec.with = null; }
       /* the home the loan is for: your part of its value counts in net worth (shared loans) */
       var hv = $('nwShared').checked ? num($('nwHome').value) : NaN;
+      /* a home worth less than half its loan is almost always a missing zero */
+      if (hv > 0 && hv < rec.balance / 2 && !confirm('The home value (' + kr(hv) + ') is less than half the loan (' + kr(rec.balance) + '). Is a zero missing?\n\nOK = save it anyway · Cancel = fix it')) { $('nwHome').focus(); $('nwHome').select(); return; }
       if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value), oh = od && od.home; rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: oh && +oh.value === Math.round(hv) ? oh.at : today() }; }
     }
     if (editingAcc) {

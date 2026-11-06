@@ -104,8 +104,9 @@
     /* bills: overdue ones this month first, then each due day in the window */
     for (var mo = -1; mo <= 1; mo++) {
       var base = new Date(t0.getFullYear(), t0.getMonth() + mo, 1), k = ymk(base), dim = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate(), paid = (d.paid && d.paid[k]) || [];
-      d.budget.fixed.forEach(function (f) {
+      d.budget.fixed.concat(d.budget.later || []).forEach(function (f) {
         if (!f.day || f.src === 'save' || f.src === 'year') return;
+        if (B.activeIn && !B.activeIn(f, k)) return;            /* a bill that hasn't started yet, or has ended, that month */
         var dt = new Date(base.getFullYear(), base.getMonth(), Math.min(+f.day, dim));
         if (f.start && ymk(dt) <= String(f.start).slice(0, 7)) return;     /* a loan pays from the month after its start/balance date */
         var isPaid = paid.indexOf(f.id) > -1, auto = f.src === 'sub' && dt <= t0;

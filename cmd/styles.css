@@ -4349,3 +4349,10 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .acc-hint .acc-ico { color: var(--accent); }
 .card-folded .card-head > .icon-btn:not(.fold-hint) { display: none; }
 .card-folded .card-head .mi:not(.fold-hint), .card-folded .card-head .head-actions { display: none !important; }
+.fb-when input[type="month"] { width: 100%; }
+.pa-ended { margin: 4px 0 8px; font-size: 13px; color: var(--muted); }
+.pa-ended summary { cursor: pointer; padding: 6px 0; }
+.ah-warn { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, #c98500 55%, var(--line)); background: color-mix(in srgb, #c98500 10%, transparent); font-size: 13.5px; }
+.ah-warn > .bi { color: #c98500; margin-top: 2px; }
+.ah-warn > span { flex: 1; min-width: 200px; }
+.ah-warn .text-btn { margin-left: 24px; font-size: 13px; }

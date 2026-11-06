@@ -240,7 +240,7 @@
       return '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' + esc(a.label) +
         '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
         '<ul class="pa-list">' + g.rows.map(function (f) {
-          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
+          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.until ? ' · until ' + esc(new Date(+f.until.slice(0, 4), +f.until.slice(5, 7) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
           var go = f.src === 'loan' ? 'change the loan' : f.src === 'sub' ? 'change the subscription' : 'open where it comes from';
           return '<li>' + (f.src ? '<button type="button" class="pa-open" data-pasrc="' + esc(f.src + '|' + f.id) + '" aria-label="' + esc(f.name) + ' – ' + go + '"><span>' + esc(f.name) + '<small>' + info + ' · <i class="bi bi-link-45deg"></i> ' + go + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
@@ -252,12 +252,22 @@
       (groups || '<p class="empty">No fixed costs yet.</p>') +
       (saves.length ? '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#22b35e"><i class="bi bi-piggy-bank"></i></span>Savings<b>' + money(sum(saves)) + '</b></p><ul class="pa-list pa-ro">' + saves.map(function (f) {
           var to = A.get(d, f.to) || p.saveTo; return '<li><span>' + esc(f.name) + '<small>' + (to ? '→ ' + esc(to.label) : 'no account chosen') + '</small></span>' + money(f.amount) + '</li>'; }).join('') + '</ul></div>' : '') +
+      laterEnded(d) +
       (empty.length ? '<p class="muted pa-none">No bills from ' + esc(empty.map(function (g) { return g.a.label; }).join(', ')) + '</p>' : '') +
       '<div class="pa-set">' +
         '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label>' +
         '<label><span><i class="bi bi-piggy-bank"></i> Savings go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
       '</div>' +
       '<div class="pa-reset"><button type="button" class="text-btn danger" data-frreset><i class="bi bi-arrow-counterclockwise"></i> Reset finances …</button></div>';
+  }
+  /* bills that start later or have ended (their first / last month) */
+  function laterEnded(d) {
+    var mn = function (k) { return new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+    var row = function (f, t) { return '<li><button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + t + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' + money(f.amount) + '</li>'; };
+    var later = d.budget.later || [], ended = (d.budget.ended || []).slice(-5).reverse(), out = '';
+    if (later.length) out += '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#7a8794"><i class="bi bi-calendar-plus"></i></span>Starting later</p><ul class="pa-list">' + later.map(function (f) { return row(f, 'from ' + esc(mn(f.from)) + (f.until ? ' to ' + esc(mn(f.until)) : '')); }).join('') + '</ul></div>';
+    if (ended.length) out += '<details class="pa-ended"><summary>Ended · ' + ended.length + '</summary><ul class="pa-list">' + ended.map(function (f) { return row(f, 'last month ' + esc(mn(f.until))); }).join('') + '</ul></details>';
+    return out;
   }
   function setAcct(d, id, patch) {
     var list = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];

@@ -128,7 +128,25 @@
     a.balance = Math.round(bal); a.asOf = dk(r); a.rate = rate;
     if (n > 0 && n < 1200) a.pay = Math.round(L.payment(bal, rate, n));
   }
-  window.Links = { syncSave: syncSave, syncLoans: syncLoans, syncVary: syncVary, syncRates: syncRates };
+  /* bills with a first / last month: only the ones for this month are in d.budget.fixed */
+  function syncDates() {
+    var d = window.Vault.get(), B = window.Budget; if (!d || !B || !B.activeIn || !d.budget) return;
+    var b = d.budget, k = B.ym(new Date()), fixed = Array.isArray(b.fixed) ? b.fixed : [], later = Array.isArray(b.later) ? b.later : [], ended = Array.isArray(b.ended) ? b.ended : [];
+    var all = fixed.concat(later), keep = [], wait = [], gone = ended.slice(), ch = false;
+    all.forEach(function (f) {
+      if (!f || f.src || (!f.from && !f.until)) { keep.push(f); return; }
+      var where = f.until && f.until < k ? gone : f.from && f.from > k ? wait : keep;
+      where.push(f);
+    });
+    /* an ended bill whose end you moved later comes back */
+    gone = gone.filter(function (f) { if (f && !f.src && (!f.until || f.until >= k)) { (f.from && f.from > k ? wait : keep).push(f); return false; } return true; });
+    if (keep.length !== fixed.length || wait.length !== later.length || gone.length !== ended.length) ch = true;
+    if (!ch) return;
+    b.fixed = keep; b.later = wait; b.ended = gone.slice(-30);
+    window.Vault.save(d);
+    window.dispatchEvent(new Event('fin:change'));
+  }
+  window.Links = { syncSave: syncSave, syncLoans: syncLoans, syncVary: syncVary, syncRates: syncRates, syncDates: syncDates };
 
   /* ---------- trips → places to visit ---------- */
   function near(a, b) {
@@ -227,6 +245,7 @@
     try { syncSave(); } catch (e) { console.error(e); }
     try { syncLoans(); } catch (e) { console.error(e); }
     try { syncVary(); } catch (e) { console.error(e); }
+    try { syncDates(); } catch (e) { console.error(e); }
     try { syncRates(); if (window.Policy && (window.Vault.get().accounts || []).some(function (a) { return a && a.float; })) window.Policy.update(function () { try { syncRates(); } catch (e) {} }); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
@@ -234,6 +253,6 @@
   window.Vault.onUnlock(function () { setTimeout(run, 0); });
   window.addEventListener('tools:change', function () { if (window.Vault.get()) { syncSubs(); syncWorkouts(); } });
   window.addEventListener('features:change', function () { if (window.Vault.get()) run(); });
-  window.addEventListener('fin:change', function () { if (window.Vault.get()) { try { syncVary(); } catch (e) { console.error(e); } } });   /* e.g. a bank import found this month's power bill */
+  window.addEventListener('fin:change', function () { if (window.Vault.get()) { try { syncVary(); syncDates(); } catch (e) { console.error(e); } } });   /* e.g. a bank import found this month's power bill */
   window.addEventListener('travel:change', function () { if (window.Vault.get()) { syncTrips(); syncBucket(); } });
 })();

@@ -347,7 +347,11 @@
     var short = keys.length < range ? '<p class="muted ah-grow"><i class="bi bi-hourglass-split"></i> History builds up by itself – one more day every evening (since ' + esc(new Date(keys[0] + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ').</p>' : '';
     var lastT = (window.Vault.get().health || {}).last;
     var goalCtl = GOAL_DEF[chartM] != null || GOALABLE[chartM] ? (editGoal ? '<span class="ah-goaledit">Goal <input id="ahGoalIn" inputmode="decimal" value="' + esc(goal == null ? '' : goal) + '" aria-label="Goal for ' + esc(LABEL[chartM]) + '">' + ({ weight: ' kg', rhr: ' bpm', hrv: ' ms', sleep: ' h', exercise: ' min', active: ' kcal', stand: ' h', distance: ' km', mindful: ' min', water: ' l', daylight: ' min', flights: ' floors' }[chartM] || '') + ' <button type="button" class="text-btn" data-ahgoalsave>Save</button></span>' : '<button type="button" class="text-btn ah-goalbtn" data-ahgoal><i class="bi bi-flag"></i> Goal ' + esc(fmt(chartM, goal)) + '</button>') : '';
-    box.innerHTML = head + '<div class="ah-tiles' + (editLayout ? ' editing' : '') + '">' + tiles + '</div>' + ctl + bars + dayBox +
+    /* sleep that's far too short on several days: usually the Shortcut only gets part of the night (Limit on in Find Health Samples) */
+    var low = keys.filter(function (k) { var v = D[k].sleep; return v != null && v > 0 && v < 2; });
+    var lowNote = low.length >= 2 ? '<div class="ah-warn"><i class="bi bi-exclamation-triangle"></i><span><b>Sleep under 2 hours on ' + low.length + ' days</b> – the Shortcut probably gets only part of the night. In the Shortcut’s sleep step (Find Health Samples, Type Sleep), switch <b>Limit</b> off.</span>' +
+      '<button type="button" class="text-btn" data-ahlowdel>Remove those ' + low.length + ' nights</button></div>' : '';
+    box.innerHTML = head + lowNote + '<div class="ah-tiles' + (editLayout ? ' editing' : '') + '">' + tiles + '</div>' + ctl + bars + dayBox +
       (ins.length ? '<p class="ah-ins">' + esc(ins.join(' · ')) + '</p>' : '') + short +
       '<div class="ah-foot muted"><span>' + (lastT ? 'Updated ' + esc(new Date(lastT).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '') + '</span>' + goalCtl + '</div>';
     if (editGoal && $('ahGoalIn')) { $('ahGoalIn').focus(); $('ahGoalIn').select(); }
@@ -371,6 +375,13 @@
     var dt = e.target.closest('[data-ahdot]'); if (dt) { stackIdx = +dt.dataset.ahdot; var t = $('ahStack'); if (t) t.scrollTo({ left: stackIdx * t.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); return; }
     var kd = e.target.closest('[data-ahkind]'); if (kd) { var st = readJSON('dash.settings', {}) || {}; st.ahChart = st.ahChart || {}; st.ahChart[chartM] = kd.dataset.ahkind; writeJSON('dash.settings', st); card(); return; }
     if (e.target.closest('[data-ahlayout]')) { editLayout = !editLayout; card(); return; }
+    if (e.target.closest('[data-ahlowdel]')) {
+      var dd = window.Vault.get(); if (!dd || !dd.health || !dd.health.days) return;
+      var gone = {}; Object.keys(dd.health.days).forEach(function (k) { var x = dd.health.days[k]; if (x && x.sleep != null && x.sleep > 0 && x.sleep < 2) { gone[k] = x.sleep; delete x.sleep; } });
+      window.Vault.save(dd); window.dispatchEvent(new Event('health:change')); card();
+      if (window.Quick) window.Quick.toast('<i class="bi bi-moon-stars"></i> ' + Object.keys(gone).length + ' short nights removed', function () { var x = window.Vault.get(); Object.keys(gone).forEach(function (k) { if (x.health.days[k]) x.health.days[k].sleep = gone[k]; }); window.Vault.save(x); window.dispatchEvent(new Event('health:change')); card(); });
+      return;
+    }
     if (e.target.closest('[data-ahlayreset]')) { saveLayout(function (L) { delete L.where; delete L.order; }); card(); return; }
     var wh = e.target.closest('[data-ahwhere]'); if (wh) { saveLayout(function (L) { L.where = L.where || {}; L.where[wh.dataset.ahwhere] = wh.dataset.v; }); card(); return; }
     var mv = e.target.closest('[data-ahmove]'); if (mv) { var D0 = days(), ks = Object.keys(D0), hv = METRICS.filter(function (m) { return ks.some(function (k) { return D0[k][m[0]] != null; }); }), ord = layout(hv).order, ix = ord.indexOf(mv.dataset.ahmove), to = ix + (+mv.dataset.d);

@@ -23,7 +23,7 @@
   document.body.appendChild(bg);
 
   var cur = null;          // { id, vary } while the sheet is open
-  function bill(d, id) { return ((d && d.budget && d.budget.fixed) || []).filter(function (f) { return f.id === id; })[0] || null; }
+  function bill(d, id) { var b = (d && d.budget) || {}; return [].concat(b.fixed || [], b.later || [], b.ended || []).filter(function (f) { return f && f.id === id; })[0] || null; }
 
   function draw() {
     var d = window.Vault.get(), f = d && bill(d, cur.id); if (!f) { close(); return; }
@@ -57,6 +57,8 @@
           chart +
           '<p class="fb-mh">Amount each month</p><ul class="fb-months">' + rows + '</ul>'
         : '<label><span>Kr a month</span><input name="a" inputmode="decimal" autocomplete="off" value="' + esc(String(Math.round(+f.amount || 0))) + '" required></label>') +
+        '<div class="fs-r2 fb-when"><label><span>First month</span><input type="month" name="from" value="' + esc(f.from || '') + '"></label><label><span>Last month</span><input type="month" name="until" value="' + esc(f.until || '') + '"></label></div>' +
+        '<p class="muted fs-hint">Optional. Rent that stops when you move, a contract that ends – outside these months the bill isn’t counted.</p>' +
         '<div class="fs-r2"><label><span>Due</span><select name="day">' + days + '</select></label>' +
           (accts.length ? '<label><span>Paid from</span><select name="acct">' + accts.map(function (a) { return '<option value="' + esc(a.id) + '"' + (a.id === acct ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
       '</div>' +
@@ -77,15 +79,16 @@
     if (form.n) f.name = form.n.value;
     if (form.day) f.day = form.day.value ? +form.day.value : null;
     if (form.acct) f.acct = form.acct.value;
+    if (form.from) f.from = form.from.value; if (form.until) f.until = form.until.value;
   }
   bg.addEventListener('change', function (e) {
     if (!cur || e.target.name !== 'vary') return;
     var form = $('fbForm'), d = window.Vault.get(), f = bill(d, cur.id); if (!f) return;
-    var tmp = { name: f.name, day: f.day, acct: f.acct }; keepTyped(tmp, form);
+    var tmp = { name: f.name, day: f.day, acct: f.acct, from: f.from, until: f.until }; keepTyped(tmp, form);
     cur.vary = e.target.checked;
     var typedAmt = form.a ? num(form.a.value) : NaN;
     draw();
-    form = $('fbForm'); form.n.value = tmp.name; form.day.value = tmp.day || ''; if (form.acct && tmp.acct) form.acct.value = tmp.acct;
+    form = $('fbForm'); form.n.value = tmp.name; form.day.value = tmp.day || ''; if (form.acct && tmp.acct) form.acct.value = tmp.acct; form.from.value = tmp.from || ''; form.until.value = tmp.until || '';
     /* switching on: this month starts as what the bill was; switching off: the usual/this month's amount */
     if (cur.vary) { var mi = form.querySelector('[data-fbm="' + ymOf(new Date()) + '"]'); if (mi && !mi.value && typedAmt > 0) mi.value = Math.round(typedAmt); if (mi) mi.focus(); }
     else if (form.a) form.a.select();
@@ -116,6 +119,9 @@
       f.amount = Math.round(amt); delete f.vary; delete f.usual; delete f.months; delete f.mbank;
     }
     f.name = name.slice(0, 50); f.day = form.day.value ? +form.day.value : null; if (form.acct) f.acct = form.acct.value;
+    var fr = form.from && form.from.value, un = form.until && form.until.value;
+    if (fr && un && un < fr) { form.until.focus(); return; }
+    if (fr) f.from = fr; else delete f.from; if (un) f.until = un; else delete f.until;
     window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
     close();
     if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> ' + esc(f.name) + ' saved' + (f.vary ? ' · ' + esc(kr(f.amount)) + ' this month' : ''));
@@ -126,7 +132,7 @@
     if (t.closest('[data-fbdel]') && cur) {
       var d = window.Vault.get(), f = bill(d, cur.id); if (!f) { close(); return; }
       if (!confirm('Delete “' + (f.name || 'this bill') + '”?')) return;
-      d.budget.fixed = d.budget.fixed.filter(function (x) { return x.id !== cur.id; });
+      ['fixed', 'later', 'ended'].forEach(function (k) { if (Array.isArray(d.budget[k])) d.budget[k] = d.budget[k].filter(function (x) { return x.id !== cur.id; }); });
       window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); close();
     }
   });

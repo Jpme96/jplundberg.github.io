@@ -226,7 +226,10 @@ window.Budget = (function () {
     return Math.round(use.reduce(function (a, x) { return a + (+m[x]); }, 0) / use.length);
   }
 
-  return { fixedAmt: fixedAmt, fixedWhole: fixedWhole, splitPart: splitPart, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  /* a bill with a first and a last month (f.from / f.until, 'YYYY-MM'): rent that stops when you move, a contract that ends.
+     Bills outside their months wait in d.budget.later or rest in d.budget.ended (Links.syncDates), so nothing adds them up. */
+  function activeIn(f, k) { return !!f && (!f.from || f.from <= k) && (!f.until || f.until >= k); }
+  return { activeIn: activeIn, fixedAmt: fixedAmt, fixedWhole: fixedWhole, splitPart: splitPart, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
 
 /* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
