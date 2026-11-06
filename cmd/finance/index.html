@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=178" rel="stylesheet">
+  <link href="../styles.css?v=180" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -232,6 +232,11 @@
               <div class="row2">
                 <label class="sv-by"><span>Due day</span><input id="nwDay" placeholder="1–31" inputmode="numeric" autocomplete="off"></label>
                 <label class="sv-by"><span>Paid from</span><select id="nwFrom"><option value="salary">Salary account</option><option value="card">Card account</option><option value="credit">Credit card</option></select></label>
+              </div>
+              <label class="qa-check"><input type="checkbox" id="nwFloat"> Floating rate – follows Norges Bank’s policy rate</label>
+              <div class="nw-float" id="nwFloatBox" hidden>
+                <label class="sv-by"><span>A new rate reaches the loan after, weeks</span><input id="nwLag" placeholder="6" inputmode="numeric" autocomplete="off"></label>
+                <p class="muted sv-hint" id="nwFloatHint"></p>
               </div>
               <label class="qa-check"><input type="checkbox" id="nwShared"> Shared loan – we split the payment</label>
               <div class="nw-share" id="nwShareBox" hidden>
@@ -942,7 +947,7 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=18f7f12b3f"></script>
+  <script src="../dist/page-finance.js?v=9359e449da"></script>
   <script src="../dist/tail.js?v=73eb93822f"></script>
   <!-- /scripts -->
 </body>

@@ -240,7 +240,8 @@
         '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
         '<ul class="pa-list">' + g.rows.map(function (f) {
           var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
-          return '<li>' + (f.src ? '<span>' + esc(f.name) + '<small>' + info + '</small></span>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
+          var go = f.src === 'loan' ? 'change the loan' : f.src === 'sub' ? 'change the subscription' : 'open where it comes from';
+          return '<li>' + (f.src ? '<button type="button" class="pa-open" data-pasrc="' + esc(f.src + '|' + f.id) + '" aria-label="' + esc(f.name) + ' – ' + go + '"><span>' + esc(f.name) + '<small>' + info + ' · <i class="bi bi-link-45deg"></i> ' + go + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
         }).join('') + '</ul></div>';
     }).join('');
@@ -341,7 +342,7 @@
       if (!c) return '<li class="ln">' + head + split + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
       if (c.never) return '<li class="ln">' + head + split + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
       var paidPct = l.orig > 0 ? Math.min(1, 1 - c.balance / l.orig) : null;
-      return '<li class="ln">' + head + split +
+      return '<li class="ln">' + head + floatLine(l) + split +
         '<div class="ln-grid">' +
           '<span><small>Paid off</small><b>' + esc(c.endLabel) + '</b></span>' +
           '<span><small>This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
@@ -386,7 +387,7 @@
     }
     var ex = (l.extra || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var exl = ex.length ? '<ul class="ln-ex">' + ex.slice(0, 4).map(function (e) { return '<li><span>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' · ' + (e.who === 'them' ? esc(who) : 'You') + '</span>' + money(e.amount) + '<button type="button" class="icon-btn sm" data-lnexdel="' + esc(l.id + '|' + e.id) + '" aria-label="Remove extra payment"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' : '';
-    return '<li class="ln">' + head + split + grid +
+    return '<li class="ln">' + head + floatLine(l) + split + grid +
       '<div class="ln-acts"><button type="button" class="text-btn" data-lnextra="' + esc(l.id) + '"><i class="bi bi-plus-circle"></i> Extra payment</button>' +
       (window.SharedHome ? '<button type="button" class="text-btn" data-lnsub="' + esc(l.id) + '"><i class="bi bi-arrow-left-right"></i> Covered an instalment</button>' : '') + '</div>' + exl + settle +
       (q.left < (+l.inner.months || 0) || !started ? '' : '') + '</li>';
@@ -411,6 +412,17 @@
       if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> Extra payment saved – ' + (w === 'me' ? 'your' : esc(who) + '’s') + ' part is lower');
     });
   }
+  /* a floating rate: where it comes from, and a change on its way */
+  function floatLine(l) {
+    var P = window.Policy; if (!l.float || !P) return '';
+    var fl = l.float, f2 = function (v) { return String(Math.round(v * 100) / 100).replace('.', ','); }, dt = function (k) { return new Date(k + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
+    var pend = (P.data().changes || []).filter(function (c) { return c.date > (fl.since || '') && (fl.applied || []).indexOf(c.date) < 0; })[0], nm = P.nextMeeting(), out;
+    out = '<i class="bi bi-graph-up-arrow"></i> Floating: policy rate ' + f2(P.at(new Date().toISOString().slice(0, 10))) + ' % ' + (fl.margin >= 0 ? '+ ' : '− ') + f2(Math.abs(fl.margin)) + ' (your margin)';
+    if (pend) { var e = new Date(pend.date + 'T12:00'); e.setDate(e.getDate() + (+fl.lag >= 0 ? +fl.lag : 42)); out += '<br><b>From ' + dt(e.toISOString().slice(0, 10)) + ': ' + f2(+pend.rate + (+fl.margin || 0)) + ' %</b> – Norges Bank set the policy rate to ' + f2(pend.rate) + ' % on ' + dt(pend.date); }
+    else if (l.rateLog && l.rateLog.length) { var last = l.rateLog[l.rateLog.length - 1]; out += '<br>Last change: ' + f2(last.rate) + ' % from ' + dt(last.date); }
+    if (nm) out += ' · next meeting ' + dt(nm);
+    return '<p class="ln-float">' + out + '</p>';
+  }
   function win(c, cx) { return '<i class="bi bi-stars"></i> Paid off <b>' + esc(cx.endLabel.split(' (')[0]) + '</b> – ' + (c.months - cx.months) + ' months sooner, <b>' + money(c.interestLeft - cx.interestLeft) + '</b> less interest'; }
   function editLoan(id) {
     var dd = data(), pl = id && dd && (dd.accounts || []).filter(function (x) { return String(x.id) === String(id) && x.plan; })[0];
@@ -424,6 +436,17 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lnedit]'); if (b) { editLoan(b.dataset.lnedit); return; }
+    /* a linked bill in Accounts & fixed costs: open the thing it comes from */
+    if ((b = e.target.closest('[data-pasrc]'))) {
+      var q = b.dataset.pasrc.split('|'), src = q[0], fid = q.slice(1).join('|');
+      if (src === 'loan') { var lid = fid.replace(/^loan-/, ''), dd = data(), ln = dd && (dd.accounts || []).filter(function (x) { return String(x.id) === lid; })[0];
+        if (ln && ln.plan) { editLoan(lid); return; }
+        goCard('#fpLoanCard'); setTimeout(function () { var card = document.querySelector('#fpLoans [data-lnedit="' + lid + '"]'); if (card) { card.closest('.ln').scrollIntoView({ behavior: 'smooth', block: 'start' }); card.closest('.ln').classList.add('flash'); setTimeout(function () { card.closest('.ln').classList.remove('flash'); }, 1600); } }, 120); return; }
+      if (src === 'save') { goCard('.card.savings'); return; }
+      if (src === 'year') { goCard('#fpYearlyCard'); return; }
+      if (src === 'sub') { var sc = document.querySelector('[data-tool="subs"]'); if (sc) goCard(sc); else location.href = '/cmd/finance/#subs'; return; }
+      return;
+    }
     if ((b = e.target.closest('[data-lnextra]'))) { extraSheet(b.dataset.lnextra); return; }
     if ((b = e.target.closest('[data-lnsub]'))) { if (window.SharedHome) window.SharedHome.cover(b.dataset.lnsub); return; }
     if ((b = e.target.closest('[data-lnexdel]'))) { var q = b.dataset.lnexdel.split('|'), d0 = data(); (d0.accounts || []).forEach(function (a) { if (String(a.id) === q[0]) a.extra = (a.extra || []).filter(function (x) { return x.id !== q[1]; }); }); window.Vault.save(d0); if (window.Links) window.Links.syncLoans(); save(data()); return; }

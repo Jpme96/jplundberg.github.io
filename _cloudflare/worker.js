@@ -20,6 +20,7 @@
                       until the dashboard picks them up, puts them in your encrypted vault and
                       deletes them. A service token can only use this endpoint.
    /cmd/api/power     electricity prices for Oslo (NO1) from hvakosterstrommen.no, cached at the edge.
+   /cmd/api/rate      Norges Bank's policy rate (styringsrenten), its changes over the last years, cached 6 hours.
    /cmd/api/ping      a quick health check: is the worker up, and which vault version does it hold.
    Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
                       the last 30 days), so a mistake can be undone from Settings → Data & sync.
@@ -92,6 +93,7 @@ async function route(request, env) {
     if (path === '/cmd/api/texts') return textsApi(request, env);
     if (path === '/cmd/api/push') return pushApi(request, env);
     if (path === '/cmd/api/power') return powerApi(url);
+    if (path === '/cmd/api/rate') return rateApi();
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
@@ -292,6 +294,36 @@ async function powerApi(url) {
   if (r.status === 404) return json({ error: 'not published yet' }, 404);
   if (!r.ok) return json({ error: 'prices ' + r.status }, 502);
   return new Response(await r.text(), { headers: { 'content-type': 'application/json', 'cache-control': 'private, max-age=900', 'x-robots-tag': 'noindex' } });
+}
+
+/* ---------- Norges Bank's policy rate: { now, changes: [{ date, rate }] } (the days it changed), cached 6 hours ---------- */
+async function rateApi() {
+  const from = new Date(Date.now() - 3 * 365 * 864e5).toISOString().slice(0, 10);
+  const keys = ['B.KPRA.SD.R', 'B.KPRA..R'];
+  for (const k of keys) {
+    let r;
+    try {
+      r = await fetch('https://data.norges-bank.no/api/data/IR/' + k + '?format=csv&locale=en&startPeriod=' + from,
+        { cf: { cacheTtl: 21600, cacheEverything: true }, headers: { 'User-Agent': 'jplundberg-dashboard', 'Accept': 'text/csv' } });
+    } catch (e) { continue; }
+    if (!r.ok) continue;
+    const rows = parseRateCsv(await r.text());
+    if (!rows.length) continue;
+    const changes = [];
+    rows.forEach(function (x) { if (!changes.length || changes[changes.length - 1].rate !== x.rate) changes.push(x); });
+    return new Response(JSON.stringify({ now: rows[rows.length - 1].rate, asOf: rows[rows.length - 1].date, changes: changes.slice(1), first: changes[0], source: 'Norges Bank' }),
+      { headers: { 'content-type': 'application/json', 'cache-control': 'private, max-age=3600', 'x-robots-tag': 'noindex' } });
+  }
+  return json({ error: 'policy rate unavailable' }, 502);
+}
+function parseRateCsv(txt) {
+  const lines = String(txt || '').trim().split(/\r?\n/); if (lines.length < 2) return [];
+  const sep = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+  const cells = function (l) { return l.split(sep).map(function (c) { return c.replace(/^"|"$/g, '').trim(); }); };
+  const head = cells(lines[0]), ti = head.indexOf('TIME_PERIOD'), vi = head.indexOf('OBS_VALUE');
+  if (ti < 0 || vi < 0) return [];
+  return lines.slice(1).map(cells).map(function (c) { return { date: c[ti], rate: Math.round(parseFloat(String(c[vi]).replace(',', '.')) * 1000) / 1000 }; })
+    .filter(function (x) { return /^\d{4}-\d{2}-\d{2}$/.test(x.date) && isFinite(x.rate); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
 }
 
 /* ---------- website settings in GitHub ---------- */

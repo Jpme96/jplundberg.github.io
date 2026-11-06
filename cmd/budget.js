@@ -543,3 +543,52 @@ window.Budget.real = function (d, now) {
     return out;
   });
 })();
+
+/* Norges Bank's policy rate (styringsrenten), for loans with a floating rate that follows it (l.float).
+   From the Worker (/cmd/api/rate, Norges Bank's open data), or straight from Norges Bank if the browser may, kept 12 hours
+   in localStorage dash.policy; until then the last known decision built in below. */
+window.Policy = (function () {
+  "use strict";
+  var SEED = { now: 4.5, asOf: '2026-11-05', changes: [{ date: '2026-09-25', rate: 4.5 }], source: 'built in (Norges Bank, 5 Nov 2026)' };
+  /* Norges Bank's meeting dates (rentemøter) */
+  var MEET = ['2026-12-17', '2027-01-21', '2027-03-18', '2027-05-05', '2027-06-17', '2027-08-19', '2027-09-23', '2027-11-04', '2027-12-16'];
+  var busy = null, subs = [];
+  function cached() { try { var c = JSON.parse(localStorage.getItem('dash.policy')); return c && isFinite(+c.now) ? c : null; } catch (e) { return null; } }
+  function data() { var c = cached(); return c || SEED; }
+  function fresh() { var c = cached(); return c && c.at && Date.now() - c.at < 12 * 3600e3; }
+  function keep(j, src) {
+    if (!j || !isFinite(+j.now)) return false;
+    var c = { now: +j.now, asOf: j.asOf, changes: (j.changes || []).filter(function (x) { return x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && isFinite(+x.rate); }), source: src, at: Date.now() };
+    /* keep the built-in change too, if the feed starts later */
+    SEED.changes.forEach(function (x) { if (!c.changes.some(function (y) { return y.date === x.date; }) && (!c.changes.length || x.date < c.changes[0].date)) c.changes.unshift(x); });
+    try { localStorage.setItem('dash.policy', JSON.stringify(c)); } catch (e) {}
+    return true;
+  }
+  function parseCsv(txt) {
+    var lines = String(txt || '').trim().split(/\r?\n/); if (lines.length < 2) return null;
+    var sep = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+    var cells = function (l) { return l.split(sep).map(function (c) { return c.replace(/^"|"$/g, '').trim(); }); };
+    var head = cells(lines[0]), ti = head.indexOf('TIME_PERIOD'), vi = head.indexOf('OBS_VALUE'); if (ti < 0 || vi < 0) return null;
+    var rows = lines.slice(1).map(cells).map(function (c) { return { date: c[ti], rate: Math.round(parseFloat(String(c[vi]).replace(',', '.')) * 1000) / 1000 }; }).filter(function (x) { return /^\d{4}-\d{2}-\d{2}$/.test(x.date) && isFinite(x.rate); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    if (!rows.length) return null;
+    var ch = []; rows.forEach(function (x) { if (!ch.length || ch[ch.length - 1].rate !== x.rate) ch.push(x); });
+    return { now: rows[rows.length - 1].rate, asOf: rows[rows.length - 1].date, changes: ch.slice(1) };
+  }
+  /* get the newest; cb() when it's in (whether or not anything changed) */
+  function update(cb) {
+    if (cb) subs.push(cb);
+    if (fresh()) { var s0 = subs; subs = []; s0.forEach(function (f) { try { f(data()); } catch (e) {} }); return; }
+    if (busy) return;
+    var done = function () { busy = null; var s = subs; subs = []; s.forEach(function (f) { try { f(data()); } catch (e) {} }); };
+    busy = fetch('/cmd/api/rate', { headers: { 'X-Diag-Probe': '1' } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && keep(j, 'Norges Bank')) return;
+      var from = new Date(Date.now() - 3 * 365 * 864e5).toISOString().slice(0, 10);
+      return fetch('https://data.norges-bank.no/api/data/IR/B.KPRA.SD.R?format=csv&locale=en&startPeriod=' + from).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) { var p = parseCsv(t); if (p) keep(p, 'Norges Bank'); });
+    }).catch(function () {}).then(done, done);
+  }
+  function now() { return +data().now; }
+  /* the policy rate on a day */
+  function at(k) { var r = null, d = data(); (d.changes || []).forEach(function (x) { if (x.date <= k) r = +x.rate; }); return r == null ? +d.now : r; }
+  function nextMeeting() { var t = new Date().toISOString().slice(0, 10); return MEET.filter(function (x) { return x >= t; })[0] || null; }
+  return { data: data, now: now, at: at, update: update, nextMeeting: nextMeeting, fresh: fresh, MEET: MEET };
+})();

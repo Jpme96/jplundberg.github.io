@@ -707,6 +707,8 @@
     var sh = !!(a && window.Loans && window.Loans.shared && window.Loans.shared(a)), inn = !!(a && a.inner), hm = (a && a.home) || {};
     $('nwShared').checked = sh; $('nwWith').value = sh ? (a.with || '') : ''; $('nwShare').value = sh && !inn ? String(a.share).replace('.', ',') : '';
     $('nwMode').value = inn ? 'inner' : 'pct';
+    $('nwFloat').checked = !!(a && a.float); $('nwLag').value = a && a.float ? String(Math.round((+a.float.lag >= 0 ? +a.float.lag : 42) / 7)) : '';
+    if (window.Policy) window.Policy.update(function () { loanUi(); });
     $('nwMine').value = inn ? Math.round(a.inner.mine) : ''; $('nwTerm').value = inn ? String(Math.round(a.inner.months / 12 * 10) / 10).replace('.', ',') : '';
     $('nwStart').value = a && a.asOf ? a.asOf : today(); $('nwHome').value = hm.value ? Math.round(hm.value) : ''; $('nwOwn').value = hm.own ? String(hm.own).replace('.', ',') : ''; $('nwSaleCost').value = hm.costs != null && hm.costs !== '' ? String(hm.costs).replace('.', ',') : '';
     loanUi();
@@ -725,9 +727,16 @@
     var yrs = num($('nwYears').value);
     if (yrs > 0 && l.balance > 0) { l.pay = Math.round(window.Loans.payment(l.balance, l.rate, yrs * 12)); $('nwPay').value = l.pay; }
     var c = window.Loans.calc(l);
-    shareUi(l);
+    shareUi(l); floatUi(l);
     $('nwHint').textContent = !c ? '' : c.never ? 'The payment doesn’t cover the interest (' + nfK(c.interest) + ' a month) – the loan never gets smaller' :
       'Paid off ' + c.endLabel + ' · ' + nfK(c.interestLeft) + ' in interest left · this month ' + nfK(c.interest) + ' interest + ' + nfK(c.principal) + ' repayment';
+  }
+  /* a floating rate that follows the policy rate: your margin = your rate − the policy rate today */
+  function floatUi(l) {
+    var on = $('nwFloat').checked; $('nwFloatBox').hidden = !on; if (!on || !window.Policy) return;
+    var P = window.Policy, pr = P.now(), d = P.data(), m = (l.rate || 0) - pr, nm = P.nextMeeting();
+    $('nwFloatHint').textContent = (l.rate ? 'Policy rate ' + String(pr).replace('.', ',') + ' % + your margin ' + (m >= 0 ? '' : '−') + String(Math.round(Math.abs(m) * 100) / 100).replace('.', ',') + ' = ' + String(l.rate).replace('.', ',') + ' %. ' : 'Type your rate today – the difference to the policy rate (' + String(pr).replace('.', ',') + ' %) is your margin. ') +
+      'When Norges Bank changes the policy rate, your rate moves the same and the instalment is worked out again' + (nm ? ' · next meeting ' + new Date(nm + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + '. Source: ' + (d.source || 'Norges Bank') + '.';
   }
   /* a shared loan: who you share it with and your part of the payment, in % (the rest is theirs) */
   function shareUi(l) {
@@ -749,7 +758,7 @@
       pay > 0 ? 'Each month: you ' + nfK(pay * pct / 100) + ' · ' + who + ' ' + nfK(pay * (100 - pct) / 100) + '. Your budget and net worth count your ' + String(pct).replace('.', ',') + ' %.' :
       'You ' + String(pct).replace('.', ',') + ' % · ' + who + ' ' + String(Math.round((100 - pct) * 10) / 10).replace('.', ',') + ' %';
   }
-  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears', 'nwFee', 'nwShare', 'nwWith', 'nwShared', 'nwMode', 'nwMine', 'nwTerm'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
+  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears', 'nwFee', 'nwShare', 'nwWith', 'nwShared', 'nwMode', 'nwMine', 'nwTerm', 'nwFloat', 'nwLag'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
   $('nwShareBox').addEventListener('click', function (e) {
     var b = e.target.closest('[data-nwsplit]'); if (!b) return;
     $('nwShare').value = b.dataset.nwsplit; loanUi();
@@ -767,7 +776,13 @@
       Object.assign(rec, { rate: num($('nwRate').value) || 0, pay: Math.round(num($('nwPay').value) || 0), fee: Math.round(num($('nwFee').value) || 0),
         day: day >= 1 && day <= 31 ? day : null, from: $('nwFrom').value, fixed: $('nwFixed').checked, asOf: today() });
       var pct = num($('nwShare').value);
-      rec.inner = null; rec.home = null;
+      rec.inner = null; rec.home = null; rec.float = null;
+      if ($('nwFloat').checked && window.Policy) {
+        var lagW = num($('nwLag').value); lagW = lagW >= 0 && lagW <= 26 ? lagW : 6;
+        var old = editingAcc ? D.accounts.filter(function (x) { return x.id === editingAcc; })[0] : null;
+        rec.float = old && old.float && +old.rate === +rec.rate ? Object.assign({}, old.float, { lag: Math.round(lagW * 7) })     /* same rate: keep the margin and what's been applied */
+          : { margin: Math.round(((rec.rate || 0) - window.Policy.now()) * 1000) / 1000, lag: Math.round(lagW * 7), since: today(), applied: [], policy: window.Policy.now() };
+      }
       if ($('nwShared').checked && $('nwMode').value === 'inner') {
         var mine = num($('nwMine').value), yrs = num($('nwTerm').value);
         if (!(mine > 0 && mine <= rec.balance)) { $('nwMine').focus(); return; }
@@ -789,7 +804,7 @@
         if (a.id !== editingAcc) return;
         if (a.balance !== rec.balance && rec.kind === 'debt' && !rec.inner) a.asOf = today();
         if (rec.inner) a.asOf = rec.asOf;
-        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
+        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home', 'float'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
         if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
         a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
       });
@@ -797,7 +812,7 @@
       rec.id = uid();
       if (rec.share == null && !rec.inner) { delete rec.share; delete rec.with; }
       if (rec.share == null) delete rec.share;
-      if (!rec.inner) delete rec.inner; if (!rec.home) delete rec.home;
+      if (!rec.inner) delete rec.inner; if (!rec.home) delete rec.home; if (!rec.float) delete rec.float;
       D.accounts.push(rec);
     }
     snapshot();

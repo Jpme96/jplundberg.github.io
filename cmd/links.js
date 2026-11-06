@@ -79,7 +79,56 @@
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
   }
-  window.Links = { syncSave: syncSave, syncLoans: syncLoans, syncVary: syncVary };
+  /* floating rates that follow Norges Bank (a.float = { margin, lag (days), since, applied: [change dates] }):
+     when the policy rate changes, the loan's rate becomes policy + margin once the bank's notice has run (lag days).
+     The loan is then re-based on its last due date: what's owed then, the months left, and a new instalment
+     (the term stays – that's what Norwegian banks do). a.rateLog keeps the history. */
+  function dk(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function syncRates() {
+    var d = window.Vault.get(), P = window.Policy, L = window.Loans; if (!d || !P || !L) return false;
+    var ch = false, today = dk(new Date());
+    (d.accounts || []).forEach(function (a) {
+      var fl = a && a.kind === 'debt' && !a.plan && a.float; if (!fl || !a.asOf) return;
+      fl.applied = Array.isArray(fl.applied) ? fl.applied : [];
+      (P.data().changes || []).forEach(function (c) {
+        if (c.date <= (fl.since || '') || fl.applied.indexOf(c.date) > -1) return;
+        var eff = new Date(c.date + 'T12:00'); eff.setDate(eff.getDate() + (+fl.lag >= 0 ? +fl.lag : 42));
+        if (dk(eff) > today) return;
+        var nr = Math.round((+c.rate + (+fl.margin || 0)) * 1000) / 1000;
+        rebase(a, eff, nr); fl.applied.push(c.date);
+        a.rateLog = (a.rateLog || []).concat([{ date: dk(eff), rate: nr, policy: +c.rate }]).slice(-24);
+        ch = true;
+      });
+    });
+    if (ch) { window.Vault.save(d); syncLoans(); window.dispatchEvent(new Event('fin:change')); }
+    return ch;
+  }
+  function rebase(a, eff, rate) {
+    var L = window.Loans, day = +a.day || +String(a.asOf).slice(8, 10) || 1;
+    /* the last due date on or before the day the new rate starts */
+    var r = new Date(eff.getFullYear(), eff.getMonth(), Math.min(day, new Date(eff.getFullYear(), eff.getMonth() + 1, 0).getDate()));
+    if (r > eff) r = new Date(eff.getFullYear(), eff.getMonth() - 1, Math.min(day, new Date(eff.getFullYear(), eff.getMonth(), 0).getDate()));
+    if (dk(r) <= a.asOf) {          /* no payment since the balance was entered: just the new rate (and instalment, same term) */
+      if (!a.inner && +a.pay > 0) { var b0 = +a.balance || 0, i0 = (+a.rate || 0) / 1200, n0 = 0; while (b0 > 0.5 && n0 < 1200) { b0 = b0 * (1 + i0) - (+a.pay); n0++; } if (n0 > 0 && n0 < 1200) a.pay = Math.round(L.payment(+a.balance || 0, rate, n0)); }
+      a.rate = rate; if (a.inner) a.pay = Math.round(L.payment(+a.inner.mine, rate, +a.inner.months) + L.payment(Math.max(0, a.balance - a.inner.mine), rate, +a.inner.months));
+      return;
+    }
+    if (a.inner) {
+      var q = L.inner(a, new Date(r.getFullYear(), r.getMonth(), r.getDate(), 12)); if (!q) { a.rate = rate; return; }
+      var key = dk(r);
+      a.extraDone = (a.extraDone || []).concat((a.extra || []).filter(function (e) { return e.date <= key; })).slice(-40);
+      a.extra = (a.extra || []).filter(function (e) { return e.date > key; });
+      a.inner.mine = Math.round(q.me.bal); a.balance = Math.round(q.me.bal + q.them.bal); a.inner.months = q.left; a.asOf = key; a.rate = rate;
+      a.pay = Math.round(L.payment(q.me.bal, rate, q.left) + (q.them.bal > 0.5 ? L.payment(q.them.bal, rate, q.left) : 0));
+      return;
+    }
+    if (!(+a.pay > 0)) { a.rate = rate; return; }
+    var bal = L.balanceNow(a, new Date(r.getFullYear(), r.getMonth(), r.getDate(), 12)), i = (+a.rate || 0) / 1200, n = 0, b = bal;
+    while (b > 0.5 && n < 1200) { b = b * (1 + i) - (+a.pay); n++; }
+    a.balance = Math.round(bal); a.asOf = dk(r); a.rate = rate;
+    if (n > 0 && n < 1200) a.pay = Math.round(L.payment(bal, rate, n));
+  }
+  window.Links = { syncSave: syncSave, syncLoans: syncLoans, syncVary: syncVary, syncRates: syncRates };
 
   /* ---------- trips → places to visit ---------- */
   function near(a, b) {
@@ -178,6 +227,7 @@
     try { syncSave(); } catch (e) { console.error(e); }
     try { syncLoans(); } catch (e) { console.error(e); }
     try { syncVary(); } catch (e) { console.error(e); }
+    try { syncRates(); if (window.Policy && (window.Vault.get().accounts || []).some(function (a) { return a && a.float; })) window.Policy.update(function () { try { syncRates(); } catch (e) {} }); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
   }
