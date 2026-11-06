@@ -30,6 +30,7 @@
     "work-plus.js",
     "health-plus.js",
     "money-plus.js",
+    "home-shared.js",
     "backup-mail.js",
     "delight.js",
     "scenes.js",
@@ -120,6 +121,7 @@
       "links.js"
     ],
     "house/index.html": [
+      "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",

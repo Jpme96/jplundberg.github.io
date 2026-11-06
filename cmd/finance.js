@@ -12,6 +12,7 @@
     { id: 'eating', name: 'Eating out', color: '#d95926' },
     { id: 'transport', name: 'Transport', color: '#3987e5' },
     { id: 'shopping', name: 'Shopping', color: '#c98500' },
+    { id: 'home', name: 'Home', color: '#a0673a' },
     { id: 'fun', name: 'Fun', color: '#d55181' },
     { id: 'health', name: 'Health', color: '#8a6fdf' },
     { id: 'travel', name: 'Travel', color: '#0891b2' },
@@ -623,7 +624,7 @@
   function bankNet() { var m = window.Accts ? window.Accts.money(D) : null; return m && m.known ? m.net : 0; }
   function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.counted); }
   function netWorth() {
-    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance * loanPart(a) : a.balance; });
+    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -owed(a) * loanPart(a) : a.balance; });
   }
   function snapshot() {
     if (D.accounts.length || hasBank()) D.history[ym(new Date())] = netWorth();
@@ -661,8 +662,8 @@
     }).map(function (a) {
       var debt = a.kind === 'debt', pt = debt ? loanPart(a) : 1;
       return '<li class="acc" data-id="' + a.id + '"><i class="bi bi-' + (debt ? 'credit-card' : 'bank') + ' acc-ico' + (debt ? ' debt' : '') + '"></i>' +
-        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? 'Shared loan · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(a.balance)) : 'Debt') : 'Asset') + '</span></span>' +
-        money(debt ? -a.balance * pt : a.balance, debt ? 'neg' : '') + '</li>';
+        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? (a.plan ? 'Paid in parts' : 'Shared loan') + ' · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(owed(a))) : 'Debt') : 'Asset') + '</span></span>' +
+        money(debt ? -owed(a) * pt : a.balance, debt ? 'neg' : '') + '</li>';
     }).join('');
   }
 
@@ -708,6 +709,7 @@
     $('nwDelete').hidden = !a;
     $('nwName').focus();
   }
+  function owed(a) { return window.Loans && window.Loans.owedNow ? window.Loans.owedNow(a) : a.balance; }
   function loanPart(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }
   function closeAcc() { $('nwForm').hidden = true; editingAcc = null; }
   /* a debt can be a loan: interest, monthly payment (or years left, and the payment is worked out), fee and due day */

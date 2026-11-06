@@ -52,7 +52,7 @@
     var d = window.Vault.get(); if (!d || !window.Loans) return;     /* needs budget.js (shared loans); pages without it leave this to the ones with it */
     d.budget = d.budget || { income: [], fixed: [] };
     var fixed = Array.isArray(d.budget.fixed) ? d.budget.fixed : [];
-    var want = (d.accounts || []).filter(function (a) { return a.kind === 'debt' && a.fixed !== false && +a.pay > 0; }).map(function (a) {
+    var want = (d.accounts || []).filter(function (a) { return a.kind === 'debt' && a.fixed !== false && +a.pay > 0 && window.Loans.owedNow(a) > 0.5; }).map(function (a) {     /* a paid-off loan stops costing */
       /* a shared loan: only your part of the payment (and fee) goes into your budget */
       var part = window.Loans.part ? window.Loans.part(a) : 1;
       return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round((+a.pay + (+a.fee || 0)) * part), day: a.day || null, src: 'loan', acct: a.from || 'salary' };

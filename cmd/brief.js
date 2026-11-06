@@ -186,7 +186,7 @@
     var d = window.Vault.get(), ym = today.slice(0, 7), day = now.getDate(), dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     var sum = function (l) { return (l || []).reduce(function (a, x) { return a + (+x.amount || 0); }, 0); };
     var shiftYm = function (n) { var x = new Date(now.getFullYear(), now.getMonth() + n, 1); return x.getFullYear() + '-' + pad(x.getMonth() + 1); };
-    var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', other: 'Other' };
+    var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', other: 'Other' };
 
     if (d && (!Fe || Fe.on('finance'))) {
       var ex = d.expenses || [], income = window.Budget ? window.Budget.income(d, ym) : sum((d.budget || {}).income), fixed = sum((d.budget || {}).fixed);

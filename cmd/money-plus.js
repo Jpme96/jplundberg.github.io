@@ -22,11 +22,12 @@
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function norm(s) { return window.Smart ? window.Smart.norm(s) : String(s || '').toLowerCase().replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
   function ord(n) { var t = n % 100, u = n % 10; return n + (t > 10 && t < 14 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th'); }
-  var CAT = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
-  var CATC = { groceries: '#11a597', eating: '#d95926', transport: '#3987e5', shopping: '#c98500', fun: '#d55181', health: '#8a6fdf', travel: '#0891b2', other: '#6b6d73' };
+  var CAT = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+  var CATC = { groceries: '#11a597', eating: '#d95926', transport: '#3987e5', shopping: '#c98500', home: '#a0673a', fun: '#d55181', health: '#8a6fdf', travel: '#0891b2', other: '#6b6d73' };
 
   /* ---------- settings (Settings → Pages → Finances) ---------- */
-  var DEF = { months: 6, recurGlance: true, sharedGlance: true, sharedMin: 200, split: 'equal' };
+  /* partner + pct: who you usually split with and your usual % (e.g. 60 = you 60, them 40) – new splits start there */
+  var DEF = { months: 6, recurGlance: true, sharedGlance: true, sharedMin: 200, split: 'equal', partner: '', pct: 50 };
   function cfg() { var c = Fe.tools().fincfg; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }
   function setCfg(p) { var t = Fe.tools(); t.fincfg = Object.assign({}, t.fincfg || {}, p); Fe.saveTools(t); }
 
@@ -134,7 +135,34 @@
     var b = 0;
     s.items.forEach(function (x) { var sh = x.shares || {}; if (x.payer === 'me') b += +sh[pid] || 0; else if (x.payer === pid) b -= +sh.me || 0; });
     s.pays.forEach(function (p) { if (p.from === 'me' && p.to === pid) b += +p.amount || 0; if (p.from === pid && p.to === 'me') b -= +p.amount || 0; });
+    planPays(null, pid).forEach(function (x) { if (x.payer === 'me') b += x.them; else if (x.payer === pid) b -= x.mine; });
     return Math.round(b * 100) / 100;
+  }
+  /* things bought in parts (delbetaling) are loans in Net worth with a.plan: every monthly payment made so far,
+     with your part and theirs – when one of you pays the store, the other owes their part.
+     -> [{ loan, n (payment no.), of, date, amount, mine, them, payer, pid, name }] (oldest first; until = 'YYYY-MM-DD' or today) */
+  function planPays(until, pid) {
+    var d = window.Vault.get(), Lo = window.Loans, out = []; if (!d || !Lo) return out;
+    var end = until || dkey(new Date());
+    (d.accounts || []).forEach(function (a) {
+      var pl = a && a.kind === 'debt' && a.plan; if (!pl || !(+a.pay > 0) || !a.asOf) return;
+      if (pid && pl.pid !== pid) return;
+      var bal = +a.balance || 0, i = (+a.rate || 0) / 1200, p = +a.pay, fee = +a.fee || 0, part = Lo.part(a), day = +a.day || +a.asOf.slice(8, 10);
+      var st = fromKey(a.asOf), total = monthsFor(a);
+      for (var n = 1; n <= total && bal > 0.5; n++) {
+        var dt = new Date(st.getFullYear(), st.getMonth() + n, 1); dt.setDate(Math.min(day, new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate()));
+        var dk = dkey(dt); if (dk > end) break;
+        var r = bal * i, pay = Math.min(p, bal + r); bal = bal + r - pay;
+        var amt = Math.round((pay + fee) * 100) / 100;
+        out.push({ loan: a.id, n: n, of: total, date: dk, amount: amt, mine: Math.round(amt * part * 100) / 100, them: Math.round(amt * (1 - part) * 100) / 100, payer: pl.payer || 'each', pid: pl.pid, name: a.name || 'Payment' });
+      }
+    });
+    return out.sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  }
+  function monthsFor(a) {     /* how many payments the plan has (from the loan maths, at most 600) */
+    var bal = +a.balance || 0, i = (+a.rate || 0) / 1200, p = +a.pay || 0, n = 0;
+    while (bal > 0.5 && n < 600 && p > 0) { bal = bal * (1 + i) - p; n++; }
+    return n;
   }
   function sharedCard(el) {
     var s = sh(), ym = dkey(new Date()).slice(0, 7);
@@ -181,7 +209,10 @@
     var s = sh(), d = window.Vault.get() || {}, isNew = !item;
     var x = item ? JSON.parse(JSON.stringify(item)) : { id: uid(), date: dkey(new Date()), note: '', total: '', payer: 'me', shares: {}, cat: 'eating', exp: null, add: true };
     var withIds = Object.keys(x.shares || {}).filter(function (k) { return k !== 'me'; });
-    var mode = item && item.mode === 'amount' ? 'amount' : cfg().split === 'amount' ? 'amount' : 'equal', custom = {};
+    var C = cfg(), mode = item ? (item.mode === 'amount' || item.mode === 'pct' ? item.mode : 'equal') : C.split === 'amount' || C.split === 'pct' ? C.split : 'equal', custom = {};
+    var myPct = item && item.mode === 'pct' && item.pct != null ? +item.pct : +C.pct || 50;
+    if (isNew && C.partner && person(s, C.partner)) withIds = [C.partner];       /* new splits start with your usual partner */
+    if (preset && preset.payer) x.payer = preset.payer;
     if (mode === 'amount') Object.keys(x.shares || {}).forEach(function (k) { custom[k] = x.shares[k]; });
     if (preset) { x.note = preset.note || ''; x.total = preset.amount; x.date = preset.date; x.cat = preset.cat || 'other'; x.exp = preset.id; }
     var S = sheet('Split a payment', 'mp-box'), box = S.box, newPerson = '';
@@ -189,6 +220,10 @@
     function shares() {
       var tot = num(x.total) || 0, ids = ['me'].concat(withIds), out = {};
       if (mode === 'equal') { var each = Math.round(tot / ids.length * 100) / 100, acc = 0; ids.forEach(function (k, i) { out[k] = i === ids.length - 1 ? Math.round((tot - acc) * 100) / 100 : each; acc += each; }); }
+      else if (mode === 'pct') {    /* you take your %, the others share the rest equally */
+        var mine = Math.round(tot * myPct) / 100, left = tot - mine, each2 = Math.round(left / Math.max(1, withIds.length) * 100) / 100, acc2 = 0;
+        out.me = mine; withIds.forEach(function (k, i) { out[k] = i === withIds.length - 1 ? Math.round((left - acc2) * 100) / 100 : each2; acc2 += each2; });
+      }
       else { var rest = tot; withIds.forEach(function (k) { out[k] = num(custom[k]) || 0; rest -= out[k]; }); out.me = Math.round(rest * 100) / 100; }
       return out;
     }
@@ -206,7 +241,8 @@
         '<p class="mp-lbl">Shared with</p><div class="lf-chips mp-chips">' + s.people.map(function (p) { return '<button type="button" class="lf-chip" data-shwith="' + esc(p.id) + '" aria-pressed="' + (withIds.indexOf(p.id) > -1) + '">' + esc(p.name) + '</button>'; }).join('') +
         '<span class="mp-newp"><input name="np" placeholder="New person" value="' + esc(newPerson) + '" maxlength="30" autocomplete="off"><button type="button" class="icon-btn sm" data-shaddp aria-label="Add person"><i class="bi bi-plus-lg"></i></button></span></div>' +
         (withIds.length ? '<p class="mp-lbl">Who paid?</p><div class="seg lf-seg">' + ['me'].concat(withIds).map(function (k) { return '<button type="button" data-shpayer="' + esc(k) + '" aria-pressed="' + (x.payer === k) + '">' + esc(k === 'me' ? 'You' : pname(s, k)) + '</button>'; }).join('') + '</div>' +
-          '<p class="mp-lbl">Split</p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '">Equally</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '">By amount</button></div>' +
+          '<p class="mp-lbl">Split</p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '">Equally</button><button type="button" data-shmode="pct" aria-pressed="' + (mode === 'pct') + '">By %</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '">By amount</button></div>' +
+          (mode === 'pct' ? '<div class="mp-pct"><label>You pay<input inputmode="decimal" data-shpct value="' + esc(String(myPct).replace('.', ',')) + '" aria-label="Your share in %"><span>%</span></label><div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-shpctq="' + v + '" aria-pressed="' + (myPct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div></div>' : '') +
           (mode === 'amount' ? '<div class="mp-amts">' + withIds.map(function (k) { return '<label>' + esc(pname(s, k)) + '<input inputmode="decimal" data-shamt="' + esc(k) + '" value="' + esc(custom[k] == null ? '' : String(custom[k]).replace('.', ',')) + '" placeholder="kr"></label>'; }).join('') + '<label>You<b>' + esc(kr(sv.me)) + '</b></label></div>' : '') : '') +
         (!x.exp && x.payer !== 'me' && withIds.length ? '<label class="lf-check"><input type="checkbox" name="add"' + (x.add !== false ? ' checked' : '') + '> Add your share to Spending</label>' : '') +
         '<p class="mp-prev" id="mpPrev">' + prev + '</p>' +
@@ -221,6 +257,7 @@
     }
     box.addEventListener('input', function (e) {
       if (e.target.dataset.shamt) { custom[e.target.dataset.shamt] = e.target.value; }
+      if (e.target.hasAttribute('data-shpct')) { var pv = num(e.target.value); if (pv >= 0 && pv <= 100) myPct = pv; var pr = box.querySelector('#mpPrev'), sv1 = shares(); if (pr) pr.innerHTML = 'Your share ' + esc(kr(sv1.me)) + ' · ' + withIds.map(function (k) { return esc(pname(s, k)) + ' ' + esc(kr(sv1[k])); }).join(' · '); return; }
       sync();
       if (e.target.name === 'total' || e.target.dataset.shamt) { var keep = e.target, pos = keep.selectionStart; draw(); var again = box.querySelector(keep.name ? '[name="' + keep.name + '"]' : '[data-shamt="' + keep.dataset.shamt + '"]'); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (er) {} } }
     });
@@ -231,6 +268,7 @@
       if ((b = e.target.closest('[data-shwith]'))) { var id = b.dataset.shwith, i = withIds.indexOf(id); if (i > -1) { withIds.splice(i, 1); if (x.payer === id) x.payer = 'me'; } else withIds.push(id); draw(); return; }
       if (e.target.closest('[data-shaddp]')) { addPerson(); return; }
       if ((b = e.target.closest('[data-shpayer]'))) { x.payer = b.dataset.shpayer; if (x.payer !== 'me' && x.exp) x.exp = null; draw(); return; }
+      if ((b = e.target.closest('[data-shpctq]'))) { myPct = +b.dataset.shpctq; draw(); return; }
       if ((b = e.target.closest('[data-shmode]'))) { mode = b.dataset.shmode; if (mode === 'amount') { var sv0 = shares(); withIds.forEach(function (k) { if (custom[k] == null) custom[k] = sv0[k]; }); } draw(); return; }
       if (e.target.closest('[data-shdel]')) { remove(item); S.close(); return; }
       if (e.target.closest('[data-shsave]')) {
@@ -239,7 +277,7 @@
         if (!withIds.length) { var np = box.querySelector('[name="np"]'); if (np) np.focus(); return; }
         var sv = shares();
         if (sv.me < 0) { box.querySelector('#mpPrev').innerHTML = '<span class="mp-neg">The amounts add up to more than the total.</span>'; return; }
-        x.total = tot; x.shares = sv; x.mode = mode;
+        x.total = tot; x.shares = sv; x.mode = mode; if (mode === 'pct') x.pct = myPct; else delete x.pct;
         save(x, item, s); S.close();
       }
     });
@@ -316,12 +354,13 @@
       s = sh(); var b = balance(s, pid);
       var ev = s.items.filter(function (x) { return x.payer === pid || (x.shares || {})[pid] != null; }).map(function (x) { return { k: 'i', date: x.date, x: x, v: x.payer === 'me' ? +(x.shares[pid] || 0) : x.payer === pid ? -(+x.shares.me || 0) : 0, t: x.note || 'Shared' }; })
         .concat(s.pays.filter(function (q) { return q.from === pid || q.to === pid; }).map(function (q) { return { k: 'p', date: q.date, x: q, v: q.from === 'me' ? +q.amount : -q.amount, t: q.from === 'me' ? 'You paid ' + p.name : p.name + ' paid you' }; }))
+        .concat(planPays(null, pid).filter(function (q) { return q.payer !== 'each'; }).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.loan }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · payment ' + q.n + ' of ' + q.of }; }))
         .sort(function (a, c) { return a.date < c.date ? 1 : -1; });
       box.innerHTML = head('person', p.name) + '<p class="mp-bal ' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(b >= 1 ? 'Owes you ' + kr(b) : b <= -1 ? 'You owe ' + kr(-b) : 'Settled up') + '</p>' +
         '<ul class="mp-list">' + ev.map(function (r) {
-          return '<li class="mp-row"><span class="kit-ic" style="--c:' + (r.k === 'p' ? '#22b35e' : '#3987e5') + '"><i class="bi bi-' + (r.k === 'p' ? 'cash-coin' : 'people') + '"></i></span><span class="kit-x"><b>' + esc(r.t) + '</b><small>' + esc(fmt(r.date) + (r.k === 'i' ? ' · ' + kr(r.x.total) + ' in total' : '')) + '</small></span>' +
+          return '<li class="mp-row"><span class="kit-ic" style="--c:' + (r.k === 'p' ? '#22b35e' : r.k === 'l' ? '#a0673a' : '#3987e5') + '"><i class="bi bi-' + (r.k === 'p' ? 'cash-coin' : r.k === 'l' ? 'calendar2-check' : 'people') + '"></i></span><span class="kit-x"><b>' + esc(r.t) + '</b><small>' + esc(fmt(r.date) + (r.k !== 'p' ? ' · ' + kr(r.x.total) + ' in total' : '')) + '</small></span>' +
             '<span class="money ' + (r.v > 0 ? 'mp-pos' : r.v < 0 ? 'mp-neg' : '') + '">' + (r.v > 0 ? '+' : r.v < 0 ? '−' : '') + esc(kr(Math.abs(r.v))) + '</span>' +
-            (r.k === 'p' ? '<button type="button" class="icon-btn sm" data-shdelpay="' + esc(r.x.id) + '" aria-label="Delete payment"><i class="bi bi-trash3"></i></button>' : '<button type="button" class="icon-btn sm" data-shedit="' + esc(r.x.id) + '" aria-label="Edit"><i class="bi bi-pencil"></i></button>') + '</li>';
+            (r.k === 'p' ? '<button type="button" class="icon-btn sm" data-shdelpay="' + esc(r.x.id) + '" aria-label="Delete payment"><i class="bi bi-trash3"></i></button>' : r.k === 'l' ? '<span class="icon-btn sm" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>' : '<button type="button" class="icon-btn sm" data-shedit="' + esc(r.x.id) + '" aria-label="Edit"><i class="bi bi-pencil"></i></button>') + '</li>';
         }).join('') + '</ul>' +
         '<div class="lf-foot"><button type="button" class="text-btn danger" data-shdelp' + (ev.length ? ' hidden' : '') + '><i class="bi bi-trash3"></i> Remove ' + esc(p.name) + '</button><button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Message</button>' +
         (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn" data-shsettle="' + esc(pid) + '">Settle up</button>' : '') + '</div>';
@@ -389,7 +428,9 @@
       box.innerHTML = '<p class="st-intro">Extras on the Finances page. Everything is worked out on this device from your own entries.</p>' +
         subh('arrow-repeat', 'Recurring payments') + '<div class="st-group">' + feat('recur', 'Show the card', 'Charges that come back every month') + sel('months', 'Look back', [[3, '3 months'], [6, '6 months'], [12, '12 months']]) +
         sw('recurGlance', 'Suggest new ones in At a glance') + (ni ? '<button type="button" class="st-row st-btn" data-funign><span><i class="bi bi-arrow-counterclockwise"></i> Suggest the ' + ni + ' I waved away again</span></button>' : '') + '</div>' +
-        subh('people', 'Shared expenses') + '<div class="st-group">' + feat('shared', 'Show the card', 'Split payments and see who owes what') + sel('split', 'New splits start', [['equal', 'Equally'], ['amount', 'By amount']]) +
+        subh('people', 'Shared expenses') + '<div class="st-group">' + feat('shared', 'Show the card', 'Split payments and see who owes what') + sel('split', 'New splits start', [['equal', 'Equally'], ['pct', 'By your usual %'], ['amount', 'By amount']]) +
+        (sh().people.length ? sel('partner', 'Usually split with', [['', 'Nobody in particular']].concat(sh().people.map(function (p) { return [p.id, p.name]; })), 'Picked for you on every new split') : '') +
+        sel('pct', 'Your usual share', [[50, '50 % (half)'], [60, '60 %'], [40, '40 %'], [70, '70 %'], [30, '30 %'], [55, '55 %'], [45, '45 %'], [65, '65 %'], [35, '35 %']].concat([50, 60, 40, 70, 30, 55, 45, 65, 35].indexOf(+cfg().pct) < 0 ? [[cfg().pct, cfg().pct + ' %']] : []), 'For “By your usual %”') +
         sw('sharedGlance', 'Remind me in At a glance', 'When someone owes you, or you owe them') + sel('sharedMin', 'From', [[1, 'Any amount'], [100, '100 kr'], [200, '200 kr'], [500, '500 kr'], [1000, '1 000 kr']]) + '</div>' +
         '<div class="st-group"><a class="st-row st-btn" href="/cmd/finance/"><span><i class="bi bi-wallet2"></i> Open Finances</span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/finance/?customize"><span><i class="bi bi-grid-1x2"></i> Order and hide cards</span><i class="bi bi-chevron-right"></i></a></div>';
     }
@@ -412,4 +453,8 @@
   })();
 
   window.MoneyPlus = { detect: detect, addAs: addAs, setIgnore: setIgnore, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
+  /* the shared-expenses engine, for the House page's “Shared home” card and Quick add (one set of data, one balance) */
+  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, monthsFor: monthsFor, person: function (id) { return person(sh(), id); },
+    split: splitSheet, settle: settleSheet, history: personSheet, message: share, saveItem: save, removeItem: remove, cfg: cfg, setCfg: setCfg,
+    partner: function () { var c = cfg(), s = sh(); return (c.partner && person(s, c.partner)) || null; } };
 })();

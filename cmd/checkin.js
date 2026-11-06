@@ -18,7 +18,7 @@
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
-  var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
+  var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
 
   /* weekOf(day): the Monday–Sunday week that day is in */
   function weekOf(ref) {

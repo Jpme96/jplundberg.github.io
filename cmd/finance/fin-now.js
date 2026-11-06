@@ -92,7 +92,7 @@
         '<button type="button" class="icon-btn sm fn-x" data-fnoff="' + esc(x.k) + '" aria-label="Not now"><i class="bi bi-x"></i></button></li>';
     }).join('') + '</ul>';
   }
-  var CATN = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+  var CATN = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
 
   /* ================= the next 14 days ================= */
   function next(d) {

@@ -12,13 +12,14 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function pad(n) { return String(n).padStart(2, '0'); }
-  var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
+  var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
   /* merchant words → category (Norwegian everyday life first) */
   var RULES = [
     ['groceries', /rema|kiwi|coop|extra\b|meny|joker|bunnpris|spar\b|obs\b|prix|matkroken|europris|oda\.com|oda\b|kolonial|nærbutikken|narvesen|7-?eleven|mix\b|deli de luca|bakeri|baker|point\b/i],
     ['eating', /restaurant|cafe|café|kaffe|coffee|espresso|foodora|wolt|just eat|mcdonald|burger|pizza|sushi|kebab|bar\b|pub\b|bryggeri|vinmonopol|peppes|egon|olivia|starbucks|dominos|max\b|sesam|bistro|kantine|eurest|iss\b|lunsj|lunch|bakehuset|kaffebrenneri|nordvegan|eathappy|vegan|chicken|subway|favrit|bit\b|kam nydalen|syng\b|grill|taco|thai|ramen|poke|bakery/i],
     ['transport', /ruter|vy\b|vy app|vy\.no|flytoget|sas\b|norwegian|widerøe|wideroe|bolt\.eu|bolt\b|uber|taxi|circle k|shell|esso|uno-x|yx\b|bompeng|autopass|fjellinjen|parker|parkering|easypark|apcoa|q-park|onepark|bane nor|entur|kolumbus|skyss|atb\b|voi\b|tier\b|ryde|bilxtra|biltema|nsb/i],
     ['health', /apotek|vitus|boots|legesenter|lege\b|tannlege|tannhelse|sats|elixia|evo\b|fresh fitness|trening|fysio|kiropraktor|optiker|specsavers|brilleland|synsam|lensway|solotica|linser|helse|volvat|aleris|dr\.dropin|bassenget|svømme|life\b|sunkost|lean studio|yoga|pilates/i],
+    ['home', /ikea|bohus|jysk|skeidar|fagmøbler|møbelringen|mobelringen|kid interiør|princess|home & cottage|søstrene grene|kitch'n|tilbords|clas ohlson|jernia|byggmakker|maxbo|obs bygg|monter|xl-bygg|plantasjen|hageland|bauhaus|megaflis|flisekompaniet|fargerike|møbler|mobler|interiør/i],
     ['shopping', /zara|h&m|hm\.com|elkj|power\b|ikea|clas ohlson|amazon|zalando|xxl|jernia|kid interiør|princess|dressmann|cubus|lindex|bik bok|jysk|komplett|apple|eplehuset|samsung|nille|normal\b|kitch'n|tilbords|bohus|skeidar|g-sport|intersport|stormberg|bergans|steen & strøm|steen & strom|klarna|volt\b|mestergr|kondomeriet|lego|boozt|asos|shein|temu|ebay|etsy|black ember|sniffer/i],
     ['fun', /kino|netflix|spotify|hbo|disney|viaplay|tv 2|steam|playstation|xbox|nintendo|ticketmaster|billett|konsert|teater|museum|bowling|tusenfryd|strawberry|youtube|apple\.com\/bill|patreon|twitch|karaoke/i],
     ['travel', /hotel|hotell|airbnb|booking\.com|hotels\.com|expedia|ryanair|lufthansa|klm|finnair|color line|fjord line|hurtigruten|avinor|gardermoen|scandic|thon|radisson|nordic choice|citybox|comfort hotel|quality|trip\.com|momondo|sixt|hertz|avis|europcar/i]

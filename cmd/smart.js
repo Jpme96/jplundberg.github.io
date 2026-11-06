@@ -20,6 +20,7 @@ window.Smart = (function () {
     ['eating', /restaurant|cafe|café|kaffe|coffee|espresso|foodora|wolt|just eat|mcdonald|burger|pizza|sushi|kebab|bar\b|pub\b|bryggeri|vinmonopol|peppes|egon|olivia|starbucks|dominos|max\b|sesam|bistro|kantine|eurest|iss\b|lunsj|lunch|middag|dinner|frokost|breakfast|takeaway|øl\b|beer/i],
     ['transport', /ruter|vy\b|vy app|vy\.no|flytoget|sas\b|norwegian|widerøe|wideroe|bolt\.eu|bolt\b|uber|taxi|circle k|shell|esso|uno-x|yx\b|bompeng|autopass|fjellinjen|parker|parkering|easypark|apcoa|q-park|onepark|bensin|diesel|lading|billett buss|bussbillett|t-bane|trikk/i],
     ['health', /apotek|vitus|boots|legesenter|lege\b|tannlege|tannhelse|sats|elixia|evo\b|fresh fitness|fysio|kiropraktor|optiker|specsavers|brilleland|synsam|lensway|solotica|linser|helse|volvat|aleris|dr\.dropin|medisin|vitamin/i],
+    ['home', /ikea|bohus|jysk|skeidar|fagmøbler|møbelringen|mobelringen|kid interiør|princess|home & cottage|søstrene grene|kitch'n|tilbords|clas ohlson|jernia|byggmakker|maxbo|obs bygg|monter|xl-bygg|plantasjen|hageland|bauhaus|megaflis|flisekompaniet|fargerike|møbler|mobler|interiør/i],
     ['shopping', /zara|h&m|hm\.com|elkj|power\b|ikea|clas ohlson|amazon|zalando|xxl|jernia|kid interiør|princess|dressmann|cubus|lindex|bik bok|jysk|komplett|apple\b|eplehuset|samsung|nille|normal\b|kitch'n|tilbords|bohus|klær|sko\b|shoes|clothes/i],
     ['fun', /kino|netflix|spotify|hbo|disney|viaplay|tv 2|steam|playstation|xbox|nintendo|ticketmaster|billett|konsert|teater|museum|bowling|tusenfryd|strawberry|youtube|apple\.com\/bill|patreon|twitch|karaoke|cinema|concert/i],
     ['travel', /hotel|hotell|airbnb|booking\.com|hotels\.com|expedia|ryanair|lufthansa|klm|finnair|color line|fjord line|hurtigruten|avinor|gardermoen|scandic|thon|radisson|nordic choice|citybox|comfort hotel|quality|flybillett|flight/i]
@@ -31,7 +32,7 @@ window.Smart = (function () {
     for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(desc)) return RULES[i][0];
     return 'other';
   }
-  var CAT_NAME = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+  var CAT_NAME = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
 
   /* ---------- dates and times ---------- */
   var WD = { søndag: 0, sondag: 0, søn: 0, son: 0, sun: 0, sunday: 0, mandag: 1, man: 1, mon: 1, monday: 1, tirsdag: 2, tir: 2, tirs: 2, tue: 2, tues: 2, tuesday: 2,

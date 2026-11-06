@@ -21,7 +21,7 @@
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
-  var SPEND = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
+  var SPEND = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
   var REPEATS = [['', 'Doesn’t repeat'], ['daily', 'Every day'], ['weekdays', 'Every weekday'], ['weekly', 'Every week'], ['2weeks', 'Every 2 weeks'], ['monthly', 'Every month'], ['quarterly', 'Every 3 months'], ['yearly', 'Every year']];
   function repeatSelect(v) { return '<select name="rep" aria-label="Repeat">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (v || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'; }
   var SPORTS = [['strength', 'Strength'], ['run', 'Running'], ['walk', 'Walking'], ['bike', 'Cycling'], ['swim', 'Swimming'], ['ball', 'Ball sports'], ['yoga', 'Yoga / mobility'], ['other', 'Other']];
@@ -143,6 +143,26 @@
     });
     return out;
   }
+  /* split it with your usual partner (Finances → Shared expenses / House → Shared home), by your usual % */
+  function sharedRow() {
+    var S = window.Shared, pt = S && window.Features && window.Features.on('shared') && S.partner(); if (!pt) return '';
+    var pct = +S.cfg().pct || 50, o = function (v, t) { return '<option value="' + v + '">' + esc(t) + '</option>'; };
+    return '<div class="qa-row qa-shared"><label><i class="bi bi-people"></i><select name="sh" aria-label="Shared with ' + esc(pt.name) + '">' + o('', 'Just me') + o('me', 'Shared with ' + pt.name + ' – I paid') + o('them', 'Shared with ' + pt.name + ' – ' + pt.name + ' paid') + '</select></label>' +
+      '<span class="muted">you ' + esc(String(pct).replace('.', ',')) + ' %</span></div>';
+  }
+  function addShared(f) {
+    var S = window.Shared, pt = S && S.partner(), a = num(f.a.value), pct = S ? +S.cfg().pct || 50 : 50; if (!pt || !(a > 0)) return false;
+    var x = { id: uid(), date: f.d.value || today(), note: String(f.n.value || '').trim().slice(0, 60) || 'Shared', total: a, cat: f.c.value || 'other', mode: 'pct', pct: pct, shares: { me: Math.round(a * pct) / 100 } };
+    x.shares[pt.id] = Math.round((a - x.shares.me) * 100) / 100;
+    if (f.sh.value === 'me') {
+      var d = window.Vault.get(); d.expenses = d.expenses || [];
+      var e = { id: uid(), t: Date.now(), date: x.date, amount: a, cat: x.cat, note: x.note }; d.expenses.push(e); window.Vault.save(d);
+      x.payer = 'me'; x.exp = e.id;
+    } else { x.payer = pt.id; x.add = true; }
+    S.saveItem(x, null, S.data());
+    toast('<i class="bi bi-people"></i> ' + esc(nf.format(a)) + ' shared with ' + esc(pt.name) + ' – your part ' + esc(nf.format(x.shares.me)) + (x.payer === 'me' ? ' · ' + esc(pt.name) + ' owes you ' + esc(nf.format(x.shares[pt.id])) : ''));
+    return true;
+  }
   var FORMS = {
     expense: function (p) {
       var chips = p.a ? [] : recentChips();
@@ -150,6 +170,7 @@
         '<div class="qa-row"><input name="a" class="qa-amt" placeholder="Amount, kr" inputmode="decimal" autocomplete="off" required value="' + esc(p.a ? (p.a % 1 ? (+p.a).toFixed(2) : String(p.a)).replace('.', ',') : '') + '">' +
           '<select name="c" aria-label="Category">' + SPEND.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === p.c ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></div>' +
         '<div class="qa-row"><input name="n" placeholder="What was it? (optional)" autocomplete="off" value="' + esc(p.n || '') + '"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"></div>' +
+        sharedRow() +
         (chips.length ? '<div class="qa-chips">' + chips.map(function (e) {
           return '<button type="button" data-chip data-a="' + esc(e.amount) + '" data-c="' + esc(e.cat) + '" data-n="' + esc(e.note) + '">' + esc(e.note) + ' <b>' + esc(nf.format(e.amount)) + '</b></button>';
         }).join('') + '</div>' : '') +
@@ -260,7 +281,7 @@
   };
   /* the forms → ADD */
   var SAVE = {
-    expense: function (f) { var a = num(f.a.value); if (!(a > 0)) { f.a.focus(); return false; } return ADD.expense({ amount: a, cat: f.c.value, note: f.n.value, date: f.d.value }); },
+    expense: function (f) { var a = num(f.a.value); if (!(a > 0)) { f.a.focus(); return false; } if (f.sh && f.sh.value) return addShared(f); return ADD.expense({ amount: a, cat: f.c.value, note: f.n.value, date: f.d.value }); },
     event: function (f) { if (!f.t.value.trim()) { f.t.focus(); return false; } return ADD.event({ title: f.t.value, date: f.d.value, start: f.all.checked ? null : f.s.value, allDay: f.all.checked, cat: f.c.value, location: f.l.value, repeat: f.rep.value }); },
     workout: function (f) { if (!(+f.m.value > 0)) { f.m.focus(); return false; } return ADD.workout({ sport: f.k.value, min: +f.m.value, km: num(f.km.value), date: f.d.value, effort: f.e.value }); },
     todo: function (f) { return ADD.todo({ text: f.t.value, due: f.due.value, repeat: f.rep.value }); },

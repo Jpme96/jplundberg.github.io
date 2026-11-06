@@ -174,6 +174,8 @@
     { k: 'room', label: 'Room', type: 'select', options: ROOMS, def: 'living' },
     { k: 'price', label: 'Price paid', type: 'number', suffix: 'kr' },
     { k: 'bought', label: 'Bought', type: 'date' },
+    { k: 'ownWith', label: 'Owned together with', ph: 'Optional – e.g. your partner' },
+    { k: 'ownPct', label: 'Your share, %', type: 'number', suffix: '%', help: 'When you own it together: your part' },
     { k: 'brand', label: 'Brand and model', ph: 'Optional' },
     { k: 'serial', label: 'Serial number', ph: 'Optional' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Where the receipt is, the shop, warranty …' }],
@@ -191,7 +193,8 @@
     },
     row: function (x) {
       var c = cat(x.cat);
-      return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : ''].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
+      var own = x.ownWith && +x.ownPct > 0 && +x.ownPct < 100 ? 'yours ' + String(x.ownPct).replace('.', ',') + ' % · with ' + x.ownWith : x.ownWith ? 'with ' + x.ownWith : '';
+      return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : '', own].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
     },
     detail: function (x) {
       return '<div class="inv-ph">' + ['photo', 'receipt'].map(function (k) {

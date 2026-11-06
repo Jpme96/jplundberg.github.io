@@ -336,6 +336,7 @@
           '<span><small>' + esc(who) + ' · ' + pc(1 - pt) + ' %</small><b>' + money(pay * (1 - pt)) + '<em> a month</em></b><em>' + money(bal * (1 - pt)) + ' of the loan</em></span></div>' +
           '<button type="button" class="text-btn ln-chg" data-lnedit="' + esc(l.id) + '"><i class="bi bi-sliders"></i> Change the split</button></div>';
       }
+      if (!c && +l.pay > 0 && Lo.owedNow && Lo.owedNow(l) <= 0.5) return '<li class="ln is-done">' + head.replace(/<span class="money neg">[^<]*<\/span>/, money(0)) + '<p class="ln-p ln-win"><i class="bi bi-check2-circle"></i> Paid off</p></li>';
       if (!c) return '<li class="ln">' + head + split + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
       if (c.never) return '<li class="ln">' + head + split + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
       var paidPct = l.orig > 0 ? Math.min(1, 1 - c.balance / l.orig) : null;
@@ -356,6 +357,8 @@
   }
   function win(c, cx) { return '<i class="bi bi-stars"></i> Paid off <b>' + esc(cx.endLabel.split(' (')[0]) + '</b> – ' + (c.months - cx.months) + ' months sooner, <b>' + money(c.interestLeft - cx.interestLeft) + '</b> less interest'; }
   function editLoan(id) {
+    var dd = data(), pl = id && dd && (dd.accounts || []).filter(function (x) { return String(x.id) === String(id) && x.plan; })[0];
+    if (pl) { location.href = '/cmd/house/#hplan=' + encodeURIComponent(pl.id); return; }     /* bought in parts: changed on the House page */
     show('insights', { keep: true });
     setTimeout(function () {
       if (id) { var li = document.querySelector('#nwList .acc[data-id="' + id + '"]'); if (li) li.click(); }
@@ -432,7 +435,7 @@
 
   /* ================= Spending limits per category (Overview) =================
      d.budget.limits = { groceries: 5000, eating: 1500, … } – kr per budget period (payday → payday, or the month) */
-  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', '#3987e5', 'bus-front'], ['shopping', 'Shopping', '#c98500', 'bag'],
+  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', '#3987e5', 'bus-front'], ['shopping', 'Shopping', '#c98500', 'bag'], ['home', 'Home', '#a0673a', 'house'],
     ['fun', 'Fun', '#d55181', 'controller'], ['health', 'Health', '#8a6fdf', 'heart-pulse'], ['travel', 'Travel', '#0891b2', 'airplane'], ['other', 'Other', '#6b6d73', 'three-dots']];
   var limEditing = false;
   /* what you usually spend per category in a budget period: the average of the last three full months */

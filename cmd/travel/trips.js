@@ -590,7 +590,7 @@
       if (tr.spentId) linked[tr.spentId] = 1;
       var during = (vd.expenses || []).filter(function (x) { return x.date >= tr.start && x.date <= to && !linked[x.id]; });
       if (during.length) {
-        var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+        var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
         var by = {}, all = 0; during.forEach(function (x) { by[x.cat] = (by[x.cat] || 0) + (+x.amount || 0); all += +x.amount || 0; });
         var cats = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }), nd = Math.max(1, Math.min(tripDays(tr).length || 1, Math.round((new Date(Math.min(new Date(to + 'T12:00'), new Date())) - new Date(tr.start + 'T12:00')) / 864e5) + 1));
         html += '<div class="tp-during"><div class="tp-total"><div><span class="muted">Spent during the trip</span><b>' + esc(kr(all)) + '</b></div><div class="r"><span class="muted">Per day</span><b>' + esc(kr(all / nd)) + '</b></div></div>' +

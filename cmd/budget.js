@@ -263,7 +263,9 @@ window.Loans = (function () {
      The bank sees one loan; your budget, net worth and tax deduction see your part. */
   function part(l) { var s = +(l && l.share); return s > 0 && s < 100 ? s / 100 : 1; }
   function shared(l) { return part(l) < 1; }
-  return { payment: payment, calc: calc, balanceNow: balanceNow, label: label, TAX: TAX, part: part, shared: shared };
+  /* what's owed on a debt today: worked out from the payments when it has them, else the balance you typed */
+  function owedNow(l, now) { return l && +l.pay > 0 && l.asOf ? balanceNow(l, now) : +(l && l.balance) || 0; }
+  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared };
 })();
 
 /* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.
@@ -452,3 +454,27 @@ window.Budget.real = function (d, now) {
   return { cash: m.cash, owed: m.owed, bills: bills, billList: due, saveLeft: saveLeft, free: free, perDay: free > 0 ? free / Math.max(1, per.daysLeft) : 0,
     per: per, oldest: m.oldest, money: m };
 };
+
+/* things bought in parts (delbetaling – a loan with a.plan) show in the calendar on each due day until they're paid off */
+(function () {
+  "use strict";
+  if (!window.Vault) return;
+  (window.EventsExtra = window.EventsExtra || []).push(function () {
+    var d = window.Vault.get(), L = window.Loans, out = []; if (!d || !L) return out;
+    (d.accounts || []).forEach(function (a) {
+      if (!a || a.kind !== 'debt' || !a.plan || !(+a.pay > 0) || !a.asOf) return;
+      var c = L.calc(a); if (!c || c.never) return;
+      var st = new Date(a.asOf + 'T12:00'), day = +a.day || st.getDate(), now = new Date(), part = L.part(a);
+      var first = new Date(now.getFullYear(), now.getMonth(), Math.min(day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()));
+      var firstPay = new Date(st.getFullYear(), st.getMonth() + 1, Math.min(day, new Date(st.getFullYear(), st.getMonth() + 2, 0).getDate()));
+      if (first < new Date(now.getFullYear(), now.getMonth(), now.getDate())) first = new Date(now.getFullYear(), now.getMonth() + 1, Math.min(day, new Date(now.getFullYear(), now.getMonth() + 2, 0).getDate()));   /* this month's is behind us */
+      if (first < firstPay) first = firstPay;
+      var amt = Math.round((+a.pay) + (+a.fee || 0));
+      out.push({ id: 'rem:plan:' + a.id, title: 'Pay: ' + (a.name || 'part payment') + ' · ' + amt.toLocaleString('nb-NO') + ' kr' + (part < 1 ? ' (your part ' + Math.round(amt * part).toLocaleString('nb-NO') + ' kr)' : ''),
+        allDay: true, start: first, days: 1, color: '#a0673a', readOnly: true, reminder: true, link: '/cmd/house/#hshared', location: '',
+        notes: 'Bought in parts – ' + c.months + ' payment' + (c.months === 1 ? '' : 's') + ' left', exDays: {},
+        rule: { freq: 'MONTHLY', interval: 1, clamp: true, count: c.months } });
+    });
+    return out;
+  });
+})();

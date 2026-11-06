@@ -21,7 +21,7 @@
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
   function sum(l, f) { return (l || []).reduce(function (a, x) { return a + (+(f ? f(x) : x.amount) || 0); }, 0); }
   function hm(min) { var h = Math.floor(Math.abs(min) / 60), m = Math.round(Math.abs(min) % 60); return (min < 0 ? '−' : '') + (h ? h + 'h ' : '') + m + 'm'; }
-  var CATNAME = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
+  var CATNAME = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
 
   /* ---------- the numbers ---------- */
   function money(keyOf, test) {

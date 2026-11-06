@@ -9,6 +9,7 @@
     { id: 'eating', name: 'Eating out', color: '#d95926' },
     { id: 'transport', name: 'Transport', color: '#3987e5' },
     { id: 'shopping', name: 'Shopping', color: '#c98500' },
+    { id: 'home', name: 'Home', color: '#a0673a' },
     { id: 'fun', name: 'Fun', color: '#d55181' },
     { id: 'health', name: 'Health', color: '#8a6fdf' },
     { id: 'travel', name: 'Travel', color: '#0891b2' },
@@ -469,8 +470,9 @@
 
   /* Net worth */
   function netWorth() {
-    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -a.balance * part(a) : a.balance; });
+    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -owed(a) * part(a) : a.balance; });
   }
+  function owed(a) { return window.Loans && window.Loans.owedNow ? window.Loans.owedNow(a) : a.balance; }
   function part(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }   /* your part of a shared loan */
   function net() {
     if (!$('fpNet')) return;               // the editable Net worth card is on the page instead
@@ -478,7 +480,7 @@
     var nw = netWorth();
     $('fpNet').innerHTML = accs.length ? money(nw, nw < 0 ? 'neg' : '') : '';
     var assets = sum(accs.filter(function (a) { return a.kind !== 'debt'; }), function (a) { return a.balance; });
-    var debts = sum(accs.filter(function (a) { return a.kind === 'debt'; }), function (a) { return a.balance * part(a); });
+    var debts = sum(accs.filter(function (a) { return a.kind === 'debt'; }), function (a) { return owed(a) * part(a); });
     $('fpNetSub').innerHTML = accs.length ? 'Assets ' + money(assets) + ' · Debt ' + money(debts) : 'Add accounts and loans on the dashboard.';
     var hist = D.history || {}, keys = Object.keys(hist).sort();
     if (period !== 'all') keys = /^y:/.test(period) ? keys.filter(function (k) { return k.slice(0, 4) === period.slice(2); }) : keys.slice(-12);
@@ -520,7 +522,7 @@
     }
     $('fpAccs').innerHTML = accs.slice().sort(function (a, b) { return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance; }).map(function (a) {
       var debt = a.kind === 'debt', pt = debt ? part(a) : 1;
-      return '<li><span>' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? 'Shared loan · your ' + Math.round(pt * 1000) / 10 + ' %' : 'Debt') : 'Asset') + '</span></span>' + money(debt ? -a.balance * pt : a.balance, debt ? 'neg' : '') + '</li>';
+      return '<li><span>' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? 'Shared loan · your ' + Math.round(pt * 1000) / 10 + ' %' : 'Debt') : 'Asset') + '</span></span>' + money(debt ? -owed(a) * pt : a.balance, debt ? 'neg' : '') + '</li>';
     }).join('');
   }
 
