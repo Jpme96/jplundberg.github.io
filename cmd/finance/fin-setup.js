@@ -120,14 +120,14 @@
   }
   var QUICK = ['Loan', 'Rent', 'Power', 'Insurance', 'Phone', 'Internet', 'Car', 'Kindergarten', 'Streaming', 'Gym'];
   function stepFixed() {
-    var mine = draft.fixed.filter(function (f) { return !f.src; }), linked = draft.fixed.filter(function (f) { return f.src; });
+    var mine = draft.fixed.filter(function (f) { return !f.src && !f.split; }), linked = draft.fixed.filter(function (f) { return f.src || f.split; });
     var credit = draft.accts.filter(function (a) { return a.kind === 'credit' && a.name.trim(); });
     var from = function (f, i) { return '<select data-ff="acct" data-i="' + i + '" aria-label="Paid from">' + acctOptions(f.acct || 'salary', function (a) { return a.kind !== 'fund'; }) + '</select>'; };
     return '<h2 class="im-h"><i class="bi bi-arrow-repeat"></i> Every month</h2><p class="muted im-p">What goes out every month – loans, rent, power, insurance … – how much, which day, and which account pays it. ' +
         (credit.length ? 'Your credit card' + (credit.length > 1 ? 's are' : ' is') + ' paid from what you owe on ' + (credit.length > 1 ? 'them' : 'it') + ' – no need to add ' + (credit.length > 1 ? 'them' : 'it') + ' here.' : '') + '</p>' +
       '<div class="fs-quick">' + QUICK.map(function (q) { return '<button type="button" data-ffq="' + esc(q) + '">+ ' + esc(q) + '</button>'; }).join('') + '</div>' +
       '<ul class="fs-fix">' + draft.fixed.map(function (f, i) {
-        if (f.src) return '';
+        if (f.src || f.split) return '';
         return '<li><div class="fs-r1"><input data-ff="name" data-i="' + i + '" value="' + esc(f.name) + '" placeholder="What" aria-label="What" autocomplete="off"><input data-ff="amount" data-i="' + i + '" inputmode="decimal" value="' + esc(f.amount) + '" placeholder="kr" aria-label="Amount a month" autocomplete="off">' +
           '<button type="button" class="icon-btn sm" data-ffdel="' + i + '" aria-label="Remove"><i class="bi bi-trash3"></i></button></div>' +
           '<div class="fs-r2"><select data-ff="day" data-i="' + i + '" aria-label="Due day">' + dayOptions(f.day, 'No fixed day') + '</select>' + from(f, i) + '</div>' +

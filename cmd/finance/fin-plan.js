@@ -239,7 +239,7 @@
       return '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' + esc(a.label) +
         '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
         '<ul class="pa-list">' + g.rows.map(function (f) {
-          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual ? ', usually ' + esc(kr(f.usual)) : '') : '');
+          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
           return '<li>' + (f.src ? '<span>' + esc(f.name) + '<small>' + info + '</small></span>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
         }).join('') + '</ul></div>';
@@ -321,6 +321,7 @@
     }
     var yearTax = 0;
     box.innerHTML = '<ul class="ln-list">' + loans.map(function (l) {
+      if (l.inner && Lo.inner) { var tb = Lo.myTaxBack(l); yearTax += tb; return innerLoan(l); }
       var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null, pt = Lo.part ? Lo.part(l) : 1, sh = pt < 1, who = String(l.with || '').trim() || 'The other';
       if (c && !c.never) yearTax += c.taxBack * pt;
       var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + (l.pay ? esc(kr(l.pay)) + ' a month' + (l.fee ? ' + ' + esc(kr(l.fee)) + ' fee' : '') : 'no payment set') +
@@ -355,6 +356,61 @@
     }).join('') + '</ul>' +
       (yearTax > 0 ? '<p class="ln-sum"><i class="bi bi-percent"></i> All loans: about ' + money(yearTax) + ' less tax over the next 12 months (rentefradrag)</p>' : '');
   }
+  /* a mortgage in two internal parts (samboerkontrakt): each part on its own, extra payments, your tax numbers, your settlement */
+  function innerLoan(l) {
+    var q = Lo.inner(l), c = Lo.calc(l), who = String(l.with || '').trim() || 'The other', yr = new Date().getFullYear(); if (!q) return '';
+    var started = new Date(l.asOf + 'T12:00') <= new Date();
+    var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + '<i class="bi bi-people"></i> two internal parts' +
+      (l.fixed !== false ? ' · <i class="bi bi-link-45deg"></i> your instalment in fixed costs' : '') + (started ? '' : ' · starts ' + esc(new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }))) + '</small></span>' + money(-(q.me.bal + q.them.bal), 'neg') +
+      '<button type="button" class="icon-btn sm" data-lnedit="' + esc(l.id) + '" aria-label="Change ' + esc(l.name) + '"><i class="bi bi-pencil"></i></button></div>';
+    var tot = q.me.bal + q.them.bal, pt = tot > 0 ? q.me.bal / tot : 1, pc = function (v) { return String(Math.round(v * 1000) / 10).replace('.', ','); };
+    var col = function (name, x, fee, cls) {
+      return '<span class="' + cls + '"><small>' + esc(name) + ' · ' + money(x.bal) + '</small><b>' + money(x.pay + fee) + '<em> a month</em></b><em>' + money(x.interest) + ' interest + ' + money(x.pay - x.interest) + ' off the part</em></span>';
+    };
+    var split = '<div class="ln-split"><div class="ln-sbar" role="img" aria-label="Your part ' + pc(pt) + ' %, ' + esc(who) + ' ' + pc(1 - pt) + ' %"><span style="width:' + (pt * 100).toFixed(1) + '%"></span></div>' +
+      '<div class="ln-who">' + col('Your part', q.me, q.fee.me, '') + col(who + '’s part', q.them, q.fee.them, '') + '</div></div>';
+    var fees = q.fee.me * q.me.yearPays, tax = (q.me.year + fees) * Lo.TAX;
+    var grid = '<div class="ln-grid">' +
+      '<span><small>Paid off</small><b>' + (c && !c.never ? esc(c.endLabel) : '–') + '</b></span>' +
+      '<span><small>Your interest + fees ' + yr + '</small><b>' + money(q.me.year + fees) + '</b><em>for the skattemelding · ' + q.me.yearPays + ' payment' + (q.me.yearPays === 1 ? '' : 's') + '</em></span>' +
+      '<span><small>Tax deduction ' + yr + ', yours</small><b>' + money(tax) + '</b><em>22 % of your own interest and fees</em></span>' +
+      '<span><small>Next 12 months, yours</small><b>' + money(q.me.next12) + ' interest</b><em>' + money(Lo.myTaxBack(l)) + ' less tax</em></span>' +
+    '</div>';
+    var hm = l.home && +l.home.value > 0 ? l.home : null, settle = '';
+    if (hm) {
+      var own = (+hm.own || 50) / 100, net = +hm.value * (1 - (+hm.costs || 0) / 100), mine = net * own - q.me.bal, theirs = net * (1 - own) - q.them.bal;
+      settle = '<div class="ln-home"><p><i class="bi bi-house-door"></i> <b>If sold at ' + esc(kr(hm.value)) + '</b> <span class="muted">(less ' + esc(String(+hm.costs || 0).replace('.', ',')) + ' % sale costs)</span></p>' +
+        '<div class="ln-who"><span><small>Your settlement</small><b>' + money(mine, mine < 0 ? 'neg' : '') + '</b><em>your ' + Math.round(own * 100) + ' % less your part of the loan</em></span>' +
+        '<span><small>' + esc(who) + '’s settlement</small><b>' + money(theirs, theirs < 0 ? 'neg' : '') + '</b><em>' + Math.round((1 - own) * 100) + ' % less their part</em></span></div>' +
+        '<p class="muted ln-p">Value from ' + esc(hm.at || '–') + ' – change it with the pencil now and then.</p></div>';
+    }
+    var ex = (l.extra || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var exl = ex.length ? '<ul class="ln-ex">' + ex.slice(0, 4).map(function (e) { return '<li><span>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' · ' + (e.who === 'them' ? esc(who) : 'You') + '</span>' + money(e.amount) + '<button type="button" class="icon-btn sm" data-lnexdel="' + esc(l.id + '|' + e.id) + '" aria-label="Remove extra payment"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' : '';
+    return '<li class="ln">' + head + split + grid +
+      '<div class="ln-acts"><button type="button" class="text-btn" data-lnextra="' + esc(l.id) + '"><i class="bi bi-plus-circle"></i> Extra payment</button>' +
+      (window.SharedHome ? '<button type="button" class="text-btn" data-lnsub="' + esc(l.id) + '"><i class="bi bi-arrow-left-right"></i> Covered an instalment</button>' : '') + '</div>' + exl + settle +
+      (q.left < (+l.inner.months || 0) || !started ? '' : '') + '</li>';
+  }
+  /* an extra payment on one internal part */
+  function extraSheet(id) {
+    var d = data(), l = d && (d.accounts || []).filter(function (a) { return String(a.id) === String(id); })[0]; if (!l) return;
+    var who = String(l.with || '').trim() || 'The other', bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
+    bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Extra payment"><div class="lf-head"><h3><i class="bi bi-plus-circle"></i> Extra payment</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+      '<p class="muted">It lowers only the payer’s part – and that person’s next instalments, with the same term.</p>' +
+      '<div class="seg lf-seg"><button type="button" data-w="me" aria-pressed="true">You paid</button><button type="button" data-w="them" aria-pressed="false">' + esc(who) + ' paid</button></div>' +
+      '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required><input name="date" type="date" value="' + esc(new Date().toISOString().slice(0, 10)) + '" aria-label="Date"></div>' +
+      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save</button></div></form>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var w = 'me', close = function () { bg.remove(); };
+    bg.addEventListener('click', function (e) { var b = e.target.closest('[data-w]'); if (b) { w = b.dataset.w; bg.querySelectorAll('[data-w]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === b)); }); return; } if (e.target === bg || e.target.closest('[data-x]')) close(); });
+    bg.addEventListener('submit', function (e) {
+      e.preventDefault(); var f = e.target, n = parseFloat(String(f.amt.value).replace(/\s/g, '').replace(',', '.'));
+      if (!(n > 0)) { f.amt.focus(); return; }
+      var d2 = data(); (d2.accounts || []).forEach(function (a) { if (String(a.id) === String(id)) { a.extra = Array.isArray(a.extra) ? a.extra : []; a.extra.push({ id: Date.now().toString(36), date: f.date.value || new Date().toISOString().slice(0, 10), amount: Math.round(n), who: w }); } });
+      window.Vault.save(d2); if (window.Links) window.Links.syncLoans(); close(); save(data());
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> Extra payment saved – ' + (w === 'me' ? 'your' : esc(who) + '’s') + ' part is lower');
+    });
+  }
   function win(c, cx) { return '<i class="bi bi-stars"></i> Paid off <b>' + esc(cx.endLabel.split(' (')[0]) + '</b> – ' + (c.months - cx.months) + ' months sooner, <b>' + money(c.interestLeft - cx.interestLeft) + '</b> less interest'; }
   function editLoan(id) {
     var dd = data(), pl = id && dd && (dd.accounts || []).filter(function (x) { return String(x.id) === String(id) && x.plan; })[0];
@@ -368,6 +424,9 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lnedit]'); if (b) { editLoan(b.dataset.lnedit); return; }
+    if ((b = e.target.closest('[data-lnextra]'))) { extraSheet(b.dataset.lnextra); return; }
+    if ((b = e.target.closest('[data-lnsub]'))) { if (window.SharedHome) window.SharedHome.cover(b.dataset.lnsub); return; }
+    if ((b = e.target.closest('[data-lnexdel]'))) { var q = b.dataset.lnexdel.split('|'), d0 = data(); (d0.accounts || []).forEach(function (a) { if (String(a.id) === q[0]) a.extra = (a.extra || []).filter(function (x) { return x.id !== q[1]; }); }); window.Vault.save(d0); if (window.Links) window.Links.syncLoans(); save(data()); return; }
     if (e.target.closest('#fpLoanAdd')) editLoan(null);
   });
   document.addEventListener('input', function (e) {
@@ -401,7 +460,7 @@
     var max = Math.max.apply(null, months.map(function (m) { return m.net + Math.max(0, m.tax || 0); }).concat([fixed, 1]));
     var y = String(now.getFullYear());
     var bsu = (d.savings || []).filter(function (g) { return g.bsu; }), bsuIn = sum(bsu, function (g) { return (g.yr || {})[y] || 0; });
-    var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack * (Lo.part ? Lo.part(l) : 1) : 0); }, 0) : 0;
+    var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack * (Lo.part ? Lo.part(l) : 1) : 0) * (l.inner ? 0 : 1) + (l.inner ? Lo.myTaxBack(l) : 0); }, 0) : 0;
     var june = months.filter(function (m) { return m.hol; })[0], dec = months.filter(function (m) { return m.half; })[0];
     var facts = [];
     if (june) facts.push(['sun', '#c98500', 'Holiday pay in ' + june.dt.toLocaleDateString('en-GB', { month: 'long' }), money(june.net) + ' paid out – ' + money(Math.abs(june.net - ord)) + (june.net >= ord ? ' more' : ' less') + ' than a normal month, no tax on the holiday pay']);

@@ -136,7 +136,63 @@
     s.items.forEach(function (x) { var sh = x.shares || {}; if (x.payer === 'me') b += +sh[pid] || 0; else if (x.payer === pid) b -= +sh.me || 0; });
     s.pays.forEach(function (p) { if (p.from === 'me' && p.to === pid) b += +p.amount || 0; if (p.from === pid && p.to === 'me') b -= +p.amount || 0; });
     planPays(null, pid).forEach(function (x) { if (x.payer === 'me') b += x.them; else if (x.payer === pid) b -= x.mine; });
+    billClaims(null, pid).forEach(function (x) { if (x.payer === 'me') b += x.them; else if (x.payer === pid) b -= x.mine; });
     return Math.round(b * 100) / 100;
+  }
+  /* shared running costs (a fixed cost with f.split): every month from f.split.from, once its due day has passed, the one who
+     paid the bill has a claim on the other's part. -> [{ bill, ym, date, amount (whole), mine, them, payer, pid, name }] */
+  function billClaims(until, pid) {
+    var d = window.Vault.get(), B = window.Budget, out = []; if (!d || !B || !B.fixedWhole) return out;
+    var end = until || dkey(new Date());
+    ((d.budget && d.budget.fixed) || []).forEach(function (f) {
+      var sp = f && f.split; if (!sp || !sp.pid || (pid && sp.pid !== pid) || !/^\d{4}-\d{2}$/.test(sp.from || '')) return;
+      if (sp.payer !== 'me' && sp.payer !== sp.pid) return;          /* each pays their own part: nothing between you */
+      var part = B.splitPart(f);
+      for (var y = +sp.from.slice(0, 4), m = +sp.from.slice(5, 7) - 1, g = 0; g < 240; g++, m++) {
+        var first = new Date(y, m, 1); if (dkey(first) > end) break;
+        var dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate(), dt = new Date(first.getFullYear(), first.getMonth(), Math.min(+f.day || 1, dim)), k = dkey(dt);
+        if (k > end) break;
+        var ym = k.slice(0, 7), whole = B.fixedWhole(f, ym); if (!(whole > 0)) continue;
+        var mine = Math.round(whole * part * 100) / 100;
+        out.push({ bill: f.id, ym: ym, date: k, amount: whole, mine: mine, them: Math.round((whole - mine) * 100) / 100, payer: sp.payer, pid: sp.pid, name: f.name || 'Bill' });
+      }
+    });
+    return out.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  }
+  /* what's been paid back: every claim between you and pid, oldest first, settled by repayments (and by what the other way
+     round is owed – it nets out). -> { rows: [{ key, kind, id, date, amount (owed), dir: +1 they owe you / -1 you owe them,
+     left, paidAt, state: 'paid' | 'part' | 'open', note, sub, loan }], last: { in, out } (latest repayment each way) } */
+  function ledger(pid) {
+    var s = sh(), rows = [];
+    s.items.forEach(function (x) {
+      var sh2 = x.shares || {};
+      if (x.payer === 'me' && +sh2[pid] > 0) rows.push({ key: 'i:' + x.id, kind: 'item', id: x.id, date: x.date, amount: +sh2[pid], dir: 1, note: x.note || 'Shared', sub: !!x.sub, loan: x.loan || null });
+      else if (x.payer === pid && +sh2.me > 0) rows.push({ key: 'i:' + x.id, kind: 'item', id: x.id, date: x.date, amount: +sh2.me, dir: -1, note: x.note || 'Shared', sub: !!x.sub, loan: x.loan || null });
+    });
+    planPays(null, pid).forEach(function (q) { if (q.payer === 'me' && q.them > 0) rows.push({ key: 'l:' + q.loan + ':' + q.n, kind: 'plan', id: q.loan, date: q.date, amount: q.them, dir: 1, note: q.name + ' · payment ' + q.n }); else if (q.payer === pid && q.mine > 0) rows.push({ key: 'l:' + q.loan + ':' + q.n, kind: 'plan', id: q.loan, date: q.date, amount: q.mine, dir: -1, note: q.name + ' · payment ' + q.n }); });
+    billClaims(null, pid).forEach(function (q) { if (q.payer === 'me' && q.them > 0) rows.push({ key: 'b:' + q.bill + ':' + q.ym, kind: 'bill', id: q.bill, date: q.date, amount: q.them, dir: 1, note: q.name + ' · ' + q.ym, ym: q.ym }); else if (q.payer === pid && q.mine > 0) rows.push({ key: 'b:' + q.bill + ':' + q.ym, kind: 'bill', id: q.bill, date: q.date, amount: q.mine, dir: -1, note: q.name + ' · ' + q.ym, ym: q.ym }); });
+    rows.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    /* credit each way: repayments in that direction + what's owed the other way (it cancels out) */
+    var credit = { 1: [], '-1': [] }, last = { in: null, out: null };
+    s.pays.forEach(function (p) {
+      if (p.from === pid && p.to === 'me') { credit[1].push({ date: p.date, amount: +p.amount || 0 }); if (!last.in || p.date >= last.in.date) last.in = p; }
+      if (p.from === 'me' && p.to === pid) { credit[-1].push({ date: p.date, amount: +p.amount || 0 }); if (!last.out || p.date >= last.out.date) last.out = p; }
+    });
+    rows.forEach(function (r) { credit[-r.dir].push({ date: r.date, amount: r.amount }); });
+    [1, -1].forEach(function (dir) {
+      var cs = credit[dir].sort(function (a, b) { return a.date < b.date ? -1 : 1; }), ci = 0, have = 0, at = null;
+      rows.filter(function (r) { return r.dir === dir; }).forEach(function (r) {
+        var need = r.amount;
+        while (need > 0.005) {
+          if (have <= 0.005) { if (ci >= cs.length) break; have = cs[ci].amount; at = cs[ci].date; ci++; continue; }
+          var use = Math.min(have, need); have -= use; need -= use;
+        }
+        r.left = Math.max(0, Math.round(need * 100) / 100);
+        r.state = r.left <= 0.005 ? 'paid' : r.left < r.amount - 0.005 ? 'part' : 'open';
+        r.paidAt = r.state === 'paid' ? (at && at > r.date ? at : r.date) : null;
+      });
+    });
+    return { rows: rows, last: last };
   }
   /* things bought in parts (delbetaling) are loans in Net worth with a.plan: every monthly payment made so far,
      with your part and theirs – when one of you pays the store, the other owes their part.
@@ -355,6 +411,7 @@
       var ev = s.items.filter(function (x) { return x.payer === pid || (x.shares || {})[pid] != null; }).map(function (x) { return { k: 'i', date: x.date, x: x, v: x.payer === 'me' ? +(x.shares[pid] || 0) : x.payer === pid ? -(+x.shares.me || 0) : 0, t: x.note || 'Shared' }; })
         .concat(s.pays.filter(function (q) { return q.from === pid || q.to === pid; }).map(function (q) { return { k: 'p', date: q.date, x: q, v: q.from === 'me' ? +q.amount : -q.amount, t: q.from === 'me' ? 'You paid ' + p.name : p.name + ' paid you' }; }))
         .concat(planPays(null, pid).filter(function (q) { return q.payer !== 'each'; }).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.loan }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · payment ' + q.n + ' of ' + q.of }; }))
+        .concat(billClaims(null, pid).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.bill }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · ' + fmt(q.date + '', { month: 'long', year: 'numeric' }) }; }))
         .sort(function (a, c) { return a.date < c.date ? 1 : -1; });
       box.innerHTML = head('person', p.name) + '<p class="mp-bal ' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(b >= 1 ? 'Owes you ' + kr(b) : b <= -1 ? 'You owe ' + kr(-b) : 'Settled up') + '</p>' +
         '<ul class="mp-list">' + ev.map(function (r) {
@@ -454,7 +511,7 @@
 
   window.MoneyPlus = { detect: detect, addAs: addAs, setIgnore: setIgnore, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
   /* the shared-expenses engine, for the House page's “Shared home” card and Quick add (one set of data, one balance) */
-  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, monthsFor: monthsFor, person: function (id) { return person(sh(), id); },
+  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, monthsFor: monthsFor, billClaims: billClaims, ledger: ledger, person: function (id) { return person(sh(), id); },
     split: splitSheet, settle: settleSheet, history: personSheet, message: share, saveItem: save, removeItem: remove, cfg: cfg, setCfg: setCfg,
     partner: function () { var c = cfg(), s = sh(); return (c.partner && person(s, c.partner)) || null; } };
 })();

@@ -175,7 +175,8 @@
     { k: 'price', label: 'Price paid', type: 'number', suffix: 'kr' },
     { k: 'bought', label: 'Bought', type: 'date' },
     { k: 'ownWith', label: 'Owned together with', ph: 'Optional – e.g. your partner' },
-    { k: 'ownPct', label: 'Your share, %', type: 'number', suffix: '%', help: 'When you own it together: your part' },
+    { k: 'ownPct', label: 'Your share, %', type: 'number', suffix: '%', help: 'When you own it together: your part (0 = all theirs)' },
+    { k: 'agreed', label: 'Agreed in writing', type: 'date', help: 'When you both accepted this entry in the household register' },
     { k: 'brand', label: 'Brand and model', ph: 'Optional' },
     { k: 'serial', label: 'Serial number', ph: 'Optional' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Where the receipt is, the shop, warranty …' }],
@@ -184,7 +185,7 @@
     mount: $t('hinv'), feature: 'house', key: 'hinv', icon: 'box-seam', title: 'Home inventory', addLabel: 'Item', limit: 8,
     addTitle: INV.addTitle, editTitle: INV.editTitle, fields: INV.fields, onDelete: INV.onDelete,
     empty: 'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.',
-    headExtra: function (l) { return l.length ? '<button type="button" class="text-btn" data-invpdf><i class="bi bi-file-earmark-pdf"></i> Insurance list</button>' : ''; },
+    headExtra: function (l) { return l.length ? '<button type="button" class="text-btn" data-invpdf><i class="bi bi-file-earmark-pdf"></i> Insurance list</button><button type="button" class="text-btn" data-invreg><i class="bi bi-journal-check"></i> Register</button>' : ''; },
     sort: function (a, b) { return (+b.price || 0) - (+a.price || 0); },
     summary: function (l) {
       if (!l.length) return '';
@@ -193,7 +194,8 @@
     },
     row: function (x) {
       var c = cat(x.cat);
-      var own = x.ownWith && +x.ownPct > 0 && +x.ownPct < 100 ? 'yours ' + String(x.ownPct).replace('.', ',') + ' % · with ' + x.ownWith : x.ownWith ? 'with ' + x.ownWith : '';
+      var own = x.ownWith && +x.ownPct > 0 && +x.ownPct < 100 ? 'yours ' + String(x.ownPct).replace('.', ',') + ' % · with ' + x.ownWith : x.ownWith && x.ownPct !== '' && x.ownPct != null && +x.ownPct === 0 ? 'all ' + x.ownWith + '’s' : x.ownWith ? 'with ' + x.ownWith : '';
+      if (x.ownWith && !x.agreed) own += ' · not agreed yet';
       return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : '', own].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
     },
     detail: function (x) {
@@ -204,7 +206,7 @@
       }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '');
     },
     afterRender: function (el) { el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
-    onClick: function (e) { if (e.target.closest('[data-invpdf]')) invList(); }
+    onClick: function (e) { if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register(); }
   }) : null;
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-invfile]'); if (!i || !i.files.length) return;
@@ -217,6 +219,46 @@
     }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> Couldn’t read that picture'); });
   });
   /* the list for the insurance company: A4, with photos – Save as PDF from the print sheet */
+  /* the household register (samboerkontrakt, Appendix B): each item, its price and who owns it, to sign */
+  function ownText(x, me, them) {
+    var pct = x.ownPct === '' || x.ownPct == null ? null : +x.ownPct;
+    if (!x.ownWith) return '100 % ' + me;
+    if (pct === 0) return '100 % ' + (x.ownWith || them);
+    if (pct === 100) return '100 % ' + me;
+    if (pct === 50 || pct == null) return '50/50';
+    return String(pct).replace('.', ',') + ' % ' + me + ' / ' + String(Math.round((100 - pct) * 10) / 10).replace('.', ',') + ' % ' + (x.ownWith || them);
+  }
+  function register() {
+    var prof = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();
+    var pt = window.Shared && window.Shared.partner(), me = (prof.name || 'Me').split(' ')[0], them = pt ? pt.name : 'the other';
+    var all = Fe.list('hinv').slice().sort(function (a, b) { return (a.bought || '') < (b.bought || '') ? -1 : 1; }), onlyShared = false;
+    var bg = document.createElement('div'); bg.className = 'rp-bg';
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rgclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-rgsh> Only what you own together</label>' +
+      '<button type="button" class="pill-btn" data-rgprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
+      '<p class="rp-hint">Each entry should be accepted by both of you in writing – sign the PDF, or reply to it by message. Set “Agreed in writing” on the item afterwards.</p><article class="rp-doc"></article>';
+    document.body.appendChild(bg); document.body.classList.add('rp-open');
+    var doc = bg.querySelector('.rp-doc');
+    function draw() {
+      var l = all.filter(function (x) { return !onlyShared || x.ownWith; }), tot = l.reduce(function (a, x) { return a + (+x.price || 0); }, 0);
+      doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick">Appendix B · Vedlegg B</p><h1>Register of household items</h1><p class="rp-addr">Register over innbo · ' + esc(prof.name || me) + (pt ? ' and ' + esc(pt.name) : '') + '</p></div>' +
+        '<div class="iv-no"><small>Total</small><b>' + esc(kr(tot)) + '</b></div></header>' +
+        '<p class="rp-intro">Ownership: 50/50, 100 % one of you, or another split. ' + l.length + ' items · made ' + esc(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
+        '<table class="rg-t"><thead><tr><th>Item</th><th>Bought</th><th>Price</th><th>Ownership</th><th>Agreed</th></tr></thead><tbody>' + l.map(function (x) {
+          return '<tr><td><b>' + esc(x.name) + '</b>' + (x.brand ? '<br><small>' + esc(x.brand) + '</small>' : '') + '</td><td>' + esc(x.bought ? fromKey(x.bought).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '–') + '</td><td>' + (x.price ? esc(kr(x.price)) : '–') + '</td><td>' + esc(ownText(x, me, them)) + '</td><td>' + (x.agreed ? esc(fromKey(x.agreed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) : '') + '</td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<div class="rg-sign"><div><span></span><p>' + esc(prof.name || me) + ' · date</p></div><div><span></span><p>' + esc(pt ? pt.name : 'Other party') + ' · date</p></div></div>' +
+        '<footer class="rp-foot">Appendix B – register of household items · ' + esc(today()) + '</footer>';
+    }
+    function close() { bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }
+    function key(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', key);
+    bg.addEventListener('change', function (e) { if (e.target.matches('[data-rgsh]')) { onlyShared = e.target.checked; draw(); } });
+    bg.addEventListener('click', function (e) {
+      if (e.target.closest('[data-rgclose]')) return close();
+      if (e.target.closest('[data-rgprint]')) { var t = document.title; document.title = 'Appendix B – household items ' + today(); var done = function () { document.title = t; window.removeEventListener('afterprint', done); }; window.addEventListener('afterprint', done); setTimeout(function () { window.print(); }, 300); setTimeout(done, 60000); }
+    });
+    draw();
+  }
   function invList() {
     var l = Fe.list('hinv').slice().sort(function (a, b) { return (a.room || '').localeCompare(b.room || '') || (+b.price || 0) - (+a.price || 0); });
     var me = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();

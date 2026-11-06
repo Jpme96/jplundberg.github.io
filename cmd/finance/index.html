@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=177" rel="stylesheet">
+  <link href="../styles.css?v=178" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -237,8 +237,24 @@
               <div class="nw-share" id="nwShareBox" hidden>
                 <div class="row2">
                   <label class="sv-by"><span>Shared with</span><input id="nwWith" placeholder="e.g. your partner’s name" maxlength="30" autocomplete="off"></label>
-                  <label class="sv-by"><span>You pay, %</span><input id="nwShare" placeholder="e.g. 60" inputmode="decimal" autocomplete="off"></label>
+                  <label class="sv-by"><span>How you split it</span><select id="nwMode"><option value="pct">By %</option><option value="inner">Two internal parts</option></select></label>
                 </div>
+                <div class="nw-inner" id="nwInner" hidden>
+                  <p class="muted sv-hint">As in a samboerkontrakt: each of you pays your own internal part of the loan as its own annuity over the same term. An extra payment only lowers the payer’s part. The fee is split equally.</p>
+                  <div class="row2">
+                    <label class="sv-by"><span>Your internal part, kr</span><input id="nwMine" placeholder="When the loan starts" inputmode="decimal" autocomplete="off"></label>
+                    <label class="sv-by"><span>Term, years</span><input id="nwTerm" placeholder="e.g. 30" inputmode="decimal" autocomplete="off"></label>
+                  </div>
+                  <div class="row2">
+                    <label class="sv-by"><span>Loan starts</span><input id="nwStart" type="date"></label>
+                    <label class="sv-by"><span>Home value, kr</span><input id="nwHome" placeholder="Optional – your estimate" inputmode="decimal" autocomplete="off"></label>
+                  </div>
+                  <div class="row2">
+                    <label class="sv-by"><span>You own, %</span><input id="nwOwn" placeholder="50" inputmode="decimal" autocomplete="off"></label>
+                    <label class="sv-by"><span>Costs of a sale, %</span><input id="nwSaleCost" placeholder="2,5" inputmode="decimal" autocomplete="off"></label>
+                  </div>
+                </div>
+                <label class="sv-by nw-pctrow" id="nwPctRow"><span>You pay, %</span><input id="nwShare" placeholder="e.g. 60" inputmode="decimal" autocomplete="off"></label>
                 <div class="nw-chips" role="group" aria-label="Quick split"><button type="button" data-nwsplit="50">50 / 50</button><button type="button" data-nwsplit="60">60 / 40</button><button type="button" data-nwsplit="40">40 / 60</button><button type="button" data-nwsplit="70">70 / 30</button><button type="button" data-nwsplit="30">30 / 70</button></div>
                 <p class="muted sv-hint" id="nwShareHint"></p>
               </div>
@@ -926,8 +942,8 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=33cf301b28"></script>
-  <script src="../dist/tail.js?v=ca727043c9"></script>
+  <script src="../dist/page-finance.js?v=18f7f12b3f"></script>
+  <script src="../dist/tail.js?v=73eb93822f"></script>
   <!-- /scripts -->
 </body>
 </html>

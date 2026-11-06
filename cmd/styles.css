@@ -4280,3 +4280,56 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 @media (max-width: 600px) { .hs2 .kit-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
 .hs2 .kit-tile > span { white-space: normal; overflow: visible; text-overflow: clip; }
 .hs2 .kit-tile b { white-space: nowrap; }
+
+/* shared home, part 2: payback, covered instalments, running costs, repairs, moving (home-shared.js) */
+.hs2-pb { margin: 8px 0 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.hs2-pb b { color: var(--text); font-weight: 600; }
+.hs2-pb .bi { margin-right: 4px; }
+.hs2-st { display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; width: max-content; }
+.hs2-paid { background: color-mix(in srgb, #22b35e 16%, transparent); color: #1f9d55; }
+.hs2-part { background: color-mix(in srgb, #c98500 18%, transparent); color: #b07400; }
+.hs2-open { background: color-mix(in srgb, #e8743b 16%, transparent); color: #d0612b; }
+.hs2-lines .kit-x, .hs2-run .kit-x, .hs2-work .kit-x { display: grid; min-width: 0; }
+.hs2-cov { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hs2-cov li { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); }
+.hs2-cov li span { display: grid; gap: 2px; min-width: 0; font-size: 14px; }
+.hs2-cov li small { color: var(--muted); font-size: 12px; }
+.hs2-cov li.soon { border-color: #c98500; }
+.hs2-cov li.late { border-color: #e8743b; }
+.hs2-cov li.late small:last-child { color: #e8743b; }
+.hs2-run, .hs2-work { margin-top: 2px; }
+.hs2-run .money, .hs2-work .money { font-variant-numeric: tabular-nums; color: var(--heading); flex: none; margin-left: auto; }
+.hs2-cap { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); margin-bottom: 8px; }
+.hs2-cap p { margin: 0; display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; }
+.hs2-cap p span { color: var(--muted); }
+.hs2-cap .stack { height: 6px; }
+.hs2-cap small { font-size: 12px; }
+.hs2-mv { font-size: 12.5px; }
+.hs2-move { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.hs2-move li { display: flex; align-items: center; gap: 6px; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.hs2-move li .lf-check { flex: 1; min-width: 0; }
+.hs2-move li input:checked + span { color: var(--muted); text-decoration: line-through; }
+.hs2-mvadd { display: flex; gap: 6px; margin-top: 8px; }
+.hs2-mvadd input { flex: 1; min-width: 0; }
+.hs2-kind { flex-wrap: wrap; }
+.hs2-kind button { flex: 1 1 40%; }
+.hs2-agreed, .hs2-more label { display: grid; gap: 3px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+.hs2-more { margin-top: 14px; padding-top: 6px; border-top: 1px solid var(--line); }
+.ln-acts { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; }
+.ln-acts .text-btn { font-size: 13px; }
+.ln-ex { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.ln-ex li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.ln-ex li .money { margin-left: auto; color: var(--text); }
+.ln-home { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); }
+.ln-home > p { margin: 0; font-size: 14px; }
+.ln-home .ln-who span:first-child small::before, .ln-home .ln-who span:last-child small::before { display: none; }
+.nw-inner { display: grid; gap: 8px; }
+.nw-pctrow[hidden], .nw-chips[hidden], .nw-inner[hidden] { display: none !important; }
+/* Appendix B (house-plus.js) */
+.rg-t { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 12px; }
+.rg-t th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #666; border-bottom: 1.5px solid #333; padding: 6px 6px 6px 0; }
+.rg-t td { padding: 7px 6px 7px 0; border-bottom: 1px solid #ddd; vertical-align: top; }
+.rg-t td small { color: #666; }
+.rg-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 46px; }
+.rg-sign span { display: block; border-bottom: 1px solid #333; height: 34px; }
+.rg-sign p { margin: 6px 0 0; font-size: 12px; color: #555; }

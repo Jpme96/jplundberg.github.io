@@ -111,7 +111,7 @@
         var a = ids[f.acct] || main;
         var own = f.vary && f.months && f.months[k] != null && f.months[k] !== '';
         ev.push({ dt: late ? t0 : dt, real: dt, kind: 'bill', id: f.id, ym: k, paid: isPaid || auto, late: late, name: f.name, amt: -(B.fixedAmt ? B.fixedAmt(f, k) : +f.amount || 0), open: !f.src, vary: !!f.vary && !own,
-          sub: (a ? (a.kind === 'credit' ? 'on ' : 'from ') + a.label : '') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? (own ? ' · this month’s amount' : ' · varies, estimate') : '') });
+          sub: (a ? (a.kind === 'credit' ? 'on ' : 'from ') + a.label : '') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? (own ? ' · this month’s amount' : ' · varies, estimate') : '') + (f.split && B.fixedWhole ? ' · your part of ' + kr(B.fixedWhole(f, k)) : '') });
       });
     }
     /* credit card bills */

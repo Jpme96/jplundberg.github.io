@@ -246,7 +246,7 @@
           '<button type="button" class="text-btn fx-vary" data-fbopen="' + r.id + '"><i class="bi bi-graph-up"></i> The amount changes from month to month …</button>' +
           '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit">Save</button></div></form></li>';
       }
-      return '<li class="b-row"><button type="button" class="b-open" ' + (r.vary ? 'data-fbopen' : 'data-fedit') + '="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day || r.vary ? '<small class="muted">' + (r.day ? 'due the ' + esc(r.day) + '.' : '') + (r.vary ? (r.day ? ' · ' : '') + 'varies – this month' : '') + '</small>' : '') + '</button>' + money(r.amount) +
+      return '<li class="b-row"><button type="button" class="b-open" ' + (r.vary || r.split ? 'data-fbopen' : 'data-fedit') + '="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day || r.vary ? '<small class="muted">' + (r.day ? 'due the ' + esc(r.day) + '.' : '') + (r.split ? (r.day ? ' · ' : '') + 'shared – your part' : r.vary ? (r.day ? ' · ' : '') + 'varies – this month' : '') + '</small>' : '') + '</button>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
     return '<div class="b-edit"><h3>' + title + ' <span class="muted">' + money(sum(D.budget[kind])) + '</span></h3>' +
@@ -624,7 +624,7 @@
   function bankNet() { var m = window.Accts ? window.Accts.money(D) : null; return m && m.known ? m.net : 0; }
   function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.counted); }
   function netWorth() {
-    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -owed(a) * loanPart(a) : a.balance; });
+    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -owed(a) * loanPart(a) + homeShare(a) : a.balance; });
   }
   function snapshot() {
     if (D.accounts.length || hasBank()) D.history[ym(new Date())] = netWorth();
@@ -662,8 +662,9 @@
     }).map(function (a) {
       var debt = a.kind === 'debt', pt = debt ? loanPart(a) : 1;
       return '<li class="acc" data-id="' + a.id + '"><i class="bi bi-' + (debt ? 'credit-card' : 'bank') + ' acc-ico' + (debt ? ' debt' : '') + '"></i>' +
-        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? (a.plan ? 'Paid in parts' : 'Shared loan') + ' · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(owed(a))) : 'Debt') : 'Asset') + '</span></span>' +
-        money(debt ? -owed(a) * pt : a.balance, debt ? 'neg' : '') + '</li>';
+        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (a.inner ? 'Your internal part of ' + esc(kr(owed(a))) : pt < 1 ? (a.plan ? 'Paid in parts' : 'Shared loan') + ' · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(owed(a))) : 'Debt') : 'Asset') + '</span></span>' +
+        money(debt ? -owed(a) * pt : a.balance, debt ? 'neg' : '') + '</li>' +
+        (debt && homeShare(a) ? '<li class="acc" data-id="' + a.id + '"><i class="bi bi-house-door acc-ico"></i><span class="acc-name">Home<span class="muted">your ' + esc(String(+a.home.own || 50).replace('.', ',')) + ' % of ' + esc(kr(a.home.value)) + ' · value from ' + esc(a.home.at || '') + '</span></span>' + money(homeShare(a)) + '</li>' : '');
     }).join('');
   }
 
@@ -703,12 +704,16 @@
     $('nwDay').value = a && a.day ? a.day : '';
     $('nwFrom').value = a && a.from ? a.from : 'salary';
     $('nwFixed').checked = !a || a.fixed !== false;
-    var sh = !!(a && window.Loans && window.Loans.shared && window.Loans.shared(a));
-    $('nwShared').checked = sh; $('nwWith').value = sh ? (a.with || '') : ''; $('nwShare').value = sh ? String(a.share).replace('.', ',') : '';
+    var sh = !!(a && window.Loans && window.Loans.shared && window.Loans.shared(a)), inn = !!(a && a.inner), hm = (a && a.home) || {};
+    $('nwShared').checked = sh; $('nwWith').value = sh ? (a.with || '') : ''; $('nwShare').value = sh && !inn ? String(a.share).replace('.', ',') : '';
+    $('nwMode').value = inn ? 'inner' : 'pct';
+    $('nwMine').value = inn ? Math.round(a.inner.mine) : ''; $('nwTerm').value = inn ? String(Math.round(a.inner.months / 12 * 10) / 10).replace('.', ',') : '';
+    $('nwStart').value = a && a.asOf ? a.asOf : today(); $('nwHome').value = hm.value ? Math.round(hm.value) : ''; $('nwOwn').value = hm.own ? String(hm.own).replace('.', ',') : ''; $('nwSaleCost').value = hm.costs != null && hm.costs !== '' ? String(hm.costs).replace('.', ',') : '';
     loanUi();
     $('nwDelete').hidden = !a;
     $('nwName').focus();
   }
+  function homeShare(a) { return a && a.home && +a.home.value > 0 ? +a.home.value * (+a.home.own || 50) / 100 : 0; }   /* your part of the home's value, kept with its mortgage */
   function owed(a) { return window.Loans && window.Loans.owedNow ? window.Loans.owedNow(a) : a.balance; }
   function loanPart(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }
   function closeAcc() { $('nwForm').hidden = true; editingAcc = null; }
@@ -728,6 +733,15 @@
   function shareUi(l) {
     var on = $('nwShared').checked; $('nwShareBox').hidden = !on;
     if (!on) return;
+    var inn = $('nwMode').value === 'inner'; $('nwInner').hidden = !inn; $('nwPctRow').hidden = inn; document.querySelector('#nwShareBox .nw-chips').hidden = inn;
+    if (inn) {
+      var tot = Math.abs(num($('nwBal').value) || 0), mine = num($('nwMine').value) || 0, yrs = num($('nwTerm').value) || 0, r = num($('nwRate').value) || 0, fee = num($('nwFee').value) || 0, other = $('nwWith').value.trim() || 'the other';
+      if (!(tot > 0 && mine > 0 && mine <= tot && yrs > 0)) { $('nwShareHint').textContent = 'Type the whole loan above, your internal part and the term – the rest is ' + other + '’s part.'; return; }
+      var pm = window.Loans.payment(mine, r, yrs * 12), po = tot - mine > 0 ? window.Loans.payment(tot - mine, r, yrs * 12) : 0;
+      $('nwPay').value = Math.round(pm + po);
+      $('nwShareHint').textContent = 'Each month: you ' + nfK(pm + fee / 2) + ' · ' + other + ' ' + nfK(po + fee / 2) + ' (fee split equally). Parts: you ' + nfK(mine) + ' · ' + other + ' ' + nfK(tot - mine) + '.';
+      return;
+    }
     var pct = num($('nwShare').value), who = $('nwWith').value.trim() || 'the other';
     [].forEach.call(document.querySelectorAll('[data-nwsplit]'), function (b) { b.classList.toggle('on', +b.dataset.nwsplit === pct); });
     var pay = (l.pay || 0) + (num($('nwFee').value) || 0);
@@ -735,7 +749,7 @@
       pay > 0 ? 'Each month: you ' + nfK(pay * pct / 100) + ' · ' + who + ' ' + nfK(pay * (100 - pct) / 100) + '. Your budget and net worth count your ' + String(pct).replace('.', ',') + ' %.' :
       'You ' + String(pct).replace('.', ',') + ' % · ' + who + ' ' + String(Math.round((100 - pct) * 10) / 10).replace('.', ',') + ' %';
   }
-  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears', 'nwFee', 'nwShare', 'nwWith', 'nwShared'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
+  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears', 'nwFee', 'nwShare', 'nwWith', 'nwShared', 'nwMode', 'nwMine', 'nwTerm'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
   $('nwShareBox').addEventListener('click', function (e) {
     var b = e.target.closest('[data-nwsplit]'); if (!b) return;
     $('nwShare').value = b.dataset.nwsplit; loanUi();
@@ -753,7 +767,19 @@
       Object.assign(rec, { rate: num($('nwRate').value) || 0, pay: Math.round(num($('nwPay').value) || 0), fee: Math.round(num($('nwFee').value) || 0),
         day: day >= 1 && day <= 31 ? day : null, from: $('nwFrom').value, fixed: $('nwFixed').checked, asOf: today() });
       var pct = num($('nwShare').value);
-      if ($('nwShared').checked) {
+      rec.inner = null; rec.home = null;
+      if ($('nwShared').checked && $('nwMode').value === 'inner') {
+        var mine = num($('nwMine').value), yrs = num($('nwTerm').value);
+        if (!(mine > 0 && mine <= rec.balance)) { $('nwMine').focus(); return; }
+        if (!(yrs > 0 && yrs <= 50)) { $('nwTerm').focus(); return; }
+        rec.inner = { mine: Math.round(mine), months: Math.round(yrs * 12) };
+        var pt = window.Shared && window.Shared.partner(); if (pt && $('nwWith').value.trim().toLowerCase() === String(pt.name).toLowerCase()) rec.inner.pid = pt.id;
+        rec.share = null; rec.with = $('nwWith').value.trim().slice(0, 30) || (pt ? pt.name : '');
+        rec.pay = Math.round(window.Loans.payment(mine, rec.rate, yrs * 12) + (rec.balance - mine > 0 ? window.Loans.payment(rec.balance - mine, rec.rate, yrs * 12) : 0));
+        rec.asOf = /^\d{4}-\d{2}-\d{2}$/.test($('nwStart').value) ? $('nwStart').value : today();
+        var hv = num($('nwHome').value);
+        if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value); rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: today() }; }
+      } else if ($('nwShared').checked) {
         if (!(pct > 0 && pct < 100)) { $('nwShare').focus(); return; }
         rec.share = Math.round(pct * 10) / 10; rec.with = $('nwWith').value.trim().slice(0, 30);
       } else { rec.share = null; rec.with = null; }
@@ -761,14 +787,17 @@
     if (editingAcc) {
       D.accounts.forEach(function (a) {
         if (a.id !== editingAcc) return;
-        if (a.balance !== rec.balance && rec.kind === 'debt') a.asOf = today();
-        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
+        if (a.balance !== rec.balance && rec.kind === 'debt' && !rec.inner) a.asOf = today();
+        if (rec.inner) a.asOf = rec.asOf;
+        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
         if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
         a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
       });
     } else {
       rec.id = uid();
-      if (rec.share == null) { delete rec.share; delete rec.with; }
+      if (rec.share == null && !rec.inner) { delete rec.share; delete rec.with; }
+      if (rec.share == null) delete rec.share;
+      if (!rec.inner) delete rec.inner; if (!rec.home) delete rec.home;
       D.accounts.push(rec);
     }
     snapshot();

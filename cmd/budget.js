@@ -203,13 +203,21 @@ window.Budget = (function () {
      f.amount always holds this month's amount (Links.syncVary), so everything that adds up fixed costs just works. */
   function fixedAmt(f, k) {
     if (!f) return 0;
-    if (!f.vary) return +f.amount || 0;
+    if (!f.vary && !f.split) return +f.amount || 0;
+    return fixedWhole(f, k) * splitPart(f);
+  }
+  /* a bill you share with someone (running costs of a joint home): f.split = { pid, pct (your %), payer: 'me' | pid | 'each',
+     from: 'YYYY-MM' }, f.full = the whole bill (when it doesn't vary). f.amount is your part, so budgets count only that. */
+  function splitPart(f) { var p = f && f.split ? +f.split.pct : 100; return p > 0 && p < 100 ? p / 100 : f && f.split && p === 0 ? 0 : 1; }
+  function fixedWhole(f, k) {
+    if (!f) return 0;
+    if (!f.vary) return f.split && f.full != null ? +f.full || 0 : +f.amount || 0;
     k = k || ym(new Date());
     var m = f.months || {};
     if (m[k] != null && m[k] !== '' && isFinite(+m[k])) return +m[k];
     if (+f.usual > 0) return +f.usual;
     var avg = varyAvg(f, k);
-    return avg != null ? avg : +f.amount || 0;
+    return avg != null ? avg : f.split && f.full != null ? +f.full : +f.amount || 0;
   }
   function varyAvg(f, k) {     /* the average of the last three months with an amount, before month k (or any if none before) */
     var m = f.months || {}, keys = Object.keys(m).filter(function (x) { return /^\d{4}-\d{2}$/.test(x) && isFinite(+m[x]) && m[x] !== '' && m[x] != null; }).sort();
@@ -218,7 +226,7 @@ window.Budget = (function () {
     return Math.round(use.reduce(function (a, x) { return a + (+m[x]); }, 0) / use.length);
   }
 
-  return { fixedAmt: fixedAmt, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { fixedAmt: fixedAmt, fixedWhole: fixedWhole, splitPart: splitPart, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
 
 /* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
@@ -242,6 +250,7 @@ window.Loans = (function () {
   /* where the loan is now, from the balance you entered and the payments since */
   function balanceNow(l, now) {
     now = now || new Date();
+    if (l && l.inner) { var q = inner(l, now); return q ? q.me.bal + q.them.bal : +l.balance || 0; }
     var bal = +l.balance || 0, i = (+l.rate || 0) / 1200, p = +l.pay || 0;
     if (!l.asOf || !(p > 0)) return bal;
     var a = new Date(l.asOf + 'T12:00'), m = (now.getFullYear() - a.getFullYear()) * 12 + now.getMonth() - a.getMonth();
@@ -251,7 +260,8 @@ window.Loans = (function () {
   }
   function calc(l, extra, now) {
     now = now || new Date();
-    var bal = balanceNow(l, now), i = (+l.rate || 0) / 1200, p = (+l.pay || 0) + (+extra || 0);
+    var q = l && l.inner ? inner(l, now) : null;
+    var bal = balanceNow(l, now), i = (+l.rate || 0) / 1200, p = (q ? q.me.pay + q.them.pay : +l.pay || 0) + (+extra || 0);
     if (!(bal > 0) || !(p > 0)) return null;
     var interest = bal * i, principal = p - interest;
     if (principal <= 0) return { balance: bal, never: true, interest: interest };
@@ -261,11 +271,66 @@ window.Loans = (function () {
   }
   /* a loan you share (with a partner): l.share = your part in %, l.with = who has the rest.
      The bank sees one loan; your budget, net worth and tax deduction see your part. */
-  function part(l) { var s = +(l && l.share); return s > 0 && s < 100 ? s / 100 : 1; }
-  function shared(l) { return part(l) < 1; }
+  function part(l) {
+    if (l && l.inner) { var q = inner(l); return q && q.me.bal + q.them.bal > 0 ? q.me.bal / (q.me.bal + q.them.bal) : 1; }
+    var s = +(l && l.share); return s > 0 && s < 100 ? s / 100 : 1;
+  }
+  /* A mortgage split into two internal parts (samboerkontrakt): l.inner = { mine (your part when the loan started, l.asOf),
+     months (the term in months at l.asOf), pid (the other person in Shared expenses) }, l.balance = the whole loan then,
+     l.extra = [{ id, date, amount, who: 'me' | 'them' }]. Each part is its own annuity over the same remaining term;
+     an extra payment lowers only the payer's part and that person's next instalments (same term). The bank's fee is
+     split equally (all of it once the other part is paid). Works out, as of `now`:
+     { me: { bal, pay, interest (this month), year (interest in the calendar year), next12 }, them: { … }, left (months), fee: { me, them } } */
+  function inner(l, now) {
+    if (!l || !l.inner || !l.asOf) return null;
+    now = now || new Date();
+    var i = (+l.rate || 0) / 1200, n = Math.max(1, Math.round(+l.inner.months || 360)), A = Math.max(0, +l.inner.mine || 0), Bv = Math.max(0, (+l.balance || 0) - A);
+    var st = new Date(l.asOf + 'T12:00'), day = +l.day || st.getDate(), yr = now.getFullYear();
+    var m = (now.getFullYear() - st.getFullYear()) * 12 + now.getMonth() - st.getMonth(); if (now.getDate() < day) m--; m = Math.max(0, Math.min(n, m));
+    var ex = (Array.isArray(l.extra) ? l.extra : []).filter(function (e) { return e && +e.amount > 0 && e.date; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }), xi = 0;
+    var P = { me: { bal: A, year: 0, next12: 0 }, them: { bal: Bv, year: 0, next12: 0 } }, NOW = null;
+    function payDate(k) { var d = new Date(st.getFullYear(), st.getMonth() + k, 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return d; }
+    function dk(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function extrasTo(key) { while (xi < ex.length && ex[xi].date <= key) { var w = ex[xi].who === 'them' ? P.them : P.me; w.bal = Math.max(0, w.bal - (+ex[xi].amount)); xi++; } }
+    function snap() { extrasTo(dk(now)); NOW = { me: P.me.bal, them: P.them.bal }; }
+    /* every payment from the start, then on into the future (no extra payments assumed) far enough for
+       this calendar year and the next 12 months */
+    var horizon = Math.min(n, Math.max(m + 12, (yr - st.getFullYear()) * 12 + 12 - st.getMonth()));
+    if (m === 0) snap();
+    for (var k = 1; k <= horizon; k++) {
+      var d = payDate(k), future = k > m;
+      if (!future) extrasTo(dk(d));
+      ['me', 'them'].forEach(function (w) {
+        var x = P[w]; if (x.bal <= 0.5) { x.bal = 0; return; }
+        var r = x.bal * i, pay = payment(x.bal, l.rate, n - k + 1);
+        if (d.getFullYear() === yr) { x.year += r; x.yp = (x.yp || 0) + 1; }
+        if (future && k <= m + 12) x.next12 += r;
+        x.bal = Math.max(0, x.bal + r - pay);
+      });
+      if (k === m) snap();
+    }
+    if (!NOW) snap();
+    P.me.bal = NOW.me; P.them.bal = NOW.them;
+    var left = n - m, fee = +l.fee || 0, meOn = P.me.bal > 0.5, thOn = P.them.bal > 0.5;
+    var feeMe = meOn && thOn ? fee / 2 : meOn ? fee : 0, feeThem = meOn && thOn ? fee / 2 : thOn ? fee : 0;
+    function out(x) { return { bal: x.bal, pay: x.bal > 0.5 ? payment(x.bal, l.rate, left) : 0, interest: x.bal * i, year: x.year, yearPays: x.yp || 0, next12: x.next12 }; }
+    return { me: out(P.me), them: out(P.them), left: left, fee: { me: feeMe, them: feeThem }, paidMonths: m };
+  }
+  /* your tax deduction on a loan over the next 12 months (rentefradrag, 22 %): your own internal part's interest and your
+     share of the fees, or your % of the whole loan's */
+  function myTaxBack(l) {
+    if (l && l.inner) { var q = inner(l); return q ? (q.me.next12 + q.fee.me * 12) * TAX : 0; }
+    var c = calc(l); return c && !c.never ? c.taxBack * part(l) : 0;
+  }
+  /* what you pay each month on it: your instalment (+ your part of the fee) */
+  function myPay(l) {
+    if (l && l.inner) { var q = inner(l); return q ? q.me.pay + q.fee.me : 0; }
+    return ((+l.pay || 0) + (+l.fee || 0)) * part(l);
+  }
+  function shared(l) { return !!(l && l.inner) || part(l) < 1; }
   /* what's owed on a debt today: worked out from the payments when it has them, else the balance you typed */
   function owedNow(l, now) { return l && +l.pay > 0 && l.asOf ? balanceNow(l, now) : +(l && l.balance) || 0; }
-  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared };
+  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared, inner: inner, myTaxBack: myTaxBack, myPay: myPay };
 })();
 
 /* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.

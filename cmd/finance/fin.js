@@ -470,7 +470,7 @@
 
   /* Net worth */
   function netWorth() {
-    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -owed(a) * part(a) : a.balance; });
+    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -owed(a) * part(a) + (a.home && +a.home.value > 0 ? +a.home.value * (+a.home.own || 50) / 100 : 0) : a.balance; });
   }
   function owed(a) { return window.Loans && window.Loans.owedNow ? window.Loans.owedNow(a) : a.balance; }
   function part(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }   /* your part of a shared loan */

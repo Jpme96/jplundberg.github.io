@@ -66,6 +66,7 @@
   function open(id) {
     var d = window.Vault.get(), f = d && bill(d, id); if (!f) return;
     if (f.src) return;                  // linked bills (loans, subscriptions, savings, yearly) are changed where they come from
+    if (f.split && window.SharedHome) { window.SharedHome.run(id); return; }      // a running cost you share: the House page's sheet
     cur = { id: id, vary: !!f.vary }; draw();
     bg.hidden = false; document.body.classList.add('qa-open'); requestAnimationFrame(function () { bg.classList.add('open'); });
   }
