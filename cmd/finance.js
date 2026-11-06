@@ -91,7 +91,7 @@
     var box = $('budgetBody');
 
     if (budgetEditing) {
-      box.innerHTML = incomeEditor() + budgetEditor('fixed', 'Fixed costs', 'e.g. Rent');
+      box.innerHTML = incomeEditor() + '<p class="muted is-p"><i class="bi bi-receipt"></i> Bills are changed in the <button type="button" class="text-btn" data-billsgo>Bills</button> card below.</p>';
       $('budgetEdit').textContent = 'Done';
       var f = box.querySelector('.pay-form input[name="n"]');
       if (f && payEditing === 'new' && !f.value) f.focus();
@@ -115,8 +115,8 @@
     box.innerHTML =
       '<ul class="is-list">' + incRows + '<li class="is-tot"><span>Income ' + esc(monthName(key, true)) + '</span>' + money(inc.net) + '</li></ul>' +
       (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> Next payday ' + esc(next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · ' + esc(per.byPayday ? 'the budget runs payday to payday' : 'the budget runs by calendar month') + '</p>' : '') +
-      '<ul class="is-list is-fix"><li><span>Fixed costs<small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' – by account below</small></span>' + money(fixed) + '</li>' +
-        '<li class="is-tot"><span>Left after fixed costs</span>' + money(inc.net - fixed) + '</li></ul>' +
+      '<ul class="is-list is-fix"><li><button type="button" class="is-go" data-billsgo><span>Bills<small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' · see them all</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' + money(fixed) + '</li>' +
+        '<li class="is-tot"><span>Left after bills</span>' + money(inc.net - fixed) + '</li></ul>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-fsopen="1"><i class="bi bi-magic"></i> Step by step</button><span class="spacer"></span><button type="button" class="pill-btn" data-bopen>Edit income &amp; costs</button></div>';
   }
 
@@ -307,6 +307,7 @@
     if (e.target.closest('[data-bopen]')) { budgetEditing = true; payEditing = null; fixEditing = null; renderBudget(); return; }
     if (fe) { fixEditing = fe.dataset.fedit; budgetEditing = true; renderBudget(); var i0 = $('budgetBody').querySelector('.fx-edit input[name="a"]'); if (i0) { i0.focus(); i0.select(); } return; }
     if (e.target.closest('[data-fxcancel]')) { fixEditing = null; renderBudget(); return; }
+    if (e.target.closest('[data-billsgo]')) { budgetEditing = false; renderBudget(); if (window.FinTabs) window.FinTabs.go('#fpAcctCard'); else { var bc = $('fpAcctCard'); if (bc) bc.scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
     if (e.target.closest('[data-fixopen]')) { budgetEditing = true; payEditing = null; renderBudget(); var fl = $('budgetBody').querySelectorAll('.b-edit')[1]; if (fl) fl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
     var pe = e.target.closest('[data-pedit]');
     if (pe) { openPay(pe.dataset.pedit); return; }

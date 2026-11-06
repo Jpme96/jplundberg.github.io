@@ -228,6 +228,10 @@
     var A = window.Accts, list = A.list(d), fixed = d.budget.fixed, p = plan(d);
     var opt = function (sel, filter) { return list.filter(filter || function () { return true; }).map(function (a) { return '<option value="' + a.id + '"' + (sel === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join(''); };
     var ofAcct = function (f) { return list.some(function (x) { return x.id === f.acct; }) ? f.acct : p.main.id; };
+    /* this month's ticks – the same ones as in Now → Next 14 days */
+    var pk = new Date().toISOString().slice(0, 7), paidL = (d.paid && d.paid[pk]) || [], today = new Date().getDate();
+    function isPaid(f) { return paidL.indexOf(f.id) > -1 || (f.src === 'sub' && f.day && +f.day <= today); }
+    var bills = fixed.filter(function (f) { return f.src !== 'save' && f.src !== 'year'; }), nPaid = bills.filter(isPaid).length, toPay = sum(bills.filter(function (f) { return !isPaid(f); }));
     var used = [], empty = [];
     list.forEach(function (a) {
       var rows = fixed.filter(function (f) { return f.src !== 'save' && f.src !== 'year' && ofAcct(f) === a.id; });
@@ -242,14 +246,17 @@
         '<ul class="pa-list">' + g.rows.map(function (f) {
           var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.until ? ' · until ' + esc(new Date(+f.until.slice(0, 4), +f.until.slice(5, 7) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
           var go = f.src === 'loan' ? 'change the loan' : f.src === 'sub' ? 'change the subscription' : 'open where it comes from';
-          return '<li>' + (f.src ? '<button type="button" class="pa-open" data-pasrc="' + esc(f.src + '|' + f.id) + '" aria-label="' + esc(f.name) + ' – ' + go + '"><span>' + esc(f.name) + '<small>' + info + ' · <i class="bi bi-link-45deg"></i> ' + go + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
+          var pd = isPaid(f), tick = '<button type="button" class="check pa-tick" data-papaid="' + esc(f.id) + '" aria-pressed="' + pd + '" aria-label="' + esc(f.name) + (pd ? ' – paid this month' : ' – mark as paid this month') + '"><i class="bi bi-check-lg"></i></button>';
+          return '<li class="' + (pd ? 'pa-paid' : '') + '">' + tick + (f.src ? '<button type="button" class="pa-open" data-pasrc="' + esc(f.src + '|' + f.id) + '" aria-label="' + esc(f.name) + ' – ' + go + '"><span>' + esc(f.name) + '<small>' + info + ' · <i class="bi bi-link-45deg"></i> ' + go + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
         }).join('') + '</ul></div>';
     }).join('');
     box.innerHTML =
-      '<p class="muted pa-p">Which account pays each bill. Tap a bill to change it – or to say its amount changes from month to month. Tap <i class="bi bi-arrow-left-right"></i> to move one to another account.</p>' +
-      '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> Edit accounts</button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-plus-lg"></i> Add or change bills</button></div>' +
-      (groups || '<p class="empty">No fixed costs yet.</p>') +
+      (bills.length ? '<div class="pa-month"><b>' + esc(new Date().toLocaleDateString('en-GB', { month: 'long' })) + ': ' + nPaid + ' of ' + bills.length + ' paid</b><span>' + (toPay > 0 ? money(toPay) + ' still to pay' : '<i class="bi bi-check2-all"></i> all paid') + '</span>' +
+        '<span class="stack"><span style="width:' + (bills.length ? nPaid / bills.length * 100 : 0).toFixed(1) + '%;background:var(--accent)"></span></span></div>' : '') +
+      '<p class="muted pa-p">Tick a bill when it’s paid. Tap it to change it – the amount, the due day, months it changes, or when it starts or ends. <i class="bi bi-arrow-left-right"></i> moves it to another account.</p>' +
+      '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> Edit accounts</button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-list-check"></i> All bills step by step</button></div>' +
+      (groups || '<p class="empty">No bills yet – add one with + Bill.</p>') +
       (saves.length ? '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#22b35e"><i class="bi bi-piggy-bank"></i></span>Savings<b>' + money(sum(saves)) + '</b></p><ul class="pa-list pa-ro">' + saves.map(function (f) {
           var to = A.get(d, f.to) || p.saveTo; return '<li><span>' + esc(f.name) + '<small>' + (to ? '→ ' + esc(to.label) : 'no account chosen') + '</small></span>' + money(f.amount) + '</li>'; }).join('') + '</ul></div>' : '') +
       laterEnded(d) +
@@ -462,6 +469,7 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lnedit]'); if (b) { editLoan(b.dataset.lnedit); return; }
+    if ((b = e.target.closest('[data-papaid]'))) { var dp = data(); if (!dp) return; var k = new Date().toISOString().slice(0, 7), l = (dp.paid = dp.paid || {})[k] = (dp.paid[k] || []), ix = l.indexOf(b.dataset.papaid); if (ix > -1) l.splice(ix, 1); else l.push(b.dataset.papaid); save(dp); return; }
     if ((b = e.target.closest('[data-lntog]'))) {
       var li = b.closest('.ln'), more = li.querySelector('.ln-more'), op = more.hidden; more.hidden = !op; li.classList.toggle('open', op);
       b.setAttribute('aria-expanded', String(op)); var ic = b.querySelector('.bi'); if (ic) ic.className = 'bi bi-chevron-' + (op ? 'up' : 'down');

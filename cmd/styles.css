@@ -4356,3 +4356,15 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .ah-warn > .bi { color: #c98500; margin-top: 2px; }
 .ah-warn > span { flex: 1; min-width: 200px; }
 .ah-warn .text-btn { margin-left: 24px; font-size: 13px; }
+/* Bills card (fin-plan.js renderAcct) */
+.pa-month { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); font-size: 14px; }
+.pa-month span:not(.stack) { color: var(--muted); font-size: 13px; }
+.pa-month .stack { grid-column: 1 / -1; height: 6px; }
+.pa-list li { gap: 8px; }
+.pa-tick { flex: none; }
+.pa-list li.pa-paid > .pa-open > span, .pa-list li.pa-paid > span { opacity: .6; }
+.is-go { display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.is-go .bi { color: var(--muted); font-size: 12px; }
+.pa-list li:has(> .pa-tick) { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.pa-tick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+.pa-tick[aria-pressed="true"] i { opacity: 1; color: #fff; }

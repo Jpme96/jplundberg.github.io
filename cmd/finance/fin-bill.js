@@ -23,7 +23,8 @@
   document.body.appendChild(bg);
 
   var cur = null;          // { id, vary } while the sheet is open
-  function bill(d, id) { var b = (d && d.budget) || {}; return [].concat(b.fixed || [], b.later || [], b.ended || []).filter(function (f) { return f && f.id === id; })[0] || null; }
+  var draft = null;          /* a new bill being added (not saved yet) */
+  function bill(d, id) { if (id === 'new') return draft; var b = (d && d.budget) || {}; return [].concat(b.fixed || [], b.later || [], b.ended || []).filter(function (f) { return f && f.id === id; })[0] || null; }
 
   function draw() {
     var d = window.Vault.get(), f = d && bill(d, cur.id); if (!f) { close(); return; }
@@ -47,7 +48,7 @@
       return '<span class="' + (x === now ? 'now' : '') + '" title="' + esc(mName(x, true) + ': ' + kr(m[x])) + '"><i style="height:' + Math.max(4, Math.round(+m[x] / max * 56)) + 'px"></i><small>' + esc(mName(x).slice(0, 3)) + '</small></span>';
     }).join('') + '</div>' : '';
     $('fbForm').innerHTML =
-      '<h2 class="im-h"><i class="bi bi-receipt"></i> ' + esc(f.name || 'Bill') + '</h2>' +
+      '<h2 class="im-h"><i class="bi bi-receipt"></i> ' + (f === draft ? 'New bill' : esc(f.name || 'Bill')) + '</h2>' +
       '<div class="fs-form fb-form">' +
         '<label><span>Name</span><input name="n" value="' + esc(f.name) + '" required maxlength="50" autocomplete="off"></label>' +
         '<label class="qa-check fb-vary"><input type="checkbox" name="vary"' + (vary ? ' checked' : '') + '> The amount changes from month to month <small class="muted">power, phone, kindergarten …</small></label>' +
@@ -56,16 +57,17 @@
             '<p class="muted fs-hint">Used for months without their own amount' + (avg ? ' – leave it empty to use the average of the last three months (' + esc(kr(avg)) + ')' : '') + '. Bank imports fill in the real amount when they find the payment.</p></div>' +
           chart +
           '<p class="fb-mh">Amount each month</p><ul class="fb-months">' + rows + '</ul>'
-        : '<label><span>Kr a month</span><input name="a" inputmode="decimal" autocomplete="off" value="' + esc(String(Math.round(+f.amount || 0))) + '" required></label>') +
+        : '<label><span>Kr a month</span><input name="a" inputmode="decimal" autocomplete="off" value="' + (f === draft && !f.amount ? '' : esc(String(Math.round(+f.amount || 0)))) + '" placeholder="e.g. 900" required></label>') +
         '<div class="fs-r2 fb-when"><label><span>First month</span><input type="month" name="from" value="' + esc(f.from || '') + '"></label><label><span>Last month</span><input type="month" name="until" value="' + esc(f.until || '') + '"></label></div>' +
         '<p class="muted fs-hint">Optional. Rent that stops when you move, a contract that ends – outside these months the bill isn’t counted.</p>' +
         '<div class="fs-r2"><label><span>Due</span><select name="day">' + days + '</select></label>' +
           (accts.length ? '<label><span>Paid from</span><select name="acct">' + accts.map(function (a) { return '<option value="' + esc(a.id) + '"' + (a.id === acct ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
       '</div>' +
-      '<div class="qa-acts fs-foot"><button type="button" class="text-btn danger" data-fbdel>Delete</button><span class="spacer"></span><button type="button" class="text-btn" data-fbclose>Cancel</button><button type="submit" class="pill-btn">Save</button></div>';
+      '<div class="qa-acts fs-foot">' + (f === draft ? '' : '<button type="button" class="text-btn danger" data-fbdel>Delete</button>') + '<span class="spacer"></span><button type="button" class="text-btn" data-fbclose>Cancel</button><button type="submit" class="pill-btn">Save</button></div>';
   }
 
   function open(id) {
+    if (id === 'new') { var d0 = window.Vault.get(); if (!d0) return; draft = { id: 'new', name: '', amount: '', day: null }; }
     var d = window.Vault.get(), f = d && bill(d, id); if (!f) return;
     if (f.src) return;                  // linked bills (loans, subscriptions, savings, yearly) are changed where they come from
     if (f.split && window.SharedHome) { window.SharedHome.run(id); return; }      // a running cost you share: the House page's sheet
@@ -118,6 +120,7 @@
       var amt = num(form.a.value); if (!(amt > 0)) { form.a.focus(); return; }
       f.amount = Math.round(amt); delete f.vary; delete f.usual; delete f.months; delete f.mbank;
     }
+    if (f === draft) { f = Object.assign({}, draft, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5) }); delete f.draft; d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || []; d.budget.fixed.push(f); draft = null; }
     f.name = name.slice(0, 50); f.day = form.day.value ? +form.day.value : null; if (form.acct) f.acct = form.acct.value;
     var fr = form.from && form.from.value, un = form.until && form.until.value;
     if (fr && un && un < fr) { form.until.focus(); return; }
