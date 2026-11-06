@@ -73,7 +73,7 @@ export default {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
