@@ -297,6 +297,8 @@
           <div class="card-head"><h2><i class="bi bi-receipt"></i> Bills</h2><button class="text-btn" type="button" data-fbopen="new"><i class="bi bi-plus-lg"></i> Bill</button></div>
           <div id="fpAcct"></div>
         </section>
+        <div data-tool="subs" class="fp-billtool" hidden></div>
+        <div data-tool="recur" class="fp-billtool" hidden></div>
         
         
         <section class="card loans" id="fpLoanCard">
@@ -391,11 +393,9 @@
     </div>
 
     </div>
-    <div class="kit-grid kit-after" data-ftab="tx" data-pk="cards" data-pk-name="Recurring, shared, subscriptions and warranties">
-      <div data-tool="recur" hidden></div>
+    <div class="kit-grid kit-after" data-ftab="tx" data-pk="cards" data-pk-name="Shared, power prices and warranties">
       <div data-tool="shared" hidden></div>
       <div data-tool="power" hidden></div>
-      <div data-tool="subs" hidden></div>
       <div data-tool="warranty" hidden></div>
     </div>
 
@@ -945,7 +945,7 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=f7a5102126"></script>
+  <script src="../dist/page-finance.js?v=6efcb14020"></script>
   <script src="../dist/tail.js?v=62f3ad1a2f"></script>
   <!-- /scripts -->
 </body>

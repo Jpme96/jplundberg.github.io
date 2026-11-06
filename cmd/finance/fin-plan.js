@@ -63,6 +63,8 @@
     var m = location.hash.match(/^#c=([a-z]+)$/);
     if (m) { var c = document.querySelector('#fp .card.' + m[1]); if (c && tabOf(c)) show(tabOf(c), { keep: true }); }
     else if (location.hash === '#import' || location.hash === '#scan') show('tx', { keep: true });
+    /* #subs, #recur, #shared … – a card mounted by id: open the tab it's on */
+    else if (/^#[a-z]+$/.test(location.hash)) { var t0 = document.querySelector('#fp [data-tool="' + location.hash.slice(1) + '"]') || document.getElementById(location.hash.slice(1)); if (t0 && tabOf(t0)) show(tabOf(t0), { keep: true }); }
   }
   window.addEventListener('hashchange', fromHash);
   if (/[?&]customize/.test(location.search)) main.classList.add('fp-all');      // customizing shows every card
