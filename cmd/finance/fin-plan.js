@@ -239,12 +239,13 @@
       return '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' + esc(a.label) +
         '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
         '<ul class="pa-list">' + g.rows.map(function (f) {
-          return '<li><span>' + esc(f.name) + '<small>' + (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + '</small></span>' + money(f.amount) +
+          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual ? ', usually ' + esc(kr(f.usual)) : '') : '');
+          return '<li>' + (f.src ? '<span>' + esc(f.name) + '<small>' + info + '</small></span>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';
         }).join('') + '</ul></div>';
     }).join('');
     box.innerHTML =
-      '<p class="muted pa-p">Which account pays each bill. Tap <i class="bi bi-arrow-left-right"></i> to move one to another account.</p>' +
+      '<p class="muted pa-p">Which account pays each bill. Tap a bill to change it – or to say its amount changes from month to month. Tap <i class="bi bi-arrow-left-right"></i> to move one to another account.</p>' +
       '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> Edit accounts</button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-plus-lg"></i> Add or change bills</button></div>' +
       (groups || '<p class="empty">No fixed costs yet.</p>') +
       (saves.length ? '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#22b35e"><i class="bi bi-piggy-bank"></i></span>Savings<b>' + money(sum(saves)) + '</b></p><ul class="pa-list pa-ro">' + saves.map(function (f) {
@@ -315,25 +316,35 @@
     var box = $('fpLoans'); if (!box || !Lo) return;
     var loans = (d.accounts || []).filter(function (a) { return a.kind === 'debt'; });
     if (!loans.length) {
-      box.innerHTML = '<p class="empty">Add a mortgage, car loan or student loan with its interest and monthly payment. You see when it’s paid off, what the interest costs, the tax deduction – and what paying a bit more would save. The payment goes into your fixed costs by itself.</p>';
+      box.innerHTML = '<p class="empty">Add a mortgage, car loan or student loan with its interest and monthly payment. You see when it’s paid off, what the interest costs, the tax deduction – and what paying a bit more would save. The payment goes into your fixed costs by itself – and a loan you share with a partner counts only your part.</p>';
       return;
     }
     var yearTax = 0;
     box.innerHTML = '<ul class="ln-list">' + loans.map(function (l) {
-      var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null;
-      if (c && !c.never) yearTax += c.taxBack;
+      var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null, pt = Lo.part ? Lo.part(l) : 1, sh = pt < 1, who = String(l.with || '').trim() || 'The other';
+      if (c && !c.never) yearTax += c.taxBack * pt;
       var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + (l.pay ? esc(kr(l.pay)) + ' a month' + (l.fee ? ' + ' + esc(kr(l.fee)) + ' fee' : '') : 'no payment set') +
-        (l.fixed !== false && l.pay ? ' · <i class="bi bi-link-45deg"></i> in fixed costs' : '') + '</small></span>' + money(c ? -c.balance : -l.balance, 'neg') +
+        (sh ? ' · <i class="bi bi-people"></i> shared' : '') +
+        (l.fixed !== false && l.pay ? ' · <i class="bi bi-link-45deg"></i> ' + (sh ? 'your part ' : '') + 'in fixed costs' : '') + '</small></span>' + money(c ? -c.balance : -l.balance, 'neg') +
         '<button type="button" class="icon-btn sm" data-lnedit="' + esc(l.id) + '" aria-label="Change ' + esc(l.name) + '"><i class="bi bi-pencil"></i></button></div>';
-      if (!c) return '<li class="ln">' + head + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
-      if (c.never) return '<li class="ln">' + head + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
+      /* shared: who pays what each month and whose part of the loan it is */
+      var split = '';
+      if (sh) {
+        var pay = (+l.pay || 0) + (+l.fee || 0), bal = c ? c.balance : +l.balance || 0, pc = function (v) { return String(Math.round(v * 1000) / 10).replace('.', ','); };
+        split = '<div class="ln-split"><div class="ln-sbar" role="img" aria-label="You ' + pc(pt) + ' %, ' + esc(who) + ' ' + pc(1 - pt) + ' %"><span style="width:' + (pt * 100).toFixed(1) + '%"></span></div>' +
+          '<div class="ln-who"><span><small>You · ' + pc(pt) + ' %</small><b>' + money(pay * pt) + '<em> a month</em></b><em>' + money(bal * pt) + ' of the loan</em></span>' +
+          '<span><small>' + esc(who) + ' · ' + pc(1 - pt) + ' %</small><b>' + money(pay * (1 - pt)) + '<em> a month</em></b><em>' + money(bal * (1 - pt)) + ' of the loan</em></span></div>' +
+          '<button type="button" class="text-btn ln-chg" data-lnedit="' + esc(l.id) + '"><i class="bi bi-sliders"></i> Change the split</button></div>';
+      }
+      if (!c) return '<li class="ln">' + head + split + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
+      if (c.never) return '<li class="ln">' + head + split + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
       var paidPct = l.orig > 0 ? Math.min(1, 1 - c.balance / l.orig) : null;
-      return '<li class="ln">' + head +
+      return '<li class="ln">' + head + split +
         '<div class="ln-grid">' +
           '<span><small>Paid off</small><b>' + esc(c.endLabel) + '</b></span>' +
           '<span><small>This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
           '<span><small>Interest left</small><b>' + money(c.interestLeft) + '</b></span>' +
-          '<span><small>Tax deduction</small><b>' + money(c.taxBack) + '</b><em>next 12 months, 22 %</em></span>' +
+          '<span><small>Tax deduction' + (sh ? ', yours' : '') + '</small><b>' + money(c.taxBack * pt) + '</b><em>next 12 months, 22 %' + (sh ? ' of your part' : '') + '</em></span>' +
         '</div>' +
         (paidPct != null ? '<div class="stack ln-bar"><span style="width:' + (paidPct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' : '') +
         '<label class="ln-try"><span>Pay more each month</span><input type="range" min="0" max="' + Math.max(2000, Math.ceil(l.pay / 1000) * 1000) + '" step="250" value="' + x + '" data-lntry="' + esc(l.id) + '" aria-label="Extra a month for ' + esc(l.name) + '"><b class="ln-x">' + (x ? '+' + esc(kr(x)) : '+0 kr') + '</b></label>' +
@@ -387,7 +398,7 @@
     var max = Math.max.apply(null, months.map(function (m) { return m.net + Math.max(0, m.tax || 0); }).concat([fixed, 1]));
     var y = String(now.getFullYear());
     var bsu = (d.savings || []).filter(function (g) { return g.bsu; }), bsuIn = sum(bsu, function (g) { return (g.yr || {})[y] || 0; });
-    var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack : 0); }, 0) : 0;
+    var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack * (Lo.part ? Lo.part(l) : 1) : 0); }, 0) : 0;
     var june = months.filter(function (m) { return m.hol; })[0], dec = months.filter(function (m) { return m.half; })[0];
     var facts = [];
     if (june) facts.push(['sun', '#c98500', 'Holiday pay in ' + june.dt.toLocaleDateString('en-GB', { month: 'long' }), money(june.net) + ' paid out – ' + money(Math.abs(june.net - ord)) + (june.net >= ord ? ' more' : ' less') + ' than a normal month, no tax on the holiday pay']);

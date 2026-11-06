@@ -197,8 +197,28 @@ window.Budget = (function () {
     return { months: n, date: d, label: n >= 600 ? '' : 'in ' + n + ' month' + (n === 1 ? '' : 's') + ' (' + d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + ')' };
   }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
+  /* a fixed cost whose amount changes from month to month (power, phone bill …): f.vary = true,
+     f.months = { 'YYYY-MM': kr } (what it was / will be – typed in or seen in a bank import), f.usual = the normal amount.
+     The amount for a month: that month's own amount, else the usual one, else the average of the last three known months.
+     f.amount always holds this month's amount (Links.syncVary), so everything that adds up fixed costs just works. */
+  function fixedAmt(f, k) {
+    if (!f) return 0;
+    if (!f.vary) return +f.amount || 0;
+    k = k || ym(new Date());
+    var m = f.months || {};
+    if (m[k] != null && m[k] !== '' && isFinite(+m[k])) return +m[k];
+    if (+f.usual > 0) return +f.usual;
+    var avg = varyAvg(f, k);
+    return avg != null ? avg : +f.amount || 0;
+  }
+  function varyAvg(f, k) {     /* the average of the last three months with an amount, before month k (or any if none before) */
+    var m = f.months || {}, keys = Object.keys(m).filter(function (x) { return /^\d{4}-\d{2}$/.test(x) && isFinite(+m[x]) && m[x] !== '' && m[x] != null; }).sort();
+    var before = keys.filter(function (x) { return !k || x < k; }), use = (before.length ? before : keys).slice(-3);
+    if (!use.length) return null;
+    return Math.round(use.reduce(function (a, x) { return a + (+m[x]); }, 0) / use.length);
+  }
 
-  return { mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { fixedAmt: fixedAmt, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
 
 /* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
@@ -239,7 +259,11 @@ window.Loans = (function () {
     return { balance: bal, interest: interest, principal: principal, months: r.months, interestLeft: r.interest, yearInterest: r.year,
       taxBack: r.year * TAX, end: new Date(now.getFullYear(), now.getMonth() + r.months, 1), endLabel: label(r.months, now), never: false };
   }
-  return { payment: payment, calc: calc, balanceNow: balanceNow, label: label, TAX: TAX };
+  /* a loan you share (with a partner): l.share = your part in %, l.with = who has the rest.
+     The bank sees one loan; your budget, net worth and tax deduction see your part. */
+  function part(l) { var s = +(l && l.share); return s > 0 && s < 100 ? s / 100 : 1; }
+  function shared(l) { return part(l) < 1; }
+  return { payment: payment, calc: calc, balanceNow: balanceNow, label: label, TAX: TAX, part: part, shared: shared };
 })();
 
 /* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.

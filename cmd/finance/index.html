@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=175" rel="stylesheet">
+  <link href="../styles.css?v=176" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -233,7 +233,16 @@
                 <label class="sv-by"><span>Due day</span><input id="nwDay" placeholder="1–31" inputmode="numeric" autocomplete="off"></label>
                 <label class="sv-by"><span>Paid from</span><select id="nwFrom"><option value="salary">Salary account</option><option value="card">Card account</option><option value="credit">Credit card</option></select></label>
               </div>
-              <label class="qa-check"><input type="checkbox" id="nwFixed" checked> Count the payment as a fixed cost in the monthly budget</label>
+              <label class="qa-check"><input type="checkbox" id="nwShared"> Shared loan – we split the payment</label>
+              <div class="nw-share" id="nwShareBox" hidden>
+                <div class="row2">
+                  <label class="sv-by"><span>Shared with</span><input id="nwWith" placeholder="e.g. your partner’s name" maxlength="30" autocomplete="off"></label>
+                  <label class="sv-by"><span>You pay, %</span><input id="nwShare" placeholder="e.g. 60" inputmode="decimal" autocomplete="off"></label>
+                </div>
+                <div class="nw-chips" role="group" aria-label="Quick split"><button type="button" data-nwsplit="50">50 / 50</button><button type="button" data-nwsplit="60">60 / 40</button><button type="button" data-nwsplit="40">40 / 60</button><button type="button" data-nwsplit="70">70 / 30</button><button type="button" data-nwsplit="30">30 / 70</button></div>
+                <p class="muted sv-hint" id="nwShareHint"></p>
+              </div>
+              <label class="qa-check"><input type="checkbox" id="nwFixed" checked> Count my payment as a fixed cost in the monthly budget</label>
               <p class="muted sv-hint" id="nwHint"></p>
             </div>
             <div class="form-actions">
@@ -917,7 +926,7 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=74d49f97cf"></script>
-  <script src="../dist/page-finance.js?v=6adf04a0c0"></script>
+  <script src="../dist/page-finance.js?v=873f4ba274"></script>
   <script src="../dist/tail.js?v=898214719b"></script>
   <!-- /scripts -->
 </body>

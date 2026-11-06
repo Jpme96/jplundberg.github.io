@@ -49,11 +49,13 @@
   }
   /* loans (Net worth → a debt with a monthly payment) → fixed costs, so the budget knows the payment */
   function syncLoans() {
-    var d = window.Vault.get(); if (!d) return;
+    var d = window.Vault.get(); if (!d || !window.Loans) return;     /* needs budget.js (shared loans); pages without it leave this to the ones with it */
     d.budget = d.budget || { income: [], fixed: [] };
     var fixed = Array.isArray(d.budget.fixed) ? d.budget.fixed : [];
     var want = (d.accounts || []).filter(function (a) { return a.kind === 'debt' && a.fixed !== false && +a.pay > 0; }).map(function (a) {
-      return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan'), amount: Math.round(+a.pay + (+a.fee || 0)), day: a.day || null, src: 'loan', acct: a.from || 'salary' };
+      /* a shared loan: only your part of the payment (and fee) goes into your budget */
+      var part = window.Loans.part ? window.Loans.part(a) : 1;
+      return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round((+a.pay + (+a.fee || 0)) * part), day: a.day || null, src: 'loan', acct: a.from || 'salary' };
     });
     var before = JSON.stringify(fixed.filter(function (f) { return f.src === 'loan'; }));
     if (before === JSON.stringify(want)) return;
@@ -61,7 +63,22 @@
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
   }
-  window.Links = { syncSave: syncSave, syncLoans: syncLoans };
+  /* fixed costs that change from month to month: f.amount follows this month (Budget.fixedAmt) */
+  function syncVary() {
+    var d = window.Vault.get(), B = window.Budget; if (!d || !B || !B.fixedAmt) return;
+    var fixed = (d.budget && Array.isArray(d.budget.fixed)) ? d.budget.fixed : [], ch = false, k = B.ym(new Date());
+    fixed.forEach(function (f) {
+      if (!f || !f.vary || f.src) return;
+      var a = Math.round(B.fixedAmt(f, k));
+      if (a > 0 && a !== +f.amount) { f.amount = a; ch = true; }
+      /* keep a year and a bit of history */
+      var ks = Object.keys(f.months || {}).sort(); if (ks.length > 15) { ks.slice(0, ks.length - 15).forEach(function (x) { delete f.months[x]; }); ch = true; }
+    });
+    if (!ch) return;
+    window.Vault.save(d);
+    window.dispatchEvent(new Event('fin:change'));
+  }
+  window.Links = { syncSave: syncSave, syncLoans: syncLoans, syncVary: syncVary };
 
   /* ---------- trips → places to visit ---------- */
   function near(a, b) {
@@ -159,11 +176,13 @@
     try { syncSubs(); } catch (e) { console.error(e); }
     try { syncSave(); } catch (e) { console.error(e); }
     try { syncLoans(); } catch (e) { console.error(e); }
+    try { syncVary(); } catch (e) { console.error(e); }
     try { syncTrips(); } catch (e) { console.error(e); }
     try { syncBucket(); } catch (e) { console.error(e); }
   }
   window.Vault.onUnlock(function () { setTimeout(run, 0); });
   window.addEventListener('tools:change', function () { if (window.Vault.get()) { syncSubs(); syncWorkouts(); } });
   window.addEventListener('features:change', function () { if (window.Vault.get()) run(); });
+  window.addEventListener('fin:change', function () { if (window.Vault.get()) { try { syncVary(); } catch (e) { console.error(e); } } });   /* e.g. a bank import found this month's power bill */
   window.addEventListener('travel:change', function () { if (window.Vault.get()) { syncTrips(); syncBucket(); } });
 })();

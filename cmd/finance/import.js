@@ -364,7 +364,16 @@
       if (r.mine && !r.on) { (d.expenses || []).forEach(function (e) { if (e.id === r.mine.id && !e.ref) e.ref = r.ref; }); return; }
       if (!r.on) return;
       if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined }); nin++; return; }
-      if (r.bill) { var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++; return; }
+      if (r.bill) {
+        var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++;
+        /* a bill whose amount changes: what the bank took is that month's amount (unless you typed one in) */
+        ((d.budget && d.budget.fixed) || []).forEach(function (f) {
+          if (f.id !== r.bill.id || !f.vary) return;
+          f.months = f.months || {}; f.mbank = f.mbank || {};
+          if (f.months[k] == null || f.mbank[k]) { f.months[k] = Math.round(r.amount); f.mbank[k] = 1; }
+        });
+        return;
+      }
       if (r.mk) {
         /* a new fixed cost from now on; this period's charge is the bill being paid (no double counting) */
         d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || [];

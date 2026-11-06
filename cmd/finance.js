@@ -242,9 +242,10 @@
         var opts = '<option value="">No due day</option>'; for (var dd = 1; dd <= 31; dd++) opts += '<option value="' + dd + '"' + (+r.day === dd ? ' selected' : '') + '>Due on the ' + dd + '.</option>';
         return '<li class="b-fixedit"><form class="fx-edit" data-fid="' + r.id + '"><div class="add-row"><input name="n" value="' + esc(r.name) + '" required autocomplete="off" aria-label="Name"><input name="a" class="amt" value="' + esc(String(r.amount)) + '" inputmode="decimal" required autocomplete="off" aria-label="kr / month"></div>' +
           '<div class="add-row"><select name="day" aria-label="Due day">' + opts + '</select></div>' +
+          '<button type="button" class="text-btn fx-vary" data-fbopen="' + r.id + '"><i class="bi bi-graph-up"></i> The amount changes from month to month …</button>' +
           '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit">Save</button></div></form></li>';
       }
-      return '<li class="b-row"><button type="button" class="b-open" data-fedit="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day ? '<small class="muted">due the ' + esc(r.day) + '.</small>' : '') + '</button>' + money(r.amount) +
+      return '<li class="b-row"><button type="button" class="b-open" ' + (r.vary ? 'data-fbopen' : 'data-fedit') + '="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day || r.vary ? '<small class="muted">' + (r.day ? 'due the ' + esc(r.day) + '.' : '') + (r.vary ? (r.day ? ' · ' : '') + 'varies – this month' : '') + '</small>' : '') + '</button>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
     return '<div class="b-edit"><h3>' + title + ' <span class="muted">' + money(sum(D.budget[kind])) + '</span></h3>' +
@@ -622,7 +623,7 @@
   function bankNet() { var m = window.Accts ? window.Accts.money(D) : null; return m && m.known ? m.net : 0; }
   function hasBank() { var m = window.Accts ? window.Accts.money(D) : null; return !!(m && m.counted); }
   function netWorth() {
-    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
+    return bankNet() + sum(D.accounts, function (a) { return a.kind === 'debt' ? -a.balance * loanPart(a) : a.balance; });
   }
   function snapshot() {
     if (D.accounts.length || hasBank()) D.history[ym(new Date())] = netWorth();
@@ -658,10 +659,10 @@
     $('nwList').innerHTML = bankRows + D.accounts.slice().sort(function (a, b) {
       return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance;
     }).map(function (a) {
-      var debt = a.kind === 'debt';
+      var debt = a.kind === 'debt', pt = debt ? loanPart(a) : 1;
       return '<li class="acc" data-id="' + a.id + '"><i class="bi bi-' + (debt ? 'credit-card' : 'bank') + ' acc-ico' + (debt ? ' debt' : '') + '"></i>' +
-        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? 'Debt' : 'Asset') + '</span></span>' +
-        money(debt ? -a.balance : a.balance, debt ? 'neg' : '') + '</li>';
+        '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? 'Shared loan · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(a.balance)) : 'Debt') : 'Asset') + '</span></span>' +
+        money(debt ? -a.balance * pt : a.balance, debt ? 'neg' : '') + '</li>';
     }).join('');
   }
 
@@ -701,10 +702,13 @@
     $('nwDay').value = a && a.day ? a.day : '';
     $('nwFrom').value = a && a.from ? a.from : 'salary';
     $('nwFixed').checked = !a || a.fixed !== false;
+    var sh = !!(a && window.Loans && window.Loans.shared && window.Loans.shared(a));
+    $('nwShared').checked = sh; $('nwWith').value = sh ? (a.with || '') : ''; $('nwShare').value = sh ? String(a.share).replace('.', ',') : '';
     loanUi();
     $('nwDelete').hidden = !a;
     $('nwName').focus();
   }
+  function loanPart(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }
   function closeAcc() { $('nwForm').hidden = true; editingAcc = null; }
   /* a debt can be a loan: interest, monthly payment (or years left, and the payment is worked out), fee and due day */
   function loanUi() {
@@ -714,10 +718,26 @@
     var yrs = num($('nwYears').value);
     if (yrs > 0 && l.balance > 0) { l.pay = Math.round(window.Loans.payment(l.balance, l.rate, yrs * 12)); $('nwPay').value = l.pay; }
     var c = window.Loans.calc(l);
+    shareUi(l);
     $('nwHint').textContent = !c ? '' : c.never ? 'The payment doesn’t cover the interest (' + nfK(c.interest) + ' a month) – the loan never gets smaller' :
       'Paid off ' + c.endLabel + ' · ' + nfK(c.interestLeft) + ' in interest left · this month ' + nfK(c.interest) + ' interest + ' + nfK(c.principal) + ' repayment';
   }
-  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
+  /* a shared loan: who you share it with and your part of the payment, in % (the rest is theirs) */
+  function shareUi(l) {
+    var on = $('nwShared').checked; $('nwShareBox').hidden = !on;
+    if (!on) return;
+    var pct = num($('nwShare').value), who = $('nwWith').value.trim() || 'the other';
+    [].forEach.call(document.querySelectorAll('[data-nwsplit]'), function (b) { b.classList.toggle('on', +b.dataset.nwsplit === pct); });
+    var pay = (l.pay || 0) + (num($('nwFee').value) || 0);
+    $('nwShareHint').textContent = !(pct > 0 && pct < 100) ? 'Type your part in % (1–99) – the rest is ' + who + '’s.' :
+      pay > 0 ? 'Each month: you ' + nfK(pay * pct / 100) + ' · ' + who + ' ' + nfK(pay * (100 - pct) / 100) + '. Your budget and net worth count your ' + String(pct).replace('.', ',') + ' %.' :
+      'You ' + String(pct).replace('.', ',') + ' % · ' + who + ' ' + String(Math.round((100 - pct) * 10) / 10).replace('.', ',') + ' %';
+  }
+  ['nwKind', 'nwBal', 'nwRate', 'nwPay', 'nwYears', 'nwFee', 'nwShare', 'nwWith', 'nwShared'].forEach(function (id) { $(id).addEventListener('input', loanUi); $(id).addEventListener('change', loanUi); });
+  $('nwShareBox').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-nwsplit]'); if (!b) return;
+    $('nwShare').value = b.dataset.nwsplit; loanUi();
+  });
 
   $('nwAddBtn').addEventListener('click', function () { $('nwForm').hidden ? openAcc(null) : closeAcc(); });
   $('nwCancel').addEventListener('click', closeAcc);
@@ -730,17 +750,23 @@
       var day = Math.round(num($('nwDay').value));
       Object.assign(rec, { rate: num($('nwRate').value) || 0, pay: Math.round(num($('nwPay').value) || 0), fee: Math.round(num($('nwFee').value) || 0),
         day: day >= 1 && day <= 31 ? day : null, from: $('nwFrom').value, fixed: $('nwFixed').checked, asOf: today() });
+      var pct = num($('nwShare').value);
+      if ($('nwShared').checked) {
+        if (!(pct > 0 && pct < 100)) { $('nwShare').focus(); return; }
+        rec.share = Math.round(pct * 10) / 10; rec.with = $('nwWith').value.trim().slice(0, 30);
+      } else { rec.share = null; rec.with = null; }
     }
     if (editingAcc) {
       D.accounts.forEach(function (a) {
         if (a.id !== editingAcc) return;
         if (a.balance !== rec.balance && rec.kind === 'debt') a.asOf = today();
-        ['rate', 'pay', 'fee', 'day', 'from', 'fixed'].forEach(function (k) { if (rec.kind !== 'debt') delete a[k]; else a[k] = rec[k]; });
+        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
         if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
         a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
       });
     } else {
       rec.id = uid();
+      if (rec.share == null) { delete rec.share; delete rec.with; }
       D.accounts.push(rec);
     }
     snapshot();

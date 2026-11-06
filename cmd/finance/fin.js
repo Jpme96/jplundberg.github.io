@@ -469,15 +469,16 @@
 
   /* Net worth */
   function netWorth() {
-    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -a.balance : a.balance; });
+    return sum(D.accounts || [], function (a) { return a.kind === 'debt' ? -a.balance * part(a) : a.balance; });
   }
+  function part(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }   /* your part of a shared loan */
   function net() {
     if (!$('fpNet')) return;               // the editable Net worth card is on the page instead
     var accs = D.accounts || [];
     var nw = netWorth();
     $('fpNet').innerHTML = accs.length ? money(nw, nw < 0 ? 'neg' : '') : '';
     var assets = sum(accs.filter(function (a) { return a.kind !== 'debt'; }), function (a) { return a.balance; });
-    var debts = sum(accs.filter(function (a) { return a.kind === 'debt'; }), function (a) { return a.balance; });
+    var debts = sum(accs.filter(function (a) { return a.kind === 'debt'; }), function (a) { return a.balance * part(a); });
     $('fpNetSub').innerHTML = accs.length ? 'Assets ' + money(assets) + ' · Debt ' + money(debts) : 'Add accounts and loans on the dashboard.';
     var hist = D.history || {}, keys = Object.keys(hist).sort();
     if (period !== 'all') keys = /^y:/.test(period) ? keys.filter(function (k) { return k.slice(0, 4) === period.slice(2); }) : keys.slice(-12);
@@ -518,8 +519,8 @@
       });
     }
     $('fpAccs').innerHTML = accs.slice().sort(function (a, b) { return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance; }).map(function (a) {
-      var debt = a.kind === 'debt';
-      return '<li><span>' + esc(a.name) + '<span class="muted">' + (debt ? 'Debt' : 'Asset') + '</span></span>' + money(debt ? -a.balance : a.balance, debt ? 'neg' : '') + '</li>';
+      var debt = a.kind === 'debt', pt = debt ? part(a) : 1;
+      return '<li><span>' + esc(a.name) + '<span class="muted">' + (debt ? (pt < 1 ? 'Shared loan · your ' + Math.round(pt * 1000) / 10 + ' %' : 'Debt') : 'Asset') + '</span></span>' + money(debt ? -a.balance * pt : a.balance, debt ? 'neg' : '') + '</li>';
     }).join('');
   }
 

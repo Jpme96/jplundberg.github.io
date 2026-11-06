@@ -109,7 +109,9 @@
         var late = dt < t0 && !isPaid && !auto && mo === 0;
         if (!(late || (dt >= t0 && dt <= end))) return;
         var a = ids[f.acct] || main;
-        ev.push({ dt: late ? t0 : dt, real: dt, kind: 'bill', id: f.id, ym: k, paid: isPaid || auto, late: late, name: f.name, amt: -(+f.amount || 0), sub: (a ? (a.kind === 'credit' ? 'on ' : 'from ') + a.label : '') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') });
+        var own = f.vary && f.months && f.months[k] != null && f.months[k] !== '';
+        ev.push({ dt: late ? t0 : dt, real: dt, kind: 'bill', id: f.id, ym: k, paid: isPaid || auto, late: late, name: f.name, amt: -(B.fixedAmt ? B.fixedAmt(f, k) : +f.amount || 0), open: !f.src, vary: !!f.vary && !own,
+          sub: (a ? (a.kind === 'credit' ? 'on ' : 'from ') + a.label : '') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? (own ? ' · this month’s amount' : ' · varies, estimate') : '') });
       });
     }
     /* credit card bills */
@@ -142,7 +144,7 @@
       var tick = e.kind === 'bill' ? '<button type="button" class="check" data-fnpaid="' + esc(e.id) + '" data-ym="' + e.ym + '" aria-pressed="' + e.paid + '" aria-label="' + esc(e.name) + (e.paid ? ' – paid' : ' – mark as paid') + '"><i class="bi bi-check-lg"></i></button>'
         : e.kind === 'card' ? '<button type="button" class="check" data-pfcc="' + esc(e.id) + '" aria-pressed="' + e.paid + '" aria-label="' + esc(e.name) + (e.paid ? ' – paid' : ' – mark as paid in full') + '"><i class="bi bi-check-lg"></i></button>'
         : '<span class="fn-ic ' + e.kind + '"><i class="bi bi-' + (e.kind === 'pay' ? 'cash-stack' : 'calendar2-range') + '"></i></span>';
-      return '<li class="fn-e ' + e.kind + (e.paid ? ' paid' : '') + (e.late ? ' late' : '') + '">' + tick + '<span class="fn-t"><b>' + esc(e.name) + '</b><small>' + label(e) + (e.sub ? ' · ' + esc(e.sub) : '') + '</small></span>' + money(e.amt, e.amt < 0 ? '' : 'up') + '</li>';
+      return '<li class="fn-e ' + e.kind + (e.paid ? ' paid' : '') + (e.late ? ' late' : '') + '">' + tick + (e.open ? '<button type="button" class="fn-t fn-open" data-fbopen="' + esc(e.id) + '" aria-label="Change ' + esc(e.name) + '">' : '<span class="fn-t">') + '<b>' + esc(e.name) + '</b><small>' + label(e) + (e.sub ? ' · ' + esc(e.sub) : '') + '</small>' + (e.open ? '</button>' : '</span>') + (e.vary ? '<span class="fn-approx" title="Estimate">≈</span>' : '') + money(e.amt, e.amt < 0 ? '' : 'up') + '</li>';
     }).join('') + '</ul>';
   }
 

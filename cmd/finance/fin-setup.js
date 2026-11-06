@@ -66,8 +66,13 @@
     }
     if (part === 'fixed') {
       var linked = d.budget.fixed.filter(function (f) { return f.src; });
+      var was = {}; d.budget.fixed.forEach(function (f) { if (f && f.id) was[f.id] = f; });
       var mine = draft.fixed.filter(function (f) { return !f.src && String(f.name || '').trim() && num(f.amount) > 0; }).map(function (f) {
-        return { id: f.id || uid(), name: String(f.name).trim().slice(0, 50), amount: Math.round(num(f.amount)), day: +f.day || null, acct: f.acct || 'salary' };
+        var old = (f.id && was[f.id]) || {}, rec = Object.assign({}, old, { id: f.id || uid(), name: String(f.name).trim().slice(0, 50), amount: Math.round(num(f.amount)), day: +f.day || null, acct: f.acct || 'salary' });
+        if (rec.vary && Math.round(num(f.amount)) !== Math.round(+old.amount || 0)) {      /* changed here = this month's amount */
+          var t = new Date(), k = t.getFullYear() + '-' + pad(t.getMonth() + 1); rec.months = Object.assign({}, rec.months || {}); rec.months[k] = rec.amount;
+        }
+        return rec;
       });
       linked.forEach(function (f) { var dr = draft.fixed.filter(function (x) { return x.id === f.id; })[0]; if (dr && dr.acct) f.acct = dr.acct; });
       d.budget.fixed = mine.concat(linked);
@@ -125,7 +130,8 @@
         if (f.src) return '';
         return '<li><div class="fs-r1"><input data-ff="name" data-i="' + i + '" value="' + esc(f.name) + '" placeholder="What" aria-label="What" autocomplete="off"><input data-ff="amount" data-i="' + i + '" inputmode="decimal" value="' + esc(f.amount) + '" placeholder="kr" aria-label="Amount a month" autocomplete="off">' +
           '<button type="button" class="icon-btn sm" data-ffdel="' + i + '" aria-label="Remove"><i class="bi bi-trash3"></i></button></div>' +
-          '<div class="fs-r2"><select data-ff="day" data-i="' + i + '" aria-label="Due day">' + dayOptions(f.day, 'No fixed day') + '</select>' + from(f, i) + '</div></li>';
+          '<div class="fs-r2"><select data-ff="day" data-i="' + i + '" aria-label="Due day">' + dayOptions(f.day, 'No fixed day') + '</select>' + from(f, i) + '</div>' +
+          (f.vary ? '<p class="muted fs-hint"><i class="bi bi-graph-up"></i> Changes from month to month – the amount above is this month’s. Set the other months under Setup → Accounts &amp; fixed costs.</p>' : '') + '</li>';
       }).join('') + '</ul><button type="button" class="text-btn" data-ffadd><i class="bi bi-plus-lg"></i> Add one</button>' +
       (linked.length ? '<p class="muted fs-hint"><i class="bi bi-link-45deg"></i> Also counted (change them where they come from): ' + esc(linked.map(function (f) { return f.name + ' ' + kr(f.amount); }).join(' · ')) + '</p>' : '') +
       (!mine.length ? '<p class="muted fs-hint">Nothing yet – tap a button above to start.</p>' : '') +
