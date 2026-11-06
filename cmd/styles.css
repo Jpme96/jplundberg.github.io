@@ -4368,3 +4368,34 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .pa-list li:has(> .pa-tick) { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 .pa-tick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
 .pa-tick[aria-pressed="true"] i { opacity: 1; color: #fff; }
+
+/* tabs on Health, House and Work (pagetabs.js) – the bar itself uses the Finances look (.fp-tabs) */
+.pt-hide { display: none !important; }
+.pt-tabs { margin: 0 0 14px; }
+html:not(.feat-off-house) #fp .fp-houseable { display: none !important; }   /* power prices and warranties live on House when it's on */
+.pt-tail:empty { display: none; }
+.pt-tail { margin: 14px 0 0; }
+.pt-empty { margin: 4px 0 12px; color: var(--muted); font-size: 14px; text-align: center; }
+.pt-sug p { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.pt-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.pt-chip { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); background: rgba(var(--ink-rgb), .02); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.pt-chip:hover { border-color: var(--accent); }
+.pt-chip > span { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.pt-chip small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-chip > .bi:first-child { font-size: 18px; }
+.pt-chip > .bi:last-child { color: var(--accent); }
+/* the Today cards */
+.pt-today { margin-bottom: 14px; }
+.pt-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.pt-row { width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.pt-row:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.pt-ic { grid-row: 1 / 3; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); }
+.pt-t { display: grid; min-width: 0; }
+.pt-t small { color: var(--muted); font-size: 12px; }
+.pt-t b { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-x { grid-column: 2; min-width: 0; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-x small { font-size: 12px; }
+.pt-bar { display: block; height: 5px; margin-top: 5px; border-radius: 999px; background: rgba(var(--ink-rgb), .08); overflow: hidden; }
+.pt-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+.pt-tabs { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
+@media (min-width: 640px) { .pt-tabs { grid-template-columns: repeat(var(--n, 4), auto); } }

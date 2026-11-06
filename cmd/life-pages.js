@@ -108,8 +108,8 @@
     var tk = dkey(now), h = prices(tk); if (!h) return;
     var cfg = Fe.tools().powercfg || {}; if (cfg.norgespris) return;
     var c3 = cheapest(h, 3, now.getHours()), cur = h[now.getHours()];
-    if (c3 && c3.h === now.getHours()) add(36, 'lightning-charge', '#22b35e', 'Cheap power now – ' + nf.format(Math.round(cur)) + ' øre', 'Good time to wash, dry or charge · until ' + pad(c3.h + 3) + ':00', '/cmd/finance/#power');
-    else if (c3 && now.getHours() >= 17 && now.getHours() < 23) add(48, 'lightning-charge', '#c98500', 'Cheapest power ' + pad(c3.h) + '–' + pad(c3.h + 3), nf.format(Math.round(c3.avg)) + ' øre/kWh · now ' + nf.format(Math.round(cur)) + ' øre', '/cmd/finance/#power');
+    if (c3 && c3.h === now.getHours()) add(36, 'lightning-charge', '#22b35e', 'Cheap power now – ' + nf.format(Math.round(cur)) + ' øre', 'Good time to wash, dry or charge · until ' + pad(c3.h + 3) + ':00', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
+    else if (c3 && now.getHours() >= 17 && now.getHours() < 23) add(48, 'lightning-charge', '#c98500', 'Cheapest power ' + pad(c3.h) + '–' + pad(c3.h + 3), nf.format(Math.round(c3.avg)) + ' øre/kWh · now ' + nf.format(Math.round(cur)) + ' øre', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
   });
 
   /* ======================= Savings jars ======================= */
