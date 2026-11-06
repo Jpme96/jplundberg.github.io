@@ -92,7 +92,8 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "tidy.js"
     ],
     "habits/index.html": [
       "budget.js",

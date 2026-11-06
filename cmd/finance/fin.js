@@ -274,6 +274,8 @@
             (am.missing.length ? ' · no balance yet: ' + esc(am.missing.map(function (a) { return a.label; }).join(', ')) : '') : '') +
           (change !== null ? ' · <span class="' + (change >= 0 ? 'up' : 'down') + '"><i class="bi bi-arrow-' + (change >= 0 ? 'up' : 'down') + '-right"></i> ' + money(Math.abs(change)) + '</span> since ' + esc(mName(prevKey)) : '') }
     ];
+    /* these three are already on the page: what's left and the payday at the top of Now, net worth in its own card above */
+    T = T.filter(function (t) { return !(t.i === 'calendar-event' && $('fnHero')) && !(t.i === 'graph-up-arrow' && $('nwList')) && !(t.i === 'wallet2' && period === 'month' && $('fnHero')); });
     $('fpTiles').innerHTML = T.map(function (t) {
       return '<div class="fp-tile" data-tk="' + t.l.replace(/\b(19|20)\d\d\b/g, 'Y') + '"><div class="lbl"><i class="bi bi-' + t.i + '"></i>' + t.l + '</div><div class="val">' + t.v + '</div><div class="sub">' + t.s + '</div></div>';
     }).join('');

@@ -651,12 +651,13 @@
     $('nwEmpty').textContent = hasBank() ? 'Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage, a student loan – with +.' :
       'Your accounts (Overview → Your accounts) are counted by themselves once they have a balance. Add other things you own or owe – a house, a car, a mortgage – with +.';
     /* every bank account: counted ones with their balance, ones without a balance yet, and ones you left out */
-    var bankRows = window.Accts ? window.Accts.list(D).map(function (a) {
-      var cr = a.kind === 'credit', has = a.bal != null, v = has ? (cr ? -Math.max(0, a.bal) : a.bal) : 0;
-      var note = !a.nw ? 'Not counted · change under Your accounts → Update' : !has ? 'No balance yet – add it under Your accounts' : (cr ? 'Credit card' : a.kind === 'fund' ? 'Fund' : a.kind === 'savings' ? 'Savings' : 'Account') + ' · from Your accounts';
-      return '<li class="acc acc-bank' + (!a.nw || !has ? ' acc-off' : '') + '"><i class="bi bi-' + a.icon + ' acc-ico' + (cr ? ' debt' : '') + '"></i><span class="acc-name">' + esc(a.label) + '<span class="muted">' + note + '</span></span>' +
-        (has && a.nw ? money(v, v < 0 ? 'neg' : '') : '<span class="muted">' + (has ? esc(kr(v)) : '–') + '</span>') + '</li>';
-    }).join('') : '';
+    /* your bank accounts are listed on Now → Your accounts: here they're one line with their total */
+    var am2 = window.Accts ? window.Accts.money(D) : null;
+    var bankRows = am2 && (am2.counted || am2.missing.length) ? '<li class="acc acc-bank"><i class="bi bi-bank2 acc-ico"></i><span class="acc-name">Your accounts<span class="muted">' + am2.counted + ' with a balance' +
+      (am2.missing.length ? ' · no balance yet: ' + esc(am2.missing.map(function (a) { return a.label; }).join(', ')) : '') + ' · on Now</span></span>' + money(am2.worth, am2.worth < 0 ? 'neg' : '') + '</li>' : '';
+    /* a mortgage without the home's value makes net worth look far too low */
+    var noHome = D.accounts.filter(function (a) { return a.kind === 'debt' && (a.inner || a.share) && !a.plan && !(a.home && +a.home.value > 0) && (+a.balance || 0) > 500000; })[0];
+    if (noHome) bankRows += '<li class="acc acc-hint" data-id="' + noHome.id + '"><i class="bi bi-house-add acc-ico"></i><span class="acc-name">Add the home’s value<span class="muted">Net worth counts your part of “' + esc(noHome.name) + '” but not your part of the home – tap to add it</span></span><i class="bi bi-chevron-right"></i></li>';
     $('nwList').innerHTML = bankRows + D.accounts.slice().sort(function (a, b) {
       return (a.kind === 'debt') - (b.kind === 'debt') || b.balance - a.balance;
     }).map(function (a) {
@@ -777,6 +778,10 @@
         day: day >= 1 && day <= 31 ? day : null, from: $('nwFrom').value, fixed: $('nwFixed').checked, asOf: today() });
       var pct = num($('nwShare').value);
       rec.inner = null; rec.home = null; rec.float = null;
+      /* the date the balance is from – or, for a loan that hasn't started yet, the day it starts (nothing is paid or counted before) */
+      var od = editingAcc ? D.accounts.filter(function (x) { return x.id === editingAcc; })[0] : null, sd = $('nwStart').value;
+      rec.asOf = /^\d{4}-\d{2}-\d{2}$/.test(sd) ? sd : today();
+      if (od && od.asOf === sd && Math.abs(bal) !== od.balance) rec.asOf = today();      /* a new balance with the old date: it's today's balance */
       if ($('nwFloat').checked && window.Policy) {
         var lagW = num($('nwLag').value); lagW = lagW >= 0 && lagW <= 26 ? lagW : 6;
         var old = editingAcc ? D.accounts.filter(function (x) { return x.id === editingAcc; })[0] : null;
@@ -791,19 +796,18 @@
         var pt = window.Shared && window.Shared.partner(); if (pt && $('nwWith').value.trim().toLowerCase() === String(pt.name).toLowerCase()) rec.inner.pid = pt.id;
         rec.share = null; rec.with = $('nwWith').value.trim().slice(0, 30) || (pt ? pt.name : '');
         rec.pay = Math.round(window.Loans.payment(mine, rec.rate, yrs * 12) + (rec.balance - mine > 0 ? window.Loans.payment(rec.balance - mine, rec.rate, yrs * 12) : 0));
-        rec.asOf = /^\d{4}-\d{2}-\d{2}$/.test($('nwStart').value) ? $('nwStart').value : today();
-        var hv = num($('nwHome').value);
-        if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value); rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: today() }; }
       } else if ($('nwShared').checked) {
         if (!(pct > 0 && pct < 100)) { $('nwShare').focus(); return; }
         rec.share = Math.round(pct * 10) / 10; rec.with = $('nwWith').value.trim().slice(0, 30);
       } else { rec.share = null; rec.with = null; }
+      /* the home the loan is for: your part of its value counts in net worth (shared loans) */
+      var hv = $('nwShared').checked ? num($('nwHome').value) : NaN;
+      if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value), oh = od && od.home; rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: oh && +oh.value === Math.round(hv) ? oh.at : today() }; }
     }
     if (editingAcc) {
       D.accounts.forEach(function (a) {
         if (a.id !== editingAcc) return;
-        if (a.balance !== rec.balance && rec.kind === 'debt' && !rec.inner) a.asOf = today();
-        if (rec.inner) a.asOf = rec.asOf;
+        if (rec.kind === 'debt') a.asOf = rec.asOf;
         ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home', 'float'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
         if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
         a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
@@ -834,6 +838,7 @@
     if (!li) return;
     if (li.classList.contains('acc-bank')) { if (window.FinTabs) window.FinTabs.go('.card.myaccts'); return; }   // changed under Your accounts
     openAcc(D.accounts.filter(function (a) { return a.id === li.dataset.id; })[0]);
+    if (li.classList.contains('acc-hint')) setTimeout(function () { $('nwHome').scrollIntoView({ block: 'center' }); $('nwHome').focus(); }, 80);
   });
 
   /* ================= Lock / unlock ================= */

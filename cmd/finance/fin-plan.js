@@ -93,15 +93,16 @@
       ['Loans', p.loans, '#8a6fdf', ''],
       ['Other bills', other, '#3987e5', ''],
       ['Savings & yearly costs', saving, '#22b35e', ''],
-      ['Left for everyday', Math.max(0, leftM), 'var(--accent)', '']
+      ['Salary left for everyday', Math.max(0, leftM), 'var(--accent)', '']
     ].filter(function (s0) { return s0[1] > 0; });
     var tot = Math.max(inc, sum(segs, function (s) { return s[1]; }), 1);
     var openN = p.open.length, payday = p.per.byPayday && p.per.days - p.per.daysLeft < 7;
     box.innerHTML =
       '<div class="pf-in"><span><i class="bi bi-' + p.main.icon + '"></i> Salary in · ' + esc(p.main.label) + '</span><b>' + money(inc) + '</b></div>' +
       '<div class="stack pf-bar" role="img" aria-label="Where the salary goes">' + segs.map(function (s) { return '<span style="width:' + (s[1] / tot * 100).toFixed(2) + '%;background:' + s[2] + '"></span>'; }).join('') + '</div>' +
-      '<ul class="pf-wf">' + segs.map(function (s0) { var last = s0[0] === 'Left for everyday'; return '<li class="' + (last ? 'pf-eq' : '') + '"><i class="dot" style="background:' + s0[2] + '"></i><span>' + (last ? '= ' : '− ') + esc(s0[0]) + (s0[3] ? '<small>' + esc(s0[3]) + '</small>' : '') + '</span><b>' + money(last ? leftM : s0[1]) + '</b></li>'; }).join('') +
-        (leftM < 0 ? '<li class="pf-eq neg"><i class="dot" style="background:var(--danger)"></i><span>= Short this month</span><b>' + money(leftM) + '</b></li>' : '') + '</ul>' +
+      '<ul class="pf-wf">' + segs.map(function (s0) { var last = s0[0] === 'Salary left for everyday'; return '<li class="' + (last ? 'pf-eq' : '') + '"><i class="dot" style="background:' + s0[2] + '"></i><span>' + (last ? '= ' : '− ') + esc(s0[0]) + (s0[3] ? '<small>' + esc(s0[3]) + '</small>' : '') + '</span><b>' + money(last ? leftM : s0[1]) + '</b></li>'; }).join('') +
+        (leftM < 0 ? '<li class="pf-eq neg"><i class="dot" style="background:var(--danger)"></i><span>= The salary doesn’t cover these</span><b>' + money(leftM) + '</b></li>' : '') + '</ul>' +
+      '<p class="muted pf-note"><i class="bi bi-info-circle"></i> This is the plan for one salary. The number at the top of Now is different: it’s what’s really in your accounts today, until payday.</p>' +
       (p.moves.length ? '<p class="pf-h">Payday checklist' + (openN ? ' · <span class="' + (payday ? 'pf-due' : '') + '">' + openN + ' to do</span>' : ' · <span class="pf-ok"><i class="bi bi-check2-all"></i> all done</span>') + '</p><ul class="pf-moves pf-check">' + p.moves.map(function (m) {
         return '<li class="' + (m.done ? 'done' : '') + '"><button type="button" class="check" data-pfmove="' + esc(m.id) + '" aria-pressed="' + m.done + '" aria-label="' + esc(m.label) + (m.done ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></button><span>' + esc(m.label) + '<small>' + esc(m.sub) + '</small></span><b>' + money(m.amount) + '</b></li>';
       }).join('') + '</ul>' : '') +
@@ -321,7 +322,9 @@
       return;
     }
     var yearTax = 0;
-    box.innerHTML = '<ul class="ln-list">' + loans.map(function (l) {
+    box.innerHTML = '<ul class="ln-list">' + loans.map(function (l) { return foldLoan(l, oneLoan(l)); }).join('') + '</ul>' +
+      (yearTax > 0 ? '<p class="ln-sum"><i class="bi bi-percent"></i> All loans: about ' + money(yearTax) + ' less tax over the next 12 months (rentefradrag)</p>' : '');
+    function oneLoan(l) {
       if (l.inner && Lo.inner) { var tb = Lo.myTaxBack(l); yearTax += tb; return innerLoan(l); }
       var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null, pt = Lo.part ? Lo.part(l) : 1, sh = pt < 1, who = String(l.with || '').trim() || 'The other';
       if (c && !c.never) yearTax += c.taxBack * pt;
@@ -354,8 +357,21 @@
         '<p class="ln-p ln-win"' + (cx && !cx.never ? '' : ' hidden') + '>' + (cx && !cx.never ? win(c, cx) : '') + '</p>' +
         (l.asOf ? '<p class="muted ln-p">Balance worked out from ' + esc(kr(l.balance)) + ' on ' + esc(new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' and the payments since – update it under Wealth now and then.</p>' : '') +
       '</li>';
-    }).join('') + '</ul>' +
-      (yearTax > 0 ? '<p class="ln-sum"><i class="bi bi-percent"></i> All loans: about ' + money(yearTax) + ' less tax over the next 12 months (rentefradrag)</p>' : '');
+    }
+  }
+  /* each loan folds to one line – what you pay a month and when it's done – and opens on a tap */
+  var lnOpen = (function () { try { return JSON.parse(sessionStorage.getItem('dash.lnOpen')) || {}; } catch (e) { return {}; } })();
+  function foldLoan(l, html) {
+    var top = html.indexOf('<div class="ln-top">'), end = top < 0 ? -1 : html.indexOf('</button></div>', top);
+    if (end < 0) return html;
+    end += '</button></div>'.length;
+    var c = Lo.calc(l), pay = Lo.myPay ? Lo.myPay(l) : (+l.pay || 0) + (+l.fee || 0), part = Lo.part(l), open = !!lnOpen[l.id];
+    var paidOff = +l.pay > 0 && !l.inner && Lo.owedNow(l) <= 0.5, starts = l.asOf && l.asOf > new Date().toISOString().slice(0, 10);
+    var sum = paidOff ? 'Paid off' : (pay > 0 ? kr(pay) + ' a month' + (l.inner || part < 1 ? ' (your part)' : '') : 'no payment set') +
+      (starts ? ' · starts ' + new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : c && !c.never ? ' · done ' + c.endLabel.split(' (')[0] : '') + (l.float ? ' · floating' : '');
+    return html.slice(0, end).replace('<li class="ln', '<li class="ln ln-fold' + (open ? ' open' : '')) +
+      '<button type="button" class="ln-tog" data-lntog="' + esc(l.id) + '" aria-expanded="' + open + '"><span>' + esc(sum) + '</span><i class="bi bi-chevron-' + (open ? 'up' : 'down') + '"></i></button>' +
+      '<div class="ln-more"' + (open ? '' : ' hidden') + '>' + html.slice(end).replace(/<\/li>$/, '') + '</div></li>';
   }
   /* a mortgage in two internal parts (samboerkontrakt): each part on its own, extra payments, your tax numbers, your settlement */
   function innerLoan(l) {
@@ -436,12 +452,18 @@
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-lnedit]'); if (b) { editLoan(b.dataset.lnedit); return; }
+    if ((b = e.target.closest('[data-lntog]'))) {
+      var li = b.closest('.ln'), more = li.querySelector('.ln-more'), op = more.hidden; more.hidden = !op; li.classList.toggle('open', op);
+      b.setAttribute('aria-expanded', String(op)); var ic = b.querySelector('.bi'); if (ic) ic.className = 'bi bi-chevron-' + (op ? 'up' : 'down');
+      if (op) lnOpen[b.dataset.lntog] = 1; else delete lnOpen[b.dataset.lntog]; try { sessionStorage.setItem('dash.lnOpen', JSON.stringify(lnOpen)); } catch (er) {}
+      return;
+    }
     /* a linked bill in Accounts & fixed costs: open the thing it comes from */
     if ((b = e.target.closest('[data-pasrc]'))) {
       var q = b.dataset.pasrc.split('|'), src = q[0], fid = q.slice(1).join('|');
       if (src === 'loan') { var lid = fid.replace(/^loan-/, ''), dd = data(), ln = dd && (dd.accounts || []).filter(function (x) { return String(x.id) === lid; })[0];
         if (ln && ln.plan) { editLoan(lid); return; }
-        goCard('#fpLoanCard'); setTimeout(function () { var card = document.querySelector('#fpLoans [data-lnedit="' + lid + '"]'); if (card) { card.closest('.ln').scrollIntoView({ behavior: 'smooth', block: 'start' }); card.closest('.ln').classList.add('flash'); setTimeout(function () { card.closest('.ln').classList.remove('flash'); }, 1600); } }, 120); return; }
+        goCard('#fpLoanCard'); setTimeout(function () { var card = document.querySelector('#fpLoans [data-lnedit="' + lid + '"]'); if (card) { var tg = card.closest('.ln').querySelector('[data-lntog][aria-expanded="false"]'); if (tg) tg.click(); card.closest('.ln').scrollIntoView({ behavior: 'smooth', block: 'start' }); card.closest('.ln').classList.add('flash'); setTimeout(function () { card.closest('.ln').classList.remove('flash'); }, 1600); } }, 120); return; }
       if (src === 'save') { goCard('.card.savings'); return; }
       if (src === 'year') { goCard('#fpYearlyCard'); return; }
       if (src === 'sub') { var sc = document.querySelector('[data-tool="subs"]'); if (sc) goCard(sc); else location.href = '/cmd/finance/#subs'; return; }

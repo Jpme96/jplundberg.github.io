@@ -15,6 +15,7 @@
   function ymk(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
   function sum(l, f) { return l.reduce(function (a, x) { return a + (+(f ? f(x) : x.amount) || 0); }, 0); }
   function today0() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+  function dkOf(d) { return ymk(d) + "-" + pad(d.getDate()); }
   function daysAgo(k) { return k ? Math.round((today0() - new Date(k + 'T00:00')) / 864e5) : null; }
   function data() { var d = window.Vault.get(); if (!d) return null; d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || []; d.budget.income = d.budget.income || []; return d; }
   function save(d) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
@@ -105,7 +106,9 @@
       var base = new Date(t0.getFullYear(), t0.getMonth() + mo, 1), k = ymk(base), dim = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate(), paid = (d.paid && d.paid[k]) || [];
       d.budget.fixed.forEach(function (f) {
         if (!f.day || f.src === 'save' || f.src === 'year') return;
-        var dt = new Date(base.getFullYear(), base.getMonth(), Math.min(+f.day, dim)), isPaid = paid.indexOf(f.id) > -1, auto = f.src === 'sub' && dt <= t0;
+        var dt = new Date(base.getFullYear(), base.getMonth(), Math.min(+f.day, dim));
+        if (f.start && ymk(dt) <= String(f.start).slice(0, 7)) return;     /* a loan pays from the month after its start/balance date */
+        var isPaid = paid.indexOf(f.id) > -1, auto = f.src === 'sub' && dt <= t0;
         var late = dt < t0 && !isPaid && !auto && mo === 0;
         if (!(late || (dt >= t0 && dt <= end))) return;
         var a = ids[f.acct] || main;

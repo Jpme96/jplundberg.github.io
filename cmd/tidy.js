@@ -2,7 +2,7 @@
    in them, so the dashboard stays short. Tap the heading to open one anyway. */
 (function () {
   "use strict";
-  var dash = document.getElementById('dash');
+  var dash = document.getElementById('dash') || document.getElementById('fp');   /* Home, and the Finances page */
   if (!dash) return;
   /* card → is it empty? */
   var CHECK = {
@@ -12,16 +12,23 @@
     links: function (c) { return !c.querySelector('#linkGrid li'); },
     savings: function (c) { return !c.querySelector('#svList li') && c.querySelector('#svForm').hidden; },
     networth: function (c) { return !c.querySelector('#nwList li') && c.querySelector('#nwForm').hidden; },
-    bills: function (c) { return !c.querySelector('#billsBody li'); }
+    bills: function (c) { return !c.querySelector('#billsBody li'); },
+    /* Finances: cards that only explain themselves until you use them */
+    limits: function (c) { var b = c.querySelector('#fpLimits'); return !!(b && b.firstElementChild && b.firstElementChild.matches('p.empty')); },
+    recur: function (c) { return !!c.querySelector('.kit-empty') && !c.querySelector('li'); },
+    subs: function (c) { return !!c.querySelector('.kit-empty') && !c.querySelector('li'); },
+    yearly: function (c) { return !c.querySelector('#fpYearly li') && !c.querySelector('#fpYearly form:not([hidden]) input'); }
   };
+  var SEL = { limits: '#fpLimitCard', recur: '#recur', subs: '#subs', yearly: '#fpYearlyCard' };
   var HINT = {
     todo: 'Nothing to do', notes: 'No notes', goals: 'No goals yet', links: 'No links yet',
-    savings: 'No savings goals', networth: 'No accounts yet', bills: 'No fixed costs with a due date'
+    savings: 'No savings goals', networth: 'No accounts yet', bills: 'No fixed costs with a due date',
+    limits: 'No limits set', recur: 'Nothing repeating found yet', subs: 'No subscriptions', yearly: 'No yearly costs'
   };
   var opened = {};
   function pass() {
     Object.keys(CHECK).forEach(function (id) {
-      var c = document.querySelector('.card.' + id);
+      var c = document.querySelector(SEL[id] || '.card.' + id);
       if (!c) return;
       var empty = false;
       try { empty = CHECK[id](c); } catch (e) {}
@@ -40,7 +47,7 @@
   document.addEventListener('click', function (e) {
     var h = e.target.closest('.card-folded .card-head');
     if (!h || e.target.closest('a, [data-review], [data-quick]')) return;
-    var c = h.closest('.card'), id = Object.keys(CHECK).filter(function (k) { return c.classList.contains(k); })[0];
+    var c = h.closest('.card'), id = Object.keys(CHECK).filter(function (k) { return SEL[k] ? c.matches(SEL[k]) : c.classList.contains(k); })[0];
     if (!id) return;
     opened[id] = true; pass();
     var f = c.querySelector('input:not([type=hidden]), textarea, button.text-btn');
