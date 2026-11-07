@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=191" rel="stylesheet">
+  <link href="../styles.css?v=193" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -233,7 +233,15 @@
                 <label class="sv-by"><span>Due day</span><input id="nwDay" placeholder="1–31" inputmode="numeric" autocomplete="off"></label>
                 <label class="sv-by"><span>Paid from</span><select id="nwFrom"><option value="salary">Salary account</option><option value="card">Card account</option><option value="credit">Credit card</option></select></label>
               </div>
-              <label class="sv-by"><span>Balance on (or the day the loan starts)</span><input id="nwStart" type="date"></label>
+              <div class="nw-rules" id="nwRulesBox">
+                <div id="nwRules"></div>
+                <button type="button" class="text-btn" id="nwRuleAdd"><i class="bi bi-plus-lg"></i> A month with a different payment</button>
+                <p class="muted sv-hint">E.g. December interest only (avdragsfri), or a set amount for the whole loan. Every year.</p>
+              </div>
+              <div class="row2">
+                <label class="sv-by"><span>Balance on (or the day the loan starts)</span><input id="nwStart" type="date"></label>
+                <label class="sv-by"><span>Borrowed at the start, kr</span><input id="nwOrig" placeholder="For “paid so far”" inputmode="decimal" autocomplete="off"></label>
+              </div>
               <label class="qa-check"><input type="checkbox" id="nwFloat"> Floating rate – follows Norges Bank’s policy rate</label>
               <div class="nw-float" id="nwFloatBox" hidden>
                 <label class="sv-by"><span>A new rate reaches the loan after, weeks</span><input id="nwLag" placeholder="6" inputmode="numeric" autocomplete="off"></label>
@@ -257,6 +265,11 @@
                   <label class="sv-by"><span>You own, %</span><input id="nwOwn" placeholder="50" inputmode="decimal" autocomplete="off"></label>
                 </div>
                 <label class="sv-by"><span>Costs of a sale, %</span><input id="nwSaleCost" placeholder="2,5" inputmode="decimal" autocomplete="off"></label>
+                <div class="row2">
+                  <label class="sv-by"><span>Your own money in, kr</span><input id="nwEqMe" placeholder="Egenkapital" inputmode="decimal" autocomplete="off"></label>
+                  <label class="sv-by"><span id="nwEqThemL">Their own money in, kr</span><input id="nwEqThem" placeholder="Egenkapital" inputmode="decimal" autocomplete="off"></label>
+                </div>
+                <label class="sv-by"><span>If you sell</span><select id="nwSplit"><option value="pct">Split by who owns what (%)</option><option value="eq">Own money back first, then by %</option></select></label>
                 <label class="sv-by nw-pctrow" id="nwPctRow"><span>You pay, %</span><input id="nwShare" placeholder="e.g. 60" inputmode="decimal" autocomplete="off"></label>
                 <div class="nw-chips" role="group" aria-label="Quick split"><button type="button" data-nwsplit="50">50 / 50</button><button type="button" data-nwsplit="60">60 / 40</button><button type="button" data-nwsplit="40">40 / 60</button><button type="button" data-nwsplit="70">70 / 30</button><button type="button" data-nwsplit="30">30 / 70</button></div>
                 <p class="muted sv-hint" id="nwShareHint"></p>
@@ -950,8 +963,8 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=cd0aa64b71"></script>
-  <script src="../dist/page-finance.js?v=08b4085125"></script>
+  <script src="../dist/head.js?v=1c3d60e935"></script>
+  <script src="../dist/page-finance.js?v=1a5e7ee018"></script>
   <script src="../dist/tail.js?v=d44a779d16"></script>
   <!-- /scripts -->
 </body>

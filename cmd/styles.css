@@ -4636,3 +4636,16 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .hm-move > .bi { font-size: 20px; color: var(--accent); } .hm-move span { display: grid; min-width: 0; } .hm-move small { color: var(--muted); font-size: 12px; }
 @media (max-width: 480px) { .hm-move { grid-template-columns: auto minmax(0, 1fr); } .hm-move .pill-btn { grid-column: 1 / -1; justify-self: start; } .hm-past-bar { grid-template-columns: auto minmax(0, 1fr); } .hm-past-bar .pill-btn { grid-column: 1 / -1; justify-self: start; } }
 .hm-box { width: min(560px, 100%); }
+/* loans: paid so far, own money in */
+.ln-paid { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .03); }
+.ln-ph { margin: 0; font-size: 14px; } .ln-ph .bi { color: var(--accent); }
+.ln-paid .ln-bar { margin-top: 8px; }
+.ln-paid .ln-who span small::before, .ln-eq span small::before { display: none; }
+.ln-eq { margin-top: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+/* loans: months that differ, the form's rules */
+.ln-months { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.ln-months li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 13.5px; }
+.ln-months .bi { color: var(--accent); margin-top: 2px; } .ln-months span { display: grid; min-width: 0; } .ln-months small { color: var(--muted); font-size: 12px; }
+.nw-rules { margin: 8px 0 4px; }
+.nw-rule { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 6px; align-items: center; margin-bottom: 6px; }
+.nw-rule input[hidden] { display: none; } .nw-rule:has(input[hidden]) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 36px; }

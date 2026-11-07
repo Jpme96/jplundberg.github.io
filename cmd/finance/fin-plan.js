@@ -364,19 +364,63 @@
       if (!c) return '<li class="ln">' + head + split + '<p class="muted ln-p">Give it an interest rate and a monthly payment (or the years left) to see the maths.</p></li>';
       if (c.never) return '<li class="ln">' + head + split + '<p class="ln-p neg">The payment doesn’t cover the interest (' + esc(kr(c.interest)) + ' a month) – the loan never gets smaller.</p></li>';
       var paidPct = l.orig > 0 ? Math.min(1, 1 - c.balance / l.orig) : null;
-      return '<li class="ln">' + head + floatLine(l) + split +
+      return '<li class="ln">' + head + floatLine(l) + monthsLine(l, sh ? who : null) + split +
         '<div class="ln-grid">' +
           '<span><small>Paid off</small><b>' + esc(c.endLabel) + '</b></span>' +
           '<span><small>This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
           '<span><small>Interest left</small><b>' + money(c.interestLeft) + '</b></span>' +
           '<span><small>Tax deduction' + (sh ? ', yours' : '') + '</small><b>' + money(c.taxBack * pt) + '</b><em>next 12 months, 22 %' + (sh ? ' of your part' : '') + '</em></span>' +
         '</div>' +
-        (paidPct != null ? '<div class="stack ln-bar"><span style="width:' + (paidPct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' : '') +
+        paidBlock(l, pt, null) + (l.home && +l.home.value > 0 ? homeBlock(l, c.balance * pt, c.balance * (1 - pt), who) : '') +
+        '<div class="ln-acts"><button type="button" class="text-btn" data-lnextra="' + esc(l.id) + '"><i class="bi bi-plus-circle"></i> Extra payment</button></div>' + extraList(l, sh ? who : null) +
         '<label class="ln-try"><span>Pay more each month</span><input type="range" min="0" max="' + Math.max(2000, Math.ceil(l.pay / 1000) * 1000) + '" step="250" value="' + x + '" data-lntry="' + esc(l.id) + '" aria-label="Extra a month for ' + esc(l.name) + '"><b class="ln-x">' + (x ? '+' + esc(kr(x)) : '+0 kr') + '</b></label>' +
         '<p class="ln-p ln-win"' + (cx && !cx.never ? '' : ' hidden') + '>' + (cx && !cx.never ? win(c, cx) : '') + '</p>' +
         (l.asOf ? '<p class="muted ln-p">Balance worked out from ' + esc(kr(l.balance)) + ' on ' + esc(new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' and the payments since – update it under Wealth now and then.</p>' : '') +
       '</li>';
     }
+  }
+  /* months with a different payment: December interest only … – the whole loan, and each person's part */
+  var MNS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function monthsLine(l, who) {
+    var rl = (l.payRules || []).filter(function (r) { return r && +r.m >= 1; }); if (!rl.length || !Lo.monthPay) return '';
+    var now = new Date();
+    return '<ul class="ln-months">' + rl.map(function (r) {
+      var y = now.getFullYear(), day = Math.min(+l.day || 15, 28), d = new Date(y, r.m - 1, day); if (d < new Date(now.getFullYear(), now.getMonth(), now.getDate())) d = new Date(y + 1, r.m - 1, day);
+      var mp = Lo.monthPay(l, d), norm = Lo.monthPay(Object.assign({}, l, { payRules: [] }), d);
+      return '<li><i class="bi bi-calendar2-minus"></i><span><b>' + esc(MNS[r.m - 1]) + ': ' + esc(kr(mp.total + mp.fee)) + '</b> <small>' + (r.mode === 'interest' ? 'interest only' : 'a set amount') + ' · usually ' + esc(kr(norm.total + norm.fee)) + '</small>' +
+        (who ? '<small class="ln-mwho">You ' + esc(kr(mp.me)) + ' · ' + esc(who) + ' ' + esc(kr(mp.them)) + '</small>' : '') + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  /* extra payments on a loan with one payment (who paid, when) */
+  function extraList(l, who) {
+    var ex = (l.extra || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }); if (!ex.length) return '';
+    var tot = ex.reduce(function (a, e) { return a + (+e.amount || 0); }, 0);
+    return '<ul class="ln-ex">' + ex.slice(0, 4).map(function (e) { return '<li><span>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + (who ? ' · ' + (e.who === 'them' ? esc(who) : 'You') : '') + '</span>' + money(e.amount) + '<button type="button" class="icon-btn sm" data-lnexdel="' + esc(l.id + '|' + e.id) + '" aria-label="Remove extra payment"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' +
+      (ex.length > 1 ? '<p class="muted ln-p">Extra payments in all: ' + esc(kr(tot)) + '</p>' : '');
+  }
+  /* already paid: what's paid off the loan since it started (or since the amount you borrowed), and the interest so far */
+  function paidBlock(l, pt, q) {
+    var P = Lo.paid ? Lo.paid(l) : null; if (!P || !(P.start > 0)) return '';
+    var started = !l.asOf || new Date(l.asOf + 'T12:00') <= new Date(), pct = P.start > 0 ? Math.min(1, P.principal / P.start) : 0, pc = function (v) { return String(Math.round(v * 1000) / 10).replace('.', ','); };
+    var since = l.asOf ? new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    if (!started) return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b>Paid so far</b> <span class="muted">– nothing yet, the loan starts ' + esc(since) + '</span></p></div>';
+    var rows;
+    if (q) rows = '<div class="ln-who"><span><small>Your part · of ' + money(q.me.start) + '</small><b>' + money(q.me.paidOff) + '<em> paid off</em></b><em>' + money(q.me.interestSoFar) + ' interest so far</em></span>' +
+      '<span><small>' + esc(String(l.with || '').trim() || 'The other') + '’s part · of ' + money(q.them.start) + '</small><b>' + money(q.them.paidOff) + '<em> paid off</em></b><em>' + money(q.them.interestSoFar) + ' interest so far</em></span></div>';
+    else rows = '<div class="ln-who"><span><small>Paid off the loan</small><b>' + money(P.principal) + '</b><em>' + pc(pct) + ' % of ' + money(P.start) + (pt != null && pt < 1 ? ' · your part ' + money(P.principal * pt) : '') + '</em></span>' +
+      '<span><small>Interest paid</small><b>' + money(P.interest) + '</b><em>' + (P.payments ? P.payments + ' payment' + (P.payments === 1 ? '' : 's') + ' since ' + esc(since) : 'since ' + esc(since)) + '</em></span></div>';
+    return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b>Paid so far</b> <span class="muted">' + pc(pct) + ' % of the loan</span></p><div class="stack ln-bar"><span style="width:' + (pct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' + rows +
+      (!q && (!P.fromOrig || +l.orig === +l.balance) ? '<p class="muted ln-p">Counted from the balance on ' + esc(since) + '. Add “Borrowed at the start” with the pencil to see everything paid since the loan began.</p>' : '') + '</div>';
+  }
+  /* the home: the own money each of you put in, and what each gets if it's sold today */
+  function homeBlock(l, myLoan, theirLoan, who) {
+    var hm = l.home, own = (+hm.own || 50) / 100, net = +hm.value * (1 - (+hm.costs || 0) / 100), eqM = +hm.eqMe || 0, eqT = +hm.eqThem || 0, eq = hm.split === 'eq' && (eqM || eqT);
+    var mine = eq ? eqM + (net - eqM - eqT) * own - myLoan : net * own - myLoan, theirs = eq ? eqT + (net - eqM - eqT) * (1 - own) - theirLoan : net * (1 - own) - theirLoan;
+    var paid = (eqM || eqT) ? '<div class="ln-who ln-eq"><span><small>Your own money in</small><b>' + money(eqM) + '</b><em>egenkapital</em></span><span><small>' + esc(who) + '’s own money in</small><b>' + money(eqT) + '</b><em>egenkapital</em></span></div>' : '';
+    return '<div class="ln-home"><p><i class="bi bi-house-door"></i> <b>If sold at ' + esc(kr(hm.value)) + '</b> <span class="muted">(less ' + esc(String(+hm.costs || 0).replace('.', ',')) + ' % sale costs' + (eq ? ', own money back first' : '') + ')</span></p>' + paid +
+      '<div class="ln-who"><span><small>Your settlement</small><b>' + money(mine, mine < 0 ? 'neg' : '') + '</b><em>' + (eq ? 'your own money back + ' + Math.round(own * 100) + ' % of the rest' : 'your ' + Math.round(own * 100) + ' %') + ', less your part of the loan</em></span>' +
+      '<span><small>' + esc(who) + '’s settlement</small><b>' + money(theirs, theirs < 0 ? 'neg' : '') + '</b><em>' + (eq ? 'their own money back + ' + Math.round((1 - own) * 100) + ' % of the rest' : Math.round((1 - own) * 100) + ' %') + ', less their part</em></span></div>' +
+      '<p class="muted ln-p">Value from ' + esc(hm.at || '–') + ' – change it with the pencil now and then.' + ((eqM || eqT) && !eq ? ' Your samboerkontrakt gives own money back first? Choose it under “If you sell”.' : '') + '</p></div>';
   }
   /* each loan folds to one line – what you pay a month and when it's done – and opens on a tap */
   var lnOpen = (function () { try { return JSON.parse(sessionStorage.getItem('dash.lnOpen')) || {}; } catch (e) { return {}; } })();
@@ -412,17 +456,10 @@
       '<span><small>Tax deduction ' + yr + ', yours</small><b>' + money(tax) + '</b><em>22 % of your own interest and fees</em></span>' +
       '<span><small>Next 12 months, yours</small><b>' + money(q.me.next12) + ' interest</b><em>' + money(Lo.myTaxBack(l)) + ' less tax</em></span>' +
     '</div>';
-    var hm = l.home && +l.home.value > 0 ? l.home : null, settle = '';
-    if (hm) {
-      var own = (+hm.own || 50) / 100, net = +hm.value * (1 - (+hm.costs || 0) / 100), mine = net * own - q.me.bal, theirs = net * (1 - own) - q.them.bal;
-      settle = '<div class="ln-home"><p><i class="bi bi-house-door"></i> <b>If sold at ' + esc(kr(hm.value)) + '</b> <span class="muted">(less ' + esc(String(+hm.costs || 0).replace('.', ',')) + ' % sale costs)</span></p>' +
-        '<div class="ln-who"><span><small>Your settlement</small><b>' + money(mine, mine < 0 ? 'neg' : '') + '</b><em>your ' + Math.round(own * 100) + ' % less your part of the loan</em></span>' +
-        '<span><small>' + esc(who) + '’s settlement</small><b>' + money(theirs, theirs < 0 ? 'neg' : '') + '</b><em>' + Math.round((1 - own) * 100) + ' % less their part</em></span></div>' +
-        '<p class="muted ln-p">Value from ' + esc(hm.at || '–') + ' – change it with the pencil now and then.</p></div>';
-    }
+    var settle = paidBlock(l, null, q) + (l.home && +l.home.value > 0 ? homeBlock(l, q.me.bal, q.them.bal, who) : '');
     var ex = (l.extra || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var exl = ex.length ? '<ul class="ln-ex">' + ex.slice(0, 4).map(function (e) { return '<li><span>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' · ' + (e.who === 'them' ? esc(who) : 'You') + '</span>' + money(e.amount) + '<button type="button" class="icon-btn sm" data-lnexdel="' + esc(l.id + '|' + e.id) + '" aria-label="Remove extra payment"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' : '';
-    return '<li class="ln">' + head + floatLine(l) + split + grid +
+    return '<li class="ln">' + head + floatLine(l) + monthsLine(l, who) + split + grid +
       '<div class="ln-acts"><button type="button" class="text-btn" data-lnextra="' + esc(l.id) + '"><i class="bi bi-plus-circle"></i> Extra payment</button>' +
       (window.SharedHome ? '<button type="button" class="text-btn" data-lnsub="' + esc(l.id) + '"><i class="bi bi-arrow-left-right"></i> Covered an instalment</button>' : '') + '</div>' + exl + settle +
       (q.left < (+l.inner.months || 0) || !started ? '' : '') + '</li>';
@@ -430,10 +467,10 @@
   /* an extra payment on one internal part */
   function extraSheet(id) {
     var d = data(), l = d && (d.accounts || []).filter(function (a) { return String(a.id) === String(id); })[0]; if (!l) return;
-    var who = String(l.with || '').trim() || 'The other', bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
+    var who = String(l.with || '').trim() || 'The other', bg = document.createElement('div'); bg.className = 'fo-bg lf-bg'; var sh = !!l.inner || Lo.part(l) < 1;
     bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Extra payment"><div class="lf-head"><h3><i class="bi bi-plus-circle"></i> Extra payment</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-      '<p class="muted">It lowers only the payer’s part – and that person’s next instalments, with the same term.</p>' +
-      '<div class="seg lf-seg"><button type="button" data-w="me" aria-pressed="true">You paid</button><button type="button" data-w="them" aria-pressed="false">' + esc(who) + ' paid</button></div>' +
+      '<p class="muted">' + (l.inner ? 'It lowers only the payer’s part – and that person’s next instalments, with the same term.' : 'It comes off the loan; the monthly payment stays and the loan is paid off sooner.') + '</p>' +
+      (sh ? '<div class="seg lf-seg"><button type="button" data-w="me" aria-pressed="true">You paid</button><button type="button" data-w="them" aria-pressed="false">' + esc(who) + ' paid</button></div>' : '') +
       '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required><input name="date" type="date" value="' + esc(new Date().toISOString().slice(0, 10)) + '" aria-label="Date"></div>' +
       '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save</button></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
@@ -444,7 +481,7 @@
       if (!(n > 0)) { f.amt.focus(); return; }
       var d2 = data(); (d2.accounts || []).forEach(function (a) { if (String(a.id) === String(id)) { a.extra = Array.isArray(a.extra) ? a.extra : []; a.extra.push({ id: Date.now().toString(36), date: f.date.value || new Date().toISOString().slice(0, 10), amount: Math.round(n), who: w }); } });
       window.Vault.save(d2); if (window.Links) window.Links.syncLoans(); close(); save(data());
-      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> Extra payment saved – ' + (w === 'me' ? 'your' : esc(who) + '’s') + ' part is lower');
+      if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> Extra payment saved' + (l.inner ? ' – ' + (w === 'me' ? 'your' : esc(who) + '’s') + ' part is lower' : ' – the loan is lower'));
     });
   }
   /* a floating rate: where it comes from, and a change on its way */

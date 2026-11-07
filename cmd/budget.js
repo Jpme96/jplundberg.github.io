@@ -241,10 +241,28 @@ window.Loans = (function () {
     var i = (+ratePct || 0) / 1200; months = Math.max(1, Math.round(months));
     return i > 0 ? bal * i / (1 - Math.pow(1 + i, -months)) : bal / months;
   }
-  function run(bal, i, p, max) {        // month by month until it's paid: months and the interest paid
+  function run(bal, i, p, max, payAt) {        // month by month until it's paid: months and the interest paid (payAt(n, bal, r) = that month's payment, when months differ)
     var n = 0, paid = 0, year = 0;
-    while (bal > 0.5 && n < (max || 1200)) { var r = bal * i; if (n < 12) year += r; paid += r; bal = bal + r - p; n++; }
+    while (bal > 0.5 && n < (max || 1200)) { var r = bal * i, pp = payAt ? payAt(n, bal, r) : p; if (n < 12) year += r; paid += r; bal = bal + r - pp; n++; }
     return { months: n, interest: paid, year: year, done: bal <= 0.5 };
+  }
+  /* months that are different (l.payRules = [{ m: 1–12, mode: 'interest' | 'amount', amount }]): December interest only
+     (avdragsfri), or a set amount for the whole loan that month – every year */
+  function rule(l, d) { var m = d.getMonth() + 1, r = (Array.isArray(l && l.payRules) ? l.payRules : []).filter(function (x) { return x && +x.m === m && (x.mode === 'interest' || +x.amount > 0); })[0]; return r || null; }
+  function rulePay(r, normal, interest) { return !r ? normal : r.mode === 'interest' ? interest : Math.max(interest, Math.min(+r.amount, normal * 3)); }
+  function payDay(l, a, k) { var day = +l.day || a.getDate(), d = new Date(a.getFullYear(), a.getMonth() + k, 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return d; }
+  function dkey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function extras(l) { return (Array.isArray(l && l.extra) ? l.extra : []).filter(function (e) { return e && +e.amount > 0 && e.date; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  /* a loan with one payment: from the balance on l.asOf, every payment since (with the months that differ and extra payments) */
+  function walk(l, now) {
+    var bal = +l.balance || 0, i = (+l.rate || 0) / 1200, p = +l.pay || 0, out = { bal: bal, interest: 0, m: 0, extra: 0 };
+    if (!l.asOf || !(p > 0)) return out;
+    var a = new Date(l.asOf + 'T12:00'), m = (now.getFullYear() - a.getFullYear()) * 12 + now.getMonth() - a.getMonth();
+    if (l.day && now.getDate() < +l.day) m--;
+    var ex = extras(l), xi = 0, key = function (d) { while (xi < ex.length && ex[xi].date <= dkey(d)) { if (ex[xi].date > l.asOf) { bal = Math.max(0, bal - (+ex[xi].amount)); out.extra += +ex[xi].amount; } xi++; } };
+    for (var k = 1; k <= m && bal > 0; k++) { var d = payDay(l, a, k); key(d); var r = bal * i; out.interest += r; bal = bal + r - rulePay(rule(l, d), p, r); }
+    key(now);
+    out.bal = Math.max(0, bal); out.m = Math.max(0, m); return out;
   }
   function label(n, now) {
     var d = new Date(now.getFullYear(), now.getMonth() + n, 1), y = Math.floor(n / 12), m = n % 12;
@@ -254,12 +272,7 @@ window.Loans = (function () {
   function balanceNow(l, now) {
     now = now || new Date();
     if (l && l.inner) { var q = inner(l, now); return q ? q.me.bal + q.them.bal : +l.balance || 0; }
-    var bal = +l.balance || 0, i = (+l.rate || 0) / 1200, p = +l.pay || 0;
-    if (!l.asOf || !(p > 0)) return bal;
-    var a = new Date(l.asOf + 'T12:00'), m = (now.getFullYear() - a.getFullYear()) * 12 + now.getMonth() - a.getMonth();
-    if (l.day && now.getDate() < +l.day) m--;
-    for (var k = 0; k < m && bal > 0; k++) bal = bal * (1 + i) - p;
-    return Math.max(0, bal);
+    return walk(l, now).bal;
   }
   function calc(l, extra, now) {
     now = now || new Date();
@@ -268,7 +281,9 @@ window.Loans = (function () {
     if (!(bal > 0) || !(p > 0)) return null;
     var interest = bal * i, principal = p - interest;
     if (principal <= 0) return { balance: bal, never: true, interest: interest };
-    var r = run(bal, i, p);
+    /* the months ahead, with the months that differ (no extra payments assumed) */
+    var nx = new Date(now.getFullYear(), now.getMonth() + (l.day && now.getDate() >= +l.day ? 1 : 0), 1);
+    var r = run(bal, i, p, 1200, (l.payRules || []).length ? function (n, b, ri) { return rulePay(rule(l, new Date(nx.getFullYear(), nx.getMonth() + n, 1)), p, ri); } : null);
     return { balance: bal, interest: interest, principal: principal, months: r.months, interestLeft: r.interest, yearInterest: r.year,
       taxBack: r.year * TAX, end: new Date(now.getFullYear(), now.getMonth() + r.months, 1), endLabel: label(r.months, now), never: false };
   }
@@ -291,7 +306,7 @@ window.Loans = (function () {
     var st = new Date(l.asOf + 'T12:00'), day = +l.day || st.getDate(), yr = now.getFullYear();
     var m = (now.getFullYear() - st.getFullYear()) * 12 + now.getMonth() - st.getMonth(); if (now.getDate() < day) m--; m = Math.max(0, Math.min(n, m));
     var ex = (Array.isArray(l.extra) ? l.extra : []).filter(function (e) { return e && +e.amount > 0 && e.date; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }), xi = 0;
-    var P = { me: { bal: A, year: 0, next12: 0 }, them: { bal: Bv, year: 0, next12: 0 } }, NOW = null;
+    var P = { me: { bal: A, year: 0, next12: 0, sofar: 0, start: A }, them: { bal: Bv, year: 0, next12: 0, sofar: 0, start: Bv } }, NOW = null;
     function payDate(k) { var d = new Date(st.getFullYear(), st.getMonth() + k, 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return d; }
     function dk(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
     function extrasTo(key) { while (xi < ex.length && ex[xi].date <= key) { var w = ex[xi].who === 'them' ? P.them : P.me; w.bal = Math.max(0, w.bal - (+ex[xi].amount)); xi++; } }
@@ -303,11 +318,14 @@ window.Loans = (function () {
     for (var k = 1; k <= horizon; k++) {
       var d = payDate(k), future = k > m;
       if (!future) extrasTo(dk(d));
+      var rl = rule(l, d), nm = P.me.bal > 0.5 ? payment(P.me.bal, l.rate, n - k + 1) : 0, nt = P.them.bal > 0.5 ? payment(P.them.bal, l.rate, n - k + 1) : 0;
       ['me', 'them'].forEach(function (w) {
         var x = P[w]; if (x.bal <= 0.5) { x.bal = 0; return; }
         var r = x.bal * i, pay = payment(x.bal, l.rate, n - k + 1);
+        if (rl) pay = rl.mode === 'interest' ? r : Math.max(r, (+rl.amount) * (nm + nt > 0 ? pay / (nm + nt) : .5));
         if (d.getFullYear() === yr) { x.year += r; x.yp = (x.yp || 0) + 1; }
         if (future && k <= m + 12) x.next12 += r;
+        if (!future) x.sofar += r;
         x.bal = Math.max(0, x.bal + r - pay);
       });
       if (k === m) snap();
@@ -316,7 +334,7 @@ window.Loans = (function () {
     P.me.bal = NOW.me; P.them.bal = NOW.them;
     var left = n - m, fee = +l.fee || 0, meOn = P.me.bal > 0.5, thOn = P.them.bal > 0.5;
     var feeMe = meOn && thOn ? fee / 2 : meOn ? fee : 0, feeThem = meOn && thOn ? fee / 2 : thOn ? fee : 0;
-    function out(x) { return { bal: x.bal, pay: x.bal > 0.5 ? payment(x.bal, l.rate, left) : 0, interest: x.bal * i, year: x.year, yearPays: x.yp || 0, next12: x.next12 }; }
+    function out(x) { return { bal: x.bal, pay: x.bal > 0.5 ? payment(x.bal, l.rate, left) : 0, interest: x.bal * i, year: x.year, yearPays: x.yp || 0, next12: x.next12, start: x.start, paidOff: Math.max(0, x.start - x.bal), interestSoFar: x.sofar }; }
     return { me: out(P.me), them: out(P.them), left: left, fee: { me: feeMe, them: feeThem }, paidMonths: m };
   }
   /* your tax deduction on a loan over the next 12 months (rentefradrag, 22 %): your own internal part's interest and your
@@ -325,15 +343,38 @@ window.Loans = (function () {
     if (l && l.inner) { var q = inner(l); return q ? (q.me.next12 + q.fee.me * 12) * TAX : 0; }
     var c = calc(l); return c && !c.never ? c.taxBack * part(l) : 0;
   }
-  /* what you pay each month on it: your instalment (+ your part of the fee) */
-  function myPay(l) {
+  /* the payment in a given month (a month that differs, or the usual one): { total, me, them, fee, rule } – whole loan, your part, theirs */
+  function monthPay(l, when) {
+    when = when || new Date();
+    var r = rule(l, when);
+    if (l && l.inner) {
+      var q = inner(l, when); if (!q) return { total: 0, me: 0, them: 0, fee: 0, rule: r };
+      var nm = q.me.pay, nt = q.them.pay, me = nm, th = nt;
+      if (r) { if (r.mode === 'interest') { me = q.me.interest; th = q.them.interest; } else { var t = +r.amount; me = nm + nt > 0 ? t * nm / (nm + nt) : t / 2; th = t - me; } }
+      return { total: me + th, me: me + q.fee.me, them: th + q.fee.them, fee: q.fee.me + q.fee.them, rule: r };
+    }
+    var p = +l.pay || 0, i = (+l.rate || 0) / 1200, pay = rulePay(r, p, owedNow(l, when) * i), fee = +l.fee || 0, pt = part(l);
+    return { total: pay, me: (pay + fee) * pt, them: (pay + fee) * (1 - pt), fee: fee, rule: r };
+  }
+  /* what you pay each month on it: your instalment (+ your part of the fee) – this month's, when the month differs */
+  function myPay(l, when) {
+    if (l && (l.payRules || []).length) return monthPay(l, when).me;
     if (l && l.inner) { var q = inner(l); return q ? q.me.pay + q.fee.me : 0; }
     return ((+l.pay || 0) + (+l.fee || 0)) * part(l);
+  }
+  /* what's already paid: of the loan (the amount borrowed at the start – l.orig, or the balance on l.asOf) and the
+     interest since l.asOf. Two internal parts: per part, from the start of the loan. */
+  function paid(l, now) {
+    if (!l) return null;
+    now = now || new Date();
+    if (l.inner) { var q = inner(l, now); if (!q) return null; return { start: q.me.start + q.them.start, owed: q.me.bal + q.them.bal, principal: q.me.paidOff + q.them.paidOff, interest: q.me.interestSoFar + q.them.interestSoFar, payments: q.paidMonths, since: l.asOf, me: q.me, them: q.them }; }
+    var owed = owedNow(l, now), start = +l.orig > 0 ? Math.max(+l.orig, owed) : +l.balance || 0, w = walk(l, now);
+    return { start: start, owed: owed, principal: Math.max(0, start - owed), interest: w.interest, payments: w.m, extra: w.extra, since: l.asOf, fromOrig: +l.orig > 0 };
   }
   function shared(l) { return !!(l && l.inner) || part(l) < 1; }
   /* what's owed on a debt today: worked out from the payments when it has them, else the balance you typed */
   function owedNow(l, now) { return l && +l.pay > 0 && l.asOf ? balanceNow(l, now) : +(l && l.balance) || 0; }
-  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared, inner: inner, myTaxBack: myTaxBack, myPay: myPay };
+  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared, inner: inner, myTaxBack: myTaxBack, myPay: myPay, paid: paid, monthPay: monthPay, rule: rule };
 })();
 
 /* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.

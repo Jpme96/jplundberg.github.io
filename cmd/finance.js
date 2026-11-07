@@ -715,6 +715,8 @@
     if (window.Policy) window.Policy.update(function () { loanUi(); });
     $('nwMine').value = inn ? Math.round(a.inner.mine) : ''; $('nwTerm').value = inn ? String(Math.round(a.inner.months / 12 * 10) / 10).replace('.', ',') : '';
     $('nwStart').value = a && a.asOf ? a.asOf : today(); $('nwHome').value = hm.value ? Math.round(hm.value) : ''; $('nwOwn').value = hm.own ? String(hm.own).replace('.', ',') : ''; $('nwSaleCost').value = hm.costs != null && hm.costs !== '' ? String(hm.costs).replace('.', ',') : '';
+    rules = a && Array.isArray(a.payRules) ? JSON.parse(JSON.stringify(a.payRules)) : []; drawRules();
+    $('nwOrig').value = a && a.orig > 0 ? Math.round(a.orig) : ''; $('nwEqMe').value = hm.eqMe > 0 ? Math.round(hm.eqMe) : ''; $('nwEqThem').value = hm.eqThem > 0 ? Math.round(hm.eqThem) : ''; $('nwSplit').value = hm.split === 'eq' ? 'eq' : 'pct';
     loanUi();
     $('nwDelete').hidden = !a;
     $('nwName').focus();
@@ -722,6 +724,26 @@
   function homeShare(a) { return a && a.home && +a.home.value > 0 ? +a.home.value * (+a.home.own || 50) / 100 : 0; }   /* your part of the home's value, kept with its mortgage */
   function owed(a) { return window.Loans && window.Loans.owedNow ? window.Loans.owedNow(a) : a.balance; }
   function loanPart(a) { return window.Loans && window.Loans.part ? window.Loans.part(a) : 1; }
+  /* months with a different payment (l.payRules): December interest only, or a set amount for the whole loan */
+  var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var rules = [];
+  function drawRules() {
+    $('nwRules').innerHTML = rules.map(function (r, i) {
+      return '<div class="nw-rule" data-ri="' + i + '"><select data-rk="m" aria-label="Month">' + MN.map(function (m, k) { return '<option value="' + (k + 1) + '"' + (+r.m === k + 1 ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
+        '<select data-rk="mode" aria-label="Payment"><option value="interest"' + (r.mode === 'interest' ? ' selected' : '') + '>Interest only</option><option value="amount"' + (r.mode === 'amount' ? ' selected' : '') + '>Pay, kr</option></select>' +
+        '<input data-rk="amount" inputmode="decimal" placeholder="Whole loan" value="' + (r.amount || '') + '"' + (r.mode === 'amount' ? '' : ' hidden') + ' aria-label="Amount"><button type="button" class="icon-btn sm" data-rdel="' + i + '" aria-label="Remove"><i class="bi bi-x"></i></button></div>';
+    }).join('');
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#nwRuleAdd')) { rules.push({ m: 12, mode: 'interest' }); drawRules(); return; }
+    var d = e.target.closest('[data-rdel]'); if (d) { rules.splice(+d.dataset.rdel, 1); drawRules(); }
+  });
+  document.addEventListener('change', function (e) {
+    var c = e.target.closest('#nwRules [data-rk]'); if (!c) return;
+    var r = rules[+c.closest('[data-ri]').dataset.ri]; if (!r) return;
+    r[c.dataset.rk] = c.dataset.rk === 'amount' ? (num(c.value) || '') : c.value;
+    if (c.dataset.rk === 'mode') drawRules();
+  });
   function closeAcc() { $('nwForm').hidden = true; editingAcc = null; }
   /* a debt can be a loan: interest, monthly payment (or years left, and the payment is worked out), fee and due day */
   function loanUi() {
@@ -746,6 +768,7 @@
   function shareUi(l) {
     var on = $('nwShared').checked; $('nwShareBox').hidden = !on;
     if (!on) return;
+    var wn = $('nwWith').value.trim(); $('nwEqThemL').textContent = wn ? wn + '’s own money in, kr' : 'Their own money in, kr';
     var inn = $('nwMode').value === 'inner'; $('nwInner').hidden = !inn; $('nwPctRow').hidden = inn; document.querySelector('#nwShareBox .nw-chips').hidden = inn;
     if (inn) {
       var tot = Math.abs(num($('nwBal').value) || 0), mine = num($('nwMine').value) || 0, yrs = num($('nwTerm').value) || 0, r = num($('nwRate').value) || 0, fee = num($('nwFee').value) || 0, other = $('nwWith').value.trim() || 'the other';
@@ -807,13 +830,19 @@
       var hv = $('nwShared').checked ? num($('nwHome').value) : NaN;
       /* a home worth less than half its loan is almost always a missing zero */
       if (hv > 0 && hv < rec.balance / 2 && !confirm('The home value (' + kr(hv) + ') is less than half the loan (' + kr(rec.balance) + '). Is a zero missing?\n\nOK = save it anyway · Cancel = fix it')) { $('nwHome').focus(); $('nwHome').select(); return; }
-      if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value), oh = od && od.home; rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: oh && +oh.value === Math.round(hv) ? oh.at : today() }; }
+      if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value), oh = od && od.home; rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: oh && +oh.value === Math.round(hv) ? oh.at : today() };
+        /* the own money each of you put in (egenkapital), and how a sale is settled */
+        var eqM = num($('nwEqMe').value), eqT = num($('nwEqThem').value); if (eqM > 0) rec.home.eqMe = Math.round(eqM); if (eqT > 0) rec.home.eqThem = Math.round(eqT); if ($('nwSplit').value === 'eq') rec.home.split = 'eq'; }
+      /* the amount borrowed at the start – for "paid so far" (a loan started here uses its first balance) */
+      var rl = rules.filter(function (r) { return +r.m >= 1 && +r.m <= 12 && (r.mode === 'interest' || +r.amount > 0); }).map(function (r) { return r.mode === 'interest' ? { m: +r.m, mode: 'interest' } : { m: +r.m, mode: 'amount', amount: Math.round(+r.amount) }; });
+      rec.payRules = rl.length ? rl : null;
+      var og = num($('nwOrig').value); rec.orig = og > 0 ? Math.round(og) : (od && od.orig > 0 ? od.orig : null);
     }
     if (editingAcc) {
       D.accounts.forEach(function (a) {
         if (a.id !== editingAcc) return;
         if (rec.kind === 'debt') a.asOf = rec.asOf;
-        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home', 'float'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
+        ['rate', 'pay', 'fee', 'day', 'from', 'fixed', 'share', 'with', 'inner', 'home', 'float', 'orig', 'payRules'].forEach(function (k) { if (rec.kind !== 'debt' || rec[k] == null) delete a[k]; else a[k] = rec[k]; });
         if (!a.asOf && rec.kind === 'debt') a.asOf = rec.asOf;
         a.name = rec.name; a.balance = rec.balance; a.kind = rec.kind;
       });
@@ -821,7 +850,7 @@
       rec.id = uid();
       if (rec.share == null && !rec.inner) { delete rec.share; delete rec.with; }
       if (rec.share == null) delete rec.share;
-      if (!rec.inner) delete rec.inner; if (!rec.home) delete rec.home; if (!rec.float) delete rec.float;
+      if (!rec.inner) delete rec.inner; if (!rec.home) delete rec.home; if (!rec.float) delete rec.float; if (!rec.orig) delete rec.orig; if (!rec.payRules) delete rec.payRules;
       D.accounts.push(rec);
     }
     snapshot();

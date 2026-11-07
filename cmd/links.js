@@ -55,6 +55,12 @@
     var want = (d.accounts || []).filter(function (a) { return a.kind === 'debt' && a.fixed !== false && (+a.pay > 0 || a.inner) && window.Loans.owedNow(a) > 0.5 && !(a.asOf > dk(new Date())); }).map(function (a) {     /* a paid-off loan stops costing */
       /* a shared loan: only your part of the payment (and fee) goes into your budget */
       var part = window.Loans.part ? window.Loans.part(a) : 1;
+      /* months that differ (December interest only …): this month's amount, and the next two for Next 14 days */
+      if ((a.payRules || []).length && window.Loans.monthPay) {
+        var now = new Date(), months = {};
+        for (var k = 0; k < 3; k++) { var dt = new Date(now.getFullYear(), now.getMonth() + k, Math.min(+a.day || 15, 28)); months[dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0')] = Math.round(window.Loans.monthPay(a, dt).me); }
+        return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (a.inner ? ' (your part)' : part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round(window.Loans.myPay(a, now)), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null, vary: true, months: months };
+      }
       if (a.inner) return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + ' (your part)', amount: Math.round(window.Loans.myPay(a)), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null };
       return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round((+a.pay + (+a.fee || 0)) * part), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null };
     });
