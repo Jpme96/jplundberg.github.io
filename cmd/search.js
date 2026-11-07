@@ -74,6 +74,9 @@
         var vis = Object.keys(x).filter(function (k) { return !/^(id|kind|title|pass|code|guest)$/.test(k) && typeof x[k] === 'string'; }).map(function (k) { return x[k]; });
         add('Good to know', 'info-circle', x.title, vis.filter(function (v) { return v && v.length < 80 && !/^\d{4}-\d{2}-\d{2}$/.test(v); }).slice(0, 2).join(' · ') || 'House', home + 'house/#hinfo=' + x.id, '', vis.join(' ') + ' ' + (x.kind || ''));
       });
+      if (Fe.on('papers')) (T.papers || []).forEach(function (x) {
+        add('Papers', 'folder2-open', x.title, [x.who, x.date ? (x.dateKind === 'renews' ? 'renews ' : 'expires ') + fmt(x.date) : '', (x.files || []).length ? (x.files.length === 1 ? '1 file' : x.files.length + ' files') : ''].filter(Boolean).join(' · ') || 'Papers', home + 'papers/#papers=' + x.id, x.date || '', (x.who || '') + ' ' + (x.ref || '') + ' ' + (x.notes || '') + ' ' + (x.kind || '') + ' papir dokument document ' + (x.files || []).map(function (f) { return f.name; }).join(' '));
+      });
       if (Fe.on('fdv')) (T.fdv || []).forEach(function (r) {
         add('FDV', 'building-check', r.building, ['Inspection ' + fmt(r.date), r.address, r.client].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (r.address || '') + ' ' + (r.client || '') + ' ' + (r.notes || '') + ' fdv befaring inspection');
         (r.findings || []).forEach(function (f) {

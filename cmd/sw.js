@@ -3,14 +3,14 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v102';
+var CACHE = 'cmd-v103';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */
-var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/admin/'];
+var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/admin/'];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function (c) {

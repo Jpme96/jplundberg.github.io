@@ -39,7 +39,8 @@
     { id: 'ptime', group: 'Work', name: 'Time per client', icon: 'hourglass-split', c: '#e8743b', desc: 'A timer per client or project, hours per week and a list to invoice from' },
     { id: 'house', group: 'Home life', name: 'House', icon: 'house-gear', c: '#22b35e', desc: 'A page for upkeep that comes round again, bin days, meter readings and home info' },
     { id: 'people', group: 'Home life', name: 'People', icon: 'people', c: '#d55181', desc: 'A page for birthdays, keeping in touch and gift ideas' },
-    { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes' }
+    { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes' },
+    { id: 'papers', group: 'Home life', name: 'Papers', icon: 'folder2-open', c: '#6b4bc4', desc: 'A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew', def: true }
   ];
   var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday', 'ptime'];
   var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth', 'gym', 'rest'];       // the Health page shows if any is on

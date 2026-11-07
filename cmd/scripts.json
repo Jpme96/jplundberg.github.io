@@ -31,6 +31,7 @@
     "health-plus.js",
     "money-plus.js",
     "home-shared.js",
+    "papers.js",
     "backup-mail.js",
     "pagetabs.js",
     "delight.js",
@@ -140,6 +141,13 @@
       "links.js"
     ],
     "food/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "papers/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",

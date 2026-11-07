@@ -1125,7 +1125,7 @@ body.st-open { overflow: hidden; }
 .tab-off-calendar .tabbar a[data-pg=calendar]:not([aria-current]), .tab-off-travel .tabbar a[data-pg=travel]:not([aria-current]),
 .tab-off-finance .tabbar a[data-pg=finance]:not([aria-current]), .tab-off-habits .tabbar a[data-pg=habits]:not([aria-current]),
 .tab-off-work .tabbar a[data-pg=work]:not([aria-current]), .tab-off-house .tabbar a[data-pg=house]:not([aria-current]),
-.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), .tab-off-food .tabbar a[data-pg=food]:not([aria-current]), .tab-off-admin .tabbar a[data-pg=admin]:not([aria-current]) { display: none; }
+.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), .tab-off-food .tabbar a[data-pg=food]:not([aria-current]), .tab-off-papers .tabbar a[data-pg=papers]:not([aria-current]), .tab-off-admin .tabbar a[data-pg=admin]:not([aria-current]) { display: none; }
 /* the slide between pages */
 .vt-active .tabbar { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: var(--bg-solid) !important; }
 ::view-transition-group(tb-pill) { animation-duration: .5s; animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
@@ -2385,7 +2385,8 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 .tabbar a[data-pg="house"] { order: var(--nav-house, 6); }
 .tabbar a[data-pg="people"] { order: var(--nav-people, 7); }
 .tabbar a[data-pg="food"] { order: var(--nav-food, 8); }
-.tabbar a[data-pg="admin"] { order: var(--nav-admin, 9); }
+.tabbar a[data-pg="papers"] { order: var(--nav-papers, 9); }
+.tabbar a[data-pg="admin"] { order: var(--nav-admin, 10); }
 
 /* ---------- customize a page (pagekit.js) ---------- */
 .pk-off { display: none !important; }
@@ -4402,3 +4403,48 @@ html:not(.feat-off-house) #fp .fp-houseable { display: none !important; }   /* p
 .inv-pdf { text-decoration: none; display: grid; place-items: center; gap: 6px; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
 .inv-pdf .bi { font-size: 30px; color: #e66767; }
 .il-rcpdf { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #555; }
+
+/* ---------- Papers (papers.js) ---------- */
+.pa-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.pa-chips::-webkit-scrollbar { display: none; }
+.pa-chip { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.pa-chip small { opacity: .6; }
+.pa-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pa-sug { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+.pa-sug > span { width: 100%; font-size: 12px; color: var(--muted); }
+.pa-sugb { display: inline-flex; align-items: center; gap: 3px; padding: 5px 10px 5px 7px; border-radius: 999px; border: 1px dashed var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.pa-sugb:hover { border-style: solid; border-color: var(--accent); }
+.pa-note { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; line-height: 1.45; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+.pa-fc { display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; font-size: 11px; color: var(--muted); }
+.pa-fc.miss { color: #c98500; }
+.pa-fc.none { opacity: .7; }
+.pa-due { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(201, 133, 0, .14); color: #a86f00; white-space: nowrap; }
+.pa-due.near { background: rgba(232, 116, 59, .16); color: #c4581f; }
+.pa-due.over { background: rgba(230, 103, 103, .16); color: #c94444; }
+.pa-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 14px; margin: 4px 0 10px; }
+.pa-facts dt { font-size: 11px; color: var(--muted); font-weight: 500; }
+.pa-facts dd { margin: 1px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.pa-link { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 8px; text-decoration: none; }
+.pa-files { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.pa-files li { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border: 1px solid var(--line); border-radius: 12px; }
+.pa-files li > .bi { font-size: 24px; color: #e66767; flex: none; }
+.pa-files li > .bi-image { color: var(--accent); }
+.pa-files li img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; flex: none; background: rgba(var(--ink-rgb), .06); }
+.pa-files li.gone { border-style: dashed; opacity: .75; }
+.pa-files li.gone > .bi { color: var(--muted); }
+.pa-fn { flex: 1; min-width: 0; color: inherit; text-decoration: none; display: grid; }
+.pa-fn b { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-fn small { font-size: 12px; color: var(--muted); }
+.pa-files .icon-btn.armed { color: #e66767; }
+.pa-addf { display: inline-flex; align-items: center; gap: 5px; margin: 2px 0 8px; cursor: pointer; }
+.pa-pickbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 14px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.pa-pick .kit-row { cursor: pointer; }
+.pa-soon, .pa-else { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.pa-soon a, .pa-else a { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-radius: 10px; color: inherit; text-decoration: none; }
+.pa-soon a:hover, .pa-else a:hover { background: rgba(var(--ink-rgb), .04); }
+.pa-else a > .bi-chevron-right { margin-left: auto; color: var(--muted); }
+.pa-when { flex: none; width: 46px; display: grid; justify-items: center; line-height: 1.1; padding: 4px 0; border-radius: 10px; background: rgba(var(--ink-rgb), .05); }
+.pa-when b { font-size: 17px; }
+.pa-when small { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.pa-when.near { background: rgba(232, 116, 59, .14); }
+.pa-when.over { background: rgba(230, 103, 103, .14); }
