@@ -1120,6 +1120,11 @@
   var MEMO = new Map();
   /* Nov 7 audit: leftovers found by the Norwegian scan */
   Object.assign(D, {
+    'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
+    'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',
+    'Note (optional) – e.g. Vipps, first part': 'Notat (valgfritt) – f.eks. Vipps, første del',
+    'Linked to this item in the Home inventory.': 'Koblet til denne tingen i innboet.',
+    'Set up Shared home first – say who you share with': 'Sett opp Felles hjem først – si hvem du deler med',
     'to spend today': 'å bruke i dag', 'over budget': 'over budsjett',
     'Last month at a glance – and the month ahead': 'Forrige måned i korte trekk – og måneden som kommer',
     'Cities and places you want to see. Turn one into a trip when you’re ready.': 'Byer og steder du vil se. Gjør ett om til en reise når du er klar.',
@@ -1179,6 +1184,10 @@
     'Appendix B of the samboerkontrakt – from the Home inventory': 'Vedlegg B til samboerkontrakten – fra innboet'
   });
   P.push(
+    [/^Payment with (.+)$/, 'Betaling med $1'],
+    [/^You’re all square\. Paid (.+) something ahead, or got money from them\? Add it here and it counts in what you owe each other\.$/, 'Dere er skuls. Har du betalt $1 noe på forskudd, eller fått penger fra dem? Legg det inn her, så teller det med i det dere skylder hverandre.'],
+    [/^(.+)\. How much was paid\? Only part of it \(a down payment\)\? Type that amount – the rest stays owed\.$/, function (m, a) { return (/^You owe /.test(a) ? a.replace(/^You owe /, 'Du skylder ') : tr(a)) + '. Hvor mye ble betalt? Bare en del (et avdrag)? Skriv det beløpet – resten står fortsatt som gjeld.'; }],
+    [/^(.+) paid you · (.+)$/, '$1 betalte deg · $2'],
     [/^Your (\S+) check-in$/, 'Din innsjekk for $1'],
     [/^· was due (\d+) days? ago$/, function (m, n) { return '· forfalt for ' + n + (n === '1' ? ' dag' : ' dager') + ' siden'; }],
     [/^(\d+) days? late$/, function (m, n) { return n + (n === '1' ? ' dag' : ' dager') + ' for sent'; }],

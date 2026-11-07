@@ -374,12 +374,13 @@
   }
   function settleSheet(pid) {
     var s = sh(), b = balance(s, pid), p = person(s, pid); if (!p) return;
-    var S = sheet('Settle up'), box = S.box, theyPay = b > 0;
-    box.innerHTML = head('cash-coin', 'Settle up with ' + p.name) +
-      '<p class="muted">' + esc(theyPay ? p.name + ' owes you ' + kr(b) : 'You owe ' + p.name + ' ' + kr(-b)) + '. How much was paid?</p>' +
+    var sq = Math.abs(b) < 1, S = sheet(sq ? 'Payment' : 'Settle up'), box = S.box, theyPay = b > 0;
+    box.innerHTML = head(sq ? 'arrow-left-right' : 'cash-coin', (sq ? 'Payment with ' : 'Settle up with ') + p.name) +
+      '<p class="muted">' + (sq ? 'You’re all square. Paid ' + esc(p.name) + ' something ahead, or got money from them? Add it here and it counts in what you owe each other.' : esc(theyPay ? p.name + ' owes you ' + kr(b) : 'You owe ' + p.name + ' ' + kr(-b)) + '. How much was paid? Only part of it (a down payment)? Type that amount – the rest stays owed.') + '</p>' +
       '<div class="seg lf-seg"><button type="button" data-dir="in" aria-pressed="' + theyPay + '">' + esc(p.name) + ' paid you</button><button type="button" data-dir="out" aria-pressed="' + !theyPay + '">You paid ' + esc(p.name) + '</button></div>' +
-      '<input name="amt" inputmode="decimal" value="' + esc(String(Math.abs(b)).replace('.', ',')) + '" aria-label="Amount, kr">' +
-      '<div class="lf-foot"><button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Send a reminder</button><button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> Mark as paid</button></div>';
+      '<div class="mp-grid"><input name="amt" inputmode="decimal" value="' + (sq ? '' : esc(String(Math.round(Math.abs(b) * 100) / 100).replace('.', ','))) + '" placeholder="Amount, kr" aria-label="Amount, kr"><input name="date" type="date" value="' + dkey(new Date()) + '" aria-label="Date paid"></div>' +
+      '<input name="note" placeholder="Note (optional) – e.g. Vipps, first part" maxlength="60" autocomplete="off" aria-label="Note">' +
+      '<div class="lf-foot">' + (sq ? '<span class="spacer"></span>' : '<button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Send a reminder</button>') + '<button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> ' + (sq ? 'Save' : 'Mark as paid') + '</button></div>';
     var dir = theyPay ? 'in' : 'out';
     box.addEventListener('click', function (e) {
       var q;
@@ -387,7 +388,9 @@
       if (e.target.closest('[data-shcopy]')) { share(pid); return; }
       if (e.target.closest('[data-shpay]')) {
         var a = num(box.querySelector('[name="amt"]').value); if (!(a > 0)) return;
-        var s2 = sh(), pay = { id: uid(), date: dkey(new Date()), from: dir === 'in' ? pid : 'me', to: dir === 'in' ? 'me' : pid, amount: a };
+        var dt = box.querySelector('[name="date"]').value, nt = box.querySelector('[name="note"]').value.trim();
+        var s2 = sh(), pay = { id: uid(), date: /^\d{4}-\d{2}-\d{2}$/.test(dt) ? dt : dkey(new Date()), from: dir === 'in' ? pid : 'me', to: dir === 'in' ? 'me' : pid, amount: a };
+        if (nt) pay.note = nt.slice(0, 60);
         s2.pays.push(pay); saveSh(s2); S.close();
         toast('<i class="bi bi-check2-circle"></i> ' + esc(kr(a)) + ' marked as paid', function () { var s3 = sh(); s3.pays = s3.pays.filter(function (z) { return z.id !== pay.id; }); saveSh(s3); });
       }
@@ -409,7 +412,7 @@
     function draw() {
       s = sh(); var b = balance(s, pid);
       var ev = s.items.filter(function (x) { return x.payer === pid || (x.shares || {})[pid] != null; }).map(function (x) { return { k: 'i', date: x.date, x: x, v: x.payer === 'me' ? +(x.shares[pid] || 0) : x.payer === pid ? -(+x.shares.me || 0) : 0, t: x.note || 'Shared' }; })
-        .concat(s.pays.filter(function (q) { return q.from === pid || q.to === pid; }).map(function (q) { return { k: 'p', date: q.date, x: q, v: q.from === 'me' ? +q.amount : -q.amount, t: q.from === 'me' ? 'You paid ' + p.name : p.name + ' paid you' }; }))
+        .concat(s.pays.filter(function (q) { return q.from === pid || q.to === pid; }).map(function (q) { return { k: 'p', date: q.date, x: q, v: q.from === 'me' ? +q.amount : -q.amount, t: (q.from === 'me' ? 'You paid ' + p.name : p.name + ' paid you') + (q.note ? ' · ' + q.note : '') }; }))
         .concat(planPays(null, pid).filter(function (q) { return q.payer !== 'each'; }).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.loan }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · payment ' + q.n + ' of ' + q.of }; }))
         .concat(billClaims(null, pid).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.bill }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · ' + fmt(q.date + '', { month: 'long', year: 'numeric' }) }; }))
         .sort(function (a, c) { return a.date < c.date ? 1 : -1; });

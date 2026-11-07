@@ -111,6 +111,7 @@
         (pl.length ? tile('Bought in parts', money(planLeft), 'left on ' + pl.length + ' plan' + (pl.length === 1 ? '' : 's'), 'parts') : '') +
       '</div>' +
       '<div class="hs2-acts">' + (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn sm" data-hs2settle><i class="bi bi-cash-coin"></i> Settle up</button>' : '') +
+        '<button type="button" class="text-btn" data-hs2settle><i class="bi bi-arrow-left-right"></i> Payment</button>' +
         '<button type="button" class="text-btn" data-hs2hist><i class="bi bi-clock-history"></i> History</button>' +
         (Math.abs(b) >= 1 ? '<button type="button" class="text-btn" data-hs2msg><i class="bi bi-chat-text"></i> Send a reminder</button>' : '') + '</div>' + paybackLine(p, led);
     body += coveredSection(p, led) + runSection(p, st);
@@ -287,7 +288,7 @@
   }
 
   /* add a purchase, or change a thing bought in parts */
-  function buySheet(loanId) {
+  function buySheet(loanId, pre) {
     var p = partner(); if (!p) return;
     var d = window.Vault.get() || {}, L = window.Loans, loan = loanId ? (d.accounts || []).filter(function (a) { return a.id === loanId && a.plan; })[0] : null;
     if (loanId && !loan) return;
@@ -297,6 +298,8 @@
       note: loan.name, price: pl.price, date: loan.asOf, cat: 'home', payer: downItem ? downItem.payer : 'me', pct: L.part(loan) * 100, parts: true,
       down: pl.down || '', months: pl.months || '', rate: loan.rate || '', startFee: pl.startFee || '', fee: loan.fee || '', pay: loan.pay || '', payAuto: !pl.payTyped, day: loan.day || '', store: pl.payer || 'me', inv: false, kind: 'furniture', room: 'living'
     } : { work: '', agreed: '', note: '', price: '', date: dkey(new Date()), cat: 'home', payer: 'me', pct: myPct(), parts: false, down: '', months: 12, rate: '', startFee: '', fee: '', pay: '', payAuto: true, day: '', store: 'me', inv: true, kind: 'furniture', room: 'living' };
+    /* from an item already in the Home inventory: fill in what it knows, and link the two instead of adding it again */
+    if (pre && !loan) { st.note = pre.note || ''; st.price = pre.price || ''; if (pre.date) st.date = pre.date; if (+pre.pct > 0 && +pre.pct <= 100) st.pct = +pre.pct; st.inv = false; st.invLink = pre.inv; }
     var X = sheet(loan ? 'Bought in parts' : 'Bought together'), box = X.box;
     function calc() {
       var price = num(st.price) || 0, down = num(st.down) || 0, fin = Math.max(0, price - down + (num(st.startFee) || 0)), n = Math.round(num(st.months) || 0);
@@ -338,7 +341,7 @@
           '</div>' +
           '<p class="mp-lbl">Who pays the store each month?</p><div class="seg lf-seg">' + who('bstore', ['me', 'You'], st.store) + who('bstore', [p.id, p.name], st.store) + who('bstore', ['each', 'Each our part'], st.store) + '</div>' +
           '</div>' : '') +
-        (loan ? '' : '<label class="lf-check"><input type="checkbox" name="inv"' + (st.inv ? ' checked' : '') + '> Add to the Home inventory (owned together)</label>' +
+        (loan ? '' : st.invLink ? '<p class="muted hs2-note"><i class="bi bi-box-seam"></i> Linked to this item in the Home inventory.</p>' : '<label class="lf-check"><input type="checkbox" name="inv"' + (st.inv ? ' checked' : '') + '> Add to the Home inventory (owned together)</label>' +
           (st.inv ? '<div class="mp-grid hs2-ig"><select name="kind" aria-label="Kind">' + opts(KINDS, st.kind) + '</select><select name="room" aria-label="Room">' + opts(ROOMS, st.room) + '</select></div>' : '')) +
         '<p class="mp-prev" id="hs2Prev">' + preview() + '</p>' +
         '<div class="lf-foot">' + (loan ? '<button type="button" class="text-btn danger" data-bdel><i class="bi bi-trash3"></i> Delete</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-bsave><i class="bi bi-check2"></i> Save</button></div>';
@@ -403,8 +406,9 @@
       return x;
     }
     var s = S().data(), invId = null;
+    var made = null;
     if (!st.parts) {
-      sharedPayment(price, note, null);
+      made = sharedPayment(price, note, null);
     } else {
       if (!(c.n > 0)) return bad('months');
       if (!(c.fin > 0)) return bad('down');
@@ -425,10 +429,20 @@
       loan = a;
     }
     /* into the Home inventory, owned together */
-    if (st.inv && !st.work && !(loan && loan.plan && loan.plan.inv)) {
+    /* linked to an item already in the inventory: keep the ownership there in step */
+    if (st.invLink) {
+      var ti = Fe.tools(); (ti.hinv || []).forEach(function (x) {
+        if (x.id !== st.invLink) return;
+        x.shared = loan ? loan.id : made ? made.id : x.shared;
+        if (pct < 100) { x.ownPct = Math.round(pct * 10) / 10; x.ownWith = p.name; }
+      });
+      Fe.saveTools(ti);
+      if (loan && loan.plan) { var d3 = window.Vault.get(); (d3.accounts || []).forEach(function (x) { if (x.id === loan.id) x.plan.inv = st.invLink; }); window.Vault.save(d3); }
+    }
+    if (st.inv && !st.invLink && !st.work && !(loan && loan.plan && loan.plan.inv)) {
       var t = Fe.tools(); t.hinv = Array.isArray(t.hinv) ? t.hinv : [];
       invId = uid();
-      t.hinv.push({ id: invId, name: note, cat: st.kind || 'furniture', room: st.room || 'living', price: Math.round(price), bought: date, ownPct: pct < 100 ? Math.round(pct * 10) / 10 : null, ownWith: pct < 100 ? p.name : '',
+      t.hinv.push({ id: invId, shared: loan ? loan.id : made ? made.id : null, name: note, cat: st.kind || 'furniture', room: st.room || 'living', price: Math.round(price), bought: date, ownPct: pct < 100 ? Math.round(pct * 10) / 10 : null, ownWith: pct < 100 ? p.name : '',
         notes: (pct < 100 ? 'Bought together with ' + p.name + ' (' + pc(pct) + ' / ' + pc(100 - pct) + ')' : '') + (st.parts ? ' · paid in parts' : '') });
       Fe.saveTools(t);
       if (loan && loan.plan) { var d2 = window.Vault.get(); (d2.accounts || []).forEach(function (x) { if (x.id === loan.id) x.plan.inv = invId; }); window.Vault.save(d2); }
@@ -612,5 +626,21 @@
       if (!Array.isArray(m.items) || !m.items.length) m.items = MOVE.map(function (t, i) { return { id: 'm' + i + uid(), text: t, done: false }; });
     });
   }
-  window.SharedHome = { add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
+  /* an item in the Home inventory → its split and who paid: open the purchase it came from, or add it to Shared home linked to the item */
+  function forInv(invId) {
+    var inv = (Fe.tools().hinv || []).filter(function (x) { return x.id === invId; })[0]; if (!inv) return;
+    var p = partner();
+    if (!p) { toast('<i class="bi bi-people"></i> Set up Shared home first – say who you share with'); goShared(); return; }
+    var pl = plans(p.id).filter(function (a) { return a.id === inv.shared || (a.plan && a.plan.inv === invId); })[0];
+    if (pl) { buySheet(pl.id); return; }
+    var items = S().data().items, it = items.filter(function (x) { return x.id === inv.shared; })[0];
+    if (!it && !inv.shared) {
+      pl = plans(p.id).filter(function (a) { return a.name === inv.name; })[0]; if (pl) { buySheet(pl.id); return; }
+      it = items.filter(function (x) { return x.home && x.note === inv.name; })[0];
+    }
+    if (it) { S().split(it); return; }
+    buySheet(null, { note: inv.name, price: inv.price, date: inv.bought && /^\d{4}-\d{2}-\d{2}$/.test(inv.bought) ? inv.bought : '', pct: inv.ownPct != null && inv.ownPct !== '' ? inv.ownPct : null, inv: invId });
+  }
+  function goShared() { var t = document.querySelector('[data-ptab-go="shared"]'); if (t) t.click(); var c = document.getElementById('hshared'); if (c) setTimeout(function () { c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 120); }
+  window.SharedHome = { forInv: forInv, add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
 })();

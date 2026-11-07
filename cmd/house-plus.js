@@ -214,13 +214,15 @@
         return '<div class="inv-slot">' + (x[k] && k === 'receipt' && x.receiptPdf ? '<a class="inv-pdf" target="_blank" rel="noopener" data-invpdfopen="' + esc(x[k]) + '"><i class="bi bi-file-earmark-pdf"></i><span>Open the PDF receipt</span></a>' : x[k] ? '<img data-invimg="' + esc(x[k]) + '" alt="">' : '<span class="inv-none"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i></span>') +
           '<label class="text-btn"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i> ' + (x[k] ? (k === 'photo' ? 'New photo' : 'New receipt') : (k === 'photo' ? 'Add photo' : 'Add receipt')) +
           '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label></div>';
-      }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '');
+      }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '') +
+        (window.SharedHome && window.SharedHome.forInv && (x.ownWith || x.shared) ? '<p class="inv-split"><button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> Split and who paid</button></p>' : '');
     },
     afterRender: function (el) {
       el.querySelectorAll('a[data-invpdfopen]').forEach(function (a) { getPh(a.dataset.invpdfopen).then(function (b) { if (b) a.href = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'application/pdf' })); else a.querySelector('span').textContent = 'PDF receipt isn’t on this device yet'; }); });
       el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
     onClick: function (e) {
-      if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register(); }
+      if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register();
+      var sp = e.target.closest('[data-invsplit]'); if (sp && window.SharedHome) window.SharedHome.forInv(sp.dataset.invsplit); }
   }) : null;
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-invfile]'); if (!i || !i.files.length) return;
