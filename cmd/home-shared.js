@@ -604,5 +604,13 @@
     var mv = Fe.on('house') && move(); if (!mv) return [];
     return [{ id: 'rem:move', title: 'Take-over: the new home', allDay: true, start: fromKey(mv.date), days: 1, color: '#a0673a', readOnly: true, reminder: true, link: '/cmd/house/#hshared', location: '', notes: 'Moving checklist on the House page', exDays: {} }];
   });
-  window.SharedHome = { add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet };
+  /* the take-over date, also set from the take-over guide (house-move.js) */
+  function moveDate(dt) {
+    setMove(function (m) {
+      if (!dt) { delete m.date; return; }
+      m.date = dt;
+      if (!Array.isArray(m.items) || !m.items.length) m.items = MOVE.map(function (t, i) { return { id: 'm' + i + uid(), text: t, done: false }; });
+    });
+  }
+  window.SharedHome = { add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
 })();

@@ -40,6 +40,9 @@
     { id: 'house', group: 'Home life', name: 'House', icon: 'house-gear', c: '#22b35e', desc: 'A page for upkeep that comes round again, bin days, meter readings and home info' },
     { id: 'people', group: 'Home life', name: 'People', icon: 'people', c: '#d55181', desc: 'A page for birthdays, keeping in touch and gift ideas' },
     { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes' },
+    { id: 'hproj', group: 'Home life', name: 'Home projects', icon: 'hammer', c: '#e8743b', desc: 'Painting, a new bathroom, the garden – tasks, budget and what you spent, on its own House tab', def: true },
+    { id: 'hdocs', group: 'Home life', name: 'FDV binder', icon: 'journal-bookmark', c: '#0891b2', desc: 'Manuals, drawings and warranties for your home, sorted by building part – import a whole download or .zip at once', def: true },
+    { id: 'hclaim', group: 'Home life', name: 'Reklamasjon', icon: 'exclamation-diamond', c: '#e66767', desc: 'Report a fault to the seller, builder, tradesman or shop – with photos, the deadlines and a ready letter', def: true },
     { id: 'papers', group: 'Home life', name: 'Papers', icon: 'folder2-open', c: '#6b4bc4', desc: 'A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew', def: true }
   ];
   var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday', 'ptime'];

@@ -25,11 +25,13 @@
       feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health', 'journal'] }
     },
     house: {
-      tabs: [['shared', 'Shared', 'people'], ['upkeep', 'Upkeep', 'tools'], ['energy', 'Energy', 'lightning-charge'], ['things', 'Things', 'box-seam']],
-      map: [['#hlTiles', 'upkeep'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
+      /* a 4th value: the tab only shows while that feature is on */
+      tabs: [['shared', 'Shared', 'people'], ['upkeep', 'Upkeep', 'tools'], ['energy', 'Energy', 'lightning-charge'], ['things', 'Things', 'box-seam'],
+        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', 'hdocs'], ['claims', 'Claims', 'exclamation-diamond', 'hclaim']],
+      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'claims'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
-      feats: { shared: ['shared'], energy: ['power'], things: ['warranty'] }
+      feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
     },
     work: {
       tabs: [['today', 'Today', 'briefcase'], ['notes', 'Notes', 'journal-text'], ['plan', 'Plan', 'calendar-range']],
@@ -40,12 +42,20 @@
   };
   var C = CONF[page], KEY = 'dash.ptab.' + page, all = /[?&]customize/.test(location.search);
   var cur = (function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
-  if (!C.tabs.some(function (t) { return t[0] === cur; })) cur = C.tabs[0][0];
+  /* tabs that belong to a feature that's off aren't shown */
+  function tabs() { return C.tabs.filter(function (t) { return !t[3] || Fe.on(t[3]); }); }
+  function has(t) { return tabs().some(function (x) { return x[0] === t; }); }
+  if (!has(cur)) cur = C.tabs[0][0];
 
   /* the bar */
   var nav = document.createElement('nav');
-  nav.className = 'fp-tabs pt-tabs'; nav.setAttribute('role', 'tablist'); nav.setAttribute('aria-label', 'Views'); nav.style.setProperty('--n', C.tabs.length);
-  nav.innerHTML = C.tabs.map(function (t) { return '<button type="button" role="tab" data-ptab-go="' + t[0] + '"><i class="bi bi-' + t[1 + 1] + '"></i><span>' + esc(t[1]) + '</span></button>'; }).join('');
+  nav.className = 'fp-tabs pt-tabs'; nav.setAttribute('role', 'tablist'); nav.setAttribute('aria-label', 'Views');
+  function bar() {
+    var l = tabs(), h = l.map(function (t) { return '<button type="button" role="tab" data-ptab-go="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i><span>' + esc(t[1]) + '</span></button>'; }).join('');
+    nav.style.setProperty('--n', l.length); nav.classList.toggle('pt-many', l.length > 5);
+    if (nav._h !== h) { nav._h = h; nav.innerHTML = h; }
+  }
+  bar();
   var anchor = main.querySelector('.fp-tiles, .kit-grid, #hpHabits');
   main.insertBefore(nav, anchor || main.firstChild);
   var tail = document.createElement('div'); tail.className = 'pt-tail'; main.insertBefore(tail, main.querySelector('.foot') || null);
@@ -61,12 +71,16 @@
     assigning = false;
   }
   function draw() {
+    bar();
+    if (!has(cur)) { cur = C.tabs[0][0]; }
     nav.querySelectorAll('[data-ptab-go]').forEach(function (b) { var on = b.dataset.ptabGo === cur; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    /* many tabs on a phone scroll sideways: keep the one you're on in view */
+    if (nav.classList.contains('pt-many') && nav.scrollWidth > nav.clientWidth + 2) { var sel = nav.querySelector('[aria-selected="true"]'); if (sel) { var l = sel.offsetLeft - 8, r = sel.offsetLeft + sel.offsetWidth + 8; if (l < nav.scrollLeft) nav.scrollLeft = l; else if (r > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = r - nav.clientWidth; } }
     main.dataset.ptab = cur;
     assign(); suggest();
   }
   function show(t, keep) {
-    if (!C.tabs.some(function (x) { return x[0] === t; })) return;
+    if (!has(t)) return;
     cur = t; try { localStorage.setItem(KEY, t); } catch (e) {}
     draw();
     if (!keep) { var top = nav.getBoundingClientRect().top + scrollY - 70; if (scrollY > top) scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); }
@@ -74,7 +88,7 @@
   nav.addEventListener('click', function (e) { var b = e.target.closest('[data-ptab-go]'); if (b) show(b.dataset.ptabGo); });
   nav.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    var ids = C.tabs.map(function (t) { return t[0]; }), i = (ids.indexOf(cur) + (e.key === 'ArrowRight' ? 1 : -1) + ids.length) % ids.length;
+    var ids = tabs().map(function (t) { return t[0]; }), i = (ids.indexOf(cur) + (e.key === 'ArrowRight' ? 1 : -1) + ids.length) % ids.length;
     show(ids[i], true); var b = nav.querySelector('[data-ptab-go="' + ids[i] + '"]'); if (b) b.focus();
   });
   /* features that belong on this tab but are off: one tap to switch on */

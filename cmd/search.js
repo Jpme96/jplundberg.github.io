@@ -89,6 +89,8 @@
     add('Do', 'upload', 'Import from bank', 'CSV or Excel from your bank or credit card', home + 'finance/#import', '', 'import bank csv excel kort sparebank dnb nordea');
     add('Reviews', 'calendar-heart', 'Monthly check-in', 'Last month and the month ahead', home + '#review=month', '', 'review month summary');
     add('Reviews', 'stars', 'Year in review', 'Trips, money, workouts and habits', home + '#review=year', '', 'review year summary annual');
+    /* other parts add their own (house-docs.js: the FDV binder; house-claims.js, house-proj.js) */
+    (window.SearchExtra || []).forEach(function (f) { try { f(add); } catch (e) {} });
     SETTINGS.forEach(function (s) { add('Settings', 'gear', s[1], s[2], home + '?settings=' + s[0], '', s[2]); });
     return out;
   }
