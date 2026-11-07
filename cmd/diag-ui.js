@@ -45,6 +45,7 @@
     if (k === 'freeze') return { t: L('The page stopped responding', 'Siden sluttet å svare'), w: L('A bug or a very slow step. Send a report – it says what you tapped just before.', 'En feil eller et veldig tregt steg. Send en rapport – den sier hva du trykket på rett før.'), need: true, fix: 'report' };
     if (k === 'content') return { t: /picture/.test(m) ? L('A picture didn’t load', 'Et bilde lastet ikke') : L('Something showed a broken value', 'Noe viste en ødelagt verdi'), w: L('Shown as “undefined”, “NaN” or a missing picture. It’s a small bug – send a report so it can be fixed.', 'Vist som «undefined», «NaN» eller et manglende bilde. En liten feil – send en rapport så den kan rettes.'), need: true, fix: 'report' };
     if (k === 'layout') return { t: /wider/.test(m) ? L('A page was wider than the screen', 'En side var bredere enn skjermen') : /cover/.test(m) ? L('Two things covered each other', 'To ting dekket hverandre') : /field/.test(m) ? L('A field spilled into the next one', 'Et felt gikk over i det neste') : L('A bar was out of place', 'En linje var på feil sted'), w: L('Something on the screen was out of place. Send a report – it says where.', 'Noe på skjermen var på feil sted. Send en rapport – den sier hvor.'), need: true, fix: 'report' };
+    if (k === 'lang') return { t: L('English text in Norwegian mode', 'Engelsk tekst i norsk modus'), w: L('Some words weren’t translated. Copy it to Claude – it says which text and where.', 'Noen ord ble ikke oversatt. Kopier det til Claude – det står hvilken tekst og hvor.'), need: true, fix: 'report' };
     if (k === 'slow') return { t: L('A page opened slower than usual', 'En side åpnet tregere enn vanlig'), w: L('Once is normal (weak connection, an update). If it keeps happening, send a report.', 'Én gang er normalt (svak forbindelse, en oppdatering). Send en rapport hvis det skjer ofte.'), need: e.n >= 3, fix: 'report' };
     if (k === 'load') return { t: L('A file didn’t load', 'En fil lastet ikke'), w: L('Usually a weak connection. If something looks broken: Reload newest version.', 'Som regel svak forbindelse. Ser noe ødelagt ut: Last inn nyeste versjon.'), need: e.n >= 3, fix: 'reload' };
     if (/Failed to fetch|NetworkError|Load failed|network connection was lost/i.test(m)) return { t: L('No connection for a moment', 'Ingen forbindelse et øyeblikk'), w: L('The internet dropped while something loaded. Nothing to do.', 'Internett falt ut mens noe lastet. Ingenting å gjøre.'), need: false };
@@ -55,9 +56,11 @@
   }
   function groups(days) {
     var since = Date.now() - (days || 7) * 864e5, by = {};
-    D.list().filter(function (e) { return e.t >= since; }).forEach(function (e) {
-      var key = e.k + '|' + e.m, g = by[key];
-      if (!g) g = by[key] = { k: e.k, m: e.m, a: e.a, n: 0, t: 0, pages: [] };
+    var cv = D.ver ? D.ver() : '';
+    D.list().filter(function (e) { return e.t >= since && (!cv || !e.v || e.v === cv); }).forEach(function (e) {
+      var key = e.k === 'lang' ? 'lang' : e.k + '|' + e.m, g = by[key];
+      if (!g) g = by[key] = { k: e.k, m: e.m, a: e.a, n: 0, t: 0, pages: [], texts: [] };
+      if (e.k === 'lang' && g.texts.length < 12) g.texts.push(e.m + (e.a ? ' (' + e.p + ' · ' + e.a + ')' : ' (' + e.p + ')'));
       g.n += e.n || 1; if (e.t > g.t) { g.t = e.t; g.a = e.a || g.a; }
       if (g.pages.indexOf(e.p) < 0) g.pages.push(e.p);
     });
@@ -70,7 +73,10 @@
   function probe(path, opt, ok) {
     var o = Object.assign({ credentials: 'same-origin', cache: 'no-store' }, opt || {});
     o.headers = Object.assign({ 'X-Diag-Probe': '1' }, (opt && opt.headers) || {});
-    return fetch(path, o).then(function (r) { return { s: r.status, ok: r.status === 503 ? null : ok(r.status) }; }, function () { return { s: 0, ok: null }; });
+    return fetch(path, o).then(function (r) {
+      var res = { s: r.status, ok: r.status === 503 ? null : ok(r.status) };
+      return /\/ping$/.test(path) && r.ok ? r.json().then(function (j) { res.j = j; return res; }, function () { return res; }) : res;
+    }, function () { return { s: 0, ok: null }; });
   }
   function checkWorker() {
     busy.worker = true; draw();
@@ -82,7 +88,7 @@
       probe('/cmd/api/recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }, function (s) { return s !== 404; })
     ]).then(function (r) {
       var names = [L('Server answers', 'Serveren svarer'), L('Writing articles', 'Skrive artikler'), L('Deleting articles', 'Slette artikler'), L('Backup email', 'Sikkerhetskopi på e-post'), L('Recipe from a link', 'Oppskrift fra lenke')];
-      worker = { t: Date.now(), items: r.map(function (x, i) { return { n: names[i], ok: x.ok, s: x.s }; }) };
+      worker = { t: Date.now(), items: r.map(function (x, i) { return { n: names[i], ok: x.ok, s: x.s }; }), cron: r[0].j && 'cron' in r[0].j ? (+r[0].j.cron || 0) : null };
       worker.down = r[0].ok === false || r[0].s === 0;
       worker.old = !worker.down && r.slice(1).some(function (x) { return x.ok === false; });
       try { localStorage.setItem('dash.diagWorker', JSON.stringify(worker)); } catch (e) {}
@@ -135,17 +141,20 @@
   /* ---------- what needs you, in one list ---------- */
   function needs() {
     var out = [], st = D.state(), chk = st.check;
-    if (chk && chk.issues) chk.issues.forEach(function (x) { out.push({ t: x.t, fix: x.id === 'sync' ? 'sync' : null }); });
+    var FX = { sync: 'sync', pending: 'sync', backup: 'backup', orphan: 'orphan', files: 'check', health: null };
+    if (chk && chk.issues) chk.issues.forEach(function (x) { out.push({ t: x.t, fix: FX[x.id] || null }); });
     var V = window.Vault, ss = V && V.syncState ? V.syncState() : st.syncState;
     if (ss === 'off' && !(chk && chk.issues.some(function (x) { return x.id === 'sync'; }))) out.push({ t: L('Sync is off on this device – changes stay here.', 'Synkronisering er av på denne enheten – endringer blir her.'), fix: 'sync' });
     if (worker && worker.old) out.push({ t: L('The Cloudflare Worker runs older code – some features won’t work until you paste the newest.', 'Cloudflare-workeren kjører eldre kode – noen funksjoner virker ikke før du limer inn den nyeste.'), fix: 'worker' });
     if (worker && worker.down) out.push({ t: L('The server didn’t answer the check.', 'Serveren svarte ikke på sjekken.'), fix: 'check' });
+    if (worker && worker.cron === 0) out.push({ t: L('Reminders: the 5-minute timer on the Worker has never run. Cloudflare → the Worker → Settings → Triggers → add Cron */5 * * * *.', 'Påminnelser: 5-minutters-timeren på workeren har aldri kjørt. Cloudflare → workeren → Settings → Triggers → legg til Cron */5 * * * *.'), fix: 'checkworker' });
+    else if (worker && worker.cron && Date.now() - worker.cron > 3 * 36e5) out.push({ t: L('Reminders: the Worker’s 5-minute timer last ran ' + ago(worker.cron) + ' – reminders may not arrive.', 'Påminnelser: workerens 5-minutters-timer kjørte sist ' + ago(worker.cron) + ' – påminnelser kommer kanskje ikke fram.'), fix: 'checkworker' });
     if (dev && dev.swWaiting) out.push({ t: L('A newer version of the app is ready.', 'En nyere versjon av appen er klar.'), fix: 'reload' });
     groups(2).filter(function (g) { return g.x.need; }).slice(0, 4).forEach(function (g) { out.push({ t: g.x.t + (g.pages.length ? ' · ' + g.pages.map(pageName).join(', ') : ''), fix: g.x.fix || 'report', g: g }); });
     if (test && test.done) test.res.filter(function (r) { return r.issues.length; }).forEach(function (r) { out.push({ t: L('Test: ', 'Test: ') + pageName(r.p) + ' – ' + r.issues[0], fix: 'report' }); });
     return out;
   }
-  var FIX = { sync: ['arrow-repeat', L('Sync now', 'Synk nå')], reload: ['arrow-clockwise', L('Reload newest version', 'Last inn nyeste versjon')], worker: ['clipboard', L('Copy the newest Worker', 'Kopier nyeste worker')], report: ['send', L('Report it', 'Rapporter')], check: ['arrow-repeat', L('Check again', 'Sjekk igjen')] };
+  var FIX = { backup: ['cloud-arrow-down', L('Download backup', 'Last ned sikkerhetskopi')], orphan: ['trash3', L('Remove them', 'Fjern dem')], sync: ['arrow-repeat', L('Sync now', 'Synk nå')], reload: ['arrow-clockwise', L('Reload newest version', 'Last inn nyeste versjon')], worker: ['clipboard', L('Copy the newest Worker', 'Kopier nyeste worker')], report: ['send', L('Report it', 'Rapporter')], check: ['arrow-repeat', L('Check again', 'Sjekk igjen')] };
 
   /* ---------- drawing ---------- */
   function draw() {
@@ -155,8 +164,8 @@
     /* 1. the answer */
     h += '<section class="card cr-card dgu-top ' + (list.length ? 'bad' : 'ok') + '"><div class="dgu-ans"><span class="dgu-dot"></span><div><b>' + (list.length ? (list.length === 1 ? L('1 thing needs you', '1 ting trenger deg') : list.length + L(' things need you', ' ting trenger deg')) : L('Everything is fine', 'Alt er i orden')) + '</b>' +
       '<small>' + L('Checked ', 'Sjekket ') + ago(Math.max((D.state().check || {}).t || 0, (worker || {}).t || 0)) + L(' · watches for errors, freezes, failed calls and broken screens on this device', ' · følger med på feil, frys, mislykkede kall og ødelagte skjermbilder på denne enheten') + '</small></div></div>' +
-      (list.length ? '<ul class="dgu-needs">' + list.map(function (x, i) { var f = x.fix && FIX[x.fix]; return '<li><i class="bi bi-exclamation-circle"></i><span>' + esc(x.t) + '</span>' + (f ? '<button type="button" class="text-btn" data-dgfix="' + x.fix + '" data-i="' + i + '"><i class="bi bi-' + f[0] + '"></i> ' + f[1] + '</button>' : '') + '</li>'; }).join('') + '</ul>' : '') +
-      '<div class="dgu-acts"><button type="button" class="pill-btn" data-dgfix="report"><i class="bi bi-send"></i> ' + L('Report a problem', 'Rapporter et problem') + '</button>' +
+      (list.length ? '<ul class="dgu-needs">' + list.map(function (x, i) { var f = x.fix && FIX[x.fix]; return '<li><i class="bi bi-exclamation-circle"></i><span>' + esc(x.t) + '</span>' + '<button type="button" class="icon-btn sm dgu-cp" data-dgfix="copyone" data-i="' + i + '" aria-label="' + L('Copy', 'Kopier') + '"><i class="bi bi-clipboard"></i></button>' + (f ? '<button type="button" class="text-btn" data-dgfix="' + x.fix + '" data-i="' + i + '"><i class="bi bi-' + f[0] + '"></i> ' + f[1] + '</button>' : '') + '</li>'; }).join('') + '</ul>' : '') +
+      '<div class="dgu-acts">' + (list.length ? '<button type="button" class="pill-btn" data-dgfix="copyall"><i class="bi bi-clipboard"></i> ' + L('Copy all', 'Kopier alt') + '</button>' : '') + '<button type="button" class="' + (list.length ? 'text-btn' : 'pill-btn') + '" data-dgfix="report"><i class="bi bi-send"></i> ' + L('Report a problem', 'Rapporter et problem') + '</button>' +
         '<button type="button" class="text-btn" data-dgfix="check"' + (busy.check ? ' disabled' : '') + '><i class="bi bi-arrow-repeat' + (busy.check ? ' cr-spin' : '') + '"></i> ' + L('Check again', 'Sjekk igjen') + '</button>' +
         '<button type="button" class="text-btn" data-dgfix="sync"><i class="bi bi-cloud-arrow-up"></i> ' + L('Sync now', 'Synk nå') + '</button>' +
         '<button type="button" class="text-btn" data-dgfix="test"' + (test && !test.done ? ' disabled' : '') + '><i class="bi bi-ui-checks-grid"></i> ' + L('Test everything', 'Test alt') + '</button>' +
@@ -269,6 +278,33 @@
       return lines.join('\n');
     });
   }
+  /* one problem, or all of them, as text to paste to Claude (with the technical report) */
+  function needText(x) {
+    var t = '• ' + x.t;
+    if (x.g) {
+      t += '\n  ' + x.g.k + ' ×' + x.g.n + ' [' + x.g.pages.join(',') + '] last ' + new Date(x.g.t).toISOString().slice(0, 16).replace('T', ' ');
+      if (x.g.texts && x.g.texts.length) t += '\n  ' + x.g.texts.join('\n  ');
+      else t += ': ' + x.g.m + (x.g.a ? ' — ' + x.g.a : '');
+    }
+    return t;
+  }
+  function copyText(btn, tp) {
+    var done = function () { if (btn) { var h = btn.innerHTML; btn.innerHTML = '<i class="bi bi-check-lg"></i>' + (btn.classList.contains('icon-btn') ? '' : ' ' + L('Copied – paste it to Claude', 'Kopiert – lim det inn til Claude')); setTimeout(function () { btn.innerHTML = h; }, 1800); } };
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) { navigator.clipboard.write([new ClipboardItem({ 'text/plain': tp.then(function (t) { return new Blob([t], { type: 'text/plain' }); }) })]).then(done, function () { tp.then(fallback).then(done); }); return; }
+    } catch (x) {}
+    tp.then(function (t) { return navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t).catch(function () { fallback(t); }) : fallback(t); }).then(done);
+  }
+  function copyAll(btn) {
+    var l = needs();
+    copyText(btn, device().then(function () { return fullReport(''); }).then(function (rep) {
+      return (l.length + ' thing(s) need me:\n' + l.map(needText).join('\n') + '\n\n' + rep);
+    }));
+  }
+  function copyOne(btn, x) {
+    if (!x) return;
+    copyText(btn, Promise.resolve(D.report()).then(function (base) { return needText(x) + '\n\n' + base.split('\nErrors')[0]; }));
+  }
   function reportSheet(prefill) {
     var bg = document.createElement('div'); bg.className = 'dgu-sheet'; bg.setAttribute('role', 'dialog'); bg.setAttribute('aria-modal', 'true');
     bg.innerHTML = '<div class="dgu-box"><h3><i class="bi bi-send"></i> ' + L('Report a problem', 'Rapporter et problem') + '</h3>' +
@@ -313,6 +349,16 @@
     else if (f === 'worker') copyWorker(b);
     else if (f === 'test') runTest();
     else if (f === 'clear') { D.clear(); draw(); }
+    else if (f === 'copyall') copyAll(b);
+    else if (f === 'copyone') copyOne(b, it);
+    else if (f === 'backup') { var bb = document.getElementById('stBackup'); if (bb) bb.click(); else location.href = '/cmd/?settings=data'; setTimeout(checkAll, 2500); }
+    else if (f === 'orphan') {
+      var d0 = window.Vault.get(); if (!d0 || !d0.budget) return;
+      var acc0 = d0.accounts || [], n0 = 0;
+      d0.budget.fixed = (d0.budget.fixed || []).filter(function (x) { var keep = !(x && x.src === 'loan' && !acc0.some(function (a) { return 'loan-' + a.id === x.id; })); if (!keep) n0++; return keep; });
+      window.Vault.save(d0); window.dispatchEvent(new Event('fin:change'));
+      toast('<i class="bi bi-check2"></i> ' + L('Removed ' + n0 + ' old fixed cost(s)', 'Fjernet ' + n0 + ' gamle faste kostnad(er)')); checkAll();
+    }
   });
   var drawT = null;
   window.addEventListener('diag:log', function () { clearTimeout(drawT); drawT = setTimeout(function () { if (host && host.offsetParent) draw(); }, 400); });

@@ -26,6 +26,14 @@
       .slice(0, 180);
   }
   function page() { var m = location.pathname.match(/\/cmd\/([a-z]+)\//); return m ? m[1] : 'home'; }
+  /* which version of the app logged it: the shared bundle's hash (known once the page has parsed) */
+  var VER = '';
+  function ver() {
+    if (VER) return VER;
+    var sc = document.querySelector('script[src*="dist/tail.js"]'), m = sc && sc.getAttribute('src').match(/v=(\w+)/);
+    return (VER = m ? m[1] : '');
+  }
+  var T0 = Date.now();
   function where(stack, file, line) {
     var m = String(stack || '').match(/\/cmd\/(?:dist\/)?([\w-]+\.js)[^:\s]*:(\d+)/);
     if (m) return m[1] + ':' + m[2];
@@ -38,8 +46,9 @@
     var l = readJSON(LOG, []); if (!Array.isArray(l)) l = [];
     var m = opts.raw ? String(msg).slice(0, 180) : scrub(msg), a = String(at || '').slice(0, 90), now = Date.now(), pg = opts.p || page();
     var hit = l.filter(function (x) { return x.k === kind && x.m === m && x.a === a; })[0];
-    if (hit) { hit.n = (hit.n || 1) + 1; hit.t = now; hit.p = pg; }
-    else l.push({ k: kind, m: m, a: a, p: pg, t: now, n: 1 });
+    var v = ver() || '?';
+    if (hit) { hit.n = (hit.n || 1) + 1; hit.t = now; hit.p = pg; hit.v = v; }
+    else l.push({ k: kind, m: m, a: a, p: pg, t: now, n: 1, v: v });
     l.sort(function (x, y) { return x.t - y.t; });
     writeJSON(LOG, l.slice(-MAX));
     try { window.dispatchEvent(new Event('diag:log')); } catch (e) {}
@@ -62,6 +71,17 @@
   /* the bundles wrap each file in try/catch (cmd/build.py) and report here */
   window.__dlog = function (e, file) { log('script', (e && e.message) || String(e), file + (e && e.stack ? ' ' + where(e.stack) : '')); };
 
+  /* once the page has parsed: stamp what was logged before the version was known, and when the app has been
+     updated, drop what older versions logged – those may already be fixed */
+  function settle() {
+    var v = ver(); if (!v) return;
+    var l = readJSON(LOG, []); if (!Array.isArray(l)) return;
+    l.forEach(function (x) { if (x.v === '?' && x.t >= T0) x.v = v; });
+    var s = readJSON(ST, {});
+    if (s.ver !== v) { l = l.filter(function (x) { return x.v === v; }); s.ver = v; s.verAt = Date.now(); writeJSON(ST, s); }
+    writeJSON(LOG, l);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', settle); else settle();
   var IN_TEST = /[?&]selftest=1/.test(location.search) || window !== window.top;   /* Admin's "Test everything" runs pages in a frame */
   function root() { return document.documentElement; }
   function unlocked() { return root().classList.contains('unlocked'); }
@@ -181,6 +201,17 @@
       if (!el || !el.offsetParent || el.closest('script, style, textarea, code, pre, input, [contenteditable], .dg-errs, .cr-errs, .dgu, #wrStudio')) continue;
       hits++; var sig = 'c|' + m[2] + '|' + spot(el);
       if (once(sig)) { log('content', 'Shows "' + m[2] + '" in ' + spot(el), '', { raw: true }); found.push(sig); }
+    }
+    /* English left in Norwegian mode (own words and names are skipped, like the translator does) */
+    if (nb() && window.I18N && window.I18N.skip) {
+      var EN = /\b(the|and|your|you|with|this|from|when|yet|here|tap|items|week|month|show|edit|save|delete|nothing|today|tomorrow|shows|switch|each|every|next|days|paid|owe|owes)\b/i;
+      var w2 = document.createTreeWalker(main, 4), n2, lh = 0, sk = window.I18N.skip + ',.dgu code,.dg-errs,.rp-doc,.ad-log,[contenteditable]';
+      while ((n2 = w2.nextNode()) && lh < 6) {
+        var tv = (n2.nodeValue || '').trim(); if (tv.length < 3 || tv.length > 200 || !EN.test(tv)) continue;
+        var pe2 = n2.parentElement; if (!pe2 || !pe2.offsetParent || pe2.closest(sk)) continue;
+        var sg = 'l|' + tv.slice(0, 60);
+        if (once(sg)) { lh++; log('lang', scrub(tv).slice(0, 90), spot(pe2), { raw: true }); found.push(sg); }
+      }
     }
     Array.prototype.forEach.call(document.images, function (img) {
       var src = img.getAttribute('src') || '';
@@ -326,13 +357,58 @@
     var F = window.Features, hOn = F && F.on && F.on('ahealth');
     if (hOn) {
       var days = (d.health && d.health.days) || {}, last = Object.keys(days).sort().pop(), age = last ? (Date.now() - new Date(last + 'T12:00').getTime()) / 864e5 : Infinity;
-      checks.push({ id: 'health', ok: age < 3 });
+      var imp = d.health && d.health.last ? (Date.now() - d.health.last) / 36e5 : null;
+      if (imp != null && imp >= 36 && age < 3) { checks.push({ id: 'health', ok: false }); bad('health', 'Nothing from Apple Health for ' + Math.round(imp) + ' hours. Check the Shortcut’s automation on the iPhone.', 'Ingenting fra Apple Helse på ' + Math.round(imp) + ' timer. Sjekk automasjonen til snarveien på iPhonen.'); }
+      else checks.push({ id: 'health', ok: age < 3 });
       if (age >= 3 && last) bad('health', 'No Apple Health numbers since ' + last.split('-').reverse().join('.') + '. Check the Shortcut’s automation on the iPhone.', 'Ingen tall fra Apple Helse siden ' + last.split('-').reverse().join('.') + '. Sjekk automasjonen til snarveien på iPhonen.');
     }
     /* 4. errors today */
-    var errs = readJSON(LOG, []).filter(function (x) { return daysAgo(x.t) < 1; }).reduce(function (a, x) { return a + (x.n || 1); }, 0);
+    var errs = readJSON(LOG, []).filter(function (x) { return daysAgo(x.t) < 1 && (!ver() || x.v === ver()) && x.k !== 'lang'; }).reduce(function (a, x) { return a + (x.n || 1); }, 0);
     checks.push({ id: 'errors', ok: errs < 10 });
     if (errs >= 10) bad('errors', errs + ' errors in the last day – see Settings → Diagnostics.', errs + ' feil siste døgn – se Innstillinger → Diagnostikk.');
+    /* 4b. changes that haven't reached the server */
+    var V2 = window.Vault, ss = V2 && V2.syncState ? V2.syncState() : s.syncState, hrs = s.syncOk ? (Date.now() - s.syncOk) / 36e5 : 0;
+    if (everSynced && ss !== 'ok' && hrs >= 1 && syncAge < 2) { checks.push({ id: 'pending', ok: false }); bad('pending', 'Changes on this device haven’t reached the server for ' + Math.round(hrs) + ' hours.', 'Endringer på denne enheten har ikke nådd serveren på ' + Math.round(hrs) + ' timer.'); }
+    else checks.push({ id: 'pending', ok: true });
+    /* 6. backup */
+    var lb = Math.max(+(localStorage.getItem('dash.lastBackup') || 0), +(d.lastBackup || 0)), bAge = daysAgo(lb);
+    checks.push({ id: 'backup', ok: bAge <= 30 });
+    if (bAge > 30) bad('backup', lb ? 'Your last encrypted backup is ' + Math.floor(bAge) + ' days old.' : 'You haven’t downloaded an encrypted backup yet.', lb ? 'Den siste krypterte sikkerhetskopien er ' + Math.floor(bAge) + ' dager gammel.' : 'Du har ikke lastet ned en kryptert sikkerhetskopi ennå.');
+    /* 7. money that doesn't add up */
+    var acc = Array.isArray(d.accounts) ? d.accounts : [], fx = d.budget && Array.isArray(d.budget.fixed) ? d.budget.fixed : [], today = dkey(new Date()), money = 0;
+    var orphan = fx.filter(function (f) { return f && f.src === 'loan' && !acc.some(function (a) { return 'loan-' + a.id === f.id; }); });
+    if (orphan.length) { money++; bad('orphan', orphan.length + ' fixed cost(s) belong to a loan that no longer exists.', orphan.length + ' fast(e) kostnad(er) hører til et lån som ikke finnes lenger.'); }
+    var Lo = window.Loans;
+    if (Lo && Lo.owedNow) {
+      var doneOwe = acc.filter(function (a) { return a && a.kind === 'debt' && a.owe && Lo.owedNow(a) <= 0.5; });
+      if (doneOwe.length) { money++; bad('owedone', doneOwe.length + ' pay-back plan(s) are paid off – remove them under Shared home → Paying back.', doneOwe.length + ' tilbakebetalingsplan(er) er nedbetalt – fjern dem under Felles hjem → Betaler tilbake.'); }
+    }
+    var later45 = dkey(new Date(Date.now() + 45 * 864e5)), fut = acc.filter(function (a) { return a && a.kind === 'debt' && a.asOf && a.asOf > later45; });
+    if (fut.length) { money++; bad('future', fut.length + ' loan(s) start more than 45 days from now – they don’t count in your budget until then.', fut.length + ' lån starter mer enn 45 dager fram i tid – de teller ikke i budsjettet før da.'); }
+    var Sh = window.Shared;
+    if (Sh && Sh.partner && Sh.sides && Sh.partner()) { var pid = Sh.partner().id, sd = Sh.sides(pid), bl = Sh.balance(pid); if (Math.abs(sd.net - bl) > 1) { money++; bad('sides', 'Shared home: the two sides don’t add up to the total.', 'Felles hjem: de to sidene stemmer ikke med totalen.'); } }
+    checks.push({ id: 'money', ok: !money });
+    /* 8. files: on the server, and how full the free storage is */
+    var files = (window.FileSync && everSynced && navigator.onLine !== false) ? window.FileSync.list().then(function (srv) {
+      if (!srv) return;
+      var F2 = window.Features, tools = F2 && F2.tools ? F2.tools() : {}, gone = Array.isArray(tools.filegone) ? tools.filegone : [], refs = {};
+      (function walk(o, k) {
+        if (typeof o === 'string') { if (k !== 'id' && /^(pp|inv|tk|rk|pj|fdv)-[A-Za-z0-9_-]{3,90}$/.test(o)) refs[o] = 1; return; }
+        if (o && typeof o === 'object') for (var key in o) if (Object.prototype.hasOwnProperty.call(o, key) && key !== 'filegone' && key !== 'fold') walk(o[key], key);
+      })(tools, '');
+      var miss = Object.keys(refs).filter(function (id) { return !(id in srv) && gone.indexOf(id) < 0; });
+      checks.push({ id: 'files', ok: !miss.length });
+      if (miss.length) bad('files', miss.length + ' photo(s) or file(s) aren’t on the server – they’re only on one device, or missing. Open House or Papers on the device that has them.', miss.length + ' bilde(r) eller fil(er) er ikke på serveren – de finnes bare på én enhet, eller mangler. Åpne Bolig eller Papirer på enheten som har dem.');
+      var used = window.FileSync.state().bytes || 0, pct = used / 1073741824 * 100;
+      checks.push({ id: 'space', ok: pct < 80 });
+      if (pct >= 80) bad('space', 'File storage is ' + Math.round(pct) + ' % full (free 1 GB).', 'Fillagringen er ' + Math.round(pct) + ' % full (gratis 1 GB).');
+    }).catch(function () {}) : Promise.resolve();
+    /* 9. space on this device */
+    var dev = navigator.storage && navigator.storage.estimate ? navigator.storage.estimate().then(function (e) {
+      var p = e && e.quota ? e.usage / e.quota : 0;
+      checks.push({ id: 'device', ok: p < 0.8 });
+      if (p >= 0.8) bad('device', 'This device’s storage for the dashboard is ' + Math.round(p * 100) + ' % full.', 'Lagringen for dashbordet på denne enheten er ' + Math.round(p * 100) + ' % full.');
+    }).catch(function () {}) : Promise.resolve();
     /* 5. the server's daily copy */
     var snap = (everSynced && navigator.onLine !== false) ? fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
@@ -343,7 +419,7 @@
         checks.push({ id: 'snap', ok: age < 3 });
         if (age >= 3) bad('snap', newest ? 'The server’s newest daily copy is from ' + newest.split('-').reverse().join('.') + '.' : 'The server has no daily copies yet.', newest ? 'Serverens nyeste daglige kopi er fra ' + newest.split('-').reverse().join('.') + '.' : 'Serveren har ingen daglige kopier ennå.');
       }).catch(function () {}) : Promise.resolve();
-    return snap.then(function () {
+    return Promise.all([snap, files, dev]).then(function () {
       var res = { t: Date.now(), d: dkey(new Date()), issues: issues, checks: checks };
       mark('check', res);
       if (issues.length && !manual) tell(issues);
@@ -451,7 +527,7 @@
   function fallback(t) { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
   window.addEventListener('diag:log', function () { var pg = document.querySelector('.st-page[data-page="diag"]'); if (pg && !pg.hidden) render(); });
 
-  window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, mark: mark, state: state,
+  window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, ver: ver, mark: mark, state: state,
     notice: notice, hide: hide, retry: retry, selfCheck: selfCheck, report: report, scrub: scrub, render: render,
     crumbs: function () { return crumbs.slice(); }, speed: function () { return readJSON(SPEED, {}); }, scanNow: scanNow, label: label, page: page, open: openPanel, netOk: function () { return netOk; } };
 })();

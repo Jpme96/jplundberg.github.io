@@ -21,7 +21,7 @@
                       deletes them. A service token can only use this endpoint.
    /cmd/api/power     electricity prices for Oslo (NO1) from hvakosterstrommen.no, cached at the edge.
    /cmd/api/rate      Norges Bank's policy rate (styringsrenten), its changes over the last years, cached 6 hours.
-   /cmd/api/ping      a quick health check: is the worker up, and which vault version does it hold.
+   /cmd/api/ping      a quick health check: is the worker up, which vault version it holds, and when the cron trigger last ran.
    Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
                       the last 30 days), so a mistake can be undone from Settings → Data & sync.
    /cmd/api/recipe    reads a recipe page you link to (POST {url}) and hands back its name, ingredients,
@@ -66,9 +66,18 @@ export default {
   },
   /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e))]));
+    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e))]));
   }
 };
+
+/* the cron trigger leaves a mark (at most once an hour, to stay far under the free 1 000 writes a day),
+   so Diagnostics can tell whether reminders are being sent at all */
+const CRON_KEY = 'meta:cron';
+async function cronBeat(env) {
+  if (!env.VAULT) return;
+  const last = +(await env.VAULT.get(CRON_KEY)) || 0;
+  if (Date.now() - last > 3600e3) await env.VAULT.put(CRON_KEY, String(Date.now()));
+}
 
 async function route(request, env) {
     const url = new URL(request.url);
@@ -97,7 +106,7 @@ async function route(request, env) {
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
-    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
+    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron }); }
     return vault(request, env);
 }
 

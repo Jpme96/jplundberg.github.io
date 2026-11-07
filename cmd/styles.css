@@ -4680,3 +4680,4 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 @media (max-width: 600px) { .il-f.il-norc-f, .il-f:not(.il-noph-f) { grid-template-columns: 64px minmax(0, 1fr) auto; } .il-f.il-noph-f { grid-template-columns: minmax(0, 1fr) auto; } }
 .inv-slot .text-btn.danger { color: var(--danger, #e66767); }
 .inv-same { margin: 4px 0 0; }
+.dgu-needs .dgu-cp { flex: none; width: 40px; height: 40px; color: var(--muted); background: transparent; border-color: transparent; }

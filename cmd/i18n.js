@@ -1272,6 +1272,7 @@
   window.I18N.t = function (s) { return tr(s); };
   /* never touch your own words */
   var SKIP = '[data-tool="people"] .kit-x b,.pp5-t b,script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b';
+  window.I18N.skip = SKIP;
   var ATTR = ['placeholder', 'aria-label', 'title', 'data-title'];
   function textNode(n) {
     var p = n.parentElement; if (!p || p.closest(SKIP)) return;
