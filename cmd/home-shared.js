@@ -112,9 +112,10 @@
       '</div>' +
       '<div class="hs2-acts">' + (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn sm" data-hs2settle><i class="bi bi-cash-coin"></i> Settle up</button>' : '') +
         '<button type="button" class="text-btn" data-hs2settle><i class="bi bi-arrow-left-right"></i> Payment</button>' +
+        (b <= -1 && !S().owePlans(p.id).length ? '<button type="button" class="text-btn" data-hs2pb><i class="bi bi-calendar2-check"></i> Pay back monthly</button>' : '') +
         '<button type="button" class="text-btn" data-hs2hist><i class="bi bi-clock-history"></i> History</button>' +
         (Math.abs(b) >= 1 ? '<button type="button" class="text-btn" data-hs2msg><i class="bi bi-chat-text"></i> Send a reminder</button>' : '') + '</div>' + paybackLine(p, led);
-    body += coveredSection(p, led) + runSection(p, st);
+    body += oweSection(p) + coveredSection(p, led) + runSection(p, st);
     /* bought in parts */
     if (pl.length) {
       body += '<h3 class="lp-h3">Bought in parts</h3><ul class="hs2-plans">' + pl.map(function (a) {
@@ -552,6 +553,21 @@
     try { navigator.clipboard.writeText(txt).then(function () { toast('<i class="bi bi-clipboard-check"></i> Copied – paste it in a message'); }); } catch (e) {}
   }
 
+  /* paying back what you owe your partner, a set amount each month (a fixed cost – window.Shared.payBack) */
+  function oweSection(p) {
+    var L = window.Loans, ow = S().owePlans ? S().owePlans(p.id) : []; if (!ow.length || !L) return '';
+    return '<h3 class="lp-h3">Paying back</h3><ul class="hs2-plans">' + ow.map(function (a) {
+      var left = L.owedNow(a), paid = left <= 0.5, now = new Date(), nd = new Date(now.getFullYear(), now.getMonth(), 1), day = +a.day || 1;
+      var dimN = function (d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
+      if (Math.min(day, dimN(nd)) <= now.getDate() - 0 && dkey(new Date(nd.getFullYear(), nd.getMonth(), Math.min(day, dimN(nd)))) <= dkey(now)) nd = new Date(nd.getFullYear(), nd.getMonth() + 1, 1);
+      if (a.asOf && a.asOf >= dkey(now)) { var st0 = fromKey(a.asOf); nd = new Date(st0.getFullYear(), st0.getMonth() + 1, 1); }
+      var lastM = new Date(nd.getFullYear(), nd.getMonth() + Math.max(0, Math.ceil(left / (+a.pay || 1)) - 1), 1), c = { endLabel: lastM.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) };
+      return '<li><button type="button" class="hs2-plan' + (paid ? ' is-done' : '') + '" data-hs2owe="' + esc(a.id) + '"><span class="hs2-pt"><b>' + esc(a.name) + '</b><small>' +
+        (paid ? '<i class="bi bi-check2-circle"></i> Paid back' : esc(kr(a.pay)) + ' a month on the ' + (+a.day || 1) + '. · in your fixed costs' + ' · last ' + esc(c.endLabel)) + '</small></span>' +
+        '<span class="hs2-pr">' + (paid ? '' : money(left) + '<small>left</small>') + '</span></button></li>';
+    }).join('') + '</ul>';
+  }
+
   /* ---------- events ---------- */
   if (mount) {
     mount.addEventListener('click', function (e) {
@@ -563,6 +579,8 @@
       if (!p) return;
       if (e.target.closest('[data-hs2settle]')) { S().settle(p.id); return; }
       if (e.target.closest('[data-hs2hist]')) { S().history(p.id); return; }
+      if (e.target.closest('[data-hs2pb]')) { S().payBack(p.id); return; }
+      if ((b = e.target.closest('[data-hs2owe]'))) { S().payBack(p.id, b.dataset.hs2owe); return; }
       if (e.target.closest('[data-hs2msg]')) { S().message(p.id); return; }
       if (e.target.closest('[data-hs2copy]')) { shareMonth(); return; }
       if ((b = e.target.closest('[data-hs2run]'))) { runSheet(b.dataset.hs2run); return; }

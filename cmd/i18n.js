@@ -1120,6 +1120,11 @@
   var MEMO = new Map();
   /* Nov 7 audit: leftovers found by the Norwegian scan */
   Object.assign(D, {
+    'Pay back each month': 'Betal tilbake hver måned', 'Pay back monthly': 'Betal tilbake månedlig', 'Paying back': 'Betaler tilbake', 'Paid back': 'Betalt tilbake',
+    'You owe in all, kr': 'Du skylder i alt, kr', 'Each month, kr': 'Hver måned, kr', 'First payment': 'Første betaling', 'What for (optional)': 'Hva gjelder det (valgfritt)',
+    'e.g. 50 000': 'f.eks. 50 000', 'e.g. 2 000': 'f.eks. 2 000', 'e.g. Egenkapital': 'f.eks. Egenkapital', 'Stop': 'Stopp', 'Lent to you': 'Lånt til deg',
+    'Type the monthly amount.': 'Skriv beløpet per måned.', 'Type what you owe and the monthly amount.': 'Skriv hva du skylder og beløpet per måned.', 'extra payment': 'ekstra innbetaling',
+    'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
     'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',
     'Note (optional) – e.g. Vipps, first part': 'Notat (valgfritt) – f.eks. Vipps, første del',
@@ -1184,6 +1189,18 @@
     'Appendix B of the samboerkontrakt – from the Home inventory': 'Vedlegg B til samboerkontrakten – fra innboet'
   });
   P.push(
+    [/^Pay back (.+?) each month$/, 'Betal tilbake til $1 hver måned'],
+    [/^I owe (.+) – pay back each month$/, 'Jeg skylder $1 – betal tilbake hver måned'],
+    [/^Paying back (.+) each month – change$/, 'Betaler tilbake til $1 hver måned – endre'],
+    [/^Pay back (.+?)( – .+)?$/, function (m, a, b) { return 'Tilbakebetaling ' + a + (b || ''); }],
+    [/^(.+) left of (.+)\. Change the monthly amount or the day – payments already made stay\.$/, '$1 igjen av $2. Endre beløpet per måned eller dagen – betalinger som er gjort, blir stående.'],
+    [/^(You owe (.+?) (.+ kr) now\.|You don’t owe (.+?) anything yet\.) Type what you owe in all – if it’s more, the difference is noted as money (.+) lent you\. The monthly amount goes into your fixed costs, and each payment counts as paid to (.+)\.$/, function (m, x, a, b, c, d) { return (a ? 'Du skylder ' + a + ' ' + b + ' nå.' : 'Du skylder ikke ' + c + ' noe ennå.') + ' Skriv hva du skylder i alt – er det mer, noteres forskjellen som penger ' + d + ' har lånt deg. Beløpet per måned går inn i de faste kostnadene, og hver betaling teller som betalt til ' + d + '.'; }],
+    [/^(\d+) payments? – the last in (.+)\.$/, function (m, n, d) { return n + (n === '1' ? ' betaling' : ' betalinger') + ' – den siste i ' + tr(d) + '.'; }],
+    [/^(.+ kr) a month on the (\d+)\. · in your fixed costs · last (.+)$/, function (m, a, d, e) { return a + ' i måneden den ' + d + '. · i de faste kostnadene · siste ' + tr(e); }],
+    [/^(.+ kr) a month to (.+) – in your fixed costs$/, '$1 i måneden til $2 – i de faste kostnadene'],
+    [/^Stopped – (.+ kr) still owed to (.+)$/, 'Stoppet – $1 skyldes fortsatt til $2'],
+    [/^(.+) · payment (\d+) of (\d+)$/, function (m, a, n, o) { return tr(a) + ' · betaling ' + n + ' av ' + o; }],
+    [/^Loan: Pay back (.+)$/, 'Lån: Tilbakebetaling $1'],
     [/^Payment with (.+)$/, 'Betaling med $1'],
     [/^You’re all square\. Paid (.+) something ahead, or got money from them\? Add it here and it counts in what you owe each other\.$/, 'Dere er skuls. Har du betalt $1 noe på forskudd, eller fått penger fra dem? Legg det inn her, så teller det med i det dere skylder hverandre.'],
     [/^(.+)\. How much was paid\? Only part of it \(a down payment\)\? Type that amount – the rest stays owed\.$/, function (m, a) { return (/^You owe /.test(a) ? a.replace(/^You owe /, 'Du skylder ') : tr(a)) + '. Hvor mye ble betalt? Bare en del (et avdrag)? Skriv det beløpet – resten står fortsatt som gjeld.'; }],

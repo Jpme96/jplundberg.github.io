@@ -137,7 +137,92 @@
     s.pays.forEach(function (p) { if (p.from === 'me' && p.to === pid) b += +p.amount || 0; if (p.from === pid && p.to === 'me') b -= +p.amount || 0; });
     planPays(null, pid).forEach(function (x) { if (x.payer === 'me') b += x.them; else if (x.payer === pid) b -= x.mine; });
     billClaims(null, pid).forEach(function (x) { if (x.payer === 'me') b += x.them; else if (x.payer === pid) b -= x.mine; });
+    owePays(null, pid).forEach(function (x) { b += x.amount; });
     return Math.round(b * 100) / 100;
+  }
+  /* paying back what you owe someone, a set amount each month: a loan in Net worth with a.owe = { pid } (no interest),
+     so the monthly amount is a fixed cost by itself; every payment made so far (and any extra payment) counts as
+     you paying them. -> [{ loan, n, of, date, amount, pid, name, extra? }] (oldest first; until = 'YYYY-MM-DD' or today) */
+  function owePays(until, pid) {
+    var d = window.Vault.get(), out = []; if (!d) return out;
+    var end = until || dkey(new Date());
+    (d.accounts || []).forEach(function (a) {
+      var ow = a && a.kind === 'debt' && a.owe; if (!ow || !ow.pid || (pid && ow.pid !== pid) || !(+a.pay > 0) || !a.asOf) return;
+      var bal = +a.balance || 0, p = +a.pay, st = fromKey(a.asOf), day = +a.day || st.getDate(), of = Math.ceil(bal / p);
+      var ex = (Array.isArray(a.extra) ? a.extra : []).filter(function (e) { return e && +e.amount > 0 && e.date > a.asOf; }).sort(function (x, y) { return x.date < y.date ? -1 : 1; }), xi = 0;
+      function extrasTo(k) { while (xi < ex.length && ex[xi].date <= k && ex[xi].date <= end && bal > 0.5) { var v = Math.min(bal, +ex[xi].amount); bal -= v; out.push({ loan: a.id, n: 0, of: of, date: ex[xi].date, amount: Math.round(v * 100) / 100, pid: ow.pid, name: a.name || 'Paying back', extra: true }); xi++; } }
+      for (var n = 1; n <= 600 && bal > 0.5; n++) {
+        var dt = new Date(st.getFullYear(), st.getMonth() + n, 1); dt.setDate(Math.min(day, new Date(dt.getFullYear(), dt.getMonth() + 1, 0).getDate()));
+        var k = dkey(dt); extrasTo(k); if (k > end || bal <= 0.5) break;
+        var v = Math.min(p, bal); bal -= v;
+        out.push({ loan: a.id, n: n, of: of, date: k, amount: Math.round(v * 100) / 100, pid: ow.pid, name: a.name || 'Paying back' });
+      }
+      extrasTo(end);
+    });
+    return out.sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  }
+  function owePlans(pid) { var d = window.Vault.get() || {}; return (d.accounts || []).filter(function (a) { return a && a.kind === 'debt' && a.owe && (!pid || a.owe.pid === pid); }); }
+  /* "I owe them – pay it back each month": how much you owe in all (anything new is noted as money they lent you),
+     a monthly amount and the first payment day. It becomes a loan (so a fixed cost) and the payments count between you. */
+  function payBackSheet(pid, loanId) {
+    var s = sh(), p = person(s, pid); if (!p) return;
+    var d = window.Vault.get() || {}, a = loanId ? (d.accounts || []).filter(function (x) { return x.id === loanId && x.owe; })[0] : null, L = window.Loans;
+    var owed = Math.max(0, -balance(s, pid)), left = a && L ? L.owedNow(a) : 0;
+    var nx = new Date(); nx = new Date(nx.getFullYear(), nx.getMonth() + 1, 1);
+    var first = a ? (function () { var st = fromKey(a.asOf); var f1 = new Date(st.getFullYear(), st.getMonth() + 1, 1); f1.setDate(Math.min(+a.day || 1, new Date(f1.getFullYear(), f1.getMonth() + 1, 0).getDate())); return dkey(f1); })() : dkey(nx);
+    var S = sheet('Pay back each month'), box = S.box;
+    box.innerHTML = head('calendar2-check', 'Pay back ' + p.name + ' each month') +
+      (a ? '<p class="muted">' + esc(kr(left)) + ' left of ' + esc(kr(a.balance)) + '. Change the monthly amount or the day – payments already made stay.</p>'
+        : '<p class="muted">' + (owed >= 1 ? 'You owe ' + esc(p.name) + ' ' + esc(kr(owed)) + ' now.' : 'You don’t owe ' + esc(p.name) + ' anything yet.') + ' Type what you owe in all – if it’s more, the difference is noted as money ' + esc(p.name) + ' lent you. The monthly amount goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>') +
+      '<div class="mp-grid">' +
+        (a ? '' : '<label><span>You owe in all, kr</span><input name="total" inputmode="decimal" value="' + (owed >= 1 ? esc(String(Math.round(owed))) : '') + '" placeholder="e.g. 50 000" autocomplete="off"></label>') +
+        '<label><span>Each month, kr</span><input name="pay" inputmode="decimal" value="' + (a ? esc(String(a.pay)) : '') + '" placeholder="e.g. 2 000" autocomplete="off"></label>' +
+        '<label><span>First payment</span><input name="first" type="date" value="' + esc(first) + '"></label>' +
+        (a ? '' : '<label><span>What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" autocomplete="off"></label>') +
+      '</div><p class="mp-prev" id="pbPrev"></p>' +
+      '<div class="lf-foot">' + (a ? '<button type="button" class="text-btn danger" data-pbstop><i class="bi bi-stop-circle"></i> Stop</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-pbsave><i class="bi bi-check2"></i> Save</button></div>';
+    function vals() { return { total: a ? +a.balance : num((box.querySelector('[name="total"]') || {}).value), pay: num(box.querySelector('[name="pay"]').value), first: box.querySelector('[name="first"]').value }; }
+    function prev() {
+      var v = vals(), base = a ? left : v.total, el = box.querySelector('#pbPrev');
+      if (!(base > 0) || !(v.pay > 0)) { el.textContent = 'Type ' + (a ? 'the monthly amount.' : 'what you owe and the monthly amount.'); return; }
+      var n = Math.ceil(base / v.pay), f = /^\d{4}-\d{2}-\d{2}$/.test(v.first) ? fromKey(v.first) : nx, last = new Date(f.getFullYear(), f.getMonth() + n - 1, 1);
+      el.innerHTML = esc(n + ' payment' + (n === 1 ? '' : 's') + ' – the last in ' + last.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) + '.');
+    }
+    box.addEventListener('input', prev); prev();
+    box.addEventListener('click', function (e) {
+      if (e.target.closest('[data-pbstop]')) {
+        /* the payments made so far stay as payments to them; the rest is owed again as normal */
+        var made = owePays(null, pid).filter(function (q) { return q.loan === a.id; }), s2 = sh();
+        made.forEach(function (q) { s2.pays.push({ id: uid(), date: q.date, from: 'me', to: pid, amount: q.amount, note: a.name || 'Paying back' }); });
+        saveSh(s2);
+        var d2 = window.Vault.get(); d2.accounts = (d2.accounts || []).filter(function (x) { return x.id !== a.id; }); window.Vault.save(d2);
+        if (window.Links && window.Links.syncLoans) window.Links.syncLoans();
+        window.dispatchEvent(new Event('fin:change')); S.close();
+        toast('<i class="bi bi-stop-circle"></i> Stopped – ' + esc(kr(left)) + ' still owed to ' + esc(p.name)); return;
+      }
+      if (!e.target.closest('[data-pbsave]')) return;
+      var v = vals();
+      if (!a && !(v.total > 0)) { box.querySelector('[name="total"]').focus(); return; }
+      if (!(v.pay > 0)) { box.querySelector('[name="pay"]').focus(); return; }
+      var f = /^\d{4}-\d{2}-\d{2}$/.test(v.first) ? fromKey(v.first) : nx;
+      var asOf = new Date(f.getFullYear(), f.getMonth() - 1, 1); asOf.setDate(Math.min(f.getDate(), new Date(asOf.getFullYear(), asOf.getMonth() + 1, 0).getDate()));
+      var d2 = window.Vault.get(); d2.accounts = d2.accounts || [];
+      if (a) {
+        /* a new amount or day: start again from what's left today, keeping what's been paid as payments */
+        var made = owePays(null, pid).filter(function (q) { return q.loan === a.id; }), s3 = sh();
+        made.forEach(function (q) { s3.pays.push({ id: uid(), date: q.date, from: 'me', to: pid, amount: q.amount, note: a.name || 'Paying back' }); });
+        saveSh(s3);
+        d2.accounts.forEach(function (x) { if (x.id !== a.id) return; x.balance = Math.round(left * 100) / 100; x.pay = Math.round(v.pay); x.day = f.getDate(); x.asOf = dkey(asOf); delete x.extra; });
+      } else {
+        var extra = v.total - owed, note = (box.querySelector('[name="note"]').value || '').trim();
+        if (extra > 0.5) { var s4 = sh(); s4.pays.push({ id: uid(), date: dkey(new Date()), from: pid, to: 'me', amount: Math.round(extra * 100) / 100, note: note || 'Lent to you', lend: true }); saveSh(s4); }
+        d2.accounts.push({ id: 'ow' + uid(), kind: 'debt', name: ('Pay back ' + p.name + (note ? ' – ' + note : '')).slice(0, 60), balance: Math.round(v.total * 100) / 100, orig: Math.round(v.total * 100) / 100, rate: 0, pay: Math.round(v.pay), fee: 0, day: f.getDate(), asOf: dkey(asOf), from: 'salary', fixed: true, owe: { pid: pid } });
+      }
+      window.Vault.save(d2);
+      if (window.Links && window.Links.syncLoans) window.Links.syncLoans();
+      window.dispatchEvent(new Event('fin:change')); S.close();
+      toast('<i class="bi bi-calendar2-check"></i> ' + esc(kr(v.pay)) + ' a month to ' + esc(p.name) + ' – in your fixed costs');
+    });
   }
   /* shared running costs (a fixed cost with f.split): every month from f.split.from, once its due day has passed, the one who
      paid the bill has a claim on the other's part. -> [{ bill, ym, date, amount (whole), mine, them, payer, pid, name }] */
@@ -175,9 +260,10 @@
     /* credit each way: repayments in that direction + what's owed the other way (it cancels out) */
     var credit = { 1: [], '-1': [] }, last = { in: null, out: null };
     s.pays.forEach(function (p) {
-      if (p.from === pid && p.to === 'me') { credit[1].push({ date: p.date, amount: +p.amount || 0 }); if (!last.in || p.date >= last.in.date) last.in = p; }
+      if (p.from === pid && p.to === 'me') { credit[1].push({ date: p.date, amount: +p.amount || 0 }); if (!p.lend && (!last.in || p.date >= last.in.date)) last.in = p; }
       if (p.from === 'me' && p.to === pid) { credit[-1].push({ date: p.date, amount: +p.amount || 0 }); if (!last.out || p.date >= last.out.date) last.out = p; }
     });
+    owePays(null, pid).forEach(function (q) { credit[-1].push({ date: q.date, amount: q.amount }); });
     rows.forEach(function (r) { credit[-r.dir].push({ date: r.date, amount: r.amount }); });
     [1, -1].forEach(function (dir) {
       var cs = credit[dir].sort(function (a, b) { return a.date < b.date ? -1 : 1; }), ci = 0, have = 0, at = null;
@@ -380,12 +466,14 @@
       '<div class="seg lf-seg"><button type="button" data-dir="in" aria-pressed="' + theyPay + '">' + esc(p.name) + ' paid you</button><button type="button" data-dir="out" aria-pressed="' + !theyPay + '">You paid ' + esc(p.name) + '</button></div>' +
       '<div class="mp-grid"><input name="amt" inputmode="decimal" value="' + (sq ? '' : esc(String(Math.round(Math.abs(b) * 100) / 100).replace('.', ','))) + '" placeholder="Amount, kr" aria-label="Amount, kr"><input name="date" type="date" value="' + dkey(new Date()) + '" aria-label="Date paid"></div>' +
       '<input name="note" placeholder="Note (optional) – e.g. Vipps, first part" maxlength="60" autocomplete="off" aria-label="Note">' +
+      '<button type="button" class="text-btn" data-shpb><i class="bi bi-calendar2-check"></i> ' + (owePlans(pid).length ? 'Paying back ' + esc(p.name) + ' each month – change' : 'I owe ' + esc(p.name) + ' – pay back each month') + '</button>' +
       '<div class="lf-foot">' + (sq ? '<span class="spacer"></span>' : '<button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Send a reminder</button>') + '<button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> ' + (sq ? 'Save' : 'Mark as paid') + '</button></div>';
     var dir = theyPay ? 'in' : 'out';
     box.addEventListener('click', function (e) {
       var q;
       if ((q = e.target.closest('[data-dir]'))) { dir = q.dataset.dir; box.querySelectorAll('[data-dir]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === q)); }); return; }
       if (e.target.closest('[data-shcopy]')) { share(pid); return; }
+      if (e.target.closest('[data-shpb]')) { S.close(); var op = owePlans(pid)[0]; payBackSheet(pid, op ? op.id : null); return; }
       if (e.target.closest('[data-shpay]')) {
         var a = num(box.querySelector('[name="amt"]').value); if (!(a > 0)) return;
         var dt = box.querySelector('[name="date"]').value, nt = box.querySelector('[name="note"]').value.trim();
@@ -414,6 +502,7 @@
       var ev = s.items.filter(function (x) { return x.payer === pid || (x.shares || {})[pid] != null; }).map(function (x) { return { k: 'i', date: x.date, x: x, v: x.payer === 'me' ? +(x.shares[pid] || 0) : x.payer === pid ? -(+x.shares.me || 0) : 0, t: x.note || 'Shared' }; })
         .concat(s.pays.filter(function (q) { return q.from === pid || q.to === pid; }).map(function (q) { return { k: 'p', date: q.date, x: q, v: q.from === 'me' ? +q.amount : -q.amount, t: (q.from === 'me' ? 'You paid ' + p.name : p.name + ' paid you') + (q.note ? ' · ' + q.note : '') }; }))
         .concat(planPays(null, pid).filter(function (q) { return q.payer !== 'each'; }).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.loan }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · payment ' + q.n + ' of ' + q.of }; }))
+        .concat(owePays(null, pid).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.loan }, v: q.amount, t: q.name + (q.extra ? ' · extra payment' : ' · payment ' + q.n + ' of ' + q.of) }; }))
         .concat(billClaims(null, pid).map(function (q) { return { k: 'l', date: q.date, x: { total: q.amount, id: q.bill }, v: q.payer === 'me' ? q.them : -q.mine, t: q.name + ' · ' + fmt(q.date + '', { month: 'long', year: 'numeric' }) }; }))
         .sort(function (a, c) { return a.date < c.date ? 1 : -1; });
       box.innerHTML = head('person', p.name) + '<p class="mp-bal ' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(b >= 1 ? 'Owes you ' + kr(b) : b <= -1 ? 'You owe ' + kr(-b) : 'Settled up') + '</p>' +
@@ -514,7 +603,7 @@
 
   window.MoneyPlus = { detect: detect, addAs: addAs, setIgnore: setIgnore, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
   /* the shared-expenses engine, for the House page's “Shared home” card and Quick add (one set of data, one balance) */
-  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, monthsFor: monthsFor, billClaims: billClaims, ledger: ledger, person: function (id) { return person(sh(), id); },
+  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, owePays: owePays, owePlans: owePlans, payBack: payBackSheet, monthsFor: monthsFor, billClaims: billClaims, ledger: ledger, person: function (id) { return person(sh(), id); },
     split: splitSheet, settle: settleSheet, history: personSheet, message: share, saveItem: save, removeItem: remove, cfg: cfg, setCfg: setCfg,
     partner: function () { var c = cfg(), s = sh(); return (c.partner && person(s, c.partner)) || null; } };
 })();
