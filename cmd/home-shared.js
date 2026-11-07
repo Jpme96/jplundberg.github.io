@@ -134,11 +134,11 @@
       }).join('') + '</ul>';
     }
     /* the month */
-    body += '<div class="hs2-mh"><h3 class="lp-h3">Your month together</h3><span class="hs2-nav"><button type="button" class="icon-btn sm" data-hs2m="-1" aria-label="Earlier month"><i class="bi bi-chevron-left"></i></button><b>' + esc(mName(ym, true)) + '</b>' +
+    var mb = '<div class="hs2-mh"><span class="hs2-nav"><button type="button" class="icon-btn sm" data-hs2m="-1" aria-label="Earlier month"><i class="bi bi-chevron-left"></i></button><b>' + esc(mName(ym, true)) + '</b>' +
       '<button type="button" class="icon-btn sm" data-hs2m="1" aria-label="Later month"' + (month >= 0 ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button></span></div>';
-    if (!lines.length) body += '<p class="empty kit-empty">Nothing shared in ' + esc(mName(ym, true)) + '. Bought something for the home together? Add it with <b>+ Add</b>.</p>';
+    if (!lines.length) mb += '<p class="empty kit-empty">Nothing shared in ' + esc(mName(ym, true)) + '. Bought something for the home together? Add it with <b>+ Add</b>.</p>';
     else {
-      body += '<ul class="mp-list hs2-lines">' + lines.map(function (l) {
+      mb += '<ul class="mp-list hs2-lines">' + lines.map(function (l) {
         var pay = l.payer === 'me' ? 'you paid' : l.payer === p.id ? esc(p.name) + ' paid' : 'each paid their part', r = st[l.key];
         var chip = r ? '<span class="hs2-st hs2-' + r.state + '">' + (r.state === 'paid' ? '<i class="bi bi-check2"></i> paid back' + (r.paidAt && r.paidAt !== r.date ? ' ' + esc(fmt(r.paidAt)) : '') : r.state === 'part' ? esc(kr(r.left)) + ' left' : (r.dir > 0 ? 'open' : 'you owe')) + '</span>' : '';
         return '<li class="mp-row"><button type="button" class="kit-main" ' + (l.k === 'l' ? 'data-hs2plan' : l.k === 'b' ? 'data-hs2run' : 'data-hs2item') + '="' + esc(l.id) + '"><span class="kit-ic" style="--c:' + (CATC[l.cat] || CATC.other) + '"><i class="bi bi-' + (l.k === 'l' ? 'calendar2-check' : l.k === 'b' ? 'lightning-charge' : l.sub ? 'arrow-left-right' : l.work ? WORKI[l.work] : CATI[l.cat] || 'people') + '"></i></span>' +
@@ -150,13 +150,19 @@
         '<p class="hs2-even">' + (Math.abs(m.net) < 1 ? '<i class="bi bi-check2-circle"></i> This month evens out by itself' : '<i class="bi bi-arrow-left-right"></i> To even out ' + esc(mName(ym)) + ': <b>' + (m.net > 0 ? esc(p.name) + ' sends you ' + esc(kr(m.net)) : 'you send ' + esc(p.name) + ' ' + esc(kr(-m.net))) + '</b>') + '</p>' +
         '<button type="button" class="text-btn" data-hs2copy><i class="bi bi-share"></i> Share the month</button></div>';
     }
+    body += sec('month', 'Your month together', esc(mName(ym, true)) + ' · ' + esc(kr(m.total)) + ' together', mb);
     body += workSection(p, yr) + moveSection();
     /* what you share, by category this year */
     var cats = Object.keys(byCat).sort(function (a, c) { return byCat[c] - byCat[a]; }), mx = cats.length ? byCat[cats[0]] : 1;
-    if (cats.length > 1) body += '<h3 class="lp-h3">Shared in ' + yr + '</h3><ul class="hs2-cats">' + cats.map(function (c) {
+    if (cats.length > 1) body += sec('cats', 'Shared in ' + yr, esc(kr(yearAll)) + ' in all', '<ul class="hs2-cats">' + cats.map(function (c) {
       return '<li><span>' + esc(catName(c)) + '</span><span class="hs2-cb"><i style="width:' + Math.max(3, byCat[c] / mx * 100).toFixed(1) + '%;background:' + (CATC[c] || CATC.other) + '"></i></span>' + money(byCat[c]) + '</li>';
-    }).join('') + '</ul>';
+    }).join('') + '</ul>');
     mount.innerHTML = '<section class="card kit-card hs2" id="hshared">' + head + body + '</section>';
+  }
+  /* a section that folds to one line (title + a short summary); open or closed is remembered on this device */
+  function secOpen() { try { return JSON.parse(localStorage.getItem('dash.hs2sec') || '{}') || {}; } catch (e) { return {}; } }
+  function sec(k, title, sum, inner) {
+    return '<details class="hs2-sec" data-hs2sec="' + k + '"' + (secOpen()[k] ? ' open' : '') + '><summary><span class="hs2-stt">' + title + '</span><small>' + sum + '</small><i class="bi bi-chevron-down"></i></summary><div class="hs2-sb">' + inner + '</div></details>';
   }
   var WORKN = { repair: 'minor repair', urgent: 'urgent repair', improve: 'improvement' };
   var WORKI = { repair: 'wrench', urgent: 'exclamation-triangle', improve: 'stars' };
@@ -185,9 +191,9 @@
   /* shared running costs */
   function runSection(p, st) {
     var rc = runCosts(p.id), B = window.Budget, ym = dkey(new Date()).slice(0, 7);
-    var head = '<div class="hs2-mh"><h3 class="lp-h3">Running costs</h3><button type="button" class="text-btn" data-hs2run="new"><i class="bi bi-plus-lg"></i> Running cost</button></div>';
-    if (!rc.length) return head + '<p class="muted hs2-note">Felleskostnader, power, internet, contents insurance … – shared every month. Add them once: your part goes into your budget, and when one of you pays the bill the other’s part is a claim to settle within 40 days.</p>' +
-      '<div class="lf-chips mp-chips">' + RUNQ.map(function (q) { return '<button type="button" class="lf-chip" data-hs2runq="' + esc(q) + '">+ ' + esc(q) + '</button>'; }).join('') + '</div>';
+    var head = '<div class="hs2-mh hs2-mr"><button type="button" class="text-btn" data-hs2run="new"><i class="bi bi-plus-lg"></i> Running cost</button></div>';
+    if (!rc.length) return sec('run', 'Running costs', 'none yet', head + '<p class="muted hs2-note">Felleskostnader, power, internet, contents insurance … – shared every month. Add them once: your part goes into your budget, and when one of you pays the bill the other’s part is a claim to settle within 40 days.</p>' +
+      '<div class="lf-chips mp-chips">' + RUNQ.map(function (q) { return '<button type="button" class="lf-chip" data-hs2runq="' + esc(q) + '">+ ' + esc(q) + '</button>'; }).join('') + '</div>');
     var tot = 0, mine = 0;
     var list = rc.map(function (f) {
       var whole = B.fixedWhole(f, ym), my = whole * B.splitPart(f); tot += whole; mine += my;
@@ -196,7 +202,7 @@
       return '<li><button type="button" class="kit-main" data-hs2run="' + esc(f.id) + '"><span class="kit-ic" style="--c:#0891b2"><i class="bi bi-lightning-charge"></i></span><span class="kit-x"><b>' + esc(f.name) + '</b><small>' +
         (f.vary ? '≈ ' : '') + esc(kr(whole)) + ' · ' + who + (f.day ? ' · the ' + esc(f.day) + '.' : '') + ' · you ' + esc(pc(+f.split.pct)) + ' %' + (r && r.state !== 'paid' ? ' · ' + (r.dir > 0 ? 'claim open' : 'you owe') : '') + '</small></span><span class="money">' + esc(kr(my)) + '</span></button></li>';
     }).join('');
-    return head + '<ul class="mp-list hs2-run">' + list + '</ul><p class="muted hs2-note">' + esc(mName(ym, true)) + ': ' + esc(kr(tot)) + ' together · your part ' + esc(kr(mine)) + '</p>';
+    return sec('run', 'Running costs', rc.length + ' a month · your part ' + esc(kr(mine)), head + '<ul class="mp-list hs2-run">' + list + '</ul><p class="muted hs2-note">' + esc(mName(ym, true)) + ': ' + esc(kr(tot)) + ' together · your part ' + esc(kr(mine)) + '</p>');
   }
   var RUNQ = ['Felleskostnader', 'Strøm og nettleie', 'Internett', 'Innboforsikring', 'TV og strømming', 'Renovasjon'];
   /* repairs and improvements (samboerkontrakt 4.3) */
@@ -205,14 +211,14 @@
     if (!items.length) return '';
     var minor = items.filter(function (x) { return x.work === 'repair'; }).reduce(function (a, x) { return a + (+x.total || 0); }, 0), over = minor > REPAIR_CAP;
     var imp = items.filter(function (x) { return x.work === 'improve'; }), urg = items.filter(function (x) { return x.work === 'urgent'; });
-    return '<h3 class="lp-h3">Repairs and improvements ' + yr + '</h3>' +
+    return sec('work', 'Repairs and improvements ' + yr, esc(kr(minor)) + ' of ' + esc(kr(REPAIR_CAP)) + ' minor repairs' + (over ? ' · over the limit' : ''),
       '<div class="hs2-cap"><p><span>Minor repairs, shared up to ' + esc(kr(REPAIR_CAP)) + ' a year</span><b' + (over ? ' class="mp-neg"' : '') + '>' + esc(kr(minor)) + '</b></p><span class="stack"><span style="width:' + Math.min(100, minor / REPAIR_CAP * 100).toFixed(1) + '%;background:' + (over ? '#e8743b' : '#a0673a') + '"></span></span>' +
       (over ? '<small class="mp-neg">Over the limit – the rest needs a written agreement first, or it’s the payer’s own cost.</small>' : '<small class="muted">' + esc(kr(REPAIR_CAP - minor)) + ' left this year</small>') + '</div>' +
       (urg.length || imp.length ? '<ul class="mp-list hs2-work">' + urg.concat(imp).map(function (x) {
         var ok = x.work === 'urgent' || x.agreed;
         return '<li><button type="button" class="kit-main" data-hs2item="' + esc(x.id) + '"><span class="kit-ic" style="--c:' + (x.work === 'urgent' ? '#e8743b' : '#8a6fdf') + '"><i class="bi bi-' + WORKI[x.work] + '"></i></span><span class="kit-x"><b>' + esc(x.note) + '</b><small>' + esc(fmt(x.date)) + ' · ' + esc(kr(x.total)) + ' · ' +
           (x.work === 'urgent' ? 'urgent repair – shared, tell ' + esc(p.name) + ' in writing' : ok ? 'agreed in writing ' + esc(fmt(x.agreed)) : '<span class="mp-neg"><i class="bi bi-exclamation-triangle"></i> no written agreement yet</span>') + '</small></span></button></li>';
-      }).join('') + '</ul>' : '');
+      }).join('') + '</ul>' : ''));
   }
   /* moving in: the take-over date and a checklist */
   var MOVE = ['Flyttemelding to Folkeregisteret (Skatteetaten)', 'Power contract for the new address', 'Internet at the new place', 'Contents insurance (innboforsikring) for both', 'Payment protection insurance on your part of the loan', 'Ettersending of post (Posten)', 'New address at the bank, employer and NAV', 'Take-over protocol and meter reading on the day', 'Keys and the borettslag’s house rules', 'Register household items (the list in the Home inventory)'];
@@ -221,10 +227,10 @@
     var mv = move(); if (!mv) return '';
     var items = Array.isArray(mv.items) ? mv.items : [], done = items.filter(function (x) { return x.done; }).length, days = -daysSince(mv.date);
     if (days < -30 && done === items.length) return '';
-    return '<div class="hs2-mh"><h3 class="lp-h3">Moving in</h3><span class="muted hs2-mv">' + esc(fromKey(mv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + ' · ' +
-      (days > 0 ? 'in ' + days + ' day' + (days === 1 ? '' : 's') : days === 0 ? 'today' : (-days) + ' days ago') + ' · ' + done + ' of ' + items.length + ' done</span></div>' +
+    return sec('move', 'Moving in', esc(fromKey(mv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ' · ' +
+      (days > 0 ? 'in ' + days + ' day' + (days === 1 ? '' : 's') : days === 0 ? 'today' : (-days) + ' days ago') + ' · ' + done + ' of ' + items.length + ' done',
       '<ul class="hs2-move">' + items.map(function (x) { return '<li><label class="lf-check"><input type="checkbox" data-hs2mv="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '> <span>' + esc(x.text) + '</span></label><button type="button" class="icon-btn sm" data-hs2mvdel="' + esc(x.id) + '" aria-label="Remove"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' +
-      '<form class="hs2-mvadd" data-hs2mvadd><input name="t" placeholder="Add to the list" maxlength="80" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>';
+      '<form class="hs2-mvadd" data-hs2mvadd><input name="t" placeholder="Add to the list" maxlength="80" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>');
   }
   function setMove(fn) { var t = Fe.tools(); var mv = t.hmove && typeof t.hmove === 'object' ? t.hmove : {}; fn(mv); t.hmove = mv; Fe.saveTools(t); }
 
@@ -595,6 +601,11 @@
       if ((b = e.target.closest('[data-hs2plan]'))) { buySheet(b.dataset.hs2plan); return; }
       if ((b = e.target.closest('[data-hs2item]'))) { var it = S().data().items.filter(function (x) { return x.id === b.dataset.hs2item; })[0]; if (!it) return; var lp = it.plan ? plans().filter(function (a) { return a.plan.item === it.id; })[0] : null; if (lp) buySheet(lp.id); else S().split(it); }
     });
+    mount.addEventListener('toggle', function (e) {
+      var d = e.target; if (!d.matches || !d.matches('details[data-hs2sec]')) return;
+      var o = secOpen(); if (d.open) o[d.dataset.hs2sec] = 1; else delete o[d.dataset.hs2sec];
+      try { localStorage.setItem('dash.hs2sec', JSON.stringify(o)); } catch (er) {}
+    }, true);
     mount.addEventListener('submit', function (e) {
       var m = e.target.closest('[data-hs2mvadd]');
       if (m) { e.preventDefault(); var t = m.t.value.trim(); if (t) setMove(function (mv) { mv.items = (mv.items || []).concat([{ id: uid(), text: t.slice(0, 80), done: false }]); }); return; }

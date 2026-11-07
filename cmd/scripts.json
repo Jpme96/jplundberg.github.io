@@ -46,7 +46,8 @@
     "avatar.js",
     "alive.js",
     "modern.js",
-    "steady.js"
+    "steady.js",
+    "fold.js"
   ],
   "pages": {
     "index.html": [

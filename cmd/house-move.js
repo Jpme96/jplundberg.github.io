@@ -97,7 +97,7 @@
     ensure(); t = T();
     var n = daysTo(d), open = t.open || (n > 1 ? 'prep' : n >= 0 ? 'meters' : 'after');
     var states = STEPS.map(function (s) { return stepState(s[0], t); }), done = states.filter(function (s) { return s.done; }).length;
-    html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day</h2><div class="head-actions">' +
+    html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day <small class="fold-sum">' + esc(n > 1 ? 'in ' + n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : (-n) + ' days ago') + ' · ' + done + '/' + STEPS.length + '</small></h2><div class="head-actions">' +
       '<button type="button" class="text-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Record</button><button type="button" class="text-btn" data-tkset aria-label="Details"><i class="bi bi-sliders"></i></button></div></div>' +
       '<div class="hx-when"><span class="hx-day"><b>' + esc(fromKey(d).getDate()) + '</b><small>' + esc(fromKey(d).toLocaleDateString('en-GB', { month: 'short' })) + '</small></span><span><b>' + esc(n > 1 ? 'In ' + n + ' days' : n === 1 ? 'Tomorrow' : n === 0 ? 'Today – good luck!' : (-n) + ' days ago') + '</b><small>' +
       esc([t.addr, t.seller ? 'from ' + t.seller : ''].filter(Boolean).join(' · ') || 'Add the address and seller under the sliders') + '</small></span><span class="hx-prog"><b>' + done + '/' + STEPS.length + '</b><small>steps</small></span></div>' +

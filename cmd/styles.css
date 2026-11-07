@@ -4651,3 +4651,25 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .nw-rule { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 6px; align-items: center; margin-bottom: 6px; }
 .nw-rule input[hidden] { display: none; } .nw-rule:has(input[hidden]) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 36px; }
 @media (max-width: 700px) { .hs2 .kit-tiles > .kit-tile[data-tk="balance"] { grid-column: 1 / -1; } }
+/* fold any card (fold.js) */
+.fold-btn { flex: none; width: 40px; height: 40px; margin-left: 2px; color: var(--muted); background: transparent; border-color: transparent; }
+.fold-btn i { font-size: 13px; }
+@media (hover: hover) { .fold-btn:hover { color: var(--text); } }
+.card.ufold > :not(.card-head) { display: none !important; }
+.card.ufold { padding-top: 12px; padding-bottom: 12px; }
+.card.ufold > .card-head { margin-bottom: 0; cursor: pointer; }
+.card.ufold > .card-head > :not(h2):not(.fold-btn) { display: none !important; }
+.card.ufold > .card-head h2 { color: var(--muted); }
+.card.ufold > .card-head .fold-btn { color: var(--accent); }
+/* Shared home: sections that fold to one line */
+.hs2-sec { border-top: 1px solid var(--line); margin-top: 10px; }
+.hs2-sec > summary { list-style: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 0; cursor: pointer; min-height: 44px; }
+.hs2-sec > summary::-webkit-details-marker { display: none; }
+.hs2-sec > summary .hs2-stt { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.hs2-sec > summary small { color: var(--muted); font-size: 13px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hs2-sec > summary .bi { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.hs2-sec[open] > summary .bi { transform: rotate(180deg); }
+.hs2-sb { padding-bottom: 6px; }
+.hs2-mr { justify-content: flex-end; }
+.fold-sum { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.card:not(.ufold) .fold-sum { display: none; }

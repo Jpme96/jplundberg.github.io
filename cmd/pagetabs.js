@@ -25,11 +25,11 @@
       feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health', 'journal'] }
     },
     house: {
-      /* a 4th value: the tab only shows while that feature is on */
+      /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
       /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
       tabs: [['shared', 'Shared', 'people', null, true], ['upkeep', 'Upkeep', 'tools', null, true], ['energy', 'Energy', 'lightning-charge', null, true], ['things', 'Things', 'box-seam', null, true],
-        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', 'hdocs'], ['claims', 'Claims', 'exclamation-diamond', 'hclaim'], ['history', 'History', 'clock-history']],
-      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'claims'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
+        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', ['hdocs', 'hclaim']], ['history', 'History', 'clock-history']],
+      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
@@ -45,7 +45,11 @@
   var cur = (function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
   /* tabs that belong to a feature that's off aren't shown */
   function past() { var H = window.Homes; return !!(H && H.isPast(H.view())); }
-  function tabs() { var p = past(); return C.tabs.filter(function (t) { return (!t[3] || Fe.on(t[3])) && !(t[4] && p); }); }
+  function fon(f) { return !f || (Array.isArray(f) ? f.some(function (x) { return Fe.on(x); }) : Fe.on(f)); }
+  function tabs() { var p = past(); return C.tabs.filter(function (t) { return fon(t[3]) && !(t[4] && p); }); }
+  /* tabs that were merged into another */
+  var ALIAS = { claims: 'docs' };
+  if (ALIAS[cur]) cur = ALIAS[cur];
   function has(t) { return tabs().some(function (x) { return x[0] === t; }); }
   if (!has(cur)) cur = (tabs()[0] || C.tabs[0])[0];
 
@@ -82,6 +86,7 @@
     assign(); suggest();
   }
   function show(t, keep) {
+    if (ALIAS[t]) t = ALIAS[t];
     if (!has(t)) return;
     cur = t; try { localStorage.setItem(KEY, t); } catch (e) {}
     draw();
