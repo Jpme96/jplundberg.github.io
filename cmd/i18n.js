@@ -1057,7 +1057,10 @@
     'The files aren’t on this device yet – open the House page while online and try again': 'Filene er ikke på denne enheten ennå – åpne Hus-siden mens du er på nett og prøv igjen',
     /* Shared home's first-run form (home-shared.js) */
     'Share your home with someone? Say who and how you split, then add what you buy together – furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.': 'Deler du boligen med noen? Si hvem og hvordan dere fordeler, og legg inn det dere kjøper sammen – møbler, nytt kjøleskap, alt. Du ser hvem som skylder hvem, det dere betaler i deler, og den ene overføringen som jevner ut hver måned.',
-    'You pay, %': 'Du betaler, %', 'Your partner’s name': 'Navnet til partneren din'
+    'You pay, %': 'Du betaler, %', 'Your partner’s name': 'Navnet til partneren din',
+    'Report': 'Rapport', 'Report of all claims': 'Rapport over alle reklamasjoner', 'Report of all claims (PDF)': 'Rapport over alle reklamasjoner (PDF)', 'You live with': 'Du bor med', 'Just me': 'Bare meg', 'Their full name': 'Fullt navn',
+    'Letters and reports about the home are signed by both of you (“we”). Just me = only your name.': 'Brev og rapporter om boligen signeres av dere begge («vi»). Bare meg = bare navnet ditt.',
+    'One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose': 'Én rapport med alle reklamasjonene – en oversikt først, så hver reklamasjon på egen side med bildene. I utskriftsvinduet velger du'
   });
   P.push(
     [/^(\d+) read$/, '$1 lest av'], [/^(\d+) missing$/, '$1 mangler'], [/^(\d+) of (\d+) counted$/, '$1 av $2 telt'], [/^(\d+) of (\d+) checked( · (\d+) faults?)?$/, function (m, a, b, c, n) { return a + ' av ' + b + ' sjekket' + (n ? ' · ' + n + ' feil' : ''); }],

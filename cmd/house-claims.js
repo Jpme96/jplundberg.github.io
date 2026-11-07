@@ -31,7 +31,10 @@
   function list() { return Fe.list('hclaims'); }
   function byId(id) { return list().filter(function (x) { return x.id === id; })[0]; }
   function saveOne(id, fn) { var t = Fe.tools(); (t.hclaims || []).forEach(function (x) { if (x && x.id === id) fn(x); }); Fe.saveTools(t); }
-  function cfg() { var c = Fe.tools().hclaimcfg; return Object.assign({ lang: 'nb', replyDays: 14 }, c && typeof c === 'object' ? c : {}); }
+  function cfg() { var c = Fe.tools().hclaimcfg; return Object.assign({ lang: 'nb', replyDays: 14, co: 'auto', coName: '' }, c && typeof c === 'object' ? c : {}); }
+  /* who you live with – on the letters and reports for the home ("we"): your partner from Shared home, someone you name, or just you */
+  function partner() { return window.Shared && window.Shared.partner && window.Shared.partner(); }
+  function coName() { var c = cfg(); if (c.co === 'none') return ''; if (c.co === 'name') return String(c.coName || '').trim(); var p = partner(); return p ? p.name : ''; }
   HF && HF.uses(function () { var ids = []; list().forEach(function (c) { ids = ids.concat(c.photos || []); }); return ids; });
 
   /* who it's against → the law, and its deadlines */
@@ -120,7 +123,7 @@
     mount: mountEl, feature: 'hclaim', key: 'hclaims', icon: 'exclamation-diamond', title: 'Reklamasjon', addLabel: 'Claim', limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
     empty: 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.',
-    headExtra: function (l) { return '<button type="button" class="text-btn" data-hcset aria-label="Claim settings"><i class="bi bi-sliders"></i></button>'; },
+    headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims"><i class="bi bi-file-earmark-pdf"></i> Report</button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings"><i class="bi bi-sliders"></i></button>'; },
     sort: function (a, b) { var oa = OPEN[a.status] ? 0 : 1, ob = OPEN[b.status] ? 0 : 1; return oa - ob || (b.found || '').localeCompare(a.found || ''); },
     summary: function (l) {
       if (!l.length) return '';
@@ -159,6 +162,7 @@
       if ((b = e.target.closest('[data-hcupd]'))) return updSheet(b.dataset.hcupd);
       if ((b = e.target.closest('[data-hcnudge]'))) return nudge(b.dataset.hcnudge);
       if (e.target.closest('[data-hcset]')) return setSheet();
+      if (e.target.closest('[data-hcall]')) return reportAll();
     }
   }) : null;
   /* the card's "+": who it's to first */
@@ -209,22 +213,29 @@
   function setSheet() {
     var c = cfg(), X = HF.sheet('Claims');
     X.box.innerHTML = HF.head('sliders', 'Claims') + '<form class="hx-form"><p class="mp-lbl">Letters in</p><div class="lf-chips"><button type="button" class="lf-chip" data-hclang="nb" aria-pressed="' + (c.lang !== 'en') + '">Norsk</button><button type="button" class="lf-chip" data-hclang="en" aria-pressed="' + (c.lang === 'en') + '">English</button></div>' +
+      '<p class="mp-lbl">You live with</p><div class="lf-chips">' + (partner() ? '<button type="button" class="lf-chip" data-hcco="auto" aria-pressed="' + (c.co === 'auto') + '">' + esc(partner().name) + '</button>' : '') +
+      '<button type="button" class="lf-chip" data-hcco="name" aria-pressed="' + (c.co === 'name' || (c.co === 'auto' && !partner())) + '">Someone else</button><button type="button" class="lf-chip" data-hcco="none" aria-pressed="' + (c.co === 'none') + '">Just me</button></div>' +
+      '<label class="hx-f" data-hcconame' + (c.co === 'name' || (c.co === 'auto' && !partner()) ? '' : ' hidden') + '><span>Name</span><input name="cn" maxlength="60" value="' + esc(c.coName || '') + '" placeholder="Their full name" autocomplete="off"></label>' +
+      '<p class="muted hs2-note">Letters and reports about the home are signed by both of you (“we”). Just me = only your name.</p>' +
       '<label class="hx-f"><span>Ask for an answer within, days</span><input name="rd" inputmode="numeric" value="' + esc(c.replyDays) + '"></label>' +
       '<label class="lf-check"><input type="checkbox" name="gl"' + (c.glance !== false ? ' checked' : '') + '> <span>Nudges in At a glance (send it, late answers, the one-year inspection)</span></label>' +
       '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
-    var lang = c.lang === 'en' ? 'en' : 'nb';
-    X.box.addEventListener('click', function (e) { var h = e.target.closest('[data-hclang]'); if (h) { lang = h.dataset.hclang; X.box.querySelectorAll('[data-hclang]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === h)); }); } });
+    var lang = c.lang === 'en' ? 'en' : 'nb', co = c.co === 'auto' && !partner() ? 'name' : c.co;
+    X.box.addEventListener('click', function (e) {
+      var h = e.target.closest('[data-hclang]'); if (h) { lang = h.dataset.hclang; X.box.querySelectorAll('[data-hclang]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === h)); }); }
+      var o = e.target.closest('[data-hcco]'); if (o) { co = o.dataset.hcco; X.box.querySelectorAll('[data-hcco]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === o)); }); X.box.querySelector('[data-hcconame]').hidden = co !== 'name'; if (co === 'name') X.box.querySelector('[name=cn]').focus(); }
+    });
     X.box.addEventListener('submit', function (e) {
       e.preventDefault(); var rd = Math.round(+e.target.rd.value) || 14, t = Fe.tools();
-      t.hclaimcfg = Object.assign({}, cfg(), { lang: lang, replyDays: Math.min(60, Math.max(3, rd)), glance: e.target.gl.checked }); Fe.saveTools(t); X.close(); toast('<i class="bi bi-check2"></i> Saved');
+      t.hclaimcfg = Object.assign({}, cfg(), { lang: lang, replyDays: Math.min(60, Math.max(3, rd)), glance: e.target.gl.checked, co: co === 'name' && !e.target.cn.value.trim() ? 'none' : co, coName: e.target.cn.value.trim().slice(0, 60) }); Fe.saveTools(t); X.close(); toast('<i class="bi bi-check2"></i> Saved');
     });
   }
 
   /* ---------- the letter ---------- */
   function me() { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } }
   function letterText(c, lang) {
-    var p = me(), pt = window.Shared && window.Shared.partner && window.Shared.partner(), ti = takeInfo(), lk = lawKey(c), home = c.against === 'seller' || c.against === 'builder';
-    var we = home && pt, nb = lang !== 'en', addr = ti.addr || '';
+    var p = me(), co = coName(), ti = takeInfo(), lk = lawKey(c), home = c.against === 'seller' || c.against === 'builder';
+    var we = home && !!co, nb = lang !== 'en', addr = ti.addr || '';
     var dfmt = function (k) { return isKey(k) ? fromKey(k).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''; };
     var replyBy = c.status === 'sent' && isKey(c.replyBy) ? c.replyBy : addDays(today(), cfg().replyDays);
     var want = { fix: nb ? 'at mangelen rettes' : 'that the fault is put right', price: nb ? 'prisavslag' : 'a price reduction', comp: nb ? 'erstatning for kostnadene med å rette mangelen' : 'compensation for the cost of putting it right', new: nb ? 'omlevering – en ny vare uten feil' : 'a replacement without the fault', back: nb ? 'heving av kjøpet og at pengene betales tilbake' : 'to cancel the purchase and have my money back', look: nb ? 'at dere ser på forholdet og kommer med et forslag til løsning' : 'that you look at it and propose a solution' }[c.want] || (nb ? 'at mangelen rettes' : 'that the fault is put right');
@@ -252,7 +263,7 @@
     lines.push((nb ? I + ' krever ' : I + ' ask for ') + want + (+c.cost ? (nb ? '. Anslått kostnad: ' : '. Estimated cost: ') + kr(c.cost) : '') + '.' + (LAW[lk] && LAW[lk].nb ? (nb ? ' Reklamasjonen gjelder etter ' + LAW[lk].nb + '.' : ' This notice is given under the Norwegian ' + LAW[lk].nb + '.') : ''));
     lines.push(nb ? 'Vennligst gi ' + (we ? 'oss' : 'meg') + ' et skriftlig svar innen ' + dfmt(replyBy) + '.' : 'Please reply in writing by ' + dfmt(replyBy) + '.');
     if (lk === 'avh') lines.push(nb ? 'Hvis du har boligselgerforsikring, ber ' + i2 + ' deg sende reklamasjonen videre til forsikringsselskapet og si fra hvem som behandler saken.' : 'If you have a seller’s insurance (boligselgerforsikring), please pass this on to the insurer and tell ' + (we ? 'us' : 'me') + ' who is handling the case.');
-    var sig = [nb ? 'Med vennlig hilsen' : 'Kind regards', [p.name, home && pt ? pt.name : ''].filter(Boolean).join(nb ? ' og ' : ' and '), [p.phone, p.email].filter(Boolean).join(' · ')].filter(Boolean).join('\n');
+    var sig = [nb ? 'Med vennlig hilsen' : 'Kind regards', [p.name, home && co ? co : ''].filter(Boolean).join(nb ? ' og ' : ' and '), [p.phone, p.email].filter(Boolean).join(' · ')].filter(Boolean).join('\n');
     lines.push(sig);
     return { subject: subj, body: lines.join('\n\n'), replyBy: replyBy };
   }
@@ -333,6 +344,85 @@
     });
   }
 
+  /* every claim in one report – a cover with the summary table, then one section per claim with its photos */
+  var RL = {
+    nb: { kick: 'Reklamasjonsrapport', home: 'Boligen', owners: 'Eiere', owner: 'Eier', seller: 'Selger / utbygger', agent: 'Megler', taken: 'Overtatt', count: 'Antall reklamasjoner', total: 'Anslått kostnad', made: 'Rapportdato',
+      intro: function (n, d) { return 'Rapporten samler ' + n + (n === 1 ? ' reklamasjon' : ' reklamasjoner') + ' per ' + d + '. Hver mangel er beskrevet med sted, når den ble oppdaget, hva som kreves, status og bilder.'; },
+      sum: 'Oversikt', no: 'Nr.', what: 'Mangel', where: 'Sted', found: 'Oppdaget', to: 'Gjelder', status: 'Status', next: 'Neste frist', cost: 'Kostnad', to2: 'Til', law: 'Regelverk', deliver: 'Overtatt / kjøpt', want: 'Krav', sent: 'Sendt', reply: 'Svarfrist', ref: 'Referanse', prot: 'Påpekt ved overtakelsen', yes: 'Ja',
+      desc: 'Beskrivelse', log: 'Historikk', photos: 'Bilder', photo: 'Bilde', sign: 'Underskrift', place: 'Sted og dato', sendBy: 'send innen ', answer: 'svar innen ', none: '–', all: 'Alle', open: 'Bare åpne',
+      foot: 'Reklamasjonsrapport', st: { draft: 'Utkast', sent: 'Sendt', reply: 'Besvart', agreed: 'Avtalt', fixed: 'Rettet', no: 'Avslått', closed: 'Lukket' },
+      ag: { seller: 'Selger', builder: 'Utbygger', craftsman: 'Håndverker', shop: 'Butikk', other: 'Annet' }, wt: { fix: 'Retting', price: 'Prisavslag', comp: 'Erstatning', new: 'Omlevering', back: 'Heving', look: 'Vurdering først' },
+      lw: { avh: 'Avhendingslova', buofl: 'Bustadoppføringslova', hvtj: 'Håndverkertjenesteloven', fkjl: 'Forbrukerkjøpsloven', other: '–' }, and: ' og ' },
+    en: { kick: 'Claims report', home: 'The home', owners: 'Owners', owner: 'Owner', seller: 'Seller / builder', agent: 'Estate agent', taken: 'Taken over', count: 'Claims', total: 'Estimated cost', made: 'Report date',
+      intro: function (n, d) { return 'This report brings together ' + n + (n === 1 ? ' claim' : ' claims') + ' as of ' + d + '. Each defect is described with where it is, when it was found, what is asked for, its status and photos.'; },
+      sum: 'Summary', no: 'No.', what: 'Defect', where: 'Location', found: 'Found', to: 'Against', status: 'Status', next: 'Next deadline', cost: 'Cost', to2: 'To', law: 'Law', deliver: 'Taken over / bought', want: 'Claim', sent: 'Sent', reply: 'Reply by', ref: 'Reference', prot: 'Noted at the take-over', yes: 'Yes',
+      desc: 'Description', log: 'History', photos: 'Photos', photo: 'Photo', sign: 'Signature', place: 'Place and date', sendBy: 'send by ', answer: 'reply by ', none: '–', all: 'All', open: 'Open only',
+      foot: 'Claims report', st: { draft: 'Draft', sent: 'Sent', reply: 'Answered', agreed: 'Agreed', fixed: 'Fixed', no: 'Turned down', closed: 'Closed' },
+      ag: { seller: 'Seller', builder: 'Builder', craftsman: 'Tradesman', shop: 'Shop', other: 'Other' }, wt: { fix: 'Put right', price: 'Price reduction', comp: 'Compensation', new: 'Replacement', back: 'Cancel the purchase', look: 'Assessment first' },
+      lw: { avh: 'Avhendingslova (sale of real property)', buofl: 'Bustadoppføringslova (new homes)', hvtj: 'Håndverkertjenesteloven (tradesmen)', fkjl: 'Forbrukerkjøpsloven (consumer purchases)', other: '–' }, and: ' and ' } };
+  /* the history is written in English; the Norwegian report says it in Norwegian */
+  var LOGNB = [[/^Made the claim$/, 'Reklamasjonen ble laget'], [/^Made from a fault at the take-over$/, 'Laget fra en feil ved overtakelsen'], [/^Reminder sent$/, 'Påminnelse sendt'],
+    [/^Sent by (e-mail|letter|text message|their web form)( to (.+))?$/, function (m, h, x, w) { return 'Sendt som ' + ({ 'e-mail': 'e-post', letter: 'brev', 'text message': 'SMS', 'their web form': 'skjemaet deres' })[h] + (w ? ' til ' + w : ''); }],
+    [/^They answered(: (.+))?$/, 'De svarte$1'], [/^We agreed what happens(: (.+))?$/, 'Vi ble enige om hva som skjer$1'], [/^It’s fixed or paid(: (.+))?$/, 'Det er rettet eller betalt$1'],
+    [/^They turned it down(: (.+))?$/, 'De avslo$1'], [/^Close the claim(: (.+))?$/, 'Reklamasjonen ble lukket$1'], [/^Just a note: (.+)$/, 'Notat: $1']];
+  function logNb(t) { for (var i = 0; i < LOGNB.length; i++) if (LOGNB[i][0].test(t)) return t.replace(LOGNB[i][0], LOGNB[i][1]); return t; }
+  function reportAll(o) {
+    o = o || {};
+    var lang = o.lang || (cfg().lang === 'en' ? 'en' : 'nb'), only = !!o.open, photos = o.photos !== false;
+    var bg = document.createElement('div'); bg.className = 'rp-bg';
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcaclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span>' +
+      '<div class="lf-chips hc-aopt" data-noi18n><button type="button" class="lf-chip" data-hcaopen="0">Alle · All</button><button type="button" class="lf-chip" data-hcaopen="1">Åpne · Open</button></div>' +
+      '<div class="lf-chips hc-aopt" data-noi18n><button type="button" class="lf-chip" data-hcalang="nb">Norsk</button><button type="button" class="lf-chip" data-hcalang="en">English</button></div>' +
+      '<label class="rp-opt"><input type="checkbox" data-hcaph checked> Photos</label><button type="button" class="pill-btn" data-hcaprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
+      '<p class="rp-hint">One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose <b>Save as PDF</b>.</p><article class="rp-doc hc-all" data-noi18n></article>';
+    document.body.appendChild(bg); document.body.classList.add('rp-open');
+    var doc = bg.querySelector('.rp-doc');
+    function draw() {
+      bg.querySelectorAll('[data-hcaopen]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.hcaopen === '1') === only)); });
+      bg.querySelectorAll('[data-hcalang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.hcalang === lang)); });
+      var T = RL[lang], nb = lang === 'nb', ti = takeInfo(), p = me(), co = coName(), td = takeDate();
+      var dfmt = function (k, short) { return isKey(k) ? fromKey(k).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', short ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'long', year: 'numeric' }) : T.none; };
+      var L = list().filter(function (c) { return !only || OPEN[c.status]; }).sort(function (a, b) { return (a.found || a.at || '').localeCompare(b.found || b.at || ''); });
+      var total = L.reduce(function (a, c) { return a + (+c.cost || 0); }, 0), owners = [p.name, co].filter(Boolean);
+      var next = function (c) { var d = deadlines(c); return c.status === 'draft' && d.soft ? T.sendBy + dfmt(d.soft, true) : c.status === 'sent' && d.reply ? T.answer + dfmt(d.reply, true) : T.none; };
+      var cnt = {}; L.forEach(function (c) { cnt[c.status] = (cnt[c.status] || 0) + 1; });
+      var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(T.kick) + '</p><h1>' + esc(ti.addr || T.home) + '</h1><p class="rp-addr">' + esc(dfmt(today())) + '</p></div>' +
+        '<div class="iv-no"><small>' + esc(T.count) + '</small><b>' + L.length + '</b></div></header>' +
+        '<table class="rp-meta"><tr><th>' + esc(owners.length > 1 ? T.owners : T.owner) + '</th><td>' + esc(owners.join(T.and) || T.none) + '</td><th>' + esc(T.seller) + '</th><td>' + esc(ti.seller || T.none) + '</td></tr>' +
+        '<tr><th>' + esc(T.taken) + '</th><td>' + esc(dfmt(td)) + '</td><th>' + esc(T.agent) + '</th><td>' + esc(ti.agent || T.none) + '</td></tr>' +
+        '<tr><th>' + esc(T.total) + '</th><td>' + (total ? esc(kr(total)) : T.none) + '</td><th>' + esc(T.made) + '</th><td>' + esc(dfmt(today())) + '</td></tr></table>' +
+        '<p class="rp-intro">' + esc(T.intro(L.length, dfmt(today()))) + ' ' + Object.keys(cnt).map(function (k) { return esc(T.st[k] || k) + ': ' + cnt[k]; }).join(' · ') + '</p>' +
+        '<h2>' + esc(T.sum) + '</h2><table class="rp-todo hc-sumt"><thead><tr><th>' + T.no + '</th><th>' + T.what + '</th><th>' + T.where + '</th><th>' + T.found + '</th><th>' + T.to + '</th><th>' + T.status + '</th><th>' + T.next + '</th><th class="hc-num">' + T.cost + '</th></tr></thead><tbody>' +
+        L.map(function (c, i) { return '<tr><td>' + (i + 1) + '</td><td><b>' + esc(c.title) + '</b></td><td>' + esc(c.where || T.none) + '</td><td>' + esc(dfmt(c.found, true)) + '</td><td>' + esc(T.ag[c.against] || T.ag.other) + (c.who ? '<br><small>' + esc(c.who) + '</small>' : '') + '</td><td>' + esc(T.st[c.status] || c.status) + '</td><td>' + esc(next(c)) + '</td><td class="hc-num">' + (+c.cost ? esc(kr(c.cost)) : T.none) + '</td></tr>'; }).join('') +
+        (total ? '<tr class="hc-tot"><td></td><td colspan="6"><b>' + esc(T.total) + '</b></td><td class="hc-num"><b>' + esc(kr(total)) + '</b></td></tr>' : '') + '</tbody></table>' +
+        L.map(function (c, i) {
+          var d = (c.log || []).slice(), lk = lawKey(c), rows = [[T.to2, (c.who || T.none) + (c.email ? ' · ' + c.email : '')], [T.law, T.lw[lk] || T.none], [T.where, c.where || T.none], [T.found, dfmt(c.found)], [T.deliver, dfmt(c.deliver)], [T.want, T.wt[c.want] || T.wt.fix],
+            [T.cost, +c.cost ? kr(c.cost) : T.none], [T.status, T.st[c.status] || c.status], [T.sent, dfmt(c.sent)], [T.reply, c.status === 'sent' ? dfmt(c.replyBy) : T.none], [T.ref, c.ref || T.none]];
+          if (c.inProt) rows.push([T.prot, T.yes]);
+          var meta = ''; for (var r = 0; r < rows.length; r += 2) meta += '<tr><th>' + esc(rows[r][0]) + '</th><td>' + esc(rows[r][1]) + '</td>' + (rows[r + 1] ? '<th>' + esc(rows[r + 1][0]) + '</th><td>' + esc(rows[r + 1][1]) + '</td>' : '<th></th><td></td>') + '</tr>';
+          return '<section class="hc-rsec"><h2>' + (i + 1) + '. ' + esc(c.title) + '</h2><table class="rp-meta">' + meta + '</table>' +
+            '<h3>' + esc(T.desc) + '</h3><p class="rp-notes">' + esc(c.desc || c.title).replace(/\n/g, '<br>') + '</p>' +
+            (d.length ? '<h3>' + esc(T.log) + '</h3><table class="rp-todo hc-logt"><tbody>' + d.map(function (x) { return '<tr><td>' + esc(dfmt(x.d, true)) + '</td><td>' + esc(nb ? logNb(x.t) : x.t) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+            (photos && (c.photos || []).length ? '<h3>' + esc(T.photos) + '</h3><div class="hc-rph">' + c.photos.map(function (ph, j) { return '<figure><img data-hfimg="' + esc(ph) + '" alt=""><figcaption>' + esc(T.photo) + ' ' + (i + 1) + '.' + (j + 1) + '</figcaption></figure>'; }).join('') + '</div>' : '') + '</section>';
+        }).join('') +
+        '<div class="rg-sign hc-sign">' + (owners.length ? owners : ['']).map(function (n) { return '<div><span></span><p>' + esc(n || T.sign) + ' · ' + esc(T.place) + '</p></div>'; }).join('') + '</div>' +
+        '<footer class="rp-foot">' + esc(T.foot) + ' · ' + esc(ti.addr || '') + ' · ' + esc(today()) + '</footer>';
+      doc.innerHTML = h; HF.fill(doc);
+    }
+    function close() { bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }
+    function key(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', key);
+    bg.addEventListener('change', function (e) { if (e.target.matches('[data-hcaph]')) { photos = e.target.checked; draw(); } });
+    bg.addEventListener('click', function (e) {
+      var b;
+      if (e.target.closest('[data-hcaclose]')) return close();
+      if ((b = e.target.closest('[data-hcaopen]'))) { only = b.dataset.hcaopen === '1'; return draw(); }
+      if ((b = e.target.closest('[data-hcalang]'))) { lang = b.dataset.hcalang; return draw(); }
+      if (e.target.closest('[data-hcaprint]')) { var tt = document.title; document.title = (lang === 'nb' ? 'Reklamasjonsrapport ' : 'Claims report ') + today(); var done = function () { document.title = tt; window.removeEventListener('afterprint', done); }; window.addEventListener('afterprint', done); setTimeout(function () { window.print(); }, 500); setTimeout(done, 60000); }
+    });
+    draw();
+  }
+
   /* a new claim from elsewhere (a fault at the take-over) */
   function create(o) {
     var it = Object.assign({ id: uid(), status: 'draft', want: 'fix', photos: [], log: [{ id: uid(), d: today(), t: o.from === 'take' ? 'Made from a fault at the take-over' : 'Made the claim' }], at: today(), deliver: takeDate() }, o);
@@ -361,11 +451,12 @@
     return out;
   });
   (window.CommandExtra = window.CommandExtra || []).push(function () {
-    return on() ? [{ i: 'exclamation-diamond', t: 'New claim (reklamasjon)', s: 'House · Claims', run: function () { if (mountEl && K) { if (window.PageTabs) window.PageTabs.show('claims', true); pickKind(); } else location.href = '/cmd/house/#hclaim'; }, x: 'reklamasjon claim complaint klage mangel defect fault feil seller selger' }] : [];
+    return on() ? [{ i: 'exclamation-diamond', t: 'New claim (reklamasjon)', s: 'House · Claims', run: function () { if (mountEl && K) { if (window.PageTabs) window.PageTabs.show('claims', true); pickKind(); } else location.href = '/cmd/house/#hclaim'; }, x: 'reklamasjon claim complaint klage mangel defect fault feil seller selger' },
+      { i: 'file-earmark-pdf', t: 'Report of all claims (PDF)', s: 'House · Claims', run: function () { if (mountEl) reportAll(); else location.href = '/cmd/house/#hclaim'; }, x: 'reklamasjonsrapport report rapport claims pdf alle' }] : [];
   });
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;
     list().forEach(function (c) { add('House', 'exclamation-diamond', c.title, 'Claim · ' + (STATUS[c.status] || STATUS.draft)[0] + (c.who ? ' · ' + c.who : ''), '/cmd/house/#hclaims=' + c.id, c.found || '', [c.desc, c.where, c.ref, 'reklamasjon claim'].join(' ')); });
   });
-  window.HouseClaims = { create: create, list: list, letter: letterText, report: report, deadlines: deadlines };
+  window.HouseClaims = { co: coName, reportAll: function (o) { reportAll(o); }, create: create, list: list, letter: letterText, report: report, deadlines: deadlines };
 })();

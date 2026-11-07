@@ -4602,3 +4602,13 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .hd-cl li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .hd-cl li .hx-f { grid-column: 2; } .hd-cl li:has(.hx-f + .icon-btn) .hx-f { grid-column: 2; }
 @media print { body.rp-open .hc-rph img { max-height: 260px; } }
+/* all claims in one report */
+.hc-aopt { gap: 4px; } .hc-aopt .lf-chip { padding: 5px 10px; font-size: 12.5px; }
+.hc-all .hc-rsec { margin-top: 34px; padding-top: 6px; border-top: 3px solid #e5e8ec; }
+.hc-all h3 { margin-top: 14px; }
+.hc-sumt td, .hc-sumt th { font-size: 11.5px; } .hc-sumt small { color: #5b6470; }
+.hc-num { text-align: right !important; white-space: nowrap; }
+.hc-tot td { border-top: 2px solid #d5dae0; }
+.hc-logt td:first-child { width: 90px; color: #5b6470; white-space: nowrap; }
+.hc-sign { margin-top: 40px; }
+@media print { body.rp-open .hc-all .hc-rsec { break-before: page; border-top: 0; margin-top: 0; } body.rp-open .hc-sumt tr { break-inside: avoid; } }
