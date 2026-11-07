@@ -215,15 +215,24 @@
           '<label class="text-btn"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i> ' + (x[k] ? (k === 'photo' ? 'New photo' : 'New receipt') : (k === 'photo' ? 'Add photo' : 'Add receipt')) +
           '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label></div>';
       }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '') +
-        (window.SharedHome && window.SharedHome.forInv && (x.ownWith || x.shared) ? '<p class="inv-split"><button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> Split and who paid</button></p>' : '');
+        (window.SharedHome && window.SharedHome.forInv && (x.ownWith || x.shared) ? (function () {
+          var i = window.SharedHome.invInfo ? window.SharedHome.invInfo(x.id) : null, h = '<button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> Split and who paid</button>';
+          if (i && i.owe) h += '<button type="button" class="text-btn" data-invpb="' + esc(x.id) + '"><i class="bi bi-calendar2-check"></i> Paying back ' + esc(kr(i.owe.pay)) + ' a month · ' + esc(kr(i.owe.left)) + ' left</button>';
+          else if (i && i.theyPaid && i.mine > 0) h += '<button type="button" class="text-btn" data-invpb="' + esc(x.id) + '"><i class="bi bi-calendar2-check"></i> Pay ' + esc(i.p.name) + ' back monthly</button>';
+          var who = i && i.item ? (i.item.payer === 'me' ? 'You paid' : i.theyPaid ? esc(i.p.name) + ' paid' : '') : '';
+          return '<p class="inv-split">' + (who ? '<span class="muted">' + who + ' · your part ' + esc(kr(i.mine)) + '</span>' : '') + h + '</p>';
+        })() : '');
     },
     afterRender: function (el) {
       el.querySelectorAll('a[data-invpdfopen]').forEach(function (a) { getPh(a.dataset.invpdfopen).then(function (b) { if (b) a.href = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'application/pdf' })); else a.querySelector('span').textContent = 'PDF receipt isn’t on this device yet'; }); });
       el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
     onClick: function (e) {
       if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register();
-      var sp = e.target.closest('[data-invsplit]'); if (sp && window.SharedHome) window.SharedHome.forInv(sp.dataset.invsplit); }
+      var sp = e.target.closest('[data-invsplit]'); if (sp && window.SharedHome) window.SharedHome.forInv(sp.dataset.invsplit);
+      var pb = e.target.closest('[data-invpb]'); if (pb && window.SharedHome) window.SharedHome.payBackInv(pb.dataset.invpb); }
   }) : null;
+  /* a pay-back plan or a payment changes what the item rows say */
+  if (invCol) window.addEventListener('fin:change', function () { var ae = document.activeElement; if (ae && ae.closest && ae.closest('[data-tool="hinv"]') && ae.matches('input, select, textarea')) return; invCol.render(); });
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-invfile]'); if (!i || !i.files.length) return;
     var q = i.dataset.invfile.split('|'), it = Fe.list('hinv').filter(function (x) { return x.id === q[0]; })[0]; if (!it) return;

@@ -1124,6 +1124,7 @@
     'You owe in all, kr': 'Du skylder i alt, kr', 'Each month, kr': 'Hver måned, kr', 'First payment': 'Første betaling', 'What for (optional)': 'Hva gjelder det (valgfritt)',
     'e.g. 50 000': 'f.eks. 50 000', 'e.g. 2 000': 'f.eks. 2 000', 'e.g. Egenkapital': 'f.eks. Egenkapital', 'Stop': 'Stopp', 'Lent to you': 'Lånt til deg',
     'Type the monthly amount.': 'Skriv beløpet per måned.', 'Type what you owe and the monthly amount.': 'Skriv hva du skylder og beløpet per måned.', 'extra payment': 'ekstra innbetaling',
+    'Your part to pay back, kr': 'Din del å betale tilbake, kr', 'You paid': 'Du betalte',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
     'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',
@@ -1201,6 +1202,10 @@
     [/^Stopped – (.+ kr) still owed to (.+)$/, 'Stoppet – $1 skyldes fortsatt til $2'],
     [/^(.+) · payment (\d+) of (\d+)$/, function (m, a, n, o) { return tr(a) + ' · betaling ' + n + ' av ' + o; }],
     [/^Loan: Pay back (.+)$/, 'Lån: Tilbakebetaling $1'],
+    [/^Pay (.+) back monthly$/, 'Betal $1 tilbake månedlig'],
+    [/^(.+) paid · your part (.+)$/, function (m, a, b) { return (a === 'You' ? 'Du' : a) + ' betalte · din del ' + b; }],
+    [/^You paid · your part (.+)$/, 'Du betalte · din del $1'],
+    [/^(.+) paid for (.+) – pay your part back a set amount each month\. It goes into your fixed costs, and each payment counts as paid to (.+)\.$/, '$1 betalte for $2 – betal din del tilbake med et fast beløp hver måned. Det går inn i de faste kostnadene, og hver betaling teller som betalt til $3.'],
     [/^Payment with (.+)$/, 'Betaling med $1'],
     [/^You’re all square\. Paid (.+) something ahead, or got money from them\? Add it here and it counts in what you owe each other\.$/, 'Dere er skuls. Har du betalt $1 noe på forskudd, eller fått penger fra dem? Legg det inn her, så teller det med i det dere skylder hverandre.'],
     [/^(.+)\. How much was paid\? Only part of it \(a down payment\)\? Type that amount – the rest stays owed\.$/, function (m, a) { return (/^You owe /.test(a) ? a.replace(/^You owe /, 'Du skylder ') : tr(a)) + '. Hvor mye ble betalt? Bare en del (et avdrag)? Skriv det beløpet – resten står fortsatt som gjeld.'; }],
@@ -1222,6 +1227,7 @@
     [/^On the home (\d{4})$/, 'På boligen $1'],
     [/^Nothing shared in (\S+) (\d{4})\. Bought something for the home together\? Add it with$/, 'Ingenting delt i $1 $2. Kjøpt noe til hjemmet sammen? Legg det inn med']
   );
+  P.unshift([/^Paying back (.+ kr) a month · (.+ kr) left$/, 'Betaler tilbake $1 i måneden · $2 igjen']);
   function tr(s) {
     var c = MEMO.get(s); if (c !== undefined) return c;
     var r = tr0(s);

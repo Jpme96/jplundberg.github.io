@@ -164,7 +164,7 @@
   function owePlans(pid) { var d = window.Vault.get() || {}; return (d.accounts || []).filter(function (a) { return a && a.kind === 'debt' && a.owe && (!pid || a.owe.pid === pid); }); }
   /* "I owe them – pay it back each month": how much you owe in all (anything new is noted as money they lent you),
      a monthly amount and the first payment day. It becomes a loan (so a fixed cost) and the payments count between you. */
-  function payBackSheet(pid, loanId) {
+  function payBackSheet(pid, loanId, pre) {
     var s = sh(), p = person(s, pid); if (!p) return;
     var d = window.Vault.get() || {}, a = loanId ? (d.accounts || []).filter(function (x) { return x.id === loanId && x.owe; })[0] : null, L = window.Loans;
     var owed = Math.max(0, -balance(s, pid)), left = a && L ? L.owedNow(a) : 0;
@@ -172,13 +172,13 @@
     var first = a ? (function () { var st = fromKey(a.asOf); var f1 = new Date(st.getFullYear(), st.getMonth() + 1, 1); f1.setDate(Math.min(+a.day || 1, new Date(f1.getFullYear(), f1.getMonth() + 1, 0).getDate())); return dkey(f1); })() : dkey(nx);
     var S = sheet('Pay back each month'), box = S.box;
     box.innerHTML = head('calendar2-check', 'Pay back ' + p.name + ' each month') +
-      (a ? '<p class="muted">' + esc(kr(left)) + ' left of ' + esc(kr(a.balance)) + '. Change the monthly amount or the day – payments already made stay.</p>'
+      (pre && !a ? '<p class="muted">' + esc(p.name) + ' paid for ' + esc(pre.note || 'it') + ' – pay your part back a set amount each month. It goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>' : a ? '<p class="muted">' + esc(kr(left)) + ' left of ' + esc(kr(a.balance)) + '. Change the monthly amount or the day – payments already made stay.</p>'
         : '<p class="muted">' + (owed >= 1 ? 'You owe ' + esc(p.name) + ' ' + esc(kr(owed)) + ' now.' : 'You don’t owe ' + esc(p.name) + ' anything yet.') + ' Type what you owe in all – if it’s more, the difference is noted as money ' + esc(p.name) + ' lent you. The monthly amount goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>') +
       '<div class="mp-grid">' +
-        (a ? '' : '<label><span>You owe in all, kr</span><input name="total" inputmode="decimal" value="' + (owed >= 1 ? esc(String(Math.round(owed))) : '') + '" placeholder="e.g. 50 000" autocomplete="off"></label>') +
+        (a ? '' : '<label><span>' + (pre ? 'Your part to pay back, kr' : 'You owe in all, kr') + '</span><input name="total" inputmode="decimal" value="' + (pre && pre.total > 0 ? esc(String(Math.round(pre.total))) : owed >= 1 ? esc(String(Math.round(owed))) : '') + '" placeholder="e.g. 50 000" autocomplete="off"></label>') +
         '<label><span>Each month, kr</span><input name="pay" inputmode="decimal" value="' + (a ? esc(String(a.pay)) : '') + '" placeholder="e.g. 2 000" autocomplete="off"></label>' +
         '<label><span>First payment</span><input name="first" type="date" value="' + esc(first) + '"></label>' +
-        (a ? '' : '<label><span>What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" autocomplete="off"></label>') +
+        (a ? '' : '<label><span>What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" value="' + esc(pre && pre.note || '') + '" autocomplete="off"></label>') +
       '</div><p class="mp-prev" id="pbPrev"></p>' +
       '<div class="lf-foot">' + (a ? '<button type="button" class="text-btn danger" data-pbstop><i class="bi bi-stop-circle"></i> Stop</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-pbsave><i class="bi bi-check2"></i> Save</button></div>';
     function vals() { return { total: a ? +a.balance : num((box.querySelector('[name="total"]') || {}).value), pay: num(box.querySelector('[name="pay"]').value), first: box.querySelector('[name="first"]').value }; }
@@ -215,8 +215,9 @@
         d2.accounts.forEach(function (x) { if (x.id !== a.id) return; x.balance = Math.round(left * 100) / 100; x.pay = Math.round(v.pay); x.day = f.getDate(); x.asOf = dkey(asOf); delete x.extra; });
       } else {
         var extra = v.total - owed, note = (box.querySelector('[name="note"]').value || '').trim();
+        if (pre) extra = 0;   /* your part of something they paid is already owed – nothing new lent */
         if (extra > 0.5) { var s4 = sh(); s4.pays.push({ id: uid(), date: dkey(new Date()), from: pid, to: 'me', amount: Math.round(extra * 100) / 100, note: note || 'Lent to you', lend: true }); saveSh(s4); }
-        d2.accounts.push({ id: 'ow' + uid(), kind: 'debt', name: ('Pay back ' + p.name + (note ? ' – ' + note : '')).slice(0, 60), balance: Math.round(v.total * 100) / 100, orig: Math.round(v.total * 100) / 100, rate: 0, pay: Math.round(v.pay), fee: 0, day: f.getDate(), asOf: dkey(asOf), from: 'salary', fixed: true, owe: { pid: pid } });
+        d2.accounts.push({ id: 'ow' + uid(), kind: 'debt', name: ('Pay back ' + p.name + (note ? ' – ' + note : '')).slice(0, 60), balance: Math.round(v.total * 100) / 100, orig: Math.round(v.total * 100) / 100, rate: 0, pay: Math.round(v.pay), fee: 0, day: f.getDate(), asOf: dkey(asOf), from: 'salary', fixed: true, owe: pre && pre.inv ? { pid: pid, inv: pre.inv } : { pid: pid } });
       }
       window.Vault.save(d2);
       if (window.Links && window.Links.syncLoans) window.Links.syncLoans();

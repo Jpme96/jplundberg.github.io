@@ -3173,7 +3173,7 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .hw-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; } .hw-sw.cur { background: #c98500; } .hw-sw.prev { background: rgba(var(--ink-rgb), .2); }
 .hp4-card .kit-tiles .up { color: #22b35e; } .hp4-card .kit-tiles .dn { color: #e8743b; }
 .inv-ph { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
-.inv-split { margin: 6px 0 0; }
+.inv-split { margin: 6px 0 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; } .inv-split .muted { font-size: 13px; }
 .inv-slot { display: grid; gap: 4px; justify-items: start; }
 .inv-slot img, .inv-none { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: rgba(var(--ink-rgb), .05); border: 1px solid var(--line); }
 .inv-none { display: grid; place-items: center; color: var(--muted); font-size: 22px; }

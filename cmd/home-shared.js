@@ -659,6 +659,20 @@
     if (it) { S().split(it); return; }
     buySheet(null, { note: inv.name, price: inv.price, date: inv.bought && /^\d{4}-\d{2}-\d{2}$/.test(inv.bought) ? inv.bought : '', pct: inv.ownPct != null && inv.ownPct !== '' ? inv.ownPct : null, inv: invId });
   }
+  /* for the inventory row: is it linked to a purchase, who paid, your part, and any pay-back plan for it */
+  function invInfo(invId) {
+    var inv = (Fe.tools().hinv || []).filter(function (x) { return x.id === invId; })[0], p = partner(); if (!inv || !p || !S()) return null;
+    var items = S().data().items, it = items.filter(function (x) { return x.id === inv.shared; })[0] || (!inv.shared ? items.filter(function (x) { return x.home && x.note === inv.name; })[0] : null);
+    var ow = (S().owePlans ? S().owePlans(p.id) : []).filter(function (a) { return a.owe.inv === invId; })[0], L = window.Loans;
+    return { p: p, item: it || null, theyPaid: !!(it && it.payer === p.id), mine: it ? +(it.shares || {}).me || 0 : 0, owe: ow ? { id: ow.id, left: L ? L.owedNow(ow) : +ow.balance, pay: +ow.pay } : null };
+  }
+  function payBackInv(invId) {
+    var i = invInfo(invId); if (!i) return;
+    if (i.owe) { S().payBack(i.p.id, i.owe.id); return; }
+    var inv = (Fe.tools().hinv || []).filter(function (x) { return x.id === invId; })[0];
+    var owed = Math.max(0, -S().balance(i.p.id));
+    S().payBack(i.p.id, null, { total: Math.min(i.mine, owed || i.mine), note: inv.name, inv: invId });
+  }
   function goShared() { var t = document.querySelector('[data-ptab-go="shared"]'); if (t) t.click(); var c = document.getElementById('hshared'); if (c) setTimeout(function () { c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 120); }
-  window.SharedHome = { forInv: forInv, add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
+  window.SharedHome = { forInv: forInv, invInfo: invInfo, payBackInv: payBackInv, add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
 })();
