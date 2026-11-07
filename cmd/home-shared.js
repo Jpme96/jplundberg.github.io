@@ -117,7 +117,7 @@
       '</div>' +
       '<div class="hs2-acts">' + (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn sm" data-hs2settle><i class="bi bi-cash-coin"></i> Settle up</button>' : '') +
         '<button type="button" class="text-btn" data-hs2settle><i class="bi bi-arrow-left-right"></i> Payment</button>' +
-        (b <= -1 && !S().owePlans(p.id).length ? '<button type="button" class="text-btn" data-hs2pb><i class="bi bi-calendar2-check"></i> Pay back monthly</button>' : '') +
+        ((S().sides ? S().sides(p.id).you : -b) >= 1 && !S().owePlans(p.id).length ? '<button type="button" class="text-btn" data-hs2pb><i class="bi bi-calendar2-check"></i> Pay back monthly</button>' : '') +
         '<button type="button" class="text-btn" data-hs2hist><i class="bi bi-clock-history"></i> History</button>' +
         (Math.abs(b) >= 1 ? '<button type="button" class="text-btn" data-hs2msg><i class="bi bi-chat-text"></i> Send a reminder</button>' : '') + '</div>' + paybackLine(p, led);
     body += oweSection(p) + coveredSection(p, led) + runSection(p, st);
@@ -686,7 +686,7 @@
     var i = invInfo(invId); if (!i) return;
     if (i.owe) { S().payBack(i.p.id, i.owe.id); return; }
     var inv = (Fe.tools().hinv || []).filter(function (x) { return x.id === invId; })[0];
-    var owed = Math.max(0, -S().balance(i.p.id));
+    var owed = Math.max(0, S().sides ? S().sides(i.p.id).you : -S().balance(i.p.id));
     S().payBack(i.p.id, null, { total: Math.min(i.mine, owed || i.mine), note: inv.name, inv: invId });
   }
   function goShared() { var t = document.querySelector('[data-ptab-go="shared"]'); if (t) t.click(); var c = document.getElementById('hshared'); if (c) setTimeout(function () { c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 120); }

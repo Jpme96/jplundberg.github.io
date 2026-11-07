@@ -184,7 +184,8 @@
   function payBackSheet(pid, loanId, pre) {
     var s = sh(), p = person(s, pid); if (!p) return;
     var d = window.Vault.get() || {}, a = loanId ? (d.accounts || []).filter(function (x) { return x.id === loanId && x.owe; })[0] : null, L = window.Loans;
-    var owed = Math.max(0, -balance(s, pid)), left = a && L ? L.owedNow(a) : 0;
+    /* only what you owe them – what they owe you is kept apart and isn't taken off (Shared home shows both sides) */
+    var owed = Math.max(0, sides(pid).you), left = a && L ? L.owedNow(a) : 0;
     var nx = new Date(); nx = new Date(nx.getFullYear(), nx.getMonth() + 1, 1);
     var first = a ? (function () { var st = fromKey(a.asOf); var f1 = new Date(st.getFullYear(), st.getMonth() + 1, 1); f1.setDate(Math.min(+a.day || 1, new Date(f1.getFullYear(), f1.getMonth() + 1, 0).getDate())); return dkey(f1); })() : dkey(nx);
     var S = sheet('Pay back each month'), box = S.box;
