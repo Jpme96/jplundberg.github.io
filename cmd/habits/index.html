@@ -511,7 +511,13 @@
           <ol>
             <li>Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
             <li><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
-            <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Asleep</b>, <b>Value is not Awake</b> and <b>Value is not In Bed</b> (keeps the Watch's Core, Deep and REM, so a night isn't counted twice). No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>. Limit off. Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
+            <li><b>Sleep</b> (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):
+              <ol type="a">
+                <li><b>Adjust Date</b>: Subtract <b>24 hours</b> from <b>Current Date</b>.</li>
+                <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Awake</b>, <b>is not In Bed</b>, <b>is not Asleep</b> (keeps the Watch’s Core, Deep and REM, so nothing is counted twice). Limit off. No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>.</li>
+                <li><b>Repeat with Each</b> item in Health Samples → <b>If</b> Repeat Item’s Start Date <b>is after</b> Adjusted Date → <b>Get Minutes between</b> Repeat Item’s Start Date and End Date → <b>Otherwise</b> → <b>Number</b> 0 → End If → End Repeat.</li>
+                <li><b>Calculate Statistics</b> → Sum of Repeat Results, renamed <i>Sleep sum</i>. That’s minutes – the dashboard turns it into hours.</li>
+              </ol></li>
             <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
             <li><b>More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
               <div class="ah-keys">
@@ -685,7 +691,7 @@
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=fcbd19a60e"></script>
   <script src="../dist/page-habits.js?v=23093fcecf"></script>
-  <script src="../dist/tail.js?v=1db7f564fd"></script>
+  <script src="../dist/tail.js?v=c62f516868"></script>
   <!-- /scripts -->
 </body>
 </html>
