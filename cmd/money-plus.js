@@ -161,6 +161,23 @@
     });
     return out.sort(function (x, y) { return x.date < y.date ? -1 : 1; });
   }
+  /* both sides kept apart: what they owe you (their part of what you paid, less what they've paid back) and what you
+     owe them (your part of what they paid and money they lent you, less what you've paid). net = theirs − yours = balance */
+  function sides(pid) {
+    var s = sh(), they = 0, you = 0;
+    s.items.forEach(function (x) { var q = x.shares || {}; if (x.payer === 'me') they += +q[pid] || 0; else if (x.payer === pid) you += +q.me || 0; });
+    planPays(null, pid).forEach(function (x) { if (x.payer === 'me') they += x.them; else if (x.payer === pid) you += x.mine; });
+    billClaims(null, pid).forEach(function (x) { if (x.payer === 'me') they += x.them; else if (x.payer === pid) you += x.mine; });
+    s.pays.forEach(function (p) {
+      if (p.from === pid && p.to === 'me') { if (p.lend) you += +p.amount || 0; else they -= +p.amount || 0; }
+      if (p.from === 'me' && p.to === pid) you -= +p.amount || 0;
+    });
+    owePays(null, pid).forEach(function (x) { you -= x.amount; });
+    /* paid back more than owed one way: the rest counts on the other side */
+    if (they < 0) { you -= they; they = 0; } if (you < 0) { they -= you; you = 0; }
+    var r = function (v) { return Math.round(v * 100) / 100; };
+    return { they: r(they), you: r(you), net: r(they - you) };
+  }
   function owePlans(pid) { var d = window.Vault.get() || {}; return (d.accounts || []).filter(function (a) { return a && a.kind === 'debt' && a.owe && (!pid || a.owe.pid === pid); }); }
   /* "I owe them – pay it back each month": how much you owe in all (anything new is noted as money they lent you),
      a monthly amount and the first payment day. It becomes a loan (so a fixed cost) and the payments count between you. */
@@ -604,7 +621,7 @@
 
   window.MoneyPlus = { detect: detect, addAs: addAs, setIgnore: setIgnore, balance: function (pid) { return balance(sh(), pid); }, ignored: ignored, cfg: cfg, split: splitSheet };
   /* the shared-expenses engine, for the House page's “Shared home” card and Quick add (one set of data, one balance) */
-  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, owePays: owePays, owePlans: owePlans, payBack: payBackSheet, monthsFor: monthsFor, billClaims: billClaims, ledger: ledger, person: function (id) { return person(sh(), id); },
+  window.Shared = { data: sh, save: saveSh, balance: function (pid) { return balance(sh(), pid); }, planPays: planPays, sides: function (pid) { return sides(pid); }, owePays: owePays, owePlans: owePlans, payBack: payBackSheet, monthsFor: monthsFor, billClaims: billClaims, ledger: ledger, person: function (id) { return person(sh(), id); },
     split: splitSheet, settle: settleSheet, history: personSheet, message: share, saveItem: save, removeItem: remove, cfg: cfg, setCfg: setCfg,
     partner: function () { var c = cfg(), s = sh(); return (c.partner && person(s, c.partner)) || null; } };
 })();

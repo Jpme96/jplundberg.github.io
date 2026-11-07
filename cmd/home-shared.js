@@ -105,7 +105,12 @@
     var planLeft = pl.reduce(function (a, x) { return a + (L ? L.owedNow(x) : 0); }, 0);
     var bal = b >= 1 ? esc(p.name) + ' owes you' : b <= -1 ? 'You owe ' + esc(p.name) : 'Between you';
     var body = '<div class="kit-tiles">' +
-        tile(bal, Math.abs(b) >= 1 ? money(Math.abs(b), b >= 1 ? 'mp-pos' : 'mp-neg') : 'All square', Math.abs(b) >= 1 ? 'everything so far' : 'nothing to settle', 'balance') +
+        (function () {
+          var sd = S().sides ? S().sides(p.id) : { they: Math.max(0, b), you: Math.max(0, -b), net: b };
+          return tile(esc(p.name) + ' owes you', sd.they >= 1 ? money(sd.they, 'mp-pos') : '0 kr', 'their part of what you paid', 'they') +
+            tile('You owe ' + esc(p.name), sd.you >= 1 ? money(sd.you, 'mp-neg') : '0 kr', 'your part of what they paid', 'you') +
+            tile('In total', Math.abs(b) >= 1 ? money(Math.abs(b), b >= 1 ? 'mp-pos' : 'mp-neg') : 'All square', Math.abs(b) >= 1 ? (b >= 1 ? 'you’re in plus · ' + esc(p.name) + ' sends you this' : 'you’re in minus · you send ' + esc(p.name) + ' this') : 'nothing to settle', 'balance');
+        })() +
         tile('This month', money(cur.total), 'together · your part ' + esc(kr(cur.mine)), 'month') +
         tile('On the home ' + yr, money(yearHome), 'together' + (yearAll > yearHome ? ' · ' + esc(kr(yearAll)) + ' shared in all' : ''), 'year') +
         (pl.length ? tile('Bought in parts', money(planLeft), 'left on ' + pl.length + ' plan' + (pl.length === 1 ? '' : 's'), 'parts') : '') +

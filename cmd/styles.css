@@ -4650,3 +4650,4 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .nw-rules { margin: 8px 0 4px; }
 .nw-rule { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 6px; align-items: center; margin-bottom: 6px; }
 .nw-rule input[hidden] { display: none; } .nw-rule:has(input[hidden]) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 36px; }
+@media (max-width: 700px) { .hs2 .kit-tiles > .kit-tile[data-tk="balance"] { grid-column: 1 / -1; } }
