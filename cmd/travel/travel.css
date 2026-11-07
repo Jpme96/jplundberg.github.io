@@ -140,8 +140,7 @@
 .tv-nx .s { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tv-nx .s .bi-signpost-split { color: var(--accent); }
 
-.tv-tabs { display: flex; width: 100%; max-width: 420px; margin-bottom: 18px; }
-.tv-tabs button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 10px; }
+.tv-tabs { margin-bottom: 18px; }
 .tv-count:not(:empty) {
   min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--on-accent);
   font-size: 11px; font-weight: 700; display: inline-grid; place-items: center;
@@ -276,7 +275,6 @@
 .tp-budget-row { padding: 0 14px; }
 
 /* ================= trip sections ================= */
-.tv-tabs { max-width: 520px; }
 .tp-tabs { display: flex; width: 100%; max-width: 560px; margin: 0 0 14px; overflow-x: auto; scrollbar-width: none; }
 .tp-tabs::-webkit-scrollbar { display: none; }
 .tp-tabs button { flex: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; }

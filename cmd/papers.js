@@ -2,8 +2,8 @@
    work papers, ID, car, health and tax – each with its PDF or photos, who it's with, a reference number,
    and a reminder before it expires or renews (At a glance + the calendar).
    The details (title, dates, notes) are in dash.tools.papers – synced and encrypted like everything else.
-   The FILES stay on this device (IndexedDB "dash-papers"), so the page shows which papers have their
-   file here and which were added on another phone or computer. Receipts on Home inventory items,
+   The FILES are kept on the device (IndexedDB "dash-papers") and synced encrypted to your other devices
+   through the Worker (filesync.js); the page shows what is synced and what is still on its way. Receipts on Home inventory items,
    warranties and travel documents keep living where they are; the page links to them. */
 (function () {
   "use strict";
@@ -40,12 +40,14 @@
     ['Home insurance (innbo)', 'insurance', 'renews'], ['Mortgage agreement', 'loan', ''], ['Work contract', 'work', ''],
     ['Car insurance', 'insurance', 'renews'], ['Travel insurance', 'insurance', 'renews'], ['Tax return (skattemelding)', 'tax', ''], ['Will or power of attorney', 'other', '']];
 
-  /* ---------- the files: on this device only ---------- */
+  /* ---------- the files: kept on the device, synced (encrypted) through filesync.js ---------- */
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-papers', 1); r.onupgradeneeded = function () { r.result.createObjectStore('files'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })); }
   function putF(id, blob) { return db().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(blob, id); t.oncomplete = res; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); }; }); }); }
-  function getF(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
-  function delF(id) { return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
+  function getF(id) { return localF(id).then(function (b) { if (b || !window.FileSync) return b; return window.FileSync.down(id).then(function (nb) { if (nb) putF(id, nb).then(soonHere); return nb; }); }); }
+  function soonHere() { clearTimeout(soonHere.t); soonHere.t = setTimeout(loadHere, 200); }
+  function localF(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
+  function delF(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
   function allKeys() { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').getAllKeys(); q.onsuccess = function () { res(q.result || []); }; q.onerror = function () { res([]); }; }); }).catch(function () { return []; }); }
   var here = null;                         // file ids on this device (null until read)
   function loadHere() { return allKeys().then(function (k) { var n = {}; k.forEach(function (x) { n[x] = 1; }); var ch = JSON.stringify(n) !== JSON.stringify(here); here = n; if (ch) redraw(); }); }
@@ -66,7 +68,7 @@
         if (pdf && f.size > 15e6) { bad.push(f.name + ' (over 15 MB)'); return; }
         if (!pdf && !/^image\//.test(f.type || '') && !/\.(heic|heif|jpe?g|png|webp)$/i.test(f.name || '')) { bad.push(f.name + ' (not a PDF or photo)'); return; }
         var id = 'pp-' + uid();
-        return (pdf ? Promise.resolve(f) : shrink(f)).then(function (b) { return putF(id, b).then(function () { out.push({ id: id, name: f.name || (pdf ? 'Document.pdf' : 'Photo.jpg'), type: pdf ? 'pdf' : 'img', size: b.size, at: today() }); }); })
+        return (pdf ? Promise.resolve(f) : shrink(f)).then(function (b) { return putF(id, b).then(function () { if (window.FileSync) window.FileSync.up(id, b); out.push({ id: id, name: f.name || (pdf ? 'Document.pdf' : 'Photo.jpg'), type: pdf ? 'pdf' : 'img', size: b.size, at: today() }); }); })
           .catch(function () { bad.push(f.name + ' (couldn’t read it)'); });
       });
     }, Promise.resolve()).then(function () { askKeep(); return { files: out, bad: bad }; });
@@ -133,7 +135,7 @@
       storeFiles(files).then(function (r) {
         var t = Fe.tools(); (t.papers || []).forEach(function (x) { if (x.id === id) x.files = (x.files || []).concat(r.files); }); Fe.saveTools(t);
         loadHere();
-        if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved on this device');
+        if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved' + (syncs() ? ' – syncing to your other devices' : ' on this device'));
         if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> Not added: ' + esc(r.bad.join(', ')));
       });
     },
@@ -147,7 +149,7 @@
     var box = document.createElement('div'); box.className = 'cl-group pa-pick';
     var n = item && item.files ? item.files.length : 0;
     box.innerHTML = '<label class="st-row kit-row"><span>' + (n ? 'Add more files' : 'File') + '</span><span class="pa-pickbtn"><i class="bi bi-paperclip"></i> <span data-papickt>' + (n ? n + ' saved · add' : 'PDF or photos') + '</span></span>' +
-      '<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-papick></label><small class="kit-help">Kept on this device only – PDF up to 15 MB, photos are made smaller.</small>';
+      '<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-papick></label><small class="kit-help">' + (syncs() ? 'Encrypted and synced to your other devices' : 'Kept on this device') + ' – PDF up to 15 MB, photos are made smaller.</small>';
     var anchor = document.getElementById('kf-kind'); anchor = anchor && anchor.closest('.cl-group');
     if (anchor && anchor.nextSibling) anchor.parentNode.insertBefore(box, anchor.nextSibling); else t.parentNode.appendChild(box);
     box.querySelector('[data-papick]').addEventListener('change', function (e) {
@@ -161,6 +163,8 @@
     if (sa && sb && sa.date !== sb.date) return sa.date < sb.date ? -1 : 1;
     return String(a.title || '').localeCompare(String(b.title || ''), 'nb');
   }
+  function syncs() { return !!window.FileSync && window.FileSync.state().ok !== false; }
+  function onServer(id) { var st = window.FileSync && window.FileSync.state(); return !!(st && st.server && id in st.server); }
   function missing(x) { return here ? (x.files || []).filter(function (f) { return !here[f.id]; }).length : 0; }
   var filt = 'all';
   try { filt = sessionStorage.getItem('dash.paFilt') || 'all'; } catch (e) {}
@@ -181,15 +185,21 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + (l.length ? 'Also worth keeping' : 'Start with') + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
-      var files = l.reduce(function (a, x) { return a + (x.files || []).length; }, 0), miss = l.reduce(function (a, x) { return a + missing(x); }, 0);
-      if (files) h += '<p class="pa-note"><span><i class="bi bi-' + (miss ? 'cloud-slash' : 'phone') + '"></i> ' + (miss ? '<b>' + (files - miss) + ' of ' + files + ' files</b> are on this device – ' + miss + ' ' + (miss === 1 ? 'was' : 'were') + ' added on another phone or computer. ' : '<b>All ' + files + ' files</b> are on this device. ') + 'The details sync, the files don’t.</span>' +
+      var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
+      l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
+      var msg;
+      if (!fs || fs.ok === false) msg = '<i class="bi bi-' + (miss ? 'cloud-slash' : 'phone') + '"></i> ' + (miss ? '<b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' : '<b>All ' + files + ' files</b> are on this device. ') + (fs && fs.ok === false ? 'To sync them to your other devices, paste the new <b>worker.js</b> in Cloudflare.' : 'The details sync, the files don’t.');
+      else if (fs.ok && !miss && !wait) msg = '<i class="bi bi-cloud-check"></i> <b>All ' + files + ' files</b> are synced, encrypted, and on this device.';
+      else if (fs.ok) msg = '<i class="bi bi-arrow-repeat"></i> <b>' + onSrv + ' of ' + files + ' files</b> synced' + (wait ? ' · ' + wait + ' uploading' : '') + (miss ? ' · ' + miss + ' only on the phone or computer ' + (miss === 1 ? 'it was' : 'they were') + ' added on – open Papers there once' : '') + '.';
+      else msg = '<i class="bi bi-phone"></i> <b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' + (fs.error === 'offline' ? 'They sync when you’re online.' : 'Syncing …');
+      if (files) h += '<p class="pa-note"><span>' + msg + '</span>' +
         (kept === false ? ' <button type="button" class="text-btn" data-pakeep>Ask the browser to keep them</button>' : kept ? ' The browser has been asked to keep them.' : '') + '</p>';
       return h;
     },
     row: function (x) {
       var k = kind(x.kind), s = status(x), n = (x.files || []).length, m = missing(x);
       var sub = [x.who, s ? s.text : '', x.ref ? 'no. ' + x.ref : ''].filter(Boolean).map(esc).join(' · ');
-      sub += n ? ' <span class="pa-fc' + (m ? ' miss' : '') + '" title="' + (m ? m + ' not on this device' : 'On this device') + '"><i class="bi bi-' + (m === n ? 'cloud-slash' : 'paperclip') + '"></i>' + n + '</span>' : ' <span class="pa-fc none"><i class="bi bi-paperclip"></i>no file</span>';
+      sub += n ? ' <span class="pa-fc' + (m ? ' miss' : '') + '" title="' + (m ? m + ' not on this device yet' : 'On this device') + '"><i class="bi bi-' + (m === n ? 'cloud-arrow-down' : 'paperclip') + '"></i>' + n + '</span>' : ' <span class="pa-fc none"><i class="bi bi-paperclip"></i>no file</span>';
       var right = s && (s.soon || s.over) ? '<span class="pa-due' + (s.over && x.dateKind !== 'renews' ? ' over' : s.n <= 7 ? ' near' : '') + '">' + esc(s.rel) + '</span>' : '';
       return { icon: k[2], color: k[3], title: x.title, sub: sub, right: right, cls: 'pa-k-' + (x.kind || 'other') };
     },
@@ -206,7 +216,7 @@
           var hereNow = !here || here[f.id];
           return '<li data-paf="' + esc(f.id) + '"' + (hereNow ? '' : ' class="gone"') + '>' +
             (f.type === 'img' && hereNow ? '<img data-paimg="' + esc(f.id) + '" alt="">' : '<i class="bi bi-' + (f.type === 'pdf' ? 'file-earmark-pdf' : 'image') + '"></i>') +
-            '<a class="pa-fn" target="_blank" rel="noopener" data-paopen="' + esc(f.id) + '"><b>' + esc(f.name) + '</b><small>' + (hereNow ? esc(size(f.size || 0)) + ' · added ' + esc(fmt(f.at)) : 'On another device – add it here too to open it') + '</small></a>' +
+            '<a class="pa-fn" target="_blank" rel="noopener" data-paopen="' + esc(f.id) + '"><b>' + esc(f.name) + '</b><small>' + (hereNow ? esc(size(f.size || 0)) + ' · added ' + esc(fmt(f.at)) : onServer(f.id) ? 'Downloading …' : 'Only on the device it was added on – open Papers there once to sync it') + '</small></a>' +
             (hereNow ? '<a class="icon-btn" data-padl="' + esc(f.id) + '" download="' + esc(f.name) + '" aria-label="Save a copy" title="Save a copy"><i class="bi bi-download"></i></a>' : '') +
             '<button type="button" class="icon-btn" data-pafdel="' + esc(x.id + '|' + f.id) + '" aria-label="Remove file" title="Remove file"><i class="bi bi-x-lg"></i></button></li>';
         }).join('') + '</ul>' +
@@ -226,7 +236,7 @@
       if ((b = e.target.closest('[data-pafilt]'))) { filt = b.dataset.pafilt; try { sessionStorage.setItem('dash.paFilt', filt); } catch (x) {} render(); return; }
       if ((b = e.target.closest('[data-pasug]'))) { var c = COMMON.filter(function (x) { return x[0] === b.dataset.pasug; })[0]; editSheet(null, c); return; }
       if (e.target.closest('[data-pakeep]')) { askKeep(); setTimeout(function () { if (kept === false) toast('The browser said no for now – it usually agrees once the dashboard is on your home screen'); }, 600); return; }
-      if ((b = e.target.closest('[data-paopen]')) && !b.getAttribute('href')) { e.preventDefault(); toast('That file isn’t on this device'); return; }
+      if ((b = e.target.closest('[data-paopen]')) && !b.getAttribute('href')) { e.preventDefault(); toast(onServer(b.dataset.paopen) ? 'Downloading – try again in a moment' : 'That file is only on the device it was added on'); return; }
       if ((b = e.target.closest('[data-pafdel]'))) {
         if (!b.classList.contains('armed')) { b.classList.add('armed'); b.setAttribute('aria-label', 'Tap again to remove'); b.innerHTML = '<i class="bi bi-trash3"></i>'; setTimeout(function () { b.classList.remove('armed'); }, 3000); return; }
         var q = b.dataset.pafdel.split('|'), t = Fe.tools();
@@ -248,7 +258,7 @@
     storeFiles(files).then(function (r) {
       var t = Fe.tools(); (t.papers || []).forEach(function (x) { if (x.id === id) x.files = (x.files || []).concat(r.files); }); Fe.saveTools(t);
       loadHere();
-      if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved on this device');
+      if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved' + (syncs() ? ' – syncing to your other devices' : ' on this device'));
       if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> Not added: ' + esc(r.bad.join(', ')));
     });
   });
@@ -311,9 +321,17 @@
   window.Vault.onUnlock(function () {
     setTimeout(function () {
       drawSoon(); drawElse(); drawTiles();
-      if (IS_PAGE) { loadHere(); keepState(); if (location.hash === '#add' && on() && col) { history.replaceState(null, '', location.pathname); editSheet(null); } }
+      if (IS_PAGE) { loadHere().then(syncAll); keepState(); if (location.hash === '#add' && on() && col) { history.replaceState(null, '', location.pathname); editSheet(null); } }
     }, 60);
   });
+
+  /* ---------- sync the files on this page: up what only this device has, down what's missing here ---------- */
+  function syncAll() {
+    if (!window.FileSync || !on()) return;
+    var ids = []; Fe.list('papers').forEach(function (x) { (x.files || []).forEach(function (f) { ids.push(f.id); }); });
+    window.FileSync.sync({ ids: ids, getLocal: localF, putLocal: putF, download: true }).then(loadHere);
+  }
+  if (IS_PAGE) window.addEventListener('filesync:change', function () { clearTimeout(syncAll.t); syncAll.t = setTimeout(function () { if (col) col.render(); }, 250); });
 
   /* ---------- At a glance: before a paper expires or renews ---------- */
   window.BriefExtra = window.BriefExtra || [];

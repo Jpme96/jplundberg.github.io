@@ -3811,13 +3811,13 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .fin-hidden #scIllu text, .fin-hidden #scIllu figcaption a, .fin-hidden .mo-big, .fin-hidden [data-money] { filter: blur(7px); }
 
 /* ---------- Finances in four views (finance/fin-plan.js) ---------- */
-.fp-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 4px; margin: 4px 0 16px; border-radius: 14px; background: rgba(var(--ink-rgb), .07); }
+.fp-tabs { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 3px; padding: 4px; margin: 4px 0 16px; border-radius: 14px; background: rgba(var(--ink-rgb), .07); }
 .fp-tabs button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; padding: 8px 4px; border: 0; border-radius: 11px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s; }
 .fp-tabs button .bi { font-size: 17px; }
 .fp-tabs button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fp-tabs button[aria-selected="true"] { background: var(--bg-solid); color: var(--heading); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
 .fp-tabs button[aria-selected="true"] .bi { color: var(--accent); }
-@media (min-width: 640px) { .fp-tabs { display: inline-grid; grid-template-columns: repeat(4, auto); } .fp-tabs button { flex-direction: row; gap: 7px; padding: 8px 16px; font-size: 14px; } .fp-tabs button .bi { font-size: 15px; } }
+@media (min-width: 640px) { .fp-tabs { display: inline-grid; grid-template-columns: repeat(var(--n, 4), auto); } .fp-tabs button { flex-direction: row; gap: 7px; padding: 8px 16px; font-size: 14px; } .fp-tabs button .bi { font-size: 15px; } }
 #fp:not(.fp-all)[data-tab] [data-ftab] { display: none; }
 #fp:not(.fp-all)[data-tab="now"] [data-ftab="now"], #fp:not(.fp-all)[data-tab="tx"] [data-ftab="tx"],
 #fp:not(.fp-all)[data-tab="insights"] [data-ftab="insights"], #fp:not(.fp-all)[data-tab="setup"] [data-ftab="setup"] { display: revert; }

@@ -6,7 +6,7 @@
                          for the insurance company (PDF / CSV).
      House picture     – a small drawing at the top of the House page that lights up what's due.
    Data in dash.tools: hseason ({'2026-autumn': {itemId: date}}), hseasonx (your own items),
-   hseasonoff (usual items you've removed), hinv (inventory). Inventory photos stay on this device
+   hseasonoff (usual items you've removed), hinv (inventory). Inventory photos are kept on the device and synced encrypted (filesync.js)
    (IndexedDB "dash-inv"). */
 (function () {
   "use strict";
@@ -154,9 +154,20 @@
   /* ======================= Home inventory ======================= */
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-inv', 1); r.onupgradeneeded = function () { r.result.createObjectStore('photos'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })); }
-  function putPh(id, blob) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, id); t.oncomplete = res; }); }); }
-  function getPh(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
-  function delPh(id) { return db().then(function (d) { d.transaction('photos', 'readwrite').objectStore('photos').delete(id); }).catch(function () {}); }
+  /* photos and receipts are kept on the device and synced (encrypted) to your other devices – filesync.js */
+  function keepPh(id, blob) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, id); t.oncomplete = res; }); }); }
+  function putPh(id, blob) { return keepPh(id, blob).then(function () { if (window.FileSync) window.FileSync.up(id, blob); }); }
+  function localPh(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
+  function getPh(id) { return localPh(id).then(function (b) { if (b || !window.FileSync) return b; return window.FileSync.down(id).then(function (nb) { if (nb) keepPh(id, nb); return nb; }); }); }
+  function delPh(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('photos', 'readwrite').objectStore('photos').delete(id); }).catch(function () {}); }
+  /* on the House page: send up the photos and receipts only this device has (others come when shown) */
+  if (/\/cmd\/house\/$/.test(location.pathname.replace(/index\.html$/, ''))) window.Vault.onUnlock(function () {
+    setTimeout(function () {
+      if (!window.FileSync || !Fe.on('house')) return;
+      var ids = []; Fe.list('hinv').forEach(function (x) { if (x.photo) ids.push(x.photo); if (x.receipt) ids.push(x.receipt); });
+      if (ids.length) window.FileSync.sync({ ids: ids, getLocal: localPh, putLocal: keepPh, download: false });
+    }, 1500);
+  });
   function shrink(file) {
     return new Promise(function (res, rej) {
       var img = new Image(); img.onload = function () { var s = Math.min(1, 1400 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); c.toBlob(function (b) { b ? res(b) : rej(); }, 'image/jpeg', .82); URL.revokeObjectURL(img.src); };
@@ -206,7 +217,7 @@
       }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '');
     },
     afterRender: function (el) {
-      el.querySelectorAll('a[data-invpdfopen]').forEach(function (a) { getPh(a.dataset.invpdfopen).then(function (b) { if (b) a.href = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'application/pdf' })); else a.querySelector('span').textContent = 'PDF receipt saved on another device'; }); });
+      el.querySelectorAll('a[data-invpdfopen]').forEach(function (a) { getPh(a.dataset.invpdfopen).then(function (b) { if (b) a.href = URL.createObjectURL(b.type ? b : new Blob([b], { type: 'application/pdf' })); else a.querySelector('span').textContent = 'PDF receipt isn’t on this device yet'; }); });
       el.querySelectorAll('img[data-invimg]').forEach(function (im) { getPh(im.dataset.invimg).then(function (b) { if (b) im.src = URL.createObjectURL(b); }); }); },
     onClick: function (e) {
       if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register(); }
@@ -221,7 +232,7 @@
     (isPdf ? Promise.resolve(file) : shrink(file)).then(function (b) { return putPh(pid, b); }).then(function () {
       if (it[q[1]]) delPh(it[q[1]]);
       var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) { x[q[1]] = pid; if (q[1] === 'receipt') { if (isPdf) x.receiptPdf = 1; else delete x.receiptPdf; } } }); Fe.saveTools(t);
-      toast('<i class="bi bi-check2"></i> ' + (q[1] === 'photo' ? 'Photo' : isPdf ? 'PDF receipt' : 'Receipt') + ' saved on this device');
+      toast('<i class="bi bi-check2"></i> ' + (q[1] === 'photo' ? 'Photo' : isPdf ? 'PDF receipt' : 'Receipt') + ' saved' + (window.FileSync && window.FileSync.state().ok !== false ? ' – syncing to your other devices' : ' on this device'));
     }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> Couldn’t read that file – a photo (JPG, PNG, HEIC) or a PDF works'); });
     i.value = '';
   });

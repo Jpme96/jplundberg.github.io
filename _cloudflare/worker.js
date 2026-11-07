@@ -73,7 +73,7 @@ export default {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -96,6 +96,7 @@ async function route(request, env) {
     if (path === '/cmd/api/rate') return rateApi();
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
+    if (path === '/cmd/api/file') return fileApi(request, url, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null }); }
     return vault(request, env);
 }
@@ -279,6 +280,41 @@ async function vault(request, env) {
     await env.VAULT.put(KEY, body);
     return json({ ok: true, rev: next.rev });
   }
+  return json({ error: 'method not allowed' }, 405);
+}
+
+/* ---------- files for Papers and the Home inventory ----------
+   The dashboard encrypts each file with a key only your devices have (it lives inside the encrypted
+   vault) before it is sent, so what is stored here is unreadable without your passcode.
+   GET ?list=1 → { files: { id: size } }   GET ?id= → the encrypted bytes   PUT ?id= (body = bytes)   DELETE ?id= */
+const FILE_PREFIX = 'file:';
+const FILE_MAX = 24 * 1024 * 1024;                 // KV holds up to 25 MiB per value
+async function fileApi(request, url, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (request.method === 'GET' && url.searchParams.get('list') === '1') {
+    const files = {}; let cursor, bytes = 0, n = 0;
+    do {
+      const r = await env.VAULT.list({ prefix: FILE_PREFIX, cursor });
+      r.keys.forEach(k => { const sz = k.metadata && k.metadata.s || 0; files[k.name.slice(FILE_PREFIX.length)] = sz; bytes += sz; });
+      cursor = r.list_complete ? null : r.cursor;
+    } while (cursor && ++n < 20);
+    return json({ files, bytes });
+  }
+  const id = String(url.searchParams.get('id') || '');
+  if (!/^[a-z]{2,4}-[A-Za-z0-9_-]{3,90}$/.test(id)) return json({ error: 'bad id' }, 400);
+  if (request.method === 'GET') {
+    const v = await env.VAULT.get(FILE_PREFIX + id, { type: 'stream' });
+    return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
+  }
+  if (request.method === 'PUT') {
+    const len = parseInt(request.headers.get('content-length') || '0', 10);
+    if (!len || len < 30) return json({ error: 'empty' }, 400);
+    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
+    if (!request.body) return json({ error: 'empty' }, 400);
+    await env.VAULT.put(FILE_PREFIX + id, request.body, { metadata: { s: len, at: Date.now() } });
+    return json({ ok: true, id, size: len });
+  }
+  if (request.method === 'DELETE') { await env.VAULT.delete(FILE_PREFIX + id); return json({ ok: true }); }
   return json({ error: 'method not allowed' }, 405);
 }
 
