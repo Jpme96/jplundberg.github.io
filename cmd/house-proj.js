@@ -211,9 +211,9 @@
   (window.BriefExtra = window.BriefExtra || []).push(function (add) {
     if (!on()) return;
     var due = [];
-    list().forEach(function (p) { if (p.status === 'done') return; arr(p.tasks).forEach(function (x) { if (!x.done && isKey(x.due) && daysTo(x.due) <= 0) due.push({ p: p, x: x }); }); });
+    list().forEach(function (p) { if (p.status === 'done') return; arr(p.tasks).forEach(function (x) { if (!x.done && isKey(x.due) && daysTo(x.due) < 0) due.push({ p: p, x: x }); }); });   /* today's tasks are already in At a glance through the calendar – here only the overdue ones */
     due.sort(function (a, b) { return a.x.due < b.x.due ? -1 : 1; });
-    if (due.length) add(daysTo(due[0].x.due) < 0 ? 26 : 38, 'hammer', '#e8743b', (due.length === 1 ? due[0].x.t : due.length + ' project tasks due'), due.length === 1 ? due[0].p.name + (daysTo(due[0].x.due) < 0 ? ' · overdue' : ' · today') : due.slice(0, 2).map(function (d) { return d.x.t; }).join(' · '), (here ? '' : '/cmd/house/') + '#hproj=' + due[0].p.id, { key: 'hp:' + due.map(function (d) { return d.x.id; }).join(',') });
+    if (due.length) add(26, 'hammer', '#e8743b', (due.length === 1 ? due[0].x.t : due.length + ' project tasks overdue'), due.length === 1 ? due[0].p.name + (daysTo(due[0].x.due) < 0 ? ' · overdue' : ' · today') : due.slice(0, 2).map(function (d) { return d.x.t; }).join(' · '), (here ? '' : '/cmd/house/') + '#hproj=' + due[0].p.id, { key: 'hp:' + due.map(function (d) { return d.x.id; }).join(',') });
   });
   (window.EventsExtra = window.EventsExtra || []).push(function () {
     if (!on()) return [];

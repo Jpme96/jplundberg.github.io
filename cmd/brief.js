@@ -34,6 +34,8 @@
   function items() {
     var out = [], now = new Date(), today = dkey(now);
     function add(pri, icon, color, title, sub, href, opt) {
+      /* a line with no title (an odd or old-format item) is left out rather than shown empty */
+      if (title == null || title === '') return;
       var it = { pri: pri, icon: icon, color: color, title: title, sub: sub, href: href };
       if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; if (opt.run && opt.act) ACTIONS[opt.act.id] = opt.run; }
       /* anything can be put away for today (hover ×, or swipe it left on a phone) */

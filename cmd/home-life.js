@@ -165,7 +165,8 @@
     var lead = +cfg('housecfg').lead || 0;
     Fe.list('hmaint').filter(function (x) { return daysTo(nextDue(x)) <= lead; }).sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; }).slice(0, 2).forEach(function (x) {
       var n = daysTo(nextDue(x));
-      add(n < 0 ? 33 : 46, hmIcon(x.title), n < 0 ? RED : AMBER, x.title, n < 0 ? 'Overdue since ' + fmt(nextDue(x)) : 'Due ' + inDays(n), '/cmd/house/',
+      var nm = String(x.title || x.text || 'Upkeep');
+      add(n < 0 ? 33 : 46, hmIcon(nm), n < 0 ? RED : AMBER, nm, n < 0 ? 'Overdue since ' + fmt(nextDue(x)) : 'Due ' + inDays(n), '/cmd/house/',
         { act: { id: 'hm:' + x.id + ':' + today(), label: 'Done' }, run: function () { hmDone(x.id); }, badge: n < 0 && !!(window.Delight && window.Delight.on('badgeHouse')) });
     });
   });
