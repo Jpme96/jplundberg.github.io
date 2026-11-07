@@ -4673,3 +4673,10 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .hs2-mr { justify-content: flex-end; }
 .fold-sum { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
 .card:not(.ufold) .fold-sum { display: none; }
+/* insurance list: no empty frames – the columns follow what an item has */
+.il-f.il-noph-f { grid-template-columns: minmax(0, 1fr) auto auto; }
+.il-f.il-norc-f { grid-template-columns: 90px minmax(0, 1fr) auto; }
+.il-f.il-noph-f.il-norc-f { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 600px) { .il-f.il-norc-f, .il-f:not(.il-noph-f) { grid-template-columns: 64px minmax(0, 1fr) auto; } .il-f.il-noph-f { grid-template-columns: minmax(0, 1fr) auto; } }
+.inv-slot .text-btn.danger { color: var(--danger, #e66767); }
+.inv-same { margin: 4px 0 0; }

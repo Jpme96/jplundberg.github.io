@@ -1128,6 +1128,8 @@
     'their part of what you paid': 'deres del av det du betalte', 'your part of what they paid': 'din del av det de betalte', 'In total': 'Totalt',
     'Running costs': 'Faste felleskostnader', 'Running cost': 'Fast felleskostnad',
     'Your month together': 'Måneden deres sammen', 'none yet': 'ingen ennå', 'Moving in': 'Innflytting',
+    'Same receipt as…': 'Samme kvittering som …', 'Same receipt as': 'Samme kvittering som', 'Photo removed': 'Bildet er fjernet', 'Receipt removed': 'Kvitteringen er fjernet', 'PDF receipt saved': 'PDF-kvittering lagret',
+    'Bought together on one receipt? Pick the item that has it – both point to the same file.': 'Kjøpt sammen på én kvittering? Velg tingen som har den – begge peker til samme fil.',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
     'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',
@@ -1220,6 +1222,8 @@
     [/^(.+) · (.+ kr) together$/, function (m, a, b) { return tr(a) + ' · ' + b + ' sammen'; }],
     [/^(.+) · (in \d+ days?|today|\d+ days ago|tomorrow) · (\d+) of (\d+) done$/, function (m, a, b, n, o) { return tr(a) + ' · ' + tr(b) + ' · ' + n + ' av ' + o + ' gjort'; }],
     [/^(in \d+ days?|tomorrow|today|\d+ days ago) · (\d+)\/(\d+)$/, function (m, a, n, o) { return tr(a) + ' · ' + n + '/' + o; }],
+    [/^Same receipt as (.+)$/, 'Samme kvittering som $1'],
+    [/^(.+) uses the receipt from (.+)$/, '$1 bruker kvitteringen fra $2'],
     [/^Payment with (.+)$/, 'Betaling med $1'],
     [/^You’re all square\. Paid (.+) something ahead, or got money from them\? Add it here and it counts in what you owe each other\.$/, 'Dere er skuls. Har du betalt $1 noe på forskudd, eller fått penger fra dem? Legg det inn her, så teller det med i det dere skylder hverandre.'],
     [/^(.+)\. How much was paid\? Only part of it \(a down payment\)\? Type that amount – the rest stays owed\.$/, function (m, a) { return (/^You owe /.test(a) ? a.replace(/^You owe /, 'Du skylder ') : tr(a)) + '. Hvor mye ble betalt? Bare en del (et avdrag)? Skriv det beløpet – resten står fortsatt som gjeld.'; }],
@@ -1241,6 +1245,7 @@
     [/^On the home (\d{4})$/, 'På boligen $1'],
     [/^Nothing shared in (\S+) (\d{4})\. Bought something for the home together\? Add it with$/, 'Ingenting delt i $1 $2. Kjøpt noe til hjemmet sammen? Legg det inn med']
   );
+  P.unshift([/^(PDF receipt saved|receipt saved) \(same receipt as (.+)\)$/, function (m, a, b) { return (a === 'receipt saved' ? 'kvittering lagret' : 'PDF-kvittering lagret') + ' (samme kvittering som ' + b + ')'; }]);
   P.unshift([/^Paying back (.+ kr) a month · (.+ kr) left$/, 'Betaler tilbake $1 i måneden · $2 igjen']);
   function tr(s) {
     var c = MEMO.get(s); if (c !== undefined) return c;

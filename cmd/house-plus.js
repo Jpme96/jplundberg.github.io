@@ -159,6 +159,9 @@
   function putPh(id, blob) { return keepPh(id, blob).then(function () { if (window.FileSync) window.FileSync.up(id, blob); }); }
   function localPh(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
   function getPh(id) { return localPh(id).then(function (b) { if (b || !window.FileSync) return b; return window.FileSync.down(id).then(function (nb) { if (nb) keepPh(id, nb); return nb; }); }); }
+  /* a file can be shared by several items (one receipt for a sofa and a bed): only delete it when nothing uses it */
+  function usedBy(fid, except) { return Fe.list('hinv').filter(function (x) { return x.id !== except && (x.photo === fid || x.receipt === fid); }); }
+  function dropPh(fid, except) { if (fid && !usedBy(fid, except).length) delPh(fid); }
   function delPh(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('photos', 'readwrite').objectStore('photos').delete(id); }).catch(function () {}); }
   /* on the House page: send up the photos and receipts only this device has (others come when shown) */
   if (/\/cmd\/house\/$/.test(location.pathname.replace(/index\.html$/, ''))) window.Vault.onUnlock(function () {
@@ -191,7 +194,7 @@
     { k: 'brand', label: 'Brand and model', ph: 'Optional' },
     { k: 'serial', label: 'Serial number', ph: 'Optional' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Where the receipt is, the shop, warranty …' }],
-    onDelete: function (it) { if (it.photo) delPh(it.photo); if (it.receipt) delPh(it.receipt); } };
+    onDelete: function (it) { dropPh(it.photo, it.id); dropPh(it.receipt, it.id); } };
   var invCol = K && $t('hinv') ? K.collection({
     mount: $t('hinv'), feature: 'house', key: 'hinv', icon: 'box-seam', title: 'Home inventory', addLabel: 'Item', limit: 8,
     addTitle: INV.addTitle, editTitle: INV.editTitle, fields: INV.fields, onDelete: INV.onDelete,
@@ -210,11 +213,16 @@
       return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : '', own].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
     },
     detail: function (x) {
+      var others = x.receipt ? usedBy(x.receipt, x.id).filter(function (o) { return o.receipt === x.receipt; }) : [];
+      var canShare = !x.receipt && Fe.list('hinv').some(function (o) { return o.id !== x.id && o.receipt; });
       return '<div class="inv-ph">' + ['photo', 'receipt'].map(function (k) {
         return '<div class="inv-slot">' + (x[k] && k === 'receipt' && x.receiptPdf ? '<a class="inv-pdf" target="_blank" rel="noopener" data-invpdfopen="' + esc(x[k]) + '"><i class="bi bi-file-earmark-pdf"></i><span>Open the PDF receipt</span></a>' : x[k] ? '<img data-invimg="' + esc(x[k]) + '" alt="">' : '<span class="inv-none"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i></span>') +
           '<label class="text-btn"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i> ' + (x[k] ? (k === 'photo' ? 'New photo' : 'New receipt') : (k === 'photo' ? 'Add photo' : 'Add receipt')) +
-          '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label></div>';
-      }).join('') + '</div>' + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '') +
+          '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label>' +
+          (x[k] ? '<button type="button" class="text-btn danger" data-invrm="' + esc(x.id + '|' + k) + '"><i class="bi bi-trash3"></i> Remove</button>' : '') +
+          (k === 'receipt' && canShare ? '<button type="button" class="text-btn" data-invsame="' + esc(x.id) + '"><i class="bi bi-link-45deg"></i> Same receipt as…</button>' : '') + '</div>';
+      }).join('') + '</div>' +
+      (others.length ? '<p class="muted hl-small inv-same"><i class="bi bi-link-45deg"></i> Same receipt as ' + esc(others.map(function (o) { return o.name; }).join(', ')) + '</p>' : '') + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '') +
         (window.SharedHome && window.SharedHome.forInv && (x.ownWith || x.shared) ? (function () {
           var i = window.SharedHome.invInfo ? window.SharedHome.invInfo(x.id) : null, h = '<button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> Split and who paid</button>';
           if (i && i.owe) h += '<button type="button" class="text-btn" data-invpb="' + esc(x.id) + '"><i class="bi bi-calendar2-check"></i> Paying back ' + esc(kr(i.owe.pay)) + ' a month · ' + esc(kr(i.owe.left)) + ' left</button>';
@@ -229,6 +237,8 @@
     onClick: function (e) {
       if (e.target.closest('[data-invpdf]')) invList(); if (e.target.closest('[data-invreg]')) register();
       var sp = e.target.closest('[data-invsplit]'); if (sp && window.SharedHome) window.SharedHome.forInv(sp.dataset.invsplit);
+      var rm = e.target.closest('[data-invrm]'); if (rm) removeFile(rm.dataset.invrm);
+      var sm = e.target.closest('[data-invsame]'); if (sm) sameSheet(sm.dataset.invsame);
       var pb = e.target.closest('[data-invpb]'); if (pb && window.SharedHome) window.SharedHome.payBackInv(pb.dataset.invpb); }
   }) : null;
   /* a pay-back plan or a payment changes what the item rows say */
@@ -241,12 +251,40 @@
     /* a PDF receipt (most web shops send one) is kept as it is; pictures are made smaller */
     if (isPdf && file.size > 15e6) { toast('<i class="bi bi-exclamation-triangle"></i> That PDF is over 15 MB – try a smaller one'); i.value = ''; return; }
     (isPdf ? Promise.resolve(file) : shrink(file)).then(function (b) { return putPh(pid, b); }).then(function () {
-      if (it[q[1]]) delPh(it[q[1]]);
-      var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) { x[q[1]] = pid; if (q[1] === 'receipt') { if (isPdf) x.receiptPdf = 1; else delete x.receiptPdf; } } }); Fe.saveTools(t);
+      if (it[q[1]]) dropPh(it[q[1]], it.id);
+      var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) { x[q[1]] = pid; if (q[1] === 'receipt') { delete x.receiptOf; if (isPdf) x.receiptPdf = 1; else delete x.receiptPdf; } } }); Fe.saveTools(t);
       toast('<i class="bi bi-check2"></i> ' + (q[1] === 'photo' ? 'Photo' : isPdf ? 'PDF receipt' : 'Receipt') + ' saved' + (window.FileSync && window.FileSync.state().ok !== false ? ' – syncing to your other devices' : ' on this device'));
     }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> Couldn’t read that file – a photo (JPG, PNG, HEIC) or a PDF works'); });
     i.value = '';
   });
+  /* take a photo or receipt off an item (the file goes once no other item uses it) */
+  function removeFile(v) {
+    var q = v.split('|'), it = Fe.list('hinv').filter(function (x) { return x.id === q[0]; })[0]; if (!it || !it[q[1]]) return;
+    var fid = it[q[1]], was = { v: fid, pdf: it.receiptPdf, of: it.receiptOf };
+    var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === q[0]) { delete x[q[1]]; if (q[1] === 'receipt') { delete x.receiptPdf; delete x.receiptOf; } } }); Fe.saveTools(t);
+    var gone = false, timer = setTimeout(function () { gone = true; dropPh(fid); }, 8000);
+    toast('<i class="bi bi-trash3"></i> ' + (q[1] === 'photo' ? 'Photo' : 'Receipt') + ' removed', function () {
+      if (gone) return; clearTimeout(timer);
+      var t2 = Fe.tools(); (t2.hinv || []).forEach(function (x) { if (x.id === q[0]) { x[q[1]] = was.v; if (q[1] === 'receipt') { if (was.pdf) x.receiptPdf = 1; if (was.of) x.receiptOf = was.of; } } }); Fe.saveTools(t2);
+    });
+  }
+  /* one receipt for several things: point this item at another item's receipt */
+  function sameSheet(id) {
+    var HFS = window.HouseFiles, it = Fe.list('hinv').filter(function (x) { return x.id === id; })[0]; if (!HFS || !it) return;
+    var seen = {}, src = Fe.list('hinv').filter(function (o) { if (o.id === id || !o.receipt || seen[o.receipt]) return false; seen[o.receipt] = 1; return true; });
+    var X = HFS.sheet('Same receipt as'), box = X.box;
+    box.innerHTML = HFS.head('link-45deg', 'Same receipt as', 'Bought together on one receipt? Pick the item that has it – both point to the same file.') +
+      '<ul class="mp-list">' + src.map(function (o) {
+        var names = Fe.list('hinv').filter(function (z) { return z.receipt === o.receipt; }).map(function (z) { return z.name; });
+        return '<li class="mp-row"><button type="button" class="kit-main" data-invpick="' + esc(o.id) + '"><span class="kit-ic" style="--c:#0891b2"><i class="bi bi-' + (o.receiptPdf ? 'file-earmark-pdf' : 'receipt') + '"></i></span><span class="kit-x"><b>' + esc(names.join(', ')) + '</b><small>' + esc((o.receiptPdf ? 'PDF' : 'Photo') + (o.bought ? ' · ' + fromKey(o.bought).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '')) + '</small></span></button></li>';
+      }).join('') + '</ul>';
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-invpick]'); if (!b) return;
+      var o = Fe.list('hinv').filter(function (z) { return z.id === b.dataset.invpick; })[0]; if (!o) return;
+      var t = Fe.tools(); (t.hinv || []).forEach(function (x) { if (x.id === id) { x.receipt = o.receipt; if (o.receiptPdf) x.receiptPdf = 1; else delete x.receiptPdf; x.receiptOf = o.id; } }); Fe.saveTools(t);
+      X.close(); toast('<i class="bi bi-link-45deg"></i> ' + esc(it.name) + ' uses the receipt from ' + esc(o.name));
+    });
+  }
   /* the list for the insurance company: A4, with photos – Save as PDF from the print sheet */
   /* the household register (samboerkontrakt, Appendix B): each item, its price and who owns it, to sign */
   function ownText(x, me, them) {
@@ -306,9 +344,11 @@
         rooms.map(function (r) {
           var rl = l.filter(function (x) { return (room(x.room) || 'Other') === r; });
           return '<h2>' + esc(r) + ' <small class="il-sum">' + esc(kr(rl.reduce(function (a, x) { return a + (+x.price || 0); }, 0))) + '</small></h2>' + rl.map(function (x) {
-            return '<div class="rp-f il-f">' + (withPh && x.photo ? '<img class="il-ph" data-ilimg="' + esc(x.photo) + '" alt="">' : '<span class="il-ph il-noph"></span>') +
-              '<div class="rp-ft"><p><b>' + esc(x.name) + '</b>' + (x.brand ? ' – ' + esc(x.brand) : '') + '</p><p class="rp-act">' + esc([cat(x.cat)[1], x.bought ? 'bought ' + fromKey(x.bought).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '', x.serial ? 'serial ' + x.serial : '', x.receipt ? 'receipt saved' : 'no receipt'].filter(Boolean).join(' · ')) + '</p>' + (x.notes ? '<p class="rp-act">' + esc(x.notes) + '</p>' : '') + '</div>' +
-              '<b class="il-price">' + (x.price ? esc(kr(x.price)) : '–') + '</b>' + (withPh && x.receipt && !x.receiptPdf ? '<img class="il-rc" data-ilimg="' + esc(x.receipt) + '" alt="">' : withPh && x.receiptPdf ? '<span class="il-rc il-rcpdf"><i class="bi bi-file-earmark-pdf"></i> PDF receipt</span>' : '') + '</div>';
+            var hasPh = withPh && x.photo, hasRc = withPh && x.receipt && !x.receiptPdf;
+            var mates = x.receipt ? l.filter(function (z) { return z.id !== x.id && z.receipt === x.receipt; }).map(function (z) { return z.name; }) : [];
+            return '<div class="rp-f il-f' + (hasPh ? '' : ' il-noph-f') + (hasRc ? '' : ' il-norc-f') + '">' + (hasPh ? '<img class="il-ph" data-ilimg="' + esc(x.photo) + '" alt="">' : '') +
+              '<div class="rp-ft"><p><b>' + esc(x.name) + '</b>' + (x.brand ? ' – ' + esc(x.brand) : '') + '</p><p class="rp-act">' + esc([cat(x.cat)[1], x.bought ? 'bought ' + fromKey(x.bought).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '', x.serial ? 'serial ' + x.serial : '', x.receipt ? (x.receiptPdf ? 'PDF receipt saved' : 'receipt saved') + (mates.length ? ' (same receipt as ' + mates.join(', ') + ')' : '') : 'no receipt'].filter(Boolean).join(' · ')) + '</p>' + (x.notes ? '<p class="rp-act">' + esc(x.notes) + '</p>' : '') + '</div>' +
+              '<b class="il-price">' + (x.price ? esc(kr(x.price)) : '–') + '</b>' + (hasRc ? '<img class="il-rc" data-ilimg="' + esc(x.receipt) + '" alt="">' : '') + '</div>';
           }).join('');
         }).join('') + '<footer class="rp-foot">Home inventory · ' + esc(me.name || '') + ' · ' + esc(today()) + '</footer>';
       doc.querySelectorAll('img[data-ilimg]').forEach(function (im) { getPh(im.dataset.ilimg).then(function (b) { if (!b) return im.remove(); var fr = new FileReader(); fr.onload = function () { im.src = fr.result; }; fr.readAsDataURL(b); }); });
