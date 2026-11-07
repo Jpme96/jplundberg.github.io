@@ -26,12 +26,14 @@
   function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : null; }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 2 });
 
-  function T() { var t = Fe.tools().htake; return t && typeof t === 'object' && !Array.isArray(t) ? t : {}; }
+  /* the guide is for the home you live in now; an earlier home keeps its own copy (house-homes.js archives it when you move) */
+  function past(hid) { return !!(hid && window.Homes && window.Homes.isPast(hid)); }
+  function T(hid) { if (past(hid)) { var h = window.Homes.get(hid); return h && h.take && typeof h.take === 'object' ? h.take : {}; } var t = Fe.tools().htake; return t && typeof t === 'object' && !Array.isArray(t) ? t : {}; }
   function save(fn) { var t = Fe.tools(), x = t.htake && typeof t.htake === 'object' && !Array.isArray(t.htake) ? t.htake : {}; fn(x); t.htake = x; Fe.saveTools(t); }
   function move() { var m = Fe.tools().hmove; return m && typeof m === 'object' && isKey(m.date) ? m : null; }
-  function date() { var m = move(); return m ? m.date : null; }
+  function date(hid) { if (past(hid)) { var h = window.Homes.get(hid); return h && isKey(h.from) ? h.from : null; } var m = move(); return m ? m.date : null; }
   function arr(x) { return Array.isArray(x) ? x.filter(function (y) { return y && typeof y === 'object'; }) : []; }
-  HF && HF.uses(function () { var t = T(), ids = []; arr(t.meters).forEach(function (m) { ids.push(m.photo); }); arr(t.faults).forEach(function (f) { ids = ids.concat(f.photos || []); }); return ids; });
+  HF && HF.uses(function () { var t = T(), ids = []; if (window.Homes) window.Homes.list().forEach(function (h) { if (h.take) { arr(h.take.meters).forEach(function (m) { ids.push(m.photo); }); arr(h.take.faults).forEach(function (f) { ids = ids.concat(f.photos || []); }); } }); arr(t.meters).forEach(function (m) { ids.push(m.photo); }); arr(t.faults).forEach(function (f) { ids = ids.concat(f.photos || []); }); return ids; });
 
   var PREP = [['id', 'ID for both of you', 'person-vcard'], ['phone', 'A charged phone – for photos of meters and faults', 'phone'], ['torch', 'A torch and a tape measure', 'flashlight'],
     ['papers', 'The purchase contract and the condition report (tilstandsrapport)', 'file-earmark-text'], ['time', 'A time agreed with the estate agent or the seller', 'clock'],
@@ -308,8 +310,8 @@
   }
 
   /* your own record of the day – A4, with the photos – Save as PDF */
-  function record() {
-    var t = T(), d = date(), prof = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();
+  function record(hid) {
+    var t = T(hid), d = date(hid), prof = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();
     var pt = window.Shared && window.Shared.partner && window.Shared.partner();
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-tkrclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><button type="button" class="pill-btn" data-tkrprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
@@ -351,5 +353,5 @@
   ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(draw.t); draw.t = setTimeout(draw, 40); }); });
   window.Vault.onUnlock(function () { setTimeout(draw, 70); });
   window.Vault.onLock(function () { if (el) { el.innerHTML = ''; el._h = ''; el.hidden = true; } });
-  window.HouseMove = { draw: draw, date: date, data: T };
+  window.HouseMove = { draw: draw, date: date, data: T, record: record };
 })();

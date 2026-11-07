@@ -4612,3 +4612,27 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .hc-logt td:first-child { width: 90px; color: #5b6470; white-space: nowrap; }
 .hc-sign { margin-top: 40px; }
 @media print { body.rp-open .hc-all .hc-rsec { break-before: page; border-top: 0; margin-top: 0; } body.rp-open .hc-sumt tr { break-inside: avoid; } }
+/* homes over the years (house-homes.js) */
+.hm-bar { margin: 0 0 10px; }
+.hm-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; } .hm-chips::-webkit-scrollbar { display: none; }
+.hm-chips .lf-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; } .hm-chips .lf-chip small { opacity: .7; font-size: 11.5px; }
+.hm-past-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, #8a6fdf 45%, var(--line)); background: color-mix(in srgb, #8a6fdf 12%, transparent); }
+.hm-past-bar > .bi { color: #8a6fdf; font-size: 18px; } .hm-past-bar span { display: grid; min-width: 0; } .hm-past-bar small { color: var(--muted); font-size: 12px; }
+#fp.hm-past :is([data-tool="htake"], [data-tool="hshared"], [data-tool="hmaint"], [data-tool="hseason"], [data-tool="hbins"], [data-tool="hmeter"], [data-tool="hpower"], [data-tool="power"], [data-tool="hinfo"], [data-tool="hinv"], [data-tool="warranty"], #hlTiles, #hsIllu) { display: none !important; }
+.hm-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.hm-home { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: rgba(var(--ink-rgb), .02); }
+.hm-home.now { border-color: color-mix(in srgb, #22b35e 40%, var(--line)); }
+.hm-hh { width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr) 20px; gap: 10px; align-items: center; padding: 10px 12px; min-height: 54px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hm-ht { display: grid; min-width: 0; } .hm-ht b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .hm-ht small { color: var(--muted); font-size: 12px; }
+.hm-home.open .hx-chev { transform: rotate(180deg); }
+.hm-hb { padding: 0 12px 12px; }
+.hm-acts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 4px; }
+.hm-yt { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.hm-yt th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600; padding: 0 6px 4px 0; } .hm-yt td { padding: 5px 6px 5px 0; border-top: 1px solid var(--line); }
+.hm-yt th:not(:first-child), .hm-yt td:not(:first-child) { text-align: right; }
+.hm-loans { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.hm-loans li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13.5px; } .hm-loans .bi { color: #11a597; } .hm-loans span { display: grid; min-width: 0; } .hm-loans small { color: var(--muted); font-size: 12px; }
+.hm-move { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 12px; padding: 12px; border-radius: 14px; border: 1px dashed rgba(var(--ink-rgb), .22); }
+.hm-move > .bi { font-size: 20px; color: var(--accent); } .hm-move span { display: grid; min-width: 0; } .hm-move small { color: var(--muted); font-size: 12px; }
+@media (max-width: 480px) { .hm-move { grid-template-columns: auto minmax(0, 1fr); } .hm-move .pill-btn { grid-column: 1 / -1; justify-self: start; } .hm-past-bar { grid-template-columns: auto minmax(0, 1fr); } .hm-past-bar .pill-btn { grid-column: 1 / -1; justify-self: start; } }
+.hm-box { width: min(560px, 100%); }

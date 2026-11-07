@@ -34,6 +34,7 @@
     "home-shared.js",
     "papers.js",
     "house-files.js",
+    "house-homes.js",
     "house-move.js",
     "house-claims.js",
     "house-proj.js",

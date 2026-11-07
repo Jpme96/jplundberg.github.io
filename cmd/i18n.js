@@ -1060,6 +1060,15 @@
     'You pay, %': 'Du betaler, %', 'Your partner’s name': 'Navnet til partneren din',
     'Report': 'Rapport', 'Report of all claims': 'Rapport over alle reklamasjoner', 'Report of all claims (PDF)': 'Rapport over alle reklamasjoner (PDF)', 'You live with': 'Du bor med', 'Just me': 'Bare meg', 'Their full name': 'Fullt navn',
     'Letters and reports about the home are signed by both of you (“we”). Just me = only your name.': 'Brev og rapporter om boligen signeres av dere begge («vi»). Bare meg = bare navnet ditt.',
+    'History': 'Historikk', 'Your homes': 'Boligene dine', 'New home': 'Ny bolig', 'A new home': 'En ny bolig', 'Set up a new home': 'Sett opp en ny bolig', 'Moving?': 'Skal du flytte?', 'Home history': 'Bolighistorikk', 'Set up a new home (moving)': 'Sett opp en ny bolig (flytting)',
+    'Everything stays: when you move, the old home keeps its take-over, claims, projects, documents and loans here – and you start fresh at the new place.': 'Alt blir liggende: når du flytter, beholder den gamle boligen overtakelsen, reklamasjonene, prosjektene, dokumentene og lånene her – og du starter på nytt på det nye stedet.',
+    'Set up your next home – the one you leave keeps its history here.': 'Sett opp neste bolig – den du flytter fra, beholder historikken sin her.', 'Claims report': 'Reklamasjonsrapport', 'Documents (.zip)': 'Dokumenter (.zip)', 'Open this home': 'Åpne denne boligen',
+    'Money while you lived there': 'Penger mens du bodde der', 'Year': 'År', 'Spent': 'Brukt', 'On the home': 'På boligen', 'Nothing in Finances from those years yet.': 'Ingenting i Økonomi fra de årene ennå.', 'Bought together for the home:': 'Kjøpt sammen til boligen:',
+    'Back to now': 'Tilbake til nå', 'now': 'nå', 'Home': 'Hjem', 'The home you live in now moves to History with everything that belongs to it.': 'Boligen du bor i nå flyttes til Historikk med alt som hører til.',
+    'e.g. Bislett, The house in Asker': 'f.eks. Bislett, Huset i Asker', 'The new home is': 'Den nye boligen er', 'You live with': 'Du bor med', 'The same as now': 'Det samme som nå', 'Sold for, kr': 'Solgt for, kr', 'Bought for, kr': 'Kjøpt for, kr',
+    'A paid-off loan stops as a bill and leaves net worth; a copy of how it stood stays in History. Untick a loan that moves with you.': 'Et nedbetalt lån slutter å være en regning og forsvinner fra formuen; en kopi av hvordan det sto, blir i Historikk. Fjern haken for et lån som flytter med deg.',
+    'Set it up': 'Sett det opp', 'The home': 'Boligen', 'The home you live in': 'Boligen du bor i', 'An earlier home': 'En tidligere bolig', 'Moved in': 'Flyttet inn', 'Moved out': 'Flyttet ut', 'You lived with': 'Du bodde med', 'As in the claim settings': 'Som i reklamasjonsinnstillingene',
+    'The take-over date is set on the take-over guide (Shared tab).': 'Overtakelsesdatoen settes i overtakelsesveiviseren (Felles-fanen).', 'New home set up – the take-over guide is ready on Shared': 'Ny bolig er satt opp – overtakelsesveiviseren er klar under Felles',
     'One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose': 'Én rapport med alle reklamasjonene – en oversikt først, så hver reklamasjon på egen side med bildene. I utskriftsvinduet velger du'
   });
   P.push(
@@ -1089,7 +1098,10 @@
     [/^Category removed( – its (\d+) documents are under Other)?$/, function (m, a, n) { return 'Kategorien er fjernet' + (n ? ' – de ' + n + ' dokumentene ligger under Annet' : ''); }],
     [/^Learned from your moves: (\d+) words?\.$/, function (m, n) { return 'Lært av flyttingene dine: ' + n + (n === '1' ? ' ord.' : ' ord.'); }], [/^Your own words, e\.g\. (.+)$/, 'Egne ord, f.eks. $1'],
     [/^Saving (\d+) photos …$/, 'Lagrer $1 bilder …'], [/^(\d+) photos saved( – syncing to your other devices)?$/, function (m, n, s) { return n + ' bilder lagret' + (s ? ' – synkroniseres til de andre enhetene dine' : ''); }], [/^Not added: (.+)$/, 'Ikke lagt til: $1'],
-    [/^(.+) · (\d+) not on this device yet$/, '$1 · $2 er ikke på denne enheten ennå']
+    [/^(.+) · (\d+) not on this device yet$/, '$1 · $2 er ikke på denne enheten ennå'],
+    [/^moved out (.+)$/, 'flyttet ut $1'], [/^(\d+) open$/, '$1 åpne'], [/^Take-over (\d.+)$/, 'Overtakelse $1'], [/^owed now (.+)$/, 'skyldig nå $1'], [/^owed when you moved (.+)$/, 'skyldig da du flyttet $1'], [/^your part (\d+) %$/, 'din del $1 %'], [/^paid off (.+)$/, 'nedbetalt $1'],
+    [/^Bought for (.+)$/, 'Kjøpt for $1'], [/^sold for (.+)$/, 'solgt for $1'], [/^About (.+) kWh a year$/, 'Omtrent $1 kWh i året'], [/^You leave (.+)$/, 'Du flytter fra $1'], [/^Loans on (.+)$/, 'Lån på $1'], [/^Paid off when it’s sold:$/, 'Nedbetalt når den selges:'],
+    [/^(.+) · an earlier home – projects, documents and claims from then$/, '$1 · en tidligere bolig – prosjekter, dokumenter og reklamasjoner fra da']
   );
   var MEMO = new Map();
   function tr(s) {

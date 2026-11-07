@@ -123,6 +123,7 @@
       el.hidden = !on;
       if (!on) { el.innerHTML = ''; return; }
       var items = F.list(cfg.key).slice();
+      if (cfg.filter) try { items = items.filter(cfg.filter); } catch (e) {}
       if (cfg.sort) try { items.sort(cfg.sort); } catch (e) {}
       var kw = 'kit:' + cfg.key;
       var lim = cfg.limit || 8, shown = showAll ? items : items.slice(0, lim);

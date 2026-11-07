@@ -34,7 +34,7 @@
   function cfg() { var c = Fe.tools().hclaimcfg; return Object.assign({ lang: 'nb', replyDays: 14, co: 'auto', coName: '' }, c && typeof c === 'object' ? c : {}); }
   /* who you live with – on the letters and reports for the home ("we"): your partner from Shared home, someone you name, or just you */
   function partner() { return window.Shared && window.Shared.partner && window.Shared.partner(); }
-  function coName() { var c = cfg(); if (c.co === 'none') return ''; if (c.co === 'name') return String(c.coName || '').trim(); var p = partner(); return p ? p.name : ''; }
+  function coName(h) { var H = window.Homes && window.Homes.get(hv(h)); if (H && H.co) { if (H.co === 'none') return ''; if (H.co === 'name') return String(H.coName || '').trim(); } var c = cfg(); if (c.co === 'none') return ''; if (c.co === 'name') return String(c.coName || '').trim(); var p = partner(); return p ? p.name : ''; }
   HF && HF.uses(function () { var ids = []; list().forEach(function (c) { ids = ids.concat(c.photos || []); }); return ids; });
 
   /* who it's against → the law, and its deadlines */
@@ -74,8 +74,12 @@
     if (c.status === 'sent' && isKey(c.replyBy)) out.reply = c.replyBy;
     return out;
   }
-  function takeDate() { var m = Fe.tools().hmove; return m && isKey(m.date) ? m.date : ''; }
-  function takeInfo() { return window.HouseMove ? window.HouseMove.data() : {}; }
+  /* the home in view (house-homes.js): its take-over date and details */
+  function hv(h) { return h || (window.Homes ? window.Homes.view() : null); }
+  function takeDate(h) { if (window.HouseMove) return window.HouseMove.date(hv(h)) || ''; var m = Fe.tools().hmove; return m && isKey(m.date) ? m.date : ''; }
+  function takeInfo(h) { var x = window.HouseMove ? window.HouseMove.data(hv(h)) : {}, H = window.Homes && window.Homes.get(hv(h)); return H ? Object.assign({}, x, { addr: x.addr || H.addr || '', seller: x.seller || H.seller || '', agent: x.agent || H.agent || '', kind: x.kind || H.kind }) : x; }
+  function cur() { return window.Homes ? window.Homes.current() : null; }
+  function inView(x) { return !window.Homes || window.Homes.inView(x); }
 
   /* ---------- the card ---------- */
   var FIELDS = [
@@ -93,7 +97,7 @@
     { k: 'long', label: 'Meant to last much longer', type: 'check', help: 'Products only: white goods, built-in or furniture – the limit is then 5 years, not 2.' }];
   var NEWK = null;
   function withDefs(d) { return { key: 'hclaims', addTitle: 'New claim', editTitle: 'Edit claim', fields: FIELDS.map(function (f) { return f.k in d ? Object.assign({}, f, { def: d[f.k] }) : f; }),
-    beforeSave: function (it, isNew) { if (isNew) { it.status = 'draft'; it.against = (NEWK && NEWK.against) || it.against || 'other'; it.photos = it.photos || []; it.log = [{ id: uid(), d: today(), t: 'Made the claim' }]; it.at = today(); } if (it.law !== 'fkjl') delete it.long; },
+    beforeSave: function (it, isNew) { if (isNew) { if (window.Homes) it.home = window.Homes.view(); it.status = 'draft'; it.against = (NEWK && NEWK.against) || it.against || 'other'; it.photos = it.photos || []; it.log = [{ id: uid(), d: today(), t: 'Made the claim' }]; it.at = today(); } if (it.law !== 'fkjl') delete it.long; },
     afterSave: function (it, isNew) { if (isNew) { openId = it.id; toast('<i class="bi bi-check2"></i> Claim saved – add photos, then make the letter'); } NEWK = null; },
     onDelete: function (it) { HF && HF.release(it.photos || []); } };
   }
@@ -120,7 +124,7 @@
     return bits;
   }
   var col = K && mountEl ? K.collection({
-    mount: mountEl, feature: 'hclaim', key: 'hclaims', icon: 'exclamation-diamond', title: 'Reklamasjon', addLabel: 'Claim', limit: 8,
+    mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: 'Reklamasjon', addLabel: 'Claim', limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
     empty: 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.',
     headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims"><i class="bi bi-file-earmark-pdf"></i> Report</button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings"><i class="bi bi-sliders"></i></button>'; },
@@ -234,7 +238,7 @@
   /* ---------- the letter ---------- */
   function me() { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } }
   function letterText(c, lang) {
-    var p = me(), co = coName(), ti = takeInfo(), lk = lawKey(c), home = c.against === 'seller' || c.against === 'builder';
+    var p = me(), co = coName(c.home), ti = takeInfo(c.home), lk = lawKey(c), home = c.against === 'seller' || c.against === 'builder';
     var we = home && !!co, nb = lang !== 'en', addr = ti.addr || '';
     var dfmt = function (k) { return isKey(k) ? fromKey(k).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''; };
     var replyBy = c.status === 'sent' && isKey(c.replyBy) ? c.replyBy : addDays(today(), cfg().replyDays);
@@ -320,7 +324,7 @@
   /* the report: A4, the letter and the photos – Save as PDF */
   function report(id, lang) {
     var c = byId(id); if (!c) return;
-    var L = letterText(c, lang), nb = lang !== 'en', ti = takeInfo();
+    var L = letterText(c, lang), nb = lang !== 'en', ti = takeInfo(c.home);
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcrclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><button type="button" class="pill-btn" data-hcrprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
       '<p class="rp-hint">In the print window, choose <b>Save as PDF</b> – then attach it to the e-mail.</p><article class="rp-doc" data-noi18n></article>';
@@ -380,9 +384,9 @@
     function draw() {
       bg.querySelectorAll('[data-hcaopen]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.hcaopen === '1') === only)); });
       bg.querySelectorAll('[data-hcalang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.hcalang === lang)); });
-      var T = RL[lang], nb = lang === 'nb', ti = takeInfo(), p = me(), co = coName(), td = takeDate();
+      var T = RL[lang], nb = lang === 'nb', hid = o.home || hv(), ti = takeInfo(hid), p = me(), co = coName(hid), td = takeDate(hid);
       var dfmt = function (k, short) { return isKey(k) ? fromKey(k).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', short ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'long', year: 'numeric' }) : T.none; };
-      var L = list().filter(function (c) { return !only || OPEN[c.status]; }).sort(function (a, b) { return (a.found || a.at || '').localeCompare(b.found || b.at || ''); });
+      var L = list().filter(function (c) { return (!window.Homes || window.Homes.belongs(c, hid)) && (!only || OPEN[c.status]); }).sort(function (a, b) { return (a.found || a.at || '').localeCompare(b.found || b.at || ''); });
       var total = L.reduce(function (a, c) { return a + (+c.cost || 0); }, 0), owners = [p.name, co].filter(Boolean);
       var next = function (c) { var d = deadlines(c); return c.status === 'draft' && d.soft ? T.sendBy + dfmt(d.soft, true) : c.status === 'sent' && d.reply ? T.answer + dfmt(d.reply, true) : T.none; };
       var cnt = {}; L.forEach(function (c) { cnt[c.status] = (cnt[c.status] || 0) + 1; });
@@ -425,7 +429,7 @@
 
   /* a new claim from elsewhere (a fault at the take-over) */
   function create(o) {
-    var it = Object.assign({ id: uid(), status: 'draft', want: 'fix', photos: [], log: [{ id: uid(), d: today(), t: o.from === 'take' ? 'Made from a fault at the take-over' : 'Made the claim' }], at: today(), deliver: takeDate() }, o);
+    var it = Object.assign({ id: uid(), status: 'draft', want: 'fix', photos: [], log: [{ id: uid(), d: today(), t: o.from === 'take' ? 'Made from a fault at the take-over' : 'Made the claim' }], at: today(), deliver: takeDate(cur()), home: cur() }, o);
     var t = Fe.tools(); t.hclaims = (Array.isArray(t.hclaims) ? t.hclaims : []).concat([it]); Fe.saveTools(t);
     return it.id;
   }
@@ -440,14 +444,14 @@
       if (c.status === 'sent' && isKey(c.replyBy) && daysTo(c.replyBy) < 0) add(24, 'hourglass-bottom', '#e66767', 'No answer on: ' + c.title, 'Asked for by ' + fmt(c.replyBy, { day: 'numeric', month: 'short' }) + ' – send a reminder', href, { key: 'hc:r:' + c.id + ':' + c.replyBy });
     });
     /* a new home: the one-year inspection */
-    var ti = takeInfo(), td = takeDate();
+    var ti = takeInfo(cur()), td = takeDate(cur());
     if (ti.kind === 'new' && td) { var y = addYears(td, 1), n1 = daysTo(y); if (n1 <= 45 && n1 >= -14) add(40, 'building-check', '#0891b2', 'One-year inspection (ettårsbefaring) ' + (n1 >= 0 ? 'around ' + fmt(y, { day: 'numeric', month: 'short' }) : 'is due'), 'Walk round the home and note what’s wrong – bring the list to the builder', (here ? '' : '/cmd/house/') + '#hclaim', { key: 'hc:y1:' + y, tip: true }); }
   });
   (window.EventsExtra = window.EventsExtra || []).push(function () {
     if (!on()) return [];
     var out = [];
     list().forEach(function (c) { if (c.status === 'sent' && isKey(c.replyBy)) out.push({ id: 'rem:hc:' + c.id, title: 'Answer due: ' + c.title, allDay: true, start: fromKey(c.replyBy), days: 1, color: '#e66767', readOnly: true, reminder: true, link: '/cmd/house/#hclaims=' + c.id, location: '', notes: 'Reklamasjon', exDays: {} }); });
-    var ti = takeInfo(), td = takeDate(); if (ti.kind === 'new' && td) out.push({ id: 'rem:hc:y1', title: 'One-year inspection (ettårsbefaring)', allDay: true, start: fromKey(addYears(td, 1)), days: 1, color: '#0891b2', readOnly: true, reminder: true, link: '/cmd/house/#hclaim', location: '', notes: 'A year since the take-over', exDays: {} });
+    var ti = takeInfo(cur()), td = takeDate(cur()); if (ti.kind === 'new' && td) out.push({ id: 'rem:hc:y1', title: 'One-year inspection (ettårsbefaring)', allDay: true, start: fromKey(addYears(td, 1)), days: 1, color: '#0891b2', readOnly: true, reminder: true, link: '/cmd/house/#hclaim', location: '', notes: 'A year since the take-over', exDays: {} });
     return out;
   });
   (window.CommandExtra = window.CommandExtra || []).push(function () {

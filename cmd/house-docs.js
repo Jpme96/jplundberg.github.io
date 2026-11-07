@@ -21,10 +21,13 @@
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function on() { return Fe.on('house') && Fe.on('hdocs'); }
   function tr(s) { return window.I18N ? window.I18N.t(s) : s; }
-  function list() { return Fe.list('hdocs'); }
+  /* every document; list(h) = the ones for the home in view (or home h) – house-homes.js */
+  function all() { return Fe.list('hdocs'); }
+  function list(h) { var H = window.Homes; return all().filter(function (d) { return !H || H.belongs(d, h || H.view()); }); }
+  function hview() { return window.Homes ? window.Homes.view() : undefined; }
   function ccfg() { var c = Fe.tools().hdocscat; c = c && typeof c === 'object' && !Array.isArray(c) ? c : {}; return { extra: Array.isArray(c.extra) ? c.extra.filter(function (x) { return x && x.id; }) : [], kw: c.kw && typeof c.kw === 'object' ? c.kw : {}, learn: c.learn && typeof c.learn === 'object' ? c.learn : {} }; }
   function setC(fn) { var t = Fe.tools(), c = ccfg(); fn(c); t.hdocscat = c; Fe.saveTools(t); }
-  HF && HF.uses(function () { return list().map(function (d) { return d.file && d.file.id; }); });
+  HF && HF.uses(function () { return all().map(function (d) { return d.file && d.file.id; }); });
 
   /* the categories, in the order a file is tested against them (first match wins) */
   var CATS = [
@@ -215,8 +218,8 @@
     return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type: 'application/zip' });
   }
   function safe(s) { return String(s || 'file').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'file'; }
-  function zipAll(only) {
-    var L = list().filter(function (d) { return d.file && (!only || cat(d.cat).id === only); }); if (!L.length) return;
+  function zipAll(only, hid) {
+    var L = list(hid).filter(function (d) { return d.file && (!only || cat(d.cat).id === only); }); if (!L.length) return;
     toast('<i class="bi bi-hourglass-split"></i> Packing ' + L.length + (L.length === 1 ? ' document' : ' documents') + ' …');
     var used = {}, entries = [], missing = 0;
     L.reduce(function (p, d) {
@@ -295,7 +298,7 @@
       pick.reduce(function (p, r) {
         return p.then(function () {
           return r.get().then(function (f) { return HF.put(f, 'fdv', { any: true, max: 2200, noUp: true }); }).then(function (m) {
-            saved.push({ id: uid(), name: r.name.slice(0, 160), cat: r.cat, file: m, date: '', notes: '', path: r.path ? r.path.slice(0, 200) : '', at: today() });
+            saved.push({ id: uid(), home: hview(), name: r.name.slice(0, 160), cat: r.cat, file: m, date: '', notes: '', path: r.path ? r.path.slice(0, 200) : '', at: today() });
           }, function () { bad.push(r.name); }).then(function () { done++; pr.textContent = done + ' of ' + pick.length; bar.style.width = (done / pick.length * 100).toFixed(1) + '%'; });
         });
       }, Promise.resolve()).then(function () {
@@ -355,7 +358,7 @@
   function addFile(file, o) {
     o = o || {};
     return HF.put(file, 'fdv', { any: true, max: 2200 }).then(function (m) {
-      var d = { id: uid(), name: (o.name || String(file.name).replace(/\.[a-z0-9]{2,5}$/i, '')).slice(0, 160), cat: o.cat || guess(file.name, ''), file: m, date: o.date || '', notes: o.notes || '', path: '', at: today() };
+      var d = { id: uid(), home: o.home || hview(), name: (o.name || String(file.name).replace(/\.[a-z0-9]{2,5}$/i, '')).slice(0, 160), cat: o.cat || guess(file.name, ''), file: m, date: o.date || '', notes: o.notes || '', path: '', at: today() };
       var t = Fe.tools(); t.hdocs = (Array.isArray(t.hdocs) ? t.hdocs : []).concat([d]); Fe.saveTools(t);
       return d.id;
     });
@@ -368,10 +371,10 @@
   /* search finds documents by name, category and notes */
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;
-    list().forEach(function (d) { add('FDV binder', 'journal-bookmark', d.name, tr(cat(d.cat).name), '/cmd/house/#hdocs', '', (d.notes || '') + ' ' + (d.file ? d.file.name : '') + ' fdv'); });
+    all().forEach(function (d) { add('FDV binder', 'journal-bookmark', d.name, tr(cat(d.cat).name), '/cmd/house/#hdocs', '', (d.notes || '') + ' ' + (d.file ? d.file.name : '') + ' fdv'); });
   });
   ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(draw.t); draw.t = setTimeout(draw, 40); }); });
   window.Vault.onUnlock(function () { setTimeout(draw, 80); });
   window.Vault.onLock(function () { if (el) { el.innerHTML = ''; el._h = ''; el.hidden = true; } openId = null; q = ''; });
-  window.HouseDocs = { addFile: addFile, remove: remove, guess: guess, list: list, importSheet: importSheet, zip: zipAll, _zip: { make: makeZip, read: readZip, unzip: unzipOne } };
+  window.HouseDocs = { addFile: addFile, remove: remove, guess: guess, list: list, all: all, importSheet: importSheet, zip: zipAll, _zip: { make: makeZip, read: readZip, unzip: unzipOne } };
 })();

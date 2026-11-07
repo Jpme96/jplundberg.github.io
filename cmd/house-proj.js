@@ -62,7 +62,7 @@
   function cfgFor(defs) {
     return { key: 'hproj', addTitle: 'New project', editTitle: 'Edit project', fields: FIELDS.map(function (f) { return f.k in defs ? Object.assign({}, f, { def: defs[f.k] }) : f; }),
       beforeSave: function (it, isNew) {
-        if (isNew) { var k = kind(it.kind); it.tasks = (NEWK ? k[4] : []).map(function (t) { return { id: uid(), t: t, done: false }; }); it.costs = []; it.photos = []; it.at = today(); }
+        if (isNew) { if (window.Homes) it.home = window.Homes.view(); var k = kind(it.kind); it.tasks = (NEWK ? k[4] : []).map(function (t) { return { id: uid(), t: t, done: false }; }); it.costs = []; it.photos = []; it.at = today(); }
         if (it.status === 'done' && !it.doneAt) it.doneAt = today(); if (it.status !== 'done') delete it.doneAt;
         if (!it.shared) { delete it.work; delete it.agreed; }
       },
@@ -82,7 +82,7 @@
   }
   var taskOpen = null;
   var col = K && mountEl ? K.collection({
-    mount: mountEl, feature: 'hproj', key: 'hproj', icon: 'hammer', title: 'Home projects', addLabel: 'Project', limit: 8,
+    mount: mountEl, feature: 'hproj', key: 'hproj', filter: function (x) { return !window.Homes || window.Homes.inView(x); }, icon: 'hammer', title: 'Home projects', addLabel: 'Project', limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
     empty: 'Painting, a new bathroom, the garden – plan it here with tasks, a budget and what you spend. Shared projects go straight into Shared home.',
     sort: function (a, b) { var o = { doing: 0, plan: 1, idea: 2, done: 3 }; return (o[a.status] - o[b.status]) || ((a.end || a.start || '9') < (b.end || b.start || '9') ? -1 : 1); },

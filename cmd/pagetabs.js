@@ -26,9 +26,10 @@
     },
     house: {
       /* a 4th value: the tab only shows while that feature is on */
-      tabs: [['shared', 'Shared', 'people'], ['upkeep', 'Upkeep', 'tools'], ['energy', 'Energy', 'lightning-charge'], ['things', 'Things', 'box-seam'],
-        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', 'hdocs'], ['claims', 'Claims', 'exclamation-diamond', 'hclaim']],
-      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'claims'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
+      /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
+      tabs: [['shared', 'Shared', 'people', null, true], ['upkeep', 'Upkeep', 'tools', null, true], ['energy', 'Energy', 'lightning-charge', null, true], ['things', 'Things', 'box-seam', null, true],
+        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', 'hdocs'], ['claims', 'Claims', 'exclamation-diamond', 'hclaim'], ['history', 'History', 'clock-history']],
+      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'claims'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
@@ -43,9 +44,10 @@
   var C = CONF[page], KEY = 'dash.ptab.' + page, all = /[?&]customize/.test(location.search);
   var cur = (function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
   /* tabs that belong to a feature that's off aren't shown */
-  function tabs() { return C.tabs.filter(function (t) { return !t[3] || Fe.on(t[3]); }); }
+  function past() { var H = window.Homes; return !!(H && H.isPast(H.view())); }
+  function tabs() { var p = past(); return C.tabs.filter(function (t) { return (!t[3] || Fe.on(t[3])) && !(t[4] && p); }); }
   function has(t) { return tabs().some(function (x) { return x[0] === t; }); }
-  if (!has(cur)) cur = C.tabs[0][0];
+  if (!has(cur)) cur = (tabs()[0] || C.tabs[0])[0];
 
   /* the bar */
   var nav = document.createElement('nav');
@@ -72,7 +74,7 @@
   }
   function draw() {
     bar();
-    if (!has(cur)) { cur = C.tabs[0][0]; }
+    if (!has(cur)) { cur = (tabs()[0] || C.tabs[0])[0]; }
     nav.querySelectorAll('[data-ptab-go]').forEach(function (b) { var on = b.dataset.ptabGo === cur; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
     /* many tabs on a phone scroll sideways: keep the one you're on in view */
     if (nav.classList.contains('pt-many') && nav.scrollWidth > nav.clientWidth + 2) { var sel = nav.querySelector('[aria-selected="true"]'); if (sel) { var l = sel.offsetLeft - 8, r = sel.offsetLeft + sel.offsetWidth + 8; if (l < nav.scrollLeft) nav.scrollLeft = l; else if (r > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = r - nav.clientWidth; } }
@@ -118,6 +120,7 @@
   var tm = null;
   new MutationObserver(function () { if (assigning) return; clearTimeout(tm); tm = setTimeout(function () { assign(); suggest(); }, 40); }).observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   window.addEventListener('features:change', function () { setTimeout(draw, 80); });
+  window.addEventListener('homes:view', function () { setTimeout(draw, 30); });
   window.Vault.onUnlock(function () { setTimeout(function () { draw(); fromHash(); }, 60); });
   draw(); fromHash();
   window.PageTabs = { show: show, current: function () { return cur; } };
