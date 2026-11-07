@@ -108,11 +108,23 @@ function hnum(v) {
   const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.'));
   return isFinite(n) && n >= 0 && n < 1e7 ? Math.round(n * 100) / 100 : null;
 }
+/* sleep may come as a number (hours, minutes or seconds), "7:32" / "7:32:10", or "7 hr 32 min" / "7 t 32 min" */
+function hdur(v) {
+  if (typeof v === 'number') return hnum(v);
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  let m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m) return Math.round((+m[1] + m[2] / 60 + (m[3] || 0) / 3600) * 100) / 100;
+  const h = s.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hr|hrs|hour|hours|t|time|timer)(?![a-zæøå])/), mi = s.match(/(\d+(?:[.,]\d+)?)\s*(?:m|min|mins|minute|minutes|minutt|minutter)(?![a-zæøå])/);
+  if (h || mi) return Math.round(((h ? parseFloat(h[1].replace(',', '.')) : 0) + (mi ? parseFloat(mi[1].replace(',', '.')) / 60 : 0)) * 100) / 100;
+  return hnum(v);
+}
 function hday(o) {
+  /* field names are matched without caring about capitals: "Sleep" works like "sleep" */
+  const lo = {}; Object.keys(o || {}).forEach(f => { lo[String(f).trim().toLowerCase()] = o[f]; }); o = lo;
   const k = /^\d{4}-\d{2}-\d{2}/.test(String(o.date || '')) ? String(o.date).slice(0, 10) : new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
   const out = { date: k };
   /* the known numbers, plus any other short name (up to 30) – new numbers need no Worker update */
-  Object.keys(o).filter(f => f !== 'date' && /^[a-z][a-z0-9]{0,15}$/.test(f)).slice(0, 30).forEach(f => { const n = hnum(o[f]); if (n !== null) out[f] = n; });
+  Object.keys(o).filter(f => f !== 'date' && /^[a-z][a-z0-9]{0,15}$/.test(f)).slice(0, 30).forEach(f => { const n = f === 'sleep' ? hdur(o[f]) : hnum(o[f]); if (n !== null) out[f] = n; });
   return Object.keys(out).length > 1 ? out : null;
 }
 async function healthApi(request, env) {

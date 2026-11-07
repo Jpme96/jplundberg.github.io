@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=187" rel="stylesheet">
+  <link href="../styles.css?v=188" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
@@ -506,7 +506,7 @@
           <ol>
             <li>Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
             <li><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
-            <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Asleep</b> and <b>Value is not Awake</b> (keeps the Watch's Core, Deep and REM, so a night isn't counted twice). Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
+            <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Asleep</b>, <b>Value is not Awake</b> and <b>Value is not In Bed</b> (keeps the Watch's Core, Deep and REM, so a night isn't counted twice). No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>. Limit off. Then <b>Get Details of Health Sample</b> → Duration, and <b>Calculate Statistics</b> → Sum.</li>
             <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
             <li><b>More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
               <div class="ah-keys">
@@ -680,7 +680,7 @@
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=fcbd19a60e"></script>
   <script src="../dist/page-papers.js?v=60c5e6d23c"></script>
-  <script src="../dist/tail.js?v=6bfc4ae332"></script>
+  <script src="../dist/tail.js?v=1db7f564fd"></script>
   <!-- /scripts -->
 </body>
 </html>

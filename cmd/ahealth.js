@@ -112,6 +112,9 @@
       pulling = false;
       if (D) { D.mark('healthPull'); D.hide('health'); }
       if (!j || !j.items || !j.items.length) return;
+      /* remember the newest sending, so Settings can show exactly what the iPhone sent */
+      var li = j.items[j.items.length - 1];
+      if (li && JSON.stringify(li) !== JSON.stringify(lastIn())) { writeJSON('dash.health.lastIn', li); if (typeof settingsPage === 'function') try { settingsPage(); } catch (e) {} card(); }
       /* the inbox is kept on the server (last 120 sendings), so every device – and a device that
          was locked before its save reached the server – picks up every day; numbers only change
          when they're new, so taking them again does nothing */
@@ -349,9 +352,11 @@
     var goalCtl = GOAL_DEF[chartM] != null || GOALABLE[chartM] ? (editGoal ? '<span class="ah-goaledit">Goal <input id="ahGoalIn" inputmode="decimal" value="' + esc(goal == null ? '' : goal) + '" aria-label="Goal for ' + esc(LABEL[chartM]) + '">' + ({ weight: ' kg', rhr: ' bpm', hrv: ' ms', sleep: ' h', exercise: ' min', active: ' kcal', stand: ' h', distance: ' km', mindful: ' min', water: ' l', daylight: ' min', flights: ' floors' }[chartM] || '') + ' <button type="button" class="text-btn" data-ahgoalsave>Save</button></span>' : '<button type="button" class="text-btn ah-goalbtn" data-ahgoal><i class="bi bi-flag"></i> Goal ' + esc(fmt(chartM, goal)) + '</button>') : '';
     /* sleep that's far too short on several days: usually the Shortcut only gets part of the night (Limit on in Find Health Samples) */
     var low = keys.filter(function (k) { var v = D[k].sleep; return v != null && v > 0 && v < 2; });
+    var sc0 = sleepCheck(lastIn()), li0 = lastIn();
+    var sleepNote = sc0 && sc0.bad && li0 && li0.t && Date.now() - li0.t < 3 * 864e5 ? '<div class="ah-warn"><i class="bi bi-moon-stars"></i><span><b>' + esc(sc0.title) + '.</b> <a href="../?settings=ahealth">See what your iPhone sent and how to fix it</a></span></div>' : '';
     var lowNote = low.length >= 2 ? '<div class="ah-warn"><i class="bi bi-exclamation-triangle"></i><span><b>Sleep under 2 hours on ' + low.length + ' days</b> – the Shortcut probably gets only part of the night. In the Shortcut’s sleep step (Find Health Samples, Type Sleep), switch <b>Limit</b> off.</span>' +
       '<button type="button" class="text-btn" data-ahlowdel>Remove those ' + low.length + ' nights</button></div>' : '';
-    box.innerHTML = head + lowNote + '<div class="ah-tiles' + (editLayout ? ' editing' : '') + '">' + tiles + '</div>' + ctl + bars + dayBox +
+    box.innerHTML = head + (lowNote || sleepNote) + '<div class="ah-tiles' + (editLayout ? ' editing' : '') + '">' + tiles + '</div>' + ctl + bars + dayBox +
       (ins.length ? '<p class="ah-ins">' + esc(ins.join(' · ')) + '</p>' : '') + short +
       '<div class="ah-foot muted"><span>' + (lastT ? 'Updated ' + esc(new Date(lastT).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '') + '</span>' + goalCtl + '</div>';
     if (editGoal && $('ahGoalIn')) { $('ahGoalIn').focus(); $('ahGoalIn').select(); }
@@ -395,6 +400,26 @@
     if (t) { selDay = n; card(); document.querySelector('[data-ahday="' + n + '"]').focus(); }
   });
 
+  /* ---------- what the last sending had: the answer to "sleep didn't come through" ---------- */
+  function lastIn() { return readJSON('dash.health.lastIn', null); }
+  function sleepCheck(li) {
+    if (!li) return null;
+    var has = Object.prototype.hasOwnProperty.call(li, 'sleep'), h = has ? hours(li.sleep) : null;
+    if (!has) return { bad: true, title: 'The last sending had no sleep number', fix: 'In the Shortcut’s <b>Get Contents of URL</b> step, add a field: type <b>Number</b>, key <b>sleep</b>, value the <b>Calculation Result</b> of the sleep step. If the field is there, the sleep step gives nothing – see below.' };
+    if (!h) return { bad: true, title: 'Sleep came as 0', fix: 'The sleep step found nothing. Open Health → Sleep → <b>Show More Sleep Data</b>: if you only see <b>In Bed</b> (no Core, Deep or REM), remove the “Value is not …” filters and use one filter, <b>Value is In Bed</b>. If you see Core/Deep/REM, keep <b>Value is not Asleep</b>, <b>is not Awake</b> and <b>is not In Bed</b>.' };
+    if (h > 14) return { bad: true, title: 'Sleep came as ' + fmt('sleep', h) + ' – too much', fix: 'In Bed is counted on top of Core, Deep and REM. In the sleep step add the filter <b>Value is not In Bed</b>.' };
+    if (h < 2) return { bad: true, title: 'Sleep came as only ' + fmt('sleep', h), fix: 'Only part of the night was found. In the sleep step switch <b>Limit</b> off, and let the automation run in the evening (a morning run can miss the end of the night).' };
+    return { bad: false, title: 'Sleep ' + fmt('sleep', h) };
+  }
+  function lastInHtml() {
+    var li = lastIn(); if (!li) return '';
+    var when = li.t ? new Date(li.t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    var got = Object.keys(li).filter(function (f) { return f !== 't' && f !== 'date'; }).map(function (f) { return '<code>' + esc(f) + '</code> ' + esc(f === 'sleep' ? li[f] + (hours(li[f]) ? ' → ' + fmt('sleep', hours(li[f])) : '') : li[f]); }).join(' · ');
+    var sc = sleepCheck(li);
+    return '<div class="st-row ah-last"><span class="st-label">Last sending from your iPhone<small>' + esc(when) + (li.date ? ' · for ' + esc(li.date) : '') + '</small><small class="ah-got">' + (got || 'No numbers') + '</small>' +
+      (sc ? '<small class="' + (sc.bad ? 'ah-bad' : 'ah-good') + '"><i class="bi bi-' + (sc.bad ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + esc(sc.title) + (sc.fix ? '</small><small class="ah-fix">' + sc.fix : '') + '</small>' : '') + '</span></div>';
+  }
+
   /* ---------- Settings → Apple Health ---------- */
   function settingsPage() {
     var box = $('ahSet'); if (!box) return;
@@ -402,6 +427,8 @@
     var hb = readJSON('dash.habits', { list: [] }), D = days(), n = Object.keys(D).length;
     $('ahStatus').textContent = n ? n + ' day' + (n === 1 ? '' : 's') + ' from Apple Health · last ' + new Date(((window.Vault.get() || {}).health || {}).last || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Nothing received yet';
     $('ahOn').checked = Fe ? Fe.on('ahealth') : true;
+    var lg = $('ahLast'); if (!lg) { lg = document.createElement('section'); lg.className = 'st-group'; lg.id = 'ahLast'; var g0 = $('ahOn').closest('.st-group'); g0.parentNode.insertBefore(lg, g0.nextSibling); }
+    var lh = lastInHtml(); lg.hidden = !lh; if (lg.innerHTML !== lh) lg.innerHTML = lh;
     if ($('ahSetup') && !settingsPage.done) { $('ahSetup').open = !n; settingsPage.done = true; }   // set-up open until numbers arrive
     $('ahHabits').innerHTML = (hb.list || []).length ? hb.list.map(function (h) {
       var a = h.auto || {};

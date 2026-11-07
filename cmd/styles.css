@@ -4448,3 +4448,9 @@ html:not(.feat-off-house) #fp .fp-houseable { display: none !important; }   /* p
 .pa-when small { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
 .pa-when.near { background: rgba(232, 116, 59, .14); }
 .pa-when.over { background: rgba(230, 103, 103, .14); }
+/* Settings → Apple Health: the last sending */
+.ah-last .st-label small { display: block; margin-top: 3px; }
+.ah-got code { font-size: 11px; padding: 0 4px; border-radius: 4px; background: rgba(var(--ink-rgb), .07); }
+.ah-bad { color: #c4581f; font-weight: 600; }
+.ah-good { color: #1f9d55; font-weight: 600; }
+.ah-fix { line-height: 1.45; }
