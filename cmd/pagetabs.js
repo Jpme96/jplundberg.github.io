@@ -20,7 +20,7 @@
     habits: {
       tabs: [['today', 'Today', 'sun'], ['training', 'Training', 'heart-pulse'], ['body', 'Body', 'apple'], ['care', 'Care', 'clipboard2-pulse']],
       map: [['#hpTiles', 'today'], ['#hsToday', 'today'], ['.hr-wrap', 'today'], ['#hpHabits', 'today'], ['#hpEmpty', 'today'],
-        ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'],
+        ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'], ['[data-tool="hwater"]', 'today'],
         ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care']],
       feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health', 'journal'] }
     },
