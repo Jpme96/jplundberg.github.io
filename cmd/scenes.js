@@ -165,7 +165,7 @@
     var svg = ground() + deco('work') +
       part('flex', st ? '' : '', '<circle cx="200" cy="38" r="16" class="sc-clock"/>' + hand(ha, 8, 'sc-hh') + hand(ma, 12, 'sc-mh') + '<circle cx="200" cy="38" r="1.6" class="sc-dot"/>' +
         (st ? '<text x="200" y="66" text-anchor="middle" class="sc-lbl' + (st.balance < 0 ? ' neg' : '') + '">' + esc(bal) + '</text>' : '')) +
-      (window.Avatar ? '<g class="sc-me">' + window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="98" y="40" width="50" height="60"' }).replace('viewBox="0 0 200 200"', 'viewBox="56 24 90 108"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '') + '</g>' : '') +
+      (window.Avatar ? '<g class="sc-me">' + window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="90" y="22" width="66" height="80"' }).replace('viewBox="0 0 200 200"', 'viewBox="56 24 90 108"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '') + '</g>' : '') +
       '<rect x="24" y="96" width="192" height="6" rx="2" class="sc-wood"/><rect x="34" y="102" width="5" height="26" class="sc-wood"/><rect x="201" y="102" width="5" height="26" class="sc-wood"/>' +
       part('ptime', timer ? 'hot' : '', '<rect x="54" y="70" width="44" height="26" rx="2" class="sc-screen' + (timer ? ' lit' : '') + '"/><path d="M48 96 h56 l-4 -3 h-48z" class="sc-kbd"/>' + (timer ? '<path d="M72 78 l8 5 -8 5z" class="sc-play"/>' : ''));
     var stack = Math.min(6, open), papers = '';
@@ -398,9 +398,9 @@
     }).join('');
     var svg = ground() + deco('wish') + stars +
       part('wbuy', buy ? 'hot' : '', '<path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text>') +
-      part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92) +
-      /* you, pushing the cart back and forth */
-      '<g class="sc-push">' + sceneMe(-14, 44, 52, 84, 'plain', 'sc-pusher') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
+      part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92);
+    /* you, pushing the cart across the picture and back */
+    svg += '<g class="sc-push">' + sceneMe(-14, 44, 52, 84, 'plain', 'sc-pusher') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
     var list = [];
     var fits = W && W.fit ? Fe.list('wishes').filter(function (w) { var f = W.fit(w); return f && f.now; }).length : 0;
     if (l.length) list.push({ t: Fe.list('wishes').length + L(' wishes', ' ønsker') + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
@@ -426,7 +426,7 @@
       '<path d="M28 132 L120 30 L212 132 Z" class="sc-mtn"/><path d="M104 48 L120 30 L136 48 L128 44 L120 50 L112 44 Z" class="sc-snow"/><path d="M150 132 L184 92 L224 132 Z" class="sc-mtn2"/>' +
       '<path d="M40 128 Q70 104 66 92 T96 62 T120 32" class="sc-trail"/>' +
       part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers +
-      (allDone ? sceneMe(92, -16, 36, 52, 'win', 'sc-top') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-20, -56, 40, 57, 'plain', 'sc-climber') + '</g>'; })());
+      (allDone ? sceneMe(88, -26, 44, 64, 'win', 'sc-top') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-24, -68, 48, 69, 'plain', 'sc-climber') + '</g>'; })());
     var list = l.map(function (g) { return { t: g.name + ' · ' + Math.round((GS ? GS.pct(g) : 0) * 100) + ' %', h: '#glActive' }; });
     return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.') };
   }

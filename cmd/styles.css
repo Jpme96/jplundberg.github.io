@@ -4982,7 +4982,7 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 :is(.sc-you, .sc-curl) :is(.av-armR, .av-armL) { transform-box: view-box; }
 :is(.sc-you, .sc-curl) .av-armR { transform-origin: 123px 96px; } :is(.sc-you, .sc-curl) .av-armL { transform-origin: 79px 96px; }
 /* Wishlist: pushing the cart back and forth */
-.sc-push { animation: scpush 3.4s ease-in-out infinite; } @keyframes scpush { 50% { transform: translateX(16px); } }
+.sc-push { animation: scpush 7s ease-in-out infinite; } @keyframes scpush { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(150px); } }
 .sc-pusher :is(.av-armR, .av-armL) { transform: rotate(-58deg); }
 .sc-pusher .av-all { animation: scstep .42s ease-in-out infinite alternate; } @keyframes scstep { to { transform: translateY(-2px); } }
 .sc-push .sc-wheel { transform-box: fill-box; transform-origin: center; }
