@@ -4756,3 +4756,13 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
   .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > [data-tool] > .card.card-folded { height: auto; }
 }
 #fpMoneyEdit, .mn-trs [data-mntrall] { white-space: nowrap; flex: none; }
+.cr-grid.gp-on { grid-auto-rows: 4px; grid-auto-flow: row dense; align-items: start; }
+/* Admin → System: one grid for all its cards, so nothing waits under the tallest card of another group */
+@media (min-width: 700px) {
+  #crRoot.cr-sys { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); column-gap: 14px; row-gap: 14px; align-items: start; }
+  #crRoot.cr-sys.gp-on { grid-auto-rows: 4px; grid-auto-flow: row dense; }
+  #crRoot.cr-sys > #crTop, #crRoot.cr-sys .dgu-top { grid-column: 1 / -1; }
+  #crRoot.cr-sys > #crDiag, #crRoot.cr-sys .dgu, #crRoot.cr-sys .dgu-grid, #crRoot.cr-sys > #crCards, #crRoot.cr-sys > #crCards > .cr-grid { display: contents; }
+  #crRoot.cr-sys .dgu-top { margin: 0; }
+}
+@media (min-width: 700px) { #crRoot.cr-sys .cr-tabs { margin-bottom: 0; } }

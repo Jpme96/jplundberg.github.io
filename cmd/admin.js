@@ -265,6 +265,7 @@
     document.getElementById('crTop').innerHTML = top + tabbar;
     document.getElementById('crCards').innerHTML = grid;
     var wsEl = document.getElementById('crWs'); wsEl.hidden = TAB !== 'website'; if (TAB === 'website') mountWs();
+    box.classList.toggle('cr-sys', TAB === 'system');     /* System: Diagnostics' cards and the System cards share one grid (gridpack.js) */
     var dgEl = document.getElementById('crDiag'); dgEl.hidden = TAB !== 'system'; if (TAB === 'system' && window.DiagUI) window.DiagUI.mount(dgEl);
     if (keep) { var f = box.querySelector('#crCards form.' + keep.sel.split(' ').join('.') + ' input'); if (f) { f.value = keep.v; f.focus(); } }
     fillAsync();

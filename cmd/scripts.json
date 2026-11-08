@@ -48,6 +48,7 @@
     "alive.js",
     "modern.js",
     "steady.js",
+    "gridpack.js",
     "fold.js"
   ],
   "pages": {
