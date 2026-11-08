@@ -4909,3 +4909,13 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .dv-x b em { font-style: normal; font-size: 11.5px; font-weight: 600; color: #22b35e; margin-left: 4px; }
 .dv-x small { font-size: 12.5px; color: var(--muted); }
 .dv-in { width: 100%; }
+
+/* iPhone: an empty date box collapsed to a tiny pill (Safari draws no text in it until a date is picked).
+   Give date and time boxes a real size, and a calendar/clock mark while they’re empty (:invalid
+   isn’t reliable, so gridpack.js marks empty ones with .dt-empty). */
+input[type="date"], input[type="month"], input[type="datetime-local"] { min-width: 9.5em; min-height: 38px; }
+input[type="time"] { min-width: 6em; min-height: 38px; }
+input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value, input[type="month"]::-webkit-date-and-time-value { min-height: 1.3em; }
+input.dt-empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 15px; }
+input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .25.43l3.5 2a.5.5 0 0 0 .5-.86L8 8.71z'/%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0'/%3E%3C/svg%3E"); }
+.kit-row input[type="date"], .kit-row input[type="time"] { width: 9.5em; }

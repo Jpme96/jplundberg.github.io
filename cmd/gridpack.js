@@ -43,3 +43,19 @@
   watch();
   window.GridPack = { pack: pack };
 })();
+
+/* Empty date and time boxes: iPhone Safari draws nothing in them, so they get a calendar or clock mark (.dt-empty,
+   styles.css) until a date is picked – set as forms appear and whenever a value changes. */
+(function () {
+  "use strict";
+  var SEL = 'input[type="date"], input[type="time"], input[type="month"], input[type="datetime-local"]';
+  function mark(i) { var e = !i.value; if (i.classList.contains('dt-empty') !== e) i.classList.toggle('dt-empty', e); }
+  function all(root) { (root || document).querySelectorAll(SEL).forEach(mark); }
+  ['input', 'change'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target.matches && e.target.matches(SEL)) mark(e.target); }, true); });
+  var t = null;
+  new MutationObserver(function () { clearTimeout(t); t = setTimeout(all, 60); }).observe(document.documentElement, { childList: true, subtree: true });
+  /* a form filled in by code (value set without an event) */
+  document.addEventListener('focusout', function (e) { if (e.target.matches && e.target.matches(SEL)) mark(e.target); }, true);
+  setInterval(function () { if (!document.hidden && document.querySelector('.kit-bg.open, .fo-bg.open, .lf-bg.open, .st-backdrop.open')) all(); }, 800);
+  all();
+})();
