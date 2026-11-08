@@ -370,7 +370,8 @@
     try { var tt = JSON.parse(localStorage.getItem('dash.diagTest') || 'null'); if (tt && tt.done && Date.now() - tt.t < 864e5) test = tt; } catch (e) {}
     draw();
     device().then(draw);
-    if (!worker || Date.now() - worker.t > 6 * 36e5) checkWorker();
+    /* the Worker is checked again when the last check is over 10 minutes old (a new Cron Trigger shows up quickly) */
+    if (!worker || Date.now() - worker.t > 10 * 6e4) checkWorker();
   }
   window.DiagUI = { mount: mount, report: function (t) { reportSheet(t); }, test: runTest, check: checkAll, draw: draw };
 })();
