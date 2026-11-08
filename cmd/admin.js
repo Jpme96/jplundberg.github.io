@@ -230,6 +230,7 @@
         '<li><span>Apple Health</span><b>' + (Fe && Fe.on('ahealth') ? ago(dst.healthPull) : L('off', 'av')) + '</b></li>' +
         '<li><span>' + L('App version', 'App-versjon') + '</span><b id="crVer">…</b></li></ul>' +
         (errs.length ? '<ul class="cr-errs">' + errs.slice(0, 4).map(function (e) { return '<li>' + esc(String(e.msg || e.m || e.message || e).slice(0, 110)) + (e.n > 1 ? ' ×' + e.n : '') + '</li>'; }).join('') + '</ul>' : ''));
+      C['clean'] = window.AdminClean ? window.AdminClean.card(card) : '';
       C['storage'] = card('storage', 'database', L('Storage', 'Lagring'), '', '<div id="crStore"><p class="muted">' + L('Counting …', 'Teller …') + '</p></div>');
     }
     /* admin to-do */
@@ -254,7 +255,7 @@
           : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
-    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage'] };
+    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage', 'clean'] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
     var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
       return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
@@ -509,6 +510,6 @@
   setTimeout(function () { if (!started && root.classList.contains('unlocked')) start(); else if (!box.innerHTML.trim() && root.classList.contains('unlocked')) draw(); }, 2500);
   if (root.classList.contains('unlocked')) start();
   var soon = function () { clearTimeout(soon.t); soon.t = setTimeout(draw, 120); };
-  ['tools:change', 'dash:local', 'sync:state'].forEach(function (ev) { window.addEventListener(ev, soon); });
+  ['tools:change', 'dash:local', 'sync:state', 'clean:done'].forEach(function (ev) { window.addEventListener(ev, soon); });
   window.addEventListener('admin:cfg', function () { schedule(); draw(); });
 })();

@@ -243,6 +243,8 @@
     }, 350);
     history.replaceState(null, '', location.pathname + location.search);
   }
+  /* for others: everything you can find (notes link to things with [[name]] – script.js) */
+  window.SearchIndex = function () { try { return index().filter(function (x) { return x.g !== 'Commands' && x.g !== 'Notes' && x.h; }); } catch (e) { return []; } };
   window.Vault.onUnlock(goHash);
   window.addEventListener('hashchange', goHash);
 })();

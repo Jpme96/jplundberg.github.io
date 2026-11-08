@@ -622,7 +622,18 @@
     return esc(text).replace(/(https?:\/\/[^\s<]+)/g, function (u) {
       var label = u; try { label = new URL(u.replace(/&amp;/g, '&')).hostname; } catch (e) {}
       return '<a href="' + u + '" target="_blank" rel="noopener">' + label + '</a>';
+    }).replace(/\[\[([^\]\n]{1,60})\]\]/g, function (all, name) {
+      /* [[Sofa]], [[Iago]], [[New bathroom]]: a link to that thing anywhere on the dashboard */
+      var hit = findThing(name.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
+      return hit ? '<a class="nl-link" href="' + esc(hit.h) + '"><i class="bi bi-' + esc(hit.i) + '"></i>' + name + '</a>' : '<span class="nl-link nl-miss" title="Nothing called that yet"><i class="bi bi-link-45deg"></i>' + name + '</span>';
     });
+  }
+  var thingCache = null;
+  function findThing(q) {
+    if (!window.SearchIndex) return null;
+    if (!thingCache || Date.now() - thingCache.t > 5000) thingCache = { t: Date.now(), l: window.SearchIndex() };
+    var x = q.toLowerCase().trim(), l = thingCache.l;
+    return l.filter(function (i) { return i.t.toLowerCase() === x; })[0] || l.filter(function (i) { return i.t.toLowerCase().indexOf(x) === 0; })[0] || l.filter(function (i) { return i.t.toLowerCase().indexOf(x) > -1; })[0] || null;
   }
   /* lines like "- [ ] milk" become tick boxes; tick one and the note remembers it */
   function noteBody(n) {
@@ -653,6 +664,8 @@
     $('noteEmpty').hidden = notes.length > 0;
   }
   var notesAll = false;
+  /* [[links]] need the search index (loaded after this file) and your data */
+  if (window.Vault) window.Vault.onUnlock(function () { setTimeout(function () { thingCache = null; if (notes.some(function (n) { return /\[\[/.test(n.text); })) renderNotes(); }, 400); });
   function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
   $('noteInput').addEventListener('input', function () { grow(this); });
   $('noteInput').addEventListener('keydown', function (e) {

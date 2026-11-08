@@ -3,6 +3,7 @@
     "diag.js",
     "i18n.js",
     "lock.js",
+    "devices.js",
     "lockui.js",
     "passkey.js",
     "features.js",
@@ -25,6 +26,7 @@
     "life-pages.js",
     "home-life.js",
     "people-plus.js",
+    "life-more.js",
     "food-plus.js",
     "filesync.js",
     "house-plus.js",
@@ -187,6 +189,7 @@
       "budget.js",
       "kit.js",
       "profile.js",
+      "admin-clean.js",
       "admin.js",
       "writer.js",
       "diag-ui.js"

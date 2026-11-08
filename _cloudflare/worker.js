@@ -11,6 +11,7 @@
                       (sets "published: false" in the file's front matter).
    /cmd/api/texts     the website texts you can edit (_data/texts.json in GitHub):
                       about, roles, contact, footer … in English and Norwegian.
+   /cmd/api/devices   your devices (Settings → Security): a list, and signing one out.
    /cmd/api/push      notifications (Settings → Notifications, off until switched on on a device):
                       the dashboard sends the reminders it planned for the next 7 days, and a
                       cron trigger (every 5 minutes) sends each one at its time with Web Push.
@@ -82,7 +83,7 @@ async function cronBeat(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -93,6 +94,10 @@ async function route(request, env) {
 
     /* a service token (the iPhone Shortcut) may only hand in health numbers */
     if (check.service && !(path === '/cmd/api/health' && request.method === 'POST')) return json({ error: 'not allowed for a service token' }, 403);
+    /* a device you signed out in Settings → Security → Your devices gets nothing more (it wipes itself) */
+    const devId = request.headers.get('X-Dash-Device');
+    if (devId && DEV_ID.test(devId) && env.VAULT) { const dv = await env.VAULT.get(DEV_PREFIX + devId); if (dv && JSON.parse(dv).revoked) return json({ error: 'signed out', signedOut: true }, 401); }
+    if (path === '/cmd/api/devices') return devicesApi(request, url, env);
     if (path === '/cmd/api/health') return healthApi(request, env);
     if (path === '/cmd/api/site') return site(request, env);
     if (path === '/cmd/api/visitors') return visitors(url, env);
@@ -882,6 +887,39 @@ function hdrs() {
 }
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: hdrs() });
+}
+
+/* ---- Your devices (Settings → Security): each device says hello now and then (at most every few hours);
+   you see them all and can sign one out – it wipes its own copy the next time it asks for anything. ---- */
+const DEV_PREFIX = 'dev:';
+const DEV_ID = /^[a-z0-9]{8,40}$/;
+async function devicesApi(request, url, env) {
+  if (!env.VAULT) return json({ error: 'no storage' }, 503);
+  if (request.method === 'GET') {
+    const l = await env.VAULT.list({ prefix: DEV_PREFIX }), out = [];
+    for (const k of l.keys.slice(0, 50)) { const v = await env.VAULT.get(k.name); if (v) { try { out.push(JSON.parse(v)); } catch (e) {} } }
+    return json({ devices: out });
+  }
+  if (request.method === 'POST') {
+    const b = await request.json().catch(() => ({}));
+    if (!DEV_ID.test(b.id || '')) return json({ error: 'bad device id' }, 400);
+    const old = JSON.parse(await env.VAULT.get(DEV_PREFIX + b.id) || 'null');
+    if (old && old.revoked) return json({ error: 'signed out', signedOut: true }, 401);
+    const cf = request.cf || {};
+    const rec = { id: b.id, name: String(b.name || '').slice(0, 60), ua: (request.headers.get('User-Agent') || '').slice(0, 200), first: old ? old.first : Date.now(), last: Date.now(), where: [cf.city, cf.country].filter(Boolean).join(', ') };
+    await env.VAULT.put(DEV_PREFIX + b.id, JSON.stringify(rec), { expirationTtl: 400 * 86400 });
+    return json({ ok: true });
+  }
+  if (request.method === 'DELETE') {
+    const id = url.searchParams.get('id') || '';
+    if (!DEV_ID.test(id)) return json({ error: 'bad device id' }, 400);
+    if (url.searchParams.get('forget')) { await env.VAULT.delete(DEV_PREFIX + id); return json({ ok: true }); }
+    const old = JSON.parse(await env.VAULT.get(DEV_PREFIX + id) || 'null') || { id };
+    old.revoked = Date.now();
+    await env.VAULT.put(DEV_PREFIX + id, JSON.stringify(old), { expirationTtl: 90 * 86400 });
+    return json({ ok: true });
+  }
+  return json({ error: 'method not allowed' }, 405);
 }
 
 /* ---- Cloudflare Access token check (RS256 JWT) ---- */

@@ -261,7 +261,7 @@
           <button class="pill-btn" type="submit" id="noteSubmit" aria-label="Save note"><i class="bi bi-plus-lg"></i></button>
         </form>
         <ul class="note-list" id="noteList"></ul>
-        <p class="empty" id="noteEmpty">No notes yet. Tap a note to edit it, pin the ones you need, and start lines with “- [ ]” for a checklist.</p>
+        <p class="empty" id="noteEmpty">No notes yet. Tap a note to edit it, pin the ones you need, and start lines with “- [ ]” for a checklist. Write [[a name]] to link to a person, wish, project or paper.</p>
       </section>
       </div>
     </section>
@@ -535,6 +535,7 @@
 
       <div class="st-page" data-page="health" data-title="Health" hidden>
         <div id="hpSet"></div>
+        <div id="hpSet2"></div>
       </div>
 
       <div class="st-page" data-page="house" data-title="House" hidden>
@@ -544,6 +545,7 @@
 
       <div class="st-page" data-page="people" data-title="People" hidden>
         <div id="hlSet-people"></div>
+        <div id="hlSet-people2"></div>
       </div>
 
       <div class="st-page" data-page="food" data-title="Food" hidden>
@@ -580,6 +582,8 @@
         </form>
         <button class="st-row st-btn" id="stLockNow" type="button"><span><i class="bi bi-lock"></i> Lock now</span><i class="bi bi-chevron-right"></i></button>
       </section>
+      <p class="st-sub ap-sub"><i class="bi bi-phone"></i> Your devices <span class="st-hint">Where your dashboard is open – sign one out if you lose it</span></p>
+      <section class="st-group" id="stDevices"></section>
       </div>
 
       <div class="st-page" data-page="adminset" data-title="Admin page" hidden><div id="crSet"></div></div>
@@ -826,9 +830,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=86bebce9d9"></script>
-  <script src="dist/page-home.js?v=17034df8d0"></script>
-  <script src="dist/tail.js?v=0bfab24c88"></script>
+  <script src="dist/head.js?v=0c4a380fef"></script>
+  <script src="dist/page-home.js?v=ec2f640bcd"></script>
+  <script src="dist/tail.js?v=077e4e56d7"></script>
   <!-- /scripts -->
 </body>
 </html>
