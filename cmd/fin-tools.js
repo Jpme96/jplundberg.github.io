@@ -29,7 +29,7 @@
   function fin() { return Fe.on('finance') ? window.Vault.get() : null; }
   var GREEN = '#22b35e', AMBER = '#c98500', RED = '#e66767', BLUE = '#3987e5', GREY = '#7a8794';
 
-  var DEF = { merge: true, buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
+  var DEF = { eye: true, rise: true, payBrief: true, ebBrief: true, merge: true, buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
   function cfg() { var c = Fe.tools().fintools; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }
   function setCfg(p) { var t = Fe.tools(); t.fintools = Object.assign({}, t.fintools || {}, p); Fe.saveTools(t); }
   function debts(d) { return ((d && d.accounts) || []).filter(function (a) { return a.kind === 'debt'; }); }
@@ -222,6 +222,18 @@
       if (t >= y + '-03-18' && t <= y + '-04-30' && !st.done) { var n = days(t, y + '-04-30'); add(n <= 7 ? 40 : 66, 'envelope-open', BLUE, 'Tax return for ' + ty + (n <= 7 ? ' – ' + (n ? n + ' days left' : 'last day') : ' is open'), 'Deadline 30 April · what to check is on Finances → Insights', '/cmd/finance/#fntax'); }
       if (t >= y + '-12-10' && t <= y + '-12-31') add(74, 'hourglass-bottom', GREY, 'Things that count for ' + y + ' end on 31 Dec', 'Gifts to charity, fund savings – if you planned any', '/cmd/finance/#fntax');
     }
+    rises().slice(0, 2).forEach(function (r) {
+      add(54, 'graph-up-arrow', AMBER, r.name + ' went up: ' + kr(r.was) + ' → ' + kr(r.now), 'Charged ' + fmtD(r.date) + ' · update the price?', r.kind === 'sub' ? '/cmd/finance/#subs' : '/cmd/finance/#fpAcctCard',
+        { act: { id: 'rise:' + r.key, label: 'Update' }, run: function () { riseFix(r, true); } });
+    });
+    if (c.payBrief && B && B.payPlan) { try { var pp = B.payPlan(d), op = pp.moves.filter(function (m) { return !m.done; }); var into = pp.per.days - pp.per.daysLeft;
+      if (pp.per.byPayday && into <= 3 && op.length) add(30, 'list-check', BLUE, 'Payday: ' + op.length + (op.length === 1 ? ' move' : ' moves') + ' to do', kr(op.reduce(function (a, m) { return a + m.amount; }, 0)) + ' to move · tap All done when you have', '/cmd/finance/#fnPayCard', { act: { id: 'payall:' + pp.per.startKey, label: 'All done' }, run: payAll });
+    } catch (er) {} }
+    if (c.ebBrief) Fe.list('ebudgets').forEach(function (b) {
+      if (!isKey(b.start)) return; var n = days(t, b.start), sp = ebSpent(b, d).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0;
+      if (n >= 0 && n <= 14) add(60, b.kind === 'trip' ? 'airplane' : 'calendar2-heart', '#d55181', b.name + ' in ' + n + (n === 1 ? ' day' : ' days'), kr(Math.max(0, bu - sp)) + ' left of ' + kr(bu), '/cmd/finance/#ebud');
+      else if (n < 0 && t <= (b.end || b.start) && sp > bu) add(42, 'exclamation-triangle', RED, b.name + ': over budget', kr(sp - bu) + ' over', '/cmd/finance/#ebud');
+    });
     if (c.rateBrief) {
       var lg = rateLog().filter(function (x) { return days(x.date, t) <= 10; })[0];
       if (lg) add(56, 'percent', lg.to > lg.from ? AMBER : GREEN, 'Interest on ' + lg.name + ' ' + (lg.to > lg.from ? 'up' : 'down') + ' to ' + fmtR(lg.to) + ' %', lg.month ? 'About ' + (lg.month > 0 ? '+' : '−') + kr(Math.abs(lg.month)) + ' a month' : 'From ' + fmtR(lg.from) + ' %', '/cmd/finance/#fnrate');
@@ -244,9 +256,11 @@
     function sel(f, label, opts, sub) { var v = String(c[f]); return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" data-ftcfg="' + f + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
     function sw(f, label, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" class="switch" data-ftcfg="' + f + '"' + (c[f] ? ' checked' : '') + '></label>'; }
     function sub(icon, t) { return '<p class="st-sub ap-sub"><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</p>'; }
-    box.innerHTML = sub('calculator', 'Can I afford it?') + '<div class="st-group">' +
+    box.innerHTML = sub('eye-slash', 'Hide amounts') + '<div class="st-group">' + sw('eye', 'The eye button on every page', 'Blurs all amounts when someone is next to you – reload the page after changing') + '</div>' +
+      sub('calculator', 'Can I afford it?') + '<div class="st-group">' +
       sel('buffer', 'Always keep in your accounts', [[0, 'Nothing'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr'], [20000, '20 000 kr'], [50000, '50 000 kr']], 'Paying from the accounts never goes below this') +
       sel('share', 'A price fits this month when it’s up to', [[50, 'Half of what’s left'], [75, '75 % of what’s left'], [100, 'All of what’s left']]) + '</div>' +
+      sub('calendar2-heart', 'Events, payday and prices') + '<div class="st-group">' + sw('ebBrief', 'Event and trip budgets in At a glance', 'Two weeks before, and when one goes over') + sw('payBrief', 'Payday moves in At a glance', 'With an All done button') + sw('rise', 'Tell me when a bill or subscription costs more', 'From your bank imports – with an Update button') + '</div>' +
       sub('percent', 'Loans') + '<div class="st-group">' + sw('rateBrief', 'Tell me when a loan’s interest changes', 'At a glance, for 10 days') +
       sel('rateCheck', 'Ask if the rate is still right', [[0, 'Never'], [3, 'Every 3 months'], [6, 'Every 6 months'], [12, 'Once a year']]) + '</div>' +
       sub('envelope-open', 'Tax') + '<div class="st-group">' + sw('taxBrief', 'Tax dates in At a glance', 'The tax return in March–April, the last days of the year in December') + '</div>' +
@@ -291,6 +305,118 @@
     },
     norm: normNote, on: function () { return cfg().learn; }
   };
+
+
+  /* ================= Price rise alert: a subscription or bill the bank charged more for than you noted ================= */
+  function rises() {
+    var d = fin(); if (!d || !cfg().rise) return [];
+    var since = (function () { var x = new Date(); x.setDate(x.getDate() - 45); return dkey(x); })(), n = window.FinLearn ? window.FinLearn.norm : function (s) { return String(s || '').toLowerCase(); };
+    var bank = (d.expenses || []).filter(function (e) { return e && e.src === 'bank' && e.date >= since && e.note; });
+    var seen = Fe.tools().riseSeen || {}, out = [];
+    var check = function (kind, id, name, amount) {
+      var k = n(name).split(' ')[0]; if (!k || k.length < 4 || !(+amount > 0)) return;
+      var hit = bank.filter(function (e) { return n(e.note).split(' ')[0] === k; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0];
+      if (!hit || +hit.amount <= +amount * 1.03 + 2) return;
+      var key = kind + ':' + id + ':' + Math.round(hit.amount); if (seen[key]) return;
+      out.push({ kind: kind, id: id, name: name, was: +amount, now: +hit.amount, date: hit.date, key: key });
+    };
+    if (Fe.on('subs')) Fe.list('subs').forEach(function (x) { check('sub', x.id, x.name, x.amount); });
+    ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (!f.src) check('fixed', f.id, f.name, f.amount); });
+    return out;
+  }
+  function riseFix(r, update) {
+    var t = Fe.tools(); t.riseSeen = Object.assign({}, t.riseSeen || {}); t.riseSeen[r.key] = today();
+    if (update && r.kind === 'sub') (t.subs || []).forEach(function (x) { if (x.id === r.id) x.amount = Math.round(r.now * 100) / 100; });
+    Fe.saveTools(t);
+    if (update && r.kind === 'fixed') { var d = window.Vault.get(); ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (f.id === r.id) f.amount = Math.round(r.now); }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+    toast('<i class="bi bi-check2"></i> ' + (update ? esc(r.name) + ' updated to ' + esc(kr(r.now)) : 'Noted'));
+  }
+
+  /* ================= Payday autopilot: tick every move at once ================= */
+  function payAll() {
+    var d = window.Vault.get(); if (!d || !B || !B.payPlan) return 0;
+    var p = B.payPlan(d), k = p.per.startKey, open = p.moves.filter(function (m) { return !m.done; }); if (!open.length) return 0;
+    d.budget.payDone = d.budget.payDone || {}; var m = d.budget.payDone[k] = d.budget.payDone[k] || {};
+    open.forEach(function (x) { m[x.id] = true; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
+    toast('<i class="bi bi-check2-all"></i> ' + open.length + ' payday moves done', function () { var d2 = window.Vault.get(), m2 = ((d2.budget || {}).payDone || {})[k] || {}; open.forEach(function (x) { delete m2[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); });
+    return open.length;
+  }
+  window.FinPayAll = payAll;
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-payall]')) { e.preventDefault(); payAll(); } });
+
+  /* ================= Budgets for events and trips ================= */
+  /* dash.tools.ebudgets = [{ id, name, kind: event|trip, start, end, budget, saved }]; a spending counts when it's
+     tagged (expense.ebud = id), and for a trip also everything you spend between its dates */
+  function ebSpent(b, d) {
+    d = d || fin() || {}; var all = b.kind === 'trip';
+    return (d.expenses || []).filter(function (e) { return e && (e.ebud === b.id || (all && isKey(b.start) && e.date >= b.start && e.date <= (b.end || b.start) && e.cat !== 'fixed' && !e.ebud)); });
+  }
+  function monthsTo(k) { if (!isKey(k)) return 0; var a = new Date(), b = fromKey(k); return Math.max(0, (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth()); }
+  function ebSaveMonthly(b) { var left = Math.max(0, (+b.budget || 0) - (+b.saved || 0)), m = monthsTo(b.start); return m > 0 ? Math.ceil(left / m / 10) * 10 : 0; }
+  var EBK = [['event', 'An event'], ['trip', 'A trip']];
+  var ebCol = (window.Kit && document.querySelector('[data-tool="ebud"]')) ? window.Kit.collection({
+    mount: document.querySelector('[data-tool="ebud"]'), feature: 'finance', key: 'ebudgets', icon: 'calendar2-heart', title: 'Budgets for events and trips', addLabel: 'Add', limit: 6,
+    addTitle: 'New budget', editTitle: 'Edit budget', fields: [
+      { k: 'name', type: 'title', label: 'For', ph: 'e.g. Christmas, Spain in May, the moving day', req: true },
+      { k: 'kind', label: 'It’s', type: 'select', options: EBK, def: 'event', help: 'A trip counts everything you spend between its dates; an event counts what you tag.' },
+      { k: 'budget', label: 'Budget', type: 'number', suffix: 'kr', req: true },
+      { k: 'start', label: 'From', type: 'date' }, { k: 'end', label: 'To', type: 'date' },
+      { k: 'saved', label: 'Already put aside', type: 'number', suffix: 'kr' }],
+    empty: 'Christmas, a birthday party, the move, a trip – give it a budget and a date, and you see what’s spent, what’s left, and what to put aside each month until then.',
+    sort: function (a, b) { return String(a.start || '9').localeCompare(String(b.start || '9')); },
+    row: function (b) {
+      var sp = ebSpent(b).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0, past = isKey(b.end || b.start) && (b.end || b.start) < today();
+      var c = sp > bu ? RED : sp > bu * .85 ? AMBER : GREEN, per = ebSaveMonthly(b);
+      return { icon: b.kind === 'trip' ? 'airplane' : 'calendar2-heart', color: b.kind === 'trip' ? '#0891b2' : '#d55181', title: b.name,
+        sub: esc([isKey(b.start) ? fmtD(b.start) + (isKey(b.end) && b.end !== b.start ? '–' + fmtD(b.end) : '') : '', kr(sp) + ' of ' + kr(bu), !past && per && sp === 0 ? 'put aside ' + kr(per) + ' a month' : ''].filter(Boolean).join(' · ')),
+        right: '<span class="hl-chip" style="--c:' + c + '">' + (past ? (sp > bu ? kr(sp - bu) + ' over' : kr(bu - sp) + ' under') : kr(Math.max(0, bu - sp)) + ' left') + '</span>' };
+    },
+    detail: function (b) {
+      var d = fin() || {}, l = ebSpent(b, d), bu = +b.budget || 0, sp = l.reduce(function (a, e) { return a + (+e.amount || 0); }, 0), per = ebSaveMonthly(b);
+      var near = (d.expenses || []).filter(function (e) { return e && !e.ebud && e.cat !== 'fixed' && isKey(e.date) && e.date >= (function () { var x = new Date(); x.setDate(x.getDate() - 30); return dkey(x); })() && l.indexOf(e) < 0; }).sort(function (a, b2) { return a.date < b2.date ? 1 : -1; }).slice(0, 6);
+      var has = ((d.budget && d.budget.fixed) || []).some(function (f) { return f.id === 'eb-' + b.id; });
+      return '<div class="fn-bar"><i style="width:' + Math.min(100, bu ? sp / bu * 100 : 0).toFixed(1) + '%"></i></div>' +
+        (l.length ? '<ul class="eb-l">' + l.slice(0, 8).map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b>' + (e.ebud ? '<button type="button" class="icon-btn sm" data-ebuntag="' + esc(e.id) + '" aria-label="Don’t count it"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="muted hl-small">Nothing counted yet.</p>') +
+        (near.length ? '<p class="fx-sub">Count a recent spending</p><ul class="eb-l">' + near.map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b><button type="button" class="icon-btn sm" data-ebtag="' + esc(e.id) + '|' + esc(b.id) + '" aria-label="Count it"><i class="bi bi-plus-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
+        '<div class="hl-acts">' + (per && !has ? '<button type="button" class="pill-btn" data-ebsave="' + esc(b.id) + '"><i class="bi bi-piggy-bank"></i> Put aside ' + esc(kr(per)) + ' a month</button>' : has ? '<span class="muted hl-small"><i class="bi bi-check2"></i> In your payday moves</span>' : '') + '</div>';
+    },
+    onClick: function (e, render) {
+      var b;
+      if ((b = e.target.closest('[data-ebtag]'))) { var q = b.dataset.ebtag.split('|'), d = window.Vault.get(); (d.expenses || []).forEach(function (x) { if (x.id === q[0]) x.ebud = q[1]; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); render(); return; }
+      if ((b = e.target.closest('[data-ebuntag]'))) { var d2 = window.Vault.get(); (d2.expenses || []).forEach(function (x) { if (x.id === b.dataset.ebuntag) delete x.ebud; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); render(); return; }
+      if ((b = e.target.closest('[data-ebsave]'))) {
+        var it = Fe.list('ebudgets').filter(function (x) { return x.id === b.dataset.ebsave; })[0]; if (!it) return;
+        var d3 = window.Vault.get(); d3.budget = d3.budget || { income: [], fixed: [] }; d3.budget.fixed = d3.budget.fixed || [];
+        d3.budget.fixed.push({ id: 'eb-' + it.id, name: 'Savings: ' + it.name, amount: ebSaveMonthly(it), src: 'save', until: isKey(it.start) ? it.start.slice(0, 7) : undefined });
+        window.Vault.save(d3); window.dispatchEvent(new Event('fin:change')); render(); toast('<i class="bi bi-piggy-bank"></i> Added to your payday moves');
+      }
+    },
+    onDelete: function (it) { var d = window.Vault.get(); if (!d) return; (d.expenses || []).forEach(function (x) { if (x.ebud === it.id) delete x.ebud; }); if (d.budget && d.budget.fixed) d.budget.fixed = d.budget.fixed.filter(function (f) { return f.id !== 'eb-' + it.id; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+  }) : null;
+  if (ebCol) window.addEventListener('fin:change', function () { ebCol.render(); });
+  /* the monthly saving stops once the event has come */
+  window.Vault.onUnlock(function () { setTimeout(function () {
+    var d = window.Vault.get(); if (!d || !d.budget || !d.budget.fixed) return;
+    var ids = {}; Fe.list('ebudgets').forEach(function (b) { if (isKey(b.start) && b.start <= today()) ids['eb-' + b.id] = 1; });
+    var n = d.budget.fixed.length; d.budget.fixed = d.budget.fixed.filter(function (f) { return !ids[f.id]; }); if (d.budget.fixed.length !== n) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+  }, 1500); });
+  window.EventBudgets = { spent: ebSpent, monthly: ebSaveMonthly };
+
+  /* ================= Hide amounts on every page (the eye that Finances has) ================= */
+  (function () {
+    function hidden() { try { return localStorage.getItem('dash.finHide') === '1'; } catch (e) { return false; } }
+    function paint(b) { var h = hidden(); b.innerHTML = '<i class="bi bi-eye' + (h ? '-slash' : '') + '"></i>'; b.setAttribute('aria-label', h ? 'Show amounts' : 'Hide amounts'); }
+    document.body.classList.toggle('fin-hidden', hidden());
+    if (document.getElementById('finHide') || !cfg().eye) return;          /* Finances has its own */
+    var host = document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'); if (!host) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.id = 'finHideAll'; paint(b);
+    host.insertBefore(b, host.querySelector('[data-me]') || null);
+    b.addEventListener('click', function () {
+      var h = !hidden(); try { localStorage.setItem('dash.finHide', h ? '1' : '0'); } catch (e) {}
+      document.body.classList.toggle('fin-hidden', h); paint(b); window.dispatchEvent(new Event('dash:local'));
+    });
+    window.addEventListener('storage', function (e) { if (e.key === 'dash.finHide') { document.body.classList.toggle('fin-hidden', hidden()); paint(b); } });
+  })();
 
   function all() { [affordCard, taxCard, debtCard, rateCard].forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); }
   window.addEventListener('fin:change', function () { setTimeout(function () { watch(); all(); }, 30); });

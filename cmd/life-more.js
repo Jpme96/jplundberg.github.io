@@ -61,12 +61,24 @@
     });
   });
 
+  /* ================= gym bag: on your gym days, a packing list in the morning ================= */
+  function gcfg() { var c = Fe.tools().healthcfg; c = c && typeof c === 'object' ? c : {}; return { days: Array.isArray(c.gymDays) ? c.gymDays : [], bag: typeof c.gymBag === 'string' ? c.gymBag : 'Shoes, towel, lock, water bottle, headphones' }; }
+  (window.BriefExtra = window.BriefExtra || []).push(function (add, now) {
+    if (!(Fe.on('gym') || Fe.on('training'))) return;
+    var g = gcfg(), wd = (now.getDay() + 6) % 7, tk = dkey(now); if (g.days.indexOf(wd) < 0 || now.getHours() >= 17) return;
+    var T = Fe.tools(), trained = (T.training || []).some(function (w) { return w.date === tk; }) || (T.gym || []).some(function (x) { return String(x.date || '').slice(0, 10) === tk; });
+    if (trained || (T.gympacked || '') === tk) return;
+    add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', 'Gym today – pack your bag', g.bag, '/cmd/habits/#training', { act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
+  });
   /* ================= settings: under Health and People ================= */
   function sel(attr, v0, label, opts, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
   function fill(page) {
     if (page === 'health') {
       var b = document.getElementById('hpSet2'); if (!b || b.contains(document.activeElement)) return;
-      b.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-fire"></i> Streaks</p><div class="st-group"><label class="st-row"><span>Streaks in At a glance<small class="st-rsub">Late in the week when one is about to break, and every 4 weeks in a row</small></span><input type="checkbox" class="switch" data-lmcfg="healthcfg:streakBrief"' + (hcfg().streakBrief ? ' checked' : '') + '></label></div>';
+      var gc = gcfg(), DN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      b.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-bag-check"></i> Gym bag</p><div class="st-group"><div class="st-row gb-days"><span>Gym days<small class="st-rsub">A packing list in At a glance those mornings</small></span><span class="gb-dd">' + DN.map(function (n, i) { return '<button type="button" data-gbday="' + i + '" aria-pressed="' + (gc.days.indexOf(i) > -1) + '">' + n + '</button>'; }).join('') + '</span></div>' +
+        '<label class="st-row"><span>In the bag</span><input class="st-input" data-gbbag value="' + esc(gc.bag) + '" maxlength="160"></label></div>' +
+        '<p class="st-sub ap-sub"><i class="bi bi-fire"></i> Streaks</p><div class="st-group"><label class="st-row"><span>Streaks in At a glance<small class="st-rsub">Late in the week when one is about to break, and every 4 weeks in a row</small></span><input type="checkbox" class="switch" data-lmcfg="healthcfg:streakBrief"' + (hcfg().streakBrief ? ' checked' : '') + '></label></div>';
     }
     if (page === 'people') {
       var p = document.getElementById('hlSet-people2'); if (!p || p.contains(document.activeElement)) return;
@@ -77,6 +89,15 @@
     var i = e.target.closest('[data-lmcfg]'); if (!i) return;
     var q = i.dataset.lmcfg.split(':'), t = Fe.tools(); t[q[0]] = Object.assign({}, t[q[0]] || {}); t[q[0]][q[1]] = i.type === 'checkbox' ? i.checked : +i.value; Fe.saveTools(t);
     toast('<i class="bi bi-check2"></i> Saved');
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-gbday]'); if (!b) return;
+    var t = Fe.tools(), c = Object.assign({}, t.healthcfg || {}), l = Array.isArray(c.gymDays) ? c.gymDays.slice() : [], i = +b.dataset.gbday, at = l.indexOf(i);
+    if (at > -1) l.splice(at, 1); else l.push(i); c.gymDays = l.sort(); t.healthcfg = c; Fe.saveTools(t); b.setAttribute('aria-pressed', String(at < 0));
+  });
+  document.addEventListener('change', function (e) {
+    var i = e.target.closest('[data-gbbag]'); if (!i) return;
+    var t = Fe.tools(); t.healthcfg = Object.assign({}, t.healthcfg || {}, { gymBag: i.value.trim() }); Fe.saveTools(t); toast('<i class="bi bi-check2"></i> Saved');
   });
   window.addEventListener('st:page', function (e) { setTimeout(function () { fill(e.detail); }, 0); });
 })();

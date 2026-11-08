@@ -55,6 +55,19 @@
           get: function (d) { var x = (d.accounts || []).filter(function (a) { return a.id === l.id; })[0], p = x && L.paid(x); return p ? p.principal : null; } });
       });
     }
+    /* Health: training, medicine, steps and sleep */
+    var ym = today().slice(0, 7), mon = (function () { var d = new Date(); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dkey(d); })();
+    var sessions = function (from, to) { var T = Fe.tools(), seen = {}; (T.training || []).concat((T.gym || []).map(function (g) { return { date: String(g.date || '').slice(0, 10) }; })).forEach(function (w) { if (w.date >= from && w.date <= to) seen[w.date + (w.kind || '')] = 1; }); return Object.keys(seen).length; };
+    if (Fe.on('training') || Fe.on('gym')) {
+      out.push({ id: 'trainM', label: 'Training sessions this month', unit: '', grp: 'Health', get: function () { return sessions(ym + '-01', ym + '-31'); } });
+      out.push({ id: 'trainW', label: 'Training sessions this week', unit: '', grp: 'Health', get: function () { return sessions(mon, today()); } });
+    }
+    if (Fe.on('health')) out.push({ id: 'medM', label: 'Medicine taken this month', unit: '', grp: 'Health', get: function () { var t = Fe.tools().htaken || {}, n = 0; Object.keys(t).forEach(function (k) { if (k.slice(0, 7) === ym) n += Object.keys(t[k] || {}).length; }); return n; } });
+    if (Fe.on('ahealth')) {
+      var days = function () { var d = fin(); return (d && d.health && d.health.days) || {}; };
+      out.push({ id: 'stepsW', label: 'Steps this week', unit: '', grp: 'Health', get: function () { var D = days(), n = 0; Object.keys(D).forEach(function (k) { if (k >= mon && k <= today()) n += +D[k].steps || 0; }); return n; } });
+      out.push({ id: 'sleep7', label: 'Sleep, 7-night average (h)', unit: '', grp: 'Health', get: function () { var D = days(), v = []; for (var i = 0; i < 7; i++) { var dd = new Date(); dd.setDate(dd.getDate() - i); var x = D[dkey(dd)]; if (x && x.sleep) v.push(+x.sleep); } return v.length ? Math.round(v.reduce(function (a, b) { return a + b; }, 0) / v.length * 10) / 10 : null; } });
+    }
     if (Fe.on('house') && Fe.on('hproj')) out.push({ id: 'hproj', label: 'House projects done this year', unit: '', grp: 'Home', get: function () { return Fe.list('hproj').filter(function (p) { return p.status === 'done' && String(p.end || p.start || '').slice(0, 4) === year(); }).length; } });
     if (Fe.on('wish')) out.push({ id: 'wish', label: 'Wishes bought this year', unit: '', grp: 'Home', get: function () { return Fe.list('wbought').filter(function (x) { return String(x.bought || '').slice(0, 4) === year(); }).length; } });
     if (Fe.on('travel')) out.push({ id: 'trips', label: 'Trips this year', unit: '', grp: 'Life', get: function () { var t = readJSON('dash.travel', {}) || {}; return (t.trips || []).filter(function (x) { return String(x.start || '').slice(0, 4) === year() && x.start <= today(); }).length; } });
@@ -101,7 +114,7 @@
     l.forEach(function (g) {
       if (g.src) { var v = srcValue(g); if (v != null && v !== g.value) { g.value = v; ch = true; } }
       if (g.src === 'steps') { var n = (g.steps || []).length; if (g.target !== n) { g.target = n; ch = true; } }
-      var p = pct(g), weekly = g.habit || g.ah;      /* habit and Apple Health goals start over each day or week */
+      var p = pct(g), weekly = g.habit || g.ah || /^(trainW|stepsW|sleep7)$/.test(g.src || '');      /* habit, Apple Health and this-week goals start over */
       if (weekly) { if (g.done || g.arch) { delete g.done; delete g.arch; ch = true; } }
       else if (p >= 1 && !g.done) { g.done = today(); ch = true; reached.push(g); }
       else if (p < 1 && g.done && !g.arch) { delete g.done; ch = true; }

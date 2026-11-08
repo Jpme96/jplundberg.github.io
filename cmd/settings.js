@@ -127,11 +127,14 @@
   var media2 = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
   function cardStyleOf(s) { return ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid'); }
   function motionOf(s) { return s.motion || (media2 && media2.matches ? 'off' : 'full'); }
+  /* "Sun": light from sunrise to sunset in Oslo, dark after – rough times per month (local time) */
+  function sunUp() { var n = new Date(), m = n.getMonth(), h = n.getHours() + n.getMinutes() / 60, R = [9.1, 8, 6.6, 6.3, 5, 4, 4.6, 5.9, 7.2, 8.4, 8.5, 9.3], S = [15.4, 16.9, 18.2, 20.6, 21.8, 22.7, 22.4, 21, 19.3, 17.6, 15.6, 15.2]; return h >= R[m] && h < S[m]; }
+  setInterval(function () { if (get().theme === 'sun') { var want = sunUp() ? 'light' : 'dark'; if (root.getAttribute('data-theme') !== want) apply(); } }, 5 * 60e3);
   function apply() {
     var s = get();
     var mo = motionOf(s);
     ['full', 'subtle', 'off'].forEach(function (m) { root.classList.toggle('mo-' + m, m === mo); });
-    var theme = s.theme === 'auto' ? (media && media.matches ? 'light' : 'dark') : s.theme;
+    var theme = s.theme === 'auto' ? (media && media.matches ? 'light' : 'dark') : s.theme === 'sun' ? (sunUp() ? 'light' : 'dark') : s.theme;
     root.setAttribute('data-theme', theme);
     var a = accentOf(s);
     root.style.setProperty('--accent', a.hex);
@@ -253,7 +256,7 @@
     /* One-line summaries on the main menu */
     var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
-    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto' }[s.theme] + ' · ' + a.name + ' · ' + bgName + ' · ' + { solid: 'Solid', glass: 'Glass', minimal: 'Minimal', soft: 'Soft' }[cardStyleOf(s)] + ' cards';
+    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto', sun: 'Follows the sun' }[s.theme] + ' · ' + a.name + ' · ' + bgName + ' · ' + { solid: 'Solid', glass: 'Glass', minimal: 'Minimal', soft: 'Soft' }[cardStyleOf(s)] + ' cards';
     var avail = CARDS.filter(function (c) { return featureOn(c[0]); });
     var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
     $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');

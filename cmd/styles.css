@@ -5025,3 +5025,11 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 [data-theme="light"] .dl-wx-stars { display: none; }
 /* the kit sheet's background shorthand reset these, so the clock icon tiled across an empty time box */
 input.dt-empty, .kit-row input.dt-empty:not(.switch) { background-repeat: no-repeat !important; background-position: right 10px center !important; background-size: 15px !important; }
+.gb-dd { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.gb-dd button { min-width: 38px; height: 32px; padding: 0 6px; border-radius: 9px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .05); color: var(--text); font-size: 12.5px; }
+.gb-dd button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+@media (max-width: 520px) { .gb-days { flex-wrap: wrap; } .gb-dd { justify-content: flex-start; width: 100%; } }
+.eb-l { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.eb-l li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; font-size: 13.5px; padding: 3px 0; }
+.eb-l li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .eb-l small { color: var(--muted); }
+.eb-l b { font-weight: 500; font-variant-numeric: tabular-nums; }
