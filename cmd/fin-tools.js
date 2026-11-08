@@ -227,7 +227,7 @@
         { act: { id: 'rise:' + r.key, label: 'Update' }, run: function () { riseFix(r, true); } });
     });
     if (c.payBrief && B && B.payPlan) { try { var pp = B.payPlan(d), op = pp.moves.filter(function (m) { return !m.done; }); var into = pp.per.days - pp.per.daysLeft;
-      if (pp.per.byPayday && into <= 3 && op.length) add(30, 'list-check', BLUE, 'Payday: ' + op.length + (op.length === 1 ? ' move' : ' moves') + ' to do', kr(op.reduce(function (a, m) { return a + m.amount; }, 0)) + ' to move · tap All done when you have', '/cmd/finance/#fnPayCard', { act: { id: 'payall:' + pp.per.startKey, label: 'All done' }, run: payAll });
+      if (pp.per.byPayday && into <= 3 && op.length) add(30, 'list-check', BLUE, 'Payday: ' + op.length + (op.length === 1 ? ' move' : ' moves') + ' to do', kr(op.reduce(function (a, m) { return a + m.amount; }, 0)) + ' to move · tap All done when you have', '/cmd/finance/#fnPayCard', { main: true, act: { id: 'payall:' + pp.per.startKey, label: 'All done' }, run: payAll });
     } catch (er) {} }
     if (c.ebBrief) Fe.list('ebudgets').forEach(function (b) {
       if (!isKey(b.start)) return; var n = days(t, b.start), sp = ebSpent(b, d).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0;
@@ -320,7 +320,7 @@
       var key = kind + ':' + id + ':' + Math.round(hit.amount); if (seen[key]) return;
       out.push({ kind: kind, id: id, name: name, was: +amount, now: +hit.amount, date: hit.date, key: key });
     };
-    if (Fe.on('subs')) Fe.list('subs').forEach(function (x) { check('sub', x.id, x.name, x.amount); });
+    /* subscriptions already have their own line in At a glance (brief.js) – only bills here */
     ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (!f.src) check('fixed', f.id, f.name, f.amount); });
     return out;
   }

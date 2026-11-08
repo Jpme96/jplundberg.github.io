@@ -37,7 +37,7 @@
       /* a line with no title (an odd or old-format item) is left out rather than shown empty */
       if (title == null || title === '') return;
       var it = { pri: pri, icon: icon, color: color, title: title, sub: sub, href: href };
-      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; if (opt.run && opt.act) ACTIONS[opt.act.id] = opt.run; }
+      if (opt) { if (opt.key && dismissed(opt.key)) return; it.key = opt.key; it.act = opt.act; it.review = opt.review; it.tip = opt.tip; it.badge = opt.badge; it.checkin = opt.checkin; it.main = opt.main; if (opt.run && opt.act) ACTIONS[opt.act.id] = opt.run; }
       /* anything can be put away for today (hover ×, or swipe it left on a phone) */
       it.day = 'd:' + today + ':' + title; if (!it.key && dismissed(it.day)) return;
       out.push(it);
@@ -334,8 +334,10 @@
   function render() {
     if (!unlocked) return;
     var all = items(), mode = tipsMode(), folding = mode !== 'show';
-    var tips = folding ? all.filter(function (x) { return x.tip || x.act; }) : [];
-    var main = folding ? all.filter(function (x) { return !(x.tip || x.act); }) : all;
+    /* a line with a button is a tip, unless it's a thing to do (opt.main: medicine, payday, the gym bag …) */
+    var isTip = function (x) { return x.tip || (x.act && !x.main); };
+    var tips = folding ? all.filter(isTip) : [];
+    var main = folding ? all.filter(function (x) { return !isTip(x); }) : all;
     var shown = showAll ? main.slice() : main.slice(0, 5);
     if (mode === 'fold' && tips.length) {
       shown.push({ fold: true, icon: 'lightbulb', color: '#c9a227', title: tips.length + ' tip' + (tips.length === 1 ? '' : 's'),
@@ -349,17 +351,25 @@
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
     /* amounts get .money so "hide amounts" blurs them (only the number, not the sentence) */
     var amt = function (h) { return String(h).replace(/[−-]?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:[.,]\d+)?\s?kr\b/g, function (m) { return '<span class="money">' + m + '</span>'; }); };
-    box.innerHTML = shown.length ? shown.map(function (x) {
+    var nextOn = (readJSON('dash.settings') || {}).nextBest !== false;
+    box.classList.toggle('br-has-next', !!(nextOn && shown.length && !shown[0].fold));
+    box.innerHTML = shown.length ? shown.map(function (x, i) {
       if (x.fold) return '<li class="br-li br-fold"><button type="button" class="br-item" data-brfold aria-expanded="' + tipsOpen + '" style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(tipsOpen ? 'Tap to fold them away' : x.sub) + '</small></span><i class="bi bi-chevron-' + (tipsOpen ? 'up' : 'down') + ' br-go"></i></button></li>';
-      return '<li class="br-li' + (x.tip || x.act ? ' br-tip' : '') + '"><a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
+      var nx = nextOn && i === 0;   /* Next up: the first line, bigger, with Later */
+      return '<li class="br-li' + (isTip(x) ? ' br-tip' : '') + (nx ? ' br-next' : '') + '">' + (nx ? '<span class="br-nl">Next up</span>' : '') + '<a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + amt(esc(x.title)) + '</b><small>' + amt(esc(x.sub)) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
         (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>'
-          : x.day && !x.badge ? '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>' : '') + '</li>';
+          : x.day && !x.badge ? (nx ? '<button type="button" class="text-btn br-later" data-brx="' + esc(x.day) + '">Later</button>' : '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>') : '') + '</li>';
     }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + main.length) + '</button></li>' : '')
       : '<li class="br-calm"><i class="bi bi-check2-circle"></i> Nothing needs you right now. Enjoy the day.</li>';
   }
+  document.addEventListener('change', function (e) {
+    if (e.target.id !== 'stNextBest') return;
+    var st = readJSON('dash.settings') || {}; st.nextBest = e.target.checked; try { localStorage.setItem('dash.settings', JSON.stringify(st)); } catch (er) {} window.dispatchEvent(new Event('dash:local')); render();
+  });
+  window.addEventListener('st:page', function (e) { var c = document.getElementById('stNextBest'); if (c && e.detail === 'dashboard') c.checked = (readJSON('dash.settings') || {}).nextBest !== false; });
   box.addEventListener('click', function (e) {
     var b;
     if (e.target.closest('[data-brmore]')) { showAll = !showAll; render(); return; }

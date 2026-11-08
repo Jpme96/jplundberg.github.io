@@ -120,6 +120,9 @@
         (r.marks.length > 1 ? badge(r.marks.length, x + W / 2 - 4, headTop + 4) : '');
     });
     svg += '</g>';
+    /* you, waving at whoever has a birthday soon – at the side nearest to them */
+    var bi = seat.map(function (r) { return r.marks.some(function (q) { return q.k === 'cake'; }); }).indexOf(true);
+    if (bi > -1 && n <= 4) svg += xs[bi] <= 120 ? sceneMe(-16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver') : sceneMe(240 - H * .62 + 16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
     if (!n) svg += '<text x="120" y="80" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>';
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
@@ -224,7 +227,8 @@
       part('fin', '', '<rect x="30" y="92" width="34" height="34" rx="4" class="sc-cal"/><rect x="30" y="92" width="34" height="9" rx="3" fill="#e66767"/><text x="47" y="120" text-anchor="middle" class="sc-calt">' + per.daysLeft + '</text>') +
       (payday ? '<g class="sc-coins">' + [0, 1, 2].map(function (i) { return '<circle cx="' + (112 + i * 8) + '" cy="' + (20 - i * 6) + '" r="5" class="sc-coin c' + i + '"/>'; }).join('') + '</g>' : '') +
       (pace ? part('fin', '', '<path d="' + (pace.ok ? 'M212 112 l10 -12 l10 12' : 'M212 100 l10 12 l10 -12') + '" class="sc-arrow ' + (pace.ok ? 'ok' : 'warn') + '"/>') : '');
-    svg += sceneMe(152, 42, 60, 86, payday ? 'win' : state === 'neg' ? 'plain' : todPose('day'));
+    /* you: on payday dropping coins into the jar, otherwise standing by it */
+    svg += payday ? sceneMe(150, 42, 60, 86, 'plain', 'sc-coiner') + '<g class="sc-drop"><circle cx="156" cy="74" r="4.5" class="sc-coin c0"/></g><g class="sc-drop b"><circle cx="156" cy="74" r="4.5" class="sc-coin c1"/></g>' : sceneMe(152, 42, 60, 86, state === 'neg' ? 'plain' : todPose('day'));
     var list = [];
     if (room > 0) list.push({ t: kr(left) + L(' left', ' igjen') + ' · ' + per.daysLeft + (per.daysLeft === 1 ? L(' day', ' dag') : L(' days', ' dager')), h: '#fin', late: left < 0 });
     if (pace) list.push({ t: pace.ok ? L('On track', 'I rute') : L('Spending faster than planned', 'Bruker raskere enn planlagt'), h: '#fin', late: !pace.ok });
@@ -247,7 +251,8 @@
         '<path d="M50 72 v-8 h22 v8" class="sc-handle2"/><line x1="44" y1="74" x2="44" y2="122" class="sc-strap"/><line x1="78" y1="74" x2="78" y2="122" class="sc-strap"/>' +
         '<circle cx="40" cy="126" r="3" class="sc-wheel"/><circle cx="82" cy="126" r="3" class="sc-wheel"/>' +
         (t ? '<path d="M92 82 l8 6" class="sc-strap"/><rect x="96" y="86" width="22" height="13" rx="2" class="sc-tag"/><text x="107" y="95.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
-      sceneMe(-12, 44, 52, 84, t && n != null && n <= 1 ? 'trip' : todPose('day')) +
+      /* you: packing – a shirt and a sock fly from your hand into the case while there's packing left; otherwise ready to go */
+      (t && pack.length && pf < 1 && !away ? sceneMe(-14, 44, 52, 84, 'plain', 'sc-packer') + '<g class="sc-pack"><path d="M24 92 h10 l2 3 -2 1 v8 h-10 v-8 l-2 -1z" class="sc-shirt"/></g><g class="sc-pack b"><path d="M26 94 h5 v7 h4 v3 h-9z" class="sc-sock"/></g>' : sceneMe(-12, 44, 52, 84, t && n != null && n <= 1 ? 'trip' : todPose('day'))) +
       '<path d="M112 112 Q150 30 222 40" class="sc-route"/>' +
       (t ? '<g class="sc-pin"><path d="M222 40 c-6 0 -8 -5 -8 -8 a8 8 0 0 1 16 0 c0 3 -2 8 -8 8z" fill="#e66767"/><circle cx="222" cy="31" r="3" fill="#fff"/></g>' : '') +
       part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path class="sc-plane sc-fly" d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" /></g>');

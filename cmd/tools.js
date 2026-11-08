@@ -415,7 +415,7 @@
       if (!h.every || !hOn(h, td) || done[h.id]) return;
       var late = h.time && (new Date().getHours() * 60 + new Date().getMinutes()) > (+h.time.slice(0, 2) * 60 + +h.time.slice(3, 5));
       add(late ? 22 : 44, h.kind === 'medicine' ? 'capsule' : 'clipboard2-pulse', '#e66767', (h.kind === 'medicine' ? 'Take ' : '') + (h.title || 'Medicine') + (h.time ? ' at ' + h.time : ' today'), [hevery(h.every), h.where].filter(Boolean).join(' · '), '/cmd/habits/#health',
-        { act: { id: 'ht:' + h.id + ':' + td, label: h.kind === 'medicine' ? 'Taken' : 'Done' }, run: function () {
+        { main: true, act: { id: 'ht:' + h.id + ':' + td, label: h.kind === 'medicine' ? 'Taken' : 'Done' }, run: function () {
           var t = F.tools(); t.htaken = t.htaken && typeof t.htaken === 'object' ? t.htaken : {};
           Object.keys(t.htaken).forEach(function (k) { if (k < F.addMonths(td, -1)) delete t.htaken[k]; });
           t.htaken[td] = Object.assign({}, t.htaken[td]); t.htaken[td][h.id] = Date.now(); F.saveTools(t);

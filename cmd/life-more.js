@@ -54,7 +54,7 @@
       var wl = Fe.on('wish') && ideas.length && !Fe.list('wishes').some(function (w) { return w.for === 'gift' && w.title === ideas[0] + ' – ' + p.name; });
       add(b.n <= 7 ? 34 : 50, 'gift', '#d55181', 'A gift for ' + p.name + ' – birthday in ' + b.n + ' days',
         (ideas.length ? 'Ideas: ' + ideas.slice(0, 2).join(', ') : 'No gift ideas yet – add some on People') + (+c.gbBday ? ' · budget ' + nf.format(+c.gbBday) + ' kr' : ''), '/cmd/people/#people=' + p.id,
-        wl ? { act: { id: 'gw:' + p.id + ':' + y, label: 'Wishlist' }, run: function () {
+        wl ? { main: true, act: { id: 'gw:' + p.id + ':' + y, label: 'Wishlist' }, run: function () {
           var t = Fe.tools(); t.wishes = (Array.isArray(t.wishes) ? t.wishes : []).concat([{ id: Date.now().toString(36), title: ideas[0] + ' – ' + p.name, for: 'gift', prio: 1, price: +c.gbBday || '', added: dkey(new Date()), notes: 'For ' + p.name + '’s birthday ' + b.next }]); Fe.saveTools(t);
           toast('<i class="bi bi-stars"></i> On the Wishlist');
         } } : undefined);
@@ -68,7 +68,7 @@
     var g = gcfg(), wd = (now.getDay() + 6) % 7, tk = dkey(now); if (g.days.indexOf(wd) < 0 || now.getHours() >= 17) return;
     var T = Fe.tools(), trained = (T.training || []).some(function (w) { return w.date === tk; }) || (T.gym || []).some(function (x) { return String(x.date || '').slice(0, 10) === tk; });
     if (trained || (T.gympacked || '') === tk) return;
-    add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', 'Gym today – pack your bag', g.bag, '/cmd/habits/#training', { act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
+    add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', 'Gym today – pack your bag', g.bag, '/cmd/habits/#training', { main: true, act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
   });
   /* ================= settings: under Health and People ================= */
   function sel(attr, v0, label, opts, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
