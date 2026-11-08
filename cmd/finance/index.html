@@ -225,6 +225,16 @@
           <div class="card-head"><h2><i class="bi bi-clipboard-check"></i> Last period</h2><span class="muted" id="fnReviewNote"></span></div>
           <div id="fnReview"></div>
         </section>
+        <div class="fx-pair">
+        <section class="card fx-afford" id="fnafford">
+          <div class="card-head"><h2><i class="bi bi-calculator"></i> Can I afford it?</h2></div>
+          <div id="fnAfford"></div>
+        </section>
+        <section class="card fx-tax" id="fntax">
+          <div class="card-head"><h2><i class="bi bi-envelope-open"></i> Tax time</h2><span class="muted" id="fnTaxNote"></span></div>
+          <div id="fnTax"></div>
+        </section>
+        </div>
         <section class="card taxyear" id="fpYearCard">
           <div class="card-head"><h2><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
           <div id="fpYearAhead"></div>
@@ -358,6 +368,14 @@
           <div id="nwChart"></div>
           <ul class="acc-list" id="nwList"></ul>
           <p class="empty" id="nwEmpty">Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage – with +.</p>
+        </section>
+        <section class="card fx-debt" id="fndebt">
+          <div class="card-head"><h2><i class="bi bi-flag"></i> Debt-free</h2><span class="muted" id="fnDebtNote"></span></div>
+          <div id="fnDebt"></div>
+        </section>
+        <section class="card fx-rate" id="fnrate">
+          <div class="card-head"><h2><i class="bi bi-percent"></i> Interest watch</h2></div>
+          <div id="fnRate"></div>
         </section>
         </div>
         <div class="fin-col">
@@ -718,6 +736,7 @@
 
       <div class="st-page" data-page="finance" data-title="Finances" hidden>
         <div id="mpSet"></div>
+        <div id="mpSet2"></div>
       </div>
 
       <div class="st-page" data-page="health" data-title="Health" hidden>
@@ -1014,8 +1033,8 @@
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
   <script src="../dist/head.js?v=86bebce9d9"></script>
-  <script src="../dist/page-finance.js?v=3ce35999ad"></script>
-  <script src="../dist/tail.js?v=571dbd10b2"></script>
+  <script src="../dist/page-finance.js?v=1f7f7e559a"></script>
+  <script src="../dist/tail.js?v=3837fdd083"></script>
   <!-- /scripts -->
 </body>
 </html>

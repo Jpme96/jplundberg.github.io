@@ -453,11 +453,15 @@
   sheet.addEventListener('change', function (e) {
     var sel = e.target.closest('[data-xcat]');
     if (sel) {
-      D.expenses.forEach(function (x) { if (x.id === sel.dataset.xcat) x.cat = sel.value; });
+      var was = null;
+      D.expenses.forEach(function (x) { if (x.id === sel.dataset.xcat) { was = x.cat; x.cat = sel.value; } });
       D.catMemory = D.catMemory || {};
       var ex = D.expenses.filter(function (x) { return x.id === sel.dataset.xcat; })[0];
-      if (ex && ex.note) D.catMemory[String(ex.note).toLowerCase().replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40)] = sel.value;   // the importer learns from it
-      persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
+      /* the importer learns from it, and the others from the same shop follow (fin-tools.js) */
+      if (ex && ex.note && !window.FinLearn) D.catMemory[String(ex.note).toLowerCase().replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40)] = sel.value;
+      persist();
+      if (window.FinLearn && was && was !== sel.value) { window.FinLearn.changed(sel.dataset.xcat, sel.value, was); D = window.Vault.get() || D; }
+      renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
     }
     if (e.target.id === 'spCatF') { sheetCat = e.target.value; renderSpending(); }
   });

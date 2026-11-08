@@ -84,6 +84,8 @@
     for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(desc)) return RULES[i][0];
     return 'other';
   }
+  /* the shop name first (what you've taught it), then the bank's whole text */
+  function guess2(note, desc, memory) { var g = guessCat(note, memory); return g === 'other' ? guessCat(desc, memory) : g; }
   function norm(s) { return String(s || '').toLowerCase().replace(/\d{2}[./]\d{2}([./]\d{2,4})?/g, '').replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
   function clean(desc) {
     var s = String(desc || '').replace(/^\*?\d{4}\s+\d{2}\.\d{2}\s+/, '').replace(/^(varekjøp|varekjop|betaling|visa|mastercard|kortkjøp|bruk av kort)\s*/i, '')
@@ -197,7 +199,7 @@
         var ms = {}; (d.expenses || []).forEach(function (e) { if (e.note && norm(e.ref ? String(e.ref).split('|').slice(2).join('|') : e.note) === rk || (e.note && norm(e.note) === norm(note))) { var mk = String(e.date).slice(0, 7); if (mk < x.date.slice(0, 7) && Math.abs(+e.amount - amount) <= Math.max(15, amount * .15)) ms[mk] = 1; } });
         recur = Object.keys(ms).filter(function (mk) { return mk >= shiftKey(x.date.slice(0, 7), -3); }).length >= 2;
       }
-      out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : guessCat(x.desc, memory), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
+      out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : (memory[norm(note)] || guess2(note, x.desc, memory)), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
     /* the account's balance after this file: the file's own balance column if it has one, otherwise the

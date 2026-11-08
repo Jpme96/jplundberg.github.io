@@ -29,6 +29,14 @@ window.Smart = (function () {
   function guessCat(desc, memory) {
     var key = norm(desc);
     if (memory && memory[key]) return memory[key];
+    /* learned: another place of the same chain ("rema grünerløkka" ~ "rema majorstuen") when every shop
+       you've filed under that first word went to the same category */
+    var w = key.split(' ')[0];
+    if (memory && w && w.length >= 4) {
+      var hit = null, mixed = false;
+      for (var k in memory) if (k.split(' ')[0] === w) { if (hit && hit !== memory[k]) { mixed = true; break; } hit = memory[k]; }
+      if (hit && !mixed) return hit;
+    }
     for (var i = 0; i < RULES.length; i++) if (RULES[i][1].test(desc)) return RULES[i][0];
     return 'other';
   }
