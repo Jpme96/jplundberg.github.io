@@ -140,10 +140,12 @@
       return '<rect x="' + X + '" y="' + (Y0 - h) + '" width="9" height="' + h + '" rx="2" class="sc-jar' + (lw ? ' low' : '') + '"/><rect x="' + (X + 1.2) + '" y="' + (Y0 - fh - 1) + '" width="6.6" height="' + fh + '" rx="1" fill="' + (lw ? '#c98500' : JC[i % JC.length]) + '" opacity=".8"/><rect x="' + (X - .5) + '" y="' + (Y0 - h - 2) + '" width="10" height="3" rx="1" class="sc-lid"/>';
     }).join('');
     svg += part('pantry', low.length ? 'hot' : '', jarsSvg || '<text x="102" y="68" text-anchor="middle" class="sc-empty sm">' + L('pantry', 'matskap') + '</text>') + badge(low.length, 140, 58);
-    svg += part('shop', shop.length ? '' : '', '<path d="M148 108 h20 l-2 20 h-16z" class="sc-bag"/><path d="M152 108 q6 -10 12 0" class="sc-bagh"/>') + badge(shop.length, 168, 102);
+    svg += part('shop', shop.length ? '' : '', '<path d="M118 108 h20 l-2 20 h-16z" class="sc-bag"/><path d="M122 108 q6 -10 12 0" class="sc-bagh"/>') + badge(shop.length, 138, 102);
     svg += part('meals', dinner ? 'hot' : '', '<rect x="178" y="98" width="52" height="30" rx="3" class="sc-stove"/><circle cx="192" cy="113" r="5" class="sc-knob2"/><circle cx="214" cy="113" r="5" class="sc-knob2"/>' +
       '<rect x="186" y="84" width="34" height="14" rx="3" class="sc-pot"/><rect x="182" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="220" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="190" y="81" width="26" height="3" rx="1.5" class="sc-pot' + (dinner ? ' sc-rattle' : '') + '"/>' +
       (dinner ? '<path d="M196 77 q-3 -6 0 -12 M204 77 q-3 -6 0 -12 M212 77 q-3 -6 0 -12" class="sc-steam"/>' : ''));
+    /* you, at the stove, stirring the pot (in front of it, so your arm reaches in) */
+    svg += sceneMe(146, 72, 38, 58, 'plain', 'sc-cook');
     var list = [];
     if (dinner) list.push({ t: L('Tonight: ', 'I kveld: ') + dinner, h: '#meals' }); else list.push({ t: L('Nothing planned tonight', 'Ingenting planlagt i kveld'), h: '#meals', late: false });
     if (shop.length) list.push({ t: shop.length + L(' on the shopping list', ' på handlelista'), h: '#shop' });
@@ -194,7 +196,7 @@
     var C = 2 * Math.PI * 30, ring = '<ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ring"/><ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ringv" stroke-dasharray="' + (C * pct).toFixed(1) + ' ' + C.toFixed(1) + '"/>';
     var svg = ground() + deco('health') +
       part('ahealth', '', ring) +
-      part('ahealth', window.Avatar ? 'sc-me' : mood === 'tired' ? 'hot' : '', window.Avatar ? window.Avatar.figure({ k: mood === 'good' ? 'day' : 'plain', mood: mood, plain: true, bg: '#000', sky: 'none', attrs: ' x="72" y="10" width="96" height="124" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"') : '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
+      part('ahealth', window.Avatar ? 'sc-me' + (on('scMe') ? ' sc-curl' : '') : mood === 'tired' ? 'hot' : '', window.Avatar ? window.Avatar.figure({ k: on('scMe') ? 'gym' : mood === 'good' ? 'day' : 'plain', mood: mood, plain: true, bg: '#000', sky: 'none', attrs: ' x="72" y="10" width="96" height="124" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"') : '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
       part('training', trained ? 'hot lit' : '', '<rect x="176" y="114" width="34" height="3" rx="1.5" class="sc-bar"/><rect x="174" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/><rect x="207" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/>') +
       part('hpHabits', '', '<path d="M50 70 c-6 -8 -18 -2 -12 8 l12 12 12 -12 c6 -10 -6 -16 -12 -8z" class="sc-heart"/>');
     var list = [];
@@ -396,8 +398,8 @@
     var svg = ground() + deco('wish') + stars +
       part('wbuy', buy ? 'hot' : '', '<path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text>') +
       part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92) +
-      sceneMe(190, 64, 44, 64, 'day') +
-      part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>');
+      /* you, pushing the cart back and forth */
+      '<g class="sc-push">' + sceneMe(-2, 70, 34, 56, 'plain', 'sc-pusher') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
     var list = [];
     var fits = W && W.fit ? Fe.list('wishes').filter(function (w) { var f = W.fit(w); return f && f.now; }).length : 0;
     if (l.length) list.push({ t: Fe.list('wishes').length + L(' wishes', ' ønsker') + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
@@ -410,16 +412,20 @@
     var GS = window.GoalSrc, l = (readJSON('dash.goals', []) || []).filter(function (g) { return g && !g.arch; }).slice(0, 4);
     var at = function (p) { var x = 40 + p * 80, y = 128 - p * 96; return [x, y]; };   /* along the left slope to the peak at (120, 32) */
     var COL = ['#3987e5', '#e8743b', '#22b35e', '#8a6fdf'];
+    var pcts = l.map(function (g) { return GS ? GS.pct(g) : (g.target > 0 ? Math.min(1, (+g.value || 0) / g.target) : 0); });
+    /* each goal is a small flag on the trail where it's got to */
     var climbers = l.map(function (g, i) {
-      var p = GS ? GS.pct(g) : (g.target > 0 ? Math.min(1, (+g.value || 0) / g.target) : 0), q = at(Math.min(.97, p)), done = p >= 1;
-      return part('glActive', done ? 'sc-gdone' : '', '<g transform="translate(' + (q[0] + (i % 2 ? 6 : -4)).toFixed(1) + ' ' + q[1].toFixed(1) + ')"><g class="sc-climb" style="animation-delay:-' + (i * .5) + 's"><circle cx="0" cy="-9" r="3" fill="#e9c7a3"/><rect x="-3" y="-6" width="6" height="7" rx="2" fill="' + COL[i] + '"/><path d="M-2 1 l-1.5 5 M2 1 l1.5 5" stroke="#3a3f4b" stroke-width="1.6" stroke-linecap="round"/></g></g>');
+      var q = at(Math.min(.97, pcts[i])), done = pcts[i] >= 1;
+      return part('glActive', done ? 'sc-gdone' : '', '<g transform="translate(' + (q[0] + (i % 2 ? 5 : -5)).toFixed(1) + ' ' + q[1].toFixed(1) + ')"><line x1="0" y1="0" x2="0" y2="-9" class="sc-pole"/><path d="M0 -9 h7 l-2 2.5 l2 2.5 h-7z" fill="' + COL[i] + '"/></g>');
     }).join('');
+    /* you climb: as far up as the goals have got on average */
+    var avg = pcts.length ? pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length : 0;
     var allDone = l.length && l.every(function (g) { return (GS ? GS.pct(g) : 0) >= 1; });
     var svg = ground() + deco('goals') +
       '<path d="M28 132 L120 30 L212 132 Z" class="sc-mtn"/><path d="M104 48 L120 30 L136 48 L128 44 L120 50 L112 44 Z" class="sc-snow"/><path d="M150 132 L184 92 L224 132 Z" class="sc-mtn2"/>' +
       '<path d="M40 128 Q70 104 66 92 T96 62 T120 32" class="sc-trail"/>' +
-      (allDone ? sceneMe(126, -6, 30, 40, 'win') : sceneMe(2, 70, 36, 58, 'day')) +
-      part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers;
+      part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers +
+      (allDone ? sceneMe(98, 2, 26, 38, 'win', 'sc-top') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-13, -36, 26, 37, 'plain', 'sc-climber') + '</g>'; })());
     var list = l.map(function (g) { return { t: g.name + ' · ' + Math.round((GS ? GS.pct(g) : 0) * 100) + ' %', h: '#glActive' }; });
     return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.') };
   }
@@ -435,7 +441,8 @@
     }).join('');
     var svg = ground() + deco('papers') + '<rect x="84" y="46" width="72" height="84" rx="5" class="sc-cab"/>' + drawers + badge(soon.length, 156, 50) +
       part('papers', '', '<g class="sc-float"><rect x="206" y="64" width="22" height="28" rx="2" class="sc-sheet"/><path d="M210 72 h14 M210 77 h14 M210 82 h9" class="sc-lines"/></g>') +
-      sceneMe(156, 66, 42, 62, todPose()) +
+      /* you, filing papers into the cabinet */
+      sceneMe(156, 66, 42, 62, 'plain', 'sc-filer') + '<g class="sc-toss"><rect x="160" y="90" width="12" height="15" rx="1" class="sc-sheet"/></g><g class="sc-toss b"><rect x="160" y="90" width="12" height="15" rx="1" class="sc-sheet b"/></g>' +
       '<g class="sc-plant"><rect x="36" y="112" width="18" height="16" rx="3" class="sc-pot"/><path d="M45 112 q-8 -14 -2 -24 M45 112 q6 -12 12 -16 M45 112 q0 -10 4 -20" class="sc-leaf"/></g>';
     var list = soon.slice(0, 3).map(function (o) { return { t: (o.x.title || '') + ' · ' + o.s.rel, h: '#papers=' + o.x.id, late: o.s.over }; });
     if (!list.length && l.length) list.push({ t: l.length + L(' papers, nothing due', ' papirer, ingenting forfaller'), h: '#papers' });
@@ -453,7 +460,8 @@
       part('clToday', todays.length ? 'hot' : '', '<rect x="78" y="44" width="64" height="70" rx="5" class="sc-cal"/><rect x="78" y="44" width="64" height="18" rx="4" fill="#e66767"/><circle cx="92" cy="44" r="2.5" class="sc-ring"/><circle cx="128" cy="44" r="2.5" class="sc-ring"/>' +
         '<text x="110" y="57" text-anchor="middle" class="sc-calm">' + esc(mo.replace('.', '').toUpperCase()) + '</text><text x="110" y="94" text-anchor="middle" class="sc-cald">' + now.getDate() + '</text><text x="110" y="107" text-anchor="middle" class="sc-calw">' + esc(wd.replace('.', '')) + '</text>') +
       part('clToday', '', '<circle cx="28" cy="62" r="16" class="sc-clock"/><line x1="28" y1="62" x2="28" y2="53" class="sc-hand h" transform="rotate(' + ha.toFixed(1) + ' 28 62)"/><line x1="28" y1="62" x2="28" y2="49" class="sc-hand m" transform="rotate(' + ma + ' 28 62)"/><circle cx="28" cy="62" r="1.6" class="sc-hub"/>') +
-      sceneMe(34, 70, 40, 58, todPose(todays.length ? 'plain' : 'day')) +
+      /* you, pacing back and forth – no time! */
+      '<g class="sc-pace">' + sceneMe(20, 80, 32, 52, 'plain', 'sc-rush') + '</g>' +
       notes + badge(todays.length > 3 ? todays.length : 0, 200, 54);
     var list = todays.slice(0, 3).map(function (e) { return { t: (e.start && !e.allDay ? e.start.slice(0, 5) + ' ' : '') + (e.title || ''), h: '#clToday' }; });
     return { svg: svg, label: L('Today', 'I dag'), list: list, empty: L('Nothing in the calendar today.', 'Ingenting i kalenderen i dag.') };

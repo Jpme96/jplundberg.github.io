@@ -4976,3 +4976,33 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 .sc-you .av-wave { animation: avwave 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
 .sc-you .steam { animation: scsteam 2.4s ease-in-out infinite; }
 .sc-you.pl-hop { animation: plhop .7s var(--ease-ios, ease); } @keyframes plhop { 35% { translate: 0 -8px; scale: 1.04 .96; } 60% { translate: 0 0; scale: 1.05 .94; } 80% { translate: 0 -2px; scale: 1; } }
+
+/* ---------- You, doing things in the pictures (scenes.js) ---------- */
+.sc-you { pointer-events: none; }                       /* the parts under you still take you to their cards */
+:is(.sc-you, .sc-curl) :is(.av-armR, .av-armL) { transform-box: view-box; }
+:is(.sc-you, .sc-curl) .av-armR { transform-origin: 123px 96px; } :is(.sc-you, .sc-curl) .av-armL { transform-origin: 79px 96px; }
+/* Wishlist: pushing the cart back and forth */
+.sc-push { animation: scpush 3.4s ease-in-out infinite; } @keyframes scpush { 50% { transform: translateX(16px); } }
+.sc-pusher :is(.av-armR, .av-armL) { transform: rotate(-58deg); }
+.sc-pusher .av-all { animation: scstep .42s ease-in-out infinite alternate; } @keyframes scstep { to { transform: translateY(-2px); } }
+.sc-push .sc-wheel { transform-box: fill-box; transform-origin: center; }
+/* Goals: climbing */
+.sc-climber .av-armR { animation: screachR 1.1s ease-in-out infinite alternate; } .sc-climber .av-armL { animation: screachL 1.1s ease-in-out infinite alternate; }
+@keyframes screachR { from { transform: rotate(-160deg); } to { transform: rotate(-115deg); } } @keyframes screachL { from { transform: rotate(115deg); } to { transform: rotate(160deg); } }
+.sc-climber .av-all { animation: scstep .55s ease-in-out infinite alternate; }
+.sc-top .av-all { animation: scjump .9s ease-in-out infinite; transform-box: view-box; }
+/* Papers: filing – a sheet from your hand into the top drawer */
+.sc-filer .av-armR { animation: scfile 2.4s ease-in-out infinite; } @keyframes scfile { 0%, 100% { transform: rotate(-25deg); } 35% { transform: rotate(-110deg); } 55% { transform: rotate(-60deg); } }
+.sc-toss { animation: sctoss 2.4s ease-in infinite; opacity: 0; } .sc-toss.b { animation-delay: -1.2s; }
+@keyframes sctoss { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 25% { opacity: 1; transform: translate(-4px, -8px) rotate(-10deg); } 60% { opacity: 1; transform: translate(-30px, -48px) rotate(-30deg); } 85% { opacity: 1; transform: translate(-48px, -44px) rotate(-8deg); } 100% { opacity: 0; transform: translate(-50px, -38px) rotate(0); } }
+/* Calendar: pacing back and forth */
+.sc-pace { animation: scpace 5s linear infinite; } @keyframes scpace { 0%, 100% { transform: translateX(0); } 47%, 53% { transform: translateX(140px); } }
+.sc-rush { transform-box: fill-box; transform-origin: center; animation: scflip 5s steps(1) infinite; } @keyframes scflip { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+.sc-rush .av-armR { animation: scswingR .38s ease-in-out infinite alternate; } .sc-rush .av-armL { animation: scswingL .38s ease-in-out infinite alternate; }
+@keyframes scswingR { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } } @keyframes scswingL { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+.sc-rush .av-all { animation: scstep .19s ease-in-out infinite alternate; }
+/* Food: stirring the pot */
+.sc-cook .av-armR { animation: scstir 1s ease-in-out infinite alternate; } @keyframes scstir { from { transform: rotate(-98deg); } to { transform: rotate(-122deg); } }
+/* Health: biceps curls */
+.sc-curl .av-armL { animation: sccurl 1.5s ease-in-out infinite alternate; } @keyframes sccurl { from { transform: rotate(-8deg); } to { transform: rotate(48deg); } }
+.mo-off :is(.sc-push, .sc-pace, .sc-toss, .sc-you *, .sc-curl *), .mo-reduced :is(.sc-push, .sc-pace, .sc-toss, .sc-you *, .sc-curl *) { animation: none !important; }
