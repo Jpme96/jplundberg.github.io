@@ -4864,3 +4864,29 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .fa-lim b, .fa-wl b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .fa-wl li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 5px 0; font-size: 13.5px; }
 .fa-wl a { color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- House: power bill, meter photo, FDV upkeep, handymen (house-energy.js) ---------- */
+.he-split { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 3px; }
+.he-split li { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--muted); }
+.he-split b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.he-year { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.he-yh { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.he-yh b { font-size: 14.5px; font-weight: 600; }
+.he-bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; height: 90px; align-items: end; margin-top: 6px; }
+.he-bars span { display: grid; grid-template-rows: 1fr auto; height: 100%; align-items: end; justify-items: center; gap: 3px; }
+.he-bars i { width: 100%; height: var(--h); min-height: 0; border-radius: 4px 4px 2px 2px; background: color-mix(in srgb, #c98500 70%, transparent); }
+.he-bars em { font-style: normal; font-size: 10.5px; color: var(--muted); }
+.he-pick { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin: 4px 0 10px; }
+.he-ocr img { display: block; width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; margin: 0 0 8px; background: rgba(var(--ink-rgb), .05); }
+.he-ocr p { margin: 0 0 6px; font-size: 13.5px; }
+.he-found b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.he-found .bi { color: #22b35e; }
+.he-sug { cursor: default; }
+.he-sug:hover { background: none; }
+.he-sugb { display: flex; gap: 6px; }
+.he-add { color: var(--accent); }
+.he-years { list-style: none; margin: 0; padding: 0; }
+.he-years li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.he-years li:first-child { border-top: 0; }
+.he-years b { font-weight: 600; }
+.he-years small { display: block; font-size: 12.5px; color: var(--muted); }

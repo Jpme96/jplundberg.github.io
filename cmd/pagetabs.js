@@ -28,8 +28,8 @@
       /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
       /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
       tabs: [['shared', 'Shared', 'people', null, true], ['upkeep', 'Upkeep', 'tools', null, true], ['energy', 'Energy', 'lightning-charge', null, true], ['things', 'Things', 'box-seam', null, true],
-        ['projects', 'Projects', 'hammer', 'hproj'], ['docs', 'Docs', 'journal-bookmark', ['hdocs', 'hclaim']], ['history', 'History', 'clock-history']],
-      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
+        ['projects', 'Projects', 'hammer', null, true], ['docs', 'Docs', 'journal-bookmark', ['hdocs', 'hclaim']], ['history', 'History', 'clock-history']],
+      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hfdvup"]', 'upkeep'], ['[data-tool="henergy"]', 'energy'], ['[data-tool="hpros"]', 'projects'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }

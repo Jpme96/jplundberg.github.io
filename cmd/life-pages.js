@@ -73,6 +73,8 @@
     return best;
   }
   function support(p) { return p - .9 * Math.max(0, p - 93.75); }     // strømstøtte: 90 % above 93,75 øre incl. VAT
+  /* for others (house-energy.js): today's prices by the hour, in øre incl. VAT – null while they load */
+  window.PowerPrice = { day: prices, support: support };
   mount('power', function (el) {
     var now = new Date(), tk = dkey(now), tom = addDays(tk, 1), k = PW.day === 'tomorrow' ? tom : tk;
     var h = prices(k), hTom = now.getHours() >= 13 ? prices(tom) : null;
