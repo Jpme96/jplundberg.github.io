@@ -4687,3 +4687,4 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .tr-grid select { width: 100%; min-width: 0; }
 .tr-swap { margin-bottom: 4px; }
 .tr-list { margin-top: 4px; }
+.mn-tr { margin: 12px 0 4px; } .qa-tr { display: flex; margin: 4px 0 2px; font-size: 14px; }

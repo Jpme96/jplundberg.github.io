@@ -186,6 +186,7 @@
     };
     box.innerHTML = setup + '<ul class="mn-list">' + list.map(row).join('') + '</ul>' +
       (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '<span>Net worth<b>' + money(m.worth) + '</b></span></div>' : '') +
+      (!monEditing && list.length > 1 ? '<button type="button" class="pill-btn sm mn-tr" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer between accounts</button>' : '') +
       (seeded(d) && !monEditing ? '<button type="button" class="text-btn mn-wiz" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button>' : '') +
       (monEditing ? '<p class="muted mn-p">Type what your bank shows now. Importing a file afterwards moves the balance on by itself (or takes the balance column, when the file has one).</p>' :
         !m.known ? '<p class="muted mn-p">Add what’s in each account – then the budget shows what you can really use, not just what the plan says.</p>' : '');

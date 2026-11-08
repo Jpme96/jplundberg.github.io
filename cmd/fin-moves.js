@@ -180,5 +180,7 @@
   }
   document.addEventListener('click', function (e) { if (e.target.closest('[data-transfer]')) { e.preventDefault(); sheet(); } });
   (window.CommandExtra = window.CommandExtra || []).push(function () { return V.get() ? [{ i: 'arrow-left-right', t: 'Transfer between accounts', s: 'Finances', run: function () { sheet(); }, x: 'transfer move money overføring flytt penger konto sparing' }] : []; });
+  /* opened from another page (Quick add → Transfer) */
+  if (/[?&]transfer=1/.test(location.search)) V.onUnlock(function () { setTimeout(function () { if (window.history && history.replaceState) history.replaceState(null, '', location.pathname + location.hash); sheet(); }, 500); });
   window.FinMoves = { transfer: sheet, add: add, remove: remove, list: list, merge: merge, unmerge: unmerge };
 })();

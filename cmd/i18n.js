@@ -1135,6 +1135,7 @@
     'Pick two different accounts.': 'Velg to forskjellige kontoer.', 'Note (optional) – e.g. Savings': 'Notat (valgfritt) – f.eks. Sparing', 'Delete transfer': 'Slett overføringen',
     'Transfer deleted – balances moved back': 'Overføringen er slettet – saldoene er flyttet tilbake', 'Add a second account first (Finances → Plan → Accounts)': 'Legg til en konto til først (Økonomi → Plan → Kontoer)',
     'Removed account': 'Fjernet konto',
+    'Moved money between your own accounts? Transfer': 'Flyttet penger mellom egne kontoer? Overføring',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
     'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',

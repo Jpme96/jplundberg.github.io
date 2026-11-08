@@ -174,6 +174,7 @@
         (chips.length ? '<div class="qa-chips">' + chips.map(function (e) {
           return '<button type="button" data-chip data-a="' + esc(e.amount) + '" data-c="' + esc(e.cat) + '" data-n="' + esc(e.note) + '">' + esc(e.note) + ' <b>' + esc(nf.format(e.amount)) + '</b></button>';
         }).join('') + '</div>' : '') +
+        (window.FinMoves ? '<button type="button" class="text-btn qa-tr" data-qatransfer><i class="bi bi-arrow-left-right"></i> Moved money between your own accounts? Transfer</button>' : '') +
         '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Log expense</button></div></form>';
     },
     event: function (p) {
@@ -300,6 +301,7 @@
     if (q) { e.preventDefault(); open(q.dataset.quick); }
   });
   bg.addEventListener('click', function (e) {
+    if (e.target.closest('[data-qatransfer]')) { close(); if (!window.Accts) { location.href = '/cmd/finance/?transfer=1'; return; } setTimeout(function () { window.FinMoves && window.FinMoves.transfer(); }, 200); return; }
     if (e.target === bg || e.target.closest('[data-close]')) { close(); return; }
     if (e.target.closest('[data-qafull]')) { close(); var nw = document.getElementById('clNew'); if (nw) setTimeout(function () { nw.click(); }, 120); return; }
     var tab = e.target.closest('[data-tab]');
