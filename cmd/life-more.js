@@ -78,6 +78,9 @@
       var gc = gcfg(), DN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       b.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-bag-check"></i> Gym bag</p><div class="st-group"><div class="st-row gb-days"><span>Gym days<small class="st-rsub">A packing list in At a glance those mornings</small></span><span class="gb-dd">' + DN.map(function (n, i) { return '<button type="button" data-gbday="' + i + '" aria-pressed="' + (gc.days.indexOf(i) > -1) + '">' + n + '</button>'; }).join('') + '</span></div>' +
         '<label class="st-row"><span>In the bag</span><input class="st-input" data-gbbag value="' + esc(gc.bag) + '" maxlength="160"></label></div>' +
+        (function () { var rc = Fe.tools().ringcfg || {}; return '<p class="st-sub ap-sub"><i class="bi bi-circle"></i> Rings on Home</p><div class="st-group"><label class="st-row"><span>Steps and water rings<small class="st-rsub">Small rings in the chips at the top of Home that fill during the day</small></span><input type="checkbox" class="switch" data-ringcfg="on"' + (rc.on !== false ? ' checked' : '') + '></label>' +
+          '<label class="st-row"><span>Water<small class="st-rsub">Tap the chip for each glass</small></span><input type="checkbox" class="switch" data-ringcfg="water"' + (rc.water !== false ? ' checked' : '') + '></label>' +
+          sel('data-ringcfg="waterGoal"', rc.waterGoal || 8, 'Glasses a day', [[6, '6'], [8, '8'], [10, '10'], [12, '12']]) + '</div>'; })() +
         '<p class="st-sub ap-sub"><i class="bi bi-fire"></i> Streaks</p><div class="st-group"><label class="st-row"><span>Streaks in At a glance<small class="st-rsub">Late in the week when one is about to break, and every 4 weeks in a row</small></span><input type="checkbox" class="switch" data-lmcfg="healthcfg:streakBrief"' + (hcfg().streakBrief ? ' checked' : '') + '></label></div>';
     }
     if (page === 'people') {
@@ -94,6 +97,10 @@
     var b = e.target.closest('[data-gbday]'); if (!b) return;
     var t = Fe.tools(), c = Object.assign({}, t.healthcfg || {}), l = Array.isArray(c.gymDays) ? c.gymDays.slice() : [], i = +b.dataset.gbday, at = l.indexOf(i);
     if (at > -1) l.splice(at, 1); else l.push(i); c.gymDays = l.sort(); t.healthcfg = c; Fe.saveTools(t); b.setAttribute('aria-pressed', String(at < 0));
+  });
+  document.addEventListener('change', function (e) {
+    var r = e.target.closest('[data-ringcfg]'); if (!r) return;
+    var t = Fe.tools(); t.ringcfg = Object.assign({}, t.ringcfg || {}); t.ringcfg[r.dataset.ringcfg] = r.type === 'checkbox' ? r.checked : +r.value; Fe.saveTools(t); toast('<i class="bi bi-check2"></i> Saved');
   });
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-gbbag]'); if (!i) return;

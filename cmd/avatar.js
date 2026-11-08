@@ -55,8 +55,33 @@
     { k: 'trip', t: 'Trip soon', bg: '#161e30', sky: 'sun' },
     { k: 'night', t: 'Late evening', bg: '#0f1020', sky: 'moon' }
   ];
+  /* what you wear and how you look today, by itself (Settings → Pictures & touches): an umbrella when it rains, a
+     beanie in snow, a Santa hat in December, a 17 May ribbon, sunglasses on July days; tired after a short night,
+     a drop of sweat when bills are overdue. Only on your own avatar, never on the people in People. */
+  function wear() {
+    var out = {}, now = new Date(), mo = now.getMonth(), dd = now.getDate(), h = now.getHours();
+    if (on('avWear')) {
+      var wx = readJSON('dash.wxNow', null), c = wx && Date.now() - wx.at < 3 * 3600e3 ? +wx.code : null;
+      if (c != null && ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95)) out.rain = 1;
+      if (c != null && ((c >= 71 && c <= 77) || c === 85 || c === 86)) out.snow = 1;
+      if (mo === 11 && dd <= 26) out.santa = 1;
+      if (mo === 4 && dd === 17) out.ribbon = 1;
+      if (mo === 6 && h >= 8 && h < 20 && !out.rain) out.sun = 1;
+    }
+    if (on('avMood') && window.Vault && window.Vault.get) {
+      try {
+        var ln = window.AHealth && window.AHealth.lastNight ? window.AHealth.lastNight() : null;
+        if (ln && !ln.partial && ln.v > 0 && ln.v < 6 && h < 15) out.tired = 1;
+        var d = window.Vault.get() || {}, ym = today().slice(0, 7), paid = ((d.paid || {})[ym]) || [];
+        if (paid.length) out.stress = ((d.budget && d.budget.fixed) || []).some(function (f) { return f.day && !f.src && +f.day <= dd - 3 && paid.indexOf(f.id) < 0; }) ? 1 : 0;
+      } catch (e) {}
+    }
+    return out;
+  }
   function figure(m, L) {
+    var mine = !L, W = mine ? wear() : {};
     L = L || look();
+    if (W.tired && m && !m.mood && m.k !== 'night') m = Object.assign({}, m, { mood: 'tired' });
     /* light mode: the moment's colour becomes a soft tint instead of a dark night-sky box */
     if (m && m.bg && !m.plain && document.documentElement.getAttribute('data-theme') === 'light') m = Object.assign({}, m, { bg: shade(m.bg, .8) });
     var S = L.skin, S2 = shade(L.skin, -.14), H = L.hairC, bare = L.top === 'none', T = bare ? L.skin : m.k === 'gym' ? '#2f7a55' : L.topC, T2 = shade(T, -.18), P = L.legs, top = bare ? 'none' : m.k === 'gym' ? 'tee' : m.k === 'night' ? 'hoodie' : L.top;
@@ -143,7 +168,8 @@
       full: '<path d="M82 60c0 18 8 29 19 29s19-11 19-29c-2 8-6 12-10 12-2-2-5-3-9-3s-7 1-9 3c-4 0-8-4-10-12z" fill="' + H + '"/>',
       moustache: '<path d="M94 70.5q7-4 14 0q-3.5 2-7 .6-3.5 1.4-7-.6z" fill="' + H + '"/>' }[L.beard];
     var mouthOver = L.beard === 'short' || L.beard === 'full' ? (sleep ? '' : tired || meh ? mouth : '<path d="M96 73q5 4 10 0" fill="#fff" stroke="#8a4636" stroke-width="1.6"/>') : mouth;
-    var glasses = L.glasses === 'round' ? '<g fill="rgba(255,255,255,.08)" stroke="#1d1d1d" stroke-width="1.5"><circle cx="94" cy="62" r="5"/><circle cx="108" cy="62" r="5"/><path d="M99 62h4M89 61l-6-2M113 61l6-2" fill="none"/></g>'
+    var GL = W.sun && L.glasses === 'none' && m.k !== 'night' && m.k !== 'trip' ? 'sun' : L.glasses;
+    var glasses = GL === 'round' ? '<g fill="rgba(255,255,255,.08)" stroke="#1d1d1d" stroke-width="1.5"><circle cx="94" cy="62" r="5"/><circle cx="108" cy="62" r="5"/><path d="M99 62h4M89 61l-6-2M113 61l6-2" fill="none"/></g>'
       : L.glasses === 'sun' ? '<g><path d="M86 58.5h13v4.5c0 2.5-2 4-4.5 4h-4c-2.5 0-4.5-1.5-4.5-4z" fill="#141414"/><path d="M103 58.5h13v4.5c0 2.5-2 4-4.5 4h-4c-2.5 0-4.5-1.5-4.5-4z" fill="#141414"/><path d="M99 60h4M86 59.5l-4-1.5M116 59.5l4-1.5" stroke="#141414" stroke-width="1.6"/><path d="M88.5 60.5l3 0M105.5 60.5l3 0" stroke="rgba(255,255,255,.4)" stroke-width="1.2" stroke-linecap="round"/></g>'
       : L.glasses === 'square' ? '<g fill="rgba(255,255,255,.08)" stroke="#1d1d1d" stroke-width="1.5"><rect x="88" y="58" width="11" height="8" rx="2"/><rect x="103" y="58" width="11" height="8" rx="2"/><path d="M99 61h4M88 61l-5-2M114 61l5-2" fill="none"/></g>' : '';
     var hat = '';
@@ -151,6 +177,11 @@
     else if (m.k === 'night') hat = '<path d="M80 56q6-28 24-26 17 2 17 24-19-12-41 2z" fill="#3b4d8a"/><circle cx="123" cy="50" r="4.5" fill="#e9edf5"/>';
     else if (m.k === 'trip') hat = '<rect x="87" y="58" width="13" height="8" rx="3" fill="#111"/><rect x="102" y="58" width="13" height="8" rx="3" fill="#111"/><path d="M100 61h2" stroke="#111" stroke-width="2"/>';
     else if (L.extra === 'cap') hat = '<path d="M81 56c0-12 9-19 20-19s20 7 20 19z" fill="' + shade(T, -.1) + '"/><path d="M118 55h14q2 0 0 3h-14z" fill="' + shade(T, -.25) + '"/>';
+    if (W.santa && m.k !== 'night' && m.k !== 'gym') hat = '<path d="M80 55c2-16 12-23 23-22 9 1 15 8 18 14l6 9-7 1c-2-4-5-7-8-9-9-4-22-2-32 7z" fill="#d93a3a"/><path d="M79 52q22-8 43 2l-1 6q-21-9-41-1z" fill="#f4f4f4"/><circle cx="127" cy="64" r="4" fill="#f4f4f4"/>';
+    else if (W.snow && !hat && m.k !== 'night') hat = '<path d="M81 56c0-13 9-20 20-20s20 7 20 20z" fill="#2f5d8a"/><path d="M80 55h42v5H80z" fill="#244a6e"/><circle cx="101" cy="34" r="4" fill="#e9edf5"/>';
+    if (W.stress && m.k !== 'night') hat += '<path class="av-sweat" d="M122 50q3 5 0 7q-3-2 0-7z" fill="#7cc4ff"/>';
+    if (W.ribbon) front += '<g transform="translate(112 99)"><path d="M0 0l-6-3v6zM0 0l6-3v6z" fill="#ba0c2f"/><circle r="1.7" fill="#fff"/><path d="M-1 1l-2 6M1 1l2 6" stroke="#00205b" stroke-width="1.6"/></g>';
+    if (W.rain && m.k !== 'rain' && m.k !== 'night') behind += '<g class="av-umb"><path d="M44 36q27-28 54 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0z" fill="#3987e5"/><line x1="71" y1="36" x2="71" y2="124" stroke="#2b2f36" stroke-width="2"/><path d="M71 124q0 6-5 6" stroke="#2b2f36" stroke-width="2" fill="none"/></g>';
     var buds = L.extra === 'earbuds' ? '<circle cx="82" cy="65" r="2.2" fill="#f2f2f2"/><circle cx="120" cy="65" r="2.2" fill="#f2f2f2"/>' : '';
     var neck = MU ? '<path d="M93 80h16l3 10H90z" fill="' + S2 + '"/>' : '<rect x="95" y="80" width="12" height="10" rx="3" fill="' + S2 + '"/>';
     var head = '<g class="bob">' + hairBack + neck + face + beard + brows + eyes + nose + mouthOver + hairTop + (m.k === 'trip' ? '' : glasses) + hat + buds + '</g>';

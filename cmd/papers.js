@@ -123,6 +123,8 @@
     { k: 'every', label: 'Repeats', type: 'select', options: [['', 'Once'], ['1', 'Every year'], ['2', 'Every 2 years'], ['3', 'Every 3 years'], ['5', 'Every 5 years'], ['10', 'Every 10 years']], def: '' },
     { k: 'lead', label: 'Remind me', type: 'select', options: [['30', '1 month before'], ['14', '2 weeks before'], ['60', '2 months before'], ['90', '3 months before'], ['7', '1 week before'], ['0', 'No reminder']], def: '30' },
     { k: 'cost', label: 'Costs per year', type: 'number', suffix: 'kr', help: 'Optional – for insurance and the like' },
+    { k: 'covers', label: 'What it covers', ph: 'Insurance: e.g. contents up to 1,5 mill., travel, theft' },
+    { k: 'excess', label: 'Excess (egenandel)', type: 'number', suffix: 'kr', help: 'Insurance: what you pay yourself on a claim' },
     { k: 'link', label: 'Belongs to', type: 'select', options: linkOptions, def: '' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 3, help: 'Where the original is, what to remember, notice period …' }];
   var pending = [];                        // files picked in the edit sheet, stored on save

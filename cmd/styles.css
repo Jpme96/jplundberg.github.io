@@ -5057,3 +5057,18 @@ input.dt-empty, .kit-row input.dt-empty:not(.switch) { background-repeat: no-rep
 .tp-explore { min-width: 36px; }
 .icon-btn.sm { min-width: 32px; min-height: 32px; }
 @media (pointer: coarse) { .br-x-btn { min-width: 36px; min-height: 36px; } }
+/* Home: mini-goal rings in the chips (modern.js) */
+.mh-ring { width: 16px; height: 16px; transform: rotate(-90deg); flex: none; }
+.mh-ring circle { fill: none; stroke-width: 2.6; } .mh-ring .t { stroke: rgba(var(--ink-rgb), .18); } .mh-ring .v { stroke: var(--accent); stroke-linecap: round; transition: stroke-dasharray .5s; }
+.mh-chip.mh-done .mh-ring .v { stroke: #22b35e; }
+button.mh-chip { font: inherit; cursor: pointer; border: 0; }
+/* insurance overview (home-more.js) */
+.ins-l { list-style: none; margin: 0; padding: 0; }
+.ins-l li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+.ins-l li:first-child { border-top: 0; }
+.ins-l a { color: var(--text); text-decoration: none; display: grid; gap: 1px; min-width: 0; } .ins-l a b { font-weight: 500; font-size: 14.5px; } .ins-l small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ins-n { display: grid; text-align: right; } .ins-n b { font-weight: 600; font-variant-numeric: tabular-nums; } .ins-n b small { font-weight: 400; margin-left: 2px; }
+.pl-w { margin-left: 8px; color: #3b9de0; border-color: rgba(59, 157, 224, .5); } .pl-w i { opacity: 1; font-size: 12px; }
+@media (max-width: 520px) { .ins-l li { grid-template-columns: minmax(0, 1fr) auto; } .ins-l li > .hl-chip { grid-column: 1 / -1; justify-self: start; } }
+/* avatar extras */
+.av-sweat { animation: avsweat 2.4s ease-in infinite; } @keyframes avsweat { 0%, 60% { opacity: 0; transform: translateY(-2px); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(4px); } }

@@ -23,7 +23,7 @@
   var reduce = function () { return root.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches; };
 
   /* ---------- settings ---------- */
-  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scMe: true, play: true, tod: true, wx: 'all', season: true, confetti: true,
+  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scMe: true, avWear: true, avMood: true, play: true, tod: true, wx: 'all', season: true, confetti: true,
     flames: true, morning: true, evening: true, badgeHouse: true, badgeBday: true, poster: true, swipe: true, avatar: true, avBadge: true, avSay: 'nomoney' };
   function all() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, DEF, s.touch || {}); }
   function on(k) { return !!all()[k]; }
@@ -379,6 +379,8 @@
       row('scWish', L('Wishlist', 'Ønskeliste'), L('Wishes float as stars – green when they fit', 'Ønsker svever som stjerner – grønne når de passer')) + row('scGoals', L('Goals', 'Mål'), L('A mountain with a climber for each goal', 'Et fjell med en klatrer for hvert mål')) +
       row('scPapers', L('Papers', 'Papirer'), L('A filing cabinet that opens when something expires', 'Et arkivskap som åpner seg når noe utløper')) + row('scCal', L('Calendar', 'Kalender'), L('Today’s date, the time and today’s plans', 'Dagens dato, klokka og dagens planer')) +
       row('scMe', L('You in the pictures', 'Deg i bildene'), L('Your avatar on Wishlist, Goals, Papers, Calendar, Finances and Travel', 'Avataren din på Ønskeliste, Mål, Papirer, Kalender, Økonomi og Reise')) +
+      row('avWear', L('Dress for the day', 'Kle seg for dagen'), L('Umbrella in rain, beanie in snow, Santa hat in December, 17 May ribbon, sunglasses in July', 'Paraply i regn, lue i snø, nisselue i desember, 17. mai-sløyfe, solbriller i juli')) +
+      row('avMood', L('Mood from your day', 'Humør fra dagen din'), L('Tired after a short night, a drop of sweat when bills are overdue', 'Trøtt etter en kort natt, en svettedråpe når regninger er forfalt')) +
       row('play', L('Play with the pictures', 'Lek med bildene'), L('They tilt as you move, react when you tap, and the avatar follows you with its eyes', 'De vipper når du beveger deg, reagerer når du trykker, og avataren følger deg med øynene')) + '</div>' +
       sub('brightness-alt-high', L('Living details', 'Levende detaljer')) + '<div class="st-group">' +
       row('tod', L('Time of day', 'Tid på døgnet'), L('Lit windows in the evening, sun or moon', 'Lys i vinduene om kvelden, sol eller måne')) +

@@ -223,6 +223,7 @@
   }
   function drawHero() {
     if (!hero || !modern()) return;
+    var Fe = window.Features;
     var now = new Date(), tk = dkey(now), hh = pad(now.getHours()) + ':' + pad(now.getMinutes());
     var todos = readJSON('dash.todos', []) || [];
     var top = todos.filter(function (t) { return t.today === tk; }).sort(function (a, b) { return (a.rank || 9) - (b.rank || 9); });
@@ -271,7 +272,11 @@
     if (wt && /\d/.test(wt.textContent) && !document.documentElement.classList.contains('hide-weather')) chips.push('<a class="mh-chip" href="#weatherCard"><i class="' + (wi ? wi.className : 'bi bi-cloud') + '"></i><b>' + esc(wt.textContent) + '</b> ' + esc(((wd && wd.textContent) || '').split(' · ')[0].toLowerCase()) + '</a>');
     if (tr && tripDays <= 60) chips.push('<a class="mh-chip" href="travel/"><i class="bi bi-suitcase-lg"></i><b>' + esc(tr.name || tr.dest) + '</b> in ' + tripDays + ' day' + (tripDays === 1 ? '' : 's') + '</a>');
     var H = ((window.Vault.get() || {}).health || {}).days || {}, ht = H[tk];
-    if (ht && ht.steps) chips.push('<a class="mh-chip" href="habits/"><i class="bi bi-activity"></i><b>' + nf.format(ht.steps) + '</b> steps</a>');
+    /* daily mini-goals as small rings that fill during the day: steps (Apple Health) and water (tap to add a glass) */
+    var rc = (Fe && Fe.tools().ringcfg) || {}, ringOn = rc.on !== false, s0 = readJSON('dash.settings', {}) || {}, sGoal = +((s0.ahGoals || {}).steps) || 10000;
+    var ring = function (p) { var C = 2 * Math.PI * 7; return '<svg class="mh-ring" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" class="t"/><circle cx="9" cy="9" r="7" class="v" stroke-dasharray="' + (C * Math.min(1, p)).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>'; };
+    if (ht && ht.steps) chips.push('<a class="mh-chip' + (ringOn && ht.steps >= sGoal ? ' mh-done' : '') + '" href="habits/">' + (ringOn ? ring(ht.steps / sGoal) : '<i class="bi bi-activity"></i>') + '<b>' + nf.format(ht.steps) + '</b> steps</a>');
+    if (ringOn && rc.water !== false) { var wg = +rc.waterGoal || 8, wn = +(((Fe && Fe.tools().water) || {})[tk]) || 0; chips.push('<button type="button" class="mh-chip mh-water' + (wn >= wg ? ' mh-done' : '') + '" data-mhwater aria-label="Add a glass of water">' + ring(wn / wg) + '<b>' + wn + '/' + wg + '</b> water</button>'); }
     var fm = window.Focus && window.Focus.minsToday ? window.Focus.minsToday() : 0;
     if (fm) chips.push('<span class="mh-chip"><i class="bi bi-stopwatch"></i><b>' + fm + ' min</b> focused</span>');
     var ch = chips.join('');
@@ -298,6 +303,8 @@
   }
   if (hero) {
     hero.addEventListener('click', function (e) {
+      var Fe = window.Features;
+      if (e.target.closest('[data-mhwater]') && Fe) { var t = Fe.tools(), k = Fe.dkey(new Date()); t.water = t.water && typeof t.water === 'object' ? t.water : {}; Object.keys(t.water).forEach(function (x) { if (x < Fe.dkey(new Date(Date.now() - 30 * 864e5))) delete t.water[x]; }); var g = +((t.ringcfg || {}).waterGoal) || 8; t.water[k] = (+t.water[k] || 0) >= g + 4 ? 0 : (+t.water[k] || 0) + 1; Fe.saveTools(t); if (window.Quick) window.Quick.toast('<i class="bi bi-cup-straw"></i> ' + t.water[k] + ' of ' + g + ' glasses'); return; }
       var b = e.target.closest('[data-mhdone]'); if (!b) return;
       var real = document.querySelector('#todoList .todo-item[data-id="' + b.dataset.mhdone + '"] .check');
       if (real) { real.click(); return; }
@@ -305,7 +312,7 @@
       writeJSON('dash.todos', l); window.dispatchEvent(new Event('todos:change')); if (window.Dash && window.Dash.reload) window.Dash.reload();
     });
     var dq = false, soon = function () { if (!dq) { dq = true; setTimeout(function () { dq = false; drawHero(); }, 40); } };
-    ['todos:change', 'plan:change', 'cal:change', 'habits:change', 'fin:change', 'travel:change', 'health:change', 'dash:local', 'features:change', 'storage'].forEach(function (ev) { window.addEventListener(ev, soon); });
+    ['todos:change', 'plan:change', 'cal:change', 'habits:change', 'fin:change', 'travel:change', 'health:change', 'dash:local', 'features:change', 'storage', 'tools:change'].forEach(function (ev) { window.addEventListener(ev, soon); });
     var w = document.getElementById('weatherCard'); if (w) new MutationObserver(soon).observe(w, { childList: true, subtree: true, characterData: true });
     var tl = document.getElementById('todoList'); if (tl) new MutationObserver(soon).observe(tl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     setInterval(drawHero, 30000);
