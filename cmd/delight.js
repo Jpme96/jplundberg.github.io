@@ -23,7 +23,7 @@
   var reduce = function () { return root.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches; };
 
   /* ---------- settings ---------- */
-  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scMe: true, play: true, tod: true, wx: 'home', season: true, confetti: true,
+  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scMe: true, play: true, tod: true, wx: 'all', season: true, confetti: true,
     flames: true, morning: true, evening: true, badgeHouse: true, badgeBday: true, poster: true, swipe: true, avatar: true, avBadge: true, avSay: 'nomoney' };
   function all() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, DEF, s.touch || {}); }
   function on(k) { return !!all()[k]; }
@@ -95,7 +95,7 @@
     if (mode === 'off' || (mode === 'home' && !home)) return wxLayer('');
     var c = readJSON('dash.wxNow', null), place = readJSON('dash.weatherPlace', null) || { lat: 59.91, lon: 10.75 };
     var night = new Date().getHours() < 6 || new Date().getHours() >= 21;
-    var show = function (code) { var k = WX_KIND(code); if (k === 'sun' && night) k = ''; wxLayer(k); };
+    var show = function (code) { var k = WX_KIND(code); if (k === 'sun' && night) k = 'stars'; wxLayer(k); };   /* a clear night: twinkling stars */
     if (c && Date.now() - c.at < 30 * 60e3) return show(c.code);
     if (c) show(c.code);
     fetch('https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon + '&current=weather_code&timezone=auto')

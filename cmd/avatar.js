@@ -97,10 +97,13 @@
     /* a small shoe under each ankle, toe pointing a little outwards, a gap between them */
     var shoe = function (cx, dir) { var w = LB + 3, x = cx - w / 2 + dir * 1.5, q = function (n) { return n.toFixed(1); };
       return '<path d="M' + q(x + 2) + ' 155h' + q(w - 4) + 'c' + (dir > 0 ? '3 0 5 1.6 5 3.2 0 1.2-.8 1.8-2.2 1.8h-' + q(w + .8) + 'c-1.2 0-1.8-.8-1.8-2 0-1.8.9-3 2-3z' : '1.1 0 2 1.2 2 3 0 1.2-.6 2-1.8 2h-' + q(w + .8) + 'c-1.4 0-2.2-.6-2.2-1.8 0-1.6 2-3.2 5-3.2z') + '" fill="#1a1a1a"/>'; };
-    var legs = '<g transform="translate(0 155) scale(1 1.27) translate(0 -155)">' + leg(x0) + leg(x1) +
+    /* each leg (with its shoe) in its own group, so the pictures can make you walk (styles.css: .av-legL / .av-legR);
+       the trousers' top is drawn over both, which hides the hinge */
+    var SC = '<g transform="translate(0 155) scale(1 1.27) translate(0 -155)">';
+    var legs = '<g class="av-legL">' + SC + leg(x0) + '</g>' + shoe(x0 + LW / 2, -1) + '</g><g class="av-legR">' + SC + leg(x1) + '</g>' + shoe(x1 + LW / 2, 1) + '</g>' + SC +
       '<path d="M' + hx0.toFixed(1) + ' 122h' + hw.toFixed(1) + 'v5c0 3-2 5-5 5h-' + (hw / 2 - 5).toFixed(1) + 'l-0 -3-0 3h-' + (hw / 2 - 5).toFixed(1) + 'c-3 0-5-2-5-5z" fill="' + (cut < 157 ? P : shade(P, -.06)) + '"/>' +
       (cut < 157 ? '<path d="M' + hx0.toFixed(1) + ' 124h' + hw.toFixed(1) + 'v' + (cut - 127) + 'q0 3-3 3h-' + (hw / 2 - 3 - G / 2).toFixed(1) + 'l-' + (G / 2).toFixed(1) + '-5-' + (G / 2).toFixed(1) + ' 5h-' + (hw / 2 - 3 - G / 2).toFixed(1) + 'q-3 0-3-3z" fill="' + P + '"/>' + (L.bottom === 'swim' ? '<path d="M' + (hx0 + 1).toFixed(1) + ' 130h' + (hw - 2).toFixed(1) + '" stroke="' + shade(P, .3) + '" stroke-width="1.5"/>' : '') : '') +
-      '</g>' + shoe(x0 + LW / 2, -1) + shoe(x1 + LW / 2, 1);
+      '</g>';
     /* arms + props */
     var arm = function (d) { return '<path d="' + d + '" stroke="' + shade(T, -.3) + '" stroke-width="' + (AW + 1.8) + '" fill="none" stroke-linecap="round" opacity=".55"/><path d="' + d + '" stroke="' + T + '" stroke-width="' + AW + '" fill="none" stroke-linecap="round"/>' +
       (L.build === 'athletic' || MU ? '<path d="' + d + '" stroke="' + T + '" stroke-width="' + (AW + (MU ? 4 : 2.5)) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (MU ? 14 : 11) + ' 999"/>' : ''); }, hand = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="' + HR + '" fill="' + S + '" stroke="' + shade(S, -.25) + '" stroke-width=".7"/>'; };

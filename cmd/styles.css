@@ -4994,7 +4994,7 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 /* Papers: filing – a sheet from your hand into the top drawer */
 .sc-filer .av-armR { animation: scfile 2.4s ease-in-out infinite; } @keyframes scfile { 0%, 100% { transform: rotate(-25deg); } 35% { transform: rotate(-110deg); } 55% { transform: rotate(-60deg); } }
 .sc-toss { animation: sctoss 2.4s ease-in infinite; opacity: 0; } .sc-toss.b { animation-delay: -1.2s; }
-@keyframes sctoss { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 25% { opacity: 1; transform: translate(-4px, -8px) rotate(-10deg); } 60% { opacity: 1; transform: translate(-40px, -46px) rotate(-30deg); } 85% { opacity: 1; transform: translate(-62px, -34px) rotate(-8deg); } 100% { opacity: 0; transform: translate(-64px, -28px) rotate(0); } }
+@keyframes sctoss { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 25% { opacity: 1; transform: translate(-4px, -10px) rotate(-10deg); } 60% { opacity: 1; transform: translate(-30px, -30px) rotate(-30deg); } 85% { opacity: 1; transform: translate(-44px, -10px) rotate(-8deg); } 100% { opacity: 0; transform: translate(-46px, -4px) rotate(0); } }
 /* Calendar: pacing back and forth */
 .sc-pace { animation: scpace 5s linear infinite; } @keyframes scpace { 0%, 100% { transform: translateX(0); } 47%, 53% { transform: translateX(130px); } }
 .sc-rush { transform-box: fill-box; transform-origin: center; animation: scflip 5s steps(1) infinite; } @keyframes scflip { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
@@ -5006,3 +5006,20 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 /* Health: biceps curls */
 .sc-curl .av-armL { animation: sccurl 1.5s ease-in-out infinite alternate; } @keyframes sccurl { from { transform: rotate(-8deg); } to { transform: rotate(48deg); } }
 .mo-off :is(.sc-push, .sc-pace, .sc-toss, .sc-you *, .sc-curl *), .mo-reduced :is(.sc-push, .sc-pace, .sc-toss, .sc-you *, .sc-curl *) { animation: none !important; }
+
+/* walking: legs swing from the hip, arms swing the other way, the body dips twice per stride */
+:is(.av-fig, .sc-you) :is(.av-legL, .av-legR) { transform-box: fill-box; transform-origin: 50% 2%; }
+.sc-rush .av-legL { animation: plegA .76s ease-in-out infinite alternate; } .sc-rush .av-legR { animation: plegB .76s ease-in-out infinite alternate; }
+.sc-rush .av-armR { animation: scswingR .76s ease-in-out infinite alternate !important; } .sc-rush .av-armL { animation: scswingL .76s ease-in-out infinite alternate !important; }
+.sc-rush .av-all { animation: scdip .38s ease-in-out infinite alternate !important; }
+.sc-pusher .av-legL { animation: plegA 1s ease-in-out infinite alternate; } .sc-pusher .av-legR { animation: plegB 1s ease-in-out infinite alternate; }
+.sc-pusher .av-all { animation: scdip .5s ease-in-out infinite alternate !important; }
+.sc-climber .av-legL { animation: pclimbA 1.1s ease-in-out infinite alternate; } .sc-climber .av-legR { animation: pclimbB 1.1s ease-in-out infinite alternate; }
+@keyframes plegA { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } } @keyframes plegB { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+@keyframes pclimbA { from { transform: rotate(10deg) translateY(0); } to { transform: rotate(-28deg) translateY(-4px); } } @keyframes pclimbB { from { transform: rotate(-28deg) translateY(-4px); } to { transform: rotate(10deg) translateY(0); } }
+@keyframes scdip { from { transform: translateY(0); } to { transform: translateY(-2.2px); } }
+.sc-toss { transform-box: fill-box; transform-origin: center; }
+.dl-wx-stars { background-image: radial-gradient(1.4px 1.4px at 40px 60px, #fff, transparent), radial-gradient(1px 1px at 150px 120px, #fff, transparent), radial-gradient(1.6px 1.6px at 260px 40px, #fff, transparent), radial-gradient(1px 1px at 330px 190px, #fff, transparent), radial-gradient(1.2px 1.2px at 90px 230px, #fff, transparent), radial-gradient(1px 1px at 210px 280px, #fff, transparent);
+  background-size: 380px 320px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%); mask-image: linear-gradient(180deg, #000, transparent 70%); animation: dltwinkle 4s ease-in-out infinite alternate; }
+@keyframes dltwinkle { from { opacity: .35; } to { opacity: .75; } }
+[data-theme="light"] .dl-wx-stars { display: none; }

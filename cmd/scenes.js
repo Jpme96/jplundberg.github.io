@@ -436,11 +436,11 @@
     var P = window.Papers, l = P ? P.list() : Fe.list('papers'), st = l.map(function (x) { return { x: x, s: P && P.status ? P.status(x) : null }; });
     var soon = st.filter(function (o) { return o.s && (o.s.soon || o.s.over); }).sort(function (a, b) { return a.s.n - b.s.n; });
     var drawers = [0, 1, 2].map(function (i) {
-      var y = 52 + i * 26, hot = i === 0 && soon.length, open = i === 0 && soon.length;
-      return part('papers', hot ? 'hot' : '', '<rect x="88" y="' + y + '" width="64" height="22" rx="3" class="sc-drawer' + (open ? ' open' : '') + '"/><rect x="112" y="' + (y + 9) + '" width="16" height="4" rx="2" class="sc-handle"/>' +
-        (open ? '<rect x="96" y="' + (y - 7) + '" width="18" height="9" rx="1" class="sc-sheet"/><rect x="118" y="' + (y - 5) + '" width="18" height="7" rx="1" class="sc-sheet b"/>' : ''));
+      var y = 74 + i * 18, hot = i === 0 && soon.length, open = i === 0 && soon.length;
+      return part('papers', hot ? 'hot' : '', '<rect x="102" y="' + y + '" width="48" height="15" rx="2.5" class="sc-drawer' + (open ? ' open' : '') + '"/><rect x="119" y="' + (y + 6) + '" width="14" height="3.2" rx="1.6" class="sc-handle"/>' +
+        (open ? '<rect x="108" y="' + (y - 6) + '" width="14" height="8" rx="1" class="sc-sheet"/><rect x="126" y="' + (y - 4) + '" width="14" height="6" rx="1" class="sc-sheet b"/>' : ''));
     }).join('');
-    var svg = ground() + deco('papers') + '<rect x="84" y="46" width="72" height="84" rx="5" class="sc-cab"/>' + drawers + badge(soon.length, 156, 50) +
+    var svg = ground() + deco('papers') + '<rect x="98" y="68" width="56" height="62" rx="4" class="sc-cab"/>' + drawers + badge(soon.length, 154, 70) +
       part('papers', '', '<g class="sc-float"><rect x="212" y="56" width="20" height="26" rx="2" class="sc-sheet"/><path d="M216 64 h12 M216 69 h12 M216 74 h8" class="sc-lines"/></g>') +
       /* you, filing papers into the cabinet */
       sceneMe(148, 24, 66, 106, 'plain', 'sc-filer') + '<g class="sc-toss"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet"/></g><g class="sc-toss b"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet b"/></g>' +
