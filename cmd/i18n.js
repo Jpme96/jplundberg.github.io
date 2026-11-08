@@ -1366,6 +1366,9 @@
     'Folded cards': 'Brettede kort', 'Fold any card with the arrow in its heading': 'Brett et kort med pilen i overskriften', 'Unfold all cards': 'Brett ut alle kort', 'No cards are folded.': 'Ingen kort er brettet.', 'All cards unfolded': 'Alle kort er brettet ut',
     'Write [[a name]] to link to a person, wish, project or paper.': 'Skriv [[et navn]] for å lenke til en person, et ønske, et prosjekt eller et papir.', 'Nothing called that yet': 'Ingenting heter det ennå',
     'A page for things you’d like to buy – whether they fit this month, small things to pick up, and what you bought (straight into Home inventory)': 'En side for ting du har lyst på – om de passer denne måneden, småting å handle, og det du har kjøpt (rett inn i innbolisten)',
+    'Repeats': 'Gjentas', 'Once': 'Én gang', 'Every week': 'Hver uke', 'Every 14 days': 'Hver 14. dag', 'Every month': 'Hver måned', 'Taken': 'Tatt',
+    'For medicine you take regularly (or a weekly appointment) – it goes in your calendar and At a glance on those days.': 'For medisin du tar fast (eller en ukentlig time) – den kommer i kalenderen og i Kort fortalt de dagene.',
+    'For appointments and medicine – it goes in your calendar.': 'For timer og medisin – det kommer i kalenderen.',
     'less tax over the next 12 months from your loans': 'mindre skatt de neste 12 månedene fra lånene', 'less tax over the next 12 months (rentefradrag)': 'mindre skatt de neste 12 månedene (rentefradrag)', 'Back (+) or to pay (−), kr': 'Tilbake (+) eller å betale (−), kr',
     'kept of': 'beholdt av', 'Your money': 'Pengene dine', 'Income month by month for the next 12 months': 'Inntekt måned for måned de neste 12 månedene', 'From the tax return': 'Fra skatteoppgjøret', 'history builds month by month': 'historikken bygges måned for måned',
     'in fixed costs': 'i faste kostnader', 'Your usual share': 'Din vanlige andel', 'For “By your usual %”': 'For «Etter din vanlige %»',
@@ -1373,6 +1376,7 @@
   });
   P.unshift(
     [/^(\d+) of (\d+) steps ·$/, '$1 av $2 steg ·'], [/^done (.+)$/, function (m, a) { return /\d/.test(a) ? 'ferdig ' + tr(a) : null; }], [/^(.+) kWh a year$/, '$1 kWh i året'], [/^(.+\S) ·$/, function (m, a) { var t = tr(a); return t !== a ? t + ' ·' : null; }],
+    [/^Take (.+) at (\d{2}:\d{2})$/, 'Ta $1 kl. $2'], [/^Take (.+) today$/, 'Ta $1 i dag'],
     [/^Wait until (.+)$/, function (m, a) { return 'Vent til ' + tr(a); }], [/^In (\d+) months$/, 'Om $1 måneder'], [/^on the list (\d+) days$/, 'på listen i $1 dager'],
     [/^(\d+) wish(?:es)? · (.+) in all$/, function (m, n, a) { return n + (n === '1' ? ' ønske' : ' ønsker') + ' · ' + a + ' totalt'; }], [/^(\d+) wish(es)?$/, function (m, n) { return n + (n === '1' ? ' ønske' : ' ønsker'); }],
     [/^(\d+) fit this month · (.+ kr) left until payday$/, '$1 passer denne måneden · $2 igjen til lønning'], [/^([−+]?[\d\s\u00a0\u202f,.]+ kr) left until payday$/, '$1 igjen til lønning'], [/^([−+]?[\d\s\u00a0\u202f,.]+ kr) left until payday after$/, '$1 igjen til lønning etterpå'],

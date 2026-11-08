@@ -24,6 +24,7 @@
   var layer = null;
   function lay() { if (!layer) { layer = document.createElement('div'); layer.className = 'pl-layer'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); } return layer; }
   function burst(x, y, kind, n) {
+    return;    /* the sparkles, hearts and falling leaves are switched off (Nov 8) – the bounces and moves stay */
     if (!on()) return;
     var L = lay(), glyph = { spark: '✦', heart: '❤', note: '♪', snow: '❄', petal: '✿', sun: '✧', leaf: '❦' }[kind] || '✦';
     for (var i = 0; i < (n || 6); i++) {

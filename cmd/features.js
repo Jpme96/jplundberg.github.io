@@ -197,11 +197,17 @@
       readOnly: true, reminder: true, link: '/cmd/?settings=profile', location: '', notes: '', exDays: {}, rule: { freq: 'YEARLY', interval: 1 } });
     if (on('health')) list('health').forEach(function (h) {
       var what = h.title || 'Health';
-      if (isKey(h.date) && h.kind === 'checkup' && h.date >= addMonths(dkey(new Date()), -1)) {
+      if (isKey(h.date) && h.kind === 'checkup' && !h.every && h.date >= addMonths(dkey(new Date()), -1)) {
         var start = fromKey(h.date), timed = /^\d{2}:\d{2}$/.test(h.time || '');
         if (timed) { var t = h.time.split(':'); start.setHours(+t[0], +t[1]); }
         out.push({ id: 'rem:hc:' + h.id, title: what + (h.where ? ' · ' + h.where : ''), allDay: !timed, start: start, days: 1, dur: 3600e3,
           color: REMIND_COLOR, readOnly: true, reminder: true, link: '/cmd/habits/#health', location: h.where || '', notes: h.notes || '', exDays: {} });
+      }
+      /* medicine you take regularly: a repeating calendar entry */
+      if (h.every && isKey(h.date)) {
+        var st = fromKey(h.date), tm = /^\d{2}:\d{2}$/.test(h.time || ''); if (tm) { var tt = h.time.split(':'); st.setHours(+tt[0], +tt[1]); }
+        var rule = { '1d': { freq: 'DAILY', interval: 1 }, '1w': { freq: 'WEEKLY', interval: 1 }, '2w': { freq: 'WEEKLY', interval: 2 }, '1m': { freq: 'MONTHLY', interval: 1 } }[h.every];
+        if (rule) out.push({ id: 'rem:hr:' + h.id, title: (h.kind === 'medicine' ? '💊 ' : '') + what, allDay: !tm, start: st, days: 1, dur: 900e3, color: REMIND_COLOR, readOnly: true, reminder: true, link: '/cmd/habits/#health', location: h.where || '', notes: h.notes || '', exDays: {}, rule: rule });
       }
       if (isKey(h.next)) ev('hn:' + h.id, ({ checkup: 'Book check-up: ', vaccine: 'Vaccine due: ', medicine: 'Renew prescription: ' }[h.kind] || 'Due: ') + what,
         h.next, h.where ? 'At ' + h.where : '', '/cmd/habits/#health');

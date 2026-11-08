@@ -353,6 +353,16 @@
 
   /* ================= HEALTH: check-ups, vaccines, medicine ================= */
   var HKINDS = [['checkup', 'Appointment / check-up'], ['vaccine', 'Vaccine'], ['medicine', 'Medicine / prescription']];
+  /* how often: medicine you take every day, every week, every 14 days or every month */
+  var HEVERY = [['', 'Once'], ['1d', 'Every day'], ['1w', 'Every week'], ['2w', 'Every 14 days'], ['1m', 'Every month']];
+  function hevery(v) { var o = HEVERY.filter(function (x) { return x[0] === v; })[0]; return o && v ? o[1] : ''; }
+  /* is it on day k? (from its date onwards) */
+  function hOn(h, k) {
+    if (!h.every || !/^\d{4}-\d{2}-\d{2}$/.test(h.date || '') || k < h.date) return false;
+    var n = Math.round((F.fromKey(k) - F.fromKey(h.date)) / 864e5);
+    return h.every === '1d' ? true : h.every === '1w' ? n % 7 === 0 : h.every === '2w' ? n % 14 === 0 : h.every === '1m' ? F.fromKey(k).getDate() === Math.min(F.fromKey(h.date).getDate(), new Date(F.fromKey(k).getFullYear(), F.fromKey(k).getMonth() + 1, 0).getDate()) : false;
+  }
+  window.HealthRepeat = { on: hOn, every: hevery };
   var HICON = { checkup: 'clipboard2-pulse', vaccine: 'shield-plus', medicine: 'capsule' };
   var HNEXT = { checkup: 'Next check-up', vaccine: 'Booster due', medicine: 'Renew by' };
   function dueBadge(k, word) {
@@ -369,7 +379,8 @@
       { k: 'title', type: 'title', label: 'What', ph: 'e.g. Dentist, Tetanus booster, Allergy pills', req: true },
       { k: 'kind', label: 'Type', type: 'select', options: HKINDS, def: 'checkup' },
       { k: 'date', label: 'Date', type: 'date', def: today, help: 'The appointment, when you took the vaccine, or when it was prescribed.' },
-      { k: 'time', label: 'Time', type: 'time', help: 'For appointments – it goes in your calendar.' },
+      { k: 'every', label: 'Repeats', type: 'select', options: HEVERY, def: '', help: 'For medicine you take regularly (or a weekly appointment) – it goes in your calendar and At a glance on those days.' },
+      { k: 'time', label: 'Time', type: 'time', help: 'For appointments and medicine – it goes in your calendar.' },
       { k: 'where', label: 'Where / who', ph: 'Clinic, doctor, pharmacy' },
       { k: 'next', label: 'Next / renew by', type: 'date', help: 'Next check-up, when a booster is due, or when the prescription runs out. You get a reminder in your calendar.' },
       { k: 'notes', label: 'Notes', type: 'textarea', rows: 3, help: 'Dose, what was said, questions for next time …' }
@@ -390,10 +401,26 @@
     row: function (h) {
       var past = h.kind === 'checkup' && h.date && h.date < today();
       return { icon: HICON[h.kind] || 'clipboard2-pulse', color: '#e66767', title: h.title,
-        sub: [{ checkup: 'Check-up', vaccine: 'Vaccine', medicine: 'Medicine' }[h.kind] || '', h.date ? fmt(h.date) + (h.time && !past ? ' ' + esc(h.time) : '') : '', h.where ? esc(h.where) : ''].filter(Boolean).join(' · '),
+        sub: [{ checkup: 'Check-up', vaccine: 'Vaccine', medicine: 'Medicine' }[h.kind] || '', h.every ? hevery(h.every) + (h.time ? ' ' + esc(h.time) : '') : h.date ? fmt(h.date) + (h.time && !past ? ' ' + esc(h.time) : '') : '', h.where ? esc(h.where) : ''].filter(Boolean).join(' · '),
         right: dueBadge(h.next, h.kind === 'medicine' ? 'Renew' : h.kind === 'vaccine' ? 'Booster' : 'Next') };
     },
     empty: 'Doctor and dentist appointments, vaccines (useful before trips) and prescriptions. You get reminders in your calendar before things are due.'
+  });
+
+  /* At a glance: medicine (or a repeating appointment) that's on today – tick it off */
+  (window.BriefExtra = window.BriefExtra || []).push(function (add) {
+    if (!F.on('health')) return;
+    var td = today(), done = (F.tools().htaken || {})[td] || {};
+    F.list('health').forEach(function (h) {
+      if (!h.every || !hOn(h, td) || done[h.id]) return;
+      var late = h.time && (new Date().getHours() * 60 + new Date().getMinutes()) > (+h.time.slice(0, 2) * 60 + +h.time.slice(3, 5));
+      add(late ? 22 : 44, h.kind === 'medicine' ? 'capsule' : 'clipboard2-pulse', '#e66767', (h.kind === 'medicine' ? 'Take ' : '') + (h.title || 'Medicine') + (h.time ? ' at ' + h.time : ' today'), [hevery(h.every), h.where].filter(Boolean).join(' · '), '/cmd/habits/#health',
+        { act: { id: 'ht:' + h.id + ':' + td, label: h.kind === 'medicine' ? 'Taken' : 'Done' }, run: function () {
+          var t = F.tools(); t.htaken = t.htaken && typeof t.htaken === 'object' ? t.htaken : {};
+          Object.keys(t.htaken).forEach(function (k) { if (k < F.addMonths(td, -1)) delete t.htaken[k]; });
+          t.htaken[td] = Object.assign({}, t.htaken[td]); t.htaken[td][h.id] = Date.now(); F.saveTools(t);
+        } });
+    });
   });
 
   /* ================= HABITS: journal ================= */
