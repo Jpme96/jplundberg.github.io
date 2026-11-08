@@ -10,7 +10,7 @@ var ASSETS = 'cmd-assets';
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */
-var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/admin/'];
+var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/wish/', '/cmd/goals/', '/cmd/papers/', '/cmd/admin/'];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function (c) {

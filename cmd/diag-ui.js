@@ -16,7 +16,7 @@
   function toast(h) { if (window.Quick && window.Quick.toast) window.Quick.toast(h); }
   var D = window.Diag, host = null, worker = null, test = null, dev = null, busy = {};
   var PAGES = [['home', '/cmd/', L('Home', 'Hjem')], ['calendar', '/cmd/calendar/', L('Calendar', 'Kalender')], ['travel', '/cmd/travel/', L('Travel', 'Reise')], ['finance', '/cmd/finance/', L('Finances', 'Økonomi')],
-    ['habits', '/cmd/habits/', L('Health', 'Helse')], ['work', '/cmd/work/', L('Work', 'Jobb')], ['house', '/cmd/house/', L('House', 'Hus')], ['people', '/cmd/people/', L('People', 'Folk')], ['food', '/cmd/food/', L('Food', 'Mat')], ['admin', '/cmd/admin/', 'Admin']];
+    ['habits', '/cmd/habits/', L('Health', 'Helse')], ['work', '/cmd/work/', L('Work', 'Jobb')], ['house', '/cmd/house/', L('House', 'Hus')], ['people', '/cmd/people/', L('People', 'Folk')], ['food', '/cmd/food/', L('Food', 'Mat')], ['wish', '/cmd/wish/', L('Wishlist', 'Ønskeliste')], ['goals', '/cmd/goals/', L('Goals', 'Mål')], ['admin', '/cmd/admin/', 'Admin']];
   function pageName(p) { var x = PAGES.filter(function (q) { return q[0] === p; })[0]; return x ? x[2] : p; }
   function ago(t) {
     if (!t) return L('never', 'aldri');

@@ -690,5 +690,5 @@
     S().payBack(i.p.id, null, { total: Math.min(i.mine, owed || i.mine), note: inv.name, inv: invId });
   }
   function goShared() { var t = document.querySelector('[data-ptab-go="shared"]'); if (t) t.click(); var c = document.getElementById('hshared'); if (c) setTimeout(function () { c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 120); }
-  window.SharedHome = { forInv: forInv, invInfo: invInfo, payBackInv: payBackInv, add: function () { buySheet(null); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
+  window.SharedHome = { forInv: forInv, invInfo: invInfo, payBackInv: payBackInv, add: function () { buySheet(null); }, buy: function (pre) { buySheet(null, pre); }, plan: buySheet, draw: draw, cover: coverSheet, run: runSheet, move: move, moveDate: moveDate };
 })();

@@ -238,8 +238,19 @@
     /* a goal that follows a habit stores the habit's numbers too, so Settings → Project progress and
        what is published on jplundberg.com show the same as this card */
     goals.forEach(function (g) { var h = linkedHabit(g, hb); if (h) { g.value = weekCount(hb, h.id); g.target = h.target; } else if (g.ah && AH[g.ah]) { var v = ahValue(g.ah); if (v != null) g.value = v; } });
+    /* goals that take their number from Finances, House … (Goals page, goals.js) */
+    var GS = window.GoalSrc;
+    if (GS) GS.sync(goals);
     save('dash.goals', goals);
-    $('goalList').innerHTML = goals.map(function (g) {
+    var shown = goals.filter(function (g) { return !g.arch; });
+    var gpl = $('goalPageLink'); if (gpl) gpl.hidden = !(window.Features && window.Features.on('goals'));
+    $('goalList').innerHTML = (shown.length ? '' : '<li class="empty">' + (goals.length ? 'All your goals are done – see them on the Goals page.' : 'No goals yet.') + '</li>') + shown.map(function (g) {
+      if (GS && (g.src || (g.steps && g.steps.length))) {
+        var sp = GS.pct(g), src = g.src === 'steps' ? (g.value || 0) + ' of ' + (g.steps || []).length + ' steps' : GS.lower(g) ? GS.show(g, g.value) + ' · goal ' + GS.show(g, g.target) : GS.show(g, g.value) + ' / ' + GS.show(g, g.target);
+        return '<li class="goal' + (sp >= 1 ? ' done' : '') + '" data-id="' + g.id + '">' +
+          '<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"></circle><circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - sp)) + '"></circle></svg>' +
+          '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + esc(src) + ' · ' + Math.round(sp * 100) + '%' + (g.src && g.src !== 'steps' ? ' · <i class="bi bi-arrow-repeat"></i> updates itself' : '') + '</span></div></li>';
+      }
       var h = linkedHabit(g, hb);
       if (h) { g = Object.assign({}, g, { value: weekCount(hb, h.id), target: h.target }); }
       var ahk = !h && g.ah && AH[g.ah] ? g.ah : null;
@@ -277,8 +288,12 @@
       renderGoals();
       return;
     }
+    if ((g.src || (g.steps && g.steps.length)) && window.Features && window.Features.on('goals')) { location.href = '/cmd/goals/'; return; }
     openGoalForm(g);
   });
+  window.addEventListener('goals:refresh', function () { clearTimeout(renderGoals.t); renderGoals.t = setTimeout(function () { goals = load('dash.goals', goals) || goals; renderGoals(); }, 30); });
+  window.addEventListener('features:change', function () { clearTimeout(renderGoals.t); renderGoals.t = setTimeout(renderGoals, 60); });
+  ['fin:change', 'tools:change'].forEach(function (ev) { window.addEventListener(ev, function () { if (window.GoalSrc && goals.some(function (g) { return g.src; })) { clearTimeout(renderGoals.t); renderGoals.t = setTimeout(renderGoals, 60); } }); });
 
   function openGoalForm(g) {
     editingGoal = g || null;

@@ -41,6 +41,8 @@
     "house-proj.js",
     "house-docs.js",
     "backup-mail.js",
+    "wish.js",
+    "goals.js",
     "pagetabs.js",
     "delight.js",
     "scenes.js",
@@ -159,6 +161,20 @@
       "links.js"
     ],
     "papers/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "wish/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "goals/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",

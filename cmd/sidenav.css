@@ -47,7 +47,7 @@
   :root.side-nav.tab-off-calendar .tabbar a[data-pg=calendar]:not([aria-current]), :root.side-nav.tab-off-travel .tabbar a[data-pg=travel]:not([aria-current]),
   :root.side-nav.tab-off-finance .tabbar a[data-pg=finance]:not([aria-current]), :root.side-nav.tab-off-habits .tabbar a[data-pg=habits]:not([aria-current]),
   :root.side-nav.tab-off-work .tabbar a[data-pg=work]:not([aria-current]), :root.side-nav.tab-off-house .tabbar a[data-pg=house]:not([aria-current]),
-  :root.side-nav.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), :root.side-nav.tab-off-food .tabbar a[data-pg=food]:not([aria-current]), :root.side-nav.tab-off-papers .tabbar a[data-pg=papers]:not([aria-current]),
+  :root.side-nav.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), :root.side-nav.tab-off-food .tabbar a[data-pg=food]:not([aria-current]), :root.side-nav.tab-off-papers .tabbar a[data-pg=papers]:not([aria-current]), :root.side-nav.tab-off-wish .tabbar a[data-pg=wish]:not([aria-current]), :root.side-nav.tab-off-goals .tabbar a[data-pg=goals]:not([aria-current]),
   :root.side-nav.tab-off-admin .tabbar a[data-pg=admin]:not([aria-current]) { display: none !important; }
   :root.side-nav .mbar .tabbar a > span:last-child { display: inline !important; overflow: hidden; text-overflow: ellipsis; }
   :root.side-nav .mbar .tabbar a i { flex: none; width: 20px; text-align: center; font-size: 17px; }
