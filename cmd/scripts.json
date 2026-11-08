@@ -51,6 +51,7 @@
     "delight.js",
     "scenes.js",
     "avatar.js",
+    "play.js",
     "alive.js",
     "modern.js",
     "steady.js",

@@ -4919,3 +4919,53 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 input.dt-empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 15px; }
 input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .25.43l3.5 2a.5.5 0 0 0 .5-.86L8 8.71z'/%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0'/%3E%3C/svg%3E"); }
 .kit-row input[type="date"], .kit-row input[type="time"] { width: 9.5em; }
+
+/* ---------- New pictures: Wishlist, Goals, Papers, Calendar (scenes.js) ---------- */
+.sc-wstar path { fill: color-mix(in srgb, #f0c040 75%, var(--bg-solid)); stroke: #c98500; stroke-width: .8; }
+.sc-wstar.fit path { fill: #22b35e; stroke: #178a47; }
+.sc-float { animation: scfloat 3.2s ease-in-out infinite; } @keyframes scfloat { 50% { transform: translateY(-4px); } }
+.sc-bag { fill: color-mix(in srgb, #d55181 70%, var(--bg-solid)); } .sc-bagh { fill: none; stroke: color-mix(in srgb, #d55181 85%, #000); stroke-width: 3; stroke-linecap: round; }
+.sc-bagt { fill: #fff; font: 700 13px Inter, system-ui, sans-serif; }
+.sc-gift { fill: color-mix(in srgb, #3987e5 70%, var(--bg-solid)); } .sc-giftl { fill: color-mix(in srgb, #3987e5 85%, #000); } .sc-ribbon { fill: #f0c040; } .sc-bow { fill: #f0c040; }
+.sc-cartb { fill: none; stroke: rgba(var(--ink-rgb), .6); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; } .sc-wheel { fill: rgba(var(--ink-rgb), .7); }
+.sc-mtn { fill: color-mix(in srgb, #6b7a8f 55%, var(--bg-solid)); } .sc-mtn2 { fill: color-mix(in srgb, #6b7a8f 35%, var(--bg-solid)); } .sc-snow { fill: #eef2f7; }
+.sc-trail { fill: none; stroke: rgba(255, 255, 255, .55); stroke-width: 1.4; stroke-dasharray: 3 3; animation: sctrail 6s linear infinite; } @keyframes sctrail { to { stroke-dashoffset: -60; } }
+.sc-gflag { fill: #e66767; transform-box: fill-box; transform-origin: left center; animation: scflag 2.2s ease-in-out infinite; } .sc-gflag.won { fill: #22b35e; } @keyframes scflag { 50% { transform: scaleX(.85) skewY(4deg); } }
+.sc-climb { animation: scclimb 1.6s ease-in-out infinite; } @keyframes scclimb { 50% { transform: translateY(-1.5px); } }
+.sc-gdone .sc-climb { animation: scjump .9s ease-in-out infinite; } @keyframes scjump { 40% { transform: translateY(-5px); } }
+.sc-cab { fill: color-mix(in srgb, #7a8794 45%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .35); }
+.sc-drawer { fill: color-mix(in srgb, #7a8794 30%, var(--bg-solid)); stroke: rgba(var(--ink-rgb), .45); transition: transform .4s var(--ease-ios, ease); }
+.sc-drawer.open { transform: translateX(-4px); } .sc-handle { fill: rgba(var(--ink-rgb), .55); }
+.sc-sheet { fill: #f4f1e8; stroke: rgba(0, 0, 0, .15); } .sc-sheet.b { fill: #e6eefc; } .sc-lines { stroke: rgba(0, 0, 0, .3); stroke-width: 1.2; stroke-linecap: round; }
+.sc-pot { fill: color-mix(in srgb, #a0673a 70%, var(--bg-solid)); } .sc-leaf { fill: none; stroke: #2f9e57; stroke-width: 3; stroke-linecap: round; }
+.sc-plant { transform-box: fill-box; transform-origin: bottom center; animation: scsway 4s ease-in-out infinite; } @keyframes scsway { 50% { transform: rotate(3deg); } }
+.sc-ring { fill: rgba(var(--ink-rgb), .7); }
+.sc-calm { fill: #fff; font: 700 9px Inter, system-ui, sans-serif; letter-spacing: .08em; } .sc-cald { fill: var(--text); font: 700 30px Inter, system-ui, sans-serif; } .sc-calw { fill: var(--muted); font: 600 10px Inter, system-ui, sans-serif; }
+.sc-note { fill: #f6dd7a; } .sc-note.n1 { fill: #9ad9f2; } .sc-note.n2 { fill: #f2a7c3; } .sc-notet { fill: #2b2b2b; font: 700 9px Inter, system-ui, sans-serif; }
+.sc-hand { stroke: var(--text); stroke-linecap: round; } .sc-hand.h { stroke-width: 2.4; } .sc-hand.m { stroke-width: 1.5; } .sc-hub { fill: #e66767; }
+
+/* ---------- Play (play.js): tilt, taps, wiggles, sparkles, avatar moves ---------- */
+#scIllu svg, #hsIllu svg { transition: transform .35s ease-out; transform-origin: 50% 70%; will-change: transform; }
+.hs-part { transform-box: fill-box; transform-origin: 50% 90%; }
+.hs-part.pl-pop { animation: plpop .55s var(--ease-ios, ease); } .hs-part.hot.pl-pop { animation: plpop .55s var(--ease-ios, ease), hsglow 2.4s ease-in-out infinite; }
+@keyframes plpop { 0% { scale: 1; } 30% { scale: 1.14 .9; } 55% { scale: .94 1.08; } 80% { scale: 1.03 .98; } 100% { scale: 1; } }
+.hs-part.pl-wig { animation: plwig .8s ease-in-out; } .hs-part.hot.pl-wig { animation: plwig .8s ease-in-out, hsglow 2.4s ease-in-out infinite; }
+@keyframes plwig { 20% { rotate: -4deg; } 45% { rotate: 3.5deg; } 70% { rotate: -2deg; } 100% { rotate: 0deg; } }
+.pl-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.pl-p { position: absolute; font-style: normal; font-size: 14px; line-height: 1; translate: -50% -50%; animation: plfly 1s ease-out forwards; opacity: 0; }
+.pl-spark, .pl-sun { color: #f0c040; } .pl-heart { color: #e5484d; font-size: 16px; } .pl-note { color: var(--accent); font-size: 17px; }
+.pl-snow { color: #dfe9f7; } .pl-petal { color: #f2a7c3; } .pl-leaf { color: #d9822b; font-size: 16px; }
+@keyframes plfly { 0% { opacity: 0; transform: translate(0, 0) rotate(0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); } }
+.pl-snow, .pl-petal, .pl-leaf, .pl-sun { animation-name: plfall; animation-timing-function: ease-in; }
+@keyframes plfall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)); } }
+.av-fig .eyes { transition: translate .18s ease-out; }
+.av-fig.pl-jump { animation: pljump .7s var(--ease-ios, ease); } @keyframes pljump { 35% { transform: translateY(-14px) scale(1.03, .97); } 60% { transform: translateY(0) scale(1.04, .95); } 80% { transform: translateY(-3px); } }
+.av-fig.pl-spin svg { animation: plspin .8s ease-in-out !important; } @keyframes plspin { 50% { transform: scaleX(-1); } }
+.av-fig.pl-laugh .av-all { animation: pllaugh .7s ease-in-out !important; } @keyframes pllaugh { 15%, 45%, 75% { transform: translateY(-1.5px) rotate(-1.2deg); } 30%, 60%, 90% { transform: translateY(0) rotate(1.2deg); } }
+.av-fig.pl-wave .av-armR { animation: plwave .9s ease-in-out !important; } @keyframes plwave { 25%, 75% { transform: rotate(-150deg); } 50% { transform: rotate(-120deg); } }
+.av-fig.pl-cheer .av-armR { animation: plcheerR 1.3s ease-in-out !important; } .av-fig.pl-cheer .av-armL { animation: plcheerL 1.3s ease-in-out !important; } .av-fig.pl-cheer { animation: pljump .7s var(--ease-ios, ease) 2; }
+@keyframes plcheerR { 20%, 80% { transform: rotate(-160deg); } } @keyframes plcheerL { 20%, 80% { transform: rotate(160deg); } }
+.av-fig.pl-dance svg { animation: pldance .5s ease-in-out 6 !important; } .av-fig.pl-dance .av-armR { animation: plcheerR .5s ease-in-out 6 !important; } .av-fig.pl-dance .av-armL { animation: plcheerL .5s ease-in-out 6 .25s !important; }
+@keyframes pldance { 25% { transform: rotate(-5deg) translateY(-3px); } 75% { transform: rotate(5deg) translateY(-3px); } }
+.mo-off .pl-layer, .mo-reduced .pl-layer { display: none; }
+@media (prefers-reduced-motion: reduce) { .pl-layer { display: none; } #scIllu svg, #hsIllu svg { transform: none !important; } }

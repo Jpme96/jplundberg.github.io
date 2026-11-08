@@ -36,10 +36,10 @@
   }
   window.SceneGround = ground;
 
-  var PAGE = (location.pathname.match(/\/cmd\/(people|food|work|habits|finance|travel)\/$/) || [])[1];
+  var PAGE = (location.pathname.match(/\/cmd\/(people|food|work|habits|finance|travel|wish|goals|papers|calendar)\/$/) || [])[1];
   if (!PAGE) return;
-  var KEY = { people: 'scPeople', food: 'scFood', work: 'scWork', habits: 'scHealth', finance: 'scFin', travel: 'scTravel' }[PAGE];
-  var FEAT = { people: 'people', food: 'food', work: 'work', habits: 'healthpage', finance: 'finance', travel: 'travel' }[PAGE];
+  var KEY = { people: 'scPeople', food: 'scFood', work: 'scWork', habits: 'scHealth', finance: 'scFin', travel: 'scTravel', wish: 'scWish', goals: 'scGoals', papers: 'scPapers', calendar: 'scCal' }[PAGE];
+  var FEAT = { people: 'people', food: 'food', work: 'work', habits: 'healthpage', finance: 'finance', travel: 'travel', wish: 'wish', goals: 'goals', papers: 'papers', calendar: 'calendar' }[PAGE];
 
   /* ---------------- People ---------------- */
   /* a person at the table in the same style as your avatar: look picked from the name, shirt in the relation colour */
@@ -370,7 +370,78 @@
     if (from && to) list.push({ t: from + ' → ' + to, h: '#paneJourney' });
     return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, empty: '' };
   }
-  var MAKE = { people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
+
+  /* ---------------- Wishlist: a shopping bag, a gift for what you bought, wishes floating above as stars ---------------- */
+  function wish() {
+    var W = window.Wish, l = Fe.list('wishes').slice().sort(function (a, b) { return (+a.prio || 2) - (+b.prio || 2); }).slice(0, 5), buy = Fe.list('wbuy').length;
+    var y = String(new Date().getFullYear()), got = Fe.list('wbought').filter(function (x) { return String(x.bought || '').slice(0, 4) === y; }).length;
+    var pos = [[70, 34], [104, 22], [140, 30], [170, 48], [46, 56]];
+    var stars = l.map(function (w, i) {
+      var f = W && W.fit ? W.fit(w) : null, c = f && f.now ? 'fit' : '', p = pos[i];
+      return part('wishes=' + w.id, 'sc-wstar ' + c, '<g transform="translate(' + p[0] + ' ' + p[1] + ')"><g class="sc-float" style="animation-delay:-' + (i * .7).toFixed(1) + 's"><path d="M0 -8 l2.4 5 5.4.6 -4 3.7 1.1 5.3 -4.9-2.7 -4.9 2.7 1.1-5.3 -4-3.7 5.4-.6z"/></g></g>');
+    }).join('');
+    var svg = ground() + deco('wish') + stars +
+      part('wbuy', buy ? 'hot' : '', '<path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text>') +
+      part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92) +
+      part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>');
+    var list = [];
+    var fits = W && W.fit ? Fe.list('wishes').filter(function (w) { var f = W.fit(w); return f && f.now; }).length : 0;
+    if (l.length) list.push({ t: Fe.list('wishes').length + L(' wishes', ' ønsker') + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
+    if (buy) list.push({ t: buy + L(' to buy', ' å kjøpe'), h: '#wbuy' });
+    return { svg: svg, label: L('Your wishes', 'Ønskene dine'), list: list, empty: L('Add a wish and it floats up here.', 'Legg inn et ønske, så flyter det opp her.') };
+  }
+
+  /* ---------------- Goals: a mountain – a flag at the top, one climber per goal at how far it's got ---------------- */
+  function goals() {
+    var GS = window.GoalSrc, l = (readJSON('dash.goals', []) || []).filter(function (g) { return g && !g.arch; }).slice(0, 4);
+    var at = function (p) { var x = 40 + p * 80, y = 128 - p * 96; return [x, y]; };   /* along the left slope to the peak at (120, 32) */
+    var COL = ['#3987e5', '#e8743b', '#22b35e', '#8a6fdf'];
+    var climbers = l.map(function (g, i) {
+      var p = GS ? GS.pct(g) : (g.target > 0 ? Math.min(1, (+g.value || 0) / g.target) : 0), q = at(Math.min(.97, p)), done = p >= 1;
+      return part('glActive', done ? 'sc-gdone' : '', '<g transform="translate(' + (q[0] + (i % 2 ? 6 : -4)).toFixed(1) + ' ' + q[1].toFixed(1) + ')"><g class="sc-climb" style="animation-delay:-' + (i * .5) + 's"><circle cx="0" cy="-9" r="3" fill="#e9c7a3"/><rect x="-3" y="-6" width="6" height="7" rx="2" fill="' + COL[i] + '"/><path d="M-2 1 l-1.5 5 M2 1 l1.5 5" stroke="#3a3f4b" stroke-width="1.6" stroke-linecap="round"/></g></g>');
+    }).join('');
+    var allDone = l.length && l.every(function (g) { return (GS ? GS.pct(g) : 0) >= 1; });
+    var svg = ground() + deco('goals') +
+      '<path d="M28 132 L120 30 L212 132 Z" class="sc-mtn"/><path d="M104 48 L120 30 L136 48 L128 44 L120 50 L112 44 Z" class="sc-snow"/><path d="M150 132 L184 92 L224 132 Z" class="sc-mtn2"/>' +
+      '<path d="M40 128 Q70 104 66 92 T96 62 T120 32" class="sc-trail"/>' +
+      part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers;
+    var list = l.map(function (g) { return { t: g.name + ' · ' + Math.round((GS ? GS.pct(g) : 0) * 100) + ' %', h: '#glActive' }; });
+    return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.') };
+  }
+
+  /* ---------------- Papers: a filing cabinet – a drawer lights up when something is about to expire ---------------- */
+  function papers() {
+    var P = window.Papers, l = P ? P.list() : Fe.list('papers'), st = l.map(function (x) { return { x: x, s: P && P.status ? P.status(x) : null }; });
+    var soon = st.filter(function (o) { return o.s && (o.s.soon || o.s.over); }).sort(function (a, b) { return a.s.n - b.s.n; });
+    var drawers = [0, 1, 2].map(function (i) {
+      var y = 52 + i * 26, hot = i === 0 && soon.length, open = i === 0 && soon.length;
+      return part('papers', hot ? 'hot' : '', '<rect x="88" y="' + y + '" width="64" height="22" rx="3" class="sc-drawer' + (open ? ' open' : '') + '"/><rect x="112" y="' + (y + 9) + '" width="16" height="4" rx="2" class="sc-handle"/>' +
+        (open ? '<rect x="96" y="' + (y - 7) + '" width="18" height="9" rx="1" class="sc-sheet"/><rect x="118" y="' + (y - 5) + '" width="18" height="7" rx="1" class="sc-sheet b"/>' : ''));
+    }).join('');
+    var svg = ground() + deco('papers') + '<rect x="84" y="46" width="72" height="84" rx="5" class="sc-cab"/>' + drawers + badge(soon.length, 156, 50) +
+      part('papers', '', '<g class="sc-float"><rect x="182" y="70" width="22" height="28" rx="2" class="sc-sheet"/><path d="M186 78 h14 M186 83 h14 M186 88 h9" class="sc-lines"/></g>') +
+      '<g class="sc-plant"><rect x="36" y="112" width="18" height="16" rx="3" class="sc-pot"/><path d="M45 112 q-8 -14 -2 -24 M45 112 q6 -12 12 -16 M45 112 q0 -10 4 -20" class="sc-leaf"/></g>';
+    var list = soon.slice(0, 3).map(function (o) { return { t: (o.x.title || '') + ' · ' + o.s.rel, h: '#papers=' + o.x.id, late: o.s.over }; });
+    if (!list.length && l.length) list.push({ t: l.length + L(' papers, nothing due', ' papirer, ingenting forfaller'), h: '#papers' });
+    return { svg: svg, label: L('Your papers', 'Papirene dine'), list: list, empty: L('Add your important papers.', 'Legg inn de viktige papirene.') };
+  }
+
+  /* ---------------- Calendar: a desk calendar with today's date, a clock with the real time, today's events as notes ---------------- */
+  function calendar() {
+    var now = new Date(), tk = today(), cal = readJSON('dash.calendar', {}) || {};
+    var todays = (cal.events || []).filter(function (e) { return e.date === tk; }).sort(function (a, b) { return String(a.start || '').localeCompare(String(b.start || '')); });
+    var wd = now.toLocaleDateString(NB ? 'nb-NO' : 'en-GB', { weekday: 'short' }), mo = now.toLocaleDateString(NB ? 'nb-NO' : 'en-GB', { month: 'short' });
+    var h = now.getHours() % 12, m = now.getMinutes(), ha = (h + m / 60) * 30, ma = m * 6;
+    var notes = todays.slice(0, 3).map(function (e, i) { return part('clToday', '', '<g transform="translate(' + (160 + i * 4) + ' ' + (58 + i * 22) + ') rotate(' + (i % 2 ? 4 : -3) + ')"><rect width="40" height="18" rx="2" class="sc-note n' + i + '"/><text x="5" y="12" class="sc-notet">' + esc((e.start || '').slice(0, 5) || '•') + '</text></g>'); }).join('');
+    var svg = ground() + deco('calendar') +
+      part('clToday', todays.length ? 'hot' : '', '<rect x="78" y="44" width="64" height="70" rx="5" class="sc-cal"/><rect x="78" y="44" width="64" height="18" rx="4" fill="#e66767"/><circle cx="92" cy="44" r="2.5" class="sc-ring"/><circle cx="128" cy="44" r="2.5" class="sc-ring"/>' +
+        '<text x="110" y="57" text-anchor="middle" class="sc-calm">' + esc(mo.replace('.', '').toUpperCase()) + '</text><text x="110" y="94" text-anchor="middle" class="sc-cald">' + now.getDate() + '</text><text x="110" y="107" text-anchor="middle" class="sc-calw">' + esc(wd.replace('.', '')) + '</text>') +
+      part('clToday', '', '<circle cx="42" cy="86" r="20" class="sc-clock"/><line x1="42" y1="86" x2="42" y2="74" class="sc-hand h" transform="rotate(' + ha.toFixed(1) + ' 42 86)"/><line x1="42" y1="86" x2="42" y2="70" class="sc-hand m" transform="rotate(' + ma + ' 42 86)"/><circle cx="42" cy="86" r="1.8" class="sc-hub"/>') +
+      notes + badge(todays.length > 3 ? todays.length : 0, 200, 54);
+    var list = todays.slice(0, 3).map(function (e) { return { t: (e.start && !e.allDay ? e.start.slice(0, 5) + ' ' : '') + (e.title || ''), h: '#clToday' }; });
+    return { svg: svg, label: L('Today', 'I dag'), list: list, empty: L('Nothing in the calendar today.', 'Ingenting i kalenderen i dag.') };
+  }
+  var MAKE = { wish: wish, goals: goals, papers: papers, calendar: calendar, people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
   function draw() {
     var hero = document.querySelector('.fp-hero, .tv-hero'); if (!hero) return;
     var box = document.getElementById('scIllu');
@@ -387,6 +458,7 @@
     if (/=/.test(target)) { location.hash = target; return; }
     var c = document.getElementById(target) || document.querySelector('[data-tool="' + target + '"]') || document.querySelector('.' + target);
     if (!c) return;
+    if (c.tagName === 'BUTTON') { c.click(); return; }       /* Calendar: the Today button */
     c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('sr-flash'); setTimeout(function () { c.classList.remove('sr-flash'); }, 1600);
   }
   document.addEventListener('click', function (e) {
