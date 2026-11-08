@@ -24,6 +24,7 @@
   /* ---------------- one spending, not two ---------------- */
   var lastToast = 0, quiet = false;
   function merge(d) {
+    var fc = window.Features && window.Features.tools().fintools; if (fc && fc.merge === false) return [];     /* Settings → Finances */
     var ex = Array.isArray(d && d.expenses) ? d.expenses : null; if (!ex || !ex.length) return [];
     var no = Array.isArray(d.noMerge) ? d.noMerge : [];
     var bank = ex.filter(function (e) { return e && e.src === 'bank' && e.ref && +e.amount > 0; });

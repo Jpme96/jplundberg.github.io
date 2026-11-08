@@ -29,7 +29,7 @@
   function fin() { return Fe.on('finance') ? window.Vault.get() : null; }
   var GREEN = '#22b35e', AMBER = '#c98500', RED = '#e66767', BLUE = '#3987e5', GREY = '#7a8794';
 
-  var DEF = { buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
+  var DEF = { merge: true, buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
   function cfg() { var c = Fe.tools().fintools; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }
   function setCfg(p) { var t = Fe.tools(); t.fintools = Object.assign({}, t.fintools || {}, p); Fe.saveTools(t); }
   function debts(d) { return ((d && d.accounts) || []).filter(function (a) { return a.kind === 'debt'; }); }
@@ -250,6 +250,7 @@
       sub('percent', 'Loans') + '<div class="st-group">' + sw('rateBrief', 'Tell me when a loan’s interest changes', 'At a glance, for 10 days') +
       sel('rateCheck', 'Ask if the rate is still right', [[0, 'Never'], [3, 'Every 3 months'], [6, 'Every 6 months'], [12, 'Once a year']]) + '</div>' +
       sub('envelope-open', 'Tax') + '<div class="st-group">' + sw('taxBrief', 'Tax dates in At a glance', 'The tax return in March–April, the last days of the year in December') + '</div>' +
+      sub('intersect', 'Typed and from the bank') + '<div class="st-group">' + sw('merge', 'Count a spending once', 'When you typed it and the bank file has it too – same amount, within a few days') + '</div>' +
       sub('tags', 'Categories that learn') + '<div class="st-group">' + sw('learn', 'Learn from the categories you pick', 'The next import puts the same shop in the same category') +
       sw('learnAll', 'Change the others from the same shop too', 'When you change one bank row – with Undo') +
       (keys.length ? '<details class="st-row fx-mem"><summary><span>What it has learned<small class="st-rsub">' + keys.length + ' shops</small></span><i class="bi bi-chevron-down"></i></summary><ul>' + keys.sort().slice(0, 200).map(function (k) { return '<li><span>' + esc(k) + '</span><em>' + esc(CN[mem[k]] || mem[k]) + '</em><button type="button" class="icon-btn sm" data-ftforget="' + esc(k) + '" aria-label="Forget ' + esc(k) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul></details>' : '') + '</div>';

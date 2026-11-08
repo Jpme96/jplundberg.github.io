@@ -369,3 +369,9 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 :is(.av-fig, .av-prev) .eyes circle { animation: avglance 9s ease-in-out infinite; }
 @keyframes avglance { 0%, 18%, 40%, 62%, 100% { transform: translateX(0); } 22%, 34% { transform: translateX(1.6px); } 66%, 78% { transform: translateX(-1.6px); } }
 .mo-off :is(.av-fig, .av-prev) *, .mo-reduced :is(.av-fig, .av-prev) * { animation: none !important; }
+
+/* One typeface everywhere in this look. styles.css still names the Classic fonts (Raleway, Poppins, Roboto) on
+   some numbers and labels – tile values, small stats, chart text – and without those fonts loaded the phone fell
+   back to its system font there, which made some areas look different. Code-like text keeps its monospace. */
+:root.modern body *:not(code, pre, kbd, samp, .bi, .sc-url, .hl-secret, .rc-code, .lock-rec input, .wr-adv textarea, .wr-src, .fp-mono),
+:root.modern svg text { font-family: var(--font); }

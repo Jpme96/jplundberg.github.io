@@ -75,4 +75,17 @@
   if (window.Vault) window.Vault.onUnlock(function () { setTimeout(pass, 150); });
   setTimeout(pass, 0);
   window.Fold = { pass: pass, folded: folded, set: save };
+  /* Settings → Menu & pages: how many cards you've folded, and unfold them all */
+  function stRow() {
+    var box = document.getElementById('stFoldRow'); if (!box) return;
+    var m = map(), n = Object.keys(m).filter(function (k) { return m[k]; }).length;
+    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-chevron-bar-contract"></i> Folded cards <span class="st-hint">Fold any card with the arrow in its heading</span></p><section class="st-group">' +
+      (n ? '<button type="button" class="st-row st-btn" data-unfoldall><span class="st-label">Unfold all cards<small>' + n + (n === 1 ? ' card is' : ' cards are') + ' folded</small></span><i class="bi bi-arrows-expand"></i></button>' : '<p class="st-note st-pad">No cards are folded.</p>') + '</section>';
+  }
+  window.addEventListener('st:page', function (e) { if (e.detail === 'layout') stRow(); });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-unfoldall]')) return;
+    var t = Fe.tools(), old = t.fold; t.fold = {}; Object.keys(old || {}).forEach(function (k) { if (DEF[k] != null) t.fold[k] = 0; }); Fe.saveTools(t); stRow(); pass();
+    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-arrows-expand"></i> All cards unfolded', function () { var t2 = Fe.tools(); t2.fold = old; Fe.saveTools(t2); stRow(); pass(); });
+  });
 })();
