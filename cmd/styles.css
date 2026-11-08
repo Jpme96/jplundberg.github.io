@@ -3992,7 +3992,7 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .mn-row .money.neg { color: var(--danger); }
 .mn-bar { display: block; height: 5px; margin-top: 5px; border-radius: 3px; background: rgba(var(--ink-rgb), .08); overflow: hidden; }
 .mn-bar i { display: block; height: 100%; border-radius: 3px; }
-.mn-tot { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mn-tot { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 .mn-tot span { font-size: 12px; color: var(--muted); }
 .mn-tot b { display: block; font-size: 16px; color: var(--heading); }
 .mn-tot b.neg, .mn-tot b.neg .money { color: var(--danger); }
@@ -4725,3 +4725,34 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .fs-inline .fs-close { display: none; }
 .fs-more { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; border-top: 1px solid var(--line); margin-top: 16px; padding-top: 10px; }
 .fs-inline .fs-foot { position: static !important; bottom: auto; background: none; box-shadow: none; margin-top: 14px; padding-left: 0; padding-right: 0; }
+.mn-tot > span { min-width: 0; } .mn-tot b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Your accounts → Transfers: the one list of them */
+.mn-trs { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mn-trh { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.mn-trh > span { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.mn-trl { list-style: none; margin: 0; padding: 0; }
+.mn-trl li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.mn-trl li:first-child { border-top: 0; }
+.mn-trn b { display: block; font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .mn-trn b .bi { font-size: 11px; color: var(--muted); }
+.mn-trn small { color: var(--muted); font-size: 12.5px; }
+/* Finances tabs on wider screens: cards side by side in rows of equal height (not two loose columns),
+   so a short card never sits next to a long one with a gap under it. Spending keeps its wide column. */
+@media (min-width: 760px) {
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) { align-items: stretch; }
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col { display: contents; }
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > .card { margin: 0; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(1) { order: 1; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(1) { order: 2; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(2) { order: 3; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(2) { order: 4; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(3) { order: 5; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(3) { order: 6; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(4) { order: 7; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(4) { order: 8; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(5) { order: 9; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(5) { order: 10; }
+  .fp-fin .fin-grid.fpt > .fin-col:first-child > :nth-child(6) { order: 11; } .fp-fin .fin-grid.fpt > .fin-col:last-child > :nth-child(6) { order: 12; }
+}
+@media (min-width: 760px) { .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > [data-tool] > .card { height: 100%; box-sizing: border-box; } }
+/* an empty card (folded to one line by tidy.js) doesn't stretch next to a full one: it goes to the end as one slim full-width row */
+@media (min-width: 760px) {
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > .card.card-folded,
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > [data-tool]:has(> .card.card-folded) { grid-column: 1 / -1; order: 50; }
+  .fp-fin .fin-grid.fpt:not([data-ftab="tx"]):not(.fin-one) > .fin-col > [data-tool] > .card.card-folded { height: auto; }
+}
+#fpMoneyEdit, .mn-trs [data-mntrall] { white-space: nowrap; flex: none; }

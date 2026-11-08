@@ -145,7 +145,7 @@
         '<div class="mp-grid tr-grid"><label><span>From</span><select name="from">' + opt(from0) + '</select></label><button type="button" class="icon-btn sm tr-swap" data-trswap aria-label="Swap"><i class="bi bi-arrow-down-up"></i></button><label><span>To</span><select name="to">' + opt(to0) + '</select></label></div>' +
         '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required aria-label="Amount, kr"><input name="date" type="date" value="' + today() + '" aria-label="Date"></div>' +
         '<input name="note" maxlength="60" placeholder="Note (optional) – e.g. Savings" autocomplete="off" aria-label="Note">' +
-        '<p class="mp-prev" id="trPrev"></p>' + recent() +
+        '<p class="mp-prev" id="trPrev"></p>' +
         '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Move it</button></div></form>';
       prev();
     }

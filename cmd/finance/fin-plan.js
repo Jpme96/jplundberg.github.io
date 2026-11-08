@@ -187,11 +187,27 @@
     };
     box.innerHTML = setup + '<ul class="mn-list">' + list.map(row).join('') + '</ul>' +
       (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '<span>Net worth<b>' + money(m.worth) + '</b></span></div>' : '') +
-      (!monEditing && list.length > 1 ? '<button type="button" class="pill-btn sm mn-tr" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer between accounts</button>' : '') +
-      (seeded(d) && !monEditing ? '<button type="button" class="text-btn mn-wiz" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button>' : '') +
+      (!monEditing && list.length > 1 ? transfers(d) : '') +
       (monEditing ? '<p class="muted mn-p">Type what your bank shows now. Importing a file afterwards moves the balance on by itself (or takes the balance column, when the file has one).</p>' :
         !m.known ? '<p class="muted mn-p">Add what’s in each account – then the budget shows what you can really use, not just what the plan says.</p>' : '');
   }
+  /* the transfers between your accounts – the one place they're listed (the Transfer sheet only adds them) */
+  function transfers(d) {
+    var l = window.FinMoves ? window.FinMoves.list(d) : [], A = window.Accts, nm = function (id) { var a = A.get(d, id); return a ? a.label : 'Removed account'; };
+    var shown = l.slice(0, mnTrAll ? 30 : 4);
+    return '<div class="mn-trs"><div class="mn-trh"><span>Transfers</span><button type="button" class="pill-btn sm" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button></div>' +
+      (shown.length ? '<ul class="mn-trl">' + shown.map(function (t) {
+        return '<li><span class="mn-trn"><b>' + esc(nm(t.from)) + ' <i class="bi bi-arrow-right"></i> ' + esc(nm(t.to)) + '</b><small>' + esc(new Date(t.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (t.note ? ' · ' + t.note : '')) + '</small></span>' + money(t.amount) +
+          '<button type="button" class="icon-btn sm" data-mntrdel="' + esc(t.id) + '" aria-label="Delete transfer"><i class="bi bi-trash3"></i></button></li>';
+      }).join('') + '</ul>' + (l.length > 4 ? '<button type="button" class="text-btn" data-mntrall>' + (mnTrAll ? 'Show fewer' : 'All ' + l.length + ' transfers') + '</button>' : '')
+        : '<p class="muted mn-p">Money you move between your own accounts – not spending. The balances move with it.</p>') + '</div>';
+  }
+  var mnTrAll = false;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-mntrdel]');
+    if (b && window.FinMoves) { var x = window.FinMoves.remove(b.dataset.mntrdel); if (x && window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> Transfer deleted – balances moved back', function () { window.FinMoves.add(x); }); return; }
+    if (e.target.closest('[data-mntrall]')) { mnTrAll = !mnTrAll; var d = data(); if (d) renderMoney(d); }
+  });
   function setBal(d, id, patch) {
     var list = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
     var a = list.filter(function (x) { return x.id === id; })[0];
