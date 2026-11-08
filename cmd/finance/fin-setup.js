@@ -23,6 +23,9 @@
   bg.className = 'qa-bg fs-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="qa-box fs-box" role="dialog" aria-modal="true" aria-label="Set up Finances"><div class="qa-handle"></div><div id="fsBody"></div></div>';
   document.body.appendChild(bg);
+  /* on the Setup tab the form sits right on the page (#fsInline); the sheet is only a fallback */
+  var inline = $('fsInline');
+  function host() { return inline || $('fsBody'); }
 
   /* ---------- a working copy, written back on each Next ---------- */
   function load() {
@@ -91,7 +94,7 @@
     return '<div class="fs-steps">' + STEPS.map(function (t, i) { return '<button type="button" data-fsgo="' + i + '" class="' + (i === step ? 'on' : i < step ? 'done' : '') + '"><b>' + (i < step ? '<i class="bi bi-check-lg"></i>' : i + 1) + '</b><span>' + t + '</span></button>'; }).join('') + '</div>';
   }
   function foot(nextLabel) {
-    return '<div class="qa-acts fs-foot">' + (step ? '<button type="button" class="text-btn" data-fsback><i class="bi bi-chevron-left"></i> Back</button>' : '<button type="button" class="text-btn" data-fsclose>Later</button>') +
+    return '<div class="qa-acts fs-foot">' + (step ? '<button type="button" class="text-btn" data-fsback><i class="bi bi-chevron-left"></i> Back</button>' : inline ? '' : '<button type="button" class="text-btn" data-fsclose>Later</button>') +
       '<span class="spacer"></span><button type="button" class="pill-btn wide" data-fsnext>' + nextLabel + '</button></div>';
   }
   function stepAccts() {
@@ -154,37 +157,50 @@
   }
   function draw() {
     var html = [stepAccts, stepSalary, stepFixed, stepMonth][step]();
-    $('fsBody').innerHTML = head() + html;
-    var box = bg.querySelector('.fs-box'); if (box) box.scrollTop = 0;
+    host().innerHTML = head() + html;
+    if (inline) { var top = inline.getBoundingClientRect().top; if (top < 70 && moved) window.scrollBy(0, top - 90); moved = false; }
+    else { var box = bg.querySelector('.fs-box'); if (box) box.scrollTop = 0; }
   }
+  var moved = false;
   function open(at) {
     if (!window.Vault.get()) return;
-    draft = load(); step = at || 0; draw();
+    draft = load(); step = at || 0;
+    if (inline) { if (window.FinTabs) window.FinTabs.show('setup', { keep: true }); draw(); setTimeout(function () { var c = $('fsCard'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); return; }
+    draw();
     bg.hidden = false; document.body.classList.add('qa-open'); requestAnimationFrame(function () { bg.classList.add('open'); });
   }
-  function close() { bg.classList.remove('open'); document.body.classList.remove('qa-open'); setTimeout(function () { if (!bg.classList.contains('open')) bg.hidden = true; }, 320); }
+  /* the Setup tab draws the form when it's shown (and again when something changes elsewhere, unless you're typing in it) */
+  function showInline() {
+    if (!inline || !window.Vault.get()) return;
+    if (inline.contains(document.activeElement) && document.activeElement.matches('input, select')) return;
+    draft = load(); draw();
+  }
+  function close() {
+    if (inline) { step = 0; showInline(); if (window.FinTabs) window.FinTabs.show('now'); return; }
+    bg.classList.remove('open'); document.body.classList.remove('qa-open'); setTimeout(function () { if (!bg.classList.contains('open')) bg.hidden = true; }, 320); }
   function saveStep() { write(['accts', 'salary', 'fixed', null][step]); }
 
-  bg.addEventListener('input', function (e) {
+  function onInput(e) {
     var t = e.target, i = +t.dataset.i;
     if (t.dataset.fa) draft.accts[i][t.dataset.fa] = t.value;
     else if (t.dataset.ff) draft.fixed[i][t.dataset.ff] = t.value;
     else if (t.dataset.fs) draft.salary[t.dataset.fs] = t.value;
-  });
-  bg.addEventListener('change', function (e) {
+  }
+  function onChange(e) {
     var t = e.target, i = +t.dataset.i;
     if (t.dataset.fanw != null) { draft.accts[+t.dataset.fanw].nw = t.checked; return; }
     if (t.dataset.fa) { draft.accts[i][t.dataset.fa] = t.value; if (t.dataset.fa === 'kind') draw(); }
     else if (t.dataset.ff) draft.fixed[i][t.dataset.ff] = t.value;
     else if (t.dataset.fs) draft.salary[t.dataset.fs] = t.value;
-  });
-  bg.addEventListener('click', function (e) {
+  }
+  function onClick(e) {
     var t = e.target;
     if (t === bg || t.closest('[data-fsclose]')) { close(); return; }
+    if (t.closest('[data-fsnext], [data-fsback], [data-fsgo]')) moved = true;
     if (t.closest('[data-fsnext]')) { saveStep(); if (step >= STEPS.length - 1) { close(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> Finances set up'); return; } step++; draft = Object.assign(load(), {}); draw(); return; }
     if (t.closest('[data-fsback]')) { saveStep(); step--; draft = load(); draw(); return; }
     var go = t.closest('[data-fsgo]'); if (go) { saveStep(); step = +go.dataset.fsgo; draft = load(); draw(); return; }
-    if (t.closest('[data-faadd]')) { draft.accts.push({ id: 'ac' + uid(), kind: 'card', name: '', bal: '', limit: '', due: '', nw: true }); draw(); var ins = bg.querySelectorAll('[data-fa="name"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+    if (t.closest('[data-faadd]')) { draft.accts.push({ id: 'ac' + uid(), kind: 'card', name: '', bal: '', limit: '', due: '', nw: true }); draw(); var ins = host().querySelectorAll('[data-fa="name"]'); if (ins.length) ins[ins.length - 1].focus(); return; }
     var del = t.closest('[data-fadel]');
     if (del) {
       var a = draft.accts[+del.dataset.fadel];
@@ -192,15 +208,20 @@
       draft.accts.splice(+del.dataset.fadel, 1); draw(); return;
     }
     var q = t.closest('[data-ffq]');
-    if (q) { draft.fixed.push({ name: q.dataset.ffq, amount: '', day: '', acct: q.dataset.ffq === 'Loan' ? 'salary' : (draft.accts.filter(function (x) { return x.kind === 'card'; })[0] || { id: 'salary' }).id }); draw(); var am = bg.querySelectorAll('[data-ff="amount"]'); if (am.length) am[am.length - 1].focus(); return; }
-    if (t.closest('[data-ffadd]')) { draft.fixed.push({ name: '', amount: '', day: '', acct: 'salary' }); draw(); var nm = bg.querySelectorAll('[data-ff="name"]'); if (nm.length) nm[nm.length - 1].focus(); return; }
+    if (q) { draft.fixed.push({ name: q.dataset.ffq, amount: '', day: '', acct: q.dataset.ffq === 'Loan' ? 'salary' : (draft.accts.filter(function (x) { return x.kind === 'card'; })[0] || { id: 'salary' }).id }); draw(); var am = host().querySelectorAll('[data-ff="amount"]'); if (am.length) am[am.length - 1].focus(); return; }
+    if (t.closest('[data-ffadd]')) { draft.fixed.push({ name: '', amount: '', day: '', acct: 'salary' }); draw(); var nm = host().querySelectorAll('[data-ff="name"]'); if (nm.length) nm[nm.length - 1].focus(); return; }
     var fd = t.closest('[data-ffdel]'); if (fd) { draft.fixed.splice(+fd.dataset.ffdel, 1); draw(); }
-  });
+  }
+  [bg, inline].forEach(function (el) { if (!el) return; el.addEventListener('input', onInput); el.addEventListener('change', onChange); el.addEventListener('click', onClick); });
   document.addEventListener('keydown', function (e) { if (!bg.hidden && e.key === 'Escape') close(); });
   window.Vault.onLock(close);
   /* entry points */
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-fsopen]'); if (b) { e.preventDefault(); open(+b.dataset.fsopen || 0); } });
   function fromHash() { if (location.hash === '#setup') { history.replaceState(null, '', location.pathname + location.search); setTimeout(function () { open(0); }, 300); } }
   window.Vault.onUnlock(fromHash); window.addEventListener('hashchange', fromHash);
-  window.FinSetup = { open: open, close: close };
+  if (inline) {
+    window.Vault.onUnlock(function () { setTimeout(showInline, 100); });
+    window.addEventListener('fin:change', function () { if (document.getElementById('fp').dataset.tab === 'setup') return; setTimeout(showInline, 0); });
+  }
+  window.FinSetup = { open: open, close: close, show: showInline };
 })();

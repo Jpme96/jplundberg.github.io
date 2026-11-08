@@ -1144,6 +1144,7 @@
     'Add your salary and bills under Accounts, then you see here how fast you spend.': 'Legg inn lønn og regninger under Kontoer, så ser du her hvor fort du bruker penger.',
     'Nothing yet. Add a spending with + or import your bank file.': 'Ingenting ennå. Legg inn en utgift med + eller importer bankfilen.',
     'In your accounts': 'På kontoene', 'owed on cards': 'skyldig på kort', 'saved': 'spart', 'Free to use until payday': 'Fritt å bruke til lønning', 'Owed on cards': 'Skyldig på kort', 'Bills before payday': 'Regninger før lønning', 'See limits': 'Se grensene',
+    'Setup': 'Oppsett', 'Set up Finances': 'Sett opp økonomien', 'All bills': 'Alle regninger',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
     'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',

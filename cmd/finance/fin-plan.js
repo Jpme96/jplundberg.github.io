@@ -27,7 +27,7 @@
   function acctName(d, k) { var a = window.Accts.get(d, k); return a ? a.label : 'By hand'; }
 
   /* ================= the four views ================= */
-  var VIEWS = ['now', 'tx', 'accts', 'loans', 'insights'], OLD = { overview: 'now', plan: 'accts', setup: 'accts', wealth: 'loans' };
+  var VIEWS = ['now', 'tx', 'accts', 'loans', 'insights', 'setup'], OLD = { overview: 'now', plan: 'accts', wealth: 'loans' };
   function current() { return main.dataset.tab || 'now'; }
   function show(tab, opts) {
     if (OLD[tab]) tab = OLD[tab];
@@ -37,6 +37,7 @@
     tabsEl.querySelectorAll('[data-ftab-go]').forEach(function (b) { var on = b.dataset.ftabGo === tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
     try { localStorage.setItem('dash.finTab', tab); } catch (e) {}
     if (window.FinSpending) window.FinSpending.rows(tab === 'tx' ? 20 : 6);
+    if (tab === 'setup' && was !== 'setup' && window.FinSetup && window.FinSetup.show) window.FinSetup.show();
     if (was !== tab) {
       window.dispatchEvent(new Event('resize'));        // charts that were hidden measure themselves again
       if (!(opts && opts.keep)) { var top = tabsEl.getBoundingClientRect().top + scrollY - 70; if (scrollY > top) window.scrollTo(0, Math.max(0, top)); }
