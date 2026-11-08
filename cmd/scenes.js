@@ -145,7 +145,7 @@
       '<rect x="186" y="84" width="34" height="14" rx="3" class="sc-pot"/><rect x="182" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="220" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="190" y="81" width="26" height="3" rx="1.5" class="sc-pot' + (dinner ? ' sc-rattle' : '') + '"/>' +
       (dinner ? '<path d="M196 77 q-3 -6 0 -12 M204 77 q-3 -6 0 -12 M212 77 q-3 -6 0 -12" class="sc-steam"/>' : ''));
     /* you, at the stove, stirring the pot (in front of it, so your arm reaches in) */
-    svg += sceneMe(136, 46, 52, 84, 'plain', 'sc-cook');
+    svg += sceneMe(128, 28, 62, 104, 'plain', 'sc-cook');
     var list = [];
     if (dinner) list.push({ t: L('Tonight: ', 'I kveld: ') + dinner, h: '#meals' }); else list.push({ t: L('Nothing planned tonight', 'Ingenting planlagt i kveld'), h: '#meals', late: false });
     if (shop.length) list.push({ t: shop.length + L(' on the shopping list', ' på handlelista'), h: '#shop' });
@@ -441,9 +441,9 @@
         (open ? '<rect x="96" y="' + (y - 7) + '" width="18" height="9" rx="1" class="sc-sheet"/><rect x="118" y="' + (y - 5) + '" width="18" height="7" rx="1" class="sc-sheet b"/>' : ''));
     }).join('');
     var svg = ground() + deco('papers') + '<rect x="84" y="46" width="72" height="84" rx="5" class="sc-cab"/>' + drawers + badge(soon.length, 156, 50) +
-      part('papers', '', '<g class="sc-float"><rect x="206" y="64" width="22" height="28" rx="2" class="sc-sheet"/><path d="M210 72 h14 M210 77 h14 M210 82 h9" class="sc-lines"/></g>') +
+      part('papers', '', '<g class="sc-float"><rect x="212" y="56" width="20" height="26" rx="2" class="sc-sheet"/><path d="M216 64 h12 M216 69 h12 M216 74 h8" class="sc-lines"/></g>') +
       /* you, filing papers into the cabinet */
-      sceneMe(152, 44, 56, 84, 'plain', 'sc-filer') + '<g class="sc-toss"><rect x="168" y="84" width="14" height="18" rx="1" class="sc-sheet"/></g><g class="sc-toss b"><rect x="168" y="84" width="14" height="18" rx="1" class="sc-sheet b"/></g>' +
+      sceneMe(148, 24, 66, 106, 'plain', 'sc-filer') + '<g class="sc-toss"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet"/></g><g class="sc-toss b"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet b"/></g>' +
       '<g class="sc-plant"><rect x="36" y="112" width="18" height="16" rx="3" class="sc-pot"/><path d="M45 112 q-8 -14 -2 -24 M45 112 q6 -12 12 -16 M45 112 q0 -10 4 -20" class="sc-leaf"/></g>';
     var list = soon.slice(0, 3).map(function (o) { return { t: (o.x.title || '') + ' · ' + o.s.rel, h: '#papers=' + o.x.id, late: o.s.over }; });
     if (!list.length && l.length) list.push({ t: l.length + L(' papers, nothing due', ' papirer, ingenting forfaller'), h: '#papers' });

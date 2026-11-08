@@ -378,7 +378,7 @@
       row('scTravel', L('Travel', 'Reise'), L('Suitcase, countdown tag and a plane on its way', 'Koffert, nedtellingslapp og et fly på vei')) +
       row('scWish', L('Wishlist', 'Ønskeliste'), L('Wishes float as stars – green when they fit', 'Ønsker svever som stjerner – grønne når de passer')) + row('scGoals', L('Goals', 'Mål'), L('A mountain with a climber for each goal', 'Et fjell med en klatrer for hvert mål')) +
       row('scPapers', L('Papers', 'Papirer'), L('A filing cabinet that opens when something expires', 'Et arkivskap som åpner seg når noe utløper')) + row('scCal', L('Calendar', 'Kalender'), L('Today’s date, the time and today’s plans', 'Dagens dato, klokka og dagens planer')) +
-      row('scMe', L('You in the pictures', 'Deg i bildene'), L('Your avatar on Wishlist, Goals, Papers, Calendar, Finances, Travel and House', 'Avataren din på Ønskeliste, Mål, Papirer, Kalender, Økonomi, Reise og Hus')) +
+      row('scMe', L('You in the pictures', 'Deg i bildene'), L('Your avatar on Wishlist, Goals, Papers, Calendar, Finances and Travel', 'Avataren din på Ønskeliste, Mål, Papirer, Kalender, Økonomi og Reise')) +
       row('play', L('Play with the pictures', 'Lek med bildene'), L('They tilt as you move, react when you tap, and the avatar follows you with its eyes', 'De vipper når du beveger deg, reagerer når du trykker, og avataren følger deg med øynene')) + '</div>' +
       sub('brightness-alt-high', L('Living details', 'Levende detaljer')) + '<div class="st-group">' +
       row('tod', L('Time of day', 'Tid på døgnet'), L('Lit windows in the evening, sun or moon', 'Lys i vinduene om kvelden, sol eller måne')) +

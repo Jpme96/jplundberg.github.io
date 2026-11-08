@@ -410,8 +410,6 @@
       '<g class="hs-part' + hot('meter') + '" data-hsgo="hmeter"><rect x="158" y="102" width="14" height="18" rx="2" class="hs-meter"/><path d="M166 105 L162 112 H166 L163 118 L169 110 H165 Z" class="hs-bolt"/></g>' +
       /* bins */
       '<g class="hs-part' + hot('bins') + '" data-hsgo="hbins"><rect x="18" y="104" width="14" height="24" rx="2" class="hs-bin a"/><rect x="34" y="108" width="12" height="20" rx="2" class="hs-bin b"/><rect x="16" y="101" width="18" height="4" rx="1.5" class="hs-lid"/></g>' +
-      /* you, by the door */
-      (window.SceneMe ? window.SceneMe(160, 48, 52, 84, window.SceneTod ? window.SceneTod('day') : 'day') : '') +
       (window.SceneDeco ? window.SceneDeco('house') : '') +
       badge('roof', 112, 18) + badge('door', 128, 64) + badge('window', 92, 78) + badge('meter', 176, 98) + badge('bins', 32, 96) + badge('garden', 222, 70) +
       '</svg>';
