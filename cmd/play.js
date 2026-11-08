@@ -5,6 +5,7 @@
      · tap the sky or the grass and something falls: snowflakes in winter, petals in spring, sun sparkles in
        summer, leaves in autumn
      · now and then one part gives a little wiggle, so the picture never looks frozen
+   You in the pictures: tap yourself for a hop and a heart; your eyes follow the finger there too.
    Avatar (Home):
      · the eyes follow your finger or the mouse
      · tap: the next line, with a different move each time (jump, wave, spin, a laugh)
@@ -61,6 +62,8 @@
   document.addEventListener('click', function (e) {
     if (!on()) return;
     var svg = e.target.closest && e.target.closest(SEL); if (!svg) return;
+    var me = e.target.closest('[data-scme]');
+    if (me) { me.classList.remove('pl-hop'); void me.getBoundingClientRect(); me.classList.add('pl-hop'); setTimeout(function () { me.classList.remove('pl-hop'); }, 800); burst(e.clientX, e.clientY - 20, Math.random() < .5 ? 'heart' : 'spark', 5); return; }
     var p = e.target.closest('.hs-part, [data-scgo], [data-hsgo]');
     if (p) {
       p.classList.remove('pl-pop'); void p.getBoundingClientRect(); p.classList.add('pl-pop');
@@ -84,12 +87,17 @@
   var lastPt = null;
   document.addEventListener('pointermove', function (e) { lastPt = [e.clientX, e.clientY]; }, { passive: true });
   function eyes() {
-    var f = document.querySelector('#avHome .av-fig'); if (!f) return;
-    var ey = f.querySelectorAll('.eyes'); if (!ey.length) return;
-    if (!on() || !lastPt) { ey.forEach(function (x) { x.style.translate = ''; }); return; }
-    var r = f.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * .32;
-    var dx = lastPt[0] - cx, dy = lastPt[1] - cy, d = Math.max(1, Math.hypot(dx, dy)), k = Math.min(1, d / 220);
-    ey.forEach(function (x) { x.style.translate = (dx / d * 1.6 * k).toFixed(2) + 'px ' + (dy / d * 1.2 * k).toFixed(2) + 'px'; });
+    if (eyes.busy) return; eyes.busy = true; requestAnimationFrame(function () { eyes.busy = false; eyes2(); });
+  }
+  function eyes2() {
+    /* your avatar on Home and you in the pictures */
+    document.querySelectorAll('#avHome .av-fig, [data-scme]').forEach(function (f) {
+      var ey = f.querySelectorAll('.eyes'); if (!ey.length) return;
+      if (!on() || !lastPt) { ey.forEach(function (x) { x.style.translate = ''; }); return; }
+      var r = f.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * .32;
+      var dx = lastPt[0] - cx, dy = lastPt[1] - cy, d = Math.max(1, Math.hypot(dx, dy)), k = Math.min(1, d / 220);
+      ey.forEach(function (x) { x.style.translate = (dx / d * 1.6 * k).toFixed(2) + 'px ' + (dy / d * 1.2 * k).toFixed(2) + 'px'; });
+    });
   }
   document.addEventListener('pointerdown', function (e) { lastPt = [e.clientX, e.clientY]; eyes(); }, { passive: true });
   var MOVES = ['pl-jump', 'pl-wave', 'pl-spin', 'pl-laugh'], mi = 0;

@@ -4969,3 +4969,10 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 @keyframes pldance { 25% { transform: rotate(-5deg) translateY(-3px); } 75% { transform: rotate(5deg) translateY(-3px); } }
 .mo-off .pl-layer, .mo-reduced .pl-layer { display: none; }
 @media (prefers-reduced-motion: reduce) { .pl-layer { display: none; } #scIllu svg, #hsIllu svg { transform: none !important; } }
+/* you in the pictures */
+.sc-you { cursor: pointer; transform-box: fill-box; transform-origin: 50% 100%; }
+.sc-you .av-all { animation: avbreath 4.2s ease-in-out infinite; transform-box: view-box; transform-origin: 101px 160px; }
+.sc-you .eyes { animation: avblink 5.5s infinite; transform-box: fill-box; transform-origin: center; transition: translate .18s ease-out; }
+.sc-you .av-wave { animation: avwave 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
+.sc-you .steam { animation: scsteam 2.4s ease-in-out infinite; }
+.sc-you.pl-hop { animation: plhop .7s var(--ease-ios, ease); } @keyframes plhop { 35% { translate: 0 -8px; scale: 1.04 .96; } 60% { translate: 0 0; scale: 1.05 .94; } 80% { translate: 0 -2px; scale: 1; } }
