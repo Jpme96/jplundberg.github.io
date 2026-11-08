@@ -411,7 +411,7 @@
       /* bins */
       '<g class="hs-part' + hot('bins') + '" data-hsgo="hbins"><rect x="18" y="104" width="14" height="24" rx="2" class="hs-bin a"/><rect x="34" y="108" width="12" height="20" rx="2" class="hs-bin b"/><rect x="16" y="101" width="18" height="4" rx="1.5" class="hs-lid"/></g>' +
       /* you, by the door */
-      (window.SceneMe ? window.SceneMe(172, 82, 30, 48, window.SceneTod ? window.SceneTod('day') : 'day') : '') +
+      (window.SceneMe ? window.SceneMe(164, 60, 44, 70, window.SceneTod ? window.SceneTod('day') : 'day') : '') +
       (window.SceneDeco ? window.SceneDeco('house') : '') +
       badge('roof', 112, 18) + badge('door', 128, 64) + badge('window', 92, 78) + badge('meter', 176, 98) + badge('bins', 32, 96) + badge('garden', 222, 70) +
       '</svg>';
