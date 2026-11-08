@@ -139,7 +139,7 @@
     ev.sort(function (a, b) { return (b.late - a.late) || (a.dt - b.dt) || (a.kind === 'pay' ? -1 : 1); });
     var out = sum(ev.filter(function (e) { return e.amt < 0 && !e.paid; }), function (e) { return -e.amt; }), inn = sum(ev.filter(function (e) { return e.amt > 0; }), function (e) { return e.amt; });
     $('fnNextNote').innerHTML = ev.length ? money(-out, 'neg') + (inn ? ' · ' + money(inn) : '') : '';
-    if (!ev.length) { box.innerHTML = '<p class="empty">Nothing due in the next 14 days. Give your fixed costs a due day (Setup → Income &amp; fixed costs) and they show up here.</p>'; return; }
+    if (!ev.length) { box.innerHTML = '<p class="empty">Nothing due in the next 14 days. Give your fixed costs a due day (Accounts → Income &amp; fixed costs) and they show up here.</p>'; return; }
     var label = function (e) {
       var n = Math.round((e.real - t0) / 864e5);
       return e.late ? '<span class="late">' + (-n) + ' day' + (n === -1 ? '' : 's') + ' late</span>' : n === 0 ? '<span class="soon">Today</span>' : n === 1 ? 'Tomorrow' : e.real.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });

@@ -126,7 +126,7 @@
 
   function sheet(pre) {
     var d = V.get(); if (!d || !A()) return;
-    var accts = A().list(d); if (accts.length < 2) { toast('<i class="bi bi-bank2"></i> Add a second account first (Finances → Plan → Accounts)'); return; }
+    var accts = A().list(d); if (accts.length < 2) { toast('<i class="bi bi-bank2"></i> Add a second account first (Finances → Accounts → Bills → Edit accounts)'); return; }
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
     var opt = function (sel) { return accts.map(function (a) { return '<option value="' + esc(a.id) + '"' + (a.id === sel ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join(''); };
     var from0 = (pre && pre.from) || (accts.filter(function (a) { return a.kind === 'salary'; })[0] || accts[0]).id;

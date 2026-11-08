@@ -650,12 +650,12 @@
 
     $('nwEmpty').hidden = D.accounts.length > 0;
     $('nwEmpty').textContent = hasBank() ? 'Your accounts are counted by themselves. Add other things you own or owe – a house, a car, a mortgage, a student loan – with +.' :
-      'Your accounts (Overview → Your accounts) are counted by themselves once they have a balance. Add other things you own or owe – a house, a car, a mortgage – with +.';
+      'Your accounts (Accounts → Your accounts) are counted by themselves once they have a balance. Add other things you own or owe – a house, a car, a mortgage – with +.';
     /* every bank account: counted ones with their balance, ones without a balance yet, and ones you left out */
     /* your bank accounts are listed on Now → Your accounts: here they're one line with their total */
     var am2 = window.Accts ? window.Accts.money(D) : null;
     var bankRows = am2 && (am2.counted || am2.missing.length) ? '<li class="acc acc-bank"><i class="bi bi-bank2 acc-ico"></i><span class="acc-name">Your accounts<span class="muted">' + am2.counted + ' with a balance' +
-      (am2.missing.length ? ' · no balance yet: ' + esc(am2.missing.map(function (a) { return a.label; }).join(', ')) : '') + ' · on Now</span></span>' + money(am2.worth, am2.worth < 0 ? 'neg' : '') + '</li>' : '';
+      (am2.missing.length ? ' · no balance yet: ' + esc(am2.missing.map(function (a) { return a.label; }).join(', ')) : '') + ' · on Accounts</span></span>' + money(am2.worth, am2.worth < 0 ? 'neg' : '') + '</li>' : '';
     /* a mortgage without the home's value makes net worth look far too low */
     var noHome = D.accounts.filter(function (a) { return a.kind === 'debt' && (a.inner || a.share) && !a.plan && !(a.home && +a.home.value > 0) && (+a.balance || 0) > 500000; })[0];
     var lowHome = D.accounts.filter(function (a) { return a.kind === 'debt' && a.home && +a.home.value > 0 && +a.home.value < (+a.balance || 0) / 2; })[0];

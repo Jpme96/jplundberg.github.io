@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=202" rel="stylesheet">
+  <link href="../styles.css?v=203" rel="stylesheet">
   <link href="../modern.css?v=11" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="fin.css?v=10" rel="stylesheet">
@@ -125,11 +125,12 @@
       <p class="muted" id="fpSub">What you can use, what’s coming, and where your money goes.</p>
     </div>
 
-  <nav class="fp-tabs" id="fpTabs" role="tablist" aria-label="Finance views">
+  <nav class="fp-tabs" id="fpTabs" role="tablist" aria-label="Finance views" style="--n:5">
     <button type="button" role="tab" data-ftab-go="now" aria-selected="true"><i class="bi bi-speedometer"></i><span>Now</span></button>
     <button type="button" role="tab" data-ftab-go="tx" aria-selected="false"><i class="bi bi-receipt"></i><span>Spending</span></button>
+    <button type="button" role="tab" data-ftab-go="accts" aria-selected="false"><i class="bi bi-bank2"></i><span>Accounts</span></button>
+    <button type="button" role="tab" data-ftab-go="loans" aria-selected="false"><i class="bi bi-piggy-bank"></i><span>Loans</span></button>
     <button type="button" role="tab" data-ftab-go="insights" aria-selected="false"><i class="bi bi-graph-up-arrow"></i><span>Insights</span></button>
-    <button type="button" role="tab" data-ftab-go="setup" aria-selected="false"><i class="bi bi-sliders"></i><span>Setup</span></button>
   </nav>
 
   <section class="fin fp-fin" id="fin" aria-label="Your money" data-pk="budget" data-pk-name="Your money">
@@ -153,18 +154,25 @@
         </section>
         </div>
         <div class="fin-col">
-        <section class="card myaccts" id="fpMoneyCard">
-          <div class="card-head"><h2><i class="bi bi-bank2"></i> Your accounts</h2><div class="head-actions"><button class="text-btn" type="button" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button><button class="text-btn" type="button" id="fpMoneyEdit">Update</button></div></div>
-          <div id="fpMoney"></div>
+        <section class="card fn-accts" id="fnAcctsCard">
+          <div class="card-head"><h2><i class="bi bi-bank2"></i> Your accounts</h2><div class="head-actions"><button class="text-btn" type="button" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button><button class="text-btn" type="button" data-ftab-go="accts" data-fp-to="myaccts">All</button></div></div>
+          <div id="fnAccts"></div>
         </section>
-        <section class="card flow" id="fpFlowCard">
-          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> This month</h2><button class="text-btn" type="button" data-ftab-go="setup" data-fp-to="accounts">Accounts</button></div>
-          <div id="fpFlow"></div>
+        <section class="card fn-pay" id="fnPayCard" hidden>
+          <div class="card-head"><h2><i class="bi bi-list-check"></i> Payday moves</h2><span class="muted" id="fnPayNote"></span></div>
+          <div id="fnPay"></div>
         </section>
-        <!-- how the last pay period went (fin-now.js, the first days after payday) -->
-        <section class="card review" id="fnReviewCard" hidden>
-          <div class="card-head"><h2><i class="bi bi-clipboard-check"></i> Last period</h2><span class="muted" id="fnReviewNote"></span></div>
-          <div id="fnReview"></div>
+        <section class="card fn-pace" id="fnPaceCard">
+          <div class="card-head"><h2><i class="bi bi-speedometer2"></i> Spending pace</h2><button class="text-btn" type="button" data-ftab-go="tx">Spending</button></div>
+          <div id="fnPace"></div>
+        </section>
+        <section class="card fn-us" id="fnUsCard" hidden>
+          <div class="card-head"><h2><i class="bi bi-people"></i> <span id="fnUsTitle">Between you</span></h2><a class="text-btn" href="/cmd/house/#hshared">Shared home</a></div>
+          <div id="fnUs"></div>
+        </section>
+        <section class="card fn-latest" id="fnLatestCard">
+          <div class="card-head"><h2><i class="bi bi-clock-history"></i> Latest spending</h2><div class="head-actions"><button class="text-btn" type="button" data-fnadd><i class="bi bi-plus-lg"></i> Add</button><button class="text-btn" type="button" data-ftab-go="tx">All</button></div></div>
+          <div id="fnLatest"></div>
         </section>
         </div>
       </div>
@@ -212,6 +220,56 @@
       <!-- Insights: net worth and the year ahead (statistics follow below) -->
       <div class="fin-grid fpt" data-ftab="insights">
         <div class="fin-col">
+        <section class="card review" id="fnReviewCard" hidden>
+          <div class="card-head"><h2><i class="bi bi-clipboard-check"></i> Last period</h2><span class="muted" id="fnReviewNote"></span></div>
+          <div id="fnReview"></div>
+        </section>
+        </div>
+        <div class="fin-col">
+        <section class="card taxyear" id="fpYearCard">
+          <div class="card-head"><h2><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
+          <div id="fpYearAhead"></div>
+        </section>
+        </div>
+      </div>
+
+      <!-- Accounts & bills: what's in the accounts, the salary, the bills -->
+      <div class="fin-grid fpt" data-ftab="accts">
+        <div class="fin-col">
+        <section class="card myaccts" id="fpMoneyCard">
+          <div class="card-head"><h2><i class="bi bi-bank2"></i> Your accounts</h2><div class="head-actions"><button class="text-btn" type="button" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button><button class="text-btn" type="button" id="fpMoneyEdit">Update</button></div></div>
+          <div id="fpMoney"></div>
+        </section>
+        <section class="card budget">
+          <div class="card-head"><h2><i class="bi bi-cash-stack"></i> Income &amp; fixed costs</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
+          <div id="budgetBody"></div>
+        </section>
+        <section class="card flow" id="fpFlowCard">
+          <div class="card-head"><h2><i class="bi bi-diagram-3"></i> This month</h2><button class="text-btn" type="button" data-ftab-go="accts" data-fp-to="accounts">Bills</button></div>
+          <div id="fpFlow"></div>
+        </section>
+        </div>
+        <div class="fin-col">
+        <section class="card accounts" id="fpAcctCard">
+          <div class="card-head"><h2><i class="bi bi-receipt"></i> Bills</h2><button class="text-btn" type="button" data-fbopen="new"><i class="bi bi-plus-lg"></i> Bill</button></div>
+          <div id="fpAcct"></div>
+        </section>
+        <div data-tool="subs" class="fp-billtool" hidden></div>
+        <div data-tool="recur" class="fp-billtool" hidden></div>
+        <section class="card bills" hidden>
+          <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Bills this month</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
+          <div id="billsBody"></div>
+        </section>
+        </div>
+      </div>
+
+      <!-- Loans & savings: what you owe and what you build up -->
+      <div class="fin-grid fpt" data-ftab="loans">
+        <div class="fin-col">
+        <section class="card loans" id="fpLoanCard">
+          <div class="card-head"><h2><i class="bi bi-house-door"></i> Loans</h2><button class="text-btn" type="button" id="fpLoanAdd"><i class="bi bi-plus-lg"></i> Loan</button></div>
+          <div id="fpLoans"></div>
+        </section>
         <section class="card networth">
           <div class="card-head"><h2><i class="bi bi-graph-up-arrow"></i> Net worth</h2><button class="text-btn" id="nwAddBtn" type="button"><i class="bi bi-plus-lg"></i> Account</button></div>
           <form class="inline-form" id="nwForm" hidden>
@@ -292,34 +350,6 @@
         </section>
         </div>
         <div class="fin-col">
-        <section class="card taxyear" id="fpYearCard">
-          <div class="card-head"><h2><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
-          <div id="fpYearAhead"></div>
-        </section>
-        </div>
-      </div>
-
-      <!-- Setup: accounts, income, bills, loans, savings – everything the numbers are made of -->
-      <div class="fin-grid fpt" data-ftab="setup">
-        <div class="fin-col">
-        <section class="card budget">
-          <div class="card-head"><h2><i class="bi bi-cash-stack"></i> Income &amp; fixed costs</h2><button class="text-btn" id="budgetEdit" type="button">Edit</button></div>
-          <div id="budgetBody"></div>
-        </section>
-        <section class="card accounts" id="fpAcctCard">
-          <div class="card-head"><h2><i class="bi bi-receipt"></i> Bills</h2><button class="text-btn" type="button" data-fbopen="new"><i class="bi bi-plus-lg"></i> Bill</button></div>
-          <div id="fpAcct"></div>
-        </section>
-        <div data-tool="subs" class="fp-billtool" hidden></div>
-        <div data-tool="recur" class="fp-billtool" hidden></div>
-        
-        
-        <section class="card loans" id="fpLoanCard">
-          <div class="card-head"><h2><i class="bi bi-house-door"></i> Loans</h2><button class="text-btn" type="button" id="fpLoanAdd"><i class="bi bi-plus-lg"></i> Loan</button></div>
-          <div id="fpLoans"></div>
-        </section>
-        </div>
-        <div class="fin-col">
         <section class="card savings">
           <div class="card-head"><h2><i class="bi bi-piggy-bank"></i> Savings goals</h2><button class="text-btn" id="svAddBtn" type="button"><i class="bi bi-plus-lg"></i> Add</button></div>
           <form class="inline-form" id="svForm" hidden>
@@ -353,10 +383,6 @@
         <section class="card yearly" id="fpYearlyCard">
           <div class="card-head"><h2><i class="bi bi-calendar2-range"></i> Yearly costs</h2><button class="text-btn" type="button" id="fpYearlyAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
           <div id="fpYearly"></div>
-        </section>
-        <section class="card bills" hidden>
-          <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Bills this month</h2><button class="text-btn" id="billsEdit" type="button">Due dates</button></div>
-          <div id="billsBody"></div>
         </section>
         </div>
       </div>
@@ -963,9 +989,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=653862957c"></script>
-  <script src="../dist/page-finance.js?v=bd5b4bd927"></script>
-  <script src="../dist/tail.js?v=34a9740d11"></script>
+  <script src="../dist/head.js?v=3ff9718871"></script>
+  <script src="../dist/page-finance.js?v=625df8f6f4"></script>
+  <script src="../dist/tail.js?v=dd9cd414a1"></script>
   <!-- /scripts -->
 </body>
 </html>

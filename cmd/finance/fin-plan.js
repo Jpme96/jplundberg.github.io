@@ -27,7 +27,7 @@
   function acctName(d, k) { var a = window.Accts.get(d, k); return a ? a.label : 'By hand'; }
 
   /* ================= the four views ================= */
-  var VIEWS = ['now', 'tx', 'insights', 'setup'], OLD = { overview: 'now', plan: 'setup', wealth: 'insights' };
+  var VIEWS = ['now', 'tx', 'accts', 'loans', 'insights'], OLD = { overview: 'now', plan: 'accts', setup: 'accts', wealth: 'loans' };
   function current() { return main.dataset.tab || 'now'; }
   function show(tab, opts) {
     if (OLD[tab]) tab = OLD[tab];
@@ -82,7 +82,7 @@
     var box = $('fpFlow'); if (!box) return;
     var p = plan(d), inc = p.per.income, by = p.by;
     if (!(inc > 0)) {
-      box.innerHTML = '<p class="empty">Add your salary under Setup → Income &amp; fixed costs, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="setup" data-fp-to="accounts">Plan → Accounts</button>. Then this shows what to move where on payday.</p>';
+      box.innerHTML = '<p class="empty">Add your salary under Accounts → Income &amp; fixed costs, and choose which account pays each fixed cost under <button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="accounts">Accounts → Bills</button>. Then this shows what to move where on payday.</p>';
       return;
     }
     /* the month as you'd work it out yourself: salary − credit cards − loans − other bills − savings = left */
@@ -115,7 +115,7 @@
   function ccLine(c) {
     if (!c.amount && !c.due) return '';
     var late = c.due && !c.paid && c.days < 0, soon = c.due && !c.paid && c.days >= 0 && c.days <= 5;
-    var when = !c.due ? '<button type="button" class="text-btn" data-ftab-go="setup" data-fp-to="accounts">Set the due day</button>' :
+    var when = !c.due ? '<button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="accounts">Set the due day</button>' :
       c.paid ? 'Paid in full' : late ? '<span class="late">' + (-c.days) + ' day' + (c.days === -1 ? '' : 's') + ' overdue</span>' : c.days === 0 ? '<span class="soon">Due today</span>' : 'Due ' + c.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' · in ' + c.days + ' day' + (c.days === 1 ? '' : 's');
     return '<div class="pf-cc' + (c.paid ? ' paid' : late ? ' late' : soon ? ' soon' : '') + '"><button type="button" class="check" data-pfcc="' + esc(c.acct.id) + '" aria-pressed="' + c.paid + '" aria-label="' + esc(c.acct.label) + (c.paid ? ' – paid in full' : ' – mark as paid in full') + '"><i class="bi bi-check-lg"></i></button>' +
       '<span><b>' + esc(c.acct.label) + ' bill</b><small>' + when + (c.known ? (c.owedNow ? ' · what you owe now' : '') : ' · put in what you owe under Your accounts') + '</small></span>' + money(c.amount) + '</div>' +
@@ -500,7 +500,7 @@
   function editLoan(id) {
     var dd = data(), pl = id && dd && (dd.accounts || []).filter(function (x) { return String(x.id) === String(id) && x.plan; })[0];
     if (pl) { location.href = '/cmd/house/#hplan=' + encodeURIComponent(pl.id); return; }     /* bought in parts: changed on the House page */
-    show('insights', { keep: true });
+    show('loans', { keep: true });     /* the loan form is in Net worth, on Loans */
     setTimeout(function () {
       if (id) { var li = document.querySelector('#nwList .acc[data-id="' + id + '"]'); if (li) li.click(); }
       else { if ($('nwForm').hidden) $('nwAddBtn').click(); $('nwKind').value = 'debt'; $('nwKind').dispatchEvent(new Event('change')); }
