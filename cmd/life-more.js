@@ -12,6 +12,7 @@
   function readJSON(k, f) { try { var v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch (e) { return f; } }
   var dkey = Fe.dkey;
   function monday(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
+  function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function hcfg() { var c = Fe.tools().healthcfg; return Object.assign({ streakBrief: true }, c && typeof c === 'object' ? c : {}); }
@@ -70,6 +71,40 @@
     if (trained || (T.gympacked || '') === tk) return;
     add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', 'Gym today – pack your bag', g.bag, '/cmd/habits/#training', { main: true, act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
   });
+  /* ================= Water (Health page) =================
+     The same glasses as the Home chip (dash.tools.water { day: glasses }); Apple Health's water (litres) counts too –
+     the higher of the two wins for a day, so nothing is counted twice. Settings: ringcfg.card, ringcfg.glass (ml). */
+  function wcfg() { var r = Fe.tools().ringcfg || {}; return { card: r.card !== false, goal: +r.waterGoal || 8, ml: +r.glass || 250 }; }
+  function wDay(k, c) {
+    var g = +((Fe.tools().water || {})[k]) || 0, d = window.Vault.get() || {}, a = d.health && d.health.days && d.health.days[k] ? +d.health.days[k].water || 0 : 0;
+    if (a > 20) a = a / 1000;
+    var ag = Math.round(a * 1000 / c.ml);
+    return { n: Math.max(g, ag), tap: g, apple: ag > g };
+  }
+  function wAdd(delta) {
+    var t = Fe.tools(), k = Fe.dkey(new Date()), c = wcfg(); t.water = t.water && typeof t.water === 'object' ? Object.assign({}, t.water) : {};
+    var was = +t.water[k] || 0, now = Math.max(0, Math.min(40, wDay(k, c).n + delta));
+    t.water[k] = now; Fe.saveTools(t);
+    if (delta > 0) toast('<i class="bi bi-cup-straw"></i> ' + now + ' of ' + c.goal + ' glasses', function () { var t2 = Fe.tools(); t2.water = Object.assign({}, t2.water || {}); t2.water[k] = was; Fe.saveTools(t2); });
+  }
+  function drawWater() {
+    var el = $t('hwater'); if (!el) return;
+    var c = wcfg(); if (!c.card || !window.Vault.get()) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    var now = new Date(), k = Fe.dkey(now), w = wDay(k, c), p = Math.min(1, w.n / c.goal), R = 34, C = 2 * Math.PI * R, l = (w.n * c.ml / 1000);
+    var week = [], hit = 0;
+    for (var i = 6; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var dk = Fe.dkey(d), x = wDay(dk, c); if (x.n >= c.goal) hit++; week.push({ k: dk, n: x.n, lab: d.toLocaleDateString('en-GB', { weekday: 'short' }) }); }
+    var max = Math.max(c.goal, Math.max.apply(null, week.map(function (x) { return x.n; })));
+    el.innerHTML = '<section class="card kit-card wt-card" id="hwater"><div class="card-head"><h2><i class="bi bi-cup-straw"></i> Drinking water</h2><a class="text-btn" href="../?settings=health" aria-label="Settings"><i class="bi bi-sliders"></i></a></div>' +
+      '<div class="wt-top"><svg class="wt-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="' + R + '" class="t"/><circle cx="40" cy="40" r="' + R + '" class="v" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
+      '<div class="wt-num"><b>' + w.n + '<small>/' + c.goal + '</small></b><span>' + (w.n >= c.goal ? 'Goal reached' : (c.goal - w.n) + ' to go') + '</span><small class="muted">' + esc(l.toFixed(1).replace('.', ',')) + ' l · ' + c.ml + ' ml a glass' + (w.apple ? ' · from Apple Health' : '') + '</small></div>' +
+      '<div class="wt-btns"><button type="button" class="pill-btn wt-add" data-wtadd="1"><i class="bi bi-plus-lg"></i> Glass</button><button type="button" class="text-btn" data-wtadd="-1"' + (w.n ? '' : ' disabled') + ' aria-label="One glass less"><i class="bi bi-dash-lg"></i></button></div></div>' +
+      '<div class="wt-week" aria-label="Last 7 days">' + week.map(function (x) { return '<span class="wt-d' + (x.n >= c.goal ? ' ok' : '') + (x.k === k ? ' now' : '') + '" title="' + x.n + ' glasses"><i style="height:' + Math.max(4, Math.round(x.n / max * 100)) + '%"></i><small>' + esc(x.lab) + '</small></span>'; }).join('') + '</div>' +
+      '<p class="muted hl-small">' + hit + ' of 7 days on target · the chip on Home counts here too</p></section>';
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-wtadd]'); if (b && !b.disabled) { e.preventDefault(); wAdd(+b.dataset.wtadd); } });
+  if ($t('hwater')) { ['tools:change', 'health:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawWater, 20); }); }); window.Vault.onUnlock(function () { setTimeout(drawWater, 80); }); setTimeout(drawWater, 0); }
+
   /* ================= settings: under Health and People ================= */
   function sel(attr, v0, label, opts, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
   function fill(page) {
@@ -80,7 +115,9 @@
         '<label class="st-row"><span>In the bag</span><input class="st-input" data-gbbag value="' + esc(gc.bag) + '" maxlength="160"></label></div>' +
         (function () { var rc = Fe.tools().ringcfg || {}; return '<p class="st-sub ap-sub"><i class="bi bi-circle"></i> Rings on Home</p><div class="st-group"><label class="st-row"><span>Steps and water rings<small class="st-rsub">Small rings in the chips at the top of Home that fill during the day</small></span><input type="checkbox" class="switch" data-ringcfg="on"' + (rc.on !== false ? ' checked' : '') + '></label>' +
           '<label class="st-row"><span>Water<small class="st-rsub">Tap the chip for each glass</small></span><input type="checkbox" class="switch" data-ringcfg="water"' + (rc.water !== false ? ' checked' : '') + '></label>' +
-          sel('data-ringcfg="waterGoal"', rc.waterGoal || 8, 'Glasses a day', [[6, '6'], [8, '8'], [10, '10'], [12, '12']]) + '</div>'; })() +
+          sel('data-ringcfg="waterGoal"', rc.waterGoal || 8, 'Glasses a day', [[6, '6'], [8, '8'], [10, '10'], [12, '12']]) +
+          sel('data-ringcfg="glass"', rc.glass || 250, 'Glass size', [[150, '150 ml'], [200, '200 ml'], [250, '250 ml'], [330, '330 ml'], [500, '500 ml']], 'For litres, and for water from Apple Health') +
+          '<label class="st-row"><span>Water card on Health<small class="st-rsub">Add glasses, today’s ring and the last 7 days</small></span><input type="checkbox" class="switch" data-ringcfg="card"' + (rc.card !== false ? ' checked' : '') + '></label></div>'; })() +
         '<p class="st-sub ap-sub"><i class="bi bi-fire"></i> Streaks</p><div class="st-group"><label class="st-row"><span>Streaks in At a glance<small class="st-rsub">Late in the week when one is about to break, and every 4 weeks in a row</small></span><input type="checkbox" class="switch" data-lmcfg="healthcfg:streakBrief"' + (hcfg().streakBrief ? ' checked' : '') + '></label></div>';
     }
     if (page === 'people') {
