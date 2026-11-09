@@ -74,13 +74,32 @@ export default {
   /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
   async scheduled(event, env, ctx) {
     env = storage(env);
-    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e))]));
+    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e)), r2Backup(env).catch(e => console.log('r2 backup', e))]));
   }
 };
 
 /* the cron trigger leaves a mark (at most once an hour, to stay far under the free 1 000 writes a day),
    so Diagnostics can tell whether reminders are being sent at all */
 const CRON_KEY = 'meta:cron';
+/* ---------- daily backup to R2 (binding FILES): once a day, a copy of everything that changes, kept 90 days ----------
+   The copies are exactly what is stored here – still encrypted on your phones – so nothing readable ends up in R2.
+   bak/<date>/vault, shared, chat, pvault … · Settings → Data & sync lists the vault ones to restore from. */
+const BAK = 'bak/', BAK_KEYS = ['vault', 'shared', 'chat', 'pvault', 'pvault:wrap', 'share:cfg', 'share:wrap'], BAK_DAYS = 90;
+async function r2Backup(env) {
+  if (!env.FILES || !env.VAULT) return;
+  const day = new Date().toISOString().slice(0, 10);
+  if (await env.VAULT.get('meta:r2bak') === day) return;
+  for (const k of BAK_KEYS) { const v = await env.VAULT.get(k); if (v != null) await env.FILES.put(BAK + day + '/' + k, v, { customMetadata: { at: String(Date.now()) } }); }
+  const cut = new Date(Date.now() - BAK_DAYS * 864e5).toISOString().slice(0, 10);
+  for (const d of await bakDays(env)) if (d < cut) { let c; do { const l = await env.FILES.list({ prefix: BAK + d + '/', cursor: c }); await Promise.all(l.objects.map(o => env.FILES.delete(o.key))); c = l.truncated ? l.cursor : null; } while (c); }
+  await env.VAULT.put('meta:r2bak', day);
+}
+async function bakDays(env) {
+  if (!env.FILES) return [];
+  const out = []; let c;
+  do { const l = await env.FILES.list({ prefix: BAK, delimiter: '/', cursor: c }); for (const p of (l.delimitedPrefixes || [])) out.push(p.slice(BAK.length, -1)); c = l.truncated ? l.cursor : null; } while (c);
+  return out.filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+}
 async function cronBeat(env) {
   if (!env.VAULT) return;
   const last = +(await env.VAULT.get(CRON_KEY)) || 0;
@@ -401,6 +420,7 @@ async function liveApi(request, role, env) {
     const b = await request.json().catch(() => ({}));
     if (b.typing) { await liveSet(request, 'typ' + role, Date.now()); await notify(env, { typ: role, on: 1 }); }
     if (b.stop) { await liveDel(request, 'typ' + role); await notify(env, { typ: role, on: 0 }); }
+    if (b.away != null) await notify(env, { away: { by: role, v: !!b.away } });
     if (+b.seen > 0) { const v = Math.min(+b.seen, Date.now() + 60e3); await liveSet(request, 'seen' + role, v); await notify(env, { seen: { by: role, v } }); }
     return json({ ok: true });
   }
@@ -434,11 +454,16 @@ export class LiveRoom {
   }
   async load() {
     if (this.st) return this.st;
-    const m = await this.ctx.storage.get(['box', 'chat', 'vault', 'seeno', 'seenp']), g = k => m.get(k) == null ? null : m.get(k);
-    return (this.st = { box: g('box'), chat: g('chat'), vault: g('vault'), seeno: g('seeno'), seenp: g('seenp') });
+    const m = await this.ctx.storage.get(['box', 'chat', 'vault', 'seeno', 'seenp', 'lasto', 'lastp', 'hideo', 'hidep']), g = k => m.get(k) == null ? null : m.get(k);
+    return (this.st = { box: g('box'), chat: g('chat'), vault: g('vault'), seeno: g('seeno'), seenp: g('seenp'), lasto: g('lasto'), lastp: g('lastp'), hideo: !!g('hideo'), hidep: !!g('hidep') });
   }
   snap(role) {
-    const s = this.st, o = { now: Date.now(), box: s.box, chat: s.chat, typing: { o: this.typ.o, p: this.typ.p }, seen: { o: s.seeno, p: s.seenp } };
+    const s = this.st, on = r => this.ctx.getWebSockets(r).some(w => w !== this.leaving && w.readyState === 1);
+    const o = { now: Date.now(), box: s.box, chat: s.chat, typing: { o: this.typ.o, p: this.typ.p }, seen: { o: s.seeno, p: s.seenp },
+      online: { o: on('o'), p: on('p') }, last: { o: s.lasto, p: s.lastp }, away: !!s['hide' + role] };
+    /* "Show when I'm active" off: nobody sees that person's status – and they don't see the other's either */
+    const other = role === 'o' ? 'p' : 'o';
+    for (const x of ['o', 'p']) if (s['hide' + x] || (x === other && s['hide' + role])) { o.online[x] = false; o.last[x] = null; }
     if (role === 'o') o.vault = s.vault;
     return JSON.stringify(o);
   }
@@ -453,6 +478,7 @@ export class LiveRoom {
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1], [role]);
       pair[1].send(this.snap(role));
+      this.send([role === 'o' ? 'p' : 'o']);          /* the other one sees "Active now" */
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
     if (u.pathname === '/notify' && request.method === 'POST') {
@@ -461,6 +487,7 @@ export class LiveRoom {
       for (const k of ['box', 'chat']) if (b[k] != null) { this.st[k] = put[k] = num(b[k]); roles.add('o'); roles.add('p'); }
       if (b.vault != null) { this.st.vault = put.vault = num(b.vault); roles.add('o'); }
       if (b.seen && (b.seen.by === 'o' || b.seen.by === 'p')) { const k = 'seen' + b.seen.by; this.st[k] = put[k] = num(b.seen.v); roles.add('o'); roles.add('p'); }
+      if (b.away && (b.away.by === 'o' || b.away.by === 'p')) { const k = 'hide' + b.away.by; this.st[k] = put[k] = !!b.away.v; roles.add('o'); roles.add('p'); }
       if (b.typ === 'o' || b.typ === 'p') { this.typ[b.typ] = b.on ? Date.now() : null; roles.add(b.typ === 'o' ? 'p' : 'o'); }
       if (Object.keys(put).length) await this.ctx.storage.put(put);
       if (b.kick === 'p') { for (const ws of this.ctx.getWebSockets('p')) { try { ws.close(4001, 'sharing changed'); } catch (e) {} } roles.delete('p'); }
@@ -470,8 +497,18 @@ export class LiveRoom {
     return new Response('not found', { status: 404 });
   }
   async webSocketMessage(ws, msg) { /* the apps only listen; "ping" is answered automatically */ }
-  async webSocketClose(ws, code, reason) { try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch (e) {} }
-  async webSocketError(ws) { try { ws.close(1011, 'error'); } catch (e) {} }
+  async webSocketClose(ws, code, reason) { try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch (e) {} await this.gone(ws); }
+  async webSocketError(ws) { try { ws.close(1011, 'error'); } catch (e) {} await this.gone(ws); }
+  /* an app closed: remember when that person was last here, and tell the other one */
+  async gone(ws) {
+    await this.load();
+    const tags = this.ctx.getTags ? this.ctx.getTags(ws) : [], role = tags && tags[0] === 'p' ? 'p' : 'o';
+    this.leaving = ws;
+    try {
+      if (!this.ctx.getWebSockets(role).some(w => w !== ws && w.readyState === 1)) { const k = 'last' + role; this.st[k] = Date.now(); await this.ctx.storage.put(k, this.st[k]); }
+      this.send([role === 'o' ? 'p' : 'o']);
+    } finally { this.leaving = null; }
+  }
 }
 
 /* ---------- chat: messages between the two of you ----------
@@ -502,7 +539,7 @@ async function chatApi(request, env, by, cfg) {
     const msgs = b && b.msgs && typeof b.msgs === 'object' ? b.msgs : {};
     for (const id of Object.keys(msgs).slice(0, 50)) {
       const m = msgs[id]; if (!RID.test(id) || !m || cur.msgs[id] || typeof m.iv !== 'string' || typeof m.ct !== 'string' || m.ct.length > 40000) continue;   /* a message is never changed, only removed */
-      const fl = (Array.isArray(m.fl) ? m.fl : []).filter(x => RID.test(String(x))).slice(0, 10);
+      const fl = (Array.isArray(m.fl) ? m.fl : []).filter(x => RID.test(String(x))).slice(0, 20);   /* a picture can bring a small preview copy */
       cur.msgs[id] = { t: Math.min(+m.t || now, now + 60e3), by, iv: m.iv, ct: m.ct, fl }; n++;
     }
     for (const id of (Array.isArray(b && b.del) ? b.del : []).slice(0, 200)) {
@@ -717,13 +754,15 @@ async function vault(request, env) {
     const u = new URL(request.url);
     /* the daily snapshots: list them, or fetch one to restore */
     if (u.searchParams.has('snaps')) {
-      const l = await env.VAULT.list({ prefix: SNAP });
-      return json({ snaps: l.keys.map(k => k.name.slice(SNAP.length)).sort().reverse() });
+      const l = await env.VAULT.list({ prefix: SNAP }), kv = l.keys.map(k => k.name.slice(SNAP.length));
+      const r2 = (await bakDays(env).catch(() => [])).filter(d => kv.indexOf(d) < 0);
+      return json({ snaps: kv.concat(r2).sort().reverse(), r2: r2.sort().reverse(), backup: env.FILES ? await env.VAULT.get('meta:r2bak') : null });
     }
     if (u.searchParams.has('snap')) {
       const d = String(u.searchParams.get('snap'));
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return json({ error: 'bad date' }, 400);
-      const sv = await env.VAULT.get(SNAP + d);
+      let sv = await env.VAULT.get(SNAP + d);
+      if (!sv && env.FILES) { const o = await env.FILES.get(BAK + d + '/vault'); if (o) sv = await o.text(); }
       return sv ? new Response(sv, { headers: hdrs() }) : json({ error: 'not found' }, 404);
     }
     const v = await env.VAULT.get(KEY);

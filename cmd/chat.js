@@ -78,15 +78,17 @@
   function encFile(f) {
     /* pictures are made smaller (longest side 2048 px) and get a tiny preview that shows at once */
     var isImg = /^image\/(jpeg|png|webp|heic|heif|gif)$/i.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name);
-    var prep = isImg && !/gif/i.test(f.type) ? shrink(f, 2048, 0.85).then(function (big) { return shrink(f, 40, 0.5).then(function (th) { return { blob: big.blob, w: big.w, h: big.h, th: th.url, type: 'image/jpeg', name: f.name.replace(/\.\w+$/, '') + '.jpg' }; }); }, function () { return { blob: f, type: f.type, name: f.name }; })
+    /* … and a small copy (longest side 720 px) that the chat and the gallery load first – quick on mobile data; the full picture loads when you open it */
+    var prep = isImg && !/gif/i.test(f.type) ? shrink(f, 2048, 0.85).then(function (big) { return Promise.all([shrink(f, 40, 0.5), shrink(f, 720, 0.72).catch(function () { return null; })]).then(function (r) { return { blob: big.blob, w: big.w, h: big.h, th: r[0].url, pv: big.w > 760 || big.h > 760 ? r[1] && r[1].blob : null, type: 'image/jpeg', name: f.name.replace(/\.\w+$/, '') + '.jpg' }; }); }, function () { return { blob: f, type: f.type, name: f.name }; })
       : Promise.resolve({ blob: f, type: f.type || 'application/octet-stream', name: f.name || 'file' });
     return prep.then(function (p) {
       var max = C.fileMax || 24 * 1048576; if (p.blob.size > max) throw new Error(L('Too big – the limit is ', 'For stor – grensen er ') + Math.round(max / 1048576) + ' MB');
-      var fid = hex(16);
-      return p.blob.arrayBuffer().then(function (buf) { return SC.encryptBytes(C.opt.key, buf); }).then(function (enc) {
-        return fetch('/cmd/api/cfile?id=' + fid, { method: 'PUT', body: enc, credentials: 'same-origin' });
-      }).then(function (r) { if (r.status === 413) throw new Error(L('Too big for the server', 'For stor for serveren')); if (!r.ok) throw new Error(L('The file could not be sent', 'Filen kunne ikke sendes')); C.urls[fid] = URL.createObjectURL(p.blob);
-        return { id: fid, name: String(p.name).slice(0, 120), type: String(p.type).slice(0, 60), size: p.blob.size, w: p.w || 0, h: p.h || 0, th: p.th || '', dur: +f._dur || 0 }; });
+      var fid = hex(16), pid = p.pv ? hex(16) : '';
+      var up = function (id, blob) { return blob.arrayBuffer().then(function (buf) { return SC.encryptBytes(C.opt.key, buf); }).then(function (enc) { return fetch('/cmd/api/cfile?id=' + id, { method: 'PUT', body: enc, credentials: 'same-origin' }); }); };
+      return Promise.all([up(fid, p.blob), pid ? up(pid, p.pv).catch(function () { return null; }) : null]).then(function (rs) { var r = rs[0], pr = rs[1];
+        if (r.status === 413) throw new Error(L('Too big for the server', 'For stor for serveren')); if (!r.ok) throw new Error(L('The file could not be sent', 'Filen kunne ikke sendes')); C.urls[fid] = URL.createObjectURL(p.blob);
+        if (!(pr && pr.ok)) pid = '';
+        var o = { id: fid, name: String(p.name).slice(0, 120), type: String(p.type).slice(0, 60), size: p.blob.size, w: p.w || 0, h: p.h || 0, th: p.th || '', dur: +f._dur || 0 }; if (pid) o.pv = pid; return o; });
     });
   }
   function shrink(file, max, q) {
@@ -110,7 +112,7 @@
       m.failed = false; m.pending = true; changed();
       return Promise.all(files.map(encFile)).then(function (fl) {
         var body = { text: text, files: fl }; if (m.sys) { body.sys = m.sys; body.ttl = m.ttl; } if (m.react) body.react = m.react; if (m.mute != null) body.mute = m.mute; if (m.re) body.re = m.re;
-        return SC.encrypt(C.opt.key, body).then(function (e) { var b = { msgs: {} }; b.msgs[id] = { t: t, iv: e.iv, ct: e.ct, fl: fl.map(function (f) { return f.id; }) }; if (extra && extra.setTtl != null) b.ttl = extra.setTtl; return put(b); })
+        return SC.encrypt(C.opt.key, body).then(function (e) { var b = { msgs: {} }; b.msgs[id] = { t: t, iv: e.iv, ct: e.ct, fl: fl.reduce(function (a, f) { a.push(f.id); if (f.pv) a.push(f.pv); return a; }, []) }; if (extra && extra.setTtl != null) b.ttl = extra.setTtl; return put(b); })
           .then(function (srv) { m.files = fl; m.pending = false; C.rev = -2; if (srv && srv.ttl != null) C.ttl = srv.ttl; changed(); fetchChat(); if (!m.react && m.mute == null && !m.sys) nudge(text, fl); });
       }).catch(function (e) { m.pending = false; m.failed = true; m.err = (e && e.message) || ''; changed(); });
     };
@@ -142,11 +144,13 @@
     C.urls[f.id + ':p'] = p; p.catch(function () { delete C.urls[f.id + ':p']; });
     return p;
   }
+  /* a picture in the list or gallery: the small copy when there is one (and the full one isn't here already) */
+  function smallUrl(f) { if (!f.pv || f.local || C.urls[f.id]) return fileUrl(f); return fileUrl({ id: f.pv, type: 'image/jpeg' }); }
   function loadImgs() {
     if (!C.el) return;
     C.el.querySelectorAll('img[data-fid]:not([data-ok]), video[data-fid]:not([data-ok])').forEach(function (im) {
       var m = C.msgs[im.dataset.mid], f = m && m.files.filter(function (x) { return x.id === im.dataset.fid; })[0]; if (!f) return;
-      im.setAttribute('data-ok', '1'); fileUrl(f).then(function (u) { im.src = u; im.classList.add('on'); }, function () { im.classList.add('gone'); });
+      im.setAttribute('data-ok', '1'); (im.tagName === 'IMG' ? smallUrl(f) : fileUrl(f)).then(function (u) { im.src = u; im.classList.add('on'); }, function () { im.classList.add('gone'); });
       if (im.tagName === 'VIDEO') return;
     });
   }
@@ -163,6 +167,8 @@
       '.hc-head{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--hc-line);flex:none}',
       '.hc-head .hc-faces{display:flex;flex:none}.hc-head .hc-faces>*{width:38px;height:38px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:rgba(127,127,127,.15)}.hc-head .hc-faces>*+*{margin-left:-12px;box-shadow:0 0 0 2px var(--hc-bg)}',
       '.hc-head .hc-faces svg{width:100%;height:100%}',
+      '.hc-note{display:block;font-size:.78em;opacity:.65;margin:-2px 0 6px;padding:0 24px;line-height:1.35}',
+      '.hc-on{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:5px;vertical-align:1px}',
       '.hc-tt{flex:1;min-width:0}.hc-tt b{display:block;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-tt small{display:block;color:var(--hc-mut);font-size:12.5px;min-height:16px}',
       '.hc-tt small.typ{color:var(--hc-acc)}',
       '.hc-ib{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:inherit;font-size:18px;display:grid;place-items:center;cursor:pointer}.hc-ib:hover{background:rgba(127,127,127,.12)}',
@@ -229,11 +235,20 @@
     document.head.appendChild(s);
   }
   function linkify(s) { return esc(s).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); }
+  /* online now / last active – only known over the instant line (LiveRoom) */
+  function presence(o) {
+    if (C.missing) return '';
+    if (C.online && C.online[o]) return '<span class="hc-on"></span>' + esc(L('Active now', 'Aktiv nå'));
+    var t = C.last && +C.last[o]; if (!t) return '';
+    var m = Math.max(0, Math.round((Date.now() + C.skew - t) / 60000));
+    if (m > 7 * 1440) return '';
+    return esc(m < 1 ? L('Active just now', 'Aktiv akkurat nå') : m < 60 ? L('Active ' + m + ' min ago', 'Aktiv for ' + m + ' min siden') : m < 1440 ? L('Active ' + Math.round(m / 60) + ' h ago', 'Aktiv for ' + Math.round(m / 60) + ' t siden') : L('Active ' + Math.round(m / 1440) + ' d ago', 'Aktiv for ' + Math.round(m / 1440) + ' d siden'));
+  }
   function head() {
     var o = other(), tp = +C.typing[o] || 0, now = Date.now() + C.skew, typing = now - tp < 7000;
     return '<div class="hc-head">' + (C.full ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-chevron-left"></i></button>' : '') +
       '<div class="hc-faces">' + C.opt.face(o) + C.opt.face(C.opt.me) + '</div>' +
-      '<div class="hc-tt"><b>' + esc(C.opt.name(o)) + '</b><small class="' + (typing ? 'typ' : '') + '">' + (typing ? esc(L('typing …', 'skriver …')) : C.ttl ? '<i class="bi bi-stopwatch"></i> ' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) : esc(L('Private – just you two', 'Privat – bare dere to'))) + (muteOf(C.opt.me) > Date.now() ? ' <i class="bi bi-bell-slash" title="' + esc(L('Muted until ', 'Dempet til ') + hm(muteOf(C.opt.me))) + '"></i>' : '') + '</small></div>' +
+      '<div class="hc-tt"><b>' + esc(C.opt.name(o)) + '</b><small class="' + (typing ? 'typ' : '') + '">' + (typing ? esc(L('typing …', 'skriver …')) : presence(o) ? presence(o) + (C.ttl ? ' · <i class="bi bi-stopwatch" title="' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) + '"></i>' : '') : C.ttl ? '<i class="bi bi-stopwatch"></i> ' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) : esc(L('Private – just you two', 'Privat – bare dere to'))) + (muteOf(C.opt.me) > Date.now() ? ' <i class="bi bi-bell-slash" title="' + esc(L('Muted until ', 'Dempet til ') + hm(muteOf(C.opt.me))) + '"></i>' : '') + '</small></div>' +
       '<button type="button" class="hc-ib" data-hcmenu aria-label="' + L('Chat settings', 'Chatinnstillinger') + '"><i class="bi bi-three-dots"></i></button>' + (C.pop ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</div>';
   }
   function pins() {
@@ -250,7 +265,7 @@
     if (m.re) h += '<button type="button" class="hc-q" data-hcgo="' + esc(m.re.id) + '"><b>' + esc(m.re.by === C.opt.me ? L('You', 'Du') : C.opt.name(m.re.by)) + '</b><span>' + esc(m.re.x || '…') + '</span></button>';
     voice.forEach(function (f) { h += '<div class="hc-voice" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"><button type="button" data-hcplay="' + esc(f.id) + '" aria-label="' + L('Play', 'Spill av') + '"><i class="bi bi-play-fill"></i></button><span class="hc-vbar"><i></i></span><small>' + dur(f.dur) + '</small></div>'; });
     vids.forEach(function (f) { var u = f.local || C.urls[f.id]; h += '<video class="hc-vid" controls playsinline preload="metadata" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (u ? ' src="' + u + '" data-ok="1"' : '') + '></video>'; });
-    if (imgs.length) h += '<div class="hc-imgs n' + Math.min(4, imgs.length) + '">' + imgs.map(function (f) { var u = f.local || C.urls[f.id], ar = f.w && f.h && imgs.length === 1 ? 'aspect-ratio:' + f.w + '/' + f.h + ';' : ''; return '<button type="button" data-hcimg="' + esc(f.id) + '" style="' + ar + (f.th ? 'background-image:url(' + f.th + ')' : '') + '"><img alt="" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (u ? ' src="' + u + '" class="on" data-ok="1"' : '') + '></button>'; }).join('') + '</div>';
+    if (imgs.length) h += '<div class="hc-imgs n' + Math.min(4, imgs.length) + '">' + imgs.map(function (f) { var u = f.local || C.urls[f.id] || (f.pv && C.urls[f.pv]), ar = f.w && f.h && imgs.length === 1 ? 'aspect-ratio:' + f.w + '/' + f.h + ';' : ''; return '<button type="button" data-hcimg="' + esc(f.id) + '" style="' + ar + (f.th ? 'background-image:url(' + f.th + ')' : '') + '"><img alt="" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (u ? ' src="' + u + '" class="on" data-ok="1"' : '') + '></button>'; }).join('') + '</div>';
     other.forEach(function (f) { h += '<button type="button" class="hc-file" data-hcfile="' + esc(f.id) + '"><i class="bi bi-file-earmark' + (/pdf/.test(f.type) ? '-pdf' : '') + '"></i><span><b>' + esc(f.name) + '</b><small>' + kb(f.size || 0) + '</small></span></button>'; });
     if (m.text) h += '<div class="hc-b">' + linkify(m.text) + '</div>';
     var rx = (C._rx || {})[m.id], cnt = {}; if (rx) Object.keys(rx).forEach(function (who) { var e = rx[who]; if (e) { cnt[e] = cnt[e] || { n: 0, mine: false }; cnt[e].n++; if (who === C.opt.me) cnt[e].mine = true; } });
@@ -384,8 +399,11 @@
       '<p><i class="bi bi-bell' + (muted ? '-slash' : '') + '"></i> ' + esc(muted ? L('Muted until ', 'Dempet til ') + (mu - Date.now() > 3 * 864e5 ? L('you turn it on', 'du slår den på') : new Date(mu).toLocaleString(C.opt.no ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : L('Mute notifications', 'Demp varsler')) + '</p>' +
       '<div class="hc-chiprow">' + (muted ? '<button type="button" class="hc-chip on" data-mute="0"><i class="bi bi-bell"></i> ' + L('Unmute', 'Slå på') + '</button>' : MUTE.map(function (x) { return '<button type="button" class="hc-chip" data-mute="' + x[0] + '">' + esc(L(x[1], x[2] || x[1])) + '</button>'; }).join('')) + '</div>' +
       '<p><i class="bi bi-stopwatch"></i> ' + esc(L('Disappearing messages – for both of you', 'Meldinger som forsvinner – for dere begge')) + '</p>' +
-      '<div class="hc-chiprow">' + TTLX.map(function (x) { return '<button type="button" class="hc-chip' + (C.ttl === x[0] ? ' on' : '') + '" data-ttl="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>',
-      function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); if (b.dataset.mute != null) { var ms = +b.dataset.mute; setMute(ms ? Date.now() + ms : 0); toast(ms ? L('Muted', 'Dempet') : L('Notifications on', 'Varsler på')); } if (b.dataset.a === 'gal') setTimeout(gallery, 0); });
+      '<div class="hc-chiprow">' + TTLX.map(function (x) { return '<button type="button" class="hc-chip' + (C.ttl === x[0] ? ' on' : '') + '" data-ttl="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' +
+      (C.online ? '<p><i class="bi bi-circle-fill" style="color:' + (C.away ? '#999' : '#34c759') + ';font-size:.6em;vertical-align:2px"></i> ' + esc(L('Show when I’m active', 'Vis når jeg er aktiv')) + '</p>' +
+        '<div class="hc-chiprow"><button type="button" class="hc-chip' + (C.away ? '' : ' on') + '" data-away="0">' + esc(L('On', 'På')) + '</button><button type="button" class="hc-chip' + (C.away ? ' on' : '') + '" data-away="1">' + esc(L('Off', 'Av')) + '</button></div>' +
+        '<small class="hc-note">' + esc(L('Off: ' + C.opt.name(other()) + ' won’t see when you’re here – and you won’t see it for them either.', 'Av: ' + C.opt.name(other()) + ' ser ikke når du er her – og du ser det ikke for dem heller.')) + '</small>' : ''),
+      function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); if (b.dataset.mute != null) { var ms = +b.dataset.mute; setMute(ms ? Date.now() + ms : 0); toast(ms ? L('Muted', 'Dempet') : L('Notifications on', 'Varsler på')); } if (b.dataset.a === 'gal') setTimeout(gallery, 0); if (b.dataset.away != null) { C.away = b.dataset.away === '1'; SC.livePost({ away: C.away }); toast(C.away ? L('You now appear offline', 'Du vises nå som frakoblet') : L('Your status is shown', 'Statusen din vises')); paintList(); } });
   }
   function viewImg(fid) {
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
@@ -403,7 +421,7 @@
       (rest.length ? '<h4>' + L('Files and voice messages', 'Filer og talemeldinger') + '</h4>' + rest.map(function (x) { return '<button type="button" class="hc-file" data-gf="' + esc(x.f.id) + '" data-mid="' + x.m.id + '"><i class="bi bi-' + (/^audio\//.test(x.f.type) ? 'mic' : /^video\//.test(x.f.type) ? 'film' : 'file-earmark') + '"></i><span><b>' + esc(/^audio\//.test(x.f.type) ? L('Voice message', 'Talemelding') + ' · ' + dur(x.f.dur) : x.f.name) + '</b><small>' + esc(new Date(x.m.t).toLocaleDateString(C.opt.no ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' }) + ' · ' + kb(x.f.size || 0)) + '</small></span></button>'; }).join('') : '') +
       (!all.length ? '<div class="hc-empty"><i class="bi bi-images"></i>' + L('Photos and files you send each other show up here.', 'Bilder og filer dere sender hverandre dukker opp her.') + '</div>' : '') + '</div>';
     C.el.querySelector('.hc').appendChild(g);
-    g.querySelectorAll('img[data-fid]').forEach(function (im) { var x = all.filter(function (y) { return y.f.id === im.dataset.fid; })[0]; if (x) fileUrl(x.f).then(function (u) { im.src = u; im.classList.add('on'); }, function () {}); });
+    g.querySelectorAll('img[data-fid]').forEach(function (im) { var x = all.filter(function (y) { return y.f.id === im.dataset.fid; })[0]; if (x) smallUrl(x.f).then(function (u) { im.src = u; im.classList.add('on'); }, function () {}); });
     g.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; if (b.hasAttribute('data-x')) { g.remove(); return; } if (b.dataset.g) { viewImg(b.dataset.g); return; } if (b.dataset.gf) { var x = all.filter(function (y) { return y.f.id === b.dataset.gf; })[0]; if (x) download(x.f); } });
   }
   function pick(files) { [].slice.call(files || []).slice(0, 10 - C.picked.length).forEach(function (f) { C.picked.push(f); }); chips(); }
@@ -577,7 +595,7 @@
   function onLive(j) {
     if (!C.opt || !j) return; C.dLive = { at: Date.now(), chat: j.chat };
     if (j.now) C.skew = j.now - Date.now();
-    C.typing = j.typing || {}; C.seen = j.seen || {};
+    C.typing = j.typing || {}; C.seen = j.seen || {}; if (j.online) { C.online = j.online; C.last = j.last || {}; C.away = !!j.away; }
     if (j.chat != null && j.chat !== C.rev) fetchChat(); else if (C.el) paintList();
   }
   function init(opt) {
