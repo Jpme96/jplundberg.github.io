@@ -644,6 +644,8 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^(.+) (was|were) updated (\d+ \w+), after this date\. Untick if that balance already includes this transfer\.$/, '$1 ble oppdatert $3, etter denne datoen. Fjern haken hvis saldoen allerede har med denne overføringen.'],
+    [/^(.+) moved: (.+) → (.+) · balances not changed$/, '$1 flyttet: $2 → $3 · saldoene ble ikke endret'],
     [/^(\d+) to go$/, '$1 igjen'], [/^(\d+) of 7 days on target · the chip on Home counts here too$/, '$1 av 7 dager på mål · brikken på Hjem teller her også'], [/^(\d+) glasses$/, '$1 glass'],
     [/^([\d,]+) l · (\d+) ml a glass( · from Apple Health)?$/, function (m, l, g, a) { return l + ' l · ' + g + ' ml per glass' + (a ? ' · fra Apple Health' : ''); }],
     [/^Birthday (.+?)( \((\d+)\))?$/, function (m, a, b, n) { return 'Bursdag ' + a + (n ? ' (' + n + ')' : ''); }], [/^(.+)’s birthday today$/, '$1 har bursdag i dag'], [/^(.+)’s birthday (in \d+ days|tomorrow)$/, function (m, a, w) { return a + ' har bursdag ' + tr(w).toLowerCase(); }],
@@ -1147,6 +1149,7 @@
     'Nothing yet. Add a spending with + or import your bank file.': 'Ingenting ennå. Legg inn en utgift med + eller importer bankfilen.',
     'In your accounts': 'På kontoene', 'owed on cards': 'skyldig på kort', 'saved': 'spart', 'Free to use until payday': 'Fritt å bruke til lønning', 'Owed on cards': 'Skyldig på kort', 'Bills before payday': 'Regninger før lønning', 'See limits': 'Se grensene',
     'Setup': 'Oppsett', 'Set up Finances': 'Sett opp økonomien', 'All bills': 'Alle regninger',
+    'Balances didn’t move': 'Saldoene ble ikke flyttet', 'Move them now': 'Flytt dem nå', 'Balances moved': 'Saldoene er flyttet', 'Move the balances anyway': 'Flytt saldoene likevel',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

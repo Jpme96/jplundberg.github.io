@@ -97,20 +97,39 @@
   }
   /* how a transfer moves each account: out of "from", into "to"; on a credit card in = less owed */
   function sign(d, id, into) { var k = A() ? A().kind(d, id) : null; return (k === 'credit' ? -1 : 1) * (into ? 1 : -1); }
-  function apply(d, t, back) {
+  function apply(d, t, back, force) {
     var f = back ? -1 : 1;
     t.moved = t.moved || {};
     if (back) { if (t.moved.from) setBal(d, t.from, -sign(d, t.from, false) * t.amount, t.date, true); if (t.moved.to) setBal(d, t.to, -sign(d, t.to, true) * t.amount, t.date, true); return; }
-    t.moved.from = setBal(d, t.from, f * sign(d, t.from, false) * t.amount, t.date);
-    t.moved.to = setBal(d, t.to, f * sign(d, t.to, true) * t.amount, t.date);
+    t.moved.from = setBal(d, t.from, f * sign(d, t.from, false) * t.amount, t.date, force);
+    t.moved.to = setBal(d, t.to, f * sign(d, t.to, true) * t.amount, t.date, force);
+  }
+  /* a balance typed or imported after the transfer's date is taken to include it – unless you say it doesn't */
+  function newer(d, id, date) { var a = A() && A().get(d, id); return a && a.bal != null && a.balAt && date < a.balAt ? a : null; }
+  function notMoved(d, t) {
+    var out = []; if (!t || !t.moved || !A()) return out;
+    [['from', t.from], ['to', t.to]].forEach(function (s) { var a = A().get(d, s[1]); if (!t.moved[s[0]] && a && a.bal != null) out.push(s[0]); });
+    return out;
+  }
+  function fix(id) {
+    var d = V.get(); if (!d) return false;
+    var t = (d.transfers || []).filter(function (x) { return x.id === id; })[0]; if (!t) return false;
+    var l = notMoved(d, t); if (!l.length) return false;
+    l.forEach(function (side) { t.moved[side] = setBal(d, t[side], sign(d, t[side], side === 'to') * t.amount, t.date, true); });
+    V.save(d); window.dispatchEvent(new Event('fin:change'));
+    return true;
   }
   function add(t) {
     var d = V.get(); if (!d) return null;
     d.budget = d.budget || { income: [], fixed: [] };
     d.transfers = Array.isArray(d.transfers) ? d.transfers : [];
     var x = { id: 'tr' + uid(), date: t.date || today(), from: t.from, to: t.to, amount: Math.round(t.amount * 100) / 100, note: (t.note || '').slice(0, 60) };
-    apply(d, x, false);
+    if (t.moved && typeof t.moved === 'object') x.moved = t.moved;
+    if (x.moved) { /* put back (Undo): only the sides that had moved */
+      var mv = x.moved; x.moved = {}; ['from', 'to'].forEach(function (side) { if (mv[side]) x.moved[side] = setBal(d, x[side], sign(d, x[side], side === 'to') * x.amount, x.date, true); });
+    } else apply(d, x, false, !!t.force);
     d.transfers.push(x);
+    if (d.transfers.length > 300) d.transfers = list(d).slice(0, 300);        /* the oldest go, the list never grows without end */
     V.save(d); window.dispatchEvent(new Event('fin:change'));
     return x;
   }
@@ -158,6 +177,13 @@
       var after = function (x, into) { if (!x || x.bal == null) return null; var v = x.bal + sign(dd, x.id, into) * n; return x.kind === 'credit' ? 'you owe ' + kr(Math.max(0, v)) : kr(v); };
       var fa = after(a, false), ta = after(b, true);
       el.innerHTML = [fa ? '<span>' + esc(a.label + ' after: ' + fa) + '</span>' : '', ta ? '<span>' + esc(b.label + ' after: ' + ta) + '</span>' : ''].filter(Boolean).join('<br>');
+      var dt = f.date.value || today(), nw = [newer(dd, f.from.value, dt), newer(dd, f.to.value, dt)].filter(Boolean), box = bg.querySelector('#trForce');
+      if (nw.length) {
+        var keep = box ? box.querySelector('input').checked : true;
+        var txt = nw.map(function (x) { return x.label; }).join(' and ') + (nw.length > 1 ? ' were' : ' was') + ' updated ' + new Date(nw[0].balAt + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', after this date';
+        if (!box) { box = document.createElement('label'); box.id = 'trForce'; box.className = 'tr-force'; el.after(box); }
+        box.innerHTML = '<input type="checkbox" name="force"' + (keep ? ' checked' : '') + '><span>Move the balances anyway<small>' + esc(txt) + '. Untick if that balance already includes this transfer.</small></span>';
+      } else if (box) box.remove();
     }
     document.body.appendChild(bg); draw(); requestAnimationFrame(function () { bg.classList.add('open'); });
     var close = function () { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); };
@@ -173,9 +199,9 @@
       e.preventDefault(); var f = e.target, n = num(f.amt.value);
       if (!(n > 0)) { f.amt.focus(); return; }
       if (f.from.value === f.to.value) { f.to.focus(); return; }
-      var x = add({ from: f.from.value, to: f.to.value, amount: n, date: f.date.value || today(), note: f.note.value.trim() });
+      var x = add({ from: f.from.value, to: f.to.value, amount: n, date: f.date.value || today(), note: f.note.value.trim(), force: !!(f.force && f.force.checked) });
       close();
-      if (x) toast('<i class="bi bi-arrow-left-right"></i> ' + esc(kr(n)) + ' moved: ' + esc(label(V.get(), x.from)) + ' → ' + esc(label(V.get(), x.to)), function () { remove(x.id); });
+      if (x) toast('<i class="bi bi-arrow-left-right"></i> ' + esc(kr(n)) + ' moved: ' + esc(label(V.get(), x.from)) + ' → ' + esc(label(V.get(), x.to)) + (notMoved(V.get(), x).length ? ' · balances not changed' : ''), function () { remove(x.id); });
     });
     setTimeout(function () { var i = bg.querySelector('[name=amt]'); if (i && !matchMedia('(pointer: coarse)').matches) i.focus(); }, 60);
   }
@@ -183,5 +209,5 @@
   (window.CommandExtra = window.CommandExtra || []).push(function () { return V.get() ? [{ i: 'arrow-left-right', t: 'Transfer between accounts', s: 'Finances', run: function () { sheet(); }, x: 'transfer move money overføring flytt penger konto sparing' }] : []; });
   /* opened from another page (Quick add → Transfer) */
   if (/[?&]transfer=1/.test(location.search)) V.onUnlock(function () { setTimeout(function () { if (window.history && history.replaceState) history.replaceState(null, '', location.pathname + location.hash); sheet(); }, 500); });
-  window.FinMoves = { transfer: sheet, add: add, remove: remove, list: list, merge: merge, unmerge: unmerge };
+  window.FinMoves = { transfer: sheet, add: add, remove: remove, list: list, notMoved: notMoved, fix: fix, merge: merge, unmerge: unmerge };
 })();

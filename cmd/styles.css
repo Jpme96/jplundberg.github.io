@@ -5085,3 +5085,10 @@ button.mh-chip { font: inherit; cursor: pointer; border: 0; }
 .wt-d i { display: block; width: 100%; max-width: 26px; border-radius: 5px; background: rgba(59, 157, 224, .35); }
 .wt-d.ok i { background: #3b9de0; } .wt-d.now small { font-weight: 700; color: var(--ink); }
 .wt-d small { font-size: .7rem; opacity: .7; }
+/* transfers: a transfer whose balances didn't move, and the full list scrolls instead of growing the card */
+.mn-trwarn { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: #c98500 !important; margin-top: 2px; }
+.mn-trwarn .text-btn { padding: 0; min-height: 0; font-size: 12.5px; }
+.mn-trl.all { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; }
+.tr-force { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: rgba(201, 133, 0, .1); margin: 4px 0 8px; cursor: pointer; }
+.tr-force input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+.tr-force span { display: flex; flex-direction: column; gap: 2px; font-weight: 600; } .tr-force small { font-weight: 400; color: var(--muted); }
