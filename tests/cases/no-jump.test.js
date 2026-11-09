@@ -1,5 +1,5 @@
 /* When Iago ticks things off, what the owner is looking at in cmd stays in the same spot (no jumping). */
-const { shared, sl, U } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { shared, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p, b2, q } = await shared();
   await p.evaluate(() => { ['food', 'shop', 'meals', 'pantry', 'recipes', 'house', 'chores'].forEach(f => Features.set(f, true)); const t = Features.tools(); t.shop = []; for (let i = 0; i < 25; i++) t.shop.push({ id: 's' + i + Date.now(), text: 'Item ' + i, done: false }); Features.saveTools(t); });
@@ -7,7 +7,7 @@ const { shared, sl, U } = require('../lib/browser'); const { check, done } = req
   await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
   await q.evaluate(() => document.querySelector('[data-tab="shop"]').click()); await sl(800);
   for (const page of ['food/', '', 'food/']) for (const which of ['first', 'last']) {
-    await p.goto(U + page); await sl(3500);
+    await go(p, page, 3500);
     await p.evaluate(() => window.scrollTo(0, Math.min(1100, document.documentElement.scrollHeight - innerHeight - 50))); await sl(600);
     const probes = await p.evaluate(() => [200, 400, 600].map(y => { let el = document.elementFromPoint(200, y); while (el && el.children.length && el.textContent.length > 120) el = el.firstElementChild; return el ? { tx: (el.textContent || '').trim().slice(0, 60), top: el.getBoundingClientRect().top, tag: el.tagName } : null; }).filter(x => x && x.tx));
     await q.evaluate(w => { const all = document.querySelectorAll('[data-shop]'); (w === 'first' ? all[0] : all[all.length - 1]).click(); }, which);

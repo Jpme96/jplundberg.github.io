@@ -1,9 +1,9 @@
 /* Loans: paying extra every month moves the payoff date, shows what it saves and counts in fixed costs. */
-const { open, sl, U } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { const d = Vault.get(); d.accounts = d.accounts || []; d.accounts.push({ id: 'L1', kind: 'debt', name: 'Car loan', balance: 300000, rate: 6, pay: 6000, day: 20, asOf: '2026-06-20' }); Vault.save(d); });
-  await p.goto(U + 'finance/#c=loans'); await sl(3500);
+  await go(p, 'finance/#c=loans', 3500);
   const before = await p.evaluate(() => { const l = Vault.get().accounts.find(a => a.id === 'L1'); return { m: Loans.calc(l).months, fixed: (Vault.get().budget.fixed || []).filter(f => f.src === 'loan').map(f => f.amount) }; });
   check(before.fixed[0] === 6000, 'fixed costs count 6 000 before');
   await p.evaluate(() => { const r = document.querySelector('[data-lntry="L1"]'); r.value = 2000; r.dispatchEvent(new Event('input', { bubbles: true })); });

@@ -1,11 +1,11 @@
 /* Rooms for chores: the owner adds rooms and puts a chore in one; Iago sees the rooms, filters by room and adds a
    chore in a room; the owner gets it. By room / one room in cmd. */
-const { shared, until, sl, U } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { shared, until, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p, b2, q } = await shared();
   await p.evaluate(() => { Features.set('house', true); Features.set('chores', true); const t = Features.tools(); t.chores = [{ id: 'c1', name: 'Clean the toilet', every: '1w', day: 0, who: 'rotate', start: Features.dkey(new Date()) }, { id: 'c2', name: 'Hoover', every: '1w', day: 1, who: 'rotate', start: Features.dkey(new Date()) }]; Features.saveTools(t);
     const d = Vault.get(); d.share.what = Object.assign({}, d.share.what || {}, { chores: true }); Vault.save(d); });
-  await p.goto(U + 'house/'); await sl(3500);
+  await go(p, 'house/', 3500);
   await p.evaluate(() => document.querySelector('[data-chrooms]').click()); await sl(400);
   await p.evaluate(() => document.querySelector('[data-chrseed]').click()); await sl(800);
   const rooms = await p.evaluate(() => Features.list('rooms').map(r => r.name + ':' + r.icon));

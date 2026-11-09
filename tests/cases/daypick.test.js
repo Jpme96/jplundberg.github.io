@@ -1,9 +1,9 @@
 /* Due days: a grid of days instead of a long list; the choice is saved and the next date shown. */
-const { open, sl, U } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { const d = Vault.get(); d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = [{ id: 'f1', name: 'Rent', amount: 12000, day: 1 }, { id: 'f2', name: 'Phone', amount: 399 }]; Vault.save(d); });
-  await p.goto(U + 'finance/'); await sl(3500);
+  await go(p, 'finance/', 3500);
   await p.evaluate(() => document.getElementById('billsEdit').click()); await sl(600);
   const btns = await p.evaluate(() => [...document.querySelectorAll('#billsBody .dp-btn')].map(x => x.innerText));
   check(btns.length === 2 && /1st every month/.test(btns[0]) && /No due day/.test(btns[1]), 'buttons instead of lists: ' + btns.join(' | ').replace(/\n/g, ' '));

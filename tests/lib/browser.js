@@ -23,10 +23,29 @@ async function page(b, W, opts = {}) {
 async function open(W, opts = {}) {
   const b = await launch(), p = await page(b, W, opts);
   await p.goto(U + (opts.path || '')); await sl(1500);
+  await unlock(p);
+  return { b, p };
+}
+/* type the passcode on the lock screen. When a synced dashboard exists, wait until the lock screen has found it
+   (slow machines) – typing into "make a new one" would start a second, separate dashboard. */
+async function unlock(p) {
+  const synced = await p.evaluate(() => fetch('/cmd/api/vault', { credentials: 'same-origin' }).then(r => r.ok, () => false));
+  if (synced) await until(p, () => { const c = document.getElementById('lockConfirm'); return !(c && c.offsetParent); }, 10000);
+  await p.waitForSelector('#lockPass', { visible: true, timeout: 10000 });
   await p.type('#lockPass', PASS);
   if (await p.evaluate(() => { const c = document.getElementById('lockConfirm'); return !!(c && c.offsetParent); })) await p.type('#lockConfirm', PASS);
-  await p.click('#lockSubmit'); await sl(2500);
-  return { b, p };
+  await p.click('#lockSubmit');
+  await until(p, () => document.documentElement.classList.contains('unlocked'), 15000);
+  await sl(800);
+}
+/* go to a cmd page; if it came up locked (a slow machine missed the quick resume), unlock it */
+async function go(p, path, wait = 2500) {
+  await p.goto(U + (path || ''));
+  /* normally the page opens unlocked by itself; only when the lock screen is really showing, type the passcode */
+  const shown = () => { const i = document.getElementById('lockPass'), bx = document.getElementById('lockBox'); return !!(i && i.offsetParent && bx && getComputedStyle(bx).visibility !== 'hidden' && !document.documentElement.classList.contains('resuming')); };
+  const ok = await until(p, '(' + 'function () { return document.documentElement.classList.contains("unlocked") || (' + shown.toString() + ')(); }' + ')()', 15000);
+  if (ok !== null && !(await p.evaluate(() => document.documentElement.classList.contains('unlocked')))) await unlock(p);
+  await sl(wait);
 }
 /* owner (computer) starts sharing; Iago's phone opens the shared app with the key */
 async function shared(W2 = 393) {
@@ -46,7 +65,7 @@ async function shared(W2 = 393) {
 /* wait until fn() in the page is true; returns ms taken, or null */
 async function until(pg, fn, ms = 20000, arg) {
   const t = Date.now();
-  while (Date.now() - t < ms) { if (await pg.evaluate(fn, arg)) return Date.now() - t; await sl(100); }
+  while (Date.now() - t < ms) { if (await pg.evaluate(fn, arg).catch(() => false)) return Date.now() - t; await sl(100); }
   return null;
 }
-module.exports = { launch, page, open, shared, until, sl, U };
+module.exports = { launch, page, open, shared, until, sl, U, go, unlock };

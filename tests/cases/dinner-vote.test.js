@@ -1,11 +1,13 @@
 /* Dinner voting: the owner suggests dinners, Iago picks one – it lands on the plan in both apps; and the other way round. */
-const { shared, until, sl, U } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { shared, until, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p, b2, q } = await shared();
   await p.evaluate(() => { Features.set('food', true); Features.set('meals', true); });
-  await p.goto(U + 'food/'); await sl(3500);
-  const btn = await until(p, () => !!document.querySelector('[data-vtnew]'), 8000);
-  check(btn !== null, 'cmd offers “Let Iago choose”');
+  await go(p, 'food/', 3500);
+  await until(p, () => document.documentElement.classList.contains('unlocked'), 15000);
+  const btn = await until(p, () => !!document.querySelector('[data-vtnew]'), 15000);
+  check(btn !== null, 'cmd offers “Let Iago choose”' + (btn === null ? ' – state: ' + await p.evaluate(() => JSON.stringify({ unlocked: document.documentElement.classList.contains('unlocked'), share: (Vault.get() || {}).share && { on: Vault.get().share.on, name: Vault.get().share.name, what: Vault.get().share.what }, meals: !!document.querySelector('#meals'), food: Features.on('food') })) : ''));
+  if (btn === null) { await done(b, b2); return; }
   await p.evaluate(() => document.querySelector('[data-vtnew]').click()); await sl(400);
   await p.evaluate(() => { const f = document.querySelector('[data-vtform]'); f.d.selectedIndex = 1; f.o1.value = 'Taco'; f.o2.value = 'Pasta'; f.o3.value = 'Curry'; f.requestSubmit(); }); await sl(800);
   check(await p.evaluate(() => /Waiting for Iago/.test(document.querySelector('.hl-votes').innerText)), 'cmd shows “Waiting for Iago to pick”');
