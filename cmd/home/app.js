@@ -305,7 +305,16 @@
     var tk = today(), l = list('ev').map(function (r) { return { r: r, d: nextOf(r.f, tk) }; }).filter(function (x) { return x.d; }).sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : String(a.r.f.start || '') < String(b.r.f.start || '') ? -1 : 1; });
     return trips() + '<h2 class="h-h">' + L('Coming up', 'Kommer') + '</h2><button type="button" class="h-btn ghost wide" data-addev><i class="bi bi-plus-lg"></i> ' + L('Add an event', 'Legg til en hendelse') + '</button>' +
       (l.length ? '<ul class="h-list">' + l.slice(0, 40).map(function (x) { var f = x.r.f; return '<li><span class="h-row"><span>' + esc(f.title) + '<small>' + esc(fdate(x.d) + (f.allDay ? '' : ' · ' + (f.start || '') + (f.stop ? '–' + f.stop : '')) + (f.location ? ' · ' + f.location : '') + (f.repeat ? ' · ↻' : '')) + '</small></span></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-evdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>'
-        : '<p class="h-sum">' + L('Nothing coming up.', 'Ingenting som kommer.') + '</p>');
+        : '<p class="h-sum">' + L('Nothing coming up.', 'Ingenting som kommer.') + '</p>') + earlier();
+  }
+  /* events that have been (one-off, last 30 days) – so one added for yesterday doesn't seem to vanish */
+  var showEarlier = false;
+  function earlier() {
+    var tk = today(), from = (function () { var d = new Date(); d.setDate(d.getDate() - 30); return dkey(d); })();
+    var l = list('ev').filter(function (r) { var f = r.f, end = f.end || f.date; return !f.repeat && f.date && end < tk && f.date >= from; }).sort(function (a, b) { return a.f.date < b.f.date ? 1 : -1; });
+    if (!l.length) return '';
+    return '<button type="button" class="h-link" data-earlier>' + (showEarlier ? L('Hide earlier', 'Skjul tidligere') : L('Earlier', 'Tidligere') + ' (' + l.length + ')') + '</button>' +
+      (showEarlier ? '<ul class="h-list h-past">' + l.map(function (r) { var f = r.f; return '<li><span class="h-row"><span>' + esc(f.title) + '<small>' + esc(fdate(f.date) + (f.allDay ? '' : ' · ' + (f.start || '') + (f.stop ? '–' + f.stop : '')) + (f.location ? ' · ' + f.location : '')) + '</small></span></span>' + (r.by === 'p' ? '<button type="button" class="h-x" data-evdel="' + esc(r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>' : '');
   }
   /* ---------- sheets ---------- */
   function sheet(h, onsub) {
@@ -343,7 +352,7 @@
       if (!f.title.value.trim()) { f.title.focus(); return false; }
       var ev = { title: f.title.value.trim(), date: f.date.value || today(), allDay: f.all.checked, location: f.loc.value.trim() };
       if (!f.all.checked) { ev.start = f.start.value || '18:00'; ev.stop = f.stop.value || ''; }
-      var id = 'h' + uid(); put('ev', id, ev); toast('<i class="bi bi-calendar-check"></i> ' + esc(ev.title), function () { put('ev', id, null, true); });
+      var id = 'h' + uid(); put('ev', id, ev); if (ev.date < today()) showEarlier = true; toast('<i class="bi bi-calendar-check"></i> ' + esc(ev.title) + (ev.date < today() ? ' · ' + L('under Earlier', 'under Tidligere') : ''), function () { put('ev', id, null, true); });
     });
   }
   function mealSheet(k) {
@@ -521,6 +530,7 @@
     if (d.settle != null) { settleSheet(); return; }
     if (d.moneyall != null) { showAllMoney = !showAllMoney; draw(); return; }
     if (d.addev != null) { evSheet(); return; }
+    if (d.earlier != null) { showEarlier = !showEarlier; draw(); return; }
     var del = d.sxdel ? ['sx', d.sxdel] : d.paydel ? ['pay', d.paydel] : d.evdel ? ['ev', d.evdel] : null;
     if (del && (r = find(del[0], del[1]))) { var kf = r.f; put(del[0], r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + L('Removed', 'Fjernet'), function () { put(del[0], r.id, kf); }); }
   });
