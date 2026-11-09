@@ -30,7 +30,9 @@
     if (!C.opt) return Promise.resolve();
     if (C.busy) { C.again = true; return Promise.resolve(); }
     C.busy = true;
+    C.dTry = Date.now();
     return SC.api('chat').then(function (srv) {
+      C.dOk = Date.now(); C.dSrv = { rev: srv.rev, n: Object.keys(srv.msgs || {}).filter(function (k) { return !(srv.msgs[k] || {}).del; }).length };
       var recs = srv.msgs || {}, jobs = [], seen = {}, bad = 0;
       Object.keys(recs).forEach(function (id) {
         var r = recs[id]; seen[id] = 1;
@@ -42,7 +44,7 @@
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
         C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad;
       });
-    }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
+    }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; C.dErr = (e && (e.status || e.message)) || 'error'; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
   function list() {
     var now = Date.now();
@@ -172,7 +174,7 @@
       '.hc-chips{display:flex;gap:6px;overflow-x:auto}.hc-chips span{flex:none;display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:rgba(127,127,127,.14);font-size:12.5px;max-width:200px}.hc-chips span em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.hc-chips button{border:0;background:none;color:inherit;cursor:pointer;padding:2px}',
       '.hc-menu{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:5}.hc-menu>div{width:100%;max-width:440px;background:var(--hc-bg);border-radius:18px 18px 0 0;padding:8px 8px calc(10px + var(--hc-safe,0px));box-shadow:0 -8px 30px rgba(0,0,0,.3)}',
-      '.hc-menu p{margin:8px 12px 6px;font-size:12.5px;color:var(--hc-mut)}.hc-menu button{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:0;background:none;color:inherit;font:inherit;text-align:left;border-radius:12px;cursor:pointer}.hc-menu button:hover{background:rgba(127,127,127,.1)}',
+      '.hc-diag{font-size:11.5px!important;opacity:.8;word-break:break-word}.hc-menu p{margin:8px 12px 6px;font-size:12.5px;color:var(--hc-mut)}.hc-menu button{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:0;background:none;color:inherit;font:inherit;text-align:left;border-radius:12px;cursor:pointer}.hc-menu button:hover{background:rgba(127,127,127,.1)}',
       '.hc-menu button .bi{font-size:18px;width:22px;text-align:center}.hc-menu button.on .bi-check2{color:var(--hc-acc)}.hc-menu button.red{color:#e05555}.hc-menu .hc-quote{margin:4px 12px 8px;padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.1);font-size:13.5px;max-height:90px;overflow:hidden;white-space:pre-wrap}',
       '.hc-view{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:100;display:flex;align-items:center;justify-content:center}.hc-view img{max-width:100vw;max-height:100vh;object-fit:contain}.hc-view .hc-ib{position:absolute;top:calc(12px + env(safe-area-inset-top));color:#fff;background:rgba(255,255,255,.12)}',
       '.hc-toast{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);background:#222428;color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;z-index:6;white-space:nowrap}',
@@ -269,7 +271,9 @@
     });
   }
   function settingsMenu() {
-    menu('<p>' + esc(L('Disappearing messages – for both of you', 'Meldinger som forsvinner – for dere begge')) + '</p>' + TTLS.map(function (t) { return '<button type="button" data-ttl="' + t[0] + '" class="' + (C.ttl === t[0] ? 'on' : '') + '"><i class="bi bi-' + (C.ttl === t[0] ? 'check2' : 'circle') + '"></i>' + esc(L(t[1], t[2])) + '</button>'; }).join(''), function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); });
+    var t = function (x) { return x ? new Date(x).toTimeString().slice(0, 8) : '–'; }, sv = C.dSrv || {}, lv = C.dLive || {};
+    var diag = '<p class="hc-diag">' + esc(L('Connection', 'Tilkobling') + ': ' + L('server has ', 'serveren har ') + (sv.n == null ? '?' : sv.n) + L(' messages (v', ' meldinger (v') + (sv.rev == null ? '?' : sv.rev) + ') · ' + L('shown here ', 'vist her ') + list().filter(function (m) { return !m.sys; }).length + ' · ' + L('live v', 'live v') + (lv.chat == null ? '–' : lv.chat) + ' ' + t(lv.at) + ' · ' + L('fetched ', 'hentet ') + t(C.dOk) + (C.dErr ? ' · ' + L('error ', 'feil ') + C.dErr : '') + (C.bad ? ' · ' + L('can’t open ', 'kan ikke åpne ') + C.bad : '') + ' · ' + C.opt.me) + '</p>';
+    menu(diag + '<p>' + esc(L('Disappearing messages – for both of you', 'Meldinger som forsvinner – for dere begge')) + '</p>' + TTLS.map(function (t) { return '<button type="button" data-ttl="' + t[0] + '" class="' + (C.ttl === t[0] ? 'on' : '') + '"><i class="bi bi-' + (C.ttl === t[0] ? 'check2' : 'circle') + '"></i>' + esc(L(t[1], t[2])) + '</button>'; }).join(''), function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); });
   }
   function viewImg(fid) {
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
@@ -321,7 +325,7 @@
   }
   function unmount() { if (!C.el) return; if (C.open) SC.liveSpeed(false); C.open = false; C.el.innerHTML = ''; C.el = null; lastList = ''; }
   function onLive(j) {
-    if (!C.opt || !j) return;
+    if (!C.opt || !j) return; C.dLive = { at: Date.now(), chat: j.chat };
     if (j.now) C.skew = j.now - Date.now();
     C.typing = j.typing || {}; C.seen = j.seen || {};
     if (j.chat != null && j.chat !== C.rev) fetchChat(); else if (C.el) paintList();
