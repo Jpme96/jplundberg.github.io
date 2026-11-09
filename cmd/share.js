@@ -225,11 +225,11 @@
     if (!st()) return;
     var nm0 = notifyMe(), cut = Date.now() - 2 * 864e5, seenN = +rj('dash.share.newsSeen', 0) || 0;
     var l = (Fe.tools().sharenews || []).filter(function (x) { return x.at > cut && x.at > seenN && nm0[x.k] !== false && (nm0[x.k] || NOTE_DEF[x.k]); });
-    if (l.length) add(58, 'people', '#22b35e', l.length === 1 ? l[0].text : l.length + ' changes from ' + pname(), l.length === 1 ? 'Shared space' : l.slice(-3).map(function (x) { return x.text.replace(pname() + ' ', ''); }).join(' · '), '/cmd/?settings=sharesp',
+    if (l.length) add(58, 'people', '#22b35e', l.length === 1 ? l[0].text : l.length + ' changes from ' + pname(), l.length === 1 ? 'Shared space' : l.slice(-3).map(function (x) { return x.text.replace(pname() + ' ', ''); }).join(' · '), '/cmd/admin/#shared',
       { act: { id: 'shn:' + l[l.length - 1].at, label: 'Seen' }, run: function () { wj('dash.share.newsSeen', Date.now()); } });
     var pend = ((V.get() || {}).share || {}).pending || {};
     Object.keys(pend).forEach(function (id) { var f = pend[id].f;
-      add(30, 'hourglass-split', '#c98500', pname() + ' added ' + (f.note || 'a shared cost') + ' · ' + kr(f.total), 'Over ' + kr(approveOver()) + ' – it counts once you say OK', '/cmd/?settings=sharesp',
+      add(30, 'hourglass-split', '#c98500', pname() + ' added ' + (f.note || 'a shared cost') + ' · ' + kr(f.total), 'Over ' + kr(approveOver()) + ' – it counts once you say OK', '/cmd/admin/#shared',
         { main: true, act: { id: 'shok:' + id, label: 'OK' }, run: function () { approve(id, true); } }); });
   });
   function approve(id, yes) {
@@ -255,8 +255,9 @@
   }
   var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen2', {}), applyErr = 0, busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
   function ridOf(k, c, id) { var x = c + '|' + id; if (rids[x]) return Promise.resolve(rids[x]); return SC.rid(k, c, id).then(function (r) { rids[x] = r; return r; }); }
+  var boxRev = null;
   function absorb(k, srv) {
-    var recs = (srv && srv.recs) || {}, jobs = [];
+    var recs = (srv && srv.recs) || {}, jobs = []; if (srv && srv.rev != null) boxRev = srv.rev;
     Object.keys(recs).forEach(function (rid) {
       var r = recs[rid], old = cache[rid];
       if (old && old.t === r.t) return;
@@ -310,9 +311,11 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); if (again) { again = false; schedule(500); } },
+    }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
+  /* their change shows up within seconds: the live check sees the box move on and syncs right away */
+  SC.live(function (j) { if (st() && j && j.box != null && j.box !== boxRev && !busy) schedule(0); });
   var tm = null;
   function schedule(ms) { if (!st()) return; clearTimeout(tm); tm = setTimeout(sync, ms == null ? 1500 : ms); }
   ['tools:change', 'cal:change', 'fin:change', 'travel:change', 'avatar:change'].forEach(function (ev) { window.addEventListener(ev, function () { if (!quiet) schedule(); }); });
@@ -404,7 +407,7 @@
     return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = '/cmd/vendor/qrcode.js'; sc.onload = function () { res(window.qrcode); }; sc.onerror = rej; document.head.appendChild(sc); });
   }
   function draw() {
-    var box = document.getElementById('stShare'); if (!box) return;
+    var box = document.getElementById('crShareBox'); if (!box) return;
     var s = st(), p = partner(), nm = pname(), sw = what();
     if (!s) {
       showing = 'setup';
@@ -431,7 +434,7 @@
           return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
         }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> List every shared item</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
       settingsMore(nm) +
-      (sw.notes ? sec('notes', 'sticky', 'Home notes', nNotes ? nNotes + (nNotes === 1 ? ' note' : ' notes') : 'None yet', '<div id="shNotes">' + notesHtml() + '</div>') : '') +
+      sec('chat', 'chat-heart', 'Chat', (window.HomeChat ? 'Messages ' + (HomeChat.ttl() ? 'disappear after ' + HomeChat.ttlName(HomeChat.ttl()) : 'are kept') : '') + (sw.notes && nNotes ? ' · ' + nNotes + ' pinned' : ''), chatSec(sw)) +
       '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> Access</p>' +
       (joined ? inviteSec(nm, true) : '') +
       sec('acct', 'key', 'Login and pause', (paused ? 'Paused · ' : '') + (srvInfo && srvInfo.partner || 'Their email'),
@@ -497,7 +500,7 @@
   var noteEd = null;
   function notesHtml() {
     var l = Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : [];
-    return '<p class="st-note muted">Bin days, the Wi-Fi name, who to call when something breaks – you both see and change these. Don’t put passwords here.</p>' +
+    return '<p class="st-note muted">Pinned at the top of the chat – bin days, the Wi-Fi name, who to call when something breaks. You both see and change these. Don’t put passwords here.</p>' +
       l.map(function (n) {
         if (noteEd === n.id) return noteForm(n);
         return '<div class="st-row sh-note"><button type="button" class="sh-note-x" data-shnoteed="' + esc(n.id) + '"><b>' + esc(n.title || 'Note') + '</b><small>' + esc(String(n.text || '').split('\n')[0].slice(0, 80)) + '</small></button><button type="button" class="icon-btn sm" data-shnotedel="' + esc(n.id) + '" aria-label="Delete note"><i class="bi bi-trash3"></i></button></div>';
@@ -522,6 +525,75 @@
     var t = Fe.tools(), l = Array.isArray(t.homenotes) ? t.homenotes : (t.homenotes = []), id = f.dataset.shnoteform;
     if (id === 'new') l.push({ id: 'n' + Date.now().toString(36), title: title, text: text }); else l.forEach(function (x) { if (x.id === id) { x.title = title; x.text = text; } });
     Fe.saveTools(t); noteEd = null; drawNotes(); toast('<i class="bi bi-check2"></i> Saved');
+  });
+
+
+  /* ---------- Chat (cmd/chat.js): a button in the bar, a panel on the right (computer) or the whole screen (phone) ---------- */
+  function chatSec(sw) {
+    var T = window.HomeChat ? HomeChat.TTLS : [], cur = window.HomeChat ? HomeChat.ttl() : 0;
+    return '<button type="button" class="st-row st-btn" data-hcopen><span><i class="bi bi-chat-heart"></i> Open the chat<small class="st-rsub">Messages, photos and files – only your two phones can read them</small></span><i class="bi bi-chevron-right"></i></button>' +
+      '<div class="st-row sh-ttl"><span><i class="bi bi-stopwatch"></i> Messages disappear after<small class="st-rsub">For both of you – ' + esc(pname()) + ' sees when you change it</small></span></div><div class="sh-ttlb">' +
+      T.map(function (t) { return '<button type="button" class="lf-chip' + (cur === t[0] ? ' on' : '') + '" data-hcttl="' + t[0] + '" aria-pressed="' + (cur === t[0]) + '">' + esc(t[1]) + '</button>'; }).join('') + '</div>' +
+      (sw.notes ? '<p class="st-minor sh-pinh"><i class="bi bi-pin-angle"></i> Pinned</p><div id="shNotes">' + notesHtml() + '</div>' : '');
+  }
+  function partnerLook() { var lk = null; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'pme' && !r.del && r.f && r.f.look) lk = r.f.look; }); if (lk) return lk; var pp = (Fe.tools().people || []).filter(function (x) { return x && x.shp; })[0]; return pp && pp.look || null; }
+  function faceOf(side) {
+    var A = window.Avatar, lk = side === 'o' ? (A && A.look ? A.look() : null) : partnerLook();
+    if (!A || !A.figure || !lk) return '<span><i class="bi bi-person"></i></span>';
+    try { return '<span>' + A.figure(A.MOMENTS && A.MOMENTS.day || { k: 'day', bg: '#1d2533', sky: 'sun', i: 'sun', c: '#f2c94c' }, lk) + '</span>'; } catch (e) { return '<span><i class="bi bi-person"></i></span>'; }
+  }
+  var chatOn = false, chatBtn = null, chatOv = null;
+  function chatInit() {
+    var s = st(); if (!s || !window.HomeChat) return;
+    if (chatOn) return; chatOn = true;
+    HomeChat.init({ key: s.key, me: 'o', no: false,
+      name: function (side) { return side === 'o' ? (owner() || 'You') : pname(); },
+      face: faceOf,
+      notes: { on: function () { return !!what().notes; }, list: function () { return (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).map(function (n) { return { id: n.id, title: n.title || '', text: n.text || '' }; }); },
+        add: function (title, text) { var t = Fe.tools(); t.homenotes = (Array.isArray(t.homenotes) ? t.homenotes : []).concat([{ id: 'n' + Date.now().toString(36), title: title, text: text || '' }]); Fe.saveTools(t); drawNotes(); },
+        remove: function (id) { var t = Fe.tools(); t.homenotes = (Array.isArray(t.homenotes) ? t.homenotes : []).filter(function (x) { return x.id !== id; }); Fe.saveTools(t); drawNotes(); } },
+      onChange: chatBadge });
+    chatButton();
+  }
+  function chatButton() {
+    if (chatBtn && document.body.contains(chatBtn)) return;
+    var host = document.querySelector('.mb-acts') || document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'); if (!host) return;
+    chatBtn = document.createElement('button'); chatBtn.type = 'button'; chatBtn.className = 'icon-btn hc-barbtn'; chatBtn.setAttribute('data-hcopen', '');
+    chatBtn.setAttribute('aria-label', 'Chat with ' + pname()); chatBtn.title = 'Chat with ' + pname();
+    chatBtn.innerHTML = '<i class="bi bi-chat-heart"></i><b class="hc-badge" hidden></b>';
+    host.insertBefore(chatBtn, host.querySelector('#quickAdd') || host.querySelector('[data-search]') || host.firstChild);
+    chatBadge();
+  }
+  function chatBadge() {
+    if (!chatBtn || !window.HomeChat) return; var n = HomeChat.unread(), b = chatBtn.querySelector('.hc-badge');
+    b.hidden = !n || !!chatOv; b.textContent = n > 9 ? '9+' : String(n);
+    chatBtn.setAttribute('aria-label', 'Chat with ' + pname() + (n ? ' – ' + n + ' new' : ''));
+  }
+  function openChat() {
+    if (!window.HomeChat || !st()) return; chatInit();
+    if (chatOv) return;
+    chatOv = document.createElement('div'); chatOv.className = 'hc-ov'; chatOv.innerHTML = '<div class="hc-ovbox"></div>'; document.body.appendChild(chatOv);
+    document.documentElement.classList.add('hc-open');
+    requestAnimationFrame(function () { chatOv.classList.add('in'); });
+    HomeChat.mount(chatOv.firstChild, { full: true, onClose: closeChat }); fitOv(); chatBadge();
+    var ta = chatOv.querySelector('textarea'); if (ta && matchMedia('(hover: hover) and (pointer: fine)').matches) ta.focus();
+  }
+  function closeChat() { if (!chatOv) return; var o = chatOv; chatOv = null; if (HomeChat.isOpen()) HomeChat.unmount(); document.documentElement.classList.remove('hc-open'); o.classList.remove('in'); setTimeout(function () { o.remove(); }, 220); chatBadge(); }
+  /* phone keyboard: the chat fills what is left of the screen */
+  function fitOv() { if (!chatOv) return; var vv = window.visualViewport; if (!vv || innerWidth >= 900) { chatOv.style.top = ''; chatOv.style.height = ''; return; } chatOv.style.top = vv.offsetTop + 'px'; chatOv.style.height = vv.height + 'px'; }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fitOv); visualViewport.addEventListener('scroll', fitOv); }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hcopen]'); if (b) { e.preventDefault(); var stp = document.getElementById('settings'); if (stp && !stp.hidden && b.closest('#settings')) { var cl = document.getElementById('stClose'); if (cl) cl.click(); } openChat(); return; }
+    var t = e.target.closest('[data-hcttl]'); if (t && window.HomeChat) { HomeChat.setTtl(+t.dataset.hcttl); t.parentNode.querySelectorAll('[data-hcttl]').forEach(function (x) { x.classList.toggle('on', x === t); x.setAttribute('aria-pressed', String(x === t)); }); }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && chatOv && !chatOv.querySelector('.hc-menu')) closeChat(); });
+  if (/[?&#]chat\b/.test(location.search + location.hash)) V.onUnlock(function () { setTimeout(function () { chatInit(); openChat(); }, 600); });
+  V.onUnlock(function () { setTimeout(chatInit, 1200); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#chat') { history.replaceState(null, '', location.pathname + location.search); openChat(); } });
+  /* At a glance: new messages */
+  (window.BriefExtra = window.BriefExtra || []).push(function (add) {
+    if (!st() || !window.HomeChat) return; var n = HomeChat.unread(), m = HomeChat.last(); if (!n || !m) return;
+    add(62, 'chat-heart', '#e5484d', n === 1 ? pname() + ': ' + (m.text || (m.files.length ? 'sent a file' : '')).slice(0, 80) : n + ' new messages from ' + pname(), 'Chat', '#chat', { act: { id: 'hc:' + m.id, label: 'Open' }, run: openChat });
   });
   /* their app, read-only, in a phone-sized frame */
   function previewApp() {
@@ -592,5 +664,7 @@
     toast('<i class="bi bi-check2"></i> ' + (i.checked ? 'Shared' : 'No longer shared'));
   });
   window.addEventListener('st:page', function (e) { if (e.detail === 'sharesp') setTimeout(draw, 0); });
+  /* Admin → Shared home */
+  window.ShareSpace.drawSettings = function () { draw(); };
   V.onUnlock(function () { setTimeout(function () { paintSum(); marks(); calRow(); }, 400); });
 })();

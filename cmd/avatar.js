@@ -44,7 +44,8 @@
     evening: { k: 'evening', bg: '#22182a', sky: 'moon', i: 'lamp', c: '#f6c85f' }, night: { k: 'night', bg: '#0f1020', sky: 'moon', i: 'moon-stars', c: '#9ea3e6' },
     rain: { k: 'rain', bg: '#14202b', sky: 'cloud', i: 'umbrella', c: '#3b9de0' }, gym: { k: 'gym', bg: '#13241b', sky: 'sun', i: 'activity', c: '#22b35e' },
     trip: { k: 'trip', bg: '#161e30', sky: 'sun', i: 'airplane', c: '#3987e5' }, bday: { k: 'bday', bg: '#2a1622', sky: 'sun', i: 'gift', c: '#d55181' },
-    win: { k: 'win', bg: '#1f1a10', sky: 'sun', i: 'trophy', c: '#f2c94c' }
+    win: { k: 'win', bg: '#1f1a10', sky: 'sun', i: 'trophy', c: '#f2c94c' },
+    couple: { k: 'couple', bg: '#2a1622', sky: 'sun', i: 'heart', c: '#e5484d', couple: 1 }
   };
   /* time-of-day backgrounds also follow light mode */
   function shade(hex, f) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255; var m = function (c) { return Math.max(0, Math.min(255, Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f))); }; return '#' + [m(r), m(g), m(b)].map(function (c) { return c.toString(16).padStart(2, '0'); }).join(''); }
@@ -142,9 +143,16 @@
     if (m.k === 'evening') { arms = arm('M123 96c8 6 12 12 12 18') + hand(135, 116); prop = '<path d="M129 102h14v9a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5z" fill="#c98500"/><path d="M143 105h2a3 3 0 0 1 0 6h-2" fill="none" stroke="#c98500" stroke-width="2"/><path class="steam" d="M133 98c-1-3 1-4 0-7M138 98c-1-3 1-4 0-7" stroke="#f4efe6" stroke-width="1.5" fill="none" opacity=".7"/>'; lamp = '<path d="M22 54l10-16h14l10 16z" fill="#f6c85f"/><line x1="39" y1="54" x2="39" y2="160" stroke="#666" stroke-width="2.5"/><circle cx="39" cy="58" r="30" fill="#f6c85f" opacity=".12"/>'; }
     if (m.k === 'bday') { armsL = arm('M79 96c-4 10 0 18 10 20') + hand(89, 116); arms = arm('M123 96c4 10 0 18-10 20') + hand(113, 116); front = '<rect x="88" y="104" width="26" height="20" rx="2.5" fill="#d55181"/><rect x="99" y="104" width="4" height="20" fill="#f2c94c"/><path d="M95 102q6-8 6 2q0-10 6-2" stroke="#f2c94c" stroke-width="2.4" fill="none"/>'; }
     if (m.k === 'win') { armsL = arm('M79 96c-8-8-10-18-8-28') + hand(71, 66); arms = arm('M123 96c8-8 10-18 8-28') + hand(131, 66); front = '<g>' + ['#e8743b', '#f2c94c', '#14b8a6', '#d55181', '#3987e5'].map(function (c, i) { return '<rect x="' + (52 + i * 22) + '" y="' + (26 + (i % 2) * 14) + '" width="6" height="3" fill="' + c + '" transform="rotate(' + (i * 37) + ' ' + (55 + i * 22) + ' 30)"/>'; }).join('') + '</g>'; }
+    /* together (Avatar.couple): R = this one stands on the left and reaches right, L = the other way */
+    if (m.k === 'holdR') arms = arm('M123 96c9 8 16 18 22 28') + hand(145, 124);
+    if (m.k === 'holdL') armsL = arm('M79 96c-9 8-16 18-22 28') + hand(57, 124);
+    if (m.k === 'hi5R') arms = arm('M123 96c8-6 14-18 18-34') + hand(141, 62);
+    if (m.k === 'hi5L') armsL = arm('M79 96c-8-6-14-18-18-34') + hand(61, 62);
+    if (m.k === 'hugR') arms = arm('M123 96c10 2 18 6 22 14') + hand(145, 110);
+    if (m.k === 'hugL') armsL = arm('M79 96c-10 2-18 6-22 14') + hand(57, 110);
     if (m.k === 'night') { arms = arm('M123 96c8 10 9 22 6 30') + hand(129, 128); prop = '<text class="z" x="122" y="40" font-size="14" font-weight="800" fill="#9a9ca5">z</text><text class="z" x="132" y="28" font-size="10" font-weight="800" fill="#9a9ca5">z</text>'; }
     /* head */
-    var hx = 101, sleep = m.k === 'night';
+    var hx = 101, sleep = m.k === 'night' || !!m.closed;
     var face = '<path d="M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z" fill="' + S + '"/><ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/>';
     var hairBack = L.hair === 'long' ? '<path d="M80 60c-2-16 8-24 21-24s23 8 21 24v26c-4 4-8 0-8-6V62H88v18c0 6-4 10-8 6z" fill="' + H + '"/>' : '';
     var hairTop = {
@@ -235,6 +243,9 @@
       var bd = window.HomeLife.bday(p); if (!bd || bd.n > 2) return;
       add('bday', bd.n === 0 ? L(p.name + '’s birthday today!', p.name + ' har bursdag i dag!') : L(p.name + '’s birthday ' + (bd.n === 1 ? 'tomorrow' : 'in 2 days') + (p.gifts ? ' – idea: ' + String(p.gifts).split('\n')[0] : ''), p.name + ' har bursdag ' + (bd.n === 1 ? 'i morgen' : 'om 2 dager') + (p.gifts ? ' – idé: ' + String(p.gifts).split('\n')[0] : '')), bd.n === 0 ? 2.5 : 6);
     });
+    /* the two of you (when you share your home and they made an avatar) – share.js tells who and which picture */
+    var ci = window.CoupleInfo ? (function () { try { return window.CoupleInfo(); } catch (e) { return null; } })() : null;
+    if (ci && ci.look) add('couple', ci.say, ci.w || 7);
     /* the time of day, with the top things from At a glance */
     var mode = sayMode(), items = mode === 'fun' ? [] : (window.BriefItems || []).filter(function (x) { return !x.fold && x.title && (mode === 'all' || !isMoney(x)); }).slice(0, 3);
     var tr = function (s) { return window.I18N && window.I18N.t ? window.I18N.t(s) : s; };
@@ -259,7 +270,10 @@
     var main = withM[0], pick = l[idx % l.length] || main, m = pick.m || main.m, hr = new Date().getHours();
     if ((hr >= 19 || hr < 6) && m.sky === 'sun') m = Object.assign({}, m, { sky: 'moon', bg: '#121426' });       /* the sky follows the clock */
     if (!box) { box = document.createElement('div'); box.id = 'avHome'; box.className = 'av-home'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-av'); }
-    var html = '<button type="button" class="av-fig" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + figure(Object.assign({}, m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"') + '</button>' +
+    var ci2 = m.couple && window.CoupleInfo ? window.CoupleInfo() : null;
+    var pic = null; if (ci2 && ci2.look) try { pic = couple(ci2.kind, look(), ci2.look, { label: ci2.say }); } catch (e) { pic = null; ci2 = null; }
+    pic = pic || figure(Object.assign({}, m.couple ? MOMENTS.day : m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"');
+    var html = '<button type="button" class="av-fig' + (ci2 && ci2.look ? ' av-two' : '') + '" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + pic + '</button>' +
       '<p class="av-say" role="status">' + esc(pick.say) + (l.length > 1 ? ' <span class="av-dots">' + l.map(function (_, i) { return '<i' + (i === idx % l.length ? ' class="on"' : '') + '></i>'; }).join('') + '</span>' : '') + '</p>';
     if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
     badge(main.m);
@@ -386,5 +400,38 @@
     });
     box = dg && dg.el.querySelector('.ave-host'); if (box) box.innerHTML = html();
   }
-  window.Avatar = { figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS };
+
+  /* ---------- the two of you (shared home): holding hands, a high five, a hug or a kiss ----------
+     a, b = the two looks (a stands on the left). Two figures side by side in one picture; tap the picture to
+     try the next one. kind: hold | hi5 | hug | kiss */
+  var COUPLE = { hold: { gap: 80, a: 'holdR', b: 'holdL', bg: '#1d2533' }, hi5: { gap: 70, a: 'hi5R', b: 'hi5L', bg: '#1f1a10' }, hug: { gap: 58, a: 'hugR', b: 'hugL', bg: '#2a1622' }, kiss: { gap: 70, a: 'plain', b: 'plain', bg: '#2a1622', tilt: 6, closed: true } };
+  function couple(kind, a, b, opt) {
+    opt = opt || {}; a = Object.assign({}, START, a || {}); b = Object.assign({}, START, b || {}); var c = COUPLE[kind] || COUPLE.hold, W = 200 + c.gap, light = document.documentElement.getAttribute('data-theme') === 'light' || opt.light;
+    var bg = light ? shade(c.bg, .82) : c.bg, cx = W / 2, uid = 'cp-' + kind + (opt.uid || '');
+    var one = function (look, k, x, rot) {
+      var f = figure({ k: k, plain: true, bg: '#000', sky: 'none', closed: c.closed, attrs: ' x="' + x + '" y="0" width="200" height="200"' }, look || look0());
+      return rot ? '<g transform="rotate(' + rot + ' ' + (x + 101) + ' 165)">' + f + '</g>' : f;
+    };
+    var heart = function (x, y, s, cl) { return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path class="' + cl + '" d="M0 4C0-2-8-3-8 3C-8 8 0 12 0 14C0 12 8 8 8 3C8-3 0-2 0 4Z" fill="#e5484d"/></g>'; };
+    var fx = kind === 'kiss' ? heart(cx, 12, 1.2, 'cp-up') + heart(cx - 18, 20, .65, 'cp-up cp-d1') + heart(cx + 17, 24, .55, 'cp-up cp-d2')
+      : kind === 'hug' ? heart(cx, 22, 1, 'cp-beat')
+      : kind === 'hi5' ? '<g class="cp-pop" transform="translate(' + cx + ' 52)">' + [0, 45, 90, 135, 180, 225, 270, 315].map(function (r) { return '<path d="M0-10v-7" transform="rotate(' + r + ')" stroke="#f2c94c" stroke-width="2.4" stroke-linecap="round"/>'; }).join('') + '</g>'
+      : heart(cx, 104, .55, 'cp-beat');
+    var css = '<style>.' + uid + ' .cp-up{animation:cpUp 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-d1{animation-delay:.5s}.' + uid + ' .cp-d2{animation-delay:1.1s}' +
+      '.' + uid + ' .cp-beat{animation:cpBeat 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-pop{animation:cpPop 1.4s ease-out infinite}' +
+      '@keyframes cpUp{0%{transform:translateY(6px);opacity:0}30%{opacity:1}100%{transform:translateY(-10px);opacity:0}}@keyframes cpBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(.96)}45%{transform:scale(1.1)}}' +
+      '@keyframes cpPop{0%{opacity:0;transform:translate(' + cx + 'px,52px) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translate(' + cx + 'px,52px) scale(1.25)}}' +
+      '@media (prefers-reduced-motion:reduce){.' + uid + ' *{animation:none!important}}</style>';
+    var glow = '<defs><radialGradient id="' + uid + 'g" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="' + bg + '" stop-opacity=".95"/><stop offset=".65" stop-color="' + bg + '" stop-opacity=".5"/><stop offset="1" stop-color="' + bg + '" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="' + cx + '" cy="100" rx="' + (W / 2) + '" ry="100" fill="url(#' + uid + 'g)"/><ellipse cx="' + cx + '" cy="161" rx="' + (W / 2 - 20) + '" ry="10" fill="rgba(34,179,94,.16)"/>';
+    return '<svg viewBox="0 0 ' + W + ' 200" class="av-couple ' + uid + '" role="img" aria-label="' + esc(opt.label || '') + '">' + css + glow +
+      one(a, c.a, 0, c.tilt || 0) + one(b, c.b, c.gap, -(c.tilt || 0)) + fx + '</svg>';
+  }
+  function look0() { return look(); }
+  /* which picture fits today: a high five when a chore was done, a hug on your day together or a birthday, a kiss in the evening */
+  function coupleKind(ctx) {
+    ctx = ctx || {}; var h = new Date().getHours();
+    if (ctx.hi5) return 'hi5'; if (ctx.hug) return 'hug'; if (h >= 20 || h < 1) return 'kiss'; return 'hold';
+  }
+  window.Avatar = { couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS };
 })();

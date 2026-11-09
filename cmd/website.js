@@ -606,7 +606,7 @@
       setTimeout(function () { window.dispatchEvent(new CustomEvent('admin:goto', { detail: k })); }, 60);
       return;
     }
-    location.href = '/cmd/admin/' + (k === 'write' ? '#write=new-articles' : k === 'overview' || k === 'visitors' ? '#overview' : k === 'system' || k === 'report' ? '#' + k : '#ws=' + k);
+    location.href = '/cmd/admin/' + (k === 'write' ? '#write=new-articles' : k === 'overview' || k === 'visitors' ? '#overview' : k === 'system' || k === 'report' || k === 'shared' ? '#' + k : '#ws=' + k);
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-goadmin]'); if (!b) return;

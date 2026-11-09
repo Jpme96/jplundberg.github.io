@@ -61,6 +61,22 @@
       .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('HTTP ' + r.status)); e.status = r.status; e.body = j; throw e; } return j; }); },
         function (e) { clearTimeout(tm); throw e; });
   }
+  /* live: a tiny check every few seconds while the app is on screen (1.5 s while the chat is open).
+     It only reads version numbers from the server's edge cache, so it is cheap; whoever listens fetches
+     the real data when a number moved. Stops while the app is in the background. */
+  var liveSubs = [], liveT = null, liveFast = 0, liveBusy = false, liveOff = 0;
+  function liveTick() {
+    clearTimeout(liveT); liveT = null; if (!liveSubs.length || document.hidden || liveBusy) return;
+    liveBusy = true;
+    api('live').then(function (j) { liveOff = 0; liveSubs.forEach(function (f) { try { f(j); } catch (e) {} }); }, function (e) { liveOff = e && (e.status === 403 || e.status === 404) ? liveOff + 1 : liveOff; })
+      .then(function () { liveBusy = false; if (!document.hidden) liveT = setTimeout(liveTick, liveOff > 3 ? 60000 : liveFast > 0 ? 1500 : 4000); });
+  }
+  function live(fn) {
+    liveSubs.push(fn);
+    if (liveSubs.length === 1) { document.addEventListener('visibilitychange', function () { if (!document.hidden) { liveOff = 0; liveTick(); } }); setTimeout(liveTick, 1500); }
+  }
+  function liveSpeed(fast) { liveFast = Math.max(0, liveFast + (fast ? 1 : -1)); if (fast) liveTick(); }
+  function livePost(b) { return api('live', { method: 'POST', body: b }).catch(function () {}); }
   /* what may ever be shared – kind → the fields it may carry. Anything else is dropped before it is encrypted. */
   var ALLOW = {
     info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook', 'perm', 'onotify', 'pend'],
@@ -115,5 +131,5 @@
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
-  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();

@@ -255,18 +255,20 @@
           : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
-    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage', 'clean'] };
+    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage', 'clean'], shared: [] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
-    var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')]].map(function (t) {
+    var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')], ['shared', 'people', L('Shared home', 'Felles hjem')]].map(function (t) {
       return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
     var grid = (TAB === 'website' ? '<p class="cr-sec"><i class="bi bi-activity"></i> ' + L('Site health', 'Nettstedets helse') + '</p>' : '') + '<div class="cr-grid' + (TAB === 'website' ? ' cr-eq' : '') + '">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
     var top = TAB === 'overview' ? html : html.replace(/<div class="cr-lights">[\s\S]*$/, '');
-    if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crDiag" hidden></div><div id="crCards"></div>';
+    if (!document.getElementById('crTop')) box.innerHTML = '<div id="crTop"></div><div id="crWs" hidden></div><div id="crDiag" hidden></div><div id="crShare" class="cr-share" hidden><div id="crShareBox"></div></div><div id="crCards"></div>';
     var keep = document.activeElement && document.activeElement.closest && document.activeElement.closest('#crCards form') ? { sel: document.activeElement.closest('form').className, v: document.activeElement.value } : null;
     document.getElementById('crTop').innerHTML = top + tabbar;
     document.getElementById('crCards').innerHTML = grid;
     var wsEl = document.getElementById('crWs'); wsEl.hidden = TAB !== 'website'; if (TAB === 'website') mountWs();
     box.classList.toggle('cr-sys', TAB === 'system');     /* System: Diagnostics' cards and the System cards share one grid (gridpack.js) */
+    /* Shared home: the settings that used to be in Settings → Shared space (share.js draws them here) */
+    var shEl = document.getElementById('crShare'); shEl.hidden = TAB !== 'shared'; document.getElementById('crCards').hidden = TAB === 'shared'; if (TAB === 'shared' && window.ShareSpace && ShareSpace.drawSettings && !shEl._on) { shEl._on = 1; ShareSpace.drawSettings(); } if (TAB !== 'shared') shEl._on = 0;
     var dgEl = document.getElementById('crDiag'); dgEl.hidden = TAB !== 'system'; if (TAB === 'system' && window.DiagUI) window.DiagUI.mount(dgEl);
     if (keep) { var f = box.querySelector('#crCards form.' + keep.sel.split(' ').join('.') + ' input'); if (f) { f.value = keep.v; f.focus(); } }
     fillAsync();
@@ -305,6 +307,7 @@
   var wsHash = location.hash.match(/^#ws=([a-z]+)$/), startEd = null;
   if (wsHash) { TAB = 'website'; startEd = wsHash[1]; window.history.replaceState(null, '', location.pathname); }
   else if (location.hash === '#overview') { TAB = 'overview'; window.history.replaceState(null, '', location.pathname); }
+  else if (location.hash === '#shared') { TAB = 'shared'; window.history.replaceState(null, '', location.pathname); }
   else if (/^#(system|report)$/.test(location.hash)) { TAB = 'system'; var wantReport = location.hash === '#report'; window.history.replaceState(null, '', location.pathname); if (wantReport) window.Vault.onUnlock(function () { setTimeout(function () { if (window.DiagUI) window.DiagUI.report(''); }, 900); }); }
   var ED = [['sections', 'layout-text-sidebar', L('Front page', 'Forside')], ['announce', 'megaphone', L('Announcement', 'Kunngjøring')], ['featured', 'star', L('Featured', 'Fremhevet')], ['texts', 'fonts', L('Texts', 'Tekster')],
     ['cv', 'file-earmark-person', L('CV & experience', 'CV og erfaring')], ['courses', 'mortarboard', L('Courses', 'Kurs')], ['socials', 'share', L('Socials', 'Sosiale medier')], ['progress', 'bullseye', L('Project progress', 'Prosjektfremdrift')], ['content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter')]];
@@ -414,6 +417,7 @@
     var k = e.detail;
     if (k === 'write') { if (window.ArticleWriter) window.ArticleWriter.open({ col: 'articles', isNew: true }); return; }
     if (k === 'system' || k === 'report') { TAB = 'system'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); if (k === 'report' && window.DiagUI) setTimeout(function () { window.DiagUI.report(''); }, 200); return; }
+    if (k === 'shared') { TAB = 'shared'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (k === 'overview' || k === 'visitors') { TAB = 'overview'; try { sessionStorage.setItem('adTab', TAB); } catch (x) {} draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     window.CrWorkspace.open(ED.some(function (x) { return x[0] === k; }) ? k : 'sections');
   });

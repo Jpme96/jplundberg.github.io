@@ -5206,3 +5206,30 @@ button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; fo
 .pa-bulk .pill-btn { background: transparent; color: var(--text, inherit); border: 1px solid var(--line); border-radius: 999px; min-height: 38px; height: 38px; padding: 0 16px; font-weight: 500; }
 .pa-bulk .pill-btn .bi { color: var(--accent); }
 .pa-bulk .pill-btn:hover { background: rgba(var(--ink-rgb), .05); }
+
+/* Chat (chat.js + share.js): the bar button, the panel (computer) / full screen (phone) */
+.hc-barbtn { position: relative; }
+.hc-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #e5484d; color: #fff; font: 700 11px/18px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 2px var(--bg-solid, #111); }
+.hc-badge[hidden] { display: none; }
+.hc-ov { position: fixed; inset: 0; z-index: 950; display: flex; justify-content: flex-end; background: rgba(0, 0, 0, 0); transition: background .2s; }
+.hc-ov.in { background: rgba(0, 0, 0, .35); }
+.hc-ovbox { width: 100%; height: 100%; transform: translateY(24px); opacity: 0; transition: transform .22s var(--ease-out, ease), opacity .18s; }
+.hc-ov.in .hc-ovbox { transform: none; opacity: 1; }
+.hc-ovbox .hc { --hc-bg: var(--bg-solid, #111); --hc-acc: var(--accent); padding-top: env(safe-area-inset-top); --hc-safe: env(safe-area-inset-bottom); }
+@media (min-width: 900px) {
+  .hc-ovbox { width: 420px; border-left: 1px solid var(--line); box-shadow: -12px 0 40px rgba(0, 0, 0, .3); transform: translateX(40px); }
+  .hc-ovbox .hc { padding-top: 0; }
+}
+html.hc-open { overflow: hidden; }
+.sh-ttlb { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; }
+.sh-ttlb .lf-chip.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.sh-pinh { margin: 10px 14px 4px; }
+/* Admin → Shared home: the shared space settings, at reading width */
+.cr-share { max-width: 760px; margin: 8px 0 40px; }
+.cr-share[hidden] { display: none; }
+/* four Admin tabs on a phone: icon over a short name, all fit */
+@media (max-width: 560px) {
+  .cr-tabs { gap: 2px; }
+  .cr-tabs button { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 2px; padding: 7px 2px; font-size: 12px; white-space: nowrap; }
+  .cr-tabs button .bi { font-size: 16px; }
+}

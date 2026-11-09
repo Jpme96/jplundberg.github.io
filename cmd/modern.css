@@ -380,3 +380,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .mb-acts > #quickAdd, .mb-acts > .qa-fab { order: -1; }
 .mb-acts > .sn-hidebtn { order: 9; }
 .mb-acts > a.icon-btn[href="/"] { order: 10; }
+/* the two of you (Avatar.couple) is wider than one figure */
+.mhero.has-av .av-fig.av-two { width: 270px; }
+@media (max-width: 899px) { .mhero.has-av .av-fig.av-two { width: 168px; } }
+#avHome .av-fig.av-two svg { animation: none; }

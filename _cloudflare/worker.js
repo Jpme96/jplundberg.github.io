@@ -83,7 +83,7 @@ async function cronBeat(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -94,7 +94,8 @@ async function route(request, env) {
 
     /* the person you share your home with (Settings → Shared space) only ever reaches the shared box –
        never your own vault or anything else */
-    const shareCfg = env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
+    /* the live check runs every few seconds, so it reads the sharing setup from the edge cache (20 s) instead of KV */
+    const shareCfg = path === '/cmd/api/live' ? await cfgCached(request, env) : env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
     const em = String(check.email || '').toLowerCase();
     /* once sharing has been set up, the owner's login is known: anyone else (also someone you stopped sharing
        with) gets nothing, even if Cloudflare Access still lets them in */
@@ -106,11 +107,17 @@ async function route(request, env) {
       if (path === '/cmd/api/shared') return sharedApi(request, env, 'p');
       if (path === '/cmd/api/sfile') return sfileApi(request, url, env, true);
       if (path === '/cmd/api/pvault') return pvaultApi(request, url, env);
+      if (path === '/cmd/api/chat') return chatApi(request, env, 'p');
+      if (path === '/cmd/api/cfile') return cfileApi(request, url, env);
+      if (path === '/cmd/api/live') return liveApi(request, 'p');
       if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
       return json({ error: 'only the shared space is open to you', partner: true }, 403);
     }
     if (path === '/cmd/api/shared') return sharedApi(request, env, 'o');
     if (path === '/cmd/api/sfile') return sfileApi(request, url, env, false);
+    if (path === '/cmd/api/chat') return chatApi(request, env, 'o');
+    if (path === '/cmd/api/cfile') return cfileApi(request, url, env);
+    if (path === '/cmd/api/live') return liveApi(request, 'o');
     if (path === '/cmd/api/pvault') return json({ error: 'this belongs to the person you share with' }, 403);   /* never the owner */
     if (path === '/cmd/api/share') { const rq = new Request(request, { headers: new Headers(request.headers), duplex: 'half' }); rq.headers.set('X-Share-Me', em); return shareApi(rq, url, env, false, shareCfg); }
 
@@ -168,7 +175,7 @@ async function shareApi(request, url, env, partner, cfg) {
   if (m === 'POST' && url.searchParams.has('pause')) {            /* pause / resume: nothing is deleted */
     if (!cfg || !cfg.partner) return json({ error: 'not sharing' }, 400);
     const b = await request.json().catch(() => ({}));
-    await env.VAULT.put(SHARE_CFG, JSON.stringify(Object.assign({}, cfg, { paused: !!b.paused })));
+    await env.VAULT.put(SHARE_CFG, JSON.stringify(Object.assign({}, cfg, { paused: !!b.paused }))); await liveDel(request, 'cfg');
     return json({ ok: true, paused: !!b.paused });
   }
   if (m === 'PUT') {
@@ -177,6 +184,7 @@ async function shareApi(request, url, env, partner, cfg) {
     const prev = cfg && cfg.partner, owner = (cfg && cfg.owner) || me;
     if (!owner || owner === email) return json({ error: 'that is your own login' }, 400);
     await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString(), paused: !!(cfg && cfg.partner === email && cfg.paused) }));
+    await liveDel(request, 'cfg');
     if (prev && prev !== email) await Promise.all([env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);   /* someone new: the old lock and their own space go */
     return json({ ok: true });
   }
@@ -184,7 +192,8 @@ async function shareApi(request, url, env, partner, cfg) {
     await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
     await Promise.all([env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);
     let c2; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX + 'p', cursor: c2 }); for (const k of l.keys) { const r = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (r && r.role === 'p') await env.VAULT.delete(k.name); } c2 = l.list_complete ? null : l.cursor; } while (c2);
-    let cur; do { const l = await env.VAULT.list({ prefix: SFILE, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur);
+    for (const pre of [SFILE, CFILE]) { let cur; do { const l = await env.VAULT.list({ prefix: pre, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur); }
+    await env.VAULT.delete(CHAT); await liveDel(request, 'cfg'); await liveSet(request, 'box', Date.now()); await liveSet(request, 'chat', Date.now());
     return json({ ok: true });
   }
   return json({ error: 'method' }, 405);
@@ -211,7 +220,7 @@ async function sharedApi(request, env, by) {
   }
   /* deleted records are remembered for 90 days, so a phone that was away long can't bring them back */
   for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
-  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); }
+  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); await liveSet(request, 'box', cur.rev); }
   return json(cur);
 }
 
@@ -263,6 +272,95 @@ async function sfileApi(request, url, env, partner) {
     return json({ ok: true, id, size: len });
   }
   if (request.method === 'DELETE') { await env.VAULT.delete(SFILE + id); return json({ ok: true }); }
+  return json({ error: 'method not allowed' }, 405);
+}
+
+/* ---------- live: what changed, who is typing – kept in the edge cache, not KV ----------
+   KV on the free plan allows 1 000 writes a day, so the things that change every few seconds (someone typing,
+   "seen", the newest version numbers) live in this data centre's cache instead. It costs nothing, and both
+   phones in the same country normally reach the same data centre. If they don't, the apps fall back to
+   their normal checks (every 30–45 s), so nothing is lost – it just isn't instant. */
+const LIVE_TTL = { box: 86400, chat: 86400, typo: 8, typp: 8, seeno: 86400, seenp: 86400, cfg: 20 };
+function liveKey(request, k) { return new Request(new URL('/cmd/api/__live/' + k, request.url).toString()); }
+async function liveSet(request, k, v) {
+  const c = globalThis.caches && caches.default; if (!c) return;
+  try { await c.put(liveKey(request, k), new Response(JSON.stringify(v), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + (LIVE_TTL[k] || 60) } })); } catch (e) {}
+}
+async function liveGet(request, k) {
+  const c = globalThis.caches && caches.default; if (!c) return null;
+  try { const r = await c.match(liveKey(request, k)); return r ? await r.json() : null; } catch (e) { return null; }
+}
+async function liveDel(request, k) { const c = globalThis.caches && caches.default; if (c) try { await c.delete(liveKey(request, k)); } catch (e) {} }
+async function cfgCached(request, env) {
+  const c = await liveGet(request, 'cfg'); if (c && typeof c === 'object') return c.v;
+  const v = env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
+  await liveSet(request, 'cfg', { v }); return v;
+}
+async function liveApi(request, role) {
+  if (request.method === 'POST') {
+    const b = await request.json().catch(() => ({}));
+    if (b.typing) await liveSet(request, 'typ' + role, Date.now());
+    if (b.stop) await liveDel(request, 'typ' + role);
+    if (+b.seen > 0) await liveSet(request, 'seen' + role, Math.min(+b.seen, Date.now() + 60e3));
+    return json({ ok: true });
+  }
+  if (request.method !== 'GET') return json({ error: 'method' }, 405);
+  const ks = ['box', 'chat', 'typo', 'typp', 'seeno', 'seenp'], v = await Promise.all(ks.map(k => liveGet(request, k)));
+  return json({ now: Date.now(), box: v[0], chat: v[1], typing: { o: v[2], p: v[3] }, seen: { o: v[4], p: v[5] } });
+}
+
+/* ---------- chat: messages between the two of you ----------
+   chat { rev, ttl, msgs: { <id>: { t, by: 'o'|'p', iv, ct, fl: [file ids] } | { t, by, del: 1 } } }
+   Each message is encrypted on the phone with the shared key – the Worker only stores and prunes them.
+   ttl = how long messages are kept (0 = forever); older ones and their files are removed on the next write.
+   Pictures and files are stored encrypted under cfile:<id>; either of you may add or remove them. */
+const CHAT = 'chat', CFILE = 'cfile:', CHAT_TTLS = [0, 864e5, 7 * 864e5, 30 * 864e5];
+async function chatApi(request, env, by) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  const raw = await env.VAULT.get(CHAT), cur = raw ? JSON.parse(raw) : { rev: 0, ttl: 0, msgs: {} }, now = Date.now();
+  const expired = id => { const m = cur.msgs[id]; return cur.ttl && !m.del && now - m.t > cur.ttl; };
+  if (request.method === 'GET') { const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: {} }; for (const id of Object.keys(cur.msgs)) if (!expired(id)) out.msgs[id] = cur.msgs[id]; return json(out); }
+  if (request.method !== 'PUT') return json({ error: 'method' }, 405);
+  const body = await request.text();
+  if (body.length > 1024 * 1024) return json({ error: 'too large' }, 413);
+  let b; try { b = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
+  let n = 0; const gone = [];
+  if (b && b.ttl != null && CHAT_TTLS.includes(+b.ttl) && +b.ttl !== (cur.ttl || 0)) { cur.ttl = +b.ttl; cur.ttlAt = now; n++; }
+  const msgs = b && b.msgs && typeof b.msgs === 'object' ? b.msgs : {};
+  for (const id of Object.keys(msgs).slice(0, 50)) {
+    const m = msgs[id]; if (!RID.test(id) || !m || cur.msgs[id] || typeof m.iv !== 'string' || typeof m.ct !== 'string' || m.ct.length > 40000) continue;   /* a message is never changed, only removed */
+    const fl = (Array.isArray(m.fl) ? m.fl : []).filter(x => RID.test(String(x))).slice(0, 10);
+    cur.msgs[id] = { t: Math.min(+m.t || now, now + 60e3), by, iv: m.iv, ct: m.ct, fl }; n++;
+  }
+  for (const id of (Array.isArray(b && b.del) ? b.del : []).slice(0, 200)) {
+    const m = cur.msgs[id]; if (!m || m.del || m.by !== by) continue;            /* you can only remove your own */
+    (m.fl || []).forEach(f => gone.push(f)); cur.msgs[id] = { t: m.t, by, del: 1, dt: now }; n++;
+  }
+  /* keep: within the time limit, at most 5 000 messages; removed ones are remembered for 30 days */
+  for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id];
+    if (m.del ? now - (m.dt || m.t) > 30 * 864e5 : expired(id)) { (m.fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; } }
+  const ids = Object.keys(cur.msgs).filter(id => !cur.msgs[id].del).sort((a, c) => cur.msgs[a].t - cur.msgs[c].t);
+  for (const id of ids.slice(0, Math.max(0, ids.length - 5000))) { (cur.msgs[id].fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; }
+  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(CHAT, JSON.stringify(cur)); await liveSet(request, 'chat', cur.rev); }
+  if (gone.length) await Promise.all(gone.map(f => env.VAULT.delete(CFILE + f)));
+  return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
+}
+async function cfileApi(request, url, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  const id = String(url.searchParams.get('id') || '');
+  if (!RID.test(id)) return json({ error: 'bad id' }, 400);
+  if (request.method === 'GET') {
+    const v = await env.VAULT.get(CFILE + id, { type: 'stream' });
+    return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'private, max-age=31536000, immutable', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
+  }
+  if (request.method === 'PUT') {
+    const len = parseInt(request.headers.get('content-length') || '0', 10);
+    if (!len || len < 30) return json({ error: 'empty' }, 400);
+    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
+    await env.VAULT.put(CFILE + id, request.body, { metadata: { s: len, at: Date.now() } });
+    return json({ ok: true, id, size: len });
+  }
+  if (request.method === 'DELETE') { await env.VAULT.delete(CFILE + id); return json({ ok: true }); }
   return json({ error: 'method not allowed' }, 405);
 }
 

@@ -31,12 +31,12 @@
   document.getElementById('toast').addEventListener('click', function (e) { var t = this; if (e.target.closest('[data-undo]') && t._undo) { var u = t._undo; t._undo = null; t.classList.remove('show'); u(); } });
 
   /* ---------- the key ---------- */
-  var K = null, recs = {}, rids = {}, tab = rj('home.tab', 'today'), me = 'p', PASS = null;
+  var K = null, recs = {}, rids = {}, tab = (function (t) { return t === 'notes' ? 'chat' : t; })(rj('home.tab', 'today')), me = 'p', PASS = null;
   /* preview: the owner opens this inside Settings → Shared space to see what the other one sees – read-only */
   var preview = (function () { var m = location.hash.match(/^#preview&k=([A-Za-z0-9_-]{43})/); if (!m) return null; history.replaceState(null, '', location.pathname); return m[1]; })();
   if (preview) { document.documentElement.classList.add('h-preview'); tab = 'today'; }
   var pending = preview ? null : (function () { var m = location.hash.match(/[#&]k=([A-Za-z0-9_-]{43})/); if (m) { try { sessionStorage.setItem('home.newkey', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; } try { return sessionStorage.getItem('home.newkey'); } catch (e) { return null; } })();
-  function screen(h) { app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
+  function screen(h) { lastHtml = ''; if (window.__hnav) window.__hnav.hidden = true; if (window.__hcbox) { window.__hcbox.hidden = true; if (window.HomeChat && HomeChat.isOpen()) HomeChat.unmount(); } app.hidden = false; app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
   function boot() {
     if (preview) { K = preview; start(); return; }
     SC.api('share').then(function (j) {
@@ -91,8 +91,9 @@
 
   /* ---------- the box ---------- */
   var badKey = 0;
+  var boxRev = null, pulling = false;
   function absorb(srv) {
-    var r = (srv && srv.recs) || {}, jobs = []; badKey = 0;
+    var r = (srv && srv.recs) || {}, jobs = []; badKey = 0; if (srv && srv.rev != null) boxRev = srv.rev;
     Object.keys(r).forEach(function (rid) {
       var x = r[rid], old = recs[rid]; if (old && old.t === x.t) return;
       if (x.del) { recs[rid] = { t: x.t, del: 1, c: old && old.c, id: old && old.id }; return; }
@@ -142,6 +143,8 @@
     }).then(function () { wj('home.queue', queue); return flush(); }).then(draw);
   }
   var paused = false;
+  /* the owner's changes show up within seconds: the live check sees the box move on */
+  function livePull(j) { if (!K || stopped || preview || pulling || !j || j.box == null || j.box === boxRev) return; pulling = true; var done = function () { pulling = false; }; var pr = pull(); if (pr && pr.then) pr.then(done, done); else done(); }
   function pull() { if (preview) return SC.api('shared').then(absorb).then(draw, function () {}); return flush().then(function () { return SC.api('shared'); }).then(function (srv) { paused = false; return absorb(srv); }).then(function () { draw(); Push.update(); }, function (e) { if (e && e.status === 403 && e.body && e.body.paused) { paused = true; pausedScreen(); return; } if (e && e.status === 403) stoppedScreen(); }); }
   function pausedScreen() {
     screen('<i class="bi bi-pause-circle h-big"></i><h1>' + L('Sharing is paused', 'Delingen er satt på pause') + '</h1><p>' + esc(owner()) + L(' has paused sharing for now. Nothing is deleted – it comes back here when they turn it on again.', ' har satt delingen på pause. Ingenting er slettet – det kommer tilbake hit når den slås på igjen.') + '</p>' +
@@ -150,7 +153,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 17;
+  var APPV = 18;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -170,7 +173,7 @@
     } else if (saved && (saved.name || saved.look)) { wj('home.pmeV', APPV); put('pme', 'me', Object.assign({}, saved, { v: APPV })); }
   }
   function start() {
-    app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
+    lastHtml = ''; if (window.__hnav) window.__hnav.hidden = true; app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
     pull().then(function () {
       if (preview) return;
       if (!stopped && badKey && !list('info').length) {   /* sharing was started again with a new key */
@@ -181,6 +184,8 @@
       healProfile();
       if (!stopped && list('info').length && !list('pme').length && !rj('home.profiled', false)) setTimeout(profileSheet, 300); if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
     setInterval(function () { if (!document.hidden && !stopped) pull(); }, 30000);
+    if (!preview) SC.live(livePull);
+    chatStart();
     checkVersion(); setInterval(function () { if (!document.hidden) checkVersion(); }, 10 * 60000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && !stopped) { pull(); checkVersion(); } });
     window.addEventListener('online', function () { if (!stopped) pull(); });
@@ -231,25 +236,65 @@
   }
 
   /* ---------- drawing ---------- */
-  var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem'], ['me', 'person-lock', 'Me', 'Meg']];
+  var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'house-heart', 'Home', 'Hjem'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['chat', 'chat-heart', 'Chat', 'Chat'], ['me', 'person-lock', 'Me', 'Meg']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house'), me: !preview && My.any() }[t[0]]; }); }
+    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move') || on('house'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), chat: !!window.HomeChat && !preview, me: !preview && My.any() }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
   var MOM = { k: 'day', bg: '#1d2533', sky: 'sun', i: 'sun', c: '#f2c94c' };
   function face(look, cls) { var A = window.Avatar; if (!A || !A.figure || !look) return '<span class="h-av ' + (cls || '') + ' none"><i class="bi bi-person"></i></span>'; try { return '<span class="h-av ' + (cls || '') + '">' + A.figure(A.MOMENTS && A.MOMENTS.day || MOM, look) + '</span>'; } catch (e) { return '<span class="h-av none"><i class="bi bi-person"></i></span>'; } }
+  var lastHtml = '', nav = document.createElement('nav'); nav.className = 'h-tabs'; nav.hidden = true; document.body.appendChild(nav); window.__hnav = nav;
+  nav.addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; wj('home.tab', tab); draw(); scrollTo(0, 0); });
+  /* the menu is made once and stays put – only the highlighted tab (and the chat's unread number) changes */
+  function navDraw(ts) {
+    ts = ts || tabsOn();
+    var sig = ts.map(function (t) { return t[0]; }).join() + '|' + L('en', 'no');
+    if (nav.dataset.sig !== sig) { nav.dataset.sig = sig; nav.innerHTML = ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span>' + (t[0] === 'chat' ? '<b class="h-badge" hidden></b>' : '') + '</button>'; }).join(''); }
+    nav.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tab === tab)); });
+    var bd = nav.querySelector('.h-badge'), n = window.HomeChat && K ? HomeChat.unread() : 0; if (bd) { bd.hidden = !n || tab === 'chat'; bd.textContent = n > 9 ? '9+' : String(n); }
+    nav.hidden = false;
+  }
+  var chatBox = document.createElement('div'); chatBox.className = 'h-chat'; chatBox.hidden = true; document.body.appendChild(chatBox); window.__hcbox = chatBox;
+  var chatOn = false;
+  function chatStart() {
+    if (chatOn || !window.HomeChat || !K || preview) return; chatOn = true;
+    HomeChat.init({ key: K, me: 'p', no: nb,
+      name: function (side) { return side === 'o' ? owner() : myName(); },
+      face: function (side) { return face(side === 'o' ? info().olook : mine().look, ''); },
+      notes: { on: function () { return (info().what || {}).notes !== false; }, list: function () { return list('note').map(function (r) { return { id: r.id, title: r.f.title || '', text: r.f.text || '' }; }).sort(function (a, b) { return a.title.localeCompare(b.title); }); },
+        add: function (title, text) { put('note', 'h' + uid(), { title: title, text: text || '' }); }, remove: function (id) { put('note', id, null, true); } },
+      onChange: function () { navDraw(); } });
+  }
+  /* the chat fills the screen above the menu; with the keyboard up it fills what is left of the screen */
+  function fitChat() {
+    if (chatBox.hidden) return;
+    var vv = window.visualViewport, h = vv ? vv.height : innerHeight, kb = vv && innerHeight - vv.height > 120;
+    nav.style.visibility = kb ? 'hidden' : '';
+    var navH = kb ? 0 : nav.getBoundingClientRect().height || 72;
+    chatBox.style.top = (vv ? vv.offsetTop : 0) + 'px'; chatBox.style.height = Math.max(200, h - navH) + 'px';
+    chatBox.style.setProperty('--hc-safe', kb ? '0px' : '0px');
+  }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fitChat); visualViewport.addEventListener('scroll', fitChat); }
+  addEventListener('resize', fitChat);
   function draw() {
     if (!K || stopped || !list('info').length) return;
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
+    /* the chat has its own screen that stays put (typing and new messages arrive without redrawing the page) */
+    if (tab === 'chat' && window.HomeChat) {
+      chatStart(); app.hidden = true; chatBox.hidden = false; if (!HomeChat.isOpen()) HomeChat.mount(chatBox, {}); fitChat(); navDraw(ts); return;
+    }
+    if (window.HomeChat && HomeChat.isOpen()) HomeChat.unmount(); chatBox.hidden = true; app.hidden = false; nav.style.visibility = '';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
-    app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
+    var html = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
       (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
       (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
-      '<section class="h-body">' + ({ today: todayView, shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || todayView)() + '</section>' +
-      '<nav class="h-tabs">' + ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-current="' + (t[0] === tab) + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span></button>'; }).join('') + '</nav>';
-    if (keep) { var el = app.querySelector('[name="' + keep.n + '"]'); if (el && 'value' in el) { el.value = keep.v; el.focus(); } }
+      '<section class="h-body">' + ({ today: todayView, shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || todayView)() + '</section>';
+    /* only touch the page when something on it changed: every refresh used to rebuild it, which made it jump */
+    if (html !== lastHtml || !app.querySelector('.h-body')) { lastHtml = html; var y = scrollY; app.innerHTML = html; if (scrollY !== y) scrollTo(0, y);
+      if (keep) { var el = app.querySelector('[name="' + keep.n + '"]'); if (el && 'value' in el) { el.value = keep.v; el.focus(); } } }
+    navDraw(ts);
   }
   /* what changed from the owner since you last looked (remembered per phone) */
   var known = rj('home.known', null), lastLook = +rj('home.lastLook', 0) || 0;
@@ -271,6 +316,17 @@
     return out.sort(function (a, b) { return b.t - a.t; }).slice(0, 12);
   }
   function lookedNow() { var k = {}; Object.keys(recs).forEach(function (rid) { k[rid] = recs[rid].t; }); known = k; lastLook = Date.now(); wj('home.known', k); wj('home.lastLook', lastLook); }
+  /* the two of you: holding hands, a high five when a chore was done today, a hug on your birthday, a kiss in the evening – tap for the next */
+  var coupleK = null;
+  function coupleCard() {
+    var A = window.Avatar, ol = info().olook, my = mine().look; if (!A || !A.couple || !ol || !my) return '';
+    var tk = today(), bd = String(mine().bday || '').split('.').slice(0, 2).map(Number).join('.'), d = new Date(), dm = d.getDate() + '.' + (d.getMonth() + 1);
+    var did = Object.keys(recs).some(function (rid) { var r = recs[rid]; return r.c === 'cdone' && !r.del && r.t && dkey(new Date(r.t)) === tk; });
+    var k = coupleK || A.coupleKind({ hi5: did, hug: bd === dm }), o = owner();
+    var say = { hold: L('You and ', 'Du og ') + o + ' 💛', hi5: coupleK ? L('High five!', 'High five!') : L('Chores done today – high five!', 'Husarbeid gjort i dag – high five!'), hug: coupleK ? L('A big hug', 'En god klem') : L('Happy birthday – a big hug!', 'Gratulerer med dagen – en god klem!'), kiss: L('Good night, you two', 'God natt, dere to') }[k];
+    var pic = ''; try { var th = document.documentElement.getAttribute('data-theme'); pic = A.couple(k, my, ol, { label: say, light: th === 'light' || (!th && matchMedia('(prefers-color-scheme: light)').matches) }); } catch (e) { return ''; }
+    return '<button type="button" class="h-couple" data-couple aria-label="' + esc(say + ' – ' + L('tap for the next', 'trykk for neste')) + '">' + pic + '<span>' + esc(say) + '</span></button>';
+  }
   function todayView() {
     var tk = today(), w = info().what || {}, o = owner(), rows = [];
     var meal = list('meal').filter(function (r) { return (r.f.date || r.id) === tk; })[0];
@@ -288,7 +344,7 @@
       (ch.length ? '<ul class="h-list">' + ch.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.i + '"></i> ' + esc(x.s) + '<small>' + esc(new Date(x.t).toLocaleString(nb ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul><button type="button" class="h-link" data-looked>' + L('Mark as seen', 'Merk som sett') + '</button>'
         : '<p class="h-sum">' + (known ? L('Nothing new since you last looked.', 'Ingenting nytt siden sist.') : L('From now on, what ', 'Fra nå av ser du her hva ') + esc(o) + L(' changes shows up here.', ' endrer.')) + '</p>');
     if (!known && !preview) setTimeout(lookedNow, 0);
-    return html;
+    return coupleCard() + html;
   }
   function dinners() {
     if ((info().what || {}).meals === false) return '';
@@ -375,7 +431,7 @@
     var p = e.target.closest('[data-hmpin]'); if (p) mapPinSheet(p.dataset.hmpin);
   });
   function chores() {
-    var w = info().what || {}, out = homeMap(), tk = today();
+    var w = info().what || {}, out = '', tk = today();
     if (w.chores !== false) {
       var l = list('chore').map(function (r) { var p = period(r.f), tu = turn(r.f, p); return { r: r, p: p, tu: tu, dn: doneOf(r.id, p) }; }).sort(function (a, b) { return (a.dn ? 1 : 0) - (b.dn ? 1 : 0) || (a.p.day < b.p.day ? -1 : 1); });
       var mine = l.filter(function (x) { return !x.dn && x.tu === 'them'; }).length;
@@ -398,6 +454,7 @@
         return '<li class="' + (r.f.done ? 'done' : '') + '"><button type="button" class="h-tick" data-mv="' + esc(r.id) + '" aria-pressed="' + !!r.f.done + '"><i class="bi bi-' + (r.f.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(r.f.text) + '</span></button></li>';
       }).join('') + '</ul>';
     }
+    out += house();
     return out || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
   }
   function bills() {
@@ -629,7 +686,8 @@
       '<details class="h-det"><summary>' + L('Change passcode', 'Endre kode') + '</summary><input type="password" name="pa" autocomplete="new-password" placeholder="' + L('New passcode', 'Ny kode') + '"><input type="password" name="pb" autocomplete="new-password" placeholder="' + L('Once more', 'En gang til') + '"><p class="h-err" data-err></p></details>' +
       '<div class="h-det-box"><b>' + L('What ', 'Hva ') + esc(o) + L(' shares with you', ' deler med deg') + '</b><p class="h-small">' + NAMES.filter(function (n) { return w[n[0]] !== false; }).map(function (n) { return n[1]; }).join(' · ') + '</p><p class="h-small">' + esc(o) + L(' chooses this. Nothing else from their dashboard is shared.', ' bestemmer dette. Ingenting annet fra dashbordet deres deles.') + '</p></div>' +
       '<p class="h-small">' + L('Tip: Share → Add to Home Screen to open this like an app.', 'Tips: Del → Legg til på Hjem-skjerm for å åpne dette som en app.') + '</p>' +
-      '<div class="h-two"><button type="button" class="h-btn ghost" data-lock>' + L('Lock now', 'Lås nå') + '</button><button type="button" class="h-btn ghost danger" data-forget>' + L('Forget this phone', 'Glem denne telefonen') + '</button></div>', function (f) {
+      '<div class="h-two"><button type="button" class="h-btn ghost" data-lock>' + L('Lock now', 'Lås nå') + '</button><button type="button" class="h-btn ghost danger" data-forget>' + L('Forget this phone', 'Glem denne telefonen') + '</button></div>' +
+      '<p class="h-ver"><i class="bi bi-info-circle"></i> ' + L('Shared home · version ', 'Felles hjem · versjon ') + APPV + ' · ' + L('updates by itself', 'oppdateres av seg selv') + '</p>', function (f) {
       var er = f.querySelector('[data-err]');
       if (preview) { toast('<i class="bi bi-eye"></i> ' + L('Preview – nothing changes here', 'Forhåndsvisning – ingenting endres her')); return; }
       if (f.pa.value || f.pb.value) {
@@ -688,6 +746,7 @@
   app.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return; var d = b.dataset, r;
     if (d.reload != null) { location.reload(); return; }
+    if (d.couple != null) { var KS = window.Avatar.COUPLE_KINDS, cur = coupleK || (b.querySelector('svg').getAttribute('class').match(/cp-(\w+)/) || [])[1] || 'hold'; coupleK = KS[(KS.indexOf(cur) + 1) % KS.length]; draw(); return; }
     if (d.tab) { tab = d.tab; wj('home.tab', tab); draw(); scrollTo(0, 0); return; }
     if (d.menu != null) { settingsSheet(); return; }
     if (d.meal) { mealSheet(d.meal); return; }
