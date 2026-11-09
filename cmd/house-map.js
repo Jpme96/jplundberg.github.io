@@ -109,7 +109,7 @@
   /* ---------------- view state ---------------- */
   var LAY = (function () { try { return Object.assign({ pins: true, chores: true, upkeep: true }, JSON.parse(localStorage.getItem('dash.hmLayers')) || {}); } catch (e) { return { pins: true, chores: true, upkeep: true }; } })();
   var Z = { s: 1, x: 0, y: 0 }, mode = 'view', arm = null, sel = null, editRoom = null;
-  var wide = window.matchMedia('(min-width: 900px)');
+  var wide = window.matchMedia('(min-width: 900px)'), coarse = window.matchMedia('(pointer: coarse)');
 
   /* ---------------- drawing ---------------- */
   function draw() {
@@ -141,7 +141,7 @@
       '<svg class="hm-svg" viewBox="0 0 1000 ' + Math.round(1000 * H) + '" preserveAspectRatio="none" aria-hidden="true"><g data-hmrooms></g><rect data-hmdraft class="hm-draft" x="0" y="0" width="0" height="0" hidden></rect></svg>' +
       '<div class="hm-layer" data-hmlayer></div></div>' +
       '<div class="hm-zoom"><button type="button" data-hmz="in" aria-label="' + L('Zoom in', 'Zoom inn') + '"><i class="bi bi-plus-lg"></i></button><button type="button" data-hmz="out" aria-label="' + L('Zoom out', 'Zoom ut') + '"><i class="bi bi-dash-lg"></i></button><button type="button" data-hmz="fit" aria-label="' + L('Fit the whole plan', 'Vis hele planen') + '"><i class="bi bi-arrows-angle-contract"></i></button></div>' +
-      '</div></div><aside class="hm-side" data-hmside aria-live="polite"></aside></div></section>';
+      '</div><div class="hm-foot"><label class="text-btn"><i class="bi bi-arrow-repeat"></i> ' + L('Replace the drawing', 'Bytt tegning') + '<input type="file" accept="application/pdf,.pdf,image/*" hidden data-hmfile></label><button type="button" class="text-btn danger" data-hmwipe><span data-hmwipet><i class="bi bi-trash3"></i> ' + L('Start over', 'Start på nytt') + '</span></button></div></div><aside class="hm-side" data-hmside aria-live="polite"></aside></div></section>';
   }
   function loadImg(m) {
     var img = box.querySelector('.hm-img'); if (!img) return;
@@ -158,12 +158,14 @@
     box.querySelectorAll('[data-hmmode]').forEach(function (b) { b.setAttribute('aria-pressed', String(mode === b.dataset.hmmode)); b.querySelector('span').textContent = mode === 'rooms' ? L('Done', 'Ferdig') : L('Rooms', 'Rom'); });
     box.querySelectorAll('[data-hmlay]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!LAY[b.dataset.hmlay])); });
     var hint = box.querySelector('[data-hmhint]');
-    hint.innerHTML = arm && arm.t === 'pin' ? '<i class="bi bi-hand-index"></i> ' + L('Tap where the pin goes', 'Trykk der nålen skal stå') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
-      : arm && arm.t === 'move' ? '<i class="bi bi-arrows-move"></i> ' + L('Tap the new spot', 'Trykk på det nye stedet') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
+    var placing = arm && (arm.t === 'pin' || arm.t === 'move') && arm.x != null;
+    hint.innerHTML = placing ? '<span class="hm-place"><span><i class="bi bi-arrows-move"></i> ' + L('Drag the pin to the spot – or tap where it goes', 'Dra nålen til stedet – eller trykk der den skal stå') + '</span><span class="hm-place-b"><button type="button" class="pill-btn sm ghost" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button><button type="button" class="pill-btn sm" data-hmplace><i class="bi bi-check2"></i> ' + L('Put it here', 'Sett den her') + '</button></span></span>'
+      : arm && arm.t === 'pin' ? '<i class="bi bi-hand-index"></i> ' + L('Click where the pin goes', 'Klikk der nålen skal stå') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
+      : arm && arm.t === 'move' ? '<i class="bi bi-arrows-move"></i> ' + L('Click the new spot', 'Klikk på det nye stedet') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
       : arm && arm.t === 'part' ? '<i class="bi bi-plus-square-dotted"></i> ' + L('Drag over the rest of ', 'Dra over resten av ') + esc(arm.name) + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
       : mode === 'rooms' ? '<i class="bi bi-bounding-box"></i> ' + L('Drag a box over a room to mark it. Tap a marked room to rename it or add another part (for L-shaped rooms).', 'Dra en boks over et rom for å merke det. Trykk på et merket rom for å endre navnet eller legge til en del (for L-formede rom).')
       : !m.rooms.length ? '<i class="bi bi-info-circle"></i> ' + L('Next: tap Rooms and drag a box over each room, so chores, upkeep and things find their place.', 'Neste: trykk Rom og dra en boks over hvert rom, så husarbeid, vedlikehold og ting finner plassen sin.')
-      : (wide.matches ? L('Tap a room or a pin · hold a spot to add a pin · ⌘/ctrl + scroll to zoom', 'Trykk på et rom eller en nål · hold inne for å legge til en nål · ⌘/ctrl + rull for å zoome') : L('Tap a room or a pin · hold a spot to add a pin · pinch to zoom', 'Trykk på et rom eller en nål · hold inne for en ny nål · knip for å zoome'));
+      : (wide.matches ? L('Tap a room or a pin · hold a spot to add a pin · ⌘/ctrl + scroll to zoom', 'Trykk på et rom eller en nål · hold inne for å legge til en nål · ⌘/ctrl + rull for å zoome') : L('Tap a room or a pin · Add a pin puts one in the middle for you to drag · pinch to zoom', 'Trykk på et rom eller en nål · Ny nål setter en i midten som du drar · knip for å zoome'));
     var list = things(m), H = 1000 * m.plan.h / m.plan.w;
     box.querySelector('[data-hmrooms]').innerHTML = m.rooms.map(function (rm) {
       return rm.r.map(function (r) { return '<rect class="hm-room' + (sel && sel.room === rm.id ? ' on' : '') + (mode === 'rooms' ? ' ed' : '') + '" data-hmroom="' + esc(rm.id) + '" x="' + (r[0] * 1000).toFixed(1) + '" y="' + (r[1] * H).toFixed(1) + '" width="' + (r[2] * 1000).toFixed(1) + '" height="' + (r[3] * H).toFixed(1) + '"></rect>'; }).join('');
@@ -177,9 +179,11 @@
       else if (due.length || ch) h += '<span class="hm-badge' + (late ? ' late' : '') + '" style="left:' + ((big[0] + big[2]) * 100) + '%;top:' + (big[1] * 100) + '%">' + (ch ? '<b class="hm-face ' + (ch.who === 'me' ? 'me' : 'them') + '">' + esc(initial(ch.who)) + '</b>' : '') + (due.length ? '<i>' + due.length + '</i>' : '') + '</span>';
     });
     if (LAY.pins && mode !== 'rooms') m.pins.forEach(function (p) {
+      if (placing && arm.t === 'move' && arm.id === p.id) return;
       var k = pk(p.k), l = linkOf(p, list), due = l && soon(l), late = l && l.late;
       h += '<button type="button" class="hm-pin' + (sel && sel.pin === p.id ? ' on' : '') + (late ? ' late' : due ? ' due' : '') + '" data-hmpin="' + esc(p.id) + '" style="left:' + (p.x * 100) + '%;top:' + (p.y * 100) + '%;--c:' + k[3] + '" aria-label="' + esc(pinTitle(p, list)) + '"><i class="bi bi-' + k[2] + '"></i></button>';
     });
+    if (placing) { var dk = arm.t === 'move' ? pk((m.pins.filter(function (q) { return q.id === arm.id; })[0] || {}).k) : null; h += '<span class="hm-pin hm-dpin" data-hmdpin style="left:' + (arm.x * 100) + '%;top:' + (arm.y * 100) + '%;--c:' + (dk ? dk[3] : 'var(--accent)') + '"><i class="bi bi-' + (dk ? dk[2] : 'geo-alt-fill') + '"></i></span>'; }
     if (lay.innerHTML !== h) lay.innerHTML = h;
     applyZ();
     if (wide.matches) side(m, list); else if (sheetOpen()) refreshSheet(m, list);
@@ -196,33 +200,37 @@
     v.classList.toggle('zoomed', Z.s > 1.01);
   }
   function zoomAt(f, cx, cy) { var v = box.querySelector('[data-hmview]'), r = v.getBoundingClientRect(); cx = cx == null ? r.width / 2 : cx - r.left; cy = cy == null ? r.height / 2 : cy - r.top; var ns = Math.min(6, Math.max(1, Z.s * f)); Z.x = cx - (cx - Z.x) * ns / Z.s; Z.y = cy - (cy - Z.y) * ns / Z.s; Z.s = ns; applyZ(); }
+  function viewCenter() { var v = box.querySelector('[data-hmview]'), r = v.getBoundingClientRect(), vis = { top: Math.max(r.top, 0), bottom: Math.min(r.bottom, window.innerHeight) }; return at({ clientX: r.left + r.width / 2, clientY: vis.bottom > vis.top ? (vis.top + vis.bottom) / 2 : r.top + r.height / 2 }); }
   function at(e) { var st = box.querySelector('[data-hmstage]').getBoundingClientRect(); return { x: Math.min(1, Math.max(0, (e.clientX - st.left) / st.width)), y: Math.min(1, Math.max(0, (e.clientY - st.top) / st.height)) }; }
 
   function bindView() {
-    var v = box.querySelector('[data-hmview]'), pts = {}, start = null, pinch = null, hold = null, draft = null, lastTap = 0;
+    var v = box.querySelector('[data-hmview]'), pts = {}, start = null, pinch = null, hold = null, draft = null, lastTap = 0, dragD = null;
     v.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.hm-zoom') || e.button > 0) return;
       pts[e.pointerId] = { x: e.clientX, y: e.clientY };
       var ids = Object.keys(pts);
       if (ids.length === 2) { clearTimeout(hold); draft = null; hideDraft(); var a = pts[ids[0]], b = pts[ids[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: Z.s, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: Z.x, y: Z.y }; start = null; return; }
+      if (e.target.closest('[data-hmdpin]')) { dragD = e.pointerId; start = null; try { v.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); return; }
       if (e.target.closest('.hm-pin') && !arm && mode !== 'rooms') { start = null; return; }
       start = { x: e.clientX, y: e.clientY, zx: Z.x, zy: Z.y, t: Date.now(), moved: false, p: at(e), id: e.pointerId };
       try { v.setPointerCapture(e.pointerId); } catch (x) {}
       if (mode === 'rooms' || (arm && arm.t === 'part')) { draft = { x0: start.p.x, y0: start.p.y }; return; }
-      if (!arm) hold = setTimeout(function () { if (start && !start.moved) { var p = start.p; start = null; addPinAt(p.x, p.y); } }, 550);
+      if (!arm) hold = setTimeout(function () { if (start && !start.moved) { var p = start.p; start = null; addPinAt(p.x, p.y); } }, 500);
     });
     v.addEventListener('pointermove', function (e) {
+      if (dragD === e.pointerId && arm) { var dp = at(e); arm.x = dp.x; arm.y = dp.y; var de = v.querySelector('[data-hmdpin]'); if (de) { de.style.left = (dp.x * 100) + '%'; de.style.top = (dp.y * 100) + '%'; } return; }
       if (!pts[e.pointerId]) return; pts[e.pointerId] = { x: e.clientX, y: e.clientY };
       var ids = Object.keys(pts);
       if (pinch && ids.length === 2) { var a = pts[ids[0]], b = pts[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), r = v.getBoundingClientRect(), ns = Math.min(6, Math.max(1, pinch.s * d / pinch.d)), cx = pinch.mx - r.left, cy = pinch.my - r.top, mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
         Z.x = mx - (cx - pinch.x) * ns / pinch.s; Z.y = my - (cy - pinch.y) * ns / pinch.s; Z.s = ns; applyZ(); return; }
       if (!start || start.id !== e.pointerId) return;
       var dx = e.clientX - start.x, dy = e.clientY - start.y;
-      if (Math.abs(dx) + Math.abs(dy) > 6) { start.moved = true; clearTimeout(hold); }
+      if (Math.abs(dx) + Math.abs(dy) > (e.pointerType === 'touch' ? 12 : 6)) { start.moved = true; clearTimeout(hold); }
       if (draft) { var p = at(e); showDraft(draft.x0, draft.y0, p.x, p.y); return; }
       if (start.moved && Z.s > 1.01) { Z.x = start.zx + dx; Z.y = start.zy + dy; applyZ(); }
     });
     function end(e) {
+      if (dragD === e.pointerId) { dragD = null; delete pts[e.pointerId]; return; }
       delete pts[e.pointerId]; clearTimeout(hold);
       if (pinch) { if (Object.keys(pts).length < 2) pinch = null; start = null; return; }
       if (!start || start.id !== e.pointerId) return;
@@ -244,6 +252,7 @@
   /* a tap on the plan (not on a pin) */
   function tap(p) {
     var m = data();
+    if (arm && (arm.t === 'pin' || arm.t === 'move') && arm.x != null) { arm.x = p.x; arm.y = p.y; paint(m); return; }
     if (arm && arm.t === 'pin') { var a = arm; arm = null; paint(m); addPinAt(p.x, p.y, a.k); return; }
     if (arm && arm.t === 'move') { var id = arm.id; arm = null; save(function (d) { d.pins.forEach(function (x) { if (x.id === id) { x.x = p.x; x.y = p.y; } }); }); sel = { pin: id }; openPin(id); return; }
     var rm = roomAt(p.x, p.y, m.rooms);
@@ -518,7 +527,13 @@
     var b, m;
     if ((b = e.target.closest('[data-hmlay]'))) { LAY[b.dataset.hmlay] = !LAY[b.dataset.hmlay]; try { localStorage.setItem('dash.hmLayers', JSON.stringify(LAY)); } catch (x) {} draw(); return; }
     if ((b = e.target.closest('[data-hmmode]'))) { mode = mode === 'rooms' ? 'view' : 'rooms'; arm = null; sel = null; current = null; if (mode === 'view' && !wide.matches) closeSheet(); draw(); if (mode === 'view' && wide.matches) overview(data(), things(data())); return; }
-    if (e.target.closest('[data-hmaddpin]')) { mode = 'view'; arm = { t: 'pin' }; draw(); return; }
+    if (e.target.closest('[data-hmaddpin]')) { mode = 'view'; arm = { t: 'pin' }; if (coarse.matches) { var c0 = viewCenter(); arm.x = c0.x; arm.y = c0.y; } if (!wide.matches) closeSheet(); draw(); return; }
+    if (e.target.closest('[data-hmplace]') && arm && arm.x != null) {
+      var a1 = arm; arm = null;
+      if (a1.t === 'move') { save(function (d) { d.pins.forEach(function (x) { if (x.id === a1.id) { x.x = a1.x; x.y = a1.y; } }); }); sel = { pin: a1.id }; openPin(a1.id); }
+      else { paint(data()); addPinAt(a1.x, a1.y, a1.k); }
+      return;
+    }
     if (e.target.closest('[data-hmcancel]')) { arm = null; draw(); return; }
     if ((b = e.target.closest('[data-hmz]'))) { if (b.dataset.hmz === 'fit') { Z = { s: 1, x: 0, y: 0 }; applyZ(); } else zoomAt(b.dataset.hmz === 'in' ? 1.5 : 1 / 1.5); return; }
     if ((b = e.target.closest('[data-hmpin]'))) { if (arm || mode === 'rooms') return; openPin(b.dataset.hmpin); return; }
@@ -535,7 +550,7 @@
     if ((b = e.target.closest('[data-hmedinfo]'))) { var it = (Fe.tools().hinfo || []).filter(function (x) { return x.id === b.dataset.hmedinfo; })[0], H = window.HomeLife; if (it && H && H.infoCfg && window.Kit) { if (!wide.matches) closeSheet(); window.Kit.edit(H.infoCfg(it.kind), it); } return; }
     if ((b = e.target.closest('[data-hmshow]'))) { var s = b.previousElementSibling; if (s && s.dataset.hmsec != null) { var hid = s.textContent.charAt(0) === '•'; s.textContent = hid ? s.dataset.hmsec : '••••••••'; b.textContent = hid ? L('Hide', 'Skjul') : L('Show', 'Vis'); } return; }
     if ((b = e.target.closest('[data-hmcopy]'))) { try { navigator.clipboard.writeText(b.dataset.hmcopy).then(function () { toast('<i class="bi bi-clipboard-check"></i> ' + L('Copied', 'Kopiert')); }); } catch (x) {} return; }
-    if ((b = e.target.closest('[data-hmmove]'))) { arm = { t: 'move', id: b.dataset.hmmove }; if (!wide.matches) closeSheet(); draw(); return; }
+    if ((b = e.target.closest('[data-hmmove]'))) { var mp = data().pins.filter(function (q) { return q.id === b.dataset.hmmove; })[0]; arm = { t: 'move', id: b.dataset.hmmove }; if (coarse.matches && mp) { arm.x = mp.x; arm.y = mp.y; } if (!wide.matches) closeSheet(); draw(); return; }
     if ((b = e.target.closest('[data-hmrename]'))) { renamePin(b.dataset.hmrename); return; }
     if ((b = e.target.closest('[data-hmdelpin]'))) {
       var pid = b.dataset.hmdelpin, keep = null; save(function (d) { keep = d.pins.filter(function (p) { return p.id === pid; })[0]; d.pins = d.pins.filter(function (p) { return p.id !== pid; }); });
@@ -598,10 +613,14 @@
     if ((k === 'share' || k === 'shareInfo') && window.ShareSpace) { if (window.ShareSpace.syncFiles) window.ShareSpace.syncFiles(); if (window.ShareSpace.sync) setTimeout(window.ShareSpace.sync, 1500); }
   });
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('[data-hmwipe]')) return;
-    var b = e.target.closest('[data-hmwipe]'); if (!b.classList.contains('armed')) { b.classList.add('armed'); var tt = b.querySelector('[data-hmwipet]'); if (tt) tt.innerHTML = '<i class="bi bi-trash3"></i> ' + L('Tap again to remove the map', 'Trykk igjen for å fjerne kartet'); setTimeout(setFill, 3500); return; }
-    var m = data(); if (m.plan) delF(m.plan.fid); m.pins.forEach(function (p) { if (p.photo) delF(p.photo); });
-    save(function (d) { d.plan = null; d.rooms = []; d.pins = []; d.put = {}; }); setFill(); toast('<i class="bi bi-check2"></i> ' + L('The map is removed', 'Kartet er fjernet'));
+    var b = e.target.closest('[data-hmwipe]'); if (!b) return;
+    var tt = b.querySelector('[data-hmwipet]');
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); var was = tt ? tt.innerHTML : ''; if (tt) tt.innerHTML = '<i class="bi bi-trash3"></i> ' + L('Tap again to remove the drawing, rooms and pins', 'Trykk igjen for å fjerne tegningen, rommene og nålene'); setTimeout(function () { if (b.isConnected) { b.classList.remove('armed'); if (tt) tt.innerHTML = was; } }, 4000); return; }
+    var old = data(), gone = false;
+    save(function (d) { d.plan = null; d.rooms = []; d.pins = []; d.put = {}; }); Z = { s: 1, x: 0, y: 0 }; mode = 'view'; arm = null; sel = null; current = null; closeSheet(); setFill();
+    /* the files go a little later, so Undo can bring everything back */
+    var t0 = setTimeout(function () { gone = true; if (old.plan) delF(old.plan.fid); old.pins.forEach(function (p) { if (p.photo) delF(p.photo); }); }, 9000);
+    toast('<i class="bi bi-check2"></i> ' + L('The map is removed – add a new drawing when you like', 'Kartet er fjernet – legg inn en ny tegning når du vil'), function () { if (gone) return; clearTimeout(t0); save(function (d) { d.plan = old.plan; d.rooms = old.rooms; d.pins = old.pins; d.put = old.put; }); setFill(); });
   });
   window.addEventListener('st:page', function (e) { if (e.detail === 'house') setTimeout(setFill, 0); });
   window.addEventListener('features:change', function () { setTimeout(setFill, 0); });
