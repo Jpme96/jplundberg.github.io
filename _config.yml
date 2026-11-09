@@ -33,6 +33,7 @@ defaults:
       lang: en
 
 exclude:
+  - CLAUDE.md
   - tests
   - Readme.txt
   - cmd/build.py
