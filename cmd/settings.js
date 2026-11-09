@@ -437,7 +437,11 @@
   document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.addEventListener('click', function () { set({ tips: b.dataset.tipsmode }); window.dispatchEvent(new Event('tips:change')); }); });
   $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
   $('stGlassStr').addEventListener('change', function () { set({ glassStrength: +this.value }); });
-  $('stName').addEventListener('change', function () { set({ name: this.value.trim() }); });
+  /* your name lives in two places (Settings and Profile) – change both, so it is the same everywhere (also for the person you share with) */
+  $('stName').addEventListener('change', function () {
+    var n = this.value.trim(); set({ name: n });
+    try { var pr = JSON.parse(localStorage.getItem('dash.profile') || 'null'); if (pr && typeof pr === 'object' && pr.name !== n) { pr.name = n; localStorage.setItem('dash.profile', JSON.stringify(pr)); window.dispatchEvent(new Event('profile:change')); window.dispatchEvent(new Event('dash:local')); } } catch (e) {}
+  });
   $('stSeconds').addEventListener('change', function () { set({ seconds: this.checked }); });
   $('stQuotes').addEventListener('change', function () { set({ quotes: this.checked }); });
   if ($('stAdapt')) $('stAdapt').addEventListener('change', function () { set({ adapt: this.checked }); });

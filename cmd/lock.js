@@ -7,6 +7,63 @@
    Cloudflare only ever sees the encrypted version. */
 (function () {
   "use strict";
+
+  /* Changes from another device or from the person you share with redraw parts of the page. keepView(fn) runs fn and
+     then keeps what you were looking at in the same spot on screen (the browser's own scroll anchoring doesn't help:
+     the redrawn parts are new elements, and iPhone Safari has none). It stops as soon as you scroll yourself. */
+  function anchorAt(y) {
+    var el = document.elementFromPoint(innerWidth / 2, y), node = el;
+    if (!el || el === document.body || el === document.documentElement) return null;
+    var q = function (v) { return String(v).replace(/["\\]/g, '\\$&'); };
+    /* the nearest small thing that can be found again: a section with an id, an element with a data- name, or its text */
+    var small = function (n) { return n.getBoundingClientRect().height < innerHeight * 1.2; };
+    for (var pass = 0; pass < 2; pass++) {
+      for (node = el; node && node !== document.body && small(node); node = node.parentElement) {
+        var sel = null;
+        if (node.id) sel = '[id="' + q(node.id) + '"]';
+        else if (pass) for (var i = 0; i < node.attributes.length && !sel; i++) { var at = node.attributes[i]; if (/^data-/.test(at.name) && at.value && at.value.length < 100 && !/^data-(ok|mid)$/.test(at.name)) sel = node.tagName.toLowerCase() + '[' + at.name + '="' + q(at.value) + '"]'; }
+        if (sel) { try { if (document.querySelectorAll(sel).length === 1) return { sel: sel, top: node.getBoundingClientRect().top, el: node }; } catch (e) {} }
+      }
+    }
+    var tx = (el.textContent || '').trim().slice(0, 80);
+    if (tx && tx.length < 80) return { tag: el.tagName, tx: tx, top: el.getBoundingClientRect().top, el: el };
+    for (node = el; node && node !== document.body; node = node.parentElement) if (node.id) return { sel: '[id="' + q(node.id) + '"]', top: node.getBoundingClientRect().top, el: node };
+    return null;
+  }
+  function anchorFind(a) {
+    if (a.el && a.el.isConnected) return a.el;
+    if (a.sel) return document.querySelector(a.sel);
+    var best = null, bd = 1e9; [].forEach.call(document.getElementsByTagName(a.tag), function (x) { if ((x.textContent || '').trim().slice(0, 80) === a.tx) { var d = Math.abs(x.getBoundingClientRect().top - a.top); if (d < bd) { bd = d; best = x; } } });
+    return best;
+  }
+  function keepView(fn) {
+    /* a few things down the screen; the middle value of how far they moved wins, so one item that moved on its own (ticked off, sorted) doesn't count */
+    var as = []; try { if (window.scrollY > 0) [0.25, 0.4, 0.55, 0.7].forEach(function (f) { var a = anchorAt(innerHeight * f); if (a) as.push(a); }); } catch (e) {}
+    var out = fn();
+    if (!as.length || !window.MutationObserver) return out;
+    var stop = false, fix = function () {
+      if (stop) return;
+      var ds = []; as.forEach(function (a) { var el = anchorFind(a); if (el) ds.push(el.getBoundingClientRect().top - a.top); });
+      if (!ds.length) return; ds.sort(function (x, y) { return x - y; });
+      var d = ds[Math.floor((ds.length - 1) / 2)];
+      if (Math.abs(d) > 1 && Math.abs(d) < innerHeight * 0.6) { window.scrollBy(0, d); }
+    };
+    var mo = new MutationObserver(function () { requestAnimationFrame(fix); });
+    mo.observe(document.body, { childList: true, subtree: true, characterData: true });
+    var you = function () { stop = true; }, evs = ['touchstart', 'wheel', 'keydown'];
+    evs.forEach(function (ev) { window.addEventListener(ev, you, { passive: true, once: true }); });
+    requestAnimationFrame(fix);
+    setTimeout(function () { stop = true; mo.disconnect(); evs.forEach(function (ev) { window.removeEventListener(ev, you); }); }, 3000);
+    return out;
+  }
+  /* someone is writing in a field (not the chat): changes from elsewhere wait a moment, so the field isn't redrawn under them */
+  function typingHere() {
+    var e = document.activeElement; if (!e || e.closest && e.closest('.hc')) return false;
+    if (e.isContentEditable) return true;
+    return (e.tagName === 'TEXTAREA' || (e.tagName === 'INPUT' && /^(text|search|email|url|tel|number|)$/i.test(e.type || ''))) && String(e.value || '').trim() !== '';
+  }
+  window.keepView = keepView; window.typingHere = typingHere;
+
   /* no pinch- or double-tap zoom on the phone: it is an app, and the text size is set in Settings */
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
   document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
@@ -438,7 +495,8 @@
   var liveSyncT = null;
   window.addEventListener('cmd-live-vault', function (e) {
     var r = +(e && e.detail); if (!key || !(r > syncedRev()) || pushing) return;
-    clearTimeout(liveSyncT); liveSyncT = setTimeout(function () { if (key && !pushing) sync(); }, 300);
+    var n = 0, go = function () { if (!key || pushing) return; if (typingHere() && n++ < 12) { liveSyncT = setTimeout(go, 1500); return; } sync(); };
+    clearTimeout(liveSyncT); liveSyncT = setTimeout(go, 300);
   });
   document.addEventListener('click', function (e) { if (key && e.target.closest('#syncState')) sync(); });
   window.addEventListener('online', function () { if (key) sync(); });
@@ -670,7 +728,7 @@
           saveBase(v);
           data = unpack(obj);
           recordBase(data, w);
-          emit();
+          keepView(emit);
           setSync('ok');
           return;
         }
@@ -685,7 +743,7 @@
               var merged3 = m3(baseObj, mine, obj);
               recordBase(obj, w);
               data = unpack(merged3);
-              emit();
+              keepView(emit);
               return window.Vault.save(data);
             }
             return oldMerge();
@@ -708,7 +766,7 @@
         });
         merged._w = w;
         data = unpack(merged);
-        emit();
+        keepView(emit);
         return window.Vault.save(data);           // new version on top of the other device's, then upload
         }
       });

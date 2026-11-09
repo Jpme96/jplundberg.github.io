@@ -59,6 +59,8 @@
     var before = null;
     try { before = JSON.stringify((JSON.parse(localStorage.getItem(KEY)) || {}).socials || null); } catch (e) {}
     try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {}
+    /* the same name in Settings, so it is the same everywhere */
+    try { var st = JSON.parse(localStorage.getItem('dash.settings') || '{}') || {}, n = String(p.name || '').trim(); if (n && st.name !== n) { st.name = n; localStorage.setItem('dash.settings', JSON.stringify(st)); window.dispatchEvent(new Event('dash:settings')); } } catch (e) {}
     window.dispatchEvent(new Event('dash:local'));
     window.dispatchEvent(new Event('profile:change'));
     if (before !== JSON.stringify(p.socials || null)) window.dispatchEvent(new Event('socials:change'));

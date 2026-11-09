@@ -278,10 +278,14 @@
     });
     return Promise.all(jobs);
   }
+  var typeWait = 0;
   function sync() {
     guardKey();
     var s = st(); if (!s) return Promise.resolve();
     if (busy) { again = true; return Promise.resolve(); }
+    /* you're writing in a field: their changes wait a little (at most ~20 s), so it isn't redrawn under your fingers */
+    if (window.typingHere && window.typingHere() && typeWait < 12) { typeWait++; schedule(1500); return Promise.resolve(); }
+    typeWait = 0;
     busy = true; var k = s.key;
     return SC.api('shared').then(function (srv) { return absorb(k, srv); }).then(function () {
       /* 1. their changes since last time */
@@ -294,7 +298,7 @@
          not read as "deleted" (which would also remove it from their app) */
       if (healAt && Date.now() >= healAt) { healAt = 0; var inMine = {}; mine.forEach(function (x) { inMine[x.rid] = 1; });
         Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && !r.del && !r.bad && r.c && r.f && !inMine[rid] && seen[rid] && missing(r.c, r.id)) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, heal: 1 }); }); }
-      var bad = []; try { bad = applyAll(mine) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
+      var bad = []; try { bad = (window.keepView ? window.keepView(function () { return applyAll(mine) || []; }) : applyAll(mine)) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
       applyErr = bad.length;
       mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
       wj('dash.share.seen2', seen);
