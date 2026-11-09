@@ -33,6 +33,7 @@ defaults:
       lang: en
 
 exclude:
+  - tests
   - Readme.txt
   - cmd/build.py
   - forms/Readme.txt

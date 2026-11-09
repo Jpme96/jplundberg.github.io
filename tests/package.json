@@ -1,0 +1,7 @@
+{
+  "name": "cmd-tests",
+  "private": true,
+  "description": "Automatic tests for cmd and the shared app (run: npm test). No real data.",
+  "scripts": { "test": "node run.js" },
+  "dependencies": { "puppeteer": "23.11.1", "ws": "8.18.0" }
+}
