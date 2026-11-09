@@ -1185,6 +1185,7 @@
     'House projects and documents you tick': 'Husprosjekter og dokumenter du krysser av', 'History': 'Historikk', 'Hide history': 'Skjul historikk', 'House projects': 'Husprosjekter', 'Documents': 'Dokumenter', 'Chore log': 'Husarbeidslogg',
     'Status, tasks and budget – you tick tasks off together': 'Status, oppgaver og budsjett – dere krysser av oppgaver sammen', 'Only this one – the file is encrypted for them, and removed from their app when you turn this off': 'Bare denne – filen krypteres for dem, og fjernes fra appen deres når du slår dette av',
     'Exactly what they see – nothing can be changed in the preview': 'Nøyaktig det de ser – ingenting kan endres i forhåndsvisningen',
+    'Their profile and avatar': 'Profilen og avataren deres',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
