@@ -150,7 +150,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 13;
+  var APPV = 14;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -528,6 +528,30 @@
       (f.steps ? '<h3 class="h-h">' + L('Steps', 'Fremgangsmåte') + '</h3><p class="h-pre h-small">' + esc(f.steps) + '</p>' : '') + (f.link ? '<a class="h-link" href="' + esc(f.link) + '" target="_blank" rel="noopener">' + L('Open the recipe page', 'Åpne oppskriftssiden') + '</a>' : ''), function () {});
     bg.querySelector('[type=submit]').textContent = L('Close', 'Lukk'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
   }
+  /* ---------- Settings → Appearance (this phone only, localStorage home.look) ---------- */
+  var Look = {
+    ACC: [['teal', '#14b8a6', L('Teal', 'Turkis')], ['blue', '#2563eb', L('Blue', 'Blå')], ['purple', '#7c3aed', L('Purple', 'Lilla')], ['pink', '#db2777', L('Pink', 'Rosa')], ['orange', '#f59e0b', L('Orange', 'Oransje')], ['green', '#22c55e', L('Green', 'Grønn')]],
+    get: function () { var a = rj('home.look', {}); return { theme: a.theme || 'auto', acc: a.acc || 'teal', size: a.size || 'm' }; },
+    apply: function (a) {
+      var r = document.documentElement;
+      if (a.theme === 'light' || a.theme === 'dark') r.setAttribute('data-theme', a.theme); else r.removeAttribute('data-theme');
+      if (a.acc && a.acc !== 'teal') r.setAttribute('data-acc', a.acc); else r.removeAttribute('data-acc');
+      if (a.size === 's' || a.size === 'l') r.setAttribute('data-size', a.size); else r.removeAttribute('data-size');
+      var dark = a.theme === 'dark' || (a.theme !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', dark ? '#0e0f11' : '#f4f5f7');
+    },
+    set: function (k, v) { var a = Look.get(); a[k] = v; wj('home.look', a); Look.apply(a); return a; },
+    seg: function (k, opts, cur) { return '<div class="h-seg" role="group">' + opts.map(function (o) { return '<button type="button" data-lookk="' + k + '" data-lookv="' + o[0] + '" aria-pressed="' + (o[0] === cur) + '">' + (o[2] ? '<i class="bi ' + o[2] + '"></i> ' : '') + o[1] + '</button>'; }).join('') + '</div>'; },
+    html: function () {
+      var a = Look.get();
+      return '<div class="h-det-box h-ap"><b><i class="bi bi-palette"></i> ' + L('Appearance', 'Utseende') + '</b>' +
+        '<div class="h-ap-row">' + L('Theme', 'Tema') + Look.seg('theme', [['auto', L('Phone', 'Telefon'), 'bi-phone'], ['light', L('Light', 'Lys'), 'bi-sun'], ['dark', L('Dark', 'Mørk'), 'bi-moon-stars']], a.theme) + '</div>' +
+        '<div class="h-ap-row">' + L('Colour', 'Farge') + '<div class="h-dots" role="group">' + Look.ACC.map(function (c) { return '<button type="button" data-lookk="acc" data-lookv="' + c[0] + '" style="--dot:' + c[1] + '" aria-label="' + esc(c[2]) + '" title="' + esc(c[2]) + '" aria-pressed="' + (c[0] === a.acc) + '"></button>'; }).join('') + '</div></div>' +
+        '<div class="h-ap-row">' + L('Text size', 'Tekststørrelse') + Look.seg('size', [['s', L('Small', 'Liten')], ['m', L('Normal', 'Normal')], ['l', L('Large', 'Stor')]], a.size) + '</div>' +
+        '<p class="h-small">' + L('Only on this phone. Changes show right away.', 'Bare på denne telefonen. Endringer vises med en gang.') + '</p></div>';
+    }
+  };
+  if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { Look.apply(Look.get()); }); } catch (e) {} }
   function settingsSheet() {
     var w = info().what || {}, rem = !!rj('home.key', null), o = owner();
     var NAMES = [['shop', L('Shopping list', 'Handleliste'), 'Handleliste'], ['meals', L('Dinner plan', 'Middagsplan')], ['chores', L('Chores', 'Husarbeid')], ['money', L('Money between you', 'Penger mellom dere')], ['bills', L('Home bills', 'Regninger')], ['cal', L('Calendar events', 'Kalenderhendelser')], ['trips', L('Trips', 'Turer')], ['plants', L('Plants', 'Planter')], ['move', L('Moving checklist', 'Flyttesjekkliste')], ['notes', L('Home notes', 'Hjemmenotater')]];
@@ -536,6 +560,7 @@
       '<label class="h-lbl">' + L('Your name', 'Navnet ditt') + '<input name="nm" maxlength="30" value="' + esc(mine().name || info().partner || '') + '"></label>' +
       '<button type="button" class="h-btn ghost" data-profile><i class="bi bi-person-vcard"></i> ' + L('Birthday and phone', 'Bursdag og telefon') + '</button>' +
       '<label class="h-lbl">' + L('Language', 'Språk') + '<select name="lang"><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
+      Look.html() +
       '<label class="h-check"><input type="checkbox" name="rem"' + (rem ? ' checked' : '') + '> ' + L('Keep me unlocked on this phone', 'Hold meg innlogget på denne telefonen') + '</label>' +
       '<div class="h-det-box"><b><i class="bi bi-bell"></i> ' + L('Notifications on this phone', 'Varsler på denne telefonen') + '</b>' + Push.html() + '</div>' +
       '<div class="h-det-box"><b><i class="bi bi-person-lock"></i> ' + L('Your own features', 'Dine egne funksjoner') + '</b><p class="h-small">' + L('Only you see these – locked with your own key. ', 'Bare du ser disse – låst med din egen nøkkel. ') + esc(o) + L(' can’t open them.', ' kan ikke åpne dem.') + '</p>' +
@@ -560,7 +585,7 @@
       if ((f.lang.value === 'nb') !== nb) { try { localStorage.setItem('home.lang', f.lang.value); } catch (x) {} setTimeout(function () { location.reload(); }, 150); }
     });
     bg.querySelector('[type=submit]').textContent = L('Save', 'Lagre');
-    if (preview) bg.querySelectorAll('input, select, details, [data-lock], [data-forget], [data-avatar], [data-profile], [data-mydl]').forEach(function (x) { if (x.tagName === 'DETAILS') x.style.display = 'none'; else x.disabled = true; });
+    if (preview) bg.querySelectorAll('input, select, details, [data-lock], [data-forget], [data-avatar], [data-profile], [data-mydl], [data-lookk]').forEach(function (x) { if (x.tagName === 'DETAILS') x.style.display = 'none'; else x.disabled = true; });
   }
   var backToProfile = false;
   function avatarEdit() {
@@ -578,6 +603,7 @@
   } };
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
+    if (d.lookk) { if (preview) return; Look.set(d.lookk, d.lookv); var gp = b.parentNode; gp.querySelectorAll('[data-lookk]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); return; }
     if (d.avatar != null) { e.preventDefault(); backToProfile = !!(b.closest('.h-sheet') && b.closest('.h-sheet').querySelector('[name=bd]')); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
     if (d.lock != null) { wj('home.key', null); wj('home.pkey', null); location.reload(); return; }
     if (d.forget != null) { ['home.key', 'home.queue', 'home.tab', 'home.pkey', 'home.myf', 'home.profiled'].forEach(function (k) { wj(k, null); }); location.reload(); return; }

@@ -13,7 +13,7 @@
   var wide = window.matchMedia ? matchMedia('(min-width: 1024px)') : { matches: false, addEventListener: function () {} };
   function settings() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
   function mode() { var m = null; try { m = localStorage.getItem(ST); } catch (e) {} return m === 'icons' || m === 'hidden' ? m : 'open'; }
-  function on() { var s = settings(); return s.nav === 'side' && s.look !== 'classic'; }
+  function on() { var s = settings(); return s.nav === 'side'; }
   function classes(m) {
     var o = on();
     root.classList.toggle('side-nav', o);
@@ -76,8 +76,7 @@
     var s = settings(), side = s.nav === 'side';
     document.querySelectorAll('[data-nav-opt]').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.navOpt === 'side') === side)); });
     var note = document.getElementById('stNavNote');
-    if (note) note.textContent = t(s.look === 'classic' ? 'The side bar needs the Modern look'
-      : side ? 'On wider screens – iPad across and computers. Phones keep the bottom bar.' : 'At the top on a computer, at the bottom on a phone');
+    if (note) note.textContent = t(side ? 'On wider screens – iPad across and computers. Phones keep the bottom bar.' : 'At the top on a computer, at the bottom on a phone');
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-nav-opt]'); if (!b) return;

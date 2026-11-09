@@ -14,7 +14,16 @@
   <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
   <link href="/cmd/home/manifest.webmanifest" rel="manifest">
   <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="/cmd/home/app.css?v=9" rel="stylesheet">
+  <link href="/cmd/home/app.css?v=10" rel="stylesheet">
+  <script>
+    /* Settings → Appearance, before the first paint (this phone only) */
+    (function () { try { var a = JSON.parse(localStorage.getItem('home.look')) || {}, r = document.documentElement;
+      if (a.theme === 'light' || a.theme === 'dark') r.setAttribute('data-theme', a.theme);
+      if (/^(blue|purple|pink|orange|green)$/.test(a.acc || '')) r.setAttribute('data-acc', a.acc);
+      if (a.size === 's' || a.size === 'l') r.setAttribute('data-size', a.size);
+      if (a.theme === 'light') document.querySelector('meta[name=theme-color]').setAttribute('content', '#f4f5f7');
+    } catch (e) {} })();
+  </script>
 </head>
 <body>
   <!-- The shared app: only the shared box. No part of the private dashboard is loaded on this page. -->
@@ -27,6 +36,6 @@
   </script>
   <script src="/cmd/avatar.js?v=1"></script>
   <script src="/cmd/share-core.js?v=6"></script>
-  <script src="/cmd/home/app.js?v=13"></script>
+  <script src="/cmd/home/app.js?v=14"></script>
 </body>
 </html>
