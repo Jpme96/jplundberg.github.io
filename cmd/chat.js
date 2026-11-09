@@ -325,6 +325,18 @@
       if (a === 'select') { C.sel = {}; C.sel[id] = 1; selBar(); paintList(); }
     });
   }
+  /* tap a reaction under a message: change yours, see who reacted, or take yours away */
+  function reactMenu(id) {
+    var rx = reactions()[id] || {}, myE = rx[C.opt.me] || '';
+    var who = Object.keys(rx).filter(function (k) { return rx[k]; }).map(function (k) { return '<button type="button" data-a="none" style="pointer-events:none"><span style="font-size:22px;width:22px;text-align:center">' + esc(rx[k]) + '</span>' + esc(k === C.opt.me ? L('You', 'Du') : C.opt.name(k)) + '</button>'; }).join('');
+    menu('<div class="hc-emos">' + QUICK.map(function (e) { return '<button type="button" data-e="' + e + '" class="' + (myE === e ? 'mine' : '') + '" aria-label="' + e + '">' + e + '</button>'; }).join('') + '<button type="button" data-a="moreemo" aria-label="' + L('More emojis', 'Flere emojier') + '"><i class="bi bi-plus-circle"></i></button></div>' +
+      who + (myE ? '<button type="button" data-a="rm" class="red"><i class="bi bi-x-circle"></i>' + L('Remove my reaction', 'Fjern reaksjonen min') + '</button>' : ''), function (b) {
+      if (b.dataset.e) { if (b.dataset.e !== myE) react(id, b.dataset.e); return; }
+      if (b.dataset.a === 'moreemo') { setTimeout(function () { emojiGrid(id); }, 0); return; }
+      if (b.dataset.a === 'rm') { react(id, myE); return; }
+      if (b.dataset.a === 'none') return false;
+    });
+  }
   function emojiGrid(id) {
     var myE = ((reactions()[id] || {})[C.opt.me]) || '';
     menu('<p>' + esc(L('React with', 'Reager med')) + '</p><div class="hc-emogrid">' + EMOJI.map(function (e) { return '<button type="button" data-e="' + e + '" style="' + (myE === e ? 'background:color-mix(in srgb,var(--hc-acc) 22%,transparent)' : '') + '">' + e + '</button>'; }).join('') + '</div>', function (b) { if (b.dataset.e) react(id, b.dataset.e); });
@@ -523,7 +535,7 @@
       if (d.hcretry) { var r = C.msgs[d.hcretry]; if (r && r.retry) r.retry(); return; }
       if (d.hcunpick != null) { C.picked.splice(+d.hcunpick, 1); chips(); micState(); return; }
       if (d.hcattach != null) { attachMenu(); return; }
-      if (d.hcrx) { react(d.hcrx, d.e); return; }
+      if (d.hcrx) { reactMenu(d.hcrx); return; }
       if (d.hcgo) { var t2 = root.querySelector('.hc-m[data-mid="' + d.hcgo + '"]'); if (t2) { t2.scrollIntoView({ block: 'center', behavior: 'smooth' }); t2.classList.add('hl'); setTimeout(function () { t2.classList.remove('hl'); }, 1600); } else toast(L('That message is gone', 'Den meldingen er borte')); return; }
       if (d.hcplay) { play(d.hcplay, b); return; }
       if (d.hcnoreply != null) { C.reply = null; replyBar(); return; }
