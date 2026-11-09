@@ -57,13 +57,18 @@
   function merge(list, source) {
     var d = window.Vault.get(); if (!d || !list.length) return 0;
     d.health = d.health || {}; d.health.days = d.health.days || {};
-    var n = 0;
+    /* the inbox keeps every sending (an early one with fewer steps, then the full day), so a day can change and change
+       back while going through it – only days that really end up different count (and show the "Apple Health" note) */
+    var before = {}, touched = {}, sig = function (o) { var c = {}; F.forEach(function (f) { if (o && o[f] != null) c[f] = o[f]; }); return JSON.stringify(c); };
     list.forEach(function (x) {
       var k = /^\d{4}-\d{2}-\d{2}/.test(String(x.date || '')) ? String(x.date).slice(0, 10) : dkey(new Date());
-      var cur = d.health.days[k] || {}, ch = false;
-      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : norm(f, num(x[f])); if (v === 0 && ZERO_IS_EMPTY[f]) v = null; if (v != null) { v = Math.round(v * 100) / 100; if (cur[f] !== v) { cur[f] = v; ch = true; } } });
-      if (ch) { cur.t = Date.now(); d.health.days[k] = cur; n++; }
+      if (!(k in before)) before[k] = sig(d.health.days[k]);
+      var cur = d.health.days[k] || {};
+      F.forEach(function (f) { var v = f === 'sleep' ? hours(x[f]) : norm(f, num(x[f])); if (v === 0 && ZERO_IS_EMPTY[f]) v = null; if (v != null) { v = Math.round(v * 100) / 100; if (cur[f] !== v) cur[f] = v; } });
+      d.health.days[k] = cur; touched[k] = 1;
     });
+    var n = 0;
+    Object.keys(touched).forEach(function (k) { if (sig(d.health.days[k]) !== before[k]) { d.health.days[k].t = Date.now(); n++; } else if (before[k] === '{}') delete d.health.days[k]; });
     if (!n) return 0;                                                  // nothing new: no save, no toast
     var keys = Object.keys(d.health.days).sort(); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.health.days[k]; });
     d.health.last = Date.now();

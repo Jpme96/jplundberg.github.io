@@ -5238,3 +5238,7 @@ html.hc-open { overflow: hidden; }
 :root { --hc-bub-b: 24px; }
 @media (max-width: 899px) { :root { --hc-bub-b: calc(max(12px, env(safe-area-inset-bottom)) + 76px); } }
 .hc-bub { z-index: 34 !important; }
+
+/* the things counted in the number on the app icon get the same red dot */
+.br-badge .br-ic { position: relative; }
+.br-badge .br-ic::after { content: ''; position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 0 2px var(--bg-solid, #111); }
