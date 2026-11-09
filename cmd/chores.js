@@ -59,7 +59,7 @@
     Fe.saveTools(t);
     if (!was) toast('<i class="bi bi-check2"></i> ' + esc(c.name) + ' done', function () { var t2 = Fe.tools(); delete (t2.choreDone || {})[k]; Fe.saveTools(t2); });
   }
-  window.Chores = { period: period, turn: turn, done: done, addLog: addLog, log: logOf };
+  window.Chores = { period: period, turn: turn, done: done, addLog: addLog, log: logOf, setDone: setDone, whoName: whoName, icon: icon };
   var showLog = false;
   function fair(l) { var ym = today().slice(0, 7), me = 0, them = 0; logOf().forEach(function (x) { if (x.at.slice(0, 7) !== ym) return; if (x.who === 'me') me++; else them++; }); return { me: me, them: them }; }
 

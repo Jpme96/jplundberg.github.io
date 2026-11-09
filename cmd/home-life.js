@@ -1101,5 +1101,5 @@
     return out.slice(0, 4).join('');
   };
   window.HomeLife = { cfg: cfg, setCfg: setCfg, meals: meals, bday: bday, nextPickup: nextPickup, nextDue: nextDue, addShop: addShop, start: startT, stop: stopT,
-    aisleOf: aisleOf, AISLE: AISLE, ingredients: ingredients, talked: talked, dialog: dialog, dhead: dhead, picker: picker, overdue: overdue, recipeFor: recipeFor, gear: gear };
+    aisleOf: aisleOf, AISLE: AISLE, ingredients: ingredients, talked: talked, dialog: dialog, dhead: dhead, picker: picker, hmDone: hmDone, INFO: INFO, infoCfg: infoCfg, overdue: overdue, recipeFor: recipeFor, gear: gear };
 })();
