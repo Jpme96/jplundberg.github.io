@@ -211,7 +211,7 @@ async function route(request, env) {
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
-    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv' }); }
+    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv', files: env.FILES ? 'r2' : 'kv', fileMax: fileMax(env) }); }
     return vault(request, env);
 }
 
@@ -263,7 +263,7 @@ async function shareApi(request, url, env, partner, cfg) {
     await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
     await Promise.all([env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);
     let c2; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX + 'p', cursor: c2 }); for (const k of l.keys) { const r = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (r && r.role === 'p') await env.VAULT.delete(k.name); } c2 = l.list_complete ? null : l.cursor; } while (c2);
-    for (const pre of [SFILE, CFILE]) { let cur; do { const l = await env.VAULT.list({ prefix: pre, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur); }
+    for (const pre of [SFILE, CFILE]) { const all = await fList(env, pre); await Promise.all(Object.keys(all).map(k => fDel(env, k))); }
     await env.VAULT.delete(CHAT); await liveDel(request, 'cfg'); await liveDel(request, 'chatfull'); await liveDel(request, 'boxfull'); await liveSet(request, 'box', Date.now()); await liveSet(request, 'chat', Date.now());
     return json({ ok: true });
   }
@@ -341,18 +341,18 @@ async function sfileApi(request, url, env, partner) {
   const id = String(url.searchParams.get('id') || '');
   if (!RID.test(id)) return json({ error: 'bad id' }, 400);
   if (request.method === 'GET') {
-    const v = await env.VAULT.get(SFILE + id, { type: 'stream' });
+    const v = await fGet(env, SFILE + id);
     return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
   }
   if (partner) return json({ error: 'only the owner shares files' }, 403);
   if (request.method === 'PUT') {
     const len = parseInt(request.headers.get('content-length') || '0', 10);
     if (!len || len < 30) return json({ error: 'empty' }, 400);
-    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
-    await env.VAULT.put(SFILE + id, request.body, { metadata: { s: len, at: Date.now() } });
+    if (len > fileMax(env)) return json({ error: 'too large', max: fileMax(env) }, 413);
+    await fPut(env, SFILE + id, request.body, len);
     return json({ ok: true, id, size: len });
   }
-  if (request.method === 'DELETE') { await env.VAULT.delete(SFILE + id); return json({ ok: true }); }
+  if (request.method === 'DELETE') { await fDel(env, SFILE + id); return json({ ok: true }); }
   return json({ error: 'method not allowed' }, 405);
 }
 
@@ -411,7 +411,7 @@ async function chatApi(request, env, by, cfg) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') {
     const cur = (await freshGet(request, env, CHAT, 'chatfull', ep)) || { rev: 0, ttl: 0, msgs: {} }, now = Date.now(); cur.msgs = cur.msgs || {};
-    const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: {} };
+    const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, fileMax: fileMax(env), msgs: {} };
     for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id]; if (!(cur.ttl && !m.del && now - m.t > cur.ttl)) out.msgs[id] = m; }
     return json(out);
   }
@@ -445,7 +445,7 @@ async function chatApi(request, env, by, cfg) {
       if (env.VAULT.cas) { if (!(await env.VAULT.cas(CHAT, JSON.stringify(cur), exp))) continue; } else await env.VAULT.put(CHAT, JSON.stringify(cur));
       cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev);
     }
-    if (gone.length) await Promise.all(gone.map(f => env.VAULT.delete(CFILE + f)));
+    if (gone.length) await Promise.all(gone.map(f => fDel(env, CFILE + f)));
     return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
   }
   return json({ error: 'busy – try again' }, 503);
@@ -455,17 +455,17 @@ async function cfileApi(request, url, env) {
   const id = String(url.searchParams.get('id') || '');
   if (!RID.test(id)) return json({ error: 'bad id' }, 400);
   if (request.method === 'GET') {
-    const v = await env.VAULT.get(CFILE + id, { type: 'stream' });
+    const v = await fGet(env, CFILE + id);
     return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'private, max-age=31536000, immutable', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
   }
   if (request.method === 'PUT') {
     const len = parseInt(request.headers.get('content-length') || '0', 10);
     if (!len || len < 30) return json({ error: 'empty' }, 400);
-    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
-    await env.VAULT.put(CFILE + id, request.body, { metadata: { s: len, at: Date.now() } });
+    if (len > fileMax(env)) return json({ error: 'too large', max: fileMax(env) }, 413);
+    await fPut(env, CFILE + id, request.body, len);
     return json({ ok: true, id, size: len });
   }
-  if (request.method === 'DELETE') { await env.VAULT.delete(CFILE + id); return json({ ok: true }); }
+  if (request.method === 'DELETE') { await fDel(env, CFILE + id); return json({ ok: true }); }
   return json({ error: 'method not allowed' }, 405);
 }
 
@@ -682,6 +682,28 @@ async function vault(request, env) {
   return json({ error: 'method not allowed' }, 405);
 }
 
+/* ---------- files: R2 (binding FILES) when connected, else KV ----------
+   R2 has no 25 MB limit per file, so with it uploads can be up to ~95 MB (a request body on this domain's
+   plan can be 100 MB). Files saved before R2 was connected stay in KV and are still found there. */
+const R2_MAX = 95 * 1024 * 1024;
+function fileMax(env) { return env.FILES ? R2_MAX : FILE_MAX; }
+async function fPut(env, key, body, len) {
+  if (env.FILES) { await env.FILES.put(key, body, { customMetadata: { s: String(len), at: String(Date.now()) } }); return; }
+  await env.VAULT.put(key, body, { metadata: { s: len, at: Date.now() } });
+}
+async function fGet(env, key) {
+  if (env.FILES) { const o = await env.FILES.get(key); if (o) return o.body; }
+  return env.VAULT.get(key, { type: 'stream' });
+}
+async function fDel(env, key) { if (env.FILES) await env.FILES.delete(key).catch(() => {}); await env.VAULT.delete(key); }
+/* every file under a prefix: { name: size } from both places */
+async function fList(env, prefix) {
+  const out = {};
+  let cur; do { const l = await env.VAULT.list({ prefix, cursor: cur }); l.keys.forEach(k => { out[k.name] = (k.metadata && k.metadata.s) || 0; }); cur = l.list_complete ? null : l.cursor; } while (cur);
+  if (env.FILES) { let c2; do { const l = await env.FILES.list({ prefix, cursor: c2, include: ['customMetadata'] }); (l.objects || []).forEach(o => { out[o.key] = o.size || +((o.customMetadata || {}).s) || 0; }); c2 = l.truncated ? l.cursor : null; } while (c2); }
+  return out;
+}
+
 /* ---------- files for Papers and the Home inventory ----------
    The dashboard encrypts each file with a key only your devices have (it lives inside the encrypted
    vault) before it is sent, so what is stored here is unreadable without your passcode.
@@ -691,29 +713,25 @@ const FILE_MAX = 24 * 1024 * 1024;                 // KV holds up to 25 MiB per 
 async function fileApi(request, url, env) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET' && url.searchParams.get('list') === '1') {
-    const files = {}; let cursor, bytes = 0, n = 0;
-    do {
-      const r = await env.VAULT.list({ prefix: FILE_PREFIX, cursor });
-      r.keys.forEach(k => { const sz = k.metadata && k.metadata.s || 0; files[k.name.slice(FILE_PREFIX.length)] = sz; bytes += sz; });
-      cursor = r.list_complete ? null : r.cursor;
-    } while (cursor && ++n < 20);
+    const all = await fList(env, FILE_PREFIX), files = {}; let bytes = 0;
+    Object.keys(all).forEach(k => { files[k.slice(FILE_PREFIX.length)] = all[k]; bytes += +all[k] || 0; });
     return json({ files, bytes });
   }
   const id = String(url.searchParams.get('id') || '');
   if (!/^[a-z]{2,4}-[A-Za-z0-9_-]{3,90}$/.test(id)) return json({ error: 'bad id' }, 400);
   if (request.method === 'GET') {
-    const v = await env.VAULT.get(FILE_PREFIX + id, { type: 'stream' });
+    const v = await fGet(env, FILE_PREFIX + id);
     return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
   }
   if (request.method === 'PUT') {
     const len = parseInt(request.headers.get('content-length') || '0', 10);
     if (!len || len < 30) return json({ error: 'empty' }, 400);
-    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
+    if (len > fileMax(env)) return json({ error: 'too large', max: fileMax(env) }, 413);
     if (!request.body) return json({ error: 'empty' }, 400);
-    await env.VAULT.put(FILE_PREFIX + id, request.body, { metadata: { s: len, at: Date.now() } });
+    await fPut(env, FILE_PREFIX + id, request.body, len);
     return json({ ok: true, id, size: len });
   }
-  if (request.method === 'DELETE') { await env.VAULT.delete(FILE_PREFIX + id); return json({ ok: true }); }
+  if (request.method === 'DELETE') { await fDel(env, FILE_PREFIX + id); return json({ ok: true }); }
   return json({ error: 'method not allowed' }, 405);
 }
 

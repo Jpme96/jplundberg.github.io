@@ -42,7 +42,7 @@
       });
       return Promise.all(jobs).then(function () {
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
-        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad; C.badIds = badIds;
+        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad; C.badIds = badIds; if (srv.fileMax) C.fileMax = srv.fileMax;
       });
     }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; C.dErr = (e && (e.status || e.message)) || 'error'; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
@@ -81,11 +81,11 @@
     var prep = isImg && !/gif/i.test(f.type) ? shrink(f, 2048, 0.85).then(function (big) { return shrink(f, 40, 0.5).then(function (th) { return { blob: big.blob, w: big.w, h: big.h, th: th.url, type: 'image/jpeg', name: f.name.replace(/\.\w+$/, '') + '.jpg' }; }); }, function () { return { blob: f, type: f.type, name: f.name }; })
       : Promise.resolve({ blob: f, type: f.type || 'application/octet-stream', name: f.name || 'file' });
     return prep.then(function (p) {
-      if (p.blob.size > 24 * 1048576) throw new Error(L('Too big – the limit is 24 MB', 'For stor – grensen er 24 MB'));
+      var max = C.fileMax || 24 * 1048576; if (p.blob.size > max) throw new Error(L('Too big – the limit is ', 'For stor – grensen er ') + Math.round(max / 1048576) + ' MB');
       var fid = hex(16);
       return p.blob.arrayBuffer().then(function (buf) { return SC.encryptBytes(C.opt.key, buf); }).then(function (enc) {
         return fetch('/cmd/api/cfile?id=' + fid, { method: 'PUT', body: enc, credentials: 'same-origin' });
-      }).then(function (r) { if (!r.ok) throw new Error(L('The file could not be sent', 'Filen kunne ikke sendes')); C.urls[fid] = URL.createObjectURL(p.blob);
+      }).then(function (r) { if (r.status === 413) throw new Error(L('Too big for the server', 'For stor for serveren')); if (!r.ok) throw new Error(L('The file could not be sent', 'Filen kunne ikke sendes')); C.urls[fid] = URL.createObjectURL(p.blob);
         return { id: fid, name: String(p.name).slice(0, 120), type: String(p.type).slice(0, 60), size: p.blob.size, w: p.w || 0, h: p.h || 0, th: p.th || '', dur: +f._dur || 0 }; });
     });
   }
