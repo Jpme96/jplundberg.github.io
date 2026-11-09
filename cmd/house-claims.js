@@ -124,7 +124,7 @@
     return bits;
   }
   var col = K && mountEl ? K.collection({
-    mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: 'Reklamasjon', addLabel: 'Claim', limit: 8,
+    mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: 'Fault claims', addLabel: 'Claim', limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
     empty: 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.',
     headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims"><i class="bi bi-file-earmark-pdf"></i> Report</button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings"><i class="bi bi-sliders"></i></button>'; },

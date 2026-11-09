@@ -56,7 +56,8 @@
     Work: 'Turning on any of these adds a Work page to the menu.',
     Health: 'Shown on the Health page (the menu tab shows when any of these or Habits is on).',
     Travel: 'Shown under Trips on the Travel page.',
-    Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.'
+    Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.',
+    'Home life': 'Each one is its own page in the menu. Switching one off hides it – nothing is deleted.'
   };
   /* added in October 2026 – marked until you've tried them */
   var NEW = { voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
@@ -65,7 +66,7 @@
     F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
     var simp = F.simple && F.simple();
     box.innerHTML = '<label class="st-row ft-row ft-simple"><span class="st-ico" style="--c:#7a8794"><i class="bi bi-ui-checks-grid"></i></span><span class="st-label">Simple mode<small>' +
-      (simp ? 'On – the extras are hidden. Your switches are kept for when you turn it off.' : 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, strømpris, savings jars, recurring and shared payments, warranties)') +
+      (simp ? 'On – the extras are hidden. Your switches are kept for when you turn it off.' : 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)') +
       '</small></span><input type="checkbox" class="switch" data-simple' + (simp ? ' checked' : '') + ' aria-label="Simple mode"></label>' + groups.map(function (g) {
       return '<p class="st-cardgroup"><i class="bi bi-' + GROUP_ICON[g] + '"></i> ' + g + '</p>' +
         F.LIST.filter(function (x) { return x.group === g; }).map(function (x) {
@@ -74,7 +75,7 @@
           return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
             '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new">New</span>' : '') + '<small>' + x.desc + '</small></span>' +
             '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
-        }).join('') + '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>';
+        }).join('') + (GROUP_NOTE[g] ? '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>' : '');
     }).join('');
     summary();
   }

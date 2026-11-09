@@ -32,7 +32,7 @@
     { id: 'hreport', group: 'Health', name: 'Weekly health report', icon: 'clipboard2-heart', c: '#d55181', desc: 'Every Sunday: sleep, steps, training and mood compared with last week', def: true },
     { id: 'tripbudget', group: 'Travel', name: 'Trip budget mode', icon: 'cash-coin', c: '#0891b2', desc: 'While you’re away: what you can spend today' },
     { id: 'smartpack', group: 'Travel', name: 'Smart packing', icon: 'bag-check', c: '#0891b2', desc: 'A packing list from the trip’s length and the weather there' },
-    { id: 'power', group: 'Finance', name: 'Strømpris', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours' },
+    { id: 'power', group: 'Finance', name: 'Power prices', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours' },
     { id: 'recur', group: 'Finance', name: 'Recurring payments', icon: 'arrow-repeat', c: '#11a597', desc: 'Charges that come back every month – add them to the budget in one tap', def: true },
     { id: 'shared', group: 'Finance', name: 'Shared expenses', icon: 'people', c: '#22b35e', desc: 'Split a payment with someone, see who owes what and settle up' },
     { id: 'jars', group: 'Finance', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left' },
@@ -42,7 +42,7 @@
     { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes' },
     { id: 'hproj', group: 'Home life', name: 'Home projects', icon: 'hammer', c: '#e8743b', desc: 'Painting, a new bathroom, the garden – tasks, budget and what you spent, on its own House tab', def: true },
     { id: 'hdocs', group: 'Home life', name: 'FDV binder', icon: 'journal-bookmark', c: '#0891b2', desc: 'Manuals, drawings and warranties for your home, sorted by building part – import a whole download or .zip at once', def: true },
-    { id: 'hclaim', group: 'Home life', name: 'Reklamasjon', icon: 'exclamation-diamond', c: '#e66767', desc: 'Report a fault to the seller, builder, tradesman or shop – with photos, the deadlines and a ready letter', def: true },
+    { id: 'hclaim', group: 'Home life', name: 'Fault claims', icon: 'exclamation-diamond', c: '#e66767', desc: 'Report a fault to the seller, builder, tradesman or shop – with photos, the deadlines and a ready letter', def: true },
     { id: 'wish', group: 'Home life', name: 'Wishlist', icon: 'stars', c: '#8a6fdf', desc: 'A page for things you’d like to buy – whether they fit this month, small things to pick up, and what you bought (straight into Home inventory)', def: true },
     { id: 'goals', group: 'Home life', name: 'Goals', icon: 'bullseye', c: '#3987e5', desc: 'A page for your goals with a date, steps and numbers that update themselves from your accounts, loans and the rest', def: true },
     { id: 'papers', group: 'Home life', name: 'Papers', icon: 'folder2-open', c: '#6b4bc4', desc: 'A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew', def: true }
