@@ -57,3 +57,34 @@ li.done .h-tick span { color: var(--muted); text-decoration: line-through; } li.
 .h-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 84px); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: .2s; background: #222428; color: #fff; padding: 10px 16px; border-radius: 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100vw - 32px); z-index: 20; font-size: 14.5px; }
 .h-toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .h-toast button { border: 0; background: none; color: #5eead4; font-weight: 700; cursor: pointer; min-height: 32px; }
+/* avatars */
+.h-faces { display: flex; flex: none; }
+.h-av { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #1d2533; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--bg); flex: none; }
+.h-av + .h-av { margin-left: -12px; }
+.h-av svg { width: 100%; height: 100%; transform: scale(1.35) translateY(14%); }
+.h-av.none { background: var(--card); color: var(--muted); font-size: 20px; }
+.h-av.big { width: 72px; height: 72px; }
+.h-top { align-items: center; } .h-tt { flex: 1; min-width: 0; } .h-tt h1 { overflow-wrap: anywhere; }
+.h-nudge { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 12px; padding: 12px 14px; border: 1px dashed var(--acc); border-radius: 14px; background: rgba(20, 184, 166, .08); color: var(--ink); text-align: left; cursor: pointer; }
+.h-me { display: flex; align-items: center; gap: 14px; } .h-me b { display: block; margin-bottom: 6px; }
+.h-det { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; } .h-det summary { cursor: pointer; font-weight: 600; } .h-det input { margin-top: 8px; }
+.h-det-box { background: var(--card); border-radius: 12px; padding: 12px 14px; } .h-det-box p { margin: 6px 0 0; }
+.danger { color: var(--bad) !important; }
+.h-pre { white-space: pre-wrap; }
+.h-notes .h-tick { align-items: flex-start; }
+.h-tick em { font-style: normal; color: var(--muted); }
+textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 10px 14px; font: inherit; font-size: 16px; color: inherit; resize: vertical; }
+/* the avatar maker (borrowed from the dashboard) */
+.h-avsheet { gap: 0; }
+.ave { display: grid; gap: 10px; } .ave-head { display: flex; align-items: center; justify-content: space-between; } .ave-head b { font-size: 18px; }
+.ave-head .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--card); cursor: pointer; }
+.av-prev { display: grid; justify-items: center; margin-bottom: 4px; } .av-prev > svg { width: 160px; height: auto; border-radius: 18px; }
+.av-acts { display: flex; align-items: center; gap: 8px; } .av-acts .spacer { flex: 1; }
+.av-acts .text-btn { border: 0; background: none; color: var(--acc); font-weight: 600; min-height: 40px; cursor: pointer; }
+.av-acts .pill-btn { border: 0; border-radius: 12px; background: var(--acc); color: var(--acc-ink); font-weight: 600; min-height: 42px; padding: 0 18px; cursor: pointer; }
+.av-grp { margin: 8px 0 0; } .av-grp > span { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.av-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.av-opts button { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 7px 12px; font-size: 13.5px; cursor: pointer; }
+.av-opts button[aria-pressed="true"] { border-color: var(--acc); color: var(--acc); background: rgba(20, 184, 166, .12); }
+.av-opts .av-dot { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: var(--c); border: 2px solid rgba(128, 128, 128, .3); }
+.av-opts .av-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc); background: var(--c); }

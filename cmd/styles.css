@@ -5117,3 +5117,13 @@ button.mh-chip { font: inherit; cursor: pointer; border: 0; }
 .sh-qrimg svg { display: block; width: 100%; height: auto; }
 .sh-peek { list-style: none; margin: 0; padding: 4px 14px 10px; } .sh-peek li { padding: 6px 0; border-top: 1px solid var(--line); } .sh-peek li:first-child { border-top: 0; }
 .sh-peek b { display: block; font-size: 14px; } .sh-peek small { color: var(--muted); font-size: 12.5px; }
+.hs2-pchip { display: inline-flex; align-items: center; }
+.hs2-pchip .lf-chip { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.hs2-pchip .hs2-pdel { border: 1px solid var(--line); border-left: 0; background: transparent; color: var(--muted); min-width: 36px; min-height: 36px; align-self: stretch; border-radius: 0 999px 999px 0; cursor: pointer; font-size: 16px; }
+.hs2-pchip .lf-chip:only-child { border-radius: 999px; }
+.tp-share { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 2px 12px; }
+.tp-share > span { display: flex; flex-direction: column; font-weight: 600; } .tp-share small { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.sh-note { display: flex; align-items: center; gap: 6px; } .sh-note-x { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; padding: 4px 0; cursor: pointer; }
+.sh-note-x b { display: block; } .sh-note-x small { color: var(--muted); font-size: 12.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-noteform { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; } .sh-noteform textarea { min-height: 80px; resize: vertical; font: inherit; }
+.sh-noteacts { display: flex; justify-content: flex-end; gap: 8px; }

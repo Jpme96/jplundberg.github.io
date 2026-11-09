@@ -234,14 +234,26 @@
   }
   function setMove(fn) { var t = Fe.tools(); var mv = t.hmove && typeof t.hmove === 'object' ? t.hmove : {}; fn(mv); t.hmove = mv; Fe.saveTools(t); }
 
-  function setupForm(p) {
+  function setupForm(p, inSheet) {
     var s = S().data(), pct = p ? myPct() : 50;
     return '<form class="hs2-setup" data-hs2setup><p class="muted">Share your home with someone? Say who and how you split, then add what you buy together – furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.</p>' +
-      (s.people.length ? '<div class="lf-chips mp-chips">' + s.people.map(function (q) { return '<button type="button" class="lf-chip" data-hs2pick="' + esc(q.id) + '" aria-pressed="' + (!!p && p.id === q.id) + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' : '') +
+      (s.people.length ? '<div class="lf-chips mp-chips">' + s.people.map(function (q) { return '<span class="hs2-pchip"><button type="button" class="lf-chip" data-hs2pick="' + esc(q.id) + '" aria-pressed="' + (!!p && p.id === q.id) + '">' + esc(q.name) + '</button>' + (inSheet ? '<button type="button" class="hs2-pdel" data-hs2del="' + esc(q.id) + '" aria-label="Remove ' + esc(q.name) + '"><i class="bi bi-x"></i></button>' : '') + '</span>'; }).join('') + '</div>' : '') +
       '<div class="mp-grid hs2-sg"><label><span>Who</span><input name="who" value="' + esc(p ? p.name : '') + '" placeholder="Your partner’s name" maxlength="30" autocomplete="off" required></label>' +
       '<label><span>You pay, %</span><input name="pct" value="' + esc(pc(pct)) + '" inputmode="decimal" autocomplete="off"></label></div>' +
       '<div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-hs2q="' + v + '" aria-pressed="' + (pct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div>' +
-      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (p ? 'Save' : 'Start') + '</button></div></form>';
+      (inSheet ? '' : '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (p ? 'Save' : 'Start') + '</button></div>') + '</form>';
+  }
+  /* remove someone you no longer share with – their purchases and settle-ups go too (Undo puts it all back) */
+  function removePerson(id) {
+    var q = S().person(id); if (!q) return;
+    var t0 = Fe.tools(), snap = JSON.parse(JSON.stringify({ shared: t0.shared || null, fincfg: t0.fincfg || null }));
+    var s = S().data();
+    s.people = s.people.filter(function (x) { return x.id !== id; });
+    s.items = s.items.filter(function (x) { return x.payer !== id && !(x.shares && x.shares[id] != null); });
+    s.pays = s.pays.filter(function (x) { return x.from !== id && x.to !== id; });
+    S().save(s);
+    if (S().cfg().partner === id) S().setCfg({ partner: '' });
+    toast('<i class="bi bi-person-dash"></i> ' + esc(q.name) + ' removed', function () { var t = Fe.tools(); t.shared = snap.shared; t.fincfg = snap.fincfg; Fe.saveTools(t); });
   }
   function saveSetup(form) {
     var who = form.who.value.trim(), pct = num(form.pct.value);
@@ -271,15 +283,22 @@
   function setSheet() {
     var X = sheet('Who and how you split');
     var mv = move();
-    X.box.innerHTML = shead('people', 'Who and how you split') + setupForm(partner()) + '<p class="muted hs2-note">Changing the % applies to new purchases. Ones already saved keep their split – open one to change it.</p>' +
+    X.box.innerHTML = shead('people', 'Who and how you split') + setupForm(partner(), true) + '<p class="muted hs2-note">Changing the % applies to new purchases. Ones already saved keep their split – open one to change it.</p>' +
       '<form class="hs2-more" data-hs2more><p class="mp-lbl">Moving in</p><label><span>Take-over date</span><input type="date" name="move" value="' + esc(mv ? mv.date : '') + '"></label>' +
       '<p class="muted hs2-note">Shows a moving checklist on this card and the day in your calendar. Empty = no list.</p>' +
       '<p class="mp-lbl">Overdue interest</p><label><span>Forsinkelsesrente, % a year</span><input name="rate" inputmode="decimal" value="' + esc(pc(lateRate())) + '"></label>' +
       '<p class="muted hs2-note">Used for a covered instalment not paid back within 40 days. It changes on 1 January and 1 July (Finanstilsynet) – 12,25 % from 1 July 2026.</p>' +
-      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save these</button></div></form>';
+      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save</button></div></form>';
     wireSetup(X.box, function () { X.close(); draw(); });
+    X.box.addEventListener('click', function (e) {
+      var d = e.target.closest('[data-hs2del]'); if (!d) return; e.preventDefault();
+      removePerson(d.dataset.hs2del); X.close(); draw(); setTimeout(setSheet, 60);
+    });
     X.box.addEventListener('submit', function (e) {
       var f = e.target.closest('[data-hs2more]'); if (!f) return; e.preventDefault();
+      /* one Save for the whole sheet: who and the % first */
+      var sf = X.box.querySelector('[data-hs2setup]');
+      if (sf && sf.who.value.trim() && !saveSetup(sf)) return;
       var r = num(f.rate.value); if (r > 0 && r < 50) S().setCfg({ lateRate: r });
       var dt = f.move.value;
       setMove(function (m) {

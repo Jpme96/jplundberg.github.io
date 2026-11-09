@@ -644,6 +644,7 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^Shared with (.+)$/, 'Delt med $1'], [/^Remove (.+)$/, 'Fjern $1'], [/^(.+) removed$/, '$1 er fjernet'],
     [/^With (.+), on their phone: 1\. Open (\S+) and log in with their email\. 2\. Scan this code with the Camera app\. 3\. They choose their own passcode\.$/, 'Sammen med $1, på telefonen deres: 1. Åpne $2 og logg inn med e-posten deres. 2. Skann denne koden med Kamera-appen. 3. De velger sin egen kode.'],
     [/^Visible to (.+)$/, 'Synlig for $1'], [/^Shared with (.+) – Settings → Shared space$/, 'Delt med $1 – Innstillinger → Delt hjem'], [/^Share with (.+)$/, 'Del med $1'], [/^Share your home with (.+)$/, 'Del hjemmet med $1'], [/^Sharing with (.+)$/, 'Deler med $1'], [/^With ([^\s·,]+)( · .+)?$/, function (m, a, b) { return 'Med ' + a + (b ? ' · ' + tr(b.slice(3)) : ''); }],
     [/^What (.+) sees$/, 'Hva $1 ser'], [/^Show exactly what (.+) sees$/, 'Vis nøyaktig hva $1 ser'], [/^Stopped sharing – (.+) no longer has access$/, 'Sluttet å dele – $1 har ikke lenger tilgang'], [/^Sharing with (.+) – show them the code$/, 'Deler med $1 – vis dem koden'],
@@ -1174,6 +1175,9 @@
     'Signed out – reload': 'Logget ut – last inn på nytt', 'Couldn’t reach the server': 'Fikk ikke kontakt med serveren',
     'They get their own small app with only what you choose below – the shopping list, chores, money between you, events you tick, plants and the moving checklist. Your finances, health, papers and everything else stay locked with your passcode; they can’t open it.': 'De får sin egen lille app med bare det du velger under – handlelisten, husarbeid, penger mellom dere, hendelser du krysser av, planter og flyttesjekklisten. Økonomi, helse, papirer og alt annet forblir låst med koden din; de kan ikke åpne det.',
     ' and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.': ' og logger inn med e-posten sin. 2. Skann denne koden med Kamera-appen. 3. De velger sin egen kode.', 'the person you live with': 'den du bor med',
+    'Dinner plan': 'Middagsplan', 'Home bills – their part': 'Regninger – deres del', 'Trips you tick': 'Turer du krysser av', 'Home notes': 'Hjemmenotater', 'Home bills': 'Regninger', 'Trips': 'Turer', 'Add a note': 'Legg til et notat', 'Title – e.g. Bins': 'Tittel – f.eks. Søppel', 'e.g. Paper every other Tuesday, food waste Fridays': 'f.eks. Papir annenhver tirsdag, matavfall fredager',
+    'Bin days, the Wi-Fi name, who to call when something breaks – you both see and change these. Don’t put passwords here.': 'Søppeldager, navnet på Wi-Fi, hvem man ringer når noe går i stykker – dere ser og endrer disse begge. Ikke skriv passord her.', 'Delete note': 'Slett notatet', 'Note': 'Notat',
+    'Dates and the packing list – you tick things off together': 'Datoer og pakkelisten – dere krysser av sammen',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

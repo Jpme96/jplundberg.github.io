@@ -168,7 +168,7 @@
     document.querySelectorAll('#tpDetail .tp-pane').forEach(function (p) { p.hidden = p.dataset.pane !== pane; });
     var checks = checklist(tr), open = checks.filter(function (c) { return !c.done; }).length;
     $('tpPrepCount').textContent = open ? open : '';
-    if (pane === 'overview') { renderDest(tr); renderGlance(tr, checks); if (document.activeElement !== $('tpNotes')) $('tpNotes').value = tr.notes || ''; }
+    if (pane === 'overview') { renderDest(tr); renderGlance(tr, checks); if (document.activeElement !== $('tpNotes')) $('tpNotes').value = tr.notes || ''; $('tpNotes').dataset.trip = tr.id; }
     if (pane === 'plan') { renderPlan(tr); renderIdeas(tr); renderMap(tr); }
     if (pane === 'prepare') { renderChecks(tr, checks); renderPack(tr); }
     if (pane === 'money') { renderMoney(tr); renderFx(tr); }

@@ -53,7 +53,7 @@
   }
   /* what may ever be shared – kind → the fields it may carry. Anything else is dropped before it is encrypted. */
   var ALLOW = {
-    info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'cats'],
+    info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook'],
     shop: ['text', 'done'],
     chore: ['name', 'every', 'day', 'who', 'start'],
     cdone: ['k', 'who'],
@@ -61,12 +61,26 @@
     pay: ['date', 'from', 'to', 'amount'],
     ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location'],
     plant: ['name', 'room', 'every', 'last'],
-    mv: ['text', 'done']
+    mv: ['text', 'done'],
+    meal: ['date', 'text'],
+    bill: ['name', 'day', 'amount', 'part', 'payer', 'next'],
+    trip: ['name', 'dest', 'start', 'end', 'pack'],
+    note: ['title', 'text'],
+    pme: ['name', 'look']                       /* the other person's own name and avatar – only they write it */
   };
+  /* an avatar look: short keys with short colour/word values, nothing else */
+  function cleanLook(l) {
+    if (!l || typeof l !== 'object') return null; var o = {}, n = 0;
+    Object.keys(l).forEach(function (k) { if (n < 16 && /^[a-zA-Z]{1,10}$/.test(k) && typeof l[k] === 'string' && /^[#\w-]{1,20}$/.test(l[k])) { o[k] = l[k]; n++; } });
+    return n ? o : null;
+  }
+  function cleanPack(p) { return (Array.isArray(p) ? p : []).slice(0, 150).map(function (x) { return { t: String((x && x.t) || '').slice(0, 80), done: !!(x && x.done) }; }).filter(function (x) { return x.t; }); }
   function clean(c, f) {
     var al = ALLOW[c]; if (!al || !f || typeof f !== 'object') return null;
     var o = {}; al.forEach(function (k) { if (f[k] !== undefined && f[k] !== null && f[k] !== '') o[k] = f[k]; });
+    if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
+    Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
-  window.ShareCore = { genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, ALLOW: ALLOW, clean: clean, b64: b64, unb64: unb64 };
+  window.ShareCore = { genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();
