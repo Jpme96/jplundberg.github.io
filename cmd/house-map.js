@@ -88,7 +88,7 @@
   }
   /* due soon: chores in the next 2 days, upkeep in the next 14 */
   function soon(x) { if (x.kind === 'c') return !x.done && x.due && days(x.due) <= 2; if (x.kind === 'u') return x.due && days(x.due) <= 14; return false; }
-  function partnerName() { var S = window.Shared, p = S && S.partner ? S.partner() : null; return p && p.name ? p.name : L('Them', 'De'); }
+  function partnerName() { var S = window.Shared, p = S && S.partner ? S.partner() : null; if (p && p.name) return p.name; var SS = window.ShareSpace, n = SS && SS.on && SS.on() && SS.name ? SS.name() : ''; return n && n !== 'them' ? n : L('Them', 'De'); }
   function initial(who) { var n = who === 'me' ? (((window.Vault.get() || {}).profile || {}).name || L('You', 'Du')) : partnerName(); return String(n).replace(/[^A-Za-zÆØÅæøåÀ-ÿ]/g, '').charAt(0).toUpperCase() || '?'; }
 
   /* ---------------- pins ---------------- */
@@ -587,7 +587,7 @@
         '<label class="st-row"><span>' + L('Show to ', 'Vis til ') + esc(partnerName()) + '<small class="st-rsub">' + (shared ? L('In their Home app: the plan, rooms, pins and the chores – they can tick their chores there', 'I Hjem-appen deres: planen, rommene, nålene og husarbeidet – de kan krysse av husarbeidet sitt der') : L('Set up Shared space first (Settings → Shared space)', 'Sett opp delt område først (Innstillinger → Delt område)')) + '</small></span><input type="checkbox" class="switch" data-hmset="share"' + (m.share ? ' checked' : '') + (shared ? '' : ' disabled') + '></label>' +
         (m.share ? '<label class="st-row"><span>' + L('Share passwords and codes too', 'Del passord og koder også') + '<small class="st-rsub">' + L('Off: they see where the router and keys are, not the Wi-Fi password or door codes', 'Av: de ser hvor ruteren og nøklene er, ikke Wi-Fi-passordet eller dørkodene') + '</small></span><input type="checkbox" class="switch" data-hmset="shareInfo"' + (m.shareInfo ? ' checked' : '') + '></label>' : '') +
         (m.plan ? '<label class="st-row st-btn"><span><i class="bi bi-arrow-repeat"></i> ' + L('Replace the drawing', 'Bytt tegning') + '<small class="st-rsub">' + L('Rooms and pins stay if the new one has the same shape', 'Rom og nåler blir hvis den nye har samme form') + '</small></span><input type="file" accept="application/pdf,.pdf,image/*" hidden data-hmfile></label>' +
-          '<button type="button" class="st-row st-btn" data-hmwipe><span class="danger-txt"><i class="bi bi-trash3"></i> ' + L('Remove the map', 'Fjern kartet') + '<small class="st-rsub">' + L('The drawing, rooms and pins – your chores, upkeep and Good to know stay', 'Tegningen, rommene og nålene – husarbeid, vedlikehold og Greit å vite blir') + '</small></span></button>' : '');
+          '<button type="button" class="st-row st-btn" data-hmwipe><span><span class="danger-txt" data-hmwipet><i class="bi bi-trash3"></i> ' + L('Remove the map', 'Fjern kartet') + '</span><small class="st-rsub">' + L('The drawing, rooms and pins – your chores, upkeep and Good to know stay', 'Tegningen, rommene og nålene – husarbeid, vedlikehold og Greit å vite blir') + '</small></span></button>' : '');
     }
     el.innerHTML = h + '</div>';
   }
@@ -599,7 +599,7 @@
   });
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-hmwipe]')) return;
-    var b = e.target.closest('[data-hmwipe]'); if (!b.classList.contains('armed')) { b.classList.add('armed'); b.querySelector('span').firstChild.nodeValue = ' '; b.querySelector('span').insertAdjacentHTML('afterbegin', '<b>' + L('Tap again to remove it', 'Trykk igjen for å fjerne') + '</b> '); setTimeout(setFill, 3500); return; }
+    var b = e.target.closest('[data-hmwipe]'); if (!b.classList.contains('armed')) { b.classList.add('armed'); var tt = b.querySelector('[data-hmwipet]'); if (tt) tt.innerHTML = '<i class="bi bi-trash3"></i> ' + L('Tap again to remove the map', 'Trykk igjen for å fjerne kartet'); setTimeout(setFill, 3500); return; }
     var m = data(); if (m.plan) delF(m.plan.fid); m.pins.forEach(function (p) { if (p.photo) delF(p.photo); });
     save(function (d) { d.plan = null; d.rooms = []; d.pins = []; d.put = {}; }); setFill(); toast('<i class="bi bi-check2"></i> ' + L('The map is removed', 'Kartet er fjernet'));
   });
