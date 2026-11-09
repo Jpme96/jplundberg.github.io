@@ -99,3 +99,5 @@ textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; back
 .h-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 8px 0 4px; } .h-bar i { display: block; height: 100%; background: var(--acc); border-radius: inherit; }
 .h-bar.sm { display: block; height: 5px; margin: 5px 0 0; width: 140px; max-width: 40vw; }
 .h-bal.owe b { color: var(--bad); }
+/* the preview inside the owner's settings: no desktop scrollbar in the phone frame */
+.h-preview, .h-preview body { scrollbar-width: none; } .h-preview::-webkit-scrollbar, .h-preview body::-webkit-scrollbar { display: none; }
