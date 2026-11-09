@@ -24,12 +24,16 @@
   /* the key is also kept in its own place (d.shareKey), written only when sharing is started or stopped. Your devices
      merge "share" as one block, so a phone saving something small there could bring back an older key after a
      restart on the computer – the other person then needed a new invite. The newest start/stop always wins now. */
-  function keyMark(on, key, since) { var d = V.get(); if (!d) return; var at = Date.now(); d.shareKey = { at: at, on: !!on, key: key || null, since: since || null }; d.share = Object.assign({}, d.share || {}, { keyAt: at }); V.save(d); }
+  /* every shared key you've used is remembered (d.keyHist, newest first), so messages from before a new key stay readable –
+     for both of you: the list goes to the shared box encrypted with the current key (kind 'keys') */
+  function remKey(d, k) { if (!k || !/^[A-Za-z0-9_-]{43}$/.test(k)) return; var h = Array.isArray(d.keyHist) ? d.keyHist.slice() : []; if (h.indexOf(k) < 0) { h.unshift(k); d.keyHist = h.slice(0, 8); } }
+  function oldKeys() { var d = V.get() || {}, cur = (d.share || {}).key; return (Array.isArray(d.keyHist) ? d.keyHist : []).filter(function (k) { return k && k !== cur; }); }
+  function keyMark(on, key, since) { var d = V.get(); if (!d) return; var at = Date.now(); remKey(d, (d.shareKey || {}).key); remKey(d, (d.share || {}).key); remKey(d, key); d.shareKey = { at: at, on: !!on, key: key || null, since: since || null }; d.share = Object.assign({}, d.share || {}, { keyAt: at }); V.save(d); }
   function guardKey() {
     var d = V.get(); if (!d) return; var sk = d.shareKey, sh = d.share || {};
     if (!sk) { if (sh.key && sh.on) { d.shareKey = { at: +sh.keyAt || 1, on: true, key: sh.key, since: sh.since || null }; if (!sh.keyAt) d.share = Object.assign({}, sh, { keyAt: 1 }); V.save(d); } return; }
     if ((+sk.at || 0) > (+sh.keyAt || 0) || ((+sk.at || 0) === (+sh.keyAt || 0) && (sk.key !== (sh.key || null) || !!sk.on !== !!sh.on))) {
-      d.share = Object.assign({}, sh, { key: sk.key, on: sk.on, since: sk.since || sh.since, keyAt: sk.at }); if (!sk.on) d.share.files = {};
+      remKey(d, sh.key); remKey(d, sk.key); d.share = Object.assign({}, sh, { key: sk.key, on: sk.on, since: sk.since || sh.since, keyAt: sk.at }); if (!sk.on) d.share.files = {};
       V.save(d); cache = {}; seen = {}; wj('dash.share.seen2', {}); if (window.Diag && window.Diag.log) window.Diag.log('share', 'an older key came back from another device – the newest one is used again', 'share.js');
     } else if ((+sh.keyAt || 0) > (+sk.at || 0)) { d.shareKey = { at: +sh.keyAt, on: !!sh.on, key: sh.key || null, since: sh.since || null }; V.save(d); }
   }
@@ -38,7 +42,7 @@
   var OFF_FIRST = { pantry: 1, recipes: 1 };
   /* what they may change, per area (view = they see it but can't change it) */
   var AREAS = [['shop', 'Shopping list'], ['meals', 'Dinner plan'], ['pantry', 'Pantry'], ['chores', 'Chores'], ['money', 'Money between you'], ['cal', 'Calendar'], ['trips', 'Trips'], ['plants', 'Plants'], ['move', 'Moving checklist'], ['notes', 'Home notes'], ['house', 'House projects']];
-  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
+  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', room: 'chores', vote: 'meals', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
   function perm() { var s0 = (V.get() || {}).share || {}, o = {}; AREAS.forEach(function (a) { o[a[0]] = (s0.perm && s0.perm[a[0]]) === 'view' ? 'view' : 'edit'; }); return o; }
   var NOTE_DEF = { cost: true, settle: true, event: true, shop: false, chore: false, note: false };
   function notifyMe() { var s0 = (V.get() || {}).share || {}; return Object.assign({}, NOTE_DEF, s0.notifyMe || {}); }
@@ -54,6 +58,7 @@
   function collect() {
     var w = what(), t = Fe.tools(), out = [], put = function (c, id, f) { var x = SC.clean(c, f); if (x && id) out.push({ c: c, id: String(id), f: x }); };
     var S = window.Shared, p = partner(), mv = t.hmove && typeof t.hmove === 'object' ? t.hmove : null;
+    if (oldKeys().length) put('keys', 'hist', { list: oldKeys() });
     var info = { owner: owner(), partner: pname(), what: w, mvdate: mv && mv.date ? mv.date : '', olook: window.Avatar && window.Avatar.look ? window.Avatar.look() : null };
     if (w.money && S && p) {
       var pct = (function () { var c = S.cfg ? S.cfg() : {}; return +c.pct > 0 && +c.pct < 100 ? +c.pct : 50; })();
@@ -85,13 +90,15 @@
     put('info', 'info', info);
     if (w.shop) (Array.isArray(t.shop) ? t.shop : []).forEach(function (x) { if (x && x.id) put('shop', x.id, { text: String(x.text || '').slice(0, 120), done: !!x.done }); });
     if (w.chores) {
-      (Array.isArray(t.chores) ? t.chores : []).forEach(function (x) { if (x && x.id) put('chore', x.id, { name: String(x.name || '').slice(0, 80), every: x.every || '1w', day: +x.day || 0, who: x.who || 'rotate', start: x.start || '' }); });
+      (Array.isArray(t.chores) ? t.chores : []).forEach(function (x) { if (x && x.id) put('chore', x.id, { name: String(x.name || '').slice(0, 80), every: x.every || '1w', day: +x.day || 0, who: x.who || 'rotate', start: x.start || '', room: x.room || '' }); });
+      (Array.isArray(t.rooms) ? t.rooms : []).forEach(function (x, i) { if (x && x.id) put('room', x.id, { name: String(x.name || '').slice(0, 40), icon: /^[a-z0-9-]{1,30}$/.test(x.icon || '') ? x.icon : 'house', size: x.size ? String(x.size).slice(0, 10) : '', order: i }); });
       var cd = t.choreDone || {}, since = dkey(new Date(Date.now() - 70 * 864e5));
       Object.keys(cd).forEach(function (k) { if (k.slice(0, 7) >= since.slice(0, 7)) put('cdone', k, { k: k, who: cd[k] }); });
     }
     if (w.cal) (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && evShared(e) && e.id) put('ev', e.id, { title: String(e.title || '').slice(0, 120), date: e.date, end: e.end, allDay: !!e.allDay, start: e.start, stop: e.stop, repeat: e.repeat, until: e.until, location: String(e.location || '').slice(0, 160) }); });
     if (w.plants) (Array.isArray(t.plants) ? t.plants : []).forEach(function (x) { if (x && x.id) put('plant', x.id, { name: String(x.name || '').slice(0, 80), room: String(x.room || '').slice(0, 60), every: +x.every || 7, last: x.last || '' }); });
     if (w.meals) { var ms = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}, mf = dkey(new Date(Date.now() - 864e5)); Object.keys(ms).forEach(function (k) { if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k >= mf && ms[k]) put('meal', k, { date: k, text: String(ms[k]).slice(0, 80) }); }); }
+    if (w.meals) { var vcut = dkey(new Date(Date.now() - 3 * 864e5)); (Array.isArray(t.votes) ? t.votes : []).filter(function (x) { return x && x.id && x.date >= vcut; }).forEach(function (x) { put('vote', x.id, { date: x.date, opts: x.opts || [], pick: x.pick, from: x.from === 'them' ? 'p' : 'o', at: x.at || 0 }); }); }
     if (w.bills && p && !(window.Budget && window.Budget.fixedWhole)) out.unsure = { bill: 1 };    /* this page can't work bills out – leave them as they are */
     if (w.bills && p && window.Budget && window.Budget.fixedWhole) {
       ((V.get() || {}).budget || {}).fixed && V.get().budget.fixed.forEach(function (f) {
@@ -175,7 +182,10 @@
         else { t.choreDone[ck] = f.who === 'me' ? 'me' : 'them'; var ch = (t.chores || []).filter(function (x) { return x.id === String(ck).split('|')[1]; })[0]; if (ch && window.Chores && window.Chores.addLog) window.Chores.addLog(t, ch, ck, t.choreDone[ck], f.at); }
         toolsCh = true; }
       else if (c === 'chore') { var cl = Array.isArray(t.chores) ? t.chores : (t.chores = []), ci = cl.findIndex(function (x) { return x.id === id; });
-        if (del) { if (ci > -1) cl.splice(ci, 1); } else { var co = { id: id, name: f.name || 'Chore', every: f.every || '1w', day: +f.day || 0, who: f.who || 'rotate', start: f.start || dkey(new Date()) }; if (ci > -1) cl[ci] = Object.assign({}, cl[ci], co); else cl.push(co); }
+        if (del) { if (ci > -1) cl.splice(ci, 1); } else { var co = { id: id, name: f.name || 'Chore', every: f.every || '1w', day: +f.day || 0, who: f.who || 'rotate', start: f.start || dkey(new Date()), room: f.room || '' }; if (!co.room) delete co.room; if (ci > -1) cl[ci] = Object.assign({}, cl[ci], co); else cl.push(co); }
+        toolsCh = true; }
+      else if (c === 'room') { var rl = Array.isArray(t.rooms) ? t.rooms : (t.rooms = []), ri = rl.findIndex(function (x) { return x.id === id; });
+        if (del) { if (ri > -1) rl.splice(ri, 1); } else { var ro = { id: id, name: f.name || 'Room', icon: f.icon || 'house', size: f.size || '' }; if (ri > -1) rl[ri] = Object.assign({}, rl[ri], ro); else rl.push(ro); }
         toolsCh = true; }
       else if (c === 'proj' && !del) { (t.hproj || []).forEach(function (x) { if (x.id !== id || !Array.isArray(f.tasks)) return; var old = {}; (x.tasks || []).forEach(function (q) { old[q.id] = q; }); x.tasks = f.tasks.map(function (q) { return Object.assign({}, old[q.id] || {}, q); }); toolsCh = true; }); }
       else if ((c === 'sx' || c === 'pay') && p) {
@@ -192,6 +202,9 @@
         if (del) { if (k > -1) cal.events.splice(k, 1); } else { var e = Object.assign({}, k > -1 ? cal.events[k] : { id: id, cat: 'personal' }, f, { share: true }); if (k > -1) cal.events[k] = e; else cal.events.push(e); } }
       else if (c === 'plant' && !del) { (t.plants || []).forEach(function (x) { if (x.id === id && f.last && (!x.last || f.last > x.last)) { x.last = f.last; toolsCh = true; } }); }
       else if (c === 'pantry' && !del) { (t.pantry || []).forEach(function (x) { if (x.id === id && x.state !== f.state) { x.state = f.state === 'low' ? 'low' : 'ok'; toolsCh = true; } }); }
+      else if (c === 'vote') { var vl = Array.isArray(t.votes) ? t.votes : (t.votes = []), vi = vl.findIndex(function (x) { return x.id === id; });
+        if (del) { if (vi > -1) vl.splice(vi, 1); } else { var vo = { id: id, date: f.date, opts: f.opts || [], from: f.from === 'p' ? 'them' : 'me', at: +f.at || Date.now() }; if (f.pick != null) vo.pick = +f.pick; if (vi > -1) vl[vi] = vo; else vl.push(vo); }
+        toolsCh = true; }
       else if (c === 'meal') { t.meals = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}; if (del) delete t.meals[id]; else if (f.text) t.meals[f.date || id] = f.text; toolsCh = true; }
       else if (c === 'note') { var nl = Array.isArray(t.homenotes) ? t.homenotes : (t.homenotes = []), ni = nl.findIndex(function (x) { return x.id === id; });
         if (del) { if (ni > -1) nl.splice(ni, 1); } else if (ni > -1) nl[ni] = Object.assign({}, nl[ni], { title: f.title || '', text: f.text || '' }); else nl.push({ id: id, title: f.title || '', text: f.text || '', by: 'partner' }); toolsCh = true; }
@@ -261,6 +274,8 @@
     if (c === 'shop') return !has(t.shop);
     if (c === 'note') return !has(t.homenotes);
     if (c === 'chore') return !has(t.chores);
+    if (c === 'room') return !has(t.rooms);
+    if (c === 'vote') return !has(t.votes);
     if (c === 'sx') return !has((t.shared || {}).items) && !(((V.get() || {}).share || {}).pending || {})[id];
     if (c === 'pay') return !has((t.shared || {}).pays);
     return false;
@@ -328,7 +343,7 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); if (again) { again = false; schedule(500); } },
+    }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
@@ -451,6 +466,7 @@
           return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
         }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> List every shared item</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
       settingsMore(nm) +
+      sec('act', 'clock-history', 'Who did what', actSum(nm), actHtml(nm)) +
       sec('chat', 'chat-heart', 'Chat', (window.HomeChat ? 'Messages ' + (HomeChat.ttl() ? 'disappear after ' + HomeChat.ttlName(HomeChat.ttl()) : 'are kept') : '') + (sw.notes && nNotes ? ' · ' + nNotes + ' pinned' : ''), chatSec(sw)) +
       '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> Access</p>' +
       (joined ? inviteSec(nm, true) : '') +
@@ -461,6 +477,22 @@
     SC.api('share').then(function (j) { var was = srvInfo ? { joined: !!srvInfo.joined, paused: !!srvInfo.paused, partner: srvInfo.partner } : null; srvInfo = j; paintSum();
       if (showing === 'status' && (!was || was.joined !== !!j.joined || was.paused !== !!j.paused || was.partner !== j.partner) && !document.activeElement.closest('#stShare input, #stShare textarea')) draw(); }, function () {});
   }
+  /* who did what in the shared home (the last two weeks), for both of you – ShareCore.activity, the same list Iago's app shows */
+  var actWho = '';
+  function actList(nm, who) { return SC.activity ? SC.activity(cache, { o: 'You', p: nm }, function (en) { return en; }, { who: who, days: 14, max: 40 }) : []; }
+  function actSum(nm) { var l = actList(nm, ''), mine = l.filter(function (x) { return x.by === 'o'; }).length; return l.length ? 'Last 2 weeks: you ' + mine + ' · ' + nm + ' ' + (l.length - mine) : 'Nothing yet'; }
+  function actItems(nm) {
+    var l = actList(nm, actWho);
+    return l.length ? '<ul class="sh-act">' + l.map(function (x) { return '<li><i class="bi bi-' + x.icon + '" style="color:' + (x.by === 'o' ? '#22b35e' : '#3987e5') + '"></i><span>' + esc(x.text) + '</span><small>' + esc(new Date(x.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></li>'; }).join('') + '</ul>' : '<p class="st-note st-pad">Nothing in the last two weeks.</p>';
+  }
+  function actHtml(nm) {
+    return '<div class="seg sh-actseg" role="group">' + [['', 'Both'], ['o', 'You'], ['p', nm]].map(function (x) { return '<button type="button" data-shact="' + x[0] + '" aria-pressed="' + (actWho === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div><div id="shActList">' + actItems(nm) + '</div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-shact]'); if (!b) return; actWho = b.dataset.shact; var nm = pname();
+    b.parentElement.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    var box = document.getElementById('shActList'); if (box) box.innerHTML = actItems(nm);
+  });
   /* one folding section of the Shared space settings: a title, a one-line summary, and what's inside */
   var secOpen = {};
   function sec(id, ic, title, sum, body) {
@@ -563,7 +595,7 @@
   function chatInit() {
     var s = st(); if (!s || !window.HomeChat) return;
     if (chatOn === s.key) return; chatOn = s.key;
-    HomeChat.init({ key: s.key, me: 'o', no: false, missing: 'The chat is not switched on yet – paste the new worker.js in Cloudflare (dashboard-sync → Edit code → Deploy).',
+    HomeChat.init({ key: s.key, keys: oldKeys, me: 'o', no: false, missing: 'The chat is not switched on yet – paste the new worker.js in Cloudflare (dashboard-sync → Edit code → Deploy).',
       name: function (side) { return side === 'o' ? (owner() || 'You') : pname(); },
       face: faceOf,
       notes: { on: function () { return !!what().notes; }, list: function () { return (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).map(function (n) { return { id: n.id, title: n.title || '', text: n.text || '' }; }); },
@@ -609,7 +641,7 @@
     box.innerHTML = '<p class="st-note muted">Looking …</p>';
     sync().then(function () {
       var by = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.del || !r.c || r.c === 'info') return; (by[r.c] = by[r.c] || []).push(r.f); });
-      var NM = { pme: ['Their profile and avatar', 'name'], proj: ['House projects', 'name'], doc: ['Documents', 'name'], clog: ['Chore log', 'name'], meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
+      var NM = { room: ['Rooms', 'name'], vote: ['Dinner votes', 'date'], pme: ['Their profile and avatar', 'name'], proj: ['House projects', 'name'], doc: ['Documents', 'name'], clog: ['Chore log', 'name'], meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
       var keys = Object.keys(NM).filter(function (c) { return by[c] && by[c].length; });
       box.innerHTML = keys.length ? '<ul class="sh-peek">' + keys.map(function (c) { var l = by[c]; return '<li><b>' + esc(NM[c][0]) + ' · ' + l.length + '</b><small>' + esc(l.slice(0, 4).map(function (f) { return String(f[NM[c][1]] == null ? '' : f[NM[c][1]]); }).join(', ') + (l.length > 4 ? ' …' : '')) + '</small></li>'; }).join('') + '</ul><p class="st-note muted">That is all that is in the shared box – nothing else is sent.</p>'
         : '<p class="st-note muted">Nothing shared yet.</p>';

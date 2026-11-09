@@ -477,7 +477,26 @@
   }
   function skippedNote() { var k = addShop.skipped || []; return k.length ? ' · ' + k.length + ' basic' + (k.length === 1 ? '' : 's') + ' skipped' : ''; }
   /* ---- the week's dinners ---- */
-  var ML = { wk: 0 };
+  var ML = { wk: 0, voting: false };
+  /* dinner voting with the person you live with: one suggests 2–3 dinners, the other picks (dash.tools.votes, shared) */
+  function votePartner() { var d = window.Vault.get() || {}, sh = d.share || {}, S = window.Shared, p = S && S.partner ? S.partner() : null; var nm = (p && p.name) || sh.name || ''; return sh.on && (sh.what || {}).meals !== false && nm ? String(nm).split(/\s+/)[0] : ''; }
+  function votes() { var cut = addDays(today(), -2); return Fe.list('votes').filter(function (v) { return v.date >= cut && Array.isArray(v.opts) && v.opts.length; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  function voteHtml() {
+    var pn = votePartner(); if (!pn) return '';
+    var dd = function (k) { return fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }); };
+    var h = votes().map(function (v) {
+      if (v.pick != null) return '<li class="hl-vote done"><i class="bi bi-check2-circle"></i><span>' + esc((v.from === 'me' ? pn + ' picked ' : 'You picked ') + v.opts[v.pick] + ' for ' + dd(v.date)) + '</span></li>';
+      if (v.from === 'me') return '<li class="hl-vote wait"><i class="bi bi-hourglass-split"></i><span>' + esc('Waiting for ' + pn + ' to pick for ' + dd(v.date) + ': ' + v.opts.join(' · ')) + '</span><button type="button" class="icon-btn sm" data-vtdel="' + esc(v.id) + '" aria-label="Cancel"><i class="bi bi-x"></i></button></li>';
+      return '<li class="hl-vote pick"><i class="bi bi-hand-index-thumb"></i><span>' + esc(pn + ' can’t decide – pick dinner for ' + dd(v.date)) + '</span><div class="hl-vopts">' + v.opts.map(function (o, i) { return '<button type="button" class="pill-btn sm" data-vtpick="' + esc(v.id) + '|' + i + '">' + esc(o) + '</button>'; }).join('') + '</div></li>';
+    }).join('');
+    var form = '';
+    if (ML.voting) {
+      var opts = ''; for (var i = 0; i < 7; i++) { var k = addDays(today(), i); opts += '<option value="' + k + '"' + (meals()[k] ? '' : '') + '>' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })) + (meals()[k] ? ' (planned)' : '') + '</option>'; }
+      form = '<form class="hl-vform" data-vtform><select name="d" aria-label="Which day">' + opts + '</select>' + [1, 2, 3].map(function (n) { return '<input name="o' + n + '" list="hlRecipes" maxlength="80" placeholder="' + (n === 3 ? 'Suggestion 3 (optional)' : 'Suggestion ' + n) + '" autocomplete="off"' + (n < 3 ? ' required' : '') + '>'; }).join('') +
+        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
+    }
+    return (h ? '<ul class="hl-votes">' + h + '</ul>' : '') + form;
+  }
   function monday(off) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 + off * 7); return dkey(d); }
   function weekNo(k) { var d = fromKey(k); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); var w1 = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7); }
   (function () {
@@ -492,7 +511,7 @@
         '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week"><i class="bi bi-chevron-left"></i></button>' +
         (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0">This week</button>' : '') +
         '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week"><i class="bi bi-chevron-right"></i></button></div></div>' +
-        '<ul class="hl-meals">' + days.map(function (k) {
+        voteHtml() + '<ul class="hl-meals">' + days.map(function (k) {
           var d = fromKey(k), r = recipeFor(m[k]);
           return '<li class="' + (k === tk ? 'today' : '') + (k < tk ? ' past' : '') + '"><label for="ml-' + k + '"><b>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short' })) + '</b><small>' + d.getDate() + '.' + (d.getMonth() + 1) + '</small></label>' +
             '<input id="ml-' + k + '" data-ml="' + k + '" list="hlRecipes" value="' + esc(m[k] || '') + '" placeholder="' + (k === tk ? 'What’s for dinner?' : '–') + '" maxlength="80" autocomplete="off" enterkeyhint="next">' +
@@ -500,13 +519,31 @@
         }).join('') + '</ul><datalist id="hlRecipes">' + rs.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') + '</datalist>' +
         '<div class="hl-acts">' + (withR.length ? '<button type="button" class="pill-btn" data-mlshop><i class="bi bi-cart-plus"></i> Ingredients to the shopping list</button>' : '') +
         (rs.length && planned.length < 7 ? '<button type="button" class="text-btn" data-mlfill><i class="bi bi-shuffle"></i> Fill the empty days</button>' : '') +
+        (votePartner() && !ML.voting ? '<button type="button" class="text-btn" data-vtnew><i class="bi bi-hand-index-thumb"></i> Let ' + esc(votePartner()) + ' choose</button>' : '') +
         (planned.length ? '<span class="muted hl-small">' + planned.length + ' of 7 planned</span>' : '') + '</div></section>';
     }
+    el.addEventListener('submit', function (e) {
+      var f = e.target.closest('[data-vtform]'); if (!f) return; e.preventDefault();
+      var o = [f.o1.value, f.o2.value, f.o3.value].map(function (x) { return x.trim(); }).filter(Boolean); if (o.length < 2) { (f.o2.value.trim() ? f.o1 : f.o2).focus(); return; }
+      var t = Fe.tools(); t.votes = (Array.isArray(t.votes) ? t.votes : []).filter(function (v) { return v.date >= addDays(today(), -2); }).concat([{ id: 'v' + Date.now().toString(36), date: f.d.value, opts: o.slice(0, 3), from: 'me', at: Date.now() }]);
+      ML.voting = false; if (document.activeElement && el.contains(document.activeElement)) document.activeElement.blur(); Fe.saveTools(t); draw();
+      toast('<i class="bi bi-send"></i> Sent to ' + esc(votePartner()) + ' – they pick one');
+    });
     el.addEventListener('change', function (e) { var i = e.target.closest('[data-ml]'); if (i) { setMeal(i.dataset.ml, i.value.trim()); } });
     el.addEventListener('keydown', function (e) { var i = e.target.closest('[data-ml]'); if (i && e.key === 'Enter') { e.preventDefault(); var n = i.closest('li').nextElementSibling; if (n) n.querySelector('input').focus(); else i.blur(); } });
     el.addEventListener('focusout', function () { setTimeout(function () { if (!el.contains(document.activeElement)) draw(); }, 50); });
     el.addEventListener('click', function (e) {
       var b;
+      if (e.target.closest('[data-vtnew]')) { ML.voting = true; draw(); var f0 = el.querySelector('[data-vtform] input'); if (f0) f0.focus(); return; }
+      if (e.target.closest('[data-vtcancel]')) { ML.voting = false; return draw(); }
+      if ((b = e.target.closest('[data-vtdel]'))) { var t0 = Fe.tools(); t0.votes = (t0.votes || []).filter(function (v) { return v.id !== b.dataset.vtdel; }); Fe.saveTools(t0); return; }
+      if ((b = e.target.closest('[data-vtpick]'))) {
+        var q = b.dataset.vtpick.split('|'), t1 = Fe.tools(), v1 = (t1.votes || []).filter(function (v) { return v.id === q[0]; })[0]; if (!v1) return;
+        v1.pick = +q[1]; t1.meals = meals(); t1.meals[v1.date] = v1.opts[v1.pick]; Fe.saveTools(t1);
+        var rr = recipeFor(v1.opts[v1.pick]), n = rr ? addShop(window.FoodPlus ? window.FoodPlus.lines(rr, 'week') : ingredients(rr), 'week') : 0;
+        toast('<i class="bi bi-egg-fried"></i> ' + esc(v1.opts[v1.pick]) + ' it is' + (n ? ' · ' + n + ' thing' + (n === 1 ? '' : 's') + ' to the shopping list' : ''));
+        return;
+      }
       if ((b = e.target.closest('[data-mlwk]'))) { ML.wk = +b.dataset.mlwk === 0 ? 0 : ML.wk + (+b.dataset.mlwk); return draw(); }
       if ((b = e.target.closest('[data-mlrec]'))) { RC.open(b.dataset.mlrec); var c = $t('recipes'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if (e.target.closest('[data-mlshop]')) {

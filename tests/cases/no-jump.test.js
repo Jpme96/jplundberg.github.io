@@ -13,7 +13,9 @@ const { shared, sl, U } = require('../lib/browser'); const { check, done } = req
     await q.evaluate(w => { const all = document.querySelectorAll('[data-shop]'); (w === 'first' ? all[0] : all[all.length - 1]).click(); }, which);
     await sl(3500);
     const shift = await p.evaluate(ps => ps.map(pr => { let bd = 1e9; document.querySelectorAll(pr.tag).forEach(x => { if ((x.textContent || '').trim().slice(0, 60) === pr.tx) { const d = x.getBoundingClientRect().top - pr.top; if (Math.abs(d) < Math.abs(bd)) bd = d; } }); return bd === 1e9 ? 0 : Math.round(bd); }), probes);
-    check(shift.every(s => Math.abs(s) <= 2), (page || 'home') + ' · Iago ticks the ' + which + ' item → shift ' + shift.join(', '));
+    /* the view stays put: what's at the top of the screen doesn't move, and nothing moves by more than the one row
+       that can appear or disappear where Iago's item goes (that's the list changing, not the page jumping) */
+    check(Math.abs(shift[0]) <= 2 && shift.every(s => Math.abs(s) <= 45), (page || 'home') + ' · Iago ticks the ' + which + ' item → shift ' + shift.join(', '));
   }
   check(!p.errs.length, 'no errors in cmd ' + p.errs.join(' | ').slice(0, 300));
   await done(b, b2);

@@ -115,7 +115,7 @@
     }, function () { toast('<i class="bi bi-cloud-slash"></i> ' + L('Saved here – sends when you’re online', 'Lagret her – sendes når du er på nett')); });
   }
   /* change one record: shown at once, sent right after (kept and resent if the network is away) */
-  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
+  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', room: 'chores', vote: 'meals', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
   function canEdit(area) { return ((info().perm || {})[area] || 'edit') !== 'view'; }
   /* tell the owner's phone about what you did – only the kinds they switched on */
   var tellQ = [], tellT = null;
@@ -156,7 +156,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 36;
+  var APPV = 40;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -261,7 +261,7 @@
   var chatOn = false;
   function chatStart() {
     if (chatOn || !window.HomeChat || !K || preview) return; chatOn = true;
-    HomeChat.init({ key: K, me: 'p', no: nb,
+    HomeChat.init({ key: K, me: 'p', no: nb, keys: function () { var r = list('keys')[0]; return r && r.f && Array.isArray(r.f.list) ? r.f.list : []; },
       name: function (side) { return side === 'o' ? owner() : myName(); },
       face: function (side) { return face(side === 'o' ? info().olook : mine().look, ''); },
       notes: { on: function () { return (info().what || {}).notes !== false; }, list: function () { return list('note').map(function (r) { return { id: r.id, title: r.f.title || '', text: r.f.text || '' }; }).sort(function (a, b) { return a.title.localeCompare(b.title); }); },
@@ -342,7 +342,29 @@
     if ((info().what || {}).meals === false) return '';
     var by = {}; list('meal').forEach(function (r) { by[r.f.date || r.id] = r.f.text; });
     var rows = []; for (var i = 0; i < 7; i++) { var d = new Date(); d.setDate(d.getDate() + i); var k = dkey(d); rows.push('<li><button type="button" class="h-tick" data-meal="' + k + '"><i class="bi bi-' + (by[k] ? 'egg-fried' : 'plus-circle') + '"></i><span>' + (by[k] ? esc(by[k]) : '<em>' + L('Add dinner', 'Legg til middag') + '</em>') + '<small>' + esc(i === 0 ? L('Today', 'I dag') : i === 1 ? L('Tomorrow', 'I morgen') : fdate(k, { weekday: 'long' })) + '</small></span></button></li>'); }
-    return '<h2 class="h-h">' + L('Dinners this week', 'Middager denne uka') + '</h2><ul class="h-list">' + rows.join('') + '</ul>';
+    return '<h2 class="h-h">' + L('Dinners this week', 'Middager denne uka') + '</h2>' + votesHtml() + '<ul class="h-list">' + rows.join('') + '</ul>' +
+      '<button type="button" class="h-btn ghost wide" data-votenew><i class="bi bi-hand-index-thumb"></i> ' + esc(L('Let ', 'La ') + owner() + L(' choose', ' velge')) + '</button>';
+  }
+  /* dinner voting: one suggests 2–3 dinners, the other picks; the pick goes on the plan */
+  function votesHtml() {
+    var cut = dkey(new Date(Date.now() - 2 * 864e5)), o = owner(), dd = function (k) { return fdate(k, { weekday: 'long', day: 'numeric', month: 'short' }); };
+    var l = list('vote').filter(function (r) { return r.f.date >= cut && Array.isArray(r.f.opts) && r.f.opts.length; }).sort(function (a, b) { return a.f.date < b.f.date ? -1 : 1; });
+    if (!l.length) return '';
+    return '<ul class="h-list h-votes">' + l.map(function (r) {
+      var f = r.f;
+      if (f.pick != null) return '<li><span class="h-row"><span><i class="bi bi-check2-circle"></i> ' + esc((f.from === 'p' ? o + L(' picked ', ' valgte ') : L('You picked ', 'Du valgte ')) + f.opts[f.pick] + L(' for ', ' til ') + dd(f.date)) + '</span></span></li>';
+      if (f.from === 'p') return '<li><span class="h-row"><span><i class="bi bi-hourglass-split"></i> ' + esc(L('Waiting for ', 'Venter på at ') + o + L(' to pick for ', ' velger til ') + dd(f.date) + ': ' + f.opts.join(' · ')) + '</span></span><button type="button" class="h-x" data-votedel="' + esc(r.id) + '" aria-label="' + L('Cancel', 'Avbryt') + '"><i class="bi bi-x"></i></button></li>';
+      return '<li class="h-vote"><span class="h-row"><span><i class="bi bi-hand-index-thumb"></i> ' + esc(o + L(' can’t decide – pick dinner for ', ' klarer ikke å velge – velg middag til ') + dd(f.date)) + '</span></span><div class="h-vopts">' + f.opts.map(function (x, i) { return '<button type="button" class="h-btn sm" data-votepick="' + esc(r.id) + '|' + i + '">' + esc(x) + '</button>'; }).join('') + '</div></li>';
+    }).join('') + '</ul>';
+  }
+  function voteSheet() {
+    var opts = ''; for (var i = 0; i < 7; i++) { var d = new Date(); d.setDate(d.getDate() + i); var k = dkey(d); opts += '<option value="' + k + '">' + esc(i === 0 ? L('Today', 'I dag') : i === 1 ? L('Tomorrow', 'I morgen') : fdate(k, { weekday: 'long', day: 'numeric', month: 'short' })) + '</option>'; }
+    sheet('<h2>' + esc(L('Let ', 'La ') + owner() + L(' choose', ' velge')) + '</h2><label class="h-lbl">' + L('Which day', 'Hvilken dag') + '<select name="d">' + opts + '</select></label>' +
+      [1, 2, 3].map(function (n) { return '<input name="o' + n + '" maxlength="80" placeholder="' + esc(n === 3 ? L('Suggestion 3 (optional)', 'Forslag 3 (valgfritt)') : L('Suggestion ', 'Forslag ') + n) + '">'; }).join(''), function (f) {
+      var o = [f.o1.value, f.o2.value, f.o3.value].map(function (x) { return x.trim(); }).filter(Boolean); if (o.length < 2) { (f.o1.value.trim() ? f.o2 : f.o1).focus(); return false; }
+      put('vote', 'h' + uid(), { date: f.d.value, opts: o.slice(0, 3), from: 'p', at: Date.now() });
+      toast('<i class="bi bi-send"></i> ' + esc(L('Sent to ', 'Sendt til ') + owner()));
+    });
   }
   function pantryHtml() {
     if ((info().what || {}).pantry !== true) return '';
@@ -422,16 +444,33 @@
     var r = e.target.closest('[data-hmroom]'); if (r) { mapRoomSheet(r.getAttribute('data-hmroom')); return; }
     var p = e.target.closest('[data-hmpin]'); if (p) mapPinSheet(p.dataset.hmpin);
   });
+  /* who did what in the shared home – the same list the owner sees (ShareCore.activity) */
+  var actWho = '';
+  function whoDid() {
+    if (!SC.activity) return '';
+    var nm = { p: L('You', 'Du'), o: owner() }, l = SC.activity(recs, nm, L, { who: actWho, days: 14, max: 25 });
+    var all = SC.activity(recs, nm, L, { days: 14, max: 200 }), mine = all.filter(function (x) { return x.by === 'p'; }).length;
+    return '<h2 class="h-h">' + L('Who did what', 'Hvem gjorde hva') + '</h2><p class="h-sum">' + (all.length ? esc(L('Last 2 weeks: you ', 'Siste 2 uker: du ') + mine + ' · ' + owner() + ' ' + (all.length - mine)) : L('Nothing yet.', 'Ingenting ennå.')) + '</p>' +
+      (all.length ? '<div class="h-rooms">' + [['', L('Both', 'Begge')], ['p', L('You', 'Du')], ['o', owner()]].map(function (x) { return '<button type="button" class="h-room' + (actWho === x[0] ? ' on' : '') + '" data-actwho="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' +
+      '<ul class="h-list h-act">' + l.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.icon + '"></i> ' + esc(x.text) + '<small>' + esc(new Date(x.t).toLocaleString(L('en-GB', 'nb-NO'), { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul>' : '');
+  }
+  /* rooms (the owner sets them up; you both pick them on chores) */
+  function roomList() { return list('room').sort(function (a, b) { return (+a.f.order || 0) - (+b.f.order || 0); }); }
+  var inRoom = rj('home.chroom', '') || '';
   function chores() {
     var w = info().what || {}, out = '', tk = today();
     if (w.chores !== false) {
-      var l = list('chore').map(function (r) { var p = period(r.f), tu = turn(r.f, p); return { r: r, p: p, tu: tu, dn: doneOf(r.id, p) }; }).sort(function (a, b) { return (a.dn ? 1 : 0) - (b.dn ? 1 : 0) || (a.p.day < b.p.day ? -1 : 1); });
+      var rl = roomList(); if (inRoom && !rl.some(function (r) { return r.id === inRoom; })) inRoom = '';
+      var all = list('chore').map(function (r) { var p = period(r.f), tu = turn(r.f, p); return { r: r, p: p, tu: tu, dn: doneOf(r.id, p) }; });
+      var l = all.filter(function (x) { return !inRoom || x.r.f.room === inRoom; }).sort(function (a, b) { return (a.dn ? 1 : 0) - (b.dn ? 1 : 0) || (a.p.day < b.p.day ? -1 : 1); });
+      var rname = function (id) { var r = rl.filter(function (q) { return q.id === id; })[0]; return r ? r.f.name : ''; };
+      var chips = rl.length ? '<div class="h-rooms"><button type="button" class="h-room' + (inRoom ? '' : ' on') + '" data-hroom="">' + L('All rooms', 'Alle rom') + '</button>' + rl.map(function (r) { var n = all.filter(function (x) { return x.r.f.room === r.id && !x.dn && x.p.day <= tk; }).length; return '<button type="button" class="h-room' + (inRoom === r.id ? ' on' : '') + '" data-hroom="' + esc(r.id) + '"><i class="bi bi-' + esc(r.f.icon || 'house') + '"></i> ' + esc(r.f.name) + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('') + '</div>' : '';
       var mine = l.filter(function (x) { return !x.dn && x.tu === 'them'; }).length;
       out += '<h2 class="h-h">' + L('Chores', 'Husarbeid') + '</h2><p class="h-sum">' + (l.length ? (mine ? L('Your turn: ', 'Din tur: ') + mine : L('Nothing on you right now', 'Ingenting på deg akkurat nå')) : L('No chores yet.', 'Ingen oppgaver ennå.')) + '</p>' +
-        '<ul class="h-list">' + l.map(function (x) {
+        chips + (inRoom ? (function () { var ym = today().slice(0, 7), you = 0, them = 0; logList().forEach(function (x) { var ch = find('chore', x.cid); if (!ch || ch.f.room !== inRoom || String(x.at).slice(0, 7) !== ym) return; if (x.who === 'them') you++; else them++; }); return you + them ? '<p class="h-sum">' + esc(rname(inRoom) + L(' this month: you ', ' denne måneden: du ') + you + ' · ' + owner() + ' ' + them) + '</p>' : ''; })() : '') + '<ul class="h-list">' + l.map(function (x) {
           var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + L(' days late', ' dager på etterskudd')) : fdate(x.p.day, { weekday: 'long' });
           var ls = lastDone(x.r.id);
-          return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-chore="' + esc(x.r.id) + '" aria-pressed="' + !!x.dn + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when, ls ? L('last ', 'sist ') + fdate(ls.at, { weekday: 'short', day: 'numeric', month: 'short' }) + L(' by ', ' av ') + (ls.who === 'them' ? L('you', 'deg') : owner()) : ''].filter(Boolean).join(' · ')) + '</small></span></button><button type="button" class="h-x" data-choreedit="' + esc(x.r.id) + '" aria-label="' + L('Edit', 'Endre') + '"><i class="bi bi-pencil"></i></button></li>';
+          return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-chore="' + esc(x.r.id) + '" aria-pressed="' + !!x.dn + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([inRoom ? '' : rname(x.r.f.room), x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when, ls ? L('last ', 'sist ') + fdate(ls.at, { weekday: 'short', day: 'numeric', month: 'short' }) + L(' by ', ' av ') + (ls.who === 'them' ? L('you', 'deg') : owner()) : ''].filter(Boolean).join(' · ')) + '</small></span></button><button type="button" class="h-x" data-choreedit="' + esc(x.r.id) + '" aria-label="' + L('Edit', 'Endre') + '"><i class="bi bi-pencil"></i></button></li>';
         }).join('') + '</ul><button type="button" class="h-btn ghost wide" data-choreadd><i class="bi bi-plus-lg"></i> ' + L('Add a chore', 'Legg til en oppgave') + '</button>' + choreLog();
     }
     if (w.plants !== false) {
@@ -447,6 +486,7 @@
       }).join('') + '</ul>';
     }
     out += house();
+    out += whoDid();
     return out || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
   }
   function bills() {
@@ -584,10 +624,11 @@
     sheet('<h2>' + (r ? L('Edit chore', 'Endre oppgave') : L('New chore', 'Ny oppgave')) + '</h2><input name="name" maxlength="80" placeholder="' + L('e.g. Take out the bins', 'f.eks. Ta ut søpla') + '" value="' + esc(f.name || '') + '" required>' +
       '<label class="h-lbl">' + L('How often', 'Hvor ofte') + '<select name="every"><option value="1w"' + (f.every === '1w' ? ' selected' : '') + '>' + L('Every week', 'Hver uke') + '</option><option value="2w"' + (f.every === '2w' ? ' selected' : '') + '>' + L('Every 2 weeks', 'Annenhver uke') + '</option><option value="1m"' + (f.every === '1m' ? ' selected' : '') + '>' + L('Once a month', 'En gang i måneden') + '</option></select></label>' +
       '<label class="h-lbl">' + L('On', 'På') + '<select name="day">' + DAYS().map(function (d, i) { return '<option value="' + i + '"' + (+f.day === i ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></label>' +
+      (roomList().length ? '<label class="h-lbl">' + L('Room', 'Rom') + '<select name="room"><option value="">' + L('No room', 'Ingen rom') + '</option>' + roomList().map(function (q) { return '<option value="' + esc(q.id) + '"' + ((f.room || (!r && inRoom)) === q.id ? ' selected' : '') + '>' + esc(q.f.name) + '</option>'; }).join('') + '</select></label>' : '') +
       '<label class="h-lbl">' + L('Who', 'Hvem') + '<select name="who"><option value="rotate"' + (f.who === 'rotate' ? ' selected' : '') + '>' + L('Take turns', 'Bytt på') + '</option><option value="them"' + (f.who === 'them' ? ' selected' : '') + '>' + L('Always me', 'Alltid meg') + '</option><option value="me"' + (f.who === 'me' ? ' selected' : '') + '>' + L('Always ', 'Alltid ') + esc(o) + '</option></select></label>' +
       (r ? '<button type="button" class="h-link danger" data-choredel="' + esc(r.id) + '">' + L('Delete this chore', 'Slett oppgaven') + '</button>' : ''), function (fm) {
       if (!fm.name.value.trim()) { fm.name.focus(); return false; }
-      put('chore', r ? r.id : 'h' + uid(), { name: fm.name.value.trim(), every: fm.every.value, day: +fm.day.value, who: fm.who.value, start: (r && r.f.start) || today() });
+      put('chore', r ? r.id : 'h' + uid(), { name: fm.name.value.trim(), every: fm.every.value, day: +fm.day.value, who: fm.who.value, start: (r && r.f.start) || today(), room: fm.room ? fm.room.value : (r && r.f.room) || '' });
     });
   }
   function projSheet(id) {
@@ -760,6 +801,11 @@
     if (d.shopdel && (r = find('shop', d.shopdel))) { var keep = r.f; put('shop', r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + esc(keep.text), function () { put('shop', r.id, keep); }); return; }
     if (d.shopclear != null) { var gone = list('shop').filter(function (x) { return x.f.done; }); gone.forEach(function (x) { put('shop', x.id, null, true); }); toast('<i class="bi bi-trash3"></i> ' + gone.length + L(' removed', ' fjernet'), function () { gone.forEach(function (x) { put('shop', x.id, x.f); }); }); return; }
     if (d.chore && find('chore', d.chore)) { toggleChore(d.chore); return; }
+    if (d.actwho != null) { actWho = d.actwho; draw(); return; }
+    if (d.votenew != null) { voteSheet(); return; }
+    if (d.votedel) { put('vote', d.votedel, null, true); return; }
+    if (d.votepick) { var vq = d.votepick.split('|'), vr = find('vote', vq[0]); if (vr) { var vf = Object.assign({}, vr.f, { pick: +vq[1] }); put('vote', vr.id, vf); put('meal', vf.date, { date: vf.date, text: vf.opts[+vq[1]] }); toast('<i class="bi bi-egg-fried"></i> ' + esc(vf.opts[+vq[1]]) + L(' it is', ' blir det')); } return; }
+    if (d.hroom != null) { inRoom = inRoom === d.hroom ? '' : d.hroom; wj('home.chroom', inRoom); draw(); requestAnimationFrame(function () { var on = document.querySelector('.h-room.on'); if (on && on.parentElement) on.parentElement.scrollLeft = Math.max(0, on.offsetLeft - 40); }); return; }
     if (d.water && (r = find('plant', d.water))) { var was = r.f; put('plant', r.id, Object.assign({}, r.f, { last: today() })); toast('<i class="bi bi-droplet"></i> ' + L('Watered', 'Vannet'), function () { put('plant', r.id, was); }); return; }
     if (d.mv && (r = find('mv', d.mv))) { put('mv', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.addcost != null) { costSheet(); return; }

@@ -24,6 +24,8 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 - **Who you live with is a setting** – never hard-code a name.
 - **Mail:** the domain's mail is with another provider – never touch the root MX records.
 - **Keep it light.** No new library or big image without need; images sized for the screen (WebP/AVIF); remove code that's no longer used. The size test (`tests/cases/size.test.js`) fails if the scripts a page loads grow past its budget – lower the budget when the app gets lighter, never raise it without a reason.
+- **Icons and fonts.** cmd uses its own trimmed icon set: after using a new `bi-…` icon, run `python3 cmd/icons.py` (the build test fails otherwise). Fonts are woff2. Background images stay under ~250 kB.
+- **Shared features are shared code.** Text or logic that both apps need (like `ShareCore.activity`) lives in `cmd/share-core.js`, not copied into each app. New shared kinds go into `ALLOW` with their fields and cleaning.
 - **Ask before** anything that can't be undone (deleting data, changing DNS, scheduled tasks).
 
 ## Coming (from the plan – becomes a rule when that part is done)
@@ -33,6 +35,6 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 - **Translations:** every text has a fixed name (key); never match on the English sentence.
 - **Reminders:** sent by the server (LiveRoom alarms), not planned by a device.
 - **Offline:** every edit goes through the offline queue.
-- **Lighter app:** each page loads only its own code; icons from the trimmed set only (add new ones to the set); fonts subset.
+- **Lighter app:** each page loads only its own code.
 
 The full plan: project doc `claude/plan-rebuilds-2026-11.md`.

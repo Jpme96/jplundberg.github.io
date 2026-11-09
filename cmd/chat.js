@@ -38,7 +38,7 @@
         var r = recs[id]; seen[id] = 1;
         if (r.del) { delete C.msgs[id]; return; }
         if (C.msgs[id] && !C.msgs[id].pending) return;
-        jobs.push(SC.decrypt(C.opt.key, r).then(function (o) { C.msgs[id] = shape(id, r, o); }, function () { if (!H0[id]) { bad++; badIds.push({ id: id, by: r.by }); } }));
+        jobs.push(dec(r).then(function (o) { C.msgs[id] = shape(id, r, o); }, function () { if (!H0[id]) { bad++; badIds.push({ id: id, by: r.by }); } }));
       });
       return Promise.all(jobs).then(function () {
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
@@ -136,12 +136,16 @@
   function setTtl(ms) { if (ms === C.ttl) return; send('', [], { sys: 'ttl', ttl: ms, setTtl: ms }); C.ttl = ms; }
 
   /* ---------- files on screen ---------- */
+  /* the current key first, then earlier ones (messages sent before a new invite) */
+  function allKeys() { var o = typeof C.opt.keys === 'function' ? C.opt.keys() : C.opt.keys; return [C.opt.key].concat((Array.isArray(o) ? o : []).filter(function (k) { return k && k !== C.opt.key; })); }
+  function dec(r) { var ks = allKeys(), i = 0; var next = function () { if (i >= ks.length) return Promise.reject(new Error('no key')); var k = ks[i++]; return SC.decrypt(k, r).catch(next); }; return next(); }
+  function decBytes(buf) { var ks = allKeys(), i = 0; var next = function () { if (i >= ks.length) return Promise.reject(new Error('no key')); var k = ks[i++]; return SC.decryptBytes(k, buf).catch(next); }; return next(); }
   function fileUrl(f) {
     if (f.local) return Promise.resolve(f.local);
     if (C.urls[f.id]) return Promise.resolve(C.urls[f.id]);
     if (C.urls[f.id + ':p']) return C.urls[f.id + ':p'];
     var p = fetch('/cmd/api/cfile?id=' + f.id, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('gone'); return r.arrayBuffer(); })
-      .then(function (buf) { return SC.decryptBytes(C.opt.key, buf); }).then(function (pt) { var u = URL.createObjectURL(new Blob([pt], { type: f.type || 'application/octet-stream' })); C.urls[f.id] = u; return u; });
+      .then(function (buf) { return decBytes(buf); }).then(function (pt) { var u = URL.createObjectURL(new Blob([pt], { type: f.type || 'application/octet-stream' })); C.urls[f.id] = u; return u; });
     C.urls[f.id + ':p'] = p; p.catch(function () { delete C.urls[f.id + ':p']; });
     return p;
   }
@@ -603,7 +607,7 @@
     if (j.chat != null && j.chat !== C.rev) fetchChat(); else if (C.el) paintList();
   }
   function init(opt) {
-    var first = !C.opt, newKey = C.opt && C.opt.key !== opt.key; C.opt = opt; if (newKey) { C.msgs = {}; C.rev = -1; fetchChat(); } if (!first) return;
+    var first = !C.opt, newKey = C.opt && (C.opt.key !== opt.key || String(C.opt.keys || '') !== String(opt.keys || '')); C.opt = opt; if (newKey) { C.msgs = {}; C.rev = -1; fetchChat(); } if (!first) return;
     SC.live(onLive); fetchChat();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { fetchChat(); markRead(); } });
   }

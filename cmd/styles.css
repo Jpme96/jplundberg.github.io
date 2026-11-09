@@ -5245,3 +5245,38 @@ html.hc-open { overflow: hidden; }
 /* the things counted in the number on the app icon get the same red dot */
 .br-badge .br-ic { position: relative; }
 .br-badge .br-ic::after { content: ''; position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 0 2px var(--bg-solid, #111); }
+
+/* Chores → rooms (chores.js): By day / By room, one room at a time, and the rooms list */
+.ch-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 10px; }
+.ch-seg { flex: none; }
+.ch-rooms { display: flex; gap: 6px; overflow-x: auto; flex: 1 1 100%; padding-bottom: 2px; scrollbar-width: none; }
+.ch-rooms::-webkit-scrollbar { display: none; }
+.ch-room { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--t2, inherit); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.ch-room b { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #c98500; color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
+.ch-room.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.ch-roomsbtn { margin-left: auto; }
+.ch-redit { border: 1px solid var(--line); border-radius: 14px; padding: 10px; margin: 0 0 10px; }
+.ch-redit ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.ch-redit li { display: flex; align-items: center; gap: 8px; }
+.ch-redit li > .bi { color: var(--accent); width: 18px; text-align: center; }
+.ch-redit li input[data-chrname] { flex: 1; min-width: 0; }
+.ch-redit li input[data-chrsize] { width: 64px; flex: none; }
+.ch-rnote { font-size: 12.5px; margin: 6px 2px 0; }
+.ch-inroom { margin: 0 0 8px; font-size: 14px; } .ch-inroom .bi { color: var(--accent); }
+
+/* Dinner voting (home-life.js) */
+.hl-votes { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+.hl-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 12px; background: rgba(var(--ink-rgb), .05); font-size: 13.5px; }
+.hl-vote > span { flex: 1; min-width: 0; }
+.hl-vote > .bi { color: var(--accent); }
+.hl-vote.pick { background: rgba(var(--accent-rgb), .12); }
+.hl-vopts { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; }
+.hl-vform { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; }
+
+/* Shared home → Who did what (share.js) */
+.sh-actseg { margin: 6px 12px 8px; }
+.sh-act { list-style: none; margin: 0; padding: 0 12px 10px; display: grid; gap: 2px; }
+.sh-act li { display: flex; align-items: baseline; gap: 9px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.sh-act li:last-child { border-bottom: 0; }
+.sh-act li span { flex: 1; min-width: 0; }
+.sh-act li small { color: var(--muted); font-size: 11.5px; white-space: nowrap; }

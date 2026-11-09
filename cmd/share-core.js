@@ -123,7 +123,8 @@
   var ALLOW = {
     info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook', 'perm', 'onotify', 'pend'],
     shop: ['text', 'done'],
-    chore: ['name', 'every', 'day', 'who', 'start'],
+    chore: ['name', 'every', 'day', 'who', 'start', 'room'],
+    room: ['name', 'icon', 'size', 'order'],                                  /* rooms for chores (House → Chores → Rooms) */
     cdone: ['k', 'who', 'at'],
     clog: ['cid', 'name', 'who', 'at'],
     sx: ['date', 'note', 'total', 'payer', 'shares', 'cat'],
@@ -133,6 +134,8 @@
     plant: ['name', 'room', 'every', 'last'],
     mv: ['text', 'done'],
     meal: ['date', 'text'],
+    vote: ['date', 'opts', 'pick', 'from', 'at'],
+    keys: ['list'],                                                          /* earlier shared keys, so older chat messages stay readable */                             /* dinner voting: 2–3 suggestions, the other one picks */
     pantry: ['name', 'state'],
     recipe: ['title', 'mins', 'serves', 'ingr', 'steps', 'link'],
     bill: ['name', 'day', 'amount', 'part', 'payer', 'next'],
@@ -155,6 +158,9 @@
     var o = {}; al.forEach(function (k) { if (f[k] !== undefined && f[k] !== null && f[k] !== '') o[k] = f[k]; });
     if (o.tasks) o.tasks = (Array.isArray(o.tasks) ? o.tasks : []).slice(0, 200).map(function (x) { return { id: String((x && x.id) || '').slice(0, 40), t: String((x && x.t) || '').slice(0, 120), done: !!(x && x.done), due: /^\d{4}-\d{2}-\d{2}$/.test((x && x.due) || '') ? x.due : undefined }; }).filter(function (x) { return x.id && x.t; });
     if (o.files) o.files = (Array.isArray(o.files) ? o.files : []).slice(0, 20).map(function (x) { return { fid: String((x && x.fid) || ''), name: String((x && x.name) || 'file').slice(0, 120), type: String((x && x.type) || '').slice(0, 60), size: +(x && x.size) || 0 }; }).filter(function (x) { return /^[a-f0-9]{16,64}$/.test(x.fid); });
+    if (o.list) o.list = (Array.isArray(o.list) ? o.list : []).filter(function (k) { return /^[A-Za-z0-9_-]{43}$/.test(String(k)); }).slice(0, 8);
+    if (o.opts) o.opts = (Array.isArray(o.opts) ? o.opts : []).slice(0, 3).map(function (x) { return String(x || '').slice(0, 80); }).filter(Boolean);
+    if (o.pick != null) { o.pick = Number.isInteger(+o.pick) && +o.pick >= 0 && +o.pick < 3 ? +o.pick : undefined; if (o.pick === undefined) delete o.pick; }
     if (o.notif) { var nf = {}; Object.keys(o.notif && typeof o.notif === 'object' ? o.notif : {}).slice(0, 12).forEach(function (k) { if (/^[a-z]{2,10}$/.test(k)) nf[k] = !!o.notif[k]; }); o.notif = nf; }
     if (o.perm) { var pm = {}; Object.keys(o.perm && typeof o.perm === 'object' ? o.perm : {}).slice(0, 20).forEach(function (k) { if (/^[a-z]{2,10}$/.test(k)) pm[k] = o.perm[k] === 'view' ? 'view' : 'edit'; }); o.perm = pm; }
     if (o.onotify) o.onotify = (Array.isArray(o.onotify) ? o.onotify : []).filter(function (k) { return /^[a-z]{2,10}$/.test(k); }).slice(0, 12);
@@ -173,5 +179,35 @@
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
-  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  /* Who did what – one list for both apps, made from the shared records themselves (each keeps who changed it last and when).
+     recs: { rid: { t, by: 'o'|'p', c, f, del } } · names: { o, p } · L(en, no) · opts: { who: 'o'|'p'|'', days, max }
+     → [{ t, by, icon, text }] newest first. A chore ticked off shows as done; a bought item as bought. */
+  function activity(recs, names, L, opts) {
+    opts = opts || {}; var since = Date.now() - (opts.days || 14) * 864e5, out = [], chores = {};
+    Object.keys(recs || {}).forEach(function (rid) { var r = recs[rid]; if (r && r.c === 'chore' && r.f) chores[r.id || (r.f && r.f.id)] = r.f.name; });
+    Object.keys(recs || {}).forEach(function (rid) {
+      var r = recs[rid]; if (!r || !r.c || !r.t || r.t < since || (opts.who && r.by !== opts.who)) return;
+      if (r.c === 'info' || r.c === 'clog' || r.c === 'led' || r.c === 'pme' || r.c === 'hmap' || r.c === 'room' || r.c === 'keys') return;
+      var f = r.f || {}, nm = String(f.text || f.title || f.name || f.note || '').slice(0, 80), who = names[r.by] || '';
+      var item = function (icon, en, no) { out.push({ t: r.t, by: r.by, icon: icon, text: who + ' ' + L(en, no) }); };
+      if (r.del) return who ? item('dash-circle', 'removed something', 'fjernet noe') : null;
+      switch (r.c) {
+        case 'shop': return f.done ? item('cart-check', 'bought ' + nm, 'kjøpte ' + nm) : item('cart-plus', 'added ' + nm + ' to the list', 'la ' + nm + ' på listen');
+        case 'cdone': var cn = chores[String(f.k || '').split('|')[1]] || ''; return cn ? item('check2-circle', 'did ' + cn, 'gjorde ' + cn) : null;
+        case 'chore': return item('arrow-repeat', 'changed the chore ' + nm, 'endret oppgaven ' + nm);
+        case 'meal': return item('egg-fried', 'planned ' + nm + ' for dinner', 'planla ' + nm + ' til middag');
+        case 'vote': return f.pick != null ? item('hand-index-thumb', 'picked ' + (f.opts || [])[f.pick] + ' for dinner', 'valgte ' + (f.opts || [])[f.pick] + ' til middag') : item('hand-index-thumb', 'suggested dinners: ' + (f.opts || []).join(', '), 'foreslo middager: ' + (f.opts || []).join(', '));
+        case 'sx': return item('receipt', 'added a shared cost: ' + (f.note || '') + ' ' + Math.round(+f.total || 0) + ' kr', 'la til en felles utgift: ' + (f.note || '') + ' ' + Math.round(+f.total || 0) + ' kr');
+        case 'pay': return item('arrow-left-right', 'settled up ' + Math.round(+f.amount || 0) + ' kr', 'gjorde opp ' + Math.round(+f.amount || 0) + ' kr');
+        case 'ev': return item('calendar-event', 'added ' + nm + ' to the calendar', 'la ' + nm + ' i kalenderen');
+        case 'note': return item('sticky', 'wrote the note ' + nm, 'skrev notatet ' + nm);
+        case 'plant': return item('droplet', 'watered ' + nm, 'vannet ' + nm);
+        case 'pantry': return item('box-seam', nm + (f.state === 'low' ? ' is running out' : ' is stocked'), nm + (f.state === 'low' ? ' er snart tomt' : ' er fylt opp'));
+        case 'mv': return item('box-seam', (f.done ? 'ticked off ' : 'added ') + nm, (f.done ? 'krysset av ' : 'la til ') + nm);
+        default: return nm ? item('pencil', 'changed ' + nm, 'endret ' + nm) : null;
+      }
+    });
+    return out.sort(function (a, b) { return b.t - a.t; }).slice(0, opts.max || 40);
+  }
+  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, activity: activity, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();

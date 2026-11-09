@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1153 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?df0b68b5fa") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1159 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?926de5bba5") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -439,6 +439,8 @@
 .bi-diagram-3-fill::before{content:"\f2ed"}
 .bi-door-closed::before{content:"\f306"}
 .bi-door-closed-fill::before{content:"\f305"}
+.bi-door-open::before{content:"\f308"}
+.bi-door-open-fill::before{content:"\f307"}
 .bi-dot::before{content:"\f309"}
 .bi-download::before{content:"\f30a"}
 .bi-dribbble::before{content:"\f65f"}
@@ -696,6 +698,8 @@
 .bi-grid-fill::before{content:"\f3fb"}
 .bi-grip-vertical::before{content:"\f3fe"}
 .bi-hammer::before{content:"\f3ff"}
+.bi-hand-index-thumb::before{content:"\f402"}
+.bi-hand-index-thumb-fill::before{content:"\f401"}
 .bi-hand-thumbs-down::before{content:"\f405"}
 .bi-hand-thumbs-down-fill::before{content:"\f404"}
 .bi-hand-thumbs-up::before{content:"\f407"}
@@ -1099,6 +1103,8 @@
 .bi-truck-flatbed::before{content:"\f5e9"}
 .bi-truck-front::before{content:"\f821"}
 .bi-truck-front-fill::before{content:"\f820"}
+.bi-tv::before{content:"\f5ed"}
+.bi-tv-fill::before{content:"\f5ec"}
 .bi-twitter-x::before{content:"\f8db"}
 .bi-type::before{content:"\f5f7"}
 .bi-type-bold::before{content:"\f5f0"}
