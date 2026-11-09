@@ -210,6 +210,9 @@
       '.hc-gal h4{margin:14px 2px 6px;font-size:13px;color:var(--hc-mut);font-weight:600}.hc-gal .hc-file{width:100%}',
       '.hc-cam{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}.hc-cam video{max-width:100%;max-height:75%;border-radius:12px}.hc-cam .acts{display:flex;gap:12px}.hc-cam .acts button{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}.hc-cam .snap{background:#fff;color:#000}.hc-cam .no{background:rgba(255,255,255,.18);color:#fff}',
       '.hc [hidden]{display:none!important}',
+      '.hc-menu,.hc-menu *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}',
+      '@media (pointer:coarse){.hc-list,.hc-list *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}}',
+      '.hc-list{touch-action:manipulation}.hc-pop-heart{position:absolute;z-index:7;font-size:44px;pointer-events:none;transform:translate(-50%,-50%) scale(.3);animation:hcHeart .7s ease-out forwards}@keyframes hcHeart{40%{transform:translate(-50%,-60%) scale(1.15);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:0}}',
       '.hc-toast{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);background:#222428;color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;z-index:6;white-space:nowrap}',
       '@media (hover:hover){.hc-m{position:relative}.hc-more{position:absolute;top:2px;opacity:0;border:0;background:rgba(127,127,127,.18);color:inherit;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:13px}.hc-m:not(.me) .hc-more{right:-32px}.hc-m.me .hc-more{left:-32px}.hc-m:hover .hc-more{opacity:1}}',
       '@media (hover:none){.hc-more{display:none}}'
@@ -437,6 +440,7 @@
     }, function () { toast(L('That message is gone', 'Den meldingen er borte')); });
   }
   function micState() { if (!C.el) return; var t = C.el.querySelector('textarea'), mic = C.el.querySelector('.hc-mic'), snd = C.el.querySelector('.hc-row .hc-send'); var empty = !t.value.trim() && !C.picked.length; if (mic) mic.hidden = !empty; if (snd) snd.hidden = empty; }
+  function pop(el, x, y) { var h = document.createElement('div'); h.className = 'hc-pop-heart'; h.textContent = '❤️'; var r = C.el.querySelector('.hc').getBoundingClientRect(); h.style.left = (x - r.left) + 'px'; h.style.top = (y - r.top) + 'px'; C.el.querySelector('.hc').appendChild(h); setTimeout(function () { h.remove(); }, 700); }
   var typT = 0;
   function bind(root) {
     var ta = root.querySelector('textarea'), lst = root.querySelector('.hc-list');
@@ -450,6 +454,24 @@
     /* hold a message (phone) for its menu */
     var hold = null; lst.addEventListener('touchstart', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a')) return; hold = setTimeout(function () { hold = null; if (navigator.vibrate) navigator.vibrate(10); msgMenu(m.dataset.mid); }, 480); }, { passive: true });
     ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) { lst.addEventListener(ev, function () { clearTimeout(hold); }, { passive: true }); });
+    /* double-tap a message (phone): ❤️ – double-tap again to take it away */
+    var tap = { id: null, t: 0, x: 0, y: 0 }, moved = false;
+    lst.addEventListener('touchstart', function (e) { moved = false; var p = e.touches[0]; tap.sx = p.clientX; tap.sy = p.clientY; }, { passive: true });
+    lst.addEventListener('touchmove', function (e) { var p = e.touches[0]; if (Math.abs(p.clientX - tap.sx) > 10 || Math.abs(p.clientY - tap.sy) > 10) moved = true; }, { passive: true });
+    lst.addEventListener('touchend', function (e) {
+      var m = e.target.closest('.hc-m[data-mid]'); if (!m || moved || e.target.closest('a, button, video, .hc-rx') || e.touches.length) { tap.id = null; return; }
+      var now = Date.now(), p = e.changedTouches[0];
+      if (tap.id === m.dataset.mid && now - tap.t < 320 && Math.abs(p.clientX - tap.x) < 40 && Math.abs(p.clientY - tap.y) < 40) {
+        e.preventDefault(); tap.id = null; clearTimeout(hold);
+        var msg = C.msgs[m.dataset.mid]; if (!msg || msg.pending || msg.sys) return;
+        var mineNow = ((reactions()[msg.id] || {})[C.opt.me]) || '';
+        react(msg.id, mineNow && mineNow !== '❤️' ? '❤️' : '❤️');
+        if (mineNow !== '❤️') pop(m, p.clientX, p.clientY);
+        if (navigator.vibrate) navigator.vibrate(8);
+        return;
+      }
+      tap = { id: m.dataset.mid, t: now, x: p.clientX, y: p.clientY, sx: tap.sx, sy: tap.sy };
+    });
     lst.addEventListener('contextmenu', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a')) return; e.preventDefault(); msgMenu(m.dataset.mid); });
     root.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
