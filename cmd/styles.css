@@ -5147,8 +5147,15 @@ button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; fo
 .sh-prev-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 8px 16px; font-size: 14px; }
 .sh-prev iframe { flex: 1; width: 100%; border: 0; background: #f4f5f7; }
 @media (max-width: 600px) { .sh-prev { height: calc(100vh - 32px); border-width: 0; border-radius: 18px; } }
-.sh-inv .sh-inv-again { display: none; }
-.sh-inv.sh-inv-done > :not(.sh-inv-again) { display: none; }
-.sh-inv.sh-inv-done > .sh-inv-again { display: flex; }
+/* Shared space settings: each part folds to one line with a short summary */
+.sh-sec > summary { list-style: none; cursor: pointer; }
+.sh-sec > summary::-webkit-details-marker { display: none; }
+.sh-sec > summary > span .bi { color: var(--accent); }
+.sh-sec .sh-chev { margin-left: auto; flex: none; color: var(--muted); font-size: 12px; transition: transform .2s; }
+.sh-sec[open] > summary .sh-chev { transform: rotate(180deg); }
+.sh-sec:not([open]) > summary { border-bottom: 0; }
+.sh-sec > summary > span { min-width: 0; }
+.sh-sec > summary .st-rsub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-sec > .st-note { margin: 10px 14px; }
 .sh-pend { display: flex; align-items: center; gap: 10px; } .sh-pend > span:first-child { flex: 1; min-width: 0; } .sh-pend-b { display: flex; gap: 6px; flex: none; }
 .sh-cats { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 14px 12px; }

@@ -357,7 +357,7 @@
   window.ShareSpace = { evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what };
 
   /* ---------- Settings → Shared space ---------- */
-  var srvInfo = null, showing = null, invOpen = false;
+  var srvInfo = null, showing = null;
   function paintSum() {
     var el = document.getElementById('sumShare'); if (el) el.textContent = st() ? 'With ' + pname() + (srvInfo && srvInfo.paused ? ' · paused' : '') + (lastErr ? ' · ' + lastErr : '') : 'Off';
     if (showing === 'status') { var s2 = document.getElementById('shStatus'); if (s2) s2.innerHTML = statusLine(); }
@@ -390,34 +390,67 @@
       return;
     }
     showing = 'status';
+    var joined = !!(srvInfo && srvInfo.joined), paused = !!(srvInfo && srvInfo.paused), pend = ((V.get() || {}).share || {}).pending || {};
+    var nOn = WHAT.filter(function (w) { return sw[w[0]]; }).length, nNotes = (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).length;
     box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-people"></i> Sharing with ' + esc(nm) + '</p>' +
-      '<div class="st-group"><p class="st-note" id="shStatus">' + statusLine() + '</p></div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv' + (srvInfo && srvInfo.joined && !invOpen ? ' sh-inv-done' : '') + '">' +
-        '<button type="button" class="st-row st-btn sh-inv-again" id="shInvAgain"><span><i class="bi bi-qr-code"></i> ' + esc(nm) + ' is set up · invite again<small class="st-rsub">For a new phone, or if they forgot their passcode</small></span><i class="bi bi-chevron-down"></i></button>' +
-        '<p class="st-note">' + esc('With ' + nm + ', on their phone: 1. Open ' + location.host + '/cmd/home and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.') + '</p>' +
-        '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button></div>' +
-        '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button></div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-ui-checks"></i> What ' + esc(nm) + ' sees</p><div class="st-group">' + WHAT.map(function (w) {
-        return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
-      }).join('') + '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button>' +
-        '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> Show exactly what ' + esc(nm) + ' sees</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div></div>' +
+      '<div class="st-group"><p class="st-note" id="shStatus">' + statusLine() + '</p>' +
+        '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button></div>' +
+      pendHtml(nm, pend) +
+      (joined ? '' : inviteSec(nm, false)) +
+      '<p class="st-sub ap-sub"><i class="bi bi-sliders"></i> What you share</p>' +
+      sec('sees', 'ui-checks', 'What ' + nm + ' sees', nOn + ' of ' + WHAT.length + ' shared',
+        WHAT.map(function (w) {
+          return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
+        }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> List every shared item</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
       settingsMore(nm) +
-      (sw.notes ? '<p class="st-sub ap-sub"><i class="bi bi-sticky"></i> Home notes</p><div class="st-group" id="shNotes">' + notesHtml() + '</div>' : '') +
-      '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span>Save email</span><i class="bi bi-check2"></i></button></div>' +
-      '<div class="st-group"><button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL">Stop sharing</span><small class="st-rsub">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button></div>';
-    SC.api('share').then(function (j) { var was = srvInfo && srvInfo.joined; srvInfo = j; var e = document.getElementById('shEmail'); if (e && !e.value) e.value = j.partner || ''; paintSum(); var inv = document.querySelector('.sh-inv'); if (inv) inv.classList.toggle('sh-inv-done', !!j.joined && !invOpen); }, function () {});
+      (sw.notes ? sec('notes', 'sticky', 'Home notes', nNotes ? nNotes + (nNotes === 1 ? ' note' : ' notes') : 'None yet', '<div id="shNotes">' + notesHtml() + '</div>') : '') +
+      '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> Access</p>' +
+      (joined ? inviteSec(nm, true) : '') +
+      sec('acct', 'key', 'Login and pause', (paused ? 'Paused · ' : '') + (srvInfo && srvInfo.partner || 'Their email'),
+        '<label class="st-row"><span>Their email<small class="st-rsub">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span>Save email</span><i class="bi bi-check2"></i></button>' +
+        '<button type="button" class="st-row st-btn" id="shPause"><span><i class="bi bi-' + (paused ? 'play-circle' : 'pause-circle') + '"></i> ' + (paused ? 'Resume sharing' : 'Pause sharing') + '<small class="st-rsub">' + (paused ? esc(nm) + ' sees everything again – no new code needed' : esc(nm) + ' sees nothing for now. Nothing is deleted, and they need no new code to come back.') + '</small></span></button>' +
+        '<button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL">Stop sharing</span><small class="st-rsub">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button>');
+    SC.api('share').then(function (j) { var was = srvInfo ? { joined: !!srvInfo.joined, paused: !!srvInfo.paused, partner: srvInfo.partner } : null; srvInfo = j; paintSum();
+      if (showing === 'status' && (!was || was.joined !== !!j.joined || was.paused !== !!j.paused || was.partner !== j.partner) && !document.activeElement.closest('#stShare input, #stShare textarea')) draw(); }, function () {});
+  }
+  /* one folding section of the Shared space settings: a title, a one-line summary, and what's inside */
+  var secOpen = {};
+  function sec(id, ic, title, sum, body) {
+    return '<details class="st-group sh-sec" data-shsec="' + id + '"' + (secOpen[id] ? ' open' : '') + '><summary class="st-row"><span><i class="bi bi-' + ic + '"></i> ' + esc(title) + '<small class="st-rsub">' + esc(sum) + '</small></span><i class="bi bi-chevron-down sh-chev"></i></summary>' + body + '</details>';
+  }
+  /* keep the one-line summaries true after a switch or a choice changes */
+  var sumT = null;
+  function resum(e) { if (!e.target.closest || !e.target.closest('.sh-sec [data-shwhat], .sh-sec [data-shperm], .sh-sec [data-shappr], .sh-sec [data-shnote], .sh-sec [data-shcat]')) return; clearTimeout(sumT); sumT = setTimeout(function () { if (showing === 'status') draw(); }, 400); }
+  document.addEventListener('change', resum); document.addEventListener('click', resum);
+  document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.classList && d.classList.contains('sh-sec')) secOpen[d.dataset.shsec] = d.open; }, true);
+  function inviteSec(nm, joined) {
+    var body = '<p class="st-note">' + esc('With ' + nm + ', on their phone: 1. Open ' + location.host + '/cmd/home and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.') + '</p>' +
+      '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button></div>' +
+      '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button>';
+    if (!joined) return '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv">' + body + '</div>';
+    return sec('inv', 'qr-code', 'Invite again', nm + ' is set up · for a new phone or a forgotten passcode', body);
+  }
+  function pendHtml(nm, pend) {
+    if (!Object.keys(pend).length) return '';
+    return '<p class="st-sub ap-sub"><i class="bi bi-hourglass-split"></i> Waiting for your OK</p><div class="st-group" id="shPend">' + Object.keys(pend).map(function (id) { var f = pend[id].f; return '<div class="st-row sh-pend"><span>' + esc(f.note || 'Shared cost') + '<small class="st-rsub">' + esc(kr(f.total) + ' · ' + nm + ' paid · ' + new Date(f.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></span><span class="sh-pend-b"><button type="button" class="text-btn danger" data-shpend="' + esc(id) + '|0">Decline</button><button type="button" class="pill-btn sm" data-shpend="' + esc(id) + '|1">OK</button></span></div>'; }).join('') + '</div>';
   }
   function sel(attr, v0, opts) { return '<select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   function settingsMore(nm) {
-    var pm = perm(), nmo = notifyMe(), cc = calCats(), pend = ((V.get() || {}).share || {}).pending || {}, paused = !!(srvInfo && srvInfo.paused);
+    var pm = perm(), nmo = notifyMe(), cc = calCats();
     var cats = (function () { var c = rj('dash.calendar', {}).cats; return Array.isArray(c) && c.length ? c.map(function (x) { return [x.id, x.name]; }) : window.Cal && window.Cal.CAT_ORDER ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) : [['personal', 'Personal'], ['work', 'Work'], ['social', 'Social'], ['training', 'Training']]; })();
-    return (Object.keys(pend).length ? '<p class="st-sub ap-sub"><i class="bi bi-hourglass-split"></i> Waiting for your OK</p><div class="st-group" id="shPend">' + Object.keys(pend).map(function (id) { var f = pend[id].f; return '<div class="st-row sh-pend"><span>' + esc(f.note || 'Shared cost') + '<small class="st-rsub">' + esc(kr(f.total) + ' · ' + nm + ' paid · ' + new Date(f.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></span><span class="sh-pend-b"><button type="button" class="text-btn danger" data-shpend="' + esc(id) + '|0">Decline</button><button type="button" class="pill-btn sm" data-shpend="' + esc(id) + '|1">OK</button></span></div>'; }).join('') + '</div>' : '') +
-      '<p class="st-sub ap-sub"><i class="bi bi-pencil-square"></i> What ' + esc(nm) + ' may change</p><div class="st-group">' + AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', 'Can change'], ['view', 'View only']]) + '</label>'; }).join('') + '</div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-cash-coin"></i> Bigger shared costs</p><div class="st-group"><label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', approveOver(), [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label></div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-bell"></i> Tell me when ' + esc(nm) + '…</p><div class="st-group">' + [['cost', 'adds a shared cost'], ['settle', 'settles up'], ['event', 'adds an event'], ['shop', 'adds to the shopping list'], ['chore', 'does a chore'], ['note', 'adds or changes a note']].map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
-        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p></div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-calendar-heart"></i> Share calendars automatically</p><div class="st-group"><p class="st-note muted">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div></div>' +
-      '<div class="st-group"><button type="button" class="st-row st-btn" id="shPause"><span><i class="bi bi-' + (paused ? 'play-circle' : 'pause-circle') + '"></i> ' + (paused ? 'Resume sharing' : 'Pause sharing') + '<small class="st-rsub">' + (paused ? esc(nm) + ' sees everything again – no new code needed' : esc(nm) + ' sees nothing for now. Nothing is deleted, and they need no new code to come back.') + '</small></span></button></div>';
+    var NOTE = [['cost', 'adds a shared cost'], ['settle', 'settles up'], ['event', 'adds an event'], ['shop', 'adds to the shopping list'], ['chore', 'does a chore'], ['note', 'adds or changes a note']];
+    var nView = AREAS.filter(function (a) { return pm[a[0]] === 'view'; }).length, nNote = NOTE.filter(function (x) { return nmo[x[0]]; }).length, ap = approveOver();
+    var catNames = cats.filter(function (c) { return cc.indexOf(c[0]) > -1; }).map(function (c) { return c[1]; });
+    return sec('perm', 'pencil-square', 'What ' + nm + ' may change', nView ? (nView === AREAS.length ? 'Everything is view only' : nView + ' view only · the rest can change') : 'Can change everything shared',
+        AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', 'Can change'], ['view', 'View only']]) + '</label>'; }).join('')) +
+      sec('cal', 'calendar-heart', 'Calendars shared automatically', catNames.length ? catNames.join(', ') : 'None – you tick events one by one',
+        '<p class="st-note muted">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>') +
+      '<p class="st-sub ap-sub"><i class="bi bi-shield-check"></i> Rules</p>' +
+      sec('money', 'cash-coin', 'Bigger shared costs', ap ? 'Ask me first above ' + kr(ap) : 'No OK needed',
+        '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
+      sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
+        NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
+        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>');
   }
   document.addEventListener('change', function (e) {
     var t = e.target, a;
@@ -484,10 +517,9 @@
     });
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail, #shPrev, #shInvAgain'); if (!b) return;
+    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail, #shPrev'); if (!b) return;
     e.preventDefault();
     if (b.id === 'shPrev') { sync().then(previewApp); return; }
-    if (b.id === 'shInvAgain') { invOpen = true; var inv = document.querySelector('.sh-inv'); if (inv) inv.classList.remove('sh-inv-done'); return; }
     if (b.id === 'shStart') {
       var em = (document.getElementById('shEmail') || {}).value || '', nmIn = document.getElementById('shName'), msg = document.getElementById('shMsg');
       if (!partner() && nmIn && !nmIn.value.trim()) { nmIn.focus(); return; }

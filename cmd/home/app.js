@@ -134,6 +134,7 @@
     if (!preview) tell(c, f || {}, del, isNew);
     if (preview) { toast('<i class="bi bi-eye"></i> ' + L('Preview – nothing changes here', 'Forhåndsvisning – ingenting endres her')); return Promise.resolve(); }
     var t = Date.now(), key = c + '|' + id, cf = del ? null : SC.clean(c, f);
+    if (c === 'pme' && cf) wj('home.pme', cf);
     return (rids[key] ? Promise.resolve(rids[key]) : SC.rid(K, c, id)).then(function (rid) {
       rids[key] = rid; recs[rid] = del ? { t: t, del: 1, c: c, id: id } : { t: t, by: me, c: c, id: id, f: cf }; draw();
       if (del) { queue[rid] = { t: t, del: 1 }; return; }
@@ -147,6 +148,27 @@
       (My.any() ? '<button class="h-btn" type="button" data-pausedme>' + L('Open your own features', 'Åpne dine egne funksjoner') + '</button>' : '') + '<button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>');
   }
   var stopped = false;
+  /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
+     so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
+  var APPV = 13;
+  function checkVersion() {
+    if (preview) return;
+    fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
+      var m = /app\.js\?v=(\d+)/.exec(h || ''), v = m ? +m[1] : 0, done = '';
+      try { done = sessionStorage.getItem('home.reloadedFor') || ''; } catch (e) {}
+      if (v > APPV && done !== String(v)) { try { sessionStorage.setItem('home.reloadedFor', String(v)); } catch (e) {} location.replace('/cmd/home/?v=' + v); }
+    }).catch(function () {});
+  }
+  /* your profile (name + avatar) is kept on this phone too. If it is missing from the shared box, or this is a new
+     version of the app, it is sent again by itself – nobody has to open the profile to make it reach the other side. */
+  function healProfile() {
+    if (preview || stopped || paused || !K || !list('info').length) return;
+    var r = list('pme')[0], saved = rj('home.pme', null), sentV = rj('home.pmeV', 0);
+    if (r && r.f && (r.f.name || r.f.look)) {
+      wj('home.pme', r.f);
+      if (sentV !== APPV) { wj('home.pmeV', APPV); put('pme', 'me', r.f); }
+    } else if (saved && (saved.name || saved.look)) { wj('home.pmeV', APPV); put('pme', 'me', saved); }
+  }
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
     pull().then(function () {
@@ -156,9 +178,11 @@
         screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Scan the new code', 'Skann den nye koden') + '</h1><p>' + L('Sharing was started again, so the old code no longer works.', 'Delingen ble startet på nytt, så den gamle koden virker ikke lenger.') + '</p><button class="h-btn" type="button" data-reload>' + L('Continue', 'Fortsett') + '</button>');
         return;
       }
+      healProfile();
       if (!stopped && list('info').length && !list('pme').length && !rj('home.profiled', false)) setTimeout(profileSheet, 300); if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
     setInterval(function () { if (!document.hidden && !stopped) pull(); }, 30000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && !stopped) pull(); });
+    checkVersion(); setInterval(function () { if (!document.hidden) checkVersion(); }, 10 * 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && !stopped) { pull(); checkVersion(); } });
     window.addEventListener('online', function () { if (!stopped) pull(); });
   }
 

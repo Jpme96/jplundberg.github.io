@@ -645,6 +645,8 @@
   });
   P.unshift(
     [/^(\d+) change\(s\) from (.+) couldn’t be added – Settings → Diagnostics has the details$/, '$1 endring(er) fra $2 kunne ikke legges inn – Innstillinger → Diagnostikk har detaljene'],
+    [/^(\d+) of (\d+) shared$/, '$1 av $2 delt'], [/^(\d+) of (\d+) on$/, '$1 av $2 på'], [/^(\d+) view only · the rest can change$/, '$1 kun visning · resten kan endres'], [/^Ask me first above (.+)$/, 'Spør meg først over $1'],
+    [/^(.+) is set up · for a new phone or a forgotten passcode$/, '$1 er satt opp · for en ny telefon eller glemt kode'], [/^Paused · (.+)$/, 'På pause · $1'], [/^(\d+) notes?$/, '$1 notat(er)'],
     [/^What (.+) may change$/, 'Hva $1 kan endre'], [/^Tell me when (.+)…$/, 'Si fra når $1…'], [/^A cost (.+) paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys$/, 'En utgift $1 har betalt og legger inn, teller når du sier OK – samboerregelen om å bli enige om større kjøp'],
     [/^(.+) sees everything again – no new code needed$/, '$1 ser alt igjen – ingen ny kode trengs'], [/^(.+) sees nothing for now\. Nothing is deleted, and they need no new code to come back\.$/, '$1 ser ingenting nå. Ingenting slettes, og de trenger ingen ny kode for å komme tilbake.'],
     [/^Sharing paused – (.+) sees nothing for now$/, 'Delingen er på pause – $1 ser ingenting nå'], [/^(.+) added (.+) – waiting for your OK$/, '$1 la til $2 – venter på din OK'], [/^Over (.+) – it counts once you say OK$/, 'Over $1 – den teller når du sier OK'],
@@ -1196,6 +1198,7 @@
     'Their profile and avatar': 'Profilen og avataren deres',
     'For a new phone, or if they forgot their passcode': 'For en ny telefon, eller hvis de har glemt koden',
     'profile and avatar received': 'profil og avatar mottatt', 'no profile yet': 'ingen profil ennå',
+    'What you share': 'Det du deler', 'Rules': 'Regler', 'Access': 'Tilgang', 'Invite again': 'Inviter på nytt', 'Login and pause': 'Innlogging og pause', 'Their email': 'E-posten deres', 'List every shared item': 'Vis alt som er delt', 'Calendars shared automatically': 'Kalendere som deles automatisk', 'None – you tick events one by one': 'Ingen – du huker av hendelser én og én', 'No OK needed': 'Ingen OK trengs', 'Can change everything shared': 'Kan endre alt som er delt', 'Everything is view only': 'Alt er kun visning', 'Off': 'Av', 'None yet': 'Ingen ennå',
     'Waiting for your OK': 'Venter på din OK', 'Decline': 'Avslå', 'Can change': 'Kan endre', 'View only': 'Kun visning', 'Bigger shared costs': 'Større felles utgifter', 'Ask me first above': 'Spør meg først over', 'Never': 'Aldri',
     'In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).': 'I Kort fortalt, og som varsel på telefonen hvis varsler er på (Innstillinger → Varsler).', 'Share calendars automatically': 'Del kalendere automatisk', 'Every event in these is shared – no need to tick each one.': 'Alle hendelser i disse deles – du trenger ikke krysse av hver enkelt.',
     'Pause sharing': 'Sett delingen på pause', 'Resume sharing': 'Fortsett delingen', 'Sharing resumed': 'Delingen fortsetter', 'Calendar': 'Kalender', 'House projects': 'Husprosjekter', 'Seen': 'Sett', 'Shared space': 'Delt hjem',
