@@ -644,6 +644,7 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^(.+) is set up · invite again$/, '$1 er satt opp · inviter på nytt'],
     [/^Preview (.+)’s app$/, 'Forhåndsvis appen til $1'], [/^(.+)’s app$/, 'Appen til $1'],
     [/^Shared with (.+): (.+)$/, function (m, a, b) { return 'Delt med ' + a + ': ' + tr(b); }], [/^No longer shared: (.+)$/, function (m, a) { return 'Ikke lenger delt: ' + tr(a); }], [/^Shared with (.+) – tap to stop sharing this$/, 'Delt med $1 – trykk for å slutte å dele'], [/^Not shared – tap to share this with (.+)$/, 'Ikke delt – trykk for å dele med $1'],
     [/^Split bills visible to (.+)$/, 'Delte regninger synlige for $1'],
@@ -1186,6 +1187,7 @@
     'Status, tasks and budget – you tick tasks off together': 'Status, oppgaver og budsjett – dere krysser av oppgaver sammen', 'Only this one – the file is encrypted for them, and removed from their app when you turn this off': 'Bare denne – filen krypteres for dem, og fjernes fra appen deres når du slår dette av',
     'Exactly what they see – nothing can be changed in the preview': 'Nøyaktig det de ser – ingenting kan endres i forhåndsvisningen',
     'Their profile and avatar': 'Profilen og avataren deres',
+    'For a new phone, or if they forgot their passcode': 'For en ny telefon, eller hvis de har glemt koden',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

@@ -281,7 +281,7 @@
   window.ShareSpace = { kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what };
 
   /* ---------- Settings → Shared space ---------- */
-  var srvInfo = null, showing = null;
+  var srvInfo = null, showing = null, invOpen = false;
   function paintSum() {
     var el = document.getElementById('sumShare'); if (el) el.textContent = st() ? 'With ' + pname() + (lastErr ? ' · ' + lastErr : '') : 'Off';
     if (showing === 'status') { var s2 = document.getElementById('shStatus'); if (s2) s2.innerHTML = statusLine(); }
@@ -313,7 +313,8 @@
     showing = 'status';
     box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-people"></i> Sharing with ' + esc(nm) + '</p>' +
       '<div class="st-group"><p class="st-note" id="shStatus">' + statusLine() + '</p></div>' +
-      '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv">' +
+      '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv' + (srvInfo && srvInfo.joined && !invOpen ? ' sh-inv-done' : '') + '">' +
+        '<button type="button" class="st-row st-btn sh-inv-again" id="shInvAgain"><span><i class="bi bi-qr-code"></i> ' + esc(nm) + ' is set up · invite again<small class="st-rsub">For a new phone, or if they forgot their passcode</small></span><i class="bi bi-chevron-down"></i></button>' +
         '<p class="st-note">' + esc('With ' + nm + ', on their phone: 1. Open ' + location.host + '/cmd/home and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.') + '</p>' +
         '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button></div>' +
         '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button></div>' +
@@ -324,7 +325,7 @@
       (sw.notes ? '<p class="st-sub ap-sub"><i class="bi bi-sticky"></i> Home notes</p><div class="st-group" id="shNotes">' + notesHtml() + '</div>' : '') +
       '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span>Save email</span><i class="bi bi-check2"></i></button></div>' +
       '<div class="st-group"><button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL">Stop sharing</span><small class="st-rsub">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button></div>';
-    SC.api('share').then(function (j) { srvInfo = j; var e = document.getElementById('shEmail'); if (e && !e.value) e.value = j.partner || ''; paintSum(); }, function () {});
+    SC.api('share').then(function (j) { var was = srvInfo && srvInfo.joined; srvInfo = j; var e = document.getElementById('shEmail'); if (e && !e.value) e.value = j.partner || ''; paintSum(); var inv = document.querySelector('.sh-inv'); if (inv) inv.classList.toggle('sh-inv-done', !!j.joined && !invOpen); }, function () {});
   }
   var noteEd = null;
   function notesHtml() {
@@ -378,9 +379,10 @@
     });
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail, #shPrev'); if (!b) return;
+    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail, #shPrev, #shInvAgain'); if (!b) return;
     e.preventDefault();
     if (b.id === 'shPrev') { sync().then(previewApp); return; }
+    if (b.id === 'shInvAgain') { invOpen = true; var inv = document.querySelector('.sh-inv'); if (inv) inv.classList.remove('sh-inv-done'); return; }
     if (b.id === 'shStart') {
       var em = (document.getElementById('shEmail') || {}).value || '', nmIn = document.getElementById('shName'), msg = document.getElementById('shMsg');
       if (!partner() && nmIn && !nmIn.value.trim()) { nmIn.focus(); return; }
