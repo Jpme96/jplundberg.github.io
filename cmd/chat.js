@@ -521,8 +521,11 @@
     var fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
     ta.addEventListener('input', function () { grow(ta); sendState(); micState(); var n = Date.now(); if (ta.value.trim() && n - typT > 3000) { typT = n; SC.livePost({ typing: 1 }); } });
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && fine && !e.isComposing) { e.preventDefault(); submit(); } });
-    function submit() { var t = ta.value, f = C.picked.slice(); if (!t.trim() && !f.length) return; ta.value = ''; grow(ta); C.picked = []; chips(); typT = 0; var extra = C.reply ? { re: C.reply } : null; C.reply = null; replyBar(); send(t, f, extra); micState(); if (!fine) ta.blur(); else ta.focus(); }
+    function submit() { var t = ta.value, f = C.picked.slice(); if (!t.trim() && !f.length) return; ta.value = ''; grow(ta); C.picked = []; chips(); typT = 0; var extra = C.reply ? { re: C.reply } : null; C.reply = null; replyBar(); send(t, f, extra); micState(); ta.focus(); }
     root.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); submit(); });
+    /* the keyboard stays up after sending (like Messages): tapping Send doesn't take the focus from the text box */
+    var sb = root.querySelector('.hc-row .hc-send');
+    if (sb) { sb.addEventListener('mousedown', function (e) { e.preventDefault(); }); sb.addEventListener('touchend', function (e) { if (sb.disabled) return; e.preventDefault(); submit(); }); }
     root.querySelectorAll('input[type=file]').forEach(function (inp) { inp.addEventListener('change', function () { pick(inp.files); inp.value = ''; micState(); }); });
     lst.addEventListener('scroll', function () { if (nearEnd()) { var d = root.querySelector('.hc-down'); if (d) d.hidden = true; markRead(); } }, { passive: true });
     /* hold a message (phone) for its menu */
