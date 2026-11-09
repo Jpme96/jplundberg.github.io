@@ -32,6 +32,12 @@ function png(w, h) {
   check(!/Active/.test(await hdr(q)), '… and Iago doesn’t see the owner either');
   await q.click('[data-hcmenu]'); await sl(400); await q.click('[data-away="0"]'); await sl(1500);
   check(/Active now/.test(await hdr(p)), 'switched back on: Active now again');
+  /* mute is a setting on the server, not a message that can disappear */
+  await p.evaluate(() => fetch('/cmd/api/chat', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ttl: 86400000 }) }));
+  await sl(800); await p.evaluate(() => document.querySelector('[data-hcmenu]').click()); await sl(500); await p.evaluate(() => document.querySelector('[data-mute="3600000"]').click()); await sl(1500);
+  const mu = await p.evaluate(() => fetch('/cmd/api/chat').then(r => r.json()).then(j => j.mute && j.mute.o));
+  check(mu > Date.now() + 3000e3, 'mute is stored as a setting on the server');
+  check(await q.evaluate(() => HomeChat._test.mutedThem()), 'Iago’s app knows the owner muted the chat');
   check(!p.errs.length && !q.errs.length, 'no errors ' + JSON.stringify([p.errs, q.errs]).slice(0, 300));
   await done(b, b2);
 })();

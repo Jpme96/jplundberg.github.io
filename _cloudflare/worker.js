@@ -522,7 +522,7 @@ async function chatApi(request, env, by, cfg) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') {
     const cur = (await freshGet(request, env, CHAT, 'chatfull', ep)) || { rev: 0, ttl: 0, msgs: {} }, now = Date.now(); cur.msgs = cur.msgs || {};
-    const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, fileMax: fileMax(env), msgs: {} };
+    const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, mute: cur.mute || {}, fileMax: fileMax(env), msgs: {} };
     for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id]; if (!(cur.ttl && !m.del && now - m.t > cur.ttl)) out.msgs[id] = m; }
     return json(out);
   }
@@ -536,6 +536,8 @@ async function chatApi(request, env, by, cfg) {
     const expired = id => { const m = cur.msgs[id]; return cur.ttl && !m.del && now - m.t > cur.ttl; };
     let n = 0; const gone = [];
     if (b && b.ttl != null && CHAT_TTLS.includes(+b.ttl) && +b.ttl !== (cur.ttl || 0)) { cur.ttl = +b.ttl; cur.ttlAt = now; n++; }
+    /* muting is a setting of each person (a time, nothing readable) – kept here so disappearing messages can't take it away */
+    if (b && b.mute != null && Number.isFinite(+b.mute)) { cur.mute = cur.mute || {}; const mv = Math.max(0, Math.min(+b.mute, now + 3660 * 864e5)); if (cur.mute[by] !== mv) { cur.mute[by] = mv; n++; } }
     const msgs = b && b.msgs && typeof b.msgs === 'object' ? b.msgs : {};
     for (const id of Object.keys(msgs).slice(0, 50)) {
       const m = msgs[id]; if (!RID.test(id) || !m || cur.msgs[id] || typeof m.iv !== 'string' || typeof m.ct !== 'string' || m.ct.length > 40000) continue;   /* a message is never changed, only removed */
@@ -557,7 +559,7 @@ async function chatApi(request, env, by, cfg) {
       cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev); await notify(env, { chat: cur.rev });
     }
     if (gone.length) await Promise.all(gone.map(f => fDel(env, CFILE + f)));
-    return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
+    return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, mute: cur.mute || {}, msgs: cur.msgs });
   }
   return json({ error: 'busy – try again' }, 503);
 }

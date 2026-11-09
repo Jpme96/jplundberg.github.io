@@ -42,7 +42,7 @@
       });
       return Promise.all(jobs).then(function () {
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
-        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad; C.badIds = badIds; if (srv.fileMax) C.fileMax = srv.fileMax;
+        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.mute = srv.mute || {}; C.bad = bad; C.badIds = badIds; if (srv.fileMax) C.fileMax = srv.fileMax;
       });
     }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; C.dErr = (e && (e.status || e.message)) || 'error'; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
@@ -59,7 +59,7 @@
   function visible() { var H = hiddenHere(); return list().filter(function (m) { return !hid(m) && !H[m.id]; }); }
   /* reactions: the newest one from each of you counts (an empty one takes yours away) */
   function reactions() { var R = {}; list().forEach(function (m) { if (m.react) { (R[m.react.to] = R[m.react.to] || {})[m.by] = m.react.e; } }); return R; }
-  function muteOf(side) { var u = 0; list().forEach(function (m) { if (m.mute != null && m.by === side) u = m.mute; }); return u; }
+  function muteOf(side) { if (C.mute && C.mute[side] != null) return +C.mute[side] || 0; var u = 0; list().forEach(function (m) { if (m.mute != null && m.by === side) u = m.mute; }); return u; }
   function list() {
     var now = Date.now();
     return Object.keys(C.msgs).map(function (id) { return C.msgs[id]; }).filter(function (m) { return !C.ttl || m.pending || now - m.t < C.ttl; }).sort(function (a, b) { return a.t - b.t; });
@@ -131,7 +131,8 @@
   }
   function remove(id) { var m = C.msgs[id]; if (!m || m.by !== C.opt.me) return; if (m.pending || m.failed) { delete C.msgs[id]; changed(); return; } delete C.msgs[id]; changed(); put({ del: [id] }).then(fetchChat, fetchChat); }
   function react(id, e) { var cur = (reactions()[id] || {})[C.opt.me] || ''; send('', [], { react: { to: id, e: cur === e ? '' : e } }); }
-  function setMute(until) { send('', [], { mute: until }); }
+  /* muting is stored as a setting on the server (it doesn't disappear with disappearing messages) */
+  function setMute(until) { C.mute = Object.assign({}, C.mute || {}); C.mute[C.opt.me] = until; changed(); put({ mute: until }).then(function (srv) { if (srv && srv.mute) C.mute = srv.mute; changed(); }, function () {}); }
   function setTtl(ms) { if (ms === C.ttl) return; send('', [], { sys: 'ttl', ttl: ms, setTtl: ms }); C.ttl = ms; }
 
   /* ---------- files on screen ---------- */
