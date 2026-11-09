@@ -83,7 +83,7 @@
     proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
     doc: ['name', 'cat', 'src', 'date', 'files'],
     hmap: ['w', 'h', 'mono', 'fid', 'rooms', 'pins', 'cr', 'style', 'furn'],               /* the owner's home map (house-map.js), when they show it */
-    pme: ['name', 'look', 'bday', 'phone', 'notif']                       /* the other person's own name and avatar – only they write it */
+    pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else */
   function cleanLook(l) {
@@ -110,6 +110,7 @@
       o.furn = (Array.isArray(o.furn) ? o.furn : []).slice(0, 80).map(function (x) { var q = (x && x.r) || []; return { name: String((x && x.name) || '').slice(0, 40), r: [n01(q[0]), n01(q[1]), n01(q[2]), n01(q[3])] }; });
       var cr = {}; Object.keys(o.cr && typeof o.cr === 'object' ? o.cr : {}).slice(0, 200).forEach(function (k) { var kk = sid(k), v = String(o.cr[k] || ''); if (kk && (v === 'all' || /^[\w-]{1,40}$/.test(v))) cr[kk] = v; }); o.cr = cr;
     }
+    if (o.v !== undefined) o.v = Math.max(0, Math.min(9999, Math.round(+o.v || 0))) || undefined;
     if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;

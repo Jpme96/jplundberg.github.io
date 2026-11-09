@@ -164,7 +164,7 @@
       var c = r.c, id = r.id, f = r.f || {}, del = !!r.del;
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view' && !(c === 'plant' || c === 'mv' || c === 'cdone') && pm[KIND_AREA[c]] === 'view') return;   /* view only: theirs is put back on the next sync */
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view') return;
-      news.push(newsOf(c, f, del, t, id));
+      if (!r.heal) news.push(newsOf(c, f, del, t, id));
       /* a bigger shared cost waits for your OK */
       if (c === 'sx' && !del && lim && +f.total > lim && f.payer === 'p') {
         var known = ((t.shared || {}).items || []).some(function (x) { return x.id === id; });
@@ -258,6 +258,17 @@
   }
 
   /* ---------- sync ---------- */
+  var healAt = 0;
+  function missing(c, id) {
+    var t = Fe.tools(), has = function (l) { return (Array.isArray(l) ? l : []).some(function (x) { return x && x.id === id; }); };
+    if (c === 'ev') return !has(rj('dash.calendar', {}).events);
+    if (c === 'shop') return !has(t.shop);
+    if (c === 'note') return !has(t.homenotes);
+    if (c === 'chore') return !has(t.chores);
+    if (c === 'sx') return !has((t.shared || {}).items) && !(((V.get() || {}).share || {}).pending || {})[id];
+    if (c === 'pay') return !has((t.shared || {}).pays);
+    return false;
+  }
   var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen2', {}), applyErr = 0, busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
   function ridOf(k, c, id) { var x = c + '|' + id; if (rids[x]) return Promise.resolve(rids[x]); return SC.rid(k, c, id).then(function (r) { rids[x] = r; return r; }); }
   function absorb(k, srv) {
@@ -281,6 +292,10 @@
       /* their profile is checked on every sync, not only when it changes: another device saving an older
          People list could otherwise lose the avatar for good */
       if (!mine.some(function (x) { return x.c === 'pme'; })) Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.c === 'pme' && !r.del && r.f && profileOff(r.f)) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f }); });
+      /* data just came from another device: anything of theirs that the merge dropped is put back,
+         not read as "deleted" (which would also remove it from their app) */
+      if (healAt && Date.now() >= healAt) { healAt = 0; var inMine = {}; mine.forEach(function (x) { inMine[x.rid] = 1; });
+        Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && !r.del && !r.bad && r.c && r.f && !inMine[rid] && seen[rid] && missing(r.c, r.id)) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, heal: 1 }); }); }
       var bad = []; try { bad = applyAll(mine) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
       applyErr = bad.length;
       mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
@@ -295,7 +310,7 @@
         if (r && !r.del && r.c === x.c && SC.hash(r.f) === SC.hash(x.f)) return;
         jobs.push(SC.encrypt(k, { c: x.c, id: x.id, f: x.f }).then(function (e) { push[x.rid] = { t: now, iv: e.iv, ct: e.ct }; }));
       });
-      Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (!have[rid] && !r.del && !r.bad && r.c && !PARTNER_ONLY[r.c] && !unsure[r.c]) push[rid] = { t: now, del: 1 }; });
+      Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (!have[rid] && !r.del && !r.bad && r.c && !PARTNER_ONLY[r.c] && !unsure[r.c] && !(healAt && r.by === 'p')) push[rid] = { t: now, del: 1 }; });
       /* new things from you, for their phone – only what they switched on in their app */
       var their = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'pme' && r.f && r.f.notif) their = r.f.notif; });
       var fresh = loc.filter(function (x) { return push[x.rid] && !push[x.rid].del && (!cache[x.rid] || cache[x.rid].del); }), lines = [];
@@ -317,7 +332,8 @@
   var tm = null;
   function schedule(ms) { if (!st()) return; clearTimeout(tm); tm = setTimeout(sync, ms == null ? 1500 : ms); }
   ['tools:change', 'cal:change', 'fin:change', 'travel:change', 'avatar:change'].forEach(function (ev) { window.addEventListener(ev, function () { if (!quiet) schedule(); }); });
-  V.onUnlock(function () { cache = {}; schedule(1200); });
+  /* also runs when another device's version is taken in; wait a little so a real delete there reaches the box first */
+  V.onUnlock(function () { cache = {}; healAt = Date.now() + 6000; schedule(1200); setTimeout(function () { schedule(0); }, 6500); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) schedule(300); });
   setInterval(function () { if (!document.hidden && st()) sync(); }, 45000);
 
@@ -393,9 +409,10 @@
     if (lastErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(lastErr);
     if (applyErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(applyErr + ' change(s) from ' + pname() + ' couldn’t be added – Settings → Diagnostics has the details');
     if (!lastOk) return '<i class="bi bi-arrow-repeat"></i> Syncing …';
-    var lastP = 0, prof = false; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.c === 'pme' && !r.del) prof = true; });
+    var lastP = 0, prof = false, unread = 0, av = 0; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.by === 'p' && r.bad) unread++; if (r.c === 'pme' && !r.del) { prof = true; av = (r.f && +r.f.v) || 0; } });
+    if (unread) return '<i class="bi bi-exclamation-circle"></i> ' + esc(unread + ' change(s) from ' + pname() + ' can’t be read – their app has an old invite. Show the code again (Invite below) and let them scan it.');
     return '<i class="bi bi-check2-circle"></i> In sync · ' + new Date(lastOk).toTimeString().slice(0, 5) + (srvInfo && !srvInfo.joined ? ' · waiting for ' + esc(pname()) + ' to scan the code' : srvInfo && srvInfo.joined ? ' · ' + esc(pname()) + ' has joined' : '') +
-      (lastP ? '<br><small class="muted">' + esc('Last change from ' + pname() + ': ' + new Date(lastP).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(prof ? 'profile and avatar received' : 'no profile yet') + '</small>' : '');
+      (lastP ? '<br><small class="muted">' + esc('Last change from ' + pname() + ': ' + new Date(lastP).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(prof ? 'profile and avatar received' : 'no profile yet') + (av ? ' · their app v' + av : prof ? ' · their app is out of date – they should reopen it' : '') + '</small>' : '');
   }
   function link() { var s = st(); return s ? location.origin + '/cmd/home/#k=' + s.key : ''; }
   function loadQR() {

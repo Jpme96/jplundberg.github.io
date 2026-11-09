@@ -150,7 +150,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 16;
+  var APPV = 17;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -166,8 +166,8 @@
     var r = list('pme')[0], saved = rj('home.pme', null), sentV = rj('home.pmeV', 0);
     if (r && r.f && (r.f.name || r.f.look)) {
       wj('home.pme', r.f);
-      if (sentV !== APPV) { wj('home.pmeV', APPV); put('pme', 'me', r.f); }
-    } else if (saved && (saved.name || saved.look)) { wj('home.pmeV', APPV); put('pme', 'me', saved); }
+      if (sentV !== APPV || r.f.v !== APPV) { wj('home.pmeV', APPV); put('pme', 'me', Object.assign({}, r.f, { v: APPV })); }
+    } else if (saved && (saved.name || saved.look)) { wj('home.pmeV', APPV); put('pme', 'me', Object.assign({}, saved, { v: APPV })); }
   }
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
