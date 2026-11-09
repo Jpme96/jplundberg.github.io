@@ -368,7 +368,7 @@
             '<label><span>Start fee, kr</span><input name="startFee" inputmode="decimal" value="' + esc(st.startFee) + '" placeholder="Etableringsgebyr" autocomplete="off"></label>' +
             '<label><span>Fee a month, kr</span><input name="fee" inputmode="decimal" value="' + esc(st.fee) + '" placeholder="Termingebyr" autocomplete="off"></label>' +
             '<label><span>Each month, kr</span><input name="pay" inputmode="decimal" value="' + esc(st.payAuto ? '' : st.pay) + '" placeholder="' + (c.auto ? esc(nf.format(c.auto)) + ' (auto)' : 'Worked out') + '" autocomplete="off"></label>' +
-            '<label><span>Due day</span><input name="day" inputmode="numeric" value="' + esc(st.day) + '" placeholder="1–31" autocomplete="off"></label>' +
+            '<label><span>Due day</span><input name="day" data-daypick inputmode="numeric" value="' + esc(st.day) + '" placeholder="1–31" autocomplete="off"></label>' +
           '</div>' +
           '<p class="mp-lbl">Who pays the store each month?</p><div class="seg lf-seg">' + who('bstore', ['me', 'You'], st.store) + who('bstore', [p.id, p.name], st.store) + who('bstore', ['each', 'Each our part'], st.store) + '</div>' +
           '</div>' : '') +
@@ -503,7 +503,7 @@
       box.innerHTML = shead('lightning-charge', f ? f.name : 'Running cost') +
         '<div class="mp-grid"><input name="note" placeholder="What? e.g. Felleskostnader" value="' + esc(st.name) + '" maxlength="50" autocomplete="off">' +
         '<input name="amt" inputmode="decimal" placeholder="' + (st.vary ? 'This month, kr' : 'Kr a month (whole bill)') + '" value="' + esc(st.amt) + '" autocomplete="off">' +
-        '<input name="day" inputmode="numeric" placeholder="Due day" value="' + esc(st.day) + '" autocomplete="off" aria-label="Due day"></div>' +
+        '<input name="day" data-daypick inputmode="numeric" placeholder="Due day" value="' + esc(st.day) + '" autocomplete="off" aria-label="Due day"></div>' +
         '<label class="lf-check"><input type="checkbox" name="vary"' + (st.vary ? ' checked' : '') + '> The amount changes from month to month</label>' +
         '<p class="mp-lbl">Who pays the bill?</p><div class="seg lf-seg">' + seg('me', 'You') + seg(p.id, p.name) + seg('each', 'Each our part') + '</div>' +
         '<p class="mp-lbl">Split</p><div class="mp-pct"><label>You pay<input inputmode="decimal" name="pct" value="' + esc(pc(st.pct)) + '"><span>%</span></label></div>' +

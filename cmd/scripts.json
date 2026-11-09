@@ -61,6 +61,7 @@
     "modern.js",
     "steady.js",
     "gridpack.js",
+    "daypick.js",
     "fold.js"
   ],
   "pages": {

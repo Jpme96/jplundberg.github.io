@@ -184,7 +184,7 @@
         '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span>Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
           '<label class="pay-field"><span>Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
       '</div>' +
-      '<div class="add-row"><select name="day" class="pay-day" aria-label="Payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
+      '<div class="add-row"><select name="day" class="pay-day" data-daypick="pay" aria-label="Payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-pcancel>Cancel</button><span class="spacer"></span>' +
         '<button class="pill-btn wide" type="submit">' + (r ? 'Save' : 'Add') + '</button></div></form></li>';
   }
@@ -242,7 +242,7 @@
       if (kind === 'fixed' && fixEditing === r.id) {   /* change name, amount and due day in place */
         var opts = '<option value="">No due day</option>'; for (var dd = 1; dd <= 31; dd++) opts += '<option value="' + dd + '"' + (+r.day === dd ? ' selected' : '') + '>Due on the ' + dd + '.</option>';
         return '<li class="b-fixedit"><form class="fx-edit" data-fid="' + r.id + '"><div class="add-row"><input name="n" value="' + esc(r.name) + '" required autocomplete="off" aria-label="Name"><input name="a" class="amt" value="' + esc(String(r.amount)) + '" inputmode="decimal" required autocomplete="off" aria-label="kr / month"></div>' +
-          '<div class="add-row"><select name="day" aria-label="Due day">' + opts + '</select></div>' +
+          '<div class="add-row"><select name="day" data-daypick aria-label="Due day">' + opts + '</select></div>' +
           '<button type="button" class="text-btn fx-vary" data-fbopen="' + r.id + '"><i class="bi bi-graph-up"></i> The amount changes from month to month …</button>' +
           '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit">Save</button></div></form></li>';
       }
@@ -717,7 +717,7 @@
     $('nwPay').value = a && a.pay ? a.pay : '';
     $('nwYears').value = '';
     $('nwFee').value = a && a.fee ? a.fee : '';
-    $('nwDay').value = a && a.day ? a.day : '';
+    $('nwDay').value = a && a.day ? a.day : ''; $('nwDay').dispatchEvent(new Event('change'));
     $('nwFrom').value = a && a.from ? a.from : 'salary';
     $('nwFixed').checked = !a || a.fixed !== false;
     var sh = !!(a && window.Loans && window.Loans.shared && window.Loans.shared(a)), inn = !!(a && a.inner), hm = (a && a.home) || {};
@@ -906,7 +906,7 @@
         var opts = '<option value="">No date</option>';
         for (var d = 1; d <= 31; d++) opts += '<option value="' + d + '"' + (f.day === d ? ' selected' : '') + '>' + d + '.</option>';
         return '<li class="bill"><span></span><span class="bill-text"><strong>' + esc(f.name) + '</strong><span>' + esc(kr(f.amount)) + '</span></span>' +
-          '<select class="bill-day" data-day="' + f.id + '" aria-label="Due day for ' + esc(f.name) + '">' + opts + '</select></li>';
+          '<select class="bill-day" data-daypick data-day="' + f.id + '" aria-label="Due day for ' + esc(f.name) + '">' + opts + '</select></li>';
       }).join('') + '</ul>';
       return;
     }
