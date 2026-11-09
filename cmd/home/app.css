@@ -88,3 +88,6 @@ textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; back
 .av-opts button[aria-pressed="true"] { border-color: var(--acc); color: var(--acc); background: rgba(20, 184, 166, .12); }
 .av-opts .av-dot { width: 32px; height: 32px; padding: 0; border-radius: 50%; background: var(--c); border: 2px solid rgba(128, 128, 128, .3); }
 .av-opts .av-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc); background: var(--c); }
+.h-file { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.h-file:first-child { border-top: 0; } .h-file img { max-width: 100%; border-radius: 12px; }
+.h-sheet .h-add input { min-width: 0; }

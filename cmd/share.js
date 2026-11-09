@@ -21,7 +21,7 @@
   /* ---------- state ---------- */
   function st() { var d = V.get(); return d && d.share && d.share.key && d.share.on ? d.share : null; }
   function setSt(p) { var d = V.get(); if (!d) return; d.share = Object.assign({}, d.share || {}, p); V.save(d); }
-  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky']];
+  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
   var PARTNER_ONLY = { pme: 1 };          /* records only the other person writes – never removed from here */
   function what() { var s = (V.get() || {}).share || {}; var o = {}; WHAT.forEach(function (w) { o[w[0]] = !(s.what && s.what[w[0]] === false); }); return o; }
   function partner() { var S = window.Shared; var p = S && S.partner ? S.partner() : null; return p && p.name ? p : null; }
@@ -71,10 +71,45 @@
       });
     }
     if (w.trips) { var tf = dkey(new Date(Date.now() - 7 * 864e5)); (rj('dash.travel', {}).trips || []).forEach(function (tr) { if (!tr || !tr.share || !tr.id || (tr.end || tr.start || '9') < tf) return; put('trip', tr.id, { name: String(tr.name || 'Trip').slice(0, 80), dest: String(tr.dest || '').slice(0, 80), start: tr.start, end: tr.end, pack: tr.pack }); }); }
+    if (w.chores) { var lcut = dkey(new Date(Date.now() - 120 * 864e5)); (Array.isArray(t.choreLog) ? t.choreLog : []).filter(function (x) { return x && x.at >= lcut; }).slice(-200).forEach(function (x) { put('clog', x.id, { cid: x.cid, name: x.name, who: x.who, at: x.at }); }); }
+    if (w.house) {
+      (Array.isArray(t.hproj) ? t.hproj : []).forEach(function (x) { if (!x || !x.share || !x.id) return; put('proj', x.id, { name: String(x.name || 'Project').slice(0, 80), kind: x.kind, room: x.room, status: x.status, budget: +x.budget || undefined, spent: (x.costs || []).reduce(function (a, c) { return a + (+c.amount || 0); }, 0) || undefined, start: x.start, end: x.end, tasks: x.tasks }); });
+      var fm = ((V.get() || {}).share || {}).files || {};
+      docs().forEach(function (dc) { var fl = dc.files.filter(function (f) { return fm[f.id]; }).map(function (f) { return { fid: fm[f.id], name: f.name, type: f.type, size: f.size }; }); put('doc', dc.src + ':' + dc.id, { name: dc.name, cat: dc.cat, src: dc.src, date: dc.date, files: fl }); });
+    }
     if (w.notes) (Array.isArray(t.homenotes) ? t.homenotes : []).forEach(function (n) { if (n && n.id) put('note', n.id, { title: String(n.title || '').slice(0, 60), text: String(n.text || '').slice(0, 1500) }); });
     if (w.move && mv && Array.isArray(mv.items)) mv.items.forEach(function (x) { if (x && x.id) put('mv', x.id, { text: String(x.text || '').slice(0, 80), done: !!x.done }); });
     return out;
   }
+
+  /* documents you ticked: House → Docs and Papers – with their files */
+  function docs() {
+    if (!st() || !what().house) return [];
+    var t = Fe.tools(), out = [];
+    (Array.isArray(t.hdocs) ? t.hdocs : []).forEach(function (d) { if (d && d.share && d.id && d.file && d.file.id) out.push({ src: 'house', id: d.id, name: String(d.name || 'Document').slice(0, 120), cat: String(d.cat || ''), date: d.date, files: [{ id: d.file.id, name: d.file.name || d.name, type: d.file.type || '', size: d.file.size || 0, get: function () { return window.HouseFiles ? window.HouseFiles.get(d.file.id) : Promise.resolve(null); } }] }); });
+    (Array.isArray(t.papers) ? t.papers : []).forEach(function (pp) { if (!pp || !pp.share || !pp.id) return; out.push({ src: 'papers', id: pp.id, name: String(pp.title || 'Paper').slice(0, 120), cat: pp.kind || '', date: pp.date, files: (pp.files || []).map(function (f) { return { id: f.id, name: f.name || 'file', type: f.type || '', size: f.size || 0, get: function () { return window.Papers && window.Papers.getFile ? window.Papers.getFile(f.id) : Promise.resolve(null); } }; }) }); });
+    return out;
+  }
+  /* upload the files of shared documents (encrypted with the shared key), remove the ones no longer shared */
+  var filesBusy = false;
+  function syncFiles() {
+    var s = st(); if (!s || filesBusy) return Promise.resolve();
+    filesBusy = true;
+    var want = {}, jobs = [], fm = Object.assign({}, s.files || {}), changed = false;
+    docs().forEach(function (dc) { dc.files.forEach(function (f) { want[f.id] = f; }); });
+    Object.keys(want).forEach(function (fid) {
+      if (fm[fid]) return; var f = want[fid];
+      jobs.push(f.get().then(function (blob) {
+        if (!blob) return; return blob.arrayBuffer().then(function (buf) { return Promise.all([SC.encryptBytes(s.key, buf), SC.rid(s.key, 'file', fid)]); }).then(function (r) {
+          return fetch('/cmd/api/sfile?id=' + r[1], { method: 'PUT', body: r[0], credentials: 'same-origin' }).then(function (res) { if (res.ok) { fm[fid] = r[1]; changed = true; } });
+        });
+      }).catch(function () {}));
+    });
+    Object.keys(fm).forEach(function (fid) { if (want[fid]) return; var rid0 = fm[fid]; delete fm[fid]; changed = true; jobs.push(fetch('/cmd/api/sfile?id=' + rid0, { method: 'DELETE', credentials: 'same-origin' }).catch(function () {})); });
+    return Promise.all(jobs).then(function () { filesBusy = false; if (changed) { setSt({ files: fm }); schedule(300); } }, function () { filesBusy = false; });
+  }
+  window.addEventListener('tools:change', function () { if (st()) setTimeout(syncFiles, 800); });
+  V.onUnlock(function () { setTimeout(syncFiles, 3000); });
 
   /* ---------- their changes, back into your data ---------- */
   function applyAll(list) {
@@ -84,7 +119,15 @@
       var c = r.c, id = r.id, f = r.f || {}, del = !!r.del;
       if (c === 'shop') { var l = Array.isArray(t.shop) ? t.shop : (t.shop = []), i = l.findIndex(function (x) { return x.id === id; });
         if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { l.push({ id: id, text: f.text || '', done: !!f.done, from: 'shared' }); toolsCh = true; } }
-      else if (c === 'cdone') { t.choreDone = Object.assign({}, t.choreDone || {}); if (del) delete t.choreDone[id]; else t.choreDone[f.k || id] = f.who === 'me' ? 'me' : 'them'; toolsCh = true; }
+      else if (c === 'cdone') {
+        t.choreDone = Object.assign({}, t.choreDone || {}); var ck = f.k || id;
+        if (del) { delete t.choreDone[id]; t.choreLog = (Array.isArray(t.choreLog) ? t.choreLog : []).filter(function (x) { return x.k !== id; }); }
+        else { t.choreDone[ck] = f.who === 'me' ? 'me' : 'them'; var ch = (t.chores || []).filter(function (x) { return x.id === String(ck).split('|')[1]; })[0]; if (ch && window.Chores && window.Chores.addLog) window.Chores.addLog(t, ch, ck, t.choreDone[ck], f.at); }
+        toolsCh = true; }
+      else if (c === 'chore') { var cl = Array.isArray(t.chores) ? t.chores : (t.chores = []), ci = cl.findIndex(function (x) { return x.id === id; });
+        if (del) { if (ci > -1) cl.splice(ci, 1); } else { var co = { id: id, name: f.name || 'Chore', every: f.every || '1w', day: +f.day || 0, who: f.who || 'rotate', start: f.start || dkey(new Date()) }; if (ci > -1) cl[ci] = Object.assign({}, cl[ci], co); else cl.push(co); }
+        toolsCh = true; }
+      else if (c === 'proj' && !del) { (t.hproj || []).forEach(function (x) { if (x.id !== id || !Array.isArray(f.tasks)) return; var old = {}; (x.tasks || []).forEach(function (q) { old[q.id] = q; }); x.tasks = f.tasks.map(function (q) { return Object.assign({}, old[q.id] || {}, q); }); toolsCh = true; }); }
       else if ((c === 'sx' || c === 'pay') && p) {
         var sh = t.shared && typeof t.shared === 'object' ? t.shared : (t.shared = {}); sh.items = Array.isArray(sh.items) ? sh.items : []; sh.pays = Array.isArray(sh.pays) ? sh.pays : [];
         var arr = c === 'sx' ? sh.items : sh.pays, j = arr.findIndex(function (x) { return x.id === id; }), who = function (v) { return v === 'o' ? 'me' : p.id; };
@@ -107,6 +150,8 @@
         var pp = t.people.filter(function (x) { return String(x.name || '').toLowerCase() === String(nm).toLowerCase(); })[0];
         if (!pp) { pp = { id: 'sh' + Date.now().toString(36), name: nm, rel: 'family' }; t.people.push(pp); }
         if (lk && JSON.stringify(pp.look || {}) !== JSON.stringify(lk)) { pp.look = lk; toolsCh = true; } else if (!pp.look) toolsCh = true;
+        if (f.bday && /^\d{1,2}\.\d{1,2}(\.\d{4})?$/.test(f.bday) && pp.bday !== f.bday) { pp.bday = f.bday; toolsCh = true; }
+        if (f.phone && /^[+\d\s()-]{4,20}$/.test(f.phone) && pp.phone !== f.phone) { pp.phone = f.phone; toolsCh = true; }
       }
       else if (c === 'mv' && !del && t.hmove && Array.isArray(t.hmove.items)) { t.hmove.items.forEach(function (x) { if (x.id === id && !!x.done !== !!f.done) { x.done = !!f.done; toolsCh = true; } }); }
     });
@@ -203,7 +248,13 @@
     window.dispatchEvent(new Event('dash:local'));
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
-  window.ShareSpace = { on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what };
+  var KITS = { hproj: 'Status, tasks and budget – you tick tasks off together', papers: 'Only this one – the file is encrypted for them, and removed from their app when you turn this off', hdocs: 'Only this one – the file is encrypted for them, and removed from their app when you turn this off' };
+  document.addEventListener('change', function (e) {
+    var i = e.target.closest('[data-hdshare]'); if (!i) return;
+    var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
+    toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
+  });
+  window.ShareSpace = { kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
@@ -285,7 +336,7 @@
     box.innerHTML = '<p class="st-note muted">Looking …</p>';
     sync().then(function () {
       var by = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.del || !r.c || r.c === 'info') return; (by[r.c] = by[r.c] || []).push(r.f); });
-      var NM = { meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
+      var NM = { proj: ['House projects', 'name'], doc: ['Documents', 'name'], clog: ['Chore log', 'name'], meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
       var keys = Object.keys(NM).filter(function (c) { return by[c] && by[c].length; });
       box.innerHTML = keys.length ? '<ul class="sh-peek">' + keys.map(function (c) { var l = by[c]; return '<li><b>' + esc(NM[c][0]) + ' · ' + l.length + '</b><small>' + esc(l.slice(0, 4).map(function (f) { return String(f[NM[c][1]] == null ? '' : f[NM[c][1]]); }).join(', ') + (l.length > 4 ? ' …' : '')) + '</small></li>'; }).join('') + '</ul><p class="st-note muted">That is all that is in the shared box – nothing else is sent.</p>'
         : '<p class="st-note muted">Nothing shared yet.</p>';
@@ -324,7 +375,7 @@
     if (b.id === 'shStop') {
       if (!b.dataset.armed) { b.dataset.armed = '1'; document.getElementById('shStopL').textContent = 'Tap again to stop sharing'; setTimeout(function () { delete b.dataset.armed; var l = document.getElementById('shStopL'); if (l) l.textContent = 'Stop sharing'; }, 4000); return; }
       SC.api('share', { method: 'DELETE' }).then(function () {
-        setSt({ on: false, key: null }); cache = {}; seen = {}; wj('dash.share.seen', {}); draw(); marks(); calRow();
+        setSt({ on: false, key: null, files: {} }); cache = {}; seen = {}; wj('dash.share.seen', {}); draw(); marks(); calRow();
         toast('<i class="bi bi-x-octagon"></i> Stopped sharing – ' + esc(pname()) + ' no longer has access');
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }

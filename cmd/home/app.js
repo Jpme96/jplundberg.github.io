@@ -107,7 +107,7 @@
   var stopped = false;
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
-    pull().then(function () { if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
+    pull().then(function () { if (!stopped && list('info').length && !list('pme').length && !rj('home.profiled', false)) setTimeout(profileSheet, 300); if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
     setInterval(function () { if (!document.hidden && !stopped) pull(); }, 30000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && !stopped) pull(); });
     window.addEventListener('online', function () { if (!stopped) pull(); });
@@ -130,6 +130,21 @@
     return { key: dkey(mon), day: dkey(day), n: Math.floor(w / step) };
   }
   function turn(c, p) { if (c.who === 'me') return 'me'; if (c.who === 'them') return 'them'; return ((p.n % 2) + 2) % 2 === 0 ? 'me' : 'them'; }   /* 'me' = the owner, 'them' = you */
+  /* the log: the owner's record of every tick (clog) plus your own ticks not yet in it */
+  function logList() {
+    var l = list('clog').map(function (r) { return r.f; }), have = {};
+    l.forEach(function (x) { have[x.cid + '|' + x.at] = 1; });
+    list('cdone').forEach(function (r) { var f = r.f, cid = String(f.k || '').split('|')[1], ch = find('chore', cid); if (f.at && !have[cid + '|' + f.at]) l.push({ cid: cid, name: ch ? ch.f.name : '', who: f.who, at: f.at }); });
+    return l.filter(function (x) { return x.at; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+  }
+  function lastDone(cid) { return logList().filter(function (x) { return x.cid === cid; })[0] || null; }
+  var showLog = false;
+  function choreLog() {
+    var l = logList(); if (!l.length) return '';
+    var ym = today().slice(0, 7), me = 0, o = 0; l.forEach(function (x) { if (x.at.slice(0, 7) === ym) { if (x.who === 'them') me++; else o++; } });
+    return '<p class="h-sum">' + L('This month: you ', 'Denne måneden: du ') + me + ' · ' + esc(owner()) + ' ' + o + '</p><button type="button" class="h-link" data-chlog>' + (showLog ? L('Hide history', 'Skjul historikk') : L('History', 'Historikk')) + '</button>' +
+      (showLog ? '<ul class="h-list">' + l.slice(0, 40).map(function (x) { return '<li><span class="h-row"><span>' + esc(x.name || L('Chore', 'Oppgave')) + '<small>' + esc(fdate(x.at, { weekday: 'short', day: 'numeric', month: 'short' })) + '</small></span><small>' + esc(x.who === 'them' ? L('You', 'Du') : owner()) + '</small></span></li>'; }).join('') + '</ul>' : '');
+  }
   function doneOf(cid, p) { var r = list('cdone').filter(function (x) { return x.f.k === p.key + '|' + cid; })[0]; return r ? r.f.who : null; }
 
   /* ---------- money ---------- */
@@ -144,7 +159,7 @@
   var TABS = [['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { shop: on('shop') || on('meals'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') }[t[0]]; }); }
+    return TABS.filter(function (t) { return { shop: on('shop') || on('meals'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house') }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -182,8 +197,9 @@
       out += '<h2 class="h-h">' + L('Chores', 'Husarbeid') + '</h2><p class="h-sum">' + (l.length ? (mine ? L('Your turn: ', 'Din tur: ') + mine : L('Nothing on you right now', 'Ingenting på deg akkurat nå')) : L('No chores yet.', 'Ingen oppgaver ennå.')) + '</p>' +
         '<ul class="h-list">' + l.map(function (x) {
           var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + L(' days late', ' dager på etterskudd')) : fdate(x.p.day, { weekday: 'long' });
-          return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-chore="' + esc(x.r.id) + '" aria-pressed="' + !!x.dn + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when].filter(Boolean).join(' · ')) + '</small></span></button></li>';
-        }).join('') + '</ul>';
+          var ls = lastDone(x.r.id);
+          return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-chore="' + esc(x.r.id) + '" aria-pressed="' + !!x.dn + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when, ls ? L('last ', 'sist ') + fdate(ls.at, { weekday: 'short', day: 'numeric', month: 'short' }) + L(' by ', ' av ') + (ls.who === 'them' ? L('you', 'deg') : owner()) : ''].filter(Boolean).join(' · ')) + '</small></span></button><button type="button" class="h-x" data-choreedit="' + esc(x.r.id) + '" aria-label="' + L('Edit', 'Endre') + '"><i class="bi bi-pencil"></i></button></li>';
+        }).join('') + '</ul><button type="button" class="h-btn ghost wide" data-choreadd><i class="bi bi-plus-lg"></i> ' + L('Add a chore', 'Legg til en oppgave') + '</button>' + choreLog();
     }
     if (w.plants !== false) {
       var pl = list('plant').map(function (r) { var due = r.f.last ? (function () { var d = fromKey(r.f.last); d.setDate(d.getDate() + (+r.f.every || 7)); return dkey(d); })() : tk; return { r: r, n: Math.round((fromKey(due) - fromKey(tk)) / 864e5) }; }).sort(function (a, b) { return a.n - b.n; });
@@ -234,11 +250,21 @@
     return '<h2 class="h-h">' + L('Trips', 'Turer') + '</h2><ul class="h-list">' + l.map(function (r) { var f = r.f, pk = f.pack || [], dn = pk.filter(function (x) { return x.done; }).length, n = f.start ? Math.round((fromKey(f.start) - fromKey(today())) / 864e5) : null;
       return '<li><button type="button" class="h-tick" data-trip="' + esc(r.id) + '"><i class="bi bi-airplane"></i><span>' + esc(f.name + (f.dest && f.dest !== f.name ? ' · ' + f.dest : '')) + '<small>' + esc((f.start ? fdate(f.start, { day: 'numeric', month: 'short' }) + (f.end ? '–' + fdate(f.end, { day: 'numeric', month: 'short' }) : '') : '') + (n != null && n > 0 ? ' · ' + L('in ', 'om ') + n + L(' days', ' dager') : '') + (pk.length ? ' · ' + L('packed ', 'pakket ') + dn + '/' + pk.length : '')) + '</small></span></button></li>'; }).join('') + '</ul>';
   }
+  function house() {
+    var pj = list('proj').sort(function (a, b) { return String(a.f.name).localeCompare(String(b.f.name)); }), dc = list('doc').sort(function (a, b) { return String(a.f.name).localeCompare(String(b.f.name)); }), out = '';
+    var ST = { idea: L('Idea', 'Idé'), plan: L('Planned', 'Planlagt'), doing: L('In progress', 'Pågår'), done: L('Done', 'Ferdig') };
+    if (pj.length) out += '<h2 class="h-h">' + L('House projects', 'Prosjekter') + '</h2><ul class="h-list">' + pj.map(function (r) { var f = r.f, tk = f.tasks || [], dn = tk.filter(function (x) { return x.done; }).length;
+      return '<li><button type="button" class="h-tick" data-proj="' + esc(r.id) + '"><i class="bi bi-hammer"></i><span>' + esc(f.name) + '<small>' + esc([ST[f.status] || '', f.room, tk.length ? dn + '/' + tk.length + L(' tasks', ' oppgaver') : '', f.budget ? L('budget ', 'budsjett ') + kr(f.budget) + (f.spent ? ' · ' + L('spent ', 'brukt ') + kr(f.spent) : '') : ''].filter(Boolean).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>';
+    if (dc.length) out += '<h2 class="h-h">' + L('Documents', 'Dokumenter') + '</h2><ul class="h-list">' + dc.map(function (r) { var f = r.f, n = (f.files || []).length;
+      return '<li><button type="button" class="h-tick" data-doc="' + esc(r.id) + '"><i class="bi bi-file-earmark-text"></i><span>' + esc(f.name) + '<small>' + esc([f.cat, f.date ? fdate(f.date, { day: 'numeric', month: 'short', year: 'numeric' }) : '', n ? n + (n === 1 ? L(' file', ' fil') : L(' files', ' filer')) : L('the file is on its way', 'filen er på vei')].filter(Boolean).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>';
+    return out;
+  }
   function notes() {
+    if ((info().what || {}).notes === false) return house() || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
     var l = list('note').sort(function (a, b) { return String(a.f.title || '').localeCompare(String(b.f.title || '')); });
     return '<button type="button" class="h-btn ghost wide" data-noteadd><i class="bi bi-plus-lg"></i> ' + L('Add a note', 'Legg til et notat') + '</button>' +
       (l.length ? '<ul class="h-list h-notes">' + l.map(function (r) { return '<li><button type="button" class="h-tick" data-note="' + esc(r.id) + '"><i class="bi bi-sticky"></i><span>' + esc(r.f.title || L('Note', 'Notat')) + '<small class="h-pre">' + esc(r.f.text || '') + '</small></span></button></li>'; }).join('') + '</ul>'
-        : '<p class="h-sum">' + L('Bin days, the Wi-Fi name, who to call when something breaks – notes you both see.', 'Søppeldager, navnet på Wi-Fi, hvem man ringer når noe går i stykker – notater dere begge ser.') + '</p>');
+        : '<p class="h-sum">' + L('Bin days, the Wi-Fi name, who to call when something breaks – notes you both see.', 'Søppeldager, navnet på Wi-Fi, hvem man ringer når noe går i stykker – notater dere begge ser.') + '</p>') + house();
   }
   function cal() {
     if ((info().what || {}).cal === false) return trips() || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
@@ -296,7 +322,7 @@
     var r = find('trip', id); if (!r) return;
     var bg = sheet('<h2>' + esc(r.f.name) + '</h2><p class="h-small">' + L('Tick things off as you pack – you both see it.', 'Kryss av mens dere pakker – dere ser det begge.') + '</p><ul class="h-list" data-packlist></ul>', function () {});
     var ul = bg.querySelector('[data-packlist]'), paint = function () { var x = find('trip', id); ul.innerHTML = ((x && x.f.pack) || []).map(function (p, i) { return '<li class="' + (p.done ? 'done' : '') + '"><button type="button" class="h-tick" data-pk="' + i + '"><i class="bi bi-' + (p.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(p.t) + '</span></button></li>'; }).join('') || '<li><span class="h-row"><span>' + L('No packing list yet.', 'Ingen pakkeliste ennå.') + '</span></span></li>'; };
-    paint(); bg.querySelector('[type=submit]').textContent = L('Done', 'Ferdig');
+    paint(); bg.querySelector('[type=submit]').textContent = L('Done', 'Ferdig'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
     ul.addEventListener('click', function (e) { var b = e.target.closest('[data-pk]'); if (!b) return; var x = find('trip', id); if (!x) return; var pk = (x.f.pack || []).map(function (p) { return { t: p.t, done: p.done }; }); pk[+b.dataset.pk].done = !pk[+b.dataset.pk].done; put('trip', id, Object.assign({}, x.f, { pack: pk })).then(paint); paint(); });
   }
   function noteSheet(id) {
@@ -306,12 +332,66 @@
       put('note', r ? r.id : 'h' + uid(), { title: f.title.value.trim(), text: f.text.value.trim() });
     });
   }
+  var DAYS = function () { return [L('Monday', 'mandag'), L('Tuesday', 'tirsdag'), L('Wednesday', 'onsdag'), L('Thursday', 'torsdag'), L('Friday', 'fredag'), L('Saturday', 'lørdag'), L('Sunday', 'søndag')]; };
+  function choreSheet(id) {
+    var r = id ? find('chore', id) : null, f = r ? r.f : { every: '1w', day: 5, who: 'rotate' }, o = owner();
+    sheet('<h2>' + (r ? L('Edit chore', 'Endre oppgave') : L('New chore', 'Ny oppgave')) + '</h2><input name="name" maxlength="80" placeholder="' + L('e.g. Take out the bins', 'f.eks. Ta ut søpla') + '" value="' + esc(f.name || '') + '" required>' +
+      '<label class="h-lbl">' + L('How often', 'Hvor ofte') + '<select name="every"><option value="1w"' + (f.every === '1w' ? ' selected' : '') + '>' + L('Every week', 'Hver uke') + '</option><option value="2w"' + (f.every === '2w' ? ' selected' : '') + '>' + L('Every 2 weeks', 'Annenhver uke') + '</option><option value="1m"' + (f.every === '1m' ? ' selected' : '') + '>' + L('Once a month', 'En gang i måneden') + '</option></select></label>' +
+      '<label class="h-lbl">' + L('On', 'På') + '<select name="day">' + DAYS().map(function (d, i) { return '<option value="' + i + '"' + (+f.day === i ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></label>' +
+      '<label class="h-lbl">' + L('Who', 'Hvem') + '<select name="who"><option value="rotate"' + (f.who === 'rotate' ? ' selected' : '') + '>' + L('Take turns', 'Bytt på') + '</option><option value="them"' + (f.who === 'them' ? ' selected' : '') + '>' + L('Always me', 'Alltid meg') + '</option><option value="me"' + (f.who === 'me' ? ' selected' : '') + '>' + L('Always ', 'Alltid ') + esc(o) + '</option></select></label>' +
+      (r ? '<button type="button" class="h-link danger" data-choredel="' + esc(r.id) + '">' + L('Delete this chore', 'Slett oppgaven') + '</button>' : ''), function (fm) {
+      if (!fm.name.value.trim()) { fm.name.focus(); return false; }
+      put('chore', r ? r.id : 'h' + uid(), { name: fm.name.value.trim(), every: fm.every.value, day: +fm.day.value, who: fm.who.value, start: (r && r.f.start) || today() });
+    });
+  }
+  function projSheet(id) {
+    var r = find('proj', id); if (!r) return;
+    var bg = sheet('<h2>' + esc(r.f.name) + '</h2><ul class="h-list" data-tasks></ul><div class="h-add"><input name="nt" maxlength="120" placeholder="' + L('Add a task …', 'Legg til en oppgave …') + '"><button type="button" data-taskadd aria-label="' + L('Add', 'Legg til') + '"><i class="bi bi-plus-lg"></i></button></div>', function () {});
+    bg.querySelector('[type=submit]').textContent = L('Done', 'Ferdig'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
+    var ul = bg.querySelector('[data-tasks]'), paint = function () { var x = find('proj', id); ul.innerHTML = ((x && x.f.tasks) || []).map(function (q, i) { return '<li class="' + (q.done ? 'done' : '') + '"><button type="button" class="h-tick" data-tk="' + i + '"><i class="bi bi-' + (q.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(q.t) + (q.due ? '<small>' + esc(fdate(q.due, { day: 'numeric', month: 'short' })) + '</small>' : '') + '</span></button></li>'; }).join('') || '<li><span class="h-row"><span>' + L('No tasks yet.', 'Ingen oppgaver ennå.') + '</span></span></li>'; };
+    var save = function (fn) { var x = find('proj', id); if (!x) return; var tk = (x.f.tasks || []).map(function (q) { return Object.assign({}, q); }); fn(tk); put('proj', id, Object.assign({}, x.f, { tasks: tk })).then(paint); paint(); };
+    paint();
+    bg.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tk]'); if (b) { save(function (tk) { tk[+b.dataset.tk].done = !tk[+b.dataset.tk].done; }); return; }
+      if (e.target.closest('[data-taskadd]')) { var i = bg.querySelector('[name=nt]'), v = i.value.trim(); if (!v) return; i.value = ''; save(function (tk) { tk.push({ id: 'h' + uid(), t: v, done: false }); }); }
+    });
+  }
+  function docSheet(id) {
+    var r = find('doc', id); if (!r) return;
+    var bg = sheet('<h2>' + esc(r.f.name) + '</h2><div data-files>' + ((r.f.files || []).length ? '' : '<p class="h-small">' + L('The file is on its way – try again in a minute.', 'Filen er på vei – prøv igjen om et minutt.') + '</p>') + '</div>', function () {});
+    bg.querySelector('[type=submit]').textContent = L('Close', 'Lukk'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
+    var box = bg.querySelector('[data-files]');
+    (r.f.files || []).forEach(function (f) {
+      var row = document.createElement('div'); row.className = 'h-file'; row.innerHTML = '<span><i class="bi bi-hourglass-split"></i> ' + esc(f.name) + '</span>'; box.appendChild(row);
+      fetch('/cmd/api/sfile?id=' + f.fid, { credentials: 'same-origin', cache: 'no-store' }).then(function (res) { if (!res.ok) throw new Error(res.status); return res.arrayBuffer(); })
+        .then(function (buf) { return SC.decryptBytes(K, buf); }).then(function (pt) {
+          var url = URL.createObjectURL(new Blob([pt], { type: f.type || 'application/octet-stream' }));
+          row.innerHTML = (/^image\//.test(f.type) ? '<img src="' + url + '" alt="">' : '') + '<a class="h-btn" href="' + url + '" target="_blank" rel="noopener" download="' + esc(f.name) + '"><i class="bi bi-box-arrow-up-right"></i> ' + L('Open ', 'Åpne ') + esc(f.name) + '</a>';
+        }, function () { row.innerHTML = '<span class="h-err">' + L('Couldn’t open ', 'Kunne ikke åpne ') + esc(f.name) + '</span>'; });
+    });
+  }
+  function profileSheet() {
+    var me0 = mine(), bd = String(me0.bday || '').match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?$/), bdv = bd && bd[3] ? bd[3] + '-' + pad(+bd[2]) + '-' + pad(+bd[1]) : '';
+    var bg = sheet('<h2>' + L('About you', 'Om deg') + '</h2><p class="h-small">' + esc(owner()) + L(' gets you as a person in their dashboard – your birthday and number are optional.', ' får deg som person i dashbordet sitt – bursdag og nummer er valgfritt.') + '</p>' +
+      '<div class="h-me">' + face(me0.look, 'big') + '<div><button type="button" class="h-btn sm" data-avatar>' + (me0.look ? L('Change your avatar', 'Endre avataren') : L('Make your avatar', 'Lag avataren din')) + '</button></div></div>' +
+      '<label class="h-lbl">' + L('Your name', 'Navnet ditt') + '<input name="nm" maxlength="30" value="' + esc(me0.name || info().partner || '') + '" required></label>' +
+      '<label class="h-lbl">' + L('Birthday', 'Bursdag') + '<input name="bd" type="date" value="' + esc(bdv) + '"></label>' +
+      '<label class="h-lbl">' + L('Phone', 'Telefon') + '<input name="ph" type="tel" inputmode="tel" maxlength="20" placeholder="+47" value="' + esc(me0.phone || '') + '"></label>', function (f) {
+      var nm = f.nm.value.trim(); if (!nm) { f.nm.focus(); return false; }
+      var o = Object.assign({}, mine(), { name: nm }), bv = f.bd.value;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(bv)) o.bday = +bv.slice(8, 10) + '.' + +bv.slice(5, 7) + '.' + bv.slice(0, 4); else delete o.bday;
+      var ph = f.ph.value.trim(); if (ph) o.phone = ph; else delete o.phone;
+      wj('home.profiled', true); put('pme', 'me', o); toast('<i class="bi bi-check2"></i> ' + L('Saved – ', 'Lagret – ') + esc(owner()) + L(' sees it now', ' ser det nå'));
+    });
+    bg.querySelector('[data-x]').addEventListener('click', function () { wj('home.profiled', true); });
+  }
   function settingsSheet() {
     var w = info().what || {}, rem = !!rj('home.key', null), o = owner();
     var NAMES = [['shop', L('Shopping list', 'Handleliste'), 'Handleliste'], ['meals', L('Dinner plan', 'Middagsplan')], ['chores', L('Chores', 'Husarbeid')], ['money', L('Money between you', 'Penger mellom dere')], ['bills', L('Home bills', 'Regninger')], ['cal', L('Calendar events', 'Kalenderhendelser')], ['trips', L('Trips', 'Turer')], ['plants', L('Plants', 'Planter')], ['move', L('Moving checklist', 'Flyttesjekkliste')], ['notes', L('Home notes', 'Hjemmenotater')]];
     var bg = sheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' +
       '<div class="h-me">' + face(mine().look, 'big') + '<div><b>' + esc(myName()) + '</b><button type="button" class="h-btn sm" data-avatar>' + (mine().look ? L('Change your avatar', 'Endre avataren') : L('Make your avatar', 'Lag avataren din')) + '</button></div></div>' +
       '<label class="h-lbl">' + L('Your name', 'Navnet ditt') + '<input name="nm" maxlength="30" value="' + esc(mine().name || info().partner || '') + '"></label>' +
+      '<button type="button" class="h-btn ghost" data-profile><i class="bi bi-person-vcard"></i> ' + L('Birthday and phone', 'Bursdag og telefon') + '</button>' +
       '<label class="h-lbl">' + L('Language', 'Språk') + '<select name="lang"><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<label class="h-check"><input type="checkbox" name="rem"' + (rem ? ' checked' : '') + '> ' + L('Keep me unlocked on this phone', 'Hold meg innlogget på denne telefonen') + '</label>' +
       '<details class="h-det"><summary>' + L('Change passcode', 'Endre kode') + '</summary><input type="password" name="pa" autocomplete="new-password" placeholder="' + L('New passcode', 'Ny kode') + '"><input type="password" name="pb" autocomplete="new-password" placeholder="' + L('Once more', 'En gang til') + '"><p class="h-err" data-err></p></details>' +
@@ -330,10 +410,11 @@
     });
     bg.querySelector('[type=submit]').textContent = L('Save', 'Lagre');
   }
+  var backToProfile = false;
   function avatarEdit() {
     var A = window.Avatar; if (!A || !A.editor) { toast(L('Couldn’t open the avatar maker', 'Kunne ikke åpne avatarmakeren')); return; }
     var start = mine().look || (A.personLook ? A.personLook({ id: 'p-' + (info().partner || 'x'), name: myName() }) : {});
-    A.editor(myName(), start, function (lk) { put('pme', 'me', Object.assign({}, mine(), { name: mine().name || info().partner || '', look: lk })); toast('<i class="bi bi-person-bounding-box"></i> ' + L('Avatar saved – ', 'Avataren er lagret – ') + esc(owner()) + L(' sees it too', ' ser den også')); });
+    A.editor(myName(), start, function (lk) { put('pme', 'me', Object.assign({}, mine(), { name: mine().name || info().partner || '', look: lk })); if (backToProfile) { backToProfile = false; setTimeout(profileSheet, 260); } toast('<i class="bi bi-person-bounding-box"></i> ' + L('Avatar saved – ', 'Avataren er lagret – ') + esc(owner()) + L(' sees it too', ' ser den også')); });
   }
   /* the avatar maker asks for a dialog – a small sheet here */
   window.HomeLife = { dialog: function (html, onClick) {
@@ -345,9 +426,11 @@
   } };
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
-    if (d.avatar != null) { e.preventDefault(); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
+    if (d.avatar != null) { e.preventDefault(); backToProfile = !!(b.closest('.h-sheet') && b.closest('.h-sheet').querySelector('[name=bd]')); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
     if (d.lock != null) { wj('home.key', null); location.reload(); return; }
     if (d.forget != null) { wj('home.key', null); wj('home.queue', null); wj('home.tab', null); location.reload(); return; }
+    if (d.profile != null) { var s0 = b.closest('.h-sheetbg'); if (s0) s0.remove(); profileSheet(); return; }
+    if (d.choredel && find('chore', d.choredel)) { var cf = find('chore', d.choredel).f, cid = d.choredel; put('chore', cid, null, true); var s3 = b.closest('.h-sheetbg'); if (s3) s3.remove(); toast('<i class="bi bi-trash3"></i> ' + esc(cf.name), function () { put('chore', cid, cf); }); return; }
     if (d.mealdel) { put('meal', d.mealdel, null, true); var s1 = b.closest('.h-sheetbg'); if (s1) s1.remove(); return; }
     if (d.notedel && find('note', d.notedel)) { var kf = find('note', d.notedel).f, nid = d.notedel; put('note', nid, null, true); var s2 = b.closest('.h-sheetbg'); if (s2) s2.remove(); toast('<i class="bi bi-trash3"></i> ' + L('Note deleted', 'Notatet er slettet'), function () { put('note', nid, kf); }); }
   });
@@ -368,10 +451,15 @@
     if (d.trip) { tripSheet(d.trip); return; }
     if (d.note) { noteSheet(d.note); return; }
     if (d.noteadd != null) { noteSheet(null); return; }
+    if (d.choreedit) { choreSheet(d.choreedit); return; }
+    if (d.choreadd != null) { choreSheet(null); return; }
+    if (d.chlog != null) { showLog = !showLog; draw(); return; }
+    if (d.proj) { projSheet(d.proj); return; }
+    if (d.doc) { docSheet(d.doc); return; }
     if (d.shop && (r = find('shop', d.shop))) { put('shop', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.shopdel && (r = find('shop', d.shopdel))) { var keep = r.f; put('shop', r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + esc(keep.text), function () { put('shop', r.id, keep); }); return; }
     if (d.shopclear != null) { var gone = list('shop').filter(function (x) { return x.f.done; }); gone.forEach(function (x) { put('shop', x.id, null, true); }); toast('<i class="bi bi-trash3"></i> ' + gone.length + L(' removed', ' fjernet'), function () { gone.forEach(function (x) { put('shop', x.id, x.f); }); }); return; }
-    if (d.chore && (r = find('chore', d.chore))) { var p = period(r.f), k = p.key + '|' + r.id, dn = doneOf(r.id, p); if (dn) put('cdone', k, null, true); else { put('cdone', k, { k: k, who: turn(r.f, p) }); toast('<i class="bi bi-check2"></i> ' + esc(r.f.name), function () { put('cdone', k, null, true); }); } return; }
+    if (d.chore && (r = find('chore', d.chore))) { var p = period(r.f), k = p.key + '|' + r.id, dn = doneOf(r.id, p); if (dn) put('cdone', k, null, true); else { put('cdone', k, { k: k, who: turn(r.f, p), at: today() }); toast('<i class="bi bi-check2"></i> ' + esc(r.f.name), function () { put('cdone', k, null, true); }); } return; }
     if (d.water && (r = find('plant', d.water))) { var was = r.f; put('plant', r.id, Object.assign({}, r.f, { last: today() })); toast('<i class="bi bi-droplet"></i> ' + L('Watered', 'Vannet'), function () { put('plant', r.id, was); }); return; }
     if (d.mv && (r = find('mv', d.mv))) { put('mv', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.addcost != null) { costSheet(); return; }

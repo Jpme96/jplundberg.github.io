@@ -365,5 +365,5 @@
     return [{ i: 'folder-plus', t: 'Add a paper', s: 'Papers', run: function () { if (IS_PAGE && col) editSheet(null); else location.href = '/cmd/papers/#add'; }, x: 'papers document dokument kontrakt contract insurance forsikring pdf' },
       { i: 'folder2-open', t: 'Papers', s: 'Contracts, insurance and documents', run: function () { location.href = '/cmd/papers/'; }, x: 'papers dokumenter papirer kontrakter avtaler' }];
   });
-  window.Papers = { add: function (preset) { editSheet(null, preset); }, list: function () { return Fe.list('papers'); }, upcoming: upcoming, status: status };
+  window.Papers = { getFile: getF, add: function (preset) { editSheet(null, preset); }, list: function () { return Fe.list('papers'); }, upcoming: upcoming, status: status };
 })();

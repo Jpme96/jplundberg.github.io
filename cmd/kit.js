@@ -84,6 +84,9 @@
       if (f.type === 'textarea') rows += '<div class="cl-group cl-group-text kit-text"><span class="kit-lbl">' + esc(f.label) + '</span>' + input(f, v) + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
       else rows += '<div class="cl-group">' + line + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
     });
+    /* Shared space: "Share with …" on the kinds that can be shared one by one (projects, papers) */
+    var shl = window.ShareSpace && window.ShareSpace.kitRow ? window.ShareSpace.kitRow(cfg.key) : '';
+    if (shl) rows += '<div class="cl-group"><label class="st-row kit-row"><span><i class="bi bi-people"></i> ' + esc(shl) + '</span><input type="checkbox" class="switch" id="kf-__share"' + (item.share ? ' checked' : '') + '></label><small class="kit-help">' + esc(window.ShareSpace.kitHelp(cfg.key)) + '</small></div>';
     s.fields.innerHTML = rows;
     s.del.hidden = isNew;
     var delArmed = false;
@@ -107,6 +110,7 @@
         item[f.k] = v;
       });
       if (bad) { bad.focus(); bad.classList.add('kit-bad'); return; }
+      var shc = document.getElementById('kf-__share'); if (shc) { if (shc.checked) item.share = true; else delete item.share; }
       if (!item.id) item.id = uid();
       if (cfg.beforeSave) cfg.beforeSave(item, isNew);
       var t = F.tools(), l = Array.isArray(t[cfg.key]) ? t[cfg.key] : [];

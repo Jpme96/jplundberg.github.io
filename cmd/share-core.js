@@ -26,6 +26,16 @@
       .then(function (pt) { return JSON.parse(dec.decode(pt)); });
   }
   /* the server id of a record: a hash of the key, kind and id – nothing readable */
+  /* files: the same key, bytes in and out */
+  function encryptBytes(k, buf) {
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return importKey(k).then(function (key) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, buf); })
+      .then(function (ct) { var out = new Uint8Array(12 + ct.byteLength); out.set(iv, 0); out.set(new Uint8Array(ct), 12); return out; });
+  }
+  function decryptBytes(k, buf) {
+    var a = new Uint8Array(buf);
+    return importKey(k).then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: a.slice(0, 12) }, key, a.slice(12)); });
+  }
   function rid(k, c, id) {
     return crypto.subtle.digest('SHA-256', enc.encode(k + '|' + c + '|' + id)).then(function (h) { return Array.prototype.map.call(new Uint8Array(h).slice(0, 12), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); });
   }
@@ -56,7 +66,8 @@
     info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook'],
     shop: ['text', 'done'],
     chore: ['name', 'every', 'day', 'who', 'start'],
-    cdone: ['k', 'who'],
+    cdone: ['k', 'who', 'at'],
+    clog: ['cid', 'name', 'who', 'at'],
     sx: ['date', 'note', 'total', 'payer', 'shares', 'cat'],
     pay: ['date', 'from', 'to', 'amount'],
     ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location'],
@@ -66,7 +77,9 @@
     bill: ['name', 'day', 'amount', 'part', 'payer', 'next'],
     trip: ['name', 'dest', 'start', 'end', 'pack'],
     note: ['title', 'text'],
-    pme: ['name', 'look']                       /* the other person's own name and avatar – only they write it */
+    proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
+    doc: ['name', 'cat', 'src', 'date', 'files'],
+    pme: ['name', 'look', 'bday', 'phone']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else */
   function cleanLook(l) {
@@ -78,9 +91,11 @@
   function clean(c, f) {
     var al = ALLOW[c]; if (!al || !f || typeof f !== 'object') return null;
     var o = {}; al.forEach(function (k) { if (f[k] !== undefined && f[k] !== null && f[k] !== '') o[k] = f[k]; });
+    if (o.tasks) o.tasks = (Array.isArray(o.tasks) ? o.tasks : []).slice(0, 200).map(function (x) { return { id: String((x && x.id) || '').slice(0, 40), t: String((x && x.t) || '').slice(0, 120), done: !!(x && x.done), due: /^\d{4}-\d{2}-\d{2}$/.test((x && x.due) || '') ? x.due : undefined }; }).filter(function (x) { return x.id && x.t; });
+    if (o.files) o.files = (Array.isArray(o.files) ? o.files : []).slice(0, 20).map(function (x) { return { fid: String((x && x.fid) || ''), name: String((x && x.name) || 'file').slice(0, 120), type: String((x && x.type) || '').slice(0, 60), size: +(x && x.size) || 0 }; }).filter(function (x) { return /^[a-f0-9]{16,64}$/.test(x.fid); });
     if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
-  window.ShareCore = { genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();

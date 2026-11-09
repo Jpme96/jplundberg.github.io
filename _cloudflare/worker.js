@@ -83,7 +83,7 @@ async function cronBeat(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -102,10 +102,12 @@ async function route(request, env) {
     if (!check.service && !isPartner && shareCfg && shareCfg.owner && em !== shareCfg.owner) return json({ error: 'not allowed' }, 403);
     if (isPartner) {
       if (path === '/cmd/api/shared') return sharedApi(request, env, 'p');
+      if (path === '/cmd/api/sfile') return sfileApi(request, url, env, true);
       if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
       return json({ error: 'only the shared space is open to you', partner: true }, 403);
     }
     if (path === '/cmd/api/shared') return sharedApi(request, env, 'o');
+    if (path === '/cmd/api/sfile') return sfileApi(request, url, env, false);
     if (path === '/cmd/api/share') { const rq = new Request(request, { headers: new Headers(request.headers), duplex: 'half' }); rq.headers.set('X-Share-Me', em); return shareApi(rq, url, env, false, shareCfg); }
 
     /* a service token (the iPhone Shortcut) may only hand in health numbers */
@@ -170,6 +172,7 @@ async function shareApi(request, url, env, partner, cfg) {
   }
   if (m === 'DELETE') {                                                        /* Stop sharing: access, key and box go – the owner stays known */
     await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
+    let cur; do { const l = await env.VAULT.list({ prefix: SFILE, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur);
     return json({ ok: true });
   }
   return json({ error: 'method' }, 405);
@@ -197,6 +200,30 @@ async function sharedApi(request, env, by) {
   for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
   if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); }
   return json(cur);
+}
+
+/* shared files: a document you chose to share, encrypted on your phone with the shared key (the server can't
+   read it). Only you put or remove them; both of you can fetch them. Stop sharing removes them all. */
+const SFILE = 'sfile:';
+async function sfileApi(request, url, env, partner) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (!(await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) || {}).partner) return json({ error: 'not sharing' }, 403);
+  const id = String(url.searchParams.get('id') || '');
+  if (!RID.test(id)) return json({ error: 'bad id' }, 400);
+  if (request.method === 'GET') {
+    const v = await env.VAULT.get(SFILE + id, { type: 'stream' });
+    return v ? new Response(v, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } }) : json({ error: 'not found' }, 404);
+  }
+  if (partner) return json({ error: 'only the owner shares files' }, 403);
+  if (request.method === 'PUT') {
+    const len = parseInt(request.headers.get('content-length') || '0', 10);
+    if (!len || len < 30) return json({ error: 'empty' }, 400);
+    if (len > FILE_MAX) return json({ error: 'too large', max: FILE_MAX }, 413);
+    await env.VAULT.put(SFILE + id, request.body, { metadata: { s: len, at: Date.now() } });
+    return json({ ok: true, id, size: len });
+  }
+  if (request.method === 'DELETE') { await env.VAULT.delete(SFILE + id); return json({ ok: true }); }
+  return json({ error: 'method not allowed' }, 405);
 }
 
 /* ---------- Apple Health inbox ---------- */

@@ -43,14 +43,25 @@
   function turn(c, p) { if (c.who === 'me' || !partner()) return 'me'; if (c.who === 'them') return 'them'; return ((p.n % 2) + 2) % 2 === 0 ? 'me' : 'them'; }
   function done(c, p) { return (Fe.tools().choreDone || {})[p.key + '|' + c.id] || null; }
   function whoName(w) { var p = partner(); return w === 'me' ? 'You' : p ? p.name : 'Them'; }
+  /* the log: every time a chore is ticked off – which, who and the day (dash.tools.choreLog, last 12 months) */
+  function logOf() { var l = Fe.tools().choreLog; return Array.isArray(l) ? l : []; }
+  function lastOf(cid) { return logOf().filter(function (x) { return x.cid === cid; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; })[0] || null; }
+  function addLog(t, c, k, who, at) {
+    var l = Array.isArray(t.choreLog) ? t.choreLog : (t.choreLog = []);
+    if (l.some(function (x) { return x.k === k; })) return;
+    l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: k, cid: c.id, name: c.name, who: who, at: at || today() });
+    var cut = dkey(new Date(Date.now() - 366 * 864e5)); t.choreLog = l.filter(function (x) { return x.at >= cut; }).slice(-600);
+  }
   function setDone(c, who) {
     var p = period(c), t = Fe.tools(), m = t.choreDone = Object.assign({}, t.choreDone || {}), k = p.key + '|' + c.id, was = m[k];
-    if (was) delete m[k]; else m[k] = who || turn(c, p);
+    if (was) { delete m[k]; t.choreLog = logOf().filter(function (x) { return x.k !== k; }); } else { m[k] = who || turn(c, p); addLog(t, c, k, m[k]); }
     Object.keys(m).forEach(function (x) { if (x.slice(0, 10) < dkey(new Date(Date.now() - 120 * 864e5))) delete m[x]; });
     Fe.saveTools(t);
     if (!was) toast('<i class="bi bi-check2"></i> ' + esc(c.name) + ' done', function () { var t2 = Fe.tools(); delete (t2.choreDone || {})[k]; Fe.saveTools(t2); });
   }
-  window.Chores = { period: period, turn: turn, done: done };
+  window.Chores = { period: period, turn: turn, done: done, addLog: addLog, log: logOf };
+  var showLog = false;
+  function fair(l) { var ym = today().slice(0, 7), me = 0, them = 0; logOf().forEach(function (x) { if (x.at.slice(0, 7) !== ym) return; if (x.who === 'me') me++; else them++; }); return { me: me, them: them }; }
 
   var col = K && $t('hchores') ? K.collection({
     mount: $t('hchores'), feature: 'house', key: 'chores', icon: 'arrow-repeat', title: 'Chores', addLabel: 'Add', limit: 8,
@@ -61,26 +72,34 @@
       { k: 'who', label: 'Who', type: 'select', options: function () { var p = partner(); return [['rotate', p ? 'Take turns with ' + p.name : 'Take turns'], ['me', 'Always me'], ['them', p ? 'Always ' + p.name : 'Always the other one']]; }, def: 'rotate' }],
     beforeSave: function (it, isNew) { if (isNew || !isKey(it.start)) it.start = today(); it.day = +it.day || 0; },
     headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings"><i class="bi bi-sliders"></i></a>'; },
-    above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-chseed><i class="bi bi-magic"></i> Pick from the usual ones</button>'; },
+    above: function (l) {
+      if (!l.length) return '<button type="button" class="pill-btn hl-seed" data-chseed><i class="bi bi-magic"></i> Pick from the usual ones</button>';
+      if (!showLog) return '';
+      var lg = logOf().slice().sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 40);
+      return '<ul class="ch-log">' + lg.map(function (x) { return '<li><span>' + esc(x.name) + '</span><small>' + esc(fromKey(x.at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + (x.who === 'me' ? 'You' : whoName('them'))) + '</small></li>'; }).join('') + '</ul>';
+    },
     empty: 'Bins, bathroom, vacuuming – with whose turn it is this week, changing by itself. Tick them off as you go.',
     summary: function (l) {
       if (!l.length) return '';
       var mine = 0, theirs = 0, open = 0; l.forEach(function (c) { var p = period(c); if (!done(c, p)) { open++; if (turn(c, p) === 'me') mine++; else theirs++; } });
-      var pn = partner();
-      return '<span>' + (open ? open + ' left this time' + (pn ? ' · you ' + mine + ', ' + esc(pn.name) + ' ' + theirs : '') : 'All done this time') + '</span>';
+      var pn = partner(), fr = fair();
+      return '<span>' + (open ? open + ' left this time' + (pn ? ' · you ' + mine + ', ' + esc(pn.name) + ' ' + theirs : '') : 'All done this time') + '</span>' +
+        (fr.me + fr.them ? '<span class="ch-fair">' + esc('This month: you ' + fr.me + (pn ? ' · ' + pn.name + ' ' + fr.them : '')) + '</span>' : '') +
+        (logOf().length ? '<button type="button" class="text-btn ch-logbtn" data-chlog aria-expanded="' + showLog + '"><i class="bi bi-clock-history"></i> ' + (showLog ? 'Hide history' : 'History') + '</button>' : '');
     },
     sort: function (a, b) { return period(a).day < period(b).day ? -1 : 1; },
     row: function (c) {
       var p = period(c), w = turn(c, p), dn = done(c, p), n = Math.round((fromKey(p.day) - fromKey(today())) / 864e5);
       var when = n === 0 ? 'today' : n === 1 ? 'tomorrow' : n < 0 ? (dn ? '' : (-n) + (n === -1 ? ' day late' : ' days late')) : fromKey(p.day).toLocaleDateString('en-GB', { weekday: 'long' });
       return { icon: icon(c.name), color: w === 'me' ? '#22b35e' : '#3987e5', title: c.name, cls: dn ? 'is-done' : '',
-        sub: esc([whoName(w) === 'You' ? 'Your turn' : whoName(w) + '’s turn', (EVERY.filter(function (x) { return x[0] === c.every; })[0] || EVERY[0])[1].toLowerCase(), when].filter(Boolean).join(' · ')),
+        sub: esc([whoName(w) === 'You' ? 'Your turn' : whoName(w) + '’s turn', (EVERY.filter(function (x) { return x[0] === c.every; })[0] || EVERY[0])[1].toLowerCase(), when, (function () { var ls = lastOf(c.id); return ls ? 'last ' + fromKey(ls.at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' by ' + (ls.who === 'me' ? 'you' : whoName('them')) : ''; })()].filter(Boolean).join(' · ')),
         right: '<span role="button" tabindex="0" class="check ch-check" data-chdone="' + esc(c.id) + '" aria-pressed="' + !!dn + '" aria-label="' + esc(c.name) + (dn ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></span>' };   /* a span: it sits inside the row's button */
     }
   }) : null;
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-chdone]');
     if (b) { e.preventDefault(); e.stopPropagation(); var c = Fe.list('chores').filter(function (x) { return x.id === b.dataset.chdone; })[0]; if (c) setDone(c); return; }
+    if (e.target.closest('[data-chlog]')) { e.preventDefault(); e.stopPropagation(); showLog = !showLog; if (col) col.render(); return; }
     if (e.target.closest('[data-chseed]')) {
       var t = Fe.tools(), k = today();
       t.chores = USUAL.slice(0, 5).map(function (u, i) { return { id: Date.now().toString(36) + i, name: u[0], every: u[1], day: u[2], who: 'rotate', start: k }; });

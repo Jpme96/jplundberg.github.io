@@ -644,6 +644,7 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^This month: you (\d+)( · (.+) (\d+))?$/, function (m, a, b, n, c) { return 'Denne måneden: du ' + a + (b ? ' · ' + n + ' ' + c : ''); }], [/^last (.+) by you$/, 'sist $1 av deg'], [/^last (.+) by (.+)$/, 'sist $1 av $2'],
     [/^Shared with (.+)$/, 'Delt med $1'], [/^Remove (.+)$/, 'Fjern $1'], [/^(.+) removed$/, '$1 er fjernet'],
     [/^With (.+), on their phone: 1\. Open (\S+) and log in with their email\. 2\. Scan this code with the Camera app\. 3\. They choose their own passcode\.$/, 'Sammen med $1, på telefonen deres: 1. Åpne $2 og logg inn med e-posten deres. 2. Skann denne koden med Kamera-appen. 3. De velger sin egen kode.'],
     [/^Visible to (.+)$/, 'Synlig for $1'], [/^Shared with (.+) – Settings → Shared space$/, 'Delt med $1 – Innstillinger → Delt hjem'], [/^Share with (.+)$/, 'Del med $1'], [/^Share your home with (.+)$/, 'Del hjemmet med $1'], [/^Sharing with (.+)$/, 'Deler med $1'], [/^With ([^\s·,]+)( · .+)?$/, function (m, a, b) { return 'Med ' + a + (b ? ' · ' + tr(b.slice(3)) : ''); }],
@@ -1178,6 +1179,8 @@
     'Dinner plan': 'Middagsplan', 'Home bills – their part': 'Regninger – deres del', 'Trips you tick': 'Turer du krysser av', 'Home notes': 'Hjemmenotater', 'Home bills': 'Regninger', 'Trips': 'Turer', 'Add a note': 'Legg til et notat', 'Title – e.g. Bins': 'Tittel – f.eks. Søppel', 'e.g. Paper every other Tuesday, food waste Fridays': 'f.eks. Papir annenhver tirsdag, matavfall fredager',
     'Bin days, the Wi-Fi name, who to call when something breaks – you both see and change these. Don’t put passwords here.': 'Søppeldager, navnet på Wi-Fi, hvem man ringer når noe går i stykker – dere ser og endrer disse begge. Ikke skriv passord her.', 'Delete note': 'Slett notatet', 'Note': 'Notat',
     'Dates and the packing list – you tick things off together': 'Datoer og pakkelisten – dere krysser av sammen',
+    'House projects and documents you tick': 'Husprosjekter og dokumenter du krysser av', 'History': 'Historikk', 'Hide history': 'Skjul historikk', 'House projects': 'Husprosjekter', 'Documents': 'Dokumenter', 'Chore log': 'Husarbeidslogg',
+    'Status, tasks and budget – you tick tasks off together': 'Status, oppgaver og budsjett – dere krysser av oppgaver sammen', 'Only this one – the file is encrypted for them, and removed from their app when you turn this off': 'Bare denne – filen krypteres for dem, og fjernes fra appen deres når du slår dette av',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

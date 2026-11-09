@@ -132,6 +132,7 @@
         '<label class="hx-f"><span>Name</span><input data-hdname="' + esc(d.id) + '" value="' + esc(d.name) + '" maxlength="160"></label>' +
         '<label class="hx-f"><span>Notes</span><textarea rows="2" data-hdnotes="' + esc(d.id) + '" maxlength="600" placeholder="e.g. Which room, the model, who installed it">' + esc(d.notes || '') + '</textarea></label>' +
         '<p class="muted hl-small" data-noi18n>' + esc(f.name || '') + (d.path ? ' · ' + esc(d.path) : '') + '</p>' +
+        (window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow('hdocs') ? '<label class="tp-share"><span><i class="bi bi-people"></i> ' + esc(window.ShareSpace.kitRow('hdocs')) + '<small>' + esc(window.ShareSpace.kitHelp('hdocs')) + '</small></span><input type="checkbox" class="switch" data-hdshare="' + esc(d.id) + '"' + (d.share ? ' checked' : '') + '></label>' : '') +
         '<button type="button" class="text-btn danger" data-hddel="' + esc(d.id) + '"><i class="bi bi-trash3"></i> <span>Delete</span></button></div>' : '') + '</li>';
   }
   function saveDoc(id, fn) { var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d && d.id === id) fn(d); }); Fe.saveTools(t); }
