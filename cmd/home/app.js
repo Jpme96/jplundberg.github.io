@@ -44,9 +44,16 @@
         else offline();
       });
     }, function (e) {
+      if (e.status === 403) { stoppedScreen(); return; }
       if (e.status === 401) screen('<i class="bi bi-box-arrow-in-right h-big"></i><h1>' + L('Log in again', 'Logg inn igjen') + '</h1><button class="h-btn" type="button" data-reload>' + L('Reload', 'Last inn på nytt') + '</button>');
       else offline();
     });
+  }
+  function stoppedScreen() {
+    ['home.key', 'home.queue', 'home.profiled', 'home.tab'].forEach(function (k) { wj(k, null); });
+    try { sessionStorage.removeItem('home.newkey'); } catch (e) {}
+    K = null; recs = {}; rids = {}; queue = {}; stopped = true;
+    screen('<i class="bi bi-door-closed h-big"></i><h1>' + L('Sharing has stopped', 'Delingen er stoppet') + '</h1><p>' + L('Nothing shared is kept on this phone any more. If you get a new code, scan it to start again.', 'Ingenting delt ligger igjen på denne telefonen. Får du en ny kode, skann den for å starte på nytt.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>');
   }
   function offline() { screen('<i class="bi bi-wifi-off h-big"></i><h1>' + L('No connection', 'Ingen forbindelse') + '</h1><p>' + L('Check the internet and try again.', 'Sjekk nettet og prøv igjen.') + '</p><button class="h-btn" type="button" data-reload>' + L('Try again', 'Prøv igjen') + '</button>'); }
   function setPass(k) {
@@ -75,12 +82,13 @@
   }
 
   /* ---------- the box ---------- */
+  var badKey = 0;
   function absorb(srv) {
-    var r = (srv && srv.recs) || {}, jobs = [];
+    var r = (srv && srv.recs) || {}, jobs = []; badKey = 0;
     Object.keys(r).forEach(function (rid) {
       var x = r[rid], old = recs[rid]; if (old && old.t === x.t) return;
       if (x.del) { recs[rid] = { t: x.t, del: 1, c: old && old.c, id: old && old.id }; return; }
-      jobs.push(SC.decrypt(K, x).then(function (o) { recs[rid] = { t: x.t, by: x.by, c: o.c, id: o.id, f: SC.clean(o.c, o.f) || {} }; rids[o.c + '|' + o.id] = rid; }, function () {}));
+      jobs.push(SC.decrypt(K, x).then(function (o) { recs[rid] = { t: x.t, by: x.by, c: o.c, id: o.id, f: SC.clean(o.c, o.f) || {} }; rids[o.c + '|' + o.id] = rid; }, function () { badKey++; }));
     });
     return Promise.all(jobs);
   }
@@ -103,11 +111,17 @@
       return SC.encrypt(K, { c: c, id: id, f: cf }).then(function (e) { queue[rid] = { t: t, iv: e.iv, ct: e.ct }; });
     }).then(function () { wj('home.queue', queue); return flush(); }).then(draw);
   }
-  function pull() { return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) { wj('home.key', null); screen('<i class="bi bi-door-closed h-big"></i><h1>' + L('Sharing has stopped', 'Delingen er stoppet') + '</h1><p>' + L('Ask for a new code if this is a mistake.', 'Be om en ny kode hvis dette er feil.') + '</p>'); stopped = true; } }); }
+  function pull() { return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) stoppedScreen(); }); }
   var stopped = false;
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
-    pull().then(function () { if (!stopped && list('info').length && !list('pme').length && !rj('home.profiled', false)) setTimeout(profileSheet, 300); if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
+    pull().then(function () {
+      if (!stopped && badKey && !list('info').length) {   /* sharing was started again with a new key */
+        wj('home.key', null); K = null; recs = {}; rids = {};
+        screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Scan the new code', 'Skann den nye koden') + '</h1><p>' + L('Sharing was started again, so the old code no longer works.', 'Delingen ble startet på nytt, så den gamle koden virker ikke lenger.') + '</p><button class="h-btn" type="button" data-reload>' + L('Continue', 'Fortsett') + '</button>');
+        return;
+      }
+      if (!stopped && list('info').length && !list('pme').length && !rj('home.profiled', false)) setTimeout(profileSheet, 300); if (!stopped && !list('info').length) screen('<i class="bi bi-hourglass-split h-big"></i><h1>' + L('Waiting for the first sync', 'Venter på første synk') + '</h1><p>' + L('Ask the other one to open their dashboard once.', 'Be den andre åpne dashbordet sitt én gang.') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>'); });
     setInterval(function () { if (!document.hidden && !stopped) pull(); }, 30000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && !stopped) pull(); });
     window.addEventListener('online', function () { if (!stopped) pull(); });
