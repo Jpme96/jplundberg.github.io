@@ -112,20 +112,21 @@
   }
 
   /* ---------- the list ---------- */
+  var hasDate = function (g) { return !!g('date'); };
   var FIELDS = [
-    { k: 'title', type: 'title', label: 'Paper', ph: 'e.g. Samboerkontrakt, Home insurance, Work contract', req: true },
-    { k: 'kind', label: 'Kind', type: 'select', options: KINDS.map(function (c) { return [c[0], c[1]]; }), def: 'contract' },
-    { k: 'who', label: 'From or with', ph: 'e.g. Gjensidige, DNB, employer' },
-    { k: 'ref', label: 'Policy or reference no.', ph: 'Optional' },
-    { k: 'signed', label: 'Signed or issued', type: 'date' },
-    { k: 'date', label: 'Date to watch', type: 'date', help: 'When it expires, renews or has to be cancelled – leave empty if it never does' },
-    { k: 'dateKind', label: 'That date is when it', type: 'select', options: DATEK, def: 'expires' },
-    { k: 'every', label: 'Repeats', type: 'select', options: [['', 'Once'], ['1', 'Every year'], ['2', 'Every 2 years'], ['3', 'Every 3 years'], ['5', 'Every 5 years'], ['10', 'Every 10 years']], def: '' },
-    { k: 'lead', label: 'Remind me', type: 'select', options: [['30', '1 month before'], ['14', '2 weeks before'], ['60', '2 months before'], ['90', '3 months before'], ['7', '1 week before'], ['0', 'No reminder']], def: '30' },
-    { k: 'cost', label: 'Costs per year', type: 'number', suffix: 'kr', help: 'Optional – for insurance and the like' },
-    { k: 'covers', label: 'What it covers', ph: 'Insurance: e.g. contents up to 1,5 mill., travel, theft' },
-    { k: 'excess', label: 'Excess (egenandel)', type: 'number', suffix: 'kr', help: 'Insurance: what you pay yourself on a claim' },
-    { k: 'link', label: 'Belongs to', type: 'select', options: linkOptions, def: '' },
+    { k: 'title', type: 'title', label: 'Paper', ph: 'Name, e.g. Home insurance', req: true },
+    { k: 'kind', label: 'Kind', type: 'select', options: KINDS.map(function (c) { return [c[0], c[1]]; }), def: 'contract', grp: 'a' },
+    { k: 'who', label: 'From or with', ph: 'Gjensidige, DNB …', grp: 'a' },
+    { k: 'ref', label: 'Reference no.', ph: 'Optional', grp: 'a' },
+    { k: 'signed', label: 'Signed or issued', type: 'date', grp: 'd', head: 'Dates' },
+    { k: 'date', label: 'Date to watch', type: 'date', help: 'When it expires, renews or must be cancelled – leave empty if it never does', grp: 'd' },
+    { k: 'dateKind', label: 'That date it', type: 'select', options: DATEK, def: 'expires', grp: 'd', when: hasDate },
+    { k: 'every', label: 'Repeats', type: 'select', options: [['', 'Once'], ['1', 'Every year'], ['2', 'Every 2 years'], ['3', 'Every 3 years'], ['5', 'Every 5 years'], ['10', 'Every 10 years']], def: '', grp: 'd', when: hasDate },
+    { k: 'lead', label: 'Remind me', type: 'select', options: [['30', '1 month before'], ['14', '2 weeks before'], ['60', '2 months before'], ['90', '3 months before'], ['7', '1 week before'], ['0', 'No reminder']], def: '30', grp: 'd', when: hasDate },
+    { k: 'cost', label: 'Costs per year', type: 'number', suffix: 'kr', grp: 'c', head: 'Cost', when: function (g) { return /^(insurance|loan|home|car|other)$/.test(g('kind')) || !!g('cost'); } },
+    { k: 'excess', label: 'Excess (egenandel)', type: 'number', suffix: 'kr', grp: 'c', when: function (g) { return g('kind') === 'insurance' || !!g('excess'); } },
+    { k: 'covers', label: 'Covers', ph: 'Contents, travel, theft …', grp: 'c', when: function (g) { return g('kind') === 'insurance' || !!g('covers'); } },
+    { k: 'link', label: 'Belongs to', type: 'select', options: linkOptions, def: '', grp: 'l', when: function (g) { return linkOptions().length > 1 || !!g('link'); } },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 3, help: 'Where the original is, what to remember, notice period …' }];
   var pending = [];                        // files picked in the edit sheet, stored on save
   var CFG = { key: 'papers', addTitle: 'New paper', editTitle: 'Edit paper', fields: FIELDS,
@@ -152,7 +153,7 @@
     var n = item && item.files ? item.files.length : 0;
     box.innerHTML = '<label class="st-row kit-row"><span>' + (n ? 'Add more files' : 'File') + '</span><span class="pa-pickbtn"><i class="bi bi-paperclip"></i> <span data-papickt>' + (n ? n + ' saved · add' : 'PDF or photos') + '</span></span>' +
       '<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-papick></label><small class="kit-help">' + (syncs() ? 'Encrypted and synced to your other devices' : 'Kept on this device') + ' – PDF up to 15 MB, photos are made smaller.</small>';
-    var anchor = document.getElementById('kf-kind'); anchor = anchor && anchor.closest('.cl-group');
+    var anchor = document.getElementById('kf-kind'); anchor = anchor && (anchor.closest('.kit-gwrap') || anchor.closest('.cl-group'));
     if (anchor && anchor.nextSibling) anchor.parentNode.insertBefore(box, anchor.nextSibling); else t.parentNode.appendChild(box);
     box.querySelector('[data-papick]').addEventListener('change', function (e) {
       pending = Array.prototype.slice.call(e.target.files || []);

@@ -76,18 +76,34 @@
     var s = ensureSheet(), isNew = !item, before = item ? JSON.parse(JSON.stringify(item)) : null;
     item = item ? JSON.parse(JSON.stringify(item)) : (pre ? JSON.parse(JSON.stringify(pre)) : {});
     s.title.textContent = isNew ? (cfg.addTitle || 'Add') : (cfg.editTitle || 'Edit');
-    var rows = '', inline = '';
+    var rows = '', inline = '', grp = null;
+    /* fields with the same `grp` share one box (optional `head` above it); `when(get)` shows a field only when it applies */
+    function endGrp() { if (grp !== null) { rows += '</div></div>'; grp = null; } }
     cfg.fields.forEach(function (f) {
       var v = item[f.k] != null ? item[f.k] : (isNew && f.def != null ? (typeof f.def === 'function' ? f.def() : f.def) : '');
-      if (f.type === 'title') { rows += '<input class="cl-in-title" id="kf-' + f.k + '" placeholder="' + esc(f.ph || f.label) + '"' + (f.req ? ' required' : '') + ' maxlength="' + (f.max || 120) + '" value="' + esc(v) + '">'; return; }
+      if (f.type === 'title') { endGrp(); rows += '<input class="cl-in-title" id="kf-' + f.k + '" placeholder="' + esc(f.ph || f.label) + '"' + (f.req ? ' required' : '') + ' maxlength="' + (f.max || 120) + '" value="' + esc(v) + '">'; return; }
       var line = '<label class="st-row kit-row' + (f.type === 'textarea' ? ' kit-tall' : '') + '"><span>' + esc(f.label) + '</span>' + input(f, v) + (f.suffix ? '<em>' + esc(f.suffix) + '</em>' : '') + '</label>';
-      if (f.type === 'textarea') rows += '<div class="cl-group cl-group-text kit-text"><span class="kit-lbl">' + esc(f.label) + '</span>' + input(f, v) + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
-      else rows += '<div class="cl-group">' + line + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
+      if (f.grp && f.type !== 'textarea') {
+        if (grp !== f.grp) { endGrp(); grp = f.grp; rows += '<div class="kit-gwrap" data-kg="' + esc(f.grp) + '">' + (f.head ? '<p class="kit-gh">' + esc(f.head) + '</p>' : '') + '<div class="cl-group kit-grp">'; }
+        rows += '<div class="kit-r" data-kr="' + esc(f.k) + '">' + line + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
+        return;
+      }
+      endGrp();
+      if (f.type === 'textarea') rows += '<div class="cl-group cl-group-text kit-text" data-kr="' + esc(f.k) + '"><span class="kit-lbl">' + esc(f.label) + '</span>' + input(f, v) + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
+      else rows += '<div class="cl-group" data-kr="' + esc(f.k) + '">' + line + (f.help ? '<small class="kit-help">' + esc(f.help) + '</small>' : '') + '</div>';
     });
+    endGrp();
     /* Shared space: "Share with …" on the kinds that can be shared one by one (projects, papers) */
     var shl = window.ShareSpace && window.ShareSpace.kitRow ? window.ShareSpace.kitRow(cfg.key) : '';
     if (shl) rows += '<div class="cl-group"><label class="st-row kit-row"><span><i class="bi bi-people"></i> ' + esc(shl) + '</span><input type="checkbox" class="switch" id="kf-__share"' + (item.share ? ' checked' : '') + '></label><small class="kit-help">' + esc(window.ShareSpace.kitHelp(cfg.key)) + '</small></div>';
     s.fields.innerHTML = rows;
+    var whens = cfg.fields.filter(function (f) { return typeof f.when === 'function'; });
+    function relevant() {
+      var get = function (k) { var el = document.getElementById('kf-' + k); return !el ? '' : el.type === 'checkbox' ? el.checked : el.value; };
+      whens.forEach(function (f) { var r = s.fields.querySelector('[data-kr="' + f.k + '"]'); if (r) { var on = true; try { on = !!f.when(get); } catch (e) {} r.hidden = !on; } });
+      s.fields.querySelectorAll('.kit-gwrap').forEach(function (w) { w.hidden = !w.querySelector('.kit-r:not([hidden])'); });
+    }
+    if (whens.length) { relevant(); s.fields.oninput = s.fields.onchange = relevant; } else s.fields.oninput = s.fields.onchange = null;
     s.del.hidden = isNew;
     var delArmed = false;
     s.del.querySelector('[data-kit-delbtn] span').textContent = 'Delete';

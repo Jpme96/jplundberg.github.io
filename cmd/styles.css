@@ -5159,3 +5159,15 @@ button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; fo
 .sh-sec > .st-note { margin: 10px 14px; }
 .sh-pend { display: flex; align-items: center; gap: 10px; } .sh-pend > span:first-child { flex: 1; min-width: 0; } .sh-pend-b { display: flex; gap: 6px; flex: none; }
 .sh-cats { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 14px 12px; }
+
+/* Kit forms: fields grouped in one box, same-width inputs, a small heading above (kit.js `grp`/`head`/`when`) */
+.kit-gwrap[hidden], .kit-r[hidden] { display: none !important; }
+.kit-gh { margin: 6px 4px -2px; font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+.kit-grp > .kit-r > .st-row { border-bottom: 0; }
+.kit-grp > .kit-r:not([hidden]) ~ .kit-r:not([hidden]) { border-top: 1px solid var(--line); }
+.kit-grp .kit-row input:not(.switch), .kit-grp .kit-row select { flex: 0 0 54%; width: 54%; max-width: 54%; text-align: right; }
+.kit-grp .kit-row select { text-align-last: right; }
+.kit-grp .kit-row:has(em) input:not(.switch) { flex-basis: calc(54% - 26px); width: calc(54% - 26px); }
+.kit-grp .kit-row em { width: 18px; margin-left: 0; }
+.kit-grp .kit-help { padding-top: 0; }
+@media (max-width: 380px) { .kit-grp .kit-row input:not(.switch), .kit-grp .kit-row select { flex-basis: 50%; width: 50%; max-width: 50%; } }
