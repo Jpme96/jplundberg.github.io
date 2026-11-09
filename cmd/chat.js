@@ -33,16 +33,16 @@
     C.dTry = Date.now();
     return SC.api('chat').then(function (srv) {
       C.dOk = Date.now(); C.dSrv = { rev: srv.rev, n: Object.keys(srv.msgs || {}).filter(function (k) { return !(srv.msgs[k] || {}).del; }).length };
-      var recs = srv.msgs || {}, jobs = [], seen = {}, bad = 0;
+      var recs = srv.msgs || {}, jobs = [], seen = {}, bad = 0, badIds = [], H0 = hiddenHere();
       Object.keys(recs).forEach(function (id) {
         var r = recs[id]; seen[id] = 1;
         if (r.del) { delete C.msgs[id]; return; }
         if (C.msgs[id] && !C.msgs[id].pending) return;
-        jobs.push(SC.decrypt(C.opt.key, r).then(function (o) { C.msgs[id] = shape(id, r, o); }, function () { bad++; }));
+        jobs.push(SC.decrypt(C.opt.key, r).then(function (o) { C.msgs[id] = shape(id, r, o); }, function () { if (!H0[id]) { bad++; badIds.push({ id: id, by: r.by }); } }));
       });
       return Promise.all(jobs).then(function () {
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
-        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad;
+        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad; C.badIds = badIds;
       });
     }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; C.dErr = (e && (e.status || e.message)) || 'error'; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
@@ -212,6 +212,8 @@
       '.hc-gal h4{margin:14px 2px 6px;font-size:13px;color:var(--hc-mut);font-weight:600}.hc-gal .hc-file{width:100%}',
       '.hc-cam{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}.hc-cam video{max-width:100%;max-height:75%;border-radius:12px}.hc-cam .acts{display:flex;gap:12px}.hc-cam .acts button{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}.hc-cam .snap{background:#fff;color:#000}.hc-cam .no{background:rgba(255,255,255,.18);color:#fff}',
       '.hc [hidden]{display:none!important}',
+      '.hc-list{gap:5px;padding:12px 14px 8px}.hc-m.gap{margin-top:12px}.hc-meta{margin-top:3px;margin-bottom:2px}.hc-b{padding:8px 13px}.hc-rx{margin-bottom:2px}',
+      '.hc-menu>div{max-height:78%;overflow-y:auto}.hc-chiprow{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}.hc-menu .hc-chiprow .hc-chip{width:auto;flex:1 1 0;justify-content:center;gap:5px;padding:8px 10px;border-radius:999px;background:rgba(127,127,127,.12);font-size:14px;white-space:nowrap}.hc-menu .hc-chiprow .hc-chip.on{background:var(--hc-acc);color:#fff}.hc-menu .hc-chiprow .hc-chip .bi{width:auto;font-size:15px}.hc-menu p .bi{margin-right:4px}',
       '.hc.selecting .hc-m[data-mid]{cursor:pointer;position:relative;padding-left:30px}.hc.selecting .hc-m.me[data-mid]{padding-left:0;padding-right:0}.hc.selecting .hc-more{display:none}',
       '.hc.selecting .hc-m[data-mid]::before{content:"";position:absolute;left:4px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;border:2px solid var(--hc-mut)}.hc.selecting .hc-m.me[data-mid]::before{left:auto;right:calc(100% + 10px)}',
       '.hc.selecting .hc-m.sel[data-mid]::before{background:var(--hc-acc);border-color:var(--hc-acc);box-shadow:inset 0 0 0 3px var(--hc-bg)}.hc-m.sel .hc-b,.hc-m.sel .hc-imgs,.hc-m.sel .hc-voice,.hc-m.sel .hc-file{opacity:.75}',
@@ -265,8 +267,9 @@
   }
   function listHtml() {
     if (C.missing) return '<div class="hc-empty"><i class="bi bi-cloud-arrow-up"></i>' + esc(C.opt.missing || L('The chat is not switched on yet – the server needs an update.', 'Chatten er ikke slått på ennå – serveren må oppdateres.')) + '</div>';
-    var l = visible(); C._rx = reactions(); if (!l.length) return '<div class="hc-empty"><i class="bi bi-chat-heart"></i>' + esc(L('Say hi to ', 'Si hei til ') + C.opt.name(other())) + '<br><small>' + esc(L('Messages, photos and files – only your two phones can read them.', 'Meldinger, bilder og filer – bare telefonene deres kan lese dem.')) + '</small></div>';
-    var out = C.bad ? '<div class="hc-sys"><i class="bi bi-exclamation-circle"></i> ' + esc(C.bad + L(' message(s) couldn’t be opened – one of your apps has an old invite. Scan the code again.', ' melding(er) kunne ikke åpnes – en av appene har en gammel invitasjon. Skann koden på nytt.')) + '</div>' : '', prev = null, lastMine = null; l.forEach(function (m) { if (m.by === C.opt.me && !m.sys) lastMine = m; });
+    var l = visible(); C._rx = reactions(); var badN = C.bad ? '<div class="hc-sys" style="flex-wrap:wrap;justify-content:center"><i class="bi bi-exclamation-circle"></i> ' + esc(C.bad + L(' old message(s) can’t be opened – they were sent with an earlier invite.', ' gamle melding(er) kan ikke åpnes – de ble sendt med en tidligere invitasjon.')) + ' <button type="button" data-hcbadrm style="border:0;background:none;color:var(--hc-acc);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline">' + L('Remove them', 'Fjern dem') + '</button></div>' : '';
+    if (!l.length) return badN + '<div class="hc-empty"><i class="bi bi-chat-heart"></i>' + esc(L('Say hi to ', 'Si hei til ') + C.opt.name(other())) + '<br><small>' + esc(L('Messages, photos and files – only your two phones can read them.', 'Meldinger, bilder og filer – bare telefonene deres kan lese dem.')) + '</small></div>';
+    var out = C.bad ? '<div class="hc-sys" style="flex-wrap:wrap;justify-content:center"><i class="bi bi-exclamation-circle"></i> ' + esc(C.bad + L(' old message(s) can’t be opened – they were sent with an earlier invite.', ' gamle melding(er) kan ikke åpnes – de ble sendt med en tidligere invitasjon.')) + ' <button type="button" data-hcbadrm style="border:0;background:none;color:var(--hc-acc);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline">' + L('Remove them', 'Fjern dem') + '</button></div>' : '', prev = null, lastMine = null; l.forEach(function (m) { if (m.by === C.opt.me && !m.sys) lastMine = m; });
     l.forEach(function (m, i) {
       if (!prev || dayName(prev.t) !== dayName(m.t)) { out += '<div class="hc-day">' + esc(dayName(m.t)) + '</div>'; prev = null; }
       out += msgHtml(m, prev);
@@ -368,11 +371,16 @@
   function settingsMenu() {
     var t = function (x) { return x ? new Date(x).toTimeString().slice(0, 8) : '–'; }, sv = C.dSrv || {}, lv = C.dLive || {};
     var diag = '<p class="hc-diag">' + esc(L('Connection', 'Tilkobling') + ': ' + L('server has ', 'serveren har ') + (sv.n == null ? '?' : sv.n) + L(' messages (v', ' meldinger (v') + (sv.rev == null ? '?' : sv.rev) + ') · ' + L('shown here ', 'vist her ') + list().filter(function (m) { return !m.sys; }).length + ' · ' + L('live v', 'live v') + (lv.chat == null ? '–' : lv.chat) + ' ' + t(lv.at) + ' · ' + L('fetched ', 'hentet ') + t(C.dOk) + (C.dErr ? ' · ' + L('error ', 'feil ') + C.dErr : '') + (C.bad ? ' · ' + L('can’t open ', 'kan ikke åpne ') + C.bad : '') + ' · ' + C.opt.me) + '</p>';
-    var mu = muteOf(C.opt.me), muted = mu > Date.now();
-    menu(diag + '<button type="button" data-a="gal"><i class="bi bi-images"></i>' + L('Photos & files', 'Bilder og filer') + '</button>' +
-      '<p>' + esc(muted ? L('Muted until ', 'Dempet til ') + (mu - Date.now() > 3 * 864e5 ? L('you turn it on', 'du slår den på') : new Date(mu).toLocaleString(C.opt.no ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : L('Notifications', 'Varsler')) + '</p>' +
-      (muted ? '<button type="button" data-mute="0"><i class="bi bi-bell"></i>' + L('Unmute', 'Slå på varsler') + '</button>' : [[36e5, '1 hour', '1 time'], [8 * 36e5, '8 hours', '8 timer'], [864e5, '1 day', '1 dag'], [3650 * 864e5, 'Until I turn it on', 'Til jeg slår det på']].map(function (x) { return '<button type="button" data-mute="' + x[0] + '"><i class="bi bi-bell-slash"></i>' + esc(L('Mute for ', 'Demp i ') + L(x[1], x[2])).replace(/^(Mute for|Demp i) (Until|Til)/, '$2') + '</button>'; }).join('')) +
-      '<p>' + esc(L('Disappearing messages – for both of you', 'Meldinger som forsvinner – for dere begge')) + '</p>' + TTLS.map(function (t) { return '<button type="button" data-ttl="' + t[0] + '" class="' + (C.ttl === t[0] ? 'on' : '') + '"><i class="bi bi-' + (C.ttl === t[0] ? 'check2' : 'circle') + '"></i>' + esc(L(t[1], t[2])) + '</button>'; }).join(''), function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); if (b.dataset.mute != null) { var ms = +b.dataset.mute; setMute(ms ? Date.now() + ms : 0); toast(ms ? L('Muted', 'Dempet') : L('Notifications on', 'Varsler på')); } if (b.dataset.a === 'gal') setTimeout(gallery, 0); });
+    var mu = muteOf(C.opt.me), muted = mu > Date.now(), trouble = !!(C.bad || C.dErr || C.missing);
+    var MUTE = [[36e5, '1 h', '1 t'], [8 * 36e5, '8 h', '8 t'], [864e5, L('1 day', '1 dag')], [3650 * 864e5, L('Always', 'Alltid')]];
+    var TTLX = [[0, L('Off', 'Av')], [864e5, '24 h'], [7 * 864e5, L('1 week', '1 uke')], [30 * 864e5, L('1 month', '1 mnd')]];
+    menu((trouble ? diag : '') +
+      '<button type="button" data-a="gal"><i class="bi bi-images"></i>' + L('Photos & files', 'Bilder og filer') + '</button>' +
+      '<p><i class="bi bi-bell' + (muted ? '-slash' : '') + '"></i> ' + esc(muted ? L('Muted until ', 'Dempet til ') + (mu - Date.now() > 3 * 864e5 ? L('you turn it on', 'du slår den på') : new Date(mu).toLocaleString(C.opt.no ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : L('Mute notifications', 'Demp varsler')) + '</p>' +
+      '<div class="hc-chiprow">' + (muted ? '<button type="button" class="hc-chip on" data-mute="0"><i class="bi bi-bell"></i> ' + L('Unmute', 'Slå på') + '</button>' : MUTE.map(function (x) { return '<button type="button" class="hc-chip" data-mute="' + x[0] + '">' + esc(L(x[1], x[2] || x[1])) + '</button>'; }).join('')) + '</div>' +
+      '<p><i class="bi bi-stopwatch"></i> ' + esc(L('Disappearing messages – for both of you', 'Meldinger som forsvinner – for dere begge')) + '</p>' +
+      '<div class="hc-chiprow">' + TTLX.map(function (x) { return '<button type="button" class="hc-chip' + (C.ttl === x[0] ? ' on' : '') + '" data-ttl="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>',
+      function (b) { if (b.dataset.ttl != null) setTtl(+b.dataset.ttl); if (b.dataset.mute != null) { var ms = +b.dataset.mute; setMute(ms ? Date.now() + ms : 0); toast(ms ? L('Muted', 'Dempet') : L('Notifications on', 'Varsler på')); } if (b.dataset.a === 'gal') setTimeout(gallery, 0); });
   }
   function viewImg(fid) {
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
@@ -524,6 +532,7 @@
     }, true);
     root.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
+      if (d.hcbadrm != null) { var bl = C.badIds || [], mineB = bl.filter(function (x) { return x.by === C.opt.me; }).map(function (x) { return x.id; }), H = hiddenHere(); bl.forEach(function (x) { H[x.id] = Date.now(); }); wj(hideKey(), H); if (mineB.length) put({ del: mineB.slice(0, 200) }).then(fetchChat, fetchChat); C.bad = 0; C.badIds = []; changed(); toast(L('Removed', 'Fjernet')); return; }
       if (d.hcselx != null) { C.sel = null; selBar(); paintList(); return; }
       if (d.hcseldel != null) { deleteSelected(); return; }
       if (d.hcclose != null) { unmount(); if (C.onClose) C.onClose(); return; }
