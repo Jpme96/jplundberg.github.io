@@ -172,6 +172,7 @@
     var b = +info().extra || 0;
     list('sx').forEach(function (r) { var f = r.f, s = f.shares || {}; b += f.payer === 'o' ? +s.p || 0 : -(+s.o || 0); });
     list('pay').forEach(function (r) { var f = r.f; b += f.from === 'o' ? +f.amount || 0 : -(+f.amount || 0); });
+    list('led').forEach(function (r) { var f = r.f; b += f.kind === 'back' ? +f.amount || 0 : f.payer === 'o' ? +f.p || 0 : -(+f.o || 0); });
     return Math.round(b * 100) / 100;
   }
 
@@ -189,7 +190,7 @@
     if (!K || stopped || !list('info').length) return;
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
-    app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div>' + (preview ? '' : '<button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button>') + '</header>' +
+    app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
       (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
       (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
       '<section class="h-body">' + ({ shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || shop)() + '</section>' +
@@ -255,16 +256,18 @@
   function money() {
     if ((info().what || {}).money === false) return bills() || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
     var b = balance(), o = owner();
-    var rows = list('sx').map(function (r) { return { d: r.f.date, r: r, k: 'sx' }; }).concat(list('pay').map(function (r) { return { d: r.f.date, r: r, k: 'pay' }; })).sort(function (a, c) { return a.d < c.d ? 1 : a.d > c.d ? -1 : c.r.t - a.r.t; });
+    var rows = list('sx').map(function (r) { return { d: r.f.date, r: r, k: 'sx' }; }).concat(list('pay').map(function (r) { return { d: r.f.date, r: r, k: 'pay' }; })).concat(list('led').map(function (r) { return { d: r.f.date, r: r, k: 'led' }; })).sort(function (a, c) { return a.d < c.d ? 1 : a.d > c.d ? -1 : c.r.t - a.r.t; });
     var shown = showAllMoney ? rows : rows.slice(0, 12);
     return '<div class="h-bal ' + (Math.abs(b) < 1 ? 'even' : b > 0 ? 'owe' : 'get') + '"><small>' + (Math.abs(b) < 1 ? L('You’re even', 'Dere er skuls') : b > 0 ? L('You owe ', 'Du skylder ') + esc(o) : esc(o) + L(' owes you', ' skylder deg')) + '</small><b>' + (Math.abs(b) < 1 ? '0 kr' : esc(kr(Math.abs(b)))) + '</b>' +
       (Math.abs(b) >= 1 ? '<button type="button" class="h-btn sm" data-settle>' + L('Settle up', 'Gjør opp') + '</button>' : '') + '</div>' +
       '<button type="button" class="h-btn ghost wide" data-addcost><i class="bi bi-plus-lg"></i> ' + L('Add a shared cost', 'Legg til en felles utgift') + '</button>' +
-      (rows.length ? '<ul class="h-list">' + shown.map(function (x) {
+      (rows.length ? '<p class="h-small h-key"><b class="pos">+</b> ' + esc(o) + L(' owes you for it', ' skylder deg for det') + ' · <b class="neg">−</b> ' + L('you owe ', 'du skylder ') + esc(o) + L(' for it', ' for det') + '</p><ul class="h-list">' + shown.map(function (x) {
         var f = x.r.f;
+        if (x.k === 'led') { var you = f.kind === 'back' ? f.amount : f.payer === 'o' ? f.p : f.o;
+          return '<li><span class="h-row"><span><i class="bi bi-' + (f.kind === 'bill' ? 'receipt' : f.kind === 'back' ? 'arrow-return-left' : 'calendar2-week') + '"></i> ' + esc(f.note) + '<small>' + esc(fdate(f.date) + ' · ' + (f.kind === 'back' ? o + L(' paid you back', ' betalte deg tilbake') : (f.payer === 'o' ? o + L(' paid', ' betalte') : L('you paid', 'du betalte')) + ' · ' + (f.payer === 'o' ? L('your part ', 'din del ') + kr(f.p) : L('their part ', 'deres del ') + kr(f.o)))) + '</small></span><b class="' + (f.kind === 'back' ? 'neg' : f.payer === 'o' ? 'neg' : 'pos') + '">' + (f.kind === 'back' || f.payer === 'o' ? '−' : '+') + esc(kr(you)) + '</b></span></li>'; }
         if (x.k === 'pay') return '<li><span class="h-row"><span><i class="bi bi-arrow-left-right"></i> ' + esc(f.from === 'p' ? L('You paid ', 'Du betalte ') + o : o + L(' paid you', ' betalte deg')) + '<small>' + esc(fdate(f.date)) + '</small></span><b>' + esc(kr(f.amount)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-paydel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
         var s = f.shares || {};
-        return '<li><span class="h-row"><span>' + esc(f.note || L('Shared', 'Felles')) + '<small>' + esc(fdate(f.date) + ' · ' + (f.payer === 'p' ? L('you paid', 'du betalte') : o + L(' paid', ' betalte')) + ' · ' + L('your part ', 'din del ') + kr(s.p)) + '</small></span><b>' + esc(kr(f.total)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-sxdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
+        return '<li><span class="h-row"><span>' + esc(f.note || L('Shared', 'Felles')) + '<small>' + esc(fdate(f.date) + ' · ' + (f.payer === 'p' ? L('you paid ', 'du betalte ') + kr(f.total) + ' · ' + o + L('’s part ', ' sin del ') + kr(s.o) : o + L(' paid ', ' betalte ') + kr(f.total) + ' · ' + L('your part ', 'din del ') + kr(s.p))) + '</small></span><b class="' + (f.payer === 'p' ? 'pos' : 'neg') + '">' + (f.payer === 'p' ? '+' : '−') + esc(kr(f.payer === 'p' ? s.o : s.p)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-sxdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
       }).join('') + '</ul>' + (rows.length > 12 ? '<button type="button" class="h-link" data-moneyall>' + (showAllMoney ? L('Show fewer', 'Vis færre') : L('Show all ', 'Vis alle ') + rows.length) + '</button>' : '') : '<p class="h-sum">' + L('Nothing shared yet.', 'Ingenting delt ennå.') + '</p>') + bills();
   }
   var RN = { daily: 1, weekly: 7, '2weeks': 14, weekdays: 1 };
@@ -425,7 +428,7 @@
   function settingsSheet() {
     var w = info().what || {}, rem = !!rj('home.key', null), o = owner();
     var NAMES = [['shop', L('Shopping list', 'Handleliste'), 'Handleliste'], ['meals', L('Dinner plan', 'Middagsplan')], ['chores', L('Chores', 'Husarbeid')], ['money', L('Money between you', 'Penger mellom dere')], ['bills', L('Home bills', 'Regninger')], ['cal', L('Calendar events', 'Kalenderhendelser')], ['trips', L('Trips', 'Turer')], ['plants', L('Plants', 'Planter')], ['move', L('Moving checklist', 'Flyttesjekkliste')], ['notes', L('Home notes', 'Hjemmenotater')]];
-    var bg = sheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' +
+    var bg = sheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' + (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Their settings, as they see them – read-only', 'Innstillingene deres slik de ser dem – kun visning') + '</div>' : '') +
       '<div class="h-me">' + face(mine().look, 'big') + '<div><b>' + esc(myName()) + '</b><button type="button" class="h-btn sm" data-avatar>' + (mine().look ? L('Change your avatar', 'Endre avataren') : L('Make your avatar', 'Lag avataren din')) + '</button></div></div>' +
       '<label class="h-lbl">' + L('Your name', 'Navnet ditt') + '<input name="nm" maxlength="30" value="' + esc(mine().name || info().partner || '') + '"></label>' +
       '<button type="button" class="h-btn ghost" data-profile><i class="bi bi-person-vcard"></i> ' + L('Birthday and phone', 'Bursdag og telefon') + '</button>' +
@@ -439,6 +442,7 @@
       '<p class="h-small">' + L('Tip: Share → Add to Home Screen to open this like an app.', 'Tips: Del → Legg til på Hjem-skjerm for å åpne dette som en app.') + '</p>' +
       '<div class="h-two"><button type="button" class="h-btn ghost" data-lock>' + L('Lock now', 'Lås nå') + '</button><button type="button" class="h-btn ghost danger" data-forget>' + L('Forget this phone', 'Glem denne telefonen') + '</button></div>', function (f) {
       var er = f.querySelector('[data-err]');
+      if (preview) { toast('<i class="bi bi-eye"></i> ' + L('Preview – nothing changes here', 'Forhåndsvisning – ingenting endres her')); return; }
       if (f.pa.value || f.pb.value) {
         if (f.pa.value.length < 6) { er.textContent = L('At least 6 characters.', 'Minst 6 tegn.'); f.closest('form').querySelector('details').open = true; return false; }
         if (f.pa.value !== f.pb.value) { er.textContent = L('The two don’t match.', 'De to er ikke like.'); f.closest('form').querySelector('details').open = true; return false; }
@@ -451,6 +455,7 @@
       if ((f.lang.value === 'nb') !== nb) { try { localStorage.setItem('home.lang', f.lang.value); } catch (x) {} setTimeout(function () { location.reload(); }, 150); }
     });
     bg.querySelector('[type=submit]').textContent = L('Save', 'Lagre');
+    if (preview) bg.querySelectorAll('input, select, details, [data-lock], [data-forget], [data-avatar], [data-profile], [data-mydl]').forEach(function (x) { if (x.tagName === 'DETAILS') x.style.display = 'none'; else x.disabled = true; });
   }
   var backToProfile = false;
   function avatarEdit() {

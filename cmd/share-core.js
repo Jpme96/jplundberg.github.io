@@ -70,6 +70,7 @@
     clog: ['cid', 'name', 'who', 'at'],
     sx: ['date', 'note', 'total', 'payer', 'shares', 'cat'],
     pay: ['date', 'from', 'to', 'amount'],
+    led: ['date', 'note', 'kind', 'payer', 'o', 'p', 'amount'],
     ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location'],
     plant: ['name', 'room', 'every', 'last'],
     mv: ['text', 'done'],

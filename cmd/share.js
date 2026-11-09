@@ -48,7 +48,14 @@
         var from = q.from === 'me' ? 'o' : q.from === p.id ? 'p' : null, to = q.to === 'me' ? 'o' : q.to === p.id ? 'p' : null; if (!from || !to || from === to) return;
         put('pay', q.id, { date: q.date, from: from, to: to, amount: +q.amount || 0 }); simple += from === 'o' ? +q.amount || 0 : -(+q.amount || 0);
       });
-      /* plan payments, bill splits and paying back come from your own budget: only their sum is shared */
+      /* plan payments, bill splits and paying back: each one as its own line, so they see why they owe what they owe */
+      var led = [];
+      (S.planPays ? S.planPays(null, p.id) : []).forEach(function (q) { var py = q.payer === 'me' ? 'o' : q.payer === p.id ? 'p' : null; if (!py) return; led.push({ id: 'l:' + q.loan + ':' + q.n, f: { date: q.date, note: (q.name || 'Payment') + ' · ' + q.n + '/' + q.of, kind: 'plan', payer: py, o: +q.mine || 0, p: +q.them || 0, amount: +q.amount || 0 } }); });
+      (S.billClaims ? S.billClaims(null, p.id) : []).forEach(function (q) { var py = q.payer === 'me' ? 'o' : q.payer === p.id ? 'p' : null; if (!py) return; led.push({ id: 'b:' + q.bill + ':' + q.ym, f: { date: q.date, note: q.name || 'Bill', kind: 'bill', payer: py, o: +q.mine || 0, p: +q.them || 0, amount: +q.amount || 0 } }); });
+      (S.owePays ? S.owePays(null, p.id) : []).forEach(function (q) { led.push({ id: 'o:' + q.loan + ':' + q.n + ':' + q.date, f: { date: q.date, note: q.name || 'Paying back', kind: 'back', payer: 'o', o: 0, p: 0, amount: +q.amount || 0 } }); });
+      led.sort(function (a, b) { return a.f.date < b.f.date ? 1 : -1; }).slice(0, 150).forEach(function (x) {
+        put('led', x.id, x.f); simple += x.f.kind === 'back' ? x.f.amount : x.f.payer === 'o' ? x.f.p : -x.f.o;
+      });
       info.extra = Math.round((S.balance(p.id) - simple) * 100) / 100;
     }
     put('info', 'info', info);

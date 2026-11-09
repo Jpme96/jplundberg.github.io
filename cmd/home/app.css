@@ -101,3 +101,7 @@ textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; back
 .h-bal.owe b { color: var(--bad); }
 /* the preview inside the owner's settings: no desktop scrollbar in the phone frame */
 .h-preview, .h-preview body { scrollbar-width: none; } .h-preview::-webkit-scrollbar, .h-preview body::-webkit-scrollbar { display: none; }
+.h-row b.pos { color: var(--good); } .h-row b.neg { color: var(--bad); }
+.h-key { margin: 10px 4px 0; } .h-key b { font-weight: 800; } .h-key .pos { color: var(--good); } .h-key .neg { color: var(--bad); }
+.h-row .bi { color: var(--muted); font-size: 13px; }
+button:disabled, input:disabled, select:disabled { opacity: .55; cursor: default; }
