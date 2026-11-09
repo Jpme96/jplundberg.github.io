@@ -13,6 +13,26 @@
     });
   }
 
+  /* ---------- a page left open (the Mac, a tab for days) picks up a new version by itself ----------
+     The version is CACHE in sw.js. When it changes, the page reloads the next time it's in the background or comes back –
+     never while you're typing – so two devices never run different versions of the sync for long. */
+  (function () {
+    var mine = null, newer = false;
+    function check() {
+      return fetch('/cmd/sw.js', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        var m = t.match(/var CACHE = '([^']+)'/); if (!m) return;
+        if (mine === null) mine = m[1]; else if (m[1] !== mine) newer = true;
+      }, function () {});
+    }
+    function busy() { var e = document.activeElement; return !!(e && (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT' || e.isContentEditable) && String(e.value || e.textContent || '').trim()); }
+    function maybe() { if (!newer || busy() || document.querySelector('.st-backdrop:not([hidden]) form, dialog[open]')) return; newer = false;
+      var go = function () { location.reload(); }, sw = navigator.serviceWorker;
+      if (sw && sw.getRegistration) sw.getRegistration('/cmd/').then(function (r) { return r && r.update(); }).then(function () { setTimeout(go, 700); }, go); else go(); }
+    setTimeout(check, 4000);
+    setInterval(function () { check().then(function () { if (document.hidden) maybe(); }); }, 15 * 60 * 1000);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { if (newer) maybe(); return; } check().then(maybe); });
+  })();
+
   /* ---------- backup reminder (home page) ---------- */
   var DAY = 864e5;
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
