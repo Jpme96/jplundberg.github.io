@@ -420,7 +420,8 @@
   }
   /* keep the one-line summaries true after a switch or a choice changes */
   var sumT = null;
-  function resum(e) { if (!e.target.closest || !e.target.closest('.sh-sec [data-shwhat], .sh-sec [data-shperm], .sh-sec [data-shappr], .sh-sec [data-shnote], .sh-sec [data-shcat]')) return; clearTimeout(sumT); sumT = setTimeout(function () { if (showing === 'status') draw(); }, 400); }
+  function resum(e) { if (!e.target.closest || !e.target.closest('.sh-sec [data-shwhat], .sh-sec [data-shperm], .sh-sec [data-shappr], .sh-sec [data-shnote], .sh-sec [data-shcat]')) return; if (e.type === 'click' && e.target.closest('select')) return;      /* opening a picker isn't a change – redrawing then closed it at once */
+    clearTimeout(sumT); sumT = setTimeout(function again() { var f = document.activeElement; if (f && f.tagName === 'SELECT' && f.closest('.sh-sec')) { sumT = setTimeout(again, 400); return; } if (showing === 'status') draw(); }, 400); }
   document.addEventListener('change', resum); document.addEventListener('click', resum);
   document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.classList && d.classList.contains('sh-sec')) secOpen[d.dataset.shsec] = d.open; }, true);
   function inviteSec(nm, joined) {
