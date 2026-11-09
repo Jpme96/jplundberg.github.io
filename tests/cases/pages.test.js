@@ -5,7 +5,10 @@ const RX = /\bundefined\b|\bNaN\b|\[object [A-Za-z]+\]|\bnull\b|\bInvalid Date\b
 async function bad(p) {
   return p.evaluate(src => { const R = new RegExp(src), out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
     while ((n = w.nextNode())) { const el = n.parentElement; if (!el || el.closest('script,style,noscript,textarea,code')) continue; if (R.test(n.nodeValue) && (el.offsetParent || getComputedStyle(el).position === 'fixed')) out.push(n.nodeValue.trim().slice(0, 80)); }
-    document.querySelectorAll('[placeholder]').forEach(i => { if (R.test(i.placeholder)) out.push('placeholder ' + i.placeholder); }); return out; }, RX.source);
+    document.querySelectorAll('[placeholder]').forEach(i => { if (R.test(i.placeholder)) out.push('placeholder ' + i.placeholder); });
+    /* an icon whose name isn't in the icon set draws nothing */
+    document.querySelectorAll('i.bi').forEach(i => { if (!i.offsetParent) return; const c = getComputedStyle(i, '::before').content; if (!c || c === 'none' || c === 'normal' || c === '""') out.push('missing icon ' + i.className); });
+    return out; }, RX.source);
 }
 (async () => {
   const { b, p, b2, q } = await shared(393);

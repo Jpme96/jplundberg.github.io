@@ -8,6 +8,8 @@ const a = (app.match(/var APPV = (\d+)/) || [])[1], h = (html.match(/home\/app\.
 check(a && a === h, 'shared app version matches (APPV ' + a + ', index.html ' + h + ')');
 let w = true; try { execSync('node --check _cloudflare/worker.js', { cwd: R, stdio: 'pipe' }); } catch (e) { w = false; }
 check(w, 'the Worker parses');
+let ic = true; try { execSync('python3 cmd/icons.py --check', { cwd: R, stdio: 'pipe' }); } catch (e) { ic = false; }
+check(ic, 'every icon cmd uses is in its icon set (python3 cmd/icons.py)');
 const cfg = fs.readFileSync(path.join(R, '_cloudflare/wrangler.jsonc'), 'utf8');
 check(/"LiveRoom"/.test(cfg) && /"FILES"/.test(cfg) && /"DB"/.test(cfg) && /"VAULT"/.test(cfg) && /keep_vars"\s*:\s*true/.test(cfg), 'wrangler.jsonc keeps all bindings and keep_vars');
 done();

@@ -5,10 +5,10 @@
    change the cards on top of it. The menu bar and the home hero are built by modern.js. */
 
 /* Inter, served from this site (no wait for Google Fonts) – assets/fonts, OFL licence next to the files */
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/inter-Regular.woff") format("woff"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("assets/fonts/inter-Medium.woff") format("woff"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 600 650; font-display: swap; src: url("assets/fonts/inter-SemiBold.woff") format("woff"); }
-@font-face { font-family: "Inter"; font-style: normal; font-weight: 700 800; font-display: swap; src: url("assets/fonts/inter-Bold.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("assets/fonts/inter-Regular.woff2") format("woff2"), url("assets/fonts/inter-Regular.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("assets/fonts/inter-Medium.woff2") format("woff2"), url("assets/fonts/inter-Medium.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600 650; font-display: swap; src: url("assets/fonts/inter-SemiBold.woff2") format("woff2"), url("assets/fonts/inter-SemiBold.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700 800; font-display: swap; src: url("assets/fonts/inter-Bold.woff2") format("woff2"), url("assets/fonts/inter-Bold.woff") format("woff"); }
 
 /* ---------- colours and type ---------- */
 :root.modern {
