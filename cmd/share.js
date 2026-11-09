@@ -135,10 +135,11 @@
 
   /* ---------- their changes, back into your data ---------- */
   function applyAll(list) {
-    if (!list.length) return;
+    var failed = [];
+    if (!list.length) return failed;
     var t = Fe.tools(), toolsCh = false, cal = null, tv = null, p = partner(), pm = perm(), news = [], held = [];
     var sh0 = (V.get() || {}).share || {}, pend = Object.assign({}, sh0.pending || {}), pendCh = false, lim = approveOver();
-    list.forEach(function (r) {
+    list.forEach(function (r) { try {
       var c = r.c, id = r.id, f = r.f || {}, del = !!r.del;
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view' && !(c === 'plant' || c === 'mv' || c === 'cdone') && pm[KIND_AREA[c]] === 'view') return;   /* view only: theirs is put back on the next sync */
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view') return;
@@ -187,7 +188,7 @@
         if (f.phone && /^[+\d\s()-]{4,20}$/.test(f.phone) && pp.phone !== f.phone) { pp.phone = f.phone; toolsCh = true; }
       }
       else if (c === 'mv' && !del && t.hmove && Array.isArray(t.hmove.items)) { t.hmove.items.forEach(function (x) { if (x.id === id && !!x.done !== !!f.done) { x.done = !!f.done; toolsCh = true; } }); }
-    });
+    } catch (e) { failed.push(r.rid); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply ' + r.c + ': ' + ((e && e.message) || e), 'share.js'); } });
     news = news.filter(Boolean);
     if (news.length) { t.sharenews = (Array.isArray(t.sharenews) ? t.sharenews : []).concat(news).filter(function (x) { return x.at > Date.now() - 14 * 864e5; }).slice(-60); toolsCh = true; }
     if (pendCh) setSt({ pending: pend });
@@ -195,6 +196,7 @@
     if (toolsCh) { quiet = true; Fe.saveTools(t); quiet = false; window.dispatchEvent(new Event('fin:change')); }
     if (cal) { wj('dash.calendar', cal); window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('cal:change')); }
     if (tv) { quiet = true; wj('dash.travel', tv); window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('travel:change')); quiet = false; }
+    return failed;
   }
 
   var nfk = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
@@ -232,7 +234,7 @@
   }
 
   /* ---------- sync ---------- */
-  var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen', {}), busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
+  var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen2', {}), applyErr = 0, busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
   function ridOf(k, c, id) { var x = c + '|' + id; if (rids[x]) return Promise.resolve(rids[x]); return SC.rid(k, c, id).then(function (r) { rids[x] = r; return r; }); }
   function absorb(k, srv) {
     var recs = (srv && srv.recs) || {}, jobs = [];
@@ -251,8 +253,11 @@
     return SC.api('shared').then(function (srv) { return absorb(k, srv); }).then(function () {
       /* 1. their changes since last time */
       var mine = [];
-      Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.t > (seen[rid] || 0) && r.c) mine.push({ c: r.c, id: r.id, f: r.f, del: r.del }); seen[rid] = Math.max(seen[rid] || 0, r.t); });
-      applyAll(mine); wj('dash.share.seen', seen);
+      Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.t > (seen[rid] || 0) && r.c) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, del: r.del }); });
+      var bad = []; try { bad = applyAll(mine) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
+      applyErr = bad.length;
+      mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
+      wj('dash.share.seen2', seen);
       /* 2. your changes: what differs from the box */
       var loc = collect(); unsure = loc.unsure || {};
       return Promise.all(loc.map(function (x) { return ridOf(k, x.c, x.id).then(function (rid) { x.rid = rid; return x; }); }));
@@ -359,6 +364,7 @@
   }
   function statusLine() {
     if (lastErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(lastErr);
+    if (applyErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(applyErr + ' change(s) from ' + pname() + ' couldn’t be added – Settings → Diagnostics has the details');
     if (!lastOk) return '<i class="bi bi-arrow-repeat"></i> Syncing …';
     var lastP = 0, prof = false; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.c === 'pme' && !r.del) prof = true; });
     return '<i class="bi bi-check2-circle"></i> In sync · ' + new Date(lastOk).toTimeString().slice(0, 5) + (srvInfo && !srvInfo.joined ? ' · waiting for ' + esc(pname()) + ' to scan the code' : srvInfo && srvInfo.joined ? ' · ' + esc(pname()) + ' has joined' : '') +
@@ -491,7 +497,7 @@
       SC.api('share', { method: 'PUT', body: { partner: em.trim(), name: name } }).then(function () {
         var d = V.get(), old = d.share || {};
         setSt({ key: old.key && old.on === false ? SC.genKey() : (old.key || SC.genKey()), on: true, name: name, since: dkey(new Date()) });
-        cache = {}; seen = {}; wj('dash.share.seen', {});
+        cache = {}; seen = {}; wj('dash.share.seen2', {});
         draw(); sync(); toast('<i class="bi bi-people"></i> Sharing with ' + esc(name) + ' – show them the code');
       }, function (er) { b.disabled = false; if (msg) msg.textContent = er && er.status === 400 ? 'That email doesn’t look right.' : 'Couldn’t reach the server – try again.'; });
       return;
@@ -512,7 +518,7 @@
     if (b.id === 'shStop') {
       if (!b.dataset.armed) { b.dataset.armed = '1'; document.getElementById('shStopL').textContent = 'Tap again to stop sharing'; setTimeout(function () { delete b.dataset.armed; var l = document.getElementById('shStopL'); if (l) l.textContent = 'Stop sharing'; }, 4000); return; }
       SC.api('share', { method: 'DELETE' }).then(function () {
-        setSt({ on: false, key: null, files: {} }); cache = {}; seen = {}; wj('dash.share.seen', {}); draw(); marks(); calRow();
+        setSt({ on: false, key: null, files: {} }); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
         toast('<i class="bi bi-x-octagon"></i> Stopped sharing – ' + esc(pname()) + ' no longer has access');
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }
