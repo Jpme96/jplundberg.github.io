@@ -375,3 +375,8 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
    back to its system font there, which made some areas look different. Code-like text keeps its monospace. */
 :root.modern body *:not(code, pre, kbd, samp, .bi, .sc-url, .hl-secret, .rc-code, .lock-rec input, .wr-adv textarea, .wr-src, .fp-mono),
 :root.modern svg text { font-family: var(--font); }
+/* the bar's buttons keep their places on every page: eye, add, search, then the rest, the side bar button last */
+.mb-acts > #finHide, .mb-acts > #finHideAll { order: -2; }
+.mb-acts > #quickAdd, .mb-acts > .qa-fab { order: -1; }
+.mb-acts > .sn-hidebtn { order: 9; }
+.mb-acts > a.icon-btn[href="/"] { order: 10; }

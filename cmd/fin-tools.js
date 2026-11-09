@@ -407,14 +407,16 @@
     function hidden() { try { return localStorage.getItem('dash.finHide') === '1'; } catch (e) { return false; } }
     function paint(b) { var h = hidden(); b.innerHTML = '<i class="bi bi-eye' + (h ? '-slash' : '') + '"></i>'; b.setAttribute('aria-label', h ? 'Show amounts' : 'Hide amounts'); }
     document.body.classList.toggle('fin-hidden', hidden());
-    if (document.getElementById('finHide') || !cfg().eye) return;          /* Finances has its own */
+    if (document.querySelector('.fp-top #finHide') || !cfg().eye) return;          /* the Finances page has its own in the bar */
     var host = document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'); if (!host) return;
     var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.id = 'finHideAll'; paint(b);
     host.insertBefore(b, host.querySelector('[data-me]') || null);
     b.addEventListener('click', function () {
+      var own = document.getElementById('finHide'); if (own) { own.click(); setTimeout(function () { paint(b); }, 0); return; }   /* Home's Finances card has its own – keep the two the same */
       var h = !hidden(); try { localStorage.setItem('dash.finHide', h ? '1' : '0'); } catch (e) {}
       document.body.classList.toggle('fin-hidden', h); paint(b); window.dispatchEvent(new Event('dash:local'));
     });
+    document.addEventListener('click', function (e) { if (e.target.closest('#finHide')) setTimeout(function () { paint(b); }, 0); });
     window.addEventListener('storage', function (e) { if (e.key === 'dash.finHide') { document.body.classList.toggle('fin-hidden', hidden()); paint(b); } });
   })();
 
