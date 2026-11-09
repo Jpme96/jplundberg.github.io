@@ -713,12 +713,20 @@
     });
   }
 
+  /* every change made on this device counts up; taking in another device's version starts over if you changed
+     something while it was being opened (else a tap in that moment – folding a card, ticking an item – was lost) */
+  var editSeq = 0;
+  window.addEventListener('dash:local', function () { editSeq++; });
+  window.addEventListener('tools:change', function () { editSeq++; });
   function adopt(v, failNote) {
-    var k = key;
+    var k = key, seq0 = editSeq;
+    var again = function () { setTimeout(function () { if (key && !pushing) sync(); }, 900); };
     return open(v, k).then(function (obj) {
       if (key !== k) return;
+      if (editSeq !== seq0 && !failNote) { again(); return; }
       return localChanges().catch(function () { return []; }).then(function (changed) {
         if (key !== k) return;
+        if (editSeq !== seq0 && !failNote) { again(); return; }
         salt = unb64(v.salt);
         memVault = null; writeJSON(VAULT_KEY, v);
         writeJSON(SYNC_KEY, v.rev || 0);
