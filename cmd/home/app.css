@@ -95,3 +95,7 @@ textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; back
 .h-pchip { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 8px 14px; min-height: 40px; font-size: 14.5px; cursor: pointer; }
 .h-pchip.low { border-color: rgba(201, 133, 0, .6); background: rgba(201, 133, 0, .14); color: var(--warn); font-weight: 600; }
 .h-plain { margin: 0; padding-left: 20px; } .h-plain li { margin: 3px 0; }
+.h-prevbar { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; padding: 10px 14px; border-radius: 12px; background: rgba(59, 157, 224, .14); color: var(--ink); font-size: 14px; }
+.h-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 8px 0 4px; } .h-bar i { display: block; height: 100%; background: var(--acc); border-radius: inherit; }
+.h-bar.sm { display: block; height: 5px; margin: 5px 0 0; width: 140px; max-width: 40vw; }
+.h-bal.owe b { color: var(--bad); }

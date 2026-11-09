@@ -29,14 +29,18 @@
   document.getElementById('toast').addEventListener('click', function (e) { var t = this; if (e.target.closest('[data-undo]') && t._undo) { var u = t._undo; t._undo = null; t.classList.remove('show'); u(); } });
 
   /* ---------- the key ---------- */
-  var K = null, recs = {}, rids = {}, tab = rj('home.tab', 'shop'), me = 'p';
-  var pending = (function () { var m = location.hash.match(/[#&]k=([A-Za-z0-9_-]{43})/); if (m) { try { sessionStorage.setItem('home.newkey', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; } try { return sessionStorage.getItem('home.newkey'); } catch (e) { return null; } })();
+  var K = null, recs = {}, rids = {}, tab = rj('home.tab', 'shop'), me = 'p', PASS = null;
+  /* preview: the owner opens this inside Settings → Shared space to see what the other one sees – read-only */
+  var preview = (function () { var m = location.hash.match(/^#preview&k=([A-Za-z0-9_-]{43})/); if (!m) return null; history.replaceState(null, '', location.pathname); return m[1]; })();
+  if (preview) { document.documentElement.classList.add('h-preview'); tab = 'shop'; }
+  var pending = preview ? null : (function () { var m = location.hash.match(/[#&]k=([A-Za-z0-9_-]{43})/); if (m) { try { sessionStorage.setItem('home.newkey', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; } try { return sessionStorage.getItem('home.newkey'); } catch (e) { return null; } })();
   function screen(h) { app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
   function boot() {
+    if (preview) { K = preview; start(); return; }
     SC.api('share').then(function (j) {
       if (!j.partner) { screen('<i class="bi bi-house-heart h-big"></i><h1>' + L('This is the shared app', 'Dette er den delte appen') + '</h1><p>' + L('It’s for the person you share your home with. Your own dashboard is here:', 'Den er for den du deler hjemmet med. Ditt eget dashbord er her:') + '</p><a class="h-btn" href="/cmd/">' + L('Open your dashboard', 'Åpne dashbordet ditt') + '</a>'); return; }
       if (pending) return setPass(pending);
-      var rem = rj('home.key', null); if (rem) { K = rem; return start(); }
+      var rem = rj('home.key', null); if (rem) { K = rem; My.remembered(); return start(); }
       SC.api('share?wrap').then(function (w) { askPass(w); }, function (e) {
         if (e.status === 404) screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Almost there', 'Nesten klar') + '</h1><p>' + L('Open the Camera app and scan the code on the other phone (Settings → Shared space → Show the code).', 'Åpne Kamera-appen og skann koden på den andre telefonen (Innstillinger → Delt hjem → Vis koden).') + '</p><form class="h-form" data-paste><input name="link" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + L('…or paste the invite link here', '…eller lim inn invitasjonslenken her') + '"><p class="h-err" data-err></p><button class="h-btn" type="submit">' + L('Continue', 'Fortsett') + '</button></form>' +
           '<p class="h-small">' + L('Scan the code with this phone’s Camera after you’ve logged in here. If it still asks, copy the invite link on the other phone and paste it above.', 'Skann koden med Kamera på denne telefonen etter at du har logget inn her. Spør den fortsatt, kopier invitasjonslenken på den andre telefonen og lim den inn over.') + '</p>');
@@ -65,7 +69,7 @@
       if (f.a.value.length < 6) { er.textContent = L('At least 6 characters.', 'Minst 6 tegn.'); return; }
       if (f.a.value !== f.b.value) { er.textContent = L('The two don’t match.', 'De to er ikke like.'); return; }
       er.textContent = L('Saving …', 'Lagrer …');
-      SC.importKey(k).then(function () { return SC.wrap(f.a.value, k); }).then(function (w) { return SC.api('share?wrap', { method: 'PUT', body: w }); }).then(function () {
+      PASS = f.a.value; SC.importKey(k).then(function () { return SC.wrap(f.a.value, k); }).then(function (w) { return SC.api('share?wrap', { method: 'PUT', body: w }); }).then(function () {
         try { sessionStorage.removeItem('home.newkey'); } catch (x) {} pending = null; K = k; if (f.rem.checked) wj('home.key', k); start();
         toast('<i class="bi bi-check2"></i> ' + L('All set – add this page to your Home Screen', 'Klart – legg siden til på Hjem-skjermen'));
       }, function () { er.textContent = L('Couldn’t save – try again.', 'Kunne ikke lagre – prøv igjen.'); });
@@ -77,7 +81,7 @@
       '<p class="h-small">' + L('Forgot it? Scan the code on the other phone again and choose a new one.', 'Glemt den? Skann koden på den andre telefonen igjen og velg en ny.') + '</p>');
     app.querySelector('[data-pass]').onsubmit = function (e) {
       e.preventDefault(); var f = e.target, er = f.querySelector('[data-err]'); er.textContent = '…';
-      SC.unwrap(f.a.value, w).then(function (k) { K = k; if (f.rem.checked) wj('home.key', k); start(); }, function () { er.textContent = L('Wrong passcode.', 'Feil kode.'); f.a.select(); });
+      var pw = f.a.value; SC.unwrap(pw, w).then(function (k) { K = k; PASS = pw; if (f.rem.checked) wj('home.key', k); My.unlock(pw, f.rem.checked).then(start, start); }, function () { er.textContent = L('Wrong passcode.', 'Feil kode.'); f.a.select(); });
     };
   }
 
@@ -104,6 +108,7 @@
   }
   /* change one record: shown at once, sent right after (kept and resent if the network is away) */
   function put(c, id, f, del) {
+    if (preview) { toast('<i class="bi bi-eye"></i> ' + L('Preview – nothing changes here', 'Forhåndsvisning – ingenting endres her')); return Promise.resolve(); }
     var t = Date.now(), key = c + '|' + id, cf = del ? null : SC.clean(c, f);
     return (rids[key] ? Promise.resolve(rids[key]) : SC.rid(K, c, id)).then(function (rid) {
       rids[key] = rid; recs[rid] = del ? { t: t, del: 1, c: c, id: id } : { t: t, by: me, c: c, id: id, f: cf }; draw();
@@ -111,11 +116,12 @@
       return SC.encrypt(K, { c: c, id: id, f: cf }).then(function (e) { queue[rid] = { t: t, iv: e.iv, ct: e.ct }; });
     }).then(function () { wj('home.queue', queue); return flush(); }).then(draw);
   }
-  function pull() { return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) stoppedScreen(); }); }
+  function pull() { if (preview) return SC.api('shared').then(absorb).then(draw, function () {}); return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) stoppedScreen(); }); }
   var stopped = false;
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
     pull().then(function () {
+      if (preview) return;
       if (!stopped && badKey && !list('info').length) {   /* sharing was started again with a new key */
         wj('home.key', null); K = null; recs = {}; rids = {};
         screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Scan the new code', 'Skann den nye koden') + '</h1><p>' + L('Sharing was started again, so the old code no longer works.', 'Delingen ble startet på nytt, så den gamle koden virker ikke lenger.') + '</p><button class="h-btn" type="button" data-reload>' + L('Continue', 'Fortsett') + '</button>');
@@ -170,10 +176,10 @@
   }
 
   /* ---------- drawing ---------- */
-  var TABS = [['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem']];
+  var TABS = [['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem'], ['me', 'person-lock', 'Me', 'Meg']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house') }[t[0]]; }); }
+    return TABS.filter(function (t) { return { shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house'), me: !preview && My.any() }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -183,9 +189,10 @@
     if (!K || stopped || !list('info').length) return;
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
-    app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
-      (!mine().look ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
-      '<section class="h-body">' + ({ shop: shop, chores: chores, money: money, cal: cal, notes: notes }[tab] || shop)() + '</section>' +
+    app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div>' + (preview ? '' : '<button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button>') + '</header>' +
+      (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
+      (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
+      '<section class="h-body">' + ({ shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || shop)() + '</section>' +
       '<nav class="h-tabs">' + ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-current="' + (t[0] === tab) + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span></button>'; }).join('') + '</nav>';
     if (keep) { var el = app.querySelector('[name="' + keep.n + '"]'); if (el && 'value' in el) { el.value = keep.v; el.focus(); } }
   }
@@ -424,6 +431,9 @@
       '<button type="button" class="h-btn ghost" data-profile><i class="bi bi-person-vcard"></i> ' + L('Birthday and phone', 'Bursdag og telefon') + '</button>' +
       '<label class="h-lbl">' + L('Language', 'Språk') + '<select name="lang"><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<label class="h-check"><input type="checkbox" name="rem"' + (rem ? ' checked' : '') + '> ' + L('Keep me unlocked on this phone', 'Hold meg innlogget på denne telefonen') + '</label>' +
+      '<div class="h-det-box"><b><i class="bi bi-person-lock"></i> ' + L('Your own features', 'Dine egne funksjoner') + '</b><p class="h-small">' + L('Only you see these – locked with your own key. ', 'Bare du ser disse – låst med din egen nøkkel. ') + esc(o) + L(' can’t open them.', ' kan ikke åpne dem.') + '</p>' +
+        [['cal', L('My calendar', 'Min kalender')], ['money', L('My money', 'Min økonomi')], ['todos', L('My to-dos', 'Mine gjøremål')]].map(function (x) { return '<label class="h-check"><input type="checkbox" name="my_' + x[0] + '"' + (My.on(x[0]) ? ' checked' : '') + '> ' + x[1] + '</label>'; }).join('') +
+        (My.any() ? '<button type="button" class="h-link" data-mydl>' + L('Download my own data', 'Last ned mine egne data') + '</button>' : '') + '</div>' +
       '<details class="h-det"><summary>' + L('Change passcode', 'Endre kode') + '</summary><input type="password" name="pa" autocomplete="new-password" placeholder="' + L('New passcode', 'Ny kode') + '"><input type="password" name="pb" autocomplete="new-password" placeholder="' + L('Once more', 'En gang til') + '"><p class="h-err" data-err></p></details>' +
       '<div class="h-det-box"><b>' + L('What ', 'Hva ') + esc(o) + L(' shares with you', ' deler med deg') + '</b><p class="h-small">' + NAMES.filter(function (n) { return w[n[0]] !== false; }).map(function (n) { return n[1]; }).join(' · ') + '</p><p class="h-small">' + esc(o) + L(' chooses this. Nothing else from their dashboard is shared.', ' bestemmer dette. Ingenting annet fra dashbordet deres deles.') + '</p></div>' +
       '<p class="h-small">' + L('Tip: Share → Add to Home Screen to open this like an app.', 'Tips: Del → Legg til på Hjem-skjerm for å åpne dette som en app.') + '</p>' +
@@ -432,9 +442,11 @@
       if (f.pa.value || f.pb.value) {
         if (f.pa.value.length < 6) { er.textContent = L('At least 6 characters.', 'Minst 6 tegn.'); f.closest('form').querySelector('details').open = true; return false; }
         if (f.pa.value !== f.pb.value) { er.textContent = L('The two don’t match.', 'De to er ikke like.'); f.closest('form').querySelector('details').open = true; return false; }
-        SC.wrap(f.pa.value, K).then(function (wv) { return SC.api('share?wrap', { method: 'PUT', body: wv }); }).then(function () { toast('<i class="bi bi-check2"></i> ' + L('New passcode saved', 'Ny kode er lagret')); }, function () { toast(L('Couldn’t save the passcode', 'Kunne ikke lagre koden')); });
+        var np = f.pa.value; PASS = np; SC.wrap(np, K).then(function (wv) { return SC.api('share?wrap', { method: 'PUT', body: wv }); }).then(function () { return My.rewrap(np); }).then(function () { toast('<i class="bi bi-check2"></i> ' + L('New passcode saved', 'Ny kode er lagret')); }, function () { toast(L('Couldn’t save the passcode', 'Kunne ikke lagre koden')); });
       }
       if (f.rem.checked) wj('home.key', K); else wj('home.key', null);
+      My.remember(f.rem.checked);
+      var wantMy = {}; ['cal', 'money', 'todos'].forEach(function (k) { wantMy[k] = !!(f['my_' + k] && f['my_' + k].checked); }); My.setFeatures(wantMy);
       var nm = f.nm.value.trim(); if (nm && nm !== (mine().name || '')) put('pme', 'me', Object.assign({}, mine(), { name: nm }));
       if ((f.lang.value === 'nb') !== nb) { try { localStorage.setItem('home.lang', f.lang.value); } catch (x) {} setTimeout(function () { location.reload(); }, 150); }
     });
@@ -457,8 +469,9 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
     if (d.avatar != null) { e.preventDefault(); backToProfile = !!(b.closest('.h-sheet') && b.closest('.h-sheet').querySelector('[name=bd]')); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
-    if (d.lock != null) { wj('home.key', null); location.reload(); return; }
-    if (d.forget != null) { wj('home.key', null); wj('home.queue', null); wj('home.tab', null); location.reload(); return; }
+    if (d.lock != null) { wj('home.key', null); wj('home.pkey', null); location.reload(); return; }
+    if (d.forget != null) { ['home.key', 'home.queue', 'home.tab', 'home.pkey', 'home.myf', 'home.profiled'].forEach(function (k) { wj(k, null); }); location.reload(); return; }
+    if (d.mydl != null) { My.download(); return; }
     if (d.recshop) { var rr = find('recipe', d.recshop); if (rr) { var have = {}; list('shop').forEach(function (x) { if (!x.f.done) have[String(x.f.text).toLowerCase()] = 1; }); var n = 0; String(rr.f.ingr || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (x) { if (!have[x.toLowerCase()]) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); n++; } }); toast('<i class="bi bi-cart-plus"></i> ' + n + L(' on the shopping list', ' på handlelisten')); } var s9 = b.closest('.h-sheetbg'); if (s9) s9.remove(); return; }
     if (d.profile != null) { var s0 = b.closest('.h-sheetbg'); if (s0) s0.remove(); profileSheet(); return; }
     if (d.choredel && find('chore', d.choredel)) { var cf = find('chore', d.choredel).f, cid = d.choredel; put('chore', cid, null, true); var s3 = b.closest('.h-sheetbg'); if (s3) s3.remove(); toast('<i class="bi bi-trash3"></i> ' + esc(cf.name), function () { put('chore', cid, cf); }); return; }
@@ -506,5 +519,112 @@
     var del = d.sxdel ? ['sx', d.sxdel] : d.paydel ? ['pay', d.paydel] : d.evdel ? ['ev', d.evdel] : null;
     if (del && (r = find(del[0], del[1]))) { var kf = r.f; put(del[0], r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + L('Removed', 'Fjernet'), function () { put(del[0], r.id, kf); }); }
   });
+  /* ================= Their own space: calendar, money, to-dos – only theirs =================
+     A random key of their own, locked with their passcode (/cmd/api/pvault?wrap); the data is one encrypted
+     blob (/cmd/api/pvault) that only their login can reach. Items carry t (and del) so two phones merge. */
+  var My = (function () {
+    var PK = null, P = null, rev = -1, saveT = null, loading = null;
+    var feats = rj('home.myf', {}) || {};
+    function on(k) { return !!feats[k]; }
+    function any() { return on('cal') || on('money') || on('todos'); }
+    function empty() { return { events: [], exp: [], todos: [], budget: null }; }
+    function load() {
+      if (!PK) return Promise.resolve(null);
+      return loading = SC.api('pvault').then(function (v) { rev = v.rev || 0; return SC.decrypt(PK, v); }, function (e) { if (e.status === 404) { rev = -1; return empty(); } throw e; })
+        .then(function (d) { P = Object.assign(empty(), d || {}); if (P.features) { feats = P.features; wj('home.myf', feats); } draw(); return P; });
+    }
+    function merge(a, b) {
+      var o = empty(); ['events', 'exp', 'todos'].forEach(function (k) { var m = {}; (a[k] || []).concat(b[k] || []).forEach(function (x) { if (x && x.id && (!m[x.id] || (x.t || 0) > (m[x.id].t || 0))) m[x.id] = x; }); o[k] = Object.keys(m).map(function (id) { return m[id]; }); });
+      o.budget = (a.budget && b.budget) ? ((a.budget.t || 0) >= (b.budget.t || 0) ? a.budget : b.budget) : (a.budget || b.budget);
+      o.features = (a.ft || 0) >= (b.ft || 0) ? a.features : b.features; o.ft = Math.max(a.ft || 0, b.ft || 0);
+      return o;
+    }
+    function save() {
+      clearTimeout(saveT); saveT = setTimeout(function () {
+        if (!PK || !P) return;
+        SC.encrypt(PK, P).then(function (e) {
+          return fetch('/cmd/api/pvault', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json', 'X-Base-Rev': String(rev) }, body: JSON.stringify({ v: 1, rev: rev + 1, iv: e.iv, ct: e.ct }) });
+        }).then(function (r) {
+          if (r.status === 409) return r.json().then(function (cur) { rev = cur.rev || 0; return SC.decrypt(PK, cur).then(function (d) { P = merge(P, d || {}); save(); draw(); }); });
+          if (r.ok) rev = rev + 1; else toast('<i class="bi bi-cloud-slash"></i> ' + L('Couldn’t save – trying again soon', 'Kunne ikke lagre – prøver igjen snart'));
+        }, function () { setTimeout(save, 8000); });
+      }, 700);
+    }
+    function ensureKey() {
+      if (PK) return Promise.resolve(PK);
+      return SC.api('pvault?wrap').then(function (w) {
+        if (!PASS) throw new Error('pass');
+        return SC.unwrap(PASS, w).then(function (k) { PK = k; return k; });
+      }, function (e) {
+        if (e.status !== 404) throw e; if (!PASS) throw new Error('pass');
+        var k = SC.genKey(); return SC.wrap(PASS, k).then(function (w) { return SC.api('pvault?wrap', { method: 'PUT', body: w }); }).then(function () { PK = k; P = empty(); rev = -1; return k; });
+      });
+    }
+    function askPassThen(fn) {
+      sheet('<h2>' + L('Your passcode', 'Koden din') + '</h2><p class="h-small">' + L('Type it once to unlock your own space on this phone.', 'Skriv den én gang for å låse opp ditt eget område på denne telefonen.') + '</p><input type="password" name="pp" autocomplete="current-password" required><p class="h-err" data-err></p>', function (f) {
+        var pw = f.pp.value; if (!pw) return false; PASS = pw;
+        ensureKey().then(function () { if (rj('home.key', null)) wj('home.pkey', PK); return load(); }).then(fn, function () { PASS = null; toast(L('Wrong passcode', 'Feil kode')); });
+      });
+    }
+    function setFeatures(want) {
+      var was = JSON.stringify(feats); if (JSON.stringify(want) === was) return;
+      feats = want; wj('home.myf', feats);
+      if (!any()) { if (P) { P.features = feats; P.ft = Date.now(); save(); } draw(); return; }
+      var go = function () { P = P || empty(); P.features = feats; P.ft = Date.now(); save(); tab = 'me'; draw(); };
+      ensureKey().then(function () { if (rj('home.key', null)) wj('home.pkey', PK); return P ? P : load(); }).then(go, function () { askPassThen(go); });
+    }
+    function unlock(pw, rem) { PASS = pw; return SC.api('pvault?wrap').then(function (w) { return SC.unwrap(pw, w); }).then(function (k) { PK = k; if (rem) wj('home.pkey', k); return load(); }, function () { return null; }); }
+    function remembered() { var k = rj('home.pkey', null); if (k) { PK = k; load().catch(function () {}); } }
+    function remember(on) { if (on && PK) wj('home.pkey', PK); else if (!on) wj('home.pkey', null); }
+    function rewrap(np) { if (!PK) return Promise.resolve(); return SC.wrap(np, PK).then(function (w) { return SC.api('pvault?wrap', { method: 'PUT', body: w }); }); }
+    function live(k) { return ((P && P[k]) || []).filter(function (x) { return !x.del; }); }
+    function upd(k, item) { P = P || empty(); item.t = Date.now(); var l = P[k], i = l.findIndex(function (x) { return x.id === item.id; }); if (i > -1) l[i] = item; else l.push(item); save(); draw(); }
+    function del(k, id) { var it = (P[k] || []).filter(function (x) { return x.id === id; })[0]; if (!it) return; var keep = Object.assign({}, it); upd(k, { id: id, del: 1 }); toast('<i class="bi bi-trash3"></i> ' + L('Deleted', 'Slettet'), function () { delete keep.del; upd(k, keep); }); }
+    var CATS = [['food', L('Food', 'Mat')], ['eating', L('Eating out', 'Spise ute')], ['transport', L('Transport', 'Transport')], ['shopping', L('Shopping', 'Shopping')], ['fun', L('Fun', 'Moro')], ['health', L('Health', 'Helse')], ['bills', L('Bills', 'Regninger')], ['other', L('Other', 'Annet')]];
+    function catName(c) { return (CATS.filter(function (x) { return x[0] === c; })[0] || CATS[CATS.length - 1])[1]; }
+    function view() {
+      if (!PK || !P) return '<div class="h-screen" style="margin-top:6vh"><i class="bi bi-person-lock h-big"></i><p>' + L('Your own space is locked on this phone.', 'Ditt eget område er låst på denne telefonen.') + '</p><button type="button" class="h-btn" data-myunlock>' + L('Unlock', 'Lås opp') + '</button></div>';
+      var out = '<p class="h-sum"><i class="bi bi-lock"></i> ' + L('Only you see this – ', 'Bare du ser dette – ') + esc(owner()) + L(' can’t.', ' kan ikke.') + '</p>', tk = today();
+      if (on('cal')) {
+        var ev = live('events').filter(function (e) { return (e.date || '') >= tk; }).sort(function (a, b) { return (a.date + (a.start || '')) < (b.date + (b.start || '')) ? -1 : 1; });
+        out += '<h2 class="h-h">' + L('My calendar', 'Min kalender') + '</h2><button type="button" class="h-btn ghost wide" data-myev><i class="bi bi-plus-lg"></i> ' + L('Add an event', 'Legg til en hendelse') + '</button>' +
+          (ev.length ? '<ul class="h-list">' + ev.slice(0, 30).map(function (e) { return '<li><span class="h-row"><span>' + esc(e.title) + '<small>' + esc(fdate(e.date) + (e.allDay ? '' : ' · ' + (e.start || '') + (e.stop ? '–' + e.stop : '')) + (e.loc ? ' · ' + e.loc : '')) + '</small></span></span><button type="button" class="h-x" data-myevdel="' + esc(e.id) + '" aria-label="' + L('Delete', 'Slett') + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '<p class="h-sum">' + L('Nothing coming up.', 'Ingenting som kommer.') + '</p>');
+      }
+      if (on('money')) {
+        var ym = tk.slice(0, 7), mx = live('exp').filter(function (x) { return (x.date || '').slice(0, 7) === ym; }), tot = mx.reduce(function (a, x) { return a + (+x.amount || 0); }, 0), bud = P.budget && +P.budget.v || 0;
+        var by = {}; mx.forEach(function (x) { by[x.cat] = (by[x.cat] || 0) + (+x.amount || 0); }); var cs = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }), mxv = cs.length ? by[cs[0]] : 1;
+        out += '<h2 class="h-h">' + L('My money', 'Min økonomi') + '</h2><div class="h-bal ' + (bud && tot > bud ? 'owe' : 'even') + '"><small>' + L('Spent this month', 'Brukt denne måneden') + (bud ? ' · ' + L('budget ', 'budsjett ') + esc(kr(bud)) : '') + '</small><b>' + esc(kr(tot)) + '</b><button type="button" class="h-btn sm" data-myexp>' + L('Add', 'Legg til') + '</button></div>' +
+          (bud ? '<div class="h-bar"><i style="width:' + Math.min(100, Math.round(tot / bud * 100)) + '%"></i></div>' : '') +
+          (cs.length ? '<ul class="h-list">' + cs.map(function (c) { return '<li><span class="h-row"><span>' + esc(catName(c)) + '<span class="h-bar sm"><i style="width:' + Math.round(by[c] / mxv * 100) + '%"></i></span></span><b>' + esc(kr(by[c])) + '</b></span></li>'; }).join('') + '</ul>' : '') +
+          '<button type="button" class="h-link" data-mybud>' + (bud ? L('Change the monthly budget', 'Endre månedsbudsjettet') : L('Set a monthly budget', 'Sett et månedsbudsjett')) + '</button>' +
+          (mx.length ? '<ul class="h-list">' + mx.sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 20).map(function (x) { return '<li><span class="h-row"><span>' + esc(x.note || catName(x.cat)) + '<small>' + esc(fdate(x.date) + ' · ' + catName(x.cat)) + '</small></span><b>' + esc(kr(x.amount)) + '</b></span><button type="button" class="h-x" data-myexpdel="' + esc(x.id) + '" aria-label="' + L('Delete', 'Slett') + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '');
+      }
+      if (on('todos')) {
+        var td = live('todos').sort(function (a, b) { return (a.done ? 1 : 0) - (b.done ? 1 : 0) || (a.c || 0) - (b.c || 0); });
+        out += '<h2 class="h-h">' + L('My to-dos', 'Mine gjøremål') + '</h2><form class="h-add" data-mytodo><input name="mytodo" placeholder="' + L('Add a to-do …', 'Legg til et gjøremål …') + '" autocomplete="off"><button type="submit" aria-label="' + L('Add', 'Legg til') + '"><i class="bi bi-plus-lg"></i></button></form>' +
+          (td.length ? '<ul class="h-list">' + td.map(function (x) { return '<li class="' + (x.done ? 'done' : '') + '"><button type="button" class="h-tick" data-mytd="' + esc(x.id) + '"><i class="bi bi-' + (x.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.text) + '</span></button><button type="button" class="h-x" data-mytddel="' + esc(x.id) + '" aria-label="' + L('Delete', 'Slett') + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '');
+      }
+      return out;
+    }
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
+      if (d.myunlock != null) { askPassThen(function () { draw(); }); return; }
+      if (d.myev != null) { sheet('<h2>' + L('New event', 'Ny hendelse') + '</h2><input name="title" maxlength="120" placeholder="' + L('Title', 'Tittel') + '" required><input name="date" type="date" value="' + today() + '" required><label class="h-check"><input type="checkbox" name="all"> ' + L('All day', 'Hele dagen') + '</label><div class="h-two"><input name="start" type="time" value="18:00"><input name="stop" type="time" value="19:00"></div><input name="loc" maxlength="160" placeholder="' + L('Where (optional)', 'Hvor (valgfritt)') + '">', function (f) {
+          if (!f.title.value.trim()) { f.title.focus(); return false; } var it = { id: 'm' + uid(), title: f.title.value.trim(), date: f.date.value || today(), allDay: f.all.checked, loc: f.loc.value.trim() }; if (!it.allDay) { it.start = f.start.value; it.stop = f.stop.value; } upd('events', it); }); return; }
+      if (d.myevdel) { del('events', d.myevdel); return; }
+      if (d.myexp != null) { sheet('<h2>' + L('Spent', 'Brukt') + '</h2><input name="amt" inputmode="decimal" placeholder="' + L('Amount, kr', 'Beløp, kr') + '" required><label class="h-lbl">' + L('Category', 'Kategori') + '<select name="cat">' + CATS.map(function (c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('') + '</select></label><input name="note" maxlength="80" placeholder="' + L('What was it? (optional)', 'Hva var det? (valgfritt)') + '"><input name="date" type="date" value="' + today() + '">', function (f) {
+          var a = num(f.amt.value); if (!(a > 0)) { f.amt.focus(); return false; } upd('exp', { id: 'm' + uid(), amount: a, cat: f.cat.value, note: f.note.value.trim(), date: f.date.value || today() }); }); return; }
+      if (d.myexpdel) { del('exp', d.myexpdel); return; }
+      if (d.mybud != null) { sheet('<h2>' + L('Monthly budget', 'Månedsbudsjett') + '</h2><input name="b" inputmode="decimal" placeholder="' + L('e.g. 8 000', 'f.eks. 8 000') + '" value="' + esc(P && P.budget && P.budget.v || '') + '">', function (f) { var v = num(f.b.value); P.budget = { v: v > 0 ? v : 0, t: Date.now() }; save(); draw(); }); return; }
+      if (d.mytd) { var x = live('todos').filter(function (q) { return q.id === d.mytd; })[0]; if (x) upd('todos', Object.assign({}, x, { done: !x.done })); return; }
+      if (d.mytddel) { del('todos', d.mytddel); return; }
+    });
+    document.addEventListener('submit', function (e) { var f = e.target.closest('[data-mytodo]'); if (!f) return; e.preventDefault(); var v = f.mytodo.value.trim(); if (!v) return; f.mytodo.value = ''; upd('todos', { id: 'm' + uid(), text: v.slice(0, 160), done: false, c: Date.now() }); });
+    function download() {
+      var blob = new Blob([JSON.stringify(P || empty(), null, 2)], { type: 'application/json' }), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'my-own-data-' + today() + '.json'; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
+    }
+    return { on: on, any: any, view: view, setFeatures: setFeatures, unlock: unlock, remembered: remembered, remember: remember, rewrap: rewrap, download: download };
+  })();
   boot();
 })();

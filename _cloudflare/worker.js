@@ -83,7 +83,7 @@ async function cronBeat(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -103,11 +103,13 @@ async function route(request, env) {
     if (isPartner) {
       if (path === '/cmd/api/shared') return sharedApi(request, env, 'p');
       if (path === '/cmd/api/sfile') return sfileApi(request, url, env, true);
+      if (path === '/cmd/api/pvault') return pvaultApi(request, url, env);
       if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
       return json({ error: 'only the shared space is open to you', partner: true }, 403);
     }
     if (path === '/cmd/api/shared') return sharedApi(request, env, 'o');
     if (path === '/cmd/api/sfile') return sfileApi(request, url, env, false);
+    if (path === '/cmd/api/pvault') return json({ error: 'this belongs to the person you share with' }, 403);   /* never the owner */
     if (path === '/cmd/api/share') { const rq = new Request(request, { headers: new Headers(request.headers), duplex: 'half' }); rq.headers.set('X-Share-Me', em); return shareApi(rq, url, env, false, shareCfg); }
 
     /* a service token (the iPhone Shortcut) may only hand in health numbers */
@@ -167,11 +169,12 @@ async function shareApi(request, url, env, partner, cfg) {
     const prev = cfg && cfg.partner, owner = (cfg && cfg.owner) || me;
     if (!owner || owner === email) return json({ error: 'that is your own login' }, 400);
     await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString() }));
-    if (prev && prev !== email) await env.VAULT.delete(SHARE_WRAP);            /* someone new: the old lock goes */
+    if (prev && prev !== email) await Promise.all([env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);   /* someone new: the old lock and their own space go */
     return json({ ok: true });
   }
   if (m === 'DELETE') {                                                        /* Stop sharing: access, key and box go – the owner stays known */
     await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
+    await Promise.all([env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);
     let cur; do { const l = await env.VAULT.list({ prefix: SFILE, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur);
     return json({ ok: true });
   }
@@ -200,6 +203,33 @@ async function sharedApi(request, env, by) {
   for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
   if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); }
   return json(cur);
+}
+
+/* the other person's own space (their calendar, money, to-dos): encrypted on their phone with their own key,
+   which is locked with their passcode (pvault:wrap). Only their login reaches it – the owner gets 403.
+   GET → {v, rev, iv, ct} · PUT (X-Base-Rev) → 409 with the current one if it moved on · ?wrap GET/PUT the locked key */
+const PVAULT = 'pvault', PVWRAP = 'pvault:wrap';
+async function pvaultApi(request, url, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (url.searchParams.has('wrap')) {
+    if (request.method === 'GET') { const w = await env.VAULT.get(PVWRAP); return w ? new Response(w, { headers: hdrs() }) : json({ error: 'empty' }, 404); }
+    if (request.method === 'PUT') {
+      const b = await request.json().catch(() => null);
+      if (!b || typeof b.salt !== 'string' || typeof b.iv !== 'string' || typeof b.ct !== 'string' || b.ct.length > 2000) return json({ error: 'bad wrap' }, 400);
+      await env.VAULT.put(PVWRAP, JSON.stringify({ salt: b.salt, iv: b.iv, ct: b.ct, t: Date.now() })); return json({ ok: true });
+    }
+    return json({ error: 'method' }, 405);
+  }
+  if (request.method === 'GET') { const v = await env.VAULT.get(PVAULT); return v ? new Response(v, { headers: hdrs() }) : json({ error: 'empty' }, 404); }
+  if (request.method === 'PUT') {
+    const body = await request.text(); if (body.length > 4 * 1024 * 1024) return json({ error: 'too large' }, 413);
+    let n; try { n = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
+    if (!n || n.v !== 1 || typeof n.iv !== 'string' || typeof n.ct !== 'string' || !Number.isInteger(n.rev)) return json({ error: 'not a vault' }, 400);
+    const cur = await env.VAULT.get(PVAULT), curRev = cur ? JSON.parse(cur).rev || 0 : -1, base = parseInt(request.headers.get('X-Base-Rev') || '-1', 10);
+    if (cur && base !== curRev) return new Response(cur, { status: 409, headers: hdrs() });
+    await env.VAULT.put(PVAULT, body); return json({ ok: true, rev: n.rev });
+  }
+  return json({ error: 'method' }, 405);
 }
 
 /* shared files: a document you chose to share, encrypted on your phone with the shared key (the server can't

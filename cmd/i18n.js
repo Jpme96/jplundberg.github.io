@@ -644,6 +644,7 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^Preview (.+)’s app$/, 'Forhåndsvis appen til $1'], [/^(.+)’s app$/, 'Appen til $1'],
     [/^Shared with (.+): (.+)$/, function (m, a, b) { return 'Delt med ' + a + ': ' + tr(b); }], [/^No longer shared: (.+)$/, function (m, a) { return 'Ikke lenger delt: ' + tr(a); }], [/^Shared with (.+) – tap to stop sharing this$/, 'Delt med $1 – trykk for å slutte å dele'], [/^Not shared – tap to share this with (.+)$/, 'Ikke delt – trykk for å dele med $1'],
     [/^Split bills visible to (.+)$/, 'Delte regninger synlige for $1'],
     [/^This month: you (\d+)( · (.+) (\d+))?$/, function (m, a, b, n, c) { return 'Denne måneden: du ' + a + (b ? ' · ' + n + ' ' + c : ''); }], [/^last (.+) by you$/, 'sist $1 av deg'], [/^last (.+) by (.+)$/, 'sist $1 av $2'],
@@ -1183,6 +1184,7 @@
     'Dates and the packing list – you tick things off together': 'Datoer og pakkelisten – dere krysser av sammen',
     'House projects and documents you tick': 'Husprosjekter og dokumenter du krysser av', 'History': 'Historikk', 'Hide history': 'Skjul historikk', 'House projects': 'Husprosjekter', 'Documents': 'Dokumenter', 'Chore log': 'Husarbeidslogg',
     'Status, tasks and budget – you tick tasks off together': 'Status, oppgaver og budsjett – dere krysser av oppgaver sammen', 'Only this one – the file is encrypted for them, and removed from their app when you turn this off': 'Bare denne – filen krypteres for dem, og fjernes fra appen deres når du slår dette av',
+    'Exactly what they see – nothing can be changed in the preview': 'Nøyaktig det de ser – ingenting kan endres i forhåndsvisningen',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

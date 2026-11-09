@@ -312,7 +312,8 @@
         '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button></div>' +
       '<p class="st-sub ap-sub"><i class="bi bi-ui-checks"></i> What ' + esc(nm) + ' sees</p><div class="st-group">' + WHAT.map(function (w) {
         return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
-      }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> Show exactly what ' + esc(nm) + ' sees</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div></div>' +
+      }).join('') + '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button>' +
+        '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> Show exactly what ' + esc(nm) + ' sees</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div></div>' +
       (sw.notes ? '<p class="st-sub ap-sub"><i class="bi bi-sticky"></i> Home notes</p><div class="st-group" id="shNotes">' + notesHtml() + '</div>' : '') +
       '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span>Save email</span><i class="bi bi-check2"></i></button></div>' +
       '<div class="st-group"><button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL">Stop sharing</span><small class="st-rsub">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button></div>';
@@ -347,6 +348,16 @@
     if (id === 'new') l.push({ id: 'n' + Date.now().toString(36), title: title, text: text }); else l.forEach(function (x) { if (x.id === id) { x.title = title; x.text = text; } });
     Fe.saveTools(t); noteEd = null; drawNotes(); toast('<i class="bi bi-check2"></i> Saved');
   });
+  /* their app, read-only, in a phone-sized frame */
+  function previewApp() {
+    var s = st(); if (!s) return;
+    var bg = document.createElement('div'); bg.className = 'sh-prev-bg';
+    bg.innerHTML = '<div class="sh-prev"><div class="sh-prev-head"><b><i class="bi bi-phone"></i> ' + esc(pname()) + '’s app</b><button type="button" class="icon-btn sm" data-shprevx aria-label="Close"><i class="bi bi-x-lg"></i></button></div><iframe title="Preview" src="/cmd/home/#preview&k=' + s.key + '"></iframe></div>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var close = function () { bg.remove(); document.removeEventListener('keydown', esc1, true); }, esc1 = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    document.addEventListener('keydown', esc1, true);
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-shprevx]')) close(); });
+  }
   function peek() {
     var box = document.getElementById('shPeekBox'); if (!box) return;
     box.hidden = !box.hidden; if (box.hidden) return;
@@ -360,8 +371,9 @@
     });
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail'); if (!b) return;
+    var b = e.target.closest('#shStart, #shShowQR, #shCopy, #shPeek, #shStop, #shSaveEmail, #shPrev'); if (!b) return;
     e.preventDefault();
+    if (b.id === 'shPrev') { sync().then(previewApp); return; }
     if (b.id === 'shStart') {
       var em = (document.getElementById('shEmail') || {}).value || '', nmIn = document.getElementById('shName'), msg = document.getElementById('shMsg');
       if (!partner() && nmIn && !nmIn.value.trim()) { nmIn.focus(); return; }

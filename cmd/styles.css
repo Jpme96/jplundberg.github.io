@@ -5141,3 +5141,9 @@ button.mh-chip { font: inherit; cursor: pointer; border: 0; }
 button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600; }
 .sh-vis.off { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
 .sh-vis.off:hover { color: #1f9d55; border-color: rgba(34, 179, 94, .5); }
+.sh-prev-bg { position: fixed; inset: 0; z-index: 2000; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity .2s; }
+.sh-prev-bg.open { opacity: 1; }
+.sh-prev { width: min(400px, 100%); height: min(820px, calc(100vh - 32px)); background: var(--bg-solid, #0e0f11); border-radius: 28px; border: 6px solid #2a2c31; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 80px rgba(0, 0, 0, .5); }
+.sh-prev-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 8px 16px; font-size: 14px; }
+.sh-prev iframe { flex: 1; width: 100%; border: 0; background: #f4f5f7; }
+@media (max-width: 600px) { .sh-prev { height: calc(100vh - 32px); border-width: 0; border-radius: 18px; } }
