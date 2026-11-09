@@ -3,6 +3,9 @@
    The key comes once from the QR code on the owner's phone and is kept locked with this person's own passcode. */
 (function () {
   "use strict";
+  /* no pinch- or double-tap zoom on the phone: it is an app, and the text size is set in Settings */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
+  document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
   var SC = window.ShareCore, app = document.getElementById('app');
   /* ---------- language ---------- */
   var nb = (function () { try { var v = localStorage.getItem('home.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();
@@ -153,7 +156,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 31;
+  var APPV = 32;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {

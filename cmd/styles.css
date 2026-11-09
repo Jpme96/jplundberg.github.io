@@ -45,6 +45,7 @@
 [hidden] { display: none !important; }
 
 html, body { margin: 0; }
+html { touch-action: manipulation; }   /* no double-tap zoom */
 
 body {
   min-height: 100vh;

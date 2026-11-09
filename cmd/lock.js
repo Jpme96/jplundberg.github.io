@@ -7,6 +7,9 @@
    Cloudflare only ever sees the encrypted version. */
 (function () {
   "use strict";
+  /* no pinch- or double-tap zoom on the phone: it is an app, and the text size is set in Settings */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
+  document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
 
   var VAULT_KEY = 'dash.vault';
   var FAIL_KEY = 'dash.fails';
