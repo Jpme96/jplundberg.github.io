@@ -221,6 +221,7 @@
 .cl-group .st-row > span:first-child { flex-shrink: 0; }
 .cl-dt { min-width: 0; justify-content: flex-end; }
 .cl-dt input { min-width: 0; flex: 0 1 auto; }
+.cl-dt input[type="date"] { min-width: 8.8em; } .cl-dt input[type="time"] { min-width: 5.6em; }   /* iPhone: an empty date box would shrink to a tiny pill */
 .cl-in-title { font-size: 18px; padding: 12px 14px; }
 .cl-cat-seg { display: flex; flex-wrap: wrap; gap: 6px; background: none; border: 0; padding: 0; }
 .cl-cat-seg button { flex: 0 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
