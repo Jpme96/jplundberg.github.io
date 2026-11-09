@@ -31,16 +31,16 @@
     if (C.busy) { C.again = true; return Promise.resolve(); }
     C.busy = true;
     return SC.api('chat').then(function (srv) {
-      var recs = srv.msgs || {}, jobs = [], seen = {};
+      var recs = srv.msgs || {}, jobs = [], seen = {}, bad = 0;
       Object.keys(recs).forEach(function (id) {
         var r = recs[id]; seen[id] = 1;
         if (r.del) { delete C.msgs[id]; return; }
         if (C.msgs[id] && !C.msgs[id].pending) return;
-        jobs.push(SC.decrypt(C.opt.key, r).then(function (o) { C.msgs[id] = { id: id, t: r.t, by: r.by, text: String(o.text || '').slice(0, 20000), files: Array.isArray(o.files) ? o.files.slice(0, 10) : [], sys: o.sys || null, ttl: +o.ttl || 0 }; }, function () {}));
+        jobs.push(SC.decrypt(C.opt.key, r).then(function (o) { C.msgs[id] = { id: id, t: r.t, by: r.by, text: String(o.text || '').slice(0, 20000), files: Array.isArray(o.files) ? o.files.slice(0, 10) : [], sys: o.sys || null, ttl: +o.ttl || 0 }; }, function () { bad++; }));
       });
       return Promise.all(jobs).then(function () {
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
-        C.rev = srv.rev; C.ttl = srv.ttl || 0;
+        C.rev = srv.rev; C.ttl = srv.ttl || 0; C.bad = bad;
       });
     }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
@@ -214,7 +214,7 @@
   function listHtml() {
     if (C.missing) return '<div class="hc-empty"><i class="bi bi-cloud-arrow-up"></i>' + esc(C.opt.missing || L('The chat is not switched on yet – the server needs an update.', 'Chatten er ikke slått på ennå – serveren må oppdateres.')) + '</div>';
     var l = list(); if (!l.length) return '<div class="hc-empty"><i class="bi bi-chat-heart"></i>' + esc(L('Say hi to ', 'Si hei til ') + C.opt.name(other())) + '<br><small>' + esc(L('Messages, photos and files – only your two phones can read them.', 'Meldinger, bilder og filer – bare telefonene deres kan lese dem.')) + '</small></div>';
-    var out = '', prev = null, lastMine = null; l.forEach(function (m) { if (m.by === C.opt.me && !m.sys) lastMine = m; });
+    var out = C.bad ? '<div class="hc-sys"><i class="bi bi-exclamation-circle"></i> ' + esc(C.bad + L(' message(s) couldn’t be opened – one of your apps has an old invite. Scan the code again.', ' melding(er) kunne ikke åpnes – en av appene har en gammel invitasjon. Skann koden på nytt.')) + '</div>' : '', prev = null, lastMine = null; l.forEach(function (m) { if (m.by === C.opt.me && !m.sys) lastMine = m; });
     l.forEach(function (m, i) {
       if (!prev || dayName(prev.t) !== dayName(m.t)) { out += '<div class="hc-day">' + esc(dayName(m.t)) + '</div>'; prev = null; }
       out += msgHtml(m, prev);
