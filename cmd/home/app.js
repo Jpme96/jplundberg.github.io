@@ -38,7 +38,9 @@
       if (pending) return setPass(pending);
       var rem = rj('home.key', null); if (rem) { K = rem; return start(); }
       SC.api('share?wrap').then(function (w) { askPass(w); }, function (e) {
-        if (e.status === 404) screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Almost there', 'Nesten klar') + '</h1><p>' + L('Open the Camera app and scan the code on the other phone (Settings → Shared space → Show the code).', 'Åpne Kamera-appen og skann koden på den andre telefonen (Innstillinger → Delt hjem → Vis koden).') + '</p><button class="h-btn ghost" type="button" data-reload>' + L('I’ve scanned it', 'Jeg har skannet') + '</button>');
+        if (e.status === 404) screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Almost there', 'Nesten klar') + '</h1><p>' + L('Open the Camera app and scan the code on the other phone (Settings → Shared space → Show the code).', 'Åpne Kamera-appen og skann koden på den andre telefonen (Innstillinger → Delt hjem → Vis koden).') + '</p><form class="h-form" data-paste><input name="link" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + L('…or paste the invite link here', '…eller lim inn invitasjonslenken her') + '"><p class="h-err" data-err></p><button class="h-btn" type="submit">' + L('Continue', 'Fortsett') + '</button></form>' +
+          '<p class="h-small">' + L('Scan the code with this phone’s Camera after you’ve logged in here. If it still asks, copy the invite link on the other phone and paste it above.', 'Skann koden med Kamera på denne telefonen etter at du har logget inn her. Spør den fortsatt, kopier invitasjonslenken på den andre telefonen og lim den inn over.') + '</p>');
+        var pf = app.querySelector('[data-paste]'); if (pf) pf.onsubmit = function (ev) { ev.preventDefault(); var m = String(pf.link.value).match(/[#&]k=([A-Za-z0-9_-]{43})/) || String(pf.link.value).trim().match(/^([A-Za-z0-9_-]{43})$/); if (!m) { pf.querySelector('[data-err]').textContent = L('That isn’t an invite link.', 'Det er ikke en invitasjonslenke.'); return; } pending = m[1]; setPass(m[1]); };
         else offline();
       });
     }, function (e) {
