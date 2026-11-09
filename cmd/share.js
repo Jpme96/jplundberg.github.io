@@ -565,6 +565,11 @@
       notes: { on: function () { return !!what().notes; }, list: function () { return (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).map(function (n) { return { id: n.id, title: n.title || '', text: n.text || '' }; }); },
         add: function (title, text) { var t = Fe.tools(); t.homenotes = (Array.isArray(t.homenotes) ? t.homenotes : []).concat([{ id: 'n' + Date.now().toString(36), title: title, text: text || '' }]); Fe.saveTools(t); drawNotes(); },
         remove: function (id) { var t = Fe.tools(); t.homenotes = (Array.isArray(t.homenotes) ? t.homenotes : []).filter(function (x) { return x.id !== id; }); Fe.saveTools(t); drawNotes(); } },
+      /* from a message: onto the shopping list, or into the calendar (shared with them) */
+      actions: {
+        shop: function (text) { var t = Fe.tools(); t.shop = (Array.isArray(t.shop) ? t.shop : []).concat([{ id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text: text, done: false }]); Fe.saveTools(t); },
+        plan: function (title, date, time) { var c = rj('dash.calendar', {}) || {}; c.events = Array.isArray(c.events) ? c.events : []; var ev = { id: 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), title: title, date: date, allDay: !time, cat: 'personal', share: true }; if (time) { ev.start = time; } c.events.push(ev); wj('dash.calendar', c); window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('cal:change')); }
+      },
       onChange: chatBadge });
     chatButton();
   }

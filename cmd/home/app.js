@@ -153,7 +153,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 20;
+  var APPV = 21;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -264,6 +264,10 @@
       notes: { on: function () { return (info().what || {}).notes !== false; }, list: function () { return list('note').map(function (r) { return { id: r.id, title: r.f.title || '', text: r.f.text || '' }; }).sort(function (a, b) { return a.title.localeCompare(b.title); }); },
         add: function (title, text) { put('note', 'h' + uid(), { title: title, text: text || '' }); }, remove: function (id) { put('note', id, null, true); } },
       missing: L('The chat isn’t switched on yet – ', 'Chatten er ikke slått på ennå – ') + owner() + L(' needs to update the server.', ' må oppdatere serveren.'),
+      actions: {
+        shop: function (text) { put('shop', 'h' + uid(), { text: text.slice(0, 120), done: false }); },
+        plan: function (title, date, time) { var ev = { title: title, date: date, allDay: !time }; if (time) ev.start = time; put('ev', 'h' + uid(), ev); }
+      },
       onChange: function () {} });
     HomeChat.bubble({ label: L('Chat with ', 'Chat med ') + owner(), zoom: String(parseFloat(getComputedStyle(document.body).zoom) || 1) });
   }
