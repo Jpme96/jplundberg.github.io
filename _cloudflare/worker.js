@@ -62,11 +62,12 @@ const SOCIALS = { linkedin: 'linkedin.com', instagram: 'instagram.com', facebook
 export default {
   /* every request gets a clear JSON answer – also when GitHub, Cloudflare or a calendar is down */
   async fetch(request, env) {
-    try { return await route(request, env); }
+    try { return await route(request, storage(env)); }
     catch (e) { console.log('error', request.method, new URL(request.url).pathname, e && e.stack || e); return json({ error: 'server error', detail: String(e && e.message || e).slice(0, 200) }, 500); }
   },
   /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
   async scheduled(event, env, ctx) {
+    env = storage(env);
     ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e))]));
   }
 };
@@ -78,6 +79,76 @@ async function cronBeat(env) {
   if (!env.VAULT) return;
   const last = +(await env.VAULT.get(CRON_KEY)) || 0;
   if (Date.now() - last > 3600e3) await env.VAULT.put(CRON_KEY, String(Date.now()));
+}
+
+/* ---------- storage: the keys that change often live in the D1 database (binding DB) ----------
+   Workers KV keeps a copy of a key at the edge for up to a minute, so right after one device (or the person you
+   share with) saved, another could still read the old version – and save on top of it. D1 always answers with
+   the latest version, and a save can be made conditional ("only if it is still version N"). Everything else
+   (files, snapshots, push devices, settings) stays in KV. Without a DB binding the Worker keeps using KV only.
+   - Values bigger than ~1 MB are split over rows k#0000, k#0001 … (a D1 row holds at most 2 MB).
+   - A removed key is kept as an empty row, so the old KV copy can never come back.
+   - The first read of a key that is only in KV copies it over; KV keeps its copy as a backup. */
+const HOT_KEYS = ['vault', 'shared', 'chat', 'pvault', 'pvault:wrap', 'share:cfg', 'share:wrap'];
+const D1_CHUNK = 1000000;
+let d1Ready = null;
+function d1Init(db) {
+  if (!d1Ready) d1Ready = db.prepare('CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT, n INTEGER NOT NULL DEFAULT 0, rev INTEGER, t INTEGER)').run().catch(e => { d1Ready = null; throw e; });
+  return d1Ready;
+}
+function revOf(v) { try { const r = JSON.parse(v).rev; return Number.isInteger(r) ? r : null; } catch (e) { return null; } }
+async function d1Get(db, k) {
+  await d1Init(db);
+  const row = await db.prepare('SELECT v, n FROM kv WHERE k = ?').bind(k).first();
+  if (!row) return undefined;                 /* never stored here */
+  if (row.v === null) return null;            /* removed */
+  if (!row.n) return row.v;
+  const r = await db.prepare('SELECT k, v FROM kv WHERE k >= ? AND k < ? ORDER BY k').bind(k + '#', k + '$').all();
+  const parts = (r.results || []).map(x => x.v);
+  if (parts.length !== row.n) throw new Error('storage: ' + k + ' is incomplete');
+  return parts.join('');
+}
+/* expect: only save if the stored rev is still this (-1 = nothing stored yet). Returns false when it moved on. */
+async function d1Put(db, k, v, expect) {
+  await d1Init(db);
+  const st = [], now = Date.now(), rev = v == null ? null : revOf(v);
+  if (expect !== undefined) st.push(db.prepare('SELECT CASE WHEN COALESCE((SELECT COALESCE(rev, 0) FROM kv WHERE k = ? AND v IS NOT NULL), -1) = ? THEN 1 ELSE abs(-9223372036854775808) END').bind(k, expect));
+  st.push(db.prepare('DELETE FROM kv WHERE k >= ? AND k < ?').bind(k + '#', k + '$'));
+  const up = (key, val, n, rv) => db.prepare('INSERT INTO kv (k, v, n, rev, t) VALUES (?, ?, ?, ?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v, n = excluded.n, rev = excluded.rev, t = excluded.t').bind(key, val, n, rv, now);
+  if (v == null) st.push(up(k, null, 0, null));
+  else if (v.length <= D1_CHUNK) st.push(up(k, v, 0, rev));
+  else { const n = Math.ceil(v.length / D1_CHUNK); for (let i = 0; i < n; i++) st.push(up(k + '#' + String(i).padStart(4, '0'), v.slice(i * D1_CHUNK, (i + 1) * D1_CHUNK), 0, null)); st.push(up(k, '', n, rev)); }
+  try { await db.batch(st); return true; }
+  catch (e) {
+    if (expect === undefined) throw e;
+    const row = await db.prepare('SELECT rev, v FROM kv WHERE k = ?').bind(k).first();
+    const cur = row && row.v !== null ? (row.rev == null ? 0 : row.rev) : -1;
+    if (cur !== expect) return false;
+    throw e;
+  }
+}
+function storage(env) {
+  if (!env || !env.DB || !env.VAULT || env.KV) return env;
+  const kv = env.VAULT, db = env.DB, hot = k => HOT_KEYS.indexOf(k) >= 0;
+  const read = async k => {
+    let v = await d1Get(db, k);
+    if (v === undefined) { const old = await kv.get(k); if (old != null) await d1Put(db, k, old); v = old; }
+    return v;
+  };
+  const V = {
+    get: async (k, o) => {
+      if (!hot(k)) return kv.get(k, o);
+      const v = await read(k); if (v == null) return null;
+      const ty = typeof o === 'string' ? o : o && o.type;
+      return ty === 'json' ? JSON.parse(v) : v;
+    },
+    put: async (k, v, o) => hot(k) ? d1Put(db, k, typeof v === 'string' ? v : JSON.stringify(v)) : kv.put(k, v, o),
+    delete: async k => { if (!hot(k)) return kv.delete(k); await read(k); await d1Put(db, k, null); await kv.delete(k).catch(() => {}); },
+    list: o => kv.list(o),
+    /* save only if nobody else saved since you read it */
+    cas: async (k, v, expect) => { await read(k); return d1Put(db, k, v, expect); }
+  };
+  return Object.assign({}, env, { VAULT: V, KV: kv });
 }
 
 async function route(request, env) {
@@ -140,7 +211,7 @@ async function route(request, env) {
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
-    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron }); }
+    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv' }); }
     return vault(request, env);
 }
 
@@ -201,28 +272,36 @@ async function shareApi(request, url, env, partner, cfg) {
 async function sharedApi(request, env, by, cfg) {
   const ep = String((cfg && cfg.since) || '');
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
-  const cur = (await freshGet(request, env, SHARED, 'boxfull', ep)) || { rev: 0, recs: {} }; cur.recs = cur.recs || {};
-  if (request.method === 'GET') return json(cur);
+  if (request.method === 'GET') { const c = (await freshGet(request, env, SHARED, 'boxfull', ep)) || { rev: 0, recs: {} }; c.recs = c.recs || {}; return json(c); }
   if (request.method !== 'PUT') return json({ error: 'method' }, 405);
   const body = await request.text();
   if (body.length > 1024 * 1024) return json({ error: 'too large' }, 413);
   let b; try { b = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
   const recs = b && b.recs && typeof b.recs === 'object' ? b.recs : null; if (!recs) return json({ error: 'no records' }, 400);
-  let n = 0; const now = Date.now();
-  for (const id of Object.keys(recs).slice(0, 2000)) {
-    const r = recs[id]; if (!RID.test(id) || !r || typeof r !== 'object') continue;
-    const t = Math.min(+r.t || 0, now + 60e3); if (!t) continue;
-    const old = cur.recs[id]; if (old && old.t >= t) continue;                   /* the newest change wins */
-    if (old && old.po && by !== 'p') continue;                                   /* their own profile: only they change it */
-    if (r.del) cur.recs[id] = { t, by, del: 1 };
-    else if (typeof r.iv === 'string' && typeof r.ct === 'string' && r.ct.length <= 20000) cur.recs[id] = Object.assign({ t, by, iv: r.iv, ct: r.ct }, by === 'p' && r.po ? { po: 1 } : {});
-    else continue;
-    n++;
+  /* read, merge, save – and if the other person saved in between, do it again on top of theirs */
+  for (let tries = 0; tries < 6; tries++) {
+    const got = await freshGet(request, env, SHARED, 'boxfull', ep), exp = got ? (+got.rev || 0) : -1;
+    const cur = got || { rev: 0, recs: {} }; cur.recs = cur.recs || {};
+    let n = 0; const now = Date.now();
+    for (const id of Object.keys(recs).slice(0, 2000)) {
+      const r = recs[id]; if (!RID.test(id) || !r || typeof r !== 'object') continue;
+      const t = Math.min(+r.t || 0, now + 60e3); if (!t) continue;
+      const old = cur.recs[id]; if (old && old.t >= t) continue;                   /* the newest change wins */
+      if (old && old.po && by !== 'p') continue;                                   /* their own profile: only they change it */
+      if (r.del) cur.recs[id] = { t, by, del: 1 };
+      else if (typeof r.iv === 'string' && typeof r.ct === 'string' && r.ct.length <= 20000) cur.recs[id] = Object.assign({ t, by, iv: r.iv, ct: r.ct }, by === 'p' && r.po ? { po: 1 } : {});
+      else continue;
+      n++;
+    }
+    /* deleted records are remembered for 90 days, so a phone that was away long can't bring them back */
+    for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
+    if (!n) return json(cur);
+    cur.rev = (cur.rev || 0) + 1; delete cur.ep;
+    if (env.VAULT.cas) { if (!(await env.VAULT.cas(SHARED, JSON.stringify(cur), exp))) continue; } else await env.VAULT.put(SHARED, JSON.stringify(cur));
+    cur.ep = ep; await liveSet(request, 'boxfull', cur); await liveSet(request, 'box', cur.rev);
+    return json(cur);
   }
-  /* deleted records are remembered for 90 days, so a phone that was away long can't bring them back */
-  for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
-  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); cur.ep = ep; await liveSet(request, 'boxfull', cur); await liveSet(request, 'box', cur.rev); }
-  return json(cur);
+  return json({ error: 'busy – try again' }, 503);
 }
 
 /* the other person's own space (their calendar, money, to-dos): encrypted on their phone with their own key,
@@ -247,7 +326,8 @@ async function pvaultApi(request, url, env) {
     if (!n || n.v !== 1 || typeof n.iv !== 'string' || typeof n.ct !== 'string' || !Number.isInteger(n.rev)) return json({ error: 'not a vault' }, 400);
     const cur = await env.VAULT.get(PVAULT), curRev = cur ? JSON.parse(cur).rev || 0 : -1, base = parseInt(request.headers.get('X-Base-Rev') || '-1', 10);
     if (cur && base !== curRev) return new Response(cur, { status: 409, headers: hdrs() });
-    await env.VAULT.put(PVAULT, body); return json({ ok: true, rev: n.rev });
+    if (env.VAULT.cas) { if (!(await env.VAULT.cas(PVAULT, body, curRev))) return new Response(await env.VAULT.get(PVAULT), { status: 409, headers: hdrs() }); } else await env.VAULT.put(PVAULT, body);
+    return json({ ok: true, rev: n.rev });
   }
   return json({ error: 'method' }, 405);
 }
@@ -296,6 +376,7 @@ async function liveDel(request, k) { const c = globalThis.caches && caches.defau
    here can still return the old version – and saving on top of that would drop their change. The newest version is
    also kept in this data centre's cache; whichever has the higher rev wins, for reading and for saving on top. */
 async function freshGet(request, env, key, ck, ep) {
+  if (env.KV) return env.VAULT.get(key, 'json');      /* D1: always the latest */
   const [raw, c] = await Promise.all([env.VAULT.get(key), liveGet(request, ck)]);
   const kv = raw ? JSON.parse(raw) : null;
   /* only a copy from this round of sharing counts (after Stop and a new start, an old one must not come back) */
@@ -328,33 +409,46 @@ const CHAT = 'chat', CFILE = 'cfile:', CHAT_TTLS = [0, 864e5, 7 * 864e5, 30 * 86
 async function chatApi(request, env, by, cfg) {
   const ep = String((cfg && cfg.since) || '');
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
-  const cur = (await freshGet(request, env, CHAT, 'chatfull', ep)) || { rev: 0, ttl: 0, msgs: {} }, now = Date.now(); cur.msgs = cur.msgs || {};
-  const expired = id => { const m = cur.msgs[id]; return cur.ttl && !m.del && now - m.t > cur.ttl; };
-  if (request.method === 'GET') { const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: {} }; for (const id of Object.keys(cur.msgs)) if (!expired(id)) out.msgs[id] = cur.msgs[id]; return json(out); }
+  if (request.method === 'GET') {
+    const cur = (await freshGet(request, env, CHAT, 'chatfull', ep)) || { rev: 0, ttl: 0, msgs: {} }, now = Date.now(); cur.msgs = cur.msgs || {};
+    const out = { rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: {} };
+    for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id]; if (!(cur.ttl && !m.del && now - m.t > cur.ttl)) out.msgs[id] = m; }
+    return json(out);
+  }
   if (request.method !== 'PUT') return json({ error: 'method' }, 405);
   const body = await request.text();
   if (body.length > 1024 * 1024) return json({ error: 'too large' }, 413);
   let b; try { b = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
-  let n = 0; const gone = [];
-  if (b && b.ttl != null && CHAT_TTLS.includes(+b.ttl) && +b.ttl !== (cur.ttl || 0)) { cur.ttl = +b.ttl; cur.ttlAt = now; n++; }
-  const msgs = b && b.msgs && typeof b.msgs === 'object' ? b.msgs : {};
-  for (const id of Object.keys(msgs).slice(0, 50)) {
-    const m = msgs[id]; if (!RID.test(id) || !m || cur.msgs[id] || typeof m.iv !== 'string' || typeof m.ct !== 'string' || m.ct.length > 40000) continue;   /* a message is never changed, only removed */
-    const fl = (Array.isArray(m.fl) ? m.fl : []).filter(x => RID.test(String(x))).slice(0, 10);
-    cur.msgs[id] = { t: Math.min(+m.t || now, now + 60e3), by, iv: m.iv, ct: m.ct, fl }; n++;
+  for (let tries = 0; tries < 6; tries++) {
+    const got = await freshGet(request, env, CHAT, 'chatfull', ep), exp = got ? (+got.rev || 0) : -1;
+    const cur = got || { rev: 0, ttl: 0, msgs: {} }, now = Date.now(); cur.msgs = cur.msgs || {};
+    const expired = id => { const m = cur.msgs[id]; return cur.ttl && !m.del && now - m.t > cur.ttl; };
+    let n = 0; const gone = [];
+    if (b && b.ttl != null && CHAT_TTLS.includes(+b.ttl) && +b.ttl !== (cur.ttl || 0)) { cur.ttl = +b.ttl; cur.ttlAt = now; n++; }
+    const msgs = b && b.msgs && typeof b.msgs === 'object' ? b.msgs : {};
+    for (const id of Object.keys(msgs).slice(0, 50)) {
+      const m = msgs[id]; if (!RID.test(id) || !m || cur.msgs[id] || typeof m.iv !== 'string' || typeof m.ct !== 'string' || m.ct.length > 40000) continue;   /* a message is never changed, only removed */
+      const fl = (Array.isArray(m.fl) ? m.fl : []).filter(x => RID.test(String(x))).slice(0, 10);
+      cur.msgs[id] = { t: Math.min(+m.t || now, now + 60e3), by, iv: m.iv, ct: m.ct, fl }; n++;
+    }
+    for (const id of (Array.isArray(b && b.del) ? b.del : []).slice(0, 200)) {
+      const m = cur.msgs[id]; if (!m || m.del || m.by !== by) continue;            /* you can only remove your own */
+      (m.fl || []).forEach(f => gone.push(f)); cur.msgs[id] = { t: m.t, by, del: 1, dt: now }; n++;
+    }
+    /* keep: within the time limit, at most 5 000 messages; removed ones are remembered for 30 days */
+    for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id];
+      if (m.del ? now - (m.dt || m.t) > 30 * 864e5 : expired(id)) { (m.fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; } }
+    const ids = Object.keys(cur.msgs).filter(id => !cur.msgs[id].del).sort((a, c) => cur.msgs[a].t - cur.msgs[c].t);
+    for (const id of ids.slice(0, Math.max(0, ids.length - 5000))) { (cur.msgs[id].fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; }
+    if (n) {
+      cur.rev = (cur.rev || 0) + 1; delete cur.ep;
+      if (env.VAULT.cas) { if (!(await env.VAULT.cas(CHAT, JSON.stringify(cur), exp))) continue; } else await env.VAULT.put(CHAT, JSON.stringify(cur));
+      cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev);
+    }
+    if (gone.length) await Promise.all(gone.map(f => env.VAULT.delete(CFILE + f)));
+    return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
   }
-  for (const id of (Array.isArray(b && b.del) ? b.del : []).slice(0, 200)) {
-    const m = cur.msgs[id]; if (!m || m.del || m.by !== by) continue;            /* you can only remove your own */
-    (m.fl || []).forEach(f => gone.push(f)); cur.msgs[id] = { t: m.t, by, del: 1, dt: now }; n++;
-  }
-  /* keep: within the time limit, at most 5 000 messages; removed ones are remembered for 30 days */
-  for (const id of Object.keys(cur.msgs)) { const m = cur.msgs[id];
-    if (m.del ? now - (m.dt || m.t) > 30 * 864e5 : expired(id)) { (m.fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; } }
-  const ids = Object.keys(cur.msgs).filter(id => !cur.msgs[id].del).sort((a, c) => cur.msgs[a].t - cur.msgs[c].t);
-  for (const id of ids.slice(0, Math.max(0, ids.length - 5000))) { (cur.msgs[id].fl || []).forEach(f => gone.push(f)); delete cur.msgs[id]; n++; }
-  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(CHAT, JSON.stringify(cur)); cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev); }
-  if (gone.length) await Promise.all(gone.map(f => env.VAULT.delete(CFILE + f)));
-  return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
+  return json({ error: 'busy – try again' }, 503);
 }
 async function cfileApi(request, url, env) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
@@ -581,7 +675,8 @@ async function vault(request, env) {
         await env.VAULT.put(SNAP + day, cur, { expirationTtl: 31 * 864e2 });
       }
     }
-    await env.VAULT.put(KEY, body);
+    if (env.VAULT.cas) { if (!(await env.VAULT.cas(KEY, body, curRev))) { const now = await env.VAULT.get(KEY); return new Response(now, { status: 409, headers: hdrs() }); } }
+    else await env.VAULT.put(KEY, body);
     return json({ ok: true, rev: next.rev });
   }
   return json({ error: 'method not allowed' }, 405);

@@ -357,7 +357,7 @@
     removeKey(VAULT_KEY);
     removeKey(FAIL_KEY);
     remote = null;
-    ignoreRemote = true;
+    ignoreRemote = true; writeJSON(REPLACE_KEY, 1);
     setMode('setup');
     msg('Erased. Create a new passcode.', true);
   });
@@ -372,7 +372,7 @@
       var v = JSON.parse(t);
       if (!isVault(v)) throw new Error('bad');
       v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
-      memVault = null; writeJSON(VAULT_KEY, v);
+      memVault = null; writeJSON(VAULT_KEY, v); writeJSON(REPLACE_KEY, 1);
       remote = null;
       ignoreRemote = true;
       setMode('unlock');
@@ -531,6 +531,8 @@
      If another device saved in the meantime, the parts changed HERE since the last sync are
      kept, and everything else comes from the other device – instead of one side losing. */
   var BASE_KEY = 'dash.syncBase';
+  /* set by a restored backup or 'Erase and start over': the next upload replaces the server's copy instead of merging */
+  var REPLACE_KEY = 'dash.syncReplace';
   /* Settings, tool data, profile and travel are compared one level deeper (each setting, each tool),
      and Apple Health day by day – so a change on the phone to one setting doesn't undo a change made
      on the computer to another, and health numbers from two devices both stay. */
@@ -565,6 +567,63 @@
       return crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(p[k]))).then(function (h) { return b64(h).slice(0, 22); });
     })).then(function (hs) { var o = {}; keys.forEach(function (k, i) { o[k] = hs[i]; }); return o; });
   }
+
+  /* ---------- item-by-item merge ----------
+     Each device keeps (encrypted, in IndexedDB) the last version it shared with the server: the "base".
+     When another device saved in the meantime, the three versions are compared item by item:
+     - objects key by key, lists of things with an id thing by thing, plain lists (tags, ids) as sets;
+     - only one side changed something → that change is kept; both changed the same thing → this device's;
+     - removed on one side and untouched on the other → removed; removed on one side, edited on the other → kept.
+     So a shopping item added on the phone and another ticked off on the computer both stay. */
+  function baseDb(mode, fn) {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { resolve(null); return; }
+      var req = indexedDB.open('dash-syncbase', 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore('b'); };
+      req.onerror = function () { reject(req.error); };
+      req.onsuccess = function () { var db = req.result, tx = db.transaction('b', mode), q = fn(tx.objectStore('b')); tx.oncomplete = function () { db.close(); resolve(q && q.result); }; tx.onerror = function () { db.close(); reject(tx.error); }; };
+    });
+  }
+  function saveBase(v) { if (v && isVault(v)) baseDb('readwrite', function (st) { return st.put(v, 'base'); }).catch(function () {}); }
+  function loadBase() { return Promise.race([baseDb('readonly', function (st) { return st.get('base'); }), new Promise(function (r) { setTimeout(function () { r(null); }, 2000); })]).catch(function () { return null; }); }
+  function same(a, b) { return a === b || JSON.stringify(a) === JSON.stringify(b); }
+  function idOf(x) { return x && typeof x === 'object' && !Array.isArray(x) && x.id != null && x.id !== '' ? String(x.id) : null; }
+  function keyed(a) { if (!a.length) return true; var seen = {}; for (var i = 0; i < a.length; i++) { var k = idOf(a[i]); if (k === null || seen[k]) return false; seen[k] = 1; } return true; }
+  function prim(a) { return a.every(function (x) { return x === null || typeof x !== 'object'; }); }
+  function m3(b, m, t) {
+    if (same(m, t)) return m;
+    if (same(b, m)) return t;                       /* only the other device changed it */
+    if (same(b, t)) return m;                       /* only this device changed it */
+    if (isObj(m) && isObj(t)) {
+      var bb = isObj(b) ? b : {}, o = {}, ks = {};
+      [m, t, bb].forEach(function (x) { Object.keys(x).forEach(function (k) { ks[k] = 1; }); });
+      Object.keys(ks).forEach(function (k) { var r = m3(bb[k], m[k], t[k]); if (r !== undefined) o[k] = r; });
+      return o;
+    }
+    if (Array.isArray(m) && Array.isArray(t)) return mList(Array.isArray(b) ? b : [], m, t);
+    if (m === undefined) return t;                   /* removed here, changed there: keep their change */
+    return m;                                        /* both changed the same thing: this device's */
+  }
+  function mList(b, m, t) {
+    if (keyed(m) && keyed(t) && keyed(b) && (m.length || t.length)) {
+      var B = {}, M = {}, T = {};
+      b.forEach(function (x) { B[idOf(x)] = x; }); m.forEach(function (x) { M[idOf(x)] = x; }); t.forEach(function (x) { T[idOf(x)] = x; });
+      /* their order, with things that are new here put after the thing before them here */
+      var order = t.map(idOf);
+      m.forEach(function (x, i) { var id = idOf(x); if (order.indexOf(id) >= 0) return; var at = -1; for (var j = i - 1; j >= 0; j--) { at = order.indexOf(idOf(m[j])); if (at >= 0) break; } order.splice(at + 1, 0, id); });
+      Object.keys(B).forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
+      var out = []; order.forEach(function (id) { var r = m3(B[id], M[id], T[id]); if (r !== undefined) out.push(r); });
+      return out;
+    }
+    if (prim(m) && prim(t) && prim(b)) {
+      var has = function (a, x) { return a.indexOf(x) >= 0; };
+      var res = t.filter(function (x) { return !(has(b, x) && !has(m, x)); });
+      m.forEach(function (x) { if (!has(b, x) && !has(res, x)) res.push(x); });
+      return res;
+    }
+    return m;
+  }
+  window.__m3 = m3;   /* for the tests */
   function recordBase(obj, w) {
     return fingerprints(parts(obj, w || widgets())).then(function (h) { writeJSON(BASE_KEY, h); }).catch(function () {});
   }
@@ -599,13 +658,31 @@
         remoteRev = v.rev || 0;
         var w = obj._w || {};
         if (!changed.length || failNote) {           // nothing new here: take the other device's version
+          saveBase(v);
           data = unpack(obj);
           recordBase(data, w);
           emit();
           setSync('ok');
           return;
         }
-        /* both devices changed something: keep this device's changed parts */
+        /* both devices changed something: merge item by item against the last shared version */
+        return loadBase().then(function (bv) {
+          if (key !== k) return;
+          return (bv && bv.salt === v.salt ? open(bv, k).catch(function () { return null; }) : Promise.resolve(null)).then(function (baseObj) {
+            if (key !== k) return;
+            saveBase(v);
+            if (baseObj) {
+              var mine = JSON.parse(JSON.stringify(Object.assign({}, data || {}, { _w: widgets() })));
+              var merged3 = m3(baseObj, mine, obj);
+              recordBase(obj, w);
+              data = unpack(merged3);
+              emit();
+              return window.Vault.save(data);
+            }
+            return oldMerge();
+          });
+        });
+        function oldMerge() {
         recordBase(obj, w);                          // what the server has now (before merging)
         w = JSON.parse(JSON.stringify(w));
         var mine = widgets(), merged = {};
@@ -624,6 +701,7 @@
         data = unpack(merged);
         emit();
         return window.Vault.save(data);           // new version on top of the other device's, then upload
+        }
       });
     }, function () {
       /* Encrypted with another passcode: it was changed on another device. */
@@ -643,9 +721,13 @@
         return adopt(v, 'You already have a synced dashboard. Enter its passcode to use it on this device.');
       }
       if (v && (v.rev || 0) > lr) return adopt(v);
+      /* the server moved on since this device last synced: merge first (even if this device's own version number
+         is as high) – uploading straight away would overwrite what the other device saved */
+      if (v && !readJSON(REPLACE_KEY) && syncedRev() >= 0 && (v.rev || 0) > syncedRev()) return adopt(v);
       if (!v || lr > (v.rev || 0) || syncedRev() !== (v.rev || 0)) return push();
       writeJSON(SYNC_KEY, v.rev || 0);
       setSync('ok');
+      if (local && (local.rev || 0) === (v.rev || 0)) loadBase().then(function (bv) { if (!bv || bv.rev !== v.rev) saveBase(v); });
       if (data && !readJSON(BASE_KEY)) recordBase(data);
     });
   }
@@ -666,13 +748,14 @@
       var v = JSON.parse(raw);
       /* Never upload over a synced dashboard this device has never been part of. */
       if ((syncedRev() === -1 && remoteSalt && v.salt !== remoteSalt && !ignoreRemote)) { setSync('off'); return; }
-      var base = remoteRev !== null ? remoteRev : syncedRev();
+      /* save on top of the version this device last synced with – if the server has a newer one, it answers 409 and we merge */
+      var base = readJSON(REPLACE_KEY) ? (remoteRev !== null ? remoteRev : -1) : syncedRev() >= 0 ? syncedRev() : (remoteRev !== null ? remoteRev : -1);
       return fetch(API, {
         method: 'PUT', credentials: 'same-origin', cache: 'no-store',
         headers: { 'content-type': 'application/json', 'X-Base-Rev': String(base) },
         body: raw
       }).then(function (r) {
-        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); setSync('ok'); if (data) recordBase(data); return; }
+        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
         if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
         if (r.status === 401) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');
@@ -725,7 +808,7 @@
       return writing.then(function () {
         v.rev = Math.max(v.rev || 0, remoteRev !== null ? remoteRev + 1 : 0, localRev() + 1);
         if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
-        memVault = null; writeJSON(VAULT_KEY, v);
+        memVault = null; writeJSON(VAULT_KEY, v); writeJSON(REPLACE_KEY, 1);
         remote = null;
         ignoreRemote = true;
         lock('Backup restored');
