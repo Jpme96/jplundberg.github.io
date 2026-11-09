@@ -180,7 +180,7 @@
       '.hc-meta{font-size:11px;color:var(--hc-mut);margin:2px 6px 0;display:flex;gap:6px;align-items:center}.hc-meta .bi{font-size:12px}.hc-meta button{border:0;background:none;color:#e05555;font-size:11.5px;padding:0;cursor:pointer;text-decoration:underline}',
       '.hc-imgs{display:grid;gap:3px;margin-bottom:3px;border-radius:16px;overflow:hidden;max-width:min(280px,70vw)}.hc-imgs.n2,.hc-imgs.n3,.hc-imgs.n4{grid-template-columns:1fr 1fr}',
       '.hc-imgs button{border:0;padding:0;display:block;background-size:cover;background-position:center;cursor:zoom-in;position:relative;min-height:90px;background-color:rgba(127,127,127,.15)}',
-      '.hc-imgs img{display:block;width:100%;height:100%;max-height:340px;object-fit:cover;opacity:0;transition:opacity .2s}.hc-imgs img.on{opacity:1}.hc-imgs.n2 img,.hc-imgs.n3 img,.hc-imgs.n4 img{aspect-ratio:1}',
+      '.hc-imgs img{display:block;width:100%;height:100%;max-height:340px;object-fit:cover;opacity:0;transition:opacity .2s}.hc-imgs.n1 button{max-height:340px;min-height:0}.hc-imgs.n1 button[style*=aspect-ratio] img{max-height:none}.hc-imgs img.on{opacity:1}.hc-imgs.n2 img,.hc-imgs.n3 img,.hc-imgs.n4 img{aspect-ratio:1}',
       '.hc-file{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;background:var(--hc-them);border:0;color:inherit;margin-bottom:3px;cursor:pointer;text-align:left;max-width:100%}',
       '.hc-m.me .hc-file{background:color-mix(in srgb,var(--hc-acc) 22%,transparent)}.hc-file .bi{font-size:22px;color:var(--hc-acc)}.hc-file span{min-width:0}.hc-file b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}.hc-file small{color:var(--hc-mut);font-size:12px}',
       '.hc-typing{align-self:flex-start;background:var(--hc-them);border-radius:18px;padding:10px 14px;display:flex;gap:4px;margin-top:8px}.hc-typing i{width:7px;height:7px;border-radius:50%;background:var(--hc-mut);animation:hcDot 1.2s infinite}.hc-typing i:nth-child(2){animation-delay:.15s}.hc-typing i:nth-child(3){animation-delay:.3s}',
@@ -212,6 +212,7 @@
       '.hc-gal h4{margin:14px 2px 6px;font-size:13px;color:var(--hc-mut);font-weight:600}.hc-gal .hc-file{width:100%}',
       '.hc-cam{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}.hc-cam video{max-width:100%;max-height:75%;border-radius:12px}.hc-cam .acts{display:flex;gap:12px}.hc-cam .acts button{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}.hc-cam .snap{background:#fff;color:#000}.hc-cam .no{background:rgba(255,255,255,.18);color:#fff}',
       '.hc [hidden]{display:none!important}',
+      '.hc-msgs{display:flex;flex-direction:column;gap:5px;flex:1 0 auto}.hc-list>.hc-typing{flex:none}html.hc-lock,html.hc-lock body{overflow:hidden!important;overscroll-behavior:none}',
       '.hc-list{gap:5px;padding:12px 14px 8px}.hc-m.gap{margin-top:12px}.hc-meta{margin-top:3px;margin-bottom:2px}.hc-b{padding:8px 13px}.hc-rx{margin-bottom:2px}',
       '.hc-menu>div{max-height:78%;overflow-y:auto}.hc-chiprow{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}.hc-menu .hc-chiprow .hc-chip{width:auto;flex:1 1 0;justify-content:center;gap:5px;padding:8px 10px;border-radius:999px;background:rgba(127,127,127,.12);font-size:14px;white-space:nowrap}.hc-menu .hc-chiprow .hc-chip.on{background:var(--hc-acc);color:#fff}.hc-menu .hc-chiprow .hc-chip .bi{width:auto;font-size:15px}.hc-menu p .bi{margin-right:4px}',
       '.hc.selecting .hc-m[data-mid]{cursor:pointer;position:relative;padding-left:30px}.hc.selecting .hc-m.me[data-mid]{padding-left:0;padding-right:0}.hc.selecting .hc-more{display:none}',
@@ -248,8 +249,8 @@
     var h = '<div class="hc-m' + (me ? ' me' : '') + (cont ? ' cont' : ' gap') + (m.pending ? ' pending' : '') + (m.failed ? ' failed' : '') + (C.sel && C.sel[m.id] ? ' sel' : '') + '" data-mid="' + m.id + '">';
     if (m.re) h += '<button type="button" class="hc-q" data-hcgo="' + esc(m.re.id) + '"><b>' + esc(m.re.by === C.opt.me ? L('You', 'Du') : C.opt.name(m.re.by)) + '</b><span>' + esc(m.re.x || '…') + '</span></button>';
     voice.forEach(function (f) { h += '<div class="hc-voice" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"><button type="button" data-hcplay="' + esc(f.id) + '" aria-label="' + L('Play', 'Spill av') + '"><i class="bi bi-play-fill"></i></button><span class="hc-vbar"><i></i></span><small>' + dur(f.dur) + '</small></div>'; });
-    vids.forEach(function (f) { h += '<video class="hc-vid" controls playsinline preload="metadata" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (f.local ? ' src="' + f.local + '" data-ok="1"' : '') + '></video>'; });
-    if (imgs.length) h += '<div class="hc-imgs n' + Math.min(4, imgs.length) + '">' + imgs.map(function (f) { return '<button type="button" data-hcimg="' + esc(f.id) + '" style="' + (f.th ? 'background-image:url(' + f.th + ')' : '') + '"><img alt="" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (f.local ? ' src="' + f.local + '" class="on" data-ok="1"' : '') + (f.w && f.h && imgs.length === 1 ? ' width="' + f.w + '" height="' + f.h + '"' : '') + '></button>'; }).join('') + '</div>';
+    vids.forEach(function (f) { var u = f.local || C.urls[f.id]; h += '<video class="hc-vid" controls playsinline preload="metadata" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (u ? ' src="' + u + '" data-ok="1"' : '') + '></video>'; });
+    if (imgs.length) h += '<div class="hc-imgs n' + Math.min(4, imgs.length) + '">' + imgs.map(function (f) { var u = f.local || C.urls[f.id], ar = f.w && f.h && imgs.length === 1 ? 'aspect-ratio:' + f.w + '/' + f.h + ';' : ''; return '<button type="button" data-hcimg="' + esc(f.id) + '" style="' + ar + (f.th ? 'background-image:url(' + f.th + ')' : '') + '"><img alt="" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (u ? ' src="' + u + '" class="on" data-ok="1"' : '') + '></button>'; }).join('') + '</div>';
     other.forEach(function (f) { h += '<button type="button" class="hc-file" data-hcfile="' + esc(f.id) + '"><i class="bi bi-file-earmark' + (/pdf/.test(f.type) ? '-pdf' : '') + '"></i><span><b>' + esc(f.name) + '</b><small>' + kb(f.size || 0) + '</small></span></button>'; });
     if (m.text) h += '<div class="hc-b">' + linkify(m.text) + '</div>';
     var rx = (C._rx || {})[m.id], cnt = {}; if (rx) Object.keys(rx).forEach(function (who) { var e = rx[who]; if (e) { cnt[e] = cnt[e] || { n: 0, mine: false }; cnt[e].n++; if (who === C.opt.me) cnt[e].mine = true; } });
@@ -277,7 +278,6 @@
       if (!m.sys && (endGroup || m.failed || m.pending)) out += '<div class="hc-m' + (m.by === C.opt.me ? ' me' : '') + '" style="margin-top:0">' + metaFor(m, m === lastMine) + '</div>';
       prev = m;
     });
-    var o = other(), tp = +C.typing[o] || 0; if (Date.now() + C.skew - tp < 7000) out += '<div class="hc-typing" aria-label="' + esc(C.opt.name(o)) + ' ' + L('is typing', 'skriver') + '"><i></i><i></i><i></i></div>';
     return out;
   }
   function nearEnd() { var l = C.el && C.el.querySelector('.hc-list'); return !l || l.scrollHeight - l.scrollTop - l.clientHeight < 120; }
@@ -286,9 +286,14 @@
   function paintList() {
     if (!C.el) return;
     var hd = C.el.querySelector('.hc-headbox'); if (hd) { var h1 = head() + pins(); if (hd._h !== h1) { hd._h = h1; hd.innerHTML = h1; } }
-    var box = C.el.querySelector('.hc-list'), h = listHtml(); if (h === lastList) return;
-    var stick = nearEnd(), grew = list().length; lastList = h; box.innerHTML = h; loadImgs();
-    if (stick || !C.painted) { C.painted = true; box.scrollTop = box.scrollHeight; } else { var d = C.el.querySelector('.hc-down'); if (d) d.hidden = false; }
+    var box = C.el.querySelector('.hc-msgs'), lst = C.el.querySelector('.hc-list'), stick = nearEnd();
+    /* the typing dots have their own spot, so they never redraw the messages */
+    var o = other(), tp = +C.typing[o] || 0, ty = C.el.querySelector('.hc-list > .hc-typing'), on = !C.missing && Date.now() + C.skew - tp < 7000;
+    if (ty && ty.hidden === on) { ty.hidden = !on; if (on && stick) lst.scrollTop = lst.scrollHeight; }
+    var h = listHtml(); if (h === lastList) return;
+    lastList = h; box.innerHTML = h; loadImgs(); box = lst;
+    var n = visible().length, grew = n > (C.lastN || 0); C.lastN = n;
+    if (stick || !C.painted) { C.painted = true; box.scrollTop = box.scrollHeight; } else if (grew) { var d = C.el.querySelector('.hc-down'); if (d) d.hidden = false; }
     markRead();
   }
   function chips() { var c = C.el.querySelector('.hc-chips'); c.hidden = !C.picked.length; c.innerHTML = C.picked.map(function (f, i) { return '<span><i class="bi bi-' + (/^image\//.test(f.type) ? 'image' : 'paperclip') + '"></i><em>' + esc(f.name) + '</em><button type="button" data-hcunpick="' + i + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x"></i></button></span>'; }).join(''); sendState(); }
@@ -561,8 +566,8 @@
   }
   function mount(el, o) {
     o = o || {}; css(); if (C.el && C.el !== el) unmount();
-    C.sel = null; C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
-    el.innerHTML = '<div class="hc"><div class="hc-headbox"></div><div class="hc-list" role="log" aria-live="polite"></div><button type="button" class="hc-down" data-hcdown hidden><i class="bi bi-arrow-down"></i> ' + L('New messages', 'Nye meldinger') + '</button>' +
+    C.sel = null; C.lastN = 0; C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
+    el.innerHTML = '<div class="hc"><div class="hc-headbox"></div><div class="hc-list" role="log" aria-live="polite"><div class="hc-msgs"></div><div class="hc-typing" hidden><i></i><i></i><i></i></div></div><button type="button" class="hc-down" data-hcdown hidden><i class="bi bi-arrow-down"></i> ' + L('New messages', 'Nye meldinger') + '</button>' +
       '<form class="hc-comp"><div class="hc-replybar" hidden></div><div class="hc-chips" hidden></div><div class="hc-row"><button type="button" class="hc-ib" data-hcattach aria-label="' + L('Add a photo, camera or file', 'Legg til bilde, kamera eller fil') + '"><i class="bi bi-plus-lg"></i></button>' +
       '<textarea rows="1" placeholder="' + esc(L('Message', 'Melding')) + '" enterkeyhint="send" aria-label="' + L('Message', 'Melding') + '"></textarea><button type="button" class="hc-ib hc-mic" data-hcmic aria-label="' + L('Record a voice message', 'Spill inn en talemelding') + '"><i class="bi bi-mic"></i></button><button type="submit" class="hc-ib hc-send" hidden aria-label="' + L('Send', 'Send') + '"><i class="bi bi-arrow-up"></i></button></div>' +
       '<input type="file" data-in="file" multiple hidden><input type="file" data-in="pics" multiple hidden accept="image/*,video/*"><input type="file" data-in="cam" hidden accept="image/*" capture="environment"></form></div>';
@@ -617,14 +622,14 @@
     if (B.pop) return;
     var bg = document.createElement('div'); bg.className = 'hc-popbg'; document.body.appendChild(bg); bg.addEventListener('click', closePop);
     B.pop = document.createElement('div'); B.pop.className = 'hc-pop'; B.pop.setAttribute('role', 'dialog'); B.pop.setAttribute('aria-label', B.opt.label || 'Chat'); B.pop._bg = bg; document.body.appendChild(B.pop);
-    mount(B.pop, { pop: true, onClose: closePop }); B.btn.classList.add('on'); badge(); fitPop();
+    mount(B.pop, { pop: true, onClose: closePop }); B.btn.classList.add('on'); if (innerWidth < 700) document.documentElement.classList.add('hc-lock'); badge(); fitPop();
     requestAnimationFrame(function () { if (B.pop) B.pop.classList.add('in'); });
     if (matchMedia('(hover: hover) and (pointer: fine)').matches) { var ta = B.pop.querySelector('textarea'); if (ta) ta.focus(); }
     if (B.opt.onOpen) B.opt.onOpen();
   }
   function closePop() {
     if (!B.pop) return; var p = B.pop; B.pop = null; if (C.el === p.firstChild || C.el === p) unmount(); else if (isOpen()) unmount();
-    if (p._bg) p._bg.remove(); p.classList.remove('in'); setTimeout(function () { p.remove(); }, 170); if (B.btn) B.btn.classList.remove('on'); badge();
+    document.documentElement.classList.remove('hc-lock'); if (p._bg) p._bg.remove(); p.classList.remove('in'); setTimeout(function () { p.remove(); }, 170); if (B.btn) B.btn.classList.remove('on'); badge();
   }
   /* phone keyboard: the pop-up sits on top of it and fills what is left of the screen */
   function fitPop() {
