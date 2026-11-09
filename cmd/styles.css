@@ -5127,3 +5127,9 @@ button.mh-chip { font: inherit; cursor: pointer; border: 0; }
 .sh-note-x b { display: block; } .sh-note-x small { color: var(--muted); font-size: 12.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sh-noteform { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; } .sh-noteform textarea { min-height: 80px; resize: vertical; font: inherit; }
 .sh-noteacts { display: flex; justify-content: flex-end; gap: 8px; }
+/* Home inventory: photo and receipt side by side, same size, never overlapping */
+.inv-ph { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.inv-slot { min-width: 0; }
+.inv-slot > img, .inv-slot > .inv-none, .inv-slot > .inv-pdf { width: 100%; aspect-ratio: 4 / 3; box-sizing: border-box; }
+.inv-pdf { padding: 8px; min-width: 0; overflow: hidden; }
+.inv-pdf span { white-space: normal; text-align: center; font-size: 13.5px; line-height: 1.25; overflow-wrap: anywhere; }
