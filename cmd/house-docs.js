@@ -125,7 +125,7 @@
   function row(d) {
     var c = cat(d.cat), open = openId === d.id, f = d.file || {};
     return '<li class="kit-item' + (open ? ' open' : '') + '" data-id="' + esc(d.id) + '"><button type="button" class="kit-main" data-hdopen="' + esc(d.id) + '"><span class="kit-ic" style="--c:' + c.c + '"><i class="bi bi-' + icon(d) + '"></i></span>' +
-      '<span class="kit-x"><b data-noi18n>' + esc(d.name) + '</b><small><span' + (c.own ? ' data-noi18n' : '') + '>' + esc(c.name) + '</span>' + esc([HF ? ' · ' + HF.size(f.size) : '', d.date ? ' · ' + fmt(d.date) : ''].join('')) + '</small></span></button>' +
+      '<span class="kit-x"><b data-noi18n>' + esc(d.name) + (d.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow('hdocs') ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b><small><span' + (c.own ? ' data-noi18n' : '') + '>' + esc(c.name) + '</span>' + esc([HF ? ' · ' + HF.size(f.size) : '', d.date ? ' · ' + fmt(d.date) : ''].join('')) + '</small></span></button>' +
       (open ? '<div class="kit-detail hd-detail">' +
         '<div class="hl-acts"><a class="pill-btn hf-wait" data-hfopen="' + esc(f.id) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a><a class="text-btn hf-wait" data-hfopen="' + esc(f.id) + '" download="' + esc(f.name || d.name) + '"><i class="bi bi-download"></i> Download</a></div>' +
         '<label class="hx-f"><span>Category</span><select data-hdcat="' + esc(d.id) + '">' + cats().map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === c.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +

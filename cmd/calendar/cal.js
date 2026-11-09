@@ -2,6 +2,7 @@
    Data and repeats come from cal-core.js (window.Cal). */
 (function () {
   "use strict";
+  function shIc(o) { return o && o.ev && o.ev.own && o.ev.own.share && window.ShareSpace && window.ShareSpace.on() ? '<i class="bi bi-people cl-sh" title="Shared"></i> ' : ''; }
 
   var C = window.Cal;
   var $ = function (id) { return document.getElementById(id); };
@@ -35,7 +36,7 @@
     else if (o.ev.rule) sub.push('<i class="bi bi-arrow-repeat"></i> Repeats');
     return '<li><button type="button" class="cl-ev" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' +
       '<span class="t">' + C.timeLabel(o, onDay) + '</span><span class="bar"></span>' +
-      '<span class="x"><b>' + esc(o.title) + '</b>' + (sub.length ? '<small>' + sub.join(' · ') + '</small>' : '') + '</span></button></li>';
+      '<span class="x"><b>' + shIc(o) + esc(o.title) + '</b>' + (sub.length ? '<small>' + sub.join(' · ') + '</small>' : '') + '</span></button></li>';
   }
   /* which days (keys) an occurrence touches, within [from, to) */
   function daysOf(o, from, to) {
@@ -95,7 +96,7 @@
         '<span class="cl-num">' + d.getDate() + '</span>' + (wn && d.getDay() === 1 ? '<span class="cl-wkno" aria-hidden="true">W' + C.isoWeek(d) + '</span>' : '') +
         '<span class="cl-chips">' + list.slice(0, 3).map(function (o) {
           var t = o.allDay || !C.sameDay(o.start, d) ? '' : '<b>' + hm(o.start) + '</b> ';
-          return '<span class="cl-chip' + (o.allDay ? ' full' : '') + '" style="--c:' + o.color + '">' + t + esc(o.title) + '</span>';
+          return '<span class="cl-chip' + (o.allDay ? ' full' : '') + '" style="--c:' + o.color + '">' + t + shIc(o) + esc(o.title) + '</span>';
         }).join('') + (list.length > 3 ? '<span class="cl-more">+' + (list.length - 3) + ' more</span>' : '') + '</span>' +
         '<span class="cl-dots">' + list.slice(0, 4).map(function (o) { return '<i style="--c:' + o.color + '"></i>'; }).join('') + '</span>' +
         '</button>';
@@ -151,7 +152,7 @@
     var all = !hasAll ? '' : '<div class="cl-wk-all"><div class="cl-gut">all-day</div>' + allDay.map(function (x) {
       return '<div class="cl-wk-allcol">' + x.map(function (o) {
         shown.push(o);
-        return '<button type="button" class="cl-chip full" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' + esc(o.title) + '</button>';
+        return '<button type="button" class="cl-chip full" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' + shIc(o) + esc(o.title) + '</button>';
       }).join('') + '</div>';
     }).join('') + '</div>';
 
@@ -166,7 +167,7 @@
         var top = (x.s - days[i]) / 36e5 * HOUR, ht = Math.max((x.e - x.s) / 36e5 * HOUR, 22);
         h += '<button type="button" class="cl-blk' + (ht < 40 ? ' short' : '') + (x.o.ev.leave ? ' leave' : '') + '" data-occ="' + (shown.length - 1) + '" style="--c:' + x.o.color +
           ';top:' + top + 'px;height:' + (ht - 2) + 'px;left:calc(' + x.col / x.cols * 100 + '% + 2px);width:calc(' + 100 / x.cols + '% - 4px)">' +
-          '<b>' + esc(x.o.title) + '</b><span class="tm">' + C.timeLabel(x.o, days[i]) + (x.o.ev.location ? ' · ' + esc(x.o.ev.location) : '') + '</span></button>';
+          '<b>' + shIc(x.o) + esc(x.o.title) + '</b><span class="tm">' + C.timeLabel(x.o, days[i]) + (x.o.ev.location ? ' · ' + esc(x.o.ev.location) : '') + '</span></button>';
       });
       if (k === today) h += '<div class="cl-now" style="top:' + ((now - days[i]) / 36e5 * HOUR) + 'px"></div>';
       return h + '</div>';

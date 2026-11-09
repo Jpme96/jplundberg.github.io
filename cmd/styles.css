@@ -5137,3 +5137,4 @@ button.mh-chip { font: inherit; cursor: pointer; border: 0; }
 .ch-logbtn { margin-top: 4px; padding-left: 0; }
 .ch-log { list-style: none; margin: 4px 0 10px; padding: 0; max-height: 260px; overflow-y: auto; border-top: 1px solid var(--line); }
 .ch-log li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 14px; } .ch-log small { color: var(--muted); white-space: nowrap; }
+.sh-ic, .cl-sh { color: #22b35e; font-size: .85em; vertical-align: baseline; }

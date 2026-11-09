@@ -208,14 +208,15 @@
   setInterval(function () { if (!document.hidden && st()) sync(); }, 45000);
 
   /* ---------- "Visible to …" on the cards that are shared ---------- */
-  var VIS = [['#shop', 'shop'], ['#chores', 'chores'], ['#plants', 'plants'], ['#shared', 'money'], ['#hshared', 'money']];
+  var VIS = [['#shop', 'shop'], ['#meals', 'meals'], ['#chores', 'chores'], ['#plants', 'plants'], ['#shared', 'money'], ['#hshared', 'money'], ['#fpAcctCard', 'bills', 'Split bills visible to ']];
   function marks() {
     var on = !!st(), w = on ? what() : {};
     VIS.forEach(function (v) {
       var h = document.querySelector(v[0] + ' > .card-head h2'); if (!h) return;
       var m = h.querySelector('.sh-vis'), want = on && w[v[1]];
       if (want && !m) { m = document.createElement('span'); m.className = 'sh-vis'; m.innerHTML = '<i class="bi bi-people"></i> <span></span>'; h.appendChild(m); }
-      if (m && !want) m.remove(); else if (m) { var tx = 'Visible to ' + pname(); if (m.lastChild.textContent !== tx) { m.lastChild.textContent = tx; m.title = 'Shared with ' + pname() + ' – Settings → Shared space'; } }
+      if (want && v[1] === 'bills') { var pp0 = partner(); want = !!pp0 && (((V.get() || {}).budget || {}).fixed || []).some(function (f) { return f && f.split && f.split.pid === pp0.id; }); if (!want && m) { m.remove(); m = null; } }
+      if (m && !want) m.remove(); else if (m) { var tx = (v[2] || 'Visible to ') + pname(); if (m.lastChild.textContent !== tx) { m.lastChild.textContent = tx; m.title = 'Shared with ' + pname() + ' – Settings → Shared space'; } }
     });
   }
   var mt = null; new MutationObserver(function () { clearTimeout(mt); mt = setTimeout(function () { marks(); tripRow(); }, 120); }).observe(document.body, { childList: true, subtree: true });

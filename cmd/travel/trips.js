@@ -123,7 +123,7 @@
     var cd = live ? '<span class="tp-cd live"><b>Day ' + (tripDays(tr).indexOf(today()) + 1) + '</b><small>of ' + tripDays(tr).length + '</small></span>'
       : nd > 0 && nd <= 99 ? '<span class="tp-cd"><b>' + nd + '</b><small>' + (nd === 1 ? 'day' : 'days') + '</small></span>' : '';
     return '<button type="button" class="tp-card' + (cd ? ' has-cd' : '') + '" data-trip="' + esc(tr.id) + '">' + cd +
-      '<span class="k">' + esc(relDays(tr)) + '</span><b>' + esc(tr.name) + '</b>' +
+      '<span class="k">' + esc(relDays(tr)) + '</span><b>' + esc(tr.name) + (tr.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b>' +
       '<span class="s">' + esc(window.TravelPage.rangeLabel(tr)) + (tr.place && tr.place.country && tr.place.country !== tr.dest ? ', ' + esc(tr.place.country) : '') + '</span>' +
       (bits.length ? '<span class="tp-bits">' + bits.join('') + '</span>' : '') +
       (tr.place && nd <= 16 && (tr.end || tr.start) >= today() ? '<span class="tp-cwx" data-cwx="' + esc(tr.id) + '"></span>' : '') + '<i class="bi bi-chevron-right tp-go"></i></button>';

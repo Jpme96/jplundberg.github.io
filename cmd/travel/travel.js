@@ -324,7 +324,7 @@
       var pack = trip.pack || [], packed = pack.filter(function (x) { return x.done; }).length;
       cards.push('<button type="button" class="tv-nx tv-nx-trip" data-opentrip="' + esc(trip.id) + '">' +
         '<span class="k"><i class="bi bi-suitcase-lg"></i> ' + (days > 0 ? 'In ' + days + ' day' + (days > 1 ? 's' : '') : 'Travelling now') + '</span>' +
-        '<b>' + esc(trip.name) + '</b><span class="s">' + esc(rangeLabel(trip)) + (pack.length ? ' · packed ' + packed + '/' + pack.length : '') + '</span></button>');
+        '<b>' + esc(trip.name) + (trip.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b><span class="s">' + esc(rangeLabel(trip)) + (pack.length ? ' · packed ' + packed + '/' + pack.length : '') + '</span></button>');
     }
     /* the next calendar events with a place, today and tomorrow */
     var evs = C ? C.occurrences(now, C.addDays(C.day0(now), 2)).filter(function (o) {

@@ -163,7 +163,7 @@
           return '<li class="kit-item' + (r.cls ? ' ' + r.cls : '') + (openId === it.id ? ' open' : '') + '" data-id="' + esc(it.id) + '">' +
             '<button type="button" class="kit-main" data-kit-' + (cfg.detail ? 'toggle' : 'edit') + '="' + esc(it.id) + '">' +
             (r.icon ? '<span class="kit-ic" style="--c:' + (r.color || 'var(--accent)') + '"><i class="bi bi-' + r.icon + '"></i></span>' : '') +
-            '<span class="kit-x"><b>' + esc(r.title) + '</b>' + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</span>' +
+            '<span class="kit-x"><b>' + esc(r.title) + (it.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow(cfg.key) ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b>' + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</span>' +
             (r.right ? '<span class="kit-r">' + r.right + '</span>' : '') + '</button>' +
             (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> Edit</button></div>' : '') +
             '</li>';
