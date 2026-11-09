@@ -150,7 +150,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 14;
+  var APPV = 15;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -314,8 +314,66 @@
       '<ul class="h-list">' + l.map(function (r) { return '<li class="' + (r.f.done ? 'done' : '') + '"><button type="button" class="h-tick" data-shop="' + esc(r.id) + '" aria-pressed="' + !!r.f.done + '"><i class="bi bi-' + (r.f.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(r.f.text) + '</span></button><button type="button" class="h-x" data-shopdel="' + esc(r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' +
       (l.some(function (r) { return r.f.done; }) ? '<button type="button" class="h-link" data-shopclear>' + L('Clear ticked', 'Fjern avkryssede') + '</button>' : '') + dinners() + pantryHtml() + recipesHtml();
   }
+  function toggleChore(id) {
+    var r = find('chore', id); if (!r) return; var p = period(r.f), k = p.key + '|' + r.id, dn = doneOf(r.id, p);
+    if (dn) put('cdone', k, null, true); else { put('cdone', k, { k: k, who: turn(r.f, p), at: today() }); toast('<i class="bi bi-check2"></i> ' + esc(r.f.name), function () { put('cdone', k, null, true); }); }
+  }
+  /* ---------- the home map (the owner shows it from House → Map): tap a room for its chores, a pin for where things are ---------- */
+  var mapUrl = null, mapFid = null, MAPI = { water: ['droplet', '#0891b2'], power: ['lightning-charge', '#c98500'], wifi: ['wifi', '#3987e5'], smoke: ['alarm', '#e05555'], fire: ['fire', '#e8743b'], key: ['key', '#7a8794'], heat: ['thermometer-half', '#d55181'], heater: ['water', '#0891b2'], app: ['plug', '#8a6fdf'], chore: ['check2-square', '#1f9d55'], up: ['tools', '#e05555'], note: ['pin-map', '#6b6f76'] };
+  function mapRec() { var r = list('hmap')[0]; return r && r.f && r.f.fid && Array.isArray(r.f.rooms) ? r.f : null; }
+  function mapImg(f) {
+    if (mapFid === f.fid) return; mapFid = f.fid; mapUrl = null;
+    fetch('/cmd/api/sfile?id=' + f.fid, { credentials: 'same-origin', cache: 'no-store' }).then(function (res) { if (!res.ok) throw new Error(res.status); return res.arrayBuffer(); })
+      .then(function (buf) { return SC.decryptBytes(K, buf); }).then(function (pt) { mapUrl = URL.createObjectURL(new Blob([pt], { type: 'image/png' })); var im = document.querySelector('.h-map img'); if (im) im.src = mapUrl; }, function () { mapFid = null; });
+  }
+  function mapChores(f, rid) {
+    var tk = today(); return list('chore').filter(function (r) { return (f.cr || {})[r.id] === rid; }).map(function (r) { var p = period(r.f); return { r: r, p: p, tu: turn(r.f, p), dn: doneOf(r.id, p) }; }).sort(function (a, b) { return (a.dn ? 1 : 0) - (b.dn ? 1 : 0) || (a.p.day < b.p.day ? -1 : 1); });
+  }
+  function homeMap() {
+    var f = mapRec(); if (!f) return '';
+    mapImg(f);
+    var H = Math.round(1000 * f.h / f.w), tk = today(), badges = '';
+    f.rooms.forEach(function (rm) {
+      var big = rm.r.slice().sort(function (a, b) { return b[2] * b[3] - a[2] * a[3]; })[0], n = mapChores(f, rm.id).filter(function (x) { return !x.dn && x.tu === 'them' && Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5) <= 2; });
+      if (n.length) badges += '<span class="h-mbadge' + (n.some(function (x) { return x.p.day < tk; }) ? ' late' : '') + '" style="left:' + ((big[0] + big[2]) * 100) + '%;top:' + (big[1] * 100) + '%">' + n.length + '</span>';
+    });
+    return '<h2 class="h-h">' + L('Home map', 'Boligkart') + '</h2><div class="h-map' + (f.mono ? ' mono' : '') + '" style="aspect-ratio:' + f.w + ' / ' + f.h + '"><img alt="' + L('Floor plan', 'Plantegning') + '"' + (mapUrl ? ' src="' + mapUrl + '"' : '') + '>' +
+      '<svg viewBox="0 0 1000 ' + H + '" preserveAspectRatio="none">' + f.rooms.map(function (rm) { return rm.r.map(function (q) { return '<rect data-hmroom="' + esc(rm.id) + '" x="' + q[0] * 1000 + '" y="' + q[1] * H + '" width="' + q[2] * 1000 + '" height="' + q[3] * H + '"></rect>'; }).join(''); }).join('') + '</svg>' +
+      f.pins.map(function (p) { var ic = MAPI[p.k] || MAPI.note; return '<button type="button" class="h-mpin" data-hmpin="' + esc(p.id) + '" style="left:' + p.x * 100 + '%;top:' + p.y * 100 + '%;--c:' + ic[1] + '" aria-label="' + esc(p.t) + '"><i class="bi bi-' + ic[0] + '"></i></button>'; }).join('') + badges + '</div>' +
+      '<p class="h-small h-mhint">' + L('Tap a room for its chores, or a pin for where things are.', 'Trykk på et rom for husarbeidet der, eller en nål for hvor ting er.') + '</p>';
+  }
+  function mapRoomSheet(id) {
+    var f = mapRec(); if (!f) return; var rm = f.rooms.filter(function (x) { return x.id === id; })[0]; if (!rm) return;
+    function rows() {
+      var l = mapChores(f, id), all = mapChores(f, 'all').filter(function (x) { return !x.dn; }), tk = today(), pins = f.pins.filter(function (p) { return rm.r.some(function (q) { return p.x >= q[0] && p.x <= q[0] + q[2] && p.y >= q[1] && p.y <= q[1] + q[3]; }); });
+      var row = function (x) { var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + L(' days late', ' dager på etterskudd')) : fdate(x.p.day, { weekday: 'long' });
+        return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-mchore="' + esc(x.r.id) + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when].filter(Boolean).join(' · ')) + '</small></span></button></li>'; };
+      return (l.length ? '<ul class="h-list">' + l.map(row).join('') + '</ul>' : '<p class="h-small">' + L('No chores in this room.', 'Ikke noe husarbeid i dette rommet.') + '</p>') +
+        (pins.length ? '<h3 class="h-h">' + L('Here', 'Her') + '</h3><ul class="h-list">' + pins.map(function (p) { var ic = MAPI[p.k] || MAPI.note; return '<li><button type="button" class="h-tick" data-mpin="' + esc(p.id) + '"><i class="bi bi-' + ic[0] + '" style="color:' + ic[1] + '"></i><span>' + esc(p.t) + '</span></button></li>'; }).join('') + '</ul>' : '') +
+        (all.length ? '<h3 class="h-h">' + L('For the whole home', 'For hele boligen') + '</h3><ul class="h-list">' + all.map(row).join('') + '</ul>' : '');
+    }
+    var bg = sheet('<h2>' + esc(rm.name) + '</h2>' + (rm.area ? '<p class="h-small">' + esc(rm.area) + ' m²</p>' : '') + '<div data-mrows>' + rows() + '</div>', function () {});
+    bg.querySelector('[type=submit]').textContent = L('Close', 'Lukk'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
+    bg.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-mchore]'); if (b) { e.preventDefault(); toggleChore(b.dataset.mchore); setTimeout(function () { var w = bg.querySelector('[data-mrows]'); if (w) w.innerHTML = rows(); }, 60); return; }
+      var pb = e.target.closest('[data-mpin]'); if (pb) { e.preventDefault(); bg.remove(); mapPinSheet(pb.dataset.mpin); }
+    });
+  }
+  function mapPinSheet(id) {
+    var f = mapRec(); if (!f) return; var p = f.pins.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+    var ic = MAPI[p.k] || MAPI.note, rm = f.rooms.filter(function (r) { return r.r.some(function (q) { return p.x >= q[0] && p.x <= q[0] + q[2] && p.y >= q[1] && p.y <= q[1] + q[3]; }); })[0], ch = p.c ? find('chore', p.c) : null;
+    var bg = sheet('<h2><i class="bi bi-' + ic[0] + '" style="color:' + ic[1] + '"></i> ' + esc(p.t) + '</h2><p class="h-small">' + esc(rm ? rm.name : '') + (p.u ? ' · ' + esc(owner()) + L(' looks after this', ' tar seg av dette') : '') + '</p>' +
+      (p.info && p.info.length ? '<dl class="h-mfacts">' + p.info.map(function (q) { return '<div><dt>' + esc(q[0]) + '</dt><dd' + (q[2] ? ' class="pre"' : '') + '>' + esc(q[1]) + '</dd></div>'; }).join('') + '</dl>' : '') +
+      (ch ? '<ul class="h-list"><li><button type="button" class="h-tick" data-mchore="' + esc(ch.id) + '"><i class="bi bi-circle"></i><span>' + esc(ch.f.name) + '</span></button></li></ul>' : ''), function () {});
+    bg.querySelector('[type=submit]').textContent = L('Close', 'Lukk'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
+    bg.addEventListener('click', function (e) { var b = e.target.closest('[data-mchore]'); if (b) { e.preventDefault(); toggleChore(b.dataset.mchore); bg.remove(); } });
+  }
+  app.addEventListener('click', function (e) {
+    var r = e.target.closest('[data-hmroom]'); if (r) { mapRoomSheet(r.getAttribute('data-hmroom')); return; }
+    var p = e.target.closest('[data-hmpin]'); if (p) mapPinSheet(p.dataset.hmpin);
+  });
   function chores() {
-    var w = info().what || {}, out = '', tk = today();
+    var w = info().what || {}, out = homeMap(), tk = today();
     if (w.chores !== false) {
       var l = list('chore').map(function (r) { var p = period(r.f), tu = turn(r.f, p); return { r: r, p: p, tu: tu, dn: doneOf(r.id, p) }; }).sort(function (a, b) { return (a.dn ? 1 : 0) - (b.dn ? 1 : 0) || (a.p.day < b.p.day ? -1 : 1); });
       var mine = l.filter(function (x) { return !x.dn && x.tu === 'them'; }).length;
@@ -648,7 +706,7 @@
     if (d.shop && (r = find('shop', d.shop))) { put('shop', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.shopdel && (r = find('shop', d.shopdel))) { var keep = r.f; put('shop', r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + esc(keep.text), function () { put('shop', r.id, keep); }); return; }
     if (d.shopclear != null) { var gone = list('shop').filter(function (x) { return x.f.done; }); gone.forEach(function (x) { put('shop', x.id, null, true); }); toast('<i class="bi bi-trash3"></i> ' + gone.length + L(' removed', ' fjernet'), function () { gone.forEach(function (x) { put('shop', x.id, x.f); }); }); return; }
-    if (d.chore && (r = find('chore', d.chore))) { var p = period(r.f), k = p.key + '|' + r.id, dn = doneOf(r.id, p); if (dn) put('cdone', k, null, true); else { put('cdone', k, { k: k, who: turn(r.f, p), at: today() }); toast('<i class="bi bi-check2"></i> ' + esc(r.f.name), function () { put('cdone', k, null, true); }); } return; }
+    if (d.chore && find('chore', d.chore)) { toggleChore(d.chore); return; }
     if (d.water && (r = find('plant', d.water))) { var was = r.f; put('plant', r.id, Object.assign({}, r.f, { last: today() })); toast('<i class="bi bi-droplet"></i> ' + L('Watered', 'Vannet'), function () { put('plant', r.id, was); }); return; }
     if (d.mv && (r = find('mv', d.mv))) { put('mv', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.addcost != null) { costSheet(); return; }

@@ -82,6 +82,7 @@
     note: ['title', 'text'],
     proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
     doc: ['name', 'cat', 'src', 'date', 'files'],
+    hmap: ['w', 'h', 'mono', 'fid', 'rooms', 'pins', 'cr'],               /* the owner's home map (house-map.js), when they show it */
     pme: ['name', 'look', 'bday', 'phone', 'notif']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else */
@@ -100,6 +101,13 @@
     if (o.perm) { var pm = {}; Object.keys(o.perm && typeof o.perm === 'object' ? o.perm : {}).slice(0, 20).forEach(function (k) { if (/^[a-z]{2,10}$/.test(k)) pm[k] = o.perm[k] === 'view' ? 'view' : 'edit'; }); o.perm = pm; }
     if (o.onotify) o.onotify = (Array.isArray(o.onotify) ? o.onotify : []).filter(function (k) { return /^[a-z]{2,10}$/.test(k); }).slice(0, 12);
     if (o.pend) o.pend = (Array.isArray(o.pend) ? o.pend : []).map(String).slice(0, 50);
+    if (c === 'hmap') {
+      var n01 = function (v) { v = +v; return isFinite(v) ? Math.min(1, Math.max(0, Math.round(v * 10000) / 10000)) : 0; }, sid = function (v) { return String(v || '').replace(/[^\w-]/g, '').slice(0, 40); };
+      o.w = Math.max(1, Math.min(20000, +o.w || 1)); o.h = Math.max(1, Math.min(20000, +o.h || 1)); o.mono = !!o.mono; o.fid = String(o.fid || '').slice(0, 120);
+      o.rooms = (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 40).map(function (r) { return { id: sid(r && r.id), name: String((r && r.name) || '').slice(0, 40), area: String((r && r.area) || '').slice(0, 8), r: (Array.isArray(r && r.r) ? r.r : []).slice(0, 8).map(function (q) { return [n01(q[0]), n01(q[1]), n01(q[2]), n01(q[3])]; }) }; }).filter(function (r) { return r.id && r.r.length; });
+      o.pins = (Array.isArray(o.pins) ? o.pins : []).slice(0, 150).map(function (p) { p = p || {}; return { id: sid(p.id), k: String(p.k || 'note').replace(/[^a-z]/g, '').slice(0, 10), x: n01(p.x), y: n01(p.y), t: String(p.t || '').slice(0, 80), c: sid(p.c), u: String(p.u || '').slice(0, 120), info: (Array.isArray(p.info) ? p.info : []).slice(0, 12).map(function (q) { return [String((q && q[0]) || '').slice(0, 40), String((q && q[1]) || '').slice(0, 600), !!(q && q[2])]; }) }; }).filter(function (p) { return p.id; });
+      var cr = {}; Object.keys(o.cr && typeof o.cr === 'object' ? o.cr : {}).slice(0, 200).forEach(function (k) { var kk = sid(k), v = String(o.cr[k] || ''); if (kk && (v === 'all' || /^[\w-]{1,40}$/.test(v))) cr[kk] = v; }); o.cr = cr;
+    }
     if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;

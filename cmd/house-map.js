@@ -579,7 +579,7 @@
   function setFill() {
     var el = document.getElementById('hlSet-house3'); if (!el || el.contains(document.activeElement)) return;
     if (!Fe.on('house')) { el.innerHTML = ''; return; }
-    var m = data(), S = window.ShareSpace, shared = !!(S && S.active && S.active());
+    var m = data(), S = window.ShareSpace, shared = !!(S && S.on && S.on());
     var h = '<p class="st-sub ap-sub"><i class="bi bi-map"></i> ' + L('Home map', 'Boligkart') + '</p><div class="st-group">' +
       '<label class="st-row"><span>' + L('Show the Map tab', 'Vis Kart-fanen') + '<small class="st-rsub">' + L('Your floor plan with rooms, chores, upkeep and pins', 'Plantegningen med rom, husarbeid, vedlikehold og nåler') + '</small></span><input type="checkbox" class="switch" data-hmset="on"' + (Fe.on('hmap') ? ' checked' : '') + '></label>';
     if (Fe.on('hmap')) {
@@ -595,7 +595,7 @@
     var i = e.target.closest('[data-hmset]'); if (!i) return; var k = i.dataset.hmset;
     if (k === 'on') { Fe.set('hmap', i.checked); setTimeout(setFill, 50); return; }
     var v = i.type === 'checkbox' ? i.checked : i.value; save(function (d) { d[k] = v; }); setFill(); toast('<i class="bi bi-check2"></i> ' + L('Saved', 'Lagret'));
-    if (k === 'share' && window.ShareSpace && window.ShareSpace.sync) window.ShareSpace.sync();
+    if ((k === 'share' || k === 'shareInfo') && window.ShareSpace) { if (window.ShareSpace.syncFiles) window.ShareSpace.syncFiles(); if (window.ShareSpace.sync) setTimeout(window.ShareSpace.sync, 1500); }
   });
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-hmwipe]')) return;
@@ -607,5 +607,5 @@
   window.addEventListener('features:change', function () { setTimeout(setFill, 0); });
 
   /* for share.js (Show to …) and search */
-  window.HomeMap = { data: data, things: things, pk: pk, getFile: getF, roomAt: roomAt };
+  window.HomeMap = { data: data, things: things, pk: pk, getFile: getF, roomAt: roomAt, pinTitle: pinTitle, infoOf: infoOf };
 })();
