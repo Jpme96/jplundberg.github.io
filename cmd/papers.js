@@ -144,11 +144,67 @@
     },
     onDelete: function (it) { (it.files || []).forEach(function (f) { delF(f.id); }); setTimeout(loadHere, 50); } };
   /* the edit sheet gets a "File" row: pick the PDF or photos while you add the paper */
-  function editSheet(item, preset) {
+  /* ---------- one form per kind: only the fields that kind needs, in its own words ---------- */
+  var FORMS = {
+    home: { sub: 'Samboerkontrakt, purchase contract, take-over protocol', ph: 'e.g. Samboerkontrakt', f: {
+      who: { label: 'With', ph: 'Iago, the seller, the bank …' }, signed: { label: 'Signed' }, date: { label: 'Look at it again', help: 'Optional – e.g. when to update the samboerkontrakt' }, lead: {}, link: { label: 'Belongs to' }, notes: { help: 'Where the signed original is, what you agreed …' } }, dk: 'review' },
+    contract: { sub: 'Phone, power, rent, gym, subscriptions', ph: 'e.g. Phone subscription', f: {
+      who: { label: 'Company', ph: 'Telia, Tibber …' }, ref: { label: 'Customer no.' }, signed: { label: 'Signed' }, date: { label: 'Ends or notice by', help: 'The last day to cancel, or when it runs out' }, every: {}, lead: {}, cost: {}, notes: { help: 'Notice period, binding time, what’s included …' } }, dk: 'ends' },
+    insurance: { sub: 'Home contents, travel, life, accident', ph: 'e.g. Home insurance (innbo)', f: {
+      who: { label: 'Insurer', ph: 'Gjensidige, If, Tryg …' }, ref: { label: 'Policy no.' }, date: { label: 'Renews', help: '' }, every: { def: '1' }, lead: {}, cost: { label: 'Price per year' }, excess: { label: 'Excess (egenandel)' }, covers: {}, link: { label: 'Covers this item' }, notes: { help: 'Phone number for claims, what isn’t covered …' } }, dk: 'renews' },
+    loan: { sub: 'Mortgage, loan agreement, bank papers', ph: 'e.g. Mortgage agreement', f: {
+      who: { label: 'Bank', ph: 'DNB, Sbanken …' }, ref: { label: 'Loan no.' }, signed: { label: 'Signed' }, date: { label: 'Fixed rate ends', help: 'Optional – when the rate or terms should be looked at' }, lead: {}, link: { label: 'The loan in Finances' }, notes: {} }, dk: 'review' },
+    work: { sub: 'Work contract, pay changes, references', ph: 'e.g. Work contract', f: {
+      who: { label: 'Employer' }, signed: { label: 'Signed' }, date: { label: 'Ends', help: 'Only for a temporary job' }, lead: {}, notes: { help: 'Notice period, pension, holidays …' } }, dk: 'ends' },
+    id: { sub: 'Passport, driving licence, certificates', ph: 'e.g. Driving licence', f: {
+      who: { label: 'Issued by', ph: 'Politiet, Statens vegvesen …' }, ref: { label: 'Document no.' }, signed: { label: 'Issued' }, date: { label: 'Expires', help: '' }, lead: { def: '90' }, notes: {} }, dk: 'expires' },
+    car: { sub: 'Registration, car insurance, service', ph: 'e.g. Vehicle registration', f: {
+      who: { label: 'From or with' }, ref: { label: 'Reg. no.' }, date: { label: 'Date to watch' }, dateKind: {}, every: {}, lead: {}, cost: {}, notes: {} } },
+    health: { sub: 'Referrals, results, vaccinations', ph: 'e.g. Referral', f: {
+      who: { label: 'From', ph: 'GP, hospital …' }, signed: { label: 'Date' }, date: { label: 'Look at it again', help: 'Optional' }, lead: {}, notes: {} }, dk: 'review' },
+    tax: { sub: 'Tax return, assessments, deductions', ph: 'e.g. Tax return 2026', f: {
+      who: { label: 'From', def: 'Skatteetaten' }, signed: { label: 'Date' }, date: { label: 'Deadline', help: 'Optional – e.g. the last day to change the tax return' }, lead: { def: '14' }, notes: {} }, dk: 'ends' },
+    other: { sub: 'Anything else worth keeping', ph: 'Name of the paper', f: null }
+  };
+  function cfgFor(k) {
+    var F = FORMS[k] || FORMS.other, kn = kind(k)[1];
+    var fields = !F.f ? FIELDS : FIELDS.filter(function (f) { return f.k === 'title' || f.k === 'kind' || f.k in F.f; }).map(function (f) {
+      var o = F.f[f.k] || {}, n = Object.assign({}, f);
+      if (f.k === 'title') n.ph = F.ph;
+      ['label', 'ph', 'def'].forEach(function (p) { if (o[p] != null) n[p] = o[p]; });
+      if (o.help != null) n.help = o.help || undefined;
+      return n;
+    });
+    if (F.f) {
+      /* the kind's own choice of fields shows them always – only the date's follow-ups wait for a date */
+      fields = fields.map(function (f) { return /^(dateKind|every|lead|link)$/.test(f.k) ? f : Object.assign({}, f, { when: undefined }); });
+      /* each box keeps its heading on whichever of its fields comes first */
+      var heads = {}, seen = {}; FIELDS.forEach(function (f) { if (f.grp && f.head) heads[f.grp] = f.head; });
+      fields = fields.map(function (f) { if (!f.grp) return f; var n = Object.assign({}, f); delete n.head; if (!seen[f.grp]) { seen[f.grp] = 1; if (heads[f.grp]) n.head = heads[f.grp]; } return n; });
+    }
+    return Object.assign({}, CFG, { fields: fields, addTitle: 'New: ' + kn.toLowerCase(), editTitle: kn,
+      beforeSave: function (it, isNew) { it.kind = it.kind || k; if (F.dk && FORMS[it.kind] === F) it.dateKind = F.dk; return CFG.beforeSave(it, isNew); } });
+  }
+  function pickKind(then) {
+    var H = window.HomeLife;
+    if (!H || !H.picker) { then('contract'); return; }
+    H.picker('folder2-open', 'What kind of paper?', 'You get a form for just that kind', KINDS.filter(function (c) { return c[0] !== 'car'; }).map(function (c) { return { k: c[0], n: c[1], s: (FORMS[c[0]] || {}).sub, i: c[2], c: c[3] }; }), function (o) { then(o.k); });
+  }
+  function editSheet(item, preset, keep) {
+    if (!item && !preset && !keep) { pickKind(function (k) { editSheet(null, null, { kind: k }); }); return; }
+    var kk0 = (item && item.kind) || (keep && keep.kind) || (preset && preset[1]) || 'other';
     pending = [];
-    K.edit(CFG, item || null);
+    K.edit(cfgFor(kk0), item || null, item ? null : Object.assign({ kind: kk0 }, keep || {}));
     var t = document.getElementById('kf-title'); if (!t) return;
-    if (preset) { t.value = preset[0]; var kk = document.getElementById('kf-kind'); if (kk) kk.value = preset[1]; if (preset[2]) { var dk = document.getElementById('kf-dateKind'); if (dk) dk.value = preset[2]; var ev = document.getElementById('kf-every'); if (ev && preset[2] === 'renews') ev.value = '1'; } }
+    /* changing the kind opens that kind's form, keeping what you typed */
+    var ks = document.getElementById('kf-kind');
+    if (ks) ks.addEventListener('change', function () {
+      var cur = { kind: ks.value }; FIELDS.forEach(function (f) { var el = document.getElementById('kf-' + f.k); if (el && el.value !== '') cur[f.k] = el.value; }); cur.kind = ks.value;
+      var files = pending;
+      if (item) { var it2 = Object.assign({}, item, cur); editSheet(it2); } else editSheet(null, null, Object.assign({}, keep || {}, cur));
+      pending = files;
+    });
+    if (preset) { t.value = preset[0]; if (preset[2] && !(FORMS[kk0] || {}).dk) { var dk = document.getElementById('kf-dateKind'); if (dk) dk.value = preset[2]; } var ev = document.getElementById('kf-every'); if (ev && preset[2] === 'renews' && !ev.value) ev.value = '1'; }
     var box = document.createElement('div'); box.className = 'cl-group pa-pick';
     var n = item && item.files ? item.files.length : 0;
     box.innerHTML = '<label class="st-row kit-row"><span>' + (n ? 'Add more files' : 'File') + '</span><span class="pa-pickbtn"><i class="bi bi-paperclip"></i> <span data-papickt>' + (n ? n + ' saved · add' : 'PDF or photos') + '</span></span>' +
@@ -188,6 +244,7 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + (l.length ? 'Also worth keeping' : 'Start with') + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
+      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> Add several files<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small>Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
@@ -248,7 +305,67 @@
       }
     }
   }) : null;
-  function redraw() { if (col) col.render(); drawSoon(); drawElse(); drawTiles(); }
+  /* ---------- many files at once: each becomes a paper, you check name + kind in one list ---------- */
+  var GUESS = [[/forsikr|insurance|polise|polisse|egenandel/i, 'insurance'], [/l[åa]n\b|lån|loan|mortgage|bank|dnb|nordea|sparebank|handelsbanken|sbanken/i, 'loan'],
+    [/arbeid|ansett|l[øo]nnsslipp|employ|work|attest|vitnem/i, 'work'], [/samboer|kj[øo]pekontrakt|overtak|tilstandsrapport|takst|bolig|eierskifte|borettslag|sameie|home|house/i, 'home'],
+    [/pass\b|passport|f[øo]rerkort|licen[cs]e|sertifikat|certificat|\bid\b|identitet/i, 'id'], [/skatt|tax|selvangivelse/i, 'tax'], [/helse|lege|legen|journal|resept|vaksin|health|henvis/i, 'health'],
+    [/kontrakt|avtale|contract|agreement|abonnement|subscription/i, 'contract']];
+  function guessKind(n) { for (var i = 0; i < GUESS.length; i++) if (GUESS[i][0].test(n)) return GUESS[i][1]; return 'other'; }
+  function cleanName(n) { var t = String(n || '').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim(); if (/^(img|image|scan|dok|doc|document|pxl|photo)\s?\d*/i.test(t) || !t) t = ''; return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
+  function bulk(list) {
+    var H = window.HomeLife, fl = Array.prototype.slice.call(list || []).filter(function (f) { return isPdf(f) || /^image\//.test(f.type || '') || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name || ''); });
+    if (!fl.length) { toast('Only PDFs and photos can be added'); return; }
+    if (!H || !H.dialog) return;
+    var opts = KINDS.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('');
+    var rows = fl.map(function (f, i) { var nm = cleanName(f.name), k = guessKind(f.name);
+      return '<li class="pa-brow"><span class="pa-bico"><i class="bi bi-' + (isPdf(f) ? 'file-earmark-pdf' : 'image') + '"></i></span><input data-pbn="' + i + '" maxlength="120" value="' + esc(nm) + '" placeholder="' + esc(f.name) + '"><select data-pbk="' + i + '">' + opts.replace('value="' + k + '"', 'value="' + k + '" selected') + '</select><button type="button" class="icon-btn sm" data-pbx="' + i + '" aria-label="Leave this one out"><i class="bi bi-x-lg"></i></button></li>'; }).join('');
+    var d = H.dialog(H.dhead('files', fl.length + (fl.length === 1 ? ' file' : ' files'), 'Each becomes its own paper. The kind is guessed from the file name – change what’s wrong.') +
+      '<ul class="pa-blist">' + rows + '</ul><div class="pa-bacts"><button type="button" class="pill-btn" data-pbgo><i class="bi bi-check2"></i> Add <span data-pbn2>' + fl.length + '</span> papers</button></div>', function (e, close) {
+      var x = e.target.closest('[data-pbx]');
+      if (x) { var li = x.closest('li'); li.hidden = true; li.dataset.out = '1'; var left = d.el.querySelectorAll('.pa-brow:not([data-out])').length; d.el.querySelector('[data-pbn2]').textContent = left; if (!left) close(); return; }
+      if (!e.target.closest('[data-pbgo]')) return;
+      var add = []; d.el.querySelectorAll('.pa-brow').forEach(function (li, i) { if (li.dataset.out) return; var nm = li.querySelector('[data-pbn]').value.trim() || cleanName(fl[i].name) || fl[i].name; add.push({ f: fl[i], title: nm, kind: li.querySelector('[data-pbk]').value }); });
+      close(); if (!add.length) return;
+      toast('<i class="bi bi-arrow-repeat"></i> Adding ' + add.length + ' papers …');
+      add.reduce(function (p, a) { return p.then(function (done) { return storeFiles([a.f]).then(function (r) { if (r.files.length) done.push({ id: uid(), title: a.title.slice(0, 120), kind: a.kind, dateKind: (FORMS[a.kind] || {}).dk || 'expires', lead: '30', files: r.files, added: today() }); return done; }); }); }, Promise.resolve([]))
+        .then(function (done) { var t = Fe.tools(); t.papers = (Array.isArray(t.papers) ? t.papers : []).concat(done); Fe.saveTools(t); loadHere();
+          toast('<i class="bi bi-check2"></i> ' + done.length + ' papers added – open one to add its dates', function () { var t2 = Fe.tools(), ids = done.map(function (x) { return x.id; }); done.forEach(function (x) { (x.files || []).forEach(function (fm) { delF(fm.id); }); }); t2.papers = (t2.papers || []).filter(function (x) { return ids.indexOf(x.id) < 0; }); Fe.saveTools(t2); }); });
+    });
+  }
+  document.addEventListener('change', function (e) { var i = e.target.closest('[data-pabulk]'); if (!i || !i.files.length) return; var l = Array.prototype.slice.call(i.files); i.value = ''; bulk(l); });
+  /* on a computer: drop files on the Papers card */
+  if (col) { var dz = $t('papers');
+    dz.addEventListener('dragover', function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') > -1) { e.preventDefault(); dz.classList.add('pa-drop'); } });
+    dz.addEventListener('dragleave', function (e) { if (!dz.contains(e.relatedTarget)) dz.classList.remove('pa-drop'); });
+    dz.addEventListener('drop', function (e) { if (!e.dataTransfer || !e.dataTransfer.files.length) return; e.preventDefault(); dz.classList.remove('pa-drop'); bulk(e.dataTransfer.files); }); }
+
+  /* ---------- receipts from the Home inventory, as tiles ---------- */
+  var invDb = null;
+  function invGet(id) {
+    var loc = (invDb || (invDb = new Promise(function (res, rej) { var r = indexedDB.open('dash-inv', 1); r.onupgradeneeded = function () { r.result.createObjectStore('photos'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })))
+      .then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; });
+    return loc.then(function (b) { return b || !window.FileSync ? b : window.FileSync.down(id); });
+  }
+  var rcUrls = {};
+  function drawReceipts() {
+    var el = $t('parcpt'); if (!el) return;
+    var inv = Fe.on('house') ? Fe.list('hinv').filter(function (x) { return x && x.receipt; }) : [];
+    if (!on() || !inv.length) { el.hidden = true; el.innerHTML = ''; return; }
+    var by = {}; inv.forEach(function (x) { (by[x.receipt] = by[x.receipt] || []).push(x); });
+    var ids = Object.keys(by).sort(function (a, b) { var A = by[a][0].bought || '', B = by[b][0].bought || ''; return A < B ? 1 : A > B ? -1 : 0; });
+    var tot = inv.reduce(function (a, x) { return a + (+x.price || 0); }, 0);
+    var h = '<section class="card kit-card" id="parcpt"><div class="card-head"><h2><i class="bi bi-receipt"></i> Receipts</h2><span class="muted pa-rsum">' + ids.length + (ids.length === 1 ? ' receipt' : ' receipts') + (tot ? ' · ' + kr(tot) : '') + '</span></div>' +
+      '<ul class="pa-rgrid">' + ids.map(function (rid) { var l = by[rid], x = l[0], pdf = l.some(function (y) { return y.receiptPdf; }), pr = l.reduce(function (a, y) { return a + (+y.price || 0); }, 0);
+        return '<li><a class="pa-rt" data-rcopen="' + esc(rid) + '" target="_blank" rel="noopener"><span class="pa-rth">' + (pdf ? '<i class="bi bi-file-earmark-pdf"></i>' : '<img data-rcimg="' + esc(rid) + '" alt=""><i class="bi bi-receipt"></i>') + '</span>' +
+          '<b>' + esc(l.map(function (y) { return y.name; }).filter(Boolean).join(' + ') || 'Receipt') + '</b><small>' + esc([pr ? kr(pr) : '', x.bought ? fmt(x.bought, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ') || ' ') + '</small></a>' +
+          '<a class="pa-rgo" href="/cmd/house/#hinv=' + esc(x.id) + '" aria-label="Open ' + esc(x.name || 'the item') + ' in Home inventory" title="Open in Home inventory"><i class="bi bi-box-arrow-up-right"></i></a></li>'; }).join('') + '</ul></section>';
+    el.hidden = false;
+    if (el._h !== h) { el._h = h; el.innerHTML = h;
+      ids.forEach(function (rid) { invGet(rid).then(function (b) { if (!b) return; var u = rcUrls[rid] || (rcUrls[rid] = URL.createObjectURL(b.type ? b : new Blob([b], { type: by[rid].some(function (y) { return y.receiptPdf; }) ? 'application/pdf' : 'image/jpeg' }))); var a = el.querySelector('[data-rcopen="' + rid + '"]'); if (a) a.href = u; var im = el.querySelector('img[data-rcimg="' + rid + '"]'); if (im) { im.src = u; im.onload = function () { im.parentNode.classList.add('has-img'); }; } }); }); }
+  }
+  document.addEventListener('click', function (e) { var a = e.target.closest('[data-rcopen]'); if (a && !a.getAttribute('href')) { e.preventDefault(); toast('That receipt is only on the device it was added on – open House there once to sync it'); } });
+
+  function redraw() { if (col) col.render(); drawSoon(); drawElse(); drawTiles(); drawReceipts(); }
   /* the Edit and + Paper buttons open the sheet with the File row */
   if (col) $t('papers').addEventListener('click', function (e) {
     var b = e.target.closest('[data-kit-add], [data-kit-edit]'); if (!b) return;
@@ -295,7 +412,7 @@
     var el = $t('paelse'); if (!el) return;
     if (!on()) { el.hidden = true; el.innerHTML = ''; return; }
     var rows = [];
-    if (Fe.on('house')) { var inv = Fe.list('hinv'), rc = inv.filter(function (x) { return x.receipt; }).length; rows.push(['box-seam', '#22b35e', 'Receipts on home items', inv.length ? rc + ' of ' + inv.length + ' items have a receipt' : 'Photos and receipts for your valuables', '/cmd/house/#hinv']); }
+    if (Fe.on('house')) { var inv = Fe.list('hinv'), rc = inv.filter(function (x) { return x.receipt; }).length; if (!rc) rows.push(['box-seam', '#22b35e', 'Receipts on home items', inv.length ? rc + ' of ' + inv.length + ' items have a receipt' : 'Photos and receipts for your valuables', '/cmd/house/#hinv']); }
     if (Fe.on('travel')) { var td = travelDocs(), nx = td.filter(function (d) { return isKey(d.expires) && daysTo(d.expires) >= 0; }).sort(function (a, b) { return a.expires < b.expires ? -1 : 1; })[0]; rows.push(['passport', '#0891b2', 'Travel documents', td.length ? td.length + ' saved' + (nx ? ' · next to expire: ' + (nx.name || 'document') + ' ' + fmt(nx.expires, { month: 'short', year: 'numeric' }) : '') : 'Passport, ID, EHIC and travel insurance', '/cmd/travel/#docs']); }
     if (Fe.on('house') && window.SharedHome) rows.push(['people', '#a0673a', 'Household register', 'Appendix B of the samboerkontrakt – from the Home inventory', '/cmd/house/#hinv']);
     el.hidden = !rows.length;
@@ -320,10 +437,10 @@
       heroTile('cash-coin', 'Per year', ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
     if (el.innerHTML !== h) el.innerHTML = h;
   }
-  ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawTiles.t); drawTiles.t = setTimeout(function () { drawSoon(); drawElse(); drawTiles(); }, 30); }); });
+  ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawTiles.t); drawTiles.t = setTimeout(function () { drawSoon(); drawElse(); drawTiles(); drawReceipts(); }, 30); }); });
   window.Vault.onUnlock(function () {
     setTimeout(function () {
-      drawSoon(); drawElse(); drawTiles();
+      drawSoon(); drawElse(); drawTiles(); drawReceipts();
       if (IS_PAGE) { loadHere().then(syncAll); keepState(); if (location.hash === '#add' && on() && col) { history.replaceState(null, '', location.pathname); editSheet(null); } }
     }, 60);
   });
