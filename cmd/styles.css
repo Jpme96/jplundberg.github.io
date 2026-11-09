@@ -1561,7 +1561,10 @@ select.st-wide { padding-right: 32px; }
    - cards rise in once per visit, not on every page change
    - Settings → Appearance → Motion: Full, Subtle (no rising cards) or Off */
 @view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .3s; animation-timing-function: var(--ease-out); }
+/* the old page stays fully drawn and the new one fades in on top – a plain cross-fade dips through black halfway */
+::view-transition-old(root) { animation: none; opacity: 1; }
+::view-transition-new(root) { animation: vt-in .26s var(--ease-out) both; }
+@keyframes vt-in { from { opacity: 0; } to { opacity: 1; } }
 .unlocked .tabbar, .resuming .tabbar { view-transition-name: tabbar; }
 .resuming .lock-box { visibility: hidden; }
 @keyframes pagein { from { opacity: 0; } to { opacity: 1; } }
