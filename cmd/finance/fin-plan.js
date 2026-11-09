@@ -197,11 +197,15 @@
     var shown = l.slice(0, mnTrAll ? 50 : 4), FM = window.FinMoves;
     return '<div class="mn-trs"><div class="mn-trh"><span>Transfers</span><button type="button" class="pill-btn sm" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button></div>' +
       (shown.length ? '<ul class="mn-trl' + (mnTrAll ? ' all' : '') + '">' + shown.map(function (t) {
-        return '<li><span class="mn-trn"><b>' + esc(nm(t.from)) + ' <i class="bi bi-arrow-right"></i> ' + esc(nm(t.to)) + '</b><small>' + esc(new Date(t.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (t.note ? ' · ' + t.note : '')) + '</small>' +
+        return '<li><span class="mn-trn" role="button" tabindex="0" data-tredit="' + esc(t.id) + '" aria-label="Edit transfer"><b>' + esc(nm(t.from)) + ' <i class="bi bi-arrow-right"></i> ' + esc(nm(t.to)) + '</b><small>' + esc(new Date(t.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (t.note ? ' · ' + t.note : '')) + '</small>' +
           (FM && FM.notMoved && FM.notMoved(d, t).length ? '<small class="mn-trwarn"><i class="bi bi-exclamation-circle"></i> Balances didn’t move <button type="button" class="text-btn" data-mntrfix="' + esc(t.id) + '">Move them now</button></small>' : '') + '</span>' + money(t.amount) +
           '<button type="button" class="icon-btn sm" data-mntrdel="' + esc(t.id) + '" aria-label="Delete transfer"><i class="bi bi-trash3"></i></button></li>';
       }).join('') + '</ul>' + (l.length > 4 ? '<button type="button" class="text-btn" data-mntrall>' + (mnTrAll ? 'Show fewer' : 'All ' + l.length + ' transfers') + '</button>' : '')
-        : '<p class="muted mn-p">Money you move between your own accounts – not spending. The balances move with it.</p>') + '</div>';
+        : '<p class="muted mn-p">Money you move between your own accounts – not spending. The balances move with it.</p>') +
+      (FM && FM.rules && FM.rules(d).length ? '<ul class="mn-trl mn-rules">' + FM.rules(d).map(function (r) {
+        return '<li><span class="mn-trn"><b><i class="bi bi-arrow-repeat"></i> ' + esc(nm(r.from)) + ' <i class="bi bi-arrow-right"></i> ' + esc(nm(r.to)) + '</b><small>Every month on ' + (+r.day === 31 ? 'the last day' : 'the ' + r.day + '.') + (r.note ? ' · ' + esc(r.note) : '') + '</small></span>' + money(r.amount) +
+          '<button type="button" class="icon-btn sm" data-trruledel="' + esc(r.id) + '" aria-label="Stop this monthly transfer"><i class="bi bi-x-lg"></i></button></li>';
+      }).join('') + '</ul>' : '') + '</div>';
   }
   var mnTrAll = false;
   document.addEventListener('click', function (e) {

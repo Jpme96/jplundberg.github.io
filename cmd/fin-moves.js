@@ -141,6 +141,25 @@
     V.save(d); window.dispatchEvent(new Event('fin:change'));
     return x;
   }
+  /* repeating transfers: d.transferRules [{id, from, to, amount, day (1–28, 31 = last day), note, last: 'YYYY-MM'}] –
+     made on the day each month (or the next time the dashboard is opened) */
+  function rules(d) { return Array.isArray(d && d.transferRules) ? d.transferRules : []; }
+  function addRule(r) { var d = V.get(); if (!d) return; d.transferRules = rules(d).concat([Object.assign({ id: 'tq' + uid() }, r)]); V.save(d); window.dispatchEvent(new Event('fin:change')); }
+  function dropRule(id) { var d = V.get(); if (!d) return null; var r = rules(d).filter(function (x) { return x.id === id; })[0]; d.transferRules = rules(d).filter(function (x) { return x.id !== id; }); V.save(d); window.dispatchEvent(new Event('fin:change')); return r; }
+  function dayOf(r, y, m) { var last = new Date(y, m + 1, 0).getDate(); return Math.min(+r.day || 1, last); }
+  function runRules() {
+    var d = V.get(); if (!d || !rules(d).length) return;
+    var now = new Date(), ym = now.getFullYear() + '-' + pad(now.getMonth() + 1), made = [];
+    rules(d).forEach(function (r) {
+      if (r.last >= ym) return; var dd = dayOf(r, now.getFullYear(), now.getMonth()); if (now.getDate() < dd) return;
+      r.last = ym; made.push({ from: r.from, to: r.to, amount: +r.amount, date: ym + '-' + pad(dd), note: r.note || 'Monthly' });
+    });
+    if (!made.length) return;
+    V.save(d);
+    made.forEach(function (t) { add(t); });
+    toast('<i class="bi bi-arrow-repeat"></i> ' + (made.length === 1 ? 'Monthly transfer made: ' + esc(kr(made[0].amount)) + ' → ' + esc(label(V.get(), made[0].to)) : made.length + ' monthly transfers made'));
+  }
+  V.onUnlock(function () { setTimeout(runRules, 1800); });
   function list(d) { return (Array.isArray(d && d.transfers) ? d.transfers : []).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); }
   function label(d, id) { var a = A() && A().get(d, id); return a ? a.label : 'Removed account'; }
 
@@ -149,6 +168,8 @@
     var accts = A().list(d); if (accts.length < 2) { toast('<i class="bi bi-bank2"></i> Add a second account first (Finances → Accounts → Bills → Edit accounts)'); return; }
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
     var opt = function (sel) { return accts.map(function (a) { return '<option value="' + esc(a.id) + '"' + (a.id === sel ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join(''); };
+    var ed = pre && pre.edit ? pre.edit : null;
+    if (ed) pre = Object.assign({}, pre, { from: ed.from, to: ed.to });
     var from0 = (pre && pre.from) || (accts.filter(function (a) { return a.kind === 'salary'; })[0] || accts[0]).id;
     var to0 = (pre && pre.to) || (accts.filter(function (a) { return a.id !== from0 && (a.kind === 'savings' || a.kind === 'card'); })[0] || accts.filter(function (a) { return a.id !== from0; })[0]).id;
     function recent() {
@@ -160,13 +181,14 @@
       }).join('') + '</ul>' : '';
     }
     function draw() {
-      bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Transfer"><div class="lf-head"><h3><i class="bi bi-arrow-left-right"></i> Transfer between accounts</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+      bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Transfer"><div class="lf-head"><h3><i class="bi bi-arrow-left-right"></i> ' + (ed ? 'Edit transfer' : 'Transfer between accounts') + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
         '<p class="muted">Money you move between your own accounts – it isn’t spending. The balances move with it.</p>' +
         '<div class="mp-grid tr-grid"><label><span>From</span><select name="from">' + opt(from0) + '</select></label><button type="button" class="icon-btn sm tr-swap" data-trswap aria-label="Swap"><i class="bi bi-arrow-down-up"></i></button><label><span>To</span><select name="to">' + opt(to0) + '</select></label></div>' +
-        '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required aria-label="Amount, kr"><input name="date" type="date" value="' + today() + '" aria-label="Date"></div>' +
-        '<input name="note" maxlength="60" placeholder="Note (optional) – e.g. Savings" autocomplete="off" aria-label="Note">' +
+        '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required aria-label="Amount, kr" value="' + (ed ? esc(String(ed.amount).replace('.', ',')) : '') + '"><input name="date" type="date" value="' + (ed ? esc(ed.date) : today()) + '" aria-label="Date"></div>' +
+        '<input name="note" maxlength="60" placeholder="Note (optional) – e.g. Savings" autocomplete="off" aria-label="Note" value="' + (ed ? esc(ed.note || '') : '') + '">' +
+        (ed ? '' : '<label class="tr-rep"><span>Repeat</span><select name="rep"><option value="">Just this once</option>' + (function () { var o = ''; for (var i = 1; i <= 28; i++) o += '<option value="' + i + '">Every month on the ' + i + (i % 10 === 1 && i !== 11 ? 'st' : i % 10 === 2 && i !== 12 ? 'nd' : i % 10 === 3 && i !== 13 ? 'rd' : 'th') + '</option>'; return o + '<option value="31">Every month on the last day</option>'; })() + '</select></label>') +
         '<p class="mp-prev" id="trPrev"></p>' +
-        '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Move it</button></div></form>';
+        '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (ed ? 'Save' : 'Move it') + '</button></div></form>';
       prev();
     }
     function prev() {
@@ -199,15 +221,27 @@
       e.preventDefault(); var f = e.target, n = num(f.amt.value);
       if (!(n > 0)) { f.amt.focus(); return; }
       if (f.from.value === f.to.value) { f.to.focus(); return; }
-      var x = add({ from: f.from.value, to: f.to.value, amount: n, date: f.date.value || today(), note: f.note.value.trim(), force: !!(f.force && f.force.checked) });
+      var old = ed ? remove(ed.id) : null;
+      var x = add({ from: f.from.value, to: f.to.value, amount: n, date: f.date.value || today(), note: f.note.value.trim(), force: !!(f.force && f.force.checked) || !!(old && old.moved && (old.moved.from || old.moved.to)) });
+      if (f.rep && f.rep.value) addRule({ from: x.from, to: x.to, amount: n, day: +f.rep.value, note: x.note, last: x.date.slice(0, 7) });
       close();
+      if (ed && x) { toast('<i class="bi bi-check2"></i> Transfer saved', function () { remove(x.id); add(old); }); return; }
       if (x) toast('<i class="bi bi-arrow-left-right"></i> ' + esc(kr(n)) + ' moved: ' + esc(label(V.get(), x.from)) + ' → ' + esc(label(V.get(), x.to)) + (notMoved(V.get(), x).length ? ' · balances not changed' : ''), function () { remove(x.id); });
     });
     setTimeout(function () { var i = bg.querySelector('[name=amt]'); if (i && !matchMedia('(pointer: coarse)').matches) i.focus(); }, 60);
   }
-  document.addEventListener('click', function (e) { if (e.target.closest('[data-transfer]')) { e.preventDefault(); sheet(); } });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-transfer]')) { e.preventDefault(); sheet(); return; }
+    var ed = !e.target.closest('button') && e.target.closest('[data-tredit]'); if (ed) { e.preventDefault(); var t = (V.get().transfers || []).filter(function (x) { return x.id === ed.dataset.tredit; })[0]; if (t) sheet({ edit: t }); return; }
+    var rq = e.target.closest('[data-trruledel]'); if (rq) { e.preventDefault(); var r = dropRule(rq.dataset.trruledel); if (r) toast('<i class="bi bi-arrow-repeat"></i> Monthly transfer stopped', function () { var d = V.get(); d.transferRules = rules(d).concat([r]); V.save(d); window.dispatchEvent(new Event('fin:change')); }); }
+  });
   (window.CommandExtra = window.CommandExtra || []).push(function () { return V.get() ? [{ i: 'arrow-left-right', t: 'Transfer between accounts', s: 'Finances', run: function () { sheet(); }, x: 'transfer move money overføring flytt penger konto sparing' }] : []; });
   /* opened from another page (Quick add → Transfer) */
   if (/[?&]transfer=1/.test(location.search)) V.onUnlock(function () { setTimeout(function () { if (window.history && history.replaceState) history.replaceState(null, '', location.pathname + location.hash); sheet(); }, 500); });
-  window.FinMoves = { transfer: sheet, add: add, remove: remove, list: list, notMoved: notMoved, fix: fix, merge: merge, unmerge: unmerge };
+  /* delete with Undo for anything in the vault: keep a copy, do it, Undo puts the copy back (5 s) */
+  window.VaultUndo = function (html, fn) {
+    var snap = JSON.parse(JSON.stringify(V.get() || {})); fn();
+    toast(html, function () { V.save(snap); window.dispatchEvent(new Event('fin:change')); window.dispatchEvent(new Event('dash:local')); });
+  };
+  window.FinMoves = { rules: rules, transfer: sheet, add: add, remove: remove, list: list, notMoved: notMoved, fix: fix, merge: merge, unmerge: unmerge };
 })();

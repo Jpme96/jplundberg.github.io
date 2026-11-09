@@ -279,7 +279,8 @@
   $('hbAddBtn').addEventListener('click', function () { $('hbForm').hidden ? openHabit(null) : closeHabit(); });
   $('hbCancel').addEventListener('click', closeHabit);
   $('hbDelete').addEventListener('click', function () {
-    var id = editingHabit && editingHabit.id;
+    var id = editingHabit && editingHabit.id, snapH = JSON.parse(JSON.stringify(hb));
+    if (window.Quick && window.Quick.toast) setTimeout(function () { window.Quick.toast('<i class="bi bi-trash3"></i> Habit deleted', function () { hb = snapH; save('dash.habits', hb); renderHabits(); window.dispatchEvent(new Event('habits:change')); }); }, 0);
     hb.list = hb.list.filter(function (h) { return h.id !== id; });
     Object.keys(hb.log).forEach(function (k) {
       hb.log[k] = hb.log[k].filter(function (x) { return x !== id; });

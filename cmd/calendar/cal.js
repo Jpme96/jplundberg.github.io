@@ -554,6 +554,7 @@
       $('clLoc').value = e ? (e.location || '') : '';
       $('clNotes').value = e ? (e.notes || '') : '';
       $('clDelBox').hidden = !e;
+      if (window.ShareSpace) { window.ShareSpace.calRow(); var shc = $('clShare'); if (shc) shc.checked = !!(e && e.share); }
       syncFields();
       $('clRoute').hidden = !$('clLoc').value.trim() || $('clAllDay').checked;
     }
@@ -593,6 +594,8 @@
     if (ev.repeat && $('clUntil').value >= date) ev.until = $('clUntil').value;
     if (!ev.repeat) { delete ev.repeat; }
     if (editing.own && editing.own.skip && ev.repeat) ev.skip = editing.own.skip;
+    var shc = $('clShare'), shr = $('clShareRow');
+    if (shc && shr && !shr.hidden) { if (shc.checked) ev.share = true; } else if (editing.own && editing.own.share) ev.share = true;   /* Shared space: "Share with …" */
     var d = data();
     var i = d.events.findIndex(function (x) { return x.id === ev.id; });
     if (i > -1) d.events[i] = ev; else d.events.push(ev);

@@ -78,7 +78,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=225" rel="stylesheet">
+  <link href="../styles.css?v=226" rel="stylesheet">
   <link href="../modern.css?v=13" rel="stylesheet">
   <link href="../sidenav.css?v=2" rel="stylesheet">
   <link href="../finance/fin.css?v=10" rel="stylesheet">
@@ -190,6 +190,7 @@
         </nav>
         <p class="st-minor">Privacy and data</p>
         <nav class="st-group st-menu">
+          <button type="button" class="st-row st-btn" data-go="sharesp"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-people"></i></span><span class="st-label">Shared space<small id="sumShare"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="adminset" data-owner><span class="st-ico" style="--c:#3987e5"><i class="bi bi-speedometer2"></i></span><span class="st-label">Admin page<small id="sumAdmin">Panels, checks, warnings, key dates</small></span><i class="bi bi-chevron-right"></i></button>
@@ -429,6 +430,9 @@
 
       <div class="st-page" data-page="food" data-title="Food" hidden>
         <div id="hlSet-food"></div>
+      </div>
+      <div class="st-page" data-page="sharesp" data-title="Shared space" hidden>
+        <div id="stShare"></div>
       </div>
       <div class="st-page" data-page="wish" data-title="Wishlist" hidden>
         <div id="hlSet-wish"></div>
@@ -710,9 +714,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=b5a161beb2"></script>
-  <script src="../dist/page-habits.js?v=17ed8d30d1"></script>
-  <script src="../dist/tail.js?v=36fd81db20"></script>
+  <script src="../dist/head.js?v=0df03303a1"></script>
+  <script src="../dist/page-habits.js?v=8d0bab066d"></script>
+  <script src="../dist/tail.js?v=5828a17fa9"></script>
   <!-- /scripts -->
 </body>
 </html>

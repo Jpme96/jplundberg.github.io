@@ -83,7 +83,7 @@ async function cronBeat(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -91,6 +91,22 @@ async function route(request, env) {
       console.log('unauthorized', check);
       return json({ error: 'unauthorized', ...check }, 401);
     }
+
+    /* the person you share your home with (Settings → Shared space) only ever reaches the shared box –
+       never your own vault or anything else */
+    const shareCfg = env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
+    const em = String(check.email || '').toLowerCase();
+    /* once sharing has been set up, the owner's login is known: anyone else (also someone you stopped sharing
+       with) gets nothing, even if Cloudflare Access still lets them in */
+    const isPartner = !check.service && !!(shareCfg && shareCfg.partner && em && em === shareCfg.partner);
+    if (!check.service && !isPartner && shareCfg && shareCfg.owner && em !== shareCfg.owner) return json({ error: 'not allowed' }, 403);
+    if (isPartner) {
+      if (path === '/cmd/api/shared') return sharedApi(request, env, 'p');
+      if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
+      return json({ error: 'only the shared space is open to you', partner: true }, 403);
+    }
+    if (path === '/cmd/api/shared') return sharedApi(request, env, 'o');
+    if (path === '/cmd/api/share') { const rq = new Request(request, { headers: new Headers(request.headers), duplex: 'half' }); rq.headers.set('X-Share-Me', em); return shareApi(rq, url, env, false, shareCfg); }
 
     /* a service token (the iPhone Shortcut) may only hand in health numbers */
     if (check.service && !(path === '/cmd/api/health' && request.method === 'POST')) return json({ error: 'not allowed for a service token' }, 403);
@@ -113,6 +129,74 @@ async function route(request, env) {
     if (path === '/cmd/api/file') return fileApi(request, url, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron }); }
     return vault(request, env);
+}
+
+/* ---------- Shared space ----------
+   share:cfg  { partner: their login email (lower case), name, since }  – set by you, never by them
+   share:wrap { salt, iv, ct }  – the shared key, locked with their own passcode (they set it on their phone)
+   shared     { rev, recs: { <id>: { t, by: 'o'|'p', iv, ct } | { t, by, del: 1 } } }
+   Each record is encrypted on the phone with the shared key; the Worker only merges them: per record, the
+   newest change wins, so two people can edit the same list at once without losing anything. */
+const SHARE_CFG = 'share:cfg', SHARE_WRAP = 'share:wrap', SHARED = 'shared';
+const RID = /^[a-f0-9]{16,64}$/;
+async function shareApi(request, url, env, partner, cfg) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  const m = request.method;
+  if (url.searchParams.has('wrap')) {
+    if (m === 'GET') { const w = await env.VAULT.get(SHARE_WRAP); return w ? new Response(w, { headers: hdrs() }) : json({ error: 'empty' }, 404); }
+    if (m === 'PUT') {
+      const b = await request.json().catch(() => null);
+      if (!b || typeof b.salt !== 'string' || typeof b.iv !== 'string' || typeof b.ct !== 'string' || b.ct.length > 2000) return json({ error: 'bad wrap' }, 400);
+      await env.VAULT.put(SHARE_WRAP, JSON.stringify({ salt: b.salt, iv: b.iv, ct: b.ct, t: Date.now() }));
+      return json({ ok: true });
+    }
+    return json({ error: 'method' }, 405);
+  }
+  if (m === 'GET') {
+    const w = await env.VAULT.get(SHARE_WRAP);
+    if (partner) return json({ partner: true, name: cfg.name || '', joined: !!w });
+    return json(cfg && cfg.partner ? { on: true, partner: cfg.partner, name: cfg.name || '', since: cfg.since || null, joined: !!w } : { on: false });
+  }
+  if (partner) return json({ error: 'only the owner can change sharing' }, 403);
+  const me = String(request.headers.get('X-Share-Me') || '').toLowerCase();
+  if (m === 'PUT') {
+    const b = await request.json().catch(() => null), email = b && String(b.partner || '').trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) return json({ error: 'bad email' }, 400);
+    const prev = cfg && cfg.partner, owner = (cfg && cfg.owner) || me;
+    if (!owner || owner === email) return json({ error: 'that is your own login' }, 400);
+    await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString() }));
+    if (prev && prev !== email) await env.VAULT.delete(SHARE_WRAP);            /* someone new: the old lock goes */
+    return json({ ok: true });
+  }
+  if (m === 'DELETE') {                                                        /* Stop sharing: access, key and box go – the owner stays known */
+    await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
+    return json({ ok: true });
+  }
+  return json({ error: 'method' }, 405);
+}
+async function sharedApi(request, env, by) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  const raw = await env.VAULT.get(SHARED), cur = raw ? JSON.parse(raw) : { rev: 0, recs: {} };
+  if (request.method === 'GET') return json(cur);
+  if (request.method !== 'PUT') return json({ error: 'method' }, 405);
+  const body = await request.text();
+  if (body.length > 1024 * 1024) return json({ error: 'too large' }, 413);
+  let b; try { b = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
+  const recs = b && b.recs && typeof b.recs === 'object' ? b.recs : null; if (!recs) return json({ error: 'no records' }, 400);
+  let n = 0; const now = Date.now();
+  for (const id of Object.keys(recs).slice(0, 2000)) {
+    const r = recs[id]; if (!RID.test(id) || !r || typeof r !== 'object') continue;
+    const t = Math.min(+r.t || 0, now + 60e3); if (!t) continue;
+    const old = cur.recs[id]; if (old && old.t >= t) continue;                   /* the newest change wins */
+    if (r.del) cur.recs[id] = { t, by, del: 1 };
+    else if (typeof r.iv === 'string' && typeof r.ct === 'string' && r.ct.length <= 20000) cur.recs[id] = { t, by, iv: r.iv, ct: r.ct };
+    else continue;
+    n++;
+  }
+  /* deleted records are remembered for 90 days, so a phone that was away long can't bring them back */
+  for (const id of Object.keys(cur.recs)) if (cur.recs[id].del && now - cur.recs[id].t > 90 * 864e5) delete cur.recs[id];
+  if (n) { cur.rev = (cur.rev || 0) + 1; await env.VAULT.put(SHARED, JSON.stringify(cur)); }
+  return json(cur);
 }
 
 /* ---------- Apple Health inbox ---------- */
@@ -949,7 +1033,7 @@ async function verifyAccess(request, env) {
   const { alg, use, kid, ...pub } = jwk;
   const key = await crypto.subtle.importKey('jwk', pub, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
   const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, bytes(s), new TextEncoder().encode(h + '.' + p));
-  return valid ? { ok: true, service: !payload.email && !!payload.common_name } : { ok: false, reason: 'bad signature' };
+  return valid ? { ok: true, service: !payload.email && !!payload.common_name, email: payload.email ? String(payload.email) : '' } : { ok: false, reason: 'bad signature' };
 }
 
 function b64url(s) { return s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '='); }

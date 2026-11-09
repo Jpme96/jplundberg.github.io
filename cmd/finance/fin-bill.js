@@ -134,9 +134,9 @@
     if (t === bg || t.closest('[data-fbclose]')) { close(); return; }
     if (t.closest('[data-fbdel]') && cur) {
       var d = window.Vault.get(), f = bill(d, cur.id); if (!f) { close(); return; }
-      if (!confirm('Delete “' + (f.name || 'this bill') + '”?')) return;
-      ['fixed', 'later', 'ended'].forEach(function (k) { if (Array.isArray(d.budget[k])) d.budget[k] = d.budget[k].filter(function (x) { return x.id !== cur.id; }); });
-      window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); close();
+      var id = cur.id, go = function () { var d2 = window.Vault.get(); ['fixed', 'later', 'ended'].forEach(function (k) { if (Array.isArray(d2.budget[k])) d2.budget[k] = d2.budget[k].filter(function (x) { return x.id !== id; }); }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); };
+      close();
+      if (window.VaultUndo) window.VaultUndo('<i class="bi bi-trash3"></i> ' + String(f.name || 'Bill').replace(/[<>&]/g, '') + ' deleted', go); else go();
     }
   });
   document.addEventListener('keydown', function (e) { if (!bg.hidden && e.key === 'Escape') close(); });

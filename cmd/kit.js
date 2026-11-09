@@ -18,6 +18,18 @@
   }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
+  function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
+  /* delete with Undo: the item goes at once, its photos/files only after the Undo has had its chance */
+  function removeItem(cfg, item) {
+    var t = F.tools(), l = Array.isArray(t[cfg.key]) ? t[cfg.key] : [], at = l.findIndex(function (x) { return x.id === item.id; });
+    if (at < 0) return;
+    var gone = l[at]; t[cfg.key] = l.filter(function (x) { return x.id !== item.id; }); F.saveTools(t);
+    var undone = false, tm = setTimeout(function () { if (!undone && cfg.onDelete) try { cfg.onDelete(gone); } catch (e) {} }, 6500);
+    toast('<i class="bi bi-trash3"></i> ' + esc(gone.title || gone.name || gone.text || 'Deleted') + ' deleted', function () {
+      undone = true; clearTimeout(tm); var t2 = F.tools(), l2 = Array.isArray(t2[cfg.key]) ? t2[cfg.key].slice() : [];
+      if (!l2.some(function (x) { return x.id === gone.id; })) l2.splice(Math.min(at, l2.length), 0, gone); t2[cfg.key] = l2; F.saveTools(t2);
+    });
+  }
   function fmt(k, o) { return k ? F.fromKey(k).toLocaleDateString('en-GB', o || { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
 
   /* ---------- one shared sheet ---------- */
@@ -28,7 +40,7 @@
     bg.className = 'cl-sheet-bg kit-bg'; bg.hidden = true;
     bg.innerHTML = '<form class="cl-sheet kit-sheet" role="dialog" aria-modal="true" autocomplete="off">' +
       '<div class="cl-sheet-head"><button class="text-btn" type="button" data-close>Cancel</button><h2></h2><button class="pill-btn" type="submit">Save</button></div>' +
-      '<div class="cl-edit kit-fields"></div><div class="cl-del kit-del" hidden><button class="text-btn danger" type="button"><i class="bi bi-trash3"></i> <span>Delete</span></button></div></form>';
+      '<div class="cl-edit kit-fields"></div><div class="cl-del kit-del" hidden><button class="text-btn kit-dup" type="button" data-kit-dup><i class="bi bi-copy"></i> Duplicate</button><button class="text-btn danger" type="button" data-kit-delbtn><i class="bi bi-trash3"></i> <span>Delete</span></button></div></form>';
     document.body.appendChild(bg);
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-close]')) close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bg.hidden) close(); });
@@ -59,9 +71,10 @@
     var t = f.type === 'number' ? 'text" inputmode="decimal' : (f.type || 'text');
     return '<input id="' + id + '" type="' + t + '"' + ph + req + ' maxlength="' + (f.max || 200) + '" value="' + esc(val) + '">';
   }
-  function edit(cfg, item) {
-    var s = ensureSheet(), isNew = !item;
-    item = item ? JSON.parse(JSON.stringify(item)) : {};
+  function editNew(cfg, pre) { edit(cfg, null, pre); }
+  function edit(cfg, item, pre) {
+    var s = ensureSheet(), isNew = !item, before = item ? JSON.parse(JSON.stringify(item)) : null;
+    item = item ? JSON.parse(JSON.stringify(item)) : (pre ? JSON.parse(JSON.stringify(pre)) : {});
     s.title.textContent = isNew ? (cfg.addTitle || 'Add') : (cfg.editTitle || 'Edit');
     var rows = '', inline = '';
     cfg.fields.forEach(function (f) {
@@ -74,12 +87,13 @@
     s.fields.innerHTML = rows;
     s.del.hidden = isNew;
     var delArmed = false;
-    s.del.querySelector('span').textContent = 'Delete';
-    s.del.querySelector('button').onclick = function () {
-      if (!delArmed) { delArmed = true; s.del.querySelector('span').textContent = 'Tap again to delete'; return; }
-      var t = F.tools(); t[cfg.key] = (t[cfg.key] || []).filter(function (x) { return x.id !== item.id; });
-      if (cfg.onDelete) cfg.onDelete(item);
-      F.saveTools(t); close();
+    s.del.querySelector('[data-kit-delbtn] span').textContent = 'Delete';
+    s.del.querySelector('[data-kit-delbtn]').onclick = function () { close(); removeItem(cfg, item); };     /* Undo instead of tap-twice */
+    var dup = s.del.querySelector('[data-kit-dup]'); dup.hidden = cfg.noDup === true;
+    dup.onclick = function () {
+      var c = JSON.parse(JSON.stringify(item)); delete c.id; ['done', 'doneAt', 'last', 'files', 'photos', 'photo', 'receipt', 'findings'].forEach(function (k) { delete c[k]; });
+      if (cfg.duplicate) try { c = cfg.duplicate(c) || c; } catch (e) {}
+      close(); setTimeout(function () { editNew(cfg, c); }, 240);
     };
     s.form.onsubmit = function (e) {
       e.preventDefault();
@@ -102,6 +116,9 @@
       F.saveTools(t);
       if (cfg.afterSave) cfg.afterSave(item, isNew);
       close();
+      var nm = esc(item.title || item.name || item.text || '');
+      if (!isNew && before && JSON.stringify(before) !== JSON.stringify(item)) toast('<i class="bi bi-check2"></i> ' + (nm ? nm + ' saved' : 'Saved'), function () { var t2 = F.tools(), l2 = Array.isArray(t2[cfg.key]) ? t2[cfg.key] : [], j = l2.findIndex(function (x) { return x.id === before.id; }); if (j > -1) { l2[j] = before; t2[cfg.key] = l2; F.saveTools(t2); } });
+      else if (isNew) toast('<i class="bi bi-check2"></i> ' + (nm ? nm + ' added' : 'Added'), function () { var t2 = F.tools(); t2[cfg.key] = (t2[cfg.key] || []).filter(function (x) { return x.id !== item.id; }); F.saveTools(t2); });
     };
     open();
     if (isNew && innerWidth >= 700) setTimeout(function () { var first = s.fields.querySelector('input,textarea'); if (first) first.focus(); }, 60);
@@ -116,7 +133,7 @@
   }
   /* ---------- a collection card ---------- */
   function collection(cfg) {
-    var el = cfg.mount, showAll = false, openId = null, scrolled = false;
+    var el = cfg.mount, showAll = false, openId = null, scrolled = false, q = '';
     if (!el) return null;
     function render() {
       var on = F.on(cfg.feature);
@@ -126,12 +143,16 @@
       if (cfg.filter) try { items = items.filter(cfg.filter); } catch (e) {}
       if (cfg.sort) try { items.sort(cfg.sort); } catch (e) {}
       var kw = 'kit:' + cfg.key;
-      var lim = cfg.limit || 8, shown = showAll ? items : items.slice(0, lim);
+      var lim = cfg.limit || 8, total = items.length, findable = total > Math.max(lim, 8) && cfg.search !== false;
+      if (findable && q) { var ql = q.toLowerCase(); items = items.filter(function (it) { var r = {}; try { r = cfg.row(it) || {}; } catch (e) {} return (String(r.title || '') + ' ' + String(r.sub || '').replace(/<[^>]+>/g, ' ') + ' ' + String(it.notes || '')).toLowerCase().indexOf(ql) > -1; }); }
+      var shown = showAll || q ? items : items.slice(0, lim);
       el.innerHTML = '<section class="card kit-card" id="' + cfg.key + '">' +
         '<div class="card-head"><h2><i class="bi bi-' + cfg.icon + '"></i> ' + esc(cfg.title) + '</h2>' +
         '<div class="head-actions">' + (cfg.headExtra ? safe(cfg.headExtra, [items], '', kw) : '') + '<button class="text-btn" type="button" data-kit-add><i class="bi bi-plus-lg"></i> ' + esc(cfg.addLabel || 'Add') + '</button></div></div>' +
         (cfg.summary ? '<div class="kit-sum">' + safe(cfg.summary, [items], '', kw) + '</div>' : '') +
         (cfg.above ? safe(cfg.above, [items], '', kw) : '') +
+        (findable ? '<label class="kit-find"><i class="bi bi-search"></i><input type="search" data-kit-find placeholder="Find in ' + esc(String(cfg.title).toLowerCase()) + '" value="' + esc(q) + '" aria-label="Find in ' + esc(cfg.title) + '"></label>' : '') +
+        (q && !items.length ? '<p class="empty kit-empty">Nothing matches “' + esc(q) + '”.</p>' : '') +
         (items.length ? '<ul class="kit-list">' + shown.map(function (it) {
           var r = (function () { try { return cfg.row(it) || {}; } catch (e) { if (window.Diag) window.Diag.log('render', e.message, kw); return { icon: 'exclamation-circle', title: it.title || it.name || 'Couldn’t show this one', sub: 'Tap to edit' }; } })();
           r = { icon: r.icon, color: r.color, cls: r.cls, title: tidyOut(r.title == null ? '' : String(r.title)), sub: tidyOut(r.sub), right: tidyOut(r.right) };
@@ -142,10 +163,11 @@
             (r.right ? '<span class="kit-r">' + r.right + '</span>' : '') + '</button>' +
             (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> Edit</button></div>' : '') +
             '</li>';
-        }).join('') + '</ul>' : '<p class="empty kit-empty">' + esc(cfg.empty || 'Nothing here yet.') + '</p>') +
-        (items.length > lim ? '<button class="text-btn kit-more" type="button" data-kit-more>' + (showAll ? 'Show less' : 'Show all ' + items.length) + '</button>' : '') +
+        }).join('') + '</ul>' : (q ? '' : '<p class="empty kit-empty">' + esc(cfg.empty || 'Nothing here yet.') + '</p>')) +
+        (items.length > lim && !q ? '<button class="text-btn kit-more" type="button" data-kit-more>' + (showAll ? 'Show less' : 'Show all ' + items.length) + '</button>' : '') +
         '</section>';
       if (cfg.afterRender) cfg.afterRender(el, items);
+      if (refocus) { var fi = el.querySelector('[data-kit-find]'); if (fi) { fi.focus(); try { fi.setSelectionRange(fi.value.length, fi.value.length); } catch (e) {} } refocus = false; }
       /* arriving from search (…/#people=<id>): open that one, show all, scroll to it */
       var hm = location.hash.match(new RegExp('^#' + cfg.key + '=([\\w-]+)$'));
       if (hm && document.documentElement.classList.contains('unlocked') && items.some(function (x) { return x.id === hm[1]; })) {
@@ -163,8 +185,28 @@
         setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 450);
       }
     }
+    var refocus = false;
+    el.addEventListener('input', function (e) { if (e.target.matches('[data-kit-find]')) { q = e.target.value.trim(); refocus = true; render(); } });
+    /* swipe a row left to delete it (with Undo) – like Mail on the iPhone */
+    var sw = null;
+    el.addEventListener('touchstart', function (e) {
+      var m = e.target.closest('.kit-main'); if (!m || cfg.swipe === false || e.touches.length !== 1) { sw = null; return; }
+      sw = { m: m, li: m.closest('.kit-item'), x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, on: false };
+    }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (!sw) return; var dx = e.touches[0].clientX - sw.x, dy = e.touches[0].clientY - sw.y;
+      if (!sw.on) { if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } if (dx < -14 && Math.abs(dx) > Math.abs(dy) * 1.4) { sw.on = true; sw.li.classList.add('kit-swiping'); } else return; }
+      sw.dx = Math.max(-160, Math.min(0, dx)); sw.m.style.transform = 'translateX(' + sw.dx + 'px)'; sw.li.classList.toggle('kit-swipe-go', sw.dx < -90);
+    }, { passive: true });
+    el.addEventListener('touchend', function () {
+      if (!sw) return; var s0 = sw; sw = null; if (!s0.on) return;
+      s0.li.classList.remove('kit-swiping', 'kit-swipe-go'); s0.m.style.transform = '';
+      s0.m.dataset.kitSwiped = '1'; setTimeout(function () { delete s0.m.dataset.kitSwiped; }, 400);
+      if (s0.dx < -90) { var it = F.list(cfg.key).filter(function (x) { return x.id === s0.li.dataset.id; })[0]; if (it) removeItem(cfg, it); }
+    });
     el.addEventListener('click', function (e) {
       var b;
+      if (e.target.closest('[data-kit-swiped]')) { e.preventDefault(); return; }
       if (e.target.closest('[data-kit-add]')) return edit(cfg, null);
       if ((b = e.target.closest('[data-kit-edit]'))) return edit(cfg, F.list(cfg.key).filter(function (x) { return x.id === b.dataset.kitEdit; })[0]);
       if ((b = e.target.closest('[data-kit-toggle]'))) { openId = openId === b.dataset.kitToggle ? null : b.dataset.kitToggle; return render(); }
@@ -178,7 +220,7 @@
     window.Dash = window.Dash || {};
     window.Dash.reload = function () { if (prevReload) prevReload(); render(); };
     if (window.Vault) window.Vault.onUnlock(render);
-    return { render: render, edit: function (it) { edit(cfg, it); } };
+    return { render: render, edit: function (it) { edit(cfg, it); }, add: function (pre) { editNew(cfg, pre); }, remove: function (it) { removeItem(cfg, it); } };
   }
 
   window.Kit = { collection: collection, edit: edit, close: close, esc: esc, uid: uid, num: num, kr: kr, fmt: fmt, today: today };

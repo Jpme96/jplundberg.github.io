@@ -64,7 +64,18 @@
     $('qaTabs').innerHTML = ks.map(function (x) {
       return '<button type="button" role="tab" data-tab="' + x[0] + '" aria-selected="' + (x[0] === kind) + '"><i class="bi bi-' + x[1] + '"></i><span>' + x[2] + '</span></button>';
     }).join('');
-    $('qaBody').innerHTML = FORMS[kind](pre || {});
+    var pp = pre || {};
+    if (kind === 'expense' && !pp.c) { try { var lc = localStorage.getItem('dash.qa.lastCat'); if (lc) pp = Object.assign({}, pp, { c: lc }); } catch (e) {} }   /* the category you used last */
+    $('qaBody').innerHTML = FORMS[kind](pp);
+    /* Today / Yesterday next to every date – the two dates you pick most */
+    $('qaBody').querySelectorAll('input[type=date][name=d]').forEach(function (di) {
+      var y = new Date(); y.setDate(y.getDate() - 1); var yk = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
+      var w = document.createElement('div'); w.className = 'qa-days';
+      w.innerHTML = '<button type="button" data-qaday="' + today() + '">Today</button><button type="button" data-qaday="' + yk + '">Yesterday</button>';
+      var mark = function () { w.querySelectorAll('[data-qaday]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.qaday === di.value)); }); };
+      w.addEventListener('click', function (e) { var b = e.target.closest('[data-qaday]'); if (!b) return; di.value = b.dataset.qaday; di.dispatchEvent(new Event('change', { bubbles: true })); mark(); });
+      di.addEventListener('change', mark); (di.closest('.qa-row') || di).after(w); mark();
+    });
     var wasOpen = !bg.hidden && bg.classList.contains('open');
     $('qaLine').value = line || ''; preview();
     bg.hidden = false; document.body.classList.add('qa-open');
@@ -282,7 +293,7 @@
   };
   /* the forms → ADD */
   var SAVE = {
-    expense: function (f) { var a = num(f.a.value); if (!(a > 0)) { f.a.focus(); return false; } if (f.sh && f.sh.value) return addShared(f); return ADD.expense({ amount: a, cat: f.c.value, note: f.n.value, date: f.d.value }); },
+    expense: function (f) { var a = num(f.a.value); if (!(a > 0)) { f.a.focus(); return false; } if (f.sh && f.sh.value) return addShared(f); try { localStorage.setItem('dash.qa.lastCat', f.c.value); } catch (e) {} return ADD.expense({ amount: a, cat: f.c.value, note: f.n.value, date: f.d.value }); },
     event: function (f) { if (!f.t.value.trim()) { f.t.focus(); return false; } return ADD.event({ title: f.t.value, date: f.d.value, start: f.all.checked ? null : f.s.value, allDay: f.all.checked, cat: f.c.value, location: f.l.value, repeat: f.rep.value }); },
     workout: function (f) { if (!(+f.m.value > 0)) { f.m.focus(); return false; } return ADD.workout({ sport: f.k.value, min: +f.m.value, km: num(f.km.value), date: f.d.value, effort: f.e.value }); },
     todo: function (f) { return ADD.todo({ text: f.t.value, due: f.due.value, repeat: f.rep.value }); },

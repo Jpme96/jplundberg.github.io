@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="theme-color" content="#0e0f11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Home">
+  <meta name="format-detection" content="telephone=no">
+  <title>Home</title>
+  <link href="/assets/img/favicon.png?v=2" rel="icon">
+  <link href="/cmd/assets/icons/apple-180.png" rel="apple-touch-icon">
+  <link href="/cmd/home/manifest.webmanifest" rel="manifest">
+  <link href="/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/cmd/home/app.css?v=1" rel="stylesheet">
+</head>
+<body>
+  <!-- The shared app: only the shared box. No part of the private dashboard is loaded on this page. -->
+  <main id="app" aria-live="polite"><p class="h-wait"><i class="bi bi-house-heart"></i></p></main>
+  <div class="h-toast" id="toast" role="status"></div>
+  <script src="/cmd/share-core.js?v=1"></script>
+  <script src="/cmd/home/app.js?v=1"></script>
+</body>
+</html>

@@ -379,7 +379,7 @@
       if ((b = e.target.closest('[data-bwork]'))) { read(); st.work = b.dataset.bwork; if (st.work) { st.inv = false; st.parts = false; } draw2(); return; }
       if ((b = e.target.closest('[data-bpayer]'))) { read(); st.payer = b.dataset.bpayer; draw2(); return; }
       if ((b = e.target.closest('[data-bstore]'))) { read(); st.store = b.dataset.bstore; draw2(); return; }
-      if (e.target.closest('[data-bdel]')) { read(); if (confirm('Delete “' + (loan.name || 'this') + '”? The payments so far are taken out of what you owe each other. (The Home inventory keeps the item.)')) { delPlan(loan.id); X.close(); } return; }
+      if (e.target.closest('[data-bdel]')) { read(); X.close(); var lid = loan.id; if (window.VaultUndo) window.VaultUndo('<i class="bi bi-trash3"></i> ' + String(loan.name || 'Plan').replace(/[<>&]/g, '') + ' deleted', function () { delPlan(lid); }); else delPlan(lid); return; }
       if (e.target.closest('[data-bsave]')) { read(); if (savePurchase(st, loan, p, calc(), box)) X.close(); }
     });
     draw2();
@@ -498,7 +498,7 @@
     box.addEventListener('click', function (e) {
       var b;
       if ((b = e.target.closest('[data-rpay]'))) { read(); st.payer = b.dataset.rpay; draw3(); return; }
-      if (e.target.closest('[data-rdel]')) { if (!confirm('Delete “' + f.name + '”? Claims already made from it go too.')) return; var d0 = window.Vault.get(); d0.budget.fixed = d0.budget.fixed.filter(function (x) { return x.id !== f.id; }); window.Vault.save(d0); window.dispatchEvent(new Event('fin:change')); X.close(); draw(); return; }
+      if (e.target.closest('[data-rdel]')) { var fid = f.id, gone = function () { var d0 = window.Vault.get(); d0.budget.fixed = d0.budget.fixed.filter(function (x) { return x.id !== fid; }); window.Vault.save(d0); window.dispatchEvent(new Event('fin:change')); draw(); }; X.close(); if (window.VaultUndo) window.VaultUndo('<i class="bi bi-trash3"></i> ' + String(f.name || 'Rule').replace(/[<>&]/g, '') + ' deleted', gone); else gone(); return; }
       if (!e.target.closest('[data-rsave]')) return;
       read();
       var name = String(st.name || '').trim(), a = num(st.amt), pct = num(st.pct), day = Math.round(num(st.day) || 0);

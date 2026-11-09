@@ -242,7 +242,7 @@
     var sx = 0, sy = 0, st = 0, ok = false;
     function blocked(el) {
       for (var a = el; a && a !== document.body; a = a.parentElement) {
-        if (a.matches && a.matches('input,textarea,select,[contenteditable],.leaflet-container,.cl-month,.cl-week,.todo-item,.tk-track,.st-backdrop,.cl-sheet-bg,.kit-bg,.fo-bg,.sr-bg,.tabbar,[data-noswipe],svg,canvas,.rp-sheet')) return true;
+        if (a.matches && a.matches('input,textarea,select,[contenteditable],.leaflet-container,.cl-month,.cl-week,.todo-item,.tk-track,.kit-item,.br-li,.st-backdrop,.cl-sheet-bg,.kit-bg,.fo-bg,.sr-bg,.tabbar,[data-noswipe],svg,canvas,.rp-sheet')) return true;
         var cs = getComputedStyle(a); if (/(auto|scroll)/.test(cs.overflowX) && a.scrollWidth > a.clientWidth + 2) return true;
       }
       return false;

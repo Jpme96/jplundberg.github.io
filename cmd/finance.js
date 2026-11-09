@@ -341,7 +341,9 @@
     var b = e.target.closest('[data-bdel]');
     if (!b) return;
     var p = b.dataset.bdel.split(':');
+    var goneB = D.budget[p[0]].filter(function (r) { return r.id === p[1]; })[0], atB = D.budget[p[0]].indexOf(goneB);
     D.budget[p[0]] = D.budget[p[0]].filter(function (r) { return r.id !== p[1]; });
+    if (goneB && window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> ' + String(goneB.name || 'Row').replace(/[<>&]/g, '') + ' deleted', function () { D.budget[p[0]].splice(Math.max(0, atB), 0, goneB); persist(); renderBudget(); renderBills(); window.dispatchEvent(new Event('fin:change')); });
     persist();
     renderBudget();
     renderBills();
@@ -446,7 +448,9 @@
     if (!b) return;
     var li = b.closest('li'); li.classList.add('removing');
     setTimeout(function () {
+      var goneX = D.expenses.filter(function (x) { return x.id === b.dataset.xdel; })[0];
       D.expenses = D.expenses.filter(function (x) { return x.id !== b.dataset.xdel; });
+      if (goneX && window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> ' + String(goneX.note || 'Expense').replace(/[<>&]/g, '') + ' deleted', function () { if (!D.expenses.some(function (x) { return x.id === goneX.id; })) D.expenses.push(goneX); persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change')); });
       persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change'));
     }, 250);
   });
@@ -504,7 +508,9 @@
     var li = b.closest('li');
     li.classList.add('removing');
     setTimeout(function () {
+      var goneX = D.expenses.filter(function (x) { return x.id === b.dataset.xdel; })[0];
       D.expenses = D.expenses.filter(function (x) { return x.id !== b.dataset.xdel; });
+      if (goneX && window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> ' + String(goneX.note || 'Expense').replace(/[<>&]/g, '') + ' deleted', function () { if (!D.expenses.some(function (x) { return x.id === goneX.id; })) D.expenses.push(goneX); persist(); renderSpending(); renderBudget(); window.dispatchEvent(new Event('fin:change')); });
       persist();
       renderSpending();
       renderBudget();
@@ -599,7 +605,9 @@
     renderSavings();
   });
   $('svDelete').addEventListener('click', function () {
+    var goneS = D.savings.filter(function (g) { return g.id === editingSaving; })[0];
     D.savings = D.savings.filter(function (g) { return g.id !== editingSaving; });
+    if (goneS && window.Quick && window.Quick.toast) setTimeout(function () { window.Quick.toast('<i class="bi bi-trash3"></i> ' + String(goneS.name || 'Saving goal').replace(/[<>&]/g, '') + ' deleted', function () { D.savings.push(goneS); persist(); renderSavings(); window.dispatchEvent(new Event('fin:change')); }); }, 0);
     persist();
     if (window.Links) setTimeout(window.Links.syncSave, 0);
     closeSaving();
