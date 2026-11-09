@@ -181,6 +181,15 @@
     } else if (v && typeof v === 'object' && depth > 0) Object.keys(v).forEach(function (k) { v[k] = tidy(v[k], depth - 1); });
     return v;
   }
+  /* A change made right before leaving the page (a switch flipped, then a tap on the menu) is in this browser's storage
+     but may not be sealed into the vault yet. 'dash.dirty' marks that; opening the next page keeps this browser's copy
+     instead of the older one in the vault, and seals it again. */
+  var DIRTY_KEY = 'dash.dirty', resealAfterOpen = false;
+  function unpackKeep(obj, local) {
+    var dirty = local && +readJSON(DIRTY_KEY) > 0, snap = dirty ? widgets() : null, d = unpack(obj);
+    if (snap) { Object.keys(snap).forEach(function (k) { try { localStorage.setItem(k, JSON.stringify(snap[k])); } catch (e) {} }); resealAfterOpen = true; }
+    return d;
+  }
   function unpack(obj) {
     obj = obj && typeof obj === 'object' ? obj : {};
     Object.keys(obj).forEach(function (k) { if (k !== '_w' && k !== 'health') obj[k] = tidy(obj[k], 2); });
@@ -302,6 +311,7 @@
     $('lockPass').blur();
     root.classList.remove('locked', 'resuming');
     root.classList.add('unlocked');
+    if (resealAfterOpen) { resealAfterOpen = false; setTimeout(function () { if (key) window.Vault.save(data); }, 0); }
     $('lock').hidden = true;
     $('lockBox').style.visibility = '';
     resetIdle(true);
@@ -366,7 +376,7 @@
       .then(function (obj) {
         key = k; salt = s;
         if (fromRemote) { memVault = null; writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
-        data = unpack(obj);
+        data = unpackKeep(obj, !fromRemote);
         busy(false);
         finishUnlock();
       })
@@ -501,7 +511,7 @@
   document.addEventListener('click', function (e) { if (key && e.target.closest('#syncState')) sync(); });
   window.addEventListener('online', function () { if (key) sync(); });
   /* To-dos, notes, goals and links changed: include them in the encrypted vault. */
-  window.addEventListener('dash:local', function () { if (key) window.Vault.save(data); });
+  window.addEventListener('dash:local', function () { if (key) { try { localStorage.setItem(DIRTY_KEY, String(Date.now())); } catch (e) {} window.Vault.save(data); } });
 
   /* ---------- sync with Cloudflare ---------- */
   function setSync(state, why) {
@@ -853,10 +863,11 @@
       if (!key) return Promise.reject(new Error('locked'));
       data = obj;
       var k = key, s = salt;
+      var t0 = Date.now();
       writing = writing.then(function () { return seal(obj, k, s, localRev() + 1); })
         .then(function (v) {
           if (key !== k) return;
-          if (writeJSON(VAULT_KEY, v)) memVault = null;
+          if (writeJSON(VAULT_KEY, v)) { memVault = null; if ((+readJSON(DIRTY_KEY) || 0) <= t0) removeKey(DIRTY_KEY); }
           else {
             /* this browser's storage is full: keep the newest copy in memory and upload it */
             memVault = v;
@@ -972,7 +983,7 @@
     }
     return open(vault, rec.key).then(function (obj) {
       key = rec.key; salt = unb64(vault.salt);
-      data = unpack(obj);
+      data = unpackKeep(obj, true);
       finishUnlock();
     });
   }).catch(function () {
