@@ -76,12 +76,7 @@
     if (Fe && !Fe.on('ahealth')) Fe.set('ahealth', true);          // first numbers: show the card
     tickHabits();
     window.dispatchEvent(new Event('health:change'));
-    if (n && window.Quick) {
-      var last = list[list.length - 1], bits = [];
-      if (last.steps != null) bits.push(fmt('steps', num(last.steps)) + ' steps');
-      if (hours(last.sleep)) bits.push(fmt('sleep', hours(last.sleep)) + ' sleep');
-      window.Quick.toast('<i class="bi bi-heart-pulse"></i> Apple Health' + (n > 1 ? ': ' + n + ' days' : bits.length ? ': ' + esc(bits.join(' · ')) : ' updated'));
-    }
+    /* no note on screen: new numbers simply show up on the Health card */
     return n;
   }
   /* habits can follow a number: "Exercise ≥ 30 min" ticks Training that day */

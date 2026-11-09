@@ -348,6 +348,8 @@
     var urgent = all.filter(function (x) { return x.badge; }).length;
     window.BriefItems = all;                       /* the morning briefing (delight.js) reads these */
     window.dispatchEvent(new Event('brief:items'));
+    /* only with notifications switched on (Settings → Notifications) – off means no number on the icon either */
+    if (!(readJSON('dash.push') || {}).on) urgent = 0;
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
     /* amounts get .money so "hide amounts" blurs them (only the number, not the sentence) */
     var amt = function (h) { return String(h).replace(/[−-]?\d{1,3}(?:[\s\u00a0\u202f]\d{3})*(?:[.,]\d+)?\s?kr\b/g, function (m) { return '<span class="money">' + m + '</span>'; }); };
