@@ -644,6 +644,11 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^What (.+) may change$/, 'Hva $1 kan endre'], [/^Tell me when (.+)…$/, 'Si fra når $1…'], [/^A cost (.+) paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys$/, 'En utgift $1 har betalt og legger inn, teller når du sier OK – samboerregelen om å bli enige om større kjøp'],
+    [/^(.+) sees everything again – no new code needed$/, '$1 ser alt igjen – ingen ny kode trengs'], [/^(.+) sees nothing for now\. Nothing is deleted, and they need no new code to come back\.$/, '$1 ser ingenting nå. Ingenting slettes, og de trenger ingen ny kode for å komme tilbake.'],
+    [/^Sharing paused – (.+) sees nothing for now$/, 'Delingen er på pause – $1 ser ingenting nå'], [/^(.+) added (.+) – waiting for your OK$/, '$1 la til $2 – venter på din OK'], [/^Over (.+) – it counts once you say OK$/, 'Over $1 – den teller når du sier OK'],
+    [/^(\d+) changes from (.+)$/, '$1 endringer fra $2'], [/^(.+) added a shared cost: (.+)$/, '$1 la til en felles utgift: $2'], [/^(.+) settled up (.+)$/, '$1 gjorde opp $2'], [/^(.+) added an event: (.+)$/, '$1 la til en hendelse: $2'], [/^(.+) did: (.+)$/, '$1 gjorde: $2'], [/^(.+) added a note: (.+)$/, '$1 la til et notat: $2'], [/^(.+) changed a note: (.+)$/, '$1 endret et notat: $2'],
+    [/^(.+) counted$/, '$1 er telt med'], [/^(.+) declined – removed for (.+)$/, '$1 avslått – fjernet for $2'], [/^With (\S+) · paused$/, 'Med $1 · på pause'],
     [/^Last change from (.+?): (.+)$/, 'Siste endring fra $1: $2'], [/^(.+)’s avatar is in People$/, 'Avataren til $1 er i Personer'],
     [/^(.+) is set up · invite again$/, '$1 er satt opp · inviter på nytt'],
     [/^Preview (.+)’s app$/, 'Forhåndsvis appen til $1'], [/^(.+)’s app$/, 'Appen til $1'],
@@ -1190,6 +1195,10 @@
     'Their profile and avatar': 'Profilen og avataren deres',
     'For a new phone, or if they forgot their passcode': 'For en ny telefon, eller hvis de har glemt koden',
     'profile and avatar received': 'profil og avatar mottatt', 'no profile yet': 'ingen profil ennå',
+    'Waiting for your OK': 'Venter på din OK', 'Decline': 'Avslå', 'Can change': 'Kan endre', 'View only': 'Kun visning', 'Bigger shared costs': 'Større felles utgifter', 'Ask me first above': 'Spør meg først over', 'Never': 'Aldri',
+    'In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).': 'I Kort fortalt, og som varsel på telefonen hvis varsler er på (Innstillinger → Varsler).', 'Share calendars automatically': 'Del kalendere automatisk', 'Every event in these is shared – no need to tick each one.': 'Alle hendelser i disse deles – du trenger ikke krysse av hver enkelt.',
+    'Pause sharing': 'Sett delingen på pause', 'Resume sharing': 'Fortsett delingen', 'Sharing resumed': 'Delingen fortsetter', 'Calendar': 'Kalender', 'House projects': 'Husprosjekter', 'Seen': 'Sett', 'Shared space': 'Delt hjem',
+    '…adds a shared cost': '…legger til en felles utgift', '…settles up': '…gjør opp', '…adds an event': '…legger til en hendelse', '…adds to the shopping list': '…legger til på handlelisten', '…does a chore': '…gjør en oppgave', '…adds or changes a note': '…legger til eller endrer et notat',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',

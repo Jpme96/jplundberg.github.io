@@ -2,7 +2,7 @@
    Data and repeats come from cal-core.js (window.Cal). */
 (function () {
   "use strict";
-  function shIc(o) { return o && o.ev && o.ev.own && o.ev.own.share && window.ShareSpace && window.ShareSpace.on() ? '<i class="bi bi-people cl-sh" title="Shared"></i> ' : ''; }
+  function shIc(o) { var e = o && o.ev && o.ev.own, S = window.ShareSpace; return e && S && S.on() && (S.evShared ? S.evShared(e) : e.share) ? '<i class="bi bi-people cl-sh" title="Shared"></i> ' : ''; }
 
   var C = window.Cal;
   var $ = function (id) { return document.getElementById(id); };

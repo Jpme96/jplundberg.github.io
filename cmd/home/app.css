@@ -106,3 +106,6 @@ textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; back
 .h-row .bi { color: var(--muted); font-size: 13px; }
 button:disabled, input:disabled, select:disabled { opacity: .55; cursor: default; }
 .h-past { opacity: .8; }
+.h-sub { padding-left: 26px; font-size: 14px; }
+.h-today .h-tick span { font-weight: 600; } .h-today .h-tick small { font-weight: 400; }
+li.h-wait-ok .h-row { opacity: .75; }

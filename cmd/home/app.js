@@ -21,7 +21,9 @@
   function rj(k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } }
   function wj(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   var tt = null;
+  var refusedAt = 0;
   function toast(h, undo) {
+    if (Date.now() - refusedAt < 600 && h.indexOf('bi-lock') < 0) return;          /* a refused change keeps its own message */
     var t = document.getElementById('toast'); t._undo = undo || null;
     t.innerHTML = '<span>' + h + '</span>' + (undo ? '<button type="button" data-undo>' + L('Undo', 'Angre') + '</button>' : '');
     t.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove('show'); t._undo = null; }, undo ? 5000 : 2400);
@@ -29,10 +31,10 @@
   document.getElementById('toast').addEventListener('click', function (e) { var t = this; if (e.target.closest('[data-undo]') && t._undo) { var u = t._undo; t._undo = null; t.classList.remove('show'); u(); } });
 
   /* ---------- the key ---------- */
-  var K = null, recs = {}, rids = {}, tab = rj('home.tab', 'shop'), me = 'p', PASS = null;
+  var K = null, recs = {}, rids = {}, tab = rj('home.tab', 'today'), me = 'p', PASS = null;
   /* preview: the owner opens this inside Settings → Shared space to see what the other one sees – read-only */
   var preview = (function () { var m = location.hash.match(/^#preview&k=([A-Za-z0-9_-]{43})/); if (!m) return null; history.replaceState(null, '', location.pathname); return m[1]; })();
-  if (preview) { document.documentElement.classList.add('h-preview'); tab = 'shop'; }
+  if (preview) { document.documentElement.classList.add('h-preview'); tab = 'today'; }
   var pending = preview ? null : (function () { var m = location.hash.match(/[#&]k=([A-Za-z0-9_-]{43})/); if (m) { try { sessionStorage.setItem('home.newkey', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; } try { return sessionStorage.getItem('home.newkey'); } catch (e) { return null; } })();
   function screen(h) { app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
   function boot() {
@@ -40,6 +42,7 @@
     SC.api('share').then(function (j) {
       if (!j.partner) { screen('<i class="bi bi-house-heart h-big"></i><h1>' + L('This is the shared app', 'Dette er den delte appen') + '</h1><p>' + L('It’s for the person you share your home with. Your own dashboard is here:', 'Den er for den du deler hjemmet med. Ditt eget dashbord er her:') + '</p><a class="h-btn" href="/cmd/">' + L('Open your dashboard', 'Åpne dashbordet ditt') + '</a>'); return; }
       if (pending) return setPass(pending);
+      if (j.paused && !rj('home.key', null)) { pausedScreen(); var u = app.querySelector('[data-pausedme]'); if (!u) app.querySelector('.h-screen').insertAdjacentHTML('beforeend', '<button class="h-btn ghost" type="button" data-unlockown>' + L('Unlock your own features', 'Lås opp dine egne funksjoner') + '</button>'); return; }
       var rem = rj('home.key', null); if (rem) { K = rem; My.remembered(); return start(); }
       SC.api('share?wrap').then(function (w) { askPass(w); }, function (e) {
         if (e.status === 404) screen('<i class="bi bi-qr-code-scan h-big"></i><h1>' + L('Almost there', 'Nesten klar') + '</h1><p>' + L('Open the Camera app and scan the code on the other phone (Settings → Shared space → Show the code).', 'Åpne Kamera-appen og skann koden på den andre telefonen (Innstillinger → Delt hjem → Vis koden).') + '</p><form class="h-form" data-paste><input name="link" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + L('…or paste the invite link here', '…eller lim inn invitasjonslenken her') + '"><p class="h-err" data-err></p><button class="h-btn" type="submit">' + L('Continue', 'Fortsett') + '</button></form>' +
@@ -48,6 +51,7 @@
         else offline();
       });
     }, function (e) {
+      if (e.status === 403 && e.body && e.body.paused) { pausedScreen(); return; }
       if (e.status === 403) { stoppedScreen(); return; }
       if (e.status === 401) screen('<i class="bi bi-box-arrow-in-right h-big"></i><h1>' + L('Log in again', 'Logg inn igjen') + '</h1><button class="h-btn" type="button" data-reload>' + L('Reload', 'Last inn på nytt') + '</button>');
       else offline();
@@ -107,7 +111,27 @@
     }, function () { toast('<i class="bi bi-cloud-slash"></i> ' + L('Saved here – sends when you’re online', 'Lagret her – sendes når du er på nett')); });
   }
   /* change one record: shown at once, sent right after (kept and resent if the network is away) */
+  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
+  function canEdit(area) { return ((info().perm || {})[area] || 'edit') !== 'view'; }
+  /* tell the owner's phone about what you did – only the kinds they switched on */
+  var tellQ = [], tellT = null;
+  function tell(c, f, del, isNew) {
+    var on = info().onotify || [], me0 = myName(), k = null, txt = '';
+    if (del) return;
+    if (c === 'sx' && isNew) { k = 'cost'; txt = me0 + L(' added a shared cost: ', ' la til en felles utgift: ') + (f.note || '') + ' ' + kr(f.total); }
+    else if (c === 'pay' && isNew) { k = 'settle'; txt = me0 + L(' settled up ', ' gjorde opp ') + kr(f.amount); }
+    else if (c === 'ev' && isNew) { k = 'event'; txt = me0 + L(' added an event: ', ' la til en hendelse: ') + f.title; }
+    else if (c === 'shop' && isNew) { k = 'shop'; txt = me0 + L(' added ', ' la til ') + f.text + L(' to the list', ' på listen'); }
+    else if (c === 'cdone') { var ch = find('chore', String(f.k || '').split('|')[1]); k = 'chore'; txt = me0 + L(' did: ', ' gjorde: ') + (ch ? ch.f.name : ''); }
+    else if (c === 'note') { k = 'note'; txt = me0 + L(' wrote a note: ', ' skrev et notat: ') + (f.title || ''); }
+    if (!k || on.indexOf(k) < 0) return;
+    tellQ.push(txt); clearTimeout(tellT);
+    tellT = setTimeout(function () { var b = tellQ.slice(0, 3).join(' · ') + (tellQ.length > 3 ? ' …' : ''); tellQ = []; SC.api('push', { method: 'POST', body: { notify: { title: L('Home', 'Hjem'), body: b, tag: 'p' + Date.now() } } }).catch(function () {}); }, 4000);
+  }
   function put(c, id, f, del) {
+    if (!preview && KIND_AREA[c] && !canEdit(KIND_AREA[c])) { refusedAt = Date.now(); toast('<i class="bi bi-lock"></i> ' + esc(owner()) + L(' has made this view only', ' har gjort dette kun til visning')); return Promise.resolve(); }
+    var isNew = !find(c, id);
+    if (!preview) tell(c, f || {}, del, isNew);
     if (preview) { toast('<i class="bi bi-eye"></i> ' + L('Preview – nothing changes here', 'Forhåndsvisning – ingenting endres her')); return Promise.resolve(); }
     var t = Date.now(), key = c + '|' + id, cf = del ? null : SC.clean(c, f);
     return (rids[key] ? Promise.resolve(rids[key]) : SC.rid(K, c, id)).then(function (rid) {
@@ -116,7 +140,12 @@
       return SC.encrypt(K, { c: c, id: id, f: cf }).then(function (e) { queue[rid] = { t: t, iv: e.iv, ct: e.ct }; if (c === 'pme') queue[rid].po = 1; });
     }).then(function () { wj('home.queue', queue); return flush(); }).then(draw);
   }
-  function pull() { if (preview) return SC.api('shared').then(absorb).then(draw, function () {}); return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) stoppedScreen(); }); }
+  var paused = false;
+  function pull() { if (preview) return SC.api('shared').then(absorb).then(draw, function () {}); return flush().then(function () { return SC.api('shared'); }).then(function (srv) { paused = false; return absorb(srv); }).then(function () { draw(); Push.update(); }, function (e) { if (e && e.status === 403 && e.body && e.body.paused) { paused = true; pausedScreen(); return; } if (e && e.status === 403) stoppedScreen(); }); }
+  function pausedScreen() {
+    screen('<i class="bi bi-pause-circle h-big"></i><h1>' + L('Sharing is paused', 'Delingen er satt på pause') + '</h1><p>' + esc(owner()) + L(' has paused sharing for now. Nothing is deleted – it comes back here when they turn it on again.', ' har satt delingen på pause. Ingenting er slettet – det kommer tilbake hit når den slås på igjen.') + '</p>' +
+      (My.any() ? '<button class="h-btn" type="button" data-pausedme>' + L('Open your own features', 'Åpne dine egne funksjoner') + '</button>' : '') + '<button class="h-btn ghost" type="button" data-reload>' + L('Check again', 'Sjekk igjen') + '</button>');
+  }
   var stopped = false;
   function start() {
     app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
@@ -170,17 +199,18 @@
   /* ---------- money ---------- */
   function balance() {   /* > 0: you owe the owner */
     var b = +info().extra || 0;
-    list('sx').forEach(function (r) { var f = r.f, s = f.shares || {}; b += f.payer === 'o' ? +s.p || 0 : -(+s.o || 0); });
+    var pend = info().pend || [];
+    list('sx').forEach(function (r) { if (pend.indexOf(r.id) > -1) return; var f = r.f, s = f.shares || {}; b += f.payer === 'o' ? +s.p || 0 : -(+s.o || 0); });
     list('pay').forEach(function (r) { var f = r.f; b += f.from === 'o' ? +f.amount || 0 : -(+f.amount || 0); });
     list('led').forEach(function (r) { var f = r.f; b += f.kind === 'back' ? +f.amount || 0 : f.payer === 'o' ? +f.p || 0 : -(+f.o || 0); });
     return Math.round(b * 100) / 100;
   }
 
   /* ---------- drawing ---------- */
-  var TABS = [['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem'], ['me', 'person-lock', 'Me', 'Meg']];
+  var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem'], ['me', 'person-lock', 'Me', 'Meg']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house'), me: !preview && My.any() }[t[0]]; }); }
+    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house'), me: !preview && My.any() }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -193,9 +223,48 @@
     app.innerHTML = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
       (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
       (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
-      '<section class="h-body">' + ({ shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || shop)() + '</section>' +
+      '<section class="h-body">' + ({ today: todayView, shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || todayView)() + '</section>' +
       '<nav class="h-tabs">' + ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-current="' + (t[0] === tab) + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span></button>'; }).join('') + '</nav>';
     if (keep) { var el = app.querySelector('[name="' + keep.n + '"]'); if (el && 'value' in el) { el.value = keep.v; el.focus(); } }
+  }
+  /* what changed from the owner since you last looked (remembered per phone) */
+  var known = rj('home.known', null), lastLook = +rj('home.lastLook', 0) || 0;
+  function changes() {
+    if (!known) return [];
+    var out = [], o = owner();
+    Object.keys(recs).forEach(function (rid) {
+      var r = recs[rid]; if (r.by === 'p' || !r.c || r.c === 'info' || r.c === 'clog' || r.c === 'led' || r.c === 'pme') return;
+      var was = known[rid]; if (was && was >= r.t) return; if (r.t <= lastLook) return;
+      var f = r.f || {}, nm = f.text || f.title || f.name || f.note || '';
+      if (r.del) { if (!was) return; out.push({ t: r.t, i: 'dash-circle', s: o + L(' removed something', ' fjernet noe') }); return; }
+      var verb = was ? L(' changed ', ' endret ') : L(' added ', ' la til ');
+      var what = { shop: L('to the list: ', 'på listen: '), meal: L('dinner: ', 'middag: '), ev: L('an event: ', 'en hendelse: '), chore: L('a chore: ', 'en oppgave: '), sx: L('a shared cost: ', 'en felles utgift: '), pay: L('a settle-up: ', 'en oppgjør: '), note: L('a note: ', 'et notat: '), trip: L('a trip: ', 'en tur: '), proj: L('a project: ', 'et prosjekt: '), doc: L('a document: ', 'et dokument: '), plant: L('a plant: ', 'en plante: '), mv: L('the moving checklist: ', 'flyttelisten: '), recipe: L('a recipe: ', 'en oppskrift: '), pantry: L('the pantry: ', 'matskapet: '), bill: L('a bill: ', 'en regning: '), cdone: '' }[r.c];
+      if (r.c === 'cdone') { var ch = find('chore', String(f.k || '').split('|')[1]); if (ch) out.push({ t: r.t, i: 'check2-circle', s: o + L(' did: ', ' gjorde: ') + ch.f.name }); return; }
+      if (what == null) return;
+      if (r.c === 'shop' && f.done) { out.push({ t: r.t, i: 'cart-check', s: o + L(' bought ', ' kjøpte ') + nm }); return; }
+      out.push({ t: r.t, i: 'arrow-repeat', s: o + verb + what + nm + (r.c === 'sx' ? ' ' + kr(f.total) : r.c === 'pay' ? kr(f.amount) : '') });
+    });
+    return out.sort(function (a, b) { return b.t - a.t; }).slice(0, 12);
+  }
+  function lookedNow() { var k = {}; Object.keys(recs).forEach(function (rid) { k[rid] = recs[rid].t; }); known = k; lastLook = Date.now(); wj('home.known', k); wj('home.lastLook', lastLook); }
+  function todayView() {
+    var tk = today(), w = info().what || {}, o = owner(), rows = [];
+    var meal = list('meal').filter(function (r) { return (r.f.date || r.id) === tk; })[0];
+    if (w.meals !== false) rows.push(['egg-fried', meal ? esc(meal.f.text) : '<em>' + L('Nothing planned', 'Ikke planlagt') + '</em>', L('Dinner tonight', 'Middag i kveld'), 'shop']);
+    if (w.chores !== false) { var due = list('chore').map(function (r) { var p = period(r.f); return { r: r, p: p, tu: turn(r.f, p), dn: doneOf(r.id, p) }; }).filter(function (x) { return !x.dn && x.p.day <= tk; });
+      var mine = due.filter(function (x) { return x.tu === 'them'; }); rows.push(['arrow-repeat', mine.length ? esc(mine.map(function (x) { return x.r.f.name; }).join(', ')) : '<em>' + L('Nothing on you today', 'Ingenting på deg i dag') + '</em>', L('Your turn', 'Din tur') + (due.length > mine.length ? ' · ' + o + ': ' + (due.length - mine.length) : ''), 'chores']); }
+    if (w.cal !== false) { var ev = list('ev').map(function (r) { return { r: r, d: nextOf(r.f, tk) }; }).filter(function (x) { return x.d === tk; });
+      rows.push(['calendar-heart', ev.length ? esc(ev.map(function (x) { return (x.r.f.allDay ? '' : (x.r.f.start || '') + ' ') + x.r.f.title; }).join(', ')) : '<em>' + L('Nothing today', 'Ingenting i dag') + '</em>', L('Today', 'I dag'), 'cal']); }
+    if (w.shop !== false) { var sl = list('shop').filter(function (r) { return !r.f.done; }); rows.push(['cart3', sl.length ? esc(sl.slice(0, 5).map(function (r) { return r.f.text; }).join(', ') + (sl.length > 5 ? ' …' : '')) : '<em>' + L('The list is empty', 'Listen er tom') + '</em>', sl.length + L(' to buy', ' å kjøpe'), 'shop']); }
+    if (w.money !== false) { var b = balance(); rows.push(['people', Math.abs(b) < 1 ? L('You’re even', 'Dere er skuls') : b > 0 ? L('You owe ', 'Du skylder ') + esc(o) + ' ' + esc(kr(b)) : esc(o) + L(' owes you ', ' skylder deg ') + esc(kr(-b)), L('Money', 'Penger'), 'money']); }
+    if (w.plants !== false) { var th = list('plant').filter(function (r) { var d = r.f.last ? fromKey(r.f.last) : new Date(0); d.setDate(d.getDate() + (+r.f.every || 7)); return dkey(d) <= tk; }); if (th.length) rows.push(['droplet', esc(th.map(function (r) { return r.f.name; }).join(', ')), L('Thirsty plants', 'Tørste planter'), 'chores']); }
+    var ch = changes();
+    var html = '<ul class="h-list h-today">' + rows.map(function (r) { return '<li><button type="button" class="h-tick" data-tab="' + r[3] + '"><i class="bi bi-' + r[0] + '"></i><span>' + r[1] + '<small>' + esc(r[2]) + '</small></span></button></li>'; }).join('') + '</ul>' +
+      '<h2 class="h-h">' + L('What’s changed', 'Hva som er endret') + '</h2>' +
+      (ch.length ? '<ul class="h-list">' + ch.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.i + '"></i> ' + esc(x.s) + '<small>' + esc(new Date(x.t).toLocaleString(nb ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul><button type="button" class="h-link" data-looked>' + L('Mark as seen', 'Merk som sett') + '</button>'
+        : '<p class="h-sum">' + (known ? L('Nothing new since you last looked.', 'Ingenting nytt siden sist.') : L('From now on, what ', 'Fra nå av ser du her hva ') + esc(o) + L(' changes shows up here.', ' endrer.')) + '</p>');
+    if (!known && !preview) setTimeout(lookedNow, 0);
+    return html;
   }
   function dinners() {
     if ((info().what || {}).meals === false) return '';
@@ -267,7 +336,8 @@
           return '<li><span class="h-row"><span><i class="bi bi-' + (f.kind === 'bill' ? 'receipt' : f.kind === 'back' ? 'arrow-return-left' : 'calendar2-week') + '"></i> ' + esc(f.note) + '<small>' + esc(fdate(f.date) + ' · ' + (f.kind === 'back' ? o + L(' paid you back', ' betalte deg tilbake') : (f.payer === 'o' ? o + L(' paid', ' betalte') : L('you paid', 'du betalte')) + ' · ' + (f.payer === 'o' ? L('your part ', 'din del ') + kr(f.p) : L('their part ', 'deres del ') + kr(f.o)))) + '</small></span><b class="' + (f.kind === 'back' ? 'neg' : f.payer === 'o' ? 'neg' : 'pos') + '">' + (f.kind === 'back' || f.payer === 'o' ? '−' : '+') + esc(kr(you)) + '</b></span></li>'; }
         if (x.k === 'pay') return '<li><span class="h-row"><span><i class="bi bi-arrow-left-right"></i> ' + esc(f.from === 'p' ? L('You paid ', 'Du betalte ') + o : o + L(' paid you', ' betalte deg')) + '<small>' + esc(fdate(f.date)) + '</small></span><b>' + esc(kr(f.amount)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-paydel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
         var s = f.shares || {};
-        return '<li><span class="h-row"><span>' + esc(f.note || L('Shared', 'Felles')) + '<small>' + esc(fdate(f.date) + ' · ' + (f.payer === 'p' ? L('you paid ', 'du betalte ') + kr(f.total) + ' · ' + o + L('’s part ', ' sin del ') + kr(s.o) : o + L(' paid ', ' betalte ') + kr(f.total) + ' · ' + L('your part ', 'din del ') + kr(s.p))) + '</small></span><b class="' + (f.payer === 'p' ? 'pos' : 'neg') + '">' + (f.payer === 'p' ? '+' : '−') + esc(kr(f.payer === 'p' ? s.o : s.p)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-sxdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
+        var waiting = (info().pend || []).indexOf(x.r.id) > -1;
+        return '<li' + (waiting ? ' class="h-wait-ok"' : '') + '><span class="h-row"><span>' + esc(f.note || L('Shared', 'Felles')) + (waiting ? ' <span class="h-chip warn">' + L('Waiting for ', 'Venter på ') + esc(owner()) + L('’s OK', ' sin OK') + '</span>' : '') + '<small>' + esc(fdate(f.date) + ' · ' + (f.payer === 'p' ? L('you paid ', 'du betalte ') + kr(f.total) + ' · ' + o + L('’s part ', ' sin del ') + kr(s.o) : o + L(' paid ', ' betalte ') + kr(f.total) + ' · ' + L('your part ', 'din del ') + kr(s.p))) + '</small></span><b class="' + (f.payer === 'p' ? 'pos' : 'neg') + '">' + (f.payer === 'p' ? '+' : '−') + esc(kr(f.payer === 'p' ? s.o : s.p)) + '</b></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-sxdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
       }).join('') + '</ul>' + (rows.length > 12 ? '<button type="button" class="h-link" data-moneyall>' + (showAllMoney ? L('Show fewer', 'Vis færre') : L('Show all ', 'Vis alle ') + rows.length) + '</button>' : '') : '<p class="h-sum">' + L('Nothing shared yet.', 'Ingenting delt ennå.') + '</p>') + bills();
   }
   var RN = { daily: 1, weekly: 7, '2weeks': 14, weekdays: 1 };
@@ -443,6 +513,7 @@
       '<button type="button" class="h-btn ghost" data-profile><i class="bi bi-person-vcard"></i> ' + L('Birthday and phone', 'Bursdag og telefon') + '</button>' +
       '<label class="h-lbl">' + L('Language', 'Språk') + '<select name="lang"><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<label class="h-check"><input type="checkbox" name="rem"' + (rem ? ' checked' : '') + '> ' + L('Keep me unlocked on this phone', 'Hold meg innlogget på denne telefonen') + '</label>' +
+      '<div class="h-det-box"><b><i class="bi bi-bell"></i> ' + L('Notifications on this phone', 'Varsler på denne telefonen') + '</b>' + Push.html() + '</div>' +
       '<div class="h-det-box"><b><i class="bi bi-person-lock"></i> ' + L('Your own features', 'Dine egne funksjoner') + '</b><p class="h-small">' + L('Only you see these – locked with your own key. ', 'Bare du ser disse – låst med din egen nøkkel. ') + esc(o) + L(' can’t open them.', ' kan ikke åpne dem.') + '</p>' +
         [['cal', L('My calendar', 'Min kalender')], ['money', L('My money', 'Min økonomi')], ['todos', L('My to-dos', 'Mine gjøremål')]].map(function (x) { return '<label class="h-check"><input type="checkbox" name="my_' + x[0] + '"' + (My.on(x[0]) ? ' checked' : '') + '> ' + x[1] + '</label>'; }).join('') +
         (My.any() ? '<button type="button" class="h-link" data-mydl>' + L('Download my own data', 'Last ned mine egne data') + '</button>' : '') + '</div>' +
@@ -459,6 +530,7 @@
       }
       if (f.rem.checked) wj('home.key', K); else wj('home.key', null);
       My.remember(f.rem.checked);
+      if (!preview) Push.save(f);
       var wantMy = {}; ['cal', 'money', 'todos'].forEach(function (k) { wantMy[k] = !!(f['my_' + k] && f['my_' + k].checked); }); My.setFeatures(wantMy);
       var nm = f.nm.value.trim(); if (nm && nm !== (mine().name || '')) put('pme', 'me', Object.assign({}, mine(), { name: nm }));
       if ((f.lang.value === 'nb') !== nb) { try { localStorage.setItem('home.lang', f.lang.value); } catch (x) {} setTimeout(function () { location.reload(); }, 150); }
@@ -486,6 +558,9 @@
     if (d.lock != null) { wj('home.key', null); wj('home.pkey', null); location.reload(); return; }
     if (d.forget != null) { ['home.key', 'home.queue', 'home.tab', 'home.pkey', 'home.myf', 'home.profiled'].forEach(function (k) { wj(k, null); }); location.reload(); return; }
     if (d.mydl != null) { My.download(); return; }
+    if (d.unlockown != null) { SC.api('share?wrap').then(askPass, function () {}); return; }
+    if (d.pausedme != null) { tab = 'me'; paused = false; draw(); return; }
+    if (d.pushtest != null) { Push.test(); return; }
     if (d.recshop) { var rr = find('recipe', d.recshop); if (rr) { var have = {}; list('shop').forEach(function (x) { if (!x.f.done) have[String(x.f.text).toLowerCase()] = 1; }); var n = 0; String(rr.f.ingr || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (x) { if (!have[x.toLowerCase()]) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); n++; } }); toast('<i class="bi bi-cart-plus"></i> ' + n + L(' on the shopping list', ' på handlelisten')); } var s9 = b.closest('.h-sheetbg'); if (s9) s9.remove(); return; }
     if (d.profile != null) { var s0 = b.closest('.h-sheetbg'); if (s0) s0.remove(); profileSheet(); return; }
     if (d.choredel && find('chore', d.choredel)) { var cf = find('chore', d.choredel).f, cid = d.choredel; put('chore', cid, null, true); var s3 = b.closest('.h-sheetbg'); if (s3) s3.remove(); toast('<i class="bi bi-trash3"></i> ' + esc(cf.name), function () { put('chore', cid, cf); }); return; }
@@ -530,6 +605,7 @@
     if (d.settle != null) { settleSheet(); return; }
     if (d.moneyall != null) { showAllMoney = !showAllMoney; draw(); return; }
     if (d.addev != null) { evSheet(); return; }
+    if (d.looked != null) { lookedNow(); draw(); return; }
     if (d.earlier != null) { showEarlier = !showEarlier; draw(); return; }
     var del = d.sxdel ? ['sx', d.sxdel] : d.paydel ? ['pay', d.paydel] : d.evdel ? ['ev', d.evdel] : null;
     if (del && (r = find(del[0], del[1]))) { var kf = r.f; put(del[0], r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + L('Removed', 'Fjernet'), function () { put(del[0], r.id, kf); }); }
@@ -641,5 +717,62 @@
     }
     return { on: on, any: any, view: view, setFeatures: setFeatures, unlock: unlock, remembered: remembered, remember: remember, rewrap: rewrap, download: download };
   })();
+  /* ================= Notifications on their phone =================
+     A small service worker of its own (/cmd/home/sw.js) shows them. Two kinds:
+     · right away, sent by the owner's dashboard when they add something you chose (list, events, money, dinner, chores)
+     · reminders this app sets: your turn for a chore (at the hour you pick), and shared events an hour before */
+  var Push = (function () {
+    var KINDS = [['list', L('John adds to the shopping list', 'John legger til på handlelisten')], ['events', L('A new shared event', 'En ny delt hendelse')], ['money', L('Shared costs and settling up', 'Felles utgifter og oppgjør')], ['dinner', L('Dinner plans', 'Middagsplaner')], ['chores', L('New chores', 'Nye oppgaver')], ['turn', L('Your turn for a chore (morning)', 'Din tur for en oppgave (morgen)')], ['soon', L('Shared events, an hour before', 'Delte hendelser, en time før')]];
+    function prefs() { return Object.assign({ list: true, events: true, money: true, dinner: false, chores: true, turn: true, soon: true }, (mine().notif) || {}); }
+    function devId() { var d = rj('home.dev', null); if (!d) { d = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); wj('home.dev', d); } return d; }
+    function supported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+    function on() { return !!rj('home.push', false); }
+    function html() {
+      var p = prefs(), o = owner();
+      if (!supported()) return '<p class="h-small">' + L('On iPhone, notifications work once this app is on your Home Screen: Share → Add to Home Screen, then open it from there.', 'På iPhone virker varsler når appen ligger på Hjem-skjermen: Del → Legg til på Hjem-skjerm, og åpne den derfra.') + '</p>';
+      return '<label class="h-check"><input type="checkbox" name="push_on"' + (on() ? ' checked' : '') + '> ' + L('Send notifications to this phone', 'Send varsler til denne telefonen') + '</label>' +
+        KINDS.map(function (k) { return '<label class="h-check h-sub"><input type="checkbox" name="push_' + k[0] + '"' + (p[k[0]] ? ' checked' : '') + '> ' + esc(k[1].replace('John', o)) + '</label>'; }).join('') +
+        '<label class="h-lbl">' + L('Chore reminder at', 'Oppgavepåminnelse klokka') + '<select name="push_hour">' + [7, 8, 9, 12, 16, 18, 20].map(function (h) { return '<option value="' + h + '"' + (+(rj('home.pushHour', 8)) === h ? ' selected' : '') + '>' + pad(h) + ':00</option>'; }).join('') + '</select></label>' +
+        (on() ? '<button type="button" class="h-link" data-pushtest>' + L('Send a test', 'Send en test') + '</button>' : '');
+    }
+    function reg() { return navigator.serviceWorker.register('/cmd/home/sw.js', { scope: '/cmd/home/' }).then(function () { return navigator.serviceWorker.ready; }); }
+    function b64u(s) { var p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+    function items() {
+      var p = prefs(), out = [], now = Date.now(), hr = +(rj('home.pushHour', 8)) || 8;
+      if (p.turn) list('chore').forEach(function (r) {
+        for (var w = 0; w < 3; w++) { var d = new Date(); d.setDate(d.getDate() + w * 7); var pr = period(r.f, dkey(d)); if (turn(r.f, pr) !== 'them' || doneOf(r.id, pr)) continue;
+          var at = fromKey(pr.day); at.setHours(hr, 0, 0, 0); if (at.getTime() > now) out.push({ id: 'turn:' + r.id + ':' + pr.key, at: at.getTime(), title: L('Your turn', 'Din tur'), body: r.f.name, url: '/cmd/home/' }); }
+      });
+      if (p.soon) list('ev').forEach(function (r) { var f = r.f; if (f.allDay) return; var dd = nextOf(f, today()); if (!dd) return; var at = fromKey(dd); var hm = String(f.start || '18:00').split(':'); at.setHours(+hm[0], +hm[1] || 0, 0, 0); var t0 = at.getTime() - 3600e3; if (t0 > now && t0 < now + 14 * 864e5) out.push({ id: 'ev:' + r.id + ':' + dd, at: t0, title: f.title, body: L('In an hour', 'Om en time') + (f.location ? ' · ' + f.location : ''), url: '/cmd/home/' }); });
+      return out.sort(function (a, b) { return a.at - b.at; }).slice(0, 60);
+    }
+    var lastSent = '';
+    function update(force) {
+      if (!on() || !supported() || preview || !K) return Promise.resolve();
+      return reg().then(function (r) { return r.pushManager.getSubscription(); }).then(function (sub) {
+        if (!sub) return; var it = items(), sig = JSON.stringify(it) + sub.endpoint; if (!force && sig === lastSent) return; lastSent = sig;
+        return SC.api('push', { method: 'PUT', body: { id: devId(), sub: sub.toJSON(), items: it } });
+      }).catch(function () {});
+    }
+    function enable() {
+      return Notification.requestPermission().then(function (perm) {
+        if (perm !== 'granted') throw new Error('denied');
+        return Promise.all([reg(), SC.api('push')]);
+      }).then(function (x) { return x[0].pushManager.getSubscription().then(function (s) { return s || x[0].pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(x[1].key) }); }); })
+        .then(function () { wj('home.push', true); return update(true); });
+    }
+    function disable() { wj('home.push', null); return SC.api('push', { method: 'DELETE', body: { id: devId() } }).catch(function () {}); }
+    function save(f) {
+      if (!f.push_on) return;
+      var np = {}; KINDS.forEach(function (k) { np[k[0]] = !!(f['push_' + k[0]] && f['push_' + k[0]].checked); });
+      if (f.push_hour) wj('home.pushHour', +f.push_hour.value || 8);
+      if (JSON.stringify(np) !== JSON.stringify(prefs())) put('pme', 'me', Object.assign({}, mine(), { notif: np }));
+      if (f.push_on.checked && !on()) enable().then(function () { toast('<i class="bi bi-bell"></i> ' + L('Notifications are on', 'Varsler er på')); }, function () { toast(L('Notifications weren’t allowed – check Settings → Notifications on the phone', 'Varsler ble ikke tillatt – sjekk Innstillinger → Varslinger på telefonen')); });
+      else if (!f.push_on.checked && on()) disable(); else update(true);
+    }
+    function test() { SC.api('push', { method: 'POST', body: { id: devId(), test: true } }).then(function () { toast('<i class="bi bi-bell"></i> ' + L('Test sent', 'Test sendt')); }, function (e) { toast(esc((e && e.body && e.body.error) || L('Couldn’t send', 'Kunne ikke sende'))); }); }
+    return { html: html, save: save, update: update, test: test };
+  })();
+  setInterval(function () { Push.update(); }, 5 * 60e3);
   boot();
 })();

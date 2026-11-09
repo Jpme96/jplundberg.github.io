@@ -63,7 +63,7 @@
   }
   /* what may ever be shared – kind → the fields it may carry. Anything else is dropped before it is encrypted. */
   var ALLOW = {
-    info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook'],
+    info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook', 'perm', 'onotify', 'pend'],
     shop: ['text', 'done'],
     chore: ['name', 'every', 'day', 'who', 'start'],
     cdone: ['k', 'who', 'at'],
@@ -82,7 +82,7 @@
     note: ['title', 'text'],
     proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
     doc: ['name', 'cat', 'src', 'date', 'files'],
-    pme: ['name', 'look', 'bday', 'phone']                       /* the other person's own name and avatar – only they write it */
+    pme: ['name', 'look', 'bday', 'phone', 'notif']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else */
   function cleanLook(l) {
@@ -96,6 +96,10 @@
     var o = {}; al.forEach(function (k) { if (f[k] !== undefined && f[k] !== null && f[k] !== '') o[k] = f[k]; });
     if (o.tasks) o.tasks = (Array.isArray(o.tasks) ? o.tasks : []).slice(0, 200).map(function (x) { return { id: String((x && x.id) || '').slice(0, 40), t: String((x && x.t) || '').slice(0, 120), done: !!(x && x.done), due: /^\d{4}-\d{2}-\d{2}$/.test((x && x.due) || '') ? x.due : undefined }; }).filter(function (x) { return x.id && x.t; });
     if (o.files) o.files = (Array.isArray(o.files) ? o.files : []).slice(0, 20).map(function (x) { return { fid: String((x && x.fid) || ''), name: String((x && x.name) || 'file').slice(0, 120), type: String((x && x.type) || '').slice(0, 60), size: +(x && x.size) || 0 }; }).filter(function (x) { return /^[a-f0-9]{16,64}$/.test(x.fid); });
+    if (o.notif) { var nf = {}; Object.keys(o.notif && typeof o.notif === 'object' ? o.notif : {}).slice(0, 12).forEach(function (k) { if (/^[a-z]{2,10}$/.test(k)) nf[k] = !!o.notif[k]; }); o.notif = nf; }
+    if (o.perm) { var pm = {}; Object.keys(o.perm && typeof o.perm === 'object' ? o.perm : {}).slice(0, 20).forEach(function (k) { if (/^[a-z]{2,10}$/.test(k)) pm[k] = o.perm[k] === 'view' ? 'view' : 'edit'; }); o.perm = pm; }
+    if (o.onotify) o.onotify = (Array.isArray(o.onotify) ? o.onotify : []).filter(function (k) { return /^[a-z]{2,10}$/.test(k); }).slice(0, 12);
+    if (o.pend) o.pend = (Array.isArray(o.pend) ? o.pend : []).map(String).slice(0, 50);
     if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;

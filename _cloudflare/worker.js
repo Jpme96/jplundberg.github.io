@@ -101,6 +101,8 @@ async function route(request, env) {
     const isPartner = !check.service && !!(shareCfg && shareCfg.partner && em && em === shareCfg.partner);
     if (!check.service && !isPartner && shareCfg && shareCfg.owner && em !== shareCfg.owner) return json({ error: 'not allowed' }, 403);
     if (isPartner) {
+      if (shareCfg.paused && path !== '/cmd/api/share' && path !== '/cmd/api/pvault') return json({ error: 'sharing is paused', paused: true }, 403);
+      if (path === '/cmd/api/push') return pushApi(request, env, 'p');
       if (path === '/cmd/api/shared') return sharedApi(request, env, 'p');
       if (path === '/cmd/api/sfile') return sfileApi(request, url, env, true);
       if (path === '/cmd/api/pvault') return pvaultApi(request, url, env);
@@ -118,6 +120,7 @@ async function route(request, env) {
     const devId = request.headers.get('X-Dash-Device');
     if (devId && DEV_ID.test(devId) && env.VAULT) { const dv = await env.VAULT.get(DEV_PREFIX + devId); if (dv && JSON.parse(dv).revoked) return json({ error: 'signed out', signedOut: true }, 401); }
     if (path === '/cmd/api/devices') return devicesApi(request, url, env);
+    if (path === '/cmd/api/push') return pushApi(request, env, 'o');
     if (path === '/cmd/api/health') return healthApi(request, env);
     if (path === '/cmd/api/site') return site(request, env);
     if (path === '/cmd/api/visitors') return visitors(url, env);
@@ -125,7 +128,6 @@ async function route(request, env) {
     if (path === '/cmd/api/article') return articleApi(request, url, env);
     if (path === '/cmd/api/calendar') return calendarFeed(request);
     if (path === '/cmd/api/texts') return textsApi(request, env);
-    if (path === '/cmd/api/push') return pushApi(request, env);
     if (path === '/cmd/api/power') return powerApi(url);
     if (path === '/cmd/api/rate') return rateApi();
     if (path === '/cmd/api/recipe') return recipeApi(request);
@@ -158,23 +160,30 @@ async function shareApi(request, url, env, partner, cfg) {
   }
   if (m === 'GET') {
     const w = await env.VAULT.get(SHARE_WRAP);
-    if (partner) return json({ partner: true, name: cfg.name || '', joined: !!w });
-    return json(cfg && cfg.partner ? { on: true, partner: cfg.partner, name: cfg.name || '', since: cfg.since || null, joined: !!w } : { on: false });
+    if (partner) return json({ partner: true, name: cfg.name || '', joined: !!w, paused: !!cfg.paused });
+    return json(cfg && cfg.partner ? { on: true, partner: cfg.partner, name: cfg.name || '', since: cfg.since || null, joined: !!w, paused: !!cfg.paused } : { on: false });
   }
   if (partner) return json({ error: 'only the owner can change sharing' }, 403);
   const me = String(request.headers.get('X-Share-Me') || '').toLowerCase();
+  if (m === 'POST' && url.searchParams.has('pause')) {            /* pause / resume: nothing is deleted */
+    if (!cfg || !cfg.partner) return json({ error: 'not sharing' }, 400);
+    const b = await request.json().catch(() => ({}));
+    await env.VAULT.put(SHARE_CFG, JSON.stringify(Object.assign({}, cfg, { paused: !!b.paused })));
+    return json({ ok: true, paused: !!b.paused });
+  }
   if (m === 'PUT') {
     const b = await request.json().catch(() => null), email = b && String(b.partner || '').trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) return json({ error: 'bad email' }, 400);
     const prev = cfg && cfg.partner, owner = (cfg && cfg.owner) || me;
     if (!owner || owner === email) return json({ error: 'that is your own login' }, 400);
-    await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString() }));
+    await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString(), paused: !!(cfg && cfg.partner === email && cfg.paused) }));
     if (prev && prev !== email) await Promise.all([env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);   /* someone new: the old lock and their own space go */
     return json({ ok: true });
   }
   if (m === 'DELETE') {                                                        /* Stop sharing: access, key and box go – the owner stays known */
     await Promise.all([env.VAULT.put(SHARE_CFG, JSON.stringify({ owner: cfg && cfg.owner || me, stopped: new Date().toISOString() })), env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(SHARED)]);
     await Promise.all([env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);
+    let c2; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX + 'p', cursor: c2 }); for (const k of l.keys) { const r = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (r && r.role === 'p') await env.VAULT.delete(k.name); } c2 = l.list_complete ? null : l.cursor; } while (c2);
     let cur; do { const l = await env.VAULT.list({ prefix: SFILE, cursor: cur }); await Promise.all(l.keys.map(k => env.VAULT.delete(k.name))); cur = l.list_complete ? null : l.cursor; } while (cur);
     return json({ ok: true });
   }
@@ -302,13 +311,31 @@ async function healthApi(request, env) {
 
 /* ---------- notifications (Web Push, RFC 8030/8291/8292) ---------- */
 const PUSH_PREFIX = 'push:dev:';
-async function pushApi(request, env) {
+async function pushApi(request, env, role) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') return json({ key: (await vapid(env)).pub });
   let body = {};
   try { body = JSON.parse(await request.text() || '{}'); } catch (e) { return json({ error: 'bad json' }, 400); }
-  const id = String(body.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 40);
+  /* Shared space: tell the other person's phones right away ("John added milk to the list"). Nothing is stored. */
+  if (request.method === 'POST' && body.notify) {
+    const cfg = await env.VAULT.get(SHARE_CFG, 'json').catch(() => null);
+    if (!cfg || !cfg.partner || cfg.paused) return json({ ok: true, sent: 0 });
+    const n = body.notify, want = role === 'p' ? 'o' : 'p';
+    const msg = { title: String(n.title || 'Home').slice(0, 80), body: String(n.body || '').slice(0, 200), url: want === 'p' ? '/cmd/home/' : '/cmd/', tag: 'share-' + String(n.tag || 'x').replace(/[^a-z0-9-]/gi, '').slice(0, 40) };
+    let sent = 0, cur;
+    do {
+      const l = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor: cur });
+      for (const k of l.keys) {
+        const rec = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (!rec || !rec.sub || (rec.role || 'o') !== want) continue;
+        const r = await webPush(env, rec.sub, msg); if (r.status === 404 || r.status === 410) await env.VAULT.delete(k.name); else if (r.ok) sent++;
+      }
+      cur = l.list_complete ? null : l.cursor;
+    } while (cur);
+    return json({ ok: true, sent });
+  }
+  let id = String(body.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 40);
   if (!id) return json({ error: 'no device' }, 400);
+  if (role === 'p') id = 'p' + id.slice(0, 39);                                    /* their phones never overwrite yours */
   if (request.method === 'DELETE') { await env.VAULT.delete(PUSH_PREFIX + id); return json({ ok: true }); }
   if (request.method === 'PUT') {
     const sub = body.sub || {};
@@ -317,15 +344,15 @@ async function pushApi(request, env) {
     const sent = (old.sent || []).filter(x => x.t > Date.now() - 2 * 864e5);
     const items = (Array.isArray(body.items) ? body.items : []).slice(0, 100).map(x => ({
       id: String(x.id || '').slice(0, 120), at: +x.at || 0, title: String(x.title || 'Dashboard').slice(0, 120),
-      body: String(x.body || '').slice(0, 240), url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : '/cmd/'
+      body: String(x.body || '').slice(0, 240), url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : (role === 'p' ? '/cmd/home/' : '/cmd/')
     })).filter(x => x.id && x.at > Date.now() - 600e3);
-    await env.VAULT.put(PUSH_PREFIX + id, JSON.stringify({ sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, items, sent, updated: Date.now() }));
+    await env.VAULT.put(PUSH_PREFIX + id, JSON.stringify({ sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, items, sent, updated: Date.now(), role: role || 'o' }));
     return json({ ok: true, items: items.length });
   }
   if (request.method === 'POST' && body.test) {
     const rec = JSON.parse(await env.VAULT.get(PUSH_PREFIX + id) || 'null');
     if (!rec) return json({ error: 'switch notifications on first' }, 404);
-    const r = await webPush(env, rec.sub, { title: 'Dashboard', body: 'Notifications work on this device.', url: '/cmd/', tag: 'test' });
+    const r = await webPush(env, rec.sub, { title: role === 'p' ? 'Home' : 'Dashboard', body: 'Notifications work on this device.', url: role === 'p' ? '/cmd/home/' : '/cmd/', tag: 'test' });
     if (r.status === 404 || r.status === 410) { await env.VAULT.delete(PUSH_PREFIX + id); return json({ error: 'this device’s subscription expired – switch notifications off and on' }, 410); }
     return r.ok ? json({ ok: true }) : json({ error: 'push service ' + r.status }, 502);
   }
