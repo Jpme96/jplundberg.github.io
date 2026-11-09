@@ -21,9 +21,10 @@
   /* ---------- state ---------- */
   function st() { var d = V.get(); return d && d.share && d.share.key && d.share.on ? d.share : null; }
   function setSt(p) { var d = V.get(); if (!d) return; d.share = Object.assign({}, d.share || {}, p); V.save(d); }
-  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
+  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['pantry', 'Pantry', 'box-seam'], ['recipes', 'Recipes', 'journal-text'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
   var PARTNER_ONLY = { pme: 1 };          /* records only the other person writes – never removed from here */
-  function what() { var s = (V.get() || {}).share || {}; var o = {}; WHAT.forEach(function (w) { o[w[0]] = !(s.what && s.what[w[0]] === false); }); return o; }
+  var OFF_FIRST = { pantry: 1, recipes: 1 };   /* added later: off until you turn them on */
+  function what() { var s = (V.get() || {}).share || {}; var o = {}; WHAT.forEach(function (w) { o[w[0]] = s.what && s.what[w[0]] != null ? s.what[w[0]] !== false : !OFF_FIRST[w[0]]; }); return o; }
   function partner() { var S = window.Shared; var p = S && S.partner ? S.partner() : null; return p && p.name ? p : null; }
   function pname() { var p = partner(), s = (V.get() || {}).share || {}; return p ? p.name : (s.name || 'them'); }
   function owner() { var p = rj('dash.profile', {}) || {}, st0 = rj('dash.settings', {}) || {}; return String(p.name || st0.name || '').trim().split(/\s+/)[0] || ''; }
@@ -71,6 +72,8 @@
       });
     }
     if (w.trips) { var tf = dkey(new Date(Date.now() - 7 * 864e5)); (rj('dash.travel', {}).trips || []).forEach(function (tr) { if (!tr || !tr.share || !tr.id || (tr.end || tr.start || '9') < tf) return; put('trip', tr.id, { name: String(tr.name || 'Trip').slice(0, 80), dest: String(tr.dest || '').slice(0, 80), start: tr.start, end: tr.end, pack: tr.pack }); }); }
+    if (w.pantry) (Array.isArray(t.pantry) ? t.pantry : []).forEach(function (x) { if (x && x.id) put('pantry', x.id, { name: String(x.name || '').slice(0, 60), state: x.state === 'low' ? 'low' : 'ok' }); });
+    if (w.recipes) (Array.isArray(t.recipes) ? t.recipes : []).forEach(function (x) { if (x && x.id) put('recipe', x.id, { title: String(x.title || 'Recipe').slice(0, 120), mins: x.mins, serves: x.serves, ingr: String(x.ingr || '').slice(0, 3000), steps: String(x.steps || '').slice(0, 4000), link: /^https?:\/\//.test(x.link || '') ? String(x.link).slice(0, 400) : undefined }); });
     if (w.chores) { var lcut = dkey(new Date(Date.now() - 120 * 864e5)); (Array.isArray(t.choreLog) ? t.choreLog : []).filter(function (x) { return x && x.at >= lcut; }).slice(-200).forEach(function (x) { put('clog', x.id, { cid: x.cid, name: x.name, who: x.who, at: x.at }); }); }
     if (w.house) {
       (Array.isArray(t.hproj) ? t.hproj : []).forEach(function (x) { if (!x || !x.share || !x.id) return; put('proj', x.id, { name: String(x.name || 'Project').slice(0, 80), kind: x.kind, room: x.room, status: x.status, budget: +x.budget || undefined, spent: (x.costs || []).reduce(function (a, c) { return a + (+c.amount || 0); }, 0) || undefined, start: x.start, end: x.end, tasks: x.tasks }); });
@@ -118,7 +121,7 @@
     list.forEach(function (r) {
       var c = r.c, id = r.id, f = r.f || {}, del = !!r.del;
       if (c === 'shop') { var l = Array.isArray(t.shop) ? t.shop : (t.shop = []), i = l.findIndex(function (x) { return x.id === id; });
-        if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { l.push({ id: id, text: f.text || '', done: !!f.done, from: 'shared' }); toolsCh = true; } }
+        if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { var pn = (t.pantry || []).filter(function (q) { return q.state === 'low' && String(q.name || '').toLowerCase() === String(f.text || '').toLowerCase(); })[0]; l.push({ id: id, text: f.text || '', done: !!f.done, from: pn ? 'pantry' : 'shared' }); toolsCh = true; } }
       else if (c === 'cdone') {
         t.choreDone = Object.assign({}, t.choreDone || {}); var ck = f.k || id;
         if (del) { delete t.choreDone[id]; t.choreLog = (Array.isArray(t.choreLog) ? t.choreLog : []).filter(function (x) { return x.k !== id; }); }
@@ -141,6 +144,7 @@
       else if (c === 'ev') { cal = cal || rj('dash.calendar', {}); cal.events = Array.isArray(cal.events) ? cal.events : []; var k = cal.events.findIndex(function (x) { return x.id === id; });
         if (del) { if (k > -1) cal.events.splice(k, 1); } else { var e = Object.assign({}, k > -1 ? cal.events[k] : { id: id, cat: 'personal' }, f, { share: true }); if (k > -1) cal.events[k] = e; else cal.events.push(e); } }
       else if (c === 'plant' && !del) { (t.plants || []).forEach(function (x) { if (x.id === id && f.last && (!x.last || f.last > x.last)) { x.last = f.last; toolsCh = true; } }); }
+      else if (c === 'pantry' && !del) { (t.pantry || []).forEach(function (x) { if (x.id === id && x.state !== f.state) { x.state = f.state === 'low' ? 'low' : 'ok'; toolsCh = true; } }); }
       else if (c === 'meal') { t.meals = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}; if (del) delete t.meals[id]; else if (f.text) t.meals[f.date || id] = f.text; toolsCh = true; }
       else if (c === 'note') { var nl = Array.isArray(t.homenotes) ? t.homenotes : (t.homenotes = []), ni = nl.findIndex(function (x) { return x.id === id; });
         if (del) { if (ni > -1) nl.splice(ni, 1); } else if (ni > -1) nl[ni] = Object.assign({}, nl[ni], { title: f.title || '', text: f.text || '' }); else nl.push({ id: id, title: f.title || '', text: f.text || '', by: 'partner' }); toolsCh = true; }
@@ -208,17 +212,29 @@
   setInterval(function () { if (!document.hidden && st()) sync(); }, 45000);
 
   /* ---------- "Visible to …" on the cards that are shared ---------- */
-  var VIS = [['#shop', 'shop'], ['#meals', 'meals'], ['#chores', 'chores'], ['#plants', 'plants'], ['#shared', 'money'], ['#hshared', 'money'], ['#fpAcctCard', 'bills', 'Split bills visible to ']];
+  var VIS = [['#shop', 'shop'], ['#meals', 'meals'], ['#pantry', 'pantry'], ['#recipes', 'recipes'], ['#chores', 'chores'], ['#plants', 'plants'], ['#shared', 'money'], ['#hshared', 'money'], ['#fpAcctCard', 'bills', 'Split bills visible to ']];
   function marks() {
     var on = !!st(), w = on ? what() : {};
     VIS.forEach(function (v) {
       var h = document.querySelector(v[0] + ' > .card-head h2'); if (!h) return;
-      var m = h.querySelector('.sh-vis'), want = on && w[v[1]];
-      if (want && !m) { m = document.createElement('span'); m.className = 'sh-vis'; m.innerHTML = '<i class="bi bi-people"></i> <span></span>'; h.appendChild(m); }
-      if (want && v[1] === 'bills') { var pp0 = partner(); want = !!pp0 && (((V.get() || {}).budget || {}).fixed || []).some(function (f) { return f && f.split && f.split.pid === pp0.id; }); if (!want && m) { m.remove(); m = null; } }
-      if (m && !want) m.remove(); else if (m) { var tx = (v[2] || 'Visible to ') + pname(); if (m.lastChild.textContent !== tx) { m.lastChild.textContent = tx; m.title = 'Shared with ' + pname() + ' – Settings → Shared space'; } }
+      var m = h.querySelector('.sh-vis'), shared = on && w[v[1]];
+      if (shared && v[1] === 'bills') { var pp0 = partner(); if (!(pp0 && (((V.get() || {}).budget || {}).fixed || []).some(function (f) { return f && f.split && f.split.pid === pp0.id; }))) { if (m) m.remove(); return; } }
+      if (!on) { if (m) m.remove(); return; }
+      if (!m) { m = document.createElement('button'); m.type = 'button'; m.className = 'sh-vis'; m.innerHTML = '<i class="bi bi-people"></i> <span></span>'; h.appendChild(m); }
+      m.dataset.shcard = v[1]; m.classList.toggle('off', !shared);
+      var tx = shared ? (v[2] || 'Visible to ') + pname() : 'Share with ' + pname();
+      if (m.lastChild.textContent !== tx) m.lastChild.textContent = tx;
+      m.title = shared ? 'Shared with ' + pname() + ' – tap to stop sharing this' : 'Not shared – tap to share this with ' + pname();
+      m.setAttribute('aria-pressed', String(!!shared));
     });
   }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-shcard]'); if (!b || !st()) return; e.preventDefault(); e.stopPropagation();
+    var k = b.dataset.shcard, d = V.get(), was = Object.assign({}, (d.share || {}).what || {}), w = Object.assign({}, was), now = !what()[k];
+    w[k] = now; setSt({ what: w }); marks(); calRow(); schedule(200);
+    var lbl = (WHAT.filter(function (x) { return x[0] === k; })[0] || [k, k])[1];
+    toast('<i class="bi bi-people"></i> ' + esc((now ? 'Shared with ' + pname() + ': ' : 'No longer shared: ') + lbl), function () { setSt({ what: was }); marks(); schedule(200); });
+  }, true);
   var mt = null; new MutationObserver(function () { clearTimeout(mt); mt = setTimeout(function () { marks(); tripRow(); }, 120); }).observe(document.body, { childList: true, subtree: true });
 
   /* ---------- the calendar: "Share with …" on an event ---------- */

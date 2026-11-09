@@ -644,6 +644,7 @@
     'When it has run longer than you set under Work': 'Når den har gått lenger enn du har valgt under Jobb', 'Time to leave for work': 'På tide å dra på jobb', 'Weekdays, 10 minutes before your usual departure': 'Hverdager, 10 minutter før du vanligvis drar', 'Search settings': 'Søk i innstillinger', 'What’s switched on': 'Hva som er på', 'Page settings': 'Sideinnstillinger', 'About you': 'Om deg', 'Articles and projects': 'Artikler og prosjekter', 'Statistics': 'Statistikk', 'Front page': 'Forsiden'
   });
   P.unshift(
+    [/^Shared with (.+): (.+)$/, function (m, a, b) { return 'Delt med ' + a + ': ' + tr(b); }], [/^No longer shared: (.+)$/, function (m, a) { return 'Ikke lenger delt: ' + tr(a); }], [/^Shared with (.+) – tap to stop sharing this$/, 'Delt med $1 – trykk for å slutte å dele'], [/^Not shared – tap to share this with (.+)$/, 'Ikke delt – trykk for å dele med $1'],
     [/^Split bills visible to (.+)$/, 'Delte regninger synlige for $1'],
     [/^This month: you (\d+)( · (.+) (\d+))?$/, function (m, a, b, n, c) { return 'Denne måneden: du ' + a + (b ? ' · ' + n + ' ' + c : ''); }], [/^last (.+) by you$/, 'sist $1 av deg'], [/^last (.+) by (.+)$/, 'sist $1 av $2'],
     [/^Shared with (.+)$/, 'Delt med $1'], [/^Remove (.+)$/, 'Fjern $1'], [/^(.+) removed$/, '$1 er fjernet'],

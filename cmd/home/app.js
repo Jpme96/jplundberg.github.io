@@ -173,7 +173,7 @@
   var TABS = [['shop', 'cart3', 'Food', 'Mat'], ['chores', 'arrow-repeat', 'Chores', 'Husarbeid'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['notes', 'sticky', 'Home', 'Hjem']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { shop: on('shop') || on('meals'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house') }[t[0]]; }); }
+    return TABS.filter(function (t) { return { shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), notes: on('notes') || on('house') }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -195,13 +195,23 @@
     var rows = []; for (var i = 0; i < 7; i++) { var d = new Date(); d.setDate(d.getDate() + i); var k = dkey(d); rows.push('<li><button type="button" class="h-tick" data-meal="' + k + '"><i class="bi bi-' + (by[k] ? 'egg-fried' : 'plus-circle') + '"></i><span>' + (by[k] ? esc(by[k]) : '<em>' + L('Add dinner', 'Legg til middag') + '</em>') + '<small>' + esc(i === 0 ? L('Today', 'I dag') : i === 1 ? L('Tomorrow', 'I morgen') : fdate(k, { weekday: 'long' })) + '</small></span></button></li>'); }
     return '<h2 class="h-h">' + L('Dinners this week', 'Middager denne uka') + '</h2><ul class="h-list">' + rows.join('') + '</ul>';
   }
+  function pantryHtml() {
+    if ((info().what || {}).pantry !== true) return '';
+    var l = list('pantry').sort(function (a, b) { return (a.f.state === 'low' ? 0 : 1) - (b.f.state === 'low' ? 0 : 1) || String(a.f.name).localeCompare(String(b.f.name)); }); if (!l.length) return '';
+    return '<h2 class="h-h">' + L('Pantry – tap what’s running out', 'Matskap – trykk på det som snart er tomt') + '</h2><div class="h-chips">' + l.map(function (r) { return '<button type="button" class="h-pchip' + (r.f.state === 'low' ? ' low' : '') + '" data-pantry="' + esc(r.id) + '">' + esc(r.f.name) + '</button>'; }).join('') + '</div>';
+  }
+  function recipesHtml() {
+    if ((info().what || {}).recipes !== true) return '';
+    var l = list('recipe').sort(function (a, b) { return String(a.f.title).localeCompare(String(b.f.title)); }); if (!l.length) return '';
+    return '<h2 class="h-h">' + L('Recipes', 'Oppskrifter') + '</h2><ul class="h-list">' + l.map(function (r) { return '<li><button type="button" class="h-tick" data-recipe="' + esc(r.id) + '"><i class="bi bi-journal-text"></i><span>' + esc(r.f.title) + '<small>' + esc([r.f.mins ? r.f.mins + ' min' : '', r.f.serves ? L('serves ', 'til ') + r.f.serves : ''].filter(Boolean).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>';
+  }
   function shop() {
-    if ((info().what || {}).shop === false) return dinners();
+    if ((info().what || {}).shop === false) return dinners() + pantryHtml() + recipesHtml();
     var l = list('shop').sort(function (a, b) { return (a.f.done ? 1 : 0) - (b.f.done ? 1 : 0) || a.t - b.t; }), open = l.filter(function (r) { return !r.f.done; }).length;
     return '<form class="h-add" data-addshop><input name="shop" placeholder="' + L('Add to the list …', 'Legg til på listen …') + '" autocomplete="off" enterkeyhint="done"><button type="submit" aria-label="' + L('Add', 'Legg til') + '"><i class="bi bi-plus-lg"></i></button></form>' +
       '<p class="h-sum">' + (l.length ? (open ? open + ' ' + L('to buy', 'å kjøpe') : L('All bought', 'Alt er kjøpt')) : L('The list is empty.', 'Listen er tom.')) + '</p>' +
       '<ul class="h-list">' + l.map(function (r) { return '<li class="' + (r.f.done ? 'done' : '') + '"><button type="button" class="h-tick" data-shop="' + esc(r.id) + '" aria-pressed="' + !!r.f.done + '"><i class="bi bi-' + (r.f.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(r.f.text) + '</span></button><button type="button" class="h-x" data-shopdel="' + esc(r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' +
-      (l.some(function (r) { return r.f.done; }) ? '<button type="button" class="h-link" data-shopclear>' + L('Clear ticked', 'Fjern avkryssede') + '</button>' : '') + dinners();
+      (l.some(function (r) { return r.f.done; }) ? '<button type="button" class="h-link" data-shopclear>' + L('Clear ticked', 'Fjern avkryssede') + '</button>' : '') + dinners() + pantryHtml() + recipesHtml();
   }
   function chores() {
     var w = info().what || {}, out = '', tk = today();
@@ -399,6 +409,12 @@
     });
     bg.querySelector('[data-x]').addEventListener('click', function () { wj('home.profiled', true); });
   }
+  function recipeSheet(id) {
+    var r = find('recipe', id); if (!r) return; var f = r.f, ing = String(f.ingr || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    var bg = sheet('<h2>' + esc(f.title) + '</h2>' + (ing.length ? '<h3 class="h-h">' + L('Ingredients', 'Ingredienser') + '</h3><ul class="h-plain">' + ing.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><button type="button" class="h-btn ghost" data-recshop="' + esc(id) + '"><i class="bi bi-cart-plus"></i> ' + L('Put them on the shopping list', 'Legg dem på handlelisten') + '</button>' : '') +
+      (f.steps ? '<h3 class="h-h">' + L('Steps', 'Fremgangsmåte') + '</h3><p class="h-pre h-small">' + esc(f.steps) + '</p>' : '') + (f.link ? '<a class="h-link" href="' + esc(f.link) + '" target="_blank" rel="noopener">' + L('Open the recipe page', 'Åpne oppskriftssiden') + '</a>' : ''), function () {});
+    bg.querySelector('[type=submit]').textContent = L('Close', 'Lukk'); var cx = bg.querySelector('[data-x]'); if (cx) cx.remove();
+  }
   function settingsSheet() {
     var w = info().what || {}, rem = !!rj('home.key', null), o = owner();
     var NAMES = [['shop', L('Shopping list', 'Handleliste'), 'Handleliste'], ['meals', L('Dinner plan', 'Middagsplan')], ['chores', L('Chores', 'Husarbeid')], ['money', L('Money between you', 'Penger mellom dere')], ['bills', L('Home bills', 'Regninger')], ['cal', L('Calendar events', 'Kalenderhendelser')], ['trips', L('Trips', 'Turer')], ['plants', L('Plants', 'Planter')], ['move', L('Moving checklist', 'Flyttesjekkliste')], ['notes', L('Home notes', 'Hjemmenotater')]];
@@ -443,6 +459,7 @@
     if (d.avatar != null) { e.preventDefault(); backToProfile = !!(b.closest('.h-sheet') && b.closest('.h-sheet').querySelector('[name=bd]')); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
     if (d.lock != null) { wj('home.key', null); location.reload(); return; }
     if (d.forget != null) { wj('home.key', null); wj('home.queue', null); wj('home.tab', null); location.reload(); return; }
+    if (d.recshop) { var rr = find('recipe', d.recshop); if (rr) { var have = {}; list('shop').forEach(function (x) { if (!x.f.done) have[String(x.f.text).toLowerCase()] = 1; }); var n = 0; String(rr.f.ingr || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (x) { if (!have[x.toLowerCase()]) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); n++; } }); toast('<i class="bi bi-cart-plus"></i> ' + n + L(' on the shopping list', ' på handlelisten')); } var s9 = b.closest('.h-sheetbg'); if (s9) s9.remove(); return; }
     if (d.profile != null) { var s0 = b.closest('.h-sheetbg'); if (s0) s0.remove(); profileSheet(); return; }
     if (d.choredel && find('chore', d.choredel)) { var cf = find('chore', d.choredel).f, cid = d.choredel; put('chore', cid, null, true); var s3 = b.closest('.h-sheetbg'); if (s3) s3.remove(); toast('<i class="bi bi-trash3"></i> ' + esc(cf.name), function () { put('chore', cid, cf); }); return; }
     if (d.mealdel) { put('meal', d.mealdel, null, true); var s1 = b.closest('.h-sheetbg'); if (s1) s1.remove(); return; }
@@ -469,6 +486,12 @@
     if (d.choreadd != null) { choreSheet(null); return; }
     if (d.chlog != null) { showLog = !showLog; draw(); return; }
     if (d.proj) { projSheet(d.proj); return; }
+    if (d.recipe) { recipeSheet(d.recipe); return; }
+    if (d.pantry && (r = find('pantry', d.pantry))) {
+      if (r.f.state === 'low') { put('pantry', r.id, { name: r.f.name, state: 'ok' }); return; }
+      put('pantry', r.id, { name: r.f.name, state: 'low' });
+      if (!list('shop').some(function (x) { return !x.f.done && String(x.f.text).toLowerCase() === String(r.f.name).toLowerCase(); })) put('shop', 'h' + uid(), { text: r.f.name, done: false });
+      toast('<i class="bi bi-cart-plus"></i> ' + esc(r.f.name) + L(' is on the shopping list', ' er på handlelisten')); return; }
     if (d.doc) { docSheet(d.doc); return; }
     if (d.shop && (r = find('shop', d.shop))) { put('shop', r.id, { text: r.f.text, done: !r.f.done }); return; }
     if (d.shopdel && (r = find('shop', d.shopdel))) { var keep = r.f; put('shop', r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + esc(keep.text), function () { put('shop', r.id, keep); }); return; }

@@ -74,6 +74,8 @@
     plant: ['name', 'room', 'every', 'last'],
     mv: ['text', 'done'],
     meal: ['date', 'text'],
+    pantry: ['name', 'state'],
+    recipe: ['title', 'mins', 'serves', 'ingr', 'steps', 'link'],
     bill: ['name', 'day', 'amount', 'part', 'payer', 'next'],
     trip: ['name', 'dest', 'start', 'end', 'pack'],
     note: ['title', 'text'],
