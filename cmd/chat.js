@@ -54,7 +54,9 @@
       re: o.re && o.re.id ? { id: String(o.re.id), by: o.re.by === 'o' ? 'o' : 'p', x: String(o.re.x || '').slice(0, 140) } : null };
   }
   function hid(m) { return !!(m.react || m.mute != null); }
-  function visible() { return list().filter(function (m) { return !hid(m); }); }
+  function hideKey() { return 'hchat.hide.' + C.opt.me; }
+  function hiddenHere() { if (!C.hide) C.hide = rj(hideKey(), {}) || {}; return C.hide; }
+  function visible() { var H = hiddenHere(); return list().filter(function (m) { return !hid(m) && !H[m.id]; }); }
   /* reactions: the newest one from each of you counts (an empty one takes yours away) */
   function reactions() { var R = {}; list().forEach(function (m) { if (m.react) { (R[m.react.to] = R[m.react.to] || {})[m.by] = m.react.e; } }); return R; }
   function muteOf(side) { var u = 0; list().forEach(function (m) { if (m.mute != null && m.by === side) u = m.mute; }); return u; }
@@ -210,6 +212,10 @@
       '.hc-gal h4{margin:14px 2px 6px;font-size:13px;color:var(--hc-mut);font-weight:600}.hc-gal .hc-file{width:100%}',
       '.hc-cam{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}.hc-cam video{max-width:100%;max-height:75%;border-radius:12px}.hc-cam .acts{display:flex;gap:12px}.hc-cam .acts button{border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}.hc-cam .snap{background:#fff;color:#000}.hc-cam .no{background:rgba(255,255,255,.18);color:#fff}',
       '.hc [hidden]{display:none!important}',
+      '.hc.selecting .hc-m[data-mid]{cursor:pointer;position:relative;padding-left:30px}.hc.selecting .hc-m.me[data-mid]{padding-left:0;padding-right:0}.hc.selecting .hc-more{display:none}',
+      '.hc.selecting .hc-m[data-mid]::before{content:"";position:absolute;left:4px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;border:2px solid var(--hc-mut)}.hc.selecting .hc-m.me[data-mid]::before{left:auto;right:calc(100% + 10px)}',
+      '.hc.selecting .hc-m.sel[data-mid]::before{background:var(--hc-acc);border-color:var(--hc-acc);box-shadow:inset 0 0 0 3px var(--hc-bg)}.hc-m.sel .hc-b,.hc-m.sel .hc-imgs,.hc-m.sel .hc-voice,.hc-m.sel .hc-file{opacity:.75}',
+      '.hc-selbar{display:flex;align-items:center;gap:10px;padding:4px 2px}.hc-selbar b{flex:1;text-align:center;font-weight:600}.hc-selbar button{border:0;border-radius:999px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}.hc-selx{background:rgba(127,127,127,.14);color:inherit}.hc-seldel{background:#e5484d;color:#fff}.hc-seldel:disabled{opacity:.4}',
       '.hc-menu,.hc-menu *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}',
       '@media (pointer:coarse){.hc-list,.hc-list *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}}',
       '.hc-list{touch-action:manipulation}.hc-pop-heart{position:absolute;z-index:7;font-size:44px;pointer-events:none;transform:translate(-50%,-50%) scale(.3);animation:hcHeart .7s ease-out forwards}@keyframes hcHeart{40%{transform:translate(-50%,-60%) scale(1.15);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:0}}',
@@ -237,7 +243,7 @@
     if (m.sys === 'ttl') return '<div class="hc-sys"><i class="bi bi-stopwatch"></i> ' + esc((me ? L('You', 'Du') : C.opt.name(m.by)) + (m.ttl ? L(' set messages to disappear after ', ' satte meldinger til å forsvinne etter ') + ttlName(m.ttl) : L(' turned off disappearing messages', ' slo av at meldinger forsvinner'))) + '</div>';
     var imgs = m.files.filter(function (f) { return /^image\//.test(f.type); }), voice = m.files.filter(function (f) { return /^audio\//.test(f.type); }), vids = m.files.filter(function (f) { return /^video\//.test(f.type); }),
       other = m.files.filter(function (f) { return !/^(image|audio|video)\//.test(f.type); });
-    var h = '<div class="hc-m' + (me ? ' me' : '') + (cont ? ' cont' : ' gap') + (m.pending ? ' pending' : '') + (m.failed ? ' failed' : '') + '" data-mid="' + m.id + '">';
+    var h = '<div class="hc-m' + (me ? ' me' : '') + (cont ? ' cont' : ' gap') + (m.pending ? ' pending' : '') + (m.failed ? ' failed' : '') + (C.sel && C.sel[m.id] ? ' sel' : '') + '" data-mid="' + m.id + '">';
     if (m.re) h += '<button type="button" class="hc-q" data-hcgo="' + esc(m.re.id) + '"><b>' + esc(m.re.by === C.opt.me ? L('You', 'Du') : C.opt.name(m.re.by)) + '</b><span>' + esc(m.re.x || '…') + '</span></button>';
     voice.forEach(function (f) { h += '<div class="hc-voice" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"><button type="button" data-hcplay="' + esc(f.id) + '" aria-label="' + L('Play', 'Spill av') + '"><i class="bi bi-play-fill"></i></button><span class="hc-vbar"><i></i></span><small>' + dur(f.dur) + '</small></div>'; });
     vids.forEach(function (f) { h += '<video class="hc-vid" controls playsinline preload="metadata" data-mid="' + m.id + '" data-fid="' + esc(f.id) + '"' + (f.local ? ' src="' + f.local + '" data-ok="1"' : '') + '></video>'; });
@@ -304,6 +310,7 @@
       (m.text ? '<button type="button" data-a="copy"><i class="bi bi-copy"></i>' + L('Copy', 'Kopier') + '</button>' : '') +
       (m.text && notes() ? '<button type="button" data-a="pin"><i class="bi bi-pin-angle"></i>' + L('Pin to the top', 'Fest øverst') + '</button>' : '') +
       m.files.map(function (f, i) { return '<button type="button" data-a="dl" data-i="' + i + '"><i class="bi bi-download"></i>' + esc(L('Save ', 'Lagre ') + f.name) + '</button>'; }).join('') +
+      '<button type="button" data-a="select"><i class="bi bi-check2-square"></i>' + L('Select several …', 'Velg flere …') + '</button>' +
       (mine ? '<button type="button" data-a="del" class="red"><i class="bi bi-trash3"></i>' + L('Delete for both of you', 'Slett for dere begge') + '</button>' : ''), function (b) {
       var a = b.dataset.a;
       if (b.dataset.e) { react(id, b.dataset.e); return; }
@@ -315,6 +322,7 @@
       if (a === 'pin') { var ln = m.text.split('\n'), title = ln[0].slice(0, 60), rest = m.text.length > title.length ? m.text : ''; notes().add(title, rest); C.pinsOpen = true; toast(L('Pinned', 'Festet')); setTimeout(paintList, 50); }
       if (a === 'dl') download(m.files[+b.dataset.i]);
       if (a === 'del') remove(id);
+      if (a === 'select') { C.sel = {}; C.sel[id] = 1; selBar(); paintList(); }
     });
   }
   function emojiGrid(id) {
@@ -441,6 +449,28 @@
   }
   function micState() { if (!C.el) return; var t = C.el.querySelector('textarea'), mic = C.el.querySelector('.hc-mic'), snd = C.el.querySelector('.hc-row .hc-send'); var empty = !t.value.trim() && !C.picked.length; if (mic) mic.hidden = !empty; if (snd) snd.hidden = empty; }
   function pop(el, x, y) { var h = document.createElement('div'); h.className = 'hc-pop-heart'; h.textContent = '❤️'; var r = C.el.querySelector('.hc').getBoundingClientRect(); h.style.left = (x - r.left) + 'px'; h.style.top = (y - r.top) + 'px'; C.el.querySelector('.hc').appendChild(h); setTimeout(function () { h.remove(); }, 700); }
+  /* select several messages: yours are removed for both of you, theirs are hidden on this device */
+  function selBar() {
+    if (!C.el) return; var bar = C.el.querySelector('.hc-selbar'), row = C.el.querySelector('.hc-row'), rb = C.el.querySelector('.hc-replybar'), n = C.sel ? Object.keys(C.sel).length : 0;
+    C.el.querySelector('.hc').classList.toggle('selecting', !!C.sel);
+    if (!C.sel) { if (bar) bar.remove(); if (row) row.hidden = false; replyBar(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'hc-selbar'; row.parentNode.insertBefore(bar, row); }
+    row.hidden = true; if (rb) rb.hidden = true;
+    bar.innerHTML = '<button type="button" class="hc-selx" data-hcselx>' + L('Cancel', 'Avbryt') + '</button><b>' + n + L(' selected', ' valgt') + '</b><button type="button" class="hc-seldel" data-hcseldel' + (n ? '' : ' disabled') + '><i class="bi bi-trash3"></i> ' + L('Delete', 'Slett') + '</button>';
+  }
+  function deleteSelected() {
+    var ids = Object.keys(C.sel || {}), mine = [], theirs = [];
+    ids.forEach(function (id) { var m = C.msgs[id]; if (!m) return; (m.by === C.opt.me ? mine : theirs).push(id); });
+    if (!ids.length) return;
+    var go = function () {
+      if (theirs.length) { var H = hiddenHere(); theirs.forEach(function (id) { H[id] = Date.now(); }); wj(hideKey(), H); }
+      var onServer = mine.filter(function (id) { return !C.msgs[id].pending && !C.msgs[id].failed; });
+      mine.forEach(function (id) { delete C.msgs[id]; });
+      if (onServer.length) for (var i = 0; i < onServer.length; i += 150) put({ del: onServer.slice(i, i + 150) }).then(fetchChat, fetchChat);
+      C.sel = null; selBar(); changed(); toast(ids.length === 1 ? L('Deleted', 'Slettet') : ids.length + L(' messages deleted', ' meldinger slettet'));
+    };
+    menu('<p>' + esc(ids.length + L(' message(s): ', ' melding(er): ') + (mine.length ? mine.length + L(' of yours disappear for both of you', ' av dine forsvinner for dere begge') : '') + (mine.length && theirs.length ? L('; ', '; ') : '') + (theirs.length ? theirs.length + L(' from ', ' fra ') + C.opt.name(other()) + L(' are hidden here only – only they can delete those', ' skjules bare her – bare de kan slette dem') : '') + '.') + '</p><button type="button" data-a="yes" class="red"><i class="bi bi-trash3"></i>' + L('Delete', 'Slett') + '</button><button type="button" data-a="no"><i class="bi bi-x-lg"></i>' + L('Cancel', 'Avbryt') + '</button>', function (b) { if (b.dataset.a === 'yes') go(); });
+  }
   var typT = 0;
   function bind(root) {
     var ta = root.querySelector('textarea'), lst = root.querySelector('.hc-list');
@@ -452,17 +482,17 @@
     root.querySelectorAll('input[type=file]').forEach(function (inp) { inp.addEventListener('change', function () { pick(inp.files); inp.value = ''; micState(); }); });
     lst.addEventListener('scroll', function () { if (nearEnd()) { var d = root.querySelector('.hc-down'); if (d) d.hidden = true; markRead(); } }, { passive: true });
     /* hold a message (phone) for its menu */
-    var hold = null; lst.addEventListener('touchstart', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a')) return; hold = setTimeout(function () { hold = null; if (navigator.vibrate) navigator.vibrate(10); msgMenu(m.dataset.mid); }, 480); }, { passive: true });
+    var hold = null; lst.addEventListener('touchstart', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a') || C.sel) return; hold = setTimeout(function () { hold = null; if (navigator.vibrate) navigator.vibrate(10); msgMenu(m.dataset.mid); }, 480); }, { passive: true });
     ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) { lst.addEventListener(ev, function () { clearTimeout(hold); }, { passive: true }); });
     /* double-tap a message (phone): ❤️ – double-tap again to take it away */
     var tap = { id: null, t: 0, x: 0, y: 0 }, moved = false;
     lst.addEventListener('touchstart', function (e) { moved = false; var p = e.touches[0]; tap.sx = p.clientX; tap.sy = p.clientY; }, { passive: true });
     lst.addEventListener('touchmove', function (e) { var p = e.touches[0]; if (Math.abs(p.clientX - tap.sx) > 10 || Math.abs(p.clientY - tap.sy) > 10) moved = true; }, { passive: true });
     lst.addEventListener('touchend', function (e) {
-      var m = e.target.closest('.hc-m[data-mid]'); if (!m || moved || e.target.closest('a, button, video, .hc-rx') || e.touches.length) { tap.id = null; return; }
+      var m = e.target.closest('.hc-m[data-mid]'); if (!m || C.sel || moved || (e.target.closest('a, button, video, .hc-rx') && !e.target.closest('.hc-imgs button')) || e.touches.length) { tap.id = null; return; }
       var now = Date.now(), p = e.changedTouches[0];
       if (tap.id === m.dataset.mid && now - tap.t < 320 && Math.abs(p.clientX - tap.x) < 40 && Math.abs(p.clientY - tap.y) < 40) {
-        e.preventDefault(); tap.id = null; clearTimeout(hold);
+        e.preventDefault(); tap.id = null; clearTimeout(hold); C.dblAt = Date.now();
         var msg = C.msgs[m.dataset.mid]; if (!msg || msg.pending || msg.sys) return;
         var mineNow = ((reactions()[msg.id] || {})[C.opt.me]) || '';
         react(msg.id, mineNow && mineNow !== '❤️' ? '❤️' : '❤️');
@@ -472,15 +502,23 @@
       }
       tap = { id: m.dataset.mid, t: now, x: p.clientX, y: p.clientY, sx: tap.sx, sy: tap.sy };
     });
-    lst.addEventListener('contextmenu', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a')) return; e.preventDefault(); msgMenu(m.dataset.mid); });
+    lst.addEventListener('contextmenu', function (e) { var m = e.target.closest('.hc-m[data-mid]'); if (!m || e.target.closest('a') || C.sel) return; e.preventDefault(); msgMenu(m.dataset.mid); });
+    root.addEventListener('click', function (e) {
+      if (!C.sel || e.target.closest('.hc-selbar, .hc-menu, .hc-headbox')) return;
+      var mm = e.target.closest('.hc-m[data-mid]'); if (!mm) return;
+      e.preventDefault(); e.stopPropagation(); var id = mm.dataset.mid;
+      if (C.sel[id]) delete C.sel[id]; else C.sel[id] = 1; selBar(); paintList();
+    }, true);
     root.addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
+      if (d.hcselx != null) { C.sel = null; selBar(); paintList(); return; }
+      if (d.hcseldel != null) { deleteSelected(); return; }
       if (d.hcclose != null) { unmount(); if (C.onClose) C.onClose(); return; }
       if (d.hcmenu != null) { settingsMenu(); return; }
       if (d.hcpins != null) { C.pinsOpen = !C.pinsOpen; paintList(); return; }
       if (d.hcpin) { pinMenu(d.hcpin); return; }
       if (d.hcmore != null) { msgMenu(b.closest('[data-mid]').dataset.mid); return; }
-      if (d.hcimg) { viewImg(d.hcimg); return; }
+      if (d.hcimg) { if (matchMedia('(pointer: coarse)').matches) { var at = Date.now(), fid = d.hcimg; setTimeout(function () { if (!(C.dblAt > at - 50)) viewImg(fid); }, 330); } else viewImg(d.hcimg); return; }
       if (d.hcfile) { var m = C.msgs[b.closest('[data-mid]').dataset.mid]; var f = m && m.files.filter(function (x) { return x.id === d.hcfile; })[0]; if (f) download(f); return; }
       if (d.hcretry) { var r = C.msgs[d.hcretry]; if (r && r.retry) r.retry(); return; }
       if (d.hcunpick != null) { C.picked.splice(+d.hcunpick, 1); chips(); micState(); return; }
@@ -501,7 +539,7 @@
   }
   function mount(el, o) {
     o = o || {}; css(); if (C.el && C.el !== el) unmount();
-    C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
+    C.sel = null; C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
     el.innerHTML = '<div class="hc"><div class="hc-headbox"></div><div class="hc-list" role="log" aria-live="polite"></div><button type="button" class="hc-down" data-hcdown hidden><i class="bi bi-arrow-down"></i> ' + L('New messages', 'Nye meldinger') + '</button>' +
       '<form class="hc-comp"><div class="hc-replybar" hidden></div><div class="hc-chips" hidden></div><div class="hc-row"><button type="button" class="hc-ib" data-hcattach aria-label="' + L('Add a photo, camera or file', 'Legg til bilde, kamera eller fil') + '"><i class="bi bi-plus-lg"></i></button>' +
       '<textarea rows="1" placeholder="' + esc(L('Message', 'Melding')) + '" enterkeyhint="send" aria-label="' + L('Message', 'Melding') + '"></textarea><button type="button" class="hc-ib hc-mic" data-hcmic aria-label="' + L('Record a voice message', 'Spill inn en talemelding') + '"><i class="bi bi-mic"></i></button><button type="submit" class="hc-ib hc-send" hidden aria-label="' + L('Send', 'Send') + '"><i class="bi bi-arrow-up"></i></button></div>' +
