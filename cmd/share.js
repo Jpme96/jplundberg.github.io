@@ -134,6 +134,11 @@
   V.onUnlock(function () { setTimeout(syncFiles, 3000); });
 
   /* ---------- their changes, back into your data ---------- */
+  function profileOff(f) {
+    var lk = SC.cleanLook(f.look), t = Fe.tools(), pl = Array.isArray(t.people) ? t.people : [], nm = String(((partner() || {}).name) || f.name || pname()).trim().toLowerCase();
+    var pp = pl.filter(function (x) { return x && x.shp; })[0] || pl.filter(function (x) { return x && String(x.name || '').trim().toLowerCase() === nm; })[0] || pl.filter(function (x) { return x && String(x.name || '').trim().toLowerCase().split(/\s+/)[0] === nm.split(/\s+/)[0]; })[0];
+    return !pp || !pp.shp || (lk && JSON.stringify(pp.look || {}) !== JSON.stringify(lk));
+  }
   function applyAll(list) {
     var failed = [];
     if (!list.length) return failed;
@@ -181,8 +186,11 @@
       else if (c === 'trip' && !del) { tv = tv || rj('dash.travel', {}); (tv.trips || []).forEach(function (tr) { if (tr.id !== id || !Array.isArray(f.pack)) return; var old = {}; (tr.pack || []).forEach(function (x) { old[x.t] = x; }); tr.pack = f.pack.map(function (x) { return Object.assign({}, old[x.t] || {}, { t: x.t, done: !!x.done }); }); }); }
       else if (c === 'pme' && !del) {
         var lk = SC.cleanLook(f.look), nm = (p && p.name) || f.name || pname(); t.people = Array.isArray(t.people) ? t.people : [];
-        var pp = t.people.filter(function (x) { return String(x.name || '').toLowerCase() === String(nm).toLowerCase(); })[0];
-        if (!pp) { pp = { id: 'sh' + Date.now().toString(36), name: nm, rel: 'family' }; t.people.push(pp); }
+        var low = function (v) { return String(v || '').trim().toLowerCase(); }, first = function (v) { return low(v).split(/\s+/)[0]; };
+        /* the person found before (marked), else the same name, else the same first name */
+        var pp = t.people.filter(function (x) { return x && x.shp; })[0] || t.people.filter(function (x) { return x && low(x.name) === low(nm); })[0] || t.people.filter(function (x) { return x && first(x.name) && first(x.name) === first(nm); })[0];
+        if (!pp) { pp = { id: 'sh' + Date.now().toString(36), name: nm, rel: 'family' }; t.people.push(pp); toolsCh = true; }
+        if (!pp.shp) { pp.shp = 1; toolsCh = true; }
         if (lk && JSON.stringify(pp.look || {}) !== JSON.stringify(lk)) { pp.look = lk; toolsCh = true; setTimeout(function () { toast('<i class="bi bi-person-bounding-box"></i> ' + esc(nm + '’s avatar is in People')); }, 400); } else if (!pp.look) toolsCh = true;
         if (f.bday && /^\d{1,2}\.\d{1,2}(\.\d{4})?$/.test(f.bday) && pp.bday !== f.bday) { pp.bday = f.bday; toolsCh = true; }
         if (f.phone && /^[+\d\s()-]{4,20}$/.test(f.phone) && pp.phone !== f.phone) { pp.phone = f.phone; toolsCh = true; }
@@ -254,6 +262,9 @@
       /* 1. their changes since last time */
       var mine = [];
       Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.t > (seen[rid] || 0) && r.c) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, del: r.del }); });
+      /* their profile is checked on every sync, not only when it changes: another device saving an older
+         People list could otherwise lose the avatar for good */
+      if (!mine.some(function (x) { return x.c === 'pme'; })) Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.c === 'pme' && !r.del && r.f && profileOff(r.f)) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f }); });
       var bad = []; try { bad = applyAll(mine) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
       applyErr = bad.length;
       mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
