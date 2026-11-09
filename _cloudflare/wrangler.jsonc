@@ -6,7 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dashboard-sync",
   "main": "worker.js",
-  "compatibility_date": "2025-09-01",
+  "compatibility_date": "2026-10-28",
   "keep_vars": true,
   "workers_dev": false,
   "preview_urls": false,
