@@ -3,6 +3,15 @@
 Every change – a fix, a new feature, a tweak – follows these rules. They grow as the rebuilds in the plan land;
 when a part of the plan is done, its rule moves from "Coming" to "Rules".
 
+## Before any new feature or change
+1. Read this file and the plan (project doc `claude/plan-rebuilds-2026-11.md`).
+2. If the part of the plan it touches is **done**, build it the new way (the rule is under "Rules").
+3. If that part is **not done yet**, say so to the owner and either do that rebuild step first, or build the feature
+   so it moves over without rework (same data shape, no new copying between cmd and the shared box, keys for texts).
+   Never add more of the old way just because it's quicker.
+4. Add a test for it, run all tests, then ship.
+5. When a rebuild part is finished, move its line from "Coming" to "Rules" here and in the project doc `claude/rules-for-changes.md`.
+
 ## Rules
 - **The repo is public.** Never commit real data, personal details (also the owner's email), tokens, keys or test files with real content. Tests use made-up data only.
 - **Tests first.** Run `cd tests && npm test` (or `node tests/run.js <words>` for some) before pushing. A new feature or fix gets a test in `tests/cases/` that would have caught the bug. GitHub runs all tests on every push; a red run is fixed before anything else.
