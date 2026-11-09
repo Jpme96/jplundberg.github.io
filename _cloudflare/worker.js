@@ -74,7 +74,7 @@ export default {
   /* every 5 minutes (Triggers → Cron Triggers): send the reminders that are due */
   async scheduled(event, env, ctx) {
     env = storage(env);
-    ctx.waitUntil(Promise.all([sendDue(env).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e)), r2Backup(env).catch(e => console.log('r2 backup', e))]));
+    ctx.waitUntil(Promise.all([sendDue(env, !!env.LIVE).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e)), r2Backup(env).catch(e => console.log('r2 backup', e))]));
   }
 };
 
@@ -490,11 +490,18 @@ export class LiveRoom {
       if (b.away && (b.away.by === 'o' || b.away.by === 'p')) { const k = 'hide' + b.away.by; this.st[k] = put[k] = !!b.away.v; roles.add('o'); roles.add('p'); }
       if (b.typ === 'o' || b.typ === 'p') { this.typ[b.typ] = b.on ? Date.now() : null; roles.add(b.typ === 'o' ? 'p' : 'o'); }
       if (Object.keys(put).length) await this.ctx.storage.put(put);
+      if (b.alarm && Number.isFinite(+b.alarm) && +b.alarm > Date.now()) { const cur = await this.ctx.storage.getAlarm(); if (!cur || cur > +b.alarm) await this.ctx.storage.setAlarm(+b.alarm); }
       if (b.kick === 'p') { for (const ws of this.ctx.getWebSockets('p')) { try { ws.close(4001, 'sharing changed'); } catch (e) {} } roles.delete('p'); }
       this.send(Array.from(roles));
       return new Response('ok');
     }
     return new Response('not found', { status: 404 });
+  }
+  /* a reminder is due: send it now, then sleep until the next one */
+  async alarm() {
+    let next = 0;
+    try { next = await sendDue(storage(this.env), false); } catch (e) { console.log('alarm push', e && e.message); }
+    if (next) await this.ctx.storage.setAlarm(Math.max(next, Date.now() + 1000));
   }
   async webSocketMessage(ws, msg) { /* the apps only listen; "ping" is answered automatically */ }
   async webSocketClose(ws, code, reason) { try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch (e) {} await this.gone(ws); }
@@ -663,6 +670,8 @@ async function pushApi(request, env, role) {
       body: String(x.body || '').slice(0, 240), url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : (role === 'p' ? '/cmd/home/' : '/cmd/')
     })).filter(x => x.id && x.at > Date.now() - 600e3);
     await env.VAULT.put(PUSH_PREFIX + id, JSON.stringify({ sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, items, sent, updated: Date.now(), role: role || 'o' }));
+    /* the live room wakes up at the exact minute of the next reminder (the 5-minute cron stays as a backstop) */
+    { const nx = items.map(x => x.at).filter(a => a > Date.now()).sort((a, b) => a - b)[0]; if (nx) await notify(env, { alarm: nx }); }
     return json({ ok: true, items: items.length });
   }
   if (request.method === 'POST' && body.test) {
@@ -675,10 +684,12 @@ async function pushApi(request, env, role) {
   return json({ error: 'method not allowed' }, 405);
 }
 
-async function sendDue(env) {
-  if (!env.VAULT) return;
+/* sends what's due. backstop: called by the cron while the live room sends on the minute – then only reminders that are
+   more than 2 minutes late are sent here (so one is never sent twice). Returns the time of the next reminder, or 0. */
+async function sendDue(env, backstop) {
+  if (!env.VAULT) return 0;
   const now = Date.now();
-  let cursor;
+  let cursor, next = 0;
   do {
     const list = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor });
     for (const k of list.keys) {
@@ -686,11 +697,12 @@ async function sendDue(env) {
       if (!rec || !rec.sub) continue;
       const done = new Set((rec.sent || []).map(x => x.id));
       /* due now, and not more than 20 minutes late (a reminder after the fact is no use) */
-      const due = rec.items.filter(x => x.at <= now && x.at > now - 20 * 60e3 && !done.has(x.id));
+      rec.items.forEach(x => { if (x.at > now && !done.has(x.id) && (!next || x.at < next)) next = x.at; });
+      const due = rec.items.filter(x => x.at <= (backstop ? now - 120e3 : now) && x.at > now - 20 * 60e3 && !done.has(x.id));
       if (!due.length) continue;
       let gone = false;
       for (const x of due) {
-        const r = await webPush(env, rec.sub, { title: x.title, body: x.body, url: x.url, tag: x.id.slice(0, 60) });
+        let r; try { r = await webPush(env, rec.sub, { title: x.title, body: x.body, url: x.url, tag: x.id.slice(0, 60) }); } catch (e) { console.log('push to one device failed', e && e.message); r = { status: 0 }; }   /* one broken device never stops the others */
         if (r.status === 404 || r.status === 410) { gone = true; break; }
         rec.sent = (rec.sent || []).concat({ id: x.id, t: now });
       }
@@ -701,6 +713,7 @@ async function sendDue(env) {
     }
     cursor = list.list_complete ? null : list.cursor;
   } while (cursor);
+  return next;
 }
 
 /* the server's own key pair for Web Push (made once, kept in KV) */
