@@ -29,7 +29,8 @@
     m = m && typeof m === 'object' ? m : {};
     return { plan: m.plan && m.plan.fid ? m.plan : null, rooms: Array.isArray(m.rooms) ? m.rooms.filter(function (r) { return r && r.id && Array.isArray(r.r); }) : [],
       pins: Array.isArray(m.pins) ? m.pins.filter(function (p) { return p && p.id && isFinite(p.x) && isFinite(p.y); }) : [], put: m.put && typeof m.put === 'object' ? m.put : {},
-      share: !!m.share, dark: m.dark === 'paper' ? 'paper' : 'match', shareInfo: !!m.shareInfo };
+      share: !!m.share, dark: m.dark === 'paper' ? 'paper' : 'match', shareInfo: !!m.shareInfo, style: m.style === 'original' ? 'original' : 'clean',
+      furn: Array.isArray(m.furn) ? m.furn.filter(function (f) { return f && f.id && Array.isArray(f.r) && f.r.length === 4; }) : [] };
   }
   function data() { return norm(Fe.tools().hmap); }
   function save(fn) { var t = Fe.tools(), m = norm(t.hmap); fn(m); t.hmap = m; quiet = true; Fe.saveTools(t); quiet = false; draw(); }
@@ -66,22 +67,31 @@
     if (!r && type === 'hall') r = rooms.filter(function (x) { return /entr/i.test(x.name); })[0];
     return r ? r.id : null;
   }
+  /* each room its own colour: from its kind, or the one you picked */
+  var RC = { violet: '#8a6fdf', blue: '#3987e5', teal: '#11a597', green: '#22b35e', amber: '#e0a100', orange: '#e8743b', pink: '#d55181', gray: '#8a929c' };
+  var RCT = { bed: 'violet', bath: 'blue', kitchen: 'amber', living: 'amber', hall: 'gray', balcony: 'green', office: 'teal', storage: 'gray', laundry: 'blue' };
+  function roomColor(rm, i) { if (rm.c && RC[rm.c]) return RC[rm.c]; var t = typesOf(rm.name)[0]; return RC[RCT[t]] || RC[['pink', 'teal', 'orange', 'violet', 'green', 'blue'][(i || 0) % 6]]; }
+  function furnAt(x, y, furn) { var best = null, ba = 9; (furn || []).forEach(function (f) { if (inRect(x, y, f.r) && f.r[2] * f.r[3] < ba) { ba = f.r[2] * f.r[3]; best = f; } }); return best; }
+  function furnRoom(f, rooms) { var r = roomAt(f.r[0] + f.r[2] / 2, f.r[1] + f.r[3] / 2, rooms); return r ? r.id : null; }
   /* everything that can sit in a room: chores, upkeep, things – with the room it's in (yours first, else a guess) */
   function things(m) {
-    var out = [], put = m.put, rooms = m.rooms, C = window.Chores, H = window.HomeLife;
+    var out = [], put = m.put, rooms = m.rooms, C = window.Chores, H = window.HomeLife, fr = {}, fn = {}, finv = {};
+    (m.furn || []).forEach(function (f) { fr[f.id] = furnRoom(f, rooms); fn[f.id] = f.name; if (f.inv) finv[f.inv] = f.id; });
+    /* put: a room id, 'all', 'none' – or 'f:<furniture id>' = on that piece of furniture (its room is where it stands) */
+    function wh(key, guessRoom, invId) { var v = put[key], fid = v && v.slice(0, 2) === 'f:' ? v.slice(2) : (!v && invId && finv[invId] ? finv[invId] : null); if (fid && fr.hasOwnProperty(fid)) return { room: fr[fid], furn: fid, fname: fn[fid], set: true }; return { room: v && v.slice(0, 2) !== 'f:' ? v : guessRoom, furn: null, set: !!v }; }
     if (Fe.on('house')) {
       (Fe.tools().chores || []).forEach(function (c) {
-        if (!c || !c.id) return; var key = 'c:' + c.id, rid = put[key] || roomFor(guess(GC, c.name), rooms);
+        if (!c || !c.id) return; var key = 'c:' + c.id, w0 = wh(key, roomFor(guess(GC, c.name), rooms)), rid = w0.room;
         var p = C ? C.period(c) : null, done = C && p ? C.done(c, p) : null, who = C && p ? C.turn(c, p) : 'me';
-        out.push({ key: key, kind: 'c', id: c.id, name: c.name || L('Chore', 'Husarbeid'), room: rid, guessed: !put[key], due: p ? p.day : null, done: !!done, who: who, late: !!(p && !done && p.day < today()), icon: C && C.icon ? C.icon(c.name || '') : 'arrow-repeat' });
+        out.push({ key: key, kind: 'c', id: c.id, name: c.name || L('Chore', 'Husarbeid'), room: rid, guessed: !w0.set, furn: w0.furn, fname: w0.fname, due: p ? p.day : null, done: !!done, who: who, late: !!(p && !done && p.day < today()), icon: C && C.icon ? C.icon(c.name || '') : 'arrow-repeat' });
       });
       (Fe.tools().hmaint || []).forEach(function (u) {
-        if (!u || !u.id) return; var key = 'u:' + u.id, rid = put[key] || roomFor(guess(GU, u.title), rooms), nd = H && H.nextDue ? H.nextDue(u) : today();
-        out.push({ key: key, kind: 'u', id: u.id, name: u.title || L('Upkeep', 'Vedlikehold'), room: rid, guessed: !put[key], due: nd, late: nd < today(), icon: 'tools' });
+        if (!u || !u.id) return; var key = 'u:' + u.id, w1 = wh(key, roomFor(guess(GU, u.title), rooms)), rid = w1.room, nd = H && H.nextDue ? H.nextDue(u) : today();
+        out.push({ key: key, kind: 'u', id: u.id, name: u.title || L('Upkeep', 'Vedlikehold'), room: rid, guessed: !w1.set, furn: w1.furn, fname: w1.fname, every: +u.every || 12, due: nd, late: nd < today(), icon: 'tools' });
       });
       (Fe.tools().hinv || []).forEach(function (i) {
-        if (!i || !i.id) return; var key = 'i:' + i.id, rid = put[key] || roomFor(INVT[i.room] || null, rooms);
-        out.push({ key: key, kind: 'i', id: i.id, name: i.name || L('Item', 'Ting'), room: rid, guessed: !put[key], price: i.price, receipt: !!i.receipt, icon: 'box-seam' });
+        if (!i || !i.id) return; var key = 'i:' + i.id, w2 = wh(key, roomFor(INVT[i.room] || null, rooms), i.id), rid = w2.room;
+        out.push({ key: key, kind: 'i', id: i.id, name: i.name || L('Item', 'Ting'), room: rid, guessed: !w2.set, furn: w2.furn, fname: w2.fname, price: i.price, receipt: !!i.receipt, icon: 'box-seam' });
       });
     }
     return out;
@@ -118,7 +128,8 @@
     box.hidden = false;
     var m = data();
     if (!m.plan) { box.innerHTML = emptyCard(); return; }
-    if (!box.querySelector('.hm-card') || box.dataset.fid !== m.plan.fid) { box.innerHTML = shell(m); box.dataset.fid = m.plan.fid; loadImg(m); bindView(); }
+    if (!box.querySelector('.hm-card') || box.dataset.fid !== m.plan.fid) { box.innerHTML = shell(m); box.dataset.fid = m.plan.fid; box.dataset.style = ''; bindView(); }
+    if (box.dataset.style !== m.style) { box.dataset.style = m.style; loadImg(m); }
     paint(m);
   }
   function emptyCard() {
@@ -131,7 +142,8 @@
   function shell(m) {
     var H = m.plan.h / m.plan.w;
     return '<section class="card kit-card hm-card" id="hmap"><div class="card-head"><h2><i class="bi bi-map"></i> ' + L('Map', 'Kart') + '</h2>' +
-      '<div class="hm-acts"><button type="button" class="pill-btn sm ghost" data-hmmode="rooms"><i class="bi bi-bounding-box"></i> <span>' + L('Rooms', 'Rom') + '</span></button>' +
+      '<div class="hm-acts"><button type="button" class="pill-btn sm ghost hm-edonly" data-hmmode="rooms"><i class="bi bi-bounding-box"></i> <span>' + L('Add a room', 'Nytt rom') + '</span></button>' +
+      '<button type="button" class="pill-btn sm ghost hm-edonly" data-hmmode="furn"><i class="bi bi-lamp"></i> <span>' + L('Add furniture', 'Nytt møbel') + '</span></button>' +
       '<button type="button" class="pill-btn sm ghost" data-hmaddpin><i class="bi bi-geo-alt"></i> <span>' + L('Add a pin', 'Ny nål') + '</span></button></div></div>' +
       '<div class="hm-chips" role="group" aria-label="' + L('Show on the map', 'Vis på kartet') + '">' +
       [['pins', 'geo-alt', L('Pins', 'Nåler')], ['chores', 'arrow-repeat', L('Chores', 'Husarbeid')], ['upkeep', 'tools', L('Upkeep', 'Vedlikehold')]].map(function (c) { return '<button type="button" class="hm-chip" data-hmlay="' + c[0] + '" aria-pressed="' + !!LAY[c[0]] + '"><i class="bi bi-' + c[1] + '"></i> ' + c[2] + '</button>'; }).join('') + '</div>' +
@@ -141,11 +153,33 @@
       '<svg class="hm-svg" viewBox="0 0 1000 ' + Math.round(1000 * H) + '" preserveAspectRatio="none" aria-hidden="true"><g data-hmrooms></g><rect data-hmdraft class="hm-draft" x="0" y="0" width="0" height="0" hidden></rect></svg>' +
       '<div class="hm-layer" data-hmlayer></div></div>' +
       '<div class="hm-zoom"><button type="button" data-hmz="in" aria-label="' + L('Zoom in', 'Zoom inn') + '"><i class="bi bi-plus-lg"></i></button><button type="button" data-hmz="out" aria-label="' + L('Zoom out', 'Zoom ut') + '"><i class="bi bi-dash-lg"></i></button><button type="button" data-hmz="fit" aria-label="' + L('Fit the whole plan', 'Vis hele planen') + '"><i class="bi bi-arrows-angle-contract"></i></button></div>' +
-      '</div><div class="hm-foot"><label class="text-btn"><i class="bi bi-arrow-repeat"></i> ' + L('Replace the drawing', 'Bytt tegning') + '<input type="file" accept="application/pdf,.pdf,image/*" hidden data-hmfile></label><button type="button" class="text-btn danger" data-hmwipe><span data-hmwipet><i class="bi bi-trash3"></i> ' + L('Start over', 'Start på nytt') + '</span></button></div></div><aside class="hm-side" data-hmside aria-live="polite"></aside></div></section>';
+      '</div><div class="hm-foot"><span class="hm-style" role="group" aria-label="' + L('How the drawing looks', 'Hvordan tegningen ser ut') + '"><button type="button" data-hmstyle="clean">' + L('Clean', 'Ren') + '</button><button type="button" data-hmstyle="original">' + L('Original', 'Original') + '</button></span><label class="text-btn hm-edonly"><i class="bi bi-arrow-repeat"></i> ' + L('Replace the drawing', 'Bytt tegning') + '<input type="file" accept="application/pdf,.pdf,image/*" hidden data-hmfile></label><button type="button" class="text-btn danger hm-edonly" data-hmwipe><span data-hmwipet><i class="bi bi-trash3"></i> ' + L('Start over', 'Start på nytt') + '</span></button></div></div><aside class="hm-side" data-hmside aria-live="polite"></aside></div></section>';
   }
+  /* Clean: only the walls of the drawing – thick lines survive thinning; furniture, text, dashed lines and hatching don't */
+  var cleanP = {};
+  function cleanBlob(fid) {
+    if (cleanP[fid]) return cleanP[fid];
+    return (cleanP[fid] = urlOf(fid).then(function (u) { if (!u) return null; return new Promise(function (res) { var img = new Image(); img.onload = function () {
+      try {
+        var k = Math.min(1, 1600 / Math.max(img.width, img.height)), w = Math.max(10, Math.round(img.width * k)), h = Math.max(10, Math.round(img.height * k)), c = document.createElement('canvas'); c.width = w; c.height = h;
+        var g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h); var d = g.getImageData(0, 0, w, h), px = d.data, a = new Uint8Array(w * h), b = new Uint8Array(w * h), i, x, y, n = Math.max(2, Math.round(Math.max(w, h) / 360));
+        for (i = 0; i < w * h; i++) a[i] = px[i * 4 + 3] > 100 && (px[i * 4] * .3 + px[i * 4 + 1] * .59 + px[i * 4 + 2] * .11) < 110 ? 1 : 0;
+        var pass = function (src, dst, er) {   /* one 3×3 step, as a row step then a column step */
+          for (y = 0; y < h; y++) for (x = 0; x < w; x++) { i = y * w + x; var l = x > 0 ? src[i - 1] : 0, r = x < w - 1 ? src[i + 1] : 0; dst[i] = er ? (src[i] & l & r) : (src[i] | l | r); }
+          for (y = 0; y < h; y++) for (x = 0; x < w; x++) { i = y * w + x; var t = y > 0 ? dst[i - w] : 0, bo = y < h - 1 ? dst[i + w] : 0; src[i] = er ? (dst[i] & t & bo) : (dst[i] | t | bo); }
+        };
+        for (var p0 = 0; p0 < n; p0++) pass(a, b, true);
+        for (var p1 = 0; p1 < n; p1++) pass(a, b, false);
+        for (i = 0; i < w * h; i++) { if (a[i]) { px[i * 4] = 58; px[i * 4 + 1] = 61; px[i * 4 + 2] = 66; px[i * 4 + 3] = 255; } else px[i * 4 + 3] = 0; }
+        g.putImageData(d, 0, 0); c.toBlob(function (bl) { res(bl); }, 'image/png');
+      } catch (e) { res(null); }
+    }; img.onerror = function () { res(null); }; img.src = u; }); }));
+  }
+  var cleanU = {};
+  function cleanUrl(fid) { if (cleanU[fid]) return Promise.resolve(cleanU[fid]); return cleanBlob(fid).then(function (b) { if (!b) return urlOf(fid); return (cleanU[fid] = URL.createObjectURL(b)); }); }
   function loadImg(m) {
     var img = box.querySelector('.hm-img'); if (!img) return;
-    urlOf(m.plan.fid).then(function (u) {
+    (m.style === 'clean' ? cleanUrl(m.plan.fid) : urlOf(m.plan.fid)).then(function (u) {
       if (u) { img.src = u; return; }
       img.removeAttribute('src'); var v = box.querySelector('[data-hmview]'); if (v && !v.querySelector('.hm-miss')) v.insertAdjacentHTML('beforeend', '<p class="hm-miss"><i class="bi bi-cloud-arrow-down"></i> ' + L('The drawing is on its way from your other device – open House there once if it doesn’t come.', 'Tegningen er på vei fra den andre enheten – åpne Hus der én gang hvis den ikke kommer.') + '</p>');
     });
@@ -153,32 +187,46 @@
   function paint(m) {
     if (!box) return;
     var view = box.querySelector('[data-hmview]'); if (!view) return;
-    view.classList.toggle('dk', m.dark === 'match' && !!m.plan.mono);
-    view.classList.toggle('editing', mode === 'rooms'); view.classList.toggle('arming', !!arm);
-    box.querySelectorAll('[data-hmmode]').forEach(function (b) { b.setAttribute('aria-pressed', String(mode === b.dataset.hmmode)); b.querySelector('span').textContent = mode === 'rooms' ? L('Done', 'Ferdig') : L('Rooms', 'Rom'); });
+    view.classList.toggle('dk', m.dark === 'match' && (!!m.plan.mono || m.style === 'clean')); view.classList.toggle('clean', m.style === 'clean');
+    box.querySelectorAll('[data-hmstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.hmstyle === m.style)); });
+    view.classList.toggle('editing', mode !== 'view'); view.classList.toggle('arming', !!arm);
+    box.querySelectorAll('[data-hmmode]').forEach(function (b) { var on0 = mode === b.dataset.hmmode; b.setAttribute('aria-pressed', String(on0)); b.querySelector('span').textContent = on0 ? L('Done', 'Ferdig') : b.dataset.hmmode === 'rooms' ? L('Add a room', 'Nytt rom') : L('Add furniture', 'Nytt møbel'); });
     box.querySelectorAll('[data-hmlay]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!LAY[b.dataset.hmlay])); });
     var hint = box.querySelector('[data-hmhint]');
     var placing = arm && (arm.t === 'pin' || arm.t === 'move') && arm.x != null;
     hint.innerHTML = placing ? '<span class="hm-place"><span><i class="bi bi-arrows-move"></i> ' + L('Drag the pin to the spot – or tap where it goes', 'Dra nålen til stedet – eller trykk der den skal stå') + '</span><span class="hm-place-b"><button type="button" class="pill-btn sm ghost" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button><button type="button" class="pill-btn sm" data-hmplace><i class="bi bi-check2"></i> ' + L('Put it here', 'Sett den her') + '</button></span></span>'
       : arm && arm.t === 'pin' ? '<i class="bi bi-hand-index"></i> ' + L('Click where the pin goes', 'Klikk der nålen skal stå') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
       : arm && arm.t === 'move' ? '<i class="bi bi-arrows-move"></i> ' + L('Click the new spot', 'Klikk på det nye stedet') + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
+      : arm && arm.t === 'fredraw' ? '<i class="bi bi-bounding-box"></i> ' + L('Drag a new box for ', 'Dra en ny boks for ') + esc(arm.name) + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
       : arm && arm.t === 'part' ? '<i class="bi bi-plus-square-dotted"></i> ' + L('Drag over the rest of ', 'Dra over resten av ') + esc(arm.name) + ' <button type="button" class="text-btn" data-hmcancel>' + L('Cancel', 'Avbryt') + '</button>'
+      : mode === 'furn' ? '<i class="bi bi-lamp"></i> ' + L('Drag a box where the furniture stands – the sofa, the washing machine, the heat pump. Tap one to change it.', 'Dra en boks der møbelet står – sofaen, vaskemaskinen, varmepumpa. Trykk på et for å endre det.')
       : mode === 'rooms' ? '<i class="bi bi-bounding-box"></i> ' + L('Drag a box over a room to mark it. Tap a marked room to rename it or add another part (for L-shaped rooms).', 'Dra en boks over et rom for å merke det. Trykk på et merket rom for å endre navnet eller legge til en del (for L-formede rom).')
-      : !m.rooms.length ? '<i class="bi bi-info-circle"></i> ' + L('Next: tap Rooms and drag a box over each room, so chores, upkeep and things find their place.', 'Neste: trykk Rom og dra en boks over hvert rom, så husarbeid, vedlikehold og ting finner plassen sin.')
+      : !m.rooms.length && !wide.matches ? '<i class="bi bi-laptop"></i> ' + L('Mark the rooms and furniture on your computer – on the phone you look things up, tick them off and add pins.', 'Merk rom og møbler på datamaskinen – på telefonen slår du opp, krysser av og legger til nåler.')
+      : !m.rooms.length ? '<i class="bi bi-info-circle"></i> ' + L('Next: tap Add a room and drag a box over each room, so chores, upkeep and things find their place.', 'Neste: trykk Rom og dra en boks over hvert rom, så husarbeid, vedlikehold og ting finner plassen sin.')
       : (wide.matches ? L('Tap a room or a pin · hold a spot to add a pin · ⌘/ctrl + scroll to zoom', 'Trykk på et rom eller en nål · hold inne for å legge til en nål · ⌘/ctrl + rull for å zoome') : L('Tap a room or a pin · Add a pin puts one in the middle for you to drag · pinch to zoom', 'Trykk på et rom eller en nål · Ny nål setter en i midten som du drar · knip for å zoome'));
     var list = things(m), H = 1000 * m.plan.h / m.plan.w;
-    box.querySelector('[data-hmrooms]').innerHTML = m.rooms.map(function (rm) {
-      return rm.r.map(function (r) { return '<rect class="hm-room' + (sel && sel.room === rm.id ? ' on' : '') + (mode === 'rooms' ? ' ed' : '') + '" data-hmroom="' + esc(rm.id) + '" x="' + (r[0] * 1000).toFixed(1) + '" y="' + (r[1] * H).toFixed(1) + '" width="' + (r[2] * 1000).toFixed(1) + '" height="' + (r[3] * H).toFixed(1) + '"></rect>'; }).join('');
-    }).join('');
+    box.querySelector('[data-hmrooms]').innerHTML = m.rooms.map(function (rm, ri) {
+      var col = roomColor(rm, ri);
+      return rm.r.map(function (r) { return '<rect class="hm-room' + (sel && sel.room === rm.id ? ' on' : '') + (mode === 'rooms' ? ' ed' : '') + '" style="--rc:' + col + '" data-hmroom="' + esc(rm.id) + '" x="' + (r[0] * 1000).toFixed(1) + '" y="' + (r[1] * H).toFixed(1) + '" width="' + (r[2] * 1000).toFixed(1) + '" height="' + (r[3] * H).toFixed(1) + '"></rect>'; }).join('');
+    }).join('') + m.furn.map(function (f) { var r = f.r; return '<rect class="hm-furn' + (sel && sel.furn === f.id ? ' on' : '') + (mode === 'furn' ? ' ed' : '') + '" data-hmfurn="' + esc(f.id) + '" x="' + (r[0] * 1000).toFixed(1) + '" y="' + (r[1] * H).toFixed(1) + '" width="' + (r[2] * 1000).toFixed(1) + '" height="' + (r[3] * H).toFixed(1) + '"></rect>'; }).join('');
     var lay = box.querySelector('[data-hmlayer]'), h = '';
     m.rooms.forEach(function (rm) {
       var big = rm.r.slice().sort(function (a, b) { return b[2] * b[3] - a[2] * a[3]; })[0], here = list.filter(function (x) { return x.room === rm.id; });
       var due = here.filter(function (x) { return ((x.kind === 'c' && LAY.chores) || (x.kind === 'u' && LAY.upkeep)) && soon(x); }), late = due.some(function (x) { return x.late; });
       var ch = LAY.chores ? here.filter(function (x) { return x.kind === 'c' && !x.done && x.due; }).sort(function (a, b) { return a.due < b.due ? -1 : 1; })[0] : null;
+      var bdg = due.length || ch ? '<span class="hm-badge' + (late ? ' late' : '') + '">' + (ch ? '<b class="hm-face ' + (ch.who === 'me' ? 'me' : 'them') + '">' + esc(initial(ch.who)) + '</b>' : '') + (due.length ? '<i>' + due.length + '</i>' : '') + '</span>' : '';
+      /* clean view: the room's name, size and what's due in one label – nothing on top of each other */
+      var vw0 = view.clientWidth * Z.s, vh0 = view.clientHeight * Z.s, tight = big[3] * vh0 < 76 || big[2] * vw0 < 76;   /* small on screen: one short line */
+      if (m.style === 'clean' && mode !== 'rooms') { h += '<span class="hm-rlabel' + (tight ? ' tight' : '') + '" style="left:' + ((big[0] + big[2] / 2) * 100) + '%;top:' + ((big[1] + big[3] / 2) * 100) + '%"><span>' + esc(rm.name) + '</span>' + (rm.area ? '<small>' + esc(rm.area) + ' m²</small>' : '') + bdg + '</span>'; return; }
       if (mode === 'rooms') h += '<span class="hm-tag" style="left:' + ((big[0] + big[2] / 2) * 100) + '%;top:' + ((big[1] + big[3] / 2) * 100) + '%">' + esc(rm.name) + '</span>';
       else if (due.length || ch) h += '<span class="hm-badge' + (late ? ' late' : '') + '" style="left:' + ((big[0] + big[2]) * 100) + '%;top:' + (big[1] * 100) + '%">' + (ch ? '<b class="hm-face ' + (ch.who === 'me' ? 'me' : 'them') + '">' + esc(initial(ch.who)) + '</b>' : '') + (due.length ? '<i>' + due.length + '</i>' : '') + '</span>';
     });
-    if (LAY.pins && mode !== 'rooms') m.pins.forEach(function (p) {
+    m.furn.forEach(function (fu) {
+      var ups = list.filter(function (x) { return x.kind === 'u' && x.furn === fu.id && soon(x); }), lt = ups.some(function (x) { return x.late; });
+      var small = fu.r[2] < .09 || fu.r[3] < .035;   /* too small to hold its name: the name goes underneath */
+      h += '<span class="hm-flabel' + (small ? ' below' : '') + (lt ? ' late' : ups.length && LAY.upkeep ? ' due' : '') + '" style="left:' + ((fu.r[0] + fu.r[2] / 2) * 100) + '%;top:' + ((small ? fu.r[1] + fu.r[3] : fu.r[1] + fu.r[3] / 2) * 100) + '%">' + esc(fu.name) + '</span>';
+    });
+    if (LAY.pins && mode !== 'rooms' && mode !== 'furn') m.pins.forEach(function (p) {
       if (placing && arm.t === 'move' && arm.id === p.id) return;
       var k = pk(p.k), l = linkOf(p, list), due = l && soon(l), late = l && l.late;
       h += '<button type="button" class="hm-pin' + (sel && sel.pin === p.id ? ' on' : '') + (late ? ' late' : due ? ' due' : '') + '" data-hmpin="' + esc(p.id) + '" style="left:' + (p.x * 100) + '%;top:' + (p.y * 100) + '%;--c:' + k[3] + '" aria-label="' + esc(pinTitle(p, list)) + '"><i class="bi bi-' + k[2] + '"></i></button>';
@@ -196,7 +244,7 @@
     var W = v.clientWidth, Hh = v.clientHeight;
     Z.s = Math.min(6, Math.max(1, Z.s)); Z.x = Math.min(0, Math.max(W - W * Z.s, Z.x)); Z.y = Math.min(0, Math.max(Hh - Hh * Z.s, Z.y));
     st.style.transform = 'translate(' + Z.x + 'px,' + Z.y + 'px) scale(' + Z.s + ')'; st.style.setProperty('--s', Z.s);
-    v.style.touchAction = Z.s > 1.01 || mode === 'rooms' || arm ? 'none' : 'pan-y';
+    v.style.touchAction = Z.s > 1.01 || mode !== 'view' || arm ? 'none' : 'pan-y';
     v.classList.toggle('zoomed', Z.s > 1.01);
   }
   function zoomAt(f, cx, cy) { var v = box.querySelector('[data-hmview]'), r = v.getBoundingClientRect(); cx = cx == null ? r.width / 2 : cx - r.left; cy = cy == null ? r.height / 2 : cy - r.top; var ns = Math.min(6, Math.max(1, Z.s * f)); Z.x = cx - (cx - Z.x) * ns / Z.s; Z.y = cy - (cy - Z.y) * ns / Z.s; Z.s = ns; applyZ(); }
@@ -214,7 +262,7 @@
       if (e.target.closest('.hm-pin') && !arm && mode !== 'rooms') { start = null; return; }
       start = { x: e.clientX, y: e.clientY, zx: Z.x, zy: Z.y, t: Date.now(), moved: false, p: at(e), id: e.pointerId };
       try { v.setPointerCapture(e.pointerId); } catch (x) {}
-      if (mode === 'rooms' || (arm && arm.t === 'part')) { draft = { x0: start.p.x, y0: start.p.y }; return; }
+      if (mode === 'rooms' || mode === 'furn' || (arm && (arm.t === 'part' || arm.t === 'fredraw'))) { draft = { x0: start.p.x, y0: start.p.y }; return; }
       if (!arm) hold = setTimeout(function () { if (start && !start.moved) { var p = start.p; start = null; addPinAt(p.x, p.y); } }, 500);
     });
     v.addEventListener('pointermove', function (e) {
@@ -237,7 +285,8 @@
       var s0 = start; start = null;
       if (draft) { var p = at(e), d0 = draft; draft = null; hideDraft();
         var r = [Math.min(d0.x0, p.x), Math.min(d0.y0, p.y), Math.abs(p.x - d0.x0), Math.abs(p.y - d0.y0)];
-        if (r[2] > .02 && r[3] > .02) { newPart(r); return; }
+        var mn = mode === 'furn' || (arm && arm.t === 'fredraw') ? .006 : .02;
+        if (r[2] > mn && r[3] > mn) { if (arm && arm.t === 'fredraw') redrawFurn(r); else if (mode === 'furn') newFurn(r); else newPart(r); return; }
         if (!s0.moved) tap(s0.p, e); return; }
       if (!s0.moved && e.type === 'pointerup') { var now = Date.now(); if (!arm && mode === 'view' && now - lastTap < 300 && !wide.matches) { lastTap = 0; if (Z.s > 1.5) { Z = { s: 1, x: 0, y: 0 }; applyZ(); } else zoomAt(2.2, e.clientX, e.clientY); return; } lastTap = now; tap(s0.p, e); }
     }
@@ -255,8 +304,10 @@
     if (arm && (arm.t === 'pin' || arm.t === 'move') && arm.x != null) { arm.x = p.x; arm.y = p.y; paint(m); return; }
     if (arm && arm.t === 'pin') { var a = arm; arm = null; paint(m); addPinAt(p.x, p.y, a.k); return; }
     if (arm && arm.t === 'move') { var id = arm.id; arm = null; save(function (d) { d.pins.forEach(function (x) { if (x.id === id) { x.x = p.x; x.y = p.y; } }); }); sel = { pin: id }; openPin(id); return; }
-    var rm = roomAt(p.x, p.y, m.rooms);
+    var fu = furnAt(p.x, p.y, m.furn), rm = roomAt(p.x, p.y, m.rooms);
+    if (mode === 'furn') { if (fu) furnEdit(fu.id); return; }
     if (mode === 'rooms') { if (rm) roomEdit(rm.id); return; }
+    if (fu) { sel = { furn: fu.id }; paint(m); openFurn(fu.id); return; }
     if (rm) { sel = { room: rm.id }; paint(m); openRoom(rm.id); }
     else { sel = null; paint(m); if (!wide.matches) closeSheet(); }
   }
@@ -287,13 +338,13 @@
   function escKey(e) { if (e.key === 'Escape' && sheetOpen()) { e.stopPropagation(); closeSheet(); } }
   function closeSheet() { if (!sheetOpen()) return; var s = sheetEl; sheetEl = null; document.documentElement.classList.remove('hm-sheet-on'); s.classList.remove('open'); setTimeout(function () { s.remove(); }, 220); document.removeEventListener('keydown', escKey, true); if (sel) { sel = null; var m = data(); if (m.plan) paint(m); } }
   var current = null;   /* what the panel/sheet shows: {t: 'room'|'pin'|'over', id} */
-  function refreshSheet(m, list) { if (!current) return; if (current.t === 'room') openRoom(current.id, m, list); else if (current.t === 'pin') openPin(current.id, m, list); }
+  function refreshSheet(m, list) { if (!current) return; if (current.t === 'room') openRoom(current.id, m, list); else if (current.t === 'pin') openPin(current.id, m, list); else if (current.t === 'furn') openFurn(current.id, m, list); }
   function side(m, list) { if (!current || current.t === 'over') overview(m, list); else refreshSheet(m, list); }
   function row(x, extra) {
     var sub = x.kind === 'c' ? (x.who === 'me' ? L('You', 'Du') : esc(partnerName())) + (x.done ? ' · ' + L('done', 'gjort') : x.due ? ' · ' + when(x.due) : '') : x.kind === 'u' ? L('Upkeep', 'Vedlikehold') + ' · ' + when(x.due) : (x.price ? kr(x.price) : '') + (x.receipt ? ' · ' + L('receipt', 'kvittering') : '');
     var act = x.kind === 'c' ? '<button type="button" class="pill-btn sm" data-hmdone="' + esc(x.key) + '">' + (x.done ? L('Undo', 'Angre') : L('Done', 'Ferdig')) + '</button>' : x.kind === 'u' ? '<button type="button" class="pill-btn sm" data-hmdone="' + esc(x.key) + '">' + L('Done', 'Ferdig') + '</button>' : '<a class="icon-btn sm" href="#hinv=' + esc(x.id) + '" data-hminv="' + esc(x.id) + '" aria-label="' + L('Open in Home inventory', 'Åpne i innbo') + '"><i class="bi bi-chevron-right"></i></a>';
     return '<li class="hm-li' + (x.done ? ' done' : '') + '">' + (x.kind === 'c' ? '<b class="hm-face ' + (x.who === 'me' ? 'me' : 'them') + '">' + esc(initial(x.who)) + '</b>' : '<span class="hm-li-ic"><i class="bi bi-' + x.icon + '"></i></span>') +
-      '<span class="hm-li-t">' + esc(x.name) + '<small class="' + (x.late ? 'late' : '') + '">' + sub + (extra || '') + '</small></span>' + act + '</li>';
+      '<span class="hm-li-t">' + esc(x.name) + '<small class="' + (x.late ? 'late' : '') + '">' + sub + (x.fname && extra !== false ? ' · ' + esc(x.fname) : '') + (extra || '') + '</small></span>' + act + '</li>';
   }
   function overview(m, list) {
     current = { t: 'over' };
@@ -313,11 +364,12 @@
     show('<div class="hm-shead"><h3>' + esc(rm.name) + '</h3><p class="muted">' + (rm.area ? esc(rm.area) + ' m² · ' : '') + '<button type="button" class="text-btn" data-hmput="' + esc(id) + '"><i class="bi bi-plus-lg"></i> ' + L('Put things here', 'Legg ting her') + '</button></p></div>' +
       sec(L('Chores', 'Husarbeid'), ch, L('No chores here yet.', 'Ikke noe husarbeid her ennå.')) + sec(L('Upkeep', 'Vedlikehold'), up, L('No upkeep here.', 'Ikke noe vedlikehold her.')) +
       (it.length ? sec(L('Things here', 'Ting her'), it, '') : '') +
+      (function () { var fl = m.furn.filter(function (f) { return furnRoom(f, m.rooms) === id; }); return fl.length ? '<p class="hm-sec">' + L('Furniture', 'Møbler') + '</p><ul class="hm-list">' + fl.map(function (f) { var u = list.filter(function (x) { return x.kind === 'u' && x.furn === f.id; }); return '<li class="hm-li"><span class="hm-li-ic"><i class="bi bi-lamp"></i></span><span class="hm-li-t">' + esc(f.name) + '<small>' + (u.length ? u.length + ' ' + L(u.length === 1 ? 'upkeep job' : 'upkeep jobs', 'vedlikehold') : L('No upkeep', 'Ikke noe vedlikehold')) + '</small></span><button type="button" class="icon-btn sm" data-hmopenfurn="' + esc(f.id) + '" aria-label="' + L('Open', 'Åpne') + '"><i class="bi bi-chevron-right"></i></button></li>'; }).join('') + '</ul>' : ''; })() +
       (pins.length ? '<p class="hm-sec">' + L('Pins', 'Nåler') + '</p><ul class="hm-list">' + pins.map(function (p) { var k = pk(p.k); return '<li class="hm-li"><span class="hm-li-ic" style="--c:' + k[3] + '"><i class="bi bi-' + k[2] + '"></i></span><span class="hm-li-t">' + esc(pinTitle(p, list)) + '</span><button type="button" class="icon-btn sm" data-hmopenpin="' + esc(p.id) + '" aria-label="' + L('Open', 'Åpne') + '"><i class="bi bi-chevron-right"></i></button></li>'; }).join('') + '</ul>' : '') +
       (all.length ? '<p class="hm-sec">' + L('For the whole home', 'For hele boligen') + '</p><ul class="hm-list">' + all.map(function (x) { return row(x); }).join('') + '</ul>' : ''));
     var mm = data(); if (box.querySelector('[data-hmrooms]') && mm.plan) markSel();
   }
-  function markSel() { if (!box) return; box.querySelectorAll('[data-hmroom]').forEach(function (r) { r.classList.toggle('on', !!(sel && sel.room === r.dataset.hmroom)); }); box.querySelectorAll('[data-hmpin]').forEach(function (b) { b.classList.toggle('on', !!(sel && sel.pin === b.dataset.hmpin)); }); }
+  function markSel() { if (!box) return; box.querySelectorAll('[data-hmroom]').forEach(function (r) { r.classList.toggle('on', !!(sel && sel.room === r.dataset.hmroom)); }); box.querySelectorAll('[data-hmpin]').forEach(function (b) { b.classList.toggle('on', !!(sel && sel.pin === b.dataset.hmpin)); }); box.querySelectorAll('[data-hmfurn]').forEach(function (r) { r.classList.toggle('on', !!(sel && sel.furn === r.dataset.hmfurn)); }); }
   function openPin(id, m, list) {
     m = m || data(); list = list || things(m); var p = m.pins.filter(function (x) { return x.id === id; })[0]; if (!p) { current = null; return; }
     current = { t: 'pin', id: id }; sel = { pin: id }; markSel();
@@ -398,10 +450,46 @@
     var m = data(), rm = m.rooms.filter(function (x) { return x.id === id; })[0]; if (!rm) return; sel = { room: id }; markSel(); current = { t: 'form' };
     show('<div class="hm-shead"><h3>' + esc(rm.name) + '</h3><p class="muted">' + rm.r.length + ' ' + L(rm.r.length === 1 ? 'part' : 'parts', rm.r.length === 1 ? 'del' : 'deler') + '</p></div>' +
       '<form class="hm-form" data-hmroomedit="' + esc(id) + '"><input name="n" maxlength="40" value="' + esc(rm.name) + '" required><input name="a" inputmode="decimal" maxlength="8" value="' + esc(rm.area || '') + '" placeholder="m²"><button type="submit" class="pill-btn">' + L('Save', 'Lagre') + '</button></form>' +
+      '<p class="hm-sec">' + L('Colour', 'Farge') + '</p><div class="hm-swatches">' + Object.keys(RC).map(function (k) { var cur = rm.c ? rm.c === k : roomColor(rm, m.rooms.indexOf(rm)) === RC[k]; return '<button type="button" data-hmrc="' + esc(id + '|' + k) + '" style="--c:' + RC[k] + '" aria-pressed="' + cur + '" aria-label="' + k + '"></button>'; }).join('') + '</div>' +
       '<div class="hm-pacts"><button type="button" class="text-btn" data-hmpart="' + esc(id) + '"><i class="bi bi-plus-square-dotted"></i> ' + L('Add another part', 'Legg til en del') + '</button>' +
       (rm.r.length > 1 ? '<button type="button" class="text-btn" data-hmpartdel="' + esc(id) + '"><i class="bi bi-dash-square-dotted"></i> ' + L('Remove the last part', 'Fjern den siste delen') + '</button>' : '') +
       '<button type="button" class="text-btn danger" data-hmroomdel="' + esc(id) + '"><i class="bi bi-trash3"></i> ' + L('Remove the room', 'Fjern rommet') + '</button></div>');
   }
+  /* ---------------- furniture: where it stands, its Home inventory item and its own upkeep ---------------- */
+  var FSUG = [L('Sofa', 'Sofa'), L('Bed', 'Seng'), L('Dining table', 'Spisebord'), L('Wardrobe', 'Garderobe'), L('Fridge', 'Kjøleskap'), L('Dishwasher', 'Oppvaskmaskin'), L('Washing machine', 'Vaskemaskin'), L('Dryer', 'Tørketrommel'), L('Heat pump', 'Varmepumpe'), L('Cooker hood', 'Kjøkkenvifte'), L('TV', 'TV'), L('Desk', 'Skrivebord')];
+  var INVR = { living: 'living', kitchen: 'kitchen', bed: 'bedroom', office: 'office', bath: 'bathroom', hall: 'hall', storage: 'storage', laundry: 'bathroom' };
+  function invSelect(cur) {
+    var l = (Fe.tools().hinv || []).filter(function (x) { return x && x.id; });
+    return '<select name="inv"><option value="">' + L('Not in Home inventory', 'Ikke i innbo') + '</option><option value="new">' + L('Add it to Home inventory', 'Legg den i innbo') + '</option>' + l.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur ? ' selected' : '') + '>' + esc(x.name || L('Item', 'Ting')) + '</option>'; }).join('') + '</select>';
+  }
+  function furnForm(attr, f) {
+    return '<div class="hm-sug">' + FSUG.map(function (s0) { return '<button type="button" class="hm-chip" data-hmfsug="' + esc(s0) + '">' + esc(s0) + '</button>'; }).join('') + '</div>' +
+      '<form class="hm-form hm-fform" ' + attr + '><input name="n" maxlength="40" value="' + esc(f ? f.name : '') + '" placeholder="' + L('What is it?', 'Hva er det?') + '" required>' + invSelect(f && f.inv) + '<button type="submit" class="pill-btn">' + L('Save', 'Lagre') + '</button></form>';
+  }
+  function newFurn(r) {
+    show('<div class="hm-shead"><h3>' + L('What stands here?', 'Hva står her?') + '</h3><p class="muted">' + L('Link it to Home inventory for the receipt and price.', 'Koble den til innbo for kvittering og pris.') + '</p></div>' + furnForm('data-hmfurnform data-r="' + esc(JSON.stringify(r.map(function (v) { return Math.round(v * 10000) / 10000; }))) + '"'));
+    current = { t: 'form' }; var i = document.querySelector('[data-hmfurnform] input'); if (i && wide.matches) i.focus();
+  }
+  function furnEdit(id) {
+    var f = data().furn.filter(function (x) { return x.id === id; })[0]; if (!f) return; sel = { furn: id }; markSel(); current = { t: 'form' };
+    show('<div class="hm-shead"><h3>' + esc(f.name) + '</h3></div>' + furnForm('data-hmfurnedit="' + esc(id) + '"', f) +
+      '<div class="hm-pacts"><button type="button" class="text-btn" data-hmfredraw="' + esc(id) + '"><i class="bi bi-bounding-box"></i> ' + L('Draw it again', 'Tegn den på nytt') + '</button><button type="button" class="text-btn danger" data-hmfdel="' + esc(id) + '"><i class="bi bi-trash3"></i> ' + L('Remove', 'Fjern') + '</button></div>');
+  }
+  function redrawFurn(r) { var id = arm.id; arm = null; save(function (d) { d.furn.forEach(function (x) { if (x.id === id) x.r = r; }); }); sel = { furn: id }; openFurn(id); }
+  function openFurn(id, m, list) {
+    m = m || data(); list = list || things(m); var f = m.furn.filter(function (x) { return x.id === id; })[0]; if (!f) { current = null; return; }
+    current = { t: 'furn', id: id }; sel = { furn: id }; markSel();
+    var rid = furnRoom(f, m.rooms), rm = m.rooms.filter(function (r) { return r.id === rid; })[0], ups = list.filter(function (x) { return x.kind === 'u' && x.furn === id; }), item = f.inv ? list.filter(function (x) { return x.kind === 'i' && x.id === f.inv; })[0] : null;
+    var free = list.filter(function (x) { return x.kind === 'u' && !x.furn; });
+    show('<div class="hm-shead"><h3><span class="hm-li-ic"><i class="bi bi-lamp"></i></span> ' + esc(f.name) + '</h3><p class="muted">' + (rm ? esc(rm.name) : L('On the map', 'På kartet')) + '</p></div>' +
+      '<p class="hm-sec">' + L('Upkeep', 'Vedlikehold') + '</p>' + (ups.length ? '<ul class="hm-list">' + ups.map(function (x) { return row(x, false); }).join('') + '</ul>' : '<p class="muted hm-none">' + L('Nothing yet – add what it needs below.', 'Ingenting ennå – legg inn hva den trenger under.') + '</p>') +
+      '<form class="hm-form hm-upform" data-hmupform="' + esc(id) + '"><input name="t" maxlength="80" placeholder="' + L('Clean the filter, descale …', 'Rens filteret, avkalk …') + '" required><select name="e">' + [[1, L('Every month', 'Hver måned')], [3, L('Every 3 months', 'Hver 3. måned')], [6, L('Every 6 months', 'Hver 6. måned')], [12, L('Every year', 'Hvert år')], [24, L('Every 2 years', 'Annethvert år')]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === 3 ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select><button type="submit" class="pill-btn">' + L('Add', 'Legg til') + '</button></form>' +
+      (free.length ? '<label class="hm-attach"><span class="muted">' + L('Or use an upkeep job you have', 'Eller bruk vedlikehold du har') + '</span><select data-hmattach="' + esc(id) + '"><option value="">' + L('Choose …', 'Velg …') + '</option>' + free.map(function (x) { return '<option value="' + esc(x.key) + '">' + esc(x.name) + '</option>'; }).join('') + '</select></label>' : '') +
+      '<p class="hm-sec">' + L('Home inventory', 'Innbo') + '</p>' + (item ? '<ul class="hm-list">' + row(item, false) + '</ul>' : '<p class="muted hm-none">' + L('Not linked – Edit to link it or add it.', 'Ikke koblet – Endre for å koble eller legge den til.') + '</p>') +
+      '<div class="hm-pacts hm-edonly"><button type="button" class="text-btn" data-hmfedit="' + esc(id) + '"><i class="bi bi-pencil"></i> ' + L('Edit', 'Endre') + '</button><button type="button" class="text-btn" data-hmfredraw="' + esc(id) + '"><i class="bi bi-bounding-box"></i> ' + L('Draw it again', 'Tegn den på nytt') + '</button><button type="button" class="text-btn danger" data-hmfdel="' + esc(id) + '"><i class="bi bi-trash3"></i> ' + L('Remove', 'Fjern') + '</button></div>');
+  }
+  /* a new Home inventory item for a piece of furniture (room from where it stands) */
+  function newInvItem(name, rid, rooms) { var rm = rooms.filter(function (r) { return r.id === rid; })[0], t0 = rm ? typesOf(rm.name)[0] : null, it = { id: uid(), name: name, room: INVR[t0] || 'living' }; var t = Fe.tools(); t.hinv = (Array.isArray(t.hinv) ? t.hinv : []).concat([it]); quiet = true; Fe.saveTools(t); quiet = false; return it.id; }
   function putSheet(id) {
     var m = data(), list = things(m).filter(function (x) { return x.kind !== 'i' || x.room === id || !x.room || x.guessed; }), rm = m.rooms.filter(function (x) { return x.id === id; })[0]; if (!rm) return;
     var name = function (rid) { var r = m.rooms.filter(function (x) { return x.id === rid; })[0]; return rid === 'all' ? L('whole home', 'hele boligen') : r ? r.name : ''; };
@@ -526,7 +614,15 @@
   function onClick(e) {
     var b, m;
     if ((b = e.target.closest('[data-hmlay]'))) { LAY[b.dataset.hmlay] = !LAY[b.dataset.hmlay]; try { localStorage.setItem('dash.hmLayers', JSON.stringify(LAY)); } catch (x) {} draw(); return; }
-    if ((b = e.target.closest('[data-hmmode]'))) { mode = mode === 'rooms' ? 'view' : 'rooms'; arm = null; sel = null; current = null; if (mode === 'view' && !wide.matches) closeSheet(); draw(); if (mode === 'view' && wide.matches) overview(data(), things(data())); return; }
+    if ((b = e.target.closest('[data-hmstyle]'))) { var sv = b.dataset.hmstyle; save(function (d) { d.style = sv; }); return; }
+    if ((b = e.target.closest('[data-hmopenfurn]'))) { openFurn(b.dataset.hmopenfurn); return; }
+    if ((b = e.target.closest('[data-hmfsug]'))) { var fi = b.closest('.hm-sbody, [data-hmside]').querySelector('.hm-fform input[name=n]'); if (fi) { fi.value = b.dataset.hmfsug; fi.focus(); } return; }
+    if ((b = e.target.closest('[data-hmfedit]'))) { furnEdit(b.dataset.hmfedit); return; }
+    if ((b = e.target.closest('[data-hmfredraw]'))) { var fz = data().furn.filter(function (x) { return x.id === b.dataset.hmfredraw; })[0]; if (fz) { arm = { t: 'fredraw', id: fz.id, name: fz.name }; draw(); } return; }
+    if ((b = e.target.closest('[data-hmfdel]'))) { var fd = b.dataset.hmfdel, keptF = null; save(function (d) { keptF = d.furn.filter(function (x) { return x.id === fd; })[0]; d.furn = d.furn.filter(function (x) { return x.id !== fd; }); }); current = null; sel = null; if (wide.matches) overview(data(), things(data())); else closeSheet();
+      toast('<i class="bi bi-trash3"></i> ' + L('Removed', 'Fjernet'), function () { if (keptF) save(function (d) { d.furn.push(keptF); }); }); return; }
+    if ((b = e.target.closest('[data-hmrc]'))) { var rq = b.dataset.hmrc.split('|'); save(function (d) { d.rooms.forEach(function (x) { if (x.id === rq[0]) x.c = rq[1]; }); }); roomEdit(rq[0]); return; }
+    if ((b = e.target.closest('[data-hmmode]'))) { var mm0 = b.dataset.hmmode; mode = mode === mm0 ? 'view' : mm0; arm = null; sel = null; current = null; if (mode === 'view' && !wide.matches) closeSheet(); draw(); if (mode === 'view' && wide.matches) overview(data(), things(data())); return; }
     if (e.target.closest('[data-hmaddpin]')) { mode = 'view'; arm = { t: 'pin' }; if (coarse.matches) { var c0 = viewCenter(); arm.x = c0.x; arm.y = c0.y; } if (!wide.matches) closeSheet(); draw(); return; }
     if (e.target.closest('[data-hmplace]') && arm && arm.x != null) {
       var a1 = arm; arm = null;
@@ -578,8 +674,24 @@
     var f = e.target, m;
     if (f.matches('[data-hmroomform]')) { e.preventDefault(); var n = f.n.value.trim(); if (!n) return; var r = JSON.parse(f.dataset.r), id = uid(); save(function (d) { d.rooms.push({ id: id, name: n.slice(0, 40), area: f.a.value.trim().slice(0, 8), r: [r] }); }); sel = null; current = null; if (wide.matches) show('<div class="hm-shead"><h3>' + esc(n) + '</h3><p class="muted">' + L('Marked. Drag over the next room.', 'Merket. Dra over det neste rommet.') + '</p></div>'); else closeSheet(); return; }
     if (f.matches('[data-hmroomedit]')) { e.preventDefault(); var rid = f.dataset.hmroomedit, nn = f.n.value.trim(); if (!nn) return; save(function (d) { d.rooms.forEach(function (x) { if (x.id === rid) { x.name = nn.slice(0, 40); x.area = f.a.value.trim().slice(0, 8); } }); }); toast('<i class="bi bi-check2"></i> ' + L('Saved', 'Lagret')); if (!wide.matches) closeSheet(); else roomEdit(rid); return; }
+    if (f.matches('[data-hmfurnform]') || f.matches('[data-hmfurnedit]')) {
+      e.preventDefault(); var fnm = f.n.value.trim(); if (!fnm) return; var inv = f.inv.value, md = data(), fid0 = f.dataset.hmfurnedit || uid(), rr0 = f.dataset.r ? JSON.parse(f.dataset.r) : null;
+      var room0 = rr0 ? (roomAt(rr0[0] + rr0[2] / 2, rr0[1] + rr0[3] / 2, md.rooms) || {}).id : furnRoom(md.furn.filter(function (x) { return x.id === fid0; })[0] || { r: [0, 0, 0, 0] }, md.rooms);
+      if (inv === 'new') inv = newInvItem(fnm.slice(0, 40), room0, md.rooms);
+      save(function (d) { if (rr0) d.furn.push({ id: fid0, name: fnm.slice(0, 40), r: rr0, inv: inv || undefined }); else d.furn.forEach(function (x) { if (x.id === fid0) { x.name = fnm.slice(0, 40); if (inv) x.inv = inv; else delete x.inv; } }); });
+      if (rr0 && mode === 'furn') { if (wide.matches) show('<div class="hm-shead"><h3>' + esc(fnm) + '</h3><p class="muted">' + L('Added. Drag over the next piece, or open it to add its upkeep.', 'Lagt til. Dra over neste møbel, eller åpne det for å legge inn vedlikehold.') + '</p></div><button type="button" class="pill-btn sm" data-hmopenfurn="' + esc(fid0) + '">' + L('Open ', 'Åpne ') + esc(fnm) + '</button>'); else closeSheet(); }
+      else openFurn(fid0);
+      return;
+    }
+    if (f.matches('[data-hmupform]')) {
+      e.preventDefault(); var ut = f.t.value.trim(), fid1 = f.dataset.hmupform; if (!ut) return; var nid = uid(), tt = Fe.tools();
+      tt.hmaint = (Array.isArray(tt.hmaint) ? tt.hmaint : []).concat([{ id: nid, title: ut.slice(0, 80), every: +f.e.value || 3, last: today() }]);
+      var mm2 = norm(tt.hmap); mm2.put['u:' + nid] = 'f:' + fid1; tt.hmap = mm2; quiet = true; Fe.saveTools(tt); quiet = false; draw(); openFurn(fid1);
+      toast('<i class="bi bi-check2"></i> ' + L('Added to Upkeep', 'Lagt til i Vedlikehold')); return;
+    }
     if (f.matches('[data-hmrenameform]')) { e.preventDefault(); var pid = f.dataset.hmrenameform, t = f.t.value.trim(); save(function (d) { d.pins.forEach(function (p) { if (p.id === pid) { if (t) p.t = t.slice(0, 60); else delete p.t; } }); }); openPin(pid); return; }
   });
+  document.addEventListener('change', function (e) { var a = e.target.closest('[data-hmattach]'); if (!a || !a.value) return; var fid2 = a.dataset.hmattach, key2 = a.value; save(function (d) { d.put[key2] = 'f:' + fid2; }); openFurn(fid2); });
   document.addEventListener('input', function (e) { var t = e.target.closest('[data-hmnote]'); if (!t) return; clearTimeout(t._t); t._t = setTimeout(function () { var id = t.dataset.hmnote, v = t.value.slice(0, 600); var tt = Fe.tools(), mm = norm(tt.hmap); mm.pins.forEach(function (p) { if (p.id === id) p.note = v; }); tt.hmap = mm; quiet = true; Fe.saveTools(tt); quiet = false; }, 500); });
 
   /* ---------------- keep it current ---------------- */
@@ -626,5 +738,6 @@
   window.addEventListener('features:change', function () { setTimeout(setFill, 0); });
 
   /* for share.js (Show to …) and search */
-  window.HomeMap = { data: data, things: things, pk: pk, getFile: getF, roomAt: roomAt, pinTitle: pinTitle, infoOf: infoOf };
+  window.HomeMap = { data: data, things: things, pk: pk, getFile: getF, roomAt: roomAt, pinTitle: pinTitle, infoOf: infoOf, roomColor: roomColor,
+    shareFile: function (m) { return m.style === 'clean' ? cleanBlob(m.plan.fid).then(function (b) { return b || getF(m.plan.fid); }) : getF(m.plan.fid); } };
 })();

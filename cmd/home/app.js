@@ -150,7 +150,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 15;
+  var APPV = 16;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -337,8 +337,10 @@
       var big = rm.r.slice().sort(function (a, b) { return b[2] * b[3] - a[2] * a[3]; })[0], n = mapChores(f, rm.id).filter(function (x) { return !x.dn && x.tu === 'them' && Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5) <= 2; });
       if (n.length) badges += '<span class="h-mbadge' + (n.some(function (x) { return x.p.day < tk; }) ? ' late' : '') + '" style="left:' + ((big[0] + big[2]) * 100) + '%;top:' + (big[1] * 100) + '%">' + n.length + '</span>';
     });
-    return '<h2 class="h-h">' + L('Home map', 'Boligkart') + '</h2><div class="h-map' + (f.mono ? ' mono' : '') + '" style="aspect-ratio:' + f.w + ' / ' + f.h + '"><img alt="' + L('Floor plan', 'Plantegning') + '"' + (mapUrl ? ' src="' + mapUrl + '"' : '') + '>' +
-      '<svg viewBox="0 0 1000 ' + H + '" preserveAspectRatio="none">' + f.rooms.map(function (rm) { return rm.r.map(function (q) { return '<rect data-hmroom="' + esc(rm.id) + '" x="' + q[0] * 1000 + '" y="' + q[1] * H + '" width="' + q[2] * 1000 + '" height="' + q[3] * H + '"></rect>'; }).join(''); }).join('') + '</svg>' +
+    return '<h2 class="h-h">' + L('Home map', 'Boligkart') + '</h2><div class="h-map' + (f.mono ? ' mono' : '') + (f.style === 'clean' ? ' clean' : '') + '" style="aspect-ratio:' + f.w + ' / ' + f.h + '"><img alt="' + L('Floor plan', 'Plantegning') + '"' + (mapUrl ? ' src="' + mapUrl + '"' : '') + '>' +
+      '<svg viewBox="0 0 1000 ' + H + '" preserveAspectRatio="none">' + f.rooms.map(function (rm) { return rm.r.map(function (q) { return '<rect data-hmroom="' + esc(rm.id) + '" style="--rc:' + (rm.c || 'var(--acc)') + '" x="' + q[0] * 1000 + '" y="' + q[1] * H + '" width="' + q[2] * 1000 + '" height="' + q[3] * H + '"></rect>'; }).join(''); }).join('') +
+      (f.furn || []).map(function (x) { var q = x.r; return '<rect class="h-mfurn" x="' + q[0] * 1000 + '" y="' + q[1] * H + '" width="' + q[2] * 1000 + '" height="' + q[3] * H + '"></rect>'; }).join('') + '</svg>' +
+      (f.style === 'clean' ? f.rooms.map(function (rm) { var big = rm.r.slice().sort(function (a, b) { return b[2] * b[3] - a[2] * a[3]; })[0]; return '<span class="h-mlabel" style="left:' + (big[0] + big[2] / 2) * 100 + '%;top:' + (big[1] + big[3] / 2) * 100 + '%">' + esc(rm.name) + '</span>'; }).join('') : '') +
       f.pins.map(function (p) { var ic = MAPI[p.k] || MAPI.note; return '<button type="button" class="h-mpin" data-hmpin="' + esc(p.id) + '" style="left:' + p.x * 100 + '%;top:' + p.y * 100 + '%;--c:' + ic[1] + '" aria-label="' + esc(p.t) + '"><i class="bi bi-' + ic[0] + '"></i></button>'; }).join('') + badges + '</div>' +
       '<p class="h-small h-mhint">' + L('Tap a room for its chores, or a pin for where things are.', 'Trykk på et rom for husarbeidet der, eller en nål for hvor ting er.') + '</p>';
   }

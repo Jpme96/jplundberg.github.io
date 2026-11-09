@@ -101,7 +101,7 @@
     }
     (function () {   /* the home map (House → Map), when "Show to …" is on – the drawing goes as an encrypted file like shared documents */
       var hm = mapShared(); if (!hm) return;
-      var fm2 = ((V.get() || {}).share || {}).files || {}; if (!fm2[hm.plan.fid]) return;
+      var fm2 = ((V.get() || {}).share || {}).files || {}, fk = hm.plan.fid + ':' + hm.style; if (!fm2[fk]) return;
       var HM = window.HomeMap, H = window.HomeLife, th = HM.things(hm), cr = {};
       th.forEach(function (x) { if (x.kind === 'c' && x.room) cr[x.id] = x.room; });
       var pins = hm.pins.map(function (p) {
@@ -111,7 +111,7 @@
         else if (p.note) o.info = [['Note', p.note, true]];
         return o;
       });
-      put('hmap', 'map', { w: hm.plan.w, h: hm.plan.h, mono: !!hm.plan.mono, fid: fm2[hm.plan.fid], rooms: hm.rooms, pins: pins, cr: cr });
+      put('hmap', 'map', { w: hm.plan.w, h: hm.plan.h, mono: !!hm.plan.mono || hm.style === 'clean', fid: fm2[fk], style: hm.style, rooms: hm.rooms.map(function (r, i) { return { id: r.id, name: r.name, area: r.area, r: r.r, c: HM.roomColor(r, i) }; }), furn: hm.furn.map(function (x) { return { name: x.name, r: x.r }; }), pins: pins, cr: cr });
     })();
     if (w.notes) (Array.isArray(t.homenotes) ? t.homenotes : []).forEach(function (n) { if (n && n.id) put('note', n.id, { title: String(n.title || '').slice(0, 60), text: String(n.text || '').slice(0, 1500) }); });
     if (w.move && mv && Array.isArray(mv.items)) mv.items.forEach(function (x) { if (x && x.id) put('mv', x.id, { text: String(x.text || '').slice(0, 80), done: !!x.done }); });
@@ -134,7 +134,7 @@
     filesBusy = true;
     var want = {}, jobs = [], fm = Object.assign({}, s.files || {}), changed = false;
     docs().forEach(function (dc) { dc.files.forEach(function (f) { want[f.id] = f; }); });
-    var hm0 = mapShared(); if (hm0) want[hm0.plan.fid] = { id: hm0.plan.fid, get: function () { return window.HomeMap.getFile(hm0.plan.fid); } };
+    var hm0 = mapShared(); if (hm0) want[hm0.plan.fid + ':' + hm0.style] = { id: hm0.plan.fid + ':' + hm0.style, get: function () { return window.HomeMap.shareFile(hm0); } };
     Object.keys(want).forEach(function (fid) {
       if (fm[fid]) return; var f = want[fid];
       jobs.push(f.get().then(function (blob) {

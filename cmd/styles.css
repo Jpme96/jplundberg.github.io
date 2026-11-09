@@ -5219,10 +5219,12 @@ button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; fo
 :root[data-theme="dark"] .hm-view.dk { background: #1b1d21; }
 :root[data-theme="dark"] .hm-view.dk .hm-img { filter: invert(.9) hue-rotate(180deg) contrast(.95); }
 .hm-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.hm-room { fill: transparent; cursor: pointer; transition: fill .15s; }
-@media (hover: hover) { .hm-room:hover { fill: color-mix(in srgb, var(--accent) 10%, transparent); } }
-.hm-room.on { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
-.hm-room.ed { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
+.hm-room { fill: var(--rc, var(--accent)); fill-opacity: .14; cursor: pointer; transition: fill-opacity .15s; }
+@media (hover: hover) { .hm-room:hover { fill-opacity: .26; } .hm-view.clean .hm-room:hover { fill-opacity: .55; } }
+.hm-room.on { fill-opacity: .34; }
+.hm-view.clean .hm-room { fill-opacity: .42; }
+.hm-view.clean .hm-room.on { fill-opacity: .7; }
+.hm-room.ed { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
 .hm-draft { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .hm-view.editing, .hm-view.arming { cursor: crosshair; }
 .hm-layer { position: absolute; inset: 0; pointer-events: none; }
@@ -5329,3 +5331,42 @@ html.hm-sheet-on body { padding-bottom: 62vh !important; }
 .hm-place-b .pill-btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
 .hm-foot { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; padding: 0 2px; }
 .hm-foot .text-btn, .hm-foot label.text-btn { cursor: pointer; min-height: 36px; font-size: 13.5px; }
+/* House → Map: clean drawing, room colours and names, furniture, editing on a computer */
+@media (max-width: 899px) { .hm-edonly { display: none !important; } }
+.hm-furn { fill: #ffffff; fill-opacity: .92; stroke: #6b6f76; stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: pointer; rx: 4; }
+.hm-furn.on { stroke: var(--accent); stroke-width: 3; }
+.hm-furn.ed { stroke: var(--accent); stroke-dasharray: 5 3; }
+:root[data-theme="dark"] .hm-view.dk .hm-furn { fill: #2b2e34; stroke: #9aa0a8; }
+.hm-view:not(.clean) .hm-furn { fill-opacity: .55; }
+.hm-rlabel { position: absolute; transform: translate(-50%, -50%) scale(calc(1 / var(--s, 1))); display: grid; justify-items: center; gap: 1px; font-size: 12.5px; font-weight: 650; color: #23252a; white-space: nowrap; pointer-events: none; text-shadow: 0 0 3px rgba(255, 255, 255, .9); }
+.hm-rlabel small { font-size: 11px; font-weight: 500; opacity: .75; }
+:root[data-theme="dark"] .hm-view.dk .hm-rlabel { color: #f1f2f4; text-shadow: 0 0 3px rgba(0, 0, 0, .8); }
+.hm-flabel { position: absolute; transform: translate(-50%, -50%) scale(calc(1 / var(--s, 1))); font-size: 10.5px; font-weight: 600; color: #4a4e55; white-space: nowrap; pointer-events: none; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+:root[data-theme="dark"] .hm-view.dk .hm-flabel { color: #d6d9de; }
+.hm-flabel.due::after, .hm-flabel.late::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; background: #e0a100; vertical-align: 1px; }
+.hm-flabel.late::after { background: #e05555; }
+@media (max-width: 600px) { .hm-rlabel { font-size: 11px; } .hm-rlabel small { font-size: 10px; } .hm-flabel { font-size: 9.5px; max-width: 70px; } }
+.hm-style { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(var(--ink-rgb), .06); margin-right: auto; }
+.hm-style button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 8px; cursor: pointer; min-height: 32px; }
+.hm-style button[aria-pressed="true"] { background: var(--bg-solid); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.hm-foot { align-items: center; }
+.hm-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+.hm-swatches button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; background: var(--c); cursor: pointer; padding: 0; box-shadow: inset 0 0 0 2px var(--bg-solid); }
+.hm-swatches button[aria-pressed="true"] { border-color: var(--text); }
+.hm-upform, .hm-fform { grid-template-columns: minmax(0, 1fr) minmax(0, 150px) auto; }
+@media (max-width: 420px) { .hm-upform, .hm-fform { grid-template-columns: minmax(0, 1fr) auto; } .hm-upform select, .hm-fform select { grid-column: 1 / -1; grid-row: 2; } }
+.hm-attach { display: grid; gap: 4px; margin-top: 8px; font-size: 13px; }
+.hm-shead h3 .hm-li-ic { width: 28px; height: 28px; }
+.hm-flabel.below { transform: translate(-50%, 3px) scale(calc(1 / var(--s, 1))); transform-origin: top center; padding: 1px 5px; border-radius: 6px; background: rgba(255, 255, 255, .85); }
+:root[data-theme="dark"] .hm-view.dk .hm-flabel.below { background: rgba(20, 22, 26, .8); }
+:root[data-theme="dark"] .hm-view.dk.clean .hm-room { fill-opacity: .3; }
+:root[data-theme="dark"] .hm-view.dk.clean .hm-room.on { fill-opacity: .55; }
+.hm-upform { grid-template-columns: minmax(0, 1fr) auto; }
+.hm-upform input { grid-column: 1 / -1; }
+.hm-fform { grid-template-columns: minmax(0, 1fr) auto; }
+.hm-fform input { grid-column: 1 / -1; }
+.hm-rlabel .hm-badge { position: static; transform: none; margin-top: 3px; box-shadow: none; text-shadow: none; }
+@media (max-width: 600px) { .hm-rlabel .hm-badge { font-size: 10.5px; } .hm-rlabel .hm-badge i, .hm-rlabel .hm-badge .hm-face { min-width: 17px; width: auto; height: 17px; font-size: 10px; } .hm-rlabel .hm-badge .hm-face { width: 17px; } }
+.hm-rlabel.tight { display: flex; align-items: center; gap: 4px; }
+.hm-rlabel.tight small { display: none; }
+.hm-rlabel.tight .hm-badge { margin-top: 0; }
