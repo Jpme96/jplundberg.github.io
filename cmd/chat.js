@@ -42,7 +42,7 @@
         Object.keys(C.msgs).forEach(function (id) { if (!seen[id] && !C.msgs[id].pending && !C.msgs[id].failed) delete C.msgs[id]; });   /* gone: removed or too old */
         C.rev = srv.rev; C.ttl = srv.ttl || 0;
       });
-    }).then(function () { C.busy = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function () { C.busy = false; });
+    }).then(function () { C.busy = false; C.missing = false; changed(); if (C.again) { C.again = false; fetchChat(); } }, function (e) { C.busy = false; if (e && e.status === 404 && !C.missing) { C.missing = true; changed(); } });
   }
   function list() {
     var now = Date.now();
@@ -53,9 +53,9 @@
   function markRead() {
     var l = list(); if (!l.length || !C.open || document.hidden) return;
     var mx = l[l.length - 1].t, r = +rj(readKey(), 0) || 0;
-    if (mx > r) { wj(readKey(), mx); SC.livePost({ seen: mx }); if (C.opt.onChange) C.opt.onChange(); }
+    if (mx > r) { wj(readKey(), mx); SC.livePost({ seen: mx }); if (C.opt.onChange) C.opt.onChange(); badge(); }
   }
-  function changed() { if (C.opt.onChange) C.opt.onChange(); if (C.el) paintList(); }
+  function changed() { if (C.opt.onChange) C.opt.onChange(); badge(); if (C.el) paintList(); }
 
   /* ---------- sending ---------- */
   function put(body) { return SC.api('chat', { method: 'PUT', body: body }); }
@@ -167,7 +167,7 @@
       '.hc-empty{margin:auto;text-align:center;color:var(--hc-mut);padding:20px;max-width:300px}.hc-empty .bi{font-size:34px;color:var(--hc-acc);display:block;margin-bottom:6px}',
       '.hc-down{position:absolute;right:14px;bottom:76px;border:0;border-radius:999px;background:var(--hc-acc);color:#fff;padding:7px 12px;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer}',
       '.hc-comp{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px 10px calc(8px + var(--hc-safe,0px));border-top:1px solid var(--hc-line);background:var(--hc-bg)}',
-      '.hc-row{display:flex;align-items:flex-end;gap:6px}.hc-row textarea{flex:1;min-width:0;resize:none;border:1px solid var(--hc-line);border-radius:20px;padding:9px 14px;font:inherit;font-size:16px;line-height:1.3;max-height:140px;background:rgba(127,127,127,.08);color:inherit;outline:none}',
+      '.hc-row{display:flex;align-items:flex-end;gap:6px}.hc-row textarea{flex:1;min-width:0;resize:none;border:1px solid var(--hc-line);border-radius:20px;padding:9px 14px;font:inherit;font-size:max(16px,calc(16px / var(--hc-zoom,1)));line-height:1.3;max-height:140px;background:rgba(127,127,127,.08);color:inherit;outline:none}',
       '.hc-row textarea:focus{border-color:var(--hc-acc)}.hc-send{background:var(--hc-acc)!important;color:#fff!important}.hc-send:disabled{opacity:.4}',
       '.hc-chips{display:flex;gap:6px;overflow-x:auto}.hc-chips span{flex:none;display:flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:rgba(127,127,127,.14);font-size:12.5px;max-width:200px}.hc-chips span em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.hc-chips button{border:0;background:none;color:inherit;cursor:pointer;padding:2px}',
@@ -186,8 +186,8 @@
     var o = other(), tp = +C.typing[o] || 0, now = Date.now() + C.skew, typing = now - tp < 7000;
     return '<div class="hc-head">' + (C.full ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-chevron-left"></i></button>' : '') +
       '<div class="hc-faces">' + C.opt.face(o) + C.opt.face(C.opt.me) + '</div>' +
-      '<div class="hc-tt"><b>' + esc(C.opt.name(o)) + '</b><small class="' + (typing ? 'typ' : '') + '">' + (typing ? esc(L('typing …', 'skriver …')) : C.ttl ? '<i class="bi bi-stopwatch"></i> ' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) : esc(L('Only the two of you can read this', 'Bare dere to kan lese dette'))) + '</small></div>' +
-      '<button type="button" class="hc-ib" data-hcmenu aria-label="' + L('Chat settings', 'Chatinnstillinger') + '"><i class="bi bi-three-dots"></i></button></div>';
+      '<div class="hc-tt"><b>' + esc(C.opt.name(o)) + '</b><small class="' + (typing ? 'typ' : '') + '">' + (typing ? esc(L('typing …', 'skriver …')) : C.ttl ? '<i class="bi bi-stopwatch"></i> ' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) : esc(L('Private – just you two', 'Privat – bare dere to'))) + '</small></div>' +
+      '<button type="button" class="hc-ib" data-hcmenu aria-label="' + L('Chat settings', 'Chatinnstillinger') + '"><i class="bi bi-three-dots"></i></button>' + (C.pop ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</div>';
   }
   function pins() {
     var l = notes() ? notes().list() : []; if (!l.length) return '';
@@ -212,6 +212,7 @@
     return '<div class="hc-meta">' + hm(m.t) + (isLastMine ? ' · ' + (seenIt ? '<i class="bi bi-check2-all"></i> ' + L('Seen', 'Sett') : '<i class="bi bi-check2"></i> ' + L('Sent', 'Sendt')) : '') + '</div>';
   }
   function listHtml() {
+    if (C.missing) return '<div class="hc-empty"><i class="bi bi-cloud-arrow-up"></i>' + esc(C.opt.missing || L('The chat is not switched on yet – the server needs an update.', 'Chatten er ikke slått på ennå – serveren må oppdateres.')) + '</div>';
     var l = list(); if (!l.length) return '<div class="hc-empty"><i class="bi bi-chat-heart"></i>' + esc(L('Say hi to ', 'Si hei til ') + C.opt.name(other())) + '<br><small>' + esc(L('Messages, photos and files – only your two phones can read them.', 'Meldinger, bilder og filer – bare telefonene deres kan lese dem.')) + '</small></div>';
     var out = '', prev = null, lastMine = null; l.forEach(function (m) { if (m.by === C.opt.me && !m.sys) lastMine = m; });
     l.forEach(function (m, i) {
@@ -311,7 +312,7 @@
   }
   function mount(el, o) {
     o = o || {}; css(); if (C.el && C.el !== el) unmount();
-    C.el = el; C.full = !!o.full; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
+    C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
     el.innerHTML = '<div class="hc"><div class="hc-headbox"></div><div class="hc-list" role="log" aria-live="polite"></div><button type="button" class="hc-down" data-hcdown hidden><i class="bi bi-arrow-down"></i> ' + L('New messages', 'Nye meldinger') + '</button>' +
       '<form class="hc-comp"><div class="hc-chips" hidden></div><div class="hc-row"><button type="button" class="hc-ib" data-hcattach aria-label="' + L('Add a photo or file', 'Legg til bilde eller fil') + '"><i class="bi bi-plus-lg"></i></button>' +
       '<textarea rows="1" placeholder="' + esc(L('Message', 'Melding')) + '" enterkeyhint="send" aria-label="' + L('Message', 'Melding') + '"></textarea><button type="submit" class="hc-ib hc-send" disabled aria-label="' + L('Send', 'Send') + '"><i class="bi bi-arrow-up"></i></button></div>' +
@@ -330,5 +331,60 @@
     SC.live(onLive); fetchChat();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { fetchChat(); markRead(); } });
   }
-  window.HomeChat = { init: init, mount: mount, unmount: unmount, unread: unread, last: last, refresh: fetchChat, isOpen: function () { return !!C.el; }, ttlName: function (ms) { return ttlName(ms); }, ttl: function () { return C.ttl; }, setTtl: setTtl, TTLS: TTLS };
+
+  /* ---------- the bubble: a small round button in the corner that opens the chat as a pop-up ----------
+     HomeChat.bubble({ bottom: css length above the bottom edge, label }) – call after init. */
+  var B = { btn: null, pop: null, opt: null };
+  function bubbleCss() {
+    if (document.getElementById('hcBubCss')) return;
+    var s = document.createElement('style'); s.id = 'hcBubCss';
+    s.textContent = [
+      '.hc-bub{position:fixed;right:16px;bottom:var(--hc-bub-b,24px);z-index:40;width:52px;height:52px;border-radius:50%;border:0;background:var(--acc,var(--accent,#14b8a6));color:#fff;font-size:22px;display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.28);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,opacity .15s}',
+      '.hc-bub:active{transform:scale(.92)}.hc-bub[hidden]{display:none}.hc-bub.on{opacity:0;pointer-events:none}',
+      '.hc-bub b{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#e5484d;color:#fff;font:700 11.5px/20px system-ui,sans-serif;box-shadow:0 0 0 2px var(--bg-solid,var(--bg,#111))}.hc-bub b[hidden]{display:none}',
+      '.hc-pop{position:fixed;z-index:60;right:16px;bottom:var(--hc-bub-b,24px);width:380px;height:min(600px,calc(100vh - 120px));border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.35);border:1px solid var(--line,rgba(127,127,127,.22));opacity:0;transform:translateY(12px);transition:opacity .16s,transform .16s;background:var(--bg-solid,var(--bg,#111))}',
+      '.hc-pop.in{opacity:1;transform:none}.hc-pop .hc{--hc-bg:var(--bg-solid,var(--bg,#111))}',
+      '@media (max-width:699px){.hc-pop{left:8px;right:8px;width:auto;bottom:8px;height:72vh;border-radius:20px}.hc-popbg{position:fixed;inset:0;z-index:59;background:rgba(0,0,0,.3)}}',
+      '@media (min-width:700px){.hc-popbg{display:none}}'
+    ].join('\n');
+    document.head.appendChild(s);
+  }
+  function bubble(o) {
+    B.opt = o = o || {}; bubbleCss();
+    if (!B.btn) {
+      B.btn = document.createElement('button'); B.btn.type = 'button'; B.btn.className = 'hc-bub';
+      B.btn.innerHTML = '<i class="bi bi-chat-heart-fill"></i><b hidden></b>'; document.body.appendChild(B.btn);
+      B.btn.addEventListener('click', function () { B.pop ? closePop() : openPop(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && B.pop && !B.pop.querySelector('.hc-menu')) closePop(); });
+      if (window.visualViewport) { visualViewport.addEventListener('resize', fitPop); visualViewport.addEventListener('scroll', fitPop); }
+    }
+    if (o.bottom) document.documentElement.style.setProperty('--hc-bub-b', o.bottom);
+    if (o.zoom) document.documentElement.style.setProperty('--hc-zoom', o.zoom);
+    B.btn.setAttribute('aria-label', o.label || L('Chat', 'Chat')); B.btn.title = o.label || '';
+    B.btn.hidden = false; badge();
+  }
+  function badge() { if (!B.btn) return; var n = unread(), b = B.btn.querySelector('b'); b.hidden = !n || !!B.pop; b.textContent = n > 9 ? '9+' : String(n); }
+  function openPop() {
+    if (B.pop) return;
+    var bg = document.createElement('div'); bg.className = 'hc-popbg'; document.body.appendChild(bg); bg.addEventListener('click', closePop);
+    B.pop = document.createElement('div'); B.pop.className = 'hc-pop'; B.pop.setAttribute('role', 'dialog'); B.pop.setAttribute('aria-label', B.opt.label || 'Chat'); B.pop._bg = bg; document.body.appendChild(B.pop);
+    mount(B.pop, { pop: true, onClose: closePop }); B.btn.classList.add('on'); badge(); fitPop();
+    requestAnimationFrame(function () { if (B.pop) B.pop.classList.add('in'); });
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) { var ta = B.pop.querySelector('textarea'); if (ta) ta.focus(); }
+    if (B.opt.onOpen) B.opt.onOpen();
+  }
+  function closePop() {
+    if (!B.pop) return; var p = B.pop; B.pop = null; if (C.el === p.firstChild || C.el === p) unmount(); else if (isOpen()) unmount();
+    if (p._bg) p._bg.remove(); p.classList.remove('in'); setTimeout(function () { p.remove(); }, 170); if (B.btn) B.btn.classList.remove('on'); badge();
+  }
+  /* phone keyboard: the pop-up sits on top of it and fills what is left of the screen */
+  function fitPop() {
+    if (!B.pop) return; var vv = window.visualViewport;
+    if (!vv || innerWidth >= 700) { B.pop.style.top = ''; B.pop.style.height = ''; B.pop.style.bottom = ''; return; }
+    var kb = innerHeight - vv.height > 120;
+    if (kb) { B.pop.style.top = (vv.offsetTop + 8) + 'px'; B.pop.style.height = (vv.height - 16) + 'px'; B.pop.style.bottom = 'auto'; }
+    else { B.pop.style.top = ''; B.pop.style.bottom = ''; B.pop.style.height = ''; }
+  }
+  function isOpen() { return !!C.el; }
+  window.HomeChat = { init: init, mount: mount, unmount: unmount, bubble: bubble, hideBubble: function () { if (B.btn) B.btn.hidden = true; closePop(); }, openPop: openPop, closePop: closePop, popOpen: function () { return !!B.pop; }, unread: unread, last: last, refresh: fetchChat, isOpen: function () { return !!C.el; }, ttlName: function (ms) { return ttlName(ms); }, ttl: function () { return C.ttl; }, setTtl: setTtl, TTLS: TTLS };
 })();

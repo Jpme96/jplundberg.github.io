@@ -542,11 +542,11 @@
     if (!A || !A.figure || !lk) return '<span><i class="bi bi-person"></i></span>';
     try { return '<span>' + A.figure(A.MOMENTS && A.MOMENTS.day || { k: 'day', bg: '#1d2533', sky: 'sun', i: 'sun', c: '#f2c94c' }, lk) + '</span>'; } catch (e) { return '<span><i class="bi bi-person"></i></span>'; }
   }
-  var chatOn = false, chatBtn = null, chatOv = null;
+  var chatOn = false;
   function chatInit() {
     var s = st(); if (!s || !window.HomeChat) return;
     if (chatOn) return; chatOn = true;
-    HomeChat.init({ key: s.key, me: 'o', no: false,
+    HomeChat.init({ key: s.key, me: 'o', no: false, missing: 'The chat is not switched on yet – paste the new worker.js in Cloudflare (dashboard-sync → Edit code → Deploy).',
       name: function (side) { return side === 'o' ? (owner() || 'You') : pname(); },
       face: faceOf,
       notes: { on: function () { return !!what().notes; }, list: function () { return (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).map(function (n) { return { id: n.id, title: n.title || '', text: n.text || '' }; }); },
@@ -555,38 +555,14 @@
       onChange: chatBadge });
     chatButton();
   }
-  function chatButton() {
-    if (chatBtn && document.body.contains(chatBtn)) return;
-    var host = document.querySelector('.mb-acts') || document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'); if (!host) return;
-    chatBtn = document.createElement('button'); chatBtn.type = 'button'; chatBtn.className = 'icon-btn hc-barbtn'; chatBtn.setAttribute('data-hcopen', '');
-    chatBtn.setAttribute('aria-label', 'Chat with ' + pname()); chatBtn.title = 'Chat with ' + pname();
-    chatBtn.innerHTML = '<i class="bi bi-chat-heart"></i><b class="hc-badge" hidden></b>';
-    host.insertBefore(chatBtn, host.querySelector('#quickAdd') || host.querySelector('[data-search]') || host.firstChild);
-    chatBadge();
-  }
-  function chatBadge() {
-    if (!chatBtn || !window.HomeChat) return; var n = HomeChat.unread(), b = chatBtn.querySelector('.hc-badge');
-    b.hidden = !n || !!chatOv; b.textContent = n > 9 ? '9+' : String(n);
-    chatBtn.setAttribute('aria-label', 'Chat with ' + pname() + (n ? ' – ' + n + ' new' : ''));
-  }
-  function openChat() {
-    if (!window.HomeChat || !st()) return; chatInit();
-    if (chatOv) return;
-    chatOv = document.createElement('div'); chatOv.className = 'hc-ov'; chatOv.innerHTML = '<div class="hc-ovbox"></div>'; document.body.appendChild(chatOv);
-    document.documentElement.classList.add('hc-open');
-    requestAnimationFrame(function () { chatOv.classList.add('in'); });
-    HomeChat.mount(chatOv.firstChild, { full: true, onClose: closeChat }); fitOv(); chatBadge();
-    var ta = chatOv.querySelector('textarea'); if (ta && matchMedia('(hover: hover) and (pointer: fine)').matches) ta.focus();
-  }
-  function closeChat() { if (!chatOv) return; var o = chatOv; chatOv = null; if (HomeChat.isOpen()) HomeChat.unmount(); document.documentElement.classList.remove('hc-open'); o.classList.remove('in'); setTimeout(function () { o.remove(); }, 220); chatBadge(); }
-  /* phone keyboard: the chat fills what is left of the screen */
-  function fitOv() { if (!chatOv) return; var vv = window.visualViewport; if (!vv || innerWidth >= 900) { chatOv.style.top = ''; chatOv.style.height = ''; return; } chatOv.style.top = vv.offsetTop + 'px'; chatOv.style.height = vv.height + 'px'; }
-  if (window.visualViewport) { visualViewport.addEventListener('resize', fitOv); visualViewport.addEventListener('scroll', fitOv); }
+  /* a small bubble in the corner (not in the bar): it opens the chat as a pop-up */
+  function chatButton() { if (window.HomeChat && st()) HomeChat.bubble({ label: 'Chat with ' + pname() }); }
+  function chatBadge() {}
+  function openChat() { if (!window.HomeChat || !st()) return; chatInit(); chatButton(); HomeChat.openPop(); }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-hcopen]'); if (b) { e.preventDefault(); var stp = document.getElementById('settings'); if (stp && !stp.hidden && b.closest('#settings')) { var cl = document.getElementById('stClose'); if (cl) cl.click(); } openChat(); return; }
     var t = e.target.closest('[data-hcttl]'); if (t && window.HomeChat) { HomeChat.setTtl(+t.dataset.hcttl); t.parentNode.querySelectorAll('[data-hcttl]').forEach(function (x) { x.classList.toggle('on', x === t); x.setAttribute('aria-pressed', String(x === t)); }); }
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && chatOv && !chatOv.querySelector('.hc-menu')) closeChat(); });
   if (/[?&#]chat\b/.test(location.search + location.hash)) V.onUnlock(function () { setTimeout(function () { chatInit(); openChat(); }, 600); });
   V.onUnlock(function () { setTimeout(chatInit, 1200); });
   window.addEventListener('hashchange', function () { if (location.hash === '#chat') { history.replaceState(null, '', location.pathname + location.search); openChat(); } });

@@ -31,12 +31,12 @@
   document.getElementById('toast').addEventListener('click', function (e) { var t = this; if (e.target.closest('[data-undo]') && t._undo) { var u = t._undo; t._undo = null; t.classList.remove('show'); u(); } });
 
   /* ---------- the key ---------- */
-  var K = null, recs = {}, rids = {}, tab = (function (t) { return t === 'notes' ? 'chat' : t; })(rj('home.tab', 'today')), me = 'p', PASS = null;
+  var K = null, recs = {}, rids = {}, tab = (function (t) { return t === 'notes' || t === 'chat' ? 'today' : t; })(rj('home.tab', 'today')), me = 'p', PASS = null;
   /* preview: the owner opens this inside Settings → Shared space to see what the other one sees – read-only */
   var preview = (function () { var m = location.hash.match(/^#preview&k=([A-Za-z0-9_-]{43})/); if (!m) return null; history.replaceState(null, '', location.pathname); return m[1]; })();
   if (preview) { document.documentElement.classList.add('h-preview'); tab = 'today'; }
   var pending = preview ? null : (function () { var m = location.hash.match(/[#&]k=([A-Za-z0-9_-]{43})/); if (m) { try { sessionStorage.setItem('home.newkey', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; } try { return sessionStorage.getItem('home.newkey'); } catch (e) { return null; } })();
-  function screen(h) { lastHtml = ''; if (window.__hnav) window.__hnav.hidden = true; if (window.__hcbox) { window.__hcbox.hidden = true; if (window.HomeChat && HomeChat.isOpen()) HomeChat.unmount(); } app.hidden = false; app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
+  function screen(h) { lastHtml = ''; if (window.__hnav) window.__hnav.hidden = true; if (window.HomeChat && HomeChat.hideBubble) HomeChat.hideBubble(); chatOn = false; app.innerHTML = '<div class="h-screen">' + h + '</div>'; var f = app.querySelector('input'); if (f && matchMedia('(hover: hover)').matches) f.focus(); }
   function boot() {
     if (preview) { K = preview; start(); return; }
     SC.api('share').then(function (j) {
@@ -153,7 +153,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 18;
+  var APPV = 19;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -236,10 +236,10 @@
   }
 
   /* ---------- drawing ---------- */
-  var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'house-heart', 'Home', 'Hjem'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['chat', 'chat-heart', 'Chat', 'Chat'], ['me', 'person-lock', 'Me', 'Meg']];
+  var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'house-heart', 'Home', 'Hjem'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['me', 'person-lock', 'Me', 'Meg']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move') || on('house'), money: on('money') || on('bills'), cal: on('cal') || on('trips'), chat: !!window.HomeChat && !preview, me: !preview && My.any() }[t[0]]; }); }
+    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move') || on('house'), money: on('money') || on('bills'), cal: on('cal') || on('trips'),  me: !preview && My.any() }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -251,12 +251,10 @@
   function navDraw(ts) {
     ts = ts || tabsOn();
     var sig = ts.map(function (t) { return t[0]; }).join() + '|' + L('en', 'no');
-    if (nav.dataset.sig !== sig) { nav.dataset.sig = sig; nav.innerHTML = ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span>' + (t[0] === 'chat' ? '<b class="h-badge" hidden></b>' : '') + '</button>'; }).join(''); }
+    if (nav.dataset.sig !== sig) { nav.dataset.sig = sig; nav.innerHTML = ts.map(function (t) { return '<button type="button" data-tab="' + t[0] + '"><i class="bi bi-' + t[1] + '"></i><span>' + L(t[2], t[3]) + '</span>' + '</button>'; }).join(''); }
     nav.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tab === tab)); });
-    var bd = nav.querySelector('.h-badge'), n = window.HomeChat && K ? HomeChat.unread() : 0; if (bd) { bd.hidden = !n || tab === 'chat'; bd.textContent = n > 9 ? '9+' : String(n); }
     nav.hidden = false;
   }
-  var chatBox = document.createElement('div'); chatBox.className = 'h-chat'; chatBox.hidden = true; document.body.appendChild(chatBox); window.__hcbox = chatBox;
   var chatOn = false;
   function chatStart() {
     if (chatOn || !window.HomeChat || !K || preview) return; chatOn = true;
@@ -265,27 +263,14 @@
       face: function (side) { return face(side === 'o' ? info().olook : mine().look, ''); },
       notes: { on: function () { return (info().what || {}).notes !== false; }, list: function () { return list('note').map(function (r) { return { id: r.id, title: r.f.title || '', text: r.f.text || '' }; }).sort(function (a, b) { return a.title.localeCompare(b.title); }); },
         add: function (title, text) { put('note', 'h' + uid(), { title: title, text: text || '' }); }, remove: function (id) { put('note', id, null, true); } },
-      onChange: function () { navDraw(); } });
+      missing: L('The chat isn’t switched on yet – ', 'Chatten er ikke slått på ennå – ') + owner() + L(' needs to update the server.', ' må oppdatere serveren.'),
+      onChange: function () {} });
+    HomeChat.bubble({ label: L('Chat with ', 'Chat med ') + owner(), zoom: String(parseFloat(getComputedStyle(document.body).zoom) || 1) });
   }
-  /* the chat fills the screen above the menu; with the keyboard up it fills what is left of the screen */
-  function fitChat() {
-    if (chatBox.hidden) return;
-    var vv = window.visualViewport, h = vv ? vv.height : innerHeight, kb = vv && innerHeight - vv.height > 120;
-    nav.style.visibility = kb ? 'hidden' : '';
-    var navH = kb ? 0 : nav.getBoundingClientRect().height || 72;
-    chatBox.style.top = (vv ? vv.offsetTop : 0) + 'px'; chatBox.style.height = Math.max(200, h - navH) + 'px';
-    chatBox.style.setProperty('--hc-safe', kb ? '0px' : '0px');
-  }
-  if (window.visualViewport) { visualViewport.addEventListener('resize', fitChat); visualViewport.addEventListener('scroll', fitChat); }
-  addEventListener('resize', fitChat);
   function draw() {
     if (!K || stopped || !list('info').length) return;
+    if (!chatOn && !preview) chatStart();
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
-    /* the chat has its own screen that stays put (typing and new messages arrive without redrawing the page) */
-    if (tab === 'chat' && window.HomeChat) {
-      chatStart(); app.hidden = true; chatBox.hidden = false; if (!HomeChat.isOpen()) HomeChat.mount(chatBox, {}); fitChat(); navDraw(ts); return;
-    }
-    if (window.HomeChat && HomeChat.isOpen()) HomeChat.unmount(); chatBox.hidden = true; app.hidden = false; nav.style.visibility = '';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
     var html = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
       (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +

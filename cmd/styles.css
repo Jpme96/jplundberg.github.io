@@ -5233,3 +5233,7 @@ html.hc-open { overflow: hidden; }
   .cr-tabs button { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 2px; padding: 7px 2px; font-size: 12px; white-space: nowrap; }
   .cr-tabs button .bi { font-size: 16px; }
 }
+/* chat bubble (chat.js): above the bottom tab bar on phones, in the corner on computers; under Settings and sheets */
+:root { --hc-bub-b: 24px; }
+@media (max-width: 899px) { :root { --hc-bub-b: calc(max(12px, env(safe-area-inset-bottom)) + 76px); } }
+.hc-bub { z-index: 34 !important; }
