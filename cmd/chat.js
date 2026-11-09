@@ -331,7 +331,7 @@
     if (j.chat != null && j.chat !== C.rev) fetchChat(); else if (C.el) paintList();
   }
   function init(opt) {
-    var first = !C.opt; C.opt = opt; if (!first) return;
+    var first = !C.opt, newKey = C.opt && C.opt.key !== opt.key; C.opt = opt; if (newKey) { C.msgs = {}; C.rev = -1; fetchChat(); } if (!first) return;
     SC.live(onLive); fetchChat();
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { fetchChat(); markRead(); } });
   }

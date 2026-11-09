@@ -21,6 +21,18 @@
   /* ---------- state ---------- */
   function st() { var d = V.get(); return d && d.share && d.share.key && d.share.on ? d.share : null; }
   function setSt(p) { var d = V.get(); if (!d) return; d.share = Object.assign({}, d.share || {}, p); V.save(d); }
+  /* the key is also kept in its own place (d.shareKey), written only when sharing is started or stopped. Your devices
+     merge "share" as one block, so a phone saving something small there could bring back an older key after a
+     restart on the computer – the other person then needed a new invite. The newest start/stop always wins now. */
+  function keyMark(on, key, since) { var d = V.get(); if (!d) return; var at = Date.now(); d.shareKey = { at: at, on: !!on, key: key || null, since: since || null }; d.share = Object.assign({}, d.share || {}, { keyAt: at }); V.save(d); }
+  function guardKey() {
+    var d = V.get(); if (!d) return; var sk = d.shareKey, sh = d.share || {};
+    if (!sk) { if (sh.key && sh.on) { d.shareKey = { at: +sh.keyAt || 1, on: true, key: sh.key, since: sh.since || null }; if (!sh.keyAt) d.share = Object.assign({}, sh, { keyAt: 1 }); V.save(d); } return; }
+    if ((+sk.at || 0) > (+sh.keyAt || 0) || ((+sk.at || 0) === (+sh.keyAt || 0) && (sk.key !== (sh.key || null) || !!sk.on !== !!sh.on))) {
+      d.share = Object.assign({}, sh, { key: sk.key, on: sk.on, since: sk.since || sh.since, keyAt: sk.at }); if (!sk.on) d.share.files = {};
+      V.save(d); cache = {}; seen = {}; wj('dash.share.seen2', {}); if (window.Diag && window.Diag.log) window.Diag.log('share', 'an older key came back from another device – the newest one is used again', 'share.js');
+    } else if ((+sh.keyAt || 0) > (+sk.at || 0)) { d.shareKey = { at: +sh.keyAt, on: !!sh.on, key: sh.key || null, since: sh.since || null }; V.save(d); }
+  }
   var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['pantry', 'Pantry', 'box-seam'], ['recipes', 'Recipes', 'journal-text'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
   var PARTNER_ONLY = { pme: 1 };          /* records only the other person writes – never removed from here */
   var OFF_FIRST = { pantry: 1, recipes: 1 };
@@ -267,6 +279,7 @@
     return Promise.all(jobs);
   }
   function sync() {
+    guardKey();
     var s = st(); if (!s) return Promise.resolve();
     if (busy) { again = true; return Promise.resolve(); }
     busy = true; var k = s.key;
@@ -545,7 +558,7 @@
   var chatOn = false;
   function chatInit() {
     var s = st(); if (!s || !window.HomeChat) return;
-    if (chatOn) return; chatOn = true;
+    if (chatOn === s.key) return; chatOn = s.key;
     HomeChat.init({ key: s.key, me: 'o', no: false, missing: 'The chat is not switched on yet – paste the new worker.js in Cloudflare (dashboard-sync → Edit code → Deploy).',
       name: function (side) { return side === 'o' ? (owner() || 'You') : pname(); },
       face: faceOf,
@@ -605,7 +618,8 @@
       b.disabled = true; if (msg) msg.textContent = 'Setting up …';
       SC.api('share', { method: 'PUT', body: { partner: em.trim(), name: name } }).then(function () {
         var d = V.get(), old = d.share || {};
-        setSt({ key: old.key && old.on === false ? SC.genKey() : (old.key || SC.genKey()), on: true, name: name, since: dkey(new Date()) });
+        var nk = old.key && old.on === false ? SC.genKey() : (old.key || SC.genKey()), sinceD = dkey(new Date());
+        setSt({ key: nk, on: true, name: name, since: sinceD }); keyMark(true, nk, sinceD);
         cache = {}; seen = {}; wj('dash.share.seen2', {});
         draw(); sync(); toast('<i class="bi bi-people"></i> Sharing with ' + esc(name) + ' – show them the code');
       }, function (er) { b.disabled = false; if (msg) msg.textContent = er && er.status === 400 ? 'That email doesn’t look right.' : 'Couldn’t reach the server – try again.'; });
@@ -627,7 +641,7 @@
     if (b.id === 'shStop') {
       if (!b.dataset.armed) { b.dataset.armed = '1'; document.getElementById('shStopL').textContent = 'Tap again to stop sharing'; setTimeout(function () { delete b.dataset.armed; var l = document.getElementById('shStopL'); if (l) l.textContent = 'Stop sharing'; }, 4000); return; }
       SC.api('share', { method: 'DELETE' }).then(function () {
-        setSt({ on: false, key: null, files: {} }); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
+        setSt({ on: false, key: null, files: {} }); keyMark(false, null, null); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
         toast('<i class="bi bi-x-octagon"></i> Stopped sharing – ' + esc(pname()) + ' no longer has access');
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }
