@@ -394,7 +394,7 @@
     var mu = muteOf(C.opt.me), muted = mu > Date.now(), trouble = !!(C.bad || C.dErr || C.missing);
     var MUTE = [[36e5, '1 h', '1 t'], [8 * 36e5, '8 h', '8 t'], [864e5, L('1 day', '1 dag')], [3650 * 864e5, L('Always', 'Alltid')]];
     var TTLX = [[0, L('Off', 'Av')], [864e5, '24 h'], [7 * 864e5, L('1 week', '1 uke')], [30 * 864e5, L('1 month', '1 mnd')]];
-    menu((trouble ? diag : '') +
+    menu(
       '<button type="button" data-a="gal"><i class="bi bi-images"></i>' + L('Photos & files', 'Bilder og filer') + '</button>' +
       '<p><i class="bi bi-bell' + (muted ? '-slash' : '') + '"></i> ' + esc(muted ? L('Muted until ', 'Dempet til ') + (mu - Date.now() > 3 * 864e5 ? L('you turn it on', 'du slår den på') : new Date(mu).toLocaleString(C.opt.no ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) : L('Mute notifications', 'Demp varsler')) + '</p>' +
       '<div class="hc-chiprow">' + (muted ? '<button type="button" class="hc-chip on" data-mute="0"><i class="bi bi-bell"></i> ' + L('Unmute', 'Slå på') + '</button>' : MUTE.map(function (x) { return '<button type="button" class="hc-chip" data-mute="' + x[0] + '">' + esc(L(x[1], x[2] || x[1])) + '</button>'; }).join('')) + '</div>' +
