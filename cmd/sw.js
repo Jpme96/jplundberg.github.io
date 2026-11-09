@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v172';
+var CACHE = 'cmd-v173';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
@@ -13,18 +13,27 @@ var ASSETS = 'cmd-assets';
 var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/travel/', '/cmd/finance/', '/cmd/habits/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/wish/', '/cmd/goals/', '/cmd/papers/', '/cmd/admin/'];
 self.addEventListener('install', function (e) {
   self.skipWaiting();
+  /* One page at a time (with its new files), not everything at once: an update used to download
+     13 pages and ~30 scripts in parallel while you were changing pages, which made the menu stutter.
+     Until this finishes, the previous version keeps serving its own copies. */
   e.waitUntil(caches.open(CACHE).then(function (c) {
-    return Promise.all(PAGES.map(function (u) {
-      return fetch(u, { credentials: 'same-origin', redirect: 'manual' }).then(function (res) {
-        if (!res.ok || res.type !== 'basic') return;
-        return res.clone().text().then(function (html) {
-          /* and the scripts and styles that page needs */
-          var deps = [], re = /(?:src|href)="([^"]+\?v=[^"]+)"/g, m;
-          while ((m = re.exec(html))) deps.push(new URL(m[1], self.location.origin + u).toString());
-          return caches.open(ASSETS).then(function (a) { return Promise.all([c.put(u, res)].concat(deps.map(function (d) { return a.match(d).then(function (hit) { return hit || fetch(d).then(function (r) { if (r.ok) return a.put(d, r); }); }).catch(function () {}); }))); });
-        });
-      }).catch(function () {});
-    }));
+    return caches.open(ASSETS).then(function (a) {
+      var seen = {};
+      function one(u) {
+        return fetch(u, { credentials: 'same-origin', redirect: 'manual' }).then(function (res) {
+          if (!res.ok || res.type !== 'basic') return;
+          return res.clone().text().then(function (html) {
+            /* and the scripts and styles that page needs (each file once) */
+            var deps = [], re = /(?:src|href)="([^"]+\?v=[^"]+)"/g, m;
+            while ((m = re.exec(html))) { var d = new URL(m[1], self.location.origin + u).toString(); if (!seen[d]) { seen[d] = 1; deps.push(d); } }
+            return deps.reduce(function (p, d) {
+              return p.then(function () { return a.match(d).then(function (hit) { return hit || fetch(d).then(function (r) { if (r.ok) return a.put(d, r); }); }).catch(function () {}); });
+            }, Promise.resolve()).then(function () { return c.put(u, res); });
+          });
+        }).catch(function () {});
+      }
+      return PAGES.reduce(function (p, u) { return p.then(function () { return one(u); }); }, Promise.resolve());
+    });
   }));
 });
 self.addEventListener('activate', function (e) {
