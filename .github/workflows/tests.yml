@@ -1,0 +1,33 @@
+# Runs the cmd tests (tests/) on every push and pull request. A red run means something broke – it gets fixed first.
+name: tests
+on:
+  push:
+    branches: [main]
+    paths: ['cmd/**', '_cloudflare/**', 'tests/**', '.github/workflows/tests.yml']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        working-directory: tests
+        run: npm install --no-audit --no-fund
+      - name: Run all tests
+        working-directory: tests
+        env:
+          ESBUILD: ${{ github.workspace }}/tests/node_modules/esbuild/bin/esbuild
+        run: node run.js
