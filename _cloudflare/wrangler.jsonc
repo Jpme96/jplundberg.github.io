@@ -1,0 +1,34 @@
+// The dashboard Worker (dashboard-sync). Cloudflare builds and deploys it from this folder whenever
+// _cloudflare/ changes on main (Workers & Pages → dashboard-sync → Settings → Build).
+// Only ids and names are here – no secrets. Secrets (GITHUB_TOKEN, CF_API_TOKEN, RESEND_API_KEY …) and the
+// plain variables (TEAM_DOMAIN, POLICY_AUD …) stay in the Cloudflare dashboard: keep_vars leaves them untouched.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dashboard-sync",
+  "main": "worker.js",
+  "compatibility_date": "2025-09-01",
+  "keep_vars": true,
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "jplundberg.com/cmd/api/*", "zone_name": "jplundberg.com" }
+  ],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "kv_namespaces": [
+    { "binding": "VAULT", "id": "684eb8ee40f44dc4a58c9e2f7db82d3f" }
+  ],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "dashboard-db", "database_id": "fbbb4a9f-7c08-49ff-bb6b-93186ac0e42a" }
+  ],
+  "r2_buckets": [
+    { "binding": "FILES", "bucket_name": "dashboard-files" }
+  ],
+  // instant updates: one small room that pushes "something changed" to the open apps
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE", "class_name": "LiveRoom" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["LiveRoom"] }
+  ],
+  "observability": { "enabled": true }
+}

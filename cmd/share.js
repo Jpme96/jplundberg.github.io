@@ -330,7 +330,7 @@
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
   SC.live(function (j) { if (st() && j && j.box != null && j.box !== boxRev && !busy) schedule(0); });
   var tm = null;
-  function schedule(ms) { if (!st()) return; clearTimeout(tm); tm = setTimeout(sync, ms == null ? 1500 : ms); }
+  function schedule(ms) { if (!st()) return; clearTimeout(tm); tm = setTimeout(sync, ms == null ? 600 : ms); }
   ['tools:change', 'cal:change', 'fin:change', 'travel:change', 'avatar:change'].forEach(function (ev) { window.addEventListener(ev, function () { if (!quiet) schedule(); }); });
   /* also runs when another device's version is taken in; wait a little so a real delete there reaches the box first */
   V.onUnlock(function () { cache = {}; healAt = Date.now() + 6000; schedule(1200); setTimeout(function () { schedule(0); }, 6500); });

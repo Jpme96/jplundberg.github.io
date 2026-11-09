@@ -61,22 +61,64 @@
       .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('HTTP ' + r.status)); e.status = r.status; e.body = j; throw e; } return j; }); },
         function (e) { clearTimeout(tm); throw e; });
   }
-  /* live: a tiny check every few seconds while the app is on screen (1.5 s while the chat is open).
-     It only reads version numbers from the server's edge cache, so it is cheap; whoever listens fetches
-     the real data when a number moved. Stops while the app is in the background. */
+  /* live: how the apps hear that something changed.
+     · Instant: one WebSocket to /cmd/api/ws. The server pushes the new version numbers (and who is typing) the moment
+       something is saved; whoever listens fetches the real data when a number moved. Only numbers go over it.
+     · Fallback (no WebSocket, or the server doesn't offer it): a tiny check every few seconds while the app is on
+       screen (1.5 s while the chat is open). Both stop while the app is in the background. */
   var liveSubs = [], liveT = null, liveFast = 0, liveBusy = false, liveOff = 0;
+  var ws = null, wsOk = false, wsFail = 0, wsT = null, wsPing = null, wsAt = 0, wsLast = null;
+  function emit(j) { liveSubs.forEach(function (f) { try { f(j); } catch (e) {} }); }
   function liveTick() {
     clearTimeout(liveT); liveT = null; if (!liveSubs.length || document.hidden || liveBusy) return;
+    if (wsOk) {
+      /* nothing to fetch: re-send the last news with the clock moved on, so "typing …" fades out by itself */
+      if (wsLast) { var j = JSON.parse(JSON.stringify(wsLast.j)); j.now = wsLast.j.now + (Date.now() - wsLast.at); emit(j); }
+      liveT = setTimeout(liveTick, 3000); return;
+    }
     liveBusy = true;
-    api('live').then(function (j) { liveOff = 0; liveSubs.forEach(function (f) { try { f(j); } catch (e) {} }); }, function (e) { liveOff = e && (e.status === 403 || e.status === 404) ? liveOff + 1 : liveOff; })
+    api('live').then(function (j) { liveOff = 0; emit(j); }, function (e) { liveOff = e && (e.status === 403 || e.status === 404) ? liveOff + 1 : liveOff; })
       .then(function () { liveBusy = false; if (!document.hidden) liveT = setTimeout(liveTick, liveOff > 3 ? 60000 : liveFast > 0 ? 1500 : 4000); });
   }
+  function wsOpen() {
+    clearTimeout(wsT); wsT = null;
+    if (ws || !window.WebSocket || document.hidden || !liveSubs.length || wsFail >= 5) return;
+    var s, opened = false;
+    try { s = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/cmd/api/ws'); } catch (e) { wsFail = 5; return; }
+    ws = s;
+    s.onopen = function () {
+      opened = true; wsOk = true; wsFail = 0; wsAt = Date.now(); clearInterval(wsPing);
+      wsPing = setInterval(function () { try { s.send('ping'); } catch (e) {} if (Date.now() - wsAt > 70000) try { s.close(); } catch (e) {} }, 25000);
+    };
+    s.onmessage = function (ev) {
+      wsAt = Date.now(); if (ev.data === 'pong') return;
+      var j; try { j = JSON.parse(ev.data); } catch (e) { return; }
+      wsLast = { j: j, at: Date.now() }; emit(j);
+      if (j.vault != null) try { window.dispatchEvent(new CustomEvent('cmd-live-vault', { detail: j.vault })); } catch (e) {}
+    };
+    s.onclose = function (ev) {
+      clearInterval(wsPing); if (ws === s) ws = null; wsOk = false; wsLast = null;
+      if (!opened) {                               /* the server has no instant updates (yet)? Ask once, then stop trying */
+        wsFail++;
+        if (wsFail === 1) fetch('/cmd/api/ws', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (r.status === 501 || r.status === 404) { wsFail = 5; clearTimeout(wsT); wsT = null; } }, function () {});
+      }
+      if (ev && ev.code === 4001) wsFail = Math.max(wsFail, 3);   /* sharing changed: one more try in a while */
+      liveTick();
+      if (!document.hidden && wsFail < 5) wsT = setTimeout(wsOpen, Math.min(30000, 1000 * Math.pow(2, wsFail)));
+    };
+  }
+  function wsClose() { clearTimeout(wsT); wsT = null; if (ws) { var s = ws; ws = null; wsOk = false; clearInterval(wsPing); try { s.close(1000, 'hidden'); } catch (e) {} } }
   function live(fn) {
     liveSubs.push(fn);
-    if (liveSubs.length === 1) { document.addEventListener('visibilitychange', function () { if (!document.hidden) { liveOff = 0; liveTick(); } }); setTimeout(liveTick, 1500); }
+    if (liveSubs.length === 1) {
+      document.addEventListener('visibilitychange', function () { if (document.hidden) { wsClose(); return; } liveOff = 0; if (wsFail < 5) wsFail = Math.min(wsFail, 2); wsOpen(); liveTick(); });
+      window.addEventListener('online', function () { wsFail = Math.min(wsFail, 2); wsOpen(); });
+      setTimeout(liveTick, 1500); wsOpen();
+    }
   }
   function liveSpeed(fast) { liveFast = Math.max(0, liveFast + (fast ? 1 : -1)); if (fast) liveTick(); }
   function livePost(b) { return api('live', { method: 'POST', body: b }).catch(function () {}); }
+  function liveMode() { return wsOk ? 'instant' : 'check'; }
   /* what may ever be shared – kind → the fields it may carry. Anything else is dropped before it is encrypted. */
   var ALLOW = {
     info: ['owner', 'partner', 'split', 'extra', 'what', 'mvdate', 'olook', 'perm', 'onotify', 'pend'],
@@ -131,5 +173,5 @@
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
-  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();

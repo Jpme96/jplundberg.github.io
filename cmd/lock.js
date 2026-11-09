@@ -431,6 +431,12 @@
     if (key) sync();
   });
   setInterval(function () { if (key && !document.hidden) sync(); }, 60 * 1000);
+  /* instant updates (share-core.js): another of your devices saved – fetch it now instead of within a minute */
+  var liveSyncT = null;
+  window.addEventListener('cmd-live-vault', function (e) {
+    var r = +(e && e.detail); if (!key || !(r > syncedRev()) || pushing) return;
+    clearTimeout(liveSyncT); liveSyncT = setTimeout(function () { if (key && !pushing) sync(); }, 300);
+  });
   document.addEventListener('click', function (e) { if (key && e.target.closest('#syncState')) sync(); });
   window.addEventListener('online', function () { if (key) sync(); });
   /* To-dos, notes, goals and links changed: include them in the encrypted vault. */
@@ -734,7 +740,7 @@
 
   function schedulePush() {
     clearTimeout(pushTimer);
-    pushTimer = setTimeout(function () { pushTimer = null; push(); }, 1500);
+    pushTimer = setTimeout(function () { pushTimer = null; push(); }, 700);
   }
 
   var pushAgain = false;

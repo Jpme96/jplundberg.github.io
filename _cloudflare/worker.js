@@ -22,6 +22,7 @@
                       deletes them. A service token can only use this endpoint.
    /cmd/api/power     electricity prices for Oslo (NO1) from hvakosterstrommen.no, cached at the edge.
    /cmd/api/rate      Norges Bank's policy rate (styringsrenten), its changes over the last years, cached 6 hours.
+   /cmd/api/ws        instant updates: a WebSocket that pushes "something changed" (see LiveRoom).
    /cmd/api/ping      a quick health check: is the worker up, which vault version it holds, and when the cron trigger last ran.
    Vault snapshots:   the first save each day keeps a copy of the vault as it was (vault:snap:<date>,
                       the last 30 days), so a mistake can be undone from Settings → Data & sync.
@@ -37,6 +38,9 @@
 
    Settings (Worker → Settings → Bindings / Variables and secrets):
      VAULT           KV namespace binding
+     DB              D1 database binding (dashboard-db) for the keys that change often
+     FILES           R2 bucket binding (dashboard-files) for files
+     LIVE            Durable Object binding, class LiveRoom (instant updates) – set up by wrangler.jsonc
      TEAM_DOMAIN     e.g. https://cmd-lundberg.cloudflareaccess.com
      POLICY_AUD      the "Application Audience (AUD) Tag" of the Access application
      GITHUB_TOKEN    secret: fine-grained token, only this repository, Contents read & write
@@ -154,7 +158,7 @@ function storage(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -166,7 +170,7 @@ async function route(request, env) {
     /* the person you share your home with (Settings → Shared space) only ever reaches the shared box –
        never your own vault or anything else */
     /* the live check runs every few seconds, so it reads the sharing setup from the edge cache (20 s) instead of KV */
-    const shareCfg = path === '/cmd/api/live' ? await cfgCached(request, env) : env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
+    const shareCfg = path === '/cmd/api/live' || path === '/cmd/api/ws' ? await cfgCached(request, env) : env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
     const em = String(check.email || '').toLowerCase();
     /* once sharing has been set up, the owner's login is known: anyone else (also someone you stopped sharing
        with) gets nothing, even if Cloudflare Access still lets them in */
@@ -180,7 +184,8 @@ async function route(request, env) {
       if (path === '/cmd/api/pvault') return pvaultApi(request, url, env);
       if (path === '/cmd/api/chat') return chatApi(request, env, 'p', shareCfg);
       if (path === '/cmd/api/cfile') return cfileApi(request, url, env);
-      if (path === '/cmd/api/live') return liveApi(request, 'p');
+      if (path === '/cmd/api/live') return liveApi(request, 'p', env);
+      if (path === '/cmd/api/ws') return wsApi(request, env, 'p');
       if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
       return json({ error: 'only the shared space is open to you', partner: true }, 403);
     }
@@ -188,7 +193,8 @@ async function route(request, env) {
     if (path === '/cmd/api/sfile') return sfileApi(request, url, env, false);
     if (path === '/cmd/api/chat') return chatApi(request, env, 'o', shareCfg);
     if (path === '/cmd/api/cfile') return cfileApi(request, url, env);
-    if (path === '/cmd/api/live') return liveApi(request, 'o');
+    if (path === '/cmd/api/live') return liveApi(request, 'o', env);
+    if (path === '/cmd/api/ws') return wsApi(request, env, 'o');
     if (path === '/cmd/api/pvault') return json({ error: 'this belongs to the person you share with' }, 403);   /* never the owner */
     if (path === '/cmd/api/share') { const rq = new Request(request, { headers: new Headers(request.headers), duplex: 'half' }); rq.headers.set('X-Share-Me', em); return shareApi(rq, url, env, false, shareCfg); }
 
@@ -211,7 +217,7 @@ async function route(request, env) {
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
-    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv', files: env.FILES ? 'r2' : 'kv', fileMax: fileMax(env) }); }
+    if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv', files: env.FILES ? 'r2' : 'kv', live: env.LIVE ? 'ws' : 'poll', fileMax: fileMax(env) }); }
     return vault(request, env);
 }
 
@@ -246,7 +252,7 @@ async function shareApi(request, url, env, partner, cfg) {
   if (m === 'POST' && url.searchParams.has('pause')) {            /* pause / resume: nothing is deleted */
     if (!cfg || !cfg.partner) return json({ error: 'not sharing' }, 400);
     const b = await request.json().catch(() => ({}));
-    await env.VAULT.put(SHARE_CFG, JSON.stringify(Object.assign({}, cfg, { paused: !!b.paused }))); await liveDel(request, 'cfg');
+    await env.VAULT.put(SHARE_CFG, JSON.stringify(Object.assign({}, cfg, { paused: !!b.paused }))); await liveDel(request, 'cfg'); if (b.paused) await notify(env, { kick: 'p' });
     return json({ ok: true, paused: !!b.paused });
   }
   if (m === 'PUT') {
@@ -255,7 +261,7 @@ async function shareApi(request, url, env, partner, cfg) {
     const prev = cfg && cfg.partner, owner = (cfg && cfg.owner) || me;
     if (!owner || owner === email) return json({ error: 'that is your own login' }, 400);
     await env.VAULT.put(SHARE_CFG, JSON.stringify({ owner, partner: email, name: String(b.name || '').slice(0, 40), since: (cfg && cfg.partner && cfg.since) || new Date().toISOString(), paused: !!(cfg && cfg.partner === email && cfg.paused) }));
-    await liveDel(request, 'cfg');
+    await liveDel(request, 'cfg'); await notify(env, { kick: 'p' });
     if (prev && prev !== email) await Promise.all([env.VAULT.delete(SHARE_WRAP), env.VAULT.delete(PVAULT), env.VAULT.delete(PVWRAP)]);   /* someone new: the old lock and their own space go */
     return json({ ok: true });
   }
@@ -265,6 +271,7 @@ async function shareApi(request, url, env, partner, cfg) {
     let c2; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX + 'p', cursor: c2 }); for (const k of l.keys) { const r = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (r && r.role === 'p') await env.VAULT.delete(k.name); } c2 = l.list_complete ? null : l.cursor; } while (c2);
     for (const pre of [SFILE, CFILE]) { const all = await fList(env, pre); await Promise.all(Object.keys(all).map(k => fDel(env, k))); }
     await env.VAULT.delete(CHAT); await liveDel(request, 'cfg'); await liveDel(request, 'chatfull'); await liveDel(request, 'boxfull'); await liveSet(request, 'box', Date.now()); await liveSet(request, 'chat', Date.now());
+    await notify(env, { box: Date.now(), chat: Date.now(), kick: 'p' });
     return json({ ok: true });
   }
   return json({ error: 'method' }, 405);
@@ -298,7 +305,7 @@ async function sharedApi(request, env, by, cfg) {
     if (!n) return json(cur);
     cur.rev = (cur.rev || 0) + 1; delete cur.ep;
     if (env.VAULT.cas) { if (!(await env.VAULT.cas(SHARED, JSON.stringify(cur), exp))) continue; } else await env.VAULT.put(SHARED, JSON.stringify(cur));
-    cur.ep = ep; await liveSet(request, 'boxfull', cur); await liveSet(request, 'box', cur.rev);
+    cur.ep = ep; await liveSet(request, 'boxfull', cur); await liveSet(request, 'box', cur.rev); await notify(env, { box: cur.rev });
     return json(cur);
   }
   return json({ error: 'busy – try again' }, 503);
@@ -387,17 +394,82 @@ async function cfgCached(request, env) {
   const v = env.VAULT ? await env.VAULT.get(SHARE_CFG, 'json').catch(() => null) : null;
   await liveSet(request, 'cfg', { v }); return v;
 }
-async function liveApi(request, role) {
+async function liveApi(request, role, env) {
   if (request.method === 'POST') {
     const b = await request.json().catch(() => ({}));
-    if (b.typing) await liveSet(request, 'typ' + role, Date.now());
-    if (b.stop) await liveDel(request, 'typ' + role);
-    if (+b.seen > 0) await liveSet(request, 'seen' + role, Math.min(+b.seen, Date.now() + 60e3));
+    if (b.typing) { await liveSet(request, 'typ' + role, Date.now()); await notify(env, { typ: role, on: 1 }); }
+    if (b.stop) { await liveDel(request, 'typ' + role); await notify(env, { typ: role, on: 0 }); }
+    if (+b.seen > 0) { const v = Math.min(+b.seen, Date.now() + 60e3); await liveSet(request, 'seen' + role, v); await notify(env, { seen: { by: role, v } }); }
     return json({ ok: true });
   }
   if (request.method !== 'GET') return json({ error: 'method' }, 405);
   const ks = ['box', 'chat', 'typo', 'typp', 'seeno', 'seenp'], v = await Promise.all(ks.map(k => liveGet(request, k)));
   return json({ now: Date.now(), box: v[0], chat: v[1], typing: { o: v[2], p: v[3] }, seen: { o: v[4], p: v[5] } });
+}
+
+/* ---------- instant updates: one Durable Object (binding LIVE, class LiveRoom) ----------
+   Each open app keeps one WebSocket to /cmd/api/ws. When something is saved, the Worker tells the room, and the room
+   pushes the new version numbers to every open app at once – the apps then fetch the (encrypted) data as before.
+   Only numbers and times go over this line, never content. The person you share with never gets your vault's number,
+   and their line is closed when sharing is paused, stopped or given to someone new.
+   The sockets "hibernate": while nothing happens, the room is asleep and costs nothing. Without the LIVE binding
+   the apps simply keep checking /cmd/api/live every few seconds. */
+async function notify(env, msg) {
+  if (!env.LIVE) return;
+  try { await env.LIVE.get(env.LIVE.idFromName('home')).fetch('https://live/notify', { method: 'POST', body: JSON.stringify(msg) }); }
+  catch (e) { console.log('live notify', e && e.message); }
+}
+async function wsApi(request, env, role) {
+  if (!env.LIVE) return json({ error: 'instant updates are not set up' }, 501);
+  if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') return json({ error: 'expected a websocket' }, 426);
+  return env.LIVE.get(env.LIVE.idFromName('home')).fetch(new Request('https://live/ws?role=' + role, request));
+}
+export class LiveRoom {
+  constructor(ctx, env) {
+    this.ctx = ctx; this.env = env; this.st = null; this.typ = { o: null, p: null };
+    /* the apps send "ping" every 25 s to notice a dead line; answered without waking the room */
+    try { ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong')); } catch (e) {}
+  }
+  async load() {
+    if (this.st) return this.st;
+    const m = await this.ctx.storage.get(['box', 'chat', 'vault', 'seeno', 'seenp']), g = k => m.get(k) == null ? null : m.get(k);
+    return (this.st = { box: g('box'), chat: g('chat'), vault: g('vault'), seeno: g('seeno'), seenp: g('seenp') });
+  }
+  snap(role) {
+    const s = this.st, o = { now: Date.now(), box: s.box, chat: s.chat, typing: { o: this.typ.o, p: this.typ.p }, seen: { o: s.seeno, p: s.seenp } };
+    if (role === 'o') o.vault = s.vault;
+    return JSON.stringify(o);
+  }
+  send(roles) {
+    for (const r of roles) { const m = this.snap(r); for (const ws of this.ctx.getWebSockets(r)) { try { ws.send(m); } catch (e) {} } }
+  }
+  async fetch(request) {
+    const u = new URL(request.url); await this.load();
+    if (u.pathname === '/ws') {
+      const role = u.searchParams.get('role') === 'p' ? 'p' : 'o';
+      if (this.ctx.getWebSockets(role).length >= 20) return new Response('too many', { status: 429 });
+      const pair = new WebSocketPair();
+      this.ctx.acceptWebSocket(pair[1], [role]);
+      pair[1].send(this.snap(role));
+      return new Response(null, { status: 101, webSocket: pair[0] });
+    }
+    if (u.pathname === '/notify' && request.method === 'POST') {
+      const b = await request.json().catch(() => ({})), put = {}, roles = new Set();
+      const num = v => (Number.isFinite(+v) ? +v : null);
+      for (const k of ['box', 'chat']) if (b[k] != null) { this.st[k] = put[k] = num(b[k]); roles.add('o'); roles.add('p'); }
+      if (b.vault != null) { this.st.vault = put.vault = num(b.vault); roles.add('o'); }
+      if (b.seen && (b.seen.by === 'o' || b.seen.by === 'p')) { const k = 'seen' + b.seen.by; this.st[k] = put[k] = num(b.seen.v); roles.add('o'); roles.add('p'); }
+      if (b.typ === 'o' || b.typ === 'p') { this.typ[b.typ] = b.on ? Date.now() : null; roles.add(b.typ === 'o' ? 'p' : 'o'); }
+      if (Object.keys(put).length) await this.ctx.storage.put(put);
+      if (b.kick === 'p') { for (const ws of this.ctx.getWebSockets('p')) { try { ws.close(4001, 'sharing changed'); } catch (e) {} } roles.delete('p'); }
+      this.send(Array.from(roles));
+      return new Response('ok');
+    }
+    return new Response('not found', { status: 404 });
+  }
+  async webSocketMessage(ws, msg) { /* the apps only listen; "ping" is answered automatically */ }
+  async webSocketClose(ws, code, reason) { try { ws.close(code === 1005 || code === 1006 ? 1000 : code, 'bye'); } catch (e) {} }
+  async webSocketError(ws) { try { ws.close(1011, 'error'); } catch (e) {} }
 }
 
 /* ---------- chat: messages between the two of you ----------
@@ -443,7 +515,7 @@ async function chatApi(request, env, by, cfg) {
     if (n) {
       cur.rev = (cur.rev || 0) + 1; delete cur.ep;
       if (env.VAULT.cas) { if (!(await env.VAULT.cas(CHAT, JSON.stringify(cur), exp))) continue; } else await env.VAULT.put(CHAT, JSON.stringify(cur));
-      cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev);
+      cur.ep = ep; await liveSet(request, 'chatfull', cur); await liveSet(request, 'chat', cur.rev); await notify(env, { chat: cur.rev });
     }
     if (gone.length) await Promise.all(gone.map(f => fDel(env, CFILE + f)));
     return json({ rev: cur.rev, ttl: cur.ttl || 0, ttlAt: cur.ttlAt || 0, msgs: cur.msgs });
@@ -677,6 +749,7 @@ async function vault(request, env) {
     }
     if (env.VAULT.cas) { if (!(await env.VAULT.cas(KEY, body, curRev))) { const now = await env.VAULT.get(KEY); return new Response(now, { status: 409, headers: hdrs() }); } }
     else await env.VAULT.put(KEY, body);
+    await notify(env, { vault: next.rev });
     return json({ ok: true, rev: next.rev });
   }
   return json({ error: 'method not allowed' }, 405);
