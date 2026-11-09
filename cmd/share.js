@@ -99,27 +99,12 @@
       var fm = ((V.get() || {}).share || {}).files || {};
       docs().forEach(function (dc) { var fl = dc.files.filter(function (f) { return fm[f.id]; }).map(function (f) { return { fid: fm[f.id], name: f.name, type: f.type, size: f.size }; }); put('doc', dc.src + ':' + dc.id, { name: dc.name, cat: dc.cat, src: dc.src, date: dc.date, files: fl }); });
     }
-    (function () {   /* the home map (House → Map), when "Show to …" is on – the drawing goes as an encrypted file like shared documents */
-      var hm = mapShared(); if (!hm) return;
-      var fm2 = ((V.get() || {}).share || {}).files || {}, fk = hm.plan.fid + ':' + hm.style; if (!fm2[fk]) return;
-      var HM = window.HomeMap, H = window.HomeLife, th = HM.things(hm), cr = {};
-      th.forEach(function (x) { if (x.kind === 'c' && x.room) cr[x.id] = x.room; });
-      var pins = hm.pins.map(function (p) {
-        var o = { id: p.id, k: p.k, x: p.x, y: p.y, t: HM.pinTitle(p, th) }, inf = HM.infoOf(p), l = p.link ? th.filter(function (q) { return q.key === p.link; })[0] : null;
-        if (l && l.kind === 'c') o.c = l.id; else if (l && l.kind === 'u') o.u = l.name;
-        if (inf && H && H.INFO) { var spec = H.INFO[inf.kind] || H.INFO.other; o.info = spec.f.filter(function (fd) { return fd.k !== 'title' && inf[fd.k] != null && String(inf[fd.k]).trim() !== '' && (!fd.secret || hm.shareInfo); }).map(function (fd) { return [fd.label, String(inf[fd.k]), fd.type === 'textarea']; }); }
-        else if (p.note) o.info = [['Note', p.note, true]];
-        return o;
-      });
-      put('hmap', 'map', { w: hm.plan.w, h: hm.plan.h, mono: !!hm.plan.mono || hm.style === 'clean', fid: fm2[fk], style: hm.style, rooms: hm.rooms.map(function (r, i) { return { id: r.id, name: r.name, area: r.area, r: r.r, c: HM.roomColor(r, i) }; }), furn: hm.furn.map(function (x) { return { name: x.name, r: x.r }; }), pins: pins, cr: cr });
-    })();
     if (w.notes) (Array.isArray(t.homenotes) ? t.homenotes : []).forEach(function (n) { if (n && n.id) put('note', n.id, { title: String(n.title || '').slice(0, 60), text: String(n.text || '').slice(0, 1500) }); });
     if (w.move && mv && Array.isArray(mv.items)) mv.items.forEach(function (x) { if (x && x.id) put('mv', x.id, { text: String(x.text || '').slice(0, 80), done: !!x.done }); });
     return out;
   }
 
   /* documents you ticked: House → Docs and Papers – with their files */
-  function mapShared() { var HM = window.HomeMap; if (!st() || !HM || !Fe.on('house') || !Fe.on('hmap')) return null; var m = HM.data(); return m.share && m.plan && m.plan.fid ? m : null; }
   function docs() {
     if (!st() || !what().house) return [];
     var t = Fe.tools(), out = [];
@@ -134,7 +119,6 @@
     filesBusy = true;
     var want = {}, jobs = [], fm = Object.assign({}, s.files || {}), changed = false;
     docs().forEach(function (dc) { dc.files.forEach(function (f) { want[f.id] = f; }); });
-    var hm0 = mapShared(); if (hm0) want[hm0.plan.fid + ':' + hm0.style] = { id: hm0.plan.fid + ':' + hm0.style, get: function () { return window.HomeMap.shareFile(hm0); } };
     Object.keys(want).forEach(function (fid) {
       if (fm[fid]) return; var f = want[fid];
       jobs.push(f.get().then(function (blob) {
