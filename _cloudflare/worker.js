@@ -36,6 +36,8 @@
                       calendar link) so the dashboard can show it. The link is
                       stored encrypted in the vault and only passed through here.
 
+   Deploys: Cloudflare builds this folder (wrangler.jsonc) by itself when _cloudflare/ changes on main.
+
    Settings (Worker → Settings → Bindings / Variables and secrets):
      VAULT           KV namespace binding
      DB              D1 database binding (dashboard-db) for the keys that change often
