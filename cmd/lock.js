@@ -494,6 +494,8 @@
             return undefined;
           });
         }
+        /* the person you share your home with opened the dashboard address: send them to their own app */
+        if (r.status === 403) return r.clone().json().then(function (j) { if (j && j.partner) { location.replace('/cmd/home/'); return new Promise(function () {}); } available = false; setSync('off', 'This login has no access to the dashboard'); return undefined; }, function () { return undefined; });
         if (r.status === 404) { available = true; remoteRev = null; remoteSalt = null; return null; }  // set up, but empty
         if (!r.ok) {
           available = false;
