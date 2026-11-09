@@ -370,9 +370,10 @@
       (yearTax > 0 ? '<p class="ln-sum"><i class="bi bi-percent"></i> All loans: about ' + money(yearTax) + ' less tax over the next 12 months (rentefradrag)</p>' : '');
     function oneLoan(l) {
       if (l.inner && Lo.inner) { var tb = Lo.myTaxBack(l); yearTax += tb; return innerLoan(l); }
-      var c = Lo.calc(l), x = tryExtra[l.id] || 0, cx = x ? Lo.calc(l, x) : null, pt = Lo.part ? Lo.part(l) : 1, sh = pt < 1, who = String(l.with || '').trim() || 'The other';
+      /* cur = what you already pay extra every month (l.more); the slider shows the extra in all, so moving it tries a different amount */
+      var cur = Lo.moreAt ? Lo.moreAt(l, new Date()) : 0, c = Lo.calc(l), x = tryExtra[l.id] != null ? tryExtra[l.id] : cur, cx = x !== cur ? Lo.calc(l, x - cur) : null, c0 = cur ? Lo.calc(Object.assign({}, l, { more: null })) : null, pt = Lo.part ? Lo.part(l) : 1, sh = pt < 1, who = String(l.with || '').trim() || 'The other';
       if (c && !c.never) yearTax += c.taxBack * pt;
-      var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + (l.pay ? esc(kr(l.pay)) + ' a month' + (l.fee ? ' + ' + esc(kr(l.fee)) + ' fee' : '') : 'no payment set') +
+      var head = '<div class="ln-top"><span class="ln-name"><b>' + esc(l.name) + '</b><small>' + (l.rate ? esc(String(l.rate).replace('.', ',')) + ' % · ' : '') + (l.pay ? esc(kr(l.pay)) + ' a month' + (cur ? ' + ' + esc(kr(cur)) + ' extra' : '') + (l.fee ? ' + ' + esc(kr(l.fee)) + ' fee' : '') : 'no payment set') +
         (sh ? ' · <i class="bi bi-people"></i> shared' : '') +
         (l.fixed !== false && l.pay ? ' · <i class="bi bi-link-45deg"></i> ' + (sh ? 'your part ' : '') + 'in fixed costs' : '') + '</small></span>' + money(c ? -c.balance : -l.balance, 'neg') +
         '<button type="button" class="icon-btn sm" data-lnedit="' + esc(l.id) + '" aria-label="Change ' + esc(l.name) + '"><i class="bi bi-pencil"></i></button></div>';
@@ -398,11 +399,21 @@
         '</div>' +
         paidBlock(l, pt, null) + (l.home && +l.home.value > 0 ? homeBlock(l, c.balance * pt, c.balance * (1 - pt), who) : '') +
         '<div class="ln-acts"><button type="button" class="text-btn" data-lnextra="' + esc(l.id) + '"><i class="bi bi-plus-circle"></i> Extra payment</button></div>' + extraList(l, sh ? who : null) +
-        '<label class="ln-try"><span>Pay more each month</span><input type="range" min="0" max="' + Math.max(2000, Math.ceil(l.pay / 1000) * 1000) + '" step="250" value="' + x + '" data-lntry="' + esc(l.id) + '" aria-label="Extra a month for ' + esc(l.name) + '"><b class="ln-x">' + (x ? '+' + esc(kr(x)) : '+0 kr') + '</b></label>' +
-        '<p class="ln-p ln-win"' + (cx && !cx.never ? '' : ' hidden') + '>' + (cx && !cx.never ? win(c, cx) : '') + '</p>' +
+        moreBlock(l, cur, c, c0) +
+        '<label class="ln-try"><span>' + (cur ? 'Extra each month' : 'Pay more each month') + '</span><input type="range" min="0" max="' + Math.max(2000, Math.ceil(l.pay / 1000) * 1000, Math.ceil(cur * 2 / 1000) * 1000) + '" step="250" value="' + x + '" data-lntry="' + esc(l.id) + '" aria-label="Extra a month for ' + esc(l.name) + '"><b class="ln-x">+' + esc(kr(x)) + '</b></label>' +
+        '<p class="ln-p ln-win"' + (cx && !cx.never ? '' : ' hidden') + '>' + (cx && !cx.never && c && !c.never ? win(c, cx) : '') + '</p>' +
+        '<div class="ln-acts ln-moreacts"' + (x !== cur ? '' : ' hidden') + '><button type="button" class="pill-btn sm" data-lnmore="' + esc(l.id) + '">' + moreLabel(x, cur) + '</button></div>' +
         (l.asOf ? '<p class="muted ln-p">Balance worked out from ' + esc(kr(l.balance)) + ' on ' + esc(new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + ' and the payments since – update it under Wealth now and then.</p>' : '') +
       '</li>';
     }
+  }
+  /* paying more every month than the bank asks (l.more): what it does for you */
+  function moreLabel(x, cur) { return x ? (cur ? 'Change to +' + esc(kr(x)) + ' every month' : 'Pay +' + esc(kr(x)) + ' every month') : 'Stop the extra'; }
+  function moreBlock(l, cur, c, c0) {
+    if (!cur) return '';
+    var since = (l.more || []).filter(function (m) { return +m.amount > 0; }).map(function (m) { return m.from; }).sort().pop();
+    return '<p class="ln-p ln-more"><i class="bi bi-arrow-up-circle"></i> You pay <b>+' + esc(kr(cur)) + ' extra</b> every month' + (since ? ' since ' + esc(new Date(since + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + ' – it’s in your fixed costs.</p>' +
+      (c0 && !c0.never && c && !c.never && c0.months > c.months ? '<p class="ln-p ln-win">' + win(c0, c) + ' than without it</p>' : '');
   }
   /* months with a different payment: December interest only … – the whole loan, and each person's part */
   var MNS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -560,9 +571,20 @@
     var r = e.target.closest && e.target.closest('[data-lntry]'); if (!r) return;
     var x = tryExtra[r.dataset.lntry] = +r.value || 0, d = data(); if (!d) return;
     var l = (d.accounts || []).filter(function (a) { return String(a.id) === r.dataset.lntry; })[0]; if (!l) return;
-    var li = r.closest('.ln'), c = Lo.calc(l), cx = x ? Lo.calc(l, x) : null, w = li.querySelector('.ln-win');     // only the numbers change – the slider keeps moving
+    var cur = Lo.moreAt ? Lo.moreAt(l, new Date()) : 0, li = r.closest('.ln'), c = Lo.calc(l), cx = x !== cur ? Lo.calc(l, x - cur) : null, w = li.querySelector('.ln-try + .ln-win');     // only the numbers change – the slider keeps moving
     li.querySelector('.ln-x').textContent = '+' + kr(x);
     w.hidden = !(cx && !cx.never && c && !c.never); w.innerHTML = w.hidden ? '' : win(c, cx);
+    var ma = li.querySelector('.ln-moreacts'); if (ma) { ma.hidden = x === cur; ma.querySelector('button').innerHTML = moreLabel(x, cur); }
+  });
+  /* "Pay +2 000 kr every month": from today on, the loan, its payoff date and your fixed costs count the extra */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-lnmore]'); if (!b) return;
+    var id = b.dataset.lnmore, x = +(tryExtra[id] || 0), d = data(); if (!d) return;
+    var t = new Date(), today = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    (d.accounts || []).forEach(function (a) { if (String(a.id) !== id) return; a.more = (Array.isArray(a.more) ? a.more : []).filter(function (m) { return m && m.from < today; }).concat([{ from: today, amount: Math.round(x) }]); if (!a.more.some(function (m) { return +m.amount > 0; })) delete a.more; });
+    delete tryExtra[id];
+    window.Vault.save(d); if (window.Links) window.Links.syncLoans(); save(data());
+    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-arrow-up-circle"></i> ' + (x ? '+' + esc(kr(x)) + ' extra every month from today' : 'Extra payment stopped'));
   });
   /* the first time a loan gets a balance, remember it as the starting point for "how much is paid" */
   function originals(d) {

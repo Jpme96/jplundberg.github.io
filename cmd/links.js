@@ -62,7 +62,7 @@
         return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (a.inner ? ' (your part)' : part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round(window.Loans.myPay(a, now)), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null, vary: true, months: months };
       }
       if (a.inner) return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + ' (your part)', amount: Math.round(window.Loans.myPay(a)), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null };
-      return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round((+a.pay + (+a.fee || 0)) * part), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null };
+      return { id: 'loan-' + a.id, name: 'Loan: ' + (a.name || 'loan') + (part < 1 ? ' (your ' + Math.round(part * 100) + ' %)' : ''), amount: Math.round(window.Loans.myPay(a, new Date())), day: a.day || null, src: 'loan', acct: a.from || 'salary', start: a.asOf || null };
     });
     var before = JSON.stringify(fixed.filter(function (f) { return f.src === 'loan'; }));
     if (before === JSON.stringify(want)) return;

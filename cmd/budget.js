@@ -252,6 +252,14 @@ window.Loans = (function () {
   function rulePay(r, normal, interest) { return !r ? normal : r.mode === 'interest' ? interest : Math.max(interest, Math.min(+r.amount, normal * 3)); }
   function payDay(l, a, k) { var day = +l.day || a.getDate(), d = new Date(a.getFullYear(), a.getMonth() + k, 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return d; }
   function dkey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  /* paying more every month than the bank asks (l.more = [{ from: 'YYYY-MM-DD', amount }], the newest that has started
+     counts; amount 0 = stopped) – not for a loan split in two parts (that one has its own extra payments) */
+  function moreAt(l, d) {
+    if (!l || l.inner || !Array.isArray(l.more)) return 0;
+    var k = typeof d === 'string' ? d : dkey(d), v = 0;
+    l.more.slice().sort(function (a, b) { return a.from < b.from ? -1 : 1; }).forEach(function (m) { if (m && m.from <= k) v = +m.amount || 0; });
+    return Math.max(0, v);
+  }
   function extras(l) { return (Array.isArray(l && l.extra) ? l.extra : []).filter(function (e) { return e && +e.amount > 0 && e.date; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
   /* a loan with one payment: from the balance on l.asOf, every payment since (with the months that differ and extra payments) */
   function walk(l, now) {
@@ -260,7 +268,7 @@ window.Loans = (function () {
     var a = new Date(l.asOf + 'T12:00'), m = (now.getFullYear() - a.getFullYear()) * 12 + now.getMonth() - a.getMonth();
     if (l.day && now.getDate() < +l.day) m--;
     var ex = extras(l), xi = 0, key = function (d) { while (xi < ex.length && ex[xi].date <= dkey(d)) { if (ex[xi].date > l.asOf) { bal = Math.max(0, bal - (+ex[xi].amount)); out.extra += +ex[xi].amount; } xi++; } };
-    for (var k = 1; k <= m && bal > 0; k++) { var d = payDay(l, a, k); key(d); var r = bal * i; out.interest += r; bal = bal + r - rulePay(rule(l, d), p, r); }
+    for (var k = 1; k <= m && bal > 0; k++) { var d = payDay(l, a, k); key(d); var r = bal * i, mo = moreAt(l, d); out.interest += r; bal = bal + r - rulePay(rule(l, d), p, r) - mo; out.more = (out.more || 0) + mo; }
     key(now);
     out.bal = Math.max(0, bal); out.m = Math.max(0, m); return out;
   }
@@ -277,13 +285,13 @@ window.Loans = (function () {
   function calc(l, extra, now) {
     now = now || new Date();
     var q = l && l.inner ? inner(l, now) : null;
-    var bal = balanceNow(l, now), i = (+l.rate || 0) / 1200, p = (q ? q.me.pay + q.them.pay : +l.pay || 0) + (+extra || 0);
+    var bal = balanceNow(l, now), i = (+l.rate || 0) / 1200, mo = q ? 0 : moreAt(l, now), base = q ? q.me.pay + q.them.pay : +l.pay || 0, p = base + mo + (+extra || 0);
     if (!(bal > 0) || !(p > 0)) return null;
     var interest = bal * i, principal = p - interest;
     if (principal <= 0) return { balance: bal, never: true, interest: interest };
     /* the months ahead, with the months that differ (no extra payments assumed) */
     var nx = new Date(now.getFullYear(), now.getMonth() + (l.day && now.getDate() >= +l.day ? 1 : 0), 1);
-    var r = run(bal, i, p, 1200, (l.payRules || []).length ? function (n, b, ri) { return rulePay(rule(l, new Date(nx.getFullYear(), nx.getMonth() + n, 1)), p, ri); } : null);
+    var r = run(bal, i, p, 1200, (l.payRules || []).length ? function (n, b, ri) { return rulePay(rule(l, new Date(nx.getFullYear(), nx.getMonth() + n, 1)), base, ri) + mo + (+extra || 0); } : null);
     return { balance: bal, interest: interest, principal: principal, months: r.months, interestLeft: r.interest, yearInterest: r.year,
       taxBack: r.year * TAX, end: new Date(now.getFullYear(), now.getMonth() + r.months, 1), endLabel: label(r.months, now), never: false };
   }
@@ -353,14 +361,14 @@ window.Loans = (function () {
       if (r) { if (r.mode === 'interest') { me = q.me.interest; th = q.them.interest; } else { var t = +r.amount; me = nm + nt > 0 ? t * nm / (nm + nt) : t / 2; th = t - me; } }
       return { total: me + th, me: me + q.fee.me, them: th + q.fee.them, fee: q.fee.me + q.fee.them, rule: r };
     }
-    var p = +l.pay || 0, i = (+l.rate || 0) / 1200, pay = rulePay(r, p, owedNow(l, when) * i), fee = +l.fee || 0, pt = part(l);
+    var p = +l.pay || 0, i = (+l.rate || 0) / 1200, pay = rulePay(r, p, owedNow(l, when) * i) + moreAt(l, when), fee = +l.fee || 0, pt = part(l);
     return { total: pay, me: (pay + fee) * pt, them: (pay + fee) * (1 - pt), fee: fee, rule: r };
   }
   /* what you pay each month on it: your instalment (+ your part of the fee) – this month's, when the month differs */
   function myPay(l, when) {
     if (l && (l.payRules || []).length) return monthPay(l, when).me;
     if (l && l.inner) { var q = inner(l); return q ? q.me.pay + q.fee.me : 0; }
-    return ((+l.pay || 0) + (+l.fee || 0)) * part(l);
+    return ((+l.pay || 0) + moreAt(l, when || new Date()) + (+l.fee || 0)) * part(l);
   }
   /* what's already paid: of the loan (the amount borrowed at the start – l.orig, or the balance on l.asOf) and the
      interest since l.asOf. Two internal parts: per part, from the start of the loan. */
@@ -374,7 +382,7 @@ window.Loans = (function () {
   function shared(l) { return !!(l && l.inner) || part(l) < 1; }
   /* what's owed on a debt today: worked out from the payments when it has them, else the balance you typed */
   function owedNow(l, now) { return l && +l.pay > 0 && l.asOf ? balanceNow(l, now) : +(l && l.balance) || 0; }
-  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared, inner: inner, myTaxBack: myTaxBack, myPay: myPay, paid: paid, monthPay: monthPay, rule: rule };
+  return { payment: payment, calc: calc, balanceNow: balanceNow, owedNow: owedNow, label: label, TAX: TAX, part: part, shared: shared, inner: inner, myTaxBack: myTaxBack, myPay: myPay, paid: paid, monthPay: monthPay, rule: rule, moreAt: moreAt };
 })();
 
 /* Your bank accounts (Finances → Plan → Accounts) and the payday plan worked out from them.

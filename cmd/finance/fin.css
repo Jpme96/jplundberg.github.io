@@ -149,3 +149,5 @@
 @media (max-width: 420px) { .fp-cats li.fc-row { grid-template-columns: minmax(70px, 7.5em) minmax(0, 1fr) auto 3em; gap: 8px; } .fc-name, .fc-amt { font-size: 13px; } }
 .fp-chart .proj { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; fill: none; opacity: .85; }
 .fp-chart .proj-lbl { fill: var(--accent); font-size: 11px; font-weight: 600; }
+.ln-moreacts[hidden], .ln-win[hidden] { display: none !important; }
+.ln-more { display: flex; gap: 8px; align-items: baseline; } .ln-more .bi { color: var(--accent); }
