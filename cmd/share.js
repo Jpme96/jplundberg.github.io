@@ -160,7 +160,7 @@
         var lk = SC.cleanLook(f.look), nm = (p && p.name) || f.name || pname(); t.people = Array.isArray(t.people) ? t.people : [];
         var pp = t.people.filter(function (x) { return String(x.name || '').toLowerCase() === String(nm).toLowerCase(); })[0];
         if (!pp) { pp = { id: 'sh' + Date.now().toString(36), name: nm, rel: 'family' }; t.people.push(pp); }
-        if (lk && JSON.stringify(pp.look || {}) !== JSON.stringify(lk)) { pp.look = lk; toolsCh = true; } else if (!pp.look) toolsCh = true;
+        if (lk && JSON.stringify(pp.look || {}) !== JSON.stringify(lk)) { pp.look = lk; toolsCh = true; setTimeout(function () { toast('<i class="bi bi-person-bounding-box"></i> ' + esc(nm + '’s avatar is in People')); }, 400); } else if (!pp.look) toolsCh = true;
         if (f.bday && /^\d{1,2}\.\d{1,2}(\.\d{4})?$/.test(f.bday) && pp.bday !== f.bday) { pp.bday = f.bday; toolsCh = true; }
         if (f.phone && /^[+\d\s()-]{4,20}$/.test(f.phone) && pp.phone !== f.phone) { pp.phone = f.phone; toolsCh = true; }
       }
@@ -289,7 +289,9 @@
   function statusLine() {
     if (lastErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(lastErr);
     if (!lastOk) return '<i class="bi bi-arrow-repeat"></i> Syncing …';
-    return '<i class="bi bi-check2-circle"></i> In sync · ' + new Date(lastOk).toTimeString().slice(0, 5) + (srvInfo && !srvInfo.joined ? ' · waiting for ' + esc(pname()) + ' to scan the code' : srvInfo && srvInfo.joined ? ' · ' + esc(pname()) + ' has joined' : '');
+    var lastP = 0, prof = false; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.c === 'pme' && !r.del) prof = true; });
+    return '<i class="bi bi-check2-circle"></i> In sync · ' + new Date(lastOk).toTimeString().slice(0, 5) + (srvInfo && !srvInfo.joined ? ' · waiting for ' + esc(pname()) + ' to scan the code' : srvInfo && srvInfo.joined ? ' · ' + esc(pname()) + ' has joined' : '') +
+      (lastP ? '<br><small class="muted">' + esc('Last change from ' + pname() + ': ' + new Date(lastP).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(prof ? 'profile and avatar received' : 'no profile yet') + '</small>' : '');
   }
   function link() { var s = st(); return s ? location.origin + '/cmd/home/#k=' + s.key : ''; }
   function loadQR() {

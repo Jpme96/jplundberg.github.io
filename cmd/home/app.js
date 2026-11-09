@@ -113,7 +113,7 @@
     return (rids[key] ? Promise.resolve(rids[key]) : SC.rid(K, c, id)).then(function (rid) {
       rids[key] = rid; recs[rid] = del ? { t: t, del: 1, c: c, id: id } : { t: t, by: me, c: c, id: id, f: cf }; draw();
       if (del) { queue[rid] = { t: t, del: 1 }; return; }
-      return SC.encrypt(K, { c: c, id: id, f: cf }).then(function (e) { queue[rid] = { t: t, iv: e.iv, ct: e.ct }; });
+      return SC.encrypt(K, { c: c, id: id, f: cf }).then(function (e) { queue[rid] = { t: t, iv: e.iv, ct: e.ct }; if (c === 'pme') queue[rid].po = 1; });
     }).then(function () { wj('home.queue', queue); return flush(); }).then(draw);
   }
   function pull() { if (preview) return SC.api('shared').then(absorb).then(draw, function () {}); return flush().then(function () { return SC.api('shared'); }).then(absorb).then(draw, function (e) { if (e && e.status === 403) stoppedScreen(); }); }

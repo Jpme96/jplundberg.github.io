@@ -194,8 +194,9 @@ async function sharedApi(request, env, by) {
     const r = recs[id]; if (!RID.test(id) || !r || typeof r !== 'object') continue;
     const t = Math.min(+r.t || 0, now + 60e3); if (!t) continue;
     const old = cur.recs[id]; if (old && old.t >= t) continue;                   /* the newest change wins */
+    if (old && old.po && by !== 'p') continue;                                   /* their own profile: only they change it */
     if (r.del) cur.recs[id] = { t, by, del: 1 };
-    else if (typeof r.iv === 'string' && typeof r.ct === 'string' && r.ct.length <= 20000) cur.recs[id] = { t, by, iv: r.iv, ct: r.ct };
+    else if (typeof r.iv === 'string' && typeof r.ct === 'string' && r.ct.length <= 20000) cur.recs[id] = Object.assign({ t, by, iv: r.iv, ct: r.ct }, by === 'p' && r.po ? { po: 1 } : {});
     else continue;
     n++;
   }
