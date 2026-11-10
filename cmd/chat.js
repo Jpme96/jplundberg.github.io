@@ -176,7 +176,7 @@
       '.hc-on{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:5px;vertical-align:1px}',
       '.hc-tt{flex:1;min-width:0}.hc-tt b{display:block;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-tt small{display:block;color:var(--hc-mut);font-size:12.5px;min-height:16px}',
       '.hc-tt small.typ{color:var(--hc-acc)}',
-      '.hc-ib{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:inherit;font-size:18px;display:grid;place-items:center;cursor:pointer}.hc-ib:hover{background:rgba(127,127,127,.12)}',
+      '.hc-ib{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:inherit;font-size:18px;display:grid;place-items:center;cursor:pointer}.hc-ib>i{display:block;line-height:1;width:1em;height:1em}.hc-ib>i::before{display:block;vertical-align:0;line-height:1}.hc-ib:hover{background:rgba(127,127,127,.12)}',
       '.hc-pins{flex:none;border-bottom:1px solid var(--hc-line);font-size:13.5px}.hc-pins>button{width:100%;display:flex;align-items:center;gap:8px;padding:8px 14px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}',
       '.hc-pins>button .bi-pin-angle-fill{color:var(--hc-acc)}.hc-pins>button span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-pins ul{list-style:none;margin:0;padding:0 10px 8px;max-height:40vh;overflow:auto}',
       '.hc-pins li{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:10px;background:rgba(127,127,127,.08);margin-top:6px}.hc-pins li div{flex:1;min-width:0}.hc-pins li b{display:block;font-size:13.5px}.hc-pins li p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--hc-mut)}',
@@ -414,7 +414,8 @@
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
     var v = document.createElement('div'); v.className = 'hc-view'; v.innerHTML = '<img alt=""><button type="button" class="hc-ib" style="left:12px" data-x aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button><button type="button" class="hc-ib" style="right:12px" data-dl aria-label="' + L('Save', 'Lagre') + '"><i class="bi bi-download"></i></button>';
     document.body.appendChild(v); fileUrl(f).then(function (u) { v.querySelector('img').src = u; });
-    v.addEventListener('click', function (e) { if (e.target.closest('[data-dl]')) { download(f); return; } v.remove(); });
+    v.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); if (e.target.closest('[data-dl]')) { download(f); return; } C.viewShut = Date.now(); v.remove(); });
+    ['touchend', 'pointerup'].forEach(function (n) { v.addEventListener(n, function (e) { e.stopPropagation(); }); });
   }
   /* every photo and file you sent each other */
   function gallery() {
@@ -635,7 +636,7 @@
       B.btn = document.createElement('button'); B.btn.type = 'button'; B.btn.className = 'hc-bub';
       B.btn.innerHTML = '<i class="bi bi-chat-heart-fill"></i><b hidden></b>'; document.body.appendChild(B.btn);
       B.btn.addEventListener('click', function () { B.pop ? closePop() : openPop(); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && B.pop && !B.pop.querySelector('.hc-menu')) closePop(); });
+      document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var v = document.querySelector('.hc-view'); if (v) { v.remove(); C.viewShut = Date.now(); return; } if (B.pop && !B.pop.querySelector('.hc-menu') && !document.querySelector('.hc-gal, .fv-bg')) closePop(); });   /* Escape closes the photo first, then the chat */
       if (window.visualViewport) { visualViewport.addEventListener('resize', fitPop); visualViewport.addEventListener('scroll', fitPop); }
     }
     if (o.bottom) document.documentElement.style.setProperty('--hc-bub-b', o.bottom);
@@ -646,7 +647,7 @@
   function badge() { if (!B.btn) return; var n = unread(), b = B.btn.querySelector('b'); b.hidden = !n || !!B.pop; b.textContent = n > 9 ? '9+' : String(n); }
   function openPop() {
     if (B.pop) return;
-    var bg = document.createElement('div'); bg.className = 'hc-popbg'; document.body.appendChild(bg); bg.addEventListener('click', closePop);
+    var bg = document.createElement('div'); bg.className = 'hc-popbg'; document.body.appendChild(bg); bg.addEventListener('click', function () { if (document.querySelector('.hc-view, .hc-gal, .fv-bg') || Date.now() - (C.viewShut || 0) < 700) return; closePop(); });   /* a photo was open on top: the chat stays */
     B.pop = document.createElement('div'); B.pop.className = 'hc-pop'; B.pop.setAttribute('role', 'dialog'); B.pop.setAttribute('aria-label', B.opt.label || 'Chat'); B.pop._bg = bg; document.body.appendChild(B.pop);
     mount(B.pop, { pop: true, onClose: closePop }); B.btn.classList.add('on'); if (innerWidth < 700) document.documentElement.classList.add('hc-lock'); badge(); fitPop();
     requestAnimationFrame(function () { if (B.pop) B.pop.classList.add('in'); });
