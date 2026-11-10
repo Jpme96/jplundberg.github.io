@@ -94,6 +94,7 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
 .modern .card-head .head-actions { gap: 6px; }
 /* the actions that stay words (Plan day) become small pills */
 .modern .card-head .text-btn.mp { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 5px 11px; font-weight: 600; font-size: 12.5px; }
+.modern .card-head .text-btn.mp { white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; }   /* "Plan day" stayed on two lines */
 
 /* controls */
 .modern .icon-btn { border-radius: var(--r-ctl); background: var(--chip); border-color: transparent; }

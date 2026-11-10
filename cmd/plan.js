@@ -201,7 +201,7 @@
   /* the button on At a glance */
   var head = document.querySelector('.card.brief .card-head');
   if (head && !head.querySelector('[data-plan]')) {
-    var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'text-btn'; pb.setAttribute('data-plan', ''); pb.innerHTML = '<i class="bi bi-sunrise"></i> Plan day';
+    var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'text-btn mp'; pb.setAttribute('data-plan', ''); pb.innerHTML = '<i class="bi bi-sunrise"></i><span>Plan day</span>';   /* the words in their own span: the icon-only rule (modern.css) squeezed it to 36 px */
     var rv = head.querySelector('[data-review]'); var wrap = document.createElement('span'); wrap.className = 'head-actions';
     head.insertBefore(wrap, rv || null); wrap.appendChild(pb); if (rv) wrap.appendChild(rv);
   }

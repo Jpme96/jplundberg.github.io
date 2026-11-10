@@ -58,7 +58,7 @@
   nav.className = 'fp-tabs pt-tabs'; nav.setAttribute('role', 'tablist'); nav.setAttribute('aria-label', 'Views');
   function bar() {
     var l = tabs(), h = l.map(function (t) { return '<button type="button" role="tab" data-ptab-go="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i><span>' + esc(t[1]) + '</span></button>'; }).join('');
-    nav.style.setProperty('--n', l.length); nav.classList.toggle('pt-many', l.length > 5);
+    nav.style.setProperty('--n', l.length); nav.style.setProperty('--c', Math.ceil(l.length / 2)); nav.classList.toggle('pt-many', l.length > 5);
     if (nav._h !== h) { nav._h = h; nav.innerHTML = h; }
   }
   bar();

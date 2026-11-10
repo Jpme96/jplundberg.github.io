@@ -11,6 +11,8 @@
   /* folded until you open them: duplicates of something else on the page */
   var DEF = {
     'home:calCard': 1,    /* the Today card already shows today and tomorrow; the week strip is on the Calendar page */
+    /* the phone-calendar form filled a whole phone screen on every visit: one line until a phone calendar is added */
+    'calendar:clFeeds': function () { var c = {}; try { c = JSON.parse(localStorage.getItem('dash.calendar')) || {}; } catch (e) {} return !(Array.isArray(c.feeds) && c.feeds.length); },
     /* the take-over guide opens by itself in the last two weeks before the day and the first month after */
     'house:htake': function () {
       var M = window.HouseMove, d = M && M.date && M.date(); if (!d) return 0;
