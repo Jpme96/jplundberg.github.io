@@ -49,10 +49,10 @@ function png(w, h) {
   check(st4[0] && st4[1], 'owner’s phone: tapping the photo closes it and the chat is still there ' + JSON.stringify(st4));
   /* Escape closes the photo first, the chat stays */
   await p.setViewport({ width: 1280, height: 900 }); await sl(500);
-  if (!(await p.evaluate(() => !!document.querySelector('.hc-pop .hc-imgs button')))) { await p.evaluate(() => document.querySelector('.hc-bub').click()); await sl(1500); }
-  await p.evaluate(() => { const b = document.querySelector('.hc-imgs button'); b.scrollIntoView(); b.click(); }); await sl(700);
+  await p.evaluate(() => { if (!document.querySelector('.hc-pop .hc-imgs button')) { const bb = document.querySelector('.hc-bub'); if (bb) bb.click(); } }); await sl(1500);
+  const opened = await p.evaluate(() => { const b = document.querySelector('.hc-pop .hc-imgs button'); if (!b) return false; b.scrollIntoView(); b.click(); return true; }); await sl(700);
   await p.keyboard.press('Escape'); await sl(400);
-  check(await p.evaluate(() => !document.querySelector('.hc-view') && !!document.querySelector('.hc-pop')), 'Escape closes the photo and the chat stays');
+  check(opened && await p.evaluate(() => !document.querySelector('.hc-view') && !!document.querySelector('.hc-pop')), 'Escape closes the photo and the chat stays (opened: ' + opened + ')');
   /* the send arrow sits in the middle of its circle */
   const off = await q.evaluate(() => { const b = document.querySelector('.hc-row .hc-send'), i = b && b.querySelector('i, svg'); if (!b || !i) return 'none'; const r = b.getBoundingClientRect(), c = i.getBoundingClientRect(); return [Math.round((c.left + c.width / 2) - (r.left + r.width / 2)), Math.round((c.top + c.height / 2) - (r.top + r.height / 2))]; });
   check(Array.isArray(off) && Math.abs(off[0]) <= 1 && Math.abs(off[1]) <= 1, 'the send arrow is centred: ' + JSON.stringify(off));

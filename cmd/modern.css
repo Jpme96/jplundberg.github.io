@@ -81,11 +81,15 @@
 
 /* card actions: small square icon buttons (modern.js gives each an icon and a label for screen readers) */
 .modern .card-head .text-btn.mi {
-  display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border-radius: 10px;   /* flex: the hidden label never takes a row of its own, so the icon is in the middle; same size as the fold button */
   background: var(--chip); color: var(--muted); font-size: 0; line-height: 0; text-decoration: none;
   transition: background .2s, color .2s;
 }
 .modern .card-head .text-btn.mi i { font-size: 14px; color: inherit; }
+/* an icon-only button in a card header (Settings ⚙ and the like) looks like the others */
+.modern .card-head .head-actions > .text-btn:not(.mi):has(> i.bi:only-child) { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; min-width: 36px; padding: 0; border-radius: 10px; background: var(--chip); color: var(--muted); text-decoration: none; }
+.modern .card-head .head-actions > .text-btn:not(.mi):has(> i.bi:only-child) i { font-size: 14px; color: inherit; }
+html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px; height: 36px; min-width: 36px; border-radius: 10px; }   /* every round button in a card header the same size */
 .modern .card-head .text-btn.mi:hover { color: var(--accent); background: var(--accent-soft); text-decoration: none; }
 .modern .card-head .head-actions { gap: 6px; }
 /* the actions that stay words (Plan day) become small pills */

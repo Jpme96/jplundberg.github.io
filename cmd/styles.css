@@ -4659,6 +4659,10 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .nw-rule input[hidden] { display: none; } .nw-rule:has(input[hidden]) { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 36px; }
 @media (max-width: 700px) { .hs2 .kit-tiles > .kit-tile[data-tk="balance"] { grid-column: 1 / -1; } }
 /* fold any card (fold.js) */
+/* the card's own buttons sit right next to the fold arrow, never floating in the middle of the header */
+.card-head > :not(h2):not(.fold-btn):has(+ .fold-btn) { margin-left: auto; }
+.card-head:has(> .fold-btn) { justify-content: flex-start; }
+.card-head > h2 + .fold-btn { margin-left: auto; }
 .fold-btn { flex: none; width: 40px; height: 40px; margin-left: 2px; color: var(--muted); background: transparent; border-color: transparent; }
 .fold-btn i { font-size: 13px; }
 @media (hover: hover) { .fold-btn:hover { color: var(--text); } }
@@ -5314,3 +5318,6 @@ html.fv-on, html.fv-on body { overflow: hidden; }
   .fv-name { font-size: 14px; font-weight: 600; }
   .fv-body { place-items: start center; }   /* the file starts right under the bar */
 }
+/* an icon sits exactly in the middle of its round button (the icon font's own baseline shift moved it up and to the side) */
+.icon-btn > i.bi, .fold-btn > i.bi, .pill-btn.sm > i.bi:only-child { display: block; line-height: 1; width: 1em; height: 1em; }
+.icon-btn > i.bi::before, .fold-btn > i.bi::before, .pill-btn.sm > i.bi:only-child::before { display: block; vertical-align: 0; line-height: 1; }
