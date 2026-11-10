@@ -26,12 +26,12 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 - **Keep it light.** No new library or big image without need; images sized for the screen (WebP/AVIF); remove code that's no longer used. The size test (`tests/cases/size.test.js`) fails if the scripts a page loads grow past its budget – lower the budget when the app gets lighter, never raise it without a reason.
 - **Icons and fonts.** cmd uses its own trimmed icon set: after using a new `bi-…` icon, run `python3 cmd/icons.py` (the build test fails otherwise). Fonts are woff2. Background images stay under ~250 kB.
 - **Shared features are shared code.** Text or logic that both apps need (like `ShareCore.activity`) lives in `cmd/share-core.js`, not copied into each app. New shared kinds go into `ALLOW` with their fields and cleaning.
+- **Saving in small pieces (done 2026-11-10).** On the server the vault is a small core (v: 2) plus encrypted pieces (`split()`/`join()`/`toServer()` in `cmd/lock.js`, `/cmd/api/vpiece` in the Worker). Any top-level part, widget, tool list or Health month over 2 kB becomes its own piece by itself – keep new data in its own top-level key or tool list so it lands in its own piece; don't pile it into an existing big one. Piece names stay inside the encrypted core. Backups and snapshots are whole copies. Test: `pieces`.
 - **Ask before** anything that can't be undone (deleting data, changing DNS, scheduled tasks).
 
 ## Coming (from the plan – becomes a rule when that part is done)
 - **Shared home:** shared things live only in the shared box; cmd and the shared app read and write it directly – no copying into the owner's vault. New shared features are built once and used in both apps.
   *Started (on by default since 2026-11-10, JP's choice):* shopping list, chores + rooms + chore ticks and notes are read straight from the box (`DLISTS` in `cmd/share.js` + `Features.direct()`; can be turned off per part under Shared space → "Shared home in one place"; tests `shop-direct`, `chores-direct`). **A new shared list goes into `DLISTS`**, not into `collect()`/`applyAll()`. Still the old way: dinners/votes, money, pantry, recipes, events, plants.
-- **Saving in small pieces:** new data gets its own encrypted piece instead of growing the one vault.
 - **Page switching:** every cmd module has `start()` / `stop()` and keeps no state between pages except through its store.
 - **Translations:** every text has a fixed name (key); never match on the English sentence.
 - **Reminders:** sent by the server (LiveRoom alarms), not planned by a device.

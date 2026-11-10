@@ -219,10 +219,101 @@
 
   function open(vault, k) {
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(vault.iv) }, k, unb64(vault.ct))
-      .then(function (pt) { return JSON.parse(dec.decode(pt)); });
+      .then(function (pt) { var o = JSON.parse(dec.decode(pt)); return vault.v === 2 ? assemble(o, vault, k) : o; });
   }
 
-  function isVault(v) { return v && v.v === 1 && v.salt && v.iv && v.ct; }
+  function isVault(v) { return v && (v.v === 1 || v.v === 2) && v.salt && v.iv && v.ct; }
+
+  /* ---------- the vault in pieces (rebuild A4) ----------
+     On the server the dashboard is a small core plus pieces: every big part (one month of Apple Health, a tool
+     list, the finances …) is encrypted on its own, so a change uploads the core and the one piece that changed.
+     A piece's id is the hash of its encrypted bytes; which part it is, is only written inside the encrypted core
+     (_pc). This browser keeps the whole thing as before (a server copy is stored with its pieces in pcs), so
+     unlocking without internet still works, and every merge works on the whole dashboard as it always did. */
+  var PIECE_MIN = 2048, PIECE_API = '/cmd/api/vpiece', pcBody = {}, pcMine = {}, srvHas = {}, pcKey = null;
+  function pcFor(k) { if (pcKey !== k) { pcMine = {}; pcKey = k; } }   /* a new passcode: pieces are encrypted again, never reused */
+  function piecesOff() { return readJSON('dash.vp.off') === 1; }
+  function fnv(str) { var h = 0x811c9dc5; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + str.length; }
+  function sha32(str) { return crypto.subtle.digest('SHA-256', enc.encode(str)).then(function (h) { return Array.prototype.map.call(new Uint8Array(h).slice(0, 16), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }); }
+  function pieceOf(name) {
+    if (name.indexOf('h:') === 0) return null;
+    var n = name.slice(2); return name[0] === 'w' ? ['_w'].concat(n.indexOf('dash.tools/') === 0 ? ['dash.tools', n.slice(11)] : [n]) : [n];
+  }
+  function split(obj) {
+    var core = Object.assign({}, obj), parts = {}, big = function (v) { return v !== undefined && JSON.stringify(v).length >= PIECE_MIN; };
+    if (isObj(obj._w)) { core._w = Object.assign({}, obj._w); if (isObj(obj._w['dash.tools'])) core._w['dash.tools'] = Object.assign({}, obj._w['dash.tools']); }
+    if (isObj(obj.health)) {
+      core.health = Object.assign({}, obj.health);
+      if (isObj(obj.health.days)) {
+        var days = core.health.days = Object.assign({}, obj.health.days), mon = {};
+        Object.keys(days).forEach(function (d) { var m = String(d).slice(0, 7); (mon[m] = mon[m] || {})[d] = days[d]; });
+        Object.keys(mon).forEach(function (m) { if (big(mon[m])) { parts['h:' + m] = mon[m]; Object.keys(mon[m]).forEach(function (d) { delete days[d]; }); } });
+      }
+    }
+    Object.keys(core).forEach(function (k) { if (k !== '_w' && big(core[k])) { parts['d:' + k] = core[k]; delete core[k]; } });
+    if (isObj(core._w)) Object.keys(core._w).forEach(function (k) {
+      if (k === 'dash.tools' && isObj(core._w[k])) { var t = core._w[k]; Object.keys(t).forEach(function (s2) { if (big(t[s2])) { parts['w:dash.tools/' + s2] = t[s2]; delete t[s2]; } }); }
+      else if (big(core._w[k])) { parts['w:' + k] = core._w[k]; delete core._w[k]; }
+    });
+    return { core: core, parts: parts };
+  }
+  function join(core, parts) {
+    var names = Object.keys(parts);
+    names.filter(function (n) { return n.indexOf('h:') !== 0; }).forEach(function (n) { var p = pieceOf(n); setPath(core, p, parts[n]); });
+    names.filter(function (n) { return n.indexOf('h:') === 0; }).forEach(function (n) { core.health = isObj(core.health) ? core.health : {}; core.health.days = isObj(core.health.days) ? core.health.days : {}; Object.assign(core.health.days, parts[n]); });
+    return core;
+  }
+  function getPieces(ids, have) {
+    var need = ids.filter(function (id) { return !(have && have[id]) && !pcBody[id]; }), jobs = [];
+    for (var i = 0; i < need.length; i += 200) jobs.push(fetch(PIECE_API + '?ids=' + need.slice(i, i + 200).join(','), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('pieces ' + r.status); return r.json(); })
+      .then(function (j) { Object.keys(j.pcs || {}).forEach(function (id) { pcBody[id] = j.pcs[id]; srvHas[id] = 1; }); }));
+    return Promise.all(jobs).then(function () { var out = {}; ids.forEach(function (id) { var b = (have && have[id]) || pcBody[id]; if (!b) throw new Error('a piece is missing'); out[id] = b; }); return out; });
+  }
+  /* a copy from the server: with its pieces, so it can be kept and opened like a whole one */
+  function withPieces(v) {
+    if (!v || v.v !== 2 || !Array.isArray(v.pc)) return Promise.resolve(v);
+    v.pc.forEach(function (id) { srvHas[id] = 1; });
+    return getPieces(v.pc, v.pcs).then(function (b) { v.pcs = b; return v; });
+  }
+  function assemble(core, vault, k) {
+    var map = isObj(core._pc) ? core._pc : {}, names = Object.keys(map); delete core._pc; pcFor(k);
+    return getPieces(names.map(function (n) { return map[n]; }), vault.pcs).then(function (bodies) {
+      return Promise.all(names.map(function (n) { var b = JSON.parse(bodies[map[n]]);
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(b.iv) }, k, unb64(b.ct)).then(function (pt) { var s2 = dec.decode(pt); pcMine[n] = { ph: fnv(s2), id: map[n] }; pcBody[map[n]] = bodies[map[n]]; return [n, JSON.parse(s2)]; }); }));
+    }).then(function (l) { var parts = {}; l.forEach(function (x) { parts[x[0]] = x[1]; }); return join(core, parts); });
+  }
+  /* what goes to the server: the core and the pieces it doesn't have yet */
+  function toServer(local, k) {
+    return open(local, k).then(function (obj) {
+      var sp = split(obj), map = {}, jobs = []; pcFor(k);
+      Object.keys(sp.parts).forEach(function (n) {
+        var str = JSON.stringify(sp.parts[n]), ph = fnv(str);
+        if (pcMine[n] && pcMine[n].ph === ph && pcBody[pcMine[n].id]) { map[n] = pcMine[n].id; return; }
+        var iv = crypto.getRandomValues(new Uint8Array(12));
+        jobs.push(crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(str)).then(function (ct) {
+          var body = JSON.stringify({ iv: b64(iv), ct: b64(ct) });
+          return sha32(body).then(function (id) { pcBody[id] = body; pcMine[n] = { ph: ph, id: id }; map[n] = id; });
+        }));
+      });
+      return Promise.all(jobs).then(function () {
+        sp.core._pc = map;
+        var ids = Object.keys(map).map(function (n) { return map[n]; }), up = ids.filter(function (id) { return !srvHas[id]; });
+        var batches = [], cur = {}, size = 0;
+        up.forEach(function (id) { if (size + pcBody[id].length > 3e6 && size) { batches.push(cur); cur = {}; size = 0; } cur[id] = pcBody[id]; size += pcBody[id].length; });
+        if (size) batches.push(cur);
+        return batches.reduce(function (p, b) { return p.then(function () { return fetch(PIECE_API, { method: 'PUT', credentials: 'same-origin', cache: 'no-store', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pcs: b }) })
+          .then(function (r) { if (!r.ok) throw new Error('pieces ' + r.status); Object.keys(b).forEach(function (id) { srvHas[id] = 1; }); }); }); }, Promise.resolve()).then(function () {
+          var iv = crypto.getRandomValues(new Uint8Array(12));
+          return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(JSON.stringify(sp.core))).then(function (ct) {
+            var out = { v: 2, rev: local.rev || 0, iter: local.iter || ITER, salt: local.salt, iv: b64(iv), ct: b64(ct), pc: ids };
+            if (local.rec) out.rec = local.rec;
+            return JSON.stringify(out);
+          });
+        });
+      });
+    });
+  }
+  window.__pieces = { split: split, join: join, count: function () { return Object.keys(pcMine).length; } };   /* for the tests */
 
   /* ---------- lock screen UI ---------- */
   var mode = 'unlock';   // 'setup' | 'unlock' | 'reset'
@@ -587,7 +678,7 @@
           });
         }
         available = true;
-        return r.json().then(function (v) {
+        return r.json().then(withPieces).then(function (v) {
           if (!isVault(v)) return undefined;
           remoteRev = v.rev || 0;
           remoteSalt = v.salt;
@@ -823,8 +914,10 @@
   }
 
   var pushAgain = false;
+  var missTry = 0;
   function push() {
     if (pushing) { pushAgain = true; return Promise.resolve(); }
+    var pk = key;
     if (!available) { if (navigator.onLine === false) setSync('offline'); else if (syncState !== 'off') setSync('off'); else retryCheck('off'); return Promise.resolve(); }
     pushing = true;
     setSync('busy');
@@ -835,15 +928,20 @@
       if ((syncedRev() === -1 && remoteSalt && v.salt !== remoteSalt && !ignoreRemote)) { setSync('off'); return; }
       /* save on top of the version this device last synced with – if the server has a newer one, it answers 409 and we merge */
       var base = readJSON(REPLACE_KEY) ? (remoteRev !== null ? remoteRev : -1) : syncedRev() >= 0 ? syncedRev() : (remoteRev !== null ? remoteRev : -1);
-      return fetch(API, {
+      /* in pieces when unlocked (the key is needed to cut it up); a whole copy otherwise – the server takes both */
+      return (pk && !piecesOff() ? toServer(v, pk).catch(function (e) { if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
+        if (!body) return;
+        return fetch(API, {
         method: 'PUT', credentials: 'same-origin', cache: 'no-store',
         headers: { 'content-type': 'application/json', 'X-Base-Rev': String(base) },
-        body: raw
+        body: body
       }).then(function (r) {
-        if (r.ok) { remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
-        if (r.status === 409) return r.json().then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
+        if (r.ok) { missTry = 0; remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
+        if (r.status === 412 && missTry < 2) { missTry++; return r.json().then(function (j) { (j.missing || []).forEach(function (id) { delete srvHas[id]; }); pushAgain = true; }); }
+        if (r.status === 409) return r.json().then(withPieces).then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
         if (r.status === 401) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');
+      });
       });
     }).catch(function () { setSync('offline'); })
       .then(function () { pushing = false; if (pushAgain) { pushAgain = false; if (key && localRev() > syncedRev()) schedulePush(); } });

@@ -89,7 +89,7 @@ async function r2Backup(env) {
   if (!env.FILES || !env.VAULT) return;
   const day = new Date().toISOString().slice(0, 10);
   if (await env.VAULT.get('meta:r2bak') === day) return;
-  for (const k of BAK_KEYS) { const v = await env.VAULT.get(k); if (v != null) await env.FILES.put(BAK + day + '/' + k, v, { customMetadata: { at: String(Date.now()) } }); }
+  for (const k of BAK_KEYS) { let v = await env.VAULT.get(k); if (v != null && k === KEY) v = await wholeVault(env, v); if (v != null) await env.FILES.put(BAK + day + '/' + k, v, { customMetadata: { at: String(Date.now()) } }); }
   const cut = new Date(Date.now() - BAK_DAYS * 864e5).toISOString().slice(0, 10);
   for (const d of await bakDays(env)) if (d < cut) { let c; do { const l = await env.FILES.list({ prefix: BAK + d + '/', cursor: c }); await Promise.all(l.objects.map(o => env.FILES.delete(o.key))); c = l.truncated ? l.cursor : null; } while (c); }
   await env.VAULT.put('meta:r2bak', day);
@@ -154,7 +154,7 @@ async function d1Put(db, k, v, expect) {
 }
 function storage(env) {
   if (!env || !env.DB || !env.VAULT || env.KV) return env;
-  const kv = env.VAULT, db = env.DB, hot = k => HOT_KEYS.indexOf(k) >= 0;
+  const kv = env.VAULT, db = env.DB, hot = k => HOT_KEYS.indexOf(k) >= 0 || k.indexOf(VP) === 0;
   const read = async k => {
     let v = await d1Get(db, k);
     if (v === undefined) { const old = await kv.get(k); if (old != null) await d1Put(db, k, old); v = old; }
@@ -179,7 +179,7 @@ function storage(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws|vpiece)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -238,6 +238,7 @@ async function route(request, env) {
     if (path === '/cmd/api/recipe') return recipeApi(request);
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
+    if (path === '/cmd/api/vpiece') return pieceApi(request, url, env);
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv', files: env.FILES ? 'r2' : 'kv', live: env.LIVE ? 'ws' : 'poll', fileMax: fileMax(env) }); }
     return vault(request, env);
 }
@@ -763,6 +764,51 @@ async function webPush(env, sub, msg) {
 }
 
 /* ---------- encrypted dashboard data ---------- */
+/* ---------- the vault in pieces ----------
+   A big part of the dashboard (Apple Health of one month, the tool lists, the finances …) is its own encrypted
+   piece, so a change uploads the small core plus the one piece that changed instead of everything. A piece's id is
+   the hash of its encrypted bytes (it never changes – a new version is a new piece); which part it is stays inside
+   the encrypted core. The core (v: 2) lists the ids it needs in pc. Backups, snapshots and the email backup hold the
+   whole thing (core + pieces in pcs), so they never depend on pieces that were cleaned up later. */
+const VP = 'vp:', PIECE_ID = /^[0-9a-f]{32}$/, VP_REFS = 'meta:vprefs';
+async function pieceId(body) { const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body))); return [...h.slice(0, 16)].map(b => b.toString(16).padStart(2, '0')).join(''); }
+async function wholeVault(env, v) {
+  let o; try { o = JSON.parse(v); } catch (e) { return v; }
+  if (!o || o.v !== 2 || !Array.isArray(o.pc)) return v;
+  o.pcs = {}; for (const id of o.pc) { const b = await env.VAULT.get(VP + id); if (b != null) o.pcs[id] = b; }
+  return JSON.stringify(o);
+}
+/* pieces no longer used by this version or the one before it are removed (the one before: a device may be reading it) */
+async function pieceRefs(env, ids) {
+  const r = JSON.parse(await env.VAULT.get(VP_REFS) || '{"cur":[],"prev":[]}'), keep = new Set(ids.concat(r.cur || []));
+  const gone = (r.prev || []).filter(id => !keep.has(id));
+  for (const id of gone) await env.VAULT.delete(VP + id).catch(() => {});
+  await env.VAULT.put(VP_REFS, JSON.stringify({ cur: ids, prev: r.cur || [] }));
+}
+async function pieceApi(request, url, env) {
+  if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
+  if (request.method === 'GET') {
+    const ids = String(url.searchParams.get('ids') || '').split(',').filter(id => PIECE_ID.test(id)).slice(0, 400), pcs = {};
+    for (const id of ids) { const b = await env.VAULT.get(VP + id); if (b != null) pcs[id] = b; }
+    return json({ pcs });
+  }
+  if (request.method === 'PUT') {
+    const text = await request.text();
+    if (text.length > MAX_BYTES) return json({ error: 'too large' }, 413);
+    let b; try { b = JSON.parse(text); } catch (e) { return json({ error: 'bad json' }, 400); }
+    const pcs = b && b.pcs && typeof b.pcs === 'object' ? b.pcs : {}, ok = [];
+    for (const id of Object.keys(pcs)) {
+      const body = pcs[id];
+      if (!PIECE_ID.test(id) || typeof body !== 'string' || await pieceId(body) !== id) return json({ error: 'bad piece', id }, 400);
+      try { const p = JSON.parse(body); if (!p || typeof p.iv !== 'string' || typeof p.ct !== 'string') throw 0; } catch (e) { return json({ error: 'bad piece', id }, 400); }
+      if ((await env.VAULT.get(VP + id)) == null) await env.VAULT.put(VP + id, body);
+      ok.push(id);
+    }
+    return json({ ok: true, saved: ok.length });
+  }
+  return json({ error: 'method not allowed' }, 405);
+}
+
 async function vault(request, env) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') {
@@ -788,23 +834,31 @@ async function vault(request, env) {
     if (body.length > MAX_BYTES) return json({ error: 'too large' }, 413);
     let next;
     try { next = JSON.parse(body); } catch (e) { return json({ error: 'bad json' }, 400); }
-    if (!next || next.v !== 1 || !next.ct || !next.iv || !next.salt || !Number.isInteger(next.rev)) {
+    if (!next || (next.v !== 1 && next.v !== 2) || !next.ct || !next.iv || !next.salt || !Number.isInteger(next.rev)) {
       return json({ error: 'not a vault' }, 400);
     }
+    if (next.v === 2 && (!Array.isArray(next.pc) || next.pc.length > 2000 || !next.pc.every(id => PIECE_ID.test(id)))) return json({ error: 'not a vault' }, 400);
+    if (next.pcs) delete next.pcs;   /* a whole copy (a restored backup): the pieces go up on their own */
     /* Only accept the write if the device saw the latest version first. */
     const base = parseInt(request.headers.get('X-Base-Rev') || '-1', 10);
     const cur = await env.VAULT.get(KEY);
     const curRev = cur ? JSON.parse(cur).rev || 0 : -1;
+    /* an older version of cmd (one copy, v1) must not save over the newer form it can't read in full: it updates itself first */
+    if (cur && next.v === 1 && JSON.parse(cur).v === 2 && base !== curRev) return json({ error: 'update', update: true }, 426);
     if (cur && base !== curRev) return new Response(cur, { status: 409, headers: hdrs() });
+    /* every piece the new version points to must be here already */
+    if (next.v === 2) { const miss = []; for (const id of next.pc) if ((await env.VAULT.get(VP + id)) == null) miss.push(id); if (miss.length) return json({ error: 'missing pieces', missing: miss }, 412); }
     /* first save of the day: keep yesterday's last version (30 days back) */
     if (cur) {
       const day = new Date().toISOString().slice(0, 10);
       if (!(await env.VAULT.get(SNAP + day))) {
-        await env.VAULT.put(SNAP + day, cur, { expirationTtl: 31 * 864e2 });
+        await env.VAULT.put(SNAP + day, await wholeVault(env, cur), { expirationTtl: 31 * 864e2 });
       }
     }
-    if (env.VAULT.cas) { if (!(await env.VAULT.cas(KEY, body, curRev))) { const now = await env.VAULT.get(KEY); return new Response(now, { status: 409, headers: hdrs() }); } }
-    else await env.VAULT.put(KEY, body);
+    const store = next.v === 2 ? JSON.stringify(next) : body;
+    if (env.VAULT.cas) { if (!(await env.VAULT.cas(KEY, store, curRev))) { const now = await env.VAULT.get(KEY); return new Response(now, { status: 409, headers: hdrs() }); } }
+    else await env.VAULT.put(KEY, store);
+    await pieceRefs(env, next.v === 2 ? next.pc : []).catch(() => {});
     await notify(env, { vault: next.rev });
     return json({ ok: true, rev: next.rev });
   }
@@ -1351,7 +1405,7 @@ function b64ascii(str) {
   return btoa(s);
 }
 async function sendBackup(env, why) {
-  const v = await env.VAULT.get(KEY);
+  let v = await env.VAULT.get(KEY); if (v) v = await wholeVault(env, v);
   if (!v) { const l = { at: Date.now(), ok: false, err: 'nothing to back up yet', why }; await env.VAULT.put(BK_LAST, JSON.stringify(l)); return l; }
   const d = oslo().date;
   let r, err = null;

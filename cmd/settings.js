@@ -662,7 +662,7 @@
     var f = this.files && this.files[0]; if (!f) return;
     f.text().then(function (t) {
       var v = JSON.parse(t);
-      if (!v || v.v !== 1 || !v.ct || !v.iv || !v.salt) throw new Error('bad');
+      if (!v || (v.v !== 1 && v.v !== 2) || !v.ct || !v.iv || !v.salt) throw new Error('bad');
       restoreText = t;
       var m = String(f.name).match(/(\d{4}-\d{2}-\d{2})/);
       $('stRestoreInfo').textContent = 'The file is ' + (m ? 'from ' + new Date(m[1] + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '“' + f.name + '”') + '.';
