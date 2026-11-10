@@ -136,9 +136,11 @@
     if (!drag) return;
     var d = drag; drag = null;
     if (!d.moved) return;                       // a normal tap: the click does the rest
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     var a = d.target;
     if (!a || a.getAttribute('aria-current') || leaving) { d.pill.style.transform = ''; d.pill.style.width = ''; nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); return; }
+    /* with instant page changes the slide goes the same way as a tap – no reload (it reloaded the whole page, 2026-11-10) */
+    if (window.SoftNav && window.SoftNav.active) { d.pill.style.transform = ''; d.pill.style.width = ''; a.click(); return; }
     leaving = true;
     document.documentElement.classList.add('vt-active');
     setTimeout(function () { location.href = a.href; }, 120);

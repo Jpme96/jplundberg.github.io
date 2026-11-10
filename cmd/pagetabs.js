@@ -187,7 +187,7 @@
           var p = String(st.open.in || '').split(':'), started = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +p[0] || 0, +p[1] || 0);
           var brk = +st.open.brk || +(Fe.tools().flexcfg || {}).brk || 0, left = norm - worked, home = new Date(now.getTime() + Math.max(0, left) * 6e4);
           rows.push(['stopwatch', '#e8743b', 'Clocked in ' + esc(st.open.in), hmS(worked) + ' so far', '<small>' + (left > 0 ? 'a normal day ends about ' + pad(home.getHours()) + ':' + pad(home.getMinutes()) : 'a full day done – the rest is flex') + (brk ? ' · ' + brk + ' min break counted' : '') + '</small>', '[data-tool="flex"]']);
-        } else rows.push(['stopwatch', '#e8743b', 'Flex time', worked ? hmS(worked) + ' today' : 'Not clocked in', '<small>this week ' + esc(window.FlexTime.dur(st.week)) + (st.weekTarget ? ' of ' + esc(window.FlexTime.dur(st.weekTarget)) : '') + '</small>', '[data-tool="flex"]']);
+        } else if (worked) rows.push(['stopwatch', '#e8743b', 'Flex time', worked ? hmS(worked) + ' today' : 'Not clocked in', '<small>this week ' + esc(window.FlexTime.dur(st.week)) + (st.weekTarget ? ' of ' + esc(window.FlexTime.dur(st.weekTarget)) : '') + '</small>', '[data-tool="flex"]']);
       }
       /* today's work events from the calendar (own events in the Work category, and phone calendars) */
       if (window.Cal && window.Cal.occurrences) {
@@ -205,7 +205,9 @@
         var mins = Fe.list('ptime').filter(function (x) { return x && x.date === td; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0);
         rows.push(['hourglass-split', '#e8743b', run ? 'Timer running' : 'Client time today', run ? esc(pr.name || 'client') : hmS(mins), '<small>' + (run ? 'since ' + new Date(run.start || Date.now()).toTimeString().slice(0, 5) : mins ? 'logged today' : 'start a timer below') + '</small>', '[data-tool="ptime"]']);
       }
-      if (Fe.on('holiday')) {
+      /* not clocked in, or the holiday count, is what the Flex time card right below already says (it said it three times,
+         2026-11-10) – those rows only when that card isn't on */
+      if (Fe.on('holiday') && !(Fe.on('flex') && window.FlexTime)) {
         var y = String(now.getFullYear()), used = Fe.list('flex').filter(function (e) { return e && e.type === 'vacation' && String(e.date).slice(0, 4) === y; }).length, days = +((Fe.tools().flexcfg || {}).vacation || 25);
         rows.push(['sun', '#e8743b', 'Holiday ' + y, (days - used) + ' days left', '<small>' + used + ' of ' + days + ' used</small>', '[data-tool="holiday"]']);
       }

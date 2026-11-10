@@ -67,9 +67,10 @@ function png(w, h) {
   await p.evaluate(() => document.querySelector('.hc-imgs button').scrollIntoView()); await p.tap('.hc-imgs button'); await sl(800);
   const st3 = await p.evaluate(() => [!!document.querySelector('.hc-view, .fv-bg'), !!document.querySelector('.hc-pop')]);
   check(st3[0] && st3[1], 'owner’s phone: a photo opens and the chat stays open ' + JSON.stringify(st3));
-  await p.tap('.hc-view img, .fv-body'); await sl(800);
+  check(await until(p, () => !!document.querySelector('.fv-bg .fv-img') && !document.querySelector('.hc-view'), 5000) !== null, 'owner’s phone: the same viewer as papers and receipts');
+  await p.tap('.fv-x'); await sl(800);
   const st4 = await p.evaluate(() => [!document.querySelector('.hc-view, .fv-bg'), !!document.querySelector('.hc-pop')]);
-  check(st4[0] && st4[1], 'owner’s phone: tapping the photo closes it and the chat is still there ' + JSON.stringify(st4));
+  check(st4[0] && st4[1], 'owner’s phone: Close closes the photo and the chat is still there ' + JSON.stringify(st4));
   /* Escape closes the photo first, the chat stays */
   await p.setViewport({ width: 1280, height: 900 }); await sl(500);
   await until(p, () => { if (document.querySelector('.hc-pop .hc-imgs button')) return true; const bb = document.querySelector('.hc-bub'); if (bb && !document.querySelector('.hc-pop')) bb.click(); return false; }, 20000); await sl(500);

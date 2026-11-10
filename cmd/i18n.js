@@ -506,7 +506,7 @@
   );
   /* Plan my day, gestures, keyboard, focus timer (only words not already above) */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
-    'Plan day': 'Planlegg dagen', 'Plan the trip': 'Planlegg turen', 'Search a journey – it plays here': 'Søk opp en reise – den spilles av her', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',
+    'Plan day': 'Planlegg dagen', 'Plan the trip': 'Planlegg turen', 'where you live now': 'der du bor nå', 'Search a journey – it plays here': 'Søk opp en reise – den spilles av her', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',
     'Pick a task below, or type a new one': 'Velg en oppgave under, eller skriv en ny', 'Schedule': 'Sett av tid', 'Pick a slot': 'Velg et tidspunkt', 'Put it here': 'Legg den her',
     'Take it out of the calendar': 'Ta den ut av kalenderen', 'Tasks': 'Oppgaver', 'New task – it goes straight into your top 3': 'Ny oppgave – den går rett inn i topp 3',
     'No other open tasks.': 'Ingen andre åpne oppgaver.', 'Your day': 'Dagen din', 'Fill my day': 'Fyll dagen', 'Nothing left of today.': 'Ikke mer igjen av dagen.', 'Habits today': 'Vaner i dag',
@@ -1171,7 +1171,7 @@
     'Moved money between your own accounts? Transfer': 'Flyttet penger mellom egne kontoer? Overføring',
     'Accounts': 'Kontoer', 'Loans': 'Lån', 'Insights': 'Innsikt', 'Spending pace': 'Forbrukstempo', 'Latest spending': 'Siste utgifter', 'Payday moves': 'Flytt på lønningsdagen',
     'Income & fixed costs': 'Inntekt og faste kostnader', 'Spending limits': 'Forbruksgrenser', 'Yearly costs': 'Årlige kostnader', 'Between you': 'Mellom dere', 'This week': 'Denne uka', 'Per day until payday': 'Per dag til lønning',
-    'Faster than the days go': 'Raskere enn dagene går', 'Slower than the days go': 'Saktere enn dagene går', 'On pace': 'I takt', 'All': 'Alle', 'Add': 'Legg til',
+    'Spending faster than planned': 'Bruker raskere enn planlagt', 'Spending slower than planned': 'Bruker saktere enn planlagt', 'On pace': 'I takt', 'All': 'Alle', 'Add': 'Legg til',
     'On payday, move this – tick each one when it’s done.': 'På lønningsdagen flytter du dette – huk av hver når den er gjort.', 'all done': 'alt gjort',
     'Add what’s in your accounts': 'Legg inn hva som står på kontoene', 'No balances yet.': 'Ingen saldoer ennå.', 'from the bank': 'fra banken',
     'Add your salary and bills under Accounts, then you see here how fast you spend.': 'Legg inn lønn og regninger under Kontoer, så ser du her hvor fort du bruker penger.',

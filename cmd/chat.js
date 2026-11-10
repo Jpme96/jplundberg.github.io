@@ -412,8 +412,8 @@
   }
   function viewImg(fid) {
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
-    /* computer: the same panel as PDFs and other files (Download, Expand, Close) instead of blacking out the whole window */
-    if (window.FileView && matchMedia('(min-width: 700px)').matches) { fileUrl(f).then(function (u) { FileView.show(u, f.name || L('Photo', 'Bilde')); }, function () { toast(L('That file is gone', 'Den filen er borte')); }); return; }
+    /* the same viewer as papers and receipts, on a phone too (one viewer everywhere, 2026-11-10); Iago's app has no FileView and keeps its own */
+    if (window.FileView) { fileUrl(f).then(function (u) { FileView.show(u, f.name || L('Photo', 'Bilde')); }, function () { toast(L('That file is gone', 'Den filen er borte')); }); return; }
     var v = document.createElement('div'); v.className = 'hc-view'; v.innerHTML = '<img alt=""><button type="button" class="hc-ib" style="left:12px" data-x aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button><button type="button" class="hc-ib" style="right:12px" data-dl aria-label="' + L('Save', 'Lagre') + '"><i class="bi bi-download"></i></button>';
     document.body.appendChild(v); fileUrl(f).then(function (u) { v.querySelector('img').src = u; });
     v.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); if (e.target.closest('[data-dl]')) { download(f); return; } C.viewShut = Date.now(); v.remove(); });
