@@ -146,10 +146,10 @@
     hmap: ['w', 'h', 'mono', 'fid', 'rooms', 'pins', 'cr', 'style', 'furn'],               /* the owner's home map (house-map.js), when they show it */
     pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
   };
-  /* an avatar look: short keys with short colour/word values, nothing else */
+  /* an avatar look: short keys with short colour/word values, nothing else (up to 48 – the maker has ~45 settings) */
   function cleanLook(l) {
     if (!l || typeof l !== 'object') return null; var o = {}, n = 0;
-    Object.keys(l).forEach(function (k) { if (n < 16 && /^[a-zA-Z]{1,10}$/.test(k) && typeof l[k] === 'string' && /^[#\w-]{1,20}$/.test(l[k])) { o[k] = l[k]; n++; } });
+    Object.keys(l).forEach(function (k) { if (n < 48 && /^[a-zA-Z0-9]{1,10}$/.test(k) && typeof l[k] === 'string' && /^[#\wÆØÅæøå-]{1,20}$/.test(l[k])) { o[k] = l[k]; n++; } });
     return n ? o : null;
   }
   function cleanPack(p) { return (Array.isArray(p) ? p : []).slice(0, 150).map(function (x) { return { t: String((x && x.t) || '').slice(0, 80), done: !!(x && x.done) }; }).filter(function (x) { return x.t; }); }

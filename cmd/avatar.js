@@ -83,6 +83,11 @@
   function norm(L) {
     L = Object.assign({}, L);
     var x = L.extra; if (x && x !== 'none') { if (x === 'cap' && !L.hat) { L.hat = 'cap'; L.oldCap = 1; } if (x === 'lanyard' && !L.neck) L.neck = 'lanyard'; if (x === 'watch' && !L.watch) L.watch = 'yes'; if (x === 'earbuds' && !L.ears) L.ears = 'buds'; }
+    if (L.auto === 'on') { var dt = new Date(), mo = dt.getMonth() + 1, dd = dt.getDate();
+      if (mo === 12 && dd <= 26) { L.top = 'knit'; L.topC = '#b3202c'; L.hat = 'santa'; L.pat = 'none'; }
+      else if (mo === 5 && dd === 17) { L.top = 'bunad'; L.hold = 'flag'; L.hat = 'none'; }
+      else if ((mo === 10 && dd >= 29) || (mo === 11 && dd === 1)) L.hat = 'witch';
+      else if (mo === 7) { if (!L.glasses || L.glasses === 'none') L.glasses = 'sun'; L.bottom = 'shorts'; L.shoes = 'sandals'; } }
     /* clashes – one choice wins, so nothing is drawn on top of something it can't go with */
     if (L.top === 'dress' && L.bottom !== 'swim') L.bottom = 'trousers';                 /* the dress covers the bottoms */
     if (L.hat === 'phones' && L.ears && L.ears !== 'none') L.ears = 'none';             /* the headphones cover the ears */
@@ -300,7 +305,7 @@
     if (EX === 'wink') eyes = '<g class="eyes"><circle cx="94" cy="62" r="2.2" fill="' + (EC || '#2b211b') + '"/></g><path d="M105 62.5q3-2.6 6 0" stroke="#2b211b" stroke-width="2" fill="none" stroke-linecap="round"/>';
     else if (EX === 'calm') eyes = '<path d="M91 63q3-3 6 0M105 63q3-3 6 0" stroke="#2b211b" stroke-width="2" fill="none" stroke-linecap="round"/>';
     else if (EX === 'cool') eyes = '<g class="eyes"><path d="M91 62.5h6M105 62.5h6" stroke="#2b211b" stroke-width="2.6" stroke-linecap="round"/></g>';
-    else if (EC && !tired && !sleep) eyes = '<g class="eyes"><circle cx="94" cy="62" r="2.6" fill="' + EC + '"/><circle cx="108" cy="62" r="2.6" fill="' + EC + '"/><circle cx="94" cy="62" r="1.2" fill="#141414"/><circle cx="108" cy="62" r="1.2" fill="#141414"/><circle cx="94.9" cy="61.1" r=".6" fill="#fff"/><circle cx="108.9" cy="61.1" r=".6" fill="#fff"/></g>';
+    else if (EC && !tired && !sleep) eyes = '<g class="eyes"><circle cx="94" cy="62" r="2.3" fill="' + shade(EC, -.3) + '"/><circle cx="108" cy="62" r="2.3" fill="' + shade(EC, -.3) + '"/><circle cx="94.8" cy="61.2" r=".5" fill="rgba(255,255,255,.7)"/><circle cx="108.8" cy="61.2" r=".5" fill="rgba(255,255,255,.7)"/></g>';
     if (EX === 'laugh' || EX === 'shy' && false) eyes = '<path d="M91 63q3-3 6 0M105 63q3-3 6 0" stroke="#2b211b" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
     if (EX === 'silly') eyes = '<g class="eyes"><circle cx="94" cy="62" r="2.2" fill="' + (EC || '#2b211b') + '"/></g><path d="M105 62.5q3-2.6 6 0" stroke="#2b211b" stroke-width="2" fill="none" stroke-linecap="round"/>';
     if (EX === 'love') eyes = '<g fill="#e5484d"><path d="M94 66c-3.4-2.2-5-4.2-5-6 0-1.5 1.1-2.5 2.5-2.5 1.1 0 2 .6 2.5 1.5.5-.9 1.4-1.5 2.5-1.5 1.4 0 2.5 1 2.5 2.5 0 1.8-1.6 3.8-5 6z"/><path d="M108 66c-3.4-2.2-5-4.2-5-6 0-1.5 1.1-2.5 2.5-2.5 1.1 0 2 .6 2.5 1.5.5-.9 1.4-1.5 2.5-1.5 1.4 0 2.5 1 2.5 2.5 0 1.8-1.6 3.8-5 6z"/></g>';
@@ -309,7 +314,7 @@
     var EYC = EC || '#2b211b';
     if (L.eyeS && L.eyeS !== 'round' && /class="eyes"/.test(eyes) && ['cool', 'wink', 'silly', 'shy'].indexOf(EX) < 0) {
       eyes = L.eyeS === 'almond' ? '<g class="eyes"><ellipse cx="94" cy="62" rx="3" ry="1.7" fill="' + EYC + '"/><ellipse cx="108" cy="62" rx="3" ry="1.7" fill="' + EYC + '"/><circle cx="94.8" cy="61.5" r=".55" fill="#fff"/><circle cx="108.8" cy="61.5" r=".55" fill="#fff"/></g>'
-        : L.eyeS === 'big' ? '<g class="eyes"><circle cx="94" cy="62" r="3.3" fill="#fff"/><circle cx="108" cy="62" r="3.3" fill="#fff"/><circle cx="94.3" cy="62.4" r="2.2" fill="' + EYC + '"/><circle cx="108.3" cy="62.4" r="2.2" fill="' + EYC + '"/><circle cx="95" cy="61.4" r=".8" fill="#fff"/><circle cx="109" cy="61.4" r=".8" fill="#fff"/></g>'
+        : L.eyeS === 'big' ? '<g class="eyes"><circle cx="94" cy="62" r="2.9" fill="' + shade(EYC, -.2) + '"/><circle cx="108" cy="62" r="2.9" fill="' + shade(EYC, -.2) + '"/><circle cx="94.9" cy="61" r=".75" fill="rgba(255,255,255,.8)"/><circle cx="108.9" cy="61" r=".75" fill="rgba(255,255,255,.8)"/></g>'
         : '<g class="eyes"><circle cx="94" cy="62.6" r="2.1" fill="' + EYC + '"/><circle cx="108" cy="62.6" r="2.1" fill="' + EYC + '"/><path d="M90.8 61.2h6.4M104.8 61.2h6.4" stroke="' + S + '" stroke-width="2.4"/><path d="M90.8 61.6q3.2-1 6.4 0M104.8 61.6q3.2-1 6.4 0" stroke="#2b211b" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>';
     }
     var BW = { thick: 3.2, thin: 1.25 }[L.brows] || 2;
@@ -368,18 +373,18 @@
     else if (m.k === 'trip') hat = '<rect x="87" y="58" width="13" height="8" rx="3" fill="#111"/><rect x="102" y="58" width="13" height="8" rx="3" fill="#111"/><path d="M100 61h2" stroke="#111" stroke-width="2"/>';
     else if (L.hat && L.hat !== 'none') { var HC = L.hatC || shade(T, -.1);
       hat = { cap: '<path d="M81 56c0-12 9-19 20-19s20 7 20 19z" fill="' + HC + '"/><path d="M118 55h14q2 0 0 3h-14z" fill="' + (L.hatC ? shade(HC, -.25) : shade(T, -.25)) + '"/>',
-        beanie: '<path d="M81 56c0-13 9-21 20-21s20 8 20 21z" fill="' + HC + '"/><path d="M80 53h42v6H80z" rx="2" fill="' + shade(HC, -.18) + '"/><path d="M86 53v6M92 53v6M98 53v6M104 53v6M110 53v6M116 53v6" stroke="' + shade(HC, -.32) + '" stroke-width="1"/><circle cx="101" cy="33" r="5" fill="' + shade(HC, .4) + '"/>',
-        bucket: '<path d="M85 54c0-11 7-17 16-17s16 6 16 17z" fill="' + HC + '"/><path d="M76 55q25-7 50 0l-3 5q-22-6-44 0z" fill="' + shade(HC, -.15) + '"/>',
+        beanie: '<path d="M81 56c0-13 9-21 20-21s20 8 20 21z" fill="' + HC + '"/><path d="M80.5 51h41v5h-41z" fill="' + shade(HC, -.18) + '"/><path d="M86 51v5M92 51v5M98 51v5M104 51v5M110 51v5M116 51v5" stroke="' + shade(HC, -.32) + '" stroke-width="1"/><circle cx="101" cy="33" r="5" fill="' + shade(HC, .4) + '"/>',
+        bucket: '<path d="M81.5 54c0-12 8.5-18.5 19.5-18.5s19.5 6.5 19.5 18.5z" fill="' + HC + '"/><path d="M73 53q28-7 56 0l-3 4.6q-25-6-50 0z" fill="' + shade(HC, -.15) + '"/>',
         phones: '<path d="M80 63c-3-20 8-30 21-30s24 10 21 30" stroke="#232323" stroke-width="3.6" fill="none" stroke-linecap="round"/><rect x="75.5" y="56" width="8" height="14" rx="3.5" fill="' + HC + '"/><rect x="118.5" y="56" width="8" height="14" rx="3.5" fill="' + HC + '"/>',
         beret: '<ellipse cx="98" cy="44" rx="21" ry="7.5" fill="' + HC + '" transform="rotate(-9 98 44)"/><path d="M95 37q1-3 3-3" stroke="' + HC + '" stroke-width="2" fill="none" stroke-linecap="round"/>',
-        cowboy: '<path d="M87 49c0-9 2-14 6-14 3 0 5 2 8 2s5-2 8-2c4 0 6 5 6 14z" fill="' + HC + '"/><path d="M87 46h28v3H87z" fill="' + shade(HC, -.3) + '"/><path d="M72 49q29 6 58 0-2 7-10 7-19-2-38 0-8 0-10-7z" fill="' + shade(HC, -.08) + '"/>',
+        cowboy: '<g transform="translate(0 -2.5)"><path d="M87 49c0-9 2-14 6-14 3 0 5 2 8 2s5-2 8-2c4 0 6 5 6 14z" fill="' + HC + '"/><path d="M87 46h28v3H87z" fill="' + shade(HC, -.3) + '"/><path d="M72 49q29 6 58 0-2 7-10 7-19-2-38 0-8 0-10-7z" fill="' + shade(HC, -.08) + '"/></g>',
         party: '<path d="M101 16l-12 30h24z" fill="' + HC + '"/><path d="M97.6 24.6l7-1.4M94.6 32l12.8-2.6M91.6 39.6l18.6-3.6" stroke="#f2c94c" stroke-width="2.2"/><circle cx="101" cy="16" r="3.2" fill="#f2c94c"/>',
         bandana: '<path d="M81 55c1-12 9-19 20-19s19 7 20 19q-20-7-40 0z" fill="' + HC + '"/><g fill="#f2f2f2"><circle cx="90" cy="46" r="1.1"/><circle cx="98" cy="42" r="1.1"/><circle cx="106" cy="43" r="1.1"/><circle cx="113" cy="48" r="1.1"/><circle cx="97" cy="50" r="1.1"/><circle cx="106" cy="50" r="1.1"/></g><path d="M119 52l8-4-1.5 7zM119 52l7 3-5 3z" fill="' + shade(HC, -.15) + '"/>',
-        wizard: '<path d="M86 51l17-33 11 33z" fill="' + HC + '"/><path d="M78 52q23-8 46 0l-2 4.5q-21-6.5-42 0z" fill="' + shade(HC, -.2) + '"/><path d="M98.0 38.8L98.8 40.8L101.0 41.0L99.4 42.4L99.9 44.6L98.0 43.4L96.1 44.6L96.6 42.4L95.0 41.0L97.2 40.8z" fill="#f2c94c"/><circle cx="105" cy="31" r="1.2" fill="#f2c94c"/>',
+        wizard: '<path d="M81.5 53c0-11 8.5-17 19.5-17s19.5 6 19.5 17z" fill="' + HC + '"/><path d="M86 51l17-33 11 33z" fill="' + HC + '"/><path d="M78 52q23-8 46 0l-2 4.5q-21-6.5-42 0z" fill="' + shade(HC, -.2) + '"/><path d="M98.0 38.8L98.8 40.8L101.0 41.0L99.4 42.4L99.9 44.6L98.0 43.4L96.1 44.6L96.6 42.4L95.0 41.0L97.2 40.8z" fill="#f2c94c"/><circle cx="105" cy="31" r="1.2" fill="#f2c94c"/>',
         flowers: [[84, 47, '#e0559a'], [91, 42, '#f2f2f2'], [101, 40, '#f2c94c'], [111, 42, '#e0559a'], [118, 47, '#8a5cf0']].map(function (f) { return '<g transform="translate(' + f[0] + ' ' + f[1] + ')"><circle cx="0" cy="-2.6" r="2.2" fill="' + f[2] + '"/><circle cx="2.5" cy="-.8" r="2.2" fill="' + f[2] + '"/><circle cx="1.5" cy="2.1" r="2.2" fill="' + f[2] + '"/><circle cx="-1.5" cy="2.1" r="2.2" fill="' + f[2] + '"/><circle cx="-2.5" cy="-.8" r="2.2" fill="' + f[2] + '"/><circle r="1.4" fill="#f2a024"/></g>'; }).join(''),
         santa: '<path d="M80 55c2-16 12-23 23-22 9 1 15 8 18 14l6 9-7 1c-2-4-5-7-8-9-9-4-22-2-32 7z" fill="#d93a3a"/><path d="M79 52q22-8 43 2l-1 6q-21-9-41-1z" fill="#f4f4f4"/><circle cx="127" cy="64" r="4" fill="#f4f4f4"/>',
-        witch: '<path d="M86 50l14-30 4 4 10 26z" fill="#22252e"/><path d="M74 51q27-8 54 0l-3 5q-24-6-48 0z" fill="#2b2f36"/><path d="M88 46q13-3 25 0v3q-12-3-25 0z" fill="#8a5cf0"/>',
-        chef: '<path d="M86 50v-6c-7-1-8-12 0-13 1-6 10-8 15-3 5-5 14-3 15 3 8 1 7 12 0 13v6z" fill="#f4f4f4"/><path d="M86 47h30" stroke="#d8dce4" stroke-width="1.4"/>',
+        witch: '<path d="M81.5 52c0-11 8.5-17 19.5-17s19.5 6 19.5 17z" fill="#22252e"/><path d="M86 50l14-30 4 4 10 26z" fill="#22252e"/><path d="M74 51q27-8 54 0l-3 5q-24-6-48 0z" fill="#2b2f36"/><path d="M88 46q13-3 25 0v3q-12-3-25 0z" fill="#8a5cf0"/>',
+        chef: '<path d="M81.5 51c0-10 8.5-15 19.5-15s19.5 5 19.5 15z" fill="#f4f4f4"/><path d="M86 50v-6c-7-1-8-12 0-13 1-6 10-8 15-3 5-5 14-3 15 3 8 1 7 12 0 13v6z" fill="#f4f4f4"/><path d="M86 47h30" stroke="#d8dce4" stroke-width="1.4"/>',
         crown: '<path d="M87 42l2-12 6 6 6-9 6 9 6-6 2 12z" fill="#f2c94c" stroke="#c98500" stroke-width="1" stroke-linejoin="round"/><circle cx="101" cy="37" r="1.6" fill="#e5484d"/><circle cx="92" cy="39" r="1.2" fill="#3987e5"/><circle cx="110" cy="39" r="1.2" fill="#3987e5"/>' }[L.hat] || ''; }
     if (W.santa && m.k !== 'night' && m.k !== 'gym') hat = '<path d="M80 55c2-16 12-23 23-22 9 1 15 8 18 14l6 9-7 1c-2-4-5-7-8-9-9-4-22-2-32 7z" fill="#d93a3a"/><path d="M79 52q22-8 43 2l-1 6q-21-9-41-1z" fill="#f4f4f4"/><circle cx="127" cy="64" r="4" fill="#f4f4f4"/>';
     else if (W.snow && !hat && m.k !== 'night') hat = '<path d="M81 56c0-13 9-20 20-20s20 7 20 20z" fill="#2f5d8a"/><path d="M80 55h42v5H80z" fill="#244a6e"/><circle cx="101" cy="34" r="4" fill="#e9edf5"/>';
@@ -547,8 +552,131 @@
     var f = document.querySelector('#avHome .av-fig'); if (f) { f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
   });
 
+  /* ---------- the maker (2026-11): one for Settings, People and the shared home – tabs, picture tiles drawn with the
+     person's own look, colour dots + any colour. MK.html(cur, tab) draws it, MK.act(el, cur) applies a tap. ---------- */
+  var MKT = [
+    ['face', 'Face', 'Ansikt', [['faceS', 'Face shape', 'Ansiktsform'], ['expr', 'Mood', 'Humør'], ['eyeS', 'Eye shape', 'Øyeform'], ['eyeC', 'Eye colour', 'Øyefarge'], ['brows', 'Eyebrows', 'Øyenbryn'], ['nose', 'Nose', 'Nese'], ['earS', 'Ears', 'Ører'], ['makeup', 'Make-up', 'Sminke'], ['cheeks', 'Cheeks', 'Kinn'], ['lines', 'Dimples & lines', 'Smilehull og linjer'], ['mark', 'Face sticker', 'Klistremerke'], ['pierce', 'Piercings', 'Piercinger'], ['beard', 'Beard', 'Skjegg'], ['glasses', 'Glasses', 'Briller']]],
+    ['hair', 'Hair', 'Hår', [['hair', 'Style', 'Frisyre'], ['hairC', 'Colour', 'Farge'], ['hair2', 'Coloured streak', 'Farget stripe'], ['hairAge', 'Grey & hairline', 'Grått og hårfeste']]],
+    ['body', 'Body', 'Kropp', [['build', 'Build', 'Kroppsbygning'], ['height', 'Height', 'Høyde'], ['shape', 'Shape', 'Fasong'], ['skin', 'Skin tone', 'Hudfarge'], ['tat', 'Tattoo', 'Tatovering'], ['aid', 'Mobility & hearing', 'Bevegelse og hørsel']]],
+    ['style', 'Style', 'Klær', [['top', 'Top', 'Overdel'], ['pat', 'Print', 'Trykk'], ['topC', 'Top colour', 'Farge på overdelen'], ['chest', 'Text on your top', 'Tekst på overdelen'], ['bottom', 'Bottom', 'Underdel'], ['legs', 'Bottom colour', 'Farge på underdelen'], ['shoes', 'Shoes', 'Sko'], ['shoeC', 'Shoe colour', 'Farge på skoene'], ['socks', 'Socks', 'Sokker']]],
+    ['extras', 'Extras', 'Tilbehør', [['hat', 'Headwear', 'Hodeplagg'], ['hatC', 'Hat, scarf & tie colour', 'Farge på hatt, skjerf og slips'], ['ears', 'Ears', 'Ører'], ['neck', 'Neck', 'Hals'], ['addons', 'Add-ons', 'Ekstra'], ['pet', 'Sidekick', 'Følgesvenn']]],
+    ['day', 'Your day', 'Dagen din', [['auto', 'Dress for the season', 'Kle deg etter sesongen'], ['hold', 'In your hand', 'I hånden'], ['badge', 'Badge', 'Merke'], ['scene', 'Background', 'Bakgrunn']]]
+  ];
+  var MKO = {
+    faceS: [['oval', 'Oval', 'Oval'], ['round', 'Round', 'Rund'], ['square', 'Square', 'Firkantet'], ['long', 'Long', 'Lang'], ['heart', 'Heart', 'Hjerte']],
+    expr: [['smile', 'Smile', 'Smil'], ['grin', 'Big grin', 'Stort glis'], ['laugh', 'Laugh', 'Ler'], ['wink', 'Wink', 'Blunk'], ['silly', 'Silly', 'Tullete'], ['cool', 'Cool', 'Kul'], ['calm', 'Happy', 'Glad'], ['love', 'In love', 'Forelsket'], ['starry', 'Starstruck', 'Stjerneøyne'], ['shy', 'Shy', 'Sjenert'], ['wow', 'Wow', 'Wow']],
+    eyeS: [['round', 'Round', 'Runde'], ['almond', 'Almond', 'Mandel'], ['big', 'Big', 'Store'], ['sleepy', 'Sleepy', 'Søvnige']],
+    brows: [['normal', 'Normal', 'Vanlige'], ['thick', 'Thick', 'Tykke'], ['thin', 'Thin', 'Tynne'], ['arched', 'Arched', 'Buede'], ['uni', 'Unibrow', 'Sammenvokste']],
+    nose: [['normal', 'Normal', 'Vanlig'], ['button', 'Button', 'Knappenese'], ['pointy', 'Pointy', 'Spiss'], ['wide', 'Wide', 'Bred']],
+    earS: [['normal', 'Normal', 'Vanlige'], ['small', 'Small', 'Små'], ['big', 'Big', 'Store'], ['elf', 'Elf', 'Alv']],
+    makeup: [['none', 'None', 'Ingen'], ['lashes', 'Lashes', 'Vipper'], ['lips', 'Lipstick', 'Leppestift'], ['both', 'Both', 'Begge']],
+    cheeks: [['none', 'None', 'Ingen'], ['blush', 'Blush', 'Rødme'], ['freckles', 'Freckles', 'Fregner'], ['both', 'Both', 'Begge']],
+    lines: [['none', 'None', 'Ingen'], ['dimples', 'Dimples', 'Smilehull'], ['wrinkles', 'Laugh lines', 'Smilerynker'], ['both', 'Both', 'Begge']],
+    mark: [['none', 'None', 'Ingen'], ['mole', 'Beauty spot', 'Føflekk'], ['star', 'Star', 'Stjerne'], ['heart', 'Heart', 'Hjerte'], ['plaster', 'Plaster', 'Plaster']],
+    pierce: [['none', 'None', 'Ingen'], ['nose', 'Nose ring', 'Nesering'], ['brow', 'Eyebrow', 'Øyenbryn'], ['lip', 'Lip ring', 'Leppering'], ['septum', 'Septum', 'Septum']],
+    beard: [['none', 'None', 'Ingen'], ['stubble', 'Stubble', 'Stubber'], ['short', 'Short', 'Kort'], ['full', 'Full', 'Fullskjegg'], ['goatee', 'Goatee', 'Bukkeskjegg'], ['chinstrap', 'Chinstrap', 'Kjakeskjegg'], ['moustache', 'Moustache', 'Bart'], ['handlebar', 'Handlebar', 'Sykkelstyre'], ['curled', 'Curled', 'Krøllet bart']],
+    glasses: [['none', 'None', 'Ingen'], ['round', 'Round', 'Runde'], ['square', 'Square', 'Firkantede'], ['cateye', 'Cat-eye', 'Katteøye'], ['sun', 'Shades', 'Solbriller'], ['aviator', 'Aviator', 'Pilotbriller'], ['hearts', 'Hearts', 'Hjerter'], ['stars', 'Stars', 'Stjerner'], ['monocle', 'Monocle', 'Monokkel']],
+    hair: [['short', 'Short', 'Kort'], ['side', 'Side part', 'Sideskill'], ['quiff', 'Quiff', 'Quiff'], ['curly', 'Curly', 'Krøllete'], ['buzz', 'Buzz cut', 'Snauklipt'], ['fade', 'Fade', 'Fade'], ['spiky', 'Spiky', 'Piggete'], ['mohawk', 'Mohawk', 'Hanekam'], ['afro', 'Afro', 'Afro'], ['mullet', 'Mullet', 'Hockeysveis'], ['slick', 'Slicked', 'Glattet bakover'], ['undercut', 'Undercut', 'Undercut'], ['waves', 'Waves', 'Bølger'], ['sideshave', 'Side shave', 'Barbert side'], ['bangs', 'Curtain bangs', 'Gardinpannelugg'], ['bowl', 'Bowl cut', 'Potteklipp'], ['long', 'Long', 'Langt'], ['ponytail', 'Ponytail', 'Hestehale'], ['bun', 'Bun', 'Knute'], ['topknot', 'Top knot', 'Topknute'], ['braids', 'Braids', 'Fletter'], ['pigtails', 'Space buns', 'Doble knuter'], ['cornrows', 'Cornrows', 'Cornrows'], ['dreads', 'Dreads', 'Dreads'], ['bald', 'Bald', 'Skallet']],
+    hairAge: [['none', 'None', 'Ingen'], ['grey', 'Grey sides', 'Grå sider'], ['receding', 'Receding', 'Viker']],
+    build: [['slim', 'Slim', 'Slank'], ['regular', 'Regular', 'Vanlig'], ['athletic', 'Athletic', 'Atletisk'], ['muscular', 'Muscular', 'Muskuløs'], ['broad', 'Broad', 'Bred']],
+    height: [['short', 'Short', 'Lav'], ['regular', 'Regular', 'Vanlig'], ['tall', 'Tall', 'Høy']],
+    shape: [['straight', 'Straight', 'Rett'], ['belly', 'Belly', 'Mage'], ['hips', 'Hips', 'Hofter']],
+    tat: [['none', 'None', 'Ingen'], ['arm', 'Arm', 'Arm'], ['neck', 'Neck', 'Hals'], ['face', 'Face', 'Ansikt']],
+    aid: [['none', 'None', 'Ingen'], ['chair', 'Wheelchair', 'Rullestol'], ['crutches', 'Crutches', 'Krykker'], ['hearing', 'Hearing aid', 'Høreapparat'], ['arm', 'Prosthetic arm', 'Armprotese']],
+    top: [['tee', 'T-shirt', 'T-skjorte'], ['tank', 'Tank top', 'Singlet'], ['polo', 'Polo', 'Piké'], ['sweater', 'Sweater + shirt', 'Genser + skjorte'], ['knit', 'Nordic knit', 'Lusekofte'], ['hoodie', 'Hoodie', 'Hettegenser'], ['shirt', 'Shirt', 'Skjorte'], ['jersey', 'Jersey', 'Drakt'], ['kit', 'Football kit', 'Fotballdrakt'], ['varsity', 'Varsity jacket', 'College-jakke'], ['suit', 'Suit', 'Dress'], ['puffer', 'Puffer', 'Boblejakke'], ['rain', 'Raincoat', 'Regnjakke'], ['jacket', 'Jacket', 'Jakke'], ['dress', 'Dress', 'Kjole'], ['bunad', 'Bunad (Norwegian folk dress)', 'Bunad'], ['scrubs', 'Scrubs', 'Arbeidsklær (helse)'], ['chef', 'Chef jacket', 'Kokkejakke'], ['pjs', 'Pyjamas', 'Pyjamas'], ['robe', 'Bathrobe', 'Morgenkåpe'], ['none', 'No top', 'Uten overdel']],
+    pat: [['none', 'Plain', 'Ensfarget'], ['stripes', 'Stripes', 'Striper'], ['check', 'Check', 'Rutete'], ['star', 'Star', 'Stjerne'], ['heart', 'Heart', 'Hjerte'], ['flame', 'Flame', 'Flamme'], ['bolt', 'Bolt', 'Lyn'], ['camo', 'Camo', 'Kamuflasje'], ['tiedye', 'Tie-dye', 'Batikk'], ['flag', 'Norway flag', 'Norsk flagg'], ['pumpkin', 'Pumpkin', 'Gresskar'], ['bones', 'Skeleton', 'Skjelett']],
+    bottom: [['trousers', 'Trousers', 'Bukse'], ['jeans', 'Ripped jeans', 'Revne jeans'], ['joggers', 'Joggers', 'Joggebukse'], ['cargo', 'Cargo', 'Cargobukse'], ['shorts', 'Shorts', 'Shorts'], ['skirt', 'Skirt', 'Skjørt'], ['overalls', 'Overalls', 'Snekkerbukse'], ['swim', 'Swim shorts', 'Badeshorts']],
+    shoes: [['sneakers', 'Sneakers', 'Joggesko'], ['hightops', 'High-tops', 'Høye joggesko'], ['boots', 'Boots', 'Støvler'], ['sandals', 'Sandals', 'Sandaler'], ['slippers', 'Slippers', 'Tøfler'], ['cleats', 'Football boots', 'Fotballsko']],
+    hat: [['none', 'None', 'Ingen'], ['cap', 'Cap', 'Caps'], ['beanie', 'Beanie', 'Lue'], ['bucket', 'Bucket hat', 'Bøttehatt'], ['beret', 'Beret', 'Alpelue'], ['bandana', 'Bandana', 'Bandana'], ['cowboy', 'Cowboy hat', 'Cowboyhatt'], ['phones', 'Headphones', 'Hodetelefoner'], ['flowers', 'Flower crown', 'Blomsterkrans'], ['party', 'Party hat', 'Festhatt'], ['wizard', 'Wizard hat', 'Trollmannshatt'], ['santa', 'Santa hat', 'Nisselue'], ['witch', 'Witch hat', 'Heksehatt'], ['chef', 'Chef hat', 'Kokkelue'], ['crown', 'Crown', 'Krone']],
+    ears: [['none', 'None', 'Ingen'], ['studs', 'Studs', 'Ørepynt'], ['hoops', 'Hoops', 'Ringer'], ['buds', 'Earbuds', 'Øreplugger']],
+    neck: [['none', 'None', 'Ingen'], ['chain', 'Chain', 'Kjede'], ['pearls', 'Pearls', 'Perler'], ['scarf', 'Scarf', 'Skjerf'], ['bowtie', 'Bow tie', 'Sløyfe'], ['tie', 'Tie', 'Slips'], ['medal', 'Medal', 'Medalje'], ['lanyard', 'Work lanyard', 'Adgangskort']],
+    pet: [['none', 'None', 'Ingen'], ['cat', 'Cat', 'Katt'], ['dog', 'Dog', 'Hund'], ['bunny', 'Bunny', 'Kanin'], ['bird', 'Parrot pal', 'Papegøye']],
+    hold: [['none', 'Nothing', 'Ingenting'], ['phone', 'Phone', 'Mobil'], ['coffee', 'Coffee', 'Kaffe'], ['laptop', 'Laptop', 'PC'], ['bag', 'Shopping bag', 'Handlepose'], ['flowers', 'Flowers', 'Blomster'], ['icecream', 'Ice cream', 'Is'], ['balloon', 'Balloon', 'Ballong'], ['flag', 'Norway flag', 'Norsk flagg']],
+    badge: [['none', 'None', 'Ingen'], ['streak', 'Streak', 'Rekke'], ['trophy', 'Trophy', 'Pokal'], ['top3', 'Top 3 done', 'Topp 3 gjort'], ['paid', 'Paid off', 'Nedbetalt']],
+    scene: [['none', 'None', 'Ingen'], ['city', 'City', 'By'], ['beach', 'Beach', 'Strand'], ['forest', 'Forest', 'Skog'], ['office', 'Home office', 'Hjemmekontor'], ['oslo', 'Oslo fjord', 'Oslofjorden']]
+  };
+  var MKC = {
+    skin: ['#fbe2cf', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
+    hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'], hair2: ['', '#e0559a', '#2f9ee0', '#2fae6a', '#f2c94c', '#eeeeee', '#8a5cf0'],
+    topC: ['#d9c7a8', '#2e3340', '#e8743b', '#2f5d8a', '#2f7a55', '#8a6fdf', '#b8b8b8', '#f2f2f2', '#e0559a', '#f2c94c', '#d93a3a'], legs: ['#2a2f3a', '#3c5a7d', '#5b4b3a', '#6e6e6e', '#c9b48a', '#2f7a55', '#8a5cf0'],
+    shoeC: ['#1a1a1a', '#f2f2f2', '#d93a3a', '#3987e5', '#f2c94c', '#2fae6a', '#5b3a1e'], socks: ['', '#f2f2f2', '#2e3340', '#d93a3a', '#f2c94c', '#2fae6a', '#e0559a'],
+    hatC: ['#e8743b', '#2e3340', '#d93a3a', '#3987e5', '#2f7a55', '#f2c94c', '#e0559a', '#8a5a2b', '#3b4d8a', '#f2f2f2']
+  };
+  var MKFACE = { faceS: 1, expr: 1, eyeS: 1, eyeC: 1, brows: 1, nose: 1, earS: 1, makeup: 1, cheeks: 1, lines: 1, mark: 1, pierce: 1, beard: 1, glasses: 1, hair: 1, hairC: 1, hair2: 1, hairAge: 1, hat: 1, ears: 1 };
+  var MKNONE = { makeup: 1, cheeks: 1, lines: 1, mark: 1, pierce: 1, hairAge: 1, tat: 1, aid: 1, hat: 1, ears: 1, neck: 1, pet: 1, hold: 1, badge: 1, scene: 1 };
+  var MKPLAIN = { k: 'plain', plain: true, bg: 'none' };
+  function mkCrop(svg, vb) { return svg.replace('viewBox="0 0 200 200"', 'viewBox="' + vb + '"').replace(/<g class="av-sky[^"]*">[\s\S]*?<\/g>/, ''); }
+  function mkCss() {
+    if (document.getElementById('avMkCss')) return;
+    var st = document.createElement('style'); st.id = 'avMkCss';
+    st.textContent = '.avm{display:grid;gap:12px}.avm-fig{position:relative;border-radius:22px;overflow:hidden;max-width:360px;width:100%;margin:0 auto;aspect-ratio:1/1;background:rgba(127,127,127,.08)}.avm-fig>svg{width:100%;height:100%;display:block}' +
+      '.avm-face{position:absolute;right:10px;bottom:10px;width:58px;height:58px;border-radius:50%;overflow:hidden;background:rgba(0,0,0,.25);border:2px solid var(--accent,#8a5cf0)}.avm-face svg{width:100%;height:100%;display:block}' +
+      '.avm-acts{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}.avm-acts button{min-height:34px;padding:0 12px;border-radius:17px;border:1px solid rgba(255,255,255,.18);background:rgba(20,22,30,.78);color:#eceef4;font:inherit;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer}.avm-acts button.hot{background:var(--accent,#8a5cf0);border-color:transparent;color:#fff}' +
+      '.avm-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}.avm-tabs::-webkit-scrollbar{display:none}.avm-tabs button{flex:none;min-height:38px;padding:0 14px;border-radius:19px;border:0;background:rgba(127,127,127,.14);color:inherit;font:inherit;font-weight:500;cursor:pointer}.avm-tabs button[aria-selected="true"]{background:var(--accent,#8a5cf0);color:#fff;font-weight:600}' +
+      '.avm-sec{display:grid;gap:8px}.avm-sec>b{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.7}.avm-sec>b em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--accent,#8a5cf0);opacity:1}' +
+      '.avm-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}.avm-t{position:relative;border:0;padding:0;background:none;color:inherit;font:inherit;font-size:11.5px;line-height:1.2;display:grid;gap:4px;justify-items:center;text-align:center;cursor:pointer}' +
+      '.avm-t>span:first-child{width:100%;aspect-ratio:1/1.06;border-radius:14px;background:rgba(127,127,127,.12);overflow:hidden;display:grid;place-items:center}.avm-t>span:first-child>svg{width:100%;height:100%;display:block}.avm-t[aria-pressed="true"]>span:first-child{box-shadow:inset 0 0 0 2.5px var(--accent,#8a5cf0)}.avm-t[aria-pressed="true"]{font-weight:600}' +
+      '.avm-t .avm-x{width:26px;height:26px;opacity:.45}.avm-dots{display:flex;flex-wrap:wrap;gap:6px}.avm-d{position:relative;width:40px;height:40px;border-radius:50%;border:0;padding:0;background:none;display:grid;place-items:center;cursor:pointer}.avm-d i{width:30px;height:30px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(127,127,127,.4)}.avm-d[aria-pressed="true"]::after{content:"";position:absolute;inset:0;border-radius:50%;border:2.5px solid var(--accent,#8a5cf0)}' +
+      '.avm-d.avm-any i{background:conic-gradient(#e5484d,#f2c94c,#2fae6a,#2f9ee0,#8a5cf0,#e0559a,#e5484d)}.avm-d.avm-any input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}' +
+      '.avm-txt{min-height:42px;max-width:200px;border-radius:12px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font:inherit;font-size:16px;padding:0 12px;text-transform:uppercase;letter-spacing:.06em}' +
+      '.avm-sw{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;font-size:14px}.avm-fig .av-tail{animation:avmwag .5s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 100%}@keyframes avmwag{from{transform:rotate(-10deg)}to{transform:rotate(14deg)}}' +
+      '@media (prefers-reduced-motion:reduce){.avm-fig *{animation:none!important}}';
+    document.head.appendChild(st);
+  }
+  function mkTile(cur, k, v, label) {
+    var lk = Object.assign({}, cur); lk[k] = v; if (!MKFACE[k] && k !== 'pet') lk.pet = 'none';
+    var none = MKNONE[k] && v === 'none';
+    var pic = none ? '<svg class="avm-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 18.4 18.4 5.6"/></svg>'
+      : k === 'scene' ? figure(MOMENTS.day, Object.assign(lk, { pet: 'none' }))
+      : mkCrop(figure(MKPLAIN, lk), MKFACE[k] ? '58 12 84 80' : k === 'pet' ? '8 14 172 156' : k === 'badge' ? '66 70 70 60' : k === 'hold' && v === 'balloon' ? '32 -14 136 184' : '32 10 136 160');
+    var on = k === 'watch' || k === 'bag' ? cur[k] === 'yes' : (cur[k] || (MKO[k] && MKO[k][0][0])) === v;
+    return '<button type="button" class="avm-t" data-avm-k="' + k + '" data-avm-v="' + esc(v) + '" aria-pressed="' + on + '"><span>' + pic + '</span><span>' + esc(label) + '</span></button>';
+  }
+  function mkSec(cur, s) {
+    var k = s[0], title = L(s[1], s[2]), body, now = '';
+    if (k === 'addons') { body = '<div class="avm-tiles">' + mkTile(cur, 'watch', 'yes', L('Watch', 'Klokke')) + mkTile(cur, 'bag', 'yes', L('Backpack', 'Ryggsekk')) + '</div>'; }
+    else if (k === 'auto') return '<div class="avm-sec"><label class="avm-sw"><span>' + esc(title) + '<small style="display:block;opacity:.7;font-size:12.5px">' + esc(L('Christmas jumper in December, a bunad on 17 May (Norway’s national day), a witch hat at Halloween, shorts in July', 'Julegenser i desember, bunad på 17. mai, heksehatt til Halloween, shorts i juli')) + '</small></span><input type="checkbox" class="switch" data-avm-auto' + (cur.auto === 'on' ? ' checked' : '') + '></label></div>';
+    else if (k === 'chest') return '<div class="avm-sec"><b>' + esc(title) + '<em>' + esc(L('Up to 3 letters', 'Opptil 3 tegn')) + '</em></b><input class="avm-txt" data-avm-chest maxlength="3" autocomplete="off" aria-label="' + esc(title) + '" placeholder="' + esc(L('e.g. 7', 'f.eks. 7')) + '" value="' + esc(cur.chest || '') + '"></div>';
+    else if (MKO[k]) { var o = MKO[k].filter(function (x) { return x[0] === (cur[k] || MKO[k][0][0]); })[0]; now = o ? L(o[1], o[2]) : '';
+      body = '<div class="avm-tiles">' + MKO[k].map(function (x) { return mkTile(cur, k, x[0], L(x[1], x[2])); }).join('') + '</div>'; }
+    else { var c = MKC[k], own = !!cur[k] && c.indexOf(cur[k]) < 0; now = own ? L('Your own colour', 'Din egen farge') : '';
+      body = '<div class="avm-dots">' + c.map(function (h, i) { return '<button type="button" class="avm-d" data-avm-k="' + k + '" data-avm-v="' + h + '" aria-pressed="' + ((cur[k] || '') === h) + '" aria-label="' + esc(title + ' ' + (h ? i + 1 : L('none', 'ingen'))) + '"><i style="background:' + (h || 'transparent') + '"></i></button>'; }).join('') +
+        '<label class="avm-d avm-any" aria-pressed="' + own + '"><i></i><input type="color" data-avm-k="' + k + '" value="' + (own && /^#[0-9a-f]{6}$/i.test(cur[k]) ? cur[k] : '#8a5cf0') + '" aria-label="' + esc(L('Any colour', 'Valgfri farge') + ': ' + title) + '"></label></div>'; }
+    return '<div class="avm-sec"><b>' + esc(title) + '<em>' + esc(now) + '</em></b>' + body + '</div>';
+  }
+  function mkFig(cur) {
+    return figure(MOMENTS.day, cur) + '<div class="avm-face">' + mkCrop(figure(MKPLAIN, Object.assign({}, cur, { pet: 'none' })), '58 12 84 80') + '</div>' +
+      '<div class="avm-acts"><button type="button" class="hot" data-avm-rand><i class="bi bi-shuffle"></i> ' + L('Surprise me', 'Overrask meg') + '</button><button type="button" data-avm-reset><i class="bi bi-arrow-counterclockwise"></i> ' + L('Start over', 'Start på nytt') + '</button></div>';
+  }
+  function mkHtml(cur, tab) {
+    mkCss(); var t = MKT.filter(function (x) { return x[0] === tab; })[0] || MKT[0];
+    return '<div class="avm"><div class="avm-fig av-prev">' + mkFig(cur) + '</div><div class="avm-tabs" role="tablist">' + MKT.map(function (x) { return '<button type="button" role="tab" data-avm-tab="' + x[0] + '" aria-selected="' + (x[0] === t[0]) + '">' + esc(L(x[1], x[2])) + '</button>'; }).join('') + '</div>' +
+      t[3].map(function (s) { return mkSec(cur, s); }).join('') + '</div>';
+  }
+  function mkRand() {
+    var r = {}, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    Object.keys(MKO).forEach(function (k) { r[k] = MKNONE[k] && Math.random() < .65 ? 'none' : pick(MKO[k])[0]; });
+    Object.keys(MKC).forEach(function (k) { r[k] = k === 'hair2' || k === 'socks' ? (Math.random() < .7 ? '' : pick(MKC[k])) : pick(MKC[k]); });
+    r.aid = 'none'; r.scene = 'none'; r.watch = Math.random() < .3 ? 'yes' : 'no'; r.bag = Math.random() < .2 ? 'yes' : 'no'; r.extra = 'none'; r.chest = ''; return r;
+  }
+  /* a tap inside the maker: returns the new look (or null), tab changes return { tab } */
+  function mkAct(e, cur) {
+    var b = e.target.closest('[data-avm-tab]'); if (b) return { tab: b.dataset.avmTab };
+    if (e.target.closest('[data-avm-rand]')) return { look: mkRand() };
+    if (e.target.closest('[data-avm-reset]')) return { look: Object.assign({}, PLAIN0) };
+    b = e.target.closest('button[data-avm-k]'); if (!b) return null;
+    var k = b.dataset.avmK, v = b.dataset.avmV, n = Object.assign({}, cur);
+    if (k === 'watch' || k === 'bag') v = cur[k] === 'yes' ? 'no' : 'yes';
+    n[k] = v; if (k === 'hat' || k === 'neck' || k === 'ears' || k === 'watch') n.extra = 'none';   /* the newer keys win over the old 'extra' */
+    return { look: n };
+  }
+  var PLAIN0 = { faceS: 'oval', build: 'regular', skin: '#c99a73', hair: 'short', hairC: '#4a2f1b', beard: 'none', glasses: 'none', expr: 'smile', top: 'tee', topC: '#2f5d8a', bottom: 'trousers', legs: '#2a2f3a', extra: 'none', hat: 'none', neck: 'none', ears: 'none', pet: 'none' };
+  /* old looks keep 'extra'; the maker turns it into the newer keys before the first change, so nothing is lost */
+  function mkMigrate(l) { var n = Object.assign({}, START, l || {}), x = n.extra;
+    if (x === 'cap' && !n.hat) n.hat = 'cap'; if (x === 'lanyard' && !n.neck) n.neck = 'lanyard'; if (x === 'watch') n.watch = 'yes'; if (x === 'earbuds' && !n.ears) n.ears = 'buds'; n.extra = 'none'; return n; }
   /* ---------- Settings → Pictures & touches → Your avatar ---------- */
-  var prevM = 'morning';
+  var mkTab = 'face';
+  function saveWhole(l) { var s = readJSON('dash.settings', {}) || {}; s.avatar = l; try { localStorage.setItem('dash.settings', JSON.stringify(s)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('avatar:change')); }
   function maker() {
     var host = document.getElementById('dlSet'); if (!host) return;
     var box = document.getElementById('avSet');
@@ -559,19 +687,22 @@
       sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) +
       '<label class="st-row"><span>' + L('What it says', 'Hva den sier') + '<small class="st-rsub">' + L('The speech bubble is on screen for anyone nearby', 'Snakkeboblen vises for alle i nærheten') + '</small></span><select class="st-select" data-avsay>' +
         [['nomoney', L('All but money', 'Alt unntatt penger')], ['all', L('Everything', 'Alt')], ['fun', L('Only the fun bits', 'Bare det morsomme')]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sayMode() ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>' +
-      '<div class="st-group av-maker"><div class="av-prev">' + figure(MOMENTS[prevM], Lk) + '<div class="av-pm">' + ['morning', 'rain', 'gym', 'trip', 'night'].map(function (k) { return '<button type="button" data-avpm="' + k + '" aria-pressed="' + (k === prevM) + '" aria-label="' + k + '"><i class="bi bi-' + MOMENTS[k].i + '"></i></button>'; }).join('') + '</div>' +
-      '<div class="av-acts"><button type="button" class="text-btn" data-avrand><i class="bi bi-shuffle"></i> ' + L('Surprise me', 'Overrask meg') + '</button><button type="button" class="text-btn" data-avreset>' + L('Start over', 'Start på nytt') + '</button></div></div>' +
-      Object.keys(OPTS).map(function (k) { var g = OPTS[k];
-        return '<div class="av-grp"><span>' + esc(g.t) + '</span><div class="av-opts">' + g.o.map(function (o) {
-          return g.dots ? '<button type="button" class="av-dot" data-avk="' + k + '" data-avv="' + o[0] + '" aria-pressed="' + (Lk[k] === o[0]) + '" aria-label="' + esc(g.t) + '" style="--c:' + o[0] + '"></button>'
-            : '<button type="button" data-avk="' + k + '" data-avv="' + o[0] + '" aria-pressed="' + (Lk[k] === o[0]) + '">' + esc(o[1]) + '</button>';
-        }).join('') + '</div></div>'; }).join('') + '</div>';
+      '<div class="st-group av-maker">' + mkHtml(mkMigrate(Lk), mkTab) + '</div>';
   }
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-avk]'); if (b) { var p = {}; p[b.dataset.avk] = b.dataset.avv; setLook(p); maker(); return; }
-    if ((b = e.target.closest('[data-avpm]'))) { prevM = b.dataset.avpm; maker(); return; }
-    if (e.target.closest('[data-avrand]')) { var r = {}; Object.keys(OPTS).forEach(function (k) { var o = OPTS[k].o; r[k] = o[Math.floor(Math.random() * o.length)][0]; }); setLook(r); maker(); return; }
-    if (e.target.closest('[data-avreset]')) { var s = readJSON('dash.settings', {}) || {}; delete s.avatar; try { localStorage.setItem('dash.settings', JSON.stringify(s)); } catch (x) {} window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('avatar:change')); maker(); }
+    var box = e.target.closest && e.target.closest('#avSet .avm'); if (!box) return;
+    var r = mkAct(e, mkMigrate(look())); if (!r) return;
+    if (r.tab) { mkTab = r.tab; maker(); return; }
+    var y = window.scrollY; saveWhole(r.look); maker(); window.scrollTo(0, y);
+  });
+  /* colours from the picker, the text on your top and the season switch: the figure redraws, the field you're typing in stays */
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('#avSet .avm')) return;
+    var n = mkMigrate(look());
+    if (t.matches('input[type="color"][data-avm-k]')) n[t.dataset.avmK] = t.value;
+    else if (t.matches('[data-avm-chest]')) n.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 3);
+    else if (t.matches('[data-avm-auto]')) n.auto = t.checked ? 'on' : 'off'; else return;
+    saveWhole(n); var f = t.closest('.avm').querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(n);
   });
   document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-avsay]') && window.Delight && window.Delight.set) { window.Delight.set({ avSay: e.target.value }); idx = 0; } });
   window.addEventListener('st:page', function (e) { if (e.detail === 'touches') setTimeout(maker, 0); });
@@ -595,26 +726,27 @@
   /* the same maker as yours, in a sheet – onSave(look) gets the full look */
   function editor(title, start, onSave) {
     var H = window.HomeLife; if (!H || !H.dialog) return;
-    var cur = Object.assign({}, start), pm = 'day';
+    var cur = mkMigrate(start), tab = 'face', box;
     var html = function () {
       return '<div class="ave"><div class="ave-head"><b>' + esc(title) + '</b><button type="button" class="icon-btn sm" data-aveclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button></div>' +
-        '<div class="av-prev ave-prev">' + figure(MOMENTS[pm], cur) + '</div>' +
-        '<div class="av-acts"><button type="button" class="text-btn" data-averand><i class="bi bi-shuffle"></i> ' + L('Surprise me', 'Overrask meg') + '</button><span class="spacer"></span><button type="button" class="pill-btn" data-avesave>' + L('Save', 'Lagre') + '</button></div>' +
-        Object.keys(OPTS).filter(function (k) { return k !== 'extra'; }).map(function (k) { var g = OPTS[k];
-          return '<div class="av-grp"><span>' + esc(g.t) + '</span><div class="av-opts">' + g.o.map(function (o) {
-            return g.dots ? '<button type="button" class="av-dot" data-avek="' + k + '" data-avev="' + o[0] + '" aria-pressed="' + (cur[k] === o[0]) + '" aria-label="' + esc(g.t) + '" style="--c:' + o[0] + '"></button>'
-              : '<button type="button" data-avek="' + k + '" data-avev="' + o[0] + '" aria-pressed="' + (cur[k] === o[0]) + '">' + esc(o[1]) + '</button>';
-          }).join('') + '</div></div>'; }).join('') + '</div>';
+        mkHtml(cur, tab) + '<div class="av-acts" style="position:sticky;bottom:0;padding:10px 0 2px;background:inherit"><span class="spacer"></span><button type="button" class="pill-btn" data-avesave>' + L('Save', 'Lagre') + '</button></div></div>';
     };
-    var box;
+    var draw = function () { var sc = box.closest('.hl-sheet, .h-sheet, [role="dialog"]') || box.parentNode, y = sc ? sc.scrollTop : 0; box.innerHTML = html(); if (sc) sc.scrollTop = y; };
     var dg = H.dialog('<div class="ave-host" data-noi18n></div>', function (e, close) {
-      var b = e.target.closest('[data-avek]');
-      if (b) { cur[b.dataset.avek] = b.dataset.avev; box.innerHTML = html(); return; }
-      if (e.target.closest('[data-averand]')) { Object.keys(OPTS).forEach(function (k) { if (k === 'extra' || k === 'bottom') return; var o = OPTS[k].o; cur[k] = o[Math.floor(Math.random() * o.length)][0]; }); box.innerHTML = html(); return; }
       if (e.target.closest('[data-avesave]')) { onSave(cur); close(); return; }
-      if (e.target.closest('[data-aveclose]')) close();
+      if (e.target.closest('[data-aveclose]')) { close(); return; }
+      var r = mkAct(e, cur); if (!r) return;
+      if (r.tab) tab = r.tab; else cur = r.look; draw();
     });
-    box = dg && dg.el.querySelector('.ave-host'); if (box) box.innerHTML = html();
+    box = dg && dg.el.querySelector('.ave-host'); if (!box) return;
+    box.innerHTML = html();
+    box.addEventListener('input', function (e) {
+      var t = e.target;
+      if (t.matches('input[type="color"][data-avm-k]')) cur[t.dataset.avmK] = t.value;
+      else if (t.matches('[data-avm-chest]')) cur.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 3);
+      else if (t.matches('[data-avm-auto]')) cur.auto = t.checked ? 'on' : 'off'; else return;
+      var f = box.querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(cur);
+    });
   }
 
   /* ---------- the two of you (shared home): holding hands, a high five, a hug or a kiss ----------

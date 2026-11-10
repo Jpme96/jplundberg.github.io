@@ -1,0 +1,82 @@
+/* The new avatar maker (2026-11): one maker for Settings, People and the shared home.
+   - avatars made before it are drawn exactly as before (fingerprints of the old drawings in tests/lib/avatar-old.json)
+   - hundreds of random looks with every new option: no errors, no "undefined"/"NaN", nothing outside the picture
+   - Settings → Pictures & touches: tabs and picture tiles; a tap saves; an old cap/lanyard carries over; fits a phone
+   - Iago makes his avatar in his app with new options; cmd gets all of them (more than the old 16-setting limit)
+   Made-up data only. */
+const { shared, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const OLD = require('../lib/avatar-old.json');
+(async () => {
+  const { b, p, b2, q } = await shared(393);
+
+  /* 1. old avatars look the same */
+  const same = await p.evaluate(rows => {
+    const h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
+    return rows.filter(r => (r.couple ? h(Avatar.couple(r.couple, { hair: 'curly' }, { hair: 'bun' }, { uid: 't' })) : h(Avatar.figure(Avatar.MOMENTS[r.m], r.look))) !== r.h).length;
+  }, OLD);
+  check(same === 0, 'avatars made before the new maker are drawn exactly as before (' + OLD.length + ' drawings, ' + same + ' differ)');
+
+  /* 2. random looks with everything new */
+  const stress = await p.evaluate(() => {
+    const O = { faceS: ['oval', 'round', 'square', 'long', 'heart'], expr: ['smile', 'grin', 'laugh', 'wink', 'silly', 'cool', 'calm', 'love', 'starry', 'shy', 'wow'], eyeS: ['round', 'almond', 'big', 'sleepy'], nose: ['normal', 'button', 'pointy', 'wide'], earS: ['normal', 'small', 'big', 'elf'],
+      brows: ['normal', 'thick', 'thin', 'arched', 'uni'], makeup: ['none', 'lashes', 'lips', 'both'], cheeks: ['none', 'blush', 'freckles', 'both'], mark: ['none', 'mole', 'star', 'heart', 'plaster'], lines: ['none', 'dimples', 'wrinkles', 'both'], pierce: ['none', 'nose', 'brow', 'lip', 'septum'], tat: ['none', 'arm', 'neck', 'face'],
+      beard: ['none', 'stubble', 'short', 'full', 'goatee', 'chinstrap', 'moustache', 'handlebar', 'curled'], glasses: ['none', 'round', 'square', 'cateye', 'sun', 'aviator', 'hearts', 'stars', 'monocle'],
+      hair: ['short', 'side', 'quiff', 'curly', 'buzz', 'fade', 'spiky', 'mohawk', 'afro', 'mullet', 'slick', 'undercut', 'waves', 'long', 'ponytail', 'bun', 'braids', 'pigtails', 'dreads', 'sideshave', 'bangs', 'bowl', 'topknot', 'cornrows', 'bald'], hairAge: ['none', 'grey', 'receding'],
+      build: ['slim', 'regular', 'athletic', 'muscular', 'broad'], height: ['short', 'regular', 'tall'], shape: ['straight', 'belly', 'hips'], aid: ['none', 'chair', 'crutches', 'hearing', 'arm'],
+      top: ['tee', 'tank', 'polo', 'sweater', 'knit', 'hoodie', 'shirt', 'jersey', 'varsity', 'suit', 'puffer', 'rain', 'jacket', 'dress', 'scrubs', 'chef', 'kit', 'pjs', 'robe', 'bunad', 'none'],
+      pat: ['none', 'stripes', 'check', 'star', 'heart', 'flame', 'bolt', 'camo', 'tiedye', 'flag', 'pumpkin', 'bones'], bottom: ['trousers', 'jeans', 'joggers', 'cargo', 'shorts', 'skirt', 'overalls', 'swim'], shoes: ['sneakers', 'hightops', 'boots', 'sandals', 'slippers', 'cleats'],
+      hat: ['none', 'cap', 'beanie', 'bucket', 'beret', 'bandana', 'cowboy', 'phones', 'flowers', 'party', 'wizard', 'santa', 'witch', 'chef', 'crown'], ears: ['none', 'studs', 'hoops', 'buds'], neck: ['none', 'chain', 'pearls', 'scarf', 'bowtie', 'tie', 'medal', 'lanyard'],
+      pet: ['none', 'cat', 'dog', 'bunny', 'bird'], watch: ['yes', 'no'], bag: ['yes', 'no'], hold: ['none', 'phone', 'coffee', 'laptop', 'bag', 'flowers', 'icecream', 'balloon', 'flag'], badge: ['none', 'streak', 'trophy', 'top3', 'paid'], scene: ['none', 'city', 'beach', 'forest', 'office', 'oslo'], chest: ['', 'JP', 'ØÅ'], auto: ['on', 'off'] };
+    const C = ['#f3d4bb', '#3e2618', '#2f5d8a', '#f2f2f2', '#1a1a1a'];
+    let seed = 5, bad = [], out = 0; const rnd = a => { seed = (seed * 48271) % 2147483647; return a[seed % a.length]; };
+    const moms = Object.keys(Avatar.MOMENTS).map(k => Avatar.MOMENTS[k]).concat([{ k: 'plain', plain: true, bg: 'none' }]);
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:200px;visibility:hidden'; document.body.appendChild(host);
+    for (let i = 0; i < 600; i++) {
+      const lk = {}; Object.keys(O).forEach(k => lk[k] = rnd(O[k])); ['skin', 'hairC', 'topC', 'legs', 'shoeC', 'hatC', 'eyeC'].forEach(k => lk[k] = rnd(C));
+      let s; try { s = Avatar.figure(moms[i % moms.length], lk); } catch (e) { bad.push(e.message); continue; }
+      if (/undefined|NaN|null|\[object/.test(s)) bad.push('word in ' + JSON.stringify(lk).slice(0, 80));
+      if (i % 20 === 0) { host.innerHTML = s; const bb = host.querySelector('.av-all').getBBox(); if (bb.x < -2 || bb.y < -24 || bb.x + bb.width > 202 || bb.y + bb.height > 202) out++; }
+    }
+    host.remove(); return { bad: bad.slice(0, 3), out };
+  });
+  check(!stress.bad.length && !stress.out, '600 random avatars with all the new options: no errors or broken words, nothing outside the picture ' + JSON.stringify(stress));
+
+  /* 3. Settings → Pictures & touches */
+  await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.avatar = { build: 'slim', hair: 'quiff', top: 'sweater', extra: 'lanyard' }; localStorage.setItem('dash.settings', JSON.stringify(s)); });
+  await p.click('#settingsBtn'); await sl(500); await p.click('[data-go="touches"]'); await sl(700);
+  const tabs = await p.evaluate(() => [...document.querySelectorAll('#avSet .avm-tabs [data-avm-tab]')].map(x => x.textContent));
+  check(tabs.length === 6, 'the maker has 6 tabs: ' + tabs.join(', '));
+  const perTab = [];
+  for (const t of ['face', 'hair', 'body', 'style', 'extras', 'day']) {
+    await p.evaluate(t => document.querySelector('#avSet [data-avm-tab="' + t + '"]').click(), t); await sl(250);
+    perTab.push(await p.evaluate(() => { const m = document.querySelector('#avSet .avm'); return [m.querySelectorAll('.avm-t').length + m.querySelectorAll('.avm-d').length, /undefined|NaN|null/.test(m.innerText)]; }));
+  }
+  check(perTab.every(x => x[0] > 3 && !x[1]), 'every tab shows picture tiles or colours, no broken words ' + JSON.stringify(perTab));
+  await p.evaluate(() => document.querySelector('#avSet [data-avm-tab="extras"]').click()); await sl(250);
+  await p.evaluate(() => document.querySelector('#avSet [data-avm-k="hat"][data-avm-v="beanie"]').click()); await sl(300);
+  const saved = await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings')).avatar));
+  check(saved.hat === 'beanie' && saved.neck === 'lanyard' && saved.extra === 'none' && saved.hair === 'quiff', 'a tap saves (beanie), and the old work lanyard carries over: ' + JSON.stringify({ hat: saved.hat, neck: saved.neck, extra: saved.extra }));
+  check(await p.evaluate(() => document.querySelector('#avSet [data-avm-k="hat"][data-avm-v="beanie"]').getAttribute('aria-pressed') === 'true' && document.querySelector('#avSet [data-avm-tab="extras"]').getAttribute('aria-selected') === 'true'), 'the tile is marked and you stay on the same tab');
+  const fit = await p.evaluate(() => { const m = document.querySelector('#avSet .avm'), r = m.getBoundingClientRect(); return { w: Math.round(r.width), sw: m.scrollWidth, cw: m.clientWidth, page: document.documentElement.scrollWidth <= innerWidth }; });
+  check(fit.sw <= fit.cw + 1 && fit.page, 'fits a 393 px phone: ' + JSON.stringify(fit));
+
+  /* 4. Iago's own avatar in the shared home, with more than 16 settings */
+  await q.evaluate(() => { const t = document.querySelector('[data-tab="today"]'); t && t.click(); });
+  await until(q, () => !!document.querySelector('[data-avatar]'), 10000);
+  await q.evaluate(() => document.querySelector('[data-avatar]').click());
+  const qOpen = await until(q, () => !!document.querySelector('.ave .avm'), 8000);
+  check(qOpen, 'Iago’s app opens the same new maker');
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-rand]').click(); }); await sl(300);   /* Surprise me: every setting gets a value */
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="expr"][data-avm-v="wink"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-tab="style"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="top"][data-avm-v="kit"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-tab="extras"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="pet"][data-avm-v="dog"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.ave [data-avesave]').click(); }); await sl(1500);
+  await p.evaluate(() => ShareSpace.sync());
+  await until(p, () => { const l = ShareSpace.partnerLook && ShareSpace.partnerLook(); return !!(l && l.expr === 'wink' && l.top === 'kit' && l.pet === 'dog'); }, 15000);
+  const got = await p.evaluate(() => { const l = ShareSpace.partnerLook(); return l && l.expr === 'wink' && l.top === 'kit' && l.pet === 'dog' ? Object.keys(l).length : 0; });
+  check(got && got > 16, 'cmd gets all of Iago’s picks (wink, football kit, dog) – ' + got + ' settings');
+  check(!p.errs.length && !q.errs.length, 'no errors ' + JSON.stringify([p.errs, q.errs]).slice(0, 300));
+  await done(b, b2);
+})();

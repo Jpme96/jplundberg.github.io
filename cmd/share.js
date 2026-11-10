@@ -593,7 +593,7 @@
     var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
-  window.ShareSpace = { evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k, on) { if (on != null && DIRECT_OF[k] && !!on !== direct(k)) dSwitch(k, !!on); return direct(k); } };
+  window.ShareSpace = { partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k, on) { if (on != null && DIRECT_OF[k] && !!on !== direct(k)) dSwitch(k, !!on); return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
