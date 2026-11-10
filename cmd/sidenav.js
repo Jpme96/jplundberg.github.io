@@ -151,13 +151,25 @@
     if (u) { u.classList.toggle('on', on2); u.disabled = !up; }
     if (dn) { dn.classList.toggle('on', on2); dn.disabled = !down; }
   }
+  /* The list stays where you left it: a page change brings a new list, which gets the same scroll as the old one, and
+     it only moves if the page you're on would be hidden or under the fade – then just enough to show it. */
+  var keepTop = 0, fitted = null, ro = null;
   function fit() {
+    var l = list(), st = l && l === fitted ? l.scrollTop : keepTop;
     root.classList.remove('sn-fit1', 'sn-fit2');
     document.querySelectorAll('.mbar .sn-more.on').forEach(function (x) { x.classList.remove('on'); });
-    var l = list(); if (!l) { edges(); return; }
+    if (!l) { edges(); return; }
     if (over(l)) { root.classList.add('sn-fit1'); if (over(l)) root.classList.add('sn-fit2'); }
+    edges();                                    /* the "more" rows take their room before the list is measured */
+    l.scrollTop = st;
     var cur = l.querySelector('a[aria-current="page"]');
-    if (cur && over(l)) { var r = cur.getBoundingClientRect(), b = l.getBoundingClientRect(); if (r.top < b.top + 24 || r.bottom > b.bottom - 24) l.scrollTop += r.top - b.top - (b.height - r.height) / 2; }
+    if (cur && over(l)) {
+      var r = cur.getBoundingClientRect(), b = l.getBoundingClientRect(), m = 34;
+      if (r.top < b.top + m) l.scrollTop -= b.top + m - r.top; else if (r.bottom > b.bottom - m) l.scrollTop += r.bottom - (b.bottom - m);
+    }
+    keepTop = l.scrollTop; fitted = l;
+    /* buttons added to the bar later (by the page) leave the list less room: measure again when its room changes */
+    if (window.ResizeObserver) { if (!ro) ro = new ResizeObserver(function () { fitSoon(); }); if (!l.__snRO) { ro.observe(l); l.__snRO = 1; } }
     edges();
   }
   function fitSoon() { clearTimeout(fitSoon.t); fitSoon.t = setTimeout(function () { requestAnimationFrame(fit); }, 60); }
@@ -167,7 +179,7 @@
   wide.addEventListener && wide.addEventListener('change', fitSoon);
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(fitSoon);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fitSoon); else fitSoon();
-  document.addEventListener('scroll', function (e) { if (e.target && e.target.classList && e.target.classList.contains('tabbar')) edges(); }, true);
+  document.addEventListener('scroll', function (e) { if (e.target && e.target.classList && e.target.classList.contains('tabbar')) { if (e.target === fitted) keepTop = e.target.scrollTop; edges(); } }, true);
 
   window.SideNav = { mode: mode, set: go, on: active, fit: fit };
 })();

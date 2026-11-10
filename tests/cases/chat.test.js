@@ -32,6 +32,10 @@ function png(w, h) {
     if (who === 'phone') await pg.tap('.hc-imgs button'); else await pg.click('.hc-imgs button');
     await sl(700);
     const st1 = await pg.evaluate(() => [!!document.querySelector('.hc-view, .fv-bg'), !!document.querySelector('.hc-pop')]);
+    if (who === 'phone') {   /* the close and save buttons show on a light picture too (dark background, not see-through white) */
+      const bg = await pg.evaluate(() => [...document.querySelectorAll('.hc-view .hc-ib')].map(x => getComputedStyle(x).backgroundColor));
+      check(bg.length === 2 && bg.every(c => { const m = c.match(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?/); return m && +m[1] < 60 && +m[2] < 60 && +m[3] < 60 && (m[4] == null || +m[4] >= .4); }), 'phone: the photo\'s close and save buttons have a dark background ' + JSON.stringify(bg));
+    }
     check(st1[0] && st1[1], who + ': a photo opens and the chat stays open ' + JSON.stringify(st1));
     if (who === 'computer') check(await until(pg, () => !!document.querySelector('.fv-bg .fv-img') && !document.querySelector('.hc-view'), 5000) !== null,
       'computer: the photo opens in the file panel (like a PDF), not over the whole window');

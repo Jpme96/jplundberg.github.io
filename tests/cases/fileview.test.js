@@ -25,9 +25,25 @@ const PDF = '%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type
       return { scrolls: bd.scrollHeight > bd.clientHeight + 1 || bd.scrollWidth > bd.clientWidth + 1, inside: r.top >= q.top - 1 && r.bottom <= q.bottom + 1 && r.left >= q.left - 1 && r.right <= q.right + 1,
         ratio: Math.abs(r.width / r.height - 1179 / 2556) < .02, h: Math.round(r.height) }; });
     check(tall.scrolls === false && tall.inside && tall.ratio && tall.h > 200, W + ' px: a tall picture fits whole, no scrolling ' + JSON.stringify(tall));
+    if (W > 600) {   /* the panel hugs the picture: no wide empty bands beside a tall screenshot */
+      const fitW = await p.evaluate(() => { const bx = document.querySelector('.fv-box').getBoundingClientRect(), im = document.querySelector('.fv-img').getBoundingClientRect(); return { box: Math.round(bx.width), img: Math.round(im.width) }; });
+      check(fitW.box - fitW.img <= 4 && fitW.box < 600, W + ' px: the panel takes the tall picture\'s shape ' + JSON.stringify(fitW));
+      await p.click('.fv-big'); await sl(400);
+      check(await p.evaluate(() => document.querySelector('.fv-box').getBoundingClientRect().width >= innerWidth - 2), W + ' px: Expand still fills the screen');
+      await p.click('.fv-big'); await sl(400);
+      check(await p.evaluate(() => document.querySelector('.fv-box').getBoundingClientRect().width < 600), W + ' px: and back again it hugs the picture');
+    }
     await p.click('.fv-img'); await sl(300);
     check(await p.evaluate(() => { const bd = document.querySelector('.fv-body'); return bd.scrollHeight > bd.clientHeight + 1; }), W + ' px: clicking it shows it at full size (then it scrolls)');
     await p.keyboard.press('Escape'); await sl(400);
+    if (W > 600) {   /* a wide photo: as wide as the panel may be, no empty bands above and below */
+      await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 4032; c.height = 3024; c.getContext('2d').fillRect(0, 0, 10, 10);
+        return new Promise(ok => c.toBlob(bl => { FileView.show(URL.createObjectURL(bl), 'IMG_0002.png'); ok(); }, 'image/png')); });
+      await sl(900);
+      const wide = await p.evaluate(() => { const bx = document.querySelector('.fv-body').getBoundingClientRect(), im = document.querySelector('.fv-img').getBoundingClientRect(); return { bodyW: Math.round(bx.width), bodyH: Math.round(bx.height), imgW: Math.round(im.width), imgH: Math.round(im.height) }; });
+      check(Math.abs(wide.bodyW - wide.imgW) <= 3 && Math.abs(wide.bodyH - wide.imgH) <= 3 && wide.imgW >= 900, W + ' px: a wide photo fills the panel edge to edge ' + JSON.stringify(wide));
+      await p.keyboard.press('Escape'); await sl(400);
+    }
     await make(PDF, 'application/pdf', 'Contract.pdf', false); await sl(800);
     check(await p.evaluate(() => !!document.querySelector('.fv-bg.open iframe.fv-pdf')), W + ' px: a PDF opens in the panel');
     if (W > 600) { await p.click('.fv-big'); await sl(300); check(await p.evaluate(() => document.querySelector('.fv-bg').classList.contains('fv-full') && document.querySelector('.fv-box').getBoundingClientRect().width >= innerWidth - 2), 'Expand fills the screen'); }

@@ -17,13 +17,14 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
     await p.evaluate(m => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.nav = 'side'; localStorage.setItem('dash.settings', JSON.stringify(s)); localStorage.setItem('dash.sideNav', m); window.dispatchEvent(new Event('dash:local')); }, mode);
     await sl(800);
     const seen = {};
-    for (const h of [1400, 1193, 950, 800, 640, 520]) {
+    for (const h of [1400, 1193, 935, 800, 640, 520]) {
       await p.setViewport({ width: 1280, height: h }); await go(p, 'travel/', 1500);
       const s = await state(); seen[h] = s;
       const tag = mode + ' · ' + h + ' px high';
       check(s.n >= 10, tag + ': every page is in the bar (' + s.n + ')');
       check(s.minH >= 30, tag + ': rows stay easy to hit (' + s.minH + ' px)');
       check(!s.over || s.fit2, tag + ': it only scrolls after moving the rows closer and making them smaller ' + JSON.stringify(s));
+      if (h >= 800) check(!s.over, tag + ': every page fits without scrolling ' + JSON.stringify(s));
       check(!s.over || s.down || s.up, tag + ': when it scrolls, the edge with more fades ' + JSON.stringify(s));
       check(s.over || (!s.up && !s.down), tag + ': no fade when everything fits');
       check(s.curIn, tag + ': the page you are on is in view');
@@ -63,6 +64,26 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   await p.click('.mbar .sn-fold'); await sl(900);
   const m2 = await p.evaluate(() => localStorage.getItem('dash.sideNav'));
   check(m1 !== m2 && ['icons', 'open'].includes(m1) && ['icons', 'open'].includes(m2), 'the arrow switches icons ↔ names: ' + m1 + ' → ' + m2);
+  /* buttons the page adds to the bar later leave the list less room – it measures again (they used to make it scroll at
+     full spacing on JP's computer) */
+  await p.evaluate(() => { localStorage.setItem('dash.sideNav', 'icons'); window.dispatchEvent(new Event('dash:local')); });
+  await p.setViewport({ width: 1280, height: 860 }); await go(p, 'travel/', 1500);
+  await p.evaluate(() => { const a = document.querySelector('.mbar .mb-acts'); for (let i = 0; i < 2; i++) { const x = document.createElement('button'); x.className = 'icon-btn'; x.type = 'button'; x.textContent = '•'; a.appendChild(x); } });
+  await sl(800);
+  const late = await state();
+  check(!late.over && late.fit1, 'two buttons added later: the rows move closer and everything still fits ' + JSON.stringify(late));
+  /* tapping a page in a list that scrolls: the list stays where it was (it jumped on every tap) */
+  await p.setViewport({ width: 1280, height: 600 }); await go(p, '', 1500);
+  await p.evaluate(() => { const l = document.querySelector('.mbar .tabbar'); l.scrollTop = Math.round((l.scrollHeight - l.clientHeight) / 2); }); await sl(400);
+  const pick = await p.evaluate(() => { const l = document.querySelector('.mbar .tabbar'), b = l.getBoundingClientRect();
+    const a = [...l.querySelectorAll('a[data-pg]')].find(x => { const r = x.getBoundingClientRect(); return !x.getAttribute('aria-current') && r.top > b.top + 40 && r.bottom < b.bottom - 40; });
+    return a ? { path: new URL(a.href).pathname, top: l.scrollTop } : null; });
+  check(!!pick, 'a page in the middle of the scrolled list to tap: ' + JSON.stringify(pick));
+  if (pick) {
+    await nav(pick.path.replace('/cmd/', '')); await sl(600);
+    const after = await p.evaluate(() => document.querySelector('.mbar .tabbar').scrollTop);
+    check(Math.abs(after - pick.top) <= 2, 'after tapping ' + pick.path + ' the list stays where it was: ' + pick.top + ' → ' + after);
+  }
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();

@@ -19,6 +19,20 @@
     document.documentElement.classList.remove('fv-on');
     if (last && last.focus) try { last.focus({ preventScroll: true }); } catch (e) {}
   }
+  /* a picture: the panel takes the picture's shape – as large as fits on the screen, hugging it, instead of a wide box
+     with empty bands beside a tall phone screenshot (2026-11-10). Phones and Expand fill the screen as before. */
+  function shape() {
+    if (!box) return;
+    var bx = box.querySelector('.fv-box'), im = box.querySelector('.fv-img'), top = box.querySelector('.fv-top');
+    bx.style.width = ''; bx.style.height = '';
+    if (!im || !im.naturalWidth || box.classList.contains('fv-full') || matchMedia('(max-width: 600px)').matches) return;
+    var ex = bx.offsetWidth - bx.clientWidth, ey = bx.offsetHeight - bx.clientHeight, th = top.offsetHeight + ey;
+    var maxW = Math.min(960, innerWidth - 32) - ex, maxH = Math.min(innerHeight * .88, innerHeight - 32) - th;
+    var k = Math.min(maxW / im.naturalWidth, maxH / im.naturalHeight, 1);
+    bx.style.width = (Math.max(300, Math.round(im.naturalWidth * k)) + ex) + 'px';
+    bx.style.height = (Math.max(220, Math.round(im.naturalHeight * k)) + th) + 'px';
+  }
+  window.addEventListener('resize', function () { if (box) shape(); });
   function show(url, name) {
     close();
     last = document.activeElement;
@@ -38,7 +52,7 @@
       var ty = bl.type || (/\.pdf$/i.test(name) ? 'application/pdf' : /\.(png|jpe?g|gif|webp|heic|avif)$/i.test(name) ? 'image/*' : '');
       var ext = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' }[ty];
       if (ext && !/\.[a-z0-9]{2,5}$/i.test(name)) box.querySelector('.fv-dl').setAttribute('download', name + '.' + ext);   /* "Receipt" downloads as Receipt.pdf */
-      if (/^image\//.test(ty)) body.innerHTML = '<img class="fv-img" src="' + esc(url) + '" alt="' + esc(name) + '">';
+      if (/^image\//.test(ty)) { body.innerHTML = '<img class="fv-img" src="' + esc(url) + '" alt="' + esc(name) + '">'; var im = body.querySelector('.fv-img'); if (im.complete && im.naturalWidth) shape(); else im.addEventListener('load', function () { if (box === me) shape(); }); }
       else if (/pdf/.test(ty)) body.innerHTML = '<iframe class="fv-pdf" src="' + esc(url) + '#view=FitH" title="' + esc(name) + '"></iframe>';
       else body.innerHTML = '<div class="fv-other"><i class="bi bi-file-earmark"></i><b>' + esc(name) + '</b><p class="muted">' + t('This kind of file can’t be shown here – download it to open it.', 'Denne filtypen kan ikke vises her – last den ned for å åpne den.') + '</p></div>';
     }, function () { if (box === me) body.innerHTML = '<p class="muted">' + t('Couldn’t open the file.', 'Klarte ikke å åpne filen.') + '</p>'; });
@@ -58,7 +72,7 @@
     if (!box) return;
     if (e.target === box || e.target.closest('.fv-x')) { e.preventDefault(); close(); return; }
     var big = e.target.closest('.fv-big');
-    if (big) { var on = box.classList.toggle('fv-full'); big.innerHTML = '<i class="bi bi-arrows-angle-' + (on ? 'contract' : 'expand') + '"></i>'; big.setAttribute('aria-label', on ? t('Make smaller', 'Gjør mindre') : t('Expand', 'Utvid')); return; }
+    if (big) { var on = box.classList.toggle('fv-full'); big.innerHTML = '<i class="bi bi-arrows-angle-' + (on ? 'contract' : 'expand') + '"></i>'; big.setAttribute('aria-label', on ? t('Make smaller', 'Gjør mindre') : t('Expand', 'Utvid')); shape(); return; }
     var img = e.target.closest('.fv-img'); if (img) img.classList.toggle('fv-zoom');
   });
   document.addEventListener('keydown', function (e) { if (box && e.key === 'Escape') { e.preventDefault(); close(); } });
