@@ -252,7 +252,7 @@
   function head() {
     var o = other(), tp = +C.typing[o] || 0, now = Date.now() + C.skew, typing = now - tp < 7000;
     return '<div class="hc-head">' + (C.full ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-chevron-left"></i></button>' : '') +
-      '<div class="hc-faces">' + C.opt.face(o) + C.opt.face(C.opt.me) + '</div>' +
+      '<div class="hc-faces">' + C.opt.face(o) + '</div>' +   /* only the person you're talking to, like any messenger */
       '<div class="hc-tt"><b>' + esc(C.opt.name(o)) + '</b><small class="' + (typing ? 'typ' : '') + '">' + (typing ? esc(L('typing …', 'skriver …')) : presence(o) ? presence(o) + (C.ttl ? ' · <i class="bi bi-stopwatch" title="' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) + '"></i>' : '') : C.ttl ? '<i class="bi bi-stopwatch"></i> ' + esc(L('Messages disappear after ', 'Meldinger forsvinner etter ') + ttlName(C.ttl)) : esc(L('Private – just you two', 'Privat – bare dere to'))) + (muteOf(C.opt.me) > Date.now() ? ' <i class="bi bi-bell-slash" title="' + esc(L('Muted until ', 'Dempet til ') + hm(muteOf(C.opt.me))) + '"></i>' : '') + '</small></div>' +
       '<button type="button" class="hc-ib" data-hcmenu aria-label="' + L('Chat settings', 'Chatinnstillinger') + '"><i class="bi bi-three-dots"></i></button>' + (C.pop ? '<button type="button" class="hc-ib" data-hcclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</div>';
   }

@@ -156,7 +156,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 43;
+  var APPV = 44;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -280,7 +280,8 @@
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
     var html = '<header class="h-top"><div class="h-faces">' + face(info().olook, 'o') + face(mine().look, 'p') + '</div><div class="h-tt"><small>' + esc(fdate(today(), { weekday: 'long', day: 'numeric', month: 'long' })) + '</small><h1>' + esc(L('Home with ', 'Hjemme med ') + owner()) + '</h1></div><button type="button" class="h-icon" data-menu aria-label="' + L('Settings', 'Innstillinger') + '"><i class="bi bi-gear"></i></button></header>' +
-      (!mine().look && !preview ? '<button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button>' : '') +
+      /* once, on Today, and it can be put away – it sat on top of every tab (2026-11-10); Settings still has it */
+      (!mine().look && !preview && tab === 'today' && !rj('home.avNudgeOff', 0) ? '<div class="h-nudgew"><button type="button" class="h-nudge" data-avatar><i class="bi bi-person-bounding-box"></i> ' + L('Make your avatar – it shows up for ', 'Lag avataren din – den dukker opp hos ') + esc(owner()) + '</button><button type="button" class="h-nudgex" data-avnx aria-label="' + L('Not now', 'Ikke nå') + '"><i class="bi bi-x-lg"></i></button></div>' : '') +
       (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
       '<section class="h-body">' + ({ today: todayView, shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || todayView)() + '</section>';
     /* only touch the page when something on it changed: every refresh used to rebuild it, which made it jump */
@@ -418,7 +419,7 @@
     var f = mapRec(); if (!f) return; var rm = f.rooms.filter(function (x) { return x.id === id; })[0]; if (!rm) return;
     function rows() {
       var l = mapChores(f, id), all = mapChores(f, 'all').filter(function (x) { return !x.dn; }), tk = today(), pins = f.pins.filter(function (p) { return rm.r.some(function (q) { return p.x >= q[0] && p.x <= q[0] + q[2] && p.y >= q[1] && p.y <= q[1] + q[3]; }); });
-      var row = function (x) { var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + L(' days late', ' dager på etterskudd')) : fdate(x.p.day, { weekday: 'long' });
+      var row = function (x) { var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + (n === -1 ? L(' day late', ' dag på etterskudd') : L(' days late', ' dager på etterskudd'))) : fdate(x.p.day, { weekday: 'long' });
         return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-mchore="' + esc(x.r.id) + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when].filter(Boolean).join(' · ')) + '</small></span></button></li>'; };
       return (l.length ? '<ul class="h-list">' + l.map(row).join('') + '</ul>' : '<p class="h-small">' + L('No chores in this room.', 'Ikke noe husarbeid i dette rommet.') + '</p>') +
         (pins.length ? '<h3 class="h-h">' + L('Here', 'Her') + '</h3><ul class="h-list">' + pins.map(function (p) { var ic = MAPI[p.k] || MAPI.note; return '<li><button type="button" class="h-tick" data-mpin="' + esc(p.id) + '"><i class="bi bi-' + ic[0] + '" style="color:' + ic[1] + '"></i><span>' + esc(p.t) + '</span></button></li>'; }).join('') + '</ul>' : '') +
@@ -468,7 +469,7 @@
       var mine = l.filter(function (x) { return !x.dn && x.tu === 'them'; }).length;
       out += '<h2 class="h-h">' + L('Chores', 'Husarbeid') + '</h2><p class="h-sum">' + (l.length ? (mine ? L('Your turn: ', 'Din tur: ') + mine : L('Nothing on you right now', 'Ingenting på deg akkurat nå')) : L('No chores yet.', 'Ingen oppgaver ennå.')) + '</p>' +
         chips + (inRoom ? (function () { var ym = today().slice(0, 7), you = 0, them = 0; logList().forEach(function (x) { var ch = find('chore', x.cid); if (!ch || ch.f.room !== inRoom || String(x.at).slice(0, 7) !== ym) return; if (x.who === 'them') you++; else them++; }); return you + them ? '<p class="h-sum">' + esc(rname(inRoom) + L(' this month: you ', ' denne måneden: du ') + you + ' · ' + owner() + ' ' + them) + '</p>' : ''; })() : '') + '<ul class="h-list">' + l.map(function (x) {
-          var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + L(' days late', ' dager på etterskudd')) : fdate(x.p.day, { weekday: 'long' });
+          var n = Math.round((fromKey(x.p.day) - fromKey(tk)) / 864e5), when = n === 0 ? L('today', 'i dag') : n === 1 ? L('tomorrow', 'i morgen') : n < 0 ? (x.dn ? '' : (-n) + (n === -1 ? L(' day late', ' dag på etterskudd') : L(' days late', ' dager på etterskudd'))) : fdate(x.p.day, { weekday: 'long' });
           var ls = lastDone(x.r.id);
           return '<li class="' + (x.dn ? 'done' : '') + '"><button type="button" class="h-tick" data-chore="' + esc(x.r.id) + '" aria-pressed="' + !!x.dn + '"><i class="bi bi-' + (x.dn ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.r.f.name) + '<small>' + esc([inRoom ? '' : rname(x.r.f.room), x.tu === 'them' ? L('Your turn', 'Din tur') : owner() + L('’s turn', ' sin tur'), when, ls ? L('last ', 'sist ') + fdate(ls.at, { weekday: 'short', day: 'numeric', month: 'short' }) + L(' by ', ' av ') + (ls.who === 'them' ? L('you', 'deg') : owner()) : ''].filter(Boolean).join(' · ')) + '</small></span></button><button type="button" class="h-x" data-choreedit="' + esc(x.r.id) + '" aria-label="' + L('Edit', 'Endre') + '"><i class="bi bi-pencil"></i></button></li>';
         }).join('') + '</ul><button type="button" class="h-btn ghost wide" data-choreadd><i class="bi bi-plus-lg"></i> ' + L('Add a chore', 'Legg til en oppgave') + '</button>' + choreLog();
@@ -755,6 +756,7 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return; var d = b.dataset;
     if (d.lookk) { if (preview) return; Look.set(d.lookk, d.lookv); var gp = b.parentNode; gp.querySelectorAll('[data-lookk]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); return; }
+    if (d.avnx != null) { e.preventDefault(); wj('home.avNudgeOff', 1); draw(); return; }
     if (d.avatar != null) { e.preventDefault(); backToProfile = !!(b.closest('.h-sheet') && b.closest('.h-sheet').querySelector('[name=bd]')); var open = document.querySelector('.h-sheetbg'); if (open && !open.querySelector('.ave')) { open.remove(); } avatarEdit(); return; }
     if (d.lock != null) { wj('home.key', null); wj('home.pkey', null); location.reload(); return; }
     if (d.forget != null) { ['home.key', 'home.queue', 'home.tab', 'home.pkey', 'home.myf', 'home.profiled'].forEach(function (k) { wj(k, null); }); location.reload(); return; }

@@ -75,6 +75,10 @@ li.done .h-tick span { color: var(--muted); text-decoration: line-through; } li.
 .h-av.none { background: var(--card); color: var(--muted); font-size: 20px; }
 .h-av.big { width: 72px; height: 72px; }
 .h-top { align-items: center; } .h-tt { flex: 1; min-width: 0; } .h-tt h1 { overflow-wrap: anywhere; }
+.h-nudgew { position: relative; margin: 0 0 12px; }
+.h-nudgew .h-nudge { margin: 0; padding-right: 44px; }
+.h-nudgex { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 34px; height: 34px; border: 0; border-radius: 10px; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.h-nudgex:hover { background: rgba(127, 127, 127, .12); }
 .h-nudge { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0 0 12px; padding: 12px 14px; border: 1px dashed var(--acc); border-radius: 14px; background: rgba(20, 184, 166, .08); color: var(--ink); text-align: left; cursor: pointer; }
 .h-me { display: flex; align-items: center; gap: 14px; } .h-me b { display: block; margin-bottom: 6px; }
 .h-det { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; } .h-det summary { cursor: pointer; font-weight: 600; } .h-det input { margin-top: 8px; }
@@ -169,7 +173,7 @@ li.h-wait-ok .h-row { opacity: .75; }
 :root { --hc-bub-b: calc(env(safe-area-inset-bottom) + 86px); }
 .hc-bub { z-index: 9 !important; }
 /* chores by room */
-.h-rooms { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; scrollbar-width: none; }
+.h-rooms { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding-bottom: 2px; }   /* every room in sight – the last ran off the edge (2026-11-10) */
 .h-rooms::-webkit-scrollbar { display: none; }
 .h-room { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line, rgba(127,127,127,.25)); background: transparent; color: inherit; font: inherit; font-size: 13.5px; white-space: nowrap; cursor: pointer; }
 .h-room b { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #c98500; color: #fff; font-size: 11px; display: inline-grid; place-items: center; }

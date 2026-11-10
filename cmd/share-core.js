@@ -194,7 +194,7 @@
       switch (r.c) {
         case 'shop': return f.done ? item('cart-check', 'bought ' + nm, 'kjøpte ' + nm) : item('cart-plus', 'added ' + nm + ' to the list', 'la ' + nm + ' på listen');
         case 'cdone': var cn = chores[String(f.k || '').split('|')[1]] || ''; return cn ? item('check2-circle', 'did ' + cn, 'gjorde ' + cn) : null;
-        case 'chore': return item('arrow-repeat', 'changed the chore ' + nm, 'endret oppgaven ' + nm);
+        case 'chore': return null;   /* setting a chore up or changing it isn't doing it – that shows in What's changed (it counted as "changed the chore" right after adding, 2026-11-10) */
         case 'meal': return item('egg-fried', 'planned ' + nm + ' for dinner', 'planla ' + nm + ' til middag');
         case 'vote': return f.pick != null ? item('hand-index-thumb', 'picked ' + (f.opts || [])[f.pick] + ' for dinner', 'valgte ' + (f.opts || [])[f.pick] + ' til middag') : item('hand-index-thumb', 'suggested dinners: ' + (f.opts || []).join(', '), 'foreslo middager: ' + (f.opts || []).join(', '));
         case 'sx': return item('receipt', 'added a shared cost: ' + (f.note || '') + ' ' + Math.round(+f.total || 0) + ' kr', 'la til en felles utgift: ' + (f.note || '') + ' ' + Math.round(+f.total || 0) + ' kr');
