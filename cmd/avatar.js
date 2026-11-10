@@ -241,7 +241,8 @@
     if (L.earS === 'big') face = face.replace(/rx="3.5" ry="5"/g, 'rx="5" ry="6.6"');
     if (L.earS === 'elf') face = face.replace('<ellipse cx="82.5" cy="63" rx="3.5" ry="5"', '<path d="M84 59l-8-9 3 14 4 4z"').replace('<ellipse cx="119.5" cy="63" rx="3.5" ry="5"', '<path d="M118 59l8-9-3 14-4 4z"');
     var hairBack = { long: '<path d="M80 60c-2-16 8-24 21-24s23 8 21 24v26c-4 4-8 0-8-6V62H88v18c0 6-4 10-8 6z" fill="' + H + '"/>',
-      afro: '<circle cx="101" cy="52" r="28" fill="' + H + '"/><g fill="' + shade(H, .12) + '" opacity=".5"><circle cx="84" cy="36" r="2"/><circle cx="118" cy="38" r="2"/><circle cx="76" cy="56" r="1.8"/><circle cx="126" cy="58" r="1.8"/><circle cx="101" cy="27" r="2"/></g>',
+
+      afro: '<circle cx="101" cy="52" r="28" fill="' + H + '"/>',
       mullet: '<path d="M81 60v22c0 6 5 8 9 5V64zM121 60v22c0 6-5 8-9 5V64z" fill="' + H + '"/>',
       ponytail: '<path d="M115 47q15 3 14 24-1 11-7 15 2-13-3-21-3-6-7-9z" fill="' + H + '"/>',
       braids: '<g fill="' + H + '">' + [62, 68, 74, 80, 86].map(function (y, i) { return '<ellipse cx="80" cy="' + y + '" rx="' + (3.6 - i * .2) + '" ry="3.4"/><ellipse cx="122" cy="' + y + '" rx="' + (3.6 - i * .2) + '" ry="3.4"/>'; }).join('') + '</g><circle cx="80" cy="90" r="1.8" fill="#e0559a"/><circle cx="122" cy="90" r="1.8" fill="#e0559a"/>',
@@ -257,7 +258,7 @@
       long: '<path d="M81 63c-3-18 7-27 20-27 14 0 22 10 19 27-3-8-8-13-14-14-8 4-18 4-25 0z" fill="' + H + '"/>',
       bun: '<circle cx="101" cy="31" r="7" fill="' + H + '"/><path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-2-8-8-13-18-13s-16 5-19 13z" fill="' + H + '"/>',
       mohawk: '<path d="M82 60c-1-14 7-21 19-21s20 7 19 21c-3-9-10-13-19-13s-16 4-19 13z" fill="' + H + '" opacity=".35"/><path d="M95 47l-3-12 5 3 1-14 4 11 4-10 1 13 5-3-3 12q-7 2-14 0z" fill="' + H + '"/>',
-      afro: '<path d="M82 60c-1-12 7-20 19-20s20 8 19 20c-4-7-11-10-19-10s-15 3-19 10z" fill="' + H + '"/>',
+      afro: '<path d="M82 60c4-7 11-10 19-10s15 3 19 10H127.8A28 28 0 1 0 74.2 60z" fill="' + H + '"/><g fill="' + shade(H, .12) + '" opacity=".5"><circle cx="84" cy="36" r="2"/><circle cx="118" cy="38" r="2"/><circle cx="101" cy="27" r="2"/></g>',
       spiky: '<path d="M82 61c-2-9 0-15 4-19l-2-8 7 4 3-9 5 7 4-9 4 8 6-6 0 9c5 4 7 11 5 23-3-8-10-12-19-12s-16 4-19 12z" fill="' + H + '"/>',
       mullet: '<path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-1-6-4-10-8-12-6 3-16 3-23 0-3 3-5 7-6 12z" fill="' + H + '"/>',
       fade: '<path d="M82 62c-1-6 0-10 2-13 1 4 1 9-2 13zM120 62c1-6 0-10-2-13-1 4-1 9 2 13z" fill="' + H + '" opacity=".4"/><path d="M84 53c0-10 7-16 17-16s17 6 17 16c-5-4-11-5-17-5s-12 1-17 5z" fill="' + H + '"/><path d="M90 44l3-3M98 41l3-2M107 42l3-2" stroke="' + shade(H, .2) + '" stroke-width="1.1" stroke-linecap="round"/>',
