@@ -82,7 +82,14 @@
   /* the newer keys (2026-11): old looks keep working – 'extra' becomes a hat, a neck thing, a watch or earbuds */
   function norm(L) {
     L = Object.assign({}, L);
-    var x = L.extra; if (x && x !== 'none') { if (x === 'cap' && !L.hat) L.hat = 'cap'; if (x === 'lanyard' && !L.neck) L.neck = 'lanyard'; if (x === 'watch' && !L.watch) L.watch = 'yes'; if (x === 'earbuds' && !L.ears) L.ears = 'buds'; }
+    var x = L.extra; if (x && x !== 'none') { if (x === 'cap' && !L.hat) { L.hat = 'cap'; L.oldCap = 1; } if (x === 'lanyard' && !L.neck) L.neck = 'lanyard'; if (x === 'watch' && !L.watch) L.watch = 'yes'; if (x === 'earbuds' && !L.ears) L.ears = 'buds'; }
+    /* clashes – one choice wins, so nothing is drawn on top of something it can't go with */
+    if (L.top === 'dress' && L.bottom !== 'swim') L.bottom = 'trousers';                 /* the dress covers the bottoms */
+    if (L.hat === 'phones' && L.ears && L.ears !== 'none') L.ears = 'none';             /* the headphones cover the ears */
+    if (L.aid === 'crutches' || L.aid === 'chair') L.hold = 'none';                       /* both hands are busy */
+    if (L.chest && ['star', 'heart', 'flame', 'bolt', 'pumpkin', 'bones'].indexOf(L.pat) >= 0) L.pat = 'none';   /* text and a chest print would overlap */
+    if (L.top === 'suit' && L.neck === 'tie') L.neck = 'none';                           /* the suit has its own tie */
+    if (L.top === 'none' && (L.neck === 'tie' || L.neck === 'lanyard')) L.neck = 'none';
     return L;
   }
   var UID = 0;
@@ -149,7 +156,7 @@
     if (top === 'bunad') detail = '<path d="M82 92q4-4 9-5l3 41H80q-3-18 2-36zM120 92q-4-4-9-5l-3 41h14q3-18-2-36z" fill="#b3202c"/><path d="M84 112h9M109 112h9M84 120h9M109 120h9" stroke="#f2c94c" stroke-width="1.3"/><circle cx="101" cy="94" r="3.6" fill="#d8dce4" stroke="#9aa3b2" stroke-width=".8"/><circle cx="101" cy="94" r="1.3" fill="#9aa3b2"/><path d="M99 97.4l-1 3.6M103 97.4l1 3.6" stroke="#9aa3b2" stroke-width="1"/>';
     if (L.chest && !bare && ['tee', 'sweater', 'hoodie', 'tank', 'polo', 'pjs'].indexOf(top) >= 0) detail += '<text x="101" y="' + (top === 'hoodie' ? 107 : 110) + '" font-size="' + (String(L.chest).length > 2 ? 9 : 12) + '" font-weight="900" text-anchor="middle" fill="' + shade(T, T === '#f2f2f2' || T === '#f2c94c' ? -.6 : .55) + '" font-family="system-ui,sans-serif">' + esc(String(L.chest).slice(0, 3).toUpperCase()) + '</text>';
     var BG = L.badge || 'none';
-    if (BG !== 'none' && !bare) detail += '<g transform="translate(90 101)">' + ({ streak: '<circle r="5" fill="#2e3340" stroke="#f2a024" stroke-width="1.2"/><path d="M0-3.4c2 2 3.4 3.6 3.4 5.4a3.4 3.4 0 0 1-6.8 0c0-1.2.8-2 1.6-2.8 0 1.2.4 2 1.2 2 0-1.6-.4-3 .6-4.6z" fill="#f2a024"/>',
+    if (BG !== 'none' && !bare) detail += '<g transform="translate(' + (top === 'varsity' || top === 'kit' ? 112 : 90) + ' 101)">' + ({ streak: '<circle r="5" fill="#2e3340" stroke="#f2a024" stroke-width="1.2"/><path d="M0-3.4c2 2 3.4 3.6 3.4 5.4a3.4 3.4 0 0 1-6.8 0c0-1.2.8-2 1.6-2.8 0 1.2.4 2 1.2 2 0-1.6-.4-3 .6-4.6z" fill="#f2a024"/>',
       trophy: '<circle r="5" fill="#2e3340" stroke="#f2c94c" stroke-width="1.2"/><path d="M-2.6-2.6h5.2v2a2.6 2.6 0 0 1-5.2 0zM-.8 2h1.6v1.4h1.4v1h-4.4v-1h1.4z" fill="#f2c94c"/>',
       top3: '<circle r="5" fill="#f2c94c"/><text y="2.8" font-size="7.4" font-weight="900" text-anchor="middle" fill="#2a2100" font-family="system-ui,sans-serif">3</text>',
       paid: '<circle r="5" fill="#2fae6a"/><path d="M-2.4.2l1.6 1.6 3.2-3.4" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' }[BG] || '') + '</g>';
@@ -224,7 +231,7 @@
     if (m.k === 'hi5L') armsL = arm('M79 96c-8-6-14-18-18-34') + hand(61, 62);
     if (m.k === 'hugR') arms = arm('M123 96c10 2 18 6 22 14') + hand(145, 110);
     if (m.k === 'hugL') armsL = arm('M79 96c-10 2-18 6-22 14') + hand(57, 110);
-    if (m.k === 'selfieR') { arms = arm('M123 96c10-6 18-18 20-30') + hand(143, 66); prop = '<rect x="139" y="50" width="8" height="13" rx="1.6" fill="#1d2230" transform="rotate(-12 143 56)"/>'; }
+    if (m.k === 'selfieR') { arms = arm('M123 96c10-6 18-18 20-30') + hand(143, 66); prop = '<g transform="rotate(-12 143 56)"><rect x="138.5" y="49" width="9" height="14" rx="1.8" fill="#b8bdcc"/><rect x="139.8" y="50.4" width="6.4" height="10.4" rx=".8" fill="#3987e5"/></g>'; }
     if (m.k === 'danceR' || m.k === 'danceL') { arms = arm('M123 96c8-6 12-16 10-30') + hand(133, 66); armsL = arm('M79 96c-8-6-12-16-10-30') + hand(69, 66); }
     if (m.k === 'cookR') { arms = arm('M123 96c10 4 16 8 20 12') + hand(143, 112); prop = '<ellipse cx="152" cy="113" rx="10" ry="3.2" fill="#2b2f36"/><path d="M143 112h-1" stroke="#2b2f36" stroke-width="3" stroke-linecap="round"/><circle cx="150" cy="111" r="2.4" fill="#f2c94c"/><circle cx="155" cy="112" r="2" fill="#e5484d"/>'; }
     if (m.k === 'cookL') { armsL = arm('M79 96c-10 2-16 0-20-6') + hand(59, 90); propL = '<path d="M59 90l-6-22" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/><ellipse cx="52.4" cy="66" rx="2.4" ry="3.4" fill="#c9a227"/>'; front += propL; }
@@ -234,8 +241,10 @@
     if (AID === 'crutches') front += '<g stroke="#9aa3b2" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M' + (71 + DX).toFixed(1) + ' 112L' + (66 + DX).toFixed(1) + ' 168M' + (131 - DX).toFixed(1) + ' 112L' + (136 - DX).toFixed(1) + ' 168"/><path d="M' + (67 + DX).toFixed(1) + ' 112h8M' + (127 - DX).toFixed(1) + ' 112h8" stroke-width="3.2"/></g>';
     /* head */
     var hx = 101, sleep = m.k === 'night' || !!m.closed;
-    var FD = { round: 'M101 42c14.5 0 22.5 8.5 22.5 20s-9 20.5-22.5 20.5S78.5 73.5 78.5 62s8-20 22.5-20z', square: 'M101 40c13 0 20.5 5 20.5 15v13c0 10-6 16-12 16h-17c-6 0-12-6-12-16V55c0-10 7.5-15 20.5-15z',
-      long: 'M101 39c11 0 16.5 10 16.5 24s-7 25-16.5 25-16.5-11-16.5-25 5.5-24 16.5-24z', heart: 'M101 40c14 0 21 8 21 19 0 11-12 25-21 25s-21-14-21-25c0-11 7-19 21-19z' }[L.faceS] || 'M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z';
+    /* face shapes: round and long stretch the whole head (hair, hats, ears and glasses stretch with it, so they always fit);
+       square and heart change only the jaw – the forehead and temples stay the oval's, so every hairstyle and hat sits the same */
+    var FD = { square: 'M101 40c12.5 0 19 9 19 22v5c0 9-6.5 17-12 17h-14c-5.5 0-12-8-12-17v-5c0-13 6.5-22 19-22z', heart: 'M101 40c12.5 0 19 9 19 22 0 10-11.5 22-19 22s-19-12-19-22c0-13 6.5-22 19-22z' }[L.faceS] || 'M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z';
+    var HS = { round: [1.1, .98], long: [.92, 1.07], square: [1.04, 1], heart: [1.05, 1] }[L.faceS];
     var face = '<path d="' + FD + '" fill="' + S + '"/><ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/>';
     if (L.earS === 'small') face = face.replace(/rx="3.5" ry="5"/g, 'rx="2.6" ry="3.7"');
     if (L.earS === 'big') face = face.replace(/rx="3.5" ry="5"/g, 'rx="5" ry="6.6"');
@@ -275,6 +284,9 @@
       waves: '<path d="M82 61c-2-15 6-23 19-23s21 8 19 23c-1-4-4-7-7-8q-3 3-6 0q-3 3-6 0q-3 3-6 0q-3 3-6 0c-3 1-6 4-7 8z" fill="' + H + '"/><path d="M88 46q3-2 6 0t6 0 6 0 6 0" stroke="' + shade(H, .2) + '" stroke-width="1.1" fill="none"/>',
       dreads: '<path d="M82 60c-1-14 7-21 19-21s20 7 19 21c-3-9-10-13-19-13s-16 4-19 13z" fill="' + H + '"/><g fill="' + shade(H, .14) + '"><circle cx="90" cy="45" r="1.4"/><circle cx="98" cy="42" r="1.4"/><circle cx="106" cy="42" r="1.4"/><circle cx="113" cy="45" r="1.4"/></g>'
     }[L.hair] || '';
+    var COVER = !L.oldCap && ['cap', 'beanie', 'bucket', 'beret', 'bandana', 'cowboy', 'santa', 'witch', 'chef', 'wizard'].indexOf(L.hat) >= 0 && m.k !== 'gym' && m.k !== 'night' && m.k !== 'trip';
+    if (COVER && ['mohawk', 'spiky', 'quiff', 'topknot', 'bun', 'cornrows', 'waves', 'fade'].indexOf(L.hair) >= 0) hairTop = '<path d="M82 62c-2-17 6-25 19-25 13 0 21 9 18 25-1-6-4-10-8-12-6 3-16 3-23 0-3 3-5 7-6 12z" fill="' + H + '"/>';
+    if (COVER && L.hair === 'afro') { hairBack = '<ellipse cx="101" cy="62" rx="26" ry="20" fill="' + H + '"/>'; hairTop = '<path d="M82 60c-1-12 7-20 19-20s20 8 19 20c-4-7-11-10-19-10s-15 3-19 10z" fill="' + H + '"/>'; }
     var hair2 = '';
     if (L.hair2 && L.hair !== 'bald' && L.hair !== 'buzz') hair2 = '<path d="M104 38.6q9 1.6 13 12l-3.4 1.4q-3.4-7.6-10-10.4z" fill="' + L.hair2 + '"/>';
     if (L.hairAge === 'grey') hair2 += '<path d="M82 62c-1-6 0-10 2-12 1 4 1 8-2 12zM120 62c1-6 0-10-2-12-1 4-1 8 2 12z" fill="#c4c4c4"/>';
@@ -355,7 +367,7 @@
     else if (m.k === 'night') hat = '<path d="M80 56q6-28 24-26 17 2 17 24-19-12-41 2z" fill="#3b4d8a"/><circle cx="123" cy="50" r="4.5" fill="#e9edf5"/>';
     else if (m.k === 'trip') hat = '<rect x="87" y="58" width="13" height="8" rx="3" fill="#111"/><rect x="102" y="58" width="13" height="8" rx="3" fill="#111"/><path d="M100 61h2" stroke="#111" stroke-width="2"/>';
     else if (L.hat && L.hat !== 'none') { var HC = L.hatC || shade(T, -.1);
-      hat = { cap: '<path d="M81 56c0-12 9-19 20-19s20 7 20 19z" fill="' + HC + '"/><path d="M118 55h14q2 0 0 3h-14z" fill="' + shade(HC, -.25) + '"/>',
+      hat = { cap: '<path d="M81 56c0-12 9-19 20-19s20 7 20 19z" fill="' + HC + '"/><path d="M118 55h14q2 0 0 3h-14z" fill="' + (L.hatC ? shade(HC, -.25) : shade(T, -.25)) + '"/>',
         beanie: '<path d="M81 56c0-13 9-21 20-21s20 8 20 21z" fill="' + HC + '"/><path d="M80 53h42v6H80z" rx="2" fill="' + shade(HC, -.18) + '"/><path d="M86 53v6M92 53v6M98 53v6M104 53v6M110 53v6M116 53v6" stroke="' + shade(HC, -.32) + '" stroke-width="1"/><circle cx="101" cy="33" r="5" fill="' + shade(HC, .4) + '"/>',
         bucket: '<path d="M85 54c0-11 7-17 16-17s16 6 16 17z" fill="' + HC + '"/><path d="M76 55q25-7 50 0l-3 5q-22-6-44 0z" fill="' + shade(HC, -.15) + '"/>',
         phones: '<path d="M80 63c-3-20 8-30 21-30s24 10 21 30" stroke="#232323" stroke-width="3.6" fill="none" stroke-linecap="round"/><rect x="75.5" y="56" width="8" height="14" rx="3.5" fill="' + HC + '"/><rect x="118.5" y="56" width="8" height="14" rx="3.5" fill="' + HC + '"/>',
@@ -377,7 +389,8 @@
     var buds = L.ears === 'studs' ? '<circle cx="82.5" cy="68.5" r="1.5" fill="#f2c94c"/><circle cx="119.5" cy="68.5" r="1.5" fill="#f2c94c"/>' : L.ears === 'hoops' ? '<circle cx="82.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/><circle cx="119.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/>' : L.ears === 'buds' ? '<circle cx="82" cy="65" r="2.2" fill="#f2f2f2"/><circle cx="120" cy="65" r="2.2" fill="#f2f2f2"/>' : '';
     if (AID === 'hearing') buds += '<path d="M120.5 57.5q4.4 1 3.8 6.6l-1.8 3.4" stroke="#d9c7a8" stroke-width="2.8" fill="none" stroke-linecap="round"/>';
     var neck = MU ? '<path d="M93 80h16l3 10H90z" fill="' + S2 + '"/>' : '<rect x="95" y="80" width="12" height="10" rx="3" fill="' + S2 + '"/>';
-    var head = '<g class="bob">' + hairBack + neck + face + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + hairTop + hair2 + (m.k === 'trip' ? '' : glasses) + hat + buds + '</g>';
+    if (L.faceS === 'heart' && beard) { var bcid = 'avb' + (++UID); beard = '<defs><clipPath id="' + bcid + '"><path d="' + FD + '"/><path d="M93 78h16l-2 14h-12z"/></clipPath></defs><g clip-path="url(#' + bcid + ')">' + beard + '</g>'; }
+    var head = '<g class="bob">' + (HS ? '<g transform="translate(101 62) scale(' + HS[0] + ' ' + HS[1] + ') translate(-101 -62)">' : '') + hairBack + neck + face + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + hairTop + hair2 + (m.k === 'trip' ? '' : glasses) + hat + buds + (HS ? '</g>' : '') + '</g>';
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
     var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + detail + extra + '</g>';
     if (m.plain) { sky = ''; lamp = ''; ground = '<ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>'; }
@@ -407,8 +420,8 @@
     var PC = L.petC || (L.pet === 'dog' ? '#c9935a' : '#f2a65a'), pet = L.pet === 'cat' ? '<g class="av-pet"><path class="av-tail" d="M52 150q8-8 6-20" stroke="' + PC + '" stroke-width="3.4" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="151" rx="11" ry="7.5" fill="' + PC + '"/><circle cx="31" cy="141" r="7" fill="' + PC + '"/><path d="M25.5 137l1-7 5 4zM36.5 137l-1-7-5 4z" fill="' + PC + '"/><circle cx="28.5" cy="141" r="1" fill="#1a1a1a"/><circle cx="33.5" cy="141" r="1" fill="#1a1a1a"/><path d="M30 144q1 1 2 0" stroke="#1a1a1a" stroke-width=".8" fill="none"/><rect x="34" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/><rect x="46" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/></g>'
       : L.pet === 'bunny' ? '<g class="av-pet"><ellipse cx="42" cy="152" rx="10" ry="7" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="52" cy="150" r="2.6" fill="#ffffff"/><ellipse cx="28" cy="132" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(8 34.5 131.5)"/><ellipse cx="28" cy="132" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(8 34.5 131.5)"/><circle cx="31" cy="143" r="6.4" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="29" cy="142" r="1" fill="#1a1a1a"/><circle cx="33.4" cy="142" r="1" fill="#1a1a1a"/><circle cx="31.2" cy="145" r=".9" fill="#f3a9b8"/></g>'
       : L.pet === 'dog' ? '<g class="av-pet"><path class="av-tail" d="M55 145q6-6 5-12" stroke="' + PC + '" stroke-width="3.2" fill="none" stroke-linecap="round"/><ellipse cx="44" cy="149" rx="12" ry="8" fill="' + PC + '"/><circle cx="31" cy="139" r="8" fill="' + PC + '"/><ellipse cx="24.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="37.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="31" cy="143.5" rx="4" ry="3" fill="' + shade(PC, .35) + '"/><circle cx="31" cy="142" r="1.4" fill="#1a1a1a"/><circle cx="28" cy="137.5" r="1" fill="#1a1a1a"/><circle cx="34" cy="137.5" r="1" fill="#1a1a1a"/><rect x="35" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/><rect x="49" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/></g>' : '';
-    return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + '" style="--rx:' + rx + 'px;--lx:' + lx + 'px"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + pet + '<g class="av-all"><g transform="' + HT + '">' + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)"><g class="av-behind">' + behind + '</g></g>' + legs + '<g transform="translate(0 ' + WS + ')">' + body +
-      '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)"><g class="av-armL">' + armsL + '</g></g><g transform="translate(' + (-DX).toFixed(1) + ' 0)"><g class="av-armR">' + arms + '</g></g>' + head + '</g><g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')"><g class="av-prop">' + prop + '</g></g><g transform="translate(0 -9)"><g class="av-front">' + front + '</g></g></g>' + chair + '</g></g></svg>';
+    return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + '" style="--rx:' + rx + 'px;--lx:' + lx + 'px"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + (pet && AID === 'chair' ? '<g transform="translate(-12 0)">' + pet + '</g>' : pet) + '<g class="av-all">' + (HT ? '<g transform="' + HT + '">' : '') + '<g transform="translate(' + (-DX).toFixed(1) + ' -3)"><g class="av-behind">' + behind + '</g></g>' + legs + (WS ? '<g transform="translate(0 ' + WS + ')">' : '') + body +
+      '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)"><g class="av-armL">' + armsL + '</g></g><g transform="translate(' + (-DX).toFixed(1) + ' 0)"><g class="av-armR">' + arms + '</g></g>' + head + '</g><g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')"><g class="av-prop">' + prop + '</g></g><g transform="translate(0 -9)"><g class="av-front">' + front + '</g></g>' + (WS ? '</g>' : '') + chair + (HT ? '</g>' : '') + '</g></svg>';
   }
   
   /* ---------- what's going on: the moment and the line it says ---------- */
@@ -625,7 +638,7 @@
       : heart(cx, 104, .55, 'cp-beat');
     var sofa = c.sofa ? '<rect x="' + (cx - 82) + '" y="112" width="164" height="40" rx="12" fill="#3b4d8a"/><rect x="' + (cx - 90) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx + 72) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx - 72) + '" y="140" width="144" height="18" rx="6" fill="#4a5ea0"/>' : '';
     var pet = '';
-    if (opt.pet && opt.pet !== 'none') { var pf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: opt.pet })), pm = pf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (pm) pet = '<g transform="translate(' + (cx - 38) + ' 4)">' + pm[0] + '</g>'; }
+    if (opt.pet && opt.pet !== 'none') { var pf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: opt.pet })), pm = pf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (pm) pet = '<g transform="translate(-12 4)">' + pm[0] + '</g>'; }
     var css = '<style>.' + uid + ' .cp-up{animation:cpUp 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-d1{animation-delay:.5s}.' + uid + ' .cp-d2{animation-delay:1.1s}' +
       '.' + uid + ' .cp-beat{animation:cpBeat 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-pop{animation:cpPop 1.4s ease-out infinite}' +
       '@keyframes cpUp{0%{transform:translateY(6px);opacity:0}30%{opacity:1}100%{transform:translateY(-10px);opacity:0}}@keyframes cpBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(.96)}45%{transform:scale(1.1)}}' +
