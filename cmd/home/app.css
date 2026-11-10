@@ -184,3 +184,4 @@ li.h-wait-ok .h-row { opacity: .75; }
 .h-vopts { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; width: 100%; }
 .h-btn.sm { padding: 7px 12px; font-size: 14px; width: auto; }
 .h-act .bi { color: var(--acc, #14b8a6); margin-right: 4px; }
+.h-more { display: block; width: 100%; margin: 6px 0 0; border: 0; background: none; color: var(--acc); font-weight: 600; min-height: 44px; cursor: pointer; }

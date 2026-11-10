@@ -156,7 +156,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 45;
+  var APPV = 46;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -446,14 +446,17 @@
     var p = e.target.closest('[data-hmpin]'); if (p) mapPinSheet(p.dataset.hmpin);
   });
   /* who did what in the shared home – the same list the owner sees (ShareCore.activity) */
-  var actWho = '';
+  var actWho = '', actAll = false;
   function whoDid() {
     if (!SC.activity) return '';
-    var nm = { p: L('You', 'Du'), o: owner() }, l = SC.activity(recs, nm, L, { who: actWho, days: 14, max: 25 });
-    var all = SC.activity(recs, nm, L, { days: 14, max: 200 }), mine = all.filter(function (x) { return x.by === 'p'; }).length;
+    /* chores only (it's under the chores – shopping, pantry and dinners are in What's changed on Today), and short:
+       the latest five, "Show all" for the rest (2026-11-10: 48 pantry lines and an unfair count) */
+    var nm = { p: L('You', 'Du'), o: owner() }, l = SC.activity(recs, nm, L, { who: actWho, days: 14, max: 60, only: ['cdone'] });
+    var all = SC.activity(recs, nm, L, { days: 14, max: 400, only: ['cdone'] }), mine = all.filter(function (x) { return x.by === 'p'; }).length;
+    var more = l.length > 5 && !actAll ? l.length - 5 : 0; if (more) l = l.slice(0, 5);
     return '<h2 class="h-h">' + L('Who did what', 'Hvem gjorde hva') + '</h2><p class="h-sum">' + (all.length ? esc(L('Last 2 weeks: you ', 'Siste 2 uker: du ') + mine + ' · ' + owner() + ' ' + (all.length - mine)) : L('Nothing yet.', 'Ingenting ennå.')) + '</p>' +
       (all.length ? '<div class="h-rooms">' + [['', L('Both', 'Begge')], ['p', L('You', 'Du')], ['o', owner()]].map(function (x) { return '<button type="button" class="h-room' + (actWho === x[0] ? ' on' : '') + '" data-actwho="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' +
-      '<ul class="h-list h-act">' + l.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.icon + '"></i> ' + esc(x.text) + '<small>' + esc(new Date(x.t).toLocaleString(L('en-GB', 'nb-NO'), { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul>' : '');
+      '<ul class="h-list h-act">' + l.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.icon + '"></i> ' + esc(x.text) + '<small>' + esc(new Date(x.t).toLocaleString(L('en-GB', 'nb-NO'), { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul>' + (more ? '<button type="button" class="h-more" data-actall>' + esc(L('Show all ', 'Vis alle ') + (more + 5)) + '</button>' : '') : '');
   }
   /* rooms (the owner sets them up; you both pick them on chores) */
   function roomList() { return list('room').sort(function (a, b) { return (+a.f.order || 0) - (+b.f.order || 0); }); }
@@ -803,7 +806,8 @@
     if (d.shopdel && (r = find('shop', d.shopdel))) { var keep = r.f; put('shop', r.id, null, true); toast('<i class="bi bi-trash3"></i> ' + esc(keep.text), function () { put('shop', r.id, keep); }); return; }
     if (d.shopclear != null) { var gone = list('shop').filter(function (x) { return x.f.done; }); gone.forEach(function (x) { put('shop', x.id, null, true); }); toast('<i class="bi bi-trash3"></i> ' + gone.length + L(' removed', ' fjernet'), function () { gone.forEach(function (x) { put('shop', x.id, x.f); }); }); return; }
     if (d.chore && find('chore', d.chore)) { toggleChore(d.chore); return; }
-    if (d.actwho != null) { actWho = d.actwho; draw(); return; }
+    if (d.actwho != null) { actWho = d.actwho; actAll = false; draw(); return; }
+    if (d.actall != null) { actAll = true; draw(); return; }
     if (d.votenew != null) { voteSheet(); return; }
     if (d.votedel) { put('vote', d.votedel, null, true); return; }
     if (d.votepick) { var vq = d.votepick.split('|'), vr = find('vote', vq[0]); if (vr) { var vf = Object.assign({}, vr.f, { pick: +vq[1] }); put('vote', vr.id, vf); put('meal', vf.date, { date: vf.date, text: vf.opts[+vq[1]] }); toast('<i class="bi bi-egg-fried"></i> ' + esc(vf.opts[+vq[1]]) + L(' it is', ' blir det')); } return; }

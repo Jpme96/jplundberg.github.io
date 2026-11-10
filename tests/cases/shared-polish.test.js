@@ -29,8 +29,8 @@ const { shared, sl, until } = require('../lib/browser'); const { check, done } =
   check(await q.evaluate(() => !document.querySelector('.h-nudge[data-avatar]')), 'the other tabs don\'t repeat it');
   const txt = await q.evaluate(() => document.querySelector('.h-body').innerText);
   check(/1 day late/.test(txt) && !/1 days late/.test(txt), 'a chore one day late says "1 day late": ' + JSON.stringify((txt.match(/\d+ days? late/g) || [])));
-  const who = await q.evaluate(() => { const m = document.querySelector('.h-body').innerText.match(/Last 2 weeks:[^\n]*/); return m ? m[0] : ''; });
-  check(/you 0/.test(who) && !/Lundberg [2-9]/.test(who), '"Who did what" doesn\'t count setting chores up: ' + JSON.stringify(who));
+  const who = await q.evaluate(() => { const t = document.querySelector('.h-body').innerText, m = t.match(/Last 2 weeks:[^\n]*/); return m ? m[0] : /Who did what\s*Nothing yet/i.test(t) ? 'Nothing yet.' : ''; });
+  check((/you 0/.test(who) && !/Lundberg [2-9]/.test(who)) || who === 'Nothing yet.', '"Who did what" doesn\'t count setting chores up: ' + JSON.stringify(who));
   check(!/changed the chore/.test(txt), 'no "changed the chore" for chores that were only set up');
   const off = await q.evaluate(() => [...document.querySelectorAll('.h-rooms .h-room')].filter(x => x.offsetParent && x.getBoundingClientRect().right > innerWidth + 1).map(x => x.textContent.trim()));
   check(!off.length && await q.evaluate(() => document.querySelectorAll('.h-rooms .h-room').length) >= 6, 'every room chip is on screen (they wrap) ' + JSON.stringify(off));

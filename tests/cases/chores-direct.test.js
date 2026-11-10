@@ -48,8 +48,8 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   await p.evaluate(() => { const d = Vault.get(); d.share.what = Object.assign({}, d.share.what || {}, { notes: true }); Vault.save(d); });
   check(await p.evaluate(() => ShareSpace.direct('notes', true)) === true, 'notes switch turns on');
   await p.evaluate(() => { const t = Features.tools(); t.homenotes = (t.homenotes || []).concat([{ id: 'nWifi', title: 'Wi-Fi', text: 'Name: TestNet' }]); Features.saveTools(t); });
-  await q.evaluate(() => { const b = document.querySelector('[data-tab="notes"]'); if (b) b.click(); });
-  check(await until(q, () => /TestNet/.test(document.body.innerText), 15000) !== null, 'a note from cmd reaches Iago');
+  await q.evaluate(() => { const x = document.querySelector('.hc-bub'); if (x) x.click(); });   /* notes are pinned in the chat */
+  check(await until(q, () => { const b = document.querySelector('[data-hcpins]'); if (b && !/TestNet/.test(document.body.innerText)) b.click(); return /TestNet/.test(document.body.innerText); }, 15000) !== null, 'a note from cmd reaches Iago (pinned in the chat)');
   await p.evaluate(() => ShareSpace.direct('notes', false));
   await p.evaluate(() => ShareSpace.direct('chores', false)); await sl(500);
   check(await p.evaluate(() => (Features.tools().chores || []).map(c => c.name).sort().join(',') + '|' + Features.tools().rooms.map(r => r.name).join(',')) === want + '|Hallway,Kitchen,Bathroom', 'turned off, chores and rooms are kept');

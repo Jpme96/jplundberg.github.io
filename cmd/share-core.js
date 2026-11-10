@@ -180,13 +180,14 @@
     return o;
   }
   /* Who did what – one list for both apps, made from the shared records themselves (each keeps who changed it last and when).
-     recs: { rid: { t, by: 'o'|'p', c, f, del } } · names: { o, p } · L(en, no) · opts: { who: 'o'|'p'|'', days, max }
+     recs: { rid: { t, by: 'o'|'p', c, f, del } } · names: { o, p } · L(en, no) · opts: { who: 'o'|'p'|'', days, max, only: [kinds] }
      → [{ t, by, icon, text }] newest first. A chore ticked off shows as done; a bought item as bought. */
   function activity(recs, names, L, opts) {
     opts = opts || {}; var since = Date.now() - (opts.days || 14) * 864e5, out = [], chores = {};
     Object.keys(recs || {}).forEach(function (rid) { var r = recs[rid]; if (r && r.c === 'chore' && r.f) chores[r.id || (r.f && r.f.id)] = r.f.name; });
     Object.keys(recs || {}).forEach(function (rid) {
       var r = recs[rid]; if (!r || !r.c || !r.t || r.t < since || (opts.who && r.by !== opts.who)) return;
+      if (opts.only && opts.only.indexOf(r.c) < 0) return;   /* e.g. only: ['cdone'] = chores done (Who did what sits under the chores) */
       if (r.c === 'info' || r.c === 'clog' || r.c === 'led' || r.c === 'pme' || r.c === 'hmap' || r.c === 'room' || r.c === 'keys') return;
       var f = r.f || {}, nm = String(f.text || f.title || f.name || f.note || '').slice(0, 80), who = names[r.by] || '';
       var item = function (icon, en, no) { out.push({ t: r.t, by: r.by, icon: icon, text: who + ' ' + L(en, no) }); };

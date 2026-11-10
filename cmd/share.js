@@ -501,7 +501,7 @@
       var have = {}, push = {}, now = Date.now(), jobs = [];
       loc.forEach(function (x) {
         have[x.rid] = 1; var r = cache[x.rid];
-        if (r && !r.del && r.c === x.c && SC.hash(r.f) === SC.hash(x.f)) return;
+        if (r && !r.del && r.c === x.c && (SC.hash(r.f) === SC.hash(x.f) || (x.c === 'cdone' && r.f && r.f.k === x.f.k && r.f.who === x.f.who))) return;   /* a tick from their phone carries its time: keep theirs, so it stays theirs */
         jobs.push(SC.encrypt(k, { c: x.c, id: x.id, f: x.f }).then(function (e) { push[x.rid] = { t: now, iv: e.iv, ct: e.ct }; }));
       });
       Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (!have[rid] && !r.del && !r.bad && r.c && !PARTNER_ONLY[r.c] && !unsure[r.c] && !(healAt && r.by === 'p')) push[rid] = { t: now, del: 1 }; });
@@ -656,7 +656,7 @@
   }
   /* who did what in the shared home (the last two weeks), for both of you – ShareCore.activity, the same list Iago's app shows */
   var actWho = '';
-  function actList(nm, who) { return SC.activity ? SC.activity(cache, { o: 'You', p: nm }, function (en) { return en; }, { who: who, days: 14, max: 40 }) : []; }
+  function actList(nm, who) { return SC.activity ? SC.activity(cache, { o: 'You', p: nm }, function (en) { return en; }, { who: who, days: 14, max: 40, only: ['cdone'] }) : []; }   /* chores done, like Iago's app */
   function actSum(nm) { var l = actList(nm, ''), mine = l.filter(function (x) { return x.by === 'o'; }).length; return l.length ? 'Last 2 weeks: you ' + mine + ' · ' + nm + ' ' + (l.length - mine) : 'Nothing yet'; }
   function actItems(nm) {
     var l = actList(nm, actWho);
