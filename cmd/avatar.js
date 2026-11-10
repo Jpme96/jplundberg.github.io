@@ -159,7 +159,7 @@
     if (top === 'pjs') detail = '<path d="M92 87l9 8 9-8-2 6-7 3-7-3z" fill="' + shade(T, .3) + '"/><path d="M101 95v33" stroke="' + shade(T, .3) + '" stroke-width="1.4"/>' + [101, 110, 119].map(function (y) { return '<circle cx="101" cy="' + y + '" r="1.2" fill="' + shade(T, .4) + '"/>'; }).join('');
     if (top === 'robe') detail = '<path d="M91 86l14 30M111 86l-14 26" stroke="' + shade(T, -.2) + '" stroke-width="3" fill="none"/><path d="M78 113q23 5 46 0" stroke="' + shade(T, -.25) + '" stroke-width="3.4" fill="none"/><path d="M106 115l3 10M108 115l6 8" stroke="' + shade(T, -.25) + '" stroke-width="2.2" stroke-linecap="round"/>';
     if (top === 'bunad') detail = '<path d="M82 92q4-4 9-5l3 41H80q-3-18 2-36zM120 92q-4-4-9-5l-3 41h14q3-18-2-36z" fill="#b3202c"/><path d="M84 112h9M109 112h9M84 120h9M109 120h9" stroke="#f2c94c" stroke-width="1.3"/><circle cx="101" cy="94" r="3.6" fill="#d8dce4" stroke="#9aa3b2" stroke-width=".8"/><circle cx="101" cy="94" r="1.3" fill="#9aa3b2"/><path d="M99 97.4l-1 3.6M103 97.4l1 3.6" stroke="#9aa3b2" stroke-width="1"/>';
-    if (L.chest && !bare && ['tee', 'sweater', 'hoodie', 'tank', 'polo', 'pjs'].indexOf(top) >= 0) detail += '<text x="101" y="' + (top === 'hoodie' ? 107 : 110) + '" font-size="' + (String(L.chest).length > 2 ? 9 : 12) + '" font-weight="900" text-anchor="middle" fill="' + shade(T, T === '#f2f2f2' || T === '#f2c94c' ? -.6 : .55) + '" font-family="system-ui,sans-serif">' + esc(String(L.chest).slice(0, 3).toUpperCase()) + '</text>';
+    if (L.chest && !bare && ['tee', 'sweater', 'hoodie', 'tank', 'polo', 'pjs'].indexOf(top) >= 0) detail += '<text x="101" y="' + (top === 'hoodie' ? 107 : 110) + '" font-size="' + ({ 4: 7.6, 3: 9 }[String(L.chest).length] || 12) + '" font-weight="900" text-anchor="middle" fill="' + shade(T, T === '#f2f2f2' || T === '#f2c94c' ? -.6 : .55) + '" font-family="system-ui,sans-serif">' + esc(String(L.chest).slice(0, 4).toUpperCase()) + '</text>';
     var BG = L.badge || 'none';
     if (BG !== 'none' && !bare) detail += '<g transform="translate(' + (top === 'varsity' || top === 'kit' ? 112 : 90) + ' 101)">' + ({ streak: '<circle r="5" fill="#2e3340" stroke="#f2a024" stroke-width="1.2"/><path d="M0-3.4c2 2 3.4 3.6 3.4 5.4a3.4 3.4 0 0 1-6.8 0c0-1.2.8-2 1.6-2.8 0 1.2.4 2 1.2 2 0-1.6-.4-3 .6-4.6z" fill="#f2a024"/>',
       trophy: '<circle r="5" fill="#2e3340" stroke="#f2c94c" stroke-width="1.2"/><path d="M-2.6-2.6h5.2v2a2.6 2.6 0 0 1-5.2 0zM-.8 2h1.6v1.4h1.4v1h-4.4v-1h1.4z" fill="#f2c94c"/>',
@@ -238,8 +238,8 @@
     if (m.k === 'hugL') armsL = arm('M79 96c-10 2-18 6-22 14') + hand(57, 110);
     if (m.k === 'selfieR') { arms = arm('M123 96c10-6 18-18 20-30') + hand(143, 66); prop = '<g transform="rotate(-12 143 56)"><rect x="138.5" y="49" width="9" height="14" rx="1.8" fill="#b8bdcc"/><rect x="139.8" y="50.4" width="6.4" height="10.4" rx=".8" fill="#3987e5"/></g>'; }
     if (m.k === 'danceR' || m.k === 'danceL') { arms = arm('M123 96c8-6 12-16 10-30') + hand(133, 66); armsL = arm('M79 96c-8-6-12-16-10-30') + hand(69, 66); }
-    if (m.k === 'cookR') { arms = arm('M123 96c10 4 16 8 20 12') + hand(143, 112); prop = '<ellipse cx="152" cy="113" rx="10" ry="3.2" fill="#2b2f36"/><path d="M143 112h-1" stroke="#2b2f36" stroke-width="3" stroke-linecap="round"/><circle cx="150" cy="111" r="2.4" fill="#f2c94c"/><circle cx="155" cy="112" r="2" fill="#e5484d"/>'; }
-    if (m.k === 'cookL') { armsL = arm('M79 96c-10 2-16 0-20-6') + hand(59, 90); propL = '<path d="M59 90l-6-22" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/><ellipse cx="52.4" cy="66" rx="2.4" ry="3.4" fill="#c9a227"/>'; front += propL; }
+    if (m.k === 'cookR') { arms = arm('M123 96c8 6 12 12 14 20') + hand(137, 118); prop = '<path d="M137 120h8" stroke="#2b2f36" stroke-width="3" stroke-linecap="round"/><path d="M144 118h24q-1 7-12 7t-12-7z" fill="#2b2f36"/><circle cx="152" cy="117.4" r="2.4" fill="#f2c94c"/><circle cx="158" cy="118" r="2" fill="#e5484d"/><circle cx="163" cy="117.6" r="1.6" fill="#2fae6a"/><path class="steam" d="M150 112c-1-3 1-4 0-7M157 112c-1-3 1-4 0-7" stroke="#f4efe6" stroke-width="1.4" fill="none" opacity=".6"/>'; }
+    if (m.k === 'cookL') { armsL = arm('M79 96c-8 6-12 12-14 18') + hand(65, 114) + '<path d="M65 114l-6 9" stroke="#c9a227" stroke-width="2" stroke-linecap="round"/><ellipse cx="58" cy="124.5" rx="2.4" ry="1.6" fill="#c9a227"/>'; }
     if (m.k === 'night') { arms = arm('M123 96c8 10 9 22 6 30') + hand(129, 128); prop = '<text class="z" x="122" y="40" font-size="14" font-weight="800" fill="#9a9ca5">z</text><text class="z" x="132" y="28" font-size="10" font-weight="800" fill="#9a9ca5">z</text>'; }
     var AID = L.aid || 'none';
     if (AID === 'arm') armsL = armsL.replace(new RegExp('stroke="' + AC.replace('#', '\\#') + '"', 'g'), 'stroke="#9aa3b2"').replace(new RegExp('stroke="' + shade(AC, -.3).replace('#', '\\#') + '"', 'g'), 'stroke="#6b7385"') + '<circle cx="77" cy="112" r="2.4" fill="#6b7385"/>';
@@ -394,7 +394,8 @@
     if (W.rain && m.k !== 'rain' && m.k !== 'night') behind += '<g class="av-umb"><path d="M44 36q27-28 54 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0z" fill="#3987e5"/><line x1="71" y1="36" x2="71" y2="124" stroke="#2b2f36" stroke-width="2"/><path d="M71 124q0 6-5 6" stroke="#2b2f36" stroke-width="2" fill="none"/></g>';
     var buds = L.ears === 'studs' ? '<circle cx="82.5" cy="68.5" r="1.5" fill="#f2c94c"/><circle cx="119.5" cy="68.5" r="1.5" fill="#f2c94c"/>' : L.ears === 'hoops' ? '<circle cx="82.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/><circle cx="119.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/>' : L.ears === 'buds' ? '<circle cx="82" cy="65" r="2.2" fill="#f2f2f2"/><circle cx="120" cy="65" r="2.2" fill="#f2f2f2"/>' : '';
     if (AID === 'hearing') buds += '<path d="M120.5 57.5q4.4 1 3.8 6.6l-1.8 3.4" stroke="#d9c7a8" stroke-width="2.8" fill="none" stroke-linecap="round"/>';
-    var neck = MU ? '<path d="M93 80h16l3 10H90z" fill="' + S2 + '"/>' : '<rect x="95" y="80" width="12" height="10" rx="3" fill="' + S2 + '"/>';
+    /* the neck in skin colour, a little wider at the bottom, with a soft shadow under the chin (a dark block looked stuck on) */
+    var neck = (MU ? '<path d="M93 77h16l3 13H90z" fill="' + S + '"/>' : '<path d="M95.4 77h11.2l1 13h-13.2z" fill="' + S + '"/>') + '<path d="M95.2 83q5.8 3.4 11.6 0v2.6q-5.8 2.8-11.6 0z" fill="' + S2 + '" opacity=".7"/>';
     if (L.faceS === 'heart' && beard) { var bcid = 'avb' + (++UID); beard = '<defs><clipPath id="' + bcid + '"><path d="' + FD + '"/><path d="M93 78h16l-2 14h-12z"/></clipPath></defs><g clip-path="url(#' + bcid + ')">' + beard + '</g>'; }
     var head = '<g class="bob">' + (HS ? '<g transform="translate(101 62) scale(' + HS[0] + ' ' + HS[1] + ') translate(-101 -62)">' : '') + hairBack + neck + face + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + hairTop + hair2 + (m.k === 'trip' ? '' : glasses) + hat + buds + (HS ? '</g>' : '') + '</g>';
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
@@ -637,7 +638,7 @@
     var k = s[0], title = L(s[1], s[2]), body, now = '';
     if (k === 'addons') { body = '<div class="avm-tiles">' + mkTile(cur, 'watch', 'yes', L('Watch', 'Klokke')) + mkTile(cur, 'bag', 'yes', L('Backpack', 'Ryggsekk')) + '</div>'; }
     else if (k === 'auto') return '<div class="avm-sec"><label class="avm-sw"><span>' + esc(title) + '<small style="display:block;opacity:.7;font-size:12.5px">' + esc(L('Christmas jumper in December, a bunad on 17 May (Norway’s national day), a witch hat at Halloween, shorts in July', 'Julegenser i desember, bunad på 17. mai, heksehatt til Halloween, shorts i juli')) + '</small></span><input type="checkbox" class="switch" data-avm-auto' + (cur.auto === 'on' ? ' checked' : '') + '></label></div>';
-    else if (k === 'chest') return '<div class="avm-sec"><b>' + esc(title) + '<em>' + esc(L('Up to 3 letters', 'Opptil 3 tegn')) + '</em></b><input class="avm-txt" data-avm-chest maxlength="3" autocomplete="off" aria-label="' + esc(title) + '" placeholder="' + esc(L('e.g. 7', 'f.eks. 7')) + '" value="' + esc(cur.chest || '') + '"></div>';
+    else if (k === 'chest') return '<div class="avm-sec"><b>' + esc(title) + '<em>' + esc(L('Up to 4 letters', 'Opptil 4 tegn')) + '</em></b><input class="avm-txt" data-avm-chest maxlength="4" autocomplete="off" aria-label="' + esc(title) + '" placeholder="' + esc(L('e.g. JP or 7', 'f.eks. JP eller 7')) + '" value="' + esc(cur.chest || '') + '"></div>';
     else if (MKO[k]) { var o = MKO[k].filter(function (x) { return x[0] === (cur[k] || MKO[k][0][0]); })[0]; now = o ? L(o[1], o[2]) : '';
       body = '<div class="avm-tiles">' + MKO[k].map(function (x) { return mkTile(cur, k, x[0], L(x[1], x[2])); }).join('') + '</div>'; }
     else { var c = MKC[k], own = !!cur[k] && c.indexOf(cur[k]) < 0; now = own ? L('Your own colour', 'Din egen farge') : '';
@@ -701,7 +702,7 @@
     var t = e.target; if (!t.closest || !t.closest('#avSet .avm')) return;
     var n = mkMigrate(look());
     if (t.matches('input[type="color"][data-avm-k]')) n[t.dataset.avmK] = t.value;
-    else if (t.matches('[data-avm-chest]')) n.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 3);
+    else if (t.matches('[data-avm-chest]')) n.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 4);
     else if (t.matches('[data-avm-auto]')) n.auto = t.checked ? 'on' : 'off'; else return;
     saveWhole(n); var f = t.closest('.avm').querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(n);
   });
@@ -744,7 +745,7 @@
     box.addEventListener('input', function (e) {
       var t = e.target;
       if (t.matches('input[type="color"][data-avm-k]')) cur[t.dataset.avmK] = t.value;
-      else if (t.matches('[data-avm-chest]')) cur.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 3);
+      else if (t.matches('[data-avm-chest]')) cur.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 4);
       else if (t.matches('[data-avm-auto]')) cur.auto = t.checked ? 'on' : 'off'; else return;
       var f = box.querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(cur);
     });
@@ -754,7 +755,7 @@
      a, b = the two looks (a stands on the left). Two figures side by side in one picture; tap the picture to
      try the next one. kind: hold | hi5 | hug | kiss */
   var COUPLE = { hold: { gap: 80, a: 'holdR', b: 'holdL', bg: '#1d2533' }, hi5: { gap: 70, a: 'hi5R', b: 'hi5L', bg: '#1f1a10' }, hug: { gap: 58, a: 'hugR', b: 'hugL', bg: '#2a1622' }, kiss: { gap: 70, a: 'plain', b: 'plain', bg: '#2a1622', tilt: 6, closed: true },
-    selfie: { gap: 62, a: 'plain', b: 'selfieR', bg: '#1d2533', tilt: -4 }, dance: { gap: 78, a: 'danceR', b: 'danceL', bg: '#22182a' }, cook: { gap: 74, a: 'cookR', b: 'cookL', bg: '#2c1f12' }, sofa: { gap: 66, a: 'plain', b: 'plain', bg: '#1d2533', sofa: true } };
+    selfie: { gap: 62, a: 'plain', b: 'selfieR', bg: '#1d2533', tilt: -4 }, dance: { gap: 78, a: 'danceR', b: 'danceL', bg: '#22182a' }, cook: { gap: 96, a: 'cookR', b: 'cookL', bg: '#2c1f12' }, sofa: { gap: 66, a: 'plain', b: 'plain', bg: '#1d2533', sofa: true } };
   function couple(kind, a, b, opt) {
     opt = opt || {}; a = Object.assign({}, START, a || {}); b = Object.assign({}, START, b || {}); var c = COUPLE[kind] || COUPLE.hold, W = 200 + c.gap, light = document.documentElement.getAttribute('data-theme') === 'light' || opt.light;
     var bg = light ? shade(c.bg, .82) : c.bg, cx = W / 2, uid = 'cp-' + kind + (opt.uid || '');
@@ -769,6 +770,9 @@
       : kind === 'dance' ? '<g fill="#f2c94c"><path class="cp-up" d="M' + (cx - 30) + ' 30l2 5 5 .6-4 3.4 1.2 5-4.2-2.6-4.2 2.6 1.2-5-4-3.4 5-.6z"/><path class="cp-up cp-d1" d="M' + (cx + 26) + ' 22l1.6 4 4 .5-3 2.6 1 4-3.6-2-3.4 2 .9-4-3-2.6 4-.5z"/></g><path class="cp-up cp-d2" d="M' + (cx - 4) + ' 18v12a3 3 0 1 1-2-2.8V18h8" stroke="#e9edf5" stroke-width="1.6" fill="none"/>'
       : kind === 'selfie' || kind === 'cook' || kind === 'sofa' ? ''
       : heart(cx, 104, .55, 'cp-beat');
+    /* the right-hand person's own pet stands on the right, facing in (the left one's stays on the left) */
+    var petB = '';
+    if (!opt.pet && b.pet && b.pet !== 'none' && b.pet !== 'bird') { var bf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: b.pet, petC: b.petC })), bm = bf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (bm) petB = '<g transform="translate(' + (W + 6) + ' 4) scale(-1 1)">' + bm[0] + '</g>'; }
     var sofa = c.sofa ? '<rect x="' + (cx - 82) + '" y="112" width="164" height="40" rx="12" fill="#3b4d8a"/><rect x="' + (cx - 90) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx + 72) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx - 72) + '" y="140" width="144" height="18" rx="6" fill="#4a5ea0"/>' : '';
     var pet = '';
     if (opt.pet && opt.pet !== 'none') { var pf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: opt.pet })), pm = pf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (pm) pet = '<g transform="translate(-12 4)">' + pm[0] + '</g>'; }
@@ -780,7 +784,7 @@
     var glow = '<defs><radialGradient id="' + uid + 'g" cx="50%" cy="55%" r="55%"><stop offset="0" stop-color="' + bg + '" stop-opacity=".95"/><stop offset=".65" stop-color="' + bg + '" stop-opacity=".5"/><stop offset="1" stop-color="' + bg + '" stop-opacity="0"/></radialGradient></defs>' +
       '<ellipse cx="' + cx + '" cy="100" rx="' + (W / 2) + '" ry="100" fill="url(#' + uid + 'g)"/><ellipse cx="' + cx + '" cy="161" rx="' + (W / 2 - 20) + '" ry="10" fill="rgba(34,179,94,.16)"/>';
     return '<svg viewBox="0 0 ' + W + ' 200" class="av-couple ' + uid + '" role="img" aria-label="' + esc(opt.label || '') + '">' + css + glow +
-      sofa + one(a, c.a, 0, c.tilt || 0) + one(b, c.b, c.gap, -(c.tilt || 0)) + pet + fx + '</svg>';
+      sofa + one(a, c.a, 0, c.tilt || 0) + one(opt.pet ? b : Object.assign({}, b, { pet: 'none' }), c.b, c.gap, -(c.tilt || 0)) + pet + petB + fx + '</svg>';
   }
   function look0() { return look(); }
   /* which picture fits today: a high five when a chore was done, a hug on your day together or a birthday, a kiss in the evening */
