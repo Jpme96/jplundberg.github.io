@@ -202,13 +202,15 @@
       delete obj._w;
       /* only what differs from this browser's copy is written, and the page only redraws when something
          did – unlocking on the same device used to draw every part twice (slow to open on a phone) */
-      var changed = false;
+      var changed = false, keys = [];
       Object.keys(w).forEach(function (k) {
         if (WIDGET_KEYS.indexOf(k) < 0) return;
         var v = JSON.stringify(tidy(w[k], 3)), cur = null;
         try { cur = localStorage.getItem(k); } catch (e) {}
-        if (cur !== v) { changed = true; try { localStorage.setItem(k, v); } catch (e) {} }
+        if (cur !== v) { changed = true; keys.push(k); try { localStorage.setItem(k, v); } catch (e) {} }
       });
+      /* parts read straight from the shared box put the box's version back over what another device's copy had */
+      if (keys.length) try { window.dispatchEvent(new CustomEvent('vault:in', { detail: keys })); } catch (e) {}
       if (changed && window.Dash && window.Dash.reload) window.Dash.reload();
     }
     return obj;

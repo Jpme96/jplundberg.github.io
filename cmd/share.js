@@ -174,7 +174,7 @@
         if (!known) { pend[id] = { f: f, t: Date.now() }; pendCh = true; held.push(f); return; }
       }
       if (c === 'sx' && del && pend[id]) { delete pend[id]; pendCh = true; return; }
-      if (directKind(c) && c !== 'cdone') return;   /* this list is read from the box itself */
+      if ((directKind(c) && c !== 'cdone') || (c === 'ev' && evOn())) return;   /* read from the box itself */
       if (c === 'shop') { var l = Array.isArray(t.shop) ? t.shop : (t.shop = []), i = l.findIndex(function (x) { return x.id === id; });
         if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { var pn = (t.pantry || []).filter(function (q) { return q.state === 'low' && String(q.name || '').toLowerCase() === String(f.text || '').toLowerCase(); })[0]; l.push({ id: id, text: f.text || '', done: !!f.done, from: pn ? 'pantry' : 'shared' }); toolsCh = true; } }
       else if (c === 'cdone') {
@@ -272,7 +272,7 @@
   function missing(c, id) {
     var t = Fe.tools(), has = function (l) { return (Array.isArray(l) ? l : []).some(function (x) { return x && x.id === id; }); };
     if (c === 'ev') return !has(rj('dash.calendar', {}).events);
-    if (directKind(c)) return false;   /* read from the box: nothing to put back */
+    if (directKind(c) || (c === 'ev' && evOn())) return false;   /* read from the box: nothing to put back */
     if (c === 'shop') return !has(t.shop);
     if (c === 'note') return !has(t.homenotes);
     if (c === 'chore') return !has(t.chores);
@@ -304,7 +304,7 @@
       item: function (f) { var o = { date: f.date, opts: f.opts || [], from: f.from === 'p' ? 'them' : 'me', at: +f.at || 0 }; if (f.pick != null) o.pick = +f.pick; return o; }, tidy: function (x) { if (x.pick == null) delete x.pick; return x; } },
     note: { c: 'note', key: 'homenotes', area: 'notes', box: function (x) { return { title: String(x.title || '').slice(0, 60), text: String(x.text || '').slice(0, 1500) }; }, item: function (f) { return { title: f.title || '', text: f.text || '' }; }, extra: { by: 'partner' } }
   };
-  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room', 'cdone'], notes: ['note'], meals: ['meal', 'vote'] };   /* switch → the lists it moves */
+  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room', 'cdone'], notes: ['note'], meals: ['meal', 'vote'], cal: [] };   /* cal: events, see EV below */   /* switch → the lists it moves */
   function dl(name) { var d = DLISTS[name]; if (!d.ops) { d.boxL = rj('dash.share.box.' + name, null); d.ops = rj('dash.share.ops.' + name, {}) || {}; } return d; }
   function direct(k) { var s = st(); return !!(s && !(s.direct && s.direct[k] === false) && what()[k]); }   /* on unless turned off in Shared space */
   function dOn(name) { return direct(DLISTS[name].area === 'chores' ? 'chores' : DLISTS[name].area); }
@@ -356,10 +356,66 @@
   Object.keys(DLISTS).forEach(function (name) { Fe.direct(DLISTS[name].key, { on: function () { return dOn(name); }, view: function (m) { return dView(name, m); }, save: function (b, n) { dSave(name, b, n); } }); });
   function directKind(c) { return DLISTS[c] && dOn(c); }
   /* after the box moved on: keep its lists, and redraw if theirs changed something */
+  /* ---------- shared calendar events straight from the box ----------
+     Events live in dash.calendar (not the tool lists) and many parts of cmd write it directly, so instead of a
+     view hook the calendar copy itself is kept equal to the box: what you change there becomes a change for the
+     box the moment it's saved (cal:change), and the box's events are written back into it. Your private events
+     (not shared) are never touched. */
+  var EV = { boxL: rj('dash.share.box.ev', null), ops: rj('dash.share.ops.ev', {}) || {}, snap: rj('dash.share.snap.ev', null) };
+  function evOn() { return direct('cal'); }
+  function evBox(e) { return SC.clean('ev', { title: String(e.title || '').slice(0, 120), date: e.date, end: e.end, allDay: !!e.allDay, start: e.start, stop: e.stop, repeat: e.repeat, until: e.until, location: String(e.location || '').slice(0, 160) }) || {}; }
+  function evSave() { wj('dash.share.ops.ev', EV.ops); wj('dash.share.snap.ev', EV.snap); }
+  function evMine() { var o = {}; (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && e.id && evShared(e)) o[e.id] = e; }); return o; }
+  /* what you changed in the calendar since last time → changes for the box */
+  function evCapture() {
+    if (!evOn() || !EV.snap) return false;
+    var cur = evMine(), at = Date.now(), ch = false;
+    Object.keys(cur).forEach(function (id) { var f = evBox(cur[id]), h = hashF(f); if (EV.snap[id] !== h) { EV.ops[id] = { f: f, t: at }; EV.snap[id] = h; ch = true; } });
+    Object.keys(EV.snap).forEach(function (id) { if (!cur[id]) { EV.ops[id] = { f: null, t: at }; delete EV.snap[id]; ch = true; } });
+    if (ch) evSave();
+    return ch;
+  }
+  ['cal:change', 'dash:local'].forEach(function (n) { window.addEventListener(n, function () { if (!quiet) evCapture(); }); });
+  /* another device's copy of the calendar came in: its shared events may be older than the box – the box's go back in */
+  window.addEventListener('vault:in', function (e) { if ((e.detail || []).indexOf('dash.calendar') > -1 && evOn() && EV.snap && EV.boxL) evWrite(); });
+  /* the box's events (+ yours not sent yet) written into the calendar */
+  function evWrite() {
+    var cal = rj('dash.calendar', {}) || {}, list = Array.isArray(cal.events) ? cal.events : [], by = {}, ids = {}, out = [];
+    list.forEach(function (e) { if (e && e.id) by[e.id] = e; });
+    Object.keys(EV.boxL || {}).forEach(function (id) { ids[id] = { f: EV.boxL[id].f, t: EV.boxL[id].t }; });
+    Object.keys(EV.ops).forEach(function (id) { var o = EV.ops[id]; if (o.f) ids[id] = { f: o.f, t: (ids[id] && ids[id].t) || o.t }; else delete ids[id]; });
+    list.forEach(function (e) {
+      if (!e || !e.id) { out.push(e); return; }
+      if (!evShared(e) && !ids[e.id]) { out.push(e); return; }                      /* private: as it is */
+      if (ids[e.id]) { var x = Object.assign({}, e, ids[e.id].f); if (!evShared(x)) x.share = true; out.push(x); }
+    });
+    Object.keys(ids).filter(function (id) { return !by[id]; }).sort(function (a, c) { return (ids[a].t || 0) - (ids[c].t || 0); })
+      .forEach(function (id) { out.push(Object.assign({ id: id, cat: 'personal', share: true }, ids[id].f)); });
+    cal.events = out;
+    var snap = {}; out.forEach(function (e) { if (e && e.id && evShared(e)) snap[e.id] = hashF(evBox(e)); }); EV.snap = snap; evSave();
+    quiet = true; wj('dash.calendar', cal); window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('cal:change')); quiet = false;
+  }
+  function evPrep() {
+    if (!evOn() || !Object.keys(cache).length) return Promise.resolve(null);
+    var nb = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'ev' && !r.del && !r.bad && r.f && r.id) nb[r.id] = { f: r.f, t: r.t }; });
+    var sig = function (o) { return o ? Object.keys(o).sort().map(function (id) { return id + '\u0001' + hashF(o[id].f); }).join('\u0002') : ''; };
+    if (EV.snap && sig(nb) === sig(EV.boxL)) return Promise.resolve(null);
+    var first = Promise.resolve(), s = st();
+    if (!EV.snap) {                                                     /* first time: what only this calendar has goes up (unless it was deleted in the box) */
+      var mine = evMine(), want = Object.keys(mine).filter(function (id) { return !nb[id]; });
+      first = Promise.all(want.map(function (id) { return ridOf(s.key, 'ev', id).then(function (rid) { return cache[rid] && cache[rid].del ? null : id; }, function () { return null; }); }))
+        .then(function (l) { var at = Date.now(); l.forEach(function (id) { if (id) EV.ops[id] = { f: evBox(mine[id]), t: at }; }); EV.snap = {}; evSave(); });
+    }
+    return first.then(function () { return function () { evCapture(); EV.boxL = nb; wj('dash.share.box.ev', nb); evWrite(); }; });
+  }
+  function evSent(upTo) { var ch = false; Object.keys(EV.ops).forEach(function (id) { if (EV.ops[id].t <= upTo) { delete EV.ops[id]; ch = true; } }); if (ch) evSave(); }
+  function evForget() { EV.ops = {}; EV.boxL = null; EV.snap = null; ['box', 'ops', 'snap'].forEach(function (k) { try { localStorage.removeItem('dash.share.' + k + '.ev'); } catch (e) {} }); }
+
   /* dPrep works out what changed and returns a function that puts it on screen (so the sync can do that together
      with their other changes, inside one keepView – two at once fight and the page jumps) */
   function dTake() { return dPrep().then(function (go) { if (go) { if (window.keepView) window.keepView(go); else go(); } }); }
-  function dPrep() {
+  function dPrep() { return Promise.all([dPrepLists(), evPrep()]).then(function (fs) { var l = fs.filter(Boolean); return l.length ? function () { l.forEach(function (f) { try { f(); } catch (e) { if (window.Diag && window.Diag.log) window.Diag.log('share', 'show: ' + ((e && e.message) || e), 'share.js'); } }); } : null; }); }
+  function dPrepLists() {
     if (!Object.keys(cache).length) return Promise.resolve(null);
     var news = [], firsts = [];
     Object.keys(DLISTS).forEach(function (name) {
@@ -395,7 +451,8 @@
     var t = Fe.tools(); quiet = true;
     (DIRECT_OF[k] || []).forEach(function (name) { var d = dl(name); if (on) { d.boxL = Object.keys(cache).length ? fromCache(d) : null; if (d.boxL) wj('dash.share.box.' + name, d.boxL); else { try { localStorage.removeItem('dash.share.box.' + name); } catch (e) {} } } });
     var dv = V.get(); dv.share = Object.assign({}, dv.share || {}); dv.share.direct = Object.assign({}, dv.share.direct || {}); dv.share.direct[k] = !!on; V.save(dv);
-    if (!on) { Fe.saveTools(t); (DIRECT_OF[k] || []).forEach(dForget); }
+    if (!on) { Fe.saveTools(t); (DIRECT_OF[k] || []).forEach(dForget); if (k === 'cal') evForget(); }
+    if (on && k === 'cal') evForget();
     quiet = false; window.dispatchEvent(new Event('tools:change')); schedule(200);
   }
 
@@ -432,7 +489,7 @@
          not read as "deleted" (which would also remove it from their app) */
       if (healAt && Date.now() >= healAt) { healAt = 0; var inMine = {}; mine.forEach(function (x) { inMine[x.rid] = 1; });
         Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && !r.del && !r.bad && r.c && r.f && !inMine[rid] && seen[rid] && missing(r.c, r.id)) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, heal: 1 }); }); }
-      var both = function () { if (showD) { try { showD(); } catch (e) {} showD = null; } return applyAll(mine) || []; };
+      var both = function () { var r = applyAll(mine) || []; if (showD) { try { showD(); } catch (e) {} showD = null; } return r; };   /* their news first (against your copy as it was), then the box's lists */
       var bad = []; try { bad = (mine.length || showD ? (window.keepView ? window.keepView(both) : both()) : []) || []; } catch (e) { bad = mine.map(function (x) { return x.rid; }); if (window.Diag && window.Diag.log) window.Diag.log('share', 'apply: ' + ((e && e.message) || e), 'share.js'); }
       applyErr = bad.length;
       mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
@@ -463,7 +520,7 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { dSent(sentAt); return dTake(); }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
+    }).then(function () { dSent(sentAt); evSent(sentAt); return dTake(); }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
@@ -653,7 +710,7 @@
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
         '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
       (function () {
-        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['meals', 'Dinner plan and votes'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
+        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['meals', 'Dinner plan and votes'], ['cal', 'Shared events'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
         return sec('direct', 'lightning-charge', 'Shared home in one place', on.length ? on.map(function (x) { return x[1]; }).join(', ') + ': on' : 'Off',
           '<p class="st-note muted">One copy for both of you instead of two kept in step – no more fights when you both change something at once. Your own copy is kept as a backup, so turning it off loses nothing.</p>' +
           DR.map(function (x) { return '<label class="st-row"><span>' + esc(x[1]) + ' straight from the shared home</span><input type="checkbox" class="switch" data-shdirect="' + x[0] + '"' + (direct(x[0]) ? ' checked' : '') + '></label>'; }).join(''));
@@ -809,7 +866,7 @@
     if (b.id === 'shStop') {
       if (!b.dataset.armed) { b.dataset.armed = '1'; document.getElementById('shStopL').textContent = 'Tap again to stop sharing'; setTimeout(function () { delete b.dataset.armed; var l = document.getElementById('shStopL'); if (l) l.textContent = 'Stop sharing'; }, 4000); return; }
       SC.api('share', { method: 'DELETE' }).then(function () {
-        setSt({ on: false, key: null, files: {} }); keyMark(false, null, null); Object.keys(DLISTS).forEach(dForget); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
+        setSt({ on: false, key: null, files: {} }); keyMark(false, null, null); Object.keys(DLISTS).forEach(dForget); evForget(); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
         toast('<i class="bi bi-x-octagon"></i> Stopped sharing – ' + esc(pname()) + ' no longer has access');
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }
