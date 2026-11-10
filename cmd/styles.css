@@ -3377,6 +3377,7 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 [data-theme="light"] .dl-wx-rain, [data-theme="light"] .dl-wx-storm { background-image: repeating-linear-gradient(105deg, transparent 0 14px, rgba(60, 100, 150, .14) 14px 15px); }
 [data-theme="light"] .dl-wx-snow { filter: invert(.6); }
 .mo-off .dl-wx, .mo-off .dl-wx::after { animation: none; }
+.dl-wx.dl-cv { opacity: 1; background: none !important; animation: none !important; } .dl-wx.dl-cv::after { display: none; } .dl-wx canvas { position: absolute; inset: 0; display: block; }   /* the canvas draws the weather now (delight.js) */
 @media (prefers-reduced-motion: reduce) { .dl-wx, .dl-wx::after { animation: none; } }
 .dl-confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
 .dl-flame { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #f2994a; background: color-mix(in srgb, #f2994a 15%, transparent); vertical-align: 1px; white-space: nowrap; }
