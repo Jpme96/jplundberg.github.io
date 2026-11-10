@@ -76,11 +76,17 @@
     var skip = true; ou.call(this, function (d) { if (!skip) fn(d); }); skip = false; later.push(fn);
   }; }
   takeSnap(); delete snap.SoftNav;
+  /* Safari has built-in objects on window that can't be changed (frozen, read-only): touching them threw
+     "Attempted to assign to readonly property" and broke every page change on a Mac – so those are skipped, and one bad key never stops the rest */
   function restore() {
     Object.keys(snap).forEach(function (k) {
-      var s = snap[k]; try { if (window[k] !== s.v) window[k] = s.v; } catch (e) {}
-      if (s.t === 'a') { s.v.length = 0; Array.prototype.push.apply(s.v, s.c); }
-      else if (s.t === 'o') { Object.keys(s.v).forEach(function (x) { if (!(x in s.c)) delete s.v[x]; }); Object.assign(s.v, s.c); }
+      var s = snap[k];
+      try {
+        if (window[k] !== s.v) window[k] = s.v;
+        if ((s.t === 'a' || s.t === 'o') && (Object.isFrozen(s.v) || !Object.isExtensible(s.v))) return;
+        if (s.t === 'a') { s.v.length = 0; Array.prototype.push.apply(s.v, s.c); }
+        else if (s.t === 'o') { Object.keys(s.v).forEach(function (x) { if (!(x in s.c)) delete s.v[x]; }); Object.assign(s.v, s.c); }
+      } catch (e) {}
     });
     if (regs && window.Vault && window.Vault._regs) window.Vault._regs.reset(regs);
   }
