@@ -13,6 +13,8 @@
   try { on = (JSON.parse(localStorage.getItem('dash.settings')) || {}).softNav !== false; } catch (e) { on = true; }   /* on unless turned off */
   window.SoftNav = { on: on, count: 0 };
   if (!on || !window.history || !window.history.pushState || !window.fetch || !window.DOMParser) return;
+  window.SoftNav.active = true;          /* really working in this browser (nav.js leaves "one change at a time" to it) */
+  window.SoftNav.busy = function () { return busy; };
 
   var root = document.documentElement, epoch = 0, running = false;
   function mark(n) { try { performance.mark(n); } catch (e) {} }   /* how long each step took (Settings → Data & sync → problems, and the tests) */
@@ -98,10 +100,12 @@
   function page(u) { var x = new URL(u, location.href); return x.origin === location.origin && PAGES.indexOf(x.pathname) > -1 ? x : null; }
   function getHtml(u) { var k = u.pathname; return htmlCache[k] ? Promise.resolve(htmlCache[k]) : fetch(u.pathname, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { htmlCache[k] = t; return t; }); }
   function srcOf(doc, re) { var s = [].filter.call(doc.querySelectorAll('script[src]'), function (x) { return re.test(x.getAttribute('src')); })[0]; return s ? new URL(s.getAttribute('src'), s.ownerDocument === document ? location.href : base).href : ''; }
-  var base = location.href, busy = false, HEAD = '';
+  var base = location.href, busy = false, next = null, HEAD = '';
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
-    if (busy) return; busy = true; mark('sn:start');
+    /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
+    if (busy) { next = { u: u, pop: pop }; return; }
+    busy = true; mark('sn:start');
     var full = function () { location.href = u.href; };
     getHtml(u).then(function (text) {
       mark('sn:html'); var doc = new DOMParser().parseFromString(text, 'text/html');
@@ -142,7 +146,10 @@
       vt.finished.then(end, end);
       return vt.updateCallbackDone.then(finish, function () { finish(); });
     }).catch(function (e) { try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); full(); })
-      .then(function () { busy = false; });
+      .then(function () { busy = false;
+        var n = next; next = null;
+        if (n && (n.u.pathname !== location.pathname || n.u.search !== location.search)) go(n.u, n.pop);
+      });
   }
   /* the page bundle and tail.js run again, in order (from the browser's cache) */
   function run(srcs) {
@@ -160,7 +167,8 @@
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target || a.hasAttribute('download')) return;
     var u = page(a.href); if (!u) return;
-    if (u.pathname === location.pathname && u.search === location.search) { if (u.hash) return; e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    /* the page you're on: back to the top – unless another page is on its way, then this tap means "stay here" */
+    if (!busy && u.pathname === location.pathname && u.search === location.search) { if (u.hash) return; e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (!root.classList.contains('unlocked')) return;          /* locked: the lock screen does its job on a normal load */
     e.preventDefault();
     try { history.replaceState(Object.assign({}, history.state || {}, { y: window.scrollY }), ''); } catch (er) {}

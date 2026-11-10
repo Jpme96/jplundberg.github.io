@@ -94,12 +94,14 @@
     if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
     if (leaving) { e.preventDefault(); return; }
     /* the page you're on: back to the top instead of loading it again */
-    if (a.getAttribute('aria-current')) {
+    if (a.getAttribute('aria-current') && !(window.SoftNav && SoftNav.busy && SoftNav.busy())) {
       e.preventDefault();
       if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: document.documentElement.classList.contains('mo-off') ? 'auto' : 'smooth' });
       return;
     }
-    leaving = true;
+    /* with instant page changes, softnav.js keeps it to one change at a time (and remembers a tap that comes meanwhile);
+       holding the menu shut here waited for a new page load that never comes, so every later tap was lost */
+    if (!(window.SoftNav && window.SoftNav.active)) leaving = true;
     var off = document.documentElement.classList.contains('mo-off');
     if (pressed !== a) slideTo(a);              // keyboard or a click without a press first
     pressed = null;

@@ -33,13 +33,16 @@ function png(w, h) {
     await sl(700);
     const st1 = await pg.evaluate(() => [!!document.querySelector('.hc-view, .fv-bg'), !!document.querySelector('.hc-pop')]);
     check(st1[0] && st1[1], who + ': a photo opens and the chat stays open ' + JSON.stringify(st1));
+    if (who === 'computer') check(await until(pg, () => !!document.querySelector('.fv-bg .fv-img') && !document.querySelector('.hc-view'), 5000) !== null,
+      'computer: the photo opens in the file panel (like a PDF), not over the whole window');
     if (who === 'phone') await pg.tap('.hc-view [data-x], .fv-x'); else await pg.click('.hc-view [data-x], .fv-x');
     await sl(700);
     const st2 = await pg.evaluate(() => [!document.querySelector('.hc-view, .fv-bg'), !!document.querySelector('.hc-pop')]);
     check(st2[0] && st2[1], who + ': closing the photo goes back to the chat ' + JSON.stringify(st2));
   }
-  /* the send arrow sits in the middle of its circle */
-  const off = await q.evaluate(() => { const b = document.querySelector('.hc-row .hc-send'), i = b && b.querySelector('i, svg'); if (!b || !i) return 'none'; const r = b.getBoundingClientRect(), c = i.getBoundingClientRect(); return [Math.round((c.left + c.width / 2) - (r.left + r.width / 2)), Math.round((c.top + c.height / 2) - (r.top + r.height / 2))]; });
+  /* the send arrow sits in the middle of its circle – measured on the drawn arrow itself (a font icon's box was centred
+     while the glyph inside it sat high, 2026-11-10) */
+  const off = await q.evaluate(() => { const b = document.querySelector('.hc-row .hc-send'), i = b && b.querySelector('svg path'); if (!b || !i) return 'no drawn arrow'; const r = b.getBoundingClientRect(), c = i.getBoundingClientRect(); return [Math.round((c.left + c.width / 2) - (r.left + r.width / 2)), Math.round((c.top + c.height / 2) - (r.top + r.height / 2))]; });
   check(Array.isArray(off) && Math.abs(off[0]) <= 1 && Math.abs(off[1]) <= 1, 'the send arrow is centred: ' + JSON.stringify(off));
   /* appear offline */
   await q.click('[data-hcmenu]'); await sl(500); await q.click('[data-away="1"]'); await sl(1500);
@@ -68,6 +71,6 @@ function png(w, h) {
   await until(p, () => { if (document.querySelector('.hc-pop .hc-imgs button')) return true; const bb = document.querySelector('.hc-bub'); if (bb && !document.querySelector('.hc-pop')) bb.click(); return false; }, 20000); await sl(500);
   const opened = await p.evaluate(() => { const b = document.querySelector('.hc-pop .hc-imgs button'); if (!b) return false; b.scrollIntoView(); b.click(); return true; }); await sl(700);
   await p.keyboard.press('Escape'); await sl(400);
-  check(opened && await p.evaluate(() => !document.querySelector('.hc-view') && !!document.querySelector('.hc-pop')), 'Escape closes the photo and the chat stays (opened: ' + opened + ')');
+  check(opened && await p.evaluate(() => !document.querySelector('.hc-view, .fv-bg') && !!document.querySelector('.hc-pop')), 'Escape closes the photo and the chat stays (opened: ' + opened + ')');
   await done(b, b2);
 })();

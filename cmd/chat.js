@@ -176,7 +176,7 @@
       '.hc-on{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:5px;vertical-align:1px}',
       '.hc-tt{flex:1;min-width:0}.hc-tt b{display:block;font-size:16px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-tt small{display:block;color:var(--hc-mut);font-size:12.5px;min-height:16px}',
       '.hc-tt small.typ{color:var(--hc-acc)}',
-      '.hc-ib{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:inherit;font-size:18px;display:grid;place-items:center;cursor:pointer}.hc-ib>i{display:block;line-height:1;width:1em;height:1em}.hc-ib>i::before{display:block;vertical-align:0;line-height:1}.hc-ib:hover{background:rgba(127,127,127,.12)}',
+      '.hc-ib{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:inherit;font-size:18px;display:grid;place-items:center;cursor:pointer}.hc-ib>i{display:block;line-height:1;width:1em;height:1em}.hc-ib>i::before{display:block;vertical-align:0;line-height:1}.hc-ib>svg{display:block;flex:none}.hc-ib:hover{background:rgba(127,127,127,.12)}',
       '.hc-pins{flex:none;border-bottom:1px solid var(--hc-line);font-size:13.5px}.hc-pins>button{width:100%;display:flex;align-items:center;gap:8px;padding:8px 14px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}',
       '.hc-pins>button .bi-pin-angle-fill{color:var(--hc-acc)}.hc-pins>button span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-pins ul{list-style:none;margin:0;padding:0 10px 8px;max-height:40vh;overflow:auto}',
       '.hc-pins li{display:flex;gap:8px;align-items:flex-start;padding:8px;border-radius:10px;background:rgba(127,127,127,.08);margin-top:6px}.hc-pins li div{flex:1;min-width:0}.hc-pins li b{display:block;font-size:13.5px}.hc-pins li p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--hc-mut)}',
@@ -412,6 +412,8 @@
   }
   function viewImg(fid) {
     var m = null, f = null; Object.keys(C.msgs).forEach(function (id) { (C.msgs[id].files || []).forEach(function (x) { if (x.id === fid) { m = C.msgs[id]; f = x; } }); }); if (!f) return;
+    /* computer: the same panel as PDFs and other files (Download, Expand, Close) instead of blacking out the whole window */
+    if (window.FileView && matchMedia('(min-width: 700px)').matches) { fileUrl(f).then(function (u) { FileView.show(u, f.name || L('Photo', 'Bilde')); }, function () { toast(L('That file is gone', 'Den filen er borte')); }); return; }
     var v = document.createElement('div'); v.className = 'hc-view'; v.innerHTML = '<img alt=""><button type="button" class="hc-ib" style="left:12px" data-x aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button><button type="button" class="hc-ib" style="right:12px" data-dl aria-label="' + L('Save', 'Lagre') + '"><i class="bi bi-download"></i></button>';
     document.body.appendChild(v); fileUrl(f).then(function (u) { v.querySelector('img').src = u; });
     v.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); if (e.target.closest('[data-dl]')) { download(f); return; } C.viewShut = Date.now(); v.remove(); });
@@ -480,7 +482,7 @@
   function recBar() {
     if (!C.el) return; var row = C.el.querySelector('.hc-row'), bar = C.el.querySelector('.hc-rec');
     if (!REC) { if (bar) bar.remove(); if (row) row.hidden = false; return; }
-    if (!bar) { bar = document.createElement('div'); bar.className = 'hc-rec'; bar.innerHTML = '<i class="dot"></i><b>0:00</b><button type="button" class="hc-ib" data-hcrecno aria-label="' + L('Cancel', 'Avbryt') + '"><i class="bi bi-trash3"></i></button><button type="button" class="hc-ib hc-send" data-hcrecgo aria-label="' + L('Send', 'Send') + '"><i class="bi bi-arrow-up"></i></button>'; row.parentNode.insertBefore(bar, row); row.hidden = true; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'hc-rec'; bar.innerHTML = '<i class="dot"></i><b>0:00</b><button type="button" class="hc-ib" data-hcrecno aria-label="' + L('Cancel', 'Avbryt') + '"><i class="bi bi-trash3"></i></button><button type="button" class="hc-ib hc-send" data-hcrecgo aria-label="' + L('Send', 'Send') + '"><svg class="hc-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>'; row.parentNode.insertBefore(bar, row); row.hidden = true; }
     bar.querySelector('b').textContent = dur((Date.now() - REC.t0) / 1000);
   }
   /* play a voice message (one at a time) */
@@ -596,7 +598,7 @@
     C.sel = null; C.lastN = 0; C.el = el; C.full = !!o.full; C.pop = !!o.pop; C.onClose = o.onClose || null; C.open = true; C.painted = false; lastList = '';
     el.innerHTML = '<div class="hc"><div class="hc-headbox"></div><div class="hc-list" role="log" aria-live="polite"><div class="hc-msgs"></div><div class="hc-typing" hidden><i></i><i></i><i></i></div></div><button type="button" class="hc-down" data-hcdown hidden><i class="bi bi-arrow-down"></i> ' + L('New messages', 'Nye meldinger') + '</button>' +
       '<form class="hc-comp"><div class="hc-replybar" hidden></div><div class="hc-chips" hidden></div><div class="hc-row"><button type="button" class="hc-ib" data-hcattach aria-label="' + L('Add a photo, camera or file', 'Legg til bilde, kamera eller fil') + '"><i class="bi bi-plus-lg"></i></button>' +
-      '<textarea rows="1" placeholder="' + esc(L('Message', 'Melding')) + '" enterkeyhint="send" aria-label="' + L('Message', 'Melding') + '"></textarea><button type="button" class="hc-ib hc-mic" data-hcmic aria-label="' + L('Record a voice message', 'Spill inn en talemelding') + '"><i class="bi bi-mic"></i></button><button type="submit" class="hc-ib hc-send" hidden aria-label="' + L('Send', 'Send') + '"><i class="bi bi-arrow-up"></i></button></div>' +
+      '<textarea rows="1" placeholder="' + esc(L('Message', 'Melding')) + '" enterkeyhint="send" aria-label="' + L('Message', 'Melding') + '"></textarea><button type="button" class="hc-ib hc-mic" data-hcmic aria-label="' + L('Record a voice message', 'Spill inn en talemelding') + '"><i class="bi bi-mic"></i></button><button type="submit" class="hc-ib hc-send" hidden aria-label="' + L('Send', 'Send') + '"><svg class="hc-arrow" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div>' +
       '<input type="file" data-in="file" multiple hidden><input type="file" data-in="pics" multiple hidden accept="image/*,video/*"><input type="file" data-in="cam" hidden accept="image/*" capture="environment"></form></div>';
     bind(el); chips(); replyBar(); micState(); paintList(); SC.liveSpeed(true); fetchChat();
   }
