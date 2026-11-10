@@ -120,7 +120,7 @@
       var rm = roomOf(c);
       return { icon: icon(c.name), color: w === 'me' ? '#22b35e' : '#3987e5', title: c.name, cls: dn ? 'is-done' : '',
         sub: esc([rm && !inRoom ? rm.name : '', whoName(w) === 'You' ? 'Your turn' : whoName(w) + '’s turn', (EVERY.filter(function (x) { return x[0] === c.every; })[0] || EVERY[0])[1].toLowerCase(), when, (function () { var ls = lastOf(c.id); return ls ? 'last ' + fromKey(ls.at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' by ' + (ls.who === 'me' ? 'you' : whoName('them')) : ''; })()].filter(Boolean).join(' · ')),
-        right: '<span role="button" tabindex="0" class="check ch-check" data-chdone="' + esc(c.id) + '" aria-pressed="' + !!dn + '" aria-label="' + esc(c.name) + (dn ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></span>' };   /* a span: it sits inside the row's button */
+        right: '<span role="button" tabindex="0" class="ch-pen" data-kit-edit="' + esc(c.id) + '" aria-label="' + esc('Edit or delete ' + c.name) + '"><i class="bi bi-pencil"></i></span><span role="button" tabindex="0" class="check ch-check" data-chdone="' + esc(c.id) + '" aria-pressed="' + !!dn + '" aria-label="' + esc(c.name) + (dn ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></span>' };   /* a span: it sits inside the row's button */
     }
   }) : null;
   document.addEventListener('click', function (e) {

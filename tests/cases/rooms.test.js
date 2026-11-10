@@ -18,6 +18,10 @@ const { shared, until, sl, U, go } = require('../lib/browser'); const { check, d
   await p.evaluate(() => document.querySelector('[data-chroom]:not([data-chroom=""])') && [...document.querySelectorAll('[data-chroom]')].find(x => /Bathroom/.test(x.innerText)).click()); await sl(500);
   const only = await p.evaluate(() => [...document.querySelectorAll('[data-tool="hchores"] .kit-row, [data-tool="hchores"] li[data-id]')].map(x => x.innerText.split('\n')[0]));
   check(only.length === 1 && /toilet/.test(only[0]), 'one room at a time shows only its chores: ' + only.join(' | '));
+  /* every chore has a pen that opens the editor, where it can be deleted */
+  const pen = await p.evaluate(() => { const x = document.querySelector('[data-tool="hchores"] .ch-pen'); if (!x) return 'no pen'; x.click(); return 'ok'; }); await sl(500);
+  check(pen === 'ok' && await p.evaluate(() => { const d = document.querySelector('.kit-del [data-kit-delbtn]'); return !!(d && d.offsetParent); }), 'the pen on a chore opens the editor with Delete: ' + pen);
+  await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelectorAll('.kit-sheet-bg, .cl-bg').forEach(x => x.classList.remove('open'))); await sl(300);
   await p.evaluate(() => ShareSpace.sync()); await sl(2500);
   /* Iago */
   await q.evaluate(() => document.querySelector('[data-tab="chores"]').click());
