@@ -527,11 +527,13 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 /* ---------- Lock screen ---------- */
 .locked:not(.resuming) .top, .locked:not(.resuming) .dash, .locked:not(.resuming) .fin, .locked:not(.resuming) .foot { display: none; }
+/* Locked: nothing else on the page may show – pop-ups, the chat, sheets and photos added later included. */
+.locked:not(.resuming) body > :not(#lock):not(.bg) { visibility: hidden !important; }
 
 .lock {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 2147483000;   /* above every pop-up, whatever its own z-index */
   display: grid;
   place-items: center;
   padding: 24px;

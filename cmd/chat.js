@@ -64,8 +64,8 @@
     var now = Date.now();
     return Object.keys(C.msgs).map(function (id) { return C.msgs[id]; }).filter(function (m) { return !C.ttl || m.pending || now - m.t < C.ttl; }).sort(function (a, b) { return a.t - b.t; });
   }
-  function unread() { var r = +rj(readKey(), 0) || 0, o = other(); return visible().filter(function (m) { return m.by === o && !m.sys && m.t > r; }).length; }
-  function last() { var l = visible().filter(function (m) { return !m.sys; }); return l[l.length - 1] || null; }
+  function unread() { if (!C.opt) return 0; var r = +rj(readKey(), 0) || 0, o = other(); return visible().filter(function (m) { return m.by === o && !m.sys && m.t > r; }).length; }
+  function last() { if (!C.opt) return null; var l = visible().filter(function (m) { return !m.sys; }); return l[l.length - 1] || null; }
   function markRead() {
     var l = list(); if (!l.length || !C.open || document.hidden) return;
     var mx = l[l.length - 1].t, r = +rj(readKey(), 0) || 0;
@@ -610,9 +610,16 @@
     if (j.chat != null && j.chat !== C.rev) fetchChat(); else if (C.el) paintList();
   }
   function init(opt) {
-    var first = !C.opt, newKey = C.opt && (C.opt.key !== opt.key || String(C.opt.keys || '') !== String(opt.keys || '')); C.opt = opt; if (newKey) { C.msgs = {}; C.rev = -1; fetchChat(); } if (!first) return;
-    SC.live(onLive); fetchChat();
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { fetchChat(); markRead(); } });
+    var first = !C.wired, fresh = !C.opt || C.opt.key !== opt.key || String(C.opt.keys || '') !== String(opt.keys || ''); C.opt = opt; C.wired = true;
+    if (first) { SC.live(onLive); document.addEventListener('visibilitychange', function () { if (!document.hidden && C.opt) { fetchChat(); markRead(); } }); }
+    if (fresh) { C.msgs = {}; C.rev = -1; fetchChat(); }
+  }
+  /* Locked: the chat closes and forgets everything it had opened (messages, photos, the key) until it is set up again. */
+  function forget() {
+    closePop(); if (B.btn) B.btn.hidden = true; if (C.el) unmount();
+    document.querySelectorAll('.hc-view').forEach(function (v) { v.remove(); });
+    Object.keys(C.urls).forEach(function (k) { if (typeof C.urls[k] === 'string') URL.revokeObjectURL(C.urls[k]); });
+    C.opt = null; C.msgs = {}; C.rev = -1; C.urls = {}; C.pend = []; C.picked = []; C.typing = {}; C.seen = {}; C.hide = null; C.sel = null; C.badIds = null;
   }
 
   /* ---------- the bubble: a small round button in the corner that opens the chat as a pop-up ----------
@@ -669,5 +676,5 @@
     else { B.pop.style.top = ''; B.pop.style.bottom = ''; B.pop.style.height = ''; }
   }
   function isOpen() { return !!C.el; }
-  window.HomeChat = { _test: { mutedThem: function () { return muteOf(other()) > Date.now(); }, reactions: function () { return reactions(); } }, init: init, mount: mount, unmount: unmount, bubble: bubble, hideBubble: function () { if (B.btn) B.btn.hidden = true; closePop(); }, openPop: openPop, closePop: closePop, popOpen: function () { return !!B.pop; }, unread: unread, last: last, refresh: fetchChat, isOpen: function () { return !!C.el; }, ttlName: function (ms) { return ttlName(ms); }, ttl: function () { return C.ttl; }, setTtl: setTtl, TTLS: TTLS };
+  window.HomeChat = { _test: { mutedThem: function () { return muteOf(other()) > Date.now(); }, reactions: function () { return reactions(); } }, init: init, mount: mount, unmount: unmount, bubble: bubble, hideBubble: function () { if (B.btn) B.btn.hidden = true; closePop(); }, forget: forget, openPop: openPop, closePop: closePop, popOpen: function () { return !!B.pop; }, unread: unread, last: last, refresh: fetchChat, isOpen: function () { return !!C.el; }, ttlName: function (ms) { return ttlName(ms); }, ttl: function () { return C.ttl; }, setTtl: setTtl, TTLS: TTLS };
 })();
