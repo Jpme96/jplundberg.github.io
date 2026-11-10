@@ -104,5 +104,6 @@
   /* synced settings arrive after unlocking, and with every pull from another device */
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(refresh, 0); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+  window.addEventListener('softnav:swap', mount);   /* a new page's menu came in without a reload */
   window.SideNav = { mode: mode, set: go, on: active };
 })();

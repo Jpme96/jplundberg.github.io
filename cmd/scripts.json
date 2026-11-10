@@ -7,7 +7,7 @@
     "lockui.js",
     "passkey.js",
     "features.js",
-    "sidenav.js"
+    "sidenav.js", "softnav.js"
   ],
   "tail": [
     "smart.js",

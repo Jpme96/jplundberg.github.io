@@ -955,6 +955,8 @@
   window.Vault = {
     onUnlock: function (fn) { unlockFns.push(fn); if (key) fn(data); },
     onLock: function (fn) { lockFns.push(fn); },
+    /* instant page changes (softnav.js): what the head registered stays, what a page registered goes when you leave it */
+    _regs: { mark: function () { return [unlockFns.length, lockFns.length]; }, reset: function (m) { if (m) { unlockFns.length = Math.min(unlockFns.length, m[0]); lockFns.length = Math.min(lockFns.length, m[1]); } } },
     get: function () { return data; },
     syncState: function () { return syncState; },
     save: function (obj) {
