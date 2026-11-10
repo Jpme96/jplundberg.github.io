@@ -5,12 +5,22 @@ const { shared, open, until, sl } = require('../lib/browser'); const { check, do
 const names = l => (l || []).map(x => x.text + (x.done ? '✓' : '')).sort().join(',');
 (async () => {
   const { b, p, b2, q } = await shared();
-  await p.evaluate(() => { const t = Features.tools(); t.shop = [{ id: 'sMilk', text: 'Milk', done: false, from: 'pantry' }, { id: 'sBread', text: 'Bread', done: false }]; Features.saveTools(t); });
-  await p.evaluate(() => ShareSpace.sync()); await sl(1500);
-  check(await p.evaluate(() => ShareSpace.direct('shop', true)) === true, 'the switch turns on');
-  await p.evaluate(() => ShareSpace.sync()); await sl(1000);
-  await q.evaluate(() => document.querySelector('[data-tab="shop"]').click());
-  check(await until(q, () => /Milk/.test(document.body.innerText) && /Bread/.test(document.body.innerText), 10000) !== null, 'Iago sees the list');
+  /* like the update day: the list is only in this device's copy (old way), then the new way is on by default */
+  check(await p.evaluate(() => ShareSpace.direct('shop')) === true, 'on by default');
+  await q.evaluate(() => document.querySelector('[data-tab="shop"]').click()); await sl(500);
+  await q.evaluate(() => { const f = document.querySelector('[data-addshop]'); f.shop.value = 'Apples'; f.requestSubmit(); });
+  check(await until(p, () => (Features.tools().shop || []).some(x => x.text === 'Apples'), 10000) !== null, 'Iago’s first item reaches cmd');
+  await p.evaluate(() => { const d = Vault.get(); d.share.direct = { shop: false }; Vault.save(d);
+    const t = Features.tools(); t.shop = [{ id: 'sMilk', text: 'Milk', done: false, from: 'pantry' }, { id: 'sBread', text: 'Bread', done: false }]; localStorage.setItem('dash.tools', JSON.stringify(t)); window.dispatchEvent(new Event('dash:local'));
+    ['dash.share.box.shop', 'dash.share.ops.shop'].forEach(k => localStorage.removeItem(k)); d.share.direct = {}; Vault.save(d); });
+  await sl(300); await p.reload(); await sl(3000);
+  await (require('../lib/browser').go)(p, '', 2500);
+  check(await p.evaluate(() => ShareSpace.direct('shop')) === true, 'on again');
+  await p.evaluate(() => ShareSpace.sync()); await sl(1500); await p.evaluate(() => ShareSpace.sync()); await sl(1000);
+  check(await until(q, () => /Milk/.test(document.body.innerText) && /Bread/.test(document.body.innerText) && /Apples/.test(document.body.innerText), 10000) !== null, 'on the first load, what only cmd had goes up and Iago’s item stays: ' + await q.evaluate(() => document.querySelector('.h-list') && document.querySelector('.h-list').innerText.replace(/\n/g, '|')) + ' cmd ' + await p.evaluate(() => JSON.stringify([Features.tools().shop, Features.rawTools().shop, localStorage.getItem('dash.share.box.shop'), localStorage.getItem('dash.share.ops.shop'), ShareSpace.direct('shop')])));
+  const apl = await q.evaluate(() => { const x = [...document.querySelectorAll('[data-shop]')].find(e => /Apples/.test(e.innerText)); return x && x.dataset.shop; });
+  await q.evaluate(id => document.querySelector('[data-shopdel="' + id + '"]').click(), apl);
+  check(await until(p, () => !(Features.tools().shop || []).some(x => x.text === 'Apples'), 10000) !== null, 'Iago removes Apples again');
   /* both at once, no sync in between */
   await Promise.all([
     p.evaluate(() => { const t = Features.tools(); t.shop.find(x => x.id === 'sMilk').done = true; t.shop.push({ id: 'sEggs', text: 'Eggs', done: false }); Features.saveTools(t); }),

@@ -32,6 +32,13 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   await go(p, 'house/', 2500);
   await p.evaluate(() => { const c = Features.list('chores').find(x => x.name === 'Scrub the sink'); Chores.setDone(c); });
   check(await until(q, () => { const x = [...document.querySelectorAll('[data-chore]')].find(e => /Scrub/.test(e.innerText)); return x && x.getAttribute('aria-pressed') === 'true'; }, 15000) !== null, 'a tick in cmd reaches Iago');
+  /* Iago ticks one: cmd shows it done and it's in the history; then cmd unticks its own and Iago sees that */
+  await q.evaluate(() => [...document.querySelectorAll('[data-chore]')].find(e => /Wash the shower/.test(e.innerText)).click());
+  check(await until(p, () => { const c = Features.list('chores').find(x => x.name === 'Wash the shower'); return c && Chores.done(c, Chores.period(c)) && Chores.log().some(l => l.cid === c.id); }, 15000) !== null, 'Iago’s tick shows in cmd and in the history: ' + await p.evaluate(() => { const c = Features.list('chores').find(x => x.name === 'Wash the shower'); return JSON.stringify({ done: Chores.done(c, Chores.period(c)), cd: Features.tools().choreDone, raw: Features.rawTools().choreDone, log: Chores.log().map(l => l.cid + ':' + l.who) }); }));
+  await p.evaluate(() => { const c = Features.list('chores').find(x => x.name === 'Scrub the sink'); Chores.setDone(c); });
+  check(await until(q, () => { const x = [...document.querySelectorAll('[data-chore]')].find(e => /Scrub/.test(e.innerText)); return x && x.getAttribute('aria-pressed') === 'false'; }, 15000) !== null, 'untick in cmd reaches Iago');
+  await sl(2000);
+  check(await p.evaluate(() => { const c = Features.list('chores').find(x => x.name === 'Wash the shower'), s = Features.list('chores').find(x => x.name === 'Scrub the sink'); return Chores.done(c, Chores.period(c)) && !Chores.done(s, Chores.period(s)); }), 'ticks stay as they are after more syncs');
   /* order changed in cmd reaches Iago */
   await p.evaluate(() => { const t = Features.tools(); t.rooms = [t.rooms[2], t.rooms[0], t.rooms[1]]; Features.saveTools(t); });
   check(await until(q, () => [...document.querySelectorAll('[data-hroom]')].map(x => x.innerText.replace(/\d+/g, '').trim()).slice(1).join(',') === 'Hallway,Kitchen,Bathroom', 15000) !== null, 'a new room order reaches Iago: ' + await q.evaluate(() => [...document.querySelectorAll('[data-hroom]')].map(x => x.innerText.trim()).join('|')));

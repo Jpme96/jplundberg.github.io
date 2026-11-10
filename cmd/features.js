@@ -102,7 +102,7 @@
   /* one bad item (null, or an old-format entry) must never break a page: lists come back without holes */
   /* Shared things read straight from the shared box (rebuild A2): a part registered in DIRECT shows the box's copy
      here instead of the old copy in the vault, and a save turns what you changed into changes for the box.
-     DIRECT[key] = { on(), view(vaultList) → list or null, save(listAsRead, listNow) }. The vault keeps a copy
+     DIRECT[key] = { on(), view(vaultCopy) → list/map or null, save(asRead, now) }. The vault keeps a copy
      (with extras that only cmd uses), so turning it off again loses nothing. */
   var DIRECT = {}, readAs = typeof WeakMap === 'function' ? new WeakMap() : null;
   function raw() {
@@ -115,8 +115,8 @@
   function tools() {
     var t = raw(), seen = null;
     Object.keys(DIRECT).forEach(function (k) {
-      var d = DIRECT[k], v = null; try { if (d.on()) v = d.view(Array.isArray(t[k]) ? t[k] : []); } catch (e) { v = null; }
-      if (!Array.isArray(v)) return;
+      var d = DIRECT[k], v = null; try { if (d.on()) v = d.view(t[k]); } catch (e) { v = null; }
+      if (!v || typeof v !== 'object') return;
       t[k] = v; (seen = seen || {})[k] = copy(v);
     });
     if (seen && readAs) readAs.set(t, seen);
@@ -124,9 +124,9 @@
   }
   function saveTools(t) {
     if (t && typeof t === 'object') Object.keys(DIRECT).forEach(function (k) {
-      var d = DIRECT[k]; try { if (!d.on() || !Array.isArray(t[k])) return; } catch (e) { return; }
+      var d = DIRECT[k]; try { if (!d.on() || !t[k] || typeof t[k] !== 'object') return; } catch (e) { return; }
       var was = readAs && readAs.get(t), base = was && was[k];
-      if (!base) { var r = raw(); base = d.view(Array.isArray(r[k]) ? r[k] : []) || []; }   /* not read through tools(): compare with the list as it is now */
+      if (!base) { var r = raw(); base = d.view(r[k]) || (Array.isArray(t[k]) ? [] : {}); }   /* not read through tools(): compare with the list as it is now */
       try { d.save(base, t[k]); } catch (e) { if (window.Diag && window.Diag.log) window.Diag.log('direct', k + ': ' + ((e && e.message) || e), 'features.js'); }
       if (readAs) { var nw = Object.assign({}, was || {}); nw[k] = copy(t[k]); readAs.set(t, nw); }   /* saving the same object twice only sends the new change */
     });
