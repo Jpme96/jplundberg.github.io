@@ -803,6 +803,7 @@
   });
   if (/[?&#]chat\b/.test(location.search + location.hash)) V.onUnlock(function () { setTimeout(function () { chatInit(); openChat(); }, 600); });
   V.onUnlock(function () { setTimeout(chatInit, 1200); });
+  V.onLock(function () { chatOn = null; if (window.HomeChat && HomeChat.forget) HomeChat.forget(); if (window.FileView) FileView.close(); });
   window.addEventListener('hashchange', function () { if (location.hash === '#chat') { history.replaceState(null, '', location.pathname + location.search); openChat(); } });
   /* At a glance: new messages */
   (window.BriefExtra = window.BriefExtra || []).push(function (add) {

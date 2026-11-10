@@ -527,11 +527,13 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 /* ---------- Lock screen ---------- */
 .locked:not(.resuming) .top, .locked:not(.resuming) .dash, .locked:not(.resuming) .fin, .locked:not(.resuming) .foot { display: none; }
+/* Locked: nothing else on the page may show – pop-ups, the chat, sheets and photos added later included. */
+.locked:not(.resuming) body > :not(#lock):not(.bg) { visibility: hidden !important; }
 
 .lock {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 2147483000;   /* above every pop-up, whatever its own z-index */
   display: grid;
   place-items: center;
   padding: 24px;
@@ -1985,6 +1987,11 @@ body.qa-open { overflow: hidden; }
 .dg-note button { min-height: 44px; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; padding: 0 10px; border-radius: 12px; white-space: nowrap; }
 .dg-note .dg-x { color: var(--muted); min-width: 44px; padding: 0; font-size: 18px; }
 @media (min-width: 760px) { .dg-note { bottom: 28px; } }
+/* Phone with the chat button showing: the notice keeps clear of the button's corner. */
+@media (max-width: 759px) {
+  :root:has(.hc-bub:not([hidden])) .dg-note { left: 12px; right: 80px; width: auto; transform: translateY(16px); }
+  :root:has(.hc-bub:not([hidden])) .dg-note.show { transform: none; }
+}
 .mo-off .dg-note { transition: none !important; }
 .dg-row .dg-val { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; padding-left: 8px; }
 .dg-row .st-label { min-width: 0; }
