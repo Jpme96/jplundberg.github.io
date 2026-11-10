@@ -62,7 +62,7 @@
     "steady.js",
     "gridpack.js",
     "daypick.js",
-    "fold.js"
+    "fold.js", "fileview.js"
   ],
   "pages": {
     "index.html": [

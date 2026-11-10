@@ -5285,3 +5285,24 @@ html.hc-open { overflow: hidden; }
 .kit-r:has(.ch-pen) { display: inline-flex; align-items: center; gap: 6px; }
 .ch-pen { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; color: var(--muted); font-size: 15px; }
 .ch-pen:hover, .ch-pen:focus-visible { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+
+/* files open in a panel over the page (fileview.js): Download, Expand, Close */
+.fv-bg { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, .6); opacity: 0; transition: opacity .18s; }
+.fv-bg.open { opacity: 1; }
+.fv-box { width: min(960px, 100%); height: min(88vh, 100%); display: flex; flex-direction: column; border-radius: 18px; overflow: hidden;
+  background: var(--bg-solid); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); transform: translateY(10px) scale(.985); transition: transform .22s cubic-bezier(.2, .8, .2, 1), width .22s, height .22s, border-radius .22s; }
+.fv-bg.open .fv-box { transform: none; }
+.fv-bg.fv-full { padding: 0; }
+.fv-bg.fv-full .fv-box { width: 100%; height: 100%; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top); }
+.fv-top { display: flex; align-items: center; gap: 6px; padding: 10px 10px 10px 16px; border-bottom: 1px solid var(--line); }
+.fv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.fv-body { flex: 1; min-height: 0; overflow: auto; display: grid; place-items: center; background: rgba(var(--ink-rgb), .03); }
+.fv-img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; }
+.fv-img.fv-zoom { max-width: none; max-height: none; cursor: zoom-out; }
+.fv-pdf { width: 100%; height: 100%; border: 0; background: #fff; }
+.fv-other { text-align: center; padding: 24px; display: grid; gap: 8px; justify-items: center; }
+.fv-other .bi { font-size: 40px; color: var(--muted); }
+.fv-wait { padding: 24px; }
+html.fv-on, html.fv-on body { overflow: hidden; }
+@media (max-width: 600px) { .fv-big { display: none; } .fv-bg { padding: 0; } .fv-box { width: 100%; height: 100%; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top); } }
