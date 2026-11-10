@@ -9,7 +9,6 @@ const { shared, sl, until, unlock } = require('../lib/browser'); const { check, 
   await q.type('.hc-row textarea', 'Secret test message'); await q.click('.hc-row .hc-send'); await sl(1500);
   for (const [w, h, name] of [[393, 852, 'phone'], [1280, 900, 'computer']]) {
     await p.setViewport({ width: w, height: h }); await sl(400);
-    await p.evaluate(() => { const n = document.getElementById('dgNote'); if (n) n.hidden = true; });   /* a self-check notice can sit over the button on phones */
     await p.click('.hc-bub');
     check(await until(p, () => /Secret test message/.test((document.querySelector('.hc-pop') || {}).innerText || ''), 10000) !== null, name + ': the chat is open with the message');
     await p.evaluate(() => Vault.lock()); await sl(1000);
@@ -27,7 +26,6 @@ const { shared, sl, until, unlock } = require('../lib/browser'); const { check, 
     check(!r.pop && !r.bub, name + ': no chat pop-up or chat button while locked');
     check(!r.text && r.left, name + ': the message is gone from the page and from the chat\'s memory');
     await unlock(p); await sl(2500);
-    await p.evaluate(() => { const n = document.getElementById('dgNote'); if (n) n.hidden = true; });   /* a self-check notice can sit over the button on phones */
     await p.click('.hc-bub');
     check(await until(p, () => /Secret test message/.test((document.querySelector('.hc-pop') || {}).innerText || ''), 10000) !== null, name + ': after unlocking the chat works again');
     await p.evaluate(() => HomeChat.closePop()); await sl(400);
