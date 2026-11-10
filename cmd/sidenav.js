@@ -104,6 +104,23 @@
   /* synced settings arrive after unlocking, and with every pull from another device */
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(refresh, 0); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
-  window.addEventListener('softnav:swap', mount);   /* a new page's menu came in without a reload */
+  window.addEventListener('softnav:swap', mount);
+  /* icons only: the page's name next to the icon you point at (floating, so the scrolling list doesn't cut it) */
+  var tipEl = null;
+  function tipHide() { if (tipEl) tipEl.classList.remove('on'); }
+  function tipShow(a) {
+    if (!root.classList.contains('sn-mini') || !active()) return tipHide();
+    if (!tipEl || !tipEl.isConnected) { tipEl = document.createElement('div'); tipEl.className = 'sn-tip'; tipEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(tipEl); }
+    var r = a.getBoundingClientRect(), bar = a.closest('.tabbar').getBoundingClientRect();
+    if (r.bottom < bar.top || r.top > bar.bottom) return tipHide();
+    tipEl.textContent = a.getAttribute('data-tip') || '';
+    tipEl.style.left = (r.right + 16) + 'px'; tipEl.style.top = (r.top + r.height / 2) + 'px';
+    requestAnimationFrame(function () { tipEl.classList.add('on'); });
+  }
+  function tipFrom(e) { return e.target && e.target.closest ? e.target.closest('.mbar .tabbar a[data-tip]') : null; }
+  document.addEventListener('mouseover', function (e) { var a = tipFrom(e); if (a) tipShow(a); else tipHide(); });
+  document.addEventListener('focusin', function (e) { var a = tipFrom(e); if (a && a.matches(':focus-visible')) tipShow(a); else tipHide(); });
+  document.addEventListener('scroll', tipHide, true);
+  window.addEventListener('softnav:swap', tipHide);   /* a new page's menu came in without a reload */
   window.SideNav = { mode: mode, set: go, on: active };
 })();

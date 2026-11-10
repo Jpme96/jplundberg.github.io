@@ -49,6 +49,7 @@
   :root.side-nav.tab-off-work .tabbar a[data-pg=work]:not([aria-current]), :root.side-nav.tab-off-house .tabbar a[data-pg=house]:not([aria-current]),
   :root.side-nav.tab-off-people .tabbar a[data-pg=people]:not([aria-current]), :root.side-nav.tab-off-food .tabbar a[data-pg=food]:not([aria-current]), :root.side-nav.tab-off-papers .tabbar a[data-pg=papers]:not([aria-current]), :root.side-nav.tab-off-wish .tabbar a[data-pg=wish]:not([aria-current]), :root.side-nav.tab-off-goals .tabbar a[data-pg=goals]:not([aria-current]),
   :root.side-nav.tab-off-admin .tabbar a[data-pg=admin]:not([aria-current]) { display: none !important; }
+  :root.side-nav .mbar .tabbar a { flex-shrink: 0; }
   :root.side-nav .mbar .tabbar a > span:last-child { display: inline !important; overflow: hidden; text-overflow: ellipsis; }
   :root.side-nav .mbar .tabbar a i { flex: none; width: 20px; text-align: center; font-size: 17px; }
   :root.side-nav .mbar .tabbar .tb-pill, :root.side-nav .mbar .tabbar .tb-more { display: none !important; }
@@ -83,15 +84,13 @@
   :root.side-nav.sn-mini .mbar { padding-left: 8px; padding-right: 8px; }
   :root.side-nav.sn-mini .mbar .mb-me { justify-content: center; padding: 2px 0 14px; }
   :root.side-nav.sn-mini .mbar .mb-who, :root.side-nav.sn-mini .mbar .tabbar a > span:last-child { display: none !important; }
-  :root.side-nav.sn-mini:is(.unlocked, .resuming) .mbar .tabbar { overflow: visible; }
-  :root.side-nav.sn-mini .mbar .tabbar a { justify-content: center; padding: 11px 0; }
-  :root.side-nav.sn-mini .mbar .tabbar a::after {
-    content: attr(data-tip); position: absolute; left: calc(100% + 16px); top: 50%; transform: translate(-4px, -50%); z-index: 5;
-    padding: 6px 10px; border-radius: 9px; background: var(--bg-solid); border: 1px solid var(--line); color: var(--text);
-    font-size: 12.5px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .3); transition: opacity .15s, transform .15s;
-  }
-  :root.side-nav.sn-mini .mbar .tabbar a:is(:hover, :focus-visible)::after { opacity: 1; transform: translate(0, -50%); }
+  /* icons only: the list scrolls when the window is short (it never runs under the buttons below); the names
+     show in a floating label (sidenav.js), because a scrolling list would cut a label drawn inside it */
+  :root.side-nav.sn-mini .mbar .tabbar a { justify-content: center; padding: 11px 0; flex: none; }
+  .sn-tip { position: fixed; z-index: 60; padding: 6px 10px; border-radius: 9px; background: var(--bg-solid); border: 1px solid var(--line); color: var(--text);
+    font-size: 12.5px; font-weight: 500; white-space: nowrap; pointer-events: none; box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    opacity: 0; transform: translate(-4px, -50%); transition: opacity .15s, transform .15s; }
+  .sn-tip.on { opacity: 1; transform: translate(0, -50%); }
   :root.side-nav.sn-mini .mbar .mb-acts { flex-direction: column; align-items: center; flex-wrap: nowrap; }
 
   /* Opening and closing (view transitions, so the page slides on the graphics card instead of being re-laid out
