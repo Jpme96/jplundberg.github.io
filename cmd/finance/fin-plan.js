@@ -412,7 +412,7 @@
   function moreBlock(l, cur, c, c0) {
     if (!cur) return '';
     var since = (l.more || []).filter(function (m) { return +m.amount > 0; }).map(function (m) { return m.from; }).sort().pop();
-    return '<p class="ln-p ln-more"><i class="bi bi-arrow-up-circle"></i> You pay <b>+' + esc(kr(cur)) + ' extra</b> every month' + (since ? ' since ' + esc(new Date(since + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + ' – it’s in your fixed costs.</p>' +
+    return '<p class="ln-p ln-monthly"><i class="bi bi-arrow-up-circle"></i> You pay <b>+' + esc(kr(cur)) + ' extra</b> every month' + (since ? ' since ' + esc(new Date(since + 'T12:00').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + ' – it’s in your fixed costs.</p>' +
       (c0 && !c0.never && c && !c.never && c0.months > c.months ? '<p class="ln-p ln-win">' + win(c0, c) + ' than without it</p>' : '');
   }
   /* months with a different payment: December interest only … – the whole loan, and each person's part */

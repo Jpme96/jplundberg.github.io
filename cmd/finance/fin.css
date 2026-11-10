@@ -150,4 +150,4 @@
 .fp-chart .proj { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; fill: none; opacity: .85; }
 .fp-chart .proj-lbl { fill: var(--accent); font-size: 11px; font-weight: 600; }
 .ln-moreacts[hidden], .ln-win[hidden] { display: none !important; }
-.ln-more { display: flex; gap: 8px; align-items: baseline; } .ln-more .bi { color: var(--accent); }
+.ln-monthly { display: flex; gap: 8px; align-items: baseline; } .ln-monthly .bi { color: var(--accent); }
