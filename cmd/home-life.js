@@ -387,6 +387,20 @@
     addTitle: PP.addTitle, editTitle: PP.editTitle, fields: PP.fields,
     headExtra: function () { return (window.PeoplePlus ? window.PeoplePlus.importBtn() : '') + gear('people'); },
     empty: 'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.',
+    /* who you live with is already known (shared home): offer them in one tap until they're in the list (2026-11-10) */
+    afterRender: function (el, items) {
+      var nm = ''; try { nm = window.ShareSpace && ShareSpace.on() ? String(ShareSpace.name() || '').trim() : ''; } catch (e) {}
+      var has = !nm || nm === 'them' || items.some(function (x) { return String(x.name || '').trim().toLowerCase() === nm.toLowerCase(); });
+      var old = el.querySelector('.pp-suggest'); if (has) { if (old) old.remove(); return; }
+      if (old) return;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'pill-btn sm pp-suggest'; var nb = window.I18N && I18N.lang === 'nb'; b.innerHTML = '<i class="bi bi-person-plus"></i> ' + (nb ? 'Legg til ' : 'Add ') + esc(nm);
+      b.addEventListener('click', function () {
+        var was = snapshot('people');
+        saveList('people', function (l) { l.push({ id: uid(), name: nm, rel: 'family' }); });
+        toast('<i class="bi bi-person-check"></i> ' + esc(nm) + (nb ? ' lagt til' : ' added'), function () { restore('people', was); });
+      });
+      var at = el.querySelector('.kit-list, .kit-empty'); if (at) at.parentNode.insertBefore(b, at); else el.appendChild(b);
+    },
     sort: function (a, b) {
       var oa = overdue(a), ob = overdue(b), ba = bday(a), bb = bday(b);
       var sa = ba && ba.n <= 14 ? ba.n : oa != null ? 20 : 100 + (ba ? ba.n : 400), sb = bb && bb.n <= 14 ? bb.n : ob != null ? 20 : 100 + (bb ? bb.n : 400);

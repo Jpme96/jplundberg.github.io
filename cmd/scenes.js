@@ -123,7 +123,9 @@
     /* you, waving at whoever has a birthday soon – at the side nearest to them */
     var bi = seat.map(function (r) { return r.marks.some(function (q) { return q.k === 'cake'; }); }).indexOf(true);
     if (bi > -1 && n <= 4) svg += xs[bi] <= 120 ? sceneMe(-16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver') : sceneMe(240 - H * .62 + 16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
-    if (!n) svg += '<text x="120" y="80" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>';
+    /* nobody yet: you, waving, with the invitation above you – it drew only sky and grass and looked broken (2026-11-10) */
+    if (!n) { var me0 = sceneMe(56 - H * .31, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
+      svg += me0 + '<text x="' + (me0 ? 152 : 120) + '" y="96" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>'; }
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
     return { svg: svg, label: L('Your people', 'Personene dine'), list: list, empty: n ? L('Everyone’s fine – nothing coming up this week.', 'Alle har det fint – ingenting denne uka.') : '' };
@@ -349,6 +351,7 @@
     var tv = readJSON('dash.travel', {}) || {}, legs = [];
     try { legs = JSON.parse(localStorage.getItem('dash.tvLegs') || '[]'); } catch (e) {}
     legs = (Array.isArray(legs) ? legs : []).filter(function (m) { return VEH[m]; }).slice(0, 4);
+    var real = legs.length > 0;   /* rides from a search you made – otherwise the film plays a made-up bus → metro → train */
     if (!legs.length) { var m1 = ''; try { m1 = localStorage.getItem('dash.tvMode') || ''; } catch (e) {} legs = VEH[m1] ? [m1] : ['bus', 'metro', 'rail']; }
     var rec = (tv.recent || [])[0], nm = function (x) { return !x ? '' : typeof x === 'string' ? x : String(x.name || x.label || ''); };   /* saved places are objects {name, …} */
     var from = rec ? nm(rec.from) : '', to = rec ? nm(rec.to) : '', pl = tv.places || {}, hn = nm(pl.home).toLowerCase(), wn = nm(pl.work).toLowerCase();
@@ -387,8 +390,14 @@
     /* everything that moves stays inside the picture (the pictures draw with overflow visible, so rides waiting off-stage showed up over the page) */
     var svg = '<style>' + css + '</style><clipPath id="' + id + 'c"><rect x="0" y="0" width="240" height="150"/></clipPath>' + ground() + deco('travel') + '<g clip-path="url(#' + id + 'c)">' + layers + '</g>';
     var hw = function (w) { return w ? L('Work', 'Jobb') : L('Home', 'Hjem'); };
-    var list = [{ t: hw(A) + ' ⇄ ' + hw(B) + ': ' + legs.map(function (m) { return VEH[m][2]; }).join(' → '), h: '#paneJourney' }];
-    if (from && to) list.push({ t: from + ' → ' + to, h: '#paneJourney' });
+    /* the line under the picture says only what is true: "Work ⇄ Home" when it's your search and home or work is known,
+       otherwise where your last search went, and with no search yet an invitation (it named a route you never planned, 2026-11-10) */
+    var modes = legs.map(function (m) { return VEH[m][2]; }).join(' → ');
+    var knownHW = !!(hn || wn) || is(from, '', /^(home|hjem|work|jobb|arbeid)/) || is(to, '', /^(home|hjem|work|jobb|arbeid)/);
+    var list = real && knownHW ? [{ t: hw(A) + ' ⇄ ' + hw(B) + ': ' + modes, h: '#paneJourney' }]
+      : real && from && to ? [{ t: from + ' → ' + to + ': ' + modes, h: '#paneJourney' }]
+      : [{ t: L('Search a journey – it plays here', 'Søk opp en reise – den spilles av her'), h: '#paneJourney' }];
+    if (real && knownHW && from && to) list.push({ t: from + ' → ' + to, h: '#paneJourney' });
     return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, empty: '' };
   }
 

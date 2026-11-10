@@ -49,8 +49,10 @@
   function history() { return rj('dash.adminChecks', []) || []; }
   function runCore() {
     S.busy.core = true; draw();
-    return Promise.all([timed('/cmd/api/ping'), timed('/cmd/api/site'), timed('/?admincheck=' + Date.now())]).then(function (r) {
+    return Promise.all([timed('/cmd/api/ping'), timed('/cmd/api/site'), timed('/?admincheck=' + Date.now()), timed('/cmd/api/backup')]).then(function (r) {
       S.ping = r[0]; S.site = r[1]; S.speed = r[2];
+      /* is the weekly email backup really set up on the server? (null = couldn't tell) */
+      S.mailReady = r[3] && r[3].ok && r[3].json && typeof r[3].json.ready === 'boolean' ? r[3].json.ready : null;
       var h = history(); h.push({ at: Date.now(), api: r[0].ok ? r[0].ms : null, web: r[2].ok ? r[2].ms : null }); wj('dash.adminChecks', h.slice(-300));
       S.busy.core = false; S.checkedAt = Date.now(); draw();
     });
@@ -116,6 +118,9 @@
     /* keys */
     [['ghExpiry', 'key', L('GitHub key', 'GitHub-nøkkel'), true], ['cfExpiry', 'cloud', L('Cloudflare token', 'Cloudflare-token')], ['domainExpiry', 'globe', L('Domain renewal', 'Domenefornyelse')], ['resendExpiry', 'envelope', L('Resend key', 'Resend-nøkkel')]].forEach(function (k) {
       var dt = c[k[0]]; if (!dt && !k[3]) return;
+      /* a key for something that isn't in use is no reason for a red light: the Resend key only counts while the
+         email backup is set up on the server (it went red from a date typed once, 2026-11-10) */
+      if (k[0] === 'resendExpiry' && S.mailReady === false) return;
       var ex = dt ? Math.round((new Date(dt + 'T12:00') - new Date()) / 864e5) : null;
       out.push([k[1], k[2], ex == null ? L('Expiry date not set', 'Utløpsdato ikke satt') : ex < 0 ? L('Expired ', 'Utløpt for ') + (-ex) + L(' days ago', ' dager siden') : L('Expires in ', 'Utløper om ') + ex + L(' days', ' dager'), ex == null ? 'warn' : ex < 0 ? 'bad' : ex <= 30 ? 'warn' : 'ok', k[0]]);
     });

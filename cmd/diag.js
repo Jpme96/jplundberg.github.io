@@ -189,7 +189,21 @@
   var BAD = /(^|[^\w])(undefined|NaN|\[object Object\]|Invalid Date)([^\w]|$)/;
   function overlayOpen() {
     var r = root(), b = document.body;
-    return r.classList.contains('wrs-open') || (b && (b.classList.contains('qa-open') || b.classList.contains('st-open') || b.classList.contains('rp-open'))) || !!document.querySelector('dialog[open], .sheet.open, .kit-sheet.open, #settings.open, .st-panel.open, .sh-prev-bg.open');
+    if (r.classList.contains('wrs-open') || (b && (b.classList.contains('qa-open') || b.classList.contains('st-open') || b.classList.contains('rp-open'))) || !!document.querySelector('dialog[open], .sheet.open, .kit-sheet.open, #settings.open, .st-panel.open, .sh-prev-bg.open')) return true;
+    return !!coverAll();
+  }
+  /* any popup at all: a layer on the page itself that covers (nearly) the whole window and sits on top – so a new popup
+     no longer needs adding to the list above before it stops giving a false "two things cover each other" (2026-11-10) */
+  function coverAll() {
+    var b = document.body; if (!b) return null;
+    for (var i = b.children.length - 1; i >= 0; i--) {
+      var e = b.children[i], cs = getComputedStyle(e);
+      if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < .2 || cs.pointerEvents === 'none') continue;
+      if (!(parseInt(cs.zIndex, 10) > 0) || e.id === 'lock' || e.classList.contains('bg')) continue;
+      var rr = e.getBoundingClientRect();
+      if (rr.width >= innerWidth * .9 && rr.height >= innerHeight * .9) return e;
+    }
+    return null;
   }
   function scanContent(found) {
     var main = document.body; if (!main) return;   /* the whole page – page heroes sit outside <main> */

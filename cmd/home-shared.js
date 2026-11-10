@@ -234,11 +234,13 @@
   }
   function setMove(fn) { var t = Fe.tools(); var mv = t.hmove && typeof t.hmove === 'object' ? t.hmove : {}; fn(mv); t.hmove = mv; Fe.saveTools(t); }
 
+  /* who you already share the home with (Admin → Shared home) – asked for again here before (2026-11-10) */
+  function sharedName() { try { return window.ShareSpace && ShareSpace.on() ? String(ShareSpace.name() || '').replace(/^them$/, '') : ''; } catch (e) { return ''; } }
   function setupForm(p, inSheet) {
     var s = S().data(), pct = p ? myPct() : 50;
-    return '<form class="hs2-setup" data-hs2setup><p class="muted">Share your home with someone? Say who and how you split, then add what you buy together – furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.</p>' +
+    return '<form class="hs2-setup" data-hs2setup><p class="muted">' + (!p && sharedName() ? 'Split what you buy for the home with ' + esc(sharedName()) + ' – say how you split, then add what you buy together: furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.' : 'Share your home with someone? Say who and how you split, then add what you buy together – furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.') + '</p>' +
       (s.people.length ? '<div class="lf-chips mp-chips">' + s.people.map(function (q) { return '<span class="hs2-pchip"><button type="button" class="lf-chip" data-hs2pick="' + esc(q.id) + '" aria-pressed="' + (!!p && p.id === q.id) + '">' + esc(q.name) + '</button>' + (inSheet ? '<button type="button" class="hs2-pdel" data-hs2del="' + esc(q.id) + '" aria-label="Remove ' + esc(q.name) + '"><i class="bi bi-x"></i></button>' : '') + '</span>'; }).join('') + '</div>' : '') +
-      '<div class="mp-grid hs2-sg"><label><span>Who</span><input name="who" value="' + esc(p ? p.name : '') + '" placeholder="Your partner’s name" maxlength="30" autocomplete="off" required></label>' +
+      '<div class="mp-grid hs2-sg"><label><span>Who</span><input name="who" value="' + esc(p ? p.name : sharedName()) + '" placeholder="Your partner’s name" maxlength="30" autocomplete="off" required></label>' +
       '<label><span>You pay, %</span><input name="pct" value="' + esc(pc(pct)) + '" inputmode="decimal" autocomplete="off"></label></div>' +
       '<div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-hs2q="' + v + '" aria-pressed="' + (pct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div>' +
       (inSheet ? '' : '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (p ? 'Save' : 'Start') + '</button></div>') + '</form>';

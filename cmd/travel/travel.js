@@ -334,7 +334,8 @@
     evs.forEach(function (o, i) {
       cards.push('<button type="button" class="tv-nx" data-nx="' + i + '" style="--c:' + o.color + '">' +
         '<span class="k"><i class="bi bi-calendar3"></i> ' + (C.sameDay(o.start, now) ? 'Today' : 'Tomorrow') + ' ' + C.hm(o.start) + '</span>' +
-        '<b>' + esc(o.title) + '</b><span class="s" data-lb="' + i + '"><i class="bi bi-geo-alt"></i> ' + esc(o.ev.location) + '</span></button>');
+        '<b>' + esc(o.title) + '</b><span class="s" data-lb="' + i + '"><i class="bi bi-geo-alt"></i> ' + esc(o.ev.location) + '</span>' +
+        '<span class="tv-nx-go">Plan the trip <i class="bi bi-arrow-right"></i></span></button>');   /* a tap already planned the route there – now it says so (2026-11-10) */
     });
     nextEvents = evs;
     box.hidden = !cards.length;

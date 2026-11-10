@@ -506,7 +506,7 @@
   );
   /* Plan my day, gestures, keyboard, focus timer (only words not already above) */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
-    'Plan day': 'Planlegg dagen', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',
+    'Plan day': 'Planlegg dagen', 'Plan the trip': 'Planlegg turen', 'Search a journey – it plays here': 'Søk opp en reise – den spilles av her', 'Plan my day': 'Planlegg dagen', 'Plan your day': 'Planlegg dagen', 'Top 3 today': 'Topp 3 i dag', 'Remove from top 3': 'Fjern fra topp 3',
     'Pick a task below, or type a new one': 'Velg en oppgave under, eller skriv en ny', 'Schedule': 'Sett av tid', 'Pick a slot': 'Velg et tidspunkt', 'Put it here': 'Legg den her',
     'Take it out of the calendar': 'Ta den ut av kalenderen', 'Tasks': 'Oppgaver', 'New task – it goes straight into your top 3': 'Ny oppgave – den går rett inn i topp 3',
     'No other open tasks.': 'Ingen andre åpne oppgaver.', 'Your day': 'Dagen din', 'Fill my day': 'Fyll dagen', 'Nothing left of today.': 'Ikke mer igjen av dagen.', 'Habits today': 'Vaner i dag',
@@ -1115,6 +1115,7 @@
     [/^The meter readings are in the protocol( \(.+\))?$/, function (m, a) { return 'Måleravlesningene står i protokollen' + (a || ''); }], [/^All (\d+) faults? (is|are) written in the protocol$/, function (m, n) { return 'Alle ' + n + ' feil står i protokollen'; }],
     [/^(\d+) left: (.+)$/, function (m, n, rest) { return n + ' igjen: ' + rest.split(' · ').map(tr).join(' · '); }], [/^Take-over (\d.+)$/, 'Overtakelse $1'], [/^Faults found \((\d+)\)$/, 'Feil funnet ($1)'], [/^(\d+) \(missing (\d+)\)$/, '$1 (mangler $2)'],
     [/^(\d+) faults? from the take-over$/, function (m, n) { return n + ' feil fra overtakelsen'; }], [/^Take-over record · (.*)$/, 'Overtakelseslogg · $1'], [/^(.+) – reading$/, function (m, a) { return tr(a) + ' – avlesning'; }], [/^(.+) – should get$/, function (m, a) { return tr(a) + ' – skal ha'; }], [/^(.+) – got$/, function (m, a) { return tr(a) + ' – fikk'; }],
+    [/^Split what you buy for the home with (.+?) – say how you split, then add what you buy together: furniture, a new fridge, the lot\. You see who owes whom, things you pay in parts, and the one transfer that evens out each month\.$/, 'Del det dere kjøper til hjemmet med $1 – si hvordan dere deler, og legg til det dere kjøper sammen: møbler, et nytt kjøleskap, alt. Du ser hvem som skylder hvem, ting dere betaler i deler, og den ene overføringen som jevner ut hver måned.'],
     [/^Send it by about (.+)$/, 'Send den innen ca. $1'], [/^Send it now – found (\d+) days ago$/, 'Send den nå – funnet for $1 dager siden'], [/^Answer by (.+)$/, 'Svar innen $1'], [/^Answer is (\d+) days late$/, 'Svaret er $1 dager forsinket'],
     [/^The (\d)-year limit passed (.+)$/, '$1-årsfristen gikk ut $2'], [/^Final limit (.+)$/, 'Siste frist $1'], [/^(\d+) closed$/, '$1 lukket'], [/^(\d+) late$/, '$1 forsinket'], [/^in (\d+) days$/, 'om $1 dager'],
     [/^Found (\d.+)$/, 'Oppdaget $1'], [/^Taken over (\d.+)$/, 'Overtatt $1'], [/^Bought (\d.+)$/, 'Kjøpt $1'], [/^Work finished (\d.+)$/, 'Arbeidet ferdig $1'], [/^Delivered (\d.+)$/, 'Levert $1'],

@@ -41,7 +41,7 @@
     var c = st.cfg || {}, l = st.last;
     var last = l ? (l.ok ? '<i class="bi bi-check-circle" style="color:var(--accent)"></i> Last one sent ' + esc(when(l.at)) + (st.to ? ' to ' + esc(st.to) : '') : '<i class="bi bi-exclamation-triangle" style="color:var(--danger)"></i> ' + esc(when(l.at)) + ': ' + esc(l.err || 'failed')) : 'None sent yet';
     if (!st.ready) {
-      b.innerHTML = '<div class="st-col"><p class="st-note" data-noi18n>' + L('One step left: the server needs an email service to send it. Until then, use <b>Download encrypted backup</b> above – At a glance reminds you.', 'Ett steg igjen: serveren trenger en e-posttjeneste for å sende den. Fram til da: bruk <b>Last ned kryptert sikkerhetskopi</b> over – Kort fortalt minner deg på det.') + '</p></div>' + steps();
+      b.innerHTML = '<div class="st-col"><p class="st-note" data-noi18n>' + L('Not set up – it’s optional. <b>Download encrypted backup</b> above does the same by hand, and At a glance reminds you when it’s time.', 'Ikke satt opp – det er valgfritt. <b>Last ned kryptert sikkerhetskopi</b> over gjør det samme for hånd, og Kort fortalt minner deg på det når det er på tide.') + '</p></div>' + steps();
       return;
     }
     b.innerHTML = '<label class="st-row"><span>Email me a backup every week<small class="st-rsub">' + last + '</small></span><input type="checkbox" class="switch" data-bmon' + (c.on ? ' checked' : '') + '></label>' +
