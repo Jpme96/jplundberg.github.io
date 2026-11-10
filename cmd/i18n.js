@@ -816,7 +816,7 @@
   );
   /* side bar (Oct 2026) */
   Object.assign(D, {
-    'Bar': 'Linje', 'Side bar': 'Sidepanel', 'Icons only': 'Bare ikoner', 'Show page names': 'Vis sidenavn', 'Hide the side bar': 'Skjul sidepanelet', 'Show the side bar': 'Vis sidepanelet',
+    'Bar': 'Linje', 'Side bar': 'Sidepanel', 'Icons only': 'Bare ikoner', 'Show page names': 'Vis sidenavn', 'Hide the side bar': 'Skjul sidepanelet', 'Show the side bar': 'Vis sidepanelet', 'More pages above': 'Flere sider over', 'More pages below': 'Flere sider under',
     'The side bar needs the Modern look': 'Sidepanelet trenger Moderne utseende', 'At the top on a computer, at the bottom on a phone': 'Øverst på en datamaskin, nederst på en telefon',
     'On wider screens – iPad across and computers. Phones keep the bottom bar.': 'På bredere skjermer – iPad på tvers og datamaskiner. Telefoner beholder linjen nederst.'
   });

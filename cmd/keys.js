@@ -9,7 +9,10 @@
 (function () {
   "use strict";
   if (!window.Vault) return;
-  var page = (location.pathname.match(/\/cmd\/([a-z]+)\//) || [])[1] || 'home';
+  /* In the head bundle (runs once, stays through instant page changes – a key pressed while a page is on its way
+     still counts), so the page is read at each key press, and the listener sits on window: the page's own keys
+     (on document) still come first and can claim a key. */
+  function page() { return (location.pathname.match(/\/cmd\/([a-z]+)\//) || [])[1] || 'home'; }
   var home = '/cmd/';
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
@@ -43,13 +46,13 @@
     if (document.body.classList.contains('st-open') || (window.Plan && window.Plan.isOpen())) return true;
     return false;
   }
-  document.addEventListener('keydown', function (e) {
+  window.addEventListener('keydown', function (e) {
     if (!document.documentElement.classList.contains('unlocked')) return;
     if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
     var t = e.target; if (/INPUT|TEXTAREA|SELECT/.test(t.tagName || '') || t.isContentEditable) return;
     if (busy()) return;
     var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    if (page === 'calendar' && (k === 'n' || k === 't')) return;            // the calendar's own keys
+    if (page() === 'calendar' && (k === 'n' || k === 't')) return;            // the calendar's own keys
     if (/^[1-9]$/.test(k)) { var l = pages()[+k - 1]; if (l) { e.preventDefault(); l.click(); } return; }
     if (ACT[k]) { e.preventDefault(); ACT[k](); }
   });

@@ -46,13 +46,15 @@
   function settle() { requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); }); }
 
   /* ---------- the buttons ---------- */
-  var fold, hide, open;
+  var fold, hide, open, upB, downB;
   function btn(cls, icon) { var b = document.createElement('button'); b.type = 'button'; b.className = cls; b.innerHTML = '<i class="bi bi-' + icon + '"></i>'; return b; }
   function labels() {
     var m = mode();
     if (fold) { var l = t(m === 'icons' ? 'Show page names' : 'Icons only'); fold.setAttribute('aria-label', l); fold.title = l; }
     if (hide) { var h = t('Hide the side bar'); hide.setAttribute('aria-label', h); hide.title = h + ' ( [ )'; }
     if (open) { var o = t('Show the side bar'); open.setAttribute('aria-label', o); open.title = o + ' ( [ )'; }
+    if (upB) { upB.setAttribute('aria-label', t('More pages above')); upB.title = t('More pages above'); }
+    if (downB) { downB.setAttribute('aria-label', t('More pages below')); downB.title = t('More pages below'); }
     document.querySelectorAll('.tabbar a[data-pg]').forEach(function (a) { var n = a.querySelector('span:last-child'); a.setAttribute('data-tip', ((n && n.textContent) || a.textContent || '').trim()); });
   }
   function mount() {
@@ -63,6 +65,13 @@
       var acts = bar.querySelector('.mb-acts');
       hide = btn('icon-btn sn-hidebtn', 'layout-sidebar-inset'); if (acts) acts.appendChild(hide);
       hide.addEventListener('click', function () { go('hidden'); });
+    }
+    /* "more pages" rows just above and below the list – only when it has to scroll (their own rows, so they never
+       sit on top of a page icon); a click scrolls that way */
+    if (bar && !bar.querySelector('.sn-more')) {
+      upB = btn('sn-more sn-more-up', 'chevron-up'); downB = btn('sn-more sn-more-down', 'chevron-down');
+      bar.appendChild(upB); bar.appendChild(downB);      /* put in place around the list by edges() */
+      [[upB, -1], [downB, 1]].forEach(function (x) { x[0].addEventListener('click', function () { var l = bar.querySelector('.tabbar'); if (l) l.scrollBy({ top: x[1] * Math.max(80, l.clientHeight * .7), behavior: root.classList.contains('mo-off') ? 'auto' : 'smooth' }); }); });
     }
     if (!document.querySelector('.sn-open')) {
       open = btn('sn-open', 'layout-sidebar'); document.body.appendChild(open);
@@ -96,7 +105,7 @@
   });
 
   /* another device or tab changed the setting, or the look changed */
-  function refresh() { var had = root.classList.contains('side-nav'); classes(mode()); sync(); if (had !== root.classList.contains('side-nav')) settle(); }
+  function refresh() { var had = root.classList.contains('side-nav'); classes(mode()); sync(); if (had !== root.classList.contains('side-nav')) settle(); fitSoon(); }
   window.addEventListener('dash:local', function () { clearTimeout(refresh.t); refresh.t = setTimeout(refresh, 60); });
   window.addEventListener('storage', function (e) { if (e.key === KEY || e.key === ST) refresh(); });
   window.addEventListener('st:page', function (e) { if (e.detail === 'appearance') sync(); });
@@ -105,6 +114,9 @@
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(refresh, 0); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
   window.addEventListener('softnav:swap', mount);
+  /* instant page changes: the new page builds its menu bar (modern.js) only after the swap, so the arrow and the
+     hide button are added again once it's done – otherwise they vanished after the first page change */
+  window.addEventListener('softnav:done', function () { mount(); fitSoon(); });
   /* icons only: the page's name next to the icon you point at (floating, so the scrolling list doesn't cut it) */
   var tipEl = null;
   function tipHide() { if (tipEl) tipEl.classList.remove('on'); }
@@ -122,5 +134,40 @@
   document.addEventListener('focusin', function (e) { var a = tipFrom(e); if (a && a.matches(':focus-visible')) tipShow(a); else tipHide(); });
   document.addEventListener('scroll', tipHide, true);
   window.addEventListener('softnav:swap', tipHide);   /* a new page's menu came in without a reload */
-  window.SideNav = { mode: mode, set: go, on: active };
+  /* ---------- fit the pages in the window ----------
+     Normal spacing if it fits; otherwise closer rows (sn-fit1), then smaller rows too (sn-fit2). Only if even that
+     is too tall does the list scroll – with a fade at the edge that has more, and the page you're on kept in view. */
+  function list() { return active() && !root.classList.contains('sn-hide') ? document.querySelector('.mbar .tabbar') : null; }
+  function over(l) { return l.scrollHeight > l.clientHeight + 1; }
+  function edges() {
+    var l = document.querySelector('.mbar .tabbar'); if (!l) return;
+    var on2 = !!list() && over(l), up = on2 && l.scrollTop > 2, down = on2 && l.scrollTop + l.clientHeight < l.scrollHeight - 2;
+    l.classList.toggle('sn-up', up); l.classList.toggle('sn-down', down);
+    /* the rows stay while it scrolls (dimmed at the end), so nothing jumps as you scroll */
+    var bar = l.parentNode; if (!bar || !bar.classList || !bar.classList.contains('mbar')) return;
+    var u = bar.querySelector('.sn-more-up'), dn = bar.querySelector('.sn-more-down');
+    if (u && u.nextSibling !== l) bar.insertBefore(u, l);                 /* the list moves in and out of the bar (phone ↔ computer) */
+    if (dn && l.nextSibling !== dn) bar.insertBefore(dn, l.nextSibling);
+    if (u) { u.classList.toggle('on', on2); u.disabled = !up; }
+    if (dn) { dn.classList.toggle('on', on2); dn.disabled = !down; }
+  }
+  function fit() {
+    root.classList.remove('sn-fit1', 'sn-fit2');
+    document.querySelectorAll('.mbar .sn-more.on').forEach(function (x) { x.classList.remove('on'); });
+    var l = list(); if (!l) { edges(); return; }
+    if (over(l)) { root.classList.add('sn-fit1'); if (over(l)) root.classList.add('sn-fit2'); }
+    var cur = l.querySelector('a[aria-current="page"]');
+    if (cur && over(l)) { var r = cur.getBoundingClientRect(), b = l.getBoundingClientRect(); if (r.top < b.top + 24 || r.bottom > b.bottom - 24) l.scrollTop += r.top - b.top - (b.height - r.height) / 2; }
+    edges();
+  }
+  function fitSoon() { clearTimeout(fitSoon.t); fitSoon.t = setTimeout(function () { requestAnimationFrame(fit); }, 60); }
+  window.addEventListener('resize', fitSoon);
+  window.addEventListener('softnav:swap', fitSoon);
+  window.addEventListener('dash:local', fitSoon);           /* pages switched on/off, the bar opened or folded */
+  wide.addEventListener && wide.addEventListener('change', fitSoon);
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(fitSoon);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fitSoon); else fitSoon();
+  document.addEventListener('scroll', function (e) { if (e.target && e.target.classList && e.target.classList.contains('tabbar')) edges(); }, true);
+
+  window.SideNav = { mode: mode, set: go, on: active, fit: fit };
 })();

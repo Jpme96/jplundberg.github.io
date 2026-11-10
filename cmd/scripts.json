@@ -7,7 +7,7 @@
     "lockui.js",
     "passkey.js",
     "features.js",
-    "sidenav.js", "softnav.js"
+    "sidenav.js", "keys.js", "softnav.js"
   ],
   "tail": [
     "smart.js",
@@ -20,7 +20,6 @@
     "tilekit.js",
     "pagekit.js",
     "focus.js",
-    "keys.js",
     "nav.js",
     "life.js",
     "life-pages.js",

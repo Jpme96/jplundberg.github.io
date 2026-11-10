@@ -3,7 +3,7 @@
    Three states, remembered per device: open (icons + names), icons (slim strip, names on hover)
    and hidden (a small button in the top-left corner brings it back). The bar never covers the page:
    opening it pushes the page to the right. modern.js still builds the bar; this file only lays it out. */
-.sn-fold, .sn-hidebtn, .sn-open { display: none; }
+.sn-fold, .sn-hidebtn, .sn-open, .sn-more { display: none; }
 
 @media (min-width: 1024px) {
   :root.side-nav { --sn-w: 236px; --sn-gap: 12px; --sn-pad: calc(var(--sn-w) + var(--sn-gap) * 2); --sn-ease: cubic-bezier(.22, .8, .2, 1); }
@@ -92,6 +92,33 @@
     opacity: 0; transform: translate(-4px, -50%); transition: opacity .15s, transform .15s; }
   .sn-tip.on { opacity: 1; transform: translate(0, -50%); }
   :root.side-nav.sn-mini .mbar .mb-acts { flex-direction: column; align-items: center; flex-wrap: nowrap; }
+
+  /* Short windows (sidenav.js fit()): first the rows move closer (sn-fit1), then they get a little smaller too
+     (sn-fit2). Only when even that doesn't fit does the list scroll – and then it fades out at the edge that has
+     more, instead of cutting an icon in half. */
+  :root.side-nav.sn-fit1 .mbar .tabbar { gap: 1px; padding: 8px 0; }
+  :root.side-nav.sn-fit1 .mbar .tabbar a { min-height: 36px; padding-top: 7px; padding-bottom: 7px; }
+  :root.side-nav.sn-fit1.sn-mini .mbar .tabbar a { padding: 8px 0; }
+  :root.side-nav.sn-fit2 .mbar .tabbar a { min-height: 32px; padding-top: 5px; padding-bottom: 5px; font-size: 13.5px; }
+  :root.side-nav.sn-fit2.sn-mini .mbar .tabbar a { padding: 6px 0; }
+  :root.side-nav.sn-fit2 .mbar .tabbar a i { font-size: 16px; }
+  :root.side-nav .mbar .tabbar.sn-up { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30px); mask-image: linear-gradient(to bottom, transparent, #000 30px); }
+  :root.side-nav .mbar .tabbar.sn-down { -webkit-mask-image: linear-gradient(to top, transparent, #000 30px); mask-image: linear-gradient(to top, transparent, #000 30px); }
+  /* very short windows (still too tall after sn-fit2): the buttons at the bottom move closer too */
+  :root.side-nav.sn-mini.sn-fit2 .mbar .mb-acts { gap: 3px; padding-top: 8px; }
+  :root.side-nav.sn-mini.sn-fit2 .mbar .mb-acts > :is(.icon-btn, .sr-btn, a.icon-btn) { width: 34px; height: 34px; font-size: 15px; }
+  /* when it still has to scroll: a "more pages" row just above and below the list (their own rows – never on top of a
+     page icon), dimmed at the end you've reached; a click scrolls that way */
+  :root.side-nav:is(.unlocked, .resuming) .mbar .sn-more.on {
+    display: grid; place-items: center; flex: none; width: 100%; height: 22px; margin: 2px 0; padding: 0; border: 0; border-radius: 8px;
+    background: rgba(var(--ink-rgb), .05); color: var(--muted); font-size: 12px; cursor: pointer; transition: color .15s, background .15s, opacity .15s;
+  }
+  :root.side-nav .mbar .sn-more.on:hover:not(:disabled) { color: var(--accent); background: rgba(var(--ink-rgb), .09); }
+  :root.side-nav .mbar .sn-more.on:disabled { opacity: .3; cursor: default; }
+  :root.side-nav .mbar .tabbar.sn-up.sn-down {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+  }
 
   /* Opening and closing (view transitions, so the page slides on the graphics card instead of being re-laid out
      every frame): the bar grows or slides on its own layer, the page slides from where it was to where it goes. */
