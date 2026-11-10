@@ -297,9 +297,14 @@
     room: { c: 'room', key: 'rooms', area: 'chores', ordered: true, box: function (x, i) { return { name: String(x.name || '').slice(0, 40), icon: /^[a-z0-9-]{1,30}$/.test(x.icon || '') ? x.icon : 'house', size: x.size ? String(x.size).slice(0, 10) : '', order: i }; },
       item: function (f) { return { name: f.name || 'Room', icon: f.icon || 'house', size: f.size || '' }; } },
     cdone: { c: 'cdone', key: 'choreDone', area: 'chores', map: true, box: function (k, who) { return { k: k, who: who === 'them' ? 'them' : 'me' }; }, val: function (f) { return f.who === 'me' ? 'me' : 'them'; } },
+    meal: { c: 'meal', key: 'meals', area: 'meals', map: true, win: function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k) && k >= dkey(new Date(Date.now() - 864e5)); },
+      box: function (k, v) { return { date: k, text: String(v || '').slice(0, 80) }; }, val: function (f) { return f.text || ''; } },
+    vote: { c: 'vote', key: 'votes', area: 'meals', win: function (x) { return !!(x && x.date >= dkey(new Date(Date.now() - 3 * 864e5))); },
+      box: function (x) { var o = { date: x.date, opts: Array.isArray(x.opts) ? x.opts : [], from: x.from === 'them' ? 'p' : 'o', at: +x.at || 0 }; if (x.pick != null) o.pick = +x.pick; return o; },
+      item: function (f) { var o = { date: f.date, opts: f.opts || [], from: f.from === 'p' ? 'them' : 'me', at: +f.at || 0 }; if (f.pick != null) o.pick = +f.pick; return o; }, tidy: function (x) { if (x.pick == null) delete x.pick; return x; } },
     note: { c: 'note', key: 'homenotes', area: 'notes', box: function (x) { return { title: String(x.title || '').slice(0, 60), text: String(x.text || '').slice(0, 1500) }; }, item: function (f) { return { title: f.title || '', text: f.text || '' }; }, extra: { by: 'partner' } }
   };
-  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room', 'cdone'], notes: ['note'] };   /* switch → the lists it moves */
+  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room', 'cdone'], notes: ['note'], meals: ['meal', 'vote'] };   /* switch → the lists it moves */
   function dl(name) { var d = DLISTS[name]; if (!d.ops) { d.boxL = rj('dash.share.box.' + name, null); d.ops = rj('dash.share.ops.' + name, {}) || {}; } return d; }
   function direct(k) { var s = st(); return !!(s && !(s.direct && s.direct[k] === false) && what()[k]); }   /* on unless turned off in Shared space */
   function dOn(name) { return direct(DLISTS[name].area === 'chores' ? 'chores' : DLISTS[name].area); }
@@ -309,16 +314,18 @@
     return o;
   }
   function inWin(k) { return String(k).slice(0, 7) >= dkey(new Date(Date.now() - 70 * 864e5)).slice(0, 7); }   /* chore ticks: the box holds the last ~2 months */
+  /* the part of a list the box holds (older things stay only in your copy): chore ticks ~2 months, dinners from yesterday, votes 3 days */
+  function win(d, x) { return d.win ? d.win(x) : d.map ? inWin(x) : true; }
   function mView(name, mirror) {
     var d = dl(name), out = {}, box = d.boxL;
-    Object.keys(mirror).forEach(function (k) { if (!inWin(k) || !box) out[k] = mirror[k]; });
-    if (box) Object.keys(box).forEach(function (k) { out[k] = d.val(box[k].f); });
+    Object.keys(mirror).forEach(function (k) { if (!win(d, k) || !box) out[k] = mirror[k]; });
+    if (box) Object.keys(box).forEach(function (k) { var v = d.val(box[k].f); if (v != null && v !== '') out[k] = v; });
     Object.keys(d.ops).forEach(function (k) { var o = d.ops[k]; if (o.f) out[k] = d.val(o.f); else delete out[k]; });
     return out;
   }
   function mSave(name, base, now) {
     var d = dl(name), at = Date.now(), ch = false, all = Object.assign({}, base, now);
-    Object.keys(all).forEach(function (k) { if (!inWin(k) || base[k] === now[k]) return; d.ops[k] = { f: now[k] == null ? null : d.box(k, now[k]), t: at }; ch = true; });
+    Object.keys(all).forEach(function (k) { if (!win(d, k) || base[k] === now[k]) return; d.ops[k] = { f: now[k] == null || now[k] === '' ? null : d.box(k, now[k]), t: at }; ch = true; });
     if (ch) wj('dash.share.ops.' + name, d.ops);
   }
   function dView(name, mirror) {
@@ -326,10 +333,11 @@
     if (d.map) return mView(name, mirror && typeof mirror === 'object' && !Array.isArray(mirror) ? mirror : {});
     mirror = Array.isArray(mirror) ? mirror : [];
     mirror.forEach(function (x) { if (x && x.id) m[x.id] = x; });
-    if (!box) { box = {}; mirror.forEach(function (x, i) { if (x && x.id) box[x.id] = { f: d.box(x, i), t: 0 }; }); }   /* the box isn't known yet: start from the copy we have */
+    if (!box) { box = {}; mirror.forEach(function (x, i) { if (x && x.id && win(d, x)) box[x.id] = { f: d.box(x, i), t: 0 }; }); }   /* the box isn't known yet: start from the copy we have */
+    mirror.forEach(function (x) { if (x && x.id && !win(d, x)) ids[x.id] = { keep: x }; });   /* older than the box holds: as it is in your copy */
     Object.keys(box).forEach(function (id) { ids[id] = box[id]; });
     Object.keys(d.ops).forEach(function (id) { var o = d.ops[id]; if (o.f) ids[id] = { f: o.f, t: (ids[id] && ids[id].t) || o.t }; else delete ids[id]; });
-    var mk = function (id, base) { var x = Object.assign({}, base || (d.extra || {}), base || !d.fresh ? {} : d.fresh(ids[id].f), d.item(ids[id].f), { id: id }); return d.tidy ? d.tidy(x) : x; };
+    var mk = function (id, base) { if (ids[id].keep) return ids[id].keep; var x = Object.assign({}, base || (d.extra || {}), base || !d.fresh ? {} : d.fresh(ids[id].f), d.item(ids[id].f), { id: id }); return d.tidy ? d.tidy(x) : x; };
     if (d.ordered) Object.keys(ids).sort(function (a, b) { return ((ids[a].f.order != null ? ids[a].f.order : 999) - (ids[b].f.order != null ? ids[b].f.order : 999)) || ((ids[a].t || 0) - (ids[b].t || 0)); }).forEach(function (id) { out.push(mk(id, m[id])); });
     else {
       mirror.forEach(function (x) { if (x && x.id && ids[x.id]) out.push(mk(x.id, x)); });
@@ -340,8 +348,8 @@
   function dSave(name, base, now) {
     if (DLISTS[name].map) return mSave(name, base && !Array.isArray(base) ? base : {}, now && !Array.isArray(now) ? now : {});
     var d = dl(name), b = {}, n = {}, at = Date.now(), ch = false; base = Array.isArray(base) ? base : []; now = Array.isArray(now) ? now : [];
-    base.forEach(function (x, i) { if (x && x.id) b[x.id] = hashF(d.box(x, i)); });
-    now.forEach(function (x, i) { if (!x || !x.id) return; n[x.id] = 1; var f = d.box(x, i); if (b[x.id] !== hashF(f)) { d.ops[x.id] = { f: f, t: at }; ch = true; } });
+    base.forEach(function (x, i) { if (x && x.id && win(d, x)) b[x.id] = hashF(d.box(x, i)); });
+    now.forEach(function (x, i) { if (!x || !x.id) return; n[x.id] = 1; if (!win(d, x)) return; var f = d.box(x, i); if (b[x.id] !== hashF(f)) { d.ops[x.id] = { f: f, t: at }; ch = true; } });
     Object.keys(b).forEach(function (id) { if (!n[id]) { d.ops[id] = { f: null, t: at }; ch = true; } });
     if (ch) wj('dash.share.ops.' + name, d.ops);
   }
@@ -371,8 +379,8 @@
   }
   function firstLoad(name, d, nb, mirror) {
     var at = Date.now(), want = [], s = st();
-    if (d.map) { if (mirror && typeof mirror === 'object' && !Array.isArray(mirror)) Object.keys(mirror).forEach(function (k) { if (inWin(k) && !nb[k] && !d.ops[k]) want.push({ id: k, f: d.box(k, mirror[k]) }); }); }
-    else if (Array.isArray(mirror)) mirror.forEach(function (x, i) { if (x && x.id && !nb[x.id] && !d.ops[x.id]) want.push({ id: x.id, f: d.box(x, i) }); });
+    if (d.map) { if (mirror && typeof mirror === 'object' && !Array.isArray(mirror)) Object.keys(mirror).forEach(function (k) { if (win(d, k) && !nb[k] && !d.ops[k]) want.push({ id: k, f: d.box(k, mirror[k]) }); }); }
+    else if (Array.isArray(mirror)) mirror.forEach(function (x, i) { if (x && x.id && win(d, x) && !nb[x.id] && !d.ops[x.id]) want.push({ id: x.id, f: d.box(x, i) }); });
     if (!want.length || !s) return Promise.resolve();
     /* deleted in the box (by them, or on another device) stays deleted; never in the box at all goes up */
     return Promise.all(want.map(function (w) { return ridOf(s.key, d.c, w.id).then(function (rid) { return cache[rid] && cache[rid].del ? null : w; }, function () { return null; }); })).then(function (l) {
@@ -645,7 +653,7 @@
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
         '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
       (function () {
-        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
+        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['meals', 'Dinner plan and votes'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
         return sec('direct', 'lightning-charge', 'Shared home in one place', on.length ? on.map(function (x) { return x[1]; }).join(', ') + ': on' : 'Off',
           '<p class="st-note muted">One copy for both of you instead of two kept in step – no more fights when you both change something at once. Your own copy is kept as a backup, so turning it off loses nothing.</p>' +
           DR.map(function (x) { return '<label class="st-row"><span>' + esc(x[1]) + ' straight from the shared home</span><input type="checkbox" class="switch" data-shdirect="' + x[0] + '"' + (direct(x[0]) ? ' checked' : '') + '></label>'; }).join(''));

@@ -32,7 +32,7 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 
 ## Coming (from the plan – becomes a rule when that part is done)
 - **Shared home:** shared things live only in the shared box; cmd and the shared app read and write it directly – no copying into the owner's vault. New shared features are built once and used in both apps.
-  *Started (on by default since 2026-11-10, JP's choice):* shopping list, chores + rooms + chore ticks and notes are read straight from the box (`DLISTS` in `cmd/share.js` + `Features.direct()`; can be turned off per part under Shared space → "Shared home in one place"; tests `shop-direct`, `chores-direct`). **A new shared list goes into `DLISTS`**, not into `collect()`/`applyAll()`. Still the old way: dinners/votes, money, pantry, recipes, events, plants.
+  *Started (on by default since 2026-11-10, JP's choice):* shopping list, chores + rooms + chore ticks, dinners + votes and notes are read straight from the box (`DLISTS` in `cmd/share.js` + `Features.direct()`; can be turned off per part under Shared space → "Shared home in one place"; tests `shop-direct`, `chores-direct`, `dinner-direct`; a part the box only keeps for a while gets a `win`). **A new shared list goes into `DLISTS`**, not into `collect()`/`applyAll()`. Still the old way: shared events (they live in dash.calendar, not the tool lists) and money (worked out from your finances). Pantry, recipes and plants are only published one way (you edit, they see; they can only mark low / watered), so they don't fight.
 - **Translations:** every text has a fixed name (key); never match on the English sentence.
 - **Reminders:** sent by the server (LiveRoom alarms), not planned by a device.
 - **Offline:** every edit goes through the offline queue.

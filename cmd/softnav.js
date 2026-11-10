@@ -15,6 +15,7 @@
   if (!on || !window.history || !window.history.pushState || !window.fetch || !window.DOMParser) return;
 
   var root = document.documentElement, epoch = 0, running = false;
+  function mark(n) { try { performance.mark(n); } catch (e) {} }   /* how long each step took (Settings → Data & sync → problems, and the tests) */
   var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/finance/', '/cmd/habits/', '/cmd/travel/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/wish/', '/cmd/goals/', '/cmd/admin/'];
   var KEEP = ['lock', 'dgNote'];        /* parts of the page that belong to the head (the lock screen, the problem note) */
 
@@ -93,10 +94,10 @@
   var base = location.href, busy = false, HEAD = '';
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
-    if (busy) return; busy = true;
+    if (busy) return; busy = true; mark('sn:start');
     var full = function () { location.href = u.href; };
     getHtml(u).then(function (text) {
-      var doc = new DOMParser().parseFromString(text, 'text/html');
+      mark('sn:html'); var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
       /* a new version of the dashboard: load it properly */
       if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) return full();
@@ -120,13 +121,19 @@
           body.insertBefore(document.importNode(n, true), first);
         });
         window.scrollTo(0, pop && history.state && history.state.y ? history.state.y : 0);
-        window.dispatchEvent(new Event('softnav:swap'));
+        window.dispatchEvent(new Event('softnav:swap')); mark('sn:swap');
       };
-      var vt = document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches ? document.startViewTransition(swap) : (swap(), null);
-      return (vt ? vt.updateCallbackDone : Promise.resolve()).then(function () { return run(scripts); }).then(function () {
-        window.SoftNav.count++;
-        window.dispatchEvent(new Event('softnav:done'));
-      });
+      /* smooth: the old page stays on screen while the new one is put together and drawn, then the new one glides in
+         (the menu stays where it is). Motion off or reduced: it just switches. */
+      var still = root.classList.contains('mo-off') || root.classList.contains('mo-reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var built = function () { swap(); return run(scripts).then(function () { return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
+      var finish = function () { mark('sn:done'); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
+      if (!document.startViewTransition || still) return built().then(finish);
+      root.classList.add('sn-go');
+      var vt = document.startViewTransition(built);
+      var end = function () { root.classList.remove('sn-go'); };
+      vt.finished.then(end, end);
+      return vt.updateCallbackDone.then(finish, function () { finish(); });
     }).catch(function (e) { try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); full(); })
       .then(function () { busy = false; });
   }

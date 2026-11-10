@@ -262,6 +262,15 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 @media (min-width: 760px) { .modern.vt-active .mbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg-solid); } }   /* phones: the top bar has no background, so nothing to swap */
 .modern::view-transition-old(root), .modern::view-transition-new(root) { animation-duration: .2s; }
 .modern::view-transition-group(tb-pill) { animation-duration: .3s; }
+/* instant page changes (softnav.js): the old page fades away quickly, the new one rises in softly; the menu stays */
+:root.sn-go::view-transition-old(root) { animation: sn-out .16s ease-in both; }
+:root.sn-go::view-transition-new(root) { animation: sn-in .34s cubic-bezier(.2, .8, .2, 1) both; }
+:root.sn-go.mo-subtle::view-transition-new(root) { animation: sn-fade .22s ease-out both; }
+:root.sn-go .mbar { view-transition-name: pgbar; }
+:root.sn-go::view-transition-group(pgbar), :root.sn-go::view-transition-old(pgbar), :root.sn-go::view-transition-new(pgbar) { animation-duration: .2s; }
+@keyframes sn-out { to { opacity: 0; } }
+@keyframes sn-in { from { opacity: 0; transform: translateY(14px) scale(.995); } }
+@keyframes sn-fade { from { opacity: 0; } }
 .modern .tabbar a.going { color: var(--on-accent); }
 
 /* batch 5 consistency: every card's head buttons are the same small squares (week/year arrows too) */
