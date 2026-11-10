@@ -250,7 +250,8 @@
        square and heart change only the jaw – the forehead and temples stay the oval's, so every hairstyle and hat sits the same */
     var FD = { square: 'M101 40c12.5 0 19 9 19 22v5c0 9-6.5 17-12 17h-14c-5.5 0-12-8-12-17v-5c0-13 6.5-22 19-22z', heart: 'M101 40c12.5 0 19 9 19 22 0 10-11.5 22-19 22s-19-12-19-22c0-13 6.5-22 19-22z' }[L.faceS] || 'M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z';
     var HS = { round: [1.1, .98], long: [.92, 1.07], square: [1.04, 1], heart: [1.05, 1] }[L.faceS];
-    var face = '<path d="' + FD + '" fill="' + S + '"/><ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + S2 + '"/>';
+    /* ears sit behind the face (only the outer half shows), skin-coloured with a small inner curve – on top of the cheek they looked pasted on */
+    var face = '<ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><path d="M81.4 60.2q-2 2.8 0 5.6M120.6 60.2q2 2.8 0 5.6" stroke="' + S2 + '" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="' + FD + '" fill="' + S + '"/>';
     if (L.earS === 'small') face = face.replace(/rx="3.5" ry="5"/g, 'rx="2.6" ry="3.7"');
     if (L.earS === 'big') face = face.replace(/rx="3.5" ry="5"/g, 'rx="5" ry="6.6"');
     if (L.earS === 'elf') face = face.replace('<ellipse cx="82.5" cy="63" rx="3.5" ry="5"', '<path d="M84 59l-8-9 3 14 4 4z"').replace('<ellipse cx="119.5" cy="63" rx="3.5" ry="5"', '<path d="M118 59l8-9-3 14-4 4z"');

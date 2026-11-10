@@ -107,6 +107,8 @@
     if (busy) { next = { u: u, pop: pop }; return; }
     busy = true; mark('sn:start');
     var full = function () { location.href = u.href; };
+    /* never stuck: a page change that hasn't finished after 6 s is done as a normal load instead (and noted in Diagnostics) */
+    var arrived = false, dog = sT.call(window, function () { if (arrived) return; try { sessionStorage.setItem('softnav.err', 'timeout ' + u.pathname + ' ' + (performance.getEntriesByType ? performance.getEntriesByType('mark').slice(-4).map(function (m) { return m.name; }).join(',') : '')); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', 'A page change to ' + u.pathname + ' took too long – loaded it normally', 'softnav.js'); full(); }, 6000);
     getHtml(u).then(function (text) {
       mark('sn:html'); var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
@@ -137,7 +139,7 @@
       /* smooth: the old page stays on screen while the new one is put together and drawn, then the new one glides in
          (the menu stays where it is). Motion off or reduced: it just switches. */
       var still = root.classList.contains('mo-off') || root.classList.contains('mo-reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var built = function () { swap(); return run(scripts).then(function () { return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
+      var built = function () { swap(); return run(scripts).then(function () { arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
       var finish = function () { mark('sn:done'); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
       if (!document.startViewTransition || still) return built().then(finish);
       root.classList.add('sn-go');
@@ -145,7 +147,7 @@
       var end = function () { root.classList.remove('sn-go'); };
       vt.finished.then(end, end);
       return vt.updateCallbackDone.then(finish, function () { finish(); });
-    }).catch(function (e) { try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); full(); })
+    }).catch(function (e) { arrived = true; clearTimeout(dog); try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); full(); })
       .then(function () { busy = false;
         var n = next; next = null;
         if (n && (n.u.pathname !== location.pathname || n.u.search !== location.search)) go(n.u, n.pop);

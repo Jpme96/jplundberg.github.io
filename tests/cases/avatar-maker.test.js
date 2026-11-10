@@ -1,5 +1,6 @@
 /* The new avatar maker (2026-11): one maker for Settings, People and the shared home.
-   - avatars made before it are drawn exactly as before (fingerprints of the old drawings in tests/lib/avatar-old.json)
+   - avatars made before it are drawn exactly as before, apart from the nicer ears (fingerprints in tests/lib/avatar-old.json,
+     made from the old code with only the ear change)
    - hundreds of random looks with every new option: no errors, no "undefined"/"NaN", nothing outside the picture
    - Settings → Pictures & touches: tabs and picture tiles; a tap saves; an old cap/lanyard carries over; fits a phone
    - Iago makes his avatar in his app with new options; cmd gets all of them (more than the old 16-setting limit)
