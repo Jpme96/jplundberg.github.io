@@ -100,7 +100,8 @@
   function page(u) { var x = new URL(u, location.href); return x.origin === location.origin && PAGES.indexOf(x.pathname) > -1 ? x : null; }
   function getHtml(u) { var k = u.pathname; return htmlCache[k] ? Promise.resolve(htmlCache[k]) : fetch(u.pathname, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { htmlCache[k] = t; return t; }); }
   function srcOf(doc, re) { var s = [].filter.call(doc.querySelectorAll('script[src]'), function (x) { return re.test(x.getAttribute('src')); })[0]; return s ? new URL(s.getAttribute('src'), s.ownerDocument === document ? location.href : base).href : ''; }
-  var base = location.href, busy = false, next = null, HEAD = '';
+  var base = location.href, busy = false, next = null, HEAD = '', stage = '', vtOn = false;
+  var SAFARI = /safari/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent);
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
@@ -108,9 +109,11 @@
     busy = true; mark('sn:start');
     var full = function () { location.href = u.href; };
     /* never stuck: a page change that hasn't finished after 6 s is done as a normal load instead (and noted in Diagnostics) */
-    var arrived = false, dog = sT.call(window, function () { if (arrived) return; try { sessionStorage.setItem('softnav.err', 'timeout ' + u.pathname + ' ' + (performance.getEntriesByType ? performance.getEntriesByType('mark').slice(-4).map(function (m) { return m.name; }).join(',') : '')); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', 'A page change to ' + u.pathname + ' took too long – loaded it normally', 'softnav.js'); full(); }, 6000);
+    var arrived = false; stage = 'getting the page'; vtOn = false;
+    var dog = sT.call(window, function () { if (arrived) return; var why = 'A page change to ' + u.pathname + ' took too long – loaded it normally (stuck at: ' + stage + (vtOn ? ', with the glide' : '') + ')';
+      try { sessionStorage.setItem('softnav.err', why); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', why, 'softnav.js'); full(); }, 6000);
     getHtml(u).then(function (text) {
-      mark('sn:html'); var doc = new DOMParser().parseFromString(text, 'text/html');
+      mark('sn:html'); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
       /* a new version of the dashboard: load it properly */
       if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) return full();
@@ -139,9 +142,11 @@
       /* smooth: the old page stays on screen while the new one is put together and drawn, then the new one glides in
          (the menu stays where it is). Motion off or reduced: it just switches. */
       var still = root.classList.contains('mo-off') || root.classList.contains('mo-reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var built = function () { swap(); return run(scripts).then(function () { arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
+      var built = function () { stage = 'putting the page in'; swap(); stage = 'starting its scripts'; return run(scripts).then(function () { arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
       var finish = function () { mark('sn:done'); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
-      if (!document.startViewTransition || still) return built().then(finish);
+      /* Safari (Mac, Nov 2026): page changes with the glide never finished – it just swaps there */
+      if (!document.startViewTransition || still || SAFARI) return built().then(finish);
+      vtOn = true;
       root.classList.add('sn-go');
       var vt = document.startViewTransition(built);
       var end = function () { root.classList.remove('sn-go'); };
@@ -157,7 +162,7 @@
   function run(srcs) {
     running = true;
     return srcs.reduce(function (p, src) {
-      return p.then(function () { return new Promise(function (ok) { var s = document.createElement('script'); s.src = src; s.async = false; s.onload = s.onerror = function () { s.remove(); ok(); }; document.body.appendChild(s); }); });
+      return p.then(function () { stage = 'script ' + src.replace(/^.*\/dist\//, '').replace(/\?.*$/, ''); return new Promise(function (ok) { var s = document.createElement('script'); s.src = src; s.async = false; s.onload = s.onerror = function () { s.remove(); ok(); }; document.body.appendChild(s); }); });
     }, Promise.resolve()).then(function () { running = false; flushLater(); window.dispatchEvent(new Event('resize')); }, function () { running = false; flushLater(); });
   }
   function flushLater() {

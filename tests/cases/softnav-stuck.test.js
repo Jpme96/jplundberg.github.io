@@ -12,6 +12,17 @@ const { open, sl, until } = require('../lib/browser'); const { check, done } = r
   check(await p.evaluate(() => window.__same === 1), 'the page change starts softly (nothing reloads yet)');
   const loaded = await until(p, () => location.pathname === '/cmd/habits/' && window.__same !== 1, 12000);
   check(loaded !== null, 'after a few seconds Health loads normally instead of staying stuck');
-  check(await p.evaluate(() => /timeout \/cmd\/habits\//.test(sessionStorage.getItem('softnav.err') || '')), 'it is noted for Diagnostics');
-  await done(b);
+  check(await p.evaluate(() => /\/cmd\/habits\/ took too long.*stuck at: script page-habits\.js/.test(sessionStorage.getItem('softnav.err') || '')), 'it is noted for Diagnostics, with the step it was stuck at: ' + await p.evaluate(() => sessionStorage.getItem('softnav.err')));
+
+  /* Safari: pages switch without the glide (with it, they never finished on a Mac) – and quickly, without reloading */
+  const { b: b2, p: s } = await open(1280);
+  await s.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0.1 Safari/605.1.15');
+  await s.reload(); await sl(2500);
+  await s.evaluate(() => { window.__same = 1; document.startViewTransition = function () { throw new Error('glide used on Safari'); }; });
+  const t0 = Date.now();
+  await s.evaluate(() => { const a = [...document.querySelectorAll('a[href]')].find(a => a.offsetWidth && new URL(a.href).pathname === '/cmd/finance/'); a.click(); });
+  const ok = await until(s, () => location.pathname === '/cmd/finance/' && window.SoftNav.count > 0, 6000);
+  check(ok !== null && await s.evaluate(() => window.__same === 1) && Date.now() - t0 < 5000, 'Safari: Finances opens softly without the glide, in ' + (Date.now() - t0) + ' ms');
+  check(!s.errs.length, 'no errors on Safari ' + s.errs.join(' | ').slice(0, 200));
+  await done(b, b2);
 })();
