@@ -5305,4 +5305,12 @@ html.hc-open { overflow: hidden; }
 .fv-other .bi { font-size: 40px; color: var(--muted); }
 .fv-wait { padding: 24px; }
 html.fv-on, html.fv-on body { overflow: hidden; }
-@media (max-width: 600px) { .fv-big { display: none; } .fv-bg { padding: 0; } .fv-box { width: 100%; height: 100%; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top); } }
+@media (max-width: 600px) {
+  .fv-big { display: none; } .fv-bg { padding: 0; }
+  /* phone: a slim bar right under the status bar, and no zoom-in effect (it made the text look soft while it settled) */
+  .fv-box, .fv-bg.open .fv-box { width: 100%; height: 100%; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top); transform: none; transition: none; }
+  .fv-top { padding: 2px 6px 2px 14px; gap: 2px; min-height: 44px; }
+  .fv-top .icon-btn { width: 38px; height: 38px; font-size: 16px; background: none; }
+  .fv-name { font-size: 14px; font-weight: 600; }
+  .fv-body { place-items: start center; }   /* the file starts right under the bar */
+}
