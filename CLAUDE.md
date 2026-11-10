@@ -30,6 +30,7 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 
 ## Coming (from the plan – becomes a rule when that part is done)
 - **Shared home:** shared things live only in the shared box; cmd and the shared app read and write it directly – no copying into the owner's vault. New shared features are built once and used in both apps.
+  *Started:* shopping list, chores + rooms and notes can already be read straight from the box (switch: Shared space → "Shared home in one place (beta)"; `DLISTS` in `cmd/share.js` + `Features.direct()`; tests `shop-direct`, `chores-direct`). **A new shared list goes into `DLISTS`**, not into `collect()`/`applyAll()`. Still the old way: chore ticks, dinners/votes, money, pantry, recipes, events, plants.
 - **Saving in small pieces:** new data gets its own encrypted piece instead of growing the one vault.
 - **Page switching:** every cmd module has `start()` / `stop()` and keeps no state between pages except through its store.
 - **Translations:** every text has a fixed name (key); never match on the English sentence.

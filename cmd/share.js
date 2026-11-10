@@ -167,13 +167,14 @@
       var c = r.c, id = r.id, f = r.f || {}, del = !!r.del;
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view' && !(c === 'plant' || c === 'mv' || c === 'cdone') && pm[KIND_AREA[c]] === 'view') return;   /* view only: theirs is put back on the next sync */
       if (KIND_AREA[c] && pm[KIND_AREA[c]] === 'view') return;
-      if (!r.heal) news.push(newsOf(c, f, del, t, id));
+      if (!r.heal) news.push(newsOf(c, f, del, directKind(c) ? Fe.rawTools() : t, id));
       /* a bigger shared cost waits for your OK */
       if (c === 'sx' && !del && lim && +f.total > lim && f.payer === 'p') {
         var known = ((t.shared || {}).items || []).some(function (x) { return x.id === id; });
         if (!known) { pend[id] = { f: f, t: Date.now() }; pendCh = true; held.push(f); return; }
       }
       if (c === 'sx' && del && pend[id]) { delete pend[id]; pendCh = true; return; }
+      if (directKind(c)) return;   /* this list is read from the box itself */
       if (c === 'shop') { var l = Array.isArray(t.shop) ? t.shop : (t.shop = []), i = l.findIndex(function (x) { return x.id === id; });
         if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { var pn = (t.pantry || []).filter(function (q) { return q.state === 'low' && String(q.name || '').toLowerCase() === String(f.text || '').toLowerCase(); })[0]; l.push({ id: id, text: f.text || '', done: !!f.done, from: pn ? 'pantry' : 'shared' }); toolsCh = true; } }
       else if (c === 'cdone') {
@@ -271,6 +272,7 @@
   function missing(c, id) {
     var t = Fe.tools(), has = function (l) { return (Array.isArray(l) ? l : []).some(function (x) { return x && x.id === id; }); };
     if (c === 'ev') return !has(rj('dash.calendar', {}).events);
+    if (directKind(c)) return false;   /* read from the box: nothing to put back */
     if (c === 'shop') return !has(t.shop);
     if (c === 'note') return !has(t.homenotes);
     if (c === 'chore') return !has(t.chores);
@@ -282,6 +284,77 @@
   }
   var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen2', {}), applyErr = 0, busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
   function ridOf(k, c, id) { var x = c + '|' + id; if (rids[x]) return Promise.resolve(rids[x]); return SC.rid(k, c, id).then(function (r) { rids[x] = r; return r; }); }
+  /* ---------- shared lists straight from the shared box (rebuild A2, behind a switch per part) ----------
+     The box is the list. cmd shows the box's copy (plus your changes not sent yet) and sends only what you changed;
+     nothing is copied back into the vault except a backup copy (with the extras only cmd uses, like "from the pantry").
+     One recipe for every list: c = kind in the box, key = list in dash.tools, area = what()/switch name,
+     box(x) = the shared fields of an item, item(f) = an item made from the box (cmd's own extras are kept). */
+  var DLISTS = {
+    shop: { c: 'shop', key: 'shop', area: 'shop', box: function (x) { return { text: String(x.text || '').slice(0, 120), done: !!x.done }; }, item: function (f) { return { text: f.text || '', done: !!f.done }; } },
+    chore: { c: 'chore', key: 'chores', area: 'chores', box: function (x) { return { name: String(x.name || '').slice(0, 80), every: x.every || '1w', day: +x.day || 0, who: x.who || 'rotate', start: x.start || '', room: x.room || '' }; },
+      item: function (f) { var o = { name: f.name || 'Chore', every: f.every || '1w', day: +f.day || 0, who: f.who || 'rotate', start: f.start || dkey(new Date()), room: f.room || '' }; return o; }, tidy: function (x) { if (!x.room) delete x.room; return x; } },
+    room: { c: 'room', key: 'rooms', area: 'chores', ordered: true, box: function (x, i) { return { name: String(x.name || '').slice(0, 40), icon: /^[a-z0-9-]{1,30}$/.test(x.icon || '') ? x.icon : 'house', size: x.size ? String(x.size).slice(0, 10) : '', order: i }; },
+      item: function (f) { return { name: f.name || 'Room', icon: f.icon || 'house', size: f.size || '' }; } },
+    note: { c: 'note', key: 'homenotes', area: 'notes', box: function (x) { return { title: String(x.title || '').slice(0, 60), text: String(x.text || '').slice(0, 1500) }; }, item: function (f) { return { title: f.title || '', text: f.text || '' }; }, extra: { by: 'partner' } }
+  };
+  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room'], notes: ['note'] };   /* switch → the lists it moves */
+  function dl(name) { var d = DLISTS[name]; if (!d.ops) { d.boxL = rj('dash.share.box.' + name, null); d.ops = rj('dash.share.ops.' + name, {}) || {}; } return d; }
+  function direct(k) { var s = st(); return !!(s && s.direct && s.direct[k] && what()[k]); }
+  function dOn(name) { return direct(DLISTS[name].area === 'chores' ? 'chores' : DLISTS[name].area); }
+  function hashF(f) { return JSON.stringify(f); }
+  function fromCache(d) {
+    var o = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === d.c && !r.del && !r.bad && r.f && r.id) o[r.id] = { f: r.f, t: r.t }; });
+    return o;
+  }
+  function dView(name, mirror) {
+    var d = dl(name), m = {}, out = [], ids = {}, box = d.boxL;
+    mirror.forEach(function (x) { if (x && x.id) m[x.id] = x; });
+    if (!box) { box = {}; mirror.forEach(function (x, i) { if (x && x.id) box[x.id] = { f: d.box(x, i), t: 0 }; }); }   /* the box isn't known yet: start from the copy we have */
+    Object.keys(box).forEach(function (id) { ids[id] = box[id]; });
+    Object.keys(d.ops).forEach(function (id) { var o = d.ops[id]; if (o.f) ids[id] = { f: o.f, t: (ids[id] && ids[id].t) || o.t }; else delete ids[id]; });
+    var mk = function (id, base) { var x = Object.assign({}, base || (d.extra || {}), d.item(ids[id].f), { id: id }); return d.tidy ? d.tidy(x) : x; };
+    if (d.ordered) Object.keys(ids).sort(function (a, b) { return ((ids[a].f.order != null ? ids[a].f.order : 999) - (ids[b].f.order != null ? ids[b].f.order : 999)) || ((ids[a].t || 0) - (ids[b].t || 0)); }).forEach(function (id) { out.push(mk(id, m[id])); });
+    else {
+      mirror.forEach(function (x) { if (x && x.id && ids[x.id]) out.push(mk(x.id, x)); });
+      Object.keys(ids).filter(function (id) { return !m[id]; }).sort(function (a, b) { return (ids[a].t || 0) - (ids[b].t || 0); }).forEach(function (id) { out.push(mk(id, null)); });
+    }
+    return out;
+  }
+  function dSave(name, base, now) {
+    var d = dl(name), b = {}, n = {}, at = Date.now(), ch = false;
+    base.forEach(function (x, i) { if (x && x.id) b[x.id] = hashF(d.box(x, i)); });
+    now.forEach(function (x, i) { if (!x || !x.id) return; n[x.id] = 1; var f = d.box(x, i); if (b[x.id] !== hashF(f)) { d.ops[x.id] = { f: f, t: at }; ch = true; } });
+    Object.keys(b).forEach(function (id) { if (!n[id]) { d.ops[id] = { f: null, t: at }; ch = true; } });
+    if (ch) wj('dash.share.ops.' + name, d.ops);
+  }
+  Object.keys(DLISTS).forEach(function (name) { Fe.direct(DLISTS[name].key, { on: function () { return dOn(name); }, view: function (m) { return dView(name, m); }, save: function (b, n) { dSave(name, b, n); } }); });
+  function directKind(c) { return DLISTS[c] && dOn(c); }
+  /* after the box moved on: keep its lists, and redraw if theirs changed something */
+  function dTake() {
+    if (!Object.keys(cache).length) return;
+    var moved = false, r = null;
+    Object.keys(DLISTS).forEach(function (name) {
+      if (!dOn(name)) return; var d = dl(name), nb = fromCache(d), sig = function (o) { return o ? Object.keys(o).sort().map(function (id) { return id + '\u0001' + hashF(o[id].f); }).join('\u0002') : ''; };
+      if (sig(nb) === sig(d.boxL)) return;
+      d.boxL = nb; wj('dash.share.box.' + name, nb); moved = true;
+      r = r || Fe.rawTools(); r[d.key] = dView(name, Array.isArray(r[d.key]) ? r[d.key] : []);   /* the backup copy in the vault keeps up */
+    });
+    if (!moved) return;
+    wj('dash.tools', r); window.dispatchEvent(new Event('dash:local'));
+    var redraw = function () { quiet = true; window.dispatchEvent(new Event('tools:change')); quiet = false; };
+    if (window.keepView) window.keepView(redraw); else redraw();
+  }
+  function dSent(upTo) { Object.keys(DLISTS).forEach(function (name) { var d = dl(name), ch = false; Object.keys(d.ops).forEach(function (id) { if (d.ops[id].t <= upTo) { delete d.ops[id]; ch = true; } }); if (ch) wj('dash.share.ops.' + name, d.ops); }); }
+  function dForget(name) { var d = dl(name); d.ops = {}; d.boxL = null; try { localStorage.removeItem('dash.share.ops.' + name); localStorage.removeItem('dash.share.box.' + name); } catch (e) {} }
+  /* turning a part on or off: the backup copy in the vault gets the list as it is now */
+  function dSwitch(k, on) {
+    var t = Fe.tools(); quiet = true;
+    (DIRECT_OF[k] || []).forEach(function (name) { var d = dl(name); if (on) { d.boxL = Object.keys(cache).length ? fromCache(d) : null; if (d.boxL) wj('dash.share.box.' + name, d.boxL); else { try { localStorage.removeItem('dash.share.box.' + name); } catch (e) {} } } });
+    var dv = V.get(); dv.share = Object.assign({}, dv.share || {}); dv.share.direct = Object.assign({}, dv.share.direct || {}); if (on) dv.share.direct[k] = true; else delete dv.share.direct[k]; V.save(dv);
+    if (!on) { Fe.saveTools(t); (DIRECT_OF[k] || []).forEach(dForget); }
+    quiet = false; window.dispatchEvent(new Event('tools:change')); schedule(200);
+  }
+
   var boxRev = null;
   function absorb(k, srv) {
     var recs = (srv && srv.recs) || {}, jobs = []; if (srv && srv.rev != null) boxRev = srv.rev;
@@ -301,8 +374,9 @@
     /* you're writing in a field: their changes wait a little (at most ~20 s), so it isn't redrawn under your fingers */
     if (window.typingHere && window.typingHere() && typeWait < 12) { typeWait++; schedule(1500); return Promise.resolve(); }
     typeWait = 0;
-    busy = true; var k = s.key;
+    busy = true; var k = s.key, sentAt = 0;
     return SC.api('shared').then(function (srv) { return absorb(k, srv); }).then(function () {
+      dTake();
       /* 1. their changes since last time */
       var mine = [];
       Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.t > (seen[rid] || 0) && r.c) mine.push({ rid: rid, t: r.t, c: r.c, id: r.id, f: r.f, del: r.del }); });
@@ -318,7 +392,7 @@
       mine.forEach(function (x) { if (bad.indexOf(x.rid) < 0) seen[x.rid] = Math.max(seen[x.rid] || 0, x.t); });
       wj('dash.share.seen2', seen);
       /* 2. your changes: what differs from the box */
-      var loc = collect(); unsure = loc.unsure || {};
+      sentAt = Date.now(); var loc = collect(); unsure = loc.unsure || {};
       return Promise.all(loc.map(function (x) { return ridOf(k, x.c, x.id).then(function (rid) { x.rid = rid; return x; }); }));
     }).then(function (loc) {
       var have = {}, push = {}, now = Date.now(), jobs = [];
@@ -343,7 +417,7 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
+    }).then(function () { dSent(sentAt); dTake(); lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
@@ -416,7 +490,7 @@
     var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
-  window.ShareSpace = { evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what };
+  window.ShareSpace = { evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k, on) { if (on != null && DIRECT_OF[k] && !!on !== direct(k)) dSwitch(k, !!on); return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
@@ -531,12 +605,19 @@
         '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
-        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>');
+        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
+      (function () {
+        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
+        return sec('direct', 'lightning-charge', 'Shared home in one place (beta)', on.length ? on.map(function (x) { return x[1]; }).join(', ') + ': on' : 'Off',
+          '<p class="st-note muted">One copy for both of you instead of two kept in step – no more fights when you both change something at once. Your own copy is kept as a backup, so turning it off loses nothing.</p>' +
+          DR.map(function (x) { return '<label class="st-row"><span>' + esc(x[1]) + ' straight from the shared home</span><input type="checkbox" class="switch" data-shdirect="' + x[0] + '"' + (direct(x[0]) ? ' checked' : '') + '></label>'; }).join(''));
+      })();
   }
   document.addEventListener('change', function (e) {
     var t = e.target, a;
     if ((a = t.closest('[data-shperm]'))) { var pm = Object.assign({}, ((V.get() || {}).share || {}).perm || {}); pm[a.dataset.shperm] = a.value; setSt({ perm: pm }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); return; }
     if ((a = t.closest('[data-shappr]'))) { setSt({ approveOver: +a.value || 0 }); toast('<i class="bi bi-check2"></i> Saved'); return; }
+    if ((a = t.closest('[data-shdirect]'))) { dSwitch(a.dataset.shdirect, a.checked); toast('<i class="bi bi-check2"></i> ' + (a.checked ? 'Now straight from the shared home' : 'Back to the usual way – nothing is lost')); return; }
     if ((a = t.closest('[data-shnote]'))) { var nn = Object.assign({}, notifyMe()); nn[a.dataset.shnote] = a.checked; setSt({ notifyMe: nn }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); }
   });
   document.addEventListener('click', function (e) {
@@ -682,7 +763,7 @@
     if (b.id === 'shStop') {
       if (!b.dataset.armed) { b.dataset.armed = '1'; document.getElementById('shStopL').textContent = 'Tap again to stop sharing'; setTimeout(function () { delete b.dataset.armed; var l = document.getElementById('shStopL'); if (l) l.textContent = 'Stop sharing'; }, 4000); return; }
       SC.api('share', { method: 'DELETE' }).then(function () {
-        setSt({ on: false, key: null, files: {} }); keyMark(false, null, null); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
+        setSt({ on: false, key: null, files: {} }); keyMark(false, null, null); Object.keys(DLISTS).forEach(dForget); cache = {}; seen = {}; wj('dash.share.seen2', {}); draw(); marks(); calRow();
         toast('<i class="bi bi-x-octagon"></i> Stopped sharing – ' + esc(pname()) + ' no longer has access');
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }

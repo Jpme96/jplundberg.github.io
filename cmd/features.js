@@ -100,13 +100,36 @@
 
   /* ---------- tool data ---------- */
   /* one bad item (null, or an old-format entry) must never break a page: lists come back without holes */
-  function tools() {
+  /* Shared things read straight from the shared box (rebuild A2): a part registered in DIRECT shows the box's copy
+     here instead of the old copy in the vault, and a save turns what you changed into changes for the box.
+     DIRECT[key] = { on(), view(vaultList) → list or null, save(listAsRead, listNow) }. The vault keeps a copy
+     (with extras that only cmd uses), so turning it off again loses nothing. */
+  var DIRECT = {}, readAs = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function raw() {
     var t = readJSON('dash.tools');
     if (!t || typeof t !== 'object' || Array.isArray(t)) return {};
     Object.keys(t).forEach(function (k) { if (Array.isArray(t[k]) && t[k].some(function (x) { return x == null; })) t[k] = t[k].filter(function (x) { return x != null; }); });
     return t;
   }
+  function copy(v) { return JSON.parse(JSON.stringify(v)); }
+  function tools() {
+    var t = raw(), seen = null;
+    Object.keys(DIRECT).forEach(function (k) {
+      var d = DIRECT[k], v = null; try { if (d.on()) v = d.view(Array.isArray(t[k]) ? t[k] : []); } catch (e) { v = null; }
+      if (!Array.isArray(v)) return;
+      t[k] = v; (seen = seen || {})[k] = copy(v);
+    });
+    if (seen && readAs) readAs.set(t, seen);
+    return t;
+  }
   function saveTools(t) {
+    if (t && typeof t === 'object') Object.keys(DIRECT).forEach(function (k) {
+      var d = DIRECT[k]; try { if (!d.on() || !Array.isArray(t[k])) return; } catch (e) { return; }
+      var was = readAs && readAs.get(t), base = was && was[k];
+      if (!base) { var r = raw(); base = d.view(Array.isArray(r[k]) ? r[k] : []) || []; }   /* not read through tools(): compare with the list as it is now */
+      try { d.save(base, t[k]); } catch (e) { if (window.Diag && window.Diag.log) window.Diag.log('direct', k + ': ' + ((e && e.message) || e), 'features.js'); }
+      if (readAs) { var nw = Object.assign({}, was || {}); nw[k] = copy(t[k]); readAs.set(t, nw); }   /* saving the same object twice only sends the new change */
+    });
     writeJSON('dash.tools', t);
     window.dispatchEvent(new Event('tools:change'));
     window.dispatchEvent(new Event('cal:change'));
@@ -269,7 +292,7 @@
   window.Features = {
     LIST: LIST, WORK: WORK, HEALTH: HEALTH, REMIND_COLOR: REMIND_COLOR, holidays: holidays, holiday: holiday,
     on: on, set: set, apply: apply, byId: byId, ADV: ADV, simple: simple, setSimple: setSimple,
-    tools: tools, saveTools: saveTools, list: list,
+    tools: tools, saveTools: saveTools, list: list, rawTools: raw, direct: function (k, d) { if (d) DIRECT[k] = d; else delete DIRECT[k]; },
     events: events, nextRenewal: nextRenewal, warrantyEnd: warrantyEnd,
     dkey: dkey, fromKey: fromKey, addMonths: addMonths
   };
