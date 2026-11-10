@@ -160,6 +160,7 @@
     return '<div class="cr-bars">' + rows.map(function (r) { return '<span style="height:' + Math.max(4, Math.round(r[key] / max * 100)) + '%" title="' + esc(r.name) + ': ' + r[key] + '"></span>'; }).join('') + '</div>';
   }
   function draw() {
+    if (!box.isConnected) return;   /* left Admin (instant page change) while a check was still running – nothing to draw on */
     try { drawInner(); } catch (err) {
       if (window.Diag && window.Diag.log) window.Diag.log('error', 'admin: ' + (err && err.message), 'admin.js');
       box.innerHTML = '<div class="cr-bar cr-bad"><span class="cr-pulse"></span><b>' + esc(L('Admin couldn’t draw everything', 'Admin klarte ikke å vise alt')) + '</b><span class="cr-meta">' + esc(String(err && err.message || err).slice(0, 160)) + '</span><button type="button" class="pill-btn" onclick="location.reload()">' + esc(L('Reload', 'Last inn på nytt')) + '</button></div>';
