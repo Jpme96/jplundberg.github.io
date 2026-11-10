@@ -1,6 +1,6 @@
 /* Every cmd page, every page tab and every Admin tab opens without errors, with every feature switched on –
    and no "undefined", "NaN", "null" or "[object …]" reaches the screen. The shared app's tabs too. */
-const { open, shared, sl, U, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, shared, sl, U, go } = require('../lib/browser'); const { check, done, GAPS } = require('../lib/check');
 const RX = /\bundefined\b|\bNaN\b|\[object [A-Za-z]+\]|\bnull\b|\bInvalid Date\b|\{\{|\}\}|\$\{/;
 async function bad(p) {
   return p.evaluate(src => { const R = new RegExp(src), out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
@@ -18,7 +18,8 @@ async function bad(p) {
     p.errs.length = 0; await go(p, pg, 2500);
     const where = [pg || 'home'], words = [].concat(await bad(p));
     const tabs = await p.evaluate(() => [...document.querySelectorAll('[data-ptab-go]')].map(x => x.dataset.ptabGo));
-    for (const t of tabs) { await p.evaluate(t => { const x = document.querySelector('[data-ptab-go="' + t + '"]'); x && x.click(); }, t); await sl(700); words.push(...await bad(p)); }
+    words.push(...(await p.evaluate(GAPS)).map(g => 'empty gap ' + g));
+    for (const t of tabs) { await p.evaluate(t => { const x = document.querySelector('[data-ptab-go="' + t + '"]'); x && x.click(); }, t); await sl(700); words.push(...await bad(p)); words.push(...(await p.evaluate(GAPS)).map(g => t + ': empty gap ' + g)); }
     check(!p.errs.length && !words.length, (pg || 'home') + (tabs.length ? ' (+' + tabs.length + ' tabs)' : '') + (p.errs.length ? ' errors: ' + p.errs.join(' | ').slice(0, 200) : '') + (words.length ? ' odd text: ' + [...new Set(words)].join(' | ').slice(0, 200) : ''));
   }
   for (const at of ['overview', 'website', 'system', 'shared']) {

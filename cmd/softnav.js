@@ -66,6 +66,13 @@
     });
     regs = window.Vault && window.Vault._regs ? window.Vault._regs.mark() : null;
   }
+  /* a page started again finds the dashboard already open: "when it's unlocked" runs once all its scripts are in,
+     like on a normal load (a module that asked early would otherwise draw before it had everything it needs) */
+  var later = [];
+  if (window.Vault && window.Vault.onUnlock) { var ou = window.Vault.onUnlock; window.Vault.onUnlock = function (fn) {
+    if (!running || typeof fn !== 'function') return ou.call(this, fn);
+    var skip = true; ou.call(this, function (d) { if (!skip) fn(d); }); skip = false; later.push(fn);
+  }; }
   takeSnap(); delete snap.SoftNav;
   function restore() {
     Object.keys(snap).forEach(function (k) {
@@ -142,7 +149,11 @@
     running = true;
     return srcs.reduce(function (p, src) {
       return p.then(function () { return new Promise(function (ok) { var s = document.createElement('script'); s.src = src; s.async = false; s.onload = s.onerror = function () { s.remove(); ok(); }; document.body.appendChild(s); }); });
-    }, Promise.resolve()).then(function () { running = false; window.dispatchEvent(new Event('resize')); }, function () { running = false; });
+    }, Promise.resolve()).then(function () { running = false; flushLater(); window.dispatchEvent(new Event('resize')); }, function () { running = false; flushLater(); });
+  }
+  function flushLater() {
+    var l = later; later = []; var d = window.Vault && window.Vault.get ? window.Vault.get() : null;
+    if (d) l.forEach(function (fn) { try { fn(d); } catch (e) { console.error(e); } });
   }
 
   addL.call(document, 'click', function (e) {

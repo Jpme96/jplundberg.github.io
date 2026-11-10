@@ -1,7 +1,7 @@
 /* Rebuild A5: instant page changes. With the switch on, the menu changes page without a reload: every page draws,
    nothing is set up twice (a tick ticks once), no errors, no odd words, Back works, Settings still open, the lock
    still works, and it's faster than a full load. On by default; turned off, nothing of it runs. Made-up data only. */
-const { open, sl, U, until, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, sl, U, until, go } = require('../lib/browser'); const { check, done, GAPS } = require('../lib/check');
 const RX = /\bundefined\b|\bNaN\b|\[object [A-Za-z]+\]|\bInvalid Date\b/;
 (async () => {
   const { b, p } = await open(393);
@@ -25,6 +25,11 @@ const RX = /\bundefined\b|\bNaN\b|\[object [A-Za-z]+\]|\bInvalid Date\b/;
     const ms = await nav(pg); times.push(ms);
     const st = await p.evaluate(rx => { const R = new RegExp(rx), odd = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const el = n.parentElement; if (el && !el.closest('script,style,textarea,code') && el.offsetParent && R.test(n.nodeValue)) odd.push(n.nodeValue.trim().slice(0, 50)); }
       return { still: window.__still, path: location.pathname, unlocked: document.documentElement.classList.contains('unlocked'), cards: document.querySelectorAll('main .card, main section, .card').length, odd }; }, RX.source);
+    /* every page tab of this page: no empty gap where something should be */
+    const tabs = await p.evaluate(() => [...document.querySelectorAll('[data-ptab-go]')].map(x => x.dataset.ptabGo));
+    const gaps = [];
+    for (const t of tabs.length ? tabs : ['']) { if (t) { await p.evaluate(t => document.querySelector('[data-ptab-go="' + t + '"]').click(), t); await sl(500); } gaps.push(...(await p.evaluate(GAPS)).map(g => (t || 'page') + ': ' + g)); }
+    check(!gaps.length, 'no empty gaps on ' + (pg || 'home') + (gaps.length ? ': ' + gaps.slice(0, 5).join(' ; ') : ''));
     check(ms !== null && st.still === 'same page' && st.path === '/cmd/' + pg && st.unlocked && st.cards > 0 && !st.odd.length && !p.errs.length,
       'to ' + (pg || 'home') + ' in ' + ms + ' ms without reloading' + (st.odd.length ? ' odd: ' + st.odd.join(' | ') : '') + (p.errs.length ? ' errors: ' + p.errs.join(' | ').slice(0, 300) : '') + ' ' + JSON.stringify({ still: st.still, path: st.path, cards: st.cards }));
   }
