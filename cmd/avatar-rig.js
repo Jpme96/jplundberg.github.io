@@ -62,6 +62,10 @@
   Rig.reach = function (A, T, bend) {
     if (!A) return;
     var P = A.S, dx = T[0] - P[0], dy = T[1] - P[1], d = Math.hypot(dx, dy), L1 = A.L1, L2 = A.L2;
+    /* a hand close to the body: a person's elbow goes back or forward (in depth), it doesn't flare out sideways.
+       Seen from the front that makes the arm look shorter, so both parts are drawn shorter (down to 55 %) and the
+       elbow keeps a soft bend */
+    var f = Math.max(.55, Math.min(1, d / (.82 * (L1 + L2)))); L1 *= f; L2 *= f;
     d = Math.max(Math.abs(L1 - L2) + .5, Math.min(L1 + L2 - .05, d));
     var th = Math.atan2(dy, dx), al = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))));
     var a1 = th - (bend || 1) * A.side * al, e = [P[0] + L1 * Math.cos(a1), P[1] + L1 * Math.sin(a1)];
@@ -115,7 +119,8 @@
     var far = t > 0 ? 'R' : 'L', near = far === 'R' ? 'L' : 'R', s = far === 'R' ? -1 : 1;
     r['w' + near].setAttribute('transform', r['t' + near] + ' translate(' + f2(s * 5 * k) + ' 0)');
     r['w' + far].setAttribute('transform', r['t' + far] + ' translate(' + f2(s * 7 * k) + ' 0)');
-    if (!r.isBack) { if (k > .35) { if (r['w' + far].parentNode !== r.back) r.back.appendChild(r['w' + far]); } else armsHome(r); }
+    /* only in a true side view does the far arm go behind the body; half-turned you see both */
+    if (!r.isBack) { if (k > .8) { if (r['w' + far].parentNode !== r.back) r.back.appendChild(r['w' + far]); } else armsHome(r); }
     if (r.legParent && r.LL && r.LR) { if (t > .35) r.legParent.insertBefore(r.LR.g, r.LL.g); else r.legParent.insertBefore(r.LL.g, r.LR.g); }
     r.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(5.5 * t + (r.look ? r.look[0] : 0)) + ' ' + f2(r.look ? r.look[1] : 0) + ')'); });
     r.fig.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(2.6 * t) + ' 0)'); });
@@ -131,7 +136,8 @@
   var SHORT = /^(bald|buzz)$/, LONG = /^(long|bun|ponytail|braids|dreads|afro|curly)$/;
   Rig.back = function (r, on, look) {
     var fig = r.fig; look = look || {};
-    if (r.L && r.R) { if (!r.torso) prep(r); r.isBack = on; if (r.back) { if (on) { r.back.appendChild(r.wL); r.back.appendChild(r.wR); } else armsHome(r); } }
+    /* from behind you still see both arms (their backs), so they stay in front of the torso – hiding them left a stray hand */
+    if (r.L && r.R) { if (!r.torso) prep(r); r.isBack = on; if (r.back) armsHome(r); }
     fig.querySelectorAll('.av-feat, .av-chest').forEach(function (e) { e.style.display = on ? 'none' : ''; });
     fig.querySelectorAll('.rig-nape').forEach(function (e) { e.remove(); });
     if (!on) return;

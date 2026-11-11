@@ -496,7 +496,9 @@
     var html = '<svg viewBox="0 0 240 150" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';
     if (box._h !== html) { box._h = html; box.innerHTML = html;
       /* the living scene (scene-*.js, Phase L): your avatar comes alive on top of the still picture */
-      var live = window.SceneLive && window.SceneLive[PAGE]; if (live) { try { live(box.querySelector('svg'), s.live || {}); } catch (e) { if (window.Diag && Diag.log) Diag.log('error', 'scene ' + PAGE + ': ' + (e && e.message), 'scenes.js'); } }
+      var live = window.SceneLive && window.SceneLive[PAGE];
+      if (live && !draw.broken) { try { live(box.querySelector('svg'), s.live || {}); } catch (e) { draw.broken = true; box.innerHTML = html;   /* back to the still picture */
+        if (window.Diag && Diag.log) Diag.log('scene', 'scene ' + PAGE + ': ' + (e && e.message), 'scenes.js'); } }
     }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
   }
   function go(target) {

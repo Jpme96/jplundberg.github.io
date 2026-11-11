@@ -25,7 +25,10 @@
       .replace('<svg viewBox="0 0 200 200"', '<svg viewBox="44 20 114 144" preserveAspectRatio="xMidYMax meet" x="' + box.x + '" y="' + box.y + '" width="' + box.w + '" height="' + box.h + '"');
     H.wrap = el('g', { class: 'hero' }); H.wrap.innerHTML = '<ellipse class="hero-sh" cx="' + H.feet0[0] + '" cy="' + H.feet0[1] + '" rx="' + 15 * s / .5 + '" ry="' + 2.4 * s / .5 + '" fill="rgba(0,0,0,.28)"/><g class="hero-body">' + f + '</g>';
     if (before) svg.insertBefore(H.wrap, before); else svg.appendChild(H.wrap);
-    H.body = H.wrap.querySelector('.hero-body'); H.sh = H.wrap.querySelector('.hero-sh'); H.fig = H.wrap.querySelector('.hero-body > svg');
+    H.body = H.wrap.querySelector('.hero-body');
+    /* a pet from the maker stays on the ground where you started (it doesn't climb or jump with you) */
+    var pet0 = H.wrap.querySelector('.hero-body .av-pet');
+    if (pet0) { var ps = H.wrap.querySelector('.hero-body > svg').cloneNode(false); ps.setAttribute('class', 'hero-pet'); ps.appendChild(pet0); H.wrap.insertBefore(ps, H.body); H.pet = ps; } H.sh = H.wrap.querySelector('.hero-sh'); H.fig = H.wrap.querySelector('.hero-body > svg');
     H.rig = Rig(H.fig);
     H.pos = H.feet0.slice(); H.lean = 0; H.bob = 0; H.lift = 0; H.op = 1;
     H.hand = { R: null, L: null }; H.rot = { R: [0, 0], L: [0, 0] }; H.legs = { R: 0, L: 0, sR: 0, sL: 0 }; H.head = [0, 0];
@@ -40,12 +43,12 @@
   function Obj(H, side, html, grip, opt) {
     var g = el('g', { class: 'obj' }, html); opt = opt || {};
     var o = { g: g, side: side, grip: grip || [0, 0], rot: opt.rot || 0, flip: !!opt.flip, sc: opt.sc || 1, layer: opt.layer || null, free: null };
-    H.objs[side] = o; H.layF.appendChild(g); return o;
+    H.objs[side] = o; H.layF.appendChild(g); if (window.Rig && Rig.stow) Rig.stow(H.rig, true); return o;   /* the maker's own held things are put away meanwhile */
   }
   function objXf(H, o, P) { var k = H.s / .5 * (H.k || 1) * o.sc; return 'translate(' + P[0].toFixed(2) + ' ' + P[1].toFixed(2) + ') scale(' + k.toFixed(3) + ') rotate(' + o.rot.toFixed(2) + ') scale(' + (o.flip ? -1 : 1) + ' 1) translate(' + (-o.grip[0]) + ' ' + (-o.grip[1]) + ')'; }
   /* a point on a held thing (like the tip of a spout), in the picture */
   function objPoint(H, o, lp) { var P = o.free || handAt(H, o.side), k = H.s / .5 * (H.k || 1) * o.sc, x = (lp[0] - o.grip[0]) * (o.flip ? -1 : 1), y = lp[1] - o.grip[1], a = o.rot * Math.PI / 180; return [P[0] + k * (x * Math.cos(a) - y * Math.sin(a)), P[1] + k * (x * Math.sin(a) + y * Math.cos(a))]; }
-  function letGo(H, side) { var o = H.objs[side]; if (o) { o.g.remove(); delete H.objs[side]; } }
+  function letGo(H, side) { var o = H.objs[side]; if (o) { o.g.remove(); delete H.objs[side]; } if (!H.objs.R && !H.objs.L && window.Rig && Rig.stow) Rig.stow(H.rig, false); }
   /* an interrupted action puts everything down: props out of the hands, the maker's own things back */
   function clear(H) { letGo(H, 'R'); letGo(H, 'L'); H.gaze = null; if (window.Rig && Rig.stow) Rig.stow(H.rig, false); }
   function toLocal(H, g, P) { var a = H.svg.getScreenCTM(), b = g.getScreenCTM(); if (!a || !b) return P; var pt = H.svg.createSVGPoint(); pt.x = P[0]; pt.y = P[1]; var q = pt.matrixTransform(a).matrixTransform(b.inverse()); return [q.x, q.y]; }
@@ -162,8 +165,11 @@
       var tot = pool.reduce(function (s, a) { return s + (a.w || 1); }, 0), r = Math.random() * tot, a = pool[0];
       for (var i = 0; i < pool.length; i++) { r -= pool[i].w || 1; if (r <= 0) { a = pool[i]; break; } }
       last = a.n;
-      label(a.t); var tok = R.tok;
-      a.f().then(function () { if (R.tok !== tok) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { var lv = lively(); return idle(R, H, lv === 'calm' ? rnd(4000, 8000) : lv === 'lively' ? rnd(400, 1000) : rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
+      label(a.t); var tok = R.tok, pr;
+      /* an action that fails (something it needs isn't in today's picture) is dropped, and the next one is picked */
+      var failed = function (e) { a.bad = true; if (window.Diag && Diag.log) Diag.log('scene', 'action ' + a.n + ': ' + (e && e.message), 'scene-kit.js'); if (R.tok !== tok) return; clear(H); H.view === 'back' && Rig.back(H.rig, false, H.look); H.view = 'front'; };
+      try { pr = Promise.resolve(a.f()); } catch (e) { pr = Promise.reject(e); }
+      pr.catch(failed).then(function () { if (R.tok !== tok) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { var lv = lively(); return idle(R, H, lv === 'calm' ? rnd(4000, 8000) : lv === 'lively' ? rnd(400, 1000) : rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
     }
     H.wrap.addEventListener('click', function (ev) { ev.stopPropagation(); R.tok++; clear(H); var tok = R.tok; label('giggling'); poke().then(function () { if (R.tok !== tok) return; return settle(R, H, 400); }).then(function () { if (R.tok === tok) { label('looking around'); face(H, 'smile'); setTimeout(function () { if (R.tok === tok) go(); }, 900); } }); });
     setTimeout(go, rnd(300, 1200));

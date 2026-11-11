@@ -27,9 +27,10 @@
     data = data || {};
     /* the slot in the lid, and a ladder leaning on the jar (about shoulder-wide, rungs a step apart) */
     jar.appendChild(el('rect', { x: 134, y: 39.4, width: 10, height: 2.6, rx: 1.3, fill: '#2a1d12' }));
-    var rx = function (rail, y) { return rail ? 176 - (126 - y) / 50 * 3 : 152 + (126 - y) / 50 * 3; };
-    svg.appendChild(el('g', { class: 'sc-ladder' }, '<path d="M152 126L155 76M176 126L173 76" stroke="#9aa3b2" stroke-width="2.2" stroke-linecap="round"/>' + [112, 96, 80].map(function (y) { return '<path d="M' + rx(0, y) + ' ' + y + 'H' + rx(1, y) + '" stroke="#9aa3b2" stroke-width="1.8" stroke-linecap="round"/>'; }).join('')));
-    var H = L.Hero(svg, null, box), R = L.Run(), base = H.pos.slice(), GY = 36;
+    /* the ladder reaches the lid: you stand two rungs up and hold the rails at head height, as on a real ladder */
+    var rx = function (rail, y) { return rail ? 181 - (126 - y) / 82 * 3 : 147 + (126 - y) / 82 * 3; };   /* a little wider than the shoulders, so the hands on the rails sit outside the body */
+    svg.appendChild(el('g', { class: 'sc-ladder' }, '<path d="M147 126L150 44M181 126L178 44" stroke="#9aa3b2" stroke-width="2.2" stroke-linecap="round"/>' + [112, 96, 80, 64].map(function (y) { return '<path d="M' + rx(0, y) + ' ' + y + 'H' + rx(1, y) + '" stroke="#9aa3b2" stroke-width="1.8" stroke-linecap="round"/>'; }).join('')));
+    var H = L.Hero(svg, null, box), R = L.Run(), base = H.pos.slice(), GY = 30;
     R.alive = function () { return svg.isConnected; };
     function fit(fx, fy) { var k = H.s * (H.k || 1); return [H.pos[0] + fx * k, H.pos[1] + fy * k]; }
     function seq(fns) { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); }
@@ -62,17 +63,17 @@
         return seq([function () { L.face(H, 'grin'); return L.walk(R, H, [164, 126], 22, null, -.6); },
           function () { return L.turnTo(R, H, 'back', 300); },
           function () { var t = hands(126); return L.both(R, H, t[0], t[1], 400); },
-          function () { return rung(126, 112, true); }, function () { return rung(112, 96, true); }, function () { return rung(96, 80, true); },
+          function () { return rung(126, 112, true); }, function () { return rung(112, 96, true); },
           /* at the top: right hand stays on the ladder, turn to the jar, a coin from the pocket, into the slot */
           function () { return L.turnTo(R, H, -.55, 320); },
           function () { return L.reach(R, H, 'L', fit(-12, -46), 350); },
           function () { o = take('L', 'coin'); look([139, 40]); L.face(H, 'starry'); return L.reach(R, H, 'L', [139, 35.5], 520); },
           function () { return L.reach(R, H, 'L', [139, 38.8], 220); },
-          function () { drop('L'); var d = dropIn(139); return L.reach(R, H, 'L', hands(80)[0], 380).then(function () { return d; }); },
+          function () { drop('L'); var d = dropIn(139); return L.reach(R, H, 'L', hands(96)[0], 380).then(function () { return d; }); },
           function () { look(null); return L.turnTo(R, H, -.2, 250); },
           function () { L.face(H, 'laugh'); L.say(H, T('Saved!', 'Spart!'), 1400); return L.wait(R, 900); },
           function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return rung(80, 96, false); }, function () { return rung(96, 112, false); }, function () { return rung(112, 126, false); },
+          function () { return rung(96, 112, false); }, function () { return rung(112, 126, false); },
           function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
       } },
       { n: 'knock', f: function () {
@@ -121,7 +122,7 @@
     ];
     function acts() { return ACTS.filter(function (a) { return a.w !== 0; }); }
     L.brain(R, H, acts, function () { look(null); return L.jump(R, H); });
-    var api = { H: H, R: R, acts: ACTS, run: function (n) { var a = ACTS.filter(function (x) { return x.n === n; })[0]; R.tok++; L.clear(H); return a ? a.f().then(function () { return L.settle(R, H, 300); }) : Promise.resolve(); } };
+    var api = { H: H, R: R, acts: function () { return ACTS; }, run: function (n) { var a = ACTS.filter(function (x) { return x.n === n; })[0]; R.tok++; L.clear(H); return a ? a.f().then(function () { return L.settle(R, H, 300); }) : Promise.resolve(); } };
     window.SceneLive._finance = api;
     return api;
   };

@@ -59,6 +59,7 @@
     "scenes.js",
     "avatar-rig.js",
     "scene-kit.js",
+    "scene-common.js",
     "avatar.js",
     "avatar-page.js",
     "play.js",
@@ -108,7 +109,8 @@
       "calendar/cal-settings.js",
       "calendar/cal.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-calendar.js"
     ],
     "finance/index.html": [
       "budget.js",
@@ -134,7 +136,8 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-habits.js"
     ],
     "travel/index.html": [
       "budget.js",
@@ -155,7 +158,8 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-work.js"
     ],
     "house/index.html": [
       "budget.js",
@@ -176,28 +180,32 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-food.js"
     ],
     "papers/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-papers.js"
     ],
     "wish/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-wish.js"
     ],
     "goals/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-goals.js"
     ],
     "admin/index.html": [
       "budget.js",
