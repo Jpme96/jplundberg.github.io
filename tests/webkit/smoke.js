@@ -71,7 +71,8 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
         await p.keyboard.press('Escape').catch(() => {}); await sl(300);
       }
       /* the living Finances picture moves */
-      await p.goto(U + 'finance/'); await sl(1500);
+      /* reached by an instant page change, as from the menu (a fresh load hid the frozen-avatar bug) */
+      await p.evaluate(() => { const a = document.createElement('a'); a.href = '/cmd/finance/'; document.body.appendChild(a); a.click(); a.remove(); }); await sl(2500);
       if (!(await p.evaluate(() => document.documentElement.classList.contains('unlocked')))) { await p.fill('#lockPass', 'test-passcode-1'); await p.click('#lockSubmit'); await sl(2500); }
       const live = await p.waitForFunction(() => !!document.querySelector('#scIllu .hero'), null, { timeout: 12000, polling: 250 }).then(() => true, () => false);
       if (live) {

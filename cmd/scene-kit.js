@@ -92,18 +92,22 @@
     /* held things */
     Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
   }
-  var running = false;
+  /* the loop can be stopped from outside: an instant page change drops the animation frames of the page you leave
+     (softnav.js), and this engine outlives the page. So it notes when it last drew, and wake() starts it again
+     whenever it has gone quiet – every tween calls wake(), so a frozen avatar can't happen */
+  var running = false, lastFrame = 0;
   function loop(t) {
+    lastFrame = performance.now();
     HEROES = HEROES.filter(function (H) { return H.svg.isConnected && !H.dead; });
     if (!HEROES.length) { running = false; return; }
     if (!document.hidden) HEROES.forEach(function (H) { try { render(H, t); } catch (e) { H.dead = true; if (window.Diag && Diag.log) Diag.log('error', 'scene: ' + (e && e.message), 'scene-kit.js'); } });
     requestAnimationFrame(loop);
   }
-  function wake() { if (!running) { running = true; requestAnimationFrame(loop); } }
+  function wake() { if (!running || performance.now() - lastFrame > 300) { running = true; lastFrame = performance.now(); requestAnimationFrame(loop); } }
 
   /* ---------- scripting ---------- */
   function Run(scene) { return { sc: scene, tok: 0 }; }
-  function tw(R, ms, f) { var tok = R.tok; return new Promise(function (res) { var t0 = performance.now(); (function fr(now) { if (R.tok !== tok || (R.alive && !R.alive())) return; if (document.hidden) { t0 += 16; requestAnimationFrame(fr); return; } var u = Math.min(1, (now - t0) / ms); f(u); if (u < 1) requestAnimationFrame(fr); else res(); })(t0); }); }
+  function tw(R, ms, f) { var tok = R.tok; return new Promise(function (res) { var t0 = performance.now(); (function fr(now) { if (R.tok !== tok || (R.alive && !R.alive())) return; wake(); if (document.hidden) { t0 += 16; requestAnimationFrame(fr); return; } var u = Math.min(1, (now - t0) / ms); f(u); if (u < 1) requestAnimationFrame(fr); else res(); })(t0); }); }
   function wait(R, ms) { return tw(R, ms, function () {}); }
   /* walk: knees lift in turn, a little bob, arms swing; pathFn(u) can give the ground to walk on (a trail) */
   function walk(R, H, to, speed, pathFn, endTurn, faceDir) {
