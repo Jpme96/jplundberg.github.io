@@ -417,8 +417,9 @@
       return part('wishes=' + w.id, 'sc-wstar ' + c, '<g transform="translate(' + p[0] + ' ' + p[1] + ')"><g class="sc-float" style="animation-delay:-' + (i * .7).toFixed(1) + 's"><path d="M0 -8 l2.4 5 5.4.6 -4 3.7 1.1 5.3 -4.9-2.7 -4.9 2.7 1.1-5.3 -4-3.7 5.4-.6z"/></g></g>');
     }).join('');
     var svg = ground() + deco('wish') + stars +
-      part('wbuy', buy ? 'hot' : '', '<path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text>') +
-      part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92);
+      /* real sizes next to you (Phase L4): a shopping bag about knee to waist high, a gift box a bit lower – each scaled around where it stands */
+      part('wbuy', buy ? 'hot' : '', '<g transform="translate(115 128) scale(.6) translate(-115 -128)"><path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text></g>') +
+      part('wbought', '', '<g transform="translate(165 126) scale(.75) translate(-165 -126)"><rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/></g>') + badge(got, 181, 98);
     /* you, pushing the cart across the picture and back */
     svg += '<g class="sc-cartg">' + sceneMe(-14, 44, 52, 84, 'plain') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
     var list = [];

@@ -25,10 +25,10 @@
           function () { pushing = false; cartAt(0); look(H, null); }]);
       } },
       { n: 'gift', t: 'putting the gift in the cart', f: function () {
-        var g0 = [165, 112], carrying = false;
+        var g0 = [165, 114], carrying = false;   /* the gift's middle (drawn at 75 % around its bottom, scenes.js) */
         (function fr() { if (carrying) { var c = mid(H); gift.setAttribute('transform', 'translate(' + (c[0] - g0[0]).toFixed(2) + ' ' + (c[1] - g0[1] + 3).toFixed(2) + ')'); } if (carrying !== null) requestAnimationFrame(fr); })();
         return seq([function () { L.face(H, 'starry'); return L.walk(R, H, [143, base[1]], 22, null, .7); },
-          function () { look(H, g0); return Promise.all([L.prop(R, H, 'bob', 10, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.both(R, H, [151, 113], [179, 113], 500)]); },
+          function () { look(H, g0); return Promise.all([L.prop(R, H, 'bob', 10, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.both(R, H, [153, 115], [177, 115], 500)]); },
           function () { svg.appendChild(gift); carrying = true; return Promise.all([L.prop(R, H, 'bob', 0, 500), L.legs(R, H, 0, 0, 0, 0, 500), L.both(R, H, fit(H, -16, -58), fit(H, 16, -58), 500)]); },
           function () { return L.turnTo(R, H, 'front', 300); },
           function () { look(H, null); L.say(H, T('Bought it!', 'Kjøpt!'), 1400); L.burst(svg, mid(H), 6); return L.both(R, H, fit(H, -16, -120), fit(H, 16, -120), 450); },
@@ -43,14 +43,14 @@
       { n: 'bag', t: 'taking the list from the bag', f: function () {
         var o;
         return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [82, base[1]], 22, null, .7); },
-          function () { look(H, [115, 86]); return Promise.all([L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [108, 92], 450)]); },
-          function () { L.wob(bag, 4, 400); return L.reach(R, H, 'R', [110, 100], 250); },
-          function () { o = take(H, 'R', 'paperBack'); return L.reach(R, H, 'R', [108, 84], 300); },
+          function () { look(H, [115, 100]); return Promise.all([L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [110, 101], 450)]); },   /* the bag is knee to waist high (60 %, scenes.js) */
+          function () { L.wob(bag, 4, 400); return L.reach(R, H, 'R', [112, 108], 250); },
+          function () { o = take(H, 'R', 'paperBack'); return L.reach(R, H, 'R', [110, 96], 300); },
           function () { return Promise.all([L.prop(R, H, 'lean', 0, 400), L.turnTo(R, H, 'front', 350), L.reach(R, H, 'R', fit(H, 8, -58), 450)]); },
           function () { look(H, L.handAt(H, 'R')); return L.headTo(R, H, 6, 1.5, 300); },
           function () { return L.wait(R, 900); },
           function () { look(H, null); L.face(H, 'love'); L.say(H, T('What’s next?', 'Hva blir det neste?'), 1700); return L.wait(R, 1300); },
-          function () { look(H, [115, 86]); return Promise.all([L.turnTo(R, H, .7, 300), L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [110, 100], 500)]); },
+          function () { look(H, [115, 100]); return Promise.all([L.turnTo(R, H, .7, 300), L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [112, 108], 500)]); },
           function () { L.letGo(H, 'R'); look(H, null); return Promise.all([L.prop(R, H, 'lean', 0, 400), L.reach(R, H, 'R', null, 400)]); },
           function () { return L.walk(R, H, base, 22); }]);
       } },

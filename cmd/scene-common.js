@@ -59,5 +59,14 @@
   function spin(sel, svg, ms, turns) { svg.querySelectorAll(sel).forEach(function (h) { var t = h.getAttribute('transform') || '', m = t.match(/rotate\((\S+) (\S+) (\S+)\)/), c = m ? [m[2], m[3]] : [h.getAttribute('x1'), h.getAttribute('y1')], a0 = m ? +m[1] : 0, t0 = performance.now(); (function fr(now) { var u = Math.min(1, (now - t0) / ms); h.setAttribute('transform', 'rotate(' + (a0 + 360 * turns * ease(u)) + ' ' + c[0] + ' ' + c[1] + ')'); if (u < 1) requestAnimationFrame(fr); else h.setAttribute('transform', t); })(t0); }); }
   function fall(svg, inner, a, b, ms, before) { var g = el('g', {}, inner); if (before) before.parentNode.insertBefore(g, before); else svg.appendChild(g); return new Promise(function (res) { var t0 = performance.now(); (function fr(now) { var u = Math.min(1, (now - t0) / ms); g.setAttribute('transform', 'translate(' + lerp(a[0], b[0], u).toFixed(2) + ' ' + lerp(a[1], b[1], u * u).toFixed(2) + ')'); if (u < 1) requestAnimationFrame(fr); else { g.remove(); res(); } })(t0); }); }
   function drip(svg, P, col) { fall(svg, '<path d="M0 0q-1.2 1.8 0 2.7q1.2-.9 0-2.7z" fill="' + (col || '#8fd0ff') + '"/>', P, [P[0] + rnd(-1, 1), P[1] + 14], 420); }
-  window.SceneCommon = { T: T, fit: fit, seq: seq, mid: mid, mount: mount, look: look, O: O, take: take, tipOf: tipOf, common: common, start: start, spin: spin, fall: fall, drip: drip };
+  /* real sizes (Phase L4): each object in the page pictures, as a share of your height (you ≈ 1.75 m), with the range it
+     must stay in – the scene-sizes test measures them. [selector, nth match, min, max, what]. Big symbols (the money jar,
+     the wall calendar, the mountain) are left out on purpose: they're made reachable instead (the ladder). */
+  var SIZES = {
+    food: [['[data-scgo="meals"]', 0, .9, 1.25, 'fridge – about your height'], ['[data-scgo="meals"]', 1, .4, .75, 'stove – at hip height'], ['[data-scgo="shop"]', 0, .2, .55, 'bag – knee to waist']],
+    wish: [['[data-scgo="wishes"]', 0, .4, .7, 'cart – handle at the hip'], ['[data-scgo="wbuy"]', 0, .3, .62, 'shopping bag – knee to waist'], ['[data-scgo="wbought"]', 0, .25, .6, 'gift – knee to waist']],
+    travel: [['.sc-caseo', 0, .3, .62, 'suitcase – up to the hip']],
+    people: [['.sc-mingle > .hs-part', -1, .85, 1.25, 'your people – your size']]
+  };
+  window.SceneCommon = { SIZES: SIZES, T: T, fit: fit, seq: seq, mid: mid, mount: mount, look: look, O: O, take: take, tipOf: tipOf, common: common, start: start, spin: spin, fall: fall, drip: drip };
 })();
