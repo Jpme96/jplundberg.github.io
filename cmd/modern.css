@@ -12,6 +12,7 @@
 
 /* ---------- colours and type ---------- */
 :root.modern {
+  /* tokens */
   --bg: #0a0b0e;
   --bg-solid: #15161b;
   --card-rgb: 19, 20, 25;
@@ -26,8 +27,12 @@
   --r-card: 22px;
   --r-ctl: 12px;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --solid-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset;
+  --mbar-shadow: 0 10px 34px rgba(0, 0, 0, .28);
+  /* /tokens */
 }
 :root.modern[data-theme="light"] {
+  /* tokens */
   --bg: #f3f4f7;
   --bg-solid: #ffffff;
   --card-rgb: 255, 255, 255;
@@ -39,6 +44,9 @@
   --t2: rgba(20, 22, 30, .74);
   --line: rgba(20, 22, 30, .08);
   --chip: rgba(20, 22, 30, .045);
+  --solid-shadow: 0 1px 2px rgba(20, 22, 30, .05), 0 6px 20px rgba(20, 22, 30, .04);
+  --mbar-shadow: 0 8px 26px rgba(20, 22, 30, .08);
+  /* /tokens */
 }
 .modern.corners-sharp { --r-card: 10px; --r-ctl: 8px; }
 
@@ -52,13 +60,12 @@
 /* ---------- the calm background (default for this look) ---------- */
 [data-bg="calm"] .bg, .bg-calm {
   background:
-    radial-gradient(900px 440px at 16% -10%, rgba(var(--accent-rgb), .22), transparent 70%),
-    radial-gradient(700px 380px at 96% -2%, rgba(var(--accent-rgb), .07), transparent 70%);
+    radial-gradient(900px 440px at 16% -10%, rgba(var(--accent-rgb), var(--calm-a)), transparent 70%),
+    radial-gradient(700px 380px at 96% -2%, rgba(var(--accent-rgb), var(--calm-b)), transparent 70%);
   filter: none;
   -webkit-mask-image: none; mask-image: none;
   --bg-opacity: 1;
 }
-:root[data-theme="light"][data-bg="calm"] .bg { background: radial-gradient(900px 440px at 16% -10%, rgba(var(--accent-rgb), .16), transparent 70%), radial-gradient(700px 380px at 96% -2%, rgba(var(--accent-rgb), .06), transparent 70%); }
 
 /* ---------- cards ---------- */
 .modern .card { border-radius: var(--r-card); padding: 20px; }
@@ -66,8 +73,7 @@
 .modern .card-head h2, .modern .card-head h2 i { font-size: 14px; }
 .modern .card-head h2 { color: var(--t2); font-weight: 600; letter-spacing: 0; }
 .modern .card-head h2 i { color: var(--accent); }
-.modern.card-solid .card { box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset; }
-:root.modern[data-theme="light"].card-solid .card { box-shadow: 0 1px 2px rgba(20, 22, 30, .05), 0 6px 20px rgba(20, 22, 30, .04); }
+.modern.card-solid .card { box-shadow: var(--solid-shadow); }
 @media (hover: hover) {
   .modern .dash .card { transition: transform .25s var(--ease-out), box-shadow .25s, border-color .25s; }
   .modern .dash .card:hover { border-color: rgba(var(--ink-rgb), .12); }
@@ -136,10 +142,9 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
     left: max(16px, calc((100vw - 1150px) / 2)); right: max(16px, calc((100vw - 1150px) / 2));
     height: 56px; padding: 0 8px 0 10px; border-radius: 18px;
     background: rgba(var(--card-rgb), .74); -webkit-backdrop-filter: saturate(160%) blur(22px); backdrop-filter: saturate(160%) blur(22px);
-    border: 1px solid var(--line); box-shadow: 0 10px 34px rgba(0, 0, 0, .28);
+    border: 1px solid var(--line); box-shadow: var(--mbar-shadow);
     transition: transform .35s var(--ease-out), opacity .3s;
   }
-  :root.modern[data-theme="light"] .mbar { box-shadow: 0 8px 26px rgba(20, 22, 30, .08); }
   .mbar.away { transform: translateY(calc(-100% - 20px)); opacity: 0; pointer-events: none; }
   .modern .mbar .tabbar, .modern.unlocked .mbar .tabbar, .modern.resuming .mbar .tabbar {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); right: auto; bottom: auto;
