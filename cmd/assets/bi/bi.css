@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1174 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?031866faf2") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1176 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?bb2df6cdff") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -1057,6 +1057,8 @@
 .bi-stopwatch::before{content:"\f597"}
 .bi-stopwatch-fill::before{content:"\f596"}
 .bi-strava::before{content:"\f668"}
+.bi-suitcase::before{content:"\f900"}
+.bi-suitcase-fill::before{content:"\f8fd"}
 .bi-suitcase-lg::before{content:"\f8ff"}
 .bi-suitcase-lg-fill::before{content:"\f8fe"}
 .bi-sun::before{content:"\f5a2"}

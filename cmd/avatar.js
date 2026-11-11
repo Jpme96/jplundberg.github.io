@@ -615,6 +615,12 @@
     drawHome(); var f = document.querySelector('#avHome .av-fig'); if (f) { f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
     clearTimeout(reactTo.t); reactTo.t = setTimeout(function () { react = null; drawHome(); }, 4600);
   }
+  /* a happy moment from outside (together.js: a high five or a heart from the one you live with) */
+  function cheer(say) {
+    react = { m: MOMENTS.win, say: say, until: Date.now() + 5500 };
+    drawHome(); var f = document.querySelector('#avHome .av-fig'); if (f) { f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
+    clearTimeout(reactTo.t); reactTo.t = setTimeout(function () { react = null; drawHome(); }, 5600);
+  }
   function watch() {
     if (!root.classList.contains('unlocked')) return;
     var c = counts(); if (!seen) { seen = c; return; }
@@ -969,6 +975,6 @@
     return '';
   }
 
-  window.Avatar = { dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+  window.Avatar = { cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
     _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();

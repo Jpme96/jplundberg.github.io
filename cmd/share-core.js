@@ -144,7 +144,15 @@
     proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
     doc: ['name', 'cat', 'src', 'date', 'files'],
     hmap: ['w', 'h', 'mono', 'fid', 'rooms', 'pins', 'cr', 'style', 'furn'],               /* the owner's home map (house-map.js), when they show it */
-    spet: ['pet', 'at'],                                                     /* the pet you share (C10) – either of you picks it, the latest pick wins */
+    spet: ['pet', 'at'],
+    /* the two of you (Phase E, together.js) – either of you writes these */
+    omw: ['by', 'at', 'until'],                                              /* on my way home: when you left and when you'll be home */
+    react: ['by', 'kind', 'at', 'what'],                                     /* a high five or a heart for something the other did */
+    cd: ['title', 'date', 'icon', 'by'],                                     /* a countdown you both see */
+    idea: ['text', 'by', 'done'],                                            /* date-night ideas */
+    tpk: ['trip', 'text', 'done', 'by'],                                     /* the shared packing list of a trip */
+    ndg: ['text', 'at', 'by', 'for'],                                        /* a nudge: a reminder for the other, at a time */
+    guest: ['name', 'from', 'to', 'by'],                                     /* guests staying over */                                                     /* the pet you share (C10) – either of you picks it, the latest pick wins */
     pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else (up to 48 – the maker has ~45 settings) */

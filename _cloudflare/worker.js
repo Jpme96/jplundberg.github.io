@@ -637,6 +637,7 @@ async function healthApi(request, env) {
 
 /* ---------- notifications (Web Push, RFC 8030/8291/8292) ---------- */
 const PUSH_PREFIX = 'push:dev:';
+const NUDGE_PREFIX = 'push:nudge:';   /* a nudge for later: push:nudge:<who sent it>:<id> → { want, at, msg } */
 async function pushApi(request, env, role) {
   if (!env.VAULT) return json({ error: 'worker not configured' }, 503);
   if (request.method === 'GET') return json({ key: (await vapid(env)).pub });
@@ -648,6 +649,14 @@ async function pushApi(request, env, role) {
     if (!cfg || !cfg.partner || cfg.paused) return json({ ok: true, sent: 0 });
     const n = body.notify, want = role === 'p' ? 'o' : 'p';
     const msg = { title: String(n.title || 'Home').slice(0, 80), body: String(n.body || '').slice(0, 200), url: want === 'p' ? '/cmd/home/' : '/cmd/', tag: 'share-' + String(n.tag || 'x').replace(/[^a-z0-9-]/gi, '').slice(0, 40) };
+    /* a nudge for later (Phase E): kept until its minute, then sent to the other person's phones by the live room's alarm */
+    const nid = String(n.id || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+    if (n.cancel && nid) { await env.VAULT.delete(NUDGE_PREFIX + role + ':' + nid); return json({ ok: true }); }
+    if (+n.at > Date.now() + 30e3 && +n.at < Date.now() + 60 * 864e5) {
+      await env.VAULT.put(NUDGE_PREFIX + role + ':' + (nid || String(Date.now())), JSON.stringify({ want, at: +n.at, msg }), { expirationTtl: Math.ceil((+n.at - Date.now()) / 1000) + 2 * 86400 });
+      await notify(env, { alarm: +n.at });
+      return json({ ok: true, at: +n.at });
+    }
     let sent = 0, cur;
     do {
       const l = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor: cur });
@@ -693,6 +702,19 @@ async function sendDue(env, backstop) {
   if (!env.VAULT) return 0;
   const now = Date.now();
   let cursor, next = 0;
+  /* nudges for later (Phase E): due ones go to every phone of the person they're for, then they're gone */
+  { let nc; const due = [];
+    do { const l = await env.VAULT.list({ prefix: NUDGE_PREFIX, cursor: nc });
+      for (const k of l.keys) { const x = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (!x) continue; if (x.at <= now) due.push([k.name, x]); else if (!next || x.at < next) next = x.at; }
+      nc = l.list_complete ? null : l.cursor; } while (nc);
+    for (const [name, x] of due) {
+      await env.VAULT.delete(name);
+      if (x.at < now - 6 * 3600e3) continue;                                   /* hours late: no use any more */
+      let dc; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor: dc });
+        for (const k of l.keys) { const rec = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (!rec || !rec.sub || (rec.role || 'o') !== x.want) continue;
+          try { const r = await webPush(env, rec.sub, x.msg); if (r.status === 404 || r.status === 410) await env.VAULT.delete(k.name); } catch (e) { console.log('nudge push failed', e && e.message); } }
+        dc = l.list_complete ? null : l.cursor; } while (dc);
+    } }
   do {
     const list = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor });
     for (const k of list.keys) {

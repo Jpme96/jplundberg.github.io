@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 82;
+  var APPV = 83;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -306,6 +306,7 @@
   }
   function draw() {
     if (!K || stopped || !list('info').length) return;
+    tgUse();
     if (!chatOn && !preview) chatStart();
     var ts = tabsOn(); if (!ts.some(function (t) { return t[0] === tab; })) tab = ts.length ? ts[0][0] : 'shop';
     var keep = document.activeElement && document.activeElement.name ? { n: document.activeElement.name, v: document.activeElement.value } : null;
@@ -340,6 +341,16 @@
   }
   function lookedNow() { var k = {}; Object.keys(recs).forEach(function (rid) { k[rid] = recs[rid].t; }); known = k; lastLook = Date.now(); wj('home.known', k); wj('home.lastLook', lastLook); }
   /* the two of you: holding hands, a high five when a chore was done today, a hug on your birthday, a kiss in the evening – tap for the next */
+  /* the two of you (Phase E): together.js, the same code as in cmd – plugged into this app's records */
+  function tgUse() {
+    if (!window.Together || tgUse.on) return; tgUse.on = true;
+    Together.use({ role: 'p', list: function (c) { return list(c).map(function (r) { return { id: r.id, f: r.f, t: r.t, by: r.by }; }); },
+      put: function (c, id, f, del) { put(c, id, f, del); }, me: function () { return myName(); }, other: function () { return owner(); },
+      otherLook: function () { return info().olook; },
+      push: function (title, body, o) { o = o || {}; SC.api('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }).catch(function () {}); },
+      toast: function (h) { toast(h); }, shopAdd: function (texts) { texts.forEach(function (x) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); }); },
+      onReact: function () { coupleK = 'hi5'; }, refresh: function () { draw(); } });
+  }
   var coupleK = null;
   function sharedPet() { var o = null; Object.keys(recs).forEach(function (rid) { var r = recs[rid]; if (r.c === 'spet' && !r.del && r.f && (!o || (+r.f.at || 0) > (+o.at || 0))) o = r.f; }); return o ? o.pet : ''; }
   function coupleCard() {
@@ -368,7 +379,7 @@
       (ch.length ? '<ul class="h-list">' + ch.map(function (x) { return '<li><span class="h-row"><span><i class="bi bi-' + x.i + '"></i> ' + esc(x.s) + '<small>' + esc(new Date(x.t).toLocaleString(nb ? 'nb-NO' : 'en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></span></span></li>'; }).join('') + '</ul><button type="button" class="h-link" data-looked>' + L('Mark as seen', 'Merk som sett') + '</button>'
         : '<p class="h-sum">' + (known ? L('Nothing new since you last looked.', 'Ingenting nytt siden sist.') : L('From now on, what ', 'Fra nå av ser du her hva ') + esc(o) + L(' changes shows up here.', ' endrer.')) + '</p>');
     if (!known && !preview) setTimeout(lookedNow, 0);
-    return coupleCard() + html;
+    return coupleCard() + (window.Together && !preview ? Together.card() : '') + html;
   }
   function dinners() {
     if ((info().what || {}).meals === false) return '';

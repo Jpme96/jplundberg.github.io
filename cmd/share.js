@@ -38,7 +38,11 @@
     } else if ((+sh.keyAt || 0) > (+sk.at || 0)) { d.shareKey = { at: +sh.keyAt, on: !!sh.on, key: sh.key || null, since: sh.since || null }; V.save(d); }
   }
   var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['pantry', 'Pantry', 'box-seam'], ['recipes', 'Recipes', 'journal-text'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
-  var PARTNER_ONLY = { pme: 1 };          /* records only the other person writes – never removed from here */
+  var PARTNER_ONLY = { pme: 1 };
+  /* kinds either of you writes (together.js, Phase E): cmd's own changes wait in a small outbox until they're sent,
+     and what's in the box is kept (never deleted just because this device's copy doesn't have it) */
+  var BOTH = { omw: 1, react: 1, cd: 1, idea: 1, tpk: 1, ndg: 1, guest: 1 };
+  var TG = (function () { try { return JSON.parse(localStorage.getItem('dash.share.tg')) || {}; } catch (e) { return {}; } })();          /* records only the other person writes – never removed from here */
   var OFF_FIRST = { pantry: 1, recipes: 1 };
   /* what they may change, per area (view = they see it but can't change it) */
   var AREAS = [['shop', 'Shopping list'], ['meals', 'Dinner plan'], ['pantry', 'Pantry'], ['chores', 'Chores'], ['money', 'Money between you'], ['cal', 'Calendar'], ['trips', 'Trips'], ['plants', 'Plants'], ['move', 'Moving checklist'], ['notes', 'Home notes'], ['house', 'House projects']];
@@ -88,6 +92,9 @@
     var pend = ((V.get() || {}).share || {}).pending || {};
     if (w.money && Object.keys(pend).length) { info.pend = Object.keys(pend); Object.keys(pend).forEach(function (id) { put('sx', id, pend[id].f); }); }
     put('info', 'info', info);
+    /* the two of you: what's in the box stays, your outbox goes up (a deletion = left out) */
+    Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (BOTH[r.c] && !r.del && !r.bad && r.f && r.id && !TG[r.c + '|' + r.id]) put(r.c, r.id, r.f); });
+    Object.keys(TG).forEach(function (k) { var x = TG[k]; if (!x.del) put(x.c, x.id, x.f); });
     /* the shared pet: yours goes up only if you picked it after the one in the box (they can pick it in their app too) */
     var sp0 = sharedPetRec(), mySp = ((V.get() || {}).share || {});
     if (mySp.pet && (!sp0 || (+mySp.petAt || 0) > (+sp0.at || 0))) put('spet', 'pet', { pet: mySp.pet, at: +mySp.petAt || Date.now() });
@@ -492,7 +499,7 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { dSent(sentAt); evSent(sentAt); if (window.Vault && Vault.paintWaiting) Vault.paintWaiting(); return dTake(); }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
+    }).then(function () { dSent(sentAt); evSent(sentAt); tgSent(sentAt); if (window.Vault && Vault.paintWaiting) Vault.paintWaiting(); return dTake(); }).then(function () { try { window.dispatchEvent(new Event('together:change')); } catch (e) {} lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
@@ -565,6 +572,15 @@
     var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
+  function tgSave() { try { localStorage.setItem('dash.share.tg', JSON.stringify(TG)); } catch (e) {} }
+  function tgSent(upTo) { var ch = false; Object.keys(TG).forEach(function (k) { if (TG[k].t <= upTo) { delete TG[k]; ch = true; } }); if (ch) tgSave(); }
+  /* the shared records of a kind, with this device's unsent changes on top: [{ id, f, t, by }] */
+  function tgList(c) {
+    var out = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === c && !r.del && !r.bad && r.f && r.id) out[r.id] = { id: r.id, f: r.f, t: r.t, by: r.by }; });
+    Object.keys(TG).forEach(function (k) { var x = TG[k]; if (x.c !== c) return; if (x.del) delete out[x.id]; else out[x.id] = { id: x.id, f: x.f, t: x.t, by: 'o' }; });
+    return Object.keys(out).map(function (id) { return out[id]; });
+  }
+  function tgPut(c, id, f, del) { if (!BOTH[c] || !st()) return; TG[c + '|' + id] = { c: c, id: String(id), f: f || {}, del: !!del, t: Date.now() }; tgSave(); window.dispatchEvent(new Event('together:change')); schedule(200); }
   function sharedPetRec() { var o = null; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'spet' && !r.del && r.f && (!o || (+r.f.at || 0) > (+o.at || 0))) o = r.f; }); return o; }
   function sharedPet() { var r = sharedPetRec(), mine = ((V.get() || {}).share || {}); if (mine.pet && (!r || (+mine.petAt || 0) > (+r.at || 0))) return mine.pet; return r ? r.pet : ''; }
   /* the two of you on Home (avatar.js asks): their avatar, which picture fits today, and your shared pet */
@@ -575,7 +591,7 @@
     var say = kind === 'hi5' ? (nb ? 'Husarbeid gjort i dag – high five, ' + p + '!' : 'Chores done today – high five, ' + p + '!') : (nb ? 'Du og ' + p + ' 💛' : 'You and ' + p + ' 💛');
     return { look: lk, kind: kind, say: say, pet: sharedPet(), w: 7 };
   };
-  window.ShareSpace = { partnerName: function () { return pname(); }, sharedPet: function () { return sharedPet(); }, setPet: function (v) { setSt({ pet: v || 'none', petAt: Date.now() }); schedule(200); }, waiting: function () { if (!st()) return 0; var n = Object.keys(EV.ops || {}).length; Object.keys(DLISTS).forEach(function (k) { n += Object.keys(dl(k).ops || {}).length; }); return n; }, partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
+  window.ShareSpace = { list: function (c) { return tgList(c); }, put: function (c, id, f, del) { tgPut(c, id, f, del); }, ownerName: function () { return owner(); }, partnerName: function () { return pname(); }, sharedPet: function () { return sharedPet(); }, setPet: function (v) { setSt({ pet: v || 'none', petAt: Date.now() }); schedule(200); }, waiting: function () { if (!st()) return 0; var n = Object.keys(EV.ops || {}).length; Object.keys(DLISTS).forEach(function (k) { n += Object.keys(dl(k).ops || {}).length; }); return n; }, partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
