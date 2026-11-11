@@ -151,7 +151,8 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-travel.js"
     ],
     "work/index.html": [
       "budget.js",
@@ -173,7 +174,8 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-people.js"
     ],
     "food/index.html": [
       "budget.js",

@@ -85,13 +85,13 @@
       if (od != null) marks.push({ k: 'talk', t: L('Catch up with ', 'Ta kontakt med ') + p.name, w: 15 });
       return { p: p, marks: marks, w: marks.length ? Math.min.apply(null, marks.map(function (x) { return x.w; })) : 100 + (b ? b.n : 400) };
     }).sort(function (a, b) { return a.w - b.w; });
-    var seat = rows.slice(0, 5), n = seat.length, REL = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
+    var seat = rows.slice(0, 4), n = seat.length, REL = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
     var svg = ground() + deco('people') +
       '';
     /* a little get-together: everyone standing on the grass, drawn like your avatar with their own look,
        gently swaying and taking turns to talk. A birthday person has a cake on a small table beside them. */
     var AV = window.Avatar && window.Avatar.personLook, H = [0, 104, 100, 94, 88, 82][n] || 82, W = H * 0.86;
-    var gap = Math.min(W * 0.92, 210 / Math.max(1, n)), xs = seat.map(function (r, i) { return 120 + (i - (n - 1) / 2) * gap; });
+    var gap = Math.min(W * 0.92, 184 / Math.max(1, n)), xs = seat.map(function (r, i) { return 136 + (i - (n - 1) / 2) * gap; });   /* room on the left for you */
     var talk = n > 1 ? (new Date().getMinutes() % n) : -1;
     svg += '<g class="sc-mingle">';
     /* a bit of depth: every other person stands a step back (smaller, higher); the back row is drawn first */
@@ -121,14 +121,15 @@
     });
     svg += '</g>';
     /* you, waving at whoever has a birthday soon – at the side nearest to them */
+    /* you stand on the left with your people (the living scene walks you over to them); waving when a birthday is near */
     var bi = seat.map(function (r) { return r.marks.some(function (q) { return q.k === 'cake'; }); }).indexOf(true);
-    if (bi > -1 && n <= 4) svg += xs[bi] <= 120 ? sceneMe(-16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver') : sceneMe(240 - H * .62 + 16, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
+    if (n) svg += sceneMe(18 - H * .4, 136 - H * 1.02, H * .8, H * 1.02, 'day', bi > -1 ? 'sc-waver' : '');   /* as wide as their boxes, so you're the same size */
     /* nobody yet: you, waving, with the invitation above you – it drew only sky and grass and looked broken (2026-11-10) */
     if (!n) { var me0 = sceneMe(56 - H * .31, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
       svg += me0 + '<text x="' + (me0 ? 152 : 120) + '" y="96" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>'; }
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
-    return { svg: svg, label: L('Your people', 'Personene dine'), list: list, empty: n ? L('Everyone’s fine – nothing coming up this week.', 'Alle har det fint – ingenting denne uka.') : '' };
+    return { svg: svg, label: L('Your people', 'Personene dine'), list: list, live: { n: n, cake: bi > -1, gift: seat.some(function (r) { return r.marks.some(function (q) { return q.k === 'gift'; }); }), talk: seat.some(function (r) { return r.marks.some(function (q) { return q.k === 'talk'; }); }) }, empty: n ? L('Everyone’s fine – nothing coming up this week.', 'Alle har det fint – ingenting denne uka.') : '' };
   }
 
   /* ---------------- Food ---------------- */
@@ -250,11 +251,12 @@
     var P = function (u) { var x = (1 - u) * (1 - u) * 112 + 2 * (1 - u) * u * 150 + u * u * 222, y = (1 - u) * (1 - u) * 112 + 2 * (1 - u) * u * 30 + u * u * 40; return [x, y]; };
     var p = P(prog), q = P(Math.min(1, prog + .02)), ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
     var svg = ground() + deco('travel') +
-      part('trips', pack.length && pf < 1 && n != null && n <= 3 ? 'hot' : '', '<clipPath id="scCase"><rect x="30" y="72" width="62" height="52" rx="6"/></clipPath><rect x="30" y="72" width="62" height="52" rx="6" class="sc-case"/>' +
+      /* the suitcase at waist height (a real one comes up to your hip; it was as tall as your shoulders) – drawn at 70 % around its wheels */
+      part('trips', pack.length && pf < 1 && n != null && n <= 3 ? 'hot' : '', '<g transform="translate(61 126) scale(.7) translate(-61 -126)"><clipPath id="scCase"><rect x="30" y="72" width="62" height="52" rx="6"/></clipPath><rect x="30" y="72" width="62" height="52" rx="6" class="sc-case"/>' +
         '<rect x="30" y="' + (124 - 52 * pf).toFixed(1) + '" width="62" height="52" class="sc-casef" clip-path="url(#scCase)"/><rect x="30" y="72" width="62" height="52" rx="6" class="sc-caseo"/>' +
         '<path d="M50 72 v-8 h22 v8" class="sc-handle2"/><line x1="44" y1="74" x2="44" y2="122" class="sc-strap"/><line x1="78" y1="74" x2="78" y2="122" class="sc-strap"/>' +
-        '<circle cx="40" cy="126" r="3" class="sc-wheel"/><circle cx="82" cy="126" r="3" class="sc-wheel"/>' +
-        (t ? '<path d="M92 82 l8 6" class="sc-strap"/><rect x="96" y="86" width="22" height="13" rx="2" class="sc-tag"/><text x="107" y="95.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
+        '<circle cx="40" cy="126" r="3" class="sc-wheel"/><circle cx="82" cy="126" r="3" class="sc-wheel"/></g>' +
+        (t ? '<path d="M82.5 96 l4 3" class="sc-strap"/><rect x="85" y="98" width="22" height="13" rx="2" class="sc-tag"/><text x="96" y="107.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
       /* you: packing – a shirt and a sock fly from your hand into the case while there's packing left; otherwise ready to go */
       (t && pack.length && pf < 1 && !away ? sceneMe(-14, 44, 52, 84, 'plain', 'sc-packer') + '<g class="sc-pack"><path d="M24 92 h10 l2 3 -2 1 v8 h-10 v-8 l-2 -1z" class="sc-shirt"/></g><g class="sc-pack b"><path d="M26 94 h5 v7 h4 v3 h-9z" class="sc-sock"/></g>' : sceneMe(-12, 44, 52, 84, t && n != null && n <= 1 ? 'trip' : todPose('day'))) +
       '<path d="M112 112 Q150 30 222 40" class="sc-route"/>' +
@@ -266,7 +268,7 @@
       if (pack.length) list.push({ t: L('Packed ', 'Pakket ') + packed + '/' + pack.length, h: '#trip=' + t.id, late: pf < 1 && n <= 2 });
       else list.push({ t: L('No packing list yet', 'Ingen pakkeliste ennå'), h: '#trip=' + t.id });
     }
-    return { svg: svg, label: L('Your next trip', 'Neste reise'), list: list, empty: L('No trip planned – plan one under Trips.', 'Ingen reise planlagt – planlegg en under Reiser.') };
+    return { svg: svg, label: L('Your next trip', 'Neste reise'), list: list, live: { trip: !!t, days: n, away: !!away, packLeft: pack.length - packed, packN: pack.length }, empty: L('No trip planned – plan one under Trips.', 'Ingen reise planlagt – planlegg en under Reiser.') };
   }
 
   /* Journey tab: your everyday ride – bus, tram, metro, train or boat (the one your last search started with) pulls in at the stop */

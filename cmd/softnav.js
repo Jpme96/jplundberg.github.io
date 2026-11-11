@@ -174,7 +174,7 @@
       root.classList.add('sn-go');
       var vt = document.startViewTransition(built);
       var end = function () { root.classList.remove('sn-go'); };
-      vt.finished.then(end, end);
+      vt.finished.then(end, end); if (vt.ready) vt.ready.catch(function () {});   /* skipped by a newer one: not an error */
       return vt.updateCallbackDone.then(finish, function () { finish(); });
     }).catch(function (e) { arrived = true; clearTimeout(dog); try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); failed(e && e.message); full(); })
       .then(function () { busy = false;

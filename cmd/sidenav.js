@@ -39,7 +39,7 @@
     root.classList.add('sn-vt');
     var vt;
     try { vt = document.startViewTransition(apply); } catch (e) { root.classList.remove('sn-vt'); apply(); settle(); return; }
-    vt.finished.then(done, done);
+    vt.finished.then(done, done); if (vt.ready) vt.ready.catch(function () {});   /* a skipped transition (a quick second tap) rejects ready – not an error */
     function done() { root.classList.remove('sn-vt'); settle(); }
   }
   /* cards that measure themselves (masonry, the menu fitting) get told the room changed */

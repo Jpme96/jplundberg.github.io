@@ -5,7 +5,7 @@
    - Admin shows no Resend key light while the email backup isn't set up on the server
    - Diagnostics treats any full-screen popup as a popup (no "two things cover each other")
    Made-up data only. */
-const { shared, sl, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { shared, sl, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p, b2 } = await shared(393);
   await p.setViewport({ width: 1280, height: 900 }); await go(p, '', 1500);
@@ -26,7 +26,8 @@ const { shared, sl, go } = require('../lib/browser'); const { check, done } = re
 
   /* People */
   await go(p, 'people/', 2200);
-  check(await p.evaluate(() => !!document.querySelector('[data-scme]')), 'People with nobody yet: the picture shows you waving, not just grass');
+  check(await p.evaluate(() => !!document.querySelector('[data-scme], #scIllu .hero')), 'People with nobody yet: the picture shows you waving, not just grass');
+  await until(p, () => !!document.querySelector('.pp-suggest'), 8000);   /* the offer can come a moment after the page */
   const sug = await p.evaluate(() => { const x = document.querySelector('.pp-suggest'); return x ? x.textContent.trim() : ''; });
   check(/Add Iago/.test(sug), 'People offers "Add Iago": ' + JSON.stringify(sug));
   await p.click('.pp-suggest'); await sl(1200);
