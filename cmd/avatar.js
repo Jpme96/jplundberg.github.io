@@ -184,7 +184,7 @@
     var LW = (hem - 3 - G) / 2, LB = LW * (MU ? .68 : L.build === 'athletic' ? .72 : .8), x0 = 101 - G / 2 - LW, x1 = 101 + G / 2;
     var leg = function (a) { var d = (LW - LB) / 2, q = function (n) { return n.toFixed(1); };
       return '<path d="M' + q(a) + ' 124H' + q(a + LW) + 'Q' + q(a + LW + .6) + ' 140 ' + q(a + LW - d) + ' 156H' + q(a + d) + 'Q' + q(a - .6) + ' 140 ' + q(a) + ' 124Z" fill="' + LC + '"/>' +
-        '<path class="av-knee" d="M' + q(a + LW * .22) + ' 140.6q' + q(LW * .28) + ' 1.1 ' + q(LW * .56) + ' 0" stroke="rgba(0,0,0,.16)" stroke-width=".8" fill="none" stroke-linecap="round"/>'; };
+        '<path class="av-knee" d="M' + q(a + LW * .22) + ' 140.6q' + q(LW * .28) + ' 1.1 ' + q(LW * .56) + ' 0" stroke="rgba(0,0,0,.1)" stroke-width=".6" fill="none" stroke-linecap="round"/>'; };
     var hx0 = 101 - hem / 2 + 1, hw = hem - 2;
     /* a small shoe under each ankle, toe pointing a little outwards, a gap between them */
     var shoe = function (cx, dir) { var w = LB + 3, x = cx - w / 2 + dir * 1.5, q = function (n) { return n.toFixed(1); };
@@ -224,7 +224,7 @@
       var n = String(d).match(/-?\d*\.?\d+/g).map(Number), Sx = n[0], Sy = n[1], vx = n[6], vy = n[7], cx1 = n[2], cy1 = n[3];
       var side = Sx > 101 ? 'R' : 'L'; cur = side;
       var dist = Math.hypot(vx, vy) || 1, tot = A1 + A2;
-      var r = KEEP ? Math.min(dist, tot * .99) : Math.min(tot * .97, dist / A0 * tot);
+      var r = KEEP ? Math.min(dist, tot * .99) : tot * Math.min(.97, .3 + dist / A0 * .7);   /* free poses: nearly straight, a soft elbow */
       r = Math.max(r, Math.abs(A1 - A2) + 2);
       var ux = vx / dist, uy = vy / dist, Ex = Sx + ux * r, Ey = Sy + uy * r;
       var cr = vx * cy1 - vy * cx1, sg = cr < 0 ? -1 : cr > 0 ? 1 : (side === 'R' ? -1 : 1);
@@ -236,16 +236,18 @@
       var line = function (dd, col, w, extra) { return '<path d="' + dd + '" stroke="' + col + '" stroke-width="' + w + '" fill="none" stroke-linecap="round"' + (extra || '') + '/>'; };
       return '<g class="av-limb" data-s="' + q2(Sx) + ' ' + q2(Sy) + '" data-e="' + q2(Elx) + ' ' + q2(Ely) + '" data-w="' + q2(Ex) + ' ' + q2(Ey) + '">' +
         line(up + lo.replace('M', 'L'), shade(AC, -.3), AW + 1.8, ' stroke-linejoin="round" opacity=".55"') +
-        line(up, AC, AW) + line(lo, AC, AW * .94) +
+        line(up, AC, AW) + line(lo, AC, AW * .86) +
         '<circle cx="' + q2(Elx) + '" cy="' + q2(Ely) + '" r="' + q2(AW * .47) + '" fill="' + AC + '"/>' +
-        (L.build === 'athletic' || MU ? line(up, AC, AW + (MU ? 4 : 2.5), ' stroke-dasharray="' + (MU ? 13 : 10) + ' 999"') : '') +
+        (L.build === 'athletic' || MU ? line(up, AC, AW + (MU ? 3 : 2), ' stroke-dasharray="' + (MU ? 10 : 8) + ' 999" stroke-dashoffset="-6"') : '') +
         '</g><g class="av-hand" transform="translate(' + q2(shift[side][0]) + ' ' + q2(shift[side][1]) + ')">';
     }, hand = function (x, y) {
-      /* a mitten along the forearm, the thumb on the side toward the body */
-      var sd = cur === 'R' ? 1 : -1, ang = fAng[cur] - 90, t = 'rotate(' + q2(ang) + ' ' + x + ' ' + y + ')', HS2 = shade(S, -.25);
-      return '<g transform="' + t + '"><ellipse cx="' + q2(x - 3.4 * sd * HR / 4.2) + '" cy="' + q2(y - .6) + '" rx="' + q2(HR * .48) + '" ry="' + q2(HR * .78) + '" transform="rotate(' + (30 * sd) + ' ' + q2(x - 3.4 * sd * HR / 4.2) + ' ' + q2(y - .6) + ')" fill="' + S + '" stroke="' + HS2 + '" stroke-width=".6"/>' +
-        '<ellipse cx="' + x + '" cy="' + q2(y + HR * .3) + '" rx="' + q2(HR * .95) + '" ry="' + q2(HR * 1.22) + '" fill="' + S + '" stroke="' + HS2 + '" stroke-width=".7"/>' +
-        '<path d="M' + q2(x - 1.6 * sd) + ' ' + q2(y + HR * 1.05) + 'q' + q2(1.6 * sd) + ' 1.1 ' + q2(3.2 * sd) + ' 0" stroke="rgba(0,0,0,.18)" stroke-width=".6" fill="none"/></g>';
+      /* a mitten along the forearm: one rounded shape a bit longer than wide, the thumb a small curve lying on its inside edge */
+      var sd = cur === 'R' ? 1 : -1, ang = fAng[cur] - 90, hr = Math.min(HR, 4.6), HS2 = shade(S, -.25), w = Math.max(hr * .92, AW * .86 * .5), h = w * 1.28, x0 = x; hr = w / .92;   /* as wide as the forearm */
+      y = y + hr * .7;   /* the hand comes out of the sleeve, past the wrist */
+      var mit = 'M' + q2(x - w) + ' ' + q2(y - h * .55) + 'Q' + q2(x - w) + ' ' + q2(y + h) + ' ' + x + ' ' + q2(y + h) + 'Q' + q2(x + w) + ' ' + q2(y + h) + ' ' + q2(x + w) + ' ' + q2(y - h * .55) + 'Z';
+      var tx = x - sd * w * .78, th = 'M' + q2(tx) + ' ' + q2(y - h * .45) + 'q' + q2(-sd * hr * .55) + ' ' + q2(hr * .5) + ' ' + q2(sd * hr * .1) + ' ' + q2(hr * 1.05);
+      return '<g transform="rotate(' + q2(ang) + ' ' + x0 + ' ' + q2(y - hr * .7) + ')"><path d="' + mit + '" fill="' + S + '" stroke="' + HS2 + '" stroke-width=".7" stroke-linejoin="round"/>' +
+        '<path d="' + th + '" stroke="' + HS2 + '" stroke-width=".75" fill="none" stroke-linecap="round"/></g>';
     };
     var holdAt = function (x, y, up) { var H0 = L.hold || 'none'; if (H0 === 'none') return '';
       return { phone: '<rect x="' + (x - 3.2) + '" y="' + (y - 10) + '" width="6.4" height="11" rx="1.4" fill="#1d2230"/><rect x="' + (x - 2.2) + '" y="' + (y - 9) + '" width="4.4" height="7.6" rx=".6" fill="#3987e5"/>',
@@ -467,7 +469,7 @@
     if (!KEEP && /^(morning|evening|selfieR)$/.test(m.k || '')) prop = '<g transform="translate(' + q2(shift.R[0]) + ' ' + q2(shift.R[1]) + ')">' + prop + '</g>';
     var propG = '<g transform="translate(' + (-DX).toFixed(1) + ' ' + (m.k === 'trip' ? 0 : -9) + ')"><g class="av-prop">' + prop + '</g></g>';
     /* the neck: behind the collar and the chin */
-    var neck = '<g class="av-neck" transform="translate(0 -9)"><path d="M96 78h10v16q-5 3-10 0z" fill="' + S + '"/><path d="M96 80q5 4 10 0v3q-5 4-10 0z" fill="rgba(0,0,0,.16)"/></g>';
+    var neck = '<g class="av-neck" transform="translate(0 -9)"><path d="M97 78h8v14q-4 2.4-8 0z" fill="' + shade(S, -.07) + '"/></g>';
     var PC = L.petC || (L.pet === 'dog' ? '#c9935a' : '#f2a65a'), pet = L.pet === 'cat' ? '<g class="av-pet"><path class="av-tail" d="M52 150q8-8 6-20" stroke="' + PC + '" stroke-width="3.4" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="151" rx="11" ry="7.5" fill="' + PC + '"/><circle cx="31" cy="141" r="7" fill="' + PC + '"/><path d="M25.5 137l1-7 5 4zM36.5 137l-1-7-5 4z" fill="' + PC + '"/><circle cx="28.5" cy="141" r="1" fill="#1a1a1a"/><circle cx="33.5" cy="141" r="1" fill="#1a1a1a"/><path d="M30 144q1 1 2 0" stroke="#1a1a1a" stroke-width=".8" fill="none"/><rect x="34" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/><rect x="46" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/></g>'
       : L.pet === 'bunny' ? '<g class="av-pet"><ellipse cx="42" cy="152" rx="10" ry="7" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="52" cy="150" r="2.6" fill="#ffffff"/><ellipse cx="28" cy="132" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(8 34.5 131.5)"/><ellipse cx="28" cy="132" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(8 34.5 131.5)"/><circle cx="31" cy="143" r="6.4" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="29" cy="142" r="1" fill="#1a1a1a"/><circle cx="33.4" cy="142" r="1" fill="#1a1a1a"/><circle cx="31.2" cy="145" r=".9" fill="#f3a9b8"/></g>'
       : L.pet === 'dog' ? '<g class="av-pet"><path class="av-tail" d="M55 145q6-6 5-12" stroke="' + PC + '" stroke-width="3.2" fill="none" stroke-linecap="round"/><ellipse cx="44" cy="149" rx="12" ry="8" fill="' + PC + '"/><circle cx="31" cy="139" r="8" fill="' + PC + '"/><ellipse cx="24.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="37.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="31" cy="143.5" rx="4" ry="3" fill="' + shade(PC, .35) + '"/><circle cx="31" cy="142" r="1.4" fill="#1a1a1a"/><circle cx="28" cy="137.5" r="1" fill="#1a1a1a"/><circle cx="34" cy="137.5" r="1" fill="#1a1a1a"/><rect x="35" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/><rect x="49" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/></g>' : '';
