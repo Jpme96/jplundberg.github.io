@@ -135,6 +135,7 @@
   }
 
   function showWeather(d, time) {
+    if (!document.getElementById('wTemp')) return;          /* left the page before the forecast came */
     var c = d.current, w = wmo(c.weather_code);
     $('wIcon').className = 'bi bi-' + w[1];
     $('wTemp').textContent = Math.round(c.temperature_2m) + '°';
@@ -169,9 +170,11 @@
     }).catch(function () {
       if (cached) return;
       /* no forecast: one calm line with a retry, instead of a big dash */
-      var wc = document.getElementById('weatherCard'); if (wc) wc.classList.add('w-off');
-      $('wDesc').innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry">Try again</button>';
-      var rb = document.getElementById('wRetry'); if (rb) rb.addEventListener('click', function () { $('wDesc').textContent = 'Loading weather…'; loadWeather(); });
+      /* the answer can come after you've left the page (instant page changes): then there's no card to write to */
+      var wc = document.getElementById('weatherCard'), wd = document.getElementById('wDesc'); if (!wd) return;
+      if (wc) wc.classList.add('w-off');
+      wd.innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry">Try again</button>';
+      var rb = document.getElementById('wRetry'); if (rb) rb.addEventListener('click', function () { var w2 = document.getElementById('wDesc'); if (w2) w2.textContent = 'Loading weather…'; loadWeather(); });
     });
   }
   function setCity(n) { var h = document.querySelector('#weatherCard .card-head h2'); if (h) h.innerHTML = '<i class="bi bi-cloud-sun"></i> ' + esc(n || 'Oslo'); }
