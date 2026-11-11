@@ -11,8 +11,10 @@ const sl = ms => new Promise(r => setTimeout(r, ms));
 let fails = 0; const check = (ok, what) => { console.log((ok ? '  ✓ ' : '  ✗ ') + what); if (!ok) fails++; };
 const up = () => new Promise(r => { const q = http.get(U, res => { res.resume(); r(true); }); q.on('error', () => r(false)); });
 (async () => {
-  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'server.mjs')], { env: Object.assign({}, process.env, { D1: '1', R2: '1', LIVE: '1', PORT: String(PORT) }), stdio: 'ignore' });
+  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'server.mjs')], { env: Object.assign({}, process.env, { D1: '1', R2: '1', LIVE: '1', PORT: String(PORT) }), stdio: ['ignore', 'ignore', 'pipe'] });
+  let serr = ''; srv.stderr.on('data', d => { serr += d; });
   for (let i = 0; i < 50 && !(await up()); i++) await sl(200);
+  if (!(await up())) console.log('  the test server did not start: ' + serr.slice(-800));
   const b = await pw[ENGINE].launch(); const errs = [];
   try {
     for (const W of [1280, 393]) {
