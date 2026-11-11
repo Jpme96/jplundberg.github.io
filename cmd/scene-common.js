@@ -52,7 +52,7 @@
     var list = function () { return (typeof ACTS === 'function' ? ACTS() : ACTS).filter(function (a) { return !a.bad && a.w !== 0; }); };
     L.brain(R, H, list, function () { look(H, null); return L.jump(R, H); });
     var all = function () { return typeof ACTS === 'function' ? ACTS() : ACTS; };
-    var api = { H: H, R: R, acts: all, run: function (n) { var a = all().filter(function (x) { return x.n === n; })[0]; R.tok++; L.clear(H); return a ? Promise.resolve().then(a.f).then(function () { return L.settle(R, H, 300); }) : Promise.resolve(); } };
+    var api = { H: H, R: R, acts: all, run: function (n) { var a = all().filter(function (x) { return x.n === n; })[0]; R.paused = true; return Promise.resolve(R.cur).then(function () { R.tok++; L.clear(H); return L.settle(R, H, 200); }).then(function () { return a ? a.f() : null; }).then(function () { return L.settle(R, H, 300); }); } };
     window.SceneLive['_' + key] = api; return api;
   }
   function spin(sel, svg, ms, turns) { svg.querySelectorAll(sel).forEach(function (h) { var t = h.getAttribute('transform') || '', m = t.match(/rotate\((\S+) (\S+) (\S+)\)/), c = m ? [m[2], m[3]] : [h.getAttribute('x1'), h.getAttribute('y1')], a0 = m ? +m[1] : 0, t0 = performance.now(); (function fr(now) { var u = Math.min(1, (now - t0) / ms); h.setAttribute('transform', 'rotate(' + (a0 + 360 * turns * ease(u)) + ' ' + c[0] + ' ' + c[1] + ')'); if (u < 1) requestAnimationFrame(fr); else h.setAttribute('transform', t); })(t0); }); }

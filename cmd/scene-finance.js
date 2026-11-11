@@ -122,7 +122,7 @@
     ];
     function acts() { return ACTS.filter(function (a) { return a.w !== 0; }); }
     L.brain(R, H, acts, function () { look(null); return L.jump(R, H); });
-    var api = { H: H, R: R, acts: function () { return ACTS; }, run: function (n) { var a = ACTS.filter(function (x) { return x.n === n; })[0]; R.tok++; L.clear(H); return a ? a.f().then(function () { return L.settle(R, H, 300); }) : Promise.resolve(); } };
+    var api = { H: H, R: R, acts: function () { return ACTS; }, run: function (n) { var a = ACTS.filter(function (x) { return x.n === n; })[0]; R.paused = true; return Promise.resolve(R.cur).then(function () { R.tok++; L.clear(H); return L.settle(R, H, 200); }).then(function () { return a ? a.f() : null; }).then(function () { return L.settle(R, H, 300); }); } };
     window.SceneLive._finance = api;
     return api;
   };

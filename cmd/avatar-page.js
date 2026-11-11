@@ -92,7 +92,7 @@
     function drawFig() {
       fig.innerHTML = M.figure(M.PLAIN, Object.assign({}, cur)).replace('viewBox="0 0 200 200"', 'viewBox="22 8 156 172"');
       if (view !== 'front' && window.Rig) {
-        var svg = fig.querySelector('svg'), r = window.Rig(svg);
+        var svg = fig.querySelector('svg'), r = window.Rig(svg, cur);
         if (view === 'back') { Rig.turn(r, .001); Rig.back(r, true, cur); } else Rig.turn(r, view === 'q' ? .55 : 1);
       }
     }

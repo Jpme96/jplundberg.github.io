@@ -29,7 +29,7 @@
     /* a pet from the maker stays on the ground where you started (it doesn't climb or jump with you) */
     var pet0 = H.wrap.querySelector('.hero-body .av-pet');
     if (pet0) { var ps = H.wrap.querySelector('.hero-body > svg').cloneNode(false); ps.setAttribute('class', 'hero-pet'); ps.appendChild(pet0); H.wrap.insertBefore(ps, H.body); H.pet = ps; } H.sh = H.wrap.querySelector('.hero-sh'); H.fig = H.wrap.querySelector('.hero-body > svg');
-    H.rig = Rig(H.fig);
+    H.rig = Rig(H.fig, H.look);
     H.pos = H.feet0.slice(); H.lean = 0; H.bob = 0; H.lift = 0; H.op = 1;
     H.hand = { R: null, L: null }; H.rot = { R: [0, 0], L: [0, 0] }; H.legs = { R: 0, L: 0, sR: 0, sL: 0 }; H.head = [0, 0];
     H.held = { R: null, L: null }; H.bend = { R: 1, L: 1 }; H.turn = 0; H.str = null; H.view = 'front'; H.sq = 1; H.hold = {}; H.k = 1;
@@ -71,7 +71,14 @@
       if (H.hand[k]) Rig.reach(A, aim(A, toLocal(H, A.g, H.hand[k])), H.bend[k]); else Rig.rot(A, H.rot[k][0], H.rot[k][1]);
       if (H.held[k]) { var p = handAt(H, k); H.held[k].setAttribute('transform', 'translate(' + p[0].toFixed(2) + ' ' + p[1].toFixed(2) + ')'); }
     });
-    if (Math.abs(H.turn) > .01 || H.rig.t) Rig.turn(H.rig, Math.abs(H.turn) > .01 ? H.turn : 0);
+    /* the head leads a turn: it points where the body is going a moment before the body gets there */
+    var tv = H.turn - (H.pt == null ? H.turn : H.pt); H.pt = H.turn;
+    H.ht = H.ht == null ? H.turn : H.ht + (Math.max(-1, Math.min(1, H.turn + tv * 9)) - H.ht) * .35;
+    if (Math.abs(H.turn) > .01 || Math.abs(H.ht) > .01 || H.rig.t) Rig.turn(H.rig, Math.abs(H.turn) > .01 ? H.turn : 0, Math.abs(H.ht) > .01 ? H.ht : 0);
+    /* long hair and ponytails swing after you move, then settle */
+    var vx = H.pos[0] - (H.px == null ? H.pos[0] : H.px), vy = H.pos[1] - (H.py == null ? H.pos[1] : H.py); H.px = H.pos[0]; H.py = H.pos[1];
+    H.swv = (H.swv || 0) * .86 + (-vx * 9 - (H.bob - (H.pb || 0)) * 2) * .14; H.pb = H.bob; H.sw = (H.sw || 0) + (H.swv - (H.sw || 0)) * .2;
+    if (H.rig.head) H.rig.head.querySelectorAll('.av-swing').forEach(function (e) { if (!e._piv) { try { var bb = e.getBBox(); e._piv = [bb.x + bb.width / 2, bb.y]; } catch (er) { e._piv = [101, 50]; } } e.setAttribute('transform', 'rotate(' + Math.max(-18, Math.min(18, H.sw)).toFixed(2) + ' ' + e._piv[0].toFixed(1) + ' ' + e._piv[1].toFixed(1) + ')'); });
     if (H.str) { Rig.stride(H.rig.LR, H.str[0], H.str[1]); Rig.stride(H.rig.LL, H.str[2], H.str[3]); }
     else { Rig.leg(H.rig.LR, H.legs.R, H.legs.sR); Rig.leg(H.rig.LL, H.legs.L, H.legs.sL); }
     /* eyes and face follow what you're doing */
@@ -79,7 +86,8 @@
     if (H.gaze && H.view !== 'back') { var hc = [H.pos[0], H.pos[1] - 100 * H.s * (H.k || 1)], dx = H.gaze[0] - hc[0], dy = H.gaze[1] - hc[1], d = Math.hypot(dx, dy) || 1; lx = dx / d * 2.4; ly = dy / d * 1.6; ht = dx / d * 3; }
     H.lk = H.lk || [0, 0, 0]; H.lk = [lerp(H.lk[0], lx, .15), lerp(H.lk[1], ly, .15), lerp(H.lk[2], ht, .15)];
     var tt = Math.abs(H.turn) > .01 ? H.turn : 0;
-    H.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (5.5 * tt + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
+    var vw = Rig.view ? Rig.view(H.rig) : 'front';
+    if (vw === 'front' || /^q/.test(vw)) H.fig.querySelectorAll('.bob .av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (5.5 * (H.ht == null ? tt : H.ht) + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
     if (H.rig.head) H.rig.head.setAttribute('transform', 'rotate(' + (H.head[0] + H.lk[2]).toFixed(2) + ' 101 80) translate(0 ' + H.head[1].toFixed(2) + ')');
     /* held things */
     Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
@@ -112,16 +120,25 @@
       H.pos = p; H.turn = lerp(u < .5 ? t0 : (endTurn || 0), faceDir || dir, fade);
       H.str = [-dir * 24 * sn * fade, dir * 42 * Math.max(0, cs) * fade, dir * 24 * sn * fade, dir * 42 * Math.max(0, -cs) * fade];
       H.bob = Math.abs(sn) * 1.3 * (H.bounce || 1) * H.s / .5 * fade;
-      if (!H.hand.R) H.rot.R = [dir * 22 * sn * fade, -dir * 18 * fade]; if (!H.hand.L) H.rot.L = [-dir * 22 * sn * fade, -dir * 18 * fade];
+      /* arms swing opposite the legs, relaxed: the forearm trails a little and bends more on the forward swing */
+      var lagR = Math.sin(ph - .5), lagL = -lagR;
+      if (!H.hand.R) H.rot.R = [dir * 20 * sn * fade, -dir * (10 + 10 * Math.max(0, lagR)) * fade]; if (!H.hand.L) H.rot.L = [-dir * 20 * sn * fade, -dir * (10 + 10 * Math.max(0, lagL)) * fade];
       H.lean = (faceDir || dir) * 3 * fade; if (H.onStep) H.onStep();
     }).then(function () { H.str = null; H.turn = endTurn || 0; H.legs.R = H.legs.L = 0; H.bob = 0; H.lean = 0; H.rot.R = [0, 0]; H.rot.L = [0, 0]; });
   }
   function turnTo(R, H, v, ms) {   /* v: 'front' | 'back' | a number −1…1 (three-quarter toward left/right) */
     ms = ms || 320; var t0 = H.turn, t1 = typeof v === 'number' ? v : 0, swap = (v === 'back') !== (H.view === 'back');
+    /* turning around goes through the side, as a person does: front → three-quarter → side → back (or back again) */
+    var via = t0 > .05 ? 1 : t0 < -.05 ? -1 : (H.lastDir || 1);
+    if (swap) ms = Math.max(ms, 420);
     return tw(R, ms, function (u) {
-      H.turn = lerp(t0, t1, ease(u));
-      if (swap) { H.sq = 1 - .45 * Math.sin(u * Math.PI); if (u >= .5 && (v === 'back') !== (H.view === 'back')) { H.view = v === 'back' ? 'back' : 'front'; Rig.back(H.rig, H.view === 'back', H.look); } }
-    }).then(function () { H.sq = 1; H.turn = t1; if (Math.abs(t1) < .01) H.turn = 0; });
+      if (!swap) { H.turn = lerp(t0, t1, ease(u)); return; }
+      if (u < .5) { var a = ease(u * 2); H.turn = lerp(t0, via, a); H.ht = lerp(t0, via, Math.min(1, a * 1.3)); }
+      else {
+        if ((v === 'back') !== (H.view === 'back')) { H.view = v === 'back' ? 'back' : 'front'; Rig.back(H.rig, H.view === 'back', H.look); }
+        H.turn = lerp(via, t1, ease((u - .5) * 2));
+      }
+    }).then(function () { H.sq = 1; H.turn = t1; if (Math.abs(t1) < .01) H.turn = 0; if (t1) H.lastDir = t1 > 0 ? 1 : -1; });
   }
   /* move a hand to a point in the picture (or back to rest with null) */
   function reach(R, H, side, P, ms) {
@@ -136,8 +153,9 @@
   function legs(R, H, r, l, sr, sl, ms) { var a = Object.assign({}, H.legs); return tw(R, ms || 400, function (u) { var e = ease(u); H.legs.R = lerp(a.R, r, e); H.legs.L = lerp(a.L, l, e); H.legs.sR = lerp(a.sR, sr || 0, e); H.legs.sL = lerp(a.sL, sl || 0, e); }); }
   function face(H, e) {
     var b = H.rig.head; if (!b) return; H.faceNow = e; if (!H.faces[e]) { var d = document.createElement('div'); d.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none' }, Object.assign({}, H.look, { expr: e })); var x = d.querySelector('.bob'); H.faces[e] = x ? x.innerHTML : ''; }
-    if (H.faces[e]) b.innerHTML = H.faces[e];
-    if (H.rig.t) Rig.turn(H.rig, H.rig.t);
+    var was = Rig.view ? Rig.view(H.rig) : 'front';
+    if (H.faces[e]) { if (was !== 'front') { b.innerHTML = H.faces[e]; Rig.refresh(H.rig); H.rig.hv = null; } else { b.innerHTML = H.faces[e]; Rig.refresh(H.rig); } }
+    if (H.rig.t || H.ht) Rig.turn(H.rig, H.rig.t || 0, H.ht || 0);
     if (H.view === 'back') Rig.back(H.rig, true, H.look);
   }
   /* rest: everything back to standing */
@@ -165,18 +183,28 @@
       var tot = pool.reduce(function (s, a) { return s + (a.w || 1); }, 0), r = Math.random() * tot, a = pool[0];
       for (var i = 0; i < pool.length; i++) { r -= pool[i].w || 1; if (r <= 0) { a = pool[i]; break; } }
       last = a.n;
-      label(a.t); var tok = R.tok, pr;
+      if (R.paused) return;
+      label(a.t); var tok = R.tok, pr; R.busy = true;
       /* an action that fails (something it needs isn't in today's picture) is dropped, and the next one is picked */
       var failed = function (e) { a.bad = true; if (window.Diag && Diag.log) Diag.log('scene', 'action ' + a.n + ': ' + (e && e.message), 'scene-kit.js'); if (R.tok !== tok) return; clear(H); H.view === 'back' && Rig.back(H.rig, false, H.look); H.view = 'front'; };
       try { pr = Promise.resolve(a.f()); } catch (e) { pr = Promise.reject(e); }
-      pr.catch(failed).then(function () { if (R.tok !== tok) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { var lv = lively(); return idle(R, H, lv === 'calm' ? rnd(4000, 8000) : lv === 'lively' ? rnd(400, 1000) : rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
+      R.cur = pr.catch(failed).then(function () { R.busy = false; }); R.cur.then(function () { if (R.tok !== tok || R.paused) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { var lv = lively(); return idle(R, H, lv === 'calm' ? rnd(4000, 8000) : lv === 'lively' ? rnd(400, 1000) : rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
     }
-    H.wrap.addEventListener('click', function (ev) { ev.stopPropagation(); R.tok++; clear(H); var tok = R.tok; label('giggling'); poke().then(function () { if (R.tok !== tok) return; return settle(R, H, 400); }).then(function () { if (R.tok === tok) { label('looking around'); face(H, 'smile'); setTimeout(function () { if (R.tok === tok) go(); }, 900); } }); });
+    /* a tap: busy with something → you laugh and say something, but keep hold of what you're doing (an action broken
+       off halfway would leave a coin in the air or a door open); resting → you jump */
+    H.wrap.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (R.busy || R.paused) { var was = H.faceNow; face(H, 'laugh'); say(H, NB ? 'Hihi!' : 'Hehe!', 1100); setTimeout(function () { if (H.faceNow === 'laugh') face(H, was || 'smile'); }, 900); return; }
+      R.tok++; var tok = R.tok; label('giggling');
+      poke().then(function () { if (R.tok !== tok) return; return settle(R, H, 400); }).then(function () { if (R.tok === tok) { label('looking around'); face(H, 'smile'); setTimeout(function () { if (R.tok === tok) go(); }, 900); } });
+    });
     setTimeout(go, rnd(300, 1200));
   }
   /* resting: look around a bit, shift weight */
   function idle(R, H, ms) { return tw(R, ms, function (u) { var t = u * ms / 1000; H.head = [Math.sin(t * 1.3) * 3, 0]; H.legs.R = Math.max(0, Math.sin(t * .9)) * .08; }); }
-  function jump(R, H) { face(H, 'laugh'); say(H, NB ? 'Hihi!' : 'Hehe!', 1200); return Promise.all([tw(R, 700, function (u) { var j = Math.sin(u * Math.PI); H.bob = -j * 12 * H.s / .5; H.legs.R = H.legs.L = j * .55; H.rot.R = [-150 * j, -20 * j]; H.rot.L = [150 * j, 20 * j]; })]); }
+  function jump(R, H) { face(H, 'laugh'); say(H, NB ? 'Hihi!' : 'Hehe!', 1200); return tw(R, 220, function (u) { var c = Math.sin(u * Math.PI / 2); H.bob = c * 3 * H.s / .5; H.legs.R = H.legs.L = c * .35; H.rot.R = [12 * c, 0]; H.rot.L = [-12 * c, 0]; })   /* crouch: bend before jumping */
+      .then(function () { return tw(R, 620, function (u) { var j = Math.sin(u * Math.PI); H.bob = (3 * (1 - u) * (1 - u) - j * 12) * H.s / .5; H.legs.R = H.legs.L = j * .55; H.rot.R = [-150 * j, -20 * j]; H.rot.L = [150 * j, 20 * j]; }); })
+      .then(function () { return tw(R, 200, function (u) { var c = Math.sin(u * Math.PI); H.bob = c * 2 * H.s / .5; H.legs.R = H.legs.L = c * .25; }); });   /* soft landing */ }
 
   window.Live = { clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
 })();

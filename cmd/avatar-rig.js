@@ -3,9 +3,9 @@
      arms   .av-limb (upper arm, forearm, elbow; data-s shoulder, data-e elbow, data-w wrist, data-h where the hand
             was drawn, data-l the two lengths) and .av-hand (the mitten .av-mit plus anything held)
      legs   .av-legL / .av-legR (redrawn once as thigh + shin with a knee, same colour and width, shoe on the ankle)
-     turn   the torso narrows, legs and arms move in, the far arm goes behind; features (.av-feat) and front hair
-            (.av-hairf) shift the way it faces
-     back   features and the chest print hidden, the back of the head in hair colour (skin when bald), arms behind
+     turn   the torso narrows, legs and arms move in, the far arm goes behind in a true side view; the head is swapped
+            for its three-quarter or side drawing (avatar.js headView), led by where the head points
+     back   the back of the head (hair by type, the hat from behind), the chest print hidden
    Rig(svg) returns handles; Rig.reach / rot / leg / stride / turn / back pose them. Coordinates are the avatar's own
    (0–200 picture), each arm in its group's space. */
 (function () {
@@ -54,10 +54,34 @@
     return { g: g, th: th, sh: sh, shoe: sg, cx: cx, hip: [cx, top], knee: [cx, knee], len: knee - top, side: side === 'R' ? 1 : -1 };
   }
 
-  function Rig(fig) {
-    return { fig: fig, R: armRig(fig.querySelector('.av-armR'), 'R'), L: armRig(fig.querySelector('.av-armL'), 'L'),
+  function Rig(fig, look) {
+    var r = { fig: fig, av: look || null, R: armRig(fig.querySelector('.av-armR'), 'R'), L: armRig(fig.querySelector('.av-armL'), 'L'),
       LR: legRig(fig.querySelector('.av-legR'), 'R'), LL: legRig(fig.querySelector('.av-legL'), 'L'), head: fig.querySelector('.bob'), t: 0 };
+    Rig.refresh(r); return r;
   }
+  /* the head as avatar.js drew it from the front – kept, so the other views can be swapped in and back */
+  Rig.refresh = function (r) {
+    if (!r.head) return; r.front = r.head.innerHTML; var h = r.head.querySelector('.av-hat'); r.hatFront = h ? h.innerHTML : ''; r.hv = 'front';
+  };
+  /* front, three-quarter (q), side or back; dir -1 mirrors it (facing our left) */
+  function setHead(r, v, dir) {
+    if (!r.head || !r.av || !window.Avatar || !Avatar.headView) return;
+    var key = v + (v === 'q' || v === 'side' ? (dir < 0 ? '<' : '>') : '');
+    if (r.hv === key) return; r.hv = key;
+    var mir = function (x) { return dir < 0 ? '<g transform="translate(202 0) scale(-1 1)">' + x + '</g>' : x; };
+    if (v === 'front') r.head.innerHTML = r.front;
+    else if (v === 'back') r.head.innerHTML = Avatar.headView(r.av, 'back', r.hatFront);
+    else if (v === 'side') r.head.innerHTML = mir(Avatar.headView(r.av, 'side', r.hatFront));
+    else {
+      /* three-quarter: the front head, with the back of the hair showing past the far side and the far ear hidden */
+      r.head.innerHTML = mir(Avatar.headView(r.av, 'qback', '')) + r.front;
+      var farX = dir < 0 ? '82.5' : '119.5', nearX = dir < 0 ? '119.5' : '82.5';
+      r.head.querySelectorAll('ellipse[cx="' + farX + '"]').forEach(function (e) { if (e.getAttribute('ry') === '5' || e.getAttribute('rx') === '3.5') e.style.display = 'none'; });
+      r.head.querySelectorAll('ellipse[cx="' + nearX + '"]').forEach(function (e) { e.setAttribute('transform', 'translate(' + (dir < 0 ? -2.5 : 2.5) + ' 0)'); });
+    }
+    r.head.querySelectorAll('.av-swing').forEach(function (e) { e._piv = null; });
+  }
+  Rig.view = function (r) { return r.hv || 'front'; };
   /* a hand to point T (in the arm's own coordinates); bend picks the elbow side (1 = outward) */
   Rig.reach = function (A, T, bend) {
     if (!A) return;
@@ -110,8 +134,10 @@
     return true;
   }
   function armsHome(r) { var hb = r.home.querySelector('.bob'); r.home.insertBefore(r.wL, hb); r.home.insertBefore(r.wR, hb); }
-  Rig.turn = function (r, t) {
+  /* ht: where the head points (it leads a turn, so it can be ahead of the body) */
+  Rig.turn = function (r, t, ht) {
     if (!r.torso && !prep(r)) return;
+    if (ht == null) ht = t;
     var k = Math.abs(t);
     r.torso.setAttribute('transform', 'translate(101 0) scale(' + f2(1 - .28 * k) + ' 1) translate(-101 0)');
     if (r.LL) r.LL.g.setAttribute('transform', 'translate(' + f2(8 * k) + ' 0)');
@@ -122,34 +148,23 @@
     /* only in a true side view does the far arm go behind the body; half-turned you see both */
     if (!r.isBack) { if (k > .8) { if (r['w' + far].parentNode !== r.back) r.back.appendChild(r['w' + far]); } else armsHome(r); }
     if (r.legParent && r.LL && r.LR) { if (t > .35) r.legParent.insertBefore(r.LR.g, r.LL.g); else r.legParent.insertBefore(r.LL.g, r.LR.g); }
-    r.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(5.5 * t + (r.look ? r.look[0] : 0)) + ' ' + f2(r.look ? r.look[1] : 0) + ')'); });
-    r.fig.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(2.6 * t) + ' 0)'); });
-    /* from the side the far ear is behind the head */
-    var ears = r.fig.querySelectorAll('.bob ellipse[cx="82.5"], .bob ellipse[cx="119.5"]');
-    ears.forEach(function (e) { var far2 = (e.getAttribute('cx') === '82.5') === (t > 0); e.style.display = k > .8 && far2 ? 'none' : ''; });
+    /* the head: its own drawing for each side (avatar.js headView), chosen by where the head points */
+    if (!r.isBack) { var hk = Math.abs(ht); setHead(r, hk < .3 ? 'front' : hk < .78 ? 'q' : 'side', ht < 0 ? -1 : 1); }
+    if (r.hv === 'front' || /^q/.test(r.hv || '')) {
+      r.head.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(5.5 * ht) + ' 0)'); });
+      r.head.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(2.6 * ht) + ' 0)'); });
+    }
     /* both toes point the way it faces */
     if (r.LL) r.LL.shoe.setAttribute('transform', t > .35 ? 'translate(' + f2(2 * r.LL.cx) + ' 0) scale(-1 1)' : '');
     if (r.LR) r.LR.shoe.setAttribute('transform', t < -.35 ? 'translate(' + f2(2 * r.LR.cx) + ' 0) scale(-1 1)' : '');
     r.t = t;
   };
-  /* seen from behind: no face, the back of the head in hair colour (skin when bald or buzzed), no chest print */
-  var SHORT = /^(bald|buzz)$/, LONG = /^(long|bun|ponytail|braids|dreads|afro|curly)$/;
+  /* seen from behind: the back of the head (hair by type, the hat from behind), no chest print or card */
   Rig.back = function (r, on, look) {
-    var fig = r.fig; look = look || {};
-    /* from behind you still see both arms (their backs), so they stay in front of the torso – hiding them left a stray hand */
-    if (r.L && r.R) { if (!r.torso) prep(r); r.isBack = on; if (r.back) armsHome(r); }
-    fig.querySelectorAll('.av-feat, .av-chest').forEach(function (e) { e.style.display = on ? 'none' : ''; });
-    fig.querySelectorAll('.rig-nape').forEach(function (e) { e.remove(); });
-    if (!on) return;
-    var fs = fig.querySelector('.av-faceshape'); if (!fs) return;
-    var hair = look.hair || 'short', c = fs.cloneNode(); c.setAttribute('class', 'rig-nape');
-    c.setAttribute('fill', (SHORT.test(hair) ? look.skin : look.hairC) || '#1e140d');
-    if (!SHORT.test(hair) && !LONG.test(hair)) {   /* short hair ends above the neck: the nape stays skin */
-      var id = 'nape' + Math.random().toString(36).slice(2, 8), cp = E('clipPath', { id: id, class: 'rig-nape' });
-      cp.appendChild(E('path', { d: 'M60 0H142V77.5Q101 79.5 60 77.5Z' })); fs.parentNode.insertBefore(cp, fs.nextSibling); c.setAttribute('clip-path', 'url(#' + id + ')');
-    }
-    fs.parentNode.insertBefore(c, fs.nextSibling);
-    if (hair === 'bald') fs.parentNode.insertBefore(E('path', { class: 'rig-nape', d: 'M88 50q13 -6 26 0', stroke: 'rgba(255,255,255,.15)', 'stroke-width': '2', fill: 'none' }), c.nextSibling);
+    if (look) r.av = look;
+    if (r.L && r.R) { if (!r.torso) prep(r); r.isBack = on; if (r.back) armsHome(r); }   /* both arms stay in front of the torso */
+    r.fig.querySelectorAll('.av-chest').forEach(function (e) { e.style.display = on ? 'none' : ''; });
+    if (on) setHead(r, 'back', 1); else { r.hv = null; setHead(r, 'front', 1); if (r.t) Rig.turn(r, r.t); }
   };
   /* things it holds from the maker (coffee, flowers…) are put away while it uses a prop, and come back after */
   Rig.stow = function (r, on) { ['R', 'L'].forEach(function (k) { var A = r[k]; if (!A) return; [].forEach.call(A.hand.children, function (c) { if (!c.classList.contains('av-mit')) c.style.display = on ? 'none' : ''; }); }); };
