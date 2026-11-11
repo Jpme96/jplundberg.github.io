@@ -78,6 +78,8 @@
       var farX = dir < 0 ? '82.5' : '119.5', nearX = dir < 0 ? '119.5' : '82.5';
       r.head.querySelectorAll('ellipse[cx="' + farX + '"]').forEach(function (e) { if (e.getAttribute('ry') === '5' || e.getAttribute('rx') === '3.5') e.style.display = 'none'; });
       r.head.querySelectorAll('ellipse[cx="' + nearX + '"]').forEach(function (e) { e.setAttribute('transform', 'translate(' + (dir < 0 ? -2.5 : 2.5) + ' 0)'); });
+      /* earrings: the far one is behind the head, the near one moves with its ear */
+      r.head.querySelectorAll('.av-buds circle').forEach(function (e) { var far = dir < 0 ? +e.getAttribute('cx') < 101 : +e.getAttribute('cx') > 101; if (far) e.style.display = 'none'; else e.setAttribute('transform', 'translate(' + (dir < 0 ? -2.5 : 2.5) + ' 0)'); });
     }
     r.head.querySelectorAll('.av-swing').forEach(function (e) { e._piv = null; });
   }

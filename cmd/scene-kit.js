@@ -43,6 +43,10 @@
   function Obj(H, side, html, grip, opt) {
     var g = el('g', { class: 'obj' }, html); opt = opt || {};
     var o = { g: g, side: side, grip: grip || [0, 0], rot: opt.rot || 0, flip: !!opt.flip, sc: opt.sc || 1, layer: opt.layer || null, free: null };
+    /* the fingers close over the front of what it holds (round 3): a small grip in skin colour on top of the thing at
+       its grip point, the same size whatever the thing's scale; hidden when it's put down or seen from behind */
+    if (!opt.nogrip) { var sk = (H.look && H.look.skin) || '#c68a5a', w = 3.6 / o.sc, h = 2.8 / o.sc, gx = o.grip[0], gy = o.grip[1];
+      o.fg = el('g', { class: 'obj-grip' }, '<rect x="' + (gx - w / 2).toFixed(2) + '" y="' + (gy - h / 2).toFixed(2) + '" width="' + w.toFixed(2) + '" height="' + h.toFixed(2) + '" rx="' + (h * .45).toFixed(2) + '" fill="' + sk + '" stroke="rgba(0,0,0,.22)" stroke-width="' + (.35 / o.sc).toFixed(2) + '"/><path d="M' + (gx - w / 6).toFixed(2) + ' ' + (gy - h * .3).toFixed(2) + 'v' + (h * .6).toFixed(2) + 'M' + (gx + w / 6).toFixed(2) + ' ' + (gy - h * .3).toFixed(2) + 'v' + (h * .6).toFixed(2) + '" stroke="rgba(0,0,0,.2)" stroke-width="' + (.3 / o.sc).toFixed(2) + '"/>'); g.appendChild(o.fg); }
     H.objs[side] = o; H.layF.appendChild(g); if (window.Rig && Rig.stow) Rig.stow(H.rig, true); return o;   /* the maker's own held things are put away meanwhile */
   }
   function objXf(H, o, P) { var k = H.s / .5 * (H.k || 1) * o.sc; return 'translate(' + P[0].toFixed(2) + ' ' + P[1].toFixed(2) + ') scale(' + k.toFixed(3) + ') rotate(' + o.rot.toFixed(2) + ') scale(' + (o.flip ? -1 : 1) + ' 1) translate(' + (-o.grip[0]) + ' ' + (-o.grip[1]) + ')'; }
@@ -98,7 +102,7 @@
     if (vw === 'front' || /^q/.test(vw)) H.fig.querySelectorAll('.bob .av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (5.5 * (H.ht == null ? tt : H.ht) + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
     if (H.rig.head) H.rig.head.setAttribute('transform', 'rotate(' + (H.head[0] + H.lk[2]).toFixed(2) + ' 101 80) translate(0 ' + H.head[1].toFixed(2) + ')');
     /* held things */
-    Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
+    Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; if (o.fg) o.fg.style.display = o.free || H.view === 'back' ? 'none' : ''; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
   }
   /* the loop can be stopped from outside: an instant page change drops the animation frames of the page you leave
      (softnav.js), and this engine outlives the page. So it notes when it last drew, and wake() starts it again

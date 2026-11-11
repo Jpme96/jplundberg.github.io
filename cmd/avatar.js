@@ -926,8 +926,21 @@
       if (L.beard && L.beard !== 'none' && L.beard !== 'moustache' && L.beard !== 'handlebar' && L.beard !== 'curled') sd += p('M100 66c0 8 4 15 10 17h3c4 0 6-3 6-6l-.4-2.2 1-1.2-.4-2.4h-3c-1 3-4 4-7 3-4-1-6-4-6-8z', H, L.beard === 'stubble' ? ' opacity=".28"' : '');
       if (L.beard === 'moustache' || L.beard === 'handlebar' || L.beard === 'curled') sd += p('M113 70q4-2 8 0l-1 1.4q-3-1-6 0z', H);
       /* glasses: one lens and the arm to the ear */
-      if (L.glasses && L.glasses !== 'none') sd += '<path d="M103 60h6" stroke="#2b2f36" stroke-width="1.2"/><rect x="109" y="58" width="7" height="6.4" rx="' + (L.glasses === 'round' ? 3.2 : 1.6) + '" fill="' + (L.glasses === 'sun' ? '#1d2230' : 'rgba(180,220,255,.25)') + '" stroke="#2b2f36" stroke-width="1.2"/>';
+      if (L.glasses && L.glasses !== 'none') {
+        /* each kind keeps its own frame and lens from the side */
+        var GK = L.glasses, FR = { round: '#1d1d1d', square: '#1d1d1d', sun: '#141414', aviator: '#c9a227', cateye: '#c2185b', hearts: '#a5202a', stars: '#c98500', monocle: '#c9a227' }[GK] || '#2b2f36';
+        var LN = GK === 'sun' ? '#141414' : GK === 'aviator' ? '#39414f' : GK === 'hearts' ? '#e5484d' : GK === 'stars' ? '#f2c94c' : 'rgba(180,220,255,.22)';
+        if (GK !== 'monocle') sd += '<path d="M103 60h6" stroke="' + FR + '" stroke-width="1.2"/>';
+        sd += GK === 'round' || GK === 'monocle' ? '<circle cx="112.6" cy="61.4" r="3.6" fill="' + LN + '" stroke="' + FR + '" stroke-width="1.3"/>' + (GK === 'monocle' ? '<path d="M114.6 64.5q2 8-2.5 16" stroke="' + FR + '" stroke-width=".8" fill="none"/>' : '')
+          : GK === 'aviator' ? '<path d="M109 58.4h7.4c.6 4.2-1.2 6.8-3.7 6.8s-4.3-2.6-3.7-6.8z" fill="' + LN + '" stroke="' + FR + '" stroke-width="1.1"/>'
+          : GK === 'cateye' ? '<path d="M108.8 58.6l8.4-1.6v4.4q-.8 3-4.2 3t-4.2-3z" fill="' + LN + '" stroke="' + FR + '" stroke-width="1.3" stroke-linejoin="round"/>'
+          : GK === 'hearts' ? '<path d="M112.6 66c-3-2-4.4-3.6-4.4-5.2 0-1.3 1-2.2 2.2-2.2 1 0 1.8.6 2.2 1.4.4-.8 1.2-1.4 2.2-1.4 1.2 0 2.2.9 2.2 2.2 0 1.6-1.4 3.2-4.4 5.2z" fill="' + LN + '" stroke="' + FR + '" stroke-width=".8"/>'
+          : GK === 'stars' ? '<path d="M112.6 57.2l1.3 2.6 2.8.4-2 2 .5 2.8-2.6-1.4-2.6 1.4.5-2.8-2-2 2.8-.4z" fill="' + LN + '" stroke="' + FR + '" stroke-width=".8" stroke-linejoin="round"/>'
+          : '<rect x="109" y="58" width="7.4" height="' + (GK === 'sun' ? 6.8 : 6.2) + '" rx="' + (GK === 'sun' ? 2.4 : 1.6) + '" fill="' + LN + '" stroke="' + FR + '" stroke-width="1.2"/>';
+      }
       if (L.ears === 'studs') sd += '<circle cx="99" cy="68.5" r="1.4" fill="#f2c94c"/>'; else if (L.ears === 'hoops') sd += '<circle cx="99" cy="71" r="2.6" fill="none" stroke="#f2c94c" stroke-width="1.2"/>';
+      if (L.ears === 'buds') sd += '<circle cx="99.4" cy="65" r="2" fill="#f2f2f2"/>';
+      if (L.pierce === 'nose') sd += '<circle cx="119.2" cy="68.4" r="1.4" fill="none" stroke="#c9ccd6" stroke-width=".9"/>'; else if (L.pierce === 'lip') sd += '<circle cx="118.6" cy="74.6" r="1.4" fill="none" stroke="#c9ccd6" stroke-width=".9"/>'; else if (L.pierce === 'brow') sd += '<circle cx="114.6" cy="55" r=".9" fill="#c9ccd6"/>';
       /* the hat: the front drawing sits on the same cranium; headphones show one cup over the ear */
       if (L.hat === 'phones') hatOnly = '<path d="M86 60c-2-16 6-24 16-24s16 8 14 22" stroke="#232323" stroke-width="3.4" fill="none" stroke-linecap="round"/><rect x="94.5" y="56" width="9" height="14" rx="3.8" fill="' + HCc + '"/>';
       return wrap(sd + hatOnly);
