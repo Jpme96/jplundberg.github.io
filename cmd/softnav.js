@@ -170,7 +170,7 @@
       /* Safari (Mac, Nov 2026): page changes with the view-transition glide never finished – there the page swaps
          plainly and then its content glides in with an ordinary animation (nothing waits on it, so it can't hang) */
       if (!document.startViewTransition || still || SAFARI) return built().then(function () {
-        if (!still && SAFARI) { var m = document.querySelector('main'); if (m && m.animate) { try { m.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2, .8, .2, 1)' }); } catch (e) {} } }
+        if (!still && SAFARI) { var m = document.querySelector('main'); if (m && m.animate) { try { m.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2, .8, .2, 1)' }); window.SoftNav.glides = (window.SoftNav.glides || 0) + 1; } catch (e) {} } }
         finish(); });
       vtOn = true;
       root.classList.add('sn-go');
