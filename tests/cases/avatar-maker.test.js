@@ -64,7 +64,7 @@ const OLD = require('../lib/avatar-old.json');
   await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(2500);
   check(await p.evaluate(() => !!document.querySelector('.avp-test .hero')), 'turning around and "See it move" work');
   /* leaving with changes asks first */
-  await p.evaluate(() => document.querySelector('.avp [data-avp-back]').click()); await sl(200);
+  await p.evaluate(() => { const x = document.querySelector('.avp [data-avp-back]'); x && x.click(); }); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.avp-ask').hidden), 'leaving with changes asks first');
   await p.evaluate(() => document.querySelector('.avp-ask [data-avp-save]').click()); await sl(400);
   const saved = await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings')).avatar));
@@ -72,12 +72,13 @@ const OLD = require('../lib/avatar-old.json');
   await p.evaluate(() => document.querySelector('#avSet [data-avp-open]').click()); await sl(500);
   const fit = await p.evaluate(() => { const m = document.querySelector('.avp'); return { sw: m.scrollWidth, cw: m.clientWidth, pane: document.querySelector('.avp-pane').scrollWidth <= document.querySelector('.avp-pane').clientWidth + 1 }; });
   check(fit.sw <= fit.cw + 1 && fit.pane, 'fits a 393 px phone: ' + JSON.stringify(fit));
-  await p.evaluate(() => document.querySelector('.avp [data-avp-back]').click()); await sl(200);
+  await p.evaluate(() => { const x = document.querySelector('.avp [data-avp-back]'); x && x.click(); }); await sl(200);
 
   /* 4. Iago's own avatar in the shared home, with more than 16 settings */
   await q.evaluate(() => { const t = document.querySelector('[data-tab="today"]'); t && t.click(); });
-  await until(q, () => !!document.querySelector('[data-avatar]'), 10000);
-  await q.evaluate(() => document.querySelector('[data-avatar]').click());
+  const qAv = await until(q, () => !!document.querySelector('[data-avatar]'), 25000);   /* the shared app can be slow to start on GitHub */
+  check(qAv !== null, 'Iago’s app shows his avatar');
+  await q.evaluate(() => { const x = document.querySelector('[data-avatar]'); x && x.click(); });
   const qOpen = await until(q, () => !!document.querySelector('.avp .avp-pane .avm-t'), 8000);
   check(qOpen, 'Iago’s app opens the same avatar page');
   check(await q.evaluate(() => !document.querySelector('.avp [data-avp-tab="settings"]')), 'without your settings tab');
