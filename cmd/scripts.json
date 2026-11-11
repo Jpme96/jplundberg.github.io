@@ -70,7 +70,8 @@
     "gridpack.js",
     "daypick.js",
     "fold.js",
-    "fileview.js"
+    "fileview.js",
+    "prices.js"
   ],
   "pages": {
     "index.html": [

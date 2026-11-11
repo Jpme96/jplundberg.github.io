@@ -17,7 +17,7 @@
   function at(key, hh, mm) { var p = String(key).split('-'); return new Date(+p[0], p[1] - 1, +p[2], hh, mm || 0).getTime(); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
-  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, house: true, people: true, timer: true, commute: false }, detail: 'private' };
+  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
   function prefs() { var p = readJSON(KEY, {}); var o = Object.assign({}, DEF, p); o.k = Object.assign({}, DEF.k, p.k || {}); return o; }
   function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function devId() { var p = prefs(); if (!p.id) { p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save(p); } return p.id; }
@@ -77,6 +77,20 @@
           add('bill:' + f.id + ':' + k, at(k, 9), full ? f.name + ' is due today' : 'A bill is due today', full ? kr(f.amount) : 'Open Finances to see it', '/cmd/finance/#c=bills');
         });
       }
+    }
+    /* the morning "Today" (later features): 07:30 each of the next mornings – what's in the calendar, your top
+       tasks and bills due that day (worked out now, so it's as fresh as the last time the dashboard was open) */
+    if (p.k.morning) for (var mi = 0; mi < 3; mi++) {
+      var md = new Date(); md.setDate(md.getDate() + mi); var mk = dkey(md), evs = [], tasks = [], bills = [];
+      try { if (C && on('calendar', true)) evs = C.occurrences(new Date(md.getFullYear(), md.getMonth(), md.getDate()), new Date(md.getFullYear(), md.getMonth(), md.getDate(), 23, 59), { card: true }).filter(function (o) { return !(o.ev && (o.ev.holiday || o.ev.reminder)); }); } catch (e) {}
+      tasks = (readJSON('dash.todos', []) || []).filter(function (t) { return !t.done && (t.due === mk || t.today === mk); });
+      if (d.budget && on('finance', true)) { var mym = mk.slice(0, 7), mpaid = (d.paid && d.paid[mym]) || []; bills = (d.budget.fixed || []).filter(function (f) { return f.day && f.src !== 'sub' && +f.day === md.getDate() && mpaid.indexOf(f.id) < 0; }); }
+      if (!evs.length && !tasks.length && !bills.length) continue;
+      var first = evs.filter(function (o) { return !o.allDay; })[0], parts = [];
+      if (evs.length) parts.push(evs.length + (evs.length === 1 ? ' event' : ' events') + (full && first ? ' (first ' + pad(first.start.getHours()) + ':' + pad(first.start.getMinutes()) + ' ' + first.title + ')' : ''));
+      if (tasks.length) parts.push(full ? 'Tasks: ' + tasks.slice(0, 3).map(function (t) { return t.text; }).join(', ') : tasks.length + (tasks.length === 1 ? ' task' : ' tasks'));
+      if (bills.length) parts.push(full ? 'Due: ' + bills.map(function (f) { return f.name; }).join(', ') : bills.length + (bills.length === 1 ? ' bill due' : ' bills due'));
+      add('morning:' + mk, at(mk, 7, 30), 'Today', parts.join(' · '), '/cmd/');
     }
     /* tasks with a day */
     if (p.k.tasks) (readJSON('dash.todos', []) || []).forEach(function (t) {

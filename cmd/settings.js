@@ -676,7 +676,7 @@
     fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
       var all = d.snaps || [], l = all.slice(0, snapsAll ? 120 : 14);
       box.innerHTML = l.length ? l.map(function (k) {
-        return '<li><span>' + new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: k.slice(0, 4) === String(new Date().getFullYear()) ? undefined : 'numeric' }) + '<small class="muted"> · as it was at the start of the day</small></span><button type="button" class="text-btn" data-snap="' + k + '">Restore</button></li>';
+        return '<li><span>' + new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: k.slice(0, 4) === String(new Date().getFullYear()) ? undefined : 'numeric' }) + '<small class="muted"> · as it was at the start of the day</small></span><span><button type="button" class="text-btn" data-snappick="' + k + '">Pick items</button> <button type="button" class="text-btn" data-snap="' + k + '">Restore</button></span></li>';
       }).join('') + (all.length > l.length ? '<li><button type="button" class="text-btn" data-snapsall>Show all ' + all.length + ' days</button></li>' : '') +
         (d.backup ? '<li class="muted"><small>Daily encrypted backup kept for 90 days · last ' + new Date(d.backup + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</small></li>' : '')
         : '<li class="muted">None yet – the first one is kept tomorrow, after your first change.</li>';
@@ -693,6 +693,13 @@
   });
   var snapsAll = false;
   document.addEventListener('click', function (e) { if (e.target.closest('[data-snapsall]')) { snapsAll = true; snaps(); } });
+  /* "Pick items" (restore a single thing): restore1.js is loaded only when it's used */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-snappick]'); if (!b) return;
+    var go = function () { window.Restore1.open(b.dataset.snappick, b); };
+    if (window.Restore1) return go();
+    var sc = document.createElement('script'); sc.src = '/cmd/restore1.js'; sc.onload = go; document.head.appendChild(sc);
+  });
   document.addEventListener('click', function (e) { if (e.target.closest('[data-go="data"]')) setTimeout(snaps, 50); });
   $('stRestoreNo').addEventListener('click', function () { restoreText = null; $('stRestoreAsk').hidden = true; });
   $('stRestoreYes').addEventListener('click', function () {

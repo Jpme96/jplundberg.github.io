@@ -38,6 +38,14 @@
       "url": "/cmd/?add=task"
     },
     {
+      "name": "Add expense",
+      "url": "/cmd/?add=expense"
+    },
+    {
+      "name": "New event",
+      "url": "/cmd/?add=event"
+    },
+    {
       "name": "Calendar",
       "url": "/cmd/calendar/"
     },
