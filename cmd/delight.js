@@ -210,10 +210,11 @@
     var show = function (code) { var k = WX_KIND(code); if (k === 'sun' && night) k = 'stars'; wxLayer(k, code); };   /* a clear night: twinkling stars */
     if (c && Date.now() - c.at < 30 * 60e3) return show(c.code);
     if (c) show(c.code);
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon + '&current=weather_code&timezone=auto')
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon + '&current=weather_code,temperature_2m&timezone=auto')
       .then(function (r) { return r.json(); }).then(function (j) {
         var code = j && j.current && j.current.weather_code; if (code == null) return;
-        try { localStorage.setItem('dash.wxNow', JSON.stringify({ code: code, at: Date.now() })); } catch (e) {}
+        var tc = j.current.temperature_2m;   /* the avatar dresses for it (avatar.js wear()) */
+        try { localStorage.setItem('dash.wxNow', JSON.stringify({ code: code, t: typeof tc === 'number' ? Math.round(tc) : null, at: Date.now() })); } catch (e) {}
         show(code);
       }).catch(function () {});
   }

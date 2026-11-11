@@ -65,8 +65,8 @@
       '<label><span>' + L('How lively', 'Hvor livlig') + '<small>' + L('What it does in the page pictures', 'Hva den gjør i sidebildene') + '</small></span>' + sel('data-avlive', live, [['lively', L('Lively', 'Livlig')], ['normal', L('Normal', 'Vanlig')], ['calm', L('Calm', 'Rolig')], ['still', L('Still pictures', 'Stillbilder')]]) + '</label>' +
       '<label><span>' + L('What it says', 'Hva den sier') + '<small>' + L('The speech bubble is on screen for anyone nearby', 'Snakkeboblen vises for alle i nærheten') + '</small></span>' + sel('data-avsay', say, [['nomoney', L('All but money', 'Alt unntatt penger')], ['all', L('Everything', 'Alt')], ['fun', L('Only the fun bits', 'Bare det morsomme')]]) + '</label>' +
       '<label><span>' + L('Dress for the season', 'Kle seg etter sesongen') + '<small>' + L('Christmas jumper in December, a bunad on 17 May (Norway’s national day), shorts in July', 'Julegenser i desember, bunad på 17. mai, shorts i juli') + '</small></span><input type="checkbox" class="switch" data-avm-auto' + (cur.auto === 'on' ? ' checked' : '') + '></label>' +
-      sw('avWear', L('Dress for the weather', 'Kle seg for været'), L('Umbrella in rain, beanie in snow, sunglasses in July', 'Paraply i regn, lue i snø, solbriller i juli')) +
-      sw('avMood', L('Mood from your day', 'Humør fra dagen din'), L('Tired after a short night, a drop of sweat when bills are overdue', 'Trøtt etter en kort natt, en svettedråpe når regninger er forfalt')) +
+      sw('avWear', L('Dress for the weather', 'Kle seg for været'), L('Umbrella in rain, a warm jacket, beanie and scarf when it’s cold, a T-shirt when it’s warm, sunglasses in July', 'Paraply i regn, varm jakke, lue og skjerf når det er kaldt, T-skjorte når det er varmt, solbriller i juli')) +
+      sw('avMood', L('Mood from your day', 'Humør fra dagen din'), L('Tired after a short night, a drop of sweat when bills are overdue, a badge when you earn one (a habit streak, today’s top 3 done, bills paid)', 'Trøtt etter en kort natt, en svettedråpe når regninger er forfalt, et merke når du fortjener det (en vane på rad, dagens topp 3 gjort, regningene betalt)')) +
       sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) +
       '</div>';
   }
@@ -80,7 +80,9 @@
     el.innerHTML = '<header class="avp-top"><button type="button" class="avp-ib" data-avp-back aria-label="' + esc(L('Back', 'Tilbake')) + '"><i class="bi bi-chevron-left"></i></button><b>' + esc(title) + '</b></header>' +
       '<div class="avp-scroll"><section class="avp-stage"><div class="avp-fig av-prev"></div>' +
       '<div class="avp-row" role="group" aria-label="' + esc(L('Turn it around', 'Snu den')) + '">' + VIEWS.map(function (v) { return '<button type="button" data-avp-view="' + v[0] + '" aria-pressed="' + (v[0] === view) + '">' + esc(L(v[1], v[2])) + '</button>'; }).join('') +
-      '<button type="button" data-avp-play><i class="bi bi-play-fill"></i> ' + esc(L('See it move', 'Se den bevege seg')) + '</button></div>' +
+      '<button type="button" data-avp-play><i class="bi bi-play-fill"></i> ' + esc(L('See it move', 'Se den bevege seg')) + '</button>' +
+      /* Match with the one you share your home with (C10): their top and its colour, one tap, Undo brings yours back */
+      (opts.match && opts.match.look ? '<button type="button" data-avp-match><i class="bi bi-people"></i> ' + esc(L('Match with ' + (opts.match.name || 'them'), 'Match med ' + (opts.match.name || 'dem'))) + '</button>' : '') + '</div>' +
       '<div class="avp-testw" hidden><svg class="avp-test" viewBox="0 0 240 120" aria-hidden="true"></svg></div></section>' +
       '<nav class="avp-tabs" role="tablist"></nav><div class="avp-pane" role="tabpanel"></div></div>' +
       '<footer class="avp-bar"><button type="button" data-avp-rand><i class="bi bi-shuffle"></i> ' + esc(L('Surprise me', 'Overrask meg')) + '</button><button type="button" data-avp-undo disabled><i class="bi bi-arrow-counterclockwise"></i> ' + esc(L('Undo', 'Angre')) + '</button><button type="button" class="hot" data-avp-save>' + esc(L('Save', 'Lagre')) + '</button></footer>' +
@@ -154,6 +156,7 @@
       if (e.target.closest('[data-avp-stay]')) { el.querySelector('.avp-ask').hidden = true; return; }
       if (e.target.closest('[data-avp-drop]')) { close(); return; }
       if (e.target.closest('[data-avp-save]')) { save(); return; }
+      if (e.target.closest('[data-avp-match]')) { var ml = opts.match.look || {}; undo.push(JSON.stringify(cur)); cur = Object.assign({}, cur, { top: ml.top || cur.top, topC: ml.topC || cur.topC, pat: ml.pat || 'none' }); redraw(); return; }
       if (e.target.closest('[data-avp-undo]')) { if (undo.length) { cur = JSON.parse(undo.pop()); redraw(); } return; }
       if (e.target.closest('[data-avp-rand]')) { change(Object.assign({}, M.rand(), { hand: cur.hand, walk: cur.walk, auto: cur.auto })); return; }
       if ((b = e.target.closest('[data-avp-tab]'))) { setTab(b.dataset.avpTab); return; }

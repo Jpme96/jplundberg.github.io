@@ -167,8 +167,11 @@
       var still = root.classList.contains('mo-off') || root.classList.contains('mo-reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
       var built = function () { stage = 'putting the page in'; swap(); stage = 'starting its scripts'; return run(scripts).then(function () { arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
       var finish = function () { mark('sn:done'); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
-      /* Safari (Mac, Nov 2026): page changes with the glide never finished – it just swaps there */
-      if (!document.startViewTransition || still || SAFARI) return built().then(finish);
+      /* Safari (Mac, Nov 2026): page changes with the view-transition glide never finished – there the page swaps
+         plainly and then its content glides in with an ordinary animation (nothing waits on it, so it can't hang) */
+      if (!document.startViewTransition || still || SAFARI) return built().then(function () {
+        if (!still && SAFARI) { var m = document.querySelector('main'); if (m && m.animate) { try { m.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2, .8, .2, 1)' }); } catch (e) {} } }
+        finish(); });
       vtOn = true;
       root.classList.add('sn-go');
       var vt = document.startViewTransition(built);

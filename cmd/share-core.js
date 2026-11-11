@@ -144,6 +144,7 @@
     proj: ['name', 'kind', 'room', 'status', 'budget', 'spent', 'start', 'end', 'tasks'],
     doc: ['name', 'cat', 'src', 'date', 'files'],
     hmap: ['w', 'h', 'mono', 'fid', 'rooms', 'pins', 'cr', 'style', 'furn'],               /* the owner's home map (house-map.js), when they show it */
+    spet: ['pet', 'at'],                                                     /* the pet you share (C10) – either of you picks it, the latest pick wins */
     pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
   };
   /* an avatar look: short keys with short colour/word values, nothing else (up to 48 – the maker has ~45 settings) */

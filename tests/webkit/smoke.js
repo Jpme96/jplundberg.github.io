@@ -33,6 +33,8 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       /* instant page changes through the menu – the Mac once got stuck on Home */
       const pages = ['calendar', 'finance', 'habits', 'travel', 'people', ''];
       let moved = 0;
+      /* the glide: in Safari the new page's content glides in after the swap (C10) */
+      await p.evaluate(() => { window.__glides = 0; window.addEventListener('softnav:done', () => { const m = document.querySelector('main'); if (m && m.getAnimations().length) window.__glides++; }); });
       for (const pg of pages) {
         const ok = await p.evaluate(pg => { const a = document.querySelector('a[href="/cmd/' + pg + '"], a[href="/cmd/' + pg + (pg ? '/' : '') + '"]'); if (!a) return false; a.click(); return true; }, pg);
         if (!ok) { await p.goto(U + pg + (pg ? '/' : '')); }
@@ -48,6 +50,7 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
         await sl(400);
       }
       check(moved === pages.length, W + ' px: page changes reach every page (' + moved + '/' + pages.length + ')');
+      if (ENGINE === 'webkit') { const gl = await p.evaluate(() => window.__glides || 0); check(gl >= 3, W + ' px: pages glide in (' + gl + ' of ' + pages.length + ')'); }
       const clickable = await p.evaluate(() => { const e = document.elementFromPoint(innerWidth / 2, 200); return !!e && getComputedStyle(document.body).pointerEvents !== 'none'; });
       check(clickable, W + ' px: the page can be clicked after the changes');
       await p.goBack(); await sl(800);

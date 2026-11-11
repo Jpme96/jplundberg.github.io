@@ -88,6 +88,10 @@
     var pend = ((V.get() || {}).share || {}).pending || {};
     if (w.money && Object.keys(pend).length) { info.pend = Object.keys(pend); Object.keys(pend).forEach(function (id) { put('sx', id, pend[id].f); }); }
     put('info', 'info', info);
+    /* the shared pet: yours goes up only if you picked it after the one in the box (they can pick it in their app too) */
+    var sp0 = sharedPetRec(), mySp = ((V.get() || {}).share || {});
+    if (mySp.pet && (!sp0 || (+mySp.petAt || 0) > (+sp0.at || 0))) put('spet', 'pet', { pet: mySp.pet, at: +mySp.petAt || Date.now() });
+    else if (sp0) put('spet', 'pet', { pet: sp0.pet, at: sp0.at });
     if (w.shop) (Array.isArray(t.shop) ? t.shop : []).forEach(function (x) { if (x && x.id) put('shop', x.id, { text: String(x.text || '').slice(0, 120), done: !!x.done }); });
     if (w.chores) {
       (Array.isArray(t.chores) ? t.chores : []).forEach(function (x) { if (x && x.id) put('chore', x.id, { name: String(x.name || '').slice(0, 80), every: x.every || '1w', day: +x.day || 0, who: x.who || 'rotate', start: x.start || '', room: x.room || '' }); });
@@ -488,7 +492,7 @@
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });
       });
-    }).then(function () { dSent(sentAt); evSent(sentAt); return dTake(); }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
+    }).then(function () { dSent(sentAt); evSent(sentAt); if (window.Vault && Vault.paintWaiting) Vault.paintWaiting(); return dTake(); }).then(function () { lastOk = Date.now(); lastErr = ''; busy = false; paintSum(); chatInit(); chatButton(); var ab = document.getElementById('shActList'); if (ab) ab.innerHTML = actItems(pname()); if (again) { again = false; schedule(500); } },
       function (e) { busy = false; lastErr = (e && e.status === 401) ? 'Signed out – reload' : 'Couldn’t reach the server'; paintSum(); if (again) { again = false; schedule(5000); } });
   }
   /* their change shows up within seconds: the live check sees the box move on and syncs right away */
@@ -561,7 +565,17 @@
     var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
-  window.ShareSpace = { partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
+  function sharedPetRec() { var o = null; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'spet' && !r.del && r.f && (!o || (+r.f.at || 0) > (+o.at || 0))) o = r.f; }); return o; }
+  function sharedPet() { var r = sharedPetRec(), mine = ((V.get() || {}).share || {}); if (mine.pet && (!r || (+mine.petAt || 0) > (+r.at || 0))) return mine.pet; return r ? r.pet : ''; }
+  /* the two of you on Home (avatar.js asks): their avatar, which picture fits today, and your shared pet */
+  window.CoupleInfo = function () {
+    if (!st()) return null; var lk = partnerLook(); if (!lk) return null;
+    var tk = dkey(new Date()), did = Object.keys(cache).some(function (rid) { var r = cache[rid]; return r.c === 'cdone' && !r.del && r.t && dkey(new Date(r.t)) === tk; });
+    var kind = window.Avatar && Avatar.coupleKind ? Avatar.coupleKind({ hi5: did }) : 'hold', nb = window.I18N && window.I18N.lang === 'nb', p = pname();
+    var say = kind === 'hi5' ? (nb ? 'Husarbeid gjort i dag – high five, ' + p + '!' : 'Chores done today – high five, ' + p + '!') : (nb ? 'Du og ' + p + ' 💛' : 'You and ' + p + ' 💛');
+    return { look: lk, kind: kind, say: say, pet: sharedPet(), w: 7 };
+  };
+  window.ShareSpace = { partnerName: function () { return pname(); }, sharedPet: function () { return sharedPet(); }, setPet: function (v) { setSt({ pet: v || 'none', petAt: Date.now() }); schedule(200); }, waiting: function () { if (!st()) return 0; var n = Object.keys(EV.ops || {}).length; Object.keys(DLISTS).forEach(function (k) { n += Object.keys(dl(k).ops || {}).length; }); return n; }, partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
@@ -676,12 +690,17 @@
         '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
-        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>');
+        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
+      (function () { var cp = sharedPet() || 'none', P = [['none', 'No pet', 'Ingen'], ['cat', 'Cat', 'Katt'], ['dog', 'Dog', 'Hund'], ['bunny', 'Bunny', 'Kanin'], ['parrot', 'Parrot', 'Papegøye']], nb = window.I18N && window.I18N.lang === 'nb';
+        return sec('spet', 'heart', nb ? 'Kjæledyret dere deler' : 'Your shared pet', (P.filter(function (x) { return x[0] === cp; })[0] || P[0])[nb ? 2 : 1],
+          '<p class="st-note muted">' + (nb ? 'Står ved dere i bildet av dere to – i begge appene. Den av dere som velger sist, bestemmer.' : 'Stands with you in the picture of the two of you – in both apps. Whoever picks last decides.') + '</p>' +
+          '<label class="st-row"><span>' + (nb ? 'Kjæledyr' : 'Pet') + '</span><select data-shpet>' + P.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === cp ? ' selected' : '') + '>' + (nb ? x[2] : x[1]) + '</option>'; }).join('') + '</select></label>'); })();
   }
   document.addEventListener('change', function (e) {
     var t = e.target, a;
     if ((a = t.closest('[data-shperm]'))) { var pm = Object.assign({}, ((V.get() || {}).share || {}).perm || {}); pm[a.dataset.shperm] = a.value; setSt({ perm: pm }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); return; }
     if ((a = t.closest('[data-shappr]'))) { setSt({ approveOver: +a.value || 0 }); toast('<i class="bi bi-check2"></i> Saved'); return; }
+    if ((a = t.closest('[data-shpet]'))) { setSt({ pet: a.value, petAt: Date.now() }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); return; }
     if ((a = t.closest('[data-shnote]'))) { var nn = Object.assign({}, notifyMe()); nn[a.dataset.shnote] = a.checked; setSt({ notifyMe: nn }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); }
   });
   document.addEventListener('click', function (e) {

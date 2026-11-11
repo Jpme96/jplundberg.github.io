@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 80;
+  var APPV = 82;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -341,13 +341,14 @@
   function lookedNow() { var k = {}; Object.keys(recs).forEach(function (rid) { k[rid] = recs[rid].t; }); known = k; lastLook = Date.now(); wj('home.known', k); wj('home.lastLook', lastLook); }
   /* the two of you: holding hands, a high five when a chore was done today, a hug on your birthday, a kiss in the evening – tap for the next */
   var coupleK = null;
+  function sharedPet() { var o = null; Object.keys(recs).forEach(function (rid) { var r = recs[rid]; if (r.c === 'spet' && !r.del && r.f && (!o || (+r.f.at || 0) > (+o.at || 0))) o = r.f; }); return o ? o.pet : ''; }
   function coupleCard() {
     var A = window.Avatar, ol = info().olook, my = mine().look; if (!A || !A.couple || !ol || !my) return '';
     var tk = today(), bd = String(mine().bday || '').split('.').slice(0, 2).map(Number).join('.'), d = new Date(), dm = d.getDate() + '.' + (d.getMonth() + 1);
     var did = Object.keys(recs).some(function (rid) { var r = recs[rid]; return r.c === 'cdone' && !r.del && r.t && dkey(new Date(r.t)) === tk; });
     var k = coupleK || A.coupleKind({ hi5: did, hug: bd === dm }), o = owner();
     var say = { hold: L('You and ', 'Du og ') + o + ' 💛', hi5: coupleK ? L('High five!', 'High five!') : L('Chores done today – high five!', 'Husarbeid gjort i dag – high five!'), hug: coupleK ? L('A big hug', 'En god klem') : L('Happy birthday – a big hug!', 'Gratulerer med dagen – en god klem!'), kiss: L('Good night, you two', 'God natt, dere to') }[k];
-    var pic = ''; try { var th = document.documentElement.getAttribute('data-theme'); pic = A.couple(k, my, ol, { label: say, light: th === 'light' || (!th && matchMedia('(prefers-color-scheme: light)').matches) }); } catch (e) { return ''; }
+    var pic = ''; try { var th = document.documentElement.getAttribute('data-theme'); var sp = sharedPet(); pic = A.couple(k, my, ol, { label: say, pet: sp && sp !== 'none' ? sp : null, light: th === 'light' || (!th && matchMedia('(prefers-color-scheme: light)').matches) }); } catch (e) { return ''; }
     return '<button type="button" class="h-couple" data-couple aria-label="' + esc(say + ' – ' + L('tap for the next', 'trykk for neste')) + '">' + pic + '<span>' + esc(say) + '</span></button>';
   }
   function todayView() {
@@ -697,11 +698,14 @@
       '<div class="h-me">' + face(me0.look, 'big') + '<div><button type="button" class="h-btn sm" data-avatar>' + (me0.look ? L('Change your avatar', 'Endre avataren') : L('Make your avatar', 'Lag avataren din')) + '</button></div></div>' +
       '<label class="h-lbl">' + L('Your name', 'Navnet ditt') + '<input name="nm" maxlength="30" value="' + esc(me0.name || info().partner || '') + '" required></label>' +
       '<label class="h-lbl">' + L('Birthday', 'Bursdag') + '<input name="bd" type="date" value="' + esc(bdv) + '"></label>' +
-      '<label class="h-lbl">' + L('Phone', 'Telefon') + '<input name="ph" type="tel" inputmode="tel" maxlength="20" placeholder="+47" value="' + esc(me0.phone || '') + '"></label>', function (f) {
+      '<label class="h-lbl">' + L('Phone', 'Telefon') + '<input name="ph" type="tel" inputmode="tel" maxlength="20" placeholder="+47" value="' + esc(me0.phone || '') + '"></label>' +
+      /* the pet you share (C10): in the picture of the two of you, in both apps – whoever picks last decides */
+      '<label class="h-lbl">' + L('Your shared pet', 'Kjæledyret dere deler') + '<select name="sp">' + [['none', 'No pet', 'Ingen'], ['cat', 'Cat', 'Katt'], ['dog', 'Dog', 'Hund'], ['bunny', 'Bunny', 'Kanin'], ['parrot', 'Parrot', 'Papegøye']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === (sharedPet() || 'none') ? ' selected' : '') + '>' + L(x[1], x[2]) + '</option>'; }).join('') + '</select></label>', function (f) {
       var nm = f.nm.value.trim(); if (!nm) { f.nm.focus(); return false; }
       var o = Object.assign({}, mine(), { name: nm }), bv = f.bd.value;
       if (/^\d{4}-\d{2}-\d{2}$/.test(bv)) o.bday = +bv.slice(8, 10) + '.' + +bv.slice(5, 7) + '.' + bv.slice(0, 4); else delete o.bday;
       var ph = f.ph.value.trim(); if (ph) o.phone = ph; else delete o.phone;
+      if (f.sp && f.sp.value !== (sharedPet() || 'none')) put('spet', 'pet', { pet: f.sp.value, at: Date.now() });
       wj('home.profiled', true); put('pme', 'me', o); toast('<i class="bi bi-check2"></i> ' + L('Saved – ', 'Lagret – ') + esc(owner()) + L(' sees it now', ' ser det nå'));
     });
     bg.querySelector('[data-x]').addEventListener('click', function () { wj('home.profiled', true); });
@@ -776,7 +780,7 @@
   function avatarEdit() {
     var A = window.Avatar; if (!A || !A.editor) { toast(L('Couldn’t open the avatar maker', 'Kunne ikke åpne avatarmakeren')); return; }
     var start = mine().look || (A.personLook ? A.personLook({ id: 'p-' + (info().partner || 'x'), name: myName() }) : {});
-    A.editor(myName(), start, function (lk) { put('pme', 'me', Object.assign({}, mine(), { name: mine().name || info().partner || '', look: lk })); if (backToProfile) { backToProfile = false; setTimeout(profileSheet, 260); } toast('<i class="bi bi-person-bounding-box"></i> ' + L('Avatar saved – ', 'Avataren er lagret – ') + esc(owner()) + L(' sees it too', ' ser den også')); });
+    A.editor(myName(), start, function (lk) { put('pme', 'me', Object.assign({}, mine(), { name: mine().name || info().partner || '', look: lk })); if (backToProfile) { backToProfile = false; setTimeout(profileSheet, 260); } toast('<i class="bi bi-person-bounding-box"></i> ' + L('Avatar saved – ', 'Avataren er lagret – ') + esc(owner()) + L(' sees it too', ' ser den også')); }, { match: info().olook ? { look: info().olook, name: owner() } : null });
   }
   /* the avatar maker asks for a dialog – a small sheet here */
   window.HomeLife = { dialog: function (html, onClick) {

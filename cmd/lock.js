@@ -623,6 +623,24 @@
     try { window.dispatchEvent(new CustomEvent('sync:state', { detail: state })); } catch (e) {}
     retryCheck(state, why);
   }
+  /* "N changes waiting" (C10): what hasn't reached the server yet – saves since the last sync plus shared-home
+     changes still queued – as a small chip at the top of every page while sync isn't getting through; a tap retries */
+  function waiting() {
+    var n = syncedRev() >= 0 ? Math.max(0, localRev() - syncedRev()) : 0;
+    try { if (window.ShareSpace && ShareSpace.waiting) n += ShareSpace.waiting(); } catch (e) {}
+    return n;
+  }
+  function paintWaiting() {
+    var n = key ? waiting() : 0, show = n > 0 && syncState !== 'ok' && syncState !== 'busy', c = document.getElementById('waitChip');
+    if (!show) { if (c) c.remove(); return; }
+    if (!c) { c = document.createElement('button'); c.id = 'waitChip'; c.type = 'button'; c.className = 'wait-chip'; c.setAttribute('data-noi18n', ''); document.body.appendChild(c); }
+    var nb = window.I18N && window.I18N.lang === 'nb';
+    c.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> ' + n + (nb ? (n === 1 ? ' endring venter' : ' endringer venter') : (n === 1 ? ' change waiting' : ' changes waiting'));
+    c.title = nb ? 'Lagret her – sendes når nettet er tilbake. Trykk for å prøve igjen.' : 'Saved here – it goes up when you’re back online. Tap to try again.';
+  }
+  window.addEventListener('sync:state', paintWaiting);
+  window.addEventListener('dash:local', function () { setTimeout(paintWaiting, 50); });
+  document.addEventListener('click', function (e) { if (key && e.target.closest('#waitChip')) { sync(); if (window.ShareSpace && ShareSpace.sync) try { ShareSpace.sync(); } catch (er) {} } });
   /* A failed sync is tried again by itself – after 4 s, 12 s, 30 s, 1½ min, then every 4 min – and
      after the third miss one calm message says what's going on, with Try again. Edits are always
      saved on this device first, so nothing is lost while it waits. */
@@ -962,6 +980,7 @@
     _regs: { mark: function () { return [unlockFns.length, lockFns.length]; }, reset: function (m) { if (m) { unlockFns.length = Math.min(unlockFns.length, m[0]); lockFns.length = Math.min(lockFns.length, m[1]); } } },
     get: function () { return data; },
     syncState: function () { return syncState; },
+    waiting: function () { return waiting(); }, paintWaiting: function () { paintWaiting(); },
     save: function (obj) {
       if (!key) return Promise.reject(new Error('locked'));
       data = obj;

@@ -18,7 +18,8 @@
 
   /* ---------- the avatar in a scene ---------- */
   function Hero(svg, before, box, look) {
-    var H = { svg: svg, look: Object.assign({}, window.Avatar && Avatar.look ? Avatar.look() : {}, look || {}), faces: {} };
+    var own = window.Avatar && Avatar.look ? Avatar.look() : {};
+    var H = { svg: svg, look: look ? Object.assign({}, own, look) : (window.Avatar && Avatar.dressed ? Avatar.dressed(own) : own), faces: {} };   /* your own avatar wears what the day brings (weather, an earned badge) */
     var s = Math.min(box.w / 114, box.h / 144), ox = box.x + (box.w - 114 * s) / 2, oy = box.y + box.h - 144 * s;
     H.s = s; H.feet0 = [ox + 57 * s, oy + 140 * s];
     var f = Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none' }, H.look).replace(/<ellipse cx="101" cy="160"[^>]*>/, '')

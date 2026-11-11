@@ -93,16 +93,35 @@
       if (mo === 11 && dd <= 26) out.santa = 1;
       if (mo === 4 && dd === 17) out.ribbon = 1;
       if (mo === 6 && h >= 8 && h < 20 && !out.rain) out.sun = 1;
+      /* the temperature (C10): a padded jacket, beanie and scarf when it's cold, a T-shirt when it's warm */
+      var tc = wx && Date.now() - wx.at < 3 * 3600e3 && typeof wx.t === 'number' ? wx.t : null;
+      if (tc != null && tc <= 3) out.cold = 1; else if (tc != null && tc >= 22) out.hot = 1;
     }
     if (on('avMood') && window.Vault && window.Vault.get) {
       try {
         var ln = window.AHealth && window.AHealth.lastNight ? window.AHealth.lastNight() : null;
         if (ln && !ln.partial && ln.v > 0 && ln.v < 6 && h < 15) out.tired = 1;
         var d = window.Vault.get() || {}, ym = today().slice(0, 7), paid = ((d.paid || {})[ym]) || [];
-        if (paid.length) out.stress = ((d.budget && d.budget.fixed) || []).some(function (f) { return f.day && !f.src && +f.day <= dd - 3 && paid.indexOf(f.id) < 0; }) ? 1 : 0;
+        var fixed = ((d.budget && d.budget.fixed) || []).filter(function (f) { return f.day && !f.src; });
+        if (paid.length) out.stress = fixed.some(function (f) { return +f.day <= dd - 3 && paid.indexOf(f.id) < 0; }) ? 1 : 0;
+        /* badges you earn (C10), the best one first: a habit 3+ weeks in a row, today's top 3 done, every bill so far paid */
+        var hb = readJSON('dash.habits', null), mon = new Date(now.getFullYear(), mo, dd - (now.getDay() + 6) % 7), dk = function (x) { return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+        var streak = hb && Array.isArray(hb.list) && hb.list.some(function (hh) { var st = 0; for (var w = 1; w < 8; w++) { var n = 0; for (var i = 0; i < 7; i++) if (((hb.log || {})[dk(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() - 7 * w + i))] || []).indexOf(hh.id) > -1) n++; if (n >= (+hh.target || 1)) st++; else break; } return st >= 3; });
+        var td = today(), t3 = (readJSON('dash.todos', []) || []).filter(function (t) { return t && t.today === td; }).slice(0, 3);
+        var bills = fixed.filter(function (f) { return +f.day <= dd; });
+        out.badge = streak ? 'streak' : t3.length === 3 && t3.every(function (t) { return t.done; }) ? 'top3' : bills.length && bills.every(function (f) { return paid.indexOf(f.id) > -1; }) ? 'paid' : '';
       } catch (e) {}
     }
     return out;
+  }
+  /* your own look as today dresses it (C10): weather clothes and an earned badge – a badge you picked yourself wins.
+     The umbrella, snow hat, sunglasses and sweat stay drawn by figure() from wear() itself. */
+  function dressed(L, W) {
+    W = W || wear(); var o = Object.assign({}, L);
+    if (W.cold) { if (!o.hat || o.hat === 'none') o.hat = 'beanie'; if (!o.neck || o.neck === 'none') o.neck = 'scarf'; if (['puffer', 'jacket', 'rain', 'knit', 'suit', 'bunad', 'robe'].indexOf(o.top) < 0 && o.top !== 'none') o.top = 'puffer'; }
+    else if (W.hot && ['sweater', 'knit', 'hoodie', 'puffer', 'jacket'].indexOf(o.top) > -1) o.top = 'tee';
+    if (W.badge && (!o.badge || o.badge === 'none')) o.badge = W.badge;
+    return o;
   }
   /* the newer keys (2026-11): old looks keep working – 'extra' becomes a hat, a neck thing, a watch or earbuds */
   function norm(L) {
@@ -125,7 +144,7 @@
   var UID = 0;
   function figure(m, L) {
     var mine = !L, W = mine ? wear() : {};
-    L = norm(L || look());
+    L = norm(mine ? dressed(look(), W) : L);
     if (W.tired && m && !m.mood && m.k !== 'night') m = Object.assign({}, m, { mood: 'tired' });
     /* light mode: the moment's colour becomes a soft tint instead of a dark night-sky box */
     if (m && m.bg && !m.plain && document.documentElement.getAttribute('data-theme') === 'light') m = Object.assign({}, m, { bg: shade(m.bg, .8) });
@@ -489,6 +508,8 @@
        --rx/--lx are the shoulders in picture coordinates, so arms swing from the right place on every body type */
     if (L.pet === 'bird') { var bx = 101 + 22 * SX; front += '<g class="av-pet" transform="translate(' + bx.toFixed(1) + ' 81)"><path d="M-5 2l-6 3 6-1z" fill="' + shade(L.petC || '#2f9ee0', -.25) + '"/><ellipse cx="0" cy="0" rx="6" ry="4.6" fill="' + (L.petC || '#2f9ee0') + '"/><circle cx="4" cy="-4.4" r="3.4" fill="' + (L.petC || '#2f9ee0') + '"/><path d="M7 -4.8l3.2 1.2-3.2 1z" fill="#f2a024"/><circle cx="5" cy="-5.2" r=".8" fill="#1a1a1a"/><path d="M-2 0q2 3 5 0" stroke="' + shade(L.petC || '#2f9ee0', .3) + '" stroke-width="1.2" fill="none"/></g>'; }
     var HT = L.height === 'short' ? 'translate(101 160) scale(.9) translate(-101 -160)' : L.height === 'tall' ? 'translate(101 160) scale(1.08) translate(-101 -160)' : '';
+    /* seated (the sofa in the couple picture, C10): hips down on the cushion, the thighs seen end-on, feet on the floor */
+    if (m.seat && AID !== 'chair') { legs = '<g transform="translate(0 124) scale(1 .56) translate(0 -124)">' + legs + '</g>'; HT = (HT ? HT + ' ' : '') + 'translate(0 16)'; }
     var WS = AID === 'chair' ? 14 : 0, chair = '';
     if (WS) { legs = '<g transform="translate(0 160) scale(1 .5) translate(0 -160)">' + legs + '</g>';
       behind += '<path d="M78 70v58M124 70v58" stroke="#3a3f4a" stroke-width="3" stroke-linecap="round"/>';
@@ -570,7 +591,7 @@
     if ((hr >= 19 || hr < 6) && m.sky === 'sun') m = Object.assign({}, m, { sky: 'moon', bg: '#121426' });       /* the sky follows the clock */
     if (!box) { box = document.createElement('div'); box.id = 'avHome'; box.className = 'av-home'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-av'); }
     var ci2 = m.couple && window.CoupleInfo ? window.CoupleInfo() : null;
-    var pic = null; if (ci2 && ci2.look) try { pic = couple(ci2.kind, look(), ci2.look, { label: ci2.say }); } catch (e) { pic = null; ci2 = null; }
+    var pic = null; if (ci2 && ci2.look) try { pic = couple(ci2.kind, dressed(look()), ci2.look, { label: ci2.say, pet: ci2.pet && ci2.pet !== 'none' ? ci2.pet : null }); } catch (e) { pic = null; ci2 = null; }
     pic = pic || figure(Object.assign({}, m.couple ? MOMENTS.day : m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"');
     var html = '<button type="button" class="av-fig' + (ci2 && ci2.look ? ' av-two' : '') + '" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + pic + '</button>' +
       '<button type="button" class="av-edit" data-avp-open aria-label="' + esc(L('Edit your avatar', 'Rediger avataren din')) + '" style="position:absolute;top:4px;right:4px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(127,127,127,.18);color:inherit;display:grid;place-items:center;cursor:pointer;z-index:2"><i class="bi bi-pencil" aria-hidden="true"></i></button>' +
@@ -769,7 +790,7 @@
       '<span>' + L('Your avatar', 'Avataren din') + '<small class="st-rsub">' + L('Look, how it moves, and its settings', 'Utseende, hvordan den beveger seg, og innstillinger') + '</small></span></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button></div>';
   }
   /* opens your own avatar page (avatar-page.js) */
-  function openMine() { if (window.Avatar && window.Avatar.page) window.Avatar.page(L('Your avatar', 'Avataren din'), mkMigrate(look()), function (lk) { saveWhole(lk); }, { mine: true }); }
+  function openMine() { var S = window.ShareSpace, pl = null; try { pl = S && S.partnerLook ? S.partnerLook() : null; } catch (e) {} if (window.Avatar && window.Avatar.page) window.Avatar.page(L('Your avatar', 'Avataren din'), mkMigrate(look()), function (lk) { saveWhole(lk); }, { mine: true, match: pl ? { look: pl, name: S.partnerName ? S.partnerName() : '' } : null }); }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-avp-open]')) { e.preventDefault(); openMine(); } });
   document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-avsay]') && window.Delight && window.Delight.set) { window.Delight.set({ avSay: e.target.value }); idx = 0; } });
   window.addEventListener('st:page', function (e) { if (e.detail === 'touches') setTimeout(maker, 0); });
@@ -791,7 +812,7 @@
   var RELC = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
   function personLook(p, topC) { return Object.assign({}, seedLook((p && (p.id || p.name)) || '', topC || (p && RELC[p.rel]) || '#3987e5'), (p && p.look) || {}); }
   /* the same maker as yours, on its own page (avatar-page.js) – onSave(look) gets the full look */
-  function editor(title, start, onSave) { if (window.Avatar && window.Avatar.page) window.Avatar.page(title, mkMigrate(start), onSave, {}); }
+  function editor(title, start, onSave, opts) { if (window.Avatar && window.Avatar.page) window.Avatar.page(title, mkMigrate(start), onSave, opts || {}); }
 
   /* ---------- the two of you (shared home): holding hands, a high five, a hug or a kiss ----------
      a, b = the two looks (a stands on the left). Two figures side by side in one picture; tap the picture to
@@ -802,7 +823,7 @@
     opt = opt || {}; a = Object.assign({}, START, a || {}); b = Object.assign({}, START, b || {}); var c = COUPLE[kind] || COUPLE.hold, W = 200 + c.gap, light = document.documentElement.getAttribute('data-theme') === 'light' || opt.light;
     var bg = light ? shade(c.bg, .82) : c.bg, cx = W / 2, uid = 'cp-' + kind + (opt.uid || '');
     var one = function (look, k, x, rot) {
-      var f = figure({ k: k, plain: true, bg: '#000', sky: 'none', closed: c.closed, attrs: ' x="' + x + '" y="0" width="200" height="200"' }, Object.assign({}, look || look0(), opt.pet ? { pet: 'none' } : {}));
+      var f = figure({ k: k, plain: true, bg: '#000', sky: 'none', closed: c.closed, seat: !!c.sofa, attrs: ' x="' + x + '" y="0" width="200" height="200"' }, Object.assign({}, look || look0(), opt.pet ? { pet: 'none' } : {}));
       return rot ? '<g transform="rotate(' + rot + ' ' + (x + 101) + ' 165)">' + f + '</g>' : f;
     };
     var heart = function (x, y, s, cl) { return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path class="' + cl + '" d="M0 4C0-2-8-3-8 3C-8 8 0 12 0 14C0 12 8 8 8 3C8-3 0-2 0 4Z" fill="#e5484d"/></g>'; };
@@ -948,6 +969,6 @@
     return '';
   }
 
-  window.Avatar = { headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+  window.Avatar = { dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
     _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();
