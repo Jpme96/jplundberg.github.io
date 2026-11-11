@@ -45,13 +45,16 @@
         return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [174, base[1]], 22); }, function () { return L.turnTo(R, H, 'back', 320); },
           function () { var p = Promise.resolve(); notes.forEach(function (n, i) { p = p.then(function () { var bb = n.getBBox(), m = n.parentNode.getCTM(), pt = svg.createSVGPoint(); pt.x = bb.x + 4; pt.y = bb.y + bb.height / 2; var q = pt.matrixTransform(n.getCTM()); return L.reach(R, H, 'R', [q.x, q.y], 420).then(function () { wiggle(n.parentNode); return L.wait(R, 350); }); }); }); return p; },
           function () { return L.reach(R, H, 'R', null, 300); }, function () { return L.turnTo(R, H, 'front', 320); },
-          function () { L.face(H, 'wow'); L.say(H, T('Lots on today!', 'Mye i dag!'), 1600); return L.wait(R, 1400); },
+          function () { L.face(H, 'wow'); L.say(H, (nNotes > 1 ? T('Busy day!', 'Travel dag!') : T('One thing today', 'Én ting i dag')), 1600); return L.wait(R, 1400); },
           function () { return L.walk(R, H, base, 22); }]);
       } },
       { n: 'rush', t: 'in a hurry', f: function () { look(H, null); L.face(H, 'wow'); L.say(H, T('So much to do!', 'Så mye å gjøre!'), 1600); L.drops(svg, fit(H, 12, -106), 3); return L.tw(R, 1800, function (u) { var a = u * Math.PI * 10; H.rot.R = [-60 + Math.sin(a) * 60, -20]; H.rot.L = [60 - Math.sin(a + 1) * 60, 20]; H.pos = [base[0] + Math.sin(a * .5) * 1.5, base[1]]; }); } },
-      C.coffee, C.wave
+      C.coffee, C.wave, C.think(T('What shall I plan?', 'Hva skal jeg planlegge?'))
     ];
-    return start(svg, H, R, function () { return ACTS.filter(function (a) { return a.n !== 'tear' || hasPage; }); }, 'calendar');
+    /* what's in today's picture decides: the notes only when today has notes, the rush only when it has several,
+       the clock check otherwise; no coffee here (there's no cup in this picture) */
+    var nNotes = notes.length;
+    return start(svg, H, R, function () { return ACTS.filter(function (a) { return a.n === 'coffee' ? false : a.n === 'tear' ? hasPage : a.n === 'notes' ? nNotes > 0 : a.n === 'rush' ? nNotes >= 2 : true; }); }, 'calendar');
   };
 
   }

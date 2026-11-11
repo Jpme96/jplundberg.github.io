@@ -120,7 +120,7 @@
         '<g class="avp-table"><rect x="128" y="74" width="34" height="3.5" rx="1.5" fill="#8a5d43"/><rect x="131" y="77" width="3" height="31" fill="#6b4a36"/><rect x="156" y="77" width="3" height="31" fill="#6b4a36"/></g>' +
         '<g class="avp-cup"><rect x="140" y="67.4" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M146 69q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/></g>' +
         '<rect x="188" y="99" width="34" height="9" rx="1.5" fill="#596276"/><rect x="188" y="99" width="34" height="2" fill="#7a849a"/>';
-      var H = Lv.Hero(test, null, { x: 34, y: 22, w: 60, h: 86 }, cur), R = Lv.Run(), base = H.pos.slice(), cup = test.querySelector('.avp-cup');
+      var H = Lv.Hero(test, null, { x: 34, y: 22, w: 60, h: 86 }, cur), R = Lv.Run(), base = H.pos.slice(), cup = test.querySelector('.avp-cup'), mug = null;
       R.alive = function () { return test.isConnected && !testW.hidden; };
       playing = { H: H, R: R };
       var main = cur.hand === 'left' ? 'L' : 'R', sp = cur.walk === 'quick' ? 34 : cur.walk === 'calm' ? 18 : 24, chair = cur.aid === 'chair', crutch = cur.aid === 'crutches';
@@ -131,8 +131,11 @@
       if (!crutch) steps.push(
         function () { H.gaze = [143, 70]; return Lv.turnTo(R, H, main === 'R' ? .6 : -.6, 250); },
         function () { return Lv.reach(R, H, main, [143, 70], 450); },
-        function () { cup.style.display = 'none'; Lv.Obj(H, main, '<rect x="-3" y="-3.3" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M3 -1.6q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/>', [0, 1.5]); return Lv.reach(R, H, main, [H.pos[0] + 6, H.pos[1] - 62], 500); },
-        function () { Lv.say(H, L('Coffee!', 'Kaffe!'), 1200); return Lv.wait(R, 900); },
+        function () { cup.style.display = 'none'; mug = Lv.Obj(H, main, '<rect x="-3" y="-3.3" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M3 -1.6q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/>', [0, 1.5], { flip: main === 'L' }); H.gaze = null; return Lv.turnTo(R, H, 'front', 300); },
+        function () { return Lv.drink(R, H, main, mug, 900); },
+        function () { Lv.say(H, L('Mmm, coffee!', 'Mmm, kaffe!'), 1300); return Lv.reach(R, H, main, Lv.chest(H).map(function (v, i) { return v + (i ? 6 : (main === 'R' ? 10 : -10)) * H.s; }), 400); },
+        function () { return Lv.wait(R, 700); },
+        function () { H.gaze = [143, 70]; return Lv.turnTo(R, H, main === 'R' ? .6 : -.6, 250); },
         function () { return Lv.reach(R, H, main, [143, 70], 450); },
         function () { Lv.letGo(H, main); cup.style.display = ''; H.gaze = null; return Lv.reach(R, H, main, null, 350); });
       if (!chair) steps.push(

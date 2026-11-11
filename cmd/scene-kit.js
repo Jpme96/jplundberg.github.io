@@ -204,6 +204,20 @@
     });
     setTimeout(go, rnd(300, 1200));
   }
+  /* points on the body, in the picture: where the mouth is (to drink), the chest (to hold something in front of you),
+     the top of the head. Measured from the drawing (avatar units: feet at 160, mouth at 66 since the new body),
+     scaled with the avatar and its depth, and shifted the way the head is turned */
+  function bodyAt(H, ux, uy) { var k = H.s * (H.k || 1), t = H.ht == null ? H.turn : H.ht; return [H.pos[0] + (ux + 5.5 * t) * k, H.pos[1] - H.bob - H.lift + (uy - 160) * k]; }
+  function mouth(H) { return bodyAt(H, 0, 66); }
+  function chest(H) { return bodyAt(H, 0, 98); }
+  /* drink from what the hand holds: up to the mouth, tilt it, head back a little, down again */
+  function drink(R, H, side, o, ms, tilt) {
+    side = side || H.main || 'R'; var m = mouth(H), s = side === 'R' ? 1 : -1; tilt = tilt || 38;   /* a bottle tips further than a cup */
+    return reach(R, H, side, [m[0] + s * 2 * H.s, m[1] + 3 * H.s], 500)
+      .then(function () { return Promise.all([headTo(R, H, -s * 4, -1.5, 350), tw(R, 350, function (u) { if (o) o.rot = -s * tilt * ease(u); })]); })
+      .then(function () { return wait(R, ms || 800); })
+      .then(function () { return Promise.all([headTo(R, H, 0, 0, 300), tw(R, 300, function (u) { if (o) o.rot = -s * tilt * (1 - ease(u)); })]); });
+  }
   /* a wave, the way people do it: the upper arm goes up and out to the side, the forearm points up, the hand is
      above the head and swings from the elbow; the head tilts a little toward it. side 'R'/'L', default the hand
      you use (the maker's left- or right-handed) */
@@ -224,5 +238,5 @@
       .then(function () { return tw(R, 620, function (u) { var j = Math.sin(u * Math.PI); H.bob = (3 * (1 - u) * (1 - u) - j * 12) * H.s / .5; H.legs.R = H.legs.L = j * .55; H.rot.R = [-150 * j, -20 * j]; H.rot.L = [150 * j, 20 * j]; }); })
       .then(function () { return tw(R, 200, function (u) { var c = Math.sin(u * Math.PI); H.bob = c * 2 * H.s / .5; H.legs.R = H.legs.L = c * .25; }); });   /* soft landing */ }
 
-  window.Live = { wave: wave, clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
+  window.Live = { bodyAt: bodyAt, mouth: mouth, chest: chest, drink: drink, wave: wave, clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
 })();

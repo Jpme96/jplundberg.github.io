@@ -30,7 +30,7 @@
         function carry() { var o = H.objs.R; cup.setAttribute('transform', 'translate(' + (L.handAt(H, 'R')[0] - c0[0]).toFixed(2) + ' ' + (L.handAt(H, 'R')[1] - c0[1]).toFixed(2) + ')'); }
         return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [140, base[1]], 20, null, .6); },
           function () { look(H, [158, 88]); return L.reach(R, H, 'R', c0, 450); },
-          function () { return Promise.all([L.reach(R, H, 'R', fit(H, 14, -86), 550), L.headTo(R, H, -8, -1, 500), L.tw(R, 560, carry)]); },
+          function () { var mo = L.mouth(H); return Promise.all([L.reach(R, H, 'R', [mo[0] + 4 * H.s, mo[1] + 7 * H.s], 550), L.headTo(R, H, -6, -1.5, 500), L.tw(R, 560, carry)]); },   /* the cup to the mouth */
           function () { return L.tw(R, 1000, carry); },
           function () { look(H, null); L.face(H, 'love'); L.say(H, T('Ahh', 'Ahh'), 1300); return L.wait(R, 500); },
           function () { look(H, [158, 88]); return Promise.all([L.reach(R, H, 'R', c0, 550), L.headTo(R, H, 0, 0, 400), L.tw(R, 560, carry)]); },

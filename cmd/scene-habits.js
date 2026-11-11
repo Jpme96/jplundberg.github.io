@@ -11,7 +11,7 @@
     var m = mount(svg); if (!m) return null; data = data || {};
     m.me.remove();
     var bar = svg.querySelector('[data-scgo="training"]'), heart = svg.querySelector('.sc-heart');
-    var H = L.Hero(svg, null, m.box, { top: 'tee', topC: '#2f7a55', hat: 'bandana', hatC: '#e5484d', extra: 'none', neck: 'none' }), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
+    var H = L.Hero(svg, null, m.box)   /* your own avatar, as you made it */, R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
     svg.appendChild(bar);   /* the barbell lies in front of you, wider than your shoulders */
     var barIn = el('g', {}); while (bar.firstChild) barIn.appendChild(bar.firstChild); bar.appendChild(barIn); barIn.setAttribute('transform', 'translate(193 124) scale(1.9 1.5) translate(-193 -124)');
     var ACTS = [
@@ -47,9 +47,8 @@
       { n: 'drink', t: 'drinking water', f: function () {
         var o;
         return seq([function () { L.face(H, 'calm'); return L.reach(R, H, 'R', fit(H, 14, -44), 300); },
-          function () { o = take(H, 'R', 'bottle'); return Promise.all([L.reach(R, H, 'R', fit(H, 8, -88), 600), L.headTo(R, H, -9, -1, 600), L.tw(R, 600, function (u) { o.rot = -70 * ease(u); })]); },
-          function () { return L.wait(R, 1000); },
-          function () { L.face(H, 'grin'); L.say(H, T('Water!', 'Vann!'), 1300); return Promise.all([L.reach(R, H, 'R', fit(H, 14, -44), 400), L.tw(R, 400, function (u) { o.rot = -70 * (1 - ease(u)); })]); },
+          function () { o = take(H, 'R', 'bottle'); return L.drink(R, H, 'R', o, 1000, 70); },   /* to the mouth, tipped up */
+          function () { L.face(H, 'grin'); L.say(H, T('Water!', 'Vann!'), 1300); return L.reach(R, H, 'R', fit(H, 14, -44), 400); },
           function () { L.letGo(H, 'R'); }]);
       } },
       C.stretch

@@ -25,9 +25,13 @@
           function () { o = take(H, 'R', 'spoon'); look(H, [203, 84]); return L.reach(R, H, 'R', [203, 74], 450); },
           function () { steam(5); return L.tw(R, 2400, function (u) { var a = u * Math.PI * 7; H.hand.R = [203 + Math.cos(a) * 6, 75 + Math.sin(a) * 1.2]; }); },
           function () { return L.reach(R, H, 'R', [203, 70], 200); },
-          function () { return Promise.all([L.reach(R, H, 'R', fit(H, 10, -90), 450), L.headTo(R, H, -5, 0, 400)]); },
+          function () {   /* taste: turn the spoon bowl-up and bring the bowl (not the fist) to the mouth */
+            var mo = L.mouth(H), hd = L.handAt(H, 'R'), r0 = o.rot; o.rot = 150; var b = L.objPoint(H, o, [0, 3.6]); o.rot = r0;
+            var to = [mo[0] - (b[0] - hd[0]), mo[1] - (b[1] - hd[1])];
+            return Promise.all([L.reach(R, H, 'R', to, 450), L.tw(R, 450, function (u) { o.rot = r0 + (150 - r0) * L.ease(u); }), L.headTo(R, H, 3, -1, 400)]); },
           function () { look(H, null); L.face(H, 'love'); L.say(H, T('Mmm!', 'Mmm!'), 1400); return L.wait(R, 1100); },
-          function () { L.letGo(H, 'R'); return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 20); }]);
+          function () { L.tw(R, 300, function (u) { o.rot = 150 * (1 - L.ease(u)); }); return L.reach(R, H, 'R', fit(H, 16, -50), 300); },
+          function () { L.letGo(H, 'R'); return Promise.all([L.settle(R, H, 350), L.headTo(R, H, 0, 0, 300)]); }, function () { return L.walk(R, H, base, 20); }]);
       } },
       { n: 'fridge', t: 'getting milk', f: function () {
         var o, milkInFridge = svg.querySelector('.fr-milk');
@@ -73,7 +77,7 @@
           function () { return L.turnTo(R, H, 'front', 300); },
           function () { look(H, L.handAt(H, 'L')); return L.headTo(R, H, 6, 1.5, 300); },
           function () { return L.wait(R, 900); },
-          function () { look(H, null); L.face(H, 'wow'); L.say(H, T('So many wishes', 'Så mange ønsker'), 1600); return L.wait(R, 1200); },
+          function () { look(H, null); L.face(H, 'wow'); L.say(H, T('What do we need?', 'Hva trenger vi?'), 1600); return L.wait(R, 1200); },
           function () { return L.turnTo(R, H, -.7, 300); },
           function () { look(H, [128, 110]); return Promise.all([L.prop(R, H, 'bob', 8, 400), L.legs(R, H, .6, .6, -12, 12, 400), L.reach(R, H, 'L', [129, 114], 450)]); },
           function () { L.letGo(H, 'L'); look(H, null); return Promise.all([L.prop(R, H, 'bob', 0, 400), L.legs(R, H, 0, 0, 0, 0, 400), L.reach(R, H, 'L', null, 400)]); },

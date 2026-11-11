@@ -10,8 +10,10 @@
   return function (svg, data) {
     var m = mount(svg); if (!m) return null; data = data || {};
     m.me.remove();
-    var trail = svg.querySelector('.sc-trail'), len = trail.getTotalLength(), P = function (u) { var p = trail.getPointAtLength(Math.max(0, Math.min(1, u)) * len); return [p.x, p.y]; };
-    var H = L.Hero(svg, null, { x: 0, y: 0, w: 48, h: 69 }), R = L.Run(), C = common(R, H, svg), u0 = .42, cu = u0;
+    var trail = svg.querySelector('.sc-trail'), len = trail.getTotalLength();
+    /* the trail sits in a moved group in the picture: its points are taken into the picture's own coordinates */
+    var P = function (u) { var p = trail.getPointAtLength(Math.max(0, Math.min(1, u)) * len), a = trail.getScreenCTM(), b = svg.getScreenCTM(); if (!a || !b) return [p.x, p.y]; var q = svg.createSVGPoint(); q.x = p.x; q.y = p.y; q = q.matrixTransform(a).matrixTransform(b.inverse()); return [q.x, q.y]; };
+    var H = L.Hero(svg, null, { x: 0, y: 0, w: 31, h: 44 })   /* small against the mountain */, R = L.Run(), C = common(R, H, svg), u0 = .42, cu = u0;
     function at(u) { cu = u; H.pos = P(u); H.k = 1 - .25 * u; }
     at(u0);
     function along(a, b, sp, end) { return L.walk(R, H, P(b), sp || 14, function (u) { var v = lerp(a, b, u); H.k = 1 - .25 * v; return P(v); }, end).then(function () { at(b); }); }
@@ -27,9 +29,8 @@
         var o;
         return seq([function () { L.face(H, 'calm'); return Promise.all([L.prop(R, H, 'bob', 7, 500), L.legs(R, H, .7, .7, -18, 18, 500)]); },
           function () { return L.reach(R, H, 'R', fit(H, 14, -46), 350); },
-          function () { o = take(H, 'R', 'bottle'); return Promise.all([L.reach(R, H, 'R', fit(H, 8, -88), 600), L.headTo(R, H, -9, -1, 600), L.tw(R, 600, function (u) { o.rot = -70 * ease(u); })]); },
-          function () { return L.wait(R, 900); },
-          function () { return Promise.all([L.reach(R, H, 'R', fit(H, 14, -46), 400), L.tw(R, 400, function (u) { o.rot = -70 * (1 - ease(u)); })]); },
+          function () { o = take(H, 'R', 'bottle'); return L.drink(R, H, 'R', o, 900, 70); },   /* to the mouth, tipped up */
+          function () { return L.reach(R, H, 'R', fit(H, 14, -46), 400); },
           function () { L.letGo(H, 'R'); L.face(H, 'grin'); return L.reach(R, H, 'R', null, 300); },
           function () { return L.reach(R, H, 'L', fit(H, -8, -106), 400); }, function () { return L.reach(R, H, 'L', fit(H, 8, -108), 350); },
           function () { L.drops(svg, fit(H, 10, -104), 3); L.say(H, T('Phew', 'Puh'), 1300); return L.wait(R, 700); }]);

@@ -77,15 +77,17 @@
           function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
       } },
       { n: 'knock', f: function () {
-        return seq([function () { L.face(H, 'silly'); return L.walk(R, H, [172, 126], 22, null, -.7); },
-          function () { look([155, 92]); return L.reach(R, H, 'L', [159, 92], 400); },
-          function () { L.say(H, T('Grow, little jar!', 'Voks, lille krukke!'), 1800); var p = Promise.resolve(); [0, 1, 2].forEach(function () { p = p.then(function () { return L.reach(R, H, 'L', [155.8, 92], 130); }).then(function () { L.wob(jar, 1.3, 260); return L.reach(R, H, 'L', [159, 92], 160); }); }); return p; },
+        /* in front of the jar, turned toward it (the ladder leans on its side) – the knuckles on the glass */
+        return seq([function () { L.face(H, 'silly'); return L.walk(R, H, [136, 127], 22, null, -.65); },
+          function () { look([116, 94]); return L.reach(R, H, 'L', [119, 94], 400); },
+          function () { L.say(H, T('Grow, little jar!', 'Voks, lille krukke!'), 1800); var p = Promise.resolve(); [0, 1, 2].forEach(function () { p = p.then(function () { return L.reach(R, H, 'L', [115.6, 94], 130); }).then(function () { L.wob(jar, 1.3, 260); return L.reach(R, H, 'L', [119, 94], 160); }); }); return p; },
           function () { look(null); return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
       } },
       { n: 'polish', f: function () {
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [167, 126], 22, null, -.7); },
-          function () { take('L', 'cloth'); look([147, 98]); return L.reach(R, H, 'L', [150.5, 98], 400); },
-          function () { return L.tw(R, 2000, function (u) { var a = u * Math.PI * 5; H.hand.L = [147 + Math.cos(a) * 3.6, 98 + Math.sin(a) * 3.6]; }); },
+        /* the cloth on the front of the jar, in circles */
+        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [136, 127], 22, null, -.65); },
+          function () { take('L', 'cloth'); look([114, 96]); return L.reach(R, H, 'L', [117.5, 96], 400); },
+          function () { return L.tw(R, 2000, function (u) { var a = u * Math.PI * 5; H.hand.L = [114 + Math.cos(a) * 3.6, 96 + Math.sin(a) * 3.6]; look(H.hand.L); }); },
           function () { drop('L'); look(null); return L.turnTo(R, H, 'front', 300); },
           function () { L.face(H, 'love'); L.say(H, T('Shiny!', 'Skinnende!'), 1400); [[128, 66], [116, 92], [140, 108]].forEach(function (p, i) { setTimeout(function () { if (svg.isConnected) L.burst(svg, p, 3); }, i * 200); }); return L.wait(R, 900); },
           function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
@@ -94,7 +96,7 @@
         var t = pay.querySelector('.sc-calt');
         return seq([function () { L.face(H, 'starry'); look([47, 108]); return L.turnTo(R, H, -.55, 300); },
           function () { return L.reach(R, H, 'L', [47, 104], 550); },
-          function () { L.say(H, payLine, 1900); if (t) { t.style.transformBox = 'fill-box'; t.style.transformOrigin = 'center'; t.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)', offset: .4 }, { transform: 'scaleY(1.2)', offset: .75 }, { transform: 'scaleY(1)' }], { duration: 700 }); } L.wob(pay, 5, 600); return L.wait(R, 1600); },
+          function () { if (payLine) L.say(H, payLine, 1900); if (t) { t.style.transformBox = 'fill-box'; t.style.transformOrigin = 'center'; t.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)', offset: .4 }, { transform: 'scaleY(1.2)', offset: .75 }, { transform: 'scaleY(1)' }], { duration: 700 }); } L.wob(pay, 5, 600); return L.wait(R, 1600); },
           function () { look(null); }]);
       } },
       { n: 'count', f: function () {
