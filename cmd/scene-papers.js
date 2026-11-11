@@ -10,7 +10,6 @@
   return function (svg, data) {
     var m = mount(svg); if (!m) return null; data = data || {};
     m.me.remove();
-    svg.querySelectorAll('.sc-toss').forEach(function (x) { x.remove(); });
     var drawers = svg.querySelectorAll('[data-scgo="papers"]'), top = drawers[0], fl = svg.querySelector('.sc-float'), plant = svg.querySelector('.sc-plant');
     var canHome = el('g', { class: 'can-home' }); svg.insertBefore(canHome, svg.querySelector('.sc-plant').nextSibling);
     var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();

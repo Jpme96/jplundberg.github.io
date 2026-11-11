@@ -23,7 +23,7 @@
     var moneyEl = svg.querySelector('.sc-money'), glass = svg.querySelector('.sc-jarg');
     if (!me || !jar || !pay || !moneyEl || !glass) return null;
     var meSvg = me.querySelector('svg'), box = { x: +meSvg.getAttribute('x'), y: +meSvg.getAttribute('y'), w: +meSvg.getAttribute('width'), h: +meSvg.getAttribute('height') };
-    me.remove(); svg.querySelectorAll('.sc-drop').forEach(function (e) { e.remove(); });
+    me.remove();
     data = data || {};
     /* the slot in the lid, and a ladder leaning on the jar (about shoulder-wide, rungs a step apart) */
     jar.appendChild(el('rect', { x: 134, y: 39.4, width: 10, height: 2.6, rx: 1.3, fill: '#2a1d12' }));

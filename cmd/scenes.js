@@ -123,9 +123,9 @@
     /* you, waving at whoever has a birthday soon – at the side nearest to them */
     /* you stand on the left with your people (the living scene walks you over to them); waving when a birthday is near */
     var bi = seat.map(function (r) { return r.marks.some(function (q) { return q.k === 'cake'; }); }).indexOf(true);
-    if (n) svg += sceneMe(18 - H * .4, 136 - H * 1.02, H * .8, H * 1.02, 'day', bi > -1 ? 'sc-waver' : '');   /* as wide as their boxes, so you're the same size */
+    if (n) svg += sceneMe(18 - H * .4, 136 - H * 1.02, H * .8, H * 1.02, 'day');   /* as wide as their boxes, so you're the same size */
     /* nobody yet: you, waving, with the invitation above you – it drew only sky and grass and looked broken (2026-11-10) */
-    if (!n) { var me0 = sceneMe(56 - H * .31, 136 - H * 1.02, H * .62, H * 1.02, 'day', 'sc-waver');
+    if (!n) { var me0 = sceneMe(56 - H * .31, 136 - H * 1.02, H * .62, H * 1.02, 'day');
       svg += me0 + '<text x="' + (me0 ? 152 : 120) + '" y="96" text-anchor="middle" class="sc-empty">' + L('Add the people who matter', 'Legg til de som betyr noe') + '</text>'; }
     var list = []; rows.forEach(function (r) { r.marks.forEach(function (m) { list.push({ t: m.t, h: '#people=' + r.p.id, w: m.w }); }); });
     list.sort(function (a, b) { return a.w - b.w; });
@@ -151,7 +151,7 @@
       '<rect x="186" y="84" width="34" height="14" rx="3" class="sc-pot"/><rect x="182" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="220" y="86" width="4" height="3" rx="1" class="sc-pot"/><rect x="190" y="81" width="26" height="3" rx="1.5" class="sc-pot' + (dinner ? ' sc-rattle' : '') + '"/>' +
       (dinner ? '<path d="M196 77 q-3 -6 0 -12 M204 77 q-3 -6 0 -12 M212 77 q-3 -6 0 -12" class="sc-steam"/>' : ''));
     /* you, at the stove, stirring the pot (in front of it, so your arm reaches in) */
-    svg += sceneMe(128, 28, 62, 104, 'plain', 'sc-cook');
+    svg += sceneMe(128, 28, 62, 104, 'plain');
     var list = [];
     if (dinner) list.push({ t: L('Tonight: ', 'I kveld: ') + dinner, h: '#meals' }); else list.push({ t: L('Nothing planned tonight', 'Ingenting planlagt i kveld'), h: '#meals', late: false });
     if (shop.length) list.push({ t: shop.length + L(' on the shopping list', ' på handlelista'), h: '#shop' });
@@ -202,7 +202,7 @@
     var C = 2 * Math.PI * 30, ring = '<ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ring"/><ellipse cx="120" cy="124" rx="30" ry="6" class="sc-ringv" stroke-dasharray="' + (C * pct).toFixed(1) + ' ' + C.toFixed(1) + '"/>';
     var svg = ground() + deco('health') +
       part('ahealth', '', ring) +
-      part('ahealth', window.Avatar ? 'sc-me' + (on('scMe') ? ' sc-curl' : '') : mood === 'tired' ? 'hot' : '', window.Avatar ? window.Avatar.figure({ k: on('scMe') ? 'gym' : mood === 'good' ? 'day' : 'plain', mood: mood, plain: true, bg: '#000', sky: 'none', attrs: ' x="72" y="10" width="96" height="124" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"') : '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
+      part('ahealth', window.Avatar ? 'sc-me' : mood === 'tired' ? 'hot' : '', window.Avatar ? window.Avatar.figure({ k: on('scMe') ? 'gym' : mood === 'good' ? 'day' : 'plain', mood: mood, plain: true, bg: '#000', sky: 'none', attrs: ' x="72" y="10" width="96" height="124" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"') : '<rect x="108" y="68" width="24" height="34" rx="10" class="sc-body"/><path d="M114 100 v22 M126 100 v22" class="sc-leg"/><path d="M108 76 l-10 14 M132 76 l10 14" class="sc-leg"/><circle cx="120" cy="52" r="13" class="sc-head"/>' + face) +
       part('training', trained ? 'hot lit' : '', '<rect x="176" y="114" width="34" height="3" rx="1.5" class="sc-bar"/><rect x="174" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/><rect x="207" y="107" width="5" height="17" rx="1.5" class="sc-plate2"/>') +
       part('hpHabits', '', '<path d="M50 70 c-6 -8 -18 -2 -12 8 l12 12 12 -12 c6 -10 -6 -16 -12 -8z" class="sc-heart"/>');
     var list = [];
@@ -231,7 +231,7 @@
       (payday ? '<g class="sc-coins">' + [0, 1, 2].map(function (i) { return '<circle cx="' + (112 + i * 8) + '" cy="' + (20 - i * 6) + '" r="5" class="sc-coin c' + i + '"/>'; }).join('') + '</g>' : '') +
       (pace ? part('fin', '', '<path d="' + (pace.ok ? 'M212 112 l10 -12 l10 12' : 'M212 100 l10 12 l10 -12') + '" class="sc-arrow ' + (pace.ok ? 'ok' : 'warn') + '"/>') : '');
     /* you: on payday dropping coins into the jar, otherwise standing by it */
-    svg += payday ? sceneMe(150, 42, 60, 86, 'plain', 'sc-coiner') + '<g class="sc-drop"><circle cx="156" cy="74" r="4.5" class="sc-coin c0"/></g><g class="sc-drop b"><circle cx="156" cy="74" r="4.5" class="sc-coin c1"/></g>' : sceneMe(152, 42, 60, 86, state === 'neg' ? 'plain' : todPose('day'));
+    svg += payday ? sceneMe(150, 42, 60, 86, 'plain') : sceneMe(152, 42, 60, 86, state === 'neg' ? 'plain' : todPose('day'));
     var list = [];
     if (room > 0) list.push({ t: kr(left) + L(' left', ' igjen') + ' · ' + per.daysLeft + (per.daysLeft === 1 ? L(' day', ' dag') : L(' days', ' dager')), h: '#fin', late: left < 0 });
     if (pace) list.push({ t: pace.ok ? L('On track', 'I rute') : L('Spending faster than planned', 'Bruker raskere enn planlagt'), h: '#fin', late: !pace.ok });
@@ -258,7 +258,7 @@
         '<circle cx="40" cy="126" r="3" class="sc-wheel"/><circle cx="82" cy="126" r="3" class="sc-wheel"/></g>' +
         (t ? '<path d="M82.5 96 l4 3" class="sc-strap"/><rect x="85" y="98" width="22" height="13" rx="2" class="sc-tag"/><text x="96" y="107.5" text-anchor="middle" class="sc-tagt">' + (away ? '✈' : n + 'd') + '</text>' : '')) +
       /* you: packing – a shirt and a sock fly from your hand into the case while there's packing left; otherwise ready to go */
-      (t && pack.length && pf < 1 && !away ? sceneMe(-14, 44, 52, 84, 'plain', 'sc-packer') + '<g class="sc-pack"><path d="M24 92 h10 l2 3 -2 1 v8 h-10 v-8 l-2 -1z" class="sc-shirt"/></g><g class="sc-pack b"><path d="M26 94 h5 v7 h4 v3 h-9z" class="sc-sock"/></g>' : sceneMe(-12, 44, 52, 84, t && n != null && n <= 1 ? 'trip' : todPose('day'))) +
+      (t && pack.length && pf < 1 && !away ? sceneMe(-14, 44, 52, 84, 'plain') : sceneMe(-12, 44, 52, 84, t && n != null && n <= 1 ? 'trip' : todPose('day'))) +
       '<path d="M112 112 Q150 30 222 40" class="sc-route"/>' +
       (t ? '<g class="sc-pin"><path d="M222 40 c-6 0 -8 -5 -8 -8 a8 8 0 0 1 16 0 c0 3 -2 8 -8 8z" fill="#e66767"/><circle cx="222" cy="31" r="3" fill="#fff"/></g>' : '') +
       part('trips', '', '<g transform="translate(' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ') rotate(' + ang.toFixed(0) + ')"><path class="sc-plane sc-fly" d="M-9 0 h16 q4 0 4 1.5 q0 1.5 -4 1.5 h-16z M-1 1 l-6 -7 h3 l8 6z M-1 2 l-6 7 h3 l8 -6z M-9 1 l-3 -4 h2 l4 3z" /></g>');
@@ -418,7 +418,7 @@
       part('wbuy', buy ? 'hot' : '', '<path d="M92 82 h46 l-4 46 h-38z" class="sc-bag"/><path d="M104 82 q0 -14 11 -14 q11 0 11 14" class="sc-bagh"/><text x="115" y="112" text-anchor="middle" class="sc-bagt">' + (buy || '') + '</text>') +
       part('wbought', '', '<rect x="150" y="100" width="30" height="26" rx="2" class="sc-gift"/><rect x="146" y="94" width="38" height="8" rx="2" class="sc-giftl"/><rect x="162" y="94" width="6" height="32" class="sc-ribbon"/><path d="M165 94 q-10 -10 -12 -2 q2 4 12 2 q10 -10 12 -2 q-2 4 -12 2" class="sc-bow"/>') + badge(got, 184, 92);
     /* you, pushing the cart across the picture and back */
-    svg += '<g class="sc-push">' + sceneMe(-14, 44, 52, 84, 'plain', 'sc-pusher') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
+    svg += '<g class="sc-cartg">' + sceneMe(-14, 44, 52, 84, 'plain') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
     var list = [];
     var fits = W && W.fit ? Fe.list('wishes').filter(function (w) { var f = W.fit(w); return f && f.now; }).length : 0;
     if (l.length) list.push({ t: Fe.list('wishes').length + L(' wishes', ' ønsker') + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
@@ -444,7 +444,7 @@
       '<path d="M28 132 L120 30 L212 132 Z" class="sc-mtn"/><path d="M104 48 L120 30 L136 48 L128 44 L120 50 L112 44 Z" class="sc-snow"/><path d="M150 132 L184 92 L224 132 Z" class="sc-mtn2"/>' +
       '<path d="M40 128 Q70 104 66 92 T96 62 T120 32" class="sc-trail"/>' +
       part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers +
-      (allDone ? sceneMe(88, -26, 44, 64, 'win', 'sc-top') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-24, -68, 48, 69, 'plain', 'sc-climber') + '</g>'; })());
+      (allDone ? sceneMe(88, -26, 44, 64, 'win') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-24, -68, 48, 69, 'plain') + '</g>'; })());
     var list = l.map(function (g) { return { t: g.name + ' · ' + Math.round((GS ? GS.pct(g) : 0) * 100) + ' %', h: '#glActive' }; });
     return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.') };
   }
@@ -461,7 +461,7 @@
     var svg = ground() + deco('papers') + '<rect x="98" y="68" width="56" height="62" rx="4" class="sc-cab"/>' + drawers + badge(soon.length, 154, 70) +
       part('papers', '', '<g class="sc-float"><rect x="212" y="56" width="20" height="26" rx="2" class="sc-sheet"/><path d="M216 64 h12 M216 69 h12 M216 74 h8" class="sc-lines"/></g>') +
       /* you, filing papers into the cabinet */
-      sceneMe(148, 24, 66, 106, 'plain', 'sc-filer') + '<g class="sc-toss"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet"/></g><g class="sc-toss b"><rect x="172" y="76" width="14" height="18" rx="1" class="sc-sheet b"/></g>' +
+      sceneMe(148, 24, 66, 106, 'plain') +
       '<g class="sc-plant"><rect x="36" y="112" width="18" height="16" rx="3" class="sc-pot"/><path d="M45 112 q-8 -14 -2 -24 M45 112 q6 -12 12 -16 M45 112 q0 -10 4 -20" class="sc-leaf"/></g>';
     var list = soon.slice(0, 3).map(function (o) { return { t: (o.x.title || '') + ' · ' + o.s.rel, h: '#papers=' + o.x.id, late: o.s.over }; });
     if (!list.length && l.length) list.push({ t: l.length + L(' papers, nothing due', ' papirer, ingenting forfaller'), h: '#papers' });
@@ -480,7 +480,7 @@
         '<text x="110" y="57" text-anchor="middle" class="sc-calm">' + esc(mo.replace('.', '').toUpperCase()) + '</text><text x="110" y="94" text-anchor="middle" class="sc-cald">' + now.getDate() + '</text><text x="110" y="107" text-anchor="middle" class="sc-calw">' + esc(wd.replace('.', '')) + '</text>') +
       part('clToday', '', '<circle cx="28" cy="62" r="16" class="sc-clock"/><line x1="28" y1="62" x2="28" y2="53" class="sc-hand h" transform="rotate(' + ha.toFixed(1) + ' 28 62)"/><line x1="28" y1="62" x2="28" y2="49" class="sc-hand m" transform="rotate(' + ma + ' 28 62)"/><circle cx="28" cy="62" r="1.6" class="sc-hub"/>') +
       /* you, pacing back and forth – no time! */
-      '<g class="sc-pace">' + sceneMe(10, 50, 50, 82, 'plain', 'sc-rush') + '</g>' +
+      sceneMe(10, 50, 50, 82, 'plain') +
       notes + badge(todays.length > 3 ? todays.length : 0, 200, 54);
     var list = todays.slice(0, 3).map(function (e) { return { t: (e.start && !e.allDay ? e.start.slice(0, 5) + ' ' : '') + (e.title || ''), h: '#clToday' }; });
     return { svg: svg, label: L('Today', 'I dag'), list: list, empty: L('Nothing in the calendar today.', 'Ingenting i kalenderen i dag.') };

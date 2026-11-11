@@ -47,7 +47,7 @@
        its grip point, the same size whatever the thing's scale; hidden when it's put down or seen from behind */
     if (!opt.nogrip) { var sk = (H.look && H.look.skin) || '#c68a5a', w = 3.6 / o.sc, h = 2.8 / o.sc, gx = o.grip[0], gy = o.grip[1];
       o.fg = el('g', { class: 'obj-grip' }, '<rect x="' + (gx - w / 2).toFixed(2) + '" y="' + (gy - h / 2).toFixed(2) + '" width="' + w.toFixed(2) + '" height="' + h.toFixed(2) + '" rx="' + (h * .45).toFixed(2) + '" fill="' + sk + '" stroke="rgba(0,0,0,.22)" stroke-width="' + (.35 / o.sc).toFixed(2) + '"/><path d="M' + (gx - w / 6).toFixed(2) + ' ' + (gy - h * .3).toFixed(2) + 'v' + (h * .6).toFixed(2) + 'M' + (gx + w / 6).toFixed(2) + ' ' + (gy - h * .3).toFixed(2) + 'v' + (h * .6).toFixed(2) + '" stroke="rgba(0,0,0,.2)" stroke-width="' + (.3 / o.sc).toFixed(2) + '"/>'); g.appendChild(o.fg); }
-    H.objs[side] = o; H.layF.appendChild(g); if (window.Rig && Rig.stow) Rig.stow(H.rig, true); return o;   /* the maker's own held things are put away meanwhile */
+    H.objs[side] = o; g.setAttribute('transform', objXf(H, o, handAt(H, side))); H.layF.appendChild(g);   /* in the hand from the first frame (it flashed in the corner for one frame) */ if (window.Rig && Rig.stow) Rig.stow(H.rig, true); return o;   /* the maker's own held things are put away meanwhile */
   }
   function objXf(H, o, P) { var k = H.s / .5 * (H.k || 1) * o.sc; return 'translate(' + P[0].toFixed(2) + ' ' + P[1].toFixed(2) + ') scale(' + k.toFixed(3) + ') rotate(' + o.rot.toFixed(2) + ') scale(' + (o.flip ? -1 : 1) + ' 1) translate(' + (-o.grip[0]) + ' ' + (-o.grip[1]) + ')'; }
   /* a point on a held thing (like the tip of a spout), in the picture */
@@ -119,7 +119,9 @@
 
   /* ---------- scripting ---------- */
   function Run(scene) { return { sc: scene, tok: 0 }; }
-  function tw(R, ms, f) { var tok = R.tok; return new Promise(function (res) { var t0 = performance.now(); (function fr(now) { if (R.tok !== tok || (R.alive && !R.alive())) return; wake(); if (document.hidden) { t0 += 16; requestAnimationFrame(fr); return; } var u = Math.min(1, (now - t0) / ms); f(u); if (u < 1) requestAnimationFrame(fr); else res(); })(t0); }); }
+  /* PACE: how fast everything plays (1 = normal); the staging test plays the actions faster */
+  var PACE = 1;
+  function tw(R, ms, f) { ms = ms / PACE; var tok = R.tok; return new Promise(function (res) { var t0 = performance.now(); (function fr(now) { if (R.tok !== tok || (R.alive && !R.alive())) return; wake(); if (document.hidden) { t0 += 16; requestAnimationFrame(fr); return; } var u = Math.min(1, (now - t0) / ms); f(u); if (u < 1) requestAnimationFrame(fr); else res(); })(t0); }); }
   function wait(R, ms) { return tw(R, ms, function () {}); }
   /* walk: knees lift in turn, a little bob, arms swing; pathFn(u) can give the ground to walk on (a trail) */
   function walk(R, H, to, speed, pathFn, endTurn, faceDir) {
@@ -219,7 +221,7 @@
   /* points on the body, in the picture: where the mouth is (to drink), the chest (to hold something in front of you),
      the top of the head. Measured from the drawing (avatar units: feet at 160, mouth at 66 since the new body),
      scaled with the avatar and its depth, and shifted the way the head is turned */
-  function bodyAt(H, ux, uy) { var k = H.s * (H.k || 1), t = H.ht == null ? H.turn : H.ht; return [H.pos[0] + (ux + 5.5 * t) * k, H.pos[1] - H.bob - H.lift + (uy - 160) * k]; }
+  function bodyAt(H, ux, uy) { var k = H.s * (H.k || 1), t = H.ht == null ? H.turn : H.ht; return [H.pos[0] + (ux + 5.5 * t) * k, H.pos[1] + H.bob - H.lift + (uy - 160) * k]; }   /* bob > 0 is a crouch: the body goes down */
   function mouth(H) { return bodyAt(H, 0, 66); }
   function chest(H) { return bodyAt(H, 0, 98); }
   /* drink from what the hand holds: up to the mouth, tilt it, head back a little, down again */
@@ -250,5 +252,5 @@
       .then(function () { return tw(R, 620, function (u) { var j = Math.sin(u * Math.PI); H.bob = (3 * (1 - u) * (1 - u) - j * 12) * H.s / .5; H.legs.R = H.legs.L = j * .55; H.rot.R = [-150 * j, -20 * j]; H.rot.L = [150 * j, 20 * j]; }); })
       .then(function () { return tw(R, 200, function (u) { var c = Math.sin(u * Math.PI); H.bob = c * 2 * H.s / .5; H.legs.R = H.legs.L = c * .25; }); });   /* soft landing */ }
 
-  window.Live = { bodyAt: bodyAt, mouth: mouth, chest: chest, drink: drink, wave: wave, clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
+  window.Live = { pace: function (x) { PACE = Math.max(.25, Math.min(8, +x || 1)); }, bodyAt: bodyAt, mouth: mouth, chest: chest, drink: drink, wave: wave, clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
 })();

@@ -9,7 +9,7 @@
   /* ================= CALENDAR: tear off yesterday, look at the clock, read the notes ================= */
   return function (svg, data) {
     var m = mount(svg); if (!m) return null; data = data || {};
-    var pace = m.me.closest('.sc-pace'); (pace || m.me).remove();
+    m.me.remove();
     svg.querySelector('.hs-part').parentNode.insertBefore(el('g', { class: 'bin' }, '<path d="M8 118h12l-1.4 12h-9.2z" fill="#4a5568"/><path d="M7 118h14" stroke="#6b7385" stroke-width="1.6" stroke-linecap="round"/>'), null);
     var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
     var cal = svg.querySelector('[data-scgo="clToday"]'), body = cal.querySelector('.sc-cal'), page = el('g', { class: 'page' }); cal.appendChild(page);

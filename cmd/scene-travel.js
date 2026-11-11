@@ -14,7 +14,6 @@
     var m = mount(svg); if (!m) return null; data = data || {};
     var parts = svg.querySelectorAll('[data-scgo="trips"]'), cs = parts[0], plane = parts[1];
     if (!cs) return null;
-    svg.querySelectorAll('.sc-pack').forEach(function (e) { e.remove(); });
     m.me.remove();
     var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
     var mouthOfCase = [61, 90], handle = [61, 83], tag = [96, 104], pin = [222, 31];   /* the suitcase is drawn at 70 % around its wheels (scenes.js) */

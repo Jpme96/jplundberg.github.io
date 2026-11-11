@@ -16,7 +16,11 @@ const CASES = [
   ['muscular-gym', 'gym', { build: 'muscular', hair: 'quiff', beard: 'short' }],
   ['rain-night', 'rain', { hair: 'curly', hairC: '#2b1a10', top: 'hoodie', topC: '#22313f' }],
   ['night', 'night', { hair: 'short', expr: 'calm' }],
-  ['pet-dog', 'day', { pet: 'dog', hair: 'long', top: 'shirt', topC: '#f2f2f2' }]
+  ['pet-dog', 'day', { pet: 'dog', hair: 'long', top: 'shirt', topC: '#f2f2f2' }],
+  /* turned by the rig (Phase L rounds 2–3): the back of the top, a hood and glasses from the side, the near earring */
+  ['jersey-back', 'day', { top: 'jersey', topC: '#c62828', num: '23', bag: 'yes', hair: 'ponytail', _view: 'back' }],
+  ['hoodie-side', 'day', { top: 'hoodie', topC: '#3a6ea5', glasses: 'aviator', ears: 'hoops', _view: 'side' }],
+  ['suit-quarter', 'day', { top: 'suit', neck: 'tie', ears: 'studs', hair: 'long', hairC: '#1e140d', _view: 'q' }]
 ];
 (async () => {
   const { b, p } = await open(1280);
@@ -26,7 +30,9 @@ const CASES = [
     const ref = path.join(REF, id + '.png'), have = fs.existsSync(ref) && !UPDATE;
     const res = await p.evaluate(async (mom, look, refUrl) => {
       const W = 240, H = 300;
-      const svg = Avatar.figure(Avatar.MOMENTS[mom], look);
+      let svg = Avatar.figure(Avatar.MOMENTS[mom], look);
+      if (look._view) { const d = document.createElement('div'); d.innerHTML = svg; document.body.appendChild(d); const r = Rig(d.querySelector('svg'), look);
+        if (look._view === 'back') Rig.back(r, true, look); else Rig.turn(r, look._view === 'side' ? 1 : .55); svg = d.innerHTML; d.remove(); }
       const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('could not draw')); i.src = src; });
       const px = img => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = '#808080'; x.fillRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); return { c, d: x.getImageData(0, 0, W, H).data }; };
       let s = svg; if (!/xmlns=/.test(s)) s = s.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');

@@ -9,9 +9,8 @@
   /* ================= WISH LIST: the cart, the gift into the cart, the list from the bag ================= */
   return function (svg, data) {
     var m = mount(svg); if (!m) return null; data = data || {};
-    var push = m.me.closest('.sc-push');
     var cart = svg.querySelector('.sc-cart'), gift = svg.querySelector('[data-scgo="wbought"]'), bag = svg.querySelector('[data-scgo="wbuy"]');
-    push.classList.remove('sc-push'); m.me.remove();
+    m.me.remove();
     var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
     svg.appendChild(cart.parentNode); svg.appendChild(bag);    /* the cart and the bag are in front of you */
     var inCart = el('g', { class: 'incart', style: 'opacity:0' }, '<g transform="translate(55 104) scale(.55) translate(-165 -112)">' + gift.innerHTML + '</g>'); cart.appendChild(inCart);
