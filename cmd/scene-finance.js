@@ -118,7 +118,7 @@
           function () { L.say(H, data.state === 'neg' ? T('Tight this month', 'Stramt denne måneden') : T('Spending a bit fast', 'Bruker litt fort'), 1800); return L.tw(R, 1600, function (u) { H.head = [-4 + Math.sin(u * 6) * 2, -1]; }); },
           function () { look(null); }]);
       } },
-      { n: 'wave', f: function () { look(null); L.face(H, 'grin'); L.say(H, T('Hi!', 'Hei!'), 1400); return L.reach(R, H, 'R', fit(30, -122), 450).then(function () { return L.tw(R, 1400, function (u) { var a = Math.sin(u * Math.PI * 6); H.hand.R = fit(30 + a * 7, -122 + Math.abs(a) * 2); H.head = [6, 0]; }); }); } }
+      { n: 'wave', f: function () { look(null); L.face(H, 'grin'); L.say(H, T('Hi!', 'Hei!'), 1400); return L.wave(R, H); } }
     ];
     function acts() { return ACTS.filter(function (a) { return a.w !== 0; }); }
     L.brain(R, H, acts, function () { look(null); return L.jump(R, H); });

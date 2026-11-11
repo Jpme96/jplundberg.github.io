@@ -28,7 +28,7 @@
     H.body = H.wrap.querySelector('.hero-body');
     /* a pet from the maker stays on the ground where you started (it doesn't climb or jump with you) */
     var pet0 = H.wrap.querySelector('.hero-body .av-pet');
-    if (pet0) { var ps = H.wrap.querySelector('.hero-body > svg').cloneNode(false); ps.setAttribute('class', 'hero-pet'); ps.appendChild(pet0); H.wrap.insertBefore(ps, H.body); H.pet = ps; } H.sh = H.wrap.querySelector('.hero-sh'); H.fig = H.wrap.querySelector('.hero-body > svg');
+    if (pet0) { var ps = H.wrap.querySelector('.hero-body > svg').cloneNode(false); ps.setAttribute('class', 'hero-pet'); ps.setAttribute('overflow', 'visible'); ps.style.overflow = 'visible'; ps.appendChild(pet0); H.wrap.insertBefore(ps, H.body); H.pet = ps; } H.sh = H.wrap.querySelector('.hero-sh'); H.fig = H.wrap.querySelector('.hero-body > svg');
     H.rig = Rig(H.fig, H.look);
     H.pos = H.feet0.slice(); H.lean = 0; H.bob = 0; H.lift = 0; H.op = 1;
     H.hand = { R: null, L: null }; H.rot = { R: [0, 0], L: [0, 0] }; H.legs = { R: 0, L: 0, sR: 0, sL: 0 }; H.head = [0, 0];
@@ -200,11 +200,25 @@
     });
     setTimeout(go, rnd(300, 1200));
   }
+  /* a wave, the way people do it: the upper arm goes up and out to the side, the forearm points up, the hand is
+     above the head and swings from the elbow; the head tilts a little toward it. side 'R'/'L', default the hand
+     you use (the maker's left- or right-handed) */
+  function wave(R, H, side, ms) {
+    side = side || H.main || 'R'; ms = ms || 1600; var s = side === 'R' ? 1 : -1, other = side === 'R' ? 'L' : 'R';
+    H.hand[side] = null;
+    return tw(R, ms, function (u) {
+      var up = Math.min(1, u / .18), down = Math.min(1, (1 - u) / .14), k = ease(Math.min(up, down));
+      var sw = Math.sin((u * ms / 1000) * Math.PI * 4.2) * 24 * Math.min(1, up * 1.5) * down;
+      H.rot[side] = [-s * 112 * k, -s * (62 * k + sw * k)];
+      if (!H.hand[other]) H.rot[other] = [s * 4 * k, 0];
+      H.head = [s * 5 * k, 0]; H.lean = -s * 1.5 * k;
+    }).then(function () { H.rot[side] = [0, 0]; H.head = [0, 0]; H.lean = 0; });
+  }
   /* resting: look around a bit, shift weight */
   function idle(R, H, ms) { return tw(R, ms, function (u) { var t = u * ms / 1000; H.head = [Math.sin(t * 1.3) * 3, 0]; H.legs.R = Math.max(0, Math.sin(t * .9)) * .08; }); }
   function jump(R, H) { face(H, 'laugh'); say(H, NB ? 'Hihi!' : 'Hehe!', 1200); return tw(R, 220, function (u) { var c = Math.sin(u * Math.PI / 2); H.bob = c * 3 * H.s / .5; H.legs.R = H.legs.L = c * .35; H.rot.R = [12 * c, 0]; H.rot.L = [-12 * c, 0]; })   /* crouch: bend before jumping */
       .then(function () { return tw(R, 620, function (u) { var j = Math.sin(u * Math.PI); H.bob = (3 * (1 - u) * (1 - u) - j * 12) * H.s / .5; H.legs.R = H.legs.L = j * .55; H.rot.R = [-150 * j, -20 * j]; H.rot.L = [150 * j, 20 * j]; }); })
       .then(function () { return tw(R, 200, function (u) { var c = Math.sin(u * Math.PI); H.bob = c * 2 * H.s / .5; H.legs.R = H.legs.L = c * .25; }); });   /* soft landing */ }
 
-  window.Live = { clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
+  window.Live = { wave: wave, clear: clear, still: still, Hero: Hero, Run: Run, tw: tw, wait: wait, walk: walk, reach: reach, both: both, headTo: headTo, prop: prop, pos: pos, legs: legs, face: face, settle: settle, say: say, burst: burst, drops: drops, flash: flash, wob: wob, brain: brain, idle: idle, turnTo: turnTo, Obj: Obj, objPoint: objPoint, letGo: letGo, jump: jump, handAt: handAt, el: el, ease: ease, lerp: lerp, rnd: rnd };
 })();

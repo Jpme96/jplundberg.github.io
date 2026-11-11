@@ -120,7 +120,7 @@
         '<g class="avp-table"><rect x="128" y="74" width="34" height="3.5" rx="1.5" fill="#8a5d43"/><rect x="131" y="77" width="3" height="31" fill="#6b4a36"/><rect x="156" y="77" width="3" height="31" fill="#6b4a36"/></g>' +
         '<g class="avp-cup"><rect x="140" y="67.4" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M146 69q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/></g>' +
         '<rect x="188" y="99" width="34" height="9" rx="1.5" fill="#596276"/><rect x="188" y="99" width="34" height="2" fill="#7a849a"/>';
-      var H = Lv.Hero(test, null, { x: 14, y: 22, w: 60, h: 86 }, cur), R = Lv.Run(), base = H.pos.slice(), cup = test.querySelector('.avp-cup');
+      var H = Lv.Hero(test, null, { x: 34, y: 22, w: 60, h: 86 }, cur), R = Lv.Run(), base = H.pos.slice(), cup = test.querySelector('.avp-cup');
       R.alive = function () { return test.isConnected && !testW.hidden; };
       playing = { H: H, R: R };
       var main = cur.hand === 'left' ? 'L' : 'R', sp = cur.walk === 'quick' ? 34 : cur.walk === 'calm' ? 18 : 24, chair = cur.aid === 'chair', crutch = cur.aid === 'crutches';
@@ -139,9 +139,7 @@
         function () { return go([182, base[1]]); },
         function () { return Lv.tw(R, 300, function (u) { H.legs.R = u * .7; }); },
         function () { return Lv.tw(R, 420, function (u) { H.pos = [182 + 18 * u, base[1] - 9 * Lv.ease(u)]; H.legs.R = .7 * (1 - u); H.legs.L = Math.sin(u * Math.PI) * .5; }); },
-        function () { Lv.face(H, 'grin'); Lv.say(H, L('Hi!', 'Hei!'), 1200); return Lv.reach(R, H, main, [H.pos[0] + (main === 'R' ? 16 : -16), H.pos[1] - 68], 400); },
-        function () { return Lv.tw(R, 1000, function (u) { var a = Math.sin(u * Math.PI * 5); H.hand[main] = [H.pos[0] + (main === 'R' ? 16 : -16) + a * 4, H.pos[1] - 68]; }); },
-        function () { return Lv.reach(R, H, main, null, 300); },
+        function () { Lv.face(H, 'grin'); Lv.say(H, L('Hi!', 'Hei!'), 1400); return Lv.wave(R, H, main, 1700); },
         function () { return Lv.tw(R, 420, function (u) { H.pos = [200 - 18 * u, base[1] - 9 + 9 * Lv.ease(u)]; H.legs.L = Math.sin(u * Math.PI) * .5; }); });
       steps.push(function () { return Lv.settle(R, H, 300); }, function () { return go(base); }, function () { return Lv.turnTo(R, H, 'front', 250); });
       seq(steps).then(function () { if (playing && playing.R === R) setTimeout(function () { if (playing && playing.R === R) stopPlay(); }, 600); });

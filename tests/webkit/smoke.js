@@ -51,15 +51,35 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       await p.evaluate(() => localStorage.setItem('dash.wxNow', JSON.stringify({ code: 63, at: Date.now() })));
       await p.goto(U); await sl(2500);
       check(await p.evaluate(() => !!document.querySelector('#dlWx canvas') || !document.getElementById('dlWx')), W + ' px: weather draws (or is off)');
-      /* Settings → the avatar maker */
+      /* Settings → Your avatar: the page opens, a tap and Save save, the turn-around and "See it move" work */
       if (await p.locator('#settingsBtn').isVisible().catch(() => false)) {
         await p.click('#settingsBtn'); await sl(600);
         await p.evaluate(() => { const g = document.querySelector('[data-go="touches"]'); g && g.click(); }); await sl(900);
-        const tile = p.locator('#avSet [data-avm-k="hat"][data-avm-v="beanie"]');
-        if (await tile.count()) { await p.evaluate(() => { const t = document.querySelector('#avSet [data-avm-tab="extras"]'); t && t.click(); }); await sl(300); await p.evaluate(() => document.querySelector('#avSet [data-avm-k="hat"][data-avm-v="beanie"]').click()); await sl(400);
-          check(await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings') || '{}').avatar || {}).hat === 'beanie'), W + ' px: the avatar maker saves a tap'); }
-        else check(true, W + ' px: avatar maker not on this layout');
+        const opened = await p.evaluate(() => { const b = document.querySelector('#avSet [data-avp-open]'); if (!b) return false; b.click(); return true; }); await sl(800);
+        check(opened && await p.evaluate(() => !!document.querySelector('.avp')), W + ' px: the avatar page opens');
+        if (opened) {
+          await p.evaluate(() => { document.querySelector('.avp [data-avp-tab="extras"]').click(); }); await sl(300);
+          await p.evaluate(() => { document.querySelector('.avp [data-avm-k="hat"][data-avm-v="beanie"]').click(); }); await sl(300);
+          for (const v of ['q', 'side', 'back', 'front']) { await p.evaluate(v => document.querySelector('.avp [data-avp-view="' + v + '"]').click(), v); await sl(150); }
+          await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(400);
+          const pose = () => p.evaluate(() => { const h = document.querySelector('.avp-test .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll('.avp-test .av-limb path')].map(x => x.getAttribute('d')).join('') : ''; });
+          const a = await pose(); await sl(1200); const b2 = await pose();
+          check(!!a && a !== b2, W + ' px: "See it move" moves');
+          await p.evaluate(() => document.querySelector('.avp-bar [data-avp-save]').click()); await sl(400);
+          check(await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings') || '{}').avatar || {}).hat === 'beanie' && !document.querySelector('.avp')), W + ' px: the avatar page saves');
+        }
+        await p.keyboard.press('Escape').catch(() => {}); await sl(300);
       }
+      /* the living Finances picture moves */
+      await p.goto(U + 'finance/'); await sl(1500);
+      if (!(await p.evaluate(() => document.documentElement.classList.contains('unlocked')))) { await p.fill('#lockPass', 'test-passcode-1'); await p.click('#lockSubmit'); await sl(2500); }
+      const live = await p.waitForFunction(() => !!document.querySelector('#scIllu .hero'), null, { timeout: 12000, polling: 250 }).then(() => true, () => false);
+      if (live) {
+        const pose2 = () => p.evaluate(() => { const h = document.querySelector('#scIllu .hero-body'); return (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll('#scIllu .av-limb path')].map(x => x.getAttribute('d')).join(''); });
+        let moved2 = false; const f0 = await pose2();
+        for (let k = 0; k < 16 && !moved2; k++) { await sl(500); moved2 = (await pose2()) !== f0; }
+        check(moved2, W + ' px: the Finances avatar moves');
+      } else check(false, W + ' px: the Finances avatar comes alive');
       await ctx.close();
     }
   } catch (e) { check(false, 'ran to the end: ' + e.message); }
