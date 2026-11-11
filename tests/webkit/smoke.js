@@ -25,8 +25,11 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       await p.fill('#lockPass', 'test-passcode-1');
       if (await p.locator('#lockConfirm').isVisible().catch(() => false)) await p.fill('#lockConfirm', 'test-passcode-1');
       await p.click('#lockSubmit');
-      await p.waitForFunction(() => document.documentElement.classList.contains('unlocked'), null, { timeout: 15000, polling: 250 });
-      check(true, W + ' px: unlocked');
+      const logs = []; p.on('console', m => logs.push(m.type() + ': ' + m.text()));
+      const unl = await p.waitForFunction(() => document.documentElement.classList.contains('unlocked'), null, { timeout: 30000, polling: 250 }).then(() => true, () => false);
+      if (!unl) console.log('  not unlocked – the lock screen says: ' + JSON.stringify(await p.evaluate(() => { const l = document.getElementById('lock') || document.body; return (l.innerText || '').slice(0, 300) + ' | secure ' + window.isSecureContext + ' | subtle ' + !!(window.crypto && crypto.subtle); })) + ' | console: ' + logs.slice(-6).join(' / ').slice(0, 600));
+      check(unl, W + ' px: unlocked');
+      if (!unl) { await ctx.close(); continue; }
       /* instant page changes through the menu – the Mac once got stuck on Home */
       const pages = ['calendar', 'finance', 'habits', 'travel', 'people', ''];
       let moved = 0;
