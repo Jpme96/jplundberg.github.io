@@ -8,7 +8,9 @@
     "lockui.js",
     "passkey.js",
     "features.js",
-    "sidenav.js", "keys.js", "softnav.js"
+    "sidenav.js",
+    "keys.js",
+    "softnav.js"
   ],
   "tail": [
     "smart.js",
@@ -62,7 +64,8 @@
     "steady.js",
     "gridpack.js",
     "daypick.js",
-    "fold.js", "fileview.js"
+    "fold.js",
+    "fileview.js"
   ],
   "pages": {
     "index.html": [
@@ -119,7 +122,10 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "tidy.js"
+      "tidy.js",
+      "avatar-rig.js",
+      "scene-kit.js",
+      "scene-finance.js"
     ],
     "habits/index.html": [
       "budget.js",

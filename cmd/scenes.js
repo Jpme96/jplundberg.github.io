@@ -235,7 +235,9 @@
     if (room > 0) list.push({ t: kr(left) + L(' left', ' igjen') + ' · ' + per.daysLeft + (per.daysLeft === 1 ? L(' day', ' dag') : L(' days', ' dager')), h: '#fin', late: left < 0 });
     if (pace) list.push({ t: pace.ok ? L('On track', 'I rute') : L('Spending faster than planned', 'Bruker raskere enn planlagt'), h: '#fin', late: !pace.ok });
     if (payday) list.push({ t: L('Payday today', 'Lønning i dag'), h: '#fin' });
-    return { svg: svg, label: L('Your money jar', 'Pengekrukka di'), list: list, empty: L('Set up your budget to fill the jar.', 'Sett opp budsjettet for å fylle krukka.') };
+    var dtp = null; try { var np2 = B.nextPayday && B.nextPayday(d); if (np2 && np2.days != null) dtp = np2.days; } catch (e) {}
+    return { svg: svg, label: L('Your money jar', 'Pengekrukka di'), list: list, empty: L('Set up your budget to fill the jar.', 'Sett opp budsjettet for å fylle krukka.'),
+      live: { state: room > 0 ? state : 'none', daysToPay: dtp } };
   }
 
   /* ---------------- Travel ---------------- */
@@ -492,7 +494,10 @@
     if (!box) { box = document.createElement('figure'); box.id = 'scIllu'; box.className = 'hs-illu sc-illu'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-illu'); }
     var cap = s.list.length ? s.list.slice(0, 3).map(function (x) { return '<a href="' + esc(x.h) + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (s.list.length > 3 ? ' · +' + (s.list.length - 3) : '') : esc(s.empty || '');
     var html = '<svg viewBox="0 0 240 150" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';
-    if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
+    if (box._h !== html) { box._h = html; box.innerHTML = html;
+      /* the living scene (scene-*.js, Phase L): your avatar comes alive on top of the still picture */
+      var live = window.SceneLive && window.SceneLive[PAGE]; if (live) { try { live(box.querySelector('svg'), s.live || {}); } catch (e) { if (window.Diag && Diag.log) Diag.log('error', 'scene ' + PAGE + ': ' + (e && e.message), 'scenes.js'); } }
+    }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
   }
   function go(target) {
     if (/=/.test(target)) { location.hash = target; return; }

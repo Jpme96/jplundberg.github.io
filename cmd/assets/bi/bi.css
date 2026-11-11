@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1172 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?b1325569c5") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1174 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?031866faf2") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -395,6 +395,7 @@
 .bi-code::before{content:"\f2c8"}
 .bi-code-slash::before{content:"\f2c6"}
 .bi-code-square::before{content:"\f2c7"}
+.bi-coin::before{content:"\f634"}
 .bi-collection::before{content:"\f2cc"}
 .bi-collection-fill::before{content:"\f2c9"}
 .bi-collection-play::before{content:"\f2cb"}
@@ -669,6 +670,7 @@
 .bi-folder2::before{content:"\f3d9"}
 .bi-folder2-open::before{content:"\f3d8"}
 .bi-fonts::before{content:"\f3da"}
+.bi-front::before{content:"\f3dd"}
 .bi-fuel-pump::before{content:"\f83e"}
 .bi-fuel-pump-diesel::before{content:"\f83c"}
 .bi-fuel-pump-diesel-fill::before{content:"\f83b"}

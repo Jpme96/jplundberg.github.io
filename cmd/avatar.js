@@ -234,7 +234,7 @@
       fAng[side] = Math.atan2(Ey - Ely, Ex - Elx) * 180 / Math.PI;
       var up = 'M' + q2(Sx) + ' ' + q2(Sy) + 'L' + q2(Elx) + ' ' + q2(Ely), lo = 'M' + q2(Elx) + ' ' + q2(Ely) + 'L' + q2(Ex) + ' ' + q2(Ey);
       var line = function (dd, col, w, extra) { return '<path d="' + dd + '" stroke="' + col + '" stroke-width="' + w + '" fill="none" stroke-linecap="round"' + (extra || '') + '/>'; };
-      return '<g class="av-limb" data-s="' + q2(Sx) + ' ' + q2(Sy) + '" data-e="' + q2(Elx) + ' ' + q2(Ely) + '" data-w="' + q2(Ex) + ' ' + q2(Ey) + '">' +
+      return '<g class="av-limb" data-s="' + q2(Sx) + ' ' + q2(Sy) + '" data-e="' + q2(Elx) + ' ' + q2(Ely) + '" data-w="' + q2(Ex) + ' ' + q2(Ey) + '" data-h="' + q2(Sx + vx) + ' ' + q2(Sy + vy) + '" data-l="' + A1 + ' ' + A2 + '">' +
         line(up + lo.replace('M', 'L'), shade(AC, -.3), AW + 1.8, ' stroke-linejoin="round" opacity=".55"') +
         line(up, AC, AW) + line(lo, AC, AW * .86) +
         '<circle cx="' + q2(Elx) + '" cy="' + q2(Ely) + '" r="' + q2(AW * .47) + '" fill="' + AC + '"/>' +
@@ -246,7 +246,7 @@
       y = y + hr * .7;   /* the hand comes out of the sleeve, past the wrist */
       var mit = 'M' + q2(x - w) + ' ' + q2(y - h * .55) + 'Q' + q2(x - w) + ' ' + q2(y + h) + ' ' + x + ' ' + q2(y + h) + 'Q' + q2(x + w) + ' ' + q2(y + h) + ' ' + q2(x + w) + ' ' + q2(y - h * .55) + 'Z';
       var tx = x - sd * w * .78, th = 'M' + q2(tx) + ' ' + q2(y - h * .45) + 'q' + q2(-sd * hr * .55) + ' ' + q2(hr * .5) + ' ' + q2(sd * hr * .1) + ' ' + q2(hr * 1.05);
-      return '<g transform="rotate(' + q2(ang) + ' ' + x0 + ' ' + q2(y - hr * .7) + ')"><path d="' + mit + '" fill="' + S + '" stroke="' + HS2 + '" stroke-width=".7" stroke-linejoin="round"/>' +
+      return '<g class="av-mit" transform="rotate(' + q2(ang) + ' ' + x0 + ' ' + q2(y - hr * .7) + ')"><path d="' + mit + '" fill="' + S + '" stroke="' + HS2 + '" stroke-width=".7" stroke-linejoin="round"/>' +
         '<path d="' + th + '" stroke="' + HS2 + '" stroke-width=".75" fill="none" stroke-linecap="round"/></g>';
     };
     var holdAt = function (x, y, up) { var H0 = L.hold || 'none'; if (H0 === 'none') return '';
@@ -291,7 +291,7 @@
     var FD = { square: 'M101 40c12.5 0 19 9 19 22v5c0 9-6.5 17-12 17h-14c-5.5 0-12-8-12-17v-5c0-13 6.5-22 19-22z', heart: 'M101 40c12.5 0 19 9 19 22 0 10-11.5 22-19 22s-19-12-19-22c0-13 6.5-22 19-22z' }[L.faceS] || 'M101 40c12.5 0 19 9 19 22s-8.5 22-19 22-19-9-19-22 6.5-22 19-22z';
     var HS = { round: [1.1, .98], long: [.92, 1.07], square: [1.04, 1], heart: [1.05, 1] }[L.faceS];
     /* ears sit behind the face (only the outer half shows), skin-coloured with a small inner curve – on top of the cheek they looked pasted on */
-    var face = '<ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><path d="M81.4 60.2q-2 2.8 0 5.6M120.6 60.2q2 2.8 0 5.6" stroke="' + S2 + '" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="' + FD + '" fill="' + S + '"/>';
+    var face = '<ellipse cx="82.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><ellipse cx="119.5" cy="63" rx="3.5" ry="5" fill="' + shade(S, -.05) + '"/><path d="M81.4 60.2q-2 2.8 0 5.6M120.6 60.2q2 2.8 0 5.6" stroke="' + S2 + '" stroke-width="1.1" fill="none" stroke-linecap="round"/><path class="av-faceshape" d="' + FD + '" fill="' + S + '"/>';
     if (L.earS === 'small') face = face.replace(/rx="3.5" ry="5"/g, 'rx="2.6" ry="3.7"');
     if (L.earS === 'big') face = face.replace(/rx="3.5" ry="5"/g, 'rx="5" ry="6.6"');
     if (L.earS === 'elf') face = face.replace('<ellipse cx="82.5" cy="63" rx="3.5" ry="5"', '<path d="M84 59l-8-9 3 14 4 4z"').replace('<ellipse cx="119.5" cy="63" rx="3.5" ry="5"', '<path d="M118 59l8-9-3 14-4 4z"');
@@ -437,9 +437,9 @@
     /* the neck in skin colour, a little wider at the bottom, with a soft shadow under the chin (a dark block looked stuck on) */
     var neck = (MU ? '<path d="M93 77h16l3 13H90z" fill="' + S + '"/>' : '<path d="M95.4 77h11.2l1 13h-13.2z" fill="' + S + '"/>') + '<path d="M95.2 83q5.8 3.4 11.6 0v2.6q-5.8 2.8-11.6 0z" fill="' + S2 + '" opacity=".7"/>';
     if (L.faceS === 'heart' && beard) { var bcid = 'avb' + (++UID); beard = '<defs><clipPath id="' + bcid + '"><path d="' + FD + '"/><path d="M93 78h16l-2 14h-12z"/></clipPath></defs><g clip-path="url(#' + bcid + ')">' + beard + '</g>'; }
-    var head = '<g class="bob">' + (HS ? '<g transform="translate(101 62) scale(' + HS[0] + ' ' + HS[1] + ') translate(-101 -62)">' : '') + hairBack + neck + face + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + hairTop + hair2 + (m.k === 'trip' ? '' : glasses) + hat + buds + (HS ? '</g>' : '') + '</g>';
+    var head = '<g class="bob">' + (HS ? '<g transform="translate(101 62) scale(' + HS[0] + ' ' + HS[1] + ') translate(-101 -62)">' : '') + hairBack + neck + face + '<g class="av-feat">' + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + '</g><g class="av-hairf">' + hairTop + hair2 + '</g><g class="av-feat">' + (m.k === 'trip' ? '' : glasses) + '</g>' + hat + buds + (HS ? '</g>' : '') + '</g>';
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
-    var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + detail + extra + '</g>';
+    var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + '<g class="av-chest">' + detail + extra + '</g></g>';
     if (m.plain) { sky = ''; lamp = ''; ground = '<ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>'; }
     /* soft: no box – a glow in the moment's colour that fades into the page, and a patch of grass instead of a strip */
     var SCN = L.scene || 'none', sceneEl = '';
