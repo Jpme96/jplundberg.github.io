@@ -38,9 +38,13 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       let moved = 0;
       /* the glide: in Safari the new page's content glides in after the swap (C10) */
       const gl0 = await p.evaluate(() => (window.SoftNav && SoftNav.glides) || 0);
+      const x0 = await p.evaluate(() => { const b = document.querySelector('.mbar'); return b && getComputedStyle(b).position === 'fixed' ? Math.round(b.getBoundingClientRect().left) : null; });
+      let barMove = 0;
       for (const pg of pages) {
         const ok = await p.evaluate(pg => { const a = document.querySelector('a[href="/cmd/' + pg + '"], a[href="/cmd/' + pg + (pg ? '/' : '') + '"]'); if (!a) return false; a.click(); return true; }, pg);
         if (!ok) { await p.goto(U + pg + (pg ? '/' : '')); }
+        /* the side menu stays put while the page glides in (it jumped over the page in Safari, Nov 2026) */
+        if (ok && x0 != null) for (let k = 0; k < 12; k++) { const x = await p.evaluate(() => { const b = document.querySelector('.mbar'); return b ? Math.round(b.getBoundingClientRect().left) : null; }).catch(() => null); if (x != null) barMove = Math.max(barMove, Math.abs(x - x0)); await p.waitForTimeout(25); }
         /* reached = the address changed and the page shows (unlocked, or the lock screen after a full load – then unlock again) */
         let there = false;
         for (let t = 0; t < 60 && !there; t++) {
@@ -53,6 +57,7 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
         await sl(400);
       }
       check(moved === pages.length, W + ' px: page changes reach every page (' + moved + '/' + pages.length + ')');
+      if (x0 != null) check(barMove <= 2, W + ' px: the side menu stays put during page changes (moved ' + barMove + ' px)');
       if (ENGINE === 'webkit') { const gl = await p.evaluate(g0 => ((window.SoftNav && SoftNav.glides) || 0) - g0, gl0); check(gl >= 3, W + ' px: pages glide in (' + gl + ' of ' + pages.length + ')'); }
       const clickable = await p.evaluate(() => { const e = document.elementFromPoint(innerWidth / 2, 200); return !!e && getComputedStyle(document.body).pointerEvents !== 'none'; });
       check(clickable, W + ' px: the page can be clicked after the changes');
