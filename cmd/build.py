@@ -10,6 +10,7 @@ Which files each page uses, and in which order, is in cmd/scripts.json:
   nb    – the Norwegian words, loaded by i18n.js only when the language is Norwegian (dist/nb.js)
   tail  – loaded last on every page (search, quick add, notifications, menu …)
   pages – what each page loads in between
+  late  – per page: the page parts of split modules (cmd/split-page.js), run after tail.js
 Each file is wrapped so an error in one can't stop the others, like separate files. """
 import hashlib, io, json, os, re, shutil, subprocess, sys
 
@@ -34,11 +35,16 @@ def minify(text):
     return '/* Built by cmd/build.py – edit the source files listed in cmd/scripts.json, not this one. */\n' + r.stdout.decode('utf-8')
 
 
-def bundle(files):
-    out = ['/* Built by cmd/build.py from: ' + ', '.join(files) + ' – edit those files, not this one. */']
+def bundle(files, late=()):
+    out = ['/* Built by cmd/build.py from: ' + ', '.join(list(files) + list(late)) + ' – edit those files, not this one. */']
     for f in files:
         src = io.open(os.path.join(HERE, f), encoding='utf-8').read()
         out.append('/* ===== %s ===== */\ntry {\n%s\n} catch (e) { console.error(%s, e); if (window.__dlog) window.__dlog(e, %s); }' % (f, src.rstrip(), json.dumps(f), json.dumps(f)))
+    # a page's own part of a module that is split (cmd/split-page.js): it runs after tail.js (late.js, the last tail file),
+    # when the everywhere part it builds on is there
+    for f in late:
+        src = io.open(os.path.join(HERE, f), encoding='utf-8').read()
+        out.append('/* ===== %s (after tail.js) ===== */\n(window.__late = window.__late || []).push(function () {\ntry {\n%s\n} catch (e) { console.error(%s, e); if (window.__dlog) window.__dlog(e, %s); }\n});' % (f, src.rstrip(), json.dumps(f), json.dumps(f)))
     return minify('\n'.join(out) + '\n')
 
 
@@ -76,7 +82,7 @@ stale |= head_v is None or tail_v is None
 for page, files in M['pages'].items():
     name = 'page-' + (os.path.dirname(page) or 'home') + '.js'
     if os.path.dirname(page): files = files + [f for f in SET_JS if f not in files]
-    v = write(name, bundle(files))
+    v = write(name, bundle(files, M.get('late', {}).get(page, [])))
     if v is None: stale = True; continue
     html_path = os.path.join(HERE, page)
     html = io.open(html_path, encoding='utf-8').read()

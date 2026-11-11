@@ -293,6 +293,10 @@
     return out;
   }
 
+  /* the lists other pages' modules add to (At a glance, ⌘K, search, calendar, notifications): made here in the head, so
+     instant page changes empty them when you leave and the next page's modules fill them again – before, every
+     visit added another copy (softnav.js puts the head's objects back as they were) */
+  ['BriefExtra', 'CommandExtra', 'SearchExtra', 'EventsExtra', 'NotifyExtra'].forEach(function (k) { if (!Array.isArray(window[k])) window[k] = []; });
   window.Features = {
     LIST: LIST, WORK: WORK, HEALTH: HEALTH, REMIND_COLOR: REMIND_COLOR, holidays: holidays, holiday: holiday,
     on: on, set: set, apply: apply, byId: byId, ADV: ADV, simple: simple, setSimple: setSimple,

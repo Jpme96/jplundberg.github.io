@@ -75,7 +75,8 @@
     "daypick.js",
     "fold.js",
     "fileview.js",
-    "prices.js"
+    "prices.js",
+    "late.js"
   ],
   "pages": {
     "index.html": [
@@ -223,6 +224,17 @@
       "admin.js",
       "writer.js",
       "diag-ui.js"
+    ]
+  },
+  "late": {
+    "house/index.html": [
+      "house-plus.page.js",
+      "house-homes.page.js",
+      "house-move.page.js",
+      "house-claims.page.js",
+      "house-proj.page.js",
+      "house-docs.page.js",
+      "house-energy.page.js"
     ]
   },
   "settings": [
