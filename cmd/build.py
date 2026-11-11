@@ -135,12 +135,13 @@ newhv = json.dumps({'n': n, 'hash': hh}) + '\n'
 _save(HV, io.open(HV, encoding='utf-8').read() if os.path.exists(HV) else '', newhv)
 # the service worker's cache name: changes whenever anything under cmd/ changes, so every device picks up the new version
 SW = os.path.join(HERE, 'sw.js'); sw = io.open(SW, encoding='utf-8').read(); acc = hashlib.sha1()
-for d, _, fs in os.walk(HERE):
+for d, ds, fs in os.walk(HERE):
+    ds.sort()                                   # the same order on every machine (GitHub's disk lists folders differently)
     if os.sep + 'node_modules' in d: continue
     for f in sorted(fs):
         fp = os.path.join(d, f)
         if fp == SW or f.endswith(('.md', '.py')): continue
-        acc.update(os.path.relpath(fp, HERE).encode()); acc.update(open(fp, 'rb').read())
+        acc.update(os.path.relpath(fp, HERE).replace(os.sep, '/').encode()); acc.update(open(fp, 'rb').read())
 _save(SW, sw, re.sub(r"var CACHE = '[^']*';", "var CACHE = 'cmd-v%s';" % acc.hexdigest()[:10], sw))
 
 if check:
