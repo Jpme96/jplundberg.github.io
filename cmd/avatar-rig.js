@@ -145,7 +145,8 @@
     if (r.LL) r.LL.g.setAttribute('transform', 'translate(' + f2(8 * k) + ' 0)');
     if (r.LR) r.LR.g.setAttribute('transform', 'translate(' + f2(-8 * k) + ' 0)');
     var far = t > 0 ? 'R' : 'L', near = far === 'R' ? 'L' : 'R', s = far === 'R' ? -1 : 1;
-    r['w' + near].setAttribute('transform', r['t' + near] + ' translate(' + f2(s * 5 * k) + ' 0)');
+    /* both shoulders come in with the narrower torso (the near arm moved out and hung in the air behind, 2026-11-11) */
+    r['w' + near].setAttribute('transform', r['t' + near] + ' translate(' + f2(-s * 6.5 * k) + ' 0)');
     r['w' + far].setAttribute('transform', r['t' + far] + ' translate(' + f2(s * 7 * k) + ' 0)');
     /* only in a true side view does the far arm go behind the body; half-turned you see both */
     if (!r.isBack) { if (k > .8) { if (r['w' + far].parentNode !== r.back) r.back.appendChild(r['w' + far]); } else armsHome(r); }

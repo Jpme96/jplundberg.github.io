@@ -61,5 +61,19 @@ const { open, go, until } = require('../lib/browser'); const { check, done } = r
   check(bubbles.some(t => /3 days to go|3 dager igjen/.test(t)), 'the tag says the real days left');
   check(bubbles.length > 4 && !bubbles.some(t => /undefined|NaN|null|\[object/.test(t)), 'speech bubbles read well: ' + bubbles.slice(0, 10).join(' / '));
   check(!p.errs.length, 'Trips: no page errors ' + p.errs.join(' | ').slice(0, 200));
+
+  /* Journey: your everyday rides, lived (made-up rides: bus then metro), played 3× faster */
+  p.errs.length = 0; bubbles.length = 0;
+  await p.evaluate(() => { try { sessionStorage.setItem('dash.travelTab', 'journey'); localStorage.setItem('dash.tvLegs', JSON.stringify(['bus', 'metro'])); } catch (e) {} });
+  await go(p, 'travel/', 2500);
+  check(await until(p, () => !!(window.SceneLive && SceneLive._travel && document.querySelector('#scIllu .hero')), 10000) !== null, 'Journey: you come alive at the door');
+  await watch();
+  check(await p.evaluate(() => !document.querySelector('#scIllu style') && document.querySelectorAll('#scIllu .hero').length === 1), 'the old film is gone, one of you');
+  const jr = await p.evaluate(() => new Promise(r => { Live.pace(3); const t = setTimeout(() => r('timeout'), 60000); SceneLive._travel.run('trip').then(() => { clearTimeout(t); Live.pace(1); const H = SceneLive._travel.H; r(H.view === 'front' && H.op > .9 && Math.abs(H.turn) < .02 ? 'ok' : JSON.stringify({ v: H.view, op: H.op, t: H.turn })); }, e => { clearTimeout(t); r('error ' + (e && e.message)); }); }));
+  check(jr === 'ok', 'Journey: a whole trip runs and you end up ready by the door ' + jr);
+  check(bubbles.some(t => /Change!|Bytte!/.test(t)) && bubbles.some(t => /At work!|Home!|På jobb!|Hjemme!/.test(t)), 'you change rides and get there: ' + bubbles.join(' / '));
+  const size = await p.evaluate(() => { const H = SceneLive._travel.H, f = H.fig.querySelector('.bob').getBoundingClientRect(); return H.fig.getBoundingClientRect().height / document.querySelector('#scIllu svg').getBoundingClientRect().height; });
+  check(size > .12 && size < .3, 'you are about life size next to the rides (' + size.toFixed(2) + ' of the picture)');
+  check(!p.errs.length, 'Journey: no page errors ' + p.errs.join(' | ').slice(0, 200));
   await done(b);
 })();

@@ -102,7 +102,7 @@
     if (vw === 'front' || /^q/.test(vw)) H.fig.querySelectorAll('.bob .av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (5.5 * (H.ht == null ? tt : H.ht) + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
     if (H.rig.head) H.rig.head.setAttribute('transform', 'rotate(' + (H.head[0] + H.lk[2]).toFixed(2) + ' 101 80) translate(0 ' + H.head[1].toFixed(2) + ')');
     /* held things */
-    Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; if (o.fg) o.fg.style.display = o.free || H.view === 'back' ? 'none' : ''; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
+    Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' || (Math.abs(H.turn) > .8 && k === (H.turn > 0 ? 'R' : 'L')) ? H.layB : H.layF);   /* side-on, the far arm is behind the body – and so is what that hand holds (the milk floated on the chest, 2026-11-11) */ if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; if (o.fg) o.fg.style.display = o.free || H.view === 'back' ? 'none' : ''; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
   }
   /* the loop can be stopped from outside: an instant page change drops the animation frames of the page you leave
      (softnav.js), and this engine outlives the page. So it notes when it last drew, and wake() starts it again

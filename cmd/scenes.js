@@ -343,9 +343,12 @@
   function me(x, y, w, h) { x -= 8; y -= 24; w += 16; h += 24;    /* a bit bigger, feet in the same place */
     return window.Avatar ? window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" preserveAspectRatio="xMidYMax meet"' }).replace('viewBox="0 0 200 200"', 'viewBox="44 24 114 140"').replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
     : '<circle cx="' + (x + w / 2) + '" cy="' + (y + 26) + '" r="5" class="sc-skin"/><path d="M' + (x + w / 2 - 6) + ' ' + (y + h - 6) + ' v-14 q0 -5 6 -5 q6 0 6 5 v14" class="sc-coat"/>'; }
+  function stopChar(m) { return m === 'water' ? '⚓' : m === 'rail' || m === 'metro' ? 'T' : 'H'; }
+  /* the stop sign on its pole, in the ride's colour */
+  function stopArt(m) { return '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + VEH[m][0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + stopChar(m) + '</text></g>'; };
   function placeSvg(work, dx, lit) {   /* your house or your office; lit = the keyframe name for the windows */
     var g = '<g transform="translate(' + dx + ' 0)">';
-    if (work) return g + '<rect x="168" y="44" width="54" height="74" rx="3" fill="#8fa3bf" stroke="#4f5f78" stroke-width="1.6"/>' + [0, 1, 2, 3, 4].map(function (r) { return [0, 1, 2].map(function (c) { return '<rect x="' + (174 + c * 16) + '" y="' + (50 + r * 11) + '" width="10" height="7" rx="1" fill="#1d2a3b" style="animation:' + lit + '"/>'; }).join(''); }).join('') + '<rect x="188" y="104" width="14" height="14" fill="#3b4a60"/></g>';
+    if (work) return g + '<rect x="168" y="44" width="54" height="74" rx="3" fill="#8fa3bf" stroke="#4f5f78" stroke-width="1.6"/>' + [0, 1, 2, 3, 4].map(function (r) { return [0, 1, 2].map(function (c) { return '<rect x="' + (174 + c * 16) + '" y="' + (50 + r * 11) + '" width="10" height="7" rx="1" fill="#1d2a3b" style="animation:' + lit + '"/>'; }).join(''); }).join('') + '<rect x="186" y="94" width="18" height="24" rx="1" fill="#3b4a60"/></g>';   /* the door, a bit taller than you */
     return g + '<path d="M160 82 l30 -24 l30 24" fill="#b5523b" stroke="#7d3426" stroke-width="1.6" stroke-linejoin="round"/><rect x="164" y="80" width="52" height="38" rx="2" fill="#efe3cc" stroke="#9c8a6a" stroke-width="1.6"/>' +
       '<rect x="200" y="64" width="7" height="12" fill="#8a5a44" stroke="#5e3b2c" stroke-width="1.2"/><rect x="170" y="88" width="13" height="11" rx="1.5" fill="#1d2a3b" style="animation:' + lit + '"/><rect x="188" y="96" width="12" height="22" rx="1.5" fill="#6b4a35"/><circle cx="197" cy="108" r="1" fill="#ffd56b"/></g>';
   }
@@ -368,8 +371,7 @@
     var P = function (k, f) { return Math.min(100, k * SL + f * SL); }, f2 = function (x) { return x.toFixed(2) + '%'; };
     var vis = function (name, a, b) { return '@keyframes ' + name + '{0%{opacity:' + (a <= 0 ? 1 : 0) + '}' + (a > 0 ? f2(a) + '{opacity:0}' + f2(a + .05) + '{opacity:1}' : '') + f2(Math.max(a + .06, b)) + '{opacity:1}' + (b < 100 ? f2(b + .05) + '{opacity:0}100%{opacity:0}' : '100%{opacity:1}') + '}'; };
     var css = '', layers = '', run = ' ' + D + 's infinite';
-    var stopChar = function (m) { return m === 'water' ? '⚓' : m === 'rail' || m === 'metro' ? 'T' : 'H'; };
-    var stopSvg = function (m) { return '<g class="sc-stop"><line x1="176" y1="60" x2="176" y2="116" class="sc-pole"/><rect x="167" y="56" width="18" height="14" rx="3" fill="' + VEH[m][0] + '"/><text x="176" y="66" text-anchor="middle" class="sc-stopt">' + stopChar(m) + '</text></g>'; };
+    var stopSvg = stopArt;
     slots.forEach(function (sl, k) {
       var a = P(k, 0), b = P(k + 1, 0), g = id + 'g' + k, inner = '';
       css += vis(g, a, b);
@@ -402,7 +404,7 @@
       : real && from && to ? [{ t: from + ' → ' + to + ': ' + modes, h: '#paneJourney' }]
       : [{ t: L('Search a journey – it plays here', 'Søk opp en reise – den spilles av her'), h: '#paneJourney' }];
     if (real && knownHW && from && to) list.push({ t: from + ' → ' + to, h: '#paneJourney' });
-    return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, empty: '' };
+    return { svg: svg, label: L('Your journey', 'Reisen din'), list: list, live: { journey: true, legs: legs, toWork: toWork }, empty: '' };
   }
 
   /* ---------------- Wishlist: a shopping bag, a gift for what you bought, wishes floating above as stars ---------------- */
@@ -485,6 +487,8 @@
     var list = todays.slice(0, 3).map(function (e) { return { t: (e.start && !e.allDay ? e.start.slice(0, 5) + ' ' : '') + (e.title || ''), h: '#clToday' }; });
     return { svg: svg, label: L('Today', 'I dag'), list: list, empty: L('Nothing in the calendar today.', 'Ingenting i kalenderen i dag.') };
   }
+  /* the drawings the living Journey (scene-travel.js) builds its stage from */
+  window.SceneArt = { VEH: VEH, vehicle: vehicle, track: track, kindOf: kindOf, place: placeSvg, stop: stopArt };
   var MAKE = { wish: wish, goals: goals, papers: papers, calendar: calendar, people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
   function draw() {
     var hero = document.querySelector('.fp-hero, .tv-hero'); if (!hero) return;

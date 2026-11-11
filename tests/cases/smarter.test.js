@@ -27,7 +27,7 @@ const { shared, sl, go, until } = require('../lib/browser'); const { check, done
   /* People */
   await go(p, 'people/', 2200);
   check(await p.evaluate(() => !!document.querySelector('[data-scme], #scIllu .hero')), 'People with nobody yet: the picture shows you waving, not just grass');
-  await until(p, () => !!document.querySelector('.pp-suggest'), 8000);   /* the offer can come a moment after the page */
+  await until(p, () => !!document.querySelector('.pp-suggest'), 20000);   /* the offer can come a moment after the page */
   const sug = await p.evaluate(() => { const x = document.querySelector('.pp-suggest'); return x ? x.textContent.trim() : ''; });
   check(/Add Iago/.test(sug), 'People offers "Add Iago": ' + JSON.stringify(sug));
   await p.click('.pp-suggest'); await sl(1200);

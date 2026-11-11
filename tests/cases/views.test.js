@@ -44,6 +44,11 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     const chestMoved = /translate/.test(host.querySelector('.av-chest').getAttribute('transform') || '');
     Rig.turn(rh, 0); const hoodFront = hood.style.display === 'none';
     const dress = Object.assign({}, Avatar.look(), { auto: 'off', top: 'dress' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, dress); const hem = !!host.querySelector('.av-hem');
+    /* half-turned, both shoulders stay on the body (the near arm hung in the air behind it, 2026-11-11) */
+    const S7 = Object.assign({}, Avatar.look(), { auto: 'off' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, S7);
+    const r7 = Rig(host.querySelector('svg'), S7); Rig.turn(r7, .7);
+    const tb = host.querySelector('.rig-torso').getBoundingClientRect(), shoulders = [r7.L, r7.R].map(A => { const c = A.joint ? null : null; const lb = A.limb.querySelector('circle').getBoundingClientRect(); return [lb.left + lb.width / 2, tb.left, tb.right]; });
+    const onBody = shoulders.every(q => q[0] >= q[1] - 2 && q[0] <= q[2] + 2);
     /* round 3: three-quarter hides the far earring; from the side each kind of glasses keeps its frame; held things get fingers */
     const E3 = Object.assign({}, Avatar.look(), { auto: 'off', ears: 'hoops', glasses: 'aviator', pierce: 'nose' });
     host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, E3);
@@ -53,7 +58,7 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     let grip = false; try { const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('viewBox', '0 0 200 120'); sv.style.cssText = 'position:fixed;left:0;top:0;width:200px;height:120px'; document.body.appendChild(sv);
       const H = Live.Hero(sv, null, { x: 60, y: 10, w: 60, h: 100 }); const o = Live.Obj(H, 'R', '<rect width="6" height="8"/>', [3, 4]); grip = !!(o.fg && o.g.contains(o.fg)); sv.remove(); } catch (e) { grip = 'err ' + e.message; }
     host.remove();
-    return { r3: { oneHoop, aviSide, grip }, r2: { hiddenFront, backShown, backGone, dangle, hoodSide, chestMoved, hoodFront, hem }, bad: bad.slice(0, 4), out: out.slice(0, 4), seen, chestHidden, backHasTail, frontAgain };
+    return { onBody, r3: { oneHoop, aviSide, grip }, r2: { hiddenFront, backShown, backGone, dangle, hoodSide, chestMoved, hoodFront, hem }, bad: bad.slice(0, 4), out: out.slice(0, 4), seen, chestHidden, backHasTail, frontAgain };
   });
   check(!r.bad.length, 'every hair style and hat draws from behind, the side and three-quarter ' + JSON.stringify(r.bad));
   check(!r.out.length, 'and stays on the head ' + JSON.stringify(r.out));
@@ -63,6 +68,7 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
   check(r.r2.hiddenFront && r.r2.backShown && r.r2.backGone, 'from behind: the jersey number and the backpack show, and go again when it turns back ' + JSON.stringify(r.r2));
   check(r.r2.hoodSide && r.r2.hoodFront && r.r2.chestMoved, 'from the side: the hood shows past the neck and the chest print moves to the front');
   check(r.r2.dangle && r.r2.hem, 'the lanyard can swing and the dress hem can sway');
+  check(r.onBody, 'half-turned, both shoulders stay on the body');
   check(r.r3.oneHoop, 'three-quarter: only the near earring shows');
   check(r.r3.aviSide, 'from the side: aviators keep their gold frame, the nose ring shows');
   check(r.r3.grip === true, 'a held thing gets fingers around it ' + r.r3.grip);
