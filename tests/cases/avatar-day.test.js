@@ -25,12 +25,20 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   check(day.earned === 'top3' && day.picked === 'trophy', 'today’s top 3 done earns its badge; a badge you picked stays (' + day.earned + ', ' + day.picked + ')');
   check(day.seated, 'on the sofa you sit');
   /* the two of you: Iago has an avatar */
-  await q.evaluate(() => { const b = document.querySelector('[data-avatar]'); if (b) b.click(); }); await sl(800);
-  await q.evaluate(() => { const s = document.querySelector('.avp [data-avp-save]'), x = document.querySelector('.avp [data-avp-rand]'); if (x) x.click(); const sv = document.querySelector('.avp [data-avp-back]'); if (sv) sv.click(); }); await sl(600);
-  await q.evaluate(() => { const s = document.querySelector('.avp-ask [data-avp-save]'); if (s) s.click(); }); await sl(1500);
-  await p.evaluate(() => ShareSpace.sync()); await sl(1500); await p.evaluate(() => ShareSpace.sync()); await sl(1000);
-  const ci = await until(p, () => { const c = window.CoupleInfo && CoupleInfo(); return c && c.look ? c.kind : false; }, 15000);
-  check(!!ci, 'cmd knows the two of you (' + ci + ')');
+  /* (slow machines: wait for his app, and try again if the first save didn't reach the box) */
+  let ci = null;
+  for (let tries = 0; tries < 3 && ci === null; tries++) {
+    await until(q, () => !!document.querySelector('[data-avatar]'), 20000);
+    await q.evaluate(() => { const b = document.querySelector('[data-avatar]'); if (b) b.click(); });
+    await until(q, () => !!document.querySelector('.avp [data-avp-rand]'), 10000);
+    await q.evaluate(() => { const x = document.querySelector('.avp [data-avp-rand]'); if (x) x.click(); const sv = document.querySelector('.avp [data-avp-back]'); if (sv) sv.click(); });
+    await until(q, () => !!document.querySelector('.avp-ask [data-avp-save]'), 5000);
+    await q.evaluate(() => { const s = document.querySelector('.avp-ask [data-avp-save]'); if (s) s.click(); }); await sl(1500);
+    await q.evaluate(() => window.HomeApp && HomeApp.sync ? HomeApp.sync() : null); await sl(1200);
+    await p.evaluate(() => ShareSpace.sync()); await sl(1500); await p.evaluate(() => ShareSpace.sync()); await sl(1000);
+    ci = await until(p, () => { const c = window.CoupleInfo && CoupleInfo(); return c && c.look ? c.kind : false; }, 15000);
+  }
+  check(ci !== null, 'cmd knows the two of you (' + ci + ')');
   /* Match with Iago */
   await p.evaluate(() => { const b = document.querySelector('[data-avp-open]'); if (b) b.click(); else Avatar.page('T', Avatar.look(), () => {}, { mine: true, match: { look: ShareSpace.partnerLook(), name: ShareSpace.partnerName() } }); }); await sl(800);
   const m = await p.evaluate(() => { const btn = document.querySelector('.avp [data-avp-match]'); if (!btn) return { btn: false };

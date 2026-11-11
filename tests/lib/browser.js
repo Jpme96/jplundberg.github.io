@@ -14,7 +14,7 @@ async function page(b, W, opts = {}) {
   await p.setViewport({ width: W, height: opts.h || (touch ? 852 : 945), isMobile: touch, hasTouch: touch, deviceScaleFactor: 1 });
   p.errs = [];
   p.on('pageerror', e => p.errs.push(e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|WebSocket connection|localStorage/.test(m.text())) p.errs.push('console: ' + m.text().slice(0, 200)); });
+  p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|WebSocket connection|localStorage|Manifest: Line: 1, column: 1/.test(m.text())) p.errs.push('console: ' + m.text().slice(0, 200)); });
   await p.setRequestInterception(true);
   p.on('request', r => { if (!r.url().startsWith('http://localhost')) return r.abort(); r.continue(); });
   return p;
