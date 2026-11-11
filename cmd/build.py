@@ -7,6 +7,7 @@
 The source files stay where they are – edit those, never cmd/dist/.
 Which files each page uses, and in which order, is in cmd/scripts.json:
   head  – loaded first on every page (language, lock, features)
+  nb    – the Norwegian words, loaded by i18n.js only when the language is Norwegian (dist/nb.js)
   tail  – loaded last on every page (search, quick add, notifications, menu …)
   pages – what each page loads in between
 Each file is wrapped so an error in one can't stop the others, like separate files. """
@@ -67,7 +68,9 @@ SETTINGS = ('  <!-- settings: copied from index.html by cmd/build.py – edit it
 SET_JS = M.get('settings', [])
 
 stale = False
-head_v = write('head.js', bundle(M['head']))
+nb_v = write('nb.js', bundle(M['nb']))
+head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
+stale |= nb_v is None
 tail_v = write('tail.js', bundle(M['tail']))
 stale |= head_v is None or tail_v is None
 for page, files in M['pages'].items():

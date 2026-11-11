@@ -12,6 +12,9 @@
     "keys.js",
     "softnav.js"
   ],
+  "nb": [
+    "i18n-nb.js"
+  ],
   "tail": [
     "smart.js",
     "search.js",

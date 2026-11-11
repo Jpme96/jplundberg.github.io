@@ -5,7 +5,7 @@
    How a page is "left" without reloading: everything the page's scripts (the page bundle and tail.js) set up on
    things that stay – listeners on window/document/<html>/<body>, timers, observers, live connections, classes on
    <html>, additions to the head's own objects – is written down when it is made, and undone when you leave.
-   Who made it is read from the call stack (head.js or not), so the head's own (the lock, the menu) stays.
+   Who made it is read from the call stack (head.js/nb.js or not), so the head's own (the lock, the menu) stays.
    Off: nothing here runs at all – the switch is read once when a page loads. */
 (function () {
   'use strict';
@@ -40,9 +40,11 @@
 
   /* ---------- who made it: the head, or the page? ---------- */
   function byPage() {
-    var st = (new Error()).stack || '', fr = st.split('\n').filter(function (l) { return /(https?:|\/cmd\/)/.test(l); });
+    var lim = Error.stackTraceLimit; Error.stackTraceLimit = 6;   /* only the first frames are needed – a full stack is slow, and this runs for every listener */
+    var st = (new Error()).stack || ''; Error.stackTraceLimit = lim;
+    var fr = st.split('\n').filter(function (l) { return /(https?:|\/cmd\/)/.test(l); });
     var caller = fr[2] || '';               /* 0: byPage, 1: the wrapper, 2: whoever called it */
-    return !/\/dist\/head\.js/.test(caller);
+    return !/\/dist\/(head|nb)\.js/.test(caller);   /* nb.js = the Norwegian words, loaded once right after the head */
   }
   var rec = { ls: [], iv: [], obs: [], ws: [], cls: [] };
   function stays(t) {

@@ -57,16 +57,20 @@
     window.dispatchEvent(new Event('dash:local'));      // lock.js puts it in the synced vault
   }
   function byId(id) { return LIST.filter(function (x) { return x.id === id; })[0]; }
+  var BYID = {};
 
   /* Simple mode (Settings → Features): the extras below are hidden – your own switches are kept and come back when Simple is off */
   var ADV = ['voice', 'findtime', 'shutdown', 'prep', 'holiday', 'rest', 'hreport', 'tripbudget', 'smartpack', 'power', 'jars', 'recur', 'shared', 'warranty'];
-  function simple() { return !!((readJSON('dash.settings') || {}).simple); }
+  /* the settings, read once per change: on() runs hundreds of times per page, parsing them each time was slow */
+  var SC = { raw: undefined, val: null };
+  function sets() { var r = null; try { r = localStorage.getItem('dash.settings'); } catch (e) {} if (r !== SC.raw) { SC.raw = r; try { SC.val = JSON.parse(r) || {}; } catch (e) { SC.val = {}; } } return SC.val; }
+  function simple() { return !!sets().simple; }
   function on(id) {
     if (simple() && ADV.indexOf(id) > -1) return false;
     if (id === 'work') return WORK.some(on);
     if (id === 'healthpage') return HEALTH.some(on);
-    var f = (readJSON('dash.settings') || {}).features || {};
-    var d = byId(id);
+    var f = sets().features || {};
+    var d = BYID[id] || (BYID[id] = byId(id));
     return Object.prototype.hasOwnProperty.call(f, id) ? !!f[id] : !!(d && d.def);
   }
   function set(id, val) {

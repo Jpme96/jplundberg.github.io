@@ -2,7 +2,7 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 2200 };      /* biggest page today ≈ 2 000 kB (head + page + tail) */
+const BUDGET_KB = { total: 1950 };      /* biggest page today ≈ 1 900 kB (head + page + tail; the Norwegian words load only in Norwegian) */
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
