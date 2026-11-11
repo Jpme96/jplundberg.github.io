@@ -126,7 +126,7 @@
 
   var media2 = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
   function cardStyleOf(s) { return ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid'); }
-  function motionOf(s) { return s.motion || (media2 && media2.matches ? 'off' : 'full'); }
+  function motionOf(s) { if (window.__safeMode) return 'off'; return s.motion || (media2 && media2.matches ? 'off' : 'full'); }   /* safe mode (diag.js): no animations */
   /* "Sun": light from sunrise to sunset in Oslo, dark after – rough times per month (local time) */
   function sunUp() { var n = new Date(), m = n.getMonth(), h = n.getHours() + n.getMinutes() / 60, R = [9.1, 8, 6.6, 6.3, 5, 4, 4.6, 5.9, 7.2, 8.4, 8.5, 9.3], S = [15.4, 16.9, 18.2, 20.6, 21.8, 22.7, 22.4, 21, 19.3, 17.6, 15.6, 15.2]; return h >= R[m] && h < S[m]; }
   setInterval(function () { if (get().theme === 'sun') { var want = sunUp() ? 'light' : 'dark'; if (root.getAttribute('data-theme') !== want) apply(); } }, 5 * 60e3);

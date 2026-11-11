@@ -6,6 +6,36 @@
   /* no pinch- or double-tap zoom on the phone: it is an app, and the text size is set in Settings */
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) { document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false }); });
   document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  /* ---------- error reports (Phase C step 5): uncaught errors are kept on this phone (newest 30) and sent to the
+     server a little later, masked the same way as cmd's Diagnostics – no names, amounts or text from the lists ---------- */
+  (function () {
+    var K = 'home.errlog', S = 'home.errsent', t = 0;
+    var mask = function (x) { return String(x == null ? '' : x).replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '<email>').replace(/(["'“‘«])[^"'”’»]{1,}?(["'”’»])/g, '$1…$2').replace(/https?:\/\/[^\s)]+/g, '<url>').replace(/\d+([.,:\s]\d+)*/g, '#').slice(0, 180); };
+    var at = function (st, f, l) { var m = String(st || '').match(/\/cmd\/(?:home\/)?([\w-]+\.js)[^:\s]*:(\d+)/); return m ? m[1] + ':' + m[2] : f ? String(f).split('?')[0].split('/').pop() + (l ? ':' + l : '') : ''; };
+    var ver = function () { var sc = document.querySelector('script[src*="home/app.js"]'), m = sc && sc.getAttribute('src').match(/v=(\w+)/); return m ? 'h' + m[1] : 'h?'; };
+    var rd = function (k) { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } };
+    var wr = function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+    var key = function (e) { return [e.k, e.m, e.a, e.v].join('|'); };
+    function send() {
+      t = 0; if (navigator.onLine === false || window !== window.top) return;
+      var l = rd(K) || [], sent = rd(S) || {}, todo = l.filter(function (e) { return (sent[key(e)] || 0) < e.n; });
+      if (!todo.length) return;
+      var ua = navigator.userAgent;
+      fetch('/cmd/api/errlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({
+        os: /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'macOS' : 'other', br: /CriOS|Chrome\//.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'other', w: Math.round(innerWidth / 10) * 10, errs: todo }) })
+        .then(function (r) { if (r.ok) { todo.forEach(function (e) { sent[key(e)] = e.n; }); wr(S, sent); } }, function () {});
+    }
+    function log(k, m, a) {
+      var l = rd(K); if (!Array.isArray(l)) l = [];
+      var e = { k: k, m: mask(m), a: String(a || '').slice(0, 90), p: 'shared', v: ver(), t: Date.now(), n: 1 }, hit = l.filter(function (x) { return key(x) === key(e); })[0];
+      if (hit) { hit.n++; hit.t = e.t; } else l.push(e);
+      wr(K, l.slice(-30)); if (!t) t = setTimeout(send, 8000);
+    }
+    window.addEventListener('error', function (e) { if (!e.message || /^Script error\.?$/.test(e.message)) return; log('error', e.message, at(e.error && e.error.stack, e.filename, e.lineno)); });
+    window.addEventListener('unhandledrejection', function (e) { var r = e.reason; if (!r || r.name === 'AbortError') return; log('promise', r.message || String(r), at(r.stack)); });
+    setTimeout(send, 12000);
+    window.__homeErr = { log: log, send: send };
+  })();
   var SC = window.ShareCore, app = document.getElementById('app');
   /* ---------- language ---------- */
   var nb = (function () { try { var v = localStorage.getItem('home.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();
@@ -156,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 50;
+  var APPV = 51;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {

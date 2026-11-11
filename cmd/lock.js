@@ -404,6 +404,8 @@
     $('lockPass').blur();
     root.classList.remove('locked', 'resuming');
     root.classList.add('unlocked');
+    /* data saved in an older shape is brought up to date once (cmd/upgrades.js) and saved again */
+    if (window.Upgrades && data) { var dv0 = +data.dv || 0; try { window.Upgrades.run(data); } catch (e) {} if ((+data.dv || 0) !== dv0) resealAfterOpen = true; }
     if (resealAfterOpen) { resealAfterOpen = false; setTimeout(function () { if (key) window.Vault.save(data); }, 0); }
     $('lock').hidden = true;
     $('lockBox').style.visibility = '';

@@ -86,6 +86,50 @@
   function root() { return document.documentElement; }
   function unlocked() { return root().classList.contains('unlocked'); }
 
+  /* ---------- safe mode and the crash guard (Phase C step 6) ----------
+     /cmd/?safe starts with the extras off for this tab: normal page loads, no weather or animations, and the newest
+     version is fetched. A bar on top says so and has "Back to normal".
+     Crash guard: a start "counts" when the page gets to the lock screen or unlocks. Two starts in a row that never got
+     there → the next start opens in safe mode by itself, with a note. */
+  var SAFE = 'dash.safe', BOOT = 'dash.boot';
+  var safeWhy = '';
+  try {
+    if (/[?&]safe(=|&|$)/.test(location.search)) { sessionStorage.setItem(SAFE, 'asked'); }
+    if (/[?&]normal=1/.test(location.search)) { sessionStorage.removeItem(SAFE); }
+    var bt = IN_TEST ? null : JSON.parse(localStorage.getItem(BOOT) || 'null');
+    if (bt && bt.n >= 2 && Date.now() - bt.at < 30 * 6e4 && !sessionStorage.getItem(SAFE)) sessionStorage.setItem(SAFE, 'crash');
+    safeWhy = sessionStorage.getItem(SAFE) || '';
+    if (!IN_TEST) localStorage.setItem(BOOT, JSON.stringify({ n: (bt && Date.now() - bt.at < 30 * 6e4 ? bt.n : 0) + 1, at: Date.now() }));
+  } catch (e) {}
+  window.__safeMode = safeWhy;
+  if (safeWhy) {
+    root().classList.remove('mo-full', 'mo-subtle'); root().classList.add('mo-off', 'safe-mode');
+    try { navigator.serviceWorker && navigator.serviceWorker.getRegistration && navigator.serviceWorker.getRegistration().then(function (r) { if (r) r.update(); }, function () {}); } catch (e) {}
+    var bar = function () {
+      if (document.getElementById('safeBar')) return;
+      var b = document.createElement('div'); b.id = 'safeBar'; b.setAttribute('role', 'status');
+      b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:calc(env(safe-area-inset-top,0px) + 8px) 14px 8px;background:#2b2f3a;color:#fff;font:600 14px/1.3 system-ui,-apple-system,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+      var t = document.createElement('span');
+      t.textContent = safeWhy === 'crash'
+        ? L('Safe mode – the dashboard didn’t start properly twice, so the extras are off. It has been noted.', 'Sikker modus – dashbordet startet ikke riktig to ganger, så ekstrafunksjonene er av. Det er notert.')
+        : L('Safe mode – the extras are off (normal page loads, no animations).', 'Sikker modus – ekstrafunksjonene er av (vanlig sidelasting, ingen animasjoner).');
+      var a = document.createElement('button'); a.type = 'button'; a.id = 'safeBack';
+      a.style.cssText = 'border:0;border-radius:999px;padding:6px 14px;background:#fff;color:#2b2f3a;font:inherit;cursor:pointer';
+      a.textContent = L('Back to normal', 'Tilbake til vanlig');
+      a.addEventListener('click', function () { try { sessionStorage.removeItem(SAFE); localStorage.removeItem(BOOT); } catch (e) {} location.href = location.pathname; });
+      b.appendChild(t); b.appendChild(a); document.body.appendChild(b);
+      document.body.style.paddingTop = 'calc(' + (getComputedStyle(document.body).paddingTop || '0px') + ' + ' + b.offsetHeight + 'px)';
+    };
+    if (document.body) bar(); else document.addEventListener('DOMContentLoaded', bar);
+  }
+  if (!IN_TEST) {
+    var started = function () { return root().classList.contains('unlocked') || !!(document.getElementById('lockPass') || {}).offsetParent; };
+    var bootIv = setInterval(function () {
+      if (document.readyState === 'complete' && started()) { clearInterval(bootIv); try { localStorage.removeItem(BOOT); } catch (e) {} }
+    }, 500);
+    if (safeWhy === 'crash') setTimeout(function () { log('crash', 'Two starts in a row did not reach the lock screen – opened in safe mode', '', { raw: true }); }, 0);
+  }
+
   /* ---------- the last few taps, as element names only (never the text on them) ---------- */
   var crumbs = [];
   function label(el) {
@@ -515,15 +559,17 @@
           row('apple', '#e66767', L('Apple Health', 'Apple Helse'), i.healthDay ? esc(i.healthDay.split('-').reverse().slice(0, 2).join('.')) : '–', L('Last import ', 'Siste import ') + ago(i.healthLast) + (i.healthFail && (!i.healthPull || i.healthFail > i.healthPull) ? L(' · last fetch failed ', ' · siste henting feilet ') + ago(i.healthFail) : '')) +
           row('clipboard2-pulse', c && c.issues.length ? '#d95926' : '#22b35e', L('Daily self-check', 'Daglig sjekk'), c ? (c.issues.length ? '<b class="dg-bad">' + c.issues.length + '</b>' : '<i class="bi bi-check-lg dg-ok"></i>') : '–', cTxt + (c ? ' · ' + ago(c.t) : '')) +
           row('box-seam', '#8a6fdf', L('App version', 'App-versjon'), esc(i.sw.replace('cmd-', '')), L('Scripts ', 'Skript ') + esc(i.bundle)) +
+          (window.SoftNav && window.SoftNav.paused ? row('lightning-charge', '#d95926', L('Instant page changes', 'Raske sidebytter'), '<button type="button" class="text-btn" id="dgSnTry">' + L('Try again', 'Prøv igjen') + '</button>', L('Paused on this device after 2 failures – pages load normally until the next version', 'Satt på pause på denne enheten etter 2 feil – sidene lastes vanlig til neste versjon')) : '') +
+          (window.__safeMode ? row('shield-check', '#2b6fd9', L('Safe mode', 'Sikker modus'), '<button type="button" class="text-btn" id="dgSafeOff">' + L('Back to normal', 'Tilbake til vanlig') + '</button>', window.__safeMode === 'crash' ? L('Opened by itself after two failed starts', 'Åpnet av seg selv etter to mislykkede starter') : L('Asked for with ?safe', 'Bedt om med ?safe')) : '') +
         '</section>' +
         '<div class="dg-acts"><button type="button" class="pill-btn" id="dgCopy"><i class="bi bi-clipboard"></i> ' + L('Copy report', 'Kopier rapport') + '</button>' +
           '<button type="button" class="text-btn" id="dgRun"><i class="bi bi-arrow-repeat"></i> ' + L('Check now', 'Sjekk nå') + '</button></div>' +
-        '<p class="st-sub ap-sub"><i class="bi bi-bug"></i> ' + L('Recent errors', 'Siste feil') + ' <span class="st-hint">' + L('On this device · numbers and names are masked', 'På denne enheten · tall og navn er skjult') + '</span></p>' +
+        '<p class="st-sub ap-sub"><i class="bi bi-bug"></i> ' + L('Recent errors', 'Siste feil') + ' <span class="st-hint">' + L('Also sent to your own server · numbers and names are masked', 'Sendes også til din egen server · tall og navn er skjult') + '</span></p>' +
         '<section class="st-group"><ul class="st-inv dg-errs">' + (errs.length ? errs.slice(0, 15).map(function (e) {
           return '<li><span class="dg-et">' + esc(new Date(e.t).toLocaleString(nb() ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(e.p) + (e.n > 1 ? ' · ×' + e.n : '') + '</span><code>' + esc(e.m) + '</code>' + (e.a ? '<small>' + esc(e.a) + '</small>' : '') + '</li>';
         }).join('') : '<li class="muted">' + L('No errors. Nice.', 'Ingen feil. Fint.') + '</li>') + '</ul>' +
         (errs.length ? '<button type="button" class="st-row st-btn" id="dgClear"><span><i class="bi bi-trash3"></i> ' + L('Clear the log', 'Tøm loggen') + '</span></button>' : '') + '</section>' +
-        '<p class="st-intro st-after">' + L('The report has no amounts, names or other personal data – just versions, times and error messages with numbers masked. Paste it to Claude when something isn’t right.', 'Rapporten har ingen beløp, navn eller andre personlige data – bare versjoner, tidspunkter og feilmeldinger med tall skjult. Lim den inn til Claude når noe ikke stemmer.') + '</p>';
+        '<p class="st-intro st-after">' + L('The report has no amounts, names or other personal data – just versions, times and error messages with numbers masked. The error lines also go to your own server, so Claude can read them when you say “check the errors”.', 'Rapporten har ingen beløp, navn eller andre personlige data – bare versjoner, tidspunkter og feilmeldinger med tall skjult. Feillinjene sendes også til din egen server, så Claude kan lese dem når du sier «sjekk feilene».') + '</p>';
     });
   }
   document.addEventListener('click', function (e) {
@@ -537,11 +583,46 @@
     }
     if (e.target.closest('#dgRun')) { var r = e.target.closest('#dgRun'); r.disabled = true; selfCheck(true).then(render); }
     if (e.target.closest('#dgClear')) { writeJSON(LOG, []); render(); }
+    if (e.target.closest('#dgSnTry')) { try { localStorage.removeItem('dash.snpause'); localStorage.removeItem('dash.snfail'); } catch (er) {} location.reload(); }
+    if (e.target.closest('#dgSafeOff')) { try { sessionStorage.removeItem(SAFE); localStorage.removeItem(BOOT); } catch (er) {} location.href = location.pathname; }
   });
   function fallback(t) { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
   window.addEventListener('diag:log', function () { var pg = document.querySelector('.st-page[data-page="diag"]'); if (pg && !pg.hidden) render(); });
 
+  /* ---------- error reports reach the server (Phase C step 5) so the next session can read them ----------
+     Only what this log already holds (masked messages, file:line, page, version, times, counts) plus os/browser/width.
+     Sent a little after something is logged and when the page is left; each line only again when its count grew. */
+  var SENT = 'dash.errsent', upT = 0;
+  function devInfo() {
+    var ua = navigator.userAgent;
+    return { os: /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : 'other',
+      br: /CriOS|Chrome\//.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'other', w: Math.round(innerWidth / 10) * 10 };
+  }
+  function lineKey(e) { return [e.k, e.m, e.a, e.p, e.v].join('|'); }
+  function upload(leaving) {
+    clearTimeout(upT); upT = 0;
+    if (IN_TEST || navigator.onLine === false || /[?&]noreport=1/.test(location.search)) return;
+    var sent = readJSON(SENT, {}); if (!sent || typeof sent !== 'object') sent = {};
+    var l = readJSON(LOG, []); if (!Array.isArray(l)) return;
+    var todo = l.filter(function (e) { return e && e.v && e.v !== '?' && (sent[lineKey(e)] || 0) < (e.n || 1); });
+    if (!todo.length) return;
+    var d = devInfo(), body = JSON.stringify({ os: d.os, br: d.br, w: d.w, errs: todo.slice(-60) });
+    var done = function () {
+      var keep = {}; l.forEach(function (e) { var k = lineKey(e); if (sent[k]) keep[k] = sent[k]; });
+      todo.forEach(function (e) { keep[lineKey(e)] = e.n || 1; });
+      writeJSON(SENT, keep); var s = readJSON(ST, {}); s.reportAt = Date.now(); writeJSON(ST, s);
+    };
+    try {
+      var r = fetch('/cmd/api/errlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, credentials: 'same-origin', keepalive: !!leaving });
+      if (leaving) done();   /* the page is going away: count it as sent (a lost one is sent again only if it repeats) */
+      else r.then(function (res) { if (res.ok) done(); }, function () {});
+    } catch (e) {}
+  }
+  window.addEventListener('diag:log', function () { if (!upT) upT = setTimeout(upload, 8000); });
+  window.addEventListener('pagehide', function () { if (upT) upload(true); });
+  setTimeout(upload, 12000);   /* anything left from last time */
+
   window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, ver: ver, mark: mark, state: state,
     notice: notice, hide: hide, retry: retry, selfCheck: selfCheck, report: report, scrub: scrub, render: render,
-    crumbs: function () { return crumbs.slice(); }, speed: function () { return readJSON(SPEED, {}); }, scanNow: scanNow, label: label, page: page, open: openPanel, netOk: function () { return netOk; } };
+    crumbs: function () { return crumbs.slice(); }, upload: upload, speed: function () { return readJSON(SPEED, {}); }, scanNow: scanNow, label: label, page: page, open: openPanel, netOk: function () { return netOk; } };
 })();

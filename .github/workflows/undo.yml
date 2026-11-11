@@ -1,0 +1,34 @@
+# Undo the last release: puts back the code of the release before it (as a new change on main – nothing is deleted
+# from the history) and publishes it. If `next` has newer work, merge main into it before the next release.
+# Run it from the Actions tab (or `gh workflow run undo.yml`).
+name: undo last release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+jobs:
+  undo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Put back the previous release
+        run: |
+          git config user.name "cmd undo"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch --tags origin
+          last=$(git tag -l 'release-*' --sort=-creatordate | sed -n 1p)
+          prev=$(git tag -l 'release-*' --sort=-creatordate | sed -n 2p)
+          if [ -z "$prev" ]; then echo "no earlier release to go back to" >&2; exit 1; fi
+          echo "going back from $last to $prev"
+          git checkout main
+          git diff --binary HEAD "$prev" | git apply --index
+          git commit -m "Undo release $last: back to $prev" || { echo "nothing to undo"; exit 0; }
+          git push origin main
+          git tag "release-$(date -u +%Y%m%d-%H%M%S)-undo" && git push origin --tags
+      - name: Publish the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || true

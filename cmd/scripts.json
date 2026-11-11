@@ -3,6 +3,7 @@
     "diag.js",
     "i18n.js",
     "lock.js",
+    "upgrades.js",
     "devices.js",
     "lockui.js",
     "passkey.js",

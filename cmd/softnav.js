@@ -11,7 +11,25 @@
   'use strict';
   var on = false;
   try { on = (JSON.parse(localStorage.getItem('dash.settings')) || {}).softNav !== false; } catch (e) { on = true; }   /* on unless turned off */
-  window.SoftNav = { on: on, count: 0 };
+  /* self-healing (Phase C step 6): after 2 failed page changes within 3 days this device uses normal loads – until
+     the next version of the app, which gets a fresh try (Settings → Diagnostics says so and can try again) */
+  var PAUSE = 'dash.snpause', FAILS = 'dash.snfail', HV = (function () { var c = document.currentScript, m = c && (c.getAttribute('src') || '').match(/v=(\w+)/); return m ? m[1] : ''; })();
+  var paused = null;
+  try { paused = JSON.parse(localStorage.getItem(PAUSE) || 'null'); if (paused && paused.v !== HV) { localStorage.removeItem(PAUSE); localStorage.removeItem(FAILS); paused = null; } } catch (e) {}
+  var safe = !!window.__safeMode;
+  window.SoftNav = { on: on && !paused && !safe, count: 0, paused: paused, safe: safe };
+  on = window.SoftNav.on;
+  function failed(why) {
+    if (navigator.onLine === false) return;
+    try {
+      var l = (JSON.parse(localStorage.getItem(FAILS) || '[]') || []).filter(function (t) { return t > Date.now() - 3 * 864e5; });
+      l.push(Date.now()); localStorage.setItem(FAILS, JSON.stringify(l));
+      if (l.length >= 2) {
+        localStorage.setItem(PAUSE, JSON.stringify({ at: Date.now(), v: HV, why: String(why || '').slice(0, 160) }));
+        if (window.Diag && window.Diag.log) window.Diag.log('softnav', 'Instant page changes paused on this device after 2 failures – normal loads until the next version', 'softnav.js', { raw: true });
+      }
+    } catch (e) {}
+  }
   if (!on || !window.history || !window.history.pushState || !window.fetch || !window.DOMParser) return;
   window.SoftNav.active = true;          /* really working in this browser (nav.js leaves "one change at a time" to it) */
   window.SoftNav.busy = function () { return busy; };
@@ -117,7 +135,7 @@
     /* never stuck: a page change that hasn't finished after 6 s is done as a normal load instead (and noted in Diagnostics) */
     var arrived = false; stage = 'getting the page'; vtOn = false;
     var dog = sT.call(window, function () { if (arrived) return; var why = 'A page change to ' + u.pathname + ' took too long – loaded it normally (stuck at: ' + stage + (vtOn ? ', with the glide' : '') + ')';
-      try { sessionStorage.setItem('softnav.err', why); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', why, 'softnav.js'); full(); }, 6000);
+      try { sessionStorage.setItem('softnav.err', why); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', why, 'softnav.js'); failed(why); full(); }, 6000);
     getHtml(u).then(function (text) {
       mark('sn:html'); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
@@ -158,7 +176,7 @@
       var end = function () { root.classList.remove('sn-go'); };
       vt.finished.then(end, end);
       return vt.updateCallbackDone.then(finish, function () { finish(); });
-    }).catch(function (e) { arrived = true; clearTimeout(dog); try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); full(); })
+    }).catch(function (e) { arrived = true; clearTimeout(dog); try { sessionStorage.setItem('softnav.err', String((e && e.stack) || e).slice(0, 500)); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', (e && e.message) || String(e), 'softnav.js'); failed(e && e.message); full(); })
       .then(function () { busy = false;
         var n = next; next = null;
         if (n && (n.u.pathname !== location.pathname || n.u.search !== location.search)) go(n.u, n.pop);

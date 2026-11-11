@@ -93,7 +93,57 @@ for page, files in M['pages'].items():
         if check: print('out of date:', page); stale = True
         else: io.open(html_path, 'w', encoding='utf-8').write(new)
 
+# ---------- version numbers, stamped from the file contents (no hand bumps) ----------
+# Every local file a page loads with "?v=" gets the first 10 characters of its content's hash, the service worker's
+# CACHE name is the hash of everything under cmd/, and the shared app's APPV counts up by one whenever its files change.
+ROOT = os.path.dirname(HERE)
+def _h(data): return hashlib.sha1(data).hexdigest()[:10]
+def _local(html_path, url):
+    u = url.split('#')[0]
+    if re.match(r'[a-z]+:', u) or u.startswith('//'): return None
+    p = os.path.join(ROOT, u.lstrip('/')) if u.startswith('/') else os.path.normpath(os.path.join(os.path.dirname(html_path), u))
+    return p if os.path.isfile(p) else None
+def _save(path, old, new):
+    global stale
+    if new == old: return
+    if check: print('out of date (version):', os.path.relpath(path, ROOT)); stale = True
+    else: io.open(path, 'w', encoding='utf-8').write(new)
+HTML = []
+for d, _, fs in os.walk(HERE):
+    if os.sep + 'dist' in d or os.sep + 'node_modules' in d: continue
+    HTML += [os.path.join(d, f) for f in fs if f.endswith('.html')]
+for hp in sorted(HTML):
+    html = io.open(hp, encoding='utf-8').read()
+    def _stamp(m):
+        if m.group(2).endswith('home/app.js'): return m.group(0)     # the shared app keeps its counting number (below)
+        f = _local(hp, m.group(2))
+        return m.group(0) if not f else '%s="%s?v=%s"' % (m.group(1), m.group(2), _h(open(f, 'rb').read()))
+    _save(hp, html, re.sub(r'(src|href)="([^"?]+)\?v=[^"]*"', _stamp, html))
+# the shared app: its version goes up by one when any of its files change (it compares numbers to know "newer")
+HV = os.path.join(HERE, 'home', 'version.json'); APPJS = os.path.join(HERE, 'home', 'app.js'); HIDX = os.path.join(HERE, 'home', 'index.html')
+hv = json.load(io.open(HV)) if os.path.exists(HV) else None
+appjs = io.open(APPJS, encoding='utf-8').read(); hidx = io.open(HIDX, encoding='utf-8').read()
+cur = int(re.search(r'var APPV = (\d+);', appjs).group(1))
+parts = [re.sub(r'var APPV = \d+;', '', appjs), re.sub(r'home/app\.js\?v=\d+', '', hidx)]
+for f in ['home/app.css', 'avatar.js', 'share-core.js', 'chat.js']: parts.append(io.open(os.path.join(HERE, f), encoding='utf-8').read())
+hh = _h('\n'.join(parts).encode('utf-8'))
+if not hv: hv = {'n': cur, 'hash': hh}
+n = hv['n'] + (1 if hv['hash'] != hh else 0)
+_save(APPJS, appjs, re.sub(r'var APPV = \d+;', 'var APPV = %d;' % n, appjs))
+_save(HIDX, hidx, re.sub(r'home/app\.js\?v=\d+', 'home/app.js?v=%d' % n, hidx))
+newhv = json.dumps({'n': n, 'hash': hh}) + '\n'
+_save(HV, io.open(HV, encoding='utf-8').read() if os.path.exists(HV) else '', newhv)
+# the service worker's cache name: changes whenever anything under cmd/ changes, so every device picks up the new version
+SW = os.path.join(HERE, 'sw.js'); sw = io.open(SW, encoding='utf-8').read(); acc = hashlib.sha1()
+for d, _, fs in os.walk(HERE):
+    if os.sep + 'node_modules' in d: continue
+    for f in sorted(fs):
+        fp = os.path.join(d, f)
+        if fp == SW or f.endswith(('.md', '.py')): continue
+        acc.update(os.path.relpath(fp, HERE).encode()); acc.update(open(fp, 'rb').read())
+_save(SW, sw, re.sub(r"var CACHE = '[^']*';", "var CACHE = 'cmd-v%s';" % acc.hexdigest()[:10], sw))
+
 if check:
-    print('bundles are out of date – run python3 cmd/build.py' if stale else 'bundles are up to date')
+    print('bundles or versions are out of date – run python3 cmd/build.py' if stale else 'bundles and versions are up to date')
     sys.exit(1 if stale else 0)
-print('built', 2 + len(M['pages']), 'bundles')
+print('built', 2 + len(M['pages']), 'bundles, stamped versions')

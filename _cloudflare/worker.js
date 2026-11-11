@@ -179,7 +179,7 @@ function storage(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws|vpiece)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws|vpiece|errlog)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -208,6 +208,7 @@ async function route(request, env) {
       if (path === '/cmd/api/live') return liveApi(request, 'p', env);
       if (path === '/cmd/api/ws') return wsApi(request, env, 'p');
       if (path === '/cmd/api/share') return shareApi(request, url, env, true, shareCfg);
+      if (path === '/cmd/api/errlog') return errlogApi(request, url, env, 'p');
       return json({ error: 'only the shared space is open to you', partner: true }, 403);
     }
     if (path === '/cmd/api/shared') return sharedApi(request, env, 'o', shareCfg);
@@ -239,6 +240,7 @@ async function route(request, env) {
     if (path === '/cmd/api/backup') return backupApi(request, env);
     if (path === '/cmd/api/file') return fileApi(request, url, env);
     if (path === '/cmd/api/vpiece') return pieceApi(request, url, env);
+    if (path === '/cmd/api/errlog') return errlogApi(request, url, env, 'o');
     if (path === '/cmd/api/ping') { const v = env.VAULT ? await env.VAULT.get(KEY) : null; const cron = env.VAULT ? +(await env.VAULT.get(CRON_KEY)) || 0 : 0; return json({ ok: true, now: new Date().toISOString(), rev: v ? JSON.parse(v).rev : null, cron, store: env.KV ? 'd1' : 'kv', files: env.FILES ? 'r2' : 'kv', live: env.LIVE ? 'ws' : 'poll', fileMax: fileMax(env) }); }
     return vault(request, env);
 }
@@ -1491,6 +1493,60 @@ async function devicesApi(request, url, env) {
     const old = JSON.parse(await env.VAULT.get(DEV_PREFIX + id) || 'null') || { id };
     old.revoked = Date.now();
     await env.VAULT.put(DEV_PREFIX + id, JSON.stringify(old), { expirationTtl: 90 * 86400 });
+    return json({ ok: true });
+  }
+  return json({ error: 'method not allowed' }, 405);
+}
+
+/* ---- Error reports (Phase C step 5): the error lines each device keeps (cmd/diag.js) are sent here so the next
+   session can read them. Only what Diagnostics already shows: kind, masked message, file:line, page, version, times,
+   count, and the device's os/browser/width. Masked again here (numbers, e-mails, quoted text) in case a client didn't.
+   The owner (o) and the person you share with (p, the shared app) each have their own list; only the owner reads. ---- */
+const ERR_KEY = who => 'errlog:' + who, ERR_MAX = 300, ERR_DAYS = 21;
+function errMask(s, raw) {
+  s = String(s == null ? '' : s).replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '<email>').replace(/(["'“‘«])[^"'”’»]{1,}?(["'”’»])/g, '$1…$2');
+  if (!raw) s = s.replace(/\d+([.,:\s]\d+)*/g, '#');
+  return s.replace(/[\u0000-\u001f]/g, ' ').slice(0, 200);
+}
+function errClean(e, dev) {
+  if (!e || typeof e !== 'object') return null;
+  const k = String(e.k || ''); if (!/^[a-z]{2,12}$/.test(k)) return null;
+  const raw = k === 'freeze' || k === 'speed' || k === 'nav';   /* our own messages (times in seconds) */
+  return { k, m: errMask(e.m, raw), a: errMask(e.a, true).replace(/[^\w.:#\-\/ ››>]/g, '').slice(0, 100), p: String(e.p || '').replace(/[^a-z]/g, '').slice(0, 16),
+    v: String(e.v || '').replace(/[^\w-]/g, '').slice(0, 16), t: Math.min(+e.t || 0, Date.now()), n: Math.max(1, Math.min(+e.n || 1, 1e6)), d: dev };
+}
+async function errlogApi(request, url, env, who) {
+  if (!env.VAULT) return json({ error: 'no storage' }, 503);
+  const cut = Date.now() - ERR_DAYS * 86400e3;
+  const load = async w => (JSON.parse(await env.VAULT.get(ERR_KEY(w)) || '[]') || []).filter(x => x && x.t > cut);
+  if (request.method === 'GET') {
+    if (who !== 'o') return json({ error: 'not allowed' }, 403);
+    const lists = { o: await load('o'), p: await load('p') };
+    if (url.searchParams.get('format') === 'text') {
+      const lines = ['cmd error reports · ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC · last ' + ERR_DAYS + ' days'];
+      for (const w of ['o', 'p']) {
+        const l = lists[w].sort((a, b) => b.t - a.t);
+        lines.push('', (w === 'o' ? 'cmd (owner)' : 'shared app') + ' – ' + l.length + ' line(s)');
+        l.forEach(e => lines.push('- ' + new Date(e.t).toISOString().slice(5, 16).replace('T', ' ') + ' ' + e.k + ' ' + e.p + ' ' + (e.a || '') + ' ×' + e.n + ' [' + e.v + ' · ' + e.d + ']: ' + e.m));
+      }
+      return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
+    }
+    return json(lists);
+  }
+  if (request.method === 'POST') {
+    const b = await request.json().catch(() => ({}));
+    const dev = [b.os, b.br, b.w ? b.w + 'px' : ''].map(x => String(x || '').replace(/[^\w ()]/g, '').slice(0, 24)).filter(Boolean).join(' ').slice(0, 60) || '?';
+    const inc = (Array.isArray(b.errs) ? b.errs : []).slice(0, 80).map(e => errClean(e, dev)).filter(Boolean);
+    if (!inc.length) return json({ ok: true, n: 0 });
+    const l = await load(who), same = (x, y) => x.k === y.k && x.m === y.m && x.a === y.a && x.p === y.p && x.v === y.v && x.d === y.d;
+    for (const e of inc) { const hit = l.find(x => same(x, e)); if (hit) { hit.n = Math.max(hit.n, e.n); hit.t = Math.max(hit.t, e.t); } else l.push(e); }
+    l.sort((a, b) => a.t - b.t);
+    await env.VAULT.put(ERR_KEY(who), JSON.stringify(l.slice(-ERR_MAX)), { expirationTtl: ERR_DAYS * 86400 });
+    return json({ ok: true, n: inc.length });
+  }
+  if (request.method === 'DELETE') {
+    if (who !== 'o') return json({ error: 'not allowed' }, 403);
+    await env.VAULT.delete(ERR_KEY('o')); await env.VAULT.delete(ERR_KEY('p'));
     return json({ ok: true });
   }
   return json({ error: 'method not allowed' }, 405);

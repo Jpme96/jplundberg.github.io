@@ -1,11 +1,16 @@
-# Runs the cmd tests (tests/) on every push and pull request. A red run means something broke – it gets fixed first.
+# Tests for cmd (tests/), split over 4 machines, plus a Safari (WebKit) check.
+#  - A push to `next` is tested first; only when everything is green is `main` moved to it, which publishes cmd
+#    (GitHub Pages) and the Worker (Cloudflare builds from main). A red run publishes nothing.
+#  - A direct push to main, a pull request, a manual run and the nightly run are tested the same way (no promotion).
 name: tests
 on:
   push:
-    branches: [main]
-    paths: ['cmd/**', '_cloudflare/**', 'tests/**', '.github/workflows/tests.yml']
+    branches: [main, next]
+    paths: ['cmd/**', '_cloudflare/**', 'tests/**', '.github/workflows/**', 'assets/**', 'index.html']
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
 permissions:
   contents: read
 concurrency:
@@ -14,7 +19,11 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +35,54 @@ jobs:
       - name: Install
         working-directory: tests
         run: npm install --no-audit --no-fund
-      - name: Run all tests
+      - name: Run tests (part ${{ matrix.shard }} of 4)
         working-directory: tests
         env:
           ESBUILD: ${{ github.workspace }}/tests/node_modules/esbuild/bin/esbuild
-        run: node run.js
+        run: node run.js -j 2 --shard ${{ matrix.shard }}/4
+
+  safari:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps webkit
+      - name: Safari (WebKit) check
+        working-directory: tests
+        run: node webkit/smoke.js
+
+  # Only green changes reach main (and so the live site and the Worker)
+  promote:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+    needs: [test, safari]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Move main to the tested change
+        run: |
+          git config user.name "cmd tests"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin main
+          if git merge-base --is-ancestor origin/main "$GITHUB_SHA"; then
+            git push origin "$GITHUB_SHA:refs/heads/main"
+          else
+            echo "main has changes that next doesn't have – merge main into next first" >&2; exit 1
+          fi
+          git tag "release-$(date -u +%Y%m%d-%H%M%S)" "$GITHUB_SHA" && git push origin --tags
+      - name: Publish the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Pages builds by itself from main"
