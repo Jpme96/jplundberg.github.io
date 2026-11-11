@@ -7,7 +7,8 @@
   'use strict';
   if (window.Live) return;
   var NS = 'http://www.w3.org/2000/svg';
-  function still() { var c = document.documentElement.classList; return c.contains('mo-off') || c.contains('mo-reduced') || !!window.__safeMode || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function lively() { var d = window.Delight && window.Delight.get ? window.Delight.get() : {}; return d.avLive || 'normal'; }
+  function still() { var c = document.documentElement.classList; return lively() === 'still' || c.contains('mo-off') || c.contains('mo-reduced') || !!window.__safeMode || !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
   var reduce = false, NB = window.I18N && window.I18N.lang === 'nb';
   function el(tag, at, html) { var e = document.createElementNS(NS, tag); for (var k in at) e.setAttribute(k, at[k]); if (html) e.innerHTML = html; return e; }
   function lerp(a, b, u) { return a + (b - a) * u; }
@@ -31,6 +32,7 @@
     H.held = { R: null, L: null }; H.bend = { R: 1, L: 1 }; H.turn = 0; H.str = null; H.view = 'front'; H.sq = 1; H.hold = {}; H.k = 1;
     H.layB = el('g', { class: 'held-back' }); H.layF = el('g', { class: 'held-front' }); svg.insertBefore(H.layB, H.wrap); svg.insertBefore(H.layF, H.wrap.nextSibling);
     H.gaze = null; H.objs = {};
+    H.bounce = H.look.walk === 'bouncy' ? 1.8 : H.look.walk === 'calm' ? .7 : 1; H.speed = H.look.walk === 'quick' ? 1.4 : H.look.walk === 'calm' ? .8 : 1; H.main = H.look.hand === 'left' ? 'L' : 'R';
     HEROES.push(H); wake(); return H;
   }
   /* things in a hand: drawn so the grip sits in the hand; rot tilts it, flip mirrors it (a can facing left);
@@ -74,7 +76,7 @@
     if (H.gaze && H.view !== 'back') { var hc = [H.pos[0], H.pos[1] - 100 * H.s * (H.k || 1)], dx = H.gaze[0] - hc[0], dy = H.gaze[1] - hc[1], d = Math.hypot(dx, dy) || 1; lx = dx / d * 2.4; ly = dy / d * 1.6; ht = dx / d * 3; }
     H.lk = H.lk || [0, 0, 0]; H.lk = [lerp(H.lk[0], lx, .15), lerp(H.lk[1], ly, .15), lerp(H.lk[2], ht, .15)];
     var tt = Math.abs(H.turn) > .01 ? H.turn : 0;
-    H.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (3.6 * tt + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
+    H.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + (5.5 * tt + H.lk[0]).toFixed(2) + ' ' + H.lk[1].toFixed(2) + ')'); });
     if (H.rig.head) H.rig.head.setAttribute('transform', 'rotate(' + (H.head[0] + H.lk[2]).toFixed(2) + ' 101 80) translate(0 ' + H.head[1].toFixed(2) + ')');
     /* held things */
     Object.keys(H.objs).forEach(function (k) { var o = H.objs[k], want = o.layer === 'front' ? H.layF : o.layer === 'back' ? H.layB : (H.view === 'back' ? H.layB : H.layF); if (o.g.parentNode !== want) want.appendChild(o.g); o.g.style.opacity = H.op; o.g.setAttribute('transform', objXf(H, o, o.free || handAt(H, k))); });
@@ -94,19 +96,19 @@
   function wait(R, ms) { return tw(R, ms, function () {}); }
   /* walk: knees lift in turn, a little bob, arms swing; pathFn(u) can give the ground to walk on (a trail) */
   function walk(R, H, to, speed, pathFn, endTurn, faceDir) {
-    var from = H.pos.slice(), dist = Math.hypot(to[0] - from[0], to[1] - from[1]), step = 7 * H.s / .5 * (H.k || 1), ms = Math.max(300, dist / (speed || 24) * 1000), dir = to[0] >= from[0] ? 1 : -1, t0 = H.turn;
+    var from = H.pos.slice(), dist = Math.hypot(to[0] - from[0], to[1] - from[1]), step = 7 * H.s / .5 * (H.k || 1), ms = Math.max(300, dist / ((speed || 24) * (H.speed || 1)) * 1000), dir = to[0] >= from[0] ? 1 : -1, t0 = H.turn;
     var last = from.slice();
     return tw(R, ms, function (u) {
       var p = pathFn ? pathFn(u) : [lerp(from[0], to[0], u), lerp(from[1], to[1], u)], ph = dist * u / step * Math.PI / 2, sn = Math.sin(ph), cs = Math.cos(ph);
       var fade = Math.min(1, u * ms / 220, (1 - u) * ms / 260), dd = [p[0] - last[0], p[1] - last[1]]; last = p.slice();
       ['R', 'L'].forEach(function (k) { if (H.hand[k] && !H.fixHand) H.hand[k] = [H.hand[k][0] + dd[0], H.hand[k][1] + dd[1]]; });
       if (faceDir === 'front') {   /* walking toward you: knees lift in turn, no side stride */
-        H.pos = p; H.str = null; var ph2 = dist * u / step * Math.PI, s2 = Math.sin(ph2); H.legs.R = Math.max(0, s2) * .7 * fade; H.legs.L = Math.max(0, -s2) * .7 * fade; H.bob = -Math.abs(s2) * 1.1 * H.s / .5 * fade; H.turn = lerp(t0, endTurn || 0, u);
+        H.pos = p; H.str = null; var ph2 = dist * u / step * Math.PI, s2 = Math.sin(ph2); H.legs.R = Math.max(0, s2) * .7 * fade; H.legs.L = Math.max(0, -s2) * .7 * fade; H.bob = -Math.abs(s2) * 1.1 * (H.bounce || 1) * H.s / .5 * fade; H.turn = lerp(t0, endTurn || 0, u);
         if (!H.hand.R) H.rot.R = [-s2 * 12 * fade, -8 * fade]; if (!H.hand.L) H.rot.L = [-s2 * 12 * fade, 8 * fade]; if (H.onStep) H.onStep(); return;
       }
       H.pos = p; H.turn = lerp(u < .5 ? t0 : (endTurn || 0), faceDir || dir, fade);
       H.str = [-dir * 24 * sn * fade, dir * 42 * Math.max(0, cs) * fade, dir * 24 * sn * fade, dir * 42 * Math.max(0, -cs) * fade];
-      H.bob = Math.abs(sn) * 1.3 * H.s / .5 * fade;
+      H.bob = Math.abs(sn) * 1.3 * (H.bounce || 1) * H.s / .5 * fade;
       if (!H.hand.R) H.rot.R = [dir * 22 * sn * fade, -dir * 18 * fade]; if (!H.hand.L) H.rot.L = [-dir * 22 * sn * fade, -dir * 18 * fade];
       H.lean = (faceDir || dir) * 3 * fade; if (H.onStep) H.onStep();
     }).then(function () { H.str = null; H.turn = endTurn || 0; H.legs.R = H.legs.L = 0; H.bob = 0; H.lean = 0; H.rot.R = [0, 0]; H.rot.L = [0, 0]; });
@@ -161,7 +163,7 @@
       for (var i = 0; i < pool.length; i++) { r -= pool[i].w || 1; if (r <= 0) { a = pool[i]; break; } }
       last = a.n;
       label(a.t); var tok = R.tok;
-      a.f().then(function () { if (R.tok !== tok) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { return idle(R, H, rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
+      a.f().then(function () { if (R.tok !== tok) return; label('looking around'); face(H, 'smile'); return settle(R, H, 450).then(function () { var lv = lively(); return idle(R, H, lv === 'calm' ? rnd(4000, 8000) : lv === 'lively' ? rnd(400, 1000) : rnd(900, 2200)); }); }).then(function () { if (R.tok === tok) go(); });
     }
     H.wrap.addEventListener('click', function (ev) { ev.stopPropagation(); R.tok++; clear(H); var tok = R.tok; label('giggling'); poke().then(function () { if (R.tok !== tok) return; return settle(R, H, 400); }).then(function () { if (R.tok === tok) { label('looking around'); face(H, 'smile'); setTimeout(function () { if (R.tok === tok) go(); }, 900); } }); });
     setTimeout(go, rnd(300, 1200));

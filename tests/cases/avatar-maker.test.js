@@ -2,7 +2,7 @@
    - avatars made before it are drawn exactly as before (fingerprints in tests/lib/avatar-old.json – first made from the
      old code with only the ear change, renewed on purpose for the new body, L1 2026-11-11: same choices, new arms/legs/neck)
    - hundreds of random looks with every new option: no errors, no "undefined"/"NaN", nothing outside the picture
-   - Settings → Pictures & touches: tabs and picture tiles; a tap saves; an old cap/lanyard carries over; fits a phone
+   - Settings → Your avatar: its own page with tabs and picture tiles, turn-around, See it move, Undo, Save; an old cap/lanyard carries over; fits a phone
    - Iago makes his avatar in his app with new options; cmd gets all of them (more than the old 16-setting limit)
    Made-up data only. */
 const { shared, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
@@ -42,38 +42,52 @@ const OLD = require('../lib/avatar-old.json');
   });
   check(!stress.bad.length && !stress.out, '600 random avatars with all the new options: no errors or broken words, nothing outside the picture ' + JSON.stringify(stress));
 
-  /* 3. Settings → Pictures & touches */
+  /* 3. Settings → Your avatar: the maker on its own page */
   await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.avatar = { build: 'slim', hair: 'quiff', top: 'sweater', extra: 'lanyard' }; localStorage.setItem('dash.settings', JSON.stringify(s)); });
   await p.click('#settingsBtn'); await sl(500); await p.click('[data-go="touches"]'); await sl(700);
-  const tabs = await p.evaluate(() => [...document.querySelectorAll('#avSet .avm-tabs [data-avm-tab]')].map(x => x.textContent));
-  check(tabs.length === 6, 'the maker has 6 tabs: ' + tabs.join(', '));
+  check(await p.evaluate(() => !!document.querySelector('#avSet [data-avp-open]') && !document.querySelector('#avSet .avm-tiles')), 'Settings keeps one row for your avatar (no tiles crowding it)');
+  await p.evaluate(() => document.querySelector('#avSet [data-avp-open]').click()); await sl(700);
+  const tabs = await p.evaluate(() => [...document.querySelectorAll('.avp [data-avp-tab]')].map(x => x.textContent));
+  check(tabs.length === 8, 'the avatar page has 8 tabs: ' + tabs.join(', '));
   const perTab = [];
-  for (const t of ['face', 'hair', 'body', 'style', 'extras', 'day']) {
-    await p.evaluate(t => document.querySelector('#avSet [data-avm-tab="' + t + '"]').click(), t); await sl(250);
-    perTab.push(await p.evaluate(() => { const m = document.querySelector('#avSet .avm'); return [m.querySelectorAll('.avm-t').length + m.querySelectorAll('.avm-d').length, /undefined|NaN|null/.test(m.innerText)]; }));
+  for (const t of ['face', 'hair', 'body', 'style', 'extras', 'pet', 'moves', 'settings']) {
+    await p.evaluate(t => document.querySelector('.avp [data-avp-tab="' + t + '"]').click(), t); await sl(250);
+    perTab.push(await p.evaluate(() => { const m = document.querySelector('.avp-pane'); return [m.querySelectorAll('.avm-t').length + m.querySelectorAll('.avm-d').length + m.querySelectorAll('.avp-set label').length, /undefined|NaN|null/.test(m.innerText)]; }));
   }
-  check(perTab.every(x => x[0] > 3 && !x[1]), 'every tab shows picture tiles or colours, no broken words ' + JSON.stringify(perTab));
-  await p.evaluate(() => document.querySelector('#avSet [data-avm-tab="extras"]').click()); await sl(250);
-  await p.evaluate(() => document.querySelector('#avSet [data-avm-k="hat"][data-avm-v="beanie"]').click()); await sl(300);
+  check(perTab.every(x => x[0] >= 2 && !x[1]), 'every tab shows picture tiles, colours or settings, no broken words ' + JSON.stringify(perTab));
+  await p.evaluate(() => document.querySelector('.avp [data-avp-tab="extras"]').click()); await sl(250);
+  await p.evaluate(() => document.querySelector('.avp [data-avm-k="hat"][data-avm-v="beanie"]').click()); await sl(300);
+  check(await p.evaluate(() => document.querySelector('.avp [data-avm-k="hat"][data-avm-v="beanie"]').getAttribute('aria-pressed') === 'true' && !document.querySelector('.avp [data-avp-undo]').disabled), 'a tap shows on the tile, and Undo is ready');
+  check(await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings')).avatar || {}).hat !== 'beanie'), 'nothing is saved until Save');
+  /* turn it around and see it move */
+  for (const v of ['q', 'side', 'back', 'front']) await p.evaluate(v => document.querySelector('.avp [data-avp-view="' + v + '"]').click(), v);
+  await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(2500);
+  check(await p.evaluate(() => !!document.querySelector('.avp-test .hero')), 'turning around and "See it move" work');
+  /* leaving with changes asks first */
+  await p.evaluate(() => document.querySelector('.avp [data-avp-back]').click()); await sl(200);
+  check(await p.evaluate(() => !document.querySelector('.avp-ask').hidden), 'leaving with changes asks first');
+  await p.evaluate(() => document.querySelector('.avp-ask [data-avp-save]').click()); await sl(400);
   const saved = await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings')).avatar));
-  check(saved.hat === 'beanie' && saved.neck === 'lanyard' && saved.extra === 'none' && saved.hair === 'quiff', 'a tap saves (beanie), and the old work lanyard carries over: ' + JSON.stringify({ hat: saved.hat, neck: saved.neck, extra: saved.extra }));
-  check(await p.evaluate(() => document.querySelector('#avSet [data-avm-k="hat"][data-avm-v="beanie"]').getAttribute('aria-pressed') === 'true' && document.querySelector('#avSet [data-avm-tab="extras"]').getAttribute('aria-selected') === 'true'), 'the tile is marked and you stay on the same tab');
-  const fit = await p.evaluate(() => { const m = document.querySelector('#avSet .avm'), r = m.getBoundingClientRect(); return { w: Math.round(r.width), sw: m.scrollWidth, cw: m.clientWidth, page: document.documentElement.scrollWidth <= innerWidth }; });
-  check(fit.sw <= fit.cw + 1 && fit.page, 'fits a 393 px phone: ' + JSON.stringify(fit));
+  check(!await p.evaluate(() => !!document.querySelector('.avp')) && saved.hat === 'beanie' && saved.neck === 'lanyard' && saved.extra === 'none' && saved.hair === 'quiff', 'Save saves (beanie), and the old work lanyard carries over: ' + JSON.stringify({ hat: saved.hat, neck: saved.neck, extra: saved.extra }));
+  await p.evaluate(() => document.querySelector('#avSet [data-avp-open]').click()); await sl(500);
+  const fit = await p.evaluate(() => { const m = document.querySelector('.avp'); return { sw: m.scrollWidth, cw: m.clientWidth, pane: document.querySelector('.avp-pane').scrollWidth <= document.querySelector('.avp-pane').clientWidth + 1 }; });
+  check(fit.sw <= fit.cw + 1 && fit.pane, 'fits a 393 px phone: ' + JSON.stringify(fit));
+  await p.evaluate(() => document.querySelector('.avp [data-avp-back]').click()); await sl(200);
 
   /* 4. Iago's own avatar in the shared home, with more than 16 settings */
   await q.evaluate(() => { const t = document.querySelector('[data-tab="today"]'); t && t.click(); });
   await until(q, () => !!document.querySelector('[data-avatar]'), 10000);
   await q.evaluate(() => document.querySelector('[data-avatar]').click());
-  const qOpen = await until(q, () => !!document.querySelector('.ave .avm'), 8000);
-  check(qOpen, 'Iago’s app opens the same new maker');
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-rand]').click(); }); await sl(300);   /* Surprise me: every setting gets a value */
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="expr"][data-avm-v="wink"]').click(); }); await sl(200);
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-tab="style"]').click(); }); await sl(200);
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="top"][data-avm-v="kit"]').click(); }); await sl(200);
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-tab="extras"]').click(); }); await sl(200);
-  await q.evaluate(() => { document.querySelector('.ave [data-avm-k="pet"][data-avm-v="dog"]').click(); }); await sl(200);
-  await q.evaluate(() => { document.querySelector('.ave [data-avesave]').click(); }); await sl(1500);
+  const qOpen = await until(q, () => !!document.querySelector('.avp .avp-pane .avm-t'), 8000);
+  check(qOpen, 'Iago’s app opens the same avatar page');
+  check(await q.evaluate(() => !document.querySelector('.avp [data-avp-tab="settings"]')), 'without your settings tab');
+  await q.evaluate(() => { document.querySelector('.avp [data-avp-rand]').click(); }); await sl(300);   /* Surprise me: every setting gets a value */
+  await q.evaluate(() => { document.querySelector('.avp [data-avm-k="expr"][data-avm-v="wink"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.avp [data-avp-tab="style"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.avp [data-avm-k="top"][data-avm-v="kit"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.avp [data-avp-tab="pet"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.avp [data-avm-k="pet"][data-avm-v="dog"]').click(); }); await sl(200);
+  await q.evaluate(() => { document.querySelector('.avp-bar [data-avp-save]').click(); }); await sl(1500);
   await p.evaluate(() => ShareSpace.sync());
   await until(p, () => { const l = ShareSpace.partnerLook && ShareSpace.partnerLook(); return !!(l && l.expr === 'wink' && l.top === 'kit' && l.pet === 'dog'); }, 15000);
   const got = await p.evaluate(() => { const l = ShareSpace.partnerLook(); return l && l.expr === 'wink' && l.top === 'kit' && l.pet === 'dog' ? Object.keys(l).length : 0; });

@@ -57,7 +57,10 @@
     "pagetabs.js",
     "delight.js",
     "scenes.js",
+    "avatar-rig.js",
+    "scene-kit.js",
     "avatar.js",
+    "avatar-page.js",
     "play.js",
     "alive.js",
     "modern.js",
@@ -123,8 +126,6 @@
       "profile.js",
       "links.js",
       "tidy.js",
-      "avatar-rig.js",
-      "scene-kit.js",
       "scene-finance.js"
     ],
     "habits/index.html": [

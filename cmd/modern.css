@@ -324,6 +324,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .av-opts .av-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg-solid, #111), 0 0 0 4px var(--accent); background: var(--c); }
 
 /* avatar on Home: no hard box – the scene fades softly into the page (a round vignette) */
+#avHome { position: relative; }
 #avHome .av-fig, #avHome .av-fig svg { border-radius: 0; }
 #avHome .av-fig svg { overflow: visible; }
 #avHome .av-fig::after { content: none; }

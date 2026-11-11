@@ -19,7 +19,7 @@
     if (!g) return null;
     var limb = g.querySelector('.av-limb'), hand = g.querySelector('.av-hand'); if (!limb || !hand) return null;
     var S = pt(limb.getAttribute('data-s')), El = pt(limb.getAttribute('data-e')), W = pt(limb.getAttribute('data-w')), Hd = pt(limb.getAttribute('data-h')), ls = pt(limb.getAttribute('data-l'));
-    var paths = limb.querySelectorAll('path'), joint = limb.querySelector('circle');
+    var paths = limb.querySelectorAll('path'), circles = limb.querySelectorAll('circle'), joint = circles[circles.length - 1];
     var A = { g: g, limb: limb, hand: hand, S: S, El: El, W: W, Hd: Hd, L1: ls[0] || 23, L2: ls[1] || 21, side: side === 'R' ? 1 : -1,
       out: paths[0], up: paths[1], lo: paths[2], mus: paths[3] || null, joint: joint };
     A.r1 = Math.atan2(El[1] - S[1], El[0] - S[0]); A.r2 = Math.atan2(W[1] - El[1], W[0] - El[0]);
@@ -29,7 +29,7 @@
   /* draw the arm with the elbow at e and the wrist at w */
   function pose(A, e, w) {
     var S = A.S, up = 'M' + f2(S[0]) + ' ' + f2(S[1]) + 'L' + f2(e[0]) + ' ' + f2(e[1]), lo = 'M' + f2(e[0]) + ' ' + f2(e[1]) + 'L' + f2(w[0]) + ' ' + f2(w[1]);
-    A.out.setAttribute('d', up + lo.replace('M', 'L')); A.up.setAttribute('d', up); A.lo.setAttribute('d', lo); if (A.mus) A.mus.setAttribute('d', up);
+    A.out.setAttribute('d', 'M' + f2(S[0] + (e[0] - S[0]) * .35) + ' ' + f2(S[1] + (e[1] - S[1]) * .35) + 'L' + f2(e[0]) + ' ' + f2(e[1]) + 'L' + f2(w[0]) + ' ' + f2(w[1])); A.up.setAttribute('d', up); A.lo.setAttribute('d', lo); if (A.mus) A.mus.setAttribute('d', up);
     if (A.joint) { A.joint.setAttribute('cx', f2(e[0])); A.joint.setAttribute('cy', f2(e[1])); }
     /* the hand (and what it holds) follows the wrist and turns with the forearm */
     var da = (Math.atan2(w[1] - e[1], w[0] - e[0]) - A.r2) * D, h = A.Hd;
@@ -109,16 +109,19 @@
   Rig.turn = function (r, t) {
     if (!r.torso && !prep(r)) return;
     var k = Math.abs(t);
-    r.torso.setAttribute('transform', 'translate(101 0) scale(' + f2(1 - .16 * k) + ' 1) translate(-101 0)');
-    if (r.LL) r.LL.g.setAttribute('transform', 'translate(' + f2(6.5 * k) + ' 0)');
-    if (r.LR) r.LR.g.setAttribute('transform', 'translate(' + f2(-6.5 * k) + ' 0)');
+    r.torso.setAttribute('transform', 'translate(101 0) scale(' + f2(1 - .28 * k) + ' 1) translate(-101 0)');
+    if (r.LL) r.LL.g.setAttribute('transform', 'translate(' + f2(8 * k) + ' 0)');
+    if (r.LR) r.LR.g.setAttribute('transform', 'translate(' + f2(-8 * k) + ' 0)');
     var far = t > 0 ? 'R' : 'L', near = far === 'R' ? 'L' : 'R', s = far === 'R' ? -1 : 1;
     r['w' + near].setAttribute('transform', r['t' + near] + ' translate(' + f2(s * 5 * k) + ' 0)');
     r['w' + far].setAttribute('transform', r['t' + far] + ' translate(' + f2(s * 7 * k) + ' 0)');
     if (!r.isBack) { if (k > .35) { if (r['w' + far].parentNode !== r.back) r.back.appendChild(r['w' + far]); } else armsHome(r); }
     if (r.legParent && r.LL && r.LR) { if (t > .35) r.legParent.insertBefore(r.LR.g, r.LL.g); else r.legParent.insertBefore(r.LL.g, r.LR.g); }
-    r.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(3.6 * t + (r.look ? r.look[0] : 0)) + ' ' + f2(r.look ? r.look[1] : 0) + ')'); });
-    r.fig.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(1.3 * t) + ' 0)'); });
+    r.fig.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(5.5 * t + (r.look ? r.look[0] : 0)) + ' ' + f2(r.look ? r.look[1] : 0) + ')'); });
+    r.fig.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(2.6 * t) + ' 0)'); });
+    /* from the side the far ear is behind the head */
+    var ears = r.fig.querySelectorAll('.bob ellipse[cx="82.5"], .bob ellipse[cx="119.5"]');
+    ears.forEach(function (e) { var far2 = (e.getAttribute('cx') === '82.5') === (t > 0); e.style.display = k > .8 && far2 ? 'none' : ''; });
     /* both toes point the way it faces */
     if (r.LL) r.LL.shoe.setAttribute('transform', t > .35 ? 'translate(' + f2(2 * r.LL.cx) + ' 0) scale(-1 1)' : '');
     if (r.LR) r.LR.shoe.setAttribute('transform', t < -.35 ? 'translate(' + f2(2 * r.LR.cx) + ' 0) scale(-1 1)' : '');

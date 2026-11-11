@@ -227,15 +227,20 @@
       var r = KEEP ? Math.min(dist, tot * .99) : tot * Math.min(.97, .3 + dist / A0 * .7);   /* free poses: nearly straight, a soft elbow */
       r = Math.max(r, Math.abs(A1 - A2) + 2);
       var ux = vx / dist, uy = vy / dist, Ex = Sx + ux * r, Ey = Sy + uy * r;
+      /* a resting arm hangs almost straight down, close to the body (not bowed out at the elbow) */
+      if (!KEEP && vy > 24 && Math.abs(vx) < 12) { var sdx = side === 'R' ? 1 : -1; r = tot * .985; Ex = Sx + sdx * 4; Ey = Sy + Math.sqrt(r * r - 16); ux = (Ex - Sx) / r; uy = (Ey - Sy) / r; }
       var cr = vx * cy1 - vy * cx1, sg = cr < 0 ? -1 : cr > 0 ? 1 : (side === 'R' ? -1 : 1);
       var a = Math.acos(Math.max(-1, Math.min(1, (A1 * A1 + r * r - A2 * A2) / (2 * A1 * r)))) * sg, th = Math.atan2(uy, ux);
       var Elx = Sx + Math.cos(th + a) * A1, Ely = Sy + Math.sin(th + a) * A1;
       shift[side] = [Ex - (Sx + vx), Ey - (Sy + vy)];
       fAng[side] = Math.atan2(Ey - Ely, Ex - Elx) * 180 / Math.PI;
       var up = 'M' + q2(Sx) + ' ' + q2(Sy) + 'L' + q2(Elx) + ' ' + q2(Ely), lo = 'M' + q2(Elx) + ' ' + q2(Ely) + 'L' + q2(Ex) + ' ' + q2(Ey);
+      /* the dark edge starts a third down the upper arm, so the sleeve flows out of the shoulder instead of a rim around it */
+      var edge = 'M' + q2(Sx + (Elx - Sx) * .35) + ' ' + q2(Sy + (Ely - Sy) * .35) + 'L' + q2(Elx) + ' ' + q2(Ely) + 'L' + q2(Ex) + ' ' + q2(Ey);
       var line = function (dd, col, w, extra) { return '<path d="' + dd + '" stroke="' + col + '" stroke-width="' + w + '" fill="none" stroke-linecap="round"' + (extra || '') + '/>'; };
       return '<g class="av-limb" data-s="' + q2(Sx) + ' ' + q2(Sy) + '" data-e="' + q2(Elx) + ' ' + q2(Ely) + '" data-w="' + q2(Ex) + ' ' + q2(Ey) + '" data-h="' + q2(Sx + vx) + ' ' + q2(Sy + vy) + '" data-l="' + A1 + ' ' + A2 + '">' +
-        line(up + lo.replace('M', 'L'), shade(AC, -.3), AW + 1.8, ' stroke-linejoin="round" opacity=".55"') +
+        line(edge, shade(AC, -.3), AW + 1.8, ' stroke-linejoin="round" opacity=".55"') +
+        '<circle cx="' + q2(Sx - (side === 'R' ? 1 : -1) * AW * .12) + '" cy="' + q2(Sy + AW * .1) + '" r="' + q2(AW * .58) + '" fill="' + AC + '"/>' +
         line(up, AC, AW) + line(lo, AC, AW * .86) +
         '<circle cx="' + q2(Elx) + '" cy="' + q2(Ely) + '" r="' + q2(AW * .47) + '" fill="' + AC + '"/>' +
         (L.build === 'athletic' || MU ? line(up, AC, AW + (MU ? 3 : 2), ' stroke-dasharray="' + (MU ? 10 : 8) + ' 999" stroke-dashoffset="-6"') : '') +
@@ -543,6 +548,7 @@
     var pic = null; if (ci2 && ci2.look) try { pic = couple(ci2.kind, look(), ci2.look, { label: ci2.say }); } catch (e) { pic = null; ci2 = null; }
     pic = pic || figure(Object.assign({}, m.couple ? MOMENTS.day : m, { soft: true })).replace('viewBox="0 0 200 200"', 'viewBox="12 8 176 164"');
     var html = '<button type="button" class="av-fig' + (ci2 && ci2.look ? ' av-two' : '') + '" data-avnext aria-label="' + esc(L('Your avatar – tap for the next thing', 'Avataren din – trykk for neste')) + '">' + pic + '</button>' +
+      '<button type="button" class="av-edit" data-avp-open aria-label="' + esc(L('Edit your avatar', 'Rediger avataren din')) + '" style="position:absolute;top:4px;right:4px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(127,127,127,.18);color:inherit;display:grid;place-items:center;cursor:pointer;z-index:2"><i class="bi bi-pencil" aria-hidden="true"></i></button>' +
       '<p class="av-say" role="status">' + esc(pick.say) + (l.length > 1 ? ' <span class="av-dots">' + l.map(function (_, i) { return '<i' + (i === idx % l.length ? ' class="on"' : '') + '></i>'; }).join('') + '</span>' : '') + '</p>';
     if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
     badge(main.m);
@@ -643,6 +649,9 @@
     badge: [['none', 'None', 'Ingen'], ['streak', 'Streak', 'Rekke'], ['trophy', 'Trophy', 'Pokal'], ['top3', 'Top 3 done', 'Topp 3 gjort'], ['paid', 'Paid off', 'Nedbetalt']],
     scene: [['none', 'None', 'Ingen'], ['city', 'City', 'By'], ['beach', 'Beach', 'Strand'], ['forest', 'Forest', 'Skog'], ['office', 'Home office', 'Hjemmekontor'], ['oslo', 'Oslo fjord', 'Oslofjorden']]
   };
+  /* Moves (avatar page): which hand it uses for things, and how it walks in the living scenes */
+  MKO.hand = [['right', 'Right-handed', 'Høyrehendt'], ['left', 'Left-handed', 'Venstrehendt']];
+  MKO.walk = [['calm', 'Calm', 'Rolig'], ['bouncy', 'Bouncy', 'Sprettende'], ['quick', 'Quick', 'Rask']];
   var MKC = {
     skin: ['#fbe2cf', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
     hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'], hair2: ['', '#e0559a', '#2f9ee0', '#2fae6a', '#f2c94c', '#eeeeee', '#8a5cf0'],
@@ -723,35 +732,20 @@
   function mkMigrate(l) { var n = Object.assign({}, START, l || {}), x = n.extra;
     if (x === 'cap' && !n.hat) n.hat = 'cap'; if (x === 'lanyard' && !n.neck) n.neck = 'lanyard'; if (x === 'watch') n.watch = 'yes'; if (x === 'earbuds' && !n.ears) n.ears = 'buds'; n.extra = 'none'; return n; }
   /* ---------- Settings → Pictures & touches → Your avatar ---------- */
-  var mkTab = 'face';
   function saveWhole(l) { var s = readJSON('dash.settings', {}) || {}; s.avatar = l; try { localStorage.setItem('dash.settings', JSON.stringify(s)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('avatar:change')); }
   function maker() {
     var host = document.getElementById('dlSet'); if (!host) return;
     var box = document.getElementById('avSet');
-    if (!box) { box = document.createElement('div'); box.id = 'avSet'; box.setAttribute('data-noi18n', ''); var first = host.querySelector('.st-sub'); host.firstElementChild ? host.firstElementChild.insertBefore(box, host.firstElementChild.querySelector('.st-sub')) : host.appendChild(box); }
-    var Lk = look(), sw = function (k, label, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" class="switch" data-dltouch="' + k + '"' + (on(k) ? ' checked' : '') + '></label>'; };
+    if (!box) { box = document.createElement('div'); box.id = 'avSet'; box.setAttribute('data-noi18n', ''); host.firstElementChild ? host.firstElementChild.insertBefore(box, host.firstElementChild.querySelector('.st-sub')) : host.appendChild(box); }
+    /* the maker has its own page now ("Your avatar"): Settings keeps one row that opens it */
     box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-person-bounding-box"></i> ' + L('Your avatar', 'Avataren din') + '</p><div class="st-group">' +
-      sw('avatar', L('Avatar on Home', 'Avatar på Hjem'), L('A little you that follows your day', 'En liten deg som følger dagen din')) +
-      sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) +
-      '<label class="st-row"><span>' + L('What it says', 'Hva den sier') + '<small class="st-rsub">' + L('The speech bubble is on screen for anyone nearby', 'Snakkeboblen vises for alle i nærheten') + '</small></span><select class="st-select" data-avsay>' +
-        [['nomoney', L('All but money', 'Alt unntatt penger')], ['all', L('Everything', 'Alt')], ['fun', L('Only the fun bits', 'Bare det morsomme')]].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sayMode() ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>' +
-      '<div class="st-group av-maker">' + mkHtml(mkMigrate(Lk), mkTab) + '</div>';
+      '<button type="button" class="st-row avp-open" data-avp-open style="width:100%;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer">' +
+      '<span style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;background:rgba(127,127,127,.15)">' + mkCrop(figure(MKPLAIN, Object.assign({}, mkMigrate(look()), { pet: 'none' })), '58 12 84 80') + '</span>' +
+      '<span>' + L('Your avatar', 'Avataren din') + '<small class="st-rsub">' + L('Look, how it moves, and its settings', 'Utseende, hvordan den beveger seg, og innstillinger') + '</small></span></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button></div>';
   }
-  document.addEventListener('click', function (e) {
-    var box = e.target.closest && e.target.closest('#avSet .avm'); if (!box) return;
-    var r = mkAct(e, mkMigrate(look())); if (!r) return;
-    if (r.tab) { mkTab = r.tab; maker(); return; }
-    var y = window.scrollY; saveWhole(r.look); maker(); window.scrollTo(0, y);
-  });
-  /* colours from the picker, the text on your top and the season switch: the figure redraws, the field you're typing in stays */
-  document.addEventListener('input', function (e) {
-    var t = e.target; if (!t.closest || !t.closest('#avSet .avm')) return;
-    var n = mkMigrate(look());
-    if (t.matches('input[type="color"][data-avm-k]')) n[t.dataset.avmK] = t.value;
-    else if (t.matches('[data-avm-chest]')) n.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 4);
-    else if (t.matches('[data-avm-auto]')) n.auto = t.checked ? 'on' : 'off'; else return;
-    saveWhole(n); var f = t.closest('.avm').querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(n);
-  });
+  /* opens your own avatar page (avatar-page.js) */
+  function openMine() { if (window.Avatar && window.Avatar.page) window.Avatar.page(L('Your avatar', 'Avataren din'), mkMigrate(look()), function (lk) { saveWhole(lk); }, { mine: true }); }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-avp-open]')) { e.preventDefault(); openMine(); } });
   document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-avsay]') && window.Delight && window.Delight.set) { window.Delight.set({ avSay: e.target.value }); idx = 0; } });
   window.addEventListener('st:page', function (e) { if (e.detail === 'touches') setTimeout(maker, 0); });
   window.addEventListener('touch:change', function () { if (document.getElementById('avSet')) setTimeout(maker, 0); });
@@ -771,31 +765,8 @@
   }
   var RELC = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
   function personLook(p, topC) { return Object.assign({}, seedLook((p && (p.id || p.name)) || '', topC || (p && RELC[p.rel]) || '#3987e5'), (p && p.look) || {}); }
-  /* the same maker as yours, in a sheet – onSave(look) gets the full look */
-  function editor(title, start, onSave) {
-    var H = window.HomeLife; if (!H || !H.dialog) return;
-    var cur = mkMigrate(start), tab = 'face', box;
-    var html = function () {
-      return '<div class="ave"><div class="ave-head"><b>' + esc(title) + '</b><button type="button" class="icon-btn sm" data-aveclose aria-label="' + L('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button></div>' +
-        mkHtml(cur, tab) + '<div class="av-acts" style="position:sticky;bottom:0;padding:10px 0 2px;background:inherit"><span class="spacer"></span><button type="button" class="pill-btn" data-avesave>' + L('Save', 'Lagre') + '</button></div></div>';
-    };
-    var draw = function () { var sc = box.closest('.hl-sheet, .h-sheet, [role="dialog"]') || box.parentNode, y = sc ? sc.scrollTop : 0; box.innerHTML = html(); if (sc) sc.scrollTop = y; };
-    var dg = H.dialog('<div class="ave-host" data-noi18n></div>', function (e, close) {
-      if (e.target.closest('[data-avesave]')) { onSave(cur); close(); return; }
-      if (e.target.closest('[data-aveclose]')) { close(); return; }
-      var r = mkAct(e, cur); if (!r) return;
-      if (r.tab) tab = r.tab; else cur = r.look; draw();
-    });
-    box = dg && dg.el.querySelector('.ave-host'); if (!box) return;
-    box.innerHTML = html();
-    box.addEventListener('input', function (e) {
-      var t = e.target;
-      if (t.matches('input[type="color"][data-avm-k]')) cur[t.dataset.avmK] = t.value;
-      else if (t.matches('[data-avm-chest]')) cur.chest = t.value.replace(/[^0-9A-Za-zÆØÅæøå]/g, '').slice(0, 4);
-      else if (t.matches('[data-avm-auto]')) cur.auto = t.checked ? 'on' : 'off'; else return;
-      var f = box.querySelector('.avm-fig'); if (f) f.innerHTML = mkFig(cur);
-    });
-  }
+  /* the same maker as yours, on its own page (avatar-page.js) – onSave(look) gets the full look */
+  function editor(title, start, onSave) { if (window.Avatar && window.Avatar.page) window.Avatar.page(title, mkMigrate(start), onSave, {}); }
 
   /* ---------- the two of you (shared home): holding hands, a high five, a hug or a kiss ----------
      a, b = the two looks (a stands on the left). Two figures side by side in one picture; tap the picture to
@@ -838,5 +809,6 @@
     ctx = ctx || {}; var h = new Date().getHours();
     if (ctx.hi5) return 'hi5'; if (ctx.hug) return 'hug'; if (h >= 20 || h < 1) return 'kiss'; return 'hold';
   }
-  window.Avatar = { couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS };
+  window.Avatar = { couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+    _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();
