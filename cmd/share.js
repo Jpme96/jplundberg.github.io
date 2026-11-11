@@ -494,7 +494,7 @@
       fresh.filter(function (x) { return x.c === 'pay'; }).forEach(function (x) { add1('money', me0 + ' settled up ' + kr(x.f.amount)); });
       fresh.filter(function (x) { return x.c === 'meal'; }).forEach(function (x) { add1('dinner', 'Dinner ' + new Date(x.f.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }) + ': ' + x.f.text); });
       fresh.filter(function (x) { return x.c === 'chore'; }).forEach(function (x) { add1('chores', me0 + ' added a chore: ' + x.f.name); });
-      if (lines.length && Object.keys(cache).length) SC.api('push', { method: 'POST', body: { notify: { title: 'Home', body: lines.slice(0, 3).join(' · '), tag: 'o' + now } } }).catch(function () {});
+      if (lines.length && Object.keys(cache).length) SC.send('push', { method: 'POST', body: { notify: { title: 'Home', body: lines.slice(0, 3).join(' · '), tag: 'o' + now } } }).catch(function () {});
       return Promise.all(jobs).then(function () {
         if (!Object.keys(push).length) return null;
         return SC.api('shared', { method: 'PUT', body: { recs: push } }).then(function (srv) { return absorb(k, srv); });

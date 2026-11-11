@@ -262,7 +262,7 @@
       role: 'o', list: function (c) { return S() ? S().list(c) : []; }, put: function (c, id, f, del) { if (S()) S().put(c, id, f, del); },
       me: function () { return S() && S().ownerName ? S().ownerName() : ''; }, other: function () { return S() && S().partnerName ? S().partnerName() : ''; },
       otherLook: function () { return S() && S().partnerLook ? S().partnerLook() : null; },
-      push: function (title, body, o) { o = o || {}; var sc = SC(); if (sc && sc.api) sc.api('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }).catch(function () {}); },
+      push: function (title, body, o) { o = o || {}; var sc = SC(); if (sc && sc.send) sc.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
       toast: function (h) { if (window.Quick && Quick.toast) Quick.toast(h); },
       shopAdd: function (texts) { var Fe = window.Features; if (!Fe) return; var t = Fe.tools(); t.shop = (Array.isArray(t.shop) ? t.shop : []).concat(texts.map(function (x) { return { id: 's' + uid(), text: x.slice(0, 120), done: false }; })); Fe.saveTools(t); },
       onReact: function (kind) { if (window.Avatar && Avatar.cheer) Avatar.cheer(kind === 'heart' ? L(S().partnerName() + ' sent you a heart ❤️', S().partnerName() + ' sendte deg et hjerte ❤️') : L(S().partnerName() + ' gave you a high five 👏', S().partnerName() + ' ga deg en high five 👏')); },

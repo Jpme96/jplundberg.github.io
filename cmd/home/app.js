@@ -160,7 +160,7 @@
     else if (c === 'note') { k = 'note'; txt = me0 + L(' wrote a note: ', ' skrev et notat: ') + (f.title || ''); }
     if (!k || on.indexOf(k) < 0) return;
     tellQ.push(txt); clearTimeout(tellT);
-    tellT = setTimeout(function () { var b = tellQ.slice(0, 3).join(' · ') + (tellQ.length > 3 ? ' …' : ''); tellQ = []; SC.api('push', { method: 'POST', body: { notify: { title: L('Home', 'Hjem'), body: b, tag: 'p' + Date.now() } } }).catch(function () {}); }, 4000);
+    tellT = setTimeout(function () { var b = tellQ.slice(0, 3).join(' · ') + (tellQ.length > 3 ? ' …' : ''); tellQ = []; SC.send('push', { method: 'POST', body: { notify: { title: L('Home', 'Hjem'), body: b, tag: 'p' + Date.now() } } }).catch(function () {}); }, 4000);
   }
   function put(c, id, f, del) {
     if (!preview && KIND_AREA[c] && !canEdit(KIND_AREA[c])) { refusedAt = Date.now(); toast('<i class="bi bi-lock"></i> ' + esc(owner()) + L(' has made this view only', ' har gjort dette kun til visning')); return Promise.resolve(); }
@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 83;
+  var APPV = 85;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -347,7 +347,7 @@
     Together.use({ role: 'p', list: function (c) { return list(c).map(function (r) { return { id: r.id, f: r.f, t: r.t, by: r.by }; }); },
       put: function (c, id, f, del) { put(c, id, f, del); }, me: function () { return myName(); }, other: function () { return owner(); },
       otherLook: function () { return info().olook; },
-      push: function (title, body, o) { o = o || {}; SC.api('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }).catch(function () {}); },
+      push: function (title, body, o) { o = o || {}; SC.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
       toast: function (h) { toast(h); }, shopAdd: function (texts) { texts.forEach(function (x) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); }); },
       onReact: function () { coupleK = 'hi5'; }, refresh: function () { draw(); } });
   }

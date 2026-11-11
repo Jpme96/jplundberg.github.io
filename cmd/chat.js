@@ -26,6 +26,8 @@
   function notes() { var n = C.opt && C.opt.notes; return n && (!n.on || n.on()) ? n : null; }
 
   /* ---------- data ---------- */
+  /* messages that waited offline: once the queue has sent them, they're ordinary sent messages */
+  window.addEventListener('outq:change', function () { if (!C || !C.msgs || (SC.queued && SC.queued())) return; var any = false; Object.keys(C.msgs).forEach(function (k) { var m = C.msgs[k]; if (m && m.queued) { m.queued = false; m.pending = false; any = true; } }); if (any) { changed(); fetchChat(); } });
   function fetchChat() {
     if (!C.opt) return Promise.resolve();
     if (C.busy) { C.again = true; return Promise.resolve(); }
@@ -74,7 +76,7 @@
   function changed() { if (C.opt.onChange) C.opt.onChange(); badge(); if (C.el) paintList(); }
 
   /* ---------- sending ---------- */
-  function put(body) { return SC.api('chat', { method: 'PUT', body: body }); }
+  function put(body) { return SC.send('chat', { method: 'PUT', body: body }, body && body.id ? 'chat:' + body.id : ''); }   /* offline: waits in the queue (share-core.js) */
   function encFile(f) {
     /* pictures are made smaller (longest side 2048 px) and get a tiny preview that shows at once */
     var isImg = /^image\/(jpeg|png|webp|heic|heif|gif)$/i.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name);
@@ -113,7 +115,8 @@
       return Promise.all(files.map(encFile)).then(function (fl) {
         var body = { text: text, files: fl }; if (m.sys) { body.sys = m.sys; body.ttl = m.ttl; } if (m.react) body.react = m.react; if (m.mute != null) body.mute = m.mute; if (m.re) body.re = m.re;
         return SC.encrypt(C.opt.key, body).then(function (e) { var b = { msgs: {} }; b.msgs[id] = { t: t, iv: e.iv, ct: e.ct, fl: fl.reduce(function (a, f) { a.push(f.id); if (f.pv) a.push(f.pv); return a; }, []) }; if (extra && extra.setTtl != null) b.ttl = extra.setTtl; return put(b); })
-          .then(function (srv) { m.files = fl; m.pending = false; C.rev = -2; if (srv && srv.ttl != null) C.ttl = srv.ttl; changed(); fetchChat(); if (!m.react && m.mute == null && !m.sys) nudge(text, fl); });
+          .then(function (srv) { if (srv && srv.queued) { m.files = fl; m.queued = true; changed(); return; }   /* offline: it waits (still "sending") and goes up when you're back */
+            m.files = fl; m.pending = false; C.rev = -2; if (srv && srv.ttl != null) C.ttl = srv.ttl; changed(); fetchChat(); if (!m.react && m.mute == null && !m.sys) nudge(text, fl); });
       }).catch(function (e) { m.pending = false; m.failed = true; m.err = (e && e.message) || ''; changed(); });
     };
     m.retry = go;
@@ -127,7 +130,7 @@
     if (muteOf(o) > Date.now()) return;                 /* they muted the chat */
     var body = text ? text.slice(0, 120) : fl.length ? (fl.some(function (f) { return /^audio\//.test(f.type); }) ? L('🎤 Voice message', '🎤 Talemelding') : fl.some(function (f) { return /^image\//.test(f.type); }) ? L('📷 Photo', '📷 Bilde') : fl.some(function (f) { return /^video\//.test(f.type); }) ? L('🎬 Video', '🎬 Video') : L('📎 File', '📎 Fil')) : '';
     if (!body) return;
-    SC.api('push', { method: 'POST', body: { notify: { title: C.opt.name(C.opt.me), body: body, tag: 'chat' } } }).catch(function () {});
+    SC.send('push', { method: 'POST', body: { notify: { title: C.opt.name(C.opt.me), body: body, tag: 'chat' } } }).catch(function () {});
   }
   function remove(id) { var m = C.msgs[id]; if (!m || m.by !== C.opt.me) return; if (m.pending || m.failed) { delete C.msgs[id]; changed(); return; } delete C.msgs[id]; changed(); put({ del: [id] }).then(fetchChat, fetchChat); }
   function react(id, e) { var cur = (reactions()[id] || {})[C.opt.me] || ''; send('', [], { react: { to: id, e: cur === e ? '' : e } }); }

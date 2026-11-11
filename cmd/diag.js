@@ -92,12 +92,26 @@
      Crash guard: a start "counts" when the page gets to the lock screen or unlocks. Two starts in a row that never got
      there → the next start opens in safe mode by itself, with a note. */
   var SAFE = 'dash.safe', BOOT = 'dash.boot';
+  /* talk to the service worker about the last good version (sw.js): 'good', 'back', 'forward', 'state' */
+  function lgv(what) {
+    return new Promise(function (ok) {
+      var c = navigator.serviceWorker && navigator.serviceWorker.controller; if (!c || !window.MessageChannel) { ok(null); return; }
+      var ch = new MessageChannel(), t = setTimeout(function () { ok(null); }, 3000); ch.port1.onmessage = function (e) { clearTimeout(t); ok(e.data); };
+      try { c.postMessage({ lgv: what }, [ch.port2]); } catch (e) { clearTimeout(t); ok(null); }
+    });
+  }
+  window.LastGood = { ask: lgv };
   var safeWhy = '';
   try {
     if (/[?&]safe(=|&|$)/.test(location.search)) { sessionStorage.setItem(SAFE, 'asked'); }
     if (/[?&]normal=1/.test(location.search)) { sessionStorage.removeItem(SAFE); }
     var bt = IN_TEST ? null : JSON.parse(localStorage.getItem(BOOT) || 'null');
-    if (bt && bt.n >= 2 && Date.now() - bt.at < 30 * 6e4 && !sessionStorage.getItem(SAFE)) sessionStorage.setItem(SAFE, 'crash');
+    /* two starts that never got there: first back to the last good version (if this device has one), then safe mode */
+    var tried = sessionStorage.getItem('dash.lgv');
+    if (bt && bt.n >= 2 && Date.now() - bt.at < 30 * 6e4 && !tried && navigator.serviceWorker && navigator.serviceWorker.controller) {
+      sessionStorage.setItem('dash.lgv', '1');
+      lgv('back').then(function (r) { if (r && r.use) { try { localStorage.removeItem(BOOT); sessionStorage.setItem('dash.lgvOn', '1'); } catch (e) {} location.reload(); } else { sessionStorage.setItem(SAFE, 'crash'); location.reload(); } });
+    } else if (bt && bt.n >= 2 && Date.now() - bt.at < 30 * 6e4 && !sessionStorage.getItem(SAFE)) sessionStorage.setItem(SAFE, 'crash');
     safeWhy = sessionStorage.getItem(SAFE) || '';
     if (!IN_TEST) localStorage.setItem(BOOT, JSON.stringify({ n: (bt && Date.now() - bt.at < 30 * 6e4 ? bt.n : 0) + 1, at: Date.now() }));
   } catch (e) {}
@@ -125,9 +139,20 @@
   if (!IN_TEST) {
     var started = function () { return root().classList.contains('unlocked') || !!(document.getElementById('lockPass') || {}).offsetParent; };
     var bootIv = setInterval(function () {
-      if (document.readyState === 'complete' && started()) { clearInterval(bootIv); try { localStorage.removeItem(BOOT); } catch (e) {} }
+      if (document.readyState === 'complete' && started()) { clearInterval(bootIv); try { localStorage.removeItem(BOOT); } catch (e) {} lgv('good'); }
     }, 500);
     if (safeWhy === 'crash') setTimeout(function () { log('crash', 'Two starts in a row did not reach the lock screen – opened in safe mode', '', { raw: true }); }, 0);
+    /* running the last good version: say so, and offer the new one again */
+    lgv('state').then(function (st) {
+      if (!st || !st.use) return; if (sessionStorage.getItem('dash.lgvOn')) { sessionStorage.removeItem('dash.lgvOn'); log('crash', 'The new version did not start twice – went back to the last good version (' + st.use + ')', '', { raw: true }); }
+      var show = function () { if (document.getElementById('lgvBar')) return; var b = document.createElement('div'); b.id = 'lgvBar'; b.setAttribute('role', 'status');
+        b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:calc(env(safe-area-inset-top,0px) + 8px) 14px 8px;background:#2b2f3a;color:#fff;font:600 14px/1.3 system-ui,sans-serif';
+        var t = document.createElement('span'); t.textContent = L('Running the previous version – the new one didn’t start. It has been noted.', 'Kjører forrige versjon – den nye startet ikke. Det er notert.');
+        var a = document.createElement('button'); a.type = 'button'; a.style.cssText = 'border:0;border-radius:999px;padding:6px 14px;background:#fff;color:#2b2f3a;font:inherit;cursor:pointer'; a.textContent = L('Try the new one', 'Prøv den nye');
+        a.addEventListener('click', function () { lgv('forward').then(function () { try { localStorage.removeItem(BOOT); sessionStorage.removeItem('dash.lgv'); } catch (e) {} location.reload(); }); });
+        b.appendChild(t); b.appendChild(a); document.body.appendChild(b); };
+      if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+    });
   }
 
   /* ---------- the last few taps, as element names only (never the text on them) ---------- */

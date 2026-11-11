@@ -3,10 +3,23 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v5c396727bc';
+var CACHE = 'cmd-v1c756f4fba';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
+/* the last good version (Phase D): a version that reached the lock screen is "good" (the page says so). Its copy is
+   kept when a new version comes, and if the new one doesn't start, the page asks to go back to it ("use") until you
+   try the new one again – or until the next version, which gets a fresh try. Kept in a small cache of its own. */
+var META = 'cmd-meta';
+function meta(k) { return caches.open(META).then(function (c) { return c.match('/' + k); }).then(function (r) { return r ? r.text() : ''; }); }
+function setMeta(k, v) { return caches.open(META).then(function (c) { return v ? c.put('/' + k, new Response(v)) : c.delete('/' + k); }); }
+self.addEventListener('message', function (e) {
+  var d = e.data || {}, port = e.ports && e.ports[0], reply = function (x) { if (port) port.postMessage(x); };
+  if (d.lgv === 'good') e.waitUntil(meta('use').then(function (u) { return u ? null : setMeta('good', CACHE); }).then(function () { reply({ ok: true, good: CACHE }); }));
+  else if (d.lgv === 'back') e.waitUntil(meta('good').then(function (g) { if (!g || g === CACHE) { reply({ use: '' }); return; } return caches.has(g).then(function (has) { if (!has) { reply({ use: '' }); return; } return setMeta('use', g).then(function () { reply({ use: g }); }); }); }));
+  else if (d.lgv === 'forward') e.waitUntil(setMeta('use', '').then(function () { reply({ ok: true }); }));
+  else if (d.lgv === 'state') e.waitUntil(Promise.all([meta('good'), meta('use')]).then(function (x) { reply({ current: CACHE, good: x[0], use: x[1] }); }));
+});
 
 /* on install: keep a copy of every page, so the dashboard opens even without a connection
    (pages behind the Cloudflare login that answer with a redirect are skipped) */
@@ -37,8 +50,10 @@ self.addEventListener('install', function (e) {
   }));
 });
 self.addEventListener('activate', function (e) {
-  e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== CACHE && k !== ASSETS; }).map(function (k) { return caches.delete(k); }));
+  e.waitUntil(Promise.all([caches.keys(), meta('good')]).then(function (x) {
+    var keys = x[0], good = x[1];
+    /* a new version gets a fresh try (no "use" left over); the last good copy stays, older ones go */
+    return setMeta('use', '').then(function () { return Promise.all(keys.filter(function (k) { return k !== CACHE && k !== ASSETS && k !== META && k !== good; }).map(function (k) { return caches.delete(k); })); });
   }).then(function () {   /* keep the asset cache from growing forever: the newest 250 files stay */
     return caches.open(ASSETS).then(function (a) { return a.keys().then(function (ks) { return Promise.all(ks.slice(0, Math.max(0, ks.length - 250)).map(function (k) { return a.delete(k); })); }); });
   }).then(function () { return self.clients.claim(); }));
@@ -76,7 +91,10 @@ self.addEventListener('fetch', function (e) {
      and a fresh copy is fetched in the background for next time. Scripts are versioned, so a page
      never mixes old and new code. */
   if (req.mode === 'navigate' && PAGES.indexOf(url.pathname) > -1 && !url.search) {
-    e.respondWith(caches.open(CACHE).then(function (c) {
+    e.respondWith(meta('use').then(function (use) {
+      /* going back to the last good version: its pages (and so its scripts) */
+      if (use) return caches.open(use).then(function (c) { return c.match(url.pathname); }).then(function (h) { return h || caches.open(CACHE).then(function (c) { return c.match(url.pathname); }).then(function (h2) { return h2 || fetch(req); }); });
+      return caches.open(CACHE).then(function (c) {
       return Promise.all([c.match(url.pathname), c.match('/cmd/__login')]).then(function (x) {
         var hit = x[0], login = x[1];
         var net = fetch(req).then(function (res) {
@@ -88,7 +106,7 @@ self.addEventListener('fetch', function (e) {
         if (hit && !login) { e.waitUntil(net.catch(function () {})); return hit; }
         return net.catch(function () { return c.match('/cmd/').then(function (h) { return h || Response.error(); }); });
       });
-    }));
+    }); }));
     return;
   }
   e.respondWith(

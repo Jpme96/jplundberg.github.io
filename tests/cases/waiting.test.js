@@ -10,7 +10,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   await p.evaluate(() => { const t = Features.tools(); t.homenotes = (t.homenotes || []).concat([{ id: 'wn1', title: 'Offline note', text: 'Made up' }]); Features.saveTools(t); });
   await p.evaluate(() => Vault.sync && Vault.sync());
   const chip = await until(p, () => { const c = document.getElementById('waitChip'); return c && /\d+ (change|changes) waiting|endring/.test(c.textContent) ? c.textContent.trim() : false; }, 20000);
-  check(!!chip, 'offline: the chip says changes are waiting: ' + chip);
+  check(chip !== null, 'offline: the chip says changes are waiting: ' + await p.evaluate(() => (document.getElementById('waitChip') || {}).textContent));   /* until() gives the wait in ms – 0 when it's there at once */
   const box = await p.evaluate(() => { const r = document.getElementById('waitChip').getBoundingClientRect(); return { top: r.top, right: r.right, w: innerWidth }; });
   check(box.top >= 0 && box.top < 80 && box.right <= box.w, 'it sits at the top, inside the phone screen ' + JSON.stringify(box));
   await p.setOfflineMode(false);

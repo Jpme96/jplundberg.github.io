@@ -61,6 +61,31 @@
       .then(function (r) { clearTimeout(tm); return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('HTTP ' + r.status)); e.status = r.status; e.body = j; throw e; } return j; }); },
         function (e) { clearTimeout(tm); throw e; });
   }
+  /* the offline queue (Phase D): a write that can't reach the server because the network is away waits here and goes
+     up when you're back – never lost. Only network failures queue (an answer from the server, even an error, doesn't).
+     key: a later write with the same key replaces the waiting one (e.g. the latest "on my way"). Both apps use it. */
+  var OQ = 'dash.outq';
+  function oq() { try { return JSON.parse(localStorage.getItem(OQ)) || []; } catch (e) { return []; } }
+  function oqSave(l) { try { localStorage.setItem(OQ, JSON.stringify(l.slice(-200))); } catch (e) {} }
+  function send(path, opt, key) {
+    return api(path, opt).catch(function (e) {
+      if (e && e.status) throw e;                                       /* the server answered: not a network problem */
+      var l = oq().filter(function (x) { return !key || x.key !== key; }); l.push({ path: path, opt: opt, key: key || '', at: Date.now() }); oqSave(l);
+      try { window.dispatchEvent(new Event('outq:change')); } catch (er) {}
+      return { queued: true };
+    });
+  }
+  var flushing = false;
+  function flush() {
+    var l = oq(); if (!l.length || flushing || navigator.onLine === false) return Promise.resolve(0);
+    flushing = true; var sent = 0;
+    return l.reduce(function (p, x) { return p.then(function (stop) { if (stop) return true; return api(x.path, x.opt).then(function () { sent++; oqSave(oq().filter(function (y) { return !(y.at === x.at && y.path === x.path && y.key === x.key); })); return false; }, function (e) {
+      if (e && e.status && e.status < 500) { oqSave(oq().filter(function (y) { return !(y.at === x.at && y.path === x.path); })); return false; }   /* refused for good: drop it */
+      return true; }); }); }, Promise.resolve(false))
+      .then(function () { flushing = false; try { window.dispatchEvent(new Event('outq:change')); } catch (er) {} return sent; }, function () { flushing = false; return sent; });
+  }
+  window.addEventListener('online', function () { setTimeout(flush, 800); });
+  setInterval(flush, 30e3); setTimeout(flush, 3000);
   /* live: how the apps hear that something changed.
      · Instant: one WebSocket to /cmd/api/ws. The server pushes the new version numbers (and who is typing) the moment
        something is saved; whoever listens fetches the real data when a number moved. Only numbers go over it.
@@ -219,5 +244,5 @@
     });
     return out.sort(function (a, b) { return b.t - a.t; }).slice(0, opts.max || 40);
   }
-  window.ShareCore = { encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, activity: activity, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  window.ShareCore = { send: send, flushQueue: flush, queued: function () { return oq().length; }, encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, activity: activity, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();
