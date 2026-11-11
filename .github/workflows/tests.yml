@@ -42,27 +42,22 @@ jobs:
         run: node run.js -j 2 --shard ${{ matrix.shard }}/4
 
   safari:
-    # WebKit's system packages are known for 24.04 (ubuntu-latest moved to 26.04 and Playwright 1.49 can't install there)
-    runs-on: ubuntu-24.04
+    # Playwright's own image has WebKit and every system library it needs – no apt installs (the Ubuntu mirrors hung
+    # for 20 minutes on 2026-11-11, and nothing was released)
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.49.1-noble
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      # the Azure Ubuntu mirror timed out on every package (2026-11-11): use the main archive, with retries
-      - name: Ubuntu mirror
-        run: |
-          sudo sed -i 's#http://azure.archive.ubuntu.com/ubuntu#http://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
-          echo 'Acquire::Retries "3"; Acquire::http::Timeout "25";' | sudo tee /etc/apt/apt.conf.d/80-retries
       - name: Install
         working-directory: tests
         run: |
           npm install --no-audit --no-fund
           npm install --no-save --no-audit --no-fund playwright@1.49.1
-          for i in 1 2 3; do timeout 420 npx playwright install --with-deps webkit && break; echo "install try $i stalled – again"; sleep 10; done
       - name: Safari (WebKit) check
         working-directory: tests
+        env:
+          HOME: /root
         run: node webkit/smoke.js
 
   # Only green changes reach main (and so the live site and the Worker)
