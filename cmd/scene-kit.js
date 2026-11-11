@@ -79,6 +79,14 @@
     var vx = H.pos[0] - (H.px == null ? H.pos[0] : H.px), vy = H.pos[1] - (H.py == null ? H.pos[1] : H.py); H.px = H.pos[0]; H.py = H.pos[1];
     H.swv = (H.swv || 0) * .86 + (-vx * 9 - (H.bob - (H.pb || 0)) * 2) * .14; H.pb = H.bob; H.sw = (H.sw || 0) + (H.swv - (H.sw || 0)) * .2;
     if (H.rig.head) H.rig.head.querySelectorAll('.av-swing').forEach(function (e) { if (!e._piv) { try { var bb = e.getBBox(); e._piv = [bb.x + bb.width / 2, bb.y]; } catch (er) { e._piv = [101, 50]; } } e.setAttribute('transform', 'rotate(' + Math.max(-18, Math.min(18, H.sw)).toFixed(2) + ' ' + e._piv[0].toFixed(1) + ' ' + e._piv[1].toFixed(1) + ')'); });
+    /* what hangs from the neck (card, medal, tie, pendant) stays upright when it leans and swings after a move; a
+       skirt or dress hem sways the same way, less */
+    if (!H.dg || (H.dg[0] && !H.dg[0].isConnected)) H.dg = [].slice.call(H.fig.querySelectorAll('.av-dangle, .av-hem'));
+    H.dg.forEach(function (e) {
+      if (!e._piv) { try { var bb = e.getBBox(); e._piv = [bb.x + bb.width / 2, bb.y]; } catch (er) { e._piv = [101, 88]; } }
+      var hem = e.classList.contains('av-hem'), a = hem ? Math.max(-7, Math.min(7, H.sw * .35)) : Math.max(-24, Math.min(24, -H.lean * .85 + H.sw * .6));
+      e.setAttribute('transform', Math.abs(a) < .05 ? '' : 'rotate(' + a.toFixed(2) + ' ' + e._piv[0].toFixed(1) + ' ' + e._piv[1].toFixed(1) + ')');
+    });
     if (H.str) { Rig.stride(H.rig.LR, H.str[0], H.str[1]); Rig.stride(H.rig.LL, H.str[2], H.str[3]); }
     else { Rig.leg(H.rig.LR, H.legs.R, H.legs.sR); Rig.leg(H.rig.LL, H.legs.L, H.legs.sL); }
     /* eyes and face follow what you're doing */

@@ -154,6 +154,10 @@
       r.head.querySelectorAll('.av-feat').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(5.5 * ht) + ' 0)'); });
       r.head.querySelectorAll('.av-hairf').forEach(function (e) { e.setAttribute('transform', 'translate(' + f2(2.6 * ht) + ' 0)'); });
     }
+    /* what's printed or worn on the chest slides toward the side it faces and narrows; a hood shows past the neck */
+    var sg = t < 0 ? -1 : 1, cx = 101 + sg * 9 * k, sc = 1 - .5 * k;
+    r.fig.querySelectorAll('.av-chest').forEach(function (e) { e.setAttribute('transform', k > .01 ? 'translate(' + f2(cx) + ' 0) scale(' + f2(sc) + ' 1) translate(-101 0)' : ''); });
+    r.fig.querySelectorAll('.av-hoodb').forEach(function (e) { var on = !r.isBack && k > .45; e.style.display = on ? '' : 'none'; if (on) e.setAttribute('transform', (sg < 0 ? 'translate(202 0) scale(-1 1) ' : '') + 'translate(' + f2(-5 * k) + ' 0)'); });
     /* both toes point the way it faces */
     if (r.LL) r.LL.shoe.setAttribute('transform', t > .35 ? 'translate(' + f2(2 * r.LL.cx) + ' 0) scale(-1 1)' : '');
     if (r.LR) r.LR.shoe.setAttribute('transform', t < -.35 ? 'translate(' + f2(2 * r.LR.cx) + ' 0) scale(-1 1)' : '');
@@ -164,6 +168,9 @@
     if (look) r.av = look;
     if (r.L && r.R) { if (!r.torso) prep(r); r.isBack = on; if (r.back) armsHome(r); }   /* both arms stay in front of the torso */
     r.fig.querySelectorAll('.av-chest').forEach(function (e) { e.style.display = on ? 'none' : ''; });
+    /* the back of the top (avatar.js backOf): hood, collar, number, backpack */
+    r.fig.querySelectorAll('.av-backd').forEach(function (e) { e.style.display = on ? '' : 'none'; });
+    if (on) r.fig.querySelectorAll('.av-hoodb').forEach(function (e) { e.style.display = 'none'; });
     if (on) setHead(r, 'back', 1); else { r.hv = null; setHead(r, 'front', 1); if (r.t) Rig.turn(r, r.t); }
   };
   /* things it holds from the maker (coffee, flowers…) are put away while it uses a prop, and come back after */

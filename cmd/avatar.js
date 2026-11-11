@@ -47,6 +47,31 @@
     win: { k: 'win', bg: '#1f1a10', sky: 'sun', i: 'trophy', c: '#f2c94c' },
     couple: { k: 'couple', bg: '#2a1622', sky: 'sun', i: 'heart', c: '#e5484d', couple: 1 }
   };
+  /* the back of the top (Phase L round 2): what you see when the avatar turns its back – collar or hood, the number
+     on a jersey, the backpack the straps belong to, overall straps crossing – drawn hidden, shown by Rig.back; the hood
+     alone (av-hoodb) shows past the neck when it turns to the side */
+  function backOf(top, T, T2, P, S, L, bare) {
+    var hood = top === 'hoodie' || top === 'rain', b = '';
+    var collar = ['shirt', 'polo', 'suit', 'jacket', 'pjs', 'chef', 'varsity', 'robe', 'scrubs'].indexOf(top) >= 0;
+    if (bare) b += '<path d="M101 92v30" stroke="' + shade(S, -.22) + '" stroke-width="1.2" opacity=".55" stroke-linecap="round"/><path d="M86 98q5 5 10 2M116 98q-5 5-10 2" stroke="' + shade(S, -.2) + '" stroke-width="1.1" fill="none" opacity=".5" stroke-linecap="round"/>';
+    else if (hood) b += '<path d="M85 86.5q16-6 32 0 3 8-4 13.5-12 5-24 0-7-5.5-4-13.5z" fill="' + T2 + '"/><path d="M90 90q11 7 22 0" stroke="' + shade(T2, -.25) + '" stroke-width="1.2" fill="none"/>';
+    else if (collar) b += '<path d="M90 85.5q11 3.6 22 0l.4 3.6q-11.4 4-22.8 0z" fill="' + (top === 'sweater' ? '#f2f2f2' : shade(T, -.14)) + '"/>';
+    else if (top === 'sweater') b += '<path d="M91 86q10 3 20 0v2.6q-10 3-20 0z" fill="#f2f2f2"/>';
+    else b += '<path d="M92 86.6q9 2.6 18 0" stroke="' + (top === 'jersey' || top === 'kit' ? '#f2f2f2' : T2) + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
+    if (top === 'jersey' || top === 'kit') b += '<text x="101" y="119" font-size="20" font-weight="900" text-anchor="middle" fill="#f2f2f2" font-family="system-ui,sans-serif">' + esc(L.num || (top === 'kit' ? '10' : '7')) + '</text>';
+    if (top === 'puffer') b += '<path d="M76 100q25 4 50 0M76 111q25 4 50 0M78 122q23 4 46 0" stroke="' + T2 + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+    if (top === 'knit') b += '<path d="M78 92q23 9 46 0v9q-23 9-46 0z" fill="#f2f2f2"/>';
+    if (top === 'sweater' || top === 'knit') b += '<path d="M78.5 125q22.5 3 45 0" stroke="' + (top === 'knit' ? '#f2f2f2' : T2) + '" stroke-width="2.6" fill="none"/>';
+    if (['shirt', 'polo', 'pjs', 'scrubs', 'chef'].indexOf(top) >= 0) b += '<path d="M80 96q21 3 42 0" stroke="' + T2 + '" stroke-width="1" fill="none" opacity=".8"/>';
+    if (['suit', 'jacket', 'varsity', 'rain', 'robe', 'chef'].indexOf(top) >= 0) b += '<path d="M101 113v17" stroke="' + shade(T, -.22) + '" stroke-width="1.2"/>';
+    if (top === 'robe') b += '<path d="M78 113q23 5 46 0" stroke="' + shade(T, -.25) + '" stroke-width="3.4" fill="none"/>';
+    if (top === 'dress') b += '<path d="M101 88v22" stroke="' + T2 + '" stroke-width=".9"/><path d="M80 116q21 4 42 0" stroke="' + T2 + '" stroke-width="2" fill="none"/>';
+    if (top === 'tank') b += '<path d="M89 86.4q12 6 24 0" stroke="' + T2 + '" stroke-width="1.6" fill="none"/>';
+    if (L.neck === 'scarf') b += '<path d="M88 84q13 8 26 0l1 6q-14 9-28 0z" fill="' + (L.hatC || '#e8743b') + '"/>';
+    if (L.bottom === 'overalls') b += '<path d="M89.5 88l22 16M112.5 88l-22 16" stroke="' + P + '" stroke-width="3.4" stroke-linecap="round"/><path d="M91 103h20v25H91z" fill="' + P + '"/>';
+    if (L.bag === 'yes' && !bare) b += '<rect x="84" y="93" width="34" height="34" rx="7" fill="#2e3340"/><rect x="88.5" y="109" width="25" height="14" rx="3.5" fill="#3a4050"/><path d="M89 105h24" stroke="#b8bdcc" stroke-width="1"/><path d="M95 93q6-5 12 0" stroke="#2e3340" stroke-width="2.4" fill="none"/>';
+    return '<g class="av-backd" style="display:none">' + b + '</g>' + (hood ? '<g class="av-hoodb" style="display:none"><path d="M84 86.5q10-7 22-2 4 6-2 12-10 4-17 0-5-4-3-10z" fill="' + T2 + '"/></g>' : '');
+  }
   /* time-of-day backgrounds also follow light mode */
   function shade(hex, f) { var n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255; var m = function (c) { return Math.max(0, Math.min(255, Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f))); }; return '#' + [m(r), m(g), m(b)].map(function (c) { return c.toString(16).padStart(2, '0'); }).join(''); }
   var MOM = [
@@ -135,7 +160,7 @@
       if (PT === 'pumpkin') lines = '<ellipse cx="101" cy="110" rx="10" ry="8.4" fill="#f2851f"/><path d="M101 101.6v-3" stroke="#2f7a55" stroke-width="2"/><path d="M95 107l2.4-2.4 2.4 2.4zM102.2 107l2.4-2.4 2.4 2.4zM94.6 112q6.4 4 12.8 0l-2 1.6-2-1.4-2 1.6-2-1.6-2 1.6z" fill="#2a1a10"/>';
       if (PT === 'bones') lines = '<g stroke="#e9edf5" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M101 90v32"/><path d="M89 98q12 4 24 0M88 106q13 4 26 0M89 114q12 4 24 0"/></g>';
       if (PT === 'flame') lines = '<path d="M101 98c5 5 9 9 9 14a9 9 0 0 1-18 0c0-3 2-5 4-7 0 3 1 5 3 5 0-4-1-8 2-12z" fill="#f2a024"/><path d="M101 108c2 2 4 4 4 6a4 4 0 0 1-8 0c0-2 2-4 4-6z" fill="#f2e04a"/>';
-      torso += '<defs><clipPath id="' + cid + '"><path d="' + TD + '"/></clipPath></defs><g clip-path="url(#' + cid + ')">' + lines + '</g>';
+      torso += '<defs><clipPath id="' + cid + '"><path d="' + TD + '"/></clipPath></defs><g clip-path="url(#' + cid + ')">' + (['stripes', 'check', 'camo', 'tiedye'].indexOf(PT) < 0 ? '<g class="av-chest">' + lines + '</g>' : lines) + '</g>';
     }
     var detail = '';
     if (top === 'sweater') detail = '<path d="M92 88l9 9 9-9" fill="#f2f2f2"/><path d="M92 88l9 9 9-9" fill="none" stroke="#cfd6e4" stroke-width="1"/><path d="M95 88l6 6 6-6" fill="' + T + '"/><path d="M78.5 125q22.5 3 45 0" stroke="' + T2 + '" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
@@ -168,15 +193,15 @@
     if (top === 'jacket') detail = '<path d="M92 88l9 10 9-10v40h-18z" fill="#f2f2f2"/><path d="M92 88l9 10v30M110 88l-9 10" stroke="' + T2 + '" stroke-width="2" fill="none"/>';
     var extra = '';
     var NK = L.neck || 'none';
-    if (NK === 'chain') extra += '<path d="M91 88q10 10 20 0" stroke="#f2c94c" stroke-width="1.7" fill="none"/><circle cx="101" cy="98" r="2.2" fill="#f2c94c"/>';
+    if (NK === 'chain') extra += '<g class="av-dangle"><path d="M91 88q10 10 20 0" stroke="#f2c94c" stroke-width="1.7" fill="none"/><circle cx="101" cy="98" r="2.2" fill="#f2c94c"/></g>';
     if (NK === 'scarf' && m.k !== 'gym') extra += '<path d="M88 84q13 8 26 0l1 6q-14 9-28 0z" fill="' + (L.hatC || '#e8743b') + '"/><path d="M106 89h6l1 17h-7z" fill="' + shade(L.hatC || '#e8743b', -.12) + '"/><path d="M106.5 104h6M107 101h5.5" stroke="' + shade(L.hatC || '#e8743b', .3) + '" stroke-width="1"/>';
     if (NK === 'bowtie') extra += '<path d="M101 89l-7.5-4.5v9zM101 89l7.5-4.5v9z" fill="' + (L.hatC || '#d93a3a') + '"/><circle cx="101" cy="89" r="2" fill="' + shade(L.hatC || '#d93a3a', -.2) + '"/>';
-    if (NK === 'tie' && !bare) extra += '<path d="M99 87.5h4l-1 3 3 19-4 4.5-4-4.5 3-19z" fill="' + (L.hatC || '#d93a3a') + '"/><path d="M98 97l6-2M97.6 103l6.6-2.2" stroke="' + shade(L.hatC || '#d93a3a', .3) + '" stroke-width="1"/>';
+    if (NK === 'tie' && !bare) extra += '<g class="av-dangle"><path d="M99 87.5h4l-1 3 3 19-4 4.5-4-4.5 3-19z" fill="' + (L.hatC || '#d93a3a') + '"/><path d="M98 97l6-2M97.6 103l6.6-2.2" stroke="' + shade(L.hatC || '#d93a3a', .3) + '" stroke-width="1"/></g>';
     if (NK === 'pearls') extra += '<g fill="#f6f1e7" stroke="#d8cdb8" stroke-width=".4">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var a = Math.PI * (.12 + i * .095); return '<circle cx="' + (101 - Math.cos(a) * 11).toFixed(1) + '" cy="' + (85 + Math.sin(a) * 9).toFixed(1) + '" r="1.5"/>'; }).join('') + '</g>';
-    if (NK === 'medal') extra += '<path d="M94 86l7 15 7-15" fill="none" stroke="#d93a3a" stroke-width="3.2"/><path d="M96 86l5 11 5-11" fill="none" stroke="#3987e5" stroke-width="1.2"/><circle cx="101" cy="105" r="5" fill="#f2c94c" stroke="#c98500" stroke-width="1"/><path d="M101.0 102.2L101.7 104.0L103.7 104.1L102.2 105.4L102.6 107.3L101.0 106.3L99.4 107.3L99.8 105.4L98.3 104.1L100.3 104.0z" fill="#c98500"/>';
+    if (NK === 'medal') extra += '<g class="av-dangle"><path d="M94 86l7 15 7-15" fill="none" stroke="#d93a3a" stroke-width="3.2"/><path d="M96 86l5 11 5-11" fill="none" stroke="#3987e5" stroke-width="1.2"/><circle cx="101" cy="105" r="5" fill="#f2c94c" stroke="#c98500" stroke-width="1"/><path d="M101.0 102.2L101.7 104.0L103.7 104.1L102.2 105.4L102.6 107.3L101.0 106.3L99.4 107.3L99.8 105.4L98.3 104.1L100.3 104.0z" fill="#c98500"/></g>';
     if (L.bag === 'yes' && !bare) extra += '<path d="M88 87v40M114 87v40" stroke="#2e3340" stroke-width="4" stroke-linecap="round"/><rect x="85.5" y="104" width="5" height="4" rx="1" fill="#b8bdcc"/><rect x="111.5" y="104" width="5" height="4" rx="1" fill="#b8bdcc"/>';
     if (L.bottom === 'overalls') extra += '<path d="M89 103h24v25H89z" fill="' + P + '"/><path d="M89.5 88l1.5 16M112.5 88l-1.5 16" stroke="' + P + '" stroke-width="3.4" stroke-linecap="round"/><circle cx="91" cy="104" r="1.6" fill="#f2c94c"/><circle cx="111" cy="104" r="1.6" fill="#f2c94c"/><rect x="96" y="108" width="10" height="7" rx="1.5" fill="none" stroke="' + shade(P, .25) + '" stroke-width="1"/>';
-    if (NK === 'lanyard' && !bare && m.k !== 'gym' && m.k !== 'night') extra += '<path d="M93 90l6 22M109 90l-6 22" stroke="#1b1b1b" stroke-width="1.6" fill="none"/><rect x="97" y="111" width="8" height="10" rx="1.5" fill="#f2f2f2" stroke="#999" stroke-width=".6"/>';
+    if (NK === 'lanyard' && !bare && m.k !== 'gym' && m.k !== 'night') extra += '<g class="av-dangle"><path d="M93 90l6 22M109 90l-6 22" stroke="#1b1b1b" stroke-width="1.6" fill="none"/><rect x="97" y="111" width="8" height="10" rx="1.5" fill="#f2f2f2" stroke="#999" stroke-width=".6"/></g>';
     var cut = L.bottom === 'shorts' ? 142 : L.bottom === 'swim' ? 135 : 157;
     var LC = cut < 157 || L.bottom === 'skirt' || top === 'dress' ? S : P;
     /* legs drawn at their own width for each body (not squeezed with the torso): they fill the hem, taper to the ankle */
@@ -208,7 +233,7 @@
       (L.bottom === 'joggers' ? '<path d="M' + (x0 + .8).toFixed(1) + ' 127L' + (x0 + LW / 2 - LB / 2 + .6).toFixed(1) + ' 152M' + (x1 + LW - .8).toFixed(1) + ' 127L' + (x1 + LW / 2 + LB / 2 - .6).toFixed(1) + ' 152" stroke="#f2f2f2" stroke-width="1.3"/><path d="M' + (x0 + (LW - LB) / 2).toFixed(1) + ' 152.5h' + LB.toFixed(1) + 'M' + (x1 + (LW - LB) / 2).toFixed(1) + ' 152.5h' + LB.toFixed(1) + '" stroke="' + shade(P, -.25) + '" stroke-width="3"/>' : '') +
       (L.bottom === 'cargo' ? '<rect x="' + (x0 - .3).toFixed(1) + '" y="134" width="5" height="7" rx="1" fill="' + shade(P, -.14) + '"/><rect x="' + (x1 + LW - 4.7).toFixed(1) + '" y="134" width="5" height="7" rx="1" fill="' + shade(P, -.14) + '"/>' : '') +
       '</g>';
-    if (L.bottom === 'skirt' || top === 'dress') { var SKC = top === 'dress' ? T : P; legs += '<path d="M' + (hx0 - 1).toFixed(1) + ' 119h' + (hw + 2).toFixed(1) + 'l7 ' + (top === 'dress' ? 24 : 21) + 'q-' + (hw / 2 + 8).toFixed(1) + ' 5-' + (hw + 16).toFixed(1) + ' 0z" fill="' + SKC + '"/><path d="M' + (hx0 - 5).toFixed(1) + ' ' + (top === 'dress' ? 141 : 138) + 'q' + (hw / 2 + 6).toFixed(1) + ' 4 ' + (hw + 10).toFixed(1) + ' 0" stroke="' + shade(SKC, -.2) + '" stroke-width="1.4" fill="none"/>'; }
+    if (L.bottom === 'skirt' || top === 'dress') { var SKC = top === 'dress' ? T : P; legs += '<g class="av-hem"><path d="M' + (hx0 - 1).toFixed(1) + ' 119h' + (hw + 2).toFixed(1) + 'l7 ' + (top === 'dress' ? 24 : 21) + 'q-' + (hw / 2 + 8).toFixed(1) + ' 5-' + (hw + 16).toFixed(1) + ' 0z" fill="' + SKC + '"/><path d="M' + (hx0 - 5).toFixed(1) + ' ' + (top === 'dress' ? 141 : 138) + 'q' + (hw / 2 + 6).toFixed(1) + ' 4 ' + (hw + 10).toFixed(1) + ' 0" stroke="' + shade(SKC, -.2) + '" stroke-width="1.4" fill="none"/></g>'; }
     /* arms + props */
     var AC = top === 'tank' ? S : top === 'varsity' ? '#f2f2f2' : T;
     /* ---------- the body built for moving (Phase L1, 2026-11-11) ----------
@@ -444,7 +469,7 @@
     if (L.faceS === 'heart' && beard) { var bcid = 'avb' + (++UID); beard = '<defs><clipPath id="' + bcid + '"><path d="' + FD + '"/><path d="M93 78h16l-2 14h-12z"/></clipPath></defs><g clip-path="url(#' + bcid + ')">' + beard + '</g>'; }
     var head = '<g class="bob">' + (HS ? '<g transform="translate(101 62) scale(' + HS[0] + ' ' + HS[1] + ') translate(-101 -62)">' : '') + hairBack + neck + face + '<g class="av-feat">' + cheeks + extraFace + beard + brows + eyes + nose + mouthOver + pierce + '</g><g class="av-hairf">' + hairTop + hair2 + '</g><g class="av-feat">' + (m.k === 'trip' ? '' : glasses) + '</g><g class="av-hat">' + hat + '</g><g class="av-buds">' + buds + '</g>' + (HS ? '</g>' : '') + '</g>';
     /* longer legs: the upper body sits 9 px higher, the legs are stretched to meet it */
-    var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + '<g class="av-chest">' + detail + extra + '</g></g>';
+    var body = '<g transform="translate(101 -9) scale(' + SX + ' 1) translate(-101 0)">' + torso + '<g class="av-chest">' + detail + extra + '</g>' + backOf(top, T, T2, P, S, L, bare) + '</g>';
     if (m.plain) { sky = ''; lamp = ''; ground = '<ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>'; }
     /* soft: no box – a glow in the moment's colour that fades into the page, and a patch of grass instead of a strip */
     var SCN = L.scene || 'none', sceneEl = '';
