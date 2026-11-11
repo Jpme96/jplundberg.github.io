@@ -90,17 +90,17 @@
     var t = T(), d = date(), html;
     if (!d) {
       html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day</h2></div>' +
-        '<p class="muted hx-lead">Getting the keys to a new home? A step-by-step for the day itself: meter readings with photos, keys, the walk-through with faults, and the protocol.</p>' +
-        '<form class="hx-row" data-tkdate><label class="hx-f"><span>Take-over date</span><input type="date" name="d" required></label><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Start</button><button type="button" class="text-btn" data-tkhide>Not moving – hide</button></form></section>';
+        '<p class="muted hx-lead" data-t="ui.getting-the-keys-to-a-new-home-a-step-by">Getting the keys to a new home? A step-by-step for the day itself: meter readings with photos, keys, the walk-through with faults, and the protocol.</p>' +
+        '<form class="hx-row" data-tkdate><label class="hx-f"><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="d" required></label><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Start</button><button type="button" class="text-btn" data-tkhide data-t="ui.not-moving-hide">Not moving – hide</button></form></section>';
       el.innerHTML = html; return;
     }
     ensure(); t = T();
     var n = daysTo(d), open = t.open || (n > 1 ? 'prep' : n >= 0 ? 'meters' : 'after');
     var states = STEPS.map(function (s) { return stepState(s[0], t); }), done = states.filter(function (s) { return s.done; }).length;
     html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day <small class="fold-sum">' + esc(n > 1 ? 'in ' + n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : (-n) + ' days ago') + ' · ' + done + '/' + STEPS.length + '</small></h2><div class="head-actions">' +
-      '<button type="button" class="text-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Record</button><button type="button" class="text-btn" data-tkset aria-label="Details"><i class="bi bi-sliders"></i></button></div></div>' +
+      '<button type="button" class="text-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Record</button><button type="button" class="text-btn" data-tkset aria-label="Details" data-t-aria-label="ui.details"><i class="bi bi-sliders"></i></button></div></div>' +
       '<div class="hx-when"><span class="hx-day"><b>' + esc(fromKey(d).getDate()) + '</b><small>' + esc(fromKey(d).toLocaleDateString('en-GB', { month: 'short' })) + '</small></span><span><b>' + esc(n > 1 ? 'In ' + n + ' days' : n === 1 ? 'Tomorrow' : n === 0 ? 'Today – good luck!' : (-n) + ' days ago') + '</b><small>' +
-      esc([t.addr, t.seller ? 'from ' + t.seller : ''].filter(Boolean).join(' · ') || 'Add the address and seller under the sliders') + '</small></span><span class="hx-prog"><b>' + done + '/' + STEPS.length + '</b><small>steps</small></span></div>' +
+      esc([t.addr, t.seller ? 'from ' + t.seller : ''].filter(Boolean).join(' · ') || 'Add the address and seller under the sliders') + '</small></span><span class="hx-prog"><b>' + done + '/' + STEPS.length + '</b><small data-t="ui.steps-2">steps</small></span></div>' +
       '<ol class="hx-steps">' + STEPS.map(function (s, i) {
         var st = states[i], isOpen = open === s[0];
         return '<li class="hx-step' + (isOpen ? ' open' : '') + (st.done ? ' done' : '') + (st.warn ? ' warn' : '') + '"><button type="button" class="hx-sh" data-tkstep="' + s[0] + '" aria-expanded="' + isOpen + '"><span class="hx-n">' + (st.done ? '<i class="bi bi-check-lg"></i>' : i + 1) + '</span><span class="hx-st"><b>' + esc(s[1]) + '</b>' + (st.text ? '<small>' + esc(st.text) + '</small>' : '') + '</span><i class="bi bi-chevron-down hx-chev"></i></button>' +
@@ -125,11 +125,11 @@
           : '<label class="text-btn hx-sm"><i class="bi bi-camera"></i> Photo of the meter<input type="file" accept="image/*" capture="environment" data-tkmph="' + esc(m.id) + '" hidden></label>') + '</div></li>';
     }).join('') + '</ul><div class="lf-chips hx-add">' + ['water', 'heat', 'oil', 'other'].map(function (k) { return '<button type="button" class="lf-chip" data-tkmadd="' + k + '"><i class="bi bi-plus"></i> ' + esc(METERS[k][0]) + '</button>'; }).join('') + '</div>' +
       '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> The electricity reading also goes into Electricity meter on the Energy tab, so the power use starts from the day you took over.</p>';
-    if (id === 'keys') return '<table class="hx-keys"><thead><tr><th>Key</th><th>Should get</th><th>Got</th></tr></thead><tbody>' + arr(t.keys).map(function (k) {
+    if (id === 'keys') return '<table class="hx-keys"><thead><tr><th data-t="ui.key">Key</th><th data-t="ui.should-get">Should get</th><th data-t="ui.got">Got</th></tr></thead><tbody>' + arr(t.keys).map(function (k) {
       var miss = num(k.got) != null && +k.got < +k.want;
       return '<tr' + (miss ? ' class="miss"' : '') + '><td>' + esc(k.label) + '</td><td><input inputmode="numeric" value="' + esc(k.want) + '" data-tkkw="' + esc(k.id) + '" aria-label="' + esc(k.label) + ' – should get"></td><td><input inputmode="numeric" value="' + esc(k.got) + '" data-tkkg="' + esc(k.id) + '" aria-label="' + esc(k.label) + ' – got"></td></tr>';
-    }).join('') + '</tbody></table><form class="hx-row" data-tkkadd><input name="t" placeholder="Another key, e.g. Bike shed" maxlength="40" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
-      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> Codes (alarm, Wi-Fi, the door code) belong in <a href="#hinfo" data-tkgo="hinfo">Good to know</a> on the Things tab – they’re hidden until you tap Show.</p>';
+    }).join('') + '</tbody></table><form class="hx-row" data-tkkadd><input name="t" placeholder="Another key, e.g. Bike shed" data-t-placeholder="ui.another-key-e-g-bike-shed" maxlength="40" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
+      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> Codes (alarm, Wi-Fi, the door code) belong in <a href="#hinfo" data-tkgo="hinfo" data-t="ui.good-to-know">Good to know</a> on the Things tab – they’re hidden until you tap Show.</p>';
     if (id === 'walk') {
       var f = arr(t.faults), hasClaim = Fe.on('hclaim') && window.HouseClaims;
       return '<ul class="hx-cks">' + CHECKS.map(function (c) { return checkRow('data-tkcheck', c[0], (t.checks || {})[c[0]], c[1], c[2]); }).join('') + '</ul>' +
@@ -138,7 +138,7 @@
           return '<li class="hx-fault' + (x.big ? ' big' : '') + '"><div class="hx-ft"><button type="button" class="hx-fb" data-tkfedit="' + esc(x.id) + '"><b>' + esc(x.text || 'Fault') + '</b><small>' + esc([x.room, x.big ? 'serious' : ''].filter(Boolean).join(' · ')) + '</small></button>' +
             (x.claim ? '<a class="hl-chip hx-cl" style="--c:#e66767" href="#hclaim=' + esc(x.claim) + '" data-tkclaimgo="' + esc(x.claim) + '"><i class="bi bi-exclamation-diamond"></i> Claim</a>' : hasClaim ? '<button type="button" class="text-btn hx-sm" data-tkclaim="' + esc(x.id) + '"><i class="bi bi-exclamation-diamond"></i> Make it a claim</button>' : '') + '</div>' +
             (HF ? HF.strip(x.photos, 'take:' + x.id, { label: 'Photos' }) : '') + '</li>';
-        }).join('') + '</ul>' : '<p class="muted hx-tip">Found something wrong? Add it with a photo – it goes on the protocol, and you can turn it into a claim later.</p>');
+        }).join('') + '</ul>' : '<p class="muted hx-tip" data-t="ui.found-something-wrong-add-it-with-a-phot">Found something wrong? Add it with a photo – it goes on the protocol, and you can turn it into a claim later.</p>');
     }
     if (id === 'sign') {
       var f2 = arr(t.faults), m2 = arr(t.meters).filter(function (x) { return num(x.value) != null; });
@@ -150,15 +150,15 @@
         '<div class="hs2-acts"><button type="button" class="pill-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Your own record (PDF)</button>' +
         '<label class="text-btn"><i class="bi bi-upload"></i> ' + (t.protocol ? 'Replace the signed protocol' : 'Add the signed protocol') + '<input type="file" accept="application/pdf,.pdf,image/*" data-tkprotfile hidden></label>' +
         (t.signed ? '' : '<button type="button" class="text-btn" data-tksigned><i class="bi bi-pen"></i> Signed today</button>') + '</div>' +
-        (t.protocol ? '<p class="hx-tip"><i class="bi bi-journal-check"></i> The signed protocol is in the <a href="#hdocs" data-tkgo="hdocs">FDV binder</a> under Purchase and take-over.</p>' : '');
+        (t.protocol ? '<p class="hx-tip"><i class="bi bi-journal-check"></i> The signed protocol is in the <a href="#hdocs" data-tkgo="hdocs" data-t="ui.fdv-binder">FDV binder</a> under Purchase and take-over.</p>' : '');
     }
     var mv = move(), left = mv ? arr(mv.items).filter(function (x) { return !x.done; }) : [];
     return '<ul class="hx-after">' +
-      '<li><a href="#hshared" data-tkgo="hshared"><i class="bi bi-list-check"></i><span><b>Moving checklist</b><small>' + esc(left.length ? left.length + ' left: ' + left.slice(0, 2).map(function (x) { return x.text; }).join(' · ') : 'all done') + '</small></span></a></li>' +
-      '<li><a href="https://www.skatteetaten.no/person/folkeregister/flytte/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i><span><b>Moving notice (flyttemelding)</b><small>to Folkeregisteret within 8 days – Skatteetaten</small></span></a></li>' +
-      '<li><a href="#hmeter" data-tkgo="hmeter"><i class="bi bi-speedometer2"></i><span><b>Read the meter again in a month</b><small>Energy tab – then you see your use per day</small></span></a></li>' +
-      (Fe.on('hdocs') ? '<li><a href="#hdocs" data-tkgo="hdocs"><i class="bi bi-journal-bookmark"></i><span><b>Keep the documents you got</b><small>manuals, drawings, the FDV papers – FDV binder</small></span></a></li>' : '') +
-      (Fe.on('hclaim') ? '<li><a href="#hclaim" data-tkgo="hclaim"><i class="bi bi-exclamation-diamond"></i><span><b>Found a fault later?</b><small>tell the seller in writing as soon as you can – Claims tab</small></span></a></li>' : '') + '</ul>';
+      '<li><a href="#hshared" data-tkgo="hshared"><i class="bi bi-list-check"></i><span><b data-t="ui.moving-checklist">Moving checklist</b><small>' + esc(left.length ? left.length + ' left: ' + left.slice(0, 2).map(function (x) { return x.text; }).join(' · ') : 'all done') + '</small></span></a></li>' +
+      '<li><a href="https://www.skatteetaten.no/person/folkeregister/flytte/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i><span><b data-t="ui.moving-notice-flyttemelding">Moving notice (flyttemelding)</b><small data-t="ui.to-folkeregisteret-within-8-days-skattee">to Folkeregisteret within 8 days – Skatteetaten</small></span></a></li>' +
+      '<li><a href="#hmeter" data-tkgo="hmeter"><i class="bi bi-speedometer2"></i><span><b data-t="ui.read-the-meter-again-in-a-month">Read the meter again in a month</b><small data-t="ui.energy-tab-then-you-see-your-use-per-day">Energy tab – then you see your use per day</small></span></a></li>' +
+      (Fe.on('hdocs') ? '<li><a href="#hdocs" data-tkgo="hdocs"><i class="bi bi-journal-bookmark"></i><span><b data-t="ui.keep-the-documents-you-got">Keep the documents you got</b><small data-t="ui.manuals-drawings-the-fdv-papers-fdv-bind">manuals, drawings, the FDV papers – FDV binder</small></span></a></li>' : '') +
+      (Fe.on('hclaim') ? '<li><a href="#hclaim" data-tkgo="hclaim"><i class="bi bi-exclamation-diamond"></i><span><b data-t="ui.found-a-fault-later">Found a fault later?</b><small data-t="ui.tell-the-seller-in-writing-as-soon-as-yo">tell the seller in writing as soon as you can – Claims tab</small></span></a></li>' : '') + '</ul>';
   }
 
   /* ---------- editing ---------- */
@@ -244,9 +244,9 @@
     var t = T(), f = id ? arr(t.faults).filter(function (x) { return x.id === id; })[0] : null; if (id && !f) return;
     var X = HF.sheet(f ? 'Fault' : 'New fault');
     X.box.innerHTML = HF.head('exclamation-triangle', f ? 'Fault' : 'New fault', 'Say where it is and what’s wrong – add photos after saving.') +
-      '<form class="hx-form" data-tkfform><p class="mp-lbl">Where</p><div class="lf-chips">' + ROOMS.map(function (r) { return '<button type="button" class="lf-chip" data-tkroom="' + esc(r) + '" aria-pressed="' + (!!f && f.room === r) + '">' + esc(r) + '</button>'; }).join('') + '</div>' +
-      '<label class="hx-f"><span>What’s wrong</span><textarea name="text" rows="3" maxlength="600" placeholder="e.g. Crack in the tile by the shower, the kitchen tap drips" required>' + esc(f ? f.text : '') + '</textarea></label>' +
-      '<label class="lf-check"><input type="checkbox" name="big"' + (f && f.big ? ' checked' : '') + '> <span>Serious – it stops you using something, or may get worse (water, power, the roof)</span></label>' +
+      '<form class="hx-form" data-tkfform><p class="mp-lbl" data-t="ui.where">Where</p><div class="lf-chips">' + ROOMS.map(function (r) { return '<button type="button" class="lf-chip" data-tkroom="' + esc(r) + '" aria-pressed="' + (!!f && f.room === r) + '">' + esc(r) + '</button>'; }).join('') + '</div>' +
+      '<label class="hx-f"><span data-t="ui.whats-wrong">What’s wrong</span><textarea name="text" rows="3" maxlength="600" placeholder="e.g. Crack in the tile by the shower, the kitchen tap drips" data-t-placeholder="ui.e-g-crack-in-the-tile-by-the-shower-the" required>' + esc(f ? f.text : '') + '</textarea></label>' +
+      '<label class="lf-check"><input type="checkbox" name="big"' + (f && f.big ? ' checked' : '') + '> <span data-t="ui.serious-it-stops-you-using-something-or">Serious – it stops you using something, or may get worse (water, power, the roof)</span></label>' +
       '<div class="lf-foot">' + (f ? '<button type="button" class="text-btn danger" data-tkfdel><i class="bi bi-trash3"></i> Delete</button>' : '<span></span>') + '<button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
     var room = f ? f.room : '';
     X.box.addEventListener('click', function (e) {
@@ -284,12 +284,12 @@
     var t = T(), d = date();
     var X = HF.sheet('The take-over');
     X.box.innerHTML = HF.head('key', 'The take-over') +
-      '<form class="hx-form" data-tkdet><label class="hx-f"><span>Take-over date</span><input type="date" name="d" value="' + esc(d || '') + '" required></label>' +
-      '<label class="hx-f"><span>Address</span><input name="addr" maxlength="120" value="' + esc(t.addr || '') + '" placeholder="Street and number, postcode"></label>' +
-      '<label class="hx-f"><span>Seller or builder</span><input name="seller" maxlength="80" value="' + esc(t.seller || '') + '" placeholder="Name"></label>' +
-      '<label class="hx-f"><span>Estate agent</span><input name="agent" maxlength="80" value="' + esc(t.agent || '') + '" placeholder="Name and firm"></label>' +
-      '<p class="mp-lbl">The home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-tkkind="used" aria-pressed="' + (t.kind !== 'new') + '">Used – bought from the owner</button><button type="button" class="lf-chip" data-tkkind="new" aria-pressed="' + (t.kind === 'new') + '">New – from a builder</button></div>' +
-      '<p class="muted hs2-note">This decides which rules a claim follows (avhendingslova or bustadoppføringslova).</p>' +
+      '<form class="hx-form" data-tkdet><label class="hx-f"><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="d" value="' + esc(d || '') + '" required></label>' +
+      '<label class="hx-f"><span data-t="ui.address">Address</span><input name="addr" maxlength="120" value="' + esc(t.addr || '') + '" placeholder="Street and number, postcode"></label>' +
+      '<label class="hx-f"><span data-t="ui.seller-or-builder">Seller or builder</span><input name="seller" maxlength="80" value="' + esc(t.seller || '') + '" placeholder="Name"></label>' +
+      '<label class="hx-f"><span data-t="ui.estate-agent">Estate agent</span><input name="agent" maxlength="80" value="' + esc(t.agent || '') + '" placeholder="Name and firm"></label>' +
+      '<p class="mp-lbl" data-t="ui.the-home-is">The home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-tkkind="used" aria-pressed="' + (t.kind !== 'new') + '">Used – bought from the owner</button><button type="button" class="lf-chip" data-tkkind="new" aria-pressed="' + (t.kind === 'new') + '">New – from a builder</button></div>' +
+      '<p class="muted hs2-note" data-t="ui.this-decides-which-rules-a-claim-follows">This decides which rules a claim follows (avhendingslova or bustadoppføringslova).</p>' +
       '<div class="lf-foot"><button type="button" class="text-btn danger" data-tkreset><i class="bi bi-arrow-counterclockwise"></i> Start the guide over</button><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
     var kind = t.kind === 'new' ? 'new' : 'used';
     X.box.addEventListener('click', function (e) {
@@ -315,16 +315,16 @@
     var pt = window.Shared && window.Shared.partner && window.Shared.partner();
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-tkrclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><button type="button" class="pill-btn" data-tkrprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
-      '<p class="rp-hint">Your own record of the take-over, next to the agent’s protocol. In the print window, choose <b>Save as PDF</b>.</p><article class="rp-doc"></article>';
+      '<p class="rp-hint">Your own record of the take-over, next to the agent’s protocol. In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b>.</p><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc'), meters = arr(t.meters).filter(function (m) { return num(m.value) != null || m.photo; }), keys = arr(t.keys).filter(function (k) { return +k.want > 0 || num(k.got) != null; }), faults = arr(t.faults);
     var checked = CHECKS.filter(function (c) { return (t.checks || {})[c[0]]; });
-    doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick">Take-over · Overtakelse</p><h1>' + esc(t.addr || 'The new home') + '</h1><p class="rp-addr">' + esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</p></div></header>' +
-      '<table class="rp-meta"><tr><th>Buyer</th><td>' + esc([prof.name, window.HouseClaims ? window.HouseClaims.co() : pt ? pt.name : ''].filter(Boolean).join(' and ') || '–') + '</td><th>Seller</th><td>' + esc(t.seller || '–') + '</td></tr><tr><th>Estate agent</th><td>' + esc(t.agent || '–') + '</td><th>Protocol signed</th><td>' + esc(t.signed ? fmt(t.signed) : 'not yet') + '</td></tr></table>' +
-      '<h2>Meter readings</h2>' + (meters.length ? meters.map(function (m) { var M = METERS[m.kind] || METERS.other; return '<div class="rp-f hx-rf">' + (m.photo ? '<img class="rp-ph" data-hfimg="' + esc(m.photo) + '" alt="">' : '<span></span>') + '<div class="rp-ft"><p><b>' + esc(m.label || M[0]) + '</b></p><p class="rp-act">' + (num(m.value) != null ? esc(nf.format(num(m.value)) + ' ' + (m.unit || M[1])) : 'see the photo') + '</p></div><span></span></div>'; }).join('') : '<p>No readings noted.</p>') +
-      '<h2>Keys</h2>' + (keys.length ? '<table class="rp-todo"><thead><tr><th>Key</th><th>Should get</th><th>Got</th></tr></thead><tbody>' + keys.map(function (k) { return '<tr><td>' + esc(k.label) + '</td><td>' + esc(k.want) + '</td><td>' + esc(num(k.got) != null ? k.got : '–') + (num(k.got) != null && +k.got < +k.want ? ' (missing ' + (k.want - k.got) + ')' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>Not counted.</p>') +
-      '<h2>Faults found (' + faults.length + ')</h2>' + (faults.length ? faults.map(function (f, i) { return '<div class="rp-part"><h3>' + (i + 1) + '. ' + esc(f.room ? f.room + ': ' : '') + esc(String(f.text).split('\n')[0]) + (f.big ? ' – serious' : '') + '</h3>' + (String(f.text).indexOf('\n') > 0 ? '<p class="rp-notes">' + esc(f.text) + '</p>' : '') + ((f.photos || []).length ? '<div class="hx-rph">' + f.photos.map(function (p) { return '<img class="rp-ph" data-hfimg="' + esc(p) + '" alt="">'; }).join('') + '</div>' : '') + '</div>'; }).join('') : '<p>None.</p>') +
-      '<h2>Checked on the walk-through</h2><ul class="hx-rl">' + (checked.length ? checked.map(function (c) { return '<li>' + esc(c[1]) + '</li>'; }).join('') : '<li>Nothing ticked.</li>') + '</ul>' +
+    doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.take-over-overtakelse">Take-over · Overtakelse</p><h1>' + esc(t.addr || 'The new home') + '</h1><p class="rp-addr">' + esc(fmt(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '</p></div></header>' +
+      '<table class="rp-meta"><tr><th data-t="ui.buyer">Buyer</th><td>' + esc([prof.name, window.HouseClaims ? window.HouseClaims.co() : pt ? pt.name : ''].filter(Boolean).join(' and ') || '–') + '</td><th data-t="ui.seller">Seller</th><td>' + esc(t.seller || '–') + '</td></tr><tr><th data-t="ui.estate-agent">Estate agent</th><td>' + esc(t.agent || '–') + '</td><th data-t="ui.protocol-signed">Protocol signed</th><td>' + esc(t.signed ? fmt(t.signed) : 'not yet') + '</td></tr></table>' +
+      '<h2 data-t="ui.meter-readings">Meter readings</h2>' + (meters.length ? meters.map(function (m) { var M = METERS[m.kind] || METERS.other; return '<div class="rp-f hx-rf">' + (m.photo ? '<img class="rp-ph" data-hfimg="' + esc(m.photo) + '" alt="">' : '<span></span>') + '<div class="rp-ft"><p><b>' + esc(m.label || M[0]) + '</b></p><p class="rp-act">' + (num(m.value) != null ? esc(nf.format(num(m.value)) + ' ' + (m.unit || M[1])) : 'see the photo') + '</p></div><span></span></div>'; }).join('') : '<p data-t="ui.no-readings-noted">No readings noted.</p>') +
+      '<h2 data-t="ui.keys">Keys</h2>' + (keys.length ? '<table class="rp-todo"><thead><tr><th data-t="ui.key">Key</th><th data-t="ui.should-get">Should get</th><th data-t="ui.got">Got</th></tr></thead><tbody>' + keys.map(function (k) { return '<tr><td>' + esc(k.label) + '</td><td>' + esc(k.want) + '</td><td>' + esc(num(k.got) != null ? k.got : '–') + (num(k.got) != null && +k.got < +k.want ? ' (missing ' + (k.want - k.got) + ')' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p data-t="ui.not-counted">Not counted.</p>') +
+      '<h2>Faults found (' + faults.length + ')</h2>' + (faults.length ? faults.map(function (f, i) { return '<div class="rp-part"><h3>' + (i + 1) + '. ' + esc(f.room ? f.room + ': ' : '') + esc(String(f.text).split('\n')[0]) + (f.big ? ' – serious' : '') + '</h3>' + (String(f.text).indexOf('\n') > 0 ? '<p class="rp-notes">' + esc(f.text) + '</p>' : '') + ((f.photos || []).length ? '<div class="hx-rph">' + f.photos.map(function (p) { return '<img class="rp-ph" data-hfimg="' + esc(p) + '" alt="">'; }).join('') + '</div>' : '') + '</div>'; }).join('') : '<p data-t="ui.none">None.</p>') +
+      '<h2 data-t="ui.checked-on-the-walk-through">Checked on the walk-through</h2><ul class="hx-rl">' + (checked.length ? checked.map(function (c) { return '<li>' + esc(c[1]) + '</li>'; }).join('') : '<li data-t="ui.nothing-ticked">Nothing ticked.</li>') + '</ul>' +
       '<footer class="rp-foot">Take-over record · ' + esc(t.addr || '') + ' · made ' + esc(today()) + '</footer>';
     HF.fill(doc);
     function close() { bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }

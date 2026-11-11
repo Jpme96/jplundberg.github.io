@@ -78,8 +78,8 @@
     bar.hidden = !editing;
     if (!editing) { bar.innerHTML = ''; return; }
     var C = conf();
-    bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> Customize this page</h2></div>' +
-      '<p class="muted pk-intro">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Menu & pages.</p>' +
+    bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page" data-t-aria-label="ui.customize-this-page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> Customize this page</h2></div>' +
+      '<p class="muted pk-intro" data-t="ui.move-sections-and-cards-up-or-down-and-s">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Menu & pages.</p>' +
       zones().map(function (z) {
         var list = items(z); if (list.length < 2 && z.key !== 'main') return '';
         var off = (C[z.key] || {}).off || [];
@@ -91,8 +91,8 @@
             '<input type="checkbox" class="switch" data-pkshow="' + esc(k) + '" data-z="' + esc(z.key) + '"' + (on ? ' checked' : '') + ' aria-label="Show ' + esc(nameOf(el)) + '"></div>';
         }).join('');
       }).join('') +
-      (zones().some(function (z) { return items(z).length > 1; }) ? '' : '<p class="muted pk-intro">Nothing to arrange on this page yet – switch on more cards under Settings → Features.</p>') +
-      '<div class="pk-foot"><button type="button" class="text-btn" data-pkreset>Reset</button><button type="button" class="pill-btn" data-pkedit>Done</button></div></section>';
+      (zones().some(function (z) { return items(z).length > 1; }) ? '' : '<p class="muted pk-intro" data-t="ui.nothing-to-arrange-on-this-page-yet-swit">Nothing to arrange on this page yet – switch on more cards under Settings → Features.</p>') +
+      '<div class="pk-foot"><button type="button" class="text-btn" data-pkreset data-t="ui.reset">Reset</button><button type="button" class="pill-btn" data-pkedit data-t="ui.done">Done</button></div></section>';
   }
   function zoneBy(key) { return zones().filter(function (z) { return z.key === key; })[0]; }
 

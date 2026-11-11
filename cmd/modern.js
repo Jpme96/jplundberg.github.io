@@ -66,7 +66,7 @@
   var more = null;
   if (nav) {
     more = document.createElement('a'); more.className = 'tb-more'; more.href = '#'; more.setAttribute('role', 'button');
-    more.setAttribute('aria-haspopup', 'true'); more.innerHTML = '<i class="bi bi-grid-3x3-gap-fill"></i><span>More</span>';
+    more.setAttribute('aria-haspopup', 'true'); more.innerHTML = '<i class="bi bi-grid-3x3-gap-fill"></i><span data-t="ui.more">More</span>';
     nav.appendChild(more);
   }
   /* the pages that are switched on (Settings → Features) – the ones folded into More count too */
@@ -105,14 +105,14 @@
     var edit = '<a class="mut" href="/cmd/?settings=layout"><i class="bi bi-sliders"></i> Choose what’s in the bar</a>';
     if (wideMQ.matches) {
       var m = document.createElement('div'); m.className = 'tb-menu'; m.id = 'tbMenu'; m.setAttribute('role', 'menu');
-      m.innerHTML = '<p>More pages</p>' + hidden.map(function (a) { return item(a, all.indexOf(a)); }).join('') + '<hr>' + edit;
+      m.innerHTML = '<p data-t="ui.more-pages">More pages</p>' + hidden.map(function (a) { return item(a, all.indexOf(a)); }).join('') + '<hr>' + edit;
       document.body.appendChild(m);
       var r = more.getBoundingClientRect(); m.style.top = (r.bottom + 10) + 'px'; m.style.left = Math.min(innerWidth - 262, Math.max(12, r.right - 250)) + 'px';
       var f = m.querySelector('a'); if (f) f.focus();
     } else {
       var bg = document.createElement('div'); bg.className = 'tb-sheet-bg'; bg.id = 'tbSheetBg';
       var s = document.createElement('div'); s.className = 'tb-sheet'; s.id = 'tbMenu'; s.setAttribute('role', 'dialog'); s.setAttribute('aria-label', 'All pages');
-      s.innerHTML = '<div class="grab"></div><p>All pages</p><div class="tb-grid">' + all.map(function (a, i) { return item(a, i); }).join('') + '</div>' + edit.replace('class="mut"', 'class="tb-edit"').replace('what’s in the bar', 'your 4 in the bar');
+      s.innerHTML = '<div class="grab"></div><p data-t="ui.all-pages">All pages</p><div class="tb-grid">' + all.map(function (a, i) { return item(a, i); }).join('') + '</div>' + edit.replace('class="mut"', 'class="tb-edit"').replace('what’s in the bar', 'your 4 in the bar');
       document.body.appendChild(bg); document.body.appendChild(s);
       requestAnimationFrame(function () { bg.classList.add('open'); s.classList.add('open'); });
       bg.addEventListener('click', closeMore);

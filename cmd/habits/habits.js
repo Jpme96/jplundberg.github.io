@@ -116,7 +116,7 @@
         ['This week', wk + '<small>/ ' + h.target + '</small>'],
         ['Current streak', st.cur + '<small>week' + (st.cur === 1 ? '' : 's') + '</small>'],
         ['Best streak', st.best + '<small>week' + (st.best === 1 ? '' : 's') + '</small>'],
-        ['Last 12 weeks', Math.round(met12 / 12 * 100) + '<small>% on target</small>']
+        ['Last 12 weeks', Math.round(met12 / 12 * 100) + '<small data-t="ui.on-target">% on target</small>']
       ].map(function (s) { return '<div class="hp-stat"><div class="k">' + s[0] + '</div><div class="v">' + s[1] + '</div></div>'; }).join('');
 
       var weeks = '', lastMonth = -1;
@@ -150,7 +150,7 @@
       return '<section class="card hp-card"><div class="card-head"><h2><i class="bi bi-activity"></i> ' + esc(h.name) + '<small>' + h.target + '× per week</small></h2></div>' +
         '<div class="hp-stats">' + stats + '</div>' +
         '<div class="hp-recent">' + recent + '</div>' +
-        '<div class="hp-heat"><div class="hp-heat-inner' + (yr ? ' year' : '') + '"><div class="hp-days"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>' +
+        '<div class="hp-heat"><div class="hp-heat-inner' + (yr ? ' year' : '') + '"><div class="hp-days"><span></span><span data-t="ui.mon">Mon</span><span></span><span data-t="ui.wed">Wed</span><span></span><span data-t="ui.fri">Fri</span><span></span><span data-t="ui.sun">Sun</span></div>' +
         '<div class="hp-weeks">' + weeks + '</div></div></div>' +
         '<div class="hp-sub"><label class="hp-range"><select data-hprange="' + h.id + '" aria-label="Show">' + '<option value="26"' + (!yr ? ' selected' : '') + '>Last 26 weeks</option>' +
           yearList.map(function (yy) { return '<option value="' + yy + '"' + (yr === yy ? ' selected' : '') + '>' + yy + '</option>'; }).join('') + '</select></label>' +

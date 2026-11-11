@@ -2,7 +2,7 @@
    Data and repeats come from cal-core.js (window.Cal). */
 (function () {
   "use strict";
-  function shIc(o) { var e = o && o.ev && o.ev.own, S = window.ShareSpace; return e && S && S.on() && (S.evShared ? S.evShared(e) : e.share) ? '<i class="bi bi-people cl-sh" title="Shared"></i> ' : ''; }
+  function shIc(o) { var e = o && o.ev && o.ev.own, S = window.ShareSpace; return e && S && S.on() && (S.evShared ? S.evShared(e) : e.share) ? '<i class="bi bi-people cl-sh" title="Shared" data-t-title="ui.shared"></i> ' : ''; }
 
   var C = window.Cal;
   var $ = function (id) { return document.getElementById(id); };
@@ -70,7 +70,7 @@
     var groups = [['Your calendars', items.filter(function (it) { return C.CATS[it.id]; })], ['From the dashboard', items.filter(function (it) { return /^(travel|reminders|holidays)$/.test(it.id); })], ['Phone calendars', items.filter(function (it) { return it.feed; })]];
     $('clCats').innerHTML = '<button type="button" class="cl-filter' + (off.length ? ' on' : '') + '" data-clfilter aria-expanded="' + filterOpen + '"><i class="bi bi-funnel' + (off.length ? '-fill' : '') + '"></i> ' + esc(label) + ' <i class="bi bi-chevron-' + (filterOpen ? 'up' : 'down') + '"></i></button>' +
       off.map(function (it) { return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="false" style="--c:' + it.color + '" title="Show ' + esc(it.name) + '"><i class="dot"></i>' + esc(it.name) + '</button>'; }).join('') +
-      (filterOpen ? '<div class="clf-panel" role="group" aria-label="Filter calendars"><div class="clf-top"><button type="button" class="text-btn" data-clall="show">Show all</button><button type="button" class="text-btn" data-clall="hide">Hide all</button></div>' +
+      (filterOpen ? '<div class="clf-panel" role="group" aria-label="Filter calendars" data-t-aria-label="ui.filter-calendars"><div class="clf-top"><button type="button" class="text-btn" data-clall="show" data-t="ui.show-all">Show all</button><button type="button" class="text-btn" data-clall="hide" data-t="ui.hide-all">Hide all</button></div>' +
         groups.filter(function (g) { return g[1].length; }).map(function (g) { return '<p class="clf-h">' + g[0] + '</p>' + g[1].map(row).join(''); }).join('') + '</div>' : '');
     renderCats.items = items;
   }
@@ -114,7 +114,7 @@
     box.innerHTML = '<div class="card-head"><h2><i class="bi bi-calendar-day"></i> ' + esc(C.dayLabel(d, true)) + '</h2>' +
       '<button class="text-btn" type="button" data-new-day="' + sel + '"><i class="bi bi-plus-lg"></i> Add</button></div>' +
       (list.length ? '<ul class="cl-agenda">' + list.map(function (o) { return row(o, d); }).join('') + '</ul>'
-        : '<p class="empty">Nothing planned.</p>');
+        : '<p class="empty" data-t="ui.nothing-planned">Nothing planned.</p>');
   }
 
   /* ---------- week (or 3 days on a phone) ---------- */
@@ -149,7 +149,7 @@
         d.toLocaleDateString('en-GB', { weekday: 'short' }) + '</span><b>' + d.getDate() + '</b></button>';
     }).join('');
     var hasAll = allDay.some(function (x) { return x.length; });
-    var all = !hasAll ? '' : '<div class="cl-wk-all"><div class="cl-gut">all-day</div>' + allDay.map(function (x) {
+    var all = !hasAll ? '' : '<div class="cl-wk-all"><div class="cl-gut" data-t="ui.all-day-2">all-day</div>' + allDay.map(function (x) {
       return '<div class="cl-wk-allcol">' + x.map(function (o) {
         shown.push(o);
         return '<button type="button" class="cl-chip full" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' + shIc(o) + esc(o.title) + '</button>';

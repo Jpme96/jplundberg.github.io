@@ -115,28 +115,28 @@
     var l = raw().slice().reverse(), cur = current();
     if (!l.length) l = [{ id: 'h1', loans: [] }];
     var html = '<section class="card kit-card hm-card" id="hhist"><div class="card-head"><h2><i class="bi bi-clock-history"></i> Your homes</h2><div class="head-actions"><button type="button" class="text-btn" data-hmnew><i class="bi bi-plus-lg"></i> New home</button></div></div>' +
-      '<p class="muted hx-lead">Everything stays: when you move, the old home keeps its take-over, claims, projects, documents and loans here – and you start fresh at the new place.</p>' +
+      '<p class="muted hx-lead" data-t="ui.everything-stays-when-you-move-the-old-h">Everything stays: when you move, the old home keeps its take-over, claims, projects, documents and loans here – and you start fresh at the new place.</p>' +
       '<ol class="hm-list">' + l.map(function (h, i) {
         var isCur = h.id === cur, c = counts(h), m = money(h), op = openH[h.id] != null ? openH[h.id] : (isCur || i === 0), td = isCur ? (window.HouseMove && window.HouseMove.date()) || h.from : h.from;
         var yl = Object.keys(m.years).sort().reverse();
         return '<li class="hm-home' + (isCur ? ' now' : '') + (op ? ' open' : '') + '"><button type="button" class="hm-hh" data-hmtog="' + esc(h.id) + '" aria-expanded="' + op + '"><span class="kit-ic" style="--c:' + (isCur ? '#22b35e' : '#7a8794') + '"><i class="bi bi-' + (isCur ? 'house-door' : 'clock-history') + '"></i></span>' +
           '<span class="hm-ht"><b' + (h.name ? ' data-noi18n' : '') + '>' + esc(label(h)) + '</b><small>' + esc(isCur ? (isKey(h.from) ? 'since ' + fmt(h.from) : 'where you live now') : [years(h), 'moved out ' + fmt(h.to)].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-down hx-chev"></i></button>' +
           (op ? '<div class="hm-hb">' +
-            '<div class="kit-tiles"><div class="kit-tile" data-tk="claims"><span>Claims</span><b>' + c.claims.length + '</b><small>' + (c.open ? c.open + ' open' : '&nbsp;') + '</small></div><div class="kit-tile" data-tk="proj"><span>Projects</span><b>' + c.proj.length + '</b><small>' + (c.spent ? esc(kr(c.spent)) : '&nbsp;') + '</small></div><div class="kit-tile" data-tk="docs"><span>Documents</span><b>' + c.docs.length + '</b><small>&nbsp;</small></div></div>' +
+            '<div class="kit-tiles"><div class="kit-tile" data-tk="claims"><span data-t="ui.claims">Claims</span><b>' + c.claims.length + '</b><small>' + (c.open ? c.open + ' open' : '&nbsp;') + '</small></div><div class="kit-tile" data-tk="proj"><span data-t="ui.projects">Projects</span><b>' + c.proj.length + '</b><small>' + (c.spent ? esc(kr(c.spent)) : '&nbsp;') + '</small></div><div class="kit-tile" data-tk="docs"><span data-t="ui.documents">Documents</span><b>' + c.docs.length + '</b><small>&nbsp;</small></div></div>' +
             '<div class="hm-acts">' + (isKey(td) ? '<button type="button" class="text-btn" data-hmtake="' + esc(h.id) + '"><i class="bi bi-key"></i> Take-over ' + esc(fmt(td)) + '</button>' : '') +
               (c.claims.length ? '<button type="button" class="text-btn" data-hmclaims="' + esc(h.id) + '"><i class="bi bi-file-earmark-pdf"></i> Claims report</button>' : '') +
               (c.docs.length ? '<button type="button" class="text-btn" data-hmdocs="' + esc(h.id) + '"><i class="bi bi-file-earmark-zip"></i> Documents (.zip)</button>' : '') +
               (!isCur ? '<button type="button" class="text-btn" data-hmopen="' + esc(h.id + '|claims') + '"><i class="bi bi-eye"></i> Open this home</button>' : '') +
               '<button type="button" class="text-btn" data-hmedit="' + esc(h.id) + '"><i class="bi bi-pencil"></i> Details</button></div>' +
-            '<h3 class="lp-h3">Money while you lived there</h3>' +
-            (yl.length ? '<table class="hm-yt"><thead><tr><th>Year</th><th>Spent</th><th>On the home</th></tr></thead><tbody>' + yl.map(function (y) { return '<tr><td>' + y + '</td><td>' + esc(kr(m.years[y].all)) + '</td><td>' + esc(kr(m.years[y].home)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="muted hl-small">Nothing in Finances from those years yet.</p>') +
+            '<h3 class="lp-h3" data-t="ui.money-while-you-lived-there">Money while you lived there</h3>' +
+            (yl.length ? '<table class="hm-yt"><thead><tr><th data-t="ui.year">Year</th><th data-t="ui.spent">Spent</th><th data-t="ui.on-the-home">On the home</th></tr></thead><tbody>' + yl.map(function (y) { return '<tr><td>' + y + '</td><td>' + esc(kr(m.years[y].all)) + '</td><td>' + esc(kr(m.years[y].home)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="muted hl-small" data-t="ui.nothing-in-finances-from-those-years-yet">Nothing in Finances from those years yet.</p>') +
             (m.shared ? '<p class="hl-small">Bought together for the home: <b>' + esc(kr(m.shared)) + '</b></p>' : '') +
             (m.loans.length ? '<ul class="hm-loans">' + m.loans.map(function (a) { return '<li><i class="bi bi-bank"></i><span><b data-noi18n>' + esc(a.name || 'Loan') + '</b><small>' + esc([isCur ? 'owed now ' + kr(a.owed) : 'owed when you moved ' + kr(a.owed), a.part < 1 ? 'your part ' + Math.round(a.part * 100) + ' %' : '', a.rate ? String(a.rate).replace('.', ',') + ' %' : '', isCur ? '' : 'paid off ' + fmt(a.at)].filter(Boolean).join(' · ')) + '</small></span></li>'; }).join('') + '</ul>' : '') +
             ((+h.price || +h.sold) ? '<p class="hl-small">' + esc([+h.price ? 'Bought for ' + kr(h.price) : '', +h.sold ? 'sold for ' + kr(h.sold) : '', +h.price && +h.sold ? ((h.sold - h.price >= 0 ? '+' : '−') + kr(Math.abs(h.sold - h.price))) : ''].filter(Boolean).join(' · ')) + '</p>' : '') +
             (m.kwh ? '<p class="hl-small"><i class="bi bi-lightning-charge"></i> About ' + esc(nf.format(m.kwh)) + ' kWh a year</p>' : '') +
             (h.notes ? '<p class="kit-notes" data-noi18n>' + esc(h.notes) + '</p>' : '') + '</div>' : '') + '</li>';
       }).join('') + '</ol>' +
-      '<div class="hm-move"><i class="bi bi-truck"></i><span><b>Moving?</b><small>Set up your next home – the one you leave keeps its history here.</small></span><button type="button" class="pill-btn" data-hmnew><i class="bi bi-plus-lg"></i> Set up a new home</button></div></section>';
+      '<div class="hm-move"><i class="bi bi-truck"></i><span><b data-t="ui.moving">Moving?</b><small data-t="ui.set-up-your-next-home-the-one-you-leave">Set up your next home – the one you leave keeps its history here.</small></span><button type="button" class="pill-btn" data-hmnew><i class="bi bi-plus-lg"></i> Set up a new home</button></div></section>';
     if (el._h !== html) { el._h = html; el.innerHTML = html; }
   }
 
@@ -146,16 +146,16 @@
     var X = HF.sheet('A new home', 'hm-box'), old = get(current()), d = window.Vault.get() || {};
     var debts = (d.accounts || []).filter(function (a) { return a && a.kind === 'debt' && !a.closedAt && (!a.homeId || a.homeId === old.id) && (a.share || a.inner || a.home || a.homeId); });
     X.box.innerHTML = HF.head('truck', 'A new home', 'The home you live in now moves to History with everything that belongs to it.') +
-      '<form class="hx-form"><label class="hx-f"><span>Name</span><input name="name" maxlength="40" placeholder="e.g. Bislett, The house in Asker" autocomplete="off"></label>' +
-      '<label class="hx-f"><span>Address</span><input name="addr" maxlength="120" placeholder="Street and number, postcode" autocomplete="off"></label>' +
-      '<div class="mp-grid hs2-sg"><label class="hx-f"><span>Take-over date</span><input type="date" name="from" required></label><label class="hx-f"><span>You leave ' + esc(label(old)) + '</span><input type="date" name="to"></label></div>' +
-      '<p class="mp-lbl">The new home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-hmkind="used" aria-pressed="true">Used – bought from the owner</button><button type="button" class="lf-chip" data-hmkind="new" aria-pressed="false">New – from a builder</button></div>' +
-      '<label class="hx-f"><span>Seller or builder</span><input name="seller" maxlength="80" autocomplete="off"></label>' +
-      '<p class="mp-lbl">You live with</p><div class="lf-chips"><button type="button" class="lf-chip" data-hmco="" aria-pressed="true">The same as now</button><button type="button" class="lf-chip" data-hmco="name" aria-pressed="false">Someone else</button><button type="button" class="lf-chip" data-hmco="none" aria-pressed="false">Just me</button></div>' +
-      '<label class="hx-f" data-hmconame hidden><span>Name</span><input name="cn" maxlength="60" autocomplete="off"></label>' +
+      '<form class="hx-form"><label class="hx-f"><span data-t="ui.name-2">Name</span><input name="name" maxlength="40" placeholder="e.g. Bislett, The house in Asker" data-t-placeholder="ui.e-g-bislett-the-house-in-asker" autocomplete="off"></label>' +
+      '<label class="hx-f"><span data-t="ui.address">Address</span><input name="addr" maxlength="120" placeholder="Street and number, postcode" data-t-placeholder="ui.street-and-number-postcode" autocomplete="off"></label>' +
+      '<div class="mp-grid hs2-sg"><label class="hx-f"><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="from" required></label><label class="hx-f"><span>You leave ' + esc(label(old)) + '</span><input type="date" name="to"></label></div>' +
+      '<p class="mp-lbl" data-t="ui.the-new-home-is">The new home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-hmkind="used" aria-pressed="true" data-t="ui.used-bought-from-the-owner">Used – bought from the owner</button><button type="button" class="lf-chip" data-hmkind="new" aria-pressed="false" data-t="ui.new-from-a-builder">New – from a builder</button></div>' +
+      '<label class="hx-f"><span data-t="ui.seller-or-builder">Seller or builder</span><input name="seller" maxlength="80" autocomplete="off"></label>' +
+      '<p class="mp-lbl" data-t="ui.you-live-with">You live with</p><div class="lf-chips"><button type="button" class="lf-chip" data-hmco="" aria-pressed="true" data-t="ui.the-same-as-now">The same as now</button><button type="button" class="lf-chip" data-hmco="name" aria-pressed="false">Someone else</button><button type="button" class="lf-chip" data-hmco="none" aria-pressed="false" data-t="ui.just-me">Just me</button></div>' +
+      '<label class="hx-f" data-hmconame hidden><span data-t="ui.name-2">Name</span><input name="cn" maxlength="60" autocomplete="off"></label>' +
       (debts.length ? '<p class="mp-lbl">Loans on ' + esc(label(old)) + '</p>' + debts.map(function (a) { return '<label class="lf-check"><input type="checkbox" name="close" value="' + esc(a.id) + '" checked> <span>Paid off when it’s sold: <b data-noi18n>' + esc(a.name || 'Loan') + '</b></span></label>'; }).join('') +
-        '<p class="muted hs2-note">A paid-off loan stops as a bill and leaves net worth; a copy of how it stood stays in History. Untick a loan that moves with you.</p>' : '') +
-      '<label class="hx-f"><span>Sold for, kr</span><input name="sold" inputmode="decimal" placeholder="Optional" autocomplete="off"></label>' +
+        '<p class="muted hs2-note" data-t="ui.a-paid-off-loan-stops-as-a-bill-and-leav">A paid-off loan stops as a bill and leaves net worth; a copy of how it stood stays in History. Untick a loan that moves with you.</p>' : '') +
+      '<label class="hx-f"><span data-t="ui.sold-for-kr">Sold for, kr</span><input name="sold" inputmode="decimal" placeholder="Optional" data-t-placeholder="ui.optional" autocomplete="off"></label>' +
       '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Set it up</button></div></form>';
     var kind = 'used', co = '';
     X.box.addEventListener('click', function (e) {
@@ -202,14 +202,14 @@
     ensure(); var h = get(id); if (!h) return;
     var isCur = id === current(), X = HF.sheet('The home', 'hm-box');
     X.box.innerHTML = HF.head('house', isCur ? 'The home you live in' : 'An earlier home') +
-      '<form class="hx-form"><label class="hx-f"><span>Name</span><input name="name" maxlength="40" value="' + esc(h.name || '') + '" placeholder="e.g. Bislett"></label>' +
-      '<label class="hx-f"><span>Address</span><input name="addr" maxlength="120" value="' + esc(h.addr || (isCur ? (Fe.tools().htake || {}).addr || '' : '')) + '"></label>' +
-      '<div class="mp-grid hs2-sg"><label class="hx-f"><span>Moved in</span><input type="date" name="from" value="' + esc(h.from || '') + '"' + (isCur ? ' disabled' : '') + '></label>' + (isCur ? '' : '<label class="hx-f"><span>Moved out</span><input type="date" name="to" value="' + esc(h.to || '') + '"></label>') + '</div>' +
-      '<div class="mp-grid hs2-sg"><label class="hx-f"><span>Bought for, kr</span><input name="price" inputmode="decimal" value="' + esc(h.price || '') + '"></label><label class="hx-f"><span>Sold for, kr</span><input name="sold" inputmode="decimal" value="' + esc(h.sold || '') + '"></label></div>' +
+      '<form class="hx-form"><label class="hx-f"><span data-t="ui.name-2">Name</span><input name="name" maxlength="40" value="' + esc(h.name || '') + '" placeholder="e.g. Bislett"></label>' +
+      '<label class="hx-f"><span data-t="ui.address">Address</span><input name="addr" maxlength="120" value="' + esc(h.addr || (isCur ? (Fe.tools().htake || {}).addr || '' : '')) + '"></label>' +
+      '<div class="mp-grid hs2-sg"><label class="hx-f"><span data-t="ui.moved-in">Moved in</span><input type="date" name="from" value="' + esc(h.from || '') + '"' + (isCur ? ' disabled' : '') + '></label>' + (isCur ? '' : '<label class="hx-f"><span data-t="ui.moved-out">Moved out</span><input type="date" name="to" value="' + esc(h.to || '') + '"></label>') + '</div>' +
+      '<div class="mp-grid hs2-sg"><label class="hx-f"><span data-t="ui.bought-for-kr">Bought for, kr</span><input name="price" inputmode="decimal" value="' + esc(h.price || '') + '"></label><label class="hx-f"><span data-t="ui.sold-for-kr">Sold for, kr</span><input name="sold" inputmode="decimal" value="' + esc(h.sold || '') + '"></label></div>' +
       '<p class="mp-lbl">You live' + (isCur ? '' : 'd') + ' with</p><div class="lf-chips"><button type="button" class="lf-chip" data-hmco="" aria-pressed="' + !h.co + '">As in the claim settings</button><button type="button" class="lf-chip" data-hmco="name" aria-pressed="' + (h.co === 'name') + '">Someone else</button><button type="button" class="lf-chip" data-hmco="none" aria-pressed="' + (h.co === 'none') + '">Just me</button></div>' +
-      '<label class="hx-f" data-hmconame' + (h.co === 'name' ? '' : ' hidden') + '><span>Name</span><input name="cn" maxlength="60" value="' + esc(h.coName || '') + '"></label>' +
-      '<label class="hx-f"><span>Notes</span><textarea name="notes" rows="2" maxlength="600">' + esc(h.notes || '') + '</textarea></label>' +
-      (isCur ? '<p class="muted hs2-note">The take-over date is set on the take-over guide (Shared tab).</p>' : '') +
+      '<label class="hx-f" data-hmconame' + (h.co === 'name' ? '' : ' hidden') + '><span data-t="ui.name-2">Name</span><input name="cn" maxlength="60" value="' + esc(h.coName || '') + '"></label>' +
+      '<label class="hx-f"><span data-t="ui.notes">Notes</span><textarea name="notes" rows="2" maxlength="600">' + esc(h.notes || '') + '</textarea></label>' +
+      (isCur ? '<p class="muted hs2-note" data-t="ui.the-take-over-date-is-set-on-the-take-ov">The take-over date is set on the take-over guide (Shared tab).</p>' : '') +
       '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
     var co = h.co || '';
     X.box.addEventListener('click', function (e) { var c = e.target.closest('[data-hmco]'); if (c) { co = c.dataset.hmco; X.box.querySelectorAll('[data-hmco]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === c)); }); X.box.querySelector('[data-hmconame]').hidden = co !== 'name'; } });

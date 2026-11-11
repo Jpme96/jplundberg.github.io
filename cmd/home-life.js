@@ -75,7 +75,7 @@
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-hlclose]')) return close(); if (onClick) onClick(e, close); });
     return { el: bg.firstChild, close: close };
   }
-  function dhead(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-hlclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
+  function dhead(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-hlclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
   function picker(icon, title, sub, opts, pick) {
     dialog(dhead(icon, title, sub) + '<div class="hl-pick">' + opts.map(function (o, i) {
       return '<button type="button" data-hlpick="' + i + '" style="--c:' + o.c + '"><span class="kit-ic" style="--c:' + o.c + '"><i class="bi bi-' + o.i + '"></i></span><span><b>' + esc(o.n) + '</b>' + (o.s ? '<small>' + esc(o.s) + '</small>' : '') + '</span></button>';
@@ -247,7 +247,7 @@
     empty: 'Read the meter now and then (or copy the number from the app) – you see how much you use per day and per year.',
     sort: function (a, b) { return a.date < b.date ? 1 : -1; },
     summary: function (l) {
-      var s = meterStats(l); if (s.r.length < 2) return s.r.length ? '<p class="muted hl-small">Add one more reading to see how much you use.</p>' : '';
+      var s = meterStats(l); if (s.r.length < 2) return s.r.length ? '<p class="muted hl-small" data-t="ui.add-one-more-reading-to-see-how-much-you">Add one more reading to see how much you use.</p>' : '';
       var pr = +cfg('housecfg').price || 0;
       return '<div class="kit-tiles">' + tile('Per day, lately', nf1.format(s.last) + ' <small>kWh</small>') + tile('Per day, avg', nf1.format(s.avg) + ' <small>kWh</small>', 'last 12 months') +
         (pr ? tile('Per month', '≈ ' + nf.format(s.avg * 30.4 * pr / 100) + ' <small>kr</small>', 'at ' + nf.format(pr) + ' øre/kWh') : tile('Per year', nf.format(s.avg * 365) + ' <small>kWh</small>', 'at that pace')) + '</div>';
@@ -298,7 +298,7 @@
     INFO[k].f.forEach(function (f) {
       var v = x[f.k]; if (f.k === 'title' || f.k === 'notes' || v == null || v === '') return;
       var val = esc(f.type === 'select' ? ((f.options.filter(function (o) { return String(o[0]) === String(v); })[0] || [, v])[1]) : f.type === 'date' ? fmt(v, { day: 'numeric', month: 'long', year: 'numeric' }) : v), act = '';
-      if (f.secret) { val = '<span class="hl-secret" data-sec="' + esc(v) + '">••••••••</span>'; act = '<button type="button" class="text-btn" data-hlshow>Show</button>'; }
+      if (f.secret) { val = '<span class="hl-secret" data-sec="' + esc(v) + '">••••••••</span>'; act = '<button type="button" class="text-btn" data-hlshow data-t="ui.show">Show</button>'; }
       if (f.type === 'tel') act = '<a class="text-btn" href="tel:' + esc(String(v).replace(/[^\d+]/g, '')) + '"><i class="bi bi-telephone"></i> Call</a>';
       if (f.type === 'email') act = '<a class="text-btn" href="mailto:' + esc(v) + '"><i class="bi bi-envelope"></i></a>';
       if (f.type === 'url' && /^https?:\/\//.test(v)) { val = 'Link'; act = '<a class="text-btn" href="' + esc(v) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a>'; }
@@ -307,7 +307,7 @@
     });
     if (k === 'appliance' && isKey(x.bought)) {
       var end = addMonths(x.bought, 12 * (+x.years || 5)), n = daysTo(end);
-      rows += '<div class="hl-kv"><span>Complaint period</span><b>' + (n >= 0 ? 'Until ' + esc(fmt(end, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Ended ' + esc(fmt(end, { month: 'short', year: 'numeric' }))) + '</b><span></span></div>';
+      rows += '<div class="hl-kv"><span data-t="ui.complaint-period">Complaint period</span><b>' + (n >= 0 ? 'Until ' + esc(fmt(end, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Ended ' + esc(fmt(end, { month: 'short', year: 'numeric' }))) + '</b><span></span></div>';
     }
     return (rows ? '<div class="hl-kvs">' + rows + '</div>' : '') + (x.notes ? '<p class="kit-notes hl-pre">' + esc(x.notes) + '</p>' : '');
   }
@@ -438,7 +438,7 @@
           var b = x[0], d = fromKey(b.next);
           return '<li' + (b.n <= 7 ? ' class="soon"' : '') + '><span class="hl-day"><b>' + d.getDate() + '</b><small>' + esc(d.toLocaleDateString('en-GB', { month: 'short' })) + '</small></span>' +
             '<span class="hl-dx"><b><span data-noi18n>' + esc(x[1].name) + '</span>' + (b.kind ? ' <span class="pp5-kind" style="--c:' + b.c + '"><i class="bi bi-' + b.icon + '"></i> ' + esc(b.label) + '</span>' : '') + '</b><small>' + esc(cap(inDays(b.n)) + (b.age ? ' · turns ' + b.age : '') + (b.years ? ' · ' + b.years + ' years' : '')) + (!b.kind && x[1].gifts ? ' · <i class="bi bi-gift"></i> ' + esc(String(x[1].gifts).split('\n')[0]) : '') + '</small></span></li>';
-        }).join('') + '</ul>' : '<p class="empty kit-empty">Nothing in the next four months – add birthdays and other dates to the people in your list.</p>') + '</section>';
+        }).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.nothing-in-the-next-four-months-add-birt">Nothing in the next four months – add birthdays and other dates to the people in your list.</p>') + '</section>';
     }
     ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, draw); });
     window.Vault.onUnlock(draw);
@@ -507,7 +507,7 @@
     if (ML.voting) {
       var opts = ''; for (var i = 0; i < 7; i++) { var k = addDays(today(), i); opts += '<option value="' + k + '"' + (meals()[k] ? '' : '') + '>' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })) + (meals()[k] ? ' (planned)' : '') + '</option>'; }
       form = '<form class="hl-vform" data-vtform><select name="d" aria-label="Which day">' + opts + '</select>' + [1, 2, 3].map(function (n) { return '<input name="o' + n + '" list="hlRecipes" maxlength="80" placeholder="' + (n === 3 ? 'Suggestion 3 (optional)' : 'Suggestion ' + n) + '" autocomplete="off"' + (n < 3 ? ' required' : '') + '>'; }).join('') +
-        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
+        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
     }
     return (h ? '<ul class="hl-votes">' + h + '</ul>' : '') + form;
   }
@@ -522,9 +522,9 @@
       var days = []; for (var i = 0; i < 7; i++) days.push(addDays(m0, i));
       var planned = days.filter(function (k) { return m[k]; }), withR = planned.filter(function (k) { return recipeFor(m[k]); });
       el.innerHTML = '<section class="card kit-card" id="meals"><div class="card-head"><h2><i class="bi bi-calendar-week"></i> Dinners · week ' + weekNo(m0) + '</h2>' +
-        '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week"><i class="bi bi-chevron-left"></i></button>' +
-        (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0">This week</button>' : '') +
-        '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week"><i class="bi bi-chevron-right"></i></button></div></div>' +
+        '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week" data-t-aria-label="ui.previous-week"><i class="bi bi-chevron-left"></i></button>' +
+        (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0" data-t="ui.this-week">This week</button>' : '') +
+        '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week" data-t-aria-label="ui.next-week"><i class="bi bi-chevron-right"></i></button></div></div>' +
         voteHtml() + '<ul class="hl-meals">' + days.map(function (k) {
           var d = fromKey(k), r = recipeFor(m[k]);
           return '<li class="' + (k === tk ? 'today' : '') + (k < tk ? ' past' : '') + '"><label for="ml-' + k + '"><b>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short' })) + '</b><small>' + d.getDate() + '.' + (d.getMonth() + 1) + '</small></label>' +
@@ -655,9 +655,9 @@
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
         '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
         (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> Clear done</button>' : '') + '</div></div>' +
-        '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
+        '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" data-t-placeholder="ui.add-milk-eggs-coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
         (l.length ? '<ul class="hl-shop">' + body + '</ul>'
-          : '<p class="empty kit-empty">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
+          : '<p class="empty kit-empty" data-t="ui.nothing-to-buy-add-things-here-or-send-a">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
       var inp = el.querySelector('.hl-shopadd input'); inp.value = typed; if (focus) inp.focus();
     }
     el.addEventListener('submit', function (e) {
@@ -807,7 +807,7 @@
       var h = '<section class="card kit-card" id="ptime"><div class="card-head"><h2><i class="bi bi-hourglass-split"></i> Time per client</h2><div class="head-actions">' +
         gear('work') + '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> Client</button>' +
         (live.length ? '<button type="button" class="text-btn" data-ptadd><i class="bi bi-clock-history"></i> Add time</button>' : '') + '</div></div>';
-      if (!ps.length) h += '<p class="empty kit-empty">Add a client or project, then start a timer when you work on it – or add the hours afterwards. You get hours per week and a list to invoice from.</p>';
+      if (!ps.length) h += '<p class="empty kit-empty" data-t="ui.add-a-client-or-project-then-start-a-tim">Add a client or project, then start a timer when you work on it – or add the hours afterwards. You get hours per week and a list to invoice from.</p>';
       else {
         h += r ? '<div class="pt-run" style="--c:' + proj(r.pid).color + '"><span class="pt-dot"></span><span class="pt-x"><b>' + esc(proj(r.pid).name) + '</b><small>Since ' + pad(new Date(r.start).getHours()) + ':' + pad(new Date(r.start).getMinutes()) + '</small></span>' +
           '<span class="pt-clock" data-ptclock>' + clock(Date.now() - r.start) + '</span><button type="button" class="pill-btn danger-btn" data-ptstop><i class="bi bi-stop-fill"></i> Stop</button></div>' : '';
@@ -831,7 +831,7 @@
         if (es.length) h += '<div class="hl-acts"><button type="button" class="text-btn" data-ptcsv><i class="bi bi-filetype-csv"></i> Export ' + rg[2].toLowerCase() + ' (CSV)</button>' +
           '<button type="button" class="text-btn" data-ptcopy><i class="bi bi-clipboard"></i> Copy summary</button></div>';
         var arch = ps.filter(function (p) { return p.archived; }).length;
-        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage>Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
+        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage data-t="ui.edit-clients">Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
           (window.WorkPlus && ptList().length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> Invoice draft</button>' : '') + '</p>';
       }
       el.innerHTML = h + '</section>';
@@ -869,7 +869,7 @@
       var ps = Fe.list('pproj');
       dialog(dhead('briefcase', 'Clients and projects', 'Tap one to change its name, rate or mark it finished') + '<ul class="kit-list">' + ps.map(function (p) {
         return '<li class="kit-item"><button type="button" class="kit-main" data-pm="' + esc(p.id) + '"><span class="kit-ic" style="--c:' + p.color + '"><i class="bi bi-briefcase"></i></span><span class="kit-x"><b>' + esc(p.name) + '</b><small>' + esc([p.client, p.rate ? nf.format(p.rate) + ' kr/h' : '', p.archived ? 'finished' : ''].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-right"></i></button></li>';
-      }).join('') + '</ul><button type="button" class="pill-btn wide" data-hlclose>Done</button>', function (e, close) {
+      }).join('') + '</ul><button type="button" class="pill-btn wide" data-hlclose data-t="ui.done">Done</button>', function (e, close) {
         var b = e.target.closest('[data-pm]'); if (b) { close(); K.edit(PROJ, byId('pproj', b.dataset.pm)); }
       });
     }
@@ -1029,7 +1029,7 @@
     var HOURS = [12, 14, 16, 17, 18, 19, 20].map(function (h) { return [h, 'From ' + pad(h) + ':00']; });
     var PAGES = {
       house: function () {
-        return '<p class="st-intro">Reminders and estimates for the House page. Your bins, upkeep and notes are on the page itself.</p>' +
+        return '<p class="st-intro" data-t="ui.reminders-and-estimates-for-the-house-pa">Reminders and estimates for the House page. Your bins, upkeep and notes are on the page itself.</p>' +
           sub('trash3', 'Bin days') + '<div class="st-group">' + sel('housecfg', 'binHour', 'Evening-before reminder', HOURS, 'In At a glance') + sw('housecfg', 'binMorning', 'Also on the morning of pickup') + '</div>' +
           sub('tools', 'Upkeep') + '<div class="st-group">' + sel('housecfg', 'lead', 'Remind me', [[0, 'On the day'], [2, '2 days before'], [7, 'A week before'], [14, '2 weeks before']]) + '</div>' +
           sub('lightning-charge', 'Electricity') + '<div class="st-group">' + numIn('housecfg', 'price', 'Price for estimates', 'øre/kWh', 'Power + grid rent, incl. VAT – shows ≈ kr a month') + sw('housecfg', 'meterNudge', 'Remind me to read the meter', 'At the start of each month') + '</div>' +
@@ -1038,7 +1038,7 @@
           '<div class="st-group">' + link('/cmd/house/', 'house-gear', 'Open House') + link('/cmd/house/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       },
       people: function () {
-        return '<p class="st-intro">How People reminds you about birthdays and keeping in touch.</p>' +
+        return '<p class="st-intro" data-t="ui.how-people-reminds-you-about-birthdays-a">How People reminds you about birthdays and keeping in touch.</p>' +
           sub('balloon', 'Birthdays') + '<div class="st-group">' + sel('peoplecfg', 'lead', 'Heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before'], [14, '2 weeks before']], 'In At a glance') + sw('peoplecfg', 'calendar', 'Birthdays in the calendar') + '</div>' +
           sub('chat-heart', 'Keeping in touch') + '<div class="st-group">' + sw('peoplecfg', 'catchup', 'Nudges in At a glance') + sel('peoplecfg', 'catchupMax', 'At most', [[1, '1 person at a time'], [2, '2 people'], [3, '3 people']]) +
           sel('peoplecfg', 'defEvery', 'For new people', KEEP, 'What “Keep in touch” starts at') + sw('peoplecfg', 'askNote', 'Ask for a note after “Talked today”', 'One line, kept as a short history') + '</div>' +
@@ -1050,7 +1050,7 @@
           '<div class="st-group">' + link('/cmd/people/', 'people', 'Open People') + link('/cmd/people/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
       },
       food: function () {
-        return '<p class="st-intro">The dinner plan, shopping list and reminders.</p>' +
+        return '<p class="st-intro" data-t="ui.the-dinner-plan-shopping-list-and-remind">The dinner plan, shopping list and reminders.</p>' +
           sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
           sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
           sub('journal-text', 'Recipes') + '<div class="st-group">' + sel('foodcfg', 'servings', 'Usually cooking for', [[0, 'As the recipe says'], [1, '1 person'], [2, '2 people'], [3, '3 people'], [4, '4 people'], [5, '5 people'], [6, '6 people'], [8, '8 people']], 'Recipes open scaled to this, and the week’s shopping list too') + '</div>' +

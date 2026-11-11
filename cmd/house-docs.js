@@ -105,17 +105,17 @@
       .sort(function (a, b) { return (cat(a.cat).name).localeCompare(cat(b.cat).name) || String(a.name).localeCompare(String(b.name)); });
     var lim = showAll || q || filt ? shown.length : 12;
     var html = '<section class="card kit-card hd-card" id="hdocs"><div class="card-head"><h2><i class="bi bi-journal-bookmark"></i> FDV binder</h2><div class="head-actions">' +
-      (L.length ? '<button type="button" class="text-btn" data-hdzip aria-label="Download all as a zip"><i class="bi bi-file-earmark-zip"></i> Download</button>' : '') +
-      '<button type="button" class="text-btn" data-hdcats aria-label="Categories"><i class="bi bi-sliders"></i></button><button type="button" class="text-btn" data-hdimport><i class="bi bi-plus-lg"></i> Import</button></div></div>' +
-      (L.length ? '<div class="kit-tiles"><div class="kit-tile" data-tk="docs"><span>Documents</span><b>' + L.length + '</b><small>' + esc(HF ? HF.size(bytes) : '') + '</small></div>' +
-        '<div class="kit-tile" data-tk="cats"><span>Categories</span><b>' + Object.keys(counts).length + '</b><small>' + (counts.other ? counts.other + ' in Other' : 'all sorted') + '</small></div>' +
-        '<div class="kit-tile" data-tk="last"><span>Last added</span><b>' + esc(fmt(L.map(function (d) { return d.at; }).filter(isKey).sort().pop()).replace(/ \d{4}$/, '') || '–') + '</b><small>&nbsp;</small></div></div>' +
+      (L.length ? '<button type="button" class="text-btn" data-hdzip aria-label="Download all as a zip" data-t-aria-label="ui.download-all-as-a-zip"><i class="bi bi-file-earmark-zip"></i> Download</button>' : '') +
+      '<button type="button" class="text-btn" data-hdcats aria-label="Categories" data-t-aria-label="ui.categories"><i class="bi bi-sliders"></i></button><button type="button" class="text-btn" data-hdimport><i class="bi bi-plus-lg"></i> Import</button></div></div>' +
+      (L.length ? '<div class="kit-tiles"><div class="kit-tile" data-tk="docs"><span data-t="ui.documents">Documents</span><b>' + L.length + '</b><small>' + esc(HF ? HF.size(bytes) : '') + '</small></div>' +
+        '<div class="kit-tile" data-tk="cats"><span data-t="ui.categories">Categories</span><b>' + Object.keys(counts).length + '</b><small>' + (counts.other ? counts.other + ' in Other' : 'all sorted') + '</small></div>' +
+        '<div class="kit-tile" data-tk="last"><span data-t="ui.last-added">Last added</span><b>' + esc(fmt(L.map(function (d) { return d.at; }).filter(isKey).sort().pop()).replace(/ \d{4}$/, '') || '–') + '</b><small>&nbsp;</small></div></div>' +
         '<div class="hd-cats">' + C.filter(function (c) { return counts[c.id]; }).map(function (c) { return '<button type="button" class="hd-cat" data-hdfilt="' + esc(c.id) + '" aria-pressed="' + (filt === c.id) + '" style="--c:' + c.c + '"><i class="bi bi-' + c.icon + '"></i><span' + (c.own ? ' data-noi18n' : '') + '>' + esc(c.name) + '</span><b>' + counts[c.id] + '</b></button>'; }).join('') + '</div>' +
         '<label class="hd-q"><i class="bi bi-search"></i><input type="search" placeholder="Find a document" value="' + esc(q) + '" data-hdq autocomplete="off" aria-label="Find a document"></label>' +
-        (shown.length ? '<ul class="kit-list hd-list">' + shown.slice(0, lim).map(row).join('') + '</ul>' : '<p class="empty kit-empty">Nothing matches.</p>') +
+        (shown.length ? '<ul class="kit-list hd-list">' + shown.slice(0, lim).map(row).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.nothing-matches">Nothing matches.</p>') +
         (shown.length > lim ? '<button type="button" class="text-btn kit-more" data-hdmore>Show all ' + shown.length + '</button>' : '') +
         (filt ? '<div class="hl-acts"><button type="button" class="text-btn" data-hdzip="' + esc(filt) + '"><i class="bi bi-file-earmark-zip"></i> Download this category</button><button type="button" class="text-btn" data-hdfilt="' + esc(filt) + '"><i class="bi bi-x"></i> Show all</button></div>' : '')
-        : '<p class="empty kit-empty">Keep the papers for your home in one place – manuals, drawings, product sheets, warranties, the take-over protocol. Got a login to an FDV portal or Boligmappa? Download everything, then import the files or the .zip here: they’re sorted by building part for you.</p>' +
+        : '<p class="empty kit-empty" data-t="ui.keep-the-papers-for-your-home-in-one-pla">Keep the papers for your home in one place – manuals, drawings, product sheets, warranties, the take-over protocol. Got a login to an FDV portal or Boligmappa? Download everything, then import the files or the .zip here: they’re sorted by building part for you.</p>' +
           '<div class="hl-acts"><button type="button" class="pill-btn" data-hdimport><i class="bi bi-upload"></i> Import documents</button></div>') +
       '</section>';
     if (el._h !== html) { var y = typing(), pos = y ? document.activeElement.selectionStart : 0; el._h = html; el.innerHTML = html; if (y) { var i = el.querySelector('[data-hdq]'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} } } }
@@ -125,15 +125,15 @@
   function row(d) {
     var c = cat(d.cat), open = openId === d.id, f = d.file || {};
     return '<li class="kit-item' + (open ? ' open' : '') + '" data-id="' + esc(d.id) + '"><button type="button" class="kit-main" data-hdopen="' + esc(d.id) + '"><span class="kit-ic" style="--c:' + c.c + '"><i class="bi bi-' + icon(d) + '"></i></span>' +
-      '<span class="kit-x"><b data-noi18n>' + esc(d.name) + (d.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow('hdocs') ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b><small><span' + (c.own ? ' data-noi18n' : '') + '>' + esc(c.name) + '</span>' + esc([HF ? ' · ' + HF.size(f.size) : '', d.date ? ' · ' + fmt(d.date) : ''].join('')) + '</small></span></button>' +
+      '<span class="kit-x"><b data-noi18n>' + esc(d.name) + (d.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow('hdocs') ? ' <i class="bi bi-people sh-ic" title="Shared" data-t-title="ui.shared"></i>' : '') + '</b><small><span' + (c.own ? ' data-noi18n' : '') + '>' + esc(c.name) + '</span>' + esc([HF ? ' · ' + HF.size(f.size) : '', d.date ? ' · ' + fmt(d.date) : ''].join('')) + '</small></span></button>' +
       (open ? '<div class="kit-detail hd-detail">' +
         '<div class="hl-acts"><a class="pill-btn hf-wait" data-hfopen="' + esc(f.id) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a><a class="text-btn hf-wait" data-hfopen="' + esc(f.id) + '" download="' + esc(f.name || d.name) + '"><i class="bi bi-download"></i> Download</a></div>' +
-        '<label class="hx-f"><span>Category</span><select data-hdcat="' + esc(d.id) + '">' + cats().map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === c.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
-        '<label class="hx-f"><span>Name</span><input data-hdname="' + esc(d.id) + '" value="' + esc(d.name) + '" maxlength="160"></label>' +
-        '<label class="hx-f"><span>Notes</span><textarea rows="2" data-hdnotes="' + esc(d.id) + '" maxlength="600" placeholder="e.g. Which room, the model, who installed it">' + esc(d.notes || '') + '</textarea></label>' +
+        '<label class="hx-f"><span data-t="ui.category">Category</span><select data-hdcat="' + esc(d.id) + '">' + cats().map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === c.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="hx-f"><span data-t="ui.name-2">Name</span><input data-hdname="' + esc(d.id) + '" value="' + esc(d.name) + '" maxlength="160"></label>' +
+        '<label class="hx-f"><span data-t="ui.notes">Notes</span><textarea rows="2" data-hdnotes="' + esc(d.id) + '" maxlength="600" placeholder="e.g. Which room, the model, who installed it">' + esc(d.notes || '') + '</textarea></label>' +
         '<p class="muted hl-small" data-noi18n>' + esc(f.name || '') + (d.path ? ' · ' + esc(d.path) : '') + '</p>' +
         (window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow('hdocs') ? '<label class="tp-share"><span><i class="bi bi-people"></i> ' + esc(window.ShareSpace.kitRow('hdocs')) + '<small>' + esc(window.ShareSpace.kitHelp('hdocs')) + '</small></span><input type="checkbox" class="switch" data-hdshare="' + esc(d.id) + '"' + (d.share ? ' checked' : '') + '></label>' : '') +
-        '<button type="button" class="text-btn danger" data-hddel="' + esc(d.id) + '"><i class="bi bi-trash3"></i> <span>Delete</span></button></div>' : '') + '</li>';
+        '<button type="button" class="text-btn danger" data-hddel="' + esc(d.id) + '"><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button></div>' : '') + '</li>';
   }
   function saveDoc(id, fn) { var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d && d.id === id) fn(d); }); Fe.saveTools(t); }
   if (el) {
@@ -253,7 +253,7 @@
       X.box.innerHTML = HF.head('upload', 'Import documents', 'PDFs, photos, Word or Excel files – or a whole .zip. Nothing is saved until you’ve checked the list.') +
         '<div class="hd-pick"><label class="pill-btn"><i class="bi bi-files"></i> Choose files<input type="file" multiple data-hdin hidden></label>' +
         '<label class="text-btn"><i class="bi bi-file-earmark-zip"></i> A .zip<input type="file" accept=".zip,application/zip,application/x-zip-compressed" data-hdin hidden></label></div>' +
-        '<div class="hd-drop" data-hddrop><i class="bi bi-cloud-arrow-down"></i><span>Or drop files here</span></div>' +
+        '<div class="hd-drop" data-hddrop><i class="bi bi-cloud-arrow-down"></i><span data-t="ui.or-drop-files-here">Or drop files here</span></div>' +
         '<p class="muted hs2-note"><i class="bi bi-info-circle"></i> On the iPhone: download from the portal in Safari, then choose the files from Files → Downloads. Up to 20 MB a file; they’re encrypted and synced to your other devices.</p>';
     }
     function review() {
@@ -337,9 +337,9 @@
         }).join('') + c.extra.map(function (x) {
           return '<li><span class="kit-ic" style="--c:#7a8794"><i class="bi bi-folder"></i></span><label class="hx-f"><span data-noi18n>' + esc(x.name) + '</span><input data-hdxkw="' + esc(x.id) + '" value="' + esc(x.kw || '') + '" placeholder="Words that belong here" maxlength="200" autocomplete="off"></label><button type="button" class="icon-btn sm" data-hdxdel="' + esc(x.id) + '" aria-label="Remove the category"><i class="bi bi-x"></i></button></li>';
         }).join('') + '</ul>' +
-        '<form class="hx-row" data-hdxadd><input name="n" placeholder="A category of your own, e.g. Boat" maxlength="40" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
-        (learned ? '<p class="muted hs2-note">Learned from your moves: ' + learned + (learned === 1 ? ' word' : ' words') + '. <button type="button" class="text-btn" data-hdforget>Forget them</button></p>' : '') +
-        '<p class="muted hs2-note">NS 3451 folder codes (21–29 building, 31–39 VVS, 41–49 electrical, 7x outdoors) are recognised too.</p>';
+        '<form class="hx-row" data-hdxadd><input name="n" placeholder="A category of your own, e.g. Boat" data-t-placeholder="ui.a-category-of-your-own-e-g-boat" maxlength="40" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
+        (learned ? '<p class="muted hs2-note">Learned from your moves: ' + learned + (learned === 1 ? ' word' : ' words') + '. <button type="button" class="text-btn" data-hdforget data-t="ui.forget-them">Forget them</button></p>' : '') +
+        '<p class="muted hs2-note" data-t="ui.ns-3451-folder-codes-21-29-building-31-3">NS 3451 folder codes (21–29 building, 31–39 VVS, 41–49 electrical, 7x outdoors) are recognised too.</p>';
     }
     drawC();
     X.box.addEventListener('change', function (e) {

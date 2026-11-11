@@ -13,6 +13,7 @@
     "softnav.js"
   ],
   "nb": [
+    "words/ui.nb.js",
     "i18n-nb.js"
   ],
   "tail": [

@@ -619,12 +619,12 @@
     if (!s) {
       showing = 'setup';
       box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-people"></i> Share your home with ' + esc(p ? p.name : 'the person you live with') + '</p>' +
-        '<div class="st-group"><p class="st-note">They get their own small app with only what you choose below – the shopping list, chores, money between you, events you tick, plants and the moving checklist. Your finances, health, papers and everything else stay locked with your passcode; they can’t open it.</p></div>' +
-        (p ? '' : '<div class="st-group"><label class="st-row"><span>Their name<small class="st-rsub">For money between you, add them in Finances → Shared expenses</small></span><input class="st-input" id="shName" maxlength="40" value="' + esc(((V.get() || {}).share || {}).name || '') + '" placeholder="Name"></label></div>') +
-        '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub">The one they log in with – only kept on your server</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label></div>' +
+        '<div class="st-group"><p class="st-note" data-t="ui.they-get-their-own-small-app-with-only-w">They get their own small app with only what you choose below – the shopping list, chores, money between you, events you tick, plants and the moving checklist. Your finances, health, papers and everything else stay locked with your passcode; they can’t open it.</p></div>' +
+        (p ? '' : '<div class="st-group"><label class="st-row"><span>Their name<small class="st-rsub" data-t="ui.for-money-between-you-add-them-in-financ">For money between you, add them in Finances → Shared expenses</small></span><input class="st-input" id="shName" maxlength="40" value="' + esc(((V.get() || {}).share || {}).name || '') + '" placeholder="Name"></label></div>') +
+        '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub" data-t="ui.the-one-they-log-in-with-only-kept-on-yo">The one they log in with – only kept on your server</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label></div>' +
         '<div class="st-group"><button type="button" class="st-row st-btn" id="shStart"><span><i class="bi bi-people"></i> Start sharing</span><i class="bi bi-chevron-right"></i></button></div>' +
         '<p class="st-note muted" id="shMsg" role="status"></p>' +
-        '<p class="st-note muted">You also add their email in Cloudflare (Zero Trust → Access → Applications → your dashboard → policy) so they can log in at all.</p>';
+        '<p class="st-note muted" data-t="ui.you-also-add-their-email-in-cloudflare-z">You also add their email in Cloudflare (Zero Trust → Access → Applications → your dashboard → policy) so they can log in at all.</p>';
       return;
     }
     showing = 'status';
@@ -632,13 +632,13 @@
     var nOn = WHAT.filter(function (w) { return sw[w[0]]; }).length, nNotes = (Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : []).length;
     box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-people"></i> Sharing with ' + esc(nm) + '</p>' +
       '<div class="st-group"><p class="st-note" id="shStatus">' + statusLine() + '</p>' +
-        '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button></div>' +
+        '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub" data-t="ui.exactly-what-they-see-nothing-can-be-cha">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button></div>' +
       pendHtml(nm, pend) +
       (joined ? '' : inviteSec(nm, false)) +
       '<p class="st-sub ap-sub"><i class="bi bi-sliders"></i> What you share</p>' +
       sec('sees', 'ui-checks', 'What ' + nm + ' sees', nOn + ' of ' + WHAT.length + ' shared',
         WHAT.map(function (w) {
-          return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
+          return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub" data-t="ui.add-them-in-finances-shared-expenses-fir">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
         }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> List every shared item</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
       settingsMore(nm) +
       sec('act', 'clock-history', 'Who did what', actSum(nm), actHtml(nm)) +
@@ -646,9 +646,9 @@
       '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> Access</p>' +
       (joined ? inviteSec(nm, true) : '') +
       sec('acct', 'key', 'Login and pause', (paused ? 'Paused · ' : '') + (srvInfo && srvInfo.partner || 'Their email'),
-        '<label class="st-row"><span>Their email<small class="st-rsub">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span>Save email</span><i class="bi bi-check2"></i></button>' +
+        '<label class="st-row"><span>Their email<small class="st-rsub" data-t="ui.change-it-if-they-log-in-with-another-on">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span data-t="ui.save-email">Save email</span><i class="bi bi-check2"></i></button>' +
         '<button type="button" class="st-row st-btn" id="shPause"><span><i class="bi bi-' + (paused ? 'play-circle' : 'pause-circle') + '"></i> ' + (paused ? 'Resume sharing' : 'Pause sharing') + '<small class="st-rsub">' + (paused ? esc(nm) + ' sees everything again – no new code needed' : esc(nm) + ' sees nothing for now. Nothing is deleted, and they need no new code to come back.') + '</small></span></button>' +
-        '<button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL">Stop sharing</span><small class="st-rsub">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button>');
+        '<button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL" data-t="ui.stop-sharing">Stop sharing</span><small class="st-rsub" data-t="ui.they-lose-access-at-once-the-shared-box">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button>');
     SC.api('share').then(function (j) { var was = srvInfo ? { joined: !!srvInfo.joined, paused: !!srvInfo.paused, partner: srvInfo.partner } : null; srvInfo = j; paintSum();
       if (showing === 'status' && (!was || was.joined !== !!j.joined || was.paused !== !!j.paused || was.partner !== j.partner) && !document.activeElement.closest('#stShare input, #stShare textarea')) draw(); }, function () {});
   }
@@ -682,7 +682,7 @@
   function inviteSec(nm, joined) {
     var body = '<p class="st-note">' + esc('With ' + nm + ', on their phone: 1. Open ' + location.host + '/cmd/home and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.') + '</p>' +
       '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button></div>' +
-      '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button>';
+      '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub" data-t="ui.only-send-it-somewhere-private-it-works">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button>';
     if (!joined) return '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv">' + body + '</div>';
     return sec('inv', 'qr-code', 'Invite again', nm + ' is set up · for a new phone or a forgotten passcode', body);
   }
@@ -700,13 +700,13 @@
     return sec('perm', 'pencil-square', 'What ' + nm + ' may change', nView ? (nView === AREAS.length ? 'Everything is view only' : nView + ' view only · the rest can change') : 'Can change everything shared',
         AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', 'Can change'], ['view', 'View only']]) + '</label>'; }).join('')) +
       sec('cal', 'calendar-heart', 'Calendars shared automatically', catNames.length ? catNames.join(', ') : 'None – you tick events one by one',
-        '<p class="st-note muted">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>') +
+        '<p class="st-note muted" data-t="ui.every-event-in-these-is-shared-no-need-t">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>') +
       '<p class="st-sub ap-sub"><i class="bi bi-shield-check"></i> Rules</p>' +
       sec('money', 'cash-coin', 'Bigger shared costs', ap ? 'Ask me first above ' + kr(ap) : 'No OK needed',
         '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
-        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
+        '<p class="st-note muted" data-t="ui.in-at-a-glance-and-as-a-notification-on">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
       (function () { var cp = sharedPet() || 'none', P = [['none', 'No pet', 'Ingen'], ['cat', 'Cat', 'Katt'], ['dog', 'Dog', 'Hund'], ['bunny', 'Bunny', 'Kanin'], ['parrot', 'Parrot', 'Papegøye']], nb = window.I18N && window.I18N.lang === 'nb';
         return sec('spet', 'heart', nb ? 'Kjæledyret dere deler' : 'Your shared pet', (P.filter(function (x) { return x[0] === cp; })[0] || P[0])[nb ? 2 : 1],
           '<p class="st-note muted">' + (nb ? 'Står ved dere i bildet av dere to – i begge appene. Den av dere som velger sist, bestemmer.' : 'Stands with you in the picture of the two of you – in both apps. Whoever picks last decides.') + '</p>' +
@@ -736,8 +736,8 @@
       }).join('') + (noteEd === 'new' ? noteForm(null) : '<button type="button" class="st-row st-btn" data-shnoteed="new"><span><i class="bi bi-plus-lg"></i> Add a note</span></button>');
   }
   function noteForm(n) {
-    return '<form class="sh-noteform" data-shnoteform="' + esc(n ? n.id : 'new') + '"><input class="st-input" name="title" maxlength="60" placeholder="Title – e.g. Bins" value="' + esc(n ? n.title : '') + '" required><textarea class="st-input" name="text" rows="3" maxlength="1500" placeholder="e.g. Paper every other Tuesday, food waste Fridays">' + esc(n ? n.text : '') + '</textarea>' +
-      '<div class="sh-noteacts"><button type="button" class="text-btn" data-shnotecancel>Cancel</button><button type="submit" class="pill-btn">Save</button></div></form>';
+    return '<form class="sh-noteform" data-shnoteform="' + esc(n ? n.id : 'new') + '"><input class="st-input" name="title" maxlength="60" placeholder="Title – e.g. Bins" value="' + esc(n ? n.title : '') + '" required><textarea class="st-input" name="text" rows="3" maxlength="1500" placeholder="e.g. Paper every other Tuesday, food waste Fridays" data-t-placeholder="ui.e-g-paper-every-other-tuesday-food-waste">' + esc(n ? n.text : '') + '</textarea>' +
+      '<div class="sh-noteacts"><button type="button" class="text-btn" data-shnotecancel data-t="ui.cancel">Cancel</button><button type="submit" class="pill-btn" data-t="ui.save">Save</button></div></form>';
   }
   function drawNotes() { var b = document.getElementById('shNotes'); if (b) b.innerHTML = notesHtml(); var f = b && b.querySelector('[name=title]'); if (f && !f.value) f.focus(); }
   document.addEventListener('click', function (e) {
@@ -810,7 +810,7 @@
   function previewApp() {
     var s = st(); if (!s) return;
     var bg = document.createElement('div'); bg.className = 'sh-prev-bg';
-    bg.innerHTML = '<div class="sh-prev"><div class="sh-prev-head"><b><i class="bi bi-phone"></i> ' + esc(pname()) + '’s app</b><button type="button" class="icon-btn sm" data-shprevx aria-label="Close"><i class="bi bi-x-lg"></i></button></div><iframe title="Preview" src="/cmd/home/#preview&k=' + s.key + '"></iframe></div>';
+    bg.innerHTML = '<div class="sh-prev"><div class="sh-prev-head"><b><i class="bi bi-phone"></i> ' + esc(pname()) + '’s app</b><button type="button" class="icon-btn sm" data-shprevx aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div><iframe title="Preview" src="/cmd/home/#preview&k=' + s.key + '"></iframe></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var close = function () { bg.remove(); document.removeEventListener('keydown', esc1, true); }, esc1 = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     document.addEventListener('keydown', esc1, true);
@@ -819,13 +819,13 @@
   function peek() {
     var box = document.getElementById('shPeekBox'); if (!box) return;
     box.hidden = !box.hidden; if (box.hidden) return;
-    box.innerHTML = '<p class="st-note muted">Looking …</p>';
+    box.innerHTML = '<p class="st-note muted" data-t="ui.looking">Looking …</p>';
     sync().then(function () {
       var by = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.del || !r.c || r.c === 'info') return; (by[r.c] = by[r.c] || []).push(r.f); });
       var NM = { room: ['Rooms', 'name'], vote: ['Dinner votes', 'date'], pme: ['Their profile and avatar', 'name'], proj: ['House projects', 'name'], doc: ['Documents', 'name'], clog: ['Chore log', 'name'], meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
       var keys = Object.keys(NM).filter(function (c) { return by[c] && by[c].length; });
-      box.innerHTML = keys.length ? '<ul class="sh-peek">' + keys.map(function (c) { var l = by[c]; return '<li><b>' + esc(NM[c][0]) + ' · ' + l.length + '</b><small>' + esc(l.slice(0, 4).map(function (f) { return String(f[NM[c][1]] == null ? '' : f[NM[c][1]]); }).join(', ') + (l.length > 4 ? ' …' : '')) + '</small></li>'; }).join('') + '</ul><p class="st-note muted">That is all that is in the shared box – nothing else is sent.</p>'
-        : '<p class="st-note muted">Nothing shared yet.</p>';
+      box.innerHTML = keys.length ? '<ul class="sh-peek">' + keys.map(function (c) { var l = by[c]; return '<li><b>' + esc(NM[c][0]) + ' · ' + l.length + '</b><small>' + esc(l.slice(0, 4).map(function (f) { return String(f[NM[c][1]] == null ? '' : f[NM[c][1]]); }).join(', ') + (l.length > 4 ? ' …' : '')) + '</small></li>'; }).join('') + '</ul><p class="st-note muted" data-t="ui.that-is-all-that-is-in-the-shared-box-no">That is all that is in the shared box – nothing else is sent.</p>'
+        : '<p class="st-note muted" data-t="ui.nothing-shared-yet">Nothing shared yet.</p>';
     });
   }
   document.addEventListener('click', function (e) {
@@ -848,9 +848,9 @@
       return;
     }
     if (b.id === 'shShowQR') {
-      var q = document.getElementById('shQR'); q.innerHTML = '<p class="muted">Making the code …</p>';
-      loadQR().then(function (qr) { var c = qr(0, 'M'); c.addData(link()); c.make(); q.innerHTML = '<div class="sh-qrimg">' + c.createSvgTag({ cellSize: 5, margin: 3, scalable: true }) + '</div><button type="button" class="text-btn" id="shHideQR">Hide the code</button>'; },
-        function () { q.innerHTML = '<p class="muted">Couldn’t make the code – use Copy the invite link.</p>'; });
+      var q = document.getElementById('shQR'); q.innerHTML = '<p class="muted" data-t="ui.making-the-code">Making the code …</p>';
+      loadQR().then(function (qr) { var c = qr(0, 'M'); c.addData(link()); c.make(); q.innerHTML = '<div class="sh-qrimg">' + c.createSvgTag({ cellSize: 5, margin: 3, scalable: true }) + '</div><button type="button" class="text-btn" id="shHideQR" data-t="ui.hide-the-code">Hide the code</button>'; },
+        function () { q.innerHTML = '<p class="muted" data-t="ui.couldnt-make-the-code-use-copy-the-invit">Couldn’t make the code – use Copy the invite link.</p>'; });
       return;
     }
     if (b.id === 'shCopy') { var L = link(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(L) : Promise.reject()).then(function () { toast('<i class="bi bi-link-45deg"></i> Invite link copied'); }, function () { prompt('Invite link', L); }); return; }

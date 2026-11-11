@@ -54,7 +54,7 @@
   function card(fn) {
     var l; try { l = checks(); } catch (e) { return ''; }
     var todo = l.filter(function (x) { return x.n > 0; });
-    return fn('clean', 'stars', 'Clean up', todo.length > 1 ? '<button type="button" class="text-btn" data-cleanall>Clean all</button>' : '',
+    return fn('clean', 'stars', 'Clean up', todo.length > 1 ? '<button type="button" class="text-btn" data-cleanall data-t="ui.clean-all">Clean all</button>' : '',
       todo.length ? '<ul class="cl-list">' + todo.map(function (x) { return '<li><span class="kit-ic" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span><span><b>' + esc(x.t) + ' · ' + x.n + '</b>' + (x.s ? '<small>' + esc(x.s) + '</small>' : '') + '</span><button type="button" class="text-btn" data-clean="' + x.id + '">Clean</button></li>'; }).join('') + '</ul>'
         : '<p class="muted cl-ok"><i class="bi bi-check2-circle"></i> Nothing has piled up – no duplicates, old done things or empty rows.</p>');
   }

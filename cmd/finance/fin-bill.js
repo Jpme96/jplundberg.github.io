@@ -38,7 +38,7 @@
     if (vary) {
       for (var k = -3; k <= 2; k++) {
         var key = addM(now, k), has = m[key] != null && m[key] !== '', est = Math.round(B.fixedAmt(Object.assign({}, f, { vary: true }), key));
-        rows += '<li class="' + (key === now ? 'now' : key < now ? 'past' : '') + '"><span>' + esc(mName(key, true)) + (key === now ? '<small>this month</small>' : has && f.mbank && f.mbank[key] ? '<small>from the bank</small>' : '') + '</span>' +
+        rows += '<li class="' + (key === now ? 'now' : key < now ? 'past' : '') + '"><span>' + esc(mName(key, true)) + (key === now ? '<small data-t="ui.this-month-2">this month</small>' : has && f.mbank && f.mbank[key] ? '<small data-t="ui.from-the-bank">from the bank</small>' : '') + '</span>' +
           '<input data-fbm="' + key + '" inputmode="decimal" autocomplete="off" value="' + (has ? esc(String(m[key])) : '') + '" placeholder="' + (est > 0 ? '≈ ' + esc(est.toLocaleString('nb-NO')) : 'kr') + '" aria-label="Amount for ' + esc(mName(key, true)) + '"></li>';
       }
     }
@@ -50,7 +50,7 @@
     $('fbForm').innerHTML =
       '<h2 class="im-h"><i class="bi bi-receipt"></i> ' + (f === draft ? 'New bill' : esc(f.name || 'Bill')) + '</h2>' +
       '<div class="fs-form fb-form">' +
-        '<label><span>Name</span><input name="n" value="' + esc(f.name) + '" required maxlength="50" autocomplete="off"></label>' +
+        '<label><span data-t="ui.name-2">Name</span><input name="n" value="' + esc(f.name) + '" required maxlength="50" autocomplete="off"></label>' +
         '<label class="qa-check fb-vary"><input type="checkbox" name="vary"' + (vary ? ' checked' : '') + '> The amount changes from month to month <small class="muted">power, phone, kindergarten …</small></label>' +
         (vary ?
           '<div class="fb-usual"><label><span>Usually, kr</span><input name="u" inputmode="decimal" autocomplete="off" value="' + (+f.usual > 0 ? esc(String(f.usual)) : '') + '" placeholder="' + (avg ? '≈ ' + esc(avg.toLocaleString('nb-NO')) + ' (average)' : 'e.g. 900') + '"></label>' +
@@ -58,12 +58,12 @@
           chart +
           '<p class="fb-mh">Amount each month</p><ul class="fb-months">' + rows + '</ul>'
         : '<label><span>Kr a month</span><input name="a" inputmode="decimal" autocomplete="off" value="' + (f === draft && !f.amount ? '' : esc(String(Math.round(+f.amount || 0)))) + '" placeholder="e.g. 900" required></label>') +
-        '<div class="fs-r2 fb-when"><label><span>First month</span><input type="month" name="from" value="' + esc(f.from || '') + '"></label><label><span>Last month</span><input type="month" name="until" value="' + esc(f.until || '') + '"></label></div>' +
+        '<div class="fs-r2 fb-when"><label><span>First month</span><input type="month" name="from" value="' + esc(f.from || '') + '"></label><label><span data-t="ui.last-month">Last month</span><input type="month" name="until" value="' + esc(f.until || '') + '"></label></div>' +
         '<p class="muted fs-hint">Optional. Rent that stops when you move, a contract that ends – outside these months the bill isn’t counted.</p>' +
         '<div class="fs-r2"><label><span>Due</span><select name="day">' + days + '</select></label>' +
           (accts.length ? '<label><span>Paid from</span><select name="acct">' + accts.map(function (a) { return '<option value="' + esc(a.id) + '"' + (a.id === acct ? ' selected' : '') + '>' + esc(a.label) + '</option>'; }).join('') + '</select></label>' : '') + '</div>' +
       '</div>' +
-      '<div class="qa-acts fs-foot">' + (f === draft ? '' : '<button type="button" class="text-btn danger" data-fbdel>Delete</button>') + '<span class="spacer"></span><button type="button" class="text-btn" data-fbclose>Cancel</button><button type="submit" class="pill-btn">Save</button></div>';
+      '<div class="qa-acts fs-foot">' + (f === draft ? '' : '<button type="button" class="text-btn danger" data-fbdel data-t="ui.delete">Delete</button>') + '<span class="spacer"></span><button type="button" class="text-btn" data-fbclose data-t="ui.cancel">Cancel</button><button type="submit" class="pill-btn" data-t="ui.save">Save</button></div>';
   }
 
   function open(id) {

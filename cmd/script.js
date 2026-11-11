@@ -173,7 +173,7 @@
       /* the answer can come after you've left the page (instant page changes): then there's no card to write to */
       var wc = document.getElementById('weatherCard'), wd = document.getElementById('wDesc'); if (!wd) return;
       if (wc) wc.classList.add('w-off');
-      wd.innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry">Try again</button>';
+      wd.innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry" data-t="ui.try-again">Try again</button>';
       var rb = document.getElementById('wRetry'); if (rb) rb.addEventListener('click', function () { var w2 = document.getElementById('wDesc'); if (w2) w2.textContent = 'Loading weather…'; loadWeather(); });
     });
   }
@@ -264,7 +264,7 @@
         '<circle class="val" cx="28" cy="28" r="24" stroke-dasharray="' + RING + '" stroke-dashoffset="' + (RING * (1 - pct)) + '"></circle></svg>' +
         '<div class="goal-text"><strong>' + esc(g.name) + '</strong><span>' + (g.target > 0 && !ahLower(ahk) && g.value > g.target ? fmt(g.value) + ' · goal ' + fmt(g.target) + ' reached' : fmt(g.value) + ' / ' + fmt(g.target) + ' · ' + Math.round(pct * 100) + '%') +
         (h ? ' · <i class="bi bi-link-45deg"></i> ' + esc(h.name) + ' habit' : '') + (ahk ? ' · <i class="bi bi-apple"></i> Apple Health' : '') + '</span></div>' +
-        (ahk ? '' : '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease">−</button><button type="button" data-step="1" aria-label="Increase">+</button></div>') + '</li>';
+        (ahk ? '' : '<div class="stepper"><button type="button" data-step="-1" aria-label="Decrease" data-t-aria-label="ui.decrease">−</button><button type="button" data-step="1" aria-label="Increase" data-t-aria-label="ui.increase">+</button></div>') + '</li>';
     }).join('');
   }
 
@@ -385,7 +385,7 @@
   }
   function stepsSheet(t) {
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
-    bg.innerHTML = '<div class="fo-box lf-box" role="dialog" aria-modal="true" aria-label="Steps"></div>';
+    bg.innerHTML = '<div class="fo-box lf-box" role="dialog" aria-modal="true" aria-label="Steps" data-t-aria-label="ui.steps"></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var box = bg.firstChild;
     function close() { bg.remove(); document.removeEventListener('keydown', key, true); renderTodos(); }
@@ -393,10 +393,10 @@
     document.addEventListener('keydown', key, true);
     function draw() {
       var st = t.steps || [];
-      box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-list-check"></i> ' + esc(t.text) + '</h3><button type="button" class="icon-btn sm" data-stclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-        '<p class="muted lf-sub">Break it into small steps – tick them off as you go.</p>' +
+      box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-list-check"></i> ' + esc(t.text) + '</h3><button type="button" class="icon-btn sm" data-stclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+        '<p class="muted lf-sub" data-t="ui.break-it-into-small-steps-tick-them-off">Break it into small steps – tick them off as you go.</p>' +
         st.map(function (x, i) { return '<div class="td-step"><label class="lf-check"><input type="checkbox" data-st="' + i + '"' + (x.d ? ' checked' : '') + '> <span' + (x.d ? ' class="dn"' : '') + '>' + esc(x.t) + '</span></label><button type="button" class="icon-btn sm" data-stdel="' + i + '" aria-label="Remove step"><i class="bi bi-x"></i></button></div>'; }).join('') +
-        '<form class="add-row td-stadd"><input placeholder="Add a step" maxlength="120" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add step"><i class="bi bi-plus-lg"></i></button></form>';
+        '<form class="add-row td-stadd"><input placeholder="Add a step" data-t-placeholder="ui.add-a-step" maxlength="120" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add step" data-t-aria-label="ui.add-step"><i class="bi bi-plus-lg"></i></button></form>';
     }
     box.addEventListener('click', function (e) {
       var b;
@@ -417,8 +417,8 @@
     $('todoList').innerHTML = all.map(function (t, i) {
       return '<li class="todo-item' + (t.done ? ' done' : '') + (i >= TOP && !todoAll ? ' td-more' : '') + (t.focus && !t.done ? ' focus' : '') + '" data-id="' + t.id + '">' +
         '<button type="button" class="check" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button>' +
-        '<span class="label">' + (t.today === dkey(new Date()) && !t.done ? '<span class="td-rank" title="Top 3 today">' + (t.rank || '•') + '</span> ' : '') + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist"></i> ' : '') + esc(t.text) + dueChip(t) + stepsChip(t) + '</span>' +
-        '<button type="button" class="del" aria-label="Delete task"><i class="bi bi-x"></i></button></li>';
+        '<span class="label">' + (t.today === dkey(new Date()) && !t.done ? '<span class="td-rank" title="Top 3 today" data-t-title="ui.top-3-today">' + (t.rank || '•') + '</span> ' : '') + (t.focus && !t.done ? '<i class="bi bi-star-fill td-star" aria-label="Focus this week" data-t-aria-label="ui.focus-this-week"></i> ' : '') + (t.list ? '<i class="bi bi-house-gear td-list" aria-label="From a checklist" data-t-aria-label="ui.from-a-checklist"></i> ' : '') + esc(t.text) + dueChip(t) + stepsChip(t) + '</span>' +
+        '<button type="button" class="del" aria-label="Delete task" data-t-aria-label="ui.delete-task"><i class="bi bi-x"></i></button></li>';
     }).join('') + (more > 0 ? '<li class="td-toggle"><button type="button" class="text-btn" data-tdall><i class="bi bi-chevron-' + (todoAll ? 'up' : 'down') + '"></i> ' + (todoAll ? 'Show fewer' : more + ' more task' + (more === 1 ? '' : 's')) + '</button></li>' : '');
     $('todoEmpty').hidden = todos.length > 0;
     $('todoClear').hidden = !todos.some(function (t) { return t.done; });
@@ -628,7 +628,7 @@
     }).replace(/\[\[([^\]\n]{1,60})\]\]/g, function (all, name) {
       /* [[Sofa]], [[Iago]], [[New bathroom]]: a link to that thing anywhere on the dashboard */
       var hit = findThing(name.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
-      return hit ? '<a class="nl-link" href="' + esc(hit.h) + '"><i class="bi bi-' + esc(hit.i) + '"></i>' + name + '</a>' : '<span class="nl-link nl-miss" title="Nothing called that yet"><i class="bi bi-link-45deg"></i>' + name + '</span>';
+      return hit ? '<a class="nl-link" href="' + esc(hit.h) + '"><i class="bi bi-' + esc(hit.i) + '"></i>' + name + '</a>' : '<span class="nl-link nl-miss" title="Nothing called that yet" data-t-title="ui.nothing-called-that-yet"><i class="bi bi-link-45deg"></i>' + name + '</span>';
     });
   }
   var thingCache = null;
@@ -655,7 +655,7 @@
     $('noteList').innerHTML = order.map(function (n) {
       return '<li class="note' + (editingNote === n ? ' editing' : '') + (n.pin ? ' pinned' : '') + '" data-id="' + n.id + '"><span class="body">' + noteBody(n) + '</span>' +
         '<button type="button" class="pin" aria-label="' + (n.pin ? 'Unpin note' : 'Pin note to the top') + '" title="' + (n.pin ? 'Unpin' : 'Pin to the top') + '"><i class="bi bi-pin' + (n.pin ? '-fill' : '') + '"></i></button>' +
-        '<button type="button" class="del" aria-label="Delete note"><i class="bi bi-x"></i></button></li>';
+        '<button type="button" class="del" aria-label="Delete note" data-t-aria-label="ui.delete-note"><i class="bi bi-x"></i></button></li>';
     }).join('');
     /* long lists fold: pinned notes plus the newest few, then "Show all" */
     var cap = Math.max(4, order.filter(function (n) { return n.pin; }).length), lis = $('noteList').children;

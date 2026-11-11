@@ -441,7 +441,7 @@
     y = y || posterYear();
     var cv = poster(y), url = cv.toDataURL('image/png');
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg dl-pbg';
-    bg.innerHTML = '<div class="fo-box lf-box dl-pbox" role="dialog" aria-modal="true" data-noi18n><div class="lf-head"><h3><i class="bi bi-stars"></i> ' + L('Your year', 'Året ditt') + ' ' + y + '</h3><button type="button" class="icon-btn sm" data-dlpx aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+    bg.innerHTML = '<div class="fo-box lf-box dl-pbox" role="dialog" aria-modal="true" data-noi18n><div class="lf-head"><h3><i class="bi bi-stars"></i> ' + L('Your year', 'Året ditt') + ' ' + y + '</h3><button type="button" class="icon-btn sm" data-dlpx aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
       '<img class="dl-pimg" alt="" src="' + url + '"><div class="qa-acts"><button type="button" class="text-btn" data-dlpy="' + (y - 1) + '">‹ ' + (y - 1) + '</button><span class="spacer"></span>' +
       '<button type="button" class="pill-btn" data-dlpshare><i class="bi bi-' + (navigator.share ? 'share' : 'download') + '"></i> ' + (navigator.share ? L('Share', 'Del') : L('Save the picture', 'Lagre bildet')) + '</button></div>' +
       '<p class="muted hl-small">' + L('Made on this device from your own data – nothing is uploaded.', 'Laget på denne enheten fra dine egne data – ingenting lastes opp.') + '</p></div>';

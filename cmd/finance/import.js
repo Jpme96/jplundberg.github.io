@@ -273,7 +273,7 @@
   /* ---------- the sheet ---------- */
   var bg = document.createElement('div');
   bg.className = 'qa-bg im-bg'; bg.hidden = true;
-  bg.innerHTML = '<div class="qa-box im-box" role="dialog" aria-modal="true" aria-label="Import from bank"><div class="qa-handle"></div><div id="imBody"></div></div>';
+  bg.innerHTML = '<div class="qa-box im-box" role="dialog" aria-modal="true" aria-label="Import from bank" data-t-aria-label="ui.import-from-bank"><div class="qa-handle"></div><div id="imBody"></div></div>';
   document.body.appendChild(bg);
   var file = document.createElement('input'); file.type = 'file'; file.accept = '.csv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; file.hidden = true; document.body.appendChild(file);
   var btn = document.createElement('button');
@@ -295,14 +295,14 @@
     if (!chosen || !list.some(function (a) { return a.id === chosen; })) { try { chosen = localStorage.getItem('dash.imAcct'); } catch (e) {} }
     if (!list.some(function (a) { return a.id === chosen; })) chosen = null;
     open('<h2 class="im-h"><i class="bi bi-bank"></i> Import from your bank</h2>' +
-      '<p class="muted im-p">Export the transactions as <b>CSV or Excel</b> in your bank app or online bank (under the account’s history), then pick the account the file is from and choose the file. Nothing leaves your browser.</p>' +
+      '<p class="muted im-p">Export the transactions as <b data-t="ui.csv-or-excel">CSV or Excel</b> in your bank app or online bank (under the account’s history), then pick the account the file is from and choose the file. Nothing leaves your browser.</p>' +
       '<p class="im-q">Which account is the file from?</p>' +
-      '<div class="im-pick" role="radiogroup" aria-label="Account">' + list.map(function (a) {
+      '<div class="im-pick" role="radiogroup" aria-label="Account" data-t-aria-label="ui.account">' + list.map(function (a) {
         return '<button type="button" role="radio" data-pickacct="' + esc(a.id) + '" aria-checked="' + (chosen === a.id) + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span><b>' + esc(a.label) + '</b><small>' +
           ({ salary: 'Salary lands here', credit: 'Credit card', card: 'Bills and other payments', savings: 'Savings', fund: 'Fund' }[a.kind] || '') + (a.bal != null ? ' · ' + esc(nf.format(a.kind === 'credit' ? -a.bal : a.bal)) : '') + '</small></span><i class="bi bi-check-circle-fill im-tick"></i></button>';
       }).join('') + '</div>' +
       '<p class="muted im-p im-small">Salary, card payments and transfers between your own accounts are left out, and rows you already have are skipped. The account’s balance is moved on by the file.</p>' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick' + (chosen ? '' : ' disabled') + '><i class="bi bi-file-earmark-arrow-up"></i> Choose file</button></div>');
+      '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick' + (chosen ? '' : ' disabled') + '><i class="bi bi-file-earmark-arrow-up"></i> Choose file</button></div>');
   }
   function preview(res) {
     found = res;
@@ -313,7 +313,7 @@
     if (sk.income) note.push(payKeys.length ? 'your salary (' + payKeys.map(function (k) { return new Date(k + '-15T12:00').toLocaleDateString('en-GB', { month: 'short' }) + ' ' + nf.format(res.pay[k]); }).join(', ') + ') – used as that month’s pay in the budget' : sk.income + ' salary (already in your budget)');
     if (sk.bad) note.push(sk.bad + ' unreadable');
     var rows = res.rows, nIn = rows.filter(function (r) { return r.income; }).length, nOut = rows.length - nIn;
-    var signRow = '<div class="im-acct"><span>' + (res.acct ? 'From <b>' + esc((acctList().filter(function (a) { return a.id === res.acct; })[0] || {}).label || '') + '</b> – change it here if that’s wrong' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account">' +
+    var signRow = '<div class="im-acct"><span>' + (res.acct ? 'From <b>' + esc((acctList().filter(function (a) { return a.id === res.acct; })[0] || {}).label || '') + '</b> – change it here if that’s wrong' : '<b>Which account is this file from?</b>') + '</span><div class="seg im-seg" role="group" aria-label="Account" data-t-aria-label="ui.account">' +
         acctList().map(function (a) { return '<button type="button" data-acct="' + esc(a.id) + '" aria-pressed="' + (res.acct === a.id) + '"><i class="bi bi-' + a.icon + '"></i> ' + esc(a.label) + '</button>'; }).join('') + '</div>' +
         '<small class="muted">' + ({ salary: 'Salary is already in your budget; card bills and money you move to your other accounts are left out.', credit: 'Purchases count; paying off the card is left out.', card: 'Money coming in from your salary account is a transfer, not income.' }[res.kind] || 'Then salary, card payments and your own transfers are sorted out the right way.') + '</small></div>' +
       '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
@@ -330,10 +330,10 @@
           (r.mine ? ' · <i class="bi bi-person-check"></i> you logged it already: ' + esc(r.mine.note || 'expense') + ', ' + esc(new Date(String(r.mine.date).slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') +
           (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · ' + esc(r.why || 'from your own account') : ' · adds to this period’s budget') : r.transfer ? ' · ' + esc(r.why || 'transfer') : '') + '</small></span>' +
           '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
-          (r.bill ? '<span class="im-fixed">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') +
+          (r.bill ? '<span class="im-fixed" data-t="ui.fixed-cost">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') +
           (r.recur && r.on && !r.bill && !r.income ? '<label class="im-mk"><input type="checkbox" data-mk="' + i + '"' + (r.mk ? ' checked' : '') + '> Comes every month – make it a fixed cost</label>' : '') + '</li>';
       }) +
-      '<div class="qa-acts im-foot"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><span class="muted" id="imSum">' + esc(nf.format(total)) + '</span><button type="button" class="pill-btn wide" data-import>Import</button></div>');
+      '<div class="qa-acts im-foot"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><span class="muted" id="imSum">' + esc(nf.format(total)) + '</span><button type="button" class="pill-btn wide" data-import data-t="ui.import">Import</button></div>');
   }
   /* the file at a glance, then the rows in groups – the ones worth a look first */
   function summary(rows) {
@@ -444,10 +444,10 @@
       return isZip ? readXlsx(buf) : decode(buf);
     }).then(function (rows) {
       var res = analyse(rows, chosen ? { acct: chosen } : {});
-      if (res.error) open('<h2 class="im-h"><i class="bi bi-bank"></i> Couldn’t read that file</h2><p class="muted im-p">' + esc(res.error) + '</p><div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick>Try another file</button></div>');
+      if (res.error) open('<h2 class="im-h"><i class="bi bi-bank"></i> Couldn’t read that file</h2><p class="muted im-p">' + esc(res.error) + '</p><div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick>Try another file</button></div>');
       else preview(res);
     }).catch(function (e) {
-      open('<h2 class="im-h"><i class="bi bi-bank"></i> Couldn’t read that file</h2><p class="muted im-p">' + esc(e && e.message || 'Unknown file') + '. CSV or Excel (.xlsx) from your bank works best.</p><div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick>Try another file</button></div>');
+      open('<h2 class="im-h"><i class="bi bi-bank"></i> Couldn’t read that file</h2><p class="muted im-p">' + esc(e && e.message || 'Unknown file') + '. CSV or Excel (.xlsx) from your bank works best.</p><div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-pick>Try another file</button></div>');
     });
   });
   document.addEventListener('keydown', function (e) { if (!bg.hidden && e.key === 'Escape') close(); });

@@ -112,8 +112,8 @@
     if (!open_) return;
     var now = new Date(), tops = top3(), evs = events(), free = gaps(evs), hs = habits(), cands = candidates(), doneTop = topDone();
     var allDay = evs.filter(function (o) { return o.allDay; }), timed = evs.filter(function (o) { return !o.allDay; });
-    var h = '<div class="pl-head"><div><p class="pl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</p><h2 id="plTitle">Plan your day</h2></div>' +
-      '<button type="button" class="icon-btn" data-plclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+    var h = '<div class="pl-head"><div><p class="pl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</p><h2 id="plTitle" data-t="ui.plan-your-day">Plan your day</h2></div>' +
+      '<button type="button" class="icon-btn" data-plclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="pl-sum">' + [timed.length + ' event' + (timed.length === 1 ? '' : 's'), cands.filter(function (t) { return t.due && t.due <= dkey(now); }).length + ' task' + (cands.filter(function (t) { return t.due && t.due <= dkey(now); }).length === 1 ? '' : 's') + ' due', hs.filter(function (x) { return !x.done; }).length + ' habit' + (hs.filter(function (x) { return !x.done; }).length === 1 ? '' : 's') + ' left'].map(esc).join(' · ') + '</p>';
     /* top 3 */
     h += '<section class="pl-sec"><h3><i class="bi bi-trophy"></i> Top 3 today</h3><ol class="pl-top">';
@@ -129,12 +129,12 @@
     }
     h += '</ol>' + (doneTop.length ? '<p class="pl-done"><i class="bi bi-check2-circle"></i> Done today: ' + doneTop.map(function (x) { return esc(x.text); }).join(' · ') + '</p>' : '') + '</section>';
     /* tasks to pick from */
-    h += '<section class="pl-sec"><h3><i class="bi bi-list-check"></i> Tasks</h3><form class="pl-add" id="plAdd"><input id="plNew" placeholder="New task – it goes straight into your top 3" autocomplete="off" enterkeyhint="done"><button class="pill-btn" type="submit" aria-label="Add task"><i class="bi bi-plus-lg"></i></button></form>' +
+    h += '<section class="pl-sec"><h3><i class="bi bi-list-check"></i> Tasks</h3><form class="pl-add" id="plAdd"><input id="plNew" placeholder="New task – it goes straight into your top 3" data-t-placeholder="ui.new-task-it-goes-straight-into-your-top" autocomplete="off" enterkeyhint="done"><button class="pill-btn" type="submit" aria-label="Add task" data-t-aria-label="ui.add-task"><i class="bi bi-plus-lg"></i></button></form>' +
       (cands.length ? '<ul class="pl-cands">' + cands.slice(0, 8).map(function (t) {
         var late = t.due && t.due < dkey(now), due = t.due === dkey(now);
         return '<li><button type="button" data-pltop="' + esc(t.id) + '" data-on="1"' + (tops.length >= 3 ? ' disabled' : '') + '><i class="bi bi-plus-circle"></i><span>' + esc(t.text) + '</span>' +
-          (late ? '<em class="late">overdue</em>' : due ? '<em class="due">today</em>' : t.focus ? '<em><i class="bi bi-star-fill"></i></em>' : t.due ? '<em>' + esc(new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</em>' : '') + '</button></li>';
-      }).join('') + '</ul>' + (cands.length > 8 ? '<p class="muted pl-more">' + (cands.length - 8) + ' more in To-do</p>' : '') : '<p class="muted">No other open tasks.</p>') + '</section>';
+          (late ? '<em class="late" data-t="ui.overdue">overdue</em>' : due ? '<em class="due" data-t="ui.today-2">today</em>' : t.focus ? '<em><i class="bi bi-star-fill"></i></em>' : t.due ? '<em>' + esc(new Date(t.due + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</em>' : '') + '</button></li>';
+      }).join('') + '</ul>' + (cands.length > 8 ? '<p class="muted pl-more">' + (cands.length - 8) + ' more in To-do</p>' : '') : '<p class="muted" data-t="ui.no-other-open-tasks">No other open tasks.</p>') + '</section>';
     /* the day */
     h += '<section class="pl-sec"><h3><i class="bi bi-calendar-day"></i> Your day' + (tops.some(function (t) { return !block(t); }) && free.length ? '<button type="button" class="text-btn pl-fill" data-plfill><i class="bi bi-magic"></i> Fill my day</button>' : '') + '</h3>' +
       (allDay.length ? '<p class="pl-allday">' + allDay.map(function (o) { return '<span style="--c:' + (o.color || 'var(--accent)') + '">' + esc(o.title) + '</span>'; }).join('') + '</p>' : '');
@@ -145,10 +145,10 @@
         (armed ? '<i class="bi bi-plus-lg"></i> Put it here' : 'Free') + ' <small>' + hm(r.s) + '–' + hm(r.e) + ' · ' + fmtLen(r.e - r.s) + '</small></button></li>';
       var mine = r.ev.ev && r.ev.ev.own && r.ev.ev.own.todo;
       return '<li class="pl-ev' + (mine ? ' mine' : '') + (r.e <= mins(now) ? ' past' : '') + '" style="--c:' + (r.ev.color || 'var(--accent)') + '"><span class="pl-hm">' + hm(r.s) + '</span><span class="pl-evb">' + (mine ? '<i class="bi bi-check2-square"></i> ' : '') + esc(r.ev.title) + ' <small>' + hm(r.s) + '–' + hm(r.e) + '</small></span></li>';
-    }).join('') + '</ul>' : '<p class="muted">Nothing left of today.</p>') + '</section>';
+    }).join('') + '</ul>' : '<p class="muted" data-t="ui.nothing-left-of-today">Nothing left of today.</p>') + '</section>';
     /* habits */
     if (hs.length) h += '<section class="pl-sec"><h3><i class="bi bi-repeat"></i> Habits today</h3><div class="pl-habits">' + hs.map(function (x) { return '<button type="button" data-plhabit="' + esc(x.id) + '" aria-pressed="' + x.done + '"><i class="bi bi-' + (x.done ? 'check-circle-fill' : 'circle') + '"></i> ' + esc(x.name) + '</button>'; }).join('') + '</div></section>';
-    h += '<div class="qa-acts pl-foot"><span class="muted">' + (tops.length ? tops.length + ' of 3 picked' + (tops.filter(block).length ? ' · ' + tops.filter(block).length + ' in the calendar' : '') : '') + '</span><span class="spacer"></span><button type="button" class="pill-btn wide" data-plclose>Done</button></div>';
+    h += '<div class="qa-acts pl-foot"><span class="muted">' + (tops.length ? tops.length + ' of 3 picked' + (tops.filter(block).length ? ' · ' + tops.filter(block).length + ' in the calendar' : '') : '') + '</span><span class="spacer"></span><button type="button" class="pill-btn wide" data-plclose data-t="ui.done">Done</button></div>';
     var keep = document.activeElement && document.activeElement.id === 'plNew';
     $('plBody').innerHTML = h;
     if (keep) $('plNew').focus();
@@ -201,7 +201,7 @@
   /* the button on At a glance */
   var head = document.querySelector('.card.brief .card-head');
   if (head && !head.querySelector('[data-plan]')) {
-    var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'text-btn mp'; pb.setAttribute('data-plan', ''); pb.innerHTML = '<i class="bi bi-sunrise"></i><span>Plan day</span>';   /* the words in their own span: the icon-only rule (modern.css) squeezed it to 36 px */
+    var pb = document.createElement('button'); pb.type = 'button'; pb.className = 'text-btn mp'; pb.setAttribute('data-plan', ''); pb.innerHTML = '<i class="bi bi-sunrise"></i><span data-t="ui.plan-day">Plan day</span>';   /* the words in their own span: the icon-only rule (modern.css) squeezed it to 36 px */
     var rv = head.querySelector('[data-review]'); var wrap = document.createElement('span'); wrap.className = 'head-actions';
     head.insertBefore(wrap, rv || null); wrap.appendChild(pb); if (rv) wrap.appendChild(rv);
   }

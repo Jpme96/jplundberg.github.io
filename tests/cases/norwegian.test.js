@@ -3,6 +3,8 @@
 const { open, sl, U, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const EN = /\b(the|your|you|and|with|this|that|from|when|what|add|show|hide|nothing|today|tomorrow|week|month|settings|change|remove|open)\b/i;
 const BUDGET = 40;     /* English bits per page, at most */
+/* texts still translated by matching the English sentence, per page (counted after naming them on 2026-11-11; lower it as pages move over) */
+const SENT = { '': 340, 'calendar/': 315, 'travel/': 305, 'finance/': 395, 'house/': 365, 'papers/': 310, 'people/': 310, 'habits/': 350, 'goals/': 300, 'work/': 340, 'wish/': 305, 'food/': 305 };
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });
@@ -13,6 +15,9 @@ const BUDGET = 40;     /* English bits per page, at most */
       while ((n = w.nextNode())) { const el = n.parentElement, t = n.nodeValue.trim(); if (!t || t.length < 4 || !el || el.closest('script,style,textarea,input,code,.hc-list,[contenteditable]')) continue; if (!el.offsetParent) continue; if (R.test(t) && !/[æøå]/i.test(t)) out.add(t.slice(0, 50)); }
       return [...out]; }, EN.source);
     worst = Math.max(worst, en.length); report.push((pg || 'home') + ' ' + en.length);
+    /* texts by name (Phase D 24): what's still matched on the English sentence only shrinks */
+    const hits = await p.evaluate(() => I18N.hits.size), named = await p.evaluate(() => document.querySelectorAll('[data-t]').length);
+    check(hits <= SENT[pg] && named > 20, (pg || 'home') + ': ' + named + ' texts by name, ' + hits + ' still matched on the English sentence (at most ' + SENT[pg] + ')');
     check(en.length <= BUDGET, (pg || 'home') + ': ' + en.length + ' English bits' + (en.length ? ' – e.g. ' + en.slice(0, 3).join(' | ') : ''));
   }
   console.log('  ' + report.join(' · ') + ' (worst ' + worst + ')');

@@ -36,7 +36,7 @@
           '<span class="ins-n"><b class="money">' + (x.cost ? esc(kr(x.cost)) + '<small>/yr</small>' : '–') + '</b><small>' + (x.excess ? 'excess ' + esc(kr(x.excess)) : 'no excess noted') + '</small></span>' +
           (st ? chip(esc(st.rel), st.over ? '#e66767' : st.soon ? '#c98500' : '#7a8794') : '') + '</li>';
       }).join('') + '</ul>' +
-      '<p class="muted hl-small">Before one renews, compare a couple of offers (finn.no/forsikring, or ask your bank) – it’s often cheaper to move. Fill in “What it covers” and the excess on each insurance paper.</p></section>';
+      '<p class="muted hl-small" data-t="ui.before-one-renews-compare-a-couple-of-of">Before one renews, compare a couple of offers (finn.no/forsikring, or ask your bank) – it’s often cheaper to move. Fill in “What it covers” and the excess on each insurance paper.</p></section>';
   }
 
   /* ================= Plant care ================= */

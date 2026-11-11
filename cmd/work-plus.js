@@ -68,7 +68,7 @@
     box.innerHTML = l.map(function (x, i) {
       return '<span class="fdv-chip' + (x.mine ? ' mine' : '') + '"><button type="button" data-fdvph="' + i + '" title="' + esc(x.action ? '→ ' + x.action : '') + '">' + (x.tg ? '<i class="tgd tg' + x.tg + '"></i>' : '') + esc(x.text) + '</button>' +
         (x.mine ? '<button type="button" class="fdv-chx" data-fdvphdel="' + esc(x.id) + '" aria-label="Remove phrase"><i class="bi bi-x"></i></button>' : '') + '</span>';
-    }).join('') + '<button type="button" class="fdv-chip fdv-save" data-fdvphsave title="Save what you’ve typed as a phrase for this part"><i class="bi bi-star"></i> <span>Save phrase</span></button>';
+    }).join('') + '<button type="button" class="fdv-chip fdv-save" data-fdvphsave title="Save what you’ve typed as a phrase for this part" data-t-title="ui.save-what-youve-typed-as-a-phrase-for-th"><i class="bi bi-star"></i> <span data-t="ui.save-phrase">Save phrase</span></button>';
     box._list = l;
   }
   var host = document.querySelector('[data-tool="fdv"]');
@@ -147,12 +147,12 @@
     var st = { ym: ms.indexOf(lastM) > -1 ? lastM : ms[0], key: null, no: '', rate: '' };
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-ivclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span>' +
-      '<select data-ivym aria-label="Month"></select><select data-ivwho aria-label="Client"></select>' +
+      '<select data-ivym aria-label="Month" data-t-aria-label="ui.month"></select><select data-ivwho aria-label="Client" data-t-aria-label="ui.client"></select>' +
       '<button type="button" class="pill-btn" data-ivprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
       '<div class="iv-opts"><label>Invoice no. <input data-ivno inputmode="numeric" maxlength="20"></label><label data-ivratel hidden>Rate <input data-ivrate inputmode="decimal" placeholder="kr/h" maxlength="10"></label>' +
-      '<span class="seg lp-seg"><button type="button" data-ivby="entry">Each entry</button><button type="button" data-ivby="day">Per day</button><button type="button" data-ivby="total">One line</button></span>' +
+      '<span class="seg lp-seg"><button type="button" data-ivby="entry" data-t="ui.each-entry">Each entry</button><button type="button" data-ivby="day" data-t="ui.per-day">Per day</button><button type="button" data-ivby="total" data-t="ui.one-line">One line</button></span>' +
       '<label class="rp-opt"><input type="checkbox" data-ivvat> 25 % VAT</label><button type="button" class="text-btn" data-ivcopy><i class="bi bi-clipboard"></i> Copy as text</button></div>' +
-      '<p class="rp-hint">A draft to check before you send it – in the print window, choose <b>Save as PDF</b>. Your details are in Settings → Work.</p><article class="rp-doc iv-doc"></article>';
+      '<p class="rp-hint">A draft to check before you send it – in the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b>. Your details are in Settings → Work.</p><article class="rp-doc iv-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc'), C = pcfg(), vat = C.vat;
     bg.querySelector('[data-ivvat]').checked = vat;
@@ -193,17 +193,17 @@
       var issued = dkey(new Date()), due = new Date(); due.setDate(due.getDate() + C2.payDays);
       var dfmt = function (k) { return fromKey(k).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); };
       var client = (g[st.key] || {}).name || '';
-      doc.innerHTML = '<header class="rp-head iv-head"><div><p class="rp-kick">Invoice draft</p><h1>' + esc(me.name || 'Your name') + '</h1>' +
+      doc.innerHTML = '<header class="rp-head iv-head"><div><p class="rp-kick" data-t="ui.invoice-draft">Invoice draft</p><h1>' + esc(me.name || 'Your name') + '</h1>' +
         '<p class="rp-addr">' + [C2.addr, me.email, me.phone, C2.org ? 'Org. no. ' + C2.org + (vat ? ' MVA' : '') : ''].filter(Boolean).map(esc).join('<br>') + '</p></div>' +
-        '<div class="iv-no"><small>Invoice</small><b>' + esc(no) + '</b></div></header>' +
-        '<table class="rp-meta"><tr><th>To</th><td><b>' + esc(client) + '</b></td><th>Invoice date</th><td>' + esc(dfmt(issued)) + '</td></tr>' +
-        '<tr><th>Period</th><td>' + esc(mName(st.ym)) + '</td><th>Due date</th><td>' + esc(dfmt(dkey(due))) + '</td></tr>' +
-        '<tr><th>Hours</th><td>' + esc(nf2.format(hrs)) + '</td><th>Pay to</th><td>' + esc(C2.account || '–') + '</td></tr></table>' +
-        '<table class="rp-todo iv-lines"><thead><tr>' + (INV.by === 'total' ? '' : '<th>Date</th>') + '<th>Description</th><th class="n">Hours</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>' +
+        '<div class="iv-no"><small data-t="ui.invoice">Invoice</small><b>' + esc(no) + '</b></div></header>' +
+        '<table class="rp-meta"><tr><th data-t="ui.to">To</th><td><b>' + esc(client) + '</b></td><th data-t="ui.invoice-date">Invoice date</th><td>' + esc(dfmt(issued)) + '</td></tr>' +
+        '<tr><th data-t="ui.period">Period</th><td>' + esc(mName(st.ym)) + '</td><th data-t="ui.due-date">Due date</th><td>' + esc(dfmt(dkey(due))) + '</td></tr>' +
+        '<tr><th data-t="ui.hours">Hours</th><td>' + esc(nf2.format(hrs)) + '</td><th data-t="ui.pay-to">Pay to</th><td>' + esc(C2.account || '–') + '</td></tr></table>' +
+        '<table class="rp-todo iv-lines"><thead><tr>' + (INV.by === 'total' ? '' : '<th data-t="ui.date">Date</th>') + '<th data-t="ui.description">Description</th><th class="n" data-t="ui.hours">Hours</th><th class="n" data-t="ui.rate">Rate</th><th class="n" data-t="ui.amount">Amount</th></tr></thead><tbody>' +
         L.map(function (x) { return '<tr>' + (INV.by === 'total' ? '' : '<td class="iv-d">' + esc(fromKey(x.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</td>') + '<td>' + esc(x.text) + '</td><td class="n">' + nf2.format(x.h) + '</td><td class="n">' + (x.rate ? kr2(x.rate) : '<span class="iv-miss">–</span>') + '</td><td class="n">' + kr2(x.sum) + '</td></tr>'; }).join('') +
-        '</tbody></table><table class="iv-tot"><tr><th>Total excl. VAT</th><td>' + kr2(ex) + ' kr</td></tr>' + (vat ? '<tr><th>VAT 25 %</th><td>' + kr2(mva) + ' kr</td></tr>' : '') +
-        '<tr class="iv-sum"><th>Amount due</th><td>' + kr2(ex + mva) + ' kr</td></tr></table>' +
-        (r.needRate && !(parseFloat(st.rate) > 0) ? '<p class="iv-warn">No hourly rate for this client – add one above, or on the client in Time per client.</p>' : '') +
+        '</tbody></table><table class="iv-tot"><tr><th data-t="ui.total-excl-vat">Total excl. VAT</th><td>' + kr2(ex) + ' kr</td></tr>' + (vat ? '<tr><th data-t="ui.vat-25">VAT 25 %</th><td>' + kr2(mva) + ' kr</td></tr>' : '') +
+        '<tr class="iv-sum"><th data-t="ui.amount-due">Amount due</th><td>' + kr2(ex + mva) + ' kr</td></tr></table>' +
+        (r.needRate && !(parseFloat(st.rate) > 0) ? '<p class="iv-warn" data-t="ui.no-hourly-rate-for-this-client-add-one-a">No hourly rate for this client – add one above, or on the client in Time per client.</p>' : '') +
         '<footer class="rp-foot">' + esc([me.name, C2.org ? 'Org. no. ' + C2.org : '', C2.account ? 'Account ' + C2.account : '', 'Invoice ' + no].filter(Boolean).join(' · ')) + '</footer>';
       st.total = ex + mva; st.client = client; st.lines = L; st.ex = ex; st.mva = mva; st.dueK = dkey(due);
     }
@@ -255,7 +255,7 @@
       if (box.contains(document.activeElement)) return;
       var ph = myPhrases();
       box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-building-check"></i> FDV inspections</p><div class="st-group">' +
-        '<div class="cl-group cl-group-text kit-text wp-parts"><span class="kit-lbl">Your own building parts</span><textarea data-wpparts rows="3" placeholder="One per line, e.g. Garage, Balcony, Lift" maxlength="1000">' + esc(myParts().join('\n')) + '</textarea><small class="kit-help">They’re added to the list of parts in every inspection.</small></div>' +
+        '<div class="cl-group cl-group-text kit-text wp-parts"><span class="kit-lbl" data-t="ui.your-own-building-parts">Your own building parts</span><textarea data-wpparts rows="3" placeholder="One per line, e.g. Garage, Balcony, Lift" data-t-placeholder="ui.one-per-line-e-g-garage-balcony-lift" maxlength="1000">' + esc(myParts().join('\n')) + '</textarea><small class="kit-help" data-t="ui.theyre-added-to-the-list-of-parts-in-eve">They’re added to the list of parts in every inspection.</small></div>' +
         '<div class="st-row"><span>Your phrases<small class="st-rsub">' + (ph.length ? ph.length + ' saved – remove them on the chips in an inspection' : 'Save one with ☆ in an inspection') + '</small></span></div></div>';
     }
     pg.addEventListener('change', function (e) {

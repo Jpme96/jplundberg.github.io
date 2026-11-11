@@ -233,7 +233,7 @@
         '<ul class="cr-list">' +
         '<li><span>' + L('Daily self-check', 'Daglig selvsjekk') + '</span><b class="' + (chk && (chk.issues || []).length ? 'neg' : '') + '">' + (chk ? ((chk.issues || []).length ? (chk.issues || []).length + L(' issue(s)', ' problem(er)') : L('Fine', 'Fint')) + ' · ' + ago(chk.t) : '–') + '</b></li>' +
         '<li><span>' + L('Errors logged', 'Feil logget') + '</span><b class="' + (errs.length ? 'neg' : '') + '">' + errs.length + '</b></li>' +
-        '<li><span>Apple Health</span><b>' + (Fe && Fe.on('ahealth') ? ago(dst.healthPull) : L('off', 'av')) + '</b></li>' +
+        '<li><span data-t="ui.apple-health">Apple Health</span><b>' + (Fe && Fe.on('ahealth') ? ago(dst.healthPull) : L('off', 'av')) + '</b></li>' +
         '<li><span>' + L('App version', 'App-versjon') + '</span><b id="crVer">…</b></li></ul>' +
         (errs.length ? '<ul class="cr-errs">' + errs.slice(0, 4).map(function (e) { return '<li>' + esc(String(e.msg || e.m || e.message || e).slice(0, 110)) + (e.n > 1 ? ' ×' + e.n : '') + '</li>'; }).join('') + '</ul>' : ''));
       C['clean'] = window.AdminClean ? window.AdminClean.card(card) : '';

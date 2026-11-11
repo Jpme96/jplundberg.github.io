@@ -676,11 +676,11 @@
     fetch('/cmd/api/vault?snaps=1', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
       var all = d.snaps || [], l = all.slice(0, snapsAll ? 120 : 14);
       box.innerHTML = l.length ? l.map(function (k) {
-        return '<li><span>' + new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: k.slice(0, 4) === String(new Date().getFullYear()) ? undefined : 'numeric' }) + '<small class="muted"> · as it was at the start of the day</small></span><span><button type="button" class="text-btn" data-snappick="' + k + '">Pick items</button> <button type="button" class="text-btn" data-snap="' + k + '">Restore</button></span></li>';
+        return '<li><span>' + new Date(k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: k.slice(0, 4) === String(new Date().getFullYear()) ? undefined : 'numeric' }) + '<small class="muted" data-t="ui.as-it-was-at-the-start-of-the-day"> · as it was at the start of the day</small></span><span><button type="button" class="text-btn" data-snappick="' + k + '">Pick items</button> <button type="button" class="text-btn" data-snap="' + k + '">Restore</button></span></li>';
       }).join('') + (all.length > l.length ? '<li><button type="button" class="text-btn" data-snapsall>Show all ' + all.length + ' days</button></li>' : '') +
         (d.backup ? '<li class="muted"><small>Daily encrypted backup kept for 90 days · last ' + new Date(d.backup + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</small></li>' : '')
-        : '<li class="muted">None yet – the first one is kept tomorrow, after your first change.</li>';
-    }).catch(function () { box.innerHTML = '<li class="muted">Paste the newest worker.js into your Worker to keep daily versions on the server.</li>'; });
+        : '<li class="muted" data-t="ui.none-yet-the-first-one-is-kept-tomorrow">None yet – the first one is kept tomorrow, after your first change.</li>';
+    }).catch(function () { box.innerHTML = '<li class="muted" data-t="ui.paste-the-newest-worker-js-into-your-wor">Paste the newest worker.js into your Worker to keep daily versions on the server.</li>'; });
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-snap]'); if (!b) return;

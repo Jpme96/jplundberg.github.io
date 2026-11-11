@@ -89,7 +89,7 @@
     var prev3 = [1, 2, 3].map(function (i) { var k = shiftYm(ym, -i); return money(k, function (x) { return x.slice(0, 7) === k; }); });
     var avg = sum(prev3, function (m) { return m.spent; }) / 3;
     var left = M.income - M.fixed - M.spent;
-    var html = '<p class="rv-kicker">Monthly check-in</p><h2>' + esc(mName(ym, { month: 'long', year: 'numeric' })) + '</h2>';
+    var html = '<p class="rv-kicker" data-t="ui.monthly-check-in">Monthly check-in</p><h2>' + esc(mName(ym, { month: 'long', year: 'numeric' })) + '</h2>';
     var tiles = '';
     if (M.income || M.spent) tiles += big('wallet2', '#11a597', kr(M.spent), 'spent', avg ? (M.spent > avg ? '<span class="dn">' : '<span class="up">') + Math.round(Math.abs(M.spent - avg) / Math.max(avg, 1) * 100) + '% ' + (M.spent > avg ? 'more' : 'less') + '</span> than usual' : '');
     if (M.income) tiles += big('piggy-bank', left >= 0 ? '#22b35e' : '#e66767', kr(Math.abs(left)), left >= 0 ? 'left over' : 'over budget', left >= 0 ? Math.round(left / M.income * 100) + '% of income' : '');
@@ -144,7 +144,7 @@
     y = String(y);
     var from = y + '-01-01', to = y + '-12-31';
     var M = money(y, function (k) { return k.slice(0, 4) === y; });
-    var html = '<p class="rv-kicker">Year in review</p><h2>' + esc(y) + '</h2>', tiles = '';
+    var html = '<p class="rv-kicker" data-t="ui.year-in-review">Year in review</p><h2>' + esc(y) + '</h2>', tiles = '';
     var trips = tripsIn(from, to), countries = {}, daysAway = 0;
     trips.forEach(function (t) {
       if (t.place && t.place.cc && t.place.cc !== 'NO') countries[t.place.cc] = t.place.country;
@@ -189,9 +189,9 @@
   /* ---------- the sheet ---------- */
   var bg = document.createElement('div');
   bg.className = 'sr-bg rv-bg'; bg.hidden = true;
-  bg.innerHTML = '<div class="sr-box rv-box" role="dialog" aria-modal="true" aria-label="Review"><div class="rv-top">' +
-    '<div class="seg" id="rvKind"><button type="button" data-rk="month">Month</button><button type="button" data-rk="year">Year</button></div>' +
-    '<select id="rvPick" aria-label="Which"></select><button type="button" class="text-btn" data-rvclose>Close</button></div><div class="rv-body" id="rvBody"></div></div>';
+  bg.innerHTML = '<div class="sr-box rv-box" role="dialog" aria-modal="true" aria-label="Review" data-t-aria-label="ui.review"><div class="rv-top">' +
+    '<div class="seg" id="rvKind"><button type="button" data-rk="month" data-t="ui.month">Month</button><button type="button" data-rk="year" data-t="ui.year">Year</button></div>' +
+    '<select id="rvPick" aria-label="Which"></select><button type="button" class="text-btn" data-rvclose data-t="ui.close">Close</button></div><div class="rv-body" id="rvBody"></div></div>';
   document.body.appendChild(bg);
   var kind = 'month', key = '';
   function years() {

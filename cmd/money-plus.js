@@ -115,10 +115,10 @@
         tile('Found', String(list.length), list.length === 1 ? 'repeating payment' : 'repeating payments') +
         tile('Per month', esc(kr(perMonth)), 'still running') +
         tile('Not added', String(fresh.length), fresh.length ? 'to the budget yet' : 'all in the budget') + '</div>' +
-        (list.length ? '<ul class="mp-list">' + list.map(row).join('') + '</ul>' : '<p class="empty kit-empty">Nothing left to look at.</p>') +
+        (list.length ? '<ul class="mp-list">' + list.map(row).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.nothing-left-to-look-at">Nothing left to look at.</p>') +
         (ign.length ? '<button type="button" class="text-btn mp-more" data-rcshowign>' + (showIgnored ? 'Hide' : 'Show') + ' ' + ign.length + ' not repeating</button>' + (showIgnored ? '<ul class="mp-list">' + ign.map(row).join('') + '</ul>' : '') : '')
-      : '<p class="empty kit-empty">When the same shop or service charges you about once a month at the same price – in a bank import or what you log – it shows up here, so you can add it to the budget in one tap.</p>';
-    el.innerHTML = '<section class="card kit-card mp-card" id="recur"><div class="card-head"><h2><i class="bi bi-arrow-repeat"></i> Recurring payments</h2><div class="head-actions"><a class="text-btn" href="/cmd/?settings=finance" aria-label="Settings"><i class="bi bi-sliders"></i></a></div></div>' + body + '</section>';
+      : '<p class="empty kit-empty" data-t="ui.when-the-same-shop-or-service-charges-yo">When the same shop or service charges you about once a month at the same price – in a bank import or what you log – it shows up here, so you can add it to the budget in one tap.</p>';
+    el.innerHTML = '<section class="card kit-card mp-card" id="recur"><div class="card-head"><h2><i class="bi bi-arrow-repeat"></i> Recurring payments</h2><div class="head-actions"><a class="text-btn" href="/cmd/?settings=finance" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a></div></div>' + body + '</section>';
   }
   function tile(label, value, sub) { return '<div class="kit-tile" data-tk="' + esc(label) + '"><span>' + label + '</span><b>' + value + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
 
@@ -194,9 +194,9 @@
         : '<p class="muted">' + (owed >= 1 ? 'You owe ' + esc(p.name) + ' ' + esc(kr(owed)) + ' now.' : 'You don’t owe ' + esc(p.name) + ' anything yet.') + ' Type what you owe in all – if it’s more, the difference is noted as money ' + esc(p.name) + ' lent you. The monthly amount goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>') +
       '<div class="mp-grid">' +
         (a ? '' : '<label><span>' + (pre ? 'Your part to pay back, kr' : 'You owe in all, kr') + '</span><input name="total" inputmode="decimal" value="' + (pre && pre.total > 0 ? esc(String(Math.round(pre.total))) : owed >= 1 ? esc(String(Math.round(owed))) : '') + '" placeholder="e.g. 50 000" autocomplete="off"></label>') +
-        '<label><span>Each month, kr</span><input name="pay" inputmode="decimal" value="' + (a ? esc(String(a.pay)) : '') + '" placeholder="e.g. 2 000" autocomplete="off"></label>' +
-        '<label><span>First payment</span><input name="first" type="date" value="' + esc(first) + '"></label>' +
-        (a ? '' : '<label><span>What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" value="' + esc(pre && pre.note || '') + '" autocomplete="off"></label>') +
+        '<label><span data-t="ui.each-month-kr">Each month, kr</span><input name="pay" inputmode="decimal" value="' + (a ? esc(String(a.pay)) : '') + '" placeholder="e.g. 2 000" autocomplete="off"></label>' +
+        '<label><span data-t="ui.first-payment">First payment</span><input name="first" type="date" value="' + esc(first) + '"></label>' +
+        (a ? '' : '<label><span data-t="ui.what-for-optional">What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" value="' + esc(pre && pre.note || '') + '" autocomplete="off"></label>') +
       '</div><p class="mp-prev" id="pbPrev"></p>' +
       '<div class="lf-foot">' + (a ? '<button type="button" class="text-btn danger" data-pbstop><i class="bi bi-stop-circle"></i> Stop</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-pbsave><i class="bi bi-check2"></i> Save</button></div>';
     function vals() { return { total: a ? +a.balance : num((box.querySelector('[name="total"]') || {}).value), pay: num(box.querySelector('[name="pay"]').value), first: box.querySelector('[name="first"]').value }; }
@@ -342,12 +342,12 @@
             '<span class="kit-x"><b>' + esc(x.p.name) + '</b><small class="' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(txt) + '</small></span></button>' +
             (Math.abs(b) >= 1 ? '<span class="mp-acts"><button type="button" class="pill-btn sm" data-shsettle="' + esc(x.p.id) + '">Settle up</button></span>' : '') + '</li>';
         }).join('') + '</ul>' +
-        (recent.length ? '<h3 class="lp-h3">Latest</h3><ul class="mp-list mp-recent">' + recent.map(function (x) {
+        (recent.length ? '<h3 class="lp-h3" data-t="ui.latest">Latest</h3><ul class="mp-list mp-recent">' + recent.map(function (x) {
           var others = Object.keys(x.shares || {}).filter(function (k) { return k !== 'me'; }).map(function (k) { return pname(s, k); });
           return '<li class="mp-row"><button type="button" class="kit-main" data-shitem="' + esc(x.id) + '"><span class="kit-ic" style="--c:' + (CATC[x.cat] || CATC.other) + '"><i class="bi bi-people"></i></span><span class="kit-x"><b>' + esc(x.note || 'Shared') + '</b><small>' +
             esc(fmt(x.date) + ' · ' + kr(x.total) + ' · ' + (x.payer === 'me' ? 'you paid' : 'paid by ' + pname(s, x.payer)) + ' · shared with ' + others.join(', ')) + '</small></span><span class="money">' + esc(kr((x.shares || {}).me || 0)) + '</span></button></li>';
         }).join('') + '</ul>' : '')
-      : '<p class="empty kit-empty">Paid for dinner, a cabin or the groceries with someone? Split it here – only your share counts in your spending, and you see who owes what until you settle up.</p>';
+      : '<p class="empty kit-empty" data-t="ui.paid-for-dinner-a-cabin-or-the-groceries">Paid for dinner, a cabin or the groceries with someone? Split it here – only your share counts in your spending, and you see who owes what until you settle up.</p>';
     el.innerHTML = '<section class="card kit-card mp-card" id="shared"><div class="card-head"><h2><i class="bi bi-people"></i> Shared expenses</h2><div class="head-actions"><button type="button" class="text-btn" data-shnew><i class="bi bi-plus-lg"></i> Split</button></div></div>' + body + '</section>';
   }
 
@@ -363,7 +363,7 @@
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-x]')) close(); });
     return { box: box, close: close };
   }
-  function head(icon, t) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>'; }
+  function head(icon, t) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>'; }
 
   /* split a payment: who paid, with whom, equally or by amount – optionally from an expense you already have */
   function splitSheet(item, preset) {
@@ -394,15 +394,15 @@
         return x.payer === 'me' ? esc(pname(s, k)) + ' owes you <b>' + esc(kr(sv[k])) + '</b>' : x.payer === k ? 'You owe ' + esc(pname(s, k)) + ' <b>' + esc(kr(sv.me)) + '</b>' : '';
       }).filter(Boolean).join(' · ') + ' · your share ' + esc(kr(sv.me)) : 'Pick who you shared it with.';
       box.innerHTML = head('people', isNew ? 'Split a payment' : 'Shared payment') +
-        (isNew && recentEx.length && !x.exp ? '<p class="mp-lbl">From your spending</p><div class="lf-chips mp-chips">' + recentEx.map(function (e) { return '<button type="button" class="lf-chip" data-shfrom="' + esc(e.id) + '">' + esc((e.note || CAT[e.cat] || 'Expense') + ' · ' + kr(e.amount)) + '</button>'; }).join('') + '</div>' : '') +
+        (isNew && recentEx.length && !x.exp ? '<p class="mp-lbl" data-t="ui.from-your-spending">From your spending</p><div class="lf-chips mp-chips">' + recentEx.map(function (e) { return '<button type="button" class="lf-chip" data-shfrom="' + esc(e.id) + '">' + esc((e.note || CAT[e.cat] || 'Expense') + ' · ' + kr(e.amount)) + '</button>'; }).join('') + '</div>' : '') +
         (x.exp ? '<p class="muted mp-from"><i class="bi bi-link-45deg"></i> From your spending – it will count only your share</p>' : '') +
         '<div class="mp-grid"><input name="note" placeholder="What was it? e.g. Dinner at Lofoten" value="' + esc(x.note) + '" maxlength="60" autocomplete="off">' +
         '<input name="total" placeholder="Total, kr" inputmode="decimal" value="' + esc(x.total === '' ? '' : String(x.total).replace('.', ',')) + '" autocomplete="off">' +
-        '<select name="cat" aria-label="Category">' + Object.keys(CAT).map(function (k) { return '<option value="' + k + '"' + (k === x.cat ? ' selected' : '') + '>' + CAT[k] + '</option>'; }).join('') + '</select><input name="date" type="date" value="' + esc(x.date) + '" aria-label="Date"></div>' +
-        '<p class="mp-lbl">Shared with</p><div class="lf-chips mp-chips">' + s.people.map(function (p) { return '<button type="button" class="lf-chip" data-shwith="' + esc(p.id) + '" aria-pressed="' + (withIds.indexOf(p.id) > -1) + '">' + esc(p.name) + '</button>'; }).join('') +
-        '<span class="mp-newp"><input name="np" placeholder="New person" value="' + esc(newPerson) + '" maxlength="30" autocomplete="off"><button type="button" class="icon-btn sm" data-shaddp aria-label="Add person"><i class="bi bi-plus-lg"></i></button></span></div>' +
-        (withIds.length ? '<p class="mp-lbl">Who paid?</p><div class="seg lf-seg">' + ['me'].concat(withIds).map(function (k) { return '<button type="button" data-shpayer="' + esc(k) + '" aria-pressed="' + (x.payer === k) + '">' + esc(k === 'me' ? 'You' : pname(s, k)) + '</button>'; }).join('') + '</div>' +
-          '<p class="mp-lbl">Split</p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '">Equally</button><button type="button" data-shmode="pct" aria-pressed="' + (mode === 'pct') + '">By %</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '">By amount</button></div>' +
+        '<select name="cat" aria-label="Category" data-t-aria-label="ui.category">' + Object.keys(CAT).map(function (k) { return '<option value="' + k + '"' + (k === x.cat ? ' selected' : '') + '>' + CAT[k] + '</option>'; }).join('') + '</select><input name="date" type="date" value="' + esc(x.date) + '" aria-label="Date"></div>' +
+        '<p class="mp-lbl" data-t="ui.shared-with">Shared with</p><div class="lf-chips mp-chips">' + s.people.map(function (p) { return '<button type="button" class="lf-chip" data-shwith="' + esc(p.id) + '" aria-pressed="' + (withIds.indexOf(p.id) > -1) + '">' + esc(p.name) + '</button>'; }).join('') +
+        '<span class="mp-newp"><input name="np" placeholder="New person" value="' + esc(newPerson) + '" maxlength="30" autocomplete="off"><button type="button" class="icon-btn sm" data-shaddp aria-label="Add person" data-t-aria-label="ui.add-person"><i class="bi bi-plus-lg"></i></button></span></div>' +
+        (withIds.length ? '<p class="mp-lbl" data-t="ui.who-paid">Who paid?</p><div class="seg lf-seg">' + ['me'].concat(withIds).map(function (k) { return '<button type="button" data-shpayer="' + esc(k) + '" aria-pressed="' + (x.payer === k) + '">' + esc(k === 'me' ? 'You' : pname(s, k)) + '</button>'; }).join('') + '</div>' +
+          '<p class="mp-lbl" data-t="ui.split">Split</p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '">Equally</button><button type="button" data-shmode="pct" aria-pressed="' + (mode === 'pct') + '">By %</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '">By amount</button></div>' +
           (mode === 'pct' ? '<div class="mp-pct"><label>You pay<input inputmode="decimal" data-shpct value="' + esc(String(myPct).replace('.', ',')) + '" aria-label="Your share in %"><span>%</span></label><div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-shpctq="' + v + '" aria-pressed="' + (myPct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div></div>' : '') +
           (mode === 'amount' ? '<div class="mp-amts">' + withIds.map(function (k) { return '<label>' + esc(pname(s, k)) + '<input inputmode="decimal" data-shamt="' + esc(k) + '" value="' + esc(custom[k] == null ? '' : String(custom[k]).replace('.', ',')) + '" placeholder="kr"></label>'; }).join('') + '<label>You<b>' + esc(kr(sv.me)) + '</b></label></div>' : '') : '') +
         (!x.exp && x.payer !== 'me' && withIds.length ? '<label class="lf-check"><input type="checkbox" name="add"' + (x.add !== false ? ' checked' : '') + '> Add your share to Spending</label>' : '') +
@@ -437,7 +437,7 @@
         if (!(tot > 0)) { var ti = box.querySelector('[name="total"]'); if (ti) ti.focus(); return; }
         if (!withIds.length) { var np = box.querySelector('[name="np"]'); if (np) np.focus(); return; }
         var sv = shares();
-        if (sv.me < 0) { box.querySelector('#mpPrev').innerHTML = '<span class="mp-neg">The amounts add up to more than the total.</span>'; return; }
+        if (sv.me < 0) { box.querySelector('#mpPrev').innerHTML = '<span class="mp-neg" data-t="ui.the-amounts-add-up-to-more-than-the-tota">The amounts add up to more than the total.</span>'; return; }
         x.total = tot; x.shares = sv; x.mode = mode; if (mode === 'pct') x.pct = myPct; else delete x.pct;
         save(x, item, s); S.close();
       }
@@ -484,7 +484,7 @@
       '<p class="muted">' + (sq ? 'You’re all square. Paid ' + esc(p.name) + ' something ahead, or got money from them? Add it here and it counts in what you owe each other.' : esc(theyPay ? p.name + ' owes you ' + kr(b) : 'You owe ' + p.name + ' ' + kr(-b)) + '. How much was paid? Only part of it (a down payment)? Type that amount – the rest stays owed.') + '</p>' +
       '<div class="seg lf-seg"><button type="button" data-dir="in" aria-pressed="' + theyPay + '">' + esc(p.name) + ' paid you</button><button type="button" data-dir="out" aria-pressed="' + !theyPay + '">You paid ' + esc(p.name) + '</button></div>' +
       '<div class="mp-grid"><input name="amt" inputmode="decimal" value="' + (sq ? '' : esc(String(Math.round(Math.abs(b) * 100) / 100).replace('.', ','))) + '" placeholder="Amount, kr" aria-label="Amount, kr"><input name="date" type="date" value="' + dkey(new Date()) + '" aria-label="Date paid"></div>' +
-      '<input name="note" placeholder="Note (optional) – e.g. Vipps, first part" maxlength="60" autocomplete="off" aria-label="Note">' +
+      '<input name="note" placeholder="Note (optional) – e.g. Vipps, first part" data-t-placeholder="ui.note-optional-e-g-vipps-first-part" maxlength="60" autocomplete="off" aria-label="Note">' +
       '<button type="button" class="text-btn" data-shpb><i class="bi bi-calendar2-check"></i> ' + (owePlans(pid).length ? 'Paying back ' + esc(p.name) + ' each month – change' : 'I owe ' + esc(p.name) + ' – pay back each month') + '</button>' +
       '<div class="lf-foot">' + (sq ? '<span class="spacer"></span>' : '<button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Send a reminder</button>') + '<button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> ' + (sq ? 'Save' : 'Mark as paid') + '</button></div>';
     var dir = theyPay ? 'in' : 'out';
@@ -593,7 +593,7 @@
     function fill() {
       var box = document.getElementById('mpSet'); if (!box || (box.contains(document.activeElement) && document.activeElement.tagName === 'SELECT')) return;
       var ni = ignored().length;
-      box.innerHTML = '<p class="st-intro">Extras on the Finances page. Everything is worked out on this device from your own entries.</p>' +
+      box.innerHTML = '<p class="st-intro" data-t="ui.extras-on-the-finances-page-everything-i">Extras on the Finances page. Everything is worked out on this device from your own entries.</p>' +
         subh('arrow-repeat', 'Recurring payments') + '<div class="st-group">' + feat('recur', 'Show the card', 'Charges that come back every month') + sel('months', 'Look back', [[3, '3 months'], [6, '6 months'], [12, '12 months']]) +
         sw('recurGlance', 'Suggest new ones in At a glance') + (ni ? '<button type="button" class="st-row st-btn" data-funign><span><i class="bi bi-arrow-counterclockwise"></i> Suggest the ' + ni + ' I waved away again</span></button>' : '') + '</div>' +
         subh('people', 'Shared expenses') + '<div class="st-group">' + feat('shared', 'Show the card', 'Split payments and see who owes what') + sel('split', 'New splits start', [['equal', 'Equally'], ['pct', 'By your usual %'], ['amount', 'By amount']]) +

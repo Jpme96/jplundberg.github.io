@@ -205,7 +205,7 @@
     var r = F.travel().recent;
     $('tvRecent').hidden = !r.length || shown.length > 0;
     var extra = recentAll ? 0 : Math.max(0, r.length - 3);
-    $('tvRecent').innerHTML = r.length ? '<p class="tv-label tv-label-row"><span>Recent</span><button type="button" class="link-btn tv-clear" data-rclear>Clear</button></p>' + r.slice(0, r.length - extra).map(function (x, i) {
+    $('tvRecent').innerHTML = r.length ? '<p class="tv-label tv-label-row"><span data-t="ui.recent">Recent</span><button type="button" class="link-btn tv-clear" data-rclear data-t="ui.clear">Clear</button></p>' + r.slice(0, r.length - extra).map(function (x, i) {
       return '<button type="button" class="tv-chip" data-r="' + i + '"><i class="bi bi-clock-history"></i><span class="tv-rn">' + esc(x.from.name) + '</span><i class="bi bi-arrow-right"></i><span class="tv-rn">' + esc(x.to.name) + '</span></button>';
     }).join('') + (extra ? '<button type="button" class="tv-more" data-rmore>' + 'Show ' + extra + ' more' + '</button>' : '') : '';
   }
@@ -271,7 +271,7 @@
     var t = when === 'arrive' && $('tvTime').value ? new Date($('tvTime').value) : null;
     $('tvContext').innerHTML = '<i class="bi bi-flag"></i><span>Getting to <b>' + esc(context.title || (to ? to.name : '')) + '</b>' +
       (t ? ' · arrive by ' + hm(t) + (context.note ? ' (' + esc(context.note) + ')' : '') : '') + '</span>' +
-      '<button type="button" class="tv-context-x" id="tvContextX" aria-label="Clear"><i class="bi bi-x-lg"></i></button>';
+      '<button type="button" class="tv-context-x" id="tvContextX" aria-label="Clear" data-t-aria-label="ui.clear"><i class="bi bi-x-lg"></i></button>';
   }
   $('tvContext').addEventListener('click', function (e) {
     if (!e.target.closest('#tvContextX')) return;
@@ -324,7 +324,7 @@
       var pack = trip.pack || [], packed = pack.filter(function (x) { return x.done; }).length;
       cards.push('<button type="button" class="tv-nx tv-nx-trip" data-opentrip="' + esc(trip.id) + '">' +
         '<span class="k"><i class="bi bi-suitcase-lg"></i> ' + (days > 0 ? 'In ' + days + ' day' + (days > 1 ? 's' : '') : 'Travelling now') + '</span>' +
-        '<b>' + esc(trip.name) + (trip.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b><span class="s">' + esc(rangeLabel(trip)) + (pack.length ? ' · packed ' + packed + '/' + pack.length : '') + '</span></button>');
+        '<b>' + esc(trip.name) + (trip.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared" data-t-title="ui.shared"></i>' : '') + '</b><span class="s">' + esc(rangeLabel(trip)) + (pack.length ? ' · packed ' + packed + '/' + pack.length : '') + '</span></button>');
     }
     /* the next calendar events with a place, today and tomorrow */
     var evs = C ? C.occurrences(now, C.addDays(C.day0(now), 2)).filter(function (o) {

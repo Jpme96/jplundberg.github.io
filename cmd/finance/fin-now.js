@@ -44,7 +44,7 @@
     }
     var trust = [];
     if (real && age != null) trust.push(age <= 1 ? 'balances up to date' : '<span class="' + (age > 7 ? 'soon' : '') + '">balances ' + age + ' days old</span>');
-    if (!real) trust.push('<button type="button" class="text-btn" data-fnupd>Add your balances</button> for the real number');
+    if (!real) trust.push('<button type="button" class="text-btn" data-fnupd data-t="ui.add-your-balances">Add your balances</button> for the real number');
     trust.push(imp == null ? 'no import yet' : imp === 0 ? 'imported today' : 'last import ' + imp + ' day' + (imp === 1 ? '' : 's') + ' ago');
     box.innerHTML =
       '<p class="fh-k">' + (real ? 'Free to use ' : 'Left in your budget ') + (per.byPayday ? 'until payday' : 'this month') + '</p>' +
@@ -54,7 +54,7 @@
       '<div class="fh-parts">' + parts.map(function (x) { return '<span><small>' + x[0] + '</small>' + money(x[1], x[2]) + '</span>'; }).join('') + '</div>' +
       paceLine +
       '<div class="fh-foot"><span class="muted">' + trust.join(' · ') + '</span><span class="fh-acts"><button type="button" class="icon-btn sm" data-fnupd aria-label="Update balances" title="Update balances"><i class="bi bi-pencil"></i></button>' +
-        '<a class="icon-btn sm" href="#import" aria-label="Import from your bank" title="Import from your bank"><i class="bi bi-upload"></i></a>' +
+        '<a class="icon-btn sm" href="#import" aria-label="Import from your bank" data-t-aria-label="ui.import-from-your-bank" title="Import from your bank"><i class="bi bi-upload"></i></a>' +
         '<button type="button" class="icon-btn sm" data-qascan aria-label="Scan a receipt" title="Scan a receipt"><i class="bi bi-camera"></i></button></span></div>';
   }
 
@@ -73,17 +73,17 @@
         });
       } catch (e) {}
     }
-    if (!m.known && (d.budget.income.length || d.budget.fixed.length)) out.push({ k: 'bal', icon: 'bank2', c: '#8a6fdf', t: 'Add what’s in your accounts', s: 'Then the number above is what you can really use, not just the plan', acts: '<button type="button" class="pill-btn sm" data-fnupd>Add balances</button>' });
-    else if (m.known && m.oldest && daysAgo(m.oldest) > 7) out.push({ k: 'old', icon: 'clock-history', c: '#c98500', t: 'Your balances are ' + daysAgo(m.oldest) + ' days old', s: 'Import your bank files or type the new balances', acts: '<a class="pill-btn sm" href="#import">Import</a><button type="button" class="text-btn" data-fnupd>Update</button>' });
-    if (m.missing && m.missing.length && m.known) out.push({ k: 'miss', icon: 'question-circle', c: '#6b6d73', t: 'No balance for ' + esc(m.missing.map(function (a) { return a.label; }).join(', ')), s: 'They’re left out of the number above and your net worth', acts: '<button type="button" class="text-btn" data-fnupd>Add</button>' });
-    list.filter(function (a) { return a.kind === 'credit' && !a.due; }).slice(0, 1).forEach(function (a) { out.push({ k: 'due:' + a.id, icon: 'credit-card', c: '#d95926', t: 'When is the ' + esc(a.label) + ' bill due?', s: 'Then you get a reminder and it shows in the next 14 days', acts: '<button type="button" class="text-btn" data-fsopen="0">Set the day</button>' }); });
+    if (!m.known && (d.budget.income.length || d.budget.fixed.length)) out.push({ k: 'bal', icon: 'bank2', c: '#8a6fdf', t: 'Add what’s in your accounts', s: 'Then the number above is what you can really use, not just the plan', acts: '<button type="button" class="pill-btn sm" data-fnupd data-t="ui.add-balances">Add balances</button>' });
+    else if (m.known && m.oldest && daysAgo(m.oldest) > 7) out.push({ k: 'old', icon: 'clock-history', c: '#c98500', t: 'Your balances are ' + daysAgo(m.oldest) + ' days old', s: 'Import your bank files or type the new balances', acts: '<a class="pill-btn sm" href="#import" data-t="ui.import">Import</a><button type="button" class="text-btn" data-fnupd data-t="ui.update">Update</button>' });
+    if (m.missing && m.missing.length && m.known) out.push({ k: 'miss', icon: 'question-circle', c: '#6b6d73', t: 'No balance for ' + esc(m.missing.map(function (a) { return a.label; }).join(', ')), s: 'They’re left out of the number above and your net worth', acts: '<button type="button" class="text-btn" data-fnupd data-t="ui.add">Add</button>' });
+    list.filter(function (a) { return a.kind === 'credit' && !a.due; }).slice(0, 1).forEach(function (a) { out.push({ k: 'due:' + a.id, icon: 'credit-card', c: '#d95926', t: 'When is the ' + esc(a.label) + ' bill due?', s: 'Then you get a reminder and it shows in the next 14 days', acts: '<button type="button" class="text-btn" data-fsopen="0" data-t="ui.set-the-day">Set the day</button>' }); });
     if (d.budget.income.length && !B.hasPayday(d)) out.push({ k: 'payday', icon: 'cash-stack', c: '#11a597', t: 'Give your salary a payday', s: 'The budget then runs from payday to payday', acts: '<button type="button" class="text-btn" data-fsopen="1">Set payday</button>' });
     var other = (d.expenses || []).filter(function (e) { return per.has(e.date) && (e.cat || 'other') === 'other'; });
     if (other.length >= 3) out.push({ k: 'other:' + per.startKey, icon: 'tags', c: '#c98500', t: other.length + ' expenses are filed under Other', s: money(sum(other)) + ' this period – sort them to see where the money goes', acts: '<button type="button" class="text-btn" data-fnsort>Sort them</button>' });
     var lim = d.budget.limits || {}, sp = {};
     (d.expenses || []).forEach(function (e) { if (per.has(e.date)) sp[e.cat] = (sp[e.cat] || 0) + (+e.amount || 0); });
     Object.keys(lim).filter(function (c) { return +lim[c] > 0 && sp[c] > lim[c]; }).slice(0, 1).forEach(function (c) {
-      out.push({ k: 'lim:' + c + ':' + per.startKey, icon: 'exclamation-octagon', c: '#e66767', t: (CATN[c] || c) + ' is over its limit', s: money(sp[c] - lim[c]) + ' over ' + money(lim[c]) + ' this period', acts: '<button type="button" class="text-btn" data-fngo=".card.limits">See limits</button>' });
+      out.push({ k: 'lim:' + c + ':' + per.startKey, icon: 'exclamation-octagon', c: '#e66767', t: (CATN[c] || c) + ' is over its limit', s: money(sp[c] - lim[c]) + ' over ' + money(lim[c]) + ' this period', acts: '<button type="button" class="text-btn" data-fngo=".card.limits" data-t="ui.see-limits">See limits</button>' });
     });
     out = out.filter(function (x) { return !off(x.k); }).slice(0, 4);
     card.hidden = !out.length;
@@ -142,7 +142,7 @@
     if (!ev.length) { box.innerHTML = '<p class="empty">Nothing due in the next 14 days. Give your fixed costs a due day (Accounts → Income &amp; fixed costs) and they show up here.</p>'; return; }
     var label = function (e) {
       var n = Math.round((e.real - t0) / 864e5);
-      return e.late ? '<span class="late">' + (-n) + ' day' + (n === -1 ? '' : 's') + ' late</span>' : n === 0 ? '<span class="soon">Today</span>' : n === 1 ? 'Tomorrow' : e.real.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      return e.late ? '<span class="late">' + (-n) + ' day' + (n === -1 ? '' : 's') + ' late</span>' : n === 0 ? '<span class="soon" data-t="ui.today">Today</span>' : n === 1 ? 'Tomorrow' : e.real.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     };
     box.innerHTML = '<ul class="fn-next">' + ev.map(function (e) {
       var tick = e.kind === 'bill' ? '<button type="button" class="check" data-fnpaid="' + esc(e.id) + '" data-ym="' + e.ym + '" aria-pressed="' + e.paid + '" aria-label="' + esc(e.name) + (e.paid ? ' – paid' : ' – mark as paid') + '"><i class="bi bi-check-lg"></i></button>'
@@ -170,13 +170,13 @@
     $('fnReviewNote').textContent = prev.name;
     box.innerHTML =
       '<ul class="pf-wf">' +
-        '<li><i class="dot" style="background:#8a6fdf"></i><span>Income</span><b>' + money(prev.income) + '</b></li>' +
+        '<li><i class="dot" style="background:#8a6fdf"></i><span data-t="ui.income">Income</span><b>' + money(prev.income) + '</b></li>' +
         '<li><i class="dot" style="background:#3987e5"></i><span>− Fixed costs</span><b>' + money(fixed) + '</b></li>' +
         '<li><i class="dot" style="background:#d95926"></i><span>− Spent<small>' + esc(top.map(function (c) { return (CATN[c] || c) + ' ' + kr(sp[c]); }).join(' · ')) + '</small></span><b>' + money(spent) + '</b></li>' +
         '<li class="pf-eq' + (kept < 0 ? ' neg' : '') + '"><i class="dot" style="background:var(--accent)"></i><span>= ' + (kept < 0 ? 'Over' : 'Kept') + '</span><b>' + money(kept) + '</b></li></ul>' +
       (over.length || under.length ? '<p class="muted fr-lim">' + (under.length ? '<i class="bi bi-check2-circle" style="color:var(--accent)"></i> Within the limit: ' + esc(under.map(function (c) { return CATN[c] || c; }).join(', ')) + '. ' : '') +
         (over.length ? '<i class="bi bi-exclamation-triangle" style="color:#c98500"></i> Over: ' + esc(over.map(function (c) { return (CATN[c] || c) + ' +' + kr(sp[c] - lim[c]); }).join(', ')) + '.' : '') + '</p>' : '') +
-      '<div class="form-actions">' + '<button type="button" class="text-btn" data-fnrevok>Done</button><span class="spacer"></span>' +
+      '<div class="form-actions">' + '<button type="button" class="text-btn" data-fnrevok data-t="ui.done">Done</button><span class="spacer"></span>' +
         (kept > 0 && g0 ? '<button type="button" class="pill-btn" data-fnkeep="' + esc(g0.id) + '" data-amt="' + Math.round(kept) + '">Put ' + esc(kr(kept)) + ' into ' + esc(g0.name) + '</button>' : '') + '</div>';
   }
 

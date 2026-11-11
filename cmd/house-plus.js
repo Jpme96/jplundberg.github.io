@@ -73,7 +73,7 @@
         return '<li class="hs-item' + (d ? ' done' : '') + '"><label><input type="checkbox" data-hstick="' + esc(key + '|' + x.id) + '"' + (d ? ' checked' : '') + '><i class="bi bi-' + x.icon + '"></i><span' + (x.mine ? ' data-noi18n' : '') + '>' + esc(x.text) + '</span>' + (d ? '<small>' + esc(fromKey(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small>' : '') + '</label>' +
           (editS ? '<button type="button" class="icon-btn sm" data-hsdel="' + esc(sid + '|' + x.id) + '" aria-label="Remove"><i class="bi bi-x"></i></button>' : '') + '</li>';
       }).join('') + '</ul>' +
-      (editS ? '<form class="hs-add" data-hsadd="' + sid + '"><input name="t" placeholder="Add your own, e.g. Take in the boat" maxlength="80" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' +
+      (editS ? '<form class="hs-add" data-hsadd="' + sid + '"><input name="t" placeholder="Add your own, e.g. Take in the boat" data-t-placeholder="ui.add-your-own-e-g-take-in-the-boat" maxlength="80" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
         ((Fe.tools().hseasonoff || []).some(function (id) { return USUAL[sid].some(function (u) { return u[0] === id; }); }) ? '<button type="button" class="text-btn" data-hsreset="' + sid + '"><i class="bi bi-arrow-counterclockwise"></i> Bring back the usual ones</button>' : '') : '');
     el.innerHTML = card('hseason', S[2], 'Season checklist', '<button type="button" class="text-btn" data-hsedit aria-pressed="' + editS + '"><i class="bi bi-' + (editS ? 'check2' : 'pencil') + '"></i> ' + (editS ? 'Done' : 'Edit') + '</button>', body);
   });
@@ -128,7 +128,7 @@
   var pwSel = null;
   mount('hpower', function (el) {
     var P = perMonth(), keys = Object.keys(P.m).sort();
-    if (keys.length < 1 || readings().length < 2) { el.innerHTML = card('hpower', 'bar-chart', 'Power use by month', '', '<p class="empty kit-empty">With two or more meter readings, this shows how many kWh you use each month – next to the same month last year.</p>'); return; }
+    if (keys.length < 1 || readings().length < 2) { el.innerHTML = card('hpower', 'bar-chart', 'Power use by month', '', '<p class="empty kit-empty" data-t="ui.with-two-or-more-meter-readings-this-sho">With two or more meter readings, this shows how many kWh you use each month – next to the same month last year.</p>'); return; }
     var now = today().slice(0, 7), months = [];
     for (var i = 11; i >= 0; i--) { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); months.push(dkey(d).slice(0, 7)); }
     var ly = function (ym) { return (+ym.slice(0, 4) - 1) + ym.slice(4); };
@@ -210,7 +210,7 @@
       var c = cat(x.cat);
       var own = x.ownWith && +x.ownPct > 0 && +x.ownPct < 100 ? 'yours ' + String(x.ownPct).replace('.', ',') + ' % · with ' + x.ownWith : x.ownWith && x.ownPct !== '' && x.ownPct != null && +x.ownPct === 0 ? 'all ' + x.ownWith + '’s' : x.ownWith ? 'with ' + x.ownWith : '';
       if (x.ownWith && !x.agreed) own += ' · not agreed yet';
-      return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : '', own].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
+      return { icon: c[2], color: c[3], title: x.name, sub: esc([room(x.room), x.brand, x.bought ? x.bought.slice(0, 4) : '', own].filter(Boolean).join(' · ')) + (x.receipt ? ' <i class="bi bi-receipt" title="Receipt saved" data-t-title="ui.receipt-saved"></i>' : '') + (x.photo ? ' <i class="bi bi-image" title="Photo saved" data-t-title="ui.photo-saved"></i>' : ''), right: x.price ? esc(kr(x.price)) : '' };
     },
     detail: function (x) {
       var others = x.receipt ? usedBy(x.receipt, x.id).filter(function (o) { return o.receipt === x.receipt; }) : [];
@@ -308,9 +308,9 @@
     function draw() {
       var l = all.filter(function (x) { return !onlyShared || x.ownWith; }), tot = l.reduce(function (a, x) { return a + (+x.price || 0); }, 0);
       doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick">Appendix B · Vedlegg B</p><h1>Register of household items</h1><p class="rp-addr">Register over innbo · ' + esc(prof.name || me) + (pt ? ' and ' + esc(pt.name) : '') + '</p></div>' +
-        '<div class="iv-no"><small>Total</small><b>' + esc(kr(tot)) + '</b></div></header>' +
+        '<div class="iv-no"><small data-t="ui.total">Total</small><b>' + esc(kr(tot)) + '</b></div></header>' +
         '<p class="rp-intro">Ownership: 50/50, 100 % one of you, or another split. ' + l.length + ' items · made ' + esc(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
-        '<table class="rg-t"><thead><tr><th>Item</th><th>Bought</th><th>Price</th><th>Ownership</th><th>Agreed</th></tr></thead><tbody>' + l.map(function (x) {
+        '<table class="rg-t"><thead><tr><th data-t="ui.item">Item</th><th data-t="ui.bought">Bought</th><th>Price</th><th>Ownership</th><th data-t="ui.agreed">Agreed</th></tr></thead><tbody>' + l.map(function (x) {
           return '<tr><td><b>' + esc(x.name) + '</b>' + (x.brand ? '<br><small>' + esc(x.brand) + '</small>' : '') + '</td><td>' + esc(x.bought ? fromKey(x.bought).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '–') + '</td><td>' + (x.price ? esc(kr(x.price)) : '–') + '</td><td>' + esc(ownText(x, me, them)) + '</td><td>' + (x.agreed ? esc(fromKey(x.agreed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) : '') + '</td></tr>';
         }).join('') + '</tbody></table>' +
         '<div class="rg-sign"><div><span></span><p>' + esc(prof.name || me) + ' · date</p></div><div><span></span><p>' + esc(pt ? pt.name : 'Other party') + ' · date</p></div></div>' +
@@ -333,13 +333,13 @@
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-ilclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-ilph checked> Photos</label>' +
       '<button type="button" class="text-btn" data-ilcsv><i class="bi bi-filetype-csv"></i> CSV</button><button type="button" class="pill-btn" data-ilprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
-      '<p class="rp-hint">In the print window, choose <b>Save as PDF</b>. Photos and receipts come from this device.</p><article class="rp-doc"></article>';
+      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b>. Photos and receipts come from this device.</p><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
     function draw() {
       var rooms = []; l.forEach(function (x) { var r = room(x.room) || 'Other'; if (rooms.indexOf(r) < 0) rooms.push(r); });
-      doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick">Home inventory</p><h1>' + esc(me.name || 'Contents') + '</h1><p class="rp-addr">' + esc(me.home && typeof me.home === 'object' ? (me.home.addr || me.home.name || '') : (me.home || '')) + '</p></div>' +
-        '<div class="iv-no"><small>Total value</small><b>' + esc(kr(tot)) + '</b></div></header>' +
+      doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.home-inventory">Home inventory</p><h1>' + esc(me.name || 'Contents') + '</h1><p class="rp-addr">' + esc(me.home && typeof me.home === 'object' ? (me.home.addr || me.home.name || '') : (me.home || '')) + '</p></div>' +
+        '<div class="iv-no"><small data-t="ui.total-value">Total value</small><b>' + esc(kr(tot)) + '</b></div></header>' +
         '<p class="rp-intro">' + l.length + ' items · ' + l.filter(function (x) { return x.receipt; }).length + ' with receipt · made ' + esc(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
         rooms.map(function (r) {
           var rl = l.filter(function (x) { return (room(x.room) || 'Other') === r; });
@@ -396,7 +396,7 @@
     var hot = function (k) { return d[k].length ? ' hot' : ''; };
     var badge = function (k, x, y) { return d[k].length ? '<g class="hs-b" transform="translate(' + x + ' ' + y + ')"><circle r="9"/><text y="3.6" text-anchor="middle">' + d[k].length + '</text></g>' : ''; };
     var leaf = { spring: '#5fc27e', summer: '#2f9e57', autumn: '#e8743b', winter: '#cfe3f2' }[sid];
-    var svg = '<svg viewBox="0 0 240 150" role="img" aria-label="Your house">' +
+    var svg = '<svg viewBox="0 0 240 150" role="img" aria-label="Your house" data-t-aria-label="ui.your-house">' +
       (window.SceneGround ? window.SceneGround() : '<rect x="0" y="128" width="240" height="22" class="hs-ground"/>') +
       '<g class="hs-smoke"><circle cx="146" cy="28" r="3"/><circle cx="146" cy="28" r="3"/><circle cx="146" cy="28" r="3"/></g>' +
       (sid === 'winter' ? '<path d="M0 128 Q60 122 120 127 T240 126 V132 H0Z" class="hs-snow"/>' : '') +

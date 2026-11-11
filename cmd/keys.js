@@ -66,9 +66,9 @@
     var cal = [['← →', 'Previous / next'], ['T', 'Today'], ['N', 'New event']];
     var kb = function (r) { return '<div class="kb-row"><span>' + r[1] + '</span><span>' + r[0].split(' ').map(function (x) { return '<kbd>' + x + '</kbd>'; }).join('') + '</span></div>'; };
     var bg = document.createElement('div'); bg.className = 'kb-bg';
-    bg.innerHTML = '<div class="kb-box" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"><div class="kb-head"><h3><i class="bi bi-keyboard"></i> Keyboard shortcuts</h3><button type="button" class="icon-btn" data-kbclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-      '<div class="kb-cols"><div><p class="st-sub">Everywhere</p>' + rows.map(kb).join('') + '</div><div><p class="st-sub">Go to</p>' + names.map(function (n) { return kb([n[0], n[1]]); }).join('') +
-      '<p class="st-sub">Calendar</p>' + cal.map(kb).join('') + '<p class="st-sub">To-do</p>' + kb(['Right-click', 'Task menu – top 3, move, focus']) + '</div></div></div>';
+    bg.innerHTML = '<div class="kb-box" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" data-t-aria-label="ui.keyboard-shortcuts"><div class="kb-head"><h3><i class="bi bi-keyboard"></i> Keyboard shortcuts</h3><button type="button" class="icon-btn" data-kbclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+      '<div class="kb-cols"><div><p class="st-sub" data-t="ui.everywhere">Everywhere</p>' + rows.map(kb).join('') + '</div><div><p class="st-sub" data-t="ui.go-to">Go to</p>' + names.map(function (n) { return kb([n[0], n[1]]); }).join('') +
+      '<p class="st-sub" data-t="ui.calendar">Calendar</p>' + cal.map(kb).join('') + '<p class="st-sub" data-t="ui.to-do">To-do</p>' + kb(['Right-click', 'Task menu – top 3, move, focus']) + '</div></div></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var x = bg.querySelector('[data-kbclose]'); x.focus();
     function close() { bg.remove(); document.removeEventListener('keydown', key, true); }

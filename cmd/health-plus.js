@@ -112,12 +112,12 @@
     var w = week(shown), p = week(addDays(shown, -7)), rows = compare(w, p), live = shown === monday(dkey(new Date()));
     var body = rows.length ? '<p class="hr-lead">' + esc(headline(rows)) + '</p><div class="hr-grid">' + rows.map(function (x) {
         return '<div class="hr-m" style="--c:' + x.r[3] + '" data-tk="' + esc(x.r[1]) + '"><span class="hr-l"><i class="bi bi-' + x.r[2] + '"></i> ' + esc(x.r[1]) + '</span><b>' + esc(x.r[4](x.v, w)) + '</b>' +
-          '<small>' + (x.r[7] ? esc(x.r[7]) + ' · ' : '') + (x.d == null ? 'no week before' : x.flat ? '<span class="nt">same as last week</span>' : '<span class="' + (x.good ? 'up' : 'dn') + '">' + esc(x.r[5](x.d, x.v, x.pv)) + '</span> vs last week') + '</small></div>';
+          '<small>' + (x.r[7] ? esc(x.r[7]) + ' · ' : '') + (x.d == null ? 'no week before' : x.flat ? '<span class="nt" data-t="ui.same-as-last-week">same as last week</span>' : '<span class="' + (x.good ? 'up' : 'dn') + '">' + esc(x.r[5](x.d, x.v, x.pv)) + '</span> vs last week') + '</small></div>';
       }).join('') + '</div>' + (w.km ? '<p class="muted hr-foot">' + esc(nf1.format(w.km) + ' km and ' + hmShort(w.trainMin) + ' of training logged') + '</p>' : '')
-      : '<p class="empty kit-empty">Nothing logged this week. With Apple Health, the training log, the journal or habits, the report fills itself.</p>';
+      : '<p class="empty kit-empty" data-t="ui.nothing-logged-this-week-with-apple-heal">Nothing logged this week. With Apple Health, the training log, the journal or habits, the report fills itself.</p>';
     host.innerHTML = '<section class="card kit-card hr-card" id="hreport"><div class="card-head"><h2><i class="bi bi-clipboard2-heart"></i> Weekly report<small>' + esc((live ? 'This week · ' : '') + weekName(shown)) + '</small></h2><div class="head-actions">' +
-      '<button type="button" class="icon-btn sm" data-hrnav="-1" aria-label="Week before"><i class="bi bi-chevron-left"></i></button><button type="button" class="icon-btn sm" data-hrnav="1" aria-label="Week after"' + (shown >= cur ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button>' +
-      (rows.length ? '<button type="button" class="text-btn" data-hrshare aria-label="Share the report"><i class="bi bi-box-arrow-up"></i></button>' : '') + '</div></div>' + body + '</section>';
+      '<button type="button" class="icon-btn sm" data-hrnav="-1" aria-label="Week before" data-t-aria-label="ui.week-before"><i class="bi bi-chevron-left"></i></button><button type="button" class="icon-btn sm" data-hrnav="1" aria-label="Week after"' + (shown >= cur ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button>' +
+      (rows.length ? '<button type="button" class="text-btn" data-hrshare aria-label="Share the report" data-t-aria-label="ui.share-the-report"><i class="bi bi-box-arrow-up"></i></button>' : '') + '</div></div>' + body + '</section>';
   }
   if (host) {
     var t = null;
@@ -158,12 +158,12 @@
     function fill() {
       var box = document.getElementById('hpSet'); if (!box) return;
       var tpl = (Fe.tools().gymtpl || []).length;
-      box.innerHTML = '<p class="st-intro">The Health page: the weekly report, the habit calendar and the gym log.</p>' +
+      box.innerHTML = '<p class="st-intro" data-t="ui.the-health-page-the-weekly-report-the-ha">The Health page: the weekly report, the habit calendar and the gym log.</p>' +
         subh('clipboard2-heart', 'Weekly report') + '<div class="st-group">' + feat('hreport', 'Show the weekly report', 'Sleep, steps, training and mood vs last week') +
         sel('day', 'Report day', [[0, 'Sunday'], [1, 'Monday']]) + sel('hour', 'From', [8, 12, 16, 18, 20].map(function (h) { return [h, pad(h) + ':00']; })) + sw('glance', 'Show it in At a glance') + '</div>' +
         subh('calendar3', 'Habit calendar') + '<div class="st-group">' + sel('heat', 'Each habit shows', [['26', 'The last 26 weeks'], ['year', 'The whole year']], 'Change it on a habit too') + '</div>' +
         subh('apple', 'Apple Health') + '<div class="st-group">' + sw('spark', 'Mini charts on the number tiles', 'The last 7 days') + '</div>' +
-        (Fe.on('gym') ? subh('person-arms-up', 'Gym log') + '<div class="st-group"><a class="st-row st-btn" href="/cmd/habits/#gym"><span><i class="bi bi-collection"></i> ' + (tpl ? tpl + ' workout template' + (tpl === 1 ? '' : 's') : 'Workout templates') + '<small class="st-rsub">Save Push, Pull, Legs … and start one with a tap</small></span><i class="bi bi-chevron-right"></i></a>' +
+        (Fe.on('gym') ? subh('person-arms-up', 'Gym log') + '<div class="st-group"><a class="st-row st-btn" href="/cmd/habits/#gym"><span><i class="bi bi-collection"></i> ' + (tpl ? tpl + ' workout template' + (tpl === 1 ? '' : 's') : 'Workout templates') + '<small class="st-rsub" data-t="ui.save-push-pull-legs-and-start-one-with-a">Save Push, Pull, Legs … and start one with a tap</small></span><i class="bi bi-chevron-right"></i></a>' +
           (tpl ? '' : '<button type="button" class="st-row st-btn" data-hppl><span><i class="bi bi-plus-lg"></i> Add Push, Pull and Legs</span></button>') + '</div>' : '') +
         '<div class="st-group"><a class="st-row st-btn" href="/cmd/habits/"><span><i class="bi bi-heart-pulse"></i> Open Health</span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/habits/?customize"><span><i class="bi bi-grid-1x2"></i> Order and hide cards</span><i class="bi bi-chevron-right"></i></a></div>';
     }

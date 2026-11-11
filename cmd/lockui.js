@@ -81,7 +81,7 @@
         return '<button type="button" class="lk-tile" data-lkstyle="' + x[0] + '" aria-pressed="' + (cur === x[0]) + '"><span class="lk-prev lk-' + (x[0] || 'same') + '"' + (x[0] === 'photo' && photoUrl ? ' style="background-image:url(' + photoUrl + ')"' : '') + '><i class="bi bi-lock-fill"></i></span>' + esc(x[1]) + '</button>';
       }).join('') + '</div><input type="file" id="stLockFile" accept="image/*" hidden>' +
         (cur === 'photo' ? '<p class="st-note"><button type="button" class="link-btn" data-lkchange>Choose another photo</button> · on this device only</p>' : '') + '</div>' +
-        '<label class="st-row"><span class="st-label">Clock and date<small>Big, above the passcode</small></span><input type="checkbox" class="switch" id="stLockClock"' + (s.lockClock !== false ? ' checked' : '') + '></label>';
+        '<label class="st-row"><span class="st-label">Clock and date<small data-t="ui.big-above-the-passcode">Big, above the passcode</small></span><input type="checkbox" class="switch" id="stLockClock"' + (s.lockClock !== false ? ' checked' : '') + '></label>';
     }
     loadPhoto().then(render);
     box.addEventListener('click', function (e) {
@@ -118,14 +118,14 @@
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-rcclose]')) return close(); if (onClick) onClick(e, close, bg.firstChild); });
     return { el: bg.firstChild, close: close };
   }
-  function head(t, sub) { return '<div class="lf-head"><h3><i class="bi bi-life-preserver"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-rcclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
+  function head(t, sub) { return '<div class="lf-head"><h3><i class="bi bi-life-preserver"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-rcclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
   function showCode(code, fresh) {
     dialog(head(fresh ? 'Your recovery code' : 'Recovery code', fresh ? 'Save it now – print it, or put it in your password manager. Anyone with it can open your dashboard.' : 'Anyone with this code can open your dashboard.') +
       '<p class="rc-code" id="rcCode">' + esc(code) + '</p>' +
       '<div class="rc-acts"><button type="button" class="pill-btn" data-rccopy><i class="bi bi-clipboard"></i> Copy</button>' +
       (navigator.share ? '<button type="button" class="text-btn" data-rcshare><i class="bi bi-share"></i> Save to…</button>' : '') +
       '<button type="button" class="text-btn" data-rcprint><i class="bi bi-printer"></i> Print</button></div>' +
-      '<p class="muted rc-note">On the lock screen: <b>Forgot passcode?</b> → enter this code → choose a new passcode.</p>' +
+      '<p class="muted rc-note">On the lock screen: <b data-t="ui.forgot-passcode">Forgot passcode?</b> → enter this code → choose a new passcode.</p>' +
       (fresh ? '<button type="button" class="pill-btn wide" data-rcclose>I’ve saved it</button>' : '<div class="rc-more"><button type="button" class="text-btn" data-rcnew><i class="bi bi-arrow-repeat"></i> Make a new code</button><button type="button" class="text-btn danger" data-rcdel><i class="bi bi-trash3"></i> Turn off</button></div>'),
       function (e, close) {
         if (e.target.closest('[data-rccopy]') && navigator.clipboard) return navigator.clipboard.writeText(code).then(function () { toast('<i class="bi bi-clipboard-check"></i> Recovery code copied'); });

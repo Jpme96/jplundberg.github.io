@@ -132,7 +132,7 @@
 
     var n = draft.sections.length;
     $('wsSections').innerHTML =
-      '<div class="st-row ws-fixed"><span><i class="bi bi-image"></i> Intro (name and title)</span><i class="bi bi-lock" title="Always first"></i></div>' +
+      '<div class="st-row ws-fixed"><span><i class="bi bi-image"></i> Intro (name and title)</span><i class="bi bi-lock" title="Always first" data-t-title="ui.always-first"></i></div>' +
       draft.sections.map(function (s, i) {
         var m = SECTION[s.id];
         return '<div class="st-row ws-sec' + (s.on ? '' : ' off') + '">' +
@@ -141,7 +141,7 @@
           '<button type="button" data-move="' + i + ':1" aria-label="Move ' + m[1] + ' down"' + (i === n - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>' +
           '<input type="checkbox" class="switch" data-sec="' + i + '"' + (s.on ? ' checked' : '') + ' aria-label="Show ' + m[1] + '"></span></div>';
       }).join('') +
-      '<div class="st-row ws-fixed"><span><i class="bi bi-envelope"></i> Contact</span><i class="bi bi-lock" title="Always last"></i></div>';
+      '<div class="st-row ws-fixed"><span><i class="bi bi-envelope"></i> Contact</span><i class="bi bi-lock" title="Always last" data-t-title="ui.always-last"></i></div>';
 
     draft.now = draft.now || { en: '', nb: '' };
     if (document.activeElement !== $('wsNowEn')) $('wsNowEn').value = draft.now.en || '';
@@ -159,7 +159,7 @@
       return '<div class="st-row ws-course' + (c.pub ? '' : ' off') + '"><span class="st-label">' + esc(c.title || '') + '<small>' + esc([c.provider, String(c.date || '').slice(0, 4), c.status === 'done' ? '' : (c.status === 'progress' ? 'in progress' : 'planned')].filter(Boolean).join(' · ')) + '</small></span>' +
         '<span class="ws-tools ws-course-sw"><label class="ws-mini"><input type="checkbox" class="switch" data-cpub="' + esc(c.id) + '"' + (c.pub ? ' checked' : '') + '> Site</label>' +
         '<label class="ws-mini"' + (c.pub ? '' : ' hidden') + '><input type="checkbox" class="switch" data-ccv="' + esc(c.id) + '"' + (c.cv ? ' checked' : '') + '> CV</label></span></div>';
-    }).join('') : '<p class="st-note">No courses yet. Add them on the Work page (switch on “Courses & certificates” under Features).</p>';
+    }).join('') : '<p class="st-note" data-t="ui.no-courses-yet-add-them-on-the-work-page">No courses yet. Add them on the Work page (switch on “Courses & certificates” under Features).</p>';
     var goals = readJSON('dash.goals', []);
     $('wsGoals').innerHTML = goals.length ? goals.map(function (g) {
       var pct = g.target > 0 ? Math.round((+g.value || 0) / g.target * 100) : 0;
@@ -210,7 +210,7 @@
       '<input name="title" placeholder="e.g. FDVU Technician" value="' + esc(e ? e.title : '') + '" required autocomplete="off">' +
       '<div class="row2"><input name="school" placeholder="School" value="' + esc(e ? e.school : '') + '" autocomplete="off"><input name="dates" placeholder="Dates" value="' + esc(e ? e.dates : '') + '" autocomplete="off"></div>' +
       '<input name="note" placeholder="Note (optional)" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-ecancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';
+      '<div class="form-actions"><button type="button" class="text-btn" data-ecancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';
   }
   function levels(text) {
     return String(text || '').split('\n').map(function (l) { var m = l.match(/^(.*?)(?:[,;:\s]\s*(\d{1,3})\s*%?)?\s*$/); return m && m[1].trim() ? { name: m[1].trim().slice(0, 60), level: Math.max(0, Math.min(100, +m[2] || 80)) } : null; }).filter(Boolean).slice(0, 12);
@@ -241,7 +241,7 @@
       '<input name="title" placeholder="Title, e.g. FDVU Advisor" value="' + esc(j ? j.title : '') + '" required autocomplete="off">' +
       '<div class="row2"><input name="company" placeholder="Company, city" value="' + esc(j ? j.company : '') + '" autocomplete="off"><input name="dates" placeholder="Dates, e.g. 2020 – 2025" value="' + esc(j ? j.dates : '') + '" autocomplete="off"></div>' +
       '<textarea name="points" rows="3" placeholder="What you did – one point per line">' + esc(j && j.points ? j.points.join('\n') : '') + '</textarea>' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-jcancel>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
+      '<div class="form-actions"><button type="button" class="text-btn" data-jcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
   }
   $('cvLang').addEventListener('click', function (e) { var b = e.target.closest('[data-lang]'); if (!b) return; cvLang = b.dataset.lang; jobEdit = null; eduEdit = null; fillCv(); });
   $('cvProfile').addEventListener('input', function () { draft.cv.profile[cvLang] = this.value; changed(); });
@@ -421,7 +421,7 @@
   function visitors() {
     var box = $('wsVisitors');
     if (vCache[days]) return drawVisitors(vCache[days]);
-    box.innerHTML = '<p class="st-intro">Loading…</p>';
+    box.innerHTML = '<p class="st-intro" data-t="ui.loading">Loading…</p>';
     fetch('/cmd/api/visitors?days=' + days, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
     }).then(function (j) {
@@ -433,7 +433,7 @@
       if (j.error) { box.innerHTML = '<p class="st-intro">Couldn’t load statistics right now.' + (j.detail ? ' <small>(' + esc(j.detail) + ')</small>' : '') + '</p>'; return; }
       vCache[days] = j;
       drawVisitors(j);
-    }).catch(function () { box.innerHTML = '<p class="st-intro">Couldn’t load statistics. Check your connection.</p>'; });
+    }).catch(function () { box.innerHTML = '<p class="st-intro" data-t="ui.couldnt-load-statistics-check-your-conne">Couldn’t load statistics. Check your connection.</p>'; });
   }
   function drawVisitors(j) {
     $('sumVisitors').textContent = j.visits + ' visits · last ' + j.days + ' days';
@@ -454,13 +454,13 @@
       }).join('') + '</ul>';
     };
     $('wsVisitors').innerHTML =
-      '<div class="ws-tiles"><div><span>Visits</span><b>' + j.visits + '</b></div><div><span>Page views</span><b>' + j.views + '</b></div></div>' +
+      '<div class="ws-tiles"><div><span data-t="ui.visits">Visits</span><b>' + j.visits + '</b></div><div><span data-t="ui.page-views">Page views</span><b>' + j.views + '</b></div></div>' +
       '<section class="st-group ws-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Visits per day, last ' + j.days + ' days">' + bars +
       '<text x="0" y="' + (H - 2) + '">' + esc(lbl(first)) + '</text><text x="' + W + '" y="' + (H - 2) + '" text-anchor="end">' + esc(lbl(last)) + '</text></svg></section>' +
       list('Most read pages', j.pages, 'file-earmark-text', pageName) +
       list('Where visitors come from', j.referrers, 'box-arrow-in-right') +
       list('Countries', j.countries, 'geo-alt', countryName) +
-      '<p class="st-foot muted">From Cloudflare Web Analytics · no cookies, no personal data.</p>';
+      '<p class="st-foot muted" data-t="ui.from-cloudflare-web-analytics-no-cookies">From Cloudflare Web Analytics · no cookies, no personal data.</p>';
   }
   /* "/articles/…/" → the article's title; "NO" → "Norway" */
   function pageName(p) {
@@ -498,7 +498,7 @@
         return;
       }
       items = j.items; drawItems();
-    }).catch(function () { itemsLoading = null; $('wsContent').innerHTML = '<p class="st-intro">Couldn’t load your articles. Check your connection.</p>'; });
+    }).catch(function () { itemsLoading = null; $('wsContent').innerHTML = '<p class="st-intro" data-t="ui.couldnt-load-your-articles-check-your-co">Couldn’t load your articles. Check your connection.</p>'; });
     return itemsLoading;
   }
   /* one row per article/project; language versions share a ref */
@@ -532,7 +532,7 @@
       }).join('') + '</section>';
     }).join('');
     var n = Object.keys(stage).length;
-    html += n ? '<div class="ws-stage"><span><b>' + n + (n === 1 ? ' change' : ' changes') + '</b> not published yet</span><button type="button" class="text-btn" data-wsstage="undo">Cancel</button><button type="button" class="pill-btn" data-wsstage="go"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-cloud-upload"></i> Publish changes</button></div>' : '';
+    html += n ? '<div class="ws-stage"><span><b>' + n + (n === 1 ? ' change' : ' changes') + '</b> not published yet</span><button type="button" class="text-btn" data-wsstage="undo" data-t="ui.cancel">Cancel</button><button type="button" class="pill-btn" data-wsstage="go"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-cloud-upload"></i> Publish changes</button></div>' : '';
     $('wsContent').innerHTML = html;
     var all = grouped('articles').concat(grouped('projects')), hidden = all.filter(function (g) { return !g.published; }).length;
     $('sumContent').textContent = (n ? n + ' not published · ' : '') + (hidden ? hidden + ' hidden' : 'All shown');
@@ -627,7 +627,7 @@
       });
     }
     if (current === 'visitors') { if (!content) load(); visitors(); }
-    if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro">Loading…</p>'; loadItems(); } }
+    if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro" data-t="ui.loading">Loading…</p>'; loadItems(); } }
     if (current === 'home' && !items) loadItems();
     bar();
     if (EDIT_PAGES.indexOf(current) > -1 && !saved) status(problem ? $('wsStatus').textContent : 'Loading…', !!problem);

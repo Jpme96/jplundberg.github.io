@@ -54,19 +54,19 @@
     return out;
   }
   function affordHtml(r) {
-    if (!r) return '<p class="muted">Add your salary and bills in Finances first.</p>';
+    if (!r) return '<p class="muted" data-t="ui.add-your-salary-and-bills-in-finances-fi">Add your salary and bills in Finances first.</p>';
     var col = r.ok === 2 ? GREEN : r.ok === 1 ? BLUE : r.ok === 0 ? AMBER : RED, ic = r.ok >= 1 ? 'check2-circle' : r.ok === 0 ? 'piggy-bank' : 'hourglass-split';
     return '<div class="fa-res" style="--c:' + col + '"><b><i class="bi bi-' + ic + '"></i> ' + esc(r.how) + '</b>' +
       (r.after != null ? '<span>' + esc(kr(r.after)) + ' ' + esc(r.afterLbl) + '</span>' : '') +
       (r.ok < 0 && r.wait ? '<span>About ' + r.wait + (r.wait === 1 ? ' month' : ' months') + ' of saving ' + esc(kr(r.per)) + ' a month</span>' : '') + '</div>' +
-      '<ul class="fa-facts">' + (r.left != null ? '<li><span>Left until payday</span><b>' + esc(kr(r.left)) + '</b></li>' : '') +
-      (r.cash != null ? '<li><span>In your accounts</span><b>' + esc(kr(r.cash)) + '</b></li>' : '') +
-      (r.owed ? '<li><span>Owed on cards</span><b class="neg">' + esc(kr(-r.owed)) + '</b></li>' : '') +
-      (r.saved ? '<li><span>Saved</span><b>' + esc(kr(r.saved)) + '</b></li>' : '') + '</ul>';
+      '<ul class="fa-facts">' + (r.left != null ? '<li><span data-t="ui.left-until-payday">Left until payday</span><b>' + esc(kr(r.left)) + '</b></li>' : '') +
+      (r.cash != null ? '<li><span data-t="ui.in-your-accounts">In your accounts</span><b>' + esc(kr(r.cash)) + '</b></li>' : '') +
+      (r.owed ? '<li><span data-t="ui.owed-on-cards">Owed on cards</span><b class="neg">' + esc(kr(-r.owed)) + '</b></li>' : '') +
+      (r.saved ? '<li><span data-t="ui.saved">Saved</span><b>' + esc(kr(r.saved)) + '</b></li>' : '') + '</ul>';
   }
   function affordSheet(price, title) {
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
-    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Can I afford it?" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-calculator"></i> Can I afford it?</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Can I afford it?" data-t-aria-label="ui.can-i-afford-it" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-calculator"></i> Can I afford it?</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
       (title ? '<p class="muted lf-sub">' + esc(title) + '</p>' : '') + affordForm(price) + '<div data-fares></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var close = function () { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); };
@@ -77,19 +77,19 @@
     setTimeout(function () { if (!price && !matchMedia('(pointer: coarse)').matches) f.price.focus(); }, 60);
   }
   function affordForm(price) {
-    return '<div class="mp-grid fa-in"><label><span>Price, kr</span><input name="price" inputmode="decimal" value="' + (price ? esc(String(price)) : '') + '" placeholder="e.g. 12 000"></label>' +
-      '<label><span>Paid</span><select name="months"><option value="1">All at once</option><option value="3">Over 3 months</option><option value="6">Over 6 months</option><option value="12">Over 12 months</option></select></label></div>';
+    return '<div class="mp-grid fa-in"><label><span data-t="ui.price-kr">Price, kr</span><input name="price" inputmode="decimal" value="' + (price ? esc(String(price)) : '') + '" placeholder="e.g. 12 000"></label>' +
+      '<label><span data-t="ui.paid">Paid</span><select name="months"><option value="1" data-t="ui.all-at-once">All at once</option><option value="3" data-t="ui.over-3-months">Over 3 months</option><option value="6" data-t="ui.over-6-months">Over 6 months</option><option value="12" data-t="ui.over-12-months">Over 12 months</option></select></label></div>';
   }
   /* before you type a price: how much you could spend right now, three ways, and the wishes that fit */
   function limits() {
-    var r = afford(1, 1); if (!r) return '<p class="muted fa-hint">Add your salary and bills, then type a price here.</p>';
+    var r = afford(1, 1); if (!r) return '<p class="muted fa-hint" data-t="ui.add-your-salary-and-bills-then-type-a-pr">Add your salary and bills, then type a price here.</p>';
     var c = cfg(), month = r.left != null ? r.left * (+c.share || 100) / 100 : null, acc = r.cash != null ? Math.max(0, r.cash - r.owed - (+c.buffer || 0)) : null;
     var W = window.Wish, wl = W && Fe.on('wish') ? Fe.list('wishes').filter(function (w) { return +w.price > 0; }).sort(function (a, b) { return a.price - b.price; }).slice(0, 4) : [];
-    return '<p class="muted fa-hint">Type a price – or see what you can spend now:</p><ul class="fa-lim">' +
-      (month != null ? '<li style="--c:' + GREEN + '"><i class="bi bi-calendar-check"></i><span>This month, until payday</span><b>' + esc(kr(month)) + '</b></li>' : '') +
+    return '<p class="muted fa-hint" data-t="ui.type-a-price-or-see-what-you-can-spend-n">Type a price – or see what you can spend now:</p><ul class="fa-lim">' +
+      (month != null ? '<li style="--c:' + GREEN + '"><i class="bi bi-calendar-check"></i><span data-t="ui.this-month-until-payday">This month, until payday</span><b>' + esc(kr(month)) + '</b></li>' : '') +
       (acc != null ? '<li style="--c:' + BLUE + '"><i class="bi bi-bank2"></i><span>From your accounts' + (+c.buffer ? ', keeping ' + esc(kr(c.buffer)) : '') + '</span><b>' + esc(kr(acc)) + '</b></li>' : '') +
-      '<li style="--c:' + AMBER + '"><i class="bi bi-piggy-bank"></i><span>In savings</span><b>' + esc(kr(r.saved)) + '</b></li></ul>' +
-      (wl.length ? '<p class="fx-sub">From your wishlist</p><ul class="fa-wl">' + wl.map(function (w) { var a = afford(+w.price, 1), col = a.ok === 2 ? GREEN : a.ok === 1 ? BLUE : a.ok === 0 ? AMBER : RED; return '<li><a href="/cmd/wish/#wishes=' + esc(w.id) + '">' + esc(w.title) + '</a><span class="hl-chip" style="--c:' + col + '">' + (a.ok === 2 ? 'Fits' : a.ok === 1 ? 'From accounts' : a.ok === 0 ? 'From savings' : 'Wait') + '</span><b>' + esc(kr(w.price)) + '</b></li>'; }).join('') + '</ul>' : '');
+      '<li style="--c:' + AMBER + '"><i class="bi bi-piggy-bank"></i><span data-t="ui.in-savings">In savings</span><b>' + esc(kr(r.saved)) + '</b></li></ul>' +
+      (wl.length ? '<p class="fx-sub" data-t="ui.from-your-wishlist">From your wishlist</p><ul class="fa-wl">' + wl.map(function (w) { var a = afford(+w.price, 1), col = a.ok === 2 ? GREEN : a.ok === 1 ? BLUE : a.ok === 0 ? AMBER : RED; return '<li><a href="/cmd/wish/#wishes=' + esc(w.id) + '">' + esc(w.title) + '</a><span class="hl-chip" style="--c:' + col + '">' + (a.ok === 2 ? 'Fits' : a.ok === 1 ? 'From accounts' : a.ok === 0 ? 'From savings' : 'Wait') + '</span><b>' + esc(kr(w.price)) + '</b></li>'; }).join('') + '</ul>' : '');
   }
   window.FinAfford = { open: affordSheet, check: afford };
 
@@ -157,7 +157,7 @@
     var d = fin(); if (!d || !L) { box.innerHTML = ''; return; }
     var dl = debts(d), m = A ? A.money(d) : { owed: 0 }, c = cfg();
     var rows = dl.map(function (l) { var x = null; try { x = L.calc(l); } catch (e) {} return { l: l, c: x, owe: L.owedNow(l) * L.part(l) }; }).filter(function (r) { return r.owe > 0; });
-    if (!rows.length && !(m.owed > 0)) { box.innerHTML = '<p class="empty">No loans – you’re debt-free. Add a loan under Loans and you see the day it’s paid off.</p>'; $('fnDebtNote').textContent = ''; return; }
+    if (!rows.length && !(m.owed > 0)) { box.innerHTML = '<p class="empty" data-t="ui.no-loans-youre-debt-free-add-a-loan-unde">No loans – you’re debt-free. Add a loan under Loans and you see the day it’s paid off.</p>'; $('fnDebtNote').textContent = ''; return; }
     rows.sort(function (a, b) { return (a.c && !a.c.never ? a.c.months : 1e9) - (b.c && !b.c.never ? b.c.months : 1e9); });
     var last = rows.filter(function (r) { return r.c && !r.c.never; }).slice(-1)[0], never = rows.some(function (r) { return !r.c || r.c.never; });
     var total = rows.reduce(function (s, r) { return s + r.owe; }, 0) + (m.owed || 0);
@@ -166,7 +166,7 @@
     var ex = +c.extra || 0, top = rows.slice().sort(function (a, b) { return (+b.l.rate || 0) - (+a.l.rate || 0); })[0], gain = null;
     if (ex > 0 && top && top.c && !top.c.never) { try { var c2 = L.calc(top.l, ex); if (c2 && !c2.never) gain = { name: top.l.name || 'the loan', months: top.c.months - c2.months, interest: (top.c.interestLeft - c2.interestLeft) * L.part(top.l), end: c2.endLabel }; } catch (e) {} }
     box.innerHTML = '<div class="fx-big"><small>' + (never ? 'Not on its way down yet' : 'Debt-free') + '</small><b>' + (last && !never ? esc(last.c.end.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })) : '–') + '</b>' + (last && !never ? '<span class="muted">' + esc(last.c.endLabel.replace(/^.*\(in /, 'in ').replace(/\)$/, '')) + '</span>' : '') + '</div>' +
-      '<ul class="fx-debts">' + (m.owed > 0 ? '<li><span class="kit-ic" style="--c:' + RED + '"><i class="bi bi-credit-card"></i></span><span><b>Credit cards</b><small>Pay these first – the highest interest</small></span><em>' + esc(kr(m.owed)) + '</em></li>' : '') +
+      '<ul class="fx-debts">' + (m.owed > 0 ? '<li><span class="kit-ic" style="--c:' + RED + '"><i class="bi bi-credit-card"></i></span><span><b data-t="ui.credit-cards">Credit cards</b><small data-t="ui.pay-these-first-the-highest-interest">Pay these first – the highest interest</small></span><em>' + esc(kr(m.owed)) + '</em></li>' : '') +
       rows.map(function (r) { return '<li><span class="kit-ic" style="--c:' + AMBER + '"><i class="bi bi-house-door"></i></span><span><b>' + esc(r.l.name || 'Loan') + '</b><small>' + (r.c && !r.c.never ? 'Paid off ' + esc(r.c.endLabel) : 'The payment doesn’t cover the interest') + (+r.l.rate ? ' · ' + String(r.l.rate).replace('.', ',') + ' %' : '') + '</small></span><em>' + esc(kr(r.owe)) + '</em></li>'; }).join('') + '</ul>' +
       (top && top.c && !top.c.never ? '<div class="fx-more"><label><span>Pay more on ' + esc(top.l.name || 'the loan') + '</span><select data-fxextra>' + [0, 500, 1000, 2000, 3000, 5000, 10000].map(function (v) { return '<option value="' + v + '"' + (v === ex ? ' selected' : '') + '>' + (v ? '+' + kr(v) + ' a month' : 'Nothing extra') + '</option>'; }).join('') + '</select></label>' +
         (gain && gain.months > 0 ? '<p><b>' + gain.months + (gain.months === 1 ? ' month' : ' months') + ' sooner</b> – done ' + esc(gain.end.replace(/ \(.*$/, '')) + ', about ' + esc(kr(gain.interest)) + ' less interest (your part)</p>' : '') + '</div>' : '');
@@ -198,15 +198,15 @@
     var box = $('fnRate'); if (!box) return;
     var d = fin(); if (!d || !L) { box.innerHTML = ''; return; }
     var dl = debts(d).filter(function (l) { return +l.rate > 0; }), seen = rateSeen(), log = rateLog(), c = cfg();
-    if (!dl.length) { box.innerHTML = '<p class="empty">Add a loan with its interest rate – you see here when it changes and what it costs a month.</p>'; return; }
+    if (!dl.length) { box.innerHTML = '<p class="empty" data-t="ui.add-a-loan-with-its-interest-rate-you-se">Add a loan with its interest rate – you see here when it changes and what it costs a month.</p>'; return; }
     box.innerHTML = '<ul class="fx-debts">' + dl.map(function (l) {
       var s = seen[l.id] || {}, ok = s.ok || s.at, old = ok && +c.rateCheck > 0 && days(ok, today()) >= c.rateCheck * 30, owe = L.owedNow(l) * L.part(l);
       var bp = owe * 0.25 / 1200;
       return '<li><span class="kit-ic" style="--c:' + (old ? AMBER : BLUE) + '"><i class="bi bi-percent"></i></span><span><b>' + esc(l.name || 'Loan') + ' · ' + fmtR(+l.rate) + ' %</b><small>' + (ok ? (old ? 'Checked ' + esc(fmtD(ok, true)) + ' – still right?' : 'Checked ' + esc(fmtD(ok, true))) : '') + ' · 0,25 % more ≈ ' + esc(kr(bp)) + ' a month</small></span>' +
         '<button type="button" class="text-btn" data-rateok="' + esc(l.id) + '">' + (old ? 'Still right' : 'Checked') + '</button></li>';
     }).join('') + '</ul>' +
-      (log.length ? '<p class="fx-sub">Changes</p><ul class="fx-log">' + log.slice(0, 4).map(function (x) { return '<li><span>' + esc(fmtD(x.date, true)) + ' · ' + esc(x.name) + '</span><b class="' + (x.to > x.from ? 'neg' : 'pos') + '">' + fmtR(x.from) + ' → ' + fmtR(x.to) + ' %</b><small>' + (x.month ? (x.month > 0 ? '+' : '−') + esc(kr(Math.abs(x.month))) + ' a month' : '') + '</small></li>'; }).join('') + '</ul>' : '') +
-      '<p class="muted hl-small">Change the rate on the loan (Loans → the loan → Edit) when the bank writes to you – it’s tracked from there.</p>';
+      (log.length ? '<p class="fx-sub" data-t="ui.changes">Changes</p><ul class="fx-log">' + log.slice(0, 4).map(function (x) { return '<li><span>' + esc(fmtD(x.date, true)) + ' · ' + esc(x.name) + '</span><b class="' + (x.to > x.from ? 'neg' : 'pos') + '">' + fmtR(x.from) + ' → ' + fmtR(x.to) + ' %</b><small>' + (x.month ? (x.month > 0 ? '+' : '−') + esc(kr(Math.abs(x.month))) + ' a month' : '') + '</small></li>'; }).join('') + '</ul>' : '') +
+      '<p class="muted hl-small" data-t="ui.change-the-rate-on-the-loan-loans-the-lo">Change the rate on the loan (Loans → the loan → Edit) when the bank writes to you – it’s tracked from there.</p>';
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-rateok]'); if (!b) return;
@@ -376,8 +376,8 @@
       var near = (d.expenses || []).filter(function (e) { return e && !e.ebud && e.cat !== 'fixed' && isKey(e.date) && e.date >= (function () { var x = new Date(); x.setDate(x.getDate() - 30); return dkey(x); })() && l.indexOf(e) < 0; }).sort(function (a, b2) { return a.date < b2.date ? 1 : -1; }).slice(0, 6);
       var has = ((d.budget && d.budget.fixed) || []).some(function (f) { return f.id === 'eb-' + b.id; });
       return '<div class="fn-bar"><i style="width:' + Math.min(100, bu ? sp / bu * 100 : 0).toFixed(1) + '%"></i></div>' +
-        (l.length ? '<ul class="eb-l">' + l.slice(0, 8).map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b>' + (e.ebud ? '<button type="button" class="icon-btn sm" data-ebuntag="' + esc(e.id) + '" aria-label="Don’t count it"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="muted hl-small">Nothing counted yet.</p>') +
-        (near.length ? '<p class="fx-sub">Count a recent spending</p><ul class="eb-l">' + near.map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b><button type="button" class="icon-btn sm" data-ebtag="' + esc(e.id) + '|' + esc(b.id) + '" aria-label="Count it"><i class="bi bi-plus-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
+        (l.length ? '<ul class="eb-l">' + l.slice(0, 8).map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b>' + (e.ebud ? '<button type="button" class="icon-btn sm" data-ebuntag="' + esc(e.id) + '" aria-label="Don’t count it"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="muted hl-small" data-t="ui.nothing-counted-yet">Nothing counted yet.</p>') +
+        (near.length ? '<p class="fx-sub" data-t="ui.count-a-recent-spending">Count a recent spending</p><ul class="eb-l">' + near.map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b><button type="button" class="icon-btn sm" data-ebtag="' + esc(e.id) + '|' + esc(b.id) + '" aria-label="Count it"><i class="bi bi-plus-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
         '<div class="hl-acts">' + (per && !has ? '<button type="button" class="pill-btn" data-ebsave="' + esc(b.id) + '"><i class="bi bi-piggy-bank"></i> Put aside ' + esc(kr(per)) + ' a month</button>' : has ? '<span class="muted hl-small"><i class="bi bi-check2"></i> In your payday moves</span>' : '') + '</div>';
     },
     onClick: function (e, render) {

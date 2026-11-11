@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dashboard">
   <meta name="format-detection" content="telephone=no">
-  <title>People</title>
+  <title data-t="ui.people">People</title>
   <link href="/assets/img/favicon.png?v=9bc342e29a" rel="icon">
   <link href="/assets/img/cmd/apple-180.png" rel="apple-touch-icon">
   <link href="/cmd/manifest.webmanifest" rel="manifest">
@@ -83,29 +83,29 @@
   <link href="../calendar/cal.css?v=d7b4b80a75" rel="stylesheet">
 </head>
 <body>
-  <nav class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span>Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span>Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span>Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span>Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span>Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span>Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span>House</span></a><a href="/cmd/people/" data-pg="people" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-people"></i><span>People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span>Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span>Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span>Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span>Papers</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
+  <nav data-t-aria-label="ui.pages" class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span data-t="ui.home">Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span data-t="ui.calendar">Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span data-t="ui.travel">Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span data-t="ui.finances">Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span data-t="ui.health">Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span data-t="ui.work">Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span data-t="ui.house">House</span></a><a href="/cmd/people/" data-pg="people" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-people"></i><span data-t="ui.people">People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span data-t="ui.food">Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span data-t="ui.wishlist">Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span data-t="ui.goals">Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span>Papers</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
   <div class="bg" aria-hidden="true"></div>
 
   <!-- Lock screen -->
   <div class="lock" id="lock">
     <div class="lock-box" id="lockBox">
       <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
-      <h1 id="lockTitle">Welcome back</h1>
+      <h1 data-t="ui.welcome-back" id="lockTitle">Welcome back</h1>
       <p class="muted" id="lockSub">Enter your passcode to open People.</p>
       <form id="lockForm" autocomplete="on">
         <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
-        <input id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
-        <input id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
+        <input data-t-placeholder="ui.passcode" data-t-aria-label="ui.passcode" id="lockPass" type="password" placeholder="Passcode" autocomplete="current-password" aria-label="Passcode" required>
+        <input data-t-placeholder="ui.repeat-passcode" data-t-aria-label="ui.repeat-passcode" id="lockConfirm" type="password" placeholder="Repeat passcode" autocomplete="new-password" aria-label="Repeat passcode" hidden>
         <p class="lock-warn" id="lockWarn" hidden><i class="bi bi-info-circle"></i> There is no recovery. If you forget the passcode, your finance data has to be erased. Let your password manager save it.</p>
-        <button class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
+        <button data-t="ui.unlock" class="pill-btn lock-submit" id="lockSubmit" type="submit">Unlock</button>
       </form>
       <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
       <div class="lock-reset" id="lockReset" hidden>
-        <button class="pill-btn danger-btn" id="lockDoReset" type="button">Erase and start over</button>
-        <button class="text-btn" id="lockCancelReset" type="button">Cancel</button>
+        <button data-t="ui.erase-and-start-over" class="pill-btn danger-btn" id="lockDoReset" type="button">Erase and start over</button>
+        <button data-t="ui.cancel" class="text-btn" id="lockCancelReset" type="button">Cancel</button>
       </div>
-      <button class="text-btn" id="lockForgot" type="button">Forgot passcode?</button>
-      <button class="text-btn" id="lockRestore" type="button" hidden><i class="bi bi-upload"></i> Restore from backup</button>
+      <button data-t="ui.forgot-passcode" class="text-btn" id="lockForgot" type="button">Forgot passcode?</button>
+      <button data-t="ui.restore-from-backup" class="text-btn" id="lockRestore" type="button" hidden><i class="bi bi-upload"></i> Restore from backup</button>
       <input type="file" id="lockFile" accept="application/json,.json" hidden>
     </div>
   </div>
@@ -113,24 +113,24 @@
 
   <main class="fp" id="fp">
     <header class="fp-top">
-      <a class="fp-back" href="../"><i class="bi bi-chevron-left"></i> Dashboard</a>
+      <a data-t="ui.dashboard" class="fp-back" href="../"><i class="bi bi-chevron-left"></i> Dashboard</a>
     </header>
 
     <div class="fp-hero">
-      <p class="fp-kicker"><i class="bi bi-people"></i> Private</p>
-      <h1>People</h1>
-      <p class="muted">Birthdays, name days, who you haven’t talked to in a while, and gifts – so nobody slips.</p>
+      <p data-t="ui.private" class="fp-kicker"><i class="bi bi-people"></i> Private</p>
+      <h1 data-t="ui.people">People</h1>
+      <p data-t="ui.birthdays-name-days-who-you-havent-talke" class="muted">Birthdays, name days, who you haven’t talked to in a while, and gifts – so nobody slips.</p>
     </div>
 
-    <section class="fp-tiles hl-tiles" id="hlTiles" aria-label="Key numbers" data-pk="numbers" data-pk-name="Key numbers"></section>
+    <section data-t-aria-label="ui.key-numbers" class="fp-tiles hl-tiles" id="hlTiles" aria-label="Key numbers" data-pk="numbers" data-pk-name="Key numbers"></section>
     <div class="kit-grid" data-pk="cards" data-pk-name="Cards">
       <div data-tool="people" class="kit-wide" hidden></div>
       <div data-tool="pdates" hidden></div>
       <div data-tool="pgifts" class="kit-wide" hidden></div>
     </div>
-    <p class="fp-empty" data-pgempty="people" hidden>People is switched off. Turn it on in <a href="../?settings=features">Settings → Features</a>.</p>
+    <p class="fp-empty" data-pgempty="people" hidden>People is switched off. Turn it on in <a data-t="ui.settings-features" href="../?settings=features">Settings → Features</a>.</p>
 
-    <p class="foot muted"><span class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Synced and encrypted with your passcode · <a href="../?settings=people">People settings</a></p>
+    <p data-t="ui.synced-and-encrypted-with-your-passcode-2" class="foot muted"><span data-t="ui.saved-on-this-device-only" class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span><br><i class="bi bi-shield-lock"></i> Synced and encrypted with your passcode · <a href="../?settings=people">People settings</a></p>
   </main>
 
   <div class="fp-tip" id="fpTip" role="tooltip" hidden></div>
@@ -139,115 +139,115 @@
   <div class="st-backdrop" id="settings" hidden>
     <aside class="st-panel" role="dialog" aria-modal="true" aria-labelledby="stTitle">
       <div class="st-head">
-        <button class="st-back" id="stBack" type="button" hidden><i class="bi bi-chevron-left"></i> Settings</button>
-        <h2 id="stTitle">Settings</h2>
-        <button class="icon-btn" id="stClose" type="button" aria-label="Close settings"><i class="bi bi-x-lg"></i></button>
+        <button data-t="ui.settings" class="st-back" id="stBack" type="button" hidden><i class="bi bi-chevron-left"></i> Settings</button>
+        <h2 data-t="ui.settings" id="stTitle">Settings</h2>
+        <button data-t-aria-label="ui.close-settings" class="icon-btn" id="stClose" type="button" aria-label="Close settings"><i class="bi bi-x-lg"></i></button>
       </div>
 
       <div class="st-page" data-page="home">
         <button type="button" class="st-profile" data-go="profile" id="stProfile"></button>
-        <label class="st-search"><i class="bi bi-search"></i><input id="stSearch" type="search" placeholder="Search settings" autocomplete="off" enterkeyhint="search" aria-label="Search settings"></label>
+        <label class="st-search"><i class="bi bi-search"></i><input data-t-placeholder="ui.search-settings" data-t-aria-label="ui.search-settings" id="stSearch" type="search" placeholder="Search settings" autocomplete="off" enterkeyhint="search" aria-label="Search settings"></label>
         <div class="st-results" id="stResults" hidden></div>
         <div id="stMenu">
-        <p class="st-grp"><i class="bi bi-lock"></i> Dashboard <span>Private, only you</span></p>
-        <p class="st-minor">Look and layout</p>
+        <p data-t="ui.dashboard" class="st-grp"><i class="bi bi-lock"></i> Dashboard <span data-t="ui.private-only-you">Private, only you</span></p>
+        <p data-t="ui.look-and-layout" class="st-minor">Look and layout</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="layout"><span class="st-ico" style="--c:#11a597"><i class="bi bi-menu-button-wide"></i></span><span class="st-label">Menu &amp; pages<small>The order of pages, sections and cards</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="touches"><span class="st-ico" style="--c:#d55181"><i class="bi bi-stars"></i></span><span class="st-label">Pictures &amp; touches<small id="sumTouches">Pictures on each page, weather, seasons, swipes</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="appearance"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-palette"></i></span><span data-t="ui.appearance" class="st-label">Appearance<small id="sumAppearance"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="dashboard"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-grid-1x2"></i></span><span data-t="ui.dashboard" class="st-label">Dashboard<small id="sumDashboard"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="layout"><span class="st-ico" style="--c:#11a597"><i class="bi bi-menu-button-wide"></i></span><span data-t="ui.menu-pages" class="st-label">Menu &amp; pages<small data-t="ui.the-order-of-pages-sections-and-cards">The order of pages, sections and cards</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="touches"><span class="st-ico" style="--c:#d55181"><i class="bi bi-stars"></i></span><span data-t="ui.pictures-touches" class="st-label">Pictures &amp; touches<small data-t="ui.pictures-on-each-page-weather-seasons-sw" id="sumTouches">Pictures on each page, weather, seasons, swipes</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">What’s switched on</p>
+        <p data-t="ui.whats-switched-on" class="st-minor">What’s switched on</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="features"><span class="st-ico" style="--c:#e8743b"><i class="bi bi-toggles"></i></span><span data-t="ui.features" class="st-label">Features<small id="sumFeatures"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">Page settings</p>
+        <p data-t="ui.page-settings" class="st-minor">Page settings</p>
         <nav class="st-group st-menu" id="stPagesNav">
-          <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="finance" id="stRow-finance"><span class="st-ico" style="--c:#11a597"><i class="bi bi-wallet2"></i></span><span class="st-label">Finances<small id="sum-finance">Recurring payments, shared expenses</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="health" id="stRow-health"><span class="st-ico" style="--c:#d55181"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Health<small id="sum-health">Weekly report, habit calendar, gym templates</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="house" id="stRow-house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span class="st-label">House<small id="sum-house"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="people" id="stRow-people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span class="st-label">People<small id="sum-people"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="food" id="stRow-food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span class="st-label">Food<small id="sum-food"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="wish" id="stRow-wish" hidden><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-stars"></i></span><span class="st-label">Wishlist<small id="sum-wish"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="goals" id="stRow-goals" hidden><span class="st-ico" style="--c:#3987e5"><i class="bi bi-bullseye"></i></span><span class="st-label">Goals<small id="sum-goals"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="calendar"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-calendar3"></i></span><span data-t="ui.calendar" class="st-label">Calendar<small id="sumCalendar"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="finance" id="stRow-finance"><span class="st-ico" style="--c:#11a597"><i class="bi bi-wallet2"></i></span><span data-t="ui.finances" class="st-label">Finances<small data-t="ui.recurring-payments-shared-expenses" id="sum-finance">Recurring payments, shared expenses</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="health" id="stRow-health"><span class="st-ico" style="--c:#d55181"><i class="bi bi-heart-pulse"></i></span><span data-t="ui.health" class="st-label">Health<small data-t="ui.weekly-report-habit-calendar-gym-templat" id="sum-health">Weekly report, habit calendar, gym templates</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="work" id="stWorkRow" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-briefcase"></i></span><span data-t="ui.work" class="st-label">Work<small id="sumWork"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="house" id="stRow-house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span data-t="ui.house" class="st-label">House<small id="sum-house"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="people" id="stRow-people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span data-t="ui.people" class="st-label">People<small id="sum-people"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="food" id="stRow-food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span data-t="ui.food" class="st-label">Food<small id="sum-food"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="wish" id="stRow-wish" hidden><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-stars"></i></span><span data-t="ui.wishlist" class="st-label">Wishlist<small id="sum-wish"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="goals" id="stRow-goals" hidden><span class="st-ico" style="--c:#3987e5"><i class="bi bi-bullseye"></i></span><span data-t="ui.goals" class="st-label">Goals<small id="sum-goals"></small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">With your iPhone</p>
+        <p data-t="ui.with-your-iphone" class="st-minor">With your iPhone</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="notify"><span class="st-ico" style="--c:#e66767"><i class="bi bi-bell"></i></span><span class="st-label">Notifications<small id="sumNotify">Off</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="ahealth" data-owner><span class="st-ico" style="--c:#e66767"><i class="bi bi-apple"></i></span><span class="st-label">Apple Health<small>Steps, sleep and more from your iPhone</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="shortcuts" data-adv><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-lightning-charge"></i></span><span class="st-label">Siri &amp; Shortcuts<small>Log things without opening the app</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="notify"><span class="st-ico" style="--c:#e66767"><i class="bi bi-bell"></i></span><span data-t="ui.notifications" class="st-label">Notifications<small data-t="ui.off" id="sumNotify">Off</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="ahealth" data-owner><span class="st-ico" style="--c:#e66767"><i class="bi bi-apple"></i></span><span data-t="ui.apple-health" class="st-label">Apple Health<small data-t="ui.steps-sleep-and-more-from-your-iphone">Steps, sleep and more from your iPhone</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="shortcuts" data-adv><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-lightning-charge"></i></span><span data-t="ui.siri-shortcuts" class="st-label">Siri &amp; Shortcuts<small data-t="ui.log-things-without-opening-the-app">Log things without opening the app</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">Privacy and data</p>
+        <p data-t="ui.privacy-and-data" class="st-minor">Privacy and data</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-goadmin="shared" data-owner><span class="st-ico" style="--c:#22b35e"><i class="bi bi-people"></i></span><span class="st-label">Shared home<small id="sumShare"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="adminset" data-owner><span class="st-ico" style="--c:#3987e5"><i class="bi bi-speedometer2"></i></span><span class="st-label">Admin page<small id="sumAdmin">Panels, checks, warnings, key dates</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="diag" data-adv><span class="st-ico" style="--c:#6b7280"><i class="bi bi-clipboard2-pulse"></i></span><span class="st-label">Diagnostics<small>Errors, sync status, daily self-check</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="shared" data-owner><span class="st-ico" style="--c:#22b35e"><i class="bi bi-people"></i></span><span data-t="ui.shared-home" class="st-label">Shared home<small id="sumShare"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="security"><span class="st-ico" style="--c:#d95926"><i class="bi bi-shield-lock"></i></span><span data-t="ui.security" class="st-label">Security<small id="sumSecurity"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="data"><span class="st-ico" style="--c:#11a597"><i class="bi bi-cloud-check"></i></span><span data-t="ui.data-sync" class="st-label">Data &amp; sync<small id="sumData"></small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="adminset" data-owner><span class="st-ico" style="--c:#3987e5"><i class="bi bi-speedometer2"></i></span><span data-t="ui.admin-page" class="st-label">Admin page<small data-t="ui.panels-checks-warnings-key-dates" id="sumAdmin">Panels, checks, warnings, key dates</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="diag" data-adv><span class="st-ico" style="--c:#6b7280"><i class="bi bi-clipboard2-pulse"></i></span><span data-t="ui.diagnostics" class="st-label">Diagnostics<small data-t="ui.errors-sync-status-daily-self-check">Errors, sync status, daily self-check</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <div class="st-web" id="stWeb" data-owner>
-        <button type="button" class="st-grp st-grpbtn" id="stWebBtn" aria-expanded="true" aria-controls="stWebBody"><i class="bi bi-globe2"></i> jplundberg.com <span>Public website</span><i class="bi bi-chevron-down st-grpchev"></i></button>
+        <button type="button" class="st-grp st-grpbtn" id="stWebBtn" aria-expanded="true" aria-controls="stWebBody"><i class="bi bi-globe2"></i> jplundberg.com <span data-t="ui.public-website">Public website</span><i class="bi bi-chevron-down st-grpchev"></i></button>
         <div class="st-webbody" id="stWebBody">
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-goadmin="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-window-sidebar"></i></span><span class="st-label">Edit the website<small>Front page, texts, CV, courses, articles – in Admin</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-goadmin="write"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-pencil-square"></i></span><span class="st-label">Write an article<small>Opens the writing studio</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-goadmin="overview"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors and status<small>Admin → Overview</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-window-sidebar"></i></span><span data-t="ui.edit-the-website" class="st-label">Edit the website<small data-t="ui.front-page-texts-cv-courses-articles-in">Front page, texts, CV, courses, articles – in Admin</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="write"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-pencil-square"></i></span><span data-t="ui.write-an-article" class="st-label">Write an article<small data-t="ui.opens-the-writing-studio">Opens the writing studio</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-goadmin="overview"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span data-t="ui.visitors-and-status" class="st-label">Visitors and status<small data-t="ui.admin-overview">Admin → Overview</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         <div class="st-webold" hidden>
-        <p class="st-minor">Front page</p>
+        <p data-t="ui.front-page" class="st-minor">Front page</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="texts"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-fonts"></i></span><span class="st-label">Texts<small id="sumTexts">About, roles, contact, footer</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="announce"><span class="st-ico" style="--c:#c98500"><i class="bi bi-megaphone"></i></span><span data-t="ui.announcement" class="st-label">Announcement<small id="sumAnnounce">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="sections"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-layout-text-sidebar"></i></span><span data-t="ui.front-page" class="st-label">Front page<small id="sumSections">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="featured"><span class="st-ico" style="--c:#d55181"><i class="bi bi-star"></i></span><span data-t="ui.featured" class="st-label">Featured<small id="sumFeatured">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="texts"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-fonts"></i></span><span data-t="ui.texts" class="st-label">Texts<small data-t="ui.about-roles-contact-footer" id="sumTexts">About, roles, contact, footer</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">About you</p>
+        <p data-t="ui.about-you" class="st-minor">About you</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="socials"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-share"></i></span><span class="st-label">Socials<small>Links in the header and footer</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="cv" data-scroll="cvJobs"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-briefcase"></i></span><span class="st-label">Experience<small>Jobs on the front page and the CV</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="socials"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-share"></i></span><span data-t="ui.socials" class="st-label">Socials<small data-t="ui.links-in-the-header-and-footer">Links in the header and footer</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="cv" data-scroll="cvJobs"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-briefcase"></i></span><span data-t="ui.experience" class="st-label">Experience<small data-t="ui.jobs-on-the-front-page-and-the-cv">Jobs on the front page and the CV</small></span><i class="bi bi-chevron-right"></i></button>
           <button type="button" class="st-row st-btn" data-go="cv"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-file-earmark-person"></i></span><span class="st-label">CV<small id="sumCv">–</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="courses"><span class="st-ico" style="--c:#c98500"><i class="bi bi-mortarboard"></i></span><span class="st-label">Courses &amp; certificates<small id="sumCourses">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="courses"><span class="st-ico" style="--c:#c98500"><i class="bi bi-mortarboard"></i></span><span data-t="ui.courses-certificates" class="st-label">Courses &amp; certificates<small id="sumCourses">–</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">Articles and projects</p>
+        <p data-t="ui.articles-and-projects" class="st-minor">Articles and projects</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="content"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-journal-check"></i></span><span class="st-label">Articles &amp; projects<small id="sumContent">–</small></span><i class="bi bi-chevron-right"></i></button>
-          <button type="button" class="st-row st-btn" data-go="progress"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bullseye"></i></span><span class="st-label">Project progress<small id="sumProgress">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="content"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-journal-check"></i></span><span data-t="ui.articles-projects" class="st-label">Articles &amp; projects<small id="sumContent">–</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="progress"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bullseye"></i></span><span data-t="ui.project-progress" class="st-label">Project progress<small id="sumProgress">–</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
-        <p class="st-minor">Statistics</p>
+        <p data-t="ui.statistics" class="st-minor">Statistics</p>
         <nav class="st-group st-menu">
-          <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span class="st-label">Visitors<small id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
+          <button type="button" class="st-row st-btn" data-go="visitors"><span class="st-ico" style="--c:#11a597"><i class="bi bi-bar-chart-line"></i></span><span data-t="ui.visitors" class="st-label">Visitors<small data-t="ui.last-7-days" id="sumVisitors">Last 7 days</small></span><i class="bi bi-chevron-right"></i></button>
         </nav>
         </div>
         </div>
         </div>
         </div>
-        <p class="st-foot muted">Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.</p>
+        <p data-t="ui.dashboard-settings-sync-across-your-devi" class="st-foot muted">Dashboard settings sync across your devices. Website changes go live on jplundberg.com about a minute after you publish.</p>
       </div>
 
-      <div class="st-page ap-page" data-page="appearance" data-title="Appearance" hidden>
-      <p class="st-sub ap-sub"><i class="bi bi-palette"></i> Colours</p>
+      <div data-t-data-title="ui.appearance" class="st-page ap-page" data-page="appearance" data-title="Appearance" hidden>
+      <p data-t="ui.colours" class="st-sub ap-sub"><i class="bi bi-palette"></i> Colours</p>
       <section class="st-group">
-        <div class="st-row" id="stNavRow"><span>Menu<small id="stNavNote"></small></span>
-          <div class="seg" role="group" aria-label="Menu">
-            <button type="button" data-nav-opt="bar"><i class="bi bi-window-dock"></i> Bar</button>
-            <button type="button" data-nav-opt="side"><i class="bi bi-layout-sidebar"></i> Side bar</button>
+        <div class="st-row" id="stNavRow"><span data-t="ui.menu">Menu<small id="stNavNote"></small></span>
+          <div data-t-aria-label="ui.menu" class="seg" role="group" aria-label="Menu">
+            <button data-t="ui.bar" type="button" data-nav-opt="bar"><i class="bi bi-window-dock"></i> Bar</button>
+            <button data-t="ui.side-bar" type="button" data-nav-opt="side"><i class="bi bi-layout-sidebar"></i> Side bar</button>
           </div>
         </div>
-        <div class="st-row"><span>Theme</span>
-          <div class="seg" role="group" aria-label="Theme">
-            <button type="button" data-theme-opt="dark"><i class="bi bi-moon-stars"></i> Dark</button>
-            <button type="button" data-theme-opt="light"><i class="bi bi-sun"></i> Light</button>
-            <button type="button" data-theme-opt="auto"><i class="bi bi-circle-half"></i> Auto</button>
-            <button type="button" data-theme-opt="sun"><i class="bi bi-sunrise"></i> Sun</button>
+        <div class="st-row"><span data-t="ui.theme">Theme</span>
+          <div data-t-aria-label="ui.theme" class="seg" role="group" aria-label="Theme">
+            <button data-t="ui.dark" type="button" data-theme-opt="dark"><i class="bi bi-moon-stars"></i> Dark</button>
+            <button data-t="ui.light" type="button" data-theme-opt="light"><i class="bi bi-sun"></i> Light</button>
+            <button data-t="ui.auto" type="button" data-theme-opt="auto"><i class="bi bi-circle-half"></i> Auto</button>
+            <button data-t="ui.sun" type="button" data-theme-opt="sun"><i class="bi bi-sunrise"></i> Sun</button>
           </div>
         </div>
-        <div class="st-col st-accent"><span>Accent colour</span><div class="swatches" id="stAccents"></div></div>
+        <div class="st-col st-accent"><span data-t="ui.accent-colour">Accent colour</span><div class="swatches" id="stAccents"></div></div>
         <div class="st-row st-hex" id="stAccentHex" hidden><span>Your colour<small></small></span><input class="st-input" maxlength="16" placeholder="#14B8A6 or 20, 184, 166" aria-label="Colour as hex or RGB"></div>
       </section>
 
-      <p class="st-sub ap-sub"><i class="bi bi-image"></i> Background</p>
+      <p data-t="ui.background" class="st-sub ap-sub"><i class="bi bi-image"></i> Background</p>
       <section class="st-group">
         <div class="st-col">
           <div class="bg-tiles" id="stBgTiles"></div>
@@ -255,19 +255,19 @@
           <p class="st-note" id="stBgNote"></p>
         </div>
         <div class="st-col" id="stStrengthRow">
-          <span>Strength</span>
-          <div class="st-range"><i class="bi bi-circle"></i><input type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
+          <span data-t="ui.strength">Strength</span>
+          <div class="st-range"><i class="bi bi-circle"></i><input data-t-aria-label="ui.background-strength" type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
         </div>
       </section>
 
-      <p class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards</p>
+      <p data-t="ui.cards" class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards</p>
       <section class="st-group">
         <div class="st-col">
-          <div class="cst-opts" id="stCardStyle" role="group" aria-label="Card style">
-            <button type="button" data-cardstyle="solid"><span class="cst-prev p-solid"><i></i><i></i></span>Solid</button>
-            <button type="button" data-cardstyle="glass"><span class="cst-prev p-glass"><i></i><i></i></span>Glass</button>
-            <button type="button" data-cardstyle="minimal"><span class="cst-prev p-minimal"><i></i><i></i></span>Minimal</button>
-            <button type="button" data-cardstyle="soft"><span class="cst-prev p-soft"><i></i><i></i></span>Soft</button>
+          <div data-t-aria-label="ui.card-style" class="cst-opts" id="stCardStyle" role="group" aria-label="Card style">
+            <button data-t="ui.solid" type="button" data-cardstyle="solid"><span class="cst-prev p-solid"><i></i><i></i></span>Solid</button>
+            <button data-t="ui.glass" type="button" data-cardstyle="glass"><span class="cst-prev p-glass"><i></i><i></i></span>Glass</button>
+            <button data-t="ui.minimal" type="button" data-cardstyle="minimal"><span class="cst-prev p-minimal"><i></i><i></i></span>Minimal</button>
+            <button data-t="ui.soft" type="button" data-cardstyle="soft"><span class="cst-prev p-soft"><i></i><i></i></span>Soft</button>
           </div>
           <p class="st-note" id="stCardNote"></p>
         </div>
@@ -275,312 +275,312 @@
           <span>Glass strength</span>
           <div class="st-range"><i class="bi bi-square-fill"></i><input type="range" id="stGlassStr" min="10" max="100" step="1" aria-label="Glass strength"><i class="bi bi-droplet-half"></i></div>
         </div>
-        <div class="st-row"><span>Density</span>
-          <div class="seg" role="group" aria-label="Density">
-            <button type="button" data-density="comfortable">Comfortable</button>
-            <button type="button" data-density="compact">Compact</button>
+        <div class="st-row"><span data-t="ui.density">Density</span>
+          <div data-t-aria-label="ui.density" class="seg" role="group" aria-label="Density">
+            <button data-t="ui.comfortable" type="button" data-density="comfortable">Comfortable</button>
+            <button data-t="ui.compact" type="button" data-density="compact">Compact</button>
           </div>
         </div>
-        <div class="st-row"><span>Corners</span>
-          <div class="seg" role="group" aria-label="Corners">
-            <button type="button" data-corners="round">Round</button>
-            <button type="button" data-corners="sharp">Sharp</button>
-          </div>
-        </div>
-      </section>
-
-      <p class="st-sub ap-sub"><i class="bi bi-fonts"></i> Text and language</p>
-      <section class="st-group">
-        <div class="st-row"><span class="st-label">Language<small>For the dashboard – the website has its own switch</small></span>
-          <div class="seg" role="group" aria-label="Language">
-            <button type="button" data-langopt="en">English</button>
-            <button type="button" data-langopt="nb">Norsk</button>
-          </div>
-        </div>
-        <div class="st-row"><span class="st-label">Text size<small>Everything – text, buttons and icons – grows or shrinks together</small></span>
-          <div class="seg" role="group" aria-label="Text size">
-            <button type="button" data-textsize="s">Small</button>
-            <button type="button" data-textsize="m">Normal</button>
-            <button type="button" data-textsize="l">Large</button>
+        <div class="st-row"><span data-t="ui.corners">Corners</span>
+          <div data-t-aria-label="ui.corners" class="seg" role="group" aria-label="Corners">
+            <button data-t="ui.round" type="button" data-corners="round">Round</button>
+            <button data-t="ui.sharp" type="button" data-corners="sharp">Sharp</button>
           </div>
         </div>
       </section>
 
-      <p class="st-sub ap-sub"><i class="bi bi-magic"></i> Motion</p>
+      <p data-t="ui.text-and-language" class="st-sub ap-sub"><i class="bi bi-fonts"></i> Text and language</p>
       <section class="st-group">
-        <div class="st-row st-motion"><span class="st-label">Animations<small id="stMotionNote"></small></span>
-          <div class="seg" role="group" aria-label="Motion">
-            <button type="button" data-motion-opt="full">Full</button>
-            <button type="button" data-motion-opt="subtle">Subtle</button>
-            <button type="button" data-motion-opt="off">Off</button>
+        <div class="st-row"><span data-t="ui.language" class="st-label">Language<small data-t="ui.for-the-dashboard-the-website-has-its-ow">For the dashboard – the website has its own switch</small></span>
+          <div data-t-aria-label="ui.language" class="seg" role="group" aria-label="Language">
+            <button data-t="ui.english" type="button" data-langopt="en">English</button>
+            <button data-t="ui.norsk" type="button" data-langopt="nb">Norsk</button>
+          </div>
+        </div>
+        <div class="st-row"><span data-t="ui.text-size" class="st-label">Text size<small data-t="ui.everything-text-buttons-and-icons-grows">Everything – text, buttons and icons – grows or shrinks together</small></span>
+          <div data-t-aria-label="ui.text-size" class="seg" role="group" aria-label="Text size">
+            <button data-t="ui.small" type="button" data-textsize="s">Small</button>
+            <button data-t="ui.normal" type="button" data-textsize="m">Normal</button>
+            <button data-t="ui.large" type="button" data-textsize="l">Large</button>
+          </div>
+        </div>
+      </section>
+
+      <p data-t="ui.motion" class="st-sub ap-sub"><i class="bi bi-magic"></i> Motion</p>
+      <section class="st-group">
+        <div class="st-row st-motion"><span data-t="ui.animations" class="st-label">Animations<small id="stMotionNote"></small></span>
+          <div data-t-aria-label="ui.motion" class="seg" role="group" aria-label="Motion">
+            <button data-t="ui.full" type="button" data-motion-opt="full">Full</button>
+            <button data-t="ui.subtle" type="button" data-motion-opt="subtle">Subtle</button>
+            <button data-t="ui.off" type="button" data-motion-opt="off">Off</button>
           </div>
         </div>
       </section>
       </div>
 
-      <div class="st-page ap-page" data-page="dashboard" data-title="Dashboard" hidden>
-      <p class="st-sub ap-sub"><i class="bi bi-house"></i> Home screen</p>
+      <div data-t-data-title="ui.dashboard" class="st-page ap-page" data-page="dashboard" data-title="Dashboard" hidden>
+      <p data-t="ui.home-screen" class="st-sub ap-sub"><i class="bi bi-house"></i> Home screen</p>
       <section class="st-group">
-        <label class="st-row"><span>Name in greeting</span><input id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
-        <div class="st-row"><span class="st-label">Clock<small>Compact puts At a glance on the first screen of your phone</small></span>
-          <div class="seg" role="group" aria-label="Clock">
-            <button type="button" data-clockstyle="big">Big</button>
-            <button type="button" data-clockstyle="compact">Compact</button>
+        <label class="st-row"><span data-t="ui.name-in-greeting">Name in greeting</span><input data-t-placeholder="ui.your-name" id="stName" class="st-input" placeholder="Your name" autocomplete="off"></label>
+        <div class="st-row"><span data-t="ui.clock" class="st-label">Clock<small data-t="ui.compact-puts-at-a-glance-on-the-first-sc">Compact puts At a glance on the first screen of your phone</small></span>
+          <div data-t-aria-label="ui.clock" class="seg" role="group" aria-label="Clock">
+            <button data-t="ui.big" type="button" data-clockstyle="big">Big</button>
+            <button data-t="ui.compact" type="button" data-clockstyle="compact">Compact</button>
           </div>
         </div>
-        <label class="st-row"><span>Show seconds</span><input type="checkbox" class="switch" id="stSeconds"></label>
-        <label class="st-row"><span>Quotes</span><input type="checkbox" class="switch" id="stQuotes"></label>
-        <div class="st-row"><span class="st-label">Tips in At a glance<small>Streaks, unusual spending and suggestions</small></span>
-          <div class="seg" role="group" aria-label="Tips">
-            <button type="button" data-tipsmode="show">Show</button>
-            <button type="button" data-tipsmode="fold">Fold</button>
-            <button type="button" data-tipsmode="off">Off</button>
+        <label class="st-row"><span data-t="ui.show-seconds">Show seconds</span><input type="checkbox" class="switch" id="stSeconds"></label>
+        <label class="st-row"><span data-t="ui.quotes">Quotes</span><input type="checkbox" class="switch" id="stQuotes"></label>
+        <div class="st-row"><span data-t="ui.tips-in-at-a-glance" class="st-label">Tips in At a glance<small data-t="ui.streaks-unusual-spending-and-suggestions">Streaks, unusual spending and suggestions</small></span>
+          <div data-t-aria-label="ui.tips" class="seg" role="group" aria-label="Tips">
+            <button data-t="ui.show" type="button" data-tipsmode="show">Show</button>
+            <button data-t="ui.fold" type="button" data-tipsmode="fold">Fold</button>
+            <button data-t="ui.off" type="button" data-tipsmode="off">Off</button>
           </div>
         </div>
-        <label class="st-row"><span class="st-label">Next up, at the top<small>The one most useful thing to do now – bigger, with Later</small></span><input type="checkbox" class="switch" id="stNextBest"></label>
-        <label class="st-row"><span class="st-label">Adapt to the time of day<small>Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
+        <label class="st-row"><span data-t="ui.next-up-at-the-top" class="st-label">Next up, at the top<small data-t="ui.the-one-most-useful-thing-to-do-now-bigg">The one most useful thing to do now – bigger, with Later</small></span><input type="checkbox" class="switch" id="stNextBest"></label>
+        <label class="st-row"><span data-t="ui.adapt-to-the-time-of-day" class="st-label">Adapt to the time of day<small data-t="ui.mornings-departures-and-weather-first-ev">Mornings: departures and weather first. Evenings: habits and money.</small></span><input type="checkbox" class="switch" id="stAdapt"></label>
       </section>
-      <p class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards <span class="st-hint">Drag the grip to change the order on your dashboard</span></p>
+      <p data-t="ui.cards" class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards <span data-t="ui.drag-the-grip-to-change-the-order-on-you" class="st-hint">Drag the grip to change the order on your dashboard</span></p>
       <section class="st-group"><div id="stCards"></div></section>
-      <p class="st-sub ap-sub"><i class="bi bi-house-gear"></i> Checklists <span class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
+      <p data-t="ui.checklists" class="st-sub ap-sub"><i class="bi bi-house-gear"></i> Checklists <span data-t="ui.ready-made-repeating-tasks-switch-off-to" class="st-hint">Ready-made repeating tasks – switch off to remove them again</span></p>
       <section class="st-group"><div id="stLists"></div></section>
       </div>
 
-      <div class="st-page ap-page" data-page="layout" data-title="Menu &amp; pages" hidden>
-      <p class="st-sub ap-sub"><i class="bi bi-menu-button-wide"></i> Menu <span class="st-hint">The order of the pages in the menu</span></p>
+      <div data-t-data-title="ui.menu-pages" class="st-page ap-page" data-page="layout" data-title="Menu &amp; pages" hidden>
+      <p data-t="ui.menu" class="st-sub ap-sub"><i class="bi bi-menu-button-wide"></i> Menu <span data-t="ui.the-order-of-the-pages-in-the-menu" class="st-hint">The order of the pages in the menu</span></p>
       <section class="st-group"><div id="stNav"></div></section>
-      <p class="st-sub ap-sub"><i class="bi bi-layout-text-window-reverse"></i> Pages <span class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
+      <p data-t="ui.pages" class="st-sub ap-sub"><i class="bi bi-layout-text-window-reverse"></i> Pages <span data-t="ui.order-the-sections-and-cards-on-each-pag" class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
       <section class="st-group">
-        <a class="st-row st-btn" href="/cmd/finance/?customize"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-wallet2"></i></span><span class="st-label">Customize Finances</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/habits/?customize"><span class="st-ico" style="--c:#e66767"><i class="bi bi-heart-pulse"></i></span><span class="st-label">Customize Health</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/work/?customize"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-briefcase"></i></span><span class="st-label">Customize Work</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/house/?customize" data-hlcust="house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span class="st-label">Customize House</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/people/?customize" data-hlcust="people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span class="st-label">Customize People</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/food/?customize" data-hlcust="food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span class="st-label">Customize Food</span><i class="bi bi-chevron-right"></i></a>
-        <a class="st-row st-btn" href="/cmd/wish/?customize" data-hlcust="wish" hidden><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-stars"></i></span><span class="st-label">Customize Wishlist</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/finance/?customize"><span class="st-ico" style="--c:#22b35e"><i class="bi bi-wallet2"></i></span><span data-t="ui.customize-finances" class="st-label">Customize Finances</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/habits/?customize"><span class="st-ico" style="--c:#e66767"><i class="bi bi-heart-pulse"></i></span><span data-t="ui.customize-health" class="st-label">Customize Health</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/work/?customize"><span class="st-ico" style="--c:#3987e5"><i class="bi bi-briefcase"></i></span><span data-t="ui.customize-work" class="st-label">Customize Work</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/house/?customize" data-hlcust="house" hidden><span class="st-ico" style="--c:#22b35e"><i class="bi bi-house-gear"></i></span><span data-t="ui.customize-house" class="st-label">Customize House</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/people/?customize" data-hlcust="people" hidden><span class="st-ico" style="--c:#d55181"><i class="bi bi-people"></i></span><span data-t="ui.customize-people" class="st-label">Customize People</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/food/?customize" data-hlcust="food" hidden><span class="st-ico" style="--c:#c98500"><i class="bi bi-basket"></i></span><span data-t="ui.customize-food" class="st-label">Customize Food</span><i class="bi bi-chevron-right"></i></a>
+        <a class="st-row st-btn" href="/cmd/wish/?customize" data-hlcust="wish" hidden><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-stars"></i></span><span data-t="ui.customize-wishlist" class="st-label">Customize Wishlist</span><i class="bi bi-chevron-right"></i></a>
       </section>
-      <p class="st-note st-pad">Number tiles (Finances, Health, Travel) each have their own Customize button under them.</p>
+      <p data-t="ui.number-tiles-finances-health-travel-each" class="st-note st-pad">Number tiles (Finances, Health, Travel) each have their own Customize button under them.</p>
       <div id="stFoldRow"></div>
       </div>
 
-      <div class="st-page" data-page="features" data-title="Features" hidden>
-        <p class="st-note ft-intro">Pick what you use. Switched-off parts disappear from the menu, the dashboard and the calendar. Your data stays, encrypted and synced, so switching back on brings everything back.</p>
+      <div data-t-data-title="ui.features" class="st-page" data-page="features" data-title="Features" hidden>
+        <p data-t="ui.pick-what-you-use-switched-off-parts-dis" class="st-note ft-intro">Pick what you use. Switched-off parts disappear from the menu, the dashboard and the calendar. Your data stays, encrypted and synced, so switching back on brings everything back.</p>
         <section class="st-group ft-group" id="ftList"></section>
       </div>
 
-      <div class="st-page me-page" data-page="profile" data-title="Profile" hidden>
+      <div data-t-data-title="ui.profile" class="st-page me-page" data-page="profile" data-title="Profile" hidden>
         <div class="me-box" id="meBox"></div>
       </div>
 
-      <div class="st-page me-page" data-page="socials" data-title="Socials" hidden>
-        <p class="st-note so-intro"><i class="bi bi-globe2"></i> Public: the profiles switched on here show on jplundberg.com (sidebar, front page and footer) after you tap Publish.</p>
+      <div data-t-data-title="ui.socials" class="st-page me-page" data-page="socials" data-title="Socials" hidden>
+        <p data-t="ui.public-the-profiles-switched-on-here-sho" class="st-note so-intro"><i class="bi bi-globe2"></i> Public: the profiles switched on here show on jplundberg.com (sidebar, front page and footer) after you tap Publish.</p>
         <div class="me-box" id="soBox"></div>
       </div>
 
-      <div class="st-page" data-page="calendar" data-title="Calendar" hidden>
+      <div data-t-data-title="ui.calendar" class="st-page" data-page="calendar" data-title="Calendar" hidden>
         <div class="cs-box" id="csHome"></div>
       </div>
 
-      <div class="st-page" data-page="work" data-title="Work" hidden>
-        <p class="st-intro">Used by Flex time on the Work page and the “Work today” card.</p>
+      <div data-t-data-title="ui.work" class="st-page" data-page="work" data-title="Work" hidden>
+        <p data-t="ui.used-by-flex-time-on-the-work-page-and-t" class="st-intro">Used by Flex time on the Work page and the “Work today” card.</p>
         <div class="st-group">
-          <label class="st-row"><span>Normal working day</span><span class="st-unit"><input class="st-input st-num" id="wkNorm" inputmode="decimal" aria-label="Normal working day in hours"> h</span></label>
-          <label class="st-row"><span>Lunch break, taken off the day</span><span class="st-unit"><input class="st-input st-num" id="wkBrk" inputmode="numeric" aria-label="Break in minutes"> min</span></label>
-          <label class="st-row"><span>Holiday days a year</span><span class="st-unit"><input class="st-input st-num" id="wkVac" inputmode="numeric" aria-label="Holiday days per year"> days</span></label>
+          <label class="st-row"><span data-t="ui.normal-working-day">Normal working day</span><span class="st-unit"><input data-t-aria-label="ui.normal-working-day-in-hours" class="st-input st-num" id="wkNorm" inputmode="decimal" aria-label="Normal working day in hours"> h</span></label>
+          <label class="st-row"><span data-t="ui.lunch-break-taken-off-the-day">Lunch break, taken off the day</span><span data-t="ui.min" class="st-unit"><input data-t-aria-label="ui.break-in-minutes" class="st-input st-num" id="wkBrk" inputmode="numeric" aria-label="Break in minutes"> min</span></label>
+          <label class="st-row"><span data-t="ui.holiday-days-a-year">Holiday days a year</span><span data-t="ui.days" class="st-unit"><input data-t-aria-label="ui.holiday-days-per-year" class="st-input st-num" id="wkVac" inputmode="numeric" aria-label="Holiday days per year"> days</span></label>
         </div>
-        <p class="st-note">Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.</p>
+        <p data-t="ui.public-holidays-come-from-the-calendar-s" class="st-note">Public holidays come from the calendar setting and don’t count as work. The normal day is also in your profile.</p>
       </div>
 
-      <div class="st-page" data-page="finance" data-title="Finances" hidden>
+      <div data-t-data-title="ui.finances" class="st-page" data-page="finance" data-title="Finances" hidden>
         <div id="mpSet"></div>
         <div id="mpSet2"></div>
       </div>
 
-      <div class="st-page" data-page="health" data-title="Health" hidden>
+      <div data-t-data-title="ui.health" class="st-page" data-page="health" data-title="Health" hidden>
         <div id="hpSet"></div>
         <div id="hpSet2"></div>
       </div>
 
-      <div class="st-page" data-page="house" data-title="House" hidden>
+      <div data-t-data-title="ui.house" class="st-page" data-page="house" data-title="House" hidden>
         <div id="hlSet-house"></div>
         <div id="hlSet-house2"></div>
         <div id="hlSet-house3"></div>
         <div id="hlSet-house4"></div>
       </div>
 
-      <div class="st-page" data-page="people" data-title="People" hidden>
+      <div data-t-data-title="ui.people" class="st-page" data-page="people" data-title="People" hidden>
         <div id="hlSet-people"></div>
         <div id="hlSet-people2"></div>
       </div>
 
-      <div class="st-page" data-page="food" data-title="Food" hidden>
+      <div data-t-data-title="ui.food" class="st-page" data-page="food" data-title="Food" hidden>
         <div id="hlSet-food"></div>
       </div>
-      <div class="st-page" data-page="wish" data-title="Wishlist" hidden>
+      <div data-t-data-title="ui.wishlist" class="st-page" data-page="wish" data-title="Wishlist" hidden>
         <div id="hlSet-wish"></div>
       </div>
-      <div class="st-page" data-page="goals" data-title="Goals" hidden>
+      <div data-t-data-title="ui.goals" class="st-page" data-page="goals" data-title="Goals" hidden>
         <div id="hlSet-goals"></div>
       </div>
 
-      <div class="st-page" data-page="security" data-title="Security" hidden>
+      <div data-t-data-title="ui.security" class="st-page" data-page="security" data-title="Security" hidden>
       <section class="st-group">
-        <label class="st-row"><span>Lock after no activity</span>
+        <label class="st-row"><span data-t="ui.lock-after-no-activity">Lock after no activity</span>
           <select id="stLock" class="st-select">
-            <option value="15">15 minutes</option>
+            <option data-t="ui.15-minutes" value="15">15 minutes</option>
             <option value="60">1 hour</option>
-            <option value="240">4 hours</option>
+            <option data-t="ui.4-hours" value="240">4 hours</option>
             <option value="1440">1 day</option>
           </select>
         </label>
-        <button class="st-row st-btn" id="stChangePc" type="button"><span><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
-        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery code</span><small id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stChangePc" type="button"><span data-t="ui.change-passcode"><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRecovery" type="button"><span class="st-label"><span><i class="bi bi-life-preserver"></i> Recovery code</span><small data-t="ui.not-set-up-if-you-forget-the-passcode-ev" id="stRecState">Not set up – if you forget the passcode, everything is lost</small></span><i class="bi bi-chevron-right"></i></button>
         <form class="inline-form" id="pcForm" hidden>
           <input type="text" name="username" value="dashboard" autocomplete="username" hidden>
           <input id="pcNew" type="password" placeholder="New passcode (at least 6 characters)" autocomplete="new-password" required>
           <input id="pcConfirm" type="password" placeholder="Repeat new passcode" autocomplete="new-password" required>
           <div class="form-actions">
             <span class="spacer"></span>
-            <button type="button" class="text-btn" id="pcCancel">Cancel</button>
-            <button type="submit" class="pill-btn">Save</button>
+            <button data-t="ui.cancel" type="button" class="text-btn" id="pcCancel">Cancel</button>
+            <button data-t="ui.save" type="submit" class="pill-btn">Save</button>
           </div>
         </form>
-        <button class="st-row st-btn" id="stLockNow" type="button"><span><i class="bi bi-lock"></i> Lock now</span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stLockNow" type="button"><span data-t="ui.lock-now"><i class="bi bi-lock"></i> Lock now</span><i class="bi bi-chevron-right"></i></button>
       </section>
-      <p class="st-sub ap-sub"><i class="bi bi-phone"></i> Your devices <span class="st-hint">Where your dashboard is open – sign one out if you lose it</span></p>
+      <p data-t="ui.your-devices" class="st-sub ap-sub"><i class="bi bi-phone"></i> Your devices <span data-t="ui.where-your-dashboard-is-open-sign-one-ou" class="st-hint">Where your dashboard is open – sign one out if you lose it</span></p>
       <section class="st-group" id="stDevices"></section>
       </div>
 
-      <div class="st-page" data-page="adminset" data-title="Admin page" hidden><div id="crSet"></div></div>
-      <div class="st-page" data-page="touches" data-title="Pictures &amp; touches" hidden><div id="dlSet"></div></div>
-      <div class="st-page" data-page="data" data-title="Data &amp; sync" hidden>
+      <div data-t-data-title="ui.admin-page" class="st-page" data-page="adminset" data-title="Admin page" hidden><div id="crSet"></div></div>
+      <div data-t-data-title="ui.pictures-touches" class="st-page" data-page="touches" data-title="Pictures &amp; touches" hidden><div id="dlSet"></div></div>
+      <div data-t-data-title="ui.data-sync" class="st-page" data-page="data" data-title="Data &amp; sync" hidden>
       <section class="st-group">
-        <div class="st-row st-sync"><span id="stSync"></span><button class="text-btn" id="stSyncNow" type="button">Sync now</button></div>
-        <button class="st-row st-btn" id="stBackup" type="button"><span class="st-label"><span><i class="bi bi-download"></i> Download encrypted backup</span><small id="stBackupWhen"></small></span><i class="bi bi-chevron-right"></i></button>
-        <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span><i class="bi bi-upload"></i> Restore from a backup</span><small>Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
+        <div class="st-row st-sync"><span id="stSync"></span><button data-t="ui.sync-now" class="text-btn" id="stSyncNow" type="button">Sync now</button></div>
+        <button class="st-row st-btn" id="stBackup" type="button"><span class="st-label"><span data-t="ui.download-encrypted-backup"><i class="bi bi-download"></i> Download encrypted backup</span><small id="stBackupWhen"></small></span><i class="bi bi-chevron-right"></i></button>
+        <button class="st-row st-btn" id="stRestore" type="button"><span class="st-label"><span data-t="ui.restore-from-a-backup"><i class="bi bi-upload"></i> Restore from a backup</span><small data-t="ui.replaces-whats-here-and-on-your-other-de">Replaces what's here and on your other devices</small></span><i class="bi bi-chevron-right"></i></button>
         <input type="file" id="stRestoreFile" accept=".json,application/json" hidden>
       </section>
-      <p class="st-sub ap-sub" data-owner><i class="bi bi-envelope-paper"></i> Weekly backup by email <span class="st-hint">Encrypted, to your inbox</span></p>
-      <section class="st-group" id="stMailBk" data-owner><div class="st-row"><span class="muted">Looking …</span></div></section>
-      <p class="st-sub ap-sub"><i class="bi bi-box-seam"></i> What’s saved <span class="st-hint">Counted on this device, from your encrypted data</span></p>
+      <p data-t="ui.weekly-backup-by-email" class="st-sub ap-sub" data-owner><i class="bi bi-envelope-paper"></i> Weekly backup by email <span data-t="ui.encrypted-to-your-inbox" class="st-hint">Encrypted, to your inbox</span></p>
+      <section class="st-group" id="stMailBk" data-owner><div class="st-row"><span data-t="ui.looking" class="muted">Looking …</span></div></section>
+      <p data-t="ui.whats-saved" class="st-sub ap-sub"><i class="bi bi-box-seam"></i> What’s saved <span data-t="ui.counted-on-this-device-from-your-encrypt" class="st-hint">Counted on this device, from your encrypted data</span></p>
       <section class="st-group"><ul class="st-inv" id="stInventory"></ul></section>
-      <p class="st-sub ap-sub"><i class="bi bi-clock-history"></i> Earlier versions <span class="st-hint">Kept on your server, one a day for 30 days</span></p>
-      <section class="st-group"><ul class="st-inv st-snaps" id="stSnaps"><li class="muted">Looking …</li></ul></section>
-      <p class="st-intro st-after">Your data is encrypted with your passcode, synced through your server and kept in this browser. A backup file is a third copy – keep it in Files, iCloud Drive or on your computer. At a glance reminds you once a month.</p>
+      <p data-t="ui.earlier-versions" class="st-sub ap-sub"><i class="bi bi-clock-history"></i> Earlier versions <span data-t="ui.kept-on-your-server-one-a-day-for-30-day" class="st-hint">Kept on your server, one a day for 30 days</span></p>
+      <section class="st-group"><ul class="st-inv st-snaps" id="stSnaps"><li data-t="ui.looking" class="muted">Looking …</li></ul></section>
+      <p data-t="ui.your-data-is-encrypted-with-your-passcod" class="st-intro st-after">Your data is encrypted with your passcode, synced through your server and kept in this browser. A backup file is a third copy – keep it in Files, iCloud Drive or on your computer. At a glance reminds you once a month.</p>
       <div class="st-confirm" id="stRestoreAsk" hidden>
-        <p><b>Restore this backup?</b> <span id="stRestoreInfo"></span> Everything on the dashboard is replaced by it, on all your devices. Download a backup of what you have now first if you might want it back.</p>
-        <div class="qa-acts"><button type="button" class="text-btn" id="stRestoreNo">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide" id="stRestoreYes">Restore</button></div>
+        <p><b data-t="ui.restore-this-backup">Restore this backup?</b> <span id="stRestoreInfo"></span> Everything on the dashboard is replaced by it, on all your devices. Download a backup of what you have now first if you might want it back.</p>
+        <div class="qa-acts"><button data-t="ui.cancel" type="button" class="text-btn" id="stRestoreNo">Cancel</button><span class="spacer"></span><button data-t="ui.restore" type="button" class="pill-btn wide" id="stRestoreYes">Restore</button></div>
       </div>
       </div>
 
 
-      <div class="st-page" data-page="diag" data-title="Diagnostics" hidden>
-        <p class="st-intro">How the dashboard is doing on this device: sync, Apple Health, the daily self-check and recent errors. It checks itself once a day and only tells you when something is wrong.</p>
-        <div id="dgBody"><p class="muted">Looking …</p></div>
+      <div data-t-data-title="ui.diagnostics" class="st-page" data-page="diag" data-title="Diagnostics" hidden>
+        <p data-t="ui.how-the-dashboard-is-doing-on-this-devic" class="st-intro">How the dashboard is doing on this device: sync, Apple Health, the daily self-check and recent errors. It checks itself once a day and only tells you when something is wrong.</p>
+        <div id="dgBody"><p data-t="ui.looking" class="muted">Looking …</p></div>
       </div>
 
-      <div class="st-page" data-page="shortcuts" data-title="Siri &amp; Shortcuts" hidden>
-        <p class="st-intro">Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you press Add.</p>
+      <div data-t-data-title="ui.siri-shortcuts" class="st-page" data-page="shortcuts" data-title="Siri &amp; Shortcuts" hidden>
+        <p data-t="ui.links-that-open-the-dashboard-with-somet" class="st-intro">Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you press Add.</p>
         <section class="st-group sc-list" id="scList"></section>
-        <p class="st-sub"><i class="bi bi-mic"></i> “Hey Siri, log expense” – 2 minutes</p>
+        <p data-t="ui.hey-siri-log-expense-2-minutes" class="st-sub"><i class="bi bi-mic"></i> “Hey Siri, log expense” – 2 minutes</p>
         <section class="st-group sc-steps">
           <ol>
-            <li>Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
-            <li>Add the action <b>Ask for Input</b>. Type: Text. Prompt: <i>What did you buy?</i> – you'll say or type e.g. “149 rema”.</li>
-            <li>Add <b>URL</b> and paste the first link above (the one that ends in <code>?add=</code>). Then tap after it and insert <b>Provided Input</b> from the variables bar.</li>
-            <li>Add <b>Open URLs</b>.</li>
-            <li>Rename the shortcut to <b>Log expense</b>. Now say “Hey Siri, log expense”.</li>
+            <li data-t="ui.open-the">Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
+            <li data-t="ui.add-the-action">Add the action <b>Ask for Input</b>. Type: Text. Prompt: <i data-t="ui.what-did-you-buy">What did you buy?</i> – you'll say or type e.g. “149 rema”.</li>
+            <li data-t="ui.add">Add <b>URL</b> and paste the first link above (the one that ends in <code>?add=</code>). Then tap after it and insert <b>Provided Input</b> from the variables bar.</li>
+            <li data-t="ui.add">Add <b>Open URLs</b>.</li>
+            <li data-t="ui.rename-the-shortcut-to">Rename the shortcut to <b data-t="ui.log-expense">Log expense</b>. Now say “Hey Siri, log expense”.</li>
           </ol>
-          <p class="muted">The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.</p>
-          <p class="muted">Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it's the same as in the app.</p>
+          <p data-t="ui.the-same-works-for-events-tor-14-tannleg" class="muted">The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.</p>
+          <p data-t="ui.links-open-in-safari-the-first-time-unlo" class="muted">Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it's the same as in the app.</p>
         </section>
       </div>
 
-      <div class="st-page" data-page="ahealth" data-title="Apple Health" hidden id="ahSet">
-        <p class="st-intro">Steps, sleep, heart rate, exercise, weight and more from your iPhone, once a day. A Shortcut sends the numbers to your server; the dashboard picks them up, keeps them encrypted with the rest and deletes them from the server.</p>
+      <div data-t-data-title="ui.apple-health" class="st-page" data-page="ahealth" data-title="Apple Health" hidden id="ahSet">
+        <p data-t="ui.steps-sleep-heart-rate-exercise-weight-a" class="st-intro">Steps, sleep, heart rate, exercise, weight and more from your iPhone, once a day. A Shortcut sends the numbers to your server; the dashboard picks them up, keeps them encrypted with the rest and deletes them from the server.</p>
         <section class="st-group">
-          <label class="st-row"><span class="st-label">Show Apple Health<small id="ahStatus">Nothing received yet</small></span><input type="checkbox" class="switch" id="ahOn"></label>
+          <label class="st-row"><span data-t="ui.show-apple-health" class="st-label">Show Apple Health<small data-t="ui.nothing-received-yet" id="ahStatus">Nothing received yet</small></span><input type="checkbox" class="switch" id="ahOn"></label>
         </section>
-        <p class="st-sub">Habits that tick themselves</p>
+        <p data-t="ui.habits-that-tick-themselves" class="st-sub">Habits that tick themselves</p>
         <section class="st-group" id="ahHabits"></section>
-        <details class="st-setup" id="ahSetup"><summary class="st-sub"><i class="bi bi-tools"></i> How to set it up <span class="st-hint">About 10 minutes, once – Cloudflare first, then your iPhone</span></summary>
-        <p class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
+        <details class="st-setup" id="ahSetup"><summary data-t="ui.how-to-set-it-up" class="st-sub"><i class="bi bi-tools"></i> How to set it up <span data-t="ui.about-10-minutes-once-cloudflare-first-t" class="st-hint">About 10 minutes, once – Cloudflare first, then your iPhone</span></summary>
+        <p data-t="ui.once-in-cloudflare-3-minutes" class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
         <section class="st-group sc-steps">
           <ol>
-            <li>Paste the newest <code>worker.js</code> into the Worker, if you haven't.</li>
+            <li data-t="ui.paste-the-newest">Paste the newest <code>worker.js</code> into the Worker, if you haven't.</li>
             <li>Zero Trust → <b>Access → Service auth → Create service token</b>. Name: <i>iPhone Shortcut</i>, duration: non-expiring. Copy the <b>Client ID</b> and <b>Client Secret</b> straight into the Shortcut below – nowhere else.</li>
             <li><b>Access → Applications</b> → your dashboard → <b>Policies → Add a policy</b>. Action: <b>Service Auth</b>. Include: <b>Service Token</b> → <i>iPhone Shortcut</i>. Save.</li>
           </ol>
-          <p class="muted">The token can only hand in health numbers – it can't read or change anything else.</p>
+          <p data-t="ui.the-token-can-only-hand-in-health-number" class="muted">The token can only hand in health numbers – it can't read or change anything else.</p>
         </section>
-        <p class="st-sub"><i class="bi bi-2-circle"></i> On your iPhone (5 minutes)</p>
+        <p data-t="ui.on-your-iphone-5-minutes" class="st-sub"><i class="bi bi-2-circle"></i> On your iPhone (5 minutes)</p>
         <section class="st-group sc-steps">
           <ol>
-            <li>Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
-            <li><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
-            <li><b>Sleep</b> (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):
+            <li data-t="ui.shortcuts">Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
+            <li data-t="ui.type-steps-start-date-is-today-then"><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
+            <li><b data-t="ui.sleep">Sleep</b> (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):
               <ol type="a">
                 <li><b>Adjust Date</b>: Subtract <b>24 hours</b> from <b>Current Date</b>.</li>
-                <li><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Awake</b>, <b>is not In Bed</b>, <b>is not Asleep</b> (keeps the Watch’s Core, Deep and REM, so nothing is counted twice). Limit off. No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>.</li>
+                <li data-t="ui.type-sleep-start-date-is-in-the-last-1-d"><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Awake</b>, <b>is not In Bed</b>, <b>is not Asleep</b> (keeps the Watch’s Core, Deep and REM, so nothing is counted twice). Limit off. No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>.</li>
                 <li><b>Repeat with Each</b> item in Health Samples → <b>If</b> Repeat Item’s Start Date <b>is after</b> Adjusted Date → <b>Get Minutes between</b> Repeat Item’s Start Date and End Date → <b>Otherwise</b> → <b>Number</b> 0 → End If → End Repeat.</li>
                 <li><b>Calculate Statistics</b> → Sum of Repeat Results, renamed <i>Sleep sum</i>. That’s minutes – the dashboard turns it into hours.</li>
               </ol></li>
-            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
-            <li><b>More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
+            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button data-t="ui.copy" type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
+            <li data-t="ui.optional-one"><b data-t="ui.more-numbers">More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
               <div class="ah-keys">
                 <span><code>exercise</code> Exercise Minutes · Sum</span><span><code>active</code> Active Energy · Sum</span><span><code>stand</code> Stand Hours · Sum</span>
                 <span><code>distance</code> Walking + Running Distance · Sum</span><span><code>flights</code> Flights Climbed · Sum</span><span><code>daylight</code> Time in Daylight · Sum</span>
                 <span><code>hr</code> Heart Rate · Average, today</span><span><code>rhr</code> Resting Heart Rate · Average</span><span><code>hrv</code> Heart Rate Variability · Average</span><span><code>vo2</code> Cardio Fitness (VO₂ max) · Average, last 30 days</span>
                 <span><code>weight</code> Weight · Average, last 30 days</span><span><code>mindful</code> Mindful Minutes · Sum</span><span><code>water</code> Water · Sum</span>
               </div></li>
-            <li>Run it once. Open the dashboard – a note says what arrived.</li>
-            <li>Shortcuts → <b>Automation → +</b> → Time of Day, 22:30, Daily → <b>Run Immediately</b> → Health to dashboard.</li>
+            <li data-t="ui.run-it-once-open-the-dashboard-a-note-sa">Run it once. Open the dashboard – a note says what arrived.</li>
+            <li data-t="ui.shortcuts">Shortcuts → <b>Automation → +</b> → Time of Day, 22:30, Daily → <b>Run Immediately</b> → Health to dashboard.</li>
           </ol>
-          <p class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
+          <p data-t="ui.sleep-can-come-as-hours-minutes-or-secon" class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
         </section>
         </details>
-        <section class="st-group"><button class="st-row st-btn" id="ahClear" type="button"><span class="danger-txt"><i class="bi bi-trash3"></i> Remove Apple Health data from the dashboard</span><i class="bi bi-chevron-right"></i></button></section>
+        <section class="st-group"><button class="st-row st-btn" id="ahClear" type="button"><span data-t="ui.remove-apple-health-data-from-the-dashbo" class="danger-txt"><i class="bi bi-trash3"></i> Remove Apple Health data from the dashboard</span><i class="bi bi-chevron-right"></i></button></section>
       </div>
 
-      <div class="st-page" data-page="notify" data-title="Notifications" hidden>
-        <p class="st-intro" id="ntIntro">Reminders on this device, even when the dashboard is closed. Off until you switch it on, and you choose what they say.</p>
+      <div data-t-data-title="ui.notifications" class="st-page" data-page="notify" data-title="Notifications" hidden>
+        <p data-t="ui.reminders-on-this-device-even-when-the-d" class="st-intro" id="ntIntro">Reminders on this device, even when the dashboard is closed. Off until you switch it on, and you choose what they say.</p>
         <section class="st-group">
-          <label class="st-row"><span class="st-label">Notifications on this device<small id="ntState">Off</small></span><input type="checkbox" class="switch" id="ntOn"></label>
+          <label class="st-row"><span data-t="ui.notifications-on-this-device" class="st-label">Notifications on this device<small data-t="ui.off" id="ntState">Off</small></span><input type="checkbox" class="switch" id="ntOn"></label>
         </section>
         <div id="ntMore" hidden>
-          <p class="st-sub">What to remind you of</p>
+          <p data-t="ui.what-to-remind-you-of" class="st-sub">What to remind you of</p>
           <section class="st-group">
-            <div class="st-row"><span class="st-label">Events<small>Before things in your calendar</small></span>
-              <div class="seg" role="group" aria-label="Before events"><button type="button" data-ntev="0">Off</button><button type="button" data-ntev="15">15 min</button><button type="button" data-ntev="30">30 min</button><button type="button" data-ntev="60">1 h</button></div></div>
-            <label class="st-row"><span class="st-label">Bills<small>On the day they're due, 09:00</small></span><input type="checkbox" class="switch" data-ntk="bills"></label>
-            <label class="st-row"><span class="st-label">Tasks with a day<small>09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="tasks"></label>
-            <label class="st-row"><span class="st-label">Payday<small>08:00</small></span><input type="checkbox" class="switch" data-ntk="pay"></label>
-            <label class="st-row"><span class="st-label">Trips<small>The evening before you leave, 19:00</small></span><input type="checkbox" class="switch" data-ntk="trips"></label>
-            <label class="st-row"><span class="st-label">Weekly check-in<small>Sunday 18:00</small></span><input type="checkbox" class="switch" data-ntk="checkin"></label>
-            <label class="st-row" data-ntfeat="house"><span class="st-label">Bins and upkeep<small>Bins the evening before, upkeep on the day</small></span><input type="checkbox" class="switch" data-ntk="house"></label>
-            <label class="st-row" data-ntfeat="people"><span class="st-label">Birthdays<small>The evening before, and 09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="people"></label>
-            <label class="st-row" data-ntfeat="ptime"><span class="st-label">Client timer still running<small>When it has run longer than you set under Work</small></span><input type="checkbox" class="switch" data-ntk="timer"></label>
-            <label class="st-row"><span class="st-label">Morning summary<small>07:30 – today’s events, tasks and bills due</small></span><input type="checkbox" class="switch" data-ntk="morning"></label>
-            <label class="st-row" data-ntfeat="travel"><span class="st-label">Time to leave for work<small>Weekdays, 10 minutes before your usual departure</small></span><input type="checkbox" class="switch" data-ntk="commute"></label>
+            <div class="st-row"><span data-t="ui.events" class="st-label">Events<small data-t="ui.before-things-in-your-calendar">Before things in your calendar</small></span>
+              <div class="seg" role="group" aria-label="Before events"><button data-t="ui.off" type="button" data-ntev="0">Off</button><button type="button" data-ntev="15">15 min</button><button type="button" data-ntev="30">30 min</button><button type="button" data-ntev="60">1 h</button></div></div>
+            <label class="st-row"><span data-t="ui.bills" class="st-label">Bills<small>On the day they're due, 09:00</small></span><input type="checkbox" class="switch" data-ntk="bills"></label>
+            <label class="st-row"><span data-t="ui.tasks-with-a-day" class="st-label">Tasks with a day<small data-t="ui.09-00-on-the-day">09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="tasks"></label>
+            <label class="st-row"><span data-t="ui.payday" class="st-label">Payday<small>08:00</small></span><input type="checkbox" class="switch" data-ntk="pay"></label>
+            <label class="st-row"><span data-t="ui.trips" class="st-label">Trips<small data-t="ui.the-evening-before-you-leave-19-00">The evening before you leave, 19:00</small></span><input type="checkbox" class="switch" data-ntk="trips"></label>
+            <label class="st-row"><span data-t="ui.weekly-check-in" class="st-label">Weekly check-in<small data-t="ui.sunday-18-00">Sunday 18:00</small></span><input type="checkbox" class="switch" data-ntk="checkin"></label>
+            <label class="st-row" data-ntfeat="house"><span data-t="ui.bins-and-upkeep" class="st-label">Bins and upkeep<small data-t="ui.bins-the-evening-before-upkeep-on-the-da">Bins the evening before, upkeep on the day</small></span><input type="checkbox" class="switch" data-ntk="house"></label>
+            <label class="st-row" data-ntfeat="people"><span data-t="ui.birthdays" class="st-label">Birthdays<small data-t="ui.the-evening-before-and-09-00-on-the-day">The evening before, and 09:00 on the day</small></span><input type="checkbox" class="switch" data-ntk="people"></label>
+            <label class="st-row" data-ntfeat="ptime"><span data-t="ui.client-timer-still-running" class="st-label">Client timer still running<small data-t="ui.when-it-has-run-longer-than-you-set-unde">When it has run longer than you set under Work</small></span><input type="checkbox" class="switch" data-ntk="timer"></label>
+            <label class="st-row"><span data-t="ui.morning-summary" class="st-label">Morning summary<small data-t="ui.07-30-todays-events-tasks-and-bills-due">07:30 – today’s events, tasks and bills due</small></span><input type="checkbox" class="switch" data-ntk="morning"></label>
+            <label class="st-row" data-ntfeat="travel"><span data-t="ui.time-to-leave-for-work" class="st-label">Time to leave for work<small data-t="ui.weekdays-10-minutes-before-your-usual-de">Weekdays, 10 minutes before your usual departure</small></span><input type="checkbox" class="switch" data-ntk="commute"></label>
           </section>
-          <p class="st-sub">What they say</p>
+          <p data-t="ui.what-they-say" class="st-sub">What they say</p>
           <section class="st-group">
-            <div class="st-row"><span class="st-label">Text<small id="ntDetailNote"></small></span>
-              <div class="seg" role="group" aria-label="Notification text"><button type="button" data-ntdetail="private">Private</button><button type="button" data-ntdetail="full">Full</button></div></div>
-            <button class="st-row st-btn" id="ntTest" type="button"><span><i class="bi bi-send"></i> Send a test notification</span><i class="bi bi-chevron-right"></i></button>
+            <div class="st-row"><span data-t="ui.text" class="st-label">Text<small id="ntDetailNote"></small></span>
+              <div class="seg" role="group" aria-label="Notification text"><button data-t="ui.private" type="button" data-ntdetail="private">Private</button><button data-t="ui.full" type="button" data-ntdetail="full">Full</button></div></div>
+            <button class="st-row st-btn" id="ntTest" type="button"><span data-t="ui.send-a-test-notification"><i class="bi bi-send"></i> Send a test notification</span><i class="bi bi-chevron-right"></i></button>
           </section>
         </div>
         <p class="st-note st-pad" id="ntHelp"></p>
       </div>
 
       <!-- ===== jplundberg.com ===== -->
-      <div class="st-page" data-page="announce" data-title="Announcement" hidden>
-        <p class="st-intro">A short message at the top of every page on jplundberg.com. Visitors can close it.</p>
+      <div data-t-data-title="ui.announcement" class="st-page" data-page="announce" data-title="Announcement" hidden>
+        <p data-t="ui.a-short-message-at-the-top-of-every-page" class="st-intro">A short message at the top of every page on jplundberg.com. Visitors can close it.</p>
         <section class="st-group">
-          <label class="st-row"><span>Show announcement</span><input type="checkbox" class="switch" id="wsAnnOn"></label>
-          <div class="st-col"><span>English</span><input id="wsAnnEn" class="st-wide" maxlength="180" placeholder="e.g. New article: What do FDVU users say?"></div>
-          <div class="st-col"><span>Norwegian</span><input id="wsAnnNb" class="st-wide" maxlength="180" placeholder="f.eks. Ny artikkel: Hva sier FDVU-brukerne?"></div>
-          <div class="st-col"><span>Link (optional)</span>
+          <label class="st-row"><span data-t="ui.show-announcement">Show announcement</span><input type="checkbox" class="switch" id="wsAnnOn"></label>
+          <div class="st-col"><span data-t="ui.english">English</span><input data-t-placeholder="ui.e-g-new-article-what-do-fdvu-users-say" id="wsAnnEn" class="st-wide" maxlength="180" placeholder="e.g. New article: What do FDVU users say?"></div>
+          <div class="st-col"><span data-t="ui.norwegian">Norwegian</span><input id="wsAnnNb" class="st-wide" maxlength="180" placeholder="f.eks. Ny artikkel: Hva sier FDVU-brukerne?"></div>
+          <div class="st-col"><span data-t="ui.link-optional">Link (optional)</span>
             <select id="wsAnnPick" class="st-wide"><option value="">No link</option></select>
             <input id="wsAnnLink" class="st-wide" maxlength="300" placeholder="/articles/… or https://…" hidden>
           </div>
@@ -588,108 +588,108 @@
         <div class="ws-preview" id="wsAnnPreview" hidden><i class="bi bi-megaphone-fill"></i><span></span></div>
       </div>
 
-      <div class="st-page" data-page="sections" data-title="Front page" hidden>
-        <p class="st-intro">Choose which sections are shown on the front page, and in which order.</p>
+      <div data-t-data-title="ui.front-page" class="st-page" data-page="sections" data-title="Front page" hidden>
+        <p data-t="ui.choose-which-sections-are-shown-on-the-f" class="st-intro">Choose which sections are shown on the front page, and in which order.</p>
         <section class="st-group" id="wsSections"></section>
         <section class="st-group">
-          <h3>Right now</h3>
-          <p class="st-sub">One line under your name on the front page about what you’re working on. Leave it empty to hide it.</p>
-          <div class="st-col"><span>English</span><input id="wsNowEn" class="st-wide" maxlength="240" placeholder="e.g. Restructuring the FDVU documentation for 406 buildings at Boligbygg" autocomplete="off"></div>
-          <div class="st-col"><span>Norsk</span><input id="wsNowNb" class="st-wide" maxlength="240" placeholder="f.eks. Strukturerer FDVU-dokumentasjonen for 406 bygg i Boligbygg" autocomplete="off"></div>
+          <h3 data-t="ui.right-now">Right now</h3>
+          <p data-t="ui.one-line-under-your-name-on-the-front-pa" class="st-sub">One line under your name on the front page about what you’re working on. Leave it empty to hide it.</p>
+          <div class="st-col"><span data-t="ui.english">English</span><input id="wsNowEn" class="st-wide" maxlength="240" placeholder="e.g. Restructuring the FDVU documentation for 406 buildings at Boligbygg" autocomplete="off"></div>
+          <div class="st-col"><span data-t="ui.norsk">Norsk</span><input id="wsNowNb" class="st-wide" maxlength="240" placeholder="f.eks. Strukturerer FDVU-dokumentasjonen for 406 bygg i Boligbygg" autocomplete="off"></div>
         </section>
       </div>
 
-      <div class="st-page" data-page="courses" data-title="Courses &amp; certificates" hidden>
-        <p class="st-intro">Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses &amp; certificates” section on the front page – turn the section on under Front page) and in your CV. Nothing else from the list leaves the dashboard.</p>
+      <div data-t-data-title="ui.courses-certificates" class="st-page" data-page="courses" data-title="Courses &amp; certificates" hidden>
+        <p data-t="ui.your-courses-and-certificates-from-the-w" class="st-intro">Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses &amp; certificates” section on the front page – turn the section on under Front page) and in your CV. Nothing else from the list leaves the dashboard.</p>
         <section class="st-group" id="wsCourses"></section>
       </div>
 
-      <div class="st-page" data-page="progress" data-title="Project progress" hidden>
-        <p class="st-intro">A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (<code>goal:</code> in the project file). Only the name, the numbers and the date are published.</p>
+      <div data-t-data-title="ui.project-progress" class="st-page" data-page="progress" data-title="Project progress" hidden>
+        <p data-t="ui.a-goal-on-the-dashboard-can-keep-a-proje" class="st-intro">A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (<code>goal:</code> in the project file). Only the name, the numbers and the date are published.</p>
         <section class="st-group" id="wsGoals"></section>
       </div>
 
       <div class="st-page" data-page="cv" data-title="CV" hidden>
-        <p class="st-intro">A CV page built from your profile, experience, courses and projects – always up to date, and saved as PDF with one tap. It isn’t listed in search engines.</p>
+        <p data-t="ui.a-cv-page-built-from-your-profile-experi" class="st-intro">A CV page built from your profile, experience, courses and projects – always up to date, and saved as PDF with one tap. It isn’t listed in search engines.</p>
         <section class="st-group">
-          <label class="st-row"><span>CV page on jplundberg.com/cv/</span><input type="checkbox" class="switch" id="wsCvOn"></label>
-          <label class="st-row"><span>Include courses &amp; certificates marked “In CV”</span><input type="checkbox" class="switch" id="wsCvCourses"></label>
-          <label class="st-row"><span>Include projects</span><input type="checkbox" class="switch" id="wsCvProjects"></label>
-          <label class="st-row"><span>Include articles</span><input type="checkbox" class="switch" id="wsCvArticles"></label>
+          <label class="st-row"><span data-t="ui.cv-page-on-jplundberg-com-cv">CV page on jplundberg.com/cv/</span><input type="checkbox" class="switch" id="wsCvOn"></label>
+          <label class="st-row"><span data-t="ui.include-courses-certificates-marked-in-c">Include courses &amp; certificates marked “In CV”</span><input type="checkbox" class="switch" id="wsCvCourses"></label>
+          <label class="st-row"><span data-t="ui.include-projects">Include projects</span><input type="checkbox" class="switch" id="wsCvProjects"></label>
+          <label class="st-row"><span data-t="ui.include-articles">Include articles</span><input type="checkbox" class="switch" id="wsCvArticles"></label>
         </section>
-        <p class="st-note"><a href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a> · on the page, “Save as PDF” prints it to a file.</p>
-        <div class="seg ws-lang" id="cvLang"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
+        <p class="st-note"><a data-t="ui.open-the-cv" href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a data-t="ui.norsk" href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a> · on the page, “Save as PDF” prints it to a file.</p>
+        <div class="seg ws-lang" id="cvLang"><button data-t="ui.english" type="button" data-lang="en" aria-pressed="true">English</button><button data-t="ui.norsk" type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
         <section class="st-group">
-          <h3>Profile text</h3>
-          <p class="st-sub">The short text at the top of the CV. Empty = the About text from the website.</p>
+          <h3 data-t="ui.profile-text">Profile text</h3>
+          <p data-t="ui.the-short-text-at-the-top-of-the-cv-empt" class="st-sub">The short text at the top of the CV. Empty = the About text from the website.</p>
           <textarea id="cvProfile" rows="4" maxlength="1200" placeholder="Two or three sentences about what you do and what you’re good at."></textarea>
         </section>
         <section class="st-group">
-          <h3>Experience <span class="muted" id="cvExpNote"></span></h3>
-          <p class="st-sub">Used by the CV and the Experience section on the front page. Until you add something here, the site’s own list is shown.</p>
+          <h3 data-t="ui.experience">Experience <span class="muted" id="cvExpNote"></span></h3>
+          <p data-t="ui.used-by-the-cv-and-the-experience-sectio" class="st-sub">Used by the CV and the Experience section on the front page. Until you add something here, the site’s own list is shown.</p>
           <div id="cvJobs"></div>
-          <div class="form-actions"><button type="button" class="text-btn" id="cvJobsImport">Start from the site’s list</button><span class="spacer"></span><button type="button" class="text-btn" id="cvJobAdd"><i class="bi bi-plus-lg"></i> Add job</button></div>
+          <div class="form-actions"><button data-t="ui.start-from-the-sites-list" type="button" class="text-btn" id="cvJobsImport">Start from the site’s list</button><span class="spacer"></span><button data-t="ui.add-job" type="button" class="text-btn" id="cvJobAdd"><i class="bi bi-plus-lg"></i> Add job</button></div>
         </section>
         <section class="st-group">
-          <h3>Education <span class="muted" id="cvEduNote"></span></h3>
+          <h3 data-t="ui.education">Education <span class="muted" id="cvEduNote"></span></h3>
           <div id="cvEdu"></div>
-          <div class="form-actions"><span class="spacer"></span><button type="button" class="text-btn" id="cvEduAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
+          <div class="form-actions"><span class="spacer"></span><button data-t="ui.add" type="button" class="text-btn" id="cvEduAdd"><i class="bi bi-plus-lg"></i> Add</button></div>
         </section>
         <section class="st-group">
-          <h3>Skills</h3>
-          <p class="st-sub">One per line, with a level 0–100 after a comma, e.g. <i>Coordination, 85</i>. Shown as bars in the sidebar.</p>
+          <h3 data-t="ui.skills">Skills</h3>
+          <p data-t="ui.one-per-line-with-a-level-0-100-after-a" class="st-sub">One per line, with a level 0–100 after a comma, e.g. <i>Coordination, 85</i>. Shown as bars in the sidebar.</p>
           <textarea id="cvSkills" rows="5" placeholder="Coordination, 85"></textarea>
-          <h3>Languages</h3>
+          <h3 data-t="ui.languages">Languages</h3>
           <textarea id="cvLangs" rows="3" placeholder="Norwegian, 100"></textarea>
-          <h3>Interests</h3>
-          <p class="st-sub">One per line.</p>
+          <h3 data-t="ui.interests">Interests</h3>
+          <p data-t="ui.one-per-line" class="st-sub">One per line.</p>
           <textarea id="cvHobbies" rows="3" placeholder="Training"></textarea>
         </section>
         <section class="st-group">
-          <h3>Contact details on the CV</h3>
-          <p class="st-sub">Email and website are always there. Anything you add here is published to the website’s files, which are public – leave out what you don’t want online.</p>
-          <div class="st-col"><span>Phone</span><input id="cvPhone" class="st-wide" maxlength="30" autocomplete="off"></div>
-          <div class="st-col"><span>Address</span><input id="cvAddress" class="st-wide" maxlength="120" autocomplete="off"></div>
-          <div class="st-col"><span>Born</span><input id="cvBorn" class="st-wide" maxlength="40" placeholder="e.g. 30 June 1996" autocomplete="off"></div>
-          <div class="st-col"><span>Nationality</span><input id="cvNat" class="st-wide" maxlength="60" autocomplete="off"></div>
+          <h3 data-t="ui.contact-details-on-the-cv">Contact details on the CV</h3>
+          <p data-t="ui.email-and-website-are-always-there-anyth" class="st-sub">Email and website are always there. Anything you add here is published to the website’s files, which are public – leave out what you don’t want online.</p>
+          <div class="st-col"><span data-t="ui.phone">Phone</span><input id="cvPhone" class="st-wide" maxlength="30" autocomplete="off"></div>
+          <div class="st-col"><span data-t="ui.address">Address</span><input id="cvAddress" class="st-wide" maxlength="120" autocomplete="off"></div>
+          <div class="st-col"><span data-t="ui.born">Born</span><input data-t-placeholder="ui.e-g-30-june-1996" id="cvBorn" class="st-wide" maxlength="40" placeholder="e.g. 30 June 1996" autocomplete="off"></div>
+          <div class="st-col"><span data-t="ui.nationality">Nationality</span><input id="cvNat" class="st-wide" maxlength="60" autocomplete="off"></div>
         </section>
       </div>
 
-      <div class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
-        <p class="st-intro">Change the texts on jplundberg.com. Empty a field (or tap <i>Original</i>) to go back to the original text. Changes are live about a minute after you publish.</p>
-        <div class="seg tx-lang" id="txLang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
-        <div id="txFields"><p class="st-intro">Loading…</p></div>
+      <div data-t-data-title="ui.texts" class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
+        <p data-t="ui.change-the-texts-on-jplundberg-com-empty" class="st-intro">Change the texts on jplundberg.com. Empty a field (or tap <i data-t="ui.original">Original</i>) to go back to the original text. Changes are live about a minute after you publish.</p>
+        <div data-t-aria-label="ui.language" class="seg tx-lang" id="txLang" role="group" aria-label="Language"><button data-t="ui.english" type="button" data-lang="en" aria-pressed="true">English</button><button data-t="ui.norsk" type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
+        <div id="txFields"><p data-t="ui.loading" class="st-intro">Loading…</p></div>
         <div class="ws-bar tx-bar" id="txBar">
           <span class="ws-status" id="txStatus"></span>
-          <button type="button" class="text-btn" id="txUndo" hidden>Undo</button>
-          <button type="button" class="text-btn" id="txReview" hidden><i class="bi bi-eye"></i> Review</button>
-          <button type="button" class="pill-btn" id="txPublish" disabled><i class="bi bi-cloud-upload"></i> Publish texts</button>
+          <button data-t="ui.undo" type="button" class="text-btn" id="txUndo" hidden>Undo</button>
+          <button data-t="ui.review" type="button" class="text-btn" id="txReview" hidden><i class="bi bi-eye"></i> Review</button>
+          <button data-t="ui.publish-texts" type="button" class="pill-btn" id="txPublish" disabled><i class="bi bi-cloud-upload"></i> Publish texts</button>
         </div>
       </div>
 
-      <div class="st-page" data-page="featured" data-title="Featured" hidden>
-        <p class="st-intro">Pin an article and a project first on the front page, with a “Featured” label. Choose “Newest” to show the latest as usual.</p>
+      <div data-t-data-title="ui.featured" class="st-page" data-page="featured" data-title="Featured" hidden>
+        <p data-t="ui.pin-an-article-and-a-project-first-on-th" class="st-intro">Pin an article and a project first on the front page, with a “Featured” label. Choose “Newest” to show the latest as usual.</p>
         <section class="st-group">
-          <div class="st-col"><span>Article</span><select id="wsFeatArticle" class="st-wide"></select></div>
-          <div class="st-col"><span>Project</span><select id="wsFeatProject" class="st-wide"></select></div>
+          <div class="st-col"><span data-t="ui.article">Article</span><select id="wsFeatArticle" class="st-wide"></select></div>
+          <div class="st-col"><span data-t="ui.project">Project</span><select id="wsFeatProject" class="st-wide"></select></div>
         </section>
       </div>
 
-      <div class="st-page" data-page="content" data-title="Articles &amp; projects" hidden>
-        <p class="st-intro">Write, edit, show or hide your articles and projects. Switches wait for “Publish changes”.</p>
-        <div id="wsContent"><p class="st-intro">Loading…</p></div>
+      <div data-t-data-title="ui.articles-projects" class="st-page" data-page="content" data-title="Articles &amp; projects" hidden>
+        <p data-t="ui.write-edit-show-or-hide-your-articles-an" class="st-intro">Write, edit, show or hide your articles and projects. Switches wait for “Publish changes”.</p>
+        <div id="wsContent"><p data-t="ui.loading" class="st-intro">Loading…</p></div>
       </div>
 
-      <div class="st-page ws-page" data-page="visitors" data-title="Visitors" hidden>
-        <div class="seg ws-days" id="wsDays"><button type="button" data-days="7" aria-pressed="true">7 days</button><button type="button" data-days="30">30 days</button></div>
-        <div id="wsVisitors"><p class="st-intro">Loading…</p></div>
+      <div data-t-data-title="ui.visitors" class="st-page ws-page" data-page="visitors" data-title="Visitors" hidden>
+        <div class="seg ws-days" id="wsDays"><button type="button" data-days="7" aria-pressed="true">7 days</button><button data-t="ui.30-days" type="button" data-days="30">30 days</button></div>
+        <div id="wsVisitors"><p data-t="ui.loading" class="st-intro">Loading…</p></div>
       </div>
 
       <div class="ws-bar" id="wsBar" hidden>
         <span class="ws-status" id="wsStatus"></span>
-        <button type="button" class="text-btn" id="wsUndo" hidden>Undo</button>
-        <button type="button" class="text-btn" id="wsReview" hidden><i class="bi bi-eye"></i> Review</button>
-        <button type="button" class="pill-btn" id="wsPublish" disabled><i class="bi bi-cloud-upload"></i> Publish</button>
+        <button data-t="ui.undo" type="button" class="text-btn" id="wsUndo" hidden>Undo</button>
+        <button data-t="ui.review" type="button" class="text-btn" id="wsReview" hidden><i class="bi bi-eye"></i> Review</button>
+        <button data-t="ui.publish" type="button" class="pill-btn" id="wsPublish" disabled><i class="bi bi-cloud-upload"></i> Publish</button>
       </div>
       <p class="st-msg" id="stMsg" role="status" aria-live="polite"></p>
     </aside>
@@ -697,9 +697,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=362509d5e1"></script>
-  <script src="../dist/page-people.js?v=44a97e6289"></script>
-  <script src="../dist/tail.js?v=3409f74c97"></script>
+  <script src="../dist/head.js?v=eb3f53aade"></script>
+  <script src="../dist/page-people.js?v=412dd3c43e"></script>
+  <script src="../dist/tail.js?v=dc68d78088"></script>
   <!-- /scripts -->
 </body>
 </html>

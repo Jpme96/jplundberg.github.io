@@ -23,7 +23,7 @@
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
   var SPEND = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
   var REPEATS = [['', 'Doesn’t repeat'], ['daily', 'Every day'], ['weekdays', 'Every weekday'], ['weekly', 'Every week'], ['2weeks', 'Every 2 weeks'], ['monthly', 'Every month'], ['quarterly', 'Every 3 months'], ['yearly', 'Every year']];
-  function repeatSelect(v) { return '<select name="rep" aria-label="Repeat">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (v || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'; }
+  function repeatSelect(v) { return '<select name="rep" aria-label="Repeat" data-t-aria-label="ui.repeat">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (v || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'; }
   var SPORTS = [['strength', 'Strength'], ['run', 'Running'], ['walk', 'Walking'], ['bike', 'Cycling'], ['swim', 'Swimming'], ['ball', 'Ball sports'], ['yoga', 'Yoga / mobility'], ['other', 'Other']];
 
   /* ---------- the button ---------- */
@@ -36,10 +36,10 @@
   /* ---------- the sheet ---------- */
   var bg = document.createElement('div');
   bg.className = 'qa-bg'; bg.id = 'quickSheet'; bg.hidden = true;
-  bg.innerHTML = '<div class="qa-box" role="dialog" aria-modal="true" aria-label="Add"><div class="qa-handle"></div>' +
+  bg.innerHTML = '<div class="qa-box" role="dialog" aria-modal="true" aria-label="Add" data-t-aria-label="ui.add"><div class="qa-handle"></div>' +
     '<form class="qa-smart" id="qaSmart" autocomplete="off"><i class="bi bi-stars" aria-hidden="true"></i>' +
-      '<input id="qaLine" enterkeyhint="done" placeholder="Type it: 149 rema · tor 14 tannlege · løp 5 km" aria-label="Type what to add" spellcheck="false">' +
-      '<button type="button" class="qa-clear" id="qaClear" aria-label="Clear" hidden><i class="bi bi-x-circle-fill"></i></button></form>' +
+      '<input id="qaLine" enterkeyhint="done" placeholder="Type it: 149 rema · tor 14 tannlege · løp 5 km" data-t-placeholder="ui.type-it-149-rema-tor-14-tannlege-l-p-5-k" aria-label="Type what to add" spellcheck="false">' +
+      '<button type="button" class="qa-clear" id="qaClear" aria-label="Clear" data-t-aria-label="ui.clear" hidden><i class="bi bi-x-circle-fill"></i></button></form>' +
     '<div class="qa-prev" id="qaPrev" hidden></div>' +
     '<div class="qa-manual"><div class="qa-tabs" role="tablist" id="qaTabs"></div><div class="qa-body" id="qaBody"></div></div></div>';
   document.body.appendChild(bg);
@@ -103,7 +103,7 @@
     var d = S && S.describe(parsed);
     box.hidden = false;
     box.innerHTML = d ? '<div class="qa-guess"><span class="qa-gi"><i class="bi bi-' + d.icon + '"></i></span><span class="qa-gx"><small>' + esc(d.label) + '</small><b>' + d.bits.map(esc).join(' · ') + '</b></span></div>' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-qaedit>Edit</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-addline><i class="bi bi-plus-lg"></i> Add ' + esc(d.label.toLowerCase()) + '</button></div>'
+      '<div class="qa-acts"><button type="button" class="text-btn" data-qaedit data-t="ui.edit">Edit</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-addline><i class="bi bi-plus-lg"></i> Add ' + esc(d.label.toLowerCase()) + '</button></div>'
       : off ? '<p class="muted qa-hint">' + ({ workout: 'Logging workouts needs the Training log – switch it on in Settings → Features.', expense: 'Expenses need Finances – switch it on in Settings → Features.', event: 'Events need the Calendar – switch it on in Settings → Features.' }[off] || 'That part is switched off.') + '</p>'
       : '<p class="muted qa-hint">Didn’t get that – try “149 rema”, “fre 18 middag”, “løp 5 km” or “kjøp melk i morgen”.</p>';
   }
@@ -139,7 +139,7 @@
       });
     }
     t._undo = undo || null;
-    t.innerHTML = '<span>' + html + '</span>' + (undo ? '<button type="button" class="qa-undo" data-undo>Undo</button>' : '');
+    t.innerHTML = '<span>' + html + '</span>' + (undo ? '<button type="button" class="qa-undo" data-undo data-t="ui.undo">Undo</button>' : '');
     t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('show'); t._undo = null; }, undo ? 5000 : 2600);
   }
@@ -179,14 +179,14 @@
       var chips = p.a ? [] : recentChips();
       return '<form class="qa-form" data-kind="expense">' +
         '<div class="qa-row"><input name="a" class="qa-amt" placeholder="Amount, kr" inputmode="decimal" autocomplete="off" required value="' + esc(p.a ? (p.a % 1 ? (+p.a).toFixed(2) : String(p.a)).replace('.', ',') : '') + '">' +
-          '<select name="c" aria-label="Category">' + SPEND.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === p.c ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></div>' +
+          '<select name="c" aria-label="Category" data-t-aria-label="ui.category">' + SPEND.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === p.c ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select></div>' +
         '<div class="qa-row"><input name="n" placeholder="What was it? (optional)" autocomplete="off" value="' + esc(p.n || '') + '"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"></div>' +
         sharedRow() +
         (chips.length ? '<div class="qa-chips">' + chips.map(function (e) {
           return '<button type="button" data-chip data-a="' + esc(e.amount) + '" data-c="' + esc(e.cat) + '" data-n="' + esc(e.note) + '">' + esc(e.note) + ' <b>' + esc(nf.format(e.amount)) + '</b></button>';
         }).join('') + '</div>' : '') +
         (window.FinMoves ? '<button type="button" class="text-btn qa-tr" data-qatransfer><i class="bi bi-arrow-left-right"></i> Moved money between your own accounts? Transfer</button>' : '') +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Log expense</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-expense">Log expense</button></div></form>';
     },
     event: function (p) {
       var cats = window.Cal ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) :
@@ -196,29 +196,29 @@
       return '<form class="qa-form" data-kind="event">' +
         '<input name="t" placeholder="What? e.g. Dentist" autocomplete="off" required value="' + esc(p.t || '') + '">' +
         '<div class="qa-row"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"><input name="s" type="time" value="' + esc(hh) + '" aria-label="Start"' + (p.all ? ' disabled' : '') + '><label class="qa-check"><input type="checkbox" name="all"' + (p.all ? ' checked' : '') + '> All day</label></div>' +
-        '<div class="qa-row"><select name="c" aria-label="Category">' + cats.map(function (c) { return '<option value="' + esc(c[0]) + '"' + (c[0] === last ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>' +
+        '<div class="qa-row"><select name="c" aria-label="Category" data-t-aria-label="ui.category">' + cats.map(function (c) { return '<option value="' + esc(c[0]) + '"' + (c[0] === last ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>' +
           '<input name="l" placeholder="Where (optional)" autocomplete="off" value="' + esc(p.l || '') + '"></div>' +
         '<div class="qa-row qa-row1">' + repeatSelect(p.rep).replace(/<option value="quarterly"[^<]*<\/option>/, '') + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button>' + (document.getElementById('clNew') ? '<button type="button" class="text-btn" data-qafull><i class="bi bi-sliders"></i> More options</button>' : '') + '<span class="spacer"></span><button class="pill-btn wide" type="submit">Add event</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button>' + (document.getElementById('clNew') ? '<button type="button" class="text-btn" data-qafull><i class="bi bi-sliders"></i> More options</button>' : '') + '<span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-event">Add event</button></div></form>';
     },
     workout: function (p) {
       return '<form class="qa-form" data-kind="workout">' +
-        '<div class="qa-row"><select name="k" aria-label="Type">' + SPORTS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === p.k ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select>' +
+        '<div class="qa-row"><select name="k" aria-label="Type" data-t-aria-label="ui.type">' + SPORTS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === p.k ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select>' +
           '<input name="m" placeholder="Minutes" inputmode="numeric" value="' + esc(p.m || 60) + '" aria-label="Minutes" required></div>' +
         '<div class="qa-row"><input name="km" placeholder="km (optional)" inputmode="decimal" aria-label="Distance" value="' + esc(p.km ? String(p.km).replace('.', ',') : '') + '"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"></div>' +
-        '<div class="qa-effort" role="radiogroup" aria-label="How hard">' + [['1', 'Easy'], ['2', 'Light'], ['3', 'Moderate'], ['4', 'Hard'], ['5', 'All out']].map(function (e) {
+        '<div class="qa-effort" role="radiogroup" aria-label="How hard" data-t-aria-label="ui.how-hard">' + [['1', 'Easy'], ['2', 'Light'], ['3', 'Moderate'], ['4', 'Hard'], ['5', 'All out']].map(function (e) {
           return '<label><input type="radio" name="e" value="' + e[0] + '"' + (e[0] === '3' ? ' checked' : '') + '><span>' + e[1] + '</span></label>';
         }).join('') + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Log workout</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-workout">Log workout</button></div></form>';
     },
     todo: function (p) {
       return '<form class="qa-form" data-kind="todo"><input name="t" placeholder="Something to do…" autocomplete="off" required value="' + esc(p.t || '') + '">' +
         '<div class="qa-row"><input id="qaDue" name="due" type="date" value="' + esc(p.due || '') + '" aria-label="Due date (optional)">' + repeatSelect(p.rep) + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Add task</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-task">Add task</button></div></form>';
     },
     note: function (p) {
-      return '<form class="qa-form" data-kind="note"><textarea name="t" rows="3" placeholder="Write something…" required>' + esc(p.t || '') + '</textarea>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close>Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">Save note</button></div></form>';
+      return '<form class="qa-form" data-kind="note"><textarea name="t" rows="3" placeholder="Write something…" data-t-placeholder="ui.write-something" required>' + esc(p.t || '') + '</textarea>' +
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.save-note">Save note</button></div></form>';
     }
   };
 

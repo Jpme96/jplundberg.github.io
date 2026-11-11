@@ -123,7 +123,7 @@
     var cd = live ? '<span class="tp-cd live"><b>Day ' + (tripDays(tr).indexOf(today()) + 1) + '</b><small>of ' + tripDays(tr).length + '</small></span>'
       : nd > 0 && nd <= 99 ? '<span class="tp-cd"><b>' + nd + '</b><small>' + (nd === 1 ? 'day' : 'days') + '</small></span>' : '';
     return '<button type="button" class="tp-card' + (cd ? ' has-cd' : '') + '" data-trip="' + esc(tr.id) + '">' + cd +
-      '<span class="k">' + esc(relDays(tr)) + '</span><b>' + esc(tr.name) + (tr.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared"></i>' : '') + '</b>' +
+      '<span class="k">' + esc(relDays(tr)) + '</span><b>' + esc(tr.name) + (tr.share && window.ShareSpace && window.ShareSpace.on() && window.ShareSpace.what().trips ? ' <i class="bi bi-people sh-ic" title="Shared" data-t-title="ui.shared"></i>' : '') + '</b>' +
       '<span class="s">' + esc(window.TravelPage.rangeLabel(tr)) + (tr.place && tr.place.country && tr.place.country !== tr.dest ? ', ' + esc(tr.place.country) : '') + '</span>' +
       (bits.length ? '<span class="tp-bits">' + bits.join('') + '</span>' : '') +
       (tr.place && nd <= 16 && (tr.end || tr.start) >= today() ? '<span class="tp-cwx" data-cwx="' + esc(tr.id) + '"></span>' : '') + '<i class="bi bi-chevron-right tp-go"></i></button>';
@@ -258,7 +258,7 @@
     var nw = next ? F.when(next) : null, NT = next ? (T[next.type] || T.other) : null;
     $('tpGlance').innerHTML = '<div class="card-head"><h2><i class="bi bi-speedometer2"></i> At a glance</h2></div>' +
       warn.map(function (c) { return '<button type="button" class="gl-warn ' + c.state + '" data-pane="prepare"><i class="bi bi-exclamation-triangle"></i><span><b>' + esc(c.text) + '</b><small>' + esc(c.sub || '') + '</small></span></button>'; }).join('') +
-      (next ? '<div class="gl-next"><span class="ic"><i class="bi bi-' + NT.icon + '"></i></span><span class="x"><small>Next up</small><b>' + esc(next.title || NT.name) + '</b>' +
+      (next ? '<div class="gl-next"><span class="ic"><i class="bi bi-' + NT.icon + '"></i></span><span class="x"><small data-t="ui.next-up">Next up</small><b>' + esc(next.title || NT.name) + '</b>' +
         '<span>' + esc(fmt(next.date, { weekday: 'short', day: 'numeric', month: 'short' })) + (next.time ? ' ' + esc(next.time) : '') + (next.from ? ' · ' + esc(next.from) : '') + '</span></span>' +
         (next.from && nw && nw.timed && next.type !== 'hotel' ? '<button type="button" class="tp-route" data-route="' + esc(next.id) + '"><i class="bi bi-signpost-split"></i><span>Get there</span></button>' : '') + '</div>' : '') +
       row('list-ol', 'Plan', items.length ? items.length + ' booking' + (items.length > 1 ? 's' : '') : 'Nothing yet', null, 'plan') +
@@ -562,14 +562,14 @@
     var pct = budget ? Math.min(100, Math.round(used / budget * 100)) : 0;
     var over = (tr.end || tr.start) < today();
     var html = over && !total && !budget ? '' : '<div class="tp-total"><div><span class="muted">' + (over ? 'Booked' : 'Booked so far') + '</span><b>' + esc(kr(total)) + '</b></div>' +
-      (budget ? '<div class="r"><span class="muted">Budget</span><b>' + esc(kr(budget)) + '</b></div>' : '') + '</div>';
+      (budget ? '<div class="r"><span class="muted" data-t="ui.budget">Budget</span><b>' + esc(kr(budget)) + '</b></div>' : '') + '</div>';
     var daysLeft = ongoing ? tripDays(tr).filter(function (d) { return d >= today(); }).length : tripDays(tr).length;
     if (budget) html += '<div class="tp-progress' + (used > budget ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>' +
       '<p class="muted tp-left">' + (used > budget ? esc(kr(used - budget)) + ' over budget' : esc(kr(budget - used)) + ' left to spend') +
       (away ? ' · ' + esc(kr(away)) + ' spent while away' : '') +
       (budget > used && daysLeft ? ' · about ' + esc(kr((budget - used) / daysLeft)) + ' a day' : '') + '</p>';
-    if (ongoing) html += '<div class="tp-money-acts"><button type="button" class="pill-btn" data-quick="expense"><i class="bi bi-plus-lg"></i> Log a cost</button><span class="muted tp-hint">Goes to Finances and counts against this trip.</span></div>';
-    else if ((tr.end || tr.start) >= today()) html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip>Set a budget</button> to see what’s left per day.</p>';
+    if (ongoing) html += '<div class="tp-money-acts"><button type="button" class="pill-btn" data-quick="expense"><i class="bi bi-plus-lg"></i> Log a cost</button><span class="muted tp-hint" data-t="ui.goes-to-finances-and-counts-against-this">Goes to Finances and counts against this trip.</span></div>';
+    else if ((tr.end || tr.start) >= today()) html += '<p class="muted tp-left"><button type="button" class="link-btn" data-edittrip data-t="ui.set-a-budget">Set a budget</button> to see what’s left per day.</p>';
     if (costs.length || num(tr.spent)) {
       html += '<ul class="tp-costs">' + costs.map(function (it) {
         var Ty = T[it.type] || T.other;
@@ -593,12 +593,12 @@
         var NAMES = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
         var by = {}, all = 0; during.forEach(function (x) { by[x.cat] = (by[x.cat] || 0) + (+x.amount || 0); all += +x.amount || 0; });
         var cats = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; }), nd = Math.max(1, Math.min(tripDays(tr).length || 1, Math.round((new Date(Math.min(new Date(to + 'T12:00'), new Date())) - new Date(tr.start + 'T12:00')) / 864e5) + 1));
-        html += '<div class="tp-during"><div class="tp-total"><div><span class="muted">Spent during the trip</span><b>' + esc(kr(all)) + '</b></div><div class="r"><span class="muted">Per day</span><b>' + esc(kr(all / nd)) + '</b></div></div>' +
+        html += '<div class="tp-during"><div class="tp-total"><div><span class="muted" data-t="ui.spent-during-the-trip">Spent during the trip</span><b>' + esc(kr(all)) + '</b></div><div class="r"><span class="muted" data-t="ui.per-day">Per day</span><b>' + esc(kr(all / nd)) + '</b></div></div>' +
           '<ul class="tp-costs">' + cats.slice(0, 5).map(function (c) { return '<li><i class="bi bi-tag"></i><span class="n">' + esc(NAMES[c] || 'Other') + '</span><span class="a">' + esc(kr(by[c])) + '</span></li>'; }).join('') + '</ul>' +
           '<p class="muted tp-hint">Everything in Finances dated ' + esc(fmtD(tr.start)) + (to !== tr.start ? ' – ' + esc(fmtD(to)) : '') + ', bookings not counted twice. Grand total ' + esc(kr(all + total)) + '.</p></div>';
       }
     }
-    if (!html) html = '<p class="muted tp-hint">No costs logged for this trip.</p>';
+    if (!html) html = '<p class="muted tp-hint" data-t="ui.no-costs-logged-for-this-trip">No costs logged for this trip.</p>';
     $('tpMoney').innerHTML = html;
   }
   $('tpMoney').addEventListener('click', function (e) {

@@ -84,7 +84,7 @@
       { k: 'room', label: 'Room', type: 'select', options: function () { return [['', 'No room']].concat(rooms().map(function (r) { return [r.id, r.name]; })); }, def: function () { return inRoom || ''; }, when: function () { return rooms().length > 0; } }],
     beforeSave: function (it, isNew) { if (isNew || !isKey(it.start)) it.start = today(); it.day = +it.day || 0; if (!it.room) delete it.room; },
     filter: function (c) { return !inRoom || c.room === inRoom; },
-    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings"><i class="bi bi-sliders"></i></a>'; },
+    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a>'; },
     above: function (l) {
       var rl = rooms(), all = Fe.list('chores');
       if (!all.length) return '<button type="button" class="pill-btn hl-seed" data-chseed><i class="bi bi-magic"></i> Pick from the usual ones</button>';

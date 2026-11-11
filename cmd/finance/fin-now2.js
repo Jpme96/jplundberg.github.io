@@ -22,13 +22,13 @@
   /* ---------- your accounts at a glance ---------- */
   function accts(d) {
     var box = $('fnAccts'), list = A.list(d), m = A.money(d);
-    if (!m.known) { box.innerHTML = '<p class="empty">No balances yet. <button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="myaccts">Add what’s in your accounts</button></p>'; return; }
+    if (!m.known) { box.innerHTML = '<p class="empty">No balances yet. <button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="myaccts" data-t="ui.add-whats-in-your-accounts">Add what’s in your accounts</button></p>'; return; }
     box.innerHTML = '<div class="fn-tiles">' + list.map(function (a) {
       var cr = a.kind === 'credit', v = a.bal;
       return '<button type="button" class="fn-tile" data-ftab-go="accts" data-fp-to="myaccts" style="--c:' + a.c + '"><span><i class="bi bi-' + a.icon + '"></i> ' + esc(a.label) + '</span>' +
         (v == null ? '<b class="muted">–</b>' : '<b class="' + (cr && v > 0 ? 'neg' : '') + '">' + esc(kr(cr ? -Math.max(0, v) : v)) + '</b>') + '</button>';
     }).join('') + '</div>' +
-      '<p class="muted fn-tot"><span>In your accounts</span> ' + money(m.cash) + (m.owed ? ' · <span>owed on cards</span> ' + money(-m.owed, 'neg') : '') + (m.saved ? ' · <span>saved</span> ' + money(m.saved) : '') + '</p>';
+      '<p class="muted fn-tot"><span data-t="ui.in-your-accounts">In your accounts</span> ' + money(m.cash) + (m.owed ? ' · <span data-t="ui.owed-on-cards-2">owed on cards</span> ' + money(-m.owed, 'neg') : '') + (m.saved ? ' · <span data-t="ui.saved-2">saved</span> ' + money(m.saved) : '') + '</p>';
   }
 
   /* ---------- payday moves: from 5 days before payday until they're all ticked (or a week after) ---------- */
@@ -43,7 +43,7 @@
     var nextP = soon ? B.payPlan(d, new Date(next.date.getTime() + 864e5 / 2)) : p;
     var moves = soon && !fresh ? nextP.moves : p.moves;
     $('fnPayNote').textContent = soon && !fresh ? next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : open.length ? open.length + ' to do' : 'all done';
-    box.innerHTML = (soon && !fresh ? '<p class="muted fn-pl">On payday, move this – tick each one when it’s done.</p>' : '') +
+    box.innerHTML = (soon && !fresh ? '<p class="muted fn-pl" data-t="ui.on-payday-move-this-tick-each-one-when-i">On payday, move this – tick each one when it’s done.</p>' : '') +
       '<ul class="pf-moves pf-check">' + moves.map(function (m) {
         var can = !(soon && !fresh);
         return '<li class="' + (m.done ? 'done' : '') + '">' + (can ? '<button type="button" class="check" data-pfmove="' + esc(m.id) + '" aria-pressed="' + !!m.done + '" aria-label="' + esc(m.label) + (m.done ? ' – done' : ' – mark as done') + '"><i class="bi bi-check-lg"></i></button>' : '<span class="fn-ic pay"><i class="bi bi-arrow-right"></i></span>') +
@@ -64,9 +64,9 @@
     var lim = d.budget.limits || {}, sp = {};
     ex.forEach(function (e) { if (per.has(e.date)) sp[e.cat] = (sp[e.cat] || 0) + (+e.amount || 0); });
     var close = Object.keys(lim).filter(function (c) { return +lim[c] > 0 && sp[c] / lim[c] >= 0.75; }).sort(function (a, b) { return sp[b] / lim[b] - sp[a] / lim[a]; }).slice(0, 3);
-    if (!(room > 0) && !week) { box.innerHTML = '<p class="empty">Add your salary and bills under Accounts, then you see here how fast you spend.</p>'; return; }
+    if (!(room > 0) && !week) { box.innerHTML = '<p class="empty" data-t="ui.add-your-salary-and-bills-under-accounts">Add your salary and bills under Accounts, then you see here how fast you spend.</p>'; return; }
     var state = room <= 0 ? '' : ahead > 0.08 ? '<span class="fn-st bad"><i class="bi bi-exclamation-triangle"></i> Spending faster than planned</span>' : ahead < -0.08 ? '<span class="fn-st good"><i class="bi bi-check2-circle"></i> Spending slower than planned</span>' : '<span class="fn-st ok"><i class="bi bi-check2"></i> On pace</span>';
-    box.innerHTML = '<div class="fn-pace-g"><div><small>This week</small><b>' + esc(kr(week)) + '</b></div>' + (room > 0 ? '<div><small>Per day until payday</small><b>' + esc(kr(perDay)) + '</b></div>' : '') + '</div>' +
+    box.innerHTML = '<div class="fn-pace-g"><div><small data-t="ui.this-week">This week</small><b>' + esc(kr(week)) + '</b></div>' + (room > 0 ? '<div><small data-t="ui.per-day-until-payday">Per day until payday</small><b>' + esc(kr(perDay)) + '</b></div>' : '') + '</div>' +
       (room > 0 ? '<div class="fn-bar" role="img" aria-label="' + Math.round(used * 100) + ' % of what you can spend used, ' + Math.round(share * 100) + ' % of the days gone"><i style="width:' + Math.min(100, used * 100).toFixed(1) + '%"></i><em style="left:' + Math.min(100, share * 100).toFixed(1) + '%"></em></div>' +
         '<p class="muted fn-pl">' + Math.round(used * 100) + ' % used · ' + Math.round(share * 100) + ' % of the days gone ' + state + '</p>' : '') +
       (close.length ? '<ul class="fn-lims">' + close.map(function (c) { var r = sp[c] / lim[c]; return '<li><span>' + esc(CATN[c] || c) + '</span><span class="fn-lb"><i style="width:' + Math.min(100, r * 100).toFixed(0) + '%;background:' + (r >= 1 ? 'var(--danger)' : '#c98500') + '"></i></span><b>' + Math.round(r * 100) + ' %</b></li>'; }).join('') + '</ul>' : '');
@@ -81,18 +81,18 @@
     card.hidden = false;
     $('fnUsTitle').textContent = 'You and ' + p.name;
     $('fnUs').innerHTML = '<div class="fn-us-g"><div><small>' + esc(p.name) + ' owes you</small><b class="pos">' + esc(kr(sd.they)) + '</b></div><div><small>You owe ' + esc(p.name) + '</small><b class="neg">' + esc(kr(sd.you)) + '</b></div>' +
-      '<div><small>In total</small><b class="' + (sd.net >= 0 ? 'pos' : 'neg') + '">' + (sd.net >= 0 ? '+' : '−') + esc(kr(Math.abs(sd.net))) + '</b></div></div>';
+      '<div><small data-t="ui.in-total">In total</small><b class="' + (sd.net >= 0 ? 'pos' : 'neg') + '">' + (sd.net >= 0 ? '+' : '−') + esc(kr(Math.abs(sd.net))) + '</b></div></div>';
   }
 
   /* ---------- latest spending ---------- */
   function latest(d) {
     var box = $('fnLatest');
     var l = (d.expenses || []).filter(function (e) { return e && e.cat !== 'fixed' && +e.amount > 0; }).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.t || 0) - (a.t || 0); }).slice(0, 4);
-    if (!l.length) { box.innerHTML = '<p class="empty">Nothing yet. Add a spending with + or import your bank file.</p>'; return; }
+    if (!l.length) { box.innerHTML = '<p class="empty" data-t="ui.nothing-yet-add-a-spending-with-or-impor">Nothing yet. Add a spending with + or import your bank file.</p>'; return; }
     var t0 = dk(today0()), y = new Date(today0()); y.setDate(y.getDate() - 1); var yK = dk(y);
     box.innerHTML = '<ul class="fn-lt">' + l.map(function (e) {
       var c = e.cat || 'other', when = e.date === t0 ? 'Today' : e.date === yK ? 'Yesterday' : new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-      return '<li><span class="kit-ic" style="--c:' + (CATC[c] || CATC.other) + '"><i class="bi bi-' + (CATI[c] || 'three-dots') + '"></i></span><span class="fn-ltx"><b>' + esc(e.note || CATN[c] || c) + '</b><small>' + esc(when + ' · ' + (CATN[c] || c)) + (e.src === 'bank' || e.ref ? ' · <i class="bi bi-bank2" aria-label="from the bank"></i>' : '') + '</small></span>' + money(-(+e.amount)) + '</li>';
+      return '<li><span class="kit-ic" style="--c:' + (CATC[c] || CATC.other) + '"><i class="bi bi-' + (CATI[c] || 'three-dots') + '"></i></span><span class="fn-ltx"><b>' + esc(e.note || CATN[c] || c) + '</b><small>' + esc(when + ' · ' + (CATN[c] || c)) + (e.src === 'bank' || e.ref ? ' · <i class="bi bi-bank2" aria-label="from the bank" data-t-aria-label="ui.from-the-bank"></i>' : '') + '</small></span>' + money(-(+e.amount)) + '</li>';
     }).join('') + '</ul>';
   }
 

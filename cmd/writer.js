@@ -272,7 +272,7 @@
     h += section('details', 'sliders', L('Details', 'Detaljer'), [String(d.fm.date || '').slice(0, 10), proj ? d.fm.organisation : d.fm.category, d.fm.image ? L('cover image', 'forsidebilde') : ''].filter(Boolean).join(' · '),
       '<div class="wr-grid">' + field('date', L('Date', 'Dato'), { type: 'date' }) +
         (proj ? field('period', L('Period', 'Periode'), { ph: '2025 – ongoing' }) + field('role', L('Your role', 'Din rolle')) + field('organisation', L('Organisation', 'Organisasjon'))
-          : '<label class="wr-f"><span>' + L('Category', 'Kategori') + '</span><input data-wrk="category" list="wrCats" value="' + esc(d.fm.category || '') + '"><datalist id="wrCats"><option>Work</option><option>Training</option><option>Thoughts</option></datalist></label>') +
+          : '<label class="wr-f"><span>' + L('Category', 'Kategori') + '</span><input data-wrk="category" list="wrCats" value="' + esc(d.fm.category || '') + '"><datalist id="wrCats"><option data-t="ui.work">Work</option><option data-t="ui.training">Training</option><option>Thoughts</option></datalist></label>') +
         '<div class="wr-f wide"><span>' + L('Cover image', 'Forsidebilde') + '</span><div class="wr-cover">' + (d.fm.image ? '<img src="' + esc(d.fm.image) + '" alt="">' : '<span class="wr-noimg"><i class="bi bi-image"></i></span>') +
           '<div><button type="button" class="text-btn" data-wrup="cover"><i class="bi bi-upload"></i> ' + (d.fm.image ? L('Change', 'Bytt') : L('Upload an image', 'Last opp et bilde')) + '</button>' + (d.fm.image ? '<button type="button" class="text-btn" data-wrimgx><i class="bi bi-x-lg"></i> ' + L('Remove', 'Fjern') + '</button>' : '') + '<small>' + L('Without one, the standard building photo is used.', 'Uten bilde brukes standardbildet av bygget.') + '</small></div></div></div></div>', isOpen('details', W.isNew));
     /* key figures */
@@ -290,7 +290,7 @@
       d.parts.map(function (pt, i) {
         var p = 'parts.' + i, st = pt.status || 'planned';
         return '<div class="wb-card"><div class="wb-head">' + inp(p + '.title', pt.title, { ph: L('Phase name', 'Navn på fasen'), cls: 'wb-ttl' }) + rowBtns(p, i, d.parts.length) + '</div><div class="wb-grid">' +
-          '<label class="wr-f"><span>Status</span><select data-wb="' + p + '.status">' + [['planned', L('Planned', 'Planlagt')], ['ongoing', L('Ongoing', 'Pågår')], ['done', L('Done', 'Ferdig')]].map(function (o) { return '<option value="' + o[0] + '"' + (st === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+          '<label class="wr-f"><span data-t="ui.status">Status</span><select data-wb="' + p + '.status">' + [['planned', L('Planned', 'Planlagt')], ['ongoing', L('Ongoing', 'Pågår')], ['done', L('Done', 'Ferdig')]].map(function (o) { return '<option value="' + o[0] + '"' + (st === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
           '<label class="wr-f"><span>' + L('Progress %', 'Fremdrift %') + '</span>' + inp(p + '.progress', pt.progress, { type: 'number', ph: '0' }) + '</label>' +
           '<label class="wr-f"><span>' + L('From', 'Fra') + '</span>' + inp(p + '.start', String(pt.start || '').slice(0, 10), { type: 'date' }) + '</label><label class="wr-f"><span>' + L('To', 'Til') + '</span>' + inp(p + '.end', String(pt.end || '').slice(0, 10), { type: 'date' }) + '</label>' +
           inp(p + '.description', pt.description, { ph: L('What happens in this phase (optional)', 'Hva skjer i denne fasen (valgfritt)'), cls: 'wide' }) + '</div></div>';

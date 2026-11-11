@@ -39,7 +39,7 @@
     var f = bg.querySelector('input, button:not([data-lfclose])'); if (f && matchMedia('(hover: hover)').matches) setTimeout(function () { f.focus(); }, 30);
     return { el: bg.firstChild, close: close };
   }
-  function head(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-lfclose aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
+  function head(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-lfclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
 
   /* the button host: the modern bar, or the top corner of the page */
   function addButton(btn) {
@@ -68,7 +68,7 @@
     var lang = (readJSON('dash.settings', {}) || {}).voiceLang || ((readJSON('dash.settings', {}) || {}).lang === 'en' ? 'en-GB' : 'nb-NO');
     var r = new SR(); r.lang = lang; r.interimResults = true; r.maxAlternatives = 1; r.continuous = false;
     var pill = document.createElement('div'); pill.className = 'mic-pill'; pill.setAttribute('role', 'status');
-    pill.innerHTML = '<span class="mic-dot"></span><span class="mic-tx">' + (lang === 'nb-NO' ? 'Lytter … si f.eks. «149 Rema»' : 'Listening … say e.g. “149 Rema”') + '</span><button type="button" class="icon-btn sm" aria-label="Stop"><i class="bi bi-stop-fill"></i></button>';
+    pill.innerHTML = '<span class="mic-dot"></span><span class="mic-tx">' + (lang === 'nb-NO' ? 'Lytter … si f.eks. «149 Rema»' : 'Listening … say e.g. “149 Rema”') + '</span><button type="button" class="icon-btn sm" aria-label="Stop" data-t-aria-label="ui.stop"><i class="bi bi-stop-fill"></i></button>';
     document.body.appendChild(pill); mic.classList.add('on');
     var text = '', done = false;
     function end() { if (done) return; done = true; pill.remove(); mic.classList.remove('on'); if (text.trim() && window.Quick) window.Quick.open(null, null, text.trim()); }
@@ -96,12 +96,12 @@
     var tomEv = [];
     if (window.Cal && window.Cal.occurrences) { try { var a = fromKey(tom), b = fromKey(tom); b.setHours(23, 59); tomEv = window.Cal.occurrences(a, b).filter(function (o) { return !o.allDay && !(o.ev && o.ev.holiday); }).slice(0, 3); } catch (e) {} }
     var html = head('moon-stars', 'End your workday', 'Close today in one go – and know what tomorrow holds.') +
-      (flexOpen ? '<section class="lf-sec"><h4>Work time</h4><label class="lf-check"><input type="checkbox" id="sdOut" checked> Clock out now (' + nowHM + ') – clocked in at ' + esc(flexOpen.in) + '</label></section>' : '') +
-      '<section class="lf-sec"><h4>Left from today</h4>' + (left.length ? left.map(function (t) { return '<label class="lf-check"><input type="checkbox" data-sdmove="' + esc(t.id) + '" checked> <span>Move <b>' + esc(t.text) + '</b> to tomorrow</span></label>'; }).join('') : '<p class="muted">Nothing left – nice work.</p>') + '</section>' +
+      (flexOpen ? '<section class="lf-sec"><h4 data-t="ui.work-time">Work time</h4><label class="lf-check"><input type="checkbox" id="sdOut" checked> Clock out now (' + nowHM + ') – clocked in at ' + esc(flexOpen.in) + '</label></section>' : '') +
+      '<section class="lf-sec"><h4 data-t="ui.left-from-today">Left from today</h4>' + (left.length ? left.map(function (t) { return '<label class="lf-check"><input type="checkbox" data-sdmove="' + esc(t.id) + '" checked> <span>Move <b>' + esc(t.text) + '</b> to tomorrow</span></label>'; }).join('') : '<p class="muted" data-t="ui.nothing-left-nice-work">Nothing left – nice work.</p>') + '</section>' +
       '<section class="lf-sec"><h4>Tomorrow’s top 3 <small class="muted" id="sdCount"></small></h4><div class="lf-chips" id="sdPick">' +
-      (open.length ? open.slice(0, 14).map(function (t) { return '<button type="button" class="lf-chip" data-sdpick="' + esc(t.id) + '" aria-pressed="' + (picks.indexOf(t.id) > -1) + '">' + esc(t.text) + '</button>'; }).join('') : '<p class="muted">No open tasks.</p>') + '</div></section>' +
-      (tomEv.length ? '<section class="lf-sec"><h4>Tomorrow</h4>' + tomEv.map(function (o) { return '<p class="lf-ev"><b>' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()) + '</b> ' + esc(o.title) + '</p>'; }).join('') + '</section>' : '') +
-      '<div class="lf-foot"><button type="button" class="text-btn" data-lfclose>Not now</button><button type="button" class="pill-btn wide" data-sddo><i class="bi bi-check2"></i> End my day</button></div>';
+      (open.length ? open.slice(0, 14).map(function (t) { return '<button type="button" class="lf-chip" data-sdpick="' + esc(t.id) + '" aria-pressed="' + (picks.indexOf(t.id) > -1) + '">' + esc(t.text) + '</button>'; }).join('') : '<p class="muted" data-t="ui.no-open-tasks">No open tasks.</p>') + '</div></section>' +
+      (tomEv.length ? '<section class="lf-sec"><h4 data-t="ui.tomorrow">Tomorrow</h4>' + tomEv.map(function (o) { return '<p class="lf-ev"><b>' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()) + '</b> ' + esc(o.title) + '</p>'; }).join('') + '</section>' : '') +
+      '<div class="lf-foot"><button type="button" class="text-btn" data-lfclose data-t="ui.not-now">Not now</button><button type="button" class="pill-btn wide" data-sddo><i class="bi bi-check2"></i> End my day</button></div>';
     var d = dialog('lf-shutdown', html, function (e, close, box) {
       var p = e.target.closest('[data-sdpick]');
       if (p) {
@@ -175,7 +175,7 @@
         '<div class="lf-slots">' + (list.length ? list.map(function (s) {
           var d = fromKey(s.date);
           return '<button type="button" class="lf-slot" data-ftbook="' + s.date + '|' + s.start + '"><b>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</b><span>' + hm(s.start) + '–' + hm(s.start + st.len) + '</span><i class="bi bi-plus-lg"></i></button>';
-        }).join('') : '<p class="muted">No free slot that long – try a shorter time, or more days.</p>') + '</div>';
+        }).join('') : '<p class="muted" data-t="ui.no-free-slot-that-long-try-a-shorter-tim">No free slot that long – try a shorter time, or more days.</p>') + '</div>';
     }
     var d = dialog('lf-find', head('calendar2-range', 'Find time', 'What do you need time for?') +
       '<input id="ftTitle" placeholder="e.g. Write the FDV report, gym, call mum" maxlength="120" value="' + esc(preTitle || '') + '"><div id="ftBody">' + body() + '</div>',
@@ -238,11 +238,11 @@
   function showPrep(p) {
     var o = p.o, m = p.m, acts = m ? openActs(m) : [];
     var html = head('clipboard-check', o.title, pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()) + (o.ev && o.ev.location ? ' · ' + o.ev.location : '')) +
-      (o.ev && o.ev.notes ? '<section class="lf-sec"><h4>In the event</h4><p class="lf-notes">' + esc(o.ev.notes) + '</p></section>' : '') +
+      (o.ev && o.ev.notes ? '<section class="lf-sec"><h4 data-t="ui.in-the-event">In the event</h4><p class="lf-notes">' + esc(o.ev.notes) + '</p></section>' : '') +
       (m ? '<section class="lf-sec"><h4>Last time · ' + esc(new Date(m.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + (m.who ? ' · ' + esc(m.who) : '') + '</h4>' +
         (m.notes ? '<p class="lf-notes">' + esc(m.notes) + '</p>' : '') +
-        (acts.length ? '<h4>Open action points</h4>' + acts.map(function (a) { return '<label class="lf-check"><input type="checkbox" data-prepact="' + esc(m.id) + ':' + a.i + '"> ' + esc(a.t) + '</label>'; }).join('') : '<p class="muted">All action points done.</p>') + '</section>' : '') +
-      '<div class="lf-foot"><a class="text-btn" href="/cmd/work/#meetings"><i class="bi bi-people"></i> Meeting notes</a><button type="button" class="pill-btn wide" data-lfclose>Ready</button></div>';
+        (acts.length ? '<h4 data-t="ui.open-action-points">Open action points</h4>' + acts.map(function (a) { return '<label class="lf-check"><input type="checkbox" data-prepact="' + esc(m.id) + ':' + a.i + '"> ' + esc(a.t) + '</label>'; }).join('') : '<p class="muted" data-t="ui.all-action-points-done">All action points done.</p>') + '</section>' : '') +
+      '<div class="lf-foot"><a class="text-btn" href="/cmd/work/#meetings"><i class="bi bi-people"></i> Meeting notes</a><button type="button" class="pill-btn wide" data-lfclose data-t="ui.ready">Ready</button></div>';
     var d = dialog('lf-prep', html);
     d.el.addEventListener('change', function (e) {
       var a = e.target.dataset.prepact; if (!a) return;

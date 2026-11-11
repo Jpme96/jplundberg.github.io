@@ -91,7 +91,7 @@
     var box = $('budgetBody');
 
     if (budgetEditing) {
-      box.innerHTML = incomeEditor() + '<p class="muted is-p"><i class="bi bi-receipt"></i> Bills are changed in the <button type="button" class="text-btn" data-billsgo>Bills</button> card below.</p>';
+      box.innerHTML = incomeEditor() + '<p class="muted is-p"><i class="bi bi-receipt"></i> Bills are changed in the <button type="button" class="text-btn" data-billsgo data-t="ui.bills">Bills</button> card below.</p>';
       $('budgetEdit').textContent = 'Done';
       var f = box.querySelector('.pay-form input[name="n"]');
       if (f && payEditing === 'new' && !f.value) f.focus();
@@ -116,7 +116,7 @@
       '<ul class="is-list">' + incRows + '<li class="is-tot"><span>Income ' + esc(monthName(key, true)) + '</span>' + money(inc.net) + '</li></ul>' +
       (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> Next payday ' + esc(next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · ' + esc(per.byPayday ? 'the budget runs payday to payday' : 'the budget runs by calendar month') + '</p>' : '') +
       '<ul class="is-list is-fix"><li><button type="button" class="is-go" data-billsgo><span>Bills<small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' · see them all</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' + money(fixed) + '</li>' +
-        '<li class="is-tot"><span>Left after bills</span>' + money(inc.net - fixed) + '</li></ul>' +
+        '<li class="is-tot"><span data-t="ui.left-after-bills">Left after bills</span>' + money(inc.net - fixed) + '</li></ul>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-fsopen="1"><i class="bi bi-magic"></i> Step by step</button><span class="spacer"></span><button type="button" class="pill-btn" data-bopen>Edit income &amp; costs</button></div>';
   }
 
@@ -138,7 +138,7 @@
     var hasDay = B.hasPayday(D), mode = (D.budget.period === 'payday' || D.budget.period == null) && hasDay ? 'payday' : 'month';
     return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
       (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') +
-      (hasDay ? '<div class="b-period"><span>Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') +
+      (hasDay ? '<div class="b-period"><span data-t="ui.budget-runs">Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') +
       (list.some(function (r) { return r.gross > 0; }) ? slipEditor() : '') + '</div>';
   }
   /* log what each payslip actually said – that month then uses the real numbers, and the year adds up */
@@ -152,12 +152,12 @@
         '<button type="button" class="del" data-sdel="' + k + '" aria-label="Remove payslip"><i class="bi bi-x"></i></button></li>';
     }).join('');
     return '<div class="b-slips"><p class="pay-sub">Payslips logged' + (y.logged ? ' · this year: net ' + esc(kr(y.net)) + ' · tax ' + esc(kr(y.tax)) : '') + '</p>' +
-      (rows ? '<ul class="pay-deds">' + rows + '</ul>' : '<p class="muted b-slip-hint">Type in the net, gross and tax from each payslip. That month then uses the real numbers (bonuses, overtime, a different tax table) and the year adds up correctly.</p>') +
-      '<form class="slip-form"><div class="row2"><select name="m" aria-label="Month">' + opts + '</select><input name="net" class="amt" placeholder="Net paid (Netto)" inputmode="decimal" required autocomplete="off"></div>' +
-      '<div class="add-row"><input name="g" placeholder="Gross (optional)" inputmode="decimal" autocomplete="off"><input name="t" placeholder="Tax (optional)" inputmode="decimal" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Save payslip"><i class="bi bi-check-lg"></i></button></div></form></div>';
+      (rows ? '<ul class="pay-deds">' + rows + '</ul>' : '<p class="muted b-slip-hint" data-t="ui.type-in-the-net-gross-and-tax-from-each">Type in the net, gross and tax from each payslip. That month then uses the real numbers (bonuses, overtime, a different tax table) and the year adds up correctly.</p>') +
+      '<form class="slip-form"><div class="row2"><select name="m" aria-label="Month" data-t-aria-label="ui.month">' + opts + '</select><input name="net" class="amt" placeholder="Net paid (Netto)" data-t-placeholder="ui.net-paid-netto" inputmode="decimal" required autocomplete="off"></div>' +
+      '<div class="add-row"><input name="g" placeholder="Gross (optional)" data-t-placeholder="ui.gross-optional" inputmode="decimal" autocomplete="off"><input name="t" placeholder="Tax (optional)" data-t-placeholder="ui.tax-optional" inputmode="decimal" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Save payslip" data-t-aria-label="ui.save-payslip"><i class="bi bi-check-lg"></i></button></div></form></div>';
   }
   function payForm(r) {
-    var gross = r && r.gross > 0, days = '<option value="">Payday…</option>';
+    var gross = r && r.gross > 0, days = '<option value="" data-t="ui.payday-2">Payday…</option>';
     for (var d = 1; d <= 31; d++) days += '<option value="' + d + '"' + (r && +r.day === d ? ' selected' : '') + '>Paid on the ' + d + '.</option>';
     days += '<option value="last"' + (r && r.day === 'last' ? ' selected' : '') + '>Paid on the last day</option>';
     var ded = (r && r.deductions || []).map(function (x, i) {
@@ -167,25 +167,25 @@
     var taxVal = r && r.taxKr > 0 ? String(Math.round(r.taxKr)) : (r && r.taxPct != null ? r.taxPct + ' %' : '');
     return '<li class="pay-wrap"><form class="pay-form" data-pid="' + (r ? r.id : 'new') + '">' +
       '<div class="add-row"><input name="n" placeholder="e.g. Salary" value="' + esc(r ? r.name : '') + '" required autocomplete="off">' +
-        '<select name="mode" class="pay-mode" aria-label="Net or gross"><option value="net"' + (gross ? '' : ' selected') + '>Net (paid out)</option><option value="gross"' + (gross ? ' selected' : '') + '>Gross (payslip)</option></select></div>' +
+        '<select name="mode" class="pay-mode" aria-label="Net or gross" data-t-aria-label="ui.net-or-gross"><option value="net"' + (gross ? '' : ' selected') + '>Net (paid out)</option><option value="gross"' + (gross ? ' selected' : '') + '>Gross (payslip)</option></select></div>' +
       '<div class="pay-net"' + (gross ? ' hidden' : '') + '><input name="a" class="amt" placeholder="kr / month, after tax" inputmode="decimal" value="' + (r && !gross && r.amount ? r.amount : '') + '" autocomplete="off"></div>' +
       '<div class="pay-gross"' + (gross ? '' : ' hidden') + '>' +
-        '<p class="pay-sub">From your payslip (lønnsslipp)</p>' +
-        '<div class="row2"><label class="pay-field"><span>Monthly salary, gross (Månedslønn)</span><input name="g" placeholder="80 775" inputmode="decimal" value="' + (gross ? r.gross : '') + '" autocomplete="off"></label>' +
-          '<label class="pay-field"><span>Tax (Skattetrekk): % or kr</span><input name="t" placeholder="37 % or 29 621" value="' + esc(taxVal) + '" autocomplete="off"></label></div>' +
-        '<div class="row2"><label class="pay-field"><span>Extra tax, kr (Ekstra skattetrekk)</span><input name="tx" placeholder="0" inputmode="decimal" value="' + (r && r.taxExtra ? r.taxExtra : '') + '" autocomplete="off"></label>' +
-          '<label class="pay-field"><span>Taxed benefits, not paid out (fordel)</span><input name="bf" placeholder="e.g. 90" inputmode="decimal" value="' + (r && r.benefits ? r.benefits : '') + '" autocomplete="off"></label></div>' +
-        '<p class="pay-sub">Deductions (union, pension, insurance)</p>' +
+        '<p class="pay-sub" data-t="ui.from-your-payslip-l-nnsslipp">From your payslip (lønnsslipp)</p>' +
+        '<div class="row2"><label class="pay-field"><span data-t="ui.monthly-salary-gross-m-nedsl-nn">Monthly salary, gross (Månedslønn)</span><input name="g" placeholder="80 775" inputmode="decimal" value="' + (gross ? r.gross : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span data-t="ui.tax-skattetrekk-or-kr">Tax (Skattetrekk): % or kr</span><input name="t" placeholder="37 % or 29 621" value="' + esc(taxVal) + '" autocomplete="off"></label></div>' +
+        '<div class="row2"><label class="pay-field"><span data-t="ui.extra-tax-kr-ekstra-skattetrekk">Extra tax, kr (Ekstra skattetrekk)</span><input name="tx" placeholder="0" inputmode="decimal" value="' + (r && r.taxExtra ? r.taxExtra : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span data-t="ui.taxed-benefits-not-paid-out-fordel">Taxed benefits, not paid out (fordel)</span><input name="bf" placeholder="e.g. 90" inputmode="decimal" value="' + (r && r.benefits ? r.benefits : '') + '" autocomplete="off"></label></div>' +
+        '<p class="pay-sub" data-t="ui.deductions-union-pension-insurance">Deductions (union, pension, insurance)</p>' +
         '<ul class="pay-deds">' + ded + '</ul>' +
-        '<div class="add-row pay-dadd"><input name="dn" placeholder="e.g. Fagforening" autocomplete="off"><input name="da" class="amt" placeholder="681 or 2 %" inputmode="decimal" autocomplete="off">' +
-          '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction"><i class="bi bi-plus-lg"></i></button></div>' +
+        '<div class="add-row pay-dadd"><input name="dn" placeholder="e.g. Fagforening" data-t-placeholder="ui.e-g-fagforening" autocomplete="off"><input name="da" class="amt" placeholder="681 or 2 %" data-t-placeholder="ui.681-or-2" inputmode="decimal" autocomplete="off">' +
+          '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction" data-t-aria-label="ui.add-deduction"><i class="bi bi-plus-lg"></i></button></div>' +
         '<div class="row2"><label class="pay-field"><span>Tax card (skattekort)</span><select name="tc"><option value="table"' + (!r || r.taxCard !== 'pct' ? ' selected' : '') + '>Table (tabelltrekk)</option><option value="pct"' + (r && r.taxCard === 'pct' ? ' selected' : '') + '>Percentage (prosenttrekk)</option></select></label><span></span></div>' +
         '<label class="pay-check"><input type="checkbox" name="py"' + (!r || r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
-        '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span>Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
-          '<label class="pay-field"><span>Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
+        '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span data-t="ui.holiday-pay-earned-last-year-opptjente-f">Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
+          '<label class="pay-field"><span data-t="ui.holiday-weeks">Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
       '</div>' +
-      '<div class="add-row"><select name="day" class="pay-day" data-daypick="pay" aria-label="Payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-pcancel>Cancel</button><span class="spacer"></span>' +
+      '<div class="add-row"><select name="day" class="pay-day" data-daypick="pay" aria-label="Payday" data-t-aria-label="ui.payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-pcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span>' +
         '<button class="pill-btn wide" type="submit">' + (r ? 'Save' : 'Add') + '</button></div></form></li>';
   }
   /* what the form adds up to, as you type */
@@ -244,7 +244,7 @@
         return '<li class="b-fixedit"><form class="fx-edit" data-fid="' + r.id + '"><div class="add-row"><input name="n" value="' + esc(r.name) + '" required autocomplete="off" aria-label="Name"><input name="a" class="amt" value="' + esc(String(r.amount)) + '" inputmode="decimal" required autocomplete="off" aria-label="kr / month"></div>' +
           '<div class="add-row"><select name="day" data-daypick aria-label="Due day">' + opts + '</select></div>' +
           '<button type="button" class="text-btn fx-vary" data-fbopen="' + r.id + '"><i class="bi bi-graph-up"></i> The amount changes from month to month …</button>' +
-          '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel>Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit">Save</button></div></form></li>';
+          '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit" data-t="ui.save">Save</button></div></form></li>';
       }
       return '<li class="b-row"><button type="button" class="b-open" ' + (r.vary || r.split ? 'data-fbopen' : 'data-fedit') + '="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day || r.vary ? '<small class="muted">' + (r.day ? 'due the ' + esc(r.day) + '.' : '') + (r.split ? (r.day ? ' · ' : '') + 'shared – your part' : r.vary ? (r.day ? ' · ' : '') + 'varies – this month' : '') + '</small>' : '') + '</button>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
@@ -253,8 +253,8 @@
       '<ul>' + rows + '</ul>' +
       '<form class="add-row b-add" data-kind="' + kind + '">' +
         '<input name="n" placeholder="' + ph + '" required autocomplete="off">' +
-        '<input name="a" class="amt" placeholder="kr / month" inputmode="decimal" required autocomplete="off">' +
-        '<button class="pill-btn" type="submit" aria-label="Add"><i class="bi bi-plus-lg"></i></button>' +
+        '<input name="a" class="amt" placeholder="kr / month" data-t-placeholder="ui.kr-month" inputmode="decimal" required autocomplete="off">' +
+        '<button class="pill-btn" type="submit" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button>' +
       '</form></div>';
   }
 
@@ -384,7 +384,7 @@
       chart.innerHTML = '<p class="empty">No spending logged in ' + esc(monthName(viewMonth, true)) + '.</p>';
     } else {
       chart.innerHTML = '<div class="donut-wrap">' + donut(byCat, total) +
-        '<div class="donut-mid"><span class="muted">Total</span>' + money(total) + '</div></div>' +
+        '<div class="donut-mid"><span class="muted" data-t="ui.total">Total</span>' + money(total) + '</div></div>' +
         '<ul class="legend">' + byCat.map(function (x) {
           return '<li><i class="dot" style="background:' + x.c.color + '"></i>' + esc(x.c.name) +
             '<span class="muted pct">' + Math.round(x.v / total * 100) + '\u00a0%</span><b>' + money(x.v) + '</b></li>';
@@ -401,7 +401,7 @@
   function txRow(e, withDate) {
     var c = catById[e.cat] || catById.other, d = new Date(e.date + 'T12:00');
     return '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
-      '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank"></i>' : '') + (e.shared ? ' · <i class="bi bi-people" title="Shared – your share"></i>' + (e.full != null ? ' of ' + esc(kr(e.full)) : '') : '') + '</span></span>' +
+      '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank" data-t-title="ui.from-your-bank"></i>' : '') + (e.shared ? ' · <i class="bi bi-people" title="Shared – your share" data-t-title="ui.shared-your-share"></i>' + (e.full != null ? ' of ' + esc(kr(e.full)) : '') : '') + '</span></span>' +
       money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
   }
 
@@ -409,9 +409,9 @@
   var sheetOpen = false, sheetQ = '', sheetCat = '';
   var sheet = document.createElement('div');
   sheet.className = 'qa-bg sp-bg'; sheet.hidden = true;
-  sheet.innerHTML = '<div class="qa-box sp-box" role="dialog" aria-modal="true" aria-label="Spending"><div class="qa-handle"></div>' +
-    '<div class="sp-head"><h2 class="im-h"><i class="bi bi-receipt"></i> <span id="spSheetTitle"></span></h2><button type="button" class="icon-btn sm" data-close aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-    '<div class="sp-filter"><input id="spQ" type="search" placeholder="Search this month…" autocomplete="off"><select id="spCatF" aria-label="Category"><option value="">All categories</option>' + CATS.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('') + '</select></div>' +
+  sheet.innerHTML = '<div class="qa-box sp-box" role="dialog" aria-modal="true" aria-label="Spending" data-t-aria-label="ui.spending"><div class="qa-handle"></div>' +
+    '<div class="sp-head"><h2 class="im-h"><i class="bi bi-receipt"></i> <span id="spSheetTitle"></span></h2><button type="button" class="icon-btn sm" data-close aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+    '<div class="sp-filter"><input id="spQ" type="search" placeholder="Search this month…" data-t-placeholder="ui.search-this-month" autocomplete="off"><select id="spCatF" aria-label="Category" data-t-aria-label="ui.category"><option value="" data-t="ui.all-categories">All categories</option>' + CATS.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('') + '</select></div>' +
     '<p class="muted sp-sum" id="spSheetSum"></p><ul class="tx-list sp-sheet-list" id="spSheetList"></ul></div>';
   document.body.appendChild(sheet);
   function openSheet() {
@@ -437,10 +437,10 @@
       }
       var c = catById[e.cat] || catById.other;
       html += '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
-        '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><select class="tx-cat" data-xcat="' + e.id + '" aria-label="Category">' + CATS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === e.cat ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>' + (e.src === 'bank' ? ' <i class="bi bi-bank muted" title="From your bank"></i>' : '') + '</span>' +
+        '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><select class="tx-cat" data-xcat="' + e.id + '" aria-label="Category">' + CATS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === e.cat ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>' + (e.src === 'bank' ? ' <i class="bi bi-bank muted" title="From your bank" data-t-title="ui.from-your-bank"></i>' : '') + '</span>' +
         money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
     });
-    $('spSheetList').innerHTML = html || '<li class="empty">Nothing matches.</li>';
+    $('spSheetList').innerHTML = html || '<li class="empty" data-t="ui.nothing-matches">Nothing matches.</li>';
   }
   sheet.addEventListener('click', function (e) {
     if (e.target === sheet || e.target.closest('[data-close]')) { closeSheet(); return; }
@@ -741,8 +741,8 @@
   var rules = [];
   function drawRules() {
     $('nwRules').innerHTML = rules.map(function (r, i) {
-      return '<div class="nw-rule" data-ri="' + i + '"><select data-rk="m" aria-label="Month">' + MN.map(function (m, k) { return '<option value="' + (k + 1) + '"' + (+r.m === k + 1 ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
-        '<select data-rk="mode" aria-label="Payment"><option value="interest"' + (r.mode === 'interest' ? ' selected' : '') + '>Interest only</option><option value="amount"' + (r.mode === 'amount' ? ' selected' : '') + '>Pay, kr</option></select>' +
+      return '<div class="nw-rule" data-ri="' + i + '"><select data-rk="m" aria-label="Month" data-t-aria-label="ui.month">' + MN.map(function (m, k) { return '<option value="' + (k + 1) + '"' + (+r.m === k + 1 ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
+        '<select data-rk="mode" aria-label="Payment" data-t-aria-label="ui.payment"><option value="interest"' + (r.mode === 'interest' ? ' selected' : '') + '>Interest only</option><option value="amount"' + (r.mode === 'amount' ? ' selected' : '') + '>Pay, kr</option></select>' +
         '<input data-rk="amount" inputmode="decimal" placeholder="Whole loan" value="' + (r.amount || '') + '"' + (r.mode === 'amount' ? '' : ' hidden') + ' aria-label="Amount"><button type="button" class="icon-btn sm" data-rdel="' + i + '" aria-label="Remove"><i class="bi bi-x"></i></button></div>';
     }).join('');
   }
@@ -897,13 +897,13 @@
     var box = $('billsBody');
     $('billsEdit').hidden = !fixed.length;
     if (!fixed.length) {
-      box.innerHTML = '<p class="empty">Add your fixed costs (rent, loans, subscriptions) under Monthly budget, then give them a due date here.</p>';
+      box.innerHTML = '<p class="empty" data-t="ui.add-your-fixed-costs-rent-loans-subscrip">Add your fixed costs (rent, loans, subscriptions) under Monthly budget, then give them a due date here.</p>';
       return;
     }
     if (billsEditing) {
       $('billsEdit').textContent = 'Done';
-      box.innerHTML = '<p class="bill-sum">Which day of the month is each one due?</p><ul>' + fixed.map(function (f) {
-        var opts = '<option value="">No date</option>';
+      box.innerHTML = '<p class="bill-sum" data-t="ui.which-day-of-the-month-is-each-one-due">Which day of the month is each one due?</p><ul>' + fixed.map(function (f) {
+        var opts = '<option value="" data-t="ui.no-date">No date</option>';
         for (var d = 1; d <= 31; d++) opts += '<option value="' + d + '"' + (f.day === d ? ' selected' : '') + '>' + d + '.</option>';
         return '<li class="bill"><span></span><span class="bill-text"><strong>' + esc(f.name) + '</strong><span>' + esc(kr(f.amount)) + '</span></span>' +
           '<select class="bill-day" data-daypick data-day="' + f.id + '" aria-label="Due day for ' + esc(f.name) + '">' + opts + '</select></li>';

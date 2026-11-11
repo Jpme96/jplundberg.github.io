@@ -21,7 +21,7 @@
 
   var bg = document.createElement('div');
   bg.className = 'qa-bg fs-bg'; bg.hidden = true;
-  bg.innerHTML = '<div class="qa-box fs-box" role="dialog" aria-modal="true" aria-label="Set up Finances"><div class="qa-handle"></div><div id="fsBody"></div></div>';
+  bg.innerHTML = '<div class="qa-box fs-box" role="dialog" aria-modal="true" aria-label="Set up Finances" data-t-aria-label="ui.set-up-finances"><div class="qa-handle"></div><div id="fsBody"></div></div>';
   document.body.appendChild(bg);
   /* on the Setup tab the form sits right on the page (#fsInline); the sheet is only a fallback */
   var inline = $('fsInline');
@@ -94,7 +94,7 @@
     return '<div class="fs-steps">' + STEPS.map(function (t, i) { return '<button type="button" data-fsgo="' + i + '" class="' + (i === step ? 'on' : i < step ? 'done' : '') + '"><b>' + (i < step ? '<i class="bi bi-check-lg"></i>' : i + 1) + '</b><span>' + t + '</span></button>'; }).join('') + '</div>';
   }
   function foot(nextLabel) {
-    return '<div class="qa-acts fs-foot">' + (step ? '<button type="button" class="text-btn" data-fsback><i class="bi bi-chevron-left"></i> Back</button>' : inline ? '' : '<button type="button" class="text-btn" data-fsclose>Later</button>') +
+    return '<div class="qa-acts fs-foot">' + (step ? '<button type="button" class="text-btn" data-fsback><i class="bi bi-chevron-left"></i> Back</button>' : inline ? '' : '<button type="button" class="text-btn" data-fsclose data-t="ui.later">Later</button>') +
       '<span class="spacer"></span><button type="button" class="pill-btn wide" data-fsnext>' + nextLabel + '</button></div>';
   }
   function stepAccts() {
@@ -116,7 +116,7 @@
       '<div class="fs-form">' +
         (s.gross ? '<p class="fs-note"><i class="bi bi-calculator"></i> Worked out from your payslip (gross, tax %): about <b>' + esc(kr(s.net)) + '</b> a normal month, holiday pay in June and half tax in December. Change it under Monthly budget → Edit.</p>' :
           '<label><span>Salary after tax</span><input data-fs="amount" inputmode="decimal" value="' + esc(s.amount) + '" placeholder="e.g. 52 000" autocomplete="off"></label>') +
-        '<label><span>Payday</span><select data-fs="day">' + dayOptions(s.day, 'Pick the day') + '</select></label>' +
+        '<label><span data-t="ui.payday">Payday</span><select data-fs="day">' + dayOptions(s.day, 'Pick the day') + '</select></label>' +
         '<p class="muted fs-hint">When it’s a weekend, the Friday before counts. The budget then runs from payday to payday.</p>' +
         (draft.extraIncome ? '<p class="muted fs-hint">You have more than one income – the others are kept as they are.</p>' : '') +
       '</div>' + foot('Next: every month');

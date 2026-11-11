@@ -63,7 +63,7 @@
     var html = '<span class="fo-ring" style="--p:' + pct.toFixed(3) + '"><i class="bi bi-' + (s.mode === 'rest' ? 'cup-hot' : 'stopwatch') + '"></i></span>' +
       '<span class="fo-x"><b class="fo-time">' + mmss(ms) + '</b><small>' + esc(label) + '</small></span>' +
       '<button type="button" class="icon-btn" data-fopause aria-label="' + (s.paused != null ? 'Resume' : 'Pause') + '"><i class="bi bi-' + (s.paused != null ? 'play-fill' : 'pause-fill') + '"></i></button>' +
-      '<button type="button" class="icon-btn" data-fostop aria-label="Stop"><i class="bi bi-stop-fill"></i></button>';
+      '<button type="button" class="icon-btn" data-fostop aria-label="Stop" data-t-aria-label="ui.stop"><i class="bi bi-stop-fill"></i></button>';
     if (pill.dataset.k !== s.mode + (s.paused != null) + label) { pill.innerHTML = html; pill.dataset.k = s.mode + (s.paused != null) + label; pill.classList.toggle('rest', s.mode === 'rest'); pill.classList.toggle('paused', s.paused != null); }
     else { pill.querySelector('.fo-time').textContent = mmss(ms); pill.querySelector('.fo-ring').style.setProperty('--p', pct.toFixed(3)); }
     pill.setAttribute('aria-label', label + ' – ' + mmss(ms) + ' left');
@@ -86,11 +86,11 @@
     list.sort(function (a, b) { var ra = a.today === td ? (a.rank || 4) : 9, rb = b.today === td ? (b.rank || 4) : 9; return ra - rb; });
     var top = list.slice(0, 5);
     var bg = document.createElement('div'); bg.className = 'fo-bg';
-    bg.innerHTML = '<div class="fo-box" role="dialog" aria-modal="true" aria-label="Start a focus timer"><h3><i class="bi bi-stopwatch"></i> Focus for ' + WORK + ' minutes</h3>' +
-      '<p class="muted">Pick a task – or just start.</p>' +
+    bg.innerHTML = '<div class="fo-box" role="dialog" aria-modal="true" aria-label="Start a focus timer" data-t-aria-label="ui.start-a-focus-timer"><h3><i class="bi bi-stopwatch"></i> Focus for ' + WORK + ' minutes</h3>' +
+      '<p class="muted" data-t="ui.pick-a-task-or-just-start">Pick a task – or just start.</p>' +
       top.map(function (t) { return '<button type="button" class="fo-opt" data-fotask="' + esc(t.id) + '">' + (t.today === td && t.rank ? '<span class="td-rank">' + t.rank + '</span> ' : '') + esc(t.text) + '</button>'; }).join('') +
       '<button type="button" class="fo-opt" data-fotask=""><i class="bi bi-play-fill"></i> Just start</button>' +
-      '<div class="fo-foot"><button type="button" class="text-btn" data-foclose>Cancel</button></div></div>';
+      '<div class="fo-foot"><button type="button" class="text-btn" data-foclose data-t="ui.cancel">Cancel</button></div></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var first = bg.querySelector('.fo-opt'); if (first) first.focus();
     function close() { bg.remove(); document.removeEventListener('keydown', key, true); }

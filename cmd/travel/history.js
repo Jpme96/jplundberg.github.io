@@ -62,13 +62,13 @@
     $('hsYears').innerHTML = ks.length ? '<ul class="hs-years">' + ks.map(function (k) {
       return '<li><span class="y">' + k + '</span><span class="bar"><i style="width:' + Math.max(4, years[k].days / max * 100) + '%"></i></span>' +
         '<span class="v">' + years[k].days + ' day' + (years[k].days === 1 ? '' : 's') + ' · ' + years[k].trips + ' trip' + (years[k].trips === 1 ? '' : 's') + '</span></li>';
-    }).join('') + '</ul>' : '<p class="muted">Nothing yet.</p>';
+    }).join('') + '</ul>' : '<p class="muted" data-t="ui.nothing-yet">Nothing yet.</p>';
 
     /* countries */
     var cl = Object.keys(countries).map(function (k) { return countries[k]; }).sort(function (a, b) { return b.trips - a.trips || (a.last < b.last ? 1 : -1); });
     $('hsCountries').innerHTML = cl.length ? '<ul class="hs-countries">' + cl.map(function (c) {
       return '<li><span class="cc">' + esc(c.cc) + '</span><span class="n">' + esc(c.name) + '</span><span class="v">' + c.trips + ' trip' + (c.trips > 1 ? 's' : '') + ' · ' + c.days + ' d</span></li>';
-    }).join('') + '</ul>' : '<p class="muted">Trips with a destination show up here.</p>';
+    }).join('') + '</ul>' : '<p class="muted" data-t="ui.trips-with-a-destination-show-up-here">Trips with a destination show up here.</p>';
 
     /* past trips, a year at a time (the newest year open) – so the list never gets long */
     var byYear = {};

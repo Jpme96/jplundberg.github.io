@@ -255,7 +255,7 @@
     box.hidden = !onP; if (!onP) return;
     var D = days(), keys = Object.keys(D).sort(), today = dkey(new Date()), G = goals();
     var head = '<div class="card-head"><h2><i class="bi bi-apple"></i> Apple Health</h2><span class="ah-head-btns">' + (keys.length ? '<button type="button" class="text-btn" data-ahlayout aria-pressed="' + editLayout + '"><i class="bi bi-grid-1x2"></i> ' + (editLayout ? 'Done' : 'Customize') + '</button>' : '') + '<a class="text-btn" href="../?settings=ahealth">' + (keys.length ? 'Settings' : 'Set up') + '</a></span></div>';
-    if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="/cmd/?settings=ahealth">Set it up</a> (about 10 minutes, once).</p>'; return; }
+    if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="/cmd/?settings=ahealth" data-t="ui.set-it-up">Set it up</a> (about 10 minutes, once).</p>'; return; }
     var w = stats(addDays(today, -6), today), pw = stats(addDays(today, -13), addDays(today, -7));
     var have = METRICS.filter(function (m) { return keys.some(function (k) { return D[k][m[0]] != null; }); });
     if (!have.some(function (m) { return m[0] === chartM; })) chartM = have[0] ? have[0][0] : 'steps';
@@ -278,18 +278,18 @@
     var tiles = LY.tile.map(function (k) { return tileOf(byKey[k]); }).join('');
     if (LY.stack.length) {
       var si = LY.stack.indexOf(chartM); if (si >= 0) stackIdx = si; if (stackIdx >= LY.stack.length) stackIdx = 0;
-      tiles += '<div class="ah-stack" role="group" aria-label="More numbers – swipe">' +
+      tiles += '<div class="ah-stack" role="group" aria-label="More numbers – swipe" data-t-aria-label="ui.more-numbers-swipe">' +
         '<div class="ah-stack-track" id="ahStack">' + LY.stack.map(function (k) { return tileOf(byKey[k]); }).join('') + '</div>' +
         (LY.stack.length > 1 ? '<div class="ah-dots">' + LY.stack.map(function (k, i) { return '<button type="button" data-ahdot="' + i + '" aria-label="' + esc(byKey[k][1]) + '"' + (i === stackIdx ? ' class="on"' : '') + ' style="--c:' + byKey[k][3] + '"></button>'; }).join('') + '</div>' : '') + '</div>';
     }
     /* customize: tile / stack / hidden, and the order */
     if (editLayout) {
-      tiles = '<div class="ah-edit"><p class="muted">Main tiles are always shown; the stack holds the rest – swipe it like an iPhone widget.</p>' + LY.order.map(function (k, i) {
+      tiles = '<div class="ah-edit"><p class="muted" data-t="ui.main-tiles-are-always-shown-the-stack-ho">Main tiles are always shown; the stack holds the rest – swipe it like an iPhone widget.</p>' + LY.order.map(function (k, i) {
         var m = byKey[k], wv = LY.tile.indexOf(k) >= 0 ? 'tile' : LY.stack.indexOf(k) >= 0 ? 'stack' : 'off';
         return '<div class="ah-edit-row" style="--c:' + m[3] + '"><span class="ah-l"><i class="bi bi-' + m[2] + '"></i> ' + m[1] + '</span>' +
           '<span class="seg" role="group" aria-label="' + esc(m[1]) + '">' + [['tile', 'Tile'], ['stack', 'Stack'], ['off', 'Hide']].map(function (o) { return '<button type="button" data-ahwhere="' + k + '" data-v="' + o[0] + '" aria-pressed="' + (wv === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</span>' +
           '<span class="ah-edit-mv"><button type="button" class="icon-btn" data-ahmove="' + k + '" data-d="-1" aria-label="Move ' + esc(m[1]) + ' up"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button><button type="button" class="icon-btn" data-ahmove="' + k + '" data-d="1" aria-label="Move ' + esc(m[1]) + ' down"' + (i < LY.order.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
-      }).join('') + '<div class="ah-edit-foot"><button type="button" class="text-btn" data-ahlayreset>Reset</button><button type="button" class="pill-btn" data-ahlayout>Done</button></div></div>';
+      }).join('') + '<div class="ah-edit-foot"><button type="button" class="text-btn" data-ahlayreset data-t="ui.reset">Reset</button><button type="button" class="pill-btn" data-ahlayout data-t="ui.done">Done</button></div></div>';
     }
 
     /* the chart: 7, 14 or 30 days; tap a bar to see that day */
@@ -305,7 +305,7 @@
       bot = lo - pad; top = hi + pad;
     }
     var yOf = function (v) { return (v - bot) / (top - bot) * 100; };
-    var ctl = '<div class="ah-ctl"><span class="seg ah-kind" role="group" aria-label="Chart type"><button type="button" data-ahkind="bars" aria-pressed="' + (kind === 'bars') + '" aria-label="Bars"><i class="bi bi-bar-chart-fill"></i></button><button type="button" data-ahkind="line" aria-pressed="' + (kind === 'line') + '" aria-label="Line"><i class="bi bi-graph-up"></i></button></span><span class="seg ah-range" role="group" aria-label="Days shown">' + [7, 14, 30].map(function (n) { return '<button type="button" data-ahrange="' + n + '" aria-pressed="' + (n === range) + '">' + n + ' days</button>'; }).join('') + '</span></div>';
+    var ctl = '<div class="ah-ctl"><span class="seg ah-kind" role="group" aria-label="Chart type" data-t-aria-label="ui.chart-type"><button type="button" data-ahkind="bars" aria-pressed="' + (kind === 'bars') + '" aria-label="Bars"><i class="bi bi-bar-chart-fill"></i></button><button type="button" data-ahkind="line" aria-pressed="' + (kind === 'line') + '" aria-label="Line"><i class="bi bi-graph-up"></i></button></span><span class="seg ah-range" role="group" aria-label="Days shown" data-t-aria-label="ui.days-shown">' + [7, 14, 30].map(function (n) { return '<button type="button" data-ahrange="' + n + '" aria-pressed="' + (n === range) + '">' + n + ' days</button>'; }).join('') + '</span></div>';
     var line = '';
     if (kind === 'line' && withData.length) {
       var pts = vals.map(function (x, i) { return x.v == null ? null : [((i + .5) / range * 100).toFixed(2), (100 - yOf(x.v)).toFixed(2)]; }).filter(Boolean);
@@ -332,7 +332,7 @@
     var dayBox = '<div class="ah-day" style="--c:' + M[3] + '"><div class="ah-day-h"><button type="button" class="icon-btn" data-ahstep="-1" aria-label="Day before"' + (di <= 0 ? ' disabled' : '') + '><i class="bi bi-chevron-left"></i></button><b>' + esc(dayName(selDay, today)) + '</b><button type="button" class="icon-btn" data-ahstep="1" aria-label="Day after"' + (di >= vals.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button>' +
       '<span class="ah-dv"><i class="bi bi-' + M[2] + '"></i> ' + esc(sv != null ? fmt(chartM, sv) : '–') + '</span></div>' +
       (status || ticks ? '<div class="ah-day-s">' + status + (ticks ? '<span class="ah-ticks">' + ticks + '</span>' : '') + '</div>' : '') +
-      (nOther ? '<details class="ah-more"' + (dayOpen ? ' open' : '') + '><summary>All numbers this day (' + nOther + ')</summary><div class="ah-chips">' + chips + '</div></details>' : (sv == null && !nOther ? '<p class="muted ah-nodata">Nothing from Apple Health this day.</p>' : '')) + '</div>';
+      (nOther ? '<details class="ah-more"' + (dayOpen ? ' open' : '') + '><summary>All numbers this day (' + nOther + ')</summary><div class="ah-chips">' + chips + '</div></details>' : (sv == null && !nOther ? '<p class="muted ah-nodata" data-t="ui.nothing-from-apple-health-this-day">Nothing from Apple Health this day.</p>' : '')) + '</div>';
 
     /* a line that says something about the period */
     var ins = [];
@@ -349,7 +349,7 @@
     }
     var short = keys.length < range ? '<p class="muted ah-grow"><i class="bi bi-hourglass-split"></i> History builds up by itself – one more day every evening (since ' + esc(new Date(keys[0] + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ').</p>' : '';
     var lastT = (window.Vault.get().health || {}).last;
-    var goalCtl = GOAL_DEF[chartM] != null || GOALABLE[chartM] ? (editGoal ? '<span class="ah-goaledit">Goal <input id="ahGoalIn" inputmode="decimal" value="' + esc(goal == null ? '' : goal) + '" aria-label="Goal for ' + esc(LABEL[chartM]) + '">' + ({ weight: ' kg', rhr: ' bpm', hrv: ' ms', sleep: ' h', exercise: ' min', active: ' kcal', stand: ' h', distance: ' km', mindful: ' min', water: ' l', daylight: ' min', flights: ' floors' }[chartM] || '') + ' <button type="button" class="text-btn" data-ahgoalsave>Save</button></span>' : '<button type="button" class="text-btn ah-goalbtn" data-ahgoal><i class="bi bi-flag"></i> Goal ' + esc(fmt(chartM, goal)) + '</button>') : '';
+    var goalCtl = GOAL_DEF[chartM] != null || GOALABLE[chartM] ? (editGoal ? '<span class="ah-goaledit">Goal <input id="ahGoalIn" inputmode="decimal" value="' + esc(goal == null ? '' : goal) + '" aria-label="Goal for ' + esc(LABEL[chartM]) + '">' + ({ weight: ' kg', rhr: ' bpm', hrv: ' ms', sleep: ' h', exercise: ' min', active: ' kcal', stand: ' h', distance: ' km', mindful: ' min', water: ' l', daylight: ' min', flights: ' floors' }[chartM] || '') + ' <button type="button" class="text-btn" data-ahgoalsave data-t="ui.save">Save</button></span>' : '<button type="button" class="text-btn ah-goalbtn" data-ahgoal><i class="bi bi-flag"></i> Goal ' + esc(fmt(chartM, goal)) + '</button>') : '';
     /* sleep that's far too short on several days: usually the Shortcut only gets part of the night (Limit on in Find Health Samples) */
     var low = keys.filter(function (k) { var v = D[k].sleep; return v != null && v > 0 && v < 2; });
     var sc0 = sleepCheck(lastIn()), li0 = lastIn();
@@ -432,8 +432,8 @@
     if ($('ahSetup') && !settingsPage.done) { $('ahSetup').open = !n; settingsPage.done = true; }   // set-up open until numbers arrive
     $('ahHabits').innerHTML = (hb.list || []).length ? hb.list.map(function (h) {
       var a = h.auto || {};
-      return '<div class="st-row ah-rule"><span class="st-label">' + esc(h.name) + '<small>Tick it automatically when…</small></span><span class="ah-rule-in">' +
-        '<select data-ahrule="' + esc(h.id) + '" aria-label="Number for ' + esc(h.name) + '"><option value="">Never</option>' +
+      return '<div class="st-row ah-rule"><span class="st-label">' + esc(h.name) + '<small data-t="ui.tick-it-automatically-when">Tick it automatically when…</small></span><span class="ah-rule-in">' +
+        '<select data-ahrule="' + esc(h.id) + '" aria-label="Number for ' + esc(h.name) + '"><option value="" data-t="ui.never">Never</option>' +
         [['steps', 'Steps ≥'], ['exercise', 'Exercise min ≥'], ['sleep', 'Sleep hours ≥'], ['active', 'Active kcal ≥'], ['stand', 'Stand hours ≥'], ['distance', 'Km walked ≥'], ['flights', 'Floors ≥'], ['mindful', 'Mindful min ≥'], ['water', 'Water litres ≥'], ['daylight', 'Daylight min ≥']].map(function (o) { return '<option value="' + o[0] + '"' + (a.m === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
         '</select><input data-ahmin="' + esc(h.id) + '" inputmode="decimal" value="' + esc(a.min || '') + '" placeholder="' + (a.m === 'steps' ? '10000' : a.m === 'sleep' ? '7' : '30') + '" aria-label="Threshold"' + (a.m ? '' : ' disabled') + '></span></div>';
     }).join('') : '<p class="muted st-pad">Add a habit on the dashboard first.</p>';

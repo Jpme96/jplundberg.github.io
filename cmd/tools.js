@@ -80,7 +80,7 @@
   function clockBlock(s) {
     return '<div class="flex-clock">' +
       '<div class="fc-now"><span class="fc-dot' + (s.open ? ' on' : '') + '"></span><span>' + (s.open ? 'Clocked in at <b>' + esc(s.open.in) + '</b>' : 'Not clocked in') + '</span></div>' +
-      '<b class="fc-time" data-flex-live>' + hm(s.today) + '</b><small>today</small>' +
+      '<b class="fc-time" data-flex-live>' + hm(s.today) + '</b><small data-t="ui.today-2">today</small>' +
       '<button type="button" class="pill-btn fc-btn' + (s.open ? ' out' : '') + '" data-flex-clock><i class="bi bi-' + (s.open ? 'stop-fill' : 'play-fill') + '"></i> ' + (s.open ? 'Clock out' : 'Clock in') + '</button></div>';
   }
   var flex = K.collection({
@@ -112,9 +112,9 @@
     empty: 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.',
     afterRender: function (el) {
       var c = flexCfg();
-      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work">Change</a></p>' +
-        '<div class="fr-bar"><span class="muted"><i class="bi bi-file-earmark-text"></i> Monthly report</span><select class="fr-month" aria-label="Month for the report">' + reportMonths() + '</select>' +
-        '<button type="button" class="text-btn" data-frcsv>CSV</button><button type="button" class="text-btn" data-frpdf>PDF</button></div>');
+      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work" data-t="ui.change">Change</a></p>' +
+        '<div class="fr-bar"><span class="muted"><i class="bi bi-file-earmark-text"></i> Monthly report</span><select class="fr-month" aria-label="Month for the report" data-t-aria-label="ui.month-for-the-report">' + reportMonths() + '</select>' +
+        '<button type="button" class="text-btn" data-frcsv data-t="ui.csv">CSV</button><button type="button" class="text-btn" data-frpdf data-t="ui.pdf">PDF</button></div>');
     },
     onClick: function (e) {
       if (e.target.closest('[data-flex-clock]')) clock();
@@ -172,7 +172,7 @@
       '<h1>Flex time – ' + esc(r.name) + '</h1><p class="s">' + esc(me.name || 'John Paul Lundberg') + (me.employer ? ' · ' + esc(me.employer) : '') + ' · normal day ' + String(r.norm).replace('.', ',') + ' h</p>' +
       '<div class="sum"><div><span>Worked</span><b>' + hmPlain(r.total) + '</b>' + r.days + ' days</div><div><span>Flex this month</span><b>' + (r.delta > 0 ? '+' : '') + hmPlain(r.delta) + '</b>balance ' + (r.balance > 0 ? '+' : '') + hmPlain(r.balance) + '</div>' +
       '<div><span>Days off</span><b>' + r.vacation + '</b>holiday · ' + r.sick + ' sick · ' + r.flexoff + ' flex</div></div>' +
-      '<div class="wrap"><table><thead><tr><th>Date</th><th>Type</th><th>In</th><th>Out</th><th class="n">Break</th><th class="n">Worked</th><th>Note</th></tr></thead><tbody>' +
+      '<div class="wrap"><table><thead><tr><th data-t="ui.date">Date</th><th data-t="ui.type">Type</th><th data-t="ui.in">In</th><th data-t="ui.out">Out</th><th class="n" data-t="ui.break">Break</th><th class="n">Worked</th><th data-t="ui.note">Note</th></tr></thead><tbody>' +
       (r.rows.length ? r.rows.map(function (x) { return '<tr><td>' + esc(x.wd + ' ' + x.date.slice(8) + '.' + x.date.slice(5, 7)) + '</td><td>' + esc(x.type) + '</td><td>' + esc(x.in) + '</td><td>' + esc(x.out) + '</td><td class="n">' + (x.brk ? x.brk + ' min' : '') + '</td><td class="n">' + (x.worked ? hmPlain(x.worked) : '') + '</td><td>' + esc(x.note) + '</td></tr>'; }).join('') : '<tr><td colspan="7">Nothing logged this month.</td></tr>') +
       '</tbody></table></div><p class="tip">Use Print → Save as PDF (on iPhone: Share → Print, then pinch out on the preview to get the PDF).</p>' +
       '<script>setTimeout(function(){try{window.print()}catch(e){}},400)<\/script></body></html>';
@@ -204,7 +204,7 @@
     home.hidden = !on;
     if (!on) return;
     var s = flexStats();
-    home.innerHTML = '<div class="card-head"><h2><i class="bi bi-stopwatch"></i> Work today</h2><a class="text-btn" href="work/">Details</a></div>' +
+    home.innerHTML = '<div class="card-head"><h2><i class="bi bi-stopwatch"></i> Work today</h2><a class="text-btn" href="work/" data-t="ui.details">Details</a></div>' +
       clockBlock(s) + '<p class="fc-bal">Flex balance <b class="' + (s.balance < 0 ? 'neg' : 'pos') + '">' + (s.balance > 0 ? '+' : '') + hm(s.balance) + '</b> · this week ' + hm(s.week) + '</p>';
   }
   if (home) {
@@ -339,8 +339,8 @@
       var mon = F.dkey(monday(new Date())), m = today().slice(0, 7);
       var wk = items.filter(function (w) { return w.date >= mon; }), mo = items.filter(function (w) { return String(w.date).slice(0, 7) === m; });
       var sum = function (l, k) { return l.reduce(function (a, w) { return a + (+w[k] || 0); }, 0); };
-      return '<div class="kit-tiles">' + tile('This week', wk.length + ' <small>sessions</small>', hms(sum(wk, 'min'))) +
-        tile('This month', mo.length + ' <small>sessions</small>', hms(sum(mo, 'min'))) +
+      return '<div class="kit-tiles">' + tile('This week', wk.length + ' <small data-t="ui.sessions">sessions</small>', hms(sum(wk, 'min'))) +
+        tile('This month', mo.length + ' <small data-t="ui.sessions">sessions</small>', hms(sum(mo, 'min'))) +
         tile('Distance this month', (Math.round(sum(mo, 'km') * 10) / 10).toString().replace('.', ',') + ' <small>km</small>') + '</div>';
     },
     row: function (w) {

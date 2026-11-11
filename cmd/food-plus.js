@@ -50,7 +50,7 @@
   function lines(r, ctx) { var b = +r.serves || 0, n = servings(r, ctx), f = b && n ? n / b : 1; return HL.ingredients(r).map(function (l) { return scaleLine(l, f); }); }
   function ingrInner(r) {
     var b = +r.serves || 0, n = servings(r), l = lines(r);
-    return (b ? '<div class="fp5-serve"><span>Servings</span><button type="button" class="icon-btn sm" data-fpsv="' + esc(r.id) + '|-1" aria-label="Fewer servings"' + (n <= 1 ? ' disabled' : '') + '><i class="bi bi-dash-lg"></i></button><b>' + n + '</b>' +
+    return (b ? '<div class="fp5-serve"><span data-t="ui.servings">Servings</span><button type="button" class="icon-btn sm" data-fpsv="' + esc(r.id) + '|-1" aria-label="Fewer servings"' + (n <= 1 ? ' disabled' : '') + '><i class="bi bi-dash-lg"></i></button><b>' + n + '</b>' +
       '<button type="button" class="icon-btn sm" data-fpsv="' + esc(r.id) + '|1" aria-label="More servings"' + (n >= 40 ? ' disabled' : '') + '><i class="bi bi-plus-lg"></i></button>' + (n !== b ? '<small class="muted">scaled from ' + b + '</small>' : '') + '</div>' : '') +
       (l.length ? '<ul class="hl-ingr" data-noi18n>' + l.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '');
   }
@@ -105,16 +105,16 @@
         (lw ? '<i class="bi bi-cart3"></i>' : '') + '<span data-noi18n>' + esc(x.name) + '</span></button>';
     };
     var body = l.length ? (low.length && !editP ? '<div class="pn-low"><p><i class="bi bi-cart3"></i> Running out · on your shopping list</p><div class="pn-chips">' + sorted(low).map(function (x) {
-        return '<button type="button" class="pn-chip low" data-fpok="' + esc(x.id) + '" aria-label="Got ' + esc(x.name) + ' again"><span data-noi18n>' + esc(x.name) + '</span><i class="bi bi-check2"></i></button>'; }).join('') + '</div><p class="pn-tip">Tap when it’s back in the cupboard</p></div>' : '') +
+        return '<button type="button" class="pn-chip low" data-fpok="' + esc(x.id) + '" aria-label="Got ' + esc(x.name) + ' again"><span data-noi18n>' + esc(x.name) + '</span><i class="bi bi-check2"></i></button>'; }).join('') + '</div><p class="pn-tip" data-t="ui.tap-when-its-back-in-the-cupboard">Tap when it’s back in the cupboard</p></div>' : '') +
       '<div class="pn-groups">' + groups.map(function (a) {
         var A = HL.AISLE[a];
         return '<div class="pn-grp" data-pngrp><p class="pn-h" style="--c:' + A.c + '"><i class="bi bi-' + A.ic + '"></i> ' + esc(A.n) + ' <span>' + by[a].length + '</span></p><div class="pn-chips">' + sorted(by[a]).map(chip).join('') + '</div></div>';
-      }).join('') + '</div>' + (editP ? '' : '<p class="pn-tip">Tap anything that’s running out – it goes on the shopping list.</p>')
-      : '<p class="empty kit-empty">The basics you always keep at home. Tap one when it’s running out and it goes on the shopping list – ticked off there, it’s back in stock.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics</button></div>';
+      }).join('') + '</div>' + (editP ? '' : '<p class="pn-tip" data-t="ui.tap-anything-thats-running-out-it-goes-o">Tap anything that’s running out – it goes on the shopping list.</p>')
+      : '<p class="empty kit-empty" data-t="ui.the-basics-you-always-keep-at-home-tap-o">The basics you always keep at home. Tap one when it’s running out and it goes on the shopping list – ticked off there, it’s back in stock.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics</button></div>';
     el.innerHTML = '<section class="card kit-card pn-card" id="pantry"><div class="card-head"><h2><i class="bi bi-box-seam"></i> Pantry' + (low.length ? ' <span class="hl-count">' + low.length + '</span>' : '') + '</h2>' +
       '<div class="head-actions">' + (l.length ? '<span class="muted pn-sum">' + l.length + ' at home</span><button type="button" class="text-btn" data-fpedit aria-pressed="' + editP + '"><i class="bi bi-' + (editP ? 'check2' : 'pencil') + '"></i> ' + (editP ? 'Done' : 'Edit') + '</button>' : '') + '</div></div>' +
-      (l.length ? '<form class="hl-shopadd fp5-padd pn-find"><i class="bi bi-search" aria-hidden="true"></i><input placeholder="Find or add – e.g. oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Find or add to the pantry"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
-      body + (!l.length ? '<form class="hl-shopadd fp5-padd"><input placeholder="Or add your own – e.g. oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Add to the pantry"><button type="submit" class="icon-btn" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
+      (l.length ? '<form class="hl-shopadd fp5-padd pn-find"><i class="bi bi-search" aria-hidden="true"></i><input placeholder="Find or add – e.g. oats" data-t-placeholder="ui.find-or-add-e-g-oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Find or add to the pantry"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
+      body + (!l.length ? '<form class="hl-shopadd fp5-padd"><input placeholder="Or add your own – e.g. oats" data-t-placeholder="ui.or-add-your-own-e-g-oats" maxlength="60" enterkeyhint="done" autocomplete="off" aria-label="Add to the pantry"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' : '') +
       (editP && l.length < BASICS.length ? '<button type="button" class="text-btn" data-fpbasics><i class="bi bi-magic"></i> Add the usual basics you don’t have</button>' : '') + '</section>';
     filterPantry(el, typed);
     var inp = el.querySelector('.fp5-padd input'); inp.value = typed; if (focus) inp.focus();
@@ -250,12 +250,12 @@
       var box = dg.el.querySelector('.fp5-imp'), h = HL.dhead('link-45deg', 'Recipe from a link', 'Paste the address of a recipe page – the name, ingredients and steps are read from it.');
       var form = '<form class="fp5-url"><input name="u" type="url" inputmode="url" placeholder="https://www.matprat.no/oppskrifter/…" value="' + esc(st.url) + '" autocomplete="off" required aria-label="Recipe link"><button type="submit" class="pill-btn"' + (st.busy ? ' disabled' : '') + '>' + (st.busy ? 'Reading …' : 'Get it') + '</button></form>';
       var r = st.r, res = '';
-      if (st.have) res = '<p class="pp5-msg">You have this one already.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpiopen>Open it</button></div>';
+      if (st.have) res = '<p class="pp5-msg" data-t="ui.you-have-this-one-already">You have this one already.</p><div class="hl-acts"><button type="button" class="pill-btn" data-fpiopen data-t="ui.open-it">Open it</button></div>';
       else if (st.err) res = '<p class="pp5-msg">' + esc(st.err) + '</p>' + (st.hand ? '<div class="hl-acts"><button type="button" class="text-btn" data-fpihand><i class="bi bi-pencil"></i> Add it by hand</button></div>' : '');
       else if (r) res = '<div class="fp5-prev"><input name="fpname" value="' + esc(r.name) + '" maxlength="120" aria-label="Name" data-noi18n><p class="muted hl-small">' +
         esc([r.servings ? 'Serves ' + r.servings : '', r.mins ? r.mins + ' min' : '', (r.ingredients || []).length + ' ingredients', (r.steps || []).length ? (r.steps || []).length + ' steps' : ''].filter(Boolean).join(' · ')) + '</p>' +
         '<ul class="hl-ingr" data-noi18n>' + (r.ingredients || []).slice(0, 10).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' + ((r.ingredients || []).length > 10 ? '<p class="muted hl-small">and ' + ((r.ingredients || []).length - 10) + ' more</p>' : '') +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-hlclose>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn" data-fpisave><i class="bi bi-journal-plus"></i> Save recipe</button></div></div>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-hlclose data-t="ui.cancel">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn" data-fpisave><i class="bi bi-journal-plus"></i> Save recipe</button></div></div>';
       box.innerHTML = h + form + res;
       box.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); get(box.querySelector('[name=u]').value.trim()); });
     }
@@ -290,7 +290,7 @@
   window.addEventListener('hashchange', function () { if (document.documentElement.classList.contains('unlocked')) fromHash(); });
 
   window.FoodPlus = { shopBtn: shopBtn, cleanName: cleanName, inPantry: inPantry, lines: lines, ingrBlock: ingrBlock, scale: scaleLine, openImport: openImport, pantry: pantry,
-    importBtn: function () { return '<button type="button" class="text-btn" data-fpimport aria-label="Recipe from a link"><i class="bi bi-link-45deg"></i> From a link</button>'; } };
+    importBtn: function () { return '<button type="button" class="text-btn" data-fpimport aria-label="Recipe from a link" data-t-aria-label="ui.recipe-from-a-link"><i class="bi bi-link-45deg"></i> From a link</button>'; } };
   window.CommandExtra = window.CommandExtra || [];
   window.CommandExtra.push(function () { return on() ? [
     { i: 'link-45deg', t: 'Recipe from a link', s: 'Food', run: function () { openImport(''); }, x: 'recipe import link url oppskrift lenke' },

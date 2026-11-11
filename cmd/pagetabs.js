@@ -141,8 +141,8 @@
       var bar = function (v, goal) { return '<span class="pt-bar"><i style="width:' + Math.min(100, (v || 0) / goal * 100).toFixed(1) + '%"></i></span>'; };
       if (A && Fe.on('ahealth')) {
         var ln = A.lastNight();
-        rows.push(['moon-stars', '#8a6fdf', 'Last night', ln ? A.fmt('sleep', ln.v) : '–', ln ? bar(ln.v, sleepGoal) : '<small>no sleep sent yet</small>', '#ahCard']);
-        rows.push(['person-walking', '#22b35e', 'Steps today', day.steps != null ? A.fmt('steps', day.steps) : '–', day.steps != null ? bar(day.steps, stepGoal) : '<small>arrives with the evening Shortcut</small>', '#ahCard']);
+        rows.push(['moon-stars', '#8a6fdf', 'Last night', ln ? A.fmt('sleep', ln.v) : '–', ln ? bar(ln.v, sleepGoal) : '<small data-t="ui.no-sleep-sent-yet">no sleep sent yet</small>', '#ahCard']);
+        rows.push(['person-walking', '#22b35e', 'Steps today', day.steps != null ? A.fmt('steps', day.steps) : '–', day.steps != null ? bar(day.steps, stepGoal) : '<small data-t="ui.arrives-with-the-evening-shortcut">arrives with the evening Shortcut</small>', '#ahCard']);
         if (day.exercise != null) rows.push(['activity', '#e8743b', 'Exercise', A.fmt('exercise', day.exercise), bar(day.exercise, exGoal), '#ahCard']);
       }
       var hb = readJSON('dash.habits', null), hl = hb && Array.isArray(hb.list) ? hb.list : [];

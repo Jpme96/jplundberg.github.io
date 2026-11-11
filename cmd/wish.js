@@ -84,7 +84,7 @@
   var wishCol = K && $t('wishes') ? K.collection({
     mount: $t('wishes'), feature: 'wish', key: 'wishes', icon: 'stars', title: 'Wishes', addLabel: 'Add', limit: 12,
     addTitle: WF.addTitle, editTitle: WF.editTitle, fields: WF.fields, beforeSave: WF.beforeSave,
-    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=wish" aria-label="Settings"><i class="bi bi-sliders"></i> Settings</a>'; },
+    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=wish" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i> Settings</a>'; },
     empty: 'Things you’d like to buy – for the home, for you, or as a gift. Add the price and you see whether it fits this month.',
     sort: function (a, b) { return sorter()(a, b); },
     summary: function (l) {
@@ -119,10 +119,10 @@
     var w = byId('wishes', id); if (!w) return;
     var c = cfg(), p = partner(), homeOn = Fe.on('house'), isHome = w.for === 'home';
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
-    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Bought it"><div class="lf-head"><h3><i class="bi bi-bag-check"></i> ' + esc(w.title) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-      '<div class="mp-grid"><label><span>Paid, kr</span><input name="paid" inputmode="decimal" value="' + (w.price ? esc(String(w.price)) : '') + '" autocomplete="off"></label><label><span>When</span><input name="date" type="date" value="' + today() + '"></label></div>' +
-      (homeOn ? '<label class="lf-check"><input type="checkbox" name="inv"' + (isHome && c.toInv ? ' checked' : '') + '> Add to Home inventory <small class="muted">(add the receipt there)</small></label>' : '') +
-      (p && isHome ? '<label class="lf-check"><input type="checkbox" name="shared"> Bought together with ' + esc(p.name) + ' <small class="muted">(split in Shared home)</small></label>' : '') +
+    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Bought it" data-t-aria-label="ui.bought-it"><div class="lf-head"><h3><i class="bi bi-bag-check"></i> ' + esc(w.title) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+      '<div class="mp-grid"><label><span data-t="ui.paid-kr">Paid, kr</span><input name="paid" inputmode="decimal" value="' + (w.price ? esc(String(w.price)) : '') + '" autocomplete="off"></label><label><span data-t="ui.when">When</span><input name="date" type="date" value="' + today() + '"></label></div>' +
+      (homeOn ? '<label class="lf-check"><input type="checkbox" name="inv"' + (isHome && c.toInv ? ' checked' : '') + '> Add to Home inventory <small class="muted" data-t="ui.add-the-receipt-there">(add the receipt there)</small></label>' : '') +
+      (p && isHome ? '<label class="lf-check"><input type="checkbox" name="shared"> Bought together with ' + esc(p.name) + ' <small class="muted" data-t="ui.split-in-shared-home">(split in Shared home)</small></label>' : '') +
       '<label class="lf-check"><input type="checkbox" name="fin"' + (c.toFin ? ' checked' : '') + '> Add to Finances as spending</label>' +
       '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Bought</button></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
@@ -169,7 +169,7 @@
       { k: 'qty', label: 'How many', ph: 'e.g. 2' }],
     beforeSave: function (it, isNew) { if (isNew) it.added = today(); },
     empty: 'Small things you need next time you’re out – hooks, batteries, a doormat. Groceries go on the shopping list on Food.',
-    above: function () { return '<form class="wb-quick" data-wbquick><input name="q" placeholder="Add something to buy …" autocomplete="off" aria-label="Add something to buy" maxlength="80"><button type="submit" class="icon-btn sm" aria-label="Add"><i class="bi bi-plus-lg"></i></button></form>'; },
+    above: function () { return '<form class="wb-quick" data-wbquick><input name="q" placeholder="Add something to buy …" data-t-placeholder="ui.add-something-to-buy" autocomplete="off" aria-label="Add something to buy" maxlength="80"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>'; },
     sort: function (a, b) { return String(a.where || '~').localeCompare(String(b.where || '~')) || (a.added < b.added ? -1 : 1); },
     row: function (x) { return { icon: 'circle', color: GREY, title: x.title + (x.qty ? ' × ' + x.qty : ''), sub: esc(x.where || ''), right: '<span class="wb-got" data-wbgot="' + esc(x.id) + '" role="button" tabindex="0" aria-label="Got it"><i class="bi bi-check-lg"></i></span>' }; },
     onClick: function (e) { var g = e.target.closest('[data-wbgot]'); if (g) { e.stopPropagation(); got(g.dataset.wbgot); } }
@@ -256,7 +256,7 @@
     function sub(icon, t) { return '<p class="st-sub ap-sub"><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</p>'; }
     function fill() {
       var box = document.getElementById('hlSet-wish'); if (!box || box.contains(document.activeElement)) return;
-      box.innerHTML = '<p class="st-intro">How the wishlist decides what fits, when it reminds you, and where bought things go.</p>' +
+      box.innerHTML = '<p class="st-intro" data-t="ui.how-the-wishlist-decides-what-fits-when">How the wishlist decides what fits, when it reminds you, and where bought things go.</p>' +
         sub('wallet2', 'Does it fit?') + '<div class="st-group">' + sel('share', 'Count as fitting when it costs up to', [[25, '25 % of what’s left this month'], [50, '50 % of what’s left'], [75, '75 % of what’s left'], [100, 'All of what’s left']], 'What’s left = salary − bills − spending so far, until payday') +
         numIn('aside', 'You put aside for wishes', 'kr / month', 'Shows “in 3 months” for the ones that don’t fit now') + '</div>' +
         sub('hourglass-split', 'Thinking it over') + '<div class="st-group">' + sel('cool', 'New wishes wait', [[0, 'Don’t wait'], [3, '3 days'], [7, 'A week'], [14, '2 weeks'], [30, '30 days']], 'Then At a glance asks if you still want it') +

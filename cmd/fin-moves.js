@@ -174,19 +174,19 @@
     var to0 = (pre && pre.to) || (accts.filter(function (a) { return a.id !== from0 && (a.kind === 'savings' || a.kind === 'card'); })[0] || accts.filter(function (a) { return a.id !== from0; })[0]).id;
     function recent() {
       var l = list(V.get()).slice(0, 6);
-      return l.length ? '<p class="mp-lbl">Recent transfers</p><ul class="mp-list tr-list">' + l.map(function (t) {
+      return l.length ? '<p class="mp-lbl" data-t="ui.recent-transfers">Recent transfers</p><ul class="mp-list tr-list">' + l.map(function (t) {
         return '<li class="mp-row"><span class="kit-ic" style="--c:#3987e5"><i class="bi bi-arrow-left-right"></i></span><span class="kit-x"><b>' + esc(label(V.get(), t.from)) + ' → ' + esc(label(V.get(), t.to)) + '</b><small>' +
           esc(new Date(t.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (t.note ? ' · ' + t.note : '')) + '</small></span><span class="money">' + esc(kr(t.amount)) + '</span>' +
           '<button type="button" class="icon-btn sm" data-trdel="' + esc(t.id) + '" aria-label="Delete transfer"><i class="bi bi-trash3"></i></button></li>';
       }).join('') + '</ul>' : '';
     }
     function draw() {
-      bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Transfer"><div class="lf-head"><h3><i class="bi bi-arrow-left-right"></i> ' + (ed ? 'Edit transfer' : 'Transfer between accounts') + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-        '<p class="muted">Money you move between your own accounts – it isn’t spending. The balances move with it.</p>' +
-        '<div class="mp-grid tr-grid"><label><span>From</span><select name="from">' + opt(from0) + '</select></label><button type="button" class="icon-btn sm tr-swap" data-trswap aria-label="Swap"><i class="bi bi-arrow-down-up"></i></button><label><span>To</span><select name="to">' + opt(to0) + '</select></label></div>' +
+      bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Transfer" data-t-aria-label="ui.transfer"><div class="lf-head"><h3><i class="bi bi-arrow-left-right"></i> ' + (ed ? 'Edit transfer' : 'Transfer between accounts') + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+        '<p class="muted" data-t="ui.money-you-move-between-your-own-accounts">Money you move between your own accounts – it isn’t spending. The balances move with it.</p>' +
+        '<div class="mp-grid tr-grid"><label><span data-t="ui.from">From</span><select name="from">' + opt(from0) + '</select></label><button type="button" class="icon-btn sm tr-swap" data-trswap aria-label="Swap" data-t-aria-label="ui.swap"><i class="bi bi-arrow-down-up"></i></button><label><span data-t="ui.to">To</span><select name="to">' + opt(to0) + '</select></label></div>' +
         '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required aria-label="Amount, kr" value="' + (ed ? esc(String(ed.amount).replace('.', ',')) : '') + '"><input name="date" type="date" value="' + (ed ? esc(ed.date) : today()) + '" aria-label="Date"></div>' +
         '<input name="note" maxlength="60" placeholder="Note (optional) – e.g. Savings" autocomplete="off" aria-label="Note" value="' + (ed ? esc(ed.note || '') : '') + '">' +
-        (ed ? '' : '<label class="tr-rep"><span>Repeat</span><select name="rep"><option value="">Just this once</option>' + (function () { var o = ''; for (var i = 1; i <= 28; i++) o += '<option value="' + i + '">Every month on the ' + i + (i % 10 === 1 && i !== 11 ? 'st' : i % 10 === 2 && i !== 12 ? 'nd' : i % 10 === 3 && i !== 13 ? 'rd' : 'th') + '</option>'; return o + '<option value="31">Every month on the last day</option>'; })() + '</select></label>') +
+        (ed ? '' : '<label class="tr-rep"><span data-t="ui.repeat">Repeat</span><select name="rep"><option value="" data-t="ui.just-this-once">Just this once</option>' + (function () { var o = ''; for (var i = 1; i <= 28; i++) o += '<option value="' + i + '">Every month on the ' + i + (i % 10 === 1 && i !== 11 ? 'st' : i % 10 === 2 && i !== 12 ? 'nd' : i % 10 === 3 && i !== 13 ? 'rd' : 'th') + '</option>'; return o + '<option value="31" data-t="ui.every-month-on-the-last-day">Every month on the last day</option>'; })() + '</select></label>') +
         '<p class="mp-prev" id="trPrev"></p>' +
         '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (ed ? 'Save' : 'Move it') + '</button></div></form>';
       prev();
@@ -194,7 +194,7 @@
     function prev() {
       var f = bg.querySelector('form'), el = bg.querySelector('#trPrev'); if (!f || !el) return;
       var dd = V.get(), a = A().get(dd, f.from.value), b = A().get(dd, f.to.value), n = num(f.amt.value);
-      if (f.from.value === f.to.value) { el.innerHTML = '<span class="mp-neg">Pick two different accounts.</span>'; return; }
+      if (f.from.value === f.to.value) { el.innerHTML = '<span class="mp-neg" data-t="ui.pick-two-different-accounts">Pick two different accounts.</span>'; return; }
       if (!(n > 0)) { el.textContent = ''; return; }
       var after = function (x, into) { if (!x || x.bal == null) return null; var v = x.bal + sign(dd, x.id, into) * n; return x.kind === 'credit' ? 'you owe ' + kr(Math.max(0, v)) : kr(v); };
       var fa = after(a, false), ta = after(b, true);

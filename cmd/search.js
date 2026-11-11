@@ -151,9 +151,9 @@
   /* ---------- the search window ---------- */
   var bg = document.createElement('div');
   bg.className = 'sr-bg'; bg.hidden = true;
-  bg.innerHTML = '<div class="sr-box" role="dialog" aria-modal="true" aria-label="Search"><div class="sr-top"><i class="bi bi-search"></i>' +
-    '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" autocomplete="off" spellcheck="false" aria-label="Search">' +
-    '<button type="button" class="text-btn" data-srclose>Close</button></div><div class="sr-res" id="srRes"></div></div>';
+  bg.innerHTML = '<div class="sr-box" role="dialog" aria-modal="true" aria-label="Search" data-t-aria-label="ui.search"><div class="sr-top"><i class="bi bi-search"></i>' +
+    '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" data-t-placeholder="ui.search-everything-people-recipes-trips-n" autocomplete="off" spellcheck="false" aria-label="Search">' +
+    '<button type="button" class="text-btn" data-srclose data-t="ui.close">Close</button></div><div class="sr-res" id="srRes"></div></div>';
   document.body.appendChild(bg);
   var input = bg.querySelector('#srIn'), res = bg.querySelector('#srRes'), active = -1, results = [];
   /* typed something that reads like a thing to add ("149 rema", "fre 18 middag")? offer it */
@@ -172,7 +172,7 @@
     if (ad) { if (results.length) results.push(ad); else results = [ad]; }
     if (!q) results = commands();
     active = results.length ? 0 : -1;
-    var hint = q ? '' : '<p class="sr-hint">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>';
+    var hint = q ? '' : '<p class="sr-hint" data-t="ui.search-everything-or-type-something-to-a">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>';
     if (!results.length) { res.innerHTML = '<p class="sr-hint">Nothing found for “' + esc(q) + '”.</p>'; return; }
     var last = '', html = '';
     results.forEach(function (r, i) {

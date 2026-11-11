@@ -77,7 +77,7 @@
     }
     var all = tilesIn(box);
     box.hidden = true;
-    bar.innerHTML = '<div class="tk-editor"><p class="muted">Tiles are always shown; the stack holds the rest – swipe it like an iPhone widget.</p>' +
+    bar.innerHTML = '<div class="tk-editor"><p class="muted" data-t="ui.tiles-are-always-shown-the-stack-holds-t">Tiles are always shown; the stack holds the rest – swipe it like an iPhone widget.</p>' +
       all.map(function (t, i) {
         var k = key(t), w = where[k] || 'tile';
         return '<div class="tk-row"><span class="tk-name">' + esc(labelOf(t)) + '</span><span class="seg" role="group" aria-label="' + esc(labelOf(t)) + '">' +

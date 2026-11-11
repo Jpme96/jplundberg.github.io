@@ -172,7 +172,7 @@
     if (box.contains(document.activeElement) && document.activeElement.matches('input')) return;
     var A = window.Accts, list = A.list(d), m = A.money(d);
     $('fpMoneyEdit').textContent = monEditing ? 'Done' : 'Update';
-    var setup = !seeded(d) ? '<div class="mn-setup"><p><b>Set up Finances</b><span class="muted">Accounts, salary and what goes out each month – 4 short steps.</span></p><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Start</button></div>' : '';
+    var setup = !seeded(d) ? '<div class="mn-setup"><p><b data-t="ui.set-up-finances">Set up Finances</b><span class="muted" data-t="ui.accounts-salary-and-what-goes-out-each-m">Accounts, salary and what goes out each month – 4 short steps.</span></p><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Start</button></div>' : '';
     var row = function (a) {
       var cr = a.kind === 'credit', v = a.bal;
       if (monEditing) return '<li class="mn-row ed"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + (cr ? 'What you owe now' : 'What’s in it now') + '</small></span>' +
@@ -180,7 +180,7 @@
         (cr ? '<input class="mn-lim" data-mnlim="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.limit || '') + '" placeholder="Limit, kr" aria-label="Credit limit of ' + esc(a.label) + '" autocomplete="off">' : '') +
         '<label class="mn-nw"><input type="checkbox" data-mnnw="' + esc(a.id) + '"' + (a.nw ? ' checked' : '') + '> In net worth</label></li>';
       var lim = cr && a.limit ? '<span class="mn-bar"><i style="width:' + Math.min(100, (v || 0) / a.limit * 100).toFixed(1) + '%;background:' + ((v || 0) / a.limit > .8 ? 'var(--danger)' : (v || 0) / a.limit > .5 ? '#c98500' : a.c) + '"></i></span>' : '';
-      var sub = v == null ? '<button type="button" class="text-btn" data-mnedit>Add the balance</button>' :
+      var sub = v == null ? '<button type="button" class="text-btn" data-mnedit data-t="ui.add-the-balance">Add the balance</button>' :
         (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · from import' : '') + (a.nw ? '' : ' · not in net worth');
       return '<li class="mn-row' + (v == null ? ' none' : '') + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + sub + '</small>' + lim + '</span>' +
         (v == null ? '<span class="muted">–</span>' : money(cr ? -Math.max(0, v) : v, cr && v > 0 ? 'neg' : '')) + '</li>';
@@ -189,13 +189,13 @@
       (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '<span>Net worth<b>' + money(m.worth) + '</b></span></div>' : '') +
       (!monEditing && list.length > 1 ? transfers(d) : '') +
       (monEditing ? '<p class="muted mn-p">Type what your bank shows now. Importing a file afterwards moves the balance on by itself (or takes the balance column, when the file has one).</p>' :
-        !m.known ? '<p class="muted mn-p">Add what’s in each account – then the budget shows what you can really use, not just what the plan says.</p>' : '');
+        !m.known ? '<p class="muted mn-p" data-t="ui.add-whats-in-each-account-then-the-budge">Add what’s in each account – then the budget shows what you can really use, not just what the plan says.</p>' : '');
   }
   /* the transfers between your accounts – the one place they're listed (the Transfer sheet only adds them) */
   function transfers(d) {
     var l = window.FinMoves ? window.FinMoves.list(d) : [], A = window.Accts, nm = function (id) { var a = A.get(d, id); return a ? a.label : 'Removed account'; };
     var shown = l.slice(0, mnTrAll ? 50 : 4), FM = window.FinMoves;
-    return '<div class="mn-trs"><div class="mn-trh"><span>Transfers</span><button type="button" class="pill-btn sm" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button></div>' +
+    return '<div class="mn-trs"><div class="mn-trh"><span data-t="ui.transfers">Transfers</span><button type="button" class="pill-btn sm" data-transfer><i class="bi bi-arrow-left-right"></i> Transfer</button></div>' +
       (shown.length ? '<ul class="mn-trl' + (mnTrAll ? ' all' : '') + '">' + shown.map(function (t) {
         return '<li><span class="mn-trn" role="button" tabindex="0" data-tredit="' + esc(t.id) + '" aria-label="Edit transfer"><b>' + esc(nm(t.from)) + ' <i class="bi bi-arrow-right"></i> ' + esc(nm(t.to)) + '</b><small>' + esc(new Date(t.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (t.note ? ' · ' + t.note : '')) + '</small>' +
           (FM && FM.notMoved && FM.notMoved(d, t).length ? '<small class="mn-trwarn"><i class="bi bi-exclamation-circle"></i> Balances didn’t move <button type="button" class="text-btn" data-mntrfix="' + esc(t.id) + '">Move them now</button></small>' : '') + '</span>' + money(t.amount) +
@@ -362,7 +362,7 @@
     var box = $('fpLoans'); if (!box || !Lo) return;
     var loans = (d.accounts || []).filter(function (a) { return a.kind === 'debt'; });
     if (!loans.length) {
-      box.innerHTML = '<p class="empty">Add a mortgage, car loan or student loan with its interest and monthly payment. You see when it’s paid off, what the interest costs, the tax deduction – and what paying a bit more would save. The payment goes into your fixed costs by itself – and a loan you share with a partner counts only your part.</p>';
+      box.innerHTML = '<p class="empty" data-t="ui.add-a-mortgage-car-loan-or-student-loan">Add a mortgage, car loan or student loan with its interest and monthly payment. You see when it’s paid off, what the interest costs, the tax deduction – and what paying a bit more would save. The payment goes into your fixed costs by itself – and a loan you share with a partner counts only your part.</p>';
       return;
     }
     var yearTax = 0;
@@ -393,7 +393,7 @@
       return '<li class="ln">' + head + floatLine(l) + monthsLine(l, sh ? who : null) + split +
         '<div class="ln-grid">' +
           '<span><small>Paid off</small><b>' + esc(c.endLabel) + '</b></span>' +
-          '<span><small>This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
+          '<span><small data-t="ui.this-month">This month</small><b>' + money(c.interest) + ' interest</b><em>' + money(c.principal) + ' off the loan</em></span>' +
           '<span><small>Interest left</small><b>' + money(c.interestLeft) + '</b></span>' +
           '<span><small>Tax deduction' + (sh ? ', yours' : '') + '</small><b>' + money(c.taxBack * pt) + '</b><em>next 12 months, 22 %' + (sh ? ' of your part' : '') + '</em></span>' +
         '</div>' +
@@ -439,22 +439,22 @@
     var P = Lo.paid ? Lo.paid(l) : null; if (!P || !(P.start > 0)) return '';
     var started = !l.asOf || new Date(l.asOf + 'T12:00') <= new Date(), pct = P.start > 0 ? Math.min(1, P.principal / P.start) : 0, pc = function (v) { return String(Math.round(v * 1000) / 10).replace('.', ','); };
     var since = l.asOf ? new Date(l.asOf + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-    if (!started) return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b>Paid so far</b> <span class="muted">– nothing yet, the loan starts ' + esc(since) + '</span></p></div>';
+    if (!started) return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b data-t="ui.paid-so-far">Paid so far</b> <span class="muted">– nothing yet, the loan starts ' + esc(since) + '</span></p></div>';
     var rows;
-    if (q) rows = '<div class="ln-who"><span><small>Your part · of ' + money(q.me.start) + '</small><b>' + money(q.me.paidOff) + '<em> paid off</em></b><em>' + money(q.me.interestSoFar) + ' interest so far</em></span>' +
-      '<span><small>' + esc(String(l.with || '').trim() || 'The other') + '’s part · of ' + money(q.them.start) + '</small><b>' + money(q.them.paidOff) + '<em> paid off</em></b><em>' + money(q.them.interestSoFar) + ' interest so far</em></span></div>';
-    else rows = '<div class="ln-who"><span><small>Paid off the loan</small><b>' + money(P.principal) + '</b><em>' + pc(pct) + ' % of ' + money(P.start) + (pt != null && pt < 1 ? ' · your part ' + money(P.principal * pt) : '') + '</em></span>' +
-      '<span><small>Interest paid</small><b>' + money(P.interest) + '</b><em>' + (P.payments ? P.payments + ' payment' + (P.payments === 1 ? '' : 's') + ' since ' + esc(since) : 'since ' + esc(since)) + '</em></span></div>';
-    return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b>Paid so far</b> <span class="muted">' + pc(pct) + ' % of the loan</span></p><div class="stack ln-bar"><span style="width:' + (pct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' + rows +
+    if (q) rows = '<div class="ln-who"><span><small>Your part · of ' + money(q.me.start) + '</small><b>' + money(q.me.paidOff) + '<em data-t="ui.paid-off"> paid off</em></b><em>' + money(q.me.interestSoFar) + ' interest so far</em></span>' +
+      '<span><small>' + esc(String(l.with || '').trim() || 'The other') + '’s part · of ' + money(q.them.start) + '</small><b>' + money(q.them.paidOff) + '<em data-t="ui.paid-off"> paid off</em></b><em>' + money(q.them.interestSoFar) + ' interest so far</em></span></div>';
+    else rows = '<div class="ln-who"><span><small data-t="ui.paid-off-the-loan">Paid off the loan</small><b>' + money(P.principal) + '</b><em>' + pc(pct) + ' % of ' + money(P.start) + (pt != null && pt < 1 ? ' · your part ' + money(P.principal * pt) : '') + '</em></span>' +
+      '<span><small data-t="ui.interest-paid">Interest paid</small><b>' + money(P.interest) + '</b><em>' + (P.payments ? P.payments + ' payment' + (P.payments === 1 ? '' : 's') + ' since ' + esc(since) : 'since ' + esc(since)) + '</em></span></div>';
+    return '<div class="ln-paid"><p class="ln-ph"><i class="bi bi-check2-circle"></i> <b data-t="ui.paid-so-far">Paid so far</b> <span class="muted">' + pc(pct) + ' % of the loan</span></p><div class="stack ln-bar"><span style="width:' + (pct * 100).toFixed(1) + '%;background:var(--accent)"></span></div>' + rows +
       (!q && (!P.fromOrig || +l.orig === +l.balance) ? '<p class="muted ln-p">Counted from the balance on ' + esc(since) + '. Add “Borrowed at the start” with the pencil to see everything paid since the loan began.</p>' : '') + '</div>';
   }
   /* the home: the own money each of you put in, and what each gets if it's sold today */
   function homeBlock(l, myLoan, theirLoan, who) {
     var hm = l.home, own = (+hm.own || 50) / 100, net = +hm.value * (1 - (+hm.costs || 0) / 100), eqM = +hm.eqMe || 0, eqT = +hm.eqThem || 0, eq = hm.split === 'eq' && (eqM || eqT);
     var mine = eq ? eqM + (net - eqM - eqT) * own - myLoan : net * own - myLoan, theirs = eq ? eqT + (net - eqM - eqT) * (1 - own) - theirLoan : net * (1 - own) - theirLoan;
-    var paid = (eqM || eqT) ? '<div class="ln-who ln-eq"><span><small>Your own money in</small><b>' + money(eqM) + '</b><em>egenkapital</em></span><span><small>' + esc(who) + '’s own money in</small><b>' + money(eqT) + '</b><em>egenkapital</em></span></div>' : '';
+    var paid = (eqM || eqT) ? '<div class="ln-who ln-eq"><span><small data-t="ui.your-own-money-in">Your own money in</small><b>' + money(eqM) + '</b><em data-t="ui.egenkapital-2">egenkapital</em></span><span><small>' + esc(who) + '’s own money in</small><b>' + money(eqT) + '</b><em data-t="ui.egenkapital-2">egenkapital</em></span></div>' : '';
     return '<div class="ln-home"><p><i class="bi bi-house-door"></i> <b>If sold at ' + esc(kr(hm.value)) + '</b> <span class="muted">(less ' + esc(String(+hm.costs || 0).replace('.', ',')) + ' % sale costs' + (eq ? ', own money back first' : '') + ')</span></p>' + paid +
-      '<div class="ln-who"><span><small>Your settlement</small><b>' + money(mine, mine < 0 ? 'neg' : '') + '</b><em>' + (eq ? 'your own money back + ' + Math.round(own * 100) + ' % of the rest' : 'your ' + Math.round(own * 100) + ' %') + ', less your part of the loan</em></span>' +
+      '<div class="ln-who"><span><small data-t="ui.your-settlement">Your settlement</small><b>' + money(mine, mine < 0 ? 'neg' : '') + '</b><em>' + (eq ? 'your own money back + ' + Math.round(own * 100) + ' % of the rest' : 'your ' + Math.round(own * 100) + ' %') + ', less your part of the loan</em></span>' +
       '<span><small>' + esc(who) + '’s settlement</small><b>' + money(theirs, theirs < 0 ? 'neg' : '') + '</b><em>' + (eq ? 'their own money back + ' + Math.round((1 - own) * 100) + ' % of the rest' : Math.round((1 - own) * 100) + ' %') + ', less their part</em></span></div>' +
       '<p class="muted ln-p">Value from ' + esc(hm.at || '–') + ' – change it with the pencil now and then.' + ((eqM || eqT) && !eq ? ' Your samboerkontrakt gives own money back first? Choose it under “If you sell”.' : '') + '</p></div>';
   }
@@ -504,10 +504,10 @@
   function extraSheet(id) {
     var d = data(), l = d && (d.accounts || []).filter(function (a) { return String(a.id) === String(id); })[0]; if (!l) return;
     var who = String(l.with || '').trim() || 'The other', bg = document.createElement('div'); bg.className = 'fo-bg lf-bg'; var sh = !!l.inner || Lo.part(l) < 1;
-    bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Extra payment"><div class="lf-head"><h3><i class="bi bi-plus-circle"></i> Extra payment</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
+    bg.innerHTML = '<form class="fo-box lf-box mp-box" role="dialog" aria-modal="true" aria-label="Extra payment" data-t-aria-label="ui.extra-payment"><div class="lf-head"><h3><i class="bi bi-plus-circle"></i> Extra payment</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="muted">' + (l.inner ? 'It lowers only the payer’s part – and that person’s next instalments, with the same term.' : 'It comes off the loan; the monthly payment stays and the loan is paid off sooner.') + '</p>' +
-      (sh ? '<div class="seg lf-seg"><button type="button" data-w="me" aria-pressed="true">You paid</button><button type="button" data-w="them" aria-pressed="false">' + esc(who) + ' paid</button></div>' : '') +
-      '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" autocomplete="off" required><input name="date" type="date" value="' + esc(new Date().toISOString().slice(0, 10)) + '" aria-label="Date"></div>' +
+      (sh ? '<div class="seg lf-seg"><button type="button" data-w="me" aria-pressed="true" data-t="ui.you-paid">You paid</button><button type="button" data-w="them" aria-pressed="false">' + esc(who) + ' paid</button></div>' : '') +
+      '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" data-t-placeholder="ui.amount-kr" autocomplete="off" required><input name="date" type="date" value="' + esc(new Date().toISOString().slice(0, 10)) + '" aria-label="Date"></div>' +
       '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save</button></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var w = 'me', close = function () { bg.remove(); };
@@ -619,7 +619,7 @@
     if (tb.amount) facts.push(['bank', tb.amount > 0 ? '#22b35e' : '#e66767', 'Tax settlement', (tb.amount > 0 ? money(tb.amount) + ' back' : money(-tb.amount) + ' to pay') + (tb.month ? ' in ' + new Date(tb.month + '-15T12:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : '')]);
     $('fpYearNote').textContent = modelled ? '' : 'net salary';
     box.innerHTML =
-      '<div class="ya-bars" role="img" aria-label="Income month by month for the next 12 months">' + months.map(function (m) {
+      '<div class="ya-bars" role="img" aria-label="Income month by month for the next 12 months" data-t-aria-label="ui.income-month-by-month-for-the-next-12-mo">' + months.map(function (m) {
         var h = m.net / max * 100, th = m.tax > 0 ? m.tax / max * 100 : 0;
         return '<span class="ya-m' + (m.hol ? ' hol' : '') + (m.half ? ' half' : '') + (m.key === ym(now) ? ' now' : '') + '" title="' + esc(m.dt.toLocaleDateString('en-GB', { month: 'long' }) + ': ' + kr(m.net) + (m.note ? ' · ' + m.note : '') + (m.tax ? ' · tax settlement ' + kr(m.tax) : '')) + '">' +
           '<i style="height:' + (h * .82).toFixed(1) + '%"></i>' + (th ? '<i class="ya-tax" style="height:' + (th * .82).toFixed(1) + '%"></i>' : '') + '<small>' + esc(m.dt.toLocaleDateString('en-GB', { month: 'narrow' })) + '</small></span>';
@@ -628,8 +628,8 @@
       (facts.length ? '<ul class="ya-facts">' + facts.map(function (f) { return '<li><i class="bi bi-' + f[0] + '" style="color:' + f[1] + '"></i><span><b>' + esc(f[2]) + '</b><small>' + f[3] + '</small></span></li>'; }).join('') + '</ul>' : '') +
       (!modelled ? '<p class="muted ya-p"><i class="bi bi-info-circle"></i> Enter your salary as <b>gross with tax %</b> (Monthly budget → Edit → the salary) and tick “paid by the year” – then holiday pay in June and half tax in December are worked out here and in the budget.</p>' : '') +
       '<div class="ya-tb"><p class="pa-h">Tax settlement (skatteoppgjør)</p><div class="row2">' +
-        '<label class="sv-by"><span>Back (+) or to pay (−), kr</span><input data-yatb inputmode="decimal" value="' + esc(tb.amount || '') + '" placeholder="From the tax return" autocomplete="off"></label>' +
-        '<label class="sv-by"><span>When</span><input data-yatbm type="month" value="' + esc(tb.month || '') + '"></label></div></div>';
+        '<label class="sv-by"><span data-t="ui.back-or-to-pay-kr">Back (+) or to pay (−), kr</span><input data-yatb inputmode="decimal" value="' + esc(tb.amount || '') + '" placeholder="From the tax return" autocomplete="off"></label>' +
+        '<label class="sv-by"><span data-t="ui.when">When</span><input data-yatbm type="month" value="' + esc(tb.month || '') + '"></label></div></div>';
   }
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#fpYearAhead')) return;
@@ -668,7 +668,7 @@
           return '<li><span><i class="bi bi-' + c[3] + '" style="color:' + c[2] + '"></i> ' + c[1] + (u[c[0]] ? '<small>usually ' + esc(kr(u[c[0]])) + '</small>' : '') + '</span>' +
             '<input data-lim="' + c[0] + '" inputmode="decimal" value="' + esc(lim[c[0]] || '') + '" placeholder="' + (u[c[0]] ? esc(String(u[c[0]])) : 'No limit') + '" aria-label="Limit for ' + c[1] + '" autocomplete="off"></li>';
         }).join('') + '</ul>' +
-        '<div class="lm-acts">' + (Object.keys(u).length ? '<button type="button" class="text-btn" data-limusual><i class="bi bi-magic"></i> Use what I usually spend</button>' : '') + '<span class="spacer"></span><button type="button" class="pill-btn" data-limdone>Done</button></div>' +
+        '<div class="lm-acts">' + (Object.keys(u).length ? '<button type="button" class="text-btn" data-limusual><i class="bi bi-magic"></i> Use what I usually spend</button>' : '') + '<span class="spacer"></span><button type="button" class="pill-btn" data-limdone data-t="ui.done">Done</button></div>' +
         lmRoom(p, total);
       return;
     }
@@ -730,7 +730,7 @@
       return '<form class="inline-form yr-form" data-yrid="' + (y ? esc(y.id) : 'new') + '"><input name="n" placeholder="e.g. Car insurance" value="' + esc(y ? y.name : '') + '" required autocomplete="off">' +
         '<div class="row2"><input name="a" placeholder="kr a year" inputmode="decimal" value="' + esc(y ? y.amount : '') + '" required autocomplete="off"><select name="m" aria-label="Month it’s paid">' +
         MONTHS.map(function (n, i) { return '<option value="' + (i + 1) + '"' + ((y ? y.month : m0) === i + 1 ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
-        '<div class="form-actions">' + (y ? '<button type="button" class="text-btn danger" data-yrdel>Delete</button>' : '') + '<span class="spacer"></span><button type="button" class="text-btn" data-yrcancel>Cancel</button><button type="submit" class="pill-btn">Save</button></div></form>';
+        '<div class="form-actions">' + (y ? '<button type="button" class="text-btn danger" data-yrdel data-t="ui.delete">Delete</button>' : '') + '<span class="spacer"></span><button type="button" class="text-btn" data-yrcancel data-t="ui.cancel">Cancel</button><button type="submit" class="pill-btn" data-t="ui.save">Save</button></div></form>';
     };
     box.innerHTML = (yrEditing === 'new' ? form(null) : '') +
       (list.length ? '<p class="yr-sum"><b>' + money(Math.ceil(total / 12 / 10) * 10) + '</b> a month set aside · ' + money(total) + ' a year · <i class="bi bi-link-45deg"></i> in fixed costs</p>' +

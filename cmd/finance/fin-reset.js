@@ -49,7 +49,7 @@
       }).join('') + '</ul>' +
       (pick.all ? '<label class="fr-type"><span>Type <b>RESET</b> to clear everything</span><input id="frWord" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>' : '') +
       '<p class="muted fr-p"><i class="bi bi-cloud-check"></i> The server also keeps a copy of each day (Settings → Data & sync → Earlier versions).</p>' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-frclose>Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide fr-go" data-frgo' + (any ? '' : ' disabled') + '>Clear</button></div>';
+      '<div class="qa-acts"><button type="button" class="text-btn" data-frclose data-t="ui.cancel">Cancel</button><span class="spacer"></span><button type="button" class="pill-btn wide fr-go" data-frgo' + (any ? '' : ' disabled') + '>Clear</button></div>';
   }
   function open(pre) {
     if (!window.Vault.get()) return;
@@ -97,7 +97,7 @@
   function showUndo(text) {
     var u = $('frUndo');
     if (!u) { u = document.createElement('div'); u.id = 'frUndo'; u.className = 'fr-undo'; u.setAttribute('role', 'status'); document.body.appendChild(u); }
-    u.innerHTML = '<span><i class="bi bi-check-lg"></i> ' + esc(text) + '</span><button type="button" class="pill-btn" data-frundo>Undo</button><button type="button" class="icon-btn sm" data-frx aria-label="Close"><i class="bi bi-x-lg"></i></button>';
+    u.innerHTML = '<span><i class="bi bi-check-lg"></i> ' + esc(text) + '</span><button type="button" class="pill-btn" data-frundo data-t="ui.undo">Undo</button><button type="button" class="icon-btn sm" data-frx aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button>';
     u.hidden = false; requestAnimationFrame(function () { u.classList.add('show'); });
     clearTimeout(undoT); undoT = setTimeout(hideUndo, 120000);
   }

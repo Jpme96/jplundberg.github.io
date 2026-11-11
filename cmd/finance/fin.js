@@ -186,7 +186,7 @@
       b.setAttribute('aria-pressed', String(b.dataset.period === period));
     });
     var ys = years();
-    $('fpYear').innerHTML = '<option value="">Year…</option>' + ys.map(function (y) {
+    $('fpYear').innerHTML = '<option value="" data-t="ui.year-2">Year…</option>' + ys.map(function (y) {
       return '<option value="y:' + y + '"' + (period === 'y:' + y ? ' selected' : '') + '>' + y + '</option>';
     }).join('');
     $('fpYear').classList.toggle('on', /^y:/.test(period));
@@ -304,7 +304,7 @@
       (spendable > 0 ? '<span><svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" class="ref" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1.5"/></svg>Budget</span>' : '') : '';
 
     if (!rows.some(function (r) { return r.total > 0; })) {
-      el.innerHTML = '<p class="fp-empty">No spending logged in this period yet.</p>';
+      el.innerHTML = '<p class="fp-empty" data-t="ui.no-spending-logged-in-this-period-yet">No spending logged in this period yet.</p>';
       $('fpMonthsTable').innerHTML = '';
       return;
     }
@@ -350,8 +350,8 @@
       var r = rows[+h.dataset.i];
       var html = '<b>' + esc(label(r.m, true)) + '</b>' + used.filter(function (c) { return r.by[c.id] > 0; }).reverse().map(function (c) {
         return '<div class="row"><span>' + dot(c.color) + esc(c.name) + '</span><span>' + esc(kr(r.by[c.id])) + '</span></div>';
-      }).join('') + '<div class="row"><span>Total</span><b>' + esc(kr(r.total)) + '</b></div>' +
-        (spendable > 0 ? '<div class="row muted"><span>Budget</span><span>' + esc(kr(spendable)) + '</span></div>' : '');
+      }).join('') + '<div class="row"><span data-t="ui.total">Total</span><b>' + esc(kr(r.total)) + '</b></div>' +
+        (spendable > 0 ? '<div class="row muted"><span data-t="ui.budget">Budget</span><span>' + esc(kr(spendable)) + '</span></div>' : '');
       h.addEventListener('pointermove', function (e) {
         el.classList.add('dim');
         el.querySelectorAll('.seg').forEach(function (s) { s.classList.toggle('on', s.dataset.i === h.dataset.i); });
@@ -361,7 +361,7 @@
     });
 
     $('fpMonthsTable').innerHTML = '<table><thead><tr><th>' + (byYear ? 'Year' : 'Month') + '</th>' + used.map(function (c) { return '<th>' + esc(c.name) + '</th>'; }).join('') +
-      '<th>Total</th></tr></thead><tbody>' + rows.map(function (r) {
+      '<th data-t="ui.total">Total</th></tr></thead><tbody>' + rows.map(function (r) {
         return '<tr><td>' + esc(label(r.m, true)) + '</td>' + used.map(function (c) { return '<td>' + money(r.by[c.id]) + '</td>'; }).join('') +
           '<td>' + money(r.total) + '</td></tr>';
       }).join('') + '</tbody></table>';
@@ -398,7 +398,7 @@
       : 'Add income and fixed costs under Monthly budget to compare with a budget.';
     if (proj != null && spendable > 0) $('fpPaceLead').innerHTML += ' At this pace you end the month ' + (proj <= spendable
       ? 'with <span class="up">' + money(spendable - proj) + ' left</span>.' : '<span class="down">' + money(proj - spendable) + ' over</span>.');
-    if (!acc && !(spendable > 0)) { el.innerHTML = '<p class="fp-empty">No spending this month yet.</p>'; return; }
+    if (!acc && !(spendable > 0)) { el.innerHTML = '<p class="fp-empty" data-t="ui.no-spending-this-month-yet">No spending this month yet.</p>'; return; }
 
     var W = Math.max(280, el.clientWidth || 500), H = 190;
     var P = { l: 44, r: 10, t: 12, b: 24 };
@@ -429,9 +429,9 @@
       var day = Math.max(1, Math.min(dim, Math.round((px - P.l) / (W - P.l - P.r) * (dim - 1) + 1)));
       cross.setAttribute('x1', x(day)); cross.setAttribute('x2', x(day)); cross.setAttribute('visibility', 'visible');
       var html = '<b>' + day + '. ' + esc(mName(NOW, true)) + '</b>' +
-        (day <= today ? '<div class="row"><span>' + dot('var(--accent)') + 'Spent so far</span><span>' + esc(kr(cum[day - 1])) + '</span></div>' : '<div class="row muted"><span>Not yet</span></div>') +
-        (spendable > 0 ? '<div class="row muted"><span>Even pace</span><span>' + esc(kr(spendable * day / dim)) + '</span></div>' : '') +
-        (proj != null && day > today ? '<div class="row muted"><span>At this pace</span><span>≈ ' + esc(kr(acc / today * day)) + '</span></div>' : '');
+        (day <= today ? '<div class="row"><span>' + dot('var(--accent)') + 'Spent so far</span><span>' + esc(kr(cum[day - 1])) + '</span></div>' : '<div class="row muted"><span data-t="ui.not-yet">Not yet</span></div>') +
+        (spendable > 0 ? '<div class="row muted"><span data-t="ui.even-pace">Even pace</span><span>' + esc(kr(spendable * day / dim)) + '</span></div>' : '') +
+        (proj != null && day > today ? '<div class="row muted"><span data-t="ui.at-this-pace-2">At this pace</span><span>≈ ' + esc(kr(acc / today * day)) + '</span></div>' : '');
       showTip(html, e.clientX, e.clientY);
     });
     hit.addEventListener('pointerleave', function () { cross.setAttribute('visibility', 'hidden'); hideTip(); });
@@ -445,7 +445,7 @@
     }).filter(function (r) { return r.v > 0; }).sort(function (a, b) { return b.v - a.v; });
     $('fpCatNote').textContent = period === 'all' ? 'all years' : /^y:/.test(period) ? 'vs ' + (+period.slice(2) - 1)
       : months.length > 1 ? 'vs previous ' + months.length + ' months' : 'vs ' + mName(prevMonths[0]);
-    if (!rows.length) { $('fpCats').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
+    if (!rows.length) { $('fpCats').innerHTML = '<li class="fp-empty" data-t="ui.nothing-logged-in-this-period">Nothing logged in this period.</li>'; return; }
     /* a chart: one line per category – this period's bar, a tick where the previous period ended,
        and the change. Lower spending than before is green. */
     var cmp = period !== 'all', max = Math.max.apply(null, rows.map(function (r) { return Math.max(r.v, cmp ? r.p : 0); }));
@@ -454,7 +454,7 @@
       rows.map(function (r) {
         var ch = r.p > 0 ? (r.v - r.p) / r.p : null, share = Math.round(r.v / total * 100);
         var tip = r.c.name + ': ' + kr(r.v) + ' · ' + share + ' % of spending' + (per ? ' · ' + kr(r.v / months.length) + '/month' : '') + (cmp && r.p > 0 ? ' · before ' + kr(r.p) : '');
-        var chg = !cmp ? '<span class="fc-ch muted">' + share + ' %</span>' : ch === null ? '<span class="fc-ch muted">new</span>' : '<span class="fc-ch ' + (ch <= 0 ? 'up' : 'down') + '">' + (ch > 0 ? '+' : '−') + Math.abs(Math.round(ch * 100)) + ' %</span>';
+        var chg = !cmp ? '<span class="fc-ch muted">' + share + ' %</span>' : ch === null ? '<span class="fc-ch muted" data-t="ui.new-2">new</span>' : '<span class="fc-ch ' + (ch <= 0 ? 'up' : 'down') + '">' + (ch > 0 ? '+' : '−') + Math.abs(Math.round(ch * 100)) + ' %</span>';
         return '<li class="fc-row" title="' + esc(tip) + '"><span class="fc-name">' + dot(r.c.color) + esc(r.c.name) + '</span>' +
           '<span class="fc-track"><span class="fc-fill" style="width:' + (r.v / max * 100).toFixed(1) + '%;background:' + r.c.color + '"></span>' +
           (cmp && r.p > 0 ? '<span class="fc-prev" style="left:' + (r.p / max * 100).toFixed(1) + '%"></span>' : '') + '</span>' +
@@ -516,8 +516,8 @@
         h.addEventListener('pointermove', function (e) {
           cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
           var d = i > 0 ? vals[i] - vals[i - 1] : null;
-          showTip('<b>' + esc(mName(keys[i], true)) + '</b><div class="row"><span>Net worth</span><span>' + esc(kr(vals[i])) + '</span></div>' +
-            (d === null ? '' : '<div class="row"><span>Change</span><span class="' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '+' : '−') + esc(kr(Math.abs(d))) + '</span></div>'), e.clientX, e.clientY);
+          showTip('<b>' + esc(mName(keys[i], true)) + '</b><div class="row"><span data-t="ui.net-worth">Net worth</span><span>' + esc(kr(vals[i])) + '</span></div>' +
+            (d === null ? '' : '<div class="row"><span data-t="ui.change">Change</span><span class="' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '+' : '−') + esc(kr(Math.abs(d))) + '</span></div>'), e.clientX, e.clientY);
         });
         h.addEventListener('pointerleave', function () { cross.setAttribute('visibility', 'hidden'); hideTip(); });
       });
@@ -545,7 +545,7 @@
   function top(months, ex) {
     var list = inMonths(ex, months).slice().sort(function (a, b) { return b.amount - a.amount; }).slice(0, 5);
     $('fpTopNote').textContent = periodName(months);
-    if (!list.length) { $('fpTop').innerHTML = '<li class="fp-empty">Nothing logged in this period.</li>'; return; }
+    if (!list.length) { $('fpTop').innerHTML = '<li class="fp-empty" data-t="ui.nothing-logged-in-this-period">Nothing logged in this period.</li>'; return; }
     $('fpTop').innerHTML = list.map(function (e) {
       var c = catById[e.cat] || catById.other;
       var d = new Date(e.date + 'T12:00');

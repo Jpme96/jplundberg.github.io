@@ -235,7 +235,7 @@
     above: function (l) {
       var h = '';
       var kinds = KINDS.filter(function (k) { return l.some(function (x) { return (x.kind || 'other') === k[0]; }); });
-      if (kinds.length > 1) h += '<div class="pa-chips" role="group" aria-label="Show">' + [['all', 'All', 'grid']].concat(kinds.map(function (k) { return [k[0], k[1], k[2]]; })).map(function (k) {
+      if (kinds.length > 1) h += '<div class="pa-chips" role="group" aria-label="Show" data-t-aria-label="ui.show">' + [['all', 'All', 'grid']].concat(kinds.map(function (k) { return [k[0], k[1], k[2]]; })).map(function (k) {
         var n = k[0] === 'all' ? l.length : l.filter(function (x) { return (x.kind || 'other') === k[0]; }).length;
         return '<button type="button" class="pa-chip' + (filt === k[0] ? ' on' : '') + '" data-pafilt="' + k[0] + '" aria-pressed="' + (filt === k[0]) + '"><i class="bi bi-' + k[2] + '"></i> ' + esc(k[1]) + ' <small>' + n + '</small></button>';
       }).join('') + '</div>';
@@ -244,7 +244,7 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + (l.length ? 'Also worth keeping' : 'Start with') + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
-      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> Add several files<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small>Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
+      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> Add several files<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;

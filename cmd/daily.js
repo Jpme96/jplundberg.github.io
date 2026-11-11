@@ -81,7 +81,7 @@
     var top = todos.filter(function (t) { return !t.done && t.due === dkey(t1); }).slice(0, 3);
     tm.sort(function (a, b) { return (a.t ? +a.t : 0) - (b.t ? +b.t : 0); });
     var list = tm.slice(0, 4).map(function (x) { return '<li style="--c:' + esc(x.c || 'var(--accent)') + '"><span class="tl-t">' + (x.t ? hm(x.t) : 'All day') + '</span><i class="bi bi-' + x.icon + '"></i><span>' + esc(x.title) + '</span></li>'; }).join('') +
-      top.map(function (t) { return '<li style="--c:#22b35e"><span class="tl-t">Task</span><i class="bi bi-check2-square"></i><span>' + esc(t.text) + '</span></li>'; }).join('');
+      top.map(function (t) { return '<li style="--c:#22b35e"><span class="tl-t" data-t="ui.task">Task</span><i class="bi bi-check2-square"></i><span>' + esc(t.text) + '</span></li>'; }).join('');
     return '<div class="tl-eve">' + (bits.length ? '<p class="tl-done">' + bits.join('') + '</p>' : '') +
       '<p class="tl-sub"><i class="bi bi-sunrise"></i> Tomorrow, ' + esc(t1.toLocaleDateString('en-GB', { weekday: 'long' })) + '</p>' +
       (list ? '<ul class="tl-tm">' + list + '</ul>' : '<p class="muted tl-free">Nothing planned yet.</p>') + '</div>';
@@ -99,7 +99,7 @@
     var empty = !r.list.length && !r.allDay.length, eve = now.getHours() >= 17 ? evening(now) : '';
     card.innerHTML = '<div class="card-head"><h2><i class="bi bi-list-columns-reverse"></i> Today</h2><span class="muted tl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>' +
       (r.allDay.length ? '<div class="tl-all">' + r.allDay.map(function (x) { return '<a class="tl-chip" href="' + esc(x.href) + '" style="--c:' + esc(x.c) + '"><i class="bi bi-' + x.icon + '"></i>' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') +
-      (empty ? '<p class="empty">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>') + eve;
+      (empty ? '<p class="empty" data-t="ui.a-free-day-nothing-in-the-calendar-no-bi">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>') + eve;
     clearTimeout(keepSnap.t); keepSnap.t = setTimeout(keepSnap, 500);
   }
   /* coming back to an open session: paint the last Today straight away (this tab only, no amounts in it) */
@@ -156,15 +156,15 @@
       return { p: p, first: first, leave: leave, cancel: cancel, late: late, mins: Math.round((leave - now) / 60000) };
     }).filter(function (x) { return x.leave - now > -60000; }).slice(0, 3);
     var head = '<div class="cm-head"><i class="bi bi-' + r.i[0] + '"></i> ' + r.from + ' <i class="bi bi-arrow-right"></i> <i class="bi bi-' + r.i[1] + '"></i> ' + r.to +
-      '<button type="button" class="link-btn cm-plan" data-cmplan>All trips</button></div>';
+      '<button type="button" class="link-btn cm-plan" data-cmplan data-t="ui.all-trips">All trips</button></div>';
     var body;
-    if (!CM.list && !CM.err) body = '<p class="muted cm-msg">Finding departures …</p>';
-    else if (!rows.length) body = '<p class="muted cm-msg">' + (CM.err ? 'No connection to Entur right now. <button type="button" class="link-btn" data-cmretry>Try again</button>' : 'No trips found.') + '</p>';
+    if (!CM.list && !CM.err) body = '<p class="muted cm-msg" data-t="ui.finding-departures">Finding departures …</p>';
+    else if (!rows.length) body = '<p class="muted cm-msg">' + (CM.err ? 'No connection to Entur right now. <button type="button" class="link-btn" data-cmretry data-t="ui.try-again">Try again</button>' : 'No trips found.') + '</p>';
     else body = '<ul class="cm-list">' + rows.map(function (x, i) {
       var l = x.first, line = l && l.line, col = line && line.presentation && line.presentation.colour ? '#' + line.presentation.colour : 'var(--accent)';
       var dest = l && l.fromEstimatedCall && l.fromEstimatedCall.destinationDisplay ? l.fromEstimatedCall.destinationDisplay.frontText : '';
       var when = x.mins <= 0 ? 'Now' : x.mins < 60 ? x.mins + ' min' : hm(x.leave);
-      var state = x.cancel ? '<span class="cm-bad">Cancelled</span>' : x.late >= 2 ? '<span class="cm-late">+' + x.late + ' min</span>' : (l && l.realtime ? '<span class="cm-ok">On time</span>' : '');
+      var state = x.cancel ? '<span class="cm-bad" data-t="ui.cancelled">Cancelled</span>' : x.late >= 2 ? '<span class="cm-late">+' + x.late + ' min</span>' : (l && l.realtime ? '<span class="cm-ok" data-t="ui.on-time">On time</span>' : '');
       return '<li class="' + (x.cancel ? 'cancel' : '') + (i === 0 ? ' first' : '') + '"><span class="cm-when" data-cmleave="' + x.leave.getTime() + '">' + when + '</span>' +
         '<span class="cm-x"><b>' + (line ? '<span class="cm-line" style="--lc:' + esc(col) + '">' + esc(line.publicCode || '') + '</span> ' : '') + esc(dest || (l && l.fromPlace ? l.fromPlace.name : 'Walk')) + '</b>' +
         '<small>Leave ' + hm(x.leave) + ' · there ' + hm(new Date(x.p.expectedEndTime)) + (l && l.fromPlace ? ' · from ' + esc(l.fromPlace.name) : '') + '</small></span>' + state + '</li>';

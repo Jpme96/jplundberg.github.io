@@ -137,7 +137,7 @@
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-x]')) close(); });
     return { box: bg.firstChild, close: close, bg: bg };
   }
-  function head(icon, t, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
+  function head(icon, t, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
 
   /* ---------- on the House page: send up what only this device has ---------- */
   if (/\/cmd\/house\/$/.test(location.pathname.replace(/index\.html$/, ''))) window.Vault.onUnlock(function () {

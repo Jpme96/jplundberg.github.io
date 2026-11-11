@@ -106,7 +106,7 @@
     el.hidden = false;
     var e = estimate(), c = cfg(), r = readings(), ys = years(), yl = Object.keys(ys).sort().reverse();
     var ocrBtn = c.ocr ? '<button type="button" class="text-btn" data-mocr><i class="bi bi-camera"></i> Photo</button>' : '';
-    var acts = ocrBtn + '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings"><i class="bi bi-sliders"></i></a>';
+    var acts = ocrBtn + '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a>';
     var body;
     if (e.none) body = '<p class="empty kit-empty">' + (r.length ? 'One more meter reading and you see what this month’s power costs.' : 'Read the meter (or take a photo of it) twice, a few days apart – then you see what this month’s power costs, updated with the price every day.') + '</p>' +
       (e.spot != null ? '<p class="muted hl-small">Price today: ' + nf.format(Math.round(e.spot)) + ' øre/kWh spot' + (e.up != null ? ' · ' + nf.format(Math.round(e.up)) + ' øre with grid rent' : '') + '</p>' : '');
@@ -114,13 +114,13 @@
       var mName = new Date().toLocaleDateString('en-GB', { month: 'long' });
       body = '<div class="kit-tiles">' +
         '<div class="kit-tile"><span>' + esc(mName) + ', about</span><b>' + (e.total != null ? esc(kr(e.total)) : '–') + '</b><small>' + nf.format(Math.round(e.kwh)) + ' kWh</small></div>' +
-        '<div class="kit-tile"><span>Per day</span><b>' + nf1.format(e.perDay) + ' <small>kWh</small></b><small>' + (e.up != null ? '≈ ' + esc(kr(e.perDay * e.up / 100)) : '&nbsp;') + '</small></div>' +
+        '<div class="kit-tile"><span data-t="ui.per-day">Per day</span><b>' + nf1.format(e.perDay) + ' <small>kWh</small></b><small>' + (e.up != null ? '≈ ' + esc(kr(e.perDay * e.up / 100)) : '&nbsp;') + '</small></div>' +
         '<div class="kit-tile"><span>' + (c.norgespris ? 'Norgespris' : 'Price ' + (e.monthAvg != null ? 'this month' : 'today')) + '</span><b>' + (e.up != null ? nf.format(Math.round(e.up)) + ' <small>øre</small>' : '–') + '</b><small>' + (c.norgespris ? '50 øre + grid rent' : e.spot != null ? nf.format(Math.round(e.spot)) + ' spot' + (c.support && e.spot > 93.75 ? ', after support' : '') : 'set it in Settings') + '</small></div></div>' +
-        (e.energy != null ? '<ul class="he-split"><li><span>Energy' + (c.norgespris ? ' (Norgespris)' : '') + ' and grid rent per kWh</span><b>' + esc(kr(e.energy)) + '</b></li><li><span>Grid rent, fixed part</span><b>' + esc(kr(e.fixed)) + '</b></li></ul>' : '');
+        (e.energy != null ? '<ul class="he-split"><li><span>Energy' + (c.norgespris ? ' (Norgespris)' : '') + ' and grid rent per kWh</span><b>' + esc(kr(e.energy)) + '</b></li><li><span data-t="ui.grid-rent-fixed-part">Grid rent, fixed part</span><b>' + esc(kr(e.fixed)) + '</b></li></ul>' : '');
     }
     if (yl.length) {
       /* the year view: each calendar year – kWh, about what it cost, against the year before (month by month is on Power use by month) */
-      body += '<div class="he-year"><p class="fx-sub">By year</p><ul class="he-years">' + yl.slice(0, 4).map(function (y) {
+      body += '<div class="he-year"><p class="fx-sub" data-t="ui.by-year">By year</p><ul class="he-years">' + yl.slice(0, 4).map(function (y) {
         var o = ys[y], p = ys[String(+y - 1)], full = o.days >= 330, mx = o.months.indexOf(Math.max.apply(null, o.months));
         var cost = o.costDays ? o.cost / o.costDays * o.days + (+c.gridFixed || 0) * Math.min(12, Math.round(o.days / 30.4)) : null;
         var vs = p && p.days >= 330 && full ? (o.kwh <= p.kwh ? '−' : '+') + Math.round(Math.abs(o.kwh / p.kwh - 1) * 100) + ' % vs ' + (+y - 1) : '';
@@ -155,11 +155,11 @@
   function ocrSheet() {
     var r = readings(), last = r.length ? r[r.length - 1].value : null;
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
-    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Read the meter" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-camera"></i> Read the meter</h3><button type="button" class="icon-btn sm" data-x aria-label="Close"><i class="bi bi-x-lg"></i></button></div>' +
-      '<p class="muted lf-sub">Take a photo close to the numbers. It’s read on your phone – the photo isn’t kept.</p>' +
+    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Read the meter" data-t-aria-label="ui.read-the-meter" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-camera"></i> Read the meter</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+      '<p class="muted lf-sub" data-t="ui.take-a-photo-close-to-the-numbers-its-re">Take a photo close to the numbers. It’s read on your phone – the photo isn’t kept.</p>' +
       '<label class="pill-btn he-pick"><i class="bi bi-camera"></i> Take or pick a photo<input type="file" accept="image/*" capture="environment" hidden data-mfile></label>' +
       '<div class="he-ocr" data-mstate></div>' +
-      '<div class="mp-grid"><label><span>Meter shows, kWh</span><input name="value" inputmode="decimal"></label><label><span>Date</span><input name="date" type="date" value="' + today() + '"></label></div>' +
+      '<div class="mp-grid"><label><span data-t="ui.meter-shows-kwh">Meter shows, kWh</span><input name="value" inputmode="decimal"></label><label><span data-t="ui.date">Date</span><input name="date" type="date" value="' + today() + '"></label></div>' +
       (last != null ? '<p class="muted hl-small">Last reading: ' + nf.format(last) + ' kWh (' + esc(fromKey(r[r.length - 1].date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ')</p>' : '') +
       '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save reading</button></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
@@ -173,16 +173,16 @@
         st.innerHTML = '<img src="' + im.url + '" alt="The meter"><p class="muted"><i class="bi bi-hourglass-split"></i> Reading the numbers … (the first time takes a little longer)</p>';
         return loadTess().then(function (T) { return T.recognize(im.canvas, 'eng', { tessedit_char_whitelist: '0123456789 ' }); }).then(function (res) {
           var n = pick(res && res.data && res.data.text, last);
-          st.innerHTML = '<img src="' + im.url + '" alt="The meter">' + (n != null ? '<p class="he-found"><i class="bi bi-check2-circle"></i> Found <b>' + nf.format(n) + '</b> – check it against the photo</p>' : '<p class="muted">Couldn’t find the number – type it in.</p>');
+          st.innerHTML = '<img src="' + im.url + '" alt="The meter">' + (n != null ? '<p class="he-found"><i class="bi bi-check2-circle"></i> Found <b>' + nf.format(n) + '</b> – check it against the photo</p>' : '<p class="muted" data-t="ui.couldnt-find-the-number-type-it-in">Couldn’t find the number – type it in.</p>');
           if (n != null) f.value.value = n;
           f.value.focus();
         });
-      }).catch(function () { st.innerHTML = '<p class="muted">Couldn’t read the photo here – type the number in.</p>'; f.value.focus(); });
+      }).catch(function () { st.innerHTML = '<p class="muted" data-t="ui.couldnt-read-the-photo-here-type-the-num">Couldn’t read the photo here – type the number in.</p>'; f.value.focus(); });
     });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var v = num(f.value.value); if (v == null) { f.value.focus(); f.value.classList.add('kit-bad'); return; }
-      if (last != null && v < last && !f.dataset.sure) { f.dataset.sure = 1; st.insertAdjacentHTML('beforeend', '<p class="hl-warn">That’s lower than the last reading – Save again if it’s right (a new meter).</p>'); return; }
+      if (last != null && v < last && !f.dataset.sure) { f.dataset.sure = 1; st.insertAdjacentHTML('beforeend', '<p class="hl-warn" data-t="ui.thats-lower-than-the-last-reading-save-a">That’s lower than the last reading – Save again if it’s right (a new meter).</p>'); return; }
       var t = Fe.tools(); t.hmeter = (Array.isArray(t.hmeter) ? t.hmeter : []).concat([{ id: uid(), date: isKey(f.date.value) ? f.date.value : today(), value: v, src: 'photo' }]); Fe.saveTools(t);
       close(); toast('<i class="bi bi-speedometer2"></i> Reading saved – ' + nf.format(v) + ' kWh');
     });
@@ -231,7 +231,7 @@
     el.hidden = false;
     var EV = { 1: 'every month', 3: 'every 3 months', 6: 'every 6 months', 12: 'every year' };
     el.innerHTML = card('hfdvup', 'journal-check', 'Upkeep your documents ask for', '<button type="button" class="text-btn" data-fdvall><i class="bi bi-plus-lg"></i> Add all</button>',
-      '<p class="muted hl-small">From the manuals in your FDV binder – add the ones that fit, and they come round in Upkeep.</p><ul class="kit-list">' + l.slice(0, 8).map(function (x) {
+      '<p class="muted hl-small" data-t="ui.from-the-manuals-in-your-fdv-binder-add">From the manuals in your FDV binder – add the ones that fit, and they come round in Upkeep.</p><ul class="kit-list">' + l.slice(0, 8).map(function (x) {
         return '<li class="kit-item"><div class="kit-main he-sug"><span class="kit-ic" style="--c:' + BLUE + '"><i class="bi bi-' + x.icon + '"></i></span><span class="kit-x"><b>' + esc(x.title) + '</b><small>' + esc(EV[x.every] + ' · from “' + x.from + '”') + '</small></span>' +
           '<span class="kit-r he-sugb"><button type="button" class="icon-btn sm" data-fdvno="' + x.id + '" aria-label="Not for me"><i class="bi bi-x-lg"></i></button><button type="button" class="icon-btn sm he-add" data-fdvadd="' + x.id + '" aria-label="Add to Upkeep"><i class="bi bi-plus-lg"></i></button></span></div></li>';
       }).join('') + '</ul>' + (l.length > 8 ? '<p class="muted hl-small">' + (l.length - 8) + ' more after these</p>' : ''));
