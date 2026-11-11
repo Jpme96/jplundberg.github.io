@@ -234,7 +234,6 @@
      unlocking without internet still works, and every merge works on the whole dashboard as it always did. */
   var PIECE_MIN = 2048, PIECE_API = '/cmd/api/vpiece', pcBody = {}, pcMine = {}, srvHas = {}, pcKey = null;
   function pcFor(k) { if (pcKey !== k) { pcMine = {}; pcKey = k; } }   /* a new passcode: pieces are encrypted again, never reused */
-  function piecesOff() { return readJSON('dash.vp.off') === 1; }
   function fnv(str) { var h = 0x811c9dc5; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + str.length; }
   function sha32(str) { return crypto.subtle.digest('SHA-256', enc.encode(str)).then(function (h) { return Array.prototype.map.call(new Uint8Array(h).slice(0, 16), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }); }
   function pieceOf(name) {
@@ -933,7 +932,7 @@
       /* save on top of the version this device last synced with – if the server has a newer one, it answers 409 and we merge */
       var base = readJSON(REPLACE_KEY) ? (remoteRev !== null ? remoteRev : -1) : syncedRev() >= 0 ? syncedRev() : (remoteRev !== null ? remoteRev : -1);
       /* in pieces when unlocked (the key is needed to cut it up); a whole copy otherwise – the server takes both */
-      return (pk && !piecesOff() ? toServer(v, pk).catch(function (e) { if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
+      return (pk ? toServer(v, pk).catch(function (e) { if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
         if (!body) return;
         return fetch(API, {
         method: 'PUT', credentials: 'same-origin', cache: 'no-store',

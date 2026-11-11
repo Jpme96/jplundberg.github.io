@@ -174,19 +174,11 @@
         if (!known) { pend[id] = { f: f, t: Date.now() }; pendCh = true; held.push(f); return; }
       }
       if (c === 'sx' && del && pend[id]) { delete pend[id]; pendCh = true; return; }
-      if ((directKind(c) && c !== 'cdone') || (c === 'ev' && evOn())) return;   /* read from the box itself */
-      if (c === 'shop') { var l = Array.isArray(t.shop) ? t.shop : (t.shop = []), i = l.findIndex(function (x) { return x.id === id; });
-        if (del) { if (i > -1) { l.splice(i, 1); toolsCh = true; } } else if (i > -1) { l[i] = Object.assign({}, l[i], { text: f.text, done: !!f.done }); toolsCh = true; } else { var pn = (t.pantry || []).filter(function (q) { return q.state === 'low' && String(q.name || '').toLowerCase() === String(f.text || '').toLowerCase(); })[0]; l.push({ id: id, text: f.text || '', done: !!f.done, from: pn ? 'pantry' : 'shared' }); toolsCh = true; } }
-      else if (c === 'cdone') {
-        var dir = directKind('cdone'); t.choreDone = Object.assign({}, t.choreDone || {}); var ck = f.k || id;   /* read from the box: only the history is written here */
+      if ((DLISTS[c] && c !== 'cdone') || c === 'ev') return;   /* read straight from the box – never copied into your data (step 7); if you don't share that part, theirs is ignored */
+      if (c === 'cdone') {
+        var dir = true; t.choreDone = Object.assign({}, t.choreDone || {}); var ck = f.k || id;   /* read from the box: only the history is written here */
         if (del) { if (!dir) delete t.choreDone[id]; t.choreLog = (Array.isArray(t.choreLog) ? t.choreLog : []).filter(function (x) { return x.k !== id; }); }
         else { var cw = f.who === 'me' ? 'me' : 'them'; if (!dir) t.choreDone[ck] = cw; var ch = (t.chores || []).filter(function (x) { return x.id === String(ck).split('|')[1]; })[0]; if (ch && window.Chores && window.Chores.addLog) window.Chores.addLog(t, ch, ck, cw, f.at); }
-        toolsCh = true; }
-      else if (c === 'chore') { var cl = Array.isArray(t.chores) ? t.chores : (t.chores = []), ci = cl.findIndex(function (x) { return x.id === id; });
-        if (del) { if (ci > -1) cl.splice(ci, 1); } else { var co = { id: id, name: f.name || 'Chore', every: f.every || '1w', day: +f.day || 0, who: f.who || 'rotate', start: f.start || dkey(new Date()), room: f.room || '' }; if (!co.room) delete co.room; if (ci > -1) cl[ci] = Object.assign({}, cl[ci], co); else cl.push(co); }
-        toolsCh = true; }
-      else if (c === 'room') { var rl = Array.isArray(t.rooms) ? t.rooms : (t.rooms = []), ri = rl.findIndex(function (x) { return x.id === id; });
-        if (del) { if (ri > -1) rl.splice(ri, 1); } else { var ro = { id: id, name: f.name || 'Room', icon: f.icon || 'house', size: f.size || '' }; if (ri > -1) rl[ri] = Object.assign({}, rl[ri], ro); else rl.push(ro); }
         toolsCh = true; }
       else if (c === 'proj' && !del) { (t.hproj || []).forEach(function (x) { if (x.id !== id || !Array.isArray(f.tasks)) return; var old = {}; (x.tasks || []).forEach(function (q) { old[q.id] = q; }); x.tasks = f.tasks.map(function (q) { return Object.assign({}, old[q.id] || {}, q); }); toolsCh = true; }); }
       else if ((c === 'sx' || c === 'pay') && p) {
@@ -199,16 +191,8 @@
           if (j > -1) arr[j] = Object.assign({}, arr[j], o); else arr.push(o); toolsCh = true;
         }
       }
-      else if (c === 'ev') { cal = cal || rj('dash.calendar', {}); cal.events = Array.isArray(cal.events) ? cal.events : []; var k = cal.events.findIndex(function (x) { return x.id === id; });
-        if (del) { if (k > -1) cal.events.splice(k, 1); } else { var e = Object.assign({}, k > -1 ? cal.events[k] : { id: id, cat: 'personal' }, f, { share: true }); if (k > -1) cal.events[k] = e; else cal.events.push(e); } }
       else if (c === 'plant' && !del) { (t.plants || []).forEach(function (x) { if (x.id === id && f.last && (!x.last || f.last > x.last)) { x.last = f.last; toolsCh = true; } }); }
       else if (c === 'pantry' && !del) { (t.pantry || []).forEach(function (x) { if (x.id === id && x.state !== f.state) { x.state = f.state === 'low' ? 'low' : 'ok'; toolsCh = true; } }); }
-      else if (c === 'vote') { var vl = Array.isArray(t.votes) ? t.votes : (t.votes = []), vi = vl.findIndex(function (x) { return x.id === id; });
-        if (del) { if (vi > -1) vl.splice(vi, 1); } else { var vo = { id: id, date: f.date, opts: f.opts || [], from: f.from === 'p' ? 'them' : 'me', at: +f.at || Date.now() }; if (f.pick != null) vo.pick = +f.pick; if (vi > -1) vl[vi] = vo; else vl.push(vo); }
-        toolsCh = true; }
-      else if (c === 'meal') { t.meals = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}; if (del) delete t.meals[id]; else if (f.text) t.meals[f.date || id] = f.text; toolsCh = true; }
-      else if (c === 'note') { var nl = Array.isArray(t.homenotes) ? t.homenotes : (t.homenotes = []), ni = nl.findIndex(function (x) { return x.id === id; });
-        if (del) { if (ni > -1) nl.splice(ni, 1); } else if (ni > -1) nl[ni] = Object.assign({}, nl[ni], { title: f.title || '', text: f.text || '' }); else nl.push({ id: id, title: f.title || '', text: f.text || '', by: 'partner' }); toolsCh = true; }
       else if (c === 'trip' && !del) { tv = tv || rj('dash.travel', {}); (tv.trips || []).forEach(function (tr) { if (tr.id !== id || !Array.isArray(f.pack)) return; var old = {}; (tr.pack || []).forEach(function (x) { old[x.t] = x; }); tr.pack = f.pack.map(function (x) { return Object.assign({}, old[x.t] || {}, { t: x.t, done: !!x.done }); }); }); }
       else if (c === 'pme' && !del) {
         var lk = SC.cleanLook(f.look), nm = (p && p.name) || f.name || pname(); t.people = Array.isArray(t.people) ? t.people : [];
@@ -271,20 +255,14 @@
   var healAt = 0;
   function missing(c, id) {
     var t = Fe.tools(), has = function (l) { return (Array.isArray(l) ? l : []).some(function (x) { return x && x.id === id; }); };
-    if (c === 'ev') return !has(rj('dash.calendar', {}).events);
-    if (directKind(c) || (c === 'ev' && evOn())) return false;   /* read from the box: nothing to put back */
-    if (c === 'shop') return !has(t.shop);
-    if (c === 'note') return !has(t.homenotes);
-    if (c === 'chore') return !has(t.chores);
-    if (c === 'room') return !has(t.rooms);
-    if (c === 'vote') return !has(t.votes);
+    if (DLISTS[c] || c === 'ev') return false;   /* read straight from the box: nothing to put back */
     if (c === 'sx') return !has((t.shared || {}).items) && !(((V.get() || {}).share || {}).pending || {})[id];
     if (c === 'pay') return !has((t.shared || {}).pays);
     return false;
   }
   var unsure = {}, cache = {}, rids = {}, seen = rj('dash.share.seen2', {}), applyErr = 0, busy = false, again = false, quiet = false, lastOk = 0, lastErr = '';
   function ridOf(k, c, id) { var x = c + '|' + id; if (rids[x]) return Promise.resolve(rids[x]); return SC.rid(k, c, id).then(function (r) { rids[x] = r; return r; }); }
-  /* ---------- shared lists straight from the shared box (rebuild A2, behind a switch per part) ----------
+  /* ---------- shared lists straight from the shared box (rebuild A2; always on since step 7, 2026-11-11) ----------
      The box is the list. cmd shows the box's copy (plus your changes not sent yet) and sends only what you changed;
      nothing is copied back into the vault except a backup copy (with the extras only cmd uses, like "from the pantry").
      One recipe for every list: c = kind in the box, key = list in dash.tools, area = what()/switch name,
@@ -304,9 +282,8 @@
       item: function (f) { var o = { date: f.date, opts: f.opts || [], from: f.from === 'p' ? 'them' : 'me', at: +f.at || 0 }; if (f.pick != null) o.pick = +f.pick; return o; }, tidy: function (x) { if (x.pick == null) delete x.pick; return x; } },
     note: { c: 'note', key: 'homenotes', area: 'notes', box: function (x) { return { title: String(x.title || '').slice(0, 60), text: String(x.text || '').slice(0, 1500) }; }, item: function (f) { return { title: f.title || '', text: f.text || '' }; }, extra: { by: 'partner' } }
   };
-  var DIRECT_OF = { shop: ['shop'], chores: ['chore', 'room', 'cdone'], notes: ['note'], meals: ['meal', 'vote'], cal: [] };   /* cal: events, see EV below */   /* switch → the lists it moves */
   function dl(name) { var d = DLISTS[name]; if (!d.ops) { d.boxL = rj('dash.share.box.' + name, null); d.ops = rj('dash.share.ops.' + name, {}) || {}; } return d; }
-  function direct(k) { var s = st(); return !!(s && !(s.direct && s.direct[k] === false) && what()[k]); }   /* on unless turned off in Shared space */
+  function direct(k) { return !!(st() && what()[k]); }   /* always straight from the box for what you share (the switches went in step 7) */
   function dOn(name) { return direct(DLISTS[name].area === 'chores' ? 'chores' : DLISTS[name].area); }
   function hashF(f) { return JSON.stringify(f); }
   function fromCache(d) {
@@ -446,15 +423,6 @@
   }
   function dSent(upTo) { Object.keys(DLISTS).forEach(function (name) { var d = dl(name), ch = false; Object.keys(d.ops).forEach(function (id) { if (d.ops[id].t <= upTo) { delete d.ops[id]; ch = true; } }); if (ch) wj('dash.share.ops.' + name, d.ops); }); }
   function dForget(name) { var d = dl(name); d.ops = {}; d.boxL = null; try { localStorage.removeItem('dash.share.ops.' + name); localStorage.removeItem('dash.share.box.' + name); } catch (e) {} }
-  /* turning a part on or off: the backup copy in the vault gets the list as it is now */
-  function dSwitch(k, on) {
-    var t = Fe.tools(); quiet = true;
-    (DIRECT_OF[k] || []).forEach(function (name) { var d = dl(name); if (on) { d.boxL = Object.keys(cache).length ? fromCache(d) : null; if (d.boxL) wj('dash.share.box.' + name, d.boxL); else { try { localStorage.removeItem('dash.share.box.' + name); } catch (e) {} } } });
-    var dv = V.get(); dv.share = Object.assign({}, dv.share || {}); dv.share.direct = Object.assign({}, dv.share.direct || {}); dv.share.direct[k] = !!on; V.save(dv);
-    if (!on) { Fe.saveTools(t); (DIRECT_OF[k] || []).forEach(dForget); if (k === 'cal') evForget(); }
-    if (on && k === 'cal') evForget();
-    quiet = false; window.dispatchEvent(new Event('tools:change')); schedule(200);
-  }
 
   var boxRev = null;
   function absorb(k, srv) {
@@ -593,7 +561,7 @@
     var t = Fe.tools(); (t.hdocs || []).forEach(function (d) { if (d.id === i.dataset.hdshare) { if (i.checked) d.share = true; else delete d.share; } }); Fe.saveTools(t);
     toast('<i class="bi bi-people"></i> ' + esc(i.checked ? 'Shared with ' + pname() : 'No longer shared'));
   });
-  window.ShareSpace = { partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k, on) { if (on != null && DIRECT_OF[k] && !!on !== direct(k)) dSwitch(k, !!on); return direct(k); } };
+  window.ShareSpace = { partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
@@ -708,19 +676,12 @@
         '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
-        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
-      (function () {
-        var DR = [['shop', 'Shopping list'], ['chores', 'Chores and rooms'], ['meals', 'Dinner plan and votes'], ['cal', 'Shared events'], ['notes', 'Notes']], on = DR.filter(function (x) { return direct(x[0]); });
-        return sec('direct', 'lightning-charge', 'Shared home in one place', on.length ? on.map(function (x) { return x[1]; }).join(', ') + ': on' : 'Off',
-          '<p class="st-note muted">One copy for both of you instead of two kept in step – no more fights when you both change something at once. Your own copy is kept as a backup, so turning it off loses nothing.</p>' +
-          DR.map(function (x) { return '<label class="st-row"><span>' + esc(x[1]) + ' straight from the shared home</span><input type="checkbox" class="switch" data-shdirect="' + x[0] + '"' + (direct(x[0]) ? ' checked' : '') + '></label>'; }).join(''));
-      })();
+        '<p class="st-note muted">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>');
   }
   document.addEventListener('change', function (e) {
     var t = e.target, a;
     if ((a = t.closest('[data-shperm]'))) { var pm = Object.assign({}, ((V.get() || {}).share || {}).perm || {}); pm[a.dataset.shperm] = a.value; setSt({ perm: pm }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); return; }
     if ((a = t.closest('[data-shappr]'))) { setSt({ approveOver: +a.value || 0 }); toast('<i class="bi bi-check2"></i> Saved'); return; }
-    if ((a = t.closest('[data-shdirect]'))) { dSwitch(a.dataset.shdirect, a.checked); toast('<i class="bi bi-check2"></i> ' + (a.checked ? 'Now straight from the shared home' : 'Back to the usual way – nothing is lost')); return; }
     if ((a = t.closest('[data-shnote]'))) { var nn = Object.assign({}, notifyMe()); nn[a.dataset.shnote] = a.checked; setSt({ notifyMe: nn }); schedule(200); toast('<i class="bi bi-check2"></i> Saved'); }
   });
   document.addEventListener('click', function (e) {

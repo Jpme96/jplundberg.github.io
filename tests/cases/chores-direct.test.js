@@ -8,7 +8,7 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
     t.chores = [{ id: 'cA', name: 'Clean the sink', every: '1w', day: 0, who: 'rotate', start: d0, room: 'rK' }, { id: 'cB', name: 'Mop the floor', every: '1w', day: 2, who: 'me', start: d0 }];
     Features.saveTools(t); const d = Vault.get(); d.share.what = Object.assign({}, d.share.what || {}, { chores: true }); Vault.save(d); });
   await p.evaluate(() => ShareSpace.sync()); await sl(1500);
-  check(await p.evaluate(() => ShareSpace.direct('chores', true)) === true, 'the switch turns on');
+  check(await p.evaluate(() => ShareSpace.direct('chores')) === true, 'read straight from the box');
   await p.evaluate(() => ShareSpace.sync()); await sl(1000);
   await q.evaluate(() => document.querySelector('[data-tab="chores"]').click());
   check(await until(q, () => /Clean the sink/.test(document.body.innerText) && /Mop the floor/.test(document.body.innerText), 12000) !== null, 'Iago sees the chores');
@@ -46,13 +46,11 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   check(await p.evaluate(() => (Features.tools().chores || []).map(c => c.name).sort().join(',')) === want, 'nothing comes back after more syncs');
   /* notes the same way */
   await p.evaluate(() => { const d = Vault.get(); d.share.what = Object.assign({}, d.share.what || {}, { notes: true }); Vault.save(d); });
-  check(await p.evaluate(() => ShareSpace.direct('notes', true)) === true, 'notes switch turns on');
+  check(await p.evaluate(() => ShareSpace.direct('notes')) === true, 'notes straight from the box once shared');
   await p.evaluate(() => { const t = Features.tools(); t.homenotes = (t.homenotes || []).concat([{ id: 'nWifi', title: 'Wi-Fi', text: 'Name: TestNet' }]); Features.saveTools(t); });
   await q.evaluate(() => { const x = document.querySelector('.hc-bub'); if (x) x.click(); });   /* notes are pinned in the chat */
   check(await until(q, () => { const b = document.querySelector('[data-hcpins]'); if (b && !/TestNet/.test(document.body.innerText)) b.click(); return /TestNet/.test(document.body.innerText); }, 15000) !== null, 'a note from cmd reaches Iago (pinned in the chat)');
-  await p.evaluate(() => ShareSpace.direct('notes', false));
-  await p.evaluate(() => ShareSpace.direct('chores', false)); await sl(500);
-  check(await p.evaluate(() => (Features.tools().chores || []).map(c => c.name).sort().join(',') + '|' + Features.tools().rooms.map(r => r.name).join(',')) === want + '|Hallway,Kitchen,Bathroom', 'turned off, chores and rooms are kept');
+  check(await p.evaluate(() => (Features.tools().chores || []).map(c => c.name).sort().join(',') + '|' + Features.tools().rooms.map(r => r.name).join(',')) === want + '|Hallway,Kitchen,Bathroom', 'chores and rooms as the box has them');
   check(!p.errs.length && !q.errs.length, 'no errors ' + JSON.stringify([p.errs, q.errs]).slice(0, 300));
   await done(b, b2);
 })();

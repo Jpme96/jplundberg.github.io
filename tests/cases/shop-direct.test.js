@@ -47,12 +47,12 @@ const names = l => (l || []).map(x => x.text + (x.done ? '✓' : '')).sort().joi
   await d2.p.evaluate(() => { const t = Features.tools(); t.shop.push({ id: 'sTea', text: 'Tea', done: false }); Features.saveTools(t); });
   check(await until(q, () => /Tea/.test(document.body.innerText), 12000) !== null, 'an add on the second device reaches Iago');
   check(await until(p, () => (Features.tools().shop || []).some(x => x.text === 'Tea'), 12000) !== null, '… and the first device');
-  /* off again: the list stays (the vault copy) */
-  await p.evaluate(() => ShareSpace.direct('shop', false)); await sl(500);
-  const after = await p.evaluate(() => (Features.tools().shop || []).map(x => x.text).sort().join(','));
-  check(after === 'Coffee,Milk,Tea', 'turned off, the list is kept: ' + after);
-  await p.evaluate(() => ShareSpace.sync()); await sl(2500);
-  check(await q.evaluate(() => [...document.querySelectorAll('[data-shop]')].map(x => x.innerText.trim()).sort().join(',')) === 'Coffee,Milk,Tea', 'Iago’s list is unchanged after turning it off');
+  /* the box wins (step 7): an old copy on this device that never saw Tea can't take it away from the shared list */
+  await p.evaluate(() => { const t = JSON.parse(localStorage.getItem('dash.tools') || '{}'); t.shop = (t.shop || []).filter(x => x.text !== 'Tea'); localStorage.setItem('dash.tools', JSON.stringify(t)); window.dispatchEvent(new Event('dash:local')); });
+  await p.evaluate(() => ShareSpace.sync()); await sl(2500); await p.evaluate(() => ShareSpace.sync()); await sl(1500);
+  check(await q.evaluate(() => [...document.querySelectorAll('[data-shop]')].map(x => x.innerText.trim()).sort().join(',')) === 'Coffee,Milk,Tea', 'an old copy can’t remove Tea from Iago’s list');
+  check(await p.evaluate(() => (Features.tools().shop || []).map(x => x.text).sort().join(',')) === 'Coffee,Milk,Tea', '… and cmd still shows the shared list');
+  check(await p.evaluate(() => !document.querySelector('[data-shdirect]') && ShareSpace.direct('shop') === true), 'no off switch any more');
   check(!p.errs.length && !q.errs.length && !d2.p.errs.length, 'no errors ' + JSON.stringify([p.errs, q.errs, d2.p.errs]).slice(0, 300));
   await done(b, b2, d2.b);
 })();

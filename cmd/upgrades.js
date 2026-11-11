@@ -27,6 +27,14 @@
         if (x === 'earbuds' && (!L.ears || L.ears === 'none')) L.ears = 'buds';
         L.extra = 'none';
         s.avatar = L; set('dash.settings', s); return true;
+      } },
+    { n: 2, what: 'step 7: the off switches for the shared home, saving in pieces and instant page changes are gone',
+      run: function (d, get, set) {
+        var ch = false;
+        if (obj(d.share) && d.share.direct) { delete d.share.direct; ch = true; }   /* every shared part is read straight from the box now */
+        var s = get('dash.settings'); if (obj(s) && 'softNav' in s) { delete s.softNav; set('dash.settings', s); ch = true; }
+        try { if (localStorage.getItem('dash.vp.off') != null) { localStorage.removeItem('dash.vp.off'); ch = true; } } catch (e) {}
+        return ch;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;

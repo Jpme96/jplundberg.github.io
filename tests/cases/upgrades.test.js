@@ -15,8 +15,12 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
     const d2 = { dv: 0 }, mem2 = { 'dash.settings': { avatar: { extra: 'watch' } } };
     Upgrades.run(d2, { get: () => { throw new Error('boom'); }, set: () => {} });
     const empty = {}; Upgrades.run(empty, { get: () => null, set: () => {} });
-    return { r1, a, r2, d2: d2.dv, empty: empty.dv };
+    /* step 2 (step 7 of the plan): the old off switches are cleared */
+    const d3 = { dv: 1, share: { on: true, direct: { shop: false, cal: false } } }, mem3 = { 'dash.settings': { softNav: false, theme: 'dark' } };
+    const r3 = Upgrades.run(d3, { get: k => mem3[k] ? JSON.parse(JSON.stringify(mem3[k])) : null, set: (k, v) => { mem3[k] = v; } });
+    return { r1, a, r2, d2: d2.dv, empty: empty.dv, s7: { r3, direct: 'direct' in d3.share, on: d3.share.on, soft: 'softNav' in mem3['dash.settings'], theme: mem3['dash.settings'].theme } };
   });
+  check(pure.s7.r3.indexOf(2) > -1 && !pure.s7.direct && pure.s7.on === true && !pure.s7.soft && pure.s7.theme === 'dark', 'step 2 clears the old off switches and keeps the rest ' + JSON.stringify(pure.s7));
   check(pure.r1.indexOf(1) > -1 && pure.a.hat === 'cap' && pure.a.oldCap === 1 && pure.a.extra === 'none' && pure.a.hair === 'short', 'step 1 turns the old cap into the hat, keeping the rest ' + JSON.stringify(pure.a));
   check(pure.r2.length === 0, 'it runs only once');
   check(pure.d2 === 0, 'a failing step stops and is tried again next time (dv stays ' + pure.d2 + ')');

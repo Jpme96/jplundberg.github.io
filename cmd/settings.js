@@ -231,7 +231,6 @@
     $('stStrength').value = s.bgStrength || Math.round(parseFloat(cs.opacity) * 100) || 30;
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
     $('stSeconds').checked = !!s.seconds;
-    if ($('stSoftNav')) $('stSoftNav').checked = s.softNav !== false;
     $('stQuotes').checked = !!s.quotes;
     if ($('stAdapt')) $('stAdapt').checked = s.adapt !== false;
     $('stCards').innerHTML = GROUPS.map(function (g) {
@@ -444,7 +443,6 @@
     try { var pr = JSON.parse(localStorage.getItem('dash.profile') || 'null'); if (pr && typeof pr === 'object' && pr.name !== n) { pr.name = n; localStorage.setItem('dash.profile', JSON.stringify(pr)); window.dispatchEvent(new Event('profile:change')); window.dispatchEvent(new Event('dash:local')); } } catch (e) {}
   });
   $('stSeconds').addEventListener('change', function () { set({ seconds: this.checked }); });
-  if ($('stSoftNav')) $('stSoftNav').addEventListener('change', function () { set({ softNav: this.checked }); });
   $('stQuotes').addEventListener('change', function () { set({ quotes: this.checked }); });
   if ($('stAdapt')) $('stAdapt').addEventListener('change', function () { set({ adapt: this.checked }); });
   /* No lonely card at the end of Today: "This week" (habits) only spans two columns when that fills the rows */

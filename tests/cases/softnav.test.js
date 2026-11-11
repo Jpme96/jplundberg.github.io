@@ -7,13 +7,8 @@ const RX = /\bundefined\b|\bNaN\b|\[object [A-Za-z]+\]|\bInvalid Date\b/;
   const { b, p } = await open(393);
   await p.evaluate(() => { ['food', 'shop', 'house', 'chores', 'travel', 'habits'].forEach(f => Features.set(f, true)); const t = Features.tools(); t.shop = [{ id: 'sA', text: 'Apples', done: false }, { id: 'sB', text: 'Bread', done: false }]; Features.saveTools(t); });
   check(await p.evaluate(() => window.SoftNav && window.SoftNav.on === true), 'on by default');
-  /* turned off: nothing runs (a normal page load) */
-  await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.softNav = false; localStorage.setItem('dash.settings', JSON.stringify(s)); window.dispatchEvent(new Event('dash:local')); });
-  await sl(1200); await go(p, '', 3000);
-  check(await p.evaluate(() => window.SoftNav.on === false && setTimeout.toString().indexOf('native') > -1), 'off: nothing of it runs');
-  await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.softNav = true; localStorage.setItem('dash.settings', JSON.stringify(s)); window.dispatchEvent(new Event('dash:local')); });
-  await sl(1200); await go(p, '', 3000);
-  check(await p.evaluate(() => window.SoftNav.on === true), 'on again');
+  /* always on since step 7: no switch in Settings any more (safe mode and the pause after failures still fall back – test safe) */
+  check(await p.evaluate(() => !document.getElementById('stSoftNav')), 'no off switch in Settings');
   await p.evaluate(() => { window.__still = 'same page'; });
   const nav = async path => { const t0 = Date.now(); const n0 = await p.evaluate(() => SoftNav.count);
     await p.evaluate(h => { const a = document.createElement('a'); a.href = h; document.body.appendChild(a); a.click(); a.remove(); }, '/cmd/' + path);

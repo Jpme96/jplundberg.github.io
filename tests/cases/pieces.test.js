@@ -38,10 +38,10 @@ const { open, until, sl } = require('../lib/browser'); const { check, done } = r
   /* an old version (one copy) can't save over it */
   const old = await p.evaluate(() => fetch('/cmd/api/vault', { method: 'PUT', headers: { 'content-type': 'application/json', 'X-Base-Rev': '0' }, body: JSON.stringify({ v: 1, rev: 1, salt: 'x', iv: 'x', ct: 'x' }) }).then(r => r.status));
   check(old === 426, 'an old version is told to update instead of saving over it: ' + old);
-  /* turned off: a whole copy is saved again, and both still work */
-  await p.evaluate(() => { localStorage.setItem('dash.vp.off', '1'); const t = Features.tools(); t.recipes[4].title = 'Whole again'; Features.saveTools(t); });
-  check(await until(p, () => fetch('/cmd/api/vault', { cache: 'no-store' }).then(r => r.json()).then(v => v.v === 1)) !== null, 'switched off: a whole copy again');
-  check(await until(d2.p, () => (Features.tools().recipes || [])[4] && Features.tools().recipes[4].title === 'Whole again', 20000) !== null, 'the second device reads the whole copy');
+  /* always in pieces since step 7: an old switch left on a device changes nothing */
+  await p.evaluate(() => { localStorage.setItem('dash.vp.off', '1'); const t = Features.tools(); t.recipes[4].title = 'Still in pieces'; Features.saveTools(t); });
+  check(await until(p, () => fetch('/cmd/api/vault', { cache: 'no-store' }).then(r => r.json()).then(v => v.v === 2)) !== null, 'an old off switch is ignored: still saved in pieces');
+  check(await until(d2.p, () => (Features.tools().recipes || [])[4] && Features.tools().recipes[4].title === 'Still in pieces', 20000) !== null, 'the second device reads it');
   await p.evaluate(() => localStorage.removeItem('dash.vp.off'));
   /* a new passcode: every piece is encrypted again (never an old one reused), the other device opens it with the new one */
   await p.evaluate(() => Vault.changePasscode('test-passcode-2')); await sl(2500);
@@ -49,7 +49,7 @@ const { open, until, sl } = require('../lib/browser'); const { check, done } = r
   await d2.p.evaluate(() => Vault.sync()); 
   check(await until(d2.p, () => { const i = document.getElementById('lockPass'); return !!(i && i.offsetParent); }, 20000) !== null, 'the other device asks for the new passcode');
   await d2.p.type('#lockPass', 'test-passcode-2'); await d2.p.click('#lockSubmit');
-  const back = await until(d2.p, () => { if (!document.documentElement.classList.contains('unlocked')) return false; const d = Vault.get(), t = Features.tools(); return Object.keys(d.health.days).length === 112 && t.recipes.length === 60 && t.recipes[4].title === 'Whole again'; }, 20000);
+  const back = await until(d2.p, () => { if (!document.documentElement.classList.contains('unlocked')) return false; const d = Vault.get(), t = Features.tools(); return Object.keys(d.health.days).length === 112 && t.recipes.length === 60 && t.recipes[4].title === 'Still in pieces'; }, 20000);
   check(back !== null, 'with the new passcode the other device has the whole dashboard');
   check(!p.errs.length && !d2.p.errs.length, 'no errors ' + JSON.stringify([p.errs, d2.p.errs]).slice(0, 300));
   await done(b, d2.b);

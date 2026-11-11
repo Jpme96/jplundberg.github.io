@@ -1,4 +1,4 @@
-/* Instant page changes (rebuild A5) – on unless turned off in Settings → Appearance → "Instant page changes".
+/* Instant page changes (rebuild A5) – always on since step 7 (2026-11-11); the safety nets below still fall back to normal loads.
    A tap on the menu doesn't load a new page: the dashboard stays open (unlocked, the data already in memory) and
    only the page's own part is swapped and started again. Normal loading is the fallback for anything unexpected.
 
@@ -9,8 +9,7 @@
    Off: nothing here runs at all – the switch is read once when a page loads. */
 (function () {
   'use strict';
-  var on = false;
-  try { on = (JSON.parse(localStorage.getItem('dash.settings')) || {}).softNav !== false; } catch (e) { on = true; }   /* on unless turned off */
+  var on = true;   /* the switch went in step 7; safe mode and the pause after failures still turn it off below */
   /* self-healing (Phase C step 6): after 2 failed page changes within 3 days this device uses normal loads – until
      the next version of the app, which gets a fresh try (Settings → Diagnostics says so and can try again) */
   var PAUSE = 'dash.snpause', FAILS = 'dash.snfail', HV = (function () { var c = document.currentScript, m = c && (c.getAttribute('src') || '').match(/v=(\w+)/); return m ? m[1] : ''; })();
