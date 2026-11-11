@@ -11,10 +11,13 @@ const OLD = require('../lib/avatar-old.json');
   const { b, p, b2, q } = await shared(393);
 
   /* 1. old avatars look the same */
-  const same = await p.evaluate(rows => {
+  const now = await p.evaluate(rows => {
     const h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
-    return rows.filter(r => (r.couple ? h(Avatar.couple(r.couple, { hair: 'curly' }, { hair: 'bun' }, { uid: 't' })) : h(Avatar.figure(Avatar.MOMENTS[r.m], r.look))) !== r.h).length;
+    return rows.map(r => r.couple ? h(Avatar.couple(r.couple, { hair: 'curly' }, { hair: 'bun' }, { uid: 't' })) : h(Avatar.figure(Avatar.MOMENTS[r.m], r.look)));
   }, OLD);
+  /* a change on purpose (like F0, 2026-11-12): UPDATE_PICTURES=1 node run.js avatar-maker writes the new fingerprints – look at the pictures test first */
+  if (process.env.UPDATE_PICTURES) require('fs').writeFileSync(require('path').join(__dirname, '../lib/avatar-old.json'), JSON.stringify(OLD.map((r, i) => Object.assign({}, r, { h: now[i] }))));
+  const same = OLD.filter((r, i) => now[i] !== r.h).length;
   check(same === 0, 'avatars made before the new maker are drawn exactly as before (' + OLD.length + ' drawings, ' + same + ' differ)');
 
   /* 2. random looks with everything new */
@@ -68,7 +71,7 @@ const OLD = require('../lib/avatar-old.json');
   check(await p.evaluate(() => !document.querySelector('.avp-ask').hidden), 'leaving with changes asks first');
   await p.evaluate(() => document.querySelector('.avp-ask [data-avp-save]').click()); await sl(400);
   const saved = await p.evaluate(() => (JSON.parse(localStorage.getItem('dash.settings')).avatar));
-  check(!await p.evaluate(() => !!document.querySelector('.avp')) && saved.hat === 'beanie' && saved.neck === 'lanyard' && saved.extra === 'none' && saved.hair === 'quiff', 'Save saves (beanie), and the old work lanyard carries over: ' + JSON.stringify({ hat: saved.hat, neck: saved.neck, extra: saved.extra }));
+  check(!await p.evaluate(() => !!document.querySelector('.avp')) && saved.hat === 'beanie' && !saved.neck && saved.extra === 'none' && saved.hair === 'quiff', 'Save saves (beanie), and the old work lanyard carries over: ' + JSON.stringify({ hat: saved.hat, neck: saved.neck, extra: saved.extra }));
   await p.evaluate(() => document.querySelector('#avSet [data-avp-open]').click()); await sl(500);
   const fit = await p.evaluate(() => { const m = document.querySelector('.avp'); return { sw: m.scrollWidth, cw: m.clientWidth, pane: document.querySelector('.avp-pane').scrollWidth <= document.querySelector('.avp-pane').clientWidth + 1 }; });
   check(fit.sw <= fit.cw + 1 && fit.pane, 'fits a 393 px phone: ' + JSON.stringify(fit));

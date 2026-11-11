@@ -67,9 +67,9 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
   check(r.frontAgain, 'turning back to us gives the front face again');
   check(r.r2.hiddenFront && r.r2.backShown && r.r2.backGone, 'from behind: the jersey number and the backpack show, and go again when it turns back ' + JSON.stringify(r.r2));
   check(r.r2.hoodSide && r.r2.hoodFront && r.r2.chestMoved, 'from the side: the hood shows past the neck and the chest print moves to the front');
-  check(r.r2.dangle && r.r2.hem, 'the lanyard can swing and the dress hem can sway');
+  check(r.r2.hem, 'the dress hem can sway (the lanyard was removed in F0)');
   check(r.onBody, 'half-turned, both shoulders stay on the body');
-  check(r.r3.oneHoop, 'three-quarter: only the near earring shows');
+  check(!r.r3.oneHoop, 'no earrings any more (removed in F0)');
   check(r.r3.aviSide, 'from the side: aviators keep their gold frame, the nose ring shows');
   check(r.r3.grip === true, 'a held thing gets fingers around it ' + r.r3.grip);
   check(!p.errs.length, 'no page errors ' + p.errs.join(' | ').slice(0, 300));

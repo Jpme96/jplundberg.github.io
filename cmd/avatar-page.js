@@ -19,7 +19,7 @@
     ['hair', 'Hair', 'Hår', group('hair')],
     ['body', 'Body', 'Kropp', group('body')],
     ['style', 'Style', 'Klær', group('style')],
-    ['extras', 'Extras', 'Tilbehør', group('extras').filter(function (s) { return s[0] !== 'pet'; }).concat(['hold', 'badge', 'scene'].map(sec).filter(Boolean))],
+    ['extras', 'Extras', 'Tilbehør', group('extras').filter(function (s) { return s[0] !== 'pet'; })],
     ['pet', 'Pet', 'Kjæledyr', [sec('pet')].filter(Boolean)],
     ['moves', 'Moves', 'Bevegelse', [['hand', 'The hand it uses for things', 'Hånden den bruker til ting'], ['walk', 'How it walks', 'Hvordan den går']]],
     ['settings', 'Settings', 'Innstillinger', null]
@@ -66,7 +66,7 @@
       '<label><span>' + L('What it says', 'Hva den sier') + '<small>' + L('The speech bubble is on screen for anyone nearby', 'Snakkeboblen vises for alle i nærheten') + '</small></span>' + sel('data-avsay', say, [['nomoney', L('All but money', 'Alt unntatt penger')], ['all', L('Everything', 'Alt')], ['fun', L('Only the fun bits', 'Bare det morsomme')]]) + '</label>' +
       '<label><span>' + L('Dress for the season', 'Kle seg etter sesongen') + '<small>' + L('Christmas jumper in December, a bunad on 17 May (Norway’s national day), shorts in July', 'Julegenser i desember, bunad på 17. mai, shorts i juli') + '</small></span><input type="checkbox" class="switch" data-avm-auto' + (cur.auto === 'on' ? ' checked' : '') + '></label>' +
       sw('avWear', L('Dress for the weather', 'Kle seg for været'), L('Umbrella in rain, a warm jacket, beanie and scarf when it’s cold, a T-shirt when it’s warm, sunglasses in July', 'Paraply i regn, varm jakke, lue og skjerf når det er kaldt, T-skjorte når det er varmt, solbriller i juli')) +
-      sw('avMood', L('Mood from your day', 'Humør fra dagen din'), L('Tired after a short night, a drop of sweat when bills are overdue, a badge when you earn one (a habit streak, today’s top 3 done, bills paid)', 'Trøtt etter en kort natt, en svettedråpe når regninger er forfalt, et merke når du fortjener det (en vane på rad, dagens topp 3 gjort, regningene betalt)')) +
+      sw('avMood', L('Mood from your day', 'Humør fra dagen din'), L('Tired after a short night, a drop of sweat when bills are overdue', 'Trøtt etter en kort natt, en svettedråpe når regninger er forfalt')) +
       sw('avBadge', L('Moment badge on your photo', 'Merke på bildet ditt'), L('Coffee, umbrella, gym, trip … in the top bar', 'Kaffe, paraply, trening, reise … i toppen')) +
       '</div>';
   }
@@ -156,7 +156,7 @@
       if (e.target.closest('[data-avp-stay]')) { el.querySelector('.avp-ask').hidden = true; return; }
       if (e.target.closest('[data-avp-drop]')) { close(); return; }
       if (e.target.closest('[data-avp-save]')) { save(); return; }
-      if (e.target.closest('[data-avp-match]')) { var ml = opts.match.look || {}; undo.push(JSON.stringify(cur)); cur = Object.assign({}, cur, { top: ml.top || cur.top, topC: ml.topC || cur.topC, pat: ml.pat || 'none' }); redraw(); return; }
+      if (e.target.closest('[data-avp-match]')) { var ml = opts.match.look || {}; undo.push(JSON.stringify(cur)); cur = Object.assign({}, cur, { top: ml.top || cur.top, bottom: ml.bottom || cur.bottom, legs: ml.legs || cur.legs });   /* the same outfit (tops have one standard colour since F0) */ redraw(); return; }
       if (e.target.closest('[data-avp-undo]')) { if (undo.length) { cur = JSON.parse(undo.pop()); redraw(); } return; }
       if (e.target.closest('[data-avp-rand]')) { change(Object.assign({}, M.rand(), { hand: cur.hand, walk: cur.walk, auto: cur.auto })); return; }
       if ((b = e.target.closest('[data-avp-tab]'))) { setTab(b.dataset.avpTab); return; }

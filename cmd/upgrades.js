@@ -35,6 +35,16 @@
         var s = get('dash.settings'); if (obj(s) && 'softNav' in s) { delete s.softNav; set('dash.settings', s); ch = true; }
         try { if (localStorage.getItem('dash.vp.off') != null) { localStorage.removeItem('dash.vp.off'); ch = true; } } catch (e) {}
         return ch;
+      } },
+    { n: 3, what: 'F0: the avatar settings and choices JP took out are removed from saved looks (yours and your people\'s)',
+      run: function (d, get, set) {
+        var A = window.Avatar; if (!A || !A.trimLook) throw new Error('avatar code not loaded yet');   /* tried again next time */
+        var ch = false, same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
+        var s = get('dash.settings'); if (obj(s) && obj(s.avatar)) { var t = A.trimLook(s.avatar); if (!same(t, s.avatar)) { s.avatar = t; set('dash.settings', s); ch = true; } }
+        var tl = get('dash.tools'); if (obj(tl) && Array.isArray(tl.people)) { var pc = false;
+          tl.people.forEach(function (p) { if (obj(p) && obj(p.look)) { var t2 = A.trimLook(p.look); if (!same(t2, p.look)) { p.look = t2; pc = true; } } });
+          if (pc) { set('dash.tools', tl); ch = true; } }
+        return ch;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;

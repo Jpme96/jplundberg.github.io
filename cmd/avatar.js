@@ -67,7 +67,7 @@
     if (top === 'robe') b += '<path d="M78 113q23 5 46 0" stroke="' + shade(T, -.25) + '" stroke-width="3.4" fill="none"/>';
     if (top === 'dress') b += '<path d="M101 88v22" stroke="' + T2 + '" stroke-width=".9"/><path d="M80 116q21 4 42 0" stroke="' + T2 + '" stroke-width="2" fill="none"/>';
     if (top === 'tank') b += '<path d="M89 86.4q12 6 24 0" stroke="' + T2 + '" stroke-width="1.6" fill="none"/>';
-    if (L.neck === 'scarf') b += '<path d="M88 84q13 8 26 0l1 6q-14 9-28 0z" fill="' + (L.hatC || '#e8743b') + '"/>';
+    if (L.wxScarf) b += '<path d="M88 84q13 8 26 0l1 6q-14 9-28 0z" fill="' + (L.hatC || '#e8743b') + '"/>';
     if (L.bottom === 'overalls') b += '<path d="M89.5 88l22 16M112.5 88l-22 16" stroke="' + P + '" stroke-width="3.4" stroke-linecap="round"/><path d="M91 103h20v25H91z" fill="' + P + '"/>';
     if (L.bag === 'yes' && !bare) b += '<rect x="84" y="93" width="34" height="34" rx="7" fill="#2e3340"/><rect x="88.5" y="109" width="25" height="14" rx="3.5" fill="#3a4050"/><path d="M89 105h24" stroke="#b8bdcc" stroke-width="1"/><path d="M95 93q6-5 12 0" stroke="#2e3340" stroke-width="2.4" fill="none"/>';
     return '<g class="av-backd" style="display:none">' + b + '</g>' + (hood ? '<g class="av-hoodb" style="display:none"><path d="M84 86.5q10-7 22-2 4 6-2 12-10 4-17 0-5-4-3-10z" fill="' + T2 + '"/></g>' : '');
@@ -104,29 +104,41 @@
         var d = window.Vault.get() || {}, ym = today().slice(0, 7), paid = ((d.paid || {})[ym]) || [];
         var fixed = ((d.budget && d.budget.fixed) || []).filter(function (f) { return f.day && !f.src; });
         if (paid.length) out.stress = fixed.some(function (f) { return +f.day <= dd - 3 && paid.indexOf(f.id) < 0; }) ? 1 : 0;
-        /* badges you earn (C10), the best one first: a habit 3+ weeks in a row, today's top 3 done, every bill so far paid */
-        var hb = readJSON('dash.habits', null), mon = new Date(now.getFullYear(), mo, dd - (now.getDay() + 6) % 7), dk = function (x) { return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
-        var streak = hb && Array.isArray(hb.list) && hb.list.some(function (hh) { var st = 0; for (var w = 1; w < 8; w++) { var n = 0; for (var i = 0; i < 7; i++) if (((hb.log || {})[dk(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() - 7 * w + i))] || []).indexOf(hh.id) > -1) n++; if (n >= (+hh.target || 1)) st++; else break; } return st >= 3; });
-        var td = today(), t3 = (readJSON('dash.todos', []) || []).filter(function (t) { return t && t.today === td; }).slice(0, 3);
-        var bills = fixed.filter(function (f) { return +f.day <= dd; });
-        out.badge = streak ? 'streak' : t3.length === 3 && t3.every(function (t) { return t.done; }) ? 'top3' : bills.length && bills.every(function (f) { return paid.indexOf(f.id) > -1; }) ? 'paid' : '';
       } catch (e) {}
     }
     return out;
   }
-  /* your own look as today dresses it (C10): weather clothes and an earned badge – a badge you picked yourself wins.
+  /* your own look as today dresses it (C10): weather clothes (a beanie, a scarf and a padded jacket when it's cold, a T-shirt when it's warm).
      The umbrella, snow hat, sunglasses and sweat stay drawn by figure() from wear() itself. */
   function dressed(L, W) {
     W = W || wear(); var o = Object.assign({}, L);
-    if (W.cold) { if (!o.hat || o.hat === 'none') o.hat = 'beanie'; if (!o.neck || o.neck === 'none') o.neck = 'scarf'; if (['puffer', 'jacket', 'rain', 'knit', 'suit', 'bunad', 'robe'].indexOf(o.top) < 0 && o.top !== 'none') o.top = 'puffer'; }
+    if (W.cold) { if (!o.hat || o.hat === 'none') o.hat = 'beanie'; o.wxScarf = 1; if (['puffer', 'jacket', 'rain', 'knit', 'suit', 'bunad', 'robe'].indexOf(o.top) < 0 && o.top !== 'none') o.top = 'puffer'; }
     else if (W.hot && ['sweater', 'knit', 'hoodie', 'puffer', 'jacket'].indexOf(o.top) > -1) o.top = 'tee';
-    if (W.badge && (!o.badge || o.badge === 'none')) o.badge = W.badge;
     return o;
   }
   /* the newer keys (2026-11): old looks keep working – 'extra' becomes a hat, a neck thing, a watch or earbuds */
+  /* F0 (2026-11-12): the settings and choices JP took out of the avatar. Every look goes through trimLook():
+     in norm() whenever it's drawn (yours, people's, your partner's from the shared box) and once for what's saved
+     (upgrades.js step 3). Removed settings fall back to the plain default; removed choices become the nearest kept one.
+     Tops and shoes have one standard colour; the weather can still add a scarf (dressed()) and the season its outfit. */
+  var TRIM_GONE = ['eyeS', 'brows', 'nose', 'earS', 'lines', 'mark', 'pierce', 'hair2', 'hairAge', 'shape', 'tat', 'pat', 'chest', 'shoeC', 'socks', 'ears', 'neck', 'hold', 'badge', 'scene'];
+  var TRIM_TO = { faceS: { square: 'oval', heart: 'oval' }, expr: { silly: 'grin', love: 'smile', starry: 'wow' }, cheeks: { both: 'blush' },
+    beard: { chinstrap: 'short', handlebar: 'moustache', curled: 'moustache' }, glasses: { hearts: 'sun', stars: 'sun', monocle: 'round' },
+    hair: { buzz: 'short', spiky: 'quiff', mullet: 'side', slick: 'side', sideshave: 'undercut', bowl: 'bangs', bun: 'topknot', cornrows: 'braids' },
+    hat: { bucket: 'cap', beret: 'beanie', flowers: 'none' } };
+  var TOP_STD = '#d9c7a8';
+  function trimLook(l) {
+    if (!l || typeof l !== 'object') return l;
+    var o = Object.assign({}, l);
+    TRIM_GONE.forEach(function (k) { delete o[k]; });
+    Object.keys(TRIM_TO).forEach(function (k) { var to = TRIM_TO[k][o[k]]; if (to) o[k] = to; });
+    if (o.extra === 'lanyard' || o.extra === 'earbuds') o.extra = 'none';   /* the old single extra: only the cap and the watch are left */
+    o.topC = TOP_STD;
+    return o;
+  }
   function norm(L) {
-    L = Object.assign({}, L);
-    var x = L.extra; if (x && x !== 'none') { if (x === 'cap' && !L.hat) { L.hat = 'cap'; L.oldCap = 1; } if (x === 'lanyard' && !L.neck) L.neck = 'lanyard'; if (x === 'watch' && !L.watch) L.watch = 'yes'; if (x === 'earbuds' && !L.ears) L.ears = 'buds'; }
+    L = trimLook(L);
+    var x = L.extra; if (x && x !== 'none') { if (x === 'cap' && !L.hat) { L.hat = 'cap'; L.oldCap = 1; } if (x === 'watch' && !L.watch) L.watch = 'yes'; }
     if (L.auto === 'on') { var dt = new Date(), mo = dt.getMonth() + 1, dd = dt.getDate();
       if (mo === 12 && dd <= 26) { L.top = 'knit'; L.topC = '#b3202c'; L.hat = 'santa'; L.pat = 'none'; }
       else if (mo === 5 && dd === 17) { L.top = 'bunad'; L.hold = 'flag'; L.hat = 'none'; }
@@ -134,11 +146,7 @@
       else if (mo === 7) { if (!L.glasses || L.glasses === 'none') L.glasses = 'sun'; L.bottom = 'shorts'; L.shoes = 'sandals'; } }
     /* clashes – one choice wins, so nothing is drawn on top of something it can't go with */
     if (L.top === 'dress' && L.bottom !== 'swim') L.bottom = 'trousers';                 /* the dress covers the bottoms */
-    if (L.hat === 'phones' && L.ears && L.ears !== 'none') L.ears = 'none';             /* the headphones cover the ears */
     if (L.aid === 'crutches' || L.aid === 'chair') L.hold = 'none';                       /* both hands are busy */
-    if (L.chest && ['star', 'heart', 'flame', 'bolt', 'pumpkin', 'bones'].indexOf(L.pat) >= 0) L.pat = 'none';   /* text and a chest print would overlap */
-    if (L.top === 'suit' && L.neck === 'tie') L.neck = 'none';                           /* the suit has its own tie */
-    if (L.top === 'none' && (L.neck === 'tie' || L.neck === 'lanyard')) L.neck = 'none';
     return L;
   }
   var UID = 0;
@@ -164,23 +172,6 @@
       : 'M88 86.5C95 85 107 85 114 86.5C123 88 127 92 127 100C127 108 125.5 116 124.5 123C124 127.5 121 130 117 130H85C81 130 78 127.5 77.5 123C76.5 116 75 108 75 100C75 92 79 88 88 86.5Z';
     var BS = L.shape || 'straight';
     var torso = (BS === 'hips' ? '<path d="M77 114q-5 8-3 16h54q2-8-3-16z" fill="' + (L.bottom === 'skirt' || top === 'dress' ? (top === 'dress' ? T : P) : L.bottom === 'shorts' || L.bottom === 'swim' ? P : P) + '"/>' : '') + '<path d="' + TD + '" fill="' + T + '"/>' + (BS === 'belly' ? '<path d="M78 106q-4 10 0 21h46q4-11 0-21z" fill="' + T + '"/><path d="M84 124q17 5 34 0" stroke="' + T2 + '" stroke-width="1.2" fill="none" opacity=".6"/>' : '') + (MU ? '<path d="M88 104q6.5 4 13 2q6.5 2 13-2" fill="none" stroke="' + T2 + '" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>' : '');
-    /* a pattern on the top, kept inside the torso */
-    var PT = bare || top === 'suit' ? 'none' : L.pat || 'none';
-    if (PT !== 'none') {
-      var cid = 'avc' + (++UID), pc = shade(T, .35), lines = '';
-      if (PT === 'stripes') for (var sy = 92; sy < 130; sy += 7) lines += '<path d="M60 ' + sy + 'h82" stroke="' + pc + '" stroke-width="2.6"/>';
-      if (PT === 'check') { for (var cy = 90; cy < 130; cy += 9) lines += '<path d="M60 ' + cy + 'h82" stroke="' + T2 + '" stroke-width="3" opacity=".55"/>'; for (var cx = 70; cx < 135; cx += 9) lines += '<path d="M' + cx + ' 84v48" stroke="' + T2 + '" stroke-width="3" opacity=".55"/>'; }
-      if (PT === 'star') lines = '<path d="M101 99l3.2 6.6 7.2 1-5.2 5 1.3 7.2-6.5-3.4-6.5 3.4 1.3-7.2-5.2-5 7.2-1z" fill="' + pc + '"/>';
-      if (PT === 'heart') lines = '<path d="M101 117c-8-5.5-11-9.5-11-13.5 0-3 2.4-5 5-5 2.6 0 4.6 1.6 6 3.6 1.4-2 3.4-3.6 6-3.6 2.6 0 5 2 5 5 0 4-3 8-11 13.5z" fill="#e5484d"/>';
-      if (PT === 'bolt') lines = '<path d="M104 96l-9 13h6l-4 11 10-14h-6l5-10z" fill="#f2c94c" stroke="' + shade(T, -.35) + '" stroke-width=".8" stroke-linejoin="round"/>';
-      if (PT === 'camo') lines = '<g opacity=".8"><ellipse cx="84" cy="96" rx="7" ry="4" fill="#5d6b3f"/><ellipse cx="108" cy="92" rx="8" ry="3.5" fill="#3e4a2b"/><ellipse cx="96" cy="108" rx="9" ry="4" fill="#8a8a5c"/><ellipse cx="118" cy="110" rx="6" ry="4.5" fill="#5d6b3f"/><ellipse cx="86" cy="120" rx="7" ry="3.5" fill="#3e4a2b"/><ellipse cx="108" cy="124" rx="8" ry="3.5" fill="#5d6b3f"/></g>';
-      if (PT === 'tiedye') lines = '<g opacity=".6"><circle cx="101" cy="108" r="30" fill="#e0559a"/><circle cx="101" cy="108" r="22" fill="#f2c94c"/><circle cx="101" cy="108" r="14" fill="#2fae6a"/><circle cx="101" cy="108" r="7" fill="#2f9ee0"/></g>';
-      if (PT === 'flag') lines = '<g transform="translate(106 95)"><rect width="12" height="8.5" rx=".8" fill="#ba0c2f"/><path d="M3.6 0v8.5M0 4.25h12" stroke="#fff" stroke-width="2.6"/><path d="M3.6 0v8.5M0 4.25h12" stroke="#00205b" stroke-width="1.3"/></g>';
-      if (PT === 'pumpkin') lines = '<ellipse cx="101" cy="110" rx="10" ry="8.4" fill="#f2851f"/><path d="M101 101.6v-3" stroke="#2f7a55" stroke-width="2"/><path d="M95 107l2.4-2.4 2.4 2.4zM102.2 107l2.4-2.4 2.4 2.4zM94.6 112q6.4 4 12.8 0l-2 1.6-2-1.4-2 1.6-2-1.6-2 1.6z" fill="#2a1a10"/>';
-      if (PT === 'bones') lines = '<g stroke="#e9edf5" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M101 90v32"/><path d="M89 98q12 4 24 0M88 106q13 4 26 0M89 114q12 4 24 0"/></g>';
-      if (PT === 'flame') lines = '<path d="M101 98c5 5 9 9 9 14a9 9 0 0 1-18 0c0-3 2-5 4-7 0 3 1 5 3 5 0-4-1-8 2-12z" fill="#f2a024"/><path d="M101 108c2 2 4 4 4 6a4 4 0 0 1-8 0c0-2 2-4 4-6z" fill="#f2e04a"/>';
-      torso += '<defs><clipPath id="' + cid + '"><path d="' + TD + '"/></clipPath></defs><g clip-path="url(#' + cid + ')">' + (['stripes', 'check', 'camo', 'tiedye'].indexOf(PT) < 0 ? '<g class="av-chest">' + lines + '</g>' : lines) + '</g>';
-    }
     var detail = '';
     if (top === 'sweater') detail = '<path d="M92 88l9 9 9-9" fill="#f2f2f2"/><path d="M92 88l9 9 9-9" fill="none" stroke="#cfd6e4" stroke-width="1"/><path d="M95 88l6 6 6-6" fill="' + T + '"/><path d="M78.5 125q22.5 3 45 0" stroke="' + T2 + '" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
     if (top === 'tee') detail = '<path d="M94 88q7 6 14 0" fill="none" stroke="' + T2 + '" stroke-width="2.5"/>';
@@ -203,24 +194,12 @@
     if (top === 'pjs') detail = '<path d="M92 87l9 8 9-8-2 6-7 3-7-3z" fill="' + shade(T, .3) + '"/><path d="M101 95v33" stroke="' + shade(T, .3) + '" stroke-width="1.4"/>' + [101, 110, 119].map(function (y) { return '<circle cx="101" cy="' + y + '" r="1.2" fill="' + shade(T, .4) + '"/>'; }).join('');
     if (top === 'robe') detail = '<path d="M91 86l14 30M111 86l-14 26" stroke="' + shade(T, -.2) + '" stroke-width="3" fill="none"/><path d="M78 113q23 5 46 0" stroke="' + shade(T, -.25) + '" stroke-width="3.4" fill="none"/><path d="M106 115l3 10M108 115l6 8" stroke="' + shade(T, -.25) + '" stroke-width="2.2" stroke-linecap="round"/>';
     if (top === 'bunad') detail = '<path d="M82 92q4-4 9-5l3 41H80q-3-18 2-36zM120 92q-4-4-9-5l-3 41h14q3-18-2-36z" fill="#b3202c"/><path d="M84 112h9M109 112h9M84 120h9M109 120h9" stroke="#f2c94c" stroke-width="1.3"/><circle cx="101" cy="94" r="3.6" fill="#d8dce4" stroke="#9aa3b2" stroke-width=".8"/><circle cx="101" cy="94" r="1.3" fill="#9aa3b2"/><path d="M99 97.4l-1 3.6M103 97.4l1 3.6" stroke="#9aa3b2" stroke-width="1"/>';
-    if (L.chest && !bare && ['tee', 'sweater', 'hoodie', 'tank', 'polo', 'pjs'].indexOf(top) >= 0) detail += '<text x="101" y="' + (top === 'hoodie' ? 107 : 110) + '" font-size="' + ({ 4: 7.6, 3: 9 }[String(L.chest).length] || 12) + '" font-weight="900" text-anchor="middle" fill="' + shade(T, T === '#f2f2f2' || T === '#f2c94c' ? -.6 : .55) + '" font-family="system-ui,sans-serif">' + esc(String(L.chest).slice(0, 4).toUpperCase()) + '</text>';
-    var BG = L.badge || 'none';
-    if (BG !== 'none' && !bare) detail += '<g transform="translate(' + (top === 'varsity' || top === 'kit' ? 112 : 90) + ' 101)">' + ({ streak: '<circle r="5" fill="#2e3340" stroke="#f2a024" stroke-width="1.2"/><path d="M0-3.4c2 2 3.4 3.6 3.4 5.4a3.4 3.4 0 0 1-6.8 0c0-1.2.8-2 1.6-2.8 0 1.2.4 2 1.2 2 0-1.6-.4-3 .6-4.6z" fill="#f2a024"/>',
-      trophy: '<circle r="5" fill="#2e3340" stroke="#f2c94c" stroke-width="1.2"/><path d="M-2.6-2.6h5.2v2a2.6 2.6 0 0 1-5.2 0zM-.8 2h1.6v1.4h1.4v1h-4.4v-1h1.4z" fill="#f2c94c"/>',
-      top3: '<circle r="5" fill="#f2c94c"/><text y="2.8" font-size="7.4" font-weight="900" text-anchor="middle" fill="#2a2100" font-family="system-ui,sans-serif">3</text>',
-      paid: '<circle r="5" fill="#2fae6a"/><path d="M-2.4.2l1.6 1.6 3.2-3.4" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' }[BG] || '') + '</g>';
     if (top === 'jacket') detail = '<path d="M92 88l9 10 9-10v40h-18z" fill="#f2f2f2"/><path d="M92 88l9 10v30M110 88l-9 10" stroke="' + T2 + '" stroke-width="2" fill="none"/>';
     var extra = '';
-    var NK = L.neck || 'none';
-    if (NK === 'chain') extra += '<g class="av-dangle"><path d="M91 88q10 10 20 0" stroke="#f2c94c" stroke-width="1.7" fill="none"/><circle cx="101" cy="98" r="2.2" fill="#f2c94c"/></g>';
+    var NK = L.wxScarf ? 'scarf' : 'none';   /* only the weather's scarf is left (F0) */
     if (NK === 'scarf' && m.k !== 'gym') extra += '<path d="M88 84q13 8 26 0l1 6q-14 9-28 0z" fill="' + (L.hatC || '#e8743b') + '"/><path d="M106 89h6l1 17h-7z" fill="' + shade(L.hatC || '#e8743b', -.12) + '"/><path d="M106.5 104h6M107 101h5.5" stroke="' + shade(L.hatC || '#e8743b', .3) + '" stroke-width="1"/>';
-    if (NK === 'bowtie') extra += '<path d="M101 89l-7.5-4.5v9zM101 89l7.5-4.5v9z" fill="' + (L.hatC || '#d93a3a') + '"/><circle cx="101" cy="89" r="2" fill="' + shade(L.hatC || '#d93a3a', -.2) + '"/>';
-    if (NK === 'tie' && !bare) extra += '<g class="av-dangle"><path d="M99 87.5h4l-1 3 3 19-4 4.5-4-4.5 3-19z" fill="' + (L.hatC || '#d93a3a') + '"/><path d="M98 97l6-2M97.6 103l6.6-2.2" stroke="' + shade(L.hatC || '#d93a3a', .3) + '" stroke-width="1"/></g>';
-    if (NK === 'pearls') extra += '<g fill="#f6f1e7" stroke="#d8cdb8" stroke-width=".4">' + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function (i) { var a = Math.PI * (.12 + i * .095); return '<circle cx="' + (101 - Math.cos(a) * 11).toFixed(1) + '" cy="' + (85 + Math.sin(a) * 9).toFixed(1) + '" r="1.5"/>'; }).join('') + '</g>';
-    if (NK === 'medal') extra += '<g class="av-dangle"><path d="M94 86l7 15 7-15" fill="none" stroke="#d93a3a" stroke-width="3.2"/><path d="M96 86l5 11 5-11" fill="none" stroke="#3987e5" stroke-width="1.2"/><circle cx="101" cy="105" r="5" fill="#f2c94c" stroke="#c98500" stroke-width="1"/><path d="M101.0 102.2L101.7 104.0L103.7 104.1L102.2 105.4L102.6 107.3L101.0 106.3L99.4 107.3L99.8 105.4L98.3 104.1L100.3 104.0z" fill="#c98500"/></g>';
     if (L.bag === 'yes' && !bare) extra += '<path d="M88 87v40M114 87v40" stroke="#2e3340" stroke-width="4" stroke-linecap="round"/><rect x="85.5" y="104" width="5" height="4" rx="1" fill="#b8bdcc"/><rect x="111.5" y="104" width="5" height="4" rx="1" fill="#b8bdcc"/>';
     if (L.bottom === 'overalls') extra += '<path d="M89 103h24v25H89z" fill="' + P + '"/><path d="M89.5 88l1.5 16M112.5 88l-1.5 16" stroke="' + P + '" stroke-width="3.4" stroke-linecap="round"/><circle cx="91" cy="104" r="1.6" fill="#f2c94c"/><circle cx="111" cy="104" r="1.6" fill="#f2c94c"/><rect x="96" y="108" width="10" height="7" rx="1.5" fill="none" stroke="' + shade(P, .25) + '" stroke-width="1"/>';
-    if (NK === 'lanyard' && !bare && m.k !== 'gym' && m.k !== 'night') extra += '<g class="av-dangle"><path d="M93 90l6 22M109 90l-6 22" stroke="#1b1b1b" stroke-width="1.6" fill="none"/><rect x="97" y="111" width="8" height="10" rx="1.5" fill="#f2f2f2" stroke="#999" stroke-width=".6"/></g>';
     var cut = L.bottom === 'shorts' ? 142 : L.bottom === 'swim' ? 135 : 157;
     var LC = cut < 157 || L.bottom === 'skirt' || top === 'dress' ? S : P;
     /* legs drawn at their own width for each body (not squeezed with the torso): they fill the hem, taper to the ankle */
@@ -232,14 +211,12 @@
     var hx0 = 101 - hem / 2 + 1, hw = hem - 2;
     /* a small shoe under each ankle, toe pointing a little outwards, a gap between them */
     var shoe = function (cx, dir) { var w = LB + 3, x = cx - w / 2 + dir * 1.5, q = function (n) { return n.toFixed(1); };
-      return '<path d="M' + q(x + 2) + ' 155h' + q(w - 4) + 'c' + (dir > 0 ? '3 0 5 1.6 5 3.2 0 1.2-.8 1.8-2.2 1.8h-' + q(w + .8) + 'c-1.2 0-1.8-.8-1.8-2 0-1.8.9-3 2-3z' : '1.1 0 2 1.2 2 3 0 1.2-.6 2-1.8 2h-' + q(w + .8) + 'c-1.4 0-2.2-.6-2.2-1.8 0-1.6 2-3.2 5-3.2z') + '" fill="' + (L.shoes === 'sandals' ? S : (L.shoeC || '#1a1a1a')) + '"/>' +
-        (L.socks && (cut < 157 || L.bottom === 'skirt' || top === 'dress') && L.shoes !== 'boots' && L.shoes !== 'sandals' ? '<rect x="' + q(x + 1.2) + '" y="150.6" width="' + q(w - 2.4) + '" height="5" rx="1" fill="' + L.socks + '"/><path d="M' + q(x + 1.2) + ' 152h' + q(w - 2.4) + '" stroke="' + shade(L.socks, -.25) + '" stroke-width=".8"/>' : '') +
-        (L.shoes === 'slippers' ? '<ellipse cx="' + q(cx + dir * 1.5) + '" cy="157.4" rx="' + q(w / 2 + 1.4) + '" ry="3.2" fill="' + (L.shoeC || '#e0559a') + '"/><circle cx="' + q(cx + dir * 1.5) + '" cy="155.2" r="2" fill="' + shade(L.shoeC || '#e0559a', .45) + '"/>' : '') +
+      return '<path d="M' + q(x + 2) + ' 155h' + q(w - 4) + 'c' + (dir > 0 ? '3 0 5 1.6 5 3.2 0 1.2-.8 1.8-2.2 1.8h-' + q(w + .8) + 'c-1.2 0-1.8-.8-1.8-2 0-1.8.9-3 2-3z' : '1.1 0 2 1.2 2 3 0 1.2-.6 2-1.8 2h-' + q(w + .8) + 'c-1.4 0-2.2-.6-2.2-1.8 0-1.6 2-3.2 5-3.2z') + '" fill="' + (L.shoes === 'sandals' ? S : '#1a1a1a') + '"/>' +
+        (L.shoes === 'slippers' ? '<ellipse cx="' + q(cx + dir * 1.5) + '" cy="157.4" rx="' + q(w / 2 + 1.4) + '" ry="3.2" fill="' + '#e0559a' + '"/><circle cx="' + q(cx + dir * 1.5) + '" cy="155.2" r="2" fill="' + shade('#e0559a', .45) + '"/>' : '') +
         (L.shoes === 'cleats' ? '<path d="M' + q(x + 1) + ' 160.8h1.4M' + q(x + w / 2 - .4) + ' 160.8h1.4M' + q(x + w - 1.4) + ' 160.8h1.4" stroke="#f2f2f2" stroke-width="1.4"/><path d="M' + q(x + 2) + ' 157h' + q(w - 3) + '" stroke="#f2c94c" stroke-width="1.1"/>' : '') +
-        (L.shoes === 'boots' ? '<rect x="' + q(x + .5) + '" y="148" width="' + q(w - 1) + '" height="9" rx="1.5" fill="' + (L.shoeC || '#5b3a1e') + '"/><path d="M' + q(x + .5) + ' 150.5h' + q(w - 1) + '" stroke="' + shade(L.shoeC || '#5b3a1e', -.3) + '" stroke-width="1"/>' : '') +
-        (L.shoes === 'hightops' ? '<rect x="' + q(x + .8) + '" y="150.5" width="' + q(w - 1.6) + '" height="6" rx="1.5" fill="' + (L.shoeC || '#d93a3a') + '"/><circle cx="' + q(cx) + '" cy="152.5" r=".7" fill="#f2f2f2"/><circle cx="' + q(cx) + '" cy="154.6" r=".7" fill="#f2f2f2"/>' : '') +
-        (L.shoes === 'sandals' ? '<path d="M' + q(x + 1.5) + ' 157.6h' + q(w - 1) + '" stroke="' + (L.shoeC || '#5b3a1e') + '" stroke-width="1.8" stroke-linecap="round"/>' : '') +
-        (L.shoeC && L.shoeC !== '#1a1a1a' && L.shoes !== 'sandals' ? '<path d="M' + q(x - .5) + ' 159.6h' + q(w + 3) + '" stroke="#f2f2f2" stroke-width="1.3" stroke-linecap="round"/>' : ''); };
+        (L.shoes === 'boots' ? '<rect x="' + q(x + .5) + '" y="148" width="' + q(w - 1) + '" height="9" rx="1.5" fill="' + '#5b3a1e' + '"/><path d="M' + q(x + .5) + ' 150.5h' + q(w - 1) + '" stroke="' + shade('#5b3a1e', -.3) + '" stroke-width="1"/>' : '') +
+        (L.shoes === 'hightops' ? '<rect x="' + q(x + .8) + '" y="150.5" width="' + q(w - 1.6) + '" height="6" rx="1.5" fill="' + '#d93a3a' + '"/><circle cx="' + q(cx) + '" cy="152.5" r=".7" fill="#f2f2f2"/><circle cx="' + q(cx) + '" cy="154.6" r=".7" fill="#f2f2f2"/>' : '') +
+        (L.shoes === 'sandals' ? '<path d="M' + q(x + 1.5) + ' 157.6h' + q(w - 1) + '" stroke="' + '#5b3a1e' + '" stroke-width="1.8" stroke-linecap="round"/>' : ''); };
     /* each leg (with its shoe) in its own group, so the pictures can make you walk (styles.css: .av-legL / .av-legR);
        the trousers' top is drawn over both, which hides the hinge */
     /* L1: the body sits UP higher and the legs get that room (the feet stay on the ground); not when seated */
@@ -481,7 +458,7 @@
     if (W.stress && m.k !== 'night') hat += '<path class="av-sweat" d="M122 50q3 5 0 7q-3-2 0-7z" fill="#7cc4ff"/>';
     if (W.ribbon) front += '<g transform="translate(112 99)"><path d="M0 0l-6-3v6zM0 0l6-3v6z" fill="#ba0c2f"/><circle r="1.7" fill="#fff"/><path d="M-1 1l-2 6M1 1l2 6" stroke="#00205b" stroke-width="1.6"/></g>';
     if (W.rain && m.k !== 'rain' && m.k !== 'night') behind += '<g class="av-umb"><path d="M44 36q27-28 54 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0q-7-5-13.5 0z" fill="#3987e5"/><line x1="71" y1="36" x2="71" y2="124" stroke="#2b2f36" stroke-width="2"/><path d="M71 124q0 6-5 6" stroke="#2b2f36" stroke-width="2" fill="none"/></g>';
-    var buds = L.ears === 'studs' ? '<circle cx="82.5" cy="68.5" r="1.5" fill="#f2c94c"/><circle cx="119.5" cy="68.5" r="1.5" fill="#f2c94c"/>' : L.ears === 'hoops' ? '<circle cx="82.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/><circle cx="119.5" cy="71.5" r="3" fill="none" stroke="#f2c94c" stroke-width="1.3"/>' : L.ears === 'buds' ? '<circle cx="82" cy="65" r="2.2" fill="#f2f2f2"/><circle cx="120" cy="65" r="2.2" fill="#f2f2f2"/>' : '';
+    var buds = '';
     if (AID === 'hearing') buds += '<path d="M120.5 57.5q4.4 1 3.8 6.6l-1.8 3.4" stroke="#d9c7a8" stroke-width="2.8" fill="none" stroke-linecap="round"/>';
     /* the neck in skin colour, a little wider at the bottom, with a soft shadow under the chin (a dark block looked stuck on) */
     var neck = (MU ? '<path d="M93 77h16l3 13H90z" fill="' + S + '"/>' : '<path d="M95.4 77h11.2l1 13h-13.2z" fill="' + S + '"/>') + '<path d="M95.2 83q5.8 3.4 11.6 0v2.6q-5.8 2.8-11.6 0z" fill="' + S2 + '" opacity=".7"/>';
@@ -661,58 +638,41 @@
   /* ---------- the maker (2026-11): one for Settings, People and the shared home – tabs, picture tiles drawn with the
      person's own look, colour dots + any colour. MK.html(cur, tab) draws it, MK.act(el, cur) applies a tap. ---------- */
   var MKT = [
-    ['face', 'Face', 'Ansikt', [['faceS', 'Face shape', 'Ansiktsform'], ['expr', 'Mood', 'Humør'], ['eyeS', 'Eye shape', 'Øyeform'], ['eyeC', 'Eye colour', 'Øyefarge'], ['brows', 'Eyebrows', 'Øyenbryn'], ['nose', 'Nose', 'Nese'], ['earS', 'Ears', 'Ører'], ['makeup', 'Make-up', 'Sminke'], ['cheeks', 'Cheeks', 'Kinn'], ['lines', 'Dimples & lines', 'Smilehull og linjer'], ['mark', 'Face sticker', 'Klistremerke'], ['pierce', 'Piercings', 'Piercinger'], ['beard', 'Beard', 'Skjegg'], ['glasses', 'Glasses', 'Briller']]],
-    ['hair', 'Hair', 'Hår', [['hair', 'Style', 'Frisyre'], ['hairC', 'Colour', 'Farge'], ['hair2', 'Coloured streak', 'Farget stripe'], ['hairAge', 'Grey & hairline', 'Grått og hårfeste']]],
-    ['body', 'Body', 'Kropp', [['build', 'Build', 'Kroppsbygning'], ['height', 'Height', 'Høyde'], ['shape', 'Shape', 'Fasong'], ['skin', 'Skin tone', 'Hudfarge'], ['tat', 'Tattoo', 'Tatovering'], ['aid', 'Mobility & hearing', 'Bevegelse og hørsel']]],
-    ['style', 'Style', 'Klær', [['top', 'Top', 'Overdel'], ['pat', 'Print', 'Trykk'], ['topC', 'Top colour', 'Farge på overdelen'], ['chest', 'Text on your top', 'Tekst på overdelen'], ['bottom', 'Bottom', 'Underdel'], ['legs', 'Bottom colour', 'Farge på underdelen'], ['shoes', 'Shoes', 'Sko'], ['shoeC', 'Shoe colour', 'Farge på skoene'], ['socks', 'Socks', 'Sokker']]],
-    ['extras', 'Extras', 'Tilbehør', [['hat', 'Headwear', 'Hodeplagg'], ['hatC', 'Hat, scarf & tie colour', 'Farge på hatt, skjerf og slips'], ['ears', 'Ears', 'Ører'], ['neck', 'Neck', 'Hals'], ['addons', 'Add-ons', 'Ekstra'], ['pet', 'Sidekick', 'Følgesvenn']]],
-    ['day', 'Your day', 'Dagen din', [['auto', 'Dress for the season', 'Kle deg etter sesongen'], ['hold', 'In your hand', 'I hånden'], ['badge', 'Badge', 'Merke'], ['scene', 'Background', 'Bakgrunn']]]
+    ['face', 'Face', 'Ansikt', [['faceS', 'Face shape', 'Ansiktsform'], ['expr', 'Mood', 'Humør'], ['eyeC', 'Eye colour', 'Øyefarge'], ['makeup', 'Make-up', 'Sminke'], ['cheeks', 'Cheeks', 'Kinn'], ['beard', 'Beard', 'Skjegg'], ['glasses', 'Glasses', 'Briller']]],
+    ['hair', 'Hair', 'Hår', [['hair', 'Style', 'Frisyre'], ['hairC', 'Colour', 'Farge']]],
+    ['body', 'Body', 'Kropp', [['build', 'Build', 'Kroppsbygning'], ['height', 'Height', 'Høyde'], ['skin', 'Skin tone', 'Hudfarge'], ['aid', 'Mobility & hearing', 'Bevegelse og hørsel']]],
+    ['style', 'Style', 'Klær', [['top', 'Top', 'Overdel'], ['bottom', 'Bottom', 'Underdel'], ['legs', 'Bottom colour', 'Farge på underdelen'], ['shoes', 'Shoes', 'Sko']]],
+    ['extras', 'Extras', 'Tilbehør', [['hat', 'Headwear', 'Hodeplagg'], ['hatC', 'Hat colour', 'Farge på hatten'], ['addons', 'Add-ons', 'Ekstra'], ['pet', 'Sidekick', 'Følgesvenn']]],
+    ['day', 'Your day', 'Dagen din', [['auto', 'Dress for the season', 'Kle deg etter sesongen']]]
   ];
   var MKO = {
-    faceS: [['oval', 'Oval', 'Oval'], ['round', 'Round', 'Rund'], ['square', 'Square', 'Firkantet'], ['long', 'Long', 'Lang'], ['heart', 'Heart', 'Hjerte']],
-    expr: [['smile', 'Smile', 'Smil'], ['grin', 'Big grin', 'Stort glis'], ['laugh', 'Laugh', 'Ler'], ['wink', 'Wink', 'Blunk'], ['silly', 'Silly', 'Tullete'], ['cool', 'Cool', 'Kul'], ['calm', 'Happy', 'Glad'], ['love', 'In love', 'Forelsket'], ['starry', 'Starstruck', 'Stjerneøyne'], ['shy', 'Shy', 'Sjenert'], ['wow', 'Wow', 'Wow']],
-    eyeS: [['round', 'Round', 'Runde'], ['almond', 'Almond', 'Mandel'], ['big', 'Big', 'Store'], ['sleepy', 'Sleepy', 'Søvnige']],
-    brows: [['normal', 'Normal', 'Vanlige'], ['thick', 'Thick', 'Tykke'], ['thin', 'Thin', 'Tynne'], ['arched', 'Arched', 'Buede'], ['uni', 'Unibrow', 'Sammenvokste']],
-    nose: [['normal', 'Normal', 'Vanlig'], ['button', 'Button', 'Knappenese'], ['pointy', 'Pointy', 'Spiss'], ['wide', 'Wide', 'Bred']],
-    earS: [['normal', 'Normal', 'Vanlige'], ['small', 'Small', 'Små'], ['big', 'Big', 'Store'], ['elf', 'Elf', 'Alv']],
+    faceS: [['oval', 'Oval', 'Oval'], ['round', 'Round', 'Rund'], ['long', 'Long', 'Lang']],
+    expr: [['smile', 'Smile', 'Smil'], ['grin', 'Big grin', 'Stort glis'], ['laugh', 'Laugh', 'Ler'], ['wink', 'Wink', 'Blunk'], ['cool', 'Cool', 'Kul'], ['calm', 'Happy', 'Glad'], ['shy', 'Shy', 'Sjenert'], ['wow', 'Wow', 'Wow']],
     makeup: [['none', 'None', 'Ingen'], ['lashes', 'Lashes', 'Vipper'], ['lips', 'Lipstick', 'Leppestift'], ['both', 'Both', 'Begge']],
-    cheeks: [['none', 'None', 'Ingen'], ['blush', 'Blush', 'Rødme'], ['freckles', 'Freckles', 'Fregner'], ['both', 'Both', 'Begge']],
-    lines: [['none', 'None', 'Ingen'], ['dimples', 'Dimples', 'Smilehull'], ['wrinkles', 'Laugh lines', 'Smilerynker'], ['both', 'Both', 'Begge']],
-    mark: [['none', 'None', 'Ingen'], ['mole', 'Beauty spot', 'Føflekk'], ['star', 'Star', 'Stjerne'], ['heart', 'Heart', 'Hjerte'], ['plaster', 'Plaster', 'Plaster']],
-    pierce: [['none', 'None', 'Ingen'], ['nose', 'Nose ring', 'Nesering'], ['brow', 'Eyebrow', 'Øyenbryn'], ['lip', 'Lip ring', 'Leppering'], ['septum', 'Septum', 'Septum']],
-    beard: [['none', 'None', 'Ingen'], ['stubble', 'Stubble', 'Stubber'], ['short', 'Short', 'Kort'], ['full', 'Full', 'Fullskjegg'], ['goatee', 'Goatee', 'Bukkeskjegg'], ['chinstrap', 'Chinstrap', 'Kjakeskjegg'], ['moustache', 'Moustache', 'Bart'], ['handlebar', 'Handlebar', 'Sykkelstyre'], ['curled', 'Curled', 'Krøllet bart']],
-    glasses: [['none', 'None', 'Ingen'], ['round', 'Round', 'Runde'], ['square', 'Square', 'Firkantede'], ['cateye', 'Cat-eye', 'Katteøye'], ['sun', 'Shades', 'Solbriller'], ['aviator', 'Aviator', 'Pilotbriller'], ['hearts', 'Hearts', 'Hjerter'], ['stars', 'Stars', 'Stjerner'], ['monocle', 'Monocle', 'Monokkel']],
-    hair: [['short', 'Short', 'Kort'], ['side', 'Side part', 'Sideskill'], ['quiff', 'Quiff', 'Quiff'], ['curly', 'Curly', 'Krøllete'], ['buzz', 'Buzz cut', 'Snauklipt'], ['fade', 'Fade', 'Fade'], ['spiky', 'Spiky', 'Piggete'], ['mohawk', 'Mohawk', 'Hanekam'], ['afro', 'Afro', 'Afro'], ['mullet', 'Mullet', 'Hockeysveis'], ['slick', 'Slicked', 'Glattet bakover'], ['undercut', 'Undercut', 'Undercut'], ['waves', 'Waves', 'Bølger'], ['sideshave', 'Side shave', 'Barbert side'], ['bangs', 'Curtain bangs', 'Gardinpannelugg'], ['bowl', 'Bowl cut', 'Potteklipp'], ['long', 'Long', 'Langt'], ['ponytail', 'Ponytail', 'Hestehale'], ['bun', 'Bun', 'Knute'], ['topknot', 'Top knot', 'Topknute'], ['braids', 'Braids', 'Fletter'], ['pigtails', 'Space buns', 'Doble knuter'], ['cornrows', 'Cornrows', 'Cornrows'], ['dreads', 'Dreads', 'Dreads'], ['bald', 'Bald', 'Skallet']],
-    hairAge: [['none', 'None', 'Ingen'], ['grey', 'Grey sides', 'Grå sider'], ['receding', 'Receding', 'Viker']],
+    cheeks: [['none', 'None', 'Ingen'], ['blush', 'Blush', 'Rødme'], ['freckles', 'Freckles', 'Fregner']],
+    beard: [['none', 'None', 'Ingen'], ['stubble', 'Stubble', 'Stubber'], ['short', 'Short', 'Kort'], ['full', 'Full', 'Fullskjegg'], ['goatee', 'Goatee', 'Bukkeskjegg'], ['moustache', 'Moustache', 'Bart']],
+    glasses: [['none', 'None', 'Ingen'], ['round', 'Round', 'Runde'], ['square', 'Square', 'Firkantede'], ['cateye', 'Cat-eye', 'Katteøye'], ['sun', 'Shades', 'Solbriller'], ['aviator', 'Aviator', 'Pilotbriller']],
+    hair: [['short', 'Short', 'Kort'], ['side', 'Side part', 'Sideskill'], ['quiff', 'Quiff', 'Quiff'], ['curly', 'Curly', 'Krøllete'], ['fade', 'Fade', 'Fade'], ['mohawk', 'Mohawk', 'Hanekam'], ['afro', 'Afro', 'Afro'], ['undercut', 'Undercut', 'Undercut'], ['waves', 'Waves', 'Bølger'], ['bangs', 'Curtain bangs', 'Gardinpannelugg'], ['long', 'Long', 'Langt'], ['ponytail', 'Ponytail', 'Hestehale'], ['topknot', 'Top knot', 'Topknute'], ['braids', 'Braids', 'Fletter'], ['pigtails', 'Space buns', 'Doble knuter'], ['dreads', 'Dreads', 'Dreads'], ['bald', 'Bald', 'Skallet']],
     build: [['slim', 'Slim', 'Slank'], ['regular', 'Regular', 'Vanlig'], ['athletic', 'Athletic', 'Atletisk'], ['muscular', 'Muscular', 'Muskuløs'], ['broad', 'Broad', 'Bred']],
     height: [['short', 'Short', 'Lav'], ['regular', 'Regular', 'Vanlig'], ['tall', 'Tall', 'Høy']],
-    shape: [['straight', 'Straight', 'Rett'], ['belly', 'Belly', 'Mage'], ['hips', 'Hips', 'Hofter']],
-    tat: [['none', 'None', 'Ingen'], ['arm', 'Arm', 'Arm'], ['neck', 'Neck', 'Hals'], ['face', 'Face', 'Ansikt']],
     aid: [['none', 'None', 'Ingen'], ['chair', 'Wheelchair', 'Rullestol'], ['crutches', 'Crutches', 'Krykker'], ['hearing', 'Hearing aid', 'Høreapparat'], ['arm', 'Prosthetic arm', 'Armprotese']],
     top: [['tee', 'T-shirt', 'T-skjorte'], ['tank', 'Tank top', 'Singlet'], ['polo', 'Polo', 'Piké'], ['sweater', 'Sweater + shirt', 'Genser + skjorte'], ['knit', 'Nordic knit', 'Lusekofte'], ['hoodie', 'Hoodie', 'Hettegenser'], ['shirt', 'Shirt', 'Skjorte'], ['jersey', 'Jersey', 'Drakt'], ['kit', 'Football kit', 'Fotballdrakt'], ['varsity', 'Varsity jacket', 'College-jakke'], ['suit', 'Suit', 'Dress'], ['puffer', 'Puffer', 'Boblejakke'], ['rain', 'Raincoat', 'Regnjakke'], ['jacket', 'Jacket', 'Jakke'], ['dress', 'Dress', 'Kjole'], ['bunad', 'Bunad (Norwegian folk dress)', 'Bunad'], ['scrubs', 'Scrubs', 'Arbeidsklær (helse)'], ['chef', 'Chef jacket', 'Kokkejakke'], ['pjs', 'Pyjamas', 'Pyjamas'], ['robe', 'Bathrobe', 'Morgenkåpe'], ['none', 'No top', 'Uten overdel']],
-    pat: [['none', 'Plain', 'Ensfarget'], ['stripes', 'Stripes', 'Striper'], ['check', 'Check', 'Rutete'], ['star', 'Star', 'Stjerne'], ['heart', 'Heart', 'Hjerte'], ['flame', 'Flame', 'Flamme'], ['bolt', 'Bolt', 'Lyn'], ['camo', 'Camo', 'Kamuflasje'], ['tiedye', 'Tie-dye', 'Batikk'], ['flag', 'Norway flag', 'Norsk flagg'], ['pumpkin', 'Pumpkin', 'Gresskar'], ['bones', 'Skeleton', 'Skjelett']],
     bottom: [['trousers', 'Trousers', 'Bukse'], ['jeans', 'Ripped jeans', 'Revne jeans'], ['joggers', 'Joggers', 'Joggebukse'], ['cargo', 'Cargo', 'Cargobukse'], ['shorts', 'Shorts', 'Shorts'], ['skirt', 'Skirt', 'Skjørt'], ['overalls', 'Overalls', 'Snekkerbukse'], ['swim', 'Swim shorts', 'Badeshorts']],
     shoes: [['sneakers', 'Sneakers', 'Joggesko'], ['hightops', 'High-tops', 'Høye joggesko'], ['boots', 'Boots', 'Støvler'], ['sandals', 'Sandals', 'Sandaler'], ['slippers', 'Slippers', 'Tøfler'], ['cleats', 'Football boots', 'Fotballsko']],
-    hat: [['none', 'None', 'Ingen'], ['cap', 'Cap', 'Caps'], ['beanie', 'Beanie', 'Lue'], ['bucket', 'Bucket hat', 'Bøttehatt'], ['beret', 'Beret', 'Alpelue'], ['bandana', 'Bandana', 'Bandana'], ['cowboy', 'Cowboy hat', 'Cowboyhatt'], ['phones', 'Headphones', 'Hodetelefoner'], ['flowers', 'Flower crown', 'Blomsterkrans'], ['party', 'Party hat', 'Festhatt'], ['wizard', 'Wizard hat', 'Trollmannshatt'], ['santa', 'Santa hat', 'Nisselue'], ['witch', 'Witch hat', 'Heksehatt'], ['chef', 'Chef hat', 'Kokkelue'], ['crown', 'Crown', 'Krone']],
-    ears: [['none', 'None', 'Ingen'], ['studs', 'Studs', 'Ørepynt'], ['hoops', 'Hoops', 'Ringer'], ['buds', 'Earbuds', 'Øreplugger']],
-    neck: [['none', 'None', 'Ingen'], ['chain', 'Chain', 'Kjede'], ['pearls', 'Pearls', 'Perler'], ['scarf', 'Scarf', 'Skjerf'], ['bowtie', 'Bow tie', 'Sløyfe'], ['tie', 'Tie', 'Slips'], ['medal', 'Medal', 'Medalje'], ['lanyard', 'Work lanyard', 'Adgangskort']],
+    hat: [['none', 'None', 'Ingen'], ['cap', 'Cap', 'Caps'], ['beanie', 'Beanie', 'Lue'], ['bandana', 'Bandana', 'Bandana'], ['cowboy', 'Cowboy hat', 'Cowboyhatt'], ['phones', 'Headphones', 'Hodetelefoner'], ['party', 'Party hat', 'Festhatt'], ['wizard', 'Wizard hat', 'Trollmannshatt'], ['santa', 'Santa hat', 'Nisselue'], ['witch', 'Witch hat', 'Heksehatt'], ['chef', 'Chef hat', 'Kokkelue'], ['crown', 'Crown', 'Krone']],
     pet: [['none', 'None', 'Ingen'], ['cat', 'Cat', 'Katt'], ['dog', 'Dog', 'Hund'], ['bunny', 'Bunny', 'Kanin'], ['bird', 'Parrot pal', 'Papegøye']],
-    hold: [['none', 'Nothing', 'Ingenting'], ['phone', 'Phone', 'Mobil'], ['coffee', 'Coffee', 'Kaffe'], ['laptop', 'Laptop', 'PC'], ['bag', 'Shopping bag', 'Handlepose'], ['flowers', 'Flowers', 'Blomster'], ['icecream', 'Ice cream', 'Is'], ['balloon', 'Balloon', 'Ballong'], ['flag', 'Norway flag', 'Norsk flagg']],
-    badge: [['none', 'None', 'Ingen'], ['streak', 'Streak', 'Rekke'], ['trophy', 'Trophy', 'Pokal'], ['top3', 'Top 3 done', 'Topp 3 gjort'], ['paid', 'Paid off', 'Nedbetalt']],
-    scene: [['none', 'None', 'Ingen'], ['city', 'City', 'By'], ['beach', 'Beach', 'Strand'], ['forest', 'Forest', 'Skog'], ['office', 'Home office', 'Hjemmekontor'], ['oslo', 'Oslo fjord', 'Oslofjorden']]
   };
   /* Moves (avatar page): which hand it uses for things, and how it walks in the living scenes */
   MKO.hand = [['right', 'Right-handed', 'Høyrehendt'], ['left', 'Left-handed', 'Venstrehendt']];
   MKO.walk = [['calm', 'Calm', 'Rolig'], ['bouncy', 'Bouncy', 'Sprettende'], ['quick', 'Quick', 'Rask']];
   var MKC = {
     skin: ['#fbe2cf', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
-    hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'], hair2: ['', '#e0559a', '#2f9ee0', '#2fae6a', '#f2c94c', '#eeeeee', '#8a5cf0'],
-    topC: ['#d9c7a8', '#2e3340', '#e8743b', '#2f5d8a', '#2f7a55', '#8a6fdf', '#b8b8b8', '#f2f2f2', '#e0559a', '#f2c94c', '#d93a3a'], legs: ['#2a2f3a', '#3c5a7d', '#5b4b3a', '#6e6e6e', '#c9b48a', '#2f7a55', '#8a5cf0'],
-    shoeC: ['#1a1a1a', '#f2f2f2', '#d93a3a', '#3987e5', '#f2c94c', '#2fae6a', '#5b3a1e'], socks: ['', '#f2f2f2', '#2e3340', '#d93a3a', '#f2c94c', '#2fae6a', '#e0559a'],
+    hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'],
+    legs: ['#2a2f3a', '#3c5a7d', '#5b4b3a', '#6e6e6e', '#c9b48a', '#2f7a55', '#8a5cf0'],
     hatC: ['#e8743b', '#2e3340', '#d93a3a', '#3987e5', '#2f7a55', '#f2c94c', '#e0559a', '#8a5a2b', '#3b4d8a', '#f2f2f2']
   };
-  var MKFACE = { faceS: 1, expr: 1, eyeS: 1, eyeC: 1, brows: 1, nose: 1, earS: 1, makeup: 1, cheeks: 1, lines: 1, mark: 1, pierce: 1, beard: 1, glasses: 1, hair: 1, hairC: 1, hair2: 1, hairAge: 1, hat: 1, ears: 1 };
-  var MKNONE = { makeup: 1, cheeks: 1, lines: 1, mark: 1, pierce: 1, hairAge: 1, tat: 1, aid: 1, hat: 1, ears: 1, neck: 1, pet: 1, hold: 1, badge: 1, scene: 1 };
+  var MKFACE = { faceS: 1, expr: 1, eyeC: 1, makeup: 1, cheeks: 1, beard: 1, glasses: 1, hair: 1, hairC: 1, hat: 1 };
+  var MKNONE = { makeup: 1, cheeks: 1, aid: 1, hat: 1, pet: 1 };
   var MKPLAIN = { k: 'plain', plain: true, bg: 'none' };
   function mkCrop(svg, vb) { return svg.replace('viewBox="0 0 200 200"', 'viewBox="' + vb + '"').replace(/<g class="av-sky[^"]*">[\s\S]*?<\/g>/, ''); }
   function mkCss() {
@@ -745,7 +705,6 @@
     var k = s[0], title = L(s[1], s[2]), body, now = '';
     if (k === 'addons') { body = '<div class="avm-tiles">' + mkTile(cur, 'watch', 'yes', L('Watch', 'Klokke')) + mkTile(cur, 'bag', 'yes', L('Backpack', 'Ryggsekk')) + '</div>'; }
     else if (k === 'auto') return '<div class="avm-sec"><label class="avm-sw"><span>' + esc(title) + '<small style="display:block;opacity:.7;font-size:12.5px">' + esc(L('Christmas jumper in December, a bunad on 17 May (Norway’s national day), a witch hat at Halloween, shorts in July', 'Julegenser i desember, bunad på 17. mai, heksehatt til Halloween, shorts i juli')) + '</small></span><input type="checkbox" class="switch" data-avm-auto' + (cur.auto === 'on' ? ' checked' : '') + '></label></div>';
-    else if (k === 'chest') return '<div class="avm-sec"><b>' + esc(title) + '<em>' + esc(L('Up to 4 letters', 'Opptil 4 tegn')) + '</em></b><input class="avm-txt" data-avm-chest maxlength="4" autocomplete="off" aria-label="' + esc(title) + '" placeholder="' + esc(L('e.g. JP or 7', 'f.eks. JP eller 7')) + '" value="' + esc(cur.chest || '') + '"></div>';
     else if (MKO[k]) { var o = MKO[k].filter(function (x) { return x[0] === (cur[k] || MKO[k][0][0]); })[0]; now = o ? L(o[1], o[2]) : '';
       body = '<div class="avm-tiles">' + MKO[k].map(function (x) { return mkTile(cur, k, x[0], L(x[1], x[2])); }).join('') + '</div>'; }
     else { var c = MKC[k], own = !!cur[k] && c.indexOf(cur[k]) < 0; now = own ? L('Your own colour', 'Din egen farge') : '';
@@ -765,8 +724,8 @@
   function mkRand() {
     var r = {}, pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
     Object.keys(MKO).forEach(function (k) { r[k] = MKNONE[k] && Math.random() < .65 ? 'none' : pick(MKO[k])[0]; });
-    Object.keys(MKC).forEach(function (k) { r[k] = k === 'hair2' || k === 'socks' ? (Math.random() < .7 ? '' : pick(MKC[k])) : pick(MKC[k]); });
-    r.aid = 'none'; r.scene = 'none'; r.watch = Math.random() < .3 ? 'yes' : 'no'; r.bag = Math.random() < .2 ? 'yes' : 'no'; r.extra = 'none'; r.chest = ''; return r;
+    Object.keys(MKC).forEach(function (k) { r[k] = pick(MKC[k]); });
+    r.aid = 'none'; r.watch = Math.random() < .3 ? 'yes' : 'no'; r.bag = Math.random() < .2 ? 'yes' : 'no'; r.extra = 'none'; return r;
   }
   /* a tap inside the maker: returns the new look (or null), tab changes return { tab } */
   function mkAct(e, cur) {
@@ -782,7 +741,7 @@
   var PLAIN0 = { faceS: 'oval', build: 'regular', skin: '#c99a73', hair: 'short', hairC: '#4a2f1b', beard: 'none', glasses: 'none', expr: 'smile', top: 'tee', topC: '#2f5d8a', bottom: 'trousers', legs: '#2a2f3a', extra: 'none', hat: 'none', neck: 'none', ears: 'none', pet: 'none' };
   /* old looks keep 'extra'; the maker turns it into the newer keys before the first change, so nothing is lost */
   function mkMigrate(l) { var n = Object.assign({}, START, l || {}), x = n.extra;
-    if (x === 'cap' && !n.hat) n.hat = 'cap'; if (x === 'lanyard' && !n.neck) n.neck = 'lanyard'; if (x === 'watch') n.watch = 'yes'; if (x === 'earbuds' && !n.ears) n.ears = 'buds'; n.extra = 'none'; return n; }
+    if (x === 'cap' && !n.hat) n.hat = 'cap'; if (x === 'watch') n.watch = 'yes'; n.extra = 'none'; return trimLook(n); }
   /* ---------- Settings → Pictures & touches → Your avatar ---------- */
   function saveWhole(l) { var s = readJSON('dash.settings', {}) || {}; s.avatar = l; try { localStorage.setItem('dash.settings', JSON.stringify(s)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); window.dispatchEvent(new Event('avatar:change')); }
   function maker() {
@@ -965,8 +924,6 @@
           : GK === 'stars' ? '<path d="M112.6 57.2l1.3 2.6 2.8.4-2 2 .5 2.8-2.6-1.4-2.6 1.4.5-2.8-2-2 2.8-.4z" fill="' + LN + '" stroke="' + FR + '" stroke-width=".8" stroke-linejoin="round"/>'
           : '<rect x="109" y="58" width="7.4" height="' + (GK === 'sun' ? 6.8 : 6.2) + '" rx="' + (GK === 'sun' ? 2.4 : 1.6) + '" fill="' + LN + '" stroke="' + FR + '" stroke-width="1.2"/>';
       }
-      if (L.ears === 'studs') sd += '<circle cx="99" cy="68.5" r="1.4" fill="#f2c94c"/>'; else if (L.ears === 'hoops') sd += '<circle cx="99" cy="71" r="2.6" fill="none" stroke="#f2c94c" stroke-width="1.2"/>';
-      if (L.ears === 'buds') sd += '<circle cx="99.4" cy="65" r="2" fill="#f2f2f2"/>';
       if (L.pierce === 'nose') sd += '<circle cx="119.2" cy="68.4" r="1.4" fill="none" stroke="#c9ccd6" stroke-width=".9"/>'; else if (L.pierce === 'lip') sd += '<circle cx="118.6" cy="74.6" r="1.4" fill="none" stroke="#c9ccd6" stroke-width=".9"/>'; else if (L.pierce === 'brow') sd += '<circle cx="114.6" cy="55" r=".9" fill="#c9ccd6"/>';
       /* the hat: the front drawing sits on the same cranium; headphones show one cup over the ear */
       if (L.hat === 'phones') hatOnly = '<path d="M86 60c-2-16 6-24 16-24s16 8 14 22" stroke="#232323" stroke-width="3.4" fill="none" stroke-linecap="round"/><rect x="94.5" y="56" width="9" height="14" rx="3.8" fill="' + HCc + '"/>';
@@ -975,6 +932,6 @@
     return '';
   }
 
-  window.Avatar = { cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+  window.Avatar = { trimLook: trimLook, cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
     _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();

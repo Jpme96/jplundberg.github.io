@@ -4,7 +4,7 @@ Every change – a fix, a new feature, a tweak – follows these rules. They gro
 when a part of the plan is done, its rule moves from "Coming" to "Rules".
 
 ## Before any new feature or change
-1. Read this file and the plan (project doc `claude/plan-rebuilds-2026-11.md`).
+1. Read this file and the plan (project doc `claude/plan-rebuilds-2026-11.md` – Phase F there is the 2.5D avatar and scenes).
 2. If the part of the plan it touches is **done**, build it the new way (the rule is under "Rules").
 3. If that part is **not done yet**, say so to the owner and either do that rebuild step first, or build the feature
    so it moves over without rework (same data shape, no new copying between cmd and the shared box, keys for texts).
@@ -44,6 +44,14 @@ when a part of the plan is done, its rule moves from "Coming" to "Rules".
 - **Ask before** anything that can't be undone (deleting data, changing DNS, scheduled tasks).
 
 ## Coming (from the plan – becomes a rule when that part is done)
-- **Reminders:** sent by the server (LiveRoom alarms), not planned by a device.
+- **Reminders:** sent by the server (LiveRoom alarms), not planned by a device (plan: step F-R).
+- **2.5D avatar and scenes (replaces "Living scenes" when Phase 1–2 are done; plan `claude/plan-rebuilds-2026-11.md`, Phase F).** Every scene and every action meets the seven build criteria in the plan before it ships:
+  1. **Customisation is handled properly on the characters.** Every kept choice is drawn in every view; clothes stay on the body; hair, hats and beards never stick out past the head.
+  2. **Look and character work together, scene by scene.** Each scene is checked with the look sweep (varied looks, wheelchair and crutches included); props and clothes don't fight.
+  3. **Actions are proper behaviour.** They pass the staging checklist (11 points, props laid properly), follow real-life order, and fit the data.
+  4. **More actions.** At least four per page, idle moves, tap interactions, time and season versions, never twice in a row.
+  5. **It runs smoothly.** 60 fps and under 4 ms a frame; endings flow into the rest; no teleports; `scene-flow` test.
+  6. **Good movement, no visual bugs.** Look first, then fix: contact sheets and a real-speed recording, the problem list written down and fixed, then shown to JP with that list.
+  7. **Props follow the action and fit the scene.** Every action has the props it needs, and new ones are added when needed. A prop matches the scene's style, palette, light, size and perspective, lives somewhere believable and goes back there. Each prop is one component (drawing, grip, named points, size, home).
 
-The full plan: project doc `claude/plan-rebuilds-2026-11.md`.
+The full plan: project doc `claude/plan-rebuilds-2026-11.md` (Phase F = the 2.5D avatar and scenes).

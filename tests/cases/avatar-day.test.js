@@ -10,19 +10,20 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   const { b, p, b2, q } = await shared();
   /* weather and badges */
   const day = await p.evaluate(() => {
-    const L = Object.assign({}, Avatar.look(), { auto: 'off', top: 'sweater', hat: 'none', neck: 'none', badge: 'none' }), now = Date.now();
+    const L = Object.assign({}, Avatar.look(), { auto: 'off', top: 'sweater', hat: 'none' }), now = Date.now();
     localStorage.setItem('dash.wxNow', JSON.stringify({ code: 3, t: -6, at: now }));
     const cold = Avatar.dressed(L);
     localStorage.setItem('dash.wxNow', JSON.stringify({ code: 0, t: 26, at: now }));
     const warm = Avatar.dressed(L);
     const td = Features.dkey(new Date()); localStorage.setItem('dash.todos', JSON.stringify([1, 2, 3].map(i => ({ id: 't' + i, text: 'Made up ' + i, today: td, done: true }))));
-    const earned = Avatar.dressed(L), picked = Avatar.dressed(Object.assign({}, L, { badge: 'trophy' }));
+    const earned = Avatar.dressed(L), trimmed = Avatar.trimLook(Object.assign({}, L, { badge: 'trophy', neck: 'tie', pat: 'stripes', topC: '#d93a3a', hair: 'mullet', hat: 'beret', glasses: 'monocle' }));
     const sofa = Avatar.couple('sofa', L, L, {}), hold = Avatar.couple('hold', L, L, {});
-    return { cold: [cold.top, cold.hat, cold.neck], warm: warm.top, earned: earned.badge, picked: picked.badge, seated: /scale\(1 \.56\)/.test(sofa) && !/scale\(1 \.56\)/.test(hold) };
+    return { cold: [cold.top, cold.hat, cold.wxScarf ? 'scarf' : 'none'], warm: warm.top, earned: earned.badge || 'none', trimmed: [trimmed.badge, trimmed.neck, trimmed.pat, trimmed.topC, trimmed.hair, trimmed.hat, trimmed.glasses].join(','), seated: /scale\(1 \.56\)/.test(sofa) && !/scale\(1 \.56\)/.test(hold) };
   });
   check(day.cold.join(',') === 'puffer,beanie,scarf', 'cold: a padded jacket, beanie and scarf ' + day.cold);
   check(day.warm === 'tee', 'warm: a T-shirt instead of the sweater (' + day.warm + ')');
-  check(day.earned === 'top3' && day.picked === 'trophy', 'today’s top 3 done earns its badge; a badge you picked stays (' + day.earned + ', ' + day.picked + ')');
+  check(day.earned === 'none', 'no earned badges any more, even with today’s top 3 done (' + day.earned + ')');
+  check(day.trimmed === ',,,#d9c7a8,side,beanie,round', 'F0: removed settings go, removed choices become the nearest kept one, tops get the standard colour (' + day.trimmed + ')');
   check(day.seated, 'on the sofa you sit');
   /* the two of you: Iago has an avatar */
   /* (slow machines: wait for his app, and try again if the first save didn't reach the box) */
@@ -42,11 +43,11 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   /* Match with Iago */
   await p.evaluate(() => { const b = document.querySelector('[data-avp-open]'); if (b) b.click(); else Avatar.page('T', Avatar.look(), () => {}, { mine: true, match: { look: ShareSpace.partnerLook(), name: ShareSpace.partnerName() } }); }); await sl(800);
   const m = await p.evaluate(() => { const btn = document.querySelector('.avp [data-avp-match]'); if (!btn) return { btn: false };
-    const their = ShareSpace.partnerLook(), lbl = btn.textContent.trim(); btn.click();
-    const after = document.querySelector('.avp-fig').innerHTML.indexOf(their.topC) > -1; document.querySelector('.avp [data-avp-undo]').click();
+    const lbl = btn.textContent.trim(), before = document.querySelector('.avp-fig').innerHTML; btn.click();
+    const after = !document.querySelector('.avp [data-avp-undo]').disabled; document.querySelector('.avp [data-avp-undo]').click();
     return { btn: true, lbl, after, undo: !document.querySelector('.avp [data-avp-undo]').disabled === false }; });
   check(m.btn && /^Match with |^Match med /.test(m.lbl), 'the avatar page offers "' + m.lbl + '"');
-  check(m.after, 'a tap puts their top colour on you');
+  check(m.after, 'a tap puts their outfit on you (Undo is offered)');
   await p.evaluate(() => { const x = document.querySelector('.avp [data-avp-back]'); if (x) x.click(); const d = document.querySelector('.avp-ask [data-avp-drop]'); if (d) d.click(); }); await sl(400);
   /* the shared pet, picked in cmd → in Iago's picture of the two of you */
   await p.evaluate(() => ShareSpace.setPet('dog')); await sl(500); await p.evaluate(() => ShareSpace.sync()); await sl(2000);
