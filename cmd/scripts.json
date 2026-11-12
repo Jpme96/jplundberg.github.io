@@ -40,6 +40,7 @@
     "health-plus.js",
     "money-plus.js",
     "fin-moves.js",
+    "push-key.js",
     "share-core.js",
     "fin-tools.js",
     "home-shared.js",

@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 89;
+  var APPV = 90;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -1009,7 +1009,7 @@
       if (!on() || !supported() || preview || !K) return Promise.resolve();
       return reg().then(function (r) { return r.pushManager.getSubscription(); }).then(function (sub) {
         if (!sub) return; var it = items(), sig = JSON.stringify(it) + sub.endpoint; if (!force && sig === lastSent) return; lastSent = sig;
-        return SC.api('push', { method: 'PUT', body: { id: devId(), sub: sub.toJSON(), items: it } });
+        return (window.PushKey ? PushKey.sealItems(it) : Promise.resolve(it.map(function (x) { return { id: x.id, at: x.at, url: x.url }; }))).then(function (sealed) { return SC.api('push', { method: 'PUT', body: { id: devId(), sub: sub.toJSON(), items: sealed } }); });
       }).catch(function () {});
     }
     function enable() {

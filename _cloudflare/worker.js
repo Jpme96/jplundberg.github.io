@@ -678,8 +678,8 @@ async function pushApi(request, env, role) {
     const old = JSON.parse(await env.VAULT.get(PUSH_PREFIX + id) || '{}');
     const sent = (old.sent || []).filter(x => x.t > Date.now() - 2 * 864e5);
     const items = (Array.isArray(body.items) ? body.items : []).slice(0, 100).map(x => ({
-      id: String(x.id || '').slice(0, 120), at: +x.at || 0, title: String(x.title || 'Dashboard').slice(0, 120),
-      body: String(x.body || '').slice(0, 240), url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : (role === 'p' ? '/cmd/home/' : '/cmd/')
+      /* F-R: only the time, an id, the page to open and the text sealed on the device (c) – never readable text */
+      id: String(x.id || '').slice(0, 120), at: +x.at || 0, c: /^[A-Za-z0-9+/=]{24,1400}$/.test(x.c || '') ? x.c : '', url: /^\/cmd\//.test(x.url || '') ? String(x.url).slice(0, 200) : (role === 'p' ? '/cmd/home/' : '/cmd/')
     })).filter(x => x.id && x.at > Date.now() - 600e3);
     await env.VAULT.put(PUSH_PREFIX + id, JSON.stringify({ sub: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, items, sent, updated: Date.now(), role: role || 'o' }));
     /* the live room wakes up at the exact minute of the next reminder (the 5-minute cron stays as a backstop) */
@@ -727,7 +727,7 @@ async function sendDue(env, backstop) {
       if (!due.length) continue;
       let gone = false;
       for (const x of due) {
-        let r; try { r = await webPush(env, rec.sub, { title: x.title, body: x.body, url: x.url, tag: x.id.slice(0, 60) }); } catch (e) { console.log('push to one device failed', e && e.message); r = { status: 0 }; }   /* one broken device never stops the others */
+        let r; try { r = await webPush(env, rec.sub, { c: x.c || '', url: x.url, tag: x.id.slice(0, 60) }); } catch (e) { console.log('push to one device failed', e && e.message); r = { status: 0 }; }   /* one broken device never stops the others */
         if (r.status === 404 || r.status === 410) { gone = true; break; }
         rec.sent = (rec.sent || []).concat({ id: x.id, t: now });
       }

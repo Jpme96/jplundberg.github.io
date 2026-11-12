@@ -161,7 +161,7 @@
       if (!sub) return;
       var items = plan(), sig = JSON.stringify([items, p.detail]);
       if (!force && sig === lastSent && Date.now() - (p.synced || 0) < 6 * 3600e3) return;
-      return api('PUT', { id: devId(), sub: sub.toJSON(), items: items }).then(function () {
+      return (window.PushKey ? PushKey.sealItems(items) : Promise.resolve(items.map(function (x) { return { id: x.id, at: x.at, url: x.url }; }))).then(function (sealed) { return api('PUT', { id: devId(), sub: sub.toJSON(), items: sealed }); }).then(function () {
         lastSent = sig; var q = prefs(); q.synced = Date.now(); q.count = items.length; save(q); fill();
       });
     }).catch(function (e) { var s = $('ntState'); if (s) s.textContent = 'Couldn’t reach the server: ' + e.message; });

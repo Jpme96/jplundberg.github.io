@@ -1,12 +1,15 @@
 /* The shared app's own service worker – only for notifications (nothing is cached here). */
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+try { importScripts('/cmd/push-key.js'); } catch (x) {}
 self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Home', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Home', {
-    body: d.body || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/home/' },
-    icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png'
+  /* a reminder comes sealed (F-R): open it with this device's key; without the key, a plain "Reminder" */
+  var text = d.c !== undefined && self.PushKey ? self.PushKey.open(d.c).then(function (m) { return m || self.PushKey.fallback(); }) : Promise.resolve({ t: d.title || 'Home', b: d.body || '' });
+  e.waitUntil(text.then(function (m) {
+    return self.registration.showNotification(m.t || 'Home', { body: m.b || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/home/' },
+      icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png' });
   }));
 });
 self.addEventListener('notificationclick', function (e) {
