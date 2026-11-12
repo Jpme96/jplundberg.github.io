@@ -6,7 +6,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
 const pose = p => p.evaluate(sel => { const f = document.querySelector(sel + ' svg.sc25 .sc25-front'); if (f) return f.innerHTML.length + '|' + f.innerHTML.slice(-3000);   /* a 2.5D scene (F2): its moving layer */ const h = document.querySelector(sel + ' .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll(sel + ' .av-limb path')].map(x => x.getAttribute('d')).join('') + '|' + [...document.querySelectorAll(sel + ' .av-legL g, ' + sel + ' .av-legR g')].map(x => x.getAttribute('transform')).join('') : ''; }, '#scIllu');
 async function moves(p, ms) { const a = await pose(p); for (let t = 0; t < ms; t += 400) { await sl(400); const b = await pose(p); if (a && b && a !== b) return true; } return false; }
 (async () => {
-  const { b, p } = await open(393, { oldLive: 1 });
+  const { b, p } = await open(393);
   await p.evaluate(() => { ['flex', 'meetings', 'food', 'work', 'healthpage', 'wish', 'goals', 'papers', 'calendar', 'finance'].forEach(k => { try { Features.set(k, true); } catch (e) {} }); });
   await go(p, '', 2000);
   await p.evaluate(() => { window.__still = 'same page'; });
@@ -22,7 +22,7 @@ async function moves(p, ms) { const a = await pose(p); for (let t = 0; t < ms; t
   /* the avatar page after all those page changes */
   await p.evaluate(() => Avatar.page('Test', Avatar.look(), () => {}, { mine: true })); await sl(500);
   await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(500);
-  const sp = () => p.evaluate(() => { const h = document.querySelector('.avp-test .hero-body'); return h ? h.getAttribute('transform') : ''; });
+  const sp = () => p.evaluate(() => { const h = document.querySelector('.avp-test.sc25 .sc25-front'); return h ? h.innerHTML.length + ':' + h.innerHTML.slice(0, 4000) : ''; });
   const s0 = await sp(); await sl(1500); const s1 = await sp();
   check(!!s0 && s0 !== s1, '"See it move" moves after page changes');
   check(!p.errs.length, 'no page errors ' + p.errs.join(' | ').slice(0, 300));

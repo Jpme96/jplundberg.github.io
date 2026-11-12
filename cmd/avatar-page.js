@@ -83,7 +83,7 @@
       '<button type="button" data-avp-play><i class="bi bi-play-fill"></i> ' + esc(L('See it move', 'Se den bevege seg')) + '</button>' +
       /* Match with the one you share your home with (C10): their top and its colour, one tap, Undo brings yours back */
       (opts.match && opts.match.look ? '<button type="button" data-avp-match><i class="bi bi-people"></i> ' + esc(L('Match with ' + (opts.match.name || 'them'), 'Match med ' + (opts.match.name || 'dem'))) + '</button>' : '') + '</div>' +
-      '<div class="avp-testw" hidden><svg class="avp-test" viewBox="0 0 240 120" aria-hidden="true"></svg></div></section>' +
+      '<div class="avp-testw" hidden><svg class="avp-test" viewBox="0 0 400 240" aria-hidden="true"></svg></div></section>' +
       '<nav class="avp-tabs" role="tablist"></nav><div class="avp-pane" role="tabpanel"></div></div>' +
       '<footer class="avp-bar"><button type="button" data-avp-rand><i class="bi bi-shuffle"></i> ' + esc(L('Surprise me', 'Overrask meg')) + '</button><button type="button" data-avp-undo disabled><i class="bi bi-arrow-counterclockwise"></i> ' + esc(L('Undo', 'Angre')) + '</button><button type="button" class="hot" data-avp-save>' + esc(L('Save', 'Lagre')) + '</button></footer>' +
       '<div class="avp-ask" hidden role="alertdialog"><b>' + esc(L('Save your changes?', 'Lagre endringene?')) + '</b><div><button type="button" class="hot" data-avp-save>' + esc(L('Save', 'Lagre')) + '</button><button type="button" data-avp-drop>' + esc(L('Don’t save', 'Ikke lagre')) + '</button><button type="button" data-avp-stay>' + esc(L('Keep editing', 'Fortsett')) + '</button></div></div>';
@@ -94,10 +94,6 @@
     function drawFig() {
       var A25 = { front: 18, q: 40, side: 90, back: 180 };
       fig.innerHTML = M.figure(Object.assign({}, M.PLAIN, window.Fig25 ? { a: A25[view] != null ? A25[view] : 18 } : {}), Object.assign({}, cur)).replace('viewBox="0 0 200 200"', 'viewBox="22 8 156 172"');
-      if (view !== 'front' && window.Rig && !window.Fig25) {
-        var svg = fig.querySelector('svg'), r = window.Rig(svg, cur);
-        if (view === 'back') { Rig.turn(r, .001); Rig.back(r, true, cur); } else Rig.turn(r, view === 'q' ? .55 : 1);
-      }
     }
     function drawTabs() { nav.innerHTML = tabs.map(function (t) { return '<button type="button" role="tab" data-avp-tab="' + t[0] + '" aria-selected="' + (t[0] === tab) + '">' + esc(L(t[1], t[2])) + '</button>'; }).join(''); var b = nav.querySelector('[aria-selected="true"]'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
     function drawPane() {
@@ -113,42 +109,55 @@
     document.addEventListener('keydown', key);
     function setTab(t) { tab = t; drawTabs(); drawPane(); var top = el.querySelector('.avp-stage').offsetHeight; if (scroll.scrollTop > top) scroll.scrollTop = top; }
 
-    /* ---- see it move: a little stage with a table and a cup, and a step ---- */
-    function stopPlay() { if (playing) { playing.R.tok++; playing = null; } test.innerHTML = ''; testW.hidden = true; }
+    /* ---- see it move (2.5D, F3): walk to the table, take the cup, a sip, put it back, up the step, wave, back down –
+       the same body as on the pages (Scene25 + Fig25) with the look you're making; a wheelchair skips the step,
+       crutches skip the cup (both hands are busy) ---- */
+    function stopPlay() { if (playing) { playing.stop(); playing = null; } test.innerHTML = ''; testW.hidden = true; }
     function play() {
-      var Lv = window.Live; if (!Lv || !window.Rig) return;
+      var S = window.Scene25; if (!S || !window.Fig25) return;
       stopPlay(); testW.hidden = false;
-      /* a person ≈ 1.75 m stands 86 tall here: the table top is at hip height, the cup fits the hand, the step is a stair step */
-      test.innerHTML = '<rect x="0" y="108" width="240" height="12" fill="rgba(255,255,255,.06)"/>' +
-        '<g class="avp-table"><rect x="128" y="74" width="34" height="3.5" rx="1.5" fill="#8a5d43"/><rect x="131" y="77" width="3" height="31" fill="#6b4a36"/><rect x="156" y="77" width="3" height="31" fill="#6b4a36"/></g>' +
-        '<g class="avp-cup"><rect x="140" y="67.4" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M146 69q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/></g>' +
-        '<rect x="188" y="99" width="34" height="9" rx="1.5" fill="#596276"/><rect x="188" y="99" width="34" height="2" fill="#7a849a"/>';
-      var H = Lv.Hero(test, null, { x: 34, y: 22, w: 60, h: 86 }, cur), R = Lv.Run(), base = H.pos.slice(), cup = test.querySelector('.avp-cup'), mug = null;
-      R.alive = function () { return test.isConnected && !testW.hidden; };
-      playing = { H: H, R: R };
-      var main = cur.hand === 'left' ? 'L' : 'R', sp = cur.walk === 'quick' ? 34 : cur.walk === 'calm' ? 18 : 24, chair = cur.aid === 'chair', crutch = cur.aid === 'crutches';
-      H.bounce = cur.walk === 'bouncy' ? 1.8 : cur.walk === 'calm' ? .7 : 1;
-      var go = function (to) { return chair ? Lv.pos(R, H, to, Math.abs(to[0] - H.pos[0]) * 30) : Lv.walk(R, H, to, sp); };
-      var seq = function (fns) { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); };
-      var steps = [function () { return Lv.wait(R, 300); }, function () { return go([116, base[1]]); }];
-      if (!crutch) steps.push(
-        function () { H.gaze = [143, 70]; return Lv.turnTo(R, H, main === 'R' ? .6 : -.6, 250); },
-        function () { return Lv.reach(R, H, main, [143, 70], 450); },
-        function () { cup.style.display = 'none'; mug = Lv.Obj(H, main, '<rect x="-3" y="-3.3" width="6" height="6.6" rx="1.3" fill="#f2f2f2"/><path d="M3 -1.6q3 0 3 2t-3 2" stroke="#f2f2f2" stroke-width="1.1" fill="none"/>', [0, 1.5], { flip: main === 'L' }); H.gaze = null; return Lv.turnTo(R, H, 'front', 300); },
-        function () { return Lv.drink(R, H, main, mug, 900); },
-        function () { Lv.say(H, L('Mmm, coffee!', 'Mmm, kaffe!'), 1300); return Lv.reach(R, H, main, Lv.chest(H).map(function (v, i) { return v + (i ? 6 : (main === 'R' ? 10 : -10)) * H.s; }), 400); },
-        function () { return Lv.wait(R, 700); },
-        function () { H.gaze = [143, 70]; return Lv.turnTo(R, H, main === 'R' ? .6 : -.6, 250); },
-        function () { return Lv.reach(R, H, main, [143, 70], 450); },
-        function () { Lv.letGo(H, main); cup.style.display = ''; H.gaze = null; return Lv.reach(R, H, main, null, 350); });
-      if (!chair) steps.push(
-        function () { return go([182, base[1]]); },
-        function () { return Lv.tw(R, 300, function (u) { H.legs.R = u * .7; }); },
-        function () { return Lv.tw(R, 420, function (u) { H.pos = [182 + 18 * u, base[1] - 9 * Lv.ease(u)]; H.legs.R = .7 * (1 - u); H.legs.L = Math.sin(u * Math.PI) * .5; }); },
-        function () { Lv.face(H, 'grin'); Lv.say(H, L('Hi!', 'Hei!'), 1400); return Lv.wave(R, H, main, 1700); },
-        function () { return Lv.tw(R, 420, function (u) { H.pos = [200 - 18 * u, base[1] - 9 + 9 * Lv.ease(u)]; H.legs.L = Math.sin(u * Math.PI) * .5; }); });
-      steps.push(function () { return Lv.settle(R, H, 300); }, function () { return go(base); }, function () { return Lv.turnTo(R, H, 'front', 250); });
-      seq(steps).then(function () { if (playing && playing.R === R) setTimeout(function () { if (playing && playing.R === R) stopPlay(); }, 600); });
+      var E = S.E, SEG = S.SEG, LERP = S.LERP, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, REST = S.REST, add = S.add, grp = S.grp;
+      var chair = cur.aid === 'chair', crutch = cur.aid === 'crutches', sp = cur.walk === 'quick' ? .8 : cur.walk === 'calm' ? 1.25 : 1;
+      var look = Object.assign({}, cur), right = cur.hand !== 'left';
+      /* the timeline (seconds), slower or quicker with the walk you picked */
+      var T = { in0: .3, in1: 2.0 * sp, cup0: 2.3 * sp, up: 2.8 * sp, sip: 3.5 * sp, down: 4.6 * sp, back: 5.1 * sp, out: 5.6 * sp };
+      if (crutch) T.out = T.in1 + .2;
+      var st0 = T.out + .2, st1 = st0 + 1.4 * sp, wv = st1 + .4, wv1 = wv + 1.6, sd0 = wv1 + .2, sd1 = sd0 + .5, hm = chair ? T.out + .3 : sd1 + .2, len = hm + 1.8 * sp + .6;
+      var TABLE = 214, CUP = [TABLE - 2, 151], MOUTH = B(66, 24), STEP = 318;
+      function cup(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.4, y: -5.5, width: 8.8, height: 11, rx: 2, fill: '#f2f2f2' }); add(m, 'path', { d: 'M4.2 -3 q4.2 0 4.2 3 q0 3 -4.2 3', fill: 'none', stroke: '#f2f2f2', 'stroke-width': 1.6 }); add(m, 'rect', { x: -3.8, y: -5.5, width: 7.6, height: 1.5, fill: '#5a3424', opacity: .7 }); return m; }
+      playing = S.run(test, { id: 'avp-play', len: len, idle: [1e9, 1e9],
+        back: function (bg) {
+          add(bg, 'rect', { x: 0, y: 200, width: 400, height: 40, fill: 'rgba(255,255,255,.06)' });
+          /* the table: its top at hip height, the cup fits the hand */
+          add(bg, 'rect', { x: TABLE - 30, y: 156, width: 60, height: 5, rx: 2, fill: '#8a5d43' }); add(bg, 'rect', { x: TABLE - 25, y: 161, width: 5, height: 39, fill: '#6b4a36' }); add(bg, 'rect', { x: TABLE + 20, y: 161, width: 5, height: 39, fill: '#6b4a36' });
+          /* the step: one stair step high */
+          add(bg, 'rect', { x: STEP - 26, y: 186, width: 56, height: 14, rx: 2, fill: '#596276' }); add(bg, 'rect', { x: STEP - 26, y: 186, width: 56, height: 3, fill: '#7a849a' });
+        },
+        render: function (g, t, st) {
+          var cx = 70, gy = 200, face = 0, w = 0, pose = {}, lean = 0, lift = 0, held = false, tilt = 0, hd = SIDE(right ? 1 : -1, 90), say = '';
+          var walkTo = function (a, b, t0, t1) { var f = SEG(t, t0, t1); cx = LERP(a, b, chair ? E(f) : f); face = b > a ? 90 : -90; w = chair ? 0 : Math.min(1, (t - t0) / .2, (t1 - t) / .2); };
+          if (t < T.in0) face = 90 * E(SEG(t, 0, T.in0));
+          else if (t < T.in1) walkTo(70, TABLE - 34, T.in0, T.in1);
+          else if (t < T.out) { cx = TABLE - 34; face = 90;
+            pose[hd] = t < T.cup0 ? REST : t < T.up ? GO(REST, AT(CUP), SEG(t, T.cup0, T.up), 3) : t < T.sip ? GO(AT(CUP), MOUTH, SEG(t, T.up, T.sip), 2)
+              : t < T.down ? HOLD(MOUTH) : t < T.back ? GO(MOUTH, AT(CUP), SEG(t, T.down, T.back), 2) : GO(AT(CUP), REST, SEG(t, T.back, T.out));
+            held = t >= T.up && t < T.back; tilt = t >= T.sip && t < T.down ? 38 * Math.sin(Math.PI * SEG(t, T.sip, T.down)) : 0;
+            lean = .3 * E(SEG(t, T.cup0, T.up)) * (1 - E(SEG(t, T.up, T.sip))) + .3 * E(SEG(t, T.down, T.back)) * (1 - E(SEG(t, T.back, T.out)));
+            if (t > T.sip + .3 && t < T.down + .4) say = L('Mmm, coffee!', 'Mmm, kaffe!'); }
+          else if (!chair && t < st1) { walkTo(TABLE - 34, STEP, st0, st1); if (t > st1 - .45) { var u = SEG(t, st1 - .45, st1); lift = -14 * E(u); } }
+          else if (!chair && t < sd0) { cx = STEP; lift = -14; face = 90 * (1 - E(SEG(t, st1, st1 + .4)));
+            if (t >= wv) { var wh = SIDE(right ? 1 : -1, 0), WV = B(44, 10); pose[wh] = t < wv + .3 ? GO(REST, WV, SEG(t, wv, wv + .3)) : t < wv1 - .4 ? HOLD(B(44, 10 + 9 * Math.sin((t - wv - .3) * 16))) : GO(WV, REST, SEG(t, wv1 - .4, wv1)); say = L('Hi!', 'Hei!'); } }
+          else if (!chair && t < sd1) { cx = LERP(STEP, STEP - 30, E(SEG(t, sd0, sd1))); face = -90; lift = -14 * (1 - E(SEG(t, sd0, sd1))); w = .4; }
+          else if (t < hm) { cx = chair ? TABLE - 34 : STEP - 30; face = -90; }
+          else if (t < len - .6) walkTo(chair ? TABLE - 34 : STEP - 30, 70, hm, len - .6);
+          else { cx = 70; face = -90 + 90 * E(SEG(t, len - .6, len)); }
+          if (t >= len) { cx = 70; face = 0; }
+          pose.lean = lean; pose.lift = lift; var ph = S.LIFE(st, pose, w);
+          S.FIG(g, { st: st, k: .5, cx: cx, gy: gy, face: face, ph: ph, w: w, pose: pose, look: look, who: 'avp', items: function (H) { var hh = right ? H.s1 : H.sm; return held && hh ? [[hh.z - .15, cup(hh.X, hh.Y, right ? tilt : -tilt)]] : []; } });
+          if (!held) g.appendChild(cup(CUP[0], CUP[1], 0));
+          if (say) { var by = 200 + lift - 116, bx = cx + 26; add(g, 'rect', { x: bx, y: by - 14, width: 8 + say.length * 6.4, height: 20, rx: 10, fill: '#fff' }); var tx = add(g, 'text', { x: bx + 4 + say.length * 3.2, y: by, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: '#2a2d33', 'font-family': 'Inter, system-ui, sans-serif' }); tx.textContent = say; }
+        } });
+      if (playing) playing.play(true);
     }
 
     el.addEventListener('click', function (e) {

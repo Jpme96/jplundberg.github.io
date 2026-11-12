@@ -65,7 +65,7 @@ const OLD = require('../lib/avatar-old.json');
   /* turn it around and see it move */
   for (const v of ['q', 'side', 'back', 'front']) await p.evaluate(v => document.querySelector('.avp [data-avp-view="' + v + '"]').click(), v);
   await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(2500);
-  check(await p.evaluate(() => !!document.querySelector('.avp-test .hero')), 'turning around and "See it move" work');
+  check(await p.evaluate(() => !!document.querySelector('.avp-test.sc25 .sc25-front path')), 'turning around and "See it move" work');
   /* leaving with changes asks first */
   await p.evaluate(() => { const x = document.querySelector('.avp [data-avp-back]'); x && x.click(); }); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.avp-ask').hidden), 'leaving with changes asks first');

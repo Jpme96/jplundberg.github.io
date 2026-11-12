@@ -5030,10 +5030,7 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 .av-fig.pl-jump { animation: pljump .7s var(--ease-ios, ease); } @keyframes pljump { 35% { transform: translateY(-14px) scale(1.03, .97); } 60% { transform: translateY(0) scale(1.04, .95); } 80% { transform: translateY(-3px); } }
 .av-fig.pl-spin svg { animation: plspin .8s ease-in-out !important; } @keyframes plspin { 50% { transform: scaleX(-1); } }
 .av-fig.pl-laugh .av-all { animation: pllaugh .7s ease-in-out !important; } @keyframes pllaugh { 15%, 45%, 75% { transform: translateY(-1.5px) rotate(-1.2deg); } 30%, 60%, 90% { transform: translateY(0) rotate(1.2deg); } }
-.av-fig.pl-wave .av-armR { animation: plwave .9s ease-in-out !important; } @keyframes plwave { 25%, 75% { transform: rotate(-150deg); } 50% { transform: rotate(-120deg); } }
-.av-fig.pl-cheer .av-armR { animation: plcheerR 1.3s ease-in-out !important; } .av-fig.pl-cheer .av-armL { animation: plcheerL 1.3s ease-in-out !important; } .av-fig.pl-cheer { animation: pljump .7s var(--ease-ios, ease) 2; }
-@keyframes plcheerR { 20%, 80% { transform: rotate(-160deg); } } @keyframes plcheerL { 20%, 80% { transform: rotate(160deg); } }
-.av-fig.pl-dance svg { animation: pldance .5s ease-in-out 6 !important; } .av-fig.pl-dance .av-armR { animation: plcheerR .5s ease-in-out 6 !important; } .av-fig.pl-dance .av-armL { animation: plcheerL .5s ease-in-out 6 .25s !important; }
+.av-fig.pl-dance svg { animation: pldance .5s ease-in-out 6 !important; } 
 @keyframes pldance { 25% { transform: rotate(-5deg) translateY(-3px); } 75% { transform: rotate(5deg) translateY(-3px); } }
 .mo-off .pl-layer, .mo-reduced .pl-layer { display: none; }
 @media (prefers-reduced-motion: reduce) { .pl-layer { display: none; } #scIllu svg, #hsIllu svg { transform: none !important; } }
@@ -5041,7 +5038,6 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 .sc-you { cursor: pointer; transform-box: fill-box; transform-origin: 50% 100%; }
 .sc-you .av-all { animation: avbreath 4.2s ease-in-out infinite; transform-box: view-box; transform-origin: 101px 160px; }
 .sc-you .eyes { animation: avblink 5.5s infinite; transform-box: fill-box; transform-origin: center; transition: translate .18s ease-out; }
-.sc-you .av-wave { animation: avwave 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
 .sc-you .steam { animation: scsteam 2.4s ease-in-out infinite; }
 .sc-you.pl-hop { animation: plhop .7s var(--ease-ios, ease); } @keyframes plhop { 35% { translate: 0 -8px; scale: 1.04 .96; } 60% { translate: 0 0; scale: 1.05 .94; } 80% { translate: 0 -2px; scale: 1; } }
 
@@ -5049,8 +5045,6 @@ input[type="time"].dt-empty { background-image: url("data:image/svg+xml,%3Csvg x
 .sc-you { pointer-events: none; }                       /* the parts under you still take you to their cards */
 .mo-off .sc-you *, .mo-reduced .sc-you * { animation: none !important; }   /* the living scenes (scene-*.js) do the moving now; the still pictures stay still */
 
-/* legs turn from the hip */
-:is(.av-fig, .sc-you) :is(.av-legL, .av-legR) { transform-box: fill-box; transform-origin: 50% 2%; }
 .dl-wx-stars { background-image: radial-gradient(1.4px 1.4px at 40px 60px, #fff, transparent), radial-gradient(1px 1px at 150px 120px, #fff, transparent), radial-gradient(1.6px 1.6px at 260px 40px, #fff, transparent), radial-gradient(1px 1px at 330px 190px, #fff, transparent), radial-gradient(1.2px 1.2px at 90px 230px, #fff, transparent), radial-gradient(1px 1px at 210px 280px, #fff, transparent);
   background-size: 380px 320px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%); mask-image: linear-gradient(180deg, #000, transparent 70%); animation: dltwinkle 4s ease-in-out infinite alternate; }
 @keyframes dltwinkle { from { opacity: .35; } to { opacity: .75; } }

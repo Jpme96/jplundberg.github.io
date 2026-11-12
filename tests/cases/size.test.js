@@ -2,13 +2,15 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 1749 };      /* biggest page today ≈ 1 748 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian). +4 kB on 2026-11-12: pushes to the other one sealed with the shared key (push-key.js, share-core.js) – comes down with the old engine in F4 */
+const BUDGET_KB = { total: 1646 };      /* biggest page today ≈ 1644 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
 /* each page on its own (Phase D 25: a page loads only its own code) – lower a page's number when it gets lighter */
 /* +25 kB on every page (2026-11-12, F1b): the 2.5D figure (avatar-25d.js) and its small moves are in tail next to the old flat drawing; the old
    drawing code goes in F4 and these budgets come down again then.
    +2–9 kB on the pages with a scene (2026-11-12, F2): the 2.5D scene engine (scene25.js) in their bundle, next to the old engine until F4.
-   −83 kB on every page (2026-11-12, D 25): Papers, Work, Habits (water), Goals, Wishlist and House chores load their page parts only on their page. */
-const PAGE_KB = { 'index.html': 1645, 'admin/index.html': 1570, 'calendar/index.html': 1505, 'finance/index.html': 1749, 'food/index.html': 1513, 'goals/index.html': 1518, 'habits/index.html': 1516, 'house/index.html': 1674, 'papers/index.html': 1532, 'people/index.html': 1505, 'travel/index.html': 1608, 'wish/index.html': 1519, 'work/index.html': 1524 };
+   −83 kB on every page (2026-11-12, D 25): Papers, Work, Habits (water), Goals, Wishlist and House chores load their page parts only on their page.
+   −100 kB on every page (2026-11-12, F4): the old engine (scene-kit, avatar-rig, scene-common) and the flat drawing are gone; scene25.js is in tail
+   now (the avatar page's "See it move" uses it on every page). */
+const PAGE_KB = { 'index.html': 1549, 'admin/index.html': 1474, 'calendar/index.html': 1401, 'finance/index.html': 1646, 'food/index.html': 1409, 'goals/index.html': 1415, 'habits/index.html': 1413, 'house/index.html': 1579, 'papers/index.html': 1429, 'people/index.html': 1401, 'travel/index.html': 1507, 'wish/index.html': 1416, 'work/index.html': 1421 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

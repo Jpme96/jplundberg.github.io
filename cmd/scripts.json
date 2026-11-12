@@ -63,11 +63,9 @@
     "pagetabs.js",
     "delight.js",
     "scenes.js",
-    "avatar-rig.js",
-    "scene-kit.js",
-    "scene-common.js",
     "avatar-25d.js",
     "avatar.js",
+    "scene25.js",
     "avatar-page.js",
     "play.js",
     "alive.js",
@@ -119,7 +117,6 @@
       "calendar/cal.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-calendar.js"
     ],
     "finance/index.html": [
@@ -138,7 +135,6 @@
       "profile.js",
       "links.js",
       "tidy.js",
-      "scene25.js",
       "scene-finance.js"
     ],
     "habits/index.html": [
@@ -148,7 +144,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-habits.js"
     ],
     "travel/index.html": [
@@ -164,7 +159,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-travel.js"
     ],
     "work/index.html": [
@@ -173,7 +167,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-work.js"
     ],
     "house/index.html": [
@@ -189,7 +182,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-people.js"
     ],
     "food/index.html": [
@@ -198,7 +190,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-food.js"
     ],
     "papers/index.html": [
@@ -207,7 +198,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-papers.js"
     ],
     "wish/index.html": [
@@ -216,7 +206,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-wish.js"
     ],
     "goals/index.html": [
@@ -225,7 +214,6 @@
       "tools.js",
       "profile.js",
       "links.js",
-      "scene25.js",
       "scene-goals.js"
     ],
     "admin/index.html": [

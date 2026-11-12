@@ -9,7 +9,8 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    if (data.journey || !data.trip) return null;   /* the Journey tab and no trip planned: the still picture (the Journey in 2.5D comes later) */
+    if (data.journey) return journey(svg, data);
+    if (!data.trip) return null;   /* no trip planned: the still picture */
     return S.run(svg, { hits: [[0, 120, 120, 80, 'trips']], len: 17, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
@@ -172,4 +173,60 @@
       if (V === 'ferry' && t >= 10.6 && t < 14.6 && onScreen) g.appendChild(suitcase(vx + 82, 142 + bob, 0, .9));
     } });
   };
+
+  /* ---------- the Journey (F3): the whole round trip as a film in 2.5D – out of the door, each ride of your last search
+     pulls in at its stop and takes you, you arrive and the light goes on; then the opposite way home. 5 s a part.
+     The rides and places are SceneArt's drawings (scenes.js) at life size: a bus about 1.7× your height, a door a bit
+     taller than you. ---------- */
+  var JOURNEY = { SC: 2.6, K: .32 };   /* the art's scale and your size on the Journey (scene-sizes measures them) */
+  window.SceneLive.journeySize = JOURNEY;
+  function journey(svg, data) {
+    var S = window.Scene25, add = S.add, E = S.E, SEG = S.SEG, LERP = S.LERP, A = window.SceneArt; if (!A) return null;
+    var legs = (data.legs || []).filter(function (m) { return A.VEH[m]; }); if (!legs.length) legs = ['bus'];
+    var toWork = data.toWork !== false, PA = !toWork, PB = toWork;   /* true = work, false = home */
+    var slots = [{ k: 'leave', w: PA }].concat(legs.map(function (m) { return { k: 'ride', m: m }; }), [{ k: 'arrive', w: PB }, { k: 'leave', w: PB }], legs.slice().reverse().map(function (m) { return { k: 'ride', m: m }; }), [{ k: 'arrive', w: PA }]);
+    var SL = 5, SC = JOURNEY.SC, GY = 200, K = JOURNEY.K, cache = {};
+    /* art drawn in the old 240-wide pictures, put on our ground at life size */
+    function art(key, html, x, y) { var n = cache[key]; if (!n) { n = cache[key] = document.createElementNS('http://www.w3.org/2000/svg', 'g'); n.innerHTML = html; } n.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + SC + ')'); return n; }
+    var Y0 = GY - 117 * SC;   /* the art's ground line (y 117) on ours */
+    function place(g, work, cx, lit) {
+      g.appendChild(art('pl' + work, A.place(work, 0, 'none'), cx - 191 * SC, Y0));
+      if (lit) { var ws = work ? [[174, 50], [190, 61], [206, 72], [174, 83]] : [[170, 88]]; ws.forEach(function (w) { add(g, 'rect', { x: cx + (w[0] - 191) * SC, y: Y0 + w[1] * SC, width: (work ? 10 : 13) * SC, height: (work ? 7 : 11) * SC, rx: 2, fill: '#ffd56b', opacity: lit.toFixed(2) }); }); }
+    }
+    function doorX(work) { return (work ? 195 : 194) - 191; }   /* the door's middle, from the place's middle (art units) */
+    return S.run(svg, { id: location.pathname + '#journey', hits: [[0, 0, 400, 240, 'paneJourney']], len: slots.length * SL, data: data,
+      back: function (bg) { add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(255,255,255,.05)' }); },
+      render: function (g, t, st) {
+        var k = Math.min(slots.length - 1, Math.floor(t / SL)), u = (t - k * SL) / SL, sl = slots[k];
+        var cx = 0, face = 0, w = 0, show = true, pose = {}, front = [];
+        function walk(a, b, u0, u1) { var f = SEG(u, u0, u1); cx = LERP(a, b, f); face = b > a ? 90 : -90; w = Math.min(1, (u - u0) * SL / .2, (u1 - u) * SL / .2); }
+        if (sl.k === 'leave') {
+          g.appendChild(art('tr-road', A.track('road'), 0, Y0)); g.appendChild(art('tr-road2', A.track('road'), 240 * SC, Y0));
+          var PX = 90, nx = (slots[k + 1] && slots[k + 1].m) || legs[0], dx = PX + doorX(sl.w) * SC;
+          place(g, sl.w, PX, 1 - E(SEG(u, .1, .18)));
+          g.appendChild(art('stop' + nx, A.stop(nx), 330 - 176 * SC, Y0));
+          if (u < .12) { show = u > .02; cx = dx; face = 0; }
+          else if (u < .2) { cx = dx; face = 90 * E(SEG(u, .12, .2)); }
+          else if (u < .85) walk(dx, 312, .2, .85);
+          else { cx = 312; face = 90 - 90 * E(SEG(u, .85, .95)); }
+        } else if (sl.k === 'ride') {
+          var m = sl.m, kind = A.kindOf(m), v = A.VEH[m], off = { tram: -18, metro: -18, rail: -28 }[m] || 0;
+          g.appendChild(art('tr-' + kind, A.track(kind), 0, Y0)); g.appendChild(art('tr2-' + kind, A.track(kind), 240 * SC, Y0));
+          g.appendChild(art('stop' + m, A.stop(m), 330 - 176 * SC, Y0));
+          cx = 312; face = 0; show = u < .44;
+          if (u > .3 && u < .44) { face = -90 * E(SEG(u, .3, .36)); w = .5; cx = LERP(312, 296, SEG(u, .34, .44)); }
+          /* the ride pulls in (eases to a stop with its door at you), waits, then pulls away */
+          var vx = u < .32 ? LERP(-560, 0, 1 - Math.pow(1 - SEG(u, 0, .32), 3)) : u < .56 ? 0 : 900 * Math.pow(SEG(u, .56, .9), 2);
+          front.push(art('veh' + m, A.vehicle(m, v[0]), 300 - (72 + off) * SC + vx, Y0 + 3 * SC));
+        } else {   /* arrive: walk in from the left to the door, in, the light comes on */
+          g.appendChild(art('tr-road', A.track('road'), 0, Y0)); g.appendChild(art('tr-road2', A.track('road'), 240 * SC, Y0));
+          var QX = 290, ax = QX + doorX(sl.w) * SC;
+          place(g, sl.w, QX, E(SEG(u, .64, .72)));
+          if (u < .55) walk(-20, ax, 0, .55); else { cx = ax; face = 90 + 90 * E(SEG(u, .55, .6)); show = u < .63; }
+        }
+        pose.breath = 0; var ph = S.LIFE(st, pose, w);
+        if (show) S.FIG(g, { st: st, k: K, cx: cx, gy: GY, face: face, ph: ph, w: w, pose: pose });
+        front.forEach(function (n) { g.appendChild(n); });
+      } });
+  }
 })();

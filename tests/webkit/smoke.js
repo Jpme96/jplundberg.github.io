@@ -78,7 +78,7 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
           await p.evaluate(() => { document.querySelector('.avp [data-avm-k="hat"][data-avm-v="beanie"]').click(); }); await sl(300);
           for (const v of ['q', 'side', 'back', 'front']) { await p.evaluate(v => document.querySelector('.avp [data-avp-view="' + v + '"]').click(), v); await sl(150); }
           await p.evaluate(() => document.querySelector('.avp [data-avp-play]').click()); await sl(400);
-          const pose = () => p.evaluate(() => { const h = document.querySelector('.avp-test .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll('.avp-test .av-limb path')].map(x => x.getAttribute('d')).join('') : ''; });
+          const pose = () => p.evaluate(() => { const h = document.querySelector('.avp-test.sc25 .sc25-front'); return h ? h.innerHTML.length + '|' + h.innerHTML.slice(0, 4000) : ''; });
           const a = await pose(); await sl(1200); const b2 = await pose();
           check(!!a && a !== b2, W + ' px: "See it move" moves');
           await p.evaluate(() => document.querySelector('.avp-bar [data-avp-save]').click()); await sl(400);

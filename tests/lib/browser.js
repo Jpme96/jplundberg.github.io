@@ -22,7 +22,6 @@ async function page(b, W, opts = {}) {
 /* the owner's cmd, unlocked (a new dashboard the first time, the synced one after) */
 async function open(W, opts = {}) {
   const b = await launch(), p = await page(b, W, opts);
-  if (opts.oldLive) await p.evaluateOnNewDocument(() => { try { localStorage.setItem('cmd.oldLive', '1'); } catch (e) {} });   /* the old flat living scenes, until F2 replaces them */
   await p.goto(U + (opts.path || '')); await sl(1500);
   await unlock(p);
   return { b, p };

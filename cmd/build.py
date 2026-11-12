@@ -134,7 +134,7 @@ hv = json.load(io.open(HV)) if os.path.exists(HV) else None
 appjs = io.open(APPJS, encoding='utf-8').read(); hidx = io.open(HIDX, encoding='utf-8').read()
 cur = int(re.search(r'var APPV = (\d+);', appjs).group(1))
 parts = [re.sub(r'var APPV = \d+;', '', appjs), re.sub(r'home/app\.js\?v=\d+', '', hidx)]
-for f in ['home/app.css', 'avatar.js', 'avatar-rig.js', 'scene-kit.js', 'avatar-page.js', 'share-core.js', 'together.js', 'chat.js']: parts.append(io.open(os.path.join(HERE, f), encoding='utf-8').read())
+for f in ['home/app.css', 'avatar.js', 'avatar-25d.js', 'scene25.js', 'scene-couple.js', 'avatar-page.js', 'share-core.js', 'together.js', 'chat.js']: parts.append(io.open(os.path.join(HERE, f), encoding='utf-8').read())
 hh = _h('\n'.join(parts).encode('utf-8'))
 if not hv: hv = {'n': cur, 'hash': hh}
 n = hv['n'] + (1 if hv['hash'] != hh else 0)
