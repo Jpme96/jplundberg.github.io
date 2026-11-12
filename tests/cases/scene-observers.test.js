@@ -4,7 +4,7 @@
 const { open, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(420);
-  await p.evaluate(() => { try { Features.set('work', true); } catch (e) {} });
+  await p.evaluate(() => { ['flex', 'meetings', 'ptime', 'work'].forEach(f => { try { Features.set(f, true); } catch (e) {} }); });
   await go(p, 'work/', 3000); await until(p, () => !!document.querySelector('#scIllu svg.sc25'), 10000);
   const r = await p.evaluate(() => new Promise(res => { let n = 0; const o = new MutationObserver(() => { n++; }); o.observe(document.body, { childList: true, subtree: true, attributes: true });
     document.querySelector('#scIllu').scrollIntoView(); Scene25.list()[0].play(true, 'main');
