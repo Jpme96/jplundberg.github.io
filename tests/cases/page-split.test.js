@@ -37,7 +37,10 @@ const SPLIT = [   /* file, its page, the page bundle, what other pages still use
   check(!home.core.length, 'on Home, what other pages use is there ' + home.core.join(', '));
   check(!home.only.length && !home.ui.length, 'on Home, nothing of the pages themselves ' + home.only.concat(home.ui).join(', '));
   check(['Add a paper', 'New goal', 'New wish'].every(t => home.cmds.includes(t)), 'their ⌘K commands are there on Home');
-  check(/Made-up lamp/.test(home.srch) && /Made-up savings goal/.test(home.srch), 'search on Home finds a wish and a goal');
+  /* search reads the saved lists, which can arrive a moment after the page (slower on GitHub) – wait for them */
+  const found = await until(p, () => { const srch = []; (window.SearchExtra || []).forEach(f => { try { f(function () { srch.push([].slice.call(arguments).join(' | ')); }); } catch (e) {} });
+    const t = srch.join('\n'); return /Made-up lamp/.test(t) && /Made-up savings goal/.test(t) ? t : null; }, 10000);
+  check(found !== null, 'search on Home finds a wish and a goal ' + (found === null ? home.srch.slice(0, 200) : ''));
   check(home.goalCfg, 'the Goals rows in Settings work on Home');
   /* jobs that must run on every page stay in the everywhere part */
   const jobs = await p.evaluate(async () => { let refreshed = 0; window.addEventListener('goals:refresh', () => refreshed++);
