@@ -15,7 +15,7 @@
       FLOOR(g);
       },
       /* the page's own actions (F3): dusting the cabinet, and a folder out of the drawer to read (a frown), back in */
-      acts: [{ id: 'dust', len: 7.8, w: function () { return 1.5; } }, { id: 'folder', len: 9.4, w: function () { return 2; } }],
+      acts: [{ id: 'dust', len: 7.8, w: function () { return 1.5; } }, { id: 'folder', len: 9.4, w: function () { return 2; } }, { id: 'stamp', len: 7.0, w: function () { return 1.2; } }],   /* stamp: a paper on the cabinet top, the stamp from beside it – thump – and the paper away in his pocket */
       hits: [[106, 100, 74, 100, 'papers', 'folder'], [226, 44, 52, 40, 'papers', 'dust']],   /* the cabinet: a folder out to read; the frame: a dusting */
       season: { x: 213, y: 194, s: .95 }, len: 11.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
@@ -24,14 +24,22 @@
       var L0 = [140, 86 + 3 * Math.sin(now / 600)], LT = [192, 118], OVER = [197, 115], CAN0 = [325, 147], POUR2 = [338, 138];
       function HD(pp) { return [178 + pp, 131]; }
       /* the room: a framed certificate, the floor */
-      var cloth = false, folderIn = false, expr = null, puffs = 0;
+      var cloth = false, folderIn = false, expr = null, puffs = 0, stampIn = null, paperAt = null, inked = false, paperH = null;
+      function stampG(x, y) { var c = grp(x, y, 0); add(c, 'rect', { x: -2, y: -9, width: 4, height: 6, rx: 1.5, fill: '#7a4b2e' }); add(c, 'rect', { x: -4, y: -4, width: 8, height: 4, rx: 1, fill: '#3a3f4a' }); return c; }
+      function sheetG(x, y, ink) { var c = grp(x, y, 0); add(c, 'rect', { x: -9, y: -1.6, width: 18, height: 2.2, rx: .6, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)', 'stroke-width': .4 }); if (ink) add(c, 'rect', { x: -3, y: -1.4, width: 6, height: 1.4, fill: '#d93a3a' }); return c; }
       function walkTo(a, b, t0, t1) { var f = SEG(t, t0, t1); cx = LERP(a, b, f); face = b > a ? 90 : -90; w = Math.min(1, (t - t0) / .2, (t1 - t) / .2); }
       if (st.pact) {
-        var T1 = st.pact === 'dust' ? 6.4 : 8.0;   /* when he heads back */
+        var T1 = st.pact === 'dust' ? 6.4 : st.pact === 'stamp' ? 5.6 : 8.0;   /* when he heads back */
         if (t < .3) { cx = 272; face = -90 * E(SEG(t, 0, .3)); } else if (t < 1.3) walkTo(272, 205, .3, 1.3); else if (t < T1) { cx = 205; face = -90; }
         else if (t < T1 + .3) { cx = 205; face = -90 + 180 * E(SEG(t, T1, T1 + .3)); } else if (t < T1 + 1.0) walkTo(205, 272, T1 + .3, T1 + 1.0); else { cx = 272; face = 90 * (1 - E(SEG(t, T1 + 1.0, T1 + 1.4))); }
         var nr2 = SIDE(1, -90), fr2 = SIDE(-1, -90);
-        if (st.pact === 'dust') {   /* a cloth over the top and down the side, a puff of dust */
+        if (st.pact === 'stamp') {
+          var PP = [168, 106], ST0 = [178, 103], PK2 = B(150, 6), UPS = AT([168, 93]), DNS = AT([168, 102]);
+          pose[fr2] = t < 1.3 ? REST : t < 1.6 ? GO(REST, PK2, SEG(t, 1.3, 1.6)) : t < 2.1 ? GO(PK2, AT(PP), SEG(t, 1.6, 2.1), 3) : t < 2.5 ? GO(AT(PP), REST, SEG(t, 2.1, 2.5)) : t < 4.2 ? REST : t < 4.6 ? GO(REST, AT(PP), SEG(t, 4.2, 4.6), 3) : t < 5.1 ? GO(AT(PP), PK2, SEG(t, 4.6, 5.1), 3) : GO(PK2, REST, SEG(t, 5.1, 5.5));
+          pose[nr2] = t < 2.1 ? REST : t < 2.6 ? GO(REST, AT(ST0), SEG(t, 2.1, 2.6), 3) : t < 2.9 ? GO(AT(ST0), UPS, SEG(t, 2.6, 2.9)) : t < 3.1 ? GO(UPS, DNS, SEG(t, 2.9, 3.1)) : t < 3.4 ? HOLD(DNS) : t < 3.7 ? GO(DNS, UPS, SEG(t, 3.4, 3.7)) : t < 4.1 ? GO(UPS, AT(ST0), SEG(t, 3.7, 4.1)) : t < 4.5 ? GO(AT(ST0), REST, SEG(t, 4.1, 4.5), 3) : REST;
+          stampIn = t >= 2.6 && t < 4.1 ? nr2 : null; paperAt = t >= 1.6 && t < 2.1 ? 'in' : t >= 2.1 && t < 4.6 ? 'top' : t >= 4.6 && t < 5.1 ? 'out' : null; inked = t >= 3.1; paperH = fr2;
+          lean = .16 * Math.sin(Math.PI * SEG(t, 1.6, 5.2)) + (t > 2.9 && t < 3.4 ? .05 : 0);
+        } else if (st.pact === 'dust') {   /* a cloth over the top and down the side, a puff of dust */
           var WIPE = function (u) { return u < .5 ? [LERP(126, 170, (1 - Math.cos(u * 2 * Math.PI * 3)) / 2), 108] : [172, LERP(116, 180, (1 - Math.cos((u - .5) * 2 * Math.PI * 2)) / 2)]; };
           pose[nr2] = t < 1.3 ? REST : t < 1.7 ? GO(REST, AT(WIPE(0)), SEG(t, 1.3, 1.7), 2) : t < 5.7 ? HOLD(AT(WIPE(SEG(t, 1.7, 5.7)))) : t < 6.2 ? GO(AT(WIPE(1)), REST, SEG(t, 5.7, 6.2)) : REST;
           cloth = t >= 1.5 && t < 6.0; lean = .2 * Math.sin(Math.PI * SEG(t, 1.3, 6.2)); puffs = t > 1.8 && t < 5.8 ? 1 : 0;
@@ -92,8 +100,12 @@
       if (lp && !inH) g.appendChild(letter(lp[0], lp[1], la));
       if (puffs) for (var pi = 0; pi < 3; pi++) { var q2 = ((now / 900) + pi / 3) % 1; add(g, 'circle', { cx: 150 + 20 * pi - 6 * q2, cy: 104 - 14 * q2, r: 2 + 3 * q2, fill: 'rgba(220,220,210,' + (.35 * (1 - q2)).toFixed(2) + ')' }); }
       function folder(x, y) { var f = grp(x, y, -8); add(f, 'rect', { x: -10, y: -8, width: 20, height: 15, rx: 1.5, fill: '#e8743b' }); add(f, 'rect', { x: -10, y: -10, width: 8, height: 3, rx: 1, fill: '#e8743b' }); add(f, 'rect', { x: -7, y: -5, width: 14, height: 2, fill: '#f4f1ea', opacity: .8 }); return f; }
+      if (!stampIn) g.appendChild(stampG(178, 108));   /* the stamp lives on the cabinet top */
+      if (paperAt === 'top') g.appendChild(sheetG(166, 108, inked));
       var H = FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, look: expr ? Object.assign({}, S.look(), { expr: expr }) : undefined, items: function (H2) { var out = [];
         var ch = H2[SIDE(1, -90)], fh = H2[SIDE(-1, -90)];
+        if (stampIn && H2[stampIn]) out.push([H2[stampIn].z + .05, stampG(H2[stampIn].X, H2[stampIn].Y + 4)]);
+        if ((paperAt === 'in' || paperAt === 'out') && H2[paperH]) out.push([H2[paperH].z + .05, sheetG(H2[paperH].X, H2[paperH].Y + 2, inked)]);
         if (cloth && ch) out.push([ch.z - .15, (function () { var c = grp(ch.X, ch.Y, 10); add(c, 'rect', { x: -5, y: -3, width: 10, height: 6, rx: 1.5, fill: '#f2c94c' }); return c; })()]);
         if (folderIn && fh) out.push([fh.z - .15, folder(fh.X, fh.Y - 6)]); if (inH && H2.sm) out.push([H2.sm.z - .15, letter(H2.sm.X, H2.sm.Y - 2, 1)]); if (canIn && H2.sm) out.push([H2.sm.z - .15, can(H2.sm.X, H2.sm.Y, tilt)]); return out; } });
       if (water && H.sm) { var r2 = tilt * Math.PI / 180, tx = H.sm.X + 18.5 * Math.cos(r2) - 2.5 * Math.sin(r2), ty = H.sm.Y + 18.5 * Math.sin(r2) + 2.5 * Math.cos(r2);

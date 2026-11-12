@@ -94,7 +94,33 @@
     function calm(t, st) { var r = { h: 0, w: 0, face: -90, pose: {} };
       if (t < 1.8) Object.assign(r, walkIn(t, st, HOME)); else if (t < 2.0) { r.cx = HOME; r.w = Math.max(0, 1 - (t - 1.8) / .2); } else if (t < 2.5) { r.cx = HOME; r.face = -90 + 90 * E((t - 2) / .5); } else Object.assign(r, rest(st));
       return r; }
+    /* his own small actions (F3), from the rest and back to it:
+       polish – over to the jar, a cloth in circles on the glass, a look at the amount;
+       piggy  – over to the piggy bank on the calendar block, a shake, a coin rolls out, he picks it up and puts it back in */
+    var SEG = S.SEG, GO = S.GO, AT2 = S.AT, B = S.B, HOLD = S.HOLD, REST = S.REST, SIDE = S.SIDE, PIG = [139, 121];
+    function walkP(r, t, a, b, t0, t1) { r.cx = a + (b - a) * SEG(t, t0, t1); r.face = b > a ? 90 : -90; r.w = Math.min(1, (t - t0) / .22, (t1 - t) / .22); }
+    function polish(t, st) { var r = { h: 0, w: 0, face: 0, cx: HOME, pose: {} }, X1 = 285, hk = SIDE(1, -90);
+      if (t < .4) r.face = -90 * E(t / .4); else if (t < 1.2) walkP(r, t, HOME, X1, .4, 1.2); else if (t < 5.4) { r.cx = X1; r.face = -90; }
+      else if (t < 5.7) { r.cx = X1; r.face = -90 + 180 * E(SEG(t, 5.4, 5.7)); } else if (t < 6.5) walkP(r, t, X1, HOME, 5.7, 6.5); else r.face = 90 * (1 - E(SEG(t, 6.5, 6.9)));
+      var W = function (u) { return [249 - 5 * Math.cos(u * Math.PI * 6), 124 + 8 * Math.sin(u * Math.PI * 6) + 10 * u]; };
+      if (t >= 1.2 && t < 5.4) { r.pose[hk] = t < 1.7 ? GO(REST, AT2(W(0)), SEG(t, 1.2, 1.7), 3) : t < 4.0 ? HOLD(AT2(W(SEG(t, 1.7, 4.0)))) : t < 4.5 ? GO(AT2(W(1)), REST, SEG(t, 4.0, 4.5)) : REST;
+        r.cloth = t >= 1.5 && t < 4.3 ? hk : null; r.pose.lean = .16 * Math.sin(Math.PI * SEG(t, 1.2, 4.5)) + .1 * Math.sin(Math.PI * SEG(t, 4.5, 5.4)); if (t > 4.5) r.expr = ok ? 'grin' : 'shy'; }
+      return r; }
+    function piggy(t, st) { var r = { h: 0, w: 0, face: 0, cx: HOME, pose: {}, pig: 'home' }, X1 = 166, hk = SIDE(1, -90), UP = B(104, 22), CO = [154, GY - 3];
+      if (t < .4) r.face = -90 * E(t / .4); else if (t < 2.6) walkP(r, t, HOME, X1, .4, 2.6); else if (t < 7.6) { r.cx = X1; r.face = -90; }
+      else if (t < 7.9) { r.cx = X1; r.face = -90 + 180 * E(SEG(t, 7.6, 7.9)); } else if (t < 10.1) walkP(r, t, X1, HOME, 7.9, 10.1); else r.face = 90 * (1 - E(SEG(t, 10.1, 10.5)));
+      if (t >= 2.6 && t < 7.6) {
+        r.pose[hk] = t < 3.1 ? GO(REST, AT2(PIG), SEG(t, 2.6, 3.1), 3) : t < 3.5 ? GO(AT2(PIG), UP, SEG(t, 3.1, 3.5)) : t < 4.5 ? HOLD(B(104 + 5 * Math.sin((t - 3.5) * 19), 22)) : t < 4.9 ? GO(UP, AT2(PIG), SEG(t, 4.5, 4.9)) :
+          t < 5.5 ? GO(AT2(PIG), AT2(CO), SEG(t, 4.9, 5.5), 2) : t < 6.2 ? GO(AT2(CO), AT2([PIG[0] + 2, PIG[1] - 9]), SEG(t, 5.5, 6.2), 4) : t < 6.6 ? HOLD(AT2([PIG[0] + 2, PIG[1] - 9])) : GO(AT2([PIG[0] + 2, PIG[1] - 9]), REST, SEG(t, 6.6, 7.2));
+        r.pig = t >= 3.1 && t < 4.9 ? hk : 'home';
+        r.pose.lean = .34 * E(SEG(t, 5.0, 5.5)) * (1 - E(SEG(t, 5.5, 6.0))) + .1 * Math.sin(Math.PI * SEG(t, 2.6, 4.9));
+        /* the coin: falls from the shaken pig, rolls along the floor, lies there, then in his hand and into the slot */
+        var cq = SEG(t, 4.0, 4.4), rq = E(SEG(t, 4.4, 5.2));
+        r.pcoin = t < 4.0 ? null : t < 4.4 ? [148 + 2 * cq, 112 + (GY - 3 - 112) * cq * cq] : t < 5.5 ? [150 + (CO[0] - 150) * rq, GY - 3] : t < 6.6 ? 'hand' : null; r.pk = hk; r.expr = t > 3.5 && t < 4.6 ? 'wow' : t > 6.6 ? 'grin' : null; }
+      return r; }
+    function pigG(x, y, deg) { var c = S.grp(x, y, deg || 0); add(c, 'ellipse', { cx: 0, cy: 0, rx: 9, ry: 6.5, fill: '#f2a3c4' }); add(c, 'ellipse', { cx: 2.5, cy: 1.5, rx: 6, ry: 4.4, fill: '#e58fb3' }); add(c, 'circle', { cx: -8.2, cy: .5, r: 2.6, fill: '#e58fb3' }); add(c, 'path', { d: 'M-5 -5.5 l1.5 -3.5 l2.5 3 Z', fill: '#e58fb3' }); add(c, 'circle', { cx: -5.4, cy: -1.6, r: .8, fill: '#3a2a2a' }); add(c, 'rect', { x: -1.5, y: -6.8, width: 5, height: 1.1, rx: .5, fill: '#7a3a55' }); [-4.5, 4.5].forEach(function (lx2) { add(c, 'rect', { x: lx2 - 1.2, y: 5, width: 2.4, height: 3, rx: 1, fill: '#e58fb3' }); }); return c; }
     var run = S.run(svg, {
+      acts: [{ id: 'polish', len: 7.0, w: function () { return idle ? 2.5 : 1; } }, { id: 'piggy', len: 10.6, w: function (d) { return !ok ? 2.5 : .8; } }],
       len: ok ? (AID ? XLEN : LEN) : idle ? CLEN : WLEN, data: data,
       pick: function (st) { st.from = st.t > 0 ? HOME : 420; },
       season: { x: 352, y: 165, s: .9 },   /* a replay starts from where he rests – no teleport */
@@ -125,19 +151,26 @@
         nearRail = el('line', { x1: LB[0] - 3, y1: LB[1], x2: LT[0] - 3, y2: LT[1], stroke: '#a7b0ba', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
       },
       render: function (sv, t, st) {
-        st.aid = AID; var r = ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
+        st.aid = AID; var r = st.pact === 'polish' ? polish(t, st) : st.pact === 'piggy' ? piggy(t, st) : ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
+        if (!r.pig || r.pig === 'home') sv.appendChild(pigG(PIG[0], PIG[1]));   /* the piggy bank lives on the calendar block */
+        if (r.pcoin && typeof r.pcoin === 'object') add(sv, 'ellipse', { cx: r.pcoin[0].toFixed(1), cy: r.pcoin[1].toFixed(1), rx: 2.6, ry: 2.6 * Math.abs(Math.cos(r.pcoin[0] / 3)) + .5, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .7 });
         /* him: the near rail goes in front of his far side, behind his near side */
         var gg = add(sv, 'g', { class: 'sc25-me' }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
         var look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h, k: K, ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY, shS: 1 - Math.min(.4, r.h / 120),
-          extra: [[.45, nearRail]] });
-        if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 });
+          extra: [[.45, nearRail]], items: function (H2) { var o2 = [], ph2 = r.pig && r.pig !== 'home' && H2[r.pig], ch2 = r.cloth && H2[r.cloth], kh = r.pcoin === 'hand' && H2[r.pk];
+            if (ph2) o2.push([ph2.z + .05, pigG(ph2.X - 2, ph2.Y + 1, 8 * Math.sin(t * 19))]);
+            if (ch2) o2.push([ch2.z + .05, (function () { var c = S.grp(ch2.X, ch2.Y, 12); add(c, 'rect', { x: -5, y: -3.4, width: 10, height: 6.8, rx: 1.6, fill: '#9ad0e8' }); return c; })()]);
+            if (kh) o2.push([kh.z + .05, (function () { var c = el('g', {}); add(c, 'circle', { cx: kh.X.toFixed(1), cy: (kh.Y - 1).toFixed(1), r: 2.6, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .7 }); return c; })()]);
+            return o2; } });
+        if (r.coin === 'hand' && H.near && r.fly == null && data.payday && !AID) { var bx = H.near.X - 1, by = H.near.Y + 5; add(sv, 'path', { d: 'M' + (bx - 6) + ' ' + (by + 5) + ' Q' + (bx - 8) + ' ' + (by - 4) + ' ' + (bx - 2.5) + ' ' + (by - 8) + ' L' + (bx + 2.5) + ' ' + (by - 8) + ' Q' + (bx + 8) + ' ' + (by - 4) + ' ' + (bx + 6) + ' ' + (by + 5) + ' Q' + bx + ' ' + (by + 8) + ' ' + (bx - 6) + ' ' + (by + 5) + ' Z', fill: '#c9a46a' }); add(sv, 'rect', { x: bx - 3, y: by - 9.4, width: 6, height: 2, rx: 1, fill: '#7a5a2e' }); add(sv, 'circle', { cx: bx, cy: by - 1, r: 2.2, fill: '#f2c94c' }); }   /* payday: a whole bag of coins hangs from his hand up the ladder */
+        else if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 });
         /* the tossed coin: from where it left the hand, up over the lid and down through the slot */
         if (r.fly != null) { if (!st.rel && H.near) st.rel = [H.near.X, H.near.Y]; var A = st.rel || [TX - 22, GY - 92], q2 = Math.min(1, r.fly), cxp = A[0] + (SL - A[0]) * q2, cyp = A[1] + (JT + 2 - A[1]) * q2 - 46 * Math.sin(Math.PI * Math.min(1, q2 * 1.05));
           if (q2 < 1) add(sv, 'ellipse', { cx: cxp.toFixed(1), cy: cyp.toFixed(1), rx: 3, ry: 3 * Math.abs(Math.cos(q2 * 9)) + .6, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }
         else st.rel = null;
         st.H = H; st.r = r;
-        if (typeof r.coin === 'number') { var q = r.coin; add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * q * q, rx: 3 * (1 - q * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }
+        if (typeof r.coin === 'number') { (data.payday && !AID ? [0, .18, .36] : [0]).forEach(function (dl) { var q = Math.max(0, Math.min(1, r.coin * 1.36 - dl)); if (q > 0 && q < 1) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * q * q, rx: 3 * (1 - q * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); else if (!dl && !(data.payday && !AID)) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * r.coin * r.coin, rx: 3 * (1 - r.coin * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }); }   /* payday: three coins pour in, one after the other */
       }
     });
     return run;

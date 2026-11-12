@@ -18,7 +18,7 @@
       CLOCK(g, 330, 62, 17, 'face'); FLOOR(g);
       }, gen: { no: ['coffee'] },
       /* the page's own actions (F3): a video call in work hours, ticking off a sheet from the pile, a yawn late in the day */
-      acts: [{ id: 'call', len: 5.2, w: function () { return HR >= 8 && HR < 16 ? 3 : .4; } }, { id: 'tick', len: 5.8, w: function () { return 1.5; } }, { id: 'yawn', len: 4.4, w: function () { return HR >= 15 || HR < 6 ? 3 : .4; } }], hits: [[196, 124, 50, 32, 'ptime', 'call'], [180, 136, 22, 22, 'flex', 'main'], [310, 42, 40, 40, 'flex', 'watch'], [128, 154, 184, 46, 'flex', 'tick']],   /* the laptop: a video call; the mug: a sip; the clock: the time; the desk: a sheet ticked off */
+      acts: [{ id: 'call', len: 5.2, w: function () { return HR >= 8 && HR < 16 ? 3 : .4; } }, { id: 'tick', len: 5.8, w: function () { return 1.5; } }, { id: 'yawn', len: 4.4, w: function () { return HR >= 15 || HR < 6 ? 3 : .4; } }, { id: 'done', len: 6.6, w: function () { return HR >= 16 || HR < 6 ? 2.5 : .3; } }], hits: [[196, 124, 50, 32, 'ptime', 'call'], [180, 136, 22, 22, 'flex', 'main'], [310, 42, 40, 40, 'flex', 'watch'], [128, 154, 184, 46, 'flex', 'tick']],   /* the laptop: a video call; the mug: a sip; the clock: the time; the desk: a sheet ticked off */
       season: { x: 362, y: 196, s: .95, act: false }, len: 12, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
@@ -26,7 +26,7 @@
       function TYPE(sd) { return B(118 + 1.4 * Math.sin(now / 75 + (sd > 0 ? 1.6 : 0)), 26); }
       /* the room: a window with the city at night, the clock, the floor */
       CLOCK(g, 330, 62, 17, 'hands');
-      var sheetIn = false, ticks = 0, talk = false, expr = null, PILE = [266, 150];
+      var lid = 0, sheetIn = false, ticks = 0, talk = false, expr = null, PILE = [266, 150];
       if (st.pact === 'call') {   /* a wave at the laptop's camera, then nodding along while the others talk */
         var wv = SIDE(1, 0), WAVE = B(54, 34);
         pose[SIDE(-1, 0)] = HOLD(TYPE(-1));
@@ -41,6 +41,12 @@
         var UPY = B(30, 4), EYE = B(64, 26);
         [-1, 1].forEach(function (sd) { var k2 = SIDE(sd, 0); pose[k2] = t < .6 ? GO(TYPE(sd), UPY, SEG(t, .1, .6)) : t < 1.6 ? HOLD(UPY) : t < 2.1 ? GO(UPY, EYE, SEG(t, 1.6, 2.1)) : t < 3.2 ? HOLD(B(64 + 3 * Math.sin((t - 2.1) * 18) * sd, 26)) : t < 3.8 ? GO(EYE, TYPE(sd), SEG(t, 3.2, 3.8)) : HOLD(TYPE(sd)); });
         lean = -.08 * Math.sin(Math.PI * SEG(t, .2, 1.8)); lift = 2 * Math.sin(Math.PI * SEG(t, .4, 1.6)); expr = t > .4 && t < 1.8 ? 'wow' : t > 1.8 && t < 3.4 ? 'calm' : null;
+      } else if (st.pact === 'done') {   /* after hours: the lid down, a lean back with the hands behind the head – then one more thing, and the lid is up again */
+        var rk = SIDE(1, 0), lk2 = SIDE(-1, 0), LT = function () { return AT([220, 131 + 19 * lid]); }, HEAD = function (sd) { return B(50, -8); };
+        lid = t < .7 ? 0 : t < 1.3 ? E(SEG(t, .7, 1.3)) : t < 5.0 ? 1 : t < 5.6 ? 1 - E(SEG(t, 5.0, 5.6)) : 0;
+        pose[rk] = t < .7 ? GO(TYPE(1), AT([220, 131]), SEG(t, .2, .7), 2) : t < 1.3 ? HOLD(LT()) : t < 2.0 ? GO(AT([220, 150]), HEAD(1), SEG(t, 1.4, 2.0), 3) : t < 4.0 ? HOLD(HEAD(1)) : t < 5.0 ? GO(HEAD(1), AT([220, 150]), SEG(t, 4.0, 5.0), 3) : t < 5.6 ? HOLD(LT()) : GO(AT([220, 131]), TYPE(1), SEG(t, 5.6, 6.2), 2);
+        pose[lk2] = t < 1.4 ? HOLD(TYPE(-1)) : t < 2.0 ? GO(TYPE(-1), HEAD(-1), SEG(t, 1.4, 2.0), 3) : t < 4.0 ? HOLD(HEAD(-1)) : t < 4.8 ? GO(HEAD(-1), TYPE(-1), SEG(t, 4.0, 4.8), 3) : HOLD(TYPE(-1));
+        lean = -.14 * E(SEG(t, 1.5, 2.1)) * (1 - E(SEG(t, 3.9, 4.6))); expr = t > 1.9 && t < 4.2 ? 'calm' : null;
       } else if (t < 2.8 || t >= 7.8) { pose[SIDE(-1, 0)] = HOLD(TYPE(-1)); pose[SIDE(1, 0)] = HOLD(TYPE(1)); }
       else if (t < 6.3) {
         face = t < 3.2 ? -70 * E(SEG(t, 2.8, 3.2)) : t < 5.9 ? -70 : -70 * (1 - E(SEG(t, 5.9, 6.3)));
@@ -66,7 +72,7 @@
       add(g, 'rect', { x: 136, y: 160, width: 168, height: 40, fill: '#7a5038' }); add(g, 'rect', { x: 146, y: 166, width: 60, height: 14, rx: 3, fill: '#8a5e44' }); add(g, 'rect', { x: 170, y: 172, width: 12, height: 2.4, rx: 1.2, fill: '#d7c2a8' });
       [0, 1, 2].forEach(function (i) { if (i === 2 && sheetIn) return; add(g, 'rect', { x: PILE[0] - 10 + i * .6, y: PILE[1] - 1.6 - i * 1.6, width: 20, height: 1.8, rx: .6, fill: i % 2 ? '#e9e5dc' : '#f4f1ea', stroke: 'rgba(0,0,0,.12)', 'stroke-width': .4 }); });   /* the pile of action points; the top sheet is the one he takes */
       add(g, 'rect', { x: 198, y: 150, width: 44, height: 4, rx: 1.5, fill: '#3a3f4a' });
-      add(g, 'path', { d: 'M201 151 L239 151 L238 131 L202 131 Z', fill: '#c9ced6' }); add(g, 'circle', { cx: 220, cy: 141, r: 3, fill: '#eef0f4', opacity: .9 });
+      var ly = 131 + 19 * lid; add(g, 'path', { d: 'M201 151 L239 151 L' + (238 + lid).toFixed(1) + ' ' + ly.toFixed(1) + ' L' + (202 - lid).toFixed(1) + ' ' + ly.toFixed(1) + ' Z', fill: '#c9ced6' }); if (lid < .8) add(g, 'circle', { cx: 220, cy: (141 + 9.5 * lid).toFixed(1), r: 3 * (1 - lid), fill: '#eef0f4', opacity: .9 });   /* the lid folds down when he's done */
       if (!mugIn) { var m0 = mug(MUG[0], MUG[1], 0); g.appendChild(m0); for (var si = 0; si < 2; si++) { var ph0 = ((now / 1000) * .5 + si / 2) % 1; add(g, 'path', { d: 'M' + (MUG[0] - 2 + si * 4) + ' ' + (MUG[1] - 8 - ph0 * 12) + ' q-2 -3 0 -6', fill: 'none', stroke: '#fff', 'stroke-width': 1.3, 'stroke-linecap': 'round', opacity: (.45 * Math.sin(Math.PI * ph0)).toFixed(2) }); } }
     } });
   };

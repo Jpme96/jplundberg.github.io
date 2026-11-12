@@ -16,10 +16,10 @@
        map  – a folded map from his pocket, unfolded, turned the right way, shown to you, folded and put back (nothing to pack) */
     var PACK = { len: 7.8 }, MAP = { len: 5.8 }, CHAIR = 86, packedNow = false;
     return S.run(svg, { hits: [[0, 120, 120, 80, 'trips']], len: 17, data: data,
-      acts: [{ id: 'pack', len: PACK.len, w: function (d) { return d.packLeft > 0 && !packedNow ? 3 : 0; } }, { id: 'map', len: MAP.len, w: function (d) { return d.packLeft > 0 ? .6 : 2; } }],
+      acts: [{ id: 'pack', len: PACK.len, w: function (d) { return d.packLeft > 0 && !packedNow ? 3 : 0; } }, { id: 'map', len: MAP.len, w: function (d) { return d.packLeft > 0 ? .6 : 2; } }, { id: 'passport', len: 5.0, w: function (d) { return /plane/.test(d.veh || 'plane') ? 1.5 : 0; } }],   /* passport (flights): out of the pocket, opened – a stamp lands on the page – a smile, back in the pocket */
       render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
-      var pt = st.pact === 'pack' || st.pact === 'map' ? t : null; if (pt != null) t = 17;   /* his own actions start from the rest at the end (home by the stop) */
+      var pt = st.pact === 'pack' || st.pact === 'map' || st.pact === 'passport' ? t : null; if (pt != null) t = 17;   /* his own actions start from the rest at the end (home by the stop) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var V = /^(bus|train|plane|ferry)$/.test(data.veh || '') ? data.veh : 'plane', g = add(sv, 'g', {});
       var KIND = { bus: 'step', train: 'step', plane: 'stairs', ferry: 'ramp' }[V];
@@ -151,7 +151,7 @@
           if (t >= 16.6) { cx = 200; face = -90 + 90 * E(SEG(t, 16.6, 17)); suit = 'stand'; sx = 222; pose = {}; if (t < 16.95) pose[SIDE(-1, face)] = GO(B(150, -14), REST, SEG(t, 16.6, 16.95)); } }   /* lets go of the handle, then turns to you */
       }
       if (t >= 14.6) gone = false;
-      var shirt = data.packLeft > 0 && !packedNow ? 'chair' : null, lid = 0, mapW = 0, mapF = 1, mapUp = 0;
+      var passIn = null, passOpen = 0, passStamp = 0, lift0 = 0, shirt = data.packLeft > 0 && !packedNow ? 'chair' : null, lid = 0, mapW = 0, mapF = 1, mapUp = 0;
       if (pt != null && st.pact === 'pack') {
         var pq = pt, R0 = REST, SEATP = [CHAIR + 8, 176], TOPC = [222, 166];
         face = pq < 2.9 ? -90 * E(SEG(pq, 0, .4)) : pq < 3.3 ? -90 + 180 * E(SEG(pq, 2.9, 3.3)) : pq < 6.9 ? 90 : 90 * (1 - E(SEG(pq, 6.9, 7.4)));
@@ -166,6 +166,13 @@
         shirt = pq < 2.2 ? 'chair' : pq < 5.2 ? 'hand' : null; if (pq >= 5.2 && pt >= PACK.len - .05) packedNow = true;
         lid = pq < 4.4 ? 0 : pq < 4.8 ? E(SEG(pq, 4.4, 4.8)) : pq < 5.7 ? 1 : 1 - E(SEG(pq, 5.7, 6.4));   /* the suitcase opens at the top, and the zip closes it */
         suit = 'stand'; sx = 222; h = 0; inside = false; gone = false;
+      }
+      if (pt != null && st.pact === 'passport') {
+        var pq2 = pt; face = 0; cx = 200; w = 0; suit = 'stand'; sx = 222; h = 0; inside = false; gone = false; pose = {};
+        var pk3 = SIDE(1, 0), POCK2 = B(150, 6), SHOW = B(92, 30);
+        pose[pk3] = pq2 < .6 ? GO(REST, POCK2, SEG(pq2, .1, .6)) : pq2 < 1.2 ? GO(POCK2, SHOW, SEG(pq2, .6, 1.2), 2) : pq2 < 3.6 ? HOLD(SHOW) : pq2 < 4.2 ? GO(SHOW, POCK2, SEG(pq2, 3.6, 4.2), 2) : GO(POCK2, REST, SEG(pq2, 4.2, 4.7));
+        passIn = pq2 > .6 && pq2 < 4.2 ? pk3 : null; passOpen = E(SEG(pq2, 1.3, 1.7)) * (1 - E(SEG(pq2, 3.2, 3.6))); passStamp = pq2 < 2.2 ? 0 : E(SEG(pq2, 2.2, 2.4));
+        pose.lean = .05 * Math.sin(Math.PI * SEG(pq2, 1.2, 3.4)); lift0 = pq2 > 2.4 && pq2 < 3.0 ? 1.6 * Math.sin(Math.PI * SEG(pq2, 2.4, 3.0)) : 0; pose.lift = lift0;
       }
       if (pt != null && st.pact === 'map') {
         var mq = pt; face = 0; cx = 200; w = 0; suit = 'stand'; sx = 222; h = 0; inside = false; gone = false; pose = {};
@@ -209,6 +216,7 @@
         var out = [], hs = face > 0 ? H.s1 : H.sm;
         if ((suit === 'pull') && hs) { var dir = face >= 0 ? 1 : -1, gw = groundAt(hs.X - dir * 30) + 1, c = Math.max(-1, Math.min(1, (gw - hs.Y) / 47)), th = Math.acos(c), wx = hs.X - dir * 47 * Math.sin(th); out.push([-100, suitcase(wx, gw, dir * th * 180 / Math.PI)]); }
         if (suit === 'hand' && H.s1) out.push([H.s1.z - .05, suitcase(H.s1.X, H.s1.Y + 48, 0)]);
+        var pph = passIn && H[passIn]; if (pph) { var pp2 = grp(pph.X, pph.Y - 4, -6), ow = 5 * passOpen; add(pp2, 'rect', { x: -5 - ow, y: -7, width: 10 + ow * 2, height: 13, rx: 1.5, fill: passOpen > .5 ? '#f4f1ea' : '#7a2e3a' }); if (passOpen <= .5) add(pp2, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); else { add(pp2, 'line', { x1: 0, y1: -7, x2: 0, y2: 6, stroke: 'rgba(0,0,0,.2)', 'stroke-width': .5 }); if (passStamp > 0) add(pp2, 'circle', { cx: 5, cy: -1, r: 1.2 + 2.2 * passStamp, fill: 'none', stroke: '#d93a3a', 'stroke-width': 1.1, opacity: (.4 + .6 * passStamp).toFixed(2) }); } out.push([pph.z + .05, pp2]); }   /* the passport in his hand: shut, then open with the new stamp */
         var sh1 = H.s1; if (shirt === 'hand' && sh1) out.push([sh1.z + .05, shirtG(sh1.X, sh1.Y + 3)]);
         if (mapUp && st.mapAt && H.near) { var mh = H[st.mapHand]; if (st.mapIn && mh) out.push([mh.z + .05, mapG(mh.X, mh.Y + 1, 0, 1)]); else out.push([.6, mapG(st.mapAt[0], st.mapAt[1] - 1, mapW, mapF)]); }   /* folded in his hand; held up open between his hands */
         if (suit === 'carry' && H.s1) out.push([H.s1.z + (face > 100 ? -.05 : .05), carryCase(H.s1.X, H.s1.Y)]);

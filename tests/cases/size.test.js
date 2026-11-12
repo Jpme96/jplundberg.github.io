@@ -2,7 +2,7 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 1607 };      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
+const BUDGET_KB = { total: 1611 };      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
 /* each page on its own (Phase D 25: a page loads only its own code) – lower a page's number when it gets lighter */
 /* +25 kB on every page (2026-11-12, F1b): the 2.5D figure (avatar-25d.js) and its small moves are in tail next to the old flat drawing; the old
    drawing code goes in F4 and these budgets come down again then.
@@ -20,8 +20,9 @@ const BUDGET_KB = { total: 1607 };      /* biggest page today ≈ 1589 kB (Finan
    Travel's packing and map.
    +4–5 kB on every page (2026-11-12 night, D 24): the choices in lists, the Settings summaries and the counts as I18N.k(name, English, {n}).
    +1 kB on Food and People (2026-11-12 night): night actions, muscles and face shapes in the figure, the whole plane.
-   +1 kB on most pages (2026-11-12 night): the six-pack and obliques on a bare athletic or muscular body. */
-const PAGE_KB = { 'index.html': 1380, 'admin/index.html': 1302, 'calendar/index.html': 1230, 'finance/index.html': 1607, 'food/index.html': 1311, 'goals/index.html': 1245, 'habits/index.html': 1289, 'house/index.html': 1600, 'papers/index.html': 1260, 'people/index.html': 1310, 'travel/index.html': 1386, 'wish/index.html': 1329, 'work/index.html': 1353 };
+   +1 kB on most pages (2026-11-12 night): the six-pack and obliques on a bare athletic or muscular body.
+   +1–4 kB on the scene pages (2026-11-13): the last F3 actions (price tag, cart, call, ball, heart note, star sticker, done for the day, stamp, the smaller climber, taste and salt, the shelf, polish, piggy bank, payday bag, passport). */
+const PAGE_KB = { 'index.html': 1380, 'admin/index.html': 1302, 'calendar/index.html': 1230, 'finance/index.html': 1611, 'food/index.html': 1313, 'goals/index.html': 1246, 'habits/index.html': 1290, 'house/index.html': 1600, 'papers/index.html': 1262, 'people/index.html': 1312, 'travel/index.html': 1387, 'wish/index.html': 1330, 'work/index.html': 1354 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

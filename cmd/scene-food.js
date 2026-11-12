@@ -101,6 +101,29 @@
       else r.face = 90 - 90 * E(SEG(t, 6.1, 6.5));
       return r;
     }
+    /* dinner's on: over to the pot, a taste from a spoon – mm – a shake of salt, back again */
+    var SHK = [264, CT - 7];
+    function tasteAt(t, st) {
+      var r = cookAt(LEN, st), pose = r.pose = {}; r.w = 0; r.expr = null; var X1 = 272, POTP = [PX - 3, PT - 4], OVER = [PX - 6, PT - 15], MO = { b: [66, 26] };
+      r.face = t < .4 ? 90 * E(t / .4) : t < 6.7 ? 90 : t < 6.95 ? 90 - 180 * E(SEG(t, 6.7, 6.95)) : t < 7.9 ? -90 : -90 * (1 - E(SEG(t, 7.9, 8.3)));
+      r.cx = t < .4 ? HOME : t < 1.4 ? HOME + (X1 - HOME) * SEG(t, .4, 1.4) : t < 6.9 ? X1 : t < 7.9 ? X1 + (HOME - X1) * SEG(t, 6.9, 7.9) : HOME;
+      r.w = t > .4 && t < 1.4 ? Math.min(1, (t - .4) / .2, (1.4 - t) / .2) : t > 6.9 && t < 7.9 ? Math.min(1, (t - 6.9) / .2, (7.9 - t) / .2) : 0;
+      var hk = key(-1, 90);
+      if (t >= 1.4 && t < 6.7) pose[hk] = t < 1.9 ? reach(REST, AT(POTP), SEG(t, 1.4, 1.9), 3) : t < 2.5 ? reach(AT(POTP), MO, SEG(t, 1.9, 2.5), 2) : t < 3.3 ? { m: 1, b: MO.b } : t < 3.7 ? reach(MO, AT(POTP), SEG(t, 3.3, 3.7), 2) : t < 4.1 ? reach(AT(POTP), AT(SHK), SEG(t, 3.7, 4.1), 4) : t < 4.6 ? reach(AT(SHK), AT(OVER), SEG(t, 4.1, 4.6), 3) :
+        t < 5.8 ? { m: 1, at: [OVER[0] + 2 * Math.sin(t * 22), OVER[1] + Math.abs(Math.sin(t * 22))] } : t < 6.3 ? reach(AT(OVER), AT(SHK), SEG(t, 5.8, 6.3), 3) : reach(AT(SHK), REST, SEG(t, 6.3, 6.7), 2);
+      r.tspoon = t >= 1.9 && t < 3.7; r.salt = t >= 4.1 && t < 6.3 ? 'hand' : 'counter'; r.grains = t > 4.7 && t < 5.8; r.expr = t > 2.5 && t < 2.9 ? 'wow' : t >= 2.9 && t < 3.7 ? 'grin' : null;
+      pose.lean = .1 * Math.sin(Math.PI * SEG(t, 1.4, 2.2)) + .1 * Math.sin(Math.PI * SEG(t, 3.5, 6.5));
+      return r;
+    }
+    /* the pantry is running low: a look up at the shelf, counting the jars with a finger, a shake of the head */
+    function shelfAt(t, st) {
+      var r = (cook ? cookAt : lookAt)(cook ? LEN : LLEN, st), pose = r.pose = {}; r.w = 0; r.expr = null; var hk = key(-1, 55);
+      r.face = t < .5 ? 55 * E(t / .5) : t < 3.2 ? 55 : t < 4.0 ? 55 + 12 * Math.sin((t - 3.2) * 15.7) : 55 * (1 - E(SEG(t, 4.2, 4.8)));
+      pose[hk] = t < .5 ? REST : t < 1.0 ? reach(REST, { b: [34, 36] }, SEG(t, .5, 1.0), 0) : t < 3.0 ? { m: 1, b: [34 + 2.5 * Math.abs(Math.sin((t - 1) * 6.3)), 36] } : t < 3.6 ? reach({ b: [34, 36] }, REST, SEG(t, 3.0, 3.6), 0) : REST;
+      pose.lean = -.05 * Math.sin(Math.PI * SEG(t, .5, 3.4));
+      return r;
+    }
+    function shaker(x, y, deg) { var c = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (deg || 0) + ')' }); add(c, 'rect', { x: -2.6, y: -4, width: 5.2, height: 10, rx: 1.6, fill: '#eef0f2' }); add(c, 'rect', { x: -2.8, y: -6.4, width: 5.6, height: 3, rx: 1.2, fill: '#9aa3ad' }); return c; }
     /* the milk carton: white with a blue band, a gable top, the spout on its right */
     function carton(x, y, deg) { var g = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + deg.toFixed(1) + ')' });
       add(g, 'rect', { x: -4.5, y: -8, width: 9, height: 17, rx: 1.2, fill: '#f7f7f4' }); add(g, 'rect', { x: -4.5, y: -1, width: 9, height: 5, fill: '#3987e5' });
@@ -110,7 +133,7 @@
     return S.run(svg, {
       len: cook ? LEN : LLEN, data: data,
       season: { x: 160, y: 194, s: .95 },
-      acts: [{ id: 'list', len: 6.6, w: function (d) { return d.shop ? 3 : .6; } }],
+      acts: [{ id: 'list', len: 6.6, w: function (d) { return d.shop ? 3 : .6; } }, { id: 'taste', len: 8.4, w: function () { return cook ? 2 : 0; } }, { id: 'shelf', len: 5.0, w: function (d) { return d.low ? 2.5 : 0; } }],
       back: function (bg) {
         /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
         add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(0,0,0,.22)' });
@@ -140,7 +163,7 @@
           add(bag, 'rect', { x: 147, y: 170, width: 5, height: 8, rx: 1.4, fill: '#22b35e' }); add(bag, 'circle', { cx: 159, cy: 173, r: 3.4, fill: '#e8743b' }); }
       },
       render: function (sv, t, st) {
-        var r = st.pact === 'list' ? listAt(t, st) : cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
+        var r = st.pact === 'list' ? listAt(t, st) : st.pact === 'taste' ? tasteAt(t, st) : st.pact === 'shelf' ? shelfAt(t, st) : cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
         var hot = cook && (t > 9 || !st.playing); steamA += ((hot ? (r.stir >= 0 ? 1 : .75) : 0) - steamA) * (st.still ? 1 : Math.min(1, st.dt * 1.5));
         var now = st.now || 0;
         if (hot) add(sv, 'ellipse', { cx: PX, cy: CT - 3, rx: 18, ry: 1.6, fill: '#ff6a3d', opacity: (.55 + .25 * Math.sin(now / 160)).toFixed(2) });
@@ -178,10 +201,15 @@
         /* the shopping list on the fridge door: a line more each time he writes */
         if (th < .01) { var nl = add(fr2, 'g', { class: 'hs-part', 'data-scgo': 'shop' }); add(nl, 'rect', { x: 86, y: 120, width: 20, height: 26, rx: 1.5, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(3 96 133)' }); add(nl, 'circle', { cx: 96, cy: 121, r: 1.6, fill: '#d93a3a' });
           var nlines = Math.min(4, (data.shop ? 2 : 1) + (r.pen || 0)); for (var li = 0; li < nlines; li++) add(nl, 'rect', { x: 89, y: 126 + li * 4.5, width: li % 2 ? 10 : 14, height: 1.3, fill: '#5b636c', opacity: .7 }); }
+        if (cook && r.salt !== 'hand') sv.appendChild(shaker(SHK[0], SHK[1] + 1));   /* the salt lives on the counter */
         /* him, with the carton at his hand's depth while he holds it */
         var gg = add(sv, 'g', { class: 'sc25-me' }), ph = S.LIFE(st, r.pose, r.w), look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY, k: K, ph: ph, w: r.w, pose: r.pose,
-          items: function (H) { var h = Fig25.hand()['s-1']; return r.milk === 'hand' && h ? [[h.z - .15, carton(h.X, h.Y, r.tilt)]] : []; } });
+          items: function (H) { var h = Fig25.hand()['s-1'];
+            if (r.tspoon && h) { var ts = el('g', {}); add(ts, 'line', { x1: h.X.toFixed(1), y1: (h.Y + 2).toFixed(1), x2: (h.X + 7).toFixed(1), y2: (h.Y - 5).toFixed(1), stroke: '#c9ced6', 'stroke-width': 1.3, 'stroke-linecap': 'round' }); add(ts, 'ellipse', { cx: (h.X + 8).toFixed(1), cy: (h.Y - 6).toFixed(1), rx: 2.4, ry: 1.6, fill: '#c9ced6' }); return [[h.z + .05, ts]]; }
+            if (r.salt === 'hand' && h) return [[h.z + .05, shaker(h.X, h.Y - 2, r.grains ? 150 : 0)]];
+            return r.milk === 'hand' && h ? [[h.z - .15, carton(h.X, h.Y, r.tilt)]] : []; } });
+        if (r.grains && Fig25.hand()['s-1']) { var gh = Fig25.hand()['s-1']; for (var gi = 0; gi < 4; gi++) { var gq = ((now / 300) + gi / 4) % 1; add(sv, 'circle', { cx: (gh.X + (gi - 1.5) * 1.6).toFixed(1), cy: (gh.Y + 6 + gq * (PT - gh.Y - 6)).toFixed(1), r: .7, fill: '#fff', opacity: (1 - gq).toFixed(2) }); } }
         var hm = Fig25.hand()['s-1']; st.spoonTop = hm ? [hm.X, hm.Y] : SPOON; st.r = r;
         if (r.flow > 0 && hm) { var sp = spout(hm.X, hm.Y, r.tilt), wob = Math.sin(now / 60) * .8;
           add(sv, 'path', { d: 'M' + sp[0].toFixed(1) + ' ' + sp[1].toFixed(1) + ' Q' + (sp[0] + 2 + wob).toFixed(1) + ' ' + ((sp[1] + PT) / 2).toFixed(1) + ' ' + (sp[0] + 1).toFixed(1) + ' ' + (PT + 1), fill: 'none', stroke: '#f6f2e8', 'stroke-width': (2.4 * r.flow).toFixed(2), 'stroke-linecap': 'round' }); }

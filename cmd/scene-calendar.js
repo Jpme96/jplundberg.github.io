@@ -16,7 +16,7 @@
       CLOCK(g, 330, 64, 17, 'face'); FLOOR(g);
       },
       /* the page's own actions (F3): a new note on the wall, and a look at the watch, then the clock – a hurried step */
-      acts: [{ id: 'note', len: 5.4, w: function () { return 2; } }, { id: 'hurry', len: 5.0, w: function () { return 1.5; } }],
+      acts: [{ id: 'note', len: 5.4, w: function () { return 2; } }, { id: 'heart', len: 5.4, w: function () { return (window.ShareSpace && ShareSpace.on && ShareSpace.on()) ? 1.5 : .5; } }, { id: 'hurry', len: 5.0, w: function () { return 1.5; } }],
       hits: [[148, 80, 56, 72, 'clToday', 'main'], [232, 46, 54, 54, 'clToday', 'note'], [310, 44, 40, 40, 'clToday', 'hurry']],   /* a tap on the pad tears a page, on the notes adds one, on the clock: a hurried check */
       season: { x: 300, y: 194, s: .95 }, len: 7.4, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
@@ -25,8 +25,8 @@
       var cx = 260, face = 0, w = 0, pose = {}, lean = 0, lift = 0, C0 = [196, 145], PULL = [206, 150], CH = B(116, 22), TOSS = [194, 112], BIN = [118, 184];
       /* sticky notes, the clock, the bin, the floor */
       CLOCK(g, 330, 64, 17, 'hands');
-      var tp = st.pact ? 99 : t, noteIn = false, noteUp = 0, NOTE = [252, 114];   /* during the page's other actions yesterday's page is long gone */
-      if (st.pact === 'note') {   /* a new note from his pocket, up on the wall next to the others, pressed flat */
+      var tp = st.pact ? 99 : t, noteIn = false, noteUp = 0, HN = st.pact === 'heart', NOTE = HN ? [274, 120] : [252, 114], NOTE1 = [252, 114], NOTE2 = [274, 120];   /* heart: a pink note with a heart, next to the others (something you share) */   /* during the page's other actions yesterday's page is long gone */
+      if (st.pact === 'note' || HN) {   /* a new note from his pocket, up on the wall next to the others, pressed flat */
         cx = 220; face = t < .4 ? 30 * E(SEG(t, 0, .4)) : t < 4.6 ? 30 : 30 * (1 - E(SEG(t, 4.6, 5.0)));
         var nh2 = SIDE(1, 30), PK = B(150, 14);
         pose[nh2] = t < .5 ? GO(REST, PK, SEG(t, .1, .5)) : t < 1.6 ? GO(PK, AT(NOTE), SEG(t, .6, 1.6), 6) : t < 2.6 ? HOLD(AT([NOTE[0] + 1.5 * Math.sin((t - 1.6) * 12), NOTE[1]])) : t < 3.2 ? GO(AT(NOTE), REST, SEG(t, 2.6, 3.2)) : REST;
@@ -64,10 +64,11 @@
       var sheet = null;
       if (tp >= 2.2 && tp < 3.0) sheet = 1 - .78 * E(SEG(t, 2.2, 2.7));
       function paper(x, y, s) { var p2 = grp(x, y, 0); if (s > .4) { add(p2, 'path', { d: 'M' + (-14 * s) + ' ' + (-2 * s) + ' L' + (12 * s) + ' ' + (-6 * s) + ' L' + (14 * s) + ' ' + (20 * s) + ' L' + (-10 * s) + ' ' + (22 * s) + ' Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.15)' }); } else { add(p2, 'circle', { cx: 0, cy: 0, r: 4.2, fill: '#f1ede4', stroke: 'rgba(0,0,0,.2)' }); add(p2, 'path', { d: 'M-2 -1 L1 1 L-1 3 M1 -3 L2 0', fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': .7 }); } return p2; }
-      function note(x, y, deg) { var n = grp(x, y, deg); add(n, 'rect', { x: -9, y: -8, width: 18, height: 16, rx: 1.5, fill: '#b5e3a8' }); add(n, 'line', { x1: -5, y1: -2, x2: 5, y2: -2, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); add(n, 'line', { x1: -5, y1: 3, x2: 2, y2: 3, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); return n; }
-      if (noteUp || (st.pact !== 'note' && st.noteDone)) g.appendChild(note(NOTE[0] + 2, NOTE[1] - 2, 4));   /* the new note stays on the wall */
-      if (st.pact === 'note' && noteUp) st.noteDone = true;
-      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { var nh3 = H[SIDE(1, 30)]; if (noteIn && nh3) return [[nh3.z - .15, note(nh3.X, nh3.Y - 6, -8)]]; return sheet != null && H.s1 ? [[H.s1.z - .15, paper(H.s1.X, H.s1.Y, sheet)]] : []; } });
+      function note(x, y, deg, hrt) { var n = grp(x, y, deg); add(n, 'rect', { x: -9, y: -8, width: 18, height: 16, rx: 1.5, fill: hrt ? '#f2a3c4' : '#b5e3a8' }); if (hrt) { add(n, 'path', { d: 'M0 5 C-9 -1 -4 -7 0 -2.5 C4 -7 9 -1 0 5 Z', fill: '#d93a3a' }); return n; } add(n, 'line', { x1: -5, y1: -2, x2: 5, y2: -2, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); add(n, 'line', { x1: -5, y1: 3, x2: 2, y2: 3, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); return n; }
+      if ((noteUp && !HN) || (st.pact !== 'note' && st.noteDone)) g.appendChild(note(NOTE1[0] + 2, NOTE1[1] - 2, 4));   /* the new note stays on the wall */
+      if ((noteUp && HN) || (!HN && st.heartDone)) g.appendChild(note(NOTE2[0] + 2, NOTE2[1] - 2, -5, 1));
+      if (st.pact === 'note' && noteUp) st.noteDone = true; if (HN && noteUp) st.heartDone = true;
+      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { var nh3 = H[SIDE(1, 30)]; if (noteIn && nh3) return [[nh3.z - .15, note(nh3.X, nh3.Y - 6, -8, HN)]]; return sheet != null && H.s1 ? [[H.s1.z - .15, paper(H.s1.X, H.s1.Y, sheet)]] : []; } });
       /* the ball flies into the bin */
       if (tp >= 3.0 && tp < 3.75) { var q = SEG(t, 3.0, 3.75), bp = MIX(TOSS, [118, 190], q); g.appendChild(paper(bp[0], bp[1] - 40 * Math.sin(Math.PI * Math.min(1, q * 1.08)), .2)); }
       /* the bin's front, drawn over the ball so it falls in and disappears */

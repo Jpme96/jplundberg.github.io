@@ -113,7 +113,7 @@ const PAGES = ['finance', 'food', 'work', 'habits', 'papers', 'calendar', 'goals
         prev = { cx: f.cx, R: f.R, L: f.L }; }
         [0, a.len].forEach(t => { R.pact(a.id, t); const f = st.figs.me; out.ends = Math.max(out.ends, Math.abs(f.cx - rest.cx)); ['R', 'L'].forEach(k => { if (f[k] && rest[k]) out.ends = Math.max(out.ends, Math.hypot(f[k][0] - rest[k][0], f[k][1] - rest[k][1])); }); }); });
       R.at(R.len); return out; });
-    check(tr.acts.map(a => a.id).join() === 'pack,map' && tr.acts[0].w > tr.acts[1].w, 'travel: packing comes first while something is left to pack (' + JSON.stringify(tr.acts) + ')');
+    check(tr.acts.map(a => a.id).slice(0, 2).join() === 'pack,map' && tr.acts[0].w > tr.acts[1].w, 'travel: packing comes first while something is left to pack (' + JSON.stringify(tr.acts) + ')');
     check(tr.worst < 7 && tr.body < 4.5, 'travel: packing and the map are smooth (body ' + tr.body.toFixed(2) + ', hands ' + tr.worst.toFixed(2) + ' at ' + tr.at + ')');
     check(tr.ends < 2 && !tr.bad, 'travel: they start and end in the rest, no broken numbers (' + tr.ends.toFixed(2) + ', ' + tr.bad + ')');
   }

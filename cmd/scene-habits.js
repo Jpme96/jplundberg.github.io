@@ -9,6 +9,7 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
+    var STK = false; function st0() { return STK; }
     return S.run(svg, {
       back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
       add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 6, fill: 'rgba(255,255,255,.08)', stroke: 'rgba(255,255,255,.25)' });
@@ -19,12 +20,12 @@
       FLOOR(g); add(g, 'ellipse', { cx: 200, cy: 199, rx: 52, ry: 7, fill: '#3a7d6b', opacity: .55 });
       },
       /* the page's own actions (F3): a drink from the bottle and a big sigh, jogging on the spot then a look at the watch, a stretch down to the toes */
-      acts: [{ id: 'bottle', len: 8.2, w: function () { return 2; } }, { id: 'jog', len: 5.6, w: function () { return 1.5; } }, { id: 'toes', len: 5.2, w: function () { return 1.5; } }],
+      acts: [{ id: 'bottle', len: 8.2, w: function () { return 2; } }, { id: 'jog', len: 5.6, w: function () { return 1.5; } }, { id: 'toes', len: 5.2, w: function () { return 1.5; } }, { id: 'sticker', len: 6.6, w: function () { return st0() ? 0 : 1.5; } }],   /* sticker: over to the streak chart, a star above today's bar, a small cheer */
       hits: [[42, 40, 98, 62, 'training'], [150, 168, 96, 32, 'training', 'toes'], [252, 166, 18, 34, 'ahealth', 'bottle'], [290, 108, 90, 92, 'training', 'main']],   /* the mat: a toe stretch; the bottle: a drink; the rack: the curls */
       season: { x: 112, y: 194, s: .95 }, len: 9.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
-      var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, cs = Math.cos(face * Math.PI / 180);
+      var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, stickIn = null, cs = Math.cos(face * Math.PI / 180);
       function DB(sd) { return [200 + sd * 13 + 9, 193]; }   /* the dumbbells stay by the mat */
       /* the room: a streak chart on the wall, the rack with the barbell, the mat, a bottle */
       function bottle(x, y, deg) { var b = grp(x, y, deg || 0); add(b, 'rect', { x: -4.5, y: -9.5, width: 9, height: 19, rx: 3, fill: '#3987e5', opacity: .85 }); add(b, 'rect', { x: -3, y: -13.5, width: 6, height: 5, rx: 1.5, fill: '#e9eef2' }); return b; }
@@ -57,7 +58,17 @@
         [-1, 1].forEach(function (sd) { var k2 = SIDE(sd, face), TOE = B(178, 14), UPT = B(26, 4);
           pose[k2] = t < .6 ? REST : t < 1.4 ? GO(REST, TOE, SEG(t, .6, 1.4)) : t < 2.4 ? HOLD(TOE) : t < 3.2 ? GO(TOE, UPT, SEG(t, 2.4, 3.2)) : t < 4.0 ? HOLD(UPT) : t < 4.6 ? GO(UPT, REST, SEG(t, 4.0, 4.6)) : REST; });
         pose.lean = 1.1 * dn; lift = t >= 3.2 && t < 4.0 ? 2 * Math.sin(Math.PI * SEG(t, 3.2, 4.0)) : 0; gy = 200;
+      } else if (st.pact === 'sticker') {
+        var SP = [126, 54], sh2;
+        cx = t < .3 ? 200 : t < 1.5 ? LERP(200, 150, E(SEG(t, .3, 1.5))) : t < 4.8 ? 150 : t < 6.0 ? LERP(150, 200, E(SEG(t, 4.8, 6.0))) : 200;
+        w = t > .3 && t < 1.5 ? Math.min(1, (t - .3) / .25, (1.5 - t) / .25) : t > 4.8 && t < 6.0 ? Math.min(1, (t - 4.8) / .25, (6.0 - t) / .25) : 0;
+        face = t < .3 ? LERP(35, -90, E(SEG(t, 0, .3))) : t < 1.5 ? -90 : t < 1.8 ? LERP(-90, -55, E(SEG(t, 1.5, 1.8))) : t < 4.4 ? -55 : t < 4.8 ? LERP(-55, 90, E(SEG(t, 4.4, 4.8))) : t < 6.0 ? 90 : LERP(90, 35, E(SEG(t, 6.0, 6.5)));
+        sh2 = SIDE(-1, face);
+        if (t >= 1.5 && t < 4.4) pose[sh2] = t < 1.9 ? GO(REST, B(150, 6), SEG(t, 1.5, 1.9)) : t < 2.7 ? GO(B(150, 6), AT(SP), SEG(t, 1.9, 2.7), 4) : t < 3.3 ? HOLD(AT([SP[0] + Math.sin((t - 2.7) * 12), SP[1]])) : GO(AT(SP), REST, SEG(t, 3.3, 3.9));
+        stickIn = t >= 1.9 && t < 3.0 ? sh2 : null; if (t >= 3.0) STK = st.stick = true;
+        lift = t > 3.9 && t < 4.4 ? 2.2 * Math.sin(Math.PI * SEG(t, 3.9, 4.4)) : 0; gy = 200;
       }
+      if (st.stick && !stickIn) STAR(g, 126, 46, 5, '#f2c94c', 1);   /* today's star stays on the chart */
       /* crouch, take both dumbbells, stand; three curls; put them down; wipe the brow; arms up */
       if (st.pact) {} else if (t < .7) cr = E(SEG(t, 0, .7)); else if (t < 1.3) cr = 1 - E(SEG(t, .7, 1.3)); else if (t >= 4.3 && t < 5.0) cr = E(SEG(t, 4.3, 5.0)); else if (t >= 5.0 && t < 5.6) cr = 1 - E(SEG(t, 5.0, 5.6));
       var gy;
@@ -83,9 +94,10 @@
       if (!held) [-1, 1].forEach(function (sd) { var p = DB(sd); g.appendChild(dumb(p[0], p[1] + 2)); });
       if (!bIn) g.appendChild(bottle(BOT[0], BOT[1]));
       FIG(g, { cx: cx, gy: gy, ground: 200, face: face, ph: ph, w: w, pose: pose, look: expr ? Object.assign({}, S.look(), { expr: expr }) : undefined, items: function (H) {
+        if (stickIn && H[stickIn]) { var sg = el('g', {}); STAR(sg, H[stickIn].X, H[stickIn].Y - 3, 5, '#f2c94c', 1); return [[H[stickIn].z + .05, sg]]; }
         if (bIn) { var bh = H[SIDE(-1, face)]; return bh ? [[bh.z - .15, bottle(bh.X, bh.Y, bTilt)]] : []; }
         return held ? [H.s1, H.sm].filter(Boolean).map(function (h) { return [h.z - .15, dumb(h.X, h.Y)]; }) : []; } });
-      if (t >= 6.1 && t < 7.0) { var q = SEG(t, 6.1, 7.0); add(g, 'path', { d: 'M' + (cx + 10) + ' ' + (126 + q * 50) + ' q-2.5 4 0 5.5 q2.5 -1.5 0 -5.5', fill: '#9ad0e8', opacity: (1 - q).toFixed(2) }); }
+      if (t >= 6.1 && t < 7.0 && st.pact !== 'sticker') { var q = SEG(t, 6.1, 7.0); add(g, 'path', { d: 'M' + (cx + 10) + ' ' + (126 + q * 50) + ' q-2.5 4 0 5.5 q2.5 -1.5 0 -5.5', fill: '#9ad0e8', opacity: (1 - q).toFixed(2) }); }
     } });
   };
 })();

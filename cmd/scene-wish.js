@@ -17,12 +17,12 @@
       FLOOR(g);
       },
       /* the page's own action (F3): he looks up, points – and a new wish star lights up and stays */
-      acts: [{ id: 'star', len: 4.8, w: function () { return 2; } }],
+      acts: [{ id: 'star', len: 4.8, w: function () { return 2; } }, { id: 'price', len: 5.6, w: function () { return 1.2; } }, { id: 'roll', len: 6.0, w: function () { return 1; } }],   /* price: he lifts the gift, reads the tag, shakes his head and puts it back; roll: a happy push of the cart and back */
       hits: [[200, 96, 112, 42, 'wishes', 'main'], [206, 140, 66, 60, 'wbuy', 'main'], [40, 0, 330, 70, 'wishes', 'star']],   /* the shelf or the cart: the gift into the cart; a star: a new wish */
       season: { x: 118, y: 194, s: .95 }, len: 6.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
-      var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];
+      var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gOv = null, tag = false, rollH = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];
       /* wishes floating as stars, the shelf, the floor */
       [[70, 52], [120, 34], [330, 46]].forEach(function (s, i) { STAR(g, s[0], s[1] + 3 * Math.sin(now / 700 + i), 7, '#f2c94c', .55 + .35 * Math.sin(now / 400 + i * 2)); });
       var NS = [238, 60], ns = st.newStar ? 1 : 0;
@@ -32,8 +32,22 @@
         pose[ph2] = t < .4 ? REST : t < .9 ? GO(REST, PT, SEG(t, .4, .9)) : t < 3.2 ? HOLD(B(22 + 2 * Math.sin((t - .9) * 6), 30)) : t < 3.8 ? GO(PT, REST, SEG(t, 3.2, 3.8)) : REST;
         ns = Math.max(ns, E(SEG(t, 1.4, 2.4))); if (t >= 2.4) st.newStar = 1;
         if (t > 2.2 && t < 3.4) lift = 1.5 * Math.sin(Math.PI * SEG(t, 2.2, 3.4));
+      } else if (st.pact === 'price') {
+        cx = 200; face = t < .4 ? 90 * E(SEG(t, 0, .4)) : t < 4.0 ? 90 + (t > 1.8 && t < 3.0 ? 14 * Math.sin((t - 1.8) * 7.9) : 0) : 90 * (1 - E(SEG(t, 4.0, 4.5)));
+        var IN2 = [242, 152], UPG = B(98, 24), n2 = SIDE(-1, face);
+        pose[n2] = t < .4 ? REST : t < 1.0 ? GO(REST, AT(IN2), SEG(t, .4, 1.0), 3) : t < 1.6 ? GO(AT(IN2), UPG, SEG(t, 1.0, 1.6)) : t < 3.0 ? HOLD(UPG) : t < 3.6 ? GO(UPG, AT(IN2), SEG(t, 3.0, 3.6)) : t < 4.0 ? GO(AT(IN2), REST, SEG(t, 3.6, 4.0), 3) : REST;
+        pose.lean = .22 * (E(SEG(t, .4, 1.0)) * (1 - E(SEG(t, 1.0, 1.6))) + E(SEG(t, 3.0, 3.6)) * (1 - E(SEG(t, 3.6, 4.0))));
+        gOv = t >= 1.0 && t < 3.6 ? 'hand' : 'cart'; tag = t >= 1.0 && t < 3.6;
+        if (t > 4.5) lift = -1.6 * Math.sin(Math.PI * SEG(t, 4.5, 5.5));   /* a small sigh */
+      } else if (st.pact === 'roll') {
+        var rq = t < .5 ? 0 : t < 2.4 ? E(SEG(t, .5, 2.4)) : t < 3.0 ? 1 : t < 4.9 ? 1 - E(SEG(t, 3.0, 4.9)) : 0; cx = 200 + 44 * rq;
+        face = t < .5 ? 90 * E(SEG(t, 0, .5)) : t < 5.0 ? 90 : 90 * (1 - E(SEG(t, 5.0, 5.5)));
+        w = (t > .5 && t < 2.4) ? Math.min(1, (t - .5) / .25, (2.4 - t) / .25) : (t > 3.0 && t < 4.9) ? .7 * Math.min(1, (t - 3.0) / .25, (4.9 - t) / .25) : 0;
+        rollH = t < .5 ? E(SEG(t, .1, .5)) : t < 4.9 ? 1 : 1 - E(SEG(t, 4.9, 5.3));
+        if (t > 2.4 && t < 3.0) lift = 2.4 * Math.sin(Math.PI * SEG(t, 2.4, 3.0));   /* a little hop at the far end */
       } else if (t < 2.6) { cx = LERP(-70, 200, SEG(t, 0, 2.6)); w = Math.min(1, t / .2, (2.6 - t) / .2); } else cx = 200;
       var HDL = [cx + 16, 147], nh = SIDE(-1, 90), fh = SIDE(1, 90);
+      if (rollH > 0) { pose[nh] = GO(REST, AT(HDL), rollH); pose[fh] = GO(REST, AT(HDL), rollH); }
       if (st.pact) {} else if (t < 2.6) { pose[nh] = HOLD(AT(HDL)); pose[fh] = HOLD(AT(HDL)); }
       else if (t < 4.4) { pose[fh] = HOLD(AT(HDL));
         pose[nh] = t < 3.0 ? GO(AT(HDL), AT(GIFT0), SEG(t, 2.6, 3.0), 3) : t < 3.6 ? GO(AT(GIFT0), AT(INTO), SEG(t, 3.0, 3.6), 6) : t < 4.0 ? GO(AT(INTO), AT(HDL), SEG(t, 3.6, 4.0)) : HOLD(AT(HDL));
@@ -41,7 +55,7 @@
         pose.lean = .3 * E(SEG(t, 2.6, 3.0)) * (1 - E(SEG(t, 3.6, 4.0))); }
       else if (t < 4.8) face = 90 * (1 - E(SEG(t, 4.4, 4.8)));
       else if (!st.pact) { face = 0; var ch = CHEER(t, 4.8, 1.2); lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
-      gift = st.pact ? 'cart' : t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
+      gift = st.pact ? (gOv || 'cart') : t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
       if (ns > 0) { STAR(g, NS[0], NS[1] + 2 * Math.sin(now / 650), 7 * ns, '#f2c94c', .9); if (ns < 1) add(g, 'circle', { cx: NS[0], cy: NS[1], r: 16 * ns, fill: 'none', stroke: '#f2c94c', opacity: (1 - ns).toFixed(2) }); }   /* the new wish – it stays */
       pose.lift = lift; var ph = LIFE(st, pose, w);
       function box(x, y) { var b2 = grp(x, y, 0); add(b2, 'rect', { x: -8, y: -7, width: 16, height: 14, rx: 2, fill: '#d93a3a' }); add(b2, 'rect', { x: -1.5, y: -7, width: 3, height: 14, fill: '#f2c94c' }); add(b2, 'rect', { x: -8, y: -1.5, width: 16, height: 3, fill: '#f2c94c' }); add(b2, 'path', { d: 'M0 -7 q-6 -6 -6 0 Z M0 -7 q6 -6 6 0 Z', fill: '#f2c94c' }); return b2; }
@@ -54,9 +68,9 @@
       add(g, 'line', { x1: c0 + 3, y1: 162, x2: c0 + 45, y2: 162, stroke: '#b9c1ca', 'stroke-width': .8, opacity: .7 });
       add(g, 'path', { d: 'M' + (c0 - 6) + ' 146 L' + c0 + ' 148 M' + (c0 + 8) + ' 176 L' + (c0 + 8) + ' 194 M' + (c0 + 40) + ' 176 L' + (c0 + 40) + ' 194 M' + (c0 + 2) + ' 192 L' + (c0 + 46) + ' 192', fill: 'none', stroke: '#9aa3ad', 'stroke-width': 1.8, 'stroke-linecap': 'round' });
       [c0 + 8, c0 + 40].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 196.5, r: 3.5, fill: '#2a2d33' }); });
-      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { return gift === 'hand' && H.sm ? [[H.sm.z - .15, box(H.sm.X, H.sm.Y)]] : []; } });
+      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (!(gift === 'hand' && H.sm)) return []; var bx = box(H.sm.X, H.sm.Y); if (tag) { add(bx, 'line', { x1: 8, y1: -3, x2: 12, y2: 2, stroke: '#c9b48e', 'stroke-width': .6 }); add(bx, 'rect', { x: 9.5, y: 2, width: 6, height: 8, rx: 1, fill: '#f4f1ea' }); add(bx, 'line', { x1: 11, y1: 6, x2: 14, y2: 6, stroke: '#8a8f99', 'stroke-width': .7 }); } return [[H.sm.z - .15, bx]]; }   /* the price tag hangs from the gift */ });
       /* the wish: a star rises from the cart and joins the others */
-      if (t >= 3.6) { var q = SEG(t, 3.6, 4.8), sp = [LERP(c0 + 22, 250, E(q)), LERP(150, 40, E(q))]; STAR(g, sp[0], sp[1], 5 + 3 * E(q), '#f2c94c', q < 1 ? 1 : .55 + .35 * Math.sin(now / 400 + 4));
+      if (t >= 3.6 || st.pact === 'price' || st.pact === 'roll') { var q = st.pact === 'price' || st.pact === 'roll' ? 1 : SEG(t, 3.6, 4.8), sp = [LERP(c0 + 22, 250, E(q)), LERP(150, 40, E(q))]; STAR(g, sp[0], sp[1], 5 + 3 * E(q), '#f2c94c', q < 1 ? 1 : .55 + .35 * Math.sin(now / 400 + 4));
         if (q < .5) for (var r3 = 0; r3 < 6; r3++) { var a3 = r3 * Math.PI / 3, rr = 6 + 26 * q; add(g, 'circle', { cx: c0 + 22 + Math.cos(a3) * rr, cy: 152 + Math.sin(a3) * rr * .7, r: 1.4, fill: '#f2c94c', opacity: (1 - 2 * q).toFixed(2) }); } }
     } });
   };
