@@ -20,7 +20,8 @@
       },
       /* the page's own actions (F3): a drink from the bottle and a big sigh, jogging on the spot then a look at the watch, a stretch down to the toes */
       acts: [{ id: 'bottle', len: 8.2, w: function () { return 2; } }, { id: 'jog', len: 5.6, w: function () { return 1.5; } }, { id: 'toes', len: 5.2, w: function () { return 1.5; } }],
-      hits: [[42, 40, 98, 62, 'training'], [150, 168, 96, 32, 'training'], [252, 166, 18, 34, 'ahealth'], [290, 108, 90, 92, 'training']], len: 9.6, data: data, render: function (sv, t, st) {
+      hits: [[42, 40, 98, 62, 'training'], [150, 168, 96, 32, 'training', 'toes'], [252, 166, 18, 34, 'ahealth', 'bottle'], [290, 108, 90, 92, 'training', 'main']],   /* the mat: a toe stretch; the bottle: a drink; the rack: the curls */
+      season: { x: 112, y: 194, s: .95 }, len: 9.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, cs = Math.cos(face * Math.PI / 180);

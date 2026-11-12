@@ -18,7 +18,8 @@
       },
       /* the page's own action (F3): he looks up, points – and a new wish star lights up and stays */
       acts: [{ id: 'star', len: 4.8, w: function () { return 2; } }],
-      hits: [[200, 96, 112, 42, 'wishes'], [206, 140, 66, 60, 'wbuy']], len: 6.6, data: data, render: function (sv, t, st) {
+      hits: [[200, 96, 112, 42, 'wishes', 'main'], [206, 140, 66, 60, 'wbuy', 'main'], [40, 0, 330, 70, 'wishes', 'star']],   /* the shelf or the cart: the gift into the cart; a star: a new wish */
+      season: { x: 118, y: 194, s: .95 }, len: 6.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];

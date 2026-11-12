@@ -17,7 +17,8 @@
       },
       /* the page's own actions (F3): a new note on the wall, and a look at the watch, then the clock – a hurried step */
       acts: [{ id: 'note', len: 5.4, w: function () { return 2; } }, { id: 'hurry', len: 5.0, w: function () { return 1.5; } }],
-      hits: [[148, 80, 56, 72, 'clToday'], [232, 46, 54, 54, 'clToday'], [310, 44, 40, 40, 'clToday']], len: 7.4, data: data, render: function (sv, t, st) {
+      hits: [[148, 80, 56, 72, 'clToday', 'main'], [232, 46, 54, 54, 'clToday', 'note'], [310, 44, 40, 40, 'clToday', 'hurry']],   /* a tap on the pad tears a page, on the notes adds one, on the clock: a hurried check */
+      season: { x: 300, y: 194, s: .95 }, len: 7.4, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), d = new Date(), today = d.getDate(), yday = new Date(d - 864e5).getDate(), WD = window.I18N && I18N.lang === 'nb' ? ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

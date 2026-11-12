@@ -96,7 +96,8 @@
       return r; }
     var run = S.run(svg, {
       len: ok ? (AID ? XLEN : LEN) : idle ? CLEN : WLEN, data: data,
-      pick: function (st) { st.from = st.t > 0 ? HOME : 420; },   /* a replay starts from where he rests – no teleport */
+      pick: function (st) { st.from = st.t > 0 ? HOME : 420; },
+      season: { x: 352, y: 165, s: .9 },   /* a replay starts from where he rests – no teleport */
       back: function (sv) {
         /* the room: a soft floor glow, the moon, the calendar tile with the days left */
         var bg = add(sv, 'g', {});
@@ -107,7 +108,7 @@
         add(cal, 'path', { d: 'M120 132 Q120 127 125 127 L153 127 Q158 127 158 132 L158 136 L120 136 Z', fill: '#d96b6b' });
         if (data.daysLeft != null) S.txt(cal, { x: 139, y: 157, 'text-anchor': 'middle', class: 'sc-calt' }, String(data.daysLeft));
         /* the jar: glass, the money level (its colour says how it goes), coins in the bottom, the lid with the slot, the amount */
-        var jar = add(sv, 'g', { class: 'hs-part' + (ok ? '' : ' hot'), 'data-scgo': 'fin' });
+        var jar = add(sv, 'g', { class: 'hs-part' + (ok ? '' : ' hot'), 'data-scgo': 'fin', 'data-scact': 'main' });   /* a tap on the jar: he goes to it (a coin in, or a worried look when money is short) */
         var path = 'M' + (JX0 + 6) + ' ' + (JT + 12) + ' Q' + JX0 + ' ' + (JT + 16) + ' ' + JX0 + ' ' + (JT + 26) + ' L' + JX0 + ' ' + (JB - 10) + ' Q' + JX0 + ' ' + JB + ' ' + (JX0 + 10) + ' ' + JB + ' L' + (JX0 + JW - 10) + ' ' + JB + ' Q' + (JX0 + JW) + ' ' + JB + ' ' + (JX0 + JW) + ' ' + (JB - 10) + ' L' + (JX0 + JW) + ' ' + (JT + 26) + ' Q' + (JX0 + JW) + ' ' + (JT + 16) + ' ' + (JX0 + JW - 6) + ' ' + (JT + 12) + ' Z';
         var lvl = 6 + 66 * ratio, top = JB - lvl;
         if (ratio > 0) add(jar, 'path', { d: 'M' + (JX0 + 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + (JB - 10) + ' Q' + (JX0 + JW - 2) + ' ' + (JB - 2) + ' ' + (JX0 + JW - 10) + ' ' + (JB - 2) + ' L' + (JX0 + 10) + ' ' + (JB - 2) + ' Q' + (JX0 + 2) + ' ' + (JB - 2) + ' ' + (JX0 + 2) + ' ' + (JB - 10) + ' Z', class: 'sc-money ' + (data.state || 'ok') });

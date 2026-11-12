@@ -19,7 +19,8 @@
       },
       /* the page's own actions (F3): a heart floats up between you, and – in the evening most – a sit on the bench together */
       acts: [{ id: 'heart', len: 4.6, w: function () { return 2; } }, { id: 'bench', len: 10.4, w: function () { return HRp >= 17 || HRp < 2 ? 3 : .8; } }],
-      hits: [[300, 150, 90, 50, 'people'], [20, 60, 90, 140, 'people']], len: 7.2, data: data, render: function (sv, t, st) {
+      hits: [[300, 150, 90, 50, 'people', 'bench'], [20, 60, 90, 140, 'people']],   /* the bench: you sit on it together */
+      season: { x: 122, y: 196, s: .95 }, len: 7.2, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), me = { cx: 30, face: 90, w: 0, pose: {} }, pa = { cx: 283, face: 0, w: 0, pose: {} }, MID = [258, 116], spark = -1;

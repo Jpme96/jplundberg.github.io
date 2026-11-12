@@ -109,6 +109,7 @@
     var steamA = 0;
     return S.run(svg, {
       len: cook ? LEN : LLEN, data: data,
+      season: { x: 160, y: 194, s: .95 },
       acts: [{ id: 'list', len: 6.6, w: function (d) { return d.shop ? 3 : .6; } }],
       back: function (bg) {
         /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
@@ -155,7 +156,7 @@
         if (steamA > .02) for (var si = 0; si < 3; si++) { var ph0 = ((now / 1000) * .6 + si / 3) % 1, sx = PX - 8 + si * 8, sy = PT - 4 - ph0 * 26;
           add(sv, 'path', { d: 'M' + sx + ' ' + sy.toFixed(1) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#fff', 'stroke-width': 1.8, 'stroke-linecap': 'round', opacity: (steamA * .55 * Math.sin(Math.PI * ph0)).toFixed(2) }); }
         /* the fridge: freezer drawer on top, the door below, its inside lit when open */
-        var fr2 = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
+        var fr2 = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals', 'data-scact': 'main' });   /* a tap on the fridge: he goes to it */
         add(fr2, 'path', { d: 'M112 80 L121 86 L121 199 L112 199 Z', fill: '#a9b4bd' });
         add(fr2, 'rect', { x: 40, y: 78, width: 72, height: 121, rx: 6, fill: '#dfe5ea' });
         add(fr2, 'rect', { x: 48, y: 96, width: 22, height: 3, rx: 1.5, fill: '#9aa6b0' });

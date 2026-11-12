@@ -16,7 +16,8 @@
       },
       /* the page's own actions (F3): dusting the cabinet, and a folder out of the drawer to read (a frown), back in */
       acts: [{ id: 'dust', len: 7.8, w: function () { return 1.5; } }, { id: 'folder', len: 9.4, w: function () { return 2; } }],
-      hits: [[106, 100, 74, 100, 'papers'], [226, 44, 52, 40, 'papers']], len: 11.6, data: data, render: function (sv, t, st) {
+      hits: [[106, 100, 74, 100, 'papers', 'folder'], [226, 44, 52, 40, 'papers', 'dust']],   /* the cabinet: a folder out to read; the frame: a dusting */
+      season: { x: 213, y: 194, s: .95 }, len: 11.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 205, face = -90, w = 0, pose = {}, p = 0, lean = 0, tilt = 0, canIn = false, grow = 0, water = 0;

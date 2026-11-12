@@ -18,7 +18,8 @@
       CLOCK(g, 330, 62, 17, 'face'); FLOOR(g);
       }, gen: { no: ['coffee'] },
       /* the page's own actions (F3): a video call in work hours, ticking off a sheet from the pile, a yawn late in the day */
-      acts: [{ id: 'call', len: 5.2, w: function () { return HR >= 8 && HR < 16 ? 3 : .4; } }, { id: 'tick', len: 5.8, w: function () { return 1.5; } }, { id: 'yawn', len: 4.4, w: function () { return HR >= 15 || HR < 6 ? 3 : .4; } }], hits: [[196, 124, 50, 32, 'ptime'], [180, 136, 22, 22, 'flex'], [310, 42, 40, 40, 'flex'], [128, 154, 184, 46, 'flex']], len: 12, data: data, render: function (sv, t, st) {
+      acts: [{ id: 'call', len: 5.2, w: function () { return HR >= 8 && HR < 16 ? 3 : .4; } }, { id: 'tick', len: 5.8, w: function () { return 1.5; } }, { id: 'yawn', len: 4.4, w: function () { return HR >= 15 || HR < 6 ? 3 : .4; } }], hits: [[196, 124, 50, 32, 'ptime', 'call'], [180, 136, 22, 22, 'flex', 'main'], [310, 42, 40, 40, 'flex', 'watch'], [128, 154, 184, 46, 'flex', 'tick']],   /* the laptop: a video call; the mug: a sip; the clock: the time; the desk: a sheet ticked off */
+      season: { x: 362, y: 196, s: .95, act: false }, len: 12, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 220, face = 0, pose = {}, lean = 0, lift = 0, mugIn = false, tilt = 0, MUG = [194, 151], MOUTH = B(66, 24), UP = B(34, 4);

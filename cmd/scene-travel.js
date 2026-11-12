@@ -11,8 +11,15 @@
     data = data || {};
     if (data.journey) return journey(svg, data);
     if (!data.trip) return null;   /* no trip planned: the still picture */
-    return S.run(svg, { hits: [[0, 120, 120, 80, 'trips']], len: 17, data: data, render: function (sv, t, st) {
+    /* Travel's own actions (F3), after he's home again by the stop with the suitcase beside him:
+       pack – a shirt from the chair into the suitcase, the zip closed (packing list items still open);
+       map  – a folded map from his pocket, unfolded, turned the right way, shown to you, folded and put back (nothing to pack) */
+    var PACK = { len: 7.8 }, MAP = { len: 5.8 }, CHAIR = 86, packedNow = false;
+    return S.run(svg, { hits: [[0, 120, 120, 80, 'trips']], len: 17, data: data,
+      acts: [{ id: 'pack', len: PACK.len, w: function (d) { return d.packLeft > 0 && !packedNow ? 3 : 0; } }, { id: 'map', len: MAP.len, w: function (d) { return d.packLeft > 0 ? .6 : 2; } }],
+      render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      var pt = st.pact === 'pack' || st.pact === 'map' ? t : null; if (pt != null) t = 17;   /* his own actions start from the rest at the end (home by the stop) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var V = /^(bus|train|plane|ferry)$/.test(data.veh || '') ? data.veh : 'plane', g = add(sv, 'g', {});
       var KIND = { bus: 'step', train: 'step', plane: 'stairs', ferry: 'ramp' }[V];
@@ -142,18 +149,55 @@
           if (t >= 16.6) { cx = 200; face = -90 + 90 * E(SEG(t, 16.6, 17)); suit = 'stand'; sx = 222; pose = {}; if (t < 16.95) pose[SIDE(-1, face)] = GO(B(150, -14), REST, SEG(t, 16.6, 16.95)); } }   /* lets go of the handle, then turns to you */
       }
       if (t >= 14.6) gone = false;
+      var shirt = data.packLeft > 0 && !packedNow ? 'chair' : null, lid = 0, mapW = 0, mapF = 1, mapUp = 0;
+      if (pt != null && st.pact === 'pack') {
+        var pq = pt, R0 = REST, SEATP = [CHAIR + 8, 176], TOPC = [222, 166];
+        face = pq < 2.9 ? -90 * E(SEG(pq, 0, .4)) : pq < 3.3 ? -90 + 180 * E(SEG(pq, 2.9, 3.3)) : pq < 6.9 ? 90 : 90 * (1 - E(SEG(pq, 6.9, 7.4)));
+        cx = pq < 2.9 ? LERP(200, CHAIR + 26, E(SEG(pq, .3, 1.6))) : LERP(CHAIR + 26, 200, E(SEG(pq, 3.1, 4.4)));
+        w = pq > .3 && pq < 1.6 ? Math.min(1, (pq - .3) / .25, (1.6 - pq) / .25) : pq > 3.1 && pq < 4.4 ? Math.min(1, (pq - 3.1) / .25, (4.4 - pq) / .25) : 0;
+        st.phpk = (pq > .3 && pq < 1.6) || (pq > 3.1 && pq < 4.4) ? Math.abs(cx - 200) * .0674 : st.phpk || 0;
+        var bend = pq < 1.7 ? 0 : pq < 2.2 ? E(SEG(pq, 1.7, 2.2)) : pq < 2.7 ? 1 - E(SEG(pq, 2.4, 2.7)) : pq < 4.5 ? 0 : pq < 4.9 ? E(SEG(pq, 4.5, 4.9)) * .7 : pq < 6.6 ? .7 : .7 * (1 - E(SEG(pq, 6.6, 6.9)));
+        pose = { lean: .38 * bend }; var near = SIDE(1, face);   /* the same hand (his right) all the way, whichever way he faces */
+        var HOLDP = B(124, 18);
+        pose[near] = pq < 1.7 ? R0 : pq < 2.2 ? GO(R0, AT(SEATP), SEG(pq, 1.7, 2.2), 2) : pq < 2.7 ? GO(AT(SEATP), HOLDP, SEG(pq, 2.3, 2.7)) : pq < 4.5 ? HOLD(HOLDP) : pq < 5.0 ? GO(HOLDP, AT([TOPC[0] - 2, TOPC[1] - 2]), SEG(pq, 4.5, 5.0), 3) : pq < 5.5 ? HOLD(AT([TOPC[0] - 2, TOPC[1] - 2])) :
+          pq < 5.7 ? GO(AT([TOPC[0] - 2, TOPC[1] - 2]), AT([TOPC[0] - 9, TOPC[1] - 1]), SEG(pq, 5.5, 5.7)) : pq < 6.4 ? HOLD(AT([LERP(TOPC[0] - 9, TOPC[0] + 9, E(SEG(pq, 5.7, 6.4))), TOPC[1] - 1])) : GO(AT([TOPC[0] + 9, TOPC[1] - 1]), R0, SEG(pq, 6.4, 6.9));   /* takes the shirt, carries it, puts it in, then the zip across the top */
+        shirt = pq < 2.2 ? 'chair' : pq < 5.2 ? 'hand' : null; if (pq >= 5.2 && pt >= PACK.len - .05) packedNow = true;
+        lid = pq < 4.4 ? 0 : pq < 4.8 ? E(SEG(pq, 4.4, 4.8)) : pq < 5.7 ? 1 : 1 - E(SEG(pq, 5.7, 6.4));   /* the suitcase opens at the top, and the zip closes it */
+        suit = 'stand'; sx = 222; h = 0; inside = false; gone = false;
+      }
+      if (pt != null && st.pact === 'map') {
+        var mq = pt; face = 0; cx = 200; w = 0; suit = 'stand'; sx = 222; h = 0; inside = false; gone = false; pose = {};
+        var nk = SIDE(1, 0), fk = SIDE(-1, 0), POCK = B(150, 6), MY = 150 - 14 * E(SEG(mq, 2.9, 3.3)) * (1 - E(SEG(mq, 3.9, 4.2)));
+        mapW = mq < 1.2 ? 0 : mq < 1.9 ? E(SEG(mq, 1.2, 1.9)) : mq < 4.0 ? 1 : mq < 4.6 ? 1 - E(SEG(mq, 4.0, 4.6)) : 0;
+        var hx = 5 + 13 * mapW, LH = [cx - hx, MY], RH = [cx + hx, MY];
+        pose[nk] = mq < .7 ? GO(REST, POCK, SEG(mq, .2, .7)) : mq < 1.2 ? GO(POCK, AT(RH), SEG(mq, .7, 1.2)) : mq < 4.6 ? HOLD(AT(RH)) : mq < 5.1 ? GO(AT(RH), POCK, SEG(mq, 4.6, 5.1)) : GO(POCK, REST, SEG(mq, 5.1, 5.6));   /* the hand on your right takes it from the pocket */
+        pose[fk] = mq < .9 ? REST : mq < 1.2 ? GO(REST, AT(LH), SEG(mq, .9, 1.2)) : mq < 4.6 ? HOLD(AT(LH)) : GO(AT(LH), REST, SEG(mq, 4.6, 5.0));
+        mapF = mq > 2.2 && mq < 2.8 ? Math.cos(Math.PI * SEG(mq, 2.2, 2.8)) : 1;   /* turned the right way round */
+        mapUp = mq > .7 && mq < 5.05 ? 1 : 0; st.mapAt = [cx, MY]; st.mapHand = nk; st.mapIn = mq < 1.2 || mq > 4.6;   /* folded: in his hand; open: between his hands */
+        pose.lean = .05 * Math.sin(Math.PI * SEG(mq, 1.9, 2.9));   /* a look down at it */
+      }
       if (t < 7.4 || t >= 14.6 || (t >= 7.4 && t < 8.4)) { /* walking on the flat */ }
       GND = groundAt(cx); if (KIND === 'stairs' && t >= 8.8 && t < 12.2) h = 198 - GND; if (KIND === 'ramp' && t >= 8.4 && t < 14.6) h = inside ? 198 - (142 + bob) : 198 - groundAt(cx);
-      var ph = LIFE(st, pose, w);
+      var ph = LIFE(st, pose, w); if (pt != null && st.pact === 'pack') ph = st.phpk || 0;   /* his steps follow the distance, so his feet never slide */
       function suitcase(x, y, deg, s) { var c = grp(x, y, deg, s || 1); add(c, 'rect', { x: -11, y: -33, width: 22, height: 31, rx: 4, fill: '#d96b6b' }); add(c, 'rect', { x: -11, y: -21, width: 22, height: 3, fill: 'rgba(0,0,0,.18)' }); add(c, 'line', { x1: 0, y1: -33, x2: 0, y2: -47, stroke: '#3a3f4a', 'stroke-width': 2 }); add(c, 'rect', { x: -4, y: -49, width: 8, height: 3, rx: 1.5, fill: '#3a3f4a' }); add(c, 'circle', { cx: -7, cy: -1, r: 2.3, fill: '#2a2d33' }); add(c, 'circle', { cx: 7, cy: -1, r: 2.3, fill: '#2a2d33' }); return c; }
       function carryCase(x, y) { var c = grp(x, y, 0); add(c, 'rect', { x: -4, y: -1, width: 8, height: 3, rx: 1.5, fill: '#3a3f4a' }); add(c, 'rect', { x: -10, y: 2, width: 20, height: 27, rx: 4, fill: '#d96b6b' }); add(c, 'rect', { x: -10, y: 13, width: 20, height: 3, fill: 'rgba(0,0,0,.18)' }); return c; }
+      /* the chair by the stop (only once he's home and has something left to pack) with the shirt waiting on it */
+      function chairG(x) { var c = add(g, 'g', {}); add(c, 'rect', { x: x - 1, y: 150, width: 3, height: 48, rx: 1, fill: '#7a4b2e' }); add(c, 'rect', { x: x, y: 174, width: 22, height: 4, rx: 1.5, fill: '#a0673a' }); add(c, 'rect', { x: x + 19, y: 178, width: 2.6, height: 20, fill: '#7a4b2e' }); add(c, 'rect', { x: x + 1, y: 178, width: 2.6, height: 20, fill: '#7a4b2e' }); return c; }
+      function shirtG(x, y, sc) { var c = grp(x, y, 0, sc || 1); add(c, 'rect', { x: -7, y: -4, width: 14, height: 4.4, rx: 1.2, fill: '#3987e5' }); add(c, 'rect', { x: -7, y: -4, width: 14, height: 1.4, rx: .7, fill: '#5aa0f0' }); add(c, 'path', { d: 'M-2 -4 l2 1.6 l2 -1.6', fill: 'none', stroke: '#2a62ad', 'stroke-width': .7 }); return c; }
+      function mapG(x, y, wq, fq) { var W = 6 + 26 * wq, H = 8 + 13 * wq, c = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(1 ' + fq.toFixed(2) + ')' });
+        add(c, 'rect', { x: -W / 2, y: -H / 2, width: W, height: H, rx: .8, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.18)', 'stroke-width': .5 });
+        if (wq > .3) { add(c, 'path', { d: 'M' + (-W / 2 + 2) + ' ' + (H / 2 - 3) + ' q' + (W * .2) + ' ' + (-H * .5) + ' ' + (W * .45) + ' ' + (-H * .25) + ' t' + (W * .4) + ' ' + (-H * .4), fill: 'none', stroke: '#d93a3a', 'stroke-width': .8, 'stroke-dasharray': '1.4 1' });
+          add(c, 'circle', { cx: W * .3, cy: -H * .25, r: 3 * wq, fill: '#9ad0e8' }); add(c, 'rect', { x: -W * .38, y: -H * .4, width: W * .22, height: H * .3, fill: '#bfe0b0' });
+          [-1, 1].forEach(function (q) { add(c, 'line', { x1: q * W / 6, y1: -H / 2, x2: q * W / 6, y2: H / 2, stroke: 'rgba(0,0,0,.08)', 'stroke-width': .5 }); }); }
+        return c; }
+      if (t >= 14.6 && (data.packLeft > 0 || st.pact === 'pack')) { chairG(CHAIR); if (shirt === 'chair') g.appendChild(shirtG(CHAIR + 11, 174)); }
       /* draw: the back of the vehicle, then (outside) its wall and him, or (inside) him and then the wall over him */
       var drawV = { bus: bus, train: train, plane: plane, ferry: ferry }[V], onScreen = V === 'plane' ? px > -700 && py > -260 : vx > -560 && vx < 430;
       if (V === 'plane') { if (onScreen) plane('back'); stairs(); }
       else if (onScreen) drawV('back');
       if (V !== 'plane' && onScreen && !inside) drawV('wall');
       if (V === 'plane' && onScreen && !inside) plane('wall');
-      if (suit === 'stand') g.appendChild(suitcase(sx, 199, 0));
+      if (suit === 'stand') { g.appendChild(suitcase(sx, 199, 0)); if (lid > 0) add(g, 'path', { d: 'M' + (sx - 10) + ' 167 q10 ' + (-5 * lid).toFixed(1) + ' 20 0 Z', fill: '#2a1414', opacity: lid.toFixed(2) }); }   /* the zip open at the top */
       if (suit === 'in' && KIND === 'step' && onScreen && t < 14.6) g.appendChild(suitcase(DX + 6, FLOOR, 0));
       var figPar = g;
       if (inside && onScreen && KIND !== 'ramp') { var cpd = add(g, 'defs', {}), cp = add(cpd, 'clipPath', { id: 'tvClip' });
@@ -163,6 +207,8 @@
         var out = [], hs = face > 0 ? H.s1 : H.sm;
         if ((suit === 'pull') && hs) { var dir = face >= 0 ? 1 : -1, gw = groundAt(hs.X - dir * 30) + 1, c = Math.max(-1, Math.min(1, (gw - hs.Y) / 47)), th = Math.acos(c), wx = hs.X - dir * 47 * Math.sin(th); out.push([-100, suitcase(wx, gw, dir * th * 180 / Math.PI)]); }
         if (suit === 'hand' && H.s1) out.push([H.s1.z - .05, suitcase(H.s1.X, H.s1.Y + 48, 0)]);
+        var sh1 = H.s1; if (shirt === 'hand' && sh1) out.push([sh1.z + .05, shirtG(sh1.X, sh1.Y + 3)]);
+        if (mapUp && st.mapAt && H.near) { var mh = H[st.mapHand]; if (st.mapIn && mh) out.push([mh.z + .05, mapG(mh.X, mh.Y + 1, 0, 1)]); else out.push([.6, mapG(st.mapAt[0], st.mapAt[1] - 1, mapW, mapF)]); }   /* folded in his hand; held up open between his hands */
         if (suit === 'carry' && H.s1) out.push([H.s1.z + (face > 100 ? -.05 : .05), carryCase(H.s1.X, H.s1.Y)]);
         if (t >= 3.4 && t < 4.5 && H.sm) { var ps = grp(H.sm.X, H.sm.Y - 3, -8); if (V === 'plane') { add(ps, 'rect', { x: -5, y: -7, width: 10, height: 13, rx: 1.5, fill: '#7a2e3a' }); add(ps, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); } else { add(ps, 'rect', { x: -3.5, y: -6.5, width: 7, height: 13, rx: 1.5, fill: '#1b1f27' }); add(ps, 'rect', { x: -2.6, y: -5.5, width: 5.2, height: 10, rx: 1, fill: '#9ad0e8' }); } out.push([H.sm.z - .15, ps]); }
         return out; } });
