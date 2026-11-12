@@ -9,10 +9,14 @@
    · Categories that learn: change the category of a bank row and the others from the same shop follow, and
      the next import uses it (Finances → Spending; the list of what it learned is in Settings → Finances).
    Settings: dash.tools.fintools (Settings → Finances, under the shared expenses). */
+/* The everywhere part (made by cmd/split-page.js): hooks for other pages and the data they need. The rest is in fin-tools.page.js, loaded only on its own page. */
 (function () {
   "use strict";
   if (!window.Vault || !window.Features) return;
-  var Fe = window.Features, B = window.Budget, A = window.Accts, L = window.Loans;
+  var Fe = window.Features;
+  var B = window.Budget;
+  var A = window.Accts;
+  var L = window.Loans;
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function num(v) { var s = String(v == null ? '' : v).replace(/[\s kr]/gi, ''); if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); var x = parseFloat(s.replace(',', '.')); return isFinite(x) ? x : null; }
@@ -27,14 +31,15 @@
   function fmtD(k, y) { return fromKey(k).toLocaleDateString('en-GB', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function fin() { return Fe.on('finance') ? window.Vault.get() : null; }
-  var GREEN = '#22b35e', AMBER = '#c98500', RED = '#e66767', BLUE = '#3987e5', GREY = '#7a8794';
-
+  var GREEN = '#22b35e';
+  var AMBER = '#c98500';
+  var RED = '#e66767';
+  var BLUE = '#3987e5';
+  var GREY = '#7a8794';
   var DEF = { eye: true, rise: true, payBrief: true, ebBrief: true, merge: true, buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
   function cfg() { var c = Fe.tools().fintools; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }
   function setCfg(p) { var t = Fe.tools(); t.fintools = Object.assign({}, t.fintools || {}, p); Fe.saveTools(t); }
   function debts(d) { return ((d && d.accounts) || []).filter(function (a) { return a.kind === 'debt'; }); }
-
-  /* ================= Can I afford it? ================= */
   function afford(price, months) {
     var d = fin(); if (!d || !B) return null;
     var c = cfg(), out = { price: price, months: months || 1 };
@@ -64,23 +69,10 @@
       (r.owed ? '<li><span data-t="ui.owed-on-cards"><span data-t="ui.owed-on-cards"><span data-t="ui.owed-on-cards">Owed on cards</span></span></span><b class="neg">' + esc(kr(-r.owed)) + '</b></li>' : '') +
       (r.saved ? '<li><span data-t="ui.saved"><span data-t="ui.saved"><span data-t="ui.saved">Saved</span></span></span><b>' + esc(kr(r.saved)) + '</b></li>' : '') + '</ul>';
   }
-  function affordSheet(price, title) {
-    var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
-    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Can I afford it?" data-t-aria-label="ui.can-i-afford-it" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-calculator"></i> <span data-t="ui.can-i-afford-it"><span data-t="ui.can-i-afford-it">Can I afford it?</span></span></h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
-      (title ? '<p class="muted lf-sub">' + esc(title) + '</p>' : '') + affordForm(price) + '<div data-fares></div></form>';
-    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
-    var close = function () { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); };
-    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-x]')) close(); });
-    var f = bg.querySelector('form'); f.addEventListener('submit', function (e) { e.preventDefault(); });
-    var run = function () { var p = num(f.price.value); bg.querySelector('[data-fares]').innerHTML = p > 0 ? affordHtml(afford(p, +f.months.value || 1)) : ''; };
-    f.addEventListener('input', run); f.addEventListener('change', run); run();
-    setTimeout(function () { if (!price && !matchMedia('(pointer: coarse)').matches) f.price.focus(); }, 60);
-  }
   function affordForm(price) {
     return '<div class="mp-grid fa-in"><label><span data-t="ui.price-kr"><span data-t="ui.price-kr"><span data-t="ui.price-kr">Price, kr</span></span></span><input name="price" inputmode="decimal" value="' + (price ? esc(String(price)) : '') + '" placeholder="e.g. 12 000"></label>' +
       '<label><span data-t="ui.paid">Paid</span><select name="months"><option value="1" data-t="ui.all-at-once">All at once</option><option value="3" data-t="ui.over-3-months">Over 3 months</option><option value="6" data-t="ui.over-6-months">Over 6 months</option><option value="12" data-t="ui.over-12-months">Over 12 months</option></select></label></div>';
   }
-  /* before you type a price: how much you could spend right now, three ways, and the wishes that fit */
   function limits() {
     var r = afford(1, 1); if (!r) return '<p class="muted fa-hint" data-t="ui.add-your-salary-and-bills-then-type-a-pr">Add your salary and bills, then type a price here.</p>';
     var c = cfg(), month = r.left != null ? r.left * (+c.share || 100) / 100 : null, acc = r.cash != null ? Math.max(0, r.cash - r.owed - (+c.buffer || 0)) : null;
@@ -91,9 +83,6 @@
       '<li style="--c:' + AMBER + '"><i class="bi bi-piggy-bank"></i><span data-t="ui.in-savings"><span data-t="ui.in-savings"><span data-t="ui.in-savings">In savings</span></span></span><b>' + esc(kr(r.saved)) + '</b></li></ul>' +
       (wl.length ? '<p class="fx-sub" data-t="ui.from-your-wishlist">From your wishlist</p><ul class="fa-wl">' + wl.map(function (w) { var a = afford(+w.price, 1), col = a.ok === 2 ? GREEN : a.ok === 1 ? BLUE : a.ok === 0 ? AMBER : RED; return '<li><a href="/cmd/wish/#wishes=' + esc(w.id) + '">' + esc(w.title) + '</a><span class="hl-chip" style="--c:' + col + '">' + (a.ok === 2 ? 'Fits' : a.ok === 1 ? 'From accounts' : a.ok === 0 ? 'From savings' : 'Wait') + '</span><b>' + esc(kr(w.price)) + '</b></li>'; }).join('') + '</ul>' : '');
   }
-  window.FinAfford = { open: affordSheet, check: afford };
-
-  /* the card on Insights */
   function affordCard() {
     var box = $('fnAfford'); if (!box) return;
     if (!box.firstChild) {
@@ -103,8 +92,6 @@
       affordCard.run = run;
     } else if (affordCard.run && !box.contains(document.activeElement)) affordCard.run();
   }
-
-  /* ================= Tax time ================= */
   function taxDates(now) {
     var y = now.getFullYear(), t = dkey(now);
     var l = [
@@ -116,7 +103,6 @@
     ];
     return l.filter(function (x) { return x.k >= t; });
   }
-  /* which year's return you're working on: from January until 30 April it's last year's, then this year's (for planning) */
   function taxYear(now) { var y = now.getFullYear(); return now.getMonth() < 5 ? y - 1 : y; }
   function taxChecks(ty) {
     var d = fin() || {}, out = [], dl = debts(d), sh = dl.some(function (l) { return L && L.shared(l); });
@@ -150,8 +136,6 @@
     var s = t.taxcheck[ty] = t.taxcheck[ty] || {}; if (s[b.dataset.taxck]) delete s[b.dataset.taxck]; else s[b.dataset.taxck] = today();
     Fe.saveTools(t); taxCard();
   });
-
-  /* ================= Debt-free ================= */
   function debtCard() {
     var box = $('fnDebt'); if (!box) return;
     var d = fin(); if (!d || !L) { box.innerHTML = ''; return; }
@@ -172,27 +156,8 @@
         (gain && gain.months > 0 ? '<p><b>' + gain.months + (gain.months === 1 ? ' month' : ' months') + ' sooner</b> – done ' + esc(gain.end.replace(/ \(.*$/, '')) + ', about ' + esc(kr(gain.interest)) + ' less interest (your part)</p>' : '') + '</div>' : '');
   }
   document.addEventListener('change', function (e) { var s = e.target.closest('[data-fxextra]'); if (s) { setCfg({ extra: +s.value }); debtCard(); } });
-
-  /* ================= Interest watch ================= */
   function rateSeen() { var t = Fe.tools(); return t.rateSeen && typeof t.rateSeen === 'object' ? t.rateSeen : {}; }
   function rateLog() { var t = Fe.tools(); return Array.isArray(t.rateLog) ? t.rateLog : []; }
-  /* notice a changed rate (typed into a loan): log it with what it means a month */
-  function watch() {
-    var d = fin(); if (!d || !L) return;
-    var seen = rateSeen(), log = rateLog(), ch = false;
-    debts(d).forEach(function (l) {
-      var r = +l.rate; if (!(r >= 0) || !l.id) return;
-      var s = seen[l.id];
-      if (!s) { seen[l.id] = { r: r, at: today(), ok: today() }; ch = true; return; }
-      if (Math.abs(s.r - r) > 0.0001) {
-        var owe = L.owedNow(l) * L.part(l), month = owe * (r - s.r) / 1200;
-        log.unshift({ id: l.id, name: l.name || 'Loan', date: today(), from: s.r, to: r, month: Math.round(month) });
-        seen[l.id] = { r: r, at: today(), ok: today() }; ch = true;
-        if (Math.abs(month) >= 1) toast('<i class="bi bi-percent"></i> ' + esc(l.name || 'Loan') + ': ' + fmtR(s.r) + ' → ' + fmtR(r) + ' % · about ' + (month > 0 ? '+' : '−') + esc(kr(Math.abs(month))) + ' a month in interest');
-      }
-    });
-    if (ch) { var t = Fe.tools(); t.rateSeen = seen; t.rateLog = log.slice(0, 30); Fe.saveTools(t); }
-  }
   function fmtR(r) { return String(Math.round(r * 100) / 100).replace('.', ','); }
   function rateCard() {
     var box = $('fnRate'); if (!box) return;
@@ -212,8 +177,6 @@
     var b = e.target.closest('[data-rateok]'); if (!b) return;
     var t = Fe.tools(); t.rateSeen = t.rateSeen || {}; var s = t.rateSeen[b.dataset.rateok]; if (s) s.ok = today(); Fe.saveTools(t); rateCard(); toast('<i class="bi bi-check2"></i> Noted');
   });
-
-  /* ================= At a glance ================= */
   (window.BriefExtra = window.BriefExtra || []).push(function (add) {
     var d = fin(); if (!d) return;
     var c = cfg(), now = new Date(), t = today();
@@ -246,8 +209,6 @@
   (window.CommandExtra = window.CommandExtra || []).push(function () {
     return Fe.on('finance') ? [{ i: 'calculator', t: 'Can I afford it?', s: 'Finances', run: function () { affordSheet(''); }, x: 'afford råd kjøpe har jeg råd price' }] : [];
   });
-
-  /* ================= Settings → Finances (under what money-plus.js draws) ================= */
   function setFill() {
     var box = $('mpSet2'); if (!box || box.contains(document.activeElement)) return;
     if (!Fe.on('finance')) { box.innerHTML = ''; return; }
@@ -280,34 +241,7 @@
     b.closest('li').remove(); toast('<i class="bi bi-x-lg"></i> Forgot ' + esc(k), function () { var d2 = window.Vault.get(); d2.catMemory = d2.catMemory || {}; d2.catMemory[k] = was; window.Vault.save(d2); setFill(); });
   });
   window.addEventListener('st:page', function (e) { if (e.detail === 'finance') setTimeout(setFill, 0); });
-
-  /* ================= categories that learn: the others from the same shop follow ================= */
   function normNote(s) { return window.Smart && window.Smart.norm ? window.Smart.norm(s) : String(s || '').toLowerCase().replace(/[^a-zæøå ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
-  /* finance.js calls this after you change one row's category */
-  window.FinLearn = {
-    changed: function (id, cat, oldCat) {
-      var c = cfg(), d = window.Vault.get(); if (!d) return;
-      var ex = (d.expenses || []).filter(function (x) { return x.id === id; })[0]; if (!ex || !ex.note) return;
-      var key = normNote(ex.note);
-      if (c.learn) { d.catMemory = d.catMemory || {}; d.catMemory[key] = cat; }
-      var others = c.learnAll ? (d.expenses || []).filter(function (x) { return x.id !== id && x.cat === oldCat && x.cat !== 'fixed' && x.note && normNote(x.note) === key; }) : [];
-      var undo = others.map(function (x) { return [x.id, x.cat]; });
-      others.forEach(function (x) { x.cat = cat; });
-      window.Vault.save(d);
-      if (others.length) {
-        window.dispatchEvent(new Event('fin:change'));
-        toast('<i class="bi bi-tags"></i> ' + others.length + ' more from ' + esc(ex.note) + ' moved too', function () {
-          var d2 = window.Vault.get(), m = {}; undo.forEach(function (u) { m[u[0]] = u[1]; });
-          (d2.expenses || []).forEach(function (x) { if (m[x.id]) x.cat = m[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change'));
-        });
-      }
-      return others.length;
-    },
-    norm: normNote, on: function () { return cfg().learn; }
-  };
-
-
-  /* ================= Price rise alert: a subscription or bill the bank charged more for than you noted ================= */
   function rises() {
     var d = fin(); if (!d || !cfg().rise) return [];
     var since = (function () { var x = new Date(); x.setDate(x.getDate() - 45); return dkey(x); })(), n = window.FinLearn ? window.FinLearn.norm : function (s) { return String(s || '').toLowerCase(); };
@@ -324,85 +258,35 @@
     ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (!f.src) check('fixed', f.id, f.name, f.amount); });
     return out;
   }
-  function riseFix(r, update) {
-    var t = Fe.tools(); t.riseSeen = Object.assign({}, t.riseSeen || {}); t.riseSeen[r.key] = today();
-    if (update && r.kind === 'sub') (t.subs || []).forEach(function (x) { if (x.id === r.id) x.amount = Math.round(r.now * 100) / 100; });
-    Fe.saveTools(t);
-    if (update && r.kind === 'fixed') { var d = window.Vault.get(); ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (f.id === r.id) f.amount = Math.round(r.now); }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
-    toast('<i class="bi bi-check2"></i> ' + (update ? esc(r.name) + ' updated to ' + esc(kr(r.now)) : 'Noted'));
-  }
-
-  /* ================= Payday autopilot: tick every move at once ================= */
-  function payAll() {
-    var d = window.Vault.get(); if (!d || !B || !B.payPlan) return 0;
-    var p = B.payPlan(d), k = p.per.startKey, open = p.moves.filter(function (m) { return !m.done; }); if (!open.length) return 0;
-    d.budget.payDone = d.budget.payDone || {}; var m = d.budget.payDone[k] = d.budget.payDone[k] || {};
-    open.forEach(function (x) { m[x.id] = true; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
-    toast('<i class="bi bi-check2-all"></i> ' + open.length + ' payday moves done', function () { var d2 = window.Vault.get(), m2 = ((d2.budget || {}).payDone || {})[k] || {}; open.forEach(function (x) { delete m2[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); });
-    return open.length;
-  }
-  window.FinPayAll = payAll;
-  document.addEventListener('click', function (e) { if (e.target.closest('[data-payall]')) { e.preventDefault(); payAll(); } });
-
-  /* ================= Budgets for events and trips ================= */
-  /* dash.tools.ebudgets = [{ id, name, kind: event|trip, start, end, budget, saved }]; a spending counts when it's
-     tagged (expense.ebud = id), and for a trip also everything you spend between its dates */
   function ebSpent(b, d) {
     d = d || fin() || {}; var all = b.kind === 'trip';
     return (d.expenses || []).filter(function (e) { return e && (e.ebud === b.id || (all && isKey(b.start) && e.date >= b.start && e.date <= (b.end || b.start) && e.cat !== 'fixed' && !e.ebud)); });
   }
   function monthsTo(k) { if (!isKey(k)) return 0; var a = new Date(), b = fromKey(k); return Math.max(0, (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth()); }
   function ebSaveMonthly(b) { var left = Math.max(0, (+b.budget || 0) - (+b.saved || 0)), m = monthsTo(b.start); return m > 0 ? Math.ceil(left / m / 10) * 10 : 0; }
-  var EBK = [['event', 'An event'], ['trip', 'A trip']];
-  var ebCol = (window.Kit && document.querySelector('[data-tool="ebud"]')) ? window.Kit.collection({
-    mount: document.querySelector('[data-tool="ebud"]'), feature: 'finance', key: 'ebudgets', icon: 'calendar2-heart', title: 'Budgets for events and trips', addLabel: 'Add', limit: 6,
-    addTitle: 'New budget', editTitle: 'Edit budget', fields: [
-      { k: 'name', type: 'title', label: 'For', ph: 'e.g. Christmas, Spain in May, the moving day', req: true },
-      { k: 'kind', label: 'It’s', type: 'select', options: EBK, def: 'event', help: 'A trip counts everything you spend between its dates; an event counts what you tag.' },
-      { k: 'budget', label: 'Budget', type: 'number', suffix: 'kr', req: true },
-      { k: 'start', label: 'From', type: 'date' }, { k: 'end', label: 'To', type: 'date' },
-      { k: 'saved', label: 'Already put aside', type: 'number', suffix: 'kr' }],
-    empty: 'Christmas, a birthday party, the move, a trip – give it a budget and a date, and you see what’s spent, what’s left, and what to put aside each month until then.',
-    sort: function (a, b) { return String(a.start || '9').localeCompare(String(b.start || '9')); },
-    row: function (b) {
-      var sp = ebSpent(b).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0, past = isKey(b.end || b.start) && (b.end || b.start) < today();
-      var c = sp > bu ? RED : sp > bu * .85 ? AMBER : GREEN, per = ebSaveMonthly(b);
-      return { icon: b.kind === 'trip' ? 'airplane' : 'calendar2-heart', color: b.kind === 'trip' ? '#0891b2' : '#d55181', title: b.name,
-        sub: esc([isKey(b.start) ? fmtD(b.start) + (isKey(b.end) && b.end !== b.start ? '–' + fmtD(b.end) : '') : '', kr(sp) + ' of ' + kr(bu), !past && per && sp === 0 ? 'put aside ' + kr(per) + ' a month' : ''].filter(Boolean).join(' · ')),
-        right: '<span class="hl-chip" style="--c:' + c + '">' + (past ? (sp > bu ? kr(sp - bu) + ' over' : kr(bu - sp) + ' under') : kr(Math.max(0, bu - sp)) + ' left') + '</span>' };
-    },
-    detail: function (b) {
-      var d = fin() || {}, l = ebSpent(b, d), bu = +b.budget || 0, sp = l.reduce(function (a, e) { return a + (+e.amount || 0); }, 0), per = ebSaveMonthly(b);
-      var near = (d.expenses || []).filter(function (e) { return e && !e.ebud && e.cat !== 'fixed' && isKey(e.date) && e.date >= (function () { var x = new Date(); x.setDate(x.getDate() - 30); return dkey(x); })() && l.indexOf(e) < 0; }).sort(function (a, b2) { return a.date < b2.date ? 1 : -1; }).slice(0, 6);
-      var has = ((d.budget && d.budget.fixed) || []).some(function (f) { return f.id === 'eb-' + b.id; });
-      return '<div class="fn-bar"><i style="width:' + Math.min(100, bu ? sp / bu * 100 : 0).toFixed(1) + '%"></i></div>' +
-        (l.length ? '<ul class="eb-l">' + l.slice(0, 8).map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b>' + (e.ebud ? '<button type="button" class="icon-btn sm" data-ebuntag="' + esc(e.id) + '" aria-label="Don’t count it"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>' : '<p class="muted hl-small" data-t="ui.nothing-counted-yet">Nothing counted yet.</p>') +
-        (near.length ? '<p class="fx-sub" data-t="ui.count-a-recent-spending">Count a recent spending</p><ul class="eb-l">' + near.map(function (e) { return '<li><span>' + esc(e.note || e.cat) + ' <small>' + esc(fmtD(e.date)) + '</small></span><b>' + esc(kr(e.amount)) + '</b><button type="button" class="icon-btn sm" data-ebtag="' + esc(e.id) + '|' + esc(b.id) + '" aria-label="Count it"><i class="bi bi-plus-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
-        '<div class="hl-acts">' + (per && !has ? '<button type="button" class="pill-btn" data-ebsave="' + esc(b.id) + '"><i class="bi bi-piggy-bank"></i> Put aside ' + esc(kr(per)) + ' a month</button>' : has ? '<span class="muted hl-small"><i class="bi bi-check2"></i> <span data-t="ui.in-your-payday-moves">In your payday moves</span></span>' : '') + '</div>';
-    },
-    onClick: function (e, render) {
-      var b;
-      if ((b = e.target.closest('[data-ebtag]'))) { var q = b.dataset.ebtag.split('|'), d = window.Vault.get(); (d.expenses || []).forEach(function (x) { if (x.id === q[0]) x.ebud = q[1]; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); render(); return; }
-      if ((b = e.target.closest('[data-ebuntag]'))) { var d2 = window.Vault.get(); (d2.expenses || []).forEach(function (x) { if (x.id === b.dataset.ebuntag) delete x.ebud; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); render(); return; }
-      if ((b = e.target.closest('[data-ebsave]'))) {
-        var it = Fe.list('ebudgets').filter(function (x) { return x.id === b.dataset.ebsave; })[0]; if (!it) return;
-        var d3 = window.Vault.get(); d3.budget = d3.budget || { income: [], fixed: [] }; d3.budget.fixed = d3.budget.fixed || [];
-        d3.budget.fixed.push({ id: 'eb-' + it.id, name: 'Savings: ' + it.name, amount: ebSaveMonthly(it), src: 'save', until: isKey(it.start) ? it.start.slice(0, 7) : undefined });
-        window.Vault.save(d3); window.dispatchEvent(new Event('fin:change')); render(); toast('<i class="bi bi-piggy-bank"></i> Added to your payday moves');
+  function all() { [affordCard, taxCard, debtCard, rateCard].forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); }
+  /* everywhere (data jobs and the eye in every top bar): */
+  function watch() {
+    var d = fin(); if (!d || !L) return;
+    var seen = rateSeen(), log = rateLog(), ch = false;
+    debts(d).forEach(function (l) {
+      var r = +l.rate; if (!(r >= 0) || !l.id) return;
+      var s = seen[l.id];
+      if (!s) { seen[l.id] = { r: r, at: today(), ok: today() }; ch = true; return; }
+      if (Math.abs(s.r - r) > 0.0001) {
+        var owe = L.owedNow(l) * L.part(l), month = owe * (r - s.r) / 1200;
+        log.unshift({ id: l.id, name: l.name || 'Loan', date: today(), from: s.r, to: r, month: Math.round(month) });
+        seen[l.id] = { r: r, at: today(), ok: today() }; ch = true;
+        if (Math.abs(month) >= 1) toast('<i class="bi bi-percent"></i> ' + esc(l.name || 'Loan') + ': ' + fmtR(s.r) + ' → ' + fmtR(r) + ' % · about ' + (month > 0 ? '+' : '−') + esc(kr(Math.abs(month))) + ' a month in interest');
       }
-    },
-    onDelete: function (it) { var d = window.Vault.get(); if (!d) return; (d.expenses || []).forEach(function (x) { if (x.ebud === it.id) delete x.ebud; }); if (d.budget && d.budget.fixed) d.budget.fixed = d.budget.fixed.filter(function (f) { return f.id !== 'eb-' + it.id; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
-  }) : null;
-  if (ebCol) window.addEventListener('fin:change', function () { ebCol.render(); });
-  /* the monthly saving stops once the event has come */
+    });
+    if (ch) { var t = Fe.tools(); t.rateSeen = seen; t.rateLog = log.slice(0, 30); Fe.saveTools(t); }
+  }
   window.Vault.onUnlock(function () { setTimeout(function () {
     var d = window.Vault.get(); if (!d || !d.budget || !d.budget.fixed) return;
     var ids = {}; Fe.list('ebudgets').forEach(function (b) { if (isKey(b.start) && b.start <= today()) ids['eb-' + b.id] = 1; });
     var n = d.budget.fixed.length; d.budget.fixed = d.budget.fixed.filter(function (f) { return !ids[f.id]; }); if (d.budget.fixed.length !== n) { window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
   }, 1500); });
-  window.EventBudgets = { spent: ebSpent, monthly: ebSaveMonthly };
-
-  /* ================= Hide amounts on every page (the eye that Finances has) ================= */
   (function () {
     function hidden() { try { return localStorage.getItem('dash.finHide') === '1'; } catch (e) { return false; } }
     function paint(b) { var h = hidden(); b.innerHTML = '<i class="bi bi-eye' + (h ? '-slash' : '') + '"></i>'; b.setAttribute('aria-label', h ? 'Show amounts' : 'Hide amounts'); }
@@ -419,9 +303,58 @@
     document.addEventListener('click', function (e) { if (e.target.closest('#finHide')) setTimeout(function () { paint(b); }, 0); });
     window.addEventListener('storage', function (e) { if (e.key === 'dash.finHide') { document.body.classList.toggle('fin-hidden', hidden()); paint(b); } });
   })();
-
-  function all() { [affordCard, taxCard, debtCard, rateCard].forEach(function (f) { try { f(); } catch (e) { console.error(e); } }); }
   window.addEventListener('fin:change', function () { setTimeout(function () { watch(); all(); }, 30); });
   window.addEventListener('tools:change', function () { clearTimeout(all.t); all.t = setTimeout(all, 40); });
   window.Vault.onUnlock(function () { setTimeout(function () { watch(); all(); }, 80); });
+  /* sheets that open from At a glance, ⌘K and the Wishlist – every page */
+  function affordSheet(price, title) {
+    var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
+    bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Can I afford it?" data-t-aria-label="ui.can-i-afford-it" autocomplete="off"><div class="lf-head"><h3><i class="bi bi-calculator"></i> <span data-t="ui.can-i-afford-it"><span data-t="ui.can-i-afford-it">Can I afford it?</span></span></h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
+      (title ? '<p class="muted lf-sub">' + esc(title) + '</p>' : '') + affordForm(price) + '<div data-fares></div></form>';
+    document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
+    var close = function () { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); };
+    bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-x]')) close(); });
+    var f = bg.querySelector('form'); f.addEventListener('submit', function (e) { e.preventDefault(); });
+    var run = function () { var p = num(f.price.value); bg.querySelector('[data-fares]').innerHTML = p > 0 ? affordHtml(afford(p, +f.months.value || 1)) : ''; };
+    f.addEventListener('input', run); f.addEventListener('change', run); run();
+    setTimeout(function () { if (!price && !matchMedia('(pointer: coarse)').matches) f.price.focus(); }, 60);
+  }
+  function riseFix(r, update) {
+    var t = Fe.tools(); t.riseSeen = Object.assign({}, t.riseSeen || {}); t.riseSeen[r.key] = today();
+    if (update && r.kind === 'sub') (t.subs || []).forEach(function (x) { if (x.id === r.id) x.amount = Math.round(r.now * 100) / 100; });
+    Fe.saveTools(t);
+    if (update && r.kind === 'fixed') { var d = window.Vault.get(); ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (f.id === r.id) f.amount = Math.round(r.now); }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
+    toast('<i class="bi bi-check2"></i> ' + (update ? esc(r.name) + ' updated to ' + esc(kr(r.now)) : 'Noted'));
+  }
+  function payAll() {
+    var d = window.Vault.get(); if (!d || !B || !B.payPlan) return 0;
+    var p = B.payPlan(d), k = p.per.startKey, open = p.moves.filter(function (m) { return !m.done; }); if (!open.length) return 0;
+    d.budget.payDone = d.budget.payDone || {}; var m = d.budget.payDone[k] = d.budget.payDone[k] || {};
+    open.forEach(function (x) { m[x.id] = true; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
+    toast('<i class="bi bi-check2-all"></i> ' + open.length + ' payday moves done', function () { var d2 = window.Vault.get(), m2 = ((d2.budget || {}).payDone || {})[k] || {}; open.forEach(function (x) { delete m2[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); });
+    return open.length;
+  }
+  window.FinPayAll = payAll;
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-payall]')) { e.preventDefault(); payAll(); } });
+  window.FinAfford = { check: afford, open: affordSheet };
+  window.FinLearn = { changed: function (id, cat, oldCat) {
+      var c = cfg(), d = window.Vault.get(); if (!d) return;
+      var ex = (d.expenses || []).filter(function (x) { return x.id === id; })[0]; if (!ex || !ex.note) return;
+      var key = normNote(ex.note);
+      if (c.learn) { d.catMemory = d.catMemory || {}; d.catMemory[key] = cat; }
+      var others = c.learnAll ? (d.expenses || []).filter(function (x) { return x.id !== id && x.cat === oldCat && x.cat !== 'fixed' && x.note && normNote(x.note) === key; }) : [];
+      var undo = others.map(function (x) { return [x.id, x.cat]; });
+      others.forEach(function (x) { x.cat = cat; });
+      window.Vault.save(d);
+      if (others.length) {
+        window.dispatchEvent(new Event('fin:change'));
+        toast('<i class="bi bi-tags"></i> ' + others.length + ' more from ' + esc(ex.note) + ' moved too', function () {
+          var d2 = window.Vault.get(), m = {}; undo.forEach(function (u) { m[u[0]] = u[1]; });
+          (d2.expenses || []).forEach(function (x) { if (m[x.id]) x.cat = m[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change'));
+        });
+      }
+      return others.length;
+    }, norm: normNote, on: function () { return cfg().learn; } };
+  window.EventBudgets = { spent: ebSpent, monthly: ebSaveMonthly };
+  (window.__core = window.__core || {})["fintools"] = { setFill: setFill, esc: esc, fin: fin, Fe: Fe, cfg: cfg, DEF: DEF, $: $, toast: toast, setCfg: setCfg, debts: debts, rateSeen: rateSeen, fmtR: fmtR, GREEN: GREEN, rateLog: rateLog, RED: RED, ebSpent: ebSpent, isKey: isKey, all: all, rateCard: rateCard, kr: kr, nf: nf, fmtD: fmtD, fromKey: fromKey, BLUE: BLUE, AMBER: AMBER, today: today, dkey: dkey, pad: pad, days: days, L: L, debtCard: debtCard, A: A, taxCard: taxCard, GREY: GREY, taxDates: taxDates, taxChecks: taxChecks, taxState: taxState, taxYear: taxYear, affordCard: affordCard, limits: limits, afford: afford, B: B, affordHtml: affordHtml, num: num, affordForm: affordForm, rises: rises, ebSaveMonthly: ebSaveMonthly, monthsTo: monthsTo, normNote: normNote };
 })();

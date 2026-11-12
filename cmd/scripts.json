@@ -231,6 +231,10 @@
       "papers.page.js"
     ],
     "house/index.html": [
+      "home-life.page.js",
+      "money-plus.page.js",
+      "home-shared.page.js",
+      "life-pages.page.js",
       "house-plus.page.js",
       "house-homes.page.js",
       "house-move.page.js",
@@ -241,16 +245,38 @@
       "chores.page.js"
     ],
     "work/index.html": [
+      "home-life.page.js",
+      "life-pages.page.js",
       "work-plus.page.js"
     ],
     "habits/index.html": [
+      "life-pages.page.js",
       "life-more.page.js"
     ],
     "goals/index.html": [
       "goals.page.js"
     ],
     "wish/index.html": [
+      "money-plus.page.js",
+      "home-shared.page.js",
       "wish.page.js"
+    ],
+    "people/index.html": [
+      "home-life.page.js",
+      "people-plus.page.js"
+    ],
+    "food/index.html": [
+      "home-life.page.js",
+      "food-plus.page.js"
+    ],
+    "finance/index.html": [
+      "money-plus.page.js",
+      "fin-tools.page.js",
+      "home-shared.page.js",
+      "life-pages.page.js"
+    ],
+    "travel/index.html": [
+      "life-pages.page.js"
     ]
   },
   "settings": [
