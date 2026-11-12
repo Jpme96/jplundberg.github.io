@@ -183,6 +183,12 @@
       it.push(function (H) { var h = H.s1; if (!h || t < .2 || t > 2.8) return null; return [h.z - .15, flagG(h.X, h.Y, k / .5, 2 * Math.sin(t * 9))]; }); } }
   };
   /* a long press: a little dance (an easter egg – never picked by itself) */
+  /* at night (22–05): a big yawn – one arm up, the other hand to the mouth, then sleepy eyes */
+  GEN.yawn = { len: 3.8, f: function (t, o, it, k, sd, fr) { var up = sd(-1), mh = sd(1), R0 = fr(up), R1 = fr(mh), UP = B(30, 6), MOUTH = B(66, 24);   /* the hand that holds a cup to the mouth covers the yawn */
+      o.pose[up] = t < .6 ? GO(R0, UP, SEG(t, .1, .6)) : t < 1.7 ? HOLD(UP) : GO(UP, R0, SEG(t, 1.7, 2.4));
+      o.pose[mh] = t < .7 ? GO(R1, MOUTH, SEG(t, .3, .7), 2) : t < 1.6 ? HOLD(MOUTH) : GO(MOUTH, R1, SEG(t, 1.6, 2.1));
+      o.pose.lean = (o.pose.lean || 0) - .07 * Math.sin(Math.PI * SEG(t, .3, 1.8)); o.pose.lift = (o.pose.lift || 0) + 1.4 * Math.sin(Math.PI * SEG(t, .5, 1.6));
+      o.expr = t > .5 && t < 1.7 ? 'wow' : t >= 1.7 && t < 3.4 ? 'calm' : null; } };
   GEN.dance = { len: 3.2, f: function (t, o, it, k, sd, fr) { var on = E(SEG(t, 0, .4)) * (1 - E(SEG(t, 2.7, 3.2))), s2 = Math.sin(t * 9);
     ['near', 'far'].forEach(function (k2, i) { o.pose[k2] = GO(fr(k2), B(60 + 22 * s2 * (i ? 1 : -1), 30), on); }); o.pose.lift = (o.pose.lift || 0) + 3 * on * Math.abs(Math.sin(t * 9)); o.pose.lean = (o.pose.lean || 0) + .05 * on * s2; }, turn: function (t) { return 25 * Math.sin(t * 4.5) * E(SEG(t, 0, .4)) * (1 - E(SEG(t, 2.7, 3.2))); } };
   /* December: he walks to the little tree, takes a bauble from his pocket, hangs it, steps back to look, and walks back */
@@ -203,7 +209,9 @@
       if (t < 4.2) walkOn(o, T, t, T.from, T.stand, .35, 2.0); else walkOn(o, T, t, T.stand, T.from, 4.3, 6.1);
       carry(o, T.from);
       var c = t < 2.1 ? 0 : t < 2.6 ? E(SEG(t, 2.1, 2.6)) : t < 3.4 ? 1 : 1 - E(SEG(t, 3.4, 3.9));   /* the crouch */
-      if (c > 0) { o.pose.lean = (o.pose.lean || 0) + .42 * c; o.pose.legNear = { m: c, th: .85, kn: 1.7 }; o.pose.legFar = { m: c, th: .85, kn: 1.7 }; o.pose.lift = (o.pose.lift || 0) - 20 * c; }   /* a crouch: hips back, knees forward, the back leaning over */
+      if (c > 0 && o.aid === 'chair') o.pose.lean = (o.pose.lean || 0) + .3 * c;   /* in the wheelchair: he leans down to it from the seat */
+      else if (c > 0 && o.aid === 'crutches') { o.pose.lean = (o.pose.lean || 0) + .62 * c; o.pose.legNear = { m: c, th: .5, kn: 1.0 }; o.pose.legFar = { m: c, th: .5, kn: 1.0 }; o.pose.lift = (o.pose.lift || 0) - 12 * c; }   /* on crutches: a small bend at the knees and a lean, no deep crouch */
+      else if (c > 0) { o.pose.lean = (o.pose.lean || 0) + .42 * c; o.pose.legNear = { m: c, th: .85, kn: 1.7 }; o.pose.legFar = { m: c, th: .85, kn: 1.7 }; o.pose.lift = (o.pose.lift || 0) - 20 * c; }   /* a crouch: hips back, knees forward, the back leaning over */
       var top = [T.sp.x - T.dir * 2 * T.s, T.sp.y - 16 * T.s], hd = 'near', R0 = fr(hd);
       if (t >= 2.3 && t < 3.8) o.pose[hd] = t < 2.85 ? GO(R0, AT(top), SEG(t, 2.3, 2.85), 2) : t < 3.25 ? HOLD(AT(top)) : GO(AT(top), R0, SEG(t, 3.25, 3.8));
     }, done: function (st) { if (st.season) decor(st).lit = true; } };
@@ -215,6 +223,7 @@
     g = g || {}; var d = new Date(), h = d.getHours(), W = wearNow(), l = ['wave', 'stretch', 'watch', g.out ? 'gaze' : 'look'], sn = season();
     if (sn && spec && spec.season && spec.season.act !== false) l.push(sn === 'xmas' ? 'tree' : 'pumpkin');   /* the season's own, where the page has room to walk to it */
     if (h >= 6 && h < 11) l.push('coffee');
+    if (h >= 22 || h < 5) l.push('yawn');
     if (W.rain && g.out) l.push('umbrella');
     if (d.getMonth() === 4 && d.getDate() === 17) l.push('flag');
     return l.filter(function (x) { return (g.no || []).indexOf(x) < 0; });
@@ -232,9 +241,11 @@
     if (st && who === 'me' && !o.noGen && st.gen && GEN[st.gen.id]) {
       var gd = GEN[st.gen.id], gt = st.gen.t, ft = E(SEG(gt, 0, .35)) * (1 - E(SEG(gt, gd.len - .4, gd.len)));
       var p0 = o.pose || {}; o = Object.assign({}, o, { pose: Object.assign({}, p0) });
+      o.aid = lk && lk.aid;   /* the wheelchair or crutches: an action can choose its own way */
       var fr = function (key) { var q = p0[key]; return q && !q.path && (q.at || q.b) ? (q.at ? { at: q.at } : { b: q.b }) : REST; };   /* each hand starts and ends where the page holds it */
       face = LERP(face, 0, ft) + (gd.turn ? gd.turn(gt, o, st) : 0) * ft;
       var fNow = face; gd.f(gt, o, gx, k, function (sd) { return SIDE(sd, fNow); }, fr, st);   /* the hand on his right/left side whichever way he faces now */
+      if (o.expr && lk) { var mx = st.__lkx || (st.__lkx = {}); if (!mx[o.expr] || mx[o.expr].b !== lk) mx[o.expr] = { b: lk, v: Object.assign({}, lk, { expr: o.expr }) }; lk = mx[o.expr].v; }   /* an action's face (a yawn), kept as one look object so the figure's cache holds */
     } else if (st && who === 'me' && !o.noGen && !st.playing && !st.still && st.restT > 0) {
       var rp = (st.restT % 11) / 11; face += 26 * Math.sin(Math.PI * 2 * SEG(rp, .55, .8)) * (Math.abs(face) < 30 ? 1 : 0);   /* a slow look round, then back */
       if (st.lookAt != null && Math.abs(face) < 40 && performance.now() - st.lookT < 1500) { var want = CL((st.lookAt - o.cx) / 160 + .5) * 60 - 30; st.lookF = LERP(st.lookF || 0, want, .15); face += st.lookF; }   /* he turns a little toward your finger or pointer */

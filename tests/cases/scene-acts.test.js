@@ -87,6 +87,18 @@ const PAGES = ['finance', 'food', 'work', 'habits', 'papers', 'calendar', 'goals
       check(look > 5, 'he turns toward your finger at rest (' + look.toFixed(1) + '°)');
     }
   }
+  /* the walks to the season's tree and pumpkin in the wheelchair and on crutches: smooth, no broken numbers, back in the rest */
+  for (const aid of ['chair', 'crutches']) {
+    await p.evaluate(aid => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.avatar = Object.assign({}, s.avatar, { aid }); localStorage.setItem('dash.settings', JSON.stringify(s)); }, aid);
+    await go(p, 'papers/', 2500); await until(p, () => !!document.querySelector('#scIllu svg.sc25'), 10000);
+    const w = await p.evaluate(() => { window.__sceneSpeed = 0.00001; const R = Scene25.list()[0], st = R.state, out = { body: 0, hands: 0, bad: 0, ends: 0 }; R.at(R.len); const rest = JSON.parse(JSON.stringify(st.figs.me));
+      ['tree', 'pumpkin', 'yawn'].forEach(id => { let prev = null; const L = Scene25.GEN[id].len; for (let t = 0; t <= L + 1e-6; t += 1 / 60) { R.act(id, t); const f = st.figs.me; if (/NaN|undefined/.test(document.querySelector('#scIllu svg').innerHTML)) out.bad++;
+        if (prev) { out.body = Math.max(out.body, Math.abs(f.cx - prev.cx)); ['R', 'L'].forEach(k => { if (f[k] && prev[k]) out.hands = Math.max(out.hands, Math.hypot(f[k][0] - prev[k][0], f[k][1] - prev[k][1])); }); } prev = { cx: f.cx, R: f.R, L: f.L }; }
+        R.act(id, L); out.ends = Math.max(out.ends, Math.abs(st.figs.me.cx - rest.cx)); });
+      R.at(R.len); return out; });
+    check(!w.bad && w.body < 4.5 && w.hands < 7 && w.ends < 1.5, (aid === 'chair' ? 'in the wheelchair' : 'on crutches') + ': the tree, the pumpkin and the yawn are smooth and end in the rest (' + JSON.stringify(w) + ')');
+  }
+  await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.avatar = Object.assign({}, s.avatar, { aid: 'none' }); localStorage.setItem('dash.settings', JSON.stringify(s)); });
   /* Travel's own actions on a planned trip: packing (something left on the packing list), the map */
   await p.evaluate(() => { Features.set('travel', true); const d = new Date(), k = n => { const x = new Date(d.getTime() + n * 864e5); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
     const tv = JSON.parse(localStorage.getItem('dash.travel') || '{}'); tv.trips = [{ id: 'tt1', name: 'Made-up trip', dest: 'Testby', start: k(3), end: k(6), how: 'bus', pack: [{ id: 'p1', text: 'Shirts', done: false }] }];
