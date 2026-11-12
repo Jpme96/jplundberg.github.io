@@ -102,7 +102,7 @@
   }
   document.addEventListener('pointerdown', function (e) { lastPt = [e.clientX, e.clientY]; eyes(); }, { passive: true });
   var MOVES = ['pl-jump', 'pl-wave', 'pl-spin', 'pl-laugh'], mi = 0;
-  function act(f, cls, ms) { f.classList.remove.apply(f.classList, MOVES.concat(['pl-dance', 'pl-cheer'])); void f.offsetWidth; f.classList.add(cls); clearTimeout(f._pl); f._pl = setTimeout(function () { f.classList.remove(cls); }, ms || 1000); }
+  function act(f, cls, ms) { f.classList.remove.apply(f.classList, MOVES.concat(['pl-dance', 'pl-cheer'])); void f.offsetWidth; f.classList.add(cls); if (window.Avatar && Avatar.act25 && Avatar.act25(f, cls.slice(3), ms || 1000)) f.classList.remove(cls); clearTimeout(f._pl); f._pl = setTimeout(function () { f.classList.remove(cls); }, ms || 1000); }
   var hold = null, lastTap = 0, rub = null;
   document.addEventListener('pointerdown', function (e) {
     var f = e.target.closest && e.target.closest('#avHome .av-fig'); if (!f || !on()) return;

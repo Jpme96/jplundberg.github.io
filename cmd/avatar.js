@@ -155,6 +155,34 @@
      the left and turns right, L the other way. */
   /* the old engine's tests (localStorage cmd.oldLive) see the whole old flat world until F2 replaces it */
   var OLDLIVE = (function () { try { return localStorage.getItem('cmd.oldLive') === '1'; } catch (e) { return false; } })();
+  /* small moves of the 2.5D figure (F1b): tap moves, cheers, the idle look and stretch on Home and the avatar page.
+     The figure is redrawn each frame with a changing pose, then put back as it was. Reduced motion: no moves. */
+  var F25N = 0, F25A = {};
+  var ACT25 = {
+    wave: function (t, a) { return { a: a, pose: { far: UP(48, 14 + 10 * Math.sin(t * 22)) }, expr: 'grin' }; },
+    jump: function (t, a) { var e = Math.sin(t * Math.PI); return { a: a, pose: { lift: 14 * e, near: UP(122 - 22 * e, 22), far: UP(122 - 22 * e, 22) } }; },
+    spin: function (t, a) { return { a: a + 360 * t }; },
+    laugh: function (t, a) { return { a: a, pose: { lean: .05 * Math.sin(t * 25) }, expr: 'laugh' }; },
+    cheer: function (t, a) { var e = Math.min(1, Math.sin(t * Math.PI) * 2); return { a: a, pose: { lift: 8 * Math.abs(Math.sin(t * 9)) * e, near: UP(118 - 80 * e, 10), far: UP(118 - 80 * e, 10) }, expr: 'laugh' }; },
+    dance: function (t, a) { var s = Math.sin(t * 24); return { a: a + 30 * Math.sin(t * 6), ph: t * 30, w: .35, pose: { near: UP(68 + 18 * s, 32), far: UP(68 - 18 * s, 32), lean: .04 * s }, expr: 'laugh' }; },
+    look: function (t, a) { return { a: a + 45 * Math.sin(t * Math.PI * 2) * Math.sin(t * Math.PI) }; },
+    stretch: function (t, a) { var e = Math.sin(t * Math.PI); return { a: a, pose: { near: UP(118 - 90 * e, 4), far: UP(118 - 90 * e, 4), lean: -.05 * e }, expr: e > .5 ? 'calm' : null }; }
+  };
+  function act25(f, kind, ms) {
+    var sv = f && (f.matches && f.matches('svg[data-f25]') ? f : f.querySelector('svg[data-f25]')), rt = document.documentElement.classList;
+    if (!sv || !ACT25[kind] || rt.contains('mo-off') || rt.contains('mo-reduced') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return false;
+    var A = F25A[+sv.getAttribute('data-f25') % 48]; if (!A || A.id !== +sv.getAttribute('data-f25')) return false;
+    var t0 = performance.now(), d = ms || 1000, my = (sv._a25 = (sv._a25 || 0) + 1);
+    var put = function (o, L) { var g = sv.querySelector('g.av-all'); if (!g) return; var tmp = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); tmp.innerHTML = Fig25.group(L, o); g.replaceWith(tmp.firstChild); };
+    (function step(now) {
+      if (sv._a25 !== my || !sv.isConnected) return;
+      var t = Math.min(1, (now - t0) / d), r = ACT25[kind](t, A.o.a), o = Object.assign({}, A.o, { a: r.a, ph: r.ph || 0, w: r.w || 0, pose: Object.assign({}, A.o.pose || {}, r.pose || {}) });
+      if (r.pose && (r.pose.near || r.pose.far)) o.hold = null;
+      put(t < 1 ? o : A.o, t < 1 && r.expr ? Object.assign({}, A.L, { expr: r.expr }) : A.L);
+      if (t < 1) requestAnimationFrame(step);
+    })(t0);
+    return true;
+  }
   var UP = function (y, z) { return { m: 1, b: [y, z] }; };
   var FIG25 = {
     morning: { hold: 'cup' }, evening: { hold: 'book' }, night: { expr: 'calm' }, rain: { hold: 'umbrella' }, gym: { hold: 'dumbbell' },
@@ -525,8 +553,9 @@
     if (window.Fig25 && !m.flat && !OLDLIVE) {
       var M25 = FIG25[m.k] || {}, L25 = Object.assign({}, L, { top: top, expr: tired ? 'calm' : meh ? 'calm' : (M25.expr || L.expr) });
       if (m.k === 'couple' || m.noPet) L25.pet = 'none';
-      var body25 = Fig25.group(L25, { a: m.a != null ? m.a : M25.a != null ? M25.a : 18, cx: 101, gy: 159, k: .68, hold: M25.hold, pose: m.pose || M25.pose, shadow: false, ph: m.ph, w: m.w });
-      return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + ' av-25' + ((m.pose || M25.pose || {}).lift ? ' av-sit' : '') + '"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + body25 + (tired && !m.plain ? '<text x="132" y="40" font-size="13" font-weight="800" fill="#9a9ca5">z</text><text x="141" y="29" font-size="9" font-weight="800" fill="#9a9ca5">z</text>' : '') + '</svg>';
+      var o25 = { a: m.a != null ? m.a : M25.a != null ? M25.a : 18, cx: 101, gy: 159, k: .68, hold: M25.hold, pose: m.pose || M25.pose, shadow: false, ph: m.ph, w: m.w }, body25 = Fig25.group(L25, o25), id25 = ++F25N;
+      F25A[id25 % 48] = { id: id25, L: L25, o: o25 };
+      return '<svg viewBox="0 0 200 200" data-f25="' + id25 + '" class="av-m-' + esc(m.k || 'plain') + ' av-25' + ((m.pose || M25.pose || {}).lift ? ' av-sit' : '') + '"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + body25 + (tired && !m.plain ? '<text x="132" y="40" font-size="13" font-weight="800" fill="#9a9ca5">z</text><text x="141" y="29" font-size="9" font-weight="800" fill="#9a9ca5">z</text>' : '') + '</svg>';
     }
     return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + '" style="--rx:' + rx + 'px;--lx:' + lx + 'px"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + (pet && AID === 'chair' ? '<g transform="translate(-12 0)">' + pet + '</g>' : pet) + '<g class="av-all">' + (HT ? '<g transform="' + HT + '">' : '') + '<g class="av-up" transform="translate(0 ' + (-UP) + ')"><g transform="translate(' + (-DX).toFixed(1) + ' -3)"><g class="av-behind">' + behind + '</g></g></g>' + legs + (WS ? '<g transform="translate(0 ' + WS + ')">' : '') + '<g class="av-up" transform="translate(0 ' + (-UP) + ')">' + neck + body +
       '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)"><g class="av-armL">' + closeHand(armsL) + '</g></g><g transform="translate(' + (-DX).toFixed(1) + ' 0)"><g class="av-armR">' + closeHand(arms) + '</g></g>' + head + '</g>' + (m.k === 'trip' ? '' : propG) + '<g transform="translate(0 -9)"><g class="av-front">' + front + '</g></g></g>' + (m.k === 'trip' ? propG : '') + (WS ? '</g>' : '') + chair + (HT ? '</g>' : '') + '</g></svg>';
@@ -650,7 +679,7 @@
       var f = document.querySelector('#avHome .av-fig'), rt = document.documentElement.classList;
       if (f && !document.hidden && !rt.contains('mo-off') && !rt.contains('mo-reduced') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
         var fx = ['hop', 'av-look', 'av-stretch'][Math.floor(Math.random() * 3)];
-        f.classList.remove('hop', 'av-look', 'av-stretch'); void f.offsetWidth; f.classList.add(fx);
+        f.classList.remove('hop', 'av-look', 'av-stretch'); void f.offsetWidth; f.classList.add(fx); if (fx !== 'hop') act25(f, fx.slice(3), 1400);
         setTimeout(function () { f.classList.remove(fx); }, 1600);
       }
       idle();
@@ -965,6 +994,6 @@
     return '';
   }
 
-  window.Avatar = { trimLook: trimLook, cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+  window.Avatar = { trimLook: trimLook, act25: act25, cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, headView: headView, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
     _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();

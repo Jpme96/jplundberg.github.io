@@ -12,7 +12,7 @@ const OLD = require('../lib/avatar-old.json');
 
   /* 1. old avatars look the same */
   const now = await p.evaluate(rows => {
-    const h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
+    const h = s => { s = s.replace(/ data-f25="\d+"/g, '').replace(/f25t\d+/g, 'f25t');   /* frame and clip ids are only counters */ let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(16); };
     return rows.map(r => r.couple ? h(Avatar.couple(r.couple, { hair: 'curly' }, { hair: 'bun' }, { uid: 't' })) : h(Avatar.figure(Avatar.MOMENTS[r.m], r.look)));
   }, OLD);
   /* a change on purpose (like F0, 2026-11-12): UPDATE_PICTURES=1 node run.js avatar-maker writes the new fingerprints – look at the pictures test first */
