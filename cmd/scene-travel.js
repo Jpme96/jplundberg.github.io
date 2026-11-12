@@ -31,7 +31,7 @@
       if (V === 'bus') vx = t < 12.6 ? 120 + 320 * arr : 120 - 600 * lv * lv;
       if (V === 'train') vx = t < 12.6 ? 70 + 420 * arr : 70 - 900 * lv * lv;
       if (V === 'ferry') { vx = t < 12.6 ? 150 + 300 * arr : 150 + 420 * lv * lv; bob = 1.2 * Math.sin(now / 700); }
-      if (V === 'plane') { stx = t < 12.5 ? -260 * arr : -300 * E(SEG(t, 12.5, 13.3)); var tq = SEG(t, 13.0, 14.6); px = -520 * tq * tq; py = -150 * Math.pow(SEG(t, 13.7, 14.6), 2); prot = 10 * E(SEG(t, 13.6, 14.2)); }
+      if (V === 'plane') { stx = t < 12.5 ? -260 * arr : -300 * E(SEG(t, 12.5, 13.3)); var tq = SEG(t, 13.0, 14.6); px = -780 * tq * tq; py = -240 * Math.pow(SEG(t, 13.7, 14.6), 2);   /* far enough that the whole plane, tail too, is gone before the scene moves on */ prot = 10 * E(SEG(t, 13.6, 14.2)); }
       if (t >= 14.6 && V !== 'plane') vx = V === 'ferry' ? 900 : -900;
       door = t < 6.6 ? 0 : t < 7.0 ? E(SEG(t, 6.6, 7.0)) : t < 12.2 ? 1 : t < 12.5 ? 1 - E(SEG(t, 12.2, 12.5)) : 0;
       var DX = { bus: vx + 143, train: vx + 164, plane: 247, ferry: vx + 54 }[V];
@@ -77,11 +77,13 @@
       }
       function plane(layer) {
         var pg = el('g', { transform: 'translate(' + px.toFixed(1) + ' ' + py.toFixed(1) + ') rotate(' + prot.toFixed(1) + ' 420 142)' }); g.appendChild(pg);
-        if (layer === 'back') { add(pg, 'path', { d: 'M300 132 L470 168 L470 150 L330 122 Z', fill: '#9aa3ad' }); add(pg, 'ellipse', { cx: 380, cy: 156, rx: 22, ry: 9, fill: '#c8cdd4' }); add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, fill: '#2a2f3a' }); return; }
-        add(pg, 'path', { d: 'M470 22 H232 Q190 22 186 70 Q184 118 216 142 H470 Z M232 54 h30 v86 h-30 Z', fill: '#eef1f4', 'fill-rule': 'evenodd' });
-        add(pg, 'path', { d: 'M216 142 H470 V122 H196 Q204 136 216 142 Z', fill: '#c8cdd4' }); add(pg, 'rect', { x: 262, y: 74, width: 208, height: 6, fill: '#2a5a9a' }); add(pg, 'rect', { x: 186, y: 74, width: 46, height: 6, fill: '#2a5a9a' });
+        if (layer === 'back') { add(pg, 'path', { d: 'M300 132 L500 172 L520 168 L360 122 Z', fill: '#9aa3ad' }); add(pg, 'ellipse', { cx: 380, cy: 156, rx: 22, ry: 9, fill: '#c8cdd4' }); add(pg, 'path', { d: 'M650 44 L700 30 L712 34 L676 54 Z', fill: '#9aa3ad' });   /* the far wing and tail plane: the whole plane is drawn, so all of it flies when it takes off */ add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, fill: '#2a2f3a' }); return; }
+        add(pg, 'path', { d: 'M610 22 H232 Q190 22 186 70 Q184 118 216 142 H600 Q660 138 724 46 L724 30 Q680 22 610 22 Z M232 54 h30 v86 h-30 Z', fill: '#eef1f4', 'fill-rule': 'evenodd' });
+        add(pg, 'path', { d: 'M640 24 L690 -38 L716 -38 L708 30 Z', fill: '#d9dee3' }); add(pg, 'path', { d: 'M668 -10 L700 -38 L716 -38 L712 -10 Z', fill: '#2a5a9a' });   /* the tail fin */
+        add(pg, 'path', { d: 'M560 58 L620 46 L632 50 L590 66 Z', fill: '#c8cdd4' });   /* the near tail plane */
+        add(pg, 'path', { d: 'M216 142 H600 Q640 139 668 122 H196 Q204 136 216 142 Z', fill: '#c8cdd4' }); add(pg, 'rect', { x: 262, y: 74, width: 380, height: 6, fill: '#2a5a9a' }); add(pg, 'rect', { x: 186, y: 74, width: 46, height: 6, fill: '#2a5a9a' });
         add(pg, 'path', { d: 'M196 48 Q200 40 214 38 L222 38 L220 50 Z', fill: 'rgba(30,40,55,.85)' });
-        for (var wx = 280; wx < 470; wx += 22) add(pg, 'rect', { x: wx, y: 56, width: 9, height: 12, rx: 4.5, fill: 'rgba(30,40,55,.7)' });
+        for (var wx = 280; wx < 610; wx += 22) add(pg, 'rect', { x: wx, y: 56, width: 9, height: 12, rx: 4.5, fill: 'rgba(30,40,55,.7)' });
         if (door < 1) add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86 * (1 - door), rx: 3, fill: '#e2e6ea', stroke: '#b9c1ca', 'stroke-width': 1 });
         add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, rx: 3, fill: 'none', stroke: '#b9c1ca', 'stroke-width': 1.2 });
       }
@@ -192,7 +194,7 @@
         return c; }
       if (t >= 14.6 && (data.packLeft > 0 || st.pact === 'pack')) { chairG(CHAIR); if (shirt === 'chair') g.appendChild(shirtG(CHAIR + 11, 174)); }
       /* draw: the back of the vehicle, then (outside) its wall and him, or (inside) him and then the wall over him */
-      var drawV = { bus: bus, train: train, plane: plane, ferry: ferry }[V], onScreen = V === 'plane' ? px > -700 && py > -260 : vx > -560 && vx < 430;
+      var drawV = { bus: bus, train: train, plane: plane, ferry: ferry }[V], onScreen = V === 'plane' ? px > -800 && py > -300 : vx > -560 && vx < 430;
       if (V === 'plane') { if (onScreen) plane('back'); stairs(); }
       else if (onScreen) drawV('back');
       if (V !== 'plane' && onScreen && !inside) drawV('wall');

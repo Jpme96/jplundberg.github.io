@@ -48,11 +48,11 @@
   /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
      w = body width, d = depth (front to back), sh = shoulders, wa = waist, hp = hips, arm / leg = how thick */
   var BUILD = {
-    slim:     { w: .92, d: .9,  sh: .96, wa: .9,  hp: .92, arm: .84, leg: .86 },
+    slim:     { w: .9,  d: .88, sh: .92, wa: .86, hp: .9,  arm: .8,  leg: .82 },
     regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1 },
-    athletic: { w: 1.04, d: 1.02, sh: 1.12, wa: .86, hp: .98, arm: 1.12, leg: 1.08 },
-    muscular: { w: 1.1, d: 1.1, sh: 1.22, wa: .9,  hp: 1.04, arm: 1.32, leg: 1.18 },
-    broad:    { w: 1.18, d: 1.24, sh: 1.08, wa: 1.16, hp: 1.12, arm: 1.14, leg: 1.16 }
+    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.22, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
+    muscular: { w: 1.1, d: 1.12, sh: 1.34, wa: .88, hp: 1.04, arm: 1.46, leg: 1.3, mus: 2 },
+    broad:    { w: 1.2, d: 1.28, sh: 1.1, wa: 1.22, hp: 1.16, arm: 1.16, leg: 1.2 }   /* JP: the build changed too little – the spread is bigger and athletic/muscular have muscles */
   };
   function look25(l) {
     l = l || {}; if (window.Avatar && Avatar.trimLook) l = Avatar.trimLook(l);
@@ -136,7 +136,8 @@
       /* a human leg: full at the hip, narrower at the knee, the calf swells a little below it, slim at the ankle */
       var lc = shade(far, C.legs2, C.legs), skc = shade(far, C.skin2, C.skin), calf = P(knee[0], knee[1] + (ank[1] - knee[1]) * .32, knee[2] + (ank[2] - knee[2]) * .32);
       var thighC = L.legsOn === 'none' || L.legsOn === 'swim' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
-      taper(a1, a2, 10.5 * LW, 8.2 * LW, thighC, z); taper(a2, calf, 8.2 * LW, 8.4 * LW, shinC, z); taper(calf, a3, 8.4 * LW, 7.2 * LW, shinC, z);
+      var MUL = 1 + .07 * (L.bp.mus || 0);   /* athletic/muscular: fuller thighs and calves */
+      taper(a1, a2, 10.5 * LW * MUL, 8.2 * LW, thighC, z); taper(a2, calf, 8.2 * LW, 8.4 * LW * MUL, shinC, z); taper(calf, a3, 8.4 * LW * MUL, 7.2 * LW, shinC, z);
       if (L.legsOn === 'thigh') { var kb = P(knee[0], knee[1] - 4, knee[2]); taper(a1, kb, 10.8, 9, lc, z + .001); }
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
@@ -162,6 +163,13 @@
     var TD = 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
+    if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
+      var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.35 + .15 * BP.mus)).toFixed(2), pecY = 98 + bob;
+      [-1, 1].forEach(function (sd) { var pa1 = P(sd * 2, pecY, 15), pa2 = P(sd * 15 * BP.sh, pecY + 1, 13), pa3 = P(sd * 22 * BP.sh, pecY - 7, 10);
+        parts.push([0.012, el('path', { d: 'M' + pa1.X.toFixed(1) + ' ' + pa1.Y.toFixed(1) + ' Q' + pa2.X.toFixed(1) + ' ' + (pa2.Y + 3 * k).toFixed(1) + ' ' + pa3.X.toFixed(1) + ' ' + pa3.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (1.1 * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); });
+      var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 140 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]);
+      [112, 124].forEach(function (yy) { var q1 = P(-7, yy + bob, 14.5), q2 = P(7, yy + bob, 14.5); parts.push([0.012, el('path', { d: 'M' + q1.X.toFixed(1) + ' ' + q1.Y.toFixed(1) + ' Q' + ((q1.X + q2.X) / 2).toFixed(1) + ' ' + (q1.Y + 1.5 * k).toFixed(1) + ' ' + q2.X.toFixed(1) + ' ' + q2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.8 * k).toFixed(2), opacity: mo })]); });
+    }
     if (shadeOn) parts.push([0.015, el('path', { d: 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z', fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
     if (L.top === 'knit') {
@@ -188,7 +196,7 @@
       var tl = P(-6, 84 + bob, 15); if (rot(-6, 15, a).z > -2 && Math.abs(Math.sin(a)) < .82) parts.push([0.61, el('rect', { x: tl.X - 3.5 * k, y: tl.Y, width: 7 * k, height: 26 * k, rx: 3 * k, fill: dk(L.neckC, .92) })]);
     }
     var side = Math.sin(a), sw = Math.abs(side) * 12 * k;
-    if (sw > .5) { var sx = side > 0 ? t1.X - hw * k + 1 : t1.X + hw * k - sw - 1; parts.push([0.01, el('rect', { x: sx, y: t1.Y + 6 * k, width: sw, height: (botY - topY - 8) * k, rx: sw / 2, fill: C.top2, opacity: .55 })]); }
+    if (sw > .5) { var sx = side > 0 ? t1.X - hw * k + 1 : t1.X + hw * k - sw - 1; parts.push([0.01, el('rect', { x: sx, y: t1.Y + 6 * k, width: sw, height: (botY - topY - 8) * k, rx: sw / 2, fill: L.top === 'none' ? C.skin2 : C.top2, opacity: .55 })]); }   /* no top: the shade on his side is skin, not the top's colour (the green strip on a bare back) */
     if (Math.cos(a) > 0.15) {
       if (L.top === 'hoodie') [-5, 5].forEach(function (x) { var q1 = P(x, 86 + bob, 13), q2 = P(x, 104 + bob, 13); parts.push([0.02, el('line', { x1: q1.X, y1: q1.Y, x2: q2.X, y2: q2.Y, stroke: '#f2f2f2', 'stroke-width': 1.6 * k, 'stroke-linecap': 'round', opacity: Math.min(1, Math.cos(a) * 1.5) })]); });
       if (L.top === 'shirt') { var c1 = P(-8, 79 + bob, 12), c2 = P(0, 90 + bob, 13), c3 = P(8, 79 + bob, 12), c4 = P(0, 82 + bob, 13);
@@ -209,7 +217,9 @@
       var hand = [sd * 32 * SHW, elb[1] + 27 * Math.cos(fb), elb[2] + 27 * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
-      if (L.bare === 'arms' || L.top === 'none') { taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z); }
+      var MU = L.bp.mus || 0, bic = MU ? P(sh[0] + (elb[0] - sh[0]) * .45, sh[1] + (elb[1] - sh[1]) * .45, sh[2] + (elb[2] - sh[2]) * .45, 1) : null;   /* athletic/muscular: a fuller shoulder and upper arm */
+      if (L.bare === 'arms' || L.top === 'none') { taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z);
+        if (MU) { taper(p1, bic, (6.4 + .5 * MU) * AW, (5.6 + .6 * MU) * AW, shade(far, C.skin2, C.skin), z + .002); taper(bic, p2, (5.6 + .6 * MU) * AW, 4.4 * AW, shade(far, C.skin2, C.skin), z + .002); } }
       else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1);
         taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z); taper(p1, mid, 7.2 * AW, 6.4 * AW, shade(far, C.top2, C.top), z + .01); }
       else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, p2, 9 * AW, 8 * AW, shade(far, slc2, slc), z); taper(p2, p3, 8 * AW, 7.4 * AW, shade(far, slc2, slc), z);
@@ -248,7 +258,8 @@
     var head = el('g', {});
     function hatCoversLong() { return L.hat === 'beanie' && false; }
     head.appendChild(el('rect', { x: hc.X - 6 * k, y: hc.Y + 14 * k, width: 12 * k, height: 16 * k, rx: 5 * k, fill: C.skin2 }));
-    head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + (L.faceS === 'long' ? 1.5 * k : 0), rx: R * (L.faceS === 'round' ? 1.06 : L.faceS === 'long' ? .95 : 1), ry: R * (L.faceS === 'long' ? 1.08 : 1), fill: C.skin }));
+    var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
+    head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + FS[2] * k, rx: R * FS[0], ry: R * FS[1], fill: C.skin }));
     function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
     function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
     function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }

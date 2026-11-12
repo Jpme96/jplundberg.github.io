@@ -18,8 +18,9 @@ const BUDGET_KB = { total: 1605 };      /* biggest page today ≈ 1589 kB (Finan
    +1 kB on some pages (2026-11-12, F4 faster frames): scene25's patch() – a frame is built off the page and only the changes are written.
    +5–6 kB on every page, +10 on Travel (2026-11-12, F3 extras): the season props and walks (tree, pumpkin) and the taps on things in scene25.js;
    Travel's packing and map.
-   +4–5 kB on every page (2026-11-12 night, D 24): the choices in lists, the Settings summaries and the counts as I18N.k(name, English, {n}). */
-const PAGE_KB = { 'index.html': 1379, 'admin/index.html': 1300, 'calendar/index.html': 1228, 'finance/index.html': 1605, 'food/index.html': 1309, 'goals/index.html': 1243, 'habits/index.html': 1288, 'house/index.html': 1598, 'papers/index.html': 1259, 'people/index.html': 1307, 'travel/index.html': 1384, 'wish/index.html': 1327, 'work/index.html': 1352 };
+   +4–5 kB on every page (2026-11-12 night, D 24): the choices in lists, the Settings summaries and the counts as I18N.k(name, English, {n}).
+   +1 kB on Food and People (2026-11-12 night): night actions, muscles and face shapes in the figure, the whole plane. */
+const PAGE_KB = { 'index.html': 1379, 'admin/index.html': 1300, 'calendar/index.html': 1228, 'finance/index.html': 1605, 'food/index.html': 1311, 'goals/index.html': 1243, 'habits/index.html': 1288, 'house/index.html': 1598, 'papers/index.html': 1259, 'people/index.html': 1309, 'travel/index.html': 1384, 'wish/index.html': 1327, 'work/index.html': 1352 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

@@ -23,7 +23,7 @@
       }, gen: { out: true },
       /* the page's own action (F3): a rest on the rock at the top, looking out over the view */
       acts: [{ id: 'sit', len: 6.6, w: function () { return 2; } }],
-      hits: [[150, 80, 250, 120, 'glActive', 'gaze']], len: 10.6, data: data, render: function (sv, t, st) {
+      hits: [[150, 80, 250, 120, 'glActive', 'gaze']], season: { x: 379, y: 107.5, s: .6, act: false },   /* on the top, small with the distance; no walk on the slope */ len: 10.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 60, face = 0, w = 0, pose = {}, lift = 0, planted = false;
