@@ -125,7 +125,7 @@
       var st0 = T.out + .2, st1 = st0 + 1.4 * sp, wv = st1 + .4, wv1 = wv + 1.6, sd0 = wv1 + .2, sd1 = sd0 + .5, hm = chair ? T.out + .3 : sd1 + .2, len = hm + 1.8 * sp + .6;
       var TABLE = 214, CUP = [TABLE - 2, 151], MOUTH = B(66, 24), STEP = 318;
       function cup(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.4, y: -5.5, width: 8.8, height: 11, rx: 2, fill: '#f2f2f2' }); add(m, 'path', { d: 'M4.2 -3 q4.2 0 4.2 3 q0 3 -4.2 3', fill: 'none', stroke: '#f2f2f2', 'stroke-width': 1.6 }); add(m, 'rect', { x: -3.8, y: -5.5, width: 7.6, height: 1.5, fill: '#5a3424', opacity: .7 }); return m; }
-      playing = S.run(test, { id: 'avp-play', len: len, idle: [1e9, 1e9],
+      playing = S.run(test, { id: 'avp-play', gen: false, len: len, idle: [1e9, 1e9],
         back: function (bg) {
           add(bg, 'rect', { x: 0, y: 200, width: 400, height: 40, fill: 'rgba(255,255,255,.06)' });
           /* the table: its top at hip height, the cup fits the hand */

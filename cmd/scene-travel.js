@@ -194,7 +194,7 @@
       if (lit) { var ws = work ? [[174, 50], [190, 61], [206, 72], [174, 83]] : [[170, 88]]; ws.forEach(function (w) { add(g, 'rect', { x: cx + (w[0] - 191) * SC, y: Y0 + w[1] * SC, width: (work ? 10 : 13) * SC, height: (work ? 7 : 11) * SC, rx: 2, fill: '#ffd56b', opacity: lit.toFixed(2) }); }); }
     }
     function doorX(work) { return (work ? 195 : 194) - 191; }   /* the door's middle, from the place's middle (art units) */
-    return S.run(svg, { id: location.pathname + '#journey', hits: [[0, 0, 400, 240, 'paneJourney']], len: slots.length * SL, data: data,
+    return S.run(svg, { id: location.pathname + '#journey', gen: false, hits: [[0, 0, 400, 240, 'paneJourney']], len: slots.length * SL, data: data,
       back: function (bg) { add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(255,255,255,.05)' }); },
       render: function (g, t, st) {
         var k = Math.min(slots.length - 1, Math.floor(t / SL)), u = (t - k * SL) / SL, sl = slots[k];

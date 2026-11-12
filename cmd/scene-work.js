@@ -9,7 +9,7 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    return S.run(svg, { hits: [[196, 124, 50, 32, 'ptime'], [180, 136, 22, 22, 'flex'], [310, 42, 40, 40, 'flex'], [128, 154, 184, 46, 'flex']], len: 12, data: data, render: function (sv, t, st) {
+    return S.run(svg, { gen: { no: ['coffee'] }, hits: [[196, 124, 50, 32, 'ptime'], [180, 136, 22, 22, 'flex'], [310, 42, 40, 40, 'flex'], [128, 154, 184, 46, 'flex']], len: 12, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 220, face = 0, pose = {}, lean = 0, lift = 0, mugIn = false, tilt = 0, MUG = [194, 151], MOUTH = B(66, 24), UP = B(34, 4);

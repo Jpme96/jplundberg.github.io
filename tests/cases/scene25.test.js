@@ -36,7 +36,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   const end = a.path[a.path.length - 1], last = a.path.filter(x => x[0] <= a.len).pop();
   check(Math.abs(end[1] - last[1]) < .5, 'the end of the action is the rest that follows (no jump into the rest)');
   /* a replay starts from where he stands */
-  const rep = await p.evaluate(() => { const R = Scene25.list()[0]; R.at(R.len); R.play(true); R.at(0); return Scene25.list()[0].state.figs.me.cx; });
+  const rep = await p.evaluate(() => { const R = Scene25.list()[0]; R.at(R.len); R.play(true, 'main'); R.at(0); return Scene25.list()[0].state.figs.me.cx; });
   check(Math.abs(rep - 300) < 3, 'a replay starts where he rests – no teleport to the edge (' + rep.toFixed(0) + ')');
   const a2 = await sweep();   /* the replay itself: he turns from you, walks back to the ladder – just as smooth */
   if (process.env.DBG) console.log(a2.path.filter(x => Math.abs(x[0] - parseFloat(a2.at)) < .06).map(x => JSON.stringify(x)).join('\n'));

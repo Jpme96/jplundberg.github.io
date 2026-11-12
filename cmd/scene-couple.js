@@ -11,7 +11,7 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    return S.run(svg, { id: 'couple-' + (data.kind || 'hold'), len: 6, data: data, render: function (sv, t, st) {
+    return S.run(svg, { id: 'couple-' + (data.kind || 'hold'), gen: false, len: 6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; o.who = o.look; if (o.look === 'me' && data.me) o.look = data.me; else if (o.look === 'partner' && data.them) o.look = data.them; return window.Scene25.FIG(par, o); }
       var kind = /^(hold|hi5|hug|kiss|selfie|dance|cook|sofa)$/.test(data.kind || '') ? data.kind : 'hold', g = add(sv, 'g', {}), K6 = .6, me = { cx: 176, face: 0, w: 0, pose: {}, gy: 200 }, pa = { cx: 224, face: 0, w: 0, pose: {}, gy: 200 };

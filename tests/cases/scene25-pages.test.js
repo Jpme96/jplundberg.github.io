@@ -41,7 +41,7 @@ const PAGES = [
     check(a.len >= V.len[0] && a.len <= V.len[1], P.page + ' – ' + V.name + ' (' + a.len.toFixed(1) + ' s)');
     check(a.body < 4.5 && a.hand < 7, P.page + ' – ' + V.name + ': smooth, nothing jumps (body ' + a.body.toFixed(2) + ', hands ' + a.hand.toFixed(2) + ' at ' + a.at + ')');
     check(!a.bad, P.page + ' – ' + V.name + ': no "NaN" or "undefined" in any frame');
-    await p.evaluate(() => { const R = Scene25.list()[0]; R.at(R.len); R.play(true); });
+    await p.evaluate(() => { const R = Scene25.list()[0]; R.at(R.len); R.play(true, 'main'); });
     const r2 = await sweep();
     check(r2.body < 4.5 && r2.hand < 7, P.page + ' – ' + V.name + ': a replay is smooth too (body ' + r2.body.toFixed(2) + ', hands ' + r2.hand.toFixed(2) + ' at ' + r2.at + ')');
     /* the wheelchair: plays through without errors or broken numbers */

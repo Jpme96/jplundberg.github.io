@@ -9,7 +9,7 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    return S.run(svg, { hits: [[150, 80, 250, 120, 'glActive']], len: 10.6, data: data, render: function (sv, t, st) {
+    return S.run(svg, { gen: { out: true }, hits: [[150, 80, 250, 120, 'glActive']], len: 10.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 60, face = 0, w = 0, pose = {}, lift = 0, planted = false;
