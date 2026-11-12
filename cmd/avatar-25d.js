@@ -41,6 +41,15 @@
     varsity: { sleeve: '#f4f1ea' }, suit: { jacket: '#2e3340' }, puffer: { quilt: 1 }, rain: { hood: 1, zip: 1 }, jacket: { zip: 1 }, dress: { bare: 'short', skirt: 'knee' }, bunad: { band: 1, sleeve: '#f4f4f2' },
     scrubs: { vneck: 1, bare: 'short' }, chef: { buttons2: 1 }, pjs: { stripes: 1 }, robe: { wrap: 1 }, none: { bare: 'arms' } };
   var SHOES = { sneakers: '#1a1a1a', hightops: '#d93a3a', boots: '#5b3a1e', sandals: '#8a5e44', slippers: '#e0559a', cleats: '#1a1a1a' };
+  /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
+     w = body width, d = depth (front to back), sh = shoulders, wa = waist, hp = hips, arm / leg = how thick */
+  var BUILD = {
+    slim:     { w: .92, d: .9,  sh: .96, wa: .9,  hp: .92, arm: .84, leg: .86 },
+    regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1 },
+    athletic: { w: 1.04, d: 1.02, sh: 1.12, wa: .86, hp: .98, arm: 1.12, leg: 1.08 },
+    muscular: { w: 1.1, d: 1.1, sh: 1.22, wa: .9,  hp: 1.04, arm: 1.32, leg: 1.18 },
+    broad:    { w: 1.18, d: 1.24, sh: 1.08, wa: 1.16, hp: 1.12, arm: 1.14, leg: 1.16 }
+  };
   function look25(l) {
     l = l || {}; if (window.Avatar && Avatar.trimLook) l = Avatar.trimLook(l);
     var top = TOPS[l.top] ? l.top : 'sweater', t = TOPS[top], bottom = l.bottom || 'trousers';
@@ -49,7 +58,7 @@
       top: top, topC: top === 'chef' ? '#f4f4f2' : (/^#[0-9a-f]{6}$/i.test(l.topC || '') ? l.topC : TOP_STD), bottom: bottom, legsC: l.legs || '#2a2f3a', shoes: l.shoes || 'sneakers',
       hat: l.hat || 'none', hatC: l.hatC || '#e8743b', neck: l.wxScarf ? 'scarf' : 'none', neckC: l.hatC || '#e8743b', aid: l.aid || 'none',
       bare: t.bare || '', sleeve: t.sleeve || '', skirt: t.skirt || (bottom === 'skirt' ? 'knee' : ''), legsOn: bottom === 'shorts' ? 'thigh' : bottom === 'swim' ? 'swim' : top === 'dress' ? 'none' : 'full',
-      bw: { slim: 1, regular: 1.05, athletic: 1.08, muscular: 1.15, broad: 1.2 }[l.build] || 1, hs: { short: .94, tall: 1.05 }[l.height] || 1 };
+      bw: (BUILD[l.build] || BUILD.regular).w, bp: BUILD[l.build] || BUILD.regular, hs: { short: .94, tall: 1.05 }[l.height] || 1 };
     o.shoeC = SHOES[o.shoes] || '#1a1a1a';
     if (top === 'dress') o.legsC = o.skin;
     if (o.hair === 'bald') o.hair = 'none';
@@ -112,7 +121,7 @@
       var lo = pose[nearSide(sd) ? 'legNear' : 'legFar'];
       if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m == null ? 1 : lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */
       if (lo) { th = th * (1 - lo.m) + lo.th * lo.m; kn = kn * (1 - lo.m) + lo.kn * lo.m; }   /* a keyed leg pose */
-      var hip = [sd * 10, 140 + bob, 0], knee = [hip[0], hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
+      var LW = L.bp.leg, hip = [sd * 10 * L.bp.hp, 140 + bob, 0], knee = [hip[0], hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
       var ank = [hip[0], knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
       var lift = Math.max(0, 218 - 4 - ank[1]); /* stays on the ground */
       if (ank[1] > 214) { var d = ank[1] - 214; knee[1] -= d; ank[1] = 214; hip[1] -= 0; }
@@ -121,7 +130,7 @@
       /* a human leg: full at the hip, narrower at the knee, the calf swells a little below it, slim at the ankle */
       var lc = shade(far, C.legs2, C.legs), skc = shade(far, C.skin2, C.skin), calf = P(knee[0], knee[1] + (ank[1] - knee[1]) * .32, knee[2] + (ank[2] - knee[2]) * .32);
       var thighC = L.legsOn === 'none' || L.legsOn === 'swim' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
-      taper(a1, a2, 10.5, 8.2, thighC, z); taper(a2, calf, 8.2, 8.4, shinC, z); taper(calf, a3, 8.4, 7.2, shinC, z);
+      taper(a1, a2, 10.5 * LW, 8.2 * LW, thighC, z); taper(a2, calf, 8.2 * LW, 8.4 * LW, shinC, z); taper(calf, a3, 8.4 * LW, 7.2 * LW, shinC, z);
       if (L.legsOn === 'thigh') { var kb = P(knee[0], knee[1] - 4, knee[2]); taper(a1, kb, 10.8, 9, lc, z + .001); }
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
@@ -136,17 +145,18 @@
     });
     /* the seat: a rounded pelvis in the trousers' colour where the legs meet the body, fuller at the back –
        from the side you see the bottom, from the front the hips */
-    var pw = Math.sqrt(Math.pow(18 * Math.cos(a), 2) + Math.pow(10 * Math.sin(a), 2)), pc = P(0, 144 + bob, -6);
+    var pw = Math.sqrt(Math.pow(18 * L.bp.hp * Math.cos(a), 2) + Math.pow(10 * L.bp.d * Math.sin(a), 2)), pc = P(0, 144 + bob, -6);
     parts.push([-0.005, el('ellipse', { cx: pc.X, cy: pc.Y, rx: pw * k, ry: 11 * k, fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
     if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = BW * Math.sqrt(Math.pow(26 * Math.cos(a), 2) + Math.pow(17 * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
       parts.push([0.004, el('path', { d: 'M' + (sk1.X - skw1) + ' ' + sk1.Y + ' L' + (sk1.X + skw1) + ' ' + sk1.Y + ' L' + (sk2.X + skw2) + ' ' + sk2.Y + ' Q' + sk2.X + ' ' + (sk2.Y + 4 * k) + ' ' + (sk2.X - skw2) + ' ' + sk2.Y + ' Z', fill: skc2 })]); }
     /* torso: an oval tube – its width depends on which way he faces; the side towards the back is darker */
-    var hw = BW * Math.sqrt(Math.pow(30 * Math.cos(a), 2) + Math.pow(17 * Math.sin(a), 2)), topY = 80 + bob, botY = 146 + bob;
+    var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)); };
+    var hw = wid(BP.wa), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
     var t1 = P(0, topY, 0), t2 = P(0, botY, 0);
-    var TD = 'M' + (t1.X - hw * k * .92) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hw * k * .92) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z';
+    var TD = 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
-    if (shadeOn) parts.push([0.015, el('path', { d: 'M' + (t1.X - hw * k * .92) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hw * k * .92) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z', fill: 'url(#shBody)' })]);
+    if (shadeOn) parts.push([0.015, el('path', { d: 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z', fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
     if (L.top === 'knit') {
       var KNID = 'kn' + (draw.n = (draw.n || 0) + 1), KW = el('g', {}), KC = el('clipPath', { id: KNID }); KC.appendChild(el('path', { d: TD })); KW.appendChild(KC); var KN = el('g', { 'clip-path': 'url(#' + KNID + ')' }); KW.appendChild(KN); parts.push([0.02, KW]);
@@ -189,14 +199,14 @@
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
       if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, 29, 27, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
-      var sh = [sd * 30 * BW, 88 + bob, 0], elb = [sd * 32 * BW, sh[1] + 29 * Math.cos(sv), 29 * Math.sin(sv)];
-      var hand = [sd * 32 * BW, elb[1] + 27 * Math.cos(fb), elb[2] + 27 * Math.sin(fb)];
+      var AW = L.bp.arm, SHW = BW * L.bp.sh, sh = [sd * 30 * SHW, 88 + bob, 0], elb = [sd * 32 * SHW, sh[1] + 29 * Math.cos(sv), 29 * Math.sin(sv)];
+      var hand = [sd * 32 * SHW, elb[1] + 27 * Math.cos(fb), elb[2] + 27 * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
-      if (L.bare === 'arms' || L.top === 'none') { taper(p1, p2, 5.6, 4.6, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6, 3.6, shade(far, C.skin2, C.skin), z); }
+      if (L.bare === 'arms' || L.top === 'none') { taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z); }
       else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1);
-        taper(p1, p2, 5.6, 4.6, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6, 3.6, shade(far, C.skin2, C.skin), z); taper(p1, mid, 7.2, 6.4, shade(far, C.top2, C.top), z + .01); }
-      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, p2, 9 * BW, 8 * BW, shade(far, slc2, slc), z); taper(p2, p3, 8 * BW, 7.4 * BW, shade(far, slc2, slc), z);
+        taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z); taper(p1, mid, 7.2 * AW, 6.4 * AW, shade(far, C.top2, C.top), z + .01); }
+      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, p2, 9 * AW, 8 * AW, shade(far, slc2, slc), z); taper(p2, p3, 8 * AW, 7.4 * AW, shade(far, slc2, slc), z);
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
@@ -358,7 +368,7 @@
     }
     if (CRUTCH) {
       /* forearm crutches: the cuff round the forearm, the handle in the hand, the tip on the ground a little ahead */
-      [-1, 1].forEach(function (sd) { var hd = HAND['s' + sd]; if (!hd) return; var tip = P(sd * 34 * BW, 216, 10 + 9 * Math.sin(ph + (sd < 0 ? Math.PI : 0)) * w), cuff = { X: hd.X + (hd.X - tip.X) * .32, Y: hd.Y + (hd.Y - tip.Y) * .32 };
+      [-1, 1].forEach(function (sd) { var hd = HAND['s' + sd]; if (!hd) return; var tip = P(sd * 34 * BW * L.bp.sh, 216, 10 + 9 * Math.sin(ph + (sd < 0 ? Math.PI : 0)) * w), cuff = { X: hd.X + (hd.X - tip.X) * .32, Y: hd.Y + (hd.Y - tip.Y) * .32 };
         var z2 = hd.z - .15, g2 = el('g', {});
         g2.appendChild(el('line', { x1: cuff.X, y1: cuff.Y, x2: tip.X, y2: tip.Y, stroke: '#9aa3ad', 'stroke-width': 2.6 * k, 'stroke-linecap': 'round' }));
         g2.appendChild(el('circle', { cx: tip.X, cy: tip.Y, r: 2.2 * k, fill: '#2a2d33' }));

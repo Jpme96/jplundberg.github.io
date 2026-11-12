@@ -27,7 +27,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(pure.s7.r3.indexOf(2) > -1 && !pure.s7.direct && pure.s7.on === true && !pure.s7.soft && pure.s7.theme === 'dark', 'step 2 clears the old off switches and keeps the rest ' + JSON.stringify(pure.s7));
   check(pure.r1.indexOf(1) > -1 && pure.a.hat === 'cap' && pure.a.oldCap === 1 && pure.a.extra === 'none' && pure.a.hair === 'short', 'step 1 turns the old cap into the hat, keeping the rest ' + JSON.stringify(pure.a));
   check(pure.r2.length === 0, 'it runs only once');
-  check(pure.f0.r4.indexOf(3) > -1 && pure.f0.a.hair === 'side' && pure.f0.a.hat === 'beanie' && !('pierce' in pure.f0.a) && !('neck' in pure.f0.a) && pure.f0.a.topC === '#2f7a55', 'step 3 (F0) trims your saved look ' + JSON.stringify(pure.f0.a));
+  check(pure.f0.r4.indexOf(3) > -1 && pure.f0.a.hair === 'side' && pure.f0.a.hat === 'beanie' && !('pierce' in pure.f0.a) && !('neck' in pure.f0.a) && pure.f0.a.topC === '#d93a3a', 'step 3 (F0) trims your saved look ' + JSON.stringify(pure.f0.a));
   check(pure.f0.pl.hair === 'topknot' && pure.f0.pl.glasses === 'sun' && !('badge' in pure.f0.pl), 'and your people\'s looks ' + JSON.stringify(pure.f0.pl));
   check(pure.d2 === 0, 'a failing step stops and is tried again next time (dv stays ' + pure.d2 + ')');
   check(pure.empty >= 1, 'nothing to change still counts as done');

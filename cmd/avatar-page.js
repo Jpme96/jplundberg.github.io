@@ -157,7 +157,7 @@
       if (e.target.closest('[data-avp-stay]')) { el.querySelector('.avp-ask').hidden = true; return; }
       if (e.target.closest('[data-avp-drop]')) { close(); return; }
       if (e.target.closest('[data-avp-save]')) { save(); return; }
-      if (e.target.closest('[data-avp-match]')) { var ml = opts.match.look || {}; undo.push(JSON.stringify(cur)); cur = Object.assign({}, cur, { top: ml.top || cur.top, bottom: ml.bottom || cur.bottom, legs: ml.legs || cur.legs });   /* the same outfit (tops have one standard colour since F0) */ redraw(); return; }
+      if (e.target.closest('[data-avp-match]')) { var ml = opts.match.look || {}; undo.push(JSON.stringify(cur)); cur = Object.assign({}, cur, { top: ml.top || cur.top, topC: ml.topC || cur.topC, bottom: ml.bottom || cur.bottom, legs: ml.legs || cur.legs });   /* the same outfit (tops have one standard colour since F0) */ redraw(); return; }
       if (e.target.closest('[data-avp-undo]')) { if (undo.length) { cur = JSON.parse(undo.pop()); redraw(); } return; }
       if (e.target.closest('[data-avp-rand]')) { change(Object.assign({}, M.rand(), { hand: cur.hand, walk: cur.walk, auto: cur.auto })); return; }
       if ((b = e.target.closest('[data-avp-tab]'))) { setTab(b.dataset.avpTab); return; }

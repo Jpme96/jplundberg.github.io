@@ -133,7 +133,7 @@
     TRIM_GONE.forEach(function (k) { delete o[k]; });
     Object.keys(TRIM_TO).forEach(function (k) { var to = TRIM_TO[k][o[k]]; if (to) o[k] = to; });
     if (o.extra === 'lanyard' || o.extra === 'earbuds') o.extra = 'none';   /* the old single extra: only the cap and the watch are left */
-    o.topC = TOP_STD;
+    if (!/^#[0-9a-f]{6}$/i.test(o.topC || '')) o.topC = TOP_STD;   /* forest green unless you picked a colour (the top colour came back, JP 2026-11-12) */
     return o;
   }
   function norm(L) {
@@ -697,7 +697,7 @@
     ['face', 'Face', 'Ansikt', [['faceS', 'Face shape', 'Ansiktsform'], ['expr', 'Mood', 'Humør'], ['eyeC', 'Eye colour', 'Øyefarge'], ['makeup', 'Make-up', 'Sminke'], ['cheeks', 'Cheeks', 'Kinn'], ['beard', 'Beard', 'Skjegg'], ['glasses', 'Glasses', 'Briller']]],
     ['hair', 'Hair', 'Hår', [['hair', 'Style', 'Frisyre'], ['hairC', 'Colour', 'Farge']]],
     ['body', 'Body', 'Kropp', [['build', 'Build', 'Kroppsbygning'], ['height', 'Height', 'Høyde'], ['skin', 'Skin tone', 'Hudfarge'], ['aid', 'Mobility & hearing', 'Bevegelse og hørsel']]],
-    ['style', 'Style', 'Klær', [['top', 'Top', 'Overdel'], ['bottom', 'Bottom', 'Underdel'], ['legs', 'Bottom colour', 'Farge på underdelen'], ['shoes', 'Shoes', 'Sko']]],
+    ['style', 'Style', 'Klær', [['top', 'Top', 'Overdel'], ['topC', 'Top colour', 'Farge på overdelen'], ['bottom', 'Bottom', 'Underdel'], ['legs', 'Bottom colour', 'Farge på underdelen'], ['shoes', 'Shoes', 'Sko']]],
     ['extras', 'Extras', 'Tilbehør', [['hat', 'Headwear', 'Hodeplagg'], ['hatC', 'Hat colour', 'Farge på hatten'], ['addons', 'Add-ons', 'Ekstra'], ['pet', 'Sidekick', 'Følgesvenn']]],
     ['day', 'Your day', 'Dagen din', [['auto', 'Dress for the season', 'Kle deg etter sesongen']]]
   ];
@@ -725,7 +725,8 @@
     skin: ['#fbe2cf', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
     hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'],
     legs: ['#2a2f3a', '#3c5a7d', '#5b4b3a', '#6e6e6e', '#c9b48a', '#2f7a55', '#8a5cf0'],
-    hatC: ['#e8743b', '#2e3340', '#d93a3a', '#3987e5', '#2f7a55', '#f2c94c', '#e0559a', '#8a5a2b', '#3b4d8a', '#f2f2f2']
+    hatC: ['#e8743b', '#2e3340', '#d93a3a', '#3987e5', '#2f7a55', '#f2c94c', '#e0559a', '#8a5a2b', '#3b4d8a', '#f2f2f2'],
+    topC: ['#2f7a55', '#2f5d8a', '#2e3340', '#d93a3a', '#e8743b', '#f2c94c', '#8a6fdf', '#e0559a', '#d9c7a8', '#b8b8b8', '#f2f2f2', '#5b4b3a']
   };
   var MKFACE = { faceS: 1, expr: 1, eyeC: 1, makeup: 1, cheeks: 1, beard: 1, glasses: 1, hair: 1, hairC: 1, hat: 1 };
   var MKNONE = { makeup: 1, cheeks: 1, aid: 1, hat: 1, pet: 1 };

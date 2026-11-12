@@ -8,7 +8,7 @@ const BUDGET_KB = { total: 1745 };      /* biggest page today ≈ 1 740 kB (Fina
    drawing code goes in F4 and these budgets come down again then.
    +2–9 kB on the pages with a scene (2026-11-12, F2): the 2.5D scene engine (scene25.js) in their bundle, next to the old engine until F4.
    −83 kB on every page (2026-11-12, D 25): Papers, Work, Habits (water), Goals, Wishlist and House chores load their page parts only on their page. */
-const PAGE_KB = { 'index.html': 1645, 'admin/index.html': 1570, 'calendar/index.html': 1505, 'finance/index.html': 1749, 'food/index.html': 1513, 'goals/index.html': 1518, 'habits/index.html': 1516, 'house/index.html': 1674, 'papers/index.html': 1532, 'people/index.html': 1499, 'travel/index.html': 1608, 'wish/index.html': 1519, 'work/index.html': 1524 };
+const PAGE_KB = { 'index.html': 1645, 'admin/index.html': 1570, 'calendar/index.html': 1505, 'finance/index.html': 1749, 'food/index.html': 1513, 'goals/index.html': 1518, 'habits/index.html': 1516, 'house/index.html': 1674, 'papers/index.html': 1532, 'people/index.html': 1505, 'travel/index.html': 1608, 'wish/index.html': 1519, 'work/index.html': 1524 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

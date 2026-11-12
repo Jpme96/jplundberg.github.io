@@ -32,14 +32,14 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     Fig25.draw(base, -Math.PI / 2, 200, 200, .5, 0, 0, { near: { m: 1, at: [180, 130] } }).forEach(q => svg.appendChild(q[1]));
     const h = Fig25.hand().near;
     const dif = {}; for (const k in distinct) dif[k] = distinct[k].size + '/' + G[k].length;
-    return { n, sweep, chairDiff: chair !== plain && chair.length > plain.length + 400, crutchDiff: crutch.length > plain.length + 200, petDiff: petSvg.length > plain.length + 300, bad: bad.slice(0, 5), errs: errs.slice(0, 5), hand: h && Math.hypot(h.X - 180, h.Y - 130), dif, trimmed: Fig25.look({ hair: 'mullet', topC: '#ff0000' }) };
+    return { n, sweep, chairDiff: chair !== plain && chair.length > plain.length + 400, crutchDiff: crutch.length > plain.length + 200, petDiff: petSvg.length > plain.length + 300, bad: bad.slice(0, 5), errs: errs.slice(0, 5), hand: h && Math.hypot(h.X - 180, h.Y - 130), dif, trimmed: Fig25.look({ hair: 'mullet', topC: '#ff0000' }), plainTop: Fig25.look({ hair: 'short' }).topC };
   });
   check(r.n > 500 && !r.errs.length, 'every choice draws from five angles (' + r.n + ' pictures) ' + r.errs.join(' | '));
   check(r.sweep === 120, 'the look sweep: 12 mixed looks from five angles, standing and walking (' + r.sweep + ')');
   check(r.chairDiff && r.crutchDiff && r.petDiff, 'the wheelchair, the crutches and a pet add their own parts');
   check(!r.bad.length, 'no "NaN", "undefined" or "null" in any picture ' + r.bad.join(', '));
   check(r.hand != null && r.hand < 3, 'a hand put on a point lands there (' + (r.hand || 0).toFixed(1) + ' px off)');
-  check(r.trimmed.hair === 'side' && r.trimmed.topC === '#2f7a55', 'it draws the trimmed look: removed choices mapped, the standard top colour (' + r.trimmed.hair + ', ' + r.trimmed.topC + ')');
+  check(r.trimmed.hair === 'side' && r.trimmed.topC === '#ff0000' && r.plainTop === '#2f7a55', 'it draws the trimmed look: removed choices mapped, your top colour kept, forest green when none (' + r.trimmed.hair + ', ' + r.trimmed.topC + ', ' + r.plainTop + ')');
   /* shared shapes for now (F1 follow-up): undercut and waves are drawn as the side part */
   const ALIAS = { hair: 2 };
   const same = Object.keys(r.dif).filter(k => ['top', 'hat', 'hair', 'beard', 'glasses', 'shoes', 'bottom'].includes(k) && +r.dif[k].split('/')[0] < +r.dif[k].split('/')[1] - (ALIAS[k] || 0));

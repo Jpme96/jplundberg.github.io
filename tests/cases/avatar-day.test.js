@@ -23,7 +23,7 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   check(day.cold.join(',') === 'puffer,beanie,scarf', 'cold: a padded jacket, beanie and scarf ' + day.cold);
   check(day.warm === 'tee', 'warm: a T-shirt instead of the sweater (' + day.warm + ')');
   check(day.earned === 'none', 'no earned badges any more, even with today’s top 3 done (' + day.earned + ')');
-  check(day.trimmed === ',,,#2f7a55,side,beanie,round', 'F0: removed settings go, removed choices become the nearest kept one, tops get the standard colour (' + day.trimmed + ')');
+  check(day.trimmed === ',,,#d93a3a,side,beanie,round', 'F0: removed settings go, removed choices become the nearest kept one, your top colour stays (' + day.trimmed + ')');
   check(day.seated, 'on the sofa you sit');
   /* the two of you: Iago has an avatar */
   /* (slow machines: wait for his app, and try again if the first save didn't reach the box) */
