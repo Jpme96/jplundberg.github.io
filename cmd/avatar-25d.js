@@ -167,8 +167,13 @@
       var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.35 + .15 * BP.mus)).toFixed(2), pecY = 98 + bob;
       [-1, 1].forEach(function (sd) { var pa1 = P(sd * 2, pecY, 15), pa2 = P(sd * 15 * BP.sh, pecY + 1, 13), pa3 = P(sd * 22 * BP.sh, pecY - 7, 10);
         parts.push([0.012, el('path', { d: 'M' + pa1.X.toFixed(1) + ' ' + pa1.Y.toFixed(1) + ' Q' + pa2.X.toFixed(1) + ' ' + (pa2.Y + 3 * k).toFixed(1) + ' ' + pa3.X.toFixed(1) + ' ' + pa3.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (1.1 * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); });
-      var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 140 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]);
-      [112, 124].forEach(function (yy) { var q1 = P(-7, yy + bob, 14.5), q2 = P(7, yy + bob, 14.5); parts.push([0.012, el('path', { d: 'M' + q1.X.toFixed(1) + ' ' + q1.Y.toFixed(1) + ' Q' + ((q1.X + q2.X) / 2).toFixed(1) + ' ' + (q1.Y + 1.5 * k).toFixed(1) + ' ' + q2.X.toFixed(1) + ' ' + q2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.8 * k).toFixed(2), opacity: mo })]); });
+      /* the stomach: a six-pack – three rows of two soft blocks either side of the middle line – and the V of the obliques down to the hips */
+      var abA = (BP.mus > 1 ? .55 : .42) * Math.min(1, (Math.cos(a) - .3) * 2), abf = dk(L.skin, .86);
+      [[106, 115], [117, 126], [128, 137]].forEach(function (r) { [-1, 1].forEach(function (sd) { var c1 = P(sd * 1.4, r[0] + bob, 15), c2 = P(sd * 9.2, r[1] + bob, 14.2);
+        var x0 = Math.min(c1.X, c2.X), w0 = Math.abs(c2.X - c1.X); if (w0 < .6 * k) return;
+        parts.push([0.012, el('rect', { x: x0.toFixed(1), y: c1.Y.toFixed(1), width: w0.toFixed(1), height: (c2.Y - c1.Y).toFixed(1), rx: (2.6 * k).toFixed(2), fill: 'none', stroke: abf, 'stroke-width': (.9 * k).toFixed(2), opacity: abA.toFixed(2) })]); }); });
+      var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 138 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (1 * k).toFixed(2), opacity: mo })]);
+      [-1, 1].forEach(function (sd) { var o1 = P(sd * 16 * BP.wa, 118 + bob, 12), o2 = P(sd * 6, 146 + bob, 13.5); parts.push([0.012, el('path', { d: 'M' + o1.X.toFixed(1) + ' ' + o1.Y.toFixed(1) + ' Q' + ((o1.X + o2.X) / 2 + sd * 2 * k).toFixed(1) + ' ' + ((o1.Y + o2.Y) / 2).toFixed(1) + ' ' + o2.X.toFixed(1) + ' ' + o2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]); });
     }
     if (shadeOn) parts.push([0.015, el('path', { d: 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z', fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
