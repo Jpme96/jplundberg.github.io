@@ -122,10 +122,10 @@
   function showCode(code, fresh) {
     dialog(head(fresh ? 'Your recovery code' : 'Recovery code', fresh ? 'Save it now – print it, or put it in your password manager. Anyone with it can open your dashboard.' : 'Anyone with this code can open your dashboard.') +
       '<p class="rc-code" id="rcCode">' + esc(code) + '</p>' +
-      '<div class="rc-acts"><button type="button" class="pill-btn" data-rccopy><i class="bi bi-clipboard"></i> Copy</button>' +
+      '<div class="rc-acts"><button type="button" class="pill-btn" data-rccopy><i class="bi bi-clipboard"></i> <span data-t="ui.copy">Copy</span></button>' +
       (navigator.share ? '<button type="button" class="text-btn" data-rcshare><i class="bi bi-share"></i> Save to…</button>' : '') +
       '<button type="button" class="text-btn" data-rcprint><i class="bi bi-printer"></i> Print</button></div>' +
-      '<p class="muted rc-note">On the lock screen: <b data-t="ui.forgot-passcode">Forgot passcode?</b> → enter this code → choose a new passcode.</p>' +
+      '<p class="muted rc-note">On the lock screen: <b data-t="ui.forgot-passcode"><span data-t="ui.forgot-passcode">Forgot passcode?</span></b> → enter this code → choose a new passcode.</p>' +
       (fresh ? '<button type="button" class="pill-btn wide" data-rcclose>I’ve saved it</button>' : '<div class="rc-more"><button type="button" class="text-btn" data-rcnew><i class="bi bi-arrow-repeat"></i> Make a new code</button><button type="button" class="text-btn danger" data-rcdel><i class="bi bi-trash3"></i> Turn off</button></div>'),
       function (e, close) {
         if (e.target.closest('[data-rccopy]') && navigator.clipboard) return navigator.clipboard.writeText(code).then(function () { toast('<i class="bi bi-clipboard-check"></i> Recovery code copied'); });

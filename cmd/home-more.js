@@ -29,7 +29,7 @@
     if (!l.length) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
     var total = l.reduce(function (a, x) { return a + (+x.cost || 0); }, 0);
-    el.innerHTML = '<section class="card kit-card" id="pins"><div class="card-head"><h2><i class="bi bi-shield-check"></i> Your insurance</h2><span class="muted">' + (total ? esc(kr(total)) + ' a year' : '') + '</span></div>' +
+    el.innerHTML = '<section class="card kit-card" id="pins"><div class="card-head"><h2><i class="bi bi-shield-check"></i> <span data-t="ui.your-insurance">Your insurance</span></h2><span class="muted">' + (total ? esc(kr(total)) + ' a year' : '') + '</span></div>' +
       '<ul class="ins-l">' + l.slice().sort(function (a, b) { var sa = P && P.status ? P.status(a) : null, sb = P && P.status ? P.status(b) : null; return (sa ? sa.n : 1e6) - (sb ? sb.n : 1e6); }).map(function (x) {
         var st = P && P.status ? P.status(x) : null;
         return '<li><a href="#papers=' + esc(x.id) + '"><b>' + esc(x.title) + '</b><small>' + esc([x.who, x.covers].filter(Boolean).join(' · ') || 'Add what it covers on the paper') + '</small></a>' +
@@ -83,8 +83,8 @@
   function setFill(page) {
     var id = page === 'house' ? 'hlSet-house4' : null; var box = id && document.getElementById(id); if (!box || box.contains(document.activeElement)) return;
     var c = cfg(), sw = function (f, l, s) { return '<label class="st-row"><span>' + esc(l) + '<small class="st-rsub">' + esc(s) + '</small></span><input type="checkbox" class="switch" data-hmcfg="' + f + '"' + (c[f] ? ' checked' : '') + '></label>'; };
-    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-flower1"></i> Plants and insurance</p><div class="st-group">' + sw('plantBrief', 'Thirsty plants in At a glance', 'With a Watered button') +
-      sw('compare', 'Compare insurance prices before they renew', '45 days, 2 weeks and a few days before – from the insurance papers in Papers') + '</div>';
+    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-flower1"></i> <span data-t="ui.plants-and-insurance">Plants and insurance</span></p><div class="st-group">' + sw('plantBrief', I18N.k('ui.thirsty-plants-in-at-a-glance', 'Thirsty plants in At a glance'), I18N.k('ui.with-a-watered-button', 'With a Watered button')) +
+      sw('compare', I18N.k('ui.compare-insurance-prices-before-they-ren', 'Compare insurance prices before they renew'), I18N.k('ui.45-days-2-weeks-and-a-few-days-before-fr', '45 days, 2 weeks and a few days before – from the insurance papers in Papers')) + '</div>';
   }
   document.addEventListener('change', function (e) { var i = e.target.closest('[data-hmcfg]'); if (!i) return; var p = {}; p[i.dataset.hmcfg] = i.checked; setCfg(p); toast('<i class="bi bi-check2"></i> Saved'); });
   window.addEventListener('st:page', function (e) { setTimeout(function () { setFill(e.detail); }, 0); });

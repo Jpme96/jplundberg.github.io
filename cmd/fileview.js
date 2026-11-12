@@ -42,7 +42,7 @@
       '<a class="icon-btn fv-dl" href="' + esc(url) + '" download="' + esc(name) + '" aria-label="' + t('Download', 'Last ned') + '" title="' + t('Download', 'Last ned') + '"><i class="bi bi-download"></i></a>' +
       '<button type="button" class="icon-btn fv-big" aria-label="' + t('Expand', 'Utvid') + '" title="' + t('Expand', 'Utvid') + '"><i class="bi bi-arrows-angle-expand"></i></button>' +
       '<button type="button" class="icon-btn fv-x" aria-label="' + t('Close', 'Lukk') + '" title="' + t('Close', 'Lukk') + '"><i class="bi bi-x-lg"></i></button></div>' +
-      '<div class="fv-body"><p class="fv-wait muted">' + t('Opening …', 'Åpner …') + '</p></div></div>';
+      '<div class="fv-body"><p class="fv-wait muted">' + t(I18N.k('ui.opening', 'Opening …'), 'Åpner …') + '</p></div></div>';
     document.body.appendChild(box);
     document.documentElement.classList.add('fv-on');
     requestAnimationFrame(function () { if (box) box.classList.add('open'); });
@@ -54,8 +54,8 @@
       if (ext && !/\.[a-z0-9]{2,5}$/i.test(name)) box.querySelector('.fv-dl').setAttribute('download', name + '.' + ext);   /* "Receipt" downloads as Receipt.pdf */
       if (/^image\//.test(ty)) { body.innerHTML = '<img class="fv-img" src="' + esc(url) + '" alt="' + esc(name) + '">'; var im = body.querySelector('.fv-img'); if (im.complete && im.naturalWidth) shape(); else im.addEventListener('load', function () { if (box === me) shape(); }); }
       else if (/pdf/.test(ty)) body.innerHTML = '<iframe class="fv-pdf" src="' + esc(url) + '#view=FitH" title="' + esc(name) + '"></iframe>';
-      else body.innerHTML = '<div class="fv-other"><i class="bi bi-file-earmark"></i><b>' + esc(name) + '</b><p class="muted">' + t('This kind of file can’t be shown here – download it to open it.', 'Denne filtypen kan ikke vises her – last den ned for å åpne den.') + '</p></div>';
-    }, function () { if (box === me) body.innerHTML = '<p class="muted">' + t('Couldn’t open the file.', 'Klarte ikke å åpne filen.') + '</p>'; });
+      else body.innerHTML = '<div class="fv-other"><i class="bi bi-file-earmark"></i><b>' + esc(name) + '</b><p class="muted">' + t(I18N.k('ui.this-kind-of-file-cant-be-shown-here-dow', 'This kind of file can’t be shown here – download it to open it.'), 'Denne filtypen kan ikke vises her – last den ned for å åpne den.') + '</p></div>';
+    }, function () { if (box === me) body.innerHTML = '<p class="muted">' + t(I18N.k('ui.couldnt-open-the-file', 'Couldn’t open the file.'), 'Klarte ikke å åpne filen.') + '</p>'; });
     box.querySelector('.fv-x').focus({ preventScroll: true });
   }
   window.FileView = { show: show, close: close };

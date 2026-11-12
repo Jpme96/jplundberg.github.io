@@ -54,9 +54,9 @@
   function card(fn) {
     var l; try { l = checks(); } catch (e) { return ''; }
     var todo = l.filter(function (x) { return x.n > 0; });
-    return fn('clean', 'stars', 'Clean up', todo.length > 1 ? '<button type="button" class="text-btn" data-cleanall data-t="ui.clean-all">Clean all</button>' : '',
-      todo.length ? '<ul class="cl-list">' + todo.map(function (x) { return '<li><span class="kit-ic" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span><span><b>' + esc(x.t) + ' · ' + x.n + '</b>' + (x.s ? '<small>' + esc(x.s) + '</small>' : '') + '</span><button type="button" class="text-btn" data-clean="' + x.id + '">Clean</button></li>'; }).join('') + '</ul>'
-        : '<p class="muted cl-ok"><i class="bi bi-check2-circle"></i> Nothing has piled up – no duplicates, old done things or empty rows.</p>');
+    return fn('clean', 'stars', I18N.k('ui.clean-up', 'Clean up'), todo.length > 1 ? '<button type="button" class="text-btn" data-cleanall data-t="ui.clean-all"><span data-t="ui.clean-all">Clean all</span></button>' : '',
+      todo.length ? '<ul class="cl-list">' + todo.map(function (x) { return '<li><span class="kit-ic" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span><span><b>' + esc(x.t) + ' · ' + x.n + '</b>' + (x.s ? '<small>' + esc(x.s) + '</small>' : '') + '</span><button type="button" class="text-btn" data-clean="' + x.id + '"><span data-t="ui.clean">Clean</span></button></li>'; }).join('') + '</ul>'
+        : '<p class="muted cl-ok"><i class="bi bi-check2-circle"></i> <span data-t="ui.nothing-has-piled-up-no-duplicates-old-d">Nothing has piled up – no duplicates, old done things or empty rows.</span></p>');
   }
   function run(ids) {
     var l = checks().filter(function (x) { return ids.indexOf(x.id) > -1 && x.n > 0; }); if (!l.length) return;

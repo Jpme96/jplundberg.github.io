@@ -72,7 +72,7 @@
     if (!bar) { bar = document.createElement('div'); bar.className = 'tk-bar'; box.parentNode.insertBefore(bar, box.nextSibling); }
     bar.dataset.tkg = g;
     if (!editing[g]) {
-      bar.innerHTML = '<button type="button" class="text-btn tk-edit" data-tkedit="' + esc(g) + '"><i class="bi bi-grid-1x2"></i> Customize</button>';
+      bar.innerHTML = '<button type="button" class="text-btn tk-edit" data-tkedit="' + esc(g) + '"><i class="bi bi-grid-1x2"></i> <span data-t="ui.customize"><span data-t="ui.customize">Customize</span></span></button>';
       box.hidden = false; return;
     }
     var all = tilesIn(box);
@@ -85,7 +85,7 @@
           '</span><span class="tk-mv"><button type="button" class="icon-btn" data-tkmove="' + esc(k) + '" data-d="-1" aria-label="Move ' + esc(labelOf(t)) + ' up"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +
           '<button type="button" class="icon-btn" data-tkmove="' + esc(k) + '" data-d="1" aria-label="Move ' + esc(labelOf(t)) + ' down"' + (i < all.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
       }).join('') +
-      '<div class="tk-foot"><button type="button" class="text-btn" data-tkreset="' + esc(g) + '">Reset</button><button type="button" class="pill-btn" data-tkedit="' + esc(g) + '">Done</button></div></div>';
+      '<div class="tk-foot"><button type="button" class="text-btn" data-tkreset="' + esc(g) + '"><span data-t="ui.reset"><span data-t="ui.reset">Reset</span></span></button><button type="button" class="pill-btn" data-tkedit="' + esc(g) + '"><span data-t="ui.done"><span data-t="ui.done">Done</span></span></button></div></div>';
   }
   function boxOf(g) {
     var b = null; document.querySelectorAll(SEL).forEach(function (x) { if (groupOf(x) === g) b = x; }); return b;

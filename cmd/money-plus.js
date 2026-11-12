@@ -101,11 +101,11 @@
     var perMonth = active.reduce(function (a, r) { return a + r.amount; }, 0), subsOn = Fe.on('subs');
     var row = function (r) {
       var c = CATC[r.cat] || CATC.other, done = r.sub || r.fixed;
-      var status = r.sub ? '<span class="mp-tag ok"><i class="bi bi-check2"></i> Subscription</span>' : r.fixed ? '<span class="mp-tag ok"><i class="bi bi-check2"></i> Fixed cost</span>' : '';
+      var status = r.sub ? '<span class="mp-tag ok"><i class="bi bi-check2"></i> <span data-t="ui.subscription">Subscription</span></span>' : r.fixed ? '<span class="mp-tag ok"><i class="bi bi-check2"></i> <span data-t="ui.fixed-cost">Fixed cost</span></span>' : '';
       var price = r.sub && Math.abs(+r.sub.amount - r.amount) >= 5 ? '<button type="button" class="pill-btn sm" data-rcprice="' + esc(r.key) + '">Update price to ' + esc(kr(r.amount)) + '</button>' : '';
-      var acts = r.ignored ? '<button type="button" class="text-btn" data-rcunign="' + esc(r.key) + '">Show again</button>'
-        : done ? price : (subsOn ? '<button type="button" class="pill-btn sm" data-rcadd="' + esc(r.key) + '" data-kind="sub">Subscription</button>' : '') +
-          '<button type="button" class="' + (subsOn ? 'text-btn' : 'pill-btn sm') + '" data-rcadd="' + esc(r.key) + '" data-kind="fixed">Fixed cost</button>' +
+      var acts = r.ignored ? '<button type="button" class="text-btn" data-rcunign="' + esc(r.key) + '"><span data-t="ui.show-again">Show again</span></button>'
+        : done ? price : (subsOn ? '<button type="button" class="pill-btn sm" data-rcadd="' + esc(r.key) + '" data-kind="sub"><span data-t="ui.subscription">Subscription</span></button>' : '') +
+          '<button type="button" class="' + (subsOn ? 'text-btn' : 'pill-btn sm') + '" data-rcadd="' + esc(r.key) + '" data-kind="fixed"><span data-t="ui.fixed-cost">Fixed cost</span></button>' +
           '<button type="button" class="icon-btn sm" data-rcign="' + esc(r.key) + '" aria-label="Not a repeating payment" title="Not a repeating payment"><i class="bi bi-x"></i></button>';
       return '<li class="mp-row' + (done ? ' is-done' : '') + (r.active ? '' : ' is-old') + '"><span class="kit-ic" style="--c:' + c + '"><i class="bi bi-' + (r.bank ? 'bank' : 'arrow-repeat') + '"></i></span>' +
         '<span class="kit-x"><b>' + esc(r.name) + '</b><small>' + esc(kr(r.amount) + ' · around the ' + ord(r.day) + ' · ' + r.n + ' months' + (r.active ? ' · next ≈ ' + fmt(r.next) : ' · last ' + fmt(r.last))) +
@@ -113,12 +113,12 @@
     };
     var body = list.length || ign.length ? '<div class="kit-tiles">' +
         tile('Found', String(list.length), list.length === 1 ? 'repeating payment' : 'repeating payments') +
-        tile('Per month', esc(kr(perMonth)), 'still running') +
-        tile('Not added', String(fresh.length), fresh.length ? 'to the budget yet' : 'all in the budget') + '</div>' +
+        tile(I18N.k('ui.per-month', 'Per month'), esc(kr(perMonth)), 'still running') +
+        tile(I18N.k('ui.not-added', 'Not added'), String(fresh.length), fresh.length ? 'to the budget yet' : 'all in the budget') + '</div>' +
         (list.length ? '<ul class="mp-list">' + list.map(row).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.nothing-left-to-look-at">Nothing left to look at.</p>') +
         (ign.length ? '<button type="button" class="text-btn mp-more" data-rcshowign>' + (showIgnored ? 'Hide' : 'Show') + ' ' + ign.length + ' not repeating</button>' + (showIgnored ? '<ul class="mp-list">' + ign.map(row).join('') + '</ul>' : '') : '')
       : '<p class="empty kit-empty" data-t="ui.when-the-same-shop-or-service-charges-yo">When the same shop or service charges you about once a month at the same price – in a bank import or what you log – it shows up here, so you can add it to the budget in one tap.</p>';
-    el.innerHTML = '<section class="card kit-card mp-card" id="recur"><div class="card-head"><h2><i class="bi bi-arrow-repeat"></i> Recurring payments</h2><div class="head-actions"><a class="text-btn" href="/cmd/?settings=finance" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a></div></div>' + body + '</section>';
+    el.innerHTML = '<section class="card kit-card mp-card" id="recur"><div class="card-head"><h2><i class="bi bi-arrow-repeat"></i> <span data-t="ui.recurring-payments">Recurring payments</span></h2><div class="head-actions"><a class="text-btn" href="/cmd/?settings=finance" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a></div></div>' + body + '</section>';
   }
   function tile(label, value, sub) { return '<div class="kit-tile" data-tk="' + esc(label) + '"><span>' + label + '</span><b>' + value + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
 
@@ -188,17 +188,17 @@
     var owed = Math.max(0, sides(pid).you), left = a && L ? L.owedNow(a) : 0;
     var nx = new Date(); nx = new Date(nx.getFullYear(), nx.getMonth() + 1, 1);
     var first = a ? (function () { var st = fromKey(a.asOf); var f1 = new Date(st.getFullYear(), st.getMonth() + 1, 1); f1.setDate(Math.min(+a.day || 1, new Date(f1.getFullYear(), f1.getMonth() + 1, 0).getDate())); return dkey(f1); })() : dkey(nx);
-    var S = sheet('Pay back each month'), box = S.box;
+    var S = sheet(I18N.k('ui.pay-back-each-month', 'Pay back each month')), box = S.box;
     box.innerHTML = head('calendar2-check', 'Pay back ' + p.name + ' each month') +
       (pre && !a ? '<p class="muted">' + esc(p.name) + ' paid for ' + esc(pre.note || 'it') + ' – pay your part back a set amount each month. It goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>' : a ? '<p class="muted">' + esc(kr(left)) + ' left of ' + esc(kr(a.balance)) + '. Change the monthly amount or the day – payments already made stay.</p>'
         : '<p class="muted">' + (owed >= 1 ? 'You owe ' + esc(p.name) + ' ' + esc(kr(owed)) + ' now.' : 'You don’t owe ' + esc(p.name) + ' anything yet.') + ' Type what you owe in all – if it’s more, the difference is noted as money ' + esc(p.name) + ' lent you. The monthly amount goes into your fixed costs, and each payment counts as paid to ' + esc(p.name) + '.</p>') +
       '<div class="mp-grid">' +
         (a ? '' : '<label><span>' + (pre ? 'Your part to pay back, kr' : 'You owe in all, kr') + '</span><input name="total" inputmode="decimal" value="' + (pre && pre.total > 0 ? esc(String(Math.round(pre.total))) : owed >= 1 ? esc(String(Math.round(owed))) : '') + '" placeholder="e.g. 50 000" autocomplete="off"></label>') +
         '<label><span data-t="ui.each-month-kr">Each month, kr</span><input name="pay" inputmode="decimal" value="' + (a ? esc(String(a.pay)) : '') + '" placeholder="e.g. 2 000" autocomplete="off"></label>' +
-        '<label><span data-t="ui.first-payment">First payment</span><input name="first" type="date" value="' + esc(first) + '"></label>' +
+        '<label><span data-t="ui.first-payment"><span data-t="ui.first-payment">First payment</span></span><input name="first" type="date" value="' + esc(first) + '"></label>' +
         (a ? '' : '<label><span data-t="ui.what-for-optional">What for (optional)</span><input name="note" maxlength="60" placeholder="e.g. Egenkapital" value="' + esc(pre && pre.note || '') + '" autocomplete="off"></label>') +
       '</div><p class="mp-prev" id="pbPrev"></p>' +
-      '<div class="lf-foot">' + (a ? '<button type="button" class="text-btn danger" data-pbstop><i class="bi bi-stop-circle"></i> Stop</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-pbsave><i class="bi bi-check2"></i> Save</button></div>';
+      '<div class="lf-foot">' + (a ? '<button type="button" class="text-btn danger" data-pbstop><i class="bi bi-stop-circle"></i> <span data-t="ui.stop">Stop</span></button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-pbsave><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div>';
     function vals() { return { total: a ? +a.balance : num((box.querySelector('[name="total"]') || {}).value), pay: num(box.querySelector('[name="pay"]').value), first: box.querySelector('[name="first"]').value }; }
     function prev() {
       var v = vals(), base = a ? left : v.total, el = box.querySelector('#pbPrev');
@@ -333,22 +333,22 @@
     var people = bal.filter(function (x) { return Math.abs(x.b) >= 1 || s.items.some(function (i) { return i.payer === x.p.id || (i.shares || {})[x.p.id] != null; }); })
       .sort(function (a, b) { return Math.abs(b.b) - Math.abs(a.b); });
     var recent = s.items.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }).slice(0, 4);
-    var body = s.items.length || s.pays.length ? '<div class="kit-tiles">' + tile('Owed to you', esc(kr(owed)), owed ? 'by ' + bal.filter(function (x) { return x.b >= 1; }).length + ' ' + (bal.filter(function (x) { return x.b >= 1; }).length === 1 ? 'person' : 'people') : 'all square') +
-        tile('You owe', esc(kr(owe)), owe ? 'to ' + bal.filter(function (x) { return x.b <= -1; }).length + ' ' + (bal.filter(function (x) { return x.b <= -1; }).length === 1 ? 'person' : 'people') : 'nothing') +
-        tile('Your share', esc(kr(mine)), 'this month') + '</div>' +
+    var body = s.items.length || s.pays.length ? '<div class="kit-tiles">' + tile(I18N.k('ui.owed-to-you', 'Owed to you'), esc(kr(owed)), owed ? 'by ' + bal.filter(function (x) { return x.b >= 1; }).length + ' ' + (bal.filter(function (x) { return x.b >= 1; }).length === 1 ? 'person' : 'people') : 'all square') +
+        tile(I18N.k('ui.you-owe', 'You owe'), esc(kr(owe)), owe ? 'to ' + bal.filter(function (x) { return x.b <= -1; }).length + ' ' + (bal.filter(function (x) { return x.b <= -1; }).length === 1 ? 'person' : 'people') : 'nothing') +
+        tile(I18N.k('ui.your-share', 'Your share'), esc(kr(mine)), 'this month') + '</div>' +
         '<ul class="mp-list">' + people.map(function (x) {
           var b = x.b, txt = b >= 1 ? 'owes you ' + kr(b) : b <= -1 ? 'you owe ' + kr(-b) : 'settled up';
           return '<li class="mp-row' + (Math.abs(b) < 1 ? ' is-done' : '') + '"><button type="button" class="kit-main" data-shp="' + esc(x.p.id) + '"><span class="kit-ic mp-av" style="--c:' + (b >= 1 ? '#22b35e' : b <= -1 ? '#e8743b' : '#7a8794') + '">' + esc((x.p.name || '?').slice(0, 1).toUpperCase()) + '</span>' +
             '<span class="kit-x"><b>' + esc(x.p.name) + '</b><small class="' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(txt) + '</small></span></button>' +
-            (Math.abs(b) >= 1 ? '<span class="mp-acts"><button type="button" class="pill-btn sm" data-shsettle="' + esc(x.p.id) + '">Settle up</button></span>' : '') + '</li>';
+            (Math.abs(b) >= 1 ? '<span class="mp-acts"><button type="button" class="pill-btn sm" data-shsettle="' + esc(x.p.id) + '"><span data-t="ui.settle-up">Settle up</span></button></span>' : '') + '</li>';
         }).join('') + '</ul>' +
-        (recent.length ? '<h3 class="lp-h3" data-t="ui.latest">Latest</h3><ul class="mp-list mp-recent">' + recent.map(function (x) {
+        (recent.length ? '<h3 class="lp-h3" data-t="ui.latest"><span data-t="ui.latest">Latest</span></h3><ul class="mp-list mp-recent">' + recent.map(function (x) {
           var others = Object.keys(x.shares || {}).filter(function (k) { return k !== 'me'; }).map(function (k) { return pname(s, k); });
           return '<li class="mp-row"><button type="button" class="kit-main" data-shitem="' + esc(x.id) + '"><span class="kit-ic" style="--c:' + (CATC[x.cat] || CATC.other) + '"><i class="bi bi-people"></i></span><span class="kit-x"><b>' + esc(x.note || 'Shared') + '</b><small>' +
             esc(fmt(x.date) + ' · ' + kr(x.total) + ' · ' + (x.payer === 'me' ? 'you paid' : 'paid by ' + pname(s, x.payer)) + ' · shared with ' + others.join(', ')) + '</small></span><span class="money">' + esc(kr((x.shares || {}).me || 0)) + '</span></button></li>';
         }).join('') + '</ul>' : '')
       : '<p class="empty kit-empty" data-t="ui.paid-for-dinner-a-cabin-or-the-groceries">Paid for dinner, a cabin or the groceries with someone? Split it here – only your share counts in your spending, and you see who owes what until you settle up.</p>';
-    el.innerHTML = '<section class="card kit-card mp-card" id="shared"><div class="card-head"><h2><i class="bi bi-people"></i> Shared expenses</h2><div class="head-actions"><button type="button" class="text-btn" data-shnew><i class="bi bi-plus-lg"></i> Split</button></div></div>' + body + '</section>';
+    el.innerHTML = '<section class="card kit-card mp-card" id="shared"><div class="card-head"><h2><i class="bi bi-people"></i> <span data-t="ui.shared-expenses">Shared expenses</span></h2><div class="head-actions"><button type="button" class="text-btn" data-shnew><i class="bi bi-plus-lg"></i> <span data-t="ui.split">Split</span></button></div></div>' + body + '</section>';
   }
 
   /* ---------- the sheets ---------- */
@@ -376,7 +376,7 @@
     if (preset && preset.payer) x.payer = preset.payer;
     if (mode === 'amount') Object.keys(x.shares || {}).forEach(function (k) { custom[k] = x.shares[k]; });
     if (preset) { x.note = preset.note || ''; x.total = preset.amount; x.date = preset.date; x.cat = preset.cat || 'other'; x.exp = preset.id; }
-    var S = sheet('Split a payment', 'mp-box'), box = S.box, newPerson = '';
+    var S = sheet(I18N.k('ui.split-a-payment', 'Split a payment'), 'mp-box'), box = S.box, newPerson = '';
     var recentEx = (d.expenses || []).filter(function (e) { return !e.shared && dayN(dkey(new Date())) - dayN(e.date) <= 21 && +e.amount > 0; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; }).slice(0, 8);
     function shares() {
       var tot = num(x.total) || 0, ids = ['me'].concat(withIds), out = {};
@@ -399,15 +399,15 @@
         '<div class="mp-grid"><input name="note" placeholder="What was it? e.g. Dinner at Lofoten" value="' + esc(x.note) + '" maxlength="60" autocomplete="off">' +
         '<input name="total" placeholder="Total, kr" inputmode="decimal" value="' + esc(x.total === '' ? '' : String(x.total).replace('.', ',')) + '" autocomplete="off">' +
         '<select name="cat" aria-label="Category" data-t-aria-label="ui.category">' + Object.keys(CAT).map(function (k) { return '<option value="' + k + '"' + (k === x.cat ? ' selected' : '') + '>' + CAT[k] + '</option>'; }).join('') + '</select><input name="date" type="date" value="' + esc(x.date) + '" aria-label="Date"></div>' +
-        '<p class="mp-lbl" data-t="ui.shared-with">Shared with</p><div class="lf-chips mp-chips">' + s.people.map(function (p) { return '<button type="button" class="lf-chip" data-shwith="' + esc(p.id) + '" aria-pressed="' + (withIds.indexOf(p.id) > -1) + '">' + esc(p.name) + '</button>'; }).join('') +
+        '<p class="mp-lbl" data-t="ui.shared-with"><span data-t="ui.shared-with">Shared with</span></p><div class="lf-chips mp-chips">' + s.people.map(function (p) { return '<button type="button" class="lf-chip" data-shwith="' + esc(p.id) + '" aria-pressed="' + (withIds.indexOf(p.id) > -1) + '">' + esc(p.name) + '</button>'; }).join('') +
         '<span class="mp-newp"><input name="np" placeholder="New person" value="' + esc(newPerson) + '" maxlength="30" autocomplete="off"><button type="button" class="icon-btn sm" data-shaddp aria-label="Add person" data-t-aria-label="ui.add-person"><i class="bi bi-plus-lg"></i></button></span></div>' +
-        (withIds.length ? '<p class="mp-lbl" data-t="ui.who-paid">Who paid?</p><div class="seg lf-seg">' + ['me'].concat(withIds).map(function (k) { return '<button type="button" data-shpayer="' + esc(k) + '" aria-pressed="' + (x.payer === k) + '">' + esc(k === 'me' ? 'You' : pname(s, k)) + '</button>'; }).join('') + '</div>' +
-          '<p class="mp-lbl" data-t="ui.split">Split</p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '">Equally</button><button type="button" data-shmode="pct" aria-pressed="' + (mode === 'pct') + '">By %</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '">By amount</button></div>' +
+        (withIds.length ? '<p class="mp-lbl" data-t="ui.who-paid"><span data-t="ui.who-paid">Who paid?</span></p><div class="seg lf-seg">' + ['me'].concat(withIds).map(function (k) { return '<button type="button" data-shpayer="' + esc(k) + '" aria-pressed="' + (x.payer === k) + '">' + esc(k === 'me' ? 'You' : pname(s, k)) + '</button>'; }).join('') + '</div>' +
+          '<p class="mp-lbl" data-t="ui.split"><span data-t="ui.split">Split</span></p><div class="seg lf-seg"><button type="button" data-shmode="equal" aria-pressed="' + (mode === 'equal') + '"><span data-t="ui.equally">Equally</span></button><button type="button" data-shmode="pct" aria-pressed="' + (mode === 'pct') + '">By %</button><button type="button" data-shmode="amount" aria-pressed="' + (mode === 'amount') + '"><span data-t="ui.by-amount">By amount</span></button></div>' +
           (mode === 'pct' ? '<div class="mp-pct"><label>You pay<input inputmode="decimal" data-shpct value="' + esc(String(myPct).replace('.', ',')) + '" aria-label="Your share in %"><span>%</span></label><div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-shpctq="' + v + '" aria-pressed="' + (myPct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div></div>' : '') +
-          (mode === 'amount' ? '<div class="mp-amts">' + withIds.map(function (k) { return '<label>' + esc(pname(s, k)) + '<input inputmode="decimal" data-shamt="' + esc(k) + '" value="' + esc(custom[k] == null ? '' : String(custom[k]).replace('.', ',')) + '" placeholder="kr"></label>'; }).join('') + '<label>You<b>' + esc(kr(sv.me)) + '</b></label></div>' : '') : '') +
+          (mode === 'amount' ? '<div class="mp-amts">' + withIds.map(function (k) { return '<label>' + esc(pname(s, k)) + '<input inputmode="decimal" data-shamt="' + esc(k) + '" value="' + esc(custom[k] == null ? '' : String(custom[k]).replace('.', ',')) + '" placeholder="kr"></label>'; }).join('') + '<label><span data-t="ui.you">You</span><b>' + esc(kr(sv.me)) + '</b></label></div>' : '') : '') +
         (!x.exp && x.payer !== 'me' && withIds.length ? '<label class="lf-check"><input type="checkbox" name="add"' + (x.add !== false ? ' checked' : '') + '> Add your share to Spending</label>' : '') +
         '<p class="mp-prev" id="mpPrev">' + prev + '</p>' +
-        '<div class="lf-foot">' + (isNew ? '<span class="spacer"></span>' : '<button type="button" class="text-btn danger" data-shdel><i class="bi bi-trash3"></i> Delete</button>') + '<button type="button" class="pill-btn wide" data-shsave><i class="bi bi-check2"></i> Save</button></div>';
+        '<div class="lf-foot">' + (isNew ? '<span class="spacer"></span>' : '<button type="button" class="text-btn danger" data-shdel><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button>') + '<button type="button" class="pill-btn wide" data-shsave><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div>';
     }
     function sync() { var f = box; ['note', 'total', 'date', 'cat'].forEach(function (n) { var i = f.querySelector('[name="' + n + '"]'); if (i) x[n] = n === 'total' ? i.value : i.value || x[n]; }); var a = f.querySelector('[name="add"]'); if (a) x.add = a.checked; var np = f.querySelector('[name="np"]'); if (np) newPerson = np.value; }
     function addPerson() {
@@ -486,7 +486,7 @@
       '<div class="mp-grid"><input name="amt" inputmode="decimal" value="' + (sq ? '' : esc(String(Math.round(Math.abs(b) * 100) / 100).replace('.', ','))) + '" placeholder="Amount, kr" aria-label="Amount, kr"><input name="date" type="date" value="' + dkey(new Date()) + '" aria-label="Date paid"></div>' +
       '<input name="note" placeholder="Note (optional) – e.g. Vipps, first part" data-t-placeholder="ui.note-optional-e-g-vipps-first-part" maxlength="60" autocomplete="off" aria-label="Note">' +
       '<button type="button" class="text-btn" data-shpb><i class="bi bi-calendar2-check"></i> ' + (owePlans(pid).length ? 'Paying back ' + esc(p.name) + ' each month – change' : 'I owe ' + esc(p.name) + ' – pay back each month') + '</button>' +
-      '<div class="lf-foot">' + (sq ? '<span class="spacer"></span>' : '<button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Send a reminder</button>') + '<button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> ' + (sq ? 'Save' : 'Mark as paid') + '</button></div>';
+      '<div class="lf-foot">' + (sq ? '<span class="spacer"></span>' : '<button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> <span data-t="ui.send-a-reminder">Send a reminder</span></button>') + '<button type="button" class="pill-btn wide" data-shpay><i class="bi bi-check2"></i> ' + (sq ? 'Save' : 'Mark as paid') + '</button></div>';
     var dir = theyPay ? 'in' : 'out';
     box.addEventListener('click', function (e) {
       var q;
@@ -530,8 +530,8 @@
             '<span class="money ' + (r.v > 0 ? 'mp-pos' : r.v < 0 ? 'mp-neg' : '') + '">' + (r.v > 0 ? '+' : r.v < 0 ? '−' : '') + esc(kr(Math.abs(r.v))) + '</span>' +
             (r.k === 'p' ? '<button type="button" class="icon-btn sm" data-shdelpay="' + esc(r.x.id) + '" aria-label="Delete payment"><i class="bi bi-trash3"></i></button>' : r.k === 'l' ? '<span class="icon-btn sm" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>' : '<button type="button" class="icon-btn sm" data-shedit="' + esc(r.x.id) + '" aria-label="Edit"><i class="bi bi-pencil"></i></button>') + '</li>';
         }).join('') + '</ul>' +
-        '<div class="lf-foot"><button type="button" class="text-btn danger" data-shdelp' + (ev.length ? ' hidden' : '') + '><i class="bi bi-trash3"></i> Remove ' + esc(p.name) + '</button><button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> Message</button>' +
-        (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn" data-shsettle="' + esc(pid) + '">Settle up</button>' : '') + '</div>';
+        '<div class="lf-foot"><button type="button" class="text-btn danger" data-shdelp' + (ev.length ? ' hidden' : '') + '><i class="bi bi-trash3"></i> Remove ' + esc(p.name) + '</button><button type="button" class="text-btn" data-shcopy><i class="bi bi-chat-text"></i> <span data-t="ui.message">Message</span></button>' +
+        (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn" data-shsettle="' + esc(pid) + '"><span data-t="ui.settle-up">Settle up</span></button>' : '') + '</div>';
     }
     box.addEventListener('click', function (e) {
       var b;
@@ -594,13 +594,13 @@
       var box = document.getElementById('mpSet'); if (!box || (box.contains(document.activeElement) && document.activeElement.tagName === 'SELECT')) return;
       var ni = ignored().length;
       box.innerHTML = '<p class="st-intro" data-t="ui.extras-on-the-finances-page-everything-i">Extras on the Finances page. Everything is worked out on this device from your own entries.</p>' +
-        subh('arrow-repeat', 'Recurring payments') + '<div class="st-group">' + feat('recur', 'Show the card', 'Charges that come back every month') + sel('months', 'Look back', [[3, '3 months'], [6, '6 months'], [12, '12 months']]) +
-        sw('recurGlance', 'Suggest new ones in At a glance') + (ni ? '<button type="button" class="st-row st-btn" data-funign><span><i class="bi bi-arrow-counterclockwise"></i> Suggest the ' + ni + ' I waved away again</span></button>' : '') + '</div>' +
-        subh('people', 'Shared expenses') + '<div class="st-group">' + feat('shared', 'Show the card', 'Split payments and see who owes what') + sel('split', 'New splits start', [['equal', 'Equally'], ['pct', 'By your usual %'], ['amount', 'By amount']]) +
+        subh('arrow-repeat', I18N.k('ui.recurring-payments', 'Recurring payments')) + '<div class="st-group">' + feat('recur', I18N.k('ui.show-the-card', 'Show the card'), I18N.k('ui.charges-that-come-back-every-month', 'Charges that come back every month')) + sel('months', I18N.k('ui.look-back', 'Look back'), [[3, '3 months'], [6, '6 months'], [12, '12 months']]) +
+        sw('recurGlance', I18N.k('ui.suggest-new-ones-in-at-a-glance', 'Suggest new ones in At a glance')) + (ni ? '<button type="button" class="st-row st-btn" data-funign><span><i class="bi bi-arrow-counterclockwise"></i> Suggest the ' + ni + ' I waved away again</span></button>' : '') + '</div>' +
+        subh('people', I18N.k('ui.shared-expenses', 'Shared expenses')) + '<div class="st-group">' + feat('shared', I18N.k('ui.show-the-card', 'Show the card'), I18N.k('ui.split-payments-and-see-who-owes-what', 'Split payments and see who owes what')) + sel('split', I18N.k('ui.new-splits-start', 'New splits start'), [['equal', 'Equally'], ['pct', 'By your usual %'], ['amount', 'By amount']]) +
         (sh().people.length ? sel('partner', 'Usually split with', [['', 'Nobody in particular']].concat(sh().people.map(function (p) { return [p.id, p.name]; })), 'Picked for you on every new split') : '') +
-        sel('pct', 'Your usual share', [[50, '50 % (half)'], [60, '60 %'], [40, '40 %'], [70, '70 %'], [30, '30 %'], [55, '55 %'], [45, '45 %'], [65, '65 %'], [35, '35 %']].concat([50, 60, 40, 70, 30, 55, 45, 65, 35].indexOf(+cfg().pct) < 0 ? [[cfg().pct, cfg().pct + ' %']] : []), 'For “By your usual %”') +
-        sw('sharedGlance', 'Remind me in At a glance', 'When someone owes you, or you owe them') + sel('sharedMin', 'From', [[1, 'Any amount'], [100, '100 kr'], [200, '200 kr'], [500, '500 kr'], [1000, '1 000 kr']]) + '</div>' +
-        '<div class="st-group"><a class="st-row st-btn" href="/cmd/finance/"><span><i class="bi bi-wallet2"></i> Open Finances</span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/finance/?customize"><span><i class="bi bi-grid-1x2"></i> Order and hide cards</span><i class="bi bi-chevron-right"></i></a></div>';
+        sel('pct', I18N.k('ui.your-usual-share', 'Your usual share'), [[50, '50 % (half)'], [60, '60 %'], [40, '40 %'], [70, '70 %'], [30, '30 %'], [55, '55 %'], [45, '45 %'], [65, '65 %'], [35, '35 %']].concat([50, 60, 40, 70, 30, 55, 45, 65, 35].indexOf(+cfg().pct) < 0 ? [[cfg().pct, cfg().pct + ' %']] : []), I18N.k('ui.for-by-your-usual', 'For “By your usual %”')) +
+        sw('sharedGlance', I18N.k('ui.remind-me-in-at-a-glance', 'Remind me in At a glance'), I18N.k('ui.when-someone-owes-you-or-you-owe-them', 'When someone owes you, or you owe them')) + sel('sharedMin', 'From', [[1, 'Any amount'], [100, '100 kr'], [200, '200 kr'], [500, '500 kr'], [1000, '1 000 kr']]) + '</div>' +
+        '<div class="st-group"><a class="st-row st-btn" href="/cmd/finance/"><span><i class="bi bi-wallet2"></i> <span data-t="ui.open-finances">Open Finances</span></span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/finance/?customize"><span><i class="bi bi-grid-1x2"></i> <span data-t="ui.order-and-hide-cards">Order and hide cards</span></span><i class="bi bi-chevron-right"></i></a></div>';
     }
     function row() {
       var r = document.getElementById('stRow-finance'); if (r) r.hidden = !Fe.on('finance');

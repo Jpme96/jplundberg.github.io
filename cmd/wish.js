@@ -55,12 +55,12 @@
     var ready = l.filter(function (w) { return +c.cool && isKey(w.added) && daysSince(w.added) === +c.cool; })[0];
     if (ready) add(62, 'stars', PURPLE, 'Still want ' + ready.title + '?', 'It’s been ' + c.cool + ' days' + (ready.price ? ' · ' + kr(ready.price) : ''), '/cmd/wish/#wishes=' + ready.id);
     var stale = +c.stale ? l.filter(function (w) { return daysSince(w.added) >= +c.stale && daysSince(w.added) % 30 === 0; })[0] : null;
-    if (stale) add(70, 'hourglass-split', GREY, stale.title + ' has been on your wishlist ' + daysSince(stale.added) + ' days', 'Buy it, or let it go', '/cmd/wish/#wishes=' + stale.id);
+    if (stale) add(70, 'hourglass-split', GREY, stale.title + ' has been on your wishlist ' + daysSince(stale.added) + ' days', I18N.k('ui.buy-it-or-let-it-go', 'Buy it, or let it go'), '/cmd/wish/#wishes=' + stale.id);
   });
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;
     Fe.list('wishes').forEach(function (w) { add('Wishlist', 'stars', w.title, [w.price ? kr(w.price) : '', prioOf(w.prio)[1]].filter(Boolean).join(' · '), '/cmd/wish/#wishes=' + w.id); });
-    Fe.list('wbuy').forEach(function (x) { add('To buy', 'cart-check', x.title, x.where || '', '/cmd/wish/#wbuy'); });
+    Fe.list('wbuy').forEach(function (x) { add(I18N.k('ui.to-buy', 'To buy'), 'cart-check', x.title, x.where || '', '/cmd/wish/#wbuy'); });
   });
   (window.CommandExtra = window.CommandExtra || []).push(function () {
     return on() ? [{ i: 'stars', t: 'New wish', s: 'Wishlist', run: function () { if (__ui().K && __ui().$t('wishes')) __ui().K.edit(__ui().WF, null); else location.href = '/cmd/wish/#wishes'; }, x: 'wish wishlist ønske ønskeliste kjøpe' }] : [];
@@ -73,13 +73,13 @@
     function fill() {
       var box = document.getElementById('hlSet-wish'); if (!box || box.contains(document.activeElement)) return;
       box.innerHTML = '<p class="st-intro" data-t="ui.how-the-wishlist-decides-what-fits-when">How the wishlist decides what fits, when it reminds you, and where bought things go.</p>' +
-        sub('wallet2', 'Does it fit?') + '<div class="st-group">' + sel('share', 'Count as fitting when it costs up to', [[25, '25 % of what’s left this month'], [50, '50 % of what’s left'], [75, '75 % of what’s left'], [100, 'All of what’s left']], 'What’s left = salary − bills − spending so far, until payday') +
-        numIn('aside', 'You put aside for wishes', 'kr / month', 'Shows “in 3 months” for the ones that don’t fit now') + '</div>' +
-        sub('hourglass-split', 'Thinking it over') + '<div class="st-group">' + sel('cool', 'New wishes wait', [[0, 'Don’t wait'], [3, '3 days'], [7, 'A week'], [14, '2 weeks'], [30, '30 days']], 'Then At a glance asks if you still want it') +
-        sel('stale', 'Flag wishes on the list longer than', [[0, 'Never'], [60, '2 months'], [90, '3 months'], [180, '6 months'], [365, 'A year']]) + sw('brief', 'Wishlist in At a glance') + '</div>' +
-        sub('bag-check', 'When you buy something') + '<div class="st-group">' + sw('toInv', 'Things for the home go into Home inventory', 'Ticked in “Bought it” – you can untick it there') + sw('toFin', 'Add it to Finances as spending', 'Unless you split it in Shared home') + '</div>' +
+        sub('wallet2', I18N.k('ui.does-it-fit', 'Does it fit?')) + '<div class="st-group">' + sel('share', I18N.k('ui.count-as-fitting-when-it-costs-up-to', 'Count as fitting when it costs up to'), [[25, '25 % of what’s left this month'], [50, '50 % of what’s left'], [75, '75 % of what’s left'], [100, 'All of what’s left']], I18N.k('ui.whats-left-salary-bills-spending-so-far', 'What’s left = salary − bills − spending so far, until payday')) +
+        numIn('aside', I18N.k('ui.you-put-aside-for-wishes', 'You put aside for wishes'), 'kr / month', I18N.k('ui.shows-in-3-months-for-the-ones-that-dont', 'Shows “in 3 months” for the ones that don’t fit now')) + '</div>' +
+        sub('hourglass-split', I18N.k('ui.thinking-it-over', 'Thinking it over')) + '<div class="st-group">' + sel('cool', I18N.k('ui.new-wishes-wait', 'New wishes wait'), [[0, 'Don’t wait'], [3, '3 days'], [7, 'A week'], [14, '2 weeks'], [30, '30 days']], I18N.k('ui.then-at-a-glance-asks-if-you-still-want', 'Then At a glance asks if you still want it')) +
+        sel('stale', I18N.k('ui.flag-wishes-on-the-list-longer-than', 'Flag wishes on the list longer than'), [[0, 'Never'], [60, '2 months'], [90, '3 months'], [180, '6 months'], [365, 'A year']]) + sw('brief', I18N.k('ui.wishlist-in-at-a-glance', 'Wishlist in At a glance')) + '</div>' +
+        sub('bag-check', I18N.k('ui.when-you-buy-something', 'When you buy something')) + '<div class="st-group">' + sw('toInv', I18N.k('ui.things-for-the-home-go-into-home-invento', 'Things for the home go into Home inventory'), I18N.k('ui.ticked-in-bought-it-you-can-untick-it-th', 'Ticked in “Bought it” – you can untick it there')) + sw('toFin', I18N.k('ui.add-it-to-finances-as-spending', 'Add it to Finances as spending'), I18N.k('ui.unless-you-split-it-in-shared-home', 'Unless you split it in Shared home')) + '</div>' +
         sub('sort-down', 'Order') + '<div class="st-group">' + sel('sort', 'Wishes', [['prio', 'Most wanted first'], ['price', 'Cheapest first'], ['added', 'Newest first']]) + '</div>' +
-        '<div class="st-group"><a class="st-row st-btn" href="/cmd/wish/"><span><i class="bi bi-stars"></i> Open Wishlist</span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/wish/?customize"><span><i class="bi bi-grid-1x2"></i> Order and hide cards</span><i class="bi bi-chevron-right"></i></a></div>';
+        '<div class="st-group"><a class="st-row st-btn" href="/cmd/wish/"><span><i class="bi bi-stars"></i> <span data-t="ui.open-wishlist">Open Wishlist</span></span><i class="bi bi-chevron-right"></i></a><a class="st-row st-btn" href="/cmd/wish/?customize"><span><i class="bi bi-grid-1x2"></i> <span data-t="ui.order-and-hide-cards">Order and hide cards</span></span><i class="bi bi-chevron-right"></i></a></div>';
     }
     function summary() { var c = cfg(), r = document.getElementById('sum-wish'); if (r) r.textContent = 'Fits at ' + c.share + ' % of what’s left' + (+c.cool ? ' · waits ' + c.cool + ' days' : ''); var row = document.getElementById('stRow-wish'); if (row) row.hidden = !on(); var cu = document.querySelector('[data-hlcust="wish"]'); if (cu) cu.hidden = !on(); }
     document.addEventListener('change', function (e) {

@@ -39,8 +39,8 @@
     var bg = document.createElement('div');
     bg.className = 'cl-sheet-bg kit-bg'; bg.hidden = true;
     bg.innerHTML = '<form class="cl-sheet kit-sheet" role="dialog" aria-modal="true" autocomplete="off">' +
-      '<div class="cl-sheet-head"><button class="text-btn" type="button" data-close data-t="ui.cancel">Cancel</button><h2></h2><button class="pill-btn" type="submit" data-t="ui.save">Save</button></div>' +
-      '<div class="cl-edit kit-fields"></div><div class="cl-del kit-del" hidden><button class="text-btn kit-dup" type="button" data-kit-dup><i class="bi bi-copy"></i> Duplicate</button><button class="text-btn danger" type="button" data-kit-delbtn><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button></div></form>';
+      '<div class="cl-sheet-head"><button class="text-btn" type="button" data-close data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><h2></h2><button class="pill-btn" type="submit" data-t="ui.save"><span data-t="ui.save">Save</span></button></div>' +
+      '<div class="cl-edit kit-fields"></div><div class="cl-del kit-del" hidden><button class="text-btn kit-dup" type="button" data-kit-dup><i class="bi bi-copy"></i> <span data-t="ui.duplicate">Duplicate</span></button><button class="text-btn danger" type="button" data-kit-delbtn><i class="bi bi-trash3"></i> <span data-t="ui.delete"><span data-t="ui.delete">Delete</span></span></button></div></form>';
     document.body.appendChild(bg);
     bg.addEventListener('click', function (e) { if (e.target === bg || e.target.closest('[data-close]')) close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bg.hidden) close(); });
@@ -181,7 +181,7 @@
             (r.icon ? '<span class="kit-ic" style="--c:' + (r.color || 'var(--accent)') + '"><i class="bi bi-' + r.icon + '"></i></span>' : '') +
             '<span class="kit-x"><b>' + esc(r.title) + (it.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow(cfg.key) ? ' <i class="bi bi-people sh-ic" title="Shared" data-t-title="ui.shared"></i>' : '') + '</b>' + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</span>' +
             (r.right ? '<span class="kit-r">' + r.right + '</span>' : '') + '</button>' +
-            (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> Edit</button></div>' : '') +
+            (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> <span data-t="ui.edit">Edit</span></button></div>' : '') +
             '</li>';
         }).join('') + '</ul>' : (q ? '' : '<p class="empty kit-empty">' + esc(cfg.empty || 'Nothing here yet.') + '</p>')) +
         (items.length > lim && !q ? '<button class="text-btn kit-more" type="button" data-kit-more>' + (showAll ? 'Show less' : 'Show all ' + items.length) + '</button>' : '') +

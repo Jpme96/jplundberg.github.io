@@ -91,7 +91,7 @@
     mount.hidden = !on; if (!on) { mount.innerHTML = ''; return; }
     var ae = document.activeElement; if (mount.contains(ae) && ae.matches('input:not([type="checkbox"]), select, textarea')) return;   /* don't redraw under someone typing */
     var p = partner(), head = '<div class="card-head"><h2><i class="bi bi-people"></i> Shared home' + (p ? ' <span class="muted hs2-with">with ' + esc(p.name) + '</span>' : '') + '</h2>' +
-      (p ? '<div class="head-actions"><button type="button" class="icon-btn sm" data-hs2set aria-label="Who and how you split"><i class="bi bi-sliders"></i></button><button type="button" class="text-btn" data-hs2add><i class="bi bi-plus-lg"></i> Add</button></div>' : '') + '</div>';
+      (p ? '<div class="head-actions"><button type="button" class="icon-btn sm" data-hs2set aria-label="Who and how you split"><i class="bi bi-sliders"></i></button><button type="button" class="text-btn" data-hs2add><i class="bi bi-plus-lg"></i> <span data-t="ui.add">Add</span></button></div>' : '') + '</div>';
     if (!p) { mount.innerHTML = '<section class="card kit-card hs2" id="hshared">' + head + setupForm() + '</section>'; return; }
     var s = S().data(), b = S().balance(p.id), now = new Date(), ym = dkey(new Date(now.getFullYear(), now.getMonth() + month, 1)).slice(0, 7);
     var lines = monthLines(p.id, ym), m = monthSum(lines, p.id), cur = month ? monthSum(monthLines(p.id, dkey(now).slice(0, 7)), p.id) : m;
@@ -109,17 +109,17 @@
           var sd = S().sides ? S().sides(p.id) : { they: Math.max(0, b), you: Math.max(0, -b), net: b };
           return tile(esc(p.name) + ' owes you', sd.they >= 1 ? money(sd.they, 'mp-pos') : '0 kr', 'their part of what you paid', 'they') +
             tile('You owe ' + esc(p.name), sd.you >= 1 ? money(sd.you, 'mp-neg') : '0 kr', 'your part of what they paid', 'you') +
-            tile('In total', Math.abs(b) >= 1 ? money(Math.abs(b), b >= 1 ? 'mp-pos' : 'mp-neg') : 'All square', Math.abs(b) >= 1 ? (b >= 1 ? 'you’re in plus · ' + esc(p.name) + ' sends you this' : 'you’re in minus · you send ' + esc(p.name) + ' this') : 'nothing to settle', 'balance');
+            tile(I18N.k('ui.in-total', 'In total'), Math.abs(b) >= 1 ? money(Math.abs(b), b >= 1 ? 'mp-pos' : 'mp-neg') : 'All square', Math.abs(b) >= 1 ? (b >= 1 ? 'you’re in plus · ' + esc(p.name) + ' sends you this' : 'you’re in minus · you send ' + esc(p.name) + ' this') : 'nothing to settle', 'balance');
         })() +
-        tile('This month', money(cur.total), 'together · your part ' + esc(kr(cur.mine)), 'month') +
+        tile(I18N.k('ui.this-month', 'This month'), money(cur.total), 'together · your part ' + esc(kr(cur.mine)), 'month') +
         tile('On the home ' + yr, money(yearHome), 'together' + (yearAll > yearHome ? ' · ' + esc(kr(yearAll)) + ' shared in all' : ''), 'year') +
         (pl.length ? tile('Bought in parts', money(planLeft), 'left on ' + pl.length + ' plan' + (pl.length === 1 ? '' : 's'), 'parts') : '') +
       '</div>' +
-      '<div class="hs2-acts">' + (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn sm" data-hs2settle><i class="bi bi-cash-coin"></i> Settle up</button>' : '') +
-        '<button type="button" class="text-btn" data-hs2settle><i class="bi bi-arrow-left-right"></i> Payment</button>' +
-        ((S().sides ? S().sides(p.id).you : -b) >= 1 && !S().owePlans(p.id).length ? '<button type="button" class="text-btn" data-hs2pb><i class="bi bi-calendar2-check"></i> Pay back monthly</button>' : '') +
-        '<button type="button" class="text-btn" data-hs2hist><i class="bi bi-clock-history"></i> History</button>' +
-        (Math.abs(b) >= 1 ? '<button type="button" class="text-btn" data-hs2msg><i class="bi bi-chat-text"></i> Send a reminder</button>' : '') + '</div>' + paybackLine(p, led);
+      '<div class="hs2-acts">' + (Math.abs(b) >= 1 ? '<button type="button" class="pill-btn sm" data-hs2settle><i class="bi bi-cash-coin"></i> <span data-t="ui.settle-up">Settle up</span></button>' : '') +
+        '<button type="button" class="text-btn" data-hs2settle><i class="bi bi-arrow-left-right"></i> <span data-t="ui.payment">Payment</span></button>' +
+        ((S().sides ? S().sides(p.id).you : -b) >= 1 && !S().owePlans(p.id).length ? '<button type="button" class="text-btn" data-hs2pb><i class="bi bi-calendar2-check"></i> <span data-t="ui.pay-back-monthly">Pay back monthly</span></button>' : '') +
+        '<button type="button" class="text-btn" data-hs2hist><i class="bi bi-clock-history"></i> <span data-t="ui.history">History</span></button>' +
+        (Math.abs(b) >= 1 ? '<button type="button" class="text-btn" data-hs2msg><i class="bi bi-chat-text"></i> <span data-t="ui.send-a-reminder">Send a reminder</span></button>' : '') + '</div>' + paybackLine(p, led);
     body += oweSection(p) + coveredSection(p, led) + runSection(p, st);
     /* bought in parts */
     if (pl.length) {
@@ -136,7 +136,7 @@
     /* the month */
     var mb = '<div class="hs2-mh"><span class="hs2-nav"><button type="button" class="icon-btn sm" data-hs2m="-1" aria-label="Earlier month"><i class="bi bi-chevron-left"></i></button><b>' + esc(mName(ym, true)) + '</b>' +
       '<button type="button" class="icon-btn sm" data-hs2m="1" aria-label="Later month"' + (month >= 0 ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button></span></div>';
-    if (!lines.length) mb += '<p class="empty kit-empty">Nothing shared in ' + esc(mName(ym, true)) + '. Bought something for the home together? Add it with <b data-t="ui.add-2">+ Add</b>.</p>';
+    if (!lines.length) mb += '<p class="empty kit-empty">Nothing shared in ' + esc(mName(ym, true)) + '. Bought something for the home together? Add it with <b data-t="ui.add-2"><span data-t="ui.add-2">+ Add</span></b>.</p>';
     else {
       mb += '<ul class="mp-list hs2-lines">' + lines.map(function (l) {
         var pay = l.payer === 'me' ? 'you paid' : l.payer === p.id ? esc(p.name) + ' paid' : 'each paid their part', r = st[l.key];
@@ -145,12 +145,12 @@
           '<span class="kit-x"><b>' + esc(l.note) + '</b><small>' + esc(fmt(l.date)) + ' · ' + esc(kr(l.total)) + ' · ' + pay + (l.work ? ' · ' + esc(WORKN[l.work] || '') : '') + '</small>' + chip + '</span><span class="money">' + esc(kr(l.mine)) + '</span></button></li>';
       }).join('') + '</ul>' +
       '<div class="hs2-sum"><div class="hs2-sumrow"><span>Together</span><b>' + money(m.total) + '</b></div>' +
-        '<div class="hs2-sumrow"><span data-t="ui.you-paid">You paid</span><b>' + money(m.paidMe) + '</b></div><div class="hs2-sumrow"><span>' + esc(p.name) + ' paid</span><b>' + money(m.paidThem) + '</b></div>' +
+        '<div class="hs2-sumrow"><span data-t="ui.you-paid"><span data-t="ui.you-paid">You paid</span></span><b>' + money(m.paidMe) + '</b></div><div class="hs2-sumrow"><span>' + esc(p.name) + ' paid</span><b>' + money(m.paidThem) + '</b></div>' +
         '<div class="hs2-sumrow"><span>Your part</span><b>' + money(m.mine) + '</b></div>' +
         '<p class="hs2-even">' + (Math.abs(m.net) < 1 ? '<i class="bi bi-check2-circle"></i> This month evens out by itself' : '<i class="bi bi-arrow-left-right"></i> To even out ' + esc(mName(ym)) + ': <b>' + (m.net > 0 ? esc(p.name) + ' sends you ' + esc(kr(m.net)) : 'you send ' + esc(p.name) + ' ' + esc(kr(-m.net))) + '</b>') + '</p>' +
         '<button type="button" class="text-btn" data-hs2copy><i class="bi bi-share"></i> Share the month</button></div>';
     }
-    body += sec('month', 'Your month together', esc(mName(ym, true)) + ' · ' + esc(kr(m.total)) + ' together', mb);
+    body += sec('month', I18N.k('ui.your-month-together', 'Your month together'), esc(mName(ym, true)) + ' · ' + esc(kr(m.total)) + ' together', mb);
     body += workSection(p, yr) + moveSection();
     /* what you share, by category this year */
     var cats = Object.keys(byCat).sort(function (a, c) { return byCat[c] - byCat[a]; }), mx = cats.length ? byCat[cats[0]] : 1;
@@ -185,14 +185,14 @@
       var whoOwes = r.dir > 0 ? esc(p.name) + ' owes you' : 'You owe ' + esc(p.name);
       return '<li class="' + (debt ? 'late' : left <= 10 ? 'soon' : '') + '"><span><b>' + whoOwes + ' ' + esc(kr(r.left)) + '</b><small>' + esc(r.note) + ' · ' + esc(fmt(r.date)) + '</small>' +
         '<small>' + (debt ? '<i class="bi bi-exclamation-triangle"></i> Over 40 days: a personal debt from ' + esc(fmt(r.date)) + ' – overdue interest so far ' + esc(kr(interest)) + ' (' + esc(pc(lateRate())) + ' %)' : '<i class="bi bi-hourglass-split"></i> ' + left + ' day' + (left === 1 ? '' : 's') + ' left to pay it back (40-day rule)') + '</small></span>' +
-        '<button type="button" class="text-btn" data-hs2settle data-t="ui.settle-up">Settle up</button></li>';
+        '<button type="button" class="text-btn" data-hs2settle data-t="ui.settle-up"><span data-t="ui.settle-up">Settle up</span></button></li>';
     }).join('') + '</ul>';
   }
   /* shared running costs */
   function runSection(p, st) {
     var rc = runCosts(p.id), B = window.Budget, ym = dkey(new Date()).slice(0, 7);
-    var head = '<div class="hs2-mh hs2-mr"><button type="button" class="text-btn" data-hs2run="new"><i class="bi bi-plus-lg"></i> Running cost</button></div>';
-    if (!rc.length) return sec('run', 'Running costs', 'none yet', head + '<p class="muted hs2-note" data-t="ui.felleskostnader-power-internet-contents">Felleskostnader, power, internet, contents insurance … – shared every month. Add them once: your part goes into your budget, and when one of you pays the bill the other’s part is a claim to settle within 40 days.</p>' +
+    var head = '<div class="hs2-mh hs2-mr"><button type="button" class="text-btn" data-hs2run="new"><i class="bi bi-plus-lg"></i> <span data-t="ui.running-cost">Running cost</span></button></div>';
+    if (!rc.length) return sec('run', I18N.k('ui.running-costs', 'Running costs'), 'none yet', head + '<p class="muted hs2-note" data-t="ui.felleskostnader-power-internet-contents">Felleskostnader, power, internet, contents insurance … – shared every month. Add them once: your part goes into your budget, and when one of you pays the bill the other’s part is a claim to settle within 40 days.</p>' +
       '<div class="lf-chips mp-chips">' + RUNQ.map(function (q) { return '<button type="button" class="lf-chip" data-hs2runq="' + esc(q) + '">+ ' + esc(q) + '</button>'; }).join('') + '</div>');
     var tot = 0, mine = 0;
     var list = rc.map(function (f) {
@@ -202,7 +202,7 @@
       return '<li><button type="button" class="kit-main" data-hs2run="' + esc(f.id) + '"><span class="kit-ic" style="--c:#0891b2"><i class="bi bi-lightning-charge"></i></span><span class="kit-x"><b>' + esc(f.name) + '</b><small>' +
         (f.vary ? '≈ ' : '') + esc(kr(whole)) + ' · ' + who + (f.day ? ' · the ' + esc(f.day) + '.' : '') + ' · you ' + esc(pc(+f.split.pct)) + ' %' + (r && r.state !== 'paid' ? ' · ' + (r.dir > 0 ? 'claim open' : 'you owe') : '') + '</small></span><span class="money">' + esc(kr(my)) + '</span></button></li>';
     }).join('');
-    return sec('run', 'Running costs', rc.length + ' a month · your part ' + esc(kr(mine)), head + '<ul class="mp-list hs2-run">' + list + '</ul><p class="muted hs2-note">' + esc(mName(ym, true)) + ': ' + esc(kr(tot)) + ' together · your part ' + esc(kr(mine)) + '</p>');
+    return sec('run', I18N.k('ui.running-costs', 'Running costs'), rc.length + ' a month · your part ' + esc(kr(mine)), head + '<ul class="mp-list hs2-run">' + list + '</ul><p class="muted hs2-note">' + esc(mName(ym, true)) + ': ' + esc(kr(tot)) + ' together · your part ' + esc(kr(mine)) + '</p>');
   }
   var RUNQ = ['Felleskostnader', 'Strøm og nettleie', 'Internett', 'Innboforsikring', 'TV og strømming', 'Renovasjon'];
   /* repairs and improvements (samboerkontrakt 4.3) */
@@ -221,13 +221,13 @@
       }).join('') + '</ul>' : ''));
   }
   /* moving in: the take-over date and a checklist */
-  var MOVE = ['Flyttemelding to Folkeregisteret (Skatteetaten)', 'Power contract for the new address', 'Internet at the new place', 'Contents insurance (innboforsikring) for both', 'Payment protection insurance on your part of the loan', 'Ettersending of post (Posten)', 'New address at the bank, employer and NAV', 'Take-over protocol and meter reading on the day', 'Keys and the borettslag’s house rules', 'Register household items (the list in the Home inventory)'];
+  var MOVE = ['Flyttemelding to Folkeregisteret (Skatteetaten)', I18N.k('ui.power-contract-for-the-new-address', 'Power contract for the new address'), I18N.k('ui.internet-at-the-new-place', 'Internet at the new place'), I18N.k('ui.contents-insurance-innboforsikring-for-b', 'Contents insurance (innboforsikring) for both'), I18N.k('ui.payment-protection-insurance-on-your-par', 'Payment protection insurance on your part of the loan'), I18N.k('ui.ettersending-of-post-posten', 'Ettersending of post (Posten)'), I18N.k('ui.new-address-at-the-bank-employer-and-nav', 'New address at the bank, employer and NAV'), I18N.k('ui.take-over-protocol-and-meter-reading-on', 'Take-over protocol and meter reading on the day'), I18N.k('ui.keys-and-the-borettslags-house-rules', 'Keys and the borettslag’s house rules'), 'Register household items (the list in the Home inventory)'];
   function move() { var t = Fe.tools().hmove; return t && typeof t === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(t.date || '') ? t : null; }
   function moveSection() {
     var mv = move(); if (!mv) return '';
     var items = Array.isArray(mv.items) ? mv.items : [], done = items.filter(function (x) { return x.done; }).length, days = -daysSince(mv.date);
     if (days < -30 && done === items.length) return '';
-    return sec('move', 'Moving in', esc(fromKey(mv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ' · ' +
+    return sec('move', I18N.k('ui.moving-in', 'Moving in'), esc(fromKey(mv.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ' · ' +
       (days > 0 ? 'in ' + days + ' day' + (days === 1 ? '' : 's') : days === 0 ? 'today' : (-days) + ' days ago') + ' · ' + done + ' of ' + items.length + ' done',
       '<ul class="hs2-move">' + items.map(function (x) { return '<li><label class="lf-check"><input type="checkbox" data-hs2mv="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + '> <span>' + esc(x.text) + '</span></label><button type="button" class="icon-btn sm" data-hs2mvdel="' + esc(x.id) + '" aria-label="Remove"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' +
       '<form class="hs2-mvadd" data-hs2mvadd><input name="t" placeholder="Add to the list" maxlength="80" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>');
@@ -240,7 +240,7 @@
     var s = S().data(), pct = p ? myPct() : 50;
     return '<form class="hs2-setup" data-hs2setup><p class="muted">' + (!p && sharedName() ? 'Split what you buy for the home with ' + esc(sharedName()) + ' – say how you split, then add what you buy together: furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.' : 'Share your home with someone? Say who and how you split, then add what you buy together – furniture, a new fridge, the lot. You see who owes whom, things you pay in parts, and the one transfer that evens out each month.') + '</p>' +
       (s.people.length ? '<div class="lf-chips mp-chips">' + s.people.map(function (q) { return '<span class="hs2-pchip"><button type="button" class="lf-chip" data-hs2pick="' + esc(q.id) + '" aria-pressed="' + (!!p && p.id === q.id) + '">' + esc(q.name) + '</button>' + (inSheet ? '<button type="button" class="hs2-pdel" data-hs2del="' + esc(q.id) + '" aria-label="Remove ' + esc(q.name) + '"><i class="bi bi-x"></i></button>' : '') + '</span>'; }).join('') + '</div>' : '') +
-      '<div class="mp-grid hs2-sg"><label><span data-t="ui.who">Who</span><input name="who" value="' + esc(p ? p.name : sharedName()) + '" placeholder="Your partner’s name" maxlength="30" autocomplete="off" required></label>' +
+      '<div class="mp-grid hs2-sg"><label><span data-t="ui.who"><span data-t="ui.who">Who</span></span><input name="who" value="' + esc(p ? p.name : sharedName()) + '" placeholder="Your partner’s name" maxlength="30" autocomplete="off" required></label>' +
       '<label><span data-t="ui.you-pay">You pay, %</span><input name="pct" value="' + esc(pc(pct)) + '" inputmode="decimal" autocomplete="off"></label></div>' +
       '<div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-hs2q="' + v + '" aria-pressed="' + (pct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div>' +
       (inSheet ? '' : '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> ' + (p ? 'Save' : 'Start') + '</button></div>') + '</form>';
@@ -286,11 +286,11 @@
     var X = sheet('Who and how you split');
     var mv = move();
     X.box.innerHTML = shead('people', 'Who and how you split') + setupForm(partner(), true) + '<p class="muted hs2-note">Changing the % applies to new purchases. Ones already saved keep their split – open one to change it.</p>' +
-      '<form class="hs2-more" data-hs2more><p class="mp-lbl" data-t="ui.moving-in">Moving in</p><label><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="move" value="' + esc(mv ? mv.date : '') + '"></label>' +
+      '<form class="hs2-more" data-hs2more><p class="mp-lbl" data-t="ui.moving-in"><span data-t="ui.moving-in">Moving in</span></p><label><span data-t="ui.take-over-date"><span data-t="ui.take-over-date">Take-over date</span></span><input type="date" name="move" value="' + esc(mv ? mv.date : '') + '"></label>' +
       '<p class="muted hs2-note">Shows a moving checklist on this card and the day in your calendar. Empty = no list.</p>' +
       '<p class="mp-lbl">Overdue interest</p><label><span>Forsinkelsesrente, % a year</span><input name="rate" inputmode="decimal" value="' + esc(pc(lateRate())) + '"></label>' +
       '<p class="muted hs2-note">Used for a covered instalment not paid back within 40 days. It changes on 1 January and 1 July (Finanstilsynet) – 12,25 % from 1 July 2026.</p>' +
-      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     wireSetup(X.box, function () { X.close(); draw(); });
     X.box.addEventListener('click', function (e) {
       var d = e.target.closest('[data-hs2del]'); if (!d) return; e.preventDefault();
@@ -359,7 +359,7 @@
           (st.work === 'improve' || (st.work === 'repair' && overCap(st)) ? '<label class="hs2-agreed"><span>' + (st.work === 'improve' ? 'Agreed in writing on' : 'Over 5 000 kr this year – agreed in writing on') + '</span><input type="date" name="agreed" value="' + esc(st.agreed) + '"></label>' +
             '<p class="muted hs2-note">' + (st.work === 'improve' ? 'An improvement (a new kitchen, a bathroom …) can only be split if you both agreed in writing first – with the work, the estimate and the split.' : 'Minor repairs are shared up to 5 000 kr a year; above that, agree in writing first.') + '</p>' : '') +
           (st.work === 'urgent' ? '<p class="muted hs2-note">Necessary and urgent repairs to prevent damage are shared – tell ' + esc(p.name) + ' in writing straight away.</p>' : '')) +
-        '<p class="mp-lbl" data-t="ui.split">Split</p><div class="mp-pct"><label>You pay<input inputmode="decimal" name="pct" value="' + esc(pc(st.pct)) + '" aria-label="Your share in %"><span>%</span></label><div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-bq="' + v + '" aria-pressed="' + (+st.pct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div></div>' +
+        '<p class="mp-lbl" data-t="ui.split"><span data-t="ui.split">Split</span></p><div class="mp-pct"><label>You pay<input inputmode="decimal" name="pct" value="' + esc(pc(st.pct)) + '" aria-label="Your share in %"><span>%</span></label><div class="lf-chips mp-chips">' + [50, 60, 40, 70, 30].map(function (v) { return '<button type="button" class="lf-chip" data-bq="' + v + '" aria-pressed="' + (+st.pct === v) + '">' + v + ' / ' + (100 - v) + '</button>'; }).join('') + '</div></div>' +
         '<p class="mp-lbl">' + (st.parts ? 'Who paid the down payment?' : 'Who paid?') + '</p><div class="seg lf-seg">' + who('bpayer', ['me', 'You'], st.payer) + who('bpayer', [p.id, p.name], st.payer) + '</div>' +
         '<label class="lf-check"><input type="checkbox" name="parts"' + (st.parts ? ' checked' : '') + (loan ? ' disabled' : '') + '> Paying in parts (delbetaling)</label>' +
         (st.parts ? '<div class="hs2-parts">' +
@@ -374,10 +374,10 @@
           '</div>' +
           '<p class="mp-lbl">Who pays the store each month?</p><div class="seg lf-seg">' + who('bstore', ['me', 'You'], st.store) + who('bstore', [p.id, p.name], st.store) + who('bstore', ['each', 'Each our part'], st.store) + '</div>' +
           '</div>' : '') +
-        (loan ? '' : st.invLink ? '<p class="muted hs2-note"><i class="bi bi-box-seam"></i> Linked to this item in the Home inventory.</p>' : '<label class="lf-check"><input type="checkbox" name="inv"' + (st.inv ? ' checked' : '') + '> Add to the Home inventory (owned together)</label>' +
+        (loan ? '' : st.invLink ? '<p class="muted hs2-note"><i class="bi bi-box-seam"></i> <span data-t="ui.linked-to-this-item-in-the-home-inventor">Linked to this item in the Home inventory.</span></p>' : '<label class="lf-check"><input type="checkbox" name="inv"' + (st.inv ? ' checked' : '') + '> Add to the Home inventory (owned together)</label>' +
           (st.inv ? '<div class="mp-grid hs2-ig"><select name="kind" aria-label="Kind" data-t-aria-label="ui.kind">' + opts(KINDS, st.kind) + '</select><select name="room" aria-label="Room" data-t-aria-label="ui.room">' + opts(ROOMS, st.room) + '</select></div>' : '')) +
         '<p class="mp-prev" id="hs2Prev">' + preview() + '</p>' +
-        '<div class="lf-foot">' + (loan ? '<button type="button" class="text-btn danger" data-bdel><i class="bi bi-trash3"></i> Delete</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-bsave><i class="bi bi-check2"></i> Save</button></div>';
+        '<div class="lf-foot">' + (loan ? '<button type="button" class="text-btn danger" data-bdel><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-bsave><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div>';
     }
     function read() {
       ['note', 'price', 'date', 'cat', 'pct', 'down', 'months', 'rate', 'startFee', 'fee', 'day', 'kind', 'room', 'agreed'].forEach(function (n) { var i = box.querySelector('[name="' + n + '"]'); if (i) st[n] = i.value; });
@@ -498,7 +498,7 @@
     var d = window.Vault.get() || {}, B = window.Budget, ym = dkey(new Date()).slice(0, 7), mv = move(), f = id && id !== 'new' ? runCosts().filter(function (x) { return x.id === id; })[0] : null;
     var st = f ? { name: f.name, amt: Math.round(B.fixedWhole(f, ym)), day: f.day || '', payer: f.split.payer, pct: +f.split.pct, vary: !!f.vary, from: f.split.from }
       : { name: preset || '', amt: '', day: '', payer: 'me', pct: 50, vary: /strøm|power/i.test(preset || ''), from: mv && mv.date.slice(0, 7) > ym ? mv.date.slice(0, 7) : ym };
-    var X = sheet('Running cost'), box = X.box;
+    var X = sheet(I18N.k('ui.running-cost', 'Running cost')), box = X.box;
     function draw3() {
       var seg = function (v, t) { return '<button type="button" data-rpay="' + esc(v) + '" aria-pressed="' + (st.payer === v) + '">' + esc(t) + '</button>'; };
       var a = num(st.amt) || 0, me = (num(st.pct) || 0) / 100;
@@ -508,10 +508,10 @@
         '<input name="day" data-daypick inputmode="numeric" placeholder="Due day" value="' + esc(st.day) + '" autocomplete="off" aria-label="Due day"></div>' +
         '<label class="lf-check"><input type="checkbox" name="vary"' + (st.vary ? ' checked' : '') + '> The amount changes from month to month</label>' +
         '<p class="mp-lbl">Who pays the bill?</p><div class="seg lf-seg">' + seg('me', 'You') + seg(p.id, p.name) + seg('each', 'Each our part') + '</div>' +
-        '<p class="mp-lbl" data-t="ui.split">Split</p><div class="mp-pct"><label>You pay<input inputmode="decimal" name="pct" value="' + esc(pc(st.pct)) + '"><span>%</span></label></div>' +
+        '<p class="mp-lbl" data-t="ui.split"><span data-t="ui.split">Split</span></p><div class="mp-pct"><label>You pay<input inputmode="decimal" name="pct" value="' + esc(pc(st.pct)) + '"><span>%</span></label></div>' +
         '<label class="hs2-agreed"><span>Shared from</span><input type="month" name="from" value="' + esc(st.from) + '"></label>' +
         '<p class="mp-prev">' + (a ? 'Your part ' + esc(kr(a * me)) + ' a month goes into your fixed costs' + (st.payer === 'me' ? ' · ' + esc(p.name) + '’s ' + esc(kr(a * (1 - me))) + ' is a claim each month' : st.payer === p.id ? ' · you owe ' + esc(p.name) + ' ' + esc(kr(a * me)) + ' each month' : '') + '.' : 'Type the whole bill.') + '</p>' +
-        '<div class="lf-foot">' + (f ? '<button type="button" class="text-btn danger" data-rdel><i class="bi bi-trash3"></i> Delete</button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-rsave><i class="bi bi-check2"></i> Save</button></div>';
+        '<div class="lf-foot">' + (f ? '<button type="button" class="text-btn danger" data-rdel><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button>' : '<span class="spacer"></span>') + '<button type="button" class="pill-btn wide" data-rsave><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div>';
     }
     function read() { ['note', 'amt', 'day', 'pct', 'from'].forEach(function (n) { var i = box.querySelector('[name="' + n + '"]'); if (i) st[n === 'note' ? 'name' : n] = i.value; }); var v = box.querySelector('[name="vary"]'); if (v) st.vary = v.checked; }
     box.addEventListener('input', function (e) { read(); if (/amt|pct/.test(e.target.name)) { var pv = box.querySelector('.mp-prev'), a = num(st.amt) || 0, me = (num(st.pct) || 0) / 100; if (pv) pv.innerHTML = a ? 'Your part ' + esc(kr(a * me)) + ' a month' : 'Type the whole bill.'; } });
@@ -550,7 +550,7 @@
         '<p class="muted">When one of you pays the other’s instalment: paid back within 40 days, it counts as if they paid it themselves. After that it’s a personal debt with overdue interest from the day it was paid.</p>' +
         '<div class="seg lf-seg"><button type="button" data-cdir="me" aria-pressed="' + (dir === 'me') + '">You covered ' + esc(p.name) + '’s</button><button type="button" data-cdir="them" aria-pressed="' + (dir === 'them') + '">' + esc(p.name) + ' covered yours</button></div>' +
         '<div class="mp-grid"><input name="amt" inputmode="decimal" placeholder="Amount, kr" value="' + esc(due()) + '" autocomplete="off"><input name="date" type="date" value="' + esc(dkey(new Date())) + '" aria-label="Date paid"></div>' +
-        '<div class="lf-foot"><span class="spacer"></span><button type="button" class="pill-btn wide" data-csave><i class="bi bi-check2"></i> Save</button></div>';
+        '<div class="lf-foot"><span class="spacer"></span><button type="button" class="pill-btn wide" data-csave><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div>';
     }
     box.addEventListener('click', function (e) {
       var b;
@@ -588,7 +588,7 @@
   /* paying back what you owe your partner, a set amount each month (a fixed cost – window.Shared.payBack) */
   function oweSection(p) {
     var L = window.Loans, ow = S().owePlans ? S().owePlans(p.id) : []; if (!ow.length || !L) return '';
-    return '<h3 class="lp-h3" data-t="ui.paying-back">Paying back</h3><ul class="hs2-plans">' + ow.map(function (a) {
+    return '<h3 class="lp-h3" data-t="ui.paying-back"><span data-t="ui.paying-back">Paying back</span></h3><ul class="hs2-plans">' + ow.map(function (a) {
       var left = L.owedNow(a), paid = left <= 0.5, now = new Date(), nd = new Date(now.getFullYear(), now.getMonth(), 1), day = +a.day || 1;
       var dimN = function (d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); };
       if (Math.min(day, dimN(nd)) <= now.getDate() - 0 && dkey(new Date(nd.getFullYear(), nd.getMonth(), Math.min(day, dimN(nd)))) <= dkey(now)) nd = new Date(nd.getFullYear(), nd.getMonth() + 1, 1);

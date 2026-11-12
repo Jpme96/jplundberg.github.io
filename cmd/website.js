@@ -132,7 +132,7 @@
 
     var n = draft.sections.length;
     $('wsSections').innerHTML =
-      '<div class="st-row ws-fixed"><span><i class="bi bi-image"></i> Intro (name and title)</span><i class="bi bi-lock" title="Always first" data-t-title="ui.always-first"></i></div>' +
+      '<div class="st-row ws-fixed"><span><i class="bi bi-image"></i> <span data-t="ui.intro-name-and-title">Intro (name and title)</span></span><i class="bi bi-lock" title="Always first" data-t-title="ui.always-first"></i></div>' +
       draft.sections.map(function (s, i) {
         var m = SECTION[s.id];
         return '<div class="st-row ws-sec' + (s.on ? '' : ' off') + '">' +
@@ -141,7 +141,7 @@
           '<button type="button" data-move="' + i + ':1" aria-label="Move ' + m[1] + ' down"' + (i === n - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-down"></i></button>' +
           '<input type="checkbox" class="switch" data-sec="' + i + '"' + (s.on ? ' checked' : '') + ' aria-label="Show ' + m[1] + '"></span></div>';
       }).join('') +
-      '<div class="st-row ws-fixed"><span><i class="bi bi-envelope"></i> Contact</span><i class="bi bi-lock" title="Always last" data-t-title="ui.always-last"></i></div>';
+      '<div class="st-row ws-fixed"><span><i class="bi bi-envelope"></i> <span data-t="ui.contact">Contact</span></span><i class="bi bi-lock" title="Always last" data-t-title="ui.always-last"></i></div>';
 
     draft.now = draft.now || { en: '', nb: '' };
     if (document.activeElement !== $('wsNowEn')) $('wsNowEn').value = draft.now.en || '';
@@ -210,7 +210,7 @@
       '<input name="title" placeholder="e.g. FDVU Technician" value="' + esc(e ? e.title : '') + '" required autocomplete="off">' +
       '<div class="row2"><input name="school" placeholder="School" value="' + esc(e ? e.school : '') + '" autocomplete="off"><input name="dates" placeholder="Dates" value="' + esc(e ? e.dates : '') + '" autocomplete="off"></div>' +
       '<input name="note" placeholder="Note (optional)" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-ecancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';
+      '<div class="form-actions"><button type="button" class="text-btn" data-ecancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (e ? 'Save' : 'Add') + '</button></div></form>';
   }
   function levels(text) {
     return String(text || '').split('\n').map(function (l) { var m = l.match(/^(.*?)(?:[,;:\s]\s*(\d{1,3})\s*%?)?\s*$/); return m && m[1].trim() ? { name: m[1].trim().slice(0, 60), level: Math.max(0, Math.min(100, +m[2] || 80)) } : null; }).filter(Boolean).slice(0, 12);
@@ -241,7 +241,7 @@
       '<input name="title" placeholder="Title, e.g. FDVU Advisor" value="' + esc(j ? j.title : '') + '" required autocomplete="off">' +
       '<div class="row2"><input name="company" placeholder="Company, city" value="' + esc(j ? j.company : '') + '" autocomplete="off"><input name="dates" placeholder="Dates, e.g. 2020 – 2025" value="' + esc(j ? j.dates : '') + '" autocomplete="off"></div>' +
       '<textarea name="points" rows="3" placeholder="What you did – one point per line">' + esc(j && j.points ? j.points.join('\n') : '') + '</textarea>' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-jcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
+      '<div class="form-actions"><button type="button" class="text-btn" data-jcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn wide" type="submit">' + (j ? 'Save' : 'Add') + '</button></div></form>';
   }
   $('cvLang').addEventListener('click', function (e) { var b = e.target.closest('[data-lang]'); if (!b) return; cvLang = b.dataset.lang; jobEdit = null; eduEdit = null; fillCv(); });
   $('cvProfile').addEventListener('input', function () { draft.cv.profile[cvLang] = this.value; changed(); });
@@ -392,7 +392,7 @@
     draft.socials = window.Profile.publicSocials();
     changed();
   });
-  if ($('wsReview')) $('wsReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show('Changes to jplundberg.com', saved, draft); });
+  if ($('wsReview')) $('wsReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show(I18N.k('ui.changes-to-jplundberg-com', 'Changes to jplundberg.com'), saved, draft); });
   $('wsPublish').addEventListener('click', function () {
     if (!dirty()) return;
     publishing = true; bar();
@@ -406,14 +406,14 @@
       if (j.ok) {
         saved = j.settings; sha = j.sha; draft = clone(saved);
         fill(); summary(); bar();
-        status('Published ✓ Live on jplundberg.com in about a minute');
+        status(I18N.k('ui.published-live-on-jplundberg-com-in-abou-2', 'Published ✓ Live on jplundberg.com in about a minute'));
         try { window.dispatchEvent(new CustomEvent('site:published', { detail: (PART[current] ? PART[current][1].toLowerCase() : 'website settings') })); } catch (e) {}
       } else if (j._status === 409) {
         loading = null;
-        status('The settings changed somewhere else. Loading the newest version…', true);
+        status(I18N.k('ui.the-settings-changed-somewhere-else-load', 'The settings changed somewhere else. Loading the newest version…'), true);
         load();
       } else { bar(); status('Couldn’t publish (' + (j.error || j._status) + '). Try again.', true); }
-    }).catch(function () { publishing = false; bar(); status('Couldn’t publish. Check your connection.', true); });
+    }).catch(function () { publishing = false; bar(); status(I18N.k('ui.couldnt-publish-check-your-connection', 'Couldn’t publish. Check your connection.'), true); });
   });
 
   /* ---------- visitors ---------- */
@@ -421,7 +421,7 @@
   function visitors() {
     var box = $('wsVisitors');
     if (vCache[days]) return drawVisitors(vCache[days]);
-    box.innerHTML = '<p class="st-intro" data-t="ui.loading">Loading…</p>';
+    box.innerHTML = '<p class="st-intro" data-t="ui.loading"><span data-t="ui.loading">Loading…</span></p>';
     fetch('/cmd/api/visitors?days=' + days, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; });
     }).then(function (j) {
@@ -454,7 +454,7 @@
       }).join('') + '</ul>';
     };
     $('wsVisitors').innerHTML =
-      '<div class="ws-tiles"><div><span data-t="ui.visits">Visits</span><b>' + j.visits + '</b></div><div><span data-t="ui.page-views">Page views</span><b>' + j.views + '</b></div></div>' +
+      '<div class="ws-tiles"><div><span data-t="ui.visits"><span data-t="ui.visits">Visits</span></span><b>' + j.visits + '</b></div><div><span data-t="ui.page-views"><span data-t="ui.page-views">Page views</span></span><b>' + j.views + '</b></div></div>' +
       '<section class="st-group ws-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Visits per day, last ' + j.days + ' days">' + bars +
       '<text x="0" y="' + (H - 2) + '">' + esc(lbl(first)) + '</text><text x="' + W + '" y="' + (H - 2) + '" text-anchor="end">' + esc(lbl(last)) + '</text></svg></section>' +
       list('Most read pages', j.pages, 'file-earmark-text', pageName) +
@@ -516,7 +516,7 @@
   /* switches are staged: nothing changes on jplundberg.com until you press "Publish changes" */
   var stage = {};
   function drawItems() {
-    var html = '<div class="ws-write"><button type="button" class="pill-btn" data-wsnew="articles"><i class="bi bi-pencil-square"></i> New article</button><button type="button" class="text-btn" data-wsnew="projects"><i class="bi bi-plus-lg"></i> New project</button></div>' +
+    var html = '<div class="ws-write"><button type="button" class="pill-btn" data-wsnew="articles"><i class="bi bi-pencil-square"></i> <span data-t="ui.new-article">New article</span></button><button type="button" class="text-btn" data-wsnew="projects"><i class="bi bi-plus-lg"></i> <span data-t="ui.new-project">New project</span></button></div>' +
       [['articles', 'Articles', 'journal-text'], ['projects', 'Projects', 'kanban']].map(function (c) {
       var rows = grouped(c[0]);
       if (!rows.length) return '';
@@ -532,7 +532,7 @@
       }).join('') + '</section>';
     }).join('');
     var n = Object.keys(stage).length;
-    html += n ? '<div class="ws-stage"><span><b>' + n + (n === 1 ? ' change' : ' changes') + '</b> not published yet</span><button type="button" class="text-btn" data-wsstage="undo" data-t="ui.cancel">Cancel</button><button type="button" class="pill-btn" data-wsstage="go"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-cloud-upload"></i> Publish changes</button></div>' : '';
+    html += n ? '<div class="ws-stage"><span><b>' + n + (n === 1 ? ' change' : ' changes') + '</b> <span data-t="ui.not-published-yet">not published yet</span></span><button type="button" class="text-btn" data-wsstage="undo" data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><button type="button" class="pill-btn" data-wsstage="go"' + (busyRef ? ' disabled' : '') + '><i class="bi bi-cloud-upload"></i> <span data-t="ui.publish-changes">Publish changes</span></button></div>' : '';
     $('wsContent').innerHTML = html;
     var all = grouped('articles').concat(grouped('projects')), hidden = all.filter(function (g) { return !g.published; }).length;
     $('sumContent').textContent = (n ? n + ' not published · ' : '') + (hidden ? hidden + ' hidden' : 'All shown');
@@ -591,7 +591,7 @@
           stMsg(em, false); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-exclamation-triangle"></i> ' + em);
           if (done) done(false);
         }
-      }).catch(function () { busyRef = ''; drawItems(); stMsg('No connection – nothing was deleted', false); if (done) done(false); });
+      }).catch(function () { busyRef = ''; drawItems(); stMsg(I18N.k('ui.no-connection-nothing-was-deleted', 'No connection – nothing was deleted'), false); if (done) done(false); });
   }
   window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; }, remove: removeItem };
   function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
@@ -627,7 +627,7 @@
       });
     }
     if (current === 'visitors') { if (!content) load(); visitors(); }
-    if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro" data-t="ui.loading">Loading…</p>'; loadItems(); } }
+    if (current === 'content') { if (items) drawItems(); else { $('wsContent').innerHTML = '<p class="st-intro" data-t="ui.loading"><span data-t="ui.loading">Loading…</span></p>'; loadItems(); } }
     if (current === 'home' && !items) loadItems();
     bar();
     if (EDIT_PAGES.indexOf(current) > -1 && !saved) status(problem ? $('wsStatus').textContent : 'Loading…', !!problem);

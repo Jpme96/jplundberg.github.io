@@ -36,7 +36,7 @@
     box.innerHTML = L.map(function (l) {
       return '<div class="st-row sc-row"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-' + l[0] + '"></i></span><span class="st-label">' + esc(l[1]) +
         '<small class="sc-url">' + esc(l[2].replace(/^https?:\/\//, '')) + '</small>' + (l[3] ? '<small>' + esc(l[3]) + '</small>' : '') + '</span>' +
-        '<button type="button" class="text-btn" data-sccopy="' + esc(l[2]) + '"><i class="bi bi-copy"></i> Copy</button></div>';
+        '<button type="button" class="text-btn" data-sccopy="' + esc(l[2]) + '"><i class="bi bi-copy"></i> <span data-t="ui.copy">Copy</span></button></div>';
     }).join('');
   }
   document.addEventListener('click', function (e) {
@@ -130,7 +130,7 @@
     if (p.k.checkin && window.Checkin) {
       var sun = new Date(); sun.setDate(sun.getDate() + (7 - sun.getDay()) % 7);
       var wk = window.Checkin.weekOf(sun);
-      if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), 'Weekly check-in', '5 minutes: spending, the week ahead and habits', '/cmd/#checkin');
+      if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), I18N.k('ui.weekly-check-in', 'Weekly check-in'), '5 minutes: spending, the week ahead and habits', '/cmd/#checkin');
     }
     /* more from the other parts (House, People, client timer …): window.NotifyExtra */
     (window.NotifyExtra || []).forEach(function (fn) { try { fn(add, { full: full, k: p.k, now: now, end: end, at: at, dkey: dkey }); } catch (e) {} });

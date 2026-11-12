@@ -70,7 +70,7 @@
     var by = {}; inv.forEach(function (x) { (by[x.receipt] = by[x.receipt] || []).push(x); });
     var ids = Object.keys(by).sort(function (a, b) { var A = by[a][0].bought || '', B = by[b][0].bought || ''; return A < B ? 1 : A > B ? -1 : 0; });
     var tot = inv.reduce(function (a, x) { return a + (+x.price || 0); }, 0);
-    var h = '<section class="card kit-card" id="parcpt"><div class="card-head"><h2><i class="bi bi-receipt"></i> Receipts</h2><span class="muted pa-rsum">' + ids.length + (ids.length === 1 ? ' receipt' : ' receipts') + (tot ? ' · ' + kr(tot) : '') + '</span></div>' +
+    var h = '<section class="card kit-card" id="parcpt"><div class="card-head"><h2><i class="bi bi-receipt"></i> <span data-t="ui.receipts">Receipts</span></h2><span class="muted pa-rsum">' + ids.length + (ids.length === 1 ? ' receipt' : ' receipts') + (tot ? ' · ' + kr(tot) : '') + '</span></div>' +
       '<ul class="pa-rgrid">' + ids.map(function (rid) { var l = by[rid], x = l[0], pdf = l.some(function (y) { return y.receiptPdf; }), pr = l.reduce(function (a, y) { return a + (+y.price || 0); }, 0);
         return '<li><a class="pa-rt" data-rcopen="' + esc(rid) + '" target="_blank" rel="noopener"><span class="pa-rth">' + (pdf ? '<i class="bi bi-file-earmark-pdf"></i>' : '<img data-rcimg="' + esc(rid) + '" alt=""><i class="bi bi-receipt"></i>') + '</span>' +
           '<b>' + esc(l.map(function (y) { return y.name; }).filter(Boolean).join(' + ') || 'Receipt') + '</b><small>' + esc([pr ? kr(pr) : '', x.bought ? fmt(x.bought, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ') || ' ') + '</small></a>' +
@@ -92,7 +92,7 @@
     var el = $t('pasoon'); if (!el) return;
     if (!on()) { el.hidden = true; el.innerHTML = ''; return; }
     var l = upcoming(365); el.hidden = !l.length && !Fe.list('papers').length;
-    var h = '<section class="card kit-card" id="pasoon"><div class="card-head"><h2><i class="bi bi-calendar-event"></i> Coming up</h2></div>' +
+    var h = '<section class="card kit-card" id="pasoon"><div class="card-head"><h2><i class="bi bi-calendar-event"></i> <span data-t="ui.coming-up">Coming up</span></h2></div>' +
       (l.length ? '<ul class="pa-soon">' + l.map(function (u) {
         return '<li><a href="' + esc(u.href) + '"' + (u.travel ? '' : ' data-pago') + '><span class="pa-when' + (u.n < 0 && !u.renew ? ' over' : u.n <= 30 ? ' near' : '') + '"><b>' + esc(fromKey(u.date).getDate()) + '</b><small>' + esc(fmt(u.date, { month: 'short' })) + (fromKey(u.date).getFullYear() !== new Date().getFullYear() ? ' ' + fromKey(u.date).getFullYear() : '') + '</small></span>' +
           '<span class="kit-ic" style="--c:' + u.k[3] + '"><i class="bi bi-' + u.k[2] + '"></i></span><span class="kit-x"><b>' + esc(u.title) + '</b><small>' + esc(cap(u.what) + ' ' + inDays(u.n) + (u.travel ? ' · Travel' : '')) + '</small></span></a></li>';
@@ -122,8 +122,8 @@
     var nofile = l.filter(function (x) { return !(x.files || []).length; }).length;
     el.hidden = false;
     var h = heroTile('folder2-open', 'Papers', l.length, nofile ? nofile + ' without a file' : l.length ? 'all with a file' : 'none yet', '#papers', '#6b4bc4') +
-      heroTile('calendar-event', 'Next date', u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? '#e8743b' : '#3987e5') +
-      heroTile('cash-coin', 'Per year', ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
+      heroTile('calendar-event', I18N.k('ui.next-date', 'Next date'), u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? '#e8743b' : '#3987e5') +
+      heroTile('cash-coin', I18N.k('ui.per-year', 'Per year'), ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
     if (el.innerHTML !== h) el.innerHTML = h;
   }
   window.BriefExtra = window.BriefExtra || [];

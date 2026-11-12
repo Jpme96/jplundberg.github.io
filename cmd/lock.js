@@ -390,7 +390,7 @@
       var foreign = isVault(local) && syncedRev() === -1 && v.salt !== local.salt;
       if (!isVault(local) || foreign || (v.rev || 0) > (local.rev || 0)) {
         remote = v;
-        if (mode === 'setup') { setMode('unlock'); msg('Found your synced dashboard. Enter your passcode.', true); }
+        if (mode === 'setup') { setMode('unlock'); msg(I18N.k('ui.found-your-synced-dashboard-enter-your-p', 'Found your synced dashboard. Enter your passcode.'), true); }
       }
     });
   }
@@ -1021,7 +1021,7 @@
         ignoreRemote = true;
         lock('Backup restored');
         setMode('unlock');
-        msg('Backup restored. Unlock with the passcode it was made with.', true);
+        msg(I18N.k('ui.backup-restored-unlock-with-the-passcode', 'Backup restored. Unlock with the passcode it was made with.'), true);
       });
     },
     backup: function () {

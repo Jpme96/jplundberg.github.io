@@ -41,7 +41,7 @@
   var bg = document.createElement('div');
   bg.className = 'sr-bg rv-bg ci-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="sr-box rv-box ci-box" role="dialog" aria-modal="true" aria-label="Weekly check-in" data-t-aria-label="ui.weekly-check-in"><div class="rv-top">' +
-    '<b class="ci-title"><i class="bi bi-clipboard-check"></i> Weekly check-in</b><span class="spacer"></span><button type="button" class="text-btn" data-ciclose data-t="ui.close">Close</button></div>' +
+    '<b class="ci-title"><i class="bi bi-clipboard-check"></i> <span data-t="ui.weekly-check-in">Weekly check-in</span></b><span class="spacer"></span><button type="button" class="text-btn" data-ciclose data-t="ui.close"><span data-t="ui.close">Close</span></button></div>' +
     '<div class="rv-body" id="ciBody"></div></div>';
   document.body.appendChild(bg);
   var wk = null;
@@ -59,14 +59,14 @@
     var pc = window.Budget && window.Budget.pace ? window.Budget.pace(d) : null;
     var by = {}; week.forEach(function (e) { by[e.cat] = (by[e.cat] || 0) + (+e.amount || 0); });
     var top = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; })[0];
-    return '<section class="rv-sec"><h3><span class="ci-n">1</span> Money</h3>' +
+    return '<section class="rv-sec"><h3><span class="ci-n">1</span> <span data-t="ui.money">Money</span></h3>' +
       '<div class="rv-grid ci-grid"><div class="rv-big" style="--c:#11a597"><i class="bi bi-receipt"></i><b class="money">' + esc(kr(spent)) + '</b><span data-t="ui.spent-this-week">spent this week</span>' +
         (avg > 0 ? '<small class="' + (spent > avg * 1.15 ? 'dn' : spent < avg * .85 ? 'up' : '') + '">' + (spent > avg ? kr(spent - avg) + ' more' : kr(avg - spent) + ' less') + ' than usual</small>' : '<small>' + week.length + ' expense' + (week.length === 1 ? '' : 's') + '</small>') + '</div>' +
         (top ? '<div class="rv-big" style="--c:#e8743b"><i class="bi bi-pie-chart"></i><b>' + esc((CATS.filter(function (c) { return c[0] === top; })[0] || ['', 'Other'])[1]) + '</b><span data-t="ui.most-of-it">most of it</span><small class="money">' + esc(kr(by[top])) + '</small></div>' : '') +
-        (pc ? '<div class="rv-big" style="--c:' + (pc.ok ? '#22b35e' : '#e66767') + '"><i class="bi bi-speedometer2"></i><b class="money">' + esc(kr(Math.abs(pc.end))) + '</b><span>' + (pc.ok ? 'left' : 'over') + ' at ' + (pc.per.byPayday ? 'payday' : 'month end') + '</span><small data-t="ui.at-this-pace">at this pace</small></div>' : '') +
+        (pc ? '<div class="rv-big" style="--c:' + (pc.ok ? '#22b35e' : '#e66767') + '"><i class="bi bi-speedometer2"></i><b class="money">' + esc(kr(Math.abs(pc.end))) + '</b><span>' + (pc.ok ? 'left' : 'over') + ' at ' + (pc.per.byPayday ? 'payday' : 'month end') + '</span><small data-t="ui.at-this-pace"><span data-t="ui.at-this-pace">at this pace</span></small></div>' : '') +
       '</div>' +
       '<div class="ci-imp"><i class="bi bi-bank"></i><span>' + (impDays == null ? 'You haven’t imported from your bank yet.' : 'Last bank import ' + (impDays === 0 ? 'today' : impDays === 1 ? 'yesterday' : impDays + ' days ago') + '.') + '</span>' +
-        (impDays == null || impDays >= 3 ? '<a class="pill-btn" href="finance/#import"><i class="bi bi-upload"></i> Import</a>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>' +
+        (impDays == null || impDays >= 3 ? '<a class="pill-btn" href="finance/#import"><i class="bi bi-upload"></i> <span data-t="ui.import">Import</span></a>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>' +
       backupHtml(d) +
       (unsorted.length ? '<p class="muted ci-p" data-t="ui.these-are-filed-under-other-pick-a-categ">These are filed under Other – pick a category and the bank import remembers the shop next time.</p><ul class="ci-sort">' + unsorted.map(function (e) {
         return '<li><span class="ci-x"><b>' + esc(e.note || 'Expense') + '</b><small>' + esc(new Date(e.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · <span class="money">' + esc(kr(e.amount)) + '</span></small></span>' +
@@ -76,7 +76,7 @@
   function backupHtml(d) {
     var lb = d.lastBackup || +localStorage.getItem('dash.lastBackup') || 0, age = lb ? Math.floor((Date.now() - lb) / 864e5) : null;
     return '<div class="ci-imp"><i class="bi bi-shield-check"></i><span>' + (age === null ? 'No backup downloaded yet.' : 'Last backup ' + (age === 0 ? 'today' : age === 1 ? 'yesterday' : age + ' days ago') + '.') + '</span>' +
-      (age === null || age >= 30 ? '<button type="button" class="pill-btn" data-cibackup><i class="bi bi-download"></i> Backup</button>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>';
+      (age === null || age >= 30 ? '<button type="button" class="pill-btn" data-cibackup><i class="bi bi-download"></i> <span data-t="ui.backup">Backup</span></button>' : '<i class="bi bi-check-circle-fill ci-ok"></i>') + '</div>';
   }
   function aheadHtml() {
     var start = new Date().getDay() === 0 ? addDays(new Date(), 1) : day0(new Date()), rows = '';
@@ -89,15 +89,15 @@
         .concat(tds.map(function (t) { return '<span class="ci-td"><i class="bi bi-check2-square"></i> ' + esc(t.text) + '</span>'; }));
       if (evs.length > 3) bits.push('+' + (evs.length - 3) + ' more');
       rows += '<li' + (bits.length ? '' : ' class="free"') + '><span class="ci-day">' + esc(dd.toLocaleDateString('en-GB', { weekday: 'short' })) + '<small>' + dd.getDate() + '</small></span>' +
-        '<span class="ci-evs">' + (hol ? '<span class="ci-hol">' + esc(hol.name) + '</span> ' : '') + (bits.length ? bits.join(' · ') : '<span class="muted" data-t="ui.free">Free</span>') + '</span></li>';
+        '<span class="ci-evs">' + (hol ? '<span class="ci-hol">' + esc(hol.name) + '</span> ' : '') + (bits.length ? bits.join(' · ') : '<span class="muted" data-t="ui.free"><span data-t="ui.free">Free</span></span>') + '</span></li>';
     }
     var overdue = readJSON('dash.todos', []).filter(function (t) { return !t.done && t.due && t.due < dkey(new Date()); });
-    return '<section class="rv-sec"><h3><span class="ci-n">2</span> The week ahead</h3><ul class="ci-week">' + rows + '</ul>' +
+    return '<section class="rv-sec"><h3><span class="ci-n">2</span> <span data-t="ui.the-week-ahead">The week ahead</span></h3><ul class="ci-week">' + rows + '</ul>' +
       (overdue.length ? '<p class="ci-warn"><i class="bi bi-exclamation-circle"></i> ' + overdue.length + ' task' + (overdue.length === 1 ? ' is' : 's are') + ' overdue – give ' + (overdue.length === 1 ? 'it' : 'them') + ' a new day or tick ' + (overdue.length === 1 ? 'it' : 'them') + ' off below.</p>' : '') + '</section>';
   }
   function focusHtml() {
     var open = readJSON('dash.todos', []).filter(function (t) { return !t.done; }), n = open.filter(function (t) { return t.focus; }).length;
-    return '<section class="rv-sec"><h3><span class="ci-n">3</span> Focus this week</h3>' +
+    return '<section class="rv-sec"><h3><span class="ci-n">3</span> <span data-t="ui.focus-this-week">Focus this week</span></h3>' +
       (open.length ? '<p class="muted ci-p" data-t="ui.star-up-to-three-they-go-to-the-top-of-y">Star up to three – they go to the top of your To-do.</p><ul class="ci-focus">' + open.slice(0, 15).map(function (t) {
         var late = t.due && t.due < dkey(new Date());
         return '<li><button type="button" class="ci-star' + (t.focus ? ' on' : '') + '" data-cistar="' + esc(t.id) + '" aria-pressed="' + !!t.focus + '" aria-label="Focus on ' + esc(t.text) + '"' + (!t.focus && n >= 3 ? ' disabled' : '') + '><i class="bi bi-star' + (t.focus ? '-fill' : '') + '"></i></button>' +
@@ -114,7 +114,7 @@
       var st = AH.stats(dkey(wk.mon), dkey(wk.sun));
       if (st.n) ah = '<p class="ci-health"><i class="bi bi-apple"></i> ' + [st.steps.avg != null ? AH.fmt('steps', st.steps.avg) + ' steps a day' : '', st.sleep.avg != null ? AH.fmt('sleep', st.sleep.avg) + ' sleep' : '', st.exercise.avg != null ? AH.fmt('exercise', st.exercise.sum) + ' exercise' : ''].filter(Boolean).join(' · ') + '</p>';
     }
-    return '<section class="rv-sec"><h3><span class="ci-n">4</span> Habits last week</h3>' + ah + '<ul class="ci-hab">' + hb.list.map(function (h) {
+    return '<section class="rv-sec"><h3><span class="ci-n">4</span> <span data-t="ui.habits-last-week">Habits last week</span></h3>' + ah + '<ul class="ci-hab">' + hb.list.map(function (h) {
       var n = 0;
       for (var i = 0; i < 7; i++) if (((hb.log || {})[dkey(addDays(wk.mon, i))] || []).indexOf(h.id) > -1) n++;
       var ok = n >= h.target;
@@ -125,7 +125,7 @@
     var d = window.Vault.get() || {};
     $('ciBody').innerHTML = '<p class="rv-kicker">Week ' + wk.n + ' · ' + esc(wk.mon.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ' – ' + esc(wk.sun.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</p>' +
       '<h2 data-t="ui.how-was-the-week">How was the week?</h2>' + ((!Fe || Fe.on('finance')) ? moneyHtml(d) : '') + aheadHtml() + focusHtml() + habitsHtml() +
-      '<div class="qa-acts ci-foot"><span class="spacer"></span>' + (doneSet().indexOf(wk.key) > -1 ? '<span class="muted"><i class="bi bi-check2-circle"></i> Done for this week</span>' : '<button type="button" class="pill-btn wide" data-cidone><i class="bi bi-check2-circle"></i> Done for this week</button>') + '</div>';
+      '<div class="qa-acts ci-foot"><span class="spacer"></span>' + (doneSet().indexOf(wk.key) > -1 ? '<span class="muted"><i class="bi bi-check2-circle"></i> <span data-t="ui.done-for-this-week">Done for this week</span></span>' : '<button type="button" class="pill-btn wide" data-cidone><i class="bi bi-check2-circle"></i> <span data-t="ui.done-for-this-week">Done for this week</span></button>') + '</div>';
   }
   function $(id) { return document.getElementById(id); }
   function open() {

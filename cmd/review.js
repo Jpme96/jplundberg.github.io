@@ -89,7 +89,7 @@
     var prev3 = [1, 2, 3].map(function (i) { var k = shiftYm(ym, -i); return money(k, function (x) { return x.slice(0, 7) === k; }); });
     var avg = sum(prev3, function (m) { return m.spent; }) / 3;
     var left = M.income - M.fixed - M.spent;
-    var html = '<p class="rv-kicker" data-t="ui.monthly-check-in">Monthly check-in</p><h2>' + esc(mName(ym, { month: 'long', year: 'numeric' })) + '</h2>';
+    var html = '<p class="rv-kicker" data-t="ui.monthly-check-in"><span data-t="ui.monthly-check-in">Monthly check-in</span></p><h2>' + esc(mName(ym, { month: 'long', year: 'numeric' })) + '</h2>';
     var tiles = '';
     if (M.income || M.spent) tiles += big('wallet2', '#11a597', kr(M.spent), 'spent', avg ? (M.spent > avg ? '<span class="dn">' : '<span class="up">') + Math.round(Math.abs(M.spent - avg) / Math.max(avg, 1) * 100) + '% ' + (M.spent > avg ? 'more' : 'less') + '</span> than usual' : '');
     if (M.income) tiles += big('piggy-bank', left >= 0 ? '#22b35e' : '#e66767', kr(Math.abs(left)), left >= 0 ? 'left over' : 'over budget', left >= 0 ? Math.round(left / M.income * 100) + '% of income' : '');
@@ -107,7 +107,7 @@
       else if (ah.sleep.n) tiles += big('moon-stars', '#8a6fdf', AH.fmt('sleep', ah.sleep.avg), 'sleep a night', '');
     }
     html += tiles ? '<div class="rv-grid">' + tiles + '</div>' : '<p class="muted">Not much logged this month yet.</p>';
-    if (M.cats.length) html += section('Where the money went', 'pie-chart', bars(M.cats.slice(0, 5).map(function (c) {
+    if (M.cats.length) html += section(I18N.k('ui.where-the-money-went', 'Where the money went'), 'pie-chart', bars(M.cats.slice(0, 5).map(function (c) {
       var p = sum(prev3, function (m) { return m.by[c] || 0; }) / 3, diff = p ? Math.round((M.by[c] - p) / p * 100) : null;
       return [CATNAME[c], M.by[c], kr(M.by[c]) + (diff !== null && Math.abs(diff) >= 15 ? ' <small class="' + (diff > 0 ? 'dn' : 'up') + '">' + (diff > 0 ? '+' : '') + diff + '%</small>' : '')];
     }), M.by[M.cats[0]]));
@@ -116,7 +116,7 @@
     var jr = list('journal').filter(function (j) { return j.date >= from && j.date <= to; });
     if (jr.length) {
       var avgMood = sum(jr, function (j) { return j.mood; }) / jr.length, best = jr.slice().sort(function (a, b) { return b.mood - a.mood; })[0];
-      html += section('How it felt', 'emoji-smile', '<p>' + jr.length + ' day' + (jr.length > 1 ? 's' : '') + ' written · average mood <b>' + ['', 'bad', 'meh', 'OK', 'good', 'great'][Math.round(avgMood)] + '</b></p>' + (best ? '<p class="rv-quote">“' + esc(best.line) + '” <small>' + esc(new Date(best.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></p>' : ''));
+      html += section(I18N.k('ui.how-it-felt', 'How it felt'), 'emoji-smile', '<p>' + jr.length + ' day' + (jr.length > 1 ? 's' : '') + ' written · average mood <b>' + ['', 'bad', 'meh', 'OK', 'good', 'great'][Math.round(avgMood)] + '</b></p>' + (best ? '<p class="rv-quote">“' + esc(best.line) + '” <small>' + esc(new Date(best.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></p>' : ''));
     }
     /* the month ahead (only for the month that just ended) */
     if (ym === shiftYm(ymOf(new Date()), -1)) {
@@ -144,7 +144,7 @@
     y = String(y);
     var from = y + '-01-01', to = y + '-12-31';
     var M = money(y, function (k) { return k.slice(0, 4) === y; });
-    var html = '<p class="rv-kicker" data-t="ui.year-in-review">Year in review</p><h2>' + esc(y) + '</h2>', tiles = '';
+    var html = '<p class="rv-kicker" data-t="ui.year-in-review"><span data-t="ui.year-in-review">Year in review</span></p><h2>' + esc(y) + '</h2>', tiles = '';
     var trips = tripsIn(from, to), countries = {}, daysAway = 0;
     trips.forEach(function (t) {
       if (t.place && t.place.cc && t.place.cc !== 'NO') countries[t.place.cc] = t.place.country;
@@ -174,7 +174,7 @@
         return '<span title="' + esc(p[0] + ': ' + kr(p[1])) + '"><i style="height:' + Math.max(2, Math.round(p[1] / maxM * 100)) + '%"></i><small>' + esc(p[0].charAt(0)) + '</small></span>';
       }).join('') + '</div><p class="muted">Biggest month: <b>' + esc(top[0]) + '</b> · ' + kr(top[1]) + '</p>');
     }
-    if (M.cats.length) html += section('Where the money went', 'pie-chart', bars(M.cats.slice(0, 6).map(function (c) { return [CATNAME[c], M.by[c], kr(M.by[c])]; }), M.by[M.cats[0]]));
+    if (M.cats.length) html += section(I18N.k('ui.where-the-money-went', 'Where the money went'), 'pie-chart', bars(M.cats.slice(0, 6).map(function (c) { return [CATNAME[c], M.by[c], kr(M.by[c])]; }), M.by[M.cats[0]]));
     if (trips.length) html += section('Trips', 'suitcase-lg', '<ul class="rv-ahead">' + trips.map(function (t) { return '<li><i class="bi bi-geo-alt"></i>' + esc(t.name) + (t.place ? ' · ' + esc(t.place.country) : '') + ' · ' + esc(new Date(t.start + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</li>'; }).join('') + '</ul>');
     var hb = habitsIn(from, to < dkey(new Date()) ? to : dkey(new Date()));
     if (hb.length) html += section('Habits', 'activity', bars(hb.map(function (h) { return [h.name, h.met, h.met + ' of ' + h.weeks + ' weeks · ' + h.ticks + ' times', '#d55181']; }), Math.max.apply(null, hb.map(function (h) { return h.weeks; }))));
@@ -190,8 +190,8 @@
   var bg = document.createElement('div');
   bg.className = 'sr-bg rv-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="sr-box rv-box" role="dialog" aria-modal="true" aria-label="Review" data-t-aria-label="ui.review"><div class="rv-top">' +
-    '<div class="seg" id="rvKind"><button type="button" data-rk="month" data-t="ui.month">Month</button><button type="button" data-rk="year" data-t="ui.year">Year</button></div>' +
-    '<select id="rvPick" aria-label="Which"></select><button type="button" class="text-btn" data-rvclose data-t="ui.close">Close</button></div><div class="rv-body" id="rvBody"></div></div>';
+    '<div class="seg" id="rvKind"><button type="button" data-rk="month" data-t="ui.month"><span data-t="ui.month">Month</span></button><button type="button" data-rk="year" data-t="ui.year"><span data-t="ui.year">Year</span></button></div>' +
+    '<select id="rvPick" aria-label="Which"></select><button type="button" class="text-btn" data-rvclose data-t="ui.close"><span data-t="ui.close">Close</span></button></div><div class="rv-body" id="rvBody"></div></div>';
   document.body.appendChild(bg);
   var kind = 'month', key = '';
   function years() {

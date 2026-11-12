@@ -62,7 +62,7 @@
   };
   function cfg(k) { var c = Fe.tools()[k]; return Object.assign({}, DEF[k], c && typeof c === 'object' ? c : {}); }
   function setCfg(k, patch) { var t = Fe.tools(); t[k] = Object.assign({}, t[k] || {}, patch); Fe.saveTools(t); }
-  function gear(page) { return '<a class="text-btn" href="/cmd/?settings=' + page + '" aria-label="Settings"><i class="bi bi-sliders"></i> Settings</a>'; }
+  function gear(page) { return '<a class="text-btn" href="/cmd/?settings=' + page + '" aria-label="Settings"><i class="bi bi-sliders"></i> <span data-t="ui.settings">Settings</span></a>'; }
 
   /* a small centred sheet (pick a kind, manage a list) */
   function dialog(html, onClick) {
@@ -131,7 +131,7 @@
     headExtra: function () { return gear('house'); },
     empty: 'Things that need doing every few months – filters, drains, smoke alarms. You get a nudge when they’re due.',
     sort: function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; },
-    above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-hmseed><i class="bi bi-magic"></i> Pick from the usual ones</button>'; },
+    above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-hmseed><i class="bi bi-magic"></i> <span data-t="ui.pick-from-the-usual-ones">Pick from the usual ones</span></button>'; },
     row: function (it) {
       var n = daysTo(nextDue(it)), c = n < 0 ? RED : n <= 14 ? AMBER : GREEN;
       return { icon: hmIcon(it.title), color: c, title: it.title, sub: esc(everyName(it.every) + (isKey(it.last) ? ' · last ' + fmt(it.last) : ' · not done yet')),
@@ -140,7 +140,7 @@
     detail: function (it) {
       return (it.notes ? '<p class="kit-notes">' + esc(it.notes) + '</p>' : '') +
         '<p class="muted hl-small">Next time: ' + esc(fmt(nextDue(it), { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
-        '<div class="hl-acts"><button type="button" class="pill-btn" data-hmdone="' + esc(it.id) + '"><i class="bi bi-check2"></i> Done today</button></div>';
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-hmdone="' + esc(it.id) + '"><i class="bi bi-check2"></i> <span data-t="ui.done-today">Done today</span></button></div>';
     },
     onClick: function (e) { var b = e.target.closest('[data-hmdone]'); if (b) hmDone(b.dataset.hmdone); }
   });
@@ -149,7 +149,7 @@
     var have = Fe.list('hmaint').map(function (x) { return x.title; });
     var opts = USUAL.filter(function (u) { return have.indexOf(u[0]) < 0; }).map(function (u) { return { n: u[0], s: everyName(u[1]), i: u[3], c: GREEN, u: u }; });
     opts.push({ n: 'Something else', s: 'Write your own', i: 'pencil', c: '#7a8794' });
-    picker('tools', 'New upkeep task', 'Pick one – it comes with how often and how to', opts, function (o) {
+    picker('tools', I18N.k('ui.new-upkeep-task', 'New upkeep task'), I18N.k('ui.pick-one-it-comes-with-how-often-and-how', 'Pick one – it comes with how often and how to'), opts, function (o) {
       K.edit(o.u ? withDefaults(HM, { title: o.u[0], every: o.u[1], notes: o.u[2] }) : HM, null);
     });
   }
@@ -216,7 +216,7 @@
     var have = Fe.list('hbins').map(function (x) { return x.title; });
     var opts = BIN_TYPES.filter(function (b) { return have.indexOf(b[0]) < 0; }).map(function (b) { return { n: b[0], i: b[2], c: b[1] }; });
     opts.push({ n: 'Another bin', s: 'Write your own', i: 'pencil', c: '#7a8794' });
-    picker('trash3', 'New bin', 'Which one?', opts, function (o) { K.edit(o.s ? BINS : withDefaults(BINS, { title: o.n }), null); });
+    picker('trash3', I18N.k('ui.new-bin', 'New bin'), I18N.k('ui.which-one', 'Which one?'), opts, function (o) { K.edit(o.s ? BINS : withDefaults(BINS, { title: o.n }), null); });
     return false;
   });
   window.BriefExtra.push(function (add, now) {
@@ -224,8 +224,8 @@
     var c = cfg('housecfg'), tk = today(), tm = addDays(tk, 1), h = now.getHours();
     var tonight = Fe.list('hbins').filter(function (b) { return b.night !== false && nextPickup(b, tm) === tm; }).map(function (b) { return b.title; });
     var tod = Fe.list('hbins').filter(function (b) { return nextPickup(b) === tk; }).map(function (b) { return b.title; });
-    if (tonight.length && h >= (+c.binHour || 14)) add(17, 'trash3', AMBER, 'Put out ' + tonight.join(' + ') + ' tonight', 'Picked up tomorrow', '/cmd/house/');
-    else if (tod.length && c.binMorning && h < 10) add(19, 'trash3', AMBER, tod.join(' + ') + ' is picked up today', 'Out by 7 if it isn’t already', '/cmd/house/');
+    if (tonight.length && h >= (+c.binHour || 14)) add(17, 'trash3', AMBER, 'Put out ' + tonight.join(' + ') + ' tonight', I18N.k('ui.picked-up-tomorrow', 'Picked up tomorrow'), '/cmd/house/');
+    else if (tod.length && c.binMorning && h < 10) add(19, 'trash3', AMBER, tod.join(' + ') + ' is picked up today', I18N.k('ui.out-by-7-if-it-isnt-already', 'Out by 7 if it isn’t already'), '/cmd/house/');
   });
 
   /* ---- meter readings ---- */
@@ -249,8 +249,8 @@
     summary: function (l) {
       var s = meterStats(l); if (s.r.length < 2) return s.r.length ? '<p class="muted hl-small" data-t="ui.add-one-more-reading-to-see-how-much-you">Add one more reading to see how much you use.</p>' : '';
       var pr = +cfg('housecfg').price || 0;
-      return '<div class="kit-tiles">' + tile('Per day, lately', nf1.format(s.last) + ' <small>kWh</small>') + tile('Per day, avg', nf1.format(s.avg) + ' <small>kWh</small>', 'last 12 months') +
-        (pr ? tile('Per month', '≈ ' + nf.format(s.avg * 30.4 * pr / 100) + ' <small>kr</small>', 'at ' + nf.format(pr) + ' øre/kWh') : tile('Per year', nf.format(s.avg * 365) + ' <small>kWh</small>', 'at that pace')) + '</div>';
+      return '<div class="kit-tiles">' + tile(I18N.k('ui.per-day-lately', 'Per day, lately'), nf1.format(s.last) + ' <small>kWh</small>') + tile(I18N.k('ui.per-day-avg', 'Per day, avg'), nf1.format(s.avg) + ' <small>kWh</small>', 'last 12 months') +
+        (pr ? tile(I18N.k('ui.per-month', 'Per month'), '≈ ' + nf.format(s.avg * 30.4 * pr / 100) + ' <small>kr</small>', 'at ' + nf.format(pr) + ' øre/kWh') : tile(I18N.k('ui.per-year', 'Per year'), nf.format(s.avg * 365) + ' <small>kWh</small>', 'at that pace')) + '</div>';
     },
     row: function (x) {
       var s = meterStats(Fe.list('hmeter')), p = s.prev(x), d = p ? s.per(p, x) : null;
@@ -262,7 +262,7 @@
     if (!on('house') || !cfg('housecfg').meterNudge) return;
     var r = meterStats(Fe.list('hmeter')).r; if (!r.length) return;
     var n = -daysTo(r[r.length - 1].date);
-    if (n >= 28 && new Date().getDate() <= 3) add(70, 'speedometer2', AMBER, 'Read the electricity meter', 'Last reading ' + ago(r[r.length - 1].date), '/cmd/house/');
+    if (n >= 28 && new Date().getDate() <= 3) add(70, 'speedometer2', AMBER, I18N.k('ui.read-the-electricity-meter', 'Read the electricity meter'), 'Last reading ' + ago(r[r.length - 1].date), '/cmd/house/');
   });
   window.CommandExtra.push(function () { return on('house') ? [{ i: 'speedometer2', t: 'New meter reading', s: 'House', run: function () { if ($t('hmeter') && K) K.edit(METER, null); else location.href = '/cmd/house/#hmeter'; }, x: 'meter strøm måler kwh avlesning' }] : []; });
 
@@ -270,13 +270,13 @@
   var LINE = function (k, label, o) { return Object.assign({ k: k, label: label }, o || {}); };
   var NOTES = LINE('notes', 'Notes', { type: 'textarea', rows: 3 });
   var INFO = {
-    wifi: { n: 'Wi-Fi', s: 'Network and password', i: 'wifi', c: BLUE, f: [LINE('title', 'Name', { type: 'title', def: 'Wi-Fi', req: true }), LINE('ssid', 'Network name', { ph: 'Lundberg-5G' }), LINE('pass', 'Password', { secret: true }), LINE('guest', 'Guest network', { ph: 'Name / password' }), LINE('router', 'Router', { ph: 'Where it is, admin login' }), NOTES] },
-    water: { n: 'Water & stopcock', s: 'Where to turn the water off', i: 'droplet', c: '#0891b2', f: [LINE('title', 'Name', { type: 'title', def: 'Stopcock (stoppekran)', req: true }), LINE('where', 'Where it is', { ph: 'Under the kitchen sink, behind the panel' }), LINE('heater', 'Water heater', { ph: 'Size, year, where' }), NOTES] },
-    power: { n: 'Fuse box & power', s: 'Fuses, meter, supplier', i: 'lightning-charge', c: AMBER, f: [LINE('title', 'Name', { type: 'title', def: 'Fuse box (sikringsskap)', req: true }), LINE('where', 'Where it is', { ph: 'Hallway cupboard' }), LINE('fuses', 'Which fuse is what', { type: 'textarea', rows: 3, ph: '1 Kitchen, 2 Bathroom floor heating …' }), LINE('supplier', 'Power company'), LINE('meter', 'Meter / målepunkt-ID', { secret: false }), NOTES] },
+    wifi: { n: 'Wi-Fi', s: 'Network and password', i: 'wifi', c: BLUE, f: [LINE('title', 'Name', { type: 'title', def: 'Wi-Fi', req: true }), LINE('ssid', I18N.k('ui.network-name', 'Network name'), { ph: 'Lundberg-5G' }), LINE('pass', 'Password', { secret: true }), LINE('guest', I18N.k('ui.guest-network', 'Guest network'), { ph: 'Name / password' }), LINE('router', 'Router', { ph: 'Where it is, admin login' }), NOTES] },
+    water: { n: 'Water & stopcock', s: 'Where to turn the water off', i: 'droplet', c: '#0891b2', f: [LINE('title', 'Name', { type: 'title', def: 'Stopcock (stoppekran)', req: true }), LINE('where', I18N.k('ui.where-it-is', 'Where it is'), { ph: 'Under the kitchen sink, behind the panel' }), LINE('heater', I18N.k('ui.water-heater', 'Water heater'), { ph: 'Size, year, where' }), NOTES] },
+    power: { n: 'Fuse box & power', s: 'Fuses, meter, supplier', i: 'lightning-charge', c: AMBER, f: [LINE('title', 'Name', { type: 'title', def: 'Fuse box (sikringsskap)', req: true }), LINE('where', I18N.k('ui.where-it-is', 'Where it is'), { ph: 'Hallway cupboard' }), LINE('fuses', I18N.k('ui.which-fuse-is-what', 'Which fuse is what'), { type: 'textarea', rows: 3, ph: '1 Kitchen, 2 Bathroom floor heating …' }), LINE('supplier', I18N.k('ui.power-company', 'Power company')), LINE('meter', I18N.k('ui.meter-m-lepunkt-id', 'Meter / målepunkt-ID'), { secret: false }), NOTES] },
     contact: { n: 'Contact', s: 'Landlord, plumber, the board (styret)', i: 'person-lines-fill', c: '#d55181', f: [LINE('title', 'Who', { type: 'title', ph: 'Landlord, plumber, styret …', req: true }), LINE('name', 'Name'), LINE('phone', 'Phone', { type: 'tel', ph: '+47' }), LINE('email', 'Email', { type: 'email' }), NOTES] },
-    appliance: { n: 'Appliance', s: 'Model, serial, warranty, manual', i: 'plug', c: '#8a6fdf', f: [LINE('title', 'What', { type: 'title', ph: 'Dishwasher, heat pump …', req: true }), LINE('model', 'Brand & model', { ph: 'Bosch SMV4HVX31E' }), LINE('serial', 'Serial number'), LINE('bought', 'Bought', { type: 'date' }), LINE('years', 'Complaint period', { type: 'select', options: [[2, '2 years'], [5, '5 years (things meant to last)']], def: 5 }), LINE('manual', 'Manual', { type: 'url', ph: 'https://' }), NOTES] },
-    paint: { n: 'Paint & materials', s: 'Colour codes, tiles, flooring', i: 'palette', c: '#e8743b', f: [LINE('title', 'Where', { type: 'title', ph: 'Living room walls', req: true }), LINE('product', 'Brand & colour', { ph: 'Jotun Lady Pure Color – 1024 Ullhvit' }), LINE('finish', 'Gloss / type', { ph: 'Matt 5' }), LINE('amount', 'Amount used', { ph: '2 × 2,7 l' }), NOTES] },
-    code: { n: 'Codes & keys', s: 'Door, alarm, storage room', i: 'key', c: '#7a8794', f: [LINE('title', 'What', { type: 'title', ph: 'Door code, alarm, bike room …', req: true }), LINE('code', 'Code', { secret: true }), LINE('keys', 'Who has keys'), NOTES] },
+    appliance: { n: 'Appliance', s: 'Model, serial, warranty, manual', i: 'plug', c: '#8a6fdf', f: [LINE('title', 'What', { type: 'title', ph: 'Dishwasher, heat pump …', req: true }), LINE('model', I18N.k('ui.brand-model', 'Brand & model'), { ph: 'Bosch SMV4HVX31E' }), LINE('serial', I18N.k('ui.serial-number', 'Serial number')), LINE('bought', 'Bought', { type: 'date' }), LINE('years', I18N.k('ui.complaint-period', 'Complaint period'), { type: 'select', options: [[2, '2 years'], [5, '5 years (things meant to last)']], def: 5 }), LINE('manual', 'Manual', { type: 'url', ph: 'https://' }), NOTES] },
+    paint: { n: 'Paint & materials', s: 'Colour codes, tiles, flooring', i: 'palette', c: '#e8743b', f: [LINE('title', 'Where', { type: 'title', ph: 'Living room walls', req: true }), LINE('product', I18N.k('ui.brand-colour', 'Brand & colour'), { ph: 'Jotun Lady Pure Color – 1024 Ullhvit' }), LINE('finish', I18N.k('ui.gloss-type', 'Gloss / type'), { ph: 'Matt 5' }), LINE('amount', I18N.k('ui.amount-used', 'Amount used'), { ph: '2 × 2,7 l' }), NOTES] },
+    code: { n: 'Codes & keys', s: 'Door, alarm, storage room', i: 'key', c: '#7a8794', f: [LINE('title', 'What', { type: 'title', ph: 'Door code, alarm, bike room …', req: true }), LINE('code', 'Code', { secret: true }), LINE('keys', I18N.k('ui.who-has-keys', 'Who has keys')), NOTES] },
     other: { n: 'Something else', s: 'A free note', i: 'info-circle', c: GREEN, f: [LINE('title', 'What', { type: 'title', req: true }), LINE('text', 'Details', { type: 'textarea', rows: 4 })] }
   };
   function infoCfg(kind) {
@@ -298,16 +298,16 @@
     INFO[k].f.forEach(function (f) {
       var v = x[f.k]; if (f.k === 'title' || f.k === 'notes' || v == null || v === '') return;
       var val = esc(f.type === 'select' ? ((f.options.filter(function (o) { return String(o[0]) === String(v); })[0] || [, v])[1]) : f.type === 'date' ? fmt(v, { day: 'numeric', month: 'long', year: 'numeric' }) : v), act = '';
-      if (f.secret) { val = '<span class="hl-secret" data-sec="' + esc(v) + '">••••••••</span>'; act = '<button type="button" class="text-btn" data-hlshow data-t="ui.show">Show</button>'; }
-      if (f.type === 'tel') act = '<a class="text-btn" href="tel:' + esc(String(v).replace(/[^\d+]/g, '')) + '"><i class="bi bi-telephone"></i> Call</a>';
+      if (f.secret) { val = '<span class="hl-secret" data-sec="' + esc(v) + '">••••••••</span>'; act = '<button type="button" class="text-btn" data-hlshow data-t="ui.show"><span data-t="ui.show">Show</span></button>'; }
+      if (f.type === 'tel') act = '<a class="text-btn" href="tel:' + esc(String(v).replace(/[^\d+]/g, '')) + '"><i class="bi bi-telephone"></i> <span data-t="ui.call">Call</span></a>';
       if (f.type === 'email') act = '<a class="text-btn" href="mailto:' + esc(v) + '"><i class="bi bi-envelope"></i></a>';
-      if (f.type === 'url' && /^https?:\/\//.test(v)) { val = 'Link'; act = '<a class="text-btn" href="' + esc(v) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a>'; }
+      if (f.type === 'url' && /^https?:\/\//.test(v)) { val = 'Link'; act = '<a class="text-btn" href="' + esc(v) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <span data-t="ui.open">Open</span></a>'; }
       if (f.type !== 'url' && f.type !== 'tel' && f.type !== 'email' && f.type !== 'select' && f.type !== 'date' && f.type !== 'textarea') act += '<button type="button" class="icon-btn sm" data-hlcopy="' + esc(v) + '" aria-label="Copy"><i class="bi bi-clipboard"></i></button>';
       rows += '<div class="hl-kv"><span>' + esc(f.label) + '</span><b class="' + (f.type === 'textarea' ? 'hl-pre' : '') + '">' + val + '</b><span class="hl-kva">' + act + '</span></div>';
     });
     if (k === 'appliance' && isKey(x.bought)) {
       var end = addMonths(x.bought, 12 * (+x.years || 5)), n = daysTo(end);
-      rows += '<div class="hl-kv"><span data-t="ui.complaint-period">Complaint period</span><b>' + (n >= 0 ? 'Until ' + esc(fmt(end, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Ended ' + esc(fmt(end, { month: 'short', year: 'numeric' }))) + '</b><span></span></div>';
+      rows += '<div class="hl-kv"><span data-t="ui.complaint-period"><span data-t="ui.complaint-period">Complaint period</span></span><b>' + (n >= 0 ? 'Until ' + esc(fmt(end, { day: 'numeric', month: 'short', year: 'numeric' })) : 'Ended ' + esc(fmt(end, { month: 'short', year: 'numeric' }))) + '</b><span></span></div>';
     }
     return (rows ? '<div class="hl-kvs">' + rows + '</div>' : '') + (x.notes ? '<p class="kit-notes hl-pre">' + esc(x.notes) + '</p>' : '');
   }
@@ -328,7 +328,7 @@
     var b;
     if (e.target.closest('[data-kit-add]')) {
       var ks = Object.keys(INFO);
-      picker('info-circle', 'Add to Good to know', 'What is it?', ks.map(function (k) { return { n: INFO[k].n, s: INFO[k].s, i: INFO[k].i, c: INFO[k].c, k: k }; }), function (o) { K.edit(infoCfg(o.k), null); });
+      picker('info-circle', I18N.k('ui.add-to-good-to-know', 'Add to Good to know'), I18N.k('ui.what-is-it', 'What is it?'), ks.map(function (k) { return { n: INFO[k].n, s: INFO[k].s, i: INFO[k].i, c: INFO[k].c, k: k }; }), function (o) { K.edit(infoCfg(o.k), null); });
       return false;
     }
     if ((b = e.target.closest('[data-kit-edit]'))) { var x = byId('hinfo', b.dataset.kitEdit); if (x) K.edit(infoCfg(x.kind), x); return false; }
@@ -338,10 +338,10 @@
     var nb = nextBins(), up = Fe.list('hmaint'), over = up.filter(function (x) { return daysTo(nextDue(x)) < 0; });
     var nx = up.slice().sort(function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; })[0];
     var ms = meterStats(Fe.list('hmeter')), pr = +cfg('housecfg').price || 0, info = Fe.list('hinfo');
-    return heroTile('trash3', 'Next bin', nb ? esc(cap(inDays(daysTo(nb.k)))) : '–', nb ? esc(nb.names.join(' + ')) : 'Add your bins', '#hbins') +
+    return heroTile('trash3', I18N.k('ui.next-bin', 'Next bin'), nb ? esc(cap(inDays(daysTo(nb.k)))) : '–', nb ? esc(nb.names.join(' + ')) : 'Add your bins', '#hbins') +
       heroTile('tools', 'Upkeep', over.length ? '<span class="neg">' + over.length + ' overdue</span>' : nx ? esc(cap(inDays(daysTo(nextDue(nx))))) : '–', nx ? esc(nx.title) : 'Nothing added yet', '#hmaint') +
       heroTile('lightning-charge', 'Power', ms.avg != null ? nf1.format(ms.last != null ? ms.last : ms.avg) + ' <small>kWh/day</small>' : '–', ms.avg != null ? (pr ? '≈ ' + nf.format(ms.avg * 30.4 * pr / 100) + ' kr a month' : nf.format(ms.avg * 365) + ' kWh a year') : 'Add two readings', '#hmeter') +
-      heroTile('info-circle', 'Good to know', info.length, info.length ? esc(info.slice(0, 3).map(function (x) { return x.title; }).join(', ')) : 'Wi-Fi, codes, contacts', '#hinfo');
+      heroTile('info-circle', I18N.k('ui.good-to-know', 'Good to know'), info.length, info.length ? esc(info.slice(0, 3).map(function (x) { return x.title; }).join(', ')) : 'Wi-Fi, codes, contacts', '#hinfo');
   };
 
   /* ============================== PEOPLE ============================== */
@@ -410,18 +410,18 @@
       var b = bday(p), o = overdue(p), subs = [];
       if (b) subs.push('Birthday ' + fmt(b.next) + (b.age ? ' (' + b.age + ')' : ''));
       if (isKey(p.last)) subs.push('talked ' + ago(p.last));
-      var right = b && b.n <= 14 ? chip('<i class="bi bi-balloon"></i> ' + cap(inDays(b.n)), '#d55181') : o != null ? chip('Catch up', AMBER) : '';
+      var right = b && b.n <= 14 ? chip('<i class="bi bi-balloon"></i> ' + cap(inDays(b.n)), '#d55181') : o != null ? chip(I18N.k('ui.catch-up', 'Catch up'), AMBER) : '';
       return { icon: 'person', color: REL_C[p.rel] || BLUE, title: p.name, sub: esc(subs.join(' · ')), right: right };
     },
     detail: function (p) {
       var tel = String(p.phone || '').replace(/[^\d+]/g, ''), b = bday(p);
       return (b ? '<p class="hl-small muted"><i class="bi bi-balloon"></i> ' + esc(fmt(b.next, { weekday: 'long', day: 'numeric', month: 'long' })) + (b.age ? ' – turns ' + b.age : '') + ' · ' + esc(inDays(b.n)) + '</p>' : '') +
         (window.PeoplePlus ? window.PeoplePlus.days(p) : '') +
-        (p.gifts ? '<div class="hl-gifts"><b><i class="bi bi-gift"></i> Gift ideas</b><ul>' + String(p.gifts).split('\n').filter(Boolean).map(function (g, i) { return '<li><span data-noi18n>' + esc(g) + '</span>' + (window.PeoplePlus ? ' <button type="button" class="text-btn pp5-gave" data-ppgave="' + esc(p.id) + '|' + i + '">Gave it</button>' : '') + '</li>'; }).join('') + '</ul></div>' : '') +
+        (p.gifts ? '<div class="hl-gifts"><b><i class="bi bi-gift"></i> <span data-t="ui.gift-ideas">Gift ideas</span></b><ul>' + String(p.gifts).split('\n').filter(Boolean).map(function (g, i) { return '<li><span data-noi18n>' + esc(g) + '</span>' + (window.PeoplePlus ? ' <button type="button" class="text-btn pp5-gave" data-ppgave="' + esc(p.id) + '|' + i + '"><span data-t="ui.gave-it">Gave it</span></button>' : '') + '</li>'; }).join('') + '</ul></div>' : '') +
         (p.notes ? '<p class="kit-notes hl-pre">' + esc(p.notes) + '</p>' : '') +
         (window.PeoplePlus ? window.PeoplePlus.detail(p) : '') +
-        '<div class="hl-acts"><button type="button" class="pill-btn" data-pptalk="' + esc(p.id) + '"><i class="bi bi-chat-heart"></i> Talked today</button>' +
-        (tel ? '<a class="text-btn" href="tel:' + esc(tel) + '"><i class="bi bi-telephone"></i> Call</a><a class="text-btn" href="sms:' + esc(tel) + '"><i class="bi bi-chat"></i> Message</a>' : '') + '</div>';
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-pptalk="' + esc(p.id) + '"><i class="bi bi-chat-heart"></i> <span data-t="ui.talked-today">Talked today</span></button>' +
+        (tel ? '<a class="text-btn" href="tel:' + esc(tel) + '"><i class="bi bi-telephone"></i> <span data-t="ui.call">Call</span></a><a class="text-btn" href="sms:' + esc(tel) + '"><i class="bi bi-chat"></i> <span data-t="ui.message">Message</span></a>' : '') + '</div>';
     },
     onClick: function (e) { var b = e.target.closest('[data-pptalk]'); if (b) talked(b.dataset.pptalk, true); }
   });
@@ -433,7 +433,7 @@
       var l = Fe.list('people').map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0] && x[0].n <= 120; });
       if (window.PeoplePlus) l = l.concat(window.PeoplePlus.upcoming(120));          // name days and anniversaries
       l = l.sort(function (a, b) { return a[0].n - b[0].n || (a[0].kind ? 1 : 0) - (b[0].kind ? 1 : 0); }).slice(0, 8);
-      el.innerHTML = '<section class="card kit-card" id="pdates"><div class="card-head"><h2><i class="bi bi-balloon"></i> Coming up</h2></div>' +
+      el.innerHTML = '<section class="card kit-card" id="pdates"><div class="card-head"><h2><i class="bi bi-balloon"></i> <span data-t="ui.coming-up">Coming up</span></h2></div>' +
         (l.length ? '<ul class="hl-dates">' + l.map(function (x) {
           var b = x[0], d = fromKey(b.next);
           return '<li' + (b.n <= 7 ? ' class="soon"' : '') + '><span class="hl-day"><b>' + d.getDate() + '</b><small>' + esc(d.toLocaleDateString('en-GB', { month: 'short' })) + '</small></span>' +
@@ -461,9 +461,9 @@
   heroes.people = function () {
     var l = Fe.list('people'), bs = l.map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0].n - b[0].n; });
     var due = l.filter(function (p) { return overdue(p) != null; }), m = new Date().getMonth() + 1, mon = bs.filter(function (x) { return x[0].m === m; });
-    return heroTile('balloon', 'Next birthday', bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', '#d55181') +
-      heroTile('chat-heart', 'Catch up', due.length ? '<span class="neg">' + due.length + '</span>' : '0', due.length ? esc(due.slice(0, 3).map(function (p) { return p.name; }).join(', ')) : 'All in touch', '#people') +
-      heroTile('calendar-heart', 'This month', mon.length, mon.length ? esc(mon.map(function (x) { return x[1].name; }).join(', ')) : 'No birthdays', '#pdates') +
+    return heroTile('balloon', I18N.k('ui.next-birthday', 'Next birthday'), bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', '#d55181') +
+      heroTile('chat-heart', I18N.k('ui.catch-up', 'Catch up'), due.length ? '<span class="neg">' + due.length + '</span>' : '0', due.length ? esc(due.slice(0, 3).map(function (p) { return p.name; }).join(', ')) : 'All in touch', '#people') +
+      heroTile('calendar-heart', I18N.k('ui.this-month', 'This month'), mon.length, mon.length ? esc(mon.map(function (x) { return x[1].name; }).join(', ')) : 'No birthdays', '#pdates') +
       heroTile('people', 'People', l.length, l.filter(function (p) { return +p.every; }).length + ' to keep in touch with', '#people');
   };
 
@@ -507,7 +507,7 @@
     if (ML.voting) {
       var opts = ''; for (var i = 0; i < 7; i++) { var k = addDays(today(), i); opts += '<option value="' + k + '"' + (meals()[k] ? '' : '') + '>' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })) + (meals()[k] ? ' (planned)' : '') + '</option>'; }
       form = '<form class="hl-vform" data-vtform><select name="d" aria-label="Which day">' + opts + '</select>' + [1, 2, 3].map(function (n) { return '<input name="o' + n + '" list="hlRecipes" maxlength="80" placeholder="' + (n === 3 ? 'Suggestion 3 (optional)' : 'Suggestion ' + n) + '" autocomplete="off"' + (n < 3 ? ' required' : '') + '>'; }).join('') +
-        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
+        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
     }
     return (h ? '<ul class="hl-votes">' + h + '</ul>' : '') + form;
   }
@@ -523,7 +523,7 @@
       var planned = days.filter(function (k) { return m[k]; }), withR = planned.filter(function (k) { return recipeFor(m[k]); });
       el.innerHTML = '<section class="card kit-card" id="meals"><div class="card-head"><h2><i class="bi bi-calendar-week"></i> Dinners · week ' + weekNo(m0) + '</h2>' +
         '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week" data-t-aria-label="ui.previous-week"><i class="bi bi-chevron-left"></i></button>' +
-        (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0" data-t="ui.this-week">This week</button>' : '') +
+        (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0" data-t="ui.this-week"><span data-t="ui.this-week">This week</span></button>' : '') +
         '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week" data-t-aria-label="ui.next-week"><i class="bi bi-chevron-right"></i></button></div></div>' +
         voteHtml() + '<ul class="hl-meals">' + days.map(function (k) {
           var d = fromKey(k), r = recipeFor(m[k]);
@@ -532,7 +532,7 @@
             (r ? '<button type="button" class="icon-btn sm" data-mlrec="' + esc(r.id) + '" aria-label="Open the recipe"><i class="bi bi-journal-text"></i></button>' : '<span class="hl-sp"></span>') + '</li>';
         }).join('') + '</ul><datalist id="hlRecipes">' + rs.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') + '</datalist>' +
         '<div class="hl-acts">' + (withR.length ? '<button type="button" class="pill-btn" data-mlshop><i class="bi bi-cart-plus"></i> Ingredients to the shopping list</button>' : '') +
-        (rs.length && planned.length < 7 ? '<button type="button" class="text-btn" data-mlfill><i class="bi bi-shuffle"></i> Fill the empty days</button>' : '') +
+        (rs.length && planned.length < 7 ? '<button type="button" class="text-btn" data-mlfill><i class="bi bi-shuffle"></i> <span data-t="ui.fill-the-empty-days">Fill the empty days</span></button>' : '') +
         (votePartner() && !ML.voting ? '<button type="button" class="text-btn" data-vtnew><i class="bi bi-hand-index-thumb"></i> Let ' + esc(votePartner()) + ' choose</button>' : '') +
         (planned.length ? '<span class="muted hl-small">' + planned.length + ' of 7 planned</span>' : '') + '</div></section>';
     }
@@ -654,7 +654,7 @@
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
         '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
-        (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> Clear done</button>' : '') + '</div></div>' +
+        (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> <span data-t="ui.clear-done">Clear done</span></button>' : '') + '</div></div>' +
         '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" data-t-placeholder="ui.add-milk-eggs-coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
         (l.length ? '<ul class="hl-shop">' + body + '</ul>'
           : '<p class="empty kit-empty" data-t="ui.nothing-to-buy-add-things-here-or-send-a">Nothing to buy. Add things here, or send a week of recipes over from the dinners.</p>') + '</section>';
@@ -680,7 +680,7 @@
       if ((b = e.target.closest('[data-shdonetog]'))) { shDoneOpen = !shDoneOpen; draw(); return; }
       if ((b = e.target.closest('[data-shaisle]'))) {
         var it = list().filter(function (x) { return x.id === b.dataset.shaisle; })[0]; if (!it) return;
-        picker('signpost', it.text, 'Which section is it in?', AISLES.map(function (a) { return { n: a[1], i: a[2], c: a[3], k: a[0] }; }), function (o) {
+        picker('signpost', it.text, I18N.k('ui.which-section-is-it-in', 'Which section is it in?'), AISLES.map(function (a) { return { n: a[1], i: a[2], c: a[3], k: a[0] }; }), function (o) {
           var t = Fe.tools(); t.shopcat = t.shopcat || {}; t.shopcat[String(it.text || '').toLowerCase().trim()] = o.k; Fe.saveTools(t);
           toast('<i class="bi bi-signpost"></i> ' + esc(it.text) + ' → ' + esc(o.n) + ' – remembered');
         });
@@ -723,9 +723,9 @@
       var ing = ingredients(r), link = /^https?:\/\//.test(r.link || '') ? r.link : '';
       return (window.FoodPlus ? window.FoodPlus.ingrBlock(r) : ing.length ? '<ul class="hl-ingr">' + ing.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
         (r.steps ? '<p class="kit-notes hl-pre">' + esc(r.steps) + '</p>' : '') +
-        '<div class="hl-acts"><button type="button" class="pill-btn" data-rctoday="' + esc(r.id) + '"><i class="bi bi-calendar-check"></i> Dinner today</button>' +
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-rctoday="' + esc(r.id) + '"><i class="bi bi-calendar-check"></i> <span data-t="ui.dinner-today">Dinner today</span></button>' +
         (ing.length ? '<button type="button" class="text-btn" data-rcshop="' + esc(r.id) + '"><i class="bi bi-cart-plus"></i> To the list</button>' : '') +
-        (link ? '<a class="text-btn" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open</a>' : '') + '</div>';
+        (link ? '<a class="text-btn" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <span data-t="ui.open">Open</span></a>' : '') + '</div>';
     },
     onClick: function (e) {
       var b, r;
@@ -741,14 +741,14 @@
     if (m && h < 20) {
       var r = recipeFor(m);
       add(h >= 14 ? 34 : 64, 'egg-fried', AMBER, 'Dinner: ' + m, r && r.mins ? r.mins + ' min' + (shop ? ' · ' + shop + ' on the shopping list' : '') : shop ? shop + ' on the shopping list' : 'Planned for tonight', '/cmd/food/');
-    } else if (!m && fc.nudge && h >= (+fc.nudgeHour || 13) && h < 19) add(56, 'egg-fried', '#7a8794', 'What’s for dinner?', 'Nothing planned tonight' + (shop ? ' · ' + shop + ' on the shopping list' : ''), '/cmd/food/');
+    } else if (!m && fc.nudge && h >= (+fc.nudgeHour || 13) && h < 19) add(56, 'egg-fried', '#7a8794', I18N.k('ui.whats-for-dinner', 'What’s for dinner?'), 'Nothing planned tonight' + (shop ? ' · ' + shop + ' on the shopping list' : ''), '/cmd/food/');
   });
   heroes.food = function () {
     var m = meals(), tk = today(), m0 = monday(0), n = 0, i; for (i = 0; i < 7; i++) if (m[addDays(m0, i)]) n++;
     var shop = (Fe.tools().shop || []).filter(function (x) { return !x.done; }), r = recipeFor(m[tk]);
     return heroTile('egg-fried', 'Tonight', m[tk] ? esc(m[tk]) : '–', m[tk] ? (r && r.mins ? r.mins + ' min' : 'Planned') : 'Nothing planned', '#meals', AMBER) +
-      heroTile('calendar-week', 'This week', n + ' <small>/ 7</small>', 'dinners planned', '#meals') +
-      heroTile('cart3', 'Shopping list', shop.length, shop.length ? esc(shop.slice(0, 3).map(function (x) { return x.text; }).join(', ')) : 'Nothing to buy', '#shop') +
+      heroTile('calendar-week', I18N.k('ui.this-week', 'This week'), n + ' <small>/ 7</small>', 'dinners planned', '#meals') +
+      heroTile('cart3', I18N.k('ui.shopping-list', 'Shopping list'), shop.length, shop.length ? esc(shop.slice(0, 3).map(function (x) { return x.text; }).join(', ')) : 'Nothing to buy', '#shop') +
       heroTile('journal-text', 'Recipes', Fe.list('recipes').length, 'to plan from', '#recipes');
   };
   window.CommandExtra.push(function () { return on('food') ? [{ i: 'cart3', t: 'Shopping list', s: 'Food', run: function () { location.href = '/cmd/food/#shop'; }, x: 'handleliste shopping list groceries butikk' }] : []; });
@@ -804,13 +804,13 @@
       es.forEach(function (e) { tot += e.mins; per[e.pid] = (per[e.pid] || 0) + e.mins; var p = proj(e.pid); if (p.rate) val += e.mins / 60 * p.rate; });
       var todayM = ptList().filter(function (e) { return e.date === today(); }).reduce(function (s, e) { return s + e.mins; }, 0);
       var max = Math.max.apply(null, [1].concat(Object.keys(per).map(function (k) { return per[k]; })));
-      var h = '<section class="card kit-card" id="ptime"><div class="card-head"><h2><i class="bi bi-hourglass-split"></i> Time per client</h2><div class="head-actions">' +
-        gear('work') + '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> Client</button>' +
-        (live.length ? '<button type="button" class="text-btn" data-ptadd><i class="bi bi-clock-history"></i> Add time</button>' : '') + '</div></div>';
+      var h = '<section class="card kit-card" id="ptime"><div class="card-head"><h2><i class="bi bi-hourglass-split"></i> <span data-t="ui.time-per-client">Time per client</span></h2><div class="head-actions">' +
+        gear('work') + '<button type="button" class="text-btn" data-ptproj><i class="bi bi-plus-lg"></i> <span data-t="ui.client">Client</span></button>' +
+        (live.length ? '<button type="button" class="text-btn" data-ptadd><i class="bi bi-clock-history"></i> <span data-t="ui.add-time">Add time</span></button>' : '') + '</div></div>';
       if (!ps.length) h += '<p class="empty kit-empty" data-t="ui.add-a-client-or-project-then-start-a-tim">Add a client or project, then start a timer when you work on it – or add the hours afterwards. You get hours per week and a list to invoice from.</p>';
       else {
         h += r ? '<div class="pt-run" style="--c:' + proj(r.pid).color + '"><span class="pt-dot"></span><span class="pt-x"><b>' + esc(proj(r.pid).name) + '</b><small>Since ' + pad(new Date(r.start).getHours()) + ':' + pad(new Date(r.start).getMinutes()) + '</small></span>' +
-          '<span class="pt-clock" data-ptclock>' + clock(Date.now() - r.start) + '</span><button type="button" class="pill-btn danger-btn" data-ptstop><i class="bi bi-stop-fill"></i> Stop</button></div>' : '';
+          '<span class="pt-clock" data-ptclock>' + clock(Date.now() - r.start) + '</span><button type="button" class="pill-btn danger-btn" data-ptstop><i class="bi bi-stop-fill"></i> <span data-t="ui.stop">Stop</span></button></div>' : '';
         h += '<div class="pt-starts">' + live.map(function (p) {
           var cur = r && r.pid === p.id;
           return '<button type="button" class="pt-start' + (cur ? ' on' : '') + '" style="--c:' + p.color + '" data-ptgo="' + esc(p.id) + '"' + (cur ? ' disabled' : '') + '><i class="bi bi-' + (cur ? 'record-fill' : 'play-fill') + '"></i>' + esc(p.name) + '</button>';
@@ -829,10 +829,10 @@
             esc(fmt(e.date, { weekday: 'short', day: 'numeric', month: 'short' }) + (e.note ? ' · ' + e.note : '')) + '</small></span><span class="kit-r">' + hm(e.mins) + '</span></button></li>';
         }).join('') + '</ul>';
         if (es.length) h += '<div class="hl-acts"><button type="button" class="text-btn" data-ptcsv><i class="bi bi-filetype-csv"></i> Export ' + rg[2].toLowerCase() + ' (CSV)</button>' +
-          '<button type="button" class="text-btn" data-ptcopy><i class="bi bi-clipboard"></i> Copy summary</button></div>';
+          '<button type="button" class="text-btn" data-ptcopy><i class="bi bi-clipboard"></i> <span data-t="ui.copy-summary">Copy summary</span></button></div>';
         var arch = ps.filter(function (p) { return p.archived; }).length;
-        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage data-t="ui.edit-clients">Edit clients</button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
-          (window.WorkPlus && ptList().length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> Invoice draft</button>' : '') + '</p>';
+        h += '<p class="muted hl-small">' + (live.length ? '<button type="button" class="link-btn" data-ptmanage data-t="ui.edit-clients"><span data-t="ui.edit-clients">Edit clients</span></button>' : '') + (arch ? ' · ' + arch + ' finished' : '') +
+          (window.WorkPlus && ptList().length ? ' · <button type="button" class="link-btn" data-ptinv><i class="bi bi-receipt"></i> <span data-t="ui.invoice-draft">Invoice draft</span></button>' : '') + '</p>';
       }
       el.innerHTML = h + '</section>';
       clearInterval(tick);
@@ -867,9 +867,9 @@
     /* editing clients: one list in a small sheet, tap one to edit */
     function manage() {
       var ps = Fe.list('pproj');
-      dialog(dhead('briefcase', 'Clients and projects', 'Tap one to change its name, rate or mark it finished') + '<ul class="kit-list">' + ps.map(function (p) {
+      dialog(dhead('briefcase', I18N.k('ui.clients-and-projects', 'Clients and projects'), I18N.k('ui.tap-one-to-change-its-name-rate-or-mark', 'Tap one to change its name, rate or mark it finished')) + '<ul class="kit-list">' + ps.map(function (p) {
         return '<li class="kit-item"><button type="button" class="kit-main" data-pm="' + esc(p.id) + '"><span class="kit-ic" style="--c:' + p.color + '"><i class="bi bi-briefcase"></i></span><span class="kit-x"><b>' + esc(p.name) + '</b><small>' + esc([p.client, p.rate ? nf.format(p.rate) + ' kr/h' : '', p.archived ? 'finished' : ''].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-right"></i></button></li>';
-      }).join('') + '</ul><button type="button" class="pill-btn wide" data-hlclose data-t="ui.done">Done</button>', function (e, close) {
+      }).join('') + '</ul><button type="button" class="pill-btn wide" data-hlclose data-t="ui.done"><span data-t="ui.done">Done</span></button>', function (e, close) {
         var b = e.target.closest('[data-pm]'); if (b) { close(); K.edit(PROJ, byId('pproj', b.dataset.pm)); }
       });
     }
@@ -945,14 +945,14 @@
     function draw() {
       var ok = on('work'); el.hidden = !ok; if (!ok) { el.innerHTML = ''; return; }
       var k = addDays(today(), -RPT.day), r = workReport(k);
-      el.innerHTML = '<section class="card kit-card" id="wkday"><div class="card-head"><h2><i class="bi bi-clipboard-data"></i> Day report</h2><div class="head-actions">' +
-        '<div class="seg lp-seg"><button type="button" data-rpday="0" aria-pressed="' + (RPT.day === 0) + '">Today</button><button type="button" data-rpday="1" aria-pressed="' + (RPT.day === 1) + '">Yesterday</button></div></div></div>' +
+      el.innerHTML = '<section class="card kit-card" id="wkday"><div class="card-head"><h2><i class="bi bi-clipboard-data"></i> <span data-t="ui.day-report">Day report</span></h2><div class="head-actions">' +
+        '<div class="seg lp-seg"><button type="button" data-rpday="0" aria-pressed="' + (RPT.day === 0) + '"><span data-t="ui.today">Today</span></button><button type="button" data-rpday="1" aria-pressed="' + (RPT.day === 1) + '"><span data-t="ui.yesterday">Yesterday</span></button></div></div></div>' +
         (r.parts.length ? '<div class="wr-parts">' + r.parts.map(function (p) {
           return '<div class="wr-p"><h3><i class="bi bi-' + p.i + '"></i> ' + esc(p.h) + '</h3><ul>' + p.l.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></div>';
         }).join('') + '</div>' +
-        '<div class="hl-acts"><button type="button" class="pill-btn" data-wrcopy><i class="bi bi-clipboard"></i> Copy</button>' +
-        (navigator.share ? '<button type="button" class="text-btn" data-wrshare><i class="bi bi-share"></i> Share</button>' : '') +
-        '<a class="text-btn" href="mailto:?subject=' + encodeURIComponent(r.title) + '&body=' + encodeURIComponent(r.text) + '"><i class="bi bi-envelope"></i> Email</a></div>'
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-wrcopy><i class="bi bi-clipboard"></i> <span data-t="ui.copy">Copy</span></button>' +
+        (navigator.share ? '<button type="button" class="text-btn" data-wrshare><i class="bi bi-share"></i> <span data-t="ui.share">Share</span></button>' : '') +
+        '<a class="text-btn" href="mailto:?subject=' + encodeURIComponent(r.title) + '&body=' + encodeURIComponent(r.text) + '"><i class="bi bi-envelope"></i> <span data-t="ui.email">Email</span></a></div>'
           : '<p class="empty kit-empty">Nothing logged ' + (RPT.day ? 'yesterday' : 'yet today') + '. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.</p>') + '</section>';
     }
     el.addEventListener('click', function (e) {
@@ -997,7 +997,7 @@
         var dk = addDays(tk, j), wd = fromKey(dk).getDay(); if (wd === 0 || wd === 6 || Fe.holiday(dk)) continue;
         if (Fe.list('flex').some(function (e) { return e.date === dk && ((e.type && e.type !== 'work' && e.type !== 'course') || e.in); })) continue;   // a day off, or already at work
         var leave = usual - trip - 10;
-        add('cm:' + dk, o.at(dk, Math.floor(leave / 60), leave % 60), 'Time to leave for work', 'About ' + trip + ' min to work – open the dashboard for the next departures', '/cmd/');
+        add('cm:' + dk, o.at(dk, Math.floor(leave / 60), leave % 60), I18N.k('ui.time-to-leave-for-work', 'Time to leave for work'), 'About ' + trip + ' min to work – open the dashboard for the next departures', '/cmd/');
       }
     }
   });
@@ -1030,33 +1030,33 @@
     var PAGES = {
       house: function () {
         return '<p class="st-intro" data-t="ui.reminders-and-estimates-for-the-house-pa">Reminders and estimates for the House page. Your bins, upkeep and notes are on the page itself.</p>' +
-          sub('trash3', 'Bin days') + '<div class="st-group">' + sel('housecfg', 'binHour', 'Evening-before reminder', HOURS, 'In At a glance') + sw('housecfg', 'binMorning', 'Also on the morning of pickup') + '</div>' +
-          sub('tools', 'Upkeep') + '<div class="st-group">' + sel('housecfg', 'lead', 'Remind me', [[0, 'On the day'], [2, '2 days before'], [7, 'A week before'], [14, '2 weeks before']]) + '</div>' +
-          sub('lightning-charge', 'Electricity') + '<div class="st-group">' + numIn('housecfg', 'price', 'Price for estimates', 'øre/kWh', 'Power + grid rent, incl. VAT – shows ≈ kr a month') + sw('housecfg', 'meterNudge', 'Remind me to read the meter', 'At the start of each month') + '</div>' +
-          sub('calendar3', 'Calendar') + '<div class="st-group">' + sw('housecfg', 'calendar', 'Bin days and upkeep in the calendar') + '</div>' +
-          sub('tree', 'Seasons and the house') + '<div class="st-group">' + sw('housecfg', 'seasonNudge', 'Season checklist in At a glance', 'The first weeks of autumn, winter, spring and summer') + sw('housecfg', 'illu', 'House picture at the top', 'Shows what’s due – tap a part to go there') + '</div>' +
-          '<div class="st-group">' + link('/cmd/house/', 'house-gear', 'Open House') + link('/cmd/house/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+          sub('trash3', I18N.k('ui.bin-days', 'Bin days')) + '<div class="st-group">' + sel('housecfg', 'binHour', I18N.k('ui.evening-before-reminder', 'Evening-before reminder'), HOURS, I18N.k('ui.in-at-a-glance', 'In At a glance')) + sw('housecfg', 'binMorning', I18N.k('ui.also-on-the-morning-of-pickup', 'Also on the morning of pickup')) + '</div>' +
+          sub('tools', 'Upkeep') + '<div class="st-group">' + sel('housecfg', 'lead', I18N.k('ui.remind-me', 'Remind me'), [[0, 'On the day'], [2, '2 days before'], [7, 'A week before'], [14, '2 weeks before']]) + '</div>' +
+          sub('lightning-charge', 'Electricity') + '<div class="st-group">' + numIn('housecfg', 'price', I18N.k('ui.price-for-estimates', 'Price for estimates'), 'øre/kWh', I18N.k('ui.power-grid-rent-incl-vat-shows-kr-a-mont', 'Power + grid rent, incl. VAT – shows ≈ kr a month')) + sw('housecfg', 'meterNudge', I18N.k('ui.remind-me-to-read-the-meter', 'Remind me to read the meter'), I18N.k('ui.at-the-start-of-each-month', 'At the start of each month')) + '</div>' +
+          sub('calendar3', 'Calendar') + '<div class="st-group">' + sw('housecfg', 'calendar', I18N.k('ui.bin-days-and-upkeep-in-the-calendar', 'Bin days and upkeep in the calendar')) + '</div>' +
+          sub('tree', I18N.k('ui.seasons-and-the-house', 'Seasons and the house')) + '<div class="st-group">' + sw('housecfg', 'seasonNudge', I18N.k('ui.season-checklist-in-at-a-glance', 'Season checklist in At a glance'), I18N.k('ui.the-first-weeks-of-autumn-winter-spring', 'The first weeks of autumn, winter, spring and summer')) + sw('housecfg', 'illu', I18N.k('ui.house-picture-at-the-top', 'House picture at the top'), I18N.k('ui.shows-whats-due-tap-a-part-to-go-there', 'Shows what’s due – tap a part to go there')) + '</div>' +
+          '<div class="st-group">' + link('/cmd/house/', 'house-gear', I18N.k('ui.open-house', 'Open House')) + link('/cmd/house/?customize', 'grid-1x2', I18N.k('ui.order-and-hide-cards', 'Order and hide cards')) + '</div>';
       },
       people: function () {
         return '<p class="st-intro" data-t="ui.how-people-reminds-you-about-birthdays-a">How People reminds you about birthdays and keeping in touch.</p>' +
-          sub('balloon', 'Birthdays') + '<div class="st-group">' + sel('peoplecfg', 'lead', 'Heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before'], [14, '2 weeks before']], 'In At a glance') + sw('peoplecfg', 'calendar', 'Birthdays in the calendar') + '</div>' +
-          sub('chat-heart', 'Keeping in touch') + '<div class="st-group">' + sw('peoplecfg', 'catchup', 'Nudges in At a glance') + sel('peoplecfg', 'catchupMax', 'At most', [[1, '1 person at a time'], [2, '2 people'], [3, '3 people']]) +
-          sel('peoplecfg', 'defEvery', 'For new people', KEEP, 'What “Keep in touch” starts at') + sw('peoplecfg', 'askNote', 'Ask for a note after “Talked today”', 'One line, kept as a short history') + '</div>' +
-          sub('calendar-heart', 'Name days and anniversaries') + '<div class="st-group">' + sw('peoplecfg', 'namedays', 'Name days', 'From the Norwegian almanac, by first name – in At a glance on the day') +
-          sel('peoplecfg', 'annLead', 'Anniversaries: heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before']]) + sw('peoplecfg', 'ndCal', 'Name days and anniversaries in the calendar') + '</div>' +
-          sub('gift', 'Gifts') + '<div class="st-group">' + numIn('peoplecfg', 'gbXmas', 'Christmas budget', 'kr', 'For all Christmas gifts together') + numIn('peoplecfg', 'gbBday', 'Birthday gift budget', 'kr', 'Per gift') +
-          numIn('peoplecfg', 'gbOther', 'Other occasions', 'kr', 'Per gift – weddings, christenings, thank-yous') + sw('peoplecfg', 'xmasNudge', 'Christmas gift list in At a glance', 'From 15 November') +
-          sw('peoplecfg', 'giftFin', 'Add gifts to Finances', 'As spending (Shopping) when you note a gift with a price') + '</div>' +
-          '<div class="st-group">' + link('/cmd/people/', 'people', 'Open People') + link('/cmd/people/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+          sub('balloon', 'Birthdays') + '<div class="st-group">' + sel('peoplecfg', 'lead', 'Heads-up', [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before'], [14, '2 weeks before']], I18N.k('ui.in-at-a-glance', 'In At a glance')) + sw('peoplecfg', 'calendar', I18N.k('ui.birthdays-in-the-calendar', 'Birthdays in the calendar')) + '</div>' +
+          sub('chat-heart', I18N.k('ui.keeping-in-touch', 'Keeping in touch')) + '<div class="st-group">' + sw('peoplecfg', 'catchup', I18N.k('ui.nudges-in-at-a-glance', 'Nudges in At a glance')) + sel('peoplecfg', 'catchupMax', I18N.k('ui.at-most', 'At most'), [[1, '1 person at a time'], [2, '2 people'], [3, '3 people']]) +
+          sel('peoplecfg', 'defEvery', I18N.k('ui.for-new-people', 'For new people'), KEEP, I18N.k('ui.what-keep-in-touch-starts-at', 'What “Keep in touch” starts at')) + sw('peoplecfg', 'askNote', I18N.k('ui.ask-for-a-note-after-talked-today', 'Ask for a note after “Talked today”'), I18N.k('ui.one-line-kept-as-a-short-history', 'One line, kept as a short history')) + '</div>' +
+          sub('calendar-heart', I18N.k('ui.name-days-and-anniversaries', 'Name days and anniversaries')) + '<div class="st-group">' + sw('peoplecfg', 'namedays', I18N.k('ui.name-days', 'Name days'), I18N.k('ui.from-the-norwegian-almanac-by-first-name', 'From the Norwegian almanac, by first name – in At a glance on the day')) +
+          sel('peoplecfg', 'annLead', I18N.k('ui.anniversaries-heads-up', 'Anniversaries: heads-up'), [[0, 'On the day'], [1, 'The day before'], [3, '3 days before'], [7, 'A week before']]) + sw('peoplecfg', 'ndCal', I18N.k('ui.name-days-and-anniversaries-in-the-calen', 'Name days and anniversaries in the calendar')) + '</div>' +
+          sub('gift', 'Gifts') + '<div class="st-group">' + numIn('peoplecfg', 'gbXmas', I18N.k('ui.christmas-budget', 'Christmas budget'), 'kr', I18N.k('ui.for-all-christmas-gifts-together', 'For all Christmas gifts together')) + numIn('peoplecfg', 'gbBday', I18N.k('ui.birthday-gift-budget', 'Birthday gift budget'), 'kr', I18N.k('ui.per-gift', 'Per gift')) +
+          numIn('peoplecfg', 'gbOther', I18N.k('ui.other-occasions', 'Other occasions'), 'kr', I18N.k('ui.per-gift-weddings-christenings-thank-you', 'Per gift – weddings, christenings, thank-yous')) + sw('peoplecfg', 'xmasNudge', I18N.k('ui.christmas-gift-list-in-at-a-glance', 'Christmas gift list in At a glance'), I18N.k('ui.from-15-november', 'From 15 November')) +
+          sw('peoplecfg', 'giftFin', I18N.k('ui.add-gifts-to-finances', 'Add gifts to Finances'), I18N.k('ui.as-spending-shopping-when-you-note-a-gif', 'As spending (Shopping) when you note a gift with a price')) + '</div>' +
+          '<div class="st-group">' + link('/cmd/people/', 'people', I18N.k('ui.open-people', 'Open People')) + link('/cmd/people/?customize', 'grid-1x2', I18N.k('ui.order-and-hide-cards', 'Order and hide cards')) + '</div>';
       },
       food: function () {
         return '<p class="st-intro" data-t="ui.the-dinner-plan-shopping-list-and-remind">The dinner plan, shopping list and reminders.</p>' +
-          sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', 'Ask “What’s for dinner?”', 'In At a glance, when nothing is planned') + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
-          sel('foodcfg', 'repeat', 'Fill the empty days: skip dinners from the last', [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', 'Dinners in the calendar') + '</div>' +
-          sub('journal-text', 'Recipes') + '<div class="st-group">' + sel('foodcfg', 'servings', 'Usually cooking for', [[0, 'As the recipe says'], [1, '1 person'], [2, '2 people'], [3, '3 people'], [4, '4 people'], [5, '5 people'], [6, '6 people'], [8, '8 people']], 'Recipes open scaled to this, and the week’s shopping list too') + '</div>' +
-          sub('box-seam', 'Pantry') + '<div class="st-group">' + sw('foodcfg', 'shopToPantry', 'Bought items go into the pantry', 'Tick something off the shopping list and it’s in stock at home') + sw('foodcfg', 'pantryBack', 'Back in stock when ticked off the shopping list') + sw('foodcfg', 'pantryLow', 'On the shopping list = running out', 'Adding something you keep at home marks it as running low') + sw('foodcfg', 'pantrySkip', 'Skip basics you have when adding recipes', 'Salt, oil, rice … stay off the list while they’re in stock') + '</div>' +
-          sub('cart3', 'Shopping list') + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['aisle', 'By section in the shop'], ['added', 'As added'], ['abc', 'A–Å']]) + '<button type="button" class="st-row st-btn" data-shreset><span><i class="bi bi-arrow-counterclockwise"></i> Forget the learned shop order</span></button>' + '</div>' +
-          '<div class="st-group">' + link('/cmd/food/', 'basket', 'Open Food') + link('/cmd/food/?customize', 'grid-1x2', 'Order and hide cards') + '</div>';
+          sub('egg-fried', 'Dinner') + '<div class="st-group">' + sw('foodcfg', 'nudge', I18N.k('ui.ask-whats-for-dinner', 'Ask “What’s for dinner?”'), I18N.k('ui.in-at-a-glance-when-nothing-is-planned', 'In At a glance, when nothing is planned')) + sel('foodcfg', 'nudgeHour', 'Ask', [12, 13, 14, 15, 16].map(function (h) { return [h, 'From ' + pad(h) + ':00']; })) +
+          sel('foodcfg', 'repeat', I18N.k('ui.fill-the-empty-days-skip-dinners-from-th', 'Fill the empty days: skip dinners from the last'), [[0, 'Don’t skip'], [7, 'Week'], [14, '2 weeks'], [21, '3 weeks']]) + sw('foodcfg', 'calendar', I18N.k('ui.dinners-in-the-calendar', 'Dinners in the calendar')) + '</div>' +
+          sub('journal-text', 'Recipes') + '<div class="st-group">' + sel('foodcfg', 'servings', I18N.k('ui.usually-cooking-for', 'Usually cooking for'), [[0, 'As the recipe says'], [1, '1 person'], [2, '2 people'], [3, '3 people'], [4, '4 people'], [5, '5 people'], [6, '6 people'], [8, '8 people']], I18N.k('ui.recipes-open-scaled-to-this-and-the-week', 'Recipes open scaled to this, and the week’s shopping list too')) + '</div>' +
+          sub('box-seam', 'Pantry') + '<div class="st-group">' + sw('foodcfg', 'shopToPantry', I18N.k('ui.bought-items-go-into-the-pantry', 'Bought items go into the pantry'), I18N.k('ui.tick-something-off-the-shopping-list-and', 'Tick something off the shopping list and it’s in stock at home')) + sw('foodcfg', 'pantryBack', I18N.k('ui.back-in-stock-when-ticked-off-the-shoppi', 'Back in stock when ticked off the shopping list')) + sw('foodcfg', 'pantryLow', I18N.k('ui.on-the-shopping-list-running-out', 'On the shopping list = running out'), I18N.k('ui.adding-something-you-keep-at-home-marks', 'Adding something you keep at home marks it as running low')) + sw('foodcfg', 'pantrySkip', I18N.k('ui.skip-basics-you-have-when-adding-recipes', 'Skip basics you have when adding recipes'), I18N.k('ui.salt-oil-rice-stay-off-the-list-while-th', 'Salt, oil, rice … stay off the list while they’re in stock')) + '</div>' +
+          sub('cart3', I18N.k('ui.shopping-list', 'Shopping list')) + '<div class="st-group">' + sel('foodcfg', 'sort', 'Order', [['aisle', 'By section in the shop'], ['added', 'As added'], ['abc', 'A–Å']]) + '<button type="button" class="st-row st-btn" data-shreset><span><i class="bi bi-arrow-counterclockwise"></i> Forget the learned shop order</span></button>' + '</div>' +
+          '<div class="st-group">' + link('/cmd/food/', 'basket', I18N.k('ui.open-food', 'Open Food')) + link('/cmd/food/?customize', 'grid-1x2', I18N.k('ui.order-and-hide-cards', 'Order and hide cards')) + '</div>';
       }
     };
     function summary(k) {
@@ -1081,12 +1081,12 @@
       var box = document.getElementById('hlSet-ptime');
       if (!on('ptime')) { if (box) box.remove(); return; }
       if (!box) { box = document.createElement('div'); box.id = 'hlSet-ptime'; pg.appendChild(box); }
-      box.innerHTML = sub('hourglass-split', 'Time per client') + '<div class="st-group">' +
-        sel('ptcfg', 'round', 'Round timers up to', [[0, 'Exact minutes'], [5, '5 minutes'], [15, '15 minutes'], [30, '30 minutes']]) +
-        sel('ptcfg', 'long', 'Ask if a timer runs longer than', [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>' +
-        sub('receipt', 'Invoice drafts') + '<div class="st-group">' + txt('ptcfg', 'org', 'Organisation number', 'e.g. 912 345 678') + txt('ptcfg', 'account', 'Bank account', 'e.g. 1234 56 78901') +
-        txt('ptcfg', 'addr', 'Your address on invoices', 'Street, postcode and town') + sel('ptcfg', 'payDays', 'Payment terms', [[10, '10 days'], [14, '14 days'], [20, '20 days'], [30, '30 days']]) +
-        sw('ptcfg', 'vat', 'Add 25 % VAT (MVA)') + numIn('ptcfg', 'invNext', 'Next invoice number', '') + '</div>';
+      box.innerHTML = sub('hourglass-split', I18N.k('ui.time-per-client', 'Time per client')) + '<div class="st-group">' +
+        sel('ptcfg', 'round', I18N.k('ui.round-timers-up-to', 'Round timers up to'), [[0, 'Exact minutes'], [5, '5 minutes'], [15, '15 minutes'], [30, '30 minutes']]) +
+        sel('ptcfg', 'long', I18N.k('ui.ask-if-a-timer-runs-longer-than', 'Ask if a timer runs longer than'), [[2, '2 hours'], [4, '4 hours'], [8, '8 hours']]) + '</div>' +
+        sub('receipt', I18N.k('ui.invoice-drafts', 'Invoice drafts')) + '<div class="st-group">' + txt('ptcfg', 'org', I18N.k('ui.organisation-number', 'Organisation number'), 'e.g. 912 345 678') + txt('ptcfg', 'account', I18N.k('ui.bank-account', 'Bank account'), 'e.g. 1234 56 78901') +
+        txt('ptcfg', 'addr', I18N.k('ui.your-address-on-invoices', 'Your address on invoices'), I18N.k('ui.street-postcode-and-town', 'Street, postcode and town')) + sel('ptcfg', 'payDays', I18N.k('ui.payment-terms', 'Payment terms'), [[10, '10 days'], [14, '14 days'], [20, '20 days'], [30, '30 days']]) +
+        sw('ptcfg', 'vat', I18N.k('ui.add-25-vat-mva', 'Add 25 % VAT (MVA)')) + numIn('ptcfg', 'invNext', I18N.k('ui.next-invoice-number', 'Next invoice number'), '') + '</div>';
       var r = document.getElementById('stWorkRow'); if (r && on('ptime')) r.hidden = false;
     }
     document.addEventListener('click', function (e) {
@@ -1126,15 +1126,15 @@
     var out = [], tk = today();
     if (on('flex') && window.FlexTime) {
       var st = window.FlexTime.stats(), sg = st.balance < 0 ? '−' : st.balance > 0 ? '+' : '', h = window.FlexTime.dur(Math.abs(st.balance));
-      out.push(heroTile('stopwatch', 'Flex balance', '<span class="' + (st.balance < 0 ? 'neg' : 'pos') + '">' + sg + esc(h) + '</span>', esc(window.FlexTime.dur(st.week)) + ' this week', '#flex', '#e8743b'));
+      out.push(heroTile('stopwatch', I18N.k('ui.flex-balance', 'Flex balance'), '<span class="' + (st.balance < 0 ? 'neg' : 'pos') + '">' + sg + esc(h) + '</span>', esc(window.FlexTime.dur(st.week)) + ' this week', '#flex', '#e8743b'));
     }
     if (on('ptime')) {
       var m0 = monday(0), mins = ptList().filter(function (x) { return x.date >= m0 && x.date <= tk; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0), r = run();
-      out.push(heroTile('hourglass-split', 'Client time', esc(hm(mins)), r ? 'Timer running: ' + esc(proj(r.pid).name) : 'this week', '#ptime'));
+      out.push(heroTile('hourglass-split', I18N.k('ui.client-time', 'Client time'), esc(hm(mins)), r ? 'Timer running: ' + esc(proj(r.pid).name) : 'this week', '#ptime'));
     }
     if (on('meetings')) {
       var open = 0; Fe.list('meetings').forEach(function (m) { String(m.actions || '').split('\n').forEach(function (x, i) { if (x.trim() && !(m.done || {})[i]) open++; }); });
-      out.push(heroTile('people', 'Action points', open ? '<span class="neg">' + open + '</span>' : '0', open ? 'open from meetings' : 'All done', '#meetings'));
+      out.push(heroTile('people', I18N.k('ui.action-points', 'Action points'), open ? '<span class="neg">' + open + '</span>' : '0', open ? 'open from meetings' : 'All done', '#meetings'));
     }
     if (on('fdv')) {
       var fl = Fe.list('fdv'), last = fl.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; })[0], tg = 0;
@@ -1143,11 +1143,11 @@
     }
     if (on('learning') && out.length < 4) {
       var ex = Fe.list('learning').filter(function (c) { return isKey(c.expires) && c.expires >= tk; }).sort(function (a, b) { return a.expires < b.expires ? -1 : 1; })[0];
-      out.push(heroTile('mortarboard', 'Next renewal', ex ? esc(cap(inDays(daysTo(ex.expires)))) : '–', ex ? esc(ex.title) : 'No certificates expiring', '#learning'));
+      out.push(heroTile('mortarboard', I18N.k('ui.next-renewal', 'Next renewal'), ex ? esc(cap(inDays(daysTo(ex.expires)))) : '–', ex ? esc(ex.title) : 'No certificates expiring', '#learning'));
     }
     if (on('holiday') && out.length < 4 && window.FlexTime) {
       var s2 = window.FlexTime.stats(), tot = +((Fe.tools().flexcfg || {}).vacation) || 25;
-      out.push(heroTile('sun', 'Holiday left', Math.max(0, tot - s2.vac) + ' <small>/ ' + tot + '</small>', 'days this year', '#holiday'));
+      out.push(heroTile('sun', I18N.k('ui.holiday-left', 'Holiday left'), Math.max(0, tot - s2.vac) + ' <small>/ ' + tot + '</small>', 'days this year', '#holiday'));
     }
     return out.slice(0, 4).join('');
   };

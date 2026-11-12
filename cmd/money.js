@@ -23,7 +23,7 @@
     var left = income - fixed - spent;
     if (!income && !fixed && !spent) {
       box.innerHTML = '<p class="empty" data-t="ui.set-up-your-budget-on-the-finances-page">Set up your budget on the Finances page – salary, fixed costs – and this shows what you can spend each day.</p>' +
-        '<div class="mo-acts"><a class="pill-btn wide" href="finance/#c=budget"><i class="bi bi-pie-chart"></i> Set up budget</a></div>';
+        '<div class="mo-acts"><a class="pill-btn wide" href="finance/#c=budget"><i class="bi bi-pie-chart"></i> <span data-t="ui.set-up-budget">Set up budget</span></a></div>';
       return;
     }
     var pay = B.nextPayday(d, now), untilPay = per.byPayday || (pay && pay.days > 0 && pay.days <= dim);
@@ -56,7 +56,7 @@
         '<polyline class="ln" points="' + pts + '"/>' +
         '<line class="proj" x1="' + X(pc.elapsed - 1) + '" y1="' + Y(acc) + '" x2="' + X(per.days - 1) + '" y2="' + Y(pc.projected) + '"/>' +
         '</svg>' +
-        '<div class="mo-spark-l"><span><i class="ln"></i>Spent</span><span><i class="ref"></i>Budget pace</span><span><i class="proj"></i>At this pace</span></div>';
+        '<div class="mo-spark-l"><span><i class="ln"></i><span data-t="ui.spent">Spent</span></span><span><i class="ref"></i><span data-t="ui.budget-pace">Budget pace</span></span><span><i class="proj"></i><span data-t="ui.at-this-pace-2">At this pace</span></span></div>';
     }
     box.innerHTML =
       '<div class="mo-top"><div><div class="big-num' + (left < 0 ? ' neg' : '') + '">' + money(left) + '</div>' +
@@ -65,17 +65,17 @@
         '<span class="s-fixed" style="width:' + w(fixed) + '"></span><span class="s-spent" style="width:' + w(spent) + '"></span><span class="s-left" style="width:' + w(Math.max(left, 0)) + '"></span></div>' +
       paceHtml + spark +
       '<ul class="mo-rows">' +
-        (todaySum > 0 ? '<li><i class="bi bi-bag"></i><span data-t="ui.spent-today">Spent today</span>' + money(todaySum) + '</li>' : '') +
+        (todaySum > 0 ? '<li><i class="bi bi-bag"></i><span data-t="ui.spent-today"><span data-t="ui.spent-today">Spent today</span></span>' + money(todaySum) + '</li>' : '') +
         '<li><i class="bi bi-receipt"></i><span>Spent ' + (per.byPayday ? 'since payday' : 'in ' + esc(now.toLocaleDateString('en-GB', { month: 'short' }))) + '</span>' + money(spent) + '</li>' +
         (per.extra ? '<li><i class="bi bi-arrow-down-left-circle"></i><span data-t="ui.money-in-refunds-vipps">Money in (refunds, Vipps)</span><span class="money">+' + esc(kr(per.extra)) + '</span></li>' : '') +
-        (pay ? '<li><i class="bi bi-cash-stack"></i><span>' + esc(pay.title) + (pay.days === 0 ? ' <b data-t="ui.today-2">today</b>' : pay.days === 1 ? ' <b>tomorrow</b>' : ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' days') + '</span>' + (pay.net ? money(pay.net) : '') + '</li>' : '') +
+        (pay ? '<li><i class="bi bi-cash-stack"></i><span>' + esc(pay.title) + (pay.days === 0 ? ' <b data-t="ui.today-2"><span data-t="ui.today-2">today</span></b>' : pay.days === 1 ? ' <b>tomorrow</b>' : ' ' + pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · in ' + pay.days + ' days') + '</span>' + (pay.net ? money(pay.net) : '') + '</li>' : '') +
         due.map(function (x) {
           return '<li' + (x.diff < 0 ? ' class="late"' : '') + '><i class="bi bi-' + (x.diff < 0 ? 'exclamation-circle' : 'calendar-check') + '"></i><span>' + esc(x.f.name) +
-            (x.diff < 0 ? ' <b data-t="ui.overdue">overdue</b> ' + (-x.diff) + ' day' + (x.diff === -1 ? '' : 's') : x.diff === 0 ? ' <b data-t="ui.due-today">due today</b>' : ' due in ' + x.diff + ' day' + (x.diff === 1 ? '' : 's')) + '</span>' + money(x.f.amount) + '</li>';
+            (x.diff < 0 ? ' <b data-t="ui.overdue"><span data-t="ui.overdue">overdue</span></b> ' + (-x.diff) + ' day' + (x.diff === -1 ? '' : 's') : x.diff === 0 ? ' <b data-t="ui.due-today"><span data-t="ui.due-today">due today</span></b>' : ' due in ' + x.diff + ' day' + (x.diff === 1 ? '' : 's')) + '</span>' + money(x.f.amount) + '</li>';
         }).join('') +
       '</ul>' +
-      '<div class="mo-acts"><button type="button" class="pill-btn wide" data-quick="expense"><i class="bi bi-plus-lg"></i> Log expense</button>' +
-        (due.length ? '<a class="text-btn" href="finance/#c=bills" data-t="ui.bills">Bills</a>' : '') + '</div>';
+      '<div class="mo-acts"><button type="button" class="pill-btn wide" data-quick="expense"><i class="bi bi-plus-lg"></i> <span data-t="ui.log-expense">Log expense</span></button>' +
+        (due.length ? '<a class="text-btn" href="finance/#c=bills" data-t="ui.bills"><span data-t="ui.bills">Bills</span></a>' : '') + '</div>';
   }
 
   /* hide amounts (shared with the Finances page) */

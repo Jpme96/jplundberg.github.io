@@ -280,7 +280,7 @@
       <p data-t="ui.trips-youve-been-on-show-up-here-with-da" class="empty tp-empty" id="hsEmpty" hidden>Trips you’ve been on show up here, with days away, countries and what you spent. Add older trips with “Log a past trip” – put what it cost under “Other costs” and it goes into Finances on that date.</p>
     </section>
 
-    <p data-t="ui.real-time-journey-data-from-entur-the-na" class="foot muted" id="tvFoot">Real-time journey data from Entur, the national travel planner for Norway.<br><span data-t="ui.saved-on-this-device-only" class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span> · <i class="bi bi-shield-lock"></i> Encrypted with your passcode</p>
+    <p data-t="ui.real-time-journey-data-from-entur-the-na" class="foot muted" id="tvFoot">Real-time journey data from Entur, the national travel planner for Norway.<br><span data-t="ui.saved-on-this-device-only" class="sync sync-off" id="syncState"><i class="bi bi-phone"></i> Saved on this device only</span> · <i class="bi bi-shield-lock"></i> <span data-t="ui.encrypted-with-your-passcode">Encrypted with your passcode</span></p>
   </main>
 
   <!-- Trip editor -->
@@ -708,11 +708,11 @@
         <p data-t="ui.hey-siri-log-expense-2-minutes" class="st-sub"><i class="bi bi-mic"></i> “Hey Siri, log expense” – 2 minutes</p>
         <section class="st-group sc-steps">
           <ol>
-            <li data-t="ui.open-the">Open the <b>Shortcuts</b> app → <b>+</b> (new shortcut).</li>
-            <li data-t="ui.add-the-action">Add the action <b>Ask for Input</b>. Type: Text. Prompt: <i data-t="ui.what-did-you-buy">What did you buy?</i> – you'll say or type e.g. “149 rema”.</li>
-            <li data-t="ui.add">Add <b>URL</b> and paste the first link above (the one that ends in <code>?add=</code>). Then tap after it and insert <b>Provided Input</b> from the variables bar.</li>
+            <li data-t="ui.open-the">Open the <b>Shortcuts</b> <span data-t="ui.app">app →</span> <b>+</b> <span data-t="ui.new-shortcut">(new shortcut).</span></li>
+            <li data-t="ui.add-the-action">Add the action <b>Ask for Input</b><span data-t="ui.type-text-prompt">. Type: Text. Prompt:</span> <i data-t="ui.what-did-you-buy">What did you buy?</i> <span data-t="ui.youll-say-or-type-e-g-149-rema">– you'll say or type e.g. “149 rema”.</span></li>
+            <li data-t="ui.add">Add <b>URL</b> <span data-t="ui.and-paste-the-first-link-above-the-one-t">and paste the first link above (the one that ends in</span> <code>?add=</code><span data-t="ui.then-tap-after-it-and-insert">). Then tap after it and insert</span> <b>Provided Input</b> <span data-t="ui.from-the-variables-bar">from the variables bar.</span></li>
             <li data-t="ui.add">Add <b>Open URLs</b>.</li>
-            <li data-t="ui.rename-the-shortcut-to">Rename the shortcut to <b data-t="ui.log-expense">Log expense</b>. Now say “Hey Siri, log expense”.</li>
+            <li data-t="ui.rename-the-shortcut-to">Rename the shortcut to <b data-t="ui.log-expense">Log expense</b><span data-t="ui.now-say-hey-siri-log-expense">. Now say “Hey Siri, log expense”.</span></li>
           </ol>
           <p data-t="ui.the-same-works-for-events-tor-14-tannleg" class="muted">The same works for events (“tor 14 tannlege”), tasks (“betale strøm hver måned”) and workouts (“løp 5 km”) – the line understands all of them. For Back Tap: iPhone Settings → Accessibility → Touch → Back Tap → Double Tap → pick the shortcut.</p>
           <p data-t="ui.links-open-in-safari-the-first-time-unlo" class="muted">Links open in Safari. The first time, unlock there with your passcode; your data is synced, so it's the same as in the app.</p>
@@ -730,17 +730,17 @@
         <p data-t="ui.once-in-cloudflare-3-minutes" class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
         <section class="st-group sc-steps">
           <ol>
-            <li data-t="ui.paste-the-newest">Paste the newest <code>worker.js</code> into the Worker, if you haven't.</li>
-            <li>Zero Trust → <b>Access → Service auth → Create service token</b>. Name: <i>iPhone Shortcut</i>, duration: non-expiring. Copy the <b>Client ID</b> and <b>Client Secret</b> straight into the Shortcut below – nowhere else.</li>
-            <li><b>Access → Applications</b> → your dashboard → <b>Policies → Add a policy</b>. Action: <b>Service Auth</b>. Include: <b>Service Token</b> → <i>iPhone Shortcut</i>. Save.</li>
+            <li data-t="ui.paste-the-newest">Paste the newest <code>worker.js</code> <span data-t="ui.into-the-worker-if-you-havent">into the Worker, if you haven't.</span></li>
+            <li>Zero Trust → <b>Access → Service auth → Create service token</b><span data-t="ui.name">. Name:</span> <i>iPhone Shortcut</i><span data-t="ui.duration-non-expiring-copy-the">, duration: non-expiring. Copy the</span> <b>Client ID</b> <span data-t="ui.and">and</span> <b>Client Secret</b> <span data-t="ui.straight-into-the-shortcut-below-nowhere">straight into the Shortcut below – nowhere else.</span></li>
+            <li><b>Access → Applications</b> → your dashboard → <b>Policies → Add a policy</b><span data-t="ui.action">. Action:</span> <b>Service Auth</b><span data-t="ui.include">. Include:</span> <b>Service Token</b> → <i>iPhone Shortcut</i><span data-t="ui.save-2">. Save.</span></li>
           </ol>
           <p data-t="ui.the-token-can-only-hand-in-health-number" class="muted">The token can only hand in health numbers – it can't read or change anything else.</p>
         </section>
         <p data-t="ui.on-your-iphone-5-minutes" class="st-sub"><i class="bi bi-2-circle"></i> On your iPhone (5 minutes)</p>
         <section class="st-group sc-steps">
           <ol>
-            <li data-t="ui.shortcuts">Shortcuts → <b>+</b>, name it <i>Health to dashboard</i>.</li>
-            <li data-t="ui.type-steps-start-date-is-today-then"><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> → Sum.</li>
+            <li data-t="ui.shortcuts">Shortcuts → <b>+</b><span data-t="ui.name-it">, name it</span> <i>Health to dashboard</i>.</li>
+            <li data-t="ui.type-steps-start-date-is-today-then"><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> <span data-t="ui.sum">→ Sum.</span></li>
             <li><b data-t="ui.sleep">Sleep</b> (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):
               <ol type="a">
                 <li><b>Adjust Date</b>: Subtract <b>24 hours</b> from <b>Current Date</b>.</li>
@@ -748,8 +748,8 @@
                 <li><b>Repeat with Each</b> item in Health Samples → <b>If</b> Repeat Item’s Start Date <b>is after</b> Adjusted Date → <b>Get Minutes between</b> Repeat Item’s Start Date and End Date → <b>Otherwise</b> → <b>Number</b> 0 → End If → End Repeat.</li>
                 <li><b>Calculate Statistics</b> → Sum of Repeat Results, renamed <i>Sleep sum</i>. That’s minutes – the dashboard turns it into hours.</li>
               </ol></li>
-            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button data-t="ui.copy" type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b>. Headers: <code>CF-Access-Client-Id</code> and <code>CF-Access-Client-Secret</code> with your two values. Request Body: <b>JSON</b> → <b>Number</b> fields <code>steps</code> and <code>sleep</code>, each set with <b>Select Variable</b> → the blue <b>Sum</b> under its own Calculate action. No date needed – today's is used.</li>
-            <li data-t="ui.optional-one"><b data-t="ui.more-numbers">More numbers</b> (optional): one <b>Find Health Samples</b> (Start Date is today) + one <b>Calculate Statistics</b> each, and a Number field with this name. Each gets its own tile, chart and goal.
+            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button data-t="ui.copy" type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b><span data-t="ui.headers">. Headers:</span> <code>CF-Access-Client-Id</code> <span data-t="ui.and">and</span> <code>CF-Access-Client-Secret</code> <span data-t="ui.with-your-two-values-request-body">with your two values. Request Body:</span> <b>JSON</b> → <b>Number</b> <span data-t="ui.fields">fields</span> <code>steps</code> <span data-t="ui.and">and</span> <code>sleep</code><span data-t="ui.each-set-with">, each set with</span> <b>Select Variable</b> <span data-t="ui.the-blue">→ the blue</span> <b>Sum</b> <span data-t="ui.under-its-own-calculate-action-no-date-n">under its own Calculate action. No date needed – today's is used.</span></li>
+            <li data-t="ui.optional-one"><b data-t="ui.more-numbers">More numbers</b> (optional): one <b>Find Health Samples</b> <span data-t="ui.start-date-is-today-one">(Start Date is today) + one</span> <b>Calculate Statistics</b> <span data-t="ui.each-and-a-number-field-with-this-name-e">each, and a Number field with this name. Each gets its own tile, chart and goal.</span>
               <div class="ah-keys">
                 <span><code>exercise</code> Exercise Minutes · Sum</span><span><code>active</code> Active Energy · Sum</span><span><code>stand</code> Stand Hours · Sum</span>
                 <span><code>distance</code> Walking + Running Distance · Sum</span><span><code>flights</code> Flights Climbed · Sum</span><span><code>daylight</code> Time in Daylight · Sum</span>
@@ -757,7 +757,7 @@
                 <span><code>weight</code> Weight · Average, last 30 days</span><span><code>mindful</code> Mindful Minutes · Sum</span><span><code>water</code> Water · Sum</span>
               </div></li>
             <li data-t="ui.run-it-once-open-the-dashboard-a-note-sa">Run it once. Open the dashboard – a note says what arrived.</li>
-            <li data-t="ui.shortcuts">Shortcuts → <b>Automation → +</b> → Time of Day, 22:30, Daily → <b>Run Immediately</b> → Health to dashboard.</li>
+            <li data-t="ui.shortcuts">Shortcuts → <b>Automation → +</b> <span data-t="ui.time-of-day-22-30-daily">→ Time of Day, 22:30, Daily →</span> <b>Run Immediately</b> <span data-t="ui.health-to-dashboard">→ Health to dashboard.</span></li>
           </ol>
           <p data-t="ui.sleep-can-come-as-hours-minutes-or-secon" class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
         </section>
@@ -828,7 +828,7 @@
       </div>
 
       <div data-t-data-title="ui.project-progress" class="st-page" data-page="progress" data-title="Project progress" hidden>
-        <p data-t="ui.a-goal-on-the-dashboard-can-keep-a-proje" class="st-intro">A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (<code>goal:</code> in the project file). Only the name, the numbers and the date are published.</p>
+        <p data-t="ui.a-goal-on-the-dashboard-can-keep-a-proje" class="st-intro">A goal on the dashboard can keep a project page on jplundberg.com up to date. Publish a goal here, and give the project’s chart the goal’s name (<code>goal:</code> <span data-t="ui.in-the-project-file-only-the-name-the-nu">in the project file). Only the name, the numbers and the date are published.</span></p>
         <section class="st-group" id="wsGoals"></section>
       </div>
 
@@ -840,7 +840,7 @@
           <label class="st-row"><span data-t="ui.include-projects">Include projects</span><input type="checkbox" class="switch" id="wsCvProjects"></label>
           <label class="st-row"><span data-t="ui.include-articles">Include articles</span><input type="checkbox" class="switch" id="wsCvArticles"></label>
         </section>
-        <p class="st-note"><a data-t="ui.open-the-cv" href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a data-t="ui.norsk" href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a> · on the page, “Save as PDF” prints it to a file.</p>
+        <p class="st-note"><a data-t="ui.open-the-cv" href="https://jplundberg.com/cv/" target="_blank" rel="noopener">Open the CV <i class="bi bi-box-arrow-up-right"></i></a> · <a data-t="ui.norsk" href="https://jplundberg.com/no/cv/" target="_blank" rel="noopener">Norsk</a> <span data-t="ui.on-the-page-save-as-pdf-prints-it-to-a-f">· on the page, “Save as PDF” prints it to a file.</span></p>
         <div class="seg ws-lang" id="cvLang"><button data-t="ui.english" type="button" data-lang="en" aria-pressed="true">English</button><button data-t="ui.norsk" type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
         <section class="st-group">
           <h3 data-t="ui.profile-text">Profile text</h3>
@@ -860,7 +860,7 @@
         </section>
         <section class="st-group">
           <h3 data-t="ui.skills">Skills</h3>
-          <p data-t="ui.one-per-line-with-a-level-0-100-after-a" class="st-sub">One per line, with a level 0–100 after a comma, e.g. <i>Coordination, 85</i>. Shown as bars in the sidebar.</p>
+          <p data-t="ui.one-per-line-with-a-level-0-100-after-a" class="st-sub">One per line, with a level 0–100 after a comma, e.g. <i>Coordination, 85</i><span data-t="ui.shown-as-bars-in-the-sidebar">. Shown as bars in the sidebar.</span></p>
           <textarea id="cvSkills" rows="5" placeholder="Coordination, 85"></textarea>
           <h3 data-t="ui.languages">Languages</h3>
           <textarea id="cvLangs" rows="3" placeholder="Norwegian, 100"></textarea>
@@ -879,7 +879,7 @@
       </div>
 
       <div data-t-data-title="ui.texts" class="st-page tx-page" data-page="texts" data-title="Texts" hidden>
-        <p data-t="ui.change-the-texts-on-jplundberg-com-empty" class="st-intro">Change the texts on jplundberg.com. Empty a field (or tap <i data-t="ui.original">Original</i>) to go back to the original text. Changes are live about a minute after you publish.</p>
+        <p data-t="ui.change-the-texts-on-jplundberg-com-empty" class="st-intro">Change the texts on jplundberg.com. Empty a field (or tap <i data-t="ui.original">Original</i><span data-t="ui.to-go-back-to-the-original-text-changes">) to go back to the original text. Changes are live about a minute after you publish.</span></p>
         <div data-t-aria-label="ui.language" class="seg tx-lang" id="txLang" role="group" aria-label="Language"><button data-t="ui.english" type="button" data-lang="en" aria-pressed="true">English</button><button data-t="ui.norsk" type="button" data-lang="nb" aria-pressed="false">Norsk</button></div>
         <div id="txFields"><p data-t="ui.loading" class="st-intro">Loading…</p></div>
         <div class="ws-bar tx-bar" id="txBar">
@@ -920,9 +920,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=41166d0839"></script>
-  <script src="../dist/page-travel.js?v=42ce26127a"></script>
-  <script src="../dist/tail.js?v=86d0ab68c7"></script>
+  <script src="../dist/head.js?v=003c3498bb"></script>
+  <script src="../dist/page-travel.js?v=b1311129f0"></script>
+  <script src="../dist/tail.js?v=a5830cd46e"></script>
   <!-- /scripts -->
 </body>
 </html>

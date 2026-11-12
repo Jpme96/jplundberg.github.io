@@ -19,21 +19,21 @@
       '<summary><i class="bi bi-info-circle"></i> Set it up – about 5 minutes, once</summary><ol>' +
       '<li>Make a free account at <a href="https://resend.com/signup" target="_blank" rel="noopener">resend.com</a> with the email address the backups should go to.</li>' +
       '<li>Resend → <b>API Keys</b> → <b>Create API Key</b>: name <i>Dashboard backup</i>, permission <i>Sending access</i>. Copy the key (starts with <code>re_</code>).</li>' +
-      '<li>Cloudflare → Workers &amp; Pages → <b>dashboard-sync</b> → Settings → Variables and secrets → <b data-t="ui.add">Add</b>: <code>RESEND_API_KEY</code> as a <b>Secret</b> (the key), and <code>BACKUP_EMAIL</code> as Text (your address) → Deploy.</li>' +
+      '<li>Cloudflare → Workers &amp; Pages → <b>dashboard-sync</b> → Settings → Variables and secrets → <b data-t="ui.add"><span data-t="ui.add">Add</span></b>: <code>RESEND_API_KEY</code> as a <b>Secret</b> (the key), and <code>BACKUP_EMAIL</code> as Text (your address) → Deploy.</li>' +
       '<li>Check that the Worker has the newest <code>worker.js</code> and a <b>Cron Trigger</b> “every 5 minutes” (Settings → Triggers) – the same one notifications use.</li>' +
-      '<li>Come back here, switch it on and tap <b data-t="ui.send-one-now">Send one now</b> to test.</li></ol>' +
+      '<li>Come back here, switch it on and tap <b data-t="ui.send-one-now"><span data-t="ui.send-one-now">Send one now</span></b> to test.</li></ol>' +
       '<p class="muted hl-small">Without a verified domain, Resend only sends to your own account address – which is all this needs. To send from <code>backup@jplundberg.com</code>, verify the domain in Resend and add <code>BACKUP_FROM</code>.</p>',
       '<summary><i class="bi bi-info-circle"></i> Sett det opp – omtrent 5 minutter, én gang</summary><ol>' +
       '<li>Lag en gratis konto på <a href="https://resend.com/signup" target="_blank" rel="noopener">resend.com</a> med e-postadressen sikkerhetskopiene skal til.</li>' +
       '<li>Resend → <b>API Keys</b> → <b>Create API Key</b>: navn <i>Dashboard backup</i>, tilgang <i>Sending access</i>. Kopier nøkkelen (begynner med <code>re_</code>).</li>' +
-      '<li>Cloudflare → Workers &amp; Pages → <b>dashboard-sync</b> → Settings → Variables and secrets → <b data-t="ui.add">Add</b>: <code>RESEND_API_KEY</code> som <b>Secret</b> (nøkkelen), og <code>BACKUP_EMAIL</code> som Text (adressen din) → Deploy.</li>' +
+      '<li>Cloudflare → Workers &amp; Pages → <b>dashboard-sync</b> → Settings → Variables and secrets → <b data-t="ui.add"><span data-t="ui.add">Add</span></b>: <code>RESEND_API_KEY</code> som <b>Secret</b> (nøkkelen), og <code>BACKUP_EMAIL</code> som Text (adressen din) → Deploy.</li>' +
       '<li>Sjekk at Workeren har nyeste <code>worker.js</code> og en <b>Cron Trigger</b> «hvert 5. minutt» (Settings → Triggers) – den samme som varslene bruker.</li>' +
       '<li>Kom tilbake hit, slå det på og trykk <b>Send en nå</b> for å teste.</li></ol>' +
       '<p class="muted hl-small">Uten verifisert domene sender Resend bare til din egen kontoadresse – og det er alt som trengs. Vil du sende fra <code>backup@jplundberg.com</code>, verifiser domenet i Resend og legg til <code>BACKUP_FROM</code>.</p>') + '</details>';
   }
   function draw() {
     var b = box(); if (!b) return;
-    if (!st) { b.innerHTML = '<div class="st-row"><span class="muted" data-t="ui.looking">Looking …</span></div>'; return; }
+    if (!st) { b.innerHTML = '<div class="st-row"><span class="muted" data-t="ui.looking"><span data-t="ui.looking">Looking …</span></span></div>'; return; }
     if (st.err) {
       b.innerHTML = '<div class="st-col"><p class="st-note" data-noi18n>' + (st.err === 'old' ? L('Your server doesn’t know the weekly backup yet – paste the newest <code>_cloudflare/worker.js</code> into the Worker (Edit code → Deploy).', 'Serveren kjenner ikke den ukentlige sikkerhetskopien ennå – lim inn nyeste <code>_cloudflare/worker.js</code> i Workeren (Edit code → Deploy).') : L('Couldn’t reach your server – check again when you’re online.', 'Fikk ikke kontakt med serveren – sjekk igjen når du er på nett.')) + '</p></div>' + steps();
       return;
@@ -41,14 +41,14 @@
     var c = st.cfg || {}, l = st.last;
     var last = l ? (l.ok ? '<i class="bi bi-check-circle" style="color:var(--accent)"></i> Last one sent ' + esc(when(l.at)) + (st.to ? ' to ' + esc(st.to) : '') : '<i class="bi bi-exclamation-triangle" style="color:var(--danger)"></i> ' + esc(when(l.at)) + ': ' + esc(l.err || 'failed')) : 'None sent yet';
     if (!st.ready) {
-      b.innerHTML = '<div class="st-col"><p class="st-note" data-noi18n>' + L('Not set up – it’s optional. <b data-t="ui.download-encrypted-backup">Download encrypted backup</b> above does the same by hand, and At a glance reminds you when it’s time.', 'Ikke satt opp – det er valgfritt. <b>Last ned kryptert sikkerhetskopi</b> over gjør det samme for hånd, og Kort fortalt minner deg på det når det er på tide.') + '</p></div>' + steps();
+      b.innerHTML = '<div class="st-col"><p class="st-note" data-noi18n>' + L('Not set up – it’s optional. <b data-t="ui.download-encrypted-backup"><span data-t="ui.download-encrypted-backup">Download encrypted backup</span></b> above does the same by hand, and At a glance reminds you when it’s time.', 'Ikke satt opp – det er valgfritt. <b>Last ned kryptert sikkerhetskopi</b> over gjør det samme for hånd, og Kort fortalt minner deg på det når det er på tide.') + '</p></div>' + steps();
       return;
     }
-    b.innerHTML = '<label class="st-row"><span>Email me a backup every week<small class="st-rsub">' + last + '</small></span><input type="checkbox" class="switch" data-bmon' + (c.on ? ' checked' : '') + '></label>' +
-      (c.on ? '<label class="st-row"><span data-t="ui.day">Day</span><select class="st-select" data-bmday>' + DAYS.map(function (d, i) { return '<option value="' + i + '"' + (i === c.day ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></label>' +
-        '<label class="st-row"><span data-t="ui.from">From</span><select class="st-select" data-bmhour>' + [6, 8, 12, 18, 20, 22].map(function (h) { return '<option value="' + h + '"' + (h === c.hour ? ' selected' : '') + '>' + pad(h) + ':00</option>'; }).join('') + '</select></label>' : '') +
+    b.innerHTML = '<label class="st-row"><span><span data-t="ui.email-me-a-backup-every-week">Email me a backup every week</span><small class="st-rsub">' + last + '</small></span><input type="checkbox" class="switch" data-bmon' + (c.on ? ' checked' : '') + '></label>' +
+      (c.on ? '<label class="st-row"><span data-t="ui.day"><span data-t="ui.day">Day</span></span><select class="st-select" data-bmday>' + DAYS.map(function (d, i) { return '<option value="' + i + '"' + (i === c.day ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></label>' +
+        '<label class="st-row"><span data-t="ui.from"><span data-t="ui.from">From</span></span><select class="st-select" data-bmhour>' + [6, 8, 12, 18, 20, 22].map(function (h) { return '<option value="' + h + '"' + (h === c.hour ? ' selected' : '') + '>' + pad(h) + ':00</option>'; }).join('') + '</select></label>' : '') +
       '<button type="button" class="st-row st-btn" data-bmnow' + (busy ? ' disabled' : '') + '><span><i class="bi bi-send"></i> ' + (busy ? 'Sending …' : 'Send one now') + '</span></button>' +
-      '<div class="st-col"><p class="st-note" data-noi18n>' + L('The file is the same as a downloaded backup: encrypted with your passcode, so the email is useless without it. Open it with <b data-t="ui.restore-from-a-backup">Restore from a backup</b>.', 'Filen er den samme som en nedlastet sikkerhetskopi: kryptert med koden din, så e-posten er verdiløs uten den. Åpne den med <b>Gjenopprett fra sikkerhetskopi</b>.') + '</p></div>';
+      '<div class="st-col"><p class="st-note" data-noi18n>' + L('The file is the same as a downloaded backup: encrypted with your passcode, so the email is useless without it. Open it with <b data-t="ui.restore-from-a-backup"><span data-t="ui.restore-from-a-backup">Restore from a backup</span></b>.', 'Filen er den samme som en nedlastet sikkerhetskopi: kryptert med koden din, så e-posten er verdiløs uten den. Åpne den med <b>Gjenopprett fra sikkerhetskopi</b>.') + '</p></div>';
   }
   function load() {
     st = null; draw();

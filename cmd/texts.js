@@ -82,7 +82,7 @@
       return '<p class="st-sub tx-head"><i class="bi bi-' + g.icon + '"></i> ' + g.title + '</p><section class="st-group tx-group">' + g.fields.map(function (f) {
         var v = value(f.k);
         return '<div class="st-col tx-field' + (isOwn(f.k) ? ' own' : '') + '" data-k="' + f.k + '">' +
-          '<span class="tx-label">' + f.label + '<button type="button" class="text-btn tx-reset" data-reset="' + f.k + '"' + (isOwn(f.k) ? '' : ' hidden') + '>Original</button></span>' +
+          '<span class="tx-label">' + f.label + '<button type="button" class="text-btn tx-reset" data-reset="' + f.k + '"' + (isOwn(f.k) ? '' : ' hidden') + '><span data-t="ui.original">Original</span></button></span>' +
           '<textarea class="st-wide tx-in" data-k="' + f.k + '" rows="' + f.rows + '" maxlength="' + f.max + '" placeholder="' + esc(defaults[lang][f.k]) + '">' + esc(v) + '</textarea>' +
           '<small class="tx-meta"><span>' + (f.hint || '') + '</span><span class="tx-count" data-count="' + f.k + '">' + count(f, v) + '</span></small></div>';
       }).join('') + '</section>';
@@ -130,7 +130,7 @@
     var n = draft ? Object.keys(draft.en).length + Object.keys(draft.nb).length : 0;
     if ($('sumTexts')) $('sumTexts').textContent = n ? n + ' text' + (n > 1 ? 's' : '') + ' changed' : 'About, roles, contact, footer';
   }
-  if ($('txReview')) $('txReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show('Changes to the website texts', saved, draft); });
+  if ($('txReview')) $('txReview').addEventListener('click', function () { if (window.SiteReview && saved && draft) window.SiteReview.show(I18N.k('ui.changes-to-the-website-texts', 'Changes to the website texts'), saved, draft); });
   $('txUndo').addEventListener('click', function () { draft = clone(saved); draw(); bar(); });
   $('txPublish').addEventListener('click', function () {
     if (!dirty() || busy) return;
@@ -139,10 +139,10 @@
       .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); })
       .then(function (j) {
         busy = false;
-        if (j.ok) { saved = { en: j.texts.en, nb: j.texts.nb }; draft = clone(saved); sha = j.sha; draw(); bar(); status('Published · live on jplundberg.com in about a minute'); try { window.dispatchEvent(new CustomEvent('site:published', { detail: 'website texts' })); } catch (e) {} return; }
-        if (j._status === 409) { status('Changed somewhere else. Reloading the latest version…', true); saved = null; loading = null; load(); return; }
+        if (j.ok) { saved = { en: j.texts.en, nb: j.texts.nb }; draft = clone(saved); sha = j.sha; draw(); bar(); status(I18N.k('ui.published-live-on-jplundberg-com-in-abou', 'Published · live on jplundberg.com in about a minute')); try { window.dispatchEvent(new CustomEvent('site:published', { detail: 'website texts' })); } catch (e) {} return; }
+        if (j._status === 409) { status(I18N.k('ui.changed-somewhere-else-reloading-the-lat', 'Changed somewhere else. Reloading the latest version…'), true); saved = null; loading = null; load(); return; }
         bar(); status('Couldn’t publish (' + (j.error || j._status) + ').', true);
-      }).catch(function () { busy = false; bar(); status('Couldn’t publish. Check your connection.', true); });
+      }).catch(function () { busy = false; bar(); status(I18N.k('ui.couldnt-publish-check-your-connection', 'Couldn’t publish. Check your connection.'), true); });
   });
 
   window.addEventListener('st:page', function (e) {

@@ -43,7 +43,7 @@
     headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=house" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a>'; },
     above: function (l) {
       var rl = rooms(), all = Fe.list('chores');
-      if (!all.length) return '<button type="button" class="pill-btn hl-seed" data-chseed><i class="bi bi-magic"></i> Pick from the usual ones</button>';
+      if (!all.length) return '<button type="button" class="pill-btn hl-seed" data-chseed><i class="bi bi-magic"></i> <span data-t="ui.pick-from-the-usual-ones">Pick from the usual ones</span></button>';
       /* rooms: By day / By room, one room at a time, and the rooms themselves */
       var dueIn = function (rid) { return all.filter(function (c) { var p = period(c); return (rid === '' ? true : c.room === rid) && !done(c, p) && p.day <= today(); }).length; };
       var bar = '<div class="ch-bar">' + (rl.length ? '<div class="seg ch-seg" role="group"><button type="button" data-chview="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" data-chview="room" aria-pressed="' + (view === 'room') + '">By room</button></div>' +

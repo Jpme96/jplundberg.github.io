@@ -556,7 +556,7 @@
     if (!want) { if (row) row.remove(); return; }
     var tr = (rj('dash.travel', {}).trips || []).filter(function (x) { return x.id === id; })[0]; if (!tr) return;
     if (!row) { row = document.createElement('label'); row.id = 'tpShareRow'; row.className = 'tp-share'; notes.parentNode.insertBefore(row, notes); }
-    var html = '<span><i class="bi bi-people"></i> ' + esc('Share with ' + pname()) + '<small>' + esc('Dates and the packing list – you tick things off together') + '</small></span><input type="checkbox" class="switch" data-tpshare="' + esc(id) + '"' + (tr.share ? ' checked' : '') + '>';
+    var html = '<span><i class="bi bi-people"></i> ' + esc('Share with ' + pname()) + '<small>' + esc(I18N.k('ui.dates-and-the-packing-list-you-tick-thin', 'Dates and the packing list – you tick things off together')) + '</small></span><input type="checkbox" class="switch" data-tpshare="' + esc(id) + '"' + (tr.share ? ' checked' : '') + '>';
     if (row.dataset.h !== html) { row.innerHTML = html; row.dataset.h = html; }
   }
   document.addEventListener('change', function (e) {
@@ -620,9 +620,9 @@
       showing = 'setup';
       box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-people"></i> Share your home with ' + esc(p ? p.name : 'the person you live with') + '</p>' +
         '<div class="st-group"><p class="st-note" data-t="ui.they-get-their-own-small-app-with-only-w">They get their own small app with only what you choose below – the shopping list, chores, money between you, events you tick, plants and the moving checklist. Your finances, health, papers and everything else stay locked with your passcode; they can’t open it.</p></div>' +
-        (p ? '' : '<div class="st-group"><label class="st-row"><span>Their name<small class="st-rsub" data-t="ui.for-money-between-you-add-them-in-financ">For money between you, add them in Finances → Shared expenses</small></span><input class="st-input" id="shName" maxlength="40" value="' + esc(((V.get() || {}).share || {}).name || '') + '" placeholder="Name"></label></div>') +
-        '<div class="st-group"><label class="st-row"><span>Their email<small class="st-rsub" data-t="ui.the-one-they-log-in-with-only-kept-on-yo">The one they log in with – only kept on your server</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label></div>' +
-        '<div class="st-group"><button type="button" class="st-row st-btn" id="shStart"><span><i class="bi bi-people"></i> Start sharing</span><i class="bi bi-chevron-right"></i></button></div>' +
+        (p ? '' : '<div class="st-group"><label class="st-row"><span><span data-t="ui.their-name"><span data-t="ui.their-name">Their name</span></span><small class="st-rsub" data-t="ui.for-money-between-you-add-them-in-financ">For money between you, add them in Finances → Shared expenses</small></span><input class="st-input" id="shName" maxlength="40" value="' + esc(((V.get() || {}).share || {}).name || '') + '" placeholder="Name"></label></div>') +
+        '<div class="st-group"><label class="st-row"><span><span data-t="ui.their-email"><span data-t="ui.their-email">Their email</span></span><small class="st-rsub" data-t="ui.the-one-they-log-in-with-only-kept-on-yo">The one they log in with – only kept on your server</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></label></div>' +
+        '<div class="st-group"><button type="button" class="st-row st-btn" id="shStart"><span><i class="bi bi-people"></i> <span data-t="ui.start-sharing"><span data-t="ui.start-sharing">Start sharing</span></span></span><i class="bi bi-chevron-right"></i></button></div>' +
         '<p class="st-note muted" id="shMsg" role="status"></p>' +
         '<p class="st-note muted" data-t="ui.you-also-add-their-email-in-cloudflare-z">You also add their email in Cloudflare (Zero Trust → Access → Applications → your dashboard → policy) so they can log in at all.</p>';
       return;
@@ -635,20 +635,20 @@
         '<button type="button" class="st-row st-btn" id="shPrev"><span><i class="bi bi-phone"></i> Preview ' + esc(nm) + '’s app<small class="st-rsub" data-t="ui.exactly-what-they-see-nothing-can-be-cha">Exactly what they see – nothing can be changed in the preview</small></span><i class="bi bi-chevron-right"></i></button></div>' +
       pendHtml(nm, pend) +
       (joined ? '' : inviteSec(nm, false)) +
-      '<p class="st-sub ap-sub"><i class="bi bi-sliders"></i> What you share</p>' +
+      '<p class="st-sub ap-sub"><i class="bi bi-sliders"></i> <span data-t="ui.what-you-share">What you share</span></p>' +
       sec('sees', 'ui-checks', 'What ' + nm + ' sees', nOn + ' of ' + WHAT.length + ' shared',
         WHAT.map(function (w) {
           return '<label class="st-row"><span><i class="bi bi-' + w[2] + '"></i> ' + esc(w[1]) + (w[0] === 'money' && !p ? '<small class="st-rsub" data-t="ui.add-them-in-finances-shared-expenses-fir">Add them in Finances → Shared expenses first</small>' : '') + '</span><input type="checkbox" class="switch" data-shwhat="' + w[0] + '"' + (sw[w[0]] ? ' checked' : '') + '></label>';
-        }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> List every shared item</span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
+        }).join('') + '<button type="button" class="st-row st-btn" id="shPeek"><span><i class="bi bi-eye"></i> <span data-t="ui.list-every-shared-item">List every shared item</span></span><i class="bi bi-chevron-down"></i></button><div id="shPeekBox" hidden></div>') +
       settingsMore(nm) +
       sec('act', 'clock-history', 'Who did what', actSum(nm), actHtml(nm)) +
       sec('chat', 'chat-heart', 'Chat', (window.HomeChat ? 'Messages ' + (HomeChat.ttl() ? 'disappear after ' + HomeChat.ttlName(HomeChat.ttl()) : 'are kept') : '') + (sw.notes && nNotes ? ' · ' + nNotes + ' pinned' : ''), chatSec(sw)) +
-      '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> Access</p>' +
+      '<p class="st-sub ap-sub"><i class="bi bi-person-gear"></i> <span data-t="ui.access"><span data-t="ui.access">Access</span></span></p>' +
       (joined ? inviteSec(nm, true) : '') +
-      sec('acct', 'key', 'Login and pause', (paused ? 'Paused · ' : '') + (srvInfo && srvInfo.partner || 'Their email'),
-        '<label class="st-row"><span>Their email<small class="st-rsub" data-t="ui.change-it-if-they-log-in-with-another-on">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span data-t="ui.save-email">Save email</span><i class="bi bi-check2"></i></button>' +
+      sec('acct', 'key', I18N.k('ui.login-and-pause', 'Login and pause'), (paused ? 'Paused · ' : '') + (srvInfo && srvInfo.partner || 'Their email'),
+        '<label class="st-row"><span><span data-t="ui.their-email"><span data-t="ui.their-email">Their email</span></span><small class="st-rsub" data-t="ui.change-it-if-they-log-in-with-another-on">Change it if they log in with another one</small></span><input class="st-input" id="shEmail" type="email" inputmode="email" autocomplete="off" value="' + esc(srvInfo && srvInfo.partner || '') + '"></label><button type="button" class="st-row st-btn" id="shSaveEmail" hidden><span data-t="ui.save-email"><span data-t="ui.save-email"><span data-t="ui.save-email">Save email</span></span></span><i class="bi bi-check2"></i></button>' +
         '<button type="button" class="st-row st-btn" id="shPause"><span><i class="bi bi-' + (paused ? 'play-circle' : 'pause-circle') + '"></i> ' + (paused ? 'Resume sharing' : 'Pause sharing') + '<small class="st-rsub">' + (paused ? esc(nm) + ' sees everything again – no new code needed' : esc(nm) + ' sees nothing for now. Nothing is deleted, and they need no new code to come back.') + '</small></span></button>' +
-        '<button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL" data-t="ui.stop-sharing">Stop sharing</span><small class="st-rsub" data-t="ui.they-lose-access-at-once-the-shared-box">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button>');
+        '<button type="button" class="st-row st-btn danger-txt" id="shStop"><span><i class="bi bi-x-octagon"></i> <span id="shStopL" data-t="ui.stop-sharing"><span data-t="ui.stop-sharing"><span data-t="ui.stop-sharing">Stop sharing</span></span></span><small class="st-rsub" data-t="ui.they-lose-access-at-once-the-shared-box">They lose access at once, the shared box and key are removed. Your own data stays as it is.</small></span></button>');
     SC.api('share').then(function (j) { var was = srvInfo ? { joined: !!srvInfo.joined, paused: !!srvInfo.paused, partner: srvInfo.partner } : null; srvInfo = j; paintSum();
       if (showing === 'status' && (!was || was.joined !== !!j.joined || was.paused !== !!j.paused || was.partner !== j.partner) && !document.activeElement.closest('#stShare input, #stShare textarea')) draw(); }, function () {});
   }
@@ -681,14 +681,14 @@
   document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.classList && d.classList.contains('sh-sec')) secOpen[d.dataset.shsec] = d.open; }, true);
   function inviteSec(nm, joined) {
     var body = '<p class="st-note">' + esc('With ' + nm + ', on their phone: 1. Open ' + location.host + '/cmd/home and log in with their email. 2. Scan this code with the Camera app. 3. They choose their own passcode.') + '</p>' +
-      '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button></div>' +
-      '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> Copy the invite link instead<small class="st-rsub" data-t="ui.only-send-it-somewhere-private-it-works">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button>';
-    if (!joined) return '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> Invite</p><div class="st-group sh-inv">' + body + '</div>';
-    return sec('inv', 'qr-code', 'Invite again', nm + ' is set up · for a new phone or a forgotten passcode', body);
+      '<div class="sh-qr" id="shQR"><button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> <span data-t="ui.show-the-code"><span data-t="ui.show-the-code">Show the code</span></span></button></div>' +
+      '<button type="button" class="st-row st-btn" id="shCopy"><span><i class="bi bi-link-45deg"></i> <span data-t="ui.copy-the-invite-link-instead">Copy the invite link instead</span><small class="st-rsub" data-t="ui.only-send-it-somewhere-private-it-works">Only send it somewhere private – it works like the code</small></span><i class="bi bi-copy"></i></button>';
+    if (!joined) return '<p class="st-sub ap-sub"><i class="bi bi-qr-code"></i> <span data-t="ui.invite"><span data-t="ui.invite">Invite</span></span></p><div class="st-group sh-inv">' + body + '</div>';
+    return sec('inv', 'qr-code', I18N.k('ui.invite-again', 'Invite again'), nm + ' is set up · for a new phone or a forgotten passcode', body);
   }
   function pendHtml(nm, pend) {
     if (!Object.keys(pend).length) return '';
-    return '<p class="st-sub ap-sub"><i class="bi bi-hourglass-split"></i> Waiting for your OK</p><div class="st-group" id="shPend">' + Object.keys(pend).map(function (id) { var f = pend[id].f; return '<div class="st-row sh-pend"><span>' + esc(f.note || 'Shared cost') + '<small class="st-rsub">' + esc(kr(f.total) + ' · ' + nm + ' paid · ' + new Date(f.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></span><span class="sh-pend-b"><button type="button" class="text-btn danger" data-shpend="' + esc(id) + '|0">Decline</button><button type="button" class="pill-btn sm" data-shpend="' + esc(id) + '|1">OK</button></span></div>'; }).join('') + '</div>';
+    return '<p class="st-sub ap-sub"><i class="bi bi-hourglass-split"></i> <span data-t="ui.waiting-for-your-ok">Waiting for your OK</span></p><div class="st-group" id="shPend">' + Object.keys(pend).map(function (id) { var f = pend[id].f; return '<div class="st-row sh-pend"><span>' + esc(f.note || 'Shared cost') + '<small class="st-rsub">' + esc(kr(f.total) + ' · ' + nm + ' paid · ' + new Date(f.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</small></span><span class="sh-pend-b"><button type="button" class="text-btn danger" data-shpend="' + esc(id) + '|0"><span data-t="ui.decline"><span data-t="ui.decline">Decline</span></span></button><button type="button" class="pill-btn sm" data-shpend="' + esc(id) + '|1">OK</button></span></div>'; }).join('') + '</div>';
   }
   function sel(attr, v0, opts) { return '<select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   function settingsMore(nm) {
@@ -699,11 +699,11 @@
     var catNames = cats.filter(function (c) { return cc.indexOf(c[0]) > -1; }).map(function (c) { return c[1]; });
     return sec('perm', 'pencil-square', 'What ' + nm + ' may change', nView ? (nView === AREAS.length ? 'Everything is view only' : nView + ' view only · the rest can change') : 'Can change everything shared',
         AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', 'Can change'], ['view', 'View only']]) + '</label>'; }).join('')) +
-      sec('cal', 'calendar-heart', 'Calendars shared automatically', catNames.length ? catNames.join(', ') : 'None – you tick events one by one',
+      sec('cal', 'calendar-heart', I18N.k('ui.calendars-shared-automatically', 'Calendars shared automatically'), catNames.length ? catNames.join(', ') : 'None – you tick events one by one',
         '<p class="st-note muted" data-t="ui.every-event-in-these-is-shared-no-need-t">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>') +
-      '<p class="st-sub ap-sub"><i class="bi bi-shield-check"></i> Rules</p>' +
-      sec('money', 'cash-coin', 'Bigger shared costs', ap ? 'Ask me first above ' + kr(ap) : 'No OK needed',
-        '<label class="st-row"><span>Ask me first above<small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
+      '<p class="st-sub ap-sub"><i class="bi bi-shield-check"></i> <span data-t="ui.rules"><span data-t="ui.rules">Rules</span></span></p>' +
+      sec('money', 'cash-coin', I18N.k('ui.bigger-shared-costs', 'Bigger shared costs'), ap ? 'Ask me first above ' + kr(ap) : 'No OK needed',
+        '<label class="st-row"><span><span data-t="ui.ask-me-first-above"><span data-t="ui.ask-me-first-above">Ask me first above</span></span><small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
         '<p class="st-note muted" data-t="ui.in-at-a-glance-and-as-a-notification-on">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +
@@ -733,11 +733,11 @@
       l.map(function (n) {
         if (noteEd === n.id) return noteForm(n);
         return '<div class="st-row sh-note"><button type="button" class="sh-note-x" data-shnoteed="' + esc(n.id) + '"><b>' + esc(n.title || 'Note') + '</b><small>' + esc(String(n.text || '').split('\n')[0].slice(0, 80)) + '</small></button><button type="button" class="icon-btn sm" data-shnotedel="' + esc(n.id) + '" aria-label="Delete note"><i class="bi bi-trash3"></i></button></div>';
-      }).join('') + (noteEd === 'new' ? noteForm(null) : '<button type="button" class="st-row st-btn" data-shnoteed="new"><span><i class="bi bi-plus-lg"></i> Add a note</span></button>');
+      }).join('') + (noteEd === 'new' ? noteForm(null) : '<button type="button" class="st-row st-btn" data-shnoteed="new"><span><i class="bi bi-plus-lg"></i> <span data-t="ui.add-a-note"><span data-t="ui.add-a-note">Add a note</span></span></span></button>');
   }
   function noteForm(n) {
     return '<form class="sh-noteform" data-shnoteform="' + esc(n ? n.id : 'new') + '"><input class="st-input" name="title" maxlength="60" placeholder="Title – e.g. Bins" value="' + esc(n ? n.title : '') + '" required><textarea class="st-input" name="text" rows="3" maxlength="1500" placeholder="e.g. Paper every other Tuesday, food waste Fridays" data-t-placeholder="ui.e-g-paper-every-other-tuesday-food-waste">' + esc(n ? n.text : '') + '</textarea>' +
-      '<div class="sh-noteacts"><button type="button" class="text-btn" data-shnotecancel data-t="ui.cancel">Cancel</button><button type="submit" class="pill-btn" data-t="ui.save">Save</button></div></form>';
+      '<div class="sh-noteacts"><button type="button" class="text-btn" data-shnotecancel data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><button type="submit" class="pill-btn" data-t="ui.save"><span data-t="ui.save"><span data-t="ui.save">Save</span></span></button></div></form>';
   }
   function drawNotes() { var b = document.getElementById('shNotes'); if (b) b.innerHTML = notesHtml(); var f = b && b.querySelector('[name=title]'); if (f && !f.value) f.focus(); }
   document.addEventListener('click', function (e) {
@@ -819,13 +819,13 @@
   function peek() {
     var box = document.getElementById('shPeekBox'); if (!box) return;
     box.hidden = !box.hidden; if (box.hidden) return;
-    box.innerHTML = '<p class="st-note muted" data-t="ui.looking">Looking …</p>';
+    box.innerHTML = '<p class="st-note muted" data-t="ui.looking"><span data-t="ui.looking"><span data-t="ui.looking">Looking …</span></span></p>';
     sync().then(function () {
       var by = {}; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.del || !r.c || r.c === 'info') return; (by[r.c] = by[r.c] || []).push(r.f); });
       var NM = { room: ['Rooms', 'name'], vote: ['Dinner votes', 'date'], pme: ['Their profile and avatar', 'name'], proj: ['House projects', 'name'], doc: ['Documents', 'name'], clog: ['Chore log', 'name'], meal: ['Dinner plan', 'text'], bill: ['Home bills', 'name'], trip: ['Trips', 'name'], note: ['Home notes', 'title'], shop: ['Shopping list', 'text'], chore: ['Chores', 'name'], cdone: ['Chores ticked off', 'k'], sx: ['Shared costs', 'note'], pay: ['Settled up', 'amount'], ev: ['Calendar events', 'title'], plant: ['Plants', 'name'], mv: ['Moving checklist', 'text'] };
       var keys = Object.keys(NM).filter(function (c) { return by[c] && by[c].length; });
       box.innerHTML = keys.length ? '<ul class="sh-peek">' + keys.map(function (c) { var l = by[c]; return '<li><b>' + esc(NM[c][0]) + ' · ' + l.length + '</b><small>' + esc(l.slice(0, 4).map(function (f) { return String(f[NM[c][1]] == null ? '' : f[NM[c][1]]); }).join(', ') + (l.length > 4 ? ' …' : '')) + '</small></li>'; }).join('') + '</ul><p class="st-note muted" data-t="ui.that-is-all-that-is-in-the-shared-box-no">That is all that is in the shared box – nothing else is sent.</p>'
-        : '<p class="st-note muted" data-t="ui.nothing-shared-yet">Nothing shared yet.</p>';
+        : '<p class="st-note muted" data-t="ui.nothing-shared-yet"><span data-t="ui.nothing-shared-yet"><span data-t="ui.nothing-shared-yet">Nothing shared yet.</span></span></p>';
     });
   }
   document.addEventListener('click', function (e) {
@@ -868,7 +868,7 @@
       }, function () { toast('<i class="bi bi-exclamation-circle"></i> Couldn’t reach the server – nothing changed'); });
     }
   });
-  document.addEventListener('click', function (e) { if (e.target.closest('#shHideQR')) { var q = document.getElementById('shQR'); if (q) q.innerHTML = '<button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> Show the code</button>'; } });
+  document.addEventListener('click', function (e) { if (e.target.closest('#shHideQR')) { var q = document.getElementById('shQR'); if (q) q.innerHTML = '<button type="button" class="pill-btn" id="shShowQR"><i class="bi bi-qr-code"></i> <span data-t="ui.show-the-code"><span data-t="ui.show-the-code">Show the code</span></span></button>'; } });
   document.addEventListener('input', function (e) { if (e.target.id === 'shEmail' && st()) { var s = document.getElementById('shSaveEmail'); if (s) s.hidden = !e.target.value.trim() || (srvInfo && e.target.value.trim().toLowerCase() === srvInfo.partner); } });
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-shwhat]'); if (!i) return;

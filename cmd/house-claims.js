@@ -84,7 +84,7 @@
     });
     /* a new home: the one-year inspection */
     var ti = takeInfo(cur()), td = takeDate(cur());
-    if (ti.kind === 'new' && td) { var y = addYears(td, 1), n1 = daysTo(y); if (n1 <= 45 && n1 >= -14) add(40, 'building-check', '#0891b2', 'One-year inspection (ettårsbefaring) ' + (n1 >= 0 ? 'around ' + fmt(y, { day: 'numeric', month: 'short' }) : 'is due'), 'Walk round the home and note what’s wrong – bring the list to the builder', (here ? '' : '/cmd/house/') + '#hclaim', { key: 'hc:y1:' + y, tip: true }); }
+    if (ti.kind === 'new' && td) { var y = addYears(td, 1), n1 = daysTo(y); if (n1 <= 45 && n1 >= -14) add(40, 'building-check', '#0891b2', 'One-year inspection (ettårsbefaring) ' + (n1 >= 0 ? 'around ' + fmt(y, { day: 'numeric', month: 'short' }) : 'is due'), I18N.k('ui.walk-round-the-home-and-note-whats-wrong', 'Walk round the home and note what’s wrong – bring the list to the builder'), (here ? '' : '/cmd/house/') + '#hclaim', { key: 'hc:y1:' + y, tip: true }); }
   });
   (window.EventsExtra = window.EventsExtra || []).push(function () {
     if (!on()) return [];

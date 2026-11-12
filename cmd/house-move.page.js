@@ -57,24 +57,24 @@
     el.hidden = false;
     var t = T(), d = date(), html;
     if (!d) {
-      html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day</h2></div>' +
+      html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> <span data-t="ui.take-over-day">Take-over day</span></h2></div>' +
         '<p class="muted hx-lead" data-t="ui.getting-the-keys-to-a-new-home-a-step-by">Getting the keys to a new home? A step-by-step for the day itself: meter readings with photos, keys, the walk-through with faults, and the protocol.</p>' +
-        '<form class="hx-row" data-tkdate><label class="hx-f"><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="d" required></label><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Start</button><button type="button" class="text-btn" data-tkhide data-t="ui.not-moving-hide">Not moving – hide</button></form></section>';
+        '<form class="hx-row" data-tkdate><label class="hx-f"><span data-t="ui.take-over-date"><span data-t="ui.take-over-date">Take-over date</span></span><input type="date" name="d" required></label><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.start">Start</span></button><button type="button" class="text-btn" data-tkhide data-t="ui.not-moving-hide">Not moving – hide</button></form></section>';
       el.innerHTML = html; return;
     }
     ensure(); t = T();
     var n = daysTo(d), open = t.open || (n > 1 ? 'prep' : n >= 0 ? 'meters' : 'after');
     var states = STEPS.map(function (s) { return stepState(s[0], t); }), done = states.filter(function (s) { return s.done; }).length;
-    html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> Take-over day <small class="fold-sum">' + esc(n > 1 ? 'in ' + n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : (-n) + ' days ago') + ' · ' + done + '/' + STEPS.length + '</small></h2><div class="head-actions">' +
-      '<button type="button" class="text-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Record</button><button type="button" class="text-btn" data-tkset aria-label="Details" data-t-aria-label="ui.details"><i class="bi bi-sliders"></i></button></div></div>' +
+    html = '<section class="card kit-card hx-card" id="htake"><div class="card-head"><h2><i class="bi bi-key"></i> <span data-t="ui.take-over-day">Take-over day</span> <small class="fold-sum">' + esc(n > 1 ? 'in ' + n + ' days' : n === 1 ? 'tomorrow' : n === 0 ? 'today' : (-n) + ' days ago') + ' · ' + done + '/' + STEPS.length + '</small></h2><div class="head-actions">' +
+      '<button type="button" class="text-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.record">Record</span></button><button type="button" class="text-btn" data-tkset aria-label="Details" data-t-aria-label="ui.details"><i class="bi bi-sliders"></i></button></div></div>' +
       '<div class="hx-when"><span class="hx-day"><b>' + esc(fromKey(d).getDate()) + '</b><small>' + esc(fromKey(d).toLocaleDateString('en-GB', { month: 'short' })) + '</small></span><span><b>' + esc(n > 1 ? 'In ' + n + ' days' : n === 1 ? 'Tomorrow' : n === 0 ? 'Today – good luck!' : (-n) + ' days ago') + '</b><small>' +
-      esc([t.addr, t.seller ? 'from ' + t.seller : ''].filter(Boolean).join(' · ') || 'Add the address and seller under the sliders') + '</small></span><span class="hx-prog"><b>' + done + '/' + STEPS.length + '</b><small data-t="ui.steps-2">steps</small></span></div>' +
+      esc([t.addr, t.seller ? 'from ' + t.seller : ''].filter(Boolean).join(' · ') || 'Add the address and seller under the sliders') + '</small></span><span class="hx-prog"><b>' + done + '/' + STEPS.length + '</b><small data-t="ui.steps-2"><span data-t="ui.steps-2">steps</span></small></span></div>' +
       '<ol class="hx-steps">' + STEPS.map(function (s, i) {
         var st = states[i], isOpen = open === s[0];
         return '<li class="hx-step' + (isOpen ? ' open' : '') + (st.done ? ' done' : '') + (st.warn ? ' warn' : '') + '"><button type="button" class="hx-sh" data-tkstep="' + s[0] + '" aria-expanded="' + isOpen + '"><span class="hx-n">' + (st.done ? '<i class="bi bi-check-lg"></i>' : i + 1) + '</span><span class="hx-st"><b>' + esc(s[1]) + '</b>' + (st.text ? '<small>' + esc(st.text) + '</small>' : '') + '</span><i class="bi bi-chevron-down hx-chev"></i></button>' +
           (isOpen ? '<div class="hx-sb">' + body(s[0], t) + '</div>' : '') + '</li>';
       }).join('') + '</ol>' +
-      (n < -7 ? '<p class="hx-foot"><button type="button" class="text-btn" data-tkhide><i class="bi bi-eye-slash"></i> Hide the guide</button></p>' : '') + '</section>';
+      (n < -7 ? '<p class="hx-foot"><button type="button" class="text-btn" data-tkhide><i class="bi bi-eye-slash"></i> <span data-t="ui.hide-the-guide">Hide the guide</span></button></p>' : '') + '</section>';
     if (el._h !== html) { el._h = html; el.innerHTML = html; }
     if (HF) HF.fill(el);
   }
@@ -83,28 +83,28 @@
   }
   function body(id, t) {
     if (id === 'prep') return '<ul class="hx-cks">' + PREP.map(function (p) { return checkRow('data-tkprep', p[0], (t.prep || {})[p[0]], p[1], p[2]); }).join('') + '</ul>' +
-      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> What the condition report already describes usually can’t be claimed later – read it once more before the day.</p>';
+      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> <span data-t="ui.what-the-condition-report-already-descri">What the condition report already describes usually can’t be claimed later – read it once more before the day.</span></p>';
     if (id === 'meters') return '<ul class="hx-meters">' + arr(t.meters).map(function (m) {
       var M = METERS[m.kind] || METERS.other;
       return '<li class="hx-meter"><span class="kit-ic" style="--c:' + M[3] + '"><i class="bi bi-' + M[2] + '"></i></span><div class="hx-mx"><div class="hx-mrow"><b>' + esc(m.label || M[0]) + '</b>' +
         '<label class="hx-num"><input inputmode="decimal" autocomplete="off" placeholder="Reading" value="' + esc(m.value) + '" data-tkmval="' + esc(m.id) + '" aria-label="' + esc((m.label || M[0]) + ' – reading') + '"><em>' + esc(m.unit || M[1]) + '</em></label>' +
         (m.kind !== 'power' ? '<button type="button" class="icon-btn sm" data-tkmdel="' + esc(m.id) + '" aria-label="Remove"><i class="bi bi-x"></i></button>' : '') + '</div>' +
-        (m.photo ? '<div class="hf-strip"><span class="hf-th"><button type="button" class="hf-thb" data-hfview="' + esc(m.photo) + '" aria-label="Open the photo"><img data-hfimg="' + esc(m.photo) + '" alt=""></button></span><label class="text-btn hx-sm"><i class="bi bi-camera"></i> New photo<input type="file" accept="image/*" capture="environment" data-tkmph="' + esc(m.id) + '" hidden></label></div>'
-          : '<label class="text-btn hx-sm"><i class="bi bi-camera"></i> Photo of the meter<input type="file" accept="image/*" capture="environment" data-tkmph="' + esc(m.id) + '" hidden></label>') + '</div></li>';
+        (m.photo ? '<div class="hf-strip"><span class="hf-th"><button type="button" class="hf-thb" data-hfview="' + esc(m.photo) + '" aria-label="Open the photo"><img data-hfimg="' + esc(m.photo) + '" alt=""></button></span><label class="text-btn hx-sm"><i class="bi bi-camera"></i> <span data-t="ui.new-photo">New photo</span><input type="file" accept="image/*" capture="environment" data-tkmph="' + esc(m.id) + '" hidden></label></div>'
+          : '<label class="text-btn hx-sm"><i class="bi bi-camera"></i> <span data-t="ui.photo-of-the-meter">Photo of the meter</span><input type="file" accept="image/*" capture="environment" data-tkmph="' + esc(m.id) + '" hidden></label>') + '</div></li>';
     }).join('') + '</ul><div class="lf-chips hx-add">' + ['water', 'heat', 'oil', 'other'].map(function (k) { return '<button type="button" class="lf-chip" data-tkmadd="' + k + '"><i class="bi bi-plus"></i> ' + esc(METERS[k][0]) + '</button>'; }).join('') + '</div>' +
-      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> The electricity reading also goes into Electricity meter on the Energy tab, so the power use starts from the day you took over.</p>';
-    if (id === 'keys') return '<table class="hx-keys"><thead><tr><th data-t="ui.key">Key</th><th data-t="ui.should-get">Should get</th><th data-t="ui.got">Got</th></tr></thead><tbody>' + arr(t.keys).map(function (k) {
+      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> <span data-t="ui.the-electricity-reading-also-goes-into-e">The electricity reading also goes into Electricity meter on the Energy tab, so the power use starts from the day you took over.</span></p>';
+    if (id === 'keys') return '<table class="hx-keys"><thead><tr><th data-t="ui.key"><span data-t="ui.key">Key</span></th><th data-t="ui.should-get"><span data-t="ui.should-get">Should get</span></th><th data-t="ui.got"><span data-t="ui.got">Got</span></th></tr></thead><tbody>' + arr(t.keys).map(function (k) {
       var miss = num(k.got) != null && +k.got < +k.want;
       return '<tr' + (miss ? ' class="miss"' : '') + '><td>' + esc(k.label) + '</td><td><input inputmode="numeric" value="' + esc(k.want) + '" data-tkkw="' + esc(k.id) + '" aria-label="' + esc(k.label) + ' – should get"></td><td><input inputmode="numeric" value="' + esc(k.got) + '" data-tkkg="' + esc(k.id) + '" aria-label="' + esc(k.label) + ' – got"></td></tr>';
     }).join('') + '</tbody></table><form class="hx-row" data-tkkadd><input name="t" placeholder="Another key, e.g. Bike shed" data-t-placeholder="ui.another-key-e-g-bike-shed" maxlength="40" autocomplete="off"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
-      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> Codes (alarm, Wi-Fi, the door code) belong in <a href="#hinfo" data-tkgo="hinfo" data-t="ui.good-to-know">Good to know</a> on the Things tab – they’re hidden until you tap Show.</p>';
+      '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> <span data-t="ui.codes-alarm-wi-fi-the-door-code-belong-i">Codes (alarm, Wi-Fi, the door code) belong in</span> <a href="#hinfo" data-tkgo="hinfo" data-t="ui.good-to-know"><span data-t="ui.good-to-know">Good to know</span></a> <span data-t="ui.on-the-things-tab-theyre-hidden-until-yo">on the Things tab – they’re hidden until you tap Show.</span></p>';
     if (id === 'walk') {
       var f = arr(t.faults), hasClaim = Fe.on('hclaim') && window.HouseClaims;
       return '<ul class="hx-cks">' + CHECKS.map(function (c) { return checkRow('data-tkcheck', c[0], (t.checks || {})[c[0]], c[1], c[2]); }).join('') + '</ul>' +
-        '<div class="hx-fh"><h3 class="lp-h3">Faults ' + (f.length ? '(' + f.length + ')' : '') + '</h3><button type="button" class="pill-btn sm" data-tkfault><i class="bi bi-plus-lg"></i> Fault</button></div>' +
+        '<div class="hx-fh"><h3 class="lp-h3">Faults ' + (f.length ? '(' + f.length + ')' : '') + '</h3><button type="button" class="pill-btn sm" data-tkfault><i class="bi bi-plus-lg"></i> <span data-t="ui.fault">Fault</span></button></div>' +
         (f.length ? '<ul class="hx-faults">' + f.map(function (x) {
           return '<li class="hx-fault' + (x.big ? ' big' : '') + '"><div class="hx-ft"><button type="button" class="hx-fb" data-tkfedit="' + esc(x.id) + '"><b>' + esc(x.text || 'Fault') + '</b><small>' + esc([x.room, x.big ? 'serious' : ''].filter(Boolean).join(' · ')) + '</small></button>' +
-            (x.claim ? '<a class="hl-chip hx-cl" style="--c:#e66767" href="#hclaim=' + esc(x.claim) + '" data-tkclaimgo="' + esc(x.claim) + '"><i class="bi bi-exclamation-diamond"></i> Claim</a>' : hasClaim ? '<button type="button" class="text-btn hx-sm" data-tkclaim="' + esc(x.id) + '"><i class="bi bi-exclamation-diamond"></i> Make it a claim</button>' : '') + '</div>' +
+            (x.claim ? '<a class="hl-chip hx-cl" style="--c:#e66767" href="#hclaim=' + esc(x.claim) + '" data-tkclaimgo="' + esc(x.claim) + '"><i class="bi bi-exclamation-diamond"></i> <span data-t="ui.claim">Claim</span></a>' : hasClaim ? '<button type="button" class="text-btn hx-sm" data-tkclaim="' + esc(x.id) + '"><i class="bi bi-exclamation-diamond"></i> <span data-t="ui.make-it-a-claim">Make it a claim</span></button>' : '') + '</div>' +
             (HF ? HF.strip(x.photos, 'take:' + x.id, { label: 'Photos' }) : '') + '</li>';
         }).join('') + '</ul>' : '<p class="muted hx-tip" data-t="ui.found-something-wrong-add-it-with-a-phot">Found something wrong? Add it with a photo – it goes on the protocol, and you can turn it into a claim later.</p>');
     }
@@ -112,17 +112,17 @@
       var f2 = arr(t.faults), m2 = arr(t.meters).filter(function (x) { return num(x.value) != null; });
       return '<ul class="hx-cks">' + checkRow('data-tkprot', 'meters', (t.prot || {}).meters, 'The meter readings are in the protocol' + (m2.length ? ' (' + m2.map(function (x) { return nf.format(num(x.value)) + ' ' + ((METERS[x.kind] || METERS.other)[1]); }).join(', ') + ')' : ''), 'speedometer2') +
         checkRow('data-tkprot', 'faults', (t.prot || {}).faults, f2.length ? 'All ' + f2.length + (f2.length === 1 ? ' fault is' : ' faults are') + ' written in the protocol' : 'No faults found – or they’re written in the protocol', 'exclamation-triangle') +
-        checkRow('data-tkprot', 'keys', (t.prot || {}).keys, 'The number of keys is in the protocol', 'key') +
-        checkRow('data-tkprot', 'copy', (t.prot || {}).copy, 'You got a copy of the signed protocol', 'file-earmark-check') + '</ul>' +
-        '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> Something you point out now and is written down is much easier to claim later. Don’t sign a protocol that leaves out a fault you found.</p>' +
-        '<div class="hs2-acts"><button type="button" class="pill-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> Your own record (PDF)</button>' +
+        checkRow('data-tkprot', 'keys', (t.prot || {}).keys, I18N.k('ui.the-number-of-keys-is-in-the-protocol', 'The number of keys is in the protocol'), 'key') +
+        checkRow('data-tkprot', 'copy', (t.prot || {}).copy, I18N.k('ui.you-got-a-copy-of-the-signed-protocol', 'You got a copy of the signed protocol'), 'file-earmark-check') + '</ul>' +
+        '<p class="muted hx-tip"><i class="bi bi-info-circle"></i> <span data-t="ui.something-you-point-out-now-and-is-writt">Something you point out now and is written down is much easier to claim later. Don’t sign a protocol that leaves out a fault you found.</span></p>' +
+        '<div class="hs2-acts"><button type="button" class="pill-btn" data-tkpdf><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.your-own-record-pdf">Your own record (PDF)</span></button>' +
         '<label class="text-btn"><i class="bi bi-upload"></i> ' + (t.protocol ? 'Replace the signed protocol' : 'Add the signed protocol') + '<input type="file" accept="application/pdf,.pdf,image/*" data-tkprotfile hidden></label>' +
-        (t.signed ? '' : '<button type="button" class="text-btn" data-tksigned><i class="bi bi-pen"></i> Signed today</button>') + '</div>' +
-        (t.protocol ? '<p class="hx-tip"><i class="bi bi-journal-check"></i> The signed protocol is in the <a href="#hdocs" data-tkgo="hdocs" data-t="ui.fdv-binder">FDV binder</a> under Purchase and take-over.</p>' : '');
+        (t.signed ? '' : '<button type="button" class="text-btn" data-tksigned><i class="bi bi-pen"></i> <span data-t="ui.signed-today">Signed today</span></button>') + '</div>' +
+        (t.protocol ? '<p class="hx-tip"><i class="bi bi-journal-check"></i> <span data-t="ui.the-signed-protocol-is-in-the">The signed protocol is in the</span> <a href="#hdocs" data-tkgo="hdocs" data-t="ui.fdv-binder"><span data-t="ui.fdv-binder">FDV binder</span></a> <span data-t="ui.under-purchase-and-take-over">under Purchase and take-over.</span></p>' : '');
     }
     var mv = move(), left = mv ? arr(mv.items).filter(function (x) { return !x.done; }) : [];
     return '<ul class="hx-after">' +
-      '<li><a href="#hshared" data-tkgo="hshared"><i class="bi bi-list-check"></i><span><b data-t="ui.moving-checklist">Moving checklist</b><small>' + esc(left.length ? left.length + ' left: ' + left.slice(0, 2).map(function (x) { return x.text; }).join(' · ') : 'all done') + '</small></span></a></li>' +
+      '<li><a href="#hshared" data-tkgo="hshared"><i class="bi bi-list-check"></i><span><b data-t="ui.moving-checklist"><span data-t="ui.moving-checklist">Moving checklist</span></b><small>' + esc(left.length ? left.length + ' left: ' + left.slice(0, 2).map(function (x) { return x.text; }).join(' · ') : 'all done') + '</small></span></a></li>' +
       '<li><a href="https://www.skatteetaten.no/person/folkeregister/flytte/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i><span><b data-t="ui.moving-notice-flyttemelding">Moving notice (flyttemelding)</b><small data-t="ui.to-folkeregisteret-within-8-days-skattee">to Folkeregisteret within 8 days – Skatteetaten</small></span></a></li>' +
       '<li><a href="#hmeter" data-tkgo="hmeter"><i class="bi bi-speedometer2"></i><span><b data-t="ui.read-the-meter-again-in-a-month">Read the meter again in a month</b><small data-t="ui.energy-tab-then-you-see-your-use-per-day">Energy tab – then you see your use per day</small></span></a></li>' +
       (Fe.on('hdocs') ? '<li><a href="#hdocs" data-tkgo="hdocs"><i class="bi bi-journal-bookmark"></i><span><b data-t="ui.keep-the-documents-you-got">Keep the documents you got</b><small data-t="ui.manuals-drawings-the-fdv-papers-fdv-bind">manuals, drawings, the FDV papers – FDV binder</small></span></a></li>' : '') +
@@ -207,11 +207,11 @@
   function faultSheet(id) {
     var t = T(), f = id ? arr(t.faults).filter(function (x) { return x.id === id; })[0] : null; if (id && !f) return;
     var X = HF.sheet(f ? 'Fault' : 'New fault');
-    X.box.innerHTML = HF.head('exclamation-triangle', f ? 'Fault' : 'New fault', 'Say where it is and what’s wrong – add photos after saving.') +
-      '<form class="hx-form" data-tkfform><p class="mp-lbl" data-t="ui.where">Where</p><div class="lf-chips">' + ROOMS.map(function (r) { return '<button type="button" class="lf-chip" data-tkroom="' + esc(r) + '" aria-pressed="' + (!!f && f.room === r) + '">' + esc(r) + '</button>'; }).join('') + '</div>' +
+    X.box.innerHTML = HF.head('exclamation-triangle', f ? 'Fault' : 'New fault', I18N.k('ui.say-where-it-is-and-whats-wrong-add-phot', 'Say where it is and what’s wrong – add photos after saving.')) +
+      '<form class="hx-form" data-tkfform><p class="mp-lbl" data-t="ui.where"><span data-t="ui.where">Where</span></p><div class="lf-chips">' + ROOMS.map(function (r) { return '<button type="button" class="lf-chip" data-tkroom="' + esc(r) + '" aria-pressed="' + (!!f && f.room === r) + '">' + esc(r) + '</button>'; }).join('') + '</div>' +
       '<label class="hx-f"><span data-t="ui.whats-wrong">What’s wrong</span><textarea name="text" rows="3" maxlength="600" placeholder="e.g. Crack in the tile by the shower, the kitchen tap drips" data-t-placeholder="ui.e-g-crack-in-the-tile-by-the-shower-the" required>' + esc(f ? f.text : '') + '</textarea></label>' +
       '<label class="lf-check"><input type="checkbox" name="big"' + (f && f.big ? ' checked' : '') + '> <span data-t="ui.serious-it-stops-you-using-something-or">Serious – it stops you using something, or may get worse (water, power, the roof)</span></label>' +
-      '<div class="lf-foot">' + (f ? '<button type="button" class="text-btn danger" data-tkfdel><i class="bi bi-trash3"></i> Delete</button>' : '<span></span>') + '<button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot">' + (f ? '<button type="button" class="text-btn danger" data-tkfdel><i class="bi bi-trash3"></i> <span data-t="ui.delete">Delete</span></button>' : '<span></span>') + '<button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     var room = f ? f.room : '';
     X.box.addEventListener('click', function (e) {
       var r = e.target.closest('[data-tkroom]'); if (r) { room = r.dataset.tkroom; X.box.querySelectorAll('[data-tkroom]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === r)); }); return; }
@@ -244,15 +244,15 @@
   }
   function detailsSheet() {
     var t = T(), d = date();
-    var X = HF.sheet('The take-over');
-    X.box.innerHTML = HF.head('key', 'The take-over') +
-      '<form class="hx-form" data-tkdet><label class="hx-f"><span data-t="ui.take-over-date">Take-over date</span><input type="date" name="d" value="' + esc(d || '') + '" required></label>' +
-      '<label class="hx-f"><span data-t="ui.address">Address</span><input name="addr" maxlength="120" value="' + esc(t.addr || '') + '" placeholder="Street and number, postcode"></label>' +
+    var X = HF.sheet(I18N.k('ui.the-take-over', 'The take-over'));
+    X.box.innerHTML = HF.head('key', I18N.k('ui.the-take-over', 'The take-over')) +
+      '<form class="hx-form" data-tkdet><label class="hx-f"><span data-t="ui.take-over-date"><span data-t="ui.take-over-date">Take-over date</span></span><input type="date" name="d" value="' + esc(d || '') + '" required></label>' +
+      '<label class="hx-f"><span data-t="ui.address"><span data-t="ui.address">Address</span></span><input name="addr" maxlength="120" value="' + esc(t.addr || '') + '" placeholder="Street and number, postcode"></label>' +
       '<label class="hx-f"><span data-t="ui.seller-or-builder">Seller or builder</span><input name="seller" maxlength="80" value="' + esc(t.seller || '') + '" placeholder="Name"></label>' +
-      '<label class="hx-f"><span data-t="ui.estate-agent">Estate agent</span><input name="agent" maxlength="80" value="' + esc(t.agent || '') + '" placeholder="Name and firm"></label>' +
-      '<p class="mp-lbl" data-t="ui.the-home-is">The home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-tkkind="used" aria-pressed="' + (t.kind !== 'new') + '">Used – bought from the owner</button><button type="button" class="lf-chip" data-tkkind="new" aria-pressed="' + (t.kind === 'new') + '">New – from a builder</button></div>' +
+      '<label class="hx-f"><span data-t="ui.estate-agent"><span data-t="ui.estate-agent">Estate agent</span></span><input name="agent" maxlength="80" value="' + esc(t.agent || '') + '" placeholder="Name and firm"></label>' +
+      '<p class="mp-lbl" data-t="ui.the-home-is">The home is</p><div class="lf-chips"><button type="button" class="lf-chip" data-tkkind="used" aria-pressed="' + (t.kind !== 'new') + '"><span data-t="ui.used-bought-from-the-owner">Used – bought from the owner</span></button><button type="button" class="lf-chip" data-tkkind="new" aria-pressed="' + (t.kind === 'new') + '"><span data-t="ui.new-from-a-builder">New – from a builder</span></button></div>' +
       '<p class="muted hs2-note" data-t="ui.this-decides-which-rules-a-claim-follows">This decides which rules a claim follows (avhendingslova or bustadoppføringslova).</p>' +
-      '<div class="lf-foot"><button type="button" class="text-btn danger" data-tkreset><i class="bi bi-arrow-counterclockwise"></i> Start the guide over</button><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot"><button type="button" class="text-btn danger" data-tkreset><i class="bi bi-arrow-counterclockwise"></i> <span data-t="ui.start-the-guide-over">Start the guide over</span></button><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     var kind = t.kind === 'new' ? 'new' : 'used';
     X.box.addEventListener('click', function (e) {
       var k = e.target.closest('[data-tkkind]'); if (k) { kind = k.dataset.tkkind; X.box.querySelectorAll('[data-tkkind]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === k)); }); return; }

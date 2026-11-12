@@ -95,13 +95,13 @@
     var picks = open.filter(function (t) { return t.today === tom; }).map(function (t) { return t.id; });
     var tomEv = [];
     if (window.Cal && window.Cal.occurrences) { try { var a = fromKey(tom), b = fromKey(tom); b.setHours(23, 59); tomEv = window.Cal.occurrences(a, b).filter(function (o) { return !o.allDay && !(o.ev && o.ev.holiday); }).slice(0, 3); } catch (e) {} }
-    var html = head('moon-stars', 'End your workday', 'Close today in one go – and know what tomorrow holds.') +
-      (flexOpen ? '<section class="lf-sec"><h4 data-t="ui.work-time">Work time</h4><label class="lf-check"><input type="checkbox" id="sdOut" checked> Clock out now (' + nowHM + ') – clocked in at ' + esc(flexOpen.in) + '</label></section>' : '') +
+    var html = head('moon-stars', I18N.k('ui.end-your-workday', 'End your workday'), I18N.k('ui.close-today-in-one-go-and-know-what-tomo', 'Close today in one go – and know what tomorrow holds.')) +
+      (flexOpen ? '<section class="lf-sec"><h4 data-t="ui.work-time"><span data-t="ui.work-time">Work time</span></h4><label class="lf-check"><input type="checkbox" id="sdOut" checked> Clock out now (' + nowHM + ') – clocked in at ' + esc(flexOpen.in) + '</label></section>' : '') +
       '<section class="lf-sec"><h4 data-t="ui.left-from-today">Left from today</h4>' + (left.length ? left.map(function (t) { return '<label class="lf-check"><input type="checkbox" data-sdmove="' + esc(t.id) + '" checked> <span>Move <b>' + esc(t.text) + '</b> to tomorrow</span></label>'; }).join('') : '<p class="muted" data-t="ui.nothing-left-nice-work">Nothing left – nice work.</p>') + '</section>' +
-      '<section class="lf-sec"><h4>Tomorrow’s top 3 <small class="muted" id="sdCount"></small></h4><div class="lf-chips" id="sdPick">' +
+      '<section class="lf-sec"><h4><span data-t="ui.tomorrows-top-3">Tomorrow’s top 3</span> <small class="muted" id="sdCount"></small></h4><div class="lf-chips" id="sdPick">' +
       (open.length ? open.slice(0, 14).map(function (t) { return '<button type="button" class="lf-chip" data-sdpick="' + esc(t.id) + '" aria-pressed="' + (picks.indexOf(t.id) > -1) + '">' + esc(t.text) + '</button>'; }).join('') : '<p class="muted" data-t="ui.no-open-tasks">No open tasks.</p>') + '</div></section>' +
-      (tomEv.length ? '<section class="lf-sec"><h4 data-t="ui.tomorrow">Tomorrow</h4>' + tomEv.map(function (o) { return '<p class="lf-ev"><b>' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()) + '</b> ' + esc(o.title) + '</p>'; }).join('') + '</section>' : '') +
-      '<div class="lf-foot"><button type="button" class="text-btn" data-lfclose data-t="ui.not-now">Not now</button><button type="button" class="pill-btn wide" data-sddo><i class="bi bi-check2"></i> End my day</button></div>';
+      (tomEv.length ? '<section class="lf-sec"><h4 data-t="ui.tomorrow"><span data-t="ui.tomorrow">Tomorrow</span></h4>' + tomEv.map(function (o) { return '<p class="lf-ev"><b>' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()) + '</b> ' + esc(o.title) + '</p>'; }).join('') + '</section>' : '') +
+      '<div class="lf-foot"><button type="button" class="text-btn" data-lfclose data-t="ui.not-now"><span data-t="ui.not-now">Not now</span></button><button type="button" class="pill-btn wide" data-sddo><i class="bi bi-check2"></i> <span data-t="ui.end-my-day">End my day</span></button></div>';
     var d = dialog('lf-shutdown', html, function (e, close, box) {
       var p = e.target.closest('[data-sdpick]');
       if (p) {
@@ -129,7 +129,7 @@
     count(d.el);
   }
   window.BriefExtra.push(function (add, now) {
-    if (on('shutdown') && shutdownDue(now)) add(30, 'moon-stars', '#6b4bc4', 'End your workday', 'Move what’s left and pick tomorrow’s top 3', '#shutdown');
+    if (on('shutdown') && shutdownDue(now)) add(30, 'moon-stars', '#6b4bc4', I18N.k('ui.end-your-workday', 'End your workday'), I18N.k('ui.move-whats-left-and-pick-tomorrows-top-3', 'Move what’s left and pick tomorrow’s top 3'), '#shutdown');
   });
   window.CommandExtra.push(function () { return on('shutdown') ? [{ i: 'moon-stars', t: 'End my workday', s: 'Clock out, move what’s left, pick tomorrow’s top 3', run: shutdown, x: 'shutdown end day close avslutt' }] : []; });
 
@@ -171,13 +171,13 @@
       var list = slots(st.len, st.range, WIN[st.win], st.wk);
       return seg('len', [[30, '30 min'], [60, '1 h'], [120, '2 h'], [180, '3 h']]) + seg('range', [['week', 'This week'], ['next', 'Next week'], ['two', '2 weeks']]) +
         seg('win', [['work', 'Work hours'], ['evening', 'Evenings'], ['any', 'Any time']]) +
-        '<label class="lf-check"><input type="checkbox" data-ftwk' + (st.wk ? ' checked' : '') + '> Weekends too</label>' +
+        '<label class="lf-check"><input type="checkbox" data-ftwk' + (st.wk ? ' checked' : '') + '> <span data-t="ui.weekends-too">Weekends too</span></label>' +
         '<div class="lf-slots">' + (list.length ? list.map(function (s) {
           var d = fromKey(s.date);
           return '<button type="button" class="lf-slot" data-ftbook="' + s.date + '|' + s.start + '"><b>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</b><span>' + hm(s.start) + '–' + hm(s.start + st.len) + '</span><i class="bi bi-plus-lg"></i></button>';
         }).join('') : '<p class="muted" data-t="ui.no-free-slot-that-long-try-a-shorter-tim">No free slot that long – try a shorter time, or more days.</p>') + '</div>';
     }
-    var d = dialog('lf-find', head('calendar2-range', 'Find time', 'What do you need time for?') +
+    var d = dialog('lf-find', head('calendar2-range', I18N.k('ui.find-time', 'Find time'), I18N.k('ui.what-do-you-need-time-for', 'What do you need time for?')) +
       '<input id="ftTitle" placeholder="e.g. Write the FDV report, gym, call mum" maxlength="120" value="' + esc(preTitle || '') + '"><div id="ftBody">' + body() + '</div>',
       function (e, close, box) {
         var b = e.target.closest('[data-ft]');
@@ -242,7 +242,7 @@
       (m ? '<section class="lf-sec"><h4>Last time · ' + esc(new Date(m.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) + (m.who ? ' · ' + esc(m.who) : '') + '</h4>' +
         (m.notes ? '<p class="lf-notes">' + esc(m.notes) + '</p>' : '') +
         (acts.length ? '<h4 data-t="ui.open-action-points">Open action points</h4>' + acts.map(function (a) { return '<label class="lf-check"><input type="checkbox" data-prepact="' + esc(m.id) + ':' + a.i + '"> ' + esc(a.t) + '</label>'; }).join('') : '<p class="muted" data-t="ui.all-action-points-done">All action points done.</p>') + '</section>' : '') +
-      '<div class="lf-foot"><a class="text-btn" href="/cmd/work/#meetings"><i class="bi bi-people"></i> Meeting notes</a><button type="button" class="pill-btn wide" data-lfclose data-t="ui.ready">Ready</button></div>';
+      '<div class="lf-foot"><a class="text-btn" href="/cmd/work/#meetings"><i class="bi bi-people"></i> <span data-t="ui.meeting-notes">Meeting notes</span></a><button type="button" class="pill-btn wide" data-lfclose data-t="ui.ready"><span data-t="ui.ready">Ready</span></button></div>';
     var d = dialog('lf-prep', html);
     d.el.addEventListener('change', function (e) {
       var a = e.target.dataset.prepact; if (!a) return;
@@ -281,10 +281,10 @@
     var day = D[tk] || D[addDays(tk, -1)] || null;
     function base(f) { var v = []; for (var i = 1; i <= 15; i++) { var x = D[addDays(tk, -i)]; if (x && x[f] != null) v.push(+x[f]); } return v.length >= 4 ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : null; }
     var why = [], score = 100, data = 0;
-    if (day && day.hrv != null) { data++; var bh = base('hrv'); if (bh) { var drop = (bh - day.hrv) / bh * 100; if (drop > 5) { score -= Math.min(40, drop * 1.5); why.push('HRV ' + Math.round(drop) + ' % below your normal'); } else if (drop < -5) why.push('HRV above your normal'); } }
+    if (day && day.hrv != null) { data++; var bh = base('hrv'); if (bh) { var drop = (bh - day.hrv) / bh * 100; if (drop > 5) { score -= Math.min(40, drop * 1.5); why.push('HRV ' + Math.round(drop) + ' % below your normal'); } else if (drop < -5) why.push(I18N.k('ui.hrv-above-your-normal', 'HRV above your normal')); } }
     if (day && day.rhr != null) { data++; var br = base('rhr'); if (br) { var rise = day.rhr - br; if (rise > 2) { score -= Math.min(25, rise * 4); why.push('Resting pulse +' + Math.round(rise) + ' bpm'); } } }
     var ln = window.AHealth && window.AHealth.lastNight ? window.AHealth.lastNight() : null; if (ln && !ln.partial) day = Object.assign({}, day || {}, { sleep: ln.v }); else if (ln && day) { day = Object.assign({}, day); delete day.sleep; }
-    if (day && day.sleep != null) { data++; if (day.sleep < 7) { score -= (7 - day.sleep) * 12; why.push('Slept ' + String(Math.round(day.sleep * 10) / 10).replace('.', ',') + ' h'); } else why.push('Slept well'); }
+    if (day && day.sleep != null) { data++; if (day.sleep < 7) { score -= (7 - day.sleep) * 12; why.push('Slept ' + String(Math.round(day.sleep * 10) / 10).replace('.', ',') + ' h'); } else why.push(I18N.k('ui.slept-well', 'Slept well')); }
     /* training: days in a row with a workout or a gym session */
     var trained = {};
     if (Fe) { (Fe.tools().training || []).forEach(function (w) { trained[w.date] = 1; }); (Fe.tools().gym || []).forEach(function (s) { trained[s.date] = 1; }); }
@@ -309,7 +309,7 @@
     var open = es.filter(function (e) { return e.in && !e.out; })[0], hmNow = pad(now.getHours()) + ':' + pad(now.getMinutes());
     var clock = function (fn) { return function () { var t = Fe.tools(); t.flex = t.flex || []; fn(t.flex); Fe.saveTools(t); toast('<i class="bi bi-stopwatch"></i> Saved'); }; };
     if (!es.length && now.getHours() >= 7 && now.getHours() < 11)
-      add(14, 'stopwatch', '#e8743b', 'Clock in?', 'Not clocked in yet today', '/cmd/work/', { act: { id: 'clockin:' + tk, label: 'Clock in ' + hmNow }, run: clock(function (l) { l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: tk, type: 'work', in: hmNow, out: '', brk: +((Fe.tools().flexcfg || {}).brk) || 0 }); }) });
+      add(14, 'stopwatch', '#e8743b', I18N.k('ui.clock-in', 'Clock in?'), I18N.k('ui.not-clocked-in-yet-today', 'Not clocked in yet today'), '/cmd/work/', { act: { id: 'clockin:' + tk, label: 'Clock in ' + hmNow }, run: clock(function (l) { l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: tk, type: 'work', in: hmNow, out: '', brk: +((Fe.tools().flexcfg || {}).brk) || 0 }); }) });
     if (open) {
       var mins = now.getHours() * 60 + now.getMinutes() - toMin(open.in);
       var norm = ((+((Fe.tools().flexcfg || {}).norm)) || 7.5) * 60;

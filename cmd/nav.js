@@ -35,7 +35,7 @@
     var name = function (k) { var a = nav.querySelector('a[data-pg="' + k + '"] span:last-child'); return a ? a.textContent : k; };
     var icon = function (k) { var i = nav.querySelector('a[data-pg="' + k + '"] .bi'); return i ? i.className : 'bi bi-circle'; };
     var ico = function (k) { return '<span class="st-ico" style="--c:var(--accent)"><i class="' + icon(k) + '"></i></span>'; };
-    box.innerHTML = '<div class="st-row st-nav-row is-fixed">' + ico('home') + '<span class="st-label">' + name('home') + '<small data-t="ui.always-first">Always first</small></span></div>' +
+    box.innerHTML = '<div class="st-row st-nav-row is-fixed">' + ico('home') + '<span class="st-label">' + name('home') + '<small data-t="ui.always-first"><span data-t="ui.always-first">Always first</span></small></span></div>' +
       list.map(function (k, i) {
         return '<div class="st-row st-nav-row">' + ico(k) + '<span class="st-label">' + name(k) + '</span><span class="pk-mv">' +
           '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="-1" aria-label="Move ' + name(k) + ' left"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +

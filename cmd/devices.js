@@ -58,15 +58,15 @@
   function icon(d) { var u = (d.name || '') + ' ' + (d.ua || ''); return /iPhone|Android/.test(u) ? 'phone' : /iPad/.test(u) ? 'tablet' : 'laptop'; }
   function fill() {
     var box = document.getElementById('stDevices'); if (!box) return;
-    box.innerHTML = '<p class="muted st-pad" data-t="ui.loading-2">Loading …</p>';
+    box.innerHTML = '<p class="muted st-pad" data-t="ui.loading-2"><span data-t="ui.loading-2">Loading …</span></p>';
     window.fetch('/cmd/api/devices', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (j) {
       var l = (j.devices || []).sort(function (a, b) { return (a.id === id ? -1 : b.id === id ? 1 : 0) || (b.revoked ? -1 : 0) + (a.revoked ? 1 : 0) || (b.last || 0) - (a.last || 0); });
       if (!l.some(function (d) { return d.id === id; })) l.unshift({ id: id, name: name(), last: Date.now(), first: Date.now() });
       box.innerHTML = '<ul class="dv-list">' + l.map(function (d) {
         var me = d.id === id;
         return '<li class="' + (d.revoked ? 'off' : '') + '"><span class="st-ico" style="--c:' + (me ? '#22b35e' : d.revoked ? '#7a8794' : '#3987e5') + '"><i class="bi bi-' + icon(d) + '"></i></span>' +
-          '<span class="dv-x"><b>' + esc(d.name || 'Device') + (me ? ' <em data-t="ui.this-device">this device</em>' : '') + '</b><small>' + (d.revoked ? 'Signed out ' + esc(ago(d.revoked)) : 'Last used ' + esc(ago(d.last || 0)) + (d.where ? ' · ' + esc(d.where) : '')) + (d.first ? ' · first ' + esc(new Date(d.first).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) : '') + '</small></span>' +
-          (me ? '<button type="button" class="text-btn" data-dvname data-t="ui.rename">Rename</button>' : d.revoked ? '<button type="button" class="text-btn" data-dvforget="' + esc(d.id) + '">Remove</button>' : '<button type="button" class="text-btn danger" data-dvout="' + esc(d.id) + '">Sign out</button>') + '</li>';
+          '<span class="dv-x"><b>' + esc(d.name || 'Device') + (me ? ' <em data-t="ui.this-device"><span data-t="ui.this-device">this device</span></em>' : '') + '</b><small>' + (d.revoked ? 'Signed out ' + esc(ago(d.revoked)) : 'Last used ' + esc(ago(d.last || 0)) + (d.where ? ' · ' + esc(d.where) : '')) + (d.first ? ' · first ' + esc(new Date(d.first).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) : '') + '</small></span>' +
+          (me ? '<button type="button" class="text-btn" data-dvname data-t="ui.rename"><span data-t="ui.rename">Rename</span></button>' : d.revoked ? '<button type="button" class="text-btn" data-dvforget="' + esc(d.id) + '"><span data-t="ui.remove">Remove</span></button>' : '<button type="button" class="text-btn danger" data-dvout="' + esc(d.id) + '"><span data-t="ui.sign-out">Sign out</span></button>') + '</li>';
       }).join('') + '</ul><p class="st-note st-pad" data-t="ui.signing-out-a-device-erases-the-dashboar">Signing out a device erases the dashboard on it the next time it’s used – your data stays here and on your other devices. Lost a phone? Change the passcode too.</p>';
     }).catch(function () { box.innerHTML = '<p class="st-note st-pad">The list of devices needs the newest Worker (dashboard-sync). This device: <b>' + esc(name()) + '</b>.</p>'; });
   }
@@ -74,7 +74,7 @@
     var b = e.target.closest('[data-dvout]');
     if (b) {
       if (!b.dataset.armed) { b.dataset.armed = 1; b.textContent = 'Tap again'; return; }
-      window.fetch('/cmd/api/devices?id=' + encodeURIComponent(b.dataset.dvout), { method: 'DELETE', credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw 0; fill(); if (window.Quick) window.Quick.toast('<i class="bi bi-box-arrow-right"></i> Signed out – it erases itself next time it’s used'); }).catch(function () { if (window.Quick) window.Quick.toast('Couldn’t reach the Worker'); });
+      window.fetch('/cmd/api/devices?id=' + encodeURIComponent(b.dataset.dvout), { method: 'DELETE', credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw 0; fill(); if (window.Quick) window.Quick.toast('<i class="bi bi-box-arrow-right"></i> Signed out – it erases itself next time it’s used'); }).catch(function () { if (window.Quick) window.Quick.toast(I18N.k('ui.couldnt-reach-the-worker', 'Couldn’t reach the Worker')); });
       return;
     }
     var f = e.target.closest('[data-dvforget]');

@@ -144,12 +144,12 @@
     var gl = gifts().filter(function (g) { return g.pid === p.id; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var log = Array.isArray(p.log) ? p.log : [], all = OPENLOG[p.id];
     var lookSec = window.Avatar && window.Avatar.personLook ? '<div class="pp5-sec pp5-look"><span class="pp5-face">' + window.Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none', attrs: ' width="56" height="56"' }, window.Avatar.personLook(p)).replace('viewBox="0 0 200 200"', 'viewBox="66 22 70 70"') + '</span><span class="muted hl-small">' + (p.look ? 'Their look in the People picture' : 'Picked from the name – make it look like them') + '</span><button type="button" class="text-btn" data-pplook="' + esc(p.id) + '"><i class="bi bi-person-bounding-box"></i> ' + (p.look ? 'Change look' : 'Customize look') + '</button></div>' : '';
-    return lookSec + '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-gift"></i> Gifts given</b><button type="button" class="text-btn" data-ppgift="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> Note a gift</button></div>' +
+    return lookSec + '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-gift"></i> <span data-t="ui.gifts-given">Gifts given</span></b><button type="button" class="text-btn" data-ppgift="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> <span data-t="ui.note-a-gift">Note a gift</span></button></div>' +
       (gl.length ? '<ul class="pp5-list">' + gl.slice(0, all ? 50 : 4).map(function (g) {
         var o = occ(g.occ);
         return '<li><span class="pp5-d">' + esc(fmt(g.date, { month: 'short', year: 'numeric' })) + '</span><span class="pp5-t"><i class="bi bi-' + o[2] + '" style="color:' + o[3] + '"></i> <span data-noi18n>' + esc(g.what) + '</span></span>' + (+g.cost ? '<span class="pp5-k">' + kr(g.cost) + '</span>' : '') + '</li>';
       }).join('') + '</ul>' : '<p class="hl-small muted" data-t="ui.nothing-noted-yet-then-you-never-give-th">Nothing noted yet – then you never give the same twice.</p>') + '</div>' +
-      (log.length ? '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-clock-history"></i> Talked</b>' + (log.length > 4 ? '<button type="button" class="text-btn" data-pplogall="' + esc(p.id) + '">' + (all ? 'Show less' : 'Show all ' + log.length) + '</button>' : '') + '</div><ul class="pp5-list">' +
+      (log.length ? '<div class="pp5-sec"><div class="pp5-sh"><b><i class="bi bi-clock-history"></i> <span data-t="ui.talked">Talked</span></b>' + (log.length > 4 ? '<button type="button" class="text-btn" data-pplogall="' + esc(p.id) + '">' + (all ? 'Show less' : 'Show all ' + log.length) + '</button>' : '') + '</div><ul class="pp5-list">' +
         log.slice(0, all ? 40 : 4).map(function (x, i) { return '<li><span class="pp5-d">' + esc(fmt(x.d, { day: 'numeric', month: 'short', year: x.d.slice(0, 4) !== today().slice(0, 4) ? 'numeric' : undefined })) + '</span><span class="pp5-t"' + (x.t ? ' data-noi18n' : '') + '>' + (x.t ? esc(x.t) : '<span class="muted">–</span>') + '</span>' +
           '<button type="button" class="icon-btn sm" data-pplognote="' + esc(p.id) + '|' + i + '" aria-label="' + (x.t ? 'Change the note' : 'Add a note') + '"><i class="bi bi-pencil"></i></button></li>'; }).join('') + '</ul></div>' : '');
   }
@@ -159,9 +159,9 @@
     var p = person(id); if (!p) return false;
     if (idx == null && !cfg().askNote) return false;
     var i = idx || 0, cur = ((p.log || [])[i] || {}).t || '';
-    var dg = HL.dialog(HL.dhead('chat-heart', idx == null ? 'Talked with ' + p.name : 'Note', 'What did you talk about? One line is plenty – it builds a short history.') +
+    var dg = HL.dialog(HL.dhead('chat-heart', idx == null ? 'Talked with ' + p.name : 'Note', I18N.k('ui.what-did-you-talk-about-one-line-is-plen', 'What did you talk about? One line is plenty – it builds a short history.')) +
       '<form class="pp5-note"><input name="t" maxlength="200" autocomplete="off" enterkeyhint="done" placeholder="e.g. New job in Bergen, wants to meet in December" value="' + esc(cur) + '">' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-hlclose>' + (idx == null ? 'Skip' : 'Cancel') + '</button><span class="spacer"></span><button type="submit" class="pill-btn" data-t="ui.save">Save</button></div></form>');
+      '<div class="qa-acts"><button type="button" class="text-btn" data-hlclose>' + (idx == null ? 'Skip' : 'Cancel') + '</button><span class="spacer"></span><button type="submit" class="pill-btn" data-t="ui.save"><span data-t="ui.save">Save</span></button></div></form>');
     var form = dg.el.querySelector('form'), inp = form.querySelector('input');
     setTimeout(function () { inp.focus(); }, 80);
     form.addEventListener('submit', function (e) {
@@ -191,7 +191,7 @@
     var over = function (spent, budget) { return budget && spent > budget ? '<span class="neg">' + kr(spent) + '</span>' : kr(spent); };
     var tiles = '<div class="kit-tiles" id="ppGiftTiles">' +
       tl('spent', 'Spent', kr(sum(gl)), y + ' · ' + gl.length + ' gift' + (gl.length === 1 ? '' : 's')) +
-      tl('xmas', 'Christmas gifts', over(sum(xm), +c.gbXmas), +c.gbXmas ? 'of ' + kr(c.gbXmas) : list.length ? sorted + ' of ' + list.length + ' sorted' : 'No budget set') +
+      tl('xmas', I18N.k('ui.christmas-gifts', 'Christmas gifts'), over(sum(xm), +c.gbXmas), +c.gbXmas ? 'of ' + kr(c.gbXmas) : list.length ? sorted + ' of ' + list.length + ' sorted' : 'No budget set') +
       tl('bday', 'Birthdays', kr(sum(bd)), bd.length ? (+c.gbBday ? 'budget ' + kr(c.gbBday) + ' each' : bd.length + ' gift' + (bd.length === 1 ? '' : 's')) : (+c.gbBday ? 'budget ' + kr(c.gbBday) + ' each' : 'None yet')) + '</div>';
     var xmasBox = '';
     if (list.length && y === today().slice(0, 4)) {
@@ -211,8 +211,8 @@
       }).join('') + '</ul>' + (gl.length > 6 ? '<button class="text-btn kit-more" type="button" data-ppgall>' + (GALL ? 'Show less' : 'Show all ' + gl.length) + '</button>' : '')
         : '<p class="empty kit-empty" data-t="ui.note-what-you-give-then-you-never-give-t">Note what you give – then you never give the same twice, and you see what Christmas and birthdays cost. Put people on the Christmas list from their card (Edit → On the Christmas gift list).</p>');
     var nav = ys.length > 1 ? '<button type="button" class="icon-btn" data-ppgy="-1" aria-label="Previous year"' + (yi <= 0 ? ' disabled' : '') + '><i class="bi bi-chevron-left"></i></button><button type="button" class="icon-btn" data-ppgy="1" aria-label="Next year"' + (yi >= ys.length - 1 ? ' disabled' : '') + '><i class="bi bi-chevron-right"></i></button>' : '';
-    el.innerHTML = '<section class="card kit-card" id="pgifts"><div class="card-head"><h2><i class="bi bi-gift"></i> Gifts</h2><div class="head-actions">' + nav +
-      '<button type="button" class="text-btn" data-ppgift=""><i class="bi bi-plus-lg"></i> Add</button></div></div>' + body + '</section>';
+    el.innerHTML = '<section class="card kit-card" id="pgifts"><div class="card-head"><h2><i class="bi bi-gift"></i> <span data-t="ui.gifts">Gifts</span></h2><div class="head-actions">' + nav +
+      '<button type="button" class="text-btn" data-ppgift=""><i class="bi bi-plus-lg"></i> <span data-t="ui.add">Add</span></button></div></div>' + body + '</section>';
     if (location.hash === '#pgifts' && document.documentElement.classList.contains('unlocked')) { history.replaceState(null, '', location.pathname + location.search); setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 400); }
   }
   var GALL = false;
@@ -260,7 +260,7 @@
     var c = cfg();
     people().forEach(function (p) {
       var tel = String(p.phone || '').replace(/[^\d+]/g, ''), nd = nameday(p);
-      if (nd && nd.n === 0) add(44, 'calendar-heart', PURPLE, p.name + '’s name day today', 'Gratulerer med navnedagen!', tel ? 'sms:' + tel : '/cmd/people/#people=' + p.id);
+      if (nd && nd.n === 0) add(44, 'calendar-heart', PURPLE, p.name + '’s name day today', I18N.k('ui.gratulerer-med-navnedagen', 'Gratulerer med navnedagen!'), tel ? 'sms:' + tel : '/cmd/people/#people=' + p.id);
       otherDates(p).forEach(function (a) {
         if (a.n > +c.annLead) return;
         add(a.n === 0 ? 20 : 42, a.icon, AMBER, p.name + ': ' + a.label + ' ' + inDays(a.n), a.years ? a.years + ' years' : fmt(a.next, { weekday: 'long', day: 'numeric', month: 'long' }), '/cmd/people/#people=' + p.id);
@@ -345,10 +345,10 @@
     var dg = HL.dialog('<div class="pp5-imp"></div>', function (e, close) {
       var b;
       if (e.target.closest('[data-ppipaste]')) {
-        if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (t) { IMP.rows = parseLines(t); IMP.only = IMP.rows.some(function (r) { return r.bday; }); draw(); } else draw('The clipboard is empty.'); }, function () { draw('Couldn’t read the clipboard – paste into the box instead.'); });
+        if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (t) { IMP.rows = parseLines(t); IMP.only = IMP.rows.some(function (r) { return r.bday; }); draw(); } else draw(I18N.k('ui.the-clipboard-is-empty', 'The clipboard is empty.')); }, function () { draw(I18N.k('ui.couldnt-read-the-clipboard-paste-into-th', 'Couldn’t read the clipboard – paste into the box instead.')); });
         return;
       }
-      if (e.target.closest('[data-ppiread]')) { var ta = dg.el.querySelector('textarea'); IMP.rows = parseLines(ta ? ta.value : ''); IMP.only = IMP.rows.some(function (r) { return r.bday; }); if (!IMP.rows.length) draw('No names found – one person per line: Name; 24.12.1990; +47 …'); else draw(); return; }
+      if (e.target.closest('[data-ppiread]')) { var ta = dg.el.querySelector('textarea'); IMP.rows = parseLines(ta ? ta.value : ''); IMP.only = IMP.rows.some(function (r) { return r.bday; }); if (!IMP.rows.length) draw(I18N.k('ui.no-names-found-one-person-per-line-name', 'No names found – one person per line: Name; 24.12.1990; +47 …')); else draw(); return; }
       if (e.target.closest('[data-ppiback]')) { IMP.rows = null; return draw(); }
       if ((b = e.target.closest('[data-ppionly]'))) { IMP.only = b.checked; IMP.sel = null; return draw(); }
       if (e.target.closest('[data-ppigo]')) {
@@ -373,22 +373,22 @@
     });
     function count() { var n = dg.el.querySelectorAll('[data-ppirow]:checked').length, b = dg.el.querySelector('[data-ppigo]'); if (b) { b.disabled = !n; b.textContent = n ? 'Import ' + n : 'Import'; } }
     function draw(msg) {
-      var box = dg.el.querySelector('.pp5-imp'), h = HL.dhead('person-down', 'Import contacts', IMP.rows ? '' : 'From your iPhone, with birthdays. The list stays on this device until you pick who to add.');
+      var box = dg.el.querySelector('.pp5-imp'), h = HL.dhead('person-down', I18N.k('ui.import-contacts', 'Import contacts'), IMP.rows ? '' : 'From your iPhone, with birthdays. The list stays on this device until you pick who to add.');
       if (!IMP.rows || !IMP.rows.length) {
         box.innerHTML = h + (msg ? '<p class="pp5-msg">' + esc(msg) + '</p>' : '') +
           '<div class="pp5-way"><b><i class="bi bi-clipboard"></i> From the iPhone Shortcut</b><textarea rows="4" placeholder="Paste here – one person per line: Name; 24.12.1990; +47 912 34 567" data-t-placeholder="ui.paste-here-one-person-per-line-name-24-1"></textarea>' +
-          '<div class="hl-acts"><button type="button" class="pill-btn" data-ppiread data-t="ui.read-the-list">Read the list</button>' + (navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="text-btn" data-ppipaste><i class="bi bi-clipboard-check"></i> Paste</button>' : '') + '</div></div>' +
-          '<div class="pp5-way"><b><i class="bi bi-person-vcard"></i> From a contact file</b><label class="text-btn pp5-file"><i class="bi bi-folder2-open"></i> Choose a .vcf file<input type="file" accept=".vcf,text/vcard,text/x-vcard" data-ppifile hidden></label><small class="muted" data-noi18n>' + L('Contacts on the iPhone: Lists → long-press a list → Export. On a Mac: select contacts → File → Export → vCard.', 'Kontakter på iPhone: Lister → hold inne en liste → Eksporter. På Mac: velg kontakter → Arkiv → Eksporter → vCard.') + '</small></div>' +
+          '<div class="hl-acts"><button type="button" class="pill-btn" data-ppiread data-t="ui.read-the-list">Read the list</button>' + (navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="text-btn" data-ppipaste><i class="bi bi-clipboard-check"></i> <span data-t="ui.paste">Paste</span></button>' : '') + '</div></div>' +
+          '<div class="pp5-way"><b><i class="bi bi-person-vcard"></i> <span data-t="ui.from-a-contact-file">From a contact file</span></b><label class="text-btn pp5-file"><i class="bi bi-folder2-open"></i> <span data-t="ui.choose-a-vcf-file">Choose a .vcf file</span><input type="file" accept=".vcf,text/vcard,text/x-vcard" data-ppifile hidden></label><small class="muted" data-noi18n>' + L('Contacts on the iPhone: Lists → long-press a list → Export. On a Mac: select contacts → File → Export → vCard.', 'Kontakter på iPhone: Lister → hold inne en liste → Eksporter. På Mac: velg kontakter → Arkiv → Eksporter → vCard.') + '</small></div>' +
           '<details class="pp5-steps" data-noi18n>' + L(
           '<summary><i class="bi bi-lightning-charge"></i> Set up the iPhone Shortcut (3 minutes, once)</summary><ol>' +
-          '<li>Shortcuts → <b>+</b>. Name it <i>Contacts to dashboard</i>.</li>' +
-          '<li>Add <b>Find Contacts</b>. Optional: <b>Add Filter</b> (e.g. a group) – or keep everyone and pick here.</li>' +
-          '<li>Add <b>Repeat with Each</b> (the contacts).</li>' +
-          '<li>Inside it, add <b data-t="ui.text">Text</b> with: <b>Repeat Item</b> → tap it → <i data-t="ui.name-2">Name</i>, type <code>;</code>, <b>Repeat Item</b> → <i data-t="ui.birthday">Birthday</i> (tap it → Date Format: Custom <code>dd.MM.yyyy</code>), type <code>;</code>, <b>Repeat Item</b> → <i>Phone Numbers</i>.</li>' +
+          '<li><span data-t="ui.shortcuts">Shortcuts →</span> <b>+</b>. Name it <i>Contacts to dashboard</i>.</li>' +
+          '<li><span data-t="ui.add">Add</span> <b>Find Contacts</b>. Optional: <b>Add Filter</b> (e.g. a group) – or keep everyone and pick here.</li>' +
+          '<li><span data-t="ui.add">Add</span> <b>Repeat with Each</b> (the contacts).</li>' +
+          '<li>Inside it, add <b data-t="ui.text"><span data-t="ui.text">Text</span></b> with: <b>Repeat Item</b> → tap it → <i data-t="ui.name-2"><span data-t="ui.name-2">Name</span></i>, type <code>;</code>, <b>Repeat Item</b> → <i data-t="ui.birthday"><span data-t="ui.birthday">Birthday</span></i> (tap it → Date Format: Custom <code>dd.MM.yyyy</code>), type <code>;</code>, <b>Repeat Item</b> → <i>Phone Numbers</i>.</li>' +
           '<li>After <b>End Repeat</b>: <b>Combine Text</b> (Repeat Results, New Lines).</li>' +
           '<li><b>Copy to Clipboard</b> (Combined Text) – a fallback if you have to log in first.</li>' +
-          '<li><b>URL Encode</b> (Combined Text), then <b data-t="ui.text">Text</b>: <code>https://jplundberg.com/cmd/people/#import=</code> followed by <i>URL Encoded Text</i>.</li>' +
-          '<li><b>Open URLs</b> (Text). Run it – this window opens with the list. If it opens empty, tap <b data-t="ui.paste">Paste</b>.</li></ol>' +
+          '<li><b>URL Encode</b> (Combined Text), then <b data-t="ui.text"><span data-t="ui.text">Text</span></b>: <code>https://jplundberg.com/cmd/people/#import=</code> followed by <i>URL Encoded Text</i>.</li>' +
+          '<li><b>Open URLs</b> (Text). Run it – this window opens with the list. If it opens empty, tap <b data-t="ui.paste"><span data-t="ui.paste">Paste</span></b>.</li></ol>' +
           '<p class="muted hl-small">The list travels after the # in the link, which browsers never send to a server.</p>',
           '<summary><i class="bi bi-lightning-charge"></i> Sett opp snarveien på iPhone (3 minutter, én gang)</summary><ol>' +
           '<li>Snarveier → <b>+</b>. Kall den <i>Kontakter til dashbordet</i>.</li>' +
@@ -409,12 +409,12 @@
       box.innerHTML = h + '<p class="muted hl-small">' + IMP.rows.length + ' found · ' + nb + ' with a birthday</p>' +
         (nb && nb < IMP.rows.length ? '<label class="st-row pp5-only"><span data-t="ui.only-those-with-a-birthday">Only those with a birthday</span><input type="checkbox" class="switch" data-ppionly' + (IMP.only ? ' checked' : '') + '></label>' : '') +
         '<ul class="pp5-rows">' + view.map(function (x, i) {
-          var st = x.st, chip = st.s === 'new' ? '<span class="hl-chip" style="--c:#22b35e" data-t="ui.new">New</span>' : st.s === 'update' ? '<span class="hl-chip" style="--c:#3987e5">Adds ' + st.adds.join(' + ') + '</span>' : '<span class="hl-chip" style="--c:#7a8794" data-t="ui.already-there">Already there</span>';
+          var st = x.st, chip = st.s === 'new' ? '<span class="hl-chip" style="--c:#22b35e" data-t="ui.new"><span data-t="ui.new">New</span></span>' : st.s === 'update' ? '<span class="hl-chip" style="--c:#3987e5">Adds ' + st.adds.join(' + ') + '</span>' : '<span class="hl-chip" style="--c:#7a8794" data-t="ui.already-there"><span data-t="ui.already-there">Already there</span></span>';
           var b = x.r.bday ? x.r.bday.split('.') : null;
           return '<li><label><input type="checkbox" data-ppirow="' + i + '"' + (st.s !== 'same' && (x.r.bday || st.s === 'update') ? ' checked' : '') + (st.s === 'same' ? ' disabled' : '') + '><span class="pp5-t"><b data-noi18n>' + esc(x.r.name) + '</b><small>' +
             esc([b ? new Date(b[2] ? +b[2] : 2000, b[1] - 1, +b[0]).toLocaleDateString('en-GB', b[2] ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }) : 'No birthday', x.r.phone].filter(Boolean).join(' · ')) + '</small></span>' + chip + '</label></li>';
         }).join('') + '</ul>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-ppiback><i class="bi bi-chevron-left"></i> Back</button><span class="spacer"></span><button type="button" class="pill-btn" data-ppigo data-t="ui.import">Import</button></div>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-ppiback><i class="bi bi-chevron-left"></i> <span data-t="ui.back">Back</span></button><span class="spacer"></span><button type="button" class="pill-btn" data-ppigo data-t="ui.import"><span data-t="ui.import">Import</span></button></div>';
       count();
     }
     draw();
@@ -430,7 +430,7 @@
 
   /* search (⌘K) and the cards use these */
   window.PeoplePlus = { nameday: nameday, otherDates: otherDates, upcoming: upcoming, days: days, detail: detail, askNote: askNote, gifts: gifts, openImport: openImport, parse: parseLines, pdate: pdate,
-    importBtn: function () { return '<button type="button" class="text-btn" data-ppimport aria-label="Import contacts" data-t-aria-label="ui.import-contacts"><i class="bi bi-person-down"></i> Import</button>'; } };
+    importBtn: function () { return '<button type="button" class="text-btn" data-ppimport aria-label="Import contacts" data-t-aria-label="ui.import-contacts"><i class="bi bi-person-down"></i> <span data-t="ui.import">Import</span></button>'; } };
   window.CommandExtra = window.CommandExtra || [];
   window.CommandExtra.push(function () { return on() ? [
     { i: 'gift', t: 'Note a gift', s: 'People', run: function () { if (/\/cmd\/people\//.test(location.pathname)) newGift({}); else location.href = '/cmd/people/#pgifts'; }, x: 'gift present gave gift gaver julegave bursdagsgave' },

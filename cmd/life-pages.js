@@ -79,8 +79,8 @@
     var now = new Date(), tk = dkey(now), tom = addDays(tk, 1), k = PW.day === 'tomorrow' ? tom : tk;
     var h = prices(k), hTom = now.getHours() >= 13 ? prices(tom) : null;
     var cfg = (Fe.tools().powercfg) || {};
-    var acts = '<div class="seg lp-seg"><button type="button" data-pwday="today" aria-pressed="' + (PW.day === 'today') + '">Today</button>' +
-      (hTom || PW.day === 'tomorrow' ? '<button type="button" data-pwday="tomorrow" aria-pressed="' + (PW.day === 'tomorrow') + '">Tomorrow</button>' : '') + '</div>';
+    var acts = '<div class="seg lp-seg"><button type="button" data-pwday="today" aria-pressed="' + (PW.day === 'today') + '"><span data-t="ui.today"><span data-t="ui.today">Today</span></span></button>' +
+      (hTom || PW.day === 'tomorrow' ? '<button type="button" data-pwday="tomorrow" aria-pressed="' + (PW.day === 'tomorrow') + '"><span data-t="ui.tomorrow"><span data-t="ui.tomorrow">Tomorrow</span></span></button>' : '') + '</div>';
     if (!h) { el.innerHTML = card('power', 'lightning-charge', 'Strømpris', '', '<p class="muted">' + (pwLoading[k] === 'fail' ? 'Couldn’t reach the price service right now – try again later.' : 'Getting today’s prices …') + '</p>'); return; }
     var valid = h.filter(function (x) { return x != null; }), avg = valid.reduce(function (a, b) { return a + b; }, 0) / valid.length;
     var max = Math.max.apply(null, valid), min = Math.min.apply(null, valid), cur = k === tk ? h[now.getHours()] : null;
@@ -98,7 +98,7 @@
         var inC = c3 && i >= c3.h && i < c3.h + 3, isNow = k === tk && i === now.getHours();
         return '<i class="' + (p == null ? 'na ' : '') + lvl(p || avg) + (inC ? ' best' : '') + (isNow ? ' now' : '') + (k === tk && i < now.getHours() ? ' past' : '') + '" style="--h:' + (p == null ? 2 : Math.max(4, Math.round(p / max * 100))) + '%" title="' + pad(i) + ':00 · ' + (p == null ? '–' : nf.format(Math.round(p)) + ' øre') + '"></i>';
       }).join('') + '</div><div class="pw-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>' +
-      '<p class="kit-foot">Spot price in NO1 with VAT, before grid rent (nettleie). Prices from hvakosterstrommen.no. <label class="lp-inl"><input type="checkbox" data-pwnorge' + (cfg.norgespris ? ' checked' : '') + '> I have Norgespris</label></p>';
+      '<p class="kit-foot"><span data-t="ui.spot-price-in-no1-with-vat-before-grid-r">Spot price in NO1 with VAT, before grid rent (nettleie). Prices from hvakosterstrommen.no.</span> <label class="lp-inl"><input type="checkbox" data-pwnorge' + (cfg.norgespris ? ' checked' : '') + '> <span data-t="ui.i-have-norgespris"><span data-t="ui.i-have-norgespris">I have Norgespris</span></span></label></p>';
     el.innerHTML = card('power', 'lightning-charge', 'Strømpris', acts, body, 'lp-power');
   });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pwday]'); if (b) { PW.day = b.dataset.pwday; drawAll(); } });
@@ -138,7 +138,7 @@
   if (svList) { new MutationObserver(function () { if (on('jars') && svList.querySelector('li.goal:not(:has(.jar))')) jars(); }).observe(svList, { childList: true }); mounts.push(jars); }
 
   /* ======================= FDV inspection notes ======================= */
-  var PARTS = ['Roof', 'Facade', 'Windows and doors', 'Wet rooms', 'Kitchen', 'Electrical', 'Plumbing (VVS)', 'Ventilation', 'Heating', 'Fire safety', 'Structure', 'Outdoor areas', 'Other'];
+  var PARTS = ['Roof', 'Facade', 'Windows and doors', 'Wet rooms', 'Kitchen', 'Electrical', 'Plumbing (VVS)', 'Ventilation', 'Heating', I18N.k('ui.fire-safety', 'Fire safety'), 'Structure', I18N.k('ui.outdoor-areas', 'Outdoor areas'), 'Other'];
   var TG = { 0: ['TG 0', 'No issues', '#22b35e'], 1: ['TG 1', 'Minor issues', '#3987e5'], 2: ['TG 2', 'Significant issues', '#c98500'], 3: ['TG 3', 'Serious issues', '#e66767'], iu: ['TG IU', 'Not examined', '#8b8f9a'] };
   /* photos stay on this device (IndexedDB), the text is in your synced vault */
   var idb = null;
@@ -179,7 +179,7 @@
         (worst ? '<span class="kit-r"><span class="tg-b" style="--c:' + TG[worst][2] + '">' + TG[worst][0] + '</span></span>' : '') + '</button>' +
         (open ? fdvDetail(r) : '') + '</li>';
     }).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.walk-a-building-note-each-finding-with-i">Walk a building, note each finding with its condition grade (TG) and a photo – and get a tidy summary you can send or paste into a report.</p>';
-    el.innerHTML = card('fdv', 'building-check', 'FDV inspection notes', '<button type="button" class="text-btn" data-fdvnew><i class="bi bi-plus-lg"></i> New</button>', body, 'lp-fdv');
+    el.innerHTML = card('fdv', 'building-check', I18N.k('ui.fdv-inspection-notes', 'FDV inspection notes'), '<button type="button" class="text-btn" data-fdvnew><i class="bi bi-plus-lg"></i> <span data-t="ui.new"><span data-t="ui.new">New</span></span></button>', body, 'lp-fdv');
     el.querySelectorAll('img[data-ph]').forEach(function (im) { getPhoto(im.dataset.ph).then(function (b) { if (b) im.src = URL.createObjectURL(b); else im.closest('.fdv-ph').remove(); }); });
     if (goTo) { var li = el.querySelector('.kit-item.open'); if (li) setTimeout(function () { li.scrollIntoView({ behavior: 'smooth', block: 'start' }); li.classList.add('sr-flash'); setTimeout(function () { li.classList.remove('sr-flash'); }, 1600); }, 350); }
   });
@@ -195,13 +195,13 @@
       '<select name="tg" aria-label="Condition grade">' + ['0', '1', '2', '3', 'iu'].map(function (t) { return '<option value="' + t + '"' + (t === '2' ? ' selected' : '') + '>' + TG[t][0] + ' – ' + TG[t][1] + '</option>'; }).join('') + '</select></div>' +
       '<input name="text" placeholder="What you found, e.g. Cracked sealant around window, 2nd floor" data-t-placeholder="ui.what-you-found-e-g-cracked-sealant-aroun" required maxlength="300">' +
       '<input name="action" placeholder="What should be done (optional)" data-t-placeholder="ui.what-should-be-done-optional" maxlength="200">' +
-      '<div class="fdv-row"><label class="text-btn fdv-photo"><i class="bi bi-camera"></i> <span data-t="ui.photo">Photo</span><input type="file" name="photo" accept="image/*" capture="environment" hidden></label><span class="spacer"></span><button type="submit" class="pill-btn"><i class="bi bi-plus-lg"></i> Add finding</button></div></form>' +
+      '<div class="fdv-row"><label class="text-btn fdv-photo"><i class="bi bi-camera"></i> <span data-t="ui.photo"><span data-t="ui.photo"><span data-t="ui.photo">Photo</span></span></span><input type="file" name="photo" accept="image/*" capture="environment" hidden></label><span class="spacer"></span><button type="submit" class="pill-btn"><i class="bi bi-plus-lg"></i> <span data-t="ui.add-finding"><span data-t="ui.add-finding">Add finding</span></span></button></div></form>' +
       (r.notes ? '<p class="kit-notes">' + esc(r.notes) + '</p>' : '') +
-      '<div class="fdv-acts"><button type="button" class="text-btn" data-fdvcopy="' + esc(r.id) + '"><i class="bi bi-clipboard"></i> Copy summary</button>' +
-      (navigator.share ? '<button type="button" class="text-btn" data-fdvshare="' + esc(r.id) + '"><i class="bi bi-share"></i> Share</button>' : '') +
-      '<button type="button" class="text-btn" data-fdvpdf="' + esc(r.id) + '"><i class="bi bi-file-earmark-pdf"></i> PDF report</button>' +
-      '<button type="button" class="text-btn" data-fdvtodo="' + esc(r.id) + '"><i class="bi bi-box-arrow-in-right"></i> TG 2–3 to to-do</button>' +
-      '<button type="button" class="text-btn" data-fdvedit="' + esc(r.id) + '"><i class="bi bi-pencil"></i> Edit</button></div></div>';
+      '<div class="fdv-acts"><button type="button" class="text-btn" data-fdvcopy="' + esc(r.id) + '"><i class="bi bi-clipboard"></i> <span data-t="ui.copy-summary"><span data-t="ui.copy-summary">Copy summary</span></span></button>' +
+      (navigator.share ? '<button type="button" class="text-btn" data-fdvshare="' + esc(r.id) + '"><i class="bi bi-share"></i> <span data-t="ui.share"><span data-t="ui.share">Share</span></span></button>' : '') +
+      '<button type="button" class="text-btn" data-fdvpdf="' + esc(r.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.pdf-report"><span data-t="ui.pdf-report">PDF report</span></span></button>' +
+      '<button type="button" class="text-btn" data-fdvtodo="' + esc(r.id) + '"><i class="bi bi-box-arrow-in-right"></i> <span data-t="ui.tg-2-3-to-to-do">TG 2–3 to to-do</span></button>' +
+      '<button type="button" class="text-btn" data-fdvedit="' + esc(r.id) + '"><i class="bi bi-pencil"></i> <span data-t="ui.edit"><span data-t="ui.edit">Edit</span></span></button></div></div>';
   }
   var FDV_FIELDS = { key: 'fdv', addTitle: 'New inspection', editTitle: 'Edit inspection', fields: [
     { k: 'building', type: 'title', label: 'Building', ph: 'Building or property, e.g. Storgata 12', req: true },
@@ -266,14 +266,14 @@
     var parts = PARTS.filter(function (p) { return f.some(function (x) { return x.part === p; }); });
     var h = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.fdv-inspection-report">FDV inspection report</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
       (r.address ? '<p class="rp-addr">' + esc(r.address) + '</p>' : '') + '</div>' +
-      (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small data-t="ui.worst-grade">Worst grade</small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
-      '<table class="rp-meta"><tr><th data-t="ui.date">Date</th><td>' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + '</td><th data-t="ui.client">Client</th><td>' + esc(r.client || '–') + '</td></tr>' +
-      '<tr><th data-t="ui.inspected-by">Inspected by</th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th data-t="ui.company">Company</th><td>' + esc(me.employer || '–') + '</td></tr></table>' +
+      (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small data-t="ui.worst-grade"><span data-t="ui.worst-grade"><span data-t="ui.worst-grade">Worst grade</span></span></small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
+      '<table class="rp-meta"><tr><th data-t="ui.date"><span data-t="ui.date"><span data-t="ui.date">Date</span></span></th><td>' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + '</td><th data-t="ui.client"><span data-t="ui.client"><span data-t="ui.client">Client</span></span></th><td>' + esc(r.client || '–') + '</td></tr>' +
+      '<tr><th data-t="ui.inspected-by"><span data-t="ui.inspected-by"><span data-t="ui.inspected-by">Inspected by</span></span></th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th data-t="ui.company"><span data-t="ui.company"><span data-t="ui.company">Company</span></span></th><td>' + esc(me.employer || '–') + '</td></tr></table>' +
       (r.intro ? '<p class="rp-intro">' + esc(r.intro).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.summary">Summary</h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
+      '<h2 data-t="ui.summary"><span data-t="ui.summary"><span data-t="ui.summary">Summary</span></span></h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
         return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + TG[t][1] + '</small></div>';
       }).join('') + '</div>' +
-      (todo.length ? '<h2 data-t="ui.what-should-be-done">What should be done</h2><table class="rp-todo"><thead><tr><th data-t="ui.grade">Grade</th><th data-t="ui.building-part">Building part</th><th data-t="ui.finding">Finding</th><th data-t="ui.action-2">Action</th></tr></thead><tbody>' + todo.map(function (x) {
+      (todo.length ? '<h2 data-t="ui.what-should-be-done">What should be done</h2><table class="rp-todo"><thead><tr><th data-t="ui.grade"><span data-t="ui.grade"><span data-t="ui.grade">Grade</span></span></th><th data-t="ui.building-part"><span data-t="ui.building-part"><span data-t="ui.building-part">Building part</span></span></th><th data-t="ui.finding"><span data-t="ui.finding"><span data-t="ui.finding">Finding</span></span></th><th data-t="ui.action-2"><span data-t="ui.action-2"><span data-t="ui.action-2">Action</span></span></th></tr></thead><tbody>' + todo.map(function (x) {
         return '<tr><td>' + tgb(x.tg) + '</td><td>' + esc(x.part) + '</td><td>' + esc(x.text) + '</td><td>' + esc(x.action || '–') + '</td></tr>';
       }).join('') + '</tbody></table>' : '') +
       '<h2 data-t="ui.findings-by-building-part">Findings by building part</h2>' + (parts.length ? parts.map(function (p) {
@@ -282,8 +282,8 @@
             (x.photo && RP.photos ? '<img class="rp-ph" data-rph="' + esc(x.photo) + '" alt="">' : '') + '</div>';
         }).join('') + '</section>';
       }).join('') : '<p data-t="ui.no-findings-were-recorded">No findings were recorded.</p>') +
-      (r.notes ? '<h2 data-t="ui.notes">Notes</h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.condition-grades">Condition grades</h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
+      (r.notes ? '<h2 data-t="ui.notes"><span data-t="ui.notes"><span data-t="ui.notes">Notes</span></span></h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<h2 data-t="ui.condition-grades"><span data-t="ui.condition-grades"><span data-t="ui.condition-grades">Condition grades</span></span></h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
         return '<tr><td>' + tgb(t) + '</td><td>' + ({ 0: 'No signs of wear or damage.', 1: 'Normal wear; some maintenance may be needed.', 2: 'Significant wear or damage – should be followed up.', 3: 'Serious damage or risk – needs action now.', iu: 'Not examined (no access).' }[t]) + '</td></tr>';
       }).join('') + '</table>' +
       '<footer class="rp-foot">' + esc(r.building || '') + ' · ' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + (me.email ? ' · ' + esc(me.email) : '') + (me.phone ? ' · ' + esc(me.phone) : '') + '</footer>';
@@ -291,10 +291,10 @@
   }
   function openReport(r) {
     var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rpclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span>' +
-      '<label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> Photos</label>' +
-      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> Intro</button>' +
-      '<button type="button" class="pill-btn" data-rpprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rpclose><i class="bi bi-x-lg"></i> <span data-t="ui.close"><span data-t="ui.close">Close</span></span></button><span class="spacer"></span>' +
+      '<label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> <span data-t="ui.photos"><span data-t="ui.photos">Photos</span></span></label>' +
+      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> <span data-t="ui.intro"><span data-t="ui.intro">Intro</span></span></button>' +
+      '<button type="button" class="pill-btn" data-rpprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></span></button></div>' +
       '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b> (on iPhone: pinch out on the preview, then Share).</p><textarea class="rp-introbox" rows="3" maxlength="1500" placeholder="A short introduction at the top of the report – purpose, scope, weather, what you couldn’t access" data-t-placeholder="ui.a-short-introduction-at-the-top-of-the-r" hidden></textarea><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
@@ -375,15 +375,15 @@
     var next = null; for (var i = 0; i < 370 && !next; i++) { var k = addDays(dkey(new Date()), i), h = Fe.holiday(k); if (h) next = { k: k, h: h }; }
     var br = breaks();
     var body = '<div class="kit-tiles">' + tile('Days left ' + y, (total - used - planned) + ' <small>/ ' + total + '</small>', used + ' used' + (planned ? ' · ' + planned + ' planned' : '')) +
-      (next ? tile('Next public holiday', esc(next.h.name), fmt(next.k, { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' +
+      (next ? tile(I18N.k('ui.next-public-holiday', 'Next public holiday'), esc(next.h.name), fmt(next.k, { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' +
       '<h3 class="lp-h3" data-t="ui.longest-breaks-for-the-fewest-days">Longest breaks for the fewest days</h3>' +
       (br.length ? '<ul class="hp-list">' + br.map(function (x) {
         var plannedAlready = (cfg.plans || []).some(function (p) { return p.take === x.take; });
-        return '<li><div class="hp-ratio"><b>' + x.total + '</b><small data-t="ui.days-off">days off</small></div><div class="hp-x"><b>' + esc(x.name) + '</b><span>Take ' + x.used + ' day' + (x.used === 1 ? '' : 's') + ': ' + esc(fmt(x.take, { weekday: 'short', day: 'numeric', month: 'short' })) + (x.takeTo !== x.take ? ' – ' + esc(fmt(x.takeTo, { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</span><small>Off ' + esc(fmt(x.a, { weekday: 'short', day: 'numeric', month: 'short' })) + ' – ' + esc(fmt(x.b, { weekday: 'short', day: 'numeric', month: 'short' })) + '</small></div>' +
-          (plannedAlready ? '<span class="kit-badge" data-t="ui.in-calendar">In calendar</span>' : '<button type="button" class="text-btn" data-hpplan="' + x.take + '|' + x.takeTo + '|' + x.a + '|' + x.b + '|' + x.used + '|' + esc(x.name) + '"><i class="bi bi-calendar-plus"></i> Plan it</button>') + '</li>';
+        return '<li><div class="hp-ratio"><b>' + x.total + '</b><small data-t="ui.days-off"><span data-t="ui.days-off"><span data-t="ui.days-off">days off</span></span></small></div><div class="hp-x"><b>' + esc(x.name) + '</b><span>Take ' + x.used + ' day' + (x.used === 1 ? '' : 's') + ': ' + esc(fmt(x.take, { weekday: 'short', day: 'numeric', month: 'short' })) + (x.takeTo !== x.take ? ' – ' + esc(fmt(x.takeTo, { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</span><small>Off ' + esc(fmt(x.a, { weekday: 'short', day: 'numeric', month: 'short' })) + ' – ' + esc(fmt(x.b, { weekday: 'short', day: 'numeric', month: 'short' })) + '</small></div>' +
+          (plannedAlready ? '<span class="kit-badge" data-t="ui.in-calendar"><span data-t="ui.in-calendar"><span data-t="ui.in-calendar">In calendar</span></span></span>' : '<button type="button" class="text-btn" data-hpplan="' + x.take + '|' + x.takeTo + '|' + x.a + '|' + x.b + '|' + x.used + '|' + esc(x.name) + '"><i class="bi bi-calendar-plus"></i> <span data-t="ui.plan-it"><span data-t="ui.plan-it">Plan it</span></span></button>') + '</li>';
       }).join('') + '</ul>' : '<p class="muted" data-t="ui.no-clever-breaks-in-the-next-12-months">No clever breaks in the next 12 months.</p>') +
       (on('flex') ? '' : '<p class="kit-foot">Holiday days a year: <input class="lp-num" type="number" min="0" max="60" value="' + total + '" data-hpcfg="total" aria-label="Holiday days a year"> · used so far: <input class="lp-num" type="number" min="0" max="60" value="' + used + '" data-hpcfg="used" aria-label="Holiday days used"></p>');
-    el.innerHTML = card('holiday', 'sun', 'Holiday planner', '', body, 'lp-holiday');
+    el.innerHTML = card('holiday', 'sun', I18N.k('ui.holiday-planner', 'Holiday planner'), '', body, 'lp-holiday');
   });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-hpplan]'); if (!b) return;
@@ -399,7 +399,7 @@
   document.addEventListener('change', function (e) { var c = e.target.dataset && e.target.dataset.hpcfg; if (!c) return; var t = Fe.tools(); t.holidaycfg = t.holidaycfg || {}; t.holidaycfg[c] = +e.target.value || 0; Fe.saveTools(t); });
 
   /* ======================= Gym log ======================= */
-  var EX = ['Bench press', 'Squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-ups', 'Lat pulldown', 'Leg press', 'Lunges', 'Romanian deadlift', 'Biceps curl', 'Triceps pushdown', 'Dips', 'Seated row', 'Leg curl', 'Calf raise', 'Plank'];
+  var EX = ['Bench press', 'Squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-ups', 'Lat pulldown', 'Leg press', 'Lunges', 'Romanian deadlift', 'Biceps curl', 'Triceps pushdown', 'Dips', 'Seated row', 'Leg curl', I18N.k('ui.calf-raise', 'Calf raise'), 'Plank'];
   function sessions() { return (Fe.list('gym') || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); }
   function e1rm(s) { return (+s.kg || 0) * (1 + (+s.r || 0) / 30); }
   function history(name) {
@@ -422,23 +422,23 @@
     var names = {}; l.forEach(function (s) { (s.ex || []).forEach(function (x) { names[x.n] = (names[x.n] || 0) + 1; }); });
     var top = Object.keys(names).sort(function (a, b) { return names[b] - names[a]; }).slice(0, 5);
     var prs = 0; top.forEach(function (n) { var h = history(n); if (h.length > 1 && h[h.length - 1].best >= Math.max.apply(null, h.slice(0, -1).map(function (x) { return x.best; })) && h[h.length - 1].date >= addDays(tk, -30)) prs++; });
-    var body = '<div class="kit-tiles">' + tile('This week', wk.length, 'session' + (wk.length === 1 ? '' : 's')) + tile('Volume', nf.format(Math.round(vol)) + ' <small>kg</small>', 'this week') + tile('New bests', prs, 'last 30 days') + '</div>' +
-      (top.length ? '<h3 class="lp-h3" data-t="ui.progress">Progress</h3><ul class="gym-prog">' + top.map(function (n) {
+    var body = '<div class="kit-tiles">' + tile(I18N.k('ui.this-week', 'This week'), wk.length, 'session' + (wk.length === 1 ? '' : 's')) + tile('Volume', nf.format(Math.round(vol)) + ' <small>kg</small>', 'this week') + tile(I18N.k('ui.new-bests', 'New bests'), prs, 'last 30 days') + '</div>' +
+      (top.length ? '<h3 class="lp-h3" data-t="ui.progress"><span data-t="ui.progress"><span data-t="ui.progress">Progress</span></span></h3><ul class="gym-prog">' + top.map(function (n) {
         var h = history(n).slice(-10), mx = Math.max.apply(null, h.map(function (x) { return x.best; })), mn = Math.min.apply(null, h.map(function (x) { return x.best; })), sg = suggest(n);
         var pts = h.map(function (x, i) { return (h.length === 1 ? 50 : i / (h.length - 1) * 100).toFixed(1) + ',' + (mx === mn ? 50 : 90 - (x.best - mn) / (mx - mn) * 80).toFixed(1); }).join(' ');
         var heavy = 0; history(n).forEach(function (x) { x.sets.forEach(function (t) { heavy = Math.max(heavy, +t.kg || 0); }); }); var isPr = h.length > 1 && h[h.length - 1].best >= Math.max.apply(null, h.slice(0, -1).map(function (x) { return x.best; }));
-        return '<li><div class="gym-x"><b>' + esc(n) + (isPr ? ' <span class="hl-chip" style="--c:#e8743b"><i class="bi bi-trophy"></i> Best</span>' : '') + '</b><small>' + esc((sg ? 'Last ' + sg.text : '') + (heavy ? ' · record ' + nf1.format(heavy) + ' kg' : '')) + '</small></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="gym-spark" aria-hidden="true"><polyline points="' + pts + '"/></svg>' +
-          '<div class="gym-next"><small data-t="ui.next">Next</small><b>' + (sg ? (sg.bw ? '' : nf1.format(sg.next) + ' kg ') + '× ' + sg.reps : '–') + '</b></div></li>';
+        return '<li><div class="gym-x"><b>' + esc(n) + (isPr ? ' <span class="hl-chip" style="--c:#e8743b"><i class="bi bi-trophy"></i> <span data-t="ui.best"><span data-t="ui.best">Best</span></span></span>' : '') + '</b><small>' + esc((sg ? 'Last ' + sg.text : '') + (heavy ? ' · record ' + nf1.format(heavy) + ' kg' : '')) + '</small></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" class="gym-spark" aria-hidden="true"><polyline points="' + pts + '"/></svg>' +
+          '<div class="gym-next"><small data-t="ui.next"><span data-t="ui.next"><span data-t="ui.next">Next</span></span></small><b>' + (sg ? (sg.bw ? '' : nf1.format(sg.next) + ' kg ') + '× ' + sg.reps : '–') + '</b></div></li>';
       }).join('') + '</ul>' : '') +
-      (l.length ? '<h3 class="lp-h3" data-t="ui.recent">Recent</h3><ul class="kit-list">' + l.slice(0, 4).map(function (s) { return '<li class="kit-item"><button type="button" class="kit-main" data-gymedit="' + esc(s.id) + '"><span class="kit-ic" style="--c:#d55181"><i class="bi bi-person-arms-up"></i></span><span class="kit-x"><b>' + esc(fmt(s.date, { weekday: 'long', day: 'numeric', month: 'short' })) + '</b><small>' + esc((s.ex || []).map(function (x) { return x.n + ' ' + (x.sets || []).length + '×'; }).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>' :
+      (l.length ? '<h3 class="lp-h3" data-t="ui.recent"><span data-t="ui.recent"><span data-t="ui.recent">Recent</span></span></h3><ul class="kit-list">' + l.slice(0, 4).map(function (s) { return '<li class="kit-item"><button type="button" class="kit-main" data-gymedit="' + esc(s.id) + '"><span class="kit-ic" style="--c:#d55181"><i class="bi bi-person-arms-up"></i></span><span class="kit-x"><b>' + esc(fmt(s.date, { weekday: 'long', day: 'numeric', month: 'short' })) + '</b><small>' + esc((s.ex || []).map(function (x) { return x.n + ' ' + (x.sets || []).length + '×'; }).join(' · ')) + '</small></span></button></li>'; }).join('') + '</ul>' :
         '<p class="empty kit-empty" data-t="ui.log-sets-reps-and-kilos-per-exercise-it">Log sets, reps and kilos per exercise. It shows your progress and suggests the weight for next time.</p>');
     var tpls = templates();
-    var tplRow = '<div class="gym-tpls" aria-label="Workout templates" data-t-aria-label="ui.workout-templates"><span class="gym-tpl-l"><i class="bi bi-collection"></i> Start</span>' + (tpls.length ? tpls.map(function (t) {
+    var tplRow = '<div class="gym-tpls" aria-label="Workout templates" data-t-aria-label="ui.workout-templates"><span class="gym-tpl-l"><i class="bi bi-collection"></i> <span data-t="ui.start"><span data-t="ui.start">Start</span></span></span>' + (tpls.length ? tpls.map(function (t) {
         return '<span class="gym-tpl' + (tplEdit ? ' editing' : '') + '"><button type="button" class="lf-chip" data-gymtpl="' + esc(t.id) + '" title="' + esc(t.ex.map(function (x) { return x.n; }).join(', ')) + '">' + esc(t.name) + ' <small>' + t.ex.length + '</small></button>' +
           (tplEdit ? '<button type="button" class="icon-btn sm" data-gymtpldel="' + esc(t.id) + '" aria-label="Delete ' + esc(t.name) + '"><i class="bi bi-x"></i></button>' : '') + '</span>';
       }).join('') + '<button type="button" class="icon-btn sm" data-gymtpledit aria-pressed="' + tplEdit + '" aria-label="' + (tplEdit ? 'Done' : 'Edit templates') + '" title="' + (tplEdit ? 'Done' : 'Edit templates') + '"><i class="bi bi-' + (tplEdit ? 'check2' : 'pencil') + '"></i></button>'
       : '<button type="button" class="lf-chip" data-gymstarter><i class="bi bi-plus-lg"></i> Push · Pull · Legs</button><small class="muted" data-t="ui.or-save-any-workout-as-a-template">or save any workout as a template</small>') + '</div>';
-    el.innerHTML = card('gym', 'person-arms-up', 'Gym log', '<button type="button" class="text-btn" data-gymstart><i class="bi bi-play-fill"></i> Start workout</button>', tplRow + body, 'lp-gym');
+    el.innerHTML = card('gym', 'person-arms-up', I18N.k('ui.gym-log', 'Gym log'), '<button type="button" class="text-btn" data-gymstart><i class="bi bi-play-fill"></i> <span data-t="ui.start-workout"><span data-t="ui.start-workout">Start workout</span></span></button>', tplRow + body, 'lp-gym');
   });
   /* ---------- templates: Push / Pull / Legs … – saved from a workout, started with one tap ---------- */
   var tplEdit = false;
@@ -471,18 +471,18 @@
     function draw() {
       var T = s.tpl ? templates().filter(function (t) { return t.id === s.tpl; })[0] : null;
       box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-person-arms-up"></i> ' + (T ? esc(T.name) : isNew ? 'Workout' : 'Edit workout') + '</h3><button type="button" class="icon-btn sm" data-gclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
-        '<label class="gym-date">Date <input type="date" data-gdate value="' + s.date + '"></label>' +
+        '<label class="gym-date"><span data-t="ui.date"><span data-t="ui.date">Date</span></span> <input type="date" data-gdate value="' + s.date + '"></label>' +
         s.ex.map(function (x, xi) {
           var sg = suggest(x.n);
           return '<section class="gym-ex"><div class="gym-exh"><b>' + esc(x.n) + '</b>' + (sg ? '<small>Last ' + esc(sg.text) + ' · try <b>' + (sg.bw ? '' : nf1.format(sg.next) + ' kg ') + '× ' + sg.reps + '</b>' + (sg.up ? ' ↑' : '') + '</small>' : '') + '<button type="button" class="icon-btn sm" data-gexdel="' + xi + '" aria-label="Remove ' + esc(x.n) + '"><i class="bi bi-trash3"></i></button></div>' +
             '<div class="gym-sets">' + x.sets.map(function (t, si) {
-              return '<div class="gym-set"><span>' + (si + 1) + '</span><input inputmode="numeric" data-gs="' + xi + ':' + si + ':r" value="' + esc(t.r) + '" aria-label="Reps"><em data-t="ui.reps">reps</em><input inputmode="decimal" data-gs="' + xi + ':' + si + ':kg" value="' + esc(t.kg) + '" aria-label="Kilos"><em>kg</em><button type="button" class="icon-btn sm" data-gsdel="' + xi + ':' + si + '" aria-label="Remove set"><i class="bi bi-x"></i></button></div>';
-            }).join('') + '</div><button type="button" class="text-btn" data-gsadd="' + xi + '"><i class="bi bi-plus-lg"></i> Set</button></section>';
+              return '<div class="gym-set"><span>' + (si + 1) + '</span><input inputmode="numeric" data-gs="' + xi + ':' + si + ':r" value="' + esc(t.r) + '" aria-label="Reps"><em data-t="ui.reps"><span data-t="ui.reps"><span data-t="ui.reps">reps</span></span></em><input inputmode="decimal" data-gs="' + xi + ':' + si + ':kg" value="' + esc(t.kg) + '" aria-label="Kilos"><em>kg</em><button type="button" class="icon-btn sm" data-gsdel="' + xi + ':' + si + '" aria-label="Remove set"><i class="bi bi-x"></i></button></div>';
+            }).join('') + '</div><button type="button" class="text-btn" data-gsadd="' + xi + '"><i class="bi bi-plus-lg"></i> <span data-t="ui.set"><span data-t="ui.set">Set</span></span></button></section>';
         }).join('') +
         '<form class="gym-addex"><input list="gymEx" name="n" placeholder="Add exercise, e.g. Bench press" data-t-placeholder="ui.add-exercise-e-g-bench-press" autocomplete="off" maxlength="60"><datalist id="gymEx">' + Object.keys(EX.concat(sessions().reduce(function (a, q) { return a.concat((q.ex || []).map(function (x) { return x.n; })); }, [])).reduce(function (o, n) { o[n] = 1; return o; }, {})).map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist><button class="pill-btn" type="submit" aria-label="Add exercise"><i class="bi bi-plus-lg"></i></button></form>' +
-        (s.ex.length ? (naming ? '<div class="gym-tplname"><input data-gtplname placeholder="Template name, e.g. Push" maxlength="30" value="' + esc(T ? T.name : '') + '" autocomplete="off"><button type="button" class="pill-btn sm" data-gtplsave data-t="ui.save">Save</button><button type="button" class="icon-btn sm" data-gtplx aria-label="Cancel" data-t-aria-label="ui.cancel"><i class="bi bi-x"></i></button></div>'
-          : '<div class="gym-tplbar">' + (T ? '<button type="button" class="text-btn" data-gtplupd><i class="bi bi-arrow-repeat"></i> Update “' + esc(T.name) + '”</button>' : '') + '<button type="button" class="text-btn" data-gtplnew><i class="bi bi-collection"></i> Save as template</button></div>') : '') +
-        '<div class="lf-foot">' + (isNew ? '<span class="spacer"></span>' : '<button type="button" class="text-btn danger" data-gdel><i class="bi bi-trash3"></i> Delete</button>') + '<button type="button" class="pill-btn wide" data-gsave><i class="bi bi-check2"></i> Save workout</button></div>';
+        (s.ex.length ? (naming ? '<div class="gym-tplname"><input data-gtplname placeholder="Template name, e.g. Push" maxlength="30" value="' + esc(T ? T.name : '') + '" autocomplete="off"><button type="button" class="pill-btn sm" data-gtplsave data-t="ui.save"><span data-t="ui.save"><span data-t="ui.save">Save</span></span></button><button type="button" class="icon-btn sm" data-gtplx aria-label="Cancel" data-t-aria-label="ui.cancel"><i class="bi bi-x"></i></button></div>'
+          : '<div class="gym-tplbar">' + (T ? '<button type="button" class="text-btn" data-gtplupd><i class="bi bi-arrow-repeat"></i> Update “' + esc(T.name) + '”</button>' : '') + '<button type="button" class="text-btn" data-gtplnew><i class="bi bi-collection"></i> <span data-t="ui.save-as-template">Save as template</span></button></div>') : '') +
+        '<div class="lf-foot">' + (isNew ? '<span class="spacer"></span>' : '<button type="button" class="text-btn danger" data-gdel><i class="bi bi-trash3"></i> <span data-t="ui.delete"><span data-t="ui.delete">Delete</span></span></button>') + '<button type="button" class="pill-btn wide" data-gsave><i class="bi bi-check2"></i> <span data-t="ui.save-workout"><span data-t="ui.save-workout">Save workout</span></span></button></div>';
     }
     box.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('[data-gtplname]')) { e.preventDefault(); var b = box.querySelector('[data-gtplsave]'); if (b) b.click(); } });
     box.addEventListener('submit', function (e) {
@@ -534,11 +534,11 @@
   /* ======================= Rest-day advisor ======================= */
   mount('rest', function (el) {
     var r = window.Readiness ? window.Readiness() : null;
-    if (!r || r.score == null) { el.innerHTML = card('rest', 'battery-half', 'Rest-day advisor', '', '<p class="empty kit-empty" data-t="ui.needs-a-few-days-of-sleep-heart-rate-hrv">Needs a few days of sleep, heart rate (HRV, resting pulse) from Apple Health, or your training log, to know your normal.</p>'); return; }
+    if (!r || r.score == null) { el.innerHTML = card('rest', 'battery-half', I18N.k('ui.rest-day-advisor', 'Rest-day advisor'), '', '<p class="empty kit-empty" data-t="ui.needs-a-few-days-of-sleep-heart-rate-hrv">Needs a few days of sleep, heart rate (HRV, resting pulse) from Apple Health, or your training log, to know your normal.</p>'); return; }
     var col = { go: '#22b35e', easy: '#c98500', rest: '#e66767' }[r.level], C = 2 * Math.PI * 34;
     var title = { go: 'Ready to train', easy: 'Go easy today', rest: 'Take a rest day' }[r.level];
     var tip = { go: 'Your body is recovered – a good day for a hard session.', easy: 'Train light: technique, mobility, a walk or an easy run.', rest: 'Rest, sleep early and eat well – you’ll come back stronger.' }[r.level];
-    el.innerHTML = card('rest', 'battery-half', 'Rest-day advisor', '', '<div class="rd-row"><svg class="rd-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34" class="trk"/><circle cx="40" cy="40" r="34" class="val" style="stroke:' + col + '" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - r.score / 100)).toFixed(1) + '"/><text x="40" y="46" text-anchor="middle">' + r.score + '</text></svg>' +
+    el.innerHTML = card('rest', 'battery-half', I18N.k('ui.rest-day-advisor', 'Rest-day advisor'), '', '<div class="rd-row"><svg class="rd-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34" class="trk"/><circle cx="40" cy="40" r="34" class="val" style="stroke:' + col + '" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - r.score / 100)).toFixed(1) + '"/><text x="40" y="46" text-anchor="middle">' + r.score + '</text></svg>' +
       '<div><b class="rd-t" style="color:' + col + '">' + title + '</b><p class="rd-tip">' + tip + '</p>' + (r.why.length ? '<ul class="rd-why">' + r.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') + '</div></div>', 'lp-rest');
   });
 

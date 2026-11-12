@@ -3,8 +3,8 @@
 const { open, sl, U, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const EN = /\b(the|your|you|and|with|this|that|from|when|what|add|show|hide|nothing|today|tomorrow|week|month|settings|change|remove|open)\b/i;
 const BUDGET = 40;     /* English bits per page, at most */
-/* texts still translated by matching the English sentence, per page (counted after naming them on 2026-11-11; lower it as pages move over) */
-const SENT = { '': 340, 'calendar/': 315, 'travel/': 305, 'finance/': 395, 'house/': 365, 'papers/': 310, 'people/': 310, 'habits/': 350, 'goals/': 300, 'work/': 340, 'wish/': 305, 'food/': 305 };
+/* texts still translated by matching the English sentence, per page (counted 2026-11-12 evening after naming the pieces between tags and the labels passed to helpers; lower it as pages move over) */
+const SENT = { '': 210, 'calendar/': 195, 'travel/': 185, 'finance/': 275, 'house/': 240, 'papers/': 185, 'people/': 185, 'habits/': 225, 'goals/': 180, 'work/': 210, 'wish/': 185, 'food/': 185 };
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });

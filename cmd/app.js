@@ -51,8 +51,8 @@
     el.innerHTML = '<i class="bi bi-shield-check"></i><span><b>Time for a backup.</b> ' +
       (last ? 'Your last one was ' + ago + ' days ago.' : 'You haven’t downloaded one yet.') +
       ' It’s encrypted with your passcode – keep it in iCloud Drive or OneDrive.</span>' +
-      '<button type="button" class="pill-btn" data-backup-now><i class="bi bi-download"></i> Download</button>' +
-      '<button type="button" class="text-btn" data-backup-later data-t="ui.later">Later</button>';
+      '<button type="button" class="pill-btn" data-backup-now><i class="bi bi-download"></i> <span data-t="ui.download">Download</span></button>' +
+      '<button type="button" class="text-btn" data-backup-later data-t="ui.later"><span data-t="ui.later">Later</span></button>';
     el.hidden = false;
   }
   document.addEventListener('click', function (e) {
@@ -85,7 +85,7 @@
     var groups = [];
     F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
     var simp = F.simple && F.simple();
-    box.innerHTML = '<label class="st-row ft-row ft-simple"><span class="st-ico" style="--c:#7a8794"><i class="bi bi-ui-checks-grid"></i></span><span class="st-label">Simple mode<small>' +
+    box.innerHTML = '<label class="st-row ft-row ft-simple"><span class="st-ico" style="--c:#7a8794"><i class="bi bi-ui-checks-grid"></i></span><span class="st-label"><span data-t="ui.simple-mode">Simple mode</span><small>' +
       (simp ? 'On – the extras are hidden. Your switches are kept for when you turn it off.' : 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)') +
       '</small></span><input type="checkbox" class="switch" data-simple' + (simp ? ' checked' : '') + ' aria-label="Simple mode"></label>' + groups.map(function (g) {
       return '<p class="st-cardgroup"><i class="bi bi-' + GROUP_ICON[g] + '"></i> ' + g + '</p>' +
@@ -93,7 +93,7 @@
           var adv = F.ADV && F.ADV.indexOf(x.id) > -1;
           if (adv && simp) return '';
           return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
-            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new">New</span>' : '') + '<small>' + x.desc + '</small></span>' +
+            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + x.desc + '</small></span>' +
             '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
         }).join('') + (GROUP_NOTE[g] ? '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>' : '');
     }).join('');

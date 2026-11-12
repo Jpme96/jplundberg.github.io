@@ -25,9 +25,9 @@
       if (!box) { box = document.createElement('div'); box.id = 'wpSet'; pg.appendChild(box); }
       if (box.contains(document.activeElement)) return;
       var ph = myPhrases();
-      box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-building-check"></i> FDV inspections</p><div class="st-group">' +
+      box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-building-check"></i> <span data-t="ui.fdv-inspections">FDV inspections</span></p><div class="st-group">' +
         '<div class="cl-group cl-group-text kit-text wp-parts"><span class="kit-lbl" data-t="ui.your-own-building-parts">Your own building parts</span><textarea data-wpparts rows="3" placeholder="One per line, e.g. Garage, Balcony, Lift" data-t-placeholder="ui.one-per-line-e-g-garage-balcony-lift" maxlength="1000">' + esc(myParts().join('\n')) + '</textarea><small class="kit-help" data-t="ui.theyre-added-to-the-list-of-parts-in-eve">They’re added to the list of parts in every inspection.</small></div>' +
-        '<div class="st-row"><span>Your phrases<small class="st-rsub">' + (ph.length ? ph.length + ' saved – remove them on the chips in an inspection' : 'Save one with ☆ in an inspection') + '</small></span></div></div>';
+        '<div class="st-row"><span><span data-t="ui.your-phrases">Your phrases</span><small class="st-rsub">' + (ph.length ? ph.length + ' saved – remove them on the chips in an inspection' : 'Save one with ☆ in an inspection') + '</small></span></div></div>';
     }
     pg.addEventListener('change', function (e) {
       if (!e.target.matches('[data-wpparts]')) return;

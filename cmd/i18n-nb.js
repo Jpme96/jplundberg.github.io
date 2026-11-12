@@ -42,7 +42,7 @@
     'Stand': 'Stå', 'Distance': 'Distanse', 'Flights': 'Etasjer', 'HRV': 'HRV', 'Cardio fitness': 'Kondisjon', 'Mindfulness': 'Mindfulness', 'Water': 'Vann', 'Daylight': 'Dagslys',
     'Stand hours': 'Ståtimer', 'Heart rate variability': 'Pulsvariasjon', 'Time in daylight': 'Tid i dagslys', 'Active energy': 'Aktiv energi', 'Resting heart rate': 'Hvilepuls', 'Walking + running': 'Gange + løping', 'Flights climbed': 'Etasjer gått',
     'Stand hours ≥': 'Ståtimer ≥', 'Floors ≥': 'Etasjer ≥', 'Mindful min ≥': 'Mindfulness min ≥', 'Water litres ≥': 'Vann liter ≥', 'Daylight min ≥': 'Dagslys min ≥',
-    'Customize this page': 'Tilpass denne siden', 'What’s saved': 'Hva som er lagret', 
+    'What’s saved': 'Hva som er lagret', 
     'No expenses': 'Ingen utgifter', 'No bank file imported': 'Ingen bankfil importert', 'Budget set up': 'Budsjett satt opp', 'No budget yet': 'Ikke noe budsjett ennå', 'No Apple Health data': 'Ingen data fra Apple Helse', 'Menu & pages': 'Meny og sider',
     'Home screen': 'Startskjerm', 'Text and language': 'Tekst og språk', 'How to set it up': 'Slik setter du det opp',
     
@@ -70,7 +70,7 @@
     'At a glance': 'Kort fortalt', 'Reviews': 'Oppsummeringer', 'Weather': 'Vær', 'Money': 'Penger', 'This week': 'Denne uka', 'Work today': 'Jobb i dag', 'To-do': 'Gjøremål', 'Goals': 'Mål',
     'Quick links': 'Snarveier', 'Notes': 'Notater', 'Stops': 'Stopp', 'Clear done': 'Fjern ferdige', 'No notes': 'Ingen notater',
     'No notes yet. Tap a note to edit it.': 'Ingen notater ennå. Trykk på et notat for å endre det.', 'Write something…': 'Skriv noe …', 'Something to do…': 'Noe å gjøre …',
-    'Nothing needs you right now. Enjoy the day.': 'Ingenting trenger deg akkurat nå. Nyt dagen.',
+    
     'Tap to fold them away': 'Trykk for å brette dem sammen', 'Show less': 'Vis færre', 'Not now': 'Ikke nå', 'Log expense': 'Før utgift', 'Bills': 'Regninger',
     'Weather is unavailable right now.': 'Været er ikke tilgjengelig akkurat nå.', 'Not clocked in': 'Ikke stemplet inn', 'Clock in': 'Stemple inn', 'Clock out': 'Stemple ut', 'today': 'i dag',
     'Flex balance': 'Fleksisaldo', 'logged days': 'førte dager', 'Spent today': 'Brukt i dag',
@@ -96,7 +96,7 @@
     'Spending': 'Utgifter', 'Trips': 'Reiser', 'Weekly check-in': 'Ukentlig gjennomgang', 'Import from bank': 'Importer fra banken',
     'CSV or Excel from your bank or credit card': 'CSV eller Excel fra banken eller kredittkortet',
     /* check-in, review */
-    'The week ahead': 'Uka som kommer', 'Focus this week': 'Fokus denne uka', 'Habits last week': 'Vaner forrige uke', 'Done for this week': 'Ferdig for denne uka',
+    'The week ahead': 'Uka som kommer', 'Focus this week': 'Fokus denne uka', 
     'at this pace': 'i dette tempoet', 'left at month end': 'igjen ved månedsslutt', 'left at payday': 'igjen ved lønning',
     'Free': 'Ledig', 'No backup downloaded yet.': 'Ingen sikkerhetskopi lastet ned ennå.',
     'You haven’t imported from your bank yet.': 'Du har ikke importert fra banken ennå.', 'Import': 'Importer', 'Backup': 'Sikkerhetskopi', 'Monthly check-in': 'Månedlig gjennomgang', 'Year in review': 'Året som gikk',
@@ -126,7 +126,7 @@
     'where do you want to go?': 'hvor vil du dra?', 'Journey': 'Reise', 'History': 'Historikk', 'Leave now': 'Dra nå', 'Leave at': 'Dra kl.', 'Arrive by': 'Fremme kl.', 'Find trips': 'Finn reiser',
     'Set home': 'Angi hjem', 'Set work': 'Angi jobb', 
     'Overview': 'Oversikt', 'Plan': 'Plan', 'Prepare': 'Forbered', 'Booked so far': 'Bestilt så langt', 'Booked': 'Bestilt', 'Per day': 'Per dag', 
-    'New trip': 'Ny reise', 'Plan a trip': 'Planlegg en reise', 'Your trips': 'Reisene dine', 'Past trips': 'Tidligere reiser', 'Travel documents': 'Reisedokumenter', 'Packing': 'Pakking', 'Currency': 'Valuta',
+    'New trip': 'Ny reise', 'Your trips': 'Reisene dine', 'Past trips': 'Tidligere reiser', 'Travel documents': 'Reisedokumenter', 'Packing': 'Pakking', 'Currency': 'Valuta',
     'Countries': 'Land', 'Map': 'Kart', 'Globe': 'Globus',
     /* health page */
     
@@ -278,11 +278,11 @@
     
     'Over budget': 'Over budsjett', 'All calendars': 'Alle kalendere', 'Nothing shown': 'Ingenting vises', 'Your calendars': 'Dine kalendere', 'From the dashboard': 'Fra dashbordet', 'Phone calendars': 'Telefonkalendere', 'Only': 'Bare', 'Show all': 'Vis alle', 'Hide all': 'Skjul alle', 'Filter calendars': 'Filtrer kalendere', 'Last month': 'Forrige måned', 'Last year': 'I fjor', 'all years': 'alle år', 'new': 'ny', 'Show fewer': 'Vis færre', 'Spent so far': 'Brukt så langt', 'Not yet': 'Ikke ennå', 'Even pace': 'Jevnt tempo', 'This month, after fixed costs': 'Denne måneden, etter faste kostnader', 'net income': 'netto inntekt', 'over at month end': 'over ved månedsslutt', 'From your bank': 'Fra banken',
     /* budget editor and income */
-    'Budget runs': 'Budsjettet går', 'Calendar month': 'Kalendermåned', 'Payday to payday': 'Fra lønning til lønning', 'Income': 'Inntekt', 'Add income': 'Legg til inntekt', 'Gross salary': 'Bruttolønn', 'Tax': 'Skatt', 'Tax and deductions': 'Skatt og trekk',
+    'Budget runs': 'Budsjettet går', 'Calendar month': 'Kalendermåned', 'Income': 'Inntekt', 'Add income': 'Legg til inntekt', 'Gross salary': 'Bruttolønn', 'Tax': 'Skatt', 'Tax and deductions': 'Skatt og trekk',
     'Left': 'Igjen', 'Fixed costs': 'Faste kostnader', 'Spent since payday': 'Brukt siden lønning', 'Payday…': 'Lønningsdag …', 'Paid on the last day': 'Utbetales siste dag', 'Net (paid out)': 'Netto (utbetalt)', 'Gross (payslip)': 'Brutto (lønnsslipp)',
     'Payday': 'Lønningsdag', 'e.g. Salary': 'f.eks. Lønn', 'kr / month, after tax': 'kr / måned, etter skatt', 
     '37 % or 29 621': '37 % eller 29 621', 'e.g. 90': 'f.eks. 90',
-    'e.g. Fagforening': 'f.eks. Fagforening', 'Add deduction': 'Legg til trekk', 'Norwegian pay year: holiday pay in June, half tax in December': 'Norsk lønnsår: feriepenger i juni, halv skatt i desember',
+    'e.g. Fagforening': 'f.eks. Fagforening', 'Add deduction': 'Legg til trekk', 
     '0 if you started this year': '0 hvis du begynte i år', 'Holiday weeks': 'Ferieuker', '5 weeks': '5 uker', '4 weeks + 1 day': '4 uker + 1 dag',
     'Payslips logged': 'Lønnsslipper ført', 
     'Month': 'Måned', 'Gross (optional)': 'Brutto (valgfritt)', 'Tax (optional)': 'Skatt (valgfritt)', 'Save payslip': 'Lagre lønnsslipp', 'Remove payslip': 'Fjern lønnsslipp',
@@ -294,7 +294,7 @@
     
     'Add your accounts and loans. Update the balances now and then, and the chart shows how your net worth develops month by month.': 'Legg inn kontoer og lån. Oppdater saldoene nå og da, så viser diagrammet hvordan nettoformuen din utvikler seg måned for måned.',
     'Add income and fixed costs under Monthly budget to compare with a budget.': 'Legg inn inntekt og faste kostnader under Månedsbudsjett for å sammenligne med et budsjett.',
-    'Add your salary under Monthly budget': 'Legg inn lønnen din under Månedsbudsjett', 'Set up your budget above': 'Sett opp budsjettet ovenfor', 'Set up budget': 'Sett opp budsjett',
+    'Add your salary under Monthly budget': 'Legg inn lønnen din under Månedsbudsjett', 'Set up your budget above': 'Sett opp budsjettet ovenfor', 
     'Set up your monthly budget': 'Sett opp månedsbudsjettet', 'Needs your income': 'Trenger inntekten din',
     
     
@@ -312,9 +312,9 @@
     
     'Like “Week 44” in the month and week views': 'Som «Uke 44» i måneds- og ukevisningen', 'Events in a deleted category move to Personal.': 'Hendelser i en slettet kategori flyttes til Personlig.',
     '17. mai, Easter, Christmas … also counted in Flex time': '17. mai, påske, jul … regnes også med i fleksitid', 'Colour': 'Farge',
-    'iPhone (iCloud)': 'iPhone (iCloud)', '– open the Calendar app →': '– åpne Kalender-appen →', '→ tap': '→ trykk', 'next to the calendar → turn on': 'ved siden av kalenderen → slå på',
-    '. Do this for each calendar you want here.': '. Gjør dette for hver kalender du vil ha her.', '– calendar.google.com on a computer →': '– calendar.google.com på en datamaskin →', '→ pick the calendar →': '→ velg kalenderen →',
-    '→ copy': '→ kopier', '– outlook.com →': '– outlook.com →', '→ copy the ICS link.': '→ kopier ICS-lenken.',
+    'iPhone (iCloud)': 'iPhone (iCloud)', '– open the Calendar app →': '– åpne Kalender-appen →', '→ tap': '→ trykk', 
+    '– calendar.google.com on a computer →': '– calendar.google.com på en datamaskin →', 
+    '→ copy': '→ kopier', '– outlook.com →': '– outlook.com →', 
     
     /* Travel */
     'Add a destination to your trips': 'Legg til et reisemål på turene dine', 
@@ -346,7 +346,7 @@
     'About you': 'Om deg', 'Add photo': 'Legg til bilde', 'Address': 'Adresse', 'Allergies': 'Allergier', 'Birthday': 'Fødselsdag', 'Blood type': 'Blodtype', 'City': 'By', 'Email': 'E-post', 'Emergency contact': 'Nødkontakt', 'Employer': 'Arbeidsgiver',
     'GP (fastlege)': 'Fastlege', 'Medicines': 'Medisiner', 'Name': 'Navn', 'Normal working day': 'Normal arbeidsdag', 'Normal working day in hours': 'Normal arbeidsdag i timer', 'Office': 'Kontor', 'Phone': 'Telefon', 'Private.': 'Privat.', 'Relation': 'Relasjon', 'Role': 'Rolle',
     'Saved encrypted, only for you.': 'Lagret kryptert, bare for deg.', 'Shirts & jackets': 'Skjorter og jakker', 'Shoes': 'Sko', 'Trousers': 'Bukser', 'Sizes': 'Størrelser',
-    'Only you see this – nothing here is shown on jplundberg.com. What’s public is under Settings → jplundberg.com.': 'Bare du ser dette – ingenting her vises på jplundberg.com. Det som er offentlig ligger under Innstillinger → jplundberg.com.',
+    
     'Becomes “Home” in Travel, so departures and “leave by” start from here.': 'Blir «Hjem» i Reise, så avganger og «dra senest» regnes herfra.', 'Shown with your travel documents and on the Health page.': 'Vises sammen med reisedokumentene og på Helse-siden.',
     'The office becomes “Work” in Travel. The working day is what Flex time counts against.': 'Kontoret blir «Jobb» i Reise. Arbeidsdagen er det fleksitiden regnes mot.',
     'Anything you take regularly': 'Det du tar fast', 'Company': 'Firma', 'Full name': 'Fullt navn', 'Job title': 'Stilling', 'Name and clinic': 'Navn og legekontor', 'Ring, hat …': 'Ring, lue …',
@@ -355,25 +355,25 @@
     'Links that open the dashboard with something ready to add. Use them in the Shortcuts app, for Siri (“Hey Siri, log expense”) or Back Tap (tap the back of the phone twice). Nothing is saved until you tap Add.': 'Lenker som åpner dashbordet med noe klart til å legges til. Bruk dem i Snarveier-appen, med Siri («Hei Siri, før utgift») eller Bakpå-trykk (trykk to ganger på baksiden av telefonen). Ingenting lagres før du trykker Legg til.',
     '“Hey Siri, log expense” – 2 minutes': '«Hei Siri, før utgift» – 2 minutter', 'Add what you say after it: “149 rema”, “fre 18 middag”, “løp 5 km”': 'Legg til det du sier etterpå: «149 rema», «fre 18 middag», «løp 5 km»',
     
-    'Open the': 'Åpne', 'app →': '-appen →', '(new shortcut).': '(ny snarvei).', '. Type: Text. Prompt:': '. Type: Tekst. Spørsmål:', '– you\'ll say or type e.g. “149 rema”.': '– du sier eller skriver f.eks. «149 rema».',
-    'and paste the first link above (the one that ends in': 'og lim inn den første lenken over (den som slutter på', '). Then tap after it and insert': '). Trykk så etter den og sett inn', 'from the variables bar.': 'fra variabelfeltet.',
-    '. Now say “Hey Siri, log expense”.': '. Si nå «Hei Siri, log expense».', 
+    'Open the': 'Åpne', 'app →': '-appen →', '(new shortcut).': '(ny snarvei).', 
+    
+    
     /* Apple Health set-up */
-    'On your iPhone (5 minutes)': 'På iPhonen (5 minutter)', 'Once, in Cloudflare (3 minutes)': 'Én gang, i Cloudflare (3 minutter)', 'Paste the newest': 'Lim inn nyeste', 'into the Worker, if you haven\'t.': 'i Workeren, hvis du ikke har gjort det.',
-    ', duration: non-expiring. Copy the': ', varighet: utløper ikke. Kopier', 'straight into the Shortcut below – nowhere else.': 'rett inn i snarveien nedenfor – ingen andre steder.', '. Name:': '. Navn:', '. Action:': '. Handling:', '. Include:': '. Inkluder:', '. Save.': '. Lagre.',
-    ', name it': ', gi den navnet', '– Type: Steps, Start Date: is today. Then': '– Type: Steps, Start Date: is today. Så',
+    'On your iPhone (5 minutes)': 'På iPhonen (5 minutter)', 'Once, in Cloudflare (3 minutes)': 'Én gang, i Cloudflare (3 minutter)', 'Paste the newest': 'Lim inn nyeste', 
+    '. Name:': '. Navn:', '. Action:': '. Handling:', '. Include:': '. Inkluder:', '. Save.': '. Lagre.',
+    '– Type: Steps, Start Date: is today. Then': '– Type: Steps, Start Date: is today. Så',
     '→ Sum.': '→ Sum.', '– Type: Sleep, Start Date: is in the last 1 day,': '– Type: Sleep, Start Date: is in the last 1 day,', 'and': 'og',
     '(keeps the Watch\'s Core, Deep and REM, so a night isn\'t counted twice). Then': '(beholder klokkens kjerne-, dyp- og REM-søvn, så en natt ikke telles to ganger). Så', '→ Duration, and': '→ Duration, og',
-    '. Headers:': '. Headers:', 'with your two values. Request Body:': 'med de to verdiene dine. Request Body:', 'fields': '-felt', ', each set with': ', hver satt med', '→ the blue': '→ den blå',
-    'under its own Calculate action. No date needed – today\'s is used.': 'under sin egen Calculate-handling. Ingen dato trengs – dagens brukes.', 'More numbers': 'Flere tall', '(optional): one': '(valgfritt): én', '(Start Date is today) + one': '(Start Date is today) + én',
-    'each, and a Number field with this name. Each gets its own tile, chart and goal.': 'hver, og et Number-felt med dette navnet. Hver får sin egen flis, sitt eget diagram og mål.',
-    '→ Time of Day, 22:30, Daily →': '→ Time of Day, 22:30, Daily →', '→ Health to dashboard.': '→ Health to dashboard.',
+    '. Headers:': '. Headers:', 'fields': '-felt', 
+    'More numbers': 'Flere tall', '(optional): one': '(valgfritt): én', 
+    
+    
     
     'Number for Training': 'Tall for Trening', 'Threshold': 'Grense', 'Shortcuts →': 'Snarveier →',
     /* jplundberg.com pages */
     'Link (optional)': 'Lenke (valgfritt)', 'Live': 'Publisert', 'Norwegian': 'Norsk',
     'Publish announcement': 'Publiser kunngjøring', 'Show announcement': 'Vis kunngjøring', 
-    'About': 'Om', 'Contact': 'Kontakt', 'Intro (name and title)': 'Intro (navn og tittel)', 'Latest articles': 'Siste artikler', 'Projects': 'Prosjekter',
+    'About': 'Om', 'Contact': 'Kontakt', 'Latest articles': 'Siste artikler', 'Projects': 'Prosjekter',
     'Publish front page': 'Publiser forsiden', 'Right now': 'Akkurat nå', 'Always last': 'Alltid sist', 
     'Articles': 'Artikler', 'Article': 'Artikkel', 'Project': 'Prosjekt', 'Publish featured': 'Publiser utvalgte',
     
@@ -381,22 +381,22 @@
     'Publish courses & certificates': 'Publiser kurs og sertifikater',
     'Publish project progress': 'Publiser prosjektfremdrift', 'Publish cv': 'Publiser CV', 'Add job': 'Legg til jobb', 'Born': 'Født', 
     'Include articles': 'Ta med artikler', 'Include projects': 'Ta med prosjekter', 'Nationality': 'Nasjonalitet', 'One per line.': 'Én per linje.', 'Profile text': 'Profiltekst',
-    '. Shown as bars in the sidebar.': '. Vises som stolper i sidefeltet.', 'from the site': 'fra nettsiden',
+    'from the site': 'fra nettsiden',
     
     
     'Two or three sentences about what you do.': 'To eller tre setninger om hva du gjør.', 
     'Add social': 'Legg til profil', 'Publish socials': 'Publiser profiler', 'Your profiles': 'Profilene dine', 'Network': 'Nettverk', 'username': 'brukernavn',
     'Public: the profiles switched on here show on jplundberg.com (sidebar, front page and footer) after you tap Publish.': 'Offentlig: profilene som er slått på her vises på jplundberg.com (sidefelt, forside og bunntekst) når du trykker Publiser.',
     
-    ') to go back to the original text. Changes are live about a minute after you publish.': ') for å gå tilbake til originalteksten. Endringer er ute omtrent ett minutt etter at du publiserer.',
+    
     'Couldn’t load the texts. Check your connection and try again.': 'Klarte ikke å laste tekstene. Sjekk tilkoblingen og prøv igjen.', 'Original': 'Original', 'Publish texts': 'Publiser tekster',
     
-    'in the project file). Only the name, the numbers and the date are published.': 'i prosjektfilen). Bare navnet, tallene og datoen publiseres.',
+    
     'Front page (English)': 'Forside (engelsk)', 'Front page (Norwegian)': 'Forside (norsk)',
     'Most read pages': 'Mest leste sider', 'Page views': 'Sidevisninger', 'Visits': 'Besøk', 'Where visitors come from': 'Hvor besøkende kommer fra', 'Norway': 'Norge', 'Sweden': 'Sverige',
     
     'Your courses and certificates from the Work page. Switch on the ones that may be shown on jplundberg.com (a “Courses & certificates” section on the front page – turn the section on under Front page).': 'Kursene og sertifikatene dine fra Jobb-siden. Slå på dem som kan vises på jplundberg.com (en «Kurs og sertifikater»-seksjon på forsiden – slå på seksjonen under Forside).',
-    '· on the page, “Save as PDF” prints it to a file.': '· på siden skriver «Lagre som PDF» den til en fil.', 'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
+    'Website': 'Nettside', 'Site editor': 'Nettsideredigering',
     'CSV': 'CSV', 'PDF': 'PDF'
   });
   /* optional features: Talk to add, Shutdown, Find time, Meeting prep, Trip budget, Rest day, Strømpris, Jars, FDV, Holiday planner, Gym log, Smart packing */
@@ -413,8 +413,8 @@
     'Smart packing': 'Smart pakking', 'A packing list from the trip’s length and the weather there': 'En pakkeliste ut fra reisens lengde og været der',
     'Strømpris': 'Strømpris', 'Power prices': 'Strømpris', 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours': 'Strømprisen i Oslo (NO1) time for time – og de billigste timene',
     'Savings jars': 'Sparekrukker', 'Your savings goals as jars that fill up, with weeks left': 'Sparemålene som krukker som fylles opp, med uker igjen',
-    'End your workday': 'Avslutt arbeidsdagen', 'End my workday': 'Avslutt arbeidsdagen', 'End my day': 'Avslutt dagen', 'Close today in one go – and know what tomorrow holds.': 'Avslutt i dag på én gang – og vit hva morgendagen bringer.',
-    'Work time': 'Arbeidstid', 'Tomorrow’s top 3': 'Morgendagens topp 3', 
+    'End your workday': 'Avslutt arbeidsdagen', 'End my workday': 'Avslutt arbeidsdagen', 'Close today in one go – and know what tomorrow holds.': 'Avslutt i dag på én gang – og vit hva morgendagen bringer.',
+    'Work time': 'Arbeidstid', 
     'Not now': 'Ikke nå', 'Move what’s left and pick tomorrow’s top 3': 'Flytt det som er igjen og velg morgendagens topp 3', 'Clock out, move what’s left, pick tomorrow’s top 3': 'Stemple ut, flytt det som er igjen, velg morgendagens topp 3',
     'Three is the limit – take one out first': 'Tre er maks – ta ut én først',
     'What do you need time for?': 'Hva trenger du tid til?', 'Work hours': 'Arbeidstid', 'Evenings': 'Kvelder', 'Any time': 'Når som helst', 'This week': 'Denne uken', 'Next week': 'Neste uke', '2 weeks': '2 uker', 'Weekends too': 'Helger også',
@@ -425,11 +425,11 @@
     'Rest, sleep early and eat well – you’ll come back stronger.': 'Hvil, legg deg tidlig og spis godt – du kommer sterkere tilbake.',
     
     'Today': 'I dag', 'Tomorrow': 'I morgen', 'Cheap': 'Billig', 'Normal': 'Normal', 'Expensive': 'Dyrt', 'I have Norgespris': 'Jeg har Norgespris', 
-    'Spot price in NO1 with VAT, before grid rent (nettleie). Prices from hvakosterstrommen.no.': 'Spotpris i NO1 med mva, før nettleie. Priser fra hvakosterstrommen.no.',
+    
     'Getting today’s prices …': 'Henter dagens priser …', 'Couldn’t reach the price service right now – try again later.': 'Fikk ikke kontakt med pristjenesten nå – prøv igjen senere.',
     'Good time to wash, dry or charge': 'Lurt å vaske, tørke eller lade nå', 'Full 🎉': 'Full 🎉',
     'New inspection': 'Ny befaring', 'Edit inspection': 'Rediger befaring', 'Building': 'Bygg', 'Building or property, e.g. Storgata 12': 'Bygg eller eiendom, f.eks. Storgata 12', 'Address': 'Adresse', 'Street, town': 'Gate, sted', 'Client': 'Oppdragsgiver', 'Who it’s for': 'Hvem det er for',
-    'Copy summary': 'Kopier sammendrag', 'Share': 'Del', 'TG 2–3 to to-do': 'TG 2–3 til gjøremål', 'Add finding': 'Legg til funn', 'Photo': 'Bilde', 'Photo ✓': 'Bilde ✓', 'Summary copied': 'Sammendraget er kopiert', 'Finding removed': 'Funnet er fjernet', 'Remove finding': 'Fjern funn',
+    'Copy summary': 'Kopier sammendrag', 'Share': 'Del', 'Add finding': 'Legg til funn', 'Photo': 'Bilde', 'Photo ✓': 'Bilde ✓', 'Summary copied': 'Sammendraget er kopiert', 'Finding removed': 'Funnet er fjernet', 'Remove finding': 'Fjern funn',
     
     
     'Roof': 'Tak', 'Facade': 'Fasade', 'Windows and doors': 'Vinduer og dører', 'Wet rooms': 'Våtrom', 'Kitchen': 'Kjøkken', 'Electrical': 'Elektro', 'Plumbing (VVS)': 'VVS', 'Ventilation': 'Ventilasjon', 'Heating': 'Oppvarming', 'Fire safety': 'Brannsikring', 'Structure': 'Konstruksjon', 'Outdoor areas': 'Utomhus', 'Other': 'Annet',
@@ -603,7 +603,7 @@
     'Significant wear or damage – should be followed up.': 'Vesentlig slitasje eller skade – bør følges opp.', 'Serious damage or risk – needs action now.': 'Alvorlig skade eller risiko – krever tiltak nå.', 'Not examined (no access).': 'Ikke undersøkt (ingen tilgang).',
     
     'Show 2 more': 'Vis 2 til', 'Recent': 'Siste',
-    'Pick from the usual ones': 'Velg blant de vanlige', 'New upkeep task ': 'Ny vedlikeholdsoppgave', 'Pick one – it comes with how often and how to': 'Velg en – den kommer med hvor ofte og hvordan', 'Something else': 'Noe annet', 'Write your own': 'Skriv din egen',
+    'New upkeep task ': 'Ny vedlikeholdsoppgave', 'Pick one – it comes with how often and how to': 'Velg en – den kommer med hvor ofte og hvordan', 'Something else': 'Noe annet', 'Write your own': 'Skriv din egen',
     'Clean the gutters': 'Rens takrennene', 'Check the sealant in the bathroom': 'Sjekk fugene på badet', 'Which one?': 'Hvilken?', 'Another bin': 'En annen dunk', 'Next pickup': 'Neste tømming',
     'Or any day it was picked up – the rest follow from it. Your kommune’s app or website has the dates.': 'Eller en dag den ble tømt – resten regnes ut. Kommunens app eller nettside har datoene.',
     'Add each bin once with its next pickup – you get a reminder the evening before.': 'Legg inn hver dunk én gang med neste tømming – du får en påminnelse kvelden før.', 'no reminder': 'ingen påminnelse',
@@ -692,7 +692,7 @@
     'What was it? e.g. Dinner at Lofoten': 'Hva var det? F.eks. middag på Lofoten', 'Total, kr': 'Totalt, kr', 'Shared with': 'Delt med', 'New person': 'Ny person', 'Add person': 'Legg til person',
     'Who paid?': 'Hvem betalte?', 'You': 'Du', 'Equally': 'Likt', 'By amount': 'Etter beløp', 'Add your share to Spending': 'Legg din del til i forbruket', 'Pick who you shared it with.': 'Velg hvem du delte med.',
     'Removed': 'Fjernet', 'Won’t suggest it again': 'Foreslås ikke igjen', 'Price updated': 'Prisen er oppdatert',
-    'Copied – paste it in a message': 'Kopiert – lim det inn i en melding', 'Send a reminder': 'Send en påminnelse', 'Mark as paid': 'Marker som betalt', 'Message': 'Melding', 'Delete payment': 'Slett betalingen',
+    'Copied – paste it in a message': 'Kopiert – lim det inn i en melding', 'Mark as paid': 'Marker som betalt', 'Message': 'Melding', 'Delete payment': 'Slett betalingen',
     'Payment removed': 'Betalingen er fjernet', 'settle up when it suits': 'gjør opp når det passer', 'Working it out …': 'Regner ut …',
     'Recurring payments, shared expenses': 'Gjentakende betalinger, delte utgifter', 
     'Show the card': 'Vis kortet', 'Charges that come back every month': 'Trekk som kommer igjen hver måned', 'Look back': 'Se tilbake', '6 months': '6 måneder', '12 months': '12 måneder',
@@ -714,7 +714,7 @@
     'The last 26 weeks': 'De siste 26 ukene', 'The whole year': 'Hele året', 'Change it on a habit too': 'Kan også endres på vanen', 'Mini charts on the number tiles': 'Små grafer på tallflisene',
     'The last 7 days': 'De siste 7 dagene', 'Workout templates': 'Øktmaler', 
     'Add Push, Pull and Legs': 'Legg til Push, Pull og Legs', 'Open Health': 'Åpne Helse', 'Edit templates': 'Endre maler',
-    'Save as template': 'Lagre som mal', 'Template name, e.g. Push': 'Navn på malen, f.eks. Push', 'Push, Pull and Legs added – tap one to start': 'Push, Pull og Legs er lagt til – trykk på en for å starte'
+    'Template name, e.g. Push': 'Navn på malen, f.eks. Push', 'Push, Pull and Legs added – tap one to start': 'Push, Pull og Legs er lagt til – trykk på en for å starte'
   });
   var HW = { 'more sleep': 'mer søvn', 'more steps': 'flere skritt', 'more exercise': 'mer trening', 'more workouts': 'flere økter', 'a lower resting pulse': 'lavere hvilepuls', 'a better mood': 'bedre humør',
     'more habits on target': 'flere vaner på mål', 'less sleep': 'mindre søvn', 'fewer steps': 'færre skritt', 'less exercise': 'mindre trening', 'fewer workouts': 'færre økter', 'a higher resting pulse': 'høyere hvilepuls',
@@ -755,8 +755,8 @@
     'Type the finding first, then save it as a phrase': 'Skriv funnet først, og lagre det så som en frase', 'Phrase removed': 'Frasen er fjernet',
     'Back online – syncing …': 'Tilkoblet igjen – synkroniserer …', 'Inspection synced ✓': 'Befaringen er synkronisert ✓',
     'Invoice draft': 'Fakturautkast', 'Invoice drafts': 'Fakturautkast', 'Month': 'Måned', 'Invoice no.': 'Fakturanr.', 'Rate': 'Sats', 'Each entry': 'Hver føring', 'Per day': 'Per dag', 'One line': 'Én linje',
-    '25 % VAT': '25 % MVA', 'Copy as text': 'Kopier som tekst', 'A draft to check before you send it – in the print window, choose': 'Et utkast du sjekker før du sender det – i utskriftsvinduet velger du',
-    '. Your details are in Settings → Work.': '. Opplysningene dine ligger i Innstillinger → Jobb.', 'Invoice': 'Faktura', 'Your name': 'Navnet ditt', 'To': 'Til', 'Invoice date': 'Fakturadato',
+    '25 % VAT': '25 % MVA', 
+    'Invoice': 'Faktura', 'Your name': 'Navnet ditt', 'To': 'Til', 'Invoice date': 'Fakturadato',
     'Due date': 'Forfallsdato', 'Pay to': 'Betal til', 'Description': 'Beskrivelse', 'Amount': 'Beløp', 'Total excl. VAT': 'Sum eks. MVA', 'VAT 25 %': 'MVA 25 %', 'Amount due': 'Å betale',
     
     'From Time per client': 'Fra Tid per kunde', 'Organisation number': 'Organisasjonsnummer', 'Bank account': 'Kontonummer', 'Your address on invoices': 'Adressen din på fakturaer',
@@ -774,9 +774,9 @@
     'Turn the outdoor taps back on and check for leaks': 'Åpne utekranene og se etter lekkasjer', 'Wash the windows': 'Vask vinduene', 'Service the lawnmower': 'Gi gressklipperen service',
     'Check that water runs away from the house': 'Sjekk at vannet renner bort fra huset', 'Clean the heat pump filters': 'Rens filtrene i varmepumpen',
     'Paint or stain the facade or deck where needed': 'Mal eller beis fasade eller terrasse der det trengs', 'Wash and oil the deck': 'Vask og olj terrassen', 'Clean the ventilation valves': 'Rens ventilene',
-    'Wash the facade': 'Vask fasaden', 'Check the roof and flashings': 'Sjekk tak og beslag', 'Bring back the usual ones': 'Hent tilbake de vanlige',
+    'Wash the facade': 'Vask fasaden', 'Check the roof and flashings': 'Sjekk tak og beslag', 
     'Power use by month': 'Strømforbruk per måned', 
-    'Last year': 'I fjor', 'no readings then': 'ingen avlesninger da', 'Last 12 months': 'Siste 12 måneder', 'This year': 'I år', 'Same month last year': 'Samme måned i fjor', 'so far': 'så langt',
+    'Last year': 'I fjor', 'no readings then': 'ingen avlesninger da', 'Last 12 months': 'Siste 12 måneder', 'This year': 'I år', 'so far': 'så langt',
     'Home inventory': 'Innboliste', 'Item': 'Gjenstand', 'New item': 'Ny gjenstand', 'Edit item': 'Endre gjenstand', 'Kind': 'Type', 'Room': 'Rom', 'Price paid': 'Kjøpspris', 'Bought': 'Kjøpt',
     'Brand and model': 'Merke og modell', 'Serial number': 'Serienummer', 'Where the receipt is, the shop, warranty …': 'Hvor kvitteringen er, butikken, garanti …', 'e.g. MacBook Pro 14″, Sofa, Bike': 'f.eks. MacBook Pro 14″, sofa, sykkel',
     'Living room': 'Stue', 'Bedroom': 'Soverom', 'Office': 'Kontor', 'Bathroom': 'Bad', 'Hall': 'Gang', 'Storage or attic': 'Bod eller loft', 'Garage or shed': 'Garasje eller uthus', 'Outdoors': 'Ute',
@@ -785,7 +785,7 @@
     'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.': 'Før opp verdisakene dine med bilde, pris og kvittering – blir det brann eller innbrudd, er listen til forsikringsselskapet klar.',
     'Insurance list': 'Liste til forsikringen', 'Items': 'Gjenstander', 'Total value': 'Total verdi', 'price paid': 'kjøpspris', 'Receipts': 'Kvitteringer', 'add the rest': 'legg til resten', 'all saved': 'alle lagret',
     'Receipt saved': 'Kvittering lagret', 'Photo saved': 'Bilde lagret', 'New photo': 'Nytt bilde', 'New receipt': 'Ny kvittering', 'Add photo': 'Legg til bilde', 'Add receipt': 'Legg til kvittering',
-    'Couldn’t read that picture': 'Kunne ikke lese bildet', '. Photos and receipts come from this device.': '. Bilder og kvitteringer hentes fra denne enheten.', 'Contents': 'Innbo',
+    'Couldn’t read that picture': 'Kunne ikke lese bildet', 'Contents': 'Innbo',
     'receipt saved': 'kvittering lagret', 'no receipt': 'ingen kvittering', 'Your house': 'Huset ditt', 'Read the meter': 'Les av måleren', 'Nothing due – the house is in good shape.': 'Ingenting å gjøre – huset er i god stand.',
     'Seasons and the house': 'Sesonger og huset', 'Season checklist in At a glance': 'Sesongliste i Kort fortalt', 'The first weeks of autumn, winter, spring and summer': 'De første ukene av høst, vinter, vår og sommer',
     'House picture at the top': 'Bilde av huset øverst', 'Shows what’s due – tap a part to go there': 'Viser hva som må gjøres – trykk på en del for å gå dit'
@@ -822,7 +822,7 @@
     
     'Gratulerer med navnedagen!': 'Gratulerer med navnedagen!', 'Import contacts': 'Importer kontakter', 'From your iPhone, with birthdays. The list stays on this device until you pick who to add.': 'Fra iPhonen, med bursdager. Listen blir på denne enheten til du har valgt hvem som skal med.',
     'From the iPhone Shortcut': 'Fra snarveien på iPhone', 
-    'Paste': 'Lim inn', 'From a contact file': 'Fra en kontaktfil', 'Choose a .vcf file': 'Velg en .vcf-fil', 'The clipboard is empty.': 'Utklippstavlen er tom.',
+    'Paste': 'Lim inn', 'The clipboard is empty.': 'Utklippstavlen er tom.',
     'Couldn’t read the clipboard – paste into the box instead.': 'Fikk ikke lest utklippstavlen – lim inn i feltet i stedet.', 'No names found – one person per line: Name; 24.12.1990; +47 …': 'Fant ingen navn – én person per linje: Navn; 24.12.1990; +47 …',
     'No contacts in that file.': 'Ingen kontakter i den filen.', 'Already there': 'Finnes allerede', 'No birthday': 'Ingen bursdag', 'Back': 'Tilbake',
     'Ask for a note after “Talked today”': 'Spør om et notat etter «Snakket i dag»', 'One line, kept as a short history': 'Én linje, tatt vare på som en kort historikk',
@@ -834,18 +834,18 @@
     'Anniversaries and other yearly days – one per line, a name and a date. Name days come by themselves from the Norwegian almanac.': 'Merkedager og andre årlige dager – én per linje, et navn og en dato. Navnedager kommer av seg selv fra almanakken.',
     'Wedding': 'Bryllup', 'Anniversary': 'Merkedag',
     'Servings': 'Porsjoner', 'Fewer servings': 'Færre porsjoner', 'More servings': 'Flere porsjoner', 'Pantry': 'Matskap', 'all in stock': 'alt på lager', 'On the list': 'På lista', 'Got it': 'Har det',
-    'Running out': 'Snart tom', 'Sorted by section, in the order you tick things off in the shop. ⋯ moves an item to another section.': 'Sortert etter avdeling, i rekkefølgen du krysser av i butikken. ⋯ flytter en vare til en annen avdeling.', 'Move to another section': 'Flytt til en annen avdeling', 'Admin page': 'Admin-side', 'Admin · control room': 'Admin · kontrollrom', 'Simple mode': 'Enkel modus', 'On – the extras are hidden. Your switches are kept for when you turn it off.': 'På – ekstrafunksjonene er skjult. Valgene dine tas vare på til du slår det av.', 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)': 'Skjul ekstrafunksjonene (snakk for å legge til, finn tid, avslutningsrutine, ferieplanlegger, hviledagsråd, helserapport, reisebudsjett, smart pakking, strømpris, sparekrukker, faste og delte betalinger, garantier)', 'Write down what was decided and who does what. Action points can go straight to your to-do list.': 'Skriv ned hva som ble bestemt og hvem som gjør hva. Oppfølgingspunkter kan gå rett til gjøremålslisten.', 'Streaming, apps, phone, gym … see what it all costs per month and year, and get a reminder before each payment.': 'Strømming, apper, telefon, trening … se hva alt koster per måned og år, og få en påminnelse før hver betaling.', 'Their look in the People picture': 'Utseendet i bildet på Personer-siden', 'Picked from the name – make it look like them': 'Valgt ut fra navnet – gjør det likt personen', 'Change look': 'Endre utseende', 'Customize look': 'Tilpass utseende', 'Running out · on your shopping list': 'Snart tomt · på handlelisten', 'Find or add to the pantry': 'Finn eller legg til i matskapet', 'The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk «Snart tom», så havner den på handlelista – krysset av der, er den på lager igjen.',
-    'Add the usual basics': 'Legg til de vanlige basisvarene', 'Add a basic – e.g. oats, coffee filters': 'Legg til en basisvare – f.eks. havregryn, kaffefilter', 'Add to the pantry': 'Legg til i matskapet',
-    'Add the usual basics you don’t have': 'Legg til de vanlige du ikke har', 'Recipe from a link': 'Oppskrift fra en lenke', 'From a link': 'Fra en lenke',
+    'Running out': 'Snart tom', 'Sorted by section, in the order you tick things off in the shop. ⋯ moves an item to another section.': 'Sortert etter avdeling, i rekkefølgen du krysser av i butikken. ⋯ flytter en vare til en annen avdeling.', 'Move to another section': 'Flytt til en annen avdeling', 'Admin page': 'Admin-side', 'Admin · control room': 'Admin · kontrollrom', 'Simple mode': 'Enkel modus', 'On – the extras are hidden. Your switches are kept for when you turn it off.': 'På – ekstrafunksjonene er skjult. Valgene dine tas vare på til du slår det av.', 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)': 'Skjul ekstrafunksjonene (snakk for å legge til, finn tid, avslutningsrutine, ferieplanlegger, hviledagsråd, helserapport, reisebudsjett, smart pakking, strømpris, sparekrukker, faste og delte betalinger, garantier)', 'Write down what was decided and who does what. Action points can go straight to your to-do list.': 'Skriv ned hva som ble bestemt og hvem som gjør hva. Oppfølgingspunkter kan gå rett til gjøremålslisten.', 'Streaming, apps, phone, gym … see what it all costs per month and year, and get a reminder before each payment.': 'Strømming, apper, telefon, trening … se hva alt koster per måned og år, og få en påminnelse før hver betaling.', 'Their look in the People picture': 'Utseendet i bildet på Personer-siden', 'Picked from the name – make it look like them': 'Valgt ut fra navnet – gjør det likt personen', 'Change look': 'Endre utseende', 'Customize look': 'Tilpass utseende', 'Find or add to the pantry': 'Finn eller legg til i matskapet', 'The basics you always keep at home. Tap “Running out” and it goes on the shopping list – ticked off there, it’s back in stock.': 'Basisvarene du alltid har hjemme. Trykk «Snart tom», så havner den på handlelista – krysset av der, er den på lager igjen.',
+    'Add a basic – e.g. oats, coffee filters': 'Legg til en basisvare – f.eks. havregryn, kaffefilter', 'Add to the pantry': 'Legg til i matskapet',
+    'Recipe from a link': 'Oppskrift fra en lenke', 
     'Paste the address of a recipe page – the name, ingredients and steps are read from it.': 'Lim inn adressen til en oppskriftsside – navn, ingredienser og fremgangsmåte hentes fra den.',
-    'Recipe link': 'Lenke til oppskriften', 'Get it': 'Hent', 'Reading …': 'Leser …', 'Open it': 'Åpne den', 'Add it by hand': 'Legg den inn selv',
+    'Recipe link': 'Lenke til oppskriften', 'Get it': 'Hent', 'Reading …': 'Leser …', 'Open it': 'Åpne den', 
     'Your server doesn’t know this yet – paste the newest worker.js into the Worker (Settings → Data & sync has the details).': 'Serveren kjenner ikke dette ennå – lim inn nyeste worker.js i Workeren (detaljer i Innstillinger → Data og synk).',
     'That link can’t be read – use the address of a public web page.': 'Den lenken kan ikke leses – bruk adressen til en offentlig nettside.', 'No connection – try again when you’re online.': 'Ingen forbindelse – prøv igjen når du er på nett.',
     'Save recipe': 'Lagre oppskriften', 'Recipe saved': 'Oppskriften er lagret', 'Serves': 'Porsjoner', 'people': 'personer', 'How many the ingredients are for – then you can scale it up or down.': 'Hvor mange ingrediensene er beregnet for – så kan du skalere opp eller ned.',
     'Usually cooking for': 'Lager vanligvis mat til', 'As the recipe says': 'Som oppskriften sier', '1 person': '1 person', 'Recipes open scaled to this, and the week’s shopping list too': 'Oppskrifter åpnes regnet om til dette, og ukas handleliste også',
     'Back in stock when ticked off the shopping list': 'På lager igjen når den krysses av på handlelista', 'Skip basics you have when adding recipes': 'Hopp over basisvarer du har når oppskrifter legges til',
     'Salt, oil, rice … stay off the list while they’re in stock': 'Salt, olje, ris … holdes unna lista så lenge de er på lager',
-    'Weekly backup by email': 'Ukentlig sikkerhetskopi på e-post', 'Email me a backup every week': 'Send meg en sikkerhetskopi hver uke', 'None sent yet': 'Ingen sendt ennå',
+    'Weekly backup by email': 'Ukentlig sikkerhetskopi på e-post', 'None sent yet': 'Ingen sendt ennå',
     'Day': 'Dag', 'Send one now': 'Send en nå', 'Sending …': 'Sender …', 'Backup sent – check your inbox': 'Sikkerhetskopien er sendt – sjekk innboksen', 'Couldn’t send': 'Fikk ikke sendt', 'Offline – try again later': 'Frakoblet – prøv igjen senere',
     'Couldn’t save': 'Fikk ikke lagret', 'Offline – not saved': 'Frakoblet – ikke lagret', 'nothing to back up yet': 'ingenting å ta sikkerhetskopi av ennå', 'not set up': 'ikke satt opp',
     'Tuesday': 'Tirsdag', 'Wednesday': 'Onsdag', 'Thursday': 'Torsdag', 'Friday': 'Fredag', 'Saturday': 'Lørdag', 'Recipes': 'Oppskrifter', 'People': 'Personer',
@@ -961,37 +961,37 @@
     'Before the day': 'Før dagen', 'Meter readings': 'Måleravlesninger', 'Keys and codes': 'Nøkler og koder', 'Walk-through': 'Gjennomgang', 'Sign the protocol': 'Signer protokollen', 'After moving in': 'Etter innflytting',
     'ID for both of you': 'Legitimasjon for dere begge', 'A charged phone – for photos of meters and faults': 'En oppladet telefon – til bilder av målere og feil', 'A torch and a tape measure': 'Lommelykt og målebånd',
     'The purchase contract and the condition report (tilstandsrapport)': 'Kjøpekontrakten og tilstandsrapporten', 'A time agreed with the estate agent or the seller': 'Et tidspunkt avtalt med megleren eller selgeren',
-    'Power contract and contents insurance from the day': 'Strømavtale og innboforsikring fra dagen', 'What the condition report already describes usually can’t be claimed later – read it once more before the day.': 'Det tilstandsrapporten allerede beskriver, kan som regel ikke reklameres på senere – les den en gang til før dagen.',
-    'Electricity': 'Strøm', 'Water': 'Vann', 'District heating': 'Fjernvarme', 'Oil or gas tank': 'Olje- eller gasstank', 'Other meter': 'Annen måler', 'Reading': 'Avlesning', 'Photo of the meter': 'Bilde av måleren', 'litres': 'liter',
-    'The electricity reading also goes into Electricity meter on the Energy tab, so the power use starts from the day you took over.': 'Strømavlesningen legges også i Strømmåler på Energi-fanen, så strømforbruket regnes fra dagen du overtok.',
+    'Power contract and contents insurance from the day': 'Strømavtale og innboforsikring fra dagen', 
+    'Electricity': 'Strøm', 'Water': 'Vann', 'District heating': 'Fjernvarme', 'Oil or gas tank': 'Olje- eller gasstank', 'Other meter': 'Annen måler', 'Reading': 'Avlesning', 'litres': 'liter',
+    
     'Key': 'Nøkkel', 'Should get': 'Skal ha', 'Got': 'Fikk', 
     'House or flat keys': 'Hus- eller leilighetsnøkler', 'Entrance key or tag (brikke)': 'Inngangsnøkkel eller brikke', 'Mailbox': 'Postkasse', 'Storage room (bod)': 'Bod', 'Garage or remote': 'Garasje eller fjernkontroll',
-    'Codes (alarm, Wi-Fi, the door code) belong in': 'Koder (alarm, wifi, dørkoden) hører hjemme i', 'Good to know': 'Greit å vite', 'on the Things tab – they’re hidden until you tap Show.': 'på Ting-fanen – de er skjult til du trykker Vis.',
+    'Good to know': 'Greit å vite', 
     'Run every tap, hot and cold, and flush the toilets – look for leaks under the sinks': 'Kjør alle kraner, varmt og kaldt, og trekk ned toalettene – se etter lekkasjer under vasker',
     'Drains (sluk) are clean and the water runs away': 'Slukene er rene og vannet renner unna', 'Bathroom: no cracked tiles or sealant, no damp marks': 'Bad: ingen sprukne fliser eller fuger, ingen fuktmerker',
     'Fuse box: labelled, and the earth-fault breaker’s test button works': 'Sikringsskapet: merket, og testknappen på jordfeilbryteren virker', 'Sockets and lights work': 'Stikkontakter og lys virker',
     'Smoke alarms and the fire extinguisher are there and work': 'Røykvarslere og brannslukker er på plass og virker', 'Windows and doors open, close and lock': 'Vinduer og dører åpner, lukker og låser',
     'What comes with the home is there and works (white goods, heat pump …)': 'Det som følger med boligen er der og virker (hvitevarer, varmepumpe …)', 'Cleaned and emptied as agreed – storage room, attic and garden too': 'Vasket og tømt som avtalt – også bod, loft og hage',
-    'Nothing has been damaged since the viewing': 'Ingenting er skadet siden visningen', 'Faults': 'Feil', 'Fault': 'Feil', 'New fault': 'Ny feil', 'Make it a claim': 'Gjør det til en reklamasjon', 'Claim': 'Reklamasjon',
+    'Nothing has been damaged since the viewing': 'Ingenting er skadet siden visningen', 'Faults': 'Feil', 'Fault': 'Feil', 'New fault': 'Ny feil', 'Claim': 'Reklamasjon',
     
     'serious': 'alvorlig', 'Where': 'Hvor', 'What’s wrong': 'Hva er galt', 
     'Say where it is and what’s wrong – add photos after saving.': 'Si hvor det er og hva som er galt – legg til bilder etter at du har lagret.',
     'Hall': 'Gang', 'Living room': 'Stue', 'Kitchen': 'Kjøkken', 'Bathroom': 'Bad', 'Bedroom': 'Soverom', 'Storage': 'Bod', 'Balcony or outdoors': 'Balkong eller ute', 'Other': 'Annet',
     'You got a copy of the signed protocol': 'Du har fått en kopi av den signerte protokollen', 'The number of keys is in the protocol': 'Antall nøkler står i protokollen', 'No faults found – or they’re written in the protocol': 'Ingen feil funnet – eller de står i protokollen',
-    'Something you point out now and is written down is much easier to claim later. Don’t sign a protocol that leaves out a fault you found.': 'Det du påpeker nå og som skrives ned, er mye lettere å reklamere på senere. Ikke signer en protokoll som utelater en feil du har funnet.',
-    'Your own record (PDF)': 'Din egen logg (PDF)', 'Add the signed protocol': 'Legg til den signerte protokollen', 'Replace the signed protocol': 'Bytt ut den signerte protokollen', 'Signed today': 'Signert i dag',
-    'The signed protocol is in the': 'Den signerte protokollen ligger i', 'under Purchase and take-over.': 'under Kjøp og overtakelse.', 'Moving checklist': 'Flytteliste', 'all done': 'alt er gjort',
+    
+    'Add the signed protocol': 'Legg til den signerte protokollen', 'Replace the signed protocol': 'Bytt ut den signerte protokollen', 'Signed today': 'Signert i dag',
+    'Moving checklist': 'Flytteliste', 'all done': 'alt er gjort',
     
     
-    'Hide the guide': 'Skjul veiviseren',
+    
     'not read yet': 'ikke lest av ennå', 'not counted yet': 'ikke telt ennå', 'not yet': 'ikke ennå', 'moving list done': 'flyttelisten er ferdig', 'Today – good luck!': 'I dag – lykke til!',
     'Add the address and seller under the sliders': 'Legg inn adresse og selger under glidebryterne', 'The take-over': 'Overtakelsen', 'Address': 'Adresse', 'Street and number, postcode': 'Gate og nummer, postnummer',
-    'Estate agent': 'Megler', 'Name and firm': 'Navn og firma', 'Used – bought from the owner': 'Brukt – kjøpt av eieren', 'New – from a builder': 'Ny – fra en utbygger',
-    'Start the guide over': 'Start veiviseren på nytt',
+    'Estate agent': 'Megler', 'Name and firm': 'Navn og firma', 
+    
     'Tap again – ticks, readings and faults are cleared': 'Trykk igjen – avkrysninger, avlesninger og feil slettes', 'Tap again to delete': 'Trykk igjen for å slette', 'Started over': 'Startet på nytt',
     'The take-over guide is hidden': 'Overtakelsesveiviseren er skjult', 'Fault deleted': 'Feilen er slettet', 'Fault added – now add a photo': 'Feilen er lagt til – legg til et bilde nå', 'Claim made – find it on the Claims tab': 'Reklamasjonen er laget – du finner den på Reklamasjon-fanen',
     'Saved in the FDV binder': 'Lagret i FDV-permen', 'Switch on the FDV binder to keep it': 'Slå på FDV-permen for å ta vare på den', 'That isn’t a number': 'Det er ikke et tall', 'Couldn’t read that photo': 'Klarte ikke å lese bildet',
-    'Your own record of the take-over, next to the agent’s protocol. In the print window, choose': 'Din egen logg fra overtakelsen, ved siden av meglerens protokoll. I utskriftsvinduet velger du',
+    
     'The new home': 'Den nye boligen', 'Buyer': 'Kjøper', 'Seller': 'Selger', 'Protocol signed': 'Protokoll signert', 'Keys': 'Nøkler', 
     'Not counted.': 'Ikke telt.', 'None.': 'Ingen.', 'Nothing ticked.': 'Ingenting krysset av.', 'see the photo': 'se bildet',
     'Take-over tomorrow': 'Overtakelse i morgen', 'Open the guide: what to bring, meters, keys and the walk-through': 'Åpne veiviseren: hva du tar med, målere, nøkler og gjennomgangen', 'Take-over today': 'Overtakelse i dag',
@@ -1028,7 +1028,7 @@
     'Products only: white goods, built-in or furniture – the limit is then 5 years, not 2.': 'Bare for varer: hvitevarer, innebygd eller møbler – grensen er da 5 år, ikke 2.',
     'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.': 'Funnet en feil i boligen, eller har noe du kjøpte gått i stykker? Lag en reklamasjon med bilder – kortet skriver brevet, holder styr på fristene og minner deg på det når svaret er sent ute.',
     'Open': 'Åpne', 'Next date': 'Neste dato', 'passed': 'passert', 'in the take-over protocol': 'i overtakelsesprotokollen',
-    'Letter and report': 'Brev og rapport', 'I’ve sent it': 'Jeg har sendt den', 'The letter': 'Brevet', 'Remind them': 'Send en påminnelse', 'Update': 'Oppdater',
+    'The letter': 'Brevet', 'Remind them': 'Send en påminnelse', 'Update': 'Oppdater',
     
     'Keep a copy of what you sent – an e-mail is fine, it’s in writing.': 'Ta vare på en kopi av det du sendte – en e-post holder, den er skriftlig.', 'Sent on': 'Sendt', 'How': 'Hvordan', 'E-mail': 'E-post', 'Letter': 'Brev', 'Text message': 'SMS', 'Their web form': 'Skjemaet deres',
     'Marked as sent – you get a nudge if the answer is late': 'Merket som sendt – du får et dytt hvis svaret er sent ute', 'They answered': 'De svarte', 'We agreed what happens': 'Vi ble enige om hva som skjer',
@@ -1036,9 +1036,9 @@
     
     
     'Letters in': 'Brev på', 
-    'Check it, then send it by e-mail with the photos – that’s in writing.': 'Sjekk det, og send det på e-post med bildene – da er det skriftlig.', 'No photos yet – a photo makes the claim much clearer.': 'Ingen bilder ennå – et bilde gjør reklamasjonen mye tydeligere.',
-    'Share with photos': 'Del med bilder', 'Report (PDF)': 'Rapport (PDF)', 'Sent it?': 'Har du sendt den?', 'Copied – paste it into an e-mail': 'Kopiert – lim det inn i en e-post',
-    'In the print window, choose': 'I utskriftsvinduet velger du', '– then attach it to the e-mail.': '– og legger den ved e-posten.', 'Made the claim': 'Laget reklamasjonen', 'Made from a fault at the take-over': 'Laget fra en feil ved overtakelsen', 'Reminder sent': 'Påminnelse sendt',
+    'Check it, then send it by e-mail with the photos – that’s in writing.': 'Sjekk det, og send det på e-post med bildene – da er det skriftlig.', 
+    'Report (PDF)': 'Rapport (PDF)', 'Sent it?': 'Har du sendt den?', 'Copied – paste it into an e-mail': 'Kopiert – lim det inn i en e-post',
+    'In the print window, choose': 'I utskriftsvinduet velger du', 'Made the claim': 'Laget reklamasjonen', 'Made from a fault at the take-over': 'Laget fra en feil ved overtakelsen', 'Reminder sent': 'Påminnelse sendt',
     'Don’t wait – a claim should go out soon after you find the fault': 'Ikke vent – en reklamasjon bør sendes kort tid etter at du fant feilen', 'Walk round the home and note what’s wrong – bring the list to the builder': 'Gå rundt i boligen og noter det som er galt – ta med listen til utbyggeren',
     'One-year inspection (ettårsbefaring)': 'Ettårsbefaring', 'A year since the take-over': 'Et år siden overtakelsen', 'Claim saved – add photos, then make the letter': 'Reklamasjonen er lagret – legg til bilder og lag så brevet',
     /* projects */
@@ -1058,17 +1058,17 @@
     'Painting, a new bathroom, the garden – plan it here with tasks, a budget and what you spend. Shared projects go straight into Shared home.': 'Maling, nytt bad, hagen – planlegg det her med oppgaver, budsjett og hva du bruker. Felles prosjekter går rett inn i Felles bolig.',
     'Going on': 'Pågår', 'no budget set': 'ingen budsjett satt', 'Agreed today': 'Avtalt i dag', 'Tasks': 'Oppgaver',
     'Add a task': 'Legg til en oppgave', 'Day or delete': 'Dag eller slett', 'Delete the task': 'Slett oppgaven', 'Day': 'Dag', 'Cost': 'Kostnad', 'New cost': 'Ny kostnad',
-    'Got papers from the job (manuals, the tradesman’s documentation)? Keep them in the': 'Fikk du papirer fra jobben (bruksanvisninger, håndverkerens dokumentasjon)? Ta vare på dem i', 'in Shared home': 'i Felles bolig', 'in Finances': 'i Økonomi',
+    'in Shared home': 'i Felles bolig', 'in Finances': 'i Økonomi',
     'Amount, kr': 'Beløp, kr', 'Who paid': 'Hvem betalte', 'You': 'Du', 'Task deleted': 'Oppgaven er slettet', 'Cost removed': 'Kostnaden er fjernet',
     /* the FDV binder */
     'Import': 'Importer', 'Download': 'Last ned', 'Categories': 'Kategorier', 'Documents': 'Dokumenter', 'Last added': 'Sist lagt til', 'all sorted': 'alt er sortert',
-    'Find a document': 'Finn et dokument', 'Nothing matches.': 'Ingen treff.', 'Download this category': 'Last ned denne kategorien', 'Show all': 'Vis alle', 'Import documents': 'Importer dokumenter',
+    'Find a document': 'Finn et dokument', 'Nothing matches.': 'Ingen treff.', 'Show all': 'Vis alle', 'Import documents': 'Importer dokumenter',
     
     'Purchase and take-over': 'Kjøp og overtakelse', 'Housing association': 'Borettslag og sameie', 'Warranties and receipts': 'Garantier og kvitteringer', 'Insurance': 'Forsikring', 'Drawings and plans': 'Tegninger og planer', 'Bathroom and wet rooms': 'Bad og våtrom',
     'Kitchen and appliances': 'Kjøkken og hvitevarer', 'Heating and ventilation': 'Varme og ventilasjon', 'Electrical': 'Elektro', 'Pipes and water': 'Rør og vann', 'Fire and safety': 'Brann og sikkerhet', 'Roof, facade and windows': 'Tak, fasade og vinduer',
     'Floors, walls and doors': 'Gulv, vegger og dører', 'Outdoors and garage': 'Ute og garasje', 'FDV in general': 'FDV generelt', 'Category': 'Kategori', 'Name': 'Navn', 'Notes': 'Notater', 'e.g. Which room, the model, who installed it': 'f.eks. Hvilket rom, modellen, hvem som monterte det',
     'PDFs, photos, Word or Excel files – or a whole .zip. Nothing is saved until you’ve checked the list.': 'PDF-er, bilder, Word- eller Excel-filer – eller en hel .zip. Ingenting lagres før du har sjekket listen.', 'Choose files': 'Velg filer', 'A .zip': 'En .zip', 
-    'On the iPhone: download from the portal in Safari, then choose the files from Files → Downloads. Up to 20 MB a file; they’re encrypted and synced to your other devices.': 'På iPhone: last ned fra portalen i Safari, og velg filene fra Filer → Nedlastinger. Opptil 20 MB per fil; de krypteres og synkroniseres til de andre enhetene dine.',
+    
     'Check where each one goes – change the ones that are wrong.': 'Sjekk hvor hver fil havner – endre dem som er feil.', 'Other files': 'Andre filer', 'Import this one': 'Importer denne', 'Reading …': 'Leser …', 'Importing …': 'Importerer …',
     'couldn’t open this zip': 'klarte ikke å åpne denne zip-filen', 'this kind of file isn’t kept': 'denne filtypen lagres ikke', 'over 20 MB': 'over 20 MB', 'already in the binder': 'finnes allerede i permen', 'Nothing to import there': 'Ingenting å importere der',
     'Files are sorted by words in their name and folder. Add your own words, or a category of your own.': 'Filene sorteres etter ord i navnet og mappen. Legg til egne ord, eller en egen kategori.', 
@@ -1089,15 +1089,14 @@
     'It comes off the loan; the monthly payment stays and the loan is paid off sooner.': 'Det trekkes fra lånet; den månedlige betalingen er den samme, og lånet blir nedbetalt tidligere.', 'Remove extra payment': 'Fjern ekstra innbetaling',
     'History': 'Historikk', 'Your homes': 'Boligene dine', 'New home': 'Ny bolig', 'A new home': 'En ny bolig', 'Set up a new home': 'Sett opp en ny bolig', 'Moving?': 'Skal du flytte?', 'Home history': 'Bolighistorikk', 'Set up a new home (moving)': 'Sett opp en ny bolig (flytting)',
     
-    'Claims report': 'Reklamasjonsrapport', 'Documents (.zip)': 'Dokumenter (.zip)', 'Open this home': 'Åpne denne boligen',
-    'Year': 'År', 'Spent': 'Brukt', 'On the home': 'På boligen', 'Bought together for the home:': 'Kjøpt sammen til boligen:',
-    'Back to now': 'Tilbake til nå', 'now': 'nå', 'Home': 'Hjem', 'The home you live in now moves to History with everything that belongs to it.': 'Boligen du bor i nå flyttes til Historikk med alt som hører til.',
+    'Claims report': 'Reklamasjonsrapport', 'Documents (.zip)': 'Dokumenter (.zip)', 
+    'Year': 'År', 'Spent': 'Brukt', 'On the home': 'På boligen', 
+    'now': 'nå', 'Home': 'Hjem', 'The home you live in now moves to History with everything that belongs to it.': 'Boligen du bor i nå flyttes til Historikk med alt som hører til.',
     
     
-    'Set it up': 'Sett det opp', 'The home': 'Boligen', 'The home you live in': 'Boligen du bor i', 'An earlier home': 'En tidligere bolig', 'Moved in': 'Flyttet inn', 'Moved out': 'Flyttet ut', 'You lived with': 'Du bodde med', 'As in the claim settings': 'Som i reklamasjonsinnstillingene',
+    'Set it up': 'Sett det opp', 'The home': 'Boligen', 'The home you live in': 'Boligen du bor i', 'An earlier home': 'En tidligere bolig', 'Moved in': 'Flyttet inn', 'Moved out': 'Flyttet ut', 'You lived with': 'Du bodde med', 
     'New home set up – the take-over guide is ready on Shared': 'Ny bolig er satt opp – overtakelsesveiviseren er klar under Felles',
-    'One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose': 'Én rapport med alle reklamasjonene – en oversikt først, så hver reklamasjon på egen side med bildene. I utskriftsvinduet velger du'
-  });
+    });
   P.push(
     [/^(\d+) read$/, '$1 lest av'], [/^(\d+) missing$/, '$1 mangler'], [/^(\d+) of (\d+) counted$/, '$1 av $2 telt'], [/^(\d+) of (\d+) checked( · (\d+) faults?)?$/, function (m, a, b, c, n) { return a + ' av ' + b + ' sjekket' + (n ? ' · ' + n + ' feil' : ''); }],
     [/^signed (.+)$/, 'signert $1'], [/^(\d+) left on the moving list$/, '$1 igjen på flyttelisten'], [/^In (\d+) days$/, 'Om $1 dager'], [/^from (.+)$/, 'fra $1'], [/^Faults \((\d+)\)$/, 'Feil ($1)'],
@@ -1142,7 +1141,7 @@
   var MEMO = new Map();
   /* Nov 7 audit: leftovers found by the Norwegian scan */
   Object.assign(D, {
-    'Pay back each month': 'Betal tilbake hver måned', 'Pay back monthly': 'Betal tilbake månedlig', 'Paying back': 'Betaler tilbake', 'Paid back': 'Betalt tilbake',
+    'Pay back each month': 'Betal tilbake hver måned', 'Paying back': 'Betaler tilbake', 'Paid back': 'Betalt tilbake',
     'You owe in all, kr': 'Du skylder i alt, kr', 'First payment': 'Første betaling', 
     'e.g. 50 000': 'f.eks. 50 000', 'e.g. 2 000': 'f.eks. 2 000', 'e.g. Egenkapital': 'f.eks. Egenkapital', 'Stop': 'Stopp', 'Lent to you': 'Lånt til deg',
     'Type the monthly amount.': 'Skriv beløpet per måned.', 'Type what you owe and the monthly amount.': 'Skriv hva du skylder og beløpet per måned.', 'extra payment': 'ekstra innbetaling',
@@ -1150,14 +1149,14 @@
     'their part of what you paid': 'deres del av det du betalte', 'your part of what they paid': 'din del av det de betalte', 'In total': 'Totalt',
     'Running costs': 'Faste felleskostnader', 'Running cost': 'Fast felleskostnad',
     'Your month together': 'Måneden deres sammen', 'none yet': 'ingen ennå', 'Moving in': 'Innflytting',
-    'Same receipt as…': 'Samme kvittering som …', 'Same receipt as': 'Samme kvittering som', 'Photo removed': 'Bildet er fjernet', 'Receipt removed': 'Kvitteringen er fjernet', 'PDF receipt saved': 'PDF-kvittering lagret',
+    'Same receipt as': 'Samme kvittering som', 'Photo removed': 'Bildet er fjernet', 'Receipt removed': 'Kvitteringen er fjernet', 'PDF receipt saved': 'PDF-kvittering lagret',
     'Bought together on one receipt? Pick the item that has it – both point to the same file.': 'Kjøpt sammen på én kvittering? Velg tingen som har den – begge peker til samme fil.',
     'Transfer': 'Overføring', 'Transfer between accounts': 'Overføring mellom kontoer', 'Move it': 'Flytt', 'Recent transfers': 'Siste overføringer', 'Swap': 'Bytt om',
     
     'Note (optional) – e.g. Savings': 'Notat (valgfritt) – f.eks. Sparing', 'Delete transfer': 'Slett overføringen',
     'Transfer deleted – balances moved back': 'Overføringen er slettet – saldoene er flyttet tilbake', 'Add a second account first (Finances → Plan → Accounts)': 'Legg til en konto til først (Økonomi → Plan → Kontoer)',
     'Removed account': 'Fjernet konto',
-    'Moved money between your own accounts? Transfer': 'Flyttet penger mellom egne kontoer? Overføring',
+    
     'Accounts': 'Kontoer', 'Loans': 'Lån', 'Insights': 'Innsikt', 'Spending pace': 'Forbrukstempo', 'Latest spending': 'Siste utgifter', 'Payday moves': 'Flytt på lønningsdagen',
     'Income & fixed costs': 'Inntekt og faste kostnader', 'Spending limits': 'Forbruksgrenser', 'Yearly costs': 'Årlige kostnader', 'Between you': 'Mellom dere', 'This week': 'Denne uka', 
     'Spending faster than planned': 'Bruker raskere enn planlagt', 'Spending slower than planned': 'Bruker saktere enn planlagt', 'On pace': 'I takt', 'All': 'Alle', 'Add': 'Legg til',
@@ -1167,7 +1166,7 @@
     
     'In your accounts': 'På kontoene', 'owed on cards': 'skyldig på kort', 'saved': 'spart', 'Free to use until payday': 'Fritt å bruke til lønning', 'Owed on cards': 'Skyldig på kort', 'Bills before payday': 'Regninger før lønning', 'See limits': 'Se grensene',
     'Setup': 'Oppsett', 'Set up Finances': 'Sett opp økonomien', 'All bills': 'Alle regninger',
-    'Balances didn’t move': 'Saldoene ble ikke flyttet', 'Move them now': 'Flytt dem nå', 'Balances moved': 'Saldoene er flyttet', 'Move the balances anyway': 'Flytt saldoene likevel',
+    'Balances didn’t move': 'Saldoene ble ikke flyttet', 'Move them now': 'Flytt dem nå', 'Balances moved': 'Saldoene er flyttet', 
     'Duplicate': 'Dupliser', 'Deleted': 'Slettet', 'Added': 'Lagt til',
     'Edit transfer': 'Endre overføring', 'Transfer saved': 'Overføringen er lagret', 'Repeat': 'Gjenta', 'Monthly transfer stopped': 'Månedlig overføring stoppet', 'Stop this monthly transfer': 'Stopp denne månedlige overføringen', 'Monthly': 'Månedlig', 'Today': 'I dag',
     'Habit deleted': 'Vanen er slettet',
@@ -1175,7 +1174,7 @@
     'Their name': 'Navnet deres', 'Their email': 'E-posten deres', 
     'Start sharing': 'Begynn å dele', 'Type the email they log in with.': 'Skriv e-posten de logger inn med.', 'Setting up …': 'Setter opp …', 'That email doesn’t look right.': 'Den e-posten ser ikke riktig ut.', 'Couldn’t reach the server – try again.': 'Fikk ikke kontakt med serveren – prøv igjen.',
     
-    'Invite': 'Invitasjon', 'Show the code': 'Vis koden', 'Copy the invite link instead': 'Kopier invitasjonslenken i stedet', 'Invite link copied': 'Invitasjonslenken er kopiert',
+    'Invite': 'Invitasjon', 'Show the code': 'Vis koden', 'Invite link copied': 'Invitasjonslenken er kopiert',
     'Save email': 'Lagre e-post', 'Stop sharing': 'Slutt å dele', 'Tap again to stop sharing': 'Trykk igjen for å slutte å dele',
     
     'Looking …': 'Ser etter …', 'Nothing shared yet.': 'Ingenting delt ennå.', 
@@ -1193,17 +1192,17 @@
     'Their profile and avatar': 'Profilen og avataren deres',
     'For a new phone, or if they forgot their passcode': 'For en ny telefon, eller hvis de har glemt koden',
     'profile and avatar received': 'profil og avatar mottatt', 'no profile yet': 'ingen profil ennå',
-    'What you share': 'Det du deler', 'Rules': 'Regler', 'Access': 'Tilgang', 'Invite again': 'Inviter på nytt', 'Login and pause': 'Innlogging og pause', 'Their email': 'E-posten deres', 'List every shared item': 'Vis alt som er delt', 'Calendars shared automatically': 'Kalendere som deles automatisk', 'None – you tick events one by one': 'Ingen – du huker av hendelser én og én', 'No OK needed': 'Ingen OK trengs', 'Can change everything shared': 'Kan endre alt som er delt', 'Everything is view only': 'Alt er kun visning', 'Off': 'Av', 'None yet': 'Ingen ennå',
-    'Waiting for your OK': 'Venter på din OK', 'Decline': 'Avslå', 'Can change': 'Kan endre', 'View only': 'Kun visning', 'Bigger shared costs': 'Større felles utgifter', 'Ask me first above': 'Spør meg først over', 'Never': 'Aldri',
+    'Rules': 'Regler', 'Access': 'Tilgang', 'Invite again': 'Inviter på nytt', 'Login and pause': 'Innlogging og pause', 'Their email': 'E-posten deres', 'Calendars shared automatically': 'Kalendere som deles automatisk', 'None – you tick events one by one': 'Ingen – du huker av hendelser én og én', 'No OK needed': 'Ingen OK trengs', 'Can change everything shared': 'Kan endre alt som er delt', 'Everything is view only': 'Alt er kun visning', 'Off': 'Av', 'None yet': 'Ingen ennå',
+    'Decline': 'Avslå', 'Can change': 'Kan endre', 'View only': 'Kun visning', 'Bigger shared costs': 'Større felles utgifter', 'Ask me first above': 'Spør meg først over', 'Never': 'Aldri',
     'Share calendars automatically': 'Del kalendere automatisk', 
     'Pause sharing': 'Sett delingen på pause', 'Resume sharing': 'Fortsett delingen', 'Sharing resumed': 'Delingen fortsetter', 'Calendar': 'Kalender', 'House projects': 'Husprosjekter', 'Seen': 'Sett', 'Shared space': 'Delt hjem',
     '…adds a shared cost': '…legger til en felles utgift', '…settles up': '…gjør opp', '…adds an event': '…legger til en hendelse', '…adds to the shopping list': '…legger til på handlelisten', '…does a chore': '…gjør en oppgave', '…adds or changes a note': '…legger til eller endrer et notat',
     'Transfers': 'Overføringer', 'Show fewer': 'Vis færre',
     'together': 'sammen',
     'Shared': 'Felles', 'Things': 'Ting', 'Shared home': 'Felles hjem', 'everything so far': 'alt så langt',
-    'Split and who paid': 'Fordeling og hvem som betalte', 'Payment': 'Betaling', 'Date paid': 'Dato betalt',
+    'Payment': 'Betaling', 'Date paid': 'Dato betalt',
     
-    'Linked to this item in the Home inventory.': 'Koblet til denne tingen i innboet.',
+    
     'Set up Shared home first – say who you share with': 'Sett opp Felles hjem først – si hvem du deler med',
     'to spend today': 'å bruke i dag', 'over budget': 'over budsjett',
     'Last month at a glance – and the month ahead': 'Forrige måned i korte trekk – og måneden som kommer',
@@ -1246,7 +1245,7 @@
     'Log a workout and it also ticks your training habit for that day.': 'Logg en økt, så hukes også treningsvanen av for den dagen.',
     'Last 4 weeks': 'Siste 4 uker',
     'One line a day is enough. Over time you’ll see how your weeks really were.': 'Én linje om dagen holder. Over tid ser du hvordan ukene egentlig var.',
-    'Today at work': 'I dag på jobb',
+    
     'Client time today': 'Klienttid i dag',
     'Between you': 'Mellom dere',
     'nothing to settle': 'ingenting å gjøre opp',
@@ -1331,14 +1330,14 @@
   P.unshift([/^Paying back (.+ kr) a month · (.+ kr) left$/, 'Betaler tilbake $1 i måneden · $2 igjen']);
   /* ---------- Nov 8: Wishlist, Goals, Finances extras, House energy, devices, clean-up ---------- */
   Object.assign(D, {
-    'Wishlist': 'Ønskeliste', 'Wishes': 'Ønsker', 'Wish': 'Ønske', 'To buy': 'Å kjøpe', 'Bought': 'Kjøpt', 'Bought it': 'Kjøpt den', 'Open the link': 'Åpne lenken', 'Fit this month': 'Passer denne måneden', 'Fits this month': 'Passer denne måneden',
+    'Wishlist': 'Ønskeliste', 'Wishes': 'Ønsker', 'Wish': 'Ønske', 'To buy': 'Å kjøpe', 'Bought': 'Kjøpt', 'Bought it': 'Kjøpt den', 'Fit this month': 'Passer denne måneden', 'Fits this month': 'Passer denne måneden',
     'Next month': 'Neste måned', 'Not this month': 'Ikke denne måneden', 'Need it': 'Trenger det', 'Would like it': 'Vil gjerne ha det', 'Some day': 'En dag', 'For the home': 'Til hjemmet', 'For me': 'Til meg', 'A gift': 'En gave', 'Something else': 'Noe annet',
     'No room': 'Uten rom', 'Kitchen things': 'Kjøkkenting', 'Decor and textiles': 'Pynt og tekstiler', 'Tools': 'Verktøy', 'Clothes': 'Klær', 'New wish': 'Nytt ønske', 'Edit wish': 'Endre ønske', 'What': 'Hva', 'Link': 'Lenke',
     'How much do you want it': 'Hvor gjerne vil du ha det', 'Where you found it – opens from the wish.': 'Der du fant det – åpnes fra ønsket.', 'For the home – goes with it into Home inventory when you buy it.': 'Til hjemmet – følger med inn i innbolisten når du kjøper det.',
     'e.g. Bed frame, coffee machine, rain jacket': 'f.eks. Sengeramme, kaffemaskin, regnjakke', 'Size, colour, which model …': 'Størrelse, farge, hvilken modell …',
     'Things you’d like to buy – for the home, for you, or as a gift. Add the price and you see whether it fits this month.': 'Ting du har lyst på – til hjemmet, til deg eller som gave. Legg inn prisen, så ser du om det passer denne måneden.',
     
-    'Paid, kr': 'Betalt, kr', 'When': 'Når', 'Add to Home inventory': 'Legg i innbolisten', 'Add to Finances as spending': 'Legg inn i Økonomi som forbruk', 
+    'Paid, kr': 'Betalt, kr', 'When': 'Når', 
     'Something to buy': 'Noe å kjøpe', 'Where': 'Hvor', 'How many': 'Hvor mange', 'e.g. Picture hooks, light bulbs E27': 'f.eks. Bildekroker, lyspærer E27', 'e.g. Clas Ohlson, Jula, IKEA': 'f.eks. Clas Ohlson, Jula, IKEA', 'e.g. 2': 'f.eks. 2',
     'Small things you need next time you’re out – hooks, batteries, a doormat. Groceries go on the shopping list on Food.': 'Småting du trenger neste gang du er ute – kroker, batterier, en dørmatte. Matvarer går på handlelisten under Mat.',
     'Add something to buy': 'Legg til noe å kjøpe', 'Got it': 'Fikset', 'Something you bought': 'Noe du har kjøpt', 'Paid': 'Betalt',
@@ -1357,7 +1356,7 @@
     'Savings in total': 'Sparing totalt', 'Debt left in total': 'Gjeld igjen totalt', 'House projects done this year': 'Husprosjekter ferdig i år', 'Wishes bought this year': 'Ønsker kjøpt i år', 'Trips this year': 'Reiser i år',
     'New goal': 'Nytt mål', 'Edit goal': 'Endre mål', 'Goal': 'Mål', 'Reach it by': 'Nå det innen', 'Its number': 'Tallet', 'The steps below (ticked off)': 'Stegene under (huket av)', 'Now': 'Nå', 'Steps': 'Steg', 
     'e.g. Save for the sofa, pay off the car loan': 'f.eks. Spare til sofaen, betale ned billånet', 'Get three quotes\nPick one\nBook it': 'Hent tre tilbud\nVelg ett\nBestill', 'Personal': 'Personlig', 'Learning': 'Læring', 'None': 'Ingen',
-    'Done when every step is ticked off.': 'Ferdig når alle stegene er huket av.', 'No number yet': 'Ikke noe tall ennå', 'Move to Done': 'Flytt til Ferdig', 'Back to active': 'Tilbake til aktive', 'Moved to Done': 'Flyttet til Ferdig', 'Goal deleted': 'Målet er slettet', 'Less': 'Mindre', 'More': 'Mer', 'Steps': 'Steg',
+    'Done when every step is ticked off.': 'Ferdig når alle stegene er huket av.', 'No number yet': 'Ikke noe tall ennå', 'Moved to Done': 'Flyttet til Ferdig', 'Goal deleted': 'Målet er slettet', 'Less': 'Mindre', 'More': 'Mer', 'Steps': 'Steg',
     
     'Follows a habit (this week)': 'Følger en vane (denne uka)', 'Well done': 'Godt jobbet', 'updates itself': 'oppdateres selv', 'All': 'Alle', 'Goals settings': 'Innstillinger for mål', 'Open Goals': 'Åpne Mål',
     
@@ -1374,7 +1373,7 @@
     'Loan interest is in, and right': 'Lånerentene er med, og riktige', 'Your new home is listed': 'Den nye boligen din står der', 'Funds and shares': 'Fond og aksjer', 'Check what the fund account (ASK) reports – gains, losses, the value 1 January': 'Sjekk hva aksjesparekontoen (ASK) rapporterer – gevinst, tap, verdien 1. januar',
     'Union fees': 'Fagforeningskontingent', 'Usually filled in by your union – check it’s there': 'Fylles vanligvis inn av fagforeningen – sjekk at den er der', 'Gifts to charities': 'Gaver til frivillige organisasjoner', 'Only if you gave with your personal number – the organisation reports it': 'Bare hvis du ga med personnummer – organisasjonen rapporterer det',
     'Travel to work': 'Reise til jobb', 'A long commute can give a travel deduction (reisefradrag)': 'Lang reisevei kan gi reisefradrag', 'Looked through and delivered': 'Sett gjennom og levert', 'Or nothing to change – then it’s delivered by itself': 'Eller ingenting å endre – da leveres den av seg selv',
-    'Dates are the usual ones – Skatteetaten sends the exact ones.': 'Datoene er de vanlige – Skatteetaten sender de nøyaktige.', 'The deduction is 22 % of the interest': 'Fradraget er 22 % av rentene', 'Today': 'I dag',
+    'The deduction is 22 % of the interest': 'Fradraget er 22 % av rentene', 'Today': 'I dag',
     'Debt-free': 'Gjeldfri', 'Not on its way down yet': 'Ikke på vei ned ennå', 'Credit cards': 'Kredittkort', 'The payment doesn’t cover the interest': 'Betalingen dekker ikke rentene', 'Nothing extra': 'Ikke noe ekstra', 'Loan': 'Lån',
     
     'Interest watch': 'Rentevakt', 'Changes': 'Endringer', 'Checked': 'Sjekket', 'Still right': 'Fortsatt riktig', 'Noted': 'Notert', 
@@ -1384,14 +1383,14 @@
     'Tax': 'Skatt', 'Tax dates in At a glance': 'Skattedatoer i Kort fortalt', 'The tax return in March–April, the last days of the year in December': 'Skattemeldingen i mars–april, de siste dagene av året i desember',
     'Typed and from the bank': 'Skrevet inn og fra banken', 'Count a spending once': 'Tell et forbruk én gang', 'When you typed it and the bank file has it too – same amount, within a few days': 'Når du skrev det inn og bankfilen også har det – samme beløp, innen noen dager',
     'Categories that learn': 'Kategorier som lærer', 'Learn from the categories you pick': 'Lær av kategoriene du velger', 'The next import puts the same shop in the same category': 'Neste import legger samme butikk i samme kategori', 'Change the others from the same shop too': 'Endre de andre fra samme butikk også',
-    'When you change one bank row – with Undo': 'Når du endrer én bankrad – med Angre', 'What it has learned': 'Hva den har lært',
+    'When you change one bank row – with Undo': 'Når du endrer én bankrad – med Angre', 
     'Power bill': 'Strømregning', 'Photo': 'Bilde', 'Per day': 'Per dag', 'Price this month': 'Pris denne måneden', 'Price today': 'Pris i dag', 'set it in Settings': 'angi den i Innstillinger', 'Norgespris': 'Norgespris', '50 øre + grid rent': '50 øre + nettleie', 'Grid rent, fixed part': 'Nettleie, fast del', 'By year': 'Per år',
     'An estimate: spot price from hvakosterstrommen.no (NO1), strømstøtte, your grid rent from Settings. The same month last year is used for the days ahead.': 'Et anslag: spotpris fra hvakosterstrommen.no (NO1), strømstøtte, nettleien din fra Innstillinger. Samme måned i fjor brukes for dagene fremover.',
     'An estimate: spot price from hvakosterstrommen.no (NO1), your grid rent from Settings. The same month last year is used for the days ahead.': 'Et anslag: spotpris fra hvakosterstrommen.no (NO1), nettleien din fra Innstillinger. Samme måned i fjor brukes for dagene fremover.',
     'One more meter reading and you see what this month’s power costs.': 'Én måleravlesning til, så ser du hva strømmen koster denne måneden.',
     'Read the meter (or take a photo of it) twice, a few days apart – then you see what this month’s power costs, updated with the price every day.': 'Les av måleren (eller ta bilde av den) to ganger med noen dagers mellomrom – så ser du hva strømmen koster denne måneden, oppdatert med prisen hver dag.',
-    'Read the meter': 'Les av måleren', 'Take or pick a photo': 'Ta eller velg et bilde', 'Save reading': 'Lagre avlesning',
-    'Reading the numbers …': 'Leser tallene …', 'Reading the numbers … (the first time takes a little longer)': 'Leser tallene … (første gang tar litt lenger tid)', 
+    'Read the meter': 'Les av måleren', 'Save reading': 'Lagre avlesning',
+    
     'The meter': 'Måleren', 'Read the meter from a photo': 'Les av måleren fra et bilde',
     'Upkeep your documents ask for': 'Vedlikehold dokumentene ber om', 'Add all': 'Legg til alle', 'Not for me': 'Ikke for meg', 'Add to Upkeep': 'Legg til i Vedlikehold', 
     'Clean the heat pump filters': 'Rengjør filtrene i varmepumpen', 'Keep the heat pump’s outdoor unit clear': 'Hold utedelen til varmepumpen fri', 'Change the ventilation filters': 'Bytt filtrene i ventilasjonen', 'Clean the cooker hood filter': 'Rengjør filteret i kjøkkenviften', 'Clean the bathroom drain': 'Rengjør sluket på badet',
@@ -1404,8 +1403,8 @@
     'The electrician, the plumber, the painter – with the phone number and what they did, so you know who to call (and who not to).': 'Elektrikeren, rørleggeren, maleren – med telefonnummer og hva de gjorde, så du vet hvem du skal ringe (og ikke).',
     'I have Norgespris': 'Jeg har Norgespris', '50 øre/kWh instead of the spot price': '50 øre/kWh i stedet for spotpris', 'Count strømstøtte': 'Regn med strømstøtte', 'Count the power subsidy (strømstøtte)': 'Regn med strømstøtte', '90 % of the price above 93,75 øre': '90 % av prisen over 93,75 øre', 'Grid rent, energy part': 'Nettleie, energiledd', 'Nettleie per kWh incl. VAT – on your grid bill': 'Nettleie per kWh inkl. mva. – står på nettleiefakturaen',
     'Kapasitetsledd / fastledd': 'Kapasitetsledd / fastledd', 'Supplier’s markup': 'Påslag fra strømselskapet', 'Påslag on your power bill': 'Påslag på strømregningen', 'The markup (påslag) on your power bill': 'Påslag på strømregningen', 'A Photo button on Power bill – the numbers are read on your device': 'En Bilde-knapp på Strømregning – tallene leses på enheten din',
-    'Suggest upkeep from the documents': 'Foreslå vedlikehold fra dokumentene', 'On Upkeep, from the manuals you’ve added': 'Under Vedlikehold, fra bruksanvisningene du har lagt inn', 'Show the suggestions I said no to': 'Vis forslagene jeg sa nei til', 'They’re back on Upkeep': 'De er tilbake under Vedlikehold',
-    'Streaks': 'Rekker', 'Streaks in At a glance': 'Rekker i Kort fortalt', 'Every day left this week': 'Hver dag som er igjen denne uka', 'Your best streak yet': 'Din beste rekke hittil',
+    'Suggest upkeep from the documents': 'Foreslå vedlikehold fra dokumentene', 'On Upkeep, from the manuals you’ve added': 'Under Vedlikehold, fra bruksanvisningene du har lagt inn', 'They’re back on Upkeep': 'De er tilbake under Vedlikehold',
+    'Streaks': 'Rekker', 'Every day left this week': 'Hver dag som er igjen denne uka', 'Your best streak yet': 'Din beste rekke hittil',
     'Birthday gifts': 'Bursdagsgaver', 'Remind me to find a gift': 'Minn meg på å finne en gave', 'Don’t': 'Ikke gjør det', 'A week before': 'En uke før', '2 weeks before': '2 uker før', '3 weeks before': '3 uker før', 'A month before': 'En måned før', 'With their gift ideas – until you note a gift for them': 'Med gaveideene deres – til du har notert en gave til dem',
     'On the Wishlist': 'På ønskelisten', 'No gift ideas yet – add some on People': 'Ingen gaveideer ennå – legg inn noen under Folk',
     'Your devices': 'Enhetene dine', 'this device': 'denne enheten', 'Rename': 'Gi nytt navn', 'Sign out': 'Logg ut', 'Tap again': 'Trykk igjen', 'Device': 'Enhet', 'Name of this device': 'Navn på denne enheten', 'Loading …': 'Laster …',
@@ -1415,14 +1414,14 @@
     'Clean up': 'Rydd opp', 'Clean all': 'Rydd alt', 'Clean': 'Rydd', 'The same spending twice': 'Samme forbruk to ganger', 'A bank row imported twice, or saved twice – one of each is kept': 'En bankrad importert to ganger, eller lagret to ganger – én av hver beholdes', 'To-dos done over 2 months ago': 'Gjøremål gjort for over 2 måneder siden', 'Done is done': 'Ferdig er ferdig',
     'Empty notes': 'Tomme notater', 'Calendar events over 2 years old': 'Hendelser i kalenderen eldre enn 2 år', 'One-off events only – repeating ones stay': 'Bare enkelthendelser – de som gjentas blir', 'Two meter readings on one day': 'To måleravlesninger samme dag', 'The first one is kept': 'Den første beholdes', 'Things with no name': 'Ting uten navn',
     'Empty rows in wishes, upkeep, inventory, people …': 'Tomme rader i ønsker, vedlikehold, innbo, folk …', 'Goals reached over a year ago': 'Mål nådd for over et år siden', 'From Done on the Goals page': 'Fra Ferdig på Mål-siden', 'Wishes bought over 2 years ago': 'Ønsker kjøpt for over 2 år siden', 'They stay in Home inventory and Finances': 'De blir i innbolisten og Økonomi',
-    'Learned categories': 'Lærte kategorier', 'Keeps the newest 300': 'Beholder de 300 nyeste', 'Nothing has piled up – no duplicates, old done things or empty rows.': 'Ingenting har hopet seg opp – ingen duplikater, gamle ferdige ting eller tomme rader.',
-    'Folded cards': 'Brettede kort', 'Unfold all cards': 'Brett ut alle kort', 'All cards unfolded': 'Alle kort er brettet ut',
+    'Learned categories': 'Lærte kategorier', 'Keeps the newest 300': 'Beholder de 300 nyeste', 
+    'Folded cards': 'Brettede kort', 'All cards unfolded': 'Alle kort er brettet ut',
     'Write [[a name]] to link to a person, wish, project or paper.': 'Skriv [[et navn]] for å lenke til en person, et ønske, et prosjekt eller et papir.', 
     'A page for things you’d like to buy – whether they fit this month, small things to pick up, and what you bought (straight into Home inventory)': 'En side for ting du har lyst på – om de passer denne måneden, småting å handle, og det du har kjøpt (rett inn i innbolisten)',
     'Your insurance': 'Forsikringene dine', 'What it covers': 'Hva den dekker', 'Excess (egenandel)': 'Egenandel', 'Insurance: what you pay yourself on a claim': 'Forsikring: det du betaler selv ved en skade', 'Insurance: e.g. contents up to 1,5 mill., travel, theft': 'Forsikring: f.eks. innbo opptil 1,5 mill., reise, tyveri',
     'Name, e.g. Home insurance': 'Navn, f.eks. Innboforsikring', 'Gjensidige, DNB …': 'Gjensidige, DNB …', 'Reference no.': 'Referansenr.', 'Dates': 'Datoer', 'That date it': 'Den datoen',
     'Cost': 'Kostnad', 'Covers': 'Dekker', 'Contents, travel, theft …': 'Innbo, reise, tyveri …', 'When it expires, renews or must be cancelled – leave empty if it never does': 'Når den utløper, fornyes eller må sies opp – la stå tomt hvis den aldri gjør det',
-    'What kind of paper?': 'Hva slags papir?', 'You get a form for just that kind': 'Du får et skjema for akkurat den typen', 'Add several files': 'Legg til flere filer',
+    'What kind of paper?': 'Hva slags papir?', 'You get a form for just that kind': 'Du får et skjema for akkurat den typen', 
     
     'Each becomes its own paper. The kind is guessed from the file name – change what’s wrong.': 'Hver blir sitt eget papir. Typen gjettes fra filnavnet – endre det som er feil.',
     'Receipts': 'Kvitteringer', 'Open in Home inventory': 'Åpne i innbo', 'Only PDFs and photos can be added': 'Bare PDF-er og bilder kan legges til',
@@ -1436,9 +1435,9 @@
     'Plants': 'Planter', 'New plant': 'Ny plante', 'Edit plant': 'Endre plante', 'Plant': 'Plante', 'Water': 'Vanning', 'Last watered': 'Sist vannet', 'Watered': 'Vannet', 'Thirsty': 'Tørst', 'e.g. Monstera, basil, the fig tree': 'f.eks. Monstera, basilikum, fikentreet', 'e.g. Living room window': 'f.eks. Stuevinduet',
     'Light, fertiliser, when to repot …': 'Lys, gjødsel, når den skal plantes om …', 'Every 3 days': 'Hver 3. dag', 'Every 5 days': 'Hver 5. dag', 'Every 10 days': 'Hver 10. dag', 'Every 3 weeks': 'Hver 3. uke',
     'Add your plants with how often they want water – tick them off when you’ve watered and you’re told which ones are thirsty.': 'Legg inn plantene med hvor ofte de vil ha vann – huk av når du har vannet, så får du vite hvilke som er tørste.',
-    'Plants and insurance': 'Planter og forsikring', 'Thirsty plants in At a glance': 'Tørste planter i Kort fortalt', 'With a Watered button': 'Med en Vannet-knapp', 'Compare insurance prices before they renew': 'Sammenlign forsikringspriser før de fornyes', '45 days, 2 weeks and a few days before – from the insurance papers in Papers': '45 dager, 2 uker og noen dager før – fra forsikringspapirene i Papirer',
-    'Drinking water': 'Drikkevann', 'Goal reached': 'Målet er nådd', 'Glass': 'Glass', 'One glass less': 'Ett glass mindre', 'Glass size': 'Glasstørrelse', 'For litres, and for water from Apple Health': 'For liter, og for vann fra Apple Health', 'Water card on Health': 'Vannkort på Helse', 
-    'Rings on Home': 'Ringer på Hjem', 'Steps and water rings': 'Ringer for skritt og vann', 'Glasses a day': 'Glass om dagen', 'water': 'vann', 'Add a glass of water': 'Legg til et glass vann',
+    'Thirsty plants in At a glance': 'Tørste planter i Kort fortalt', 'With a Watered button': 'Med en Vannet-knapp', 'Compare insurance prices before they renew': 'Sammenlign forsikringspriser før de fornyes', '45 days, 2 weeks and a few days before – from the insurance papers in Papers': '45 dager, 2 uker og noen dager før – fra forsikringspapirene i Papirer',
+    'Drinking water': 'Drikkevann', 'Goal reached': 'Målet er nådd', 'Glass': 'Glass', 'One glass less': 'Ett glass mindre', 'Glass size': 'Glasstørrelse', 'For litres, and for water from Apple Health': 'For liter, og for vann fra Apple Health', 
+    'Glasses a day': 'Glass om dagen', 'water': 'vann', 'Add a glass of water': 'Legg til et glass vann',
     'Dress for the day': 'Kle seg for dagen', 'Mood from your day': 'Humør fra dagen din',
     'Chores': 'Husarbeid', 'New chore': 'Ny oppgave', 'Edit chore': 'Endre oppgave', 'Chore': 'Oppgave', 'How often': 'Hvor ofte', 'On': 'På', 'Who': 'Hvem', 'Every 2 weeks': 'Annenhver uke', 'Once a month': 'En gang i måneden', 'Always me': 'Alltid meg', 'Take turns': 'Bytt på', 'Always the other one': 'Alltid den andre',
     'Take out the bins': 'Ta ut søpla', 'Clean the bathroom': 'Vask badet', 'Vacuum and mop': 'Støvsug og vask gulv', 'Change the bed sheets': 'Skift sengetøy', 'Clean the kitchen properly': 'Vask kjøkkenet grundig', 'Water the plants': 'Vann plantene', 'Clean the fridge': 'Vask kjøleskapet',
@@ -1449,7 +1448,7 @@
     'Budgets for events and trips': 'Budsjetter for hendelser og reiser', 'New budget': 'Nytt budsjett', 'Edit budget': 'Endre budsjett', 'For': 'For', 'It’s': 'Det er', 'An event': 'En hendelse', 'A trip': 'En reise', 'Budget': 'Budsjett', 'From': 'Fra', 'To': 'Til', 'Already put aside': 'Allerede satt av',
     'e.g. Christmas, Spain in May, the moving day': 'f.eks. Jul, Spania i mai, flyttedagen', 'A trip counts everything you spend between its dates; an event counts what you tag.': 'En reise teller alt du bruker mellom datoene; en hendelse teller det du merker.',
     'Christmas, a birthday party, the move, a trip – give it a budget and a date, and you see what’s spent, what’s left, and what to put aside each month until then.': 'Jul, et bursdagsselskap, flyttingen, en reise – gi det et budsjett og en dato, så ser du hva som er brukt, hva som er igjen, og hva du bør sette av hver måned frem til da.',
-    'Count it': 'Tell det', 'Don’t count it': 'Ikke tell det', 'In your payday moves': 'I lønningsflyttene dine', 'Added to your payday moves': 'Lagt til i lønningsflyttene dine', 'All done': 'Alt gjort',
+    'Count it': 'Tell det', 'Don’t count it': 'Ikke tell det', 'Added to your payday moves': 'Lagt til i lønningsflyttene dine', 'All done': 'Alt gjort',
     'Events, payday and prices': 'Hendelser, lønning og priser', 'Event and trip budgets in At a glance': 'Hendelses- og reisebudsjetter i Kort fortalt', 'Two weeks before, and when one goes over': 'To uker før, og når et går over', 'Payday moves in At a glance': 'Lønningsflytt i Kort fortalt', 'With an All done button': 'Med en Alt gjort-knapp',
     'Tell me when a bill or subscription costs more': 'Si fra når en regning eller et abonnement koster mer', 'From your bank imports – with an Update button': 'Fra bankimportene – med en Oppdater-knapp', 'Update': 'Oppdater',
     'Gym bag': 'Treningsbag', 'Gym days': 'Treningsdager', 'Gym today – pack your bag': 'Trening i dag – pakk bagen', 'Packed': 'Pakket', 'Mon': 'Man', 'Tue': 'Tir', 'Wed': 'Ons', 'Thu': 'Tor', 'Fri': 'Fre', 'Sat': 'Lør',

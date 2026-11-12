@@ -66,7 +66,7 @@
   var more = null;
   if (nav) {
     more = document.createElement('a'); more.className = 'tb-more'; more.href = '#'; more.setAttribute('role', 'button');
-    more.setAttribute('aria-haspopup', 'true'); more.innerHTML = '<i class="bi bi-grid-3x3-gap-fill"></i><span data-t="ui.more">More</span>';
+    more.setAttribute('aria-haspopup', 'true'); more.innerHTML = '<i class="bi bi-grid-3x3-gap-fill"></i><span data-t="ui.more"><span data-t="ui.more">More</span></span>';
     nav.appendChild(more);
   }
   /* the pages that are switched on (Settings → Features) – the ones folded into More count too */
@@ -102,17 +102,17 @@
     if (closeMore()) return;
     var all = tabs(), hidden = all.filter(function (a) { return a.classList.contains('tb-hide'); });
     var item = function (a, i) { var ic = a.querySelector('.bi'); return '<a href="' + a.getAttribute('href') + '"' + (a.getAttribute('aria-current') ? ' aria-current="page"' : '') + '><i class="' + (ic ? ic.className : 'bi bi-circle') + '"></i><span>' + esc((a.textContent || '').trim()) + '</span>' + (wideMQ.matches ? '<kbd>' + (i + 1) + '</kbd>' : '') + '</a>'; };
-    var edit = '<a class="mut" href="/cmd/?settings=layout"><i class="bi bi-sliders"></i> Choose what’s in the bar</a>';
+    var edit = '<a class="mut" href="/cmd/?settings=layout"><i class="bi bi-sliders"></i> <span data-t="ui.choose-whats-in-the-bar">Choose what’s in the bar</span></a>';
     if (wideMQ.matches) {
       var m = document.createElement('div'); m.className = 'tb-menu'; m.id = 'tbMenu'; m.setAttribute('role', 'menu');
-      m.innerHTML = '<p data-t="ui.more-pages">More pages</p>' + hidden.map(function (a) { return item(a, all.indexOf(a)); }).join('') + '<hr>' + edit;
+      m.innerHTML = '<p data-t="ui.more-pages"><span data-t="ui.more-pages">More pages</span></p>' + hidden.map(function (a) { return item(a, all.indexOf(a)); }).join('') + '<hr>' + edit;
       document.body.appendChild(m);
       var r = more.getBoundingClientRect(); m.style.top = (r.bottom + 10) + 'px'; m.style.left = Math.min(innerWidth - 262, Math.max(12, r.right - 250)) + 'px';
       var f = m.querySelector('a'); if (f) f.focus();
     } else {
       var bg = document.createElement('div'); bg.className = 'tb-sheet-bg'; bg.id = 'tbSheetBg';
       var s = document.createElement('div'); s.className = 'tb-sheet'; s.id = 'tbMenu'; s.setAttribute('role', 'dialog'); s.setAttribute('aria-label', 'All pages');
-      s.innerHTML = '<div class="grab"></div><p data-t="ui.all-pages">All pages</p><div class="tb-grid">' + all.map(function (a, i) { return item(a, i); }).join('') + '</div>' + edit.replace('class="mut"', 'class="tb-edit"').replace('what’s in the bar', 'your 4 in the bar');
+      s.innerHTML = '<div class="grab"></div><p data-t="ui.all-pages"><span data-t="ui.all-pages">All pages</span></p><div class="tb-grid">' + all.map(function (a, i) { return item(a, i); }).join('') + '</div>' + edit.replace('class="mut"', 'class="tb-edit"').replace('what’s in the bar', 'your 4 in the bar');
       document.body.appendChild(bg); document.body.appendChild(s);
       requestAnimationFrame(function () { bg.classList.add('open'); s.classList.add('open'); });
       bg.addEventListener('click', closeMore);
@@ -192,7 +192,7 @@
   if (page === 'home' && document.querySelector('header.top')) {
     hero = document.createElement('section'); hero.className = 'mhero'; hero.setAttribute('aria-label', 'Your day');
     hero.innerHTML = '<div class="mh-txt"><div class="mh-when"></div><h1 class="mh-line"></h1><p class="mh-sub"></p><div class="mh-chips"></div></div>' +
-      '<section class="card mh-top3"><div class="card-head"><h2><i class="bi bi-trophy"></i> Today’s top 3</h2><button type="button" class="text-btn mh-planbtn" data-plan><i class="bi bi-sunrise"></i> Plan day</button></div><div class="mh-body"></div></section>';
+      '<section class="card mh-top3"><div class="card-head"><h2><i class="bi bi-trophy"></i> <span data-t="ui.todays-top-3">Today’s top 3</span></h2><button type="button" class="text-btn mh-planbtn" data-plan><i class="bi bi-sunrise"></i> <span data-t="ui.plan-day">Plan day</span></button></div><div class="mh-body"></div></section>';
     document.querySelector('header.top').appendChild(hero);
   }
   function part(h) { return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
@@ -249,7 +249,7 @@
     if (late.length === 1) sub.unshift(late[0] + ' is overdue – pay it when you can.');
     else if (late.length > 1) sub.unshift(late.length + ' bills are overdue: ' + late.slice(0, 3).join(', ') + '.');
     if (m && !late.length) sub.push(m.left < 0 ? 'You’re over budget this month – take it easy on spending.' : 'You’re on track with money this month.');
-    else if (m && m.left < 0) sub.push('You’re over budget this month – take it easy on spending.');
+    else if (m && m.left < 0) sub.push(I18N.k('ui.youre-over-budget-this-month-take-it-eas', 'You’re over budget this month – take it easy on spending.'));
     var hb = readJSON('dash.habits', { list: [], log: {} }) || {}, mon = new Date(now); mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
     var habitLine = '';
     (hb.list || []).some(function (h) {
@@ -267,7 +267,7 @@
     if (hero.querySelector('.mh-sub').innerHTML !== subH) hero.querySelector('.mh-sub').innerHTML = subH;
     /* the chips */
     var chips = [], hide = readJSON('dash.finHide', '0') === '1' || localStorage.getItem('dash.finHide') === '1';
-    if (m && m.left >= 0) chips.push('<a class="mh-chip" href="#fin"><i class="bi bi-wallet2"></i><b>' + (hide ? '•••' : kr(m.perDay)) + '</b> left today</a>');
+    if (m && m.left >= 0) chips.push('<a class="mh-chip" href="#fin"><i class="bi bi-wallet2"></i><b>' + (hide ? '•••' : kr(m.perDay)) + '</b> <span data-t="ui.left-today">left today</span></a>');
     var wt = document.getElementById('wTemp'), wd = document.getElementById('wDesc'), wi = document.getElementById('wIcon');
     if (wt && /\d/.test(wt.textContent) && !document.documentElement.classList.contains('hide-weather')) chips.push('<a class="mh-chip" href="#weatherCard"><i class="' + (wi ? wi.className : 'bi bi-cloud') + '"></i><b>' + esc(wt.textContent) + '</b> ' + esc(((wd && wd.textContent) || '').split(' · ')[0].toLowerCase()) + '</a>');
     if (tr && tripDays <= 60) chips.push('<a class="mh-chip" href="travel/"><i class="bi bi-suitcase-lg"></i><b>' + esc(tr.name || tr.dest) + '</b> in ' + tripDays + ' day' + (tripDays === 1 ? '' : 's') + '</a>');
@@ -275,10 +275,10 @@
     /* daily mini-goals as small rings that fill during the day: steps (Apple Health) and water (tap to add a glass) */
     var rc = (Fe && Fe.tools().ringcfg) || {}, ringOn = rc.on !== false, s0 = readJSON('dash.settings', {}) || {}, sGoal = +((s0.ahGoals || {}).steps) || 10000;
     var ring = function (p) { var C = 2 * Math.PI * 7; return '<svg class="mh-ring" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" class="t"/><circle cx="9" cy="9" r="7" class="v" stroke-dasharray="' + (C * Math.min(1, p)).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>'; };
-    if (ht && ht.steps) chips.push('<a class="mh-chip' + (ringOn && ht.steps >= sGoal ? ' mh-done' : '') + '" href="habits/">' + (ringOn ? ring(ht.steps / sGoal) : '<i class="bi bi-activity"></i>') + '<b>' + nf.format(ht.steps) + '</b> steps</a>');
-    if (ringOn && rc.water !== false) { var wg = +rc.waterGoal || 8, wn = +(((Fe && Fe.tools().water) || {})[tk]) || 0; chips.push('<button type="button" class="mh-chip mh-water' + (wn >= wg ? ' mh-done' : '') + '" data-mhwater aria-label="Add a glass of water">' + ring(wn / wg) + '<b>' + wn + '/' + wg + '</b> water</button>'); }
+    if (ht && ht.steps) chips.push('<a class="mh-chip' + (ringOn && ht.steps >= sGoal ? ' mh-done' : '') + '" href="habits/">' + (ringOn ? ring(ht.steps / sGoal) : '<i class="bi bi-activity"></i>') + '<b>' + nf.format(ht.steps) + '</b> <span data-t="ui.steps-2">steps</span></a>');
+    if (ringOn && rc.water !== false) { var wg = +rc.waterGoal || 8, wn = +(((Fe && Fe.tools().water) || {})[tk]) || 0; chips.push('<button type="button" class="mh-chip mh-water' + (wn >= wg ? ' mh-done' : '') + '" data-mhwater aria-label="Add a glass of water">' + ring(wn / wg) + '<b>' + wn + '/' + wg + '</b> <span data-t="ui.water-2">water</span></button>'); }
     var fm = window.Focus && window.Focus.minsToday ? window.Focus.minsToday() : 0;
-    if (fm) chips.push('<span class="mh-chip"><i class="bi bi-stopwatch"></i><b>' + fm + ' min</b> focused</span>');
+    if (fm) chips.push('<span class="mh-chip"><i class="bi bi-stopwatch"></i><b>' + fm + ' min</b> <span data-t="ui.focused">focused</span></span>');
     var ch = chips.join('');
     if (hero.querySelector('.mh-chips').innerHTML !== ch) hero.querySelector('.mh-chips').innerHTML = ch;
     /* today's top 3 */
@@ -295,7 +295,7 @@
       var n = todos.filter(function (t) { return !t.done; }).length;
       /* nothing picked yet: one compact row, so At a glance and Today stay on the first screen of a phone */
       body = '<div class="mh-erow"><i class="bi bi-trophy"></i><p class="mh-empty">' + (n ? 'Pick today’s top 3 and give them a time.' : 'Nothing on your list – enjoy the free time.') + '</p>' +
-        '<button type="button" class="pill-btn mh-plan" data-plan><i class="bi bi-sunrise"></i> Plan my day</button></div>';
+        '<button type="button" class="pill-btn mh-plan" data-plan><i class="bi bi-sunrise"></i> <span data-t="home.plan">Plan my day</span></button></div>';
     }
     hero.querySelector('.mh-top3').classList.toggle('mh-e', !top.length);
     var bx = hero.querySelector('.mh-body'); if (bx.innerHTML !== body) bx.innerHTML = body;

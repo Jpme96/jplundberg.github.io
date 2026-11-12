@@ -125,9 +125,9 @@
     var p = load(), rows = [['GP (fastlege)', p.gp], ['Blood type', p.blood], ['Allergies', p.allergies], ['Medicines', p.meds]].filter(function (r) { return r[1]; });
     var ice = p.iceName ? esc(p.iceName) + (p.iceRel ? ' (' + esc(p.iceRel) + ')' : '') + (p.icePhone ? ' · <a href="tel:' + esc(p.icePhone.replace(/\s/g, '')) + '">' + esc(p.icePhone) + '</a>' : '') : '';
     med.hidden = !rows.length && !ice;
-    med.innerHTML = '<div class="card-head"><h2><i class="bi bi-person-vcard"></i> Medical info</h2><a class="text-btn" href="/cmd/?settings=profile" data-t="ui.edit">Edit</a></div>' +
+    med.innerHTML = '<div class="card-head"><h2><i class="bi bi-person-vcard"></i> Medical info</h2><a class="text-btn" href="/cmd/?settings=profile" data-t="ui.edit"><span data-t="ui.edit">Edit</span></a></div>' +
       '<dl class="me-dl">' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') +
-      (ice ? '<dt data-t="ui.emergency-contact">Emergency contact</dt><dd>' + ice + '</dd>' : '') + '</dl>';
+      (ice ? '<dt data-t="ui.emergency-contact"><span data-t="ui.emergency-contact">Emergency contact</span></dt><dd>' + ice + '</dd>' : '') + '</dl>';
   }
   /* Travel page: emergency contact under travel documents */
   var docs = $('tpDocsCard');
@@ -178,7 +178,7 @@
     renderSocials();
     var p = load();
     var photo = '<div class="me-photo">' + avatar(p, 'xl') + '<div><button type="button" class="pill-btn" id="mePick"><i class="bi bi-camera"></i> ' + (p.photo ? 'Change photo' : 'Add photo') + '</button>' +
-      (p.photo ? '<button type="button" class="text-btn danger" id="meNoPhoto" data-t="ui.remove">Remove</button>' : '') +
+      (p.photo ? '<button type="button" class="text-btn danger" id="meNoPhoto" data-t="ui.remove"><span data-t="ui.remove">Remove</span></button>' : '') +
       '<p class="st-note">' + (p.birthday && age(p.birthday) != null ? age(p.birthday) + ' years · ' : '') + 'Saved encrypted, only for you.</p></div>' +
       '<input type="file" id="meFile" accept="image/*" hidden></div>';
     var secs = FIELDS.map(function (S) {
@@ -198,7 +198,7 @@
         return '<label class="st-row me-row"><span>' + r[1] + '</span>' + input + '</label>';
       }).join('') + '</section>' + (S.note ? '<p class="st-note me-note">' + S.note + '</p>' : '');
     }).join('');
-    box.innerHTML = '<p class="me-private"><i class="bi bi-lock"></i><span><b data-t="ui.private-2">Private.</b> Only you see this – nothing here is shown on jplundberg.com. What’s public is under Settings → jplundberg.com.</span></p>' + photo + secs +
+    box.innerHTML = '<p class="me-private"><i class="bi bi-lock"></i><span><b data-t="ui.private-2"><span data-t="ui.private-2">Private.</span></b> <span data-t="ui.only-you-see-this-nothing-here-is-shown">Only you see this – nothing here is shown on jplundberg.com. What’s public is under Settings → jplundberg.com.</span></span></p>' + photo + secs +
       '<p class="st-sub"><i class="bi bi-pencil"></i> Notes</p><section class="st-group"><textarea class="me-notes" data-mk="notes" rows="3" maxlength="2000" placeholder="Anything else you want to keep handy" data-t-placeholder="ui.anything-else-you-want-to-keep-handy">' + esc(p.notes || '') + '</textarea></section>';
     if (window.Places) box.querySelectorAll('[data-mplace]').forEach(function (inp) {
       window.Places.field(inp, { onPick: function (pl) {
@@ -218,7 +218,7 @@
   window.addEventListener('socials:reset', renderSocials);
   function socialsHtml(p) {
     var opts = function (cur) { return Object.keys(NETS).map(function (k) { return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + NETS[k].name + '</option>'; }).join(''); };
-    return '<p class="st-sub"><i class="bi bi-share"></i> Your profiles <span class="st-hint" data-t="ui.username-or-link-the-switch-decides-if-i">Username or link. The switch decides if it’s shown on jplundberg.com</span></p>' +
+    return '<p class="st-sub"><i class="bi bi-share"></i> <span data-t="ui.your-profiles">Your profiles</span> <span class="st-hint" data-t="ui.username-or-link-the-switch-decides-if-i">Username or link. The switch decides if it’s shown on jplundberg.com</span></p>' +
       '<section class="st-group me-socials">' + p.socials.map(function (s) {
         var url = socialUrl(s), N = NETS[s.net] || NETS.linkedin;
         return '<div class="st-row me-soc" data-sid="' + esc(s.id) + '">' +
@@ -229,7 +229,7 @@
           '<input type="checkbox" class="switch" data-spub' + (s.pub ? ' checked' : '') + ' aria-label="Show ' + N.name + ' on jplundberg.com">' +
           '<button type="button" class="text-btn danger me-soc-del" data-sdel aria-label="Remove" data-t-aria-label="ui.remove"><i class="bi bi-x-lg"></i></button></div>';
       }).join('') +
-      (p.socials.length < 10 ? '<button type="button" class="st-row st-btn cs-add" data-sadd><span><i class="bi bi-plus-lg"></i> Add social</span></button>' : '') +
+      (p.socials.length < 10 ? '<button type="button" class="st-row st-btn cs-add" data-sadd><span><i class="bi bi-plus-lg"></i> <span data-t="ui.add-social">Add social</span></span></button>' : '') +
       '</section>';
   }
   /* ---------- editing ---------- */

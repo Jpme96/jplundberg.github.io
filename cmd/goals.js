@@ -138,7 +138,7 @@
       if (st) add(72, 'pencil', GREY, 'Update ' + st.name + '?', 'It’s said ' + n2(st.value) + ' for ' + sinceMoved(st) + ' days', '/cmd/goals/');
     }
     var won = l.filter(function (g) { return g.done === today(); })[0];
-    if (won) add(40, 'trophy', GREEN, 'Goal reached: ' + won.name, 'Well done', '/cmd/goals/');
+    if (won) add(40, 'trophy', GREEN, 'Goal reached: ' + won.name, I18N.k('ui.well-done', 'Well done'), '/cmd/goals/');
   });
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;
@@ -154,13 +154,13 @@
     function fill() {
       var box = document.getElementById('hlSet-goals'); if (!box || box.contains(document.activeElement)) return;
       box.innerHTML = '<p class="st-intro" data-t="ui.the-same-goals-as-the-goals-card-on-home">The same goals as the Goals card on Home – here with dates, steps and numbers that update themselves.</p>' +
-        sub('bell', 'Reminders') + '<div class="st-group">' + sw('brief', 'Goals in At a glance', 'When a dated goal is behind, or the date has passed') +
-        sel('lead', 'Warn about a goal that’s behind', [[7, 'In its last week'], [14, 'In its last 2 weeks'], [30, 'In its last month'], [90, 'In its last 3 months'], [3650, 'Any time']]) +
-        sel('stale', 'Ask to update a number you type in', [[0, 'Never'], [7, 'After a week without a change'], [14, 'After 2 weeks'], [30, 'After a month']]) + '</div>' +
-        sub('trophy', 'When you reach one') + '<div class="st-group">' + sw('celebrate', 'Celebrate', 'A note and a bit of confetti') +
-        sel('archive', 'Move it to Done', [[0, 'When I say so'], [1, 'The day after'], [7, 'After a week'], [30, 'After a month']], 'Done goals leave the card on Home too') + '</div>' +
+        sub('bell', 'Reminders') + '<div class="st-group">' + sw('brief', I18N.k('ui.goals-in-at-a-glance', 'Goals in At a glance'), I18N.k('ui.when-a-dated-goal-is-behind-or-the-date', 'When a dated goal is behind, or the date has passed')) +
+        sel('lead', I18N.k('ui.warn-about-a-goal-thats-behind', 'Warn about a goal that’s behind'), [[7, 'In its last week'], [14, 'In its last 2 weeks'], [30, 'In its last month'], [90, 'In its last 3 months'], [3650, 'Any time']]) +
+        sel('stale', I18N.k('ui.ask-to-update-a-number-you-type-in', 'Ask to update a number you type in'), [[0, 'Never'], [7, 'After a week without a change'], [14, 'After 2 weeks'], [30, 'After a month']]) + '</div>' +
+        sub('trophy', I18N.k('ui.when-you-reach-one', 'When you reach one')) + '<div class="st-group">' + sw('celebrate', 'Celebrate', I18N.k('ui.a-note-and-a-bit-of-confetti', 'A note and a bit of confetti')) +
+        sel('archive', I18N.k('ui.move-it-to-done', 'Move it to Done'), [[0, 'When I say so'], [1, 'The day after'], [7, 'After a week'], [30, 'After a month']], I18N.k('ui.done-goals-leave-the-card-on-home-too', 'Done goals leave the card on Home too')) + '</div>' +
         sub('sort-down', 'Order') + '<div class="st-group">' + sel('sort', 'Goals', [['due', 'By date'], ['pct', 'Closest to done first'], ['cat', 'By kind']]) + '</div>' +
-        '<div class="st-group"><a class="st-row st-btn" href="/cmd/goals/"><span><i class="bi bi-bullseye"></i> Open Goals</span><i class="bi bi-chevron-right"></i></a></div>';
+        '<div class="st-group"><a class="st-row st-btn" href="/cmd/goals/"><span><i class="bi bi-bullseye"></i> <span data-t="ui.open-goals">Open Goals</span></span><i class="bi bi-chevron-right"></i></a></div>';
     }
     function summary() { var c = cfg(), r = document.getElementById('sum-goals'); if (r) r.textContent = (c.brief ? 'Reminders on' : 'No reminders') + ' · to Done ' + (+c.archive ? 'after ' + c.archive + (+c.archive === 1 ? ' day' : ' days') : 'by hand'); var row = document.getElementById('stRow-goals'); if (row) row.hidden = !on(); }
     document.addEventListener('change', function (e) {

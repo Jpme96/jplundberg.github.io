@@ -53,7 +53,7 @@
     if (Fe) {
       var h0 = Fe.holiday(today), h1 = Fe.holiday(dkey(new Date(now.getTime() + 864e5)));
       if (h0) add(5, 'flag', '#e66767', h0.name, 'Public holiday today', 'calendar/');
-      else if (h1) add(40, 'flag', '#e66767', h1.name + ' tomorrow', 'Public holiday', 'calendar/');
+      else if (h1) add(40, 'flag', '#e66767', h1.name + ' tomorrow', I18N.k('ui.public-holiday', 'Public holiday'), 'calendar/');
     }
 
     /* what's next in the calendar (rest of today and tomorrow morning) */
@@ -163,13 +163,13 @@
     });
 
     /* the weekly check-in: Sunday afternoon and Monday */
-    if (window.Checkin) { var ci = window.Checkin.due(now); if (ci) add(26, 'clipboard-check', '#8a6fdf', 'Weekly check-in', ci.sub, '#checkin', { checkin: true }); }
+    if (window.Checkin) { var ci = window.Checkin.due(now); if (ci) add(26, 'clipboard-check', '#8a6fdf', I18N.k('ui.weekly-check-in', 'Weekly check-in'), ci.sub, '#checkin', { checkin: true }); }
     /* Plan my day: in the morning until you've planned; after that, today's top 3 */
     if (window.Plan) {
       var tk = dkey(now), all3 = (readJSON('dash.todos', []) || []).filter(function (t) { return t.today === tk; }), open3 = all3.filter(function (t) { return !t.done; });
       if (all3.length) add(open3.length ? 12 : 40, open3.length ? 'trophy' : 'trophy-fill', '#c98500', open3.length ? 'Today: ' + open3.sort(function (a, b) { return (a.rank || 9) - (b.rank || 9); }).map(function (t) { return t.text; }).join(' · ') : 'Top 3 done 🎉',
         (all3.length - open3.length) + ' of ' + all3.length + ' done' + (open3.some(function (t) { return t.block; }) ? ' · in your calendar' : ''), '#plan');
-      else if (now.getHours() >= 5 && now.getHours() < 13) { var seen = ''; try { seen = localStorage.getItem('dash.planSeen'); } catch (e) {} if (seen !== tk && !document.querySelector('.modern .mh-top3.mh-e')) add(14, 'sunrise', '#c98500', 'Plan your day', 'Pick your top 3 and give them a time – 1 minute', '#plan'); }   /* the Modern hero already asks */
+      else if (now.getHours() >= 5 && now.getHours() < 13) { var seen = ''; try { seen = localStorage.getItem('dash.planSeen'); } catch (e) {} if (seen !== tk && !document.querySelector('.modern .mh-top3.mh-e')) add(14, 'sunrise', '#c98500', I18N.k('ui.plan-your-day', 'Plan your day'), I18N.k('ui.pick-your-top-3-and-give-them-a-time-1-m', 'Pick your top 3 and give them a time – 1 minute'), '#plan'); }   /* the Modern hero already asks */
     }
 
     /* work: clocked in */
@@ -205,7 +205,7 @@
       if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', 'At this pace: ' + kr(-pc.end) + ' over by ' + (pc.per.byPayday ? 'payday' : 'the end of the month'),
         'You spend about ' + kr(pc.perDay) + ' a day – ' + kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) + ' a day keeps you on budget', '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500) });
       recurring(add, d, now);
-      if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', 'Set up your monthly budget', 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
+      if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', I18N.k('ui.set-up-your-monthly-budget', 'Set up your monthly budget'), 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
     }
 
     if (Fl) {
@@ -241,7 +241,7 @@
       var much = (d.expenses || []).length + (readJSON('dash.todos') || []).length > 8;
       if ((age === null && much) || age >= 30) {
         ACTIONS['backup:' + ym] = function () { window.Vault.backup(); };
-        add(56, 'shield-check', '#11a597', 'Time for a backup', age === null ? 'You haven’t downloaded one yet – it takes a second' : 'Last one ' + age + ' days ago', '?settings=data',
+        add(56, 'shield-check', '#11a597', I18N.k('ui.time-for-a-backup', 'Time for a backup'), age === null ? 'You haven’t downloaded one yet – it takes a second' : 'Last one ' + age + ' days ago', '?settings=data',
           { key: 'backupx:' + ym, act: { id: 'backup:' + ym, label: 'Download' } });
       }
     }
@@ -359,13 +359,13 @@
       if (x.fold) return '<li class="br-li br-fold"><button type="button" class="br-item" data-brfold aria-expanded="' + tipsOpen + '" style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + esc(x.title) + '</b><small>' + esc(tipsOpen ? 'Tap to fold them away' : x.sub) + '</small></span><i class="bi bi-chevron-' + (tipsOpen ? 'up' : 'down') + ' br-go"></i></button></li>';
       var nx = nextOn && i === 0;   /* Next up: the first line, bigger, with Later */
-      return '<li class="br-li' + (isTip(x) ? ' br-tip' : '') + (nx ? ' br-next' : '') + (x.badge ? ' br-badge' : '') + '"' + (x.badge ? ' title="This is the number on the app icon"' : '') + '>' + (nx ? '<span class="br-nl" data-t="ui.next-up">Next up</span>' : '') + '<a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
+      return '<li class="br-li' + (isTip(x) ? ' br-tip' : '') + (nx ? ' br-next' : '') + (x.badge ? ' br-badge' : '') + '"' + (x.badge ? ' title="This is the number on the app icon"' : '') + '>' + (nx ? '<span class="br-nl" data-t="ui.next-up"><span data-t="ui.next-up">Next up</span></span>' : '') + '<a class="br-item" href="' + esc(x.href) + '"' + (x.review ? ' data-review="' + esc(x.review) + '"' : '') + ' style="--c:' + x.color + '"><span class="br-ic"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<span class="br-x"><b>' + amt(esc(x.title)) + '</b><small>' + amt(esc(x.sub)) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
         (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>'
-          : x.day && !x.badge ? (nx ? '<button type="button" class="text-btn br-later" data-brx="' + esc(x.day) + '">Later</button>' : '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>') : '') + '</li>';
+          : x.day && !x.badge ? (nx ? '<button type="button" class="text-btn br-later" data-brx="' + esc(x.day) + '"><span data-t="ui.later">Later</span></button>' : '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>') : '') + '</li>';
     }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + main.length) + '</button></li>' : '')
-      : '<li class="br-calm"><i class="bi bi-check2-circle"></i> Nothing needs you right now. Enjoy the day.</li>';
+      : '<li class="br-calm"><i class="bi bi-check2-circle"></i> <span data-t="ui.nothing-needs-you-right-now-enjoy-the-da">Nothing needs you right now. Enjoy the day.</span></li>';
   }
   document.addEventListener('change', function (e) {
     if (e.target.id !== 'stNextBest') return;

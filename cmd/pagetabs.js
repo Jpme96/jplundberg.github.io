@@ -164,7 +164,7 @@
         if (nx) { var dd = Math.round((new Date(nx.date + 'T12:00') - new Date(td + 'T12:00')) / 864e5); rows.push(['clipboard2-pulse', '#e66767', 'Next appointment', dd === 0 ? 'Today' : dd === 1 ? 'Tomorrow' : 'In ' + dd + ' days', '<small>' + esc(nx.title || 'Check-up') + (nx.time ? ' · ' + esc(nx.time) : '') + '</small>', '[data-tool="health"]']); }
       }
       ht.hidden = !rows.length;
-      ht.innerHTML = '<div class="card-head"><h2><i class="bi bi-sun"></i> Today</h2></div><ul class="pt-rows">' + rows.map(function (r) {
+      ht.innerHTML = '<div class="card-head"><h2><i class="bi bi-sun"></i> <span data-t="ui.today">Today</span></h2></div><ul class="pt-rows">' + rows.map(function (r) {
         return '<li><button type="button" class="pt-row" data-ptjump="' + esc(r[5]) + '"><span class="pt-ic" style="--c:' + r[1] + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + esc(r[2]) + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
       }).join('') + '</ul>';
     };
@@ -212,7 +212,7 @@
         rows.push(['sun', '#e8743b', 'Holiday ' + y, (days - used) + ' days left', '<small>' + used + ' of ' + days + ' used</small>', '[data-tool="holiday"]']);
       }
       wt.hidden = !rows.length;
-      wt.innerHTML = '<div class="card-head"><h2><i class="bi bi-briefcase"></i> Today at work</h2></div><ul class="pt-rows">' + rows.map(function (r) {
+      wt.innerHTML = '<div class="card-head"><h2><i class="bi bi-briefcase"></i> <span data-t="ui.today-at-work">Today at work</span></h2></div><ul class="pt-rows">' + rows.map(function (r) {
         return '<li><button type="button" class="pt-row"' + (r[5] ? ' data-ptjump="' + esc(r[5]) + '"' : ' data-ptcal') + '><span class="pt-ic" style="--c:' + r[1] + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + r[2] + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
       }).join('') + '</ul>';
     };

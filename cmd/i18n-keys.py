@@ -3,6 +3,8 @@
 
     python3 cmd/i18n-keys.py AREA FILE [FILE …]      (AREA: ui for texts on every page, or a page's name)
     python3 cmd/i18n-keys.py ui --prune      take sentences out of the old list that are named everywhere they are used
+    python3 cmd/i18n-keys.py ui --wrap FILE … also names pieces of text that sit between other tags (a sentence with a
+                                             <b> or <code> in it): each piece gets its own <span data-t="…">
 
 For each file it finds texts that the old sentence list (i18n-nb.js) translates word for word:
   - in HTML: an element's own text and its placeholder / aria-label / title / data-title
@@ -15,6 +17,7 @@ import html.parser, io, json, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 AREA, FILES = sys.argv[1], [a for a in sys.argv[2:] if not a.startswith('--')]
+WRAP = '--wrap' in sys.argv; WRAP_ALL = False
 if not re.match(r'^[a-z][a-z0-9-]*$', AREA): sys.exit('area: lower-case letters')
 
 # the old sentence list, read by running i18n-nb.js with nothing around it
@@ -46,7 +49,7 @@ SKIP_TAGS = {'script', 'style', 'textarea', 'code'}
 class P(html.parser.HTMLParser):
     """remembers where each start tag ends ('>' position), and which tags get a name"""
     def __init__(self, text):
-        super().__init__(convert_charrefs=True); self.text = text; self.stack = []; self.ins = {}
+        super().__init__(convert_charrefs=True); self.text = text; self.stack = []; self.ins = {}; self.wraps = []
         self.lines = [0]
         for i, ch in enumerate(text):
             if ch == '\n': self.lines.append(i + 1)
@@ -74,8 +77,15 @@ class P(html.parser.HTMLParser):
         if not t or not self.stack: return
         p = self.stack[-1]
         first = not p.get('seen'); p['seen'] = True       # only an element's first text gets a name (that's the one data-t swaps)
-        if not first or p['skip'] or p['has'] or t not in D: return
-        self.ins.setdefault(p['start'], []).append(' data-t="%s"' % key_for(t))
+        if p['skip'] or t not in D: return
+        if first:   # an element's own (first) text: named by data-t on the element
+            if not p['has']: self.ins.setdefault(p['start'], []).append(' data-t="%s"' % key_for(t))
+            return
+        if not WRAP or p['tag'] in ('option', 'title', 'textarea'): return
+        # a piece between other tags: wrap it in its own named span (only where the source has the text as it is)
+        st0 = self.off(); i = self.text.find(t, st0)
+        if i < 0 or i > st0 + len(data): return
+        self.wraps.append((i, i + len(t), key_for(t)))
 
 def do_html(text):
     p = P(text); p.feed(text); p.close()
@@ -85,7 +95,11 @@ def do_html(text):
         cut = start + m.end()
         out.append(text[last:cut]); out.append(''.join(p.ins[start])); last = cut
     out.append(text[last:])
-    return ''.join(out), sum(len(v) for v in p.ins.values())
+    res, n = ''.join(out), sum(len(v) for v in p.ins.values())
+    if p.wraps:   # the wraps come after the attribute insertions: redo the offsets on the new text by searching from each old place
+        p2 = P(res); p2.feed(res); p2.close()
+        for a, b, k in sorted(p2.wraps, reverse=True): res = res[:a] + '<span data-t="%s">' % k + res[a:b] + '</span>' + res[b:]; n += 1
+    return res, n
 
 # in scripts: whole elements written inside one string literal
 JS_EL = re.compile(r"""<([a-z][a-z0-9]*)((?:\s[^<>'"]*(?:"[^"]*"[^<>'"]*)*)?)>([^<>'"\\]+)</\1>""")
@@ -106,13 +120,49 @@ def do_js(text):
         n += 1
         return '%s %s="%s" data-t-%s="%s"%s' % (before, a, v, a, key_for(v.strip()), after)
     # only inside single-quoted strings (the code's style); never in comments
+    def piece(mm):
+        nonlocal n
+        txt = mm.group(1); t = txt.strip()
+        if t not in D or len(t) < 2 or not re.search(r'[A-Za-z]', t): return mm.group(0)
+        n += 1; i0 = txt.index(t)
+        return '>' + txt[:i0] + '<span data-t="%s">' % key_for(t) + t + '</span>' + txt[i0 + len(t):]
     def lit(m):
         s = m.group(0)
         if '<' not in s: return s
-        s2 = JS_EL.sub(el, s); s2 = JS_AT.sub(at, s2); return s2
+        s2 = JS_EL.sub(el, s); s2 = JS_AT.sub(at, s2)
+        # pieces of text between two tags inside the same string ('<b>Tip:</b> do this <code>x</code>')
+        if WRAP and not re.search(r'</?(option|textarea|title|script|style|select)\b', s2): s2 = re.sub(r">([^<>'\\]+)(?=<)", piece, s2)
+        return s2
     return re.sub(r"'(?:[^'\\\n]|\\.)*'", lit, text), n
 
+# --args: a label passed to a helper in a script – sw(cfg, key, 'Show the card', 'Sub line') – becomes
+# I18N.k('ui.show-the-card', 'Show the card'): named, and Norwegian straight from the words file
+ARGS = '--args' in sys.argv
+NOT_LABEL = {'indexOf', 'getItem', 'setItem', 'removeItem', 'querySelector', 'querySelectorAll', 'closest', 'matches', 'test', 'replace', 'split', 'startsWith', 'endsWith', 'includes', 'has', 'get', 'set', 'getAttribute', 'setAttribute', 'dataset', 'k', 'fetch', 'api', 'send', 'log', 'error', 'warn', 'RegExp', 'match', 'search', 'lastIndexOf', 'Event', 'CustomEvent', 'dispatchEvent', 'addEventListener', 'key', 'on', 'list', 'tools', 'readJSON', 'rj', 'wj', 'hash', 'trackEvent', 'L'}
+def do_args(text):
+    n = 0
+    def lit(m):
+        nonlocal n
+        body = m.group(2)
+        if '\\' in body or '<' in body or body not in D or ' ' not in body or len(body) < 5 or not re.match(r'[A-Z0-9“"(]', body): return m.group(0)
+        pre = text[:m.start()].rstrip(); post = text[m.end():].lstrip()
+        if not (pre.endswith('(') or pre.endswith(',')) or not (post.startswith(',') or post.startswith(')')): return m.group(0)
+        if pre.endswith(',') and re.search(r'\[[^\[\]()]*$', pre[-200:]): return m.group(0)   # inside an array: it may be data that gets saved (a seed list) – leave it
+        fn = re.search(r'([A-Za-z_$][\w$]*)\s*\(\s*$', pre) or re.search(r'([A-Za-z_$][\w$]*)\s*\([^()]*$', pre[-300:])
+        if fn and fn.group(1) in NOT_LABEL: return m.group(0)
+        if re.search(r'(===|!==|==|!=)\s*$', pre) or re.search(r'^(===|!==|==|!=)', post): return m.group(0)
+        n += 1
+        return "I18N.k('%s', %s)" % (key_for(body), m.group(1))
+    out = re.sub(r"(?<![\w.$])('((?:[^'\\\n]|\\.)*)')", lit, text)
+    return out, n
 total = 0
+if ARGS:
+    for f in FILES:
+        path = os.path.join(HERE, f); src = io.open(path, encoding='utf-8').read()
+        new, k = do_args(src)
+        if k: io.open(path, 'w', encoding='utf-8').write(new)
+        print('%-28s %d labels named' % (f, k)); total += k
+    FILES = []
 for f in FILES:
     path = os.path.join(HERE, f) if not os.path.isabs(f) else f
     src = io.open(path, encoding='utf-8').read()
@@ -156,6 +206,11 @@ if '--prune' in sys.argv:
     print('pruned %d sentences from the old list (%d kB → %d kB)' % (len(gone), n0 // 1024, len(src.encode('utf-8')) // 1024))
     # names no file uses any more leave the words file too
     used = set(m.group(1) for s in srcs for m in re.finditer(r'data-t(?:-[a-z-]+)?=\\?"([a-z][\w.-]*)\\?"', s))
+    # names used in scripts – I18N.k('ui.x', 'English') – count too, and any missing from the words file is put back
+    for s0 in srcs:
+        for m in re.finditer(r"I18N\.k\('([a-z][\w.-]*)',\s*'((?:[^'\\]|\\.)*)'", s0):
+            used.add(m.group(1)); en = m.group(2).replace("\\'", "'")
+            if m.group(1) not in WORDS and en in D: WORDS[m.group(1)] = [en, D[en]]
     drop = [k for k in WORDS if k.startswith(AREA + '.') and k not in used]
     for k in drop: del WORDS[k]
     body = '{\n' + ',\n'.join('  %s: %s' % (json.dumps(k, ensure_ascii=False), json.dumps(v, ensure_ascii=False)) for k, v in sorted(WORDS.items())) + '\n}'

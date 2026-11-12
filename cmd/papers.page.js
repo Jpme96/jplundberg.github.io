@@ -132,7 +132,7 @@
   function pickKind(then) {
     var H = window.HomeLife;
     if (!H || !H.picker) { then('contract'); return; }
-    H.picker('folder2-open', 'What kind of paper?', 'You get a form for just that kind', KINDS.filter(function (c) { return c[0] !== 'car'; }).map(function (c) { return { k: c[0], n: c[1], s: (FORMS[c[0]] || {}).sub, i: c[2], c: c[3] }; }), function (o) { then(o.k); });
+    H.picker('folder2-open', I18N.k('ui.what-kind-of-paper', 'What kind of paper?'), I18N.k('ui.you-get-a-form-for-just-that-kind', 'You get a form for just that kind'), KINDS.filter(function (c) { return c[0] !== 'car'; }).map(function (c) { return { k: c[0], n: c[1], s: (FORMS[c[0]] || {}).sub, i: c[2], c: c[3] }; }), function (o) { then(o.k); });
   }
   function editSheet(item, preset, keep) {
     if (!item && !preset && !keep) { pickKind(function (k) { editSheet(null, null, { kind: k }); }); return; }
@@ -188,7 +188,7 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + (l.length ? 'Also worth keeping' : 'Start with') + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
-      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> Add several files<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
+      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
@@ -257,13 +257,13 @@
   function cleanName(n) { var t = String(n || '').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim(); if (/^(img|image|scan|dok|doc|document|pxl|photo)\s?\d*/i.test(t) || !t) t = ''; return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
   function bulk(list) {
     var H = window.HomeLife, fl = Array.prototype.slice.call(list || []).filter(function (f) { return isPdf(f) || /^image\//.test(f.type || '') || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name || ''); });
-    if (!fl.length) { toast('Only PDFs and photos can be added'); return; }
+    if (!fl.length) { toast(I18N.k('ui.only-pdfs-and-photos-can-be-added', 'Only PDFs and photos can be added')); return; }
     if (!H || !H.dialog) return;
     var opts = KINDS.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('');
     var rows = fl.map(function (f, i) { var nm = cleanName(f.name), k = guessKind(f.name);
       return '<li class="pa-brow"><span class="pa-bico"><i class="bi bi-' + (isPdf(f) ? 'file-earmark-pdf' : 'image') + '"></i></span><input data-pbn="' + i + '" maxlength="120" value="' + esc(nm) + '" placeholder="' + esc(f.name) + '"><select data-pbk="' + i + '">' + opts.replace('value="' + k + '"', 'value="' + k + '" selected') + '</select><button type="button" class="icon-btn sm" data-pbx="' + i + '" aria-label="Leave this one out"><i class="bi bi-x-lg"></i></button></li>'; }).join('');
-    var d = H.dialog(H.dhead('files', fl.length + (fl.length === 1 ? ' file' : ' files'), 'Each becomes its own paper. The kind is guessed from the file name – change what’s wrong.') +
-      '<ul class="pa-blist">' + rows + '</ul><div class="pa-bacts"><button type="button" class="pill-btn" data-pbgo><i class="bi bi-check2"></i> Add <span data-pbn2>' + fl.length + '</span> papers</button></div>', function (e, close) {
+    var d = H.dialog(H.dhead('files', fl.length + (fl.length === 1 ? ' file' : ' files'), I18N.k('ui.each-becomes-its-own-paper-the-kind-is-g', 'Each becomes its own paper. The kind is guessed from the file name – change what’s wrong.')) +
+      '<ul class="pa-blist">' + rows + '</ul><div class="pa-bacts"><button type="button" class="pill-btn" data-pbgo><i class="bi bi-check2"></i> <span data-t="ui.add"><span data-t="ui.add">Add</span></span> <span data-pbn2>' + fl.length + '</span> papers</button></div>', function (e, close) {
       var x = e.target.closest('[data-pbx]');
       if (x) { var li = x.closest('li'); li.hidden = true; li.dataset.out = '1'; var left = d.el.querySelectorAll('.pa-brow:not([data-out])').length; d.el.querySelector('[data-pbn2]').textContent = left; if (!left) close(); return; }
       if (!e.target.closest('[data-pbgo]')) return;

@@ -78,7 +78,7 @@
     bar.hidden = !editing;
     if (!editing) { bar.innerHTML = ''; return; }
     var C = conf();
-    bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page" data-t-aria-label="ui.customize-this-page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> Customize this page</h2></div>' +
+    bar.innerHTML = '<section class="card pk-editor" aria-label="Customize this page" data-t-aria-label="ui.customize-this-page"><div class="card-head"><h2><i class="bi bi-layout-text-window-reverse"></i> <span data-t="ui.customize-this-page">Customize this page</span></h2></div>' +
       '<p class="muted pk-intro" data-t="ui.move-sections-and-cards-up-or-down-and-s">Move sections and cards up or down, and switch off what you don’t use. Number tiles have their own Customize button. Open this again from Settings → Menu & pages.</p>' +
       zones().map(function (z) {
         var list = items(z); if (list.length < 2 && z.key !== 'main') return '';
@@ -92,7 +92,7 @@
         }).join('');
       }).join('') +
       (zones().some(function (z) { return items(z).length > 1; }) ? '' : '<p class="muted pk-intro" data-t="ui.nothing-to-arrange-on-this-page-yet-swit">Nothing to arrange on this page yet – switch on more cards under Settings → Features.</p>') +
-      '<div class="pk-foot"><button type="button" class="text-btn" data-pkreset data-t="ui.reset">Reset</button><button type="button" class="pill-btn" data-pkedit data-t="ui.done">Done</button></div></section>';
+      '<div class="pk-foot"><button type="button" class="text-btn" data-pkreset data-t="ui.reset"><span data-t="ui.reset">Reset</span></button><button type="button" class="pill-btn" data-pkedit data-t="ui.done"><span data-t="ui.done">Done</span></button></div></section>';
   }
   function zoneBy(key) { return zones().filter(function (z) { return z.key === key; })[0]; }
 

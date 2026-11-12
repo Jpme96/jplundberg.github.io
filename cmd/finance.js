@@ -91,7 +91,7 @@
     var box = $('budgetBody');
 
     if (budgetEditing) {
-      box.innerHTML = incomeEditor() + '<p class="muted is-p"><i class="bi bi-receipt"></i> Bills are changed in the <button type="button" class="text-btn" data-billsgo data-t="ui.bills">Bills</button> card below.</p>';
+      box.innerHTML = incomeEditor() + '<p class="muted is-p"><i class="bi bi-receipt"></i> Bills are changed in the <button type="button" class="text-btn" data-billsgo data-t="ui.bills"><span data-t="ui.bills">Bills</span></button> card below.</p>';
       $('budgetEdit').textContent = 'Done';
       var f = box.querySelector('.pay-form input[name="n"]');
       if (f && payEditing === 'new' && !f.value) f.focus();
@@ -115,7 +115,7 @@
     box.innerHTML =
       '<ul class="is-list">' + incRows + '<li class="is-tot"><span>Income ' + esc(monthName(key, true)) + '</span>' + money(inc.net) + '</li></ul>' +
       (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> Next payday ' + esc(next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · ' + esc(per.byPayday ? 'the budget runs payday to payday' : 'the budget runs by calendar month') + '</p>' : '') +
-      '<ul class="is-list is-fix"><li><button type="button" class="is-go" data-billsgo><span>Bills<small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' · see them all</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' + money(fixed) + '</li>' +
+      '<ul class="is-list is-fix"><li><button type="button" class="is-go" data-billsgo><span><span data-t="ui.bills">Bills</span><small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' · see them all</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' + money(fixed) + '</li>' +
         '<li class="is-tot"><span data-t="ui.left-after-bills">Left after bills</span>' + money(inc.net - fixed) + '</li></ul>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-fsopen="1"><i class="bi bi-magic"></i> Step by step</button><span class="spacer"></span><button type="button" class="pill-btn" data-bopen>Edit income &amp; costs</button></div>';
   }
@@ -136,9 +136,9 @@
         '<button class="del" type="button" data-bdel="income:' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
     }).join('');
     var hasDay = B.hasPayday(D), mode = (D.budget.period === 'payday' || D.budget.period == null) && hasDay ? 'payday' : 'month';
-    return '<div class="b-edit"><h3>Income <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
-      (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> Add income</button>') +
-      (hasDay ? '<div class="b-period"><span data-t="ui.budget-runs">Budget runs</span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '">Calendar month</button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '">Payday to payday</button></div></div>' : '') +
+    return '<div class="b-edit"><h3><span data-t="ui.income">Income</span> <span class="muted">' + money(B.income(D, key)) + ' net</span></h3><ul>' + rows + '</ul>' +
+      (payEditing === 'new' ? payForm(null) : '<button type="button" class="text-btn b-new" data-pedit="new"><i class="bi bi-plus-lg"></i> <span data-t="ui.add-income">Add income</span></button>') +
+      (hasDay ? '<div class="b-period"><span data-t="ui.budget-runs"><span data-t="ui.budget-runs">Budget runs</span></span><div class="seg"><button type="button" data-period-mode="month" aria-pressed="' + (mode === 'month') + '"><span data-t="ui.calendar-month">Calendar month</span></button><button type="button" data-period-mode="payday" aria-pressed="' + (mode === 'payday') + '"><span data-t="ui.payday-to-payday">Payday to payday</span></button></div></div>' : '') +
       (list.some(function (r) { return r.gross > 0; }) ? slipEditor() : '') + '</div>';
   }
   /* log what each payslip actually said – that month then uses the real numbers, and the year adds up */
@@ -180,12 +180,12 @@
         '<div class="add-row pay-dadd"><input name="dn" placeholder="e.g. Fagforening" data-t-placeholder="ui.e-g-fagforening" autocomplete="off"><input name="da" class="amt" placeholder="681 or 2 %" data-t-placeholder="ui.681-or-2" inputmode="decimal" autocomplete="off">' +
           '<button type="button" class="pill-btn" data-dadd aria-label="Add deduction" data-t-aria-label="ui.add-deduction"><i class="bi bi-plus-lg"></i></button></div>' +
         '<div class="row2"><label class="pay-field"><span>Tax card (skattekort)</span><select name="tc"><option value="table"' + (!r || r.taxCard !== 'pct' ? ' selected' : '') + '>Table (tabelltrekk)</option><option value="pct"' + (r && r.taxCard === 'pct' ? ' selected' : '') + '>Percentage (prosenttrekk)</option></select></label><span></span></div>' +
-        '<label class="pay-check"><input type="checkbox" name="py"' + (!r || r.payYear ? ' checked' : '') + '> Norwegian pay year: holiday pay in June, half tax in December</label>' +
+        '<label class="pay-check"><input type="checkbox" name="py"' + (!r || r.payYear ? ' checked' : '') + '> <span data-t="ui.norwegian-pay-year-holiday-pay-in-june-h">Norwegian pay year: holiday pay in June, half tax in December</span></label>' +
         '<div class="row2 pay-hol"' + (r && r.payYear === false ? ' hidden' : '') + '><label class="pay-field"><span data-t="ui.holiday-pay-earned-last-year-opptjente-f">Holiday pay earned last year (Opptjente feriepenger i fjor)</span><input name="hp" placeholder="0 if you started this year" inputmode="decimal" value="' + (r && r.holidayPay != null && r.holidayPay !== '' ? r.holidayPay : '') + '" autocomplete="off"></label>' +
           '<label class="pay-field"><span data-t="ui.holiday-weeks">Holiday weeks</span><select name="hw"><option value="5"' + (!r || +r.holidayWeeks !== 4 ? ' selected' : '') + '>5 weeks</option><option value="4"' + (r && +r.holidayWeeks === 4 ? ' selected' : '') + '>4 weeks + 1 day</option></select></label></div>' +
       '</div>' +
       '<div class="add-row"><select name="day" class="pay-day" data-daypick="pay" aria-label="Payday" data-t-aria-label="ui.payday">' + days + '</select><span class="pay-prev muted" aria-live="polite"></span></div>' +
-      '<div class="form-actions"><button type="button" class="text-btn" data-pcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span>' +
+      '<div class="form-actions"><button type="button" class="text-btn" data-pcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span>' +
         '<button class="pill-btn wide" type="submit">' + (r ? 'Save' : 'Add') + '</button></div></form></li>';
   }
   /* what the form adds up to, as you type */
@@ -208,7 +208,7 @@
     var y = new Date().getFullYear(), ord = B.rowFor(r, y + '-03'), jun = B.rowFor(r, y + '-06'), dec = B.rowFor(r, y + '-12');
     /* the sum as it stands on the payslip, so you can check it line by line */
     var line = function (t, v, neg) { return '<li><span>' + t + '</span><b>' + (neg ? '− ' : '') + esc(kr(v)) + '</b></li>'; };
-    p.innerHTML = '<ul class="pay-sum">' + line('Gross salary', r.gross) + (r.benefits ? line('(taxed benefit, not paid out ' + esc(kr(r.benefits)) + ')', 0) : '') +
+    p.innerHTML = '<ul class="pay-sum">' + line(I18N.k('ui.gross-salary', 'Gross salary'), r.gross) + (r.benefits ? line('(taxed benefit, not paid out ' + esc(kr(r.benefits)) + ')', 0) : '') +
         line('Tax ' + (r.taxPct ? String(r.taxPct).replace('.', ',') + ' %' : ''), ord.baseTax || 0, true) + (r.taxExtra ? line('Extra tax', r.taxExtra, true) : '') +
         ord.items.map(function (x) { return line(esc(x.name), x.amount, true); }).join('') +
         '<li class="pay-eq"><span>Paid out a normal month</span><b>' + esc(kr(ord.net)) + '</b></li></ul>' +
@@ -244,7 +244,7 @@
         return '<li class="b-fixedit"><form class="fx-edit" data-fid="' + r.id + '"><div class="add-row"><input name="n" value="' + esc(r.name) + '" required autocomplete="off" aria-label="Name"><input name="a" class="amt" value="' + esc(String(r.amount)) + '" inputmode="decimal" required autocomplete="off" aria-label="kr / month"></div>' +
           '<div class="add-row"><select name="day" data-daypick aria-label="Due day">' + opts + '</select></div>' +
           '<button type="button" class="text-btn fx-vary" data-fbopen="' + r.id + '"><i class="bi bi-graph-up"></i> The amount changes from month to month …</button>' +
-          '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn" type="submit" data-t="ui.save">Save</button></div></form></li>';
+          '<div class="form-actions"><button type="button" class="text-btn" data-fxcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn" type="submit" data-t="ui.save"><span data-t="ui.save">Save</span></button></div></form></li>';
       }
       return '<li class="b-row"><button type="button" class="b-open" ' + (r.vary || r.split ? 'data-fbopen' : 'data-fedit') + '="' + r.id + '" aria-label="Change ' + esc(r.name) + '"><span>' + esc(r.name) + '</span>' + (r.day || r.vary ? '<small class="muted">' + (r.day ? 'due the ' + esc(r.day) + '.' : '') + (r.split ? (r.day ? ' · ' : '') + 'shared – your part' : r.vary ? (r.day ? ' · ' : '') + 'varies – this month' : '') + '</small>' : '') + '</button>' + money(r.amount) +
         '<button class="del" type="button" data-bdel="' + kind + ':' + r.id + '" aria-label="Remove ' + esc(r.name) + '"><i class="bi bi-x"></i></button></li>';
@@ -384,7 +384,7 @@
       chart.innerHTML = '<p class="empty">No spending logged in ' + esc(monthName(viewMonth, true)) + '.</p>';
     } else {
       chart.innerHTML = '<div class="donut-wrap">' + donut(byCat, total) +
-        '<div class="donut-mid"><span class="muted" data-t="ui.total">Total</span>' + money(total) + '</div></div>' +
+        '<div class="donut-mid"><span class="muted" data-t="ui.total"><span data-t="ui.total">Total</span></span>' + money(total) + '</div></div>' +
         '<ul class="legend">' + byCat.map(function (x) {
           return '<li><i class="dot" style="background:' + x.c.color + '"></i>' + esc(x.c.name) +
             '<span class="muted pct">' + Math.round(x.v / total * 100) + '\u00a0%</span><b>' + money(x.v) + '</b></li>';
@@ -440,7 +440,7 @@
         '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><select class="tx-cat" data-xcat="' + e.id + '" aria-label="Category">' + CATS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === e.cat ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>' + (e.src === 'bank' ? ' <i class="bi bi-bank muted" title="From your bank" data-t-title="ui.from-your-bank"></i>' : '') + '</span>' +
         money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
     });
-    $('spSheetList').innerHTML = html || '<li class="empty" data-t="ui.nothing-matches">Nothing matches.</li>';
+    $('spSheetList').innerHTML = html || '<li class="empty" data-t="ui.nothing-matches"><span data-t="ui.nothing-matches">Nothing matches.</span></li>';
   }
   sheet.addEventListener('click', function (e) {
     if (e.target === sheet || e.target.closest('[data-close]')) { closeSheet(); return; }
@@ -666,7 +666,7 @@
     /* every bank account: counted ones with their balance, ones without a balance yet, and ones you left out */
     /* your bank accounts are listed on Now → Your accounts: here they're one line with their total */
     var am2 = window.Accts ? window.Accts.money(D) : null;
-    var bankRows = am2 && (am2.counted || am2.missing.length) ? '<li class="acc acc-bank"><i class="bi bi-bank2 acc-ico"></i><span class="acc-name">Your accounts<span class="muted">' + am2.counted + ' with a balance' +
+    var bankRows = am2 && (am2.counted || am2.missing.length) ? '<li class="acc acc-bank"><i class="bi bi-bank2 acc-ico"></i><span class="acc-name"><span data-t="ui.your-accounts">Your accounts</span><span class="muted">' + am2.counted + ' with a balance' +
       (am2.missing.length ? ' · no balance yet: ' + esc(am2.missing.map(function (a) { return a.label; }).join(', ')) : '') + ' · on Accounts</span></span>' + money(am2.worth, am2.worth < 0 ? 'neg' : '') + '</li>' : '';
     /* a mortgage without the home's value makes net worth look far too low */
     var noHome = D.accounts.filter(function (a) { return a.kind === 'debt' && (a.inner || a.share) && !a.plan && !(a.home && +a.home.value > 0) && (+a.balance || 0) > 500000; })[0];
@@ -680,7 +680,7 @@
       return '<li class="acc" data-id="' + a.id + '"><i class="bi bi-' + (debt ? 'credit-card' : 'bank') + ' acc-ico' + (debt ? ' debt' : '') + '"></i>' +
         '<span class="acc-name">' + esc(a.name) + '<span class="muted">' + (debt ? (a.inner ? 'Your internal part of ' + esc(kr(owed(a))) : pt < 1 ? (a.plan ? 'Paid in parts' : 'Shared loan') + ' · your ' + Math.round(pt * 1000) / 10 + ' % of ' + esc(kr(owed(a))) : 'Debt') : 'Asset') + '</span></span>' +
         money(debt ? -owed(a) * pt : a.balance, debt ? 'neg' : '') + '</li>' +
-        (debt && homeShare(a) ? '<li class="acc" data-id="' + a.id + '"><i class="bi bi-house-door acc-ico"></i><span class="acc-name">Home<span class="muted">your ' + esc(String(+a.home.own || 50).replace('.', ',')) + ' % of ' + esc(kr(a.home.value)) + ' · value from ' + esc(a.home.at || '') + '</span></span>' + money(homeShare(a)) + '</li>' : '');
+        (debt && homeShare(a) ? '<li class="acc" data-id="' + a.id + '"><i class="bi bi-house-door acc-ico"></i><span class="acc-name"><span data-t="ui.home">Home</span><span class="muted">your ' + esc(String(+a.home.own || 50).replace('.', ',')) + ' % of ' + esc(kr(a.home.value)) + ' · value from ' + esc(a.home.at || '') + '</span></span>' + money(homeShare(a)) + '</li>' : '');
     }).join('');
   }
 

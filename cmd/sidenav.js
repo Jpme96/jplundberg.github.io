@@ -51,10 +51,10 @@
   function labels() {
     var m = mode();
     if (fold) { var l = t(m === 'icons' ? 'Show page names' : 'Icons only'); fold.setAttribute('aria-label', l); fold.title = l; }
-    if (hide) { var h = t('Hide the side bar'); hide.setAttribute('aria-label', h); hide.title = h + ' ( [ )'; }
-    if (open) { var o = t('Show the side bar'); open.setAttribute('aria-label', o); open.title = o + ' ( [ )'; }
-    if (upB) { upB.setAttribute('aria-label', t('More pages above')); upB.title = t('More pages above'); }
-    if (downB) { downB.setAttribute('aria-label', t('More pages below')); downB.title = t('More pages below'); }
+    if (hide) { var h = t(I18N.k('ui.hide-the-side-bar', 'Hide the side bar')); hide.setAttribute('aria-label', h); hide.title = h + ' ( [ )'; }
+    if (open) { var o = t(I18N.k('ui.show-the-side-bar', 'Show the side bar')); open.setAttribute('aria-label', o); open.title = o + ' ( [ )'; }
+    if (upB) { upB.setAttribute('aria-label', t(I18N.k('ui.more-pages-above', 'More pages above'))); upB.title = t(I18N.k('ui.more-pages-above', 'More pages above')); }
+    if (downB) { downB.setAttribute('aria-label', t(I18N.k('ui.more-pages-below', 'More pages below'))); downB.title = t(I18N.k('ui.more-pages-below', 'More pages below')); }
     document.querySelectorAll('.tabbar a[data-pg]').forEach(function (a) { var n = a.querySelector('span:last-child'); a.setAttribute('data-tip', ((n && n.textContent) || a.textContent || '').trim()); });
   }
   function mount() {

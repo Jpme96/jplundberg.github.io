@@ -68,7 +68,7 @@
     var box = document.getElementById('hlSet-house3'); if (!box || box.contains(document.activeElement)) return;
     if (!on()) { box.innerHTML = ''; return; }
     var c = cfg(), sw = function (f, l, s) { return '<label class="st-row"><span>' + esc(l) + '<small class="st-rsub">' + esc(s) + '</small></span><input type="checkbox" class="switch" data-chcfg="' + f + '"' + (c[f] ? ' checked' : '') + '></label>'; };
-    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-arrow-repeat"></i> Chores</p><div class="st-group">' + sw('brief', 'Chores in At a glance', 'On the day it’s your turn, with Done') + sw('both', 'Also show the other one’s turn', 'Handy if you share one phone or remind each other') + '</div>';
+    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-arrow-repeat"></i> <span data-t="ui.chores">Chores</span></p><div class="st-group">' + sw('brief', I18N.k('ui.chores-in-at-a-glance', 'Chores in At a glance'), I18N.k('ui.on-the-day-its-your-turn-with-done', 'On the day it’s your turn, with Done')) + sw('both', I18N.k('ui.also-show-the-other-ones-turn', 'Also show the other one’s turn'), I18N.k('ui.handy-if-you-share-one-phone-or-remind-e', 'Handy if you share one phone or remind each other')) + '</div>';
   }
   document.addEventListener('change', function (e) { var i = e.target.closest('[data-chcfg]'); if (!i) return; var t = Fe.tools(); t.chorecfg = Object.assign({}, t.chorecfg || {}); t.chorecfg[i.dataset.chcfg] = i.checked; Fe.saveTools(t); toast('<i class="bi bi-check2"></i> Saved'); });
   window.addEventListener('st:page', function (e) { if (e.detail === 'house') setTimeout(setFill, 0); });

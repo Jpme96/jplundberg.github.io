@@ -52,7 +52,7 @@
     var td = takeDate(), ti = takeInfo(), used = ti.kind !== 'new';
     var opts = AGAINST.map(function (a) { return { n: a[1], s: a[2], i: a[3], c: a[4], a: a }; });
     if (!used) { var b = opts.splice(1, 1)[0]; opts.unshift(b); }
-    HL.dialog(HL.dhead('exclamation-diamond', 'New claim', 'Who is it to?') + '<div class="hl-pick">' + opts.map(function (o, i) {
+    HL.dialog(HL.dhead('exclamation-diamond', I18N.k('ui.new-claim', 'New claim'), I18N.k('ui.who-is-it-to', 'Who is it to?')) + '<div class="hl-pick">' + opts.map(function (o, i) {
       return '<button type="button" data-hcpick="' + i + '"><span class="kit-ic" style="--c:' + o.c + '"><i class="bi bi-' + o.i + '"></i></span><span><b>' + esc(o.n) + '</b><small>' + esc(o.s) + '</small></span></button>';
     }).join('') + '</div>', function (e, close) {
       var b = e.target.closest('[data-hcpick]'); if (!b) return; close();
@@ -72,15 +72,15 @@
     mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: 'Fault claims', addLabel: 'Claim', limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
     empty: 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.',
-    headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims" data-t-aria-label="ui.report-of-all-claims"><i class="bi bi-file-earmark-pdf"></i> Report</button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings" data-t-aria-label="ui.claim-settings"><i class="bi bi-sliders"></i></button>'; },
+    headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims" data-t-aria-label="ui.report-of-all-claims"><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.report">Report</span></button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings" data-t-aria-label="ui.claim-settings"><i class="bi bi-sliders"></i></button>'; },
     sort: function (a, b) { var oa = OPEN[a.status] ? 0 : 1, ob = OPEN[b.status] ? 0 : 1; return oa - ob || (b.found || '').localeCompare(a.found || ''); },
     summary: function (l) {
       if (!l.length) return '';
       var open = l.filter(function (c) { return OPEN[c.status]; }), wait = l.filter(function (c) { return c.status === 'sent'; }), late = wait.filter(function (c) { return isKey(c.replyBy) && daysTo(c.replyBy) < 0; });
       var next = open.map(function (c) { var d = deadlines(c); return c.status === 'draft' ? d.soft : d.reply; }).filter(isKey).sort()[0];
-      return '<div class="kit-tiles"><div class="kit-tile" data-tk="open"><span data-t="ui.open">Open</span><b>' + open.length + '</b><small>' + (l.length - open.length ? (l.length - open.length) + ' closed' : '&nbsp;') + '</small></div>' +
+      return '<div class="kit-tiles"><div class="kit-tile" data-tk="open"><span data-t="ui.open"><span data-t="ui.open">Open</span></span><b>' + open.length + '</b><small>' + (l.length - open.length ? (l.length - open.length) + ' closed' : '&nbsp;') + '</small></div>' +
         '<div class="kit-tile" data-tk="wait"><span data-t="ui.waiting-for-an-answer">Waiting for an answer</span><b>' + wait.length + '</b><small>' + (late.length ? '<span class="dn">' + late.length + ' late</span>' : '&nbsp;') + '</small></div>' +
-        '<div class="kit-tile" data-tk="next"><span data-t="ui.next-date">Next date</span><b>' + (next ? esc(fmt(next, { day: 'numeric', month: 'short' })) : '–') + '</b><small>' + (next ? esc(daysTo(next) < 0 ? 'passed' : daysTo(next) === 0 ? 'today' : 'in ' + daysTo(next) + ' days') : '&nbsp;') + '</small></div></div>';
+        '<div class="kit-tile" data-tk="next"><span data-t="ui.next-date"><span data-t="ui.next-date">Next date</span></span><b>' + (next ? esc(fmt(next, { day: 'numeric', month: 'short' })) : '–') + '</b><small>' + (next ? esc(daysTo(next) < 0 ? 'passed' : daysTo(next) === 0 ? 'today' : 'in ' + daysTo(next) + ' days') : '&nbsp;') + '</small></div></div>';
     },
     row: function (c) {
       var a = ag(c.against), S = STATUS[c.status] || STATUS.draft, b = dl(c)[0];
@@ -95,10 +95,10 @@
         '<p class="muted hl-small">' + esc([c.found ? 'Found ' + fmt(c.found) : '', c.deliver ? L.deliver + ' ' + fmt(c.deliver) : '', 'wants: ' + ((WANT.filter(function (w) { return w[0] === c.want; })[0] || WANT[0])[1]).toLowerCase(), +c.cost ? 'about ' + kr(c.cost) : '', c.inProt ? 'in the take-over protocol' : ''].filter(Boolean).join(' · ')) + '</p>' +
         (HF ? HF.strip(c.photos, 'claim:' + c.id, { label: 'Add photos' }) : '') +
         '<div class="hl-acts">' +
-        (c.status === 'draft' ? '<button type="button" class="pill-btn" data-hcletter="' + esc(c.id) + '"><i class="bi bi-envelope-paper"></i> Letter and report</button><button type="button" class="text-btn" data-hcsent="' + esc(c.id) + '"><i class="bi bi-send-check"></i> I’ve sent it</button>'
-          : '<button type="button" class="text-btn" data-hcletter="' + esc(c.id) + '"><i class="bi bi-envelope-paper"></i> The letter</button>') +
-        (c.status === 'sent' ? '<button type="button" class="text-btn" data-hcnudge="' + esc(c.id) + '"><i class="bi bi-bell"></i> Remind them</button>' : '') +
-        (c.status !== 'draft' ? '<button type="button" class="text-btn" data-hcupd="' + esc(c.id) + '"><i class="bi bi-plus-lg"></i> Update</button>' : '') + '</div>' +
+        (c.status === 'draft' ? '<button type="button" class="pill-btn" data-hcletter="' + esc(c.id) + '"><i class="bi bi-envelope-paper"></i> <span data-t="ui.letter-and-report">Letter and report</span></button><button type="button" class="text-btn" data-hcsent="' + esc(c.id) + '"><i class="bi bi-send-check"></i> <span data-t="ui.ive-sent-it">I’ve sent it</span></button>'
+          : '<button type="button" class="text-btn" data-hcletter="' + esc(c.id) + '"><i class="bi bi-envelope-paper"></i> <span data-t="ui.the-letter">The letter</span></button>') +
+        (c.status === 'sent' ? '<button type="button" class="text-btn" data-hcnudge="' + esc(c.id) + '"><i class="bi bi-bell"></i> <span data-t="ui.remind-them">Remind them</span></button>' : '') +
+        (c.status !== 'draft' ? '<button type="button" class="text-btn" data-hcupd="' + esc(c.id) + '"><i class="bi bi-plus-lg"></i> <span data-t="ui.update">Update</span></button>' : '') + '</div>' +
         '<details class="hc-law"><summary><i class="bi bi-book"></i> The rules: ' + esc(L.n) + '</summary><p>' + esc(L.rule) + '</p>' + (L.more ? '<p>' + esc(L.more) + '</p>' : '') + '<p class="muted" data-t="ui.a-guide-not-legal-advice-unsure-forbruke">A guide, not legal advice. Unsure? Forbrukerrådet, Huseierne or a lawyer can help.</p></details>' +
         ((c.log || []).length ? '<ol class="hc-log">' + c.log.slice().reverse().map(function (x) { return '<li><small>' + esc(fmt(x.d, { day: 'numeric', month: 'short' })) + '</small><span>' + esc(x.t) + '</span></li>'; }).join('') + '</ol>' : '') +
         '<p class="hc-st"><span class="hl-chip" style="--c:' + S[1] + '"><i class="bi bi-' + S[2] + '"></i> ' + esc(S[0]) + '</span></p>';
@@ -126,11 +126,11 @@
   function sentSheet(id) {
     var c = byId(id); if (!c) return;
     var X = HF.sheet('Sent'), rd = cfg().replyDays;
-    X.box.innerHTML = HF.head('send-check', 'Sent', 'Keep a copy of what you sent – an e-mail is fine, it’s in writing.') +
-      '<form class="hx-form"><label class="hx-f"><span data-t="ui.sent-on">Sent on</span><input type="date" name="d" value="' + today() + '" required></label>' +
-      '<p class="mp-lbl" data-t="ui.how">How</p><div class="lf-chips">' + ['E-mail', 'Letter', 'Text message', 'Their web form'].map(function (h, i) { return '<button type="button" class="lf-chip" data-hchow="' + esc(h) + '" aria-pressed="' + (i === 0) + '">' + esc(h) + '</button>'; }).join('') + '</div>' +
+    X.box.innerHTML = HF.head('send-check', 'Sent', I18N.k('ui.keep-a-copy-of-what-you-sent-an-e-mail-i', 'Keep a copy of what you sent – an e-mail is fine, it’s in writing.')) +
+      '<form class="hx-form"><label class="hx-f"><span data-t="ui.sent-on"><span data-t="ui.sent-on">Sent on</span></span><input type="date" name="d" value="' + today() + '" required></label>' +
+      '<p class="mp-lbl" data-t="ui.how"><span data-t="ui.how">How</span></p><div class="lf-chips">' + ['E-mail', 'Letter', 'Text message', 'Their web form'].map(function (h, i) { return '<button type="button" class="lf-chip" data-hchow="' + esc(h) + '" aria-pressed="' + (i === 0) + '">' + esc(h) + '</button>'; }).join('') + '</div>' +
       '<label class="hx-f"><span data-t="ui.asked-for-an-answer-by">Asked for an answer by</span><input type="date" name="r" value="' + addDays(today(), rd) + '"></label>' +
-      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     var how = 'E-mail';
     X.box.addEventListener('click', function (e) { var h = e.target.closest('[data-hchow]'); if (h) { how = h.dataset.hchow; X.box.querySelectorAll('[data-hchow]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === h)); }); } });
     X.box.addEventListener('submit', function (e) {
@@ -146,7 +146,7 @@
     X.box.innerHTML = HF.head('plus-lg', 'Update', c.title) + '<form class="hx-form"><div class="lf-chips">' + opts.map(function (o, i) { return '<button type="button" class="lf-chip" data-hcst="' + o[0] + '" aria-pressed="' + (i === 0) + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>' +
       '<label class="hx-f"><span data-t="ui.what-happened">What happened</span><textarea name="t" rows="3" maxlength="400" placeholder="e.g. The seller’s insurance will send a surveyor on 14 January" data-t-placeholder="ui.e-g-the-sellers-insurance-will-send-a-su"></textarea></label>' +
       '<p class="muted hs2-note" data-hcno hidden data-t="ui.turned-down-and-you-dont-agree-forbruker">Turned down and you don’t agree? Forbrukerrådet can mediate for free; for homes, Boligtvistnemnda or Huseierne’s lawyers.</p>' +
-      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     var st = 'reply';
     X.box.addEventListener('click', function (e) { var h = e.target.closest('[data-hcst]'); if (h) { st = h.dataset.hcst; X.box.querySelectorAll('[data-hcst]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === h)); }); X.box.querySelector('[data-hcno]').hidden = st !== 'no'; } });
     X.box.addEventListener('submit', function (e) {
@@ -157,14 +157,14 @@
   }
   function setSheet() {
     var c = cfg(), X = HF.sheet('Claims');
-    X.box.innerHTML = HF.head('sliders', 'Claims') + '<form class="hx-form"><p class="mp-lbl" data-t="ui.letters-in">Letters in</p><div class="lf-chips"><button type="button" class="lf-chip" data-hclang="nb" aria-pressed="' + (c.lang !== 'en') + '">Norsk</button><button type="button" class="lf-chip" data-hclang="en" aria-pressed="' + (c.lang === 'en') + '">English</button></div>' +
+    X.box.innerHTML = HF.head('sliders', 'Claims') + '<form class="hx-form"><p class="mp-lbl" data-t="ui.letters-in"><span data-t="ui.letters-in">Letters in</span></p><div class="lf-chips"><button type="button" class="lf-chip" data-hclang="nb" aria-pressed="' + (c.lang !== 'en') + '"><span data-t="ui.norsk">Norsk</span></button><button type="button" class="lf-chip" data-hclang="en" aria-pressed="' + (c.lang === 'en') + '"><span data-t="ui.english">English</span></button></div>' +
       '<p class="mp-lbl" data-t="ui.you-live-with">You live with</p><div class="lf-chips">' + (partner() ? '<button type="button" class="lf-chip" data-hcco="auto" aria-pressed="' + (c.co === 'auto') + '">' + esc(partner().name) + '</button>' : '') +
-      '<button type="button" class="lf-chip" data-hcco="name" aria-pressed="' + (c.co === 'name' || (c.co === 'auto' && !partner())) + '">Someone else</button><button type="button" class="lf-chip" data-hcco="none" aria-pressed="' + (c.co === 'none') + '">Just me</button></div>' +
-      '<label class="hx-f" data-hcconame' + (c.co === 'name' || (c.co === 'auto' && !partner()) ? '' : ' hidden') + '><span data-t="ui.name-2">Name</span><input name="cn" maxlength="60" value="' + esc(c.coName || '') + '" placeholder="Their full name" autocomplete="off"></label>' +
+      '<button type="button" class="lf-chip" data-hcco="name" aria-pressed="' + (c.co === 'name' || (c.co === 'auto' && !partner())) + '">Someone else</button><button type="button" class="lf-chip" data-hcco="none" aria-pressed="' + (c.co === 'none') + '"><span data-t="ui.just-me">Just me</span></button></div>' +
+      '<label class="hx-f" data-hcconame' + (c.co === 'name' || (c.co === 'auto' && !partner()) ? '' : ' hidden') + '><span data-t="ui.name-2"><span data-t="ui.name-2">Name</span></span><input name="cn" maxlength="60" value="' + esc(c.coName || '') + '" placeholder="Their full name" autocomplete="off"></label>' +
       '<p class="muted hs2-note" data-t="ui.letters-and-reports-about-the-home-are-s">Letters and reports about the home are signed by both of you (“we”). Just me = only your name.</p>' +
       '<label class="hx-f"><span data-t="ui.ask-for-an-answer-within-days">Ask for an answer within, days</span><input name="rd" inputmode="numeric" value="' + esc(c.replyDays) + '"></label>' +
       '<label class="lf-check"><input type="checkbox" name="gl"' + (c.glance !== false ? ' checked' : '') + '> <span data-t="ui.nudges-in-at-a-glance-send-it-late-answe">Nudges in At a glance (send it, late answers, the one-year inspection)</span></label>' +
-      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> Save</button></div></form>';
+      '<div class="lf-foot"><span></span><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save">Save</span></button></div></form>';
     var lang = c.lang === 'en' ? 'en' : 'nb', co = c.co === 'auto' && !partner() ? 'name' : c.co;
     X.box.addEventListener('click', function (e) {
       var h = e.target.closest('[data-hclang]'); if (h) { lang = h.dataset.hclang; X.box.querySelectorAll('[data-hclang]').forEach(function (z) { z.setAttribute('aria-pressed', String(z === h)); }); }
@@ -213,17 +213,17 @@
   function letter(id) {
     var c = byId(id); if (!c) return;
     var lang = cfg().lang === 'en' ? 'en' : 'nb';
-    var X = HF.sheet('The letter', 'hc-lbox');
+    var X = HF.sheet(I18N.k('ui.the-letter', 'The letter'), 'hc-lbox');
     function drawL() {
       var L = letterText(c, lang);
-      X.box.innerHTML = HF.head('envelope-paper', 'The letter', 'Check it, then send it by e-mail with the photos – that’s in writing.') +
-        '<div class="lf-chips hc-lang"><button type="button" class="lf-chip" data-hcl="nb" aria-pressed="' + (lang === 'nb') + '">Norsk</button><button type="button" class="lf-chip" data-hcl="en" aria-pressed="' + (lang === 'en') + '">English</button></div>' +
+      X.box.innerHTML = HF.head('envelope-paper', I18N.k('ui.the-letter', 'The letter'), I18N.k('ui.check-it-then-send-it-by-e-mail-with-the', 'Check it, then send it by e-mail with the photos – that’s in writing.')) +
+        '<div class="lf-chips hc-lang"><button type="button" class="lf-chip" data-hcl="nb" aria-pressed="' + (lang === 'nb') + '"><span data-t="ui.norsk">Norsk</span></button><button type="button" class="lf-chip" data-hcl="en" aria-pressed="' + (lang === 'en') + '"><span data-t="ui.english">English</span></button></div>' +
         '<div class="hc-letter" data-noi18n><p class="hc-subj"><small>' + (lang === 'nb' ? 'Emne' : 'Subject') + '</small><b>' + esc(L.subject) + '</b></p><div class="hc-body">' + L.body.split('\n\n').map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('') + '</div></div>' +
-        ((c.photos || []).length ? '' : '<p class="muted hs2-note"><i class="bi bi-camera"></i> No photos yet – a photo makes the claim much clearer.</p>') +
-        '<div class="hs2-acts"><button type="button" class="pill-btn" data-hcshare><i class="bi bi-box-arrow-up"></i> Share with photos</button>' +
-        (c.email ? '<a class="text-btn" data-hcmail href="mailto:' + esc(encodeURIComponent(c.email)) + '?subject=' + esc(encodeURIComponent(L.subject)) + '&body=' + esc(encodeURIComponent(L.body.slice(0, 1800))) + '"><i class="bi bi-envelope"></i> E-mail</a>' : '') +
-        '<button type="button" class="text-btn" data-hccopy><i class="bi bi-clipboard"></i> Copy</button><button type="button" class="text-btn" data-hcpdf><i class="bi bi-file-earmark-pdf"></i> Report (PDF)</button></div>' +
-        (c.status === 'draft' ? '<div class="lf-foot"><span class="muted hs2-note" data-t="ui.sent-it">Sent it?</span><button type="button" class="pill-btn" data-hcdone><i class="bi bi-send-check"></i> I’ve sent it</button></div>' : '');
+        ((c.photos || []).length ? '' : '<p class="muted hs2-note"><i class="bi bi-camera"></i> <span data-t="ui.no-photos-yet-a-photo-makes-the-claim-mu">No photos yet – a photo makes the claim much clearer.</span></p>') +
+        '<div class="hs2-acts"><button type="button" class="pill-btn" data-hcshare><i class="bi bi-box-arrow-up"></i> <span data-t="ui.share-with-photos">Share with photos</span></button>' +
+        (c.email ? '<a class="text-btn" data-hcmail href="mailto:' + esc(encodeURIComponent(c.email)) + '?subject=' + esc(encodeURIComponent(L.subject)) + '&body=' + esc(encodeURIComponent(L.body.slice(0, 1800))) + '"><i class="bi bi-envelope"></i> <span data-t="ui.e-mail">E-mail</span></a>' : '') +
+        '<button type="button" class="text-btn" data-hccopy><i class="bi bi-clipboard"></i> <span data-t="ui.copy">Copy</span></button><button type="button" class="text-btn" data-hcpdf><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.report-pdf">Report (PDF)</span></button></div>' +
+        (c.status === 'draft' ? '<div class="lf-foot"><span class="muted hs2-note" data-t="ui.sent-it"><span data-t="ui.sent-it">Sent it?</span></span><button type="button" class="pill-btn" data-hcdone><i class="bi bi-send-check"></i> <span data-t="ui.ive-sent-it">I’ve sent it</span></button></div>' : '');
     }
     drawL();
     X.box.addEventListener('click', function (e) {
@@ -256,14 +256,14 @@
     var t = nb ? 'Hei' + (c.who ? ' ' + c.who : '') + ',\n\nJeg viser til reklamasjonen om «' + c.title + '» sendt ' + d + '. Jeg har ikke fått svar ennå, og ber om et skriftlig svar så snart som mulig, senest innen en uke.\n\nMed vennlig hilsen\n' + (me().name || '')
       : 'Hello' + (c.who ? ' ' + c.who : '') + ',\n\nI refer to my complaint about “' + c.title + '” sent on ' + d + '. I haven’t had an answer yet and ask for a written reply as soon as possible, at the latest within a week.\n\nKind regards\n' + (me().name || '');
     copy(t);
-    saveOne(id, function (x) { logLine(x, 'Reminder sent'); x.replyBy = addDays(today(), 7); });
+    saveOne(id, function (x) { logLine(x, I18N.k('ui.reminder-sent', 'Reminder sent')); x.replyBy = addDays(today(), 7); });
   }
   function report(id, lang) {
     var c = byId(id); if (!c) return;
     var L = letterText(c, lang), nb = lang !== 'en', ti = takeInfo(c.home);
     var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcrclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><button type="button" class="pill-btn" data-hcrprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
-      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b> – then attach it to the e-mail.</p><article class="rp-doc" data-noi18n></article>';
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcrclose><i class="bi bi-x-lg"></i> <span data-t="ui.close">Close</span></button><span class="spacer"></span><button type="button" class="pill-btn" data-hcrprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf">Save as PDF</span></button></div>' +
+      '<p class="rp-hint"><span data-t="ui.in-the-print-window-choose">In the print window, choose</span> <b data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></b> <span data-t="ui.then-attach-it-to-the-e-mail">– then attach it to the e-mail.</span></p><article class="rp-doc" data-noi18n></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc'), dfmt = function (k) { return isKey(k) ? fromKey(k).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '–'; };
     var paras = L.body.split('\n\n');
@@ -307,11 +307,11 @@
     o = o || {};
     var lang = o.lang || (cfg().lang === 'en' ? 'en' : 'nb'), only = !!o.open, photos = o.photos !== false;
     var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcaclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span>' +
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-hcaclose><i class="bi bi-x-lg"></i> <span data-t="ui.close">Close</span></button><span class="spacer"></span>' +
       '<div class="lf-chips hc-aopt" data-noi18n><button type="button" class="lf-chip" data-hcaopen="0">Alle · All</button><button type="button" class="lf-chip" data-hcaopen="1">Åpne · Open</button></div>' +
-      '<div class="lf-chips hc-aopt" data-noi18n><button type="button" class="lf-chip" data-hcalang="nb" data-t="ui.norsk">Norsk</button><button type="button" class="lf-chip" data-hcalang="en" data-t="ui.english">English</button></div>' +
-      '<label class="rp-opt"><input type="checkbox" data-hcaph checked> Photos</label><button type="button" class="pill-btn" data-hcaprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
-      '<p class="rp-hint">One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b>.</p><article class="rp-doc hc-all" data-noi18n></article>';
+      '<div class="lf-chips hc-aopt" data-noi18n><button type="button" class="lf-chip" data-hcalang="nb" data-t="ui.norsk"><span data-t="ui.norsk">Norsk</span></button><button type="button" class="lf-chip" data-hcalang="en" data-t="ui.english"><span data-t="ui.english">English</span></button></div>' +
+      '<label class="rp-opt"><input type="checkbox" data-hcaph checked> <span data-t="ui.photos">Photos</span></label><button type="button" class="pill-btn" data-hcaprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf">Save as PDF</span></button></div>' +
+      '<p class="rp-hint"><span data-t="ui.one-report-with-every-claim-a-summary-fi">One report with every claim – a summary first, then each claim on its own page with its photos. In the print window, choose</span> <b data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></b>.</p><article class="rp-doc hc-all" data-noi18n></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
     function draw() {

@@ -81,8 +81,8 @@
   function stRow() {
     var box = document.getElementById('stFoldRow'); if (!box) return;
     var m = map(), n = Object.keys(m).filter(function (k) { return m[k]; }).length;
-    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-chevron-bar-contract"></i> Folded cards <span class="st-hint" data-t="ui.fold-any-card-with-the-arrow-in-its-head">Fold any card with the arrow in its heading</span></p><section class="st-group">' +
-      (n ? '<button type="button" class="st-row st-btn" data-unfoldall><span class="st-label">Unfold all cards<small>' + n + (n === 1 ? ' card is' : ' cards are') + ' folded</small></span><i class="bi bi-arrows-expand"></i></button>' : '<p class="st-note st-pad" data-t="ui.no-cards-are-folded">No cards are folded.</p>') + '</section>';
+    box.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-chevron-bar-contract"></i> <span data-t="ui.folded-cards">Folded cards</span> <span class="st-hint" data-t="ui.fold-any-card-with-the-arrow-in-its-head">Fold any card with the arrow in its heading</span></p><section class="st-group">' +
+      (n ? '<button type="button" class="st-row st-btn" data-unfoldall><span class="st-label"><span data-t="ui.unfold-all-cards">Unfold all cards</span><small>' + n + (n === 1 ? ' card is' : ' cards are') + ' folded</small></span><i class="bi bi-arrows-expand"></i></button>' : '<p class="st-note st-pad" data-t="ui.no-cards-are-folded">No cards are folded.</p>') + '</section>';
   }
   window.addEventListener('st:page', function (e) { if (e.detail === 'layout') stRow(); });
   document.addEventListener('click', function (e) {

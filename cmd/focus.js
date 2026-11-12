@@ -45,7 +45,7 @@
       writeJSON(KEY, { text: s.text, id: s.id, mode: 'rest', mins: REST, end: s.end + REST * 60000 });
       if (Date.now() < s.end + REST * 60000) ring('Well done – take a ' + REST + '-minute break.');
       roll();
-    } else { writeJSON(KEY, null); if (Date.now() - s.end < 60000) ring('Break over – ready for the next one?'); }
+    } else { writeJSON(KEY, null); if (Date.now() - s.end < 60000) ring(I18N.k('ui.break-over-ready-for-the-next-one', 'Break over – ready for the next one?')); }
   }
 
   /* ---------- the pill ---------- */
@@ -89,8 +89,8 @@
     bg.innerHTML = '<div class="fo-box" role="dialog" aria-modal="true" aria-label="Start a focus timer" data-t-aria-label="ui.start-a-focus-timer"><h3><i class="bi bi-stopwatch"></i> Focus for ' + WORK + ' minutes</h3>' +
       '<p class="muted" data-t="ui.pick-a-task-or-just-start">Pick a task – or just start.</p>' +
       top.map(function (t) { return '<button type="button" class="fo-opt" data-fotask="' + esc(t.id) + '">' + (t.today === td && t.rank ? '<span class="td-rank">' + t.rank + '</span> ' : '') + esc(t.text) + '</button>'; }).join('') +
-      '<button type="button" class="fo-opt" data-fotask=""><i class="bi bi-play-fill"></i> Just start</button>' +
-      '<div class="fo-foot"><button type="button" class="text-btn" data-foclose data-t="ui.cancel">Cancel</button></div></div>';
+      '<button type="button" class="fo-opt" data-fotask=""><i class="bi bi-play-fill"></i> <span data-t="ui.just-start">Just start</span></button>' +
+      '<div class="fo-foot"><button type="button" class="text-btn" data-foclose data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button></div></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var first = bg.querySelector('.fo-opt'); if (first) first.focus();
     function close() { bg.remove(); document.removeEventListener('keydown', key, true); }

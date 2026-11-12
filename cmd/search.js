@@ -72,7 +72,7 @@
       if (Fe.on('house')) (T.hinfo || []).forEach(function (x) {
         /* codes and passwords are never put in the index */
         var vis = Object.keys(x).filter(function (k) { return !/^(id|kind|title|pass|code|guest)$/.test(k) && typeof x[k] === 'string'; }).map(function (k) { return x[k]; });
-        add('Good to know', 'info-circle', x.title, vis.filter(function (v) { return v && v.length < 80 && !/^\d{4}-\d{2}-\d{2}$/.test(v); }).slice(0, 2).join(' · ') || 'House', home + 'house/#hinfo=' + x.id, '', vis.join(' ') + ' ' + (x.kind || ''));
+        add(I18N.k('ui.good-to-know', 'Good to know'), 'info-circle', x.title, vis.filter(function (v) { return v && v.length < 80 && !/^\d{4}-\d{2}-\d{2}$/.test(v); }).slice(0, 2).join(' · ') || 'House', home + 'house/#hinfo=' + x.id, '', vis.join(' ') + ' ' + (x.kind || ''));
       });
       if (Fe.on('papers')) (T.papers || []).forEach(function (x) {
         add('Papers', 'folder2-open', x.title, [x.who, x.date ? (x.dateKind === 'renews' ? 'renews ' : 'expires ') + fmt(x.date) : '', (x.files || []).length ? (x.files.length === 1 ? '1 file' : x.files.length + ' files') : ''].filter(Boolean).join(' · ') || 'Papers', home + 'papers/#papers=' + x.id, x.date || '', (x.who || '') + ' ' + (x.ref || '') + ' ' + (x.notes || '') + ' ' + (x.kind || '') + ' papir dokument document ' + (x.files || []).map(function (f) { return f.name; }).join(' '));
@@ -85,10 +85,10 @@
       });
       tool('warranty', 'Finances', 'receipt-cutoff', function (w) { return w.item; }, function (w) { return [w.store, fmt(w.bought), w.receipt ? 'receipt: ' + w.receipt : ''].filter(Boolean).join(' · '); }, 'finance/#warranty', 'bought', function (w) { return (w.store || '') + ' ' + (w.notes || '') + ' ' + (w.receipt || ''); });
     }
-    add('Reviews', 'clipboard-check', 'Weekly check-in', 'Spending, the week ahead, focus and habits', home + '#checkin', '', 'review week weekly sunday plan uke');
-    add('Do', 'upload', 'Import from bank', 'CSV or Excel from your bank or credit card', home + 'finance/#import', '', 'import bank csv excel kort sparebank dnb nordea');
-    add('Reviews', 'calendar-heart', 'Monthly check-in', 'Last month and the month ahead', home + '#review=month', '', 'review month summary');
-    add('Reviews', 'stars', 'Year in review', 'Trips, money, workouts and habits', home + '#review=year', '', 'review year summary annual');
+    add('Reviews', 'clipboard-check', I18N.k('ui.weekly-check-in', 'Weekly check-in'), 'Spending, the week ahead, focus and habits', home + '#checkin', '', 'review week weekly sunday plan uke');
+    add('Do', 'upload', I18N.k('ui.import-from-bank', 'Import from bank'), I18N.k('ui.csv-or-excel-from-your-bank-or-credit-ca', 'CSV or Excel from your bank or credit card'), home + 'finance/#import', '', 'import bank csv excel kort sparebank dnb nordea');
+    add('Reviews', 'calendar-heart', I18N.k('ui.monthly-check-in', 'Monthly check-in'), 'Last month and the month ahead', home + '#review=month', '', 'review month summary');
+    add('Reviews', 'stars', I18N.k('ui.year-in-review', 'Year in review'), I18N.k('ui.trips-money-workouts-and-habits', 'Trips, money, workouts and habits'), home + '#review=year', '', 'review year summary annual');
     /* other parts add their own (house-docs.js: the FDV binder; house-claims.js, house-proj.js) */
     (window.SearchExtra || []).forEach(function (f) { try { f(add); } catch (e) {} });
     SETTINGS.forEach(function (s) { add('Settings', 'gear', s[1], s[2], home + '?settings=' + s[0], '', s[2]); });
@@ -98,14 +98,14 @@
   function commands() {
     var K = window.Keys || {}, Q = window.Quick, out = [];
     function cmd(i, t, s, k, run, x) { out.push({ g: 'Commands', i: i, t: t, s: s, k: k, run: run, h: '#', x: (x || '').toLowerCase(), d: '' }); }
-    cmd('sunrise', 'Plan my day', 'Pick your top 3 and put them in the calendar', 'P', function () { K.plan ? K.plan() : (location.href = home + '#plan'); }, 'plan day top 3 schedule planlegg dagen');
-    cmd('check2-square', 'New task', 'Add something to your to-do list', 'N', function () { K.newTask ? K.newTask() : Q && Q.open('todo'); }, 'todo task oppgave');
-    if (Q) cmd('plus-lg', 'Quick add', 'Expense, event, workout, task or note', 'A', function () { Q.open(); }, 'add expense event note utgift');
-    if (window.Focus) cmd('stopwatch', window.Focus.running() ? 'Pause or resume the focus timer' : 'Start a focus timer', '25 minutes on one task, then a break', 'F', function () { window.Focus.pick(); }, 'focus pomodoro timer fokus');
+    cmd('sunrise', I18N.k('home.plan', 'Plan my day'), I18N.k('ui.pick-your-top-3-and-put-them-in-the-cale', 'Pick your top 3 and put them in the calendar'), 'P', function () { K.plan ? K.plan() : (location.href = home + '#plan'); }, 'plan day top 3 schedule planlegg dagen');
+    cmd('check2-square', I18N.k('ui.new-task', 'New task'), I18N.k('ui.add-something-to-your-to-do-list', 'Add something to your to-do list'), 'N', function () { K.newTask ? K.newTask() : Q && Q.open('todo'); }, 'todo task oppgave');
+    if (Q) cmd('plus-lg', I18N.k('ui.quick-add', 'Quick add'), I18N.k('ui.expense-event-workout-task-or-note', 'Expense, event, workout, task or note'), 'A', function () { Q.open(); }, 'add expense event note utgift');
+    if (window.Focus) cmd('stopwatch', window.Focus.running() ? 'Pause or resume the focus timer' : 'Start a focus timer', I18N.k('ui.25-minutes-on-one-task-then-a-break', '25 minutes on one task, then a break'), 'F', function () { window.Focus.pick(); }, 'focus pomodoro timer fokus');
     (K.pages ? K.pages() : []).forEach(function (a, n) { var nm = (a.textContent || '').trim(); out.push({ g: 'Go to', i: (((a.querySelector('i.bi') || {}).className || '').match(/bi-([a-z0-9-]+)/) || [0, 'arrow-right'])[1], t: nm, s: '', k: String(n + 1), h: a.getAttribute('href'), x: 'go page ' + nm.toLowerCase(), d: '' }); });
-    if (K.theme) cmd(document.documentElement.getAttribute('data-theme') === 'light' ? 'moon-stars' : 'sun', document.documentElement.getAttribute('data-theme') === 'light' ? 'Dark mode' : 'Light mode', 'Switch the look', 'D', K.theme, 'theme dark light mørk lys');
-    cmd('lock', 'Lock now', 'Lock the dashboard on this device', 'L', function () { window.Vault.lock(); }, 'lock lås');
-    if (K.help) cmd('keyboard', 'Keyboard shortcuts', 'All the keys', '?', K.help, 'keys shortcuts hurtigtaster');
+    if (K.theme) cmd(document.documentElement.getAttribute('data-theme') === 'light' ? 'moon-stars' : 'sun', document.documentElement.getAttribute('data-theme') === 'light' ? 'Dark mode' : 'Light mode', I18N.k('ui.switch-the-look', 'Switch the look'), 'D', K.theme, 'theme dark light mørk lys');
+    cmd('lock', I18N.k('ui.lock-now', 'Lock now'), I18N.k('ui.lock-the-dashboard-on-this-device', 'Lock the dashboard on this device'), 'L', function () { window.Vault.lock(); }, 'lock lås');
+    if (K.help) cmd('keyboard', I18N.k('ui.keyboard-shortcuts', 'Keyboard shortcuts'), I18N.k('ui.all-the-keys', 'All the keys'), '?', K.help, 'keys shortcuts hurtigtaster');
     (window.CommandExtra || []).forEach(function (f) { try { f().forEach(function (c) { cmd(c.i, c.t, c.s, c.k || '', c.run, c.x); }); } catch (e) {} });
     return out;
   }
@@ -153,7 +153,7 @@
   bg.className = 'sr-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="sr-box" role="dialog" aria-modal="true" aria-label="Search" data-t-aria-label="ui.search"><div class="sr-top"><i class="bi bi-search"></i>' +
     '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" data-t-placeholder="ui.search-everything-people-recipes-trips-n" autocomplete="off" spellcheck="false" aria-label="Search">' +
-    '<button type="button" class="text-btn" data-srclose data-t="ui.close">Close</button></div><div class="sr-res" id="srRes"></div></div>';
+    '<button type="button" class="text-btn" data-srclose data-t="ui.close"><span data-t="ui.close">Close</span></button></div><div class="sr-res" id="srRes"></div></div>';
   document.body.appendChild(bg);
   var input = bg.querySelector('#srIn'), res = bg.querySelector('#srRes'), active = -1, results = [];
   /* typed something that reads like a thing to add ("149 rema", "fre 18 middag")? offer it */

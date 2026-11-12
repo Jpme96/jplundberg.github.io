@@ -50,7 +50,7 @@
   var wishCol = K && $t('wishes') ? K.collection({
     mount: $t('wishes'), feature: 'wish', key: 'wishes', icon: 'stars', title: 'Wishes', addLabel: 'Add', limit: 12,
     addTitle: WF.addTitle, editTitle: WF.editTitle, fields: WF.fields, beforeSave: WF.beforeSave,
-    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=wish" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i> Settings</a>'; },
+    headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=wish" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i> <span data-t="ui.settings">Settings</span></a>'; },
     empty: 'Things you’d like to buy – for the home, for you, or as a gift. Add the price and you see whether it fits this month.',
     sort: function (a, b) { return sorter()(a, b); },
     summary: function (l) {
@@ -68,9 +68,9 @@
       var fi = fit(w), cool = cooling(w), u = safeUrl(w.link);
       return (w.notes ? '<p class="kit-notes">' + esc(w.notes) + '</p>' : '') +
         '<p class="muted hl-small">Added ' + (isKey(w.added) ? esc(fmt(w.added, { day: 'numeric', month: 'short', year: 'numeric' })) : '') + (cool ? ' · think it over until ' + esc(fmt(cool)) : '') + (fi && !fi.now && fi.m ? ' · with ' + kr(cfg().aside) + ' put aside a month: ' + esc(fi.t.toLowerCase()) : '') + '</p>' +
-        '<div class="hl-acts"><button type="button" class="pill-btn" data-wbought="' + esc(w.id) + '"><i class="bi bi-bag-check"></i> Bought it</button>' +
-        (u ? '<a class="text-btn" href="' + esc(u) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Open the link</a>' : '') +
-        (window.FinAfford ? '<button type="button" class="text-btn" data-wafford="' + esc(w.id) + '"><i class="bi bi-calculator"></i> Can I afford it?</button>' : '') + '</div>';
+        '<div class="hl-acts"><button type="button" class="pill-btn" data-wbought="' + esc(w.id) + '"><i class="bi bi-bag-check"></i> <span data-t="ui.bought-it">Bought it</span></button>' +
+        (u ? '<a class="text-btn" href="' + esc(u) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <span data-t="ui.open-the-link">Open the link</span></a>' : '') +
+        (window.FinAfford ? '<button type="button" class="text-btn" data-wafford="' + esc(w.id) + '"><i class="bi bi-calculator"></i> <span data-t="ui.can-i-afford-it">Can I afford it?</span></button>' : '') + '</div>';
     },
     onClick: function (e) {
       var b = e.target.closest('[data-wbought]'); if (b) { boughtSheet(b.dataset.wbought); return; }
@@ -84,11 +84,11 @@
     var c = cfg(), p = partner(), homeOn = Fe.on('house'), isHome = w.for === 'home';
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
     bg.innerHTML = '<form class="fo-box lf-box hl-box" role="dialog" aria-modal="true" aria-label="Bought it" data-t-aria-label="ui.bought-it"><div class="lf-head"><h3><i class="bi bi-bag-check"></i> ' + esc(w.title) + '</h3><button type="button" class="icon-btn sm" data-x aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
-      '<div class="mp-grid"><label><span data-t="ui.paid-kr">Paid, kr</span><input name="paid" inputmode="decimal" value="' + (w.price ? esc(String(w.price)) : '') + '" autocomplete="off"></label><label><span data-t="ui.when">When</span><input name="date" type="date" value="' + today() + '"></label></div>' +
-      (homeOn ? '<label class="lf-check"><input type="checkbox" name="inv"' + (isHome && c.toInv ? ' checked' : '') + '> Add to Home inventory <small class="muted" data-t="ui.add-the-receipt-there">(add the receipt there)</small></label>' : '') +
+      '<div class="mp-grid"><label><span data-t="ui.paid-kr"><span data-t="ui.paid-kr">Paid, kr</span></span><input name="paid" inputmode="decimal" value="' + (w.price ? esc(String(w.price)) : '') + '" autocomplete="off"></label><label><span data-t="ui.when"><span data-t="ui.when">When</span></span><input name="date" type="date" value="' + today() + '"></label></div>' +
+      (homeOn ? '<label class="lf-check"><input type="checkbox" name="inv"' + (isHome && c.toInv ? ' checked' : '') + '> <span data-t="ui.add-to-home-inventory">Add to Home inventory</span> <small class="muted" data-t="ui.add-the-receipt-there">(add the receipt there)</small></label>' : '') +
       (p && isHome ? '<label class="lf-check"><input type="checkbox" name="shared"> Bought together with ' + esc(p.name) + ' <small class="muted" data-t="ui.split-in-shared-home">(split in Shared home)</small></label>' : '') +
-      '<label class="lf-check"><input type="checkbox" name="fin"' + (c.toFin ? ' checked' : '') + '> Add to Finances as spending</label>' +
-      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> Bought</button></div></form>';
+      '<label class="lf-check"><input type="checkbox" name="fin"' + (c.toFin ? ' checked' : '') + '> <span data-t="ui.add-to-finances-as-spending">Add to Finances as spending</span></label>' +
+      '<div class="lf-foot"><span class="spacer"></span><button type="submit" class="pill-btn wide"><i class="bi bi-check2"></i> <span data-t="ui.bought">Bought</span></button></div></form>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var close = function () { bg.classList.remove('open'); setTimeout(function () { bg.remove(); }, 180); };
     var f = bg.querySelector('form');
@@ -157,7 +157,7 @@
     sort: function (a, b) { return a.bought < b.bought ? 1 : -1; },
     summary: function (l) { var y = String(new Date().getFullYear()), s = l.filter(function (x) { return String(x.bought || '').slice(0, 4) === y; }); return s.length ? '<span>' + s.length + ' bought in ' + y + ' · ' + kr(s.reduce(function (a, x) { return a + (+x.paid || 0); }, 0)) + '</span>' : ''; },
     row: function (x) { var f = forOf(x.for); return { icon: f[2], color: f[3], title: x.title, sub: esc([isKey(x.bought) ? fmt(x.bought, { day: 'numeric', month: 'short', year: 'numeric' }) : '', x.inv ? 'in Home inventory' : '', x.exp ? 'in Finances' : ''].filter(Boolean).join(' · ')), right: x.paid ? '<span class="money">' + esc(kr(x.paid)) + '</span>' : '' }; },
-    detail: function (x) { return (x.inv ? '<a class="text-btn" href="/cmd/house/#hinv=' + esc(x.inv) + '"><i class="bi bi-box-seam"></i> Open in Home inventory</a>' : '') + '<button type="button" class="text-btn" data-wback="' + esc(x.id) + '"><i class="bi bi-arrow-counterclockwise"></i> Back on the wishlist</button>'; },
+    detail: function (x) { return (x.inv ? '<a class="text-btn" href="/cmd/house/#hinv=' + esc(x.inv) + '"><i class="bi bi-box-seam"></i> <span data-t="ui.open-in-home-inventory">Open in Home inventory</span></a>' : '') + '<button type="button" class="text-btn" data-wback="' + esc(x.id) + '"><i class="bi bi-arrow-counterclockwise"></i> <span data-t="ui.back-on-the-wishlist">Back on the wishlist</span></button>'; },
     onClick: function (e) {
       var b = e.target.closest('[data-wback]'); if (!b) return;
       var t = Fe.tools(), x = (t.wbought || []).filter(function (z) { return z.id === b.dataset.wback; })[0]; if (!x) return;
@@ -174,8 +174,8 @@
     var l = Fe.list('wishes'), r = room(), fits = l.filter(function (w) { var f = fit(w, r); return f && f.now; }), total = l.reduce(function (a, w) { return a + (+w.price || 0); }, 0);
     var y = String(new Date().getFullYear()), by = Fe.list('wbought').filter(function (x) { return String(x.bought || '').slice(0, 4) === y; });
     var h = tile('stars', 'Wishes', l.length, total ? kr(total) : 'none yet', '#wishes', PURPLE) +
-      tile('check2-circle', 'Fit this month', fits.length, r ? kr(r.left) + ' left until payday' : 'add your budget in Finances', '#wishes', GREEN) +
-      tile('cart-check', 'To buy', Fe.list('wbuy').length, 'small things', '#wbuy', BLUE) +
+      tile('check2-circle', I18N.k('ui.fit-this-month', 'Fit this month'), fits.length, r ? kr(r.left) + ' left until payday' : 'add your budget in Finances', '#wishes', GREEN) +
+      tile('cart-check', I18N.k('ui.to-buy', 'To buy'), Fe.list('wbuy').length, 'small things', '#wbuy', BLUE) +
       tile('bag-check', 'Bought in ' + y, kr(by.reduce(function (a, x) { return a + (+x.paid || 0); }, 0)), by.length + (by.length === 1 ? ' thing' : ' things'), '#wbought', AMBER);
     if (el.innerHTML !== h) el.innerHTML = h;
   }

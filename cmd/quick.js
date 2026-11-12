@@ -71,7 +71,7 @@
     $('qaBody').querySelectorAll('input[type=date][name=d]').forEach(function (di) {
       var y = new Date(); y.setDate(y.getDate() - 1); var yk = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
       var w = document.createElement('div'); w.className = 'qa-days';
-      w.innerHTML = '<button type="button" data-qaday="' + today() + '">Today</button><button type="button" data-qaday="' + yk + '">Yesterday</button>';
+      w.innerHTML = '<button type="button" data-qaday="' + today() + '"><span data-t="ui.today"><span data-t="ui.today">Today</span></span></button><button type="button" data-qaday="' + yk + '"><span data-t="ui.yesterday"><span data-t="ui.yesterday">Yesterday</span></span></button>';
       var mark = function () { w.querySelectorAll('[data-qaday]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.qaday === di.value)); }); };
       w.addEventListener('click', function (e) { var b = e.target.closest('[data-qaday]'); if (!b) return; di.value = b.dataset.qaday; di.dispatchEvent(new Event('change', { bubbles: true })); mark(); });
       di.addEventListener('change', mark); (di.closest('.qa-row') || di).after(w); mark();
@@ -103,7 +103,7 @@
     var d = S && S.describe(parsed);
     box.hidden = false;
     box.innerHTML = d ? '<div class="qa-guess"><span class="qa-gi"><i class="bi bi-' + d.icon + '"></i></span><span class="qa-gx"><small>' + esc(d.label) + '</small><b>' + d.bits.map(esc).join(' · ') + '</b></span></div>' +
-      '<div class="qa-acts"><button type="button" class="text-btn" data-qaedit data-t="ui.edit">Edit</button><span class="spacer"></span><button type="button" class="pill-btn wide" data-addline><i class="bi bi-plus-lg"></i> Add ' + esc(d.label.toLowerCase()) + '</button></div>'
+      '<div class="qa-acts"><button type="button" class="text-btn" data-qaedit data-t="ui.edit"><span data-t="ui.edit"><span data-t="ui.edit">Edit</span></span></button><span class="spacer"></span><button type="button" class="pill-btn wide" data-addline><i class="bi bi-plus-lg"></i> Add ' + esc(d.label.toLowerCase()) + '</button></div>'
       : off ? '<p class="muted qa-hint">' + ({ workout: 'Logging workouts needs the Training log – switch it on in Settings → Features.', expense: 'Expenses need Finances – switch it on in Settings → Features.', event: 'Events need the Calendar – switch it on in Settings → Features.' }[off] || 'That part is switched off.') + '</p>'
       : '<p class="muted qa-hint">Didn’t get that – try “149 rema”, “fre 18 middag”, “løp 5 km” or “kjøp melk i morgen”.</p>';
   }
@@ -139,7 +139,7 @@
       });
     }
     t._undo = undo || null;
-    t.innerHTML = '<span>' + html + '</span>' + (undo ? '<button type="button" class="qa-undo" data-undo data-t="ui.undo">Undo</button>' : '');
+    t.innerHTML = '<span>' + html + '</span>' + (undo ? '<button type="button" class="qa-undo" data-undo data-t="ui.undo"><span data-t="ui.undo"><span data-t="ui.undo">Undo</span></span></button>' : '');
     t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('show'); t._undo = null; }, undo ? 5000 : 2600);
   }
@@ -158,7 +158,7 @@
   function sharedRow() {
     var S = window.Shared, pt = S && window.Features && window.Features.on('shared') && S.partner(); if (!pt) return '';
     var pct = +S.cfg().pct || 50, o = function (v, t) { return '<option value="' + v + '">' + esc(t) + '</option>'; };
-    return '<div class="qa-row qa-shared"><label><i class="bi bi-people"></i><select name="sh" aria-label="Shared with ' + esc(pt.name) + '">' + o('', 'Just me') + o('me', 'Shared with ' + pt.name + ' – I paid') + o('them', 'Shared with ' + pt.name + ' – ' + pt.name + ' paid') + '</select></label>' +
+    return '<div class="qa-row qa-shared"><label><i class="bi bi-people"></i><select name="sh" aria-label="Shared with ' + esc(pt.name) + '">' + o('', I18N.k('ui.just-me', 'Just me')) + o('me', 'Shared with ' + pt.name + ' – I paid') + o('them', 'Shared with ' + pt.name + ' – ' + pt.name + ' paid') + '</select></label>' +
       '<span class="muted">you ' + esc(String(pct).replace('.', ',')) + ' %</span></div>';
   }
   function addShared(f) {
@@ -185,8 +185,8 @@
         (chips.length ? '<div class="qa-chips">' + chips.map(function (e) {
           return '<button type="button" data-chip data-a="' + esc(e.amount) + '" data-c="' + esc(e.cat) + '" data-n="' + esc(e.note) + '">' + esc(e.note) + ' <b>' + esc(nf.format(e.amount)) + '</b></button>';
         }).join('') + '</div>' : '') +
-        (window.FinMoves ? '<button type="button" class="text-btn qa-tr" data-qatransfer><i class="bi bi-arrow-left-right"></i> Moved money between your own accounts? Transfer</button>' : '') +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-expense">Log expense</button></div></form>';
+        (window.FinMoves ? '<button type="button" class="text-btn qa-tr" data-qatransfer><i class="bi bi-arrow-left-right"></i> <span data-t="ui.moved-money-between-your-own-accounts-tr">Moved money between your own accounts? Transfer</span></button>' : '') +
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><button type="button" class="text-btn qa-scan" data-qascan><i class="bi bi-camera"></i> Scan receipt</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-expense"><span data-t="ui.log-expense"><span data-t="ui.log-expense">Log expense</span></span></button></div></form>';
     },
     event: function (p) {
       var cats = window.Cal ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) :
@@ -195,11 +195,11 @@
       var n = new Date(), hh = p.s || pad(Math.min(23, n.getHours() + 1)) + ':00';
       return '<form class="qa-form" data-kind="event">' +
         '<input name="t" placeholder="What? e.g. Dentist" autocomplete="off" required value="' + esc(p.t || '') + '">' +
-        '<div class="qa-row"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"><input name="s" type="time" value="' + esc(hh) + '" aria-label="Start"' + (p.all ? ' disabled' : '') + '><label class="qa-check"><input type="checkbox" name="all"' + (p.all ? ' checked' : '') + '> All day</label></div>' +
+        '<div class="qa-row"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"><input name="s" type="time" value="' + esc(hh) + '" aria-label="Start"' + (p.all ? ' disabled' : '') + '><label class="qa-check"><input type="checkbox" name="all"' + (p.all ? ' checked' : '') + '> <span data-t="ui.all-day"><span data-t="ui.all-day">All day</span></span></label></div>' +
         '<div class="qa-row"><select name="c" aria-label="Category" data-t-aria-label="ui.category">' + cats.map(function (c) { return '<option value="' + esc(c[0]) + '"' + (c[0] === last ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select>' +
           '<input name="l" placeholder="Where (optional)" autocomplete="off" value="' + esc(p.l || '') + '"></div>' +
         '<div class="qa-row qa-row1">' + repeatSelect(p.rep).replace(/<option value="quarterly"[^<]*<\/option>/, '') + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button>' + (document.getElementById('clNew') ? '<button type="button" class="text-btn" data-qafull><i class="bi bi-sliders"></i> More options</button>' : '') + '<span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-event">Add event</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button>' + (document.getElementById('clNew') ? '<button type="button" class="text-btn" data-qafull><i class="bi bi-sliders"></i> <span data-t="ui.more-options"><span data-t="ui.more-options">More options</span></span></button>' : '') + '<span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-event"><span data-t="ui.add-event"><span data-t="ui.add-event">Add event</span></span></button></div></form>';
     },
     workout: function (p) {
       return '<form class="qa-form" data-kind="workout">' +
@@ -209,16 +209,16 @@
         '<div class="qa-effort" role="radiogroup" aria-label="How hard" data-t-aria-label="ui.how-hard">' + [['1', 'Easy'], ['2', 'Light'], ['3', 'Moderate'], ['4', 'Hard'], ['5', 'All out']].map(function (e) {
           return '<label><input type="radio" name="e" value="' + e[0] + '"' + (e[0] === '3' ? ' checked' : '') + '><span>' + e[1] + '</span></label>';
         }).join('') + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-workout">Log workout</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-workout"><span data-t="ui.log-workout"><span data-t="ui.log-workout">Log workout</span></span></button></div></form>';
     },
     todo: function (p) {
       return '<form class="qa-form" data-kind="todo"><input name="t" placeholder="Something to do…" autocomplete="off" required value="' + esc(p.t || '') + '">' +
         '<div class="qa-row"><input id="qaDue" name="due" type="date" value="' + esc(p.due || '') + '" aria-label="Due date (optional)">' + repeatSelect(p.rep) + '</div>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-task">Add task</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.add-task"><span data-t="ui.add-task"><span data-t="ui.add-task">Add task</span></span></button></div></form>';
     },
     note: function (p) {
       return '<form class="qa-form" data-kind="note"><textarea name="t" rows="3" placeholder="Write something…" data-t-placeholder="ui.write-something" required>' + esc(p.t || '') + '</textarea>' +
-        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel">Cancel</button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.save-note">Save note</button></div></form>';
+        '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.save-note"><span data-t="ui.save-note"><span data-t="ui.save-note">Save note</span></span></button></div></form>';
     }
   };
 

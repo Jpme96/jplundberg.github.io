@@ -77,7 +77,7 @@
   });
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;
-    all().forEach(function (d) { add('FDV binder', 'journal-bookmark', d.name, tr(cat(d.cat).name), '/cmd/house/#hdocs', '', (d.notes || '') + ' ' + (d.file ? d.file.name : '') + ' fdv'); });
+    all().forEach(function (d) { add(I18N.k('ui.fdv-binder', 'FDV binder'), 'journal-bookmark', d.name, tr(cat(d.cat).name), '/cmd/house/#hdocs', '', (d.notes || '') + ' ' + (d.file ? d.file.name : '') + ' fdv'); });
   });
   window.HouseDocs = { guess: guess, list: list, all: all };
   (window.__core = window.__core || {})["docs"] = { kwReset: kwReset, cat: cat, cats: cats, CATS: CATS, ccfg: ccfg, Fe: Fe, tr: tr, all: all, on: on, HF: HF, list: list, guess: guess, phrase: phrase, kwCache: kwCache, NS: NS, words: words, STOP: STOP, norm: norm };

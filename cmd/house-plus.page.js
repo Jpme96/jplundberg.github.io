@@ -52,8 +52,8 @@
           (editS ? '<button type="button" class="icon-btn sm" data-hsdel="' + esc(sid + '|' + x.id) + '" aria-label="Remove"><i class="bi bi-x"></i></button>' : '') + '</li>';
       }).join('') + '</ul>' +
       (editS ? '<form class="hs-add" data-hsadd="' + sid + '"><input name="t" placeholder="Add your own, e.g. Take in the boat" data-t-placeholder="ui.add-your-own-e-g-take-in-the-boat" maxlength="80" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
-        ((Fe.tools().hseasonoff || []).some(function (id) { return USUAL[sid].some(function (u) { return u[0] === id; }); }) ? '<button type="button" class="text-btn" data-hsreset="' + sid + '"><i class="bi bi-arrow-counterclockwise"></i> Bring back the usual ones</button>' : '') : '');
-    el.innerHTML = card('hseason', S[2], 'Season checklist', '<button type="button" class="text-btn" data-hsedit aria-pressed="' + editS + '"><i class="bi bi-' + (editS ? 'check2' : 'pencil') + '"></i> ' + (editS ? 'Done' : 'Edit') + '</button>', body);
+        ((Fe.tools().hseasonoff || []).some(function (id) { return USUAL[sid].some(function (u) { return u[0] === id; }); }) ? '<button type="button" class="text-btn" data-hsreset="' + sid + '"><i class="bi bi-arrow-counterclockwise"></i> <span data-t="ui.bring-back-the-usual-ones">Bring back the usual ones</span></button>' : '') : '');
+    el.innerHTML = card('hseason', S[2], I18N.k('ui.season-checklist', 'Season checklist'), '<button type="button" class="text-btn" data-hsedit aria-pressed="' + editS + '"><i class="bi bi-' + (editS ? 'check2' : 'pencil') + '"></i> ' + (editS ? 'Done' : 'Edit') + '</button>', body);
   });
   document.addEventListener('change', function (e) {
     var c = e.target.closest('[data-hstick]'); if (!c) return;
@@ -84,7 +84,7 @@
   var pwSel = null;
   mount('hpower', function (el) {
     var P = perMonth(), keys = Object.keys(P.m).sort();
-    if (keys.length < 1 || readings().length < 2) { el.innerHTML = card('hpower', 'bar-chart', 'Power use by month', '', '<p class="empty kit-empty" data-t="ui.with-two-or-more-meter-readings-this-sho">With two or more meter readings, this shows how many kWh you use each month – next to the same month last year.</p>'); return; }
+    if (keys.length < 1 || readings().length < 2) { el.innerHTML = card('hpower', 'bar-chart', I18N.k('ui.power-use-by-month', 'Power use by month'), '', '<p class="empty kit-empty" data-t="ui.with-two-or-more-meter-readings-this-sho">With two or more meter readings, this shows how many kWh you use each month – next to the same month last year.</p>'); return; }
     var now = today().slice(0, 7), months = [];
     for (var i = 11; i >= 0; i--) { var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); months.push(dkey(d).slice(0, 7)); }
     var ly = function (ym) { return (+ym.slice(0, 4) - 1) + ym.slice(4); };
@@ -96,14 +96,14 @@
     var sel = pwSel && months.indexOf(pwSel) > -1 ? pwSel : lastFull || months[months.length - 1];
     var sv = P.m[sel] || 0, sp = P.m[ly(sel)] || 0;
     var tiles = '<div class="kit-tiles">' + tile(esc(fromKey(sel + '-01').toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })), nf.format(sv) + ' <small>kWh</small>', price ? '≈ ' + kr(sv * price / 100) : (sel === now ? 'so far' : '&nbsp;')) +
-      tile('Last year', sp ? nf.format(sp) + ' <small>kWh</small>' : '–', sp ? '<span class="' + (sv <= sp ? 'up' : 'dn') + '">' + (sv <= sp ? '−' : '+') + Math.round(Math.abs(sv / sp - 1) * 100) + '%</span>' : 'no readings then') +
-      tile('Last 12 months', nf.format(y12) + ' <small>kWh</small>', y12p > y12 * .5 ? '<span class="' + (y12 <= y12p ? 'up' : 'dn') + '">' + (y12 <= y12p ? '−' : '+') + Math.round(Math.abs(y12 / y12p - 1) * 100) + '% vs the year before</span>' : (price ? '≈ ' + kr(y12 * price / 100) : '&nbsp;')) + '</div>';
+      tile(I18N.k('ui.last-year', 'Last year'), sp ? nf.format(sp) + ' <small>kWh</small>' : '–', sp ? '<span class="' + (sv <= sp ? 'up' : 'dn') + '">' + (sv <= sp ? '−' : '+') + Math.round(Math.abs(sv / sp - 1) * 100) + '%</span>' : 'no readings then') +
+      tile(I18N.k('ui.last-12-months', 'Last 12 months'), nf.format(y12) + ' <small>kWh</small>', y12p > y12 * .5 ? '<span class="' + (y12 <= y12p ? 'up' : 'dn') + '">' + (y12 <= y12p ? '−' : '+') + Math.round(Math.abs(y12 / y12p - 1) * 100) + '% vs the year before</span>' : (price ? '≈ ' + kr(y12 * price / 100) : '&nbsp;')) + '</div>';
     var bars = '<div class="hw-chart" role="group" aria-label="kWh per month">' + months.map(function (m) {
       var v = P.m[m] || 0, p = P.m[ly(m)] || 0, est = !covered(m) && v;
       return '<button type="button" class="hw-col' + (m === sel ? ' on' : '') + (m === now ? ' now' : '') + '" data-pwm="' + m + '" aria-label="' + esc(MSHORT(m) + ': ' + nf.format(v) + ' kWh' + (p ? ', last year ' + nf.format(p) : '')) + '">' +
         '<span class="hw-bars">' + (p ? '<i class="hw-prev" style="height:' + (p / max * 100).toFixed(1) + '%"></i>' : '') + '<i class="hw-cur' + (est ? ' est' : '') + '" style="height:' + (v / max * 100).toFixed(1) + '%"></i></span><small>' + esc(MSHORT(m).slice(0, 3)) + '</small></button>';
-    }).join('') + '</div><p class="hw-key"><span><i class="hw-sw cur"></i> This year</span><span><i class="hw-sw prev"></i> Same month last year</span>' + (P.last < today() ? '<span class="muted">Up to the last reading, ' + esc(fromKey(P.last).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</span>' : '') + '</p>';
-    el.innerHTML = card('hpower', 'bar-chart', 'Power use by month', '', tiles + bars);
+    }).join('') + '</div><p class="hw-key"><span><i class="hw-sw cur"></i> <span data-t="ui.this-year">This year</span></span><span><i class="hw-sw prev"></i> <span data-t="ui.same-month-last-year">Same month last year</span></span>' + (P.last < today() ? '<span class="muted">Up to the last reading, ' + esc(fromKey(P.last).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + '</span>' : '') + '</p>';
+    el.innerHTML = card('hpower', 'bar-chart', I18N.k('ui.power-use-by-month', 'Power use by month'), '', tiles + bars);
   });
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-pwm]'); if (b) { pwSel = b.dataset.pwm; drawAll(); } });
   var idb = null;
@@ -150,12 +150,12 @@
     mount: $t('hinv'), feature: 'house', key: 'hinv', icon: 'box-seam', title: 'Home inventory', addLabel: 'Item', limit: 8,
     addTitle: INV.addTitle, editTitle: INV.editTitle, fields: INV.fields, onDelete: INV.onDelete,
     empty: 'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.',
-    headExtra: function (l) { return l.length ? '<button type="button" class="text-btn" data-invpdf><i class="bi bi-file-earmark-pdf"></i> Insurance list</button><button type="button" class="text-btn" data-invreg><i class="bi bi-journal-check"></i> Register</button>' : ''; },
+    headExtra: function (l) { return l.length ? '<button type="button" class="text-btn" data-invpdf><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.insurance-list">Insurance list</span></button><button type="button" class="text-btn" data-invreg><i class="bi bi-journal-check"></i> Register</button>' : ''; },
     sort: function (a, b) { return (+b.price || 0) - (+a.price || 0); },
     summary: function (l) {
       if (!l.length) return '';
       var tot = l.reduce(function (a, x) { return a + (+x.price || 0); }, 0), rc = l.filter(function (x) { return x.receipt; }).length, ph = l.filter(function (x) { return x.photo; }).length;
-      return '<div class="kit-tiles">' + tile('Items', l.length, ph + ' with a photo') + tile('Total value', nf.format(tot) + ' <small>kr</small>', 'price paid') + tile('Receipts', rc + ' <small>/ ' + l.length + '</small>', rc < l.length ? 'add the rest' : 'all saved') + '</div>';
+      return '<div class="kit-tiles">' + tile('Items', l.length, ph + ' with a photo') + tile(I18N.k('ui.total-value', 'Total value'), nf.format(tot) + ' <small>kr</small>', 'price paid') + tile('Receipts', rc + ' <small>/ ' + l.length + '</small>', rc < l.length ? 'add the rest' : 'all saved') + '</div>';
     },
     row: function (x) {
       var c = cat(x.cat);
@@ -170,12 +170,12 @@
         return '<div class="inv-slot">' + (x[k] && k === 'receipt' && x.receiptPdf ? '<a class="inv-pdf" target="_blank" rel="noopener" data-invpdfopen="' + esc(x[k]) + '"><i class="bi bi-file-earmark-pdf"></i><span>Open the PDF receipt</span></a>' : x[k] ? '<img data-invimg="' + esc(x[k]) + '" alt="">' : '<span class="inv-none"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i></span>') +
           '<label class="text-btn"><i class="bi bi-' + (k === 'photo' ? 'camera' : 'receipt') + '"></i> ' + (x[k] ? (k === 'photo' ? 'New photo' : 'New receipt') : (k === 'photo' ? 'Add photo' : 'Add receipt')) +
           '<input type="file" accept="' + (k === 'receipt' ? 'image/*,application/pdf,.pdf' : 'image/*') + '" ' + (k === 'photo' ? 'capture="environment" ' : '') + 'data-invfile="' + esc(x.id + '|' + k) + '" hidden></label>' +
-          (x[k] ? '<button type="button" class="text-btn danger" data-invrm="' + esc(x.id + '|' + k) + '"><i class="bi bi-trash3"></i> Remove</button>' : '') +
-          (k === 'receipt' && canShare ? '<button type="button" class="text-btn" data-invsame="' + esc(x.id) + '"><i class="bi bi-link-45deg"></i> Same receipt as…</button>' : '') + '</div>';
+          (x[k] ? '<button type="button" class="text-btn danger" data-invrm="' + esc(x.id + '|' + k) + '"><i class="bi bi-trash3"></i> <span data-t="ui.remove">Remove</span></button>' : '') +
+          (k === 'receipt' && canShare ? '<button type="button" class="text-btn" data-invsame="' + esc(x.id) + '"><i class="bi bi-link-45deg"></i> <span data-t="ui.same-receipt-as">Same receipt as…</span></button>' : '') + '</div>';
       }).join('') + '</div>' +
       (others.length ? '<p class="muted hl-small inv-same"><i class="bi bi-link-45deg"></i> Same receipt as ' + esc(others.map(function (o) { return o.name; }).join(', ')) + '</p>' : '') + (x.serial ? '<p class="muted hl-small">Serial ' + esc(x.serial) + '</p>' : '') + (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '') +
         (window.SharedHome && window.SharedHome.forInv && (x.ownWith || x.shared) ? (function () {
-          var i = window.SharedHome.invInfo ? window.SharedHome.invInfo(x.id) : null, h = '<button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> Split and who paid</button>';
+          var i = window.SharedHome.invInfo ? window.SharedHome.invInfo(x.id) : null, h = '<button type="button" class="text-btn" data-invsplit="' + esc(x.id) + '"><i class="bi bi-people"></i> <span data-t="ui.split-and-who-paid">Split and who paid</span></button>';
           if (i && i.owe) h += '<button type="button" class="text-btn" data-invpb="' + esc(x.id) + '"><i class="bi bi-calendar2-check"></i> Paying back ' + esc(kr(i.owe.pay)) + ' a month · ' + esc(kr(i.owe.left)) + ' left</button>';
           else if (i && i.theyPaid && i.mine > 0) h += '<button type="button" class="text-btn" data-invpb="' + esc(x.id) + '"><i class="bi bi-calendar2-check"></i> Pay ' + esc(i.p.name) + ' back monthly</button>';
           var who = i && i.item ? (i.item.payer === 'me' ? 'You paid' : i.theyPaid ? esc(i.p.name) + ' paid' : '') : '';
@@ -220,8 +220,8 @@
   function sameSheet(id) {
     var HFS = window.HouseFiles, it = Fe.list('hinv').filter(function (x) { return x.id === id; })[0]; if (!HFS || !it) return;
     var seen = {}, src = Fe.list('hinv').filter(function (o) { if (o.id === id || !o.receipt || seen[o.receipt]) return false; seen[o.receipt] = 1; return true; });
-    var X = HFS.sheet('Same receipt as'), box = X.box;
-    box.innerHTML = HFS.head('link-45deg', 'Same receipt as', 'Bought together on one receipt? Pick the item that has it – both point to the same file.') +
+    var X = HFS.sheet(I18N.k('ui.same-receipt-as-2', 'Same receipt as')), box = X.box;
+    box.innerHTML = HFS.head('link-45deg', I18N.k('ui.same-receipt-as-2', 'Same receipt as'), I18N.k('ui.bought-together-on-one-receipt-pick-the', 'Bought together on one receipt? Pick the item that has it – both point to the same file.')) +
       '<ul class="mp-list">' + src.map(function (o) {
         var names = Fe.list('hinv').filter(function (z) { return z.receipt === o.receipt; }).map(function (z) { return z.name; });
         return '<li class="mp-row"><button type="button" class="kit-main" data-invpick="' + esc(o.id) + '"><span class="kit-ic" style="--c:#0891b2"><i class="bi bi-' + (o.receiptPdf ? 'file-earmark-pdf' : 'receipt') + '"></i></span><span class="kit-x"><b>' + esc(names.join(', ')) + '</b><small>' + esc((o.receiptPdf ? 'PDF' : 'Photo') + (o.bought ? ' · ' + fromKey(o.bought).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '')) + '</small></span></button></li>';
@@ -246,17 +246,17 @@
     var pt = window.Shared && window.Shared.partner(), me = (prof.name || 'Me').split(' ')[0], them = pt ? pt.name : 'the other';
     var all = Fe.list('hinv').slice().sort(function (a, b) { return (a.bought || '') < (b.bought || '') ? -1 : 1; }), onlyShared = false;
     var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rgclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-rgsh> Only what you own together</label>' +
-      '<button type="button" class="pill-btn" data-rgprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rgclose><i class="bi bi-x-lg"></i> <span data-t="ui.close">Close</span></button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-rgsh> Only what you own together</label>' +
+      '<button type="button" class="pill-btn" data-rgprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf">Save as PDF</span></button></div>' +
       '<p class="rp-hint">Each entry should be accepted by both of you in writing – sign the PDF, or reply to it by message. Set “Agreed in writing” on the item afterwards.</p><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
     function draw() {
       var l = all.filter(function (x) { return !onlyShared || x.ownWith; }), tot = l.reduce(function (a, x) { return a + (+x.price || 0); }, 0);
       doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick">Appendix B · Vedlegg B</p><h1>Register of household items</h1><p class="rp-addr">Register over innbo · ' + esc(prof.name || me) + (pt ? ' and ' + esc(pt.name) : '') + '</p></div>' +
-        '<div class="iv-no"><small data-t="ui.total">Total</small><b>' + esc(kr(tot)) + '</b></div></header>' +
+        '<div class="iv-no"><small data-t="ui.total"><span data-t="ui.total">Total</span></small><b>' + esc(kr(tot)) + '</b></div></header>' +
         '<p class="rp-intro">Ownership: 50/50, 100 % one of you, or another split. ' + l.length + ' items · made ' + esc(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
-        '<table class="rg-t"><thead><tr><th data-t="ui.item">Item</th><th data-t="ui.bought">Bought</th><th>Price</th><th>Ownership</th><th data-t="ui.agreed">Agreed</th></tr></thead><tbody>' + l.map(function (x) {
+        '<table class="rg-t"><thead><tr><th data-t="ui.item"><span data-t="ui.item">Item</span></th><th data-t="ui.bought"><span data-t="ui.bought">Bought</span></th><th>Price</th><th>Ownership</th><th data-t="ui.agreed"><span data-t="ui.agreed">Agreed</span></th></tr></thead><tbody>' + l.map(function (x) {
           return '<tr><td><b>' + esc(x.name) + '</b>' + (x.brand ? '<br><small>' + esc(x.brand) + '</small>' : '') + '</td><td>' + esc(x.bought ? fromKey(x.bought).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '–') + '</td><td>' + (x.price ? esc(kr(x.price)) : '–') + '</td><td>' + esc(ownText(x, me, them)) + '</td><td>' + (x.agreed ? esc(fromKey(x.agreed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })) : '') + '</td></tr>';
         }).join('') + '</tbody></table>' +
         '<div class="rg-sign"><div><span></span><p>' + esc(prof.name || me) + ' · date</p></div><div><span></span><p>' + esc(pt ? pt.name : 'Other party') + ' · date</p></div></div>' +
@@ -277,15 +277,15 @@
     var me = (function () { try { return JSON.parse(localStorage.getItem('dash.profile')) || {}; } catch (e) { return {}; } })();
     var tot = l.reduce(function (a, x) { return a + (+x.price || 0); }, 0), withPh = true;
     var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-ilclose><i class="bi bi-x-lg"></i> Close</button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-ilph checked> Photos</label>' +
-      '<button type="button" class="text-btn" data-ilcsv><i class="bi bi-filetype-csv"></i> CSV</button><button type="button" class="pill-btn" data-ilprint><i class="bi bi-file-earmark-pdf"></i> Save as PDF</button></div>' +
-      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b>. Photos and receipts come from this device.</p><article class="rp-doc"></article>';
+    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-ilclose><i class="bi bi-x-lg"></i> <span data-t="ui.close">Close</span></button><span class="spacer"></span><label class="rp-opt"><input type="checkbox" data-ilph checked> <span data-t="ui.photos">Photos</span></label>' +
+      '<button type="button" class="text-btn" data-ilcsv><i class="bi bi-filetype-csv"></i> <span data-t="ui.csv">CSV</span></button><button type="button" class="pill-btn" data-ilprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf">Save as PDF</span></button></div>' +
+      '<p class="rp-hint"><span data-t="ui.in-the-print-window-choose">In the print window, choose</span> <b data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></b><span data-t="ui.photos-and-receipts-come-from-this-devic">. Photos and receipts come from this device.</span></p><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
     function draw() {
       var rooms = []; l.forEach(function (x) { var r = room(x.room) || 'Other'; if (rooms.indexOf(r) < 0) rooms.push(r); });
-      doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.home-inventory">Home inventory</p><h1>' + esc(me.name || 'Contents') + '</h1><p class="rp-addr">' + esc(me.home && typeof me.home === 'object' ? (me.home.addr || me.home.name || '') : (me.home || '')) + '</p></div>' +
-        '<div class="iv-no"><small data-t="ui.total-value">Total value</small><b>' + esc(kr(tot)) + '</b></div></header>' +
+      doc.innerHTML = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.home-inventory"><span data-t="ui.home-inventory">Home inventory</span></p><h1>' + esc(me.name || 'Contents') + '</h1><p class="rp-addr">' + esc(me.home && typeof me.home === 'object' ? (me.home.addr || me.home.name || '') : (me.home || '')) + '</p></div>' +
+        '<div class="iv-no"><small data-t="ui.total-value"><span data-t="ui.total-value">Total value</span></small><b>' + esc(kr(tot)) + '</b></div></header>' +
         '<p class="rp-intro">' + l.length + ' items · ' + l.filter(function (x) { return x.receipt; }).length + ' with receipt · made ' + esc(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
         rooms.map(function (r) {
           var rl = l.filter(function (x) { return (room(x.room) || 'Other') === r; });
