@@ -19,7 +19,7 @@
   var root = document.documentElement, Fe = window.Features;
   function on(k) { return window.Delight ? window.Delight.on(k) : true; }
 
-  var START = { build: 'slim', bottom: 'trousers', skin: '#c99a73', hair: 'short', hairC: '#1e140d', beard: 'stubble', glasses: 'none', top: 'sweater', topC: '#d9c7a8', legs: '#2a2f3a', extra: 'lanyard' };
+  var START = { build: 'slim', bottom: 'trousers', skin: '#c99a73', hair: 'short', hairC: '#1e140d', beard: 'stubble', glasses: 'none', top: 'sweater', topC: '#2f7a55', legs: '#2a2f3a', extra: 'lanyard' };
   function look() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, START, s.avatar || {}); }
   function setLook(patch) {
     var s = readJSON('dash.settings', {}) || {}; s.avatar = Object.assign({}, look(), patch);
@@ -126,7 +126,7 @@
     beard: { chinstrap: 'short', handlebar: 'moustache', curled: 'moustache' }, glasses: { hearts: 'sun', stars: 'sun', monocle: 'round' },
     hair: { buzz: 'short', spiky: 'quiff', mullet: 'side', slick: 'side', sideshave: 'undercut', bowl: 'bangs', bun: 'topknot', cornrows: 'braids' },
     hat: { bucket: 'cap', beret: 'beanie', flowers: 'none' } };
-  var TOP_STD = '#d9c7a8';
+  var TOP_STD = '#2f7a55';   /* forest green, JP 2026-11-12 */
   function trimLook(l) {
     if (!l || typeof l !== 'object') return l;
     var o = Object.assign({}, l);
