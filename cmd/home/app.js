@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 99;
+  var APPV = 112;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -316,7 +316,7 @@
       (preview ? '<div class="h-prevbar"><i class="bi bi-eye"></i> ' + L('Preview of ', 'Forhåndsvisning av ') + esc(info().partner || L('their', 'deres')) + L('’s app – nothing can be changed here', ' sin app – ingenting kan endres her') + '</div>' : '') +
       '<section class="h-body">' + ({ today: todayView, shop: shop, chores: chores, money: money, cal: cal, notes: notes, me: My.view }[tab] || todayView)() + '</section>';
     /* only touch the page when something on it changed: every refresh used to rebuild it, which made it jump */
-    if (html !== lastHtml || !app.querySelector('.h-body')) { lastHtml = html; var y = scrollY; app.innerHTML = html; if (scrollY !== y) scrollTo(0, y);
+    if (html !== lastHtml || !app.querySelector('.h-body')) { lastHtml = html; var y = scrollY; app.innerHTML = html; if (scrollY !== y) scrollTo(0, y); liveCouple();
       if (keep) { var el = app.querySelector('[name="' + keep.n + '"]'); if (el && 'value' in el) { el.value = keep.v; el.focus(); } } }
     navDraw(ts);
   }
@@ -351,13 +351,15 @@
       toast: function (h) { toast(h); }, shopAdd: function (texts) { texts.forEach(function (x) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); }); },
       onReact: function () { coupleK = 'hi5'; }, refresh: function () { draw(); } });
   }
-  var coupleK = null;
+  var coupleK = null, coupleNow = null;
+  /* the two of you come alive (F2b): the 2.5D moment plays in the card's picture (scene-couple.js on scene25.js) */
+  function liveCouple() { var sv = app.querySelector('.h-couple svg'); if (sv && coupleNow && window.SceneLive && window.SceneLive.couple) { try { window.SceneLive.couple(sv, coupleNow); } catch (e) { if (window.Diag && Diag.log) Diag.log('scene', 'couple: ' + (e && e.message), 'home/app.js'); } } }
   function sharedPet() { var o = null; Object.keys(recs).forEach(function (rid) { var r = recs[rid]; if (r.c === 'spet' && !r.del && r.f && (!o || (+r.f.at || 0) > (+o.at || 0))) o = r.f; }); return o ? o.pet : ''; }
   function coupleCard() {
     var A = window.Avatar, ol = info().olook, my = mine().look; if (!A || !A.couple || !ol || !my) return '';
     var tk = today(), bd = String(mine().bday || '').split('.').slice(0, 2).map(Number).join('.'), d = new Date(), dm = d.getDate() + '.' + (d.getMonth() + 1);
     var did = Object.keys(recs).some(function (rid) { var r = recs[rid]; return r.c === 'cdone' && !r.del && r.t && dkey(new Date(r.t)) === tk; });
-    var k = coupleK || A.coupleKind({ hi5: did, hug: bd === dm }), o = owner();
+    var k = coupleK || A.coupleKind({ hi5: did, hug: bd === dm }), o = owner(); coupleNow = { kind: k, me: my, them: ol, pet: (sharedPet() || 'none') };
     var say = { hold: L('You and ', 'Du og ') + o + ' 💛', hi5: coupleK ? L('High five!', 'High five!') : L('Chores done today – high five!', 'Husarbeid gjort i dag – high five!'), hug: coupleK ? L('A big hug', 'En god klem') : L('Happy birthday – a big hug!', 'Gratulerer med dagen – en god klem!'), kiss: L('Good night, you two', 'God natt, dere to') }[k];
     var pic = ''; try { var th = document.documentElement.getAttribute('data-theme'); var sp = sharedPet(); pic = A.couple(k, my, ol, { label: say, pet: sp && sp !== 'none' ? sp : null, light: th === 'light' || (!th && matchMedia('(prefers-color-scheme: light)').matches) }); } catch (e) { return ''; }
     return '<button type="button" class="h-couple" data-couple aria-label="' + esc(say + ' – ' + L('tap for the next', 'trykk for neste')) + '">' + pic + '<span>' + esc(say) + '</span></button>';

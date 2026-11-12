@@ -3360,6 +3360,11 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .sc-heart { fill: var(--danger); opacity: .85; }
 .sc-money.ok { fill: color-mix(in srgb, var(--ok) 70%, var(--bg-solid)); } .sc-money.warn { fill: color-mix(in srgb, var(--warn) 75%, var(--bg-solid)); } .sc-money.neg { fill: color-mix(in srgb, var(--danger) 70%, var(--bg-solid)); }
 .sc-jarg { fill: rgba(255, 255, 255, .05); stroke: rgba(var(--ink-rgb), .45); stroke-width: 1.5; }
+/* the 2.5D scenes (scene25.js, Phase F2): 400 × 240, a little bigger on a computer */
+.hs-illu:has(.sc25) { width: 300px; } @media (min-width: 900px) { .hs-illu:has(.sc25) { width: 360px; } }
+@media (max-width: 640px) { .hs-illu:has(.sc25) { width: min(380px, 100%); } }
+.hs-illu svg.sc25 { overflow: hidden; } .sc25 { cursor: pointer; } .sc25-floor { fill: rgba(var(--ok-rgb), .16); } .sc25-moon { fill: #eef0f4; } .sc25-moonc { fill: var(--bg-solid); }
+.sc25-amt { fill: var(--text); font: 700 12px Inter, system-ui, sans-serif; } .sc25 .sc-calt { font-size: 15px; }
 .sc-jtxt { fill: #fff; font: 700 11px Inter, system-ui, sans-serif; paint-order: stroke; stroke: rgba(0, 0, 0, .35); stroke-width: 2px; }
 .sc-cal { fill: var(--bg-solid); stroke: rgba(var(--ink-rgb), .45); } .sc-calt { fill: var(--text); font: 700 14px Inter, system-ui, sans-serif; }
 .sc-coin { fill: #f2c94c; stroke: var(--warn); stroke-width: 1; animation: sccoin 1.8s ease-in infinite; } .sc-coin.c1 { animation-delay: .5s; } .sc-coin.c2 { animation-delay: 1s; }

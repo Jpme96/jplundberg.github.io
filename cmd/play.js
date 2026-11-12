@@ -67,8 +67,8 @@
     if (me) { me.classList.remove('pl-hop'); void me.getBoundingClientRect(); me.classList.add('pl-hop'); setTimeout(function () { me.classList.remove('pl-hop'); }, 800); burst(e.clientX, e.clientY - 20, Math.random() < .5 ? 'heart' : 'spark', 5); return; }
     var p = e.target.closest('.hs-part, [data-scgo], [data-hsgo]');
     if (p) {
-      p.classList.remove('pl-pop'); void p.getBoundingClientRect(); p.classList.add('pl-pop');
-      setTimeout(function () { p.classList.remove('pl-pop'); }, 600);
+      /* a 2.5D scene (F2): the furniture he touches stays put – sparks only */
+      if (!svg.classList.contains('sc25')) { p.classList.remove('pl-pop'); void p.getBoundingClientRect(); p.classList.add('pl-pop'); setTimeout(function () { p.classList.remove('pl-pop'); }, 600); }
       burst(e.clientX, e.clientY, 'spark', 7);
     } else {
       var k = { winter: 'snow', spring: 'petal', summer: 'sun', autumn: 'leaf' }[season()];
@@ -78,7 +78,7 @@
   /* now and then one part wiggles */
   setInterval(function () {
     if (!on() || document.hidden) return;
-    var parts = document.querySelectorAll('#scIllu .hs-part, #hsIllu .hs-part'); if (!parts.length) return;
+    var parts = document.querySelectorAll('#scIllu svg:not(.sc25) .hs-part, #hsIllu .hs-part'); if (!parts.length) return;
     var p = parts[Math.floor(Math.random() * parts.length)];
     if (p.getBoundingClientRect().bottom < 0) return;
     p.classList.add('pl-wig'); setTimeout(function () { p.classList.remove('pl-wig'); }, 900);

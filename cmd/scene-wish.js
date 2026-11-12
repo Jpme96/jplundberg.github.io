@@ -1,71 +1,49 @@
-/* The living Wish picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Wish picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   WISH LIST: push the cart in, take the gift from the shelf, into the cart – a wish comes true.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= WISH LIST: the cart, the gift into the cart, the list from the bag ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    var cart = svg.querySelector('.sc-cart'), gift = svg.querySelector('[data-scgo="wbought"]'), bag = svg.querySelector('[data-scgo="wbuy"]');
-    m.me.remove();
-    var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    svg.appendChild(cart.parentNode); svg.appendChild(bag);    /* the cart and the bag are in front of you */
-    var inCart = el('g', { class: 'incart', style: 'opacity:0' }, '<g transform="translate(55 104) scale(.55) translate(-165 -112)">' + gift.innerHTML + '</g>'); cart.appendChild(inCart);
-    function cartAt(dx) { cart.setAttribute('transform', 'translate(' + dx.toFixed(2) + ' 0)'); }
-    var pushing = false; H.onStep = function () { if (pushing) cartAt(H.pos[0] - base[0]); };
-    var ACTS = [
-      { n: 'push', t: 'pushing the cart', f: function () {
-        return seq([function () { L.face(H, 'grin'); look(H, [60, 110]); return L.turnTo(R, H, .7, 300); },
-          function () { return L.both(R, H, [31, 104], [35, 104], 400); },
-          function () { pushing = true; L.say(H, T('Shopping!', 'Handletur!'), 1400); return L.walk(R, H, [base[0] + 30, base[1]], 16, null, .7); },
-          function () { return L.walk(R, H, base, 16, null, .7, 1); },
-          function () { pushing = false; cartAt(0); look(H, null); }]);
-      } },
-      { n: 'gift', t: 'putting the gift in the cart', f: function () {
-        var g0 = [165, 114], carrying = false;   /* the gift's middle (drawn at 75 % around its bottom, scenes.js) */
-        (function fr() { if (carrying) { var c = mid(H); gift.setAttribute('transform', 'translate(' + (c[0] - g0[0]).toFixed(2) + ' ' + (c[1] - g0[1] + 3).toFixed(2) + ')'); } if (carrying !== null) requestAnimationFrame(fr); })();
-        return seq([function () { L.face(H, 'starry'); return L.walk(R, H, [143, base[1]], 22, null, .7); },
-          function () { look(H, g0); return Promise.all([L.prop(R, H, 'bob', 10, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.both(R, H, [153, 115], [177, 115], 500)]); },
-          function () { svg.appendChild(gift); carrying = true; return Promise.all([L.prop(R, H, 'bob', 0, 500), L.legs(R, H, 0, 0, 0, 0, 500), L.both(R, H, fit(H, -16, -58), fit(H, 16, -58), 500)]); },
-          function () { return L.turnTo(R, H, 'front', 300); },
-          function () { look(H, null); L.say(H, T('Bought it!', 'Kjøpt!'), 1400); L.burst(svg, mid(H), 6); return L.both(R, H, fit(H, -16, -120), fit(H, 16, -120), 450); },
-          function () { return L.wait(R, 700); },
-          function () { return L.both(R, H, fit(H, -16, -58), fit(H, 16, -58), 400); },
-          function () { return L.walk(R, H, [74, base[1]], 22, null, -.7); },
-          function () { look(H, [55, 104]); return L.both(R, H, [47, 100], [63, 100], 450); },
-          function () { carrying = null; gift.style.opacity = 0; gift.setAttribute('transform', ''); inCart.style.opacity = 1; return L.settle(R, H, 400); },
-          function () { look(H, null); return L.walk(R, H, base, 22); },
-          function () { /* a few seconds later the shop puts a new one out */ setTimeout(function () { inCart.style.opacity = 0; svg.insertBefore(gift, H.layB); gift.style.opacity = ''; gift.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600 }); }, 4000); }]);
-      } },
-      { n: 'bag', t: 'taking the list from the bag', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [82, base[1]], 22, null, .7); },
-          function () { look(H, [115, 100]); return Promise.all([L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [110, 101], 450)]); },   /* the bag is knee to waist high (60 %, scenes.js) */
-          function () { L.wob(bag, 4, 400); return L.reach(R, H, 'R', [112, 108], 250); },
-          function () { o = take(H, 'R', 'paperBack'); return L.reach(R, H, 'R', [110, 96], 300); },
-          function () { return Promise.all([L.prop(R, H, 'lean', 0, 400), L.turnTo(R, H, 'front', 350), L.reach(R, H, 'R', fit(H, 8, -58), 450)]); },
-          function () { look(H, L.handAt(H, 'R')); return L.headTo(R, H, 6, 1.5, 300); },
-          function () { return L.wait(R, 900); },
-          function () { look(H, null); L.face(H, 'love'); L.say(H, T('What’s next?', 'Hva blir det neste?'), 1700); return L.wait(R, 1300); },
-          function () { look(H, [115, 100]); return Promise.all([L.turnTo(R, H, .7, 300), L.prop(R, H, 'lean', 8, 400), L.reach(R, H, 'R', [112, 108], 500)]); },
-          function () { L.letGo(H, 'R'); look(H, null); return Promise.all([L.prop(R, H, 'lean', 0, 400), L.reach(R, H, 'R', null, 400)]); },
-          function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'dream', t: 'daydreaming', f: function () {
-        var b = el('g', {}, '<circle cx="-14" cy="14" r="1.8" fill="#fff"/><circle cx="-9" cy="9" r="2.6" fill="#fff"/><ellipse rx="15" ry="10" fill="#fff"/><path d="M-5 1a5 5 0 0 1 10 0" stroke="#5b6b8c" stroke-width="1.6" fill="none"/><rect x="-6.5" y="0" width="3.4" height="5" rx="1.2" fill="#e5484d"/><rect x="3.1" y="0" width="3.4" height="5" rx="1.2" fill="#e5484d"/>');
-        b.setAttribute('transform', 'translate(' + (H.pos[0] + 26) + ' ' + (H.pos[1] - 76) + ')');
-        return seq([function () { L.face(H, 'love'); look(H, [H.pos[0] + 26, H.pos[1] - 76]); return Promise.all([L.reach(R, H, 'R', fit(H, 7, -80), 500), L.headTo(R, H, -8, -1, 500)]); },
-          function () { svg.appendChild(b); b.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 }); return L.wait(R, 2200); }, function () { b.remove(); look(H, null); }]);
-      } },
-      C.think(T('Should I buy it?', 'Skal jeg kjøpe den?'))
-    ];
-    return start(svg, H, R, ACTS, 'wish');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.wish = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[200, 96, 112, 42, 'wishes'], [206, 140, 66, 60, 'wbuy']], len: 6.6, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];
+      /* wishes floating as stars, the shelf, the floor */
+      [[70, 52], [120, 34], [330, 46]].forEach(function (s, i) { STAR(g, s[0], s[1] + 3 * Math.sin(now / 700 + i), 7, '#f2c94c', .55 + .35 * Math.sin(now / 400 + i * 2)); });
+      add(g, 'rect', { x: 206, y: 128, width: 100, height: 4, rx: 1.5, fill: '#a87652' }); [212, 300].forEach(function (x) { add(g, 'path', { d: 'M' + x + ' 132 l0 10 l6 -10 Z', fill: '#8a5e44' }); });
+      add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3987e5' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e8743b' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2fae6a' });
+      add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c96a3c' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f8a52' });
+      FLOOR(g);
+      if (t < 2.6) { cx = LERP(-70, 200, SEG(t, 0, 2.6)); w = Math.min(1, t / .2, (2.6 - t) / .2); } else cx = 200;
+      var HDL = [cx + 16, 147], nh = SIDE(-1, 90), fh = SIDE(1, 90);
+      if (t < 2.6) { pose[nh] = HOLD(AT(HDL)); pose[fh] = HOLD(AT(HDL)); }
+      else if (t < 4.4) { pose[fh] = HOLD(AT(HDL));
+        pose[nh] = t < 3.0 ? GO(AT(HDL), AT(GIFT0), SEG(t, 2.6, 3.0), 3) : t < 3.6 ? GO(AT(GIFT0), AT(INTO), SEG(t, 3.0, 3.6), 6) : t < 4.0 ? GO(AT(INTO), AT(HDL), SEG(t, 3.6, 4.0)) : HOLD(AT(HDL));
+        if (t >= 4.0) { pose[fh] = GO(AT(HDL), REST, SEG(t, 4.0, 4.4)); pose[nh] = GO(AT(HDL), REST, SEG(t, 4.0, 4.4)); }
+        pose.lean = .3 * E(SEG(t, 2.6, 3.0)) * (1 - E(SEG(t, 3.6, 4.0))); }
+      else if (t < 4.8) face = 90 * (1 - E(SEG(t, 4.4, 4.8)));
+      else { face = 0; var ch = CHEER(t, 4.8, 1.2); lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
+      gift = t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
+      pose.lift = lift; var ph = LIFE(st, pose, w);
+      function box(x, y) { var b2 = grp(x, y, 0); add(b2, 'rect', { x: -8, y: -7, width: 16, height: 14, rx: 2, fill: '#d93a3a' }); add(b2, 'rect', { x: -1.5, y: -7, width: 3, height: 14, fill: '#f2c94c' }); add(b2, 'rect', { x: -8, y: -1.5, width: 16, height: 3, fill: '#f2c94c' }); add(b2, 'path', { d: 'M0 -7 q-6 -6 -6 0 Z M0 -7 q6 -6 6 0 Z', fill: '#f2c94c' }); return b2; }
+      if (gift === 'shelf') g.appendChild(box(GIFT0[0], GIFT0[1] + 1));
+      /* the cart: the gift sits in its basket, behind the wire front */
+      var c0 = cx + 20;
+      if (gift === 'cart') g.appendChild(box(c0 + 22, 156));
+      add(g, 'path', { d: 'M' + c0 + ' 148 L' + (c0 + 48) + ' 148 L' + (c0 + 42) + ' 176 L' + (c0 + 6) + ' 176 Z', fill: 'rgba(200,210,220,.18)', stroke: '#b9c1ca', 'stroke-width': 1.6, 'stroke-linejoin': 'round' });
+      for (var i = 1; i < 5; i++) add(g, 'line', { x1: c0 + i * 9.6, y1: 148, x2: c0 + 6 + i * 7.2, y2: 176, stroke: '#b9c1ca', 'stroke-width': .8, opacity: .7 });
+      add(g, 'line', { x1: c0 + 3, y1: 162, x2: c0 + 45, y2: 162, stroke: '#b9c1ca', 'stroke-width': .8, opacity: .7 });
+      add(g, 'path', { d: 'M' + (c0 - 6) + ' 146 L' + c0 + ' 148 M' + (c0 + 8) + ' 176 L' + (c0 + 8) + ' 194 M' + (c0 + 40) + ' 176 L' + (c0 + 40) + ' 194 M' + (c0 + 2) + ' 192 L' + (c0 + 46) + ' 192', fill: 'none', stroke: '#9aa3ad', 'stroke-width': 1.8, 'stroke-linecap': 'round' });
+      [c0 + 8, c0 + 40].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 196.5, r: 3.5, fill: '#2a2d33' }); });
+      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { return gift === 'hand' && H.sm ? [[H.sm.z - .15, box(H.sm.X, H.sm.Y)]] : []; } });
+      /* the wish: a star rises from the cart and joins the others */
+      if (t >= 3.6) { var q = SEG(t, 3.6, 4.8), sp = [LERP(c0 + 22, 250, E(q)), LERP(150, 40, E(q))]; STAR(g, sp[0], sp[1], 5 + 3 * E(q), '#f2c94c', q < 1 ? 1 : .55 + .35 * Math.sin(now / 400 + 4));
+        if (q < .5) for (var r3 = 0; r3 < 6; r3++) { var a3 = r3 * Math.PI / 3, rr = 6 + 26 * q; add(g, 'circle', { cx: c0 + 22 + Math.cos(a3) * rr, cy: 152 + Math.sin(a3) * rr * .7, r: 1.4, fill: '#f2c94c', opacity: (1 - 2 * q).toFixed(2) }); } }
+    } });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.wish = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

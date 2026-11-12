@@ -1,70 +1,48 @@
-/* The living Goals picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Goals picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   GOALS: up the trail with the flag (smaller higher up – it's further away), plant it at the top.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= GOALS: on the trail (smaller higher up – it's further away) ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    m.me.remove();
-    var trail = svg.querySelector('.sc-trail'), len = trail.getTotalLength();
-    /* the trail sits in a moved group in the picture: its points are taken into the picture's own coordinates */
-    var P = function (u) { var p = trail.getPointAtLength(Math.max(0, Math.min(1, u)) * len), a = trail.getScreenCTM(), b = svg.getScreenCTM(); if (!a || !b) return [p.x, p.y]; var q = svg.createSVGPoint(); q.x = p.x; q.y = p.y; q = q.matrixTransform(a).matrixTransform(b.inverse()); return [q.x, q.y]; };
-    var H = L.Hero(svg, null, { x: 0, y: 0, w: 31, h: 44 })   /* small against the mountain */, R = L.Run(), C = common(R, H, svg), u0 = .42, cu = u0;
-    function at(u) { cu = u; H.pos = P(u); H.k = 1 - .25 * u; }
-    at(u0);
-    function along(a, b, sp, end) { return L.walk(R, H, P(b), sp || 14, function (u) { var v = lerp(a, b, u); H.k = 1 - .25 * v; return P(v); }, end).then(function () { at(b); }); }
-    var ACTS = [
-      { n: 'climb', t: 'climbing', f: function () {
-        return seq([function () { L.face(H, 'calm'); return along(u0, u0 + .14, 12); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return Promise.all([L.reach(R, H, 'R', fit(H, 4, -112), 450), L.headTo(R, H, -9, -1.5, 450)]); },
-          function () { L.say(H, T('Still far!', 'Fortsatt langt!'), 1600); return L.wait(R, 1300); },
-          function () { return L.settle(R, H, 350); }, function () { L.face(H, 'grin'); return along(u0 + .14, u0, 16); }]);
-      } },
-      { n: 'rest', t: 'taking a break', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return Promise.all([L.prop(R, H, 'bob', 7, 500), L.legs(R, H, .7, .7, -18, 18, 500)]); },
-          function () { return L.reach(R, H, 'R', fit(H, 14, -46), 350); },
-          function () { o = take(H, 'R', 'bottle'); return L.drink(R, H, 'R', o, 900, 70); },   /* to the mouth, tipped up */
-          function () { return L.reach(R, H, 'R', fit(H, 14, -46), 400); },
-          function () { L.letGo(H, 'R'); L.face(H, 'grin'); return L.reach(R, H, 'R', null, 300); },
-          function () { return L.reach(R, H, 'L', fit(H, -8, -106), 400); }, function () { return L.reach(R, H, 'L', fit(H, 8, -108), 350); },
-          function () { L.drops(svg, fit(H, 10, -104), 3); L.say(H, T('Phew', 'Puh'), 1300); return L.wait(R, 700); }]);
-      } },
-      { n: 'map', t: 'reading the map', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.both(R, H, fit(H, -14, -64), fit(H, 14, -64), 500); },
-          /* you read it: we see the back of the map */
-          function () { o = L.Obj(H, 'L', O.mapBack[0], [-6, 1]); look(H, mid(H)); return L.tw(R, 1500, function (u) { H.head = [5 + Math.sin(u * 9) * 2, 2]; }); },
-          /* then turn it round to show us */
-          function () { L.letGo(H, 'L'); o = L.Obj(H, 'L', O.map[0], [-6, 1]); look(H, null); L.face(H, 'starry'); return L.headTo(R, H, 0, 0, 300); },
-          function () { return L.wait(R, 800); },
-          function () { L.letGo(H, 'L'); return Promise.all([L.reach(R, H, 'L', null, 300), L.turnTo(R, H, .5, 300), L.reach(R, H, 'R', [120, 14], 500)]); },
-          function () { look(H, [120, 14]); L.say(H, T('This way!', 'Denne veien!'), 1500); return L.wait(R, 1300); }]);
-      } },
-      { n: 'selfie', t: 'trail selfie', f: function () {
-        return seq([function () { L.face(H, 'silly'); return L.reach(R, H, 'R', fit(H, 14, -44), 300); },
-          function () { take(H, 'R', 'phone'); return Promise.all([L.reach(R, H, 'R', fit(H, 30, -132), 600), L.headTo(R, H, 8, 0, 500), L.reach(R, H, 'L', fit(H, -16, -90), 600)]); },
-          function () { look(H, L.handAt(H, 'R')); return L.wait(R, 700); }, function () { L.flash(svg); L.face(H, 'wink'); return L.wait(R, 900); },
-          function () { look(H, null); L.letGo(H, 'R'); L.say(H, T('Getting there!', 'På god vei!'), 1400); return L.wait(R, 600); }]);
-      } },
-      { n: 'slip', t: 'oops, slipping', f: function () {
-        return seq([function () { L.face(H, 'calm'); return along(u0, u0 + .06, 12, .9); },
-          function () { L.face(H, 'wow'); L.say(H, T('Whoa!', 'Oi!'), 1300); var A = u0 + .06, B = u0 - .015; return L.tw(R, 700, function (u) { at(lerp(A, B, ease(u))); var w = u * Math.PI * 4; H.rot.R = [-90 + Math.sin(w) * 70, -30]; H.rot.L = [90 - Math.sin(w + 1) * 70, 30]; H.lean = -8 * Math.sin(u * Math.PI); }); },
-          function () { H.rot.R = [0, 0]; H.rot.L = [0, 0]; return L.turnTo(R, H, 'front', 300); },
-          function () { L.face(H, 'shy'); return L.reach(R, H, 'L', fit(H, 6, -108), 400); },
-          function () { L.drops(svg, fit(H, 8, -104), 2); L.say(H, T('Phew', 'Puh'), 1200); return along(u0 - .015, u0, 10); }]);
-      } },
-      C.cheer(T('Keep going!', 'Fortsett!')), C.wave
-    ];
-    return start(svg, H, R, ACTS, 'goals');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.goals = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[150, 80, 250, 120, 'glActive']], len: 10.6, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), cx = 60, face = 0, w = 0, pose = {}, lift = 0, planted = false;
+      function YG(x) { return 200 - 92 * E(CL((x - 110) / 220)); }
+      function KS(x) { return .5 - .17 * E(CL((x - 110) / 220)); }
+      /* far mountains, the trail hill, little flags for the other goals */
+      add(g, 'path', { d: 'M-10 170 L70 90 L120 130 L190 60 L260 140 L300 110 L410 170 Z', fill: 'rgba(255,255,255,.07)' });
+      add(g, 'path', { d: 'M176 74 L190 60 L204 74 L197 72 L190 76 L183 72 Z', fill: 'rgba(255,255,255,.35)' });
+      var hp = 'M0 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L400 108 L400 240 L0 240 Z';
+      add(g, 'path', { d: hp, fill: '#2f5a3c' });
+      var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L370 108';
+      add(g, 'path', { d: tr, fill: 'none', stroke: '#c9b48e', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
+      [[176, '#3987e5'], [252, '#e8743b']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#d7dee3', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
+      if (t < .4) face = 90 * E(SEG(t, 0, .4)); else if (t < 7.0) { face = 90; cx = LERP(60, 335, SEG(t, .4, 7.0)); w = Math.min(1, (t - .4) / .2, (7.0 - t) / .2); } else { face = 90; cx = 335; }
+      var gy = YG(cx), k = KS(cx), s = k / .5, nh = SIDE(-1, 90), CARRY = B(96, 18), UPP = [cx + 15 * s, gy - 74 * s], DN = [cx + 15 * s, gy - 30 * s], pf = 0;
+      if (t < 7.0) pose[nh] = HOLD(CARRY);
+      else if (t < 7.5) { pose[nh] = GO(CARRY, AT(UPP), SEG(t, 7.0, 7.5), 4); pf = E(SEG(t, 7.0, 7.5)); }
+      else if (t < 8.0) { pose[nh] = HOLD(AT(MIX(UPP, DN, E(SEG(t, 7.5, 8.0))))); pf = 1; }
+      else if (t < 8.4) { pose[nh] = GO(AT(DN), REST, SEG(t, 8.0, 8.4)); planted = true; }
+      else planted = true;
+      if (t >= 8.4 && t < 8.8) face = 90 * (1 - E(SEG(t, 8.4, 8.8))); else if (t >= 8.8) face = 0;
+      var ch = t >= 8.8 && t < 10.0 ? CHEER(t, 8.8, 1.2) : null;
+      if (ch) { lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
+      pose.lean = .12 * E(SEG(t, .2, .6)) * (1 - E(SEG(t, 6.8, 7.2)));   /* leaning into the climb, eased in and out */ pose.lift = lift; var ph = LIFE(st, pose, w);
+      function flag(par, top, ss, wave) { add(par, 'path', { d: 'M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' q' + (8 * ss) + ' ' + (-3 * ss + wave) + ' ' + (16 * ss) + ' ' + (1 * ss) + ' l0 ' + (12 * ss) + ' q' + (-8 * ss) + ' ' + (-3 * ss - wave) + ' ' + (-16 * ss) + ' ' + (1 * ss) + ' Z', fill: '#d93a3a' }); }
+      var PX = 335 + 15 * KS(335) / .5, PY = YG(335);
+      if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#d7dee3', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); }
+      FIG(g, { cx: cx, gy: gy, k: k, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (planted || !H.sm) return [];
+        var hx = H.sm.X, hy = H.sm.Y, carryB = [hx + 6 * s, hy + 12 * s], carryT = [hx - 26 * s, hy - 44 * s], vB = [hx, hy + 30 * s], vT = [hx, hy - 34 * s];
+        var b2 = MIX(carryB, vB, pf), t2 = MIX(carryT, vT, pf), fg = el('g', {});
+        add(fg, 'line', { x1: b2[0], y1: b2[1], x2: t2[0], y2: t2[1], stroke: '#d7dee3', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
+        if (pf > .6) flag(fg, t2, s * (pf - .6) / .4, 1.5 * Math.sin(now / 160)); else add(fg, 'path', { d: 'M' + t2[0] + ' ' + t2[1] + ' l' + (-3 * s) + ' ' + (10 * s) + ' l' + (5 * s) + ' ' + (2 * s) + ' Z', fill: '#d93a3a' });
+        return [[H.sm.z - .15, fg]]; } });
+    } });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.goals = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

@@ -156,7 +156,7 @@
     if (dinner) list.push({ t: L('Tonight: ', 'I kveld: ') + dinner, h: '#meals' }); else list.push({ t: L('Nothing planned tonight', 'Ingenting planlagt i kveld'), h: '#meals', late: false });
     if (shop.length) list.push({ t: shop.length + L(' on the shopping list', ' på handlelista'), h: '#shop' });
     low.slice(0, 2).forEach(function (x) { list.push({ t: x.name + L(' is running out', ' er snart tom'), h: '#pantry' }); });
-    return { svg: svg, label: L('Your kitchen', 'Kjøkkenet ditt'), list: list };
+    return { svg: svg, label: L('Your kitchen', 'Kjøkkenet ditt'), list: list, live: { dinner: !!dinner, shop: shop.length, low: low.length } };
   }
 
   /* ---------------- Work ---------------- */
@@ -238,7 +238,7 @@
     if (payday) list.push({ t: L('Payday today', 'Lønning i dag'), h: '#fin' });
     var dtp = null; try { var np2 = B.nextPayday && B.nextPayday(d); if (np2 && np2.days != null) dtp = np2.days; } catch (e) {}
     return { svg: svg, label: L('Your money jar', 'Pengekrukka di'), list: list, empty: L('Set up your budget to fill the jar.', 'Sett opp budsjettet for å fylle krukka.'),
-      live: { state: room > 0 ? state : 'none', daysToPay: dtp } };
+      live: { state: room > 0 ? state : 'none', daysToPay: dtp, left: room > 0 ? left : null, daysLeft: per.daysLeft, ratio: ratio, payday: payday } };
   }
 
   /* ---------------- Travel ---------------- */
@@ -268,7 +268,7 @@
       if (pack.length) list.push({ t: L('Packed ', 'Pakket ') + packed + '/' + pack.length, h: '#trip=' + t.id, late: pf < 1 && n <= 2 });
       else list.push({ t: L('No packing list yet', 'Ingen pakkeliste ennå'), h: '#trip=' + t.id });
     }
-    return { svg: svg, label: L('Your next trip', 'Neste reise'), list: list, live: { trip: !!t, days: n, away: !!away, packLeft: pack.length - packed, packN: pack.length }, empty: L('No trip planned – plan one under Trips.', 'Ingen reise planlagt – planlegg en under Reiser.') };
+    return { svg: svg, label: L('Your next trip', 'Neste reise'), list: list, live: { trip: !!t, days: n, away: !!away, packLeft: pack.length - packed, packN: pack.length, veh: t ? (t.how || t.mode || 'plane') : '' }, empty: L('No trip planned – plan one under Trips.', 'Ingen reise planlagt – planlegg en under Reiser.') };
   }
 
   /* Journey tab: your everyday ride – bus, tram, metro, train or boat (the one your last search started with) pulls in at the stop */
@@ -500,7 +500,9 @@
     if (!s) { if (box) box.remove(); hero.classList.remove('has-illu'); return; }
     if (!box) { box = document.createElement('figure'); box.id = 'scIllu'; box.className = 'hs-illu sc-illu'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-illu'); }
     var cap = s.list.length ? s.list.slice(0, 3).map(function (x) { return '<a href="' + esc(x.h) + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (s.list.length > 3 ? ' · +' + (s.list.length - 3) : '') : esc(s.empty || '');
-    var html = '<svg viewBox="0 0 240 150" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';
+    /* a page with a 2.5D scene (F2) gets its frame from the start, so the picture never changes height when the scene takes over */
+    var vb25 = window.Scene25 && window.SceneLive && window.SceneLive[PAGE] && !draw.broken;
+    var html = '<svg viewBox="' + (vb25 ? '0 0 400 240' : '0 0 240 150') + '" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';
     if (box._h !== html) { box._h = html; box.innerHTML = html;
       /* the living scene (scene-*.js, Phase L): your avatar comes alive on top of the still picture */
       var live = window.SceneLive && window.SceneLive[PAGE];

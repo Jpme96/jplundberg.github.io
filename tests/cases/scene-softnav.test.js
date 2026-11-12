@@ -1,9 +1,9 @@
-/* Living pictures after instant page changes (the bug JP saw 2026-11-11: after the first page change every avatar
+/* Living pictures after instant page changes – the old flat ones and the 2.5D ones (F2) alike (the bug JP saw 2026-11-11: after the first page change every avatar
    froze while its actions went on, because the page change dropped the engine's drawing loop). Here we move between
    pages the way a person does – tapping the menu, no reloads – and check that on each living page the avatar really
    moves on screen, and that the avatar page's "See it move" moves after page changes too. Made-up data only. */
 const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
-const pose = p => p.evaluate(sel => { const h = document.querySelector(sel + ' .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll(sel + ' .av-limb path')].map(x => x.getAttribute('d')).join('') + '|' + [...document.querySelectorAll(sel + ' .av-legL g, ' + sel + ' .av-legR g')].map(x => x.getAttribute('transform')).join('') : ''; }, '#scIllu');
+const pose = p => p.evaluate(sel => { const f = document.querySelector(sel + ' svg.sc25 .sc25-front'); if (f) return f.innerHTML.length + '|' + f.innerHTML.slice(-3000);   /* a 2.5D scene (F2): its moving layer */ const h = document.querySelector(sel + ' .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll(sel + ' .av-limb path')].map(x => x.getAttribute('d')).join('') + '|' + [...document.querySelectorAll(sel + ' .av-legL g, ' + sel + ' .av-legR g')].map(x => x.getAttribute('transform')).join('') : ''; }, '#scIllu');
 async function moves(p, ms) { const a = await pose(p); for (let t = 0; t < ms; t += 400) { await sl(400); const b = await pose(p); if (a && b && a !== b) return true; } return false; }
 (async () => {
   const { b, p } = await open(393, { oldLive: 1 });
@@ -13,11 +13,11 @@ async function moves(p, ms) { const a = await pose(p); for (let t = 0; t < ms; t
   for (const pg of ['finance', 'calendar', 'finance', 'food', 'goals', 'finance']) {
     /* an instant page change, as from the menu */
     await p.evaluate(pg => { const a = document.createElement('a'); a.href = '/cmd/' + pg + '/'; document.body.appendChild(a); a.click(); a.remove(); }, pg);
-    const there = await until(p, pg => location.pathname === '/cmd/' + pg + '/' && !!document.querySelector('#scIllu .hero'), 12000, pg);
+    const there = await until(p, pg => location.pathname === '/cmd/' + pg + '/' && !!document.querySelector('#scIllu .hero, #scIllu svg.sc25'), 12000, pg);
     check(there !== null, pg + ': reached by an instant page change, the avatar is there');
     check(await p.evaluate(() => window.__still === 'same page'), pg + ': without a reload');
     check(await moves(p, 9000), pg + ': the avatar moves on screen');
-    check(await p.evaluate(() => document.querySelectorAll('#scIllu .hero').length) === 1, pg + ': one avatar');
+    check(await p.evaluate(() => document.querySelectorAll('#scIllu .hero').length + document.querySelectorAll('#scIllu svg.sc25').length === 1 && (!window.Scene25 || Scene25.list().length <= 1)), pg + ': one avatar, one running scene');
   }
   /* the avatar page after all those page changes */
   await p.evaluate(() => Avatar.page('Test', Avatar.look(), () => {}, { mine: true })); await sl(500);

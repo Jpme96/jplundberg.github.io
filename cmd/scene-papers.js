@@ -1,85 +1,72 @@
-/* The living Papers picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Papers picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   PAPERS: open the drawer, the floating letter goes in, close it; water the plant.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= PAPERS: the cabinet (back to us), the floating letter, the plant and its can ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    m.me.remove();
-    var drawers = svg.querySelectorAll('[data-scgo="papers"]'), top = drawers[0], fl = svg.querySelector('.sc-float'), plant = svg.querySelector('.sc-plant');
-    var canHome = el('g', { class: 'can-home' }); svg.insertBefore(canHome, svg.querySelector('.sc-plant').nextSibling);
-    var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    var CANP = [66, 126];
-    function canDown() { canHome.innerHTML = '<g transform="translate(' + CANP[0] + ' ' + CANP[1] + ') scale(' + (H.s / .5).toFixed(3) + ') scale(-1 1) translate(0 -4.5)">' + O.can[0] + '</g>'; }
-    canDown();
-    function drawerOut(k) { top.setAttribute('transform', 'translate(0 ' + (3 * k) + ') translate(126 80) scale(' + (1 + .08 * k) + ') translate(-126 -80)'); }
-    var ACTS = [
-      { n: 'file', t: 'filing a letter', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.reach(R, H, 'R', fit(H, 14, -44), 300); },
-          function () { o = take(H, 'R', 'paperBack'); return L.walk(R, H, [140, base[1]], 22, null, -.6); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return L.reach(R, H, 'L', [126, 80], 420); },
-          function () { return L.tw(R, 500, function (u) { var e = ease(u); drawerOut(e); H.hand.L = [126, 80 + 3 * e]; }); },
-          function () { return L.reach(R, H, 'R', [128, 70], 420); },
-          function () { L.letGo(H, 'R'); return fall(svg, O.paper[0], [128, 70], [128, 82], 380, top.firstChild); },
-          function () { return L.tw(R, 420, function (u) { var e = 1 - ease(u); drawerOut(e); H.hand.L = [126, 80 + 3 * e]; H.hand.R = null; }); },
-          function () { top.setAttribute('transform', ''); return L.reach(R, H, 'L', null, 300); },
-          function () { return L.turnTo(R, H, 'front', 300); },
-          function () { L.face(H, 'grin'); L.say(H, T('Filed!', 'Arkivert!'), 1300); return L.wait(R, 900); },
-          function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'catch', t: 'catching a letter', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'starry'); look(H, [222, 69]); return L.turnTo(R, H, .6, 300); },
-          function () { return L.reach(R, H, 'R', [218, 72], 550); },
-          function () { fl.style.visibility = 'hidden'; o = take(H, 'R', 'paperBack'); return Promise.all([L.turnTo(R, H, 'front', 300), L.reach(R, H, 'R', fit(H, 8, -58), 450)]); },
-          function () { look(H, L.handAt(H, 'R')); return L.headTo(R, H, 6, 1.5, 300); },
-          function () { return L.wait(R, 1000); },
-          function () { look(H, null); L.face(H, 'wow'); L.say(H, T('A letter!', 'Et brev!'), 1400); return L.wait(R, 1100); },
-          function () { return Promise.all([L.turnTo(R, H, .6, 300), L.reach(R, H, 'R', [218, 72], 450)]); },
-          function () { L.letGo(H, 'R'); fl.style.visibility = ''; return L.settle(R, H, 350); }]);
-      } },
-      { n: 'water', t: 'watering the plant', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [CANP[0] + 8, base[1]], 24, null, -.7); },
-          function () { look(H, CANP); return Promise.all([L.prop(R, H, 'bob', 12, 400), L.legs(R, H, .6, .6, -12, 12, 400), L.reach(R, H, 'L', [CANP[0] - 2, CANP[1] - 5], 450)]); },
-          function () { canHome.innerHTML = ''; o = take(H, 'L', 'can', { flip: true }); return Promise.all([L.prop(R, H, 'bob', 0, 400), L.legs(R, H, 0, 0, 0, 0, 400)]); },
-          function () { look(H, [45, 96]); return L.reach(R, H, 'L', [60, 86], 450); },
-          function () { return L.tw(R, 1600, function (u) { o.rot = -38 * Math.min(1, u * 4) * (u > .85 ? (1 - u) / .15 : 1); if (u > .2 && u < .85 && Math.random() < .45) drip(svg, tipOf(H, o, 'can')); }); },
-          function () { plant.style.transformBox = 'fill-box'; plant.style.transformOrigin = '50% 100%'; plant.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06,1.14)', offset: .6 }, { transform: 'scale(1.03,1.08)' }], { duration: 1000, fill: 'forwards' }); look(H, null); return L.turnTo(R, H, -.2, 300); },
-          function () { L.face(H, 'love'); L.say(H, T('Grow!', 'Voks!'), 1300); return L.wait(R, 800); },
-          function () { look(H, CANP); return L.turnTo(R, H, -.7, 300); },
-          function () { return Promise.all([L.prop(R, H, 'bob', 12, 400), L.legs(R, H, .6, .6, -12, 12, 400), L.reach(R, H, 'L', [CANP[0] - 2, CANP[1] - 5], 450)]); },
-          function () { L.letGo(H, 'L'); canDown(); look(H, null); return Promise.all([L.prop(R, H, 'bob', 0, 400), L.legs(R, H, 0, 0, 0, 0, 400)]); },
-          function () { return L.walk(R, H, base, 24); }]);
-      } },
-      { n: 'stamp', t: 'stamping a bill', f: function () {
-        var o, sheet;
-        return seq([function () { L.face(H, 'cool'); return L.reach(R, H, 'L', fit(H, -14, -44), 300); },
-          function () { o = take(H, 'L', 'paper'); return L.walk(R, H, [164, base[1]], 22, null, -.6); },
-          function () { look(H, [140, 66]); return L.reach(R, H, 'L', [140, 64], 450); },
-          function () { L.letGo(H, 'L'); sheet = el('g', {}, '<g transform="translate(140 64) scale(' + (H.s / .5).toFixed(3) + ') translate(0 -4)"><g transform="rotate(90)">' + O.paper[0] + '</g></g>'); svg.insertBefore(sheet, H.layB); return Promise.all([L.reach(R, H, 'L', null, 300), L.reach(R, H, 'R', fit(H, 14, -44), 300)]); },
-          function () { take(H, 'R', 'stamp'); return L.reach(R, H, 'R', [143, 52], 450); },
-          function () { return L.reach(R, H, 'R', [143, 62], 160); },
-          function () { sheet.insertAdjacentHTML('beforeend', '<rect x="140" y="62" width="6" height="3" rx=".6" fill="none" stroke="#e5484d" stroke-width=".8"/>'); L.burst(svg, [143, 62], 4); return L.reach(R, H, 'R', [143, 52], 250); },
-          function () { L.letGo(H, 'R'); look(H, null); L.say(H, T('Paid!', 'Betalt!'), 1300); return Promise.all([L.reach(R, H, 'R', null, 300), L.turnTo(R, H, -.2, 300)]); },
-          function () { return L.wait(R, 900); },
-          function () { return L.turnTo(R, H, -.6, 300); }, function () { return L.reach(R, H, 'L', [140, 64], 400); },
-          function () { sheet.remove(); take(H, 'L', 'paper'); return L.reach(R, H, 'L', fit(H, -12, -46), 400); },
-          function () { L.letGo(H, 'L'); return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'sigh', t: 'so many papers', f: function () { look(H, null); L.face(H, 'shy'); L.say(H, T('So many…', 'Så mange …'), 1500); return L.both(R, H, fit(H, -26, -76), fit(H, 26, -76), 400).then(function () { return L.headTo(R, H, 8, 2, 400); }).then(function () { return L.wait(R, 1000); }); } },
-      C.stretch
-    ];
-    return start(svg, H, R, ACTS, 'papers');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.papers = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[106, 100, 74, 100, 'papers'], [226, 44, 52, 40, 'papers']], len: 11.6, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), cx = 205, face = -90, w = 0, pose = {}, p = 0, lean = 0, tilt = 0, canIn = false, grow = 0, water = 0;
+      var L0 = [140, 86 + 3 * Math.sin(now / 600)], LT = [192, 118], OVER = [197, 115], CAN0 = [325, 147], POUR2 = [338, 138];
+      function HD(pp) { return [178 + pp, 131]; }
+      /* the room: a framed certificate, the floor */
+      add(g, 'rect', { x: 230, y: 50, width: 44, height: 34, rx: 3, fill: '#f4f1ea', stroke: '#c9b48e', 'stroke-width': 3 }); [60, 66, 72].forEach(function (y) { add(g, 'line', { x1: 238, y1: y, x2: 266, y2: y, stroke: '#b9b2a2', 'stroke-width': 1.4 }); });
+      FLOOR(g);
+      if (t < .4) cx = 205; else if (t < 1.2) { cx = LERP(205, 230, E(SEG(t, .4, 1.2))); w = .35; } else if (t < 3.7) cx = 230; else if (t < 4.4) { cx = LERP(230, 205, E(SEG(t, 3.7, 4.4))); w = .35; } else cx = 205;
+      p = t < .4 ? 0 : t < 1.2 ? 34 * E(SEG(t, .4, 1.2)) : t < 3.7 ? 34 : 34 * (1 - E(SEG(t, 3.7, 4.4)));
+      if (t < 4.8) {
+        var nr = SIDE(1, -90), fr = SIDE(-1, -90);
+        /* his right hand works the drawer */
+        if (t < .4) pose[nr] = GO(REST, AT(HD(0)), SEG(t, 0, .4), 2); else if (t < 1.2) pose[nr] = HOLD(AT(HD(p))); else if (t < 1.6) pose[nr] = GO(AT(HD(34)), REST, SEG(t, 1.2, 1.6));
+        else if (t >= 3.3 && t < 3.7) pose[nr] = GO(REST, AT(HD(34)), SEG(t, 3.3, 3.7), 2); else if (t >= 3.7 && t < 4.4) pose[nr] = HOLD(AT(HD(p))); else if (t >= 4.4) pose[nr] = GO(AT(HD(0)), REST, SEG(t, 4.4, 4.8));
+        /* his left hand takes the letter as it floats down and drops it in */
+        if (t >= 1.8 && t < 2.2) pose[fr] = GO(REST, AT(LT), SEG(t, 1.8, 2.2), 2); else if (t >= 2.2 && t < 2.8) pose[fr] = GO(AT(LT), AT(OVER), SEG(t, 2.2, 2.8), 4); else if (t >= 2.8 && t < 3.2) pose[fr] = GO(AT(OVER), REST, SEG(t, 2.8, 3.2));
+        lean = .2 * E(SEG(t, 0, .4)) * (1 - E(SEG(t, 4.4, 4.8)));
+      } else if (t < 5.2) face = -90 + 180 * E(SEG(t, 4.8, 5.2));
+      else if (t < 6.4) { face = 90; cx = LERP(205, 300, SEG(t, 5.2, 6.4)); w = Math.min(1, (t - 5.2) / .2, (6.4 - t) / .2); }
+      else if (t < 9.8) {
+        face = 90; var nh = SIDE(-1, 90); cx = t < 6.8 ? 300 : t < 7.2 ? LERP(300, 308, E(SEG(t, 6.8, 7.2))) : t < 8.8 ? 308 : t < 9.4 ? LERP(308, 300, E(SEG(t, 8.8, 9.4))) : 300;
+        if (t >= 6.8 && t < 7.2 || t >= 8.8 && t < 9.4) w = .3;
+        pose[nh] = t < 6.8 ? GO(REST, AT(CAN0), SEG(t, 6.4, 6.8), 2) : t < 7.2 ? GO(AT(CAN0), AT(POUR2), SEG(t, 6.8, 7.2), 3) : t < 8.8 ? HOLD(AT(POUR2)) : t < 9.4 ? GO(AT(POUR2), AT(CAN0), SEG(t, 8.8, 9.4), 3) : GO(AT(CAN0), REST, SEG(t, 9.4, 9.8));
+        canIn = t >= 6.8 && t < 9.4; tilt = t < 7.2 ? 0 : t < 7.6 ? 42 * E(SEG(t, 7.2, 7.6)) : t < 8.4 ? 42 : t < 8.8 ? 42 * (1 - E(SEG(t, 8.4, 8.8))) : 0;
+        water = t > 7.5 && t < 8.6 ? 1 : 0; lean = .3 * E(SEG(t, 6.4, 6.8)) * (1 - E(SEG(t, 9.4, 9.8)));
+      } else if (t < 10.2) { cx = 300; face = 90 - 90 * E(SEG(t, 9.8, 10.2)); }
+      else { cx = 300; face = 0; var nw = SIDE(-1, 0), WV = B(44, 10); pose[nw] = t < 10.5 ? GO(REST, WV, SEG(t, 10.2, 10.5)) : t < 11.2 ? HOLD(B(44, 10 + 9 * Math.sin((t - 10.5) * 16))) : GO(WV, REST, SEG(t, 11.2, 11.6)); }
+      grow = t < 7.9 ? 0 : E(SEG(t, 7.9, 8.9)); if (!st.playing && t >= 11.6) grow = 1;
+      pose.lean = lean; var ph = LIFE(st, pose, w);
+      /* the cabinet, seen from the side: its front faces you on the right */
+      add(g, 'rect', { x: 110, y: 112, width: 58, height: 88, fill: '#7d8894' });
+      add(g, 'path', { d: 'M110 112 L168 112 L176 108 L118 108 Z', fill: '#a3adb7' });
+      add(g, 'path', { d: 'M168 112 L176 108 L176 197 L168 200 Z', fill: '#c3ccd5' });
+      [140, 170].forEach(function (y) { add(g, 'line', { x1: 168, y1: y, x2: 176, y2: y - 3, stroke: '#8f9ba5', 'stroke-width': 1 }); });
+      [154, 184].forEach(function (y) { add(g, 'rect', { x: 171, y: y - 3, width: 3, height: 6, rx: 1.2, fill: '#5b636c' }); });
+      /* the top drawer: it slides out toward him; you see the folders in it */
+      add(g, 'rect', { x: 168, y: 114, width: 8 + p, height: 24, fill: '#b5bec8' });
+      if (p > 2) { add(g, 'rect', { x: 170, y: 113, width: 4 + p, height: 4, fill: '#3a3f4a' }); ['#e8743b', '#3987e5', '#f2c94c', '#2fae6a'].forEach(function (c2, i) { var fx = 172 + i * 7; if (fx < 170 + p) add(g, 'rect', { x: fx, y: 109, width: 5, height: 5, rx: 1, fill: c2 }); }); }
+      add(g, 'rect', { x: 172 + p, y: 112, width: 6, height: 27, rx: 1, fill: '#d5dde4' }); add(g, 'rect', { x: 176 + p, y: 128, width: 3, height: 7, rx: 1.2, fill: '#5b636c' });
+      /* the plant and the stool with the watering can */
+      add(g, 'rect', { x: 312, y: 162, width: 26, height: 4, rx: 1.5, fill: '#a87652' }); [315, 335].forEach(function (x) { add(g, 'rect', { x: x - 1.5, y: 166, width: 3, height: 34, fill: '#8a5e44' }); });
+      var lg = grp(364, 182, 0, 1 + .14 * grow); g.appendChild(lg);
+      [[-10, -14, -40], [9, -16, 35], [-2, -26, -6], [-14, -6, -70], [13, -6, 70]].forEach(function (lf) { add(lg, 'ellipse', { cx: lf[0], cy: lf[1], rx: 4.6, ry: 10, fill: '#2f8a52', transform: 'rotate(' + lf[2] + ' ' + lf[0] + ' ' + lf[1] + ')' }); });
+      if (grow > 0) { add(lg, 'ellipse', { cx: 4, cy: -34, rx: 3.4 * grow, ry: 8 * grow, fill: '#47b06c', transform: 'rotate(20 4 -34)' }); add(lg, 'circle', { cx: -6, cy: -36, r: 3.2 * grow, fill: '#f2a3c4' }); }
+      add(g, 'path', { d: 'M352 180 L376 180 L373 200 L355 200 Z', fill: '#c96a3c' });
+      function can(x, y, deg) { var c = grp(x, y, deg); add(c, 'path', { d: 'M-6 6 Q0 -4 6 6', fill: 'none', stroke: '#2f6e52', 'stroke-width': 2 }); add(c, 'rect', { x: -8, y: 5, width: 16, height: 13, rx: 3, fill: '#3e8f6b' }); add(c, 'line', { x1: 7, y1: 12, x2: 18, y2: 3, stroke: '#3e8f6b', 'stroke-width': 2.6, 'stroke-linecap': 'round' }); add(c, 'circle', { cx: 18.5, cy: 2.5, r: 2, fill: '#2f6e52' }); return c; }
+      if (!canIn) g.appendChild(can(CAN0[0], CAN0[1], 0));
+      /* the letter: floating above the cabinet, then down to his hand, then into the drawer */
+      var lp = null, la = 1, inH = t >= 2.2 && t < 2.8;
+      if (t < 1.0 || t >= 11.55 && !st.playing && false) lp = L0; else if (t < 2.2) lp = MIX(L0, LT, E(SEG(t, 1.0, 2.2))); else if (t >= 2.8 && t < 3.15) { lp = [OVER[0], OVER[1] + 14 * SEG(t, 2.8, 3.15)]; la = 1 - SEG(t, 2.95, 3.15); }
+      if (!st.playing && t >= 11.6) lp = null;
+      function letter(x, y, op) { var l = grp(x, y, 4 * Math.sin(now / 500)); l.setAttribute('opacity', op.toFixed(2)); add(l, 'rect', { x: -8, y: -5.5, width: 16, height: 11, rx: 1.5, fill: '#f7f4ec' }); add(l, 'path', { d: 'M-8 -5 L0 1 L8 -5', fill: 'none', stroke: '#c9b48e', 'stroke-width': 1.2 }); add(l, 'circle', { cx: 0, cy: 1.5, r: 1.6, fill: '#d93a3a' }); return l; }
+      if (lp && !inH) g.appendChild(letter(lp[0], lp[1], la));
+      var H = FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H2) { var out = []; if (inH && H2.sm) out.push([H2.sm.z - .15, letter(H2.sm.X, H2.sm.Y - 2, 1)]); if (canIn && H2.sm) out.push([H2.sm.z - .15, can(H2.sm.X, H2.sm.Y, tilt)]); return out; } });
+      if (water && H.sm) { var r2 = tilt * Math.PI / 180, tx = H.sm.X + 18.5 * Math.cos(r2) - 2.5 * Math.sin(r2), ty = H.sm.Y + 18.5 * Math.sin(r2) + 2.5 * Math.cos(r2);
+        for (var di = 0; di < 6; di++) { var q = ((now / 1000) * 2.2 + di / 6) % 1; add(g, 'ellipse', { cx: LERP(tx, 364, q) + 2 * Math.sin(di), cy: LERP(ty, 182, q * q), rx: 1.2, ry: 2, fill: '#9ad0e8', opacity: .9 }); } }
+    } });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.papers = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

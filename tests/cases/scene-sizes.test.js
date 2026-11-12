@@ -14,6 +14,7 @@ const { open, go, until } = require('../lib/browser'); const { check, done } = r
   const pages = await p.evaluate(() => Object.keys(SceneCommon.SIZES));
   for (const pg of pages) {
     await go(p, pg + '/', 2500);
+    if (await until(p, () => !!document.querySelector('#scIllu svg.sc25'), 3000) !== null) continue;   /* a page in 2.5D (F2): its sizes are drawn to scale in the scene itself */
     const ok = await until(p, pg => !!(window.SceneLive && SceneLive['_' + pg] && document.querySelector('#scIllu .hero')), 10000, pg);
     check(ok !== null, pg + ': the avatar is there to measure against');
     if (ok === null) continue;

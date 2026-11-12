@@ -1,94 +1,173 @@
-/* The living Food picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Food picture in 2.5D (Phase F2 – the preview JP picked, "Food"). The fridge on the left (freezer drawer, the
+   door hinged on its left), a counter with the hob and the pot on the right, a window, the lamp, a shelf of jars.
+   What he does follows the day:
+   - dinner planned tonight: he walks to the fridge, opens it, takes the milk, pushes the door shut, carries the milk
+     to the pot, pours, puts the carton down, takes the spoon and stirs, then walks back and gives a happy hop;
+   - nothing planned: he opens the fridge, looks in, a hand to his chin, shuts it again and turns to you.
+   A shopping bag by the counter when there's something on the shopping list; the jars on the shelf run low with the
+   pantry. Tapping the fridge or the pot opens the dinner plan, the jars the pantry, the bag the shopping list
+   (data-scgo, scenes.js); tapping anywhere else plays it again. Built on scene25.js and Fig25. */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= FOOD: stove beside you, fridge opened from the side, milk into the pot ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    m.me.remove();
-    var fridge = svg.querySelector('.sc-fridge'), bag = svg.querySelector('[data-scgo="shop"]');
-    var inside = el('rect', { x: 11, y: 73, width: 42, height: 54, rx: 3, fill: '#fff6cf' }); fridge.parentNode.insertBefore(inside, fridge.nextSibling);
-    inside.insertAdjacentHTML('afterend', '<g class="fr-items"><g class="fr-milk"><path d="M17 100h6v9h-6z" fill="#f2f2f2"/><path d="M17 100l3 -2.4 3 2.4z" fill="#dfe3ea"/><rect x="17" y="103" width="6" height="2.4" fill="#3987e5"/></g><circle cx="34" cy="105" r="4" fill="#e5484d"/><rect x="40" y="100" width="7" height="10" rx="1.5" fill="#f2c94c"/><path d="M13 109.5h38" stroke="#d9cfa0" stroke-width="1"/></g>');
-    var door = el('g', { class: 'frdoor' }, '<rect x="10" y="72" width="44" height="56" rx="4" style="fill:' + getComputedStyle(fridge).fill + ';stroke:' + getComputedStyle(fridge).stroke + '" stroke-width="1.2"/><rect x="47" y="80" width="2.5" height="16" rx="1" class="sc-handle"/>'); svg.querySelector('[data-scgo="meals"]').appendChild(door);
-    function doorAt(k) { door.setAttribute('transform', 'translate(10 0) scale(' + (1 - .82 * k).toFixed(3) + ' 1) translate(-10 0)'); return 10 + 38.5 * (1 - .82 * k); }
-    var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    svg.appendChild(bag);   /* the bag stands in front of you when you reach into it */
-    function steam(n) { for (var i = 0; i < n; i++) (function (i) { setTimeout(function () { var g = el('g', {}, '<path d="M0 0q-3-4 0-8t0-8" stroke="rgba(255,255,255,.7)" stroke-width="1.8" fill="none" stroke-linecap="round"/>'); svg.appendChild(g); var x = 196 + rnd(-6, 12); g.animate([{ transform: 'translate(' + x + 'px,80px)', opacity: 0 }, { opacity: .9, offset: .25 }, { transform: 'translate(' + (x + rnd(-3, 3)) + 'px,58px)', opacity: 0 }], { duration: 1400 }).onfinish = function () { g.remove(); }; }, i * 420); })(i); }
-    var ACTS = [
-      { n: 'stir', t: 'stirring the pot', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [178, base[1]], 20, null, .7); },
-          function () { o = take(H, 'R', 'spoon'); look(H, [203, 84]); return L.reach(R, H, 'R', [203, 74], 450); },
-          function () { steam(5); return L.tw(R, 2400, function (u) { var a = u * Math.PI * 7; H.hand.R = [203 + Math.cos(a) * 6, 75 + Math.sin(a) * 1.2]; }); },
-          function () { return L.reach(R, H, 'R', [203, 70], 200); },
-          function () {   /* taste: turn the spoon bowl-up and bring the bowl (not the fist) to the mouth */
-            var mo = L.mouth(H), hd = L.handAt(H, 'R'), r0 = o.rot; o.rot = 150; var b = L.objPoint(H, o, [0, 3.6]); o.rot = r0;
-            var to = [mo[0] - (b[0] - hd[0]), mo[1] - (b[1] - hd[1])];
-            return Promise.all([L.reach(R, H, 'R', to, 450), L.tw(R, 450, function (u) { o.rot = r0 + (150 - r0) * L.ease(u); }), L.headTo(R, H, 3, -1, 400)]); },
-          function () { look(H, null); L.face(H, 'love'); L.say(H, T('Mmm!', 'Mmm!'), 1400); return L.wait(R, 1100); },
-          function () { L.tw(R, 300, function (u) { o.rot = 150 * (1 - L.ease(u)); }); return L.reach(R, H, 'R', fit(H, 16, -50), 300); },
-          function () { L.letGo(H, 'R'); return Promise.all([L.settle(R, H, 350), L.headTo(R, H, 0, 0, 300)]); }, function () { return L.walk(R, H, base, 20); }]);
-      } },
-      { n: 'fridge', t: 'getting milk', f: function () {
-        var o, milkInFridge = svg.querySelector('.fr-milk');
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [66, base[1]], 24, null, -.7); },
-          function () { look(H, [48.5, 88]); return L.reach(R, H, 'L', [48.5, 88], 400); },
-          function () { return L.tw(R, 650, function (u) { H.hand.L = [doorAt(ease(u)), 88]; }); },
-          function () { return L.reach(R, H, 'L', null, 250); },
-          function () { return L.walk(R, H, [42, base[1]], 14, null, -.7); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return Promise.all([L.prop(R, H, 'bob', 3, 300), L.reach(R, H, 'L', [20, 103], 450)]); },
-          function () { milkInFridge.style.opacity = 0; o = take(H, 'L', 'milk'); return Promise.all([L.prop(R, H, 'bob', 0, 300), L.reach(R, H, 'L', fit(H, -10, -64), 400)]); },
-          /* the hand with the milk nudges the door shut */
-          function () { return L.reach(R, H, 'L', [doorAt(1), 92], 350); },
-          function () { return L.tw(R, 450, function (u) { H.hand.L = [doorAt(1 - ease(u)), 92]; }); },
-          function () { return L.reach(R, H, 'L', fit(H, -10, -64), 300); },
-          function () { return L.turnTo(R, H, 'front', 300); },
-          function () { look(H, null); L.face(H, 'grin'); L.say(H, T('Milk!', 'Melk!'), 1200); return L.wait(R, 700); },
-          function () { return L.reach(R, H, 'L', fit(H, 8, -62), 300); },
-          function () { return L.walk(R, H, [178, base[1]], 24, null, .7); },
-          /* hand it over to the right hand, nearest the pot, and pour */
-          function () { return L.both(R, H, fit(H, 4, -66), fit(H, 6, -66), 300); },
-          function () { L.letGo(H, 'L'); o = take(H, 'R', 'milk'); return Promise.all([L.reach(R, H, 'L', null, 300), L.reach(R, H, 'R', [200, 70], 450)]); },
-          function () { look(H, [203, 84]); return L.tw(R, 1300, function (u) { o.rot = 105 * Math.min(1, u * 3) * (u > .8 ? (1 - u) * 5 : 1); if (u > .3 && u < .8 && Math.random() < .5) { var t = tipOf(H, o, 'milk'); drip(svg, t, '#f2f2f2'); } }); },
-          function () { steam(3); o.rot = 0; return L.reach(R, H, 'R', [226, 92], 400); },
-          function () { /* set it down beside the pot */ L.letGo(H, 'R'); var c = el('g', { class: 'carton' }, '<g transform="translate(226 92.5) scale(' + (H.s / .5).toFixed(3) + ') translate(0 -1.5)">' + O.milk[0] + '</g>'); svg.insertBefore(c, H.wrap); setTimeout(function () { c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: 'forwards' }).onfinish = function () { c.remove(); milkInFridge.style.opacity = 1; }; }, 4000); look(H, null); return L.settle(R, H, 350); },
-          function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'pantry', t: 'checking the pantry', f: function () {
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [104, base[1]], 22, null, -.7); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return Promise.all([L.reach(R, H, 'R', [114, 70], 500), L.headTo(R, H, -6, -1, 400)]); },
-          function () { return L.tw(R, 1200, function (u) { H.hand.R = [114 - u * 26, 70 + Math.sin(u * 9) * 1]; H.head = [-6 + u * 10, -1]; }); },
-          function () { return L.reach(R, H, 'R', null, 300); }, function () { return L.turnTo(R, H, 'front', 300); },
-          function () { look(H, null); L.face(H, 'shy'); L.say(H, T('Running low!', 'Snart tomt!'), 1500); return L.both(R, H, fit(H, -24, -74), fit(H, 24, -74), 350); },
-          function () { return L.wait(R, 900); }, function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'bag', t: 'checking the shopping list', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [148, base[1]], 22, null, -.7); },
-          function () { look(H, [128, 110]); return Promise.all([L.prop(R, H, 'bob', 8, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.reach(R, H, 'L', [129, 114], 500)]); },
-          function () { L.wob(bag, 5, 400); return L.wait(R, 300); },
-          function () { o = take(H, 'L', 'paperBack'); return Promise.all([L.prop(R, H, 'bob', 0, 450), L.legs(R, H, 0, 0, 0, 0, 450), L.reach(R, H, 'L', fit(H, -8, -58), 450)]); },
-          function () { return L.turnTo(R, H, 'front', 300); },
-          function () { look(H, L.handAt(H, 'L')); return L.headTo(R, H, 6, 1.5, 300); },
-          function () { return L.wait(R, 900); },
-          function () { look(H, null); L.face(H, 'wow'); L.say(H, T('What do we need?', 'Hva trenger vi?'), 1600); return L.wait(R, 1200); },
-          function () { return L.turnTo(R, H, -.7, 300); },
-          function () { look(H, [128, 110]); return Promise.all([L.prop(R, H, 'bob', 8, 400), L.legs(R, H, .6, .6, -12, 12, 400), L.reach(R, H, 'L', [129, 114], 450)]); },
-          function () { L.letGo(H, 'L'); look(H, null); return Promise.all([L.prop(R, H, 'bob', 0, 400), L.legs(R, H, 0, 0, 0, 0, 400), L.reach(R, H, 'L', null, 400)]); },
-          function () { return L.walk(R, H, base, 22); }]);
-      } },
-      C.think(T('Taco or pasta?', 'Taco eller pasta?')), C.wave
-    ];
-    return start(svg, H, R, ACTS, 'food');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.food = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, MIX = S.MIX;
+    data = data || {};
+    var GY = 200, K = .5, HOME = 215, CT = 160, CX0 = 250, CX1 = 392, PX = 300, PT = 141, PB = 158, PR = 14;
+    var cook = !!data.dinner;
+    /* the fridge door, hinged on the left: th = 0 shut, 75° open, seen a little from above and the right */
+    function doorEdge(th, f) { f = f == null ? 1 : f; return [40 + f * (72 * Math.cos(th) + 14 * Math.sin(th)), 6 * f * Math.sin(th)]; }
+    function handle(th) { var d = doorEdge(th, .89); return [d[0], 140 + d[1]]; }
+    var REST = { b: [143, 8] };
+    function AT(p) { return { at: p }; }
+    function reach(A, B, f, up) { return { m: 1, path: [A, B], f: E(f), up: up || 0 }; }
+    function key(sd, deg) { var zz = -sd * Math.sin(deg * Math.PI / 180); return zz > 1e-6 || (Math.abs(zz) <= 1e-6 && sd < 0) ? 'near' : 'far'; }
+    var D = 75 * Math.PI / 180, D50 = 50 * Math.PI / 180, D20 = 20 * Math.PI / 180;
+    var MILK0 = [101, 131], CARRY = [118, 22], POUR = [299, 132], DOWN = [285, 151], SPOON = [304, 132];
+    var LEN = 17.6, LLEN = 8.9;
+    function rest(st) { var it = st.still ? 0 : (st.now - (st.endNow || st.now)) / 1000; return Math.sin(it * .35) * 22 * Math.max(0, Math.sin(it * .13)); }
+    /* the door: pulled to 50°, swings on to 75°; later pushed back to 20° and it shuts with a little bump */
+    function door(t, o, c) { if (t < o) return 0; if (t < o + .7) return D50 * E(SEG(t, o, o + .7)); if (t < c) return D50 + (D - D50) * (1 - Math.pow(1 - SEG(t, o + .7, o + 1.4), 2));
+      if (t < c + .8) return D + (D20 - D) * E(SEG(t, c, c + .8)); var q = SEG(t, c + .8, c + 1.02); return D20 * (1 - q * q) + (q >= 1 ? Math.sin(SEG(t, c + 1.02, c + 1.1) * Math.PI) * .02 : 0); }
+    function cookAt(t, st) {
+      var r = { cx: HOME, face: 0, w: 0, pose: {}, th: 0, milk: 'fridge', tilt: 0, fill: 0, stir: -1, flow: 0 }, pose = r.pose;
+      if (t >= 3.5) r.milk = 'hand'; if (t >= 10.3) r.milk = 'counter';
+      r.fill = t < .01 ? 0 : E(SEG(t, 8.6, 9.4));
+      if (t < .4) r.face = -90 * E(t / .4);
+      else if (t < 1.6) { r.face = -90; r.cx = HOME + (128 - HOME) * SEG(t, .4, 1.6); r.w = Math.min(1, (t - .4) / .2, (1.6 - t) / .2); }
+      else if (t < 5.7) { r.face = -90; r.cx = 128; r.th = door(t, 1.9, 4.6);
+        if (t >= 3.9 && t < 4.5) { r.cx = 128 + (100 - 128) * E(SEG(t, 3.9, 4.5)); r.w = .5 * Math.sin(Math.PI * SEG(t, 3.9, 4.5)); } else if (t >= 4.5 && t < 5.4) r.cx = 100 + (125 - 100) * E(SEG(t, 4.6, 5.4)); else if (t >= 5.4) r.cx = 125;
+        var nr = key(1, -90), fr = key(-1, -90), edge = doorEdge(r.th, .85); edge = [edge[0] + 2, 142 + edge[1]];
+        if (t < 1.9) pose[nr] = reach(REST, AT(handle(r.th)), SEG(t, 1.6, 1.9), 2);
+        else if (t < 2.6) pose[nr] = { m: 1, at: handle(r.th) };
+        else if (t < 3.0) pose[nr] = reach(AT(handle(r.th)), REST, SEG(t, 2.6, 3.0), 0);
+        else if (t >= 4.2 && t < 4.6) pose[nr] = reach(REST, AT(edge), SEG(t, 4.2, 4.6), 3);
+        else if (t >= 4.6 && t < 5.4) pose[nr] = { m: 1, at: edge };
+        else if (t >= 5.4) pose[nr] = reach(AT(edge), REST, SEG(t, 5.4, 5.75), 0);
+        if (t >= 3.0) pose[fr] = t < 3.45 ? reach(REST, AT(MILK0), SEG(t, 3.0, 3.45), 3) : t < 3.5 ? { m: 1, at: MILK0 } : t < 3.95 ? reach(AT(MILK0), { b: CARRY }, SEG(t, 3.5, 3.95), 2) : { m: 1, b: CARRY };
+        pose.lean = .15 * E(SEG(t, 1.6, 1.9)) * (1 - E(SEG(t, 5.4, 5.7))); }
+      else if (t < 6.3) { r.cx = 125; r.face = -90 + 180 * E(SEG(t, 5.7, 6.3)); pose[key(-1, r.face)] = { m: 1, b: CARRY }; }
+      else if (t < 7.7) { r.face = 90; r.cx = 125 + (268 - 125) * SEG(t, 6.3, 7.7); r.w = Math.min(1, (t - 6.3) / .2, (7.7 - t) / .2); pose[key(-1, 90)] = { m: 1, b: CARRY }; }
+      else if (t < 12.7) { r.face = 90; r.cx = 268; var nh = key(-1, 90), sp2 = SPOON;
+        if (t >= 10.6 && t < 12.4) { var ang = (t - 10.6) / 1.8 * Math.PI * 2 * 3; r.stir = ang; sp2 = [SPOON[0] - 3 + 6 * Math.cos(ang), SPOON[1] + 1.8 * Math.sin(ang)]; }
+        pose[nh] = t < 8.15 ? reach({ b: CARRY }, AT(POUR), SEG(t, 7.7, 8.15), 3) : t < 9.8 ? { m: 1, at: POUR }
+          : t < 10.3 ? reach(AT(POUR), AT(DOWN), SEG(t, 9.8, 10.3), 4) : t < 10.6 ? reach(AT(DOWN), AT(SPOON), SEG(t, 10.3, 10.6), 3)
+          : t < 12.4 ? { m: 1, at: sp2 } : reach(AT(SPOON), REST, SEG(t, 12.4, 12.7), 0);
+        r.tilt = t < 8.1 ? 0 : t < 8.5 ? 115 * E(SEG(t, 8.1, 8.5)) : t < 9.4 ? 115 + 6 * Math.sin((t - 8.5) * 9) * .3 : t < 9.8 ? 115 * (1 - E(SEG(t, 9.4, 9.8))) : 0;
+        r.flow = t > 8.45 && t < 9.45 ? Math.min(1, (t - 8.45) / .1, (9.45 - t) / .1) : 0;
+        pose.lean = .3 * E(SEG(t, 7.7, 8.1)) * (1 - E(SEG(t, 12.4, 12.7))); r.spoonHand = t >= 10.55 && t < 12.45; }
+      else if (t < 13.1) { r.cx = 268; r.face = 90 - 180 * E(SEG(t, 12.7, 13.1)); }
+      else if (t < 14.0) { r.face = -90; r.cx = 268 + (HOME - 268) * SEG(t, 13.1, 14.0); r.w = Math.min(1, (t - 13.1) / .2, (14.0 - t) / .2); }
+      else if (t < 14.4) { r.face = -90 + 90 * E(SEG(t, 14.0, 14.4)); }
+      else if (t < 15.6) { var hp = (t - 14.4) / 1.2, on = E(CL(hp / .32)) * (1 - E(CL((hp - .7) / .3)));   /* a happy hop, both hands up */
+        r.pose = { lift: hp < .2 ? -3 * Math.sin(hp / .2 * Math.PI) : hp < .65 ? 10 * Math.sin((hp - .2) / .45 * Math.PI) : 0, far: { m: on, b: [40, 10] }, near: { m: on, b: [40, 10] } }; r.expr = 'laugh'; }
+      else r.face = rest(st);
+      if (t >= LEN) { r.milk = 'counter'; r.fill = 1; }
+      return r;
+    }
+    /* nothing planned: open, look in, a hand to the chin, a slow shake of the head, shut it, back to you */
+    function lookAt(t, st) {
+      var r = { cx: HOME, face: 0, w: 0, pose: {}, th: 0, milk: 'fridge', tilt: 0, fill: 0, stir: -1, flow: 0 }, pose = r.pose;
+      var nr = key(1, -90), fr = key(-1, -90);
+      if (t < .4) r.face = -90 * E(t / .4);
+      else if (t < 1.6) { r.face = -90; r.cx = HOME + (128 - HOME) * SEG(t, .4, 1.6); r.w = Math.min(1, (t - .4) / .2, (1.6 - t) / .2); }
+      else if (t < 5.7) { r.face = -90; r.cx = 128; r.th = door(t, 1.9, 4.6); var edge = doorEdge(r.th, .85); edge = [edge[0] + 2, 142 + edge[1]];
+        if (t < 1.9) pose[nr] = reach(REST, AT(handle(r.th)), SEG(t, 1.6, 1.9), 2);
+        else if (t < 2.6) pose[nr] = { m: 1, at: handle(r.th) };
+        else if (t < 3.0) pose[nr] = reach(AT(handle(r.th)), REST, SEG(t, 2.6, 3.0), 0);
+        else if (t >= 4.2 && t < 4.6) pose[nr] = reach(REST, AT(edge), SEG(t, 4.2, 4.6), 3);
+        else if (t >= 4.6 && t < 5.4) pose[nr] = { m: 1, at: edge };
+        else if (t >= 5.4) pose[nr] = reach(AT(edge), REST, SEG(t, 5.4, 5.75), 0);
+        var chin = E(SEG(t, 2.8, 3.2)) * (1 - E(SEG(t, 4.0, 4.4)));
+        if (chin > 0) pose[fr] = { m: chin, b: [76, 18] };
+        if (t > 3.2 && t < 4.0) r.face = -90 + 14 * Math.sin((t - 3.2) / .8 * Math.PI * 2) * Math.sin((t - 3.2) / .8 * Math.PI);
+        pose.lean = .2 * E(SEG(t, 1.6, 2.4)) * (1 - E(SEG(t, 5.0, 5.6))); r.expr = t > 2.8 && t < 4.6 ? 'shy' : null; }
+      else if (t < 7.0) { r.face = 90; r.cx = 128 + (HOME - 128) * E(SEG(t, 5.7, 7.0)); r.w = Math.sin(Math.PI * SEG(t, 5.7, 7.0)); if (t < 5.95) r.face = -90 + 180 * E(SEG(t, 5.7, 5.95)); }
+      else if (t < 7.4) r.face = 90 - 90 * E(SEG(t, 7.0, 7.4));
+      else r.face = rest(st);
+      return r;
+    }
+    /* the milk carton: white with a blue band, a gable top, the spout on its right */
+    function carton(x, y, deg) { var g = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + deg.toFixed(1) + ')' });
+      add(g, 'rect', { x: -4.5, y: -8, width: 9, height: 17, rx: 1.2, fill: '#f7f7f4' }); add(g, 'rect', { x: -4.5, y: -1, width: 9, height: 5, fill: '#3987e5' });
+      add(g, 'path', { d: 'M-4.5 -8 L0 -12 L4.5 -8 Z', fill: '#e4e4df' }); add(g, 'rect', { x: 2, y: -12.5, width: 3, height: 2.4, rx: .6, fill: '#3987e5' }); return g; }
+    function spout(x, y, deg) { var r = deg * Math.PI / 180, px = 3.5, py = -12; return [x + px * Math.cos(r) - py * Math.sin(r), y + px * Math.sin(r) + py * Math.cos(r)]; }
+    var steamA = 0;
+    return S.run(svg, {
+      len: cook ? LEN : LLEN, data: data,
+      back: function (bg) {
+        /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
+        add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(0,0,0,.22)' });
+        add(bg, 'ellipse', { cx: 210, cy: GY + 4, rx: 190, ry: 16, fill: 'rgba(255,190,120,.10)' });
+        add(bg, 'rect', { x: 160, y: 40, width: 62, height: 58, rx: 6, fill: '#1b2338', stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2.4 });
+        add(bg, 'line', { x1: 191, y1: 40, x2: 191, y2: 98, stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2 });
+        add(bg, 'circle', { cx: 206, cy: 58, r: 6, fill: '#eef0f4' }); add(bg, 'circle', { cx: 209.5, cy: 55.5, r: 5, fill: '#1b2338' });
+        [[170, 52], [180, 76], [200, 84], [214, 74]].forEach(function (s) { add(bg, 'circle', { cx: s[0], cy: s[1], r: .9, fill: '#fff', opacity: .7 }); });
+        add(bg, 'line', { x1: 330, y1: 0, x2: 330, y2: 30, stroke: '#2a1d16', 'stroke-width': 1.4 });
+        add(bg, 'path', { d: 'M316 42 Q316 30 330 30 Q344 30 344 42 Z', fill: '#e8743b' }); add(bg, 'ellipse', { cx: 330, cy: 43, rx: 9, ry: 2.5, fill: '#ffe2a8' });
+        add(bg, 'path', { d: 'M318 44 L290 118 L370 118 L342 44 Z', fill: 'rgba(255,214,150,.06)' });
+        var sh = add(bg, 'g', { class: 'hs-part' + (data.low ? ' hot' : ''), 'data-scgo': 'pantry' }), low = Math.min(4, data.low || 0);
+        add(sh, 'rect', { x: 340, y: 92, width: 50, height: 3, rx: 1, fill: '#8a5a3c' });
+        [['#c98500', 344], ['#e8743b', 356], ['#8a6fdf', 368], ['#22b35e', 380]].forEach(function (j, i) { var hh = 12 + (i % 2) * 3, f = i < low ? .25 : .65;   /* a jar running low: nearly empty */
+          add(sh, 'rect', { x: j[1], y: 92 - hh, width: 8, height: hh, rx: 2, fill: 'rgba(255,255,255,.18)', stroke: 'rgba(var(--ink-rgb), .4)', 'stroke-width': .7 });
+          add(sh, 'rect', { x: j[1] + 1, y: 92 - hh * f, width: 6, height: hh * f - 1, rx: 1.4, fill: j[0] });
+          add(sh, 'rect', { x: j[1] - .5, y: 92 - hh - 2, width: 9, height: 2.6, rx: 1, fill: '#5a3a26' }); });
+        /* the counter: cabinet fronts, the top, the hob */
+        var ct = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
+        add(ct, 'rect', { x: CX0, y: CT + 2, width: CX1 - CX0, height: GY - CT - 2, fill: '#5d7f8f' });
+        [CX0 + 6, CX0 + 52, CX0 + 98].forEach(function (x) { add(ct, 'rect', { x: x, y: CT + 9, width: 40, height: GY - CT - 16, rx: 3, fill: '#6c90a0' }); add(ct, 'rect', { x: x + 16, y: CT + 14, width: 8, height: 2.4, rx: 1.2, fill: '#d7dee3' }); });
+        add(ct, 'rect', { x: CX0 - 4, y: CT - 2, width: CX1 - CX0 + 8, height: 6, rx: 2, fill: '#c9b48e' });
+        add(ct, 'rect', { x: PX - 24, y: CT - 4, width: 48, height: 3, rx: 1.4, fill: '#2a2d33' });
+        /* the shopping bag on the floor by the counter, when there is something on the list */
+        if (data.shop) { var bag = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'shop' });
+          add(bag, 'path', { d: 'M140 200 L144 176 L164 176 L168 200 Z', fill: '#c9a26a' }); add(bag, 'path', { d: 'M148 176 Q154 166 160 176', fill: 'none', stroke: '#8a6a3c', 'stroke-width': 1.6 });
+          add(bag, 'rect', { x: 147, y: 170, width: 5, height: 8, rx: 1.4, fill: '#22b35e' }); add(bag, 'circle', { cx: 159, cy: 173, r: 3.4, fill: '#e8743b' }); }
+      },
+      render: function (sv, t, st) {
+        var r = cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
+        var hot = cook && (t > 9 || !st.playing); steamA += ((hot ? (r.stir >= 0 ? 1 : .75) : 0) - steamA) * (st.still ? 1 : Math.min(1, st.dt * 1.5));
+        var now = st.now || 0;
+        if (hot) add(sv, 'ellipse', { cx: PX, cy: CT - 3, rx: 18, ry: 1.6, fill: '#ff6a3d', opacity: (.55 + .25 * Math.sin(now / 160)).toFixed(2) });
+        /* the pot, its milk, the spoon (bowl in the pot, handle on the rim or in his hand), steam */
+        var pot = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
+        add(pot, 'ellipse', { cx: PX, cy: PT, rx: PR, ry: 4, fill: '#3b4148' });
+        if (r.fill > 0) add(pot, 'ellipse', { cx: PX, cy: PT + 1, rx: ((PR - 1.5) * (.6 + .4 * r.fill)).toFixed(1), ry: (3 * (.6 + .4 * r.fill)).toFixed(1), fill: '#f6f2e8', opacity: (.4 + .6 * r.fill).toFixed(2) });
+        var spoonTop = st.spoonTop || SPOON, bowl = [PX + (r.stir >= 0 ? -4 * Math.cos(r.stir) : 2), PT + 8];
+        add(pot, 'line', { x1: bowl[0].toFixed(1), y1: bowl[1], x2: (r.spoonHand ? spoonTop[0] : SPOON[0]).toFixed(1), y2: ((r.spoonHand ? spoonTop[1] : SPOON[1]) - 4).toFixed(1), stroke: '#c58b5a', 'stroke-width': 2.4, 'stroke-linecap': 'round' });
+        add(pot, 'path', { d: 'M' + (PX - PR) + ' ' + PT + ' L' + (PX - PR + 1) + ' ' + (PB - 3) + ' Q' + (PX - PR + 1) + ' ' + PB + ' ' + (PX - PR + 5) + ' ' + PB + ' L' + (PX + PR - 5) + ' ' + PB + ' Q' + (PX + PR - 1) + ' ' + PB + ' ' + (PX + PR - 1) + ' ' + (PB - 3) + ' L' + (PX + PR) + ' ' + PT + ' Z', fill: '#4a5058' });
+        add(pot, 'path', { d: 'M' + (PX - PR + 2) + ' ' + (PT + 4) + ' L' + (PX - PR + 3) + ' ' + (PB - 4), stroke: 'rgba(255,255,255,.35)', 'stroke-width': 2, 'stroke-linecap': 'round' });
+        [-1, 1].forEach(function (s) { add(pot, 'rect', { x: PX + s * (PR + 3) - 3, y: PT + 3, width: 6, height: 2.6, rx: 1.3, fill: '#5b636c' }); });
+        if (steamA > .02) for (var si = 0; si < 3; si++) { var ph0 = ((now / 1000) * .6 + si / 3) % 1, sx = PX - 8 + si * 8, sy = PT - 4 - ph0 * 26;
+          add(sv, 'path', { d: 'M' + sx + ' ' + sy.toFixed(1) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#fff', 'stroke-width': 1.8, 'stroke-linecap': 'round', opacity: (steamA * .55 * Math.sin(Math.PI * ph0)).toFixed(2) }); }
+        /* the fridge: freezer drawer on top, the door below, its inside lit when open */
+        var fr2 = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
+        add(fr2, 'path', { d: 'M112 80 L121 86 L121 199 L112 199 Z', fill: '#a9b4bd' });
+        add(fr2, 'rect', { x: 40, y: 78, width: 72, height: 121, rx: 6, fill: '#dfe5ea' });
+        add(fr2, 'rect', { x: 48, y: 96, width: 22, height: 3, rx: 1.5, fill: '#9aa6b0' });
+        if (th > .01) {
+          add(fr2, 'rect', { x: 43, y: 111, width: 66, height: 84, rx: 3, fill: '#fbf3dc' });
+          add(fr2, 'rect', { x: 43, y: 111, width: 66, height: 84, rx: 3, fill: 'rgba(255,230,160,' + (.35 * th / D).toFixed(2) + ')' });
+          [140, 168].forEach(function (y) { add(fr2, 'rect', { x: 43, y: y, width: 66, height: 2, fill: '#d8d0bc' }); });
+          add(fr2, 'rect', { x: 56, y: 126, width: 10, height: 14, rx: 2.5, fill: '#e8743b' }); add(fr2, 'rect', { x: 55, y: 124, width: 12, height: 3, rx: 1, fill: '#7a5038' });
+          add(fr2, 'circle', { cx: 80, cy: 163, r: 4.6, fill: '#d94a4a' }); add(fr2, 'circle', { cx: 89, cy: 164, r: 4, fill: '#7fbf4a' });
+          add(fr2, 'rect', { x: 64, y: 176, width: 26, height: 14, rx: 3, fill: '#9ad0e8', opacity: .8 });
+          if (r.milk === 'fridge') fr2.appendChild(carton(MILK0[0], MILK0[1], 0));
+        }
+        var fe = doorEdge(th), ftop = 110 + fe[1], fbot = 197 + fe[1], shadeD = Math.round(223 - 40 * Math.sin(th));
+        add(fr2, 'path', { d: 'M40 110 L' + fe[0].toFixed(1) + ' ' + ftop.toFixed(1) + ' L' + fe[0].toFixed(1) + ' ' + fbot.toFixed(1) + ' L40 197 Z', fill: 'rgb(' + shadeD + ',' + (shadeD + 6) + ',' + (shadeD + 11) + ')', stroke: 'rgba(0,0,0,.12)', 'stroke-width': .8, 'stroke-linejoin': 'round' });
+        if (th > .05) add(fr2, 'path', { d: 'M' + fe[0].toFixed(1) + ' ' + ftop.toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (ftop - 1).toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (fbot - 1).toFixed(1) + ' L' + fe[0].toFixed(1) + ' ' + fbot.toFixed(1) + ' Z', fill: '#b9c3cb' });
+        var hd = handle(th); add(fr2, 'rect', { x: (hd[0] - 1.6).toFixed(1), y: (hd[1] - 15).toFixed(1), width: 3.2, height: 30, rx: 1.6, fill: '#8f9ba5' });
+        if (th < .01) add(fr2, 'line', { x1: 40, y1: 110, x2: 112, y2: 110, stroke: '#b7c1c9', 'stroke-width': 1.2 });
+        if (r.milk === 'counter') sv.appendChild(carton(DOWN[0], DOWN[1], 0));
+        /* him, with the carton at his hand's depth while he holds it */
+        var gg = add(sv, 'g', { class: 'sc25-me' }), ph = S.LIFE(st, r.pose, r.w), look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
+        var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY, k: K, ph: ph, w: r.w, pose: r.pose,
+          items: function (H) { var h = Fig25.hand()['s-1']; return r.milk === 'hand' && h ? [[h.z - .15, carton(h.X, h.Y, r.tilt)]] : []; } });
+        var hm = Fig25.hand()['s-1']; st.spoonTop = hm ? [hm.X, hm.Y] : SPOON; st.r = r;
+        if (r.flow > 0 && hm) { var sp = spout(hm.X, hm.Y, r.tilt), wob = Math.sin(now / 60) * .8;
+          add(sv, 'path', { d: 'M' + sp[0].toFixed(1) + ' ' + sp[1].toFixed(1) + ' Q' + (sp[0] + 2 + wob).toFixed(1) + ' ' + ((sp[1] + PT) / 2).toFixed(1) + ' ' + (sp[0] + 1).toFixed(1) + ' ' + (PT + 1), fill: 'none', stroke: '#f6f2e8', 'stroke-width': (2.4 * r.flow).toFixed(2), 'stroke-linecap': 'round' }); }
+      }
+    });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.food = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

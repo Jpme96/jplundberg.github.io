@@ -1,62 +1,48 @@
-/* The living Health picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Habits picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   HEALTH: dumbbells picked up from the floor, three curls, wiping the brow, arms up.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= HEALTH: dumbbells picked up from the floor, the barbell in front of you ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    m.me.remove();
-    var bar = svg.querySelector('[data-scgo="training"]'), heart = svg.querySelector('.sc-heart');
-    var H = L.Hero(svg, null, m.box)   /* your own avatar, as you made it */, R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    svg.appendChild(bar);   /* the barbell lies in front of you, wider than your shoulders */
-    var barIn = el('g', {}); while (bar.firstChild) barIn.appendChild(bar.firstChild); bar.appendChild(barIn); barIn.setAttribute('transform', 'translate(193 124) scale(1.9 1.5) translate(-193 -124)');
-    var ACTS = [
-      { n: 'curl', t: 'curling', f: function () {
-        var bells = el('g', { class: 'bells' }, [-1, 1].map(function (s) { return '<g transform="translate(' + (base[0] + s * 13 * H.s / .5) + ' ' + (base[1] - 2) + ') scale(' + (H.s / .5).toFixed(3) + ')">' + O.bell[0] + '</g>'; }).join('')); svg.appendChild(bells);
-        return seq([function () { look(H, [base[0], base[1]]); L.face(H, 'calm'); return Promise.all([L.prop(R, H, 'bob', 16, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.both(R, H, [base[0] - 13 * H.s / .5, base[1] - 2], [base[0] + 13 * H.s / .5, base[1] - 2], 450)]); },
-          function () { bells.remove(); take(H, 'R', 'bell'); take(H, 'L', 'bell'); look(H, null); return Promise.all([L.prop(R, H, 'bob', 0, 450), L.legs(R, H, 0, 0, 0, 0, 450), L.both(R, H, fit(H, -16, -42), fit(H, 16, -42), 450)]); },
-          function () { L.face(H, 'grin'); return L.tw(R, 3000, function (u) { var a = u * Math.PI * 6, r = Math.max(0, Math.sin(a)), l = Math.max(0, -Math.sin(a)); H.hand.R = fit(H, 16 - r * 4, -42 - r * 30); H.hand.L = fit(H, -16 + l * 4, -42 - l * 30); H.head = [Math.sin(a) * 2, 0]; }); },
-          function () { L.face(H, 'cool'); L.say(H, T('One more!', 'Én til!'), 1300); return L.wait(R, 600); },
-          function () { return Promise.all([L.prop(R, H, 'bob', 16, 450), L.legs(R, H, .6, .6, -12, 12, 450), L.both(R, H, [base[0] - 13 * H.s / .5, base[1] - 2], [base[0] + 13 * H.s / .5, base[1] - 2], 450)]); },
-          function () { L.letGo(H, 'R'); L.letGo(H, 'L'); var b2 = el('g', {}, bells.innerHTML); svg.appendChild(b2); setTimeout(function () { b2.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' }).onfinish = function () { b2.remove(); }; }, 1500); return Promise.all([L.prop(R, H, 'bob', 0, 450), L.legs(R, H, 0, 0, 0, 0, 450)]); }]);
-      } },
-      { n: 'barbell', t: 'lifting the barbell', f: function () {
-        var c0 = [193, 115.5], GX = 24;
-        function carry() { var c = mid(H); bar.setAttribute('transform', 'translate(' + (c[0] - c0[0]).toFixed(2) + ' ' + (c[1] - c0[1]).toFixed(2) + ')'); }
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [193, base[1] - 6], 20); },
-          function () { look(H, c0); return Promise.all([L.prop(R, H, 'bob', 15, 500), L.legs(R, H, .6, .6, -14, 14, 500)]); },
-          function () { return L.both(R, H, [193 - GX, 115.5], [193 + GX, 115.5], 450); },
-          function () { L.face(H, 'wow'); look(H, null); return L.tw(R, 1100, function (u) { var e = ease(u), y = lerp(115.5, H.pos[1] - 64 * H.s, e); H.bob = 15 * (1 - e); H.legs.R = H.legs.L = .6 * (1 - e); H.legs.sR = -14 * (1 - e); H.legs.sL = 14 * (1 - e); H.hand.L = [193 - GX, y]; H.hand.R = [193 + GX, y]; carry(); }); },
-          function () { return L.tw(R, 500, function (u) { var e = ease(u), y = lerp(H.pos[1] - 64 * H.s, H.pos[1] - 76 * H.s, e); H.hand.L = [193 - GX, y]; H.hand.R = [193 + GX, y]; carry(); }); },
-          function () { L.face(H, 'cool'); L.say(H, T('Strong!', 'Sterk!'), 1300); return L.tw(R, 1100, function (u) { H.bob = -Math.abs(Math.sin(u * Math.PI * 2)) * 1.5; carry(); }); },
-          function () { L.face(H, 'calm'); return L.tw(R, 1300, function (u) { var e = ease(u), y = u < .5 ? lerp(H.pos[1] - 76 * H.s, H.pos[1] - 64 * H.s, e * 2) : lerp(H.pos[1] - 64 * H.s, 115.5, (e - .5) * 2); if (u > .5) { H.bob = 15 * (u - .5) * 2; H.legs.R = H.legs.L = .6 * (u - .5) * 2; } H.hand.L = [193 - GX, y]; H.hand.R = [193 + GX, y]; carry(); }); },
-          function () { bar.setAttribute('transform', ''); return L.settle(R, H, 450); },
-          function () { return L.walk(R, H, base, 20); }]);
-      } },
-      { n: 'heart', t: 'checking the pulse', f: function () {
-        return seq([function () { L.face(H, 'wow'); look(H, [50, 72]); return L.turnTo(R, H, -.6, 300); },
-          function () { return L.reach(R, H, 'L', fit(H, -4, -70), 400); },
-          function () { L.say(H, T('Heart’s pumping!', 'Pulsen går!'), 1600); heart.style.transformBox = 'fill-box'; heart.style.transformOrigin = 'center'; heart.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 300, iterations: 6 }); return L.wait(R, 1800); },
-          function () { look(H, null); }]);
-      } },
-      { n: 'jacks', t: 'jumping jacks', f: function () { look(H, null); L.face(H, 'grin'); return L.tw(R, 3600, function (u) { var a = Math.sin(u * Math.PI * 6), up = (1 - Math.cos(u * Math.PI * 6)) / 2; H.bob = -Math.abs(a) * 6; H.legs.sR = -16 * up; H.legs.sL = 16 * up; H.rot.R = [-160 * up, -10 * up]; H.rot.L = [160 * up, 10 * up]; }); } },
-      { n: 'drink', t: 'drinking water', f: function () {
-        var o;
-        return seq([function () { L.face(H, 'calm'); return L.reach(R, H, 'R', fit(H, 14, -44), 300); },
-          function () { o = take(H, 'R', 'bottle'); return L.drink(R, H, 'R', o, 1000, 70); },   /* to the mouth, tipped up */
-          function () { L.face(H, 'grin'); L.say(H, T('Water!', 'Vann!'), 1300); return L.reach(R, H, 'R', fit(H, 14, -44), 400); },
-          function () { L.letGo(H, 'R'); }]);
-      } },
-      C.stretch
-    ];
-    return start(svg, H, R, ACTS, 'habits');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.habits = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[42, 40, 98, 62, 'training'], [150, 168, 96, 32, 'training'], [252, 166, 18, 34, 'ahealth'], [290, 108, 90, 92, 'training']], len: 9.6, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, cs = Math.cos(face * Math.PI / 180);
+      function DB(sd) { return [cx + sd * 13 + 9, 193]; }
+      /* the room: a streak chart on the wall, the rack with the barbell, the mat, a bottle */
+      add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 6, fill: 'rgba(255,255,255,.08)', stroke: 'rgba(255,255,255,.25)' });
+      [14, 22, 18, 30, 26, 38, 44].forEach(function (v, i) { add(g, 'rect', { x: 56 + i * 11, y: 94 - v, width: 7, height: v, rx: 2, fill: i > 3 ? '#2fae6a' : 'rgba(255,255,255,.35)' }); });
+      [312, 368].forEach(function (x) { add(g, 'rect', { x: x - 2, y: 116, width: 4, height: 84, fill: '#5b636c' }); });
+      add(g, 'line', { x1: 296, y1: 126, x2: 384, y2: 126, stroke: '#9aa3ad', 'stroke-width': 3, 'stroke-linecap': 'round' });
+      [300, 380].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 114, width: 6, height: 24, rx: 2, fill: '#2a2d33' }); });
+      FLOOR(g); add(g, 'ellipse', { cx: cx, cy: 199, rx: 52, ry: 7, fill: '#3a7d6b', opacity: .55 });
+      add(g, 'rect', { x: 262, y: 180, width: 9, height: 19, rx: 3, fill: '#3987e5', opacity: .85 }); add(g, 'rect', { x: 263.5, y: 176, width: 6, height: 5, rx: 1.5, fill: '#e9eef2' });
+      /* crouch, take both dumbbells, stand; three curls; put them down; wipe the brow; arms up */
+      if (t < .7) cr = E(SEG(t, 0, .7)); else if (t < 1.3) cr = 1 - E(SEG(t, .7, 1.3)); else if (t >= 4.3 && t < 5.0) cr = E(SEG(t, 4.3, 5.0)); else if (t >= 5.0 && t < 5.6) cr = 1 - E(SEG(t, 5.0, 5.6));
+      held = t >= .7 && t < 5.0;
+      var gy = 200 + 24 * cr;
+      [-1, 1].forEach(function (sd) {
+        var k2 = SIDE(sd, face); pose[LEG(sd, face)] = { m: 1, at: [cx + sd * 10 * cs * .5, 198] };
+        var DN = B(150, 10), cu = t >= 1.3 && t < 4.3 ? (1 - Math.cos(2 * Math.PI * (t - 1.3))) / 2 : 0;
+        if (t < .7) pose[k2] = GO(REST, AT(DB(sd)), SEG(t, 0, .7), 2);
+        else if (t < 1.3) pose[k2] = GO(AT(DB(sd)), DN, SEG(t, .7, 1.3));
+        else if (t < 4.3) pose[k2] = HOLD(B(150 - 50 * cu, 10 + 16 * cu));
+        else if (t < 5.0) pose[k2] = GO(DN, AT(DB(sd)), SEG(t, 4.3, 5.0));
+        else if (t < 5.6) pose[k2] = GO(AT(DB(sd)), REST, SEG(t, 5.0, 5.6));
+        else if (t >= 6.9 && t < 8.7) { var U = B(38, 6); pose[k2] = t < 7.3 ? GO(REST, U, SEG(t, 6.9, 7.3)) : t < 8.3 ? HOLD(U) : GO(U, REST, SEG(t, 8.3, 8.7)); }
+      });
+      if (t >= 5.6 && t < 6.9) { var nr = SIDE(-1, face), BR = B(46, 24 - 12 * Math.sin(Math.PI * SEG(t, 6.0, 6.5))); pose[nr] = t < 6.0 ? GO(REST, B(46, 24), SEG(t, 5.6, 6.0)) : t < 6.5 ? HOLD(BR) : GO(B(46, 24), REST, SEG(t, 6.5, 6.9)); }
+      if (t >= 7.3 && t < 8.3) lift = CHEER(t, 7.3, 1.0).lift;
+      pose.lean = .6 * cr; pose.lift = lift; LIFE(st, pose, 0);
+      function dumb(x, y) { var d = grp(x, y, 0); add(d, 'line', { x1: -7, y1: 0, x2: 7, y2: 0, stroke: '#8f9ba5', 'stroke-width': 2.2 }); [-1, 1].forEach(function (s) { add(d, 'rect', { x: s * 7 - 2.5, y: -4.5, width: 5, height: 9, rx: 1.6, fill: '#2a2d33' }); }); return d; }
+      if (!held) [-1, 1].forEach(function (sd) { var p = DB(sd); g.appendChild(dumb(p[0], p[1] + 2)); });
+      FIG(g, { cx: cx, gy: gy, ground: 200, face: face, pose: pose, items: function (H) { return held ? [H.s1, H.sm].filter(Boolean).map(function (h) { return [h.z - .15, dumb(h.X, h.Y)]; }) : []; } });
+      if (t >= 6.1 && t < 7.0) { var q = SEG(t, 6.1, 7.0); add(g, 'path', { d: 'M' + (cx + 10) + ' ' + (126 + q * 50) + ' q-2.5 4 0 5.5 q2.5 -1.5 0 -5.5', fill: '#9ad0e8', opacity: (1 - q).toFixed(2) }); }
+    } });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.habits = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

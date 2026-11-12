@@ -17,7 +17,18 @@
   var L = {}, C = {}, shadeOn = true;
   function dk(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
   function colours() { C = { skin: L.skin, skin2: dk(L.skin, .87), hair: L.hairC, top: L.topC, top2: dk(L.topC, .8), legs: L.legsC, legs2: dk(L.legsC, .82), shoe: L.shoeC, eye: '#1b1f27', mouth: '#8a4a3a' }; }
-  function el(n, a) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); return e; }
+  /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order and only
+     changes the attributes that changed – a living scene draws you 60 times a second (Scene25), and making ~80 new
+     elements every frame was most of the time */
+  var POOL = null, PN = 0;
+  function el(n, a) {
+    if (POOL) {
+      var e = POOL.l[POOL.i], sig = n; for (var k0 in a) sig += ' ' + k0;
+      if (e && e._sig === sig) { var o = e._a; for (var k in a) { var v = a[k]; if (o[k] !== v) { e.setAttribute(k, v); o[k] = v; } } while (e.firstChild) e.removeChild(e.firstChild); POOL.i++; return e; }
+      e = document.createElementNS(NS, n); e._a = {}; for (var k2 in a) { e.setAttribute(k2, a[k2]); e._a[k2] = a[k2]; } e._sig = sig; POOL.l[POOL.i++] = e; return e;
+    }
+    var x = document.createElementNS(NS, n); for (var k3 in a) x.setAttribute(k3, a[k3]); return x;
+  }
   function rot(x, z, a) { return { x: x * Math.cos(a) + z * Math.sin(a), z: -x * Math.sin(a) + z * Math.cos(a) }; }
   function shade(on, a, b) { return on ? a : b; }
   /* the light: from the upper left – a soft highlight and a shade, the same whichever way he faces. One copy per page. */
@@ -47,7 +58,7 @@
   /* the details that make each top what it is (the colour is the same standard for all since F0) */
   function topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY) {
     var t = TOPS[L.top] || {}, fr = Math.cos(a), front = fr > .15, line = function (p, q, col, wd, z) { parts.push([z || .02, el('line', { x1: p.X, y1: p.Y, x2: q.X, y2: q.Y, stroke: col, 'stroke-width': wd * k, 'stroke-linecap': 'round' })]); };
-    var clipId = 'f25t' + (draw.n = (draw.n || 0) + 1), wrap = el('g', {}), cp = el('clipPath', { id: clipId }); cp.appendChild(el('path', { d: TD })); wrap.appendChild(cp); var g = el('g', { 'clip-path': 'url(#' + clipId + ')' }); wrap.appendChild(g);
+    var clipId = POOL ? POOL.id + 't' : 'f25t' + (draw.n = (draw.n || 0) + 1), wrap = el('g', {}), cp = el('clipPath', { id: clipId }); cp.appendChild(el('path', { d: TD })); wrap.appendChild(cp); var g = el('g', { 'clip-path': 'url(#' + clipId + ')' }); wrap.appendChild(g);
     var add = function (n, at) { g.appendChild(el(n, at)); }, W = hw * k;
     if (t.jacket) { add('path', { d: TD, fill: t.jacket }); if (front) { var v1 = P(-9, 80 + bob, 15), v2 = P(0, 112 + bob, 16), v3 = P(9, 80 + bob, 15); add('path', { d: 'M' + v1.X + ' ' + v1.Y + ' L' + v2.X + ' ' + v2.Y + ' L' + v3.X + ' ' + v3.Y + ' Z', fill: '#f4f4f2' }); var ti = P(0, 84 + bob, 16), tb = P(0, 108 + bob, 17); add('path', { d: 'M' + (ti.X - 2 * k) + ' ' + ti.Y + ' L' + (ti.X + 2 * k) + ' ' + ti.Y + ' L' + (tb.X + 2.4 * k) + ' ' + tb.Y + ' L' + tb.X + ' ' + (tb.Y + 3 * k) + ' L' + (tb.X - 2.4 * k) + ' ' + tb.Y + ' Z', fill: '#d42a2f' }); } }
     if (t.quilt) for (var qy = 1; qy <= 4; qy++) { var yy = t1.Y + (t2.Y - t1.Y) * qy / 5; add('path', { d: 'M' + (t1.X - W) + ' ' + yy + ' L' + (t1.X + W) + ' ' + yy, stroke: dk(L.topC, .75), 'stroke-width': 1.4 * k }); }
@@ -99,7 +110,7 @@
       var q = ph + (sd < 0 ? 0 : Math.PI), th = CHAIR ? Math.PI / 2 : w * 0.42 * Math.sin(q), kn = CHAIR ? Math.PI / 2 : w * 0.72 * Math.max(0, Math.cos(q - 0.35));
       if (CRUTCH) { th *= .7; kn *= .8; }   /* a shorter, careful step between the crutches */   /* the knee bends while the leg swings forward (lifted), straight while it pushes back on the ground */
       var lo = pose[nearSide(sd) ? 'legNear' : 'legFar'];
-      if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */
+      if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m == null ? 1 : lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */
       if (lo) { th = th * (1 - lo.m) + lo.th * lo.m; kn = kn * (1 - lo.m) + lo.kn * lo.m; }   /* a keyed leg pose */
       var hip = [sd * 10, 140 + bob, 0], knee = [hip[0], hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
       var ank = [hip[0], knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
@@ -176,7 +187,7 @@
       var fb = sv + 0.15 + w * 0.25 * Math.max(0, Math.sin(q));
       var place = function (q) { return q.at ? unlean(toBody(q.at, sd * 32)) : { y: q.b[0] + bob, z: q.b[1] }; };
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
-      if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, 29, 27, -1); ov = { m: ov.m, s: sa[0], f: sa[1] }; }   /* the hand goes where it must hold (a rail, the slot) */
+      if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, 29, 27, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
       var sh = [sd * 30 * BW, 88 + bob, 0], elb = [sd * 32 * BW, sh[1] + 29 * Math.cos(sv), 29 * Math.sin(sv)];
       var hand = [sd * 32 * BW, elb[1] + 27 * Math.cos(fb), elb[2] + 27 * Math.sin(fb)];
@@ -427,7 +438,9 @@
     return s.outerHTML;
   }
   window.Fig25 = {
-    draw: function (look, a, cx, gy, k, ph, w, pose) { ensureDefs(); HAND = {}; var r = draw(look, a, cx, gy, k, ph, w, pose); return r; },
+    /* pool: from Fig25.pool() – the same figure drawn again each frame reuses its elements (see el) */
+    draw: function (look, a, cx, gy, k, ph, w, pose, pool) { ensureDefs(); HAND = {}; POOL = pool || null; if (POOL) POOL.i = 0; try { return draw(look, a, cx, gy, k, ph, w, pose); } finally { POOL = null; } },
+    pool: function () { return { l: [], i: 0, id: 'f25p' + (++PN) }; },
     petG: function (kind, a, x, gy, k) { ensureDefs(); return pet(kind, a * Math.PI / 180, x, gy, k, 0, 0).map(function (p) { return p[1].outerHTML; }).join(''); },
     svg: svg, group: group, pet: pet, look: look25, HOLDS: HOLDS, hand: function () { return HAND; }, TOP_STD: TOP_STD
   };

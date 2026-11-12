@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1181 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?0a4daa53d8") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1186 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?5a7bc23b42") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -239,10 +239,16 @@
 .bi-capsule-pill::before{content:"\f7de"}
 .bi-car-front::before{content:"\f7e1"}
 .bi-car-front-fill::before{content:"\f7e0"}
+.bi-cart::before{content:"\f242"}
 .bi-cart-check::before{content:"\f23a"}
 .bi-cart-check-fill::before{content:"\f239"}
+.bi-cart-dash::before{content:"\f23c"}
+.bi-cart-dash-fill::before{content:"\f23b"}
+.bi-cart-fill::before{content:"\f23d"}
 .bi-cart-plus::before{content:"\f23f"}
 .bi-cart-plus-fill::before{content:"\f23e"}
+.bi-cart-x::before{content:"\f241"}
+.bi-cart-x-fill::before{content:"\f240"}
 .bi-cart3::before{content:"\f244"}
 .bi-cash::before{content:"\f247"}
 .bi-cash-coin::before{content:"\f632"}
@@ -395,7 +401,6 @@
 .bi-code::before{content:"\f2c8"}
 .bi-code-slash::before{content:"\f2c6"}
 .bi-code-square::before{content:"\f2c7"}
-.bi-coin::before{content:"\f634"}
 .bi-collection::before{content:"\f2cc"}
 .bi-collection-fill::before{content:"\f2c9"}
 .bi-collection-play::before{content:"\f2cb"}

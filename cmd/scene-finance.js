@@ -1,131 +1,144 @@
-/* The living Finances picture (Phase L6, page 1). Your avatar lives by the money jar: it climbs the ladder (always
-   three points on it) and drops a coin in the slot, knocks on the jar, polishes it, counts the days to payday on the
-   little calendar, flips a coin, checks the bank on its phone, waves. What it does follows your money: payday close →
-   the payday countdown more often; spending too fast or below zero → no saving, a worried look instead.
-   Built only from the components: avatar-rig.js (the body), scene-kit.js (Live: walk, reach, props, brain).
-   The still picture from scenes.js stays underneath: with reduced motion / animations off it's all you see, and
-   tapping the jar or the calendar still opens the card. Speech bubbles never say amounts (they're on screen for anyone nearby). */
+/* The Finances picture in 2.5D (Phase F2, page 1 – the preview JP picked, "Finances"). The glass jar holds what is
+   left this month (its level and the amount), the calendar tile counts the days left, a metal ladder leans on the
+   jar. What he does follows your money:
+   - money on track (or payday): he walks in, climbs the ladder (hands on the rails, a foot on each rung), takes a coin
+     from his pocket, drops it through the slot in the lid, climbs down, steps back, turns to you and cheers;
+   - spending too fast or below zero: no coin – he walks to the jar, looks up at the level, a hand to his chin, shakes
+     his head and turns to you, worried.
+   Both end in the same rest (facing you, breathing, a look round now and then), so a replay or a tap never jumps.
+   Tapping the jar or the calendar opens the budget card (data-scgo, scenes.js); tapping anywhere else plays it again.
+   Built on scene25.js (the runner and helpers) and Fig25 (the body). */
 (function () {
   'use strict';
-  var NB = window.I18N && window.I18N.lang === 'nb';
-  function T(en, nb) { return NB ? nb : en; }
-  /* props: drawing, grip point, named points – at the size of the hand (a 0.5-scale avatar) */
-  var O = {
-    phone: ['<rect x="-3.2" y="-5" width="6.4" height="10" rx="1.4" fill="#2b2f3a"/><circle cx="-1.3" cy="-3.1" r=".9" fill="#0d0f14"/><circle cx="-1.3" cy="-3.1" r=".4" fill="#4a5a7b"/>', [0, 2.5]],
-    coin: ['<circle r="2.8" fill="#f2c94c" stroke="#c98500" stroke-width=".8"/>', [0, 0]],
-    cloth: ['<path d="M-3.5 -2.5q3.5 -1.5 7 0l-.6 5q-3 1.2-5.8 0z" fill="#8fd0ff"/>', [0, 0]]
-  };
   window.SceneLive = window.SceneLive || {};
   window.SceneLive.finance = function (svg, data) {
-    var L = window.Live; if (!L || !window.Rig || !window.Avatar || L.still() || !svg) return null;
-    var el = L.el, ease = L.ease, lerp = L.lerp;
-    var me = svg.querySelector('.sc-me'), jar = svg.querySelectorAll('[data-scgo="fin"]')[0], pay = svg.querySelectorAll('[data-scgo="fin"]')[1];
-    var moneyEl = svg.querySelector('.sc-money'), glass = svg.querySelector('.sc-jarg');
-    if (!me || !jar || !pay || !moneyEl || !glass) return null;
-    var meSvg = me.querySelector('svg'), box = { x: +meSvg.getAttribute('x'), y: +meSvg.getAttribute('y'), w: +meSvg.getAttribute('width'), h: +meSvg.getAttribute('height') };
-    me.remove();
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, swing = S.swing;
     data = data || {};
-    /* the slot in the lid, and a ladder leaning on the jar (about shoulder-wide, rungs a step apart) */
-    jar.appendChild(el('rect', { x: 134, y: 39.4, width: 10, height: 2.6, rx: 1.3, fill: '#2a1d12' }));
-    /* the ladder reaches the lid: you stand two rungs up and hold the rails at head height, as on a real ladder */
-    var rx = function (rail, y) { return rail ? 181 - (126 - y) / 82 * 3 : 147 + (126 - y) / 82 * 3; };   /* a little wider than the shoulders, so the hands on the rails sit outside the body */
-    svg.appendChild(el('g', { class: 'sc-ladder' }, '<path d="M147 126L150 44M181 126L178 44" stroke="#9aa3b2" stroke-width="2.2" stroke-linecap="round"/>' + [112, 96, 80, 64].map(function (y) { return '<path d="M' + rx(0, y) + ' ' + y + 'H' + rx(1, y) + '" stroke="#9aa3b2" stroke-width="1.8" stroke-linecap="round"/>'; }).join('')));
-    var H = L.Hero(svg, null, box), R = L.Run(), base = H.pos.slice(), GY = 30;
-    R.alive = function () { return svg.isConnected; };
-    function fit(fx, fy) { var k = H.s * (H.k || 1); return [H.pos[0] + fx * k, H.pos[1] + fy * k]; }
-    function seq(fns) { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); }
-    function look(P) { H.gaze = P; }
-    function take(side, k) { Rig.stow(H.rig, true); return L.Obj(H, side, O[k][0], O[k][1]); }
-    function drop(side) { L.letGo(H, side); if (!H.objs.R && !H.objs.L) Rig.stow(H.rig, false); }
-    function fall(inner, a, b, ms, before) { var g = el('g', {}, inner); if (before) before.parentNode.insertBefore(g, before); else svg.appendChild(g); return L.tw(R, ms, function (u) { g.setAttribute('transform', 'translate(' + lerp(a[0], b[0], u).toFixed(2) + ' ' + lerp(a[1], b[1], u * u).toFixed(2) + ')'); }).then(function () { g.remove(); }); }
-    function hands(y) { return [[rx(0, y - GY), y - GY], [rx(1, y - GY), y - GY]]; }
-    /* one rung, the way people climb: one hand up, that foot up, body up, the other hand up – three points on the ladder */
-    function rung(y0, y1, up) {
-      var a = up ? 'R' : 'L', b = up ? 'L' : 'R';
-      return seq([function () { var t = hands(y1); return L.reach(R, H, a, a === 'L' ? t[0] : t[1], 260); },
-        function () { return L.tw(R, 260, function (u) { H.legs[a] = (up ? u : 1 - u * .2) * .75; }); },
-        function () { return L.tw(R, 520, function (u) { var e = ease(u); H.pos = [164, lerp(y0, y1, e)]; H.legs[a] = .75 * (1 - e); H.legs[b] = Math.sin(e * Math.PI) * .5; var t = hands(y0); H.hand[b] = b === 'L' ? t[0] : t[1]; }); },
-        function () { var t = hands(y1); return L.reach(R, H, b, b === 'L' ? t[0] : t[1], 260); }]);
+    var GY = 168, K = .47, JX0 = 180, JW = 76, JT = 72, JB = 166, RUNG = 19;
+    var LB = [268, 166], LT = [254, 72];                       /* the ladder leans on the jar's shoulder, its top above the lid */
+    function lx(h) { return LB[0] + (LT[0] - LB[0]) * (h / (LB[1] - LT[1])); }
+    function rail(y, sd) { return [lx(LB[1] - y) + sd * 3, y]; }
+    function onRung(r) { return [lx(r * RUNG) + 3, LB[1] - r * RUNG - 5]; }
+    var SL = JX0 + JW - 22, CLIMB = 2.3, T0 = 2.0, T1 = T0 + CLIMB, TC = T1 + .3, TD = TC + 1.7, T2 = TD + .5, T3 = T2 + CLIMB, T4 = T3 + .5, T5 = T4 + .5, T6 = T5 + 1.0, LEN = T6 + 2.0;
+    var HOME = 300, BASE = lx(0) + 8;
+    var AID = /chair|crutches/.test((S.look() || {}).aid || ''), idle = data.state === 'none' || data.state == null, ok = !idle && data.state !== 'neg' && data.state !== 'warn';
+    var ratio = data.ratio == null ? .5 : Math.max(0, Math.min(1, data.ratio));
+    function climbAt(u) {
+      var gb = E(CL(u / .35)), fA = CL(u / .7), fB = CL((u - .7) / .8), fC = CL((u - 1.5) / .8);
+      var h = 17 * E(fB) + 21 * E(fC), ground = [lx(0) + 4, LB[1]];
+      var nearFoot = fC > 0 ? swing(onRung(1), onRung(2), fC, 7, 3) : fA < 1 ? swing(ground, onRung(1), fA, 6, 4) : onRung(1);
+      var farFoot = fB > 0 ? swing(ground, onRung(2), fB, 8, 6) : ground;
+      var nearHand = swing(rail(114, -1), rail(92, -1), fB, 4, 2), farHand = swing(rail(114, 1), rail(94, 1), fC, 4, 2);
+      return { h: h, pose: { lean: .25 * gb, legNear: { m: fA > 0 ? 1 : 0, at: nearFoot }, legFar: { m: fB > 0 ? 1 : 0, at: farFoot }, near: { m: gb, at: nearHand }, far: { m: gb, at: farHand } } };
     }
-    var y00 = +moneyEl.getAttribute('y');
-    function dropIn(x) {
-      var top = +moneyEl.getAttribute('y'); look([x, top]);
-      return fall(O.coin[0], [x, 44], [x, top - 3], 560, glass).then(function () {
-        var y0 = +moneyEl.getAttribute('y'); L.burst(svg, [x, y0 - 2], 5);
-        /* the money rises a little for the coin, then settles back to what's really there */
-        return L.tw(R, 450, function (u) { moneyEl.setAttribute('y', (y0 - 3 * ease(u)).toFixed(2)); }).then(function () { setTimeout(function () { if (svg.isConnected) moneyEl.setAttribute('y', y00); }, 2500); });
-      });
+    /* the rest every action ends in: facing you by the ladder's foot, a look round now and then */
+    function rest(st) { var it = st.still ? 0 : (st.now - (st.endNow || st.now)) / 1000; return { cx: HOME, face: Math.sin(it * .35) * 22 * Math.max(0, Math.sin(it * .13)), pose: {} }; }
+    /* he walks in from the right edge (or from where he rested, after the first time) */
+    function walkIn(t, st, to) { var from = st.from || 420, f = from > 400 ? CL(t / 1.8) : E(CL(t / 1.8)); return { cx: from + (to - from) * f, face: -90 + (from > 400 ? 0 : 90 * (1 - E(CL(t / .4)))), w: t < 1.8 ? Math.min(1, t / .3) : 0 }; }   /* from where he rests: he turns first, then walks off gently */
+    /* the coin action */
+    function coin(t, st) {
+      var r = { h: 0, w: 0, face: -90, pose: {}, coin: null };
+      if (t < 1.8) Object.assign(r, walkIn(t, st, BASE));
+      else if (t < T0) { r.cx = BASE; r.w = Math.max(0, 1 - (t - 1.8) / .2); }
+      else if (t < T1) { var c = climbAt(t - T0); r.h = c.h; r.pose = c.pose; r.cx = lx(c.h) + 8; }
+      else if (t < T2) { var top = climbAt(CLIMB); r.h = top.h; r.pose = top.pose; r.cx = lx(top.h) + 8;
+        var u = t - TC, G = rail(92, -1), Pk = [r.cx - 14 * K, GY - r.h + (146 - 218) * K], Sl = [SL + 3, JT - 6], hp = G, ln = .25;
+        if (u > 0) { if (u < .35) hp = swing(G, Pk, u / .35, 3, 0); else if (u < .5) hp = Pk;
+          else if (u < .92) { hp = swing(Pk, Sl, (u - .5) / .42, 0, 7); ln = .25 + .25 * E((u - .5) / .42); }
+          else if (u < 1.25) { hp = Sl; ln = .5; } else { var fr = CL((u - 1.25) / .45); hp = swing(Sl, G, fr, 0, 3); ln = .5 - .25 * E(fr); } }
+        r.pose.near = { m: 1, at: hp }; r.pose.lean = ln;
+        if (u > .4 && u < .92) r.coin = 'hand'; else if (u >= .92 && u < 1.2) r.coin = (u - .92) / .28; }
+      else if (t < T3) { var d = climbAt(CLIMB - (t - T2)); r.h = d.h; r.pose = d.pose; r.cx = lx(d.h) + 8; }
+      else if (t < T4) { r.cx = BASE + (HOME - BASE) * E((t - T3) / .5); r.w = .6 * Math.sin(Math.PI * (t - T3) / .5); }   /* the step starts and ends still – the arms don't snap into a swing */
+      else if (t < T5) { r.cx = HOME; r.face = -90 + 90 * E((t - T4) / .5); }
+      else if (t < T6) { r.cx = HOME; r.face = 0; var hp2 = (t - T5) / 1.0, on = E(CL(hp2 / .32)) * (1 - E(CL((hp2 - .7) / .3)));   /* the arms go up and come down, never snap */
+        r.pose = { lift: hp2 < .2 ? -3 * Math.sin(hp2 / .2 * Math.PI) : hp2 < .65 ? 12 * Math.sin((hp2 - .2) / .45 * Math.PI) : 0, far: { m: on, b: [40, 10] }, near: { m: on, b: [40, 10] } }; r.expr = 'laugh'; }
+      else Object.assign(r, rest(st));
+      return r;
     }
-    var days = data.daysToPay, payLine = days == null ? '' : days === 0 ? T('Payday!', 'Lønning!') : days === 1 ? T('Payday tomorrow', 'Lønning i morgen') : T('Payday in ' + days + ' days', 'Lønning om ' + days + ' dager');
-    var ACTS = [
-      { n: 'save', w: data.state === 'ok' ? 2 : data.state === 'none' || !data.state ? 1 : 0, f: function () {
-        var o;
-        return seq([function () { L.face(H, 'grin'); return L.walk(R, H, [164, 126], 22, null, -.6); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { var t = hands(126); return L.both(R, H, t[0], t[1], 400); },
-          function () { return rung(126, 112, true); }, function () { return rung(112, 96, true); },
-          /* at the top: right hand stays on the ladder, turn to the jar, a coin from the pocket, into the slot */
-          function () { return L.turnTo(R, H, -.55, 320); },
-          function () { return L.reach(R, H, 'L', fit(-12, -46), 350); },
-          function () { o = take('L', 'coin'); look([139, 40]); L.face(H, 'starry'); return L.reach(R, H, 'L', [139, 35.5], 520); },
-          function () { return L.reach(R, H, 'L', [139, 38.8], 220); },
-          function () { drop('L'); var d = dropIn(139); return L.reach(R, H, 'L', hands(96)[0], 380).then(function () { return d; }); },
-          function () { look(null); return L.turnTo(R, H, -.2, 250); },
-          function () { L.face(H, 'laugh'); L.say(H, T('Saved!', 'Spart!'), 1400); return L.wait(R, 900); },
-          function () { return L.turnTo(R, H, 'back', 300); },
-          function () { return rung(96, 112, false); }, function () { return rung(112, 126, false); },
-          function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'knock', f: function () {
-        /* in front of the jar, turned toward it (the ladder leans on its side) – the knuckles on the glass */
-        return seq([function () { L.face(H, 'silly'); return L.walk(R, H, [136, 127], 22, null, -.65); },
-          function () { look([116, 94]); return L.reach(R, H, 'L', [119, 94], 400); },
-          function () { L.say(H, T('Grow, little jar!', 'Voks, lille krukke!'), 1800); var p = Promise.resolve(); [0, 1, 2].forEach(function () { p = p.then(function () { return L.reach(R, H, 'L', [115.6, 94], 130); }).then(function () { L.wob(jar, 1.3, 260); return L.reach(R, H, 'L', [119, 94], 160); }); }); return p; },
-          function () { look(null); return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'polish', f: function () {
-        /* the cloth on the front of the jar, in circles */
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [136, 127], 22, null, -.65); },
-          function () { take('L', 'cloth'); look([114, 96]); return L.reach(R, H, 'L', [117.5, 96], 400); },
-          function () { return L.tw(R, 2000, function (u) { var a = u * Math.PI * 5; H.hand.L = [114 + Math.cos(a) * 3.6, 96 + Math.sin(a) * 3.6]; look(H.hand.L); }); },
-          function () { drop('L'); look(null); return L.turnTo(R, H, 'front', 300); },
-          function () { L.face(H, 'love'); L.say(H, T('Shiny!', 'Skinnende!'), 1400); [[128, 66], [116, 92], [140, 108]].forEach(function (p, i) { setTimeout(function () { if (svg.isConnected) L.burst(svg, p, 3); }, i * 200); }); return L.wait(R, 900); },
-          function () { return L.settle(R, H, 350); }, function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'payday', w: days != null && days <= 3 ? 3 : payLine ? 1 : 0, f: function () {
-        var t = pay.querySelector('.sc-calt');
-        return seq([function () { L.face(H, 'starry'); look([47, 108]); return L.turnTo(R, H, -.55, 300); },
-          function () { return L.reach(R, H, 'L', [47, 104], 550); },
-          function () { if (payLine) L.say(H, payLine, 1900); if (t) { t.style.transformBox = 'fill-box'; t.style.transformOrigin = 'center'; t.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)', offset: .4 }, { transform: 'scaleY(1.2)', offset: .75 }, { transform: 'scaleY(1)' }], { duration: 700 }); } L.wob(pay, 5, 600); return L.wait(R, 1600); },
-          function () { look(null); }]);
-      } },
-      { n: 'count', f: function () {
-        var c;
-        return seq([function () { L.face(H, 'grin'); return L.both(R, H, fit(-15, -66), fit(15, -66), 450); },
-          function () { L.say(H, T('Heads or tails?', 'Mynt eller kron?'), 2000); c = el('g', {}, O.coin[0]); svg.appendChild(c); var p = Promise.resolve();
-            [0, 1, 2, 3].forEach(function (i) { p = p.then(function () { var a = L.handAt(H, i % 2 ? 'R' : 'L'), b = L.handAt(H, i % 2 ? 'L' : 'R'); return L.tw(R, 520, function (u) { var P = [lerp(a[0], b[0], u), lerp(a[1], b[1], u) - Math.sin(u * Math.PI) * 14]; c.setAttribute('transform', 'translate(' + P[0].toFixed(2) + ' ' + P[1].toFixed(2) + ') scale(' + Math.cos(u * Math.PI * 3).toFixed(2) + ' 1)'); }); }); }); return p; },
-          function () { c.remove(); look(null); L.face(H, 'laugh'); return L.wait(R, 400); }]);
-      } },
-      { n: 'phone', f: function () {
-        return seq([function () { L.face(H, 'calm'); return L.reach(R, H, 'R', fit(14, -44), 350); },
-          function () { take('R', 'phone'); return L.reach(R, H, 'R', fit(7, -70), 450); },
-          function () { look(L.handAt(H, 'R')); return L.headTo(R, H, 5, 1.5, 300); },
-          function () { return L.wait(R, 1300); },
-          function () { var bad = data.state === 'neg' || data.state === 'warn'; L.face(H, bad ? 'wow' : 'grin'); L.say(H, data.state === 'ok' ? T('All good in the bank', 'Alt fint i banken') : bad ? T('Hmm, careful now', 'Hmm, forsiktig nå') : T('Checking the bank', 'Sjekker banken'), 1600); return L.wait(R, 1300); },
-          function () { drop('R'); look(null); return L.headTo(R, H, 0, 0, 250); }]);
-      } },
-      { n: 'worry', w: data.state === 'neg' || data.state === 'warn' ? 2 : 0, f: function () {
-        return seq([function () { L.face(H, 'calm'); look([120, 100]); return L.turnTo(R, H, -.5, 300); },
-          function () { return L.reach(R, H, 'R', fit(6, -96), 450); },
-          function () { L.say(H, data.state === 'neg' ? T('Tight this month', 'Stramt denne måneden') : T('Spending a bit fast', 'Bruker litt fort'), 1800); return L.tw(R, 1600, function (u) { H.head = [-4 + Math.sin(u * 6) * 2, -1]; }); },
-          function () { look(null); }]);
-      } },
-      { n: 'wave', f: function () { look(null); L.face(H, 'grin'); L.say(H, T('Hi!', 'Hei!'), 1400); return L.wave(R, H); } }
-    ];
-    function acts() { return ACTS.filter(function (a) { return a.w !== 0; }); }
-    L.brain(R, H, acts, function () { look(null); return L.jump(R, H); });
-    var api = { H: H, R: R, acts: function () { return ACTS; }, run: function (n) { var a = ACTS.filter(function (x) { return x.n === n; })[0]; R.paused = true; return Promise.resolve(R.cur).then(function () { R.tok++; L.clear(H); return L.settle(R, H, 200); }).then(function () { return a ? a.f() : null; }).then(function () { return L.settle(R, H, 300); }); } };
-    window.SceneLive._finance = api;
-    return api;
+    /* the worried look: to the jar, eyes on the level, a hand to the chin, a slow shake of the head, back to you */
+    var W0 = 1.8, W1 = W0 + .4, W2 = W1 + 1.4, W3 = W2 + 1.1, W4 = W3 + .7, W5 = W4 + .5, WLEN = W5 + 1.2;
+    function worry(t, st) {
+      var r = { h: 0, w: 0, face: -90, pose: {}, expr: 'calm' }, AT = 292;   /* just past the ladder, eyes on the jar */
+      if (t < W0) Object.assign(r, walkIn(t, st, AT));
+      else if (t < W1) { r.cx = AT; r.w = Math.max(0, 1 - (t - W0) / .2); }
+      else if (t < W2) { r.cx = AT; var f = E((t - W1) / .6); r.pose = { near: { m: f, b: [76, 18] }, lean: -.06 * f }; r.expr = 'shy'; }
+      else if (t < W3) { r.cx = AT; r.face = -90 + 18 * Math.sin((t - W2) / 1.1 * Math.PI * 3) * Math.sin((t - W2) / 1.1 * Math.PI); r.pose = { near: { m: 1, b: [76, 18] }, lean: -.06 }; r.expr = 'shy'; }
+      else if (t < W4) { var g = E((t - W3) / .7); r.cx = AT + (HOME - AT) * g; r.w = .6 * Math.sin(Math.PI * (t - W3) / .7); r.pose = { near: { m: 1 - g, b: [76, 18] }, lean: -.06 * (1 - g) }; }
+      else if (t < W5) { r.cx = HOME; r.face = -90 + 90 * E((t - W4) / .5); }
+      else Object.assign(r, rest(st));
+      return r;
+    }
+    var nearRail = null;
+    /* in the wheelchair or on crutches the ladder is out: he goes to the jar's side, takes the coin from his pocket and
+       tosses it up through the slot – a little wind-up, the coin's arc, it drops in – then turns to you and cheers */
+    var X0 = 1.8, X1 = X0 + .25, X2 = X1 + .4, X3 = X2 + .3, X4 = X3 + .22, X5 = X4 + .65, X6 = X5 + .5, X7 = X6 + .5, X8 = X7 + 1.0, XLEN = X8 + 1.4, TX = 288;
+    function toss(t, st) {
+      var r = { h: 0, w: 0, face: -90, pose: {} }, Pk = [TX - 14 * K, GY + (146 - 218) * K];
+      if (t < X0) Object.assign(r, walkIn(t, st, TX));
+      else if (t < X1) { r.cx = TX; r.w = Math.max(0, 1 - (t - X0) / .2); }
+      else if (t < X2) { r.cx = TX; r.pose.near = { m: E((t - X1) / .4), at: Pk }; }
+      else if (t < X3) { r.cx = TX; r.pose.near = { m: 1, at: swing(Pk, [TX - 12, GY - 50], (t - X2) / .3, 0, -4) }; r.coin = 'hand'; }
+      else if (t < X4) { r.cx = TX; var f = (t - X3) / .22; r.pose.near = { m: 1, at: swing([TX - 12, GY - 50], [TX - 22, GY - 92], f, 0, 0) }; r.coin = f < .8 ? 'hand' : null; r.expr = 'grin';
+        if (f >= .8) r.fly = (f - .8) / .2 * .05; }
+      else if (t < X5) { r.cx = TX; r.pose.near = { m: 1 - E((t - X4) / .65), at: [TX - 22, GY - 92] }; r.fly = .05 + .95 * (t - X4) / .65; r.expr = 'grin'; }
+      else if (t < X6) { r.cx = TX + (HOME - TX) * E((t - X5) / .5); r.w = .6 * Math.sin(Math.PI * (t - X5) / .5); }
+      else if (t < X7) { r.cx = HOME; r.face = -90 + 90 * E((t - X6) / .5); }
+      else if (t < X8) { r.cx = HOME; r.face = 0; var hp = (t - X7) / 1.0, on = E(CL(hp / .32)) * (1 - E(CL((hp - .7) / .3))); r.pose = { lift: st.aid ? 0 : hp < .65 && hp > .2 ? 6 * Math.sin((hp - .2) / .45 * Math.PI) : 0, far: { m: on, b: [40, 10] }, near: { m: on, b: [40, 10] } }; r.expr = 'laugh'; }
+      else Object.assign(r, rest(st));
+      return r;
+    }
+    /* no budget yet: he walks in and turns to you – nothing to save or worry about */
+    var CLEN = 3.6;
+    function calm(t, st) { var r = { h: 0, w: 0, face: -90, pose: {} };
+      if (t < 1.8) Object.assign(r, walkIn(t, st, HOME)); else if (t < 2.0) { r.cx = HOME; r.w = Math.max(0, 1 - (t - 1.8) / .2); } else if (t < 2.5) { r.cx = HOME; r.face = -90 + 90 * E((t - 2) / .5); } else Object.assign(r, rest(st));
+      return r; }
+    var run = S.run(svg, {
+      len: ok ? (AID ? XLEN : LEN) : idle ? CLEN : WLEN, data: data,
+      pick: function (st) { st.from = st.t > 0 ? HOME : 420; },   /* a replay starts from where he rests – no teleport */
+      back: function (sv) {
+        /* the room: a soft floor glow, the moon, the calendar tile with the days left */
+        var bg = add(sv, 'g', {});
+        add(bg, 'ellipse', { cx: 215, cy: 176, rx: 150, ry: 22, class: 'sc25-floor' });
+        add(bg, 'circle', { cx: 112, cy: 50, r: 9, class: 'sc25-moon' }); add(bg, 'circle', { cx: 117, cy: 46, r: 7.5, class: 'sc25-moonc' });
+        var cal = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'fin' });
+        add(cal, 'rect', { x: 120, y: 127, width: 38, height: 38, rx: 5, class: 'sc-cal' });
+        add(cal, 'path', { d: 'M120 132 Q120 127 125 127 L153 127 Q158 127 158 132 L158 136 L120 136 Z', fill: '#d96b6b' });
+        if (data.daysLeft != null) S.txt(cal, { x: 139, y: 157, 'text-anchor': 'middle', class: 'sc-calt' }, String(data.daysLeft));
+        /* the jar: glass, the money level (its colour says how it goes), coins in the bottom, the lid with the slot, the amount */
+        var jar = add(sv, 'g', { class: 'hs-part' + (ok ? '' : ' hot'), 'data-scgo': 'fin' });
+        var path = 'M' + (JX0 + 6) + ' ' + (JT + 12) + ' Q' + JX0 + ' ' + (JT + 16) + ' ' + JX0 + ' ' + (JT + 26) + ' L' + JX0 + ' ' + (JB - 10) + ' Q' + JX0 + ' ' + JB + ' ' + (JX0 + 10) + ' ' + JB + ' L' + (JX0 + JW - 10) + ' ' + JB + ' Q' + (JX0 + JW) + ' ' + JB + ' ' + (JX0 + JW) + ' ' + (JB - 10) + ' L' + (JX0 + JW) + ' ' + (JT + 26) + ' Q' + (JX0 + JW) + ' ' + (JT + 16) + ' ' + (JX0 + JW - 6) + ' ' + (JT + 12) + ' Z';
+        var lvl = 6 + 66 * ratio, top = JB - lvl;
+        if (ratio > 0) add(jar, 'path', { d: 'M' + (JX0 + 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + (JB - 10) + ' Q' + (JX0 + JW - 2) + ' ' + (JB - 2) + ' ' + (JX0 + JW - 10) + ' ' + (JB - 2) + ' L' + (JX0 + 10) + ' ' + (JB - 2) + ' Q' + (JX0 + 2) + ' ' + (JB - 2) + ' ' + (JX0 + 2) + ' ' + (JB - 10) + ' Z', class: 'sc-money ' + (data.state || 'ok') });
+        /* a small pile of coins on the bottom (three rows, the top one shorter), under the amount */
+        for (var row = 0; row < 3; row++) for (var ci = 0; ci < 5 - row; ci++) { var cy = JB - 7 - row * 3.6; if (JB - cy < lvl - 3) add(jar, 'ellipse', { cx: JX0 + JW / 2 + (ci - (4 - row) / 2) * 11 + (row % 2) * 2, cy: cy, rx: 4.6, ry: 1.7, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .6 }); }
+        add(jar, 'path', { d: path, class: 'sc-jarg' });
+        add(jar, 'rect', { x: JX0 + 13, y: JT, width: JW - 26, height: 13, rx: 4, class: 'sc-lid' });
+        add(jar, 'rect', { x: SL - 8, y: JT + 4, width: 16, height: 3.2, rx: 1.6, fill: '#2a1a12' });
+        if (data.left != null) S.txt(jar, { x: JX0 + JW / 2, y: JT + 46, 'text-anchor': 'middle', class: 'sc25-amt' }, S.kr(data.left));
+        /* the ladder: far rail and rungs behind him, the near rail in front once he is on it */
+        var lg = add(sv, 'g', {});
+        add(lg, 'line', { x1: LB[0] + 3, y1: LB[1], x2: LT[0] + 3, y2: LT[1], stroke: '#7d8690', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
+        for (var rr = 1; rr <= 4; rr++) { var hy = rr * RUNG, x = lx(hy); add(lg, 'line', { x1: x - 3, y1: LB[1] - hy, x2: x + 3, y2: LB[1] - hy, stroke: '#b9c1ca', 'stroke-width': 2.2, 'stroke-linecap': 'round' }); }
+        nearRail = el('line', { x1: LB[0] - 3, y1: LB[1], x2: LT[0] - 3, y2: LT[1], stroke: '#a7b0ba', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
+      },
+      render: function (sv, t, st) {
+        st.aid = AID; var r = ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
+        /* him: the near rail goes in front of his far side, behind his near side */
+        var gg = add(sv, 'g', { class: 'sc25-me' }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
+        var look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
+        var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h, k: K, ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY, shS: 1 - Math.min(.4, r.h / 120),
+          extra: [[.45, nearRail]] });
+        if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 });
+        /* the tossed coin: from where it left the hand, up over the lid and down through the slot */
+        if (r.fly != null) { if (!st.rel && H.near) st.rel = [H.near.X, H.near.Y]; var A = st.rel || [TX - 22, GY - 92], q2 = Math.min(1, r.fly), cxp = A[0] + (SL - A[0]) * q2, cyp = A[1] + (JT + 2 - A[1]) * q2 - 46 * Math.sin(Math.PI * Math.min(1, q2 * 1.05));
+          if (q2 < 1) add(sv, 'ellipse', { cx: cxp.toFixed(1), cy: cyp.toFixed(1), rx: 3, ry: 3 * Math.abs(Math.cos(q2 * 9)) + .6, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }
+        else st.rel = null;
+        st.H = H; st.r = r;
+        if (typeof r.coin === 'number') { var q = r.coin; add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * q * q, rx: 3 * (1 - q * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }
+      }
+    });
+    return run;
   };
 })();

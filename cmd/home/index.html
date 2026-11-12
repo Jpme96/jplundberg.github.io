@@ -13,7 +13,7 @@
   <link href="/assets/img/favicon.png?v=9bc342e29a" rel="icon">
   <link href="/assets/img/cmd/apple-180.png" rel="apple-touch-icon">
   <link href="/cmd/home/manifest.webmanifest" rel="manifest">
-  <link href="/cmd/assets/bi/bi.css?v=0f852a303e" rel="stylesheet">
+  <link href="/cmd/assets/bi/bi.css?v=61c0b144ac" rel="stylesheet">
   <link href="/cmd/home/app.css?v=3910ad8c29" rel="stylesheet">
   <script>
     /* Settings → Appearance, before the first paint (this phone only) */
@@ -34,8 +34,10 @@
     window.Vault = { onUnlock: function () {}, onLock: function () {}, get: function () { return null; } };
     window.I18N = { lang: (function () { try { var v = localStorage.getItem('home.lang'); if (v) return v; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || '') ? 'nb' : 'en'; })() };
   </script>
-  <script src="/cmd/avatar-25d.js?v=0adf16e6d9"></script>
+  <script src="/cmd/avatar-25d.js?v=efaa9e98e4"></script>
   <script src="/cmd/avatar.js?v=b05d5b6650"></script>
+  <script src="/cmd/scene25.js?v=13d7fd2a1d"></script>
+  <script src="/cmd/scene-couple.js?v=a561e74fab"></script>
   <script src="/cmd/avatar-rig.js?v=ca01875aae"></script>
   <script src="/cmd/scene-kit.js?v=acdf271c67"></script>
   <script src="/cmd/avatar-page.js?v=1c8a73fe85"></script>
@@ -43,6 +45,6 @@
   <script src="/cmd/share-core.js?v=649b364dc1"></script>
   <script src="/cmd/together.js?v=ac94a017e1"></script>
   <script src="/cmd/chat.js?v=f313cd52c8"></script>
-  <script src="/cmd/home/app.js?v=99"></script>
+  <script src="/cmd/home/app.js?v=112"></script>
 </body>
 </html>

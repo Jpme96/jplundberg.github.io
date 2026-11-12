@@ -1,63 +1,49 @@
-/* The living Calendar picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Calendar picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   CALENDAR: tear off yesterday, into the bin; look at the clock; thumbs up.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= CALENDAR: tear off yesterday, look at the clock, read the notes ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    m.me.remove();
-    svg.querySelector('.hs-part').parentNode.insertBefore(el('g', { class: 'bin' }, '<path d="M8 118h12l-1.4 12h-9.2z" fill="#4a5568"/><path d="M7 118h14" stroke="#6b7385" stroke-width="1.6" stroke-linecap="round"/>'), null);
-    var H = L.Hero(svg, null, m.box), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    var cal = svg.querySelector('[data-scgo="clToday"]'), body = cal.querySelector('.sc-cal'), page = el('g', { class: 'page' }); cal.appendChild(page);
-    var hasPage = true;
-    function newPage() { page.getAnimations().forEach(function (a) { a.cancel(); }); page.style.opacity = ''; hasPage = true; page.setAttribute('transform', ''); page.innerHTML = '<rect x="78.6" y="58" width="62.8" height="55.4" rx="3" fill="' + getComputedStyle(body).fill + '" stroke="rgba(255,255,255,.18)" stroke-width=".6"/><text x="110" y="94" text-anchor="middle" class="sc-cald"></text><text x="110" y="107" text-anchor="middle" class="sc-calw"></text>';
-      /* today's real date and weekday, as the still picture shows them */
-      var d0 = cal.querySelector(':scope > .sc-cald, :scope > text.sc-cald') || svg.querySelector('.sc-cald'), w0 = svg.querySelector('.sc-calw'), pt = page.querySelectorAll('text');
-      pt[0].textContent = d0 && d0 !== pt[0] ? d0.textContent : String(new Date().getDate()); pt[1].textContent = w0 && w0 !== pt[1] ? w0.textContent : ''; }
-    newPage();
-    var notes = [].slice.call(svg.querySelectorAll('.sc-note'));
-    function wiggle(g) { var base = g.getAttribute('transform') || '', bb = g.getBBox(), t0 = performance.now(); (function fr(now) { var u = Math.min(1, (now - t0) / 600); g.setAttribute('transform', base + ' rotate(' + (Math.sin(u * Math.PI * 3) * 7 * (1 - u)).toFixed(2) + ' ' + (bb.x + bb.width / 2) + ' ' + bb.y + ')'); if (u < 1) requestAnimationFrame(fr); else g.setAttribute('transform', base); })(t0); }
-    var ACTS = [
-      { n: 'tear', t: 'tearing off yesterday', f: function () {
-        var g0 = [82, 111], ball;
-        return seq([function () { L.face(H, 'grin'); return L.walk(R, H, [63, base[1]], 20, null, .7); },
-          function () { look(H, g0); return L.reach(R, H, 'R', g0, 450); },
-          function () { return L.tw(R, 700, function (u) { var e = ease(u); H.hand.R = [lerp(82, 74, e), lerp(111, 124, e)]; page.setAttribute('transform', 'rotate(' + (-34 * e) + ' 141 58)'); look(H, H.hand.R); }); },
-          function () { page.innerHTML = ''; ball = L.Obj(H, 'R', '<circle r="3.2" fill="#d9dce4"/><path d="M-2 -1l3 1-1 2" stroke="#9aa3b2" stroke-width=".6" fill="none"/>', [0, 0]); return L.reach(R, H, 'R', fit(H, 12, -66), 300); },
-          function () { look(H, [14, 118]); return L.turnTo(R, H, -.6, 300); },
-          function () { return L.reach(R, H, 'R', fit(H, 6, -100), 260); },
-          function () { var a = L.handAt(H, 'R'); L.letGo(H, 'R'); var b = el('g', {}, '<circle r="3.2" fill="#d9dce4"/>'); svg.insertBefore(b, svg.querySelector('.bin')); return L.tw(R, 650, function (u) { b.setAttribute('transform', 'translate(' + lerp(a[0], 14, u) + ' ' + (lerp(a[1], 120, u) - Math.sin(u * Math.PI) * 26) + ')'); }).then(function () { b.remove(); L.wob(svg.querySelector('.bin'), 5, 300); }); },
-          function () { look(H, null); L.face(H, 'laugh'); L.say(H, T('New day!', 'Ny dag!'), 1500); return Promise.all([L.reach(R, H, 'R', null, 400), L.turnTo(R, H, 'front', 300)]); },
-          function () { return L.walk(R, H, base, 20); },
-          function () { hasPage = false; setTimeout(function () { newPage(); page.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1200 }); }, 20000); }]);
-      } },
-      { n: 'clock', t: 'checking the clock', f: function () {
-        return seq([function () { return L.turnTo(R, H, 'back', 320); }, function () { return L.headTo(R, H, -9, -2, 400); },
-          function () { spin('.sc-hand', svg, 1500, 1); return L.wait(R, 1600); },
-          function () { return L.turnTo(R, H, 'front', 320); }, function () { look(H, null); L.face(H, 'wow'); L.say(H, T('Already?!', 'Allerede?!'), 1500); return L.both(R, H, fit(H, -12, -100), fit(H, 12, -100), 400); },
-          function () { return L.wait(R, 900); }]);
-      } },
-      { n: 'notes', t: 'reading today’s notes', f: function () {
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [174, base[1]], 22); }, function () { return L.turnTo(R, H, 'back', 320); },
-          function () { var p = Promise.resolve(); notes.forEach(function (n, i) { p = p.then(function () { var bb = n.getBBox(), m = n.parentNode.getCTM(), pt = svg.createSVGPoint(); pt.x = bb.x + 4; pt.y = bb.y + bb.height / 2; var q = pt.matrixTransform(n.getCTM()); return L.reach(R, H, 'R', [q.x, q.y], 420).then(function () { wiggle(n.parentNode); return L.wait(R, 350); }); }); }); return p; },
-          function () { return L.reach(R, H, 'R', null, 300); }, function () { return L.turnTo(R, H, 'front', 320); },
-          function () { L.face(H, 'wow'); L.say(H, (nNotes > 1 ? T('Busy day!', 'Travel dag!') : T('One thing today', 'Én ting i dag')), 1600); return L.wait(R, 1400); },
-          function () { return L.walk(R, H, base, 22); }]);
-      } },
-      { n: 'rush', t: 'in a hurry', f: function () { look(H, null); L.face(H, 'wow'); L.say(H, T('So much to do!', 'Så mye å gjøre!'), 1600); L.drops(svg, fit(H, 12, -106), 3); return L.tw(R, 1800, function (u) { var a = u * Math.PI * 10; H.rot.R = [-60 + Math.sin(a) * 60, -20]; H.rot.L = [60 - Math.sin(a + 1) * 60, 20]; H.pos = [base[0] + Math.sin(a * .5) * 1.5, base[1]]; }); } },
-      C.coffee, C.wave, C.think(T('What shall I plan?', 'Hva skal jeg planlegge?'))
-    ];
-    /* what's in today's picture decides: the notes only when today has notes, the rush only when it has several,
-       the clock check otherwise; no coffee here (there's no cup in this picture) */
-    var nNotes = notes.length;
-    return start(svg, H, R, function () { return ACTS.filter(function (a) { return a.n === 'coffee' ? false : a.n === 'tear' ? hasPage : a.n === 'notes' ? nNotes > 0 : a.n === 'rush' ? nNotes >= 2 : true; }); }, 'calendar');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.calendar = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[148, 80, 56, 72, 'clToday'], [232, 46, 54, 54, 'clToday'], [310, 44, 40, 40, 'clToday']], len: 7.4, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), d = new Date(), today = d.getDate(), yday = new Date(d - 864e5).getDate(), WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var cx = 260, face = 0, w = 0, pose = {}, lean = 0, lift = 0, C0 = [196, 145], PULL = [214, 156], CH = B(116, 22), TOSS = [194, 112], BIN = [118, 184];
+      /* sticky notes, the clock, the bin, the floor */
+      [['#f2c94c', 236, 52, -4], ['#f2a3c4', 262, 58, 5], ['#9ad0e8', 246, 82, -2]].forEach(function (n) { var s = grp(n[1], n[2], n[3]); g.appendChild(s); add(s, 'rect', { x: 0, y: 0, width: 20, height: 18, rx: 1.5, fill: n[0] }); add(s, 'line', { x1: 4, y1: 6, x2: 16, y2: 6, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); add(s, 'line', { x1: 4, y1: 11, x2: 13, y2: 11, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); });
+      CLOCK(g, 330, 64, 17); FLOOR(g);
+      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#5b636c' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6c757e' });
+      if (t < .4) face = -90 * E(SEG(t, 0, .4)); else if (t < 1.2) { face = -90; cx = LERP(260, 220, SEG(t, .4, 1.2)); w = Math.min(1, (t - .4) / .2, (1.2 - t) / .2); }
+      else if (t < 3.6) { face = -90; cx = 220; var nr = SIDE(1, -90);
+        pose[nr] = t < 1.6 ? GO(REST, AT(C0), SEG(t, 1.2, 1.6), 2) : t < 2.2 ? HOLD(AT(MIX(C0, PULL, E(SEG(t, 1.6, 2.2))))) : t < 2.7 ? GO(AT(PULL), CH, SEG(t, 2.2, 2.7)) : t < 3.0 ? GO(CH, AT(TOSS), SEG(t, 2.7, 3.0), 3) : GO(AT(TOSS), REST, SEG(t, 3.0, 3.4));
+        lean = .25 * E(SEG(t, 1.2, 1.6)) * (1 - E(SEG(t, 3.0, 3.4))); }
+      else if (t < 4.0) { cx = 220; face = -90 + 145 * E(SEG(t, 3.6, 4.0)); }
+      else if (t < 5.0) { cx = 220; face = 55; lift = -1.2 * Math.sin(Math.PI * 2 * SEG(t, 4.3, 4.9)); }
+      else if (t < 5.4) { cx = 220; face = 55 * (1 - E(SEG(t, 5.0, 5.4))); }
+      else { cx = 220; face = 0; var tu = SIDE(-1, 0), TU = B(96, 26); pose[tu] = t < 5.8 ? GO(REST, TU, SEG(t, 5.4, 5.8)) : t < 6.8 ? HOLD(TU) : GO(TU, REST, SEG(t, 6.8, 7.2)); }
+      pose.lean = lean; pose.lift = lift; var ph = LIFE(st, pose, w);
+      /* the calendar pad: today's page under yesterday's; yesterday's peels from its lower corner, tears off and is crumpled */
+      add(g, 'line', { x1: 175, y1: 84, x2: 175, y2: 96, stroke: '#8a8f99', 'stroke-width': 1.4 }); add(g, 'circle', { cx: 175, cy: 84, r: 1.8, fill: '#8a8f99' });
+      add(g, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f4f1ea' });
+      function pageText(par, num, wd) { add(par, 'rect', { x: 151, y: 96, width: 48, height: 11, rx: 3, fill: '#d96b6b' }); var tw = add(par, 'text', { x: 175, y: 104.5, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: '#fff', 'font-family': 'Inter, system-ui, sans-serif' }); tw.textContent = wd;
+        var tn = add(par, 'text', { x: 175, y: 136, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#2a2d33', 'font-family': 'Inter, system-ui, sans-serif' }); tn.textContent = num; }
+      pageText(g, today, WD[d.getDay()]);
+      var torn = t >= 2.2 && st.playing || (t >= 2.2), pulling = t >= 1.6 && t < 2.2;
+      if (t < 1.6 || (!st.playing && t < .01)) { var pg = add(g, 'g', {}); add(pg, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f8f6f0', stroke: 'rgba(0,0,0,.08)' }); pageText(pg, yday, WD[(d.getDay() + 6) % 7]); }
+      else if (pulling) { var cn = MIX(C0, PULL, E(SEG(t, 1.6, 2.2))); add(g, 'path', { d: 'M151 107 L199 107 L' + (cn[0] + 3).toFixed(1) + ' ' + (cn[1] + 3).toFixed(1) + ' L151 148 Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.12)' }); add(g, 'rect', { x: 151, y: 96, width: 48, height: 11, rx: 3, fill: '#d96b6b' }); }
+      var sheet = null;
+      if (t >= 2.2 && t < 3.0) sheet = 1 - .78 * E(SEG(t, 2.2, 2.7));
+      function paper(x, y, s) { var p2 = grp(x, y, 0); if (s > .4) { add(p2, 'path', { d: 'M' + (-14 * s) + ' ' + (-2 * s) + ' L' + (12 * s) + ' ' + (-6 * s) + ' L' + (14 * s) + ' ' + (20 * s) + ' L' + (-10 * s) + ' ' + (22 * s) + ' Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.15)' }); } else { add(p2, 'circle', { cx: 0, cy: 0, r: 4.2, fill: '#f1ede4', stroke: 'rgba(0,0,0,.2)' }); add(p2, 'path', { d: 'M-2 -1 L1 1 L-1 3 M1 -3 L2 0', fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': .7 }); } return p2; }
+      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { return sheet != null && H.s1 ? [[H.s1.z - .15, paper(H.s1.X, H.s1.Y, sheet)]] : []; } });
+      /* the ball flies into the bin */
+      if (t >= 3.0 && t < 3.75) { var q = SEG(t, 3.0, 3.75), bp = MIX(TOSS, [118, 190], q); g.appendChild(paper(bp[0], bp[1] - 40 * Math.sin(Math.PI * Math.min(1, q * 1.08)), .2)); }
+      /* the bin's front, drawn over the ball so it falls in and disappears */
+      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#5b636c' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6c757e' });
+    } });
   };
-
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.calendar = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();

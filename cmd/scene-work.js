@@ -1,52 +1,47 @@
-/* The living Work picture (Phase L6) – your avatar's actions on this page, built from the rig, the scene engine
-   and the shared props (scene-common.js), on top of the still picture from scenes.js. */
+/* The Work picture in 2.5D (Phase F2) – ported from the preview JP picked ("Scenes in 2.5D"):
+   WORK: you behind the desk, the laptop facing you (we see its lid), the mug, the clock.
+   Built on scene25.js (the runner, helpers, your look) and Fig25 (the body). */
 (function () {
   'use strict';
-  /* made on first use: the engine and the shared props load after this page's own code */
-  function make() {
-  var L = window.Live, K = window.SceneCommon; if (!L || !K) return null;
-  var el = L.el, rnd = L.rnd, ease = L.ease, lerp = L.lerp, T = K.T, fit = K.fit, seq = K.seq, mid = K.mid, mount = K.mount, look = K.look, O = K.O, take = K.take, tipOf = K.tipOf, common = K.common, start = K.start, spin = K.spin, fall = K.fall, drip = K.drip;
-  /* ================= WORK: you behind the desk, the laptop facing you (we see its lid), the cup by its handle ================= */
-  return function (svg, data) {
-    var m = mount(svg); if (!m) return null; data = data || {};
-    var nxt = m.me.nextSibling; m.me.remove();
-    var cup = svg.querySelectorAll('[data-scgo="flex"]')[1], screen = svg.querySelector('.sc-screen'), kbd = svg.querySelector('.sc-kbd');
-    /* the laptop faces you, so we see the back of its lid */
-    screen.setAttribute('class', ''); screen.setAttribute('fill', '#9aa3b2'); screen.setAttribute('stroke', '#6b7385'); screen.setAttribute('stroke-width', '.8');
-    screen.insertAdjacentHTML('afterend', '<circle cx="76" cy="83" r="2.4" fill="#c9ced8"/>');
-    if (kbd) kbd.style.opacity = .45;
-    var H = L.Hero(svg, nxt, { x: 81.2, y: 19.5, w: 83.6, h: 105.6 }), R = L.Run(), C = common(R, H, svg), base = H.pos.slice();
-    /* the screen lights up your face while you type */
-    var glow = el('g', { class: 'glow', style: 'opacity:0;transition:opacity .4s' }, '<radialGradient id="scrGlow"><stop offset="0" stop-color="#bfe1ff" stop-opacity=".35"/><stop offset="1" stop-color="#bfe1ff" stop-opacity="0"/></radialGradient><ellipse cx="80" cy="50" rx="13" ry="14" fill="url(#scrGlow)"/>'); svg.insertBefore(glow, H.layF.nextSibling);
-    var ACTS = [
-      { n: 'type', t: 'typing', f: function () {
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [80, base[1]], 20, null, 0); },
-          function () { look(H, [76, 70]); glow.style.opacity = 1; return Promise.all([L.both(R, H, [70, 92], [84, 92], 450), L.headTo(R, H, 5, 1, 400)]); },
-          function () { return L.tw(R, 2800, function (u) { var a = u * 40; H.hand.L = [70 + Math.sin(a) * 2, 92 - Math.abs(Math.sin(a * 1.3)) * 1.4]; H.hand.R = [84 + Math.sin(a + 2) * 2, 92 - Math.abs(Math.sin(a * 1.1 + 1)) * 1.4]; }); },
-          function () { glow.style.opacity = 0; look(H, null); L.face(H, 'grin'); L.say(H, T('Sent!', 'Sendt!'), 1200); return L.settle(R, H, 400); }, function () { return L.walk(R, H, base, 20); }]);
-      } },
-      { n: 'sip', t: 'coffee break', f: function () {
-        var c0 = [168, 88];
-        function carry() { var o = H.objs.R; cup.setAttribute('transform', 'translate(' + (L.handAt(H, 'R')[0] - c0[0]).toFixed(2) + ' ' + (L.handAt(H, 'R')[1] - c0[1]).toFixed(2) + ')'); }
-        return seq([function () { L.face(H, 'calm'); return L.walk(R, H, [140, base[1]], 20, null, .6); },
-          function () { look(H, [158, 88]); return L.reach(R, H, 'R', c0, 450); },
-          function () { var mo = L.mouth(H); return Promise.all([L.reach(R, H, 'R', [mo[0] + 4 * H.s, mo[1] + 7 * H.s], 550), L.headTo(R, H, -6, -1.5, 500), L.tw(R, 560, carry)]); },   /* the cup to the mouth */
-          function () { return L.tw(R, 1000, carry); },
-          function () { look(H, null); L.face(H, 'love'); L.say(H, T('Ahh', 'Ahh'), 1300); return L.wait(R, 500); },
-          function () { look(H, [158, 88]); return Promise.all([L.reach(R, H, 'R', c0, 550), L.headTo(R, H, 0, 0, 400), L.tw(R, 560, carry)]); },
-          function () { cup.setAttribute('transform', ''); look(H, null); return L.settle(R, H, 400); }, function () { return L.walk(R, H, base, 20); }]);
-      } },
-      { n: 'clock', t: 'checking the flex', f: function () {
-        return seq([function () { L.face(H, 'calm'); look(H, [200, 38]); return L.turnTo(R, H, .6, 300); },
-          function () { spin('.sc-mh, .sc-hh', svg, 1400, 1); return L.wait(R, 1500); },
-          function () { look(H, null); return L.turnTo(R, H, 'front', 300); }, function () { L.face(H, 'starry'); L.say(H, T('Right on time!', 'Akkurat i tide!'), 1500); return L.wait(R, 1200); }]);
-      } },
-      { n: 'done', t: 'task done', f: function () { look(H, null); L.face(H, 'laugh'); L.say(H, T('Done!', 'Ferdig!'), 1300); L.burst(svg, fit(H, 0, -140), 6); return L.both(R, H, fit(H, -18, -150), fit(H, 18, -150), 450).then(function () { return L.tw(R, 900, function (u) { H.bob = -Math.abs(Math.sin(u * Math.PI * 2)) * 4; }); }); } },
-      C.think(T('Hmm…', 'Hmm …')), C.phone(T('Haha', 'Haha')), C.stretch
-    ];
-    return start(svg, H, R, ACTS, 'work');
+  window.SceneLive = window.SceneLive || {};
+  window.SceneLive.work = function (svg, data) {
+    var S = window.Scene25; if (!S || !window.Fig25 || !svg) return null;
+    var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
+      REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
+    data = data || {};
+    return S.run(svg, { hits: [[196, 124, 50, 32, 'ptime'], [180, 136, 22, 22, 'flex'], [310, 42, 40, 40, 'flex'], [128, 154, 184, 46, 'flex']], len: 12, data: data, render: function (sv, t, st) {
+      var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
+      function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      var g = add(sv, 'g', {}), cx = 220, face = 0, pose = {}, lean = 0, lift = 0, mugIn = false, tilt = 0, MUG = [194, 151], MOUTH = B(66, 24), UP = B(34, 4);
+      function TYPE(sd) { return B(118 + 1.4 * Math.sin(now / 75 + (sd > 0 ? 1.6 : 0)), 26); }
+      /* the room: a window with the city at night, the clock, the floor */
+      add(g, 'rect', { x: 34, y: 34, width: 76, height: 66, rx: 6, fill: '#1c2740', stroke: 'rgba(255,255,255,.4)', 'stroke-width': 2 });
+      [[42, 70, 11, 30], [56, 58, 13, 42], [72, 74, 10, 26], [85, 63, 15, 37]].forEach(function (b2) { add(g, 'rect', { x: b2[0], y: b2[1], width: b2[2], height: 100 - b2[1], fill: '#2c3a5a' });
+        for (var wy = b2[1] + 4; wy < 96; wy += 7) for (var wx = b2[0] + 2; wx < b2[0] + b2[2] - 2; wx += 5) if ((wx * 7 + wy * 3) % 5 < 3) add(g, 'rect', { x: wx, y: wy, width: 2.2, height: 2.4, fill: '#f2c94c', opacity: .7 }); });
+      CLOCK(g, 330, 62, 17); FLOOR(g);
+      if (t < 2.8 || t >= 7.8) { pose[SIDE(-1, 0)] = HOLD(TYPE(-1)); pose[SIDE(1, 0)] = HOLD(TYPE(1)); }
+      else if (t < 6.3) {
+        face = t < 3.2 ? -70 * E(SEG(t, 2.8, 3.2)) : t < 5.9 ? -70 : -70 * (1 - E(SEG(t, 5.9, 6.3)));
+        var mh = SIDE(1, face), oh = SIDE(-1, face);
+        if (t < 3.2) pose[oh] = GO(TYPE(-1), REST, SEG(t, 2.8, 3.2));
+        /* the mug: reach, to the mouth, a sip, back down, let go */
+        pose[mh] = t < 3.2 ? HOLD(TYPE(1)) : t < 3.7 ? GO(TYPE(1), AT(MUG), SEG(t, 3.2, 3.7), 3) : t < 4.2 ? GO(AT(MUG), MOUTH, SEG(t, 3.7, 4.2), 2)
+          : t < 5.0 ? HOLD(MOUTH) : t < 5.5 ? GO(MOUTH, AT(MUG), SEG(t, 5.0, 5.5), 2) : GO(AT(MUG), REST, SEG(t, 5.5, 5.9));
+        mugIn = t >= 3.7 && t < 5.5; tilt = t >= 4.2 && t < 5.0 ? 38 * Math.sin(Math.PI * SEG(t, 4.2, 5.0)) : 0;
+        lean = .3 * E(SEG(t, 3.2, 3.7)) * (1 - E(SEG(t, 3.7, 4.2))) + .3 * E(SEG(t, 5.0, 5.5)) * (1 - E(SEG(t, 5.5, 5.9)));
+      } else {   /* a long stretch, arms up */
+        [-1, 1].forEach(function (sd) { var k2 = SIDE(sd, 0); pose[k2] = t < 6.8 ? GO(REST, UP, SEG(t, 6.3, 6.8)) : t < 7.3 ? HOLD(UP) : GO(UP, TYPE(sd), SEG(t, 7.3, 7.8)); });
+        lift = t >= 6.8 && t < 7.3 ? 2.5 * Math.sin(Math.PI * SEG(t, 6.8, 7.3)) : 0;
+      }
+      pose.lean = lean; pose.lift = lift; LIFE(st, pose, 0);
+      function mug(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.8, y: -5.5, width: 9.6, height: 11, rx: 2, fill: '#e8743b' }); add(m, 'path', { d: 'M4.6 -3 q4.5 0 4.5 3 q0 3 -4.5 3', fill: 'none', stroke: '#e8743b', 'stroke-width': 1.8 }); add(m, 'rect', { x: -4.2, y: -5.5, width: 8.4, height: 1.6, fill: '#5a3424', opacity: .7 }); return m; }
+      FIG(g, { cx: cx, gy: 200, face: face, pose: pose, items: function (H) { return mugIn && H.s1 ? [[H.s1.z - .15, mug(H.s1.X, H.s1.Y, tilt)]] : []; } });
+      /* the desk in front of you (it hides your legs), the laptop's lid facing you, the mug */
+      add(g, 'rect', { x: 128, y: 154, width: 184, height: 6, rx: 2, fill: '#a87652' });
+      add(g, 'rect', { x: 136, y: 160, width: 168, height: 40, fill: '#7a5038' }); add(g, 'rect', { x: 146, y: 166, width: 60, height: 14, rx: 3, fill: '#8a5e44' }); add(g, 'rect', { x: 170, y: 172, width: 12, height: 2.4, rx: 1.2, fill: '#d7c2a8' });
+      add(g, 'rect', { x: 198, y: 150, width: 44, height: 4, rx: 1.5, fill: '#3a3f4a' });
+      add(g, 'path', { d: 'M201 151 L239 151 L238 131 L202 131 Z', fill: '#c9ced6' }); add(g, 'circle', { cx: 220, cy: 141, r: 3, fill: '#eef0f4', opacity: .9 });
+      if (!mugIn) { var m0 = mug(MUG[0], MUG[1], 0); g.appendChild(m0); for (var si = 0; si < 2; si++) { var ph0 = ((now / 1000) * .5 + si / 2) % 1; add(g, 'path', { d: 'M' + (MUG[0] - 2 + si * 4) + ' ' + (MUG[1] - 8 - ph0 * 12) + ' q-2 -3 0 -6', fill: 'none', stroke: '#fff', 'stroke-width': 1.3, 'stroke-linecap': 'round', opacity: (.45 * Math.sin(Math.PI * ph0)).toFixed(2) }); } }
+    } });
   };
-  }
-  var real = null; window.SceneLive = window.SceneLive || {};
-  window.SceneLive.work = function (svg, data) { real = real || make(); return real ? real(svg, data) : null; };
 })();
