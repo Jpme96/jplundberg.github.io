@@ -3361,7 +3361,9 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .sc-money.ok { fill: color-mix(in srgb, var(--ok) 70%, var(--bg-solid)); } .sc-money.warn { fill: color-mix(in srgb, var(--warn) 75%, var(--bg-solid)); } .sc-money.neg { fill: color-mix(in srgb, var(--danger) 70%, var(--bg-solid)); }
 .sc-jarg { fill: rgba(255, 255, 255, .05); stroke: rgba(var(--ink-rgb), .45); stroke-width: 1.5; }
 /* the 2.5D scenes (scene25.js, Phase F2): 400 × 240, a little bigger on a computer */
-.hs-illu:has(.sc25) { width: 300px; } @media (min-width: 900px) { .hs-illu:has(.sc25) { width: 360px; } }
+/* bigger on a tablet and a computer (JP 2026-11-12: "the figures were kinda small" – the phone size was right) */
+@media (min-width: 641px) { .hs-illu { width: 320px; } .hs-illu:has(.sc25) { width: 420px; } }
+@media (min-width: 1000px) { .hs-illu { width: 380px; } .hs-illu:has(.sc25) { width: 520px; } }
 @media (max-width: 640px) { .hs-illu:has(.sc25) { width: min(380px, 100%); } }
 .hs-illu svg.sc25 { overflow: hidden; } .sc25 { cursor: pointer; } .sc25-floor { fill: rgba(var(--ok-rgb), .16); } .sc25-moon { fill: #eef0f4; } .sc25-moonc { fill: var(--bg-solid); }
 .sc25-amt { fill: var(--text); font: 700 12px Inter, system-ui, sans-serif; } .sc25 .sc-calt { font-size: 15px; }
