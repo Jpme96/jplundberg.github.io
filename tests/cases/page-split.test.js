@@ -22,7 +22,9 @@ const SPLIT = [   /* file, its page, the page bundle, what other pages still use
   await p.evaluate(() => { ['papers', 'goals', 'wish', 'house', 'ptime', 'fdv', 'habits'].forEach(f => { try { Features.set(f, true); } catch (e) {} });
     const t = Features.tools(); t.wishes = [{ id: 'tw1', title: 'Made-up lamp', price: 400, prio: 1 }]; t.papers = [{ id: 'tp1', title: 'Made-up insurance', kind: 'insurance', date: '2030-01-01', dateKind: 'renews' }];
     t.chores = [{ id: 'tc1', name: 'Made-up hoovering', every: '1w', day: 0, who: 'me' }]; Features.saveTools(t);
-    localStorage.setItem('dash.goals', JSON.stringify([{ id: 'tg1', name: 'Made-up savings goal', target: 1000, cur: 200 }])); });
+    localStorage.setItem('dash.goals', JSON.stringify([{ id: 'tg1', name: 'Made-up savings goal', target: 1000, cur: 200 }]));
+    window.dispatchEvent(new Event('goals:refresh')); });   /* the way goals.js saves: Home's Goals card reads them again instead of saving its older copy over them */
+  await sl(1500);
   /* on Home: the everywhere parts only */
   await go(p, '', 2500);
   const home = await p.evaluate(SPLIT => {
