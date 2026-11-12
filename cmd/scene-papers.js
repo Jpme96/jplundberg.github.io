@@ -36,8 +36,8 @@
         pose[nh] = t < 6.8 ? GO(REST, AT(CAN0), SEG(t, 6.4, 6.8), 2) : t < 7.2 ? GO(AT(CAN0), AT(POUR2), SEG(t, 6.8, 7.2), 3) : t < 8.8 ? HOLD(AT(POUR2)) : t < 9.4 ? GO(AT(POUR2), AT(CAN0), SEG(t, 8.8, 9.4), 3) : GO(AT(CAN0), REST, SEG(t, 9.4, 9.8));
         canIn = t >= 6.8 && t < 9.4; tilt = t < 7.2 ? 0 : t < 7.6 ? 42 * E(SEG(t, 7.2, 7.6)) : t < 8.4 ? 42 : t < 8.8 ? 42 * (1 - E(SEG(t, 8.4, 8.8))) : 0;
         water = t > 7.5 && t < 8.6 ? 1 : 0; lean = .3 * E(SEG(t, 6.4, 6.8)) * (1 - E(SEG(t, 9.4, 9.8)));
-      } else if (t < 10.2) { cx = 300; face = 90 - 90 * E(SEG(t, 9.8, 10.2)); }
-      else { cx = 300; face = 0; var nw = SIDE(-1, 0), WV = B(44, 10); pose[nw] = t < 10.5 ? GO(REST, WV, SEG(t, 10.2, 10.5)) : t < 11.2 ? HOLD(B(44, 10 + 9 * Math.sin((t - 10.5) * 16))) : GO(WV, REST, SEG(t, 11.2, 11.6)); }
+      } else if (t < 10.2) { cx = LERP(300, 272, E(SEG(t, 9.8, 10.2))); w = .3; face = 90 - 90 * E(SEG(t, 9.8, 10.2)); }   /* steps back from the stool as he turns, so nothing stands in him */
+      else { cx = 272; face = 0; var nw = SIDE(-1, 0), WV = B(44, 10); pose[nw] = t < 10.5 ? GO(REST, WV, SEG(t, 10.2, 10.5)) : t < 11.2 ? HOLD(B(44, 10 + 9 * Math.sin((t - 10.5) * 16))) : GO(WV, REST, SEG(t, 11.2, 11.6)); }
       grow = t < 7.9 ? 0 : E(SEG(t, 7.9, 8.9)); if (!st.playing && t >= 11.6) grow = 1;
       pose.lean = lean; var ph = LIFE(st, pose, w);
       /* the cabinet, seen from the side: its front faces you on the right */

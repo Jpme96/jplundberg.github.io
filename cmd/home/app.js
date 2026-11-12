@@ -186,7 +186,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 114;
+  var APPV = 116;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -206,6 +206,7 @@
     } else if (saved && (saved.name || saved.look)) { wj('home.pmeV', APPV); put('pme', 'me', Object.assign({}, saved, { v: APPV })); }
   }
   function start() {
+    if (window.PushKey && K && !preview) PushKey.keepShared(K);   /* this phone can seal and open pushes to and from the other one */
     lastHtml = ''; if (window.__hnav) window.__hnav.hidden = true; app.innerHTML = '<p class="h-wait"><i class="bi bi-arrow-repeat"></i></p>';
     pull().then(function () {
       if (preview) return;

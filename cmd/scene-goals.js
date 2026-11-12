@@ -24,7 +24,7 @@
       add(g, 'path', { d: tr, fill: 'none', stroke: '#c9b48e', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
       [[176, '#3987e5'], [252, '#e8743b']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#d7dee3', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
       if (t < .4) face = 90 * E(SEG(t, 0, .4)); else if (t < 7.0) { face = 90; cx = LERP(60, 335, SEG(t, .4, 7.0)); w = Math.min(1, (t - .4) / .2, (7.0 - t) / .2); } else { face = 90; cx = 335; }
-      var gy = YG(cx), k = KS(cx), s = k / .5, nh = SIDE(-1, 90), CARRY = B(96, 18), UPP = [cx + 15 * s, gy - 74 * s], DN = [cx + 15 * s, gy - 30 * s], pf = 0;
+      var gy = YG(cx), k = KS(cx), s = k / .5, nh = SIDE(1, 90), CARRY = B(96, 18),   /* the flag in his far hand: the pole rests behind him, not across his chest */ UPP = [cx + 15 * s, gy - 74 * s], DN = [cx + 15 * s, gy - 30 * s], pf = 0;
       if (t < 7.0) pose[nh] = HOLD(CARRY);
       else if (t < 7.5) { pose[nh] = GO(CARRY, AT(UPP), SEG(t, 7.0, 7.5), 4); pf = E(SEG(t, 7.0, 7.5)); }
       else if (t < 8.0) { pose[nh] = HOLD(AT(MIX(UPP, DN, E(SEG(t, 7.5, 8.0))))); pf = 1; }
@@ -37,12 +37,12 @@
       function flag(par, top, ss, wave) { add(par, 'path', { d: 'M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' q' + (8 * ss) + ' ' + (-3 * ss + wave) + ' ' + (16 * ss) + ' ' + (1 * ss) + ' l0 ' + (12 * ss) + ' q' + (-8 * ss) + ' ' + (-3 * ss - wave) + ' ' + (-16 * ss) + ' ' + (1 * ss) + ' Z', fill: '#d93a3a' }); }
       var PX = 335 + 15 * KS(335) / .5, PY = YG(335);
       if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#d7dee3', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); }
-      FIG(g, { cx: cx, gy: gy, k: k, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (planted || !H.sm) return [];
-        var hx = H.sm.X, hy = H.sm.Y, carryB = [hx + 6 * s, hy + 12 * s], carryT = [hx - 26 * s, hy - 44 * s], vB = [hx, hy + 30 * s], vT = [hx, hy - 34 * s];
+      FIG(g, { cx: cx, gy: gy, k: k, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (planted || !H.s1) return [];
+        var hx = H.s1.X, hy = H.s1.Y, carryB = [hx + 6 * s, hy + 12 * s], carryT = [hx - 26 * s, hy - 44 * s], vB = [hx, hy + 30 * s], vT = [hx, hy - 34 * s];
         var b2 = MIX(carryB, vB, pf), t2 = MIX(carryT, vT, pf), fg = el('g', {});
         add(fg, 'line', { x1: b2[0], y1: b2[1], x2: t2[0], y2: t2[1], stroke: '#d7dee3', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
         if (pf > .6) flag(fg, t2, s * (pf - .6) / .4, 1.5 * Math.sin(now / 160)); else add(fg, 'path', { d: 'M' + t2[0] + ' ' + t2[1] + ' l' + (-3 * s) + ' ' + (10 * s) + ' l' + (5 * s) + ' ' + (2 * s) + ' Z', fill: '#d93a3a' });
-        return [[H.sm.z - .15, fg]]; } });
+        return [[H.s1.z - .15, fg]]; } });
     } });
   };
 })();

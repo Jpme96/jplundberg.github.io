@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-vd847f2be37';
+var CACHE = 'cmd-v7377fb1720';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
@@ -132,8 +132,8 @@ try { importScripts('/cmd/push-key.js'); } catch (x) {}
 self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Dashboard', body: e.data ? e.data.text() : '' }; }
-  /* a reminder comes sealed (F-R): open it with this device's key; without the key, a plain "Reminder" */
-  var text = d.c !== undefined && self.PushKey ? self.PushKey.open(d.c).then(function (m) { return m || self.PushKey.fallback(); }) : Promise.resolve({ t: d.title || 'Dashboard', b: d.body || '' });
+  /* a reminder comes sealed with this device's key (F-R); things from the other one with the shared key; without the key, a plain line */
+  var text = self.PushKey ? self.PushKey.text(d, false) : Promise.resolve({ t: d.title || 'Dashboard', b: d.body || '' });   /* sealed (F-R and the shared key) – never readable on the way */
   e.waitUntil(text.then(function (m) {
     return self.registration.showNotification(m.t || 'Dashboard', { body: m.b || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/' },
       icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png' });

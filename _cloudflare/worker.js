@@ -648,7 +648,10 @@ async function pushApi(request, env, role) {
     const cfg = await env.VAULT.get(SHARE_CFG, 'json').catch(() => null);
     if (!cfg || !cfg.partner || cfg.paused) return json({ ok: true, sent: 0 });
     const n = body.notify, want = role === 'p' ? 'o' : 'p';
-    const msg = { title: String(n.title || 'Home').slice(0, 80), body: String(n.body || '').slice(0, 200), url: want === 'p' ? '/cmd/home/' : '/cmd/', tag: 'share-' + String(n.tag || 'x').replace(/[^a-z0-9-]/gi, '').slice(0, 40) };
+    /* the title and text come sealed with the shared key (c) – the Worker keeps and forwards only the ciphertext and drops
+       any readable text; the phone opens it with the key both of you have (push-key.js) */
+    const c = /^[A-Za-z0-9+/=]{24,1400}$/.test(n.c || '') ? n.c : '';
+    const msg = { c, s: 1, url: want === 'p' ? '/cmd/home/' : '/cmd/', tag: 'share-' + String(n.tag || 'x').replace(/[^a-z0-9-]/gi, '').slice(0, 40) };
     /* a nudge for later (Phase E): kept until its minute, then sent to the other person's phones by the live room's alarm */
     const nid = String(n.id || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
     if (n.cancel && nid) { await env.VAULT.delete(NUDGE_PREFIX + role + ':' + nid); return json({ ok: true }); }
@@ -712,7 +715,7 @@ async function sendDue(env, backstop) {
       if (x.at < now - 6 * 3600e3) continue;                                   /* hours late: no use any more */
       let dc; do { const l = await env.VAULT.list({ prefix: PUSH_PREFIX, cursor: dc });
         for (const k of l.keys) { const rec = JSON.parse(await env.VAULT.get(k.name) || 'null'); if (!rec || !rec.sub || (rec.role || 'o') !== x.want) continue;
-          try { const r = await webPush(env, rec.sub, x.msg); if (r.status === 404 || r.status === 410) await env.VAULT.delete(k.name); } catch (e) { console.log('nudge push failed', e && e.message); } }
+          try { const r = await webPush(env, rec.sub, { c: (x.msg && x.msg.c) || '', s: 1, url: x.msg && x.msg.url, tag: x.msg && x.msg.tag });   /* only the sealed text – a nudge kept from before has none */ if (r.status === 404 || r.status === 410) await env.VAULT.delete(k.name); } catch (e) { console.log('nudge push failed', e && e.message); } }
         dc = l.list_complete ? null : l.cursor; } while (dc);
     } }
   do {

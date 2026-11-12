@@ -27,6 +27,6 @@ const KV = 'http://localhost:' + (process.env.PORT || 8770) + '/__kvget?k=';
   check(r.plain.ok && stB.indexOf('Secret plan') < 0, 'plain titles from an old device are dropped by the Worker');
   check(r.broken === null && r.fb.t === 'Reminder', 'text that can\'t be opened shows a plain "Reminder" instead');
   const sw = require('fs').readFileSync(require('path').join(__dirname, '../../cmd/sw.js'), 'utf8'), hsw = require('fs').readFileSync(require('path').join(__dirname, '../../cmd/home/sw.js'), 'utf8');
-  check(/importScripts\('\/cmd\/push-key\.js'\)/.test(sw) && /importScripts\('\/cmd\/push-key\.js'\)/.test(hsw) && /PushKey\.open\(d\.c\)/.test(sw) && /PushKey\.open\(d\.c\)/.test(hsw), 'both apps\' service workers open the sealed text');
+  check(/importScripts\('\/cmd\/push-key\.js'\)/.test(sw) && /importScripts\('\/cmd\/push-key\.js'\)/.test(hsw) && /PushKey\.text\(d,/.test(sw) && /PushKey\.text\(d,/.test(hsw), 'both apps\' service workers open the sealed text');
   await done(b);
 })();

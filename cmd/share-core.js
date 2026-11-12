@@ -67,7 +67,17 @@
   var OQ = 'dash.outq';
   function oq() { try { return JSON.parse(localStorage.getItem(OQ)) || []; } catch (e) { return []; } }
   function oqSave(l) { try { localStorage.setItem(OQ, JSON.stringify(l.slice(-200))); } catch (e) {} }
+  /* a push for the other one's phones: the title and text are sealed with the shared key's push key before anything
+     leaves this device (or waits in the queue) – the Worker only gets the ciphertext. No key → no text, never plain text. */
+  function sealPush(opt) {
+    var n = opt && opt.body && opt.body.notify; if (!n || n.cancel || (n.title == null && n.body == null)) return Promise.resolve(opt);
+    var m = { t: String(n.title || '').slice(0, 80), b: String(n.body || '').slice(0, 200) }, n2 = {};
+    Object.keys(n).forEach(function (x) { if (x !== 'title' && x !== 'body') n2[x] = n[x]; });
+    var o2 = Object.assign({}, opt, { body: Object.assign({}, opt.body, { notify: n2 }) });
+    return (window.PushKey ? PushKey.sealShared(m) : Promise.reject()).then(function (c) { n2.c = c; return o2; }, function () { return o2; });
+  }
   function send(path, opt, key) {
+    if (path === 'push' && opt && opt.body && opt.body.notify && opt.body.notify.c === undefined && (opt.body.notify.title != null || opt.body.notify.body != null)) return sealPush(opt).then(function (o2) { return send(path, o2, key); });
     return api(path, opt).catch(function (e) {
       if (e && e.status) throw e;                                       /* the server answered: not a network problem */
       var l = oq().filter(function (x) { return !key || x.key !== key; }); l.push({ path: path, opt: opt, key: key || '', at: Date.now() }); oqSave(l);
@@ -244,5 +254,5 @@
     });
     return out.sort(function (a, b) { return b.t - a.t; }).slice(0, opts.max || 40);
   }
-  window.ShareCore = { send: send, flushQueue: flush, queued: function () { return oq().length; }, encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, activity: activity, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
+  window.ShareCore = { send: send, sealPush: sealPush, flushQueue: flush, queued: function () { return oq().length; }, encryptBytes: encryptBytes, decryptBytes: decryptBytes, genKey: genKey, importKey: importKey, encrypt: encrypt, decrypt: decrypt, rid: rid, hash: hash, wrap: wrap, unwrap: unwrap, api: api, live: live, liveSpeed: liveSpeed, livePost: livePost, liveMode: liveMode, activity: activity, ALLOW: ALLOW, clean: clean, cleanLook: cleanLook, b64: b64, unb64: unb64 };
 })();

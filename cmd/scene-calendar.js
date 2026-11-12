@@ -13,7 +13,7 @@
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), d = new Date(), today = d.getDate(), yday = new Date(d - 864e5).getDate(), WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      var cx = 260, face = 0, w = 0, pose = {}, lean = 0, lift = 0, C0 = [196, 145], PULL = [214, 156], CH = B(116, 22), TOSS = [194, 112], BIN = [118, 184];
+      var cx = 260, face = 0, w = 0, pose = {}, lean = 0, lift = 0, C0 = [196, 145], PULL = [206, 150], CH = B(116, 22), TOSS = [194, 112], BIN = [118, 184];
       /* sticky notes, the clock, the bin, the floor */
       [['#f2c94c', 236, 52, -4], ['#f2a3c4', 262, 58, 5], ['#9ad0e8', 246, 82, -2]].forEach(function (n) { var s = grp(n[1], n[2], n[3]); g.appendChild(s); add(s, 'rect', { x: 0, y: 0, width: 20, height: 18, rx: 1.5, fill: n[0] }); add(s, 'line', { x1: 4, y1: 6, x2: 16, y2: 6, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); add(s, 'line', { x1: 4, y1: 11, x2: 13, y2: 11, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); });
       CLOCK(g, 330, 64, 17); FLOOR(g);
@@ -35,7 +35,13 @@
       pageText(g, today, WD[d.getDay()]);
       var torn = t >= 2.2 && st.playing || (t >= 2.2), pulling = t >= 1.6 && t < 2.2;
       if (t < 1.6 || (!st.playing && t < .01)) { var pg = add(g, 'g', {}); add(pg, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f8f6f0', stroke: 'rgba(0,0,0,.08)' }); pageText(pg, yday, WD[(d.getDay() + 6) % 7]); }
-      else if (pulling) { var cn = MIX(C0, PULL, E(SEG(t, 1.6, 2.2))); add(g, 'path', { d: 'M151 107 L199 107 L' + (cn[0] + 3).toFixed(1) + ' ' + (cn[1] + 3).toFixed(1) + ' L151 148 Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.12)' }); add(g, 'rect', { x: 151, y: 96, width: 48, height: 11, rx: 3, fill: '#d96b6b' }); }
+      else if (pulling) {   /* the page stays its own size: its lower corner folds up toward the hand, the cut runs further in as it's pulled */
+        var pq = E(SEG(t, 1.6, 2.2)), cn = MIX(C0, PULL, pq), yc = 148 - 40 * pq, xc = 199 - 46 * pq;
+        var pd = 'M151 96 L199 96 L199 ' + yc.toFixed(1) + ' L' + xc.toFixed(1) + ' 148 L151 148 Z', cp = add(g, 'clipPath', { id: 'cal25peel' }); add(cp, 'path', { d: pd });
+        var pg2 = add(g, 'g', { 'clip-path': 'url(#cal25peel)' }); add(pg2, 'path', { d: pd, fill: '#f8f6f0', stroke: 'rgba(0,0,0,.12)' });
+        pageText(pg2, yday, WD[(d.getDay() + 6) % 7]);   /* yesterday's date stays on the part of the page still hanging */
+        add(g, 'path', { d: 'M199 ' + yc.toFixed(1) + ' L' + (cn[0] + 3).toFixed(1) + ' ' + (cn[1] + 3).toFixed(1) + ' L' + xc.toFixed(1) + ' 148 Z', fill: '#ebe7de', stroke: 'rgba(0,0,0,.15)' });
+      }
       var sheet = null;
       if (t >= 2.2 && t < 3.0) sheet = 1 - .78 * E(SEG(t, 2.2, 2.7));
       function paper(x, y, s) { var p2 = grp(x, y, 0); if (s > .4) { add(p2, 'path', { d: 'M' + (-14 * s) + ' ' + (-2 * s) + ' L' + (12 * s) + ' ' + (-6 * s) + ' L' + (14 * s) + ' ' + (20 * s) + ' L' + (-10 * s) + ' ' + (22 * s) + ' Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.15)' }); } else { add(p2, 'circle', { cx: 0, cy: 0, r: 4.2, fill: '#f1ede4', stroke: 'rgba(0,0,0,.2)' }); add(p2, 'path', { d: 'M-2 -1 L1 1 L-1 3 M1 -3 L2 0', fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': .7 }); } return p2; }

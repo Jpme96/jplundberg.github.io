@@ -454,7 +454,7 @@
     /* you're writing in a field: their changes wait a little (at most ~20 s), so it isn't redrawn under your fingers */
     if (window.typingHere && window.typingHere() && typeWait < 12) { typeWait++; schedule(1500); return Promise.resolve(); }
     typeWait = 0;
-    busy = true; var k = s.key, sentAt = 0;
+    busy = true; var k = s.key, sentAt = 0; if (window.PushKey && k) PushKey.keepShared(k);   /* so this device can seal and open pushes to and from the other one */
     var showD = null;
     return SC.api('shared').then(function (srv) { return absorb(k, srv); }).then(dPrep).then(function (go) {
       showD = go;

@@ -5,8 +5,8 @@ try { importScripts('/cmd/push-key.js'); } catch (x) {}
 self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Home', body: e.data ? e.data.text() : '' }; }
-  /* a reminder comes sealed (F-R): open it with this device's key; without the key, a plain "Reminder" */
-  var text = d.c !== undefined && self.PushKey ? self.PushKey.open(d.c).then(function (m) { return m || self.PushKey.fallback(); }) : Promise.resolve({ t: d.title || 'Home', b: d.body || '' });
+  /* a reminder comes sealed with this device's key (F-R); things from the other one with the shared key; without the key, a plain line */
+  var text = self.PushKey ? self.PushKey.text(d, true) : Promise.resolve({ t: d.title || 'Home', b: d.body || '' });   /* sealed (F-R and the shared key) – never readable on the way */
   e.waitUntil(text.then(function (m) {
     return self.registration.showNotification(m.t || 'Home', { body: m.b || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/home/' },
       icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png' });
