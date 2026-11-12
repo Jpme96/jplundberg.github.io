@@ -88,6 +88,19 @@
       else r.face = rest(st);
       return r;
     }
+    /* the page's own action (F3): over to the fridge, a word on the shopping list on its door, back again – from the rest the main action left */
+    function listAt(t, st) {
+      var r = (cook ? cookAt : lookAt)(cook ? LEN : LLEN, st), pose = r.pose = {}; r.w = 0; r.expr = null;
+      var nr = key(1, -90), NOTE = [98, 132];
+      if (t < .4) r.face = -90 * E(t / .4);
+      else if (t < 1.6) { r.face = -90; r.cx = HOME + (134 - HOME) * SEG(t, .4, 1.6); r.w = Math.min(1, (t - .4) / .2, (1.6 - t) / .2); }
+      else if (t < 4.8) { r.face = -90; r.cx = 134;
+        pose[nr] = t < 2.0 ? reach(REST, AT(NOTE), SEG(t, 1.6, 2.0), 2) : t < 4.2 ? { m: 1, at: [NOTE[0] + 3 * Math.sin((t - 2) * 9), NOTE[1] + 2 * Math.floor((t - 2) / .75)] } : reach(AT(NOTE), REST, SEG(t, 4.2, 4.6), 0);
+        pose.lean = .12 * Math.sin(Math.PI * SEG(t, 1.6, 4.6)); r.pen = t >= 2.0 && t < 4.2 ? 1 + Math.floor((t - 2) / .75) : t >= 4.2 ? 4 : 0; }
+      else if (t < 6.1) { r.face = 90; r.cx = 134 + (HOME - 134) * E(SEG(t, 4.8, 6.1)); r.w = Math.sin(Math.PI * SEG(t, 4.8, 6.1)); if (t < 5.05) r.face = -90 + 180 * E(SEG(t, 4.8, 5.05)); }
+      else r.face = 90 - 90 * E(SEG(t, 6.1, 6.5));
+      return r;
+    }
     /* the milk carton: white with a blue band, a gable top, the spout on its right */
     function carton(x, y, deg) { var g = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + deg.toFixed(1) + ')' });
       add(g, 'rect', { x: -4.5, y: -8, width: 9, height: 17, rx: 1.2, fill: '#f7f7f4' }); add(g, 'rect', { x: -4.5, y: -1, width: 9, height: 5, fill: '#3987e5' });
@@ -96,6 +109,7 @@
     var steamA = 0;
     return S.run(svg, {
       len: cook ? LEN : LLEN, data: data,
+      acts: [{ id: 'list', len: 6.6, w: function (d) { return d.shop ? 3 : .6; } }],
       back: function (bg) {
         /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
         add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(0,0,0,.22)' });
@@ -125,7 +139,7 @@
           add(bag, 'rect', { x: 147, y: 170, width: 5, height: 8, rx: 1.4, fill: '#22b35e' }); add(bag, 'circle', { cx: 159, cy: 173, r: 3.4, fill: '#e8743b' }); }
       },
       render: function (sv, t, st) {
-        var r = cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
+        var r = st.pact === 'list' ? listAt(t, st) : cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
         var hot = cook && (t > 9 || !st.playing); steamA += ((hot ? (r.stir >= 0 ? 1 : .75) : 0) - steamA) * (st.still ? 1 : Math.min(1, st.dt * 1.5));
         var now = st.now || 0;
         if (hot) add(sv, 'ellipse', { cx: PX, cy: CT - 3, rx: 18, ry: 1.6, fill: '#ff6a3d', opacity: (.55 + .25 * Math.sin(now / 160)).toFixed(2) });
@@ -160,6 +174,9 @@
         var hd = handle(th); add(fr2, 'rect', { x: (hd[0] - 1.6).toFixed(1), y: (hd[1] - 15).toFixed(1), width: 3.2, height: 30, rx: 1.6, fill: '#8f9ba5' });
         if (th < .01) add(fr2, 'line', { x1: 40, y1: 110, x2: 112, y2: 110, stroke: '#b7c1c9', 'stroke-width': 1.2 });
         if (r.milk === 'counter') sv.appendChild(carton(DOWN[0], DOWN[1], 0));
+        /* the shopping list on the fridge door: a line more each time he writes */
+        if (th < .01) { var nl = add(fr2, 'g', { class: 'hs-part', 'data-scgo': 'shop' }); add(nl, 'rect', { x: 86, y: 120, width: 20, height: 26, rx: 1.5, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(3 96 133)' }); add(nl, 'circle', { cx: 96, cy: 121, r: 1.6, fill: '#d93a3a' });
+          var nlines = Math.min(4, (data.shop ? 2 : 1) + (r.pen || 0)); for (var li = 0; li < nlines; li++) add(nl, 'rect', { x: 89, y: 126 + li * 4.5, width: li % 2 ? 10 : 14, height: 1.3, fill: '#5b636c', opacity: .7 }); }
         /* him, with the carton at his hand's depth while he holds it */
         var gg = add(sv, 'g', { class: 'sc25-me' }), ph = S.LIFE(st, r.pose, r.w), look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY, k: K, ph: ph, w: r.w, pose: r.pose,

@@ -31,7 +31,7 @@ function up(PORT) { return new Promise(r => { const q = http.get('http://localho
     srv.kill();
     const r = results[results.length - 1];
     console.log((r.ok ? '✓ ' : '✗ ') + f.replace('.test.js', '').padEnd(22) + (r.ms / 1000).toFixed(1) + ' s');
-    if (!r.ok) console.log('   ' + r.out.trim().split('\n').slice(-25).join('\n   ') + (/ExperimentalWarning/.test(serr) ? '' : serr ? '\n   server: ' + serr.trim().slice(-400) : ''));
+    if (!r.ok) console.log('   ' + r.out.trim().split('\n').filter(l => /FAIL|Error|error/.test(l)).concat(r.out.trim().split('\n').slice(-12)).slice(-40).join('\n   ') + (/ExperimentalWarning/.test(serr) ? '' : serr ? '\n   server: ' + serr.trim().slice(-400) : ''));
     await sl(300);
   }
   async function worker(k) { let f; while ((f = queue.shift())) await one(f, BASE + k); }

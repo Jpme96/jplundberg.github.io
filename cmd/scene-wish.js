@@ -9,7 +9,10 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    return S.run(svg, { hits: [[200, 96, 112, 42, 'wishes'], [206, 140, 66, 60, 'wbuy']], len: 6.6, data: data, render: function (sv, t, st) {
+    return S.run(svg, {
+      /* the page's own action (F3): he looks up, points – and a new wish star lights up and stays */
+      acts: [{ id: 'star', len: 4.8, w: function () { return 2; } }],
+      hits: [[200, 96, 112, 42, 'wishes'], [206, 140, 66, 60, 'wbuy']], len: 6.6, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];
@@ -19,16 +22,24 @@
       add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3987e5' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e8743b' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2fae6a' });
       add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c96a3c' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f8a52' });
       FLOOR(g);
-      if (t < 2.6) { cx = LERP(-70, 200, SEG(t, 0, 2.6)); w = Math.min(1, t / .2, (2.6 - t) / .2); } else cx = 200;
+      var NS = [238, 60], ns = st.newStar ? 1 : 0;
+      if (st.pact === 'star') {
+        cx = 200; face = t < .4 ? 20 * E(SEG(t, 0, .4)) : t < 4.2 ? 20 : 20 * (1 - E(SEG(t, 4.2, 4.7)));
+        var ph2 = SIDE(1, face), PT = B(22, 30);
+        pose[ph2] = t < .4 ? REST : t < .9 ? GO(REST, PT, SEG(t, .4, .9)) : t < 3.2 ? HOLD(B(22 + 2 * Math.sin((t - .9) * 6), 30)) : t < 3.8 ? GO(PT, REST, SEG(t, 3.2, 3.8)) : REST;
+        ns = Math.max(ns, E(SEG(t, 1.4, 2.4))); if (t >= 2.4) st.newStar = 1;
+        if (t > 2.2 && t < 3.4) lift = 1.5 * Math.sin(Math.PI * SEG(t, 2.2, 3.4));
+      } else if (t < 2.6) { cx = LERP(-70, 200, SEG(t, 0, 2.6)); w = Math.min(1, t / .2, (2.6 - t) / .2); } else cx = 200;
       var HDL = [cx + 16, 147], nh = SIDE(-1, 90), fh = SIDE(1, 90);
-      if (t < 2.6) { pose[nh] = HOLD(AT(HDL)); pose[fh] = HOLD(AT(HDL)); }
+      if (st.pact) {} else if (t < 2.6) { pose[nh] = HOLD(AT(HDL)); pose[fh] = HOLD(AT(HDL)); }
       else if (t < 4.4) { pose[fh] = HOLD(AT(HDL));
         pose[nh] = t < 3.0 ? GO(AT(HDL), AT(GIFT0), SEG(t, 2.6, 3.0), 3) : t < 3.6 ? GO(AT(GIFT0), AT(INTO), SEG(t, 3.0, 3.6), 6) : t < 4.0 ? GO(AT(INTO), AT(HDL), SEG(t, 3.6, 4.0)) : HOLD(AT(HDL));
         if (t >= 4.0) { pose[fh] = GO(AT(HDL), REST, SEG(t, 4.0, 4.4)); pose[nh] = GO(AT(HDL), REST, SEG(t, 4.0, 4.4)); }
         pose.lean = .3 * E(SEG(t, 2.6, 3.0)) * (1 - E(SEG(t, 3.6, 4.0))); }
       else if (t < 4.8) face = 90 * (1 - E(SEG(t, 4.4, 4.8)));
-      else { face = 0; var ch = CHEER(t, 4.8, 1.2); lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
-      gift = t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
+      else if (!st.pact) { face = 0; var ch = CHEER(t, 4.8, 1.2); lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
+      gift = st.pact ? 'cart' : t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
+      if (ns > 0) { STAR(g, NS[0], NS[1] + 2 * Math.sin(now / 650), 7 * ns, '#f2c94c', .9); if (ns < 1) add(g, 'circle', { cx: NS[0], cy: NS[1], r: 16 * ns, fill: 'none', stroke: '#f2c94c', opacity: (1 - ns).toFixed(2) }); }   /* the new wish – it stays */
       pose.lift = lift; var ph = LIFE(st, pose, w);
       function box(x, y) { var b2 = grp(x, y, 0); add(b2, 'rect', { x: -8, y: -7, width: 16, height: 14, rx: 2, fill: '#d93a3a' }); add(b2, 'rect', { x: -1.5, y: -7, width: 3, height: 14, fill: '#f2c94c' }); add(b2, 'rect', { x: -8, y: -1.5, width: 16, height: 3, fill: '#f2c94c' }); add(b2, 'path', { d: 'M0 -7 q-6 -6 -6 0 Z M0 -7 q6 -6 6 0 Z', fill: '#f2c94c' }); return b2; }
       if (gift === 'shelf') g.appendChild(box(GIFT0[0], GIFT0[1] + 1));

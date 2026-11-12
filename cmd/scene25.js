@@ -97,6 +97,9 @@
     flag: { len: 3.0, f: function (t, o, it, k, sd, fr) { var hd = sd(1), R0 = fr(hd), FL = B(60, 16); o.pose[hd] = t < .4 ? GO(R0, FL, SEG(t, .1, .4)) : t < 2.5 ? HOLD(B(60 + 10 * Math.sin((t - .4) * 9), 16)) : GO(FL, R0, SEG(t, 2.5, 2.9));
       it.push(function (H) { var h = H.s1; if (!h || t < .2 || t > 2.8) return null; return [h.z - .15, flagG(h.X, h.Y, k / .5, 2 * Math.sin(t * 9))]; }); } }
   };
+  /* a long press: a little dance (an easter egg – never picked by itself) */
+  GEN.dance = { len: 3.2, f: function (t, o, it, k, sd, fr) { var on = E(SEG(t, 0, .4)) * (1 - E(SEG(t, 2.7, 3.2))), s2 = Math.sin(t * 9);
+    ['near', 'far'].forEach(function (k2, i) { o.pose[k2] = GO(fr(k2), B(60 + 22 * s2 * (i ? 1 : -1), 30), on); }); o.pose.lift = (o.pose.lift || 0) + 3 * on * Math.abs(Math.sin(t * 9)); o.pose.lean = (o.pose.lean || 0) + .05 * on * s2; }, turn: function (t) { return 25 * Math.sin(t * 4.5) * E(SEG(t, 0, .4)) * (1 - E(SEG(t, 2.7, 3.2))); } };
   function wearNow() { try { return window.Avatar && Avatar.wear ? Avatar.wear() : {}; } catch (e) { return {}; } }
   /* which everyday actions fit right now (the page's own come first; these fill in between) */
   /* spec.gen: false (none), or { out: true } for a picture outdoors (the hand over the eyes, the umbrella in rain),
@@ -124,6 +127,8 @@
       var fNow = face; gd.f(gt, o, gx, k, function (sd) { return SIDE(sd, fNow); }, fr);   /* the hand on his right/left side whichever way he faces now */
     } else if (st && who === 'me' && !o.noGen && !st.playing && !st.still && st.restT > 0) {
       var rp = (st.restT % 11) / 11; face += 26 * Math.sin(Math.PI * 2 * SEG(rp, .55, .8)) * (Math.abs(face) < 30 ? 1 : 0);   /* a slow look round, then back */
+      if (st.lookAt != null && Math.abs(face) < 40 && performance.now() - st.lookT < 1500) { var want = CL((st.lookAt - o.cx) / 160 + .5) * 60 - 30; st.lookF = LERP(st.lookF || 0, want, .15); face += st.lookF; }   /* he turns a little toward your finger or pointer */
+      else if (st.lookF) { st.lookF = LERP(st.lookF, 0, .1); face += st.lookF; if (Math.abs(st.lookF) < .3) st.lookF = 0; }
     }
     var parts = Fig25.draw(lk, face * Math.PI / 180, o.cx, gy, k, o.ph || 0, Math.max(0, Math.min(1, o.w || 0)), o.pose || {}, st ? st[pk] : null);
     var hd = Fig25.hand(); H = { near: hd.near, far: hd.far, s1: hd.s1, sm: hd['s-1'] };
@@ -145,11 +150,15 @@
     var prevSt = null; ALL.forEach(function (x) { if (x.id === (spec.id || location.pathname) && performance.now() - (x.lp || 0) < 1500) prevSt = x.st; });   /* only a redraw just now – coming back to the page starts it fresh */
     ALL = ALL.filter(function (x) { if (x.svg === svg || !x.svg.isConnected || x.id === (spec.id || location.pathname)) { x.dead = true; if (io) io.unobserve(x.svg); return false; } return true; });
     svg.setAttribute('viewBox', '0 0 400 240'); svg.classList.add('sc25');
-    var len = spec.len, idle = spec.idle || [22, 37];
+    /* the page's own actions (F3): spec.acts = [{ id, len, w: function (data) → how well it fits now (0 = not now) }];
+       render() sees st.pact (null = the main action, spec.len). Each starts and ends where the page's rest is. */
+    var len0 = spec.len, idle = spec.idle || [22, 37], ACTS = {};
+    (spec.acts || []).forEach(function (a) { ACTS[a.id] = a; });
+    function LEN() { return st.pact && ACTS[st.pact] ? ACTS[st.pact].len : len0; }
     var id = spec.id || location.pathname;
-    var st = { t: 0, ll: 0, playing: true, idle: 0, next: idle[0] + Math.random() * (idle[1] - idle[0]), now: 0, dt: 0, still: still(), data: spec.data || {}, gen: null, last: 'main', restT: 0 };
+    var st = { t: 0, ll: 0, playing: true, idle: 0, next: idle[0] + Math.random() * (idle[1] - idle[0]), now: 0, dt: 0, still: still(), data: spec.data || {}, gen: null, last: 'main', restT: 0, pact: null };
     /* the picture was drawn again (new numbers, a tick on the list): carry on where it was instead of starting over */
-    if (prevSt && !st.still) ['t', 'playing', 'idle', 'next', 'endNow', 'from', 'phme', 'blme', 'gen', 'last', 'restT'].forEach(function (k) { if (prevSt[k] != null) st[k] = prevSt[k]; });
+    if (prevSt && !st.still) ['t', 'playing', 'idle', 'next', 'endNow', 'from', 'phme', 'blme', 'gen', 'last', 'restT', 'pact'].forEach(function (k) { if (prevSt[k] != null) st[k] = prevSt[k]; });
     var R = { svg: svg, vis: !io, dead: false, raf: 0, st: st, id: id };
     function frame(now) {
       R.raf = 0;
@@ -160,7 +169,7 @@
       st.idle += dt; if (!st.playing) st.restT += dt * sp;
       if (!st.playing && st.queue) play(true, st.queue);
       else if (!st.playing && st.idle > st.next) { st.next = idle[0] + Math.random() * (idle[1] - idle[0]); play(); }
-      if (!st.gen && st.t >= len) { if (st.playing) { st.endNow = now; st.restT = 0; } st.t = len; st.playing = false; }
+      if (!st.gen && st.t >= LEN()) { if (st.playing) { st.endNow = now; st.restT = 0; } st.t = LEN(); st.playing = false; }
       /* resting (breathing, a blink, a slow look round) is drawn at 30 frames a second – half the work, the same look */
       if (!st.playing && (st.skip = (st.skip || 0) + 1) % 2) { wake(); return; }
       paint();
@@ -179,24 +188,40 @@
     function wake() { if (R.dead || R.raf || st.still) return; if (R.vis && !document.hidden) R.raf = requestAnimationFrame(frame); }
     /* what plays next: the page's own action and the everyday ones take turns, never the same twice in a row */
     function choose() {
-      var l = spec.gen === false ? [] : gens(spec.gen).filter(function (x) { return x !== st.last; });
-      if (st.last !== 'main' && (!l.length || Math.random() < .5)) return 'main';
-      return l.length ? l[Math.floor(Math.random() * l.length)] : 'main';
+      /* weighted: the page's main action 2, its own actions as much as the data says (a strong fit 3–4), everyday ones 1 */
+      var pool = [['main', 2]];
+      Object.keys(ACTS).forEach(function (k) { var w = 0; try { w = +ACTS[k].w(st.data, st) || 0; } catch (e) {} if (w > 0) pool.push([k, w]); });
+      (spec.gen === false ? [] : gens(spec.gen)).forEach(function (g) { pool.push([g, 1]); });
+      pool = pool.filter(function (x) { return x[0] !== st.last; }); if (!pool.length) return 'main';
+      var sum = pool.reduce(function (a, x) { return a + x[1]; }, 0), r = Math.random() * sum;
+      for (var i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
+      return pool[pool.length - 1][0];
     }
     function play(force, which) {
-      if (st.playing && (st.gen || st.t < len - .01)) { if (which) st.queue = which; return; }   /* busy: it finishes, then does what you asked */
+      if (st.playing && (st.gen || st.t < LEN() - .01)) { if (which) st.queue = which; return; }   /* busy: it finishes, then does what you asked */
       var nx = which || choose(); st.queue = null; st.last = nx; st.idle = 0; st.restT = 0;
-      if (nx === 'main' || !GEN[nx]) { if (spec.pick) spec.pick(st); st.t = 0; st.gen = null; }
-      else { st.t = len; st.gen = { id: nx, t: 0 }; }
+      if (GEN[nx]) { st.t = LEN(); st.gen = { id: nx, t: 0 }; }
+      else if (ACTS[nx]) { st.pact = nx; st.t = 0; st.gen = null; }
+      else { st.pact = null; if (spec.pick) spec.pick(st); st.t = 0; st.gen = null; }
       st.playing = true; wake();
     }
     R.wake = wake;
     /* a tap on the picture: he waves (or, after a wave, the next action) */
-    svg.addEventListener('click', function (e) { if (e.target.closest('[data-scgo]')) return; play(false, spec.gen === false ? 'main' : st.last === 'wave' ? choose() : 'wave'); });
+    var lp = 0, longDone = false;
+    svg.addEventListener('click', function (e) { if (longDone) { longDone = false; return; } if (e.target.closest('[data-scgo]')) return; play(false, spec.gen === false ? 'main' : st.last === 'wave' ? choose() : 'wave'); });
+    /* a long press: a little dance; moving over the picture: he looks your way (at rest) */
+    svg.addEventListener('pointerdown', function () { if (spec.gen === false) return; clearTimeout(lp); lp = setTimeout(function () { longDone = true; play(false, 'dance'); }, 650); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { svg.addEventListener(ev, function () { clearTimeout(lp); }); });
+    svg.addEventListener('pointermove', function (e) { var r2 = svg.getBoundingClientRect(); if (!r2.width) return; st.lookAt = (e.clientX - r2.left) / r2.width * 400; st.lookT = performance.now(); if (!st.playing) wake(); });
     if (spec.pick) spec.pick(st);
-    if (st.still) { st.t = len; st.playing = false; st.now = 0; paint(); }
+    if (st.still) { st.t = LEN(); st.playing = false; st.now = 0; paint(); }
     else { paint(); if (io) io.observe(svg); wake(); }
-    R.api = { play: play, at: function (t) { st.gen = null; st.t = t; st.playing = t < len; st.ll = 0; paint(); }, act: function (id, t) { st.t = len; st.gen = GEN[id] ? { id: id, t: t || 0 } : null; st.playing = !!st.gen; st.ll = 0; paint(); }, state: st, len: len, stop: function () { R.dead = true; } };
+    R.api = { play: play, at: function (t) { st.gen = null; st.pact = null; st.t = t; st.playing = t < len0; st.ll = 0; paint(); },
+      act: function (id, t) { st.t = LEN(); st.gen = GEN[id] ? { id: id, t: t || 0 } : null; st.playing = !!st.gen; st.ll = 0; paint(); },
+      /* a page action at time t (tests and contact sheets) */
+      pact: function (id, t) { st.gen = null; st.pact = ACTS[id] ? id : null; st.t = t; st.playing = t < LEN(); st.ll = 0; paint(); },
+      acts: function () { return Object.keys(ACTS).map(function (k) { return { id: k, len: ACTS[k].len, w: +ACTS[k].w(st.data, st) || 0 }; }); },
+      state: st, len: len0, stop: function () { R.dead = true; } };
     ALL.push(R);
     return R.api;
   }
