@@ -229,6 +229,9 @@
     ]
   },
   "late": {
+    "papers/index.html": [
+      "papers.page.js"
+    ],
     "house/index.html": [
       "house-plus.page.js",
       "house-homes.page.js",
@@ -236,7 +239,20 @@
       "house-claims.page.js",
       "house-proj.page.js",
       "house-docs.page.js",
-      "house-energy.page.js"
+      "house-energy.page.js",
+      "chores.page.js"
+    ],
+    "work/index.html": [
+      "work-plus.page.js"
+    ],
+    "habits/index.html": [
+      "life-more.page.js"
+    ],
+    "goals/index.html": [
+      "goals.page.js"
+    ],
+    "wish/index.html": [
+      "wish.page.js"
     ]
   },
   "settings": [

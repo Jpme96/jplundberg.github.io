@@ -4,6 +4,7 @@
    · Birthday gifts – two weeks before a birthday (Settings → People), At a glance reminds you to find a gift,
      with the person's gift ideas and your budget; one tap puts the idea on the Wishlist.
    Settings: healthcfg.streakBrief (Settings → Health), peoplecfg.giftLead (Settings → People). */
+/* The everywhere part (made by cmd/split-page.js): hooks for other pages and the data they need. The rest is in life-more.page.js, loaded only on its own page. */
 (function () {
   "use strict";
   if (!window.Vault || !window.Features) return;
@@ -12,13 +13,10 @@
   function readJSON(k, f) { try { var v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch (e) { return f; } }
   var dkey = Fe.dkey;
   function monday(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
-  function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function hcfg() { var c = Fe.tools().healthcfg; return Object.assign({ streakBrief: true }, c && typeof c === 'object' ? c : {}); }
   function pcfg() { var c = Fe.tools().peoplecfg; return Object.assign({ giftLead: 14 }, c && typeof c === 'object' ? c : {}); }
-
-  /* ================= habit streaks ================= */
   function count(hb, id, mon) { var n = 0; for (var i = 0; i < 7; i++) { var d = new Date(mon); d.setDate(mon.getDate() + i); if (((hb.log || {})[dkey(d)] || []).indexOf(id) > -1) n++; } return n; }
   function of(h, hb) {
     hb = hb || readJSON('dash.habits', { list: [], log: {} });
@@ -31,8 +29,6 @@
     var wk = count(hb, h.id, thisMon);
     return { cur: run, best: best, week: wk, met: wk >= (+h.target || 1) };
   }
-  window.Streak = { of: of };
-
   (window.BriefExtra = window.BriefExtra || []).push(function (add, now) {
     if (!hcfg().streakBrief || !(Fe.on('habits') || Fe.on('healthpage'))) return;
     var hb = readJSON('dash.habits', { list: [], log: {} }), wd = (now.getDay() + 6) % 7, left = 6 - wd + 1;   /* days left this week, today included */
@@ -42,8 +38,6 @@
       else if (!s.met && s.cur >= 2 && wd >= 4 && need > 0 && need <= left) add(need === left ? 30 : 46, 'fire', '#e8743b', h.name + ': ' + need + ' more to keep your ' + s.cur + '-week streak', need === left ? 'Every day left this week' : left + ' days left this week', '/cmd/');
     });
   });
-
-  /* ================= birthday gifts, two weeks ahead ================= */
   (window.BriefExtra = window.BriefExtra || []).push(function (add) {
     var HL = window.HomeLife; if (!HL || !Fe.on('people')) return;
     var c = pcfg(), lead = +c.giftLead || 0, birthLead = +c.lead || 0; if (!lead) return;
@@ -61,8 +55,6 @@
         } } : undefined);
     });
   });
-
-  /* ================= gym bag: on your gym days, a packing list in the morning ================= */
   function gcfg() { var c = Fe.tools().healthcfg; c = c && typeof c === 'object' ? c : {}; return { days: Array.isArray(c.gymDays) ? c.gymDays : [], bag: typeof c.gymBag === 'string' ? c.gymBag : 'Shoes, towel, lock, water bottle, headphones' }; }
   (window.BriefExtra = window.BriefExtra || []).push(function (add, now) {
     if (!(Fe.on('gym') || Fe.on('training'))) return;
@@ -71,41 +63,6 @@
     if (trained || (T.gympacked || '') === tk) return;
     add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', 'Gym today – pack your bag', g.bag, '/cmd/habits/#training', { main: true, act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
   });
-  /* ================= Water (Health page) =================
-     The same glasses as the Home chip (dash.tools.water { day: glasses }); Apple Health's water (litres) counts too –
-     the higher of the two wins for a day, so nothing is counted twice. Settings: ringcfg.card, ringcfg.glass (ml). */
-  function wcfg() { var r = Fe.tools().ringcfg || {}; return { card: r.card !== false, goal: +r.waterGoal || 8, ml: +r.glass || 250 }; }
-  function wDay(k, c) {
-    var g = +((Fe.tools().water || {})[k]) || 0, d = window.Vault.get() || {}, a = d.health && d.health.days && d.health.days[k] ? +d.health.days[k].water || 0 : 0;
-    if (a > 20) a = a / 1000;
-    var ag = Math.round(a * 1000 / c.ml);
-    return { n: Math.max(g, ag), tap: g, apple: ag > g };
-  }
-  function wAdd(delta) {
-    var t = Fe.tools(), k = Fe.dkey(new Date()), c = wcfg(); t.water = t.water && typeof t.water === 'object' ? Object.assign({}, t.water) : {};
-    var was = +t.water[k] || 0, now = Math.max(0, Math.min(40, wDay(k, c).n + delta));
-    t.water[k] = now; Fe.saveTools(t);
-    if (delta > 0) toast('<i class="bi bi-cup-straw"></i> ' + now + ' of ' + c.goal + ' glasses', function () { var t2 = Fe.tools(); t2.water = Object.assign({}, t2.water || {}); t2.water[k] = was; Fe.saveTools(t2); });
-  }
-  function drawWater() {
-    var el = $t('hwater'); if (!el) return;
-    var c = wcfg(); if (!c.card || !window.Vault.get()) { el.hidden = true; el.innerHTML = ''; return; }
-    el.hidden = false;
-    var now = new Date(), k = Fe.dkey(now), w = wDay(k, c), p = Math.min(1, w.n / c.goal), R = 34, C = 2 * Math.PI * R, l = (w.n * c.ml / 1000);
-    var week = [], hit = 0;
-    for (var i = 6; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var dk = Fe.dkey(d), x = wDay(dk, c); if (x.n >= c.goal) hit++; week.push({ k: dk, n: x.n, lab: d.toLocaleDateString('en-GB', { weekday: 'short' }) }); }
-    var max = Math.max(c.goal, Math.max.apply(null, week.map(function (x) { return x.n; })));
-    el.innerHTML = '<section class="card kit-card wt-card" id="hwater"><div class="card-head"><h2><i class="bi bi-cup-straw"></i> Drinking water</h2><a class="text-btn" href="../?settings=health" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i></a></div>' +
-      '<div class="wt-top"><svg class="wt-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="' + R + '" class="t"/><circle cx="40" cy="40" r="' + R + '" class="v" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
-      '<div class="wt-num"><b>' + w.n + '<small>/' + c.goal + '</small></b><span>' + (w.n >= c.goal ? 'Goal reached' : (c.goal - w.n) + ' to go') + '</span><small class="muted">' + esc(l.toFixed(1).replace('.', ',')) + ' l · ' + c.ml + ' ml a glass' + (w.apple ? ' · from Apple Health' : '') + '</small></div>' +
-      '<div class="wt-btns"><button type="button" class="pill-btn wt-add" data-wtadd="1"><i class="bi bi-plus-lg"></i> Glass</button><button type="button" class="text-btn" data-wtadd="-1"' + (w.n ? '' : ' disabled') + ' aria-label="One glass less"><i class="bi bi-dash-lg"></i></button></div></div>' +
-      '<div class="wt-week" aria-label="Last 7 days" data-t-aria-label="ui.last-7-days">' + week.map(function (x) { return '<span class="wt-d' + (x.n >= c.goal ? ' ok' : '') + (x.k === k ? ' now' : '') + '" title="' + x.n + ' glasses"><i style="height:' + Math.max(4, Math.round(x.n / max * 100)) + '%"></i><small>' + esc(x.lab) + '</small></span>'; }).join('') + '</div>' +
-      '<p class="muted hl-small">' + hit + ' of 7 days on target · the chip on Home counts here too</p></section>';
-  }
-  document.addEventListener('click', function (e) { var b = e.target.closest('[data-wtadd]'); if (b && !b.disabled) { e.preventDefault(); wAdd(+b.dataset.wtadd); } });
-  if ($t('hwater')) { ['tools:change', 'health:change', 'dash:local'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawWater, 20); }); }); window.Vault.onUnlock(function () { setTimeout(drawWater, 80); }); setTimeout(drawWater, 0); }
-
-  /* ================= settings: under Health and People ================= */
   function sel(attr, v0, label, opts, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
   function fill(page) {
     if (page === 'health') {
@@ -144,4 +101,6 @@
     var t = Fe.tools(); t.healthcfg = Object.assign({}, t.healthcfg || {}, { gymBag: i.value.trim() }); Fe.saveTools(t); toast('<i class="bi bi-check2"></i> Saved');
   });
   window.addEventListener('st:page', function (e) { setTimeout(function () { fill(e.detail); }, 0); });
+  window.Streak = { of: of };
+  (window.__core = window.__core || {})["lifemore"] = { fill: fill, pcfg: pcfg, Fe: Fe, hcfg: hcfg, sel: sel, esc: esc, gcfg: gcfg, toast: toast, dkey: dkey, nf: nf, of: of, count: count, monday: monday, readJSON: readJSON };
 })();

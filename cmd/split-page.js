@@ -19,7 +19,7 @@ const ast = acorn.parse(src, { ecmaVersion: 2020, ranges: true });
 const iife = ast.body.find(s => s.type === 'ExpressionStatement' && s.expression.type === 'CallExpression' && /Function/.test(s.expression.callee.type));
 if (!iife) throw new Error('no (function () { … })() in ' + file);
 const body = iife.expression.callee.body.body, head = src.slice(0, iife.start), fnStart = iife.expression.callee.body.start + 1;
-const HOOK = /window\.(BriefExtra|EventsExtra|CommandExtra|SearchExtra|NotifyExtra)\b|^HF && HF\.uses\(|^HF\.uses\(/;   /* HF.uses: which photos are still in use – every page must know, or they could be cleaned away */
+const HOOK = /window\.(BriefExtra|EventsExtra|CommandExtra|SearchExtra|NotifyExtra)\b|^HF && HF\.uses\(|^HF\.uses\(|\.st-page\[data-page=|st:page|class="st-row|\[data-[a-z]*cfg[\]=]/;   /* HF.uses: which photos are still in use – every page must know, or they could be cleaned away; .st-page, st:page, st-row, [data-…cfg]: the module's rows in Settings and their handlers – Settings opens on every page */
 
 /* ---------- items: one per top-level statement (a var with several names: one per name) ---------- */
 const items = [];
@@ -58,11 +58,10 @@ items.forEach(it => { it.refs = refsOf(it.node); it.uses = new Set(it.refs.filte
 /* ---------- the everywhere part: the hooks, the API names asked for, and what they use ---------- */
 const core = new Set(), need = [];
 items.forEach((it, i) => { if (it.hook || it.guard) need.push(i); });
-let apiItem = items.find(it => it.api), apiProps = [];
-if (apiItem) {
-  const obj = apiItem.node.expression.right;
-  apiProps = obj.properties.map(p => ({ key: p.key.name || p.key.value, text: src.slice(p.start, p.end), uses: new Set(refsOf(p.value).map(r => r.name)) }));
-}
+/* every window.Name = { … } object (a module can publish more than one, like money-plus: MoneyPlus and Shared) */
+const apiItems = items.filter(it => it.api), apiProps = [];
+apiItems.forEach(it => { const name = it.text.match(/^window\.(\w+)/)[1];
+  it.node.expression.right.properties.forEach(p => apiProps.push({ api: name, key: p.key.name || p.key.value, text: src.slice(p.start, p.end), uses: new Set(refsOf(p.value).map(r => r.name)) })); });
 function close() {
   while (need.length) {
     const i = need.pop(); if (core.has(i)) continue; core.add(i);
@@ -72,6 +71,18 @@ function close() {
 close();
 for (const p of apiProps) if (roots.includes(p.key)) { for (const n of p.uses) { const j = top.get(n); if (j != null && !items[j].page) need.push(j); } }
 close();
+/* a click/change handler for buttons the everywhere part draws (Settings rows, say) goes with it: its data-… attribute
+   appears in the everywhere part's text. Repeat until nothing more moves. */
+for (let moved = true; moved;) {
+  moved = false;
+  const coreText = [...core].map(i => items[i].text).join('\n');
+  items.forEach((it, i) => {
+    if (core.has(i) || it.kind !== 'do' || !/addEventListener\(/.test(it.text)) return;
+    const attrs = (it.text.match(/closest\('\[(data-[\w-]+)/g) || []).map(a => a.slice(10));
+    if (attrs.length && attrs.some(a => new RegExp(a + '[\\s=">]').test(coreText))) { need.push(i); it.page = false; moved = true; }
+  });
+  close();
+}
 /* an API name goes with the everywhere part when everything it uses is there */
 const inCore = n => { const j = top.get(n); return j == null || core.has(j); };
 const coreProps = apiProps.filter(p => [...p.uses].every(inCore)), pageProps = apiProps.filter(p => !coreProps.includes(p));
@@ -101,11 +112,9 @@ items.forEach((it, i) => {
   if (it.guard) { if (!pageOut.includes(it.text)) pageOut.push(it.text); }
 });
 const coreList = [...coreNames].filter(n => items[top.get(n)].kind !== 'do');
-if (apiItem) {
-  const name = apiItem.text.match(/^window\.(\w+)/)[1];
-  coreOut.push('window.' + name + ' = { ' + coreProps.map(p => p.text).join(', ') + ' };');
-  if (pageProps.length) pageOut.push('Object.assign(window.' + name + ', { ' + pageProps.map(p => p.text).join(', ') + ' });');
-}
+apiItems.forEach(it => { const name = it.text.match(/^window\.(\w+)/)[1], cp = coreProps.filter(p => p.api === name), pp = pageProps.filter(p => p.api === name);
+  coreOut.push('window.' + name + ' = { ' + cp.map(p => p.text).join(', ') + ' };');
+  if (pp.length) pageOut.push('Object.assign(window.' + name + ', { ' + pp.map(p => p.text).join(', ') + ' });'); });
 coreOut.push('(window.__core = window.__core || {})[' + JSON.stringify(key) + '] = { ' + coreList.map(n => n + ': ' + n).join(', ') + ' };');
 if (viaUi.size) coreOut.splice(coreOut.findIndex(t => !/^"use strict"|^'use strict'/.test(t)), 0, 'function __ui() { return (window.__ui || {})[' + JSON.stringify(key) + '] || {}; }   /* page-only things, when this is their page */');
 /* the page part: what it takes from the everywhere part, and what it hands back */

@@ -2,12 +2,12 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 1820 };      /* biggest page today ≈ 1 780 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
+const BUDGET_KB = { total: 1745 };      /* biggest page today ≈ 1 740 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
 /* each page on its own (Phase D 25: a page loads only its own code) – lower a page's number when it gets lighter */
 /* +25 kB on every page (2026-11-12, F1b): the 2.5D figure (avatar-25d.js) and its small moves are in tail next to the old flat drawing; the old
-   drawing code goes in F4 and these budgets come down again then. */
-const PAGE_KB = { 'index.html': 1725, 'admin/index.html': 1650, 'calendar/index.html': 1580, 'finance/index.html': 1825, 'food/index.html': 1580, 'goals/index.html': 1580,
-  'habits/index.html': 1590, 'house/index.html': 1745, 'papers/index.html': 1580, 'people/index.html': 1580, 'travel/index.html': 1675, 'wish/index.html': 1580, 'work/index.html': 1580 };
+   drawing code goes in F4 and these budgets come down again then.
+   −83 kB on every page (2026-11-12, D 25): Papers, Work, Habits (water), Goals, Wishlist and House chores load their page parts only on their page. */
+const PAGE_KB = { 'index.html': 1645, 'admin/index.html': 1570, 'calendar/index.html': 1498, 'finance/index.html': 1742, 'food/index.html': 1500, 'goals/index.html': 1511, 'habits/index.html': 1510, 'house/index.html': 1674, 'papers/index.html': 1525, 'people/index.html': 1499, 'travel/index.html': 1594, 'wish/index.html': 1513, 'work/index.html': 1516 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
