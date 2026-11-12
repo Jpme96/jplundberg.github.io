@@ -90,9 +90,9 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       /* reached by an instant page change, as from the menu (a fresh load hid the frozen-avatar bug) */
       await p.evaluate(() => { const a = document.createElement('a'); a.href = '/cmd/finance/'; document.body.appendChild(a); a.click(); a.remove(); }); await sl(2500);
       if (!(await p.evaluate(() => document.documentElement.classList.contains('unlocked')))) { await p.fill('#lockPass', 'test-passcode-1'); await p.click('#lockSubmit'); await sl(2500); }
-      const live = await p.waitForFunction(() => !!document.querySelector('#scIllu .hero'), null, { timeout: 12000, polling: 250 }).then(() => true, () => false);
+      const live = await p.waitForFunction(() => !!document.querySelector('#scIllu svg.sc25 .sc25-front'), null, { timeout: 12000, polling: 250 }).then(() => true, () => false);
       if (live) {
-        const pose2 = () => p.evaluate(() => { const h = document.querySelector('#scIllu .hero-body'); return (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll('#scIllu .av-limb path')].map(x => x.getAttribute('d')).join(''); });
+        const pose2 = () => p.evaluate(() => { const f = document.querySelector('#scIllu svg.sc25 .sc25-front'); return f ? f.innerHTML.slice(-4000) : ''; });   /* the 2.5D scene's moving layer (F2) */
         let moved2 = false; const f0 = await pose2();
         for (let k = 0; k < 16 && !moved2; k++) { await sl(500); moved2 = (await pose2()) !== f0; }
         check(moved2, W + ' px: the Finances avatar moves');
