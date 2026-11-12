@@ -128,7 +128,7 @@
       img.onerror = rej; img.src = URL.createObjectURL(file);
     });
   }
-  var ROOMS = [['living', 'Living room'], ['kitchen', 'Kitchen'], ['bedroom', 'Bedroom'], ['office', 'Office'], ['bathroom', 'Bathroom'], ['hall', 'Hall'], ['storage', 'Storage or attic'], ['garage', 'Garage or shed'], ['outdoor', 'Outdoors'], ['other', 'Other']];
+  var ROOMS = [['living', I18N.k('ui.living-room', 'Living room')], ['kitchen', I18N.k('ui.kitchen', 'Kitchen')], ['bedroom', I18N.k('ui.bedroom', 'Bedroom')], ['office', I18N.k('ui.office', 'Office')], ['bathroom', I18N.k('ui.bathroom', 'Bathroom')], ['hall', I18N.k('ui.hall', 'Hall')], ['storage', I18N.k('ui.storage-or-attic', 'Storage or attic')], ['garage', I18N.k('ui.garage-or-shed', 'Garage or shed')], ['outdoor', I18N.k('ui.outdoors', 'Outdoors')], ['other', I18N.k('ui.other', 'Other')]];
   var CATS = [['electronics', 'Electronics', 'laptop', '#3987e5'], ['appliance', 'Appliance', 'plug', '#0891b2'], ['furniture', 'Furniture', 'lamp', '#c98500'], ['jewellery', 'Jewellery and watches', 'gem', '#d55181'], ['sport', 'Bikes and sport', 'bicycle', '#22b35e'],
     ['tools', 'Tools', 'tools', '#7a8794'], ['art', 'Art and design', 'palette', '#8a6fdf'], ['clothes', 'Clothes and bags', 'bag', '#e8743b'], ['music', 'Instruments', 'music-note-beamed', '#e66767'], ['other', 'Other', 'box-seam', '#6b6d73']];
   function cat(id) { return CATS.filter(function (c) { return c[0] === id; })[0] || CATS[CATS.length - 1]; }

@@ -47,7 +47,7 @@
   var cvLang = 'en', jobEdit = null, eduEdit = null;
   var DEFAULT_SOCIALS = [{ net: 'linkedin', url: 'https://www.linkedin.com/in/john-paul-lundberg-8a804623b/' }, { net: 'instagram', url: 'https://www.instagram.com/jp.lundberg.official/' }];
   /* each page has its own Publish button; what it publishes, in words */
-  var PART = { announce: [['announcement'], 'Announcement'], sections: [['sections', 'now'], 'Front page'], featured: [['featured'], 'Featured'], socials: [['socials'], 'Socials'],
+  var PART = { announce: [['announcement'], 'Announcement'], sections: [['sections', I18N.k('ui.now-2', 'now')], 'Front page'], featured: [['featured'], 'Featured'], socials: [['socials'], 'Socials'],
     courses: [['courses'], 'Courses & certificates'], progress: [['goals'], 'Project progress'], cv: [['cv', 'experience'], 'CV'] };
   function partDirty(keys) { return saved && draft && keys.some(function (key) { return JSON.stringify(saved[key] == null ? null : saved[key]) !== JSON.stringify(draft[key] == null ? null : draft[key]); }); }
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }

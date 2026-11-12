@@ -3,8 +3,9 @@
 const { open, sl, U, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const EN = /\b(the|your|you|and|with|this|that|from|when|what|add|show|hide|nothing|today|tomorrow|week|month|settings|change|remove|open)\b/i;
 const BUDGET = 40;     /* English bits per page, at most */
-/* texts still translated by matching the English sentence, per page (counted 2026-11-12 evening after naming the pieces between tags and the labels passed to helpers; lower it as pages move over) */
-const SENT = { '': 210, 'calendar/': 195, 'travel/': 185, 'finance/': 275, 'house/': 240, 'papers/': 185, 'people/': 185, 'habits/': 225, 'goals/': 180, 'work/': 210, 'wish/': 185, 'food/': 185 };
+/* texts still translated by matching the English sentence, per page (counted 2026-11-12 night after naming the choices in lists (i18n-keys.py --opts),
+   'Move {n} left/right', 'From {n}:00', '{n} people' and the Settings summaries with I18N.k and {n}; lower it as pages move over) */
+const SENT = { '': 98, 'calendar/': 82, 'travel/': 74, 'finance/': 163, 'house/': 126, 'papers/': 74, 'people/': 74, 'habits/': 114, 'goals/': 68, 'work/': 98, 'wish/': 74, 'food/': 76 };
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });

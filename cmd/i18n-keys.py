@@ -5,6 +5,9 @@
     python3 cmd/i18n-keys.py ui --prune      take sentences out of the old list that are named everywhere they are used
     python3 cmd/i18n-keys.py ui --wrap FILE … also names pieces of text that sit between other tags (a sentence with a
                                              <b> or <code> in it): each piece gets its own <span data-t="…">
+    python3 cmd/i18n-keys.py ui --opts FILE … names the labels of choices: [value, 'Label'] in a list of choices (the value
+                                             is what's saved, the label is only shown). Not for head modules (scripts.json
+                                             "head"): they run before the Norwegian words are loaded.
 
 For each file it finds texts that the old sentence list (i18n-nb.js) translates word for word:
   - in HTML: an element's own text and its placeholder / aria-label / title / data-title
@@ -156,6 +159,27 @@ def do_args(text):
     out = re.sub(r"(?<![\w.$])('((?:[^'\\\n]|\\.)*)')", lit, text)
     return out, n
 total = 0
+OPTS = '--opts' in sys.argv
+def do_opts(text):
+    """the label in a choice [value, 'Label'] (a number or a short id, then the words) inside a list of choices: shown, never saved"""
+    n = 0
+    def pair(m):
+        nonlocal n
+        body = m.group(3)
+        if '\\' in body or '<' in body or body not in D or len(body) < 2: return m.group(0)
+        pre = text[:m.start()]
+        if not re.search(r'(\[|,\s*)$', pre): return m.group(0)                      # one of several pairs in a list
+        n += 1
+        return '[%s, I18N.k(%s, %s)]' % (m.group(1), "'%s'" % key_for(body), m.group(2))
+    out = re.sub(r"\[(-?[\d.]+|'[a-z0-9_-]{1,24}')\s*,\s*('((?:[^'\\\n]|\\.)*)')\s*\]", pair, text)
+    return out, n
+if OPTS:
+    for f in FILES:
+        path = os.path.join(HERE, f); src = io.open(path, encoding='utf-8').read()
+        new, k = do_opts(src)
+        if k: io.open(path, 'w', encoding='utf-8').write(new)
+        print('%-28s %d choices named' % (f, k)); total += k
+    FILES = []
 if ARGS:
     for f in FILES:
         path = os.path.join(HERE, f); src = io.open(path, encoding='utf-8').read()

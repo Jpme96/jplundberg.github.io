@@ -264,9 +264,9 @@
   });
 
   /* ================= WORK: courses & certificates ================= */
-  var KINDS = [['course', 'Course'], ['certificate', 'Certificate'], ['book', 'Book'], ['standard', 'Standard / regulation'], ['other', 'Other']];
+  var KINDS = [['course', 'Course'], ['certificate', 'Certificate'], ['book', 'Book'], ['standard', 'Standard / regulation'], ['other', I18N.k('ui.other', 'Other')]];
   var KIND_ICON = { course: 'mortarboard', certificate: 'award', book: 'book', standard: 'file-earmark-text', other: 'lightbulb' };
-  var STATUS = [['planned', 'Planned'], ['progress', 'In progress'], ['done', 'Done']];
+  var STATUS = [['planned', I18N.k('ui.planned', 'Planned')], ['progress', 'In progress'], ['done', I18N.k('ui.done', 'Done')]];
   function expiryBadge(k) {
     if (!k) return '';
     var days = Math.round((F.fromKey(k) - F.fromKey(today())) / 864e5);
@@ -305,7 +305,7 @@
   /* ================= HABITS: training log ================= */
   var SPORTS = [['strength', 'Strength', 'trophy'], ['run', 'Running', 'person-walking'], ['walk', 'Walking', 'person-walking'], ['bike', 'Cycling', 'bicycle'],
     ['swim', 'Swimming', 'water'], ['ball', 'Ball sports', 'dribbble'], ['yoga', 'Yoga / mobility', 'person-arms-up'], ['other', 'Other', 'heart-pulse']];
-  var EFFORT = [['1', 'Easy'], ['2', 'Light'], ['3', 'Moderate'], ['4', 'Hard'], ['5', 'All out']];
+  var EFFORT = [['1', I18N.k('ui.easy', 'Easy')], ['2', I18N.k('ui.light', 'Light')], ['3', I18N.k('ui.moderate', 'Moderate')], ['4', I18N.k('ui.hard', 'Hard')], ['5', I18N.k('ui.all-out', 'All out')]];
   function habitOptions() {
     var hb = readJSON('dash.habits') || { list: [] };
     return [['', 'Don’t tick a habit']].concat((hb.list || []).map(function (h) { return [h.id, 'Tick “' + h.name + '”']; }));
@@ -354,7 +354,7 @@
   /* ================= HEALTH: check-ups, vaccines, medicine ================= */
   var HKINDS = [['checkup', 'Appointment / check-up'], ['vaccine', 'Vaccine'], ['medicine', 'Medicine / prescription']];
   /* how often: medicine you take every day, every week, every 14 days or every month */
-  var HEVERY = [['', 'Once'], ['1d', 'Every day'], ['1w', 'Every week'], ['2w', 'Every 14 days'], ['1m', 'Every month']];
+  var HEVERY = [['', 'Once'], ['1d', I18N.k('ui.every-day', 'Every day')], ['1w', I18N.k('ui.every-week', 'Every week')], ['2w', I18N.k('ui.every-14-days', 'Every 14 days')], ['1m', I18N.k('ui.every-month', 'Every month')]];
   function hevery(v) { var o = HEVERY.filter(function (x) { return x[0] === v; })[0]; return o && v ? o[1] : ''; }
   /* is it on day k? (from its date onwards) */
   function hOn(h, k) {
@@ -502,9 +502,9 @@
   });
 
   /* ================= FINANCE: subscriptions ================= */
-  var PERIODS = [['monthly', 'Every month'], ['quarterly', 'Every 3 months'], ['yearly', 'Every year']];
+  var PERIODS = [['monthly', I18N.k('ui.every-month', 'Every month')], ['quarterly', I18N.k('ui.every-3-months', 'Every 3 months')], ['yearly', I18N.k('ui.every-year', 'Every year')]];
   var PER_MONTH = { monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
-  var SUB_CATS = [['streaming', 'Streaming & music'], ['software', 'Apps & software'], ['phone', 'Phone & internet'], ['training', 'Training'], ['news', 'News & magazines'], ['insurance', 'Insurance'], ['other', 'Other']];
+  var SUB_CATS = [['streaming', 'Streaming & music'], ['software', 'Apps & software'], ['phone', 'Phone & internet'], ['training', I18N.k('ui.training', 'Training')], ['news', 'News & magazines'], ['insurance', I18N.k('ui.insurance', 'Insurance')], ['other', I18N.k('ui.other', 'Other')]];
   K.collection({
     mount: $t('subs'), feature: 'subs', key: 'subs', title: 'Subscriptions', icon: 'arrow-repeat',
     addTitle: 'Add subscription', editTitle: 'Edit subscription',

@@ -45,7 +45,7 @@
   var TG = (function () { try { return JSON.parse(localStorage.getItem('dash.share.tg')) || {}; } catch (e) { return {}; } })();          /* records only the other person writes – never removed from here */
   var OFF_FIRST = { pantry: 1, recipes: 1 };
   /* what they may change, per area (view = they see it but can't change it) */
-  var AREAS = [['shop', 'Shopping list'], ['meals', 'Dinner plan'], ['pantry', 'Pantry'], ['chores', 'Chores'], ['money', 'Money between you'], ['cal', 'Calendar'], ['trips', 'Trips'], ['plants', 'Plants'], ['move', 'Moving checklist'], ['notes', 'Home notes'], ['house', 'House projects']];
+  var AREAS = [['shop', I18N.k('ui.shopping-list', 'Shopping list')], ['meals', I18N.k('ui.dinner-plan', 'Dinner plan')], ['pantry', I18N.k('ui.pantry', 'Pantry')], ['chores', I18N.k('ui.chores', 'Chores')], ['money', I18N.k('ui.money-between-you', 'Money between you')], ['cal', I18N.k('ui.calendar', 'Calendar')], ['trips', I18N.k('ui.trips', 'Trips')], ['plants', I18N.k('ui.plants', 'Plants')], ['move', I18N.k('ui.moving-checklist', 'Moving checklist')], ['notes', I18N.k('ui.home-notes', 'Home notes')], ['house', I18N.k('ui.house-projects', 'House projects')]];
   var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', room: 'chores', vote: 'meals', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
   function perm() { var s0 = (V.get() || {}).share || {}, o = {}; AREAS.forEach(function (a) { o[a[0]] = (s0.perm && s0.perm[a[0]]) === 'view' ? 'view' : 'edit'; }); return o; }
   var NOTE_DEF = { cost: true, settle: true, event: true, shop: false, chore: false, note: false };
@@ -661,7 +661,7 @@
     return l.length ? '<ul class="sh-act">' + l.map(function (x) { return '<li><i class="bi bi-' + x.icon + '" style="color:' + (x.by === 'o' ? '#22b35e' : '#3987e5') + '"></i><span>' + esc(x.text) + '</span><small>' + esc(new Date(x.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></li>'; }).join('') + '</ul>' : '<p class="st-note st-pad">Nothing in the last two weeks.</p>';
   }
   function actHtml(nm) {
-    return '<div class="seg sh-actseg" role="group">' + [['', 'Both'], ['o', 'You'], ['p', nm]].map(function (x) { return '<button type="button" data-shact="' + x[0] + '" aria-pressed="' + (actWho === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div><div id="shActList">' + actItems(nm) + '</div>';
+    return '<div class="seg sh-actseg" role="group">' + [['', 'Both'], ['o', I18N.k('ui.you', 'You')], ['p', nm]].map(function (x) { return '<button type="button" data-shact="' + x[0] + '" aria-pressed="' + (actWho === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div><div id="shActList">' + actItems(nm) + '</div>';
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-shact]'); if (!b) return; actWho = b.dataset.shact; var nm = pname();
@@ -693,17 +693,17 @@
   function sel(attr, v0, opts) { return '<select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   function settingsMore(nm) {
     var pm = perm(), nmo = notifyMe(), cc = calCats();
-    var cats = (function () { var c = rj('dash.calendar', {}).cats; return Array.isArray(c) && c.length ? c.map(function (x) { return [x.id, x.name]; }) : window.Cal && window.Cal.CAT_ORDER ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) : [['personal', 'Personal'], ['work', 'Work'], ['social', 'Social'], ['training', 'Training']]; })();
+    var cats = (function () { var c = rj('dash.calendar', {}).cats; return Array.isArray(c) && c.length ? c.map(function (x) { return [x.id, x.name]; }) : window.Cal && window.Cal.CAT_ORDER ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) : [['personal', I18N.k('ui.personal', 'Personal')], ['work', I18N.k('ui.work', 'Work')], ['social', I18N.k('ui.social', 'Social')], ['training', I18N.k('ui.training', 'Training')]]; })();
     var NOTE = [['cost', 'adds a shared cost'], ['settle', 'settles up'], ['event', 'adds an event'], ['shop', 'adds to the shopping list'], ['chore', 'does a chore'], ['note', 'adds or changes a note']];
     var nView = AREAS.filter(function (a) { return pm[a[0]] === 'view'; }).length, nNote = NOTE.filter(function (x) { return nmo[x[0]]; }).length, ap = approveOver();
     var catNames = cats.filter(function (c) { return cc.indexOf(c[0]) > -1; }).map(function (c) { return c[1]; });
     return sec('perm', 'pencil-square', 'What ' + nm + ' may change', nView ? (nView === AREAS.length ? 'Everything is view only' : nView + ' view only · the rest can change') : 'Can change everything shared',
-        AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', 'Can change'], ['view', 'View only']]) + '</label>'; }).join('')) +
+        AREAS.map(function (a) { return '<label class="st-row"><span>' + esc(a[1]) + '</span>' + sel('data-shperm="' + a[0] + '"', pm[a[0]], [['edit', I18N.k('ui.can-change', 'Can change')], ['view', I18N.k('ui.view-only', 'View only')]]) + '</label>'; }).join('')) +
       sec('cal', 'calendar-heart', I18N.k('ui.calendars-shared-automatically', 'Calendars shared automatically'), catNames.length ? catNames.join(', ') : 'None – you tick events one by one',
         '<p class="st-note muted" data-t="ui.every-event-in-these-is-shared-no-need-t">Every event in these is shared – no need to tick each one.</p><div class="sh-cats">' + cats.map(function (c) { return '<button type="button" class="lf-chip" data-shcat="' + esc(c[0]) + '" aria-pressed="' + (cc.indexOf(c[0]) > -1) + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>') +
       '<p class="st-sub ap-sub"><i class="bi bi-shield-check"></i> <span data-t="ui.rules"><span data-t="ui.rules">Rules</span></span></p>' +
       sec('money', 'cash-coin', I18N.k('ui.bigger-shared-costs', 'Bigger shared costs'), ap ? 'Ask me first above ' + kr(ap) : 'No OK needed',
-        '<label class="st-row"><span><span data-t="ui.ask-me-first-above"><span data-t="ui.ask-me-first-above">Ask me first above</span></span><small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, 'Never'], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
+        '<label class="st-row"><span><span data-t="ui.ask-me-first-above"><span data-t="ui.ask-me-first-above">Ask me first above</span></span><small class="st-rsub">A cost ' + esc(nm) + ' paid and adds counts once you say OK – the samboer rule about agreeing on bigger buys</small></span>' + sel('data-shappr', ap, [[0, I18N.k('ui.never', 'Never')], [1000, '1 000 kr'], [2000, '2 000 kr'], [5000, '5 000 kr'], [10000, '10 000 kr']]) + '</label>') +
       sec('note', 'bell', 'Tell me when ' + nm + '…', nNote ? nNote + ' of ' + NOTE.length + ' on' : 'Off',
         NOTE.map(function (x) { return '<label class="st-row"><span>…' + esc(x[1]) + '</span><input type="checkbox" class="switch" data-shnote="' + x[0] + '"' + (nmo[x[0]] ? ' checked' : '') + '></label>'; }).join('') +
         '<p class="st-note muted" data-t="ui.in-at-a-glance-and-as-a-notification-on">In At a glance, and as a notification on your phone if notifications are on (Settings → Notifications).</p>') +

@@ -40,7 +40,7 @@
   }
 
   /* ================= Plant care ================= */
-  var EV = [[3, 'Every 3 days'], [5, 'Every 5 days'], [7, 'Every week'], [10, 'Every 10 days'], [14, 'Every 2 weeks'], [21, 'Every 3 weeks'], [30, 'Once a month']];
+  var EV = [[3, I18N.k('ui.every-3-days', 'Every 3 days')], [5, I18N.k('ui.every-5-days', 'Every 5 days')], [7, I18N.k('ui.every-week', 'Every week')], [10, I18N.k('ui.every-10-days', 'Every 10 days')], [14, I18N.k('ui.every-2-weeks', 'Every 2 weeks')], [21, I18N.k('ui.every-3-weeks', 'Every 3 weeks')], [30, I18N.k('ui.once-a-month', 'Once a month')]];
   function due(p) { return isKey(p.last) ? addDays(p.last, +p.every || 7) : today(); }
   function water(id) {
     var t = Fe.tools(), was = null; (t.plants || []).forEach(function (p) { if (p.id === id) { was = p.last; p.last = today(); } }); Fe.saveTools(t);

@@ -79,7 +79,7 @@
     }
     if (page === 'people') {
       var p = document.getElementById('hlSet-people2'); if (!p || p.contains(document.activeElement)) return;
-      p.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-gift"></i> <span data-t="ui.birthday-gifts">Birthday gifts</span></p><div class="st-group">' + sel('data-lmcfg="peoplecfg:giftLead"', pcfg().giftLead, I18N.k('ui.remind-me-to-find-a-gift', 'Remind me to find a gift'), [[0, 'Don’t'], [7, 'A week before'], [14, '2 weeks before'], [21, '3 weeks before'], [30, 'A month before']], I18N.k('ui.with-their-gift-ideas-until-you-note-a-g', 'With their gift ideas – until you note a gift for them')) + '</div>';
+      p.innerHTML = '<p class="st-sub ap-sub"><i class="bi bi-gift"></i> <span data-t="ui.birthday-gifts">Birthday gifts</span></p><div class="st-group">' + sel('data-lmcfg="peoplecfg:giftLead"', pcfg().giftLead, I18N.k('ui.remind-me-to-find-a-gift', 'Remind me to find a gift'), [[0, I18N.k('ui.dont', 'Don’t')], [7, I18N.k('ui.a-week-before', 'A week before')], [14, I18N.k('ui.2-weeks-before', '2 weeks before')], [21, I18N.k('ui.3-weeks-before', '3 weeks before')], [30, I18N.k('ui.a-month-before', 'A month before')]], I18N.k('ui.with-their-gift-ideas-until-you-note-a-g', 'With their gift ideas – until you note a gift for them')) + '</div>';
     }
   }
   document.addEventListener('change', function (e) {

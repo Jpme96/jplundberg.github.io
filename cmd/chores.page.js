@@ -14,8 +14,8 @@
   var K = window.Kit || null;
   function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
   function chip(t, c) { return '<span class="hl-chip" style="--c:' + c + '">' + t + '</span>'; }
-  var DAYS = [[0, 'Monday'], [1, 'Tuesday'], [2, 'Wednesday'], [3, 'Thursday'], [4, 'Friday'], [5, 'Saturday'], [6, 'Sunday']];
-  var EVERY = [['1w', 'Every week'], ['2w', 'Every 2 weeks'], ['1m', 'Once a month']];
+  var DAYS = [[0, I18N.k('ui.monday', 'Monday')], [1, I18N.k('ui.tuesday', 'Tuesday')], [2, I18N.k('ui.wednesday', 'Wednesday')], [3, I18N.k('ui.thursday', 'Thursday')], [4, I18N.k('ui.friday', 'Friday')], [5, I18N.k('ui.saturday', 'Saturday')], [6, I18N.k('ui.sunday', 'Sunday')]];
+  var EVERY = [['1w', I18N.k('ui.every-week', 'Every week')], ['2w', I18N.k('ui.every-2-weeks', 'Every 2 weeks')], ['1m', I18N.k('ui.once-a-month', 'Once a month')]];
   function lastOf(cid) { return logOf().filter(function (x) { return x.cid === cid; }).sort(function (a, b) { return a.at < b.at ? 1 : -1; })[0] || null; }
   function nb() { return !!(window.I18N && window.I18N.lang === 'nb'); }
   function rooms() { return Fe.list('rooms'); }
@@ -36,7 +36,7 @@
       { k: 'name', type: 'title', label: 'Chore', ph: 'e.g. Take out the bins, clean the bathroom', req: true },
       { k: 'every', label: 'How often', type: 'select', options: EVERY, def: '1w' },
       { k: 'day', label: 'On', type: 'select', options: DAYS, def: 5 },
-      { k: 'who', label: 'Who', type: 'select', options: function () { var p = partner(); return [['rotate', p ? 'Take turns with ' + p.name : 'Take turns'], ['me', 'Always me'], ['them', p ? 'Always ' + p.name : 'Always the other one']]; }, def: 'rotate' },
+      { k: 'who', label: 'Who', type: 'select', options: function () { var p = partner(); return [['rotate', p ? 'Take turns with ' + p.name : 'Take turns'], ['me', I18N.k('ui.always-me', 'Always me')], ['them', p ? 'Always ' + p.name : 'Always the other one']]; }, def: 'rotate' },
       { k: 'room', label: 'Room', type: 'select', options: function () { return [['', 'No room']].concat(rooms().map(function (r) { return [r.id, r.name]; })); }, def: function () { return inRoom || ''; }, when: function () { return rooms().length > 0; } }],
     beforeSave: function (it, isNew) { if (isNew || !isKey(it.start)) it.start = today(); it.day = +it.day || 0; if (!it.room) delete it.room; },
     filter: function (c) { return !inRoom || c.room === inRoom; },

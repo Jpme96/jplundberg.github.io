@@ -15,7 +15,7 @@
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function size(b) { return b > 1e6 ? (b / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' kB'; }
   var IS_PAGE = /\/cmd\/papers\/$/.test(location.pathname.replace(/index\.html$/, ''));
-  var DATEK = [['expires', 'Expires'], ['renews', 'Renews'], ['ends', 'Ends or notice by'], ['review', 'Look at it again']];
+  var DATEK = [['expires', I18N.k('ui.expires', 'Expires')], ['renews', I18N.k('ui.renews', 'Renews')], ['ends', I18N.k('ui.ends-or-notice-by', 'Ends or notice by')], ['review', I18N.k('ui.look-at-it-again', 'Look at it again')]];
   var COMMON = [
     ['Samboerkontrakt', 'home', ''], ['Purchase contract (kjøpekontrakt)', 'home', ''], ['Take-over protocol (overtakelsesprotokoll)', 'home', ''],
     ['Home insurance (innbo)', 'insurance', 'renews'], ['Mortgage agreement', 'loan', ''], ['Work contract', 'work', ''],
@@ -67,8 +67,8 @@
     { k: 'signed', label: 'Signed or issued', type: 'date', grp: 'd', head: 'Dates' },
     { k: 'date', label: 'Date to watch', type: 'date', help: 'When it expires, renews or must be cancelled – leave empty if it never does', grp: 'd' },
     { k: 'dateKind', label: 'That date it', type: 'select', options: DATEK, def: 'expires', grp: 'd', when: hasDate },
-    { k: 'every', label: 'Repeats', type: 'select', options: [['', 'Once'], ['1', 'Every year'], ['2', 'Every 2 years'], ['3', 'Every 3 years'], ['5', 'Every 5 years'], ['10', 'Every 10 years']], def: '', grp: 'd', when: hasDate },
-    { k: 'lead', label: 'Remind me', type: 'select', options: [['30', '1 month before'], ['14', '2 weeks before'], ['60', '2 months before'], ['90', '3 months before'], ['7', '1 week before'], ['0', 'No reminder']], def: '30', grp: 'd', when: hasDate },
+    { k: 'every', label: 'Repeats', type: 'select', options: [['', 'Once'], ['1', I18N.k('ui.every-year', 'Every year')], ['2', I18N.k('ui.every-2-years', 'Every 2 years')], ['3', 'Every 3 years'], ['5', I18N.k('ui.every-5-years', 'Every 5 years')], ['10', 'Every 10 years']], def: '', grp: 'd', when: hasDate },
+    { k: 'lead', label: 'Remind me', type: 'select', options: [['30', '1 month before'], ['14', I18N.k('ui.2-weeks-before', '2 weeks before')], ['60', '2 months before'], ['90', '3 months before'], ['7', '1 week before'], ['0', I18N.k('ui.no-reminder', 'No reminder')]], def: '30', grp: 'd', when: hasDate },
     { k: 'cost', label: 'Costs per year', type: 'number', suffix: 'kr', grp: 'c', head: 'Cost', when: function (g) { return /^(insurance|loan|home|car|other)$/.test(g('kind')) || !!g('cost'); } },
     { k: 'excess', label: 'Excess (egenandel)', type: 'number', suffix: 'kr', grp: 'c', when: function (g) { return g('kind') === 'insurance' || !!g('excess'); } },
     { k: 'covers', label: 'Covers', ph: 'Contents, travel, theft …', grp: 'c', when: function (g) { return g('kind') === 'insurance' || !!g('covers'); } },

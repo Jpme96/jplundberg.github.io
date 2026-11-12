@@ -169,8 +169,8 @@
     var seg = function (k, opts) { return '<div class="seg lf-seg" role="group">' + opts.map(function (o) { return '<button type="button" data-ft="' + k + ':' + o[0] + '" aria-pressed="' + (String(st[k]) === String(o[0])) + '">' + o[1] + '</button>'; }).join('') + '</div>'; };
     function body() {
       var list = slots(st.len, st.range, WIN[st.win], st.wk);
-      return seg('len', [[30, '30 min'], [60, '1 h'], [120, '2 h'], [180, '3 h']]) + seg('range', [['week', 'This week'], ['next', 'Next week'], ['two', '2 weeks']]) +
-        seg('win', [['work', 'Work hours'], ['evening', 'Evenings'], ['any', 'Any time']]) +
+      return seg('len', [[30, '30 min'], [60, '1 h'], [120, '2 h'], [180, '3 h']]) + seg('range', [['week', I18N.k('ui.this-week', 'This week')], ['next', I18N.k('ui.next-week', 'Next week')], ['two', I18N.k('ui.2-weeks', '2 weeks')]]) +
+        seg('win', [['work', I18N.k('ui.work-hours', 'Work hours')], ['evening', I18N.k('ui.evenings', 'Evenings')], ['any', I18N.k('ui.any-time', 'Any time')]]) +
         '<label class="lf-check"><input type="checkbox" data-ftwk' + (st.wk ? ' checked' : '') + '> <span data-t="ui.weekends-too">Weekends too</span></label>' +
         '<div class="lf-slots">' + (list.length ? list.map(function (s) {
           var d = fromKey(s.date);

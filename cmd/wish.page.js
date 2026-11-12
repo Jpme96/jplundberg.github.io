@@ -22,8 +22,8 @@
   function chip(t, c) { return '<span class="hl-chip" style="--c:' + c + '">' + t + '</span>'; }
   var BLUE = '#3987e5';
   var FOR = [['home', 'For the home', 'house-heart', BLUE], ['me', 'For me', 'person', PURPLE], ['gift', 'A gift', 'gift', '#d55181'], ['other', 'Something else', 'bag', GREY]];
-  var ROOMS = [['', 'No room'], ['living', 'Living room'], ['kitchen', 'Kitchen'], ['bedroom', 'Bedroom'], ['office', 'Office'], ['bathroom', 'Bathroom'], ['hall', 'Hall'], ['storage', 'Storage or attic'], ['outdoor', 'Outdoors'], ['other', 'Other']];
-  var CATS = [['furniture', 'Furniture'], ['appliance', 'Appliance'], ['electronics', 'Electronics'], ['kitchen', 'Kitchen things'], ['decor', 'Decor and textiles'], ['tools', 'Tools'], ['sport', 'Bikes and sport'], ['clothes', 'Clothes'], ['other', 'Other']];
+  var ROOMS = [['', 'No room'], ['living', I18N.k('ui.living-room', 'Living room')], ['kitchen', I18N.k('ui.kitchen', 'Kitchen')], ['bedroom', I18N.k('ui.bedroom', 'Bedroom')], ['office', I18N.k('ui.office', 'Office')], ['bathroom', I18N.k('ui.bathroom', 'Bathroom')], ['hall', I18N.k('ui.hall', 'Hall')], ['storage', I18N.k('ui.storage-or-attic', 'Storage or attic')], ['outdoor', I18N.k('ui.outdoors', 'Outdoors')], ['other', I18N.k('ui.other', 'Other')]];
+  var CATS = [['furniture', I18N.k('ui.furniture', 'Furniture')], ['appliance', I18N.k('ui.appliance', 'Appliance')], ['electronics', I18N.k('ui.electronics', 'Electronics')], ['kitchen', I18N.k('ui.kitchen-things', 'Kitchen things')], ['decor', I18N.k('ui.decor-and-textiles', 'Decor and textiles')], ['tools', I18N.k('ui.tools', 'Tools')], ['sport', I18N.k('ui.bikes-and-sport', 'Bikes and sport')], ['clothes', I18N.k('ui.clothes', 'Clothes')], ['other', I18N.k('ui.other', 'Other')]];
   function forOf(f) { return FOR.filter(function (x) { return x[0] === f; })[0] || FOR[3]; }
   function host(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
   function safeUrl(u) { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; try { return new URL(u).href; } catch (e) { return ''; } }

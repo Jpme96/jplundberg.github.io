@@ -44,7 +44,7 @@
     var a = e.target.closest('.hl-tile[href^="#"]'); if (!a) return;
     e.preventDefault(); var c = document.getElementById(a.getAttribute('href').slice(1)); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
-  var EVERY = [[1, 'Every month'], [2, 'Every 2 months'], [3, 'Every 3 months'], [6, 'Every 6 months'], [12, 'Every year'], [24, 'Every 2 years'], [60, 'Every 5 years']];
+  var EVERY = [[1, I18N.k('ui.every-month', 'Every month')], [2, I18N.k('ui.every-2-months', 'Every 2 months')], [3, I18N.k('ui.every-3-months', 'Every 3 months')], [6, I18N.k('ui.every-6-months', 'Every 6 months')], [12, I18N.k('ui.every-year', 'Every year')], [24, I18N.k('ui.every-2-years', 'Every 2 years')], [60, I18N.k('ui.every-5-years', 'Every 5 years')]];
   function everyName(m) { var x = EVERY.filter(function (e) { return e[0] === +m; })[0]; return x ? x[1] : 'Every ' + m + ' months'; }
   var HM = { key: 'hmaint', addTitle: 'New upkeep task', editTitle: 'Edit upkeep task', fields: [
     { k: 'title', type: 'title', label: 'Task', ph: 'e.g. Clean the heat pump filters', req: true },
@@ -83,7 +83,7 @@
     ['Restavfall', '#7a8794', 'trash3'], ['Papir og papp', BLUE, 'newspaper'], ['Plastemballasje', '#8a6fdf', 'bag'],
     ['Matavfall', GREEN, 'apple'], ['Glass- og metallemballasje', '#0891b2', 'cup-straw'], ['Hageavfall', '#5d9c3a', 'tree']
   ];
-  var EVERY_WK = [[1, 'Every week'], [2, 'Every 2 weeks'], [3, 'Every 3 weeks'], [4, 'Every 4 weeks'], [6, 'Every 6 weeks'], [8, 'Every 8 weeks']];
+  var EVERY_WK = [[1, I18N.k('ui.every-week', 'Every week')], [2, I18N.k('ui.every-2-weeks', 'Every 2 weeks')], [3, I18N.k('ui.every-3-weeks', 'Every 3 weeks')], [4, I18N.k('ui.every-4-weeks', 'Every 4 weeks')], [6, 'Every 6 weeks'], [8, I18N.k('ui.every-8-weeks', 'Every 8 weeks')]];
   var BINS = { key: 'hbins', addTitle: 'New bin', editTitle: 'Edit bin', fields: [
     { k: 'title', type: 'title', label: 'Bin', ph: 'Restavfall, Papir, Plast, Glass og metall …', req: true },
     { k: 'first', label: 'Next pickup', type: 'date', req: true, def: function () { return addDays(today(), 1); }, help: 'Or any day it was picked up – the rest follow from it. Your kommune’s app or website has the dates.' },
@@ -199,7 +199,7 @@
       heroTile('lightning-charge', 'Power', ms.avg != null ? nf1.format(ms.last != null ? ms.last : ms.avg) + ' <small>kWh/day</small>' : '–', ms.avg != null ? (pr ? '≈ ' + nf.format(ms.avg * 30.4 * pr / 100) + ' kr a month' : nf.format(ms.avg * 365) + ' kWh a year') : 'Add two readings', '#hmeter') +
       heroTile('info-circle', I18N.k('ui.good-to-know', 'Good to know'), info.length, info.length ? esc(info.slice(0, 3).map(function (x) { return x.title; }).join(', ')) : 'Wi-Fi, codes, contacts', '#hinfo');
   };
-  var REL = [['family', 'Family'], ['friend', 'Friend'], ['work', 'Work'], ['other', 'Other']];
+  var REL = [['family', I18N.k('ui.family', 'Family')], ['friend', I18N.k('ui.friend', 'Friend')], ['work', I18N.k('ui.work', 'Work')], ['other', I18N.k('ui.other', 'Other')]];
   var REL_C = { family: '#d55181', friend: BLUE, work: '#e8743b', other: '#7a8794' };
   var PP = { key: 'people', addTitle: 'New person', editTitle: 'Edit person', fields: [
     { k: 'name', type: 'title', label: 'Name', ph: 'Name', req: true },
@@ -544,7 +544,7 @@
           var cur = r && r.pid === p.id;
           return '<button type="button" class="pt-start' + (cur ? ' on' : '') + '" style="--c:' + p.color + '" data-ptgo="' + esc(p.id) + '"' + (cur ? ' disabled' : '') + '><i class="bi bi-' + (cur ? 'record-fill' : 'play-fill') + '"></i>' + esc(p.name) + '</button>';
         }).join('') + '</div>';
-        h += '<div class="seg lp-seg pt-seg">' + [['week', 'This week'], ['last', 'Last week'], ['month', 'This month']].map(function (x) { return '<button type="button" data-ptrange="' + x[0] + '" aria-pressed="' + (PT.range === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+        h += '<div class="seg lp-seg pt-seg">' + [['week', I18N.k('ui.this-week', 'This week')], ['last', I18N.k('ui.last-week', 'Last week')], ['month', I18N.k('ui.this-month', 'This month')]].map(function (x) { return '<button type="button" data-ptrange="' + x[0] + '" aria-pressed="' + (PT.range === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
         h += '<div class="kit-tiles">' + tile(rg[2], hm(tot)) + tile('Today', hm(todayM)) + tile(val ? 'Worth' : 'Clients', val ? nf.format(val) + ' <small>kr</small>' : Object.keys(per).length, val ? 'at your rates' : 'with hours') + '</div>';
         var keys = Object.keys(per).sort(function (a, b) { return per[b] - per[a]; });
         if (keys.length) h += '<ul class="pt-bars">' + keys.map(function (k) {

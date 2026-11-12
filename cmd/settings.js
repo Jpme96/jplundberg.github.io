@@ -17,8 +17,8 @@
     green:  { hex: '#22b35e', rgb: '34, 179, 94', name: 'Green' }
   };
   var CARDS = [
-    ['brief', 'At a glance'], ['timeline', 'Today'], ['weather', 'Weather'], ['calendar', 'Calendar'], ['transit', 'Travel & departures'], ['habits', 'Habits'], ['flex', 'Work today (flex time)'],
-    ['fin', 'Money'], ['todo', 'To-do'], ['goals', 'Goals'], ['links', 'Quick links'], ['notes', 'Notes']
+    ['brief', 'At a glance'], ['timeline', I18N.k('ui.today', 'Today')], ['weather', I18N.k('ui.weather', 'Weather')], ['calendar', I18N.k('ui.calendar', 'Calendar')], ['transit', I18N.k('ui.travel-departures', 'Travel & departures')], ['habits', I18N.k('ui.habits', 'Habits')], ['flex', I18N.k('ui.work-today-flex-time', 'Work today (flex time)')],
+    ['fin', I18N.k('ui.money', 'Money')], ['todo', I18N.k('ui.to-do', 'To-do')], ['goals', I18N.k('ui.goals', 'Goals')], ['links', I18N.k('ui.quick-links', 'Quick links')], ['notes', I18N.k('ui.notes', 'Notes')]
   ];
   /* Cards can be moved within their section; finances keep their own layout */
   var GROUPS = [
@@ -49,7 +49,7 @@
     var first = list.filter(function (id) { return id === 'brief'; }), boosted = up.filter(function (id) { return list.indexOf(id) > -1; });
     return first.concat(boosted, list.filter(function (id) { return id !== 'brief' && boosted.indexOf(id) < 0; }));
   }
-  var BGS = [['calm', 'Calm'], ['moon', 'Moon'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['forest', 'Forest'], ['none', 'None'], ['custom', 'Your photo']];
+  var BGS = [['calm', I18N.k('ui.calm', 'Calm')], ['moon', I18N.k('ui.moon', 'Moon')], ['aurora', I18N.k('ui.aurora', 'Aurora')], ['dusk', I18N.k('ui.dusk', 'Dusk')], ['ocean', I18N.k('ui.ocean', 'Ocean')], ['forest', I18N.k('ui.forest', 'Forest')], ['none', I18N.k('ui.none-2', 'None')], ['custom', I18N.k('ui.your-photo', 'Your photo')]];
   /* Your own colour: any hex value, with readable text on top */
   function hexOk(h) { return /^#[0-9a-f]{6}$/i.test(h || ''); }
   function hexRgb(h) { return [1, 3, 5].map(function (i) { return parseInt(h.slice(i, i + 2), 16); }); }

@@ -15,7 +15,7 @@
   if (!window.Vault || !window.Features) return;
   var __c = (window.__core || {})["fintools"]; if (!__c) return;
   var esc = __c.esc, affordForm = __c.affordForm, num = __c.num, affordHtml = __c.affordHtml, afford = __c.afford, fin = __c.fin, L = __c.L, rateSeen = __c.rateSeen, rateLog = __c.rateLog, debts = __c.debts, today = __c.today, toast = __c.toast, fmtR = __c.fmtR, kr = __c.kr, Fe = __c.Fe, B = __c.B, ebSpent = __c.ebSpent, isKey = __c.isKey, RED = __c.RED, AMBER = __c.AMBER, GREEN = __c.GREEN, ebSaveMonthly = __c.ebSaveMonthly, fmtD = __c.fmtD, dkey = __c.dkey, cfg = __c.cfg, all = __c.all;
-  var EBK = [['event', 'An event'], ['trip', 'A trip']];
+  var EBK = [['event', I18N.k('ui.an-event', 'An event')], ['trip', I18N.k('ui.a-trip', 'A trip')]];
   var ebCol = (window.Kit && document.querySelector('[data-tool="ebud"]')) ? window.Kit.collection({
     mount: document.querySelector('[data-tool="ebud"]'), feature: 'finance', key: 'ebudgets', icon: 'calendar2-heart', title: 'Budgets for events and trips', addLabel: 'Add', limit: 6,
     addTitle: 'New budget', editTitle: 'Edit budget', fields: [

@@ -21,10 +21,10 @@
   function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
-  var SPEND = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
-  var REPEATS = [['', 'Doesn’t repeat'], ['daily', 'Every day'], ['weekdays', 'Every weekday'], ['weekly', 'Every week'], ['2weeks', 'Every 2 weeks'], ['monthly', 'Every month'], ['quarterly', 'Every 3 months'], ['yearly', 'Every year']];
+  var SPEND = [['groceries', I18N.k('ui.groceries', 'Groceries')], ['eating', I18N.k('ui.eating-out', 'Eating out')], ['transport', I18N.k('ui.transport', 'Transport')], ['shopping', I18N.k('ui.shopping', 'Shopping')], ['home', I18N.k('ui.home', 'Home')], ['fun', I18N.k('ui.fun', 'Fun')], ['health', I18N.k('ui.health', 'Health')], ['travel', I18N.k('ui.travel', 'Travel')], ['other', I18N.k('ui.other', 'Other')]];
+  var REPEATS = [['', 'Doesn’t repeat'], ['daily', I18N.k('ui.every-day', 'Every day')], ['weekdays', I18N.k('ui.every-weekday', 'Every weekday')], ['weekly', I18N.k('ui.every-week', 'Every week')], ['2weeks', I18N.k('ui.every-2-weeks', 'Every 2 weeks')], ['monthly', I18N.k('ui.every-month', 'Every month')], ['quarterly', I18N.k('ui.every-3-months', 'Every 3 months')], ['yearly', I18N.k('ui.every-year', 'Every year')]];
   function repeatSelect(v) { return '<select name="rep" aria-label="Repeat" data-t-aria-label="ui.repeat">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (v || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'; }
-  var SPORTS = [['strength', 'Strength'], ['run', 'Running'], ['walk', 'Walking'], ['bike', 'Cycling'], ['swim', 'Swimming'], ['ball', 'Ball sports'], ['yoga', 'Yoga / mobility'], ['other', 'Other']];
+  var SPORTS = [['strength', I18N.k('ui.strength', 'Strength')], ['run', I18N.k('ui.running', 'Running')], ['walk', I18N.k('ui.walking', 'Walking')], ['bike', I18N.k('ui.cycling', 'Cycling')], ['swim', I18N.k('ui.swimming', 'Swimming')], ['ball', I18N.k('ui.ball-sports', 'Ball sports')], ['yoga', I18N.k('ui.yoga-mobility', 'Yoga / mobility')], ['other', I18N.k('ui.other', 'Other')]];
 
   /* ---------- the button ---------- */
   var btn = document.createElement('button');
@@ -190,7 +190,7 @@
     },
     event: function (p) {
       var cats = window.Cal ? window.Cal.CAT_ORDER.map(function (id) { return [id, window.Cal.CATS[id].name]; }) :
-        (function () { var c = readJSON('dash.calendar', {}).cats; return Array.isArray(c) && c.length ? c.map(function (x) { return [x.id, x.name]; }) : [['personal', 'Personal'], ['work', 'Work'], ['study', 'Study'], ['training', 'Training'], ['social', 'Social']]; })();
+        (function () { var c = readJSON('dash.calendar', {}).cats; return Array.isArray(c) && c.length ? c.map(function (x) { return [x.id, x.name]; }) : [['personal', I18N.k('ui.personal', 'Personal')], ['work', I18N.k('ui.work', 'Work')], ['study', I18N.k('ui.study', 'Study')], ['training', I18N.k('ui.training', 'Training')], ['social', I18N.k('ui.social', 'Social')]]; })();
       var last = ''; try { last = localStorage.getItem('dash.calLastCat') || ''; } catch (e) {}
       var n = new Date(), hh = p.s || pad(Math.min(23, n.getHours() + 1)) + ':00';
       return '<form class="qa-form" data-kind="event">' +
@@ -206,7 +206,7 @@
         '<div class="qa-row"><select name="k" aria-label="Type" data-t-aria-label="ui.type">' + SPORTS.map(function (s) { return '<option value="' + s[0] + '"' + (s[0] === p.k ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select>' +
           '<input name="m" placeholder="Minutes" inputmode="numeric" value="' + esc(p.m || 60) + '" aria-label="Minutes" required></div>' +
         '<div class="qa-row"><input name="km" placeholder="km (optional)" inputmode="decimal" aria-label="Distance" value="' + esc(p.km ? String(p.km).replace('.', ',') : '') + '"><input name="d" type="date" value="' + esc(p.d || today()) + '" aria-label="Date"></div>' +
-        '<div class="qa-effort" role="radiogroup" aria-label="How hard" data-t-aria-label="ui.how-hard">' + [['1', 'Easy'], ['2', 'Light'], ['3', 'Moderate'], ['4', 'Hard'], ['5', 'All out']].map(function (e) {
+        '<div class="qa-effort" role="radiogroup" aria-label="How hard" data-t-aria-label="ui.how-hard">' + [['1', I18N.k('ui.easy', 'Easy')], ['2', I18N.k('ui.light', 'Light')], ['3', I18N.k('ui.moderate', 'Moderate')], ['4', I18N.k('ui.hard', 'Hard')], ['5', I18N.k('ui.all-out', 'All out')]].map(function (e) {
           return '<label><input type="radio" name="e" value="' + e[0] + '"' + (e[0] === '3' ? ' checked' : '') + '><span>' + e[1] + '</span></label>';
         }).join('') + '</div>' +
         '<div class="qa-acts"><button type="button" class="text-btn" data-close data-t="ui.cancel"><span data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></span></button><span class="spacer"></span><button class="pill-btn wide" type="submit" data-t="ui.log-workout"><span data-t="ui.log-workout"><span data-t="ui.log-workout">Log workout</span></span></button></div></form>';
