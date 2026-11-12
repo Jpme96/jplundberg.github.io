@@ -150,6 +150,25 @@
     return L;
   }
   var UID = 0;
+  /* what each moment does in 2.5D (F1b): the angle, what the hand holds, a pose. Body points are [height, forward]:
+     the shoulder is at 88, the hip at 140; forward is toward where the figure faces. R/L in the couple pictures: R stands on
+     the left and turns right, L the other way. */
+  /* the old engine's tests (localStorage cmd.oldLive) see the whole old flat world until F2 replaces it */
+  var OLDLIVE = (function () { try { return localStorage.getItem('cmd.oldLive') === '1'; } catch (e) { return false; } })();
+  var UP = function (y, z) { return { m: 1, b: [y, z] }; };
+  var FIG25 = {
+    morning: { hold: 'cup' }, evening: { hold: 'book' }, night: { expr: 'calm' }, rain: { hold: 'umbrella' }, gym: { hold: 'dumbbell' },
+    trip: { hold: 'suitcase', a: 30 }, bday: { hold: 'gift' }, win: { hold: 'trophy', expr: 'laugh' }, day: { pose: { far: UP(52, 8) } },
+    holdR: { a: 55, pose: { near: UP(128, 30) } }, holdL: { a: -55, pose: { near: UP(128, 30) } },
+    hi5R: { a: 60, pose: { near: UP(58, 46) }, expr: 'laugh' }, hi5L: { a: -60, pose: { near: UP(58, 46) }, expr: 'laugh' },
+    hugR: { a: 62, pose: { near: UP(96, 34), far: UP(96, 34) } }, hugL: { a: -62, pose: { near: UP(96, 34), far: UP(96, 34) } },
+    kissR: { a: 60, pose: { lean: .08 } }, kissL: { a: -60, pose: { lean: .08 } },
+    selfieR: { a: -20, hold: 'phone', expr: 'grin' }, selfieL: { a: 20 },
+    danceR: { a: 40, pose: { near: UP(70, 28), far: UP(54, 4) }, expr: 'laugh' }, danceL: { a: -40, pose: { near: UP(70, 28), far: UP(54, 4) }, expr: 'laugh' },
+    cookR: { a: 45, pose: { near: UP(118, 30) } }, cookL: { a: -45, pose: { near: UP(118, 30) } },
+    sofaR: { a: 25, pose: { lift: -38, legNear: { m: 1, th: 1.5, kn: 1.5 }, legFar: { m: 1, th: 1.5, kn: 1.5 }, near: UP(134, 22), far: UP(134, 22) } },
+    sofaL: { a: -25, pose: { lift: -38, legNear: { m: 1, th: 1.5, kn: 1.5 }, legFar: { m: 1, th: 1.5, kn: 1.5 }, near: UP(134, 22), far: UP(134, 22) } }
+  };
   function figure(m, L) {
     var mine = !L, W = mine ? wear() : {};
     L = norm(mine ? dressed(look(), W) : L);
@@ -501,6 +520,14 @@
     var PC = L.petC || (L.pet === 'dog' ? '#c9935a' : '#f2a65a'), pet = L.pet === 'cat' ? '<g class="av-pet"><path class="av-tail" d="M52 150q8-8 6-20" stroke="' + PC + '" stroke-width="3.4" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="151" rx="11" ry="7.5" fill="' + PC + '"/><circle cx="31" cy="141" r="7" fill="' + PC + '"/><path d="M25.5 137l1-7 5 4zM36.5 137l-1-7-5 4z" fill="' + PC + '"/><circle cx="28.5" cy="141" r="1" fill="#1a1a1a"/><circle cx="33.5" cy="141" r="1" fill="#1a1a1a"/><path d="M30 144q1 1 2 0" stroke="#1a1a1a" stroke-width=".8" fill="none"/><rect x="34" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/><rect x="46" y="154" width="3" height="5" rx="1.5" fill="' + PC + '"/></g>'
       : L.pet === 'bunny' ? '<g class="av-pet"><ellipse cx="42" cy="152" rx="10" ry="7" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="52" cy="150" r="2.6" fill="#ffffff"/><ellipse cx="28" cy="132" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="2.2" ry="7" fill="' + (L.petC || '#e9e4dc') + '" transform="rotate(8 34.5 131.5)"/><ellipse cx="28" cy="132" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(-10 28 132)"/><ellipse cx="34.5" cy="131.5" rx="1" ry="4.6" fill="#f3a9b8" transform="rotate(8 34.5 131.5)"/><circle cx="31" cy="143" r="6.4" fill="' + (L.petC || '#e9e4dc') + '"/><circle cx="29" cy="142" r="1" fill="#1a1a1a"/><circle cx="33.4" cy="142" r="1" fill="#1a1a1a"/><circle cx="31.2" cy="145" r=".9" fill="#f3a9b8"/></g>'
       : L.pet === 'dog' ? '<g class="av-pet"><path class="av-tail" d="M55 145q6-6 5-12" stroke="' + PC + '" stroke-width="3.2" fill="none" stroke-linecap="round"/><ellipse cx="44" cy="149" rx="12" ry="8" fill="' + PC + '"/><circle cx="31" cy="139" r="8" fill="' + PC + '"/><ellipse cx="24.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="37.5" cy="140" rx="3" ry="6" fill="' + shade(PC, -.3) + '"/><ellipse cx="31" cy="143.5" rx="4" ry="3" fill="' + shade(PC, .35) + '"/><circle cx="31" cy="142" r="1.4" fill="#1a1a1a"/><circle cx="28" cy="137.5" r="1" fill="#1a1a1a"/><circle cx="34" cy="137.5" r="1" fill="#1a1a1a"/><rect x="35" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/><rect x="49" y="153" width="3.4" height="6" rx="1.7" fill="' + PC + '"/></g>' : '';
+    /* F1b: the 2.5D figure (avatar-25d.js) in the same frame – the moment's sky and ground stay, the body is drawn in
+       2.5D with what the moment puts in its hand; m.flat keeps the old flat drawing (the old living scenes' rig needs it) */
+    if (window.Fig25 && !m.flat && !OLDLIVE) {
+      var M25 = FIG25[m.k] || {}, L25 = Object.assign({}, L, { top: top, expr: tired ? 'calm' : meh ? 'calm' : (M25.expr || L.expr) });
+      if (m.k === 'couple' || m.noPet) L25.pet = 'none';
+      var body25 = Fig25.group(L25, { a: m.a != null ? m.a : M25.a != null ? M25.a : 18, cx: 101, gy: 159, k: .68, hold: M25.hold, pose: m.pose || M25.pose, shadow: false, ph: m.ph, w: m.w });
+      return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + ' av-25' + ((m.pose || M25.pose || {}).lift ? ' av-sit' : '') + '"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + body25 + (tired && !m.plain ? '<text x="132" y="40" font-size="13" font-weight="800" fill="#9a9ca5">z</text><text x="141" y="29" font-size="9" font-weight="800" fill="#9a9ca5">z</text>' : '') + '</svg>';
+    }
     return '<svg viewBox="0 0 200 200" class="av-m-' + esc(m.k || 'plain') + '" style="--rx:' + rx + 'px;--lx:' + lx + 'px"' + (m.attrs || '') + '>' + bgEl + sceneEl + '<g class="av-sky ' + esc(m.sky || '') + '">' + sky + '</g>' + lamp + ground + (pet && AID === 'chair' ? '<g transform="translate(-12 0)">' + pet + '</g>' : pet) + '<g class="av-all">' + (HT ? '<g transform="' + HT + '">' : '') + '<g class="av-up" transform="translate(0 ' + (-UP) + ')"><g transform="translate(' + (-DX).toFixed(1) + ' -3)"><g class="av-behind">' + behind + '</g></g></g>' + legs + (WS ? '<g transform="translate(0 ' + WS + ')">' : '') + '<g class="av-up" transform="translate(0 ' + (-UP) + ')">' + neck + body +
       '<g transform="translate(0 -9)"><g transform="translate(' + DX.toFixed(1) + ' 0)"><g class="av-armL">' + closeHand(armsL) + '</g></g><g transform="translate(' + (-DX).toFixed(1) + ' 0)"><g class="av-armR">' + closeHand(arms) + '</g></g>' + head + '</g>' + (m.k === 'trip' ? '' : propG) + '<g transform="translate(0 -9)"><g class="av-front">' + front + '</g></g></g>' + (m.k === 'trip' ? propG : '') + (WS ? '</g>' : '') + chair + (HT ? '</g>' : '') + '</g></svg>';
   }
@@ -784,10 +811,13 @@
      try the next one. kind: hold | hi5 | hug | kiss */
   var COUPLE = { hold: { gap: 80, a: 'holdR', b: 'holdL', bg: '#1d2533' }, hi5: { gap: 70, a: 'hi5R', b: 'hi5L', bg: '#1f1a10' }, hug: { gap: 58, a: 'hugR', b: 'hugL', bg: '#2a1622' }, kiss: { gap: 70, a: 'plain', b: 'plain', bg: '#2a1622', tilt: 6, closed: true },
     selfie: { gap: 62, a: 'plain', b: 'selfieR', bg: '#1d2533', tilt: -4 }, dance: { gap: 78, a: 'danceR', b: 'danceL', bg: '#22182a' }, cook: { gap: 96, a: 'cookR', b: 'cookL', bg: '#2c1f12' }, sofa: { gap: 66, a: 'plain', b: 'plain', bg: '#1d2533', sofa: true } };
+  /* the 2.5D couple stands closer: hands meet between them */
+  var GAP25 = { hold: 46, hi5: 50, hug: 38, kiss: 40, selfie: 44, dance: 52, cook: 60, sofa: 56 };
   function couple(kind, a, b, opt) {
-    opt = opt || {}; a = Object.assign({}, START, a || {}); b = Object.assign({}, START, b || {}); var c = COUPLE[kind] || COUPLE.hold, W = 200 + c.gap, light = document.documentElement.getAttribute('data-theme') === 'light' || opt.light;
+    opt = opt || {}; a = Object.assign({}, START, a || {}); b = Object.assign({}, START, b || {}); var c = COUPLE[kind] || COUPLE.hold; if (window.Fig25) c = Object.assign({}, c, { gap: GAP25[kind] || c.gap }); var W = 200 + c.gap, light = document.documentElement.getAttribute('data-theme') === 'light' || opt.light;
     var bg = light ? shade(c.bg, .82) : c.bg, cx = W / 2, uid = 'cp-' + kind + (opt.uid || '');
     var one = function (look, k, x, rot) {
+      if (window.Fig25) { k = kind === 'selfie' ? (k === 'plain' ? 'selfieL' : 'selfieR') : (FIG25[kind + (x ? 'L' : 'R')] ? kind + (x ? 'L' : 'R') : k); rot = 0; }
       var f = figure({ k: k, plain: true, bg: '#000', sky: 'none', closed: c.closed, seat: !!c.sofa, attrs: ' x="' + x + '" y="0" width="200" height="200"' }, Object.assign({}, look || look0(), opt.pet ? { pet: 'none' } : {}));
       return rot ? '<g transform="rotate(' + rot + ' ' + (x + 101) + ' 165)">' + f + '</g>' : f;
     };
@@ -800,10 +830,13 @@
       : heart(cx, 104, .55, 'cp-beat');
     /* the right-hand person's own pet stands on the right, facing in (the left one's stays on the left) */
     var petB = '';
-    if (!opt.pet && b.pet && b.pet !== 'none' && b.pet !== 'bird') { var bf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: b.pet, petC: b.petC })), bm = bf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (bm) petB = '<g transform="translate(' + (W + 6) + ' 4) scale(-1 1)">' + bm[0] + '</g>'; }
+    if (window.Fig25) { var p25 = function (kind, x, ang) { return kind && kind !== 'none' && kind !== 'bird' ? '<g class="av-pet">' + Fig25.petG(kind, ang, x, 159, .68) + '</g>' : ''; };
+      if (!opt.pet) petB = p25(b.pet, W - 18, -60); }
+    else if (!opt.pet && b.pet && b.pet !== 'none' && b.pet !== 'bird') { var bf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: b.pet, petC: b.petC })), bm = bf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (bm) petB = '<g transform="translate(' + (W + 6) + ' 4) scale(-1 1)">' + bm[0] + '</g>'; }
     var sofa = c.sofa ? '<rect x="' + (cx - 82) + '" y="112" width="164" height="40" rx="12" fill="#3b4d8a"/><rect x="' + (cx - 90) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx + 72) + '" y="120" width="18" height="40" rx="8" fill="#334477"/><rect x="' + (cx - 72) + '" y="140" width="144" height="18" rx="6" fill="#4a5ea0"/>' : '';
     var pet = '';
-    if (opt.pet && opt.pet !== 'none') { var pf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: opt.pet })), pm = pf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (pm) pet = '<g transform="translate(-12 4)">' + pm[0] + '</g>'; }
+    if (window.Fig25) { if (opt.pet) pet = p25(opt.pet, 22, 60); }
+    else if (opt.pet && opt.pet !== 'none') { var pf = figure({ k: 'plain', plain: true, bg: 'none' }, Object.assign({}, START, { pet: opt.pet })), pm = pf.match(/<g class="av-pet"[\s\S]*?<\/g>(?=<g class="av-all">)/); if (pm) pet = '<g transform="translate(-12 4)">' + pm[0] + '</g>'; }
     var css = '<style>.' + uid + ' .cp-up{animation:cpUp 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-d1{animation-delay:.5s}.' + uid + ' .cp-d2{animation-delay:1.1s}' +
       '.' + uid + ' .cp-beat{animation:cpBeat 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}.' + uid + ' .cp-pop{animation:cpPop 1.4s ease-out infinite}' +
       '@keyframes cpUp{0%{transform:translateY(6px);opacity:0}30%{opacity:1}100%{transform:translateY(-10px);opacity:0}}@keyframes cpBeat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(.96)}45%{transform:scale(1.1)}}' +

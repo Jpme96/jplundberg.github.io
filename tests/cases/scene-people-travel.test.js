@@ -5,7 +5,7 @@
    in place. With nobody added you still wave. Made-up people and a made-up trip only. */
 const { open, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   const runAll = async (pg) => {
     const names = await p.evaluate(pg => SceneLive['_' + pg].acts().map(a => a.n), pg), res = [];
     for (const n of names) {

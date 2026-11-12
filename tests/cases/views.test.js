@@ -1,3 +1,4 @@
+/* (F1b) The old flat drawing and its rig (flat: 1) – kept for the old living scenes until F2 replaces them; the 2.5D figure is checked by fig25 and pictures. */
 /* The avatar from every side (Phase L, round 1): every hair style and hat draws from behind, from the side and in
    three-quarter without errors or broken words and inside the picture; turning swaps the head for the right view
    (and mirrors it the other way), the back view hides the chest print, and turning back gives the front again.
@@ -20,7 +21,7 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     });
     /* turning a real figure */
     const L = Object.assign({}, Avatar.look(), { auto: 'off', hair: 'ponytail', hat: 'cap', chest: 'JP' });
-    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, L);
+    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, L);
     const rig = Rig(host.querySelector('svg'), L), seen = [];
     Rig.turn(rig, .55); seen.push(Rig.view(rig));
     Rig.turn(rig, 1); seen.push(Rig.view(rig));
@@ -32,26 +33,26 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     const frontAgain = !!host.querySelector('.bob .av-faceshape');
     /* round 2: the back of the top – a jersey shows its number, a bag becomes a backpack; a hoodie's hood shows from the side */
     const J = Object.assign({}, Avatar.look(), { auto: 'off', top: 'jersey', num: '23', bag: 'yes', neck: 'lanyard' });
-    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, J);
+    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, J);
     const rj = Rig(host.querySelector('svg'), J), bd = () => host.querySelector('.av-backd');
     const hiddenFront = bd() && bd().style.display === 'none';
     Rig.back(rj, true, J); const backShown = bd().style.display !== 'none' && /23/.test(bd().textContent) && !!bd().querySelector('rect');
     Rig.back(rj, false, J); const backGone = bd().style.display === 'none';
     const dangle = !!host.querySelector('.av-chest .av-dangle');
     const Hd = Object.assign({}, Avatar.look(), { auto: 'off', top: 'hoodie' });
-    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, Hd);
+    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, Hd);
     const rh = Rig(host.querySelector('svg'), Hd); Rig.turn(rh, 1); const hood = host.querySelector('.av-hoodb'), hoodSide = !!hood && hood.style.display !== 'none';
     const chestMoved = /translate/.test(host.querySelector('.av-chest').getAttribute('transform') || '');
     Rig.turn(rh, 0); const hoodFront = hood.style.display === 'none';
-    const dress = Object.assign({}, Avatar.look(), { auto: 'off', top: 'dress' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, dress); const hem = !!host.querySelector('.av-hem');
+    const dress = Object.assign({}, Avatar.look(), { auto: 'off', top: 'dress' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, dress); const hem = !!host.querySelector('.av-hem');
     /* half-turned, both shoulders stay on the body (the near arm hung in the air behind it, 2026-11-11) */
-    const S7 = Object.assign({}, Avatar.look(), { auto: 'off' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, S7);
+    const S7 = Object.assign({}, Avatar.look(), { auto: 'off' }); host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, S7);
     const r7 = Rig(host.querySelector('svg'), S7); Rig.turn(r7, .7);
     const tb = host.querySelector('.rig-torso').getBoundingClientRect(), shoulders = [r7.L, r7.R].map(A => { const c = A.joint ? null : null; const lb = A.limb.querySelector('circle').getBoundingClientRect(); return [lb.left + lb.width / 2, tb.left, tb.right]; });
     const onBody = shoulders.every(q => q[0] >= q[1] - 2 && q[0] <= q[2] + 2);
     /* round 3: three-quarter hides the far earring; from the side each kind of glasses keeps its frame; held things get fingers */
     const E3 = Object.assign({}, Avatar.look(), { auto: 'off', ears: 'hoops', glasses: 'aviator', pierce: 'nose' });
-    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: 'none' }, E3);
+    host.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: 'none' }, E3);
     const r3 = Rig(host.querySelector('svg'), E3); Rig.turn(r3, .55);
     const hoops = [...host.querySelectorAll('.bob .av-buds circle')], oneHoop = hoops.length === 2 && hoops.filter(e => e.style.display === 'none').length === 1 && +hoops.find(e => e.style.display === 'none').getAttribute('cx') > 101;
     const sideG = Avatar.headView(E3, 'side', ''), aviSide = /#c9a227/.test(sideG) && /#c9ccd6/.test(sideG);

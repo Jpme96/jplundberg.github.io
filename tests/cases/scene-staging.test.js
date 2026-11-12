@@ -5,7 +5,7 @@
 const { open, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const CASES = [['work', 'sip'], ['food', 'stir'], ['goals', 'rest'], ['habits', 'drink']];
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   await p.evaluate(() => { ['flex', 'meetings', 'food', 'work', 'healthpage', 'goals'].forEach(k => { try { Features.set(k, true); } catch (e) {} }); });
   for (const [pg, act] of CASES) {
     p.errs.length = 0;

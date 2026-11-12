@@ -30,8 +30,9 @@ const CASES = [
     const ref = path.join(REF, id + '.png'), have = fs.existsSync(ref) && !UPDATE;
     const res = await p.evaluate(async (mom, look, refUrl) => {
       const W = 240, H = 300;
-      let svg = Avatar.figure(Avatar.MOMENTS[mom], look);
-      if (look._view) { const d = document.createElement('div'); d.innerHTML = svg; document.body.appendChild(d); const r = Rig(d.querySelector('svg'), look);
+      const A25 = { q: 40, side: 90, back: 180 };
+      let svg = Avatar.figure(Object.assign({}, Avatar.MOMENTS[mom], window.Fig25 && look._view ? { a: A25[look._view] } : {}), look);
+      if (look._view && !window.Fig25) { const d = document.createElement('div'); d.innerHTML = svg; document.body.appendChild(d); const r = Rig(d.querySelector('svg'), look);
         if (look._view === 'back') Rig.back(r, true, look); else Rig.turn(r, look._view === 'side' ? 1 : .55); svg = d.innerHTML; d.remove(); }
       const load = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('could not draw')); i.src = src; });
       const px = img => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = '#808080'; x.fillRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); return { c, d: x.getImageData(0, 0, W, H).data }; };

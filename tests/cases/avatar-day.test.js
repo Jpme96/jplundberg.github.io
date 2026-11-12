@@ -18,7 +18,7 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
     const td = Features.dkey(new Date()); localStorage.setItem('dash.todos', JSON.stringify([1, 2, 3].map(i => ({ id: 't' + i, text: 'Made up ' + i, today: td, done: true }))));
     const earned = Avatar.dressed(L), trimmed = Avatar.trimLook(Object.assign({}, L, { badge: 'trophy', neck: 'tie', pat: 'stripes', topC: '#d93a3a', hair: 'mullet', hat: 'beret', glasses: 'monocle' }));
     const sofa = Avatar.couple('sofa', L, L, {}), hold = Avatar.couple('hold', L, L, {});
-    return { cold: [cold.top, cold.hat, cold.wxScarf ? 'scarf' : 'none'], warm: warm.top, earned: earned.badge || 'none', trimmed: [trimmed.badge, trimmed.neck, trimmed.pat, trimmed.topC, trimmed.hair, trimmed.hat, trimmed.glasses].join(','), seated: /scale\(1 \.56\)/.test(sofa) && !/scale\(1 \.56\)/.test(hold) };
+    return { cold: [cold.top, cold.hat, cold.wxScarf ? 'scarf' : 'none'], warm: warm.top, earned: earned.badge || 'none', trimmed: [trimmed.badge, trimmed.neck, trimmed.pat, trimmed.topC, trimmed.hair, trimmed.hat, trimmed.glasses].join(','), seated: /scale\(1 \.56\)|av-sit/.test(sofa) && !/scale\(1 \.56\)|av-sit/.test(hold) };
   });
   check(day.cold.join(',') === 'puffer,beanie,scarf', 'cold: a padded jacket, beanie and scarf ' + day.cold);
   check(day.warm === 'tee', 'warm: a T-shirt instead of the sweater (' + day.warm + ')');

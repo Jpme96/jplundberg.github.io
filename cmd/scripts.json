@@ -66,6 +66,7 @@
     "avatar-rig.js",
     "scene-kit.js",
     "scene-common.js",
+    "avatar-25d.js",
     "avatar.js",
     "avatar-page.js",
     "play.js",

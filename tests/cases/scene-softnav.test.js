@@ -6,7 +6,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
 const pose = p => p.evaluate(sel => { const h = document.querySelector(sel + ' .hero-body'); return h ? (h.getAttribute('transform') || '') + '|' + [...document.querySelectorAll(sel + ' .av-limb path')].map(x => x.getAttribute('d')).join('') + '|' + [...document.querySelectorAll(sel + ' .av-legL g, ' + sel + ' .av-legR g')].map(x => x.getAttribute('transform')).join('') : ''; }, '#scIllu');
 async function moves(p, ms) { const a = await pose(p); for (let t = 0; t < ms; t += 400) { await sl(400); const b = await pose(p); if (a && b && a !== b) return true; } return false; }
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   await p.evaluate(() => { ['flex', 'meetings', 'food', 'work', 'healthpage', 'wish', 'goals', 'papers', 'calendar', 'finance'].forEach(k => { try { Features.set(k, true); } catch (e) {} }); });
   await go(p, '', 2000);
   await p.evaluate(() => { window.__still = 'same page'; });

@@ -384,6 +384,36 @@
     out.push([hz * .01 + .1, hg]);
     return out.sort(function (p, q) { return p[0] - q[0]; });
   }
+  /* things held in the moments (Home avatar, still pictures): the hand goes to its grip, the thing is drawn there */
+  var HOLDS = { cup: { b: [112, 24] }, umbrella: { b: [100, 18] }, gift: { b: [124, 22], both: 1 }, trophy: { b: [58, 18] }, suitcase: { b: [150, 4] }, dumbbell: { b: [102, 24] }, book: { b: [114, 26], both: 1 }, phone: { b: [56, 34] } };
+  function holdPose(kind, a) { var h = HOLDS[kind]; if (!h) return {}; var pz = {}, near = { m: 1, b: h.b }; pz.near = near; if (h.both) pz.far = { m: 1, b: h.b }; return pz; }
+  function holdItem(kind, H, k) {
+    if (!H) return null; var g = el('g', {}), x = H.X, y = H.Y, f = function (v) { return v.toFixed(1); };
+    var add = function (n, at) { g.appendChild(el(n, at)); };
+    if (kind === 'cup') { add('rect', { x: f(x - 5 * k), y: f(y - 7 * k), width: f(10 * k), height: f(11 * k), rx: f(2 * k), fill: '#f4f1ea' }); add('path', { d: 'M' + f(x + 5 * k) + ' ' + f(y - 4 * k) + ' q' + f(5 * k) + ' 0 ' + f(5 * k) + ' ' + f(3 * k) + ' q0 ' + f(3 * k) + ' ' + f(-5 * k) + ' ' + f(3 * k), fill: 'none', stroke: '#f4f1ea', 'stroke-width': f(2 * k) });
+      [0, 1].forEach(function (i) { add('path', { d: 'M' + f(x - 2 * k + i * 4 * k) + ' ' + f(y - 10 * k) + ' q' + f(-2 * k) + ' ' + f(-3 * k) + ' 0 ' + f(-6 * k), fill: 'none', stroke: 'rgba(255,255,255,.5)', 'stroke-width': f(1.2 * k), 'stroke-linecap': 'round' }); }); }
+    if (kind === 'umbrella') { var top = y - 78 * k; add('line', { x1: f(x), y1: f(y + 2 * k), x2: f(x), y2: f(top), stroke: '#3a3f4a', 'stroke-width': f(2 * k) });
+      add('path', { d: 'M' + f(x - 46 * k) + ' ' + f(top + 18 * k) + ' Q' + f(x) + ' ' + f(top - 22 * k) + ' ' + f(x + 46 * k) + ' ' + f(top + 18 * k) + ' Q' + f(x + 30 * k) + ' ' + f(top + 12 * k) + ' ' + f(x + 15 * k) + ' ' + f(top + 18 * k) + ' Q' + f(x) + ' ' + f(top + 12 * k) + ' ' + f(x - 15 * k) + ' ' + f(top + 18 * k) + ' Q' + f(x - 30 * k) + ' ' + f(top + 12 * k) + ' ' + f(x - 46 * k) + ' ' + f(top + 18 * k) + ' Z', fill: '#e8743b' });
+      add('path', { d: 'M' + f(x) + ' ' + f(y + 2 * k) + ' q0 ' + f(5 * k) + ' ' + f(-4 * k) + ' ' + f(5 * k), fill: 'none', stroke: '#3a3f4a', 'stroke-width': f(2 * k), 'stroke-linecap': 'round' }); }
+    if (kind === 'gift') { add('rect', { x: f(x - 11 * k), y: f(y - 10 * k), width: f(22 * k), height: f(18 * k), rx: f(2 * k), fill: '#d93a3a' }); add('rect', { x: f(x - 2 * k), y: f(y - 10 * k), width: f(4 * k), height: f(18 * k), fill: '#f2c94c' }); add('path', { d: 'M' + f(x) + ' ' + f(y - 10 * k) + ' q' + f(-8 * k) + ' ' + f(-8 * k) + ' ' + f(-8 * k) + ' 0 Z M' + f(x) + ' ' + f(y - 10 * k) + ' q' + f(8 * k) + ' ' + f(-8 * k) + ' ' + f(8 * k) + ' 0 Z', fill: '#f2c94c' }); }
+    if (kind === 'trophy') { add('path', { d: 'M' + f(x - 8 * k) + ' ' + f(y - 22 * k) + ' h' + f(16 * k) + ' q0 ' + f(14 * k) + ' ' + f(-8 * k) + ' ' + f(15 * k) + ' q' + f(-8 * k) + ' ' + f(-1 * k) + ' ' + f(-8 * k) + ' ' + f(-15 * k) + ' Z', fill: '#f2c94c' }); add('rect', { x: f(x - 2 * k), y: f(y - 7 * k), width: f(4 * k), height: f(5 * k), fill: '#d9a400' }); add('rect', { x: f(x - 6 * k), y: f(y - 2 * k), width: f(12 * k), height: f(4 * k), rx: f(1 * k), fill: '#d9a400' }); }
+    if (kind === 'suitcase') { add('line', { x1: f(x), y1: f(y), x2: f(x), y2: f(y + 8 * k), stroke: '#3a3f4a', 'stroke-width': f(2 * k) }); add('rect', { x: f(x - 12 * k), y: f(y + 8 * k), width: f(24 * k), height: f(32 * k), rx: f(4 * k), fill: '#3987e5' }); add('rect', { x: f(x - 12 * k), y: f(y + 20 * k), width: f(24 * k), height: f(3 * k), fill: 'rgba(0,0,0,.18)' }); }
+    if (kind === 'dumbbell') { add('line', { x1: f(x - 8 * k), y1: f(y), x2: f(x + 8 * k), y2: f(y), stroke: '#8f9ba5', 'stroke-width': f(2.4 * k) }); [-1, 1].forEach(function (sd) { add('rect', { x: f(x + sd * 8 * k - 2.6 * k), y: f(y - 5 * k), width: f(5.2 * k), height: f(10 * k), rx: f(1.6 * k), fill: '#2a2d33' }); }); }
+    if (kind === 'phone') { add('rect', { x: f(x - 3.4 * k), y: f(y - 11 * k), width: f(6.8 * k), height: f(12 * k), rx: f(1.4 * k), fill: '#2b2f3a' }); }
+    if (kind === 'book') { add('rect', { x: f(x - 10 * k), y: f(y - 8 * k), width: f(20 * k), height: f(14 * k), rx: f(1.5 * k), fill: '#3987e5' }); add('line', { x1: f(x), y1: f(y - 8 * k), x2: f(x), y2: f(y + 6 * k), stroke: '#f4f1ea', 'stroke-width': f(1.2 * k) }); }
+    return g;
+  }
+  /* the figure (and what it holds, and its pet) as an SVG group string, for pictures that have their own frame */
+  function group(look, o) {
+    o = o || {}; var a = (o.a == null ? 18 : o.a) * Math.PI / 180, k = o.k || .6, pose = Object.assign(holdPose(o.hold, a), o.pose || {}), g = el('g', { class: o.cls || 'av-all' });
+    if (o.shadow !== false) g.appendChild(el('ellipse', { cx: o.cx, cy: o.gy + 1, rx: 16 * k / .5, ry: 3.2 * k / .5, fill: 'rgba(0,0,0,.25)' }));
+    var pk = look && look.pet && look.pet !== 'none' && o.pet !== false ? look.pet : '';
+    if (pk) { var pg = el('g', { class: 'av-pet' }); pet(pk, a + 1.1, o.cx - 52 * k, o.gy, k, 0, 0).forEach(function (p) { pg.appendChild(p[1]); });   /* the pet turned toward you, seen from its side */ g.appendChild(pg); }
+    HAND = {}; var parts = draw(look, a, o.cx, o.gy, k, o.ph || 0, o.w || 0, pose);
+    if (o.hold && HOLDS[o.hold]) { var it = holdItem(o.hold, HAND.near, k * (L.hs || 1)); if (it) parts.push([HAND.near.z - .15, it]); parts.sort(function (p, q) { return p[0] - q[0]; }); }
+    parts.forEach(function (p) { g.appendChild(p[1]); });
+    return g.outerHTML;
+  }
   var HAND = {};
   /* a whole picture as a string: tiles in the maker, still pictures, the Home avatar */
   function svg(look, o) {
@@ -398,6 +428,7 @@
   }
   window.Fig25 = {
     draw: function (look, a, cx, gy, k, ph, w, pose) { ensureDefs(); HAND = {}; var r = draw(look, a, cx, gy, k, ph, w, pose); return r; },
-    svg: svg, pet: pet, look: look25, hand: function () { return HAND; }, TOP_STD: TOP_STD
+    petG: function (kind, a, x, gy, k) { ensureDefs(); return pet(kind, a * Math.PI / 180, x, gy, k, 0, 0).map(function (p) { return p[1].outerHTML; }).join(''); },
+    svg: svg, group: group, pet: pet, look: look25, HOLDS: HOLDS, hand: function () { return HAND; }, TOP_STD: TOP_STD
   };
 })();

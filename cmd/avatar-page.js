@@ -92,8 +92,9 @@
     var prevOverflow = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden';
     function dirty() { return JSON.stringify(cur) !== saved; }
     function drawFig() {
-      fig.innerHTML = M.figure(M.PLAIN, Object.assign({}, cur)).replace('viewBox="0 0 200 200"', 'viewBox="22 8 156 172"');
-      if (view !== 'front' && window.Rig) {
+      var A25 = { front: 18, q: 40, side: 90, back: 180 };
+      fig.innerHTML = M.figure(Object.assign({}, M.PLAIN, window.Fig25 ? { a: A25[view] != null ? A25[view] : 18 } : {}), Object.assign({}, cur)).replace('viewBox="0 0 200 200"', 'viewBox="22 8 156 172"');
+      if (view !== 'front' && window.Rig && !window.Fig25) {
         var svg = fig.querySelector('svg'), r = window.Rig(svg, cur);
         if (view === 'back') { Rig.turn(r, .001); Rig.back(r, true, cur); } else Rig.turn(r, view === 'q' ? .55 : 1);
       }

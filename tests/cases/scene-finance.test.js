@@ -4,7 +4,7 @@
    with animations off it's the still picture. Made-up data only. */
 const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   await go(p, 'finance/', 3000);
   const live = await until(p, () => !!(window.SceneLive && SceneLive._finance && document.querySelector('#scIllu .hero')), 10000);
   check(live !== null, 'the avatar comes alive in the Finances picture');

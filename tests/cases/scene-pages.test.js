@@ -3,7 +3,7 @@
    hands, facing us), speech bubbles read well, a pet stays on the ground, and no page errors. Made-up data only. */
 const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   await p.evaluate(() => {
     ['flex', 'meetings', 'people', 'food', 'work', 'healthpage', 'wish', 'goals', 'papers', 'calendar'].forEach(k => { try { Features.set(k, true); } catch (e) {} });
     const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.avatar = Object.assign({}, s.avatar || {}, { pet: 'dog', build: 'muscular' }); localStorage.setItem('dash.settings', JSON.stringify(s));

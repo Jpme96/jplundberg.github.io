@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v1cf1cd140a';
+var CACHE = 'cmd-v8a65e01766';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';

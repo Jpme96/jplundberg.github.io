@@ -22,7 +22,7 @@
     var H = { svg: svg, look: look ? Object.assign({}, own, look) : (window.Avatar && Avatar.dressed ? Avatar.dressed(own) : own), faces: {} };   /* your own avatar wears what the day brings (weather, an earned badge) */
     var s = Math.min(box.w / 114, box.h / 144), ox = box.x + (box.w - 114 * s) / 2, oy = box.y + box.h - 144 * s;
     H.s = s; H.feet0 = [ox + 57 * s, oy + 140 * s];
-    var f = Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none' }, H.look).replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
+    var f = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: '#000', sky: 'none' }, H.look).replace(/<ellipse cx="101" cy="160"[^>]*>/, '')
       .replace('<svg viewBox="0 0 200 200"', '<svg viewBox="44 20 114 144" preserveAspectRatio="xMidYMax meet" x="' + box.x + '" y="' + box.y + '" width="' + box.w + '" height="' + box.h + '"');
     H.wrap = el('g', { class: 'hero' }); H.wrap.innerHTML = '<ellipse class="hero-sh" cx="' + H.feet0[0] + '" cy="' + H.feet0[1] + '" rx="' + 15 * s / .5 + '" ry="' + 2.4 * s / .5 + '" fill="rgba(0,0,0,.28)"/><g class="hero-body">' + f + '</g>';
     if (before) svg.insertBefore(H.wrap, before); else svg.appendChild(H.wrap);
@@ -171,7 +171,7 @@
   function pos(R, H, to, ms) { var a = H.pos.slice(); return tw(R, ms || 400, function (u) { var e = ease(u); H.pos = [lerp(a[0], to[0], e), lerp(a[1], to[1], e)]; }); }
   function legs(R, H, r, l, sr, sl, ms) { var a = Object.assign({}, H.legs); return tw(R, ms || 400, function (u) { var e = ease(u); H.legs.R = lerp(a.R, r, e); H.legs.L = lerp(a.L, l, e); H.legs.sR = lerp(a.sR, sr || 0, e); H.legs.sL = lerp(a.sL, sl || 0, e); }); }
   function face(H, e) {
-    var b = H.rig.head; if (!b) return; H.faceNow = e; if (!H.faces[e]) { var d = document.createElement('div'); d.innerHTML = Avatar.figure({ k: 'plain', plain: true, bg: '#000', sky: 'none' }, Object.assign({}, H.look, { expr: e })); var x = d.querySelector('.bob'); H.faces[e] = x ? x.innerHTML : ''; }
+    var b = H.rig.head; if (!b) return; H.faceNow = e; if (!H.faces[e]) { var d = document.createElement('div'); d.innerHTML = Avatar.figure({ k: 'plain', plain: true, flat: 1, bg: '#000', sky: 'none' }, Object.assign({}, H.look, { expr: e })); var x = d.querySelector('.bob'); H.faces[e] = x ? x.innerHTML : ''; }
     var was = Rig.view ? Rig.view(H.rig) : 'front';
     if (H.faces[e]) { if (was !== 'front') { b.innerHTML = H.faces[e]; Rig.refresh(H.rig); H.rig.hv = null; } else { b.innerHTML = H.faces[e]; Rig.refresh(H.rig); } }
     if (H.rig.t || H.ht) Rig.turn(H.rig, H.rig.t || 0, H.ht || 0);

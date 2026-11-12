@@ -12,7 +12,9 @@
   function boxOf(me) { var s = me.querySelector('svg'); return { x: +s.getAttribute('x'), y: +s.getAttribute('y'), w: +s.getAttribute('width'), h: +s.getAttribute('height') }; }
   function mid(H) { var a = L.handAt(H, 'L'), b = L.handAt(H, 'R'); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
   /* the still picture is already drawn (scenes.js): find your still avatar in it – no avatar (switched off), no living scene */
-  function mount(svg) { if (!svg || L.still() || !window.Rig || !window.Avatar) return null; var me = svg.querySelector('.sc-me'); if (!me || !me.querySelector('svg')) return null; return { svg: svg, me: me, box: boxOf(me) }; }
+  function oldLive() { try { return localStorage.getItem('cmd.oldLive') === '1'; } catch (e) { return false; } }
+  /* F1b: with the 2.5D figure the old living scenes (flat rig) stay off until F2 redoes each page in 2.5D; tests of the old engine set cmd.oldLive */
+  function mount(svg) { if (!svg || L.still() || !window.Rig || !window.Avatar || (window.Fig25 && !oldLive())) return null; var me = svg.querySelector('.sc-me'); if (!me || !me.querySelector('svg')) return null; return { svg: svg, me: me, box: boxOf(me) }; }
   function look(H, P) { H.gaze = P; }
   /* props, drawn at the size of a 0.5-scale avatar; [drawing, grip point, named points] */
   var O = {

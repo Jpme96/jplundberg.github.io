@@ -5,7 +5,7 @@
    Made-up data only. */
 const { open, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
-  const { b, p } = await open(393);
+  const { b, p } = await open(393, { oldLive: 1 });
   await p.evaluate(() => { ['food', 'wish', 'travel', 'people', 'shop'].forEach(k => { try { Features.set(k, true); } catch (e) {} });
     const d = new Date(), k = n => { const x = new Date(d.getTime() + n * 864e5); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
     const t = Features.tools(); t.people = [{ id: 'sp1', name: 'Ada Test', rel: 'friend' }, { id: 'sp2', name: 'Bo Test', rel: 'family' }, { id: 'sp3', name: 'Cy Test', rel: 'work' }]; Features.saveTools(t);
