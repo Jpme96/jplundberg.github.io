@@ -12,7 +12,37 @@
 (function () {
   'use strict';
   var NS = 'http://www.w3.org/2000/svg';
-  function el(n, a) { var e = document.createElementNS(NS, n); e.__sc = 1; for (var k in a) e.setAttribute(k, a[k]); return e; }   /* __sc: page observers skip changes in scenes (diag.js) */
+  /* while a frame is drawn (SP set), elements come from the scene's pool in the order they're asked for: the same call
+     next frame gets the same element back. The frame is built off the page with its attributes kept in _a only, then
+     patch() writes just the differences into the live picture – see paint */
+  var SP = null;
+  function el(n, a) {
+    if (SP) {
+      var e = SP.l[SP.i], sig = n; for (var k0 in a) sig += ' ' + k0;
+      if (e && e._sig === sig) { e._a = a; if (e.firstChild) e.textContent = ''; SP.i++; return e; }
+      e = document.createElementNS(NS, n); e.__sc = 1; e._a = a; e._sig = sig; SP.l[SP.i++] = e; return e;   /* the attributes live in _a only: this copy is never shown, patch() writes them into the picture */
+    }
+    var x = document.createElementNS(NS, n); x.__sc = 1; for (var k in a) x.setAttribute(k, a[k]); return x;   /* __sc: page observers skip changes in scenes (diag.js) */
+  }
+  /* the live picture L made equal to the frame V just built off the page: attributes only where they changed (L._v
+     remembers what L has), children matched in order (same tag and attribute names), new ones inserted, leftovers removed.
+     A node marked __static (cached art made with innerHTML) is copied once and then only its own attributes follow. */
+  function patch(L, V) {
+    var a = V._a, c = L._v || (L._v = {}), k, v;
+    if (a) { for (k in a) { v = a[k]; if (c[k] !== v) { L.setAttribute(k, v); c[k] = v; } } }
+    else { var at = V.attributes; for (var i = 0; i < at.length; i++) { k = at[i].name; v = at[i].value; if (c[k] !== v) { L.setAttribute(k, v); c[k] = v; } } }
+    if (V.__static) { if (L.__src !== V) { L.innerHTML = V.innerHTML; L.__src = V; } return; }
+    var vc = V.firstChild;
+    if (vc && vc.nodeType === 3 && !vc.nextSibling) { if (L._t !== vc.data) { L.textContent = vc.data; L._t = vc.data; } return; }
+    if (L._t != null) { L.textContent = ''; L._t = null; }
+    var lc = L.firstChild;
+    for (; vc; vc = vc.nextSibling) {
+      if (vc.nodeType !== 1) continue;
+      if (!lc || lc.nodeName !== vc.nodeName || lc._sig !== vc._sig) { var n = document.createElementNS(NS, vc.nodeName); n.__sc = 1; n._sig = vc._sig; L.insertBefore(n, lc || null); patch(n, vc); }
+      else { patch(lc, vc); lc = lc.nextSibling; }
+    }
+    while (lc) { var nx = lc.nextSibling; L.removeChild(lc); lc = nx; }
+  }
   function add(par, n, a) { var x = el(n, a); par.appendChild(x); return x; }
   function txt(par, a, s) { var x = add(par, 'text', a); x.textContent = s; return x; }
   function E(f) { f = Math.max(0, Math.min(1, f)); return f * f * (3 - 2 * f); }
@@ -61,7 +91,7 @@
   function LIFE(st, pose, w, who) {
     who = who || 'me'; w = Math.max(0, Math.min(1, w || 0));
     if (st.still) return st['ph' + who] || 0;
-    pose.breath = 1.1 * Math.sin(st.now / 700 + (who === 'me' ? 0 : 1.7));
+    pose.breath = Math.round(11 * Math.sin(st.now / 700 + (who === 'me' ? 0 : 1.7))) / 10;   /* in steps of 0.1 (a twentieth of a pixel): frames where nothing moves are then the same and cost nothing (Fig25.draw keeps them) */
     var b = 'bl' + who; if (st[b] == null) st[b] = 1.5 + Math.random() * 3; st[b] -= st.dt;
     if (st[b] < 0) { pose.blink = true; if (st[b] < -.13) st[b] = 2.5 + Math.random() * 3; }
     st['ph' + who] = (st['ph' + who] || 0) + st.dt * 6.2 * w; return st['ph' + who];
@@ -118,7 +148,10 @@
     var k = o.k || .47, gy = o.gy, H;
     if (!o.noShadow) add(par, 'ellipse', { cx: o.shX != null ? o.shX : o.cx, cy: (o.ground != null ? o.ground : gy) + .5, rx: 15 * k / .5 * (o.shS || 1), ry: 3 * k / .5, fill: 'rgba(0,0,0,.25)' });
     var who = o.who || (typeof o.look === 'string' ? o.look : 'me'), pk = 'pool' + who, st = o.st;   /* each person their own pool */ if (st && !st[pk]) st[pk] = Fig25.pool();
-    var lk = typeof o.look === 'string' || !o.look ? (LOOKS[o.look || 'me'] ? LOOKS[o.look || 'me']() : myLook()) : o.look;
+    var lk = o.look && typeof o.look !== 'string' ? o.look : null;
+    if (!lk) { var lkey = o.look || 'me', mem = st && SP ? (st.__lk = st.__lk || {}) : null, tn = Date.now();   /* inside a frame the look is read once a second, not 60 times (it parses the saved settings) */
+      if (mem && mem[lkey] && tn - mem[lkey].t < 1000) lk = mem[lkey].v;
+      else { lk = LOOKS[lkey] ? LOOKS[lkey]() : myLook(); if (mem) mem[lkey] = { v: lk, t: tn }; } }
     /* an everyday action (F3) on you: from where the page left you, turned to the front, arms and a prop; at rest a look round now and then */
     var gx = [], face = o.face || 0;
     if (st && who === 'me' && !o.noGen && st.gen && GEN[st.gen.id]) {
@@ -132,7 +165,7 @@
       if (st.lookAt != null && Math.abs(face) < 40 && performance.now() - st.lookT < 1500) { var want = CL((st.lookAt - o.cx) / 160 + .5) * 60 - 30; st.lookF = LERP(st.lookF || 0, want, .15); face += st.lookF; }   /* he turns a little toward your finger or pointer */
       else if (st.lookF) { st.lookF = LERP(st.lookF, 0, .1); face += st.lookF; if (Math.abs(st.lookF) < .3) st.lookF = 0; }
     }
-    var parts = Fig25.draw(lk, face * Math.PI / 180, o.cx, gy, k, o.ph || 0, Math.max(0, Math.min(1, o.w || 0)), o.pose || {}, st ? st[pk] : null);
+    var parts = Fig25.draw(lk, face * Math.PI / 180, o.cx, gy, k, o.ph || 0, Math.max(0, Math.min(1, o.w || 0)), o.pose || {}, st && SP ? st[pk] : null);   /* the pool only inside a frame (paint): its copies are patched into the picture */
     var hd = Fig25.hand(); H = { near: hd.near, far: hd.far, s1: hd.s1, sm: hd['s-1'] };
     if (st) (st.figs = st.figs || {})[who] = { t: st.t, cx: o.cx, gy: gy, near: hd.near && [hd.near.X, hd.near.Y], far: hd.far && [hd.far.X, hd.far.Y], R: hd.s1 && [hd.s1.X, hd.s1.Y], L: hd['s-1'] && [hd['s-1'].X, hd['s-1'].Y] };   /* R/L: the same hand whichever way he faces */   /* for the flow test */
     if (o.items) parts = parts.concat(o.items(H) || []);
@@ -184,8 +217,10 @@
     function paint() {
       R.lp = performance.now();
       if (!back || !back.isConnected) { while (svg.firstChild) svg.removeChild(svg.firstChild); back = add(svg, 'g', { class: 'sc25-back' }); if (spec.back) spec.back(back, st); front = add(svg, 'g', { class: 'sc25-front' }); }
-      front.textContent = '';   /* one step instead of removing each child */
-      try { spec.render(front, st.t, st); if (spec.hits) spec.hits.forEach(function (h) { add(front, 'rect', { x: h[0], y: h[1], width: h[2], height: h[3], fill: 'transparent', class: 'hs-part sc25-hit', 'data-scgo': h[4] }); }); }   /* tap areas over the things that open a card */ catch (e) { R.dead = true; if (window.Diag && Diag.log) Diag.log('scene', 'scene25: ' + (e && e.message), 'scene25.js'); throw e; }
+      /* the frame is built off the page from pooled elements, then only what changed is written into the picture */
+      var vf = st.__vf || (st.__vf = document.createElementNS(NS, 'g')); vf.textContent = '';
+      SP = st.__sp || (st.__sp = { l: [], i: 0 }); SP.i = 0;
+      try { spec.render(vf, st.t, st); if (spec.hits) spec.hits.forEach(function (h) { add(vf, 'rect', { x: h[0], y: h[1], width: h[2], height: h[3], fill: 'transparent', class: 'hs-part sc25-hit', 'data-scgo': h[4] }); }); SP = null; patch(front, vf); }   /* tap areas over the things that open a card */ catch (e) { SP = null; R.dead = true; if (window.Diag && Diag.log) Diag.log('scene', 'scene25: ' + (e && e.message), 'scene25.js'); throw e; }
     }
     function wake() { if (R.dead || R.raf || st.still) return; if (R.vis && !document.hidden) R.raf = requestAnimationFrame(frame); }
     /* what plays next: the page's own action and the everyday ones take turns, never the same twice in a row */

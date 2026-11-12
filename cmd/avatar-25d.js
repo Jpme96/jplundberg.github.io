@@ -15,17 +15,20 @@
   var NS = 'http://www.w3.org/2000/svg';
   var TOP_STD = '#2f7a55';
   var L = {}, C = {}, shadeOn = true;
-  function dk(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
+  var DK = {};   /* darker shades, worked out once per colour */
+  function dk(h, f) { var key = h + '|' + f, m = DK[key]; if (m) return m; return (DK[key] = dk0(h, f)); }
+  function dk0(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
   function colours() { C = { skin: L.skin, skin2: dk(L.skin, .87), hair: L.hairC, top: L.topC, top2: dk(L.topC, .8), legs: L.legsC, legs2: dk(L.legsC, .82), shoe: L.shoeC, eye: '#1b1f27', mouth: '#8a4a3a' }; }
-  /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order and only
-     changes the attributes that changed – a living scene draws you 60 times a second (Scene25), and making ~80 new
-     elements every frame was most of the time */
+  /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order. Pooled
+     elements are a copy built off the page (their attributes only in _a); Scene25's patch() writes what changed into
+     the live picture – a living scene draws you 60 times a second, and making or re-adding ~80 elements every frame
+     was most of the time. A pool is only for Scene25 frames (FIG inside render). */
   var POOL = null, PN = 0;
   function el(n, a) {
     if (POOL) {
       var e = POOL.l[POOL.i], sig = n; for (var k0 in a) sig += ' ' + k0;
-      if (e && e._sig === sig) { var o = e._a; for (var k in a) { var v = a[k]; if (o[k] !== v) { e.setAttribute(k, v); o[k] = v; } } while (e.firstChild) e.removeChild(e.firstChild); POOL.i++; return e; }
-      e = document.createElementNS(NS, n); e.__sc = 1; e._a = {};   /* __sc: a live-scene node (page observers skip it, diag.js) */ for (var k2 in a) { e.setAttribute(k2, a[k2]); e._a[k2] = a[k2]; } e._sig = sig; POOL.l[POOL.i++] = e; return e;
+      if (e && e._sig === sig) { e._a = a; if (e.firstChild) e.textContent = ''; POOL.i++; return e; }
+      e = document.createElementNS(NS, n); e.__sc = 1; e._a = a; e._sig = sig; POOL.l[POOL.i++] = e; return e;   /* __sc: a live-scene node (page observers skip it, diag.js); the attributes live in _a – Scene25's patch() writes them into the picture */
     }
     var x = document.createElementNS(NS, n); for (var k3 in a) x.setAttribute(k3, a[k3]); return x;
   }
@@ -34,7 +37,8 @@
   /* the light: from the upper left – a soft highlight and a shade, the same whichever way he faces. One copy per page. */
   var DEFS_HTML = '<radialGradient id="shHead" cx="34%" cy="30%" r="78%"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>' +
     '<linearGradient id="shBody" x1="0" y1="0" x2="1" y2=".25"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>';
-  function ensureDefs() { if (document.getElementById('shHead')) return; var s = document.createElementNS(NS, 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.setAttribute('aria-hidden', 'true'); s.style.position = 'absolute'; var d = document.createElementNS(NS, 'defs'); d.innerHTML = DEFS_HTML; s.appendChild(d); (document.body || document.documentElement).appendChild(s); }
+  var DEFS = null;   /* the defs element once made: checking .isConnected is much cheaper than a lookup by id every frame */
+  function ensureDefs() { if (DEFS && DEFS.isConnected) return; DEFS = document.getElementById('shHead'); if (DEFS) return; var s = document.createElementNS(NS, 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.setAttribute('aria-hidden', 'true'); s.style.position = 'absolute'; var d = document.createElementNS(NS, 'defs'); d.innerHTML = DEFS_HTML; s.appendChild(d); (document.body || document.documentElement).appendChild(s); DEFS = d.firstChild; }
 
   /* a cmd look → what the 2.5D body needs. Choices that share a shape are drawn by the same part. */
   var TOPS = { tee: { bare: 'short' }, tank: { bare: 'arms' }, polo: { collar: 1, bare: 'short' }, sweater: {}, knit: {}, hoodie: {}, shirt: {}, jersey: { bare: 'short', stripe: 1 }, kit: { bare: 'short', stripe: 1 },
@@ -85,7 +89,8 @@
   }
 
   function draw(look, a, cx, gy, k, ph, w, pose) {
-    pose = pose || {}; L = look25(look); colours(); k *= L.hs; w = Math.max(0, Math.min(1, w || 0)); ph = ph || 0;
+    pose = pose || {}; var lc = look && look.__f25; if (lc) { L = lc.L; C = lc.C; } else { L = look25(look); colours(); if (look && typeof look === 'object') try { Object.defineProperty(look, '__f25', { value: { L: L, C: C } }); } catch (e) {} }   /* the same look object next frame: worked out once */
+    k *= L.hs; w = Math.max(0, Math.min(1, w || 0)); ph = ph || 0;
     var BW = L.bw;   /* build: how wide the body and arms are */
     function nearSide(sd) { var zz = -sd * Math.sin(a); return zz > 1e-6 || (Math.abs(zz) <= 1e-6 && sd < 0); }
     var parts = [];   /* [depth, element] – drawn back to front */
@@ -106,9 +111,9 @@
       r1 *= k; r2 *= k; var dx = p2.X - p1.X, dy = p2.Y - p1.Y, d = Math.hypot(dx, dy) || .001, ux = dx / d, uy = dy / d, nx = -uy, ny = ux;
       var sn = Math.max(-.95, Math.min(.95, (r1 - r2) / d)), cs = Math.sqrt(1 - sn * sn);
       var ax = nx * cs + ux * sn, ay = ny * cs + uy * sn, bx = -nx * cs + ux * sn, by = -ny * cs + uy * sn;
-      var f = function (v) { return v.toFixed(1); };
-      var dd = 'M' + f(p1.X + ax * r1) + ' ' + f(p1.Y + ay * r1) + ' L' + f(p2.X + ax * r2) + ' ' + f(p2.Y + ay * r2) + ' A' + f(r2) + ' ' + f(r2) + ' 0 0 0 ' + f(p2.X + bx * r2) + ' ' + f(p2.Y + by * r2) +
-        ' L' + f(p1.X + bx * r1) + ' ' + f(p1.Y + by * r1) + ' A' + f(r1) + ' ' + f(r1) + ' 0 0 0 ' + f(p1.X + ax * r1) + ' ' + f(p1.Y + ay * r1) + ' Z';
+      var r1s = r1.toFixed(1), r2s = r2.toFixed(1), s1 = (p1.X + ax * r1).toFixed(1) + ' ' + (p1.Y + ay * r1).toFixed(1);
+      var dd = 'M' + s1 + ' L' + (p2.X + ax * r2).toFixed(1) + ' ' + (p2.Y + ay * r2).toFixed(1) + ' A' + r2s + ' ' + r2s + ' 0 0 0 ' + (p2.X + bx * r2).toFixed(1) + ' ' + (p2.Y + by * r2).toFixed(1) +
+        ' L' + (p1.X + bx * r1).toFixed(1) + ' ' + (p1.Y + by * r1).toFixed(1) + ' A' + r1s + ' ' + r1s + ' 0 0 0 ' + s1 + ' Z';
       parts.push([z, el('path', { d: dd, fill: col })]);
     }
     var CHAIR = L.aid === 'chair', SEAT = CHAIR ? 38 : 0, CRUTCH = L.aid === 'crutches';
@@ -223,6 +228,16 @@
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     var hc = P(0, 52 + hb6, 0), R = 22 * k;
+    /* a shape that only moves with the head (the hair): its path is built round the head's middle and kept from the last
+       frame while the turn, the size and the hair are the same; only its place (a translate) changes as he breathes or walks */
+    var MEMO = POOL ? (POOL.memo || (POOL.memo = {})) : null;
+    function headPath(name, key, mk) {
+      if (!MEMO) return { d: poly(mk()) };   /* a still picture: drawn as before, in place */
+      var m = MEMO && MEMO[name], d;
+      if (m && m.key === key) d = m.d;
+      else { var pts = mk(), s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + (pts[i][0] - hc.X).toFixed(1) + ' ' + (pts[i][1] - hc.Y).toFixed(1); d = s + ' Z'; if (MEMO) MEMO[name] = { key: key, d: d }; }
+      return { d: d, transform: 'translate(' + hc.X.toFixed(1) + ' ' + hc.Y.toFixed(1) + ')' };
+    }
     function behind(x, y, z) { return rot(x, z, a).z; }
     /* a box (x, y, z ranges) seen from this side, as a rounded shape: long hair, a hood */
     function box(x0, x1, y0, y1, z0, z1, fill, depth, rr) {
@@ -236,7 +251,7 @@
     head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + (L.faceS === 'long' ? 1.5 * k : 0), rx: R * (L.faceS === 'round' ? 1.06 : L.faceS === 'long' ? .95 : 1), ry: R * (L.faceS === 'long' ? 1.08 : 1), fill: C.skin }));
     function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
     function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
-    function poly(pts) { return 'M' + pts.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z'; }
+    function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
     /* beard: a band round the lower face, only where the face looks your way */
     if (L.beard === 'full' || L.beard === 'short' || L.beard === 'stubble') {
       var up = [], lo = [], top0 = L.beard === 'full' ? 57 : L.beard === 'short' ? 59 : 60;
@@ -274,6 +289,8 @@
       for (var mj = 12; mj >= 0; mj--) { var mt2 = Math.PI * (.2 + .6 * mj / 12), mp2 = P(0, 52 - Math.sin(mt2) * 21 + hb6, -Math.cos(mt2) * 22); mh.push([mp2.X, mp2.Y]); }
       parts.push([0.52, el('path', { d: poly(mh), fill: C.hair, stroke: C.hair, 'stroke-width': (7 * k).toFixed(1), 'stroke-linejoin': 'round' })]); H = null; }
     if (H && !hatCovers) {
+      var hkey = L.hair + '|' + a.toFixed(4) + '|' + k.toFixed(4) + '|' + H.join(',');
+      head.appendChild(el('path', Object.assign(headPath('hair', hkey, function () {
       var pts = [], N = 32, RR = R * H[2];
       for (var i = 0; i <= N; i++) {
         var X = -1 + 2 * i / N, phi = Math.asin(X), facing = Math.cos(phi - a), side = Math.sin(phi - a);
@@ -283,13 +300,13 @@
         pts.push([hc.X + X * RR, hc.Y + (y - 52) * k]);
       }
       for (var j = 1; j < N; j++) { var t = Math.PI * j / N, bump = L.hair === 'waves' ? 1 + .035 * Math.abs(Math.sin(t * 6)) : L.hair === 'curly' || L.hair === 'afro' ? 1 + (L.hair === 'afro' ? .07 : .05) * Math.abs(Math.sin(t * 9)) : L.hair === 'dreads' ? 1 + .04 * Math.abs(Math.sin(t * 14)) : 1; pts.push([hc.X + Math.cos(t) * RR * bump, hc.Y - Math.sin(t) * R * H[3] * bump]); }
-      head.appendChild(el('path', { d: poly(pts), fill: C.hair }));
+      return pts; }), { fill: C.hair })));
       /* a swept fringe: the hair falls a little over the forehead on one side, wrapping round as he turns */
       if (L.hair === 'quiff') { var qf = P(0, 26 + hb6, 14), qb = P(0, 30 + hb6, -2); head.appendChild(el('ellipse', { cx: (qf.X + qb.X) / 2, cy: (qf.Y + qb.Y) / 2, rx: Math.max(4 * k, Math.abs(qf.X - qb.X) / 2 + 8 * k * Math.abs(Math.cos(a))), ry: 7 * k, fill: C.hair })); }
-      if (L.hair === 'short' || L.hair === 'side' || L.hair === 'bangs' || L.hair === 'waves' || L.hair === 'undercut') { var fp = [], fN = 10;
+      if (L.hair === 'short' || L.hair === 'side' || L.hair === 'bangs' || L.hair === 'waves' || L.hair === 'undercut') { var fN = 10, fr = headPath('fringe', hkey, function () { var fp = [];
         for (var fi = 0; fi <= fN; fi++) { var fph = -.9 + 1.5 * fi / fN, top = onHead(fph, 33), low = onHead(fph, 39 + 5 * Math.sin(Math.PI * fi / fN)); if (top.f > -.1) fp.push([top.x, top.y]); }
         for (var fj = fN; fj >= 0; fj--) { var fph2 = -.9 + 1.5 * fj / fN, low2 = onHead(fph2, 38.5 + 6 * Math.sin(Math.PI * fj / fN) * (fj / fN)); if (low2.f > -.1) fp.push([low2.x, low2.y]); }
-        if (fp.length > 4) head.appendChild(el('path', { d: poly(fp), fill: C.hair })); }
+        return fp.length > 4 ? fp : []; }); if (fr.d !== 'M Z') head.appendChild(el('path', Object.assign(fr, { fill: C.hair }))); }
     }
     /* glasses: a frame round each eye that can be seen, the bridge between them, the arm back to the ear */
     if (L.glasses !== 'none') {
@@ -450,7 +467,13 @@
   }
   window.Fig25 = {
     /* pool: from Fig25.pool() – the same figure drawn again each frame reuses its elements (see el) */
-    draw: function (look, a, cx, gy, k, ph, w, pose, pool) { ensureDefs(); HAND = {}; POOL = pool || null; if (POOL) POOL.i = 0; try { return draw(look, a, cx, gy, k, ph, w, pose); } finally { POOL = null; } },
+    draw: function (look, a, cx, gy, k, ph, w, pose, pool) {
+      ensureDefs();
+      /* with a pool: the same look and the same pose as last frame (he's resting between breaths) – the same parts again, nothing worked out */
+      var key = pool ? a + '|' + cx + '|' + gy + '|' + k + '|' + ph + '|' + w + '|' + JSON.stringify(pose || {}) : null;
+      if (pool && pool.key === key && pool.look === look && pool.parts) { HAND = pool.hand; return pool.parts.slice(); }
+      HAND = {}; POOL = pool || null; if (POOL) POOL.i = 0;
+      try { var parts = draw(look, a, cx, gy, k, ph, w, pose); if (pool) { pool.key = key; pool.look = look; pool.parts = parts.slice(); pool.hand = HAND; } return parts; } finally { POOL = null; } },
     pool: function () { return { l: [], i: 0, id: 'f25p' + (++PN) }; },
     petG: function (kind, a, x, gy, k) { ensureDefs(); return pet(kind, a * Math.PI / 180, x, gy, k, 0, 0).map(function (p) { return p[1].outerHTML; }).join(''); },
     svg: svg, group: group, pet: pet, look: look25, HOLDS: HOLDS, hand: function () { return HAND; }, TOP_STD: TOP_STD

@@ -14,8 +14,9 @@ const BUDGET_KB = { total: 1592 };      /* biggest page today ≈ 1589 kB (Finan
    +1–3 kB on the scene pages (2026-11-12, F3 part 2): each page's own actions (a video call, the bottle, dusting, a note, a sit on the rock, the bench …), long press, looking at your finger.
    +25 kB on every page (2026-11-12, D 24): texts by name – the pieces of text between tags got their own named span and the labels passed to helpers became I18N.k(name, English); the old sentence list (Norwegian only) shrank by 9 kB.
    −220 kB on the pages that don't draw them (2026-11-12, F4 home-life split): home-life, people-plus, food-plus, money-plus, fin-tools, home-shared and
-   life-pages load their page parts only on House, People, Food, Work, Finances, Habits, Travel and Wishlist (test home-split). */
-const PAGE_KB = { 'index.html': 1364, 'admin/index.html': 1287, 'calendar/index.html': 1215, 'finance/index.html': 1591, 'food/index.html': 1295, 'goals/index.html': 1229, 'habits/index.html': 1273, 'house/index.html': 1583, 'papers/index.html': 1244, 'people/index.html': 1293, 'travel/index.html': 1366, 'wish/index.html': 1313, 'work/index.html': 1337 };
+   life-pages load their page parts only on House, People, Food, Work, Finances, Habits, Travel and Wishlist (test home-split).
+   +1 kB on some pages (2026-11-12, F4 faster frames): scene25's patch() – a frame is built off the page and only the changes are written. */
+const PAGE_KB = { 'index.html': 1366, 'admin/index.html': 1287, 'calendar/index.html': 1215, 'finance/index.html': 1591, 'food/index.html': 1295, 'goals/index.html': 1229, 'habits/index.html': 1275, 'house/index.html': 1585, 'papers/index.html': 1246, 'people/index.html': 1293, 'travel/index.html': 1366, 'wish/index.html': 1313, 'work/index.html': 1337 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

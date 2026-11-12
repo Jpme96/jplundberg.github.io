@@ -187,7 +187,7 @@
     var slots = [{ k: 'leave', w: PA }].concat(legs.map(function (m) { return { k: 'ride', m: m }; }), [{ k: 'arrive', w: PB }, { k: 'leave', w: PB }], legs.slice().reverse().map(function (m) { return { k: 'ride', m: m }; }), [{ k: 'arrive', w: PA }]);
     var SL = 5, SC = JOURNEY.SC, GY = 200, K = JOURNEY.K, cache = {};
     /* art drawn in the old 240-wide pictures, put on our ground at life size */
-    function art(key, html, x, y) { var n = cache[key]; if (!n) { n = cache[key] = document.createElementNS('http://www.w3.org/2000/svg', 'g'); n.innerHTML = html; } n.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + SC + ')'); return n; }
+    function art(key, html, x, y) { var n = cache[key]; if (!n) { n = cache[key] = document.createElementNS('http://www.w3.org/2000/svg', 'g'); n.innerHTML = html; n.__static = 1; }   /* __static: copied into the picture once, then only its place follows */ n.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(' + SC + ')'); return n; }
     var Y0 = GY - 117 * SC;   /* the art's ground line (y 117) on ours */
     function place(g, work, cx, lit) {
       g.appendChild(art('pl' + work, A.place(work, 0, 'none'), cx - 191 * SC, Y0));

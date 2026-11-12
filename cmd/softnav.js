@@ -76,7 +76,8 @@
     if (typeof fn === 'function' && byPage()) { var e0 = epoch, f = fn, args = [].slice.call(arguments, 2); return sT.call(window, function () { if (e0 === epoch) f.apply(window, args); }, ms); }
     return sT.apply(window, arguments);
   };
-  if (rAF) window.requestAnimationFrame = function (fn) { if (byPage()) { var e0 = epoch; return rAF.call(window, function (t) { if (e0 === epoch) fn(t); }); } return rAF.call(window, fn); };
+  if (rAF) window.requestAnimationFrame = function (fn) { var bp = fn && fn.__bp; if (bp == null) { bp = byPage() ? 1 : 0; if (fn && typeof fn === 'function') try { fn.__bp = bp; } catch (e) {} }   /* a scene asks for the same frame function 60 times a second: who made it is worked out once */
+    if (bp) { var e0 = epoch; return rAF.call(window, function (t) { if (e0 === epoch) fn(t); }); } return rAF.call(window, fn); };
   ['MutationObserver', 'ResizeObserver', 'IntersectionObserver'].forEach(function (n) {
     var O = window[n]; if (!O) return;
     var W = function (cb) { var o = new O(cb); if (byPage()) rec.obs.push(o); return o; };
