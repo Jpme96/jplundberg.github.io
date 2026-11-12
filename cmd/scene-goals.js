@@ -9,7 +9,18 @@
     var add = S.add, el = S.el, E = S.E, CL = S.CL, SEG = S.SEG, LERP = S.LERP, MIX = S.MIX, AT = S.AT, B = S.B, GO = S.GO, HOLD = S.HOLD, SIDE = S.SIDE, LEG = S.LEG,
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
-    return S.run(svg, { gen: { out: true },
+    return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      function YG(x) { return 200 - 92 * E(CL((x - 110) / 220)); }
+      function KS(x) { return .5 - .17 * E(CL((x - 110) / 220)); }
+      add(g, 'path', { d: 'M-10 170 L70 90 L120 130 L190 60 L260 140 L300 110 L410 170 Z', fill: 'rgba(255,255,255,.07)' });
+      add(g, 'path', { d: 'M176 74 L190 60 L204 74 L197 72 L190 76 L183 72 Z', fill: 'rgba(255,255,255,.35)' });
+      var hp = 'M0 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L400 108 L400 240 L0 240 Z';
+      add(g, 'path', { d: hp, fill: '#2f5a3c' });
+      var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L370 108';
+      add(g, 'path', { d: tr, fill: 'none', stroke: '#c9b48e', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
+      [[176, '#3987e5'], [252, '#e8743b']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#d7dee3', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
+      }, gen: { out: true },
       /* the page's own action (F3): a rest on the rock at the top, looking out over the view */
       acts: [{ id: 'sit', len: 6.6, w: function () { return 2; } }],
       hits: [[150, 80, 250, 120, 'glActive']], len: 10.6, data: data, render: function (sv, t, st) {
@@ -19,13 +30,6 @@
       function YG(x) { return 200 - 92 * E(CL((x - 110) / 220)); }
       function KS(x) { return .5 - .17 * E(CL((x - 110) / 220)); }
       /* far mountains, the trail hill, little flags for the other goals */
-      add(g, 'path', { d: 'M-10 170 L70 90 L120 130 L190 60 L260 140 L300 110 L410 170 Z', fill: 'rgba(255,255,255,.07)' });
-      add(g, 'path', { d: 'M176 74 L190 60 L204 74 L197 72 L190 76 L183 72 Z', fill: 'rgba(255,255,255,.35)' });
-      var hp = 'M0 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L400 108 L400 240 L0 240 Z';
-      add(g, 'path', { d: hp, fill: '#2f5a3c' });
-      var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L370 108';
-      add(g, 'path', { d: tr, fill: 'none', stroke: '#c9b48e', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
-      [[176, '#3987e5'], [252, '#e8743b']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#d7dee3', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
       if (st.pact) { cx = 335; face = 0; } else if (t < .4) face = 90 * E(SEG(t, 0, .4)); else if (t < 7.0) { face = 90; cx = LERP(60, 335, SEG(t, .4, 7.0)); w = Math.min(1, (t - .4) / .2, (7.0 - t) / .2); } else { face = 90; cx = 335; }
       var gy = YG(cx), k = KS(cx), s = k / .5, nh = SIDE(1, 90), CARRY = B(96, 18),   /* the flag in his far hand: the pole rests behind him, not across his chest */ UPP = [cx + 15 * s, gy - 74 * s], DN = [cx + 15 * s, gy - 30 * s], pf = 0;
       var sitF = 0;

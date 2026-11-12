@@ -12,7 +12,7 @@
 (function () {
   'use strict';
   var NS = 'http://www.w3.org/2000/svg';
-  function el(n, a) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); return e; }
+  function el(n, a) { var e = document.createElementNS(NS, n); e.__sc = 1; for (var k in a) e.setAttribute(k, a[k]); return e; }   /* __sc: page observers skip changes in scenes (diag.js) */
   function add(par, n, a) { var x = el(n, a); par.appendChild(x); return x; }
   function txt(par, a, s) { var x = add(par, 'text', a); x.textContent = s; return x; }
   function E(f) { f = Math.max(0, Math.min(1, f)); return f * f * (3 - 2 * f); }
@@ -37,10 +37,12 @@
   function LEG(sd, deg) { return SIDE(sd, deg) === 'near' ? 'legNear' : 'legFar'; }
   function grp(x, y, deg, sc) { return el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')' + (deg ? ' rotate(' + deg.toFixed(1) + ')' : '') + (sc ? ' scale(' + sc.toFixed(3) + ')' : '') }); }
   /* the wall clock: the real time */
-  function CLOCK(par, x, y, r) {
+  /* part: 'face' (drawn once into the still layer), 'hands' (each frame), or both */
+  function CLOCK(par, x, y, r, part) {
     var d = new Date(), hh = (d.getHours() % 12 + d.getMinutes() / 60) * 30, mm = (d.getMinutes() + d.getSeconds() / 60) * 6, ss = d.getSeconds() * 6;
-    add(par, 'circle', { cx: x, cy: y, r: r, fill: '#f4f1ea', stroke: '#3a3f4a', 'stroke-width': 2.4 });
+    if (part !== 'hands') { add(par, 'circle', { cx: x, cy: y, r: r, fill: '#f4f1ea', stroke: '#3a3f4a', 'stroke-width': 2.4 });
     for (var i = 0; i < 12; i++) { var a0 = i * Math.PI / 6; add(par, 'circle', { cx: (x + Math.sin(a0) * r * .8).toFixed(1), cy: (y - Math.cos(a0) * r * .8).toFixed(1), r: .9, fill: '#8a8f99' }); }
+    } if (part === 'face') return;
     [[hh, r * .5, 2.4, '#2a2d33'], [mm, r * .76, 1.6, '#2a2d33'], [ss, r * .8, .8, '#d93a3a']].forEach(function (q) { var a = q[0] * Math.PI / 180; add(par, 'line', { x1: x, y1: y, x2: (x + Math.sin(a) * q[1]).toFixed(1), y2: (y - Math.cos(a) * q[1]).toFixed(1), stroke: q[3], 'stroke-width': q[2], 'stroke-linecap': 'round' }); });
     add(par, 'circle', { cx: x, cy: y, r: 1.6, fill: '#2a2d33' });
   }
@@ -182,7 +184,7 @@
     function paint() {
       R.lp = performance.now();
       if (!back || !back.isConnected) { while (svg.firstChild) svg.removeChild(svg.firstChild); back = add(svg, 'g', { class: 'sc25-back' }); if (spec.back) spec.back(back, st); front = add(svg, 'g', { class: 'sc25-front' }); }
-      while (front.firstChild) front.removeChild(front.firstChild);
+      front.textContent = '';   /* one step instead of removing each child */
       try { spec.render(front, st.t, st); if (spec.hits) spec.hits.forEach(function (h) { add(front, 'rect', { x: h[0], y: h[1], width: h[2], height: h[3], fill: 'transparent', class: 'hs-part sc25-hit', 'data-scgo': h[4] }); }); }   /* tap areas over the things that open a card */ catch (e) { R.dead = true; if (window.Diag && Diag.log) Diag.log('scene', 'scene25: ' + (e && e.message), 'scene25.js'); throw e; }
     }
     function wake() { if (R.dead || R.raf || st.still) return; if (R.vis && !document.hidden) R.raf = requestAnimationFrame(frame); }

@@ -10,6 +10,14 @@
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
     return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 6, fill: 'rgba(255,255,255,.08)', stroke: 'rgba(255,255,255,.25)' });
+      [14, 22, 18, 30, 26, 38, 44].forEach(function (v, i) { add(g, 'rect', { x: 56 + i * 11, y: 94 - v, width: 7, height: v, rx: 2, fill: i > 3 ? '#2fae6a' : 'rgba(255,255,255,.35)' }); });
+      [312, 368].forEach(function (x) { add(g, 'rect', { x: x - 2, y: 116, width: 4, height: 84, fill: '#5b636c' }); });
+      add(g, 'line', { x1: 296, y1: 126, x2: 384, y2: 126, stroke: '#9aa3ad', 'stroke-width': 3, 'stroke-linecap': 'round' });
+      [300, 380].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 114, width: 6, height: 24, rx: 2, fill: '#2a2d33' }); });
+      FLOOR(g); add(g, 'ellipse', { cx: 200, cy: 199, rx: 52, ry: 7, fill: '#3a7d6b', opacity: .55 });
+      },
       /* the page's own actions (F3): a drink from the bottle and a big sigh, jogging on the spot then a look at the watch, a stretch down to the toes */
       acts: [{ id: 'bottle', len: 8.2, w: function () { return 2; } }, { id: 'jog', len: 5.6, w: function () { return 1.5; } }, { id: 'toes', len: 5.2, w: function () { return 1.5; } }],
       hits: [[42, 40, 98, 62, 'training'], [150, 168, 96, 32, 'training'], [252, 166, 18, 34, 'ahealth'], [290, 108, 90, 92, 'training']], len: 9.6, data: data, render: function (sv, t, st) {
@@ -18,12 +26,6 @@
       var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, cs = Math.cos(face * Math.PI / 180);
       function DB(sd) { return [200 + sd * 13 + 9, 193]; }   /* the dumbbells stay by the mat */
       /* the room: a streak chart on the wall, the rack with the barbell, the mat, a bottle */
-      add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 6, fill: 'rgba(255,255,255,.08)', stroke: 'rgba(255,255,255,.25)' });
-      [14, 22, 18, 30, 26, 38, 44].forEach(function (v, i) { add(g, 'rect', { x: 56 + i * 11, y: 94 - v, width: 7, height: v, rx: 2, fill: i > 3 ? '#2fae6a' : 'rgba(255,255,255,.35)' }); });
-      [312, 368].forEach(function (x) { add(g, 'rect', { x: x - 2, y: 116, width: 4, height: 84, fill: '#5b636c' }); });
-      add(g, 'line', { x1: 296, y1: 126, x2: 384, y2: 126, stroke: '#9aa3ad', 'stroke-width': 3, 'stroke-linecap': 'round' });
-      [300, 380].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 114, width: 6, height: 24, rx: 2, fill: '#2a2d33' }); });
-      FLOOR(g); add(g, 'ellipse', { cx: cx, cy: 199, rx: 52, ry: 7, fill: '#3a7d6b', opacity: .55 });
       function bottle(x, y, deg) { var b = grp(x, y, deg || 0); add(b, 'rect', { x: -4.5, y: -9.5, width: 9, height: 19, rx: 3, fill: '#3987e5', opacity: .85 }); add(b, 'rect', { x: -3, y: -13.5, width: 6, height: 5, rx: 1.5, fill: '#e9eef2' }); return b; }
       var bIn = false, bTilt = 0, w = 0, expr = null, BOT = [266.5, 189.5];
       if (st.pact === 'bottle') {   /* over to the bottle, down for it, a long drink, a big sigh, put it back, back on the mat */

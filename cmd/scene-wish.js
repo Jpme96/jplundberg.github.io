@@ -10,6 +10,12 @@
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
     return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      add(g, 'rect', { x: 206, y: 128, width: 100, height: 4, rx: 1.5, fill: '#a87652' }); [212, 300].forEach(function (x) { add(g, 'path', { d: 'M' + x + ' 132 l0 10 l6 -10 Z', fill: '#8a5e44' }); });
+      add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3987e5' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e8743b' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2fae6a' });
+      add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c96a3c' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f8a52' });
+      FLOOR(g);
+      },
       /* the page's own action (F3): he looks up, points – and a new wish star lights up and stays */
       acts: [{ id: 'star', len: 4.8, w: function () { return 2; } }],
       hits: [[200, 96, 112, 42, 'wishes'], [206, 140, 66, 60, 'wbuy']], len: 6.6, data: data, render: function (sv, t, st) {
@@ -18,10 +24,6 @@
       var g = add(sv, 'g', {}), cx = -70, face = 90, w = 0, pose = {}, lift = 0, gift = 'shelf', GIFT0 = [232, 120], INTO = [240, 146];
       /* wishes floating as stars, the shelf, the floor */
       [[70, 52], [120, 34], [330, 46]].forEach(function (s, i) { STAR(g, s[0], s[1] + 3 * Math.sin(now / 700 + i), 7, '#f2c94c', .55 + .35 * Math.sin(now / 400 + i * 2)); });
-      add(g, 'rect', { x: 206, y: 128, width: 100, height: 4, rx: 1.5, fill: '#a87652' }); [212, 300].forEach(function (x) { add(g, 'path', { d: 'M' + x + ' 132 l0 10 l6 -10 Z', fill: '#8a5e44' }); });
-      add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3987e5' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e8743b' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2fae6a' });
-      add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c96a3c' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f8a52' });
-      FLOOR(g);
       var NS = [238, 60], ns = st.newStar ? 1 : 0;
       if (st.pact === 'star') {
         cx = 200; face = t < .4 ? 20 * E(SEG(t, 0, .4)) : t < 4.2 ? 20 : 20 * (1 - E(SEG(t, 4.2, 4.7)));

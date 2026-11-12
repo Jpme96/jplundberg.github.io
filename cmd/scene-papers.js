@@ -10,6 +10,10 @@
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
     return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      add(g, 'rect', { x: 230, y: 50, width: 44, height: 34, rx: 3, fill: '#f4f1ea', stroke: '#c9b48e', 'stroke-width': 3 }); [60, 66, 72].forEach(function (y) { add(g, 'line', { x1: 238, y1: y, x2: 266, y2: y, stroke: '#b9b2a2', 'stroke-width': 1.4 }); });
+      FLOOR(g);
+      },
       /* the page's own actions (F3): dusting the cabinet, and a folder out of the drawer to read (a frown), back in */
       acts: [{ id: 'dust', len: 7.8, w: function () { return 1.5; } }, { id: 'folder', len: 9.4, w: function () { return 2; } }],
       hits: [[106, 100, 74, 100, 'papers'], [226, 44, 52, 40, 'papers']], len: 11.6, data: data, render: function (sv, t, st) {
@@ -19,8 +23,6 @@
       var L0 = [140, 86 + 3 * Math.sin(now / 600)], LT = [192, 118], OVER = [197, 115], CAN0 = [325, 147], POUR2 = [338, 138];
       function HD(pp) { return [178 + pp, 131]; }
       /* the room: a framed certificate, the floor */
-      add(g, 'rect', { x: 230, y: 50, width: 44, height: 34, rx: 3, fill: '#f4f1ea', stroke: '#c9b48e', 'stroke-width': 3 }); [60, 66, 72].forEach(function (y) { add(g, 'line', { x1: 238, y1: y, x2: 266, y2: y, stroke: '#b9b2a2', 'stroke-width': 1.4 }); });
-      FLOOR(g);
       var cloth = false, folderIn = false, expr = null, puffs = 0;
       function walkTo(a, b, t0, t1) { var f = SEG(t, t0, t1); cx = LERP(a, b, f); face = b > a ? 90 : -90; w = Math.min(1, (t - t0) / .2, (t1 - t) / .2); }
       if (st.pact) {

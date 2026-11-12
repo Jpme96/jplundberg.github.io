@@ -11,6 +11,12 @@
     data = data || {};
     var HRp = new Date().getHours();
     return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      add(g, 'rect', { x: 0, y: 190, width: 400, height: 50, fill: '#2f5a3c' });
+      add(g, 'rect', { x: 66, y: 120, width: 8, height: 74, fill: '#5a3a26' }); add(g, 'circle', { cx: 70, cy: 104, r: 30, fill: '#2f7a4a' }); add(g, 'circle', { cx: 50, cy: 118, r: 18, fill: '#2a6e43' }); add(g, 'circle', { cx: 92, cy: 116, r: 20, fill: '#2a6e43' });
+      add(g, 'rect', { x: 334, y: 170, width: 52, height: 5, rx: 2, fill: '#a87652' }); add(g, 'rect', { x: 334, y: 158, width: 52, height: 4, rx: 2, fill: '#a87652' }); [338, 382].forEach(function (x) { add(g, 'rect', { x: x - 1.5, y: 175, width: 3, height: 20, fill: '#5b636c' }); });
+      add(g, 'rect', { x: 166, y: 70, width: 3, height: 124, fill: '#5b636c' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 6, fill: '#ffe2a8' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 18, fill: 'rgba(255,226,168,.12)' });
+      },
       /* the page's own actions (F3): a heart floats up between you, and – in the evening most – a sit on the bench together */
       acts: [{ id: 'heart', len: 4.6, w: function () { return 2; } }, { id: 'bench', len: 10.4, w: function () { return HRp >= 17 || HRp < 2 ? 3 : .8; } }],
       hits: [[300, 150, 90, 50, 'people'], [20, 60, 90, 140, 'people']], len: 7.2, data: data, render: function (sv, t, st) {
@@ -18,10 +24,6 @@
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), me = { cx: 30, face: 90, w: 0, pose: {} }, pa = { cx: 283, face: 0, w: 0, pose: {} }, MID = [258, 116], spark = -1;
       /* a park at dusk: a tree, a bench, a lamp */
-      add(g, 'rect', { x: 0, y: 190, width: 400, height: 50, fill: '#2f5a3c' });
-      add(g, 'rect', { x: 66, y: 120, width: 8, height: 74, fill: '#5a3a26' }); add(g, 'circle', { cx: 70, cy: 104, r: 30, fill: '#2f7a4a' }); add(g, 'circle', { cx: 50, cy: 118, r: 18, fill: '#2a6e43' }); add(g, 'circle', { cx: 92, cy: 116, r: 20, fill: '#2a6e43' });
-      add(g, 'rect', { x: 334, y: 170, width: 52, height: 5, rx: 2, fill: '#a87652' }); add(g, 'rect', { x: 334, y: 158, width: 52, height: 4, rx: 2, fill: '#a87652' }); [338, 382].forEach(function (x) { add(g, 'rect', { x: x - 1.5, y: 175, width: 3, height: 20, fill: '#5b636c' }); });
-      add(g, 'rect', { x: 166, y: 70, width: 3, height: 124, fill: '#5b636c' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 6, fill: '#ffe2a8' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 18, fill: 'rgba(255,226,168,.12)' });
       var heart = -1;
       function walkP(P, a, b, t0, t1) { var f = SEG(t, t0, t1); P.cx = LERP(a, b, f); P.face = b > a ? 90 : -90; P.w = Math.min(1, (t - t0) / .2, (t1 - t) / .2); }
       function sitP(P, f, sd) { if (f <= 0) return; P.pose.legNear = { m: f, th: 1.5, kn: 1.5 }; P.pose.legFar = { m: f, th: 1.5, kn: 1.5 }; P.pose.lift = -20 * f; P.pose[SIDE(sd, P.face)] = { m: f, b: [134, 22] }; P.pose[SIDE(-sd, P.face)] = { m: f, b: [134, 22] }; }

@@ -1,3 +1,12 @@
+/* The living scenes (F4 – faster frames): a 2.5D scene redraws its own layer every frame. The page's observers
+   (masonry, tiles, day pickers, translations …) have nothing to do there, so a change made only inside a scene
+   (svg.sc25) never reaches them – before this, ten of them searched the whole page 30–60 times a second. */
+(function (G) {
+  var MO = G.MutationObserver; if (!MO || MO.__sc25) return;
+  function inScene(n) { var e = n && (n.nodeType === 1 ? n : n.parentNode); return !!(e && (e.__sc || e.classList && e.classList.contains('sc25') || (e.closest && e.closest('svg.sc25')))); }   /* scene nodes are marked (__sc) – they may be gone from the page by the time the record arrives */
+  function W(cb) { return new MO(function (recs, o) { var keep = recs.filter(function (r) { return !inScene(r.target); }); if (keep.length) return cb.call(this, keep, o); }); }
+  W.prototype = MO.prototype; W.__sc25 = true; G.MutationObserver = W;
+})(window);
 /* Diagnostics: catches errors, keeps a small log on this device, shows calm notices, and checks
    itself once a day (Settings → Diagnostics).
    - Every uncaught error and unhandled promise rejection goes into localStorage "dash.errlog"

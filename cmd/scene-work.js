@@ -10,7 +10,13 @@
       REST = S.REST, grp = S.grp, CLOCK = S.CLOCK, FLOOR = S.FLOOR, STAR = S.STAR, CHEER = S.CHEER;
     data = data || {};
     var HR = new Date().getHours();
-    return S.run(svg, { gen: { no: ['coffee'] },
+    return S.run(svg, {
+      back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
+      add(g, 'rect', { x: 34, y: 34, width: 76, height: 66, rx: 6, fill: '#1c2740', stroke: 'rgba(255,255,255,.4)', 'stroke-width': 2 });
+      [[42, 70, 11, 30], [56, 58, 13, 42], [72, 74, 10, 26], [85, 63, 15, 37]].forEach(function (b2) { add(g, 'rect', { x: b2[0], y: b2[1], width: b2[2], height: 100 - b2[1], fill: '#2c3a5a' });
+        for (var wy = b2[1] + 4; wy < 96; wy += 7) for (var wx = b2[0] + 2; wx < b2[0] + b2[2] - 2; wx += 5) if ((wx * 7 + wy * 3) % 5 < 3) add(g, 'rect', { x: wx, y: wy, width: 2.2, height: 2.4, fill: '#f2c94c', opacity: .7 }); });
+      CLOCK(g, 330, 62, 17, 'face'); FLOOR(g);
+      }, gen: { no: ['coffee'] },
       /* the page's own actions (F3): a video call in work hours, ticking off a sheet from the pile, a yawn late in the day */
       acts: [{ id: 'call', len: 5.2, w: function () { return HR >= 8 && HR < 16 ? 3 : .4; } }, { id: 'tick', len: 5.8, w: function () { return 1.5; } }, { id: 'yawn', len: 4.4, w: function () { return HR >= 15 || HR < 6 ? 3 : .4; } }], hits: [[196, 124, 50, 32, 'ptime'], [180, 136, 22, 22, 'flex'], [310, 42, 40, 40, 'flex'], [128, 154, 184, 46, 'flex']], len: 12, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
@@ -18,10 +24,7 @@
       var g = add(sv, 'g', {}), cx = 220, face = 0, pose = {}, lean = 0, lift = 0, mugIn = false, tilt = 0, MUG = [194, 151], MOUTH = B(66, 24), UP = B(34, 4);
       function TYPE(sd) { return B(118 + 1.4 * Math.sin(now / 75 + (sd > 0 ? 1.6 : 0)), 26); }
       /* the room: a window with the city at night, the clock, the floor */
-      add(g, 'rect', { x: 34, y: 34, width: 76, height: 66, rx: 6, fill: '#1c2740', stroke: 'rgba(255,255,255,.4)', 'stroke-width': 2 });
-      [[42, 70, 11, 30], [56, 58, 13, 42], [72, 74, 10, 26], [85, 63, 15, 37]].forEach(function (b2) { add(g, 'rect', { x: b2[0], y: b2[1], width: b2[2], height: 100 - b2[1], fill: '#2c3a5a' });
-        for (var wy = b2[1] + 4; wy < 96; wy += 7) for (var wx = b2[0] + 2; wx < b2[0] + b2[2] - 2; wx += 5) if ((wx * 7 + wy * 3) % 5 < 3) add(g, 'rect', { x: wx, y: wy, width: 2.2, height: 2.4, fill: '#f2c94c', opacity: .7 }); });
-      CLOCK(g, 330, 62, 17); FLOOR(g);
+      CLOCK(g, 330, 62, 17, 'hands');
       var sheetIn = false, ticks = 0, talk = false, expr = null, PILE = [266, 150];
       if (st.pact === 'call') {   /* a wave at the laptop's camera, then nodding along while the others talk */
         var wv = SIDE(1, 0), WAVE = B(54, 34);

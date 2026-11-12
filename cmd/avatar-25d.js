@@ -25,7 +25,7 @@
     if (POOL) {
       var e = POOL.l[POOL.i], sig = n; for (var k0 in a) sig += ' ' + k0;
       if (e && e._sig === sig) { var o = e._a; for (var k in a) { var v = a[k]; if (o[k] !== v) { e.setAttribute(k, v); o[k] = v; } } while (e.firstChild) e.removeChild(e.firstChild); POOL.i++; return e; }
-      e = document.createElementNS(NS, n); e._a = {}; for (var k2 in a) { e.setAttribute(k2, a[k2]); e._a[k2] = a[k2]; } e._sig = sig; POOL.l[POOL.i++] = e; return e;
+      e = document.createElementNS(NS, n); e.__sc = 1; e._a = {};   /* __sc: a live-scene node (page observers skip it, diag.js) */ for (var k2 in a) { e.setAttribute(k2, a[k2]); e._a[k2] = a[k2]; } e._sig = sig; POOL.l[POOL.i++] = e; return e;
     }
     var x = document.createElementNS(NS, n); for (var k3 in a) x.setAttribute(k3, a[k3]); return x;
   }
