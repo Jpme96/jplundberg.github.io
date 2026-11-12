@@ -1,0 +1,6 @@
+/* Rules only this page uses (moved out of styles.css by cmd/split-css.py – a rule another page needs goes back there). */
+.wb-quick { display: flex; gap: 8px; align-items: center; margin: 2px 0 6px; }
+.wb-quick input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(var(--ink-rgb), .04); color: var(--text); font: inherit; font-size: 15px; }
+.wb-quick input:focus { outline: none; border-color: var(--accent); }
+.wb-got { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 2px solid rgba(var(--ink-rgb), .3); color: var(--muted); font-size: 15px; cursor: pointer; }
+.wb-got:hover, .wb-got:focus-visible { border-color: var(--ok); color: var(--ok); outline: none; }

@@ -1,0 +1,47 @@
+/* Rules only this page uses (moved out of styles.css by cmd/split-css.py – a rule another page needs goes back there). */
+.pa-chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.pa-chips::-webkit-scrollbar { display: none; }
+.pa-chip { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.pa-chip small { opacity: .6; }
+.pa-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pa-sug { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+.pa-sug > span { width: 100%; font-size: 12px; color: var(--muted); }
+.pa-sugb { display: inline-flex; align-items: center; gap: 3px; padding: 5px 10px 5px 7px; border-radius: 999px; border: 1px dashed var(--line); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.pa-sugb:hover { border-style: solid; border-color: var(--accent); }
+.pa-note { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; line-height: 1.45; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+.pa-fc { display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; font-size: 11px; color: var(--muted); }
+.pa-fc.miss { color: var(--warn); }
+.pa-fc.none { opacity: .7; }
+.pa-due { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: rgba(var(--warn-rgb), .14); color: #a86f00; white-space: nowrap; }
+.pa-due.near { background: rgba(var(--orange-rgb), .16); color: #c4581f; }
+.pa-due.over { background: rgba(var(--danger-rgb), .16); color: #c94444; }
+.pa-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 14px; margin: 4px 0 10px; }
+.pa-facts dt { font-size: 11px; color: var(--muted); font-weight: 500; }
+.pa-facts dd { margin: 1px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.pa-link { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 8px; text-decoration: none; }
+.pa-files { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.pa-files li { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border: 1px solid var(--line); border-radius: 12px; }
+.pa-files li > .bi { font-size: 24px; color: var(--danger); flex: none; }
+.pa-files li img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; flex: none; background: rgba(var(--ink-rgb), .06); }
+.pa-files li.gone { border-style: dashed; opacity: .75; }
+.pa-files li.gone > .bi { color: var(--muted); }
+.pa-fn { flex: 1; min-width: 0; color: inherit; text-decoration: none; display: grid; }
+.pa-fn b { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-fn small { font-size: 12px; color: var(--muted); }
+.pa-addf { display: inline-flex; align-items: center; gap: 5px; margin: 2px 0 8px; cursor: pointer; }
+.pa-pickbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 14px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.pa-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; }
+.pa-bulk small { color: var(--muted); font-size: 12.5px; flex: 1 1 200px; }
+.pa-blist { list-style: none; margin: 4px 0 12px; padding: 0; display: grid; gap: 8px; max-height: 55vh; overflow: auto; }
+.pa-brow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px; grid-template-areas: "ico name x" ". kind ."; gap: 6px 8px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.pa-brow > .pa-bico { grid-area: ico; }
+.pa-brow > input { grid-area: name; }
+.pa-brow > select { grid-area: kind; }
+.pa-brow > button { grid-area: x; }
+@media (min-width: 700px) {
+  .pa-brow { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 36%) 36px; grid-template-areas: "ico name kind x"; border-bottom: 0; padding-bottom: 0; }
+}
+.pa-brow[hidden] { display: none; }
+.pa-brow input, .pa-brow select { min-width: 0; font-size: 14px; padding: 8px 10px; }
+.pa-bico { color: var(--muted); font-size: 18px; text-align: center; }
+.pa-bacts { display: flex; justify-content: flex-end; }

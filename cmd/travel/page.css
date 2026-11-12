@@ -1,0 +1,5 @@
+/* Rules only this page uses (moved out of styles.css by cmd/split-css.py – a rule another page needs goes back there). */
+.tv-field input { height: auto; min-height: 0; font-size: 17px; }
+.tp-during { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.tp-during:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.tp-explore { min-width: 36px; }

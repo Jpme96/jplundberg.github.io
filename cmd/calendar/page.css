@@ -1,0 +1,5 @@
+/* Rules only this page uses (moved out of styles.css by cmd/split-css.py – a rule another page needs goes back there). */
+.cl-view:empty { min-height: 380px; }
+@media (min-width: 700px) {
+  .cl-view:empty { min-height: 640px; }
+}

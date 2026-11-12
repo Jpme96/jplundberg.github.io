@@ -1,0 +1,17 @@
+/* Rules only this page uses (moved out of styles.css by cmd/split-css.py – a rule another page needs goes back there). */
+.wt-top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.wt-ring { width: 76px; height: 76px; transform: rotate(-90deg); flex: none; }
+.wt-ring circle { fill: none; stroke-width: 8; }
+.wt-ring .t { stroke: rgba(var(--ink-rgb), .12); }
+.wt-ring .v { stroke: #3b9de0; stroke-linecap: round; transition: stroke-dasharray .5s; }
+.wt-num { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 120px; }
+.wt-num b { font-size: 1.6rem; line-height: 1; }
+.wt-num b small { font-size: .9rem; opacity: .6; font-weight: 600; }
+.wt-btns { display: flex; align-items: center; gap: 6px; }
+.wt-btns .wt-add { min-height: 44px; padding: 0 16px; }
+.wt-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 74px; margin: 14px 0 6px; }
+.wt-d { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%; }
+.wt-d i { display: block; width: 100%; max-width: 26px; border-radius: 5px; background: rgba(59, 157, 224, .35); }
+.wt-d.ok i { background: #3b9de0; }
+.wt-d.now small { font-weight: 700; color: var(--ink); }
+.wt-d small { font-size: .7rem; opacity: .7; }

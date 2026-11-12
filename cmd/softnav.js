@@ -160,7 +160,11 @@
         /* the page's own style sheets */
         var want = [].map.call(doc.querySelectorAll('head link[rel="stylesheet"]'), function (l) { return new URL(l.getAttribute('href'), u.href).href; });
         [].forEach.call(document.querySelectorAll('head link[rel="stylesheet"]'), function (l) { if (want.indexOf(l.href) < 0) l.remove(); });
-        want.forEach(function (h) { if (![].some.call(document.querySelectorAll('head link[rel="stylesheet"]'), function (l) { return l.href === h; })) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = h; document.head.appendChild(l); } });
+        /* a page's own stylesheet goes where the page has it (right after styles.css), so the order of the rules is the same as on a fresh load */
+        want.forEach(function (h, wi) { var have = [].slice.call(document.querySelectorAll('head link[rel="stylesheet"]')); if (have.some(function (l) { return l.href === h; })) return;
+          var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = h; var next = null;
+          for (var j = wi + 1; j < want.length && !next; j++) next = have.filter(function (x) { return x.href === want[j]; })[0] || null;
+          if (next) document.head.insertBefore(l, next); else document.head.appendChild(l); });
         /* the page itself; the lock screen stays the one that is running */
         var body = document.body, keep = KEEP.map(function (id) { return document.getElementById(id); }).filter(Boolean);
         [].slice.call(body.childNodes).forEach(function (n) { if (keep.indexOf(n) < 0) body.removeChild(n); });
