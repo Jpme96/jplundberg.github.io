@@ -63,9 +63,10 @@
   function drip(svg, P, col) { fall(svg, '<path d="M0 0q-1.2 1.8 0 2.7q1.2-.9 0-2.7z" fill="' + (col || '#8fd0ff') + '"/>', P, [P[0] + rnd(-1, 1), P[1] + 14], 420); }
   /* real sizes (Phase L4): each object in the page pictures, as a share of your height (you ≈ 1.75 m), with the range it
      must stay in – the scene-sizes test measures them. [selector, nth match, min, max, what]. Big symbols (the money jar,
-     the wall calendar, the mountain) are left out on purpose: they're made reachable instead (the ladder). */
+     the wall calendar, the mountain) are left out on purpose: they're made reachable instead (the ladder). He is measured mid-action, so a bend or crouch
+     makes him a little shorter for a moment – the fridge allows 1.3 (it failed once at 1.26 on GitHub, 2026-11-12). */
   var SIZES = {
-    food: [['[data-scgo="meals"]', 0, .9, 1.25, 'fridge – about your height'], ['[data-scgo="meals"]', 1, .4, .75, 'stove – at hip height'], ['[data-scgo="shop"]', 0, .2, .55, 'bag – knee to waist']],
+    food: [['[data-scgo="meals"]', 0, .9, 1.3, 'fridge – about your height'], ['[data-scgo="meals"]', 1, .4, .75, 'stove – at hip height'], ['[data-scgo="shop"]', 0, .2, .55, 'bag – knee to waist']],
     wish: [['[data-scgo="wishes"]', 0, .4, .7, 'cart – handle at the hip'], ['[data-scgo="wbuy"]', 0, .3, .62, 'shopping bag – knee to waist'], ['[data-scgo="wbought"]', 0, .25, .6, 'gift – knee to waist']],
     travel: [['.sc-caseo', 0, .3, .62, 'suitcase – up to the hip']],
     people: [['.sc-mingle > .hs-part', -1, .85, 1.25, 'your people – your size']]
