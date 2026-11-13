@@ -2,7 +2,7 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 1626 };   /* +8 (2026-11-13): the avatar's new face – eyes with iris and lids, tapered brows, a nose shaped by light, two lips, a profile – and room for the hair, beards and mouth shapes that follow */   /* +6 (2026-11-13): the avatar's anatomy pass – teardrop shoulders, a jaw and chin, the back's details */      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
+const BUDGET_KB = { total: 1630 };   /* +4 (2026-11-13): the avatar's shading after JP's reference – gradients per colour, limbs as flowing shapes, the chest and stomach shapes */   /* +8 (2026-11-13): the avatar's new face – eyes with iris and lids, tapered brows, a nose shaped by light, two lips, a profile – and room for the hair, beards and mouth shapes that follow */   /* +6 (2026-11-13): the avatar's anatomy pass – teardrop shoulders, a jaw and chin, the back's details */      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
 /* each page on its own (Phase D 25: a page loads only its own code) – lower a page's number when it gets lighter */
 /* +25 kB on every page (2026-11-12, F1b): the 2.5D figure (avatar-25d.js) and its small moves are in tail next to the old flat drawing; the old
    drawing code goes in F4 and these budgets come down again then.
@@ -22,7 +22,7 @@ const BUDGET_KB = { total: 1626 };   /* +8 (2026-11-13): the avatar's new face �
    +1 kB on Food and People (2026-11-12 night): night actions, muscles and face shapes in the figure, the whole plane.
    +1 kB on most pages (2026-11-12 night): the six-pack and obliques on a bare athletic or muscular body.
    +1–4 kB on the scene pages (2026-11-13): the last F3 actions (price tag, cart, call, ball, heart note, star sticker, done for the day, stamp, the smaller climber, taste and salt, the shelf, polish, piggy bank, payday bag, passport). */
-const PAGE_KB = { 'index.html': 1395, 'admin/index.html': 1317, 'calendar/index.html': 1246, 'finance/index.html': 1626, 'food/index.html': 1330, 'goals/index.html': 1262, 'habits/index.html': 1306, 'house/index.html': 1616, 'papers/index.html': 1277, 'people/index.html': 1328, 'travel/index.html': 1402, 'wish/index.html': 1345, 'work/index.html': 1370 };
+const PAGE_KB = { 'index.html': 1399, 'admin/index.html': 1321, 'calendar/index.html': 1250, 'finance/index.html': 1630, 'food/index.html': 1334, 'goals/index.html': 1266, 'habits/index.html': 1310, 'house/index.html': 1620, 'papers/index.html': 1281, 'people/index.html': 1332, 'travel/index.html': 1406, 'wish/index.html': 1349, 'work/index.html': 1374 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
