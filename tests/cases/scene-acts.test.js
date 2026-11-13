@@ -72,11 +72,14 @@ const PAGES = ['finance', 'food', 'work', 'habits', 'papers', 'calendar', 'goals
     /* the seasons: the tree in December, the pumpkin at Halloween, on the pages that have room for them */
     const sea = await p.evaluate(() => { const R = Scene25.list()[0], st = R.state, svg = document.querySelector('#scIllu svg'), out = {};
       ['xmas', 'halloween', ''].forEach(sn => { window.__season = sn; R.at(R.len); out[sn || 'none'] = svg.querySelectorAll('.sc25-season').length; });
+      window.__season = 'winter'; R.at(R.len); out.winter = svg.querySelectorAll('.sc25-season').length; out.out = !!(st.season && st.season.out); out.act = !!(st.season && st.season.act !== false); out.wgens = Scene25.gens({}, { season: st.season }).includes('snowman');
+      if (out.out) { const r0 = svg.querySelectorAll('.sc25-season rect').length; Scene25.GEN.snowman.done(st); R.at(R.len); out.hat = svg.querySelectorAll('.sc25-season rect').length - r0; }
       window.__season = 'xmas'; out.gens = Scene25.gens({}, { season: st.season }); R.at(R.len); const n0 = svg.querySelectorAll('.sc25-season circle').length;
       Scene25.GEN.tree.done(st); R.at(R.len); out.hung = svg.querySelectorAll('.sc25-season circle').length - n0; window.__season = null; R.at(R.len); out.spot = !!st.season; return out; });
     if (sea.spot) {
       check(sea.xmas === 1 && sea.halloween === 1 && sea.none === 0, pg + ': the tree in December, the pumpkin at Halloween, nothing otherwise (' + JSON.stringify(sea) + ')');
       check(sea.hung === 1, pg + ': the bauble he hung stays on the tree');
+      check(sea.winter === (sea.out ? 1 : 0) && sea.wgens === (sea.out && sea.act) && (!sea.out || sea.hat === 3), pg + ': a snowman in January and February ' + (sea.out ? 'outdoors, and the hat he puts on stays' : 'only outdoors – none here') + ' (' + sea.winter + ', ' + sea.hat + ')');
     }
     if (pg === 'work') {   /* a long press: a little dance; moving over the picture: he looks your way */
       const lp = await p.evaluate(() => new Promise(res => { const R = Scene25.list()[0], st = R.state, svg = document.querySelector('#scIllu svg'); st.playing = false; st.gen = null; st.t = R.len; st.last = 'main';

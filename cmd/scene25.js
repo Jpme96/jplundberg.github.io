@@ -112,7 +112,7 @@
      Each page that has room says where it stands (spec.season = { x, y, s }: the foot of the prop on the floor, a
      little behind his walking line, and its size). The prop is drawn first in the moving layer, so he passes in front
      of it. What he does to it stays for the day: the baubles he hung, the pumpkin he lit (DECOR). */
-  function season() { if (window.__season != null) return window.__season; var d = new Date(), m = d.getMonth(); return m === 11 ? 'xmas' : m === 9 && d.getDate() >= 20 ? 'halloween' : ''; }
+  function season() { if (window.__season != null) return window.__season; var d = new Date(), m = d.getMonth(); return m === 11 ? 'xmas' : m === 9 && d.getDate() >= 20 ? 'halloween' : m < 2 ? 'winter' : ''; }   /* January and February: a snowman, outdoors only (season.out) */
   var DECOR = {};
   function decor(st) { var k = (st.sid || '') + '|' + new Date().toDateString(); return DECOR[k] || (DECOR[k] = { n: 0, lit: false }); }
   var HANG = [[8, -36, '#f2c94c'], [-7, -32, '#d93a3a'], [5, -46, '#3987e5'], [-5, -44, '#e8743b'], [11, -27, '#f2c94c']];   /* hung at chest height, where his hand reaches */
@@ -146,10 +146,24 @@
     add(g, 'path', { d: 'M' + (x - 5 * s) + ' ' + (y - 6 * s) + ' Q' + x + ' ' + (y - 1.5 * s) + ' ' + (x + 5 * s) + ' ' + (y - 6 * s) + ' Q' + x + ' ' + (y - 3.6 * s) + ' ' + (x - 5 * s) + ' ' + (y - 6 * s) + ' Z', fill: fc, opacity: o2 });
     return g;
   }
+  /* a snowman (January and February, on the outdoor pages): three balls of snow lit from the left, coal eyes, a carrot, twig arms, a scarf – and the hat once he has put it on */
+  function hatG(x, y, s) { var h = el('g', {}); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 6.4 * s).toFixed(1), width: 6.8 * s, height: 6.4 * s, rx: .8 * s, fill: '#22262e' }); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 2.2 * s).toFixed(1), width: 6.8 * s, height: 1.5 * s, fill: '#d93a3a' }); add(h, 'rect', { x: (x - 5.6 * s).toFixed(1), y: (y - .7 * s).toFixed(1), width: 11.2 * s, height: 1.5 * s, rx: .7 * s, fill: '#22262e' }); return h; }
+  function snowmanG(par, x, y, s, hat) {
+    var g = add(par, 'g', { class: 'sc25-season' });
+    add(g, 'ellipse', { cx: x, cy: y + .5, rx: 13 * s, ry: 2.2 * s, fill: 'rgba(0,0,0,.22)' });
+    add(g, 'path', { d: 'M' + (x - 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (-9 * s).toFixed(1) + ' ' + (-5 * s).toFixed(1) + ' M' + (x + 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (9 * s).toFixed(1) + ' ' + (-6 * s).toFixed(1), fill: 'none', stroke: '#6b4a36', 'stroke-width': 1.2 * s, 'stroke-linecap': 'round' });
+    [[-10, 10.5], [-24, 7.6], [-34.5, 5.6]].forEach(function (q) { add(g, 'circle', { cx: x, cy: (y + q[0] * s).toFixed(1), r: q[1] * s, fill: '#c9d3df' }); add(g, 'circle', { cx: (x - q[1] * .14 * s).toFixed(1), cy: (y + q[0] * s - q[1] * .1 * s).toFixed(1), r: q[1] * .86 * s, fill: '#f4f7fa' }); });
+    add(g, 'path', { d: 'M' + (x - 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' Q' + x + ' ' + (y - 27.4 * s).toFixed(1) + ' ' + (x + 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' M' + (x + 3.4 * s).toFixed(1) + ' ' + (y - 29 * s).toFixed(1) + ' l' + (1.2 * s).toFixed(1) + ' ' + (6 * s).toFixed(1), fill: 'none', stroke: '#d93a3a', 'stroke-width': 2.2 * s, 'stroke-linecap': 'round' });   /* the scarf */
+    [[-2, -36], [2, -36], [0, -25], [0, -20]].forEach(function (q) { add(g, 'circle', { cx: (x + q[0] * s).toFixed(1), cy: (y + q[1] * s).toFixed(1), r: (q[1] < -30 ? .8 : .95) * s, fill: '#22262e' }); });
+    add(g, 'path', { d: 'M' + x + ' ' + (y - 34.6 * s).toFixed(1) + ' l' + (5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' l' + (-5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' Z', fill: '#e8743b' });
+    if (hat) g.appendChild(hatG(x, y - 39.2 * s, s));
+    return g;
+  }
   /* drawn first in each frame (behind him): the tree with the baubles hung so far, or the pumpkin, lit once he's lit it */
   function seasonDraw(par, st) {
     var sp = st.season, sn = season(); if (!sp || !sn) return;
     var D = decor(st), g = st.gen;
+    if (sn === 'winter') { if (sp.out) snowmanG(par, sp.x, sp.y, sp.s || 1, D.lit || (g && g.id === 'snowman' && g.t >= 3.1)); return; }
     if (sn === 'xmas') treeG(par, sp.x, sp.y, sp.s || 1, D.n + (g && g.id === 'tree' && g.t >= 3.1 ? 1 : 0));
     else pumpkinG(par, sp.x, sp.y, sp.s || 1, D.lit ? 1 : g && g.id === 'pumpkin' && g.t >= 2.9 ? CL((g.t - 2.9) / .5) : 0);
   }
@@ -202,6 +216,16 @@
       if (t >= 2.1 && t < 3.1) it.push(function (H) { var n = H.near; if (!n) return null; return [n.z + .05, baubleG(n.X, n.Y + 3.2 * T.s, T.s, h[2])];   /* hanging from his fingers, in front of the hand */ });
       if (t > 4.0 && t < 4.5) o.pose.lift = (o.pose.lift || 0) + 1.6 * Math.sin(Math.PI * SEG(t, 4.0, 4.5));   /* a small happy bounce */
     }, done: function (st) { if (st.season) decor(st).n++; } };
+  /* winter: he walks to the snowman and puts its hat on (it stays on for the day; after that he pats it) */
+  GEN.snowman = { len: 7.4, walk: 1, turn: function (t, o, st) { return GEN.tree.turn(t, o, st); },
+    f: function (t, o, it, k, sd, fr, st) { var T = trip(o, st); if (!T.sp) return;
+      if (t < 4.65) walkOn(o, T, t, T.from, T.stand, .35, 2.0); else walkOn(o, T, t, T.stand, T.from, 4.65, 6.6);
+      carry(o, T.from);
+      var D = decor(st), P0 = [T.sp.x, T.sp.y - 39.2 * T.s], hd = 'near', R0 = fr(hd);
+      if (t >= 2.2 && t < 4.0) o.pose[hd] = t < 2.85 ? GO(R0, AT(P0), SEG(t, 2.2, 2.85), 4) : t < 3.4 ? HOLD(AT(P0)) : GO(AT(P0), R0, SEG(t, 3.4, 4.0));
+      if (!D.lit && t >= 2.1 && t < 3.1) it.push(function (H) { var n = H.near; if (!n) return null; return [n.z + .05, hatG(n.X, n.Y + 1 * T.s, T.s)]; });
+      if (t > 4.0 && t < 4.5) o.pose.lift = (o.pose.lift || 0) + 1.6 * Math.sin(Math.PI * SEG(t, 4.0, 4.5));
+    }, done: function (st) { if (st.season) decor(st).lit = true; } };
   /* Halloween: he walks to the pumpkin, crouches, lights it (it glows), stands up and walks back */
   GEN.pumpkin = { len: 6.8, walk: 1, turn: function (t, o, st) { var T = trip(o, st, 21), d = T.dir; if (!T.sp) return 0;
       return t < 2.0 ? d * 90 * E(SEG(t, .1, .45)) : t < 3.9 ? d * LERP(90, 60, E(SEG(t, 2.0, 2.3))) : t < 4.3 ? LERP(d * 60, -d * 90, E(SEG(t, 3.9, 4.3))) : t < 6.1 ? -d * 90 : -d * 90 * (1 - E(SEG(t, 6.1, 6.5))); },
@@ -221,7 +245,7 @@
      { no: ['coffee'] } for what doesn't fit there (a page with its own mug) */
   function gens(g, spec) {
     g = g || {}; var d = new Date(), h = d.getHours(), W = wearNow(), l = ['wave', 'stretch', 'watch', g.out ? 'gaze' : 'look'], sn = season();
-    if (sn && spec && spec.season && spec.season.act !== false) l.push(sn === 'xmas' ? 'tree' : 'pumpkin');   /* the season's own, where the page has room to walk to it */
+    if (sn && spec && spec.season && spec.season.act !== false && (sn !== 'winter' || spec.season.out)) l.push(sn === 'xmas' ? 'tree' : sn === 'winter' ? 'snowman' : 'pumpkin');   /* the season's own, where the page has room to walk to it */
     if (h >= 6 && h < 11) l.push('coffee');
     if (h >= 22 || h < 5) l.push('yawn');
     if (W.rain && g.out) l.push('umbrella');
@@ -316,7 +340,7 @@
       /* weighted: the page's main action 2, its own actions as much as the data says (a strong fit 3–4), everyday ones 1 */
       var pool = [['main', 2]];
       Object.keys(ACTS).forEach(function (k) { var w = 0; try { w = +ACTS[k].w(st.data, st) || 0; } catch (e) {} if (w > 0) pool.push([k, w]); });
-      (spec.gen === false ? [] : gens(spec.gen, spec)).forEach(function (g) { pool.push([g, g === 'tree' || g === 'pumpkin' ? 2 : 1]); });
+      (spec.gen === false ? [] : gens(spec.gen, spec)).forEach(function (g) { pool.push([g, g === 'tree' || g === 'pumpkin' || g === 'snowman' ? 2 : 1]); });
       pool = pool.filter(function (x) { return x[0] !== st.last; }); if (!pool.length) return 'main';
       var sum = pool.reduce(function (a, x) { return a + x[1]; }, 0), r = Math.random() * sum;
       for (var i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
