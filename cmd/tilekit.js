@@ -81,7 +81,7 @@
       all.map(function (t, i) {
         var k = key(t), w = where[k] || 'tile';
         return '<div class="tk-row"><span class="tk-name">' + esc(labelOf(t)) + '</span><span class="seg" role="group" aria-label="' + esc(labelOf(t)) + '">' +
-          [['tile', 'Tile'], ['stack', 'Stack'], ['off', 'Hide']].map(function (o) { return '<button type="button" data-tkwhere="' + esc(k) + '" data-v="' + o[0] + '" aria-pressed="' + (w === o[0]) + '">' + o[1] + '</button>'; }).join('') +
+          [['tile', I18N.k('ui.tile', 'Tile')], ['stack', I18N.k('ui.stack', 'Stack')], ['off', I18N.k('ui.hide', 'Hide')]].map(function (o) { return '<button type="button" data-tkwhere="' + esc(k) + '" data-v="' + o[0] + '" aria-pressed="' + (w === o[0]) + '">' + o[1] + '</button>'; }).join('') +
           '</span><span class="tk-mv"><button type="button" class="icon-btn" data-tkmove="' + esc(k) + '" data-d="-1" aria-label="Move ' + esc(labelOf(t)) + ' up"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +
           '<button type="button" class="icon-btn" data-tkmove="' + esc(k) + '" data-d="1" aria-label="Move ' + esc(labelOf(t)) + ' down"' + (i < all.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
       }).join('') +

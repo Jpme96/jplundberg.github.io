@@ -12,7 +12,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function pad(n) { return String(n).padStart(2, '0'); }
-  var CATS = [['groceries', 'Groceries'], ['eating', 'Eating out'], ['transport', 'Transport'], ['shopping', 'Shopping'], ['home', 'Home'], ['fun', 'Fun'], ['health', 'Health'], ['travel', 'Travel'], ['other', 'Other']];
+  var CATS = [['groceries', I18N.k('ui.groceries', 'Groceries')], ['eating', I18N.k('ui.eating-out', 'Eating out')], ['transport', I18N.k('ui.transport', 'Transport')], ['shopping', I18N.k('ui.shopping', 'Shopping')], ['home', I18N.k('ui.home', 'Home')], ['fun', I18N.k('ui.fun', 'Fun')], ['health', I18N.k('ui.health', 'Health')], ['travel', I18N.k('ui.travel', 'Travel')], ['other', I18N.k('ui.other', 'Other')]];
   /* merchant words → category (Norwegian everyday life first) */
   var RULES = [
     ['groceries', /rema|kiwi|coop|extra\b|meny|joker|bunnpris|spar\b|obs\b|prix|matkroken|europris|oda\.com|oda\b|kolonial|nærbutikken|narvesen|7-?eleven|mix\b|deli de luca|bakeri|baker|point\b/i],

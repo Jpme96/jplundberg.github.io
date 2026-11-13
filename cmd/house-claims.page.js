@@ -23,7 +23,7 @@
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
   function byId(id) { return list().filter(function (x) { return x.id === id; })[0]; }
   function saveOne(id, fn) { var t = Fe.tools(); (t.hclaims || []).forEach(function (x) { if (x && x.id === id) fn(x); }); Fe.saveTools(t); }
-  var WANT = [['fix', 'Have it fixed'], ['price', 'A price reduction'], ['comp', 'Compensation for the cost'], ['new', 'A new one (replacement)'], ['back', 'My money back'], ['look', 'That they look at it first']];
+  var WANT = [['fix', I18N.k('ui.have-it-fixed', 'Have it fixed')], ['price', I18N.k('ui.a-price-reduction', 'A price reduction')], ['comp', I18N.k('ui.compensation-for-the-cost', 'Compensation for the cost')], ['new', I18N.k('ui.a-new-one-replacement', 'A new one (replacement)')], ['back', I18N.k('ui.my-money-back', 'My money back')], ['look', I18N.k('ui.that-they-look-at-it-first', 'That they look at it first')]];
   var OPEN = { draft: 1, sent: 1, reply: 1, agreed: 1 };
   function inView(x) { return !window.Homes || window.Homes.inView(x); }
   var FIELDS = [
@@ -142,7 +142,7 @@
   function updSheet(id) {
     var c = byId(id); if (!c) return;
     var X = HF.sheet('Update');
-    var opts = [['reply', 'They answered'], ['agreed', 'We agreed what happens'], ['fixed', 'It’s fixed or paid'], ['no', 'They turned it down'], ['closed', 'Close the claim'], ['note', 'Just a note']];
+    var opts = [['reply', I18N.k('ui.they-answered', 'They answered')], ['agreed', I18N.k('ui.we-agreed-what-happens', 'We agreed what happens')], ['fixed', I18N.k('ui.its-fixed-or-paid', 'It’s fixed or paid')], ['no', I18N.k('ui.they-turned-it-down', 'They turned it down')], ['closed', I18N.k('ui.close-the-claim', 'Close the claim')], ['note', I18N.k('ui.just-a-note', 'Just a note')]];
     X.box.innerHTML = HF.head('plus-lg', 'Update', c.title) + '<form class="hx-form"><div class="lf-chips">' + opts.map(function (o, i) { return '<button type="button" class="lf-chip" data-hcst="' + o[0] + '" aria-pressed="' + (i === 0) + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>' +
       '<label class="hx-f"><span data-t="ui.what-happened">What happened</span><textarea name="t" rows="3" maxlength="400" placeholder="e.g. The seller’s insurance will send a surveyor on 14 January" data-t-placeholder="ui.e-g-the-sellers-insurance-will-send-a-su"></textarea></label>' +
       '<p class="muted hs2-note" data-hcno hidden data-t="ui.turned-down-and-you-dont-agree-forbruker">Turned down and you don’t agree? Forbrukerrådet can mediate for free; for homes, Boligtvistnemnda or Huseierne’s lawyers.</p>' +

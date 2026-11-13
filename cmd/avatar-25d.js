@@ -219,16 +219,16 @@
     });
     /* the seat: a rounded pelvis in the trousers' colour where the legs meet the body, fuller at the back –
        from the side you see the bottom, from the front the hips */
-    var pw = Math.sqrt(Math.pow(L.bp.hv * Math.cos(a), 2) + Math.pow(12.2 * L.bp.d * Math.sin(a), 2)) * k, pc = P(0, 144 + bob, -2.5 * Math.abs(Math.sin(a))), pT = pc.Y - 2 * k, pB = pc.Y + 9 * k, pV = pc.Y + (6 + 5 * Math.abs(Math.sin(a))) * k;
+    var pw = Math.sqrt(Math.pow(L.bp.hv * Math.cos(a), 2) + Math.pow(11.2 * L.bp.d * Math.sin(a), 2)) * k, pc = P(0, 144 + bob, -2.5 * Math.abs(Math.sin(a))), pT = pc.Y - 2 * k, pB = pc.Y + 9 * k, pV = pc.Y + (6 + 5 * Math.abs(Math.sin(a))) * k;
     /* the bottom edge rises to the groin in the middle (an inverted V); from the side it is the round of the bottom */
     parts.push([-0.005, el('path', { d: 'M' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' L' + (pc.X + pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Q' + (pc.X + pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X + pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' L' + pc.X.toFixed(1) + ' ' + pV.toFixed(1) + ' L' + (pc.X - pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' Q' + (pc.X - pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Z', fill: grad(L.legsOn === 'none' ? C.skin2 : C.legs) })]);
     if (L.skirt) { var skW = function (wu, du) { return Math.sqrt(Math.pow(wu * Math.cos(a), 2) + Math.pow(du * L.bp.d * Math.sin(a), 2)) * k; }, sk1 = P(0, 132 + bob, 0), skh = P(0, 147 + bob, -1), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skc2 = L.top === 'dress' ? C.top : C.legs;
-      var skw1 = skW(L.bp.wv + (L.bp.hv - L.bp.wv) * .35 + .4, 12.4), skwh = skW(L.bp.hv + 1, 13.6), skw2 = skwh * (L.skirt === 'long' ? 1.5 : 1.34), sf = function (v) { return v.toFixed(1); };
+      var skw1 = skW(L.bp.wv + (L.bp.hv - L.bp.wv) * .35 + .4, 10.8), skwh = skW(L.bp.hv + 1, 12), skw2 = skwh * (L.skirt === 'long' ? 1.5 : 1.34), sf = function (v) { return v.toFixed(1); };
       /* a skirt starts as wide as the waist it hangs from, rounds over the hips and flares to the hem (it used to start wider than the body: two corners stuck out at the hips) */
       parts.push([0.004, el('path', { d: 'M' + sf(sk1.X - skw1) + ' ' + sf(sk1.Y) + ' L' + sf(sk1.X + skw1) + ' ' + sf(sk1.Y) + ' Q' + sf(skh.X + skwh * 1.04) + ' ' + sf(skh.Y) + ' ' + sf(sk2.X + skw2) + ' ' + sf(sk2.Y) + ' Q' + sf(sk2.X) + ' ' + sf(sk2.Y + 4 * k) + ' ' + sf(sk2.X - skw2) + ' ' + sf(sk2.Y) + ' Q' + sf(skh.X - skwh * 1.04) + ' ' + sf(skh.Y) + ' ' + sf(sk1.X - skw1) + ' ' + sf(sk1.Y) + ' Z', fill: grad(skc2) })]); }
     /* torso: an oval tube – its width depends on which way he faces; the side towards the back is darker */
-    var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)); };
-    var hw = Math.sqrt(Math.pow((BP.ch + 1) * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
+    var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(12.6 * BP.d * Math.sin(a), 2)); };
+    var hw = Math.sqrt(Math.pow((BP.ch + 1) * Math.cos(a), 2) + Math.pow(12.6 * BP.d * Math.sin(a), 2)), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
     var t1 = P(0, topY, 0), t2 = P(0, botY, 0);
     /* a human trunk (phase 1 of the avatar brief): the neck's base, sloping to round shoulders, a chest, a waist that narrows
        and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
@@ -236,8 +236,10 @@
     var MUT = BP.mus || 0, NW = 5.4 + .5 * MUT, mixw = function (p, q, f) { return p + (q - p) * f; };
     /* the trunk, level by level (JP's anatomy spec): the traps slope from the neck to the shoulders, the lats are widest
        under the armpits, the sides run in to the waist (a V) and flare a little over the hips */
-    var LV = [[79, NW, 7.5, 0], [82.5 - .6 * MUT, mixw(NW, BP.sx, .5), 9.5 * BP.d, -.6], [87.5, BP.sx - 1, 12 * BP.d, 0], [99, BP.ch + .8, 16.5 * BP.d, 2.4], [113, mixw(BP.ch, BP.wv, .6), 14.5 * BP.d, 1.8],
-      [128, BP.wv, 12.2 * BP.d * (.5 + .5 * BP.wa), .8], [138, mixw(BP.wv, BP.hv, .7), 12.4 * BP.d, -.4], [146, BP.hv, 12.8 * BP.d, -1.2]];
+    /* from the side (JP 2026-11-13: the chest came to a sharp point and the trunk was as deep as it was wide): a chest about two thirds as deep as it is
+       wide, its front a soft line – out a little to the chest, gently in to the stomach – and the back a slight S (shoulder blades, the small of the back, the seat) */
+    var LV = [[79, NW, 6.4, 0], [82.5 - .6 * MUT, mixw(NW, BP.sx, .5), 8.2 * BP.d, -.8], [87.5, BP.sx - 1, 10.4 * BP.d, 0], [99, BP.ch + .8, (11.9 + .45 * MUT) * BP.d, .9 + .3 * MUT], [113, mixw(BP.ch, BP.wv, .6), 11.7 * BP.d, .9],
+      [128, BP.wv, 10.4 * BP.d * (.5 + .5 * BP.wa), .6], [138, mixw(BP.wv, BP.hv, .7), 10.8 * BP.d, -.3], [146, BP.hv, 11.4 * BP.d, -1.2]];
     var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3]), hwq = Math.sqrt(Math.pow(q[1] * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
@@ -514,10 +516,12 @@
     /* the hair's outline: across the head from one side to the other along the hairline, back over the top. The hairline is high
        over the forehead, stays clear of the ear (the hair stops behind it) and drops at the back to a slightly pointed nape, so the
        neck shows (JP's spec: no brown ball) */
+    /* the nape, so the short styles differ from behind too: [the point, how far the sides rise, the point's place, lower or higher, a wavy edge and how tight] */
+    var NAPE = { quiff: [0, 8, 0, .5, 0, 0], side: [2.6, 12, .32, 0, 0, 0], waves: [0, 11, 0, .8, 1.1, 13], bangs: [0, 6, 0, 2.6, 0, 0], fade: [0, 9, 0, -4.5, 0, 0], curly: [0, 11, 0, .6, 1.2, 21] }, nk = NAPE[L.hair] || [2.8, 12, 0, 0, 0, 0];
     function hairPts(Hp, sweep, bumpy) { return function () { var pts = [], N = 32, RR = R * Hp[2];
       for (var i = 0; i <= N; i++) {
         var X = -1 + 2 * i / N, phi = Math.asin(X), facing = Math.cos(phi - a), side = Math.sin(phi - a), back = Math.max(0, Math.min(1, -facing * 1.5));
-        var y = Hp[0] + (5 - 12 * back) * X * X + 2.8 * back * Math.max(0, 1 - Math.abs(X) * 3.5) + Hp[1] * sstep(0.1, -0.5, facing) + (sweep ? 4 * Math.max(0, side) * Math.max(0, facing) : 0);
+        var y = Hp[0] + (5 - nk[1] * back) * X * X + nk[0] * back * Math.max(0, 1 - Math.abs(X - nk[2]) * 3.5) + nk[3] * back + nk[4] * back * Math.sin(X * nk[5]) + Hp[1] * sstep(0.1, -0.5, facing) + (sweep ? 4 * Math.max(0, side) * Math.max(0, facing) : 0);
         var sq = Math.sqrt(Math.max(0, 1 - X * X));
         y = Math.max(52 - 22 * sq + 1, Math.min(y, 52 + 22 * sq - 1.5));
         pts.push([hc.X + X * RR, hc.Y + (y - 52) * k]);
@@ -528,8 +532,8 @@
     if (H && (L.hair === 'undercut' || L.hair === 'mohawk' || L.hair === 'fade')) head.appendChild(el('path', Object.assign(headPath('buzz', L.hair + '|' + a.toFixed(4) + '|' + k.toFixed(4), hairPts([38.5, 29, 1.0, 1.02])), { fill: C.hair, opacity: L.hair === 'fade' ? .45 : .3 })));
     if (H && L.hair === 'mohawk' && !hatCovers) {   /* a crest along the middle of the head: highest on top, down to the scalp at the forehead and at the nape – in two halves, so the half on the far side of the head goes behind it */
       [[0, 8, -1], [7, 16, 1]].forEach(function (hf) { var mh = [], mhI = [];
-        for (var mi = hf[0]; mi <= hf[1]; mi++) { var mt = Math.PI * (.1 + .68 * mi / 16), mcr = 8.5 * Math.pow(Math.sin(Math.PI * mi / 16), .8), mp = P(0, 52 - Math.sin(mt) * (21 + mcr) + hb6, -Math.cos(mt) * (22 + mcr * .8)), mp2 = P(0, 52 - Math.sin(mt) * 20 + hb6, -Math.cos(mt) * 21); mh.push([mp.X, mp.Y]); mhI.unshift([mp2.X, mp2.Y]); }
-        parts.push([hf[2] * Math.cos(a) < -.25 ? 0.48 : 0.52, el('path', { d: poly(mh.concat(mhI)), fill: grad(C.hair), stroke: grad(C.hair), 'stroke-width': (4 * k).toFixed(1), 'stroke-linejoin': 'round' })]); });
+        for (var mi = hf[0]; mi <= hf[1]; mi++) { var mt = Math.PI * (.1 + .68 * mi / 16), mcr = 9.5 * Math.pow(Math.sin(Math.PI * mi / 16), .8) * (mi % 2 ? .72 : 1), mp = P(0, 52 - Math.sin(mt) * (21 + mcr) + hb6, -Math.cos(mt) * (22 + mcr * .8)), mp2 = P(0, 52 - Math.sin(mt) * 20 + hb6, -Math.cos(mt) * 21); mh.push([mp.X, mp.Y]); mhI.unshift([mp2.X, mp2.Y]); }
+        parts.push([hf[2] * Math.cos(a) < -.25 ? 0.48 : 0.52, el('path', { d: poly(mh.concat(mhI)), fill: grad(C.hair), stroke: grad(C.hair), 'stroke-width': (3 * k).toFixed(1), 'stroke-linejoin': 'round' })]); });
       H = null; }
     if (H && hatCovers) H = L.hair === 'mohawk' ? null : [H[0], H[1], 1, 1];   /* under a hat the hair lies flat: the hat hides its top, the hair still shows below it at the sides and the back (it used to vanish – a bald head under every hat) */
     if (H) {

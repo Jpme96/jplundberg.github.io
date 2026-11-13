@@ -23,7 +23,7 @@
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
   function byId(id) { return list().filter(function (x) { return x.id === id; })[0]; }
   function saveOne(id, fn) { var t = Fe.tools(); (t.hproj || []).forEach(function (x) { if (x && x.id === id) fn(x); }); Fe.saveTools(t); }
-  var WORK = [['improve', 'Improvement – agree it in writing first'], ['minor', 'Minor repair (counts towards the 5 000 kr a year)'], ['urgent', 'Urgent repair']];
+  var WORK = [['improve', I18N.k('ui.improvement-agree-it-in-writing-first', 'Improvement – agree it in writing first')], ['minor', I18N.k('ui.minor-repair-counts-towards-the-5-000-kr', 'Minor repair (counts towards the 5 000 kr a year)')], ['urgent', I18N.k('ui.urgent-repair', 'Urgent repair')]];
   function partner() { return window.Shared && window.Shared.partner && window.Shared.partner(); }
   function prog(p) { var t = arr(p.tasks); return t.length ? t.filter(function (x) { return x.done; }).length / t.length : (p.status === 'done' ? 1 : 0); }
   var FIELDS = [

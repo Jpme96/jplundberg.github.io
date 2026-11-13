@@ -170,7 +170,7 @@
     else if (e.target.closest('[data-fdvall]')) addFdv(suggestions().map(function (x) { return x.id; }));
     else if ((b = e.target.closest('[data-fdvno]'))) { var t = Fe.tools(); t.hfdvoff = Object.assign({}, t.hfdvoff || {}); t.hfdvoff[b.dataset.fdvno] = 1; Fe.saveTools(t); }
   });
-  var RATE = [['', 'Not rated'], [3, 'Would use again'], [2, 'Was OK'], [1, 'Wouldn’t use again']];
+  var RATE = [['', 'Not rated'], [3, I18N.k('ui.would-use-again', 'Would use again')], [2, I18N.k('ui.was-ok', 'Was OK')], [1, I18N.k('ui.wouldnt-use-again', 'Wouldn’t use again')]];
   function tel(s) { return String(s || '').replace(/[^\d+]/g, ''); }
   var prosCol = K && $t('hpros') ? K.collection({
     mount: $t('hpros'), feature: 'house', key: 'hpros', icon: 'person-gear', title: 'Handymen', addLabel: 'Add', limit: 8,

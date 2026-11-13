@@ -159,6 +159,8 @@
     if (hat) g.appendChild(hatG(x, y - 39.2 * s, s));
     return g;
   }
+  /* the season's prop at a place of the scene's own choosing (a film that pans, like the Journey, draws it with its scenery): the tree, the lit pumpkin, the snowman with its hat */
+  function seasonProp(par, x, y, s) { var sn = season(); return sn === 'xmas' ? treeG(par, x, y, s, 0) : sn === 'halloween' ? pumpkinG(par, x, y, s, 1) : sn === 'winter' ? snowmanG(par, x, y, s, 1) : null; }
   /* drawn first in each frame (behind him): the tree with the baubles hung so far, or the pumpkin, lit once he's lit it */
   function seasonDraw(par, st) {
     var sp = st.season, sn = season(); if (!sp || !sn) return;
@@ -376,7 +378,7 @@
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) ALL.forEach(function (r) { r.wake(); }); });
 
-  window.Scene25 = { run: run, still: still, look: myLook, el: el, add: add, txt: txt, E: E, CL: CL, SEG: SEG, LERP: LERP, MIX: MIX, swing: swing, CHEER: CHEER, STAR: STAR, LIFE: LIFE, FIG: FIG, kr: kr, GEN: GEN, gens: gens, season: season, decor: decor,
+  window.Scene25 = { seasonProp: seasonProp, run: run, still: still, look: myLook, el: el, add: add, txt: txt, E: E, CL: CL, SEG: SEG, LERP: LERP, MIX: MIX, swing: swing, CHEER: CHEER, STAR: STAR, LIFE: LIFE, FIG: FIG, kr: kr, GEN: GEN, gens: gens, season: season, decor: decor,
     /* for the tests and contact sheets: every live scene to time t (seconds) */
     REST: REST, AT: AT, B: B, GO: GO, HOLD: HOLD, SIDE: SIDE, LEG: LEG, grp: grp, CLOCK: CLOCK, FLOOR: FLOOR, LOOKS: LOOKS,
     seek: function (t) { ALL.forEach(function (r) { if (!r.dead) r.api.at(t); }); }, list: function () { return ALL.filter(function (r) { return !r.dead; }).map(function (r) { return r.api; }); },

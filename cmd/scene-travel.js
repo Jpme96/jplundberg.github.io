@@ -247,6 +247,7 @@
     var Y0 = GY - 117 * SC;   /* the art's ground line (y 117) on ours */
     function place(g, work, cx, lit) {
       g.appendChild(art('pl' + work, A.place(work, 0, 'none'), cx - 191 * SC, Y0));
+      S.seasonProp(g, cx + (cx < 200 ? 110 : -110), GY - 3, .8);   /* beside the building, on its open side: the tree in December, the pumpkin at Halloween, a snowman in January and February – it goes with the place as the film moves on */
       if (lit) { var ws = work ? [[174, 50], [190, 61], [206, 72], [174, 83]] : [[170, 88]]; ws.forEach(function (w) { add(g, 'rect', { x: cx + (w[0] - 191) * SC, y: Y0 + w[1] * SC, width: (work ? 10 : 13) * SC, height: (work ? 7 : 11) * SC, rx: 2, fill: '#ffd56b', opacity: lit.toFixed(2) }); }); }
     }
     function doorX(work) { return (work ? 195 : 194) - 191; }   /* the door's middle, from the place's middle (art units) */
