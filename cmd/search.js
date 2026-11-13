@@ -80,7 +80,7 @@
       if (Fe.on('fdv')) (T.fdv || []).forEach(function (r) {
         add('FDV', 'building-check', r.building, ['Inspection ' + fmt(r.date), r.address, r.client].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (r.address || '') + ' ' + (r.client || '') + ' ' + (r.notes || '') + ' fdv befaring inspection');
         (r.findings || []).forEach(function (f) {
-          add('FDV', 'clipboard-check', (f.part ? f.part + ': ' : '') + f.text, [String(f.tg).toUpperCase() === 'IU' ? 'TG IU' : 'TG' + f.tg, r.building, fmt(r.date)].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (f.action || '') + ' ' + r.building + ' funn finding');
+          add('FDV', 'clipboard-check', ((window.LifePages && LifePages.partLabel ? LifePages.partLabel(f) : f.part) ? (window.LifePages && LifePages.partLabel ? LifePages.partLabel(f) : f.part) + ': ' : '') + f.text, [String(f.tg).toUpperCase() === 'IU' ? 'TG IU' : 'TG' + f.tg, r.building, fmt(r.date)].filter(Boolean).join(' · '), home + 'work/#fdv=' + r.id, r.date, (f.action || '') + ' ' + r.building + ' funn finding');
         });
       });
       tool('warranty', 'Finances', 'receipt-cutoff', function (w) { return w.item; }, function (w) { return [w.store, fmt(w.bought), w.receipt ? 'receipt: ' + w.receipt : ''].filter(Boolean).join(' · '); }, 'finance/#warranty', 'bought', function (w) { return (w.store || '') + ' ' + (w.notes || '') + ' ' + (w.receipt || ''); });

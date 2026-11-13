@@ -11,7 +11,7 @@
   "use strict";
   if (!window.Vault || !window.Features) return;
   var __c = (window.__core || {})["work"]; if (!__c) return;
-  var myPhrases = __c.myPhrases, myParts = __c.myParts, esc = __c.esc, toast = __c.toast, Fe = __c.Fe;
+  var myPhrases = __c.myPhrases, esc = __c.esc, toast = __c.toast, Fe = __c.Fe;
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function fromKey(k) { var p = String(k).split('-'); return new Date(+p[0], p[1] - 1, +(p[2] || 1)); }
@@ -21,45 +21,72 @@
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   var nf2 = new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function kr2(n) { return nf2.format(Math.round((n || 0) * 100) / 100); }
-  var BUILT = {
-    'Roof': [['Loose or missing roof tiles', 'Løse eller manglende takstein', 'Replace and fasten tiles', 'Skift og fest takstein', '2'], ['Gutters clogged with leaves', 'Takrenner tette av løv', 'Clean gutters and downpipes', 'Rens takrenner og nedløp', '1'], ['Moss growth on the roof', 'Mosegroing på taket', 'Treat with moss remover', 'Behandle med mosefjerner', '1'], ['Damaged flashing around the chimney', 'Skadet beslag rundt pipe', 'Repair the flashing', 'Reparer beslaget', '2']],
-    'Facade': [['Flaking paint on the cladding', 'Flassende maling på kledningen', 'Scrape and repaint', 'Skrap og mal', '1'], ['Rot in the cladding near the ground', 'Råte i kledning mot terreng', 'Replace damaged boards, more clearance to the ground', 'Skift skadde bord, øk avstand til terreng', '2'], ['Cracks in render or masonry', 'Riss i puss eller mur', 'Monitor and seal the cracks', 'Følg med og tett rissene', '1']],
-    'Windows and doors': [['Cracked sealant around the window', 'Sprukket fuge rundt vinduet', 'Re-seal', 'Fug på nytt', '1'], ['Condensation between the panes', 'Kondens mellom glassene (punktert rute)', 'Replace the glass unit', 'Skift glasset', '2'], ['Door does not close properly', 'Døren lukker ikke ordentlig', 'Adjust hinges and lock', 'Juster hengsler og lås', '1']],
-    'Wet rooms': [['Missing or failing silicone joints', 'Manglende eller dårlige silikonfuger', 'Re-seal the joints', 'Fug på nytt', '2'], ['High moisture reading behind the tiles', 'Forhøyet fukt bak flisene', 'Further investigation', 'Videre undersøkelse', '3'], ['Floor drain not cleaned', 'Sluk ikke rengjort', 'Clean the drain', 'Rens sluket', '1'], ['Too little fall towards the drain', 'For lite fall mot sluk', 'Assess when renovating', 'Vurder ved rehabilitering', '2']],
-    'Kitchen': [['No leak guard under the dishwasher', 'Mangler lekkasjesikring under oppvaskmaskinen', 'Install a leak guard', 'Monter lekkasjestopper', '2'], ['Dirty filter in the cooker hood', 'Tilsmusset filter i kjøkkenviften', 'Clean or replace the filter', 'Rens eller skift filteret', '1']],
-    'Electrical': [['Old fuse box with screw fuses', 'Gammelt sikringsskap med skrusikringer', 'Assessment by an electrician', 'Vurdering av elektriker', '2'], ['No earth fault breaker', 'Mangler jordfeilbryter', 'Install an earth fault breaker', 'Monter jordfeilbryter', '2'], ['Loose socket or cover', 'Løs stikkontakt eller deksel', 'Fasten or replace', 'Fest eller skift', '1']],
-    'Plumbing (VVS)': [['Water heater older than 20 years', 'Varmtvannsbereder eldre enn 20 år', 'Plan a replacement', 'Planlegg utskifting', '2'], ['Corrosion on pipes', 'Korrosjon på rør', 'Monitor or replace', 'Følg med eller skift', '2'], ['Main stopcock hard to turn', 'Hovedstoppekran går tungt', 'Service or replace', 'Service eller skift', '1']],
-    'Ventilation': [['Dirty valves and ducts', 'Tilsmussede ventiler og kanaler', 'Clean valves and ducts', 'Rens ventiler og kanaler', '1'], ['Filter not changed', 'Filter ikke skiftet', 'Change the filter', 'Skift filteret', '1'], ['No fresh air supply in the bedroom', 'Mangler tilluft på soverommet', 'Install a vent', 'Monter ventil', '2']],
-    'Heating': [['Dirty heat pump filter', 'Tilsmusset filter i varmepumpen', 'Clean the filter', 'Rens filteret', '1'], ['Radiator heats unevenly', 'Radiator varmer ujevnt', 'Bleed or service', 'Luft eller service', '1']],
-    'Fire safety': [['Smoke alarm missing on a floor', 'Mangler røykvarsler i én etasje', 'Install a smoke alarm', 'Monter røykvarsler', '3'], ['Fire extinguisher out of date', 'Brannslukker utgått på dato', 'Service or replace', 'Service eller skift', '2'], ['Escape route blocked', 'Rømningsvei blokkert', 'Clear the escape route', 'Rydd rømningsveien', '3']],
-    'Structure': [['Cracks in the foundation wall', 'Riss i grunnmuren', 'Monitor and seal', 'Følg med og tett', '2'], ['Signs of settlement', 'Tegn på setninger', 'Further investigation', 'Videre undersøkelse', '2'], ['Moisture in the crawl space', 'Fukt i krypkjelleren', 'Better ventilation or a dehumidifier', 'Bedre lufting eller avfukter', '2']],
-    'Outdoor areas': [['Ground slopes towards the house', 'Terrenget faller mot huset', 'Re-grade away from the wall', 'Juster fallet fra veggen', '2'], ['Rot in deck boards', 'Råte i terrassebord', 'Replace the boards', 'Skift bordene', '1'], ['Loose railing', 'Løst rekkverk', 'Fasten the railing', 'Fest rekkverket', '3']],
-    'Other': [['No visible damage', 'Ingen synlige skader', '', '', '0'], ['Not accessible', 'Ikke tilgjengelig', 'Examine at the next inspection', 'Undersøk ved neste befaring', 'iu']]
-  };
-  function partKey(v) { if (BUILT[v]) return v; var T = window.I18N && window.I18N.t; return T ? Object.keys(BUILT).filter(function (k) { return T(k) === v; })[0] || v : v; }
-  function phrasesFor(part) {
-    var mine = myPhrases().filter(function (x) { return x.part === part; }).map(function (x) { return { id: x.id, text: x.text, action: x.action || '', tg: x.tg || '', mine: true }; });
-    var b = (BUILT[partKey(part)] || []).map(function (x, i) { return { id: 'b' + i, text: nb() ? x[1] : x[0], action: nb() ? x[3] : x[2], tg: x[4] }; });
+  /* built-in phrases: [NS 3451 code, finding, funn, action, tiltak, TG, place, sted] – a phrase shows for its code, its group and any longer code under it */
+  var BUILT = [
+    ['26', 'Loose or missing roof tiles', 'Løse eller manglende takstein', 'Replace and fasten tiles', 'Skift og fest takstein', '2', '', ''],
+    ['26', 'Gutters clogged with leaves', 'Takrenner tette av løv', 'Clean gutters and downpipes', 'Rens takrenner og nedløp', '1', '', ''],
+    ['26', 'Moss growth on the roof', 'Mosegroing på taket', 'Treat with moss remover', 'Behandle med mosefjerner', '1', '', ''],
+    ['26', 'Damaged flashing around the chimney', 'Skadet beslag rundt pipe', 'Repair the flashing', 'Reparer beslaget', '2', '', ''],
+    ['23', 'Flaking paint on the cladding', 'Flassende maling på kledningen', 'Scrape and repaint', 'Skrap og mal', '1', '', ''],
+    ['23', 'Rot in the cladding near the ground', 'Råte i kledning mot terreng', 'Replace damaged boards, more clearance to the ground', 'Skift skadde bord, øk avstand til terreng', '2', '', ''],
+    ['23', 'Cracks in render or masonry', 'Riss i puss eller mur', 'Monitor and seal the cracks', 'Følg med og tett rissene', '1', '', ''],
+    ['23', 'Cracked sealant around the window', 'Sprukket fuge rundt vinduet', 'Re-seal', 'Fug på nytt', '1', '', ''],
+    ['23', 'Condensation between the panes', 'Kondens mellom glassene (punktert rute)', 'Replace the glass unit', 'Skift glasset', '2', '', ''],
+    ['23', 'Door does not close properly', 'Døren lukker ikke ordentlig', 'Adjust hinges and lock', 'Juster hengsler og lås', '1', '', ''],
+    ['24', 'Missing or failing silicone joints', 'Manglende eller dårlige silikonfuger', 'Re-seal the joints', 'Fug på nytt', '2', 'Wet room', 'Våtrom'],
+    ['24', 'High moisture reading behind the tiles', 'Forhøyet fukt bak flisene', 'Further investigation', 'Videre undersøkelse', '3', 'Wet room', 'Våtrom'],
+    ['31', 'Floor drain not cleaned', 'Sluk ikke rengjort', 'Clean the drain', 'Rens sluket', '1', 'Wet room', 'Våtrom'],
+    ['25', 'Too little fall towards the drain', 'For lite fall mot sluk', 'Assess when renovating', 'Vurder ved rehabilitering', '2', 'Wet room', 'Våtrom'],
+    ['31', 'No leak guard under the dishwasher', 'Mangler lekkasjesikring under oppvaskmaskinen', 'Install a leak guard', 'Monter lekkasjestopper', '2', 'Kitchen', 'Kjøkken'],
+    ['36', 'Dirty filter in the cooker hood', 'Tilsmusset filter i kjøkkenviften', 'Clean or replace the filter', 'Rens eller skift filteret', '1', 'Kitchen', 'Kjøkken'],
+    ['43', 'Old fuse box with screw fuses', 'Gammelt sikringsskap med skrusikringer', 'Assessment by an electrician', 'Vurdering av elektriker', '2', '', ''],
+    ['43', 'No earth fault breaker', 'Mangler jordfeilbryter', 'Install an earth fault breaker', 'Monter jordfeilbryter', '2', '', ''],
+    ['43', 'Loose socket or cover', 'Løs stikkontakt eller deksel', 'Fasten or replace', 'Fest eller skift', '1', '', ''],
+    ['31', 'Water heater older than 20 years', 'Varmtvannsbereder eldre enn 20 år', 'Plan a replacement', 'Planlegg utskifting', '2', '', ''],
+    ['31', 'Corrosion on pipes', 'Korrosjon på rør', 'Monitor or replace', 'Følg med eller skift', '2', '', ''],
+    ['31', 'Main stopcock hard to turn', 'Hovedstoppekran går tungt', 'Service or replace', 'Service eller skift', '1', '', ''],
+    ['36', 'Dirty valves and ducts', 'Tilsmussede ventiler og kanaler', 'Clean valves and ducts', 'Rens ventiler og kanaler', '1', '', ''],
+    ['36', 'Filter not changed', 'Filter ikke skiftet', 'Change the filter', 'Skift filteret', '1', '', ''],
+    ['36', 'No fresh air supply in the bedroom', 'Mangler tilluft på soverommet', 'Install a vent', 'Monter ventil', '2', '', ''],
+    ['32', 'Dirty heat pump filter', 'Tilsmusset filter i varmepumpen', 'Clean the filter', 'Rens filteret', '1', '', ''],
+    ['32', 'Radiator heats unevenly', 'Radiator varmer ujevnt', 'Bleed or service', 'Luft eller service', '1', '', ''],
+    ['54', 'Smoke alarm missing on a floor', 'Mangler røykvarsler i én etasje', 'Install a smoke alarm', 'Monter røykvarsler', '3', '', ''],
+    ['33', 'Fire extinguisher out of date', 'Brannslukker utgått på dato', 'Service or replace', 'Service eller skift', '2', '', ''],
+    ['29', 'Escape route blocked', 'Rømningsvei blokkert', 'Clear the escape route', 'Rydd rømningsveien', '3', '', ''],
+    ['21', 'Cracks in the foundation wall', 'Riss i grunnmuren', 'Monitor and seal', 'Følg med og tett', '2', '', ''],
+    ['21', 'Signs of settlement', 'Tegn på setninger', 'Further investigation', 'Videre undersøkelse', '2', '', ''],
+    ['21', 'Moisture in the crawl space', 'Fukt i krypkjelleren', 'Better ventilation or a dehumidifier', 'Bedre lufting eller avfukter', '2', '', ''],
+    ['71', 'Ground slopes towards the house', 'Terrenget faller mot huset', 'Re-grade away from the wall', 'Juster fallet fra veggen', '2', '', ''],
+    ['72', 'Rot in deck boards', 'Råte i terrassebord', 'Replace the boards', 'Skift bordene', '1', '', ''],
+    ['72', 'Loose railing', 'Løst rekkverk', 'Fasten the railing', 'Fest rekkverket', '3', '', ''],
+    ['', 'No visible damage', 'Ingen synlige skader', '', '', '0', '', ''],
+    ['', 'Not accessible', 'Ikke tilgjengelig', 'Examine at the next inspection', 'Undersøk ved neste befaring', 'iu', '', '']
+  ];
+  function rel(a, b) { a = String(a || ''); b = String(b || ''); return !a || !b ? a === b : a.indexOf(b) === 0 || b.indexOf(a) === 0; }
+  function phrasesFor(code) {
+    var mine = myPhrases().filter(function (x) { return rel(x.code, code) || !x.code; }).map(function (x) { return { id: x.id, text: x.text, action: x.action || '', tg: x.tg || '', place: x.place || '', mine: true }; });
+    var b = BUILT.map(function (x, i) { return { i: i, x: x }; }).filter(function (q) { return code ? q.x[0] && rel(q.x[0], code) : !q.x[0]; }).map(function (q) { var x = q.x; return { id: 'b' + q.i, text: nb() ? x[2] : x[1], action: nb() ? x[4] : x[3], tg: x[5], place: nb() ? x[7] : x[6] }; });
     var seen = {}; return mine.concat(b).filter(function (x) { var k = String(x.text || '').toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
   }
-  var last = { part: null, tg: null };
+  var last = { code: null, tg: null, kg: null };
   function decorate(form) {
-    var sel = form.querySelector('select[name="part"]'), tg = form.querySelector('select[name="tg"]'); if (!sel) return;
-    /* your own building parts in the list */
-    myParts().forEach(function (p) { if (![].some.call(sel.options, function (o) { return o.value === p; })) { var o = document.createElement('option'); o.textContent = p; o.value = p; sel.insertBefore(o, sel.querySelector('option:last-child')); } });
+    var sel = form.querySelector('select[name="code"]'), tg = form.querySelector('select[name="tg"]'); if (!sel) return;
     if (form.dataset.wpDone) return;
     if (!form.dataset.wpDone) {
       form.dataset.wpDone = '1';
-      if (last.part && [].some.call(sel.options, function (o) { return o.value === last.part; })) sel.value = last.part;
-      if (last.tg && tg) tg.value = last.tg;
+      if (!form.fid) {   /* a new finding starts where the last one was (an edit keeps its own) */
+        if (last.code != null && [].some.call(sel.options, function (o) { return o.value === last.code; })) sel.value = last.code;
+        if (last.tg && tg) tg.value = last.tg;
+        if (last.kg != null && form.kg) form.kg.value = last.kg;
+      }
       var box = document.createElement('div'); box.className = 'fdv-tpl'; box.setAttribute('data-noi18n', '');
       form.querySelector('.row2').insertAdjacentElement('afterend', box);
     }
     chips(form);
   }
   function chips(form) {
-    var box = form.querySelector('.fdv-tpl'), part = form.part.value; if (!box) return;
-    var l = phrasesFor(part);
+    var box = form.querySelector('.fdv-tpl'), code = form.code.value === '+' ? '' : form.code.value; if (!box) return;
+    var l = phrasesFor(code);
     box.innerHTML = l.map(function (x, i) {
       return '<span class="fdv-chip' + (x.mine ? ' mine' : '') + '"><button type="button" data-fdvph="' + i + '" title="' + esc(x.action ? '→ ' + x.action : '') + '">' + (x.tg ? '<i class="tgd tg' + x.tg + '"></i>' : '') + esc(x.text) + '</button>' +
         (x.mine ? '<button type="button" class="fdv-chx" data-fdvphdel="' + esc(x.id) + '" aria-label="Remove phrase"><i class="bi bi-x"></i></button>' : '') + '</span>';
@@ -75,26 +102,28 @@
     }).observe(host, { childList: true, subtree: true });
     host.addEventListener('change', function (e) {
       var f = e.target.closest('form.fdv-add'); if (!f) return;
-      if (e.target.name === 'part') { last.part = e.target.value; chips(f); }
+      if (e.target.name === 'code') { if (e.target.value !== '+') last.code = e.target.value; chips(f); }
       if (e.target.name === 'tg') last.tg = e.target.value;
+      if (e.target.name === 'kg') last.kg = e.target.value;
     });
-    host.addEventListener('submit', function (e) { var f = e.target.closest('form.fdv-add'); if (f) { last.part = f.part.value; last.tg = f.tg.value; pendingBump(); } }, true);
+    host.addEventListener('submit', function (e) { var f = e.target.closest('form.fdv-add'); if (f && !f.fid) { if (f.code.value !== '+') last.code = f.code.value; last.tg = f.tg.value; last.kg = f.kg.value; pendingBump(); } else if (f) pendingBump(); }, true);
     host.addEventListener('click', function (e) {
       var b, f = e.target.closest('form.fdv-add');
       if ((b = e.target.closest('[data-fdvph]')) && f) {
         var x = f.querySelector('.fdv-tpl')._list[+b.dataset.fdvph]; if (!x) return;
-        f.text.value = x.text; f.action.value = x.action || ''; if (x.tg) { f.tg.value = x.tg; last.tg = x.tg; }
+        f.text.value = x.text; f.action.value = x.action || ''; if (x.tg) { f.tg.value = x.tg; last.tg = x.tg; } if (x.place && !f.part.value) f.part.value = x.place;
         f.text.focus(); try { f.text.setSelectionRange(x.text.length, x.text.length); } catch (er) {}
         return;
       }
       if (e.target.closest('[data-fdvphsave]') && f) {
         var text = f.text.value.trim(); if (!text) { f.text.focus(); toast('<i class="bi bi-info-circle"></i> Type the finding first, then save it as a phrase'); return; }
         var t = Fe.tools(); t.fdvph = Array.isArray(t.fdvph) ? t.fdvph : [];
-        if (!t.fdvph.some(function (q) { return q.part === f.part.value && String(q.text || '').toLowerCase() === text.toLowerCase(); })) t.fdvph.push({ id: uid(), part: f.part.value, text: text.slice(0, 300), action: f.action.value.trim().slice(0, 200), tg: f.tg.value });
+        var pc = f.code.value === '+' ? '' : f.code.value;
+        if (!t.fdvph.some(function (q) { return (q.code || '') === pc && String(q.text || '').toLowerCase() === text.toLowerCase(); })) t.fdvph.push({ id: uid(), code: pc, place: f.part.value.trim().slice(0, 80), text: text.slice(0, 300), action: f.action.value.trim().slice(0, 200), tg: f.tg.value });
         var keep = { text: f.text.value, action: f.action.value };
         Fe.saveTools(t);
         setTimeout(function () { var f2 = host.querySelector('form.fdv-add'); if (f2) { f2.text.value = keep.text; f2.action.value = keep.action; } }, 80);
-        toast('<i class="bi bi-star-fill"></i> Phrase saved for ' + esc(f.part.value));
+        toast('<i class="bi bi-star-fill"></i> ' + esc(I18N.k('ui.phrase-saved-for', 'Phrase saved for {p}', { p: pc && window.LifePages && LifePages.nsLabel ? LifePages.nsLabel(pc) : I18N.k('ui.ns-no-code', '– No code –') })));
         return;
       }
       if ((b = e.target.closest('[data-fdvphdel]'))) {

@@ -9,7 +9,7 @@
   "use strict";
   if (!window.Vault) return;
   var __c = (window.__core || {})["lifepages"]; if (!__c) return;
-  var nf = __c.nf, on = __c.on, mounts = __c.mounts, drawAll = __c.drawAll, dkey = __c.dkey, addDays = __c.addDays, prices = __c.prices, Fe = __c.Fe, pwLoading = __c.pwLoading, cheapest = __c.cheapest, pad = __c.pad, support = __c.support, TG = __c.TG, fmt = __c.fmt, toast = __c.toast, summary = __c.summary, readJSON = __c.readJSON, uid = __c.uid, fromKey = __c.fromKey, templates = __c.templates, saveTpls = __c.saveTpls, starter = __c.starter;
+  var nf = __c.nf, on = __c.on, mounts = __c.mounts, drawAll = __c.drawAll, dkey = __c.dkey, addDays = __c.addDays, prices = __c.prices, Fe = __c.Fe, pwLoading = __c.pwLoading, cheapest = __c.cheapest, pad = __c.pad, support = __c.support, TG = __c.TG, NS = __c.NS, nsName = __c.nsName, nsLabel = __c.nsLabel, partLabel = __c.partLabel, KG = __c.KG, prio = __c.prio, PRIO = __c.PRIO, fmt = __c.fmt, toast = __c.toast, summary = __c.summary, readJSON = __c.readJSON, uid = __c.uid, fromKey = __c.fromKey, templates = __c.templates, saveTpls = __c.saveTpls, starter = __c.starter;
   var K = window.Kit;
   if (!Fe) return;
   function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
@@ -82,7 +82,27 @@
     });
   }
   if (svList) { new MutationObserver(function () { if (on('jars') && svList.querySelector('li.goal:not(:has(.jar))')) jars(); }).observe(svList, { childList: true }); mounts.push(jars); }
-  var PARTS = ['Roof', 'Facade', 'Windows and doors', 'Wet rooms', 'Kitchen', 'Electrical', 'Plumbing (VVS)', 'Ventilation', 'Heating', I18N.k('ui.fire-safety', 'Fire safety'), 'Structure', I18N.k('ui.outdoor-areas', 'Outdoor areas'), 'Other'];
+  /* FDV after NS 3451 (building part codes) and NS 3424 (TG, KG, survey level) – 2026-11-13, JP */
+  function ownCodes() { var l = Fe.tools().fdvcodes; return (Array.isArray(l) ? l : []).filter(function (c) { return c && /^\d{3,4}$/.test(c.c); }).sort(function (a, b) { return a.c < b.c ? -1 : 1; }); }
+  function codeOpts(sel) {
+    var own = ownCodes(), h = '<option value=""' + (!sel ? ' selected' : '') + '>' + esc(I18N.k('ui.ns-no-code', '– No code –')) + '</option>';
+    NS.filter(function (q) { return q[0].length === 1; }).forEach(function (m) {
+      var subs = NS.filter(function (q) { return q[0].length === 2 && q[0][0] === m[0]; }).map(function (q) { return [q[0], nsName(q[0])]; })
+        .concat(own.filter(function (c) { return c.c[0] === m[0]; }).map(function (c) { return [c.c, c.n || nsName(c.c.slice(0, 2))]; })).sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+      h += '<optgroup label="' + esc(m[0] + ' ' + nsName(m[0])) + '">' + [[m[0], nsName(m[0])]].concat(subs).map(function (q) { return '<option value="' + q[0] + '"' + (q[0] === sel ? ' selected' : '') + '>' + esc(q[0] + ' ' + q[1]) + '</option>'; }).join('') + '</optgroup>';
+    });
+    return h + '<option value="+">' + esc(I18N.k('ui.ns-add-code', 'Add a three-digit code …')) + '</option>';
+  }
+  function tgName(t) { return { 0: I18N.k('ui.tg-0', 'No issues'), 1: I18N.k('ui.tg-1', 'Minor issues'), 2: I18N.k('ui.tg-2', 'Significant issues'), 3: I18N.k('ui.tg-3', 'Serious issues'), iu: I18N.k('ui.tg-iu', 'Not examined') }[t] || ''; }
+  function kgName(k) { return { 0: I18N.k('ui.kg-0', 'KG 0 – No consequences'), 1: I18N.k('ui.kg-1', 'KG 1 – Small consequences'), 2: I18N.k('ui.kg-2', 'KG 2 – Medium consequences'), 3: I18N.k('ui.kg-3', 'KG 3 – Large consequences') }[k] || ''; }
+  function ktName(k) { return { safety: I18N.k('ui.kt-safety', 'Safety'), health: I18N.k('ui.kt-health', 'Health'), env: I18N.k('ui.kt-env', 'Environment'), cost: I18N.k('ui.kt-cost', 'Cost'), use: I18N.k('ui.kt-use', 'Function and use'), look: I18N.k('ui.kt-look', 'Aesthetics') }[k] || ''; }
+  function whenName(k) { return { now: I18N.k('ui.when-now', 'Now'), y1: I18N.k('ui.when-y1', 'Within 1 year'), y5: I18N.k('ui.when-y5', '1–5 years'), y10: I18N.k('ui.when-y10', '5–10 years') }[k] || ''; }
+  function prioName(p) { return { 3: I18N.k('ui.prio-3', 'High priority'), 2: I18N.k('ui.prio-2', 'Medium priority'), 1: I18N.k('ui.prio-1', 'Low priority'), 0: I18N.k('ui.prio-0', 'No priority') }[p] || ''; }
+  function levelName(l) { return { 1: I18N.k('ui.level-1', 'Level 1 – general, visual'), 2: I18N.k('ui.level-2', 'Level 2 – more detailed, simple measurements'), 3: I18N.k('ui.level-3', 'Level 3 – thorough, special examinations') }[l] || ''; }
+  function opts(list, sel, first) { return (first ? '<option value="">' + esc(first) + '</option>' : '') + list.map(function (q) { return '<option value="' + q[0] + '"' + (String(q[0]) === String(sel == null ? '' : sel) ? ' selected' : '') + '>' + esc(q[1]) + '</option>'; }).join(''); }
+  /* order: by code (no code last), then worst first */
+  function byCode(a, b) { var x = a.code || '~', y = b.code || '~'; return x < y ? -1 : x > y ? 1 : (String(b.tg) > String(a.tg) ? 1 : -1); }
+  var fdvEdit = null;   /* 'inspection:finding' while a finding is being changed in the form */
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-fdv', 1); r.onupgradeneeded = function () { r.result.createObjectStore('photos'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })); }
   function putPhoto(id, blob) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, id); t.oncomplete = res; }); }); }
@@ -104,7 +124,7 @@
       var f = r.findings || [], worst = ['3', '2', '1', '0'].filter(function (t) { return f.some(function (x) { return String(x.tg) === t; }); })[0];
       var open = fdvOpen === r.id;
       return '<li class="kit-item' + (open ? ' open' : '') + '"><button type="button" class="kit-main" data-fdvopen="' + esc(r.id) + '"><span class="kit-ic" style="--c:' + (worst ? TG[worst][2] : '#0891b2') + '"><i class="bi bi-building-check"></i></span>' +
-        '<span class="kit-x"><b>' + esc(r.building) + '</b><small>' + esc([fmt(r.date), r.address, f.length + ' finding' + (f.length === 1 ? '' : 's')].filter(Boolean).join(' · ')) + '</small></span>' +
+        '<span class="kit-x"><b>' + esc(r.building) + '</b><small>' + esc([fmt(r.date), r.address, f.length + ' finding' + (f.length === 1 ? '' : 's'), r.level ? 'NS 3424 ' + I18N.k('ui.level-n', 'level {n}', { n: r.level }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
         (worst ? '<span class="kit-r"><span class="tg-b" style="--c:' + TG[worst][2] + '">' + TG[worst][0] + '</span></span>' : '') + '</button>' +
         (open ? fdvDetail(r) : '') + '</li>';
     }).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.walk-a-building-note-each-finding-with-i">Walk a building, note each finding with its condition grade (TG) and a photo – and get a tidy summary you can send or paste into a report.</p>';
@@ -113,18 +133,34 @@
     if (goTo) { var li = el.querySelector('.kit-item.open'); if (li) setTimeout(function () { li.scrollIntoView({ behavior: 'smooth', block: 'start' }); li.classList.add('sr-flash'); setTimeout(function () { li.classList.remove('sr-flash'); }, 1600); }, 350); }
   });
   function fdvDetail(r) {
-    var f = r.findings || [];
+    var f = (r.findings || []).slice().sort(byCode), ed = null, eq = fdvEdit && fdvEdit.split(':');
+    if (eq && eq[0] === r.id) ed = (r.findings || []).filter(function (x) { return x.id === eq[1]; })[0] || null;
+    var e = ed || {}, places = [].concat(Fe.tools().fdvparts || []).concat((r.findings || []).map(function (x) { return x.part; })).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).slice(0, 40);
     return '<div class="kit-detail fdv-detail">' +
       (f.length ? '<ul class="fdv-list">' + f.map(function (x) {
-        return '<li><span class="tg-b" style="--c:' + TG[x.tg][2] + '">' + TG[x.tg][0] + '</span><div><b>' + esc(x.part) + '</b> ' + esc(x.text) + (x.action ? '<small>→ ' + esc(x.action) + '</small>' : '') +
-          (x.photo ? '<span class="fdv-ph"><img data-ph="' + esc(x.photo) + '" alt="Photo: ' + esc(x.part) + '"></span>' : '') + '</div>' +
+        var pr = prio(x), meta = [x.kg != null && x.kg !== '' ? KG[x.kg][0] + (x.kt ? ' (' + ktName(x.kt) + ')' : '') : '', pr != null ? prioName(pr) : '', x.when ? whenName(x.when) : '', x.cost ? nf.format(+x.cost) + ' kr' : ''].filter(Boolean).join(' · ');
+        return '<li' + (ed && ed.id === x.id ? ' class="fdv-on"' : '') + '><span class="tg-b" style="--c:' + TG[x.tg][2] + '">' + TG[x.tg][0] + '</span><div data-noi18n><b>' + esc(partLabel(x)) + '</b> ' + esc(x.text) +
+          (meta ? '<small class="fdv-meta">' + esc(meta) + '</small>' : '') + (x.cause ? '<small>' + esc(I18N.k('ui.cause', 'Cause')) + ': ' + esc(x.cause) + '</small>' : '') + (x.action ? '<small>→ ' + esc(x.action) + '</small>' : '') +
+          (x.photo ? '<span class="fdv-ph"><img data-ph="' + esc(x.photo) + '" alt="Photo: ' + esc(partLabel(x)) + '"></span>' : '') + '</div>' +
+          '<button type="button" class="icon-btn sm" data-fdvfedit="' + esc(r.id) + ':' + esc(x.id) + '" aria-label="Edit finding" data-t-aria-label="ui.edit-finding"><i class="bi bi-pencil"></i></button>' +
           '<button type="button" class="icon-btn sm" data-fdvdel="' + esc(r.id) + ':' + esc(x.id) + '" aria-label="Remove finding"><i class="bi bi-x"></i></button></li>';
       }).join('') + '</ul>' : '<p class="muted" data-t="ui.no-findings-yet-add-the-first-one-below">No findings yet – add the first one below.</p>') +
-      '<form class="fdv-add" data-fdvadd="' + esc(r.id) + '"><div class="row2"><select name="part" aria-label="Building part" data-t-aria-label="ui.building-part">' + PARTS.map(function (p) { return '<option>' + p + '</option>'; }).join('') + '</select>' +
-      '<select name="tg" aria-label="Condition grade">' + ['0', '1', '2', '3', 'iu'].map(function (t) { return '<option value="' + t + '"' + (t === '2' ? ' selected' : '') + '>' + TG[t][0] + ' – ' + TG[t][1] + '</option>'; }).join('') + '</select></div>' +
-      '<input name="text" placeholder="What you found, e.g. Cracked sealant around window, 2nd floor" data-t-placeholder="ui.what-you-found-e-g-cracked-sealant-aroun" required maxlength="300">' +
-      '<input name="action" placeholder="What should be done (optional)" data-t-placeholder="ui.what-should-be-done-optional" maxlength="200">' +
-      '<div class="fdv-row"><label class="text-btn fdv-photo"><i class="bi bi-camera"></i> <span data-t="ui.photo"><span data-t="ui.photo"><span data-t="ui.photo">Photo</span></span></span><input type="file" name="photo" accept="image/*" capture="environment" hidden></label><span class="spacer"></span><button type="submit" class="pill-btn"><i class="bi bi-plus-lg"></i> <span data-t="ui.add-finding"><span data-t="ui.add-finding">Add finding</span></span></button></div></form>' +
+      '<form class="fdv-add' + (ed ? ' editing' : '') + '" data-fdvadd="' + esc(r.id) + '">' + (ed ? '<input type="hidden" name="fid" value="' + esc(ed.id) + '"><p class="fdv-edhd"><i class="bi bi-pencil"></i> <span data-t="ui.edit-finding">Edit finding</span></p>' : '') +
+      '<div class="row2"><select name="code" aria-label="Building part (NS 3451)" data-t-aria-label="ui.building-part-ns-3451">' + codeOpts(ed ? e.code || '' : '') + '</select>' +
+      '<select name="tg" aria-label="Condition grade">' + ['0', '1', '2', '3', 'iu'].map(function (t) { return '<option value="' + t + '"' + (t === (ed ? String(e.tg) : '2') ? ' selected' : '') + '>' + TG[t][0] + ' – ' + esc(tgName(t)) + '</option>'; }).join('') + '</select></div>' +
+      '<input name="newcode" class="fdv-newcode" placeholder="Code and name, e.g. 231 Load-bearing outer walls" data-t-placeholder="ui.ns-new-code-ph" maxlength="80" hidden>' +
+      '<div class="row2"><select name="kg" aria-label="Consequence grade" data-t-aria-label="ui.consequence-grade">' + opts([['0', kgName(0)], ['1', kgName(1)], ['2', kgName(2)], ['3', kgName(3)]], ed ? e.kg : '', I18N.k('ui.kg-none', 'KG – not set')) + '</select>' +
+      '<select name="kt" aria-label="Consequence for" data-t-aria-label="ui.consequence-for">' + opts([['safety', ktName('safety')], ['health', ktName('health')], ['env', ktName('env')], ['cost', ktName('cost')], ['use', ktName('use')], ['look', ktName('look')]], ed ? e.kt : '', I18N.k('ui.kt-none', 'Consequence for … (optional)')) + '</select></div>' +
+      '<input name="part" list="fdvPlaces" placeholder="Where – room, floor, side (optional)" data-t-placeholder="ui.fdv-place-ph" maxlength="80" value="' + esc(e.part || '') + '"><datalist id="fdvPlaces">' + places.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>' +
+      '<input name="text" placeholder="What you found, e.g. Cracked sealant around window, 2nd floor" data-t-placeholder="ui.what-you-found-e-g-cracked-sealant-aroun" required maxlength="300" value="' + esc(e.text || '') + '">' +
+      '<input name="action" placeholder="What should be done (optional)" data-t-placeholder="ui.what-should-be-done-optional" maxlength="200" value="' + esc(e.action || '') + '">' +
+      '<details class="fdv-more"' + (ed && (e.cause || e.when || e.cost) ? ' open' : '') + '><summary data-t="ui.fdv-more">Cause, when and cost</summary>' +
+        '<input name="cause" placeholder="Likely cause (optional)" data-t-placeholder="ui.fdv-cause-ph" maxlength="200" value="' + esc(e.cause || '') + '">' +
+        '<div class="row2"><select name="when" aria-label="When" data-t-aria-label="ui.when">' + opts([['now', whenName('now')], ['y1', whenName('y1')], ['y5', whenName('y5')], ['y10', whenName('y10')]], ed ? e.when : '', I18N.k('ui.when-none', 'Do it … (optional)')) + '</select>' +
+        '<input name="cost" inputmode="numeric" placeholder="Cost estimate, kr" data-t-placeholder="ui.fdv-cost-ph" maxlength="12" value="' + esc(e.cost || '') + '"></div></details>' +
+      '<div class="fdv-row"><label class="text-btn fdv-photo"><i class="bi bi-camera"></i> <span data-t="ui.photo">Photo</span><input type="file" name="photo" accept="image/*" capture="environment" hidden></label><span class="spacer"></span>' +
+      (ed ? '<button type="button" class="text-btn" data-fdvfcancel><span data-t="ui.cancel">Cancel</span></button><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> <span data-t="ui.save-finding">Save finding</span></button>'
+        : '<button type="submit" class="pill-btn"><i class="bi bi-plus-lg"></i> <span data-t="ui.add-finding">Add finding</span></button>') + '</div></form>' +
       (r.notes ? '<p class="kit-notes">' + esc(r.notes) + '</p>' : '') +
       '<div class="fdv-acts"><button type="button" class="text-btn" data-fdvcopy="' + esc(r.id) + '"><i class="bi bi-clipboard"></i> <span data-t="ui.copy-summary"><span data-t="ui.copy-summary">Copy summary</span></span></button>' +
       (navigator.share ? '<button type="button" class="text-btn" data-fdvshare="' + esc(r.id) + '"><i class="bi bi-share"></i> <span data-t="ui.share"><span data-t="ui.share">Share</span></span></button>' : '') +
@@ -135,7 +171,7 @@
   var FDV_FIELDS = { key: 'fdv', addTitle: 'New inspection', editTitle: 'Edit inspection', fields: [
     { k: 'building', type: 'title', label: 'Building', ph: 'Building or property, e.g. Storgata 12', req: true },
     { k: 'address', label: 'Address', ph: 'Street, town' }, { k: 'date', label: 'Date', type: 'date', req: true, def: function () { return dkey(new Date()); } },
-    { k: 'client', label: 'Client', ph: 'Who it’s for' }, { k: 'notes', label: 'Notes', type: 'textarea', rows: 3 }],
+    { k: 'client', label: 'Client', ph: 'Who it’s for' }, { k: 'level', label: I18N.k('ui.survey-level', 'Survey level (NS 3424)'), type: 'select', def: '1', options: function () { return [['1', levelName(1)], ['2', levelName(2)], ['3', levelName(3)]]; } }, { k: 'notes', label: 'Notes', type: 'textarea', rows: 3 }],
     beforeSave: function (it) { it.findings = it.findings || []; }, afterSave: function (it, isNew) { if (isNew) fdvOpen = it.id; },
     onDelete: function (it) { (it.findings || []).forEach(function (x) { if (x.photo) delPhoto(x.photo); }); } };
   function saveFdv(id, fn) { var t = Fe.tools(); (t.fdv || []).forEach(function (r) { if (r.id === id) fn(r); }); Fe.saveTools(t); }
@@ -143,7 +179,9 @@
     var b;
     if (e.target.closest('[data-fdvnew]') && K) return K.edit(FDV_FIELDS, null);
     if ((b = e.target.closest('[data-fdvedit]')) && K) return K.edit(FDV_FIELDS, Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvedit; })[0]);
-    if ((b = e.target.closest('[data-fdvopen]'))) { fdvOpen = fdvOpen === b.dataset.fdvopen ? null : b.dataset.fdvopen; drawAll(); return; }
+    if ((b = e.target.closest('[data-fdvfedit]'))) { fdvEdit = fdvEdit === b.dataset.fdvfedit ? null : b.dataset.fdvfedit; drawAll(); setTimeout(function () { var fm = document.querySelector('form.fdv-add.editing'); if (fm) { fm.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }, 80); return; }
+    if (e.target.closest('[data-fdvfcancel]')) { fdvEdit = null; drawAll(); return; }
+    if ((b = e.target.closest('[data-fdvopen]'))) { fdvEdit = null; fdvOpen = fdvOpen === b.dataset.fdvopen ? null : b.dataset.fdvopen; drawAll(); return; }
     if ((b = e.target.closest('[data-fdvdel]'))) {
       var q = b.dataset.fdvdel.split(':'), gone = null;
       saveFdv(q[0], function (r) { r.findings = (r.findings || []).filter(function (x) { if (x.id === q[1]) { gone = x; return false; } return true; }); });
@@ -155,7 +193,7 @@
     if ((b = e.target.closest('[data-fdvshare]'))) {
       r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvshare; })[0]; if (!r) return;
       var ids = (r.findings || []).filter(function (x) { return x.photo; });
-      Promise.all(ids.map(function (x) { return getPhoto(x.photo).then(function (bl) { return bl ? new File([bl], (x.part + '-' + x.id).replace(/[^\w-]+/g, '_') + '.jpg', { type: 'image/jpeg' }) : null; }); })).then(function (files) {
+      Promise.all(ids.map(function (x) { return getPhoto(x.photo).then(function (bl) { return bl ? new File([bl], ((x.code || 'fdv') + '-' + x.id).replace(/[^\w-]+/g, '_') + '.jpg', { type: 'image/jpeg' }) : null; }); })).then(function (files) {
         files = files.filter(Boolean);
         var data = { title: 'FDV – ' + r.building, text: summary(r) };
         if (files.length && navigator.canShare && navigator.canShare({ files: files })) data.files = files;
@@ -166,54 +204,83 @@
     if ((b = e.target.closest('[data-fdvtodo]'))) {
       r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvtodo; })[0]; if (!r) return;
       var todos = readJSON('dash.todos', []) || [], n = 0;
-      (r.findings || []).filter(function (x) { return x.tg === '2' || x.tg === '3'; }).forEach(function (x) { todos.push({ id: uid(), text: (r.building + ': ' + x.part + ' – ' + (x.action || x.text)).slice(0, 200), done: false, focus: x.tg === '3' }); n++; });
+      (r.findings || []).filter(function (x) { return x.tg === '2' || x.tg === '3'; }).forEach(function (x) { todos.push({ id: uid(), text: (r.building + ': ' + partLabel(x) + ' – ' + (x.action || x.text)).slice(0, 200), done: false, focus: x.tg === '3' || prio(x) === 3 }); n++; });
       writeJSON('dash.todos', todos); window.dispatchEvent(new Event('todos:change'));
       toast('<i class="bi bi-check2-square"></i> ' + n + ' task' + (n === 1 ? '' : 's') + ' added to your to-do list');
     }
   });
   document.addEventListener('change', function (e) {
+    if (e.target.name === 'code' && e.target.closest('.fdv-add')) { var nc = e.target.closest('.fdv-add').querySelector('.fdv-newcode'); nc.hidden = e.target.value !== '+'; if (!nc.hidden) nc.focus(); }
     if (e.target.name === 'photo' && e.target.closest('.fdv-add')) { var l = e.target.closest('label'); l.classList.toggle('has', !!e.target.files.length); l.querySelector('span').textContent = e.target.files.length ? 'Photo ✓' : 'Photo'; }
   });
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('[data-fdvadd]'); if (!f) return;
     e.preventDefault();
-    var id = f.dataset.fdvadd, fid = uid(), file = f.photo.files[0];
-    var item = { id: fid, part: f.part.value, tg: f.tg.value, text: f.text.value.trim(), action: f.action.value.trim() };
+    var id = f.dataset.fdvadd, old = f.fid ? f.fid.value : '', fid = old || uid(), file = f.photo.files[0];
+    var code = f.code.value;
+    if (code === '+') {   /* a three-digit code of your own: "231 Load-bearing outer walls" – remembered for the next time */
+      var m = f.newcode.value.trim().match(/^(\d{3,4})\s*[-–:.]?\s*(.*)$/);
+      if (!m) { f.newcode.hidden = false; f.newcode.focus(); toast('<i class="bi bi-info-circle"></i> ' + esc(I18N.k('ui.ns-code-help', 'Type the code first, e.g. 231 Load-bearing outer walls'))); return; }
+      code = m[1]; var tl = Fe.tools(); tl.fdvcodes = (Array.isArray(tl.fdvcodes) ? tl.fdvcodes : []).filter(function (c) { return c && c.c !== code; }).concat([{ c: code, n: m[2].slice(0, 60) }]).slice(-200); Fe.saveTools(tl);
+    }
+    var cost = num(f.cost.value);
+    var item = { id: fid, code: code, part: f.part.value.trim(), tg: f.tg.value, kg: f.kg.value, kt: f.kt.value, text: f.text.value.trim(), action: f.action.value.trim(), cause: f.cause.value.trim(), when: f.when.value, cost: cost != null && cost > 0 ? Math.round(cost) : '' };
+    Object.keys(item).forEach(function (k) { if (item[k] === '' && k !== 'part') delete item[k]; });
     if (!item.text) return;
-    var go = function () { saveFdv(id, function (r) { r.findings = r.findings || []; r.findings.push(item); }); };
-    if (file) shrink(file).then(function (bl) { item.photo = 'ph-' + fid; return putPhoto(item.photo, bl); }).then(go, go); else go();
+    var go = function () { saveFdv(id, function (r) { r.findings = r.findings || []; var at = -1; r.findings.forEach(function (x, i) { if (x.id === fid) at = i; });
+      if (at > -1) { var was = r.findings[at]; if (item.photo && was.photo && item.photo !== was.photo) delPhoto(was.photo); if (!item.photo && was.photo) item.photo = was.photo; Object.keys(was).forEach(function (k) { if (!(k in item) && ['code', 'part', 'kg', 'kt', 'action', 'cause', 'when', 'cost', 'photo'].indexOf(k) < 0) item[k] = was[k]; }); r.findings[at] = item; } else r.findings.push(item); });
+      if (old) { fdvEdit = null; toast('<i class="bi bi-check2"></i> ' + esc(I18N.k('ui.finding-saved', 'Finding saved'))); } };
+    if (file) shrink(file).then(function (bl) { item.photo = 'ph-' + fid + (old ? '-' + Date.now().toString(36) : ''); return putPhoto(item.photo, bl); }).then(go, go); else go();
   });
   var RP = { photos: true };
   function report(r) {
-    var f = r.findings || [], me = readJSON('dash.profile', {}) || {};
+    var f = (r.findings || []).slice().sort(byCode), me = readJSON('dash.profile', {}) || {}, L = function (k, en) { return esc(I18N.k(k, en)); };
     var by = function (t) { return f.filter(function (x) { return String(x.tg) === t; }); };
     var worst = ['3', '2', '1', '0'].filter(function (t) { return by(t).length; })[0];
     var tgb = function (t) { return '<span class="rp-tg" style="--c:' + TG[t][2] + '">' + TG[t][0] + '</span>'; };
-    var todo = f.filter(function (x) { return x.tg === '3' || x.tg === '2'; }).sort(function (a, b) { return a.tg < b.tg ? 1 : -1; });
-    var parts = PARTS.filter(function (p) { return f.some(function (x) { return x.part === p; }); });
+    var kgb = function (x) { return x.kg != null && x.kg !== '' && KG[x.kg] ? '<span class="rp-tg rp-kg" style="--c:' + KG[x.kg][2] + '">' + KG[x.kg][0] + '</span>' : ''; };
+    var prb = function (x) { var p = prio(x); return p == null ? '–' : '<span class="rp-pr" style="--c:' + PRIO[p][1] + '">' + esc(prioName(p)) + '</span>'; };
+    var todo = f.filter(function (x) { return x.tg === '3' || x.tg === '2'; }).sort(function (a, b) { var pa = prio(a), pb = prio(b); pa = pa == null ? -1 : pa; pb = pb == null ? -1 : pb; return pb - pa || (String(b.tg) > String(a.tg) ? 1 : String(b.tg) < String(a.tg) ? -1 : byCode(a, b)); });
+    var cost = f.reduce(function (a, x) { return a + (+x.cost || 0); }, 0), dt = esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }));
+    /* NS 3451 main groups: one row each with the count per grade */
+    var mains = NS.filter(function (q) { return q[0].length === 1; }).map(function (q) { return q[0]; }).concat(['']);
+    var grid = mains.map(function (m) { var xs = f.filter(function (x) { return (x.code || '').slice(0, 1) === m; }); return xs.length ? '<tr><td>' + esc(m ? m + ' ' + nsName(m) : I18N.k('ui.ns-no-code', '– No code –')) + '</td>' + ['3', '2', '1', '0', 'iu'].map(function (t) { var n = xs.filter(function (x) { return String(x.tg) === t; }).length; return '<td class="n">' + (n || '') + '</td>'; }).join('') + '</tr>' : ''; }).join('');
+    /* sections: one per two-digit code (a three-digit one sits under its two digits) */
+    var secs = [], seen = {};
+    f.forEach(function (x) { var k = x.code ? x.code.slice(0, 2) : ''; if (!seen[k]) { seen[k] = 1; secs.push(k); } });
     var h = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.fdv-inspection-report">FDV inspection report</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
       (r.address ? '<p class="rp-addr">' + esc(r.address) + '</p>' : '') + '</div>' +
-      (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small data-t="ui.worst-grade"><span data-t="ui.worst-grade"><span data-t="ui.worst-grade">Worst grade</span></span></small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
-      '<table class="rp-meta"><tr><th data-t="ui.date"><span data-t="ui.date"><span data-t="ui.date">Date</span></span></th><td>' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + '</td><th data-t="ui.client"><span data-t="ui.client"><span data-t="ui.client">Client</span></span></th><td>' + esc(r.client || '–') + '</td></tr>' +
-      '<tr><th data-t="ui.inspected-by"><span data-t="ui.inspected-by"><span data-t="ui.inspected-by">Inspected by</span></span></th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th data-t="ui.company"><span data-t="ui.company"><span data-t="ui.company">Company</span></span></th><td>' + esc(me.employer || '–') + '</td></tr></table>' +
+      (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small data-t="ui.worst-grade">Worst grade</small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
+      '<table class="rp-meta"><tr><th data-t="ui.date">Date</th><td>' + dt + '</td><th data-t="ui.client">Client</th><td>' + esc(r.client || '–') + '</td></tr>' +
+      '<tr><th data-t="ui.inspected-by">Inspected by</th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th data-t="ui.company">Company</th><td>' + esc(me.employer || '–') + '</td></tr>' +
+      '<tr><th>' + L('ui.survey-level', 'Survey level (NS 3424)') + '</th><td colspan="3">' + esc(levelName(r.level || 1)) + '</td></tr></table>' +
+      '<p class="rp-std">' + L('ui.fdv-std-line', 'Building parts after NS 3451, condition and consequence grades after NS 3424.') + '</p>' +
       (r.intro ? '<p class="rp-intro">' + esc(r.intro).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.summary"><span data-t="ui.summary"><span data-t="ui.summary">Summary</span></span></h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
-        return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + TG[t][1] + '</small></div>';
+      '<h2 data-t="ui.summary">Summary</h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
+        return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + esc(tgName(t)) + '</small></div>';
       }).join('') + '</div>' +
-      (todo.length ? '<h2 data-t="ui.what-should-be-done">What should be done</h2><table class="rp-todo"><thead><tr><th data-t="ui.grade"><span data-t="ui.grade"><span data-t="ui.grade">Grade</span></span></th><th data-t="ui.building-part"><span data-t="ui.building-part"><span data-t="ui.building-part">Building part</span></span></th><th data-t="ui.finding"><span data-t="ui.finding"><span data-t="ui.finding">Finding</span></span></th><th data-t="ui.action-2"><span data-t="ui.action-2"><span data-t="ui.action-2">Action</span></span></th></tr></thead><tbody>' + todo.map(function (x) {
-        return '<tr><td>' + tgb(x.tg) + '</td><td>' + esc(x.part) + '</td><td>' + esc(x.text) + '</td><td>' + esc(x.action || '–') + '</td></tr>';
+      (grid ? '<table class="rp-grid"><thead><tr><th>' + L('ui.building-part-ns-3451', 'Building part (NS 3451)') + '</th>' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<th class="n">' + TG[t][0] + '</th>'; }).join('') + '</tr></thead><tbody>' + grid + '</tbody></table>' : '') +
+      (cost ? '<p class="rp-cost">' + L('ui.total-cost-estimate', 'Total cost estimate') + ': <b>' + nf.format(cost) + ' kr</b></p>' : '') +
+      (todo.length ? '<h2 data-t="ui.what-should-be-done">What should be done</h2><table class="rp-todo"><thead><tr><th data-t="ui.grade">Grade</th><th>' + L('ui.priority', 'Priority') + '</th><th data-t="ui.building-part">Building part</th><th data-t="ui.finding">Finding</th><th data-t="ui.action-2">Action</th><th>' + L('ui.when', 'When') + '</th></tr></thead><tbody>' + todo.map(function (x) {
+        return '<tr><td>' + tgb(x.tg) + ' ' + kgb(x) + '</td><td>' + prb(x) + '</td><td data-noi18n>' + esc(partLabel(x)) + '</td><td data-noi18n>' + esc(x.text) + '</td><td data-noi18n>' + esc(x.action || '–') + (x.cost ? '<br><small>' + nf.format(+x.cost) + ' kr</small>' : '') + '</td><td>' + esc(whenName(x.when) || '–') + '</td></tr>';
       }).join('') + '</tbody></table>' : '') +
-      '<h2 data-t="ui.findings-by-building-part">Findings by building part</h2>' + (parts.length ? parts.map(function (p) {
-        return '<section class="rp-part"><h3>' + esc(p) + '</h3>' + f.filter(function (x) { return x.part === p; }).map(function (x) {
-          return '<div class="rp-f">' + tgb(x.tg) + '<div class="rp-ft"><p>' + esc(x.text) + '</p>' + (x.action ? '<p class="rp-act">Action: ' + esc(x.action) + '</p>' : '') + '</div>' +
+      '<h2>' + L('ui.findings-by-ns-3451', 'Findings by building part (NS 3451)') + '</h2>' + (secs.length ? secs.map(function (k) {
+        return '<section class="rp-part"><h3>' + esc(k ? nsLabel(k) : I18N.k('ui.ns-no-code', '– No code –')) + '</h3>' + f.filter(function (x) { return (x.code ? x.code.slice(0, 2) : '') === k; }).map(function (x) {
+          var sub = [x.code && x.code.length > 2 ? nsLabel(x.code) : '', x.part].filter(Boolean).join(' · ');
+          var mt = [x.kt ? I18N.k('ui.consequence-for', 'Consequence for') + ': ' + ktName(x.kt) : '', x.when ? I18N.k('ui.when', 'When') + ': ' + whenName(x.when) : '', x.cost ? nf.format(+x.cost) + ' kr' : ''].filter(Boolean).join(' · ');
+          return '<div class="rp-f"><div class="rp-gr">' + tgb(x.tg) + kgb(x) + (prio(x) != null ? prb(x) : '') + '</div><div class="rp-ft" data-noi18n>' + (sub ? '<p class="rp-where">' + esc(sub) + '</p>' : '') + '<p>' + esc(x.text) + '</p>' +
+            (x.cause ? '<p class="rp-act">' + L('ui.cause', 'Cause') + ': ' + esc(x.cause) + '</p>' : '') + (x.action ? '<p class="rp-act">' + L('ui.action-2', 'Action') + ': ' + esc(x.action) + '</p>' : '') + (mt ? '<p class="rp-act">' + esc(mt) + '</p>' : '') + '</div>' +
             (x.photo && RP.photos ? '<img class="rp-ph" data-rph="' + esc(x.photo) + '" alt="">' : '') + '</div>';
         }).join('') + '</section>';
       }).join('') : '<p data-t="ui.no-findings-were-recorded">No findings were recorded.</p>') +
-      (r.notes ? '<h2 data-t="ui.notes"><span data-t="ui.notes"><span data-t="ui.notes">Notes</span></span></h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.condition-grades"><span data-t="ui.condition-grades"><span data-t="ui.condition-grades">Condition grades</span></span></h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
-        return '<tr><td>' + tgb(t) + '</td><td>' + ({ 0: 'No signs of wear or damage.', 1: 'Normal wear; some maintenance may be needed.', 2: 'Significant wear or damage – should be followed up.', 3: 'Serious damage or risk – needs action now.', iu: 'Not examined (no access).' }[t]) + '</td></tr>';
+      (r.notes ? '<h2 data-t="ui.notes">Notes</h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
+      '<h2 data-t="ui.condition-grades">Condition grades</h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
+        return '<tr><td>' + tgb(t) + '</td><td>' + esc({ 0: I18N.k('ui.tg0-long', 'No symptoms – no signs of wear or damage.'), 1: I18N.k('ui.tg1-long', 'Small symptoms – normal wear, some maintenance may be needed.'), 2: I18N.k('ui.tg2-long', 'Medium symptoms – clear wear or damage, should be followed up.'), 3: I18N.k('ui.tg3-long', 'Large symptoms – serious damage or risk, needs action.'), iu: I18N.k('ui.tgiu-long', 'Not examined (no access).') }[t]) + '</td></tr>';
       }).join('') + '</table>' +
-      '<footer class="rp-foot">' + esc(r.building || '') + ' · ' + esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })) + (me.email ? ' · ' + esc(me.email) : '') + (me.phone ? ' · ' + esc(me.phone) : '') + '</footer>';
+      '<h2>' + L('ui.consequence-grades', 'Consequence grades') + '</h2><table class="rp-legend">' + ['0', '1', '2', '3'].map(function (k) {
+        return '<tr><td>' + kgb({ kg: k }) + '</td><td>' + esc({ 0: I18N.k('ui.kg0-long', 'No consequences.'), 1: I18N.k('ui.kg1-long', 'Small consequences.'), 2: I18N.k('ui.kg2-long', 'Medium consequences.'), 3: I18N.k('ui.kg3-long', 'Large consequences – for safety, health, the environment, function or cost.') }[k]) + '</td></tr>';
+      }).join('') + '</table><p class="rp-small">' + L('ui.prio-explained', 'Priority is worked out from TG × KG: 6 or more high, 3–5 medium, 1–2 low.') + '</p>' +
+      '<footer class="rp-foot">' + esc(r.building || '') + ' · ' + dt + (me.email ? ' · ' + esc(me.email) : '') + (me.phone ? ' · ' + esc(me.phone) : '') + '</footer>';
     return h;
   }
   function openReport(r) {

@@ -45,6 +45,27 @@
           tl.people.forEach(function (p) { if (obj(p) && obj(p.look)) { var t2 = A.trimLook(p.look); if (!same(t2, p.look)) { p.look = t2; pc = true; } } });
           if (pc) { set('dash.tools', tl); ch = true; } }
         return ch;
+      } },
+    { n: 4, what: 'FDV after NS 3451 and NS 3424: each finding and phrase gets a building part code from its old part; the old name stays as the place where there is no clear code',
+      run: function (d, get, set) {
+        /* the old parts (English, or Norwegian when they were picked in Norwegian) → NS 3451; parts with no single code keep their name as the place */
+        var MAP = { 'roof': ['26', ''], 'tak': ['26', ''], 'facade': ['23', ''], 'fasade': ['23', ''], 'windows and doors': ['23', 'Windows and doors'], 'vinduer og dører': ['23', 'Vinduer og dører'],
+          'electrical': ['4', ''], 'elektro': ['4', ''], 'plumbing (vvs)': ['31', ''], 'vvs': ['31', ''], 'ventilation': ['36', ''], 'ventilasjon': ['36', ''], 'heating': ['32', ''], 'oppvarming': ['32', ''],
+          'structure': ['22', ''], 'konstruksjon': ['22', ''], 'outdoor areas': ['7', ''], 'utomhus': ['7', ''], 'other': ['', ''], 'annet': ['', ''] };
+        var tl = get('dash.tools'); if (!obj(tl)) return false;
+        var ch = false;
+        function move(x) { if (!obj(x) || 'code' in x) return; var p0 = String(x.part || ''), m = MAP[p0.trim().toLowerCase()];
+          var lead = p0.match(/^(\d{1,4})\s+(.*)$/);   /* a part that already started with a code (your own parts) */
+          if (m) { x.code = m[0]; x.part = m[1]; } else if (lead) { x.code = lead[1]; x.part = lead[2]; } else { x.code = ''; }
+          if (p0) x.oldPart = p0; ch = true; }
+        (Array.isArray(tl.fdv) ? tl.fdv : []).forEach(function (r) { if (obj(r)) (Array.isArray(r.findings) ? r.findings : []).forEach(move); });
+        (Array.isArray(tl.fdvph) ? tl.fdvph : []).forEach(function (q) { if (!obj(q) || 'code' in q) return; move(q); q.place = q.part || ''; delete q.part; });
+        /* your own building parts: the ones that start with a code become your own codes; the rest stay as places */
+        if (Array.isArray(tl.fdvparts) && !Array.isArray(tl.fdvcodes)) { var own = [], keep = [];
+          tl.fdvparts.forEach(function (v) { var m2 = String(v || '').match(/^(\d{3,4})\s+(.*)$/); if (m2) own.push({ c: m2[1], n: m2[2] }); else keep.push(v); });
+          if (own.length) { tl.fdvcodes = own; tl.fdvparts = keep; ch = true; } }
+        if (ch) set('dash.tools', tl);
+        return ch;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;

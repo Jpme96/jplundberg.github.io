@@ -31,3 +31,24 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .iv-tot .iv-sum th, .iv-tot .iv-sum td { border-top: 2px solid #111; font-weight: 700; color: #111; font-size: 15px; padding-top: 8px; }
 .iv-miss, .iv-warn { color: #d14343; }
 .iv-warn { margin: 12px 0 0; font-size: 12.5px; }
+/* FDV after NS 3451 / NS 3424 (2026-11-13) */
+.fdv-list li > .icon-btn + .icon-btn { margin-left: -6px; }
+.fdv-list li.fdv-on { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 10px; }
+.fdv-list .fdv-meta { color: var(--text); opacity: .75; }
+.fdv-add .row2 select { min-width: 0; }
+.fdv-add.editing { border-style: solid; border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.fdv-edhd { margin: 0; font-size: 13px; font-weight: 600; color: var(--accent); }
+.fdv-more { display: grid; gap: 8px; } .fdv-more[open] { padding-bottom: 2px; }
+.fdv-more > summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 2px 0; }
+.fdv-more[open] > summary { margin-bottom: 6px; }
+.fdv-more > input, .fdv-more .row2 input { width: 100%; }
+.rp-std { margin: 6px 0 0; font-size: 11.5px; color: var(--slate); }
+.rp-grid { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+.rp-grid th { text-align: left; font-size: 11.5px; color: var(--slate); border-bottom: 1px solid #d5dae0; padding: 5px 8px 5px 0; }
+.rp-grid td { border-bottom: 1px solid #eef0f3; padding: 5px 8px 5px 0; } .rp-grid .n { text-align: center; width: 52px; }
+.rp-cost { margin: 10px 0 0; font-size: 13px; }
+.rp-kg { margin-left: 3px; } .rp-gr { display: grid; gap: 4px; justify-items: start; }
+.rp-pr { display: inline-block; font-size: 11px; font-weight: 700; color: var(--c); white-space: nowrap; }
+.rp-where { font-size: 11.5px; color: var(--slate); }
+.rp-small { font-size: 11.5px; color: var(--slate); margin: 6px 0 0; }
+.rp-f { grid-template-columns: 70px minmax(0, 1fr) auto; }
