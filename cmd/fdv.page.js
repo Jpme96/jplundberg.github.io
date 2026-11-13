@@ -210,12 +210,10 @@
     var rows = [], seen = {};
     f.forEach(function (x) { var k = x.code ? x.code.slice(0, 2) : ''; if (!seen[k]) { seen[k] = { k: k, n: {} }; rows.push(seen[k]); } seen[k].n[x.tg] = (seen[k].n[x.tg] || 0) + 1; });
     if (!rows.length) return '';
-    var tot = function (r) { return TGO.reduce(function (a, t) { return a + (r.n[t] || 0); }, 0); }, max = Math.max.apply(null, rows.map(tot)), W = 640, LX = 210, BW = 250, RH = 22, H = rows.length * RH + 4;
-    var g = rows.map(function (r, i) { var y = 2 + i * RH, n = tot(r), w = Math.max(3, n / max * BW), lab = r.k ? nsLabel(r.k) : I18N.k('ui.ns-no-code', '– No code –'); if (lab.length > 32) lab = lab.slice(0, 31) + '…';
-      var parts = TGO.filter(function (t) { return r.n[t]; }).map(function (t) { return TG[t][0] + ': ' + r.n[t]; }).join('   ');
-      return '<text x="' + (LX - 10) + '" y="' + (y + 14) + '" text-anchor="end" class="rp-cl">' + esc(lab) + '</text><rect x="' + LX + '" y="' + (y + 5) + '" width="' + w.toFixed(1) + '" height="11" rx="2" fill="#3b4a5e"/>' +
-        '<text x="' + (LX + w + 8).toFixed(1) + '" y="' + (y + 14) + '" class="rp-cv">' + n + '</text><text x="' + (LX + BW + 40) + '" y="' + (y + 14) + '" class="rp-cl">' + esc(parts) + '</text>'; }).join('');
-    return '<figure class="rp-chart"><figcaption>' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '">' + g + '</svg></figure>';
+    var tot = function (r) { return TGO.reduce(function (a, t) { return a + (r.n[t] || 0); }, 0); }, max = Math.max.apply(null, rows.map(tot));
+    /* plain HTML rows (they reflow on a phone and print sharp): name, a quiet bar for the total, the count, the grades as text */
+    return '<figure class="rp-chart rp-bars"><figcaption>' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '</figcaption>' + rows.map(function (r) { var n = tot(r);
+      return '<div class="rp-bar1"><span class="rp-bl">' + esc(r.k ? nsLabel(r.k) : I18N.k('ui.ns-no-code', '– No code –')) + '</span><span class="rp-bt"><i style="width:' + Math.max(3, Math.round(n / max * 100)) + '%"></i></span><b>' + n + '</b><small>' + esc(TGO.filter(function (t) { return r.n[t]; }).map(function (t) { return TG[t][0] + ': ' + r.n[t]; }).join(' · ')) + '</small></div>'; }).join('') + '</figure>';
   }
   function chartKey() { return '<p class="rp-key">' + TGO.map(function (t) { return '<span><i style="background:' + TG[t][2] + '"></i>' + TG[t][0] + '</span>'; }).join('') + '</p>'; }
   /* condition × consequence as a plain table of counts; the cells of the high and medium priority give a faint tint */
