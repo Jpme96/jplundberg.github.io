@@ -58,7 +58,7 @@
   /* hands and feet: a point on the screen (AT), a place by the body (B: height, forward), a move between two (GO, lifted
      a little on the way), held still (HOLD); REST is the hand hanging by the side. SIDE/LEG: which pose key is the
      hand/leg on side sd (1 = his right) when he faces deg – near or far changes as he turns. */
-  var REST = { b: [143, 8] };
+  var REST = { b: [156, 5] };   /* where a hanging hand rests (mid-thigh) */
   function AT(p) { return { at: p }; }
   function B(y, z) { return { b: [y, z] }; }
   function GO(A, B2, f, up) { return { m: 1, path: [A, B2], f: E(f), up: up || 0 }; }

@@ -19,7 +19,7 @@
     /* the fridge door, hinged on the left: th = 0 shut, 75° open, seen a little from above and the right */
     function doorEdge(th, f) { f = f == null ? 1 : f; return [40 + f * (72 * Math.cos(th) + 14 * Math.sin(th)), 6 * f * Math.sin(th)]; }
     function handle(th) { var d = doorEdge(th, .89); return [d[0], 140 + d[1]]; }
-    var REST = { b: [143, 8] };
+    var REST = { b: [156, 5] };   /* where a hanging hand rests (mid-thigh) */
     function AT(p) { return { at: p }; }
     function reach(A, B, f, up) { return { m: 1, path: [A, B], f: E(f), up: up || 0 }; }
     function key(sd, deg) { var zz = -sd * Math.sin(deg * Math.PI / 180); return zz > 1e-6 || (Math.abs(zz) <= 1e-6 && sd < 0) ? 'near' : 'far'; }

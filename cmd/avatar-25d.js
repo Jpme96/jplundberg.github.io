@@ -62,7 +62,7 @@
       top: top, topC: top === 'chef' ? '#f4f4f2' : (/^#[0-9a-f]{6}$/i.test(l.topC || '') ? l.topC : TOP_STD), bottom: bottom, legsC: l.legs || '#2a2f3a', shoes: l.shoes || 'sneakers',
       hat: l.hat || 'none', hatC: l.hatC || '#e8743b', neck: l.wxScarf ? 'scarf' : 'none', neckC: l.hatC || '#e8743b', aid: l.aid || 'none',
       bare: t.bare || '', sleeve: t.sleeve || '', skirt: t.skirt || (bottom === 'skirt' ? 'knee' : ''), legsOn: bottom === 'shorts' ? 'thigh' : bottom === 'swim' ? 'swim' : top === 'dress' ? 'none' : 'full',
-      bw: (BUILD[l.build] || BUILD.regular).w, bp: BUILD[l.build] || BUILD.regular, hs: { short: .94, tall: 1.05 }[l.height] || 1 };
+      bw: (BUILD[l.build] || BUILD.regular).w, bp: BUILD[l.build] || BUILD.regular, hs: { short: .975, tall: 1.02 }[l.height] || 1, lf: { short: .9, tall: 1.1 }[l.height] || 1 };   /* height: mostly the legs (lf), a little overall (hs) */
     o.shoeC = SHOES[o.shoes] || '#1a1a1a';
     if (top === 'dress') o.legsC = o.skin;
     if (o.hair === 'bald') o.hair = 'none';
@@ -96,10 +96,14 @@
     var parts = [];   /* [depth, element] – drawn back to front */
     /* lean: the upper body tips forward round the hips (climbing, reaching); arms always go with it */
     var LN = pose.lean || 0, LC = Math.cos(LN), LS = Math.sin(LN), HY = 0;
+    /* height changes the legs: below the hips everything stretches from the ground up, above them it all moves up or down by the same amount */
+    var LF = L.aid === 'chair' ? 1 : L.lf || 1;
+    function wy(y) { if (LF === 1) return y; return y >= HY ? 218 - (218 - y) * LF : y - (218 - HY) * (LF - 1); }
+    function uy(y) { if (LF === 1) return y; var hy2 = HY - (218 - HY) * (LF - 1); return y >= hy2 ? 218 - (218 - y) / LF : y + (218 - HY) * (LF - 1); }
     function P(x, y, z, up) { if (LN && (up || y < HY - 4)) { var dy = y - HY; y = HY + dy * LC + z * LS; z = z * LC - dy * LS; }
-      var r = rot(x, z, a); return { X: cx + r.x * k, Y: gy + (y - 218) * k, Z: r.z }; }
+      var r = rot(x, z, a); return { X: cx + r.x * k, Y: gy + (wy(y) - 218) * k, Z: r.z }; }
     /* a point on the screen back to the body's own (height, forward) – for hands and feet that must land on something */
-    function toBody(S, xl) { return { y: 218 + (S[1] - gy) / k, z: (S[0] - cx - (xl || 0) * Math.cos(a) * k) / (k * (Math.abs(Math.sin(a)) < .2 ? (Math.sin(a) < 0 ? -.2 : .2) : Math.sin(a))) }; }
+    function toBody(S, xl) { return { y: uy(218 + (S[1] - gy) / k), z: (S[0] - cx - (xl || 0) * Math.cos(a) * k) / (k * (Math.abs(Math.sin(a)) < .2 ? (Math.sin(a) < 0 ? -.2 : .2) : Math.sin(a))) }; }
     function unlean(b) { if (!LN) return b; var dy = b.y - HY; return { y: HY + dy * LC - b.z * LS, z: b.z * LC + dy * LS }; }
     /* two-bone reach: the angles (from straight down, forward positive) of the upper and lower part to touch (dy, dz) */
     function ik(dy, dz, l1, l2, bend) { var D = Math.hypot(dy, dz), D2 = Math.max(Math.abs(l1 - l2) + .5, Math.min(l1 + l2 - .3, D)), ph0 = Math.atan2(dz, dy);
@@ -130,7 +134,7 @@
       var ank = [hip[0], knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
       var lift = Math.max(0, 218 - 4 - ank[1]); /* stays on the ground */
       if (ank[1] > 214) { var d = ank[1] - 214; knee[1] -= d; ank[1] = 214; hip[1] -= 0; }
-      var a1 = P(hip[0], hip[1], hip[2]), a2 = P(knee[0], knee[1], knee[2]), a3 = P(ank[0], ank[1], ank[2]), toe = P(ank[0], ank[1] + 3, ank[2] + 14);
+      var a1 = P(hip[0], hip[1], hip[2]), a2 = P(knee[0], knee[1], knee[2]), a3 = P(ank[0], ank[1], ank[2]), toe = P(ank[0], ank[1] + 3, ank[2] + 18);   /* a foot about as long as the forearm */
       var far = rot(sd * 8, 0, a).z < 0, z = -0.02 + rot(sd * 8, 0, a).z * 0.0005;
       if (knee[2] > 14 && Math.abs(Math.cos(a)) > .5) z = 0.006 + rot(sd * 8, 0, a).z * 0.0005;   /* a deep squat or sitting, seen from the front: the thighs come toward you, in front of the body – they were hidden behind it */   /* the legs always go under the seat and the top (the near thigh used to poke over the waist when seen from the side); near leg still in front of the far one */
       /* a human leg: full at the hip, narrower at the knee, the calf swells a little below it, slim at the ankle */
@@ -143,16 +147,16 @@
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
       if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 2, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 6); parts.push([z + .003, el('rect', { x: cpk.X - 4 * k, y: cpk.Y - 4 * k, width: 8 * k, height: 8 * k, rx: 1.5 * k, fill: dk(L.legsC, .85) })]); }
-      var mid2 = P(ank[0], ank[1] + 3, ank[2] + 5); parts.push([z + 0.49, el('ellipse', { cx: mid2.X, cy: mid2.Y, rx: (8 * Math.abs(Math.cos(a)) + 4) * k, ry: 5.4 * k, fill: L.shoes === 'sandals' ? skc : C.shoe })]);   /* the shoe's width, seen from the front */
+      var mid2 = P(ank[0], ank[1] + 3, ank[2] + 5); parts.push([z + 0.49, el('ellipse', { cx: mid2.X, cy: mid2.Y, rx: (8.6 * Math.abs(Math.cos(a)) + 4.4) * k, ry: 5.6 * k, fill: L.shoes === 'sandals' ? skc : C.shoe })]);   /* the shoe's width, seen from the front */
       taper(P(ank[0], ank[1] + 2.5, ank[2] - 5), toe, 6.6, 6, L.shoes === 'sandals' ? skc : C.shoe, z + 0.5);
       if (L.shoes === 'sandals') limb(P(ank[0], ank[1] + 4, ank[2] + 3), P(ank[0], ank[1] + 4, ank[2] + 9), 3, '#8a5e44', z + .51);
-      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 6.4, ank[2] - 4), P(ank[0], ank[1] + 6.4, ank[2] + 17), 2.2, '#f4f4f2', z + .52);
-      if (L.shoes === 'cleats') [-2, 6, 14].forEach(function (cz) { var st = P(ank[0], ank[1] + 8.6, ank[2] + cz); parts.push([z + .53, el('rect', { x: st.X - 1 * k, y: st.Y, width: 2 * k, height: 2.4 * k, fill: '#9aa3ad' })]); });
+      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 6.4, ank[2] - 4), P(ank[0], ank[1] + 6.4, ank[2] + 21), 2.2, '#f4f4f2', z + .52);
+      if (L.shoes === 'cleats') [-2, 8, 18].forEach(function (cz) { var st = P(ank[0], ank[1] + 8.6, ank[2] + cz); parts.push([z + .53, el('rect', { x: st.X - 1 * k, y: st.Y, width: 2 * k, height: 2.4 * k, fill: '#9aa3ad' })]); });
       if (L.shoes === 'hightops' || L.shoes === 'boots') taper(P(ank[0], ank[1] - 8, ank[2]), P(ank[0], ank[1] + 1, ank[2]), 7.4, 7, C.shoe, z + .5);
     });
     /* the seat: a rounded pelvis in the trousers' colour where the legs meet the body, fuller at the back –
        from the side you see the bottom, from the front the hips */
-    var pw = Math.sqrt(Math.pow(18 * L.bp.hp * Math.cos(a), 2) + Math.pow(10 * L.bp.d * Math.sin(a), 2)), pc = P(0, 144 + bob, -6);
+    var pw = Math.sqrt(Math.pow(18 * L.bp.hp * Math.cos(a), 2) + Math.pow(12.5 * L.bp.d * Math.sin(a), 2)), pc = P(0, 144 + bob, -5);
     parts.push([-0.005, el('ellipse', { cx: pc.X, cy: pc.Y, rx: pw * k, ry: 11 * k, fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
     if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = BW * Math.sqrt(Math.pow(26 * Math.cos(a), 2) + Math.pow(17 * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
       parts.push([0.004, el('path', { d: 'M' + (sk1.X - skw1) + ' ' + sk1.Y + ' L' + (sk1.X + skw1) + ' ' + sk1.Y + ' L' + (sk2.X + skw2) + ' ' + sk2.Y + ' Q' + sk2.X + ' ' + (sk2.Y + 4 * k) + ' ' + (sk2.X - skw2) + ' ' + sk2.Y + ' Z', fill: skc2 })]); }
@@ -160,7 +164,16 @@
     var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)); };
     var hw = wid(BP.wa), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
     var t1 = P(0, topY, 0), t2 = P(0, botY, 0);
-    var TD = 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z';
+    /* a human trunk (phase 1 of the avatar brief): the neck's base, sloping to round shoulders, a chest, a waist that narrows
+       and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
+       forward, the bottom back), so the outline changes properly as he turns */
+    var LV = [[81, 8.5, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
+    var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a);
+    LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
+    function f1(v) { return v.toFixed(1); }
+    function side2(pts) { var d = ''; for (var i = 1; i < pts.length; i++) { var p0 = pts[i - 1], p1 = pts[i], my = (p0[1] + p1[1]) / 2; d += ' C' + f1(p0[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(p1[1]); } return d; }
+    var TLr = TL.slice().reverse();
+    var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[4][0]) + ' ' + f1(TL[4][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
@@ -175,7 +188,7 @@
       var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 138 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (1 * k).toFixed(2), opacity: mo })]);
       [-1, 1].forEach(function (sd) { var o1 = P(sd * 16 * BP.wa, 118 + bob, 12), o2 = P(sd * 6, 146 + bob, 13.5); parts.push([0.012, el('path', { d: 'M' + o1.X.toFixed(1) + ' ' + o1.Y.toFixed(1) + ' Q' + ((o1.X + o2.X) / 2 + sd * 2 * k).toFixed(1) + ' ' + ((o1.Y + o2.Y) / 2).toFixed(1) + ' ' + o2.X.toFixed(1) + ' ' + o2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]); });
     }
-    if (shadeOn) parts.push([0.015, el('path', { d: 'M' + (t1.X - hwT * k) + ' ' + (t1.Y + 3 * k) + ' Q' + t1.X + ' ' + (t1.Y - 5 * k) + ' ' + (t1.X + hwT * k) + ' ' + (t1.Y + 3 * k) + ' L' + (t2.X + hw * k) + ' ' + t2.Y + ' Q' + t2.X + ' ' + (t2.Y + 5 * k) + ' ' + (t2.X - hw * k) + ' ' + t2.Y + ' Z', fill: 'url(#shBody)' })]);
+    if (shadeOn) parts.push([0.015, el('path', { d: TD, fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
     if (L.top === 'knit') {
       var KNID = 'kn' + (draw.n = (draw.n || 0) + 1), KW = el('g', {}), KC = el('clipPath', { id: KNID }); KC.appendChild(el('path', { d: TD })); KW.appendChild(KC); var KN = el('g', { 'clip-path': 'url(#' + KNID + ')' }); KW.appendChild(KN); parts.push([0.02, KW]);
@@ -200,15 +213,15 @@
       parts.push([0.6, el('rect', { x: sc.X - scw, y: sc.Y - 4 * k, width: scw * 2, height: 9 * k, rx: 4.5 * k, fill: L.neckC })]);
       var tl = P(-6, 84 + bob, 15); if (rot(-6, 15, a).z > -2 && Math.abs(Math.sin(a)) < .82) parts.push([0.61, el('rect', { x: tl.X - 3.5 * k, y: tl.Y, width: 7 * k, height: 26 * k, rx: 3 * k, fill: dk(L.neckC, .92) })]);
     }
-    var side = Math.sin(a), sw = Math.abs(side) * 12 * k;
-    if (sw > .5) { var sx = side > 0 ? t1.X - hw * k + 1 : t1.X + hw * k - sw - 1; parts.push([0.01, el('rect', { x: sx, y: t1.Y + 6 * k, width: sw, height: (botY - topY - 8) * k, rx: sw / 2, fill: L.top === 'none' ? C.skin2 : C.top2, opacity: .55 })]); }   /* no top: the shade on his side is skin, not the top's colour (the green strip on a bare back) */
+    /* (the old side strip is gone: the trunk's own outline now shows the chest and back as he turns) */
     if (Math.cos(a) > 0.15) {
       if (L.top === 'hoodie') [-5, 5].forEach(function (x) { var q1 = P(x, 86 + bob, 13), q2 = P(x, 104 + bob, 13); parts.push([0.02, el('line', { x1: q1.X, y1: q1.Y, x2: q2.X, y2: q2.Y, stroke: '#f2f2f2', 'stroke-width': 1.6 * k, 'stroke-linecap': 'round', opacity: Math.min(1, Math.cos(a) * 1.5) })]); });
       if (L.top === 'shirt') { var c1 = P(-8, 79 + bob, 12), c2 = P(0, 90 + bob, 13), c3 = P(8, 79 + bob, 12), c4 = P(0, 82 + bob, 13);
         parts.push([0.02, el('path', { d: 'M' + c1.X + ' ' + c1.Y + ' L' + c2.X + ' ' + c2.Y + ' L' + c4.X + ' ' + c4.Y + ' Z M' + c3.X + ' ' + c3.Y + ' L' + c2.X + ' ' + c2.Y + ' L' + c4.X + ' ' + c4.Y + ' Z', fill: '#f4f4f2' })]);
         [96, 110, 124].forEach(function (yy) { var bt = P(0, yy + bob, 13); parts.push([0.02, el('circle', { cx: bt.X, cy: bt.Y, r: 1.3 * k, fill: dk(L.topC, .6) })]); }); }
     }
-    /* arms: from the shoulders, swinging against the legs */
+    /* arms: from the shoulders, swinging against the legs; long enough that a hanging hand reaches mid-thigh (the elbow at the waist) */
+    var UA = 35, FA = 32;
     [-1, 1].forEach(function (sd) {
       var q = ph + (sd < 0 ? Math.PI : 0), sv = w * 0.38 * Math.sin(q), ov = pose[nearSide(sd) ? 'near' : 'far'];
       if (CHAIR && !ov) ov = { m: 1, b: [134 - 6 * Math.cos(ph * 1.2) * w, 4 + 14 * Math.sin(ph * 1.2) * w] };
@@ -216,10 +229,10 @@
       var fb = sv + 0.15 + w * 0.25 * Math.max(0, Math.sin(q));
       var place = function (q) { return q.at ? unlean(toBody(q.at, sd * 32)) : { y: q.b[0] + bob, z: q.b[1] }; };
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
-      if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, 29, 27, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
+      if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
-      var AW = L.bp.arm, SHW = BW * L.bp.sh, sh = [sd * 30 * SHW, 88 + bob, 0], elb = [sd * 32 * SHW, sh[1] + 29 * Math.cos(sv), 29 * Math.sin(sv)];
-      var hand = [sd * 32 * SHW, elb[1] + 27 * Math.cos(fb), elb[2] + 27 * Math.sin(fb)];
+      var AW = L.bp.arm, SHW = BW * L.bp.sh, sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
+      var hand = [sd * 33.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
       var MU = L.bp.mus || 0, bic = MU ? P(sh[0] + (elb[0] - sh[0]) * .45, sh[1] + (elb[1] - sh[1]) * .45, sh[2] + (elb[2] - sh[2]) * .45, 1) : null;   /* athletic/muscular: a fuller shoulder and upper arm */
@@ -234,14 +247,18 @@
       var fwd = Math.abs(Math.sin(a)) > .3 ? (Math.sin(a) > 0 ? 1 : -1) : -sd * (Math.cos(a) >= 0 ? 1 : -1), pxv = -uy, pyv = ux; if (pxv * fwd < 0) { pxv = -pxv; pyv = -pyv; }
       var hc2 = shade(far, C.skin2, C.skin), HG = el('g', {});
       if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': (8.2 * k).toFixed(1), 'stroke-linecap': 'round' }));
-      var tx = p3.X + ux * 1.6 * k + pxv * 4.4 * k, ty = p3.Y + uy * 1.6 * k + pyv * 4.4 * k;
-      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (2.3 * k).toFixed(1), ry: (3.6 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
-      var mx = p3.X + ux * 3.2 * k, my = p3.Y + uy * 3.2 * k;
-      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (5.4 * k).toFixed(1), ry: (6.6 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
+      var tx = p3.X + ux * 2 * k + pxv * 5.4 * k, ty = p3.Y + uy * 2 * k + pyv * 5.4 * k;
+      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (2.8 * k).toFixed(1), ry: (4.4 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
+      var mx = p3.X + ux * 4 * k, my = p3.Y + uy * 4 * k;
+      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (6.4 * k).toFixed(1), ry: (8.2 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
       parts.push([z + 0.1, HG]);
       HAND[nearSide(sd) ? 'near' : 'far'] = HAND['s' + sd] = { X: p3.X, Y: p3.Y, z: z + 0.2 };
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
+    /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
+    var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * k;
+    parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin2 })]);
+    var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var hc = P(0, 52 + hb6, 0), R = 22 * k;
     /* a shape that only moves with the head (the hair): its path is built round the head's middle and kept from the last
        frame while the turn, the size and the hair are the same; only its place (a translate) changes as he breathes or walks */
@@ -262,7 +279,7 @@
     }
     var head = el('g', {});
     function hatCoversLong() { return L.hat === 'beanie' && false; }
-    head.appendChild(el('rect', { x: hc.X - 6 * k, y: hc.Y + 14 * k, width: 12 * k, height: 16 * k, rx: 5 * k, fill: C.skin2 }));
+    head.appendChild(el('rect', { x: hc.X - 6.6 * k, y: hc.Y + 14 * k, width: 13.2 * k, height: 23 * k, rx: 5 * k, fill: C.skin2 }));   /* a neck you can see, down into the shoulders */
     var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
     head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + FS[2] * k, rx: R * FS[0], ry: R * FS[1], fill: C.skin }));
     function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
@@ -386,6 +403,8 @@
     if (L.top === 'hoodie') box(-17, 17, 70, 94, -15, -5, C.top2, behind(0, 80, -10) > 0 ? 0.3 : -0.3, 8);
     if (L.hat === 'cap') { var bz = rot(0, 22, a).z, br = [[-13, 14], [13, 14], [-13, 33], [13, 33]].map(function (q) { return rot(q[0], q[1], a).x; }), b0 = Math.min.apply(null, br), b9 = Math.max.apply(null, br), byy = P(0, 41 + hb6, 0).Y;
       parts.push([bz > 0 ? 0.57 : 0.45, el('ellipse', { cx: hc.X + (b0 + b9) / 2 * k, cy: byy, rx: Math.max(3, (b9 - b0) / 2) * k, ry: 3.2 * k, fill: dk(L.hatC, .85) })]); }
+    var HSC = .73, pv = P(0, 74 + hb6, 0), HT = 'translate(' + pv.X.toFixed(1) + ' ' + pv.Y.toFixed(1) + ') scale(' + HSC + ') translate(' + (-pv.X).toFixed(1) + ' ' + (-pv.Y).toFixed(1) + ')';
+    for (var hi = hStart; hi < parts.length; hi++) { var hwr = el('g', { transform: HT }); hwr.appendChild(parts[hi][1]); parts[hi][1] = hwr; }
     if (CHAIR) {
       /* a manual wheelchair: big wheels with hand rims at his sides, a seat, a backrest behind him, small front wheels */
       var whR = 30, spin = ph * 1.2;
