@@ -82,7 +82,7 @@
       top: top, topC: top === 'chef' ? '#f4f4f2' : (/^#[0-9a-f]{6}$/i.test(l.topC || '') ? l.topC : TOP_STD), bottom: bottom, legsC: l.legs || '#2a2f3a', shoes: l.shoes || 'sneakers',
       hat: l.hat || 'none', hatC: l.hatC || '#e8743b', neck: l.wxScarf ? 'scarf' : 'none', neckC: l.hatC || '#e8743b', aid: l.aid || 'none',
       bare: t.bare || '', sleeve: t.sleeve || '', skirt: t.skirt || (bottom === 'skirt' ? 'knee' : ''), legsOn: bottom === 'shorts' ? 'thigh' : bottom === 'swim' ? 'swim' : top === 'dress' ? 'none' : 'full',
-      bw: (BUILD[l.build] || BUILD.regular).w, bp: BUILD[l.build] || BUILD.regular, hs: { short: .975, tall: 1.02 }[l.height] || 1, lf: { short: .9, tall: 1.1 }[l.height] || 1 };   /* height: mostly the legs (lf), a little overall (hs) */
+      bw: (BUILD[l.build] || BUILD.regular).w, bp: BUILD[l.build] || BUILD.regular, hs: { short: .975, tall: 1.02 }[l.height] || 1, lf: { short: 1.05, tall: 1.27 }[l.height] || 1.16 };   /* the legs are half his height (JP's reference, 2026-11-13: a 7.5-head figure) */   /* height: mostly the legs (lf), a little overall (hs) */
     o.shoeC = SHOES[o.shoes] || '#1a1a1a';
     if (top === 'dress') o.legsC = o.skin;
     if (o.hair === 'bald') o.hair = 'none';
@@ -342,7 +342,7 @@
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
-    var HSC = .68, HSX = .57, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
+    var HSC = .55, HSX = .465, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: grad(C.skin) })]);
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var HC = P(0, 52 + hb6, 0), hc = { X: 0, Y: 0 }, R = 22 * k, PH = function (x, y, z) { var p = P(x, y, z); return { X: p.X - HC.X, Y: p.Y - HC.Y }; };   /* everything in the head group is drawn round the head's middle (hc = 0, 0) and the group is moved into place: while he only bobs or breathes, nothing inside it changes, so a frame writes one attribute for the whole head */
