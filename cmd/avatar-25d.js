@@ -142,7 +142,11 @@
       var thighC = L.legsOn === 'none' || L.legsOn === 'swim' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
       var MUL = 1 + .07 * (L.bp.mus || 0);   /* athletic/muscular: fuller thighs and calves */
       taper(a1, a2, 10.5 * LW * MUL, 8.2 * LW, thighC, z); taper(a2, calf, 8.2 * LW, 8.4 * LW * MUL, shinC, z); taper(calf, a3, 8.4 * LW * MUL, 7.2 * LW, shinC, z);
-      if (L.legsOn === 'thigh') { var kb = P(knee[0], knee[1] - 4, knee[2]); taper(a1, kb, 10.8, 9, lc, z + .001); }
+      if (L.legsOn === 'thigh') {   /* shorts: a leg as wide as the thigh inside it, hanging straight to a flat hem (JP 2026-11-13: they looked drawn in) */
+        var kb = P(knee[0], knee[1] - 4, knee[2]), sr1 = (Math.max(10.8, 10.5 * LW * MUL + 1.2) - 1.2) * k, sr2 = (Math.max(9.6, 10.5 * LW * MUL + .6) - 1.2) * k, sdx = kb.X - a1.X, sdy = kb.Y - a1.Y, sdl = Math.hypot(sdx, sdy) || 1, snx = -sdy / sdl, sny = sdx / sdl;
+        var sq = [[a1.X + snx * sr1, a1.Y + sny * sr1], [kb.X + snx * sr2, kb.Y + sny * sr2], [kb.X - snx * sr2, kb.Y - sny * sr2], [a1.X - snx * sr1, a1.Y - sny * sr1]];
+        parts.push([z + .001, el('path', { d: 'M' + sq.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z', fill: lc, stroke: lc, 'stroke-width': (2.4 * k).toFixed(1), 'stroke-linejoin': 'round' })]);   /* the round join softens the hem's corners */
+        parts.push([z + .0011, el('circle', { cx: a1.X.toFixed(1), cy: a1.Y.toFixed(1), r: (sr1 + 1.2 * k).toFixed(1), fill: lc })]); }
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
