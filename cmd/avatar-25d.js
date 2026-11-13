@@ -50,8 +50,8 @@
   var BUILD = {
     slim:     { w: .9,  d: .88, sh: .92, wa: .86, hp: .9,  arm: .8,  leg: .82 },
     regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1 },
-    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.22, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
-    muscular: { w: 1.1, d: 1.12, sh: 1.34, wa: .88, hp: 1.04, arm: 1.46, leg: 1.3, mus: 2 },
+    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.12, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
+    muscular: { w: 1.1, d: 1.14, sh: 1.34, wa: .88, hp: 1.04, arm: 1.24, leg: 1.3, mus: 2 },
     broad:    { w: 1.2, d: 1.28, sh: 1.1, wa: 1.22, hp: 1.16, arm: 1.16, leg: 1.2 }   /* JP: the build changed too little – the spread is bigger and athletic/muscular have muscles */
   };
   function look25(l) {
@@ -167,13 +167,14 @@
     /* a human trunk (phase 1 of the avatar brief): the neck's base, sloping to round shoulders, a chest, a waist that narrows
        and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
        forward, the bottom back), so the outline changes properly as he turns */
-    var LV = [[81, 8.5, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
-    var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a);
+    var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
+    if (MUT) LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]);   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
+    var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
     function side2(pts) { var d = ''; for (var i = 1; i < pts.length; i++) { var p0 = pts[i - 1], p1 = pts[i], my = (p0[1] + p1[1]) / 2; d += ' C' + f1(p0[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(p1[1]); } return d; }
     var TLr = TL.slice().reverse();
-    var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[4][0]) + ' ' + f1(TL[4][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
+    var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
@@ -235,12 +236,19 @@
       var hand = [sd * 33.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
-      var MU = L.bp.mus || 0, bic = MU ? P(sh[0] + (elb[0] - sh[0]) * .45, sh[1] + (elb[1] - sh[1]) * .45, sh[2] + (elb[2] - sh[2]) * .45, 1) : null;   /* athletic/muscular: a fuller shoulder and upper arm */
-      if (L.bare === 'arms' || L.top === 'none') { taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z);
-        if (MU) { taper(p1, bic, (6.4 + .5 * MU) * AW, (5.6 + .6 * MU) * AW, shade(far, C.skin2, C.skin), z + .002); taper(bic, p2, (5.6 + .6 * MU) * AW, 4.4 * AW, shade(far, C.skin2, C.skin), z + .002); } }
+      var MU = L.bp.mus || 0;
+      /* a human arm: a round shoulder, the upper arm fullest at the biceps, a forearm that swells below the elbow and narrows to the wrist.
+         Athletic and muscular (MU) get a bigger shoulder cap, biceps and forearm */
+      var skA = shade(far, C.skin2, C.skin), fm = P(elb[0] + (hand[0] - elb[0]) * .3, elb[1] + (hand[1] - elb[1]) * .3, elb[2] + (hand[2] - elb[2]) * .3, 1), bi2 = P(sh[0] + (elb[0] - sh[0]) * .42, sh[1] + (elb[1] - sh[1]) * .42, sh[2] + (elb[2] - sh[2]) * .42, 1);
+      var rS = (6.6 + .9 * MU) * AW, rB = (6.3 + 1.1 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
+      function bareArm() { taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
+        if (MU) parts.push([z + .001, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((7.6 + 1.7 * MU) * AW * k).toFixed(1), fill: skA })]); }   /* the shoulder muscle */
+      if (L.bare === 'arms' || L.top === 'none') bareArm();
       else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1);
-        taper(p1, p2, 5.6 * AW, 4.6 * AW, shade(far, C.skin2, C.skin), z); taper(p2, p3, 4.6 * AW, 3.6 * AW, shade(far, C.skin2, C.skin), z); taper(p1, mid, 7.2 * AW, 6.4 * AW, shade(far, C.top2, C.top), z + .01); }
-      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, p2, 9 * AW, 8 * AW, shade(far, slc2, slc), z); taper(p2, p3, 8 * AW, 7.4 * AW, shade(far, slc2, slc), z);
+        taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
+        taper(p1, mid, rS + 1.6 + .5 * MU, rB + 1, shade(far, C.top2, C.top), z + .01);
+        if (MU) parts.push([z + .011, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((8.6 + 1.7 * MU) * AW * k).toFixed(1), fill: shade(far, C.top2, C.top) })]); }   /* the short sleeve sits round the shoulder and the biceps */
+      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, bi2, rS + 2.2, rB + 2, shade(far, slc2, slc), z); taper(bi2, p2, rB + 2, rE + 2.4, shade(far, slc2, slc), z); taper(p2, fm, rE + 2.4, rF + 2, shade(far, slc2, slc), z); taper(fm, p3, rF + 2, rW + 2.6, shade(far, slc2, slc), z);   /* a sleeve follows the arm inside it */
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
@@ -256,7 +264,7 @@
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
-    var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * k;
+    var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin2 })]);
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var hc = P(0, 52 + hb6, 0), R = 22 * k;
