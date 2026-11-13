@@ -242,7 +242,8 @@
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3]), hwq = Math.sqrt(Math.pow(q[1] * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
     /* a smooth line through the levels (no steps: the side is one flowing edge) */
-    function side2(pts) { var d = '', n = pts.length; for (var i = 1; i < n; i++) { var p0 = pts[Math.max(0, i - 2)], p1 = pts[i - 1], p2 = pts[i], p3 = pts[Math.min(n - 1, i + 1)];
+    function side2(pts) { var d = '', n = pts.length; if (k <= .85) { for (var i0 = 1; i0 < n; i0++) d += ' L' + f1(pts[i0][0]) + ' ' + f1(pts[i0][1]); return d; }   /* drawn small, straight pieces between the points look the same and cost a third (a scene draws him 60 times a second) */
+      for (var i = 1; i < n; i++) { var p0 = pts[Math.max(0, i - 2)], p1 = pts[i - 1], p2 = pts[i], p3 = pts[Math.min(n - 1, i + 1)];
       d += ' C' + f1(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + f1(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + f1(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + f1(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + f1(p2[0]) + ' ' + f1(p2[1]); } return d; }
     var TLr = TL.slice().reverse();
     var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
@@ -376,7 +377,8 @@
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
-    var HSC = .55, HSX = .465, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (4 + .7 * Math.abs(Math.sin(a))) * BW * (1 + .08 * (L.bp.mus || 0)) * k;
+    var HBG = 1 + .22 * Math.max(0, Math.min(1, (1 - k) / .4)), HSC = .55 * HBG, HSX = .465 * HBG,   /* drawn small (the page scenes, tiles) the head is a little bigger, so the face stays readable */
+        nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (4 + .7 * Math.abs(Math.sin(a))) * BW * (1 + .08 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: grad(C.skin) })]);
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var HC = P(0, 52 + hb6, 0), hc = { X: 0, Y: 0 }, R = 22 * k, PH = function (x, y, z) { var p = P(x, y, z); return { X: p.X - HC.X, Y: p.Y - HC.Y }; };   /* everything in the head group is drawn round the head's middle (hc = 0, 0) and the group is moved into place: while he only bobs or breathes, nothing inside it changes, so a frame writes one attribute for the whole head */
