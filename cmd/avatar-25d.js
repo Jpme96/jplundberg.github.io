@@ -143,6 +143,13 @@
     /* a whole limb as one shape (its pieces joined), so its shading runs unbroken from shoulder to wrist, hip to ankle */
     /* a cast shadow: the strip of a limb just below a hem (a sleeve, the shorts), darkened – only when he is big enough to see it */
     function hemShade(pA, pB, r1, r2, z) { if (k <= .85) return; ACC = []; taper(pA, pB, r1, r2, '', z, 1); var dd = ACC[0]; ACC = null; parts.push([z, el('path', { d: dd, fill: '#000', opacity: .17 })]); }
+    /* flat light and shade shapes (JP's reference, 2026-11-13): big enough to see, the muscles are shown as soft flat patches –
+       lighter where the light from the upper left lands, darker on the turned-away side – on top of each part's own gradient */
+    var CEL = k > .85;
+    function celE(px, py, pz, rxu, ryu, light, op, depth, rotd) { var c = P(px, py, pz), e1 = P(px - rxu, py, pz), e2 = P(px + rxu, py, pz), rxs = Math.abs(e2.X - e1.X) / 2; if (rxs < .6 * k || op < .02) return;
+      var at = { cx: c.X.toFixed(1), cy: c.Y.toFixed(1), rx: rxs.toFixed(1), ry: (ryu * k).toFixed(1), fill: light ? '#fff' : '#000', opacity: op.toFixed(2) }; if (rotd) at.transform = 'rotate(' + rotd + ' ' + at.cx + ' ' + at.cy + ')'; parts.push([depth, el('ellipse', at)]); }
+    function celL(pA, pB, t, off, rw, rl, light, op, depth) { var x = pA.X + (pB.X - pA.X) * t + off * k, y = pA.Y + (pB.Y - pA.Y) * t, ang = Math.atan2(pB.Y - pA.Y, pB.X - pA.X) * 180 / Math.PI - 90;
+      parts.push([depth, el('ellipse', { cx: x.toFixed(1), cy: y.toFixed(1), rx: (rw * k).toFixed(1), ry: (rl * k).toFixed(1), fill: light ? '#fff' : '#000', opacity: op.toFixed(2), transform: 'rotate(' + ang.toFixed(0) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')' })]); }
     var ACC = null; function whole(col, z, fn) { ACC = []; fn(); var dd = ACC.join(' '); ACC = null; parts.push([z, el('path', { d: dd, fill: grad(col) })]); }
     var CHAIR = L.aid === 'chair', SEAT = CHAIR ? 38 : 0, CRUTCH = L.aid === 'crutches';
     var bob = (CHAIR ? 0 : w * (Math.cos(2 * ph) * 1.6 - 1.2)) - (pose.lift || 0) - (pose.breath || 0) + SEAT; HY = 140 + bob;
@@ -168,6 +175,9 @@
       var rT = HX * .97, rK = HX * .7, rC = HX * .68 * MUL, rA = HX * .54;   /* the thighs meet at the groin (as wide as half the hips) and narrow to the knee, so the legs part in a V with a small gap */
       whole(thighC, z, function () { taper(a1, a2, rT, rK, thighC, z); taper(a2, calf, rK, rC, shinC, z); taper(calf, a3, rC, rA, shinC, z); });
       if (shinC === skc && Math.cos(a) > .3) { var kn1 = P(knee[0] - rK * .5, knee[1] - 1, knee[2] + rK), kn2 = P(knee[0], knee[1] + 1.2, knee[2] + rK), kn3 = P(knee[0] + rK * .5, knee[1] - 1, knee[2] + rK);
+        if (CEL) { var lz = Math.min(1, (Math.cos(a) - .3) * 2), lm = 1 + .35 * (L.bp.mus || 0);
+          celL(a1, a2, .56, -rT * .22, rT * .34, 11, 1, .09 * lz * lm, z + .0003); celL(a2, a3, .36, -rC * .2, rC * .3, 9, 1, .07 * lz * lm, z + .0012);   /* the light on the thigh and the shin */
+          celL(a1, a2, .55, rT * .5, rT * .2, 12, 0, .07 * lz * lm, z + .0003); celL(a2, a3, .07, 0, rK * .6, 1.5, 0, .07 * lz, z + .0012); }   /* the inner thigh turns away; a soft shade under the kneecap */
         parts.push([z + .0015, el('path', { d: 'M' + kn1.X.toFixed(1) + ' ' + kn1.Y.toFixed(1) + ' Q' + kn2.X.toFixed(1) + ' ' + kn2.Y.toFixed(1) + ' ' + kn3.X.toFixed(1) + ' ' + kn3.Y.toFixed(1), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .3 })]); }   /* a small line at the knee */
       if (L.legsOn === 'thigh') { var kf = .68, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .3, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1);
         hemShade(kb, P(knee[0], hip[1] + (knee[1] - hip[1]) * (kf + .075), hip[2] + (knee[2] - hip[2]) * (kf + .075)), rT + (rK - rT) * kf + .2, rT + (rK - rT) * (kf + .075) + .2, z + .0005); }   /* shorts: a straight hem on each leg – with the gap between the legs that is the inverted V at the crotch */
@@ -212,6 +222,16 @@
     parts.push([0, el('path', { d: TD, fill: grad(L.top === 'none' ? C.skin : C.top) })]);
     if (k > .85 && !L.skirt) parts.push([-0.001, el('path', { d: 'M' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1] - 2 * k) + ' L' + f1(TR[LN2][0]) + ' ' + f1(TR[LN2][1] - 2 * k) + ' L' + f1(TR[LN2][0]) + ' ' + f1(TR[LN2][1] + 2.6 * k) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 8.4 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1] + 2.6 * k) + ' Z', fill: '#000', opacity: .2 })]);   /* the top's shadow on the waistband */
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
+    if (CEL && L.top === 'none' && Math.cos(a) > .3) { var cz = Math.min(1, (Math.cos(a) - .3) * 2), cm = BP.mus ? .7 + .3 * BP.mus : .45, CH = BP.ch;
+      [-1, 1].forEach(function (sd) { var lit = sd < 0 ? 1 : .55;
+        celE(sd * CH * .47, 96 + bob, 14, CH * .37, 6.6, 1, .15 * cz * cm * lit, .0105);   /* a pec catches the light */
+        var u1 = P(sd * 1.2, 101.5 + bob, 15), u2 = P(sd * CH * .5, 107.5 + bob, 13.5), u3 = P(sd * CH * .95, 96 + bob, 10), u4 = P(sd * CH * .5, 103.2 + bob, 13.5);
+        parts.push([.0108, el('path', { d: 'M' + f1(u1.X) + ' ' + f1(u1.Y) + ' Q' + f1(u2.X) + ' ' + f1(u2.Y) + ' ' + f1(u3.X) + ' ' + f1(u3.Y) + ' Q' + f1(u4.X) + ' ' + f1(u4.Y) + ' ' + f1(u1.X) + ' ' + f1(u1.Y) + ' Z', fill: '#000', opacity: (.2 * cz * cm).toFixed(2) })]);   /* and throws a shadow under it */
+        if (BP.mus) [109.5, 118.5, 127.5].forEach(function (ay, ai) { celE(sd * 4.7, ay + bob, 14.8, 3.7 - ai * .25, 3.6, 1, .1 * cz * cm * lit, .0105); });   /* the stomach's blocks */
+        var s1 = P(sd * (CH + .3), 100 + bob, 4), s2 = P(sd * BP.wv, 128 + bob, 2), s3 = P(sd * BP.hv, 146 + bob, 0), s4 = P(sd * (BP.hv - 5), 146 + bob, 6), s5 = P(sd * (BP.wv - 5.5), 126 + bob, 9), s6 = P(sd * (CH - 4), 104 + bob, 10);
+        parts.push([.0105, el('path', { d: 'M' + f1(s1.X) + ' ' + f1(s1.Y) + ' L' + f1(s2.X) + ' ' + f1(s2.Y) + ' L' + f1(s3.X) + ' ' + f1(s3.Y) + ' L' + f1(s4.X) + ' ' + f1(s4.Y) + ' Q' + f1(s5.X) + ' ' + f1(s5.Y) + ' ' + f1(s6.X) + ' ' + f1(s6.Y) + ' Z', fill: '#000', opacity: ((sd > 0 ? .15 : .07) * cz * cm).toFixed(2) })]);   /* the flank under the ribs turns away from the light */
+      });
+    }
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
       var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.4 + .15 * BP.mus)).toFixed(2), pecY = 101 + bob, ml = function (d, wd) { parts.push([0.012, el('path', { d: d, fill: 'none', stroke: mc, 'stroke-width': ((wd || 1) * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); };
       var hl = P(-BP.ch * .46, pecY - 6, 14); parts.push([0.011, el('ellipse', { cx: hl.X.toFixed(1), cy: hl.Y.toFixed(1), rx: (BP.ch * .3 * Math.cos(a) * k).toFixed(1), ry: (6.5 * k).toFixed(1), fill: '#fff', opacity: (.06 * Math.min(1, (Math.cos(a) - .3) * 2)).toFixed(2) })]);   /* the light catches the chest on the lit side */
@@ -276,8 +296,8 @@
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
       if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
-      var AR = L.bp.ar, SX = L.bp.sx, sh = [sd * SX, 88 + bob, 0], elb = [sd * (SX + 1.2), sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
-      var hand = [sd * (SX + 1.6), elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
+      var AR = L.bp.ar, SX = L.bp.sx, sh = [sd * SX, 88 + bob, 0], elb = [sd * (SX + 1.8), sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
+      var hand = [sd * (SX + 3.2), elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
       var MU = L.bp.mus || 0;
@@ -288,17 +308,18 @@
       var rS = AR * .86, rB = AR, rE = AR * .74, rF = AR * .78, rW = AR * .56;
       var adx = p2.X - p1.X, ady = p2.Y - p1.Y, adl = Math.hypot(adx, ady), aux = adl > 2 * k ? adx / adl : 0, auy = adl > 2 * k ? ady / adl : 1, oo = rot(sd, 0, a).x, anx = -auy, any = aux;
       if (anx * (oo || sd) < 0) { anx = -anx; any = -any; }   /* across the arm, pointing away from the body */
-      var oa = Math.abs(oo), dT = 3.6 + .1 * AR;   /* the shoulder's top stays level with the shoulder line however big the arm is (JP: the deltoids stuck up) */
+      var oa = Math.abs(oo), dT = 2.4 + .08 * AR;   /* the shoulder's top stays level with the shoulder line however big the arm is (JP: the deltoids stuck up) */
       var p1d = { X: p1.X + aux * Math.max(0, rS - dT + 1) * k, Y: p1.Y + auy * Math.max(0, rS - dT + 1) * k };
-      function delt(grow, fill, zd, line) { var rD = (AR * (1.1 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .5 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.5);
+      function delt(grow, fill, zd, line) { var rD = (AR * (1.1 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .56 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.9);
         var pt = function (sv2, tv) { return f1(p1.X + aux * sv2 + anx * tv) + ' ' + f1(p1.Y + auy * sv2 + any * tv); };
         /* a teardrop: a round cap over the joint, widest just below the top, then both sides run in to a point on the outside of the upper arm */
-        var sT = -(dT + grow * .5) * k, tT = -.3 * rD * oa, sO = .3 * rD, tO = rD * (1 + .14 * oa), tI = -rD * (1 - .3 * oa), tP = .6 * rB * k * oa, D = tipS - sO;
-        var d = 'M' + pt(sT, tT) + ' C' + pt(sT, tT + .7 * rD) + ' ' + pt(sO - .55 * (sO - sT), tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .5 * D, tO) + ' ' + pt(tipS - .28 * D, tP + .5 * rD) + ' ' + pt(tipS, tP) +
+        var sT = -(dT + grow * .5) * k, tT = -.5 * rD * oa, sO = .85 * rD, tO = rD * (1 + .14 * oa), tI = -rD * (1 - .3 * oa), tP = .6 * rB * k * oa, D = tipS - sO;
+        var d = 'M' + pt(sT, tT) + ' C' + pt(sT + .08 * (sO - sT), tT + .55 * (tO - tT)) + ' ' + pt(sO - .62 * (sO - sT), tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .3 * D, tO) + ' ' + pt(tipS - .42 * D, tP + .7 * (tO - tP)) + ' ' + pt(tipS, tP) +
           ' C' + pt(tipS - .3 * D, tP - .45 * rD) + ' ' + pt(sO + .5 * D, tI) + ' ' + pt(sO, tI) + ' C' + pt(sO - .55 * (sO - sT), tI) + ' ' + pt(sT, tT - .4 * rD) + ' ' + pt(sT, tT) + ' Z';
         parts.push([zd, el('path', { d: d, fill: grad(fill) })]);
         if (line) parts.push([zd + .0005, el('path', { d: d, fill: p1.X < cx ? '#fff' : '#000', opacity: p1.X < cx ? (.07 + .03 * MU).toFixed(2) : (.05 + .02 * MU).toFixed(2) })]); }   /* the muscle shows by its tone – lighter on the lit side, darker on the shaded one – not by an outline */
-      function skinArm() { whole(skA, z, function () { taper(p1d, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z); });
+      function skinArm() { if (CEL) { var am = 1 + .35 * MU; celL(p1d, p2, .58, -rB * .25, rB * .3, 9, 1, (far ? .04 : .08) * am, z + .0006); celL(p2, p3, .36, -rF * .22, rF * .3, 8.5, 1, (far ? .04 : .07) * am, z + .0006); celL(p1d, p2, .6, rB * .55, rB * .2, 10, 0, .06 * am, z + .0006); }   /* the light on the upper arm and the forearm, the turned-away side */
+        whole(skA, z, function () { taper(p1d, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z); });
         parts.push([z + .0008, el('path', { d: 'M' + f1(p2.X - anx * rE * .75 * k) + ' ' + f1(p2.Y - any * rE * .75 * k) + ' L' + f1(p2.X - anx * rE * .1 * k) + ' ' + f1(p2.Y - any * rE * .1 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .32 })]); }   /* a subtle elbow line */
       if (L.bare === 'arms' || L.top === 'none') { skinArm(); delt(0, skA, z + .001, 1); }
       else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1), tcs = shade(far, C.top2, C.top);
@@ -306,7 +327,7 @@
         hemShade(mid, P(sh[0] + (elb[0] - sh[0]) * .64, sh[1] + (elb[1] - sh[1]) * .64, sh[2] + (elb[2] - sh[2]) * .64, 1), rB * .97, rB * .93, z + .005); }
       else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2, scs = shade(far, slc2, slc); whole(scs, z, function () { taper(p1d, bi2, rS + 1.8, rB + 1.8, scs, z); taper(bi2, p2, rB + 1.8, rE + 2.2, scs, z); taper(p2, fm, rE + 2.2, rF + 1.9, scs, z); taper(fm, p3, rF + 1.9, rW + 2.4, scs, z); }); delt(1.8, scs, z + .001);   /* a sleeve follows the arm inside it */
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
-      var HZ = Math.max(.9, Math.min(1.12, AR / 6));   /* the hands grow with the arms */
+      var HZ = Math.max(.8, Math.min(1, AR / 6.6));   /* the hands grow with the arms */
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
       var fwd = Math.abs(Math.sin(a)) > .3 ? (Math.sin(a) > 0 ? 1 : -1) : -sd * (Math.cos(a) >= 0 ? 1 : -1), pxv = -uy, pyv = ux; if (pxv * fwd < 0) { pxv = -pxv; pyv = -pyv; }
