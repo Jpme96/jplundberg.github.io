@@ -50,8 +50,8 @@
   var BUILD = {
     slim:     { w: .9,  d: .88, sh: .92, wa: .86, hp: .9,  arm: .8,  leg: .82 },
     regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1 },
-    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.12, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
-    muscular: { w: 1.1, d: 1.14, sh: 1.34, wa: .88, hp: 1.04, arm: 1.24, leg: 1.3, mus: 2 },
+    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.06, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
+    muscular: { w: 1.1, d: 1.14, sh: 1.34, wa: .88, hp: 1.04, arm: 1.12, leg: 1.3, mus: 2 },
     broad:    { w: 1.2, d: 1.28, sh: 1.1, wa: 1.22, hp: 1.16, arm: 1.16, leg: 1.2 }   /* JP: the build changed too little – the spread is bigger and athletic/muscular have muscles */
   };
   function look25(l) {
@@ -233,22 +233,22 @@
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
       if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
-      var AW = L.bp.arm, SHW = BW * L.bp.sh, sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
+      var AW = L.bp.arm, SHW = BW * (L.bp.mus ? 1 + .55 * (L.bp.sh - 1) : L.bp.sh),   /* athletic/muscular: the width is in the shoulders' muscle, the arms still hang at the trunk's side (JP 2026-11-13: they stood out like balls) */ sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
       var hand = [sd * 33.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
-      var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
-      var MU = L.bp.mus || 0;
+      var p1 = P(sh[0] - sd * 1.2 * (L.bp.mus || 0), sh[1] + 2.4 * (L.bp.mus || 0), sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
+      var MU = L.bp.mus || 0, CAPX = -sd * 1.6 * MU * k;   /* the cap leans in onto the trunk */
       /* a human arm: a round shoulder, the upper arm fullest at the biceps, a forearm that swells below the elbow and narrows to the wrist.
          Athletic and muscular (MU) get a bigger shoulder cap, biceps and forearm */
       var skA = shade(far, C.skin2, C.skin), fm = P(elb[0] + (hand[0] - elb[0]) * .3, elb[1] + (hand[1] - elb[1]) * .3, elb[2] + (hand[2] - elb[2]) * .3, 1), bi2 = P(sh[0] + (elb[0] - sh[0]) * .42, sh[1] + (elb[1] - sh[1]) * .42, sh[2] + (elb[2] - sh[2]) * .42, 1);
-      var rS = (6.6 + .9 * MU) * AW, rB = (6.3 + 1.1 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
+      var rS = (6.6 + .4 * MU) * AW, rB = (6.3 + .7 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
       function bareArm() { taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
-        if (MU) parts.push([z + .001, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((7.6 + 1.7 * MU) * AW * k).toFixed(1), fill: skA })]); }   /* the shoulder muscle */
+        if (MU) parts.push([z + .001, el('ellipse', { cx: (p1.X + CAPX).toFixed(1), cy: (p1.Y + 1 * k).toFixed(1), rx: ((6.6 + .6 * MU) * AW * k).toFixed(1), ry: ((7.2 + .8 * MU) * AW * k).toFixed(1), fill: skA })]); }   /* the shoulder muscle */
       if (L.bare === 'arms' || L.top === 'none') bareArm();
       else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1);
         taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
-        taper(p1, mid, rS + 1.6 + .5 * MU, rB + 1, shade(far, C.top2, C.top), z + .01);
-        if (MU) parts.push([z + .011, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((8.6 + 1.7 * MU) * AW * k).toFixed(1), fill: shade(far, C.top2, C.top) })]); }   /* the short sleeve sits round the shoulder and the biceps */
+        taper(p1, mid, rS + 1.6 - .05 * MU, rB + 1, shade(far, C.top2, C.top), z + .01);
+        if (MU) parts.push([z + .011, el('ellipse', { cx: (p1.X + CAPX).toFixed(1), cy: (p1.Y + 1 * k).toFixed(1), rx: ((7.4 + .4 * MU) * AW * k).toFixed(1), ry: ((8 + .6 * MU) * AW * k).toFixed(1), fill: shade(far, C.top2, C.top) })]); }   /* the short sleeve sits round the shoulder and the biceps */
       else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, bi2, rS + 2.2, rB + 2, shade(far, slc2, slc), z); taper(bi2, p2, rB + 2, rE + 2.4, shade(far, slc2, slc), z); taper(p2, fm, rE + 2.4, rF + 2, shade(far, slc2, slc), z); taper(fm, p3, rF + 2, rW + 2.6, shade(far, slc2, slc), z);   /* a sleeve follows the arm inside it */
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
