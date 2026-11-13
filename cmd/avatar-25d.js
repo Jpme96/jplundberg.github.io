@@ -168,7 +168,7 @@
        and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
        forward, the bottom back), so the outline changes properly as he turns */
     var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
-    if (MUT) LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]);   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
+    if (MUT) { LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]); LV[LV.length - 1][1] = 25 * BP.wa * (1.04 + .02 * MUT); }   /* the hips no wider than the waist goes on: a V down into the shorts, no flare that reads as belly fat (JP 2026-11-13) */   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
     var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
@@ -187,7 +187,7 @@
         var x0 = Math.min(c1.X, c2.X), w0 = Math.abs(c2.X - c1.X); if (w0 < .6 * k) return;
         parts.push([0.012, el('rect', { x: x0.toFixed(1), y: c1.Y.toFixed(1), width: w0.toFixed(1), height: (c2.Y - c1.Y).toFixed(1), rx: (2.6 * k).toFixed(2), fill: 'none', stroke: abf, 'stroke-width': (.9 * k).toFixed(2), opacity: abA.toFixed(2) })]); }); });
       var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 138 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (1 * k).toFixed(2), opacity: mo })]);
-      [-1, 1].forEach(function (sd) { var o1 = P(sd * 16 * BP.wa, 118 + bob, 12), o2 = P(sd * 6, 146 + bob, 13.5); parts.push([0.012, el('path', { d: 'M' + o1.X.toFixed(1) + ' ' + o1.Y.toFixed(1) + ' Q' + ((o1.X + o2.X) / 2 + sd * 2 * k).toFixed(1) + ' ' + ((o1.Y + o2.Y) / 2).toFixed(1) + ' ' + o2.X.toFixed(1) + ' ' + o2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]); });
+      [-1, 1].forEach(function (sd) { var o1 = P(sd * 19 * BP.wa, 130 + bob, 12), o2 = P(sd * 6, 146 + bob, 13.5); parts.push([0.012, el('path', { d: 'M' + o1.X.toFixed(1) + ' ' + o1.Y.toFixed(1) + ' Q' + ((o1.X + o2.X) / 2 - sd * 1.5 * k).toFixed(1) + ' ' + ((o1.Y + o2.Y) / 2).toFixed(1) + ' ' + o2.X.toFixed(1) + ' ' + o2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]); });
     }
     if (shadeOn) parts.push([0.015, el('path', { d: TD, fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
