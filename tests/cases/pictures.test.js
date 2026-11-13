@@ -20,7 +20,9 @@ const CASES = [
   /* turned by the rig (Phase L rounds 2–3): the back of the top, a hood and glasses from the side, the near earring */
   ['jersey-back', 'day', { top: 'jersey', topC: '#c62828', num: '23', bag: 'yes', hair: 'ponytail', _view: 'back' }],
   ['hoodie-side', 'day', { top: 'hoodie', topC: '#3a6ea5', glasses: 'aviator', ears: 'hoops', _view: 'side' }],
-  ['suit-quarter', 'day', { top: 'suit', neck: 'tie', ears: 'studs', hair: 'long', hairC: '#1e140d', _view: 'q' }]
+  ['suit-quarter', 'day', { top: 'suit', neck: 'tie', ears: 'studs', hair: 'long', hairC: '#1e140d', _view: 'q' }],
+  /* 2026-11-13: the crest of a mohawk in two halves, the chin beard, a pet in the body's look */
+  ['mohawk-goatee-cat', 'day', { hair: 'mohawk', beard: 'goatee', pet: 'cat', _view: 'q' }]
 ];
 (async () => {
   const { b, p } = await open(1280);

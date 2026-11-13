@@ -152,6 +152,7 @@
           else if (t < len - .6) walkTo(chair ? TABLE - 34 : STEP - 30, 70, hm, len - .6);
           else { cx = 70; face = -90 + 90 * E(SEG(t, len - .6, len)); }
           if (t >= len) { cx = 70; face = 0; }
+          if (say && !st.still) { pose.mouth = Fig25.viseme(t); pose.brow = 'up'; }   /* he says it: the mouth moves, the brows go up */
           pose.lean = lean; pose.lift = lift; var ph = S.LIFE(st, pose, w);
           S.FIG(g, { st: st, k: .5, cx: cx, gy: gy, face: face, ph: ph, w: w, pose: pose, look: look, who: 'avp', items: function (H) { var hh = right ? H.s1 : H.sm; return held && hh ? [[hh.z - .15, cup(hh.X, hh.Y, right ? tilt : -tilt)]] : []; } });
           if (!held) g.appendChild(cup(CUP[0], CUP[1], 0));

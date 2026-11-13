@@ -51,7 +51,7 @@
         var hk = SIDE(1, me.face), POCK = B(150, 6), EAR = B(60, 14), wk = SIDE(-1, me.face), WV0 = B(46, 10);   /* the same hand whichever way he leans his head */
         me.pose[hk] = t < .6 ? GO(REST, POCK, SEG(t, .1, .6)) : t < 1.3 ? GO(POCK, EAR, SEG(t, .6, 1.3), 2) : t < 4.6 ? HOLD(EAR) : t < 5.3 ? GO(EAR, POCK, SEG(t, 4.6, 5.3), 2) : GO(POCK, REST, SEG(t, 5.3, 5.9));
         if (t > 2.6 && t < 4.2) me.pose[wk] = t < 2.95 ? GO(REST, WV0, SEG(t, 2.6, 2.95)) : t < 3.8 ? HOLD(B(46, 10 + 8 * Math.sin((t - 2.95) * 14))) : GO(WV0, REST, SEG(t, 3.8, 4.2));
-        phone = t > .6 && t < 5.3 ? hk : null;
+        phone = t > .6 && t < 5.3 ? hk : null; if (t > 1.5 && t < 4.3) me.pose.mouth = Fig25.viseme(t);   /* he talks on the phone */
         pa.face = -30 * E(SEG(t, 1.2, 1.8)) * (1 - E(SEG(t, 4.8, 5.4)));   /* she looks over while he talks */
       } else if (st.pact === 'ball') {
         me.cx = 232; pa.cx = 283; var bk = SIDE(1, -90), BH = B(110, 20), BACK = B(96, -26), FWD = B(70, 36);

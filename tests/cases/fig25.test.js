@@ -31,13 +31,19 @@ const { open, sl } = require('../lib/browser'); const { check, done } = require(
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); document.body.appendChild(svg);
     Fig25.draw(base, -Math.PI / 2, 200, 200, .5, 0, 0, { near: { m: 1, at: [180, 130] } }).forEach(q => svg.appendChild(q[1]));
     const h = Fig25.hand().near;
+    /* talking and brows (F6, 2026-11-13): each mouth shape and each brow mood is its own drawing, big and small, and the shapes take turns over time */
+    const face = (pose, k) => Fig25.svg(base, { a: 20, k: k, pose: pose }), faces = new Set(), talkBad = [];
+    [1.2, .5].forEach(k => { [{}, { mouth: 'a' }, { mouth: 'o' }, { mouth: 'e' }, { brow: 'up' }, { brow: 'down' }, { brow: 'sad' }].forEach(ps => { const f = face(ps, k); faces.add(k + '|' + f); if (/NaN|undefined|null/.test(f)) talkBad.push(JSON.stringify(ps)); }); });
+    const vis = new Set(); for (let tt = 0; tt < 1; tt += 1 / 16) vis.add(Fig25.viseme(tt));
+    const sameM = face({ mouth: 'm' }, 1.2) === face({}, 1.2);
     const dif = {}; for (const k in distinct) dif[k] = distinct[k].size + '/' + G[k].length;
-    return { n, sweep, chairDiff: chair !== plain && chair.length > plain.length + 400, crutchDiff: crutch.length > plain.length + 200, petDiff: petSvg.length > plain.length + 300, bad: bad.slice(0, 5), errs: errs.slice(0, 5), hand: h && Math.hypot(h.X - 180, h.Y - 130), dif, trimmed: Fig25.look({ hair: 'mullet', topC: '#ff0000' }), plainTop: Fig25.look({ hair: 'short' }).topC };
+    return { n, sweep, chairDiff: chair !== plain && chair.length > plain.length + 400, crutchDiff: crutch.length > plain.length + 200, petDiff: petSvg.length > plain.length + 300, bad: bad.slice(0, 5), errs: errs.slice(0, 5), hand: h && Math.hypot(h.X - 180, h.Y - 130), faces: faces.size, talkBad, vis: [...vis].sort().join(''), sameM, dif, trimmed: Fig25.look({ hair: 'mullet', topC: '#ff0000' }), plainTop: Fig25.look({ hair: 'short' }).topC };
   });
   check(r.n > 500 && !r.errs.length, 'every choice draws from five angles (' + r.n + ' pictures) ' + r.errs.join(' | '));
   check(r.sweep === 120, 'the look sweep: 12 mixed looks from five angles, standing and walking (' + r.sweep + ')');
   check(r.chairDiff && r.crutchDiff && r.petDiff, 'the wheelchair, the crutches and a pet add their own parts');
   check(!r.bad.length, 'no "NaN", "undefined" or "null" in any picture ' + r.bad.join(', '));
+  check(r.faces === 14 && !r.talkBad.length && r.vis === 'aemo' && r.sameM, 'talking: the mouth shapes a, o, e and the brow moods up, down, sad are each their own drawing, big and small; "m" is the closed mouth; the shapes take turns (' + r.faces + ' of 14, ' + r.vis + ')');
   check(r.hand != null && r.hand < 3, 'a hand put on a point lands there (' + (r.hand || 0).toFixed(1) + ' px off)');
   check(r.trimmed.hair === 'side' && r.trimmed.topC === '#ff0000' && r.plainTop === '#2f7a55', 'it draws the trimmed look: removed choices mapped, your top colour kept, forest green when none (' + r.trimmed.hair + ', ' + r.trimmed.topC + ', ' + r.plainTop + ')');
   /* shared shapes for now (F1 follow-up): undercut and waves are drawn as the side part */

@@ -22,6 +22,7 @@
       season: { x: 362, y: 196, s: .95, act: false }, len: 12, data: data, render: function (sv, t, st) {
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
+      if (st.__ch == null) st.__ch = (S.look() || {}).aid === 'chair' ? 20 : 0;   /* in the wheelchair he sits up at the desk like on an office chair (the desk hides the wheels) – lower, his head was behind the laptop's lid */
       var g = add(sv, 'g', {}), cx = 220, face = 0, pose = {}, lean = 0, lift = 0, mugIn = false, tilt = 0, MUG = [194, 151], MOUTH = B(66, 24), UP = B(34, 4);
       function TYPE(sd) { return B(118 + 1.4 * Math.sin(now / 75 + (sd > 0 ? 1.6 : 0)), 26); }
       /* the room: a window with the city at night, the clock, the floor */
@@ -31,7 +32,7 @@
         var wv = SIDE(1, 0), WAVE = B(54, 34);
         pose[SIDE(-1, 0)] = HOLD(TYPE(-1));
         pose[wv] = t < .5 ? GO(TYPE(1), WAVE, SEG(t, .1, .5)) : t < 1.8 ? HOLD(B(54 + 8 * Math.sin((t - .5) * 14), 34)) : t < 2.3 ? GO(WAVE, TYPE(1), SEG(t, 1.8, 2.3)) : HOLD(TYPE(1));
-        lean = t > 2.3 && t < 4.8 ? .05 * Math.sin((t - 2.3) * 5) * Math.sin(Math.PI * SEG(t, 2.3, 4.8)) : 0; talk = t > 2.0 && t < 4.6; expr = t < 2 ? 'grin' : null;
+        lean = t > 2.3 && t < 4.8 ? .05 * Math.sin((t - 2.3) * 5) * Math.sin(Math.PI * SEG(t, 2.3, 4.8)) : 0; talk = t > 2.0 && t < 4.6; expr = t < 2 ? 'grin' : null; if (t > .6 && t < 1.7) { pose.mouth = Fig25.viseme(t); pose.brow = 'up'; }   /* he says hi while he waves */
       } else if (st.pact === 'tick') {   /* a sheet from the pile, ticks with the other hand, back on the pile */
         var lh = SIDE(1, 0), rh = SIDE(-1, 0), HOLDP = B(92, 40), PEN = function (k2) { return B(96 + 3 * Math.sin(k2), 42); };
         pose[lh] = t < .3 ? HOLD(TYPE(1)) : t < .8 ? GO(TYPE(1), AT(PILE), SEG(t, .3, .8), 2) : t < 1.2 ? GO(AT(PILE), HOLDP, SEG(t, .8, 1.2), 2) : t < 4.2 ? HOLD(HOLDP) : t < 4.7 ? GO(HOLDP, AT(PILE), SEG(t, 4.2, 4.7), 2) : t < 5.2 ? GO(AT(PILE), TYPE(1), SEG(t, 4.7, 5.2), 2) : HOLD(TYPE(1));
@@ -65,7 +66,7 @@
       function mug(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.8, y: -5.5, width: 9.6, height: 11, rx: 2, fill: '#e8743b' }); add(m, 'path', { d: 'M4.6 -3 q4.5 0 4.5 3 q0 3 -4.5 3', fill: 'none', stroke: '#e8743b', 'stroke-width': 1.8 }); add(m, 'rect', { x: -4.2, y: -5.5, width: 8.4, height: 1.6, fill: '#5a3424', opacity: .7 }); return m; }
       if (talk) { var bp = 200 - 112; add(g, 'rect', { x: cx + 22, y: bp - 12, width: 26, height: 14, rx: 7, fill: 'rgba(255,255,255,.9)' }); [0, 1, 2].forEach(function (i) { add(g, 'circle', { cx: cx + 29 + i * 6, cy: bp - 5, r: 1.6, fill: '#2a2d33', opacity: .35 + .65 * (Math.floor(now / 250) % 3 === i ? 1 : 0) }); }); }
       function sheet(x, y, n) { var sh = grp(x, y, -6); add(sh, 'rect', { x: -9, y: -11, width: 18, height: 22, rx: 1.5, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)' }); for (var i = 0; i < 3; i++) { add(sh, 'rect', { x: -5, y: -7 + i * 6, width: 9, height: 1.4, fill: '#b9bcc4' }); if (i < n) add(sh, 'path', { d: 'M-8 ' + (-7 + i * 6) + ' l1.6 1.8 l2.6 -3.4', fill: 'none', stroke: '#22b35e', 'stroke-width': 1.3, 'stroke-linecap': 'round' }); } return sh; }
-      FIG(g, { cx: cx, gy: 200, face: face, pose: pose, look: expr ? Object.assign({}, S.look(), { expr: expr }) : undefined, items: function (H) {
+      FIG(g, { cx: cx, gy: 200 - st.__ch, face: face, pose: pose, look: expr ? Object.assign({}, S.look(), { expr: expr }) : undefined, items: function (H) {
         var sh0 = H[SIDE(1, 0)]; if (sheetIn && sh0) return [[sh0.z - .15, sheet(sh0.X, sh0.Y - 8, ticks)]];   /* the hand that took it (by pose key – at face 0 the side names tie) */ return mugIn && H.s1 ? [[H.s1.z - .15, mug(H.s1.X, H.s1.Y, tilt)]] : []; } });
       /* the desk in front of you (it hides your legs), the laptop's lid facing you, the mug */
       add(g, 'rect', { x: 128, y: 154, width: 184, height: 6, rx: 2, fill: '#a87652' });
