@@ -658,6 +658,7 @@ I18N.add({
   "ui.fdv-found-ph": ["E.g. concrete slab, crawl space", "F.eks. plate på mark, krypkjeller"],
   "ui.fdv-gnr": ["Gnr/bnr", "Gnr/bnr"],
   "ui.fdv-grade-table": ["Grades per main group (table)", "Grader per hovedgruppe (tabell)"],
+  "ui.fdv-grades-intro": ["Each finding is given a condition grade (TG) for what was seen, and a consequence grade (KG) for what it can lead to, after NS 3424.", "Hvert funn får en tilstandsgrad (TG) for det som ble observert, og en konsekvensgrad (KG) for hva det kan føre til, etter NS 3424."],
   "ui.fdv-heat": ["Heating and ventilation", "Oppvarming og ventilasjon"],
   "ui.fdv-heat-ph": ["E.g. heat pump, balanced ventilation", "F.eks. varmepumpe, balansert ventilasjon"],
   "ui.fdv-inspection-notes": ["FDV inspection notes", "FDV-befaringsnotater"],

@@ -97,3 +97,4 @@ button.fdv-chip.fdv-save { padding: 6px 11px; gap: 5px; color: var(--accent); bo
 .rp-doc .rp-tg { border-radius: 2px; font-weight: 600; min-width: 40px; letter-spacing: .02em !important; }
 .rp-doc .rp-pr { font-weight: 600; }
 .rp-doc .rp-phref { color: #3d5a80 !important; }
+@media print { body.rp-open .rp-legend, body.rp-open .rp-mxt, body.rp-open .rp-tgt { break-inside: avoid; } }
