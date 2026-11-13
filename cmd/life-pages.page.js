@@ -178,7 +178,13 @@
   var FDV_FIELDS = { key: 'fdv', addTitle: 'New inspection', editTitle: 'Edit inspection', fields: [
     { k: 'building', type: 'title', label: 'Building', ph: 'Building or property, e.g. Storgata 12', req: true },
     { k: 'address', label: 'Address', ph: 'Street, town' }, { k: 'date', label: 'Date', type: 'date', req: true, def: function () { return dkey(new Date()); } },
-    { k: 'client', label: 'Client', ph: 'Who it’s for' }, { k: 'level', label: I18N.k('ui.survey-level', 'Survey level (NS 3424)'), type: 'select', def: '1', options: function () { return [['1', levelName(1)], ['2', levelName(2)], ['3', levelName(3)]]; } }, { k: 'notes', label: 'Notes', type: 'textarea', rows: 3 }],
+    { k: 'client', label: 'Client', ph: 'Who it’s for' }, { k: 'level', label: I18N.k('ui.survey-level', 'Survey level (NS 3424)'), type: 'select', def: '1', options: function () { return [['1', levelName(1)], ['2', levelName(2)], ['3', levelName(3)]]; } },
+    { k: 'purpose', label: I18N.k('ui.fdv-purpose', 'Purpose and scope'), type: 'textarea', rows: 2, ph: I18N.k('ui.fdv-purpose-ph', 'Why the survey is done and what it covers') },
+    { k: 'limits', label: I18N.k('ui.fdv-limits', 'Not examined'), type: 'textarea', rows: 2, ph: I18N.k('ui.fdv-limits-ph', 'Rooms or parts you couldn’t reach, and why') },
+    { k: 'docs', label: I18N.k('ui.fdv-docs', 'Documents received'), type: 'textarea', rows: 2, ph: I18N.k('ui.fdv-docs-ph', 'Drawings, FDV documentation, earlier reports …') },
+    { k: 'present', label: I18N.k('ui.fdv-present', 'Present'), ph: I18N.k('ui.fdv-present-ph', 'Who was there') }, { k: 'weather', label: I18N.k('ui.fdv-weather', 'Weather'), ph: I18N.k('ui.fdv-weather-ph', 'E.g. dry, 4 °C') },
+    { k: 'conclusion', label: I18N.k('ui.fdv-conclusion', 'Conclusion'), type: 'textarea', rows: 4, ph: I18N.k('ui.fdv-conclusion-ph', 'Your overall assessment – the state of the building and what matters most') },
+    { k: 'notes', label: 'Notes', type: 'textarea', rows: 3 }],
     beforeSave: function (it) { it.findings = it.findings || []; }, afterSave: function (it, isNew) { if (isNew) fdvOpen = it.id; },
     onDelete: function (it) { (it.findings || []).forEach(function (x) { if (x.photo) delPhoto(x.photo); }); } };
   function saveFdv(id, fn) { var t = Fe.tools(); (t.fdv || []).forEach(function (r) { if (r.id === id) fn(r); }); Fe.saveTools(t); }
@@ -241,6 +247,42 @@
     if (file) shrink(file).then(function (bl) { item.photo = 'ph-' + fid + (old ? '-' + Date.now().toString(36) : ''); return putPhoto(item.photo, bl); }).then(go, go); else go();
   });
   var RP = { photos: true };
+  /* charts for the report (plain SVG, so they print): findings per building part, the TG × KG matrix, cost by when */
+  var TGO = ['3', '2', '1', '0', 'iu'];
+  function chartParts(f) {
+    var rows = [], seen = {};
+    f.forEach(function (x) { var k = x.code ? x.code.slice(0, 2) : ''; if (!seen[k]) { seen[k] = { k: k, n: {} }; rows.push(seen[k]); } seen[k].n[x.tg] = (seen[k].n[x.tg] || 0) + 1; });
+    if (!rows.length) return '';
+    var max = Math.max.apply(null, rows.map(function (r) { return TGO.reduce(function (a, t) { return a + (r.n[t] || 0); }, 0); })), W = 640, LX = 210, BW = W - LX - 40, RH = 26, H = rows.length * RH + 8;
+    var g = rows.map(function (r, i) { var x = LX, y = 4 + i * RH, tot = 0, segs = '';
+      TGO.forEach(function (t) { var n = r.n[t] || 0; if (!n) return; var w = n / max * BW; segs += '<rect x="' + x.toFixed(1) + '" y="' + (y + 5) + '" width="' + Math.max(2, w - 2).toFixed(1) + '" height="14" rx="3" fill="' + TG[t][2] + '"/>'; x += w; tot += n; });
+      var lab = r.k ? nsLabel(r.k) : I18N.k('ui.ns-no-code', '– No code –'); if (lab.length > 30) lab = lab.slice(0, 29) + '…';
+      return '<text x="' + (LX - 8) + '" y="' + (y + 16) + '" text-anchor="end" class="rp-cl">' + esc(lab) + '</text>' + segs + '<text x="' + (x + 6).toFixed(1) + '" y="' + (y + 16) + '" class="rp-cv">' + tot + '</text>'; }).join('');
+    return '<figure class="rp-chart"><figcaption>' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '">' + g + '</svg>' + chartKey() + '</figure>';
+  }
+  function chartKey() { return '<p class="rp-key">' + TGO.map(function (t) { return '<span><i style="background:' + TG[t][2] + '"></i>' + TG[t][0] + '</span>'; }).join('') + '</p>'; }
+  function chartMatrix(f) {
+    var xs = f.filter(function (x) { return x.kg != null && x.kg !== '' && x.tg !== 'iu'; }); if (!xs.length) return '';
+    var C = 64, X0 = 70, Y0 = 8, cell = '', zone = { 3: 'rgba(230,103,103,.30)', 2: 'rgba(201,133,0,.24)', 1: 'rgba(57,135,229,.16)', 0: 'rgba(34,179,94,.12)' };
+    for (var k = 3; k >= 0; k--) for (var t = 0; t <= 3; t++) {
+      var n = xs.filter(function (x) { return +x.tg === t && +x.kg === k; }).length, pr = prio({ tg: String(t), kg: String(k) }), cx = X0 + t * (C + 2), cy = Y0 + (3 - k) * (C + 2);
+      cell += '<rect x="' + cx + '" y="' + cy + '" width="' + C + '" height="' + C + '" rx="6" fill="' + zone[pr] + '"/>' + (n ? '<circle cx="' + (cx + C / 2) + '" cy="' + (cy + C / 2) + '" r="' + (11 + Math.min(9, n * 2)) + '" fill="#fff" stroke="' + PRIO[pr][1] + '" stroke-width="2"/><text x="' + (cx + C / 2) + '" y="' + (cy + C / 2 + 5) + '" text-anchor="middle" class="rp-cn">' + n + '</text>' : '');
+    }
+    var ax = [0, 1, 2, 3].map(function (t) { return '<text x="' + (X0 + t * (C + 2) + C / 2) + '" y="' + (Y0 + 4 * (C + 2) + 14) + '" text-anchor="middle" class="rp-cl">TG ' + t + '</text>'; }).join('') +
+      [0, 1, 2, 3].map(function (k) { return '<text x="' + (X0 - 8) + '" y="' + (Y0 + (3 - k) * (C + 2) + C / 2 + 4) + '" text-anchor="end" class="rp-cl">KG ' + k + '</text>'; }).join('');
+    var W = X0 + 4 * (C + 2) + 10, H = Y0 + 4 * (C + 2) + 22;
+    return '<figure class="rp-chart rp-mx"><figcaption>' + esc(I18N.k('ui.fdv-chart-matrix', 'Condition × consequence')) + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" style="max-width:100%" role="img" aria-label="' + esc(I18N.k('ui.fdv-chart-matrix', 'Condition × consequence')) + '">' + cell + ax + '</svg>' +
+      '<p class="rp-key">' + [3, 2, 1].map(function (p) { return '<span><i style="background:' + zone[p] + ';border:1px solid ' + PRIO[p][1] + '"></i>' + esc(prioName(p)) + '</span>'; }).join('') + '</p></figure>';
+  }
+  function chartCost(f) {
+    var B = [['now', whenName('now')], ['y1', whenName('y1')], ['y5', whenName('y5')], ['y10', whenName('y10')], ['', I18N.k('ui.fdv-when-unset', 'Not set')]].map(function (q) { return [q[1], f.filter(function (x) { return (x.when || '') === q[0]; }).reduce(function (a, x) { return a + (+x.cost || 0); }, 0)]; }).filter(function (q, i) { return q[1] > 0 || i < 4; });
+    var max = Math.max.apply(null, B.map(function (q) { return q[1]; })); if (!(max > 0)) return '';
+    var W = 360, H = 170, BW = 50, gap = (W - B.length * BW) / (B.length + 1), base = H - 30;
+    var g = B.map(function (q, i) { var x = gap + i * (BW + gap), h = q[1] / max * (base - 22); return (q[1] ? '<path d="M' + x.toFixed(1) + ' ' + base + ' V' + (base - h + 4).toFixed(1) + ' q0 -4 4 -4 H' + (x + BW - 4).toFixed(1) + ' q4 0 4 4 V' + base + ' Z" fill="#0891b2"/><text x="' + (x + BW / 2).toFixed(1) + '" y="' + (base - h - 6).toFixed(1) + '" text-anchor="middle" class="rp-cv">' + esc(nf.format(Math.round(q[1] / 1000)) + 'k') + '</text>' : '') +
+      '<text x="' + (x + BW / 2).toFixed(1) + '" y="' + (base + 16) + '" text-anchor="middle" class="rp-cl">' + esc(q[0]) + '</text>'; }).join('') + '<line x1="0" x2="' + W + '" y1="' + base + '" y2="' + base + '" stroke="#d5dae0"/>';
+    return '<figure class="rp-chart rp-cc"><figcaption>' + esc(I18N.k('ui.fdv-chart-cost', 'Cost estimate by when (kr)')) + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" style="max-width:100%" role="img" aria-label="' + esc(I18N.k('ui.fdv-chart-cost', 'Cost estimate by when (kr)')) + '">' + g + '</svg></figure>';
+  }
+  /* the report after NS 3424's order: 1 the assignment, 2 the conclusion, 3 the main report (by NS 3451 code), 4 appendices (photos, grades) */
   function report(r) {
     var f = (r.findings || []).slice().sort(byCode), me = readJSON('dash.profile', {}) || {}, L = function (k, en) { return esc(I18N.k(k, en)); };
     var by = function (t) { return f.filter(function (x) { return String(x.tg) === t; }); };
@@ -250,44 +292,56 @@
     var prb = function (x) { var p = prio(x); return p == null ? '–' : '<span class="rp-pr" style="--c:' + PRIO[p][1] + '">' + esc(prioName(p)) + '</span>'; };
     var todo = f.filter(function (x) { return x.tg === '3' || x.tg === '2'; }).sort(function (a, b) { var pa = prio(a), pb = prio(b); pa = pa == null ? -1 : pa; pb = pb == null ? -1 : pb; return pb - pa || (String(b.tg) > String(a.tg) ? 1 : String(b.tg) < String(a.tg) ? -1 : byCode(a, b)); });
     var cost = f.reduce(function (a, x) { return a + (+x.cost || 0); }, 0), dt = esc(fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }));
-    /* NS 3451 main groups: one row each with the count per grade */
+    var nl = function (t) { return esc(t).replace(/\n/g, '<br>'); }, n4 = 0, nx = function () { return '4.' + (++n4) + ' '; };
+    /* photos are numbered in the order they appear in the main report and shown in appendix 4.1 */
+    var ph = [], phn = {}; if (RP.photos) f.forEach(function (x) { if (x.photo) { ph.push(x); phn[x.id] = ph.length; } });
     var mains = NS.filter(function (q) { return q[0].length === 1; }).map(function (q) { return q[0]; }).concat(['']);
     var grid = mains.map(function (m) { var xs = f.filter(function (x) { return (x.code || '').slice(0, 1) === m; }); return xs.length ? '<tr><td>' + esc(m ? m + ' ' + nsName(m) : I18N.k('ui.ns-no-code', '– No code –')) + '</td>' + ['3', '2', '1', '0', 'iu'].map(function (t) { var n = xs.filter(function (x) { return String(x.tg) === t; }).length; return '<td class="n">' + (n || '') + '</td>'; }).join('') + '</tr>' : ''; }).join('');
-    /* sections: one per two-digit code (a three-digit one sits under its two digits) */
     var secs = [], seen = {};
     f.forEach(function (x) { var k = x.code ? x.code.slice(0, 2) : ''; if (!seen[k]) { seen[k] = 1; secs.push(k); } });
-    var h = '<header class="rp-head"><div><p class="rp-kick" data-t="ui.fdv-inspection-report">FDV inspection report</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
+    /* 1 – the assignment */
+    var who = [me.name, me.role].filter(Boolean).join(', ');
+    var a1 = [[L('ui.client', 'Client'), r.client], [L('ui.address', 'Address'), r.address], [L('ui.date', 'Date'), dt ? fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }) : ''], [L('ui.inspected-by', 'Inspected by'), [who, me.employer].filter(Boolean).join(' · ')],
+      [L('ui.survey-level', 'Survey level (NS 3424)'), levelName(r.level || 1)], [L('ui.fdv-present', 'Present'), r.present], [L('ui.fdv-weather', 'Weather'), r.weather]].filter(function (q) { return q[1]; });
+    var h = '<header class="rp-head"><div><p class="rp-kick">' + L('ui.fdv-condition-report', 'Condition survey report') + '</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
       (r.address ? '<p class="rp-addr">' + esc(r.address) + '</p>' : '') + '</div>' +
       (worst ? '<div class="rp-worst" style="--c:' + TG[worst][2] + '"><small data-t="ui.worst-grade">Worst grade</small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
-      '<table class="rp-meta"><tr><th data-t="ui.date">Date</th><td>' + dt + '</td><th data-t="ui.client">Client</th><td>' + esc(r.client || '–') + '</td></tr>' +
-      '<tr><th data-t="ui.inspected-by">Inspected by</th><td>' + esc([me.name, me.role].filter(Boolean).join(', ') || '–') + '</td><th data-t="ui.company">Company</th><td>' + esc(me.employer || '–') + '</td></tr>' +
-      '<tr><th>' + L('ui.survey-level', 'Survey level (NS 3424)') + '</th><td colspan="3">' + esc(levelName(r.level || 1)) + '</td></tr></table>' +
       '<p class="rp-std">' + L('ui.fdv-std-line', 'Building parts after NS 3451, condition and consequence grades after NS 3424.') + '</p>' +
-      (r.intro ? '<p class="rp-intro">' + esc(r.intro).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.summary">Summary</h2><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
-        return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + esc(tgName(t)) + '</small></div>';
-      }).join('') + '</div>' +
-      (grid ? '<table class="rp-grid"><thead><tr><th>' + L('ui.building-part-ns-3451', 'Building part (NS 3451)') + '</th>' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<th class="n">' + TG[t][0] + '</th>'; }).join('') + '</tr></thead><tbody>' + grid + '</tbody></table>' : '') +
-      (cost ? '<p class="rp-cost">' + L('ui.total-cost-estimate', 'Total cost estimate') + ': <b>' + nf.format(cost) + ' kr</b></p>' : '') +
-      (todo.length ? '<h2 data-t="ui.what-should-be-done">What should be done</h2><table class="rp-todo"><thead><tr><th data-t="ui.grade">Grade</th><th>' + L('ui.priority', 'Priority') + '</th><th data-t="ui.building-part">Building part</th><th data-t="ui.finding">Finding</th><th data-t="ui.action-2">Action</th><th>' + L('ui.when', 'When') + '</th></tr></thead><tbody>' + todo.map(function (x) {
-        return '<tr><td>' + tgb(x.tg) + ' ' + kgb(x) + '</td><td>' + prb(x) + '</td><td data-noi18n>' + esc(partLabel(x)) + '</td><td data-noi18n>' + esc(x.text) + '</td><td data-noi18n>' + esc(x.action || '–') + (x.cost ? '<br><small>' + nf.format(+x.cost) + ' kr</small>' : '') + '</td><td>' + esc(whenName(x.when) || '–') + '</td></tr>';
-      }).join('') + '</tbody></table>' : '') +
-      '<h2>' + L('ui.findings-by-ns-3451', 'Findings by building part (NS 3451)') + '</h2>' + (secs.length ? secs.map(function (k) {
-        return '<section class="rp-part"><h3>' + esc(k ? nsLabel(k) : I18N.k('ui.ns-no-code', '– No code –')) + '</h3>' + f.filter(function (x) { return (x.code ? x.code.slice(0, 2) : '') === k; }).map(function (x) {
+      '<ol class="rp-toc"><li>' + L('ui.fdv-s1', 'Assignment') + '</li><li>' + L('ui.fdv-s2', 'Conclusion') + '</li><li>' + L('ui.fdv-s3', 'Main report') + '</li><li>' + L('ui.fdv-s4', 'Appendices') + '</li></ol>' +
+      '<section class="rp-sec"><h2>1 ' + L('ui.fdv-s1', 'Assignment') + '</h2><table class="rp-meta rp-kv">' + a1.map(function (q) { return '<tr><th>' + q[0] + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' +
+        [['ui.fdv-purpose', 'Purpose and scope', r.purpose], ['ui.fdv-background', 'Background', r.intro], ['ui.fdv-limits', 'Not examined', r.limits], ['ui.fdv-docs', 'Documents received', r.docs]].filter(function (q) { return q[2]; }).map(function (q) { return '<h3>' + L(q[0], q[1]) + '</h3><p class="rp-p" data-noi18n>' + nl(q[2]) + '</p>'; }).join('') + '</section>' +
+      /* 2 – the conclusion */
+      '<section class="rp-sec"><h2>2 ' + L('ui.fdv-s2', 'Conclusion') + '</h2>' +
+        (r.conclusion ? '<p class="rp-p rp-concl" data-noi18n>' + nl(r.conclusion) + '</p>' : '<p class="rp-p rp-muted">' + L('ui.fdv-no-conclusion', 'No conclusion written yet – add it with Conclusion above or in the inspection.') + '</p>') +
+        '<h3>' + L('ui.fdv-findings-by-grade', 'Findings by condition grade') + '</h3><div class="rp-sum">' + ['3', '2', '1', '0', 'iu'].map(function (t) {
+          return '<div style="--c:' + TG[t][2] + '"><b>' + by(t).length + '</b><span>' + TG[t][0] + '</span><small>' + esc(tgName(t)) + '</small></div>';
+        }).join('') + '</div>' +
+        chartParts(f) + '<div class="rp-charts2">' + chartMatrix(f) + chartCost(f) + '</div>' +
+        (todo.length ? '<h3 data-t="ui.what-should-be-done">What should be done</h3><table class="rp-todo"><thead><tr><th data-t="ui.grade">Grade</th><th>' + L('ui.priority', 'Priority') + '</th><th data-t="ui.building-part">Building part</th><th data-t="ui.finding">Finding</th><th data-t="ui.action-2">Action</th><th>' + L('ui.when', 'When') + '</th></tr></thead><tbody>' + todo.map(function (x) {
+          return '<tr><td>' + tgb(x.tg) + ' ' + kgb(x) + '</td><td>' + prb(x) + '</td><td data-noi18n>' + esc(partLabel(x)) + '</td><td data-noi18n>' + esc(x.text) + '</td><td data-noi18n>' + esc(x.action || '–') + (x.cost ? '<br><small>' + nf.format(+x.cost) + ' kr</small>' : '') + '</td><td>' + esc(whenName(x.when) || '–') + '</td></tr>';
+        }).join('') + '</tbody></table>' : '') +
+        (cost ? '<p class="rp-cost">' + L('ui.total-cost-estimate', 'Total cost estimate') + ': <b>' + nf.format(cost) + ' kr</b></p>' : '') + '</section>' +
+      /* 3 – the main report: one sub-section per two-digit code */
+      '<section class="rp-sec rp-newpage"><h2>3 ' + L('ui.fdv-s3', 'Main report') + '</h2><p class="rp-small">' + L('ui.findings-by-ns-3451', 'Findings by building part (NS 3451)') + '</p>' + (secs.length ? secs.map(function (k, si) {
+        return '<section class="rp-part"><h3>3.' + (si + 1) + ' ' + esc(k ? nsLabel(k) : I18N.k('ui.ns-no-code', '– No code –')) + '</h3>' + f.filter(function (x) { return (x.code ? x.code.slice(0, 2) : '') === k; }).map(function (x) {
           var sub = [x.code && x.code.length > 2 ? nsLabel(x.code) : '', x.part].filter(Boolean).join(' · ');
           var mt = [x.kt ? I18N.k('ui.consequence-for', 'Consequence for') + ': ' + ktName(x.kt) : '', x.when ? I18N.k('ui.when', 'When') + ': ' + whenName(x.when) : '', x.cost ? nf.format(+x.cost) + ' kr' : ''].filter(Boolean).join(' · ');
           return '<div class="rp-f"><div class="rp-gr">' + tgb(x.tg) + kgb(x) + (prio(x) != null ? prb(x) : '') + '</div><div class="rp-ft" data-noi18n>' + (sub ? '<p class="rp-where">' + esc(sub) + '</p>' : '') + '<p>' + esc(x.text) + '</p>' +
-            (x.cause ? '<p class="rp-act">' + L('ui.cause', 'Cause') + ': ' + esc(x.cause) + '</p>' : '') + (x.action ? '<p class="rp-act">' + L('ui.action-2', 'Action') + ': ' + esc(x.action) + '</p>' : '') + (mt ? '<p class="rp-act">' + esc(mt) + '</p>' : '') + '</div>' +
-            (x.photo && RP.photos ? '<img class="rp-ph" data-rph="' + esc(x.photo) + '" alt="">' : '') + '</div>';
+            (x.cause ? '<p class="rp-act">' + L('ui.cause', 'Cause') + ': ' + esc(x.cause) + '</p>' : '') + (x.action ? '<p class="rp-act">' + L('ui.action-2', 'Action') + ': ' + esc(x.action) + '</p>' : '') + (mt ? '<p class="rp-act">' + esc(mt) + '</p>' : '') +
+            (phn[x.id] ? '<p class="rp-act rp-phref">' + esc(I18N.k('ui.fdv-see-photo', 'See photo {n}', { n: phn[x.id] })) + '</p>' : '') + '</div></div>';
         }).join('') + '</section>';
       }).join('') : '<p data-t="ui.no-findings-were-recorded">No findings were recorded.</p>') +
-      (r.notes ? '<h2 data-t="ui.notes">Notes</h2><p class="rp-notes">' + esc(r.notes).replace(/\n/g, '<br>') + '</p>' : '') +
-      '<h2 data-t="ui.condition-grades">Condition grades</h2><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
-        return '<tr><td>' + tgb(t) + '</td><td>' + esc({ 0: I18N.k('ui.tg0-long', 'No symptoms – no signs of wear or damage.'), 1: I18N.k('ui.tg1-long', 'Small symptoms – normal wear, some maintenance may be needed.'), 2: I18N.k('ui.tg2-long', 'Medium symptoms – clear wear or damage, should be followed up.'), 3: I18N.k('ui.tg3-long', 'Large symptoms – serious damage or risk, needs action.'), iu: I18N.k('ui.tgiu-long', 'Not examined (no access).') }[t]) + '</td></tr>';
-      }).join('') + '</table>' +
-      '<h2>' + L('ui.consequence-grades', 'Consequence grades') + '</h2><table class="rp-legend">' + ['0', '1', '2', '3'].map(function (k) {
-        return '<tr><td>' + kgb({ kg: k }) + '</td><td>' + esc({ 0: I18N.k('ui.kg0-long', 'No consequences.'), 1: I18N.k('ui.kg1-long', 'Small consequences.'), 2: I18N.k('ui.kg2-long', 'Medium consequences.'), 3: I18N.k('ui.kg3-long', 'Large consequences – for safety, health, the environment, function or cost.') }[k]) + '</td></tr>';
-      }).join('') + '</table><p class="rp-small">' + L('ui.prio-explained', 'Priority is worked out from TG × KG: 6 or more high, 3–5 medium, 1–2 low.') + '</p>' +
+        (r.notes ? '<section class="rp-part"><h3>3.' + (secs.length + 1) + ' ' + L('ui.notes', 'Notes') + '</h3><p class="rp-notes" data-noi18n>' + nl(r.notes) + '</p></section>' : '') + '</section>' +
+      /* 4 – appendices */
+      '<section class="rp-sec rp-newpage"><h2>4 ' + L('ui.fdv-s4', 'Appendices') + '</h2>' +
+        (ph.length ? '<h3>' + nx() + L('ui.photos', 'Photos') + '</h3><div class="rp-phs">' + ph.map(function (x, i) { return '<figure class="rp-fig"><img class="rp-ph" data-rph="' + esc(x.photo) + '" alt=""><figcaption data-noi18n><b>' + esc(I18N.k('ui.fdv-photo-n', 'Photo {n}', { n: i + 1 })) + '</b> · ' + TG[x.tg][0] + ' · ' + esc(partLabel(x)) + ' – ' + esc(x.text) + '</figcaption></figure>'; }).join('') + '</div>' : '') +
+        (grid ? '<h3>' + nx() + L('ui.fdv-grade-table', 'Grades per main group (table)') + '</h3><table class="rp-grid"><thead><tr><th>' + L('ui.building-part-ns-3451', 'Building part (NS 3451)') + '</th>' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<th class="n">' + TG[t][0] + '</th>'; }).join('') + '</tr></thead><tbody>' + grid + '</tbody></table>' : '') +
+        '<h3>' + nx() + L('ui.condition-grades', 'Condition grades') + '</h3><table class="rp-legend">' + ['0', '1', '2', '3', 'iu'].map(function (t) {
+          return '<tr><td>' + tgb(t) + '</td><td>' + esc({ 0: I18N.k('ui.tg0-long', 'No symptoms – no signs of wear or damage.'), 1: I18N.k('ui.tg1-long', 'Small symptoms – normal wear, some maintenance may be needed.'), 2: I18N.k('ui.tg2-long', 'Medium symptoms – clear wear or damage, should be followed up.'), 3: I18N.k('ui.tg3-long', 'Large symptoms – serious damage or risk, needs action.'), iu: I18N.k('ui.tgiu-long', 'Not examined (no access).') }[t]) + '</td></tr>';
+        }).join('') + '</table>' +
+        '<h3>' + nx() + L('ui.consequence-grades', 'Consequence grades') + '</h3><table class="rp-legend">' + ['0', '1', '2', '3'].map(function (k) {
+          return '<tr><td>' + kgb({ kg: k }) + '</td><td>' + esc({ 0: I18N.k('ui.kg0-long', 'No consequences.'), 1: I18N.k('ui.kg1-long', 'Small consequences.'), 2: I18N.k('ui.kg2-long', 'Medium consequences.'), 3: I18N.k('ui.kg3-long', 'Large consequences – for safety, health, the environment, function or cost.') }[k]) + '</td></tr>';
+        }).join('') + '</table><p class="rp-small">' + L('ui.prio-explained', 'Priority is worked out from TG × KG: 6 or more high, 3–5 medium, 1–2 low.') + '</p></section>' +
       '<footer class="rp-foot">' + esc(r.building || '') + ' · ' + dt + (me.email ? ' · ' + esc(me.email) : '') + (me.phone ? ' · ' + esc(me.phone) : '') + '</footer>';
     return h;
   }
@@ -295,9 +349,9 @@
     var bg = document.createElement('div'); bg.className = 'rp-bg';
     bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rpclose><i class="bi bi-x-lg"></i> <span data-t="ui.close"><span data-t="ui.close">Close</span></span></button><span class="spacer"></span>' +
       '<label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> <span data-t="ui.photos"><span data-t="ui.photos">Photos</span></span></label>' +
-      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> <span data-t="ui.intro"><span data-t="ui.intro">Intro</span></span></button>' +
+      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> <span data-t="ui.fdv-conclusion">Conclusion</span></button>' +
       '<button type="button" class="pill-btn" data-rpprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></span></button></div>' +
-      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b> (on iPhone: pinch out on the preview, then Share).</p><textarea class="rp-introbox" rows="3" maxlength="1500" placeholder="A short introduction at the top of the report – purpose, scope, weather, what you couldn’t access" data-t-placeholder="ui.a-short-introduction-at-the-top-of-the-r" hidden></textarea><article class="rp-doc"></article>';
+      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b> (on iPhone: pinch out on the preview, then Share).</p><textarea class="rp-introbox" rows="4" maxlength="4000" placeholder="Your overall assessment – the state of the building and what matters most" data-t-placeholder="ui.fdv-conclusion-ph" hidden></textarea><article class="rp-doc"></article>';
     document.body.appendChild(bg); document.body.classList.add('rp-open');
     var doc = bg.querySelector('.rp-doc');
     function draw() {
@@ -313,8 +367,8 @@
     function close() { bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }
     function key(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', key);
-    var ib = bg.querySelector('.rp-introbox'); ib.value = r.intro || '';
-    ib.addEventListener('input', function () { r.intro = ib.value.trim(); clearTimeout(draw.t); draw.t = setTimeout(function () { draw(); saveFdv(r.id, function (x) { x.intro = r.intro; }); }, 400); });
+    var ib = bg.querySelector('.rp-introbox'); ib.value = r.conclusion || '';
+    ib.addEventListener('input', function () { r.conclusion = ib.value.trim(); clearTimeout(draw.t); draw.t = setTimeout(function () { draw(); saveFdv(r.id, function (x) { x.conclusion = r.conclusion; }); }, 400); });
     bg.addEventListener('change', function (e) { if (e.target.matches('[data-rpphotos]')) { RP.photos = e.target.checked; draw(); } });
     bg.addEventListener('click', function (e) {
       if (e.target.closest('[data-rpclose]')) return close();
