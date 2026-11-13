@@ -21,16 +21,31 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => { const f = document.querySelector('form.fdv-add'); f.code.value = '+'; f.code.dispatchEvent(new Event('change', { bubbles: true })); f.newcode.value = '231 Made-up wall code'; f.tg.value = '1'; f.kg.value = '1'; f.text.value = 'Small crack'; f.requestSubmit(); });
   await sl(400);
   const st = await p.evaluate(() => { const r = Features.list('fdv')[0], li = [...document.querySelectorAll('.fdv-list li')].map(l => l.textContent.replace(/\s+/g, ' ').trim());
-    const f = document.querySelector('form.fdv-add'); return { n: r.findings.length, a: r.findings[0], b: r.findings[1], codes: Features.tools().fdvcodes, li, own: !![...f.code.options].find(o => o.value === '231'), ownGroup: (([...f.code.options].find(o => o.value === '231') || {}).parentNode || {}).label }; });
+    const f = document.querySelector('form.fdv-add'); f.code.value = '23'; f.code.dispatchEvent(new Event('change', { bubbles: true }));
+    return { n: r.findings.length, a: r.findings[0], b: r.findings[1], codes: Features.tools().fdvcodes, li, own: !![...f.code3.options].find(o => o.value === '231') && !f.code3.hidden, ownGroup: '2 (under 23)' }; });
   check(st.n === 2 && st.a.code === '23' && st.a.kg === '2' && st.a.kt === 'safety' && st.a.cost === 25000 && st.a.when === 'y1' && st.a.part === '2nd floor, south' && st.a.cause, 'the finding is saved with its code, KG, type, place, cause, when and cost ' + JSON.stringify(st.a));
   check(st.li.some(t => /23 Outer walls · 2nd floor, south/.test(t) && /KG 2/.test(t) && /High priority/.test(t)), 'the list shows "23 Outer walls · place", KG and the priority (TG 3 × KG 2 = high) ' + JSON.stringify(st.li));
-  check(st.b.code === '231' && (st.codes || []).some(c => c.c === '231' && c.n === 'Made-up wall code') && st.own && /^2 /.test(st.ownGroup || ''), 'a three-digit code of your own is saved, remembered and listed under its group ' + JSON.stringify(st.codes));
+  check(st.b.code === '231' && (st.codes || []).some(c => c.c === '231' && c.n === 'Made-up wall code') && st.own && /^2 /.test(st.ownGroup || ''), 'a three-digit code of your own is saved, remembered and offered under 23 ' + JSON.stringify(st.codes));
   /* edit the first finding */
   await p.evaluate(id => { document.querySelector('[data-fdvfedit="ins1:' + id + '"]').click(); }, st.a.id); await sl(300);
   const ed = await p.evaluate(() => { const f = document.querySelector('form.fdv-add.editing'); if (!f) return null; const v = { code: f.code.value, tg: f.tg.value, kg: f.kg.value, text: f.text.value }; f.tg.value = '2'; f.text.value = 'Rot in the cladding, bottom boards'; f.requestSubmit(); return v; });
   await sl(400);
   const after = await p.evaluate(id => { const r = Features.list('fdv')[0]; return { n: r.findings.length, x: r.findings.filter(x => x.id === id)[0], editing: !!document.querySelector('form.fdv-add.editing') }; }, st.a.id);
   check(ed && ed.code === '23' && ed.tg === '3' && ed.kg === '2' && after.n === 2 && after.x.tg === '2' && /bottom boards/.test(after.x.text) && after.x.cost === 25000 && !after.editing, 'Edit finding fills the form with the finding and Save changes it in place ' + JSON.stringify({ ed, x: after.x }));
+  /* your own list (made-up names): a file or pasted table is read, and picking 23 → 234 → 2341 shows the levels below */
+  const parsed = await p.evaluate(() => window.__core.work.parseCodes('# made up\n234.000|2341.000|Made-up window\n234.000||Made-up openings\n235 Made-up cladding\n237\t(Reservert)\n2342\tMade-up door'));
+  check(parsed.map(c => c.c).join() === '234,2341,2342,235' && parsed[1].n === 'Made-up window', 'codes are read from lines, "|" rows and tab rows; reserved ones are skipped ' + JSON.stringify(parsed));
+  await p.evaluate(l => { const t = Features.tools(); t.fdvcodes = (t.fdvcodes || []).concat(l); Features.saveTools(t); }, parsed); await sl(600);
+  const cas = await p.evaluate(async () => { const f = document.querySelector('form.fdv-add'), w = ms => new Promise(r => setTimeout(r, ms)), ch = el => el.dispatchEvent(new Event('change', { bubbles: true }));
+    f.code.value = '23'; ch(f.code); await w(50); const l3 = [...f.code3.options].map(o => o.value), h4 = f.code4.hidden;
+    f.code3.value = '234'; ch(f.code3); await w(50); const l4 = [...f.code4.options].map(o => o.value);
+    f.code4.value = '2341'; ch(f.code4); await w(50); f.tg.value = '2'; f.text.value = 'Made-up window finding'; f.requestSubmit(); await w(400);
+    const x = Features.list('fdv')[0].findings.filter(q => q.text === 'Made-up window finding')[0];
+    document.querySelector('[data-fdvfedit="ins1:' + x.id + '"]').click(); await w(300); const g = document.querySelector('form.fdv-add.editing');
+    const back = g && [g.code.value, g.code3.value, g.code4.value].join('/'); document.querySelector('[data-fdvfcancel]').click(); await w(200);
+    const f2 = document.querySelector('form.fdv-add'); f2.code.value = '26'; ch(f2.code); await w(50);
+    return { l3, h4, l4, code: x.code, back, none: f2.querySelector('.fdv-sub').hidden, label: LifePages.partLabel(x) }; });
+  check(cas.l3.join() === ',231,234,235' && cas.h4 && cas.l4.join() === ',2341,2342' && cas.code === '2341' && cas.back === '23/234/2341' && cas.none && /^2341 Made-up window/.test(cas.label), 'picking 23 shows its three-digit codes, 234 its four-digit ones; the finding gets 2341 and an edit opens at 23 → 234 → 2341; a group with none hides the row ' + JSON.stringify(cas));
   /* the report */
   await p.evaluate(() => { document.querySelector('[data-fdvpdf="ins1"]').click(); }); await sl(500);
   const rp = await p.evaluate(() => { const d = document.querySelector('.rp-doc'); if (!d) return null; const t = d.textContent; return { secs: [...d.querySelectorAll('.rp-part h3')].map(h => h.textContent), grid: d.querySelectorAll('.rp-grid tbody tr').length, kg: /Consequence grades/.test(t), level: /Level 2/.test(t), cost: /25\s?000 kr/.test(t), std: /NS 3451/.test(t) && /NS 3424/.test(t), prio: d.querySelectorAll('.rp-pr').length }; });

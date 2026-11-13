@@ -69,23 +69,24 @@
     var seen = {}; return mine.concat(b).filter(function (x) { var k = String(x.text || '').toLowerCase(); if (seen[k]) return false; seen[k] = 1; return true; });
   }
   var last = { code: null, tg: null, kg: null };
+  function fc(f) { var v = window.FdvCode ? FdvCode.form(f) : f.code.value; return v === '+' ? '' : v; }
   function decorate(form) {
     var sel = form.querySelector('select[name="code"]'), tg = form.querySelector('select[name="tg"]'); if (!sel) return;
     if (form.dataset.wpDone) return;
     if (!form.dataset.wpDone) {
       form.dataset.wpDone = '1';
       if (!form.fid) {   /* a new finding starts where the last one was (an edit keeps its own) */
-        if (last.code != null && [].some.call(sel.options, function (o) { return o.value === last.code; })) sel.value = last.code;
+        if (last.code != null && window.FdvCode) FdvCode.set(form, last.code);
         if (last.tg && tg) tg.value = last.tg;
         if (last.kg != null && form.kg) form.kg.value = last.kg;
       }
       var box = document.createElement('div'); box.className = 'fdv-tpl'; box.setAttribute('data-noi18n', '');
-      form.querySelector('.row2').insertAdjacentElement('afterend', box);
+      (form.querySelector('.fdv-sub') || form.querySelector('.row2')).insertAdjacentElement('afterend', box);
     }
     chips(form);
   }
   function chips(form) {
-    var box = form.querySelector('.fdv-tpl'), code = form.code.value === '+' ? '' : form.code.value; if (!box) return;
+    var box = form.querySelector('.fdv-tpl'), code = fc(form); if (!box) return;
     var l = phrasesFor(code);
     box.innerHTML = l.map(function (x, i) {
       return '<span class="fdv-chip' + (x.mine ? ' mine' : '') + '"><button type="button" data-fdvph="' + i + '" title="' + esc(x.action ? '→ ' + x.action : '') + '">' + (x.tg ? '<i class="tgd tg' + x.tg + '"></i>' : '') + esc(x.text) + '</button>' +
@@ -102,11 +103,11 @@
     }).observe(host, { childList: true, subtree: true });
     host.addEventListener('change', function (e) {
       var f = e.target.closest('form.fdv-add'); if (!f) return;
-      if (e.target.name === 'code') { if (e.target.value !== '+') last.code = e.target.value; chips(f); }
+      if (/^code[34]?$/.test(e.target.name)) setTimeout(function () { if (f.code.value !== '+') last.code = fc(f); chips(f); }, 0);   /* after the page part has rebuilt the levels below */
       if (e.target.name === 'tg') last.tg = e.target.value;
       if (e.target.name === 'kg') last.kg = e.target.value;
     });
-    host.addEventListener('submit', function (e) { var f = e.target.closest('form.fdv-add'); if (f && !f.fid) { if (f.code.value !== '+') last.code = f.code.value; last.tg = f.tg.value; last.kg = f.kg.value; pendingBump(); } else if (f) pendingBump(); }, true);
+    host.addEventListener('submit', function (e) { var f = e.target.closest('form.fdv-add'); if (f && !f.fid) { if (f.code.value !== '+') last.code = fc(f); last.tg = f.tg.value; last.kg = f.kg.value; pendingBump(); } else if (f) pendingBump(); }, true);
     host.addEventListener('click', function (e) {
       var b, f = e.target.closest('form.fdv-add');
       if ((b = e.target.closest('[data-fdvph]')) && f) {
@@ -118,7 +119,7 @@
       if (e.target.closest('[data-fdvphsave]') && f) {
         var text = f.text.value.trim(); if (!text) { f.text.focus(); toast('<i class="bi bi-info-circle"></i> Type the finding first, then save it as a phrase'); return; }
         var t = Fe.tools(); t.fdvph = Array.isArray(t.fdvph) ? t.fdvph : [];
-        var pc = f.code.value === '+' ? '' : f.code.value;
+        var pc = fc(f);
         if (!t.fdvph.some(function (q) { return (q.code || '') === pc && String(q.text || '').toLowerCase() === text.toLowerCase(); })) t.fdvph.push({ id: uid(), code: pc, place: f.part.value.trim().slice(0, 80), text: text.slice(0, 300), action: f.action.value.trim().slice(0, 200), tg: f.tg.value });
         var keep = { text: f.text.value, action: f.action.value };
         Fe.saveTools(t);

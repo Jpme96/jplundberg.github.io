@@ -4299,3 +4299,4 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 /* an icon sits exactly in the middle of its round button (the icon font's own baseline shift moved it up and to the side) */
 .icon-btn > i.bi, .fold-btn > i.bi, .pill-btn.sm > i.bi:only-child { display: block; line-height: 1; width: 1em; height: 1em; }
 .icon-btn > i.bi::before, .fold-btn > i.bi::before, .pill-btn.sm > i.bi:only-child::before { display: block; vertical-align: 0; line-height: 1; }
+.wp-crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .wp-cdet > summary { cursor: pointer; font-size: 13px; color: var(--muted); margin: 6px 0; } .wp-cdet textarea { width: 100%; }
