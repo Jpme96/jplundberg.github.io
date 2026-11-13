@@ -2,7 +2,7 @@
    Budgets are today's sizes plus a little room; lower them as the app gets lighter. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const ROOT = path.join(__dirname, '..', '..', 'cmd');
-const BUDGET_KB = { total: 1612 };      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
+const BUDGET_KB = { total: 1618 };   /* +6 (2026-11-13): the avatar's anatomy pass – teardrop shoulders, a jaw and chin, the back's details */      /* biggest page today ≈ 1589 kB (Finances; head + page + tail, the Norwegian words load only in Norwegian) */
 /* each page on its own (Phase D 25: a page loads only its own code) – lower a page's number when it gets lighter */
 /* +25 kB on every page (2026-11-12, F1b): the 2.5D figure (avatar-25d.js) and its small moves are in tail next to the old flat drawing; the old
    drawing code goes in F4 and these budgets come down again then.
@@ -22,7 +22,7 @@ const BUDGET_KB = { total: 1612 };      /* biggest page today ≈ 1589 kB (Finan
    +1 kB on Food and People (2026-11-12 night): night actions, muscles and face shapes in the figure, the whole plane.
    +1 kB on most pages (2026-11-12 night): the six-pack and obliques on a bare athletic or muscular body.
    +1–4 kB on the scene pages (2026-11-13): the last F3 actions (price tag, cart, call, ball, heart note, star sticker, done for the day, stamp, the smaller climber, taste and salt, the shelf, polish, piggy bank, payday bag, passport). */
-const PAGE_KB = { 'index.html': 1382, 'admin/index.html': 1304, 'calendar/index.html': 1232, 'finance/index.html': 1612, 'food/index.html': 1316, 'goals/index.html': 1248, 'habits/index.html': 1292, 'house/index.html': 1602, 'papers/index.html': 1263, 'people/index.html': 1314, 'travel/index.html': 1388, 'wish/index.html': 1331, 'work/index.html': 1356 };
+const PAGE_KB = { 'index.html': 1387, 'admin/index.html': 1309, 'calendar/index.html': 1238, 'finance/index.html': 1618, 'food/index.html': 1322, 'goals/index.html': 1254, 'habits/index.html': 1298, 'house/index.html': 1608, 'papers/index.html': 1269, 'people/index.html': 1320, 'travel/index.html': 1394, 'wish/index.html': 1337, 'work/index.html': 1362 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

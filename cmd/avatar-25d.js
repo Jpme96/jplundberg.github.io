@@ -48,11 +48,11 @@
   /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
      w = body width, d = depth (front to back), sh = shoulders, wa = waist, hp = hips, arm / leg = how thick */
   var BUILD = {
-    slim:     { w: .9,  d: .88, sh: .92, wa: .86, hp: .9,  arm: .8,  leg: .82 },
-    regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1 },
-    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.12, leg: 1.16, mus: 1 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
-    muscular: { w: 1.1, d: 1.14, sh: 1.34, wa: .88, hp: 1.04, arm: 1.24, leg: 1.3, mus: 2 },
-    broad:    { w: 1.2, d: 1.28, sh: 1.1, wa: 1.22, hp: 1.16, arm: 1.16, leg: 1.2 }   /* JP: the build changed too little – the spread is bigger and athletic/muscular have muscles */
+    slim:     { w: .9,  d: .88, sh: .92, wa: .86, hp: .9,  arm: .8,  leg: .82, sx: 23.5, ch: 18, wv: 14.5, hv: 16, ar: 4.7 },
+    regular:  { w: 1,   d: 1,   sh: 1,   wa: 1,   hp: 1,   arm: 1,   leg: 1, sx: 25.5, ch: 20.5, wv: 17, hv: 18.5, ar: 5.6 },   /* sx: where the arm hangs, ch / wv / hv: half the chest, waist and hips seen from the front, ar: the upper arm's radius (JP's anatomy spec 2026-11-13) */
+    athletic: { w: 1.04, d: 1.04, sh: 1.2, wa: .84, hp: .98, arm: 1.12, leg: 1.16, mus: 1, sx: 28.5, ch: 22.5, wv: 17, hv: 18.5, ar: 6.9 },   /* mus: muscles are drawn (shoulders, upper arms, thighs, calves; chest and stomach when bare) */
+    muscular: { w: 1.1, d: 1.14, sh: 1.34, wa: .88, hp: 1.04, arm: 1.24, leg: 1.3, mus: 2, sx: 31.5, ch: 25, wv: 21, hv: 22.5, ar: 8 },
+    broad:    { w: 1.2, d: 1.28, sh: 1.1, wa: 1.22, hp: 1.16, arm: 1.16, leg: 1.2, sx: 28.5, ch: 24.5, wv: 24, hv: 24.5, ar: 6.6 }   /* JP: the build changed too little – the spread is bigger and athletic/muscular have muscles */
   };
   function look25(l) {
     l = l || {}; if (window.Avatar && Avatar.trimLook) l = Avatar.trimLook(l);
@@ -111,12 +111,12 @@
       var ty = Math.cos(ph0) * D2, tz = Math.sin(ph0) * D2; return [a1, Math.atan2(tz - l1 * Math.sin(a1), ty - l1 * Math.cos(a1))]; }
     function limb(p1, p2, wid, col, z) { parts.push([z, el('line', { x1: p1.X.toFixed(1), y1: p1.Y.toFixed(1), x2: p2.X.toFixed(1), y2: p2.Y.toFixed(1), stroke: col, 'stroke-width': (wid * k).toFixed(1), 'stroke-linecap': 'round' })]); }
     /* a limb that is thicker at one end (thigh to knee, calf to ankle): two round ends joined by their tangents */
-    function taper(p1, p2, r1, r2, col, z) {
+    function taper(p1, p2, r1, r2, col, z, flat) {
       r1 *= k; r2 *= k; var dx = p2.X - p1.X, dy = p2.Y - p1.Y, d = Math.hypot(dx, dy) || .001, ux = dx / d, uy = dy / d, nx = -uy, ny = ux;
       var sn = Math.max(-.95, Math.min(.95, (r1 - r2) / d)), cs = Math.sqrt(1 - sn * sn);
       var ax = nx * cs + ux * sn, ay = ny * cs + uy * sn, bx = -nx * cs + ux * sn, by = -ny * cs + uy * sn;
       var r1s = r1.toFixed(1), r2s = r2.toFixed(1), s1 = (p1.X + ax * r1).toFixed(1) + ' ' + (p1.Y + ay * r1).toFixed(1);
-      var dd = 'M' + s1 + ' L' + (p2.X + ax * r2).toFixed(1) + ' ' + (p2.Y + ay * r2).toFixed(1) + ' A' + r2s + ' ' + r2s + ' 0 0 0 ' + (p2.X + bx * r2).toFixed(1) + ' ' + (p2.Y + by * r2).toFixed(1) +
+      var dd = 'M' + s1 + ' L' + (p2.X + ax * r2).toFixed(1) + ' ' + (p2.Y + ay * r2).toFixed(1) + (flat ? ' L' : ' A' + r2s + ' ' + r2s + ' 0 0 0 ') + (p2.X + bx * r2).toFixed(1) + ' ' + (p2.Y + by * r2).toFixed(1) +
         ' L' + (p1.X + bx * r1).toFixed(1) + ' ' + (p1.Y + by * r1).toFixed(1) + ' A' + r1s + ' ' + r1s + ' 0 0 0 ' + s1 + ' Z';
       parts.push([z, el('path', { d: dd, fill: col })]);
     }
@@ -130,8 +130,8 @@
       var lo = pose[nearSide(sd) ? 'legNear' : 'legFar'];
       if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m == null ? 1 : lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */
       if (lo) { th = th * (1 - lo.m) + lo.th * lo.m; kn = kn * (1 - lo.m) + lo.kn * lo.m; }   /* a keyed leg pose */
-      var LW = L.bp.leg, hip = [sd * 10 * L.bp.hp, 140 + bob, 0], knee = [hip[0], hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
-      var ank = [hip[0], knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
+      var LW = L.bp.leg, HX = L.bp.hv * .53, hip = [sd * HX, 140 + bob, 0], knee = [hip[0] * 1.05, hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
+      var ank = [hip[0] * 1.08, knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
       var lift = Math.max(0, 218 - 4 - ank[1]); /* stays on the ground */
       if (ank[1] > 214) { var d = ank[1] - 214; knee[1] -= d; ank[1] = 214; hip[1] -= 0; }
       var a1 = P(hip[0], hip[1], hip[2]), a2 = P(knee[0], knee[1], knee[2]), a3 = P(ank[0], ank[1], ank[2]), toe = P(ank[0], ank[1] + 3, ank[2] + 18);   /* a foot about as long as the forearm */
@@ -139,11 +139,14 @@
       if (knee[2] > 14 && Math.abs(Math.cos(a)) > .5) z = 0.006 + rot(sd * 8, 0, a).z * 0.0005;   /* a deep squat or sitting, seen from the front: the thighs come toward you, in front of the body – they were hidden behind it */   /* the legs always go under the seat and the top (the near thigh used to poke over the waist when seen from the side); near leg still in front of the far one */
       /* a human leg: full at the hip, narrower at the knee, the calf swells a little below it, slim at the ankle */
       var lc = shade(far, C.legs2, C.legs), skc = shade(far, C.skin2, C.skin), calf = P(knee[0], knee[1] + (ank[1] - knee[1]) * .32, knee[2] + (ank[2] - knee[2]) * .32);
-      var thighC = L.legsOn === 'none' || L.legsOn === 'swim' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
+      var thighC = L.legsOn === 'none' || L.legsOn === 'swim' || L.legsOn === 'thigh' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
       var MUL = 1 + .07 * (L.bp.mus || 0);   /* athletic/muscular: fuller thighs and calves */
-      taper(a1, a2, 10.5 * LW * MUL, 8.2 * LW, thighC, z); taper(a2, calf, 8.2 * LW, 8.4 * LW * MUL, shinC, z); taper(calf, a3, 8.4 * LW * MUL, 7.2 * LW, shinC, z);
-      if (L.legsOn === 'thigh') { var kb = P(knee[0], knee[1] - 4, knee[2]); taper(a1, kb, 10.8, 9, lc, z + .001); }
-      if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
+      var rT = HX * .96, rK = HX * .7, rC = HX * .68 * MUL, rA = HX * .54;   /* the thighs meet at the groin (as wide as half the hips) and narrow to the knee, so the legs part in a V with a small gap */
+      taper(a1, a2, rT, rK, thighC, z); taper(a2, calf, rK, rC, shinC, z); taper(calf, a3, rC, rA, shinC, z);
+      if (shinC === skc && Math.cos(a) > .3) { var kn1 = P(knee[0] - rK * .5, knee[1] - 1, knee[2] + rK), kn2 = P(knee[0], knee[1] + 1.2, knee[2] + rK), kn3 = P(knee[0] + rK * .5, knee[1] - 1, knee[2] + rK);
+        parts.push([z + .0015, el('path', { d: 'M' + kn1.X.toFixed(1) + ' ' + kn1.Y.toFixed(1) + ' Q' + kn2.X.toFixed(1) + ' ' + kn2.Y.toFixed(1) + ' ' + kn3.X.toFixed(1) + ' ' + kn3.Y.toFixed(1), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .3 })]); }   /* a small line at the knee */
+      if (L.legsOn === 'thigh') { var kf = .68, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .5, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1); }   /* shorts: a straight hem on each leg – with the gap between the legs that is the inverted V at the crotch */
+      if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, rT + .4, rT + .2, lc, z + .001, 1); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
       if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 2, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 6); parts.push([z + .003, el('rect', { x: cpk.X - 4 * k, y: cpk.Y - 4 * k, width: 8 * k, height: 8 * k, rx: 1.5 * k, fill: dk(L.legsC, .85) })]); }
@@ -156,38 +159,54 @@
     });
     /* the seat: a rounded pelvis in the trousers' colour where the legs meet the body, fuller at the back –
        from the side you see the bottom, from the front the hips */
-    var pw = Math.sqrt(Math.pow(18 * L.bp.hp * Math.cos(a), 2) + Math.pow(12.5 * L.bp.d * Math.sin(a), 2)), pc = P(0, 144 + bob, -5);
-    parts.push([-0.005, el('ellipse', { cx: pc.X, cy: pc.Y, rx: pw * k, ry: 11 * k, fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
-    if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = BW * Math.sqrt(Math.pow(26 * Math.cos(a), 2) + Math.pow(17 * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
+    var pw = Math.sqrt(Math.pow(L.bp.hv * Math.cos(a), 2) + Math.pow(12.2 * L.bp.d * Math.sin(a), 2)) * k, pc = P(0, 144 + bob, -2.5 * Math.abs(Math.sin(a))), pT = pc.Y - 2 * k, pB = pc.Y + 9 * k, pV = pc.Y + (6 + 5 * Math.abs(Math.sin(a))) * k;
+    /* the bottom edge rises to the groin in the middle (an inverted V); from the side it is the round of the bottom */
+    parts.push([-0.005, el('path', { d: 'M' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' L' + (pc.X + pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Q' + (pc.X + pw * 1.04).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X + pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' L' + pc.X.toFixed(1) + ' ' + pV.toFixed(1) + ' L' + (pc.X - pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' Q' + (pc.X - pw * 1.04).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Z', fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
+    if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = Math.sqrt(Math.pow((L.bp.hv + 1.5) * Math.cos(a), 2) + Math.pow(14.5 * L.bp.d * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
       parts.push([0.004, el('path', { d: 'M' + (sk1.X - skw1) + ' ' + sk1.Y + ' L' + (sk1.X + skw1) + ' ' + sk1.Y + ' L' + (sk2.X + skw2) + ' ' + sk2.Y + ' Q' + sk2.X + ' ' + (sk2.Y + 4 * k) + ' ' + (sk2.X - skw2) + ' ' + sk2.Y + ' Z', fill: skc2 })]); }
     /* torso: an oval tube – its width depends on which way he faces; the side towards the back is darker */
     var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)); };
-    var hw = wid(BP.wa), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
+    var hw = Math.sqrt(Math.pow((BP.ch + 1) * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
     var t1 = P(0, topY, 0), t2 = P(0, botY, 0);
     /* a human trunk (phase 1 of the avatar brief): the neck's base, sloping to round shoulders, a chest, a waist that narrows
        and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
        forward, the bottom back), so the outline changes properly as he turns */
-    var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
-    if (MUT) LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]);   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
+    var MUT = BP.mus || 0, NW = 7 + .6 * MUT, mixw = function (p, q, f) { return p + (q - p) * f; };
+    /* the trunk, level by level (JP's anatomy spec): the traps slope from the neck to the shoulders, the lats are widest
+       under the armpits, the sides run in to the waist (a V) and flare a little over the hips */
+    var LV = [[79, NW, 7.5, 0], [82.5 - .6 * MUT, mixw(NW, BP.sx, .5), 9.5 * BP.d, -.6], [87.5, BP.sx - 1, 12 * BP.d, 0], [99, BP.ch + .8, 16.5 * BP.d, 2.4], [113, mixw(BP.ch, BP.wv, .6), 14.5 * BP.d, 1.8],
+      [128, BP.wv, 12.2 * BP.d * (.5 + .5 * BP.wa), .8], [138, mixw(BP.wv, BP.hv, .7), 12.4 * BP.d, -.4], [146, BP.hv, 12.8 * BP.d, -1.2]];
     var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
-    LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
+    LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3]), hwq = Math.sqrt(Math.pow(q[1] * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
-    function side2(pts) { var d = ''; for (var i = 1; i < pts.length; i++) { var p0 = pts[i - 1], p1 = pts[i], my = (p0[1] + p1[1]) / 2; d += ' C' + f1(p0[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(my) + ' ' + f1(p1[0]) + ' ' + f1(p1[1]); } return d; }
+    /* a smooth line through the levels (no steps: the side is one flowing edge) */
+    function side2(pts) { var d = '', n = pts.length; for (var i = 1; i < n; i++) { var p0 = pts[Math.max(0, i - 2)], p1 = pts[i - 1], p2 = pts[i], p3 = pts[Math.min(n - 1, i + 1)];
+      d += ' C' + f1(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + f1(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + f1(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + f1(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + f1(p2[0]) + ' ' + f1(p2[1]); } return d; }
     var TLr = TL.slice().reverse();
     var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
-      var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.35 + .15 * BP.mus)).toFixed(2), pecY = 98 + bob;
-      [-1, 1].forEach(function (sd) { var pa1 = P(sd * 2, pecY, 15), pa2 = P(sd * 15 * BP.sh, pecY + 1, 13), pa3 = P(sd * 22 * BP.sh, pecY - 7, 10);
-        parts.push([0.012, el('path', { d: 'M' + pa1.X.toFixed(1) + ' ' + pa1.Y.toFixed(1) + ' Q' + pa2.X.toFixed(1) + ' ' + (pa2.Y + 3 * k).toFixed(1) + ' ' + pa3.X.toFixed(1) + ' ' + pa3.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (1.1 * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); });
-      /* the stomach: a six-pack – three rows of two soft blocks either side of the middle line – and the V of the obliques down to the hips */
-      var abA = (BP.mus > 1 ? .55 : .42) * Math.min(1, (Math.cos(a) - .3) * 2), abf = dk(L.skin, .86);
-      [[106, 115], [117, 126], [128, 137]].forEach(function (r) { [-1, 1].forEach(function (sd) { var c1 = P(sd * 1.4, r[0] + bob, 15), c2 = P(sd * 9.2, r[1] + bob, 14.2);
-        var x0 = Math.min(c1.X, c2.X), w0 = Math.abs(c2.X - c1.X); if (w0 < .6 * k) return;
-        parts.push([0.012, el('rect', { x: x0.toFixed(1), y: c1.Y.toFixed(1), width: w0.toFixed(1), height: (c2.Y - c1.Y).toFixed(1), rx: (2.6 * k).toFixed(2), fill: 'none', stroke: abf, 'stroke-width': (.9 * k).toFixed(2), opacity: abA.toFixed(2) })]); }); });
-      var ab1 = P(0, pecY + 6, 15), ab2 = P(0, 138 + bob, 14); parts.push([0.012, el('line', { x1: ab1.X.toFixed(1), y1: ab1.Y.toFixed(1), x2: ab2.X.toFixed(1), y2: ab2.Y.toFixed(1), stroke: mc, 'stroke-width': (1 * k).toFixed(2), opacity: mo })]);
-      [-1, 1].forEach(function (sd) { var o1 = P(sd * 16 * BP.wa, 118 + bob, 12), o2 = P(sd * 6, 146 + bob, 13.5); parts.push([0.012, el('path', { d: 'M' + o1.X.toFixed(1) + ' ' + o1.Y.toFixed(1) + ' Q' + ((o1.X + o2.X) / 2 + sd * 2 * k).toFixed(1) + ' ' + ((o1.Y + o2.Y) / 2).toFixed(1) + ' ' + o2.X.toFixed(1) + ' ' + o2.Y.toFixed(1), fill: 'none', stroke: mc, 'stroke-width': (.9 * k).toFixed(2), opacity: mo })]); });
+      var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.4 + .15 * BP.mus)).toFixed(2), pecY = 101 + bob, ml = function (d, wd) { parts.push([0.012, el('path', { d: d, fill: 'none', stroke: mc, 'stroke-width': ((wd || 1) * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); };
+      var hl = P(-BP.ch * .46, pecY - 6, 14); parts.push([0.011, el('ellipse', { cx: hl.X.toFixed(1), cy: hl.Y.toFixed(1), rx: (BP.ch * .3 * Math.cos(a) * k).toFixed(1), ry: (6.5 * k).toFixed(1), fill: '#fff', opacity: (.09 * Math.min(1, (Math.cos(a) - .3) * 2)).toFixed(2) })]);   /* the light catches the chest on the lit side */
+      [-1, 1].forEach(function (sd) { var pa1 = P(sd * 1.5, pecY - 1, 15), pa2 = P(sd * BP.ch * .5, pecY + 4, 13.5), pa3 = P(sd * BP.ch * .9, pecY - 6, 10);
+        ml('M' + f1(pa1.X) + ' ' + f1(pa1.Y) + ' Q' + f1(pa2.X) + ' ' + f1(pa2.Y) + ' ' + f1(pa3.X) + ' ' + f1(pa3.Y), 1.1); });
+      /* the stomach: the middle line, three rows of short curves either side of it, and the V of the obliques down to the hips */
+      var ab1 = P(0, pecY + 3, 15), ab2 = P(0, 141 + bob, 14); ml('M' + f1(ab1.X) + ' ' + f1(ab1.Y) + ' L' + f1(ab2.X) + ' ' + f1(ab2.Y), 1);
+      [111, 120, 129].forEach(function (ry0) { [-1, 1].forEach(function (sd) { var c1 = P(sd * 1.3, ry0 + bob, 15), c2 = P(sd * 4.6, ry0 + 2 + bob, 14.6), c3 = P(sd * 8, ry0 - .6 + bob, 14);
+        ml('M' + f1(c1.X) + ' ' + f1(c1.Y) + ' Q' + f1(c2.X) + ' ' + f1(c2.Y) + ' ' + f1(c3.X) + ' ' + f1(c3.Y), .9); }); });
+      [-1, 1].forEach(function (sd) { var o1 = P(sd * BP.wv * .74, 117 + bob, 12), o2 = P(sd * 4.5, 146 + bob, 13.5); ml('M' + f1(o1.X) + ' ' + f1(o1.Y) + ' Q' + f1((o1.X + o2.X) / 2 + sd * 1.5 * k * Math.cos(a)) + ' ' + f1((o1.Y + o2.Y) / 2) + ' ' + f1(o2.X) + ' ' + f1(o2.Y), .9); });
+    }
+    if (L.top === 'none' && Math.cos(a) < -.3) {   /* bare, seen from behind: the spine, the shoulder blades and the small of the back; the fit builds also show the traps and the lats (JP: the back had no details) */
+      var bo = Math.min(1, (-Math.cos(a) - .3) * 2), bc = dk(L.skin, .8), bl = function (d, wd, op) { parts.push([0.012, el('path', { d: d, fill: 'none', stroke: bc, 'stroke-width': ((wd || 1) * k).toFixed(2), 'stroke-linecap': 'round', opacity: (bo * (op || .4)).toFixed(2) })]); };
+      var bq = function (x, y, z) { var p = P(x, y + bob, z); return f1(p.X) + ' ' + f1(p.Y); };
+      bl('M' + bq(0, 90, -11) + ' Q' + bq(.6, 115, -14) + ' ' + bq(0, 141, -11.5), 1.1, .42 + .06 * MUT);
+      [-1, 1].forEach(function (sd) {
+        bl('M' + bq(sd * BP.ch * .3, 95, -14) + ' Q' + bq(sd * BP.ch * .78, 98, -13) + ' ' + bq(sd * BP.ch * .6, 110, -14.5) + ' Q' + bq(sd * BP.ch * .4, 112, -15) + ' ' + bq(sd * BP.ch * .3, 107, -15), .9, .3 + .06 * MUT);   /* a shoulder blade */
+        var dm = P(sd * 5, 139 + bob, -11.5); parts.push([0.012, el('ellipse', { cx: f1(dm.X), cy: f1(dm.Y), rx: (1.3 * k).toFixed(1), ry: (1 * k).toFixed(1), fill: bc, opacity: (bo * .3).toFixed(2) })]);   /* the dimples low on the back */
+        if (MUT) { bl('M' + bq(sd * 2, 84, -8) + ' Q' + bq(sd * BP.sx * .45, 90, -11) + ' ' + bq(sd * BP.sx * .8, 89, -9), .9, .34);   /* the traps' edge out to the shoulder */
+          bl('M' + bq(sd * BP.ch * .92, 104, -11) + ' Q' + bq(sd * BP.wv * .9, 120, -12.5) + ' ' + bq(sd * 3.5, 132, -12.5), 1, .32 + .06 * MUT); }   /* a lat, from under the arm in to the low spine */
+      });
     }
     if (shadeOn) parts.push([0.015, el('path', { d: TD, fill: 'url(#shBody)' })]);
     /* a Nordic knit: a band of white zigzag across the chest and rows of small crosses, wrapping round the body */
@@ -232,40 +251,51 @@
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
       if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
-      var AW = L.bp.arm, SHW = BW * L.bp.sh, sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
-      var hand = [sd * 33.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
+      var AR = L.bp.ar, SX = L.bp.sx, sh = [sd * SX, 88 + bob, 0], elb = [sd * (SX + 1.2), sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
+      var hand = [sd * (SX + 1.6), elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0], sh[1], sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
       var MU = L.bp.mus || 0;
-      /* a human arm: a round shoulder, the upper arm fullest at the biceps, a forearm that swells below the elbow and narrows to the wrist.
-         Athletic and muscular (MU) get a bigger shoulder cap, biceps and forearm */
-      var skA = shade(far, C.skin2, C.skin), fm = P(elb[0] + (hand[0] - elb[0]) * .3, elb[1] + (hand[1] - elb[1]) * .3, elb[2] + (hand[2] - elb[2]) * .3, 1), bi2 = P(sh[0] + (elb[0] - sh[0]) * .42, sh[1] + (elb[1] - sh[1]) * .42, sh[2] + (elb[2] - sh[2]) * .42, 1);
-      var rS = (6.6 + .9 * MU) * AW, rB = (6.3 + 1.1 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
-      function bareArm() { taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
-        if (MU) parts.push([z + .001, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((7.6 + 1.7 * MU) * AW * k).toFixed(1), fill: skA })]); }   /* the shoulder muscle */
-      if (L.bare === 'arms' || L.top === 'none') bareArm();
-      else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1);
-        taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
-        taper(p1, mid, rS + 1.6 + .5 * MU, rB + 1, shade(far, C.top2, C.top), z + .01);
-        if (MU) parts.push([z + .011, el('circle', { cx: p1.X.toFixed(1), cy: (p1.Y + 1.5 * k).toFixed(1), r: ((8.6 + 1.7 * MU) * AW * k).toFixed(1), fill: shade(far, C.top2, C.top) })]); }   /* the short sleeve sits round the shoulder and the biceps */
-      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, bi2, rS + 2.2, rB + 2, shade(far, slc2, slc), z); taper(bi2, p2, rB + 2, rE + 2.4, shade(far, slc2, slc), z); taper(p2, fm, rE + 2.4, rF + 2, shade(far, slc2, slc), z); taper(fm, p3, rF + 2, rW + 2.6, shade(far, slc2, slc), z);   /* a sleeve follows the arm inside it */
+      /* a human arm (JP's anatomy spec): clearly narrower than the chest, fullest at the biceps, a slight taper to the wrist;
+         it hangs from under a teardrop shoulder muscle that caps the shoulder and runs to a point a third of the way down
+         the outside of the upper arm */
+      var skA = shade(far, C.skin2, C.skin), fm = P(elb[0] + (hand[0] - elb[0]) * .3, elb[1] + (hand[1] - elb[1]) * .3, elb[2] + (hand[2] - elb[2]) * .3, 1), bi2 = P(sh[0] + (elb[0] - sh[0]) * .45, sh[1] + (elb[1] - sh[1]) * .45, sh[2] + (elb[2] - sh[2]) * .45, 1);
+      var rS = AR * .86, rB = AR, rE = AR * .74, rF = AR * .78, rW = AR * .56;
+      var adx = p2.X - p1.X, ady = p2.Y - p1.Y, adl = Math.hypot(adx, ady), aux = adl > 2 * k ? adx / adl : 0, auy = adl > 2 * k ? ady / adl : 1, oo = rot(sd, 0, a).x, anx = -auy, any = aux;
+      if (anx * (oo || sd) < 0) { anx = -anx; any = -any; }   /* across the arm, pointing away from the body */
+      var oa = Math.abs(oo), dT = 3.6 + .1 * AR;   /* the shoulder's top stays level with the shoulder line however big the arm is (JP: the deltoids stuck up) */
+      var p1d = { X: p1.X + aux * Math.max(0, rS - dT + 1) * k, Y: p1.Y + auy * Math.max(0, rS - dT + 1) * k };
+      function delt(grow, fill, zd, line) { var rD = (AR * (1.08 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .4 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.25);
+        var pt = function (sv2, tv) { return f1(p1.X + aux * sv2 + anx * tv) + ' ' + f1(p1.Y + auy * sv2 + any * tv); };
+        var sT = -(dT + grow * .5) * k, tT = .05 * rD * oa, sO = .8 * rD, tO = rD * (1 + .12 * oa), tI = -rD * (1 - .12 * oa), tP = .55 * rB * k * oa;
+        var d = 'M' + pt(sT, tT) + ' C' + pt(sT, tT + .62 * rD) + ' ' + pt(sO - .95 * rD, tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .8 * rD, tO) + ' ' + pt(tipS - .6 * rD, tP + .45 * rD) + ' ' + pt(tipS, tP) +
+          ' C' + pt(tipS - .55 * rD, tP - .5 * rD) + ' ' + pt(sO + .7 * rD, tI) + ' ' + pt(sO, tI) + ' C' + pt(sO - .95 * rD, tI) + ' ' + pt(sT, tT - .62 * rD) + ' ' + pt(sT, tT) + ' Z';
+        parts.push([zd, el('path', { d: d, fill: fill })]);
+        if (line) parts.push([zd + .0005, el('path', { d: 'M' + pt(sO + .5 * rD, tO - .08 * rD) + ' Q' + pt(tipS - .35 * rD, tP + .4 * rD) + ' ' + pt(tipS, tP) + ' Q' + pt(tipS - .5 * rD, tP - .35 * rD) + ' ' + pt(sO + .75 * rD, tI + .3 * rD), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: (.2 + .08 * MU).toFixed(2) })]); }
+      function skinArm() { taper(p1d, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
+        parts.push([z + .0008, el('path', { d: 'M' + f1(p2.X - anx * rE * .75 * k) + ' ' + f1(p2.Y - any * rE * .75 * k) + ' L' + f1(p2.X - anx * rE * .1 * k) + ' ' + f1(p2.Y - any * rE * .1 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .32 })]); }   /* a subtle elbow line */
+      if (L.bare === 'arms' || L.top === 'none') { skinArm(); delt(0, skA, z + .001, 1); }
+      else if (L.bare === 'short') { var mid = P(sh[0] + (elb[0] - sh[0]) * .55, sh[1] + (elb[1] - sh[1]) * .55, sh[2] + (elb[2] - sh[2]) * .55, 1), tcs = shade(far, C.top2, C.top);
+        skinArm(); taper(p1d, mid, rS + 1.2, rB + 1.2, tcs, z + .01, 1); delt(1.2, tcs, z + .011); }
+      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2, scs = shade(far, slc2, slc); taper(p1d, bi2, rS + 1.8, rB + 1.8, scs, z); taper(bi2, p2, rB + 1.8, rE + 2.2, scs, z); taper(p2, fm, rE + 2.2, rF + 1.9, scs, z); taper(fm, p3, rF + 1.9, rW + 2.4, scs, z); delt(1.8, scs, z + .001);   /* a sleeve follows the arm inside it */
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
+      var HZ = Math.max(.9, Math.min(1.12, AR / 6));   /* the hands grow with the arms */
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
       var fwd = Math.abs(Math.sin(a)) > .3 ? (Math.sin(a) > 0 ? 1 : -1) : -sd * (Math.cos(a) >= 0 ? 1 : -1), pxv = -uy, pyv = ux; if (pxv * fwd < 0) { pxv = -pxv; pyv = -pyv; }
       var hc2 = shade(far, C.skin2, C.skin), HG = el('g', {});
-      if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': (8.2 * k).toFixed(1), 'stroke-linecap': 'round' }));
-      var tx = p3.X + ux * 2 * k + pxv * 5.4 * k, ty = p3.Y + uy * 2 * k + pyv * 5.4 * k;
-      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (2.8 * k).toFixed(1), ry: (4.4 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
-      var mx = p3.X + ux * 4 * k, my = p3.Y + uy * 4 * k;
-      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (6.4 * k).toFixed(1), ry: (8.2 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
+      if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': ((rW + 2.6) * 2 * k).toFixed(1), 'stroke-linecap': 'butt' }));
+      var tx = p3.X + ux * 2.4 * k + pxv * 5.9 * HZ * k, ty = p3.Y + uy * 2.4 * k + pyv * 5.9 * HZ * k;
+      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (3 * HZ * k).toFixed(1), ry: (4.8 * HZ * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
+      var mx = p3.X + ux * 4.6 * HZ * k, my = p3.Y + uy * 4.6 * HZ * k;
+      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (6.9 * HZ * k).toFixed(1), ry: (8.9 * HZ * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
       parts.push([z + 0.1, HG]);
       HAND[nearSide(sd) ? 'near' : 'far'] = HAND['s' + sd] = { X: p3.X, Y: p3.Y, z: z + 0.2 };
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
-    var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
-    parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin2 })]);
+    var HSC = .79, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
+    parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin })]);
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var hc = P(0, 52 + hb6, 0), R = 22 * k;
     /* a shape that only moves with the head (the hair): its path is built round the head's middle and kept from the last
@@ -287,9 +317,18 @@
     }
     var head = el('g', {});
     function hatCoversLong() { return L.hat === 'beanie' && false; }
-    head.appendChild(el('rect', { x: hc.X - 6.6 * k, y: hc.Y + 14 * k, width: 13.2 * k, height: 23 * k, rx: 5 * k, fill: C.skin2 }));   /* a neck you can see, down into the shoulders */
+    head.appendChild(el('rect', { x: hc.X - nkw / HSC, y: hc.Y + 12 * k, width: 2 * nkw / HSC, height: 16 * k, rx: 3 * k, fill: dk(L.skin, .8) }));   /* the chin's soft shadow on the neck */
     var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
-    head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + FS[2] * k, rx: R * FS[0], ry: R * FS[1], fill: C.skin }));
+    /* a face, not a ball (JP's anatomy spec): wide at the forehead and cheekbones, the sides curve in to an angled jaw and the chin narrows to a soft point – turned a little the way he looks */
+    var frx = R * FS[0], fry = R * FS[1], fcy = hc.Y + FS[2] * k, fch = hc.X + Math.sin(a) * R * .15, jw = L.faceS === 'round' ? .86 : .8, cw0 = L.faceS === 'round' ? .28 : .19, fp = function (x, y) { return f1(x) + ' ' + f1(fcy + y * fry); };
+    var FACE = 'M' + fp(hc.X - frx, 0) + ' A' + f1(frx) + ' ' + f1(fry) + ' 0 0 1 ' + fp(hc.X + frx, 0) + ' C' + fp(hc.X + frx, .3) + ' ' + fp(fch + frx * (jw + .07), .36) + ' ' + fp(fch + frx * jw, .56) +
+      ' C' + fp(fch + frx * (jw - .1), .78) + ' ' + fp(fch + frx * (cw0 + .2), 1.03) + ' ' + fp(fch + frx * cw0, 1.09) + ' Q' + fp(fch, 1.15) + ' ' + fp(fch - frx * cw0, 1.09) +
+      ' C' + fp(fch - frx * (cw0 + .2), 1.03) + ' ' + fp(fch - frx * (jw - .1), .78) + ' ' + fp(fch - frx * jw, .56) + ' C' + fp(fch - frx * (jw + .07), .36) + ' ' + fp(hc.X - frx, .3) + ' ' + fp(hc.X - frx, 0) + ' Z';
+    head.appendChild(el('path', { d: FACE, fill: C.skin }));
+    /* a darker band along the jaw on the shadow side, and the light on the cheekbone */
+    head.appendChild(el('path', { d: 'M' + fp(hc.X + frx, -.05) + ' C' + fp(hc.X + frx, .3) + ' ' + fp(fch + frx * (jw + .07), .36) + ' ' + fp(fch + frx * jw, .56) + ' C' + fp(fch + frx * (jw - .1), .78) + ' ' + fp(fch + frx * (cw0 + .2), 1.03) + ' ' + fp(fch + frx * cw0, 1.09) +
+      ' Q' + fp(fch + frx * .7, .6) + ' ' + fp(hc.X + frx * .9, -.05) + ' Z', fill: dk(L.skin, .74), opacity: .3 }));
+    if (Math.cos(a) > .2) head.appendChild(el('ellipse', { cx: f1(hc.X - frx * .5 + Math.sin(a) * R * .3), cy: f1(fcy + fry * .12), rx: f1(frx * .2 * Math.cos(a)), ry: f1(fry * .08), fill: '#fff', opacity: .1 }));
     function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
     function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
     function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
@@ -318,7 +357,8 @@
       else if (L.expr === 'laugh' || L.expr === 'grin') head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + mo.y + ' Q' + mo.x + ' ' + (mo.y + 7 * k) + ' ' + (mo.x + mw) + ' ' + mo.y + ' Z', fill: '#7a3a30', stroke: mcol, 'stroke-width': 1 * k }));
       else if (L.expr === 'cool') head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + (mo.y + 1 * k) + ' Q' + (mo.x + mw * .3) + ' ' + (mo.y + 2 * k) + ' ' + (mo.x + mw) + ' ' + (mo.y - 1.2 * k), fill: 'none', stroke: mcol, 'stroke-width': 1.6 * k, 'stroke-linecap': 'round' }));
       else head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + mo.y + ' Q' + mo.x + ' ' + (mo.y + 4 * k) + ' ' + (mo.x + mw) + ' ' + mo.y, fill: 'none', stroke: mcol, 'stroke-width': 1.6 * k, 'stroke-linecap': 'round' })); }
-    var no = onHead(0, 56); if (no.f > -0.2) { var nx = Math.sin(a) * 5 * k; head.appendChild(el('ellipse', { cx: no.x + nx * .45, cy: no.y, rx: (2.1 + Math.abs(Math.sin(a)) * 2.2) * k, ry: 2.5 * k, fill: dk(L.skin, .95) })); if (no.f > .2) head.appendChild(el('path', { d: 'M' + (no.x - 1.6 * k) + ' ' + (no.y + 1.8 * k) + ' Q' + no.x + ' ' + (no.y + 2.8 * k) + ' ' + (no.x + 1.6 * k) + ' ' + (no.y + 1.8 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': .9 * k, 'stroke-linecap': 'round', opacity: .6 })); }
+    var no = onHead(0, 56); if (no.f > -0.2) { var nx = Math.sin(a) * 5 * k; head.appendChild(el('ellipse', { cx: no.x + nx * .45, cy: no.y, rx: (2.1 + Math.abs(Math.sin(a)) * 2.2) * k, ry: 2.5 * k, fill: dk(L.skin, .95) })); if (no.f > .2) head.appendChild(el('path', { d: 'M' + f1(no.x + nx * .45 + 1.5 * k) + ' ' + f1(no.y - 5 * k) + ' L' + f1(no.x + nx * .45 + 2 * k) + ' ' + f1(no.y + 1 * k), fill: 'none', stroke: dk(L.skin, .74), 'stroke-width': (1.2 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .45 }));   /* the nose's shaded side */
+      if (no.f > .2) head.appendChild(el('path', { d: 'M' + (no.x - 1.6 * k) + ' ' + (no.y + 1.8 * k) + ' Q' + no.x + ' ' + (no.y + 2.8 * k) + ' ' + (no.x + 1.6 * k) + ' ' + (no.y + 1.8 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': .9 * k, 'stroke-linecap': 'round', opacity: .6 })); }
     var ears = [];
     [-Math.PI / 2, Math.PI / 2].forEach(function (phi) { var e = onHead(phi * -1, 53); ears.push(e); if (e.f > -0.35) { head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: 3.5 * k * Math.max(.4, Math.abs(Math.sin(phi * -1 + a))), ry: 5.5 * k, fill: C.skin2 }));
       if (L.aid === 'hearing' && phi > 0) head.appendChild(el('path', { d: 'M' + e.x + ' ' + (e.y - 5 * k) + ' q' + (3 * k) + ' ' + (2 * k) + ' ' + (1 * k) + ' ' + (8 * k), fill: 'none', stroke: '#d9c7a8', 'stroke-width': 2.6 * k, 'stroke-linecap': 'round' })); } });
@@ -400,7 +440,7 @@
       for (var ci = 0; ci <= 24; ci++) { var t2 = Math.PI * ci / 24; cp.push([hc.X - Math.cos(t2) * R * 1.05, hc.Y - Math.sin(t2) * R * 1.1 + (41 - 52) * k * (1 - Math.sin(t2))]); }
       head.appendChild(el('path', { d: poly(cp), fill: L.hatC }));
     }
-    if (shadeOn) head.insertBefore(el('circle', { cx: hc.X, cy: hc.Y, r: R, fill: 'url(#shHead)' }), head.childNodes[2]);
+    if (shadeOn) head.insertBefore(el('path', { d: FACE, fill: 'url(#shHead)' }), head.childNodes[2]);
     parts.push([0.5, head]);
     /* things behind or round the head that change sides: long hair, ponytail, bun, hood, a cap's brim */
     if ((L.hair === 'long' || L.hair === 'dreads') && !hatCoversLong()) box(-19, 19, 44, 96, -16, -4, C.hair, behind(0, 52, -10) > 0 ? 0.55 : -0.5, 9);
@@ -411,7 +451,7 @@
     if (L.top === 'hoodie') box(-17, 17, 70, 94, -15, -5, C.top2, behind(0, 80, -10) > 0 ? 0.3 : -0.3, 8);
     if (L.hat === 'cap') { var bz = rot(0, 22, a).z, br = [[-13, 14], [13, 14], [-13, 33], [13, 33]].map(function (q) { return rot(q[0], q[1], a).x; }), b0 = Math.min.apply(null, br), b9 = Math.max.apply(null, br), byy = P(0, 41 + hb6, 0).Y;
       parts.push([bz > 0 ? 0.57 : 0.45, el('ellipse', { cx: hc.X + (b0 + b9) / 2 * k, cy: byy, rx: Math.max(3, (b9 - b0) / 2) * k, ry: 3.2 * k, fill: dk(L.hatC, .85) })]); }
-    var HSC = .73, pv = P(0, 74 + hb6, 0), HT = 'translate(' + pv.X.toFixed(1) + ' ' + pv.Y.toFixed(1) + ') scale(' + HSC + ') translate(' + (-pv.X).toFixed(1) + ' ' + (-pv.Y).toFixed(1) + ')';
+    var pv = P(0, 74 + hb6, 0), HT = 'translate(' + pv.X.toFixed(1) + ' ' + pv.Y.toFixed(1) + ') scale(' + HSC + ') translate(' + (-pv.X).toFixed(1) + ' ' + (-pv.Y).toFixed(1) + ')';
     for (var hi = hStart; hi < parts.length; hi++) { var hwr = el('g', { transform: HT }); hwr.appendChild(parts[hi][1]); parts[hi][1] = hwr; }
     if (CHAIR) {
       /* a manual wheelchair: big wheels with hand rims at his sides, a seat, a backrest behind him, small front wheels */
