@@ -18,6 +18,7 @@
   var DK = {};   /* darker shades, worked out once per colour */
   function dk(h, f) { var key = h + '|' + f, m = DK[key]; if (m) return m; return (DK[key] = dk0(h, f)); }
   function dk0(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
+  function mixc(h1, h2, f) { var p = parseInt(h1.slice(1), 16), q = parseInt(h2.slice(1), 16), m = function (sh) { return Math.round(((p >> sh) & 255) * (1 - f) + ((q >> sh) & 255) * f); }; return 'rgb(' + m(16) + ',' + m(8) + ',' + m(0) + ')'; }
   function colours() { C = { skin: L.skin, skin2: dk(L.skin, .87), hair: L.hairC, top: L.topC, top2: dk(L.topC, .8), legs: L.legsC, legs2: dk(L.legsC, .82), shoe: L.shoeC, eye: '#1b1f27', mouth: '#8a4a3a' }; }
   /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order. Pooled
      elements are a copy built off the page (their attributes only in _a); Scene25's patch() writes what changed into
@@ -58,7 +59,7 @@
     l = l || {}; if (window.Avatar && Avatar.trimLook) l = Avatar.trimLook(l);
     var top = TOPS[l.top] ? l.top : 'sweater', t = TOPS[top], bottom = l.bottom || 'trousers';
     var o = { skin: l.skin || '#c99a73', hairC: l.hairC || '#1e140d', hair: { ponytail: 'pony', topknot: 'bun' }[l.hair] || l.hair || 'short',
-      beard: l.beard || 'none', glasses: l.glasses || 'none', expr: l.expr || 'smile', makeup: l.makeup || 'none', cheeks: l.cheeks || 'none', faceS: l.faceS || 'oval',
+      beard: l.beard || 'none', glasses: l.glasses || 'none', expr: l.expr || 'smile', makeup: l.makeup || 'none', cheeks: l.cheeks || 'none', faceS: l.faceS || 'oval', eyeC: /^#[0-9a-f]{6}$/i.test(l.eyeC || '') ? l.eyeC : '#6b4a2b',
       top: top, topC: top === 'chef' ? '#f4f4f2' : (/^#[0-9a-f]{6}$/i.test(l.topC || '') ? l.topC : TOP_STD), bottom: bottom, legsC: l.legs || '#2a2f3a', shoes: l.shoes || 'sneakers',
       hat: l.hat || 'none', hatC: l.hatC || '#e8743b', neck: l.wxScarf ? 'scarf' : 'none', neckC: l.hatC || '#e8743b', aid: l.aid || 'none',
       bare: t.bare || '', sleeve: t.sleeve || '', skirt: t.skirt || (bottom === 'skirt' ? 'knee' : ''), legsOn: bottom === 'shorts' ? 'thigh' : bottom === 'swim' ? 'swim' : top === 'dress' ? 'none' : 'full',
@@ -130,7 +131,7 @@
       var lo = pose[nearSide(sd) ? 'legNear' : 'legFar'];
       if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m == null ? 1 : lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */
       if (lo) { th = th * (1 - lo.m) + lo.th * lo.m; kn = kn * (1 - lo.m) + lo.kn * lo.m; }   /* a keyed leg pose */
-      var LW = L.bp.leg, HX = L.bp.hv * .53, hip = [sd * HX, 140 + bob, 0], knee = [hip[0] * 1.05, hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
+      var LW = L.bp.leg, HX = L.bp.hv * .5, hip = [sd * HX, 140 + bob, 0], knee = [hip[0] * 1.05, hip[1] + 38 * Math.cos(th), hip[2] + 38 * Math.sin(th)];
       var ank = [hip[0] * 1.08, knee[1] + 36 * Math.cos(th - kn), knee[2] + 36 * Math.sin(th - kn)];
       var lift = Math.max(0, 218 - 4 - ank[1]); /* stays on the ground */
       if (ank[1] > 214) { var d = ank[1] - 214; knee[1] -= d; ank[1] = 214; hip[1] -= 0; }
@@ -141,11 +142,11 @@
       var lc = shade(far, C.legs2, C.legs), skc = shade(far, C.skin2, C.skin), calf = P(knee[0], knee[1] + (ank[1] - knee[1]) * .32, knee[2] + (ank[2] - knee[2]) * .32);
       var thighC = L.legsOn === 'none' || L.legsOn === 'swim' || L.legsOn === 'thigh' ? skc : lc, shinC = L.legsOn === 'full' ? lc : skc;
       var MUL = 1 + .07 * (L.bp.mus || 0);   /* athletic/muscular: fuller thighs and calves */
-      var rT = HX * .96, rK = HX * .7, rC = HX * .68 * MUL, rA = HX * .54;   /* the thighs meet at the groin (as wide as half the hips) and narrow to the knee, so the legs part in a V with a small gap */
+      var rT = HX * .97, rK = HX * .7, rC = HX * .68 * MUL, rA = HX * .54;   /* the thighs meet at the groin (as wide as half the hips) and narrow to the knee, so the legs part in a V with a small gap */
       taper(a1, a2, rT, rK, thighC, z); taper(a2, calf, rK, rC, shinC, z); taper(calf, a3, rC, rA, shinC, z);
       if (shinC === skc && Math.cos(a) > .3) { var kn1 = P(knee[0] - rK * .5, knee[1] - 1, knee[2] + rK), kn2 = P(knee[0], knee[1] + 1.2, knee[2] + rK), kn3 = P(knee[0] + rK * .5, knee[1] - 1, knee[2] + rK);
         parts.push([z + .0015, el('path', { d: 'M' + kn1.X.toFixed(1) + ' ' + kn1.Y.toFixed(1) + ' Q' + kn2.X.toFixed(1) + ' ' + kn2.Y.toFixed(1) + ' ' + kn3.X.toFixed(1) + ' ' + kn3.Y.toFixed(1), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .3 })]); }   /* a small line at the knee */
-      if (L.legsOn === 'thigh') { var kf = .68, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .5, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1); }   /* shorts: a straight hem on each leg – with the gap between the legs that is the inverted V at the crotch */
+      if (L.legsOn === 'thigh') { var kf = .68, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .3, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1); }   /* shorts: a straight hem on each leg – with the gap between the legs that is the inverted V at the crotch */
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, rT + .4, rT + .2, lc, z + .001, 1); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
@@ -161,7 +162,7 @@
        from the side you see the bottom, from the front the hips */
     var pw = Math.sqrt(Math.pow(L.bp.hv * Math.cos(a), 2) + Math.pow(12.2 * L.bp.d * Math.sin(a), 2)) * k, pc = P(0, 144 + bob, -2.5 * Math.abs(Math.sin(a))), pT = pc.Y - 2 * k, pB = pc.Y + 9 * k, pV = pc.Y + (6 + 5 * Math.abs(Math.sin(a))) * k;
     /* the bottom edge rises to the groin in the middle (an inverted V); from the side it is the round of the bottom */
-    parts.push([-0.005, el('path', { d: 'M' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' L' + (pc.X + pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Q' + (pc.X + pw * 1.04).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X + pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' L' + pc.X.toFixed(1) + ' ' + pV.toFixed(1) + ' L' + (pc.X - pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' Q' + (pc.X - pw * 1.04).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Z', fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
+    parts.push([-0.005, el('path', { d: 'M' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' L' + (pc.X + pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Q' + (pc.X + pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X + pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' L' + pc.X.toFixed(1) + ' ' + pV.toFixed(1) + ' L' + (pc.X - pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' Q' + (pc.X - pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Z', fill: L.legsOn === 'none' ? C.skin2 : C.legs })]);
     if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = Math.sqrt(Math.pow((L.bp.hv + 1.5) * Math.cos(a), 2) + Math.pow(14.5 * L.bp.d * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
       parts.push([0.004, el('path', { d: 'M' + (sk1.X - skw1) + ' ' + sk1.Y + ' L' + (sk1.X + skw1) + ' ' + sk1.Y + ' L' + (sk2.X + skw2) + ' ' + sk2.Y + ' Q' + sk2.X + ' ' + (sk2.Y + 4 * k) + ' ' + (sk2.X - skw2) + ' ' + sk2.Y + ' Z', fill: skc2 })]); }
     /* torso: an oval tube – its width depends on which way he faces; the side towards the back is darker */
@@ -188,7 +189,7 @@
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
       var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.4 + .15 * BP.mus)).toFixed(2), pecY = 101 + bob, ml = function (d, wd) { parts.push([0.012, el('path', { d: d, fill: 'none', stroke: mc, 'stroke-width': ((wd || 1) * k).toFixed(2), 'stroke-linecap': 'round', opacity: mo })]); };
-      var hl = P(-BP.ch * .46, pecY - 6, 14); parts.push([0.011, el('ellipse', { cx: hl.X.toFixed(1), cy: hl.Y.toFixed(1), rx: (BP.ch * .3 * Math.cos(a) * k).toFixed(1), ry: (6.5 * k).toFixed(1), fill: '#fff', opacity: (.09 * Math.min(1, (Math.cos(a) - .3) * 2)).toFixed(2) })]);   /* the light catches the chest on the lit side */
+      var hl = P(-BP.ch * .46, pecY - 6, 14); parts.push([0.011, el('ellipse', { cx: hl.X.toFixed(1), cy: hl.Y.toFixed(1), rx: (BP.ch * .3 * Math.cos(a) * k).toFixed(1), ry: (6.5 * k).toFixed(1), fill: '#fff', opacity: (.06 * Math.min(1, (Math.cos(a) - .3) * 2)).toFixed(2) })]);   /* the light catches the chest on the lit side */
       [-1, 1].forEach(function (sd) { var pa1 = P(sd * 1.5, pecY - 1, 15), pa2 = P(sd * BP.ch * .5, pecY + 4, 13.5), pa3 = P(sd * BP.ch * .9, pecY - 6, 10);
         ml('M' + f1(pa1.X) + ' ' + f1(pa1.Y) + ' Q' + f1(pa2.X) + ' ' + f1(pa2.Y) + ' ' + f1(pa3.X) + ' ' + f1(pa3.Y), 1.1); });
       /* the stomach: the middle line, three rows of short curves either side of it, and the V of the obliques down to the hips */
@@ -265,13 +266,14 @@
       if (anx * (oo || sd) < 0) { anx = -anx; any = -any; }   /* across the arm, pointing away from the body */
       var oa = Math.abs(oo), dT = 3.6 + .1 * AR;   /* the shoulder's top stays level with the shoulder line however big the arm is (JP: the deltoids stuck up) */
       var p1d = { X: p1.X + aux * Math.max(0, rS - dT + 1) * k, Y: p1.Y + auy * Math.max(0, rS - dT + 1) * k };
-      function delt(grow, fill, zd, line) { var rD = (AR * (1.08 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .4 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.25);
+      function delt(grow, fill, zd, line) { var rD = (AR * (1.1 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .5 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.5);
         var pt = function (sv2, tv) { return f1(p1.X + aux * sv2 + anx * tv) + ' ' + f1(p1.Y + auy * sv2 + any * tv); };
-        var sT = -(dT + grow * .5) * k, tT = .05 * rD * oa, sO = .8 * rD, tO = rD * (1 + .12 * oa), tI = -rD * (1 - .12 * oa), tP = .55 * rB * k * oa;
-        var d = 'M' + pt(sT, tT) + ' C' + pt(sT, tT + .62 * rD) + ' ' + pt(sO - .95 * rD, tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .8 * rD, tO) + ' ' + pt(tipS - .6 * rD, tP + .45 * rD) + ' ' + pt(tipS, tP) +
-          ' C' + pt(tipS - .55 * rD, tP - .5 * rD) + ' ' + pt(sO + .7 * rD, tI) + ' ' + pt(sO, tI) + ' C' + pt(sO - .95 * rD, tI) + ' ' + pt(sT, tT - .62 * rD) + ' ' + pt(sT, tT) + ' Z';
+        /* a teardrop: a round cap over the joint, widest just below the top, then both sides run in to a point on the outside of the upper arm */
+        var sT = -(dT + grow * .5) * k, tT = -.3 * rD * oa, sO = .3 * rD, tO = rD * (1 + .14 * oa), tI = -rD * (1 - .3 * oa), tP = .6 * rB * k * oa, D = tipS - sO;
+        var d = 'M' + pt(sT, tT) + ' C' + pt(sT, tT + .7 * rD) + ' ' + pt(sO - .55 * (sO - sT), tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .5 * D, tO) + ' ' + pt(tipS - .28 * D, tP + .5 * rD) + ' ' + pt(tipS, tP) +
+          ' C' + pt(tipS - .3 * D, tP - .45 * rD) + ' ' + pt(sO + .5 * D, tI) + ' ' + pt(sO, tI) + ' C' + pt(sO - .55 * (sO - sT), tI) + ' ' + pt(sT, tT - .4 * rD) + ' ' + pt(sT, tT) + ' Z';
         parts.push([zd, el('path', { d: d, fill: fill })]);
-        if (line) parts.push([zd + .0005, el('path', { d: 'M' + pt(sO + .5 * rD, tO - .08 * rD) + ' Q' + pt(tipS - .35 * rD, tP + .4 * rD) + ' ' + pt(tipS, tP) + ' Q' + pt(tipS - .5 * rD, tP - .35 * rD) + ' ' + pt(sO + .75 * rD, tI + .3 * rD), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: (.2 + .08 * MU).toFixed(2) })]); }
+        if (line) parts.push([zd + .0005, el('path', { d: d, fill: p1.X < cx ? '#fff' : '#000', opacity: p1.X < cx ? (.07 + .03 * MU).toFixed(2) : (.05 + .02 * MU).toFixed(2) })]); }   /* the muscle shows by its tone – lighter on the lit side, darker on the shaded one – not by an outline */
       function skinArm() { taper(p1d, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
         parts.push([z + .0008, el('path', { d: 'M' + f1(p2.X - anx * rE * .75 * k) + ' ' + f1(p2.Y - any * rE * .75 * k) + ' L' + f1(p2.X - anx * rE * .1 * k) + ' ' + f1(p2.Y - any * rE * .1 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .32 })]); }   /* a subtle elbow line */
       if (L.bare === 'arms' || L.top === 'none') { skinArm(); delt(0, skA, z + .001, 1); }
@@ -294,10 +296,10 @@
     });
     /* neck and head: a ball; eyes, nose, mouth, ears, glasses and beard sit on it and come round as he turns */
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
-    var HSC = .8, HSX = .715, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
+    var HSC = .68, HSX = .57, nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin })]);
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
-    var hc = P(0, 52 + hb6, 0), R = 22 * k;
+    var HC = P(0, 52 + hb6, 0), hc = { X: 0, Y: 0 }, R = 22 * k, PH = function (x, y, z) { var p = P(x, y, z); return { X: p.X - HC.X, Y: p.Y - HC.Y }; };   /* everything in the head group is drawn round the head's middle (hc = 0, 0) and the group is moved into place: while he only bobs or breathes, nothing inside it changes, so a frame writes one attribute for the whole head */
     /* a shape that only moves with the head (the hair): its path is built round the head's middle and kept from the last
        frame while the turn, the size and the hair are the same; only its place (a translate) changes as he breathes or walks */
     var MEMO = POOL ? (POOL.memo || (POOL.memo = {})) : null;
@@ -313,14 +315,22 @@
     function box(x0, x1, y0, y1, z0, z1, fill, depth, rr) {
       var xs = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].map(function (q) { return rot(q[0], q[1], a).x; });
       var mn = Math.min.apply(null, xs), mx = Math.max.apply(null, xs), top = P(0, y0 + hb6, 0).Y, bot = P(0, y1 + hb6, 0).Y;
-      parts.push([depth, el('rect', { x: hc.X + mn * k, y: top, width: (mx - mn) * k, height: bot - top, rx: (rr || 10) * k, fill: fill })]);
+      parts.push([depth, el('rect', { x: HC.X + mn * k, y: top, width: (mx - mn) * k, height: bot - top, rx: (rr || 10) * k, fill: fill })]);
     }
-    var head = el('g', {});
     function hatCoversLong() { return L.hat === 'beanie' && false; }
+    function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
+    function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
+    function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
+    var hatCovers = L.hat === 'beanie' || L.hat === 'chef' || L.hat === 'bandana' || L.hat === 'santa' || L.hat === 'wizard' || L.hat === 'witch' || L.hat === 'cowboy';
+    /* the whole head is kept from the last frame while the turn, the size, the look and the blink are the same: it only moves
+       (one transform), so walking, breathing and reaching don't rebuild a face 60 times a second */
+    var HK = L.hair === 'mohawk' ? null : [a, k, LN, pose.blink ? 1 : 0, shadeOn ? 1 : 0, POOL ? POOL.i : 0].join('|'), HTR = 'translate(' + HC.X.toFixed(1) + ' ' + HC.Y.toFixed(1) + ')', head;
+    if (POOL && HK && POOL.hk === HK && POOL.hL === L && POOL.hEl) { head = POOL.hEl; head._a = { transform: HTR }; POOL.i = POOL.hi1; }
+    else { head = el('g', { transform: HTR });
     head.appendChild(el('rect', { x: hc.X - nkw / HSX, y: hc.Y + 12 * k, width: 2 * nkw / HSX, height: 16 * k, rx: 3 * k, fill: dk(L.skin, .8) }));   /* the chin's soft shadow on the neck */
-    var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
+    var FS = { oval: [.96, 1.05, 1], round: [1.14, .98, 0], long: [.86, 1.2, 4] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
     /* a face, not a ball (JP's anatomy spec): wide at the forehead and cheekbones, the sides curve in to an angled jaw and the chin narrows to a soft point – turned a little the way he looks */
-    var frx = R * FS[0], fry = R * FS[1], fcy = hc.Y + FS[2] * k, fch = hc.X + Math.sin(a) * R * .15, jw = L.faceS === 'round' ? .88 : .83, cw0 = L.faceS === 'round' ? .34 : .27, fp = function (x, y) { return f1(x - hc.X) + ' ' + f1(fcy - hc.Y + y * fry); }, FT = 'translate(' + f1(hc.X) + ' ' + f1(hc.Y) + ')', FM = MEMO && MEMO.face, FK = a.toFixed(4) + '|' + k.toFixed(4) + '|' + L.faceS + '|' + L.skin;   /* built round the head's middle and kept while the turn and the size are the same: only its place changes as he breathes or walks */
+    var frx = R * FS[0], fry = R * FS[1], fcy = hc.Y + FS[2] * k, fch = hc.X + Math.sin(a) * R * .24, jw = L.faceS === 'round' ? .92 : L.faceS === 'long' ? .78 : .8, cw0 = L.faceS === 'round' ? .42 : L.faceS === 'long' ? .22 : .25, fp = function (x, y) { return f1(x - hc.X) + ' ' + f1(fcy - hc.Y + y * fry); }, FT = 'translate(' + f1(hc.X) + ' ' + f1(hc.Y) + ')', FM = MEMO && MEMO.face, FK = a.toFixed(4) + '|' + k.toFixed(4) + '|' + L.faceS + '|' + L.skin;   /* built round the head's middle and kept while the turn and the size are the same: only its place changes as he breathes or walks */
     var FACE, JAWB;
     if (FM && FM.key === FK) { FACE = FM.f; JAWB = FM.j; } else {
       FACE = 'M' + fp(hc.X - frx, 0) + ' A' + f1(frx) + ' ' + f1(fry) + ' 0 0 1 ' + fp(hc.X + frx, 0) + ' C' + fp(hc.X + frx, .3) + ' ' + fp(fch + frx * (jw + .07), .36) + ' ' + fp(fch + frx * jw, .6) +
@@ -332,12 +342,9 @@
     head.appendChild(el('path', { d: FACE, fill: C.skin, transform: FT }));
     /* a darker band along the jaw on the shadow side; the light on the cheekbone is the head's own highlight (shHead) */
     head.appendChild(el('path', { d: JAWB, fill: dk(L.skin, .72), opacity: .26, transform: FT }));
-    function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
-    function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
-    function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
     /* beard: a band round the lower face, only where the face looks your way */
     if (L.beard === 'full' || L.beard === 'short' || L.beard === 'stubble') {
-      var up = [], lo = [], top0 = L.beard === 'full' ? 59.5 : L.beard === 'short' ? 61.5 : 62.5;
+      var up = [], lo = [], top0 = L.beard === 'full' ? 62 : L.beard === 'short' ? 63 : 63.5;
       for (var bi = 0; bi <= 20; bi++) { var ph2 = -1.5 + 3 * bi / 20, u = onHead(ph2, top0 + 5 * (1 - Math.cos(ph2))), dxh = u.x - hc.X; if (u.f > -0.02) { up.push([u.x, u.y]); var jt = Math.abs(u.x - fch) / frx, jyv = jt <= cw0 ? 1.07 : jt < jw ? 1.04 - (jt - cw0) / (jw - cw0) * .44 : .6 * Math.max(0, 1 - jt) / (1 - jw); lo.unshift([u.x, Math.max(u.y + 2 * k, fcy + fry * jyv + (L.beard === 'full' ? 2.5 * k * Math.max(0, u.f) : -.4 * k))]); } }   /* the lower edge follows the jaw (the head's outline at the same x), so it never sticks out as a point when he turns */
       if (up.length > 1) head.appendChild(el('path', { d: poly(up.concat(lo)), fill: C.hair, opacity: L.beard === 'full' ? 1 : L.beard === 'short' ? .85 : .3 }));
     }
@@ -345,30 +352,64 @@
       for (var gi = 0; gi <= gN; gi++) { var gp = onHead(-gw2 + 2 * gw2 * gi / gN, gy0); if (gp.f > .05) gt.push([gp.x, gp.y]); }
       for (var gj = gN; gj >= 0; gj--) { var gq = onHead(-gw2 * .8 + 1.6 * gw2 * gj / gN, gy1 - (L.beard === 'goatee' ? 0 : 1.5 * Math.abs(gj / gN - .5))); if (gq.f > .05) gt.push([gq.x, gq.y]); }
       if (gt.length > 4) head.appendChild(el('path', { d: poly(gt), fill: C.hair })); }
-    var eyes = [];
-    [-0.56, 0.56].forEach(function (phi) { var e = onHead(phi * -1, 51.5); eyes.push(e); if (e.f > 0.05) { var ew = 4.4 * k * Math.max(.3, e.f);
-      var wink = L.expr === 'wink' && phi > 0, open = !pose.blink && !wink && (L.expr === 'grin' || L.expr === 'wow' || L.expr === 'cool');
-      if (open) head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: Math.max(.9 * k, (L.expr === 'wow' ? 2.6 : 2.1) * k * e.f), ry: (L.expr === 'wow' ? 3.2 : L.expr === 'cool' ? 1.5 : 2.6) * k, fill: C.eye }));
-      else if (pose.blink || wink) head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + e.y + ' L' + (e.x + ew) + ' ' + e.y, stroke: C.eye, 'stroke-width': 1.8 * k, 'stroke-linecap': 'round' }));
-      else head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + (e.y + 1 * k) + ' Q' + e.x + ' ' + (e.y - 3.4 * k) + ' ' + (e.x + ew) + ' ' + (e.y + 1 * k), fill: 'none', stroke: C.eye, 'stroke-width': 2 * k, 'stroke-linecap': 'round' }));   /* happy closed eyes, like your avatars */
-      var br = onHead(phi * -1 * 1.05, 45); head.appendChild(el('path', { d: 'M' + (br.x - ew * 1.1) + ' ' + (br.y + .6 * k) + ' Q' + br.x + ' ' + (br.y - 1.6 * k) + ' ' + (br.x + ew * 1.1) + ' ' + (br.y + .6 * k), fill: 'none', stroke: dk(L.hairC, .9), 'stroke-width': 1.6 * k, 'stroke-linecap': 'round', opacity: .85 }));
-      if ((L.makeup === 'lashes' || L.makeup === 'both') && !open) [-.7, 0, .7].forEach(function (lx) { head.appendChild(el('line', { x1: e.x + lx * ew, y1: e.y - 1.6 * k, x2: e.x + lx * ew * 1.25, y2: e.y - 3.6 * k, stroke: C.eye, 'stroke-width': .9 * k, 'stroke-linecap': 'round' })); });
-      if (e.f > .3) head.appendChild(el('ellipse', { cx: e.x + (phi < 0 ? -1 : 1) * 1.5 * k, cy: e.y + 8.5 * k, rx: 3.6 * k * e.f, ry: 2 * k, fill: '#e58a7a', opacity: L.cheeks === 'blush' || L.expr === 'shy' ? .6 : .3 }));
-      if (L.cheeks === 'freckles' && e.f > .3) [[-1.6, 6], [0, 7.4], [1.8, 6.2]].forEach(function (fq) { head.appendChild(el('circle', { cx: e.x + fq[0] * k * e.f, cy: e.y + fq[1] * k, r: .7 * k, fill: dk(L.skin, .6) })); }); } });
-    var mo = onHead(0, L.beard === 'full' ? 64.5 : 65.5); if (mo.f > 0.1) { var mw = (L.expr === 'grin' || L.expr === 'laugh' ? 7.4 : L.expr === 'calm' || L.expr === 'shy' ? 4.6 : 6) * k * mo.f, mcol = L.makeup === 'lips' || L.makeup === 'both' ? '#c23a4a' : L.beard === 'full' ? '#f0d0c0' : C.mouth;
-      if (L.expr === 'wow') head.appendChild(el('ellipse', { cx: mo.x, cy: mo.y + 1 * k, rx: 2.6 * k * mo.f + .4, ry: 3.2 * k, fill: '#7a3a30' }));
-      else if (L.expr === 'laugh' || L.expr === 'grin') head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + mo.y + ' Q' + mo.x + ' ' + (mo.y + 7 * k) + ' ' + (mo.x + mw) + ' ' + mo.y + ' Z', fill: '#7a3a30', stroke: mcol, 'stroke-width': 1 * k }));
-      else if (L.expr === 'cool') head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + (mo.y + 1 * k) + ' Q' + (mo.x + mw * .3) + ' ' + (mo.y + 2 * k) + ' ' + (mo.x + mw) + ' ' + (mo.y - 1.2 * k), fill: 'none', stroke: mcol, 'stroke-width': 1.6 * k, 'stroke-linecap': 'round' }));
-      else head.appendChild(el('path', { d: 'M' + (mo.x - mw) + ' ' + mo.y + ' Q' + mo.x + ' ' + (mo.y + 4 * k) + ' ' + (mo.x + mw) + ' ' + mo.y, fill: 'none', stroke: mcol, 'stroke-width': 1.6 * k, 'stroke-linecap': 'round' })); }
-    var no = onHead(0, 58.5); if (no.f > -0.2) { var nx = Math.sin(a) * 5 * k; head.appendChild(el('ellipse', { cx: no.x + nx * (.45 - .3 * Math.abs(Math.sin(a))), cy: no.y, rx: (1.9 + Math.abs(Math.sin(a)) * 2) * k, ry: 2.2 * k, fill: dk(L.skin, .93) })); if (no.f > .2) head.appendChild(el('path', { d: 'M' + f1(no.x + nx * .45 + 1.5 * k) + ' ' + f1(no.y - 6.5 * k) + ' Q' + f1(no.x + nx * .45 + 2.4 * k) + ' ' + f1(no.y - 1 * k) + ' ' + f1(no.x + nx * .45 + 2.1 * k) + ' ' + f1(no.y + .8 * k), fill: 'none', stroke: dk(L.skin, .72), 'stroke-width': (1 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .4 }));   /* the nose's shaded side */
-      if (no.f > .2) head.appendChild(el('path', { d: 'M' + (no.x - 1.6 * k) + ' ' + (no.y + 1.8 * k) + ' Q' + no.x + ' ' + (no.y + 2.8 * k) + ' ' + (no.x + 1.6 * k) + ' ' + (no.y + 1.8 * k), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': .9 * k, 'stroke-linecap': 'round', opacity: .6 })); }
+    /* the face (JP's face spec, 2026-11-13): eyes at half the head's height about an eye apart, the nose's bottom two thirds
+       down, the mouth a third of the way from there to the chin. Big enough to see (DET) it has whites, a coloured iris, a
+       pupil and one highlight in the same spot on both eyes, a lash line, a lid crease, a nose shaped by light and two lips;
+       small (in the page scenes) the same face is drawn bolder with fewer parts */
+    var eyes = [], DET = k > .85, sA = Math.sin(a), shc = dk(L.skin, .76), EXP = L.expr, fx = function (v) { return v.toFixed(1); };
+    var midX = onHead(0, 53).x, add = function (n, at) { head.appendChild(el(n, at)); };
+    [-0.44, 0.44].forEach(function (phi) { var e = onHead(phi * -1, 53); e.x = hc.X + (e.x - hc.X) * .9; eyes.push(e); if (e.f > 0.16) { var fw = Math.max(.3, e.f), ew = 4.7 * k * fw;   /* the features sit on the face, a little inside the skull's outline */
+      var wink = EXP === 'wink' && phi > 0, st = pose.blink || wink ? 1 : EXP === 'laugh' || EXP === 'shy' ? 2 : 0, wide = EXP === 'wow', half = EXP === 'cool';
+      var up = (wide ? 3 : 2.5) * k, dn = (wide ? 2.4 : 1.9) * k, lidY = half ? e.y - .1 * k : e.y - 2 * up;
+      if (st === 0) {
+        if (DET && e.f > .6) add('ellipse', { cx: fx(e.x), cy: fx(e.y - .8 * k), rx: fx(ew * 1.3), ry: fx(3.4 * k), fill: shc, opacity: .1 });   /* the eye socket */
+        add('path', { d: 'M' + fx(e.x - ew) + ' ' + fx(e.y) + ' Q' + fx(e.x) + ' ' + fx(e.y - 2 * up) + ' ' + fx(e.x + ew) + ' ' + fx(e.y) + ' Q' + fx(e.x) + ' ' + fx(e.y + 2 * dn) + ' ' + fx(e.x - ew) + ' ' + fx(e.y) + ' Z', fill: '#f7f3ee' });
+        add('ellipse', { cx: fx(e.x + sA * .5 * k), cy: fx(e.y - .1 * k), rx: fx((DET ? 2.15 : 2.3) * k * fw), ry: fx((wide ? 2.3 : DET ? 2.15 : 2.3) * k), fill: DET ? L.eyeC : dk(L.eyeC, .7) });
+        if (DET) { add('ellipse', { cx: fx(e.x + sA * .5 * k), cy: fx(e.y - .1 * k), rx: fx(1.05 * k * fw), ry: fx(1.05 * k), fill: C.eye });
+          add('circle', { cx: fx(e.x + sA * .5 * k - .85 * k * fw), cy: fx(e.y - .95 * k), r: fx(.62 * k), fill: '#fff' }); }
+        if (half) add('path', { d: 'M' + fx(e.x - ew * 1.05) + ' ' + fx(e.y) + ' Q' + fx(e.x) + ' ' + fx(e.y - 2 * up - .4 * k) + ' ' + fx(e.x + ew * 1.05) + ' ' + fx(e.y) + ' Q' + fx(e.x) + ' ' + fx(lidY) + ' ' + fx(e.x - ew * 1.05) + ' ' + fx(e.y) + ' Z', fill: C.skin });   /* a half-closed lid */
+        add('path', { d: 'M' + fx(e.x - ew * 1.06) + ' ' + fx(e.y + .2 * k) + ' Q' + fx(e.x) + ' ' + fx(lidY - .3 * k) + ' ' + fx(e.x + ew * 1.06) + ' ' + fx(e.y + .2 * k), fill: 'none', stroke: C.eye, 'stroke-width': fx((DET ? 1.2 : 1.5) * k), 'stroke-linecap': 'round' });   /* the lash line */
+        if (DET) { add('path', { d: 'M' + fx(e.x - ew * .8) + ' ' + fx(e.y - up - 1 * k) + ' Q' + fx(e.x) + ' ' + fx(e.y - 2 * up - 1.9 * k) + ' ' + fx(e.x + ew * .8) + ' ' + fx(e.y - up - 1 * k), fill: 'none', stroke: shc, 'stroke-width': fx(.55 * k), 'stroke-linecap': 'round', opacity: .45 });
+          add('path', { d: 'M' + fx(e.x - ew * .62) + ' ' + fx(e.y + dn + .7 * k) + ' Q' + fx(e.x) + ' ' + fx(e.y + 2 * dn + .5 * k) + ' ' + fx(e.x + ew * .62) + ' ' + fx(e.y + dn + .7 * k), fill: 'none', stroke: shc, 'stroke-width': fx(.5 * k), 'stroke-linecap': 'round', opacity: .22 }); }
+      } else if (st === 1) add('path', { d: 'M' + fx(e.x - ew) + ' ' + fx(e.y + .4 * k) + ' Q' + fx(e.x) + ' ' + fx(e.y + 1.4 * k) + ' ' + fx(e.x + ew) + ' ' + fx(e.y + .4 * k), fill: 'none', stroke: C.eye, 'stroke-width': fx(1.5 * k), 'stroke-linecap': 'round' });   /* closed: a blink, a wink */
+      else add('path', { d: 'M' + fx(e.x - ew) + ' ' + fx(e.y + 1 * k) + ' Q' + fx(e.x) + ' ' + fx(e.y - 3.4 * k) + ' ' + fx(e.x + ew) + ' ' + fx(e.y + 1 * k), fill: 'none', stroke: C.eye, 'stroke-width': fx(1.8 * k), 'stroke-linecap': 'round' });   /* happy closed eyes: laughing, shy */
+      /* the brow: thicker toward the nose, thinner at its outer end */
+      var br = onHead(phi * -1 * 1.04, wide ? 45.4 : 46.8), inn = midX >= e.x ? 1 : -1, bx = br.x, by = br.y, bw = ew * 1.22, lift = half ? 0 : 1.5 * k;
+      add('path', { d: 'M' + fx(bx - inn * bw) + ' ' + fx(by + 1 * k) + ' Q' + fx(bx - inn * bw * .15) + ' ' + fx(by - lift - .9 * k) + ' ' + fx(bx + inn * bw * .95) + ' ' + fx(by - .5 * k) + ' L' + fx(bx + inn * bw * .98) + ' ' + fx(by + 1.3 * k) + ' Q' + fx(bx - inn * bw * .15) + ' ' + fx(by - lift + .7 * k) + ' ' + fx(bx - inn * bw) + ' ' + fx(by + 1 * k) + ' Z', fill: dk(L.hairC, .8) });
+      if ((L.makeup === 'lashes' || L.makeup === 'both')) [-.75, -.2, .35].forEach(function (lx) { var ls = phi < 0 ? -1 : 1, lx0 = e.x + ls * (lx + .45) * ew, ly0 = st === 0 ? e.y - up * (1 - Math.pow(lx + .2, 2)) * .9 : e.y - 1 * k; add('line', { x1: fx(lx0), y1: fx(ly0), x2: fx(lx0 + ls * .9 * k * fw), y2: fx(ly0 - 1.9 * k), stroke: C.eye, 'stroke-width': fx(.8 * k), 'stroke-linecap': 'round' }); });
+      if (e.f > .3) add('ellipse', { cx: fx(e.x + (phi < 0 ? -1 : 1) * 2.2 * k), cy: fx(e.y + 7.4 * k), rx: fx(3.4 * k * e.f), ry: fx(1.9 * k), fill: '#e58a7a', opacity: L.cheeks === 'blush' || EXP === 'shy' ? .55 : .22 });
+      if (L.cheeks === 'freckles' && e.f > .3) [[-1.6, 5.4], [0, 6.6], [1.8, 5.6]].forEach(function (fq) { add('circle', { cx: fx(e.x + fq[0] * k * e.f), cy: fx(e.y + fq[1] * k), r: fx(.6 * k), fill: dk(L.skin, .6) }); }); } });
+    /* the nose: shaped by light – a shadow down its shaded side, a light on the tip, nostril curves, a soft shadow under it.
+       As he turns it grows out of the face (a real profile), never a hook in the front view */
+    var no = onHead(0, 59.5), nx = sA * 4.6 * k, nxc = no.x + nx * .5;
+    if (Math.abs(sA) > .3) { var nb = onHead(0, 53.5), nbase = onHead(0, 62), tipX = hc.X + sA * R * 1.2, sg = sA > 0 ? 1 : -1;
+      add('path', { d: 'M' + fx(nb.x - sg * 2.5 * k) + ' ' + fx(nb.y) + ' L' + fx(tipX - sg * 1.3 * k) + ' ' + fx(no.y - 1 * k) + ' Q' + fx(tipX + sg * .5 * k) + ' ' + fx(no.y + .3 * k) + ' ' + fx(tipX - sg * 1.5 * k) + ' ' + fx(no.y + 1.6 * k) + ' L' + fx(nbase.x - sg * 2.5 * k) + ' ' + fx(nbase.y) + ' Z', fill: C.skin }); }
+    if (no.f > .15) { var sh = Math.abs(sA) > .15 ? (sA > 0 ? 1 : -1) : 1, nf = Math.min(1, no.f * 1.4);
+      add('path', { d: 'M' + fx(nxc + sh * .5 * k) + ' ' + fx(no.y - 6.4 * k) + ' Q' + fx(nxc + sh * 2 * k) + ' ' + fx(no.y - 1.6 * k) + ' ' + fx(nxc + sh * 2.6 * k) + ' ' + fx(no.y + .5 * k) + ' Q' + fx(nxc + sh * 2 * k) + ' ' + fx(no.y + 1.7 * k) + ' ' + fx(nxc + sh * .7 * k) + ' ' + fx(no.y + 1.3 * k) + ' Q' + fx(nxc + sh * 1.3 * k) + ' ' + fx(no.y - 2 * k) + ' ' + fx(nxc + sh * .5 * k) + ' ' + fx(no.y - 6.4 * k) + ' Z', fill: shc, opacity: fx(.36 * nf) });
+      if (DET) { add('ellipse', { cx: fx(nxc - .8 * k), cy: fx(no.y - .3 * k), rx: fx(1.3 * k), ry: fx(1.1 * k), fill: '#fff', opacity: .17 });
+        add('ellipse', { cx: fx(nxc), cy: fx(no.y + 2.6 * k), rx: fx(2.7 * k * nf), ry: fx(.75 * k), fill: shc, opacity: .32 }); }
+      add('path', { d: 'M' + fx(nxc - 2.5 * k * nf) + ' ' + fx(no.y + .8 * k) + ' Q' + fx(nxc - 1.7 * k * nf) + ' ' + fx(no.y + 1.9 * k) + ' ' + fx(nxc - .7 * k * nf) + ' ' + fx(no.y + 1.3 * k) + ' M' + fx(nxc + .7 * k * nf) + ' ' + fx(no.y + 1.3 * k) + ' Q' + fx(nxc + 1.7 * k * nf) + ' ' + fx(no.y + 1.9 * k) + ' ' + fx(nxc + 2.5 * k * nf) + ' ' + fx(no.y + .8 * k), fill: 'none', stroke: dk(L.skin, .6), 'stroke-width': fx((DET ? .7 : .9) * k), 'stroke-linecap': 'round', opacity: .8 }); }
+    /* the mouth: an upper and a lower lip, a light on the lower one and a soft shadow below it */
+    var mo = onHead(0, 65.8); if (mo.f > -0.05) { var mf = Math.max(.3, mo.f), mw = (EXP === 'grin' || EXP === 'laugh' ? 6.4 : EXP === 'calm' || EXP === 'shy' ? 4.4 : 5.4) * k * mf, mx0 = mo.x + nx * .2 + sA * Math.abs(sA) * R * .1, my0 = mo.y, MD = DET && Math.abs(sA) < .6, lips = L.makeup === 'lips' || L.makeup === 'both';
+      var lipU = lips ? '#b02f40' : mixc(L.skin, '#9a4038', .6), lipL = lips ? '#d0485a' : mixc(L.skin, '#c0625a', .6);
+      if (EXP === 'wow') { add('ellipse', { cx: fx(mx0), cy: fx(my0 + 1.2 * k), rx: fx(2.4 * k * mf + .4), ry: fx(3 * k), fill: '#6e2f28', stroke: lipL, 'stroke-width': fx(1 * k) }); }
+      else if (EXP === 'laugh' || EXP === 'grin') {
+        add('path', { d: 'M' + fx(mx0 - mw) + ' ' + fx(my0 - .8 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 8 * k) + ' ' + fx(mx0 + mw) + ' ' + fx(my0 - .8 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 1 * k) + ' ' + fx(mx0 - mw) + ' ' + fx(my0 - .8 * k) + ' Z', fill: '#6e2f28', stroke: lipU, 'stroke-width': fx(.9 * k), 'stroke-linejoin': 'round' });
+        add('path', { d: 'M' + fx(mx0 - mw * .78) + ' ' + fx(my0 - .1 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 1.2 * k) + ' ' + fx(mx0 + mw * .78) + ' ' + fx(my0 - .1 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 3.8 * k) + ' ' + fx(mx0 - mw * .78) + ' ' + fx(my0 - .1 * k) + ' Z', fill: '#f7f3ee' });   /* teeth */
+        add('path', { d: 'M' + fx(mx0 - mw * .7) + ' ' + fx(my0 + 2.3 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 5.4 * k) + ' ' + fx(mx0 + mw * .7) + ' ' + fx(my0 + 2.3 * k), fill: 'none', stroke: lipL, 'stroke-width': fx(1.3 * k), 'stroke-linecap': 'round' }); }
+      else { var cu = (EXP === 'calm' ? .6 : 1.6) * k, cl = EXP === 'cool' ? -.2 * k : cu, cr = EXP === 'cool' ? cu * 1.8 : cu;
+        if (MD) add('ellipse', { cx: fx(mx0), cy: fx(my0 + 4.5 * k), rx: fx(mw * .62), ry: fx(.7 * k), fill: shc, opacity: .2 });
+        add('path', { d: 'M' + fx(mx0 - mw * .86) + ' ' + fx(my0 - cl * .7 + .2 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 5 * k) + ' ' + fx(mx0 + mw * .86) + ' ' + fx(my0 - cr * .7 + .2 * k) + ' Q' + fx(mx0) + ' ' + fx(my0 + 1.6 * k) + ' ' + fx(mx0 - mw * .86) + ' ' + fx(my0 - cl * .7 + .2 * k) + ' Z', fill: lipL });
+        add('path', { d: 'M' + fx(mx0 - mw) + ' ' + fx(my0 - cl) + ' Q' + fx(mx0 - mw * .45) + ' ' + fx(my0 - 1.6 * k) + ' ' + fx(mx0) + ' ' + fx(my0 - .4 * k) + ' Q' + fx(mx0 + mw * .45) + ' ' + fx(my0 - 1.6 * k) + ' ' + fx(mx0 + mw) + ' ' + fx(my0 - cr) + ' Q' + fx(mx0) + ' ' + fx(my0 + 2 * k) + ' ' + fx(mx0 - mw) + ' ' + fx(my0 - cl) + ' Z', fill: lipU });
+        if (MD) add('ellipse', { cx: fx(mx0 - .3 * k), cy: fx(my0 + 2.3 * k), rx: fx(mw * .3), ry: fx(.42 * k), fill: '#fff', opacity: .3 }); } }
+    if (DET && Math.cos(a) > .2) { var cA = Math.min(1, (Math.cos(a) - .2) * 2);   /* the light on the chin (the hollows under the cheekbones are the jaw band's job: drawn as their own shapes they looked like patches) */
+      add('ellipse', { cx: fx(fch - frx * .05), cy: fx(fcy + fry * .93), rx: fx(frx * .15), ry: fx(fry * .05), fill: '#fff', opacity: fx(.09 * cA) }); }
     var ears = [];
-    [-Math.PI / 2, Math.PI / 2].forEach(function (phi) { var e = onHead(phi * -1, 53); ears.push(e); if (e.f > -0.35) { head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: 3.2 * k * Math.max(.4, Math.abs(Math.sin(phi * -1 + a))), ry: 5 * k, fill: C.skin2 }));
+    [-Math.PI / 2, Math.PI / 2].forEach(function (phi) { var e = onHead(phi * -1, 57); ears.push(e); if (e.f > -0.35) { head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: 2.7 * k * Math.max(.45, Math.abs(Math.sin(phi * -1 + a))), ry: 4.3 * k, fill: C.skin2 }));
       if (L.aid === 'hearing' && phi > 0) head.appendChild(el('path', { d: 'M' + e.x + ' ' + (e.y - 5 * k) + ' q' + (3 * k) + ' ' + (2 * k) + ' ' + (1 * k) + ' ' + (8 * k), fill: 'none', stroke: '#d9c7a8', 'stroke-width': 2.6 * k, 'stroke-linecap': 'round' })); } });
     /* hair */
     var H = { short: [37, 30, 1.07, 1.16], quiff: [37, 30, 1.07, 1.16], fade: [39, 28, 1.03, 1.08], side: [36, 31, 1.05, 1.09], undercut: [36, 14, 1.06, 1.14], waves: [36, 31, 1.08, 1.11], bangs: [42, 26, 1.07, 1.12], curly: [35, 28, 1.16, 1.2], afro: [34, 26, 1.34, 1.42],
       long: [37, 32, 1.06, 1.09], braids: [38, 31, 1.04, 1.07], dreads: [37, 32, 1.1, 1.12], pony: [38, 30, 1.02, 1.04], pigtails: [38, 30, 1.03, 1.05], bun: [38, 30, 1.02, 1.04], mohawk: [44, 22, 1.0, 1.0] }[L.hair];
-    var hatCovers = L.hat === 'beanie' || L.hat === 'chef' || L.hat === 'bandana' || L.hat === 'santa' || L.hat === 'wizard' || L.hat === 'witch' || L.hat === 'cowboy';
     if (H && L.hair === 'mohawk' && !hatCovers) { var mh = []; for (var mi = 0; mi <= 12; mi++) { var mt = Math.PI * (.2 + .6 * mi / 12), mfz = Math.cos(mt) * 26, mfy = 52 - Math.sin(mt) * 24 - 6, mp = P(0, mfy + hb6, -mfz); mh.push([mp.X, mp.Y]); }
       for (var mj = 12; mj >= 0; mj--) { var mt2 = Math.PI * (.2 + .6 * mj / 12), mp2 = P(0, 52 - Math.sin(mt2) * 21 + hb6, -Math.cos(mt2) * 22); mh.push([mp2.X, mp2.Y]); }
       parts.push([0.52, el('path', { d: poly(mh), fill: C.hair, stroke: C.hair, 'stroke-width': (7 * k).toFixed(1), 'stroke-linejoin': 'round' })]); H = null; }
@@ -386,7 +427,7 @@
       for (var j = 1; j < N; j++) { var t = Math.PI * j / N, bump = L.hair === 'waves' ? 1 + .035 * Math.abs(Math.sin(t * 6)) : L.hair === 'curly' || L.hair === 'afro' ? 1 + (L.hair === 'afro' ? .07 : .05) * Math.abs(Math.sin(t * 9)) : L.hair === 'dreads' ? 1 + .04 * Math.abs(Math.sin(t * 14)) : 1; pts.push([hc.X + Math.cos(t) * RR * bump, hc.Y - Math.sin(t) * R * H[3] * bump]); }
       return pts; }), { fill: C.hair })));
       /* a swept fringe: the hair falls a little over the forehead on one side, wrapping round as he turns */
-      if (L.hair === 'quiff') { var qf = P(0, 26 + hb6, 14), qb = P(0, 30 + hb6, -2); head.appendChild(el('ellipse', { cx: (qf.X + qb.X) / 2, cy: (qf.Y + qb.Y) / 2, rx: Math.max(4 * k, Math.abs(qf.X - qb.X) / 2 + 8 * k * Math.abs(Math.cos(a))), ry: 7 * k, fill: C.hair })); }
+      if (L.hair === 'quiff') { var qf = PH(0, 26 + hb6, 14), qb = PH(0, 30 + hb6, -2); head.appendChild(el('ellipse', { cx: (qf.X + qb.X) / 2, cy: (qf.Y + qb.Y) / 2, rx: Math.max(4 * k, Math.abs(qf.X - qb.X) / 2 + 8 * k * Math.abs(Math.cos(a))), ry: 7 * k, fill: C.hair })); }
       if (L.hair === 'short' || L.hair === 'side' || L.hair === 'bangs' || L.hair === 'waves' || L.hair === 'undercut') { var fN = 10, fr = headPath('fringe', hkey, function () { var fp = [];
         for (var fi = 0; fi <= fN; fi++) { var fph = -.9 + 1.5 * fi / fN, top = onHead(fph, 33), low = onHead(fph, 39 + 5 * Math.sin(Math.PI * fi / fN)); if (top.f > -.1) fp.push([top.x, top.y]); }
         for (var fj = fN; fj >= 0; fj--) { var fph2 = -.9 + 1.5 * fj / fN, low2 = onHead(fph2, 38.5 + 6 * Math.sin(Math.PI * fj / fN) * (fj / fN)); if (low2.f > -.1) fp.push([low2.x, low2.y]); }
@@ -416,7 +457,7 @@
     }
     if (L.hat === 'party' || L.hat === 'santa' || L.hat === 'wizard' || L.hat === 'witch') {
       /* a cone on the crown of the head: the tip leans back a little; santa's flops, the witch's has a brim */
-      var tall = { party: 26, santa: 24, wizard: 40, witch: 38 }[L.hat], base = R * (L.hat === 'party' ? .62 : 1.02), by = hc.Y - R * (L.hat === 'party' ? .9 : .62), tipP = P(0, 52 - 22 - tall + hb6, L.hat === 'santa' ? -14 : -4), tipX = L.hat === 'santa' ? tipP.X + 10 * k : tipP.X;
+      var tall = { party: 26, santa: 24, wizard: 40, witch: 38 }[L.hat], base = R * (L.hat === 'party' ? .62 : 1.02), by = hc.Y - R * (L.hat === 'party' ? .9 : .62), tipP = PH(0, 52 - 22 - tall + hb6, L.hat === 'santa' ? -14 : -4), tipX = L.hat === 'santa' ? tipP.X + 10 * k : tipP.X;
       if (L.hat === 'witch') head.appendChild(el('ellipse', { cx: hc.X, cy: by + 2 * k, rx: R * 1.5, ry: 4.5 * k, fill: dk(L.hatC, .7) }));
       head.appendChild(el('path', { d: 'M' + (hc.X - base) + ' ' + by + ' Q' + hc.X + ' ' + (by + 3 * k) + ' ' + (hc.X + base) + ' ' + by + ' L' + tipX + ' ' + tipP.Y + ' Z', fill: L.hat === 'santa' ? '#d42a2f' : L.hatC }));
       if (L.hat === 'santa') { head.appendChild(el('rect', { x: hc.X - base * 1.04, y: by - 3 * k, width: base * 2.08, height: 7 * k, rx: 3.5 * k, fill: '#f4f1ea' })); head.appendChild(el('circle', { cx: tipX, cy: tipP.Y, r: 4 * k, fill: '#f4f1ea' })); }
@@ -444,6 +485,7 @@
       head.appendChild(el('path', { d: poly(cp), fill: L.hatC }));
     }
     if (shadeOn) head.insertBefore(el('path', { d: FACE, fill: 'url(#shHead)', transform: FT }), head.childNodes[2]);
+      if (POOL) { POOL.hk = HK; POOL.hL = L; POOL.hEl = head; POOL.hi1 = POOL.i; } }
     parts.push([0.5, head]);
     /* things behind or round the head that change sides: long hair, ponytail, bun, hood, a cap's brim */
     if ((L.hair === 'long' || L.hair === 'dreads') && !hatCoversLong()) box(-19, 19, 44, 96, -16, -4, C.hair, behind(0, 52, -10) > 0 ? 0.55 : -0.5, 9);
@@ -453,7 +495,7 @@
     if (L.hair === 'bun' && !hatCovers) { var bb = P(0, 32 + hb6, -12); parts.push([behind(0, 32, -12) > 0 ? 0.56 : 0.45, el('circle', { cx: bb.X, cy: bb.Y, r: 9 * k, fill: C.hair })]); }
     if (L.top === 'hoodie') box(-17, 17, 70, 94, -15, -5, C.top2, behind(0, 80, -10) > 0 ? 0.3 : -0.3, 8);
     if (L.hat === 'cap') { var bz = rot(0, 22, a).z, br = [[-13, 14], [13, 14], [-13, 33], [13, 33]].map(function (q) { return rot(q[0], q[1], a).x; }), b0 = Math.min.apply(null, br), b9 = Math.max.apply(null, br), byy = P(0, 41 + hb6, 0).Y;
-      parts.push([bz > 0 ? 0.57 : 0.45, el('ellipse', { cx: hc.X + (b0 + b9) / 2 * k, cy: byy, rx: Math.max(3, (b9 - b0) / 2) * k, ry: 3.2 * k, fill: dk(L.hatC, .85) })]); }
+      parts.push([bz > 0 ? 0.57 : 0.45, el('ellipse', { cx: HC.X + (b0 + b9) / 2 * k, cy: byy, rx: Math.max(3, (b9 - b0) / 2) * k, ry: 3.2 * k, fill: dk(L.hatC, .85) })]); }
     var pv = P(0, 74 + hb6, 0), HT = 'translate(' + pv.X.toFixed(1) + ' ' + pv.Y.toFixed(1) + ') scale(' + HSX + ' ' + HSC + ') translate(' + (-pv.X).toFixed(1) + ' ' + (-pv.Y).toFixed(1) + ')';
     for (var hi = hStart; hi < parts.length; hi++) { var hwr = el('g', { transform: HT }); hwr.appendChild(parts[hi][1]); parts[hi][1] = hwr; }
     if (CHAIR) {
