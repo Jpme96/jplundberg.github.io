@@ -49,7 +49,7 @@
         h.appendChild(b);
       }
       b.dataset.fk = k;
-      var lbl = on ? 'Open' : 'Fold';
+      var lbl = on ? I18N.k('ui.open', 'Open') : I18N.k('ui.fold', 'Fold');
       if (b.getAttribute('aria-label') !== lbl) { b.setAttribute('aria-label', lbl); b.setAttribute('aria-expanded', String(!on)); b.innerHTML = '<i class="bi bi-chevron-' + (on ? 'down' : 'up') + '"></i>'; }
       if (card.classList.contains('ufold') !== on) card.classList.toggle('ufold', on);
       if (hs !== card && hs.classList.contains('ufold-host') !== on) hs.classList.toggle('ufold-host', on);

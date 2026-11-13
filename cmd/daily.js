@@ -57,7 +57,7 @@
     /* dinner */
     if (HL && Fe.on('food')) {
       var m = HL.meals()[tk];
-      push(at(18), 'egg-fried', '#c98500', m ? 'Dinner: ' + m : 'Dinner', m ? '' : 'Nothing planned yet', 'food/', 'dinner');
+      push(at(18), 'egg-fried', '#c98500', m ? I18N.k('ui.dinner-colon', 'Dinner: {n}', { n: m }) : I18N.k('ui.dinner', 'Dinner'), m ? '' : I18N.k('ui.nothing-planned-yet', 'Nothing planned yet'), 'food/', 'dinner');
     }
     out.sort(function (a, b) { return a.t - b.t; });
     return { list: out, allDay: allDay, now: now };
@@ -84,7 +84,7 @@
       top.map(function (t) { return '<li style="--c:#22b35e"><span class="tl-t" data-t="ui.task"><span data-t="ui.task">Task</span></span><i class="bi bi-check2-square"></i><span>' + esc(t.text) + '</span></li>'; }).join('');
     return '<div class="tl-eve">' + (bits.length ? '<p class="tl-done">' + bits.join('') + '</p>' : '') +
       '<p class="tl-sub"><i class="bi bi-sunrise"></i> Tomorrow, ' + esc(t1.toLocaleDateString('en-GB', { weekday: 'long' })) + '</p>' +
-      (list ? '<ul class="tl-tm">' + list + '</ul>' : '<p class="muted tl-free">Nothing planned yet.</p>') + '</div>';
+      (list ? '<ul class="tl-tm">' + list + '</ul>' : '<p class="muted tl-free" data-t="ui.nothing-planned-yet-dot">Nothing planned yet.</p>') + '</div>';
   }
   function drawToday() {
     if (!card || !unlocked) return;

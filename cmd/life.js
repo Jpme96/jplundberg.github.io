@@ -201,7 +201,7 @@
     var nw = document.getElementById('clNew'); if (!nw) return;
     var b = document.getElementById('clFind');
     if (!on('findtime')) { if (b) b.hidden = true; return; }
-    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'clFind'; b.className = 'icon-btn cl-find'; b.setAttribute('aria-label', 'Find time'); b.title = 'Find time'; b.innerHTML = '<i class="bi bi-calendar2-range"></i>'; b.addEventListener('click', function () { findTime(); }); nw.parentNode.insertBefore(b, nw); }
+    if (!b) { b = document.createElement('button'); b.type = 'button'; b.id = 'clFind'; b.className = 'icon-btn cl-find'; b.setAttribute('aria-label', 'Find time'); b.title = 'Find time'; b.setAttribute('data-t-aria-label', 'ui.find-time'); b.setAttribute('data-t-title', 'ui.find-time'); b.innerHTML = '<i class="bi bi-calendar2-range"></i>'; b.addEventListener('click', function () { findTime(); }); nw.parentNode.insertBefore(b, nw); }
     b.hidden = false;
   }
   if (location.hash === '#findtime') window.Vault.onUnlock(function () { history.replaceState(null, '', location.pathname + location.search); setTimeout(function () { findTime(); }, 400); });

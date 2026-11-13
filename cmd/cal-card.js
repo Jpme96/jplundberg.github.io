@@ -38,7 +38,7 @@
     $('ccStrip').innerHTML = strip;
     var h2 = document.querySelector('#calCard .card-head h2'), wk = h2 && h2.querySelector('.cc-wk');
     if (h2 && !wk) { wk = document.createElement('span'); wk.className = 'cc-wk'; h2.appendChild(wk); }
-    if (wk) wk.textContent = C.prefs().weekNums ? 'Week ' + C.isoWeek(now) : '';
+    if (wk) wk.textContent = C.prefs().weekNums ? I18N.k('ui.week-n', 'Week {n}', { n: C.isoWeek(now) }) : '';
     $('ccList').innerHTML = html;
     $('ccEmpty').hidden = next.length > 0;
   }

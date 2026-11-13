@@ -21,7 +21,7 @@
   };
   var SEL = { limits: '#fpLimitCard', recur: '#recur', subs: '#subs', yearly: '#fpYearlyCard' };
   var HINT = {
-    todo: 'Nothing to do', notes: 'No notes', goals: 'No goals yet', links: 'No links yet',
+    todo: I18N.k('ui.nothing-to-do', 'Nothing to do'), notes: I18N.k('ui.no-notes', 'No notes'), goals: I18N.k('ui.no-goals-yet', 'No goals yet'), links: I18N.k('ui.no-links-yet', 'No links yet'),
     savings: 'No savings goals', networth: 'No accounts yet', bills: 'No fixed costs with a due date',
     limits: 'No limits set', recur: I18N.k('ui.nothing-repeating-found-yet', 'Nothing repeating found yet'), subs: 'No subscriptions', yearly: 'No yearly costs'
   };

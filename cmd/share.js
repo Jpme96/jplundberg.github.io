@@ -596,7 +596,7 @@
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;
   function paintSum() {
-    var el = document.getElementById('sumShare'); if (el) el.textContent = st() ? 'With ' + pname() + (srvInfo && srvInfo.paused ? ' · paused' : '') + (lastErr ? ' · ' + lastErr : '') : 'Off';
+    var el = document.getElementById('sumShare'); if (el) el.textContent = st() ? I18N.k('ui.sum-with', 'With {n}', { n: pname() }) + (srvInfo && srvInfo.paused ? ' · ' + I18N.k('ui.sum-paused', 'paused') : '') + (lastErr ? ' · ' + lastErr : '') : I18N.k('ui.off', 'Off');
     if (showing === 'status') { var s2 = document.getElementById('shStatus'); if (s2) s2.innerHTML = statusLine(); }
   }
   function statusLine() {

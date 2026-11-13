@@ -107,17 +107,17 @@
   function taxChecks(ty) {
     var d = fin() || {}, out = [], dl = debts(d), sh = dl.some(function (l) { return L && L.shared(l); });
     var back = dl.reduce(function (s, l) { try { return s + (L ? L.myTaxBack(l) : 0); } catch (e) { return s; } }, 0);
-    if (dl.length) out.push({ id: 'interest', t: 'Loan interest is in, and right', s: (back > 0 ? 'About ' + kr(back) + ' back a year in deduction (22 %)' : 'The deduction is 22 % of the interest') + (sh ? ' – a shared loan: the interest is split by who owns and pays it' : '') });
+    if (dl.length) out.push({ id: 'interest', t: I18N.k('ui.loan-interest-is-in-and-right', 'Loan interest is in, and right'), s: (back > 0 ? 'About ' + kr(back) + ' back a year in deduction (22 %)' : 'The deduction is 22 % of the interest') + (sh ? ' – a shared loan: the interest is split by who owns and pays it' : '') });
     var M = window.HouseMove, mv = M && M.date && M.date();
-    if (mv && String(mv).slice(0, 4) === String(ty)) out.push({ id: 'home', t: 'Your new home is listed', s: 'Moved in ' + fmtD(mv, true) + ' – check the address, your share, and that it’s your primary home' });
+    if (mv && String(mv).slice(0, 4) === String(ty)) out.push({ id: 'home', t: I18N.k('ui.your-new-home-is-listed', 'Your new home is listed'), s: 'Moved in ' + fmtD(mv, true) + ' – check the address, your share, and that it’s your primary home' });
     var p = window.Shared && window.Shared.partner && window.Shared.partner();
     if (p && Fe.on('house')) out.push({ id: 'shared', t: 'You and ' + p.name + ' report the same split', s: 'Shares of the home and the loan should match in both returns' });
-    if (A && A.list(d).some(function (a) { return a.kind === 'fund'; })) out.push({ id: 'fund', t: 'Funds and shares', s: 'Check what the fund account (ASK) reports – gains, losses, the value 1 January' });
+    if (A && A.list(d).some(function (a) { return a.kind === 'fund'; })) out.push({ id: 'fund', t: I18N.k('ui.funds-and-shares', 'Funds and shares'), s: I18N.k('ui.check-what-the-fund-account-ask-reports', 'Check what the fund account (ASK) reports – gains, losses, the value 1 January') });
     var fixed = ((d.budget && d.budget.fixed) || []);
-    if (fixed.some(function (f) { return /fagforen|union|forbund|lo\b|nito|tekna|akademikerne/i.test(f.name || ''); })) out.push({ id: 'union', t: 'Union fees', s: 'Usually filled in by your union – check it’s there' });
-    out.push({ id: 'gifts', t: 'Gifts to charities', s: 'Only if you gave with your personal number – the organisation reports it' });
-    out.push({ id: 'travel', t: 'Travel to work', s: 'A long commute can give a travel deduction (reisefradrag)' });
-    out.push({ id: 'done', t: 'Looked through and delivered', s: 'Or nothing to change – then it’s delivered by itself' });
+    if (fixed.some(function (f) { return /fagforen|union|forbund|lo\b|nito|tekna|akademikerne/i.test(f.name || ''); })) out.push({ id: 'union', t: I18N.k('ui.union-fees', 'Union fees'), s: I18N.k('ui.usually-filled-in-by-your-union-check-it', 'Usually filled in by your union – check it’s there') });
+    out.push({ id: 'gifts', t: I18N.k('ui.gifts-to-charities', 'Gifts to charities'), s: I18N.k('ui.only-if-you-gave-with-your-personal-numb', 'Only if you gave with your personal number – the organisation reports it') });
+    out.push({ id: 'travel', t: I18N.k('ui.travel-to-work', 'Travel to work'), s: I18N.k('ui.a-long-commute-can-give-a-travel-deducti', 'A long commute can give a travel deduction (reisefradrag)') });
+    out.push({ id: 'done', t: I18N.k('ui.looked-through-and-delivered', 'Looked through and delivered'), s: I18N.k('ui.or-nothing-to-change-then-its-delivered', 'Or nothing to change – then it’s delivered by itself') });
     return out;
   }
   function taxState(ty) { var t = Fe.tools().taxcheck; return t && typeof t === 'object' && t[ty] && typeof t[ty] === 'object' ? t[ty] : {}; }
@@ -213,7 +213,7 @@
     var box = $('mpSet2'); if (!box || box.contains(document.activeElement)) return;
     if (!Fe.on('finance')) { box.innerHTML = ''; return; }
     var c = cfg(), d = fin() || {}, mem = d.catMemory || {}, keys = Object.keys(mem);
-    var CN = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other', fixed: 'Bills' };
+    var K = I18N.k, CN = { groceries: K('ui.groceries', 'Groceries'), eating: K('ui.eating-out', 'Eating out'), transport: K('ui.transport', 'Transport'), shopping: K('ui.shopping', 'Shopping'), home: K('ui.home', 'Home'), fun: K('ui.fun', 'Fun'), health: K('ui.health', 'Health'), travel: K('ui.travel', 'Travel'), other: K('ui.other', 'Other'), fixed: K('ui.bills', 'Bills') };   /* shown only (the keys are what's saved) */
     function sel(f, label, opts, sub) { var v = String(c[f]); return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" data-ftcfg="' + f + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
     function sw(f, label, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" class="switch" data-ftcfg="' + f + '"' + (c[f] ? ' checked' : '') + '></label>'; }
     function sub(icon, t) { return '<p class="st-sub ap-sub"><i class="bi bi-' + icon + '"></i> ' + esc(t) + '</p>'; }

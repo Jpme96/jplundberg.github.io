@@ -61,7 +61,7 @@
     /* one row: a Filter button that says what's shown, and the hidden calendars as chips to bring back.
        Everything else lives in the filter panel (switches, "Only" and Show all / Hide all). */
     var shown = items.filter(function (it) { return !d.hidden[it.id]; }), off = items.filter(function (it) { return d.hidden[it.id]; });
-    var label = !off.length ? 'All calendars' : shown.length === 1 ? 'Only ' + shown[0].name : !shown.length ? 'Nothing shown' : shown.length + ' of ' + items.length;
+    var label = !off.length ? I18N.k('ui.all-calendars', 'All calendars') : shown.length === 1 ? 'Only ' + shown[0].name : !shown.length ? 'Nothing shown' : shown.length + ' of ' + items.length;
     var row = function (it) {
       return '<div class="clf-row' + (d.hidden[it.id] ? ' off' : '') + '" style="--c:' + it.color + '"><i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : it.icon ? '<i class="bi bi-' + it.icon + '"></i>' : '') +
         '<span class="clf-name">' + esc(it.name) + '</span><button type="button" class="text-btn clf-only" data-only="' + esc(it.id) + '">Only</button>' +
@@ -85,7 +85,7 @@
     var by = bucket(C.occurrences(start, end), start, end);
     var today = dkey(new Date()), wn = C.prefs().weekNums;
     $('clTitle').textContent = first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    var h = '<div class="cl-month' + (wn ? ' has-wk' : '') + '">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (w) {
+    var h = '<div class="cl-month' + (wn ? ' has-wk' : '') + '">' + [I18N.k('ui.wd-mon', 'Mon'), I18N.k('ui.wd-tue', 'Tue'), I18N.k('ui.wd-wed', 'Wed'), I18N.k('ui.wd-thu', 'Thu'), I18N.k('ui.wd-fri', 'Fri'), I18N.k('ui.wd-sat', 'Sat'), I18N.k('ui.wd-sun', 'Sun')].map(function (w) {
       return '<div class="cl-wd">' + w + '</div>';
     }).join('');
     for (var d = start; d < end; d = addDays(d, 1)) {
@@ -469,7 +469,8 @@
     routeTo(o, place);
   });
   $('clLoc').addEventListener('input', function () { $('clRoute').hidden = !this.value.trim() || $('clAllDay').checked; });
-  $('clRepeat').innerHTML = Object.keys(C.REPEAT_NAMES).map(function (k) { return '<option value="' + k + '">' + C.REPEAT_NAMES[k] + '</option>'; }).join('');
+  var RK = { '': 'ui.never', daily: 'ui.every-day', weekdays: 'ui.every-weekday-mon-fri', weekly: 'ui.every-week', '2weeks': 'ui.every-2-weeks', monthly: 'ui.every-month', quarterly: 'ui.every-3-months', yearly: 'ui.every-year' };   /* the labels by name; the values are what's saved */
+  $('clRepeat').innerHTML = Object.keys(C.REPEAT_NAMES).map(function (k) { return '<option value="' + k + '">' + (RK[k] ? I18N.k(RK[k], C.REPEAT_NAMES[k]) : C.REPEAT_NAMES[k]) + '</option>'; }).join('');
   function catButtons() {
     $('clCatSeg').innerHTML = C.CAT_ORDER.map(function (k) {
       return '<button type="button" data-ecat="' + esc(k) + '" style="--c:' + C.CATS[k].color + '"><i class="dot"></i>' + esc(C.CATS[k].name) + '</button>';

@@ -72,7 +72,7 @@
     'No notes yet. Tap a note to edit it.': 'Ingen notater ennå. Trykk på et notat for å endre det.', 'Write something…': 'Skriv noe …', 'Something to do…': 'Noe å gjøre …',
     
     'Tap to fold them away': 'Trykk for å brette dem sammen', 'Show less': 'Vis færre', 'Not now': 'Ikke nå', 'Log expense': 'Før utgift', 'Bills': 'Regninger',
-    'Weather is unavailable right now.': 'Været er ikke tilgjengelig akkurat nå.', 'Not clocked in': 'Ikke stemplet inn', 'Clock in': 'Stemple inn', 'Clock out': 'Stemple ut', 'today': 'i dag',
+    'Not clocked in': 'Ikke stemplet inn', 'Clock in': 'Stemple inn', 'Clock out': 'Stemple ut', 'today': 'i dag',
     'Flex balance': 'Fleksisaldo', 'logged days': 'førte dager', 'Spent today': 'Brukt i dag',
     'left this month': 'igjen denne måneden', 'left until payday': 'igjen til lønning', 'over budget this month': 'over budsjett denne måneden',
     'Synced across your devices': 'Synkronisert på enhetene dine', 'Encrypted with your passcode': 'Kryptert med koden din', 'Synced and encrypted with your passcode': 'Synkronisert og kryptert med koden din',
@@ -461,7 +461,7 @@
     'Pin note to the top': 'Fest notatet øverst', 'Unpin note': 'Løsne notatet', 'Pin to the top': 'Fest øverst', 'Unpin': 'Løsne', 'Note deleted': 'Notatet er slettet', 'Goal deleted': 'Målet er slettet',
     'No notes yet. Tap a note to edit it, pin the ones you need, and start lines with “- [ ]” for a checklist.': 'Ingen notater ennå. Trykk på et notat for å endre det, fest de du trenger, og start linjer med «- [ ]» for en sjekkliste.',
     'Steps': 'Steg', 'Add steps': 'Legg til steg', 'Add step': 'Legg til steg', 'Remove step': 'Fjern steg', 
-    'Hide for today': 'Skjul i dag', 'New': 'Ny', 'Clock in?': 'Stemple inn?', 'Not clocked in yet today': 'Ikke stemplet inn i dag', 'Saved': 'Lagret', 'Earlier versions': 'Tidligere versjoner', 
+    'New': 'Ny', 'Clock in?': 'Stemple inn?', 'Not clocked in yet today': 'Ikke stemplet inn i dag', 'Saved': 'Lagret', 'Earlier versions': 'Tidligere versjoner', 
     'as it was at the start of the day': 'slik det var ved starten av dagen', 'Looking …': 'Ser etter …', 
     'Couldn’t get that version right now.': 'Fikk ikke hentet den versjonen nå.',
     'Apple Health': 'Apple Health', 'Steps today': 'Skritt i dag', 'Steps this week': 'Skritt denne uken', 'Exercise minutes today': 'Treningsminutter i dag', 'Exercise minutes this week': 'Treningsminutter denne uken', 'Active calories today': 'Aktive kalorier i dag',

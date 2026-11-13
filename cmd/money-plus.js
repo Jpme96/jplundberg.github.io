@@ -268,7 +268,7 @@
     function row() {
       var r = document.getElementById('stRow-finance'); if (r) r.hidden = !Fe.on('finance');
       var s = document.getElementById('sum-finance');
-      if (s) { var on = ['recur', 'shared'].filter(Fe.on).map(function (k) { return k === 'recur' ? 'Recurring payments' : 'Shared expenses'; }); s.textContent = on.length ? on.join(' · ') : 'Recurring payments, shared expenses'; }
+      if (s) { var on = ['recur', 'shared'].filter(Fe.on).map(function (k) { return k === 'recur' ? I18N.k('ui.recurring-payments', 'Recurring payments') : I18N.k('ui.shared-expenses', 'Shared expenses'); }); s.textContent = on.length ? on.join(' · ') : I18N.k('ui.sum-recurring-shared', 'Recurring payments, shared expenses'); }
     }
     pg.addEventListener('change', function (e) {
       var i = e.target;

@@ -152,7 +152,7 @@
   var bg = document.createElement('div');
   bg.className = 'sr-bg'; bg.hidden = true;
   bg.innerHTML = '<div class="sr-box" role="dialog" aria-modal="true" aria-label="Search" data-t-aria-label="ui.search"><div class="sr-top"><i class="bi bi-search"></i>' +
-    '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" data-t-placeholder="ui.search-everything-people-recipes-trips-n" autocomplete="off" spellcheck="false" aria-label="Search">' +
+    '<input id="srIn" type="search" placeholder="Search everything – people, recipes, trips, notes, spending…" data-t-placeholder="ui.search-everything-people-recipes-trips-n" autocomplete="off" spellcheck="false" aria-label="Search" data-t-aria-label="ui.search">' +
     '<button type="button" class="text-btn" data-srclose data-t="ui.close"><span data-t="ui.close">Close</span></button></div><div class="sr-res" id="srRes"></div></div>';
   document.body.appendChild(bg);
   var input = bg.querySelector('#srIn'), res = bg.querySelector('#srRes'), active = -1, results = [];

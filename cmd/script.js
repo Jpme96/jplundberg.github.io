@@ -173,7 +173,7 @@
       /* the answer can come after you've left the page (instant page changes): then there's no card to write to */
       var wc = document.getElementById('weatherCard'), wd = document.getElementById('wDesc'); if (!wd) return;
       if (wc) wc.classList.add('w-off');
-      wd.innerHTML = 'Weather is unavailable right now. <button type="button" class="text-btn" id="wRetry" data-t="ui.try-again"><span data-t="ui.try-again">Try again</span></button>';
+      wd.innerHTML = '<span data-t="ui.weather-is-unavailable">Weather is unavailable right now.</span> <button type="button" class="text-btn" id="wRetry" data-t="ui.try-again"><span data-t="ui.try-again">Try again</span></button>';
       var rb = document.getElementById('wRetry'); if (rb) rb.addEventListener('click', function () { var w2 = document.getElementById('wDesc'); if (w2) w2.textContent = 'Loading weather…'; loadWeather(); });
     });
   }

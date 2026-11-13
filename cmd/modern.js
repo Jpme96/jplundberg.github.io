@@ -172,6 +172,8 @@
       b.querySelectorAll('.bi-chevron-right, .bi-chevron-down').forEach(function (x) { x.remove(); });
       if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', label);
       if (!b.title) b.title = label;
+      var tk = b.getAttribute('data-t') || ((b.querySelector('[data-t]') || {}).getAttribute ? b.querySelector('[data-t]').getAttribute('data-t') : null);   /* the label carries the button's own name, so it's never matched on the sentence */
+      if (tk) { if (!b.hasAttribute('data-t-aria-label')) b.setAttribute('data-t-aria-label', tk); if (!b.hasAttribute('data-t-title')) b.setAttribute('data-t-title', tk); }
       b.classList.add('mi');
     });
   }
@@ -190,12 +192,12 @@
   /* ================= home: the hero ================= */
   var hero = null;
   if (page === 'home' && document.querySelector('header.top')) {
-    hero = document.createElement('section'); hero.className = 'mhero'; hero.setAttribute('aria-label', 'Your day');
+    hero = document.createElement('section'); hero.className = 'mhero'; hero.setAttribute('aria-label', 'Your day'); hero.setAttribute('data-t-aria-label', 'ui.your-day');
     hero.innerHTML = '<div class="mh-txt"><div class="mh-when"></div><h1 class="mh-line"></h1><p class="mh-sub"></p><div class="mh-chips"></div></div>' +
       '<section class="card mh-top3"><div class="card-head"><h2><i class="bi bi-trophy"></i> <span data-t="ui.todays-top-3">Today’s top 3</span></h2><button type="button" class="text-btn mh-planbtn" data-plan><i class="bi bi-sunrise"></i> <span data-t="ui.plan-day">Plan day</span></button></div><div class="mh-body"></div></section>';
     document.querySelector('header.top').appendChild(hero);
   }
-  function part(h) { return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+  function part(h) { return h < 5 ? I18N.k('ui.part-good-night', 'Good night') : h < 12 ? I18N.k('ui.part-good-morning', 'Good morning') : h < 17 ? I18N.k('ui.part-good-afternoon', 'Good afternoon') : I18N.k('ui.part-good-evening', 'Good evening'); }
   function moneyToday() {
     var d = window.Vault.get(), Bu = window.Budget, now = new Date(), today = dkey(now);
     if (!d || !d.budget || (window.Features && !window.Features.on('finance'))) return null;
@@ -237,18 +239,18 @@
     var tripDays = tr ? Math.round((new Date(tr.start + 'T12:00') - new Date(tk + 'T12:00')) / 864e5) : null;
     var tm = function (o) { return pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()); };
     /* the sentence */
-    var a = openToday === 0 ? (top.length ? 'Top 3 done today,' : 'A clear day,') : openToday === 1 ? 'One task left today,' : (openToday < 10 ? ['', '', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'][openToday] : openToday) + ' tasks left today,';
+    var a = openToday === 0 ? (top.length ? I18N.k('ui.mh-top-3-done-today', 'Top 3 done today,') : I18N.k('ui.mh-a-clear-day', 'A clear day,')) : openToday === 1 ? I18N.k('ui.mh-one-task-left-today', 'One task left today,') : (openToday < 10 ? ['', '', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'][openToday] : openToday) + ' tasks left today,';
     var b = nextToday ? 'next up: ' + nextToday.title + ' at ' + tm(nextToday) + '.'
-      : firstTom && firstTom.start.getHours() < 10 ? 'and an early start tomorrow.'
+      : firstTom && firstTom.start.getHours() < 10 ? I18N.k('ui.mh-early-start-tomorrow', 'and an early start tomorrow.')
       : tripDays != null && tripDays <= 14 ? (tr.name || tr.dest) + ' in ' + tripDays + ' day' + (tripDays === 1 ? '' : 's') + '.'
-      : now.getHours() >= 17 ? 'enjoy the evening.' : now.getHours() < 12 ? 'make it a good one.' : 'keep it going.';
+      : now.getHours() >= 17 ? I18N.k('ui.mh-enjoy-the-evening', 'enjoy the evening.') : now.getHours() < 12 ? I18N.k('ui.mh-make-it-a-good-one', 'make it a good one.') : I18N.k('ui.mh-keep-it-going', 'keep it going.');
     var sub = [];
     if (firstTom) sub.push(firstTom.title + ' at ' + tm(firstTom) + ' tomorrow.');
     var m = moneyToday(), late = overdueBills(now);
     /* an overdue bill comes first – never "on track" while something is unpaid (names only, no amounts on the big headline) */
     if (late.length === 1) sub.unshift(late[0] + ' is overdue – pay it when you can.');
     else if (late.length > 1) sub.unshift(late.length + ' bills are overdue: ' + late.slice(0, 3).join(', ') + '.');
-    if (m && !late.length) sub.push(m.left < 0 ? 'You’re over budget this month – take it easy on spending.' : 'You’re on track with money this month.');
+    if (m && !late.length) sub.push(m.left < 0 ? 'You’re over budget this month – take it easy on spending.' : I18N.k('ui.mh-on-track-with-money', 'You’re on track with money this month.'));
     else if (m && m.left < 0) sub.push(I18N.k('ui.youre-over-budget-this-month-take-it-eas', 'You’re over budget this month – take it easy on spending.'));
     var hb = readJSON('dash.habits', { list: [], log: {} }) || {}, mon = new Date(now); mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
     var habitLine = '';
@@ -263,7 +265,7 @@
     hero.querySelector('.mh-when').innerHTML = '<i class="bi bi-' + (now.getHours() >= 18 || now.getHours() < 6 ? 'moon-stars' : 'sun') + '"></i> ' + hh + ' · ' + part(now.getHours());
     var line = a + ' <span>' + esc(b) + '</span>';
     if (hero.querySelector('.mh-line').innerHTML !== line) hero.querySelector('.mh-line').innerHTML = line;
-    var subH = (sub.length ? sub.slice(0, 2) : ['Everything is in order.']).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(' ');
+    var subH = (sub.length ? sub.slice(0, 2) : [I18N.k('ui.mh-everything-is-in-order', 'Everything is in order.')]).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(' ');
     if (hero.querySelector('.mh-sub').innerHTML !== subH) hero.querySelector('.mh-sub').innerHTML = subH;
     /* the chips */
     var chips = [], hide = readJSON('dash.finHide', '0') === '1' || localStorage.getItem('dash.finHide') === '1';
@@ -276,7 +278,7 @@
     var rc = (Fe && Fe.tools().ringcfg) || {}, ringOn = rc.on !== false, s0 = readJSON('dash.settings', {}) || {}, sGoal = +((s0.ahGoals || {}).steps) || 10000;
     var ring = function (p) { var C = 2 * Math.PI * 7; return '<svg class="mh-ring" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" class="t"/><circle cx="9" cy="9" r="7" class="v" stroke-dasharray="' + (C * Math.min(1, p)).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>'; };
     if (ht && ht.steps) chips.push('<a class="mh-chip' + (ringOn && ht.steps >= sGoal ? ' mh-done' : '') + '" href="habits/">' + (ringOn ? ring(ht.steps / sGoal) : '<i class="bi bi-activity"></i>') + '<b>' + nf.format(ht.steps) + '</b> <span data-t="ui.steps-2">steps</span></a>');
-    if (ringOn && rc.water !== false) { var wg = +rc.waterGoal || 8, wn = +(((Fe && Fe.tools().water) || {})[tk]) || 0; chips.push('<button type="button" class="mh-chip mh-water' + (wn >= wg ? ' mh-done' : '') + '" data-mhwater aria-label="Add a glass of water">' + ring(wn / wg) + '<b>' + wn + '/' + wg + '</b> <span data-t="ui.water-2">water</span></button>'); }
+    if (ringOn && rc.water !== false) { var wg = +rc.waterGoal || 8, wn = +(((Fe && Fe.tools().water) || {})[tk]) || 0; chips.push('<button type="button" class="mh-chip mh-water' + (wn >= wg ? ' mh-done' : '') + '" data-mhwater aria-label="Add a glass of water" data-t-aria-label="ui.add-a-glass-of-water">' + ring(wn / wg) + '<b>' + wn + '/' + wg + '</b> <span data-t="ui.water-2">water</span></button>'); }
     var fm = window.Focus && window.Focus.minsToday ? window.Focus.minsToday() : 0;
     if (fm) chips.push('<span class="mh-chip"><i class="bi bi-stopwatch"></i><b>' + fm + ' min</b> <span data-t="ui.focused">focused</span></span>');
     var ch = chips.join('');
@@ -289,12 +291,12 @@
         var ev = window.Cal && t.block ? (window.Cal.load().events || []).filter(function (e) { return e.id === t.block; })[0] : null;
         return '<li class="' + (t.done ? 'dn' : '') + '" data-id="' + esc(t.id) + '"><span class="mh-rk">' + (t.rank || i + 1) + '</span><span class="mh-tx">' + esc(t.text) + '</span>' +
           (ev && ev.start && !t.done ? '<span class="mh-tm">' + esc(ev.start) + '</span>' : '') +
-          '<button type="button" class="mh-ck" data-mhdone="' + esc(t.id) + '" aria-label="' + (t.done ? 'Mark as not done' : 'Mark as done') + '"><i class="bi bi-check-lg"></i></button></li>';
+          '<button type="button" class="mh-ck" data-mhdone="' + esc(t.id) + '" aria-label="' + (t.done ? I18N.k('ui.mark-as-not-done', 'Mark as not done') : I18N.k('ui.mark-as-done', 'Mark as done')) + '"><i class="bi bi-check-lg"></i></button></li>';
       }).join('') + '</ul><div class="mh-prog"><div class="mh-bar"><i style="width:' + Math.round(done / top.length * 100) + '%"></i></div>' + done + ' of ' + top.length + ' done' + (fm ? ' · ' + fm + ' min focused' : '') + '</div>';
     } else {
       var n = todos.filter(function (t) { return !t.done; }).length;
       /* nothing picked yet: one compact row, so At a glance and Today stay on the first screen of a phone */
-      body = '<div class="mh-erow"><i class="bi bi-trophy"></i><p class="mh-empty">' + (n ? 'Pick today’s top 3 and give them a time.' : 'Nothing on your list – enjoy the free time.') + '</p>' +
+      body = '<div class="mh-erow"><i class="bi bi-trophy"></i><p class="mh-empty">' + (n ? I18N.k('ui.mh-pick-todays-top-3', 'Pick today’s top 3 and give them a time.') : I18N.k('ui.mh-nothing-on-your-list', 'Nothing on your list – enjoy the free time.')) + '</p>' +
         '<button type="button" class="pill-btn mh-plan" data-plan><i class="bi bi-sunrise"></i> <span data-t="home.plan">Plan my day</span></button></div>';
     }
     hero.querySelector('.mh-top3').classList.toggle('mh-e', !top.length);

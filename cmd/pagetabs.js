@@ -141,27 +141,27 @@
       var bar = function (v, goal) { return '<span class="pt-bar"><i style="width:' + Math.min(100, (v || 0) / goal * 100).toFixed(1) + '%"></i></span>'; };
       if (A && Fe.on('ahealth')) {
         var ln = A.lastNight();
-        rows.push(['moon-stars', '#8a6fdf', 'Last night', ln ? A.fmt('sleep', ln.v) : '–', ln ? bar(ln.v, sleepGoal) : '<small data-t="ui.no-sleep-sent-yet">no sleep sent yet</small>', '#ahCard']);
-        rows.push(['person-walking', '#22b35e', 'Steps today', day.steps != null ? A.fmt('steps', day.steps) : '–', day.steps != null ? bar(day.steps, stepGoal) : '<small data-t="ui.arrives-with-the-evening-shortcut">arrives with the evening Shortcut</small>', '#ahCard']);
-        if (day.exercise != null) rows.push(['activity', '#e8743b', 'Exercise', A.fmt('exercise', day.exercise), bar(day.exercise, exGoal), '#ahCard']);
+        rows.push(['moon-stars', '#8a6fdf', I18N.k('ui.pt-last-night', 'Last night'), ln ? A.fmt('sleep', ln.v) : '–', ln ? bar(ln.v, sleepGoal) : '<small data-t="ui.no-sleep-sent-yet">no sleep sent yet</small>', '#ahCard']);
+        rows.push(['person-walking', '#22b35e', I18N.k('ui.pt-steps-today', 'Steps today'), day.steps != null ? A.fmt('steps', day.steps) : '–', day.steps != null ? bar(day.steps, stepGoal) : '<small data-t="ui.arrives-with-the-evening-shortcut">arrives with the evening Shortcut</small>', '#ahCard']);
+        if (day.exercise != null) rows.push(['activity', '#e8743b', I18N.k('ui.pt-exercise', 'Exercise'), A.fmt('exercise', day.exercise), bar(day.exercise, exGoal), '#ahCard']);
       }
       var hb = readJSON('dash.habits', null), hl = hb && Array.isArray(hb.list) ? hb.list : [];
       if (Fe.on('habits') && hl.length) {
         var doneT = ((hb.log || {})[td] || []).filter(function (id) { return hl.some(function (h) { return h.id === id; }); }).length;
-        rows.push(['check2-circle', '#d55181', 'Habits today', doneT + ' of ' + hl.length, bar(doneT, hl.length), '#hpHabits']);
+        rows.push(['check2-circle', '#d55181', I18N.k('ui.pt-habits-today', 'Habits today'), I18N.k('ui.pt-n-of-m', '{n} of {m}', { n: doneT, m: hl.length }), bar(doneT, hl.length), '#hpHabits']);
       }
       if (Fe.on('training')) {
         var m0 = dkey(monday(new Date())), wk = Fe.list('training').filter(function (w) { return w && w.date >= m0 && w.date <= td; }), today = wk.filter(function (w) { return w.date === td; });
         var mins = wk.reduce(function (a, w) { return a + (+w.min || 0); }, 0);
-        rows.push(['heart-pulse', '#d55181', 'Training this week', wk.length + ' workout' + (wk.length === 1 ? '' : 's'), '<small>' + (mins ? mins + ' min' : 'none yet') + (today.length ? ' · today ✓' : '') + '</small>', '[data-tool="training"]']);
+        rows.push(['heart-pulse', '#d55181', I18N.k('ui.pt-training-this-week', 'Training this week'), wk.length === 1 ? I18N.k('ui.pt-1-workout', '1 workout') : I18N.k('ui.pt-n-workouts', '{n} workouts', { n: wk.length }), '<small>' + (mins ? mins + ' min' : I18N.k('ui.pt-none-yet', 'none yet')) + (today.length ? ' · today ✓' : '') + '</small>', '[data-tool="training"]']);
       }
       if (Fe.on('journal')) {
         var j = Fe.list('journal').filter(function (x) { return x && x.date === td; })[0];
-        rows.push(['journal-bookmark', '#c9a227', 'Journal', j ? 'Written' : 'Not yet', '<small>' + (j && j.line ? esc(String(j.line).slice(0, 60)) : 'one line about today') + '</small>', '[data-tool="journal"]']);
+        rows.push(['journal-bookmark', '#c9a227', I18N.k('ui.pt-journal', 'Journal'), j ? I18N.k('ui.pt-written', 'Written') : I18N.k('ui.pt-not-yet', 'Not yet'), '<small>' + (j && j.line ? esc(String(j.line).slice(0, 60)) : I18N.k('ui.pt-one-line-about-today', 'one line about today')) + '</small>', '[data-tool="journal"]']);
       }
       if (Fe.on('health')) {
         var nx = Fe.list('health').filter(function (h) { return h && h.kind === 'checkup' && /^\d{4}-\d{2}-\d{2}$/.test(h.date || '') && h.date >= td; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
-        if (nx) { var dd = Math.round((new Date(nx.date + 'T12:00') - new Date(td + 'T12:00')) / 864e5); rows.push(['clipboard2-pulse', '#e66767', 'Next appointment', dd === 0 ? 'Today' : dd === 1 ? 'Tomorrow' : 'In ' + dd + ' days', '<small>' + esc(nx.title || 'Check-up') + (nx.time ? ' · ' + esc(nx.time) : '') + '</small>', '[data-tool="health"]']); }
+        if (nx) { var dd = Math.round((new Date(nx.date + 'T12:00') - new Date(td + 'T12:00')) / 864e5); rows.push(['clipboard2-pulse', '#e66767', I18N.k('ui.pt-next-appointment', 'Next appointment'), dd === 0 ? 'Today' : dd === 1 ? 'Tomorrow' : 'In ' + dd + ' days', '<small>' + esc(nx.title || 'Check-up') + (nx.time ? ' · ' + esc(nx.time) : '') + '</small>', '[data-tool="health"]']); }
       }
       ht.hidden = !rows.length;
       ht.innerHTML = '<div class="card-head"><h2><i class="bi bi-sun"></i> <span data-t="ui.today">Today</span></h2></div><ul class="pt-rows">' + rows.map(function (r) {
@@ -187,7 +187,7 @@
           var p = String(st.open.in || '').split(':'), started = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +p[0] || 0, +p[1] || 0);
           var brk = +st.open.brk || +(Fe.tools().flexcfg || {}).brk || 0, left = norm - worked, home = new Date(now.getTime() + Math.max(0, left) * 6e4);
           rows.push(['stopwatch', '#e8743b', 'Clocked in ' + esc(st.open.in), hmS(worked) + ' so far', '<small>' + (left > 0 ? 'a normal day ends about ' + pad(home.getHours()) + ':' + pad(home.getMinutes()) : 'a full day done – the rest is flex') + (brk ? ' · ' + brk + ' min break counted' : '') + '</small>', '[data-tool="flex"]']);
-        } else if (worked) rows.push(['stopwatch', '#e8743b', 'Flex time', worked ? hmS(worked) + ' today' : 'Not clocked in', '<small>this week ' + esc(window.FlexTime.dur(st.week)) + (st.weekTarget ? ' of ' + esc(window.FlexTime.dur(st.weekTarget)) : '') + '</small>', '[data-tool="flex"]']);
+        } else if (worked) rows.push(['stopwatch', '#e8743b', I18N.k('ui.pt-flex-time', 'Flex time'), worked ? hmS(worked) + ' ' + I18N.k('ui.pt-today-lower', 'today') : I18N.k('ui.pt-not-clocked-in', 'Not clocked in'), '<small>this week ' + esc(window.FlexTime.dur(st.week)) + (st.weekTarget ? ' of ' + esc(window.FlexTime.dur(st.weekTarget)) : '') + '</small>', '[data-tool="flex"]']);
       }
       /* today's work events from the calendar (own events in the Work category, and phone calendars) */
       if (window.Cal && window.Cal.occurrences) {
@@ -198,12 +198,12 @@
       }
       if (Fe.on('meetings')) {
         var open = []; Fe.list('meetings').forEach(function (m) { String(m.actions || '').split('\n').forEach(function (x, i) { if (x.trim() && !(m.done || {})[i]) open.push(x.trim()); }); });
-        if (open.length) rows.push(['list-check', '#3987e5', 'Action points', open.length + ' open', '<small>' + esc(open.slice(0, 2).join(' · ').slice(0, 80)) + '</small>', '[data-tool="meetings"]']);
+        if (open.length) rows.push(['list-check', '#3987e5', I18N.k('ui.pt-action-points', 'Action points'), I18N.k('ui.pt-n-open', '{n} open', { n: open.length }), '<small>' + esc(open.slice(0, 2).join(' · ').slice(0, 80)) + '</small>', '[data-tool="meetings"]']);
       }
       if (Fe.on('ptime')) {
         var run = Fe.tools().ptrun, pr = run && (Fe.list('pproj').filter(function (x) { return x.id === run.pid; })[0] || {});
         var mins = Fe.list('ptime').filter(function (x) { return x && x.date === td; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0);
-        rows.push(['hourglass-split', '#e8743b', run ? 'Timer running' : 'Client time today', run ? esc(pr.name || 'client') : hmS(mins), '<small>' + (run ? 'since ' + new Date(run.start || Date.now()).toTimeString().slice(0, 5) : mins ? 'logged today' : 'start a timer below') + '</small>', '[data-tool="ptime"]']);
+        rows.push(['hourglass-split', '#e8743b', run ? I18N.k('ui.pt-timer-running', 'Timer running') : I18N.k('ui.pt-client-time-today', 'Client time today'), run ? esc(pr.name || 'client') : hmS(mins), '<small>' + (run ? 'since ' + new Date(run.start || Date.now()).toTimeString().slice(0, 5) : mins ? I18N.k('ui.pt-logged-today', 'logged today') : I18N.k('ui.pt-start-a-timer-below', 'start a timer below')) + '</small>', '[data-tool="ptime"]']);
       }
       /* not clocked in, or the holiday count, is what the Flex time card right below already says (it said it three times,
          2026-11-10) – those rows only when that card isn't on */

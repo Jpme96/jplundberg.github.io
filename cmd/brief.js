@@ -363,8 +363,8 @@
         '<span class="br-x"><b>' + amt(esc(x.title)) + '</b><small>' + amt(esc(x.sub)) + '</small></span>' + (x.act || x.key ? '' : '<i class="bi bi-chevron-right br-go"></i>') + '</a>' +
         (x.act ? '<button type="button" class="pill-btn br-act" data-bract="' + esc(x.act.id) + '">' + esc(x.act.label) + '</button>' : '') +
         (x.key ? '<button type="button" class="br-x-btn" data-brx="' + esc(x.key) + '" aria-label="Not now" title="Not now"><i class="bi bi-x"></i></button>'
-          : x.day && !x.badge ? (nx ? '<button type="button" class="text-btn br-later" data-brx="' + esc(x.day) + '"><span data-t="ui.later">Later</span></button>' : '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today"><i class="bi bi-x"></i></button>') : '') + '</li>';
-    }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? 'Show less' : 'Show all ' + main.length) + '</button></li>' : '')
+          : x.day && !x.badge ? (nx ? '<button type="button" class="text-btn br-later" data-brx="' + esc(x.day) + '"><span data-t="ui.later">Later</span></button>' : '<button type="button" class="br-x-btn br-soft" data-brx="' + esc(x.day) + '" aria-label="Hide for today" title="Hide for today" data-t-aria-label="ui.hide-for-today" data-t-title="ui.hide-for-today"><i class="bi bi-x"></i></button>') : '') + '</li>';
+    }).join('') + (main.length > 5 ? '<li><button type="button" class="text-btn br-more" data-brmore>' + (showAll ? I18N.k('ui.show-less', 'Show less') : I18N.k('ui.show-all-n', 'Show all {n}', { n: main.length })) + '</button></li>' : '')
       : '<li class="br-calm"><i class="bi bi-check2-circle"></i> <span data-t="ui.nothing-needs-you-right-now-enjoy-the-da">Nothing needs you right now. Enjoy the day.</span></li>';
   }
   document.addEventListener('change', function (e) {

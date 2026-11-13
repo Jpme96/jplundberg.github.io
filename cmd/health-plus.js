@@ -160,7 +160,7 @@
       var tpl = (Fe.tools().gymtpl || []).length;
       box.innerHTML = '<p class="st-intro" data-t="ui.the-health-page-the-weekly-report-the-ha">The Health page: the weekly report, the habit calendar and the gym log.</p>' +
         subh('clipboard2-heart', I18N.k('ui.weekly-report', 'Weekly report')) + '<div class="st-group">' + feat('hreport', I18N.k('ui.show-the-weekly-report', 'Show the weekly report'), I18N.k('ui.sleep-steps-training-and-mood-vs-last-we', 'Sleep, steps, training and mood vs last week')) +
-        sel('day', I18N.k('ui.report-day', 'Report day'), [[0, I18N.k('ui.sunday', 'Sunday')], [1, I18N.k('ui.monday', 'Monday')]]) + sel('hour', 'From', [8, 12, 16, 18, 20].map(function (h) { return [h, pad(h) + ':00']; })) + sw('glance', I18N.k('ui.show-it-in-at-a-glance', 'Show it in At a glance')) + '</div>' +
+        sel('day', I18N.k('ui.report-day', 'Report day'), [[0, I18N.k('ui.sunday', 'Sunday')], [1, I18N.k('ui.monday', 'Monday')]]) + sel('hour', I18N.k('ui.from', 'From'), [8, 12, 16, 18, 20].map(function (h) { return [h, pad(h) + ':00']; })) + sw('glance', I18N.k('ui.show-it-in-at-a-glance', 'Show it in At a glance')) + '</div>' +
         subh('calendar3', I18N.k('ui.habit-calendar', 'Habit calendar')) + '<div class="st-group">' + sel('heat', I18N.k('ui.each-habit-shows', 'Each habit shows'), [['26', I18N.k('ui.the-last-26-weeks', 'The last 26 weeks')], ['year', I18N.k('ui.the-whole-year', 'The whole year')]], I18N.k('ui.change-it-on-a-habit-too', 'Change it on a habit too')) + '</div>' +
         subh('apple', I18N.k('ui.apple-health', 'Apple Health')) + '<div class="st-group">' + sw('spark', I18N.k('ui.mini-charts-on-the-number-tiles', 'Mini charts on the number tiles'), I18N.k('ui.the-last-7-days', 'The last 7 days')) + '</div>' +
         (Fe.on('gym') ? subh('person-arms-up', I18N.k('ui.gym-log', 'Gym log')) + '<div class="st-group"><a class="st-row st-btn" href="/cmd/habits/#gym"><span><i class="bi bi-collection"></i> ' + (tpl ? tpl + ' workout template' + (tpl === 1 ? '' : 's') : I18N.k('ui.workout-templates', 'Workout templates')) + '<small class="st-rsub" data-t="ui.save-push-pull-legs-and-start-one-with-a">Save Push, Pull, Legs … and start one with a tap</small></span><i class="bi bi-chevron-right"></i></a>' +
@@ -170,7 +170,7 @@
     function row() {
       var r = document.getElementById('stRow-health'); if (r) r.hidden = !Fe.on('healthpage');
       var s = document.getElementById('sum-health'), c = cfg();
-      if (s) s.textContent = (Fe.on('hreport') ? 'Report on ' + (+c.day ? 'Mondays' : 'Sundays') : 'No weekly report') + ' · habits ' + (c.heat === 'year' ? 'by year' : '26 weeks');
+      if (s) s.textContent = (Fe.on('hreport') ? (+c.day ? I18N.k('ui.sum-report-on-mondays', 'Report on Mondays') : I18N.k('ui.sum-report-on-sundays', 'Report on Sundays')) : I18N.k('ui.sum-no-weekly-report', 'No weekly report')) + ' · ' + (c.heat === 'year' ? I18N.k('ui.sum-habits-by-year', 'habits by year') : I18N.k('ui.sum-habits-26-weeks', 'habits 26 weeks'));
     }
     pg.addEventListener('change', function (e) {
       var i = e.target;
