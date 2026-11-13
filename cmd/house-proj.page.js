@@ -62,9 +62,9 @@
   }
   var taskOpen = null;
   var col = K && mountEl ? K.collection({
-    mount: mountEl, feature: 'hproj', key: 'hproj', filter: function (x) { return !window.Homes || window.Homes.inView(x); }, icon: 'hammer', title: 'Home projects', addLabel: 'Project', limit: 8,
+    mount: mountEl, feature: 'hproj', key: 'hproj', filter: function (x) { return !window.Homes || window.Homes.inView(x); }, icon: 'hammer', title: I18N.k('ui.home-projects', 'Home projects'), addLabel: I18N.k('ui.project', 'Project'), limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
-    empty: 'Painting, a new bathroom, the garden – plan it here with tasks, a budget and what you spend. Shared projects go straight into Shared home.',
+    empty: I18N.k('ui.painting-a-new-bathroom-the-garden-plan', 'Painting, a new bathroom, the garden – plan it here with tasks, a budget and what you spend. Shared projects go straight into Shared home.'),
     sort: function (a, b) { var o = { doing: 0, plan: 1, idea: 2, done: 3 }; return (o[a.status] - o[b.status]) || ((a.end || a.start || '9') < (b.end || b.start || '9') ? -1 : 1); },
     summary: function (l) {
       if (!l.length) return '';

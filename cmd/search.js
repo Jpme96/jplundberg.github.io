@@ -221,7 +221,7 @@
 
   /* the magnifier: next to the avatar in the top corner */
   var btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'icon-btn sr-btn'; btn.setAttribute('data-search', ''); btn.setAttribute('aria-label', 'Search (/)');
+  btn.type = 'button'; btn.className = 'icon-btn sr-btn'; btn.setAttribute('data-search', ''); btn.setAttribute('aria-label', 'Search (/)'); btn.setAttribute('data-t-aria-label', 'ui.search-slash');
   btn.innerHTML = '<i class="bi bi-search"></i>';
   var acts = document.querySelector('.top-actions');
   if (acts && document.getElementById('settingsBtn')) acts.insertBefore(btn, acts.firstChild);

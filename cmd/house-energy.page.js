@@ -173,7 +173,7 @@
   var RATE = [['', 'Not rated'], [3, I18N.k('ui.would-use-again', 'Would use again')], [2, I18N.k('ui.was-ok', 'Was OK')], [1, I18N.k('ui.wouldnt-use-again', 'Wouldn’t use again')]];
   function tel(s) { return String(s || '').replace(/[^\d+]/g, ''); }
   var prosCol = K && $t('hpros') ? K.collection({
-    mount: $t('hpros'), feature: 'house', key: 'hpros', icon: 'person-gear', title: 'Handymen', addLabel: 'Add', limit: 8,
+    mount: $t('hpros'), feature: 'house', key: 'hpros', icon: 'person-gear', title: I18N.k('ui.handymen', 'Handymen'), addLabel: I18N.k('ui.add', 'Add'), limit: 8,
     addTitle: 'New handyman', editTitle: 'Edit', fields: [
       { k: 'name', type: 'title', label: 'Name or company', ph: 'e.g. Oslo Elektro, Ola the plumber', req: true },
       { k: 'trade', label: 'Does', type: 'select', options: TRADES.map(function (x) { return [x[0], x[1]]; }), def: 'electric' },
@@ -182,7 +182,7 @@
       { k: 'price', label: 'Cost', type: 'number', suffix: 'kr' },
       { k: 'rate', label: 'Would you use them again', type: 'select', options: RATE, def: '' },
       { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Org. number, who you talked to, the warranty on the work …' }],
-    empty: 'The electrician, the plumber, the painter – with the phone number and what they did, so you know who to call (and who not to).',
+    empty: I18N.k('ui.the-electrician-the-plumber-the-painter', 'The electrician, the plumber, the painter – with the phone number and what they did, so you know who to call (and who not to).'),
     sort: function (a, b) { return (+b.rate || 0) - (+a.rate || 0) || String(a.trade).localeCompare(String(b.trade)) || String(a.name).localeCompare(String(b.name)); },
     row: function (x) { var t = trade(x.trade), r = +x.rate; return { icon: t[2], color: t[3], title: x.name, sub: esc([t[1], x.job, isKey(x.when) ? fromKey(x.when).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ')), right: r === 3 ? chip('<i class="bi bi-hand-thumbs-up"></i>', GREEN) : r === 1 ? chip('<i class="bi bi-hand-thumbs-down"></i>', RED) : '' }; },
     detail: function (x) {

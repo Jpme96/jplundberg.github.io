@@ -48,10 +48,10 @@
     };
   }
   var wishCol = K && $t('wishes') ? K.collection({
-    mount: $t('wishes'), feature: 'wish', key: 'wishes', icon: 'stars', title: 'Wishes', addLabel: 'Add', limit: 12,
+    mount: $t('wishes'), feature: 'wish', key: 'wishes', icon: 'stars', title: I18N.k('ui.wishes', 'Wishes'), addLabel: I18N.k('ui.add', 'Add'), limit: 12,
     addTitle: WF.addTitle, editTitle: WF.editTitle, fields: WF.fields, beforeSave: WF.beforeSave,
     headExtra: function () { return '<a class="text-btn" href="/cmd/?settings=wish" aria-label="Settings" data-t-aria-label="ui.settings"><i class="bi bi-sliders"></i> <span data-t="ui.settings">Settings</span></a>'; },
-    empty: 'Things you’d like to buy – for the home, for you, or as a gift. Add the price and you see whether it fits this month.',
+    empty: I18N.k('ui.things-youd-like-to-buy-for-the-home-for', 'Things you’d like to buy – for the home, for you, or as a gift. Add the price and you see whether it fits this month.'),
     sort: function (a, b) { return sorter()(a, b); },
     summary: function (l) {
       if (!l.length) return '';
@@ -124,13 +124,13 @@
     setTimeout(function () { if (!matchMedia('(pointer: coarse)').matches) f.paid.focus(); }, 60);
   }
   var buyCol = K && $t('wbuy') ? K.collection({
-    mount: $t('wbuy'), feature: 'wish', key: 'wbuy', icon: 'cart-check', title: 'To buy', addLabel: 'Add', limit: 15,
+    mount: $t('wbuy'), feature: 'wish', key: 'wbuy', icon: 'cart-check', title: I18N.k('ui.to-buy', 'To buy'), addLabel: I18N.k('ui.add', 'Add'), limit: 15,
     addTitle: 'Something to buy', editTitle: 'Edit', fields: [
       { k: 'title', type: 'title', label: 'What', ph: 'e.g. Picture hooks, light bulbs E27', req: true },
       { k: 'where', label: 'Where', ph: 'e.g. Clas Ohlson, Jula, IKEA' },
       { k: 'qty', label: 'How many', ph: 'e.g. 2' }],
     beforeSave: function (it, isNew) { if (isNew) it.added = today(); },
-    empty: 'Small things you need next time you’re out – hooks, batteries, a doormat. Groceries go on the shopping list on Food.',
+    empty: I18N.k('ui.small-things-you-need-next-time-youre-ou', 'Small things you need next time you’re out – hooks, batteries, a doormat. Groceries go on the shopping list on Food.'),
     above: function () { return '<form class="wb-quick" data-wbquick><input name="q" placeholder="Add something to buy …" data-t-placeholder="ui.add-something-to-buy" autocomplete="off" aria-label="Add something to buy" maxlength="80"><button type="submit" class="icon-btn sm" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>'; },
     sort: function (a, b) { return String(a.where || '~').localeCompare(String(b.where || '~')) || (a.added < b.added ? -1 : 1); },
     row: function (x) { return { icon: 'circle', color: GREY, title: x.title + (x.qty ? ' × ' + x.qty : ''), sub: esc(x.where || ''), right: '<span class="wb-got" data-wbgot="' + esc(x.id) + '" role="button" tabindex="0" aria-label="Got it"><i class="bi bi-check-lg"></i></span>' }; },
@@ -150,10 +150,10 @@
     setTimeout(function () { var i = document.querySelector('[data-wbquick] input'); if (i) i.focus(); }, 30);
   });
   var boughtCol = K && $t('wbought') ? K.collection({
-    mount: $t('wbought'), feature: 'wish', key: 'wbought', icon: 'bag-check', title: 'Bought', addLabel: 'Add', limit: 6,
+    mount: $t('wbought'), feature: 'wish', key: 'wbought', icon: 'bag-check', title: I18N.k('ui.bought', 'Bought'), addLabel: I18N.k('ui.add', 'Add'), limit: 6,
     addTitle: 'Something you bought', editTitle: 'Edit', fields: [
       { k: 'title', type: 'title', label: 'What', req: true }, { k: 'paid', label: 'Paid', type: 'number', suffix: 'kr' }, { k: 'bought', label: 'When', type: 'date', def: today }],
-    empty: 'What you buy from your wishes ends up here – with what you paid.',
+    empty: I18N.k('ui.what-you-buy-from-your-wishes-ends-up-he', 'What you buy from your wishes ends up here – with what you paid.'),
     sort: function (a, b) { return a.bought < b.bought ? 1 : -1; },
     summary: function (l) { var y = String(new Date().getFullYear()), s = l.filter(function (x) { return String(x.bought || '').slice(0, 4) === y; }); return s.length ? '<span>' + s.length + ' bought in ' + y + ' · ' + kr(s.reduce(function (a, x) { return a + (+x.paid || 0); }, 0)) + '</span>' : ''; },
     row: function (x) { var f = forOf(x.for); return { icon: f[2], color: f[3], title: x.title, sub: esc([isKey(x.bought) ? fmt(x.bought, { day: 'numeric', month: 'short', year: 'numeric' }) : '', x.inv ? 'in Home inventory' : '', x.exp ? 'in Finances' : ''].filter(Boolean).join(' · ')), right: x.paid ? '<span class="money">' + esc(kr(x.paid)) + '</span>' : '' }; },
@@ -173,7 +173,7 @@
     el.hidden = false;
     var l = Fe.list('wishes'), r = room(), fits = l.filter(function (w) { var f = fit(w, r); return f && f.now; }), total = l.reduce(function (a, w) { return a + (+w.price || 0); }, 0);
     var y = String(new Date().getFullYear()), by = Fe.list('wbought').filter(function (x) { return String(x.bought || '').slice(0, 4) === y; });
-    var h = tile('stars', 'Wishes', l.length, total ? kr(total) : 'none yet', '#wishes', PURPLE) +
+    var h = tile('stars', I18N.k('ui.wishes', 'Wishes'), l.length, total ? kr(total) : I18N.k('ui.none-yet', 'none yet'), '#wishes', PURPLE) +
       tile('check2-circle', I18N.k('ui.fit-this-month', 'Fit this month'), fits.length, r ? kr(r.left) + ' left until payday' : 'add your budget in Finances', '#wishes', GREEN) +
       tile('cart-check', I18N.k('ui.to-buy', 'To buy'), Fe.list('wbuy').length, 'small things', '#wbuy', BLUE) +
       tile('bag-check', 'Bought in ' + y, kr(by.reduce(function (a, x) { return a + (+x.paid || 0); }, 0)), by.length + (by.length === 1 ? ' thing' : ' things'), '#wbought', AMBER);

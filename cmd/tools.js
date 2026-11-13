@@ -79,12 +79,12 @@
   }
   function clockBlock(s) {
     return '<div class="flex-clock">' +
-      '<div class="fc-now"><span class="fc-dot' + (s.open ? ' on' : '') + '"></span><span>' + (s.open ? 'Clocked in at <b>' + esc(s.open.in) + '</b>' : 'Not clocked in') + '</span></div>' +
+      '<div class="fc-now"><span class="fc-dot' + (s.open ? ' on' : '') + '"></span><span>' + (s.open ? I18N.k('ui.clocked-in-at', 'Clocked in at') + ' <b>' + esc(s.open.in) + '</b>' : I18N.k('ui.not-clocked-in', 'Not clocked in')) + '</span></div>' +
       '<b class="fc-time" data-flex-live>' + hm(s.today) + '</b><small data-t="ui.today-2"><span data-t="ui.today-2">today</span></small>' +
-      '<button type="button" class="pill-btn fc-btn' + (s.open ? ' out' : '') + '" data-flex-clock><i class="bi bi-' + (s.open ? 'stop-fill' : 'play-fill') + '"></i> ' + (s.open ? 'Clock out' : 'Clock in') + '</button></div>';
+      '<button type="button" class="pill-btn fc-btn' + (s.open ? ' out' : '') + '" data-flex-clock><i class="bi bi-' + (s.open ? 'stop-fill' : 'play-fill') + '"></i> ' + (s.open ? I18N.k('ui.clock-out-btn', 'Clock out') : I18N.k('ui.clock-in-btn', 'Clock in')) + '</button></div>';
   }
   var flex = K.collection({
-    mount: $t('flex'), feature: 'flex', key: 'flex', title: 'Flex time', icon: 'stopwatch', addLabel: 'Add day',
+    mount: $t('flex'), feature: 'flex', key: 'flex', title: I18N.k('ui.flex-time', 'Flex time'), icon: 'stopwatch', addLabel: I18N.k('ui.add-day', 'Add day'),
     addTitle: 'Add a day', editTitle: 'Edit day', limit: 6,
     fields: [
       { k: 'date', label: 'Date', type: 'date', req: true, def: today },
@@ -109,7 +109,7 @@
         sub: (e.in ? esc(e.in) + '–' + (e.out ? esc(e.out) : 'now') : '') + (e.brk ? ' · ' + e.brk + ' min break' : '') + (e.note ? ' · ' + esc(e.note) : ''),
         right: e.type === 'work' || e.type === 'course' ? hm(w) : '' };
     },
-    empty: 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.',
+    empty: I18N.k('ui.tap-clock-in-when-you-start-clock-out-wh', 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.'),
     afterRender: function (el) {
       var c = flexCfg();
       el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work" data-t="ui.change"><span data-t="ui.change">Change</span></a></p>' +
@@ -216,7 +216,7 @@
 
   /* ================= WORK: meeting notes ================= */
   K.collection({
-    mount: $t('meetings'), feature: 'meetings', key: 'meetings', title: 'Meeting notes', icon: 'people', addLabel: 'New',
+    mount: $t('meetings'), feature: 'meetings', key: 'meetings', title: I18N.k('ui.meeting-notes', 'Meeting notes'), icon: 'people', addLabel: I18N.k('ui.new', 'New'),
     addTitle: 'New meeting note', editTitle: 'Edit meeting note',
     fields: [
       { k: 'title', type: 'title', label: 'Title', ph: 'Meeting, e.g. Status FDVU handover', req: true },
@@ -241,7 +241,7 @@
             '<button type="button" class="text-btn" data-mtodo="' + esc(m.id) + ':' + i + '"><i class="bi bi-box-arrow-in-right"></i> <span data-t="ui.to-do">To-do</span></button></li>';
         }).join('') + '</ul>' : '');
     },
-    empty: 'Write down what was decided and who does what. Action points can go straight to your to-do list.',
+    empty: I18N.k('ui.write-down-what-was-decided-and-who-does', 'Write down what was decided and who does what. Action points can go straight to your to-do list.'),
     onClick: function (e, render) {
       var b = e.target.closest('[data-mtodo]');
       if (!b) return;
@@ -275,7 +275,7 @@
     return '<span class="kit-badge">Until ' + fmt(k, { month: 'short', year: 'numeric' }) + '</span>';
   }
   K.collection({
-    mount: $t('learning'), feature: 'learning', key: 'learning', title: 'Courses & certificates', icon: 'mortarboard',
+    mount: $t('learning'), feature: 'learning', key: 'learning', title: I18N.k('ui.courses-certificates', 'Courses & certificates'), icon: 'mortarboard',
     addTitle: 'Add course or certificate',
     fields: [
       { k: 'title', type: 'title', label: 'Title', ph: 'e.g. Varme arbeider, NS 3456, Plania advanced', req: true },
@@ -299,7 +299,7 @@
         sub: [c.provider ? esc(c.provider) : '', (STATUS.filter(function (s) { return s[0] === c.status; })[0] || ['', ''])[1], c.date ? fmt(c.date, { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · '),
         right: expiryBadge(c.expires) };
     },
-    empty: 'Courses you want to take, certificates that need renewing (like varme arbeider or first aid), and standards you’re reading up on.'
+    empty: I18N.k('ui.courses-you-want-to-take-certificates-th', 'Courses you want to take, certificates that need renewing (like varme arbeider or first aid), and standards you’re reading up on.')
   });
 
   /* ================= HABITS: training log ================= */
@@ -316,7 +316,7 @@
     return h ? h.id : '';
   }
   K.collection({
-    mount: $t('training'), feature: 'training', key: 'training', title: 'Training log', icon: 'heart-pulse', addLabel: 'Log workout',
+    mount: $t('training'), feature: 'training', key: 'training', title: I18N.k('ui.training-log', 'Training log'), icon: 'heart-pulse', addLabel: I18N.k('ui.sc-log-workout', 'Log workout'),
     addTitle: 'Log a workout', editTitle: 'Edit workout',
     fields: [
       { k: 'date', label: 'Date', type: 'date', req: true, def: today },
@@ -348,7 +348,7 @@
       return { icon: s[2], color: '#d55181', title: s[1], sub: fmt(w.date, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + hm(+w.min || 0) + (w.km ? ' · ' + String(w.km).replace('.', ',') + ' km' : '') + (w.notes ? ' · ' + esc(String(w.notes).slice(0, 60)) : ''),
         right: '<span class="kit-dots">' + [1, 2, 3, 4, 5].map(function (i) { return '<i class="' + (i <= +w.effort ? 'on' : '') + '"></i>'; }).join('') + '</span>' };
     },
-    empty: 'Log a workout and it also ticks your training habit for that day.'
+    empty: I18N.k('ui.log-a-workout-and-it-also-ticks-your-tra', 'Log a workout and it also ticks your training habit for that day.')
   });
 
   /* ================= HEALTH: check-ups, vaccines, medicine ================= */
@@ -373,7 +373,7 @@
     return '<span class="kit-badge">' + word + ' ' + fmt(k, { month: 'short', year: 'numeric' }) + '</span>';
   }
   K.collection({
-    mount: $t('health'), feature: 'health', key: 'health', title: 'Check-ups & medicine', icon: 'clipboard2-pulse',
+    mount: $t('health'), feature: 'health', key: 'health', title: I18N.k('ui.check-ups-medicine', 'Check-ups & medicine'), icon: 'clipboard2-pulse',
     addTitle: 'Add to health', editTitle: 'Edit',
     fields: [
       { k: 'title', type: 'title', label: 'What', ph: 'e.g. Dentist, Tetanus booster, Allergy pills', req: true },
@@ -404,7 +404,7 @@
         sub: [{ checkup: 'Check-up', vaccine: 'Vaccine', medicine: 'Medicine' }[h.kind] || '', h.every ? hevery(h.every) + (h.time ? ' ' + esc(h.time) : '') : h.date ? fmt(h.date) + (h.time && !past ? ' ' + esc(h.time) : '') : '', h.where ? esc(h.where) : ''].filter(Boolean).join(' · '),
         right: dueBadge(h.next, h.kind === 'medicine' ? 'Renew' : h.kind === 'vaccine' ? 'Booster' : 'Next') };
     },
-    empty: 'Doctor and dentist appointments, vaccines (useful before trips) and prescriptions. You get reminders in your calendar before things are due.'
+    empty: I18N.k('ui.doctor-and-dentist-appointments-vaccines', 'Doctor and dentist appointments, vaccines (useful before trips) and prescriptions. You get reminders in your calendar before things are due.')
   });
 
   /* At a glance: medicine (or a repeating appointment) that's on today – tick it off */
@@ -427,7 +427,7 @@
   var MOODS = [['1', 'Bad', 'emoji-frown', '#e66767'], ['2', 'Meh', 'emoji-neutral', '#e8743b'], ['3', 'OK', 'emoji-smile', '#c9a227'], ['4', 'Good', 'emoji-laughing', '#22b35e'], ['5', 'Great', 'emoji-heart-eyes', '#14b8a6']];
   function mood(v) { return MOODS.filter(function (m) { return m[0] === String(v); })[0] || MOODS[2]; }
   K.collection({
-    mount: $t('journal'), feature: 'journal', key: 'journal', title: 'Journal', icon: 'journal-bookmark', addLabel: 'Today',
+    mount: $t('journal'), feature: 'journal', key: 'journal', title: I18N.k('ui.journal', 'Journal'), icon: 'journal-bookmark', addLabel: I18N.k('ui.today', 'Today'),
     addTitle: 'Journal', editTitle: 'Journal', limit: 7,
     fields: [
       { k: 'date', label: 'Date', type: 'date', req: true, def: today },
@@ -454,12 +454,12 @@
       return '<div class="kit-mood">' + cells + '</div><p class="kit-moodlbl">Last 4 weeks' + (streak ? ' · ' + streak + ' day' + (streak > 1 ? 's' : '') + ' in a row' : '') + (avg ? ' · this week: ' + mood(Math.round(avg))[1].toLowerCase() : '') + '</p>';
     },
     row: function (j) { var m = mood(j.mood); return { icon: m[2], color: m[3], title: j.line, sub: fmt(j.date, { weekday: 'long', day: 'numeric', month: 'short' }) + (j.notes ? ' · ' + esc(String(j.notes).slice(0, 70)) : '') }; },
-    empty: 'One line a day is enough. Over time you’ll see how your weeks really were.'
+    empty: I18N.k('ui.one-line-a-day-is-enough-over-time-youll', 'One line a day is enough. Over time you’ll see how your weeks really were.')
   });
 
   /* ================= TRAVEL: places to visit ================= */
   K.collection({
-    mount: $t('bucket'), feature: 'bucket', key: 'bucket', title: 'Places to visit', icon: 'pin-map',
+    mount: $t('bucket'), feature: 'bucket', key: 'bucket', title: I18N.k('ui.places-to-visit', 'Places to visit'), icon: 'pin-map',
     addTitle: 'A place you want to visit',
     fields: [
       { k: 'place', type: 'title', label: 'Place', ph: 'City or place, e.g. Lisbon', req: true },
@@ -486,7 +486,7 @@
         (b.visited ? '' : '<span class="kit-acts"><button type="button" class="text-btn" data-plantrip="' + esc(b.id) + '"><i class="bi bi-suitcase-lg"></i> <span data-t="ui.plan-a-trip">Plan a trip</span></button>' +
           (window.World ? '<a class="text-btn" href="' + esc(window.World.flightsLink((b.geo && b.geo.name) || b.place)) + '" target="_blank" rel="noopener"><i class="bi bi-airplane"></i> Flight prices</a>' : '') + '</span>');
     },
-    empty: 'Cities and places you want to see. Turn one into a trip when you’re ready.',
+    empty: I18N.k('ui.cities-and-places-you-want-to-see-turn-o', 'Cities and places you want to see. Turn one into a trip when you’re ready.'),
     onClick: function (e) {
       var b = e.target.closest('[data-plantrip]');
       if (!b || !window.Flow) return;
@@ -506,7 +506,7 @@
   var PER_MONTH = { monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
   var SUB_CATS = [['streaming', 'Streaming & music'], ['software', 'Apps & software'], ['phone', 'Phone & internet'], ['training', I18N.k('ui.training', 'Training')], ['news', 'News & magazines'], ['insurance', I18N.k('ui.insurance', 'Insurance')], ['other', I18N.k('ui.other', 'Other')]];
   K.collection({
-    mount: $t('subs'), feature: 'subs', key: 'subs', title: 'Subscriptions', icon: 'arrow-repeat',
+    mount: $t('subs'), feature: 'subs', key: 'subs', title: I18N.k('ui.subscriptions', 'Subscriptions'), icon: 'arrow-repeat',
     addTitle: 'Add subscription', editTitle: 'Edit subscription',
     fields: [
       { k: 'name', type: 'title', label: 'Name', ph: 'e.g. Spotify, iCloud+, SATS', req: true },
@@ -531,12 +531,12 @@
         sub: kr(+s.amount) + ' ' + per + (s.paused ? ' · paused' : ' · next ' + fmt(F.nextRenewal(s), { day: 'numeric', month: 'short' })),
         right: s.period !== 'monthly' && !s.paused ? '<small class="muted">' + kr((+s.amount || 0) * (PER_MONTH[s.period] || 1)) + '/mo</small>' : '' };
     },
-    empty: 'Streaming, apps, phone, gym … see what it all costs per month and year, and get a reminder before each payment.'
+    empty: I18N.k('ui.streaming-apps-phone-gym-see-what-it-all', 'Streaming, apps, phone, gym … see what it all costs per month and year, and get a reminder before each payment.')
   });
 
   /* ================= FINANCE: warranties & receipts ================= */
   K.collection({
-    mount: $t('warranty'), feature: 'warranty', key: 'warranty', title: 'Warranties & receipts', icon: 'receipt-cutoff',
+    mount: $t('warranty'), feature: 'warranty', key: 'warranty', title: I18N.k('ui.warranties-and-receipts', 'Warranties & receipts'), icon: 'receipt-cutoff',
     addTitle: 'Add a purchase', editTitle: 'Edit purchase',
     fields: [
       { k: 'item', type: 'title', label: 'What', ph: 'e.g. MacBook Air, washing machine', req: true },
@@ -561,7 +561,7 @@
         sub: [w.store ? esc(w.store) : '', fmt(w.bought), w.price ? kr(+w.price) : '', w.receipt ? 'receipt: ' + esc(w.receipt) : ''].filter(Boolean).join(' · '),
         right: over ? '<span class="kit-badge">Ended</span>' : expiryBadge(end).replace('Until', 'Until').replace('Expires', 'Ends') };
     },
-    empty: 'Keep track of what you bought, where the receipt is, and when you can no longer complain. You get a reminder in your calendar.'
+    empty: I18N.k('ui.warranty-empty', 'Keep track of what you bought, where the receipt is, and when you can no longer complain. You get a reminder in your calendar.')
   });
 
   /* Work page with nothing switched on */

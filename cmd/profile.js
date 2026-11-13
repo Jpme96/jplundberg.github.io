@@ -94,7 +94,7 @@
     a.className = 'me-btn me-sub'; a.setAttribute('data-me', '');
     if ($('settings')) { a.id = 'settingsBtn'; a.type = 'button'; }
     else { a.href = '/cmd/?settings'; a.addEventListener('click', function () { try { sessionStorage.setItem('dash.stFrom', location.pathname); } catch (e) {} }); }
-    a.setAttribute('aria-label', 'Profile and settings');
+    a.setAttribute('aria-label', 'Profile and settings'); a.setAttribute('data-t-aria-label', 'ui.profile-and-settings');
     /* in the page's top row (same height as on the dashboard, below the iPhone status bar) */
     var host = document.querySelector('#fp > .fp-top');
     if (host) { a.classList.add('me-in'); host.appendChild(a); } else document.body.appendChild(a);
@@ -151,8 +151,8 @@
 
   function renderHead() {
     var p = load(), F = window.Features, sub = [p.role, p.employer].filter(Boolean).join(' · ');
-    head.innerHTML = avatar(p, 'lg') + '<span class="st-label"><b>' + esc(p.name || 'Your profile') + '</b><small>' +
-      esc(sub || 'Your details and photo – private') + '</small></span><i class="bi bi-chevron-right"></i>';
+    head.innerHTML = avatar(p, 'lg') + '<span class="st-label"><b>' + esc(p.name || I18N.k('ui.your-profile', 'Your profile')) + '</b><small>' +
+      esc(sub || I18N.k('ui.your-details-and-photo-private', 'Your details and photo – private')) + '</small></span><i class="bi bi-chevron-right"></i>';
   }
 
   var FIELDS = [

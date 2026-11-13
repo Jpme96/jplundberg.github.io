@@ -168,7 +168,7 @@
       var shown = showAll || q ? items : items.slice(0, lim);
       el.innerHTML = '<section class="card kit-card" id="' + cfg.key + '">' +
         '<div class="card-head"><h2><i class="bi bi-' + cfg.icon + '"></i> ' + esc(cfg.title) + '</h2>' +
-        '<div class="head-actions">' + (cfg.headExtra ? safe(cfg.headExtra, [items], '', kw) : '') + '<button class="text-btn" type="button" data-kit-add><i class="bi bi-plus-lg"></i> ' + esc(cfg.addLabel || 'Add') + '</button></div></div>' +
+        '<div class="head-actions">' + (cfg.headExtra ? safe(cfg.headExtra, [items], '', kw) : '') + '<button class="text-btn" type="button" data-kit-add><i class="bi bi-plus-lg"></i> ' + esc(cfg.addLabel || I18N.k('ui.add', 'Add')) + '</button></div></div>' +
         (cfg.summary ? '<div class="kit-sum">' + safe(cfg.summary, [items], '', kw) + '</div>' : '') +
         (cfg.above ? safe(cfg.above, [items], '', kw) : '') +
         (findable ? '<label class="kit-find"><i class="bi bi-search"></i><input type="search" data-kit-find placeholder="Find in ' + esc(String(cfg.title).toLowerCase()) + '" value="' + esc(q) + '" aria-label="Find in ' + esc(cfg.title) + '"></label>' : '') +

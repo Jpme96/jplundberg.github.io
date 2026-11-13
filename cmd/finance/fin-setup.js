@@ -89,7 +89,7 @@
   function acctOptions(sel, filter) {
     return draft.accts.filter(function (a) { return a.name.trim() && (!filter || filter(a)); }).map(function (a) { return '<option value="' + esc(a.id) + '"' + (sel === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; }).join('');
   }
-  function dayOptions(v, none) { var o = '<option value="">' + (none || 'Day?') + '</option>'; for (var i = 1; i <= 31; i++) o += '<option value="' + i + '"' + (+v === i ? ' selected' : '') + '>the ' + i + '.</option>'; return o; }
+  function dayOptions(v, none) { var o = '<option value="">' + (none || I18N.k('ui.day-q', 'Day?')) + '</option>'; for (var i = 1; i <= 31; i++) o += '<option value="' + i + '"' + (+v === i ? ' selected' : '') + '>' + I18N.k('ui.the-nth', 'the {n}.', { n: i }) + '</option>'; return o; }
   function head() {
     return '<div class="fs-steps">' + STEPS.map(function (t, i) { return '<button type="button" data-fsgo="' + i + '" class="' + (i === step ? 'on' : i < step ? 'done' : '') + '"><b>' + (i < step ? '<i class="bi bi-check-lg"></i>' : i + 1) + '</b><span>' + t + '</span></button>'; }).join('') + '</div>';
   }

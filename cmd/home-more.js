@@ -47,7 +47,7 @@
     toast('<i class="bi bi-droplet"></i> Watered', function () { var t2 = Fe.tools(); (t2.plants || []).forEach(function (p) { if (p.id === id) p.last = was; }); Fe.saveTools(t2); });
   }
   var plantsCol = K && $t('hplants') ? K.collection({
-    mount: $t('hplants'), feature: 'house', key: 'plants', icon: 'flower1', title: 'Plants', addLabel: 'Add', limit: 8,
+    mount: $t('hplants'), feature: 'house', key: 'plants', icon: 'flower1', title: I18N.k('ui.plants', 'Plants'), addLabel: I18N.k('ui.add', 'Add'), limit: 8,
     addTitle: 'New plant', editTitle: 'Edit plant', fields: [
       { k: 'name', type: 'title', label: 'Plant', ph: 'e.g. Monstera, basil, the fig tree', req: true },
       { k: 'room', label: 'Where', ph: 'e.g. Living room window' },
@@ -55,7 +55,7 @@
       { k: 'last', label: 'Last watered', type: 'date', def: today },
       { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Light, fertiliser, when to repot …' }],
     beforeSave: function (it) { it.every = +it.every || 7; },
-    empty: 'Add your plants with how often they want water – tick them off when you’ve watered and you’re told which ones are thirsty.',
+    empty: I18N.k('ui.add-your-plants-with-how-often-they-want', 'Add your plants with how often they want water – tick them off when you’ve watered and you’re told which ones are thirsty.'),
     sort: function (a, b) { return due(a) < due(b) ? -1 : 1; },
     row: function (p) {
       var n = days(today(), due(p)), c = n < 0 ? '#e66767' : n === 0 ? '#c98500' : '#22b35e';

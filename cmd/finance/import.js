@@ -278,7 +278,7 @@
   var file = document.createElement('input'); file.type = 'file'; file.accept = '.csv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; file.hidden = true; document.body.appendChild(file);
   var btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'icon-btn sm im-btn'; btn.innerHTML = '<i class="bi bi-upload"></i>';
-  btn.setAttribute('aria-label', 'Import from your bank (CSV)'); btn.title = 'Import from your bank (CSV)';
+  btn.setAttribute('aria-label', 'Import from your bank (CSV)'); btn.title = 'Import from your bank (CSV)'; btn.setAttribute('data-t-aria-label', 'ui.import-csv-btn'); btn.setAttribute('data-t-title', 'ui.import-csv-btn');
   card.querySelector('.card-head').appendChild(btn);
   var scan = document.createElement('button');          /* receipt.js: photo of a receipt → the expense form, filled in */
   scan.type = 'button'; scan.className = 'icon-btn sm im-btn'; scan.setAttribute('data-qascan', ''); scan.innerHTML = '<i class="bi bi-camera"></i>';

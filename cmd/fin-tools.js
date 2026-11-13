@@ -95,11 +95,11 @@
   function taxDates(now) {
     var y = now.getFullYear(), t = dkey(now);
     var l = [
-      { k: y + '-03-18', t: 'Your tax return opens', s: 'Skattemeldingen for ' + (y - 1) + ' – around mid-March', i: 'envelope-open' },
+      { k: y + '-03-18', t: I18N.k('ui.tax-return-opens', 'Your tax return opens'), s: I18N.k('ui.tax-skattemeldingen-mid-march', 'Skattemeldingen for {n} – around mid-March', { n: y - 1 }), i: 'envelope-open' },
       { k: y + '-04-30', t: 'Last day to change your tax return', s: 'For ' + (y - 1) + ' – you can ask for more time', i: 'calendar-x' },
       { k: y + '-06-20', t: 'Tax settlement starts', s: 'Skatteoppgjøret for ' + (y - 1) + ' – June to autumn', i: 'cash-coin' },
-      { k: y + '-12-31', t: 'Last day for things that count for ' + y, s: 'Gifts to charity, union fees, fund savings', i: 'hourglass-bottom' },
-      { k: (y + 1) + '-03-18', t: 'Your tax return opens', s: 'Skattemeldingen for ' + y + ' – around mid-March', i: 'envelope-open' }
+      { k: y + '-12-31', t: I18N.k('ui.tax-last-day-count-for', 'Last day for things that count for {n}', { n: y }), s: I18N.k('ui.tax-gifts-union-fund', 'Gifts to charity, union fees, fund savings'), i: 'hourglass-bottom' },
+      { k: (y + 1) + '-03-18', t: I18N.k('ui.tax-return-opens', 'Your tax return opens'), s: I18N.k('ui.tax-skattemeldingen-mid-march', 'Skattemeldingen for {n} – around mid-March', { n: y }), i: 'envelope-open' }
     ];
     return l.filter(function (x) { return x.k >= t; });
   }
@@ -127,7 +127,7 @@
     var done = list.filter(function (x) { return st[x.id]; }).length;
     $('fnTaxNote') && ($('fnTaxNote').textContent = 'For ' + ty + ' · ' + done + ' of ' + list.length);
     box.innerHTML = '<ul class="fx-dates">' + dates.map(function (x, i) { var n = days(today(), x.k); return '<li' + (i === 0 ? ' class="next"' : '') + '><span class="kit-ic" style="--c:' + (i === 0 ? BLUE : GREY) + '"><i class="bi bi-' + x.i + '"></i></span><span><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></span><em>' + (n <= 0 ? 'Today' : n <= 60 ? 'In ' + n + ' days' : esc(fmtD(x.k))) + '</em></li>'; }).join('') + '</ul>' +
-      '<p class="fx-sub">Check in your return for ' + ty + '</p><ul class="fx-checks">' + list.map(function (x) { var on = !!st[x.id]; return '<li class="' + (on ? 'done' : '') + '"><button type="button" class="check" data-taxck="' + x.id + '" aria-pressed="' + on + '" aria-label="' + esc(x.t) + '"><i class="bi bi-check-lg"></i></button><span><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></span></li>'; }).join('') + '</ul>' +
+      '<p class="fx-sub">' + esc(I18N.k('ui.check-in-your-return-for', 'Check in your return for {n}', { n: ty })) + '</p><ul class="fx-checks">' + list.map(function (x) { var on = !!st[x.id]; return '<li class="' + (on ? 'done' : '') + '"><button type="button" class="check" data-taxck="' + x.id + '" aria-pressed="' + on + '" aria-label="' + esc(x.t) + '"><i class="bi bi-check-lg"></i></button><span><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></span></li>'; }).join('') + '</ul>' +
       '<p class="muted hl-small"><span data-t="ui.dates-are-the-usual-ones-skatteetaten-se">Dates are the usual ones – Skatteetaten sends the exact ones.</span> <a href="https://www.skatteetaten.no/person/skatt/skattemelding/" target="_blank" rel="noopener">skatteetaten.no</a></p>';
   }
   document.addEventListener('click', function (e) {
@@ -289,7 +289,7 @@
   }, 1500); });
   (function () {
     function hidden() { try { return localStorage.getItem('dash.finHide') === '1'; } catch (e) { return false; } }
-    function paint(b) { var h = hidden(); b.innerHTML = '<i class="bi bi-eye' + (h ? '-slash' : '') + '"></i>'; b.setAttribute('aria-label', h ? 'Show amounts' : 'Hide amounts'); }
+    function paint(b) { var h = hidden(); b.innerHTML = '<i class="bi bi-eye' + (h ? '-slash' : '') + '"></i>'; b.setAttribute('aria-label', h ? I18N.k('ui.show-amounts', 'Show amounts') : I18N.k('ui.hide-amounts', 'Hide amounts')); }
     document.body.classList.toggle('fin-hidden', hidden());
     if (document.querySelector('.fp-top #finHide') || !cfg().eye) return;          /* the Finances page has its own in the bar */
     var host = document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'); if (!host) return;

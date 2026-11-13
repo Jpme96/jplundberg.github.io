@@ -254,7 +254,7 @@
     if (!box) { box = document.createElement('section'); box.className = 'card ah-card kit-wide'; box.id = 'ahCard'; box.setAttribute('data-owner', ''); host.insertBefore(box, host.firstChild); }
     box.hidden = !onP; if (!onP) return;
     var D = days(), keys = Object.keys(D).sort(), today = dkey(new Date()), G = goals();
-    var head = '<div class="card-head"><h2><i class="bi bi-apple"></i> <span data-t="ui.apple-health">Apple Health</span></h2><span class="ah-head-btns">' + (keys.length ? '<button type="button" class="text-btn" data-ahlayout aria-pressed="' + editLayout + '"><i class="bi bi-grid-1x2"></i> ' + (editLayout ? 'Done' : 'Customize') + '</button>' : '') + '<a class="text-btn" href="../?settings=ahealth">' + (keys.length ? 'Settings' : 'Set up') + '</a></span></div>';
+    var head = '<div class="card-head"><h2><i class="bi bi-apple"></i> <span data-t="ui.apple-health">Apple Health</span></h2><span class="ah-head-btns">' + (keys.length ? '<button type="button" class="text-btn" data-ahlayout aria-pressed="' + editLayout + '"><i class="bi bi-grid-1x2"></i> ' + (editLayout ? 'Done' : 'Customize') + '</button>' : '') + '<a class="text-btn" href="../?settings=ahealth">' + (keys.length ? I18N.k('ui.settings', 'Settings') : I18N.k('ui.set-up', 'Set up')) + '</a></span></div>';
     if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="/cmd/?settings=ahealth" data-t="ui.set-it-up"><span data-t="ui.set-it-up">Set it up</span></a> (about 10 minutes, once).</p>'; return; }
     var w = stats(addDays(today, -6), today), pw = stats(addDays(today, -13), addDays(today, -7));
     var have = METRICS.filter(function (m) { return keys.some(function (k) { return D[k][m[0]] != null; }); });
@@ -433,9 +433,9 @@
     $('ahHabits').innerHTML = (hb.list || []).length ? hb.list.map(function (h) {
       var a = h.auto || {};
       return '<div class="st-row ah-rule"><span class="st-label">' + esc(h.name) + '<small data-t="ui.tick-it-automatically-when">Tick it automatically when…</small></span><span class="ah-rule-in">' +
-        '<select data-ahrule="' + esc(h.id) + '" aria-label="Number for ' + esc(h.name) + '"><option value="" data-t="ui.never">Never</option>' +
+        '<select data-ahrule="' + esc(h.id) + '" aria-label="' + esc(I18N.k('ui.number-for', 'Number for {n}', { n: h.name })) + '"><option value="" data-t="ui.never">Never</option>' +
         [['steps', I18N.k('ui.steps-3', 'Steps ≥')], ['exercise', I18N.k('ui.exercise-min', 'Exercise min ≥')], ['sleep', I18N.k('ui.sleep-hours', 'Sleep hours ≥')], ['active', I18N.k('ui.active-kcal', 'Active kcal ≥')], ['stand', I18N.k('ui.stand-hours', 'Stand hours ≥')], ['distance', I18N.k('ui.km-walked', 'Km walked ≥')], ['flights', I18N.k('ui.floors', 'Floors ≥')], ['mindful', I18N.k('ui.mindful-min', 'Mindful min ≥')], ['water', I18N.k('ui.water-litres', 'Water litres ≥')], ['daylight', I18N.k('ui.daylight-min', 'Daylight min ≥')]].map(function (o) { return '<option value="' + o[0] + '"' + (a.m === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
-        '</select><input data-ahmin="' + esc(h.id) + '" inputmode="decimal" value="' + esc(a.min || '') + '" placeholder="' + (a.m === 'steps' ? '10000' : a.m === 'sleep' ? '7' : '30') + '" aria-label="Threshold"' + (a.m ? '' : ' disabled') + '></span></div>';
+        '</select><input data-ahmin="' + esc(h.id) + '" inputmode="decimal" value="' + esc(a.min || '') + '" placeholder="' + (a.m === 'steps' ? '10000' : a.m === 'sleep' ? '7' : '30') + '" aria-label="Threshold" data-t-aria-label="ui.threshold"' + (a.m ? '' : ' disabled') + '></span></div>';
     }).join('') : '<p class="muted st-pad">Add a habit on the dashboard first.</p>';
   }
   function saveRule(id) {

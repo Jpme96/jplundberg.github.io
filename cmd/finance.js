@@ -97,10 +97,10 @@
       if (f && payEditing === 'new' && !f.value) f.focus();
       return;
     }
-    $('budgetEdit').textContent = income || fixed ? 'Edit' : 'Set up';
+    $('budgetEdit').textContent = income || fixed ? I18N.k('ui.edit', 'Edit') : I18N.k('ui.set-up', 'Set up');
 
     if (!income && !fixed) {
-      box.innerHTML = '<p class="empty">Add your accounts, your salary and what goes out each month – then this shows what you can really spend.</p><div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button></div>';
+      box.innerHTML = '<p class="empty" data-t="ui.fh-add-your-accounts-spend">Add your accounts, your salary and what goes out each month – then this shows what you can really spend.</p><div class="form-actions"><span class="spacer"></span><button type="button" class="pill-btn" data-fsopen="0"><i class="bi bi-magic"></i> Set up step by step</button></div>';
       return;
     }
     /* Setup → Income & fixed costs: what the numbers on Now are made of (the one number itself is on Now) */
@@ -381,7 +381,7 @@
     var chart = $('spChart');
     if ($('spChartMonth')) $('spChartMonth').textContent = monthName(viewMonth, true);
     if (!total) {
-      chart.innerHTML = '<p class="empty">No spending logged in ' + esc(monthName(viewMonth, true)) + '.</p>';
+      chart.innerHTML = '<p class="empty">' + esc(I18N.k('ui.no-spending-logged-in-month', 'No spending logged in {n}.', { n: monthName(viewMonth, true) })) + '</p>';
     } else {
       chart.innerHTML = '<div class="donut-wrap">' + donut(byCat, total) +
         '<div class="donut-mid"><span class="muted" data-t="ui.total"><span data-t="ui.total">Total</span></span>' + money(total) + '</div></div>' +

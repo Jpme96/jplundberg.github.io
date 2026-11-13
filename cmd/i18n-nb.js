@@ -79,7 +79,7 @@
     'Saved on this device only': 'Bare lagret på denne enheten', 'From': 'Fra', 'To': 'Til', 
     'Save a stop under “Stops” to see its next departures here.': 'Lagre et stopp under «Stopp» for å se neste avganger her.', 'Coming up': 'Snart',
     /* quick add */
-    'Expense': 'Utgift', 'Event': 'Hendelse', 'Workout': 'Økt', 'Task': 'Oppgave', 'Note': 'Notat', 'Type what to add': 'Skriv hva du vil legge til',
+    'Expense': 'Utgift', 'Event': 'Hendelse', 'Workout': 'Økt', 'Task': 'Oppgave', 'Note': 'Notat', 
     'Amount, kr': 'Beløp, kr', 'What was it? (optional)': 'Hva var det? (valgfritt)',
     'What was it?': 'Hva var det?', 'Date': 'Dato', 'Category': 'Kategori', 'What? e.g. Dentist': 'Hva? f.eks. Tannlege', 'Where (optional)': 'Hvor (valgfritt)', 'All day': 'Hele dagen',
     'Start': 'Start', 'Minutes': 'Minutter', 'km (optional)': 'km (valgfritt)', 'Distance': 'Distanse', 'How hard': 'Hvor hardt', 'Easy': 'Lett', 'Light': 'Lys', 'Moderate': 'Middels',
@@ -713,7 +713,7 @@
     'Report day': 'Rapportdag', 'Sunday': 'Søndag', 'Monday': 'Mandag', 'Show it in At a glance': 'Vis den i Kort fortalt', 'Habit calendar': 'Vanekalender', 'Each habit shows': 'Hver vane viser',
     'The last 26 weeks': 'De siste 26 ukene', 'The whole year': 'Hele året', 'Change it on a habit too': 'Kan også endres på vanen', 'Mini charts on the number tiles': 'Små grafer på tallflisene',
     'The last 7 days': 'De siste 7 dagene', 'Workout templates': 'Øktmaler', 
-    'Add Push, Pull and Legs': 'Legg til Push, Pull og Legs', 'Open Health': 'Åpne Helse', 'Edit templates': 'Endre maler',
+    'Open Health': 'Åpne Helse', 'Edit templates': 'Endre maler',
     'Template name, e.g. Push': 'Navn på malen, f.eks. Push', 'Push, Pull and Legs added – tap one to start': 'Push, Pull og Legs er lagt til – trykk på en for å starte'
   });
   var HW = { 'more sleep': 'mer søvn', 'more steps': 'flere skritt', 'more exercise': 'mer trening', 'more workouts': 'flere økter', 'a lower resting pulse': 'lavere hvilepuls', 'a better mood': 'bedre humør',
@@ -885,7 +885,7 @@
     'Courses you want to take, certificates that need renewing (like varme arbeider or first aid), and standards you’re reading up on.': 'Kurs du vil ta, sertifikater som må fornyes (som varme arbeider eller førstehjelp) og standarder du leser deg opp på.',
     'Nothing logged yet today. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.': 'Ingenting ført i dag ennå. Stemple inn, start en kundetidtaker, skriv møtenotater eller en befaring – alt samles her i én oppsummering du kan sende.',
     'Nothing logged yesterday. Clock in, run a client timer, write meeting notes or an inspection – it all comes together here as one summary you can send.': 'Ingenting ført i går. Stemple inn, start en kundetidtaker, skriv møtenotater eller en befaring – alt samles her i én oppsummering du kan sende.',
-    'Same as the dashboard': 'Som dashbordet', 'Your photo': 'Ditt bilde', 'Clock and date': 'Klokke og dato', 
+    'Same as the dashboard': 'Som dashbordet', 'Your photo': 'Ditt bilde', 
     'Not set up – if you forget the passcode, everything is lost': 'Ikke satt opp – glemmer du koden, er alt tapt', 'Set up – keep the code somewhere safe': 'Satt opp – ta vare på koden et trygt sted',
     'No dinner nudge': 'Ingen middagspåminnelse', 'on the day': 'på dagen',
     'With': 'Med', 'One per line. Tick them off here or send them to your to-do list.': 'Én per linje. Kryss dem av her eller send dem til oppgavelista.',
@@ -1161,7 +1161,7 @@
     'Income & fixed costs': 'Inntekt og faste kostnader', 'Spending limits': 'Forbruksgrenser', 'Yearly costs': 'Årlige kostnader', 'Between you': 'Mellom dere', 'This week': 'Denne uka', 
     'Spending faster than planned': 'Bruker raskere enn planlagt', 'Spending slower than planned': 'Bruker saktere enn planlagt', 'On pace': 'I takt', 'All': 'Alle', 'Add': 'Legg til',
     'all done': 'alt gjort',
-    'Add what’s in your accounts': 'Legg inn hva som står på kontoene', 'No balances yet.': 'Ingen saldoer ennå.', 'from the bank': 'fra banken',
+    'Add what’s in your accounts': 'Legg inn hva som står på kontoene', 'from the bank': 'fra banken',
     
     
     'In your accounts': 'På kontoene', 'owed on cards': 'skyldig på kort', 'saved': 'spart', 'Free to use until payday': 'Fritt å bruke til lønning', 'Owed on cards': 'Skyldig på kort', 'Bills before payday': 'Regninger før lønning', 'See limits': 'Se grensene',
@@ -1232,8 +1232,8 @@
     'When': 'Når',
     'at the pace you spend': 'i det tempoet du bruker',
     
-    'Tick a bill when it’s paid. Tap it to change it – the amount, the due day, months it changes, or when it starts or ends.': 'Huk av en regning når den er betalt. Trykk på den for å endre beløp, forfallsdag, måneder den endres, eller når den starter eller slutter.',
-    'Everyday shopping with': 'Dagligvarer med',
+    
+    
     'Nothing repeating found yet': 'Ingenting som gjentar seg ennå',
     
     'Last night': 'I natt',
@@ -1457,7 +1457,7 @@
     'For medicine you take regularly (or a weekly appointment) – it goes in your calendar and At a glance on those days.': 'For medisin du tar fast (eller en ukentlig time) – den kommer i kalenderen og i Kort fortalt de dagene.',
     'For appointments and medicine – it goes in your calendar.': 'For timer og medisin – det kommer i kalenderen.',
     'less tax over the next 12 months from your loans': 'mindre skatt de neste 12 månedene fra lånene', 'less tax over the next 12 months (rentefradrag)': 'mindre skatt de neste 12 månedene (rentefradrag)', 
-    'kept of': 'beholdt av', 'Your money': 'Pengene dine', 'From the tax return': 'Fra skatteoppgjøret', 'history builds month by month': 'historikken bygges måned for måned',
+    'kept of': 'beholdt av', 'Your money': 'Pengene dine', 'history builds month by month': 'historikken bygges måned for måned',
     'in fixed costs': 'i faste kostnader', 'Your usual share': 'Din vanlige andel', 'For “By your usual %”': 'For «Etter din vanlige %»',
     'A page for your goals with a date, steps and numbers that update themselves from your accounts, loans and the rest': 'En side for målene dine med dato, steg og tall som oppdaterer seg selv fra kontoer, lån og resten'
   });

@@ -39,7 +39,7 @@
     var cfg = (Fe.tools().powercfg) || {};
     var acts = '<div class="seg lp-seg"><button type="button" data-pwday="today" aria-pressed="' + (PW.day === 'today') + '"><span data-t="ui.today"><span data-t="ui.today">Today</span></span></button>' +
       (hTom || PW.day === 'tomorrow' ? '<button type="button" data-pwday="tomorrow" aria-pressed="' + (PW.day === 'tomorrow') + '"><span data-t="ui.tomorrow"><span data-t="ui.tomorrow">Tomorrow</span></span></button>' : '') + '</div>';
-    if (!h) { el.innerHTML = card('power', 'lightning-charge', 'Strømpris', '', '<p class="muted">' + (pwLoading[k] === 'fail' ? 'Couldn’t reach the price service right now – try again later.' : 'Getting today’s prices …') + '</p>'); return; }
+    if (!h) { el.innerHTML = card('power', 'lightning-charge', 'Strømpris', '', '<p class="muted">' + (pwLoading[k] === 'fail' ? I18N.k('ui.price-service-down', 'Couldn’t reach the price service right now – try again later.') : I18N.k('ui.getting-todays-prices', 'Getting today’s prices …')) + '</p>'); return; }
     var valid = h.filter(function (x) { return x != null; }), avg = valid.reduce(function (a, b) { return a + b; }, 0) / valid.length;
     var max = Math.max.apply(null, valid), min = Math.min.apply(null, valid), cur = k === tk ? h[now.getHours()] : null;
     var c3 = cheapest(h, 3, k === tk ? now.getHours() : 0), exp = h.indexOf(max);

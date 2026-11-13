@@ -118,7 +118,7 @@
       var s = document.getElementById('sumCalendar');
       if (!s) return;
       var p = C.prefs();
-      s.textContent = C.CAT_ORDER.length + ' categories' + (p.weekNums ? ' · week numbers' : '') + (p.holidays ? ' · holidays' : '');
+      s.textContent = I18N.k('ui.sum-n-categories', '{n} categories', { n: C.CAT_ORDER.length }) + (p.weekNums ? ' · ' + I18N.k('ui.sum-week-numbers', 'week numbers') : '') + (p.holidays ? ' · ' + I18N.k('ui.sum-holidays', 'holidays') : '');
     }
     window.addEventListener('cal:change', summary);
     if (window.Vault) window.Vault.onUnlock(summary);

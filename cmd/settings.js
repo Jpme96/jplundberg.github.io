@@ -634,7 +634,7 @@
   var restoreText = null;
   function backupWhen() {
     var d = window.Vault && window.Vault.get(), t = (d && d.lastBackup) || +localStorage.getItem('dash.lastBackup') || 0;
-    if ($('stBackupWhen')) $('stBackupWhen').textContent = t ? 'Last one ' + new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'You haven’t taken one yet';
+    if ($('stBackupWhen')) $('stBackupWhen').textContent = t ? 'Last one ' + new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : I18N.k('ui.you-havent-taken-one-yet', 'You haven’t taken one yet');
   }
   window.addEventListener('dash:backup', backupWhen);
   /* What's saved: a quick count, so you can see your data is there (and where a CSV import went) */

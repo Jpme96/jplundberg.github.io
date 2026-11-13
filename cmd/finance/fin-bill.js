@@ -31,7 +31,7 @@
     var B = window.Budget, now = ymOf(new Date()), vary = cur.vary;
     var A = window.Accts, accts = A ? A.list(d).filter(function (a) { return a.kind !== 'savings' && a.kind !== 'fund'; }) : [];
     var acct = f.acct && accts.some(function (a) { return a.id === f.acct; }) ? f.acct : (accts[0] || { id: 'salary' }).id;
-    var days = '<option value="">No fixed day</option>'; for (var i = 1; i <= 31; i++) days += '<option value="' + i + '"' + (+f.day === i ? ' selected' : '') + '>the ' + i + '.</option>';
+    var days = '<option value="">' + I18N.k('ui.no-fixed-day', 'No fixed day') + '</option>'; for (var i = 1; i <= 31; i++) days += '<option value="' + i + '"' + (+f.day === i ? ' selected' : '') + '>' + I18N.k('ui.the-nth', 'the {n}.', { n: i }) + '</option>';
     var m = f.months || {}, avg = B.varyAvg(f, now);
     /* months: the last three, this one and the next two */
     var rows = '';

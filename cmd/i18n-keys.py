@@ -5,6 +5,7 @@
     python3 cmd/i18n-keys.py ui --prune      take sentences out of the old list that are named everywhere they are used
     python3 cmd/i18n-keys.py ui --wrap FILE … also names pieces of text that sit between other tags (a sentence with a
                                              <b> or <code> in it): each piece gets its own <span data-t="…">
+    python3 cmd/i18n-keys.py ui --props FILE … names a card's set-up words: title / empty / addLabel: 'English' (kit.js shows them)
     python3 cmd/i18n-keys.py ui --opts FILE … names the labels of choices: [value, 'Label'] in a list of choices (the value
                                              is what's saved, the label is only shown). Not for head modules (scripts.json
                                              "head"): they run before the Norwegian words are loaded.
@@ -173,6 +174,26 @@ def do_opts(text):
         return '[%s, I18N.k(%s, %s)]' % (m.group(1), "'%s'" % key_for(body), m.group(2))
     out = re.sub(r"\[(-?[\d.]+|'[a-z0-9_-]{1,24}')\s*,\s*('((?:[^'\\\n]|\\.)*)')\s*\]", pair, text)
     return out, n
+PROPS = '--props' in sys.argv
+def do_props(text):
+    """the words of a card's set-up, { title: 'Warranties & receipts', empty: 'Keep track …', addLabel: 'Add' } – shown only
+       (kit.js draws them). Only these three names: other properties (name, desc …) can be ids, data or search words."""
+    n = 0
+    def prop(m):
+        nonlocal n
+        body = m.group(3)
+        if '\\' in body or '<' in body or body not in D or len(body) < 2: return m.group(0)
+        n += 1
+        return '%s: I18N.k(%s, %s)' % (m.group(1), "'%s'" % key_for(body), m.group(2))
+    out = re.sub(r"(?<![\w$.])(title|empty|addLabel)\s*:\s*('((?:[^'\\\n]|\\.)*)')(?=\s*[,}])", prop, text)
+    return out, n
+if PROPS:
+    for f in FILES:
+        path = os.path.join(HERE, f); src = io.open(path, encoding='utf-8').read()
+        new, k = do_props(src)
+        if k: io.open(path, 'w', encoding='utf-8').write(new)
+        print('%-28s %d card words named' % (f, k)); total += k
+    FILES = []
 if OPTS:
     for f in FILES:
         path = os.path.join(HERE, f); src = io.open(path, encoding='utf-8').read()
@@ -235,6 +256,9 @@ if '--prune' in sys.argv:
         for m in re.finditer(r"I18N\.k\('([a-z][\w.-]*)',\s*'((?:[^'\\]|\\.)*)'", s0):
             used.add(m.group(1)); en = m.group(2).replace("\\'", "'")
             if m.group(1) not in WORDS and en in D: WORDS[m.group(1)] = [en, D[en]]
+    # a name written anywhere as a string counts too – code calls I18N.k through short aliases (var K = I18N.k; K('ui.x', …)),
+    # which the pattern above doesn't see: 2026-11-13 a prune took out 11 such names and their lines fell back to English
+    for s0 in srcs: used.update(m.group(1) for m in re.finditer(r"['\"](" + re.escape(AREA) + r"\.[a-z0-9][\w.-]*)['\"]", s0))
     drop = [k for k in WORDS if k.startswith(AREA + '.') and k not in used]
     for k in drop: del WORDS[k]
     body = '{\n' + ',\n'.join('  %s: %s' % (json.dumps(k, ensure_ascii=False), json.dumps(v, ensure_ascii=False)) for k, v in sorted(WORDS.items())) + '\n}'

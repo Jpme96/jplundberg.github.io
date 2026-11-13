@@ -52,10 +52,10 @@
     { k: 'last', label: 'Last done', type: 'date', def: today, help: 'Leave empty if it’s never been done – then it’s due now.' },
     { k: 'notes', label: 'How / notes', type: 'textarea', rows: 2 }] };
   col({
-    mount: $t('hmaint'), feature: 'house', key: 'hmaint', icon: 'tools', title: 'Upkeep', addLabel: 'Add', limit: 10,
+    mount: $t('hmaint'), feature: 'house', key: 'hmaint', icon: 'tools', title: I18N.k('ui.upkeep', 'Upkeep'), addLabel: I18N.k('ui.add', 'Add'), limit: 10,
     addTitle: HM.addTitle, editTitle: HM.editTitle, fields: HM.fields,
     headExtra: function () { return gear('house'); },
-    empty: 'Things that need doing every few months – filters, drains, smoke alarms. You get a nudge when they’re due.',
+    empty: I18N.k('ui.things-that-need-doing-every-few-months', 'Things that need doing every few months – filters, drains, smoke alarms. You get a nudge when they’re due.'),
     sort: function (a, b) { return nextDue(a) < nextDue(b) ? -1 : 1; },
     above: function (l) { return l.length ? '' : '<button type="button" class="pill-btn hl-seed" data-hmseed><i class="bi bi-magic"></i> <span data-t="ui.pick-from-the-usual-ones">Pick from the usual ones</span></button>'; },
     row: function (it) {
@@ -96,9 +96,9 @@
     return { k: nx[0][0], names: nx.filter(function (x) { return x[0] === nx[0][0]; }).map(function (x) { return x[1].title; }) };
   }
   col({
-    mount: $t('hbins'), feature: 'house', key: 'hbins', icon: 'trash3', title: 'Bin days', addLabel: 'Add',
+    mount: $t('hbins'), feature: 'house', key: 'hbins', icon: 'trash3', title: I18N.k('ui.bin-days', 'Bin days'), addLabel: I18N.k('ui.add', 'Add'),
     addTitle: BINS.addTitle, editTitle: BINS.editTitle, fields: BINS.fields,
-    empty: 'Add each bin once with its next pickup – you get a reminder the evening before.',
+    empty: I18N.k('ui.add-each-bin-once-with-its-next-pickup-y', 'Add each bin once with its next pickup – you get a reminder the evening before.'),
     sort: function (a, b) { return (nextPickup(a) || '9') < (nextPickup(b) || '9') ? -1 : 1; },
     summary: function () {
       var n = nextBins(); if (!n) return '';
@@ -124,9 +124,9 @@
     { k: 'value', label: 'Meter shows', type: 'number', req: true, suffix: 'kWh', help: 'The big number on the meter, or the latest one in your power company’s app.' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2 }] };
   col({
-    mount: $t('hmeter'), feature: 'house', key: 'hmeter', icon: 'speedometer2', title: 'Electricity meter', addLabel: 'Reading', limit: 6,
+    mount: $t('hmeter'), feature: 'house', key: 'hmeter', icon: 'speedometer2', title: I18N.k('ui.electricity-meter', 'Electricity meter'), addLabel: I18N.k('ui.reading-2', 'Reading'), limit: 6,
     addTitle: METER.addTitle, editTitle: METER.editTitle, fields: METER.fields,
-    empty: 'Read the meter now and then (or copy the number from the app) – you see how much you use per day and per year.',
+    empty: I18N.k('ui.read-the-meter-now-and-then-or-copy-the', 'Read the meter now and then (or copy the number from the app) – you see how much you use per day and per year.'),
     sort: function (a, b) { return a.date < b.date ? 1 : -1; },
     summary: function (l) {
       var s = meterStats(l); if (s.r.length < 2) return s.r.length ? '<p class="muted hl-small" data-t="ui.add-one-more-reading-to-see-how-much-you">Add one more reading to see how much you use.</p>' : '';
@@ -169,9 +169,9 @@
     return (rows ? '<div class="hl-kvs">' + rows + '</div>' : '') + (x.notes ? '<p class="kit-notes hl-pre">' + esc(x.notes) + '</p>' : '');
   }
   col({
-    mount: $t('hinfo'), feature: 'house', key: 'hinfo', icon: 'info-circle', title: 'Good to know', addLabel: 'Add', limit: 12,
+    mount: $t('hinfo'), feature: 'house', key: 'hinfo', icon: 'info-circle', title: I18N.k('ui.good-to-know', 'Good to know'), addLabel: I18N.k('ui.add', 'Add'), limit: 12,
     addTitle: 'New', editTitle: 'Edit', fields: INFO.other.f,
-    empty: 'Wi-Fi, where the stopcock and the fuse box are, codes, the landlord’s number, paint colours, appliance models – encrypted like the rest.',
+    empty: I18N.k('ui.wi-fi-where-the-stopcock-and-the-fuse-bo', 'Wi-Fi, where the stopcock and the fuse box are, codes, the landlord’s number, paint colours, appliance models – encrypted like the rest.'),
     sort: function (a, b) { var o = Object.keys(INFO); return o.indexOf(a.kind || 'other') - o.indexOf(b.kind || 'other') || a.title.localeCompare(b.title, 'nb'); },
     row: function (x) { var k = INFO[x.kind] ? x.kind : 'other'; return { icon: INFO[k].i, color: INFO[k].c, title: x.title, sub: esc(infoLine(x)) }; },
     detail: infoDetail,
@@ -213,10 +213,10 @@
     { k: 'dates', label: 'Other dates', type: 'textarea', rows: 2, ph: 'Wedding 12.06.2015\nStarted school 19.08.2024', help: 'Anniversaries and other yearly days – one per line, a name and a date. Name days come by themselves from the Norwegian almanac.' },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Partner’s and kids’ names, allergies, what they’re up to.' }] };
   col({
-    mount: $t('people'), feature: 'people', key: 'people', icon: 'people', title: 'People', addLabel: 'Add', limit: 12,
+    mount: $t('people'), feature: 'people', key: 'people', icon: 'people', title: I18N.k('ui.people', 'People'), addLabel: I18N.k('ui.add', 'Add'), limit: 12,
     addTitle: PP.addTitle, editTitle: PP.editTitle, fields: PP.fields,
     headExtra: function () { return (window.PeoplePlus ? window.PeoplePlus.importBtn() : '') + gear('people'); },
-    empty: 'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.',
+    empty: I18N.k('ui.add-the-people-who-matter-with-a-birthda', 'Add the people who matter – with a birthday you get a heads-up a week before, with “keep in touch” a nudge when it’s been too long.'),
     /* who you live with is already known (shared home): offer them in one tap until they're in the list (2026-11-10) */
     afterRender: function (el, items) {
       var nm = ''; try { nm = window.ShareSpace && ShareSpace.on() ? String(ShareSpace.name() || '').trim() : ''; } catch (e) {}
@@ -454,7 +454,7 @@
           var by = {}; open.forEach(function (x) { var a = aisleOf(x.text); (by[a] = by[a] || []).push(x.text); });
           txt = Object.keys(by).sort(function (a, b) { return aisleRank(a) - aisleRank(b); }).map(function (a) { return AISLE[a].n + '\n' + by[a].map(function (x) { return '• ' + x; }).join('\n'); }).join('\n\n');
         } else txt = open.map(function (x) { return '• ' + x.text; }).join('\n');
-        if (navigator.share) navigator.share({ title: 'Shopping list', text: txt }).catch(function () {});
+        if (navigator.share) navigator.share({ title: I18N.k('ui.shopping-list', 'Shopping list'), text: txt }).catch(function () {});
         else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('<i class="bi bi-clipboard-check"></i> List copied'); });
       }
     });
@@ -463,7 +463,7 @@
   })();
   var RC = { open: function () {} };
   col({
-    mount: $t('recipes'), feature: 'food', key: 'recipes', icon: 'journal-text', title: 'Recipes', addLabel: 'Add', limit: 10,
+    mount: $t('recipes'), feature: 'food', key: 'recipes', icon: 'journal-text', title: I18N.k('ui.recipes', 'Recipes'), addLabel: I18N.k('ui.add', 'Add'), limit: 10,
     headExtra: function () { return window.FoodPlus ? window.FoodPlus.importBtn() : ''; },
     addTitle: 'New recipe', editTitle: 'Edit recipe', fields: [
       { k: 'title', type: 'title', label: 'Name', ph: 'e.g. Fish tacos', req: true },
@@ -472,7 +472,7 @@
       { k: 'ingr', label: 'Ingredients', type: 'textarea', rows: 5, help: 'One per line – they go to the shopping list as they are.' },
       { k: 'steps', label: 'How', type: 'textarea', rows: 4 },
       { k: 'link', label: 'Link', type: 'url', ph: 'https://' }],
-    empty: 'Your go-to dinners. Plan them into the week and their ingredients go on the shopping list in one tap.',
+    empty: I18N.k('ui.your-go-to-dinners-plan-them-into-the-we', 'Your go-to dinners. Plan them into the week and their ingredients go on the shopping list in one tap.'),
     sort: function (a, b) { return String(a.title).localeCompare(b.title, 'nb'); },
     row: function (r) {
       var n = ingredients(r).length;

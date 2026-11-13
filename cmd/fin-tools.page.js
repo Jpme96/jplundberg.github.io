@@ -17,14 +17,14 @@
   var esc = __c.esc, affordForm = __c.affordForm, num = __c.num, affordHtml = __c.affordHtml, afford = __c.afford, fin = __c.fin, L = __c.L, rateSeen = __c.rateSeen, rateLog = __c.rateLog, debts = __c.debts, today = __c.today, toast = __c.toast, fmtR = __c.fmtR, kr = __c.kr, Fe = __c.Fe, B = __c.B, ebSpent = __c.ebSpent, isKey = __c.isKey, RED = __c.RED, AMBER = __c.AMBER, GREEN = __c.GREEN, ebSaveMonthly = __c.ebSaveMonthly, fmtD = __c.fmtD, dkey = __c.dkey, cfg = __c.cfg, all = __c.all;
   var EBK = [['event', I18N.k('ui.an-event', 'An event')], ['trip', I18N.k('ui.a-trip', 'A trip')]];
   var ebCol = (window.Kit && document.querySelector('[data-tool="ebud"]')) ? window.Kit.collection({
-    mount: document.querySelector('[data-tool="ebud"]'), feature: 'finance', key: 'ebudgets', icon: 'calendar2-heart', title: 'Budgets for events and trips', addLabel: 'Add', limit: 6,
+    mount: document.querySelector('[data-tool="ebud"]'), feature: 'finance', key: 'ebudgets', icon: 'calendar2-heart', title: I18N.k('ui.budgets-for-events-and-trips', 'Budgets for events and trips'), addLabel: I18N.k('ui.add', 'Add'), limit: 6,
     addTitle: 'New budget', editTitle: 'Edit budget', fields: [
       { k: 'name', type: 'title', label: 'For', ph: 'e.g. Christmas, Spain in May, the moving day', req: true },
       { k: 'kind', label: 'It’s', type: 'select', options: EBK, def: 'event', help: 'A trip counts everything you spend between its dates; an event counts what you tag.' },
       { k: 'budget', label: 'Budget', type: 'number', suffix: 'kr', req: true },
       { k: 'start', label: 'From', type: 'date' }, { k: 'end', label: 'To', type: 'date' },
       { k: 'saved', label: 'Already put aside', type: 'number', suffix: 'kr' }],
-    empty: 'Christmas, a birthday party, the move, a trip – give it a budget and a date, and you see what’s spent, what’s left, and what to put aside each month until then.',
+    empty: I18N.k('ui.christmas-a-birthday-party-the-move-a-tr', 'Christmas, a birthday party, the move, a trip – give it a budget and a date, and you see what’s spent, what’s left, and what to put aside each month until then.'),
     sort: function (a, b) { return String(a.start || '9').localeCompare(String(b.start || '9')); },
     row: function (b) {
       var sp = ebSpent(b).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0, past = isKey(b.end || b.start) && (b.end || b.start) < today();

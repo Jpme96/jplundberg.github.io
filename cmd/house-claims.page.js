@@ -69,9 +69,9 @@
     return bits;
   }
   var col = K && mountEl ? K.collection({
-    mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: 'Fault claims', addLabel: 'Claim', limit: 8,
+    mount: mountEl, feature: 'hclaim', key: 'hclaims', filter: inView, icon: 'exclamation-diamond', title: I18N.k('ui.fault-claims', 'Fault claims'), addLabel: I18N.k('ui.claim', 'Claim'), limit: 8,
     addTitle: BASE.addTitle, editTitle: BASE.editTitle, fields: BASE.fields, beforeSave: BASE.beforeSave, afterSave: BASE.afterSave, onDelete: BASE.onDelete,
-    empty: 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.',
+    empty: I18N.k('ui.found-a-fault-in-the-home-or-something-y', 'Found a fault in the home, or something you bought broke? Make a claim with photos – the card writes the letter, keeps the deadlines and reminds you when the answer is late.'),
     headExtra: function (l) { return (l.length ? '<button type="button" class="text-btn" data-hcall aria-label="Report of all claims" data-t-aria-label="ui.report-of-all-claims"><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.report">Report</span></button>' : '') + '<button type="button" class="text-btn" data-hcset aria-label="Claim settings" data-t-aria-label="ui.claim-settings"><i class="bi bi-sliders"></i></button>'; },
     sort: function (a, b) { var oa = OPEN[a.status] ? 0 : 1, ob = OPEN[b.status] ? 0 : 1; return oa - ob || (b.found || '').localeCompare(a.found || ''); },
     summary: function (l) {

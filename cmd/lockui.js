@@ -14,7 +14,7 @@
   function toast(h) { if (window.Quick && window.Quick.toast) window.Quick.toast(h); }
 
   /* ============================== the look ============================== */
-  var STYLES = [['', 'Same as the dashboard'], ['photo', 'Your photo'], ['aurora', 'Aurora'], ['dusk', 'Dusk'], ['ocean', 'Ocean'], ['midnight', 'Midnight'], ['minimal', 'Minimal']];
+  var STYLES = [['', 'Same as the dashboard', 'ui.lk-same'], ['photo', 'Your photo', 'ui.lk-photo'], ['aurora', 'Aurora', 'ui.lk-aurora'], ['dusk', 'Dusk', 'ui.lk-dusk'], ['ocean', 'Ocean', 'ui.lk-ocean'], ['midnight', 'Midnight', 'ui.lk-midnight'], ['minimal', 'Minimal', 'ui.lk-minimal']];   /* [value, English, name] – the label is looked up when drawn */
   function db(mode, fn) {
     return new Promise(function (resolve, reject) {
       var req = indexedDB.open('dash-bg', 1);
@@ -78,10 +78,10 @@
     function render() {
       var s = settings(), cur = s.lockStyle || '';
       box.innerHTML = '<div class="st-col"><div class="lk-tiles">' + STYLES.map(function (x) {
-        return '<button type="button" class="lk-tile" data-lkstyle="' + x[0] + '" aria-pressed="' + (cur === x[0]) + '"><span class="lk-prev lk-' + (x[0] || 'same') + '"' + (x[0] === 'photo' && photoUrl ? ' style="background-image:url(' + photoUrl + ')"' : '') + '><i class="bi bi-lock-fill"></i></span>' + esc(x[1]) + '</button>';
+        return '<button type="button" class="lk-tile" data-lkstyle="' + x[0] + '" aria-pressed="' + (cur === x[0]) + '"><span class="lk-prev lk-' + (x[0] || 'same') + '"' + (x[0] === 'photo' && photoUrl ? ' style="background-image:url(' + photoUrl + ')"' : '') + '><i class="bi bi-lock-fill"></i></span>' + esc(I18N.k(x[2], x[1])) + '</button>';
       }).join('') + '</div><input type="file" id="stLockFile" accept="image/*" hidden>' +
-        (cur === 'photo' ? '<p class="st-note"><button type="button" class="link-btn" data-lkchange>Choose another photo</button> · on this device only</p>' : '') + '</div>' +
-        '<label class="st-row"><span class="st-label">Clock and date<small data-t="ui.big-above-the-passcode">Big, above the passcode</small></span><input type="checkbox" class="switch" id="stLockClock"' + (s.lockClock !== false ? ' checked' : '') + '></label>';
+        (cur === 'photo' ? '<p class="st-note"><button type="button" class="link-btn" data-lkchange data-t="ui.choose-another-photo">Choose another photo</button> · <span data-t="ui.on-this-device-only">on this device only</span></p>' : '') + '</div>' +
+        '<label class="st-row"><span class="st-label" data-t="ui.clock-and-date">Clock and date<small data-t="ui.big-above-the-passcode">Big, above the passcode</small></span><input type="checkbox" class="switch" id="stLockClock"' + (s.lockClock !== false ? ' checked' : '') + '></label>';
     }
     loadPhoto().then(render);
     box.addEventListener('click', function (e) {

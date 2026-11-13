@@ -281,15 +281,15 @@
     box.innerHTML =
       (bills.length ? '<div class="pa-month"><b>' + esc(new Date().toLocaleDateString('en-GB', { month: 'long' })) + ': ' + nPaid + ' of ' + bills.length + ' paid</b><span>' + (toPay > 0 ? money(toPay) + ' still to pay' : '<i class="bi bi-check2-all"></i> all paid') + '</span>' +
         '<span class="stack"><span style="width:' + (bills.length ? nPaid / bills.length * 100 : 0).toFixed(1) + '%;background:var(--accent)"></span></span></div>' : '') +
-      '<p class="muted pa-p">Tick a bill when it’s paid. Tap it to change it – the amount, the due day, months it changes, or when it starts or ends. <i class="bi bi-arrow-left-right"></i> moves it to another account.</p>' +
-      '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> Edit accounts</button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-list-check"></i> All bills step by step</button></div>' +
+      '<p class="muted pa-p"><span data-t="ui.pa-tick-a-bill">Tick a bill when it’s paid. Tap it to change it – the amount, the due day, months it changes, or when it starts or ends.</span> <i class="bi bi-arrow-left-right"></i> moves it to another account.</p>' +
+      '<div class="pa-acts"><button type="button" class="text-btn" data-fsopen="0"><i class="bi bi-bank2"></i> <span data-t="ui.edit-accounts">Edit accounts</span></button><button type="button" class="text-btn" data-fsopen="2"><i class="bi bi-list-check"></i> All bills step by step</button></div>' +
       (groups || '<p class="empty">No bills yet – add one with + Bill.</p>') +
       (saves.length ? '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:#22b35e"><i class="bi bi-piggy-bank"></i></span>Savings<b>' + money(sum(saves)) + '</b></p><ul class="pa-list pa-ro">' + saves.map(function (f) {
           var to = A.get(d, f.to) || p.saveTo; return '<li><span>' + esc(f.name) + '<small>' + (to ? '→ ' + esc(to.label) : 'no account chosen') + '</small></span>' + money(f.amount) + '</li>'; }).join('') + '</ul></div>' : '') +
       laterEnded(d) +
-      (empty.length ? '<p class="muted pa-none">No bills from ' + esc(empty.map(function (g) { return g.a.label; }).join(', ')) + '</p>' : '') +
+      (empty.length ? '<p class="muted pa-none">' + I18N.k('ui.no-bills-from', 'No bills from') + ' ' + esc(empty.map(function (g) { return g.a.label; }).join(', ')) + '</p>' : '') +
       '<div class="pa-set">' +
-        '<label><span><i class="bi bi-basket"></i> Everyday shopping with</span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label>' +
+        '<label><span><i class="bi bi-basket"></i> <span data-t="ui.everyday-shopping-with">Everyday shopping with</span></span><select data-padaily>' + opt(p.daily, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label>' +
         '<label><span><i class="bi bi-piggy-bank"></i> Savings go to</span><select data-pasave><option value="">Not set</option>' + opt(p.saveTo ? p.saveTo.id : '', function (x) { return x.kind !== 'salary' && x.kind !== 'credit'; }) + '</select></label>' +
       '</div>' +
       '<div class="pa-reset"><button type="button" class="text-btn danger" data-frreset><i class="bi bi-arrow-counterclockwise"></i> Reset finances …</button></div>';
@@ -628,7 +628,7 @@
       (facts.length ? '<ul class="ya-facts">' + facts.map(function (f) { return '<li><i class="bi bi-' + f[0] + '" style="color:' + f[1] + '"></i><span><b>' + esc(f[2]) + '</b><small>' + f[3] + '</small></span></li>'; }).join('') + '</ul>' : '') +
       (!modelled ? '<p class="muted ya-p"><i class="bi bi-info-circle"></i> Enter your salary as <b>gross with tax %</b> (Monthly budget → Edit → the salary) and tick “paid by the year” – then holiday pay in June and half tax in December are worked out here and in the budget.</p>' : '') +
       '<div class="ya-tb"><p class="pa-h">Tax settlement (skatteoppgjør)</p><div class="row2">' +
-        '<label class="sv-by"><span data-t="ui.back-or-to-pay-kr">Back (+) or to pay (−), kr</span><input data-yatb inputmode="decimal" value="' + esc(tb.amount || '') + '" placeholder="From the tax return" autocomplete="off"></label>' +
+        '<label class="sv-by"><span data-t="ui.back-or-to-pay-kr">Back (+) or to pay (−), kr</span><input data-yatb inputmode="decimal" value="' + esc(tb.amount || '') + '" placeholder="From the tax return" data-t-placeholder="ui.from-the-tax-return" autocomplete="off"></label>' +
         '<label class="sv-by"><span data-t="ui.when">When</span><input data-yatbm type="month" value="' + esc(tb.month || '') + '"></label></div></div>';
   }
   document.addEventListener('change', function (e) {

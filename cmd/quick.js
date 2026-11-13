@@ -28,7 +28,7 @@
 
   /* ---------- the button ---------- */
   var btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'qa-btn'; btn.id = 'quickAdd'; btn.setAttribute('aria-label', 'Add (expense, event, workout, task or note)');
+  btn.type = 'button'; btn.className = 'qa-btn'; btn.id = 'quickAdd'; btn.setAttribute('aria-label', 'Add (expense, event, workout, task or note)'); btn.setAttribute('data-t-aria-label', 'ui.qa-add-button');
   btn.innerHTML = '<i class="bi bi-plus-lg"></i>';
   var host = document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top');
   if (host) host.insertBefore(btn, host.querySelector('[data-search]') || host.querySelector('[data-me]') || null); else document.body.appendChild(btn);
@@ -38,7 +38,7 @@
   bg.className = 'qa-bg'; bg.id = 'quickSheet'; bg.hidden = true;
   bg.innerHTML = '<div class="qa-box" role="dialog" aria-modal="true" aria-label="Add" data-t-aria-label="ui.add"><div class="qa-handle"></div>' +
     '<form class="qa-smart" id="qaSmart" autocomplete="off"><i class="bi bi-stars" aria-hidden="true"></i>' +
-      '<input id="qaLine" enterkeyhint="done" placeholder="Type it: 149 rema · tor 14 tannlege · løp 5 km" data-t-placeholder="ui.type-it-149-rema-tor-14-tannlege-l-p-5-k" aria-label="Type what to add" spellcheck="false">' +
+      '<input id="qaLine" enterkeyhint="done" placeholder="Type it: 149 rema · tor 14 tannlege · løp 5 km" data-t-placeholder="ui.type-it-149-rema-tor-14-tannlege-l-p-5-k" aria-label="Type what to add" data-t-aria-label="ui.type-what-to-add" spellcheck="false">' +
       '<button type="button" class="qa-clear" id="qaClear" aria-label="Clear" data-t-aria-label="ui.clear" hidden><i class="bi bi-x-circle-fill"></i></button></form>' +
     '<div class="qa-prev" id="qaPrev" hidden></div>' +
     '<div class="qa-manual"><div class="qa-tabs" role="tablist" id="qaTabs"></div><div class="qa-body" id="qaBody"></div></div></div>';

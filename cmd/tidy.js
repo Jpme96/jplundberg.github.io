@@ -23,7 +23,7 @@
   var HINT = {
     todo: 'Nothing to do', notes: 'No notes', goals: 'No goals yet', links: 'No links yet',
     savings: 'No savings goals', networth: 'No accounts yet', bills: 'No fixed costs with a due date',
-    limits: 'No limits set', recur: 'Nothing repeating found yet', subs: 'No subscriptions', yearly: 'No yearly costs'
+    limits: 'No limits set', recur: I18N.k('ui.nothing-repeating-found-yet', 'Nothing repeating found yet'), subs: 'No subscriptions', yearly: 'No yearly costs'
   };
   var opened = {};
   function pass() {

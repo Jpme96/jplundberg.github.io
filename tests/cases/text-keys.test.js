@@ -3,7 +3,7 @@
    and the old list of English sentences (i18n-nb.js) only gets smaller. Made-up data: none needed. */
 const fs = require('fs'), path = require('path'); const { check, done } = require('../lib/check');
 const DIR = path.join(__dirname, '../../cmd');
-const OLD_KB = 253;      /* i18n-nb.js after naming every page's texts (2026-11-11) – lower it as more move over, never raise it */
+const OLD_KB = 243;      /* i18n-nb.js after naming every page's texts (2026-11-11: 253; 2026-11-13 evening: 243) – lower it as more move over, never raise it */
 (async () => {
   const W = {};
   global.I18N = { add: o => Object.assign(W, o) };
@@ -15,6 +15,8 @@ const OLD_KB = 253;      /* i18n-nb.js after naming every page's texts (2026-11-
   for (const p of files) {
     const s = fs.readFileSync(p, 'utf8');
     for (const m of s.matchAll(/data-t(?:-[a-z-]+)?=\\?"([a-z][\w.-]*)\\?"/g)) { used++; if (!W[m[1]]) missing.add(m[1]); }
+    /* names used in scripts, also through a short alias (var K = I18N.k; K('ui.x', 'English')) – a prune once took 11 of those out (2026-11-13) */
+    for (const m of s.matchAll(/(?:I18N\.k|\bK)\(\s*'((?:ui|home)\.[\w.-]+)'\s*,/g)) { used++; if (!W[m[1]]) missing.add(m[1]); }
     /* <tag data-t="k" …>English< : the English must be the stored one */
     for (const m of s.matchAll(/data-t="([\w.-]+)"[^<>]*>\s*([^<>]+?)\s*</g)) {
       const w = W[m[1]], en = m[2].replace(/&amp;/g, '&');

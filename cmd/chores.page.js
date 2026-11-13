@@ -31,7 +31,7 @@
   var showLog = false;
   function fair(l) { var ym = today().slice(0, 7), me = 0, them = 0; logOf().forEach(function (x) { if (x.at.slice(0, 7) !== ym) return; if (x.who === 'me') me++; else them++; }); return { me: me, them: them }; }
   var col = K && $t('hchores') ? K.collection({
-    mount: $t('hchores'), feature: 'house', key: 'chores', icon: 'arrow-repeat', title: 'Chores', addLabel: 'Add', limit: 8,
+    mount: $t('hchores'), feature: 'house', key: 'chores', icon: 'arrow-repeat', title: I18N.k('ui.chores', 'Chores'), addLabel: I18N.k('ui.add', 'Add'), limit: 8,
     addTitle: 'New chore', editTitle: 'Edit chore', fields: [
       { k: 'name', type: 'title', label: 'Chore', ph: 'e.g. Take out the bins, clean the bathroom', req: true },
       { k: 'every', label: 'How often', type: 'select', options: EVERY, def: '1w' },
@@ -58,7 +58,7 @@
       var lg = logOf().slice().sort(function (a, b) { return a.at < b.at ? 1 : -1; }).slice(0, 40);
       return bar + '<ul class="ch-log">' + lg.map(function (x) { return '<li><span>' + esc(x.name) + '</span><small>' + esc(fromKey(x.at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + (x.who === 'me' ? 'You' : whoName('them'))) + '</small></li>'; }).join('') + '</ul>';
     },
-    empty: 'Bins, bathroom, vacuuming – with whose turn it is this week, changing by itself. Tick them off as you go.',
+    empty: I18N.k('ui.bins-bathroom-vacuuming-with-whose-turn', 'Bins, bathroom, vacuuming – with whose turn it is this week, changing by itself. Tick them off as you go.'),
     summary: function (l) {
       if (!l.length) return '';
       var mine = 0, theirs = 0, open = 0; l.forEach(function (c) { var p = period(c); if (!done(c, p)) { open++; if (turn(c, p) === 'me') mine++; else theirs++; } });

@@ -249,7 +249,7 @@
     var prevKey = Object.keys(hist).sort().filter(function (k) { return k < NOW; }).pop();
     var change = prevKey !== undefined && (nwAcc || am.known) ? nw - hist[prevKey] : null;
     var ded = inc.rows.reduce(function (a, r) { return a.concat(r.items); }, []);
-    var spentLbl = per.byPayday && period === 'month' ? 'Spent since payday' : period === 'month' ? 'Spent this month' : 'Spent, ' + periodName(months).replace('All years', 'all years');
+    var spentLbl = per.byPayday && period === 'month' ? 'Spent since payday' : period === 'month' ? I18N.k('ui.spent-this-month', 'Spent this month') : 'Spent, ' + periodName(months).replace('All years', 'all years');
     var spentV = per.byPayday && period === 'month' ? spentNow : spentP;
     var room = per.income - fixed;
 
@@ -257,14 +257,14 @@
       { i: 'wallet2', l: per.byPayday ? 'Left until payday' : 'Left this month', v: income || fixed ? money(left, left < 0 ? 'neg' : '') : '–',
         s: !(income || fixed) ? 'Set up your budget above' : left < 0 ? (real ? 'Short – from your accounts' : 'Over budget') :
           money(real ? real.perDay : left / Math.max(1, per.daysLeft)) + ' a day for ' + per.daysLeft + ' day' + (per.daysLeft === 1 ? '' : 's') + (real ? ' · from your accounts (plan: ' + esc(kr(plan)) + ')' : '') },
-      { i: 'cash-stack', l: 'Income in ' + esc(mName(NOW)), v: income ? money(income + (per.byPayday ? 0 : per.extra)) : '–',
+      { i: 'cash-stack', l: esc(I18N.k('ui.income-in', 'Income in {n}', { n: mName(NOW) })), v: income ? money(income + (per.byPayday ? 0 : per.extra)) : '–',
         s: !income ? 'Add your salary under Monthly budget'
           : inc.rows.length > 1 ? esc(inc.rows.filter(function (r) { return r.net; }).map(function (r) { return r.name + ' ' + kr(r.net); }).join(' + ')) + (inc.gross ? ' · tax ' + esc(kr(inc.tax)) : '')
           : inc.gross ? 'Gross ' + esc(kr(inc.gross)) + ' − tax ' + esc(kr(inc.tax)) + (inc.extra ? ' − ' + (ded.length > 2 || inc.logged ? 'deductions ' + esc(kr(inc.extra)) : ded.map(function (x) { return esc(x.name) + ' ' + esc(kr(x.amount)); }).join(' − ')) : '') + (inc.note ? ' · ' + esc(inc.note) : '')
           : 'After tax' },
       { i: 'receipt', l: spentLbl, v: money(spentV),
         s: months.length > 1 ? money(avg) + ' per month on average' : (room > 0 ? Math.round(spentNow / room * 100) + ' % of what you can spend (' + esc(kr(room)) + ')' : '') },
-      { i: 'percent', l: 'Savings rate', v: rate === null ? '–' : Math.round(rate * 100) + ' %', s: rate === null ? 'Needs your income' : rateSub },
+      { i: 'percent', l: I18N.k('ui.savings-rate', 'Savings rate'), v: rate === null ? '–' : Math.round(rate * 100) + ' %', s: rate === null ? I18N.k('ui.needs-your-income', 'Needs your income') : rateSub },
       { i: 'calendar-event', l: 'Next payday', v: mp ? (dIn(mp) === 0 ? 'Today' : dIn(mp) === 1 ? 'Tomorrow' : 'In ' + dIn(mp) + ' days') : '–',
         s: mp ? esc(mp.src.name || 'Salary') + ' · ' + mp.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + (mp.net ? ' · ' + esc(kr(mp.net)) : '') +
           (other ? ' · first ' + esc(other.src.name) + ' ' + esc(kr(other.net)) + ' on ' + other.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') : 'Give your income a payday under Monthly budget' },

@@ -3,9 +3,10 @@
 const { open, sl, U, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const EN = /\b(the|your|you|and|with|this|that|from|when|what|add|show|hide|nothing|today|tomorrow|week|month|settings|change|remove|open)\b/i;
 const BUDGET = 40;     /* English bits per page, at most */
-/* texts still translated by matching the English sentence, per page (counted 2026-11-12 night after naming the choices in lists (i18n-keys.py --opts),
+/* texts still translated by matching the English sentence, per page (2026-11-13 evening: the Settings rows, card set-ups, tabs and the
+   tax/bill texts named by hand and with --props – Finances 154 → 48, House 117 → 23, Travel 65 → 17; before that: counted 2026-11-12 night after naming the choices in lists (i18n-keys.py --opts),
    'Move {n} left/right', 'From {n}:00', '{n} people' and the Settings summaries with I18N.k and {n}; lower it as pages move over) */
-const SENT = { '': 98, 'calendar/': 82, 'travel/': 74, 'finance/': 163, 'house/': 126, 'papers/': 74, 'people/': 74, 'habits/': 114, 'goals/': 68, 'work/': 98, 'wish/': 74, 'food/': 76 };
+const SENT = { '': 51, 'calendar/': 34, 'travel/': 23, 'finance/': 54, 'house/': 29, 'papers/': 22, 'people/': 24, 'habits/': 58, 'goals/': 20, 'work/': 37, 'wish/': 18, 'food/': 26 };   /* the counts + 6: a few texts depend on the day and the time (dinner planned or not, the evening lines) */
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });

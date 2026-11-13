@@ -57,7 +57,7 @@
     if (!want) { if (mic) mic.hidden = true; return; }
     if (!mic) {
       mic = document.createElement('button'); mic.type = 'button'; mic.className = 'icon-btn mic-btn'; mic.id = 'micBtn';
-      mic.setAttribute('aria-label', 'Talk to add'); mic.title = 'Talk to add'; mic.innerHTML = '<i class="bi bi-mic"></i>';
+      mic.setAttribute('aria-label', 'Talk to add'); mic.title = 'Talk to add'; mic.setAttribute('data-t-aria-label', 'ui.talk-to-add'); mic.setAttribute('data-t-title', 'ui.talk-to-add'); mic.innerHTML = '<i class="bi bi-mic"></i>';
       mic.addEventListener('click', listen);
     }
     if (!mic.isConnected) addButton(mic);

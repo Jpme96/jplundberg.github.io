@@ -147,9 +147,9 @@
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 2, help: 'Where the receipt is, the shop, warranty …' }],
     onDelete: function (it) { dropPh(it.photo, it.id); dropPh(it.receipt, it.id); } };
   var invCol = K && $t('hinv') ? K.collection({
-    mount: $t('hinv'), feature: 'house', key: 'hinv', icon: 'box-seam', title: 'Home inventory', addLabel: 'Item', limit: 8,
+    mount: $t('hinv'), feature: 'house', key: 'hinv', icon: 'box-seam', title: I18N.k('ui.home-inventory', 'Home inventory'), addLabel: I18N.k('ui.item', 'Item'), limit: 8,
     addTitle: INV.addTitle, editTitle: INV.editTitle, fields: INV.fields, onDelete: INV.onDelete,
-    empty: 'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.',
+    empty: I18N.k('ui.note-your-valuables-with-a-photo-price-a', 'Note your valuables with a photo, price and receipt – if there’s a fire or a break-in, the list for the insurance company is ready.'),
     headExtra: function (l) { return l.length ? '<button type="button" class="text-btn" data-invpdf><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.insurance-list">Insurance list</span></button><button type="button" class="text-btn" data-invreg><i class="bi bi-journal-check"></i> Register</button>' : ''; },
     sort: function (a, b) { return (+b.price || 0) - (+a.price || 0); },
     summary: function (l) {

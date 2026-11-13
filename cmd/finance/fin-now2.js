@@ -22,7 +22,7 @@
   /* ---------- your accounts at a glance ---------- */
   function accts(d) {
     var box = $('fnAccts'), list = A.list(d), m = A.money(d);
-    if (!m.known) { box.innerHTML = '<p class="empty">No balances yet. <button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="myaccts" data-t="ui.add-whats-in-your-accounts">Add what’s in your accounts</button></p>'; return; }
+    if (!m.known) { box.innerHTML = '<p class="empty"><span data-t="ui.no-balances-yet">No balances yet.</span> <button type="button" class="text-btn" data-ftab-go="accts" data-fp-to="myaccts" data-t="ui.add-whats-in-your-accounts">Add what’s in your accounts</button></p>'; return; }
     box.innerHTML = '<div class="fn-tiles">' + list.map(function (a) {
       var cr = a.kind === 'credit', v = a.bal;
       return '<button type="button" class="fn-tile" data-ftab-go="accts" data-fp-to="myaccts" style="--c:' + a.c + '"><span><i class="bi bi-' + a.icon + '"></i> ' + esc(a.label) + '</span>' +

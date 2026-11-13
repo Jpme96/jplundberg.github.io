@@ -21,14 +21,14 @@
   function daysTo(k) { return Math.round((fromKey(k) - fromKey(today())) / 864e5); }
   function on() { return Fe.on('house'); }
   function hcfg() { return window.HomeLife ? window.HomeLife.cfg('housecfg') : {}; }
-  var SEASONS = [['spring', 'Spring', 'flower1', '#22b35e', [2, 3, 4]], ['summer', 'Summer', 'sun', '#d9a400', [5, 6, 7]], ['autumn', 'Autumn', 'tree', '#e8743b', [8, 9, 10]], ['winter', 'Winter', 'snow', '#3b9de0', [11, 0, 1]]];
+  var SEASONS = [['spring', I18N.k('ui.spring', 'Spring'), 'flower1', '#22b35e', [2, 3, 4]], ['summer', I18N.k('ui.summer', 'Summer'), 'sun', '#d9a400', [5, 6, 7]], ['autumn', I18N.k('ui.autumn', 'Autumn'), 'tree', '#e8743b', [8, 9, 10]], ['winter', I18N.k('ui.winter', 'Winter'), 'snow', '#3b9de0', [11, 0, 1]]];
   var USUAL = {
-    autumn: [['a1', 'Clean the gutters and downpipes', 'house'], ['a2', 'Turn off and drain the outdoor taps', 'droplet'], ['a3', 'Change to winter tyres', 'car-front'], ['a4', 'Put away garden furniture and the hose', 'umbrella'],
-      ['a5', 'Check the roof for loose tiles', 'house-exclamation'], ['a6', 'Rake the leaves off the lawn', 'tree-fill'], ['a7', 'Find the snow shovel and ice grips', 'snow'], ['a8', 'Check the seals on doors and windows', 'door-closed'], ['a9', 'Bleed the radiators', 'thermometer-half']],
-    winter: [['w1', 'New batteries in the smoke alarms (1 December)', 'alarm'], ['w2', 'Keep snow and ice off the roof edge', 'snow2'], ['w3', 'Keep the heat pump’s outdoor unit free of snow', 'fan'], ['w4', 'Clear snow from vents and the chimney', 'wind'], ['w5', 'Check pipes in cold rooms for frost', 'thermometer-snow']],
-    spring: [['s1', 'Change to summer tyres', 'car-front'], ['s2', 'Clean the gutters after the winter', 'house'], ['s3', 'Look for winter damage on the roof and facade', 'house-exclamation'], ['s4', 'Turn the outdoor taps back on and check for leaks', 'droplet'],
-      ['s5', 'Wash the windows', 'window'], ['s6', 'Service the lawnmower', 'scissors'], ['s7', 'Check that water runs away from the house', 'water'], ['s8', 'Clean the heat pump filters', 'fan']],
-    summer: [['u1', 'Paint or stain the facade or deck where needed', 'brush'], ['u2', 'Wash and oil the deck', 'grid-3x3'], ['u3', 'Clean the ventilation valves', 'wind'], ['u4', 'Wash the facade', 'house'], ['u5', 'Check the roof and flashings', 'house-check']]
+    autumn: [['a1', I18N.k('ui.clean-the-gutters-and-downpipes', 'Clean the gutters and downpipes'), 'house'], ['a2', I18N.k('ui.turn-off-and-drain-the-outdoor-taps', 'Turn off and drain the outdoor taps'), 'droplet'], ['a3', I18N.k('ui.change-to-winter-tyres', 'Change to winter tyres'), 'car-front'], ['a4', I18N.k('ui.put-away-garden-furniture-and-the-hose', 'Put away garden furniture and the hose'), 'umbrella'],
+      ['a5', I18N.k('ui.check-the-roof-for-loose-tiles', 'Check the roof for loose tiles'), 'house-exclamation'], ['a6', I18N.k('ui.rake-the-leaves-off-the-lawn', 'Rake the leaves off the lawn'), 'tree-fill'], ['a7', I18N.k('ui.find-the-snow-shovel-and-ice-grips', 'Find the snow shovel and ice grips'), 'snow'], ['a8', I18N.k('ui.check-the-seals-on-doors-and-windows', 'Check the seals on doors and windows'), 'door-closed'], ['a9', I18N.k('ui.bleed-the-radiators', 'Bleed the radiators'), 'thermometer-half']],
+    winter: [['w1', I18N.k('ui.new-batteries-in-the-smoke-alarms-1-dece', 'New batteries in the smoke alarms (1 December)'), 'alarm'], ['w2', I18N.k('ui.keep-snow-and-ice-off-the-roof-edge', 'Keep snow and ice off the roof edge'), 'snow2'], ['w3', I18N.k('ui.keep-the-heat-pumps-outdoor-unit-free-of', 'Keep the heat pump’s outdoor unit free of snow'), 'fan'], ['w4', I18N.k('ui.clear-snow-from-vents-and-the-chimney', 'Clear snow from vents and the chimney'), 'wind'], ['w5', I18N.k('ui.check-pipes-in-cold-rooms-for-frost', 'Check pipes in cold rooms for frost'), 'thermometer-snow']],
+    spring: [['s1', I18N.k('ui.change-to-summer-tyres', 'Change to summer tyres'), 'car-front'], ['s2', I18N.k('ui.clean-the-gutters-after-the-winter', 'Clean the gutters after the winter'), 'house'], ['s3', I18N.k('ui.look-for-winter-damage-on-the-roof-and-f', 'Look for winter damage on the roof and facade'), 'house-exclamation'], ['s4', I18N.k('ui.turn-the-outdoor-taps-back-on-and-check', 'Turn the outdoor taps back on and check for leaks'), 'droplet'],
+      ['s5', I18N.k('ui.wash-the-windows', 'Wash the windows'), 'window'], ['s6', I18N.k('ui.service-the-lawnmower', 'Service the lawnmower'), 'scissors'], ['s7', I18N.k('ui.check-that-water-runs-away-from-the-hous', 'Check that water runs away from the house'), 'water'], ['s8', I18N.k('ui.clean-the-heat-pump-filters', 'Clean the heat pump filters'), 'fan']],
+    summer: [['u1', I18N.k('ui.paint-or-stain-the-facade-or-deck-where', 'Paint or stain the facade or deck where needed'), 'brush'], ['u2', I18N.k('ui.wash-and-oil-the-deck', 'Wash and oil the deck'), 'grid-3x3'], ['u3', I18N.k('ui.clean-the-ventilation-valves', 'Clean the ventilation valves'), 'wind'], ['u4', I18N.k('ui.wash-the-facade', 'Wash the facade'), 'house'], ['u5', I18N.k('ui.check-the-roof-and-flashings', 'Check the roof and flashings'), 'house-check']]
   };
   function seasonOf(d) { d = d || new Date(); var m = d.getMonth(); return SEASONS.filter(function (s) { return s[4].indexOf(m) > -1; })[0]; }
   function sKey(id, d) { d = d || new Date(); var y = d.getFullYear(); if (id === 'winter' && d.getMonth() < 2) y--; return y + '-' + id; }
@@ -44,7 +44,7 @@
     var s = seasonOf(now), m = now.getMonth(), first = s[4][0], inFirst = m === first || (m === s[4][1] && now.getDate() <= 15);
     if (!inFirst) return;
     var x = seasonLeft(); if (!x.left.length) return;
-    add(66, s[2], s[3], s[1] + ' checklist: ' + (x.all.length - x.left.length) + ' of ' + x.all.length + ' done', x.left.slice(0, 2).map(function (y) { return y.text; }).join(' · '), '/cmd/house/#hseason', { key: 'season:' + sKey(s[0]) + ':' + (x.all.length - x.left.length), tip: true });
+    add(66, s[2], s[3], I18N.k('ui.season-checklist-done', '{s} checklist: {a} of {b} done', { s: I18N.lang === 'nb' ? s[1].toLowerCase() : s[1], a: x.all.length - x.left.length, b: x.all.length }), x.left.slice(0, 2).map(function (y) { return y.text; }).join(' · '), '/cmd/house/#hseason', { key: 'season:' + sKey(s[0]) + ':' + (x.all.length - x.left.length), tip: true });
   });
   function readings() { return Fe.list('hmeter').filter(function (x) { return /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') && typeof x.value === 'number'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
   function perMonth() {
@@ -70,7 +70,7 @@
     var tm = addDays(today(), 1);
     Fe.list('hbins').forEach(function (b) { var nx = HL.nextPickup(b); if (nx === today() || nx === tm) out.bins.push({ t: (b.title || 'Bin') + (nx === today() ? ' – today' : ' – tomorrow'), href: '#hbins' }); });
     var r = readings(); if (hcfg().meterNudge && (!r.length || daysTo(r[r.length - 1].date) < -31)) out.meter.push({ t: 'Read the meter', href: '#hmeter' });
-    var s = seasonLeft(); if (s.left.length) out.garden.push({ t: s.s[1] + ' checklist: ' + s.left.length + ' left', href: '#hseason' });
+    var s = seasonLeft(); if (s.left.length) out.garden.push({ t: I18N.k('ui.season-checklist-left', '{s} checklist: {n} left', { s: I18N.lang === 'nb' ? s.s[1].toLowerCase() : s.s[1], n: s.left.length })   /* the season's name is already in the reader's language (I18N.k in SEASONS) */, href: '#hseason' });
     return out;
   }
   window.HousePlus = { perMonth: perMonth, seasonOf: seasonOf, seasonLeft: seasonLeft, due: due };

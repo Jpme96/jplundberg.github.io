@@ -33,7 +33,7 @@
   function who() {
     var s = readJSON('dash.settings', {}) || {}, p = readJSON('dash.profile', {}) || {}, d = new Date();
     bar.querySelector('.mb-who b').textContent = p.first || s.name || 'Lundberg';
-    bar.querySelector('.mb-who small').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · week ' + week(d);
+    bar.querySelector('.mb-who small').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + I18N.k('ui.week-n-lower', 'week {n}', { n: week(d) });
   }
   /* the buttons that used to sit in the top corner of each page move into the bar (and back for Classic) */
   var moved = [];

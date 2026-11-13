@@ -420,7 +420,7 @@
             <option data-t="ui.15-minutes" value="15">15 minutes</option>
             <option value="60">1 hour</option>
             <option data-t="ui.4-hours" value="240">4 hours</option>
-            <option value="1440">1 day</option>
+            <option data-t="ui.1-day" value="1440">1 day</option>
           </select>
         </label>
         <button class="st-row st-btn" id="stChangePc" type="button"><span data-t="ui.change-passcode"><i class="bi bi-key"></i> Change passcode</span><i class="bi bi-chevron-right"></i></button>
@@ -520,8 +520,8 @@
               <div class="ah-keys">
                 <span><code>exercise</code> Exercise Minutes · Sum</span><span><code>active</code> Active Energy · Sum</span><span><code>stand</code> Stand Hours · Sum</span>
                 <span><code>distance</code> Walking + Running Distance · Sum</span><span><code>flights</code> Flights Climbed · Sum</span><span><code>daylight</code> Time in Daylight · Sum</span>
-                <span><code>hr</code> Heart Rate · Average, today</span><span><code>rhr</code> Resting Heart Rate · Average</span><span><code>hrv</code> Heart Rate Variability · Average</span><span><code>vo2</code> Cardio Fitness (VO₂ max) · Average, last 30 days</span>
-                <span><code>weight</code> Weight · Average, last 30 days</span><span><code>mindful</code> Mindful Minutes · Sum</span><span><code>water</code> Water · Sum</span>
+                <span><code>hr</code> Heart Rate · Average, today</span><span><code>rhr</code> Resting Heart Rate · Average</span><span><code>hrv</code> <span data-t="ui.ah-key-hrv">Heart Rate Variability · Average</span></span><span><code>vo2</code> <span data-t="ui.ah-key-vo2">Cardio Fitness (VO₂ max) · Average, last 30 days</span></span>
+                <span><code>weight</code> <span data-t="ui.ah-key-weight">Weight · Average, last 30 days</span></span><span><code>mindful</code> <span data-t="ui.ah-key-mindful">Mindful Minutes · Sum</span></span><span><code>water</code> <span data-t="ui.ah-key-water">Water · Sum</span></span>
               </div></li>
             <li data-t="ui.run-it-once-open-the-dashboard-a-note-sa">Run it once. Open the dashboard – a note says what arrived.</li>
             <li data-t="ui.shortcuts">Shortcuts → <b>Automation → +</b> <span data-t="ui.time-of-day-22-30-daily">→ Time of Day, 22:30, Daily →</span> <b>Run Immediately</b> <span data-t="ui.health-to-dashboard">→ Health to dashboard.</span></li>
@@ -633,7 +633,7 @@
           <textarea id="cvLangs" rows="3" placeholder="Norwegian, 100"></textarea>
           <h3 data-t="ui.interests">Interests</h3>
           <p data-t="ui.one-per-line" class="st-sub">One per line.</p>
-          <textarea id="cvHobbies" rows="3" placeholder="Training"></textarea>
+          <textarea id="cvHobbies" rows="3" placeholder="Training" data-t-placeholder="ui.training"></textarea>
         </section>
         <section class="st-group">
           <h3 data-t="ui.contact-details-on-the-cv">Contact details on the CV</h3>
@@ -671,7 +671,7 @@
       </div>
 
       <div data-t-data-title="ui.visitors" class="st-page ws-page" data-page="visitors" data-title="Visitors" hidden>
-        <div class="seg ws-days" id="wsDays"><button type="button" data-days="7" aria-pressed="true">7 days</button><button data-t="ui.30-days" type="button" data-days="30">30 days</button></div>
+        <div class="seg ws-days" id="wsDays"><button data-t="ui.7-days" type="button" data-days="7" aria-pressed="true">7 days</button><button data-t="ui.30-days" type="button" data-days="30">30 days</button></div>
         <div id="wsVisitors"><p data-t="ui.loading" class="st-intro">Loading…</p></div>
       </div>
 
@@ -687,9 +687,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=5407b7362b"></script>
-  <script src="../dist/page-admin.js?v=fcc5dcdf80"></script>
-  <script src="../dist/tail.js?v=7c32ee7fed"></script>
+  <script src="../dist/head.js?v=bbede81493"></script>
+  <script src="../dist/page-admin.js?v=cee91bccec"></script>
+  <script src="../dist/tail.js?v=aa433cffd3"></script>
   <!-- /scripts -->
 </body>
 </html>

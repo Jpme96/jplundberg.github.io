@@ -175,7 +175,7 @@
   var col = K && $t('papers') ? K.collection({
     mount: $t('papers'), feature: 'papers', key: 'papers', icon: 'folder2-open', title: 'Papers', addLabel: 'Paper', limit: 80,
     addTitle: CFG.addTitle, editTitle: CFG.editTitle, fields: FIELDS, beforeSave: CFG.beforeSave, onDelete: CFG.onDelete, sort: sortPapers,
-    empty: 'Add the papers you’d hate to search for – the samboerkontrakt, insurance, the loan agreement, your work contract – with the PDF, and get a reminder before they expire or renew.',
+    empty: I18N.k('ui.add-the-papers-youd-hate-to-search-for-t', 'Add the papers you’d hate to search for – the samboerkontrakt, insurance, the loan agreement, your work contract – with the PDF, and get a reminder before they expire or renew.'),
     above: function (l) {
       var h = '';
       var kinds = KINDS.filter(function (k) { return l.some(function (x) { return (x.kind || 'other') === k[0]; }); });

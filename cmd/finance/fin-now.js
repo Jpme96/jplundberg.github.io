@@ -26,7 +26,7 @@
     var box = $('fnHero'), per = B.period(d), real = B.real(d), p = B.payPlan(d);
     var plan = per.income - p.fixed - p.spent, has = per.income > 0 || p.fixed > 0;
     if (!has && !real) {
-      box.innerHTML = '<div class="fh-empty"><i class="bi bi-wallet2"></i><h2>Your money, in one place</h2><p class="muted">Add your accounts, your salary and what goes out each month – 4 short steps. Then this shows what you can really use until payday, what’s coming, and where it all goes.</p>' +
+      box.innerHTML = '<div class="fh-empty"><i class="bi bi-wallet2"></i><h2 data-t="ui.fh-your-money-in-one-place">Your money, in one place</h2><p class="muted" data-t="ui.fh-add-your-accounts-4-steps">Add your accounts, your salary and what goes out each month – 4 short steps. Then this shows what you can really use until payday, what’s coming, and where it all goes.</p>' +
         '<button type="button" class="pill-btn wide" data-fsopen="0"><i class="bi bi-magic"></i> Set up Finances</button></div>';
       return;
     }
@@ -76,7 +76,7 @@
     if (!m.known && (d.budget.income.length || d.budget.fixed.length)) out.push({ k: 'bal', icon: 'bank2', c: '#8a6fdf', t: 'Add what’s in your accounts', s: 'Then the number above is what you can really use, not just the plan', acts: '<button type="button" class="pill-btn sm" data-fnupd data-t="ui.add-balances">Add balances</button>' });
     else if (m.known && m.oldest && daysAgo(m.oldest) > 7) out.push({ k: 'old', icon: 'clock-history', c: '#c98500', t: 'Your balances are ' + daysAgo(m.oldest) + ' days old', s: 'Import your bank files or type the new balances', acts: '<a class="pill-btn sm" href="#import" data-t="ui.import">Import</a><button type="button" class="text-btn" data-fnupd data-t="ui.update">Update</button>' });
     if (m.missing && m.missing.length && m.known) out.push({ k: 'miss', icon: 'question-circle', c: '#6b6d73', t: 'No balance for ' + esc(m.missing.map(function (a) { return a.label; }).join(', ')), s: 'They’re left out of the number above and your net worth', acts: '<button type="button" class="text-btn" data-fnupd data-t="ui.add">Add</button>' });
-    list.filter(function (a) { return a.kind === 'credit' && !a.due; }).slice(0, 1).forEach(function (a) { out.push({ k: 'due:' + a.id, icon: 'credit-card', c: '#d95926', t: 'When is the ' + esc(a.label) + ' bill due?', s: 'Then you get a reminder and it shows in the next 14 days', acts: '<button type="button" class="text-btn" data-fsopen="0" data-t="ui.set-the-day">Set the day</button>' }); });
+    list.filter(function (a) { return a.kind === 'credit' && !a.due; }).slice(0, 1).forEach(function (a) { out.push({ k: 'due:' + a.id, icon: 'credit-card', c: '#d95926', t: esc(I18N.k('ui.when-is-the-bill-due', 'When is the {n} bill due?', { n: a.label })), s: I18N.k('ui.then-you-get-a-reminder-14-days', 'Then you get a reminder and it shows in the next 14 days'), acts: '<button type="button" class="text-btn" data-fsopen="0" data-t="ui.set-the-day">Set the day</button>' }); });
     if (d.budget.income.length && !B.hasPayday(d)) out.push({ k: 'payday', icon: 'cash-stack', c: '#11a597', t: 'Give your salary a payday', s: 'The budget then runs from payday to payday', acts: '<button type="button" class="text-btn" data-fsopen="1">Set payday</button>' });
     var other = (d.expenses || []).filter(function (e) { return per.has(e.date) && (e.cat || 'other') === 'other'; });
     if (other.length >= 3) out.push({ k: 'other:' + per.startKey, icon: 'tags', c: '#c98500', t: other.length + ' expenses are filed under Other', s: money(sum(other)) + ' this period – sort them to see where the money goes', acts: '<button type="button" class="text-btn" data-fnsort>Sort them</button>' });
@@ -139,7 +139,7 @@
     ev.sort(function (a, b) { return (b.late - a.late) || (a.dt - b.dt) || (a.kind === 'pay' ? -1 : 1); });
     var out = sum(ev.filter(function (e) { return e.amt < 0 && !e.paid; }), function (e) { return -e.amt; }), inn = sum(ev.filter(function (e) { return e.amt > 0; }), function (e) { return e.amt; });
     $('fnNextNote').innerHTML = ev.length ? money(-out, 'neg') + (inn ? ' · ' + money(inn) : '') : '';
-    if (!ev.length) { box.innerHTML = '<p class="empty">Nothing due in the next 14 days. Give your fixed costs a due day (Accounts → Income &amp; fixed costs) and they show up here.</p>'; return; }
+    if (!ev.length) { box.innerHTML = '<p class="empty" data-t="ui.fh-nothing-due-14-days">Nothing due in the next 14 days. Give your fixed costs a due day (Accounts → Income &amp; fixed costs) and they show up here.</p>'; return; }
     var label = function (e) {
       var n = Math.round((e.real - t0) / 864e5);
       return e.late ? '<span class="late">' + (-n) + ' day' + (n === -1 ? '' : 's') + ' late</span>' : n === 0 ? '<span class="soon" data-t="ui.today">Today</span>' : n === 1 ? 'Tomorrow' : e.real.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });

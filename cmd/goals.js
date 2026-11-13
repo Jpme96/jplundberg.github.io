@@ -162,7 +162,7 @@
         sub('sort-down', 'Order') + '<div class="st-group">' + sel('sort', 'Goals', [['due', I18N.k('ui.by-date', 'By date')], ['pct', I18N.k('ui.closest-to-done-first', 'Closest to done first')], ['cat', I18N.k('ui.by-kind', 'By kind')]]) + '</div>' +
         '<div class="st-group"><a class="st-row st-btn" href="/cmd/goals/"><span><i class="bi bi-bullseye"></i> <span data-t="ui.open-goals">Open Goals</span></span><i class="bi bi-chevron-right"></i></a></div>';
     }
-    function summary() { var c = cfg(), r = document.getElementById('sum-goals'); if (r) r.textContent = (c.brief ? 'Reminders on' : 'No reminders') + ' · to Done ' + (+c.archive ? 'after ' + c.archive + (+c.archive === 1 ? ' day' : ' days') : 'by hand'); var row = document.getElementById('stRow-goals'); if (row) row.hidden = !on(); }
+    function summary() { var c = cfg(), r = document.getElementById('sum-goals'); if (r) r.textContent = (c.brief ? I18N.k('ui.sum-reminders-on', 'Reminders on') : I18N.k('ui.sum-no-reminders', 'No reminders')) + ' · ' + (+c.archive ? I18N.k(+c.archive === 1 ? 'ui.sum-to-done-after-day' : 'ui.sum-to-done-after-days', +c.archive === 1 ? 'to Done after {n} day' : 'to Done after {n} days', { n: c.archive }) : I18N.k('ui.sum-to-done-by-hand', 'to Done by hand')); var row = document.getElementById('stRow-goals'); if (row) row.hidden = !on(); }
     document.addEventListener('change', function (e) {
       var i = e.target.closest('[data-glcfg]'); if (!i) return;
       var v = i.type === 'checkbox' ? i.checked : /^\d+$/.test(i.value) ? +i.value : i.value;

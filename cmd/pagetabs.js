@@ -18,7 +18,7 @@
 
   var CONF = {
     habits: {
-      tabs: [['today', 'Today', 'sun'], ['training', 'Training', 'heart-pulse'], ['body', 'Body', 'apple'], ['care', 'Care', 'clipboard2-pulse']],
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', 'Body', 'apple'], ['care', 'Care', 'clipboard2-pulse']],
       map: [['#hpTiles', 'today'], ['#hsToday', 'today'], ['.hr-wrap', 'today'], ['#hpHabits', 'today'], ['#hpEmpty', 'today'],
         ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'], ['[data-tool="hwater"]', 'today'],
         ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care']],
@@ -27,15 +27,15 @@
     house: {
       /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
       /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
-      tabs: [['shared', 'Shared', 'people', null, true], ['upkeep', 'Upkeep', 'tools', null, true], ['energy', 'Energy', 'lightning-charge', null, true], ['things', 'Things', 'box-seam', null, true],
-        ['projects', 'Projects', 'hammer', null], ['docs', 'Docs', 'journal-bookmark', ['hdocs', 'hclaim']], ['history', 'History', 'clock-history']],
+      tabs: [['shared', I18N.k('ui.shared', 'Shared'), 'people', null, true], ['upkeep', I18N.k('ui.upkeep', 'Upkeep'), 'tools', null, true], ['energy', I18N.k('ui.energy', 'Energy'), 'lightning-charge', null, true], ['things', I18N.k('ui.things', 'Things'), 'box-seam', null, true],
+        ['projects', I18N.k('ui.projects', 'Projects'), 'hammer', null], ['docs', I18N.k('ui.docs', 'Docs'), 'journal-bookmark', ['hdocs', 'hclaim']], ['history', I18N.k('ui.history', 'History'), 'clock-history']],
       map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hfdvup"]', 'upkeep'], ['[data-tool="hchores"]', 'upkeep'], ['[data-tool="hplants"]', 'upkeep'], ['[data-tool="henergy"]', 'energy'], ['[data-tool="hpros"]', 'projects'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
     },
     work: {
-      tabs: [['today', 'Today', 'briefcase'], ['notes', 'Notes', 'journal-text'], ['plan', 'Plan', 'calendar-range']],
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],
         ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'notes'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today']],
       feats: { today: ['flex', 'ptime', 'shutdown'], notes: ['meetings', 'fdv', 'prep'], plan: ['holiday', 'learning'] }

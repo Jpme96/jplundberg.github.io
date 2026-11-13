@@ -103,7 +103,7 @@
     var s = $('sumFeatures');
     if (!s) return;
     var extra = F.LIST.filter(function (x) { return !x.def && F.on(x.id); }).length;
-    s.textContent = F.LIST.filter(function (x) { return F.on(x.id); }).length + ' of ' + F.LIST.length + ' on' + (extra ? ' · ' + extra + ' extra' : '');
+    s.textContent = I18N.k('ui.sum-n-of-m-on', '{n} of {m} on', { n: F.LIST.filter(function (x) { return F.on(x.id); }).length, m: F.LIST.length }) + (extra ? ' · ' + I18N.k('ui.sum-n-extra', '{n} extra', { n: extra }) : '');
   }
   box.addEventListener('change', function (e) {
     if (e.target.hasAttribute && e.target.hasAttribute('data-simple')) { F.setSimple(e.target.checked); render(); return; }
@@ -116,7 +116,7 @@
     var row = $('stWorkRow'); if (!row) return;
     var on = F.WORK.some(F.on), c = wkCfg();
     row.hidden = !on;
-    $('sumWork').textContent = String(c.norm).replace('.', ',') + ' h day · ' + c.vacation + ' holiday days' + (c.brk ? ' · ' + c.brk + ' min break' : '');
+    $('sumWork').textContent = I18N.k('ui.sum-h-day', '{n} h day', { n: String(c.norm).replace('.', ',') }) + ' · ' + I18N.k('ui.sum-holiday-days', '{n} holiday days', { n: c.vacation }) + (c.brk ? ' · ' + I18N.k('ui.sum-min-break', '{n} min break', { n: c.brk }) : '');
     if (document.activeElement !== $('wkNorm')) $('wkNorm').value = String(c.norm).replace('.', ',');
     if (document.activeElement !== $('wkBrk')) $('wkBrk').value = c.brk || '';
     if (document.activeElement !== $('wkVac')) $('wkVac').value = c.vacation;

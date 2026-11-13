@@ -26,13 +26,13 @@
   function shortcuts() {
     var box = $('scList'); if (!box) return;
     var o = location.origin, Fe = window.Features, on = function (k, d) { return Fe ? Fe.on(k) : d; };
-    var L = [['stars', 'Type a line – for Siri', o + '/cmd/?add=', 'Add what you say after it: “149 rema”, “fre 18 middag”, “løp 5 km”']];
-    if (on('finance', true)) L.push(['receipt', 'Log expense', o + '/cmd/?add=expense', 'Opens the expense form']);
-    if (on('calendar', true)) L.push(['calendar-plus', 'New event', o + '/cmd/?add=event', '']);
-    L.push(['check2-square', 'New task', o + '/cmd/?add=task', '']);
-    if (on('training', false)) L.push(['heart-pulse', 'Log workout', o + '/cmd/?add=workout', '']);
-    L.push(['clipboard-check', 'Weekly check-in', o + '/cmd/#checkin', '']);
-    if (on('finance', true)) L.push(['upload', 'Import from bank', o + '/cmd/finance/#import', '']);
+    var K = I18N.k, L = [['stars', K('ui.sc-type-a-line', 'Type a line – for Siri'), o + '/cmd/?add=', K('ui.sc-add-what-you-say', 'Add what you say after it: “149 rema”, “fre 18 middag”, “løp 5 km”')]];
+    if (on('finance', true)) L.push(['receipt', K('ui.log-expense', 'Log expense'), o + '/cmd/?add=expense', K('ui.sc-opens-the-expense-form', 'Opens the expense form')]);
+    if (on('calendar', true)) L.push(['calendar-plus', K('ui.sc-new-event', 'New event'), o + '/cmd/?add=event', '']);
+    L.push(['check2-square', K('ui.sc-new-task', 'New task'), o + '/cmd/?add=task', '']);
+    if (on('training', false)) L.push(['heart-pulse', K('ui.sc-log-workout', 'Log workout'), o + '/cmd/?add=workout', '']);
+    L.push(['clipboard-check', K('ui.weekly-check-in', 'Weekly check-in'), o + '/cmd/#checkin', '']);
+    if (on('finance', true)) L.push(['upload', K('ui.import-from-bank', 'Import from bank'), o + '/cmd/finance/#import', '']);
     box.innerHTML = L.map(function (l) {
       return '<div class="st-row sc-row"><span class="st-ico" style="--c:#8a6fdf"><i class="bi bi-' + l[0] + '"></i></span><span class="st-label">' + esc(l[1]) +
         '<small class="sc-url">' + esc(l[2].replace(/^https?:\/\//, '')) + '</small>' + (l[3] ? '<small>' + esc(l[3]) + '</small>' : '') + '</span>' +
@@ -181,7 +181,7 @@
     document.querySelectorAll('[data-ntk]').forEach(function (c) { c.checked = !!p.k[c.dataset.ntk]; });
     document.querySelectorAll('[data-ntdetail]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.ntdetail === p.detail)); });
     $('ntDetailNote').textContent = p.detail === 'full' ? 'Shows titles and amounts. They pass through your server to send them.' : 'No titles or amounts leave your device – “A bill is due today”.';
-    $('ntHelp').textContent = 'Reminders are planned 7 days ahead each time you open the dashboard. Haven’t opened it for a week? Then they pause until you do.';
+    $('ntHelp').textContent = I18N.k('ui.nt-help-planned-7-days', 'Reminders are planned 7 days ahead each time you open the dashboard. Haven’t opened it for a week? Then they pause until you do.');
     var sum = $('sumNotify'); if (sum) sum.textContent = p.on ? 'On on this device' : 'Off';
   }
   function setP(patch) { var p = prefs(); Object.keys(patch).forEach(function (k) { p[k] = patch[k]; }); save(p); fill(); sync(true); }
