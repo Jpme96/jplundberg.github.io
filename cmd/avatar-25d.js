@@ -65,7 +65,7 @@
 
   /* a cmd look → what the 2.5D body needs. Choices that share a shape are drawn by the same part. */
   var TOPS = { tee: { bare: 'short' }, tank: { bare: 'arms' }, polo: { collar: 1, bare: 'short' }, sweater: {}, knit: {}, hoodie: {}, shirt: {}, jersey: { bare: 'short', stripe: 1 }, kit: { bare: 'short', stripe: 1 },
-    varsity: { sleeve: '#f4f1ea' }, suit: { jacket: '#2e3340' }, puffer: { quilt: 1 }, rain: { hood: 1, zip: 1 }, jacket: { zip: 1 }, dress: { bare: 'short', skirt: 'knee' }, bunad: { band: 1, sleeve: '#f4f4f2' },
+    varsity: { sleeve: '#f4f1ea' }, suit: { jacket: '#2e3340', sleeve: '#2e3340' }, puffer: { quilt: 1 }, rain: { hood: 1, zip: 1 }, jacket: { zip: 1 }, dress: { bare: 'short', skirt: 'knee' }, bunad: { band: 1, sleeve: '#f4f4f2' },
     scrubs: { vneck: 1, bare: 'short' }, chef: { buttons2: 1 }, pjs: { stripes: 1 }, robe: { wrap: 1 }, none: { bare: 'arms' } };
   var SHOES = { sneakers: '#1a1a1a', hightops: '#d93a3a', boots: '#5b3a1e', sandals: '#8a5e44', slippers: '#e0559a', cleats: '#1a1a1a' };
   /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
@@ -103,6 +103,10 @@
     if (t.band) { var by = t1.Y + 16 * k; add('rect', { x: t1.X - W, y: by, width: W * 2, height: 9 * k, fill: '#d42a2f' }); add('rect', { x: t1.X - W, y: by + 3 * k, width: W * 2, height: 3 * k, fill: '#f2c94c' }); }
     if (t.stripes) for (var sx = -3; sx <= 3; sx++) { var px = t1.X + sx / 3.4 * W; add('path', { d: 'M' + px + ' ' + t1.Y + ' L' + px + ' ' + t2.Y, stroke: '#f4f1ea', 'stroke-width': 2 * k, opacity: .55 }); }
     if (t.wrap && front) { var w1 = P(-12, 80 + bob, 14), w2 = P(10, 132 + bob, 16); add('path', { d: 'M' + w1.X + ' ' + w1.Y + ' L' + w2.X + ' ' + w2.Y, stroke: dk(L.topC, .65), 'stroke-width': 2 * k }); var bl = t1.Y + 50 * k; add('rect', { x: t1.X - W, y: bl, width: W * 2, height: 5 * k, fill: dk(L.topC, .7) }); }
+    if (L.top !== 'none' && !t.collar && !t.vneck && !t.jacket && !t.hood && !t.zip && !t.wrap && !t.buttons2 && L.top !== 'shirt' && L.top !== 'hoodie') {   /* a round neckline: the skin shows in a shallow scoop (deeper on a tank top), with the ribbed edge round it */
+      var nwd = L.top === 'tank' ? 11 : 9.4, ndp = L.top === 'tank' ? 25 : 17;
+      if (front) { var q1 = P(-nwd, 79 + bob, 7), q2 = P(0, 79 + ndp + bob, 13), q3 = P(nwd, 79 + bob, 7); parts.push([.0185, el('path', { d: 'M' + q1.X.toFixed(1) + ' ' + q1.Y.toFixed(1) + ' Q' + q2.X.toFixed(1) + ' ' + q2.Y.toFixed(1) + ' ' + q3.X.toFixed(1) + ' ' + q3.Y.toFixed(1) + ' Z', fill: L.skin, stroke: dk(L.topC, .7), 'stroke-width': (1.3 * k).toFixed(2), 'stroke-linejoin': 'round' })]); }
+      else if (fr < -.15) { var r1 = P(-nwd, 80 + bob, -6), r2 = P(0, 84.5 + bob, -10), r3 = P(nwd, 80 + bob, -6); parts.push([.0185, el('path', { d: 'M' + r1.X.toFixed(1) + ' ' + r1.Y.toFixed(1) + ' Q' + r2.X.toFixed(1) + ' ' + r2.Y.toFixed(1) + ' ' + r3.X.toFixed(1) + ' ' + r3.Y.toFixed(1), fill: 'none', stroke: dk(L.topC, .7), 'stroke-width': (1.3 * k).toFixed(2), 'stroke-linecap': 'round' })]); } }
     if (t.vneck && front) { var n1 = P(-7, 80 + bob, 14), n2 = P(0, 94 + bob, 16), n3 = P(7, 80 + bob, 14); add('path', { d: 'M' + n1.X + ' ' + n1.Y + ' L' + n2.X + ' ' + n2.Y + ' L' + n3.X + ' ' + n3.Y, fill: L.skin, stroke: dk(L.topC, .7), 'stroke-width': 1.2 * k }); }
     if (t.collar && front) { var c1 = P(-8, 79 + bob, 12), c2 = P(0, 88 + bob, 13), c3 = P(8, 79 + bob, 12); add('path', { d: 'M' + c1.X + ' ' + c1.Y + ' L' + c2.X + ' ' + c2.Y + ' L' + c3.X + ' ' + c3.Y, fill: 'none', stroke: dk(L.topC, .65), 'stroke-width': 2.2 * k }); }
     if (t.buttons2 && front) [96, 110, 124].forEach(function (yy2) { [-5, 5].forEach(function (bx) { var bt = P(bx, yy2 + bob, 15); add('circle', { cx: bt.X, cy: bt.Y, r: 1.3 * k, fill: '#9aa3ad' }); }); });
@@ -151,11 +155,11 @@
       parts.push([z, el('path', { d: 'M' + (pA.X + hx * r1).toFixed(1) + ' ' + (pA.Y + hy * r1).toFixed(1) + ' L' + (pB.X + hx * r2).toFixed(1) + ' ' + (pB.Y + hy * r2).toFixed(1) + ' L' + (pB.X - hx * r2).toFixed(1) + ' ' + (pB.Y - hy * r2).toFixed(1) + ' L' + (pA.X - hx * r1).toFixed(1) + ' ' + (pA.Y - hy * r1).toFixed(1) + ' Z', fill: '#000', opacity: .26 })]); }
     /* flat light and shade shapes (JP's reference, 2026-11-13): big enough to see, the muscles are shown as soft flat patches –
        lighter where the light from the upper left lands, darker on the turned-away side – on top of each part's own gradient */
-    var CEL = k > .85;
+    var CEL = k > .85, LTC = mixc(/^#[0-9a-f]{6}$/i.test(L.skin) ? L.skin : '#c99a73', '#ffffff', .42);   /* the light on skin is a lighter skin tone (white went chalky on dark skin) */
     function celE(px, py, pz, rxu, ryu, light, op, depth, rotd) { var c = P(px, py, pz), e1 = P(px - rxu, py, pz), e2 = P(px + rxu, py, pz), rxs = Math.abs(e2.X - e1.X) / 2; if (rxs < .6 * k || op < .02) return;
-      var at = { cx: c.X.toFixed(1), cy: c.Y.toFixed(1), rx: rxs.toFixed(1), ry: (ryu * k).toFixed(1), fill: light ? '#fff' : '#000', opacity: op.toFixed(2) }; if (rotd) at.transform = 'rotate(' + rotd + ' ' + at.cx + ' ' + at.cy + ')'; parts.push([depth, el('ellipse', at)]); }
+      var at = { cx: c.X.toFixed(1), cy: c.Y.toFixed(1), rx: rxs.toFixed(1), ry: (ryu * k).toFixed(1), fill: light ? LTC : '#000', opacity: (light ? Math.min(1, op * 1.7) : op).toFixed(2) }; if (rotd) at.transform = 'rotate(' + rotd + ' ' + at.cx + ' ' + at.cy + ')'; parts.push([depth, el('ellipse', at)]); }
     function celL(pA, pB, t, off, rw, rl, light, op, depth) { var x = pA.X + (pB.X - pA.X) * t + off * k, y = pA.Y + (pB.Y - pA.Y) * t, ang = Math.atan2(pB.Y - pA.Y, pB.X - pA.X) * 180 / Math.PI - 90;
-      parts.push([depth, el('ellipse', { cx: x.toFixed(1), cy: y.toFixed(1), rx: (rw * k).toFixed(1), ry: (rl * k).toFixed(1), fill: light ? '#fff' : '#000', opacity: op.toFixed(2), transform: 'rotate(' + ang.toFixed(0) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')' })]); }
+      parts.push([depth, el('ellipse', { cx: x.toFixed(1), cy: y.toFixed(1), rx: (rw * k).toFixed(1), ry: (rl * k).toFixed(1), fill: light ? LTC : '#000', opacity: (light ? Math.min(1, op * 1.7) : op).toFixed(2), transform: 'rotate(' + ang.toFixed(0) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')' })]); }
     /* a whole limb as one flowing shape: its pieces (shoulder to wrist, hip to ankle) give a width at each joint, and the outline is
        a smooth line through them down one side and up the other – so the muscles swell and the joints narrow without corners, and
        the shading runs unbroken. rim: also a thin cool light down its dark edge (the parts on his far side from the light) */
@@ -200,9 +204,9 @@
           var kc = P(knee[0], knee[1] - 2.2, knee[2] + rK); parts.push([z + .0013, el('ellipse', { cx: kc.X.toFixed(1), cy: kc.Y.toFixed(1), rx: (rK * .4 * k).toFixed(1), ry: (4.3 * k).toFixed(1), fill: grad(skc, 1), opacity: (.9 * lz).toFixed(2) })]);   /* the kneecap */
           celL(a2, a3, .13, 0, rK * .6, 1.7, 0, .16 * lz, z + .0012); celL(a2, a3, .47, -rC * .34, rC * .2, 8, 1, .2 * lz, z + .0012); }   /* a soft shade under the kneecap, the light on the shin */
         parts.push([z + .0015, el('path', { d: 'M' + kn1.X.toFixed(1) + ' ' + kn1.Y.toFixed(1) + ' Q' + kn2.X.toFixed(1) + ' ' + kn2.Y.toFixed(1) + ' ' + kn3.X.toFixed(1) + ' ' + kn3.Y.toFixed(1), fill: 'none', stroke: dk(L.skin, .78), 'stroke-width': (.9 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .45 })]); }   /* a small line under the knee */
-      if (L.legsOn === 'thigh') { var kf = .68, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .3, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1);
+      if (L.legsOn === 'thigh') { var kf = .6, kb = P(knee[0], hip[1] + (knee[1] - hip[1]) * kf, hip[2] + (knee[2] - hip[2]) * kf); taper(a1, kb, rT + .3, rT + (rK - rT) * kf + 1.5, lc, z + .001, 1);
         hemShade(kb, P(knee[0], hip[1] + (knee[1] - hip[1]) * (kf + .075), hip[2] + (knee[2] - hip[2]) * (kf + .075)), rT + (rK - rT) * kf + .2, rT + (rK - rT) * (kf + .075) + .2, z + .0005); }   /* shorts: a straight hem on each leg – with the gap between the legs that is the inverted V at the crotch */
-      if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, rT + .4, rT + .2, lc, z + .001, 1); }
+      if (L.legsOn === 'swim') { var sb = P(hip[0] + (knee[0] - hip[0]) * .42, hip[1] + (knee[1] - hip[1]) * .42, hip[2] + (knee[2] - hip[2]) * .42); taper(a1, sb, rT + .3, rT + (rK - rT) * .42 + 1.1, lc, z + .001, 1); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
       if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 2, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 6); parts.push([z + .003, el('rect', { x: cpk.X - 4 * k, y: cpk.Y - 4 * k, width: 8 * k, height: 8 * k, rx: 1.5 * k, fill: dk(L.legsC, .85) })]); }
@@ -211,15 +215,17 @@
       if (L.shoes === 'sandals') limb(P(ank[0], ank[1] + 4, ank[2] + 3), P(ank[0], ank[1] + 4, ank[2] + 9), 3, '#8a5e44', z + .51);
       if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 6.6, ank[2] - 3), P(ank[0], ank[1] + 6.6, ank[2] + 16.5), 1.8, '#f4f4f2', z + .52);
       if (L.shoes === 'cleats') [-1, 6.5, 14].forEach(function (cz) { var st = P(ank[0], ank[1] + 8.6, ank[2] + cz); parts.push([z + .53, el('rect', { x: st.X - 1 * k, y: st.Y, width: 2 * k, height: 2.4 * k, fill: '#9aa3ad' })]); });
-      if (L.shoes === 'hightops' || L.shoes === 'boots') taper(P(ank[0], ank[1] - 8, ank[2]), P(ank[0], ank[1] + 1, ank[2]), 7.4, 7, C.shoe, z + .5);
+      if (L.shoes === 'hightops' || L.shoes === 'boots') taper(P(ank[0], ank[1] - (L.shoes === 'boots' ? 9 : 5.5), ank[2]), P(ank[0], ank[1] + 1.5, ank[2]), rA + (L.shoes === 'boots' ? 1.4 : .9), rA + 1.6, C.shoe, z + .5);
     });
     /* the seat: a rounded pelvis in the trousers' colour where the legs meet the body, fuller at the back –
        from the side you see the bottom, from the front the hips */
     var pw = Math.sqrt(Math.pow(L.bp.hv * Math.cos(a), 2) + Math.pow(12.2 * L.bp.d * Math.sin(a), 2)) * k, pc = P(0, 144 + bob, -2.5 * Math.abs(Math.sin(a))), pT = pc.Y - 2 * k, pB = pc.Y + 9 * k, pV = pc.Y + (6 + 5 * Math.abs(Math.sin(a))) * k;
     /* the bottom edge rises to the groin in the middle (an inverted V); from the side it is the round of the bottom */
     parts.push([-0.005, el('path', { d: 'M' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' L' + (pc.X + pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Q' + (pc.X + pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X + pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' L' + pc.X.toFixed(1) + ' ' + pV.toFixed(1) + ' L' + (pc.X - pw * .62).toFixed(1) + ' ' + (pB + 2 * k).toFixed(1) + ' Q' + (pc.X - pw).toFixed(1) + ' ' + pB.toFixed(1) + ' ' + (pc.X - pw).toFixed(1) + ' ' + pT.toFixed(1) + ' Z', fill: grad(L.legsOn === 'none' ? C.skin2 : C.legs) })]);
-    if (L.skirt) { var sk1 = P(0, 136 + bob, 0), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skw1 = Math.sqrt(Math.pow((L.bp.hv + 1.5) * Math.cos(a), 2) + Math.pow(14.5 * L.bp.d * Math.sin(a), 2)) * k, skw2 = skw1 * 1.32, skc2 = L.top === 'dress' ? C.top : C.legs;
-      parts.push([0.004, el('path', { d: 'M' + (sk1.X - skw1) + ' ' + sk1.Y + ' L' + (sk1.X + skw1) + ' ' + sk1.Y + ' L' + (sk2.X + skw2) + ' ' + sk2.Y + ' Q' + sk2.X + ' ' + (sk2.Y + 4 * k) + ' ' + (sk2.X - skw2) + ' ' + sk2.Y + ' Z', fill: grad(skc2) })]); }
+    if (L.skirt) { var skW = function (wu, du) { return Math.sqrt(Math.pow(wu * Math.cos(a), 2) + Math.pow(du * L.bp.d * Math.sin(a), 2)) * k; }, sk1 = P(0, 132 + bob, 0), skh = P(0, 147 + bob, -1), sk2 = P(0, L.skirt === 'long' ? 196 : 176, 0), skc2 = L.top === 'dress' ? C.top : C.legs;
+      var skw1 = skW(L.bp.wv + (L.bp.hv - L.bp.wv) * .35 + .4, 12.4), skwh = skW(L.bp.hv + 1, 13.6), skw2 = skwh * (L.skirt === 'long' ? 1.5 : 1.34), sf = function (v) { return v.toFixed(1); };
+      /* a skirt starts as wide as the waist it hangs from, rounds over the hips and flares to the hem (it used to start wider than the body: two corners stuck out at the hips) */
+      parts.push([0.004, el('path', { d: 'M' + sf(sk1.X - skw1) + ' ' + sf(sk1.Y) + ' L' + sf(sk1.X + skw1) + ' ' + sf(sk1.Y) + ' Q' + sf(skh.X + skwh * 1.04) + ' ' + sf(skh.Y) + ' ' + sf(sk2.X + skw2) + ' ' + sf(sk2.Y) + ' Q' + sf(sk2.X) + ' ' + sf(sk2.Y + 4 * k) + ' ' + sf(sk2.X - skw2) + ' ' + sf(sk2.Y) + ' Q' + sf(skh.X - skwh * 1.04) + ' ' + sf(skh.Y) + ' ' + sf(sk1.X - skw1) + ' ' + sf(sk1.Y) + ' Z', fill: grad(skc2) })]); }
     /* torso: an oval tube – its width depends on which way he faces; the side towards the back is darker */
     var BP = L.bp, wid = function (f) { return Math.sqrt(Math.pow(30 * BW * f * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)); };
     var hw = Math.sqrt(Math.pow((BP.ch + 1) * Math.cos(a), 2) + Math.pow(17 * BP.d * Math.sin(a), 2)), hwT = wid(BP.sh) * .92, topY = 80 + bob, botY = 146 + bob;   /* hw: at the waist (details use it); hwT: across the shoulders */
@@ -241,7 +247,7 @@
     var TLr = TL.slice().reverse();
     var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
     parts.push([0, el('path', { d: TD, fill: grad(L.top === 'none' ? C.skin : C.top) })]);
-    if (k > .85) parts.push([.0102, el('path', { d: 'M' + f1(TR[3][0] - .5 * k) + ' ' + f1(TR[3][1]) + side2(TR.slice(3).map(function (q) { return [q[0] - .5 * k, q[1]]; })), fill: 'none', stroke: RIM, 'stroke-width': (.65 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .5 })]);   /* the rim light down the trunk's dark side */
+    if (k > .85) parts.push([.0102, el('path', { d: 'M' + f1(TR[3][0] - .5 * k) + ' ' + f1(TR[3][1]) + side2(TR.slice(3, L.skirt ? 6 : 9).map(function (q) { return [q[0] - .5 * k, q[1]]; })), fill: 'none', stroke: RIM, 'stroke-width': (.65 * k).toFixed(2), 'stroke-linecap': 'round', opacity: .5 })]);   /* the rim light down the trunk's dark side */
     if (k > .85 && !L.skirt) parts.push([-0.001, el('path', { d: 'M' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1] - 2 * k) + ' L' + f1(TR[LN2][0]) + ' ' + f1(TR[LN2][1] - 2 * k) + ' L' + f1(TR[LN2][0]) + ' ' + f1(TR[LN2][1] + 2.6 * k) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 8.4 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1] + 2.6 * k) + ' Z', fill: '#000', opacity: .2 })]);   /* the top's shadow on the waistband */
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
     if (CEL && L.top === 'none' && Math.cos(a) > .3) {   /* bare, big enough to see: the chest and stomach as light and dark shapes (after JP's reference picture) */
@@ -335,13 +341,13 @@
       if (anx * (oo || sd) < 0) { anx = -anx; any = -any; }   /* across the arm, pointing away from the body */
       var oa = Math.abs(oo), dT = 2.4 + .08 * AR;   /* the shoulder's top stays level with the shoulder line however big the arm is (JP: the deltoids stuck up) */
       var p1d = { X: p1.X + aux * Math.max(0, rS - dT + 1) * k, Y: p1.Y + auy * Math.max(0, rS - dT + 1) * k };
-      function delt(grow, fill, zd, line) { var rD = (AR * (1.1 + .05 * MU) + grow * .6) * k, tipS = Math.max(UA * .56 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.9);
+      function delt(grow, fill, zd, line) { var rD = (AR * (1.1 + .05 * MU) + grow * .6) * k, tipS = line ? Math.max(UA * .56 * k * Math.min(1, adl / (UA * k) + .25), rD * 1.9) : rD * 1.5;   /* under cloth the shoulder is a round cap, not a muscle with a point */
         var pt = function (sv2, tv) { return f1(p1.X + aux * sv2 + anx * tv) + ' ' + f1(p1.Y + auy * sv2 + any * tv); };
         /* a teardrop: a round cap over the joint, widest just below the top, then both sides run in to a point on the outside of the upper arm */
-        var sT = -(dT + grow * .5) * k, tT = -.5 * rD * oa, sO = .85 * rD, tO = rD * (1 + .14 * oa), tI = -rD * (1 - .3 * oa), tP = .6 * rB * k * oa, D = tipS - sO;
+        var sT = -(dT + grow * .5) * k, tT = -.5 * rD * oa, sO = .85 * rD, tO = rD * (1 + .14 * oa), tI = -rD * (1 - .3 * oa), tP = line ? .6 * rB * k * oa : .1 * rB * k * oa, D = tipS - sO;
         var d = 'M' + pt(sT, tT) + ' C' + pt(sT + .08 * (sO - sT), tT + .55 * (tO - tT)) + ' ' + pt(sO - .62 * (sO - sT), tO) + ' ' + pt(sO, tO) + ' C' + pt(sO + .3 * D, tO) + ' ' + pt(tipS - .42 * D, tP + .7 * (tO - tP)) + ' ' + pt(tipS, tP) +
           ' C' + pt(tipS - .3 * D, tP - .45 * rD) + ' ' + pt(sO + .5 * D, tI) + ' ' + pt(sO, tI) + ' C' + pt(sO - .55 * (sO - sT), tI) + ' ' + pt(sT, tT - .4 * rD) + ' ' + pt(sT, tT) + ' Z';
-        parts.push([zd, el('path', { d: d, fill: grad(fill, 1) })]);
+        parts.push([zd, el('path', { d: d, fill: grad(fill, line ? 1 : 0) })]);
         if (line && k > .85) { parts.push([zd + .0005, el('path', { d: 'M' + pt(sO + .25 * D, tI * .96) + ' Q' + pt(tipS - .4 * D, tP - .2 * rD) + ' ' + pt(tipS, tP) + ' Q' + pt(tipS - .5 * D, tP - .62 * rD) + ' ' + pt(sO + .1 * D, tI * .62) + ' Z', fill: dk(L.skin, .55), opacity: .3 })]);   /* the muscle's inner edge turns under: a dark sliver down to its point */
  } }
       function skinArm() {
@@ -352,12 +358,14 @@
         skinArm(); taper(p1d, mid, rS + 1.2, rB + 1.2, tcs, z + .01, 1); delt(1.2, tcs, z + .011);
         hemShade(mid, P(sh[0] + (elb[0] - sh[0]) * .64, sh[1] + (elb[1] - sh[1]) * .64, sh[2] + (elb[2] - sh[2]) * .64, 1), rB * .97, rB * .93, z + .005); }
       else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2, scs = shade(far, slc2, slc); whole(scs, z, function () { taper(p1d, bi2, rS + 1.8, rB + 1.8, scs, z); taper(bi2, p2, rB + 1.8, rE + 2.2, scs, z); taper(p2, fm, rE + 2.2, rF + 1.9, scs, z); taper(fm, p3, rF + 1.9, rW + 2.4, scs, z); }); delt(1.8, scs, z + .001);   /* a sleeve follows the arm inside it */
-        if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
+}
+      var PRO = L.aid === 'arm' && sd > 0;   /* a prosthetic forearm and hand, whatever the sleeve (it used to show only with long sleeves – so with a T-shirt, never) */
+      if (PRO) { taper(P(elb[0] + (hand[0] - elb[0]) * .12, elb[1] + (hand[1] - elb[1]) * .12, elb[2] + (hand[2] - elb[2]) * .12, 1), p3, rF + .5, rW + .7, shade(far, '#7d8894', '#9aa3ad'), z + .02); var pj = P(elb[0], elb[1], elb[2], 1); parts.push([z + .021, el('circle', { cx: pj.X.toFixed(1), cy: pj.Y.toFixed(1), r: ((rE + .3) * k).toFixed(1), fill: grad('#5f6975', 1) })]); }
       var HZ = Math.max(.72, Math.min(.9, AR / 6.2));   /* the hands grow with the arms */
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
       var fwd = Math.abs(Math.sin(a)) > .3 ? (Math.sin(a) > 0 ? 1 : -1) : -sd * (Math.cos(a) >= 0 ? 1 : -1), pxv = -uy, pyv = ux; if (pxv * fwd < 0) { pxv = -pxv; pyv = -pyv; }
-      var hc2 = shade(far, C.skin2, C.skin), HG = el('g', {});
+      var hc2 = PRO ? shade(far, '#7d8894', '#9aa3ad') : shade(far, C.skin2, C.skin), HG = el('g', {});
       if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': ((rW + 2.6) * 2 * k).toFixed(1), 'stroke-linecap': 'butt' }));
       var tx = p3.X + ux * 3 * k + pxv * 5.6 * HZ * k, ty = p3.Y + uy * 3 * k + pyv * 5.6 * HZ * k;
       HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (2.3 * HZ * k).toFixed(1), ry: (4.2 * HZ * k).toFixed(1), fill: grad(hc2), transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
