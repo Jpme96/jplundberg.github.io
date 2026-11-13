@@ -247,6 +247,7 @@
     "work/index.html": [
       "home-life.page.js",
       "life-pages.page.js",
+      "fdv.page.js",
       "work-plus.page.js"
     ],
     "habits/index.html": [
