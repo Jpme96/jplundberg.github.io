@@ -295,7 +295,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     key('z', { ctrlKey: true }); out.undone = tx('H6'); key('y', { ctrlKey: true }); out.redone = tx('H6');
     down('B5'); down('C6', { shiftKey: true }); out.range = document.querySelector('.xv-ref').textContent; out.inRange = document.querySelectorAll('.xv-t td.in').length;
     document.querySelector('[data-xv="bold"]').click(); out.bold = [st('B5').fontWeight, st('C6').fontWeight].join();
-    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor;
+    document.querySelector('[data-xv="fill"]').click(); { const r = document.querySelector('.xv-sw').getBoundingClientRect(), hit = document.elementFromPoint(r.left + 20, r.top + 20); out.swVisible = !!(hit && hit.closest('.xv-sw')); } document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor; out.temp = /nothing is saved here/i.test(document.querySelector('.xv-foot').textContent);
     key('Delete'); out.cleared = tx('B5') + '|' + tx('C6');
     key('z', { ctrlKey: true }); out.back = tx('B5');
     down('F11'); g.focus(); const dt = new DataTransfer(); dt.setData('text/plain', 'Made-up a\tMade-up b\nMade-up c\t"two\nlines"');
@@ -313,7 +313,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     return out;
   });
   check(xe.ref1 === 'H6' && xe.h6 === 'Zed' && xe.ref2 === 'H7' && xe.undone !== 'Zed' && xe.redone === 'Zed', 'the editor: arrow keys, start typing to replace, Enter moves down, undo and redo ' + JSON.stringify(xe));
-  check(xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back');
+  check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
   check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn, 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
   check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
   check(!errs.length, 'no page errors ' + errs.join(' | '));

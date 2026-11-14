@@ -213,7 +213,11 @@
     function sh() { return book.sheets[cur]; }
     function td(ref) { return grid.querySelector('[data-xvr="' + ref + '"]'); }
     function nEdits() { return Object.keys(edits).reduce(function (a, p) { return a + Object.keys(edits[p] || {}).length; }, 0); }
-    function showFoot() { var n = nEdits(); foot.innerHTML = n ? esc(k(n === 1 ? 'ui.xv-n-edits1' : 'ui.xv-n-edits', n === 1 ? '1 change of your own – kept on this device and in every download' : '{n} changes of your own – kept on this device and in every download', { n: n })) + ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : esc(k('ui.xv-hint', 'Your changes are kept on this device and go into every download.')); }
+    function showFoot() {
+      var n = nEdits();
+      if (!opt.onEdits) { foot.innerHTML = esc(n ? k(n === 1 ? 'ui.xv-n-temp1' : 'ui.xv-n-temp', n === 1 ? '1 change – it goes into the download, nothing is saved here' : '{n} changes – they go into the download, nothing is saved here', { n: n }) : k('ui.xv-temp', 'Nothing is saved here – your changes go into the download.')) + (n ? ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : ''); return; }   /* a plan check keeps nothing */
+      foot.innerHTML = n ? esc(k(n === 1 ? 'ui.xv-n-edits1' : 'ui.xv-n-edits', n === 1 ? '1 change of your own – kept on this device and in every download' : '{n} changes of your own – kept on this device and in every download', { n: n })) + ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : esc(k('ui.xv-hint', 'Your changes are kept on this device and go into every download.'));
+    }
     function save() { clearTimeout(saveT); saveT = setTimeout(function () { if (opt.onEdits) opt.onEdits(edits); showFoot(); }, 400); box.querySelector('[data-xv="undo"]').disabled = !undo.length; box.querySelector('[data-xv="redo"]').disabled = !redo.length; }
     function paint(ref) { var t = td(ref); if (!t) return; var L = look(sh(), book.X, edits, ref); t.textContent = L.v; t.setAttribute('style', L.st); }
     /* every change goes through here: a list of { ref, e } with the new edit for each cell; one step on the undo list */
@@ -286,7 +290,7 @@
       if (!A) { flash(k('ui.xv-pick', 'Pick a cell first')); return; }
       if (a === 'bold') { var b = !look(sh(), book.X, edits, A).b; change(refs().map(function (r) { return { ref: r, e: { b: b } }; })); showSel(); return; }
       if (a === 'clear') { change(refs().map(function (r) { return { ref: r, e: { v: '' } }; })); showSel(); return; }
-      if (a === 'fill') { sw.hidden = !sw.hidden; return; }
+      if (a === 'fill') { if (sw.hidden) { var rb = box.querySelector('[data-xv="fill"]').getBoundingClientRect(); sw.style.top = Math.round(rb.bottom + 6) + 'px'; sw.style.left = Math.round(Math.max(8, Math.min(innerWidth - 290, rb.left - 8))) + 'px'; } sw.hidden = !sw.hidden; return; }   /* fixed, so the scrolling toolbar doesn't cut it off */
       if (a === 'copy') { var t = copyText(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { flash(k('ui.xv-copied', 'Copied')); }, function () { flash(k('ui.xv-no-clip', 'The browser did not allow it – use Ctrl+C / Ctrl+V')); }); return; }
       if (a === 'paste') { (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(pasteText, function () { flash(k('ui.xv-no-clip', 'The browser did not allow it – use Ctrl+C / Ctrl+V')); }); }
     }

@@ -31,8 +31,8 @@ const BUDGET_KB = { total: 1620 };   /* Work +3 more (2026-11-14 morning): repor
    +2 kB on Work (2026-11-14 evening): Send to Team (a project as a file for work.jplundberg.com) and the PDF maker in its own file (paged-pdf.js) so Team uses the same code.
    +12 kB on Work (2026-11-14 night): Document control's "Excel with colours" – your own plan back with each row coloured by status and a Check column (the zip and the sheets are rewritten on the device, no library).
    +14 kB on Work (2026-11-14 night): see and edit the coloured plan like Excel (xlsx-view.js – sheets, colours, merged cells, a bar to type in; also used by Team).
-   +13 kB on Work (2026-11-14 night): Check a plan (the plan against the client's checklist and the naming rules, no project) and the editor's tools – ranges, keys, undo/redo, copy/paste with Excel, bold, fill colours. */
-const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1558 };
+   +13 kB on Work (2026-11-14 night): Check a plan (the plan against the client's checklist and the naming rules, no project) and the editor's tools – ranges, keys, undo/redo, copy/paste with Excel, bold, fill colours (+1 kB: the check's own footer text and the colour menu placed under its button). */
+const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1559 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

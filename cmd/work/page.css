@@ -313,7 +313,7 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .xv-tb:disabled { opacity: .35; cursor: default; }
 .xv-tb[aria-pressed="true"] { background: var(--accent, #14b8a6); color: #04211d; }
 .xv-sep { width: 1px; height: 24px; flex: none; margin: 0 4px; background: var(--line, #2a2d33); }
-.xv-sw { position: absolute; top: 44px; left: 100px; z-index: 5; display: flex; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg-solid, #17181b); border: 1px solid var(--line, #2a2d33); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.xv-sw { position: fixed; top: 0; left: 0; z-index: 2010; display: flex; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg-solid, #17181b); border: 1px solid var(--line, #2a2d33); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .xv-sw[hidden] { display: none; }
 .xv-sw button { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #c8ccd2; background: var(--sw); cursor: pointer; }
 .xv-sw button[data-xvfill=""] { background: linear-gradient(135deg, #fff 45%, #d93025 46%, #d93025 54%, #fff 55%); }

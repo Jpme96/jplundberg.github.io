@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.xv-n-temp1": ["1 change – it goes into the download, nothing is saved here", "1 endring – den er med i nedlastingen, ingenting lagres her"],
+  "ui.xv-n-temp": ["{n} changes – they go into the download, nothing is saved here", "{n} endringer – de er med i nedlastingen, ingenting lagres her"],
+  "ui.xv-temp": ["Nothing is saved here – your changes go into the download.", "Ingenting lagres her – endringene dine er med i nedlastingen."],
   "ui.dc-chk-btn": ["Check a plan", "Sjekk en plan"],
   "ui.dc-chk-miss": ["The checklist asks for: {t}", "Sjekklisten krever: {t}"],
   "ui.dc-chk-extra": ["Not in the checklist for {c}: {t}", "Ikke i sjekklisten for {c}: {t}"],
