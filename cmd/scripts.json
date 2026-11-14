@@ -247,6 +247,7 @@
     "work/index.html": [
       "home-life.page.js",
       "life-pages.page.js",
+      "paged-pdf.js",
       "fdv.page.js",
       "doc-control.page.js",
       "work-plus.page.js"

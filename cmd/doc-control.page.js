@@ -8,14 +8,18 @@
    (IndexedDB dash-dctl). The page is #dc=<id> in the address, so the phone's back gesture closes it. */
 (function () {
   "use strict";
-  if (!window.Vault || !window.Features) return;
-  var Fe = window.Features, LP = window.__core && window.__core.lifepages;
-  var el0 = document.getElementById('wkDocCtl'); if (!el0) return;
+  /* Team (work.jplundberg.com) runs this same file on its own encrypted storage: it sets window.DocHost = { Fe, LP,
+     profile, team } before loading it (a copy made by cmd/build.py). In cmd the storage is your vault (dash.tools). */
+  var HOST = window.DocHost || null;
+  if (!HOST && (!window.Vault || !window.Features)) return;
+  var Fe = HOST ? HOST.Fe : window.Features, LP = HOST ? HOST.LP : window.__core && window.__core.lifepages;
+  var el0 = document.getElementById('wkDocCtl'); if (!el0 && !HOST) return;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function k(key, en, o) { return I18N.k(key, en, o); }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function readJSON(key, d) { try { var v = JSON.parse(localStorage.getItem(key)); return v == null ? d : v; } catch (e) { return d; } }
+  function profile() { return HOST && HOST.profile ? HOST.profile() : readJSON('dash.profile', {}) || {}; }
   function pad(n) { return String(n).padStart(2, '0'); }
   function today() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function fmt(s) { if (!s) return ''; var p = String(s).split('-'); return p.length === 3 ? +p[2] + '.' + +p[1] + '.' + p[0] : s; }
@@ -305,7 +309,7 @@
     }
     h += planBtns(p);
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3><table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-trade', 'Trade / delivery'), p.trade], [k('ui.dc-due', 'Deadline'), fmt(p.due)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<div class="fdv-acts"><button type="button" class="pill-btn" data-dcedit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button><button type="button" class="text-btn dc-del" data-dcdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-delete', 'Delete project')) + '</button></div>';
+      '<div class="fdv-acts"><button type="button" class="pill-btn" data-dcedit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '<button type="button" class="text-btn dc-del" data-dcdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-delete', 'Delete project')) + '</button></div>';
     return h;
   }
   function matchesFilt(l) {
@@ -384,7 +388,7 @@
 
   /* ---------- the report ---------- */
   function report(p) {
-    var me = readJSON('dash.profile', {}) || {}, L = p.lines || [], c = counts(L), F = p.files || [];
+    var me = profile(), L = p.lines || [], c = counts(L), F = p.files || [];
     var row = function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l)) + '</td><td>' + esc(typeLabel(l)) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td></tr>'; };
     var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(k('ui.doc-control', 'Document control')) + (p.trade ? ' · ' + esc(p.trade) : '') + '</p><h1>' + esc(p.name) + '</h1></div></header>' +
       '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-due', 'Deadline'), fmt(p.due)], [k('ui.date', 'Date'), fmt(today())], [k('ui.dc-checked-by', 'Checked by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-plan', 'Document plan'), p.planName]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
@@ -715,7 +719,7 @@
     return h + '</div></div>';
   }
   function kravReport(p) {
-    var me = readJSON('dash.profile', {}) || {}, L = p.lines || [];
+    var me = profile(), L = p.lines || [];
     var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(k('ui.doc-req', 'Document requirements')) + (p.type ? ' · ' + esc(p.type) : '') + '</p><h1>' + esc(p.name) + '</h1></div></header>' +
       '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.date', 'Date'), fmt(today())], [k('ui.dr-by', 'Made by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-documents', 'Documents'), String(L.length)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<p>' + esc(k('ui.dr-intro', 'The documentation to be delivered for FDV (forvaltning, drift og vedlikehold), with the document types of NS 3456 for each system after NS 3451. Name each file with the 3-digit code, a document code and a describing text.')) + '</p>';
@@ -835,6 +839,18 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
+    /* Send to Team (work.jplundberg.com): the project as a file you import there – the plan, statuses and comments, never
+       the files themselves (they stay on this device). Nothing goes from this dashboard's storage to Team's. */
+    var tb = e.target.closest('[data-dcteam]');
+    if (tb) {
+      var tp = proj(tb.dataset.dcteam); if (!tp) return;
+      var cp = JSON.parse(JSON.stringify(tp)); delete cp.files; (cp.lines || []).forEach(function (l) { delete l.files; });
+      var tf = new File([JSON.stringify({ team: 'dctl', v: 1, at: new Date().toISOString(), p: cp })], fileName(tp, k('ui.dc-for-team', 'for Team'), '.json'), { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [tf] })) navigator.share({ files: [tf], title: tf.name }).catch(function () {});
+      else { var ta = document.createElement('a'); ta.href = URL.createObjectURL(tf); ta.download = tf.name; document.body.appendChild(ta); ta.click(); setTimeout(function () { URL.revokeObjectURL(ta.href); ta.remove(); }, 4000); }
+      toast('<i class="bi bi-people"></i> ' + esc(k('ui.dc-sent-team', 'Saved. In Team: Documents → Import from /cmd.')) + ' <a href="https://work.jplundberg.com/#docs">' + esc(k('ui.open-team', 'Open Team')) + '</a>');
+      return;
+    }
     var b, t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq')) return;
     if (t.closest('[data-drnew]')) { radding = true; draw(); var i0 = document.querySelector('[data-drform] input'); if (i0) i0.focus(); return; }
     if (t.closest('[data-drcancel]')) { radding = false; draw(); return; }
@@ -862,7 +878,7 @@
     if ((b = t.closest('[data-drpdf]'))) {
       if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
       var pp = krav(ropen); if (!pp || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
-      var note0 = document.querySelector('#wkDocReq .fdv-pdfnote'), lb = b.querySelector('span'), me0 = readJSON('dash.profile', {}) || {};
+      var note0 = document.querySelector('#wkDocReq .fdv-pdfnote'), lb = b.querySelector('span'), me0 = profile();
       b.disabled = true; lb.textContent = k('ui.fdv-making-pdf', 'Making the PDF …');
       window.FdvPdf.html(kravReport(pp), [[me0.name, me0.role].filter(Boolean).join(', '), me0.employer, k('ui.doc-req', 'Document requirements'), pp.no, pp.name].filter(Boolean).join('  ·  '), fileName(pp, k('ui.doc-req', 'Document requirements'), '.pdf')).then(function (file) {
         b.disabled = false; b._pdf = file; lb.textContent = k('ui.fdv-share-pdf', 'Share or save the PDF'); b.querySelector('i').className = 'bi bi-box-arrow-up';
@@ -917,7 +933,7 @@
     if ((b = t.closest('[data-dcpdf]'))) {
       if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
       var p2 = proj(b.dataset.dcpdf); if (!p2 || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
-      var note = document.querySelector('#wkDocCtl .fdv-pdfnote'), lbl = b.querySelector('span'), me = readJSON('dash.profile', {}) || {};
+      var note = document.querySelector('#wkDocCtl .fdv-pdfnote'), lbl = b.querySelector('span'), me = profile();
       b.disabled = true; lbl.textContent = k('ui.fdv-making-pdf', 'Making the PDF …');
       var foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p2.no, p2.name].filter(Boolean).join('  ·  ');
       var nm = ([p2.no, k('ui.doc-control', 'Document control'), p2.name].filter(Boolean).join(' ')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + '.pdf';
@@ -970,7 +986,7 @@
     if (open !== id) go(id); else draw();
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
-  window.Vault.onUnlock(function () { setTimeout(draw, 80); });
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(draw, 80); });
   window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
   draw();
 })();

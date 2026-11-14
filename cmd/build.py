@@ -153,6 +153,12 @@ for d, ds, fs in os.walk(HERE):
         acc.update(os.path.relpath(fp, HERE).replace(os.sep, '/').encode()); acc.update(open(fp, 'rb').read())
 _save(SW, sw, re.sub(r"var CACHE = '[^']*';", "var CACHE = 'cmd-v%s';" % acc.hexdigest()[:10], sw))
 
+# Team (work.jplundberg.com) runs the same Document control: its copies are made from these files (_team/build.py)
+_tb = subprocess.run([sys.executable, os.path.join(HERE, '..', '_team', 'build.py')] + (['--check'] if check else []), capture_output=True, text=True)
+if _tb.returncode:
+    print(_tb.stdout.strip() or _tb.stderr.strip()); stale = True
+    if not check: sys.exit('the Team copy failed')
+
 if check:
     print('bundles or versions are out of date – run python3 cmd/build.py' if stale else 'bundles and versions are up to date')
     sys.exit(1 if stale else 0)

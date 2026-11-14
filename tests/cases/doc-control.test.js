@@ -102,6 +102,14 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-dctab="over"]'); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);
   check((await p.evaluate(() => Features.list('dctl')[0].lines.map(l => l.st).join())) === 'ok,recv,rej,recv,recv,missing', 'importing the plan again keeps the statuses');
+  /* Send to Team (work.jplundberg.com): a file with the plan and statuses, never the files themselves */
+  const sent = await p.evaluate(async () => {
+    let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { got = this; };
+    document.querySelector('[data-dcteam]').click(); HTMLAnchorElement.prototype.click = oc;
+    if (!got) return null; const j = JSON.parse(await (await fetch(got.href)).text());
+    return { name: got.download, team: j.team, lines: j.p.lines.length, files: 'files' in j.p, lineFiles: j.p.lines.some(l => 'files' in l), st: j.p.lines.map(l => l.st).join() };
+  });
+  check(sent && sent.team === 'dctl' && sent.lines === 6 && !sent.files && !sent.lineFiles && sent.st === 'ok,recv,rej,recv,recv,missing' && /\.json$/.test(sent.name), 'Send to Team makes a file with the plan and the statuses, without the files ' + JSON.stringify(sent));
   /* names from the FDV system instead of files (2026-11-14): pasted, matched and checked the same way */
   check(JSON.stringify(await p.evaluate(() => DocCtl.namesText('Documents\n1. 336 DA Skumanlegg Made-up\n336 DA Skumanlegg Made-up\nnot a name\n235\tDV Kledning\n235 DV Kledning Made-up.pdf'))) === JSON.stringify(['336 DA Skumanlegg Made-up', '235 DV Kledning Made-up.pdf']), 'a pasted list keeps the document names (numbering and doubles removed)');
   await tap('[data-dctab="files"]'); await sl(300);

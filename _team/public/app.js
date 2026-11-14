@@ -24,6 +24,7 @@
     check: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12l3 3 5-6"/>',
     team: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.4 5 2.8 5 5.8"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    docs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
     plus: '<path d="M12 5v14M5 12h14"/>'
   };
@@ -215,6 +216,7 @@
 
   /* ---------- the app ---------- */
   async function startApp() {
+    document.documentElement.classList.add('unlocked');
     await Promise.all([pull(true), loadMembers()]);
     draw();
     stopPoll();
@@ -228,7 +230,8 @@
       await pull(false);
       if (S.tab() === 'team' || rank() >= 3) await loadMembers();
       if (S.me.team.epoch !== ep) { S.me = await api('me'); await loadKeys(); await pull(true); }
-      if (!typing() && !S.sheet && !S.edit) draw(); else if (S.seq !== before) S.stale = true;
+      if (S.tab() === 'docs' && !S.edit) { if (S.docsDirty) { S.docsDirty = false; window.dispatchEvent(new Event('tools:change')); } }
+      else if (!typing() && !S.sheet && !S.edit) draw(); else if (S.seq !== before) S.stale = true;
     } catch (e) { if (e.status === 403) { S.me = await api('me').catch(function () { return S.me; }); if (!S.me.member) { stopPoll(); route(); } } }
   }
   async function pull(all) {
@@ -236,6 +239,7 @@
     if (all) S.recs = {};
     for (var i = 0; i < j.recs.length; i++) {
       var r = j.recs[i];
+      if (DK[r.k]) { S.docsDirty = true; S.docGen++; }
       if (r.del) { S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, del: 1 }; continue; }
       var d = await unseal(r, r.id + '|' + r.k + '|' + r.e, r.e);
       S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, e: r.e, d: d, locked: !d };
@@ -271,7 +275,7 @@
   }
 
   /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
-  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; return /^(overview|meetings|actions|team)$/.test(h) ? h : 'overview'; };
+  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^d[cr]=/.test(h)) return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
   function draw() {
@@ -280,11 +284,12 @@
     var h = location.hash.slice(1), body;
     if (S.edit) body = viewEdit();
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
-    else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, team: viewTeam })[S.tab()]();
+    else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.tab()]();
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
-    $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
+    $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
+    if (tab === 'docs' && !S.edit) docsReady();
   }
   function head(title, sub, back) {
     return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : (S.me.isOwner ? '<a class="t-back" href="https://jplundberg.com/cmd/work/">' + ic('back') + '/cmd</a>' : '<small>work.jplundberg.com</small>')) +
@@ -532,6 +537,146 @@
     catch (e) { busy(f, false); setErr(e && e.status ? failMsg(e) : L('Wrong passcode.', 'Feil kode.')); }
   }
 
+  /* ---------- Documents: the same Document control and Document requirements as /cmd (copied to /dc/ by _team/build.py),
+     running on Team's encrypted storage. A project is one record (dcp) plus one record per line (dcl), so two people can work
+     on the same project at once; each line is saved on its own (the newest change of a line wins). ---------- */
+  var DK = { dcp: 1, dcl: 1, dct: 1, dcr: 1 };
+  S.dtab = 'doc'; S.docBase = {}; S.docGen = 0;
+  function viewDocs() {
+    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Document control and document requirements – the same tools as in /cmd.', 'Dokumentkontroll og dokumentkrav – de samme verktøyene som i /cmd.'));
+    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
+    if (rank() >= 1) out += '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import a project from /cmd', 'Importer et prosjekt fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document control → the project → Send to Team. Attached files stay on the device they were added on.', 'I /cmd: Jobb → Dokumentkontroll → prosjektet → Send til Team. Vedlagte filer blir på enheten de ble lagt til på.') + '</p>';
+    out += '</div>';
+    out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
+      '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>';
+    return out;
+  }
+  function loadJs(src) { return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+  function loadCss(href) { if (document.querySelector('link[href="' + href + '"]')) return; var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); }
+  var docsP = null;
+  function docsReady() {
+    if (!docsP) {
+      loadCss('/dc/bi/bi.css'); loadCss('/dc/dc.css');
+      window.PAGED_PDF_VENDOR = '/dc/vendor/';
+      window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
+      window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
+      window.PageTabs = { show: function (t) { S.dtab = t === 'req' ? 'req' : 'doc'; showDtab(); } };
+      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true };
+      docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
+        window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
+        return loadJs('/dc/doc-control.js');
+      }).catch(function (e) { docsP = null; toast(L('Could not load Documents. Try again.', 'Klarte ikke å laste Dokumenter. Prøv igjen.')); throw e; });
+    }
+    docsP.then(function () { window.dispatchEvent(new Event('tools:change')); }, function () {});
+  }
+  function showDtab() {
+    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req';
+    [].forEach.call(document.querySelectorAll('[data-dtab]'), function (x) { x.checked = x.dataset.dtab === S.dtab; });
+  }
+  var NSM = null;
+  function nsName(code) {
+    if (!NSM) { NSM = {}; (window.NS3451 || []).forEach(function (q) { NSM[q[0]] = q; }); }
+    code = String(code || ''); var q = NSM[code] || NSM[code.slice(0, 2)] || NSM[code.slice(0, 1)]; return q ? (nb ? q[2] : q[1]) : '';
+  }
+  /* a stable record id for a project, line, type or the checklist */
+  function fnv(str) { var h1 = 0x811c9dc5, h2 = 0x01000193 ^ 0x5bd1e995; for (var i = 0; i < str.length; i++) { var c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619) >>> 0; h2 = Math.imul(h2 ^ c, 2246822519) >>> 0; } return ('0000000' + h1.toString(16)).slice(-8) + ('0000000' + h2.toString(16)).slice(-8); }
+  function drid(kind, a, b, c) { return kind + fnv([kind, a, b, c].join('|')); }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+  /* what Document control sees as its "tools": built fresh from the records each time */
+  function docState(base) {
+    var t = { dctl: [], dckrav: [], dctypes: [] }, heads = [], lines = {};
+    for (var id in S.recs) {
+      var r = S.recs[id]; if (!DK[r.k] || r.del || !r.d) continue;
+      if (base) base[id] = 1;
+      if (r.k === 'dcp' && r.d.p) heads.push(r.d);
+      else if (r.k === 'dcl' && r.d.l) (lines[r.d.key + '|' + r.d.pid] = lines[r.d.key + '|' + r.d.pid] || []).push(r.d);
+      else if (r.k === 'dct' && r.d.t) t.dctypes.push(clone(r.d.t));
+      else if (r.k === 'dcr' && r.d.r) t.dcreq = clone(r.d.r);
+    }
+    heads.forEach(function (h) {
+      if (h.key !== 'dctl' && h.key !== 'dckrav') return;
+      var p = clone(h.p); p.lines = (lines[h.key + '|' + p.id] || []).sort(function (a, b) { return a.o - b.o; }).map(function (x) { return clone(x.l); });
+      t[h.key].push(p);
+    });
+    return t;
+  }
+  var DFe = {
+    tools: function () { S.docBase = {}; return docState(S.docBase); },
+    list: function (k) { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t[k] || []; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return Array.isArray(t[k]) ? t[k] : []; },   /* read-only callers: cached until a document record changes */
+    saveTools: function (t) { saveDocs(t, S.docBase, true); }
+  };
+  function wanted(t) {
+    var want = {};
+    ['dctl', 'dckrav'].forEach(function (key) {
+      (t[key] || []).forEach(function (p) {
+        if (!p || !p.id) return;
+        var h = clone(p), ls = h.lines || []; delete h.lines;
+        want[drid('p', key, p.id)] = { k: 'dcp', d: { key: key, p: h } };
+        ls.forEach(function (l, i) { if (l && l.id) want[drid('l', key, p.id, l.id)] = { k: 'dcl', d: { key: key, pid: p.id, l: l, o: i } }; });
+      });
+    });
+    (t.dctypes || []).forEach(function (ty) { if (ty && ty.id) want[drid('t', ty.id)] = { k: 'dct', d: { t: ty } }; });
+    if (t.dcreq) want[drid('r', 'checklist')] = { k: 'dcr', d: { r: t.dcreq } };
+    return want;
+  }
+  /* save what changed: new and changed records, and deletes only of what was there when Document control read it */
+  async function saveDocs(t, base, first) {
+    if (rank() < 1) { toast(L('Your role can only read.', 'Rollen din kan bare lese.')); window.dispatchEvent(new Event('tools:change')); return; }
+    var want = wanted(t), ops = [], names = {}, blocked = 0;
+    for (var id in want) {
+      var cur = S.recs[id], w = want[id];
+      if (cur && !cur.del && cur.d && JSON.stringify(cur.d) === JSON.stringify(w.d)) continue;
+      /* approving a document is for Can approve and Admin */
+      if (w.k === 'dcl' && w.d.l.st === 'ok' && rank() < 2 && !(cur && cur.d && cur.d.l && cur.d.l.st === 'ok')) { if (cur && cur.d) w.d.l.st = cur.d.l.st; else w.d.l.st = 'recv'; blocked++; if (cur && cur.d && JSON.stringify(cur.d) === JSON.stringify(w.d)) continue; }
+      ops.push({ id: id, k: w.k, d: w.d });
+      var pn = w.k === 'dcp' ? w.d.p.name : w.k === 'dcl' ? (want[drid('p', w.d.key, w.d.pid)] || { d: { p: {} } }).d.p.name : ''; if (pn) names[pn] = 1;
+    }
+    for (var rid2 in base) if (!want[rid2] && S.recs[rid2] && !S.recs[rid2].del) ops.push({ id: rid2, k: S.recs[rid2].k, del: true });
+    if (blocked) toast(L('Only people who can approve can mark a document Approved.', 'Bare de som kan godkjenne, kan merke et dokument Godkjent.'));
+    if (!ops.length) { if (blocked) window.dispatchEvent(new Event('tools:change')); return; }
+    /* show it at once; the server's answer follows */
+    S.docGen++;
+    ops.forEach(function (o) { var cur = S.recs[o.id]; if (o.del) { if (cur) cur.del = 1; } else S.recs[o.id] = Object.assign({}, cur || { id: o.id, k: o.k, v: 0 }, { d: o.d, del: 0, locked: false }); });
+    window.dispatchEvent(new Event('tools:change'));
+    var e = S.me.team.epoch, failed = 0;
+    var sum = Object.keys(names).length ? Object.assign({ e: e }, await seal({ t: L('Documents: ', 'Dokumenter: ') + Object.keys(names).join(', ').slice(0, 160) }, 'log', e)) : undefined;
+    for (var i = 0; i < ops.length; i += 400) {
+      var part = ops.slice(i, i + 400), recs = [];
+      for (var j = 0; j < part.length; j++) {
+        var o = part[j], v = S.recs[o.id] ? S.recs[o.id].v || 0 : 0;
+        if (o.del) recs.push({ id: o.id, k: o.k, del: true, v: v });
+        else { var sl = await seal(o.d, o.id + '|' + o.k + '|' + e, e); recs.push({ id: o.id, k: o.k, e: e, iv: sl.iv, ct: sl.ct, v: v }); }
+      }
+      try {
+        var res = await api('batch', { method: 'PUT', body: { recs: recs, s: i ? undefined : sum } });
+        res.results.forEach(function (x) { var r = S.recs[x.id]; if (x.error) { failed++; return; } if (r) { r.v = x.v; r.t = x.t; r.by = S.me.email; r.e = e; } });
+      } catch (err) { toast(failMsg(err)); failed += part.length; if (err.status === 403) break; }
+    }
+    if (failed) {
+      /* someone changed the same line meanwhile: take theirs, then put my changes on top once */
+      await pull(false).catch(function () {});
+      if (first) return saveDocs(t, base, false);
+      toast(L('Some changes could not be saved – the newest version is shown.', 'Noen endringer kunne ikke lagres – den nyeste versjonen vises.'));
+      window.dispatchEvent(new Event('tools:change'));
+    }
+  }
+  /* a project sent from /cmd (Document control → Send to Team) */
+  function importDoc(file) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      var j = null; try { j = JSON.parse(fr.result); } catch (x) {}
+      if (!j || j.team !== 'dctl' || !j.p || typeof j.p.name !== 'string' || !Array.isArray(j.p.lines)) { toast(L('That is not a project file from /cmd.', 'Det er ikke en prosjektfil fra /cmd.')); return; }
+      var p = j.p, nid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      p.id = nid; p.files = []; p.made = p.made || new Date().toISOString(); p.name = String(p.name).slice(0, 120);
+      p.lines = p.lines.filter(function (l) { return l && typeof l === 'object'; }).slice(0, 3000).map(function (l) { l.files = []; l.id = l.id ? String(l.id).slice(0, 40) : nid + Math.random().toString(36).slice(2, 6); return l; });
+      var t = DFe.tools(); t.dctl.push(p); saveDocs(t, S.docBase, true).then(function () {
+        toast(L('Imported: ', 'Importert: ') + p.name);
+        S.dtab = 'doc'; location.hash = '#dc=' + nid;
+      });
+    };
+    fr.readAsText(file);
+  }
+
   /* ---------- sheets ---------- */
   function openSheet(html) {
     closeSheet(true);
@@ -543,10 +688,11 @@
 
   /* ---------- one place for clicks and forms ---------- */
   document.addEventListener('click', async function (e) {
-    var t = e.target.closest('[data-act], [data-go], [data-filter]');
+    var t = e.target.closest('[data-act], [data-go], [data-filter], [data-dtab]');
     if (!t) { if (S.sheet && e.target === S.sheet) closeSheet(); return; }
     if (t.dataset.go) { e.preventDefault(); location.hash = '#' + t.dataset.go; return; }
     if (t.dataset.filter) { S.afilter = t.dataset.filter; draw(); return; }
+    if (t.dataset.dtab) { S.dtab = t.dataset.dtab; showDtab(); return; }
     var a = t.dataset.act;
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
@@ -575,6 +721,7 @@
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.dataset.tick) return tick(t.dataset.tick, t.checked);
+    if (t.hasAttribute('data-dcimport')) { if (t.files && t.files[0]) importDoc(t.files[0]); t.value = ''; return; }
     if (t.hasAttribute('data-lang')) { try { localStorage.setItem('team.lang', t.value); } catch (x) {} location.reload(); }
   });
   document.addEventListener('submit', function (e) {

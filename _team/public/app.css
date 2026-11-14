@@ -90,3 +90,6 @@ input[type="checkbox"] { width: 22px; min-height: 22px; height: 22px; padding: 0
   .t-chip { border: 1px solid #999; background: #fff; color: #000; } .t-printonly { display: block; color: #555; font-size: 12px; margin-top: 18px; }
 }
 .t-pick label:has(input:focus-visible) { outline: 2px solid var(--acc); outline-offset: 2px; }
+/* Documents: an open project or requirements list gets the whole screen */
+body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
+.dc-host { margin: 0 -4px; }

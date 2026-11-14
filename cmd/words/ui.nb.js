@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-send-team": ["Send to Team", "Send til Team"],
+  "ui.dc-for-team": ["for Team", "til Team"],
+  "ui.dc-sent-team": ["Saved. In Team: Documents → Import from /cmd.", "Lagret. I Team: Dokumenter → Importer fra /cmd."],
   "ui.team-space": ["Team space", "Teamrom"],
   "ui.team-space-about": ["Meetings, actions and documents with your team – a separate site, kept apart from your private dashboard.", "Møter, oppgaver og dokumenter med teamet ditt – et eget nettsted, holdt adskilt fra det private dashbordet ditt."],
   "ui.open-team": ["Open Team", "Åpne Team"],

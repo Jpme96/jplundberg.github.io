@@ -8,9 +8,9 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note)$/;
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr)$/;   /* dc*: Document control and requirements (projects, lines, types, the checklist) */
 const ID = /^[a-z0-9]{8,40}$/;
-const MAXREC = 100000, MAXLOG = 2000, LOCKMS = 90000;
+const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
 
 function json(o, status = 200) {
@@ -33,7 +33,7 @@ export default {
     const stub = env.TEAM.get(env.TEAM.idFromName('team'));
     const h = new Headers({ 'content-type': 'application/json', 'x-email': check.email.toLowerCase(), 'x-owner': String(env.OWNER).trim().toLowerCase() });
     const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text();
-    if (body && body.length > 400000) return json({ error: 'too big' }, 413);
+    if (body && body.length > 4000000) return json({ error: 'too big' }, 413);
     return stub.fetch(new Request('https://team' + url.pathname + url.search, { method: request.method, headers: h, body }));
   }
 };
@@ -63,6 +63,7 @@ export class TeamStore {
       if (p === 'members' && m === 'GET') return this.members(isAdmin);
       if (p === 'recs' && m === 'GET') return this.recs(url, team);
       if (p === 'rec' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b); }
+      if (p === 'batch' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
       if (!isAdmin) return json({ error: 'admins only' }, 403);
@@ -191,23 +192,37 @@ export class TeamStore {
 
   /* a record: saved only if nobody saved it since you read it (v), never while someone else is writing in it */
   async putRec(email, me, team, b) {
-    if (typeof b.id !== 'string' || !ID.test(b.id) || typeof b.k !== 'string' || !KINDS.test(b.k)) return json({ error: 'bad record' }, 400);
+    const r = await this.applyRec(email, me, team, b);
+    if (r.error) return json(r, r.status);
+    await this.log(email, r.a, { k: b.k, id: b.id, s: logSum(b.s) });
+    return json({ ok: true, v: r.v, seq: r.seq, t: r.t });
+  }
+  /* many records in one go (Document control: a project and its lines). Each is checked on its own; one log line. */
+  async batch(email, me, team, b) {
+    const list = Array.isArray(b.recs) ? b.recs : null;
+    if (!list || !list.length || list.length > MAXBATCH) return json({ error: 'bad batch' }, 400);
+    const out = []; let n = 0;
+    for (const x of list) { const r = await this.applyRec(email, me, team, x || {}); out.push(r.error ? { id: x && x.id, error: r.error, status: r.status, rec: r.rec } : { id: x.id, v: r.v, seq: r.seq, t: r.t }); if (!r.error) n++; }
+    if (n) await this.log(email, 'batch', { k: String(list[0].k || ''), n, s: logSum(b.s) });
+    return json({ ok: true, results: out });
+  }
+  async applyRec(email, me, team, b) {
+    if (typeof b.id !== 'string' || !ID.test(b.id) || typeof b.k !== 'string' || !KINDS.test(b.k)) return { error: 'bad record', status: 400 };
     const del = !!b.del;
-    if (!del && (!blob(b) || b.ct.length > MAXREC)) return json({ error: 'bad record' }, 400);
-    if (!del && (!Number.isInteger(b.e) || b.e < 1 || b.e > team.epoch || !me.keys[b.e])) return json({ error: 'old key' }, 409);
+    if (!del && (!blob(b) || b.ct.length > MAXREC)) return { error: 'bad record', status: 400 };
+    if (!del && (!Number.isInteger(b.e) || b.e < 1 || b.e > team.epoch || !me.keys[b.e])) return { error: 'old key', status: 409 };
     const lk = await this.s.get('lock:' + (b.lockId || b.id));
-    if (lk && lk.until > Date.now() && lk.by !== email) return json({ error: 'someone is writing', by: lk.by }, 423);
+    if (lk && lk.until > Date.now() && lk.by !== email) return { error: 'someone is writing', by: lk.by, status: 423 };
     const old = await this.s.get('r:' + b.id);
-    if (old && old.k !== b.k) return json({ error: 'bad record' }, 400);
-    if ((old ? old.v : 0) !== (b.v | 0)) return json({ error: 'changed meanwhile', rec: old }, 409);
+    if (old && old.k !== b.k) return { error: 'bad record', status: 400 };
+    if ((old ? old.v : 0) !== (b.v | 0)) return { error: 'changed meanwhile', rec: old, status: 409 };
     if (old) await this.s.put('h:' + b.id + ':' + old.v, old);   /* history: nothing is truly gone */
     const seq = ((await this.s.get('seq')) || 0) + 1;
     const rec = del ? Object.assign({}, old || { id: b.id, k: b.k }, { del: 1, v: (old ? old.v : 0) + 1, t: Date.now(), by: email, seq })
       : { id: b.id, k: b.k, e: b.e, iv: b.iv, ct: b.ct, v: (old ? old.v : 0) + 1, t: Date.now(), by: email, seq };
     if (!del) delete rec.del;
     await this.s.put('r:' + b.id, rec); await this.s.put('seq', seq);
-    await this.log(email, del ? 'del' : old ? (old.del ? 'restore' : 'edit') : 'new', { k: b.k, id: b.id, s: blob(b.s) && b.s.ct.length < 2000 ? { e: b.s.e, iv: b.s.iv, ct: b.s.ct } : undefined });
-    return json({ ok: true, v: rec.v, seq, t: rec.t });
+    return { v: rec.v, seq, t: rec.t, a: del ? 'del' : old ? (old.del ? 'restore' : 'edit') : 'new' };
   }
 
   async lock(email, b) {
@@ -240,6 +255,7 @@ function low(s) { return String(s || '').trim().toLowerCase(); }
 function str(s, n) { return typeof s === 'string' ? s.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n) : ''; }
 function blob(o) { return !!o && typeof o.iv === 'string' && typeof o.ct === 'string' && o.iv.length < 64 && /^[A-Za-z0-9+/=_-]+$/.test(o.ct + o.iv); }
 function jwk(o) { return !!o && o.kty === 'EC' && o.crv === 'P-256' && typeof o.x === 'string' && typeof o.y === 'string' && !o.d; }
+function logSum(s) { return blob(s) && s.ct.length < 2000 ? { e: s.e, iv: s.iv, ct: s.ct } : undefined; }
 function clean(x) { const o = {}; for (const k in x) if (x[k] !== undefined) o[k] = x[k]; return o; }
 function hex(u) { return [...u].map(b => b.toString(16).padStart(2, '0')).join(''); }
 async function sha(s) { return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))); }

@@ -132,6 +132,38 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.reload(); await own.waitForSelector('.t-tabs'); await sl(300);
   check(!/Carried over/i.test(await text(own)), 'once done, it is no longer carried over');
 
+  /* --- Documents: the same Document control as /cmd, on Team's storage --- */
+  const tmpf = path.join(__dirname, '..', '.tmp', 'team-project-' + process.pid + '.json');
+  fs.writeFileSync(tmpf, JSON.stringify({ team: 'dctl', v: 1, p: { id: 'cmd1', name: 'School rehab SECRET-DC', no: 'P-1', made: '2026-11-14T10:00:00Z', files: [{ id: 'f1', name: 'x.pdf' }],
+    lines: [{ id: 'a1', code: '442', sys: 'Lighting SECRET-SYS', type: 'Drift', t: 'B', st: 'missing', files: ['f1'] }, { id: 'a2', code: '442', sys: 'Lighting SECRET-SYS', type: 'Vedlikehold', t: 'C', st: 'recv' }, { id: 'a3', code: '320', sys: 'Heating', t: 'B', st: 'missing' }] } }));
+  await own.goto(U + '#docs'); await own.reload();
+  check(await until(own, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000), 'Documents opens Document control (the same code as /cmd)');
+  check(await until(own, () => !!document.querySelector('#wkDocReq') && document.querySelector('#wkDocReq').innerHTML.length > 50), 'and Document requirements next to it');
+  const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
+  check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
+  check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');
+  await word(own, 'Document control in Team');
+  /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
+  await kari.goto(U + '#docs'); await kari.reload();
+  check(await until(kari, () => !!document.querySelector('[data-dcopen]'), 20000), 'Kari sees the project');
+  await kari.click('[data-dcopen]'); await kari.waitForSelector('[data-dctab="docs"]'); await kari.click('[data-dctab="docs"]');
+  await kari.waitForSelector('[data-dcline="a2"]'); await kari.click('[data-dcline="a2"]');
+  await kari.waitForSelector('[data-dcst="a2:ok"]'); await kari.click('[data-dcst="a2:ok"]'); await sl(800);
+  check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'recv'), 'Can edit cannot mark a document Approved');
+  await kari.click('[data-dcst="a2:rej"]'); await sl(1200);
+  /* at the same time the owner changes another line of the same project */
+  await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a1').st = 'na'; DocHost.Fe.saveTools(t); }); await sl(1200);
+  await kari.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a3').cmt = 'Missing the manual'; DocHost.Fe.saveTools(t); }); await sl(1200);
+  await own.reload(); await own.waitForSelector('.t-tabs'); await until(own, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
+  const ls = await own.evaluate(() => DocHost.Fe.list('dctl')[0].lines.map(l => l.id + ':' + l.st + ':' + (l.cmt || '')).join(','));
+  check(/a1:na:/.test(ls) && /a2:rej:/.test(ls) && /a3:missing:Missing the manual/.test(ls), 'two people changing the same project at once lose nothing (' + ls + ')');
+  check(await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a2').st = 'ok'; DocHost.Fe.saveTools(t); return true; }) && await until(own, () => !Object.values(window.__team.recs).some(r => r.k === 'dcl' && r.v === 0)), 'the owner (Admin) can approve');
+  await sl(800);
+  await kari.reload(); await kari.waitForSelector('.t-tabs'); await until(kari, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
+  check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'ok'), "and Kari sees the owner's approval");
+  const memDc = (await raw('/__mem')).body;
+  check(!/SECRET-DC|SECRET-SYS|Missing the manual|Lighting/.test(memDc), 'the server only has the projects as ciphertext');
+
   /* --- roles --- */
   async function setRole(email, role) { await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('[data-act=member][data-email="' + email + '"]'); await own.click('[data-act=member][data-email="' + email + '"]'); await own.waitForSelector('form[data-form=role]'); await own.select('form[data-form=role] select[name=role]', role); await own.click('form[data-form=role] button[type=submit]'); await until(own, () => !document.querySelector('.t-sheetbg')); }
   await setRole('kari@y.no', 'read');
@@ -181,7 +213,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
 
   /* --- the change log, shown to members, decrypted on the device --- */
   await own.goto(U + '#team'); await own.click('[data-act=log]');
-  check(await until(own, () => /approved Kari/.test(document.body.innerText) && /removed Ola/.test(document.body.innerText) && /MARK-SECRET-1/.test(document.body.innerText)), 'the change log shows who did what');
+  check(await until(own, () => /approved Kari/.test(document.body.innerText) && /removed Ola/.test(document.body.innerText) && /MARK-SECRET-1/.test(document.body.innerText) && /Documents: School rehab SECRET-DC/.test(document.body.innerText)), 'the change log shows who did what');
   await word(own, 'the team tab');
 
   /* --- the server never had anything readable --- */
@@ -194,7 +226,9 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.evaluateOnNewDocument(() => localStorage.setItem('team.lang', 'nb'));
   await kari.goto(U + '#overview'); await kari.reload(); await kari.waitForSelector('.t-tabs');
   const nbt = await text(kari);
-  check(/Oversikt/.test(nbt) && /Møter/.test(nbt) && !/Overview|Meetings/.test(nbt), 'Norwegian when chosen');
+  check(/Oversikt/.test(nbt) && /Møter/.test(nbt) && /Dokumenter/.test(nbt) && !/Overview|Meetings/.test(nbt), 'Norwegian when chosen');
+  await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000);
+  check(/Dokumentkontroll/.test(await text(kari)) && !/Document control/.test(await text(kari)), 'Document control in Norwegian too');
   await word(kari, 'Norwegian overview');
 
   /* --- kept apart from /cmd --- */
