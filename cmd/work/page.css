@@ -323,3 +323,9 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .xv-grid:focus { outline: none; }
 .xv-t td.in { box-shadow: inset 0 0 0 999px rgba(26, 115, 232, .12); }
 @media (max-width: 600px) { .xv-act span { display: none; } }
+/* cmd's Document control: the way to the team's projects in Team */
+.dc-teamlink { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; min-height: 56px; border-radius: 14px; border: 1px dashed var(--line, #2a2d33); color: inherit; text-decoration: none; }
+.dc-teamlink > i:first-child { font-size: 20px; color: var(--accent, #14b8a6); }
+.dc-teamlink span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dc-teamlink small { color: var(--muted, #9aa0a6); }
+.dc-xrow { margin: 12px 0 4px; }

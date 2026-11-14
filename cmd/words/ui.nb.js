@@ -1,5 +1,7 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-in-team": ["Projects with your team are in Team", "Prosjekter med teamet ditt ligger i Team"],
+  "ui.dc-in-team-s": ["Shared, encrypted, the same tools – open Documents in Team", "Delt, kryptert, de samme verktøyene – åpne Dokumenter i Team"],
   "ui.dc-teg-floor": ["floor “{v}” – use K01, U01, H01, L01, T01 or 000", "etasje «{v}» – bruk K01, U01, H01, L01, T01 eller 000"],
   "ui.dc-teg-fag": ["discipline “{v}” – one letter, e.g. A, B, E, V", "fag «{v}» – én bokstav, f.eks. A, B, E, V"],
   "ui.dc-teg-part": ["building part “{v}” – 3 digits after NS 3451", "anleggsdel «{v}» – 3 siffer etter NS 3451"],

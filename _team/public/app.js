@@ -585,7 +585,7 @@
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
       window.PageTabs = { show: function (t) { S.dtab = t === 'req' ? 'req' : 'doc'; showDtab(); } };
-      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true };
+      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore };
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () { return loadJs('/dc/xlsx-view.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');
@@ -624,6 +624,25 @@
     });
     return t;
   }
+  /* the plan file and Excel edits as shared records (kind dcf = a file, dce = edits), so the whole team has the same coloured plan */
+  function b64Of(buf) { var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+  var DStore = {
+    get: function (key) {
+      var r = S.recs[drid('f', key)]; if (!r || r.del || !r.d) return Promise.resolve(null);
+      if (r.d.b64 != null) { var b = atob(r.d.b64), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return Promise.resolve(new Blob([u], { type: r.d.type || '' })); }
+      return Promise.resolve(clone(r.d.o));
+    },
+    put: function (key, val) {
+      var id = drid('f', key);
+      if (val && typeof val.arrayBuffer === 'function') return val.arrayBuffer().then(function (buf) {
+        if (buf.byteLength > 600000) return false;   /* bigger plans stay on the device that imported them */
+        return putRec('dcf', id, { key: key, name: val.name || '', type: val.type || '', b64: b64Of(buf) });
+      });
+      clearTimeout(DStore.t[key]); return new Promise(function (ok) { DStore.t[key] = setTimeout(function () { putRec('dce', id, { key: key, o: val || {} }).then(ok); }, 1500); });   /* typing in the editor: saved once it pauses */
+    },
+    del: function (key) { var id = drid('f', key); return S.recs[id] && !S.recs[id].del ? delRec(id) : Promise.resolve(true); },
+    t: {}
+  };
   var DFe = {
     tools: function () { S.docBase = {}; return docState(S.docBase); },
     list: function (k) { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t[k] || []; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return Array.isArray(t[k]) ? t[k] : []; },   /* read-only callers: cached until a document record changes */

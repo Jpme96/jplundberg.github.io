@@ -8,7 +8,7 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr)$/;   /* dc*: Document control and requirements (projects, lines, types, the checklist) */
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce)$/;   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
 const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/;
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };

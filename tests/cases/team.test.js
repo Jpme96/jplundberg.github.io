@@ -287,6 +287,12 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000);
   check(/Dokumentkontroll/.test(await text(kari)) && !/Document control/.test(await text(kari)), 'Document control in Norwegian too');
   await word(kari, 'Norwegian overview');
+  /* the plan file and Excel edits are shared, encrypted records (JP 23:46): what Kari stores, the owner reads */
+  const put = await kari.evaluate(async () => { await DocHost.store.put('plan:made-up', new Blob(['MADE-UP-PLAN-BYTES'], { type: 'text/plain' })); await DocHost.store.put('xedit:made-up', { 'xl/worksheets/sheet1.xml': { A1: { v: 'MADE-UP-EDIT' } } }); await new Promise(r => setTimeout(r, 1800)); return true; });
+  await own.goto(U + '#docs'); await own.reload(); await until(own, () => !!(window.DocHost && window.DocHost.store), 20000);
+  const got = await own.evaluate(async () => { const b = await DocHost.store.get('plan:made-up'), e = await DocHost.store.get('xedit:made-up'); return { plan: b && await b.text(), edit: e && e['xl/worksheets/sheet1.xml'].A1.v }; });
+  check(put && got.plan === 'MADE-UP-PLAN-BYTES' && got.edit === 'MADE-UP-EDIT', 'the plan file and Excel edits are shared in the team ' + JSON.stringify(got));
+  check(!/MADE-UP-PLAN|MADE-UP-EDIT/.test((await raw('/__mem')).body), 'and the server only has them encrypted');
 
   /* --- kept apart from /cmd --- */
   const wr = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '');

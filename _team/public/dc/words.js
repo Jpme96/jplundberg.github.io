@@ -55,6 +55,8 @@ window.DC_NB = {
 "ui.dc-from-krav": "Bruk dokumentkrav …",
 "ui.dc-if-contract": "Bare hvis det er avtalt i kontrakten",
 "ui.dc-in-fdv": "I FDV-systemet",
+"ui.dc-in-team": "Prosjekter med teamet ditt ligger i Team",
+"ui.dc-in-team-s": "Delt, kryptert, de samme verktøyene – åpne Dokumenter i Team",
 "ui.dc-iss-abbr": "Ukjent dokumentkode «{a}»",
 "ui.dc-iss-drawing": "Tegningsnavnet følger ikke bygg-etasje-fag-kode-type-løpenr.",
 "ui.dc-iss-fag": "Ukjent fagbokstav «{a}» i tegningsnavnet",

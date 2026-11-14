@@ -221,9 +221,15 @@
   function saveP(id, fn, key) { key = key || 'dctl'; var t = Fe.tools(); (t[key] || []).forEach(function (r) { if (r && r.id === id) fn(r); }); Fe.saveTools(t); }
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-dctl', 1); r.onupgradeneeded = function () { r.result.createObjectStore('files'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { idb = null; rej(r.error); }; })); }
-  function putBlob(id, b) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(b, id); t.oncomplete = function () { res(true); }; t.onerror = t.onabort = function () { res(false); }; }); }).catch(function () { return false; }); }
-  function getBlob(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
-  function delBlob(id) { return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
+  /* the plan file and your Excel edits: in Team they are shared records (encrypted with the team key), so everyone gets
+     the same coloured plan and the same edits (JP 23:46); elsewhere they stay on this device */
+  function shared(id) { return HOST && HOST.store && /^(plan|xedit):/.test(id); }
+  function putBlob(id, b) { if (shared(id)) return HOST.store.put(id, b); return putBlobLocal(id, b); }
+  function getBlob(id) { if (shared(id)) return HOST.store.get(id).then(function (v) { return v || getBlobLocal(id).then(function (b) { if (b) HOST.store.put(id, b); return b; }); }); return getBlobLocal(id); }   /* one imported before sharing: shared now, from the device that has it */
+  function delBlob(id) { if (shared(id)) return HOST.store.del(id); return delBlobLocal(id); }
+  function putBlobLocal(id, b) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(b, id); t.oncomplete = function () { res(true); }; t.onerror = t.onabort = function () { res(false); }; }); }).catch(function () { return false; }); }
+  function getBlobLocal(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
+  function delBlobLocal(id) { return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
 
   /* ---------- statuses ---------- */
   var ST = [['missing', 'ui.dc-st-missing', 'Missing', '#8a94a3', 'circle'], ['recv', 'ui.dc-st-recv', 'Received – to check', '#3b6fb6', 'inbox'], ['ok', 'ui.dc-st-ok', 'Approved', '#2f8a57', 'check-circle'],
@@ -273,6 +279,7 @@
         '<span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who, c.all ? k('ui.dc-n-docs', '{n} documents', { n: c.all }) : k('ui.dc-no-plan', 'No plan yet'), c.missing ? k('ui.dc-n-missing', '{n} missing', { n: c.missing }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
         (c.all ? '<span class="kit-r"><b class="dc-pc">' + pc + ' %</b></span>' : '') + '<i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : (adding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dc-empty', 'Add a project, import its document plan (Excel) and the delivered files – you see at once what is missing, and check each document.')) + '</p>');
+    if (!HOST && !adding) body += '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dc-in-team', 'Projects with your team are in Team')) + '</b><small>' + esc(k('ui.dc-in-team-s', 'Shared, encrypted, the same tools – open Documents in Team')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>';   /* one home for team projects (JP 23:46): Team; this card is for your own */
     return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</h2>' + (adding ? '' : '<div class="head-actions"><label class="text-btn dc-file dc-chk"><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.dc-chk-btn', 'Check a plan')) + '<input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label><button type="button" class="text-btn" data-dcnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
   }
   function full(p) {
@@ -324,6 +331,7 @@
       if (F.length) h += '<p class="dc-note"><i class="bi bi-files"></i> ' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: loose, b: bad })) + '</p>';
       if (p.planName) h += '<p class="muted dc-src">' + esc(k('ui.dc-plan-from', 'Plan: {f}, imported {d}', { f: p.planName, d: fmt(p.planAt) })) + '</p>';
     }
+    if (L.length) h += '<div class="fdv-acts dc-xrow"><button type="button" class="pill-btn" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button></div>';   /* the main way to work with the plan – also here, not only under Report (JP 23:46) */
     h += planBtns(p);
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3><table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-trade', 'Trade / delivery'), p.trade], [k('ui.dc-due', 'Deadline'), fmt(p.due)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<div class="fdv-acts"><button type="button" class="pill-btn" data-dcedit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '<button type="button" class="text-btn dc-del" data-dcdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-delete', 'Delete project')) + '</button></div>';
