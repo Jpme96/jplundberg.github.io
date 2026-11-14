@@ -25,8 +25,9 @@ const BUDGET_KB = { total: 1620 };   /* Work +3 more (2026-11-14 morning): repor
    +43 kB on Work (2026-11-14): Document control – the document plan read from Excel, the delivered files matched and checked by name, statuses, overview and report (doc-control.page.js, Work only);
    +4 kB more the same day: names from the FDV system (pasted or exported) and Quick check;
    +12 kB more: the plan made from the client's checklist with 34 project types (codes only), your own types, lines by hand;
-   +16 kB more: Document requirements as its own tab (the list for the start of a project, PDF and Excel for the contractor, Start document control) and the building and property on both. */
-const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1494 };
+   +16 kB more: Document requirements as its own tab (the list for the start of a project, PDF and Excel for the contractor, Start document control) and the building and property on both;
+   +3 kB: suggested document types per NS 3451 group with a short description each, when the client's checklist has none. */
+const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1497 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

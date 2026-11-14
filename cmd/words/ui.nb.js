@@ -640,6 +640,8 @@ I18N.add({
   "ui.dr-empty": ["At the start of a project: pick the project type and the systems, and get the documentation it should have after NS 3456 – to share with the contractor as PDF or Excel, and to check against later in Document control.", "Ved oppstart av et prosjekt: velg prosjekttype og systemer, og få dokumentasjonen det skal ha etter NS 3456 – til å dele med entreprenøren som PDF eller Excel, og til å kontrollere mot senere i Dokumentkontroll."],
   "ui.dr-excel": ["Excel for the contractor", "Excel til entreprenøren"],
   "ui.dr-excel-help": ["The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.", "Excel-filen er satt opp som en dokumentplan: entreprenøren fyller inn planlagte navn, og du importerer den i Dokumentkontroll."],
+  "ui.dr-fill": ["Fill in the document types", "Fyll inn dokumenttypene"],
+  "ui.dr-fill-help": ["Some systems have no document types yet.", "Noen systemer har ingen dokumenttyper ennå."],
   "ui.dr-intro": ["The documentation to be delivered for FDV (forvaltning, drift og vedlikehold), with the document types of NS 3456 for each system after NS 3451. Name each file with the 3-digit code, a document code and a describing text.", "Dokumentasjonen som skal leveres for FDV (forvaltning, drift og vedlikehold), med dokumenttypene i NS 3456 for hvert system etter NS 3451. Gi hver fil navn med den 3-sifrede koden, en dokumentkode og en beskrivende tekst."],
   "ui.dr-made": ["{n} documents on the list", "{n} dokumenter på listen"],
   "ui.dr-make": ["Make the list", "Lag listen"],

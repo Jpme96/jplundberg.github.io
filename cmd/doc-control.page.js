@@ -455,15 +455,38 @@
     ['outdoor', 'Outdoor areas', 'Utomhus', '711 712 721 722 725 744 761 762 763 771 772 773'],
     ['outva', 'Outdoor pipes and connections', 'Utvendig VA og tilknytning', '712 714 726 727 731 733 783 784 785']
   ];
+  /* built-in suggestion (JP 11:15 – "should have more of what type of documentation each of them should have"): when the client's
+     checklist has no line for a code (or none is imported), the document types are suggested per NS 3451 group, with a short
+     description of each type in this app's own words. The client's checklist always wins. */
+  var DEF = { 21: 'AEK', 22: 'AEK', 23: 'ACEFK', 24: 'ACEK', 25: 'ACEK', 26: 'ACEFK', 27: 'CEG', 28: 'ACEK', 29: 'AE',
+    31: 'ABCDEHIK', 32: 'ABCDEHIK', 33: 'ABCDEFHIK', 34: 'ABCDEFHIK', 35: 'ABCDEFHIK', 36: 'ABCDEHIK', 37: 'ABCDEHIK', 38: 'ABCDEHIK', 39: 'ABCDE',
+    41: 'ACEIK', 42: 'ABCDEFIK', 43: 'ABCDEIK', 44: 'ACDEGK', 45: 'ACEG', 46: 'ABCDEIK', 47: 'ABCDEIK', 48: 'ACEI', 49: 'AE',
+    51: 'AEK', 52: 'ABCDEHK', 53: 'ABCDEGHK', 54: 'ABCDEFGHIK', 55: 'ABCDEGK', 56: 'ABCDEGHIK', 57: 'ACEI', 59: 'AE',
+    61: 'ABCDEGK', 62: 'ABCDEFGHIK', 63: 'ABCDEHK', 64: 'ABCDEHIK', 65: 'ABCDEGK', 66: 'BCEG', 67: 'EG', 68: 'EG', 69: 'E',
+    71: 'AK', 72: 'ACEK', 73: 'ABCDEK', 74: 'ACDEK', 75: 'ACDEK', 76: 'ACEK', 77: 'CEG', 78: 'AK', 79: 'E' };
+  var DEFX = {
+    A: ['Declarations of conformity, final inspection and control declarations, test reports – that the requirements are met', 'Samsvarserklæringer, sluttkontroll og kontrollerklæringer, testrapporter – at kravene er oppfylt'],
+    B: ['How it is run and used, routines for checks and inspections, what to do when something goes wrong', 'Hvordan det driftes og brukes, rutiner for kontroll og ettersyn, hva som gjøres ved feil'],
+    C: ['Maintenance instructions with intervals, cleaning, spare parts and the warranty terms', 'Vedlikeholdsinstrukser med intervaller, renhold, reservedeler og garantivilkår'],
+    D: ['List of delivered components with TFM label, location, type and supplier', 'Oversikt over leverte komponenter med TFM-merking, plassering, type og leverandør'],
+    E: ['Product data sheets – properties, dimensions, materials and approvals', 'Produktdatablad – egenskaper, dimensjoner, materialer og godkjenninger'],
+    F: ['Certificates and third-party approvals where required', 'Sertifikater og tredjepartsgodkjenninger der det kreves'],
+    G: ['Instructions for residents and users', 'Bruksanvisning for beboere og brukere'],
+    H: ['System and function description – how it is built up and works with other systems', 'System- og funksjonsbeskrivelse – oppbygging og samspill med andre anlegg'],
+    I: ['Settings, measurements and adjustments at handover (commissioning protocol)', 'Innstillinger, målinger og innregulering ved overlevering (protokoll)'],
+    K: ['As-built drawings – plans, sections, details or schematics', '«Som bygget»-tegninger – planer, snitt, detaljer eller skjema'],
+    L: ['Photos of hidden work, with location', 'Bilder av skjulte arbeider, med plassering'] };
+  function defTypes(c) { c = String(c || ''); if (c.length < 3) return ''; if (/^[2-7]\d0$/.test(c)) return 'HK'; return DEF[c.slice(0, 2)] || ''; }
+  function defHint(x) { var q = DEFX[x]; return q ? (I18N.lang === 'nb' ? q[1] : q[0]) : ''; }
   function req() { var r = Fe.tools().dcreq; return r && r.codes ? r : null; }
   function ownTypes() { return Fe.list('dctypes'); }
   function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true }; })); }
   /* codes to pick from: the checklist's, else your own NS 3451 list, else the codes the project types use */
   function pickCodes() {
     var r = req(), out = {};
-    if (r) { Object.keys(r.codes).forEach(function (c) { out[c] = { n: r.codes[c].n, t: r.codes[c].t || '' }; }); return out; }
-    var own = LP && LP.ownMap ? LP.ownMap() : {}; Object.keys(own).forEach(function (c) { if (/^\d{3}$/.test(c)) out[c] = { n: own[c], t: '' }; });
-    PTYPES.forEach(function (t) { if (t[3] !== '*') t[3].split(' ').forEach(function (c) { if (!out[c]) out[c] = { n: codeName(c) || '', t: '' }; }); });
+    if (r) { Object.keys(r.codes).forEach(function (c) { out[c] = { n: r.codes[c].n, t: r.codes[c].t || (/^1/.test(c) ? '' : defTypes(c)) }; }); return out; }
+    var own = LP && LP.ownMap ? LP.ownMap() : {}; Object.keys(own).forEach(function (c) { if (/^\d{3}$/.test(c)) out[c] = { n: own[c], t: defTypes(c) }; });
+    PTYPES.forEach(function (t) { if (t[3] !== '*') t[3].split(' ').forEach(function (c) { if (!out[c]) out[c] = { n: codeName(c) || '', t: defTypes(c) }; }); });
     return out;
   }
   function parseReq(sheets) {
@@ -507,12 +530,12 @@
   function linesFor(codesList) {
     var r = req(), out = [];
     codesList.slice().sort().forEach(function (c) {
-      var q = r && r.codes[c], t = q ? q.t || '' : '', groups = [];
+      var q = r && r.codes[c], t = q && q.t ? q.t : /^1/.test(c) ? '' : defTypes(c), groups = [];
       if (!t) groups = [''];
       else { var bc = t.replace(/[^BC]/g, ''); t.split('').forEach(function (x) { if (x === 'B' || x === 'C') { if (groups.indexOf(bc) < 0) groups.push(bc); } else groups.push(x); }); }
       groups.forEach(function (g) {
         out.push({ id: uid() + out.length, code: c, sys: (q && q.n || codeName(c) || '').slice(0, 160), type: g ? g.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: g,
-          hint: q && q.ex ? g.split('').map(function (x) { return q.ex[x] ? x + ': ' + q.ex[x] : ''; }).filter(Boolean).join('\n').slice(0, 800) || undefined : undefined, opt: q && q.opt, planned: '', note: '', st: 'missing', files: [] });
+          hint: g.split('').map(function (x) { var v = q && q.ex && q.ex[x] || defHint(x); return v ? x + ': ' + v : ''; }).filter(Boolean).join('\n').slice(0, 800) || undefined, opt: q && q.opt, planned: '', note: '', st: 'missing', files: [] });
       });
     });
     return out;
@@ -580,6 +603,7 @@
     var h = '<div class="fdv-page dc-page"><div class="fdv-top"><button type="button" class="fdv-back" data-drback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.doc-req', 'Document requirements')) + '</button>' +
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div><div class="fdv-body">';
     if (rpicking || !L.length) return h + picker(p, 'req') + '</div></div>';
+    if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
     h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drstart><i class="bi bi-folder-check"></i> ' + esc(k('ui.dr-start', 'Start document control')) + '</button>' +
       '<button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button>' +
       '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button></div>' +
@@ -723,6 +747,7 @@
     if (t.closest('[data-drcancel]')) { radding = false; draw(); return; }
     if ((b = t.closest('[data-dropen]'))) { rgo(b.dataset.dropen); return; }
     if (t.closest('[data-drback]')) { redit = false; rback(); return; }
+    if (t.closest('[data-drfill]')) { var nf2 = 0; saveP(ropen, function (p) { var out = []; (p.lines || []).forEach(function (l) { if (!l.t && defTypes(l.code) && !/^1/.test(l.code)) { var nl = linesFor([l.code]); nf2 += nl.length; out = out.concat(nl); } else out.push(l); }); p.lines = out; }, 'dckrav'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: nf2 }))); draw(); return; }
     if (t.closest('button[data-dredit]')) { redit = true; draw(); return; }
     if (t.closest('[data-dreditx]')) { redit = false; draw(); return; }
     if ((b = t.closest('[data-drldel]'))) { var rl = b.dataset.drldel, kp = JSON.parse(JSON.stringify(krav(ropen))); saveP(ropen, function (p) { p.lines = (p.lines || []).filter(function (x) { return x.id !== rl; }); }, 'dckrav'); draw();
@@ -830,7 +855,7 @@
     if (f.matches('form[data-drform]')) { e.preventDefault(); var rn = f.name.value.trim().slice(0, 120); if (!rn) return; var rid = uid(), t11 = Fe.tools(); t11.dckrav = (t11.dckrav || []).concat([siteRead(f, { id: rid, name: rn, no: f.no.value.trim().slice(0, 40), made: new Date().toISOString(), lines: [] })]); Fe.saveTools(t11); radding = false; f.name.blur(); ticks = {}; lastType = ''; rgo(rid); return; }
     if (f.matches('form[data-dctsave]')) { e.preventDefault(); var tn = f.n.value.trim().slice(0, 60), cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!tn || !cs.length) return; var t7 = Fe.tools(); t7.dctypes = (t7.dctypes || []).concat([{ id: uid(), name: tn, codes: cs.sort() }]); Fe.saveTools(t7); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dc-type-saved', 'Saved as a project type'))); f.n.blur(); draw(); return; }
     if (f.matches('form[data-dcaddl]')) { e.preventDefault(); var code = normCode(f.code.value), tl = f.t.value, nm = f.name.value.trim().slice(0, 160), aid = f.dataset.dcaddl, akey = /^r:/.test(aid) ? 'dckrav' : 'dctl'; aid = aid.replace(/^r:/, ''); if (!code) return;
-      saveP(aid, function (p) { var q = req() && req().codes[code.slice(0, 3)]; p.lines = (p.lines || []).concat([{ id: uid(), code: code, sys: nm || (q && q.n) || codeName(code) || '', type: tl ? tl.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: tl, hint: q && q.ex && tl ? tl.split('').map(function (x) { return q.ex[x] ? x + ': ' + q.ex[x] : ''; }).filter(Boolean).join('\n') || undefined : undefined, planned: '', note: '', st: 'missing', files: [], hand: 1 }]); if (akey === 'dctl') rematch(p); }, akey);
+      saveP(aid, function (p) { var q = req() && req().codes[code.slice(0, 3)]; p.lines = (p.lines || []).concat([{ id: uid(), code: code, sys: nm || (q && q.n) || codeName(code) || '', type: tl ? tl.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: tl, hint: tl ? tl.split('').map(function (x) { var v = q && q.ex && q.ex[x] || defHint(x); return v ? x + ': ' + v : ''; }).filter(Boolean).join('\n') || undefined : undefined, planned: '', note: '', st: 'missing', files: [], hand: 1 }]); if (akey === 'dctl') rematch(p); }, akey);
       f.reset(); document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
     if (!f.matches('form[data-dcpform]')) return; e.preventDefault();
     var v = siteRead(f, { name: f.name.value.trim().slice(0, 120), no: f.no.value.trim().slice(0, 40), who: f.who.value.trim().slice(0, 120), trade: f.trade.value.trim().slice(0, 80), due: f.due.value });

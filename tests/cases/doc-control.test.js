@@ -126,6 +126,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-drnew]'); await sl(200);
   await p.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up bathroom'; f.no.value = 'P-9'; f.bid.value = '99901'; f.bname.value = 'Made-up block A'; f.pname.value = 'Made-up estate'; f.pid.value = '1/2'; f.requestSubmit(); }); await sl(500);
   check(await p.evaluate(() => document.body.classList.contains('dr-full') && /^#dr=/.test(location.hash) && !!document.querySelector('.dc-pick')), 'new requirements open on their own page (#dr=…) with the system picker');
+  const df = await p.evaluate(() => DocCtl.linesFor(['211', '330', '442']).map(l => l.code + ' ' + l.t + ' ' + (l.hint ? 1 : 0)).join());
+  check(df === '211 A 1,211 E 1,211 K 1,330 H 1,330 K 1,442 A 1,442 C 1,442 D 1,442 E 1,442 G 1,442 K 1', 'without a checklist each system still gets its suggested document types with a description (11:15) ' + df);
   await (await p.$('input[data-dcreq]')).uploadFile(reqF); await sl(1000);
   const rq = await p.evaluate(() => { const r = Features.tools().dcreq; return { n: Object.keys(r.codes).join(), t332: r.codes['332'].t, ex: r.codes['332'].ex, chips: document.querySelectorAll('[data-dcptype]').length }; });
   check(rq.n === '330,331,332' && rq.t332 === 'ABC' && rq.ex.A === 'Made-up coverage and marking' && rq.chips >= 30, 'the checklist is read: codes, their NS 3456 types and the examples ("skal ikke benyttes" left out); the project types are offered ' + JSON.stringify(rq));
@@ -137,7 +139,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-dcmake="req"]'); await sl(500);
   const kr = await p.evaluate(() => { const r = Features.list('dckrav')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t).join(), hint: r.lines.filter(l => l.code === '332' && l.t === 'BC')[0].hint, type: r.type, types: Features.tools().dctypes.map(t => t.name + ':' + t.codes.join(' ')).join(), shown: document.querySelectorAll('.dr-line').length, hints: document.querySelectorAll('.dr-hint').length,
     wide: [...document.querySelectorAll('#wkDocReq *')].filter(e => !e.closest('.dc-chips') && e.getBoundingClientRect().right > innerWidth + 1).length }; });
-  check(kr.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines$/.test(kr.hint) && kr.type === 'Sprinkler' && kr.types === 'Made-up type:330 332' && kr.shown === 4 && kr.hints === 4 && !kr.wide, 'Make the list: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(kr));
+  check(kr.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines\nC: Maintenance instructions/.test(kr.hint) && kr.type === 'Sprinkler' && kr.types === 'Made-up type:330 332' && kr.shown === 4 && kr.hints === 4 && !kr.wide, 'Make the list: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(kr));
   /* the Excel reads back as a document plan */
   const back = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-drxlsx]').click(); FdvPdf.share = old; if (!got) return null;
     const sh = await DocCtl.readBook(await got.arrayBuffer()); const res = DocCtl.parsePlan(sh); return { name: got.name, lines: res.lines.map(l => l.code + ' ' + l.t).join() }; });
