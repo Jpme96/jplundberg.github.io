@@ -141,6 +141,7 @@ window.DC_NB = {
 "ui.dc-x-file": "Dokumentkontroll",
 "ui.dc-x-new": "En ny Excel med farger (den opprinnelige planen er ikke på denne enheten)",
 "ui.dc-x-own": "Planen din med farger: rødt mangler eller ikke godkjent, gult til kontroll, grønt godkjent – se kolonnen Kontroll",
+"ui.dc-x-share": "Del eller lagre Excel-filen",
 "ui.dc-x-sheet": "Dokumentkontroll",
 "ui.delete": "Slett",
 "ui.doc-control": "Dokument­kontroll",

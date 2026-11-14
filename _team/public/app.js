@@ -714,7 +714,7 @@
     var ts = S.teams.filter(function (t) { return t.role || t.ready; });
     openSheet('<h2>' + L('Your teams', 'Teamene dine') + '</h2><ul class="t-list t-teams">' + ts.map(function (t) {
       var sub = t.role === 'pending' ? L('Waiting for approval', 'Venter på godkjenning') : t.role ? roleName(t.role) : L('Not set up yet', 'Ikke satt opp ennå');
-      return '<li><button class="t-row" type="button" data-act="goTeam" data-id="' + esc(t.id) + '"><span class="grow"><span>' + esc(t.name || L('New team', 'Nytt team')) + '</span><small>' + esc(sub) + '</small></span>' + (t.id === S.tid ? '<span class="t-chip">' + L('Open', 'Åpen') + '</span>' : '') + '</button></li>';
+      return '<li><button class="t-row" type="button" data-act="goTeam" data-id="' + esc(t.id) + '"><span class="grow"><span>' + esc(t.name || L('New team', 'Nytt team')) + '</span><small>' + esc(sub) + '</small></span>' + (t.id === S.tid && document.querySelector('.t-tabs') ? '<span class="t-chip">' + L('Open', 'Åpen') + '</span>' : '') + '</button></li>';
     }).join('') + '</ul>' + (S.me.isOwner ? '<button class="t-btn wide" type="button" data-act="newTeam">' + ic('plus') + ' ' + L('New team', 'Nytt team') + '</button>' : '') +
       '<button class="t-btn ghost wide" type="button" data-act="close">' + L('Close', 'Lukk') + '</button>');
   }
@@ -732,7 +732,7 @@
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
     if (a === 'teams') return teamsSheet();
-    if (a === 'goTeam') { if (t.dataset.id !== S.tid || !S.me.member) goTeam(t.dataset.id); else closeSheet(); return; }
+    if (a === 'goTeam') { if (t.dataset.id === S.tid && S.me.member && document.querySelector('.t-tabs')) closeSheet(); else goTeam(t.dataset.id); return; }   /* from the New team form the open team is not on screen: go to it (JP 21:31) */
     if (a === 'newTeam') { location.href = '/?new=1'; return; }
     if (a === 'newMeeting') return startEdit(rid(), true);
     if (a === 'edit') return startEdit(t.dataset.id);

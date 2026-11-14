@@ -9,7 +9,10 @@
   if (window.PagedPdf) return;
   var P = window.PagedPdf = { vendor: window.PAGED_PDF_VENDOR || '/cmd/vendor/', photo: null };
   function sharePdf(file) {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: file.name.replace(/\.pdf$/, '') }).catch(function () {}); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: file.name.replace(/\.(pdf|xlsx)$/, '') }).catch(function (e) { if (!e || e.name !== 'AbortError') save(file); }); return; }   /* the browser refused (the tap was too long ago): save it instead (JP 21:31) */
+    save(file);
+  }
+  function save(file) {
     var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   }
   /* the PDF is made on the device: the report is laid out at A4 width, drawn to a picture (html2canvas), cut into pages between

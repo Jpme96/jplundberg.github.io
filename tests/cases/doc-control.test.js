@@ -102,6 +102,18 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(rp.h2 === '1 Summary|2 Missing documents|3 Not approved and comments|4 File names' && /235/.test(rp.t) && /Made-up: version number/.test(rp.t) && /random scan 7\.pdf/.test(rp.t), 'the report: summary, missing, not approved with the comment, and the file-name problems ' + JSON.stringify(rp.h2));
   const pdf = await p.evaluate(async () => { const r = Features.list('dctl')[0], f = await window.FdvPdf.html(document.querySelector('#wkDocCtl .rp-doc').innerHTML, 'Made-up foot', 'x.pdf'); const t = new TextDecoder().decode(new Uint8Array(await f.slice(0, 8).arrayBuffer())); return { pdf: t.slice(0, 5), pages: f._pages }; });
   check(pdf.pdf === '%PDF-' && pdf.pages >= 1, 'the report becomes a PDF on the device ' + JSON.stringify(pdf));
+  /* Excel with colours from the button: when the browser refuses to share (the tap was too long ago) the file is saved instead, and the button then shares it (JP 21:31) */
+  const xb = await p.evaluate(async () => {
+    const got = []; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got.push(this.download); };
+    const cs = navigator.canShare, sh = navigator.share; let shared = 0;
+    navigator.canShare = () => true; navigator.share = () => { shared++; return Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' })); };
+    const b = document.querySelector('[data-dcxcol]'); b.click();
+    for (let i = 0; i < 50 && !got.length; i++) await new Promise(r => setTimeout(r, 100));
+    const label = b.querySelector('span').textContent; b.click(); await new Promise(r => setTimeout(r, 200));
+    navigator.canShare = cs; navigator.share = sh; HTMLAnchorElement.prototype.click = oc;
+    return { saved: got, shared, label };
+  });
+  check(xb.saved.length === 2 && /\.xlsx$/.test(xb.saved[0]) && xb.shared === 2 && /Share or save the Excel/.test(xb.label), 'Excel with colours: saved when sharing is refused, and the button shares it again ' + JSON.stringify(xb));
   /* importing the plan again keeps the statuses */
   await tap('[data-dctab="over"]'); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);

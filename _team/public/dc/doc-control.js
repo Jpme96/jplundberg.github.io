@@ -1075,9 +1075,10 @@
       setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); } }, 9000); return;
     }
     if ((b = t.closest('[data-dcxcol]'))) {
+      if (b._xl) { window.FdvPdf.share(b._xl); return; }   /* the second tap shares the file made on the first */
       var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
       planXlsx(px2).then(function (f) {
-        b.disabled = false;
+        b.disabled = false; b._xl = f; b.querySelector('span').textContent = k('ui.dc-x-share', 'Share or save the Excel file'); b.querySelector('i').className = 'bi bi-box-arrow-up';
         toast('<i class="bi bi-check2"></i> ' + esc(f._own ? k('ui.dc-x-own', 'Your plan with colours: red missing or not approved, yellow to check, green approved – see the Check column') : k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
         if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f);
       }).catch(function (e) { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.'))); try { console.warn('[dc] xlsx', e); } catch (e2) {} });

@@ -233,6 +233,11 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(stranger2 === 403, 'only the owner can make a new team');
   await own.goto(U + '?new=1'); await own.waitForSelector('form[data-form=setup]');
   check(/New team/.test(await text(own)) && /Your teams/.test(await text(own)), 'the owner gets a "New team" form with a way back');
+  /* back from the form to the team that is already "open" (JP 21:31: tapping it did nothing) */
+  await own.click('[data-act=teams]'); await own.waitForSelector('.t-teams');
+  await own.evaluate(() => [...document.querySelectorAll('[data-act=goTeam]')].find(b => /Site team/.test(b.textContent)).click());
+  check(await until(own, () => !!document.querySelector('.t-tabs') && /Site team/.test(document.body.innerText), 15000), 'from the New team form, tapping your team takes you back to it');
+  await own.goto(U + '?new=1'); await own.waitForSelector('form[data-form=setup]');
   await own.type('input[name=team]', 'Second site'); await own.type('input[name=name]', 'JP'); await own.type('input[name=pass]', 'owner-pass-2'); await own.type('input[name=pass2]', 'owner-pass-2');
   await own.click('button[type=submit]');
   check(await until(own, () => !!document.querySelector('.t-tabs') && /Second site/.test(document.body.innerText), 20000), 'the new team opens after set-up');

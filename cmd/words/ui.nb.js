@@ -1,5 +1,6 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-x-share": ["Share or save the Excel file", "Del eller lagre Excel-filen"],
   "ui.dc-x-check": ["Check", "Kontroll"],
   "ui.dc-x-sheet": ["Document check", "Dokumentkontroll"],
   "ui.dc-x-file": ["Document check", "Dokumentkontroll"],
