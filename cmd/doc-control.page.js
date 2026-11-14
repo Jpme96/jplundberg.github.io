@@ -84,7 +84,7 @@
   function issueText(q, f) {
     var p = f && f.p || {};
     return { version: k('ui.dc-iss-version', 'An as-built drawing has a version number in the name'), abbr: k('ui.dc-iss-abbr', 'Unknown document code “{a}”', { a: p.abbr }), noabbr: k('ui.dc-iss-noabbr', 'No document code after the system code (e.g. DA, DV, SE)'),
-      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), 
+      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nodwg: k('ui.dc-iss-nodwg', 'The drawing is here as PDF – the DWG is missing'), nopdf: k('ui.dc-iss-nopdf', 'The drawing is here as DWG – the PDF is missing'), notpdf: k('ui.dc-iss-notpdf', 'Not a PDF – documents are delivered as PDF'), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), 
       notext: k('ui.dc-iss-notext', 'No describing text after the codes') }[q[1]] || q[1];
   }
 
@@ -1065,7 +1065,21 @@
     }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); try { console.warn('[dc] plan', e); } catch (e2) {} });
   }
   /* files with no line are matched again (after a new plan); a file you linked by hand stays */
+  /* BBY wants drawings as both DWG and PDF, and documents as PDF (JP 23:46): checked across the delivered files */
+  var PAIR = ['nodwg', 'nopdf', 'notpdf'];
+  function pairs(p) {
+    var F = p.files || [], by = {};
+    F.forEach(function (f) { var m = String(f.name).match(/^(.*)\.([a-z0-9]{2,5})$/i); if (!m) return; (by[m[1].toLowerCase()] = by[m[1].toLowerCase()] || {})[m[2].toLowerCase()] = 1; });
+    F.forEach(function (f) {
+      if (f.nf) return; var m = String(f.name).match(/^(.*)\.([a-z0-9]{2,5})$/i); f.iss = (f.iss || []).filter(function (x) { return PAIR.indexOf(x[1]) < 0; }); if (!m) return;
+      var stem = m[1], ext = m[2].toLowerCase(), set = by[stem.toLowerCase()] || {}, drawing = TEG.test(stem) || /^\d{4,6}-/.test(stem);
+      if (drawing && ext === 'pdf' && !set.dwg) f.iss.push(['warn', 'nodwg']);
+      else if (drawing && ext === 'dwg' && !set.pdf) f.iss.push(['warn', 'nopdf']);
+      else if (!drawing && /^(docx?|xlsx?|xlsm|odt|ods|rtf|txt|msg|eml)$/.test(ext)) f.iss.push(['warn', 'notpdf']);
+    });
+  }
   function rematch(p) {
+    pairs(p);
     (p.files || []).forEach(function (f) {
       if (f.line) return; var l = bestLine(p, f.p || parseName(f.name)); if (!l) return;
       f.line = l.id; l.files = (l.files || []).concat([f.id]); if (l.st === 'missing') l.st = 'recv';
@@ -1092,6 +1106,7 @@
         saveP(id, function (p) {
           p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; return o; }));
           add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0], l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
+          pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         setTab('files'); draw();
@@ -1297,6 +1312,6 @@
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(draw, 80); });
-  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score, planXlsx: planXlsx, checkPlan: checkPlan, XZ: XZ };
+  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score, planXlsx: planXlsx, checkPlan: checkPlan, XZ: XZ, pairs: pairs };
   draw();
 })();

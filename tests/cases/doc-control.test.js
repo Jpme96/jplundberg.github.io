@@ -82,7 +82,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* the files */
   await (await p.$('input[data-dcfiles]')).uploadFile(f1, f2, zf); await sl(1500);
   const fl = await p.evaluate(() => { const r = Features.list('dctl')[0], L = {}; r.lines.forEach(l => L[l.id] = l); return { n: r.files.length, m: r.files.map(f => [f.name, f.line ? L[f.line].t : '-', (f.iss || []).map(i => i[1]).join('+')].join('|')).sort(), st: r.lines.map(l => l.st).join(), tab: document.querySelector('.fdv-tabs [aria-selected="true"]').dataset.dctab, loose: document.querySelectorAll('.dc-files li.loose').length }; });
-  check(fl.n === 5 && fl.m.join(';') === '234 DA Vindu sørfasade modell X fra Made-up.pdf|E|;332 DV Sprinkleranlegg.pdf|BC|;332 SE Sprinkleranlegg.pdf|A|;99999-H02-V-332-P-01 – Rørplan rev 2.pdf|K|version;random scan 7.pdf|-|nocode'
+  check(fl.n === 5 && fl.m.join(';') === '234 DA Vindu sørfasade modell X fra Made-up.pdf|E|;332 DV Sprinkleranlegg.pdf|BC|;332 SE Sprinkleranlegg.pdf|A|;99999-H02-V-332-P-01 – Rørplan rev 2.pdf|K|version+nodwg;random scan 7.pdf|-|nocode'
     && fl.st === 'recv,recv,recv,missing,recv,missing' && fl.tab === 'files' && fl.loose === 1, 'files (also from a .zip, without __MACOSX) are matched by code + document code, checked by name, and their lines become Received ' + JSON.stringify(fl));
   /* link the loose one by hand to 336 */
   await p.evaluate(() => { const r = Features.list('dctl')[0], s = document.querySelector('select[data-dcflink]'); s.value = r.lines[3].id; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
@@ -281,6 +281,13 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* drawing names after BBY's template (JP 23:13): a correct one passes, a broken one says which part is wrong */
   const tg = await p.evaluate(() => ['11624-T01-A-261-P-01-Plantegning', '11624-H04-234-P-01-Plantegning', '11624-000-A261-D-01-Detaljer', '11624-H09-Z-261-P-01-Plan', '11624-X01-A-261-P-01-Plan'].map(n => { const r = DocCtl.parseName(n + '.pdf'); return r.kind + ':' + r.issues.map(i => i[1]).join('+') + ':' + (r.why || ''); }));
   check(tg[0] === 'drawing::' && /^drawing:drawing:discipline “234”/.test(tg[1]) && /^drawing:drawing:discipline “A261”/.test(tg[2]) && tg[3] === 'drawing:fag:' && /^drawing:drawing:floor “X01”/.test(tg[4]), 'drawing names: the template from Coda passes, a broken one names the wrong part, an unknown discipline letter is flagged ' + JSON.stringify(tg));
+  /* BBY wants drawings as DWG and PDF, documents as PDF (JP 23:46) */
+  const pr16 = await p.evaluate(() => { const pp = { files: ['11624-T01-A-261-P-01-Plan.pdf', '11624-T01-A-261-P-01-Plan.dwg', '11624-H01-A-232-F-01-Fasade.dwg', '332 DA Datablad.docx', '332 DA Datablad 2.pdf'].map((n, i) => ({ id: 'f' + i, name: n, iss: [] })) }; DocCtl.pairs(pp); return pp.files.map(f => f.iss.map(x => x[1]).join('+')).join(','); });
+  check(pr16 === ',,nopdf,notpdf,', 'a drawing needs both DWG and PDF; a document that isn\'t a PDF is flagged ' + pr16);
+  /* reminders before a document deadline (JP 23:46): a week before and on the day, while documents are open */
+  const nt = await p.evaluate(() => { const at = n => { const t = Features.tools(), d = new Date(); d.setDate(d.getDate() + n); t.dctl[0].due = d.toISOString().slice(0, 10); Features.saveTools(t); return (window.Notify ? Notify.plan() : []).filter(x => /^dc:/.test(x.id)).map(x => x.id.replace(/^dc:[^:]+/, 'dc') + '|' + x.url.replace(/=.*/, '=')).join(','); };
+    const r = { ten: at(10), three: at(3) }; const t = Features.tools(); delete t.dctl[0].due; Features.saveTools(t); return r; });
+  check(nt.ten === 'dc:7|/cmd/work/#dc=' && nt.three === 'dc:0|/cmd/work/#dc=', 'a document deadline gives a reminder a week before and on the day (planned a week ahead) ' + JSON.stringify(nt));
   /* checklists per client (JP 23:46): a second client's checklist, picked for Check a plan and per project */
   const rq2 = await p.evaluate(() => { const t = Features.tools(); t.dcreqs = [{ id: 'cl2', name: 'Made-up client 2', at: '2026-11-15', codes: { '333': { n: 'Made-up', t: 'E' } } }]; Features.saveTools(t); return true; });
   await sl(500);

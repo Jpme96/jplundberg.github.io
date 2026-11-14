@@ -132,6 +132,15 @@
       var wk = window.Checkin.weekOf(sun);
       if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), I18N.k('ui.weekly-check-in', 'Weekly check-in'), '5 minutes: spending, the week ahead and habits', '/cmd/#checkin');
     }
+    /* document deadlines (JP 23:46): a week before and on the day, 08:00, while documents are still missing or not approved */
+    if (Fe && Fe.list) (Fe.list('dctl') || []).forEach(function (pj) {
+      if (!pj || !/^\d{4}-\d\d-\d\d$/.test(pj.due || '')) return;
+      var L = pj.lines || [], miss = L.filter(function (l) { return l.st === 'missing'; }).length, open = L.filter(function (l) { return l.st === 'missing' || l.st === 'recv' || l.st === 'rej'; }).length;
+      if (!open) return;
+      var body = full ? I18N.k('ui.nt-dc-body', '{m} documents missing, {o} not approved yet', { m: miss, o: open }) : I18N.k('ui.nt-dc-open', 'Documents are still open'), url = '/cmd/work/#dc=' + pj.id, d0 = new Date(pj.due + 'T12:00'), wk = new Date(d0); wk.setDate(wk.getDate() - 7);
+      add('dc:' + pj.id + ':7', at(dkey(wk), 8), full ? I18N.k('ui.nt-dc-week', '{p}: deadline in a week', { p: pj.name }) : I18N.k('ui.nt-dc-week0', 'A document deadline is in a week'), body, url);
+      add('dc:' + pj.id + ':0', at(pj.due, 8), full ? I18N.k('ui.nt-dc-today', '{p}: deadline today', { p: pj.name }) : I18N.k('ui.nt-dc-today0', 'A document deadline is today'), body, url);
+    });
     /* more from the other parts (House, People, client timer …): window.NotifyExtra */
     (window.NotifyExtra || []).forEach(function (fn) { try { fn(add, { full: full, k: p.k, now: now, end: end, at: at, dkey: dkey }); } catch (e) {} });
     return out.sort(function (a, b) { return a.at - b.at; }).slice(0, 80);

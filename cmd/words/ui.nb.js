@@ -1,5 +1,14 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.nt-dc-body": ["{m} documents missing, {o} not approved yet", "{m} dokumenter mangler, {o} er ikke godkjent ennå"],
+  "ui.nt-dc-open": ["Documents are still open", "Dokumenter er fortsatt åpne"],
+  "ui.nt-dc-week": ["{p}: deadline in a week", "{p}: frist om en uke"],
+  "ui.nt-dc-week0": ["A document deadline is in a week", "En dokumentfrist er om en uke"],
+  "ui.nt-dc-today": ["{p}: deadline today", "{p}: frist i dag"],
+  "ui.nt-dc-today0": ["A document deadline is today", "En dokumentfrist er i dag"],
+  "ui.dc-iss-nodwg": ["The drawing is here as PDF – the DWG is missing", "Tegningen er levert som PDF – DWG mangler"],
+  "ui.dc-iss-nopdf": ["The drawing is here as DWG – the PDF is missing", "Tegningen er levert som DWG – PDF mangler"],
+  "ui.dc-iss-notpdf": ["Not a PDF – documents are delivered as PDF", "Ikke PDF – dokumenter leveres som PDF"],
   "ui.dc-req-add": ["Another client’s checklist", "Sjekkliste for en annen byggherre"],
   "ui.dc-req-which": ["Client checklist", "Byggherrens sjekkliste"],
   "ui.dc-chk-with": ["Check a plan against:", "Sjekk en plan mot:"],
