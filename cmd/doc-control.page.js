@@ -96,9 +96,12 @@
   }
   function stMap(v) { v = String(v || '').toLowerCase().trim(); return !v ? '' : /ikke relevant|n\/?a|utgår/.test(v) ? 'na' : /anmerk|kommentar/.test(v) ? 'cmt' : /godkjent|ok/.test(v) ? 'ok' : /avvist|retur/.test(v) ? 'rej' : /^(j|ja|x|levert|mottatt|yes|y)$/.test(v) ? 'recv' : /^(n|nei|no|mangler)$/.test(v) ? 'missing' : ''; }
   function parsePlan(sheets) {
-    var lines = [], seen = 0;
+    var lines = [], seen = 0, heads = [];
     sheets.forEach(function (sh) {
       var h = findHeader(sh.rows); if (!h) return; seen++;
+      var si = heads.length, hrow = sh.rows[h.at] || [], last = 0;
+      hrow.forEach(function (c, j) { if (String(c || '').trim()) last = j + 1; });
+      heads.push({ path: sh.path || '', at: h.at, last: last, w: sh.rows.reduce(function (a, r) { return Math.max(a, (r || []).length); }, last) });
       var M = h.map, last = null;
       for (var i = h.at + 1; i < sh.rows.length; i++) {
         var r = sh.rows[i] || [], g = function (key) { return key in M ? String(r[M[key]] == null ? '' : r[M[key]]).trim() : ''; };
@@ -109,10 +112,10 @@
         var L = letters(type);
         if (!type && !planned) continue;
         lines.push({ id: uid() + lines.length, code: last.code, sys: (code ? sys : last.sys).slice(0, 160), type: type.slice(0, 80), t: L, planned: planned.replace(/^eksempel:\s*/i, '').slice(0, 160), ex: /^eksempel:/i.test(planned) || undefined,
-          note: note.slice(0, 400), fire: last.fire || undefined, resp: (g('resp') || last.resp || '').slice(0, 80), due: g('due').slice(0, 10), st: stMap(g('status')) || 'missing', files: [] });
+          note: note.slice(0, 400), fire: last.fire || undefined, resp: (g('resp') || last.resp || '').slice(0, 80), due: g('due').slice(0, 10), st: stMap(g('status')) || 'missing', files: [], src: [si, i] });
       }
     });
-    return { lines: lines, sheets: seen };
+    return { lines: lines, sheets: seen, heads: heads };
   }
 
   /* ---------- Excel and zip, read without a library (an .xlsx is a zip of XML) ---------- */
@@ -128,7 +131,7 @@
       try { name = new TextDecoder('utf-8', { fatal: !(flags & 0x800) }).decode(nb); } catch (e) { name = Array.prototype.map.call(nb, function (b) { return String.fromCharCode(b === 0x91 ? 230 : b === 0x9B ? 248 : b === 0x86 ? 229 : b === 0x92 ? 198 : b === 0x9D ? 216 : b === 0x8F ? 197 : b < 128 ? b : 95); }).join(''); }
       off += 46 + nl + xl + cl;
       var start = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true);
-      out.push({ name: name, method: method, data: u8.subarray(start, start + csize), size: usize });
+      out.push({ name: name, method: method, data: u8.subarray(start, start + csize), size: usize, crc: v.getUint32(off - 46 - nl - xl - cl + 16, true) });
     }
     return out;
   }
@@ -166,7 +169,7 @@
             rows[ri] = cells;
           });
           for (var q = 0; q < rows.length; q++) if (!rows[q]) rows[q] = [];
-          return { name: sh.name, rows: rows };
+          return { name: sh.name, path: sh.path, rows: rows };
         });
       }));
     });
@@ -408,7 +411,7 @@
     return h;
   }
   function reportTab(p) {
-    return '<div class="fdv-rbar"><span class="spacer"></span><button type="button" class="pill-btn" data-dcpdf="' + esc(p.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
+    return '<div class="fdv-rbar"><span class="spacer"></span><button type="button" class="pill-btn ghost" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button><button type="button" class="pill-btn" data-dcpdf="' + esc(p.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><article class="rp-doc rp-inline">' + report(p) + '</article>';
   }
 
@@ -761,6 +764,142 @@
       ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf fontId="0"/><xf fontId="1" applyFont="1"/></cellXfs></styleSheet>'],
       ['xl/worksheets/sheet1.xml', sheet]]);
   }
+  /* ---------- the plan back as Excel, coloured by status (JP 2026-11-14): your own file when this device has it, else a new one ---------- */
+  var FILL = { missing: 'FFF4CCCC', rej: 'FFF4CCCC', recv: 'FFFFF2CC', cmt: 'FFFCE4D6', ok: 'FFD9EAD3', na: 'FFE7E6E6' };
+  function colName(n) { var x = ''; while (n > 0) { var m = (n - 1) % 26; x = String.fromCharCode(65 + m) + x; n = Math.floor((n - 1) / 26); } return x; }
+  function colNum(ref) { var m = String(ref || '').match(/^[A-Z]+/), n = 0; if (!m) return 0; for (var i = 0; i < m[0].length; i++) n = n * 26 + m[0].charCodeAt(i) - 64; return n; }
+  /* what the check says on a line: its status, your comment and any file-name problems */
+  function checkText(p, l) {
+    var out = stName(l.st) + (l.cmt ? ': ' + l.cmt : '');
+    (p.files || []).filter(function (f) { return f.line === l.id && (f.iss || []).length; }).forEach(function (f) { out += ' · ' + f.name + ': ' + f.iss.map(function (x) { return issueText(x, f); }).join('; '); });
+    return out.slice(0, 2000);
+  }
+  /* a zip: unchanged parts are copied as they were, changed ones are packed again (or stored when the browser can't) */
+  function packAll(list) {
+    var cs = typeof CompressionStream !== 'undefined';
+    return Promise.all(list.map(function (e) {
+      if (e.keep) return e.keep;
+      var d = typeof e.text === 'string' ? new TextEncoder().encode(e.text) : e.text, c = crc(d);
+      if (!cs) return { name: e.name, method: 0, data: d, size: d.length, crc: c };
+      return new Response(new Blob([d]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (b) { return { name: e.name, method: 8, data: new Uint8Array(b), size: d.length, crc: c }; });
+    })).then(function (es) {
+      var enc = new TextEncoder(), parts = [], cen = [], off = 0;
+      es.forEach(function (z) {
+        var nm = enc.encode(z.name), h = new DataView(new ArrayBuffer(30));
+        h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x800, true); h.setUint16(8, z.method, true); h.setUint16(12, 0x21, true); h.setUint32(14, z.crc, true); h.setUint32(18, z.data.length, true); h.setUint32(22, z.size, true); h.setUint16(26, nm.length, true);
+        parts.push(new Uint8Array(h.buffer), nm, z.data);
+        var e = new DataView(new ArrayBuffer(46)); e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint16(8, 0x800, true); e.setUint16(10, z.method, true); e.setUint16(14, 0x21, true); e.setUint32(16, z.crc, true); e.setUint32(20, z.data.length, true); e.setUint32(24, z.size, true); e.setUint16(28, nm.length, true); e.setUint32(42, off, true);
+        cen.push(new Uint8Array(e.buffer), nm); off += 30 + nm.length + z.data.length;
+      });
+      var size = cen.reduce(function (a, x) { return a + x.length; }, 0), end = new DataView(new ArrayBuffer(22));
+      end.setUint32(0, 0x06054b50, true); end.setUint16(8, es.length, true); end.setUint16(10, es.length, true); end.setUint32(12, size, true); end.setUint32(16, off, true);
+      return new Blob(parts.concat(cen, [new Uint8Array(end.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    });
+  }
+  var XDECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  /* colour your own plan: each line's row gets its status colour (your cell styles kept, only the fill changes) and a new
+     "Check" column says what is wrong. Nothing else in the file changes. */
+  function colourOwn(p, buf) {
+    var ents = zipEntries(buf), E = {}, xp = new DOMParser(), xs = new XMLSerializer(), H = p.planSheets;
+    ents.forEach(function (z) { E[z.name] = z; });
+    var txt = function (nm) { return inflate(E[nm]).then(function (u) { return new TextDecoder('utf-8').decode(u); }); };
+    var paths = H.map(function (h) { return h.path; });
+    if (!E['xl/styles.xml'] || paths.some(function (x) { return !E[x]; })) return Promise.reject(new Error('changed'));
+    return Promise.all([txt('xl/styles.xml')].concat(paths.map(txt))).then(function (xml) {
+      var sd = xp.parseFromString(xml[0], 'application/xml'), NS = sd.documentElement.namespaceURI;
+      var one = function (doc, tag) { return doc.getElementsByTagNameNS(NS, tag)[0]; }, kids = function (el, tag) { return [].filter.call(el.childNodes, function (x) { return x.nodeType === 1 && x.localName === tag; }); };
+      var fills = one(sd, 'fills'), xfs = one(sd, 'cellXfs');
+      if (!fills || !xfs) throw new Error('styles');
+      var fillId = {}, xfMemo = {};
+      Object.keys(FILL).forEach(function (st) {
+        if (FILL[st] in fillId) { fillId[st] = fillId[FILL[st]]; return; }
+        var f = sd.createElementNS(NS, 'fill'), pf = sd.createElementNS(NS, 'patternFill'), fg = sd.createElementNS(NS, 'fgColor'), bg = sd.createElementNS(NS, 'bgColor');
+        pf.setAttribute('patternType', 'solid'); fg.setAttribute('rgb', FILL[st]); bg.setAttribute('indexed', '64'); pf.appendChild(fg); pf.appendChild(bg); f.appendChild(pf); fills.appendChild(f);
+        fillId[st] = fillId[FILL[st]] = kids(fills, 'fill').length - 1;
+      });
+      fills.setAttribute('count', kids(fills, 'fill').length);
+      var xfFor = function (old, st) {
+        var key = old + '|' + fillId[st]; if (key in xfMemo) return xfMemo[key];
+        var list = kids(xfs, 'xf'), src = list[old] || list[0], x = src ? src.cloneNode(true) : sd.createElementNS(NS, 'xf');
+        x.setAttribute('fillId', fillId[st]); x.setAttribute('applyFill', '1'); xfs.appendChild(x);
+        xfs.setAttribute('count', list.length + 1); return (xfMemo[key] = list.length);
+      };
+      var hdrXf = null;
+      var out = {};
+      H.forEach(function (h, si) {
+        var doc = xp.parseFromString(xml[si + 1], 'application/xml'), data = one(doc, 'sheetData'); if (!data) return;
+        var rows = {}; kids(data, 'row').forEach(function (r) { rows[+r.getAttribute('r')] = r; });
+        var rowEl = function (n) {
+          if (rows[n]) return rows[n];
+          var r = doc.createElementNS(NS, 'row'); r.setAttribute('r', n);
+          var after = kids(data, 'row').filter(function (x) { return +x.getAttribute('r') > n; })[0];
+          data.insertBefore(r, after || null); return (rows[n] = r);
+        };
+        var cell = function (r, n, col) {
+          var cs = kids(r, 'c'), ref = colName(col) + n;
+          for (var i = 0; i < cs.length; i++) { var c0 = colNum(cs[i].getAttribute('r')); if (c0 === col) return cs[i]; if (c0 > col) { var nc = doc.createElementNS(NS, 'c'); nc.setAttribute('r', ref); r.insertBefore(nc, cs[i]); return nc; } }
+          var c = doc.createElementNS(NS, 'c'); c.setAttribute('r', ref); r.appendChild(c); return c;
+        };
+        var write = function (c, text) {
+          while (c.firstChild) c.removeChild(c.firstChild); c.removeAttribute('t');
+          if (!text) return; c.setAttribute('t', 'inlineStr');
+          var is = doc.createElementNS(NS, 'is'), t = doc.createElementNS(NS, 't'); t.setAttribute('xml:space', 'preserve'); t.textContent = text; is.appendChild(t); c.appendChild(is);
+        };
+        var ncol = h.w + 1, any = false;
+        (p.lines || []).forEach(function (l) {
+          if (!l.src || l.src[0] !== si) return; any = true;
+          var n = l.src[1] + 1, r = rowEl(n), st = FILL[l.st] ? l.st : 'missing';
+          for (var col = 1; col <= h.last; col++) { var c = cell(r, n, col); c.setAttribute('s', xfFor(+c.getAttribute('s') || 0, st)); }
+          var cc = cell(r, n, ncol); cc.setAttribute('s', xfFor(+cc.getAttribute('s') || 0, st)); write(cc, checkText(p, l));
+        });
+        if (!any) return;
+        var hr = rowEl(h.at + 1), hc = cell(hr, h.at + 1, ncol), near = cell(hr, h.at + 1, h.last);
+        if (hdrXf == null) hdrXf = near.getAttribute('s'); if (hdrXf) hc.setAttribute('s', hdrXf);
+        write(hc, k('ui.dc-x-check', 'Check'));
+        var cols = one(doc, 'cols');
+        if (!cols) { cols = doc.createElementNS(NS, 'cols'); data.parentNode.insertBefore(cols, data); }
+        if (!kids(cols, 'col').some(function (c) { return +c.getAttribute('min') <= ncol && +c.getAttribute('max') >= ncol; })) {
+          var cw = doc.createElementNS(NS, 'col'); cw.setAttribute('min', ncol); cw.setAttribute('max', ncol); cw.setAttribute('width', '48'); cw.setAttribute('customWidth', '1'); cols.appendChild(cw);
+        }
+        var dim = one(doc, 'dimension'), m = dim && String(dim.getAttribute('ref') || '').match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+        if (m && colNum(m[3]) < ncol) dim.setAttribute('ref', m[1] + m[2] + ':' + colName(ncol) + m[4]);
+        out[h.path] = XDECL + xs.serializeToString(doc).replace(/^<\?xml[^>]*\?>\s*/, '');
+      });
+      out['xl/styles.xml'] = XDECL + xs.serializeToString(sd).replace(/^<\?xml[^>]*\?>\s*/, '');
+      return packAll(ents.map(function (z) { return z.name in out ? { name: z.name, text: out[z.name] } : { keep: z }; }));
+    });
+  }
+  /* a new workbook: the plan's lines in rows, coloured the same way (for a plan from the checklist, a .csv, or another device) */
+  function colourNew(p) {
+    var ST8 = Object.keys(FILL), hd = [k('ui.dc-code', 'Code'), k('ui.dc-system', 'System'), k('ui.dc-type', 'Document type'), k('ui.dc-planned-name', 'Planned name'), k('ui.dc-x-check', 'Check')];
+    var rows = (p.lines || []).slice().sort(lineOrder);
+    var sx = function (st) { return 2 + ST8.indexOf(FILL[st] ? st : 'missing'); };
+    var cellX = function (ref, v, s) { return '<c r="' + ref + '" t="inlineStr" s="' + s + '"><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; };
+    var title = p.name + (p.no ? ' – ' + p.no : '');
+    var sheet = XDECL + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="12" customWidth="1"/><col min="2" max="2" width="34" customWidth="1"/><col min="3" max="3" width="24" customWidth="1"/><col min="4" max="4" width="38" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/></cols><sheetData>' +
+      '<row r="1">' + cellX('A1', title, 1) + '</row><row r="3">' + hd.map(function (v, j) { return cellX(colName(j + 1) + 3, v, 1); }).join('') + '</row>' +
+      rows.map(function (l, i) { var n = i + 4, s0 = sx(l.st); return '<row r="' + n + '">' + [l.code, lineTitle(l), typeLabel(l), l.planned && !l.ex ? l.planned : '', checkText(p, l)].map(function (v, j) { return cellX(colName(j + 1) + n, v, s0); }).join('') + '</row>'; }).join('') + '</sheetData></worksheet>';
+    var fills = ST8.map(function (st) { return '<fill><patternFill patternType="solid"><fgColor rgb="' + FILL[st] + '"/><bgColor indexed="64"/></patternFill></fill>'; }).join('');
+    var styles = XDECL + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="' + (2 + ST8.length) + '"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' + fills + '</fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="' + (2 + ST8.length) + '"><xf fontId="0"/><xf fontId="1" applyFont="1"/>' +
+      ST8.map(function (st, i) { return '<xf fontId="0" fillId="' + (2 + i) + '" applyFill="1"><alignment vertical="top" wrapText="1"/></xf>'; }).join('') + '</cellXfs></styleSheet>';
+    var R = 'http://schemas.openxmlformats.org/', CT = 'application/vnd.openxmlformats-officedocument.spreadsheetml.';
+    return packAll([
+      { name: '[Content_Types].xml', text: XDECL + '<Types xmlns="' + R + 'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="' + CT + 'sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="' + CT + 'worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="' + CT + 'styles+xml"/></Types>' },
+      { name: '_rels/.rels', text: XDECL + '<Relationships xmlns="' + R + 'package/2006/relationships"><Relationship Id="rId1" Type="' + R + 'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: 'xl/workbook.xml', text: XDECL + '<workbook xmlns="' + R + 'spreadsheetml/2006/main" xmlns:r="' + R + 'officeDocument/2006/relationships"><sheets><sheet name="' + xmlEsc(k('ui.dc-x-sheet', 'Document check')).slice(0, 31) + '" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', text: XDECL + '<Relationships xmlns="' + R + 'package/2006/relationships"><Relationship Id="rId1" Type="' + R + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + R + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', text: styles }, { name: 'xl/worksheets/sheet1.xml', text: sheet }]);
+  }
+  function planXlsx(p) {
+    var nm = fileName(p, k('ui.dc-x-file', 'Document check'), '.xlsx');
+    var mk = function (b) { return new File([b], nm, { type: b.type }); };
+    var fresh = function () { return colourNew(p).then(function (b) { var f = mk(b); f._own = false; return f; }); };
+    if (!p.planSheets || !p.planSheets.length) return fresh();
+    return getBlob('plan:' + p.id).then(function (b) {
+      if (!b) return fresh();
+      return (b.arrayBuffer ? b.arrayBuffer() : new Response(b).arrayBuffer()).then(function (buf) { return colourOwn(p, buf); }).then(function (x) { var f = mk(x); f._own = true; return f; }, function (e) { try { console.warn('[dc] own plan', e); } catch (e2) {} return fresh(); });
+    });
+  }
   function fileName(p, what, ext) { return ([p.no, what, p.name].filter(Boolean).join(' ')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + ext; }
 
   /* ---------- importing ---------- */
@@ -770,12 +909,14 @@
       var res = parsePlan(sheets);
       if (!res.lines.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-plan-none', 'No document lines found – the plan needs a column for the system code and one for the document type or the planned name.'))); return; }
       var kept = 0;
+      if (isX) putBlob('plan:' + id, file); else delBlob('plan:' + id);
       saveP(id, function (p) {
         var old = {}; (p.lines || []).forEach(function (l) { old[l.code + '|' + l.t + '|' + l.planned + '|' + l.type] = l; });
         res.lines.forEach(function (l) { var o = old[l.code + '|' + l.t + '|' + l.planned + '|' + l.type]; if (o) { kept++; l.id = o.id; l.st = o.st; l.cmt = o.cmt; l.files = o.files || []; } });
         var ids = {}; res.lines.forEach(function (l) { ids[l.id] = 1; });
         (p.files || []).forEach(function (f) { if (f.line && !ids[f.line]) f.line = ''; });
         p.lines = res.lines; p.planName = file.name.slice(0, 120); p.planAt = today();
+        p.planSheets = isX && res.heads.every(function (h) { return h.path; }) ? res.heads : undefined;   /* the original stays on this device, for "Excel with colours" */
         rematch(p);
       });
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: res.lines.length })) + (kept ? ' · ' + esc(k('ui.dc-plan-kept', '{n} kept their status', { n: kept })) : ''));
@@ -928,7 +1069,16 @@
       var pid = b.dataset.dcdel, all = JSON.parse(JSON.stringify(Fe.tools().dctl || [])), gone = proj(pid);
       var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); Fe.saveTools(t3); back();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; Fe.saveTools(t4); draw(); });
-      setTimeout(function () { if (!proj(pid) && gone) (gone.files || []).forEach(function (f) { delBlob(f.id); }); }, 9000); return;
+      setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); } }, 9000); return;
+    }
+    if ((b = t.closest('[data-dcxcol]'))) {
+      var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
+      planXlsx(px2).then(function (f) {
+        b.disabled = false;
+        toast('<i class="bi bi-check2"></i> ' + esc(f._own ? k('ui.dc-x-own', 'Your plan with colours: red missing or not approved, yellow to check, green approved – see the Check column') : k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
+        if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f);
+      }).catch(function (e) { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.'))); try { console.warn('[dc] xlsx', e); } catch (e2) {} });
+      return;
     }
     if ((b = t.closest('[data-dcpdf]'))) {
       if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
@@ -987,6 +1137,6 @@
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(draw, 80); });
-  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
+  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score, planXlsx: planXlsx };
   draw();
 })();

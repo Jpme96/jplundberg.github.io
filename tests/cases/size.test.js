@@ -28,8 +28,9 @@ const BUDGET_KB = { total: 1620 };   /* Work +3 more (2026-11-14 morning): repor
    +16 kB more: Document requirements as its own tab (the list for the start of a project, PDF and Excel for the contractor, Start document control) and the building and property on both;
    +3 kB: suggested document types per NS 3451 group with a short description each, when the client's checklist has none; +1 kB: 4-digit codes under their 3-digit code, the code once with its types under it; +3 kB: NS 3456's 1 series (general documents, headings in both languages);
    +12 kB: documents specific to each kind of project (completion certificate, declarations, tests, photos …), the PDF drawn a few pages at a time.
-   +2 kB on Work (2026-11-14 evening): Send to Team (a project as a file for work.jplundberg.com) and the PDF maker in its own file (paged-pdf.js) so Team uses the same code. */
-const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1519 };
+   +2 kB on Work (2026-11-14 evening): Send to Team (a project as a file for work.jplundberg.com) and the PDF maker in its own file (paged-pdf.js) so Team uses the same code.
+   +12 kB on Work (2026-11-14 night): Document control's "Excel with colours" – your own plan back with each row coloured by status and a Check column (the zip and the sheets are rewritten on the device, no library). */
+const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1620, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1300, 'house/index.html': 1610, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1395, 'wish/index.html': 1369, 'work/index.html': 1531 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

@@ -1,5 +1,12 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-x-check": ["Check", "Kontroll"],
+  "ui.dc-x-sheet": ["Document check", "Dokumentkontroll"],
+  "ui.dc-x-file": ["Document check", "Dokumentkontroll"],
+  "ui.dc-x-btn": ["Excel with colours", "Excel med farger"],
+  "ui.dc-x-own": ["Your plan with colours: red missing or not approved, yellow to check, green approved – see the Check column", "Planen din med farger: rødt mangler eller ikke godkjent, gult til kontroll, grønt godkjent – se kolonnen Kontroll"],
+  "ui.dc-x-new": ["A new Excel with colours (the original plan is not on this device)", "En ny Excel med farger (den opprinnelige planen er ikke på denne enheten)"],
+  "ui.dc-x-failed": ["The Excel file could not be made.", "Excel-filen kunne ikke lages."],
   "ui.new-team": ["New team", "Nytt team"],
   "ui.people-settings": ["People settings", "Innstillinger for personer"],
   "ui.food-settings": ["Food settings", "Innstillinger for mat"],

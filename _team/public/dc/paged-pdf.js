@@ -28,7 +28,9 @@
       box.innerHTML = '<article class="rp-doc rp-pdf">' + html + '</article>'; document.body.appendChild(box);
       var doc = box.firstChild;
       var waits = [].map.call(doc.querySelectorAll('img[data-rph]'), function (im) { return (P.photo ? P.photo(im.dataset.rph) : Promise.resolve(null)).then(function (bl) { if (!bl) { (im.closest('figure') || im).remove(); return; } return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { im.onload = ok; im.onerror = ok; im.src = fr.result; }; fr.readAsDataURL(bl); }); }); });
-      return Promise.all(waits).then(function () { return new Promise(function (ok) { setTimeout(ok, 120); }); }).then(function () {
+      /* where the pages break is measured in the very copy html2canvas draws (JP 20:17: rows were cut in half – the page was
+         measured before the bold font had loaded, the picture drawn after, so every row sat a little lower than measured) */
+      function measure(doc) {
         var top0 = doc.getBoundingClientRect().top, Y = function (el, w) { var b = el.getBoundingClientRect(); return w ? b.bottom - top0 : b.top - top0; };
         var total = doc.scrollHeight;
         var atoms = [].slice.call(doc.querySelectorAll('h2, h3, p, tr, li, .rp-f, figure, .rp-bar1, .rp-mxt, .rp-tgt, .rp-head, .rp-cvt tr, footer')).map(function (e) { return [Y(e), Y(e, 1), /^H[23]$/.test(e.tagName)]; });
@@ -40,13 +42,22 @@
           else if (lim >= total) end = total;
           else {
             end = lim;
-            for (var y = lim; y > st + PAGE * .4; y--) { if (!atoms.some(function (a) { return a[0] < y && a[1] > y; })) { end = y; break; } }
+            /* break on the edge of a row or paragraph: rows touch, and their edges are often between two whole pixels */
+            var cand = atoms.map(function (a) { return a[1]; }).concat(atoms.map(function (a) { return a[0]; })).filter(function (y) { return y <= lim && y > st + PAGE * .4; }).sort(function (a, b) { return b - a; });
+            for (var i = 0; i < cand.length; i++) { var y = cand[i]; if (!atoms.some(function (a) { return a[0] < y - .5 && a[1] > y + .5; })) { end = y; break; } }
             /* a heading never ends a page alone */
             atoms.forEach(function (a) { if (a[2] && a[0] >= st && a[1] <= end && end - a[1] < 40 && a[0] > st + 20) end = Math.min(end, a[0] - 2); });
           }
           cuts.push([st, end]); st = end;
           while (st < total && !atoms.some(function (a) { return a[1] > st; })) st = total;
         }
+        return cuts;
+      }
+      return Promise.all(waits).then(function () { return document.fonts && document.fonts.ready; }).then(function () { return new Promise(function (ok) { setTimeout(ok, 120); }); }).then(function () {
+        var cuts = null;
+        return window.html2canvas(box, { scale: .05, backgroundColor: '#ffffff', logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
+          onclone: function (d) { var bx = d.querySelector('.rp-pdfbox'), ar = bx && bx.firstElementChild; if (!ar) return; cuts = measure(ar); bx.style.height = '1px'; bx.style.overflow = 'hidden'; } }).then(function () {
+        if (!cuts || !cuts.length) cuts = measure(doc);   /* the copy had no report: measure here instead */
         /* drawn a few pages at a time (JP 13:05 – a long report stopped half way on the iPhone: Safari draws nothing past ~16 million
            pixels in one picture, so one picture of the whole report came out blank at the bottom) */
         var chunks = [], cur = null;
@@ -73,9 +84,10 @@
           });
         }, Promise.resolve()).then(function () {
           box.remove();
-          var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length;
+          var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length; file._cuts = cuts;
           return file;
         });
+      });
       }).catch(function (e) { box.remove(); throw e; });
     });
   }

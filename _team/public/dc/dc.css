@@ -78,6 +78,26 @@
   /* /tokens */
   color-scheme: light;
 } }
+[data-bg="moon"] .bg { filter: var(--moon-filter); }
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("assets/img/bg-2400.jpg") center 18% / cover no-repeat;
+  opacity: var(--bg-strength, var(--bg-opacity));
+  filter: grayscale(1);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 80%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 35%, transparent 80%);
+  transition: opacity .4s;
+}
+[data-bg="none"] .bg { display: none; }
+[data-bg="aurora"] .bg, [data-bg="dusk"] .bg, [data-bg="ocean"] .bg, [data-bg="forest"] .bg, [data-bg="custom"] .bg {
+  --bg-opacity: .55;
+  filter: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+[data-bg="custom"] .bg { --bg-opacity: .4; background: var(--bg-custom, none) center / cover no-repeat; }
 .muted { color: var(--muted); font-size: 13px; }
 .top { max-width: 1120px; margin: 0 auto; }
 .date {

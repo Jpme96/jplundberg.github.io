@@ -34,6 +34,7 @@ const book = zip([
   ['[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>'],
   ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Generelt" sheetId="1" r:id="rId1"/><sheet name="3 - VVS" sheetId="2" r:id="rId2"/><sheet name="2 - Bygning" sheetId="3" r:id="rId3"/></sheets></workbook>'],
   ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Target="worksheets/sheet3.xml"/></Relationships>'],
+  ['xl/styles.xml', '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font/></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellXfs count="1"><xf fontId="0" fillId="0"/></cellXfs></styleSheet>'],
   ['xl/worksheets/sheet1.xml', sheet(S1)], ['xl/worksheets/sheet2.xml', sheet(S3)], ['xl/worksheets/sheet3.xml', sheet(S2)]], true);
 const RH = ['', '', '', 'NS3451:2022', 'Levert?', 'A - Kravoppnåelse', 'B - Drift ', 'C - Vedlikehold ', 'D - Identifikasjon', 'E - Produktinformasjon', 'F - Attestasjon', 'G - Bruksanvisning', 'H - Beskrivelse', 'I - Protokoll', 'K - Tegning', 'L - Bilde', 'Ansvarlig', 'Eksempler på dokumentasjon'];
 const RQ = [['3 VVS'], RH, ['3', '33', '330', 'Made-up fire general', '', '', '', '', '', '', '', 'x', 'x', '', '', '', '', '•G: Made-up user text \n•H: Made-up description'],
@@ -110,6 +111,28 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     return { name: got.download, team: j.team, lines: j.p.lines.length, files: 'files' in j.p, lineFiles: j.p.lines.some(l => 'files' in l), st: j.p.lines.map(l => l.st).join() };
   });
   check(sent && sent.team === 'dctl' && sent.lines === 6 && !sent.files && !sent.lineFiles && sent.st === 'ok,recv,rej,recv,recv,missing' && /\.json$/.test(sent.name), 'Send to Team makes a file with the plan and the statuses, without the files ' + JSON.stringify(sent));
+  /* Excel with colours (JP 20:14): your own plan back with each line's row coloured by status and a Check column; a new workbook when the original isn't on this device */
+  const xc = await p.evaluate(async () => {
+    const pr = Features.list('dctl')[0], f = await DocCtl.planXlsx(pr), buf = await f.arrayBuffer();
+    const sh = await DocCtl.readBook(buf), vvs = sh.find(x => x.name === '3 - VVS'), byg = sh.find(x => x.name === '2 - Bygning');
+    /* the colours: read the raw sheet and styles back */
+    const z = new Uint8Array(buf), txt = new TextDecoder().decode(z);
+    const pr2 = Object.assign({}, pr, { planSheets: undefined }), f2 = await DocCtl.planXlsx(pr2), sh2 = await DocCtl.readBook(await f2.arrayBuffer());
+    return { own: f._own, name: f.name, sheets: sh.map(x => x.name).join('|'), head: vvs.rows[1][8], c332: vvs.rows[4][8], c234: byg.rows[2][8], code: vvs.rows[4][1], kept: vvs.rows[4][6],
+      reread: DocCtl.parsePlan(sh).lines.length, fresh: f2._own, freshRows: sh2[0].rows.length, freshHead: sh2[0].rows[2].join('|') };
+  });
+  check(xc.own && /\.xlsx$/.test(xc.name) && xc.sheets === 'Generelt|3 - VVS|2 - Bygning' && xc.head === 'Check' && /^Approved/.test(xc.c332) && /^Not approved – send back: /.test(xc.c234 || '') === false && xc.code === '332.101' && xc.kept === '332 SE Sprinkleranlegg' && xc.reread === 6,
+    'Excel with colours: the same file and sheets back, a Check column with each line\'s status, the cells kept, and it still reads as a plan ' + JSON.stringify(xc));
+  check(xc.fresh === false && xc.freshRows === 9 && /Code\|System\|Document type\|Planned name\|Check/.test(xc.freshHead), 'without the original on this device: a new workbook with the lines and the check');
+  const xfill = await p.evaluate(async () => {
+    const pr = Features.list('dctl')[0], buf = new Uint8Array(await (await DocCtl.planXlsx(pr)).arrayBuffer());
+    const unz = async name => { const t = new TextDecoder('latin1').decode(buf); let i = t.indexOf(name); while (i > 0 && !(buf[i - 30] === 0x50 && buf[i - 29] === 0x4b && buf[i - 28] === 3)) i = t.indexOf(name, i + 1); const o = i - 30, dv = new DataView(buf.buffer), m = dv.getUint16(o + 8, true), cs = dv.getUint32(o + 18, true), d = buf.subarray(o + 30 + dv.getUint16(o + 26, true), o + 30 + dv.getUint16(o + 26, true) + cs); return new TextDecoder().decode(m ? new Uint8Array(await new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()) : d); };
+    const st = await unz('xl/styles.xml'), s2 = await unz('xl/worksheets/sheet2.xml');
+    const fills = [...st.matchAll(/rgb="(FF[0-9A-F]{6})"/g)].map(m => m[1]), xfs = [...st.matchAll(/<xf [^>]*fillId="(\d+)"/g)].map(m => +m[1]);
+    const sOf = ref => +((s2.match(new RegExp('<c r="' + ref + '"[^>]*s="(\\d+)"')) || [])[1]);
+    return { fills: fills.join(), green: xfs[sOf('B5')], red: xfs[sOf('B8')], hdrCount: /<cellXfs count="(\d+)"/.exec(st)[1], n: xfs.length };
+  });
+  check(/FFD9EAD3/.test(xfill.fills) && /FFF4CCCC/.test(xfill.fills) && xfill.green !== xfill.red && xfill.green >= 2 && +xfill.hdrCount === xfill.n, 'the rows get fills (approved green, others their colour) and the style list stays consistent ' + JSON.stringify(xfill));
   /* names from the FDV system instead of files (2026-11-14): pasted, matched and checked the same way */
   check(JSON.stringify(await p.evaluate(() => DocCtl.namesText('Documents\n1. 336 DA Skumanlegg Made-up\n336 DA Skumanlegg Made-up\nnot a name\n235\tDV Kledning\n235 DV Kledning Made-up.pdf'))) === JSON.stringify(['336 DA Skumanlegg Made-up', '235 DV Kledning Made-up.pdf']), 'a pasted list keeps the document names (numbering and doubles removed)');
   await tap('[data-dctab="files"]'); await sl(300);
