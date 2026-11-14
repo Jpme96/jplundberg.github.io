@@ -266,6 +266,7 @@
     return '<form class="dc-pform" data-dcpform="' + esc(p.id || '') + '">' +
       '<label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required value="' + esc(p.name || '') + '" placeholder="' + esc(k('ui.dc-project-ph', 'e.g. Made-up school, new building')) + '"></label>' +
       '<label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40" value="' + esc(p.no || '') + '"></label>' + siteFields(p) +
+      (reqs().length > 1 ? '<label><span>' + esc(k('ui.dc-req-which', 'Client checklist')) + '</span>' + reqPick('name="req"', p.req || '') + '</label>' : '') +
       '<label><span>' + esc(k('ui.dc-contractor', 'Contractor')) + '</span><input name="who" maxlength="120" value="' + esc(p.who || '') + '" placeholder="' + esc(k('ui.dc-contractor-ph', 'Who delivers, e.g. the sprinkler contractor')) + '"></label>' +
       '<label><span>' + esc(k('ui.dc-trade', 'Trade / delivery')) + '</span><input name="trade" maxlength="80" value="' + esc(p.trade || '') + '" placeholder="' + esc(k('ui.dc-trade-ph', 'e.g. Sprinkler, Facade, Windows')) + '"></label>' +
       '<label><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input name="due" type="date" value="' + esc(p.due || '') + '"></label>' +
@@ -280,6 +281,7 @@
         '<span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who, c.all ? k('ui.dc-n-docs', '{n} documents', { n: c.all }) : k('ui.dc-no-plan', 'No plan yet'), c.missing ? k('ui.dc-n-missing', '{n} missing', { n: c.missing }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
         (c.all ? '<span class="kit-r"><b class="dc-pc">' + pc + ' %</b></span>' : '') + '<i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : (adding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dc-empty', 'Add a project, import its document plan (Excel) and the delivered files – you see at once what is missing, and check each document.')) + '</p>');
+    if (!adding && reqs().length > 1) body += '<p class="muted dc-help">' + esc(k('ui.dc-chk-with', 'Check a plan against:')) + ' ' + reqPick('data-dcreqpick', (req() || {}).id) + '</p>';
     if (!HOST && !adding) body += '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dc-in-team', 'Projects with your team are in Team')) + '</b><small>' + esc(k('ui.dc-in-team-s', 'Shared, encrypted, the same tools – open Documents in Team')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>';   /* one home for team projects (JP 23:46): Team; this card is for your own */
     return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</h2>' + (adding ? '' : '<div class="head-actions"><label class="text-btn dc-file dc-chk"><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.dc-chk-btn', 'Check a plan')) + '<input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label><button type="button" class="text-btn" data-dcnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
   }
@@ -443,6 +445,7 @@
     var ae = document.activeElement; if (ae && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq]')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
+    if (p && p.req !== undefined && reqs().some(function (r) { return r.id === p.req; })) curReq = p.req; else if (p) curReq = ''; else { try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {} }   /* an open project is checked against its own checklist */
     document.body.classList.toggle('dc-full', !!p);
     el.innerHTML = p ? full(p) : list();
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
@@ -592,7 +595,13 @@
   var xsel = {}, xoff = {};
   function xtras() { var seen = {}, out = []; Object.keys(xsel).forEach(function (id) { var ty = allTypes().filter(function (q) { return q.id === id; })[0], L = ty && ty.own ? ty.x || [] : XTRA[id] || []; L.forEach(function (x) { if (!seen[xKey(x)]) { seen[xKey(x)] = 1; out.push(x); } }); }); return out.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; }); }
   function xLine(x) { var nbx = I18N.lang === 'nb', hint = nbx ? x[4] : x[5]; return { id: uid() + Math.random().toString(36).slice(2, 5), code: x[0], sys: codeName(x[0]) || '', name: (nbx ? x[2] : x[3]).slice(0, 120), type: x[1] ? typeName(x[1]) : '', t: x[1] || '', hint: hint || (x[1] ? defHint(x[1]) : '') || undefined, planned: '', note: '', st: 'missing', files: [], spec: 1 }; }
-  function req() { var r = Fe.tools().dcreq; return r && r.codes ? r : null; }
+  /* client checklists (JP 23:46): dcreq is the first (default), dcreqs any others ({ id, name, at, codes }); a project picks
+     one (p.req), Check a plan uses the one picked in the list. */
+  var curReq = ''; try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {}
+  function reqs() { var t = Fe.tools(), out = []; if (t.dcreq && t.dcreq.codes) out.push(Object.assign({ id: '' }, t.dcreq)); (t.dcreqs || []).forEach(function (r) { if (r && r.codes) out.push(r); }); return out; }
+  function req() { var L = reqs(); return L.filter(function (r) { return r.id === curReq; })[0] || L[0] || null; }
+  function useReq(id) { curReq = id || ''; try { sessionStorage.setItem('dash.dcReq', curReq); } catch (e) {} }
+  function reqPick(attr, sel) { var L = reqs(); if (L.length < 2) return ''; return '<select class="dc-link" ' + attr + '>' + L.map(function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === sel ? ' selected' : '') + '>' + esc(r.name) + '</option>'; }).join('') + '</select>'; }
   function ownTypes() { return Fe.list('dctypes'); }
   function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true, x: t.x || [] }; })); }
   /* codes to pick from: the checklist's, else your own NS 3451 list, else the codes the project types use */
@@ -633,11 +642,15 @@
     });
     return codes;
   }
-  function importReq(file) {
+  function importReq(file, add) {
     (/\.xls[xm]$/i.test(file.name) ? file.arrayBuffer().then(readBook) : file.text().then(readCsv)).then(function (sh) {
       var c = parseReq(sh), n = Object.keys(c).length;
       if (!n) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-req-none', 'No codes found – the checklist needs a column with the 3-digit code and columns “A - …” to “L - …” for the document types.'))); return; }
-      var t = Fe.tools(); t.dcreq = { name: file.name.slice(0, 120), at: today(), codes: c }; Fe.saveTools(t);
+      var t = Fe.tools(), nr = { name: file.name.slice(0, 120), at: today(), codes: c };
+      if (add && t.dcreq) { nr.id = uid(); t.dcreqs = (t.dcreqs || []).concat([nr]); useReq(nr.id); }   /* another client's checklist */
+      else if (curReq && (t.dcreqs || []).some(function (r) { return r.id === curReq; })) t.dcreqs = t.dcreqs.map(function (r) { return r.id === curReq ? Object.assign(nr, { id: r.id }) : r; });
+      else t.dcreq = nr;
+      Fe.saveTools(t);
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-req-read', 'Checklist saved: {n} codes', { n: n }))); draw();
     }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); });
   }
@@ -659,7 +672,7 @@
   function picker(p, kind) {
     var r = req(), C = pickCodes(), keys = Object.keys(C).sort(), nbx = I18N.lang === 'nb';
     var h = '<div class="dc-pick">';
-    h += r ? '<p class="muted dc-help">' + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></p>'
+    h += r ? '<p class="muted dc-help">' + (reqs().length > 1 ? reqPick('data-dcreqpick', r.id) + ' ' : '') + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label> · <label class="text-btn dc-file">' + esc(k('ui.dc-req-add', 'Another client’s checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreqadd hidden></label></p>'
       : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (e.g. Boligbygg’s Vedlegg 2 – which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p><div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>';
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-chips dc-wrap">' + allTypes().map(function (t) { return '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div>';
     h += '<p class="muted dc-help">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</p>';
@@ -976,6 +989,7 @@
       var H = readJSON('dash.dcchks', []), prev = null, best = 0;
       H.forEach(function (h) { var n0 = 0, keys = Object.keys(h.keys || {}); keys.forEach(function (x) { if (x in cur) n0++; }); var sc = keys.length ? n0 / Math.max(keys.length, Object.keys(cur).length) : 0; if (sc > best) { best = sc; prev = h; } });
       if (best < .5) prev = null;
+      H.forEach(function (h) { if (h.name === file.name) prev = h; });   /* the same file name wins */
       var diff = null;
       if (prev) {
         diff = { fixed: 0, fresh: 0, at: prev.at };
@@ -1246,6 +1260,8 @@
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
     if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }
+    if (t.matches('[data-dcreqadd]') && t.files && t.files[0]) { importReq(t.files[0], true); t.value = ''; return; }
+    if (t.matches('[data-dcreqpick]')) { useReq(t.value); draw(); return; }
     if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
     if (t.dataset.dcxtick) { xoff[t.dataset.dcxtick] = !t.checked; updPick(); return; }
     if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
@@ -1272,6 +1288,7 @@
       f.reset(); document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
     if (!f.matches('form[data-dcpform]')) return; e.preventDefault();
     var v = siteRead(f, { name: f.name.value.trim().slice(0, 120), no: f.no.value.trim().slice(0, 40), who: f.who.value.trim().slice(0, 120), trade: f.trade.value.trim().slice(0, 80), due: f.due.value });
+    if (f.req) v.req = f.req.value || undefined;
     if (!v.name) return;
     var id = f.dataset.dcpform;
     if (id) saveP(id, function (p) { Object.assign(p, v); });

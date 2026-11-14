@@ -281,6 +281,11 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* drawing names after BBY's template (JP 23:13): a correct one passes, a broken one says which part is wrong */
   const tg = await p.evaluate(() => ['11624-T01-A-261-P-01-Plantegning', '11624-H04-234-P-01-Plantegning', '11624-000-A261-D-01-Detaljer', '11624-H09-Z-261-P-01-Plan', '11624-X01-A-261-P-01-Plan'].map(n => { const r = DocCtl.parseName(n + '.pdf'); return r.kind + ':' + r.issues.map(i => i[1]).join('+') + ':' + (r.why || ''); }));
   check(tg[0] === 'drawing::' && /^drawing:drawing:discipline “234”/.test(tg[1]) && /^drawing:drawing:discipline “A261”/.test(tg[2]) && tg[3] === 'drawing:fag:' && /^drawing:drawing:floor “X01”/.test(tg[4]), 'drawing names: the template from Coda passes, a broken one names the wrong part, an unknown discipline letter is flagged ' + JSON.stringify(tg));
+  /* checklists per client (JP 23:46): a second client's checklist, picked for Check a plan and per project */
+  const rq2 = await p.evaluate(() => { const t = Features.tools(); t.dcreqs = [{ id: 'cl2', name: 'Made-up client 2', at: '2026-11-15', codes: { '333': { n: 'Made-up', t: 'E' } } }]; Features.saveTools(t); return true; });
+  await sl(500);
+  const rq2b = await p.evaluate(() => { const sel = document.querySelector('#wkDocCtl [data-dcreqpick]'); return { opts: sel ? [...sel.options].map(o => o.textContent).join('|') : '' }; });
+  check(rq2 && rq2b.opts === 'Made-up checklist.xlsx|Made-up client 2', 'with two client checklists, the list offers which one to check against ' + JSON.stringify(rq2b));
   /* Check a plan (JP 22:30): no project – the plan against the checklist and the naming rules, coloured, in the editor */
   const nproj = await p.evaluate(() => Features.list('dctl').length);
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
@@ -336,6 +341,11 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
   check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn && xe.touch === 'B8:C9', 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
   check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
+  /* checked against the second client's checklist: 333 is in it now */
+  await p.evaluate(() => { const sel = document.querySelector('#wkDocCtl [data-dcreqpick]'); sel.value = 'cl2'; sel.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan C.xlsx')); }, book2.toString('base64'));
+  check(await until(() => /Checked against Made-up client 2/.test((document.querySelector('.xv-note') || {}).textContent || '')), 'Check a plan uses the checklist picked in the list');
+  await p.evaluate(() => { document.querySelector('[data-xv="close"]').click(); const sel = document.querySelector('#wkDocCtl [data-dcreqpick]'); sel.value = ''; sel.dispatchEvent(new Event('change', { bubbles: true })); });
   /* the same plan checked again: compared with the last check */
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
   check(await until(() => /Since the check on .*: 0 fixed, 0 new/.test((document.querySelector('.xv-note') || {}).textContent || '')), 'checking the same plan again compares it with the last check');

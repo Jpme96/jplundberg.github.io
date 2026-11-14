@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-req-add": ["Another client’s checklist", "Sjekkliste for en annen byggherre"],
+  "ui.dc-req-which": ["Client checklist", "Byggherrens sjekkliste"],
+  "ui.dc-chk-with": ["Check a plan against:", "Sjekk en plan mot:"],
   "ui.dc-chk-new": ["New:", "Ny:"],
   "ui.dc-chk-diff": ["Since the check on {d}: {f} fixed, {n} new", "Siden sjekken {d}: {f} rettet, {n} nye"],
   "ui.dc-chk-send": ["Send to the contractor", "Send til entreprenøren"],

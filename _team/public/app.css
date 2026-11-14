@@ -100,3 +100,6 @@ body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
 .t-teams + .t-btn + .t-btn { margin-top: 8px; }
 .t-btn.t-danger { color: var(--bad); border-color: var(--bad); }
 .t-btn.t-danger[type="submit"] { background: var(--bad); color: #fff; }
+.t-news ul { margin: 6px 0 4px; padding-left: 18px; }
+.t-news li { margin: 2px 0; }
+.t-news .t-btn { margin-top: 8px; }

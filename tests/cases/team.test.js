@@ -208,6 +208,32 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(r4 && r4.e === 2, 'new records use the new key');
   check(!mem.some(([k, v]) => k === 'm:ola@y.no') && !JSON.stringify(mem.filter(([k]) => k.startsWith('m:')).map(([, v]) => Object.keys(v.keys))).includes('"2"') === false, 'the others got the new key, Ola has no member entry');
 
+  /* --- what's new since your last visit (JP 23:46): Kari sees what the owner did, "Seen" clears it --- */
+  await kari.evaluate(() => localStorage.setItem('team.seen.team', '0'));
+  await kari.goto(U + '#overview'); await kari.reload(); await until(kari, () => !!document.querySelector('.t-tabs'));
+  check(await until(kari, () => /Since your last visit/.test(document.body.innerText) && /meeting/.test(document.querySelector('.t-news').innerText)), 'Kari sees what is new since her last visit');
+  await kari.click('[data-act=seen]'); await sl(300);
+  check(!(await kari.$('.t-news')), '"Seen" clears it');
+  await kari.click('[data-act=settings]'); await kari.waitForSelector('[data-act=notify]');
+  check(/Notify me on this device/.test(await kari.$eval('[data-act=notify]', e => e.textContent)), 'Settings offer notifications on this device');
+  await kari.click('[data-act=close]');
+  /* --- a backup of the team (admins), locked with its own passcode; restoring brings back what was deleted --- */
+  await own.goto(U + '#overview'); await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'));
+  const bk = await own.evaluate(async () => { let got = null, blob = null; const oc = HTMLAnchorElement.prototype.click, cu = URL.createObjectURL; URL.createObjectURL = b => { blob = b; return cu.call(URL, b); }; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
+    document.querySelector('[data-act=settings]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
+    const f = document.querySelector('form[data-form=backup]'); f.pass.value = 'backup-pass-1'; f.pass2.value = 'backup-pass-1'; f.requestSubmit();
+    for (let i = 0; i < 60 && !got; i++) await new Promise(r => setTimeout(r, 100)); HTMLAnchorElement.prototype.click = oc; URL.createObjectURL = cu;
+    return got ? { name: got.download, text: await blob.text() } : null; });
+  check(bk && /\.teambackup$/.test(bk.name) && /"kind":"team-backup"/.test(bk.text) && !/MARK-SECRET/.test(bk.text), 'an admin downloads a backup of the team – locked, nothing readable in it');
+  /* a meeting is deleted, then brought back from the backup */
+  const victim = await own.evaluate(() => Object.values(window.__team.recs).find(r => r.k === 'meeting' && !r.del && r.d && /MARK-SECRET-1/.test(r.d.title)).id);
+  await own.evaluate(async id => { const r = window.__team.recs[id]; await fetch('/api/rec', { method: 'PUT', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ id, k: r.k, del: true, v: r.v }) }); }, victim);
+  await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'));
+  const rs = await own.evaluate(async (txt) => { document.querySelector('[data-act=settings]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
+    const f = document.querySelector('form[data-form=restore]'), dt = new DataTransfer(); dt.items.add(new File([txt], 'x.teambackup')); f.file.files = dt.files; f.pass.value = 'backup-pass-1'; f.requestSubmit();
+    for (let i = 0; i < 80 && document.querySelector('form[data-form=restore]'); i++) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 400));
+    return document.getElementById('toast').textContent; }, bk.text);
+  check(/1 items brought back/.test(rs) && await own.evaluate(id => !window.__team.recs[id].del && /MARK-SECRET-1/.test(window.__team.recs[id].d.title), victim), 'restoring brings back the deleted meeting (and nothing else changes) ' + rs);
   /* --- Kari on a new computer: unlocks with her passcode, reads old and new --- */
   const kari2 = await person('kari@y.no', 1280);
   await kari2.goto(U); await kari2.waitForSelector('form[data-form=unlock]');

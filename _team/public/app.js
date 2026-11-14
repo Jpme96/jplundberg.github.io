@@ -265,7 +265,8 @@
       if (DK[r.k]) { S.docsDirty = true; S.docGen++; }
       if (r.del) { S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, del: 1 }; continue; }
       var d = await unseal(r, r.id + '|' + r.k + '|' + r.e, r.e);
-      S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, e: r.e, d: d, locked: !d };
+      S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, e: r.e, d: d, locked: !d, seq: r.seq };
+      if (!all && r.by !== S.me.email && r.k === 'action' && d && d.owner === S.me.email && !d.done) notifyMe(L('New action for you', 'Ny oppgave til deg'), d.text);
     }
     S.seq = j.seq; S.locks = j.locks || {};
     if (j.epoch !== S.me.team.epoch) S.me.team.epoch = j.epoch;
@@ -320,11 +321,36 @@
       '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>';
   }
 
+  /* what's new since your last visit (JP 23:46): what others did, counted by kind; "Seen" clears it. The app badge shows
+     your new actions; with notifications on, this device tells you about a new action while Team is open in the background. */
+  function seenKey() { return 'team.seen.' + S.tid; }
+  function seenSeq() { var v = null; try { v = localStorage.getItem(seenKey()); } catch (e) {} if (v == null) { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (e) {} return S.seq; } return +v || 0; }
+  function news() {
+    var since = seenSeq(), n = { mine: 0, act: 0, meet: 0, docs: {}, by: {} };
+    for (var id in S.recs) { var r = S.recs[id]; if (!r.seq || r.seq <= since || r.by === S.me.email || r.del) continue;
+      n.by[r.by] = 1;
+      if (r.k === 'action' && r.d) { if (r.d.owner === S.me.email && !r.d.done) n.mine++; else n.act++; }
+      else if (r.k === 'meeting') n.meet++;
+      else if (DK[r.k] && r.d) n.docs[(r.d.p && r.d.p.name) || r.d.pid || r.k] = 1; }
+    n.ndocs = Object.keys(n.docs).length; n.total = n.mine + n.act + n.meet + n.ndocs; return n;
+  }
+  function badge(n) { try { if (navigator.setAppBadge) { if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } } catch (e) {} }
+  function notifyMe(title, body) {
+    try { if (localStorage.getItem('team.notify') !== '1' || !window.Notification || Notification.permission !== 'granted' || !document.hidden) return; new Notification(title, { body: String(body || '').slice(0, 120), tag: 'team-' + S.tid, icon: '/icon-192.png' }); } catch (e) {}
+  }
+  function newsCard() {
+    var n = news(); badge(n.mine); if (!n.total) return '';
+    var who = Object.keys(n.by).map(nameOf).slice(0, 3).join(', ');
+    var lines = [n.mine ? L(n.mine + (n.mine === 1 ? ' new action for you' : ' new actions for you'), n.mine + (n.mine === 1 ? ' ny oppgave til deg' : ' nye oppgaver til deg')) : '', n.act ? L(n.act + (n.act === 1 ? ' action changed' : ' actions changed'), n.act + (n.act === 1 ? ' oppgave endret' : ' oppgaver endret')) : '',
+      n.meet ? L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings') + ' new or changed', n.meet + (n.meet === 1 ? ' møte' : ' møter') + ' nye eller endret') : '', n.ndocs ? L('Changes in ' + n.ndocs + (n.ndocs === 1 ? ' document project' : ' document projects'), 'Endringer i ' + n.ndocs + (n.ndocs === 1 ? ' dokumentprosjekt' : ' dokumentprosjekter')) : ''].filter(Boolean);
+    return '<div class="t-card acc t-news"><h2>' + L('Since your last visit', 'Siden sist') + '</h2><ul>' + lines.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><p class="t-small">' + esc(L('By ', 'Av ') + who) + '</p><button class="t-btn sm" type="button" data-act="seen">' + L('Seen', 'Sett') + '</button></div>';
+  }
   function viewOverview() {
     var t = today(), ms = meetings();
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
+    out += newsCard();
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
@@ -545,6 +571,8 @@
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
+      '<button class="t-btn ghost wide" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
+      (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="backup">' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</button>' : '') +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="renameTeam">' + L('Rename the team', 'Gi teamet nytt navn') + '</button>' : '') +
       (S.me.isOwner ? '<button class="t-btn ghost wide t-danger" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
       '<button class="t-btn ghost wide" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button>' +
@@ -573,6 +601,40 @@
     busy(f, true);
     try { await api('teams/delete', { method: 'POST', body: { id: S.tid, confirm: f.name.value.trim() } }); await kclear().catch(function () {}); try { localStorage.removeItem('team.cur'); } catch (x) {} location.href = '/'; }
     catch (e) { busy(f, false); setErr(failMsg(e)); }
+  }
+  /* a backup of the whole team (JP 23:46): everything you can read, locked with a passcode you choose (PBKDF2 + AES-GCM),
+     kept by you. Restoring brings back what is missing or deleted – it never overwrites what is there now. */
+  function backupSheet() {
+    openSheet('<h2>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</h2><p class="t-small">' + L('A file with all meetings, actions and documents, locked with a passcode you choose. Keep the file and the passcode safe – nobody can open it without the passcode.', 'En fil med alle møter, oppgaver og dokumenter, låst med en kode du velger. Ta godt vare på filen og koden – ingen kan åpne den uten koden.') + '</p>' +
+      '<form class="t-form" data-form="backup">' + passFields() + '<p class="t-err"></p><button class="t-btn wide" type="submit">' + L('Download the backup', 'Last ned sikkerhetskopien') + '</button></form>' +
+      '<h2 style="margin-top:18px">' + L('Restore', 'Gjenopprett') + '</h2><form class="t-form" data-form="restore"><label class="t-lbl">' + L('Backup file', 'Sikkerhetskopi') + '<input name="file" type="file" accept=".teambackup,.json" required></label><label class="t-lbl">' + L('Its passcode', 'Koden til den') + '<input name="pass" type="password" autocomplete="off" required></label>' +
+      '<p class="t-small">' + L('Brings back what is missing or deleted. Nothing that is there now is overwritten.', 'Henter tilbake det som mangler eller er slettet. Ingenting som finnes nå blir overskrevet.') + '</p><p class="t-err"></p><button class="t-btn ghost wide" type="submit">' + L('Restore', 'Gjenopprett') + '</button></form>' +
+      '<button class="t-btn ghost wide" type="button" data-act="close">' + L('Close', 'Lukk') + '</button>');
+  }
+  async function onBackup(f) {
+    var err = checkPass(f); if (err) return setErr(err);
+    busy(f, true);
+    try {
+      var recs = []; for (var id in S.recs) { var r = S.recs[id]; if (r && !r.del && r.d) recs.push({ id: r.id, k: r.k, d: r.d, t: r.t, by: r.by }); }
+      var salt = rnd(16), iv = rnd(12), key = await passKey(f.pass.value, salt);
+      var ct = await C.encrypt({ name: 'AES-GCM', iv: iv }, key, TE.encode(JSON.stringify({ v: 1, team: S.me.team.name, at: Date.now(), recs: recs })));
+      var out = JSON.stringify({ kind: 'team-backup', v: 1, team: S.me.team.name, at: Date.now(), n: recs.length, salt: b64(salt), iv: b64(iv), ct: b64(ct) });
+      var nm = (S.me.team.name + ' ' + today()).replace(/[\\/:*?"<>|]+/g, '-') + '.teambackup', a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' })); a.download = nm; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      busy(f, false); toast(L('Backup downloaded: ' + recs.length + ' items', 'Sikkerhetskopi lastet ned: ' + recs.length + ' elementer'));
+    } catch (e) { busy(f, false); setErr(failMsg(e)); }
+  }
+  async function onRestore(f) {
+    var file = f.file.files && f.file.files[0]; if (!file) return;
+    busy(f, true);
+    try {
+      var j = JSON.parse(await file.text()); if (j.kind !== 'team-backup') throw new Error('kind');
+      var data; try { var key = await passKey(f.pass.value, ub64(j.salt)); data = JSON.parse(TD.decode(await C.decrypt({ name: 'AES-GCM', iv: ub64(j.iv) }, key, ub64(j.ct)))); } catch (x) { busy(f, false); return setErr(L('Wrong passcode, or not a Team backup.', 'Feil kode, eller ikke en sikkerhetskopi fra Team.')); }
+      var back = 0;
+      for (var i = 0; i < data.recs.length; i++) { var r = data.recs[i], cur = S.recs[r.id]; if (cur && !cur.del) continue; if (await putRec(r.k, r.id, r.d)) back++; }
+      busy(f, false); closeSheet(); await pull(false).catch(function () {}); draw(); S.docGen++; window.dispatchEvent(new Event('tools:change'));
+      toast(back ? L(back + ' items brought back', back + ' elementer hentet tilbake') : L('Nothing was missing', 'Ingenting manglet'));
+    } catch (e) { busy(f, false); setErr(L('That file could not be read.', 'Den filen kunne ikke leses.')); }
   }
   function passSheet() {
     openSheet('<h2>' + L('Change my passcode', 'Bytt koden min') + '</h2><form class="t-form" data-form="pass"><label class="t-lbl">' + L('Current passcode', 'Nåværende kode') + '<input name="old" type="password" autocomplete="current-password" required></label>' + passFields() +
@@ -640,7 +702,7 @@
       if (r.k === 'dcp' && r.d.p) heads.push(r.d);
       else if (r.k === 'dcl' && r.d.l) (lines[r.d.key + '|' + r.d.pid] = lines[r.d.key + '|' + r.d.pid] || []).push(r.d);
       else if (r.k === 'dct' && r.d.t) t.dctypes.push(clone(r.d.t));
-      else if (r.k === 'dcr' && r.d.r) t.dcreq = clone(r.d.r);
+      else if (r.k === 'dcr' && r.d.r) { if (r.d.id) (t.dcreqs = t.dcreqs || []).push(Object.assign(clone(r.d.r), { id: r.d.id })); else t.dcreq = clone(r.d.r); }   /* other clients' checklists carry an id */
     }
     heads.forEach(function (h) {
       if (h.key !== 'dctl' && h.key !== 'dckrav') return;
@@ -685,6 +747,7 @@
     });
     (t.dctypes || []).forEach(function (ty) { if (ty && ty.id) want[drid('t', ty.id)] = { k: 'dct', d: { t: ty } }; });
     if (t.dcreq) want[drid('r', 'checklist')] = { k: 'dcr', d: { r: t.dcreq } };
+    (t.dcreqs || []).forEach(function (r) { if (r && r.id) want[drid('r', 'checklist', r.id)] = { k: 'dcr', d: { r: r, id: r.id } }; });
     return want;
   }
   /* save what changed: new and changed records, and deletes only of what was there when Document control read it */
@@ -776,7 +839,10 @@
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
     if (a === 'teams') return teamsSheet();
+    if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
+    if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
+    if (a === 'backup') return backupSheet();
     if (a === 'deleteTeam') return deleteSheet();
     if (a === 'goTeam') { if (t.dataset.id === S.tid && S.me.member && document.querySelector('.t-tabs')) closeSheet(); else goTeam(t.dataset.id); return; }   /* from the New team form the open team is not on screen: go to it (JP 21:31) */
     if (a === 'newTeam') { location.href = '/?new=1'; return; }
@@ -810,7 +876,7 @@
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 
