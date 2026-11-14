@@ -323,6 +323,21 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000);
   check(/Dokumentkontroll/.test(await text(kari)) && !/Document control/.test(await text(kari)), 'Document control in Norwegian too');
   await word(kari, 'Norwegian overview');
+  /* an action linked to a document line closes by itself when the document is approved (JP 23:46) */
+  const dlink = await own.evaluate(async () => { const S = window.__team; const p = Object.values(S.recs).find(r => r.k === 'dcp' && !r.del && r.d && r.d.key === 'dctl'); if (!p) return null;
+    const l = Object.values(S.recs).find(r => r.k === 'dcl' && !r.del && r.d && r.d.pid === p.d.p.id && !['ok', 'cmt', 'na'].includes(r.d.l.st)); if (!l) return null;
+    return { v: p.d.p.id + '|' + l.d.l.id, lid: l.id }; });
+  if (dlink) {
+    await own.goto(U + '#actions'); await own.waitForSelector('[data-act=newAction]'); await own.click('[data-act=newAction]'); await own.waitForSelector('form[data-form=action] select[name=doc]');
+    await own.type('form[data-form=action] input[name=text]', 'Get the made-up FDV'); await own.select('form[data-form=action] select[name=doc]', dlink.v); await own.click('form[data-form=action] button[type=submit]');
+    check(await until(own, () => /Get the made-up FDV/.test(document.body.innerText) && /Document: /.test(document.body.innerText)), 'an action can be linked to a document line');
+    await own.goto(U + '#docs'); await until(own, () => !!(window.DocHost && window.DocHost.Fe), 20000);
+    await own.evaluate(async lid => { const S = window.__team, r = S.recs[lid], d = JSON.parse(JSON.stringify(r.d)); d.l.st = 'ok'; DocHost.Fe.saveTools((() => { const t = DocHost.Fe.tools(); t.dctl.forEach(p => (p.lines || []).forEach(l => { if (l.id === d.l.id) l.st = 'ok'; })); return t; })()); }, dlink.lid);
+    check(await until(own, () => Object.values(window.__team.recs).some(r => r.k === 'action' && r.d && r.d.text === 'Get the made-up FDV' && r.d.done && r.d.auto), 12000), 'approving the document closes the action by itself');
+  }
+  /* search in the team (also opened from /cmd's search as #search=…) */
+  await own.goto(U + '#search=' + encodeURIComponent('After Ola')); await own.reload();
+  check(await until(own, () => /Meetings/i.test(document.body.innerText) && /After Ola MARK-SECRET-4/.test(document.body.innerText), 15000), 'searching the team finds the meeting');
   /* the plan file and Excel edits are shared, encrypted records (JP 23:46): what Kari stores, the owner reads */
   const put = await kari.evaluate(async () => { await DocHost.store.put('plan:made-up', new Blob(['MADE-UP-PLAN-BYTES'], { type: 'text/plain' })); await DocHost.store.put('xedit:made-up', { 'xl/worksheets/sheet1.xml': { A1: { v: 'MADE-UP-EDIT' } } }); await new Promise(r => setTimeout(r, 1800)); return true; });
   await own.goto(U + '#docs'); await own.reload(); await until(own, () => !!(window.DocHost && window.DocHost.store), 20000);

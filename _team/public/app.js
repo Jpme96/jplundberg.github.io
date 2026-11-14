@@ -34,6 +34,7 @@
     docs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     swap: '<path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/>'
   };
   function ic(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + IC[n] + '</svg>'; }
@@ -253,6 +254,7 @@
       await pull(false);
       if (S.tab() === 'team' || rank() >= 3) await loadMembers();
       if (S.me.team.epoch !== ep) { S.me = await api('me'); await loadKeys(); await pull(true); }
+      if (S.docsDirty) autoDone().catch(function () {});
       if (S.tab() === 'docs' && !S.edit) { if (S.docsDirty) { S.docsDirty = false; window.dispatchEvent(new Event('tools:change')); } }
       else if (!typing() && !S.sheet && !S.edit) draw(); else if (S.seq !== before) S.stale = true;
     } catch (e) { if (e.status === 403) { S.me = await api('me').catch(function () { return S.me; }); if (!S.me.member) { stopPoll(); route(); } } }
@@ -308,6 +310,7 @@
     var h = location.hash.slice(1), body;
     if (S.edit) body = viewEdit();
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
+    else if (/^search=/.test(h)) body = viewSearch(decodeURIComponent(h.slice(7)));
     else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.tab()]();
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
     $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
@@ -317,7 +320,7 @@
   }
   function head(title, sub, back) {
     return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : (S.me.isOwner ? '<a class="t-back" href="https://jplundberg.com/cmd/work/">' + ic('back') + '/cmd</a>' : '<small>work.jplundberg.com</small>')) +
-      '<span class="t-topr">' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
+      '<span class="t-topr"><a class="t-icon" href="#search=" aria-label="' + L('Search', 'Søk') + '">' + ic('search') + '</a>' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
       '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>';
   }
 
@@ -345,6 +348,19 @@
       n.meet ? L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings') + ' new or changed', n.meet + (n.meet === 1 ? ' møte' : ' møter') + ' nye eller endret') : '', n.ndocs ? L('Changes in ' + n.ndocs + (n.ndocs === 1 ? ' document project' : ' document projects'), 'Endringer i ' + n.ndocs + (n.ndocs === 1 ? ' dokumentprosjekt' : ' dokumentprosjekter')) : ''].filter(Boolean);
     return '<div class="t-card acc t-news"><h2>' + L('Since your last visit', 'Siden sist') + '</h2><ul>' + lines.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><p class="t-small">' + esc(L('By ', 'Av ') + who) + '</p><button class="t-btn sm" type="button" data-act="seen">' + L('Seen', 'Sett') + '</button></div>';
   }
+  /* search in the team (JP 23:46) – also opened from /cmd's search (#search=…); everything is searched here, on the device */
+  function viewSearch(q) {
+    var words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean), hit = function (o) { var hay = JSON.stringify(o).toLowerCase(); return words.every(function (w) { return hay.indexOf(w) > -1; }); };
+    var out = head(L('Search', 'Søk'), '', ['overview', L('Overview', 'Oversikt')]) + '<form class="t-form t-srch" data-form="search"><input name="q" type="search" value="' + esc(q) + '" placeholder="' + esc(L('Search meetings, actions and documents', 'Søk i møter, oppgaver og dokumenter')) + '" autocomplete="off"></form>';
+    if (!words.length) return out;
+    var ms = meetings().filter(function (m) { return hit(m.d); }), as = actions().filter(function (a) { return hit(a.d); }), ds = [];
+    (docState().dctl || []).forEach(function (p) { var ls = (p.lines || []).filter(function (l) { return hit(l); }); if (hit({ n: p.name, no: p.no, who: p.who, t: p.trade }) || ls.length) ds.push({ p: p, n: ls.length }); });
+    if (!ms.length && !as.length && !ds.length) return out + '<p class="t-empty">' + esc(L('Nothing found for “' + q + '”.', 'Fant ingenting for «' + q + '».')) + '</p>';
+    if (ms.length) out += '<p class="t-h">' + L('Meetings', 'Møter') + '</p>' + ms.slice(0, 30).map(meetingCard).join('');
+    if (as.length) out += '<p class="t-h">' + L('Actions', 'Oppgaver') + '</p>' + actionList(as.slice(0, 50), true);
+    if (ds.length) out += '<p class="t-h">' + L('Documents', 'Dokumenter') + '</p><ul class="t-list">' + ds.slice(0, 30).map(function (x) { return '<li><a class="t-row" href="#dc=' + esc(x.p.id) + '"><span class="grow"><span>' + esc(x.p.name) + '</span><small>' + esc(x.n ? L(x.n + ' matching documents', x.n + ' treff i dokumentene') : L('The project', 'Prosjektet')) + '</small></span></a></li>'; }).join('') + '</ul>';
+    return out;
+  }
   function viewOverview() {
     var t = today(), ms = meetings();
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
@@ -370,7 +386,7 @@
       var late = !a.d.done && a.d.due && a.d.due < t, m = a.d.meeting && S.recs[a.d.meeting] && S.recs[a.d.meeting].d;
       return '<li class="' + (a.d.done ? 'done' : '') + '"><input type="checkbox" data-tick="' + a.id + '"' + (a.d.done ? ' checked' : '') + (rank() < 1 ? ' disabled' : '') + ' aria-label="' + esc(L('Done: ', 'Ferdig: ') + a.d.text) + '">' +
         '<button class="t-row" type="button" data-act="editAction" data-id="' + a.id + '"' + (rank() < 1 ? ' disabled' : '') + '><span class="grow"><span>' + esc(a.d.text) + '</span><small>' + esc(nameOf(a.d.owner)) +
-        (a.d.due ? ' · <span class="' + (late ? 't-warn' : '') + '">' + esc((late ? L('Overdue · ', 'Forfalt · ') : L('Due ', 'Frist ')) + fmtDate(a.d.due)) + '</span>' : '') + (showMeeting && m ? ' · ' + esc(m.title) : '') + '</small></span></button></li>';
+        (a.d.due ? ' · <span class="' + (late ? 't-warn' : '') + '">' + esc((late ? L('Overdue · ', 'Forfalt · ') : L('Due ', 'Frist ')) + fmtDate(a.d.due)) + '</span>' : '') + (showMeeting && m ? ' · ' + esc(m.title) : '') + (a.d.doc && docOf(a.d.doc) ? ' · ' + esc(L('Document: ', 'Dokument: ') + docLabel(docOf(a.d.doc))) : '') + '</small></span></button></li>';
     }).join('') + '</ul>';
   }
 
@@ -449,6 +465,20 @@
     out += xs.length ? actionList(xs, true) : '<p class="t-empty">' + L('Nothing here.', 'Ingenting her.') + '</p>';
     return out;
   }
+  /* an action can point at a document line (JP 23:46): it closes by itself when that document is approved */
+  function docLines() { if (docLines.g === S.docGen && docLines.c) return docLines.c; var t = docState(), out = []; docLines.g = S.docGen; docLines.c = out; (t.dctl || []).forEach(function (p) { (p.lines || []).forEach(function (l) { out.push({ v: p.id + '|' + l.id, p: p, l: l }); }); }); return out; }
+  function docOf(v) { if (!v) return null; return docLines().filter(function (x) { return x.v === v; })[0] || null; }
+  var DONE_ST = { ok: 1, cmt: 1, na: 1 };
+  function docLabel(x) { return x.p.name + ' · ' + x.l.code + ' ' + (x.l.name || x.l.type || x.l.sys || ''); }
+  function docSelect(cur) {
+    var L0 = docLines().filter(function (x) { return x.v === cur || !DONE_ST[x.l.st]; }); if (!L0.length && !cur) return '';
+    return '<label class="t-lbl">' + L('Document (closes when approved)', 'Dokument (lukkes når godkjent)') + '<select name="doc"><option value="">—</option>' + L0.slice(0, 500).map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === cur ? ' selected' : '') + '>' + esc(docLabel(x)) + '</option>'; }).join('') + '</select></label>';
+  }
+  async function autoDone() {
+    if (rank() < 1) return;
+    var acts = actions().filter(function (a) { return a.d.doc && !a.d.done; }); if (!acts.length) return;
+    for (var i = 0; i < acts.length; i++) { var x = docOf(acts[i].d.doc); if (x && DONE_ST[x.l.st]) await putRec('action', acts[i].id, Object.assign({}, acts[i].d, { done: true, doneAt: Date.now(), auto: 1 }), L('Action done – document approved: ', 'Oppgave ferdig – dokument godkjent: ') + acts[i].d.text); }
+  }
   function actionSheet(id, meeting) {
     var a = id ? S.recs[id].d : { text: '', owner: S.me.email, due: '', done: false, meeting: meeting || '' };
     var ms = meetings();
@@ -456,13 +486,14 @@
       '<label class="t-lbl">' + L('What needs doing', 'Hva skal gjøres') + '<input name="text" required maxlength="300" value="' + esc(a.text) + '"></label>' +
       '<label class="t-lbl">' + L('Who', 'Hvem') + '<select name="owner"><option value="">—</option>' + S.members.map(function (m) { return '<option value="' + esc(m.email) + '"' + (a.owner === m.email ? ' selected' : '') + '>' + esc(nameOf(m.email)) + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Due', 'Frist') + '<input name="due" type="date" value="' + esc(a.due) + '"></label>' +
+      docSelect(a.doc) +
       '<label class="t-lbl">' + L('From the meeting', 'Fra møtet') + '<select name="meeting"><option value="">—</option>' + ms.map(function (m) { return '<option value="' + m.id + '"' + (a.meeting === m.id ? ' selected' : '') + '>' + esc(m.d.title + ' · ' + fmtDate(m.d.date)) + '</option>'; }).join('') + '</select></label>' +
       '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button><button class="t-btn" type="submit">' + L('Save', 'Lagre') + '</button></div>' +
       (id ? '<button class="t-btn danger wide" type="button" data-act="delAction" data-id="' + id + '">' + L('Delete', 'Slett') + '</button>' : '') + '</form>');
   }
   async function onAction(f) {
     var id = f.dataset.id || rid(), cur = S.recs[id] && S.recs[id].d;
-    var d = Object.assign({}, cur || { done: false }, { text: f.text.value.trim(), owner: f.owner.value, due: f.due.value, meeting: f.meeting.value });
+    var d = Object.assign({}, cur || { done: false }, { text: f.text.value.trim(), owner: f.owner.value, due: f.due.value, meeting: f.meeting.value, doc: f.doc ? f.doc.value : (cur && cur.doc) || '' });
     if (!d.text) return;
     busy(f, true);
     if (await putRec('action', id, d, L('Action: ', 'Oppgave: ') + d.text)) { closeSheet(); draw(); } else busy(f, false);
@@ -767,7 +798,8 @@
     if (!ops.length) { if (blocked) window.dispatchEvent(new Event('tools:change')); return; }
     /* show it at once; the server's answer follows */
     S.docGen++;
-    ops.forEach(function (o) { var cur = S.recs[o.id]; if (o.del) { if (cur) cur.del = 1; } else S.recs[o.id] = Object.assign({}, cur || { id: o.id, k: o.k, v: 0 }, { d: o.d, del: 0, locked: false }); });
+    ops.forEach(function (o) { var cur = S.recs[o.id]; if (o.del) { if (cur) cur.del = 1; } else S.recs[o.id] = Object.assign({}, cur || { id: o.id, k: o.k, v: 0 }, { d: o.d, del: 0, locked: false });
+    setTimeout(function () { autoDone().catch(function () {}); }, 1500);   /* a document approved here closes the actions that wait for it */ });
     window.dispatchEvent(new Event('tools:change'));
     var e = S.me.team.epoch, failed = 0;
     var sum = Object.keys(names).length ? Object.assign({ e: e }, await seal({ t: L('Documents: ', 'Dokumenter: ') + Object.keys(names).join(', ').slice(0, 160) }, 'log', e)) : undefined;
@@ -876,7 +908,7 @@
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 

@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.sr-team": ["Search Team for “{q}”", "Søk i Team etter «{q}»"],
+  "ui.sr-team-s": ["Meetings, actions and documents with your team", "Møter, oppgaver og dokumenter med teamet ditt"],
+  "ui.sr-none": ["Nothing found for “{q}”.", "Fant ingenting for «{q}»."],
   "ui.nt-dc-body": ["{m} documents missing, {o} not approved yet", "{m} dokumenter mangler, {o} er ikke godkjent ennå"],
   "ui.nt-dc-open": ["Documents are still open", "Dokumenter er fortsatt åpne"],
   "ui.nt-dc-week": ["{p}: deadline in a week", "{p}: frist om en uke"],

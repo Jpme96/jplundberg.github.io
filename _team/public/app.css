@@ -103,3 +103,5 @@ body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
 .t-news ul { margin: 6px 0 4px; padding-left: 18px; }
 .t-news li { margin: 2px 0; }
 .t-news .t-btn { margin-top: 8px; }
+.t-srch input { width: 100%; min-height: 44px; font-size: 16px; }
+a.t-icon { text-decoration: none; }

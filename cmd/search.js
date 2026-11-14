@@ -171,9 +171,10 @@
     var ad = q ? addRow(q) : null;
     if (ad) { if (results.length) results.push(ad); else results = [ad]; }
     if (!q) results = commands();
+    else if (q.length > 1) results.push({ g: 'Team', i: 'people', t: I18N.k('ui.sr-team', 'Search Team for “{q}”', { q: q }), s: I18N.k('ui.sr-team-s', 'Meetings, actions and documents with your team'), h: 'https://work.jplundberg.com/#search=' + encodeURIComponent(q) });   /* cmd never reads Team's data: Team searches itself (JP 23:46) */
     active = results.length ? 0 : -1;
     var hint = q ? '' : '<p class="sr-hint" data-t="ui.search-everything-or-type-something-to-a">Search everything – or type something to add: “149 rema”, “fre 18 middag”, “løp 5 km”.</p>';
-    if (!results.length) { res.innerHTML = '<p class="sr-hint">Nothing found for “' + esc(q) + '”.</p>'; return; }
+    if (!results.length) { res.innerHTML = '<p class="sr-hint">' + esc(I18N.k('ui.sr-none', 'Nothing found for “{q}”.', { q: q })) + '</p>'; return; }
     var last = '', html = '';
     results.forEach(function (r, i) {
       if (r.g !== last) { html += '<p class="sr-g">' + esc(r.g) + '</p>'; last = r.g; }

@@ -288,6 +288,10 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const nt = await p.evaluate(() => { const at = n => { const t = Features.tools(), d = new Date(); d.setDate(d.getDate() + n); t.dctl[0].due = d.toISOString().slice(0, 10); Features.saveTools(t); return (window.Notify ? Notify.plan() : []).filter(x => /^dc:/.test(x.id)).map(x => x.id.replace(/^dc:[^:]+/, 'dc') + '|' + x.url.replace(/=.*/, '=')).join(','); };
     const r = { ten: at(10), three: at(3) }; const t = Features.tools(); delete t.dctl[0].due; Features.saveTools(t); return r; });
   check(nt.ten === 'dc:7|/cmd/work/#dc=' && nt.three === 'dc:0|/cmd/work/#dc=', 'a document deadline gives a reminder a week before and on the day (planned a week ahead) ' + JSON.stringify(nt));
+  /* /cmd's search hands a search over to Team (cmd never reads Team's data) */
+  const srt = await p.evaluate(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); await new Promise(r => setTimeout(r, 200)); const i = document.getElementById('srIn'); i.value = 'made-up meeting'; i.dispatchEvent(new Event('input', { bubbles: true }));
+    const a = [...document.querySelectorAll('#srRes .sr-item')].find(x => /Search Team for/.test(x.textContent)); const out = a ? a.getAttribute('href') : ''; document.querySelector('[data-srclose]').click(); return out; });
+  check(srt === 'https://work.jplundberg.com/#search=made-up%20meeting', 'search offers "Search Team for …", which opens Team\'s own search ' + srt);
   /* checklists per client (JP 23:46): a second client's checklist, picked for Check a plan and per project */
   const rq2 = await p.evaluate(() => { const t = Features.tools(); t.dcreqs = [{ id: 'cl2', name: 'Made-up client 2', at: '2026-11-15', codes: { '333': { n: 'Made-up', t: 'E' } } }]; Features.saveTools(t); return true; });
   await sl(500);
