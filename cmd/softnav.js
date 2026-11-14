@@ -152,7 +152,9 @@
       mark('sn:html'); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
       /* a new version of the dashboard: load it properly */
-      if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) return full();
+      /* (the normal load that follows is not a failed page change: the watchdog stops here – 14 Nov 2026, a new version took
+         over 6 s to load on Windows Firefox and was counted as a failure, which paused instant page changes there) */
+      if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) { arrived = true; clearTimeout(dog); return full(); }
       var scripts = [].filter.call(doc.querySelectorAll('body script[src]'), function (x) { return !/dist\/head\.js/.test(x.getAttribute('src')); }).map(function (x) { return new URL(x.getAttribute('src'), u.href).href; });
       var swap = function () {
         leave();

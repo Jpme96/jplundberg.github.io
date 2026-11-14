@@ -103,8 +103,8 @@
     var ids = (C.feats[cur] || []).filter(function (id) { return Fe.byId && Fe.byId(id) && !Fe.on(id) && !(Fe.simple && Fe.simple() && (Fe.ADV || []).indexOf(id) > -1); });
     var shown = [].some.call(main.querySelectorAll('[data-ptab="' + cur + '"]'), function (el) { return !el.hidden && el.offsetHeight > 30 && !el.matches('#hlTiles, #hpTiles'); });
     var html = (!shown && !all ? '<p class="pt-empty">Nothing here yet' + (ids.length ? ' – switch something on below.' : '.') + '</p>' : '') +
-      (ids.length && !all ? '<div class="pt-sug"><p>' + (shown ? 'Also fits here' : 'Fits here') + '</p><div class="pt-chips">' + ids.map(function (id) {
-        var f = Fe.byId(id); return '<button type="button" class="pt-chip" data-ptfeat="' + esc(id) + '"><i class="bi bi-' + esc(f.icon) + '" style="color:' + esc(f.c) + '"></i><span><b>' + esc(f.name) + '</b><small>' + esc(f.desc) + '</small></span><i class="bi bi-plus-lg"></i></button>';
+      (ids.length && !all ? '<div class="pt-sug"><p>' + (shown ? I18N.k('ui.pt-also-fits', 'Also fits here') : I18N.k('ui.pt-fits', 'Fits here')) + '</p><div class="pt-chips">' + ids.map(function (id) {
+        var f = Fe.byId(id); return '<button type="button" class="pt-chip" data-ptfeat="' + esc(id) + '"><i class="bi bi-' + esc(f.icon) + '" style="color:' + esc(f.c) + '"></i><span><b>' + esc(f.name) + '</b><small>' + esc(I18N.k('ui.ftd-' + f.id, f.desc)) + '</small></span><i class="bi bi-plus-lg"></i></button>';
       }).join('') + '</div></div>' : '');
     if (tail._h !== html) { tail._h = html; tail.innerHTML = html; }      /* only when it changed – a tap must not land on a redrawn chip */
   }

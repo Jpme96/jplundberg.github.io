@@ -174,7 +174,7 @@
       '<div><span>Days off</span><b>' + r.vacation + '</b>holiday · ' + r.sick + ' sick · ' + r.flexoff + ' flex</div></div>' +
       '<div class="wrap"><table><thead><tr><th data-t="ui.date"><span data-t="ui.date">Date</span></th><th data-t="ui.type"><span data-t="ui.type">Type</span></th><th data-t="ui.in"><span data-t="ui.in">In</span></th><th data-t="ui.out"><span data-t="ui.out">Out</span></th><th class="n" data-t="ui.break"><span data-t="ui.break">Break</span></th><th class="n">Worked</th><th data-t="ui.note"><span data-t="ui.note">Note</span></th></tr></thead><tbody>' +
       (r.rows.length ? r.rows.map(function (x) { return '<tr><td>' + esc(x.wd + ' ' + x.date.slice(8) + '.' + x.date.slice(5, 7)) + '</td><td>' + esc(x.type) + '</td><td>' + esc(x.in) + '</td><td>' + esc(x.out) + '</td><td class="n">' + (x.brk ? x.brk + ' min' : '') + '</td><td class="n">' + (x.worked ? hmPlain(x.worked) : '') + '</td><td>' + esc(x.note) + '</td></tr>'; }).join('') : '<tr><td colspan="7">Nothing logged this month.</td></tr>') +
-      '</tbody></table></div><p class="tip">Use Print → Save as PDF (on iPhone: Share → Print, then pinch out on the preview to get the PDF).</p>' +
+      '</tbody></table></div><p class="tip">' + esc(I18N.k('ui.print-pdf-tip', 'Use Print → Save as PDF (on iPhone: Share → Print, then pinch out on the preview to get the PDF).')) + '</p>' +
       '<script>setTimeout(function(){try{window.print()}catch(e){}},400)<\/script></body></html>';
     var w = null;
     try { w = window.open('', '_blank'); } catch (e) {}

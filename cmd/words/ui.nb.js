@@ -1,5 +1,10 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.notify-on-here": ["On on this device", "På på denne enheten"],
+  "ui.pt-also-fits": ["Also fits here", "Passer også her"],
+  "ui.pt-fits": ["Fits here", "Passer her"],
+  "ui.ftd-papers": ["A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew", "En side for kontrakter, forsikring, lån og jobbpapirer med PDF-en – og en påminnelse før de går ut eller fornyes"],
+  "ui.print-pdf-tip": ["Use Print → Save as PDF (on iPhone: Share → Print, then pinch out on the preview to get the PDF).", "Bruk Skriv ut → Lagre som PDF (på iPhone: Del → Skriv ut, og knip ut på forhåndsvisningen for å få PDF-en)."],
   "ui.dc-send-team": ["Send to Team", "Send til Team"],
   "ui.dc-for-team": ["for Team", "til Team"],
   "ui.dc-sent-team": ["Saved. In Team: Documents → Import from /cmd.", "Lagret. I Team: Dokumenter → Importer fra /cmd."],

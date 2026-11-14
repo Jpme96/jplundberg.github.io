@@ -182,7 +182,7 @@
     document.querySelectorAll('[data-ntdetail]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.ntdetail === p.detail)); });
     $('ntDetailNote').textContent = p.detail === 'full' ? 'Shows titles and amounts. They pass through your server to send them.' : 'No titles or amounts leave your device – “A bill is due today”.';
     $('ntHelp').textContent = I18N.k('ui.nt-help-planned-7-days', 'Reminders are planned 7 days ahead each time you open the dashboard. Haven’t opened it for a week? Then they pause until you do.');
-    var sum = $('sumNotify'); if (sum) sum.textContent = p.on ? 'On on this device' : 'Off';
+    var sum = $('sumNotify'); if (sum) sum.textContent = p.on ? I18N.k('ui.notify-on-here', 'On on this device') : I18N.k('ui.off', 'Off');
   }
   function setP(patch) { var p = prefs(); Object.keys(patch).forEach(function (k) { p[k] = patch[k]; }); save(p); fill(); sync(true); }
   function turnOn() {

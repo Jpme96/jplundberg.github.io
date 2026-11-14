@@ -93,7 +93,7 @@
           var adv = F.ADV && F.ADV.indexOf(x.id) > -1;
           if (adv && simp) return '';
           return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
-            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + x.desc + '</small></span>' +
+            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + I18N.k('ui.ftd-' + x.id, x.desc) + '</small></span>' +
             '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
         }).join('') + (GROUP_NOTE[g] ? '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>' : '');
     }).join('');

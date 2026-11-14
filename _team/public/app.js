@@ -544,9 +544,10 @@
   var DK = { dcp: 1, dcl: 1, dct: 1, dcr: 1 };
   S.dtab = 'doc'; S.docBase = {}; S.docGen = 0;
   function viewDocs() {
+    if (/^#dr=/.test(location.hash)) S.dtab = 'req'; else if (/^#dc=/.test(location.hash)) S.dtab = 'doc';
     var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Document control and document requirements – the same tools as in /cmd.', 'Dokumentkontroll og dokumentkrav – de samme verktøyene som i /cmd.'));
     out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
-    if (rank() >= 1) out += '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import a project from /cmd', 'Importer et prosjekt fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document control → the project → Send to Team. Attached files stay on the device they were added on.', 'I /cmd: Jobb → Dokumentkontroll → prosjektet → Send til Team. Vedlagte filer blir på enheten de ble lagt til på.') + '</p>';
+    if (rank() >= 1) out += '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document control or Document requirements → open it → Send to Team. Attached files stay on the device they were added on.', 'I /cmd: Jobb → Dokumentkontroll eller Dokumentkrav → åpne den → Send til Team. Vedlagte filer blir på enheten de ble lagt til på.') + '</p>';
     out += '</div>';
     out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
       '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>';
@@ -666,13 +667,14 @@
     var fr = new FileReader();
     fr.onload = function () {
       var j = null; try { j = JSON.parse(fr.result); } catch (x) {}
-      if (!j || j.team !== 'dctl' || !j.p || typeof j.p.name !== 'string' || !Array.isArray(j.p.lines)) { toast(L('That is not a project file from /cmd.', 'Det er ikke en prosjektfil fra /cmd.')); return; }
+      if (!j || (j.team !== 'dctl' && j.team !== 'dckrav') || !j.p || typeof j.p.name !== 'string' || !Array.isArray(j.p.lines)) { toast(L('That is not a project file from /cmd.', 'Det er ikke en prosjektfil fra /cmd.')); return; }
+      var key = j.team;   /* dctl = a Document control project, dckrav = a Document requirements list */
       var p = j.p, nid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
       p.id = nid; p.files = []; p.made = p.made || new Date().toISOString(); p.name = String(p.name).slice(0, 120);
       p.lines = p.lines.filter(function (l) { return l && typeof l === 'object'; }).slice(0, 3000).map(function (l) { l.files = []; l.id = l.id ? String(l.id).slice(0, 40) : nid + Math.random().toString(36).slice(2, 6); return l; });
-      var t = DFe.tools(); t.dctl.push(p); saveDocs(t, S.docBase, true).then(function () {
+      var t = DFe.tools(); t[key].push(p); saveDocs(t, S.docBase, true).then(function () {
         toast(L('Imported: ', 'Importert: ') + p.name);
-        S.dtab = 'doc'; location.hash = '#dc=' + nid;
+        S.dtab = key === 'dckrav' ? 'req' : 'doc'; location.hash = (key === 'dckrav' ? '#dr=' : '#dc=') + nid;
       });
     };
     fr.readAsText(file);

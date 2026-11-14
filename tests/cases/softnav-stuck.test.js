@@ -14,6 +14,31 @@ const { open, sl, until } = require('../lib/browser'); const { check, done } = r
   check(loaded !== null, 'after a few seconds Health loads normally instead of staying stuck');
   check(await p.evaluate(() => /\/cmd\/habits\/ took too long.*stuck at: script page-habits\.js/.test(sessionStorage.getItem('softnav.err') || '')), 'it is noted for Diagnostics, with the step it was stuck at: ' + await p.evaluate(() => sessionStorage.getItem('softnav.err')));
 
+  /* a new version on the server: the page loads normally, and a slow normal load is not a failed page change (14 Nov 2026:
+     Windows Firefox took over 6 s, it was counted as a failure five times and instant page changes were paused there) */
+  {
+    const { launch, unlock, U } = require('../lib/browser');
+    const b4 = await launch(), v = await b4.newPage(); v.errs = [];
+    await v.setViewport({ width: 1280, height: 900 });
+    await v.setBypassServiceWorker(true); await v.setRequestInterception(true);
+    v.on('request', async r => {
+      const u = r.url(); if (!u.startsWith('http://localhost')) return r.abort();
+      if (/\/cmd\/goals\/(\?.*)?$/.test(u) && r.resourceType() === 'fetch') {
+        const html = await (await fetch(u)).text();
+        return r.respond({ status: 200, contentType: 'text/html', body: html.replace(/dist\/head\.js\?v=[^"]+/, 'dist/head.js?v=newversion') });
+      }
+      if (/\/cmd\/goals\/(\?.*)?$/.test(u) && r.resourceType() === 'document') await sl(7500);
+      r.continue();
+    });
+    await v.goto(U); await sl(1500); await unlock(v); await sl(800);
+    await v.evaluate(() => { sessionStorage.removeItem('softnav.err'); const a = [...document.querySelectorAll('a[href]')].find(a => a.offsetWidth && new URL(a.href).pathname === '/cmd/goals/'); a.click(); });
+    const got = await until(v, () => location.pathname === '/cmd/goals/' && !!document.querySelector('main'), 20000);
+    await sl(1500);
+    const nv = await v.evaluate(() => ({ err: sessionStorage.getItem('softnav.err') || '', diag: (window.Diag ? Diag.list() : []).filter(x => x.k === 'softnav').map(x => x.m).join(' | '), paused: (localStorage.getItem('dash.snpause') || '') + (JSON.parse(localStorage.getItem('dash.snfail') || '[]').length ? 'fail' : '') }));
+    check(got !== null && !nv.err && !nv.diag && !nv.paused, 'a new version loads normally and a slow load is not counted as a failed page change ' + JSON.stringify(nv));
+    await b4.close();
+  }
+
   /* Safari has built-in objects on window that can't be changed; leaving a page must not trip over them */
   const { b: b3, p: r } = await open(1280);
   await r.evaluateOnNewDocument(() => { const ro = {}; Object.defineProperty(ro, 'pushNotification', { value: 1, writable: false, enumerable: true }); Object.preventExtensions(ro); window.safari = ro; window.__frozenList = Object.freeze([1, 2]); });

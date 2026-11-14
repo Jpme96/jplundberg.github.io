@@ -143,6 +143,13 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
   check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');
   await word(own, 'Document control in Team');
+  /* a requirements list from /cmd lands under Document requirements */
+  const tmpr = path.join(__dirname, '..', '.tmp', 'team-req-' + process.pid + '.json');
+  fs.writeFileSync(tmpr, JSON.stringify({ team: 'dckrav', v: 1, p: { id: 'r1', name: 'Facade requirements SECRET-REQ', made: '2026-11-14T09:00:00Z', lines: [{ id: 'q1', code: '231', sys: 'Outer walls', t: 'A', st: 'missing' }] } }));
+  await own.goto(U + '#docs'); await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await (await own.$('input[data-dcimport]')).uploadFile(tmpr);
+  check(await until(own, () => /^#dr=/.test(location.hash) && !document.getElementById('wkDocReq').hidden && /Facade requirements SECRET-REQ/.test(document.getElementById('wkDocReq').innerText), 15000), 'a requirements list sent from /cmd opens under Document requirements');
+  check(await own.evaluate(() => DocHost.Fe.list('dckrav').length === 1 && DocHost.Fe.list('dctl').length === 1), 'next to the project, kept apart');
   /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
   await kari.goto(U + '#docs'); await kari.reload();
   check(await until(kari, () => !!document.querySelector('[data-dcopen]'), 20000), 'Kari sees the project');
@@ -162,7 +169,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.reload(); await kari.waitForSelector('.t-tabs'); await until(kari, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
   check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'ok'), "and Kari sees the owner's approval");
   const memDc = (await raw('/__mem')).body;
-  check(!/SECRET-DC|SECRET-SYS|Missing the manual|Lighting/.test(memDc), 'the server only has the projects as ciphertext');
+  check(!/SECRET-DC|SECRET-SYS|SECRET-REQ|Missing the manual|Lighting/.test(memDc), 'the server only has the projects as ciphertext');
 
   /* --- roles --- */
   async function setRole(email, role) { await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('[data-act=member][data-email="' + email + '"]'); await own.click('[data-act=member][data-email="' + email + '"]'); await own.waitForSelector('form[data-form=role]'); await own.select('form[data-form=role] select[name=role]', role); await own.click('form[data-form=role] button[type=submit]'); await until(own, () => !document.querySelector('.t-sheetbg')); }

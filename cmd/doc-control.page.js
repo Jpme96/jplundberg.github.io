@@ -701,7 +701,7 @@
     if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
     h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drstart><i class="bi bi-folder-check"></i> ' + esc(k('ui.dr-start', 'Start document control')) + '</button>' +
       '<button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button>' +
-      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button></div>' +
+      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="r:' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '</div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dr-excel-help', 'The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.')) + '</p>';
     h += byGroup(L).map(function (g) {
       return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dr-syss">' + byCode(g[1]).map(function (c) {
@@ -843,9 +843,9 @@
        the files themselves (they stay on this device). Nothing goes from this dashboard's storage to Team's. */
     var tb = e.target.closest('[data-dcteam]');
     if (tb) {
-      var tp = proj(tb.dataset.dcteam); if (!tp) return;
+      var isKrav = /^r:/.test(tb.dataset.dcteam), tid = tb.dataset.dcteam.replace(/^r:/, ''), tp = isKrav ? krav(tid) : proj(tid); if (!tp) return;   /* r:<id> = document requirements */
       var cp = JSON.parse(JSON.stringify(tp)); delete cp.files; (cp.lines || []).forEach(function (l) { delete l.files; });
-      var tf = new File([JSON.stringify({ team: 'dctl', v: 1, at: new Date().toISOString(), p: cp })], fileName(tp, k('ui.dc-for-team', 'for Team'), '.json'), { type: 'application/json' });
+      var tf = new File([JSON.stringify({ team: isKrav ? 'dckrav' : 'dctl', v: 1, at: new Date().toISOString(), p: cp })], fileName(tp, k('ui.dc-for-team', 'for Team'), '.json'), { type: 'application/json' });
       if (navigator.canShare && navigator.canShare({ files: [tf] })) navigator.share({ files: [tf], title: tf.name }).catch(function () {});
       else { var ta = document.createElement('a'); ta.href = URL.createObjectURL(tf); ta.download = tf.name; document.body.appendChild(ta); ta.click(); setTimeout(function () { URL.revokeObjectURL(ta.href); ta.remove(); }, 4000); }
       toast('<i class="bi bi-people"></i> ' + esc(k('ui.dc-sent-team', 'Saved. In Team: Documents → Import from /cmd.')) + ' <a href="https://work.jplundberg.com/#docs">' + esc(k('ui.open-team', 'Open Team')) + '</a>');

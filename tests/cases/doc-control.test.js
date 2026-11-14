@@ -184,6 +184,13 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const back2 = await p.evaluate(() => Features.list('dckrav')[0].lines.length);
   check(rs.n === 0 && rs.name === 'Made-up bathroom' && rs.pick && back2 === before, 'Reset empties the list (the project stays) and opens the picker; Undo brings it back ' + JSON.stringify({ rs, before, back2 }));
   /* Start document control: a project in Document control with the same lines, all missing */
+  /* the requirements list can go to Team too */
+  const sentR = await p.evaluate(async () => {
+    let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { got = this; };
+    const btn = document.querySelector('[data-dcteam^="r:"]'); if (btn) btn.click(); HTMLAnchorElement.prototype.click = oc;
+    if (!got) return null; const j = JSON.parse(await (await fetch(got.href)).text()); return { team: j.team, lines: j.p.lines.length };
+  });
+  check(sentR && sentR.team === 'dckrav' && sentR.lines > 0, 'Send to Team on document requirements makes a requirements file ' + JSON.stringify(sentR));
   await tap('[data-drstart]'); await sl(700);
   const st0 = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r && r.lines.filter(l => !l.spec && /^33/.test(l.code)).map(l => l.code + ' ' + l.t + ' ' + l.st).join(), full: document.body.classList.contains('dc-full'), dr: document.body.classList.contains('dr-full'), tab: (document.querySelector('#wkDocCtl .fdv-tabs [aria-selected="true"]') || {}).textContent }; });
   const site = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return [r.no, r.bid, r.bname, r.pname, r.pid].join('|'); });

@@ -32,6 +32,15 @@ const { shared, sl } = require('../lib/browser'); const { check, done } = requir
   /* junk is cleaned or refused */
   const bad = await p.evaluate(() => fetch('/cmd/api/errlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ errs: [{ k: '<b>', m: 'x' }, 'no', null] }) }).then(r => r.json()));
   check(bad.ok && bad.n === 0, 'junk lines are dropped ' + JSON.stringify(bad));
+  /* freezes (14 Nov 2026): only a gap right after someone used the page counts – a Mac resting Firefox at night is not a freeze */
+  const st = await p.evaluate(() => [Diag.stuck(60000, true, true, 90000), Diag.stuck(60000, true, true, 3000), Diag.stuck(6000, true, true, 500), Diag.stuck(3000, true, true, 500), Diag.stuck(60000, false, true, 500), Diag.stuck(200000, true, true, 500)].join());
+  check(st === 'false,true,true,false,false,false', 'a long gap counts as a freeze only soon after a tap, while visible, under 2 minutes ' + st);
+  /* leaving the page (also to another site, like Team) is a goodbye, never "stopped responding" */
+  await p.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))); await sl(1600);
+  const hb = await p.evaluate(() => JSON.parse(sessionStorage.getItem('dash.hb') || 'null'));
+  check(hb && hb.x === true, 'after leaving, the heartbeat keeps its goodbye ' + JSON.stringify(hb && { x: hb.x }));
+  await p.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))); await sl(1300);
+  check(await p.evaluate(() => JSON.parse(sessionStorage.getItem('dash.hb')).x === false), 'and it beats again when the page comes back');
   check(!p.errs.length && !q.errs.length, 'no page errors ' + p.errs.concat(q.errs).join(' | ').slice(0, 300));
   await b2.close();
   await done(b);

@@ -195,16 +195,21 @@
       }
     } catch (e) {}
     beat(false);
-    var lastTick = Date.now(), lastVis = !document.hidden;
+    var lastTick = Date.now(), lastVis = !document.hidden, closing = false;
     setInterval(function () {
-      var now = Date.now(), vis = !document.hidden, g = now - lastTick;
-      /* a long gap while visible both before and after = the page was stuck (gaps over 2 minutes are a sleeping computer) */
-      if (vis && lastVis && g > 4000 && g < 120000) log('freeze', 'The page was stuck for ' + Math.round(g / 1000) + ' s', crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '', { raw: true });
+      if (closing) return;   /* leaving (also to another site, like Team): the goodbye beat must stay the last one */
+      var now = Date.now(), vis = !document.hidden, g = now - lastTick, lc = crumbs.length ? crumbs[crumbs.length - 1].t : 0;
+      if (stuck(g, vis, lastVis, lastTick - lc)) log('freeze', 'The page was stuck for ' + Math.round(g / 1000) + ' s', crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '', { raw: true });
       lastTick = now; lastVis = vis; beat(false);
     }, 1000);
     document.addEventListener('visibilitychange', function () { lastTick = Date.now(); lastVis = !document.hidden; beat(false); });
-    window.addEventListener('pagehide', function () { beat(true); });
+    window.addEventListener('pagehide', function () { closing = true; beat(true); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { closing = false; lastTick = Date.now(); beat(false); } });
   }
+  /* a long gap while visible both before and after, soon after a tap or click = the page was stuck. Gaps over 2 minutes are a
+     sleeping computer; a gap with nobody using the page is the system resting it (Firefox on a Mac keeps a window "visible" while
+     the screen sleeps or the Mac naps – that gave 50–100 s "freezes" at night, 14 Nov 2026). */
+  function stuck(g, vis, lastVis, sinceClick) { return !!(vis && lastVis && g > 4000 && g < 120000 && sinceClick >= 0 && sinceClick < 20000); }
 
   /* ---------- server calls that fail (own Worker and the outside services) ---------- */
   var SERVICES = { 'api.entur.io': 'Entur', 'api.open-meteo.com': 'Weather', 'geocoding-api.open-meteo.com': 'Weather search', 'api.frankfurter.app': 'Exchange rates', 'api.frankfurter.dev': 'Exchange rates',
@@ -656,7 +661,7 @@
   window.addEventListener('pagehide', function () { if (upT) upload(true); });
   setTimeout(upload, 12000);   /* anything left from last time */
 
-  window.Diag = { log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, ver: ver, mark: mark, state: state,
+  window.Diag = { stuck: stuck, log: log, list: function () { return readJSON(LOG, []); }, clear: function () { writeJSON(LOG, []); seen = {}; }, ver: ver, mark: mark, state: state,
     notice: notice, hide: hide, retry: retry, selfCheck: selfCheck, report: report, scrub: scrub, render: render,
     crumbs: function () { return crumbs.slice(); }, upload: upload, speed: function () { return readJSON(SPEED, {}); }, scanNow: scanNow, label: label, page: page, open: openPanel, netOk: function () { return netOk; } };
 })();
