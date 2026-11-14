@@ -343,7 +343,7 @@
           ['3', '2', '1', '0', 'iu'].map(function (t) { return '<td><b>' + by(t).length + '</b><small>' + esc(tgName(t)) + '</small></td>'; }).join('') + '<td><b>' + f.length + '</b><small>' + L('ui.fdv-findings', 'findings') + '</small></td></tr></tbody></table>' +
         chartParts(f) + chartMatrix(f) +
         (todo.length ? '<h3 data-t="ui.what-should-be-done">What should be done</h3><table class="rp-todo"><thead><tr><th>' + L('ui.fdv-nr', 'No.') + '</th><th data-t="ui.grade">Grade</th><th>' + L('ui.priority', 'Priority') + '</th><th data-t="ui.building-part">Building part</th><th data-t="ui.finding">Finding</th><th data-t="ui.action-2">Action</th><th>' + L('ui.when', 'When') + '</th></tr></thead><tbody>' + todo.map(function (x) {
-          return '<tr><td class="rp-no">' + fno[x.id] + '</td><td>' + tgb(x.tg) + ' ' + kgb(x) + '</td><td>' + prb(x) + '</td><td data-noi18n>' + esc(partLabel(x)) + '</td><td data-noi18n>' + esc(x.text) + '</td><td data-noi18n>' + esc(x.action || '–') + (x.cost ? '<br><small>' + nf.format(+x.cost) + ' kr</small>' : '') + '</td><td>' + esc(whenName(x.when) || '–') + '</td></tr>';
+          return '<tr><td class="rp-no">' + fno[x.id] + '</td><td class="rp-grs">' + tgb(x.tg) + kgb(x) + '</td><td>' + prb(x) + '</td><td data-noi18n>' + esc(partLabel(x)) + '</td><td data-noi18n>' + esc(x.text) + '</td><td data-noi18n>' + esc(x.action || '–') + (x.cost ? '<br><small>' + nf.format(+x.cost) + ' kr</small>' : '') + '</td><td>' + esc(whenName(x.when) || '–') + '</td></tr>';
         }).join('') + '</tbody></table>' : '') +
         costSummary(f, cost) + '</section>' +
       /* 3 – the main report: one sub-section per two-digit code */
@@ -351,7 +351,7 @@
         return '<section class="rp-part"><h3>3.' + (si + 1) + ' ' + esc(k ? nsLabel(k) : I18N.k('ui.ns-no-code', '– No code –')) + '</h3>' + f.filter(function (x) { return (x.code ? x.code.slice(0, 2) : '') === k; }).map(function (x) {
           var sub = [x.code && x.code.length > 2 ? nsLabel(x.code) : '', x.part].filter(Boolean).join(' · ');
           var mt = [x.kt ? I18N.k('ui.consequence-for', 'Consequence for') + ': ' + ktName(x.kt) : '', x.when ? I18N.k('ui.when', 'When') + ': ' + whenName(x.when) : '', x.cost ? nf.format(+x.cost) + ' kr' : ''].filter(Boolean).join(' · ');
-          return '<div class="rp-f"><div class="rp-gr"><span class="rp-no">' + esc(I18N.k('ui.fdv-finding-n', 'Finding {n}', { n: fno[x.id] })) + '</span>' + tgb(x.tg) + kgb(x) + (prio(x) != null ? prb(x) : '') + '</div><div class="rp-ft" data-noi18n>' + (sub ? '<p class="rp-where">' + esc(sub) + '</p>' : '') + '<p>' + esc(x.text) + '</p>' +
+          return '<div class="rp-f"><div class="rp-gr"><span class="rp-no">' + esc(I18N.k('ui.fdv-finding-n', 'Finding {n}', { n: fno[x.id] })) + '</span><span class="rp-grs">' + tgb(x.tg) + kgb(x) + '</span>' + (prio(x) != null ? prb(x) : '') + '</div><div class="rp-ft" data-noi18n>' + (sub ? '<p class="rp-where">' + esc(sub) + '</p>' : '') + '<p>' + esc(x.text) + '</p>' +
             (x.cause ? '<p class="rp-act">' + L('ui.cause', 'Cause') + ': ' + esc(x.cause) + '</p>' : '') + (x.action ? '<p class="rp-act">' + L('ui.action-2', 'Action') + ': ' + esc(x.action) + '</p>' : '') + (mt ? '<p class="rp-act">' + esc(mt) + '</p>' : '') +
             (phn[x.id] ? '<p class="rp-act rp-phref">' + esc(I18N.k('ui.fdv-see-photo', 'See photo {n}', { n: phn[x.id] })) + '</p>' : '') + '</div></div>';
         }).join('') + '</section>';

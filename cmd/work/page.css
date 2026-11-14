@@ -149,3 +149,8 @@ body.fdv-full [data-tool="fdv"] { display: block !important; }
 .fdv-revs { list-style: none; margin: 0 0 8px; padding: 0; } .fdv-revs li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .fdv-revadd { display: flex; gap: 8px; } .fdv-revadd input { flex: 1; min-width: 0; }
 .rp-revt { margin-top: 4px; } .rp-revt td:first-child, .rp-revt th:first-child { width: 48px; }
+/* TG and KG side by side; KG as an outlined label so TG 2 and KG 2 never look the same (JP 2026-11-14) */
+.rp-doc .rp-grs { white-space: nowrap; } .rp-doc .rp-grs .rp-tg { vertical-align: middle; }
+.rp-doc .rp-tg.rp-kg { margin-left: 4px !important; background: #fff !important; color: var(--c) !important; border: 1px solid var(--c); padding-top: 1px; padding-bottom: 1px; box-shadow: none; }
+.rp-todo th { white-space: nowrap; } .rp-todo td.rp-no { width: 22px; }
+.rp-gr { justify-items: start; } .rp-gr .rp-grs { display: inline-flex; gap: 4px; } .rp-gr .rp-grs .rp-kg { margin-left: 0 !important; }
