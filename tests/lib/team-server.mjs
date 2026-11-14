@@ -17,22 +17,29 @@ const b64u = b => Buffer.from(b).toString('base64url');
 async function token(em, aud) { const h = b64u(JSON.stringify({ alg: 'RS256', kid: 'k1' })), p = b64u(JSON.stringify({ iss: TEAM, aud: [aud || AUD], exp: Math.floor(Date.now() / 1000) + 3600, email: em }));
   return h + '.' + p + '.' + b64u(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', kp.privateKey, new TextEncoder().encode(h + '.' + p))); }
 
-/* the Durable Object's storage, in memory (values are copied like the real one does) */
-const mem = new Map();
-const storage = {
-  get: async k => mem.has(k) ? structuredClone(mem.get(k)) : undefined,
-  put: async (k, v) => { mem.set(k, structuredClone(v)); },
-  delete: async k => mem.delete(k),
-  list: async ({ prefix = '', reverse, limit, end } = {}) => {
-    let ks = [...mem.keys()].filter(k => k.startsWith(prefix) && (!end || k < end)).sort();
-    if (reverse) ks.reverse(); if (limit) ks = ks.slice(0, limit);
-    return new Map(ks.map(k => [k, structuredClone(mem.get(k))]));
-  }
-};
+/* each Durable Object's storage, in memory (values are copied like the real one does); one per team name */
+const mems = new Map();
+function storageFor(name) {
+  const mem = new Map(); mems.set(name, mem);
+  return {
+    get: async k => mem.has(k) ? structuredClone(mem.get(k)) : undefined,
+    put: async (k, v) => { mem.set(k, structuredClone(v)); },
+    delete: async k => mem.delete(k),
+    list: async ({ prefix = '', reverse, limit, end } = {}) => {
+      let ks = [...mem.keys()].filter(k => k.startsWith(prefix) && (!end || k < end)).sort();
+      if (reverse) ks.reverse(); if (limit) ks = ks.slice(0, limit);
+      return new Map(ks.map(k => [k, structuredClone(mem.get(k))]));
+    }
+  };
+}
 const env = { TEAM_DOMAIN: TEAM, POLICY_AUD: AUD, OWNER: 'owner@x.no', ORIGIN };
-const store = new mod.TeamStore({ storage }, env);
+const stores = new Map();
 let chain = Promise.resolve();   /* one request at a time, like a Durable Object */
-env.TEAM = { idFromName: () => 'team', get: () => ({ fetch: req => (chain = chain.then(() => store.fetch(req), () => store.fetch(req))) }) };
+env.TEAM = { idFromName: n => n, get: n => {
+  if (!stores.has(n)) stores.set(n, new mod.TeamStore({ storage: storageFor(n) }, env));
+  const st = stores.get(n);
+  return { fetch: req => (chain = chain.then(() => st.fetch(req), () => st.fetch(req))) };
+} };
 
 const HDRS = {};
 for (const line of fs.readFileSync(path.join(ROOT, 'public', '_headers'), 'utf8').split('\n')) { const m = line.match(/^\s+([\w-]+):\s*(.+)$/); if (m) HDRS[m[1]] = m[2].trim(); }
@@ -44,7 +51,7 @@ env.ASSETS = { fetch: async req => {
 } };
 
 http.createServer(async (req, res) => {
-  if (req.url === '/__mem') return res.end(JSON.stringify([...mem.entries()]));
+  if (req.url === '/__mem') { const all = []; for (const [n, m] of mems) for (const [k, v] of m) all.push([n === 'team' ? k : n + '/' + k, v]); return res.end(JSON.stringify(all)); }
   const ch = []; for await (const c of req) ch.push(c);
   const who = ((req.headers.cookie || '').match(/(?:^|;\s*)who=([^;]+)/) || [])[1];
   const headers = { ...req.headers };

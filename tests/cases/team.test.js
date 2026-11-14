@@ -225,8 +225,53 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
 
   /* --- the server never had anything readable --- */
   const all = (await raw('/__mem')).body;
-  check(!/SECRET|Fire safety|Supplier|owner-pass|kari-pass|ola-pass/.test(all), 'the server only has ciphertext (no meeting text, no passcodes)');
+  check(!/SECRET|Fire safety|Supplier|owner-pass|kari-pass|ola-pass|per-pass/.test(all), 'the server only has ciphertext (no meeting text, no passcodes)');
   check(!/"d":"/.test(all), 'no private keys in the clear');
+
+  /* --- more than one team: each its own members, invites, key and records; the first team is untouched --- */
+  const stranger2 = await api(kari2, 'teams', { method: 'POST', body: '{}' });
+  check(stranger2 === 403, 'only the owner can make a new team');
+  await own.goto(U + '?new=1'); await own.waitForSelector('form[data-form=setup]');
+  check(/New team/.test(await text(own)) && /Your teams/.test(await text(own)), 'the owner gets a "New team" form with a way back');
+  await own.type('input[name=team]', 'Second site'); await own.type('input[name=name]', 'JP'); await own.type('input[name=pass]', 'owner-pass-2'); await own.type('input[name=pass2]', 'owner-pass-2');
+  await own.click('button[type=submit]');
+  check(await until(own, () => !!document.querySelector('.t-tabs') && /Second site/.test(document.body.innerText), 20000), 'the new team opens after set-up');
+  const tid2 = await own.evaluate(() => window.__team.tid);
+  await own.click('[data-act=teams]'); await own.waitForSelector('.t-teams');
+  check(/Second site/.test(await own.$eval('.t-teams', e => e.textContent)), 'the new team is in the list at once');
+  await own.click('[data-act=close]');
+  check(/^[a-z0-9]{12}$/.test(tid2) && await own.evaluate(() => window.__team.members.length === 1), 'it has its own id and only the owner in it');
+  check(await own.evaluate(() => !Object.keys(window.__team.recs).length), 'none of the first team\'s records are in it');
+  await own.goto(U + '#meetings'); await own.waitForSelector('[data-act=newMeeting]'); await own.click('[data-act=newMeeting]'); await own.waitForSelector('form[data-form=meeting]');
+  await own.type('input[name=title]', 'Second MARK-SECRET-5'); await own.click('form[data-form=meeting] button[type=submit]');
+  await until(own, () => /Second MARK/.test(document.body.innerText));
+  const link3 = await invite('read', '1d');
+  check(new RegExp('&t=' + tid2 + '$').test(link3), 'its invites carry the team');
+  const kt = JSON.parse(await kari2.evaluate(() => fetch('/api/teams').then(r => r.text())));
+  check(kt.teams.length === 1 && kt.teams[0].id === 'team', 'Kari sees only her own team (not the new one, not its name)');
+  check(await kari2.evaluate(t => fetch('/api/recs', { headers: { 'x-tid': t } }).then(r => r.status), tid2) === 403, 'and gets nothing from it');
+  check(await kari2.evaluate(() => fetch('/api/recs', { headers: { 'x-tid': 'nope' } }).then(r => r.status)) === 400, 'a made-up team id is refused');
+  /* Per joins the second team with its link */
+  const per = await person('per@y.no');
+  await per.goto(link3.replace(/^https?:\/\/[^/]+\//, U)); await per.waitForSelector('form[data-form=join]');
+  check(/Join Second site/.test(await text(per)), 'the link opens the right team');
+  await per.type('input[name=name]', 'Per'); await per.type('input[name=pass]', 'per-pass-11'); await per.type('input[name=pass2]', 'per-pass-11'); await per.click('button[type=submit]');
+  check(await until(per, () => !!document.getElementById('checkCode')), 'Per waits for approval');
+  await own.goto(U + '#team'); await own.reload(); await until(own, () => !!document.querySelector('[data-act=approve]')); await own.click('[data-act=approve]');
+  check(await until(per, () => !!document.querySelector('.t-tabs'), 15000), 'Per is in the second team');
+  await per.goto(U + '#meetings'); await sl(400);
+  check(/MARK-SECRET-5/.test(await text(per)) && !/MARK-SECRET-1|MARK-SECRET-4/.test(await text(per)), 'Per reads the second team only');
+  /* the owner switches back: the first team opens without its passcode again (its keys stayed on this device) */
+  await own.click('[data-act=teams]'); await own.waitForSelector('.t-teams');
+  check(/Site team/.test(await text(own)) && /Second site/.test(await text(own)), 'the owner sees both teams');
+  await own.evaluate(() => [...document.querySelectorAll('[data-act=goTeam]')].find(b => /Site team/.test(b.textContent)).click());
+  check(await until(own, () => !!document.querySelector('.t-tabs') && /Site team/.test(document.body.innerText), 15000), 'switching back opens the first team without unlocking again');
+  await own.goto(U + '#meetings'); await sl(400);
+  check(/MARK-SECRET-4/.test(await text(own)) && !/MARK-SECRET-5/.test(await text(own)), 'the first team shows only its own meetings');
+  await own.evaluate(() => localStorage.setItem('team.cur', 'team'));
+  await word(own, 'after switching teams');
+  const all2 = (await raw('/__mem')).body;
+  check(!/SECRET|Second MARK|per-pass|owner-pass/.test(all2), 'the second team on the server is ciphertext too');
 
   /* --- Norwegian --- */
   await kari.evaluate(() => localStorage.setItem('team.lang', 'nb'));

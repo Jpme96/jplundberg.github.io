@@ -283,3 +283,5 @@ body.dr-full #wkDocReq { display: block !important; }
 /* Team space card: one tap to work.jplundberg.com (its data never comes here) */
 .tm-card .tm-about { margin: 4px 0 12px; }
 .tm-card .tm-open { width: 100%; text-decoration: none; }
+.tm-card .tm-acts { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tm-card .tm-new { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }

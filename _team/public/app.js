@@ -16,6 +16,13 @@
   function roleName(r) { return { read: L('Can read', 'Kan lese'), edit: L('Can edit', 'Kan redigere'), approve: L('Can approve', 'Kan godkjenne'), admin: L('Admin', 'Admin') }[r] || r; }
   var S = { me: null, keys: {}, priv: null, recs: {}, seq: 0, locks: {}, members: [], requests: [], invites: [], log: [], edit: null, sheet: null, timer: 0, hb: 0 };
   window.__team = S;   /* for the tests */
+  /* which team: ?t= in the link (invites carry it), else the last one used here, else the first team ('team') */
+  var TID = /^(team|[a-z0-9]{12})$/;
+  S.tid = (function () { var q = new URLSearchParams(location.search).get('t'), v = null; try { v = localStorage.getItem('team.cur'); } catch (e) {} return TID.test(q || '') ? q : TID.test(v || '') ? v : 'team'; })();
+  S.newTeam = new URLSearchParams(location.search).get('new') === '1';
+  S.teams = [];
+  function useTeam(id) { S.tid = id; try { localStorage.setItem('team.cur', id); } catch (e) {} }
+  function goTeam(id) { useTeam(id); location.href = '/?t=' + id; }
 
   /* ---------- icons (inline, so nothing is fetched from elsewhere) ---------- */
   var IC = {
@@ -26,7 +33,8 @@
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     docs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/>',
     back: '<path d="M15 18l-6-6 6-6"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>'
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    swap: '<path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/>'
   };
   function ic(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + IC[n] + '</svg>'; }
 
@@ -48,7 +56,7 @@
   /* ---------- the server ---------- */
   function api(path, opt) {
     opt = opt || {};
-    var init = { method: opt.method || 'GET', headers: { 'x-team': '1' }, credentials: 'same-origin', cache: 'no-store' };
+    var init = { method: opt.method || 'GET', headers: { 'x-team': '1', 'x-tid': S.tid }, credentials: 'same-origin', cache: 'no-store' };
     if (opt.body !== undefined) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
     return fetch('/api/' + path, init).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
@@ -101,9 +109,12 @@
   var dbp = null;
   function db() { return dbp || (dbp = new Promise(function (res, rej) { var q = indexedDB.open('team-keys', 1); q.onupgradeneeded = function () { q.result.createObjectStore('k'); }; q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; })); }
   function kop(mode, fn) { return db().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('k', mode), st = t.objectStore('k'), r = fn(st); t.oncomplete = function () { res(r && r.result); }; t.onerror = function () { rej(t.error); }; }); }); }
-  function kget(k) { return kop('readonly', function (st) { return st.get(k); }); }
-  function kset(k, v) { return kop('readwrite', function (st) { st.put(v, k); }); }
-  function kclear() { return kop('readwrite', function (st) { st.clear(); }); }
+  /* each team's keys have their own names here: the first team keeps the old ones, others are 't/<id>/…' */
+  function kn(k) { return S.tid === 'team' ? k : 't/' + S.tid + '/' + k; }
+  function mine(k) { return S.tid === 'team' ? !/^t\//.test(k) : k.indexOf('t/' + S.tid + '/') === 0; }
+  function kget(k) { return kop('readonly', function (st) { return st.get(kn(k)); }); }
+  function kset(k, v) { return kop('readwrite', function (st) { st.put(v, kn(k)); }); }
+  function kclear() { return kop('readwrite', function (st) { var r = st.getAllKeys(); r.onsuccess = function () { r.result.forEach(function (k) { if (mine(String(k))) st.delete(k); }); }; }); }
 
   async function loadKeys() {
     var em = await kget('email').catch(function () { return null; });
@@ -122,13 +133,19 @@
   /* ---------- start ---------- */
   async function boot() {
     var q = new URLSearchParams(location.search);
-    if (/^[a-f0-9]{32}$/.test(q.get('join') || '')) { try { sessionStorage.setItem('team.join', q.get('join')); } catch (e) {} history.replaceState(null, '', '/' + location.hash); }
+    if (/^[a-f0-9]{32}$/.test(q.get('join') || '')) { try { sessionStorage.setItem('team.join', q.get('join')); } catch (e) {} }
+    if (q.get('t') || q.get('join') || q.get('new')) history.replaceState(null, '', '/' + location.hash);
+    try { S.teams = (await api('teams')).teams || []; } catch (e) { S.teams = []; }
+    /* the team kept here may be gone or not yours: go to one you are in (an invite link always wins) */
+    if (!joinCode() && !S.newTeam && S.teams.length && !S.teams.some(function (t) { return t.id === S.tid; })) useTeam(S.teams[0].id);
+    useTeam(S.tid);
     try { S.me = await api('me'); } catch (e) { return screen('<h1>' + esc(L('Team', 'Team')) + '</h1><p>' + esc(failMsg(e)) + '</p><button class="t-btn" type="button" data-act="reload">' + L('Try again', 'Prøv igjen') + '</button>'); }
     route();
   }
   function joinCode() { try { return sessionStorage.getItem('team.join'); } catch (e) { return null; } }
   async function route() {
     var me = S.me;
+    if (S.newTeam && me.isOwner) return screenSetup(true);
     if (!me.team) return me.isOwner ? screenSetup() : screen('<h1>' + L('No team yet', 'Ingen team ennå') + '</h1><p>' + L('The team has not been set up yet.', 'Teamet er ikke satt opp ennå.') + '</p>');
     if (me.member) {
       if (!(await loadKeys())) return screenUnlock();
@@ -150,9 +167,11 @@
     if (f.pass.value !== f.pass2.value) return L('The two passcodes are not the same.', 'De to kodene er ikke like.');
     return '';
   }
-  function screenSetup() {
-    screen('<h1>' + L('Set up your team', 'Sett opp teamet ditt') + '</h1><p>' + L('Only you can do this, once. Then you invite the others.', 'Bare du kan gjøre dette, én gang. Så inviterer du de andre.') + '</p>' +
-      '<form class="t-form" data-form="setup"><label class="t-lbl">' + L('Team name', 'Navn på teamet') + '<input name="team" required maxlength="60" value="Team"></label>' +
+  function screenSetup(isNew) {
+    var others = S.teams.filter(function (t) { return t.ready && t.role; });
+    screen((others.length ? '<div class="t-top"><button class="t-back" type="button" data-act="teams">' + ic('back') + L('Your teams', 'Teamene dine') + '</button></div>' : '') +
+      '<h1>' + (isNew ? L('New team', 'Nytt team') : L('Set up your team', 'Sett opp teamet ditt')) + '</h1><p>' + (isNew ? L('A team of its own: its own members, invites, key and records. Nobody in your other teams sees it.', 'Et eget team: egne medlemmer, invitasjoner, nøkkel og innhold. Ingen i de andre teamene dine ser det.') : L('Only you can do this, once. Then you invite the others.', 'Bare du kan gjøre dette, én gang. Så inviterer du de andre.')) + '</p>' +
+      '<form class="t-form" data-form="setup"><label class="t-lbl">' + L('Team name', 'Navn på teamet') + '<input name="team" required maxlength="60" value="' + (isNew ? '' : 'Team') + '" placeholder="' + L('e.g. Made-up school project', 'f.eks. Oppdiktet skoleprosjekt') + '"></label>' +
       '<label class="t-lbl">' + L('Your name as the team sees it', 'Navnet ditt slik teamet ser det') + '<input name="name" required maxlength="60" autocomplete="name"></label>' + passFields() +
       '<p class="t-err" id="err"></p><button class="t-btn wide" type="submit">' + L('Create the team', 'Lag teamet') + '</button></form>');
   }
@@ -170,8 +189,9 @@
       try { var me = await api('me'); if (me.member) { stopPoll(); S.me = me; route(); } else if (!me.pending) { stopPoll(); S.me = me; route(); } } catch (e) {}
     }, 5000);
   }
+  function teamsBack() { return S.teams.length > 1 ? '<div class="t-top"><button class="t-back" type="button" data-act="teams">' + ic('back') + L('Your teams', 'Teamene dine') + '</button></div>' : ''; }
   function screenUnlock() {
-    screen('<h1>' + L('Unlock Team on this device', 'Lås opp Team på denne enheten') + '</h1><p>' + L('Type your Team passcode once. After that this device remembers it.', 'Skriv inn Team-koden din én gang. Etter det husker denne enheten den.') + '</p>' +
+    screen(teamsBack() + '<p class="t-small">' + esc(S.me.team.name) + '</p><h1>' + L('Unlock Team on this device', 'Lås opp Team på denne enheten') + '</h1><p>' + L('Type your Team passcode once. After that this device remembers it.', 'Skriv inn Team-koden din én gang. Etter det husker denne enheten den.') + '</p>' +
       '<form class="t-form" data-form="unlock"><label class="t-lbl">' + L('Passcode', 'Kode') + '<input name="pass" type="password" autocomplete="current-password" required></label>' +
       '<p class="t-err" id="err"></p><button class="t-btn wide" type="submit">' + L('Unlock', 'Lås opp') + '</button>' +
       '<p class="t-small">' + L('Forgot it? An admin can remove you and send a new invite.', 'Glemt den? En admin kan fjerne deg og sende en ny invitasjon.') + '</p></form>');
@@ -183,8 +203,10 @@
     try {
       var kp = await C.generateKey(EC, true, ['deriveBits']), tk = await C.generateKey(AES, true, ['encrypt', 'decrypt']);
       var pub = await pubOf(kp);
+      if (S.newTeam) { useTeam((await api('teams', { method: 'POST', body: {} })).id); S.newTeam = false; }
       await api('setup', { method: 'POST', body: { name: f.team.value.trim(), me: { name: f.name.value.trim(), pub: pub, priv: await sealPriv(kp.privateKey, f.pass.value), wrap: await wrapFor(pub, tk, 1) } } });
       await kset('email', S.me.email); await kset('priv', await keepPriv(kp.privateKey)); await kset('tk:1', tk);
+      try { S.teams = (await api('teams')).teams || S.teams; } catch (x) {}
       S.me = await api('me'); route();
     } catch (e) { busy(f, false); setErr(failMsg(e)); }
   }
@@ -294,7 +316,7 @@
   }
   function head(title, sub, back) {
     return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : (S.me.isOwner ? '<a class="t-back" href="https://jplundberg.com/cmd/work/">' + ic('back') + '/cmd</a>' : '<small>work.jplundberg.com</small>')) +
-      '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></div>' +
+      '<span class="t-topr">' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
       '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>';
   }
 
@@ -475,7 +497,7 @@
     busy(f, true);
     try {
       var j = await api('invites', { method: 'POST', body: { role: f.role.value, ttl: f.ttl.value, label: f.label.value.trim() } });
-      var link = location.origin + '/?join=' + j.code;
+      var link = location.origin + '/?join=' + j.code + (S.tid !== 'team' ? '&t=' + S.tid : '');
       openSheet('<h2>' + L('Send this link', 'Send denne lenken') + '</h2><p class="t-small">' + L('For one person. It works once and runs out ', 'For én person. Den virker én gang og går ut ') + esc(fmtTime(j.exp)) + '. ' + L('They sign in with their email, and you approve them here.', 'De logger inn med e-posten sin, og du godkjenner dem her.') + '</p>' +
         '<input readonly id="invLink" value="' + esc(link) + '" aria-label="' + esc(L('Invite link', 'Invitasjonslenke')) + '">' +
         '<div class="t-btns">' + (navigator.share ? '<button class="t-btn" type="button" data-act="shareInvite">' + L('Share', 'Del') + '</button>' : '') + '<button class="t-btn ghost" type="button" data-act="copyInvite">' + L('Copy', 'Kopier') + '</button></div><button class="t-btn ghost wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
@@ -687,6 +709,15 @@
     document.body.appendChild(bg); S.sheet = bg;
     var f = bg.querySelector('input:not([readonly]), select'); if (f && !/Mobi/.test(navigator.userAgent)) f.focus();
   }
+  /* your teams: each one is separate – switching opens it (unlocked once per device, like the first) */
+  function teamsSheet() {
+    var ts = S.teams.filter(function (t) { return t.role || t.ready; });
+    openSheet('<h2>' + L('Your teams', 'Teamene dine') + '</h2><ul class="t-list t-teams">' + ts.map(function (t) {
+      var sub = t.role === 'pending' ? L('Waiting for approval', 'Venter på godkjenning') : t.role ? roleName(t.role) : L('Not set up yet', 'Ikke satt opp ennå');
+      return '<li><button class="t-row" type="button" data-act="goTeam" data-id="' + esc(t.id) + '"><span class="grow"><span>' + esc(t.name || L('New team', 'Nytt team')) + '</span><small>' + esc(sub) + '</small></span>' + (t.id === S.tid ? '<span class="t-chip">' + L('Open', 'Åpen') + '</span>' : '') + '</button></li>';
+    }).join('') + '</ul>' + (S.me.isOwner ? '<button class="t-btn wide" type="button" data-act="newTeam">' + ic('plus') + ' ' + L('New team', 'Nytt team') + '</button>' : '') +
+      '<button class="t-btn ghost wide" type="button" data-act="close">' + L('Close', 'Lukk') + '</button>');
+  }
   function closeSheet(keep) { if (S.sheet) { S.sheet.remove(); S.sheet = null; if (!keep && S.stale) draw(); } }
 
   /* ---------- one place for clicks and forms ---------- */
@@ -700,6 +731,9 @@
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'teams') return teamsSheet();
+    if (a === 'goTeam') { if (t.dataset.id !== S.tid || !S.me.member) goTeam(t.dataset.id); else closeSheet(); return; }
+    if (a === 'newTeam') { location.href = '/?new=1'; return; }
     if (a === 'newMeeting') return startEdit(rid(), true);
     if (a === 'edit') return startEdit(t.dataset.id);
     if (a === 'cancelEdit') { var wasNew = S.edit && S.edit.isNew; endEdit(); if (wasNew) location.hash = '#meetings'; return; }

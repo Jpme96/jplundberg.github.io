@@ -1,5 +1,6 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.new-team": ["New team", "Nytt team"],
   "ui.people-settings": ["People settings", "Innstillinger for personer"],
   "ui.food-settings": ["Food settings", "Innstillinger for mat"],
   "ui.ccb-late1": ["{a} bill is 1 day overdue", "{a}-regningen er 1 dag over forfall"],

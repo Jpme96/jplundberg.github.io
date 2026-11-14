@@ -93,3 +93,8 @@ input[type="checkbox"] { width: 22px; min-height: 22px; height: 22px; padding: 0
 /* Documents: an open project or requirements list gets the whole screen */
 body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
 .dc-host { margin: 0 -4px; }
+/* more than one team: the switch button sits by Settings; the list of teams in its sheet */
+.t-topr { display: inline-flex; gap: 8px; margin-left: auto; }
+.t-teams { margin: 12px 0; }
+.t-teams .t-row { width: 100%; }
+.t-teams + .t-btn + .t-btn { margin-top: 8px; }

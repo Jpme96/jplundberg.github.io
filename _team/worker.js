@@ -9,7 +9,7 @@
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
 const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr)$/;   /* dc*: Document control and requirements (projects, lines, types, the checklist) */
-const ID = /^[a-z0-9]{8,40}$/;
+const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/;
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
 
@@ -30,8 +30,30 @@ export default {
       if (request.headers.get('x-team') !== '1') return json({ error: 'bad request' }, 400);
       if (o && env.ORIGIN && o !== env.ORIGIN) return json({ error: 'bad origin' }, 403);
     }
-    const stub = env.TEAM.get(env.TEAM.idFromName('team'));
-    const h = new Headers({ 'content-type': 'application/json', 'x-email': check.email.toLowerCase(), 'x-owner': String(env.OWNER).trim().toLowerCase() });
+    const email = check.email.toLowerCase(), owner = String(env.OWNER).trim().toLowerCase();
+    const h = new Headers({ 'content-type': 'application/json', 'x-email': email, 'x-owner': owner });
+    /* more than one team: each team is its own Durable Object (its own members, invites, key and records).
+       The first team keeps the name 'team'; a list of the others lives in the Durable Object 'dir'. */
+    const dir = env.TEAM.get(env.TEAM.idFromName('dir'));
+    if (url.pathname === '/api/teams') {
+      if (request.method === 'POST') {
+        if (email !== owner) return json({ error: 'only the owner can make a team' }, 403);
+        return dir.fetch(new Request('https://team/dir/add', { method: 'POST', headers: h, body: '{}' }));
+      }
+      if (request.method !== 'GET') return json({ error: 'not found' }, 404);
+      const ids = ['team'].concat((await (await dir.fetch(new Request('https://team/dir/list', { headers: h }))).json()).ids || []);
+      const out = [];
+      await Promise.all(ids.map(async (id, i) => {
+        const r = await (await env.TEAM.get(env.TEAM.idFromName(id)).fetch(new Request('https://team/api/me', { headers: h }))).json().catch(() => ({}));
+        const role = r.member ? r.member.role : r.pending ? 'pending' : '';
+        if (role || (email === owner && (id !== 'team' || r.team))) out[i] = { id, name: r.team ? r.team.name : '', role, ready: !!r.team };
+      }));
+      return json({ teams: out.filter(Boolean), owner: email === owner });
+    }
+    const tid = request.headers.get('x-tid') || 'team';
+    if (!TID.test(tid)) return json({ error: 'bad team' }, 400);
+    if (tid !== 'team') { const ok = await (await dir.fetch(new Request('https://team/dir/has?id=' + tid, { headers: h }))).json(); if (!ok.has) return json({ error: 'no such team' }, 404); }
+    const stub = env.TEAM.get(env.TEAM.idFromName(tid));
     const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text();
     if (body && body.length > 4000000) return json({ error: 'too big' }, 413);
     return stub.fetch(new Request('https://team' + url.pathname + url.search, { method: request.method, headers: h, body }));
@@ -44,6 +66,7 @@ export class TeamStore {
 
   async fetch(request) {
     const url = new URL(request.url), m = request.method, p = url.pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
+    if (p.startsWith('/dir/')) return this.dir(p.slice(5), url);   /* only the Durable Object 'dir' is ever asked these */
     const email = request.headers.get('x-email') || '', owner = request.headers.get('x-owner') || '';
     let b = {};
     if (m !== 'GET' && m !== 'DELETE') { try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); } }
@@ -76,6 +99,15 @@ export class TeamStore {
       if (p === 'remove' && m === 'POST') return this.remove(email, owner, team, b);
       return json({ error: 'not found' }, 404);
     } catch (e) { return json({ error: 'server error' }, 500); }
+  }
+
+  /* the list of teams besides the first: ids only (each team keeps its own name) */
+  async dir(p, url) {
+    const ids = (await this.s.get('ids')) || [];
+    if (p === 'list') return json({ ids });
+    if (p === 'has') return json({ has: ids.includes(url.searchParams.get('id')) });
+    if (p === 'add') { if (ids.length >= 50) return json({ error: 'too many teams' }, 409); const id = hex(crypto.getRandomValues(new Uint8Array(6))); ids.push(id); await this.s.put('ids', ids); return json({ id }); }
+    return json({ error: 'not found' }, 404);
   }
 
   async touch(me) { const now = Date.now(); if (!me.seen || now - me.seen > 300e3) { me.seen = now; await this.s.put('m:' + me.email, me); } }
