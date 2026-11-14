@@ -139,6 +139,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(k4.nested && k4.lines === '3321 A Made-up sprinkler central,3321 BC Made-up sprinkler central', 'a 4-digit code shows under its 3-digit code and gets its document types ' + JSON.stringify(k4));
   await p.evaluate(() => { const t = Features.tools(); t.fdvcodes = []; Features.saveTools(t); }); await sl(700);
   await tap('[data-dcptype="sprinkler"]'); await sl(300);
+  await p.evaluate(() => document.querySelectorAll('[data-dcxtick]').forEach(c => { c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); })); await sl(100);   /* the type's specific documents are tested below */
   const pk = await p.evaluate(() => ({ ticked: [...document.querySelectorAll('[data-dctick]:checked')].map(c => c.dataset.dctick).join(), count: document.querySelector('[data-dcpcount]').textContent }));
   check(pk.ticked === '330,331,332' && /3 systems · 5 documents/.test(pk.count), 'the Sprinkler type ticks its systems ' + JSON.stringify(pk));
   await p.evaluate(() => { const c = document.querySelector('[data-dctick="331"]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(100);
@@ -158,11 +159,25 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(back && /P-9 Dokumentkrav Made-up bathroom\.xlsx$/.test(back.name) && back.lines === '330 G,330 H,332 A,332 BC', 'the Excel for the contractor is a document plan that Document control reads back ' + JSON.stringify(back));
   const kpdf = await p.evaluate(async () => { const b = document.querySelector('[data-drpdf]'); b.click(); for (let i = 0; i < 60 && !b._pdf; i++) await new Promise(r => setTimeout(r, 200)); return b._pdf ? b._pdf._pages : 0; });
   check(kpdf >= 1, 'the requirements become a PDF ' + kpdf);
+  /* specific documents for a kind of project (13:05): the Facade type adds the completion certificate and more, on top of the NS 3456 types */
+  await tap('[data-drpick]'); await sl(300);
+  await tap('[data-dcptype="facade"]'); await sl(300);
+  const xs = await p.evaluate(() => ({ list: [...document.querySelectorAll('[data-dcxtick]')].map(c => c.closest('li').textContent.trim()), pressed: document.querySelector('[data-dcptype="facade"]').getAttribute('aria-pressed') }));
+  check(xs.pressed === 'true' && xs.list.some(t => /^124 Completion certificate/.test(t)) && xs.list.some(t => /^155 Environmental survey/.test(t)), 'the Facade type lists its specific documents (completion certificate, environmental survey …) ' + JSON.stringify(xs.list.slice(0, 4)));
+  await p.evaluate(() => { const c = [...document.querySelectorAll('[data-dcxtick]')].find(x => /^155/.test(x.closest('li').textContent.trim())); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(100);
+  await tap('[data-dcmake="req"]'); await sl(500);
+  const sp = await p.evaluate(() => { const r = Features.list('dckrav')[0]; return { names: r.lines.filter(l => l.spec).map(l => l.code + ' ' + l.name).join('|'), shown: [...document.querySelectorAll('.dr-line b')].some(b => /Completion certificate/.test(b.textContent)) }; });
+  check(/124 Completion certificate \/ temporary use permit/.test(sp.names) && !/155/.test(sp.names) && sp.shown, 'the specific documents are added as named lines (an unticked one is left out) ' + sp.names);
   /* Start document control: a project in Document control with the same lines, all missing */
   await tap('[data-drstart]'); await sl(700);
-  const st0 = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r && r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).join(), full: document.body.classList.contains('dc-full'), dr: document.body.classList.contains('dr-full'), tab: (document.querySelector('#wkDocCtl .fdv-tabs [aria-selected="true"]') || {}).textContent }; });
+  const st0 = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r && r.lines.filter(l => !l.spec && /^33/.test(l.code)).map(l => l.code + ' ' + l.t + ' ' + l.st).join(), full: document.body.classList.contains('dc-full'), dr: document.body.classList.contains('dr-full'), tab: (document.querySelector('#wkDocCtl .fdv-tabs [aria-selected="true"]') || {}).textContent }; });
   const site = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return [r.no, r.bid, r.bname, r.pname, r.pid].join('|'); });
   check(site === 'P-9|99901|Made-up block A|Made-up estate|1/2', 'the project number, building and property go with it into Document control ' + site);
+  await p.goBack(); await sl(700);
+  const bk = await p.evaluate(() => ({ dr: document.body.classList.contains('dr-full'), tab: PageTabs.current() }));
+  await tap('[data-drstart]'); await sl(700);
+  const n2 = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom').length);
+  check(bk.dr && bk.tab === 'req' && n2 === 1, 'Back returns to the requirements; starting again opens the same control project, not a second one (13:05) ' + JSON.stringify({ bk, n2 }));
   check(st0.lines === '330 G missing,330 H missing,332 A missing,332 BC missing' && st0.full && !st0.dr && /Documents/.test(st0.tab), 'Start document control copies the list into a control project and opens it ' + JSON.stringify(st0));
   /* a line by hand, and removing one */
   await p.evaluate(() => { const f = document.querySelector('form[data-dcaddl]'); f.code.value = '274'; f.t.value = 'A'; f.name.value = 'Made-up membrane declaration'; f.requestSubmit(); }); await sl(400);
@@ -170,7 +185,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-dcline="' + id0 + '"]'); await sl(250);
   const hintShown = await p.evaluate(() => (document.querySelector('.dc-hint') || {}).textContent || '');
   await tap('[data-dcldel="' + id0 + '"]'); await sl(400);
-  const ed = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines.map(l => l.code + ' ' + l.t + (l.sys ? ' ' + l.sys : '')).join());
+  const ed = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines.filter(l => !l.spec).map(l => l.code + ' ' + l.t + (l.sys ? ' ' + l.sys : '')).join());
   check(/Made-up user text/.test(hintShown) && ed === '330 H Made-up fire general,332 A Made-up sprinkler,332 BC Made-up sprinkler,274 A Made-up membrane declaration', 'the hint shows on the line; a line is added by hand and one removed ' + JSON.stringify({ hintShown, ed }));
   /* back closes the project page */
   await tap('[data-dcback]'); await sl(500);

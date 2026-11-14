@@ -570,6 +570,8 @@ I18N.add({
   "ui.dc-search": ["Search code, system or name", "Søk på kode, system eller navn"],
   "ui.dc-search-codes": ["Search code or system", "Søk på kode eller system"],
   "ui.dc-should-contain": ["Should contain", "Skal inneholde"],
+  "ui.dc-specific": ["Specific to this kind of project", "Spesielt for denne typen prosjekt"],
+  "ui.dc-specific-help": ["Documents the project needs besides the NS 3456 types – untick what doesn’t apply.", "Dokumenter prosjektet trenger i tillegg til NS 3456-typene – fjern haken for det som ikke gjelder."],
   "ui.dc-st-cmt": ["Approved with comments", "Godkjent med anmerkning"],
   "ui.dc-st-missing": ["Missing", "Mangler"],
   "ui.dc-st-na": ["Not relevant", "Ikke relevant"],

@@ -184,7 +184,7 @@
     if (ft && line.t && ft.split('').some(function (x) { return line.t.indexOf(x) >= 0; })) s += 3;
     else if (p.abbr && line.planned && new RegExp('^\\d{3}\\S*\\s+' + p.abbr + '\\b', 'i').test(line.planned)) s += 3;
     else if (ft && line.t) s -= 2;
-    var w = words(p.text), lw = words(line.planned + ' ' + line.sys + ' ' + line.type);
+    var w = words(p.text), lw = words(line.planned + ' ' + line.sys + ' ' + line.type + ' ' + (line.name || ''));
     s += Math.min(3, w.filter(function (x) { return lw.some(function (y) { return y === x || (x.length > 4 && (y.indexOf(x) === 0 || x.indexOf(y) === 0)); }); }).length);
     return s;
   }
@@ -214,7 +214,7 @@
   function grpName(d) { if (/^1\d?$/.test(String(d))) return oneName(d); return LP && LP.nsName ? LP.nsName(d) : d; }
   function codeName(c) { c = String(c || ''); if (/^1\d\d$/.test(c)) return oneName(c); var n = LP && LP.nsName ? LP.nsName(c.slice(0, 3)) || LP.nsName(c.slice(0, 2)) : ''; return n; }
   function lineTitle(l) { return l.sys || codeName(l.code) || ''; }
-  function typeLabel(l) { return l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
+  function typeLabel(l) { return l.name ? l.name : l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
   /* ---------- the page ---------- */
   var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false;
@@ -222,9 +222,9 @@
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
-  function go(id) { open = id; openLine = null; editing = false; if (hashId() !== id) history.pushState({ dc: id }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
+  function go(id) { open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
   function back() { if (hashId() && history.state && history.state.dc) { history.back(); return; } open = null; history.replaceState(null, '', location.pathname + location.search); draw(); }
-  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; draw(); } });
+  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r) PageTabs.show('req', true); else if (id) PageTabs.show('doc', true); } draw(); } });
   function setTab(t) { tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
@@ -508,9 +508,63 @@
   /* 4-digit codes (JP 11:49): from your own NS 3451 list (Settings → Work), under their 3-digit code; they take the 3-digit code's types */
   function own4() { var m = LP && LP.ownMap ? LP.ownMap() : {}, o = {}; Object.keys(m).forEach(function (c) { if (/^\d{4}$/.test(c)) o[c] = m[c]; }); return o; }
   function kids4(c3) { return Object.keys(own4()).filter(function (c) { return c.indexOf(c3) === 0; }).sort(); }
+  /* documents a kind of project needs besides the NS 3456 types (JP 13:05 – "changing a facade, you need the ferdigattest and so
+     on"): per built-in project type, [code, NS 3456 type, Norwegian name, English name, what it is (nb), (en)] – this app's own
+     list from Norwegian practice (byggesak, TEK17, NEK 400, the wet-room rules), meant as a starting point to check */
+  var BYGG = [['124', 'A', 'Ferdigattest / midlertidig brukstillatelse', 'Completion certificate / temporary use permit', 'Fra kommunen når tiltaket er søknadspliktig', 'From the municipality when the work needs a permit'],
+    ['124', 'A', 'Ansvarsretter og gjennomføringsplan', 'Declarations of responsibility and implementation plan', 'Erklæringer om ansvarsrett (SØK, PRO, UTF, KONT) og siste gjennomføringsplan', 'Declarations of responsibility (applicant, design, works, control) and the latest implementation plan'],
+    ['124', 'A', 'Kontrollerklæringer', 'Control declarations', 'Fra prosjekterende og utførende, og uavhengig kontroll der det kreves', 'From design and works, and independent control where required']];
+  var MILJO = ['155', 'A', 'Miljøkartlegging og avfallsrapport', 'Environmental survey and waste report', 'Kartlegging av farlig avfall (PCB, asbest, bly) før riving og sluttrapport for avfallet', 'Survey of hazardous waste (PCB, asbestos, lead) before demolition and the final waste report'];
+  var XTRA = {
+    facade: BYGG.concat([['164', 'K', 'Fasadetegninger fra byggesaken', 'Facade drawings from the application', 'Fasadetegninger som godkjent av kommunen', 'Facade drawings as approved by the municipality'],
+      ['171', 'A', 'Brannteknisk dokumentasjon for fasaden', 'Fire documentation for the facade', 'Brannklasse for kledning og isolasjon, brannstopp i hulrom', 'Fire class of cladding and insulation, fire stops in cavities'], MILJO,
+      ['232', 'A', 'Fuktsikring og vindtetting', 'Moisture and wind protection', 'Dokumentasjon av vindsperre, lekting og luftespalte med bilder', 'Wind barrier, battens and ventilation gap documented with photos']]),
+    windows: [BYGG[0], ['164', 'K', 'Fasadetegninger fra byggesaken', 'Facade drawings from the application', 'Hvis vindusendringen er søknadspliktig', 'If the window change needs a permit'], MILJO,
+      ['141', 'A', 'Energidokumentasjon (U-verdier)', 'Energy documentation (U-values)', 'U-verdi for vinduer og dører etter TEK17', 'U-values of windows and doors after TEK17'],
+      ['171', 'A', 'Brannklassifiserte vinduer og dører', 'Fire-rated windows and doors', 'Dokumentasjon der vinduer eller dører skal ha brannklasse', 'Where windows or doors must be fire rated']],
+    roof: BYGG.concat([['143', 'A', 'Statiske beregninger (snølast)', 'Structural calculations (snow load)', 'Beregning av bæring og snølast for taket', 'Load-bearing and snow load for the roof'],
+      ['171', 'A', 'Brannteknisk dokumentasjon for taket', 'Fire documentation for the roof', 'Brannklasse for takbelegg og isolasjon', 'Fire class of roofing and insulation'], MILJO,
+      ['262', 'L', 'Bilder av taktekking og detaljer', 'Photos of roofing and details', 'Beslag, gjennomføringer, sluk og overganger før de dekkes', 'Flashings, penetrations, drains and joints before they are covered']]),
+    balcony: BYGG.concat([['143', 'A', 'Statiske beregninger for balkongene', 'Structural calculations for the balconies', 'Bæring, innfesting og rekkverk', 'Load-bearing, fixing and railings']]),
+    structure: [BYGG[1], BYGG[2], ['143', 'A', 'Statiske beregninger', 'Structural calculations', 'Beregninger for bæresystemet', 'Calculations for the load-bearing system']],
+    ground: [['133', 'A', 'Geoteknisk rapport', 'Geotechnical report', 'Grunnundersøkelser og geoteknisk vurdering', 'Ground investigation and geotechnical assessment'], BYGG[2],
+      ['217', 'L', 'Bilder av drenering og fuktsikring', 'Photos of drainage and damp-proofing', 'Før gjenfylling, med plassering', 'Before backfilling, with location']],
+    bath: [['255', 'A', 'Våtromsdokumentasjon – tettesjikt og sluk', 'Wet-room documentation – membrane and drain', 'Samsvarserklæring etter våtromsreglene, produktsertifikat for membransystemet', 'Declaration after the wet-room rules, product certificate for the membrane system'],
+      ['255', 'L', 'Bilder av membran og sluk', 'Photos of membrane and drain', 'Tatt før flislegging, med plassering', 'Taken before tiling, with location'],
+      ['433', 'A', 'Samsvarserklæring for el-arbeidet (NEK 400)', 'Declaration of conformity for the electrical work (NEK 400)', 'Med risikovurdering og kursfortegnelse', 'With risk assessment and circuit list'],
+      ['453', 'I', 'Varmekabler – målerapport og plassering', 'Heating cables – measurement report and layout', 'Isolasjonsmåling og tegning av plasseringen', 'Insulation measurement and a drawing of the layout'],
+      ['312', 'I', 'Trykkprøving av rør', 'Pressure test of pipes', 'Protokoll for trykkprøving', 'Pressure test protocol'], MILJO,
+      ['116', 'I', 'Overtakelsesprotokoll', 'Handover protocol', 'Signert ved overtakelse, med eventuelle mangler', 'Signed at handover, with any defects'], ['115', '', 'Garantidokumenter', 'Warranty documents', '', '']],
+    kitchen: [['433', 'A', 'Samsvarserklæring for el-arbeidet (NEK 400)', 'Declaration of conformity for the electrical work (NEK 400)', 'Med kursfortegnelse', 'With circuit list'], ['312', 'I', 'Trykkprøving av rør', 'Pressure test of pipes', 'Protokoll for trykkprøving', 'Pressure test protocol'],
+      ['364', 'E', 'Kjøkkenventilator – produktdata og montering', 'Cooker hood – product data and installation', '', ''], ['116', 'I', 'Overtakelsesprotokoll', 'Handover protocol', '', '']],
+    pods: [['613', 'A', 'Våtromsdokumentasjon for baderomsmodulene', 'Wet-room documentation for the bathroom pods', 'Produktdokumentasjon og samsvarserklæring fra leverandøren', 'Product documentation and declaration from the supplier'], ['433', 'A', 'Samsvarserklæring for el-tilkoblingen', 'Declaration for the electrical connection', '', '']],
+    inner: [MILJO, ['171', 'A', 'Brannteknisk dokumentasjon', 'Fire documentation', 'Der branncellebegrensende vegger, dører eller himlinger endres', 'Where fire-separating walls, doors or ceilings change'], ['291', 'L', 'Branntetting – bilder og oversikt', 'Fire stopping – photos and list', 'Merket og fotografert ved hver gjennomføring', 'Marked and photographed at each penetration']],
+    fire: BYGG.concat([['171', 'A', 'Brannkonsept «som bygget»', 'Fire concept as built', 'Oppdatert etter tiltaket', 'Updated after the work'], ['163', 'K', 'Branntegninger', 'Fire drawings', 'Brannceller, rømningsveier, slokkeutstyr', 'Fire cells, escape routes, extinguishing equipment'],
+      ['291', 'L', 'Branntetting – bilder og oversikt', 'Fire stopping – photos and list', 'Merket og fotografert ved hver gjennomføring', 'Marked and photographed at each penetration']]),
+    sprinkler: [['332', 'I', 'Overleveringsprotokoll og akseptansetest', 'Handover protocol and acceptance test', 'Funksjonstest, trykkprøving og vannforsyning', 'Function test, pressure test and water supply'], ['332', 'F', 'Godkjenning av installatør og anlegg', 'Approval of installer and system', 'Sertifisert installatør og eventuell tredjepartskontroll', 'Certified installer and any third-party control'],
+      ['332', 'C', 'Serviceavtale og kontrollbok', 'Service agreement and log book', '', ''], ['163', 'K', 'Sprinklertegninger «som bygget»', 'As-built sprinkler drawings', 'Med seksjonsventiler og soner', 'With section valves and zones'], ['171', 'A', 'Brannkonsept – sprinkler', 'Fire concept – sprinkler', 'At anlegget dekker det brannkonseptet krever', 'That the system covers what the fire concept requires']],
+    firealarm: [['542', 'I', 'Overleveringsrapport og funksjonstest', 'Handover report and function test', 'Test av detektorer, sirener og styringer', 'Test of detectors, sounders and controls'], ['542', 'F', 'Godkjenning av installatør og anlegg', 'Approval of installer and system', '', ''],
+      ['542', 'C', 'Kontrollbok og serviceavtale', 'Log book and service agreement', '', ''], ['542', 'K', 'Branntegninger med detektorer og soner', 'Fire drawings with detectors and zones', '', '']],
+    vent: [['360', 'I', 'Innreguleringsprotokoll', 'Commissioning protocol', 'Luftmengder per rom og aggregat', 'Air flows per room and unit'], ['360', 'H', 'Funksjonsbeskrivelse og styring', 'Function description and controls', 'Driftstider, temperaturer, SD-punkter', 'Running times, temperatures, BMS points'],
+      ['360', 'C', 'Filterliste og serviceplan', 'Filter list and service plan', '', ''], ['141', 'A', 'Energidokumentasjon (SFP, gjenvinning)', 'Energy documentation (SFP, heat recovery)', '', '']],
+    heating: [['350', 'A', 'Kuldemedium – samsvar og lekkasjekontroll', 'Refrigerant – declaration and leak check', 'Etter F-gassreglene', 'After the F-gas rules'], ['320', 'I', 'Innregulering og trykkprøving', 'Balancing and pressure test', '', '']],
+    el: [['433', 'A', 'Samsvarserklæring (NEK 400) med risikovurdering', 'Declaration of conformity (NEK 400) with risk assessment', '', ''], ['432', 'K', 'Kursfortegnelse og enlinjeskjema', 'Circuit list and single-line diagram', '', ''],
+      ['410', 'I', 'Måleprotokoll', 'Measurement protocol', 'Isolasjonsmåling, kontinuitet, jordfeilbrytere', 'Insulation, continuity, RCD tests']],
+    light: [['443', 'I', 'Nødlys – funksjonstest og kontrollbok', 'Emergency lighting – function test and log book', '', '']],
+    ev: [['436', 'A', 'Samsvarserklæring for ladeanlegget (NEK 400)', 'Declaration for the charging system (NEK 400)', '', ''], ['436', 'H', 'Lastbalansering – systembeskrivelse', 'Load balancing – system description', '', '']],
+    solar: [['471', 'A', 'Samsvarserklæring og melding til nettselskapet', 'Declaration and notice to the grid company', '', ''], ['471', 'K', 'Strengskjema og plassering', 'String diagram and layout', '', ''], ['171', 'A', 'Brannteknisk vurdering av solcelleanlegget', 'Fire assessment of the solar system', '', '']],
+    lift: [['621', 'A', 'Samsvarserklæring og CE-merking', 'Declaration of conformity and CE marking', '', ''], ['621', 'F', 'Sakkyndig kontroll før bruk', 'Expert inspection before use', '', ''], ['621', 'C', 'Serviceavtale', 'Service agreement', '', '']],
+    outdoor: [['161', '', 'Situasjonsplan og utomhusplan', 'Site plan and landscape plan', '', ''], ['731', 'K', 'VA-tegninger «som bygget»', 'As-built water and drainage drawings', '', '']],
+    outva: [['731', 'K', 'VA-tegninger «som bygget»', 'As-built water and drainage drawings', '', ''], ['731', 'I', 'Trykkprøving og filming av ledninger', 'Pressure test and CCTV of pipes', '', '']],
+    one: [], new: BYGG.concat([['141', 'A', 'Energiberegning', 'Energy calculation', '', ''], ['154', 'A', 'Energiattest', 'Energy certificate', '', ''], ['145', 'I', 'Tetthetsmåling', 'Airtightness test', '', ''], ['171', 'A', 'Brannkonsept «som bygget»', 'Fire concept as built', '', ''], ['191', '', 'FDV-dokumentasjon samlet (drifts- og vedlikeholdsplan)', 'Operation and maintenance plan', '', '']])
+  };
+  function xKey(x) { return x[0] + '|' + x[2]; }
+  var xsel = {}, xoff = {};
+  function xtras() { var seen = {}, out = []; Object.keys(xsel).forEach(function (id) { var ty = allTypes().filter(function (q) { return q.id === id; })[0], L = ty && ty.own ? ty.x || [] : XTRA[id] || []; L.forEach(function (x) { if (!seen[xKey(x)]) { seen[xKey(x)] = 1; out.push(x); } }); }); return out.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; }); }
+  function xLine(x) { var nbx = I18N.lang === 'nb', hint = nbx ? x[4] : x[5]; return { id: uid() + Math.random().toString(36).slice(2, 5), code: x[0], sys: codeName(x[0]) || '', name: (nbx ? x[2] : x[3]).slice(0, 120), type: x[1] ? typeName(x[1]) : '', t: x[1] || '', hint: hint || (x[1] ? defHint(x[1]) : '') || undefined, planned: '', note: '', st: 'missing', files: [], spec: 1 }; }
   function req() { var r = Fe.tools().dcreq; return r && r.codes ? r : null; }
   function ownTypes() { return Fe.list('dctypes'); }
-  function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true }; })); }
+  function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true, x: t.x || [] }; })); }
   /* codes to pick from: the checklist's, else your own NS 3451 list, else the codes the project types use */
   function pickCodes() {
     var r = req(), out = {};
@@ -577,8 +631,11 @@
     var h = '<div class="dc-pick">';
     h += r ? '<p class="muted dc-help">' + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></p>'
       : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (e.g. Boligbygg’s Vedlegg 2 – which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p><div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>';
-    h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-chips dc-wrap">' + allTypes().map(function (t) { return '<button type="button" class="dc-chip" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div>';
+    h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-chips dc-wrap">' + allTypes().map(function (t) { return '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div>';
     h += '<p class="muted dc-help">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</p>';
+    var XS = xtras();
+    if (XS.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-specific', 'Specific to this kind of project')) + '</h3><p class="muted dc-help">' + esc(k('ui.dc-specific-help', 'Documents the project needs besides the NS 3456 types – untick what doesn’t apply.')) + '</p><ul class="dc-xs">' + XS.map(function (x) {
+      return '<li><label><input type="checkbox" data-dcxtick="' + esc(xKey(x)) + '"' + (xoff[xKey(x)] ? '' : ' checked') + '><span><b>' + esc(x[0]) + '</b> ' + esc(I18N.lang === 'nb' ? x[2] : x[3]) + (x[1] ? ' <small class="dc-lt">' + esc(typeName(x[1])) + '</small>' : '') + '</span></label></li>'; }).join('') + '</ul>';
     h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-codes', 'Search code or system')) + '">';
     var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
     if (!Object.keys(own4()).length) h += '<p class="muted dc-help">' + esc(k('ui.dc-no4', 'For 4-digit codes (e.g. 3321), import your NS 3451 list in Settings → Work – they then show under their 3-digit code.')) + '</p>';
@@ -598,7 +655,7 @@
     return h + '</div>';
   }
   function pickCount() {
-    var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }), n = linesFor(cs).length;
+    var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }), n = linesFor(cs).length + xtras().filter(function (x) { return !xoff[xKey(x)]; }).length;
     return esc(k('ui.dc-pick-count', '{c} systems · {n} documents', { c: cs.length, n: n }));
   }
   function updPick() {
@@ -688,7 +745,7 @@
   function kravXlsx(p) {
     var rows = [[p.name + (p.no ? ' – ' + p.no : '')]].concat(SITE.filter(function (q) { return p[q[0]]; }).map(function (q) { return [{ bid: 'Bygningsnummer', bname: 'Bygningsnavn', pname: 'Eiendomsnavn', pid: 'Eiendomsnummer' }[q[0]], p[q[0]]]; }), [['Anleggsnummer', 'Anleggsnavn', 'Brannbok', 'Dokumenttype', 'Skal inneholde', 'Planlagt navngivning', 'Kommentar']]);
     var hdr = rows.length - 1, FIRE = /^(225|23[1-3]|244|263|291|33\d|443|542|546|733)$/;
-    (p.lines || []).slice().sort(lineOrder).forEach(function (l) { rows.push([l.code, lineTitle(l), FIRE.test(String(l.code).slice(0, 3)) ? 'Ja' : 'Nei', l.t ? l.t.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : l.type, hintText(l), '', l.opt ? 'Hvis kontraktsfestet' : '']); });
+    (p.lines || []).slice().sort(lineOrder).forEach(function (l) { rows.push([l.code, lineTitle(l), FIRE.test(String(l.code).slice(0, 3)) ? 'Ja' : 'Nei', l.t ? l.t.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : l.type, (l.name ? l.name + (l.hint ? ': ' : '') : '') + hintText(l), '', l.opt ? 'Hvis kontraktsfestet' : '']); });
     var col = function (i) { return String.fromCharCode(65 + i); };
     var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="14" customWidth="1"/><col min="2" max="2" width="38" customWidth="1"/><col min="3" max="3" width="10" customWidth="1"/><col min="4" max="4" width="22" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/><col min="6" max="6" width="38" customWidth="1"/><col min="7" max="7" width="30" customWidth="1"/></cols><sheetData>' +
       rows.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return v === '' ? '' : '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === 0 || i === hdr ? ' s="1"' : '') + '><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; }).join('') + '</row>'; }).join('') + '</sheetData></worksheet>';
@@ -791,10 +848,14 @@
     if ((b = t.closest('[data-drdel]'))) { var did = b.dataset.drdel, allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])); var t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== did; }); Fe.saveTools(t9); rback();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); return; }
     if (t.closest('[data-drxlsx]')) { var px = krav(ropen); if (!px) return; var fx = new File([kravXlsx(px)], fileName(px, 'Dokumentkrav', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fx); return; }
-    if (t.closest('[data-drstart]')) { var ps = krav(ropen); if (!ps) return; var nid = uid(), tt2 = Fe.tools();
+    if (t.closest('[data-drstart]')) { var ps = krav(ropen); if (!ps) return; var nid = uid(), tt2 = Fe.tools(), had = (tt2.dctl || []).filter(function (x) { return x && x.krav === ps.id; })[0];
+      if (had) {   /* started before: open that one and add what is new in the requirements (JP 13:05 – a second tap made a second project) */
+        var add0 = 0; saveP(had.id, function (p) { var hv = {}; (p.lines || []).forEach(function (l) { hv[l.code + '|' + l.t + '|' + (l.name || '')] = 1; }); (ps.lines || []).forEach(function (l, i) { if (!hv[l.code + '|' + l.t + '|' + (l.name || '')]) { add0++; p.lines.push(Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' })); } }); ['bid', 'bname', 'pname', 'pid', 'no'].forEach(function (f) { if (ps[f]) p[f] = ps[f]; }); rematch(p); });
+        if (add0) toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: add0 })));
+        rpicking = false; if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); setTab('docs'); go(had.id); return; }
       tt2.dctl = (tt2.dctl || []).concat([{ id: nid, name: ps.name, no: ps.no || '', bid: ps.bid || '', bname: ps.bname || '', pname: ps.pname || '', pid: ps.pid || '', trade: ps.type || '', made: new Date().toISOString(), planName: k('ui.doc-req', 'Document requirements') + ': ' + ps.name, planAt: today(), krav: ps.id,
         lines: (ps.lines || []).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }), files: [] }]); Fe.saveTools(tt2);
-      ropen = null; rpicking = false; history.replaceState(null, '', location.pathname + location.search); if (window.PageTabs && PageTabs.show) PageTabs.show('doc'); setTab('docs'); go(nid); return; }
+      rpicking = false; if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); setTab('docs'); go(nid); return; }
     if ((b = t.closest('[data-drpdf]'))) {
       if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
       var pp = krav(ropen); if (!pp || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
@@ -808,12 +869,14 @@
     }
     if (t.closest('[data-dcnew]')) { adding = true; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
     if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; if (rpicking && ropen && krav(ropen) && !(krav(ropen).lines || []).length) { rpicking = false; rback(); return; } rpicking = false; draw(); return; }
-    if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; draw(); window.scrollTo(0, 0); return; }
-    if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; lastType = ty.id === 'new' ? '' : ty.name; var CC = pickCodes();
+    if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; xsel = {}; xoff = {}; draw(); window.scrollTo(0, 0); return; }
+    if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; lastType = ty.id === 'new' ? '' : ty.name; xsel[ty.id] = true; var CC = pickCodes();
       (ty.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req() || /^1/.test(c); }) : ty.codes.split(' ')).forEach(function (c) { if (CC[c]) ticks[c] = true; }); var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
     if ((b = t.closest('[data-dcmake]')) && b.dataset.dcmake === 'req') {
-      var cr = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cr.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
-      var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); addr = nl.length; p.lines = (p.lines || []).concat(nl); if (lastType && !p.type) p.type = lastType; }, 'dckrav');
+      var cr = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cr.length && !xtras().length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
+      var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); (p.lines || []).forEach(function (l) { if (l.name) have[l.code + '|' + l.name] = 1; });
+        xtras().forEach(function (x) { var xl = xLine(x); if (!xoff[xKey(x)] && !have[xl.code + '|' + xl.name]) { have[xl.code + '|' + xl.name] = 1; nl.push(xl); } }); addr = nl.length; p.lines = (p.lines || []).concat(nl); if (lastType && !p.type) p.type = lastType; }, 'dckrav');
+      xsel = {}; xoff = {};
       rpicking = false; ticks = {}; toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: addr }))); draw(); window.scrollTo(0, 0); return;
     }
     if (t.closest('[data-dcmake]')) {
@@ -871,6 +934,7 @@
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
     if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }
     if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
+    if (t.dataset.dcxtick) { xoff[t.dataset.dcxtick] = !t.checked; updPick(); return; }
     if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }
@@ -888,8 +952,8 @@
     var f = e.target; if (!f.matches) return;
     if (f.matches('form[data-dcpaste]')) { e.preventDefault(); var nn = namesText(f.t.value); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } pasting = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); importFiles(f.dataset.dcpaste, [], nn); return; }
     if (f.matches('form[data-dredit]')) { e.preventDefault(); var ev = siteRead(f, { name: f.name.value.trim().slice(0, 120) || 'Project', no: f.no.value.trim().slice(0, 40) }); saveP(ropen, function (p) { Object.assign(p, ev); }, 'dckrav'); redit = false; document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
-    if (f.matches('form[data-drform]')) { e.preventDefault(); var rn = f.name.value.trim().slice(0, 120); if (!rn) return; var rid = uid(), t11 = Fe.tools(); t11.dckrav = (t11.dckrav || []).concat([siteRead(f, { id: rid, name: rn, no: f.no.value.trim().slice(0, 40), made: new Date().toISOString(), lines: [] })]); Fe.saveTools(t11); radding = false; f.name.blur(); ticks = {}; lastType = ''; rgo(rid); return; }
-    if (f.matches('form[data-dctsave]')) { e.preventDefault(); var tn = f.n.value.trim().slice(0, 60), cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!tn || !cs.length) return; var t7 = Fe.tools(); t7.dctypes = (t7.dctypes || []).concat([{ id: uid(), name: tn, codes: cs.sort() }]); Fe.saveTools(t7); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dc-type-saved', 'Saved as a project type'))); f.n.blur(); draw(); return; }
+    if (f.matches('form[data-drform]')) { e.preventDefault(); var rn = f.name.value.trim().slice(0, 120); if (!rn) return; var rid = uid(), t11 = Fe.tools(); xsel = {}; xoff = {}; t11.dckrav = (t11.dckrav || []).concat([siteRead(f, { id: rid, name: rn, no: f.no.value.trim().slice(0, 40), made: new Date().toISOString(), lines: [] })]); Fe.saveTools(t11); radding = false; f.name.blur(); ticks = {}; lastType = ''; rgo(rid); return; }
+    if (f.matches('form[data-dctsave]')) { e.preventDefault(); var tn = f.n.value.trim().slice(0, 60), cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!tn || (!cs.length && !xtras().length)) return; var t7 = Fe.tools(); t7.dctypes = (t7.dctypes || []).concat([{ id: uid(), name: tn, codes: cs.sort(), x: xtras().filter(function (x) { return !xoff[xKey(x)]; }) }]); Fe.saveTools(t7); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dc-type-saved', 'Saved as a project type'))); f.n.blur(); draw(); return; }
     if (f.matches('form[data-dcaddl]')) { e.preventDefault(); var code = normCode(f.code.value), tl = f.t.value, nm = f.name.value.trim().slice(0, 160), aid = f.dataset.dcaddl, akey = /^r:/.test(aid) ? 'dckrav' : 'dctl'; aid = aid.replace(/^r:/, ''); if (!code) return;
       saveP(aid, function (p) { var q = req() && req().codes[code.slice(0, 3)]; p.lines = (p.lines || []).concat([{ id: uid(), code: code, sys: nm || (q && q.n) || codeName(code) || '', type: tl ? tl.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: tl, hint: tl ? tl.split('').map(function (x) { var v = q && q.ex && q.ex[x] || defHint(x); return v ? x + ': ' + v : ''; }).filter(Boolean).join('\n') || undefined : undefined, planned: '', note: '', st: 'missing', files: [], hand: 1 }]); if (akey === 'dctl') rematch(p); }, akey);
       f.reset(); document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }

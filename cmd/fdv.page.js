@@ -443,17 +443,31 @@
           cuts.push([st, end]); st = end;
           while (st < total && !atoms.some(function (a) { return a[1] > st; })) st = total;
         }
-        return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
-          var S = cv.width / doc.offsetWidth, PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true });
-          cuts.forEach(function (c, i) {
-            if (i) pdf.addPage();
-            var h = Math.max(1, Math.round((c[1] - c[0]) * S)), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = h;
-            var g = pc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, pc.width, h); g.drawImage(cv, 0, Math.round(c[0] * S), cv.width, h, 0, 0, cv.width, h);
-            pdf.addImage(pc.toDataURL('image/jpeg', .9), 'JPEG', 14, 14, 182, (c[1] - c[0]) / MM, undefined, 'FAST');
-            pdf.setDrawColor(213, 218, 224); pdf.setLineWidth(.2); pdf.line(14, 284, 196, 284);
-            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(110, 118, 128);
-            pdf.text(foot.replace(/\u00ad/g, ''), 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
+        /* drawn a few pages at a time (JP 13:05 – a long report stopped half way on the iPhone: Safari draws nothing past ~16 million
+           pixels in one picture, so one picture of the whole report came out blank at the bottom) */
+        var chunks = [], cur = null;
+        cuts.forEach(function (c, i) { if (!cur || c[1] - cur.a > 2400) { cur = { a: c[0], b: c[1], ix: [] }; chunks.push(cur); } cur.b = c[1]; cur.ix.push(i); });
+        var PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true }), W0 = doc.offsetWidth;
+        return chunks.reduce(function (pr, ch) {
+          return pr.then(function () {
+            var H = Math.ceil(ch.b - ch.a);
+            return window.html2canvas(box, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
+              onclone: function (d) { var bx = d.querySelector('.rp-pdfbox'), ar = bx && bx.firstElementChild; if (!ar) return; bx.style.height = H + 'px'; bx.style.overflow = 'hidden'; ar.style.setProperty('margin-top', (-ch.a) + 'px', 'important'); } }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
+              var S = cv.width / W0;
+              ch.ix.forEach(function (i) {
+                var c = cuts[i];
+                if (i) pdf.addPage();
+                var h = Math.max(1, Math.round((c[1] - c[0]) * S)), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = h;
+                var g = pc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, pc.width, h); g.drawImage(cv, 0, Math.round((c[0] - ch.a) * S), cv.width, h, 0, 0, cv.width, h);
+                pdf.addImage(pc.toDataURL('image/jpeg', .9), 'JPEG', 14, 14, 182, (c[1] - c[0]) / MM, undefined, 'FAST');
+                pdf.setDrawColor(213, 218, 224); pdf.setLineWidth(.2); pdf.line(14, 284, 196, 284);
+                pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(110, 118, 128);
+                pdf.text(foot.replace(/­/g, ''), 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
+              });
+              cv.width = cv.height = 0;
+            });
           });
+        }, Promise.resolve()).then(function () {
           box.remove();
           var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length;
           return file;
