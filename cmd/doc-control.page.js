@@ -217,7 +217,7 @@
   function typeLabel(l) { return l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
   /* ---------- the page ---------- */
-  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false;
+  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false;
   try { quick = sessionStorage.getItem('dash.dcQuick') === '1'; } catch (e) {}
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
@@ -267,15 +267,16 @@
     return Object.keys(g).sort().map(function (d) { return [d, g[d]]; });
   }
   function planBtns(p) {
-    return '<div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc((p.lines || []).length ? k('ui.dc-plan-again', 'Import the plan again') : k('ui.dc-plan-import', 'Import document plan')) +
+    return '<div class="dc-facts"><button type="button" class="pill-btn" data-dcpick><i class="bi bi-ui-checks"></i> ' + esc((p.lines || []).length ? k('ui.dc-pick-more', 'Add from the checklist') : k('ui.dc-pick', 'Make the plan from the checklist')) + '</button><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc((p.lines || []).length ? k('ui.dc-plan-again', 'Import the plan again') : k('ui.dc-plan-import', 'Import document plan')) +
       '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden></label>' +
       '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-files-import', 'Import delivered files')) + '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden></label></div>';
   }
   function over(p) {
     if (editing) return projForm(p);
+    if (picking) return picker(p);
     var L = p.lines || [], c = counts(L), F = p.files || [], bad = F.filter(function (f) { return (f.iss || []).length; }).length, loose = F.filter(function (f) { return !f.line; }).length;
     var h = '';
-    if (!L.length) h += '<p class="muted dc-help">' + esc(k('ui.dc-plan-help', 'Import the document plan: an Excel file with a column for the system code (NS 3451, e.g. 332 or 332.101) and one for the document type (NS 3456 A–L) or the planned name – like Boligbygg’s Dokumentplan. One line per document.')) + '</p>';
+    if (!L.length) h += '<p class="muted dc-help">' + esc(k('ui.dc-plan-help2', 'Got a document plan from the project? Import it (Excel – a column for the NS 3451 code and one for the NS 3456 document type or the planned name). No plan? Make it from the checklist: pick the project type and tick the systems the project has.')) + '</p>';
     else {
       h += '<div class="kit-tiles dc-tiles">' + [['all', k('ui.dc-documents', 'Documents'), c.all], ['missing', stName('missing'), c.missing], ['recv', k('ui.dc-to-check', 'To check'), c.recv], ['done', k('ui.dc-approved', 'Approved'), c.done], ['rej', k('ui.dc-not-approved', 'Not approved'), c.rej]].map(function (t) {
         return '<button type="button" class="kit-tile dc-tile" data-dcfilt="' + t[0] + '"><span>' + esc(t[1]) + '</span><b>' + nf.format(t[2]) + '</b></button>'; }).join('') + '</div>' + bar(c) +
@@ -310,7 +311,7 @@
     var h = '<div class="dc-chips" role="tablist">' + chips.map(function (x) { return '<button type="button" class="dc-chip" aria-pressed="' + (x[0] === filt) + '" data-dcfilt="' + x[0] + '">' + esc(x[1]) + ' <b>' + x[2] + '</b></button>'; }).join('') + '</div>' +
       '<label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' +
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
-    if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>';
+    if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
     h += byGroup(shown).map(function (g) {
       return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].map(function (l) {
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
@@ -320,20 +321,27 @@
         if (quick && !isOpen) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + st(x[0])[3] + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
         if (isOpen) {
           h2 += '<div class="dc-ledit">' + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
+            (l.hint ? '<p class="dc-hint"><span class="muted">' + esc(k('ui.dc-should-contain', 'Should contain')) + ':</span> <span data-noi18n>' + esc(l.hint).replace(/\n/g, '<br>') + '</span></p>' : '') + (l.opt ? '<p class="muted dc-pnote">' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</p>' : '') +
             '<div class="dc-sts">' + ST.map(function (s) { return '<button type="button" class="dc-sb" style="--c:' + s[3] + '" aria-pressed="' + (l.st === s[0]) + '" data-dcst="' + esc(l.id) + ':' + s[0] + '"><i class="bi bi-' + s[4] + '"></i> ' + esc(k(s[1], s[2])) + '</button>'; }).join('') + '</div>' +
             '<textarea class="dc-ctext" data-dccmt="' + esc(l.id) + '" rows="2" maxlength="1000" placeholder="' + esc(k('ui.dc-comment-ph', 'Comment to the contractor, e.g. Missing the signed declaration')) + '">' + esc(l.cmt || '') + '</textarea>' +
             (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li>' + (f.nf ? '<span class="dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span>' : '<button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>') + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
-            (looseFiles(p).length ? '<select class="dc-link" data-dclink="' + esc(l.id) + '"><option value="">' + esc(k('ui.dc-link-file', 'Link a file that wasn’t matched …')) + '</option>' + looseFiles(p).map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.name) + '</option>'; }).join('') + '</select>' : '') + '</div>';
+            (looseFiles(p).length ? '<select class="dc-link" data-dclink="' + esc(l.id) + '"><option value="">' + esc(k('ui.dc-link-file', 'Link a file that wasn’t matched …')) + '</option>' + looseFiles(p).map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.name) + '</option>'; }).join('') + '</select>' : '') +
+            '<div class="dc-lrm"><button type="button" class="text-btn dc-del" data-dcldel="' + esc(l.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-remove-line', 'Remove the line')) + '</button></div></div>';
         }
         return h2 + '</li>';
       }).join('') + '</ul>';
     }).join('');
-    return h;
+    return h + addLineForm(p);
+  }
+  function addLineForm(p) {
+    var o = [['', k('ui.dc-type-any', 'Document type …')]].concat(TYPES.map(function (t) { return [t[0], t[0] + ' ' + typeName(t[0])]; })).concat([['BC', 'B, C ' + typeName('B') + ', ' + typeName('C')]]);
+    return '<form class="dc-addl" data-dcaddl="' + esc(p.id) + '"><h3 class="fdv-h">' + esc(k('ui.dc-add-line', 'Add a line')) + '</h3><div class="dc-addr"><input name="code" inputmode="decimal" maxlength="7" placeholder="' + esc(k('ui.dc-code', 'Code')) + '" required><select name="t">' + o.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select></div>' +
+      '<input name="name" maxlength="160" placeholder="' + esc(k('ui.dc-add-line-ph', 'What it is, e.g. Samsvarserklæring membran')) + '"><button type="submit" class="text-btn"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.add', 'Add')) + '</button></form>';
   }
   function looseFiles(p) { return (p.files || []).filter(function (f) { return !f.line; }); }
   function lineOf(p, id) { return (p.lines || []).filter(function (l) { return l.id === id; })[0]; }
   function files(p) {
-    var F = (p.files || []).slice(), h = planBtns(p).replace('<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i>', '<label class="pill-btn dc-file" hidden><i class="bi bi-file-earmark-spreadsheet"></i>');
+    var F = (p.files || []).slice(), h = planBtns(p).replace('<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i>', '<label class="pill-btn dc-file" hidden><i class="bi bi-file-earmark-spreadsheet"></i>').replace('data-dcpick>', 'data-dcpick hidden>');
     h = h.replace('</div>', '<label class="pill-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import', 'Import a list of names')) + '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden></label>' +
       '<button type="button" class="pill-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></div>');
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
@@ -386,12 +394,147 @@
 
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
-    var ae = document.activeElement; if (ae && el.contains(ae) && ae.matches('textarea[data-dccmt], .dc-pform input, .dc-paste textarea')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && el.contains(ae) && ae.matches('textarea[data-dccmt], .dc-pform input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq]')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     document.body.classList.toggle('dc-full', !!p);
     el.innerHTML = p ? full(p) : list();
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
+  }
+
+  /* ---------- the requirements checklist and project types (JP 2026-11-14) ----------
+     The checklist (e.g. Boligbygg's "Sjekkliste for leveranse av FDVU-dokumentasjon", Vedlegg 2) says which NS 3456 types each
+     3-digit NS 3451 code needs, with examples. It is imported once and kept in your encrypted data (dash.tools.dcreq) – never in
+     the code: it is the client's document, built on the standard. A project type is a set of codes to tick in one go: the
+     built-in ones below (only NS 3451 code numbers), and your own (dash.tools.dctypes). */
+  var PTYPES = [
+    ['new', 'New building – everything', 'Nybygg – alt', '*'],
+    ['bath', 'Bathroom renovation', 'Rehabilitering av bad', '242 244 246 253 255 256 274 291 312 314 315 316 322 324 362 364 411 412 433 442 453'],
+    ['kitchen', 'Kitchen renovation', 'Rehabilitering av kjøkken', '242 246 255 256 273 312 314 315 362 364 411 433 442'],
+    ['pods', 'Prefabricated bathrooms', 'Prefabrikkerte bad', '613 312 314 315 362 364 433 442 453'],
+    ['inner', 'Interior refurbishment', 'Innvendig oppussing', '242 243 244 246 253 255 256 257 275 291 442'],
+    ['floor', 'Floors', 'Gulv', '252 253 254 255'],
+    ['facade', 'Facade renovation', 'Fasaderehabilitering', '231 232 233 234 235 236 237 238 239 265 284 287'],
+    ['windows', 'Windows and doors', 'Vinduer og dører', '234 235 236 237 238 244'],
+    ['roof', 'Roof', 'Tak', '261 262 263 264 265 266 267 268 269 413'],
+    ['balcony', 'Balconies', 'Balkonger', '282 284 286 287 288'],
+    ['stairs', 'Stairs and railings', 'Trapper og rekkverk', '281 282 283 287'],
+    ['structure', 'Load-bearing structure', 'Bærende konstruksjoner', '221 222 223 224 225 226'],
+    ['ground', 'Groundwork, foundations and drainage', 'Grunnarbeid, fundamenter og drenering', '211 212 213 214 215 216 217 218'],
+    ['fixed', 'Fixed fittings', 'Fast inventar', '271 272 273 275 276 277'],
+    ['fire', 'Fire safety upgrade', 'Brannsikring', '225 244 263 291 330 332 337 443 542 546'],
+    ['sprinkler', 'Sprinkler', 'Sprinkler', '330 331 332 337 339 434'],
+    ['firealarm', 'Fire alarm', 'Brannalarm', '511 515 542 546'],
+    ['plumbing', 'Plumbing / pipe renewal', 'Sanitær / rørfornying', '310 311 312 314 315 316 319'],
+    ['heating', 'Heating and heat pumps', 'Varme og varmepumper', '320 321 322 324 325 326 329 350 356 359 434 562 563'],
+    ['vent', 'Ventilation', 'Ventilasjon', '360 361 362 364 365 366 369 434 562 563'],
+    ['cooling', 'Cooling', 'Kjøling', '350 351 352 353 370 372 374 375 376'],
+    ['gas', 'Gas and compressed air', 'Gass og trykkluft', '341 342 345 349'],
+    ['el', 'Electrical installation', 'Elektroinstallasjon', '410 411 412 413 414 431 432 433 434 442 443 452 453'],
+    ['light', 'Lighting and emergency lighting', 'Belysning og nødlys', '440 442 443 449 563'],
+    ['ev', 'EV charging', 'Elbillading', '411 412 431 432 436'],
+    ['solar', 'Solar panels', 'Solceller', '411 412 432 471'],
+    ['reserve', 'Reserve power and UPS', 'Reservekraft og UPS', '461 462 463'],
+    ['lift', 'Lifts', 'Heis', '620 621 625 434 546'],
+    ['security', 'Access control and security', 'Adgangskontroll og sikring', '515 521 534 543 553'],
+    ['tele', 'Telecom and data', 'Tele og data', '510 511 512 514 515 520 521 522 523 524 552'],
+    ['bms', 'Building automation (BMS)', 'Byggautomasjon (SD-anlegg)', '560 562 563 564 565'],
+    ['waste', 'Waste and central vacuum', 'Avfall og sentralstøvsuger', '651 652 653'],
+    ['outdoor', 'Outdoor areas', 'Utomhus', '711 712 721 722 725 744 761 762 763 771 772 773'],
+    ['outva', 'Outdoor pipes and connections', 'Utvendig VA og tilknytning', '712 714 726 727 731 733 783 784 785']
+  ];
+  function req() { var r = Fe.tools().dcreq; return r && r.codes ? r : null; }
+  function ownTypes() { return Fe.list('dctypes'); }
+  function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true }; })); }
+  /* codes to pick from: the checklist's, else your own NS 3451 list, else the codes the project types use */
+  function pickCodes() {
+    var r = req(), out = {};
+    if (r) { Object.keys(r.codes).forEach(function (c) { out[c] = { n: r.codes[c].n, t: r.codes[c].t || '' }; }); return out; }
+    var own = LP && LP.ownMap ? LP.ownMap() : {}; Object.keys(own).forEach(function (c) { if (/^\d{3}$/.test(c)) out[c] = { n: own[c], t: '' }; });
+    PTYPES.forEach(function (t) { if (t[3] !== '*') t[3].split(' ').forEach(function (c) { if (!out[c]) out[c] = { n: codeName(c) || '', t: '' }; }); });
+    return out;
+  }
+  function parseReq(sheets) {
+    var codes = {};
+    sheets.forEach(function (sh) {
+      var rows = sh.rows, hi = -1, L = {}, exCol = -1, mustCol = -1, maybeCol = -1;
+      for (var i = 0; i < Math.min(rows.length, 15) && hi < 0; i++) {
+        var m = {}; (rows[i] || []).forEach(function (c, j) { var x = String(c || '').trim().match(/^([A-L])\s*[-–]\s*\S/); if (x && !(x[1] in m)) m[x[1]] = j; });
+        if (Object.keys(m).length >= 5) { hi = i; L = m; }
+        (rows[i] || []).forEach(function (c, j) { c = String(c || ''); if (/eksempl/i.test(c)) exCol = j; if (/^\s*skal leveres\s*$/i.test(c)) mustCol = j; if (/kontraktsfest/i.test(c)) maybeCol = j; });
+        if (hi < 0 && (mustCol >= 0 || maybeCol >= 0)) hi = i;
+      }
+      if (hi < 0) return;
+      var first = Object.keys(L).length ? Math.min.apply(null, Object.keys(L).map(function (k) { return L[k]; })) : 99;
+      for (var r = hi + 1; r < rows.length; r++) {
+        var row = rows[r] || [], cj = -1;
+        for (var j = 0; j < Math.min(first, row.length); j++) if (/^\d{3}$/.test(String(row[j] || '').trim())) cj = j;
+        if (cj < 0) continue;
+        var code = String(row[cj]).trim(), name = '';
+        for (var q = cj + 1; q < Math.min(first, row.length + 1); q++) { var v = String(row[q] || '').trim(); if (v && !/^\d+$/.test(v)) { name = v; break; } }
+        if (!name || /skal ikke benyttes/i.test(name)) continue;
+        var t = Object.keys(L).sort().filter(function (k) { return String(row[L[k]] || '').trim(); }).join('');
+        var ex = {}, txt = exCol >= 0 ? String(row[exCol] || '') : '';
+        txt.split(/•\s*(?=[A-L]\s*:)/).forEach(function (part) { var mm = part.match(/^([A-L])\s*:\s*([\s\S]*)$/); if (mm && t.indexOf(mm[1]) >= 0) ex[mm[1]] = mm[2].replace(/\s+/g, ' ').trim().slice(0, 400); });
+        var opt = mustCol >= 0 && !String(row[mustCol] || '').trim() && maybeCol >= 0 && String(row[maybeCol] || '').trim() ? 1 : undefined;
+        if (!Object.keys(L).length && mustCol >= 0 && !String(row[mustCol] || '').trim() && !(maybeCol >= 0 && String(row[maybeCol] || '').trim())) continue;   /* the general sheet: only what should be delivered */
+        codes[code] = { n: name.slice(0, 120), t: t, ex: Object.keys(ex).length ? ex : undefined, opt: opt };
+      }
+    });
+    return codes;
+  }
+  function importReq(file) {
+    (/\.xls[xm]$/i.test(file.name) ? file.arrayBuffer().then(readBook) : file.text().then(readCsv)).then(function (sh) {
+      var c = parseReq(sh), n = Object.keys(c).length;
+      if (!n) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-req-none', 'No codes found – the checklist needs a column with the 3-digit code and columns “A - …” to “L - …” for the document types.'))); return; }
+      var t = Fe.tools(); t.dcreq = { name: file.name.slice(0, 120), at: today(), codes: c }; Fe.saveTools(t);
+      toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-req-read', 'Checklist saved: {n} codes', { n: n }))); draw();
+    }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); });
+  }
+  /* the lines for the ticked codes: one per document type, Drift and Vedlikehold together (as in the document plans) */
+  function linesFor(codesList) {
+    var r = req(), out = [];
+    codesList.slice().sort().forEach(function (c) {
+      var q = r && r.codes[c], t = q ? q.t || '' : '', groups = [];
+      if (!t) groups = [''];
+      else { var bc = t.replace(/[^BC]/g, ''); t.split('').forEach(function (x) { if (x === 'B' || x === 'C') { if (groups.indexOf(bc) < 0) groups.push(bc); } else groups.push(x); }); }
+      groups.forEach(function (g) {
+        out.push({ id: uid() + out.length, code: c, sys: (q && q.n || codeName(c) || '').slice(0, 160), type: g ? g.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: g,
+          hint: q && q.ex ? g.split('').map(function (x) { return q.ex[x] ? x + ': ' + q.ex[x] : ''; }).filter(Boolean).join('\n').slice(0, 800) || undefined : undefined, opt: q && q.opt, planned: '', note: '', st: 'missing', files: [] });
+      });
+    });
+    return out;
+  }
+  var ticks = {};
+  function picker(p) {
+    var r = req(), C = pickCodes(), keys = Object.keys(C).sort(), nbx = I18N.lang === 'nb';
+    var h = '<div class="dc-pick">';
+    h += r ? '<p class="muted dc-help">' + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></p>'
+      : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (e.g. Boligbygg’s Vedlegg 2 – which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p><div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>';
+    h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-chips dc-wrap">' + allTypes().map(function (t) { return '<button type="button" class="dc-chip" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div>';
+    h += '<p class="muted dc-help">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</p>';
+    h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-codes', 'Search code or system')) + '">';
+    var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
+    var lastMain = '';
+    Object.keys(groups).sort().forEach(function (g) {
+      if (g[0] !== lastMain) { lastMain = g[0]; h += '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3>'; }
+      var n = groups[g].filter(function (c) { return ticks[c]; }).length;
+      h += '<details class="dc-pg"' + (n ? ' open' : '') + '><summary><b>' + esc(g) + '</b> ' + esc(grpName(g) || '') + ' <span class="dc-pn" data-dcpn="' + g + '">' + (n ? n : '') + '</span></summary><ul>' + groups[g].map(function (c) {
+        return '<li data-dcpc="' + c + '"><label><input type="checkbox" data-dctick="' + c + '"' + (ticks[c] ? ' checked' : '') + '><span><b>' + c + '</b> <span data-noi18n>' + esc(C[c].n) + '</span>' + (C[c].t ? ' <small class="dc-lt">' + esc(C[c].t.split('').join(' ')) + '</small>' : '') + '</span></label></li>';
+      }).join('') + '</ul></details>';
+    });
+    h += '<div class="dc-pbar"><span data-dcpcount>' + pickCount() + '</span><button type="button" class="pill-btn" data-dcmake><i class="bi bi-check2"></i> ' + esc(k('ui.dc-make', 'Make the plan')) + '</button><button type="button" class="text-btn" data-dccancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div>';
+    h += '<form class="dc-tsave" data-dctsave><input name="n" maxlength="60" placeholder="' + esc(k('ui.dc-type-name', 'Save the ticks as a type, e.g. Bathroom, small')) + '"><button type="submit" class="text-btn"><i class="bi bi-bookmark-plus"></i> ' + esc(k('ui.save', 'Save')) + '</button></form>';
+    if (ownTypes().length) h += '<p class="muted dc-help">' + ownTypes().map(function (t) { return '<button type="button" class="text-btn" data-dctdel="' + esc(t.id) + '"><i class="bi bi-x"></i> ' + esc(t.name) + '</button>'; }).join(' ') + '</p>';
+    return h + '</div>';
+  }
+  function pickCount() {
+    var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }), n = linesFor(cs).length;
+    return esc(k('ui.dc-pick-count', '{c} systems · {n} documents', { c: cs.length, n: n }));
+  }
+  function updPick() {
+    var el = document.querySelector('[data-dcpcount]'); if (el) el.innerHTML = pickCount();
+    document.querySelectorAll('[data-dcpn]').forEach(function (s) { var g = s.dataset.dcpn, n = Object.keys(ticks).filter(function (c) { return ticks[c] && c.slice(0, 2) === g; }).length; s.textContent = n || ''; });
   }
 
   /* ---------- importing ---------- */
@@ -472,7 +615,18 @@
   document.addEventListener('click', function (e) {
     var b, t = e.target; if (!t.closest || !t.closest('#wkDocCtl')) return;
     if (t.closest('[data-dcnew]')) { adding = true; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
-    if (t.closest('[data-dccancel]')) { adding = false; editing = false; draw(); return; }
+    if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; draw(); return; }
+    if (t.closest('[data-dcpick]')) { picking = true; ticks = {}; setTab('over'); draw(); window.scrollTo(0, 0); return; }
+    if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; var CC = pickCodes();
+      (ty.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req(); }) : ty.codes.split(' ')).forEach(function (c) { if (CC[c]) ticks[c] = true; }); var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
+    if (t.closest('[data-dcmake]')) {
+      var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cs.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
+      var added = 0; saveP(open, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cs).filter(function (l) { return !have[l.code + '|' + l.t]; }); added = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.dc-from-checklist', 'From the checklist'); p.planAt = today(); } rematch(p); });
+      picking = false; ticks = {}; toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: added }))); setTab('docs'); filt = 'all'; draw(); window.scrollTo(0, 0); return;
+    }
+    if ((b = t.closest('[data-dctdel]'))) { var tid = b.dataset.dctdel, tt = Fe.tools(), old = JSON.parse(JSON.stringify(tt.dctypes || [])); tt.dctypes = (tt.dctypes || []).filter(function (x) { return x.id !== tid; }); Fe.saveTools(tt); draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-type-removed', 'Project type removed')), function () { var t5 = Fe.tools(); t5.dctypes = old; Fe.saveTools(t5); draw(); }); return; }
+    if ((b = t.closest('[data-dcldel]'))) { var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
+      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dcopen]'))) { go(b.dataset.dcopen); return; }
     if (t.closest('[data-dcback]')) { back(); return; }
     if ((b = t.closest('[data-dctab]'))) { setTab(b.dataset.dctab); openLine = null; editing = false; draw(); return; }
@@ -515,12 +669,16 @@
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl')) return;
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
+    if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }
+    if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
     if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }
     if (t.dataset.dcflink && t.value) { var f = t.dataset.dcflink, l = t.value; saveP(open, function (p) { link(p, l, f); }); draw(); return; }
   });
-  document.addEventListener('input', function (e) { var t = e.target; if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });
+  document.addEventListener('input', function (e) { var t = e.target;
+    if (t.matches && t.matches('[data-dcpq]')) { var qq = t.value.toLowerCase().trim(); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
+    if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });
   document.addEventListener('focusout', function (e) {
     var t = e.target; if (!t.matches || !t.matches('textarea[data-dccmt]')) return;
     var id = t.dataset.dccmt, v = t.value.trim().slice(0, 1000);
@@ -529,6 +687,10 @@
   document.addEventListener('submit', function (e) {
     var f = e.target; if (!f.matches) return;
     if (f.matches('form[data-dcpaste]')) { e.preventDefault(); var nn = namesText(f.t.value); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } pasting = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); importFiles(f.dataset.dcpaste, [], nn); return; }
+    if (f.matches('form[data-dctsave]')) { e.preventDefault(); var tn = f.n.value.trim().slice(0, 60), cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!tn || !cs.length) return; var t7 = Fe.tools(); t7.dctypes = (t7.dctypes || []).concat([{ id: uid(), name: tn, codes: cs.sort() }]); Fe.saveTools(t7); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dc-type-saved', 'Saved as a project type'))); f.n.blur(); draw(); return; }
+    if (f.matches('form[data-dcaddl]')) { e.preventDefault(); var code = normCode(f.code.value), tl = f.t.value, nm = f.name.value.trim().slice(0, 160); if (!code) return;
+      saveP(f.dataset.dcaddl, function (p) { var q = req() && req().codes[code.slice(0, 3)]; p.lines = (p.lines || []).concat([{ id: uid(), code: code, sys: nm || (q && q.n) || codeName(code) || '', type: tl ? tl.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: tl, hint: q && q.ex && tl ? tl.split('').map(function (x) { return q.ex[x] ? x + ': ' + q.ex[x] : ''; }).filter(Boolean).join('\n') || undefined : undefined, planned: '', note: '', st: 'missing', files: [], hand: 1 }]); rematch(p); });
+      f.reset(); document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
     if (!f.matches('form[data-dcpform]')) return; e.preventDefault();
     var v = { name: f.name.value.trim().slice(0, 120), no: f.no.value.trim().slice(0, 40), who: f.who.value.trim().slice(0, 120), trade: f.trade.value.trim().slice(0, 80), due: f.due.value };
     if (!v.name) return;
@@ -540,6 +702,6 @@
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   window.Vault.onUnlock(function () { setTimeout(draw, 80); });
-  window.DocCtl = { namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
+  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
   draw();
 })();

@@ -35,7 +35,13 @@ const book = zip([
   ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Generelt" sheetId="1" r:id="rId1"/><sheet name="3 - VVS" sheetId="2" r:id="rId2"/><sheet name="2 - Bygning" sheetId="3" r:id="rId3"/></sheets></workbook>'],
   ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Target="worksheets/sheet3.xml"/></Relationships>'],
   ['xl/worksheets/sheet1.xml', sheet(S1)], ['xl/worksheets/sheet2.xml', sheet(S3)], ['xl/worksheets/sheet3.xml', sheet(S2)]], true);
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-')), planF = path.join(dir, 'Made-up plan.xlsx'); fs.writeFileSync(planF, book);
+const RH = ['', '', '', 'NS3451:2022', 'Levert?', 'A - Kravoppnåelse', 'B - Drift ', 'C - Vedlikehold ', 'D - Identifikasjon', 'E - Produktinformasjon', 'F - Attestasjon', 'G - Bruksanvisning', 'H - Beskrivelse', 'I - Protokoll', 'K - Tegning', 'L - Bilde', 'Ansvarlig', 'Eksempler på dokumentasjon'];
+const RQ = [['3 VVS'], RH, ['3', '33', '330', 'Made-up fire general', '', '', '', '', '', '', '', 'x', 'x', '', '', '', '', '•G: Made-up user text \n•H: Made-up description'],
+  ['3', '33', '331', 'Made-up hose reels', '', 'x', '', '', '', '', '', '', '', '', '', '', '', ''], ['3', '33', '332', 'Made-up sprinkler', '', 'x', 'x', 'x ', '', '', '', '', '', '', '', '', '', '•A: Made-up coverage and marking \n•B: Made-up routines'],
+  ['3', '33', '338', '(skal ikke benyttes)', '', '', '', '', '', '', '', '', '', '', '', '', '', '']];
+const reqBook = zip([['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="3 VVS" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+  ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'], ['xl/worksheets/sheet1.xml', sheet(RQ.map(r => r.concat([]).slice(0, 18)))]], true);
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-')), planF = path.join(dir, 'Made-up plan.xlsx'); fs.writeFileSync(planF, book); const reqF = path.join(dir, 'Made-up checklist.xlsx'); fs.writeFileSync(reqF, reqBook);
 /* delivered files: two loose, three in a zip (one in a folder) */
 const f1 = path.join(dir, '332 SE Sprinkleranlegg.pdf'), f2 = path.join(dir, 'random scan 7.pdf'); fs.writeFileSync(f1, '%PDF-1.4 made up'); fs.writeFileSync(f2, '%PDF-1.4 made up');
 const zf = path.join(dir, 'Made-up delivery.zip');
@@ -43,6 +49,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
 (async () => {
   const { b, p } = await open(393);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const tap = async sel => { await p.waitForSelector(sel, { timeout: 8000 }); await p.evaluate(q => document.querySelector(q).click(), sel); };
   await p.evaluate(() => { const t = Features.tools(); t.dctl = []; Features.saveTools(t); });
   await go(p, 'work/', 2500);
   /* names on their own */
@@ -50,7 +57,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(JSON.stringify(nm) === JSON.stringify([['442', 'DA', 'doc', 'long'], ['332', 'K', 'drawing', ''], ['332', 'K', 'drawing', 'version'], ['', '', 'doc', 'nocode'], ['332', 'XX', 'doc', 'abbr'], ['332.101', 'SE', 'doc', ''], ['', '', 'doc', '']]), 'file names: code, document code, drawings, and the problems (long, version, no code, unknown code) ' + JSON.stringify(nm));
   check((await p.evaluate(() => ['Drift, Vedlikehold', 'E', 'Kravoppnåelse', 'Tegning', 'A, F'].map(DocCtl.letters).join())) === 'BC,E,A,K,AF', 'document types become NS 3456 letters');
   /* a new project */
-  await p.evaluate(() => document.querySelector('[data-dcnew]').click()); await sl(200);
+  await tap('[data-dcnew]'); await sl(200);
   await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up school'; f.no.value = 'P-123'; f.who.value = 'Made-up Sprinkler AS'; f.trade.value = 'Sprinkler'; f.requestSubmit(); }); await sl(500);
   const pr = await p.evaluate(() => ({ n: Features.list('dctl').length, full: document.body.classList.contains('dc-full'), hash: location.hash }));
   check(pr.n === 1 && pr.full && /^#dc=/.test(pr.hash), 'a new project opens on its own page (#dc=…) ' + JSON.stringify(pr));
@@ -68,7 +75,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(() => { const r = Features.list('dctl')[0], s = document.querySelector('select[data-dcflink]'); s.value = r.lines[3].id; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   check(await p.evaluate(() => { const r = Features.list('dctl')[0]; return r.lines[3].st === 'recv' && r.lines[3].files.length === 1 && r.files.every(f => f.line); }), 'a file that wasn\'t matched can be linked to a line by hand');
   /* statuses and a comment */
-  await p.evaluate(() => document.querySelector('[data-dctab="docs"]').click()); await sl(300);
+  await tap('[data-dctab="docs"]'); await sl(300);
   const ids = await p.evaluate(() => Features.list('dctl')[0].lines.map(l => l.id));
   await p.evaluate(id => document.querySelector('[data-dcline="' + id + '"]').click(), ids[0]); await sl(250);
   await p.evaluate(id => document.querySelector('[data-dcst="' + id + ':ok"]').click(), ids[0]); await sl(250);
@@ -79,32 +86,32 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(sts.st === 'ok,recv,rej,recv,recv,missing' && /version number/.test(sts.cmt), 'a line gets a status and a comment ' + JSON.stringify(sts));
   check(!sts.wide.length, 'nothing is wider than the phone ' + JSON.stringify(sts.wide));
   /* filters */
-  await p.evaluate(() => document.querySelector('[data-dcfilt="missing"]').click()); await sl(250);
+  await tap('[data-dcfilt="missing"]'); await sl(250);
   check((await p.evaluate(() => document.querySelectorAll('.dc-line').length)) === 1, 'the Missing filter shows only the missing line');
   /* overview */
-  await p.evaluate(() => document.querySelector('[data-dctab="over"]').click()); await sl(300);
+  await tap('[data-dctab="over"]'); await sl(300);
   const ov = await p.evaluate(() => ({ grp: [...document.querySelectorAll('.dc-grp .dc-gn')].map(e => e.textContent.trim()), fire: (document.querySelector('.dc-note') || {}).textContent || '', bar: document.querySelectorAll('.dc-bar i').length }));
   check(ov.grp.length === 2 && /^2/.test(ov.grp[0]) && /^3/.test(ov.grp[1]) && /Fire book: 1 of 4/.test(ov.fire) && ov.bar > 2, 'the overview shows each NS 3451 group with a bar and the fire book ' + JSON.stringify(ov));
   /* report + PDF */
-  await p.evaluate(() => document.querySelector('[data-dctab="report"]').click()); await sl(300);
+  await tap('[data-dctab="report"]'); await sl(300);
   const rp = await p.evaluate(() => { const d = document.querySelector('#wkDocCtl .rp-doc'); return { h2: [...d.querySelectorAll('h2')].map(h => h.textContent).join('|'), t: d.textContent }; });
   check(rp.h2 === '1 Summary|2 Missing documents|3 Not approved and comments|4 File names' && /235/.test(rp.t) && /Made-up: version number/.test(rp.t) && /random scan 7\.pdf/.test(rp.t), 'the report: summary, missing, not approved with the comment, and the file-name problems ' + JSON.stringify(rp.h2));
   const pdf = await p.evaluate(async () => { const r = Features.list('dctl')[0], f = await window.FdvPdf.html(document.querySelector('#wkDocCtl .rp-doc').innerHTML, 'Made-up foot', 'x.pdf'); const t = new TextDecoder().decode(new Uint8Array(await f.slice(0, 8).arrayBuffer())); return { pdf: t.slice(0, 5), pages: f._pages }; });
   check(pdf.pdf === '%PDF-' && pdf.pages >= 1, 'the report becomes a PDF on the device ' + JSON.stringify(pdf));
   /* importing the plan again keeps the statuses */
-  await p.evaluate(() => document.querySelector('[data-dctab="over"]').click()); await sl(300);
+  await tap('[data-dctab="over"]'); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);
   check((await p.evaluate(() => Features.list('dctl')[0].lines.map(l => l.st).join())) === 'ok,recv,rej,recv,recv,missing', 'importing the plan again keeps the statuses');
   /* names from the FDV system instead of files (2026-11-14): pasted, matched and checked the same way */
   check(JSON.stringify(await p.evaluate(() => DocCtl.namesText('Documents\n1. 336 DA Skumanlegg Made-up\n336 DA Skumanlegg Made-up\nnot a name\n235\tDV Kledning\n235 DV Kledning Made-up.pdf'))) === JSON.stringify(['336 DA Skumanlegg Made-up', '235 DV Kledning Made-up.pdf']), 'a pasted list keeps the document names (numbering and doubles removed)');
-  await p.evaluate(() => document.querySelector('[data-dctab="files"]').click()); await sl(300);
-  await p.evaluate(() => document.querySelector('[data-dcpastebtn]').click()); await sl(200);
+  await tap('[data-dctab="files"]'); await sl(300);
+  await tap('[data-dcpastebtn]'); await sl(200);
   await p.evaluate(() => { const f = document.querySelector('form[data-dcpaste]'); f.t.value = '235 DV Kledning Made-up\n999 Unknown thing'; f.requestSubmit(); }); await sl(800);
   const nmz = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { st: r.lines[5].st, nf: r.files.filter(f => f.nf).map(f => f.name + '|' + (f.line ? 'in' : 'out')).join(), shown: document.querySelectorAll('.dc-nf').length }; });
   check(nmz.st === 'recv' && nmz.nf === '235 DV Kledning Made-up|in,999 Unknown thing|out' && nmz.shown === 2, 'pasted names are matched to the plan (235 becomes Received) and shown as "In the FDV system" ' + JSON.stringify(nmz));
   /* quick check: buttons on each line, a second tap undoes */
-  await p.evaluate(() => document.querySelector('[data-dctab="docs"]').click()); await sl(300);
-  await p.evaluate(() => { document.querySelector('[data-dcfilt="all"]').click(); }); await sl(200);
+  await tap('[data-dctab="docs"]'); await sl(300);
+  await tap('[data-dcfilt="all"]'); await sl(200);
   await p.evaluate(() => { const c = document.querySelector('[data-dcquick]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   const lid = await p.evaluate(() => Features.list('dctl')[0].lines[5].id);
   const qk = await p.evaluate(async id => { const w = ms => new Promise(r => setTimeout(r, ms)), n = document.querySelectorAll('.dc-qk').length;
@@ -113,9 +120,33 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     const wide = [...document.querySelectorAll('.dc-qk *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length; return { n, a, b, wide }; }, lid);
   check(qk.n === 6 && qk.a === 'ok' && qk.b === 'recv' && !qk.wide, 'Quick check puts Approved / Not approved / Not relevant on every line; tapping again undoes it ' + JSON.stringify(qk));
   await p.evaluate(() => { const c = document.querySelector('[data-dcquick]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
+  /* no plan: make it from the checklist (2026-11-14) – a project type ticks its systems, one line per document type (B and C together), the examples as hints */
+  await tap('[data-dcback]'); await sl(500);
+  await tap('[data-dcnew]'); await sl(200);
+  await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up bathroom'; f.requestSubmit(); }); await sl(500);
+  await tap('[data-dcpick]'); await sl(300);
+  await (await p.$('input[data-dcreq]')).uploadFile(reqF); await sl(1000);
+  const rq = await p.evaluate(() => { const r = Features.tools().dcreq; return { n: Object.keys(r.codes).join(), t332: r.codes['332'].t, ex: r.codes['332'].ex, chips: document.querySelectorAll('[data-dcptype]').length }; });
+  check(rq.n === '330,331,332' && rq.t332 === 'ABC' && rq.ex.A === 'Made-up coverage and marking' && rq.chips >= 30, 'the checklist is read: codes, their NS 3456 types and the examples ("skal ikke benyttes" left out); the project types are offered ' + JSON.stringify(rq));
+  await tap('[data-dcptype="sprinkler"]'); await sl(300);
+  const pk = await p.evaluate(() => ({ ticked: [...document.querySelectorAll('[data-dctick]:checked')].map(c => c.dataset.dctick).join(), count: document.querySelector('[data-dcpcount]').textContent }));
+  check(pk.ticked === '330,331,332' && /3 systems · 5 documents/.test(pk.count), 'the Sprinkler type ticks its systems ' + JSON.stringify(pk));
+  await p.evaluate(() => { const c = document.querySelector('[data-dctick="331"]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(100);
+  await p.evaluate(() => { const f = document.querySelector('form[data-dctsave]'); f.n.value = 'Made-up type'; f.requestSubmit(); }); await sl(300);
+  await tap('[data-dcmake]'); await sl(500);
+  const mk = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t).join(), hint: r.lines.filter(l => l.code === '332' && l.t === 'BC')[0].hint, types: Features.tools().dctypes.map(t => t.name + ':' + t.codes.join(' ')).join(), tab: document.querySelector('.fdv-tabs [aria-selected="true"]').dataset.dctab }; });
+  check(mk.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines$/.test(mk.hint) && mk.types === 'Made-up type:330 332' && mk.tab === 'docs', 'Make the plan: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(mk));
+  /* a line by hand, and removing one */
+  await p.evaluate(() => { const f = document.querySelector('form[data-dcaddl]'); f.code.value = '274'; f.t.value = 'A'; f.name.value = 'Made-up membrane declaration'; f.requestSubmit(); }); await sl(400);
+  const id0 = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines[0].id);
+  await tap('[data-dcline="' + id0 + '"]'); await sl(250);
+  const hintShown = await p.evaluate(() => (document.querySelector('.dc-hint') || {}).textContent || '');
+  await tap('[data-dcldel="' + id0 + '"]'); await sl(400);
+  const ed = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines.map(l => l.code + ' ' + l.t + (l.sys ? ' ' + l.sys : '')).join());
+  check(/Made-up user text/.test(hintShown) && ed === '330 H Made-up fire general,332 A Made-up sprinkler,332 BC Made-up sprinkler,274 A Made-up membrane declaration', 'the hint shows on the line; a line is added by hand and one removed ' + JSON.stringify({ hintShown, ed }));
   /* back closes the project page */
-  await p.evaluate(() => document.querySelector('[data-dcback]').click()); await sl(500);
-  check(await p.evaluate(() => !document.body.classList.contains('dc-full') && !!document.querySelector('[data-dcopen]')), 'Back goes to the list of projects');
+  await tap('[data-dcback]'); await sl(500);
+  check(await p.evaluate(() => !document.body.classList.contains('dc-full') && document.querySelectorAll('[data-dcopen]').length === 2), 'Back goes to the list of projects');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });
   await b.close(); done();

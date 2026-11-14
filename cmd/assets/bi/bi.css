@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1186 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?2ee056d534") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1190 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?aa1e8246ec") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -124,6 +124,10 @@
 .bi-book::before{content:"\f194"}
 .bi-book-fill::before{content:"\f192"}
 .bi-book-half::before{content:"\f193"}
+.bi-bookmark-check::before{content:"\f196"}
+.bi-bookmark-check-fill::before{content:"\f195"}
+.bi-bookmark-plus::before{content:"\f19d"}
+.bi-bookmark-plus-fill::before{content:"\f19c"}
 .bi-box::before{content:"\f1c8"}
 .bi-box-arrow-down::before{content:"\f1b9"}
 .bi-box-arrow-down-left::before{content:"\f1b7"}

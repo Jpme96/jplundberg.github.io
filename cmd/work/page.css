@@ -232,3 +232,23 @@ body.dc-full #wkDocCtl { display: block !important; }
 .dc-paste textarea { width: 100%; font-size: 16px; }
 @media (max-width: 480px) { .dc-qk { padding-left: 0; } }
 .dc-quick input { width: auto; flex: 0 0 auto; margin: 0; }
+.dc-wrap { flex-wrap: wrap; overflow: visible; }
+.dc-pg { border-bottom: 1px solid rgba(var(--ink-rgb), .08); }
+.dc-pg summary { padding: 9px 0; cursor: pointer; font-size: 14px; }
+.dc-pn { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 9px; background: var(--blue); color: #fff; font-size: 12px; text-align: center; }
+.dc-pn:empty { display: none; }
+.dc-pg ul { list-style: none; margin: 0 0 8px; padding: 0; }
+.dc-pg li label { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 13.5px; cursor: pointer; }
+.dc-pg li input { width: auto; flex: 0 0 auto; margin: 2px 0 0; }
+.dc-lt { color: var(--muted); letter-spacing: .5px; }
+.dc-pbar { position: sticky; bottom: calc(86px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--bg-solid, var(--card)); box-shadow: 0 2px 12px rgba(0, 0, 0, .25); z-index: 2; }
+.dc-pbar span { flex: 1 1 100%; font-size: 13px; color: var(--muted); }
+.dc-tsave, .dc-addl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.dc-tsave input { flex: 1; min-width: 0; font-size: 16px; }
+.dc-addl h3 { flex: 1 1 100%; margin-bottom: 0; }
+.dc-addr { display: flex; gap: 8px; flex: 1 1 100%; }
+.dc-addr input { width: 90px; flex: 0 0 auto; font-size: 16px; }
+.dc-addr select { flex: 1; min-width: 0; font-size: 14px; }
+.dc-addl > input { flex: 1 1 100%; font-size: 16px; }
+.dc-hint { font-size: 13px; margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+.dc-lrm { text-align: right; }
