@@ -57,6 +57,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const nm = await p.evaluate(() => ['442 DA taklampe korridor C20 Glamox.pdf', '11621-H02-V-332-P-01 – Rørplan.dwg', '11621-H02-V-332-P-01 – Rørplan rev B.pdf', 'Rørplan.pdf', '332 XX Sprinkler.pdf', '332.101 SE Sprinkler.pdf', 'IMG_0001.jpg'].map(n => { const r = DocCtl.parseName(n); return [r.code, r.abbr, r.kind, r.issues.map(i => i[1]).join('+')]; }));
   check(JSON.stringify(nm) === JSON.stringify([['442', 'DA', 'doc', 'long'], ['332', 'K', 'drawing', ''], ['332', 'K', 'drawing', 'version'], ['', '', 'doc', 'nocode'], ['332', 'XX', 'doc', 'abbr'], ['332.101', 'SE', 'doc', ''], ['', '', 'doc', '']]), 'file names: code, document code, drawings, and the problems (long, version, no code, unknown code) ' + JSON.stringify(nm));
   check((await p.evaluate(() => ['Drift, Vedlikehold', 'E', 'Kravoppnåelse', 'Tegning', 'A, F'].map(DocCtl.letters).join())) === 'BC,E,A,K,AF', 'document types become NS 3456 letters');
+  /* the Team card shows under Today only (JP 20:38: Team links on every Work tab) */
+  const tmv = await p.evaluate(async () => { const out = {}; for (const t of ['today', 'doc', 'req', 'insp']) { PageTabs.show(t); await new Promise(r => setTimeout(r, 60)); const el = document.getElementById('wkTeam'); out[t] = !!el && !el.hidden && el.offsetHeight > 0; } PageTabs.show('doc'); return out; });
+  check(tmv.today && !tmv.doc && !tmv.req && !tmv.insp, 'the Team card is only under Today ' + JSON.stringify(tmv));
   /* a new project */
   await tap('[data-dcnew]'); await sl(200);
   await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up school'; f.no.value = 'P-123'; f.who.value = 'Made-up Sprinkler AS'; f.trade.value = 'Sprinkler'; f.requestSubmit(); }); await sl(500);
