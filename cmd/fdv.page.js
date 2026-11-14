@@ -282,7 +282,7 @@
     var pri = [3, 2, 1, 0].map(function (p) { return row(prioName(p), sum(function (x) { return prio(x) === p; })); }).join('') + row(I18N.k('ui.fdv-prio-unset', 'No KG set'), sum(function (x) { return prio(x) == null; }));
     var grp = NS.filter(function (q) { return q[0].length === 1; }).map(function (q) { return row(q[0] + ' ' + nsName(q[0]), sum(function (x) { return (x.code || '')[0] === q[0]; })); }).join('') + row(I18N.k('ui.ns-no-code', '– No code –'), sum(function (x) { return !x.code; }));
     var head = function (t) { return '<table class="rp-ctab"><thead><tr><th>' + esc(t) + '</th><th class="n">kr</th><th class="n">%</th></tr></thead><tbody>'; };
-    return '<h3>' + esc(I18N.k('ui.fdv-cost-summary', 'Cost summary')) + '</h3><p class="rp-p">' + esc(I18N.k('ui.fdv-cost-line', 'Estimated cost of the measures: {t} in total, of which {s} now or within a year and {h} for high-priority findings. {n} findings carry an estimate.', { t: kr(cost), s: kr(soon), h: kr(hi), n: withC.length })) +
+    return '<h3>' + esc(I18N.k('ui.fdv-cost-summary', 'Cost summary')) + '</h3><p class="rp-p">' + esc([I18N.k('ui.fdv-cost-l1', 'Estimated cost of the measures: {t} in total.', { t: kr(cost) }), soon ? I18N.k('ui.fdv-cost-l2', '{s} of it now or within a year.', { s: kr(soon) }) : '', hi ? I18N.k('ui.fdv-cost-l3', '{h} for high-priority findings.', { h: kr(hi) }) : '', withC.length === 1 ? I18N.k('ui.fdv-cost-l4a', 'One finding carries an estimate.') : I18N.k('ui.fdv-cost-l4', '{n} findings carry an estimate.', { n: withC.length })].filter(Boolean).join(' '))   /* no "0 kr now" parts */ +
       (noC ? ' ' + esc(I18N.k('ui.fdv-cost-missing', '{n} findings with TG 2–3 have no estimate yet.', { n: noC })) : '') + '</p>' +
       '<div class="rp-ctabs">' + head(I18N.k('ui.when', 'When')) + when + '</tbody></table>' + head(I18N.k('ui.priority', 'Priority')) + pri + '</tbody></table>' + head(I18N.k('ui.building-part-ns-3451', 'Building part (NS 3451)')) + grp + '</tbody></table></div>' +
       '<p class="rp-cost">' + esc(I18N.k('ui.total-cost-estimate', 'Total cost estimate')) + ': <b>' + kr(cost) + '</b></p><p class="rp-small">' + esc(I18N.k('ui.fdv-cost-note', 'Estimates are rough and meant for planning; get prices before ordering work.')) + '</p>';
@@ -417,7 +417,7 @@
           cuts.push([st, end]); st = end;
           while (st < total && !atoms.some(function (a) { return a[1] > st; })) st = total;
         }
-        return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: W + 40 }).then(function (cv) {
+        return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
           var S = cv.width / doc.offsetWidth, PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true });
           var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) : '', r.building].filter(Boolean).join('  ·  ');
           cuts.forEach(function (c, i) {
