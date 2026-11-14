@@ -272,6 +272,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* back closes the project page */
   await tap('[data-dcback]'); await sl(500);
   check(await p.evaluate(() => !document.body.classList.contains('dc-full') && document.querySelectorAll('[data-dcopen]').length === 2), 'Back goes to the list of projects');
+  /* drawing names after BBY's template (JP 23:13): a correct one passes, a broken one says which part is wrong */
+  const tg = await p.evaluate(() => ['11624-T01-A-261-P-01-Plantegning', '11624-H04-234-P-01-Plantegning', '11624-000-A261-D-01-Detaljer', '11624-H09-Z-261-P-01-Plan', '11624-X01-A-261-P-01-Plan'].map(n => { const r = DocCtl.parseName(n + '.pdf'); return r.kind + ':' + r.issues.map(i => i[1]).join('+') + ':' + (r.why || ''); }));
+  check(tg[0] === 'drawing::' && /^drawing:drawing:discipline “234”/.test(tg[1]) && /^drawing:drawing:discipline “A261”/.test(tg[2]) && tg[3] === 'drawing:fag:' && /^drawing:drawing:floor “X01”/.test(tg[4]), 'drawing names: the template from Coda passes, a broken one names the wrong part, an unknown discipline letter is flagged ' + JSON.stringify(tg));
   /* Check a plan (JP 22:30): no project – the plan against the checklist and the naming rules, coloured, in the editor */
   const nproj = await p.evaluate(() => Features.list('dctl').length);
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
@@ -295,7 +298,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     key('z', { ctrlKey: true }); out.undone = tx('H6'); key('y', { ctrlKey: true }); out.redone = tx('H6');
     down('B5'); down('C6', { shiftKey: true }); out.range = document.querySelector('.xv-ref').textContent; out.inRange = document.querySelectorAll('.xv-t td.in').length;
     document.querySelector('[data-xv="bold"]').click(); out.bold = [st('B5').fontWeight, st('C6').fontWeight].join();
-    document.querySelector('[data-xv="fill"]').click(); { const r = document.querySelector('.xv-sw').getBoundingClientRect(), hit = document.elementFromPoint(r.left + 20, r.top + 20); out.swVisible = !!(hit && hit.closest('.xv-sw')); } document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor; out.temp = /nothing is saved here/i.test(document.querySelector('.xv-foot').textContent);
+    document.querySelector('[data-xv="fill"]').click(); { const m = document.querySelector('.xv-sw'), r = m.getBoundingClientRect(), tb = document.querySelector('.xv-tools').getBoundingClientRect(); out.swVisible = !m.hidden && getComputedStyle(m).position === 'fixed' && r.width > 100 && r.top >= tb.top + 30 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }   /* fixed, below the toolbar, on screen (the toolbar scrolls, so it can't clip it) */ document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor; out.temp = /nothing is saved here/i.test(document.querySelector('.xv-foot').textContent);
     key('Delete'); out.cleared = tx('B5') + '|' + tx('C6');
     key('z', { ctrlKey: true }); out.back = tx('B5');
     down('F11'); g.focus(); const dt = new DataTransfer(); dt.setData('text/plain', 'Made-up a\tMade-up b\nMade-up c\t"two\nlines"');

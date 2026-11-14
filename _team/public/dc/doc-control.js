@@ -57,6 +57,7 @@
     if ((m = String(name).replace(/\.[a-z0-9]{2,5}$/i, '').match(TEG))) {
       r.kind = 'drawing'; r.code = m[4]; r.abbr = 'K'; r.text = m[7] || ''; r.build = m[1]; r.floor = m[2]; r.fag = m[3]; r.dtype = m[5]; r.no = m[6];
       if (/\b(rev|ver|versjon|v)\.?\s*[0-9a-z]{1,3}\b|\bR\d{2}\b|[-_]r\d+$/i.test(r.text)) r.issues.push(['warn', 'version']);
+      if (FAG.indexOf(r.fag) < 0) r.issues.push(['warn', 'fag']);
       return r;
     }
     if ((m = stem.match(/^(\d{3})(?:[.,](\d{1,3}))?(?:\s+|-)([A-Za-zÆØÅæøå]{2})(?=\s|-|$)\s*-?\s*(.*)$/))) {
@@ -64,16 +65,27 @@
       if (!(r.abbr in ABBR)) r.issues.push(['warn', 'abbr']);
     } else if ((m = stem.match(/^(\d{3})(?:[.,]\d{1,3})?(?:\s+|-|$)(.*)$/))) {
       r.code = m[1]; r.text = m[2] || ''; if (!pic) r.issues.push(['warn', 'noabbr']);
-    } else if (/^\d{3,6}-/.test(stem) && /-[A-Z]-\d{3}-/.test(stem)) { r.kind = 'drawing'; r.issues.push(['err', 'drawing']); var c = stem.match(/-[A-Z]-(\d{3})-/); r.code = c ? c[1] : ''; }
+    } else if (/^\d{4,6}-/.test(stem) || (/^\d{3,6}-/.test(stem) && /-[A-Z]-\d{3}-/.test(stem))) { r.kind = 'drawing'; r.why = tegWhy(stem); r.issues.push(['err', 'drawing']); var c = stem.match(/-[A-Z]-?(\d{3})-/) || stem.match(/-(\d{3})-[A-Z]-/); r.code = c ? c[1] : ''; }   /* starts with a building number: a drawing name that breaks the template – say which part (JP 23:13) */
     else if (!pic) r.issues.push(['err', 'nocode']);
     if (!pic && r.kind === 'doc' && stem.length > 30) r.issues.push(['warn', 'long']);
     if (r.kind === 'doc' && !r.text && r.code && !pic) r.issues.push(['warn', 'notext']);
     return r;
   }
+  /* BBY's drawing template (Coda 05 Spesifikke krav til tegninger): building-floor-discipline-part-type-number-text */
+  var FAG = ['A', 'B', 'C', 'E', 'F', 'I', 'H', 'K', 'T', 'V', 'G', 'L', 'M', 'R', 'W'];
+  function tegWhy(stem) {
+    var p = String(stem).split('-');
+    if (!/^([KUHLT]\d\d|000)$/.test(p[1] || '')) return k('ui.dc-teg-floor', 'floor “{v}” – use K01, U01, H01, L01, T01 or 000', { v: p[1] || '' });
+    if (!/^[A-Z]$/.test(p[2] || '')) return k('ui.dc-teg-fag', 'discipline “{v}” – one letter, e.g. A, B, E, V', { v: p[2] || '' });
+    if (!/^\d{3}$/.test(p[3] || '')) return k('ui.dc-teg-part', 'building part “{v}” – 3 digits after NS 3451', { v: p[3] || '' });
+    if (!/^[BDFOPSTU]$/.test(p[4] || '')) return k('ui.dc-teg-type', 'drawing type “{v}” – B, D, F, O, P, S, T or U', { v: p[4] || '' });
+    if (!/^\d\d/.test(p[5] || '')) return k('ui.dc-teg-no', 'number “{v}” – 2 digits', { v: p[5] || '' });
+    return '';
+  }
   function issueText(q, f) {
     var p = f && f.p || {};
     return { version: k('ui.dc-iss-version', 'An as-built drawing has a version number in the name'), abbr: k('ui.dc-iss-abbr', 'Unknown document code “{a}”', { a: p.abbr }), noabbr: k('ui.dc-iss-noabbr', 'No document code after the system code (e.g. DA, DV, SE)'),
-      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number'), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), long: k('ui.dc-iss-long', 'Longer than 30 characters ({n})', { n: (p.stem || '').length }),
+      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), long: k('ui.dc-iss-long', 'Longer than 30 characters ({n})', { n: (p.stem || '').length }),
       notext: k('ui.dc-iss-notext', 'No describing text after the codes') }[q[1]] || q[1];
   }
 
@@ -912,7 +924,7 @@
     }
     if (q && q.t && l.t) { var extra = l.t.split('').filter(function (x) { return q.t.indexOf(x) < 0; }).join(''); if (extra) warn.push(k('ui.dc-chk-extra', 'Not in the checklist for {c}: {t}', { c: c3, t: nm(extra) })); }
     if (R && !q && /^[2-7]\d\d$/.test(c3)) warn.push(k('ui.dc-chk-nocode', '{c} is not in the checklist', { c: c3 }));
-    if (!codeName(l.code)) warn.push(k('ui.dc-chk-unknown', 'Unknown NS 3451 code'));
+    if (!codeName(l.code) && !l.sys && !(have.named && have.named[String(l.code).slice(0, 3)])) warn.push(k('ui.dc-chk-unknown', 'Unknown NS 3451 code'));   /* a code the plan names itself (160 Tegninger, planer og kart) is the client's own */
     if (!l.t && l.type) warn.push(k('ui.dc-chk-type', 'Unknown document type “{t}”', { t: l.type }));
     if (!l.t && !l.type) warn.push(k('ui.dc-chk-notype', 'No document type chosen'));
     if (l.planned && !l.ex) {
@@ -927,7 +939,7 @@
     file.arrayBuffer().then(function (buf) { buf0 = buf; return readBook(buf.slice(0)); }).then(function (sheets) {
       var res = parsePlan(sheets);
       if (!res.lines.length && !res.heads.some(function (h) { return h.none.length; })) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-plan-none', 'No document lines found – the plan needs a column for the system code and one for the document type or the planned name.'))); return; }
-      var have = {}; res.lines.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; });
+      var have = { named: {} }; res.lines.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; if (l.sys) have.named[c3] = 1; });   /* a code named anywhere in the plan is the client's own */
       var n = { err: 0, warn: 0, ok: 0, none: 0 };
       res.lines.forEach(function (l) {
         var is = planIssues(l, R, have);

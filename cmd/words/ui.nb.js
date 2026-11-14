@@ -1,5 +1,11 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-teg-floor": ["floor “{v}” – use K01, U01, H01, L01, T01 or 000", "etasje «{v}» – bruk K01, U01, H01, L01, T01 eller 000"],
+  "ui.dc-teg-fag": ["discipline “{v}” – one letter, e.g. A, B, E, V", "fag «{v}» – én bokstav, f.eks. A, B, E, V"],
+  "ui.dc-teg-part": ["building part “{v}” – 3 digits after NS 3451", "anleggsdel «{v}» – 3 siffer etter NS 3451"],
+  "ui.dc-teg-type": ["drawing type “{v}” – B, D, F, O, P, S, T or U", "tegningstype «{v}» – B, D, F, O, P, S, T eller U"],
+  "ui.dc-teg-no": ["number “{v}” – 2 digits", "løpenummer «{v}» – 2 siffer"],
+  "ui.dc-iss-fag": ["Unknown discipline letter “{a}” in the drawing name", "Ukjent fagbokstav «{a}» i tegningsnavnet"],
   "ui.xv-n-temp1": ["1 change – it goes into the download, nothing is saved here", "1 endring – den er med i nedlastingen, ingenting lagres her"],
   "ui.xv-n-temp": ["{n} changes – they go into the download, nothing is saved here", "{n} endringer – de er med i nedlastingen, ingenting lagres her"],
   "ui.xv-temp": ["Nothing is saved here – your changes go into the download.", "Ingenting lagres her – endringene dine er med i nedlastingen."],
