@@ -297,8 +297,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(/Site team/.test(await text(own)) && /Second site/.test(await text(own)), 'the owner sees both teams');
   await own.evaluate(() => [...document.querySelectorAll('[data-act=goTeam]')].find(b => /Site team/.test(b.textContent)).click());
   check(await until(own, () => !!document.querySelector('.t-tabs') && /Site team/.test(document.body.innerText), 15000), 'switching back opens the first team without unlocking again');
-  await own.goto(U + '#meetings'); await sl(400);
-  check(/MARK-SECRET-4/.test(await text(own)) && !/MARK-SECRET-5/.test(await text(own)), 'the first team shows only its own meetings');
+  await own.goto(U + '#meetings');
+  check(await until(own, () => /MARK-SECRET-4/.test(document.body.innerText), 10000) && !/MARK-SECRET-5/.test(await text(own)), 'the first team shows only its own meetings');
   /* rename (admins) and delete (only the owner, the name typed again) – on the second team */
   check(await per.evaluate(t => fetch('/api/rename', { method: 'POST', headers: { 'x-team': '1', 'x-tid': t, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'x' }) }).then(r => r.status), tid2) === 403, 'a member who is not an admin cannot rename the team');
   check(await own.evaluate(t => fetch('/api/rename', { method: 'POST', headers: { 'x-team': '1', 'x-tid': t, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Second site renamed' }) }).then(r => r.status), tid2) === 200, 'an admin renames the team');
