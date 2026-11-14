@@ -417,6 +417,7 @@
   }
   /* any report in the .rp-doc look as an A4 PDF with a text footer (also used by Document control) */
   function pagedPdf(html, foot, name) {
+    name = String(name || 'report.pdf').replace(/\u00ad/g, '');   /* soft hyphens in the Norwegian tab names stay out of the PDF */
     return libs().then(function () {
       var W = 700, MM = W / 182, PAGE = Math.floor(259 * MM);   /* A4 with 14 mm sides, 14 mm top and 24 mm for the footer */
       var box = document.createElement('div'); box.className = 'rp-pdfbox';
@@ -451,7 +452,7 @@
             pdf.addImage(pc.toDataURL('image/jpeg', .9), 'JPEG', 14, 14, 182, (c[1] - c[0]) / MM, undefined, 'FAST');
             pdf.setDrawColor(213, 218, 224); pdf.setLineWidth(.2); pdf.line(14, 284, 196, 284);
             pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(110, 118, 128);
-            pdf.text(foot, 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
+            pdf.text(foot.replace(/\u00ad/g, ''), 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
           });
           box.remove();
           var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length;

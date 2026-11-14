@@ -268,6 +268,9 @@
     var seg = [['ok', c.ok + c.na], ['cmt', c.cmt], ['recv', c.recv], ['rej', c.rej], ['missing', c.missing]].filter(function (s) { return s[1]; });
     return '<div class="dc-bar" role="img" aria-label="' + esc(seg.map(function (s) { return stName(s[0]) + ' ' + s[1]; }).join(', ')) + '">' + seg.map(function (s) { return '<i style="flex:' + s[1] + ';--c:' + st(s[0])[3] + '"></i>'; }).join('') + '</div>';
   }
+  /* the lines of one system together: the code and its name once, the document types under it (JP 11:38) */
+  function byCode(lines) { var m = {}, order = []; lines.forEach(function (l) { var c = String(l.code); if (!m[c]) { m[c] = []; order.push(c); } m[c].push(l); }); return order.map(function (c) { return [c, lineTitle(m[c][0]), m[c]]; }); }
+  function hintText(l) { var h = l.hint || ''; return (l.t || '').length > 1 ? h : h.replace(/^[A-L]: /gm, ''); }
   function byGroup(lines) {
     var g = {}; lines.forEach(function (l) { var d = String(l.code).charAt(0) || '–'; (g[d] = g[d] || []).push(l); });
     return Object.keys(g).sort().map(function (d) { return [d, g[d]]; });
@@ -319,10 +322,12 @@
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
     if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
     h += byGroup(shown).map(function (g) {
-      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].map(function (l) {
+      var seen = {};
+      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].slice().sort(function (a, b) { return a.code < b.code ? -1 : a.code > b.code ? 1 : 0; }).map(function (l) {
+        var sub = seen[l.code] ? '' : '<li class="dc-csub"><span class="dc-code">' + esc(l.code) + '</span><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi"></i>' : '') + '</b></li>'; seen[l.code] = 1;
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
-        var h2 = '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code">' + esc(l.code) + '</span>' +
-          '<span class="dc-lx"><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi" title="' + esc(k('ui.dc-fire', 'Fire book')) + '"></i>' : '') + '</b><small data-noi18n>' + esc([typeLabel(l), l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' +
+        var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code"></span>' +
+          '<span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</b><small data-noi18n>' + esc([l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' +
           (l.cmt && !isOpen ? '<small class="dc-cmt" data-noi18n>' + esc(l.cmt) + '</small>' : '') + '</span>' + chip(l.st) + '</button>';
         if (quick && !isOpen) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + st(x[0])[3] + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
         if (isOpen) {
@@ -386,7 +391,8 @@
       '<tr class="dc-tot"><td><b>' + esc(k('ui.total', 'Total')) + '</b></td>' + nc('<b>' + c.all + '</b>') + nc('<b>' + c.done + '</b>') + nc('<b>' + c.missing + '</b>') + '</tr></tbody></table>';
     var miss = L.filter(function (l) { return l.st === 'missing'; }), back = L.filter(function (l) { return l.st === 'rej' || l.st === 'cmt'; }), badF = F.filter(function (f) { return (f.iss || []).length; }), looseF = F.filter(function (f) { return !f.line; });
     var head4 = '<thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th></tr></thead>';
-    h += '<h2>2 ' + esc(k('ui.dc-missing-docs', 'Missing documents')) + '</h2>' + (miss.length ? '<table class="rp-grid dc-rt">' + head4 + '<tbody>' + miss.map(row).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-missing', 'Nothing is missing.')) + '</p>');
+    h += '<h2>2 ' + esc(k('ui.dc-missing-docs', 'Missing documents')) + '</h2>' + (miss.length ? '<table class="rp-grid dc-rt dr-rt"><thead><tr><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th></tr></thead><tbody>' +
+      byCode(miss).map(function (c) { return '<tr class="dr-crow"><td colspan="2"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</td></tr>' + c[2].map(function (l) { return '<tr><td>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td></tr>'; }).join(''); }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-missing', 'Nothing is missing.')) + '</p>');
     h += '<h2>3 ' + esc(k('ui.dc-with-comments', 'Not approved and comments')) + '</h2>' + (back.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.status', 'Status')) + '</th><th>' + esc(k('ui.dc-comment', 'Comment')) + '</th></tr></thead><tbody>' +
       back.map(function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l) + ' · ' + typeLabel(l)) + '</td><td>' + esc(stName(l.st)) + '</td><td>' + esc(l.cmt || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-comments', 'No comments.')) + '</p>');
     h += '<h2>4 ' + esc(k('ui.dc-naming', 'File names')) + '</h2>' + (badF.length || looseF.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-file', 'File')) + '</th><th>' + esc(k('ui.dc-problem', 'Problem')) + '</th></tr></thead><tbody>' +
@@ -609,9 +615,11 @@
       '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dr-excel-help', 'The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.')) + '</p>';
     h += byGroup(L).map(function (g) {
-      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].map(function (l) {
-        return '<li class="dc-line dr-line"><div class="dc-lmain"><span class="dc-code">' + esc(l.code) + '</span><span class="dc-lx"><b data-noi18n>' + esc(lineTitle(l)) + '</b><small data-noi18n>' + esc([typeLabel(l), l.opt ? k('ui.dc-if-contract', 'Only if it is in the contract') : ''].filter(Boolean).join(' · ')) + '</small>' +
-          (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(l.hint).replace(/\n/g, '<br>') + '</small>' : '') + '</span><button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button></div></li>';
+      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dr-syss">' + byCode(g[1]).map(function (c) {
+        return '<li class="dr-sys"><div class="dr-sh"><span class="dc-code">' + esc(c[0]) + '</span><b data-noi18n>' + esc(c[1]) + '</b></div><ul class="dr-types">' + c[2].map(function (l) {
+          return '<li class="dr-line"><span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + (l.opt ? ' <small>· ' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</small>' : '') + '</b>' +
+            (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span><button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button></li>';
+        }).join('') + '</ul></li>';
       }).join('') + '</ul>';
     }).join('');
     h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drpick><i class="bi bi-ui-checks"></i> ' + esc(k('ui.dc-pick-more', 'Add from the checklist')) + '</button></div>' + addLineForm(p, 'req') +
@@ -627,8 +635,8 @@
       '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.date', 'Date'), fmt(today())], [k('ui.dr-by', 'Made by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-documents', 'Documents'), String(L.length)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<p>' + esc(k('ui.dr-intro', 'The documentation to be delivered for FDV (forvaltning, drift og vedlikehold), with the document types of NS 3456 for each system after NS 3451. Name each file with the 3-digit code, a document code and a describing text.')) + '</p>';
     h += byGroup(L).map(function (g) {
-      return '<h2>' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h2><table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-should-contain', 'Should contain')) + '</th></tr></thead><tbody>' +
-        g[1].map(function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l)) + '</td><td>' + esc(typeLabel(l)) + '</td><td>' + esc((l.hint || '').replace(/^[A-L]: /gm, '')).replace(/\n/g, '<br>') + (l.opt ? ' <i>' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</i>' : '') + '</td></tr>'; }).join('') + '</tbody></table>';
+      return '<h2>' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h2><table class="rp-grid dc-rt dr-rt"><thead><tr><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-should-contain', 'Should contain')) + '</th></tr></thead><tbody>' +
+        byCode(g[1]).map(function (c) { return '<tr class="dr-crow"><td colspan="2"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</td></tr>' + c[2].map(function (l) { return '<tr><td>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</td><td>' + esc(hintText(l)).replace(/\n/g, '<br>') + (l.opt ? ' <i>' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</i>' : '') + '</td></tr>'; }).join(''); }).join('') + '</tbody></table>';
     }).join('');
     return h;
   }

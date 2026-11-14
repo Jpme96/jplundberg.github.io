@@ -482,6 +482,7 @@ I18N.add({
   "ui.dc-contractor-ph": ["Who delivers, e.g. the sprinkler contractor", "Hvem leverer, f.eks. sprinklerentreprenøren"],
   "ui.dc-delete": ["Delete project", "Slett prosjektet"],
   "ui.dc-deleted": ["Project deleted", "Prosjektet er slettet"],
+  "ui.dc-documentation": ["Documentation", "Dokumentasjon"],
   "ui.dc-documents": ["Documents", "Dokumenter"],
   "ui.dc-due": ["Deadline", "Frist"],
   "ui.dc-empty": ["Add a project, import its document plan (Excel) and the delivered files – you see at once what is missing, and check each document.", "Legg til et prosjekt, importer dokumentplanen (Excel) og de leverte filene – så ser du med en gang hva som mangler, og kontrollerer hvert dokument."],
