@@ -36,6 +36,14 @@ const book = zip([
   ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Target="worksheets/sheet3.xml"/></Relationships>'],
   ['xl/styles.xml', '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font/></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellXfs count="1"><xf fontId="0" fillId="0"/></cellXfs></styleSheet>'],
   ['xl/worksheets/sheet1.xml', sheet(S1)], ['xl/worksheets/sheet2.xml', sheet(S3)], ['xl/worksheets/sheet3.xml', sheet(S2)]], true);
+/* a second plan for "Check a plan": a code the checklist wants with no type, and a planned name without a code */
+const S3b = S3.concat([['3', '331.000', 'Made-up hose reels', '331', 'Ja', '', '', ''], ['3', '333.000', 'Made-up thing', '333', 'Nei', 'Produktinformasjon', 'Sprinkler doc', '']]);
+const book2 = zip([
+  ['[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>'],
+  ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Generelt" sheetId="1" r:id="rId1"/><sheet name="3 - VVS" sheetId="2" r:id="rId2"/><sheet name="2 - Bygning" sheetId="3" r:id="rId3"/></sheets></workbook>'],
+  ['xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Target="worksheets/sheet3.xml"/></Relationships>'],
+  ['xl/styles.xml', '<?xml version="1.0"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font/></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellXfs count="1"><xf fontId="0" fillId="0"/></cellXfs></styleSheet>'],
+  ['xl/worksheets/sheet1.xml', sheet(S1)], ['xl/worksheets/sheet2.xml', sheet(S3b)], ['xl/worksheets/sheet3.xml', sheet(S2)]], true);
 const RH = ['', '', '', 'NS3451:2022', 'Levert?', 'A - Kravoppnåelse', 'B - Drift ', 'C - Vedlikehold ', 'D - Identifikasjon', 'E - Produktinformasjon', 'F - Attestasjon', 'G - Bruksanvisning', 'H - Beskrivelse', 'I - Protokoll', 'K - Tegning', 'L - Bilde', 'Ansvarlig', 'Eksempler på dokumentasjon'];
 const RQ = [['3 VVS'], RH, ['3', '33', '330', 'Made-up fire general', '', '', '', '', '', '', '', 'x', 'x', '', '', '', '', '•G: Made-up user text \n•H: Made-up description'],
   ['3', '33', '331', 'Made-up hose reels', '', 'x', '', '', '', '', '', '', '', '', '', '', '', ''], ['3', '33', '332', 'Made-up sprinkler', '', 'x', 'x', 'x ', '', '', '', '', '', '', '', '', '', '•A: Made-up coverage and marking \n•B: Made-up routines'],
@@ -264,6 +272,50 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* back closes the project page */
   await tap('[data-dcback]'); await sl(500);
   check(await p.evaluate(() => !document.body.classList.contains('dc-full') && document.querySelectorAll('[data-dcopen]').length === 2), 'Back goes to the list of projects');
+  /* Check a plan (JP 22:30): no project – the plan against the checklist and the naming rules, coloured, in the editor */
+  const nproj = await p.evaluate(() => Features.list('dctl').length);
+  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
+  check(await until(() => !!document.querySelector('.xv .xv-t td')), 'Check a plan opens the plan in the editor');
+  const ck = await p.evaluate(() => { const tx = r => (document.querySelector('[data-xvr="' + r + '"]') || {}).textContent, bg = r => getComputedStyle(document.querySelector('[data-xvr="' + r + '"]')).backgroundColor;
+    return { title: document.querySelector('.xv-title').textContent, note: document.querySelector('.xv-note').textContent, tab: (document.querySelector('.xv-tabs [aria-selected="true"]') || {}).textContent,
+      r3: tx('I3'), r5: tx('I5'), r7: tx('I7'), r8: tx('I8'), r9: tx('I9'), r10: tx('I10'), bg9: bg('B9'), bg5: bg('B5'), bg7: bg('B7'), n: Features.list('dctl').length }; });
+  check(/^Check: Made-up plan B\.xlsx/.test(ck.title) && /^2 to fix · 4 to look at · 2 OK · 2 with no document type/.test(ck.note) && /Checked against Made-up checklist/.test(ck.note) && ck.tab === '3 - VVS',
+    'the check sums up what to fix and what it was checked against ' + JSON.stringify(ck));
+  check(ck.r3 === 'No document type chosen' && ck.r5 === 'OK' && /Not in the checklist for 332: Drawing/.test(ck.r7) && /336 is not in the checklist/.test(ck.r8) && /No document type chosen · The checklist asks for: Compliance/.test(ck.r9) && /3-digit NS 3451 code/.test(ck.r10)
+    && ck.bg9 === 'rgb(244, 204, 204)' && ck.bg5 === 'rgb(217, 234, 211)' && ck.bg7 === 'rgb(255, 242, 204)' && ck.n === nproj, 'each line says what is wrong: missing types the checklist asks for, types it doesn\'t, codes not in it, names without a code – and no project was made');
+  /* the editor: keys, start typing, undo/redo, a range, bold, fill, clear, paste from Excel */
+  const xe = await p.evaluate(async () => {
+    const S = ms => new Promise(r => setTimeout(r, ms)), g = document.querySelector('.xv-grid'), key = (k, o) => document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key: k, bubbles: true, cancelable: true }, o || {})));
+    const down = (ref, o) => document.querySelector('[data-xvr="' + ref + '"]').dispatchEvent(new PointerEvent('pointerdown', Object.assign({ bubbles: true, button: 0, pointerType: 'mouse' }, o || {})));
+    const tx = r => document.querySelector('[data-xvr="' + r + '"]').textContent, st = r => getComputedStyle(document.querySelector('[data-xvr="' + r + '"]'));
+    const out = {};
+    down('H5'); g.focus(); key('ArrowDown'); out.ref1 = document.querySelector('.xv-ref').textContent;
+    key('Z'); const inp = document.querySelector('.xv-in'); inp.value = 'Zed'; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    out.h6 = tx('H6'); out.ref2 = document.querySelector('.xv-ref').textContent;
+    key('z', { ctrlKey: true }); out.undone = tx('H6'); key('y', { ctrlKey: true }); out.redone = tx('H6');
+    down('B5'); down('C6', { shiftKey: true }); out.range = document.querySelector('.xv-ref').textContent; out.inRange = document.querySelectorAll('.xv-t td.in').length;
+    document.querySelector('[data-xv="bold"]').click(); out.bold = [st('B5').fontWeight, st('C6').fontWeight].join();
+    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor;
+    key('Delete'); out.cleared = tx('B5') + '|' + tx('C6');
+    key('z', { ctrlKey: true }); out.back = tx('B5');
+    down('F11'); g.focus(); const dt = new DataTransfer(); dt.setData('text/plain', 'Made-up a\tMade-up b\nMade-up c\t"two\nlines"');
+    document.querySelector('.xv').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    out.paste = [tx('F11'), tx('G11'), tx('F12'), tx('G12')].join('|');
+    out.undoOn = !document.querySelector('[data-xv="undo"]').disabled;
+    /* the download has the bold, the fill and the pasted text */
+    let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
+    const cs = navigator.canShare; navigator.canShare = () => false; document.querySelector('[data-xv="dl"]').click();
+    for (let i = 0; i < 60 && !got; i++) await S(100);
+    navigator.canShare = cs; HTMLAnchorElement.prototype.click = oc;
+    const bk = await XlsxView.read(await (await fetch(got.href)).arrayBuffer(), DocCtl.XZ), v = bk.sheets.find(x => x.name === '3 - VVS'), X = bk.X;
+    out.file = got.download; out.fb = X[v.cells.C6.s].b; out.fbg = X[v.cells.C5.s].bg; out.fv = v.cells.G12.v; out.fh = v.cells.H6.v;
+    document.querySelector('[data-xv="close"]').click();
+    return out;
+  });
+  check(xe.ref1 === 'H6' && xe.h6 === 'Zed' && xe.ref2 === 'H7' && xe.undone !== 'Zed' && xe.redone === 'Zed', 'the editor: arrow keys, start typing to replace, Enter moves down, undo and redo ' + JSON.stringify(xe));
+  check(xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back');
+  check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn, 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
+  check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });
   await b.close(); done();

@@ -101,12 +101,12 @@
       var h = findHeader(sh.rows); if (!h) return; seen++;
       var si = heads.length, hrow = sh.rows[h.at] || [], last = 0;
       hrow.forEach(function (c, j) { if (String(c || '').trim()) last = j + 1; });
-      var hd = { path: sh.path || '', at: h.at, last: last, w: sh.rows.reduce(function (a, r) { return Math.max(a, (r || []).length); }, last), none: [] }; heads.push(hd);
+      var hd = { path: sh.path || '', at: h.at, last: last, w: sh.rows.reduce(function (a, r) { return Math.max(a, (r || []).length); }, last), none: [], nc: {} }; heads.push(hd);
       var M = h.map, last = null;
       for (var i = h.at + 1; i < sh.rows.length; i++) {
         var r = sh.rows[i] || [], g = function (key) { return key in M ? String(r[M[key]] == null ? '' : r[M[key]]).trim() : ''; };
         var code = normCode(g('code')), sys = g('sys'), type = g('type'), planned = g('planned'), note = g('note');
-        if (code) { if (last && !last.n) hd.none.push(last.ri); last = { code: code, sys: sys, fire: /^(ja|j|x|yes)$/i.test(g('fire')), resp: g('resp'), ri: i, n: 0 }; }
+        if (code) { if (last && !last.n) { hd.none.push(last.ri); hd.nc[last.ri] = last.code; } last = { code: code, sys: sys, fire: /^(ja|j|x|yes)$/i.test(g('fire')), resp: g('resp'), ri: i, n: 0 }; }
         else if (!last || sys) continue;   /* a row of its own without a code is a heading or a note */
         if (/^navngivning ref|^dokumentnavnet skal/i.test(planned)) { note = note || ''; planned = ''; }   /* the general naming instruction in the template */
         var L = letters(type);
@@ -115,7 +115,7 @@
         lines.push({ id: uid() + lines.length, code: last.code, sys: (code ? sys : last.sys).slice(0, 160), type: type.slice(0, 80), t: L, planned: planned.replace(/^eksempel:\s*/i, '').slice(0, 160), ex: /^eksempel:/i.test(planned) || undefined,
           note: note.slice(0, 400), fire: last.fire || undefined, resp: (g('resp') || last.resp || '').slice(0, 80), due: g('due').slice(0, 10), st: stMap(g('status')) || 'missing', files: [], src: [si, i] });
       }
-      if (last && !last.n) hd.none.push(last.ri);   /* a system in the plan with no document type chosen (JP 21:47: those rows stayed white) */
+      if (last && !last.n) { hd.none.push(last.ri); hd.nc[last.ri] = last.code; }   /* a system in the plan with no document type chosen (JP 21:47: those rows stayed white) */
     });
     return { lines: lines, sheets: seen, heads: heads };
   }
@@ -261,7 +261,7 @@
         '<span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who, c.all ? k('ui.dc-n-docs', '{n} documents', { n: c.all }) : k('ui.dc-no-plan', 'No plan yet'), c.missing ? k('ui.dc-n-missing', '{n} missing', { n: c.missing }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
         (c.all ? '<span class="kit-r"><b class="dc-pc">' + pc + ' %</b></span>' : '') + '<i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : (adding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dc-empty', 'Add a project, import its document plan (Excel) and the delivered files – you see at once what is missing, and check each document.')) + '</p>');
-    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</h2>' + (adding ? '' : '<div class="head-actions"><button type="button" class="text-btn" data-dcnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
+    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</h2>' + (adding ? '' : '<div class="head-actions"><label class="text-btn dc-file dc-chk"><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.dc-chk-btn', 'Check a plan')) + '<input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label><button type="button" class="text-btn" data-dcnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
   }
   function full(p) {
     var T = [['over', k('ui.dc-tab-over', 'Overview'), 'speedometer2'], ['docs', k('ui.dc-tab-docs', 'Documents'), 'list-check'], ['files', k('ui.dc-tab-files', 'Files'), 'files'], ['report', k('ui.fdv-tab-report', 'Report'), 'file-earmark-text']];
@@ -772,6 +772,7 @@
   function colNum(ref) { var m = String(ref || '').match(/^[A-Z]+/), n = 0; if (!m) return 0; for (var i = 0; i < m[0].length; i++) n = n * 26 + m[0].charCodeAt(i) - 64; return n; }
   /* what the check says on a line: its status, your comment and any file-name problems */
   function checkText(p, l) {
+    if (l._chk != null) return l._chk;
     var out = stName(l.st) + (l.cmt ? ': ' + l.cmt : '');
     (p.files || []).filter(function (f) { return f.line === l.id && (f.iss || []).length; }).forEach(function (f) { out += ' · ' + f.name + ': ' + f.iss.map(function (x) { return issueText(x, f); }).join('; '); });
     return out.slice(0, 2000);
@@ -901,6 +902,61 @@
   }
   var XZ = { zipEntries: zipEntries, inflate: inflate, packAll: packAll };
   /* raw = the coloured file without your own cell edits (the viewer writes them in); else with them */
+  /* ---------- check a document plan without making a project (JP 22:30): the plan against the client's checklist and the naming rules ---------- */
+  function planIssues(l, R, have) {
+    var err = [], warn = [], c3 = String(l.code).slice(0, 3), q = R && R.codes[c3], nm = function (x) { return x.split('').map(typeName).join(', '); };
+    if (q && q.t && !q.opt && have[c3] && !have[c3].done) {   /* the types the checklist asks for at this code, said once (on its first line) */
+      have[c3].done = 1; var miss = q.t.split('').filter(function (x) { return have[c3].t.indexOf(x) < 0; }).join('');
+      if (miss) err.push(k('ui.dc-chk-miss', 'The checklist asks for: {t}', { t: nm(miss) }));
+    }
+    if (q && q.t && l.t) { var extra = l.t.split('').filter(function (x) { return q.t.indexOf(x) < 0; }).join(''); if (extra) warn.push(k('ui.dc-chk-extra', 'Not in the checklist for {c}: {t}', { c: c3, t: nm(extra) })); }
+    if (R && !q && /^[2-7]\d\d$/.test(c3)) warn.push(k('ui.dc-chk-nocode', '{c} is not in the checklist', { c: c3 }));
+    if (!codeName(l.code)) warn.push(k('ui.dc-chk-unknown', 'Unknown NS 3451 code'));
+    if (!l.t && l.type) warn.push(k('ui.dc-chk-type', 'Unknown document type “{t}”', { t: l.type }));
+    if (!l.t && !l.type) warn.push(k('ui.dc-chk-notype', 'No document type chosen'));
+    if (l.planned && !l.ex) {
+      var f = parseName(l.planned + '.pdf'); f.p = f;
+      f.issues.forEach(function (x) { (x[0] === 'err' ? err : warn).push(issueText(x, f)); });
+    }
+    return { err: err, warn: warn };
+  }
+  function checkPlan(file) {
+    if (!/\.xls[xm]$/i.test(file.name)) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-chk-xlsx', 'Pick the plan as an Excel file (.xlsx).'))); return; }
+    var R = req(), buf0;
+    file.arrayBuffer().then(function (buf) { buf0 = buf; return readBook(buf.slice(0)); }).then(function (sheets) {
+      var res = parsePlan(sheets);
+      if (!res.lines.length && !res.heads.some(function (h) { return h.none.length; })) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-plan-none', 'No document lines found – the plan needs a column for the system code and one for the document type or the planned name.'))); return; }
+      var have = {}; res.lines.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; });
+      var n = { err: 0, warn: 0, ok: 0, none: 0 };
+      res.lines.forEach(function (l) {
+        var is = planIssues(l, R, have);
+        l.st = is.err.length ? 'rej' : is.warn.length ? 'recv' : 'ok'; n[is.err.length ? 'err' : is.warn.length ? 'warn' : 'ok']++;
+        l._chk = is.err.concat(is.warn).join(' · ') || k('ui.dc-chk-ok', 'OK');
+      });
+      res.heads.forEach(function (h, si) {   /* systems with no document type: an error when the checklist asks for types there */
+        h.none.forEach(function (ri) {
+          var c3 = String(h.nc[ri] || '').slice(0, 3), q = R && R.codes[c3], miss = q && q.t && !q.opt ? q.t.split('').filter(function (x) { return !have[c3] || have[c3].t.indexOf(x) < 0; }).join('') : '';
+          if (miss && have[c3] && have[c3].done) miss = '';   /* already said on the code's first line */
+          if (miss) { (have[c3] || (have[c3] = { t: '' })).done = 1; n.err++; } else n.none++;
+          res.lines.push({ id: 'n' + si + '-' + ri, code: h.nc[ri] || '', st: miss ? 'rej' : 'na', src: [si, ri], files: [], _chk: miss ? k('ui.dc-chk-notype', 'No document type chosen') + ' · ' + k('ui.dc-chk-miss', 'The checklist asks for: {t}', { t: miss.split('').map(typeName).join(', ') }) : k('ui.dc-x-notype', 'No document type chosen') });
+        });
+        h.none = [];
+      });
+      var pseudo = { id: 'check', name: file.name.replace(/\.xls[xm]$/i, ''), lines: res.lines, files: [], planSheets: res.heads };
+      return colourOwn(pseudo, buf0).then(function (bl) {
+        var title = k('ui.dc-chk-title', 'Check: {f}', { f: file.name });
+        var note = '<b>' + esc(k('ui.dc-chk-sum', '{e} to fix · {w} to look at · {o} OK · {x} with no document type', { e: n.err, w: n.warn, o: n.ok, x: n.none })) + '</b>' + (R ? ' · ' + esc(k('ui.dc-chk-against', 'Checked against {f}', { f: R.name })) : ' · ' + esc(k('ui.dc-chk-noreq', 'No client checklist yet – import one under Document requirements to check the document types too.')));
+        var start = res.heads.filter(function (h, i) { return res.lines.some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0];
+        if (!window.XlsxView) { window.FdvPdf.share(new File([bl], file.name.replace(/\.xls[xm]$/i, '') + ' – ' + k('ui.dc-chk-file', 'checked') + '.xlsx', { type: bl.type })); return; }
+        XlsxView.open({ blob: bl, title: title, edits: {}, Z: XZ, start: start, cls: HOST ? 'dc-host' : '', note: note,
+          actions: [{ icon: 'folder-plus', label: k('ui.dc-chk-make', 'Make a project'), run: function (close) {
+            var t = Fe.tools(), id = uid(); t.dctl = (t.dctl || []).concat([{ id: id, made: new Date().toISOString(), name: pseudo.name.slice(0, 120), lines: [], files: [] }]); Fe.saveTools(t);
+            close(); importPlan(id, file); go(id);
+          } }],
+          download: function (b2) { window.FdvPdf.share(new File([b2], file.name.replace(/\.xls[xm]$/i, '') + ' – ' + k('ui.dc-chk-file', 'checked') + '.xlsx', { type: b2.type })); } });
+      });
+    }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); try { console.warn('[dc] check', e); } catch (e2) {} });
+  }
   function planXlsx(p, raw) {
     if (!raw && window.XlsxView) return planXlsx(p, true).then(function (f) {
       return getBlob('xedit:' + p.id + (f._own ? '' : ':new')).then(function (ed) {
@@ -1118,6 +1174,7 @@
   });
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq')) return;
+    if (t.hasAttribute('data-dcchk')) { var cf = t.files && t.files[0]; t.value = ''; if (cf) checkPlan(cf); return; }
     if (t.dataset.dcfromkrav && t.value) { var kk = krav(t.value), pid = t.dataset.dcfromkrav; if (!kk) return; var addk = 0;
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: addk }))); draw(); return; }
@@ -1159,6 +1216,6 @@
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(draw, 80); });
-  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score, planXlsx: planXlsx };
+  window.DocCtl = { parseReq: parseReq, linesFor: linesFor, PTYPES: PTYPES, namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score, planXlsx: planXlsx, checkPlan: checkPlan, XZ: XZ };
   draw();
 })();
