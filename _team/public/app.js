@@ -586,7 +586,7 @@
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
       window.PageTabs = { show: function (t) { S.dtab = t === 'req' ? 'req' : 'doc'; showDtab(); } };
       window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true };
-      docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
+      docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () { return loadJs('/dc/xlsx-view.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');
       }).catch(function (e) { docsP = null; toast(L('Could not load Documents. Try again.', 'Klarte ikke å laste Dokumenter. Prøv igjen.')); throw e; });

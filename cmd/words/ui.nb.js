@@ -1,5 +1,15 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-x-notype": ["No document type chosen", "Ingen dokumenttype valgt"],
+  "ui.xv-download": ["Download", "Last ned"],
+  "ui.xv-tap": ["Tap a cell to change it", "Trykk på en celle for å endre den"],
+  "ui.xv-reading": ["Reading the file …", "Leser filen …"],
+  "ui.xv-n-edits1": ["1 change of your own – kept on this device and in every download", "1 egen endring – tas vare på på denne enheten og er med i hver nedlasting"],
+  "ui.xv-n-edits": ["{n} changes of your own – kept on this device and in every download", "{n} egne endringer – tas vare på på denne enheten og er med i hver nedlasting"],
+  "ui.xv-reset": ["Undo all", "Angre alle"],
+  "ui.xv-hint": ["Your changes are kept on this device and go into every download.", "Endringene dine tas vare på på denne enheten og er med i hver nedlasting."],
+  "ui.xv-formula": ["This cell has a formula – what you type replaces it", "Denne cellen har en formel – det du skriver erstatter den"],
+  "ui.xv-reset-q": ["Undo all your own changes in this file?", "Angre alle dine egne endringer i denne filen?"],
   "ui.dc-x-share": ["Share or save the Excel file", "Del eller lagre Excel-filen"],
   "ui.dc-x-check": ["Check", "Kontroll"],
   "ui.dc-x-sheet": ["Document check", "Dokumentkontroll"],

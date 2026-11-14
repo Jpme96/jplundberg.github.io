@@ -285,3 +285,26 @@ body.dr-full #wkDocReq { display: block !important; }
 .tm-card .tm-open { width: 100%; text-decoration: none; }
 .tm-card .tm-acts { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .tm-card .tm-new { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+/* Excel with colours – see and edit the file (xlsx-view.js): full screen, the sheet on white like Excel, a bar to type in */
+html.xv-on, html.xv-on body { overflow: hidden; }
+.xv { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: var(--bg, #0e0f12); color: var(--text, #e8eaed); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.xv-top { display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px; }
+.xv-x { width: 44px; height: 44px; flex: none; border: 0; border-radius: 12px; background: var(--card, #1a1c20); color: inherit; font-size: 18px; cursor: pointer; }
+.xv-title { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xv-dl { flex: none; }
+.xv-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 12px 8px; scrollbar-width: none; }
+.xv-tabs button { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line, #2a2d33); background: none; color: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.xv-tabs button[aria-selected="true"] { background: var(--accent, #14b8a6); border-color: transparent; color: #04211d; font-weight: 600; }
+.xv-bar { display: flex; align-items: stretch; gap: 8px; padding: 0 12px 8px; }
+.xv-ref { flex: none; min-width: 56px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--card, #1a1c20); font: 600 13px ui-monospace, monospace; }
+.xv-in { flex: 1; min-width: 0; min-height: 44px; max-height: 120px; resize: vertical; border-radius: 10px; border: 1px solid var(--line, #2a2d33); background: var(--card, #1a1c20); color: inherit; padding: 10px 12px; font: 16px/1.35 inherit; }
+.xv-grid { flex: 1; min-height: 0; overflow: auto; background: #fff; color: #111; margin: 0 12px; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+.xv-wait { padding: 20px; color: #555; }
+.xv-t { border-collapse: collapse; table-layout: fixed; font: 12px/1.3 Calibri, Carlito, Arial, sans-serif; }
+.xv-t th { position: sticky; top: 0; z-index: 2; background: #f1f3f4; color: #5f6368; font-weight: 500; border: 1px solid #dadce0; height: 22px; text-align: center; }
+.xv-t tbody th { left: 0; top: auto; z-index: 1; }
+.xv-t thead th:first-child { left: 0; z-index: 3; }
+.xv-t td { border: 1px solid #e2e4e7; padding: 2px 4px; height: 22px; white-space: nowrap; overflow: hidden; text-overflow: clip; vertical-align: bottom; cursor: cell; }
+.xv-t td.w { white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
+.xv-t td.on { outline: 2px solid #1a73e8; outline-offset: -2px; }
+.xv-foot { margin: 0; padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); font-size: 13px; color: var(--muted, #9aa0a6); }

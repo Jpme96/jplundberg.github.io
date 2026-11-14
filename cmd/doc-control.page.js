@@ -101,19 +101,21 @@
       var h = findHeader(sh.rows); if (!h) return; seen++;
       var si = heads.length, hrow = sh.rows[h.at] || [], last = 0;
       hrow.forEach(function (c, j) { if (String(c || '').trim()) last = j + 1; });
-      heads.push({ path: sh.path || '', at: h.at, last: last, w: sh.rows.reduce(function (a, r) { return Math.max(a, (r || []).length); }, last) });
+      var hd = { path: sh.path || '', at: h.at, last: last, w: sh.rows.reduce(function (a, r) { return Math.max(a, (r || []).length); }, last), none: [] }; heads.push(hd);
       var M = h.map, last = null;
       for (var i = h.at + 1; i < sh.rows.length; i++) {
         var r = sh.rows[i] || [], g = function (key) { return key in M ? String(r[M[key]] == null ? '' : r[M[key]]).trim() : ''; };
         var code = normCode(g('code')), sys = g('sys'), type = g('type'), planned = g('planned'), note = g('note');
-        if (code) last = { code: code, sys: sys, fire: /^(ja|j|x|yes)$/i.test(g('fire')), resp: g('resp') };
+        if (code) { if (last && !last.n) hd.none.push(last.ri); last = { code: code, sys: sys, fire: /^(ja|j|x|yes)$/i.test(g('fire')), resp: g('resp'), ri: i, n: 0 }; }
         else if (!last || sys) continue;   /* a row of its own without a code is a heading or a note */
         if (/^navngivning ref|^dokumentnavnet skal/i.test(planned)) { note = note || ''; planned = ''; }   /* the general naming instruction in the template */
         var L = letters(type);
         if (!type && !planned) continue;
+        last.n++;
         lines.push({ id: uid() + lines.length, code: last.code, sys: (code ? sys : last.sys).slice(0, 160), type: type.slice(0, 80), t: L, planned: planned.replace(/^eksempel:\s*/i, '').slice(0, 160), ex: /^eksempel:/i.test(planned) || undefined,
           note: note.slice(0, 400), fire: last.fire || undefined, resp: (g('resp') || last.resp || '').slice(0, 80), due: g('due').slice(0, 10), st: stMap(g('status')) || 'missing', files: [], src: [si, i] });
       }
+      if (last && !last.n) hd.none.push(last.ri);   /* a system in the plan with no document type chosen (JP 21:47: those rows stayed white) */
     });
     return { lines: lines, sheets: seen, heads: heads };
   }
@@ -854,6 +856,11 @@
           for (var col = 1; col <= h.last; col++) { var c = cell(r, n, col); c.setAttribute('s', xfFor(+c.getAttribute('s') || 0, st)); }
           var cc = cell(r, n, ncol); cc.setAttribute('s', xfFor(+cc.getAttribute('s') || 0, st)); write(cc, checkText(p, l));
         });
+        (h.none || []).forEach(function (ri) {   /* a system with no document type chosen: grey, and the Check column says so */
+          any = true; var n = ri + 1, r = rowEl(n);
+          for (var col = 1; col <= h.last; col++) { var c = cell(r, n, col); c.setAttribute('s', xfFor(+c.getAttribute('s') || 0, 'na')); }
+          var cc = cell(r, n, ncol); cc.setAttribute('s', xfFor(+cc.getAttribute('s') || 0, 'na')); write(cc, k('ui.dc-x-notype', 'No document type chosen'));
+        });
         if (!any) return;
         var hr = rowEl(h.at + 1), hc = cell(hr, h.at + 1, ncol), near = cell(hr, h.at + 1, h.last);
         if (hdrXf == null) hdrXf = near.getAttribute('s'); if (hdrXf) hc.setAttribute('s', hdrXf);
@@ -892,7 +899,15 @@
       { name: 'xl/_rels/workbook.xml.rels', text: XDECL + '<Relationships xmlns="' + R + 'package/2006/relationships"><Relationship Id="rId1" Type="' + R + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + R + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
       { name: 'xl/styles.xml', text: styles }, { name: 'xl/worksheets/sheet1.xml', text: sheet }]);
   }
-  function planXlsx(p) {
+  var XZ = { zipEntries: zipEntries, inflate: inflate, packAll: packAll };
+  /* raw = the coloured file without your own cell edits (the viewer writes them in); else with them */
+  function planXlsx(p, raw) {
+    if (!raw && window.XlsxView) return planXlsx(p, true).then(function (f) {
+      return getBlob('xedit:' + p.id + (f._own ? '' : ':new')).then(function (ed) {
+        if (!ed || !Object.keys(ed).length) return f;
+        return f.arrayBuffer().then(function (buf) { return XlsxView.apply(buf, ed, XZ); }).then(function (bl) { var g = new File([bl], f.name, { type: f.type }); g._own = f._own; return g; });
+      });
+    });
     var nm = fileName(p, k('ui.dc-x-file', 'Document check'), '.xlsx');
     var mk = function (b) { return new File([b], nm, { type: b.type }); };
     var fresh = function () { return colourNew(p).then(function (b) { var f = mk(b); f._own = false; return f; }); };
@@ -1071,15 +1086,19 @@
       var pid = b.dataset.dcdel, all = JSON.parse(JSON.stringify(Fe.tools().dctl || [])), gone = proj(pid);
       var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); Fe.saveTools(t3); back();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; Fe.saveTools(t4); draw(); });
-      setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); } }, 9000); return;
+      setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000); return;
     }
-    if ((b = t.closest('[data-dcxcol]'))) {
-      if (b._xl) { window.FdvPdf.share(b._xl); return; }   /* the second tap shares the file made on the first */
+    if ((b = t.closest('[data-dcxcol]'))) {   /* Excel with colours: see it, change any cell, download (JP 21:47) */
       var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
-      planXlsx(px2).then(function (f) {
-        b.disabled = false; b._xl = f; b.querySelector('span').textContent = k('ui.dc-x-share', 'Share or save the Excel file'); b.querySelector('i').className = 'bi bi-box-arrow-up';
-        toast('<i class="bi bi-check2"></i> ' + esc(f._own ? k('ui.dc-x-own', 'Your plan with colours: red missing or not approved, yellow to check, green approved – see the Check column') : k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
-        if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f);
+      planXlsx(px2, true).then(function (f) {
+        b.disabled = false;
+        var ek = 'xedit:' + px2.id + (f._own ? '' : ':new');
+        return getBlob(ek).then(function (ed) {
+          if (!window.XlsxView) { window.FdvPdf.share(f); return; }
+          if (!f._own) toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
+          XlsxView.open({ blob: f, title: f.name, edits: ed || {}, Z: XZ, start: (px2.planSheets || []).filter(function (h, i) { return (h.none || []).length || (px2.lines || []).some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0],
+            onEdits: function (e) { putBlob(ek, e); }, download: function (bl) { window.FdvPdf.share(new File([bl], f.name, { type: f.type })); } });
+        });
       }).catch(function (e) { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.'))); try { console.warn('[dc] xlsx', e); } catch (e2) {} });
       return;
     }

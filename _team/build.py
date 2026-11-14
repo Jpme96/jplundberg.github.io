@@ -7,6 +7,7 @@ requirements are the same code in cmd and in Team. Edit cmd's files, never _team
 
 What it makes:
   dc/doc-control.js   cmd/doc-control.page.js (it runs on Team's storage through window.DocHost)
+  dc/xlsx-view.js     cmd/xlsx-view.js (see and edit an Excel file)
   dc/paged-pdf.js     cmd/paged-pdf.js (A4 PDFs on the device) + dc/vendor/ (jsPDF, html2canvas, fetched on first use)
   dc/ns.js            the NS 3451 names from cmd/life-pages.js (window.NS3451)
   dc/words.js         the Norwegian words those files use, from cmd/words/ui.nb.js (window.DC_NB)
@@ -40,6 +41,8 @@ dc = rd(os.path.join(CMD, 'doc-control.page.js'))
 pdf = rd(os.path.join(CMD, 'paged-pdf.js'))
 put('doc-control.js', NOTE % 'doc-control.page.js' + dc)
 put('paged-pdf.js', NOTE % 'paged-pdf.js' + pdf)
+xv = rd(os.path.join(CMD, 'xlsx-view.js'))
+put('xlsx-view.js', NOTE % 'xlsx-view.js' + xv)
 for f in ('jspdf.umd.min.js', 'html2canvas.min.js'):
     put('vendor/' + f, rd(os.path.join(CMD, 'vendor', f), True))
 
@@ -50,7 +53,7 @@ if not m: sys.exit('no NS table in cmd/life-pages.js')
 put('ns.js', NOTE % 'life-pages.js (the NS 3451 table)' + 'window.NS3451 = ' + m.group(1) + ';\n')
 
 # the Norwegian words the two files use
-src = dc + pdf
+src = dc + pdf + xv
 keys = sorted(set(re.findall(r"""'(ui\.[a-z0-9.-]+)'""", src)))   # every text name in the two files (also those passed around in tables)
 wtxt = rd(os.path.join(CMD, 'words', 'ui.nb.js'))
 wm = re.search(r'I18N\.add\((\{.*\})\);?\s*$', wtxt, re.S)

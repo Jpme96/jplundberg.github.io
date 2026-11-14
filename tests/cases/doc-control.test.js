@@ -51,6 +51,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const { b, p } = await open(393);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const tap = async sel => { await p.waitForSelector(sel, { timeout: 8000 }); await p.evaluate(q => document.querySelector(q).click(), sel); };
+  const until = async (fn, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await p.evaluate(fn).catch(() => false)) return true; await sl(120); } return false; };
   await p.evaluate(() => { const t = Features.tools(); t.dctl = []; Features.saveTools(t); });
   await go(p, 'work/', 2500);
   /* names on their own */
@@ -102,18 +103,31 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(rp.h2 === '1 Summary|2 Missing documents|3 Not approved and comments|4 File names' && /235/.test(rp.t) && /Made-up: version number/.test(rp.t) && /random scan 7\.pdf/.test(rp.t), 'the report: summary, missing, not approved with the comment, and the file-name problems ' + JSON.stringify(rp.h2));
   const pdf = await p.evaluate(async () => { const r = Features.list('dctl')[0], f = await window.FdvPdf.html(document.querySelector('#wkDocCtl .rp-doc').innerHTML, 'Made-up foot', 'x.pdf'); const t = new TextDecoder().decode(new Uint8Array(await f.slice(0, 8).arrayBuffer())); return { pdf: t.slice(0, 5), pages: f._pages }; });
   check(pdf.pdf === '%PDF-' && pdf.pages >= 1, 'the report becomes a PDF on the device ' + JSON.stringify(pdf));
-  /* Excel with colours from the button: when the browser refuses to share (the tap was too long ago) the file is saved instead, and the button then shares it (JP 21:31) */
-  const xb = await p.evaluate(async () => {
-    const got = []; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got.push(this.download); };
-    const cs = navigator.canShare, sh = navigator.share; let shared = 0;
-    navigator.canShare = () => true; navigator.share = () => { shared++; return Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' })); };
-    const b = document.querySelector('[data-dcxcol]'); b.click();
-    for (let i = 0; i < 50 && !got.length; i++) await new Promise(r => setTimeout(r, 100));
-    const label = b.querySelector('span').textContent; b.click(); await new Promise(r => setTimeout(r, 200));
-    navigator.canShare = cs; navigator.share = sh; HTMLAnchorElement.prototype.click = oc;
-    return { saved: got, shared, label };
+  /* Excel with colours opens the file to see and edit (JP 21:47): sheet tabs, the colours, systems with no document type in grey, any cell changed, kept and downloaded */
+  await tap('[data-dcxcol]');
+  check(await until(() => !!document.querySelector('.xv .xv-t td')), 'the coloured plan opens in the viewer');
+  const xv = await p.evaluate(() => {
+    const tabs = [...document.querySelectorAll('.xv-tabs button')].map(b => b.textContent + (b.getAttribute('aria-selected') === 'true' ? '*' : '')).join('|');
+    const bg = ref => getComputedStyle(document.querySelector('[data-xvr="' + ref + '"]')).backgroundColor, tx = ref => (document.querySelector('[data-xvr="' + ref + '"]') || {}).textContent;
+    return { tabs, b5: bg('B5'), b3: bg('B3'), i3: tx('I3'), i5: tx('I5'), wide: document.querySelector('.xv').scrollWidth <= innerWidth + 1 };
   });
-  check(xb.saved.length === 2 && /\.xlsx$/.test(xb.saved[0]) && xb.shared === 2 && /Share or save the Excel/.test(xb.label), 'Excel with colours: saved when sharing is refused, and the button shares it again ' + JSON.stringify(xb));
+  check(xv.tabs === 'Generelt|3 - VVS*|2 - Bygning' && xv.b5 === 'rgb(217, 234, 211)' && xv.b3 === 'rgb(231, 230, 230)' && xv.i3 === 'No document type chosen' && /^Approved/.test(xv.i5) && xv.wide,
+    'the viewer: the plan\'s sheets, approved green, a system with no document type grey with a note, nothing wider than the phone ' + JSON.stringify(xv));
+  await p.click('[data-xvr="H5"]'); await p.evaluate(() => { const t = document.querySelector('.xv-in'); t.value = 'Made-up edit ÆØÅ'; t.dispatchEvent(new Event('input', { bubbles: true })); }); await sl(700);
+  check(/1 change of your own/.test(await p.$eval('.xv-foot', e => e.textContent)) && (await p.$eval('[data-xvr="H5"]', e => e.textContent)) === 'Made-up edit ÆØÅ', 'a cell is changed by typing in the bar');
+  const dl = await p.evaluate(async () => {
+    let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
+    const cs = navigator.canShare, sh = navigator.share; navigator.canShare = () => true; navigator.share = () => Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' }));
+    document.querySelector('[data-xv="dl"]').click();
+    for (let i = 0; i < 60 && !got; i++) await new Promise(r => setTimeout(r, 100));
+    navigator.canShare = cs; navigator.share = sh; HTMLAnchorElement.prototype.click = oc;
+    if (!got) return null; const sh2 = await DocCtl.readBook(await (await fetch(got.href)).arrayBuffer()), v = sh2.find(x => x.name === '3 - VVS');
+    return { name: got.download, h5: v.rows[4][7], i5: v.rows[4][8] };
+  });
+  check(dl && /\.xlsx$/.test(dl.name) && dl.h5 === 'Made-up edit ÆØÅ' && /^Approved/.test(dl.i5), 'Download: the coloured file with your change in it (saved when the browser won\'t share) ' + JSON.stringify(dl));
+  await p.click('[data-xv="close"]'); await sl(300);
+  const kept = await p.evaluate(async () => { const f = await DocCtl.planXlsx(Features.list('dctl')[0]); const v = (await DocCtl.readBook(await f.arrayBuffer())).find(x => x.name === '3 - VVS'); return { closed: !document.querySelector('.xv'), h5: v.rows[4][7] }; });
+  check(kept.closed && kept.h5 === 'Made-up edit ÆØÅ', 'your change is kept on this device and goes into the next file too');
   /* importing the plan again keeps the statuses */
   await tap('[data-dctab="over"]'); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);

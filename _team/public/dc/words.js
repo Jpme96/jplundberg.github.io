@@ -3,6 +3,7 @@ window.DC_NB = {
 "ui.add": "Legg til",
 "ui.all": "Alle",
 "ui.cancel": "Avbryt",
+"ui.close": "Lukk",
 "ui.date": "Dato",
 "ui.dc-add-line": "Legg til en linje",
 "ui.dc-add-line-ph": "Hva det er, f.eks. Samsvarserklæring membran",
@@ -140,8 +141,7 @@ window.DC_NB = {
 "ui.dc-x-failed": "Excel-filen kunne ikke lages.",
 "ui.dc-x-file": "Dokumentkontroll",
 "ui.dc-x-new": "En ny Excel med farger (den opprinnelige planen er ikke på denne enheten)",
-"ui.dc-x-own": "Planen din med farger: rødt mangler eller ikke godkjent, gult til kontroll, grønt godkjent – se kolonnen Kontroll",
-"ui.dc-x-share": "Del eller lagre Excel-filen",
+"ui.dc-x-notype": "Ingen dokumenttype valgt",
 "ui.dc-x-sheet": "Dokumentkontroll",
 "ui.delete": "Slett",
 "ui.doc-control": "Dokument­kontroll",
@@ -172,5 +172,14 @@ window.DC_NB = {
 "ui.open-team": "Åpne Team",
 "ui.save": "Lagre",
 "ui.status": "Status",
-"ui.total": "Totalt"
+"ui.total": "Totalt",
+"ui.xv-download": "Last ned",
+"ui.xv-formula": "Denne cellen har en formel – det du skriver erstatter den",
+"ui.xv-hint": "Endringene dine tas vare på på denne enheten og er med i hver nedlasting.",
+"ui.xv-n-edits": "{n} egne endringer – tas vare på på denne enheten og er med i hver nedlasting",
+"ui.xv-n-edits1": "1 egen endring – tas vare på på denne enheten og er med i hver nedlasting",
+"ui.xv-reading": "Leser filen …",
+"ui.xv-reset": "Angre alle",
+"ui.xv-reset-q": "Angre alle dine egne endringer i denne filen?",
+"ui.xv-tap": "Trykk på en celle for å endre den"
 };
