@@ -79,7 +79,7 @@ def rules(css):
         out.append((pre.strip(), css[j + 1:k - 1])); i = k
     return out
 
-TOK = set(re.findall(r'[a-zA-Z][\w-]*', src))
+TOK = set(re.findall(r'[a-zA-Z][\w-]*', src + rd(os.path.join(CMD, 'fdv.page.js'))))   # + the inspection report's classes (inspections shared to Team)
 SKIP = re.compile(r':root|\bhtml\b|\.modern\b|\.glass\b|\.simple\b|\.unlocked\b|\.lock\b|\[data-theme|\.mo-|\.dens-|\.corners-')
 def wanted(sel):
     if not sel or sel.startswith('@') or SKIP.search(sel): return False

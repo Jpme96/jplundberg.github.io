@@ -127,6 +127,7 @@
   }
   function reportTab(r) {
     return '<div class="fdv-rbar"><label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> <span data-t="ui.photos">Photos</span></label><span class="spacer"></span>' +
+      '<button type="button" class="pill-btn" data-fdvteam="' + esc(r.id) + '"><i class="bi bi-people"></i> <span>' + esc(I18N.k('ui.fdv-to-team', 'Send to Team')) + '</span></button>' +
       '<button type="button" class="pill-btn" data-fdvmkpdf="' + esc(r.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(I18N.k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><article class="rp-doc rp-inline">' + report(r) + '</article>';
   }
@@ -385,6 +386,17 @@
   document.addEventListener('focusout', function (e) { if (e.target.matches && e.target.matches('textarea[data-fdvconcl]')) setTimeout(drawAll, 600); });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-fdvpdf]'); if (b) { openInsp(b.dataset.fdvpdf, 'report'); return; }
+    /* an inspection to Team (JP 23:46): the report as a file you import there (Documents → Import from /cmd) – without photos */
+    var tb = e.target.closest('[data-fdvteam]');
+    if (tb) {
+      var tr = (Fe.list('fdv') || []).filter(function (x) { return x.id === tb.dataset.fdvteam; })[0]; if (!tr) return;
+      var ph = RP.photos; RP.photos = false; var html; try { html = report(tr); } finally { RP.photos = ph; }
+      var tf = new File([JSON.stringify({ team: 'insp', v: 1, at: new Date().toISOString(), r: { name: String(tr.building || '').slice(0, 120), no: tr.no || '', date: tr.date || '', address: tr.address || '' }, html: html })], ([tr.no, tr.building, I18N.k('ui.dc-for-team', 'for Team')].filter(Boolean).join(' ')).replace(/[\\/:*?"<>|]+/g, '-') + '.json', { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [tf] })) navigator.share({ files: [tf], title: tf.name }).catch(function () {});
+      else { var ta = document.createElement('a'); ta.href = URL.createObjectURL(tf); ta.download = tf.name; document.body.appendChild(ta); ta.click(); setTimeout(function () { URL.revokeObjectURL(ta.href); ta.remove(); }, 4000); }
+      if (window.Quick && Quick.toast) Quick.toast('<i class="bi bi-people"></i> ' + I18N.k('ui.dc-sent-team', 'Saved. In Team: Documents → Import from /cmd.'));
+      return;
+    }
     b = e.target.closest('[data-fdvmkpdf]'); if (!b) return;
     if (b._pdf) { window.PagedPdf.share(b._pdf); return; }   /* made already: a fresh tap shares it (the phone wants a tap of its own for the share sheet) */
     var r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvmkpdf; })[0]; if (!r || b.disabled) return;

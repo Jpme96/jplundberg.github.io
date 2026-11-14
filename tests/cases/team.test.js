@@ -338,6 +338,25 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   /* search in the team (also opened from /cmd's search as #search=…) */
   await own.goto(U + '#search=' + encodeURIComponent('After Ola')); await own.reload();
   check(await until(own, () => /Meetings/i.test(document.body.innerText) && /After Ola MARK-SECRET-4/.test(document.body.innerText), 15000), 'searching the team finds the meeting');
+  /* no signal (JP 23:46): an action made offline waits on the device (encrypted) and is sent when the line is back */
+  await own.goto(U + '#actions'); await own.waitForSelector('[data-act=newAction]');
+  await own.setOfflineMode(true);
+  await own.click('[data-act=newAction]'); await own.waitForSelector('form[data-form=action]');
+  await own.type('form[data-form=action] input[name=text]', 'Offline MARK-SECRET-OFF'); await own.click('form[data-form=action] button[type=submit]');
+  check(await until(own, () => /1 change waiting for the connection/.test((document.getElementById('tWait') || {}).textContent || '') && /Offline MARK-SECRET-OFF/.test(document.body.innerText)), 'without signal the action shows at once and waits');
+  check(await own.evaluate(() => !/MARK-SECRET-OFF/.test(localStorage.getItem('team.q.team') || '') && /"ct"/.test(localStorage.getItem('team.q.team') || '')), 'what waits on the device is encrypted');
+  await own.setOfflineMode(false); await own.evaluate(() => window.dispatchEvent(new Event('online')));
+  check(await until(own, () => !document.getElementById('tWait'), 15000), 'when the line is back it is sent');
+  check(await kari.evaluate(() => fetch('/api/recs').then(r => r.json()).then(j => j.recs.length)) > 0 && JSON.parse((await raw('/__mem')).body).some(([k, v]) => k.startsWith('r:') && v.k === 'action' && v.by === 'owner@x.no' && v.seq), 'and the server has it');
+  /* a building inspection shared from /cmd (JP 23:46): imported, shown (cleaned), the team adds notes */
+  await own.goto(U + '#docs'); await own.waitForSelector('input[data-dcimport]');
+  await own.evaluate(() => { const j = { team: 'insp', v: 1, r: { name: 'Made-up block A', no: 'R-1', date: '2026-11-10', address: 'Made-up street 1' }, html: '<h1>Made-up block A</h1><p class="rp-addr">MARK-SECRET-INSP</p><script>window.__bad = 1</script><img src="x" onerror="window.__bad = 2">' };
+    const inp = document.querySelector('input[data-dcimport]'), dt = new DataTransfer(); dt.items.add(new File([JSON.stringify(j)], 'insp.json', { type: 'application/json' })); inp.files = dt.files; inp.dispatchEvent(new Event('change', { bubbles: true })); });
+  check(await until(own, () => /^#in=/.test(location.hash) && /MARK-SECRET-INSP/.test(document.body.innerText), 15000), 'an inspection from /cmd is imported and shown');
+  check(await own.evaluate(() => !window.__bad && !document.querySelector('.t-insp script, .t-insp [onerror]')), 'its report is cleaned (no scripts, no handlers)');
+  await own.type('form[data-form=inote] textarea', 'Made-up note MARK-SECRET-NOTE'); await own.click('form[data-form=inote] button[type=submit]');
+  check(await until(own, () => /Made-up note MARK-SECRET-NOTE/.test(document.body.innerText)), 'the team adds notes to it');
+  check(!/MARK-SECRET-INSP|MARK-SECRET-NOTE/.test((await raw('/__mem')).body), 'the server only has it encrypted');
   /* the plan file and Excel edits are shared, encrypted records (JP 23:46): what Kari stores, the owner reads */
   const put = await kari.evaluate(async () => { await DocHost.store.put('plan:made-up', new Blob(['MADE-UP-PLAN-BYTES'], { type: 'text/plain' })); await DocHost.store.put('xedit:made-up', { 'xl/worksheets/sheet1.xml': { A1: { v: 'MADE-UP-EDIT' } } }); await new Promise(r => setTimeout(r, 1800)); return true; });
   await own.goto(U + '#docs'); await own.reload(); await until(own, () => !!(window.DocHost && window.DocHost.store), 20000);

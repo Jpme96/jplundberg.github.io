@@ -240,7 +240,7 @@
 
   /* ---------- the app ---------- */
   async function startApp() {
-    document.documentElement.classList.add('unlocked');
+    document.documentElement.classList.add('unlocked'); waitChip(); flush().catch(function () {});
     await Promise.all([pull(true), loadMembers()]);
     draw();
     stopPoll();
@@ -250,6 +250,7 @@
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.timer) refresh(); });
   async function refresh() {
     try {
+      flush().catch(function () {});
       var before = S.seq, ep = S.me.team.epoch;
       await pull(false);
       if (S.tab() === 'team' || rank() >= 3) await loadMembers();
@@ -282,6 +283,36 @@
   function actions() { return list('action'); }
   function lockOf(id) { var l = S.locks[id]; return l && l.until > Date.now() && l.by !== S.me.email ? l : null; }
 
+  /* no signal (JP 23:46): a change waits on this device – already encrypted, never readable – and is sent when the line is
+     back (online event, every refresh). The newest version of a record wins; the version number is taken fresh on send. */
+  function qKey() { return 'team.q.' + S.tid; }
+  function queue() { try { return JSON.parse(localStorage.getItem(qKey()) || '[]'); } catch (e) { return []; } }
+  function setQueue(q) { try { if (q.length) localStorage.setItem(qKey(), JSON.stringify(q)); else localStorage.removeItem(qKey()); } catch (e) {} waitChip(); }
+  function enqueue(body) { var q = queue().filter(function (x) { return x.id !== body.id; }); q.push(body); setQueue(q); }
+  function waitChip() {
+    var n = queue().length, el = document.getElementById('tWait');
+    if (!n) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'tWait'; el.className = 't-wait'; document.body.appendChild(el); }
+    el.textContent = L(n === 1 ? '1 change waiting for the connection' : n + ' changes waiting for the connection', n === 1 ? '1 endring venter på forbindelse' : n + ' endringer venter på forbindelse');
+  }
+  var flushing = false;
+  async function flush() {
+    if (flushing || !navigator.onLine) return; var q = queue(); if (!q.length) return; flushing = true;
+    try {
+      for (var i = 0; i < q.length; i++) {
+        var b = q[i], cur = S.recs[b.id];
+        try { var res = await api('rec', { method: 'PUT', body: Object.assign({}, b, { v: cur && cur.srvV != null ? cur.srvV : b.v }) }); if (cur) { cur.v = res.v; cur.srvV = res.v; cur.t = res.t; } q[i] = null; }
+        catch (err) {
+          if (err.offline) break;
+          if (err.status === 409) { var srv = err.data && err.data.rec; if (srv) { try { var r2 = await api('rec', { method: 'PUT', body: Object.assign({}, b, { v: srv.v }) }); if (cur) { cur.v = r2.v; cur.srvV = r2.v; } q[i] = null; continue; } catch (e2) {} } }
+          q[i] = null; toast(failMsg(err));   /* refused for good (a role, a lock): dropped, the server's version stays */
+        }
+      }
+      setQueue(q.filter(Boolean));
+      if (!queue().length) { toast(L('Changes made without signal are saved', 'Endringer gjort uten forbindelse er lagret')); await pull(false).catch(function () {}); draw(); }
+    } finally { flushing = false; }
+  }
+  window.addEventListener('online', function () { flush(); });
   async function putRec(kind, id, data, sum) {
     var e = S.me.team.epoch, cur = S.recs[id];
     var s = await seal(data, id + '|' + kind + '|' + e, e);
@@ -291,17 +322,20 @@
       S.recs[id] = { id: id, k: kind, v: res.v, t: res.t, by: S.me.email, e: e, d: data };
       S.seq = Math.max(S.seq, res.seq - 1);
       return true;
-    } catch (err) { if (err.status === 409) await pull(false).catch(function () {}); toast(failMsg(err)); return false; }
+    } catch (err) {
+      if (err.offline) { enqueue({ id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm }); S.recs[id] = Object.assign({}, cur || {}, { id: id, k: kind, by: S.me.email, e: e, d: data, del: 0, pending: 1 }); return true; }
+      if (err.status === 409) await pull(false).catch(function () {}); toast(failMsg(err)); return false;
+    }
   }
   async function delRec(id, sum) {
     var cur = S.recs[id]; if (!cur) return false;
     var e = S.me.team.epoch, sm = sum ? Object.assign({ e: e }, await seal({ t: String(sum).slice(0, 200) }, 'log', e)) : undefined;
     try { var res = await api('rec', { method: 'PUT', body: { id: id, k: cur.k, del: true, v: cur.v, s: sm } }); cur.del = 1; cur.v = res.v; return true; }
-    catch (err) { toast(failMsg(err)); return false; }
+    catch (err) { if (err.offline) { enqueue({ id: id, k: cur.k, del: true, v: cur.v, s: sm }); cur.del = 1; return true; } toast(failMsg(err)); return false; }
   }
 
   /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
-  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^d[cr]=/.test(h)) return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
+  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h)) return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
   function draw() {
@@ -311,6 +345,7 @@
     if (S.edit) body = viewEdit();
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
     else if (/^search=/.test(h)) body = viewSearch(decodeURIComponent(h.slice(7)));
+    else if (/^in=/.test(h)) body = viewInsp(h.slice(3));
     else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.tab()]();
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
     $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
@@ -686,11 +721,12 @@
   function viewDocs() {
     if (/^#dr=/.test(location.hash)) S.dtab = 'req'; else if (/^#dc=/.test(location.hash)) S.dtab = 'doc';
     var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Document control and document requirements – the same tools as in /cmd.', 'Dokumentkontroll og dokumentkrav – de samme verktøyene som i /cmd.'));
-    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
+    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')], ['insp', L('Inspections', 'Befaringer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     if (rank() >= 1) out += '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document control or Document requirements → open it → Send to Team. Attached files stay on the device they were added on.', 'I /cmd: Jobb → Dokumentkontroll eller Dokumentkrav → åpne den → Send til Team. Vedlagte filer blir på enheten de ble lagt til på.') + '</p>';
     out += '</div>';
     out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
-      '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>';
+      '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>' +
+      '<section id="tInsp"' + (S.dtab === 'insp' ? '' : ' hidden') + '>' + (inspections().length ? '<ul class="t-list">' + inspections().map(function (r) { return '<li><a class="t-row" href="#in=' + r.id + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([r.d.no, r.d.date ? fmtDate(r.d.date) : '', r.d.address, (r.d.notes || []).length ? L((r.d.notes.length) + ' notes', (r.d.notes.length) + ' notater') : ''].filter(Boolean).join(' · ')) + '</small></span></a></li>'; }).join('') + '</ul>' : '<p class="t-empty">' + L('No inspections yet. In /cmd: Work → Building inspection → a report → Send to Team, then Import from /cmd here.', 'Ingen befaringer ennå. I /cmd: Jobb → Bygningsbefaring → en rapport → Send til Team, så Importer fra /cmd her.') + '</p>') + '</section>';
     return out;
   }
   function loadJs(src) { return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
@@ -712,7 +748,7 @@
     docsP.then(function () { window.dispatchEvent(new Event('tools:change')); }, function () {});
   }
   function showDtab() {
-    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req';
+    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'), c = document.getElementById('tInsp'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req'; if (c) c.hidden = S.dtab !== 'insp';
     [].forEach.call(document.querySelectorAll('[data-dtab]'), function (x) { x.checked = x.dataset.dtab === S.dtab; });
   }
   var NSM = null;
@@ -813,7 +849,10 @@
       try {
         var res = await api('batch', { method: 'PUT', body: { recs: recs, s: i ? undefined : sum } });
         res.results.forEach(function (x) { var r = S.recs[x.id]; if (x.error) { failed++; return; } if (r) { r.v = x.v; r.t = x.t; r.by = S.me.email; r.e = e; } });
-      } catch (err) { toast(failMsg(err)); failed += part.length; if (err.status === 403) break; }
+      } catch (err) {
+        if (err.offline) { recs.forEach(function (r0) { enqueue(Object.assign({}, r0, { s: undefined })); }); continue; }   /* no signal: each change waits */
+        toast(failMsg(err)); failed += part.length; if (err.status === 403) break;
+      }
     }
     if (failed) {
       /* someone changed the same line meanwhile: take theirs, then put my changes on top once */
@@ -824,10 +863,38 @@
     }
   }
   /* a project sent from /cmd (Document control → Send to Team) */
+  /* building inspections shared from /cmd (JP 23:46): the report (without photos) as one record; the team adds notes */
+  function cleanHtml(h) {
+    var d = new DOMParser().parseFromString('<div>' + String(h).slice(0, 600000) + '</div>', 'text/html'), root = d.body.firstChild;
+    [].forEach.call(root.querySelectorAll('script,iframe,object,embed,link,meta,style,form,input,button,textarea,select,base'), function (x) { x.remove(); });
+    [].forEach.call(root.querySelectorAll('*'), function (x) { [].slice.call(x.attributes).forEach(function (a) { if (/^on/i.test(a.name) || (/^(href|src|xlink:href|action)$/i.test(a.name) && /^\s*(javascript|data:text)/i.test(a.value))) x.removeAttribute(a.name); }); });
+    return root.innerHTML;
+  }
+  async function importInsp(j) {
+    var id = 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    var d = { name: String(j.r.name || L('Inspection', 'Befaring')).slice(0, 120), no: String(j.r.no || '').slice(0, 40), date: String(j.r.date || '').slice(0, 10), address: String(j.r.address || '').slice(0, 160), html: cleanHtml(j.html), notes: [] };
+    if (await putRec('insp', id, d, L('Inspection: ', 'Befaring: ') + d.name)) { toast(L('Imported: ', 'Importert: ') + d.name); S.dtab = 'insp'; location.hash = '#in=' + id; }
+  }
+  function inspections() { return list('insp').sort(function (a, b) { return (b.d.date || '').localeCompare(a.d.date || ''); }); }
+  function viewInsp(id) {
+    var r = S.recs[id]; if (!r || r.del || !r.d) return '<p class="t-empty">' + L('Not found.', 'Fant ikke.') + '</p>';
+    var d = r.d, out = '<div class="t-top t-noprint"><a class="t-back" href="#docs">' + ic('back') + L('Inspections', 'Befaringer') + '</a><button class="t-btn ghost sm" type="button" data-act="inspPdf" data-id="' + id + '">PDF</button></div>';
+    out += '<article class="rp-doc rp-inline dc-host t-insp">' + d.html + '</article>';
+    out += '<p class="t-h">' + L('Notes from the team', 'Notater fra teamet') + '</p><ul class="t-list">' + (d.notes || []).map(function (n) { return '<li><span class="grow"><span>' + esc(n.text) + '</span><small>' + esc(nameOf(n.by) + ' · ' + fmtTime(n.t)) + '</small></span></li>'; }).join('') + (d.notes && d.notes.length ? '' : '<li><span class="grow t-empty">' + L('No notes yet.', 'Ingen notater ennå.') + '</span></li>') + '</ul>';
+    if (rank() >= 1) out += '<form class="t-form" data-form="inote" data-id="' + id + '"><label class="t-lbl">' + L('Add a note', 'Legg til et notat') + '<textarea name="text" rows="3" maxlength="2000" required></textarea></label><button class="t-btn" type="submit">' + L('Save', 'Lagre') + '</button></form>';
+    return out;
+  }
+  async function onInote(f) {
+    var id = f.dataset.id, r = S.recs[id]; if (!r || !r.d) return; var tx = f.text.value.trim(); if (!tx) return;
+    busy(f, true);
+    var d = Object.assign({}, r.d, { notes: (r.d.notes || []).concat([{ by: S.me.email, t: Date.now(), text: tx.slice(0, 2000) }]) });
+    if (await putRec('insp', id, d, L('Note on ', 'Notat på ') + d.name)) draw(); else busy(f, false);
+  }
   function importDoc(file) {
     var fr = new FileReader();
     fr.onload = function () {
       var j = null; try { j = JSON.parse(fr.result); } catch (x) {}
+      if (j && j.team === 'insp' && typeof j.html === 'string' && j.r) { importInsp(j); return; }
       if (!j || (j.team !== 'dctl' && j.team !== 'dckrav') || !j.p || typeof j.p.name !== 'string' || !Array.isArray(j.p.lines)) { toast(L('That is not a project file from /cmd.', 'Det er ikke en prosjektfil fra /cmd.')); return; }
       var key = j.team;   /* dctl = a Document control project, dckrav = a Document requirements list */
       var p = j.p, nid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -871,6 +938,7 @@
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
     if (a === 'teams') return teamsSheet();
+    if (a === 'inspPdf') { var ir = S.recs[t.dataset.id]; if (!ir || !ir.d) return; docsReady(); docsP.then(function () { return window.PagedPdf.html(ir.d.html, [ir.d.name, S.me.team.name].join('  ·  '), (ir.d.no ? ir.d.no + ' ' : '') + ir.d.name + '.pdf'); }).then(function (f2) { window.PagedPdf.share(f2); }, function () { toast(L('The PDF could not be made.', 'PDF-en kunne ikke lages.')); }); return; }
     if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
     if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
@@ -908,7 +976,7 @@
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 

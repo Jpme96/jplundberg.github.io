@@ -1,5 +1,6 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.fdv-to-team": ["Send to Team", "Send til Team"],
   "ui.sr-team": ["Search Team for “{q}”", "Søk i Team etter «{q}»"],
   "ui.sr-team-s": ["Meetings, actions and documents with your team", "Møter, oppgaver og dokumenter med teamet ditt"],
   "ui.sr-none": ["Nothing found for “{q}”.", "Fant ingenting for «{q}»."],
