@@ -650,6 +650,8 @@ I18N.add({
   "ui.dr-made": ["{n} documents on the list", "{n} dokumenter på listen"],
   "ui.dr-make": ["Make the list", "Lag listen"],
   "ui.dr-next": ["Next: pick the systems", "Neste: velg systemene"],
+  "ui.dr-reset": ["Reset the list", "Nullstill listen"],
+  "ui.dr-reset-done": ["The list is empty – pick the systems again", "Listen er tømt – velg systemene på nytt"],
   "ui.dr-start": ["Start document control", "Start dokumentkontroll"],
   "ui.drag-the-grip-to-change-the-order-on-you": ["Drag the grip to change the order on your dashboard", "Dra i håndtaket for å endre rekkefølgen på dashbordet"],
   "ui.drinking-water": ["Drinking water", "Drikkevann"],

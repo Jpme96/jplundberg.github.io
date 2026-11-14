@@ -711,7 +711,7 @@
       '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3>' + (redit ? '<form class="dc-pform" data-dredit>' + '<label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required value="' + esc(p.name) + '"></label><label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40" value="' + esc(p.no || '') + '"></label>' + siteFields(p) +
         '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dreditx>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>' :
         '<table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p)).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table><div class="fdv-acts"><button type="button" class="pill-btn" data-dredit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button></div>') +
-      '<div class="fdv-acts"><button type="button" class="text-btn dc-del" data-drdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dr-delete', 'Delete the requirements')) + '</button></div>';
+      '<div class="fdv-acts"><button type="button" class="text-btn" data-drreset><i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dr-reset', 'Reset the list')) + '</button><button type="button" class="text-btn dc-del" data-drdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dr-delete', 'Delete the requirements')) + '</button></div>';
     return h + '</div></div>';
   }
   function kravReport(p) {
@@ -840,6 +840,9 @@
     if (t.closest('[data-drcancel]')) { radding = false; draw(); return; }
     if ((b = t.closest('[data-dropen]'))) { rgo(b.dataset.dropen); return; }
     if (t.closest('[data-drback]')) { redit = false; rback(); return; }
+    if (t.closest('[data-drreset]')) {   /* JP 15:18: start the list again – the project details stay, Undo brings the lines back */
+      var kp0 = JSON.parse(JSON.stringify(krav(ropen))); saveP(ropen, function (p) { p.lines = []; p.type = ''; }, 'dckrav'); rpicking = true; ticks = {}; xsel = {}; xoff = {}; lastType = ''; draw(); window.scrollTo(0, 0);
+      toast('<i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dr-reset-done', 'The list is empty – pick the systems again')), function () { var t12 = Fe.tools(); t12.dckrav = (t12.dckrav || []).map(function (x) { return x.id === kp0.id ? kp0 : x; }); Fe.saveTools(t12); rpicking = false; draw(); }); return; }
     if (t.closest('[data-drfill]')) { var nf2 = 0; saveP(ropen, function (p) { var out = []; (p.lines || []).forEach(function (l) { if (!l.t && defTypes(l.code) && !/^1/.test(l.code)) { var nl = linesFor([l.code]); nf2 += nl.length; out = out.concat(nl); } else out.push(l); }); p.lines = out; }, 'dckrav'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: nf2 }))); draw(); return; }
     if (t.closest('button[data-dredit]')) { redit = true; draw(); return; }
     if (t.closest('[data-dreditx]')) { redit = false; draw(); return; }

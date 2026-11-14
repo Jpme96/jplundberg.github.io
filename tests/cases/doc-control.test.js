@@ -168,6 +168,13 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-dcmake="req"]'); await sl(500);
   const sp = await p.evaluate(() => { const r = Features.list('dckrav')[0]; return { names: r.lines.filter(l => l.spec).map(l => l.code + ' ' + l.name).join('|'), shown: [...document.querySelectorAll('.dr-line b')].some(b => /Completion certificate/.test(b.textContent)) }; });
   check(/124 Completion certificate \/ temporary use permit/.test(sp.names) && !/155/.test(sp.names) && sp.shown, 'the specific documents are added as named lines (an unticked one is left out) ' + sp.names);
+  /* Reset the list (15:18): empties it and opens the picker; Undo brings it back */
+  const before = await p.evaluate(() => Features.list('dckrav')[0].lines.length);
+  await tap('[data-drreset]'); await sl(400);
+  const rs = await p.evaluate(() => ({ n: Features.list('dckrav')[0].lines.length, name: Features.list('dckrav')[0].name, pick: !!document.querySelector('#wkDocReq .dc-pick') }));
+  await p.evaluate(() => { const u = document.querySelector('[data-undo]'); if (u) u.click(); }); await sl(500);
+  const back2 = await p.evaluate(() => Features.list('dckrav')[0].lines.length);
+  check(rs.n === 0 && rs.name === 'Made-up bathroom' && rs.pick && back2 === before, 'Reset empties the list (the project stays) and opens the picker; Undo brings it back ' + JSON.stringify({ rs, before, back2 }));
   /* Start document control: a project in Document control with the same lines, all missing */
   await tap('[data-drstart]'); await sl(700);
   const st0 = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r && r.lines.filter(l => !l.spec && /^33/.test(l.code)).map(l => l.code + ' ' + l.t + ' ' + l.st).join(), full: document.body.classList.contains('dc-full'), dr: document.body.classList.contains('dr-full'), tab: (document.querySelector('#wkDocCtl .fdv-tabs [aria-selected="true"]') || {}).textContent }; });
