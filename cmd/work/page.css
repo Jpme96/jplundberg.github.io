@@ -252,3 +252,11 @@ body.dc-full #wkDocCtl { display: block !important; }
 .dc-addl > input { flex: 1 1 100%; font-size: 16px; }
 .dc-hint { font-size: 13px; margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
 .dc-lrm { text-align: right; }
+body.dr-full main .fp-hero, body.dr-full #hlTiles, body.dr-full .pt-tabs, body.dr-full #wkToday, body.dr-full #wkEmpty, body.dr-full .pt-tail, body.dr-full .kit-grid > :not(#wkDocReq) { display: none !important; }
+body.dr-full #wkDocReq { display: block !important; }
+.dr-line .dc-lmain { cursor: default; align-items: start; }
+.dr-hint { color: var(--muted); font-size: 12px; line-height: 1.4; margin-top: 2px; }
+.dc-fromkrav { margin: 12px 0 0; }
+.dc-site { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dc-site label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+.dc-site input { font-size: 16px; min-width: 0; }

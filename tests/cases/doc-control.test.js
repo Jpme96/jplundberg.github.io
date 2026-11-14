@@ -120,11 +120,12 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     const wide = [...document.querySelectorAll('.dc-qk *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length; return { n, a, b, wide }; }, lid);
   check(qk.n === 6 && qk.a === 'ok' && qk.b === 'recv' && !qk.wide, 'Quick check puts Approved / Not approved / Not relevant on every line; tapping again undoes it ' + JSON.stringify(qk));
   await p.evaluate(() => { const c = document.querySelector('[data-dcquick]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
-  /* no plan: make it from the checklist (2026-11-14) – a project type ticks its systems, one line per document type (B and C together), the examples as hints */
+  /* Document requirements (2026-11-14): at the start – a project type ticks its systems from the client's checklist, one line per NS 3456 type
+     (B and C together), the examples as hints; shared as PDF / Excel (a document plan that reads back), and "Start document control" copies it */
   await tap('[data-dcback]'); await sl(500);
-  await tap('[data-dcnew]'); await sl(200);
-  await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up bathroom'; f.requestSubmit(); }); await sl(500);
-  await tap('[data-dcpick]'); await sl(300);
+  await tap('[data-drnew]'); await sl(200);
+  await p.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up bathroom'; f.no.value = 'P-9'; f.bid.value = '99901'; f.bname.value = 'Made-up block A'; f.pname.value = 'Made-up estate'; f.pid.value = '1/2'; f.requestSubmit(); }); await sl(500);
+  check(await p.evaluate(() => document.body.classList.contains('dr-full') && /^#dr=/.test(location.hash) && !!document.querySelector('.dc-pick')), 'new requirements open on their own page (#dr=…) with the system picker');
   await (await p.$('input[data-dcreq]')).uploadFile(reqF); await sl(1000);
   const rq = await p.evaluate(() => { const r = Features.tools().dcreq; return { n: Object.keys(r.codes).join(), t332: r.codes['332'].t, ex: r.codes['332'].ex, chips: document.querySelectorAll('[data-dcptype]').length }; });
   check(rq.n === '330,331,332' && rq.t332 === 'ABC' && rq.ex.A === 'Made-up coverage and marking' && rq.chips >= 30, 'the checklist is read: codes, their NS 3456 types and the examples ("skal ikke benyttes" left out); the project types are offered ' + JSON.stringify(rq));
@@ -133,9 +134,22 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(pk.ticked === '330,331,332' && /3 systems · 5 documents/.test(pk.count), 'the Sprinkler type ticks its systems ' + JSON.stringify(pk));
   await p.evaluate(() => { const c = document.querySelector('[data-dctick="331"]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(100);
   await p.evaluate(() => { const f = document.querySelector('form[data-dctsave]'); f.n.value = 'Made-up type'; f.requestSubmit(); }); await sl(300);
-  await tap('[data-dcmake]'); await sl(500);
-  const mk = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t).join(), hint: r.lines.filter(l => l.code === '332' && l.t === 'BC')[0].hint, types: Features.tools().dctypes.map(t => t.name + ':' + t.codes.join(' ')).join(), tab: document.querySelector('.fdv-tabs [aria-selected="true"]').dataset.dctab }; });
-  check(mk.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines$/.test(mk.hint) && mk.types === 'Made-up type:330 332' && mk.tab === 'docs', 'Make the plan: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(mk));
+  await tap('[data-dcmake="req"]'); await sl(500);
+  const kr = await p.evaluate(() => { const r = Features.list('dckrav')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t).join(), hint: r.lines.filter(l => l.code === '332' && l.t === 'BC')[0].hint, type: r.type, types: Features.tools().dctypes.map(t => t.name + ':' + t.codes.join(' ')).join(), shown: document.querySelectorAll('.dr-line').length, hints: document.querySelectorAll('.dr-hint').length,
+    wide: [...document.querySelectorAll('#wkDocReq *')].filter(e => !e.closest('.dc-chips') && e.getBoundingClientRect().right > innerWidth + 1).length }; });
+  check(kr.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines$/.test(kr.hint) && kr.type === 'Sprinkler' && kr.types === 'Made-up type:330 332' && kr.shown === 4 && kr.hints === 4 && !kr.wide, 'Make the list: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(kr));
+  /* the Excel reads back as a document plan */
+  const back = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-drxlsx]').click(); FdvPdf.share = old; if (!got) return null;
+    const sh = await DocCtl.readBook(await got.arrayBuffer()); const res = DocCtl.parsePlan(sh); return { name: got.name, lines: res.lines.map(l => l.code + ' ' + l.t).join() }; });
+  check(back && /P-9 Dokumentkrav Made-up bathroom\.xlsx$/.test(back.name) && back.lines === '330 G,330 H,332 A,332 BC', 'the Excel for the contractor is a document plan that Document control reads back ' + JSON.stringify(back));
+  const kpdf = await p.evaluate(async () => { const b = document.querySelector('[data-drpdf]'); b.click(); for (let i = 0; i < 60 && !b._pdf; i++) await new Promise(r => setTimeout(r, 200)); return b._pdf ? b._pdf._pages : 0; });
+  check(kpdf >= 1, 'the requirements become a PDF ' + kpdf);
+  /* Start document control: a project in Document control with the same lines, all missing */
+  await tap('[data-drstart]'); await sl(700);
+  const st0 = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return { lines: r && r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).join(), full: document.body.classList.contains('dc-full'), dr: document.body.classList.contains('dr-full'), tab: (document.querySelector('#wkDocCtl .fdv-tabs [aria-selected="true"]') || {}).textContent }; });
+  const site = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0]; return [r.no, r.bid, r.bname, r.pname, r.pid].join('|'); });
+  check(site === 'P-9|99901|Made-up block A|Made-up estate|1/2', 'the project number, building and property go with it into Document control ' + site);
+  check(st0.lines === '330 G missing,330 H missing,332 A missing,332 BC missing' && st0.full && !st0.dr && /Documents/.test(st0.tab), 'Start document control copies the list into a control project and opens it ' + JSON.stringify(st0));
   /* a line by hand, and removing one */
   await p.evaluate(() => { const f = document.querySelector('form[data-dcaddl]'); f.code.value = '274'; f.t.value = 'A'; f.name.value = 'Made-up membrane declaration'; f.requestSubmit(); }); await sl(400);
   const id0 = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines[0].id);

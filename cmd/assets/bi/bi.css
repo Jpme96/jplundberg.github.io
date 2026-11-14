@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1190 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?aa1e8246ec") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1192 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?c858c50280") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -347,6 +347,8 @@
 .bi-clipboard-pulse::before{content:"\f722"}
 .bi-clipboard-x::before{content:"\f28f"}
 .bi-clipboard-x-fill::before{content:"\f723"}
+.bi-clipboard2-check::before{content:"\f725"}
+.bi-clipboard2-check-fill::before{content:"\f724"}
 .bi-clipboard2-heart::before{content:"\f72a"}
 .bi-clipboard2-heart-fill::before{content:"\f729"}
 .bi-clipboard2-pulse::before{content:"\f730"}
