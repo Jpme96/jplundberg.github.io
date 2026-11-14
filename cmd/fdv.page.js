@@ -411,10 +411,16 @@
   var LIBS = null;
   function libs() { return LIBS || (LIBS = Promise.all([window.jspdf ? 1 : loadJs('/cmd/vendor/jspdf.umd.min.js?v=2.5.2'), window.html2canvas ? 1 : loadJs('/cmd/vendor/html2canvas.min.js?v=1.4.1')]).catch(function (e) { LIBS = null; throw e; })); }
   function makePdf(r) {
+    var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) + (curRev(r) ? ' Rev. ' + curRev(r).n : '') : '', r.building].filter(Boolean).join('  ·  ');
+    var name = ((r.no ? r.no + ' ' : '') + I18N.k('ui.fdv-file-name', 'Condition report') + ' ' + (r.building || '')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + '.pdf';
+    return pagedPdf(report(r), foot, name);
+  }
+  /* any report in the .rp-doc look as an A4 PDF with a text footer (also used by Document control) */
+  function pagedPdf(html, foot, name) {
     return libs().then(function () {
       var W = 700, MM = W / 182, PAGE = Math.floor(259 * MM);   /* A4 with 14 mm sides, 14 mm top and 24 mm for the footer */
       var box = document.createElement('div'); box.className = 'rp-pdfbox';
-      box.innerHTML = '<article class="rp-doc rp-pdf">' + report(r) + '</article>'; document.body.appendChild(box);
+      box.innerHTML = '<article class="rp-doc rp-pdf">' + html + '</article>'; document.body.appendChild(box);
       var doc = box.firstChild;
       var waits = [].map.call(doc.querySelectorAll('img[data-rph]'), function (im) { return getPhoto(im.dataset.rph).then(function (bl) { if (!bl) { (im.closest('figure') || im).remove(); return; } return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { im.onload = ok; im.onerror = ok; im.src = fr.result; }; fr.readAsDataURL(bl); }); }); });
       return Promise.all(waits).then(function () { return new Promise(function (ok) { setTimeout(ok, 120); }); }).then(function () {
@@ -438,7 +444,6 @@
         }
         return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
           var S = cv.width / doc.offsetWidth, PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true });
-          var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) + (curRev(r) ? ' Rev. ' + curRev(r).n : '') : '', r.building].filter(Boolean).join('  ·  ');
           cuts.forEach(function (c, i) {
             if (i) pdf.addPage();
             var h = Math.max(1, Math.round((c[1] - c[0]) * S)), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = h;
@@ -449,13 +454,12 @@
             pdf.text(foot, 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
           });
           box.remove();
-          var name = ((r.no ? r.no + ' ' : '') + I18N.k('ui.fdv-file-name', 'Condition report') + ' ' + (r.building || '')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + '.pdf';
           var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length;
           return file;
         });
       }).catch(function (e) { box.remove(); throw e; });
     });
   }
-  window.FdvPdf = { make: makePdf };
+  window.FdvPdf = { make: makePdf, html: pagedPdf, share: sharePdf };
   drawAll();
 })();

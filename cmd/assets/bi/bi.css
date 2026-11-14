@@ -1,5 +1,5 @@
 /* Bootstrap Icons v1.11.3 (MIT) – only the 1186 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?5a7bc23b42") format("woff2")}
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?2ee056d534") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -737,7 +737,6 @@
 .bi-heart-half::before{content:"\f416"}
 .bi-heart-pulse::before{content:"\f76f"}
 .bi-heart-pulse-fill::before{content:"\f76e"}
-.bi-hearts::before{content:"\f772"}
 .bi-hourglass-bottom::before{content:"\f41e"}
 .bi-hourglass-split::before{content:"\f41f"}
 .bi-house::before{content:"\f425"}
@@ -771,6 +770,8 @@
 .bi-image-alt::before{content:"\f428"}
 .bi-image-fill::before{content:"\f429"}
 .bi-images::before{content:"\f42b"}
+.bi-inbox::before{content:"\f42d"}
+.bi-inbox-fill::before{content:"\f42c"}
 .bi-info::before{content:"\f434"}
 .bi-info-circle::before{content:"\f431"}
 .bi-info-circle-fill::before{content:"\f430"}
@@ -1055,7 +1056,6 @@
 .bi-star-fill::before{content:"\f586"}
 .bi-star-half::before{content:"\f587"}
 .bi-stars::before{content:"\f589"}
-.bi-steam::before{content:"\f6c1"}
 .bi-sticky::before{content:"\f58d"}
 .bi-sticky-fill::before{content:"\f58c"}
 .bi-stop::before{content:"\f593"}
