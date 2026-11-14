@@ -123,6 +123,12 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     'the viewer: the plan\'s sheets, approved green, a system with no document type grey with a note, nothing wider than the phone ' + JSON.stringify(xv));
   await p.click('[data-xvr="H5"]'); await p.evaluate(() => { const t = document.querySelector('.xv-in'); t.value = 'Made-up edit ÆØÅ'; t.dispatchEvent(new Event('input', { bubbles: true })); }); await sl(700);
   check(/1 change of your own/.test(await p.$eval('.xv-foot', e => e.textContent)) && (await p.$eval('[data-xvr="H5"]', e => e.textContent)) === 'Made-up edit ÆØÅ', 'a cell is changed by typing in the bar');
+  /* a status colour on a line's row sets the line's status (JP 23:46) – green, then yellow again */
+  const fs8 = await p.evaluate(async () => { const S = ms => new Promise(r => setTimeout(r, ms)), c = r => document.querySelector('[data-xvr="' + r + '"]');
+    c('B8').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
+    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#D9EAD3"]').click(); await S(400); const a = Features.list('dctl')[0].lines[3].st, said = document.querySelector('.xv-foot').textContent;
+    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#FFF2CC"]').click(); await S(400); return { a, said, b: Features.list('dctl')[0].lines[3].st }; });
+  check(fs8.a === 'ok' && /1 line is now: Approved/.test(fs8.said) && fs8.b === 'recv', 'a status colour on a row sets that line\'s status ' + JSON.stringify(fs8));
   const dl = await p.evaluate(async () => {
     let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
     const cs = navigator.canShare, sh = navigator.share; navigator.canShare = () => true; navigator.share = () => Promise.reject(Object.assign(new Error('no'), { name: 'NotAllowedError' }));
@@ -286,6 +292,13 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     'the check sums up what to fix and what it was checked against ' + JSON.stringify(ck));
   check(ck.r3 === 'No document type chosen' && ck.r5 === 'OK' && /Not in the checklist for 332: Drawing/.test(ck.r7) && /336 is not in the checklist/.test(ck.r8) && /No document type chosen · The checklist asks for: Compliance/.test(ck.r9) && /3-digit NS 3451 code/.test(ck.r10)
     && ck.bg9 === 'rgb(244, 204, 204)' && ck.bg5 === 'rgb(217, 234, 211)' && ck.bg7 === 'rgb(255, 242, 204)' && ck.n === nproj, 'each line says what is wrong: missing types the checklist asks for, types it doesn\'t, codes not in it, names without a code – and no project was made');
+  /* send to the contractor: the checked file and a message with what to fix */
+  const snd = await p.evaluate(async () => { let got = null, txt = ''; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this.download; };
+    const cs = navigator.canShare; navigator.canShare = () => false; const cw = navigator.clipboard.writeText; navigator.clipboard.writeText = t => { txt = t; return Promise.resolve(); };
+    [...document.querySelectorAll('[data-xva]')].find(b => /Send to the contractor/.test(b.textContent)).click();
+    for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 200));
+    navigator.canShare = cs; navigator.clipboard.writeText = cw; HTMLAnchorElement.prototype.click = oc; return { got, txt }; });
+  check(/Made-up plan B – checked\.xlsx$/.test(snd.got || '') && /^Check of the document plan Made-up plan B\.xlsx/.test(snd.txt) && /2 to fix/.test(snd.txt) && /• 333 Sprinkler doc: /.test(snd.txt) && /Check column/.test(snd.txt), 'Send to the contractor: the checked file and a message listing what to fix ' + JSON.stringify(snd).slice(0, 300));
   /* the editor: keys, start typing, undo/redo, a range, bold, fill, clear, paste from Excel */
   const xe = await p.evaluate(async () => {
     const S = ms => new Promise(r => setTimeout(r, ms)), g = document.querySelector('.xv-grid'), key = (k, o) => document.dispatchEvent(new KeyboardEvent('keydown', Object.assign({ key: k, bubbles: true, cancelable: true }, o || {})));
@@ -323,6 +336,10 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
   check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn && xe.touch === 'B8:C9', 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
   check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
+  /* the same plan checked again: compared with the last check */
+  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
+  check(await until(() => /Since the check on .*: 0 fixed, 0 new/.test((document.querySelector('.xv-note') || {}).textContent || '')), 'checking the same plan again compares it with the last check');
+  await p.evaluate(() => document.querySelector('[data-xv="close"]').click());
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });
   await b.close(); done();

@@ -474,9 +474,10 @@
   async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
   function logHtml() {
     if (!S.log.length) return '<p class="t-empty">' + L('Nothing yet.', 'Ingenting ennå.') + '</p>';
-    var A = { setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake') };
+    var A = { setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake'), rename: L('renamed the team to', 'ga teamet navnet') };
     return '<ul class="t-list t-log">' + S.log.map(function (l) {
       var what = l.sum || (l.k ? ({ meeting: L('a meeting', 'et møte'), action: L('an action', 'en oppgave') })[l.k] || '' : '');
+      if (l.a === 'rename') return '<li><span class="grow"><span>' + esc(nameOf(l.by) + ' ' + A.rename + ' «' + (l.name || '') + '»') + '</span><small>' + esc(fmtTime(l.t)) + '</small></span></li>';
       var who = l.who ? ' ' + (l.who === S.me.email ? nameOf(l.who) : l.name || nameOf(l.who)) + (l.role ? ' (' + roleName(l.role) + ')' : '') : (l.a === 'role' || l.a === 'invite') && l.role ? ' (' + roleName(l.role) + ')' : '';
       return '<li><span class="grow"><span>' + esc(nameOf(l.by) + ' ' + (A[l.a] || l.a) + who + (what ? ' – ' + what : '')) + '</span><small>' + esc(fmtTime(l.t)) + '</small></span></li>';
     }).join('') + '</ul><p class="t-small">' + L('Nobody can change or remove a line in the log.', 'Ingen kan endre eller fjerne en linje i loggen.') + '</p>';
@@ -544,10 +545,34 @@
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
+      (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="renameTeam">' + L('Rename the team', 'Gi teamet nytt navn') + '</button>' : '') +
+      (S.me.isOwner ? '<button class="t-btn ghost wide t-danger" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
       '<button class="t-btn ghost wide" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button>' +
       '<a class="t-btn ghost wide" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a>' +
       '<p class="t-small">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
+  }
+  /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
+  function renameSheet() {
+    openSheet('<h2>' + L('Rename the team', 'Gi teamet nytt navn') + '</h2><form class="t-form" data-form="rename"><label class="t-lbl">' + L('Team name', 'Navn på teamet') + '<input name="name" required maxlength="60" value="' + esc(S.me.team.name) + '"></label>' +
+      '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button><button class="t-btn" type="submit">' + L('Save', 'Lagre') + '</button></div></form>');
+  }
+  async function onRename(f) {
+    busy(f, true);
+    try { await api('rename', { method: 'POST', body: { name: f.name.value.trim() } }); S.me = await api('me'); try { S.teams = (await api('teams')).teams || S.teams; } catch (x) {} closeSheet(); draw(); toast(L('Saved', 'Lagret')); }
+    catch (e) { busy(f, false); setErr(failMsg(e)); }
+  }
+  function deleteSheet() {
+    openSheet('<h2>' + L('Delete the team', 'Slett teamet') + '</h2><p>' + L('Everything in ', 'Alt i ') + '<b>' + esc(S.me.team.name) + '</b>' + L(' is deleted for everyone: meetings, actions, documents, members and the change log. This cannot be undone.', ' slettes for alle: møter, oppgaver, dokumenter, medlemmer og endringsloggen. Dette kan ikke angres.') + '</p>' +
+      '<form class="t-form" data-form="delTeam"><label class="t-lbl">' + L('Type the team name to confirm', 'Skriv navnet på teamet for å bekrefte') + '<input name="name" required autocomplete="off"></label>' +
+      '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button><button class="t-btn t-danger" type="submit">' + L('Delete for good', 'Slett for godt') + '</button></div></form>');
+  }
+  async function onDelTeam(f) {
+    if (f.name.value.trim() !== S.me.team.name) return setErr(L('The name does not match.', 'Navnet stemmer ikke.'));
+    if (!confirm(L('Delete ' + S.me.team.name + ' for everyone? This cannot be undone.', 'Slette ' + S.me.team.name + ' for alle? Dette kan ikke angres.'))) return;
+    busy(f, true);
+    try { await api('teams/delete', { method: 'POST', body: { id: S.tid, confirm: f.name.value.trim() } }); await kclear().catch(function () {}); try { localStorage.removeItem('team.cur'); } catch (x) {} location.href = '/'; }
+    catch (e) { busy(f, false); setErr(failMsg(e)); }
   }
   function passSheet() {
     openSheet('<h2>' + L('Change my passcode', 'Bytt koden min') + '</h2><form class="t-form" data-form="pass"><label class="t-lbl">' + L('Current passcode', 'Nåværende kode') + '<input name="old" type="password" autocomplete="current-password" required></label>' + passFields() +
@@ -751,6 +776,8 @@
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
     if (a === 'teams') return teamsSheet();
+    if (a === 'renameTeam') return renameSheet();
+    if (a === 'deleteTeam') return deleteSheet();
     if (a === 'goTeam') { if (t.dataset.id === S.tid && S.me.member && document.querySelector('.t-tabs')) closeSheet(); else goTeam(t.dataset.id); return; }   /* from the New team form the open team is not on screen: go to it (JP 21:31) */
     if (a === 'newTeam') { location.href = '/?new=1'; return; }
     if (a === 'newMeeting') return startEdit(rid(), true);
@@ -783,7 +810,7 @@
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 

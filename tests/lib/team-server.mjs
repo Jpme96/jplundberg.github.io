@@ -25,6 +25,7 @@ function storageFor(name) {
     get: async k => mem.has(k) ? structuredClone(mem.get(k)) : undefined,
     put: async (k, v) => { mem.set(k, structuredClone(v)); },
     delete: async k => mem.delete(k),
+    deleteAll: async () => { mem.clear(); },
     list: async ({ prefix = '', reverse, limit, end } = {}) => {
       let ks = [...mem.keys()].filter(k => k.startsWith(prefix) && (!end || k < end)).sort();
       if (reverse) ks.reverse(); if (limit) ks = ks.slice(0, limit);

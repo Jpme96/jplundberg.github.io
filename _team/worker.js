@@ -50,6 +50,16 @@ export default {
       }));
       return json({ teams: out.filter(Boolean), owner: email === owner });
     }
+    if (url.pathname === '/api/teams/delete' && request.method === 'POST') {   /* the owner deletes a team: everything in it is gone (asked twice in the app) */
+      if (email !== owner) return json({ error: 'only the owner can delete a team' }, 403);
+      const b = await request.json().catch(() => ({})), id = String(b.id || '');
+      if (!TID.test(id)) return json({ error: 'bad team' }, 400);
+      if (id !== 'team') { const ok = await (await dir.fetch(new Request('https://team/dir/has?id=' + id, { headers: h }))).json(); if (!ok.has) return json({ error: 'no such team' }, 404); }
+      const r = await env.TEAM.get(env.TEAM.idFromName(id)).fetch(new Request('https://team/api/wipe', { method: 'POST', headers: h, body: JSON.stringify({ confirm: b.confirm }) }));
+      if (!r.ok) return r;
+      if (id !== 'team') await dir.fetch(new Request('https://team/dir/del?id=' + id, { method: 'POST', headers: h }));
+      return json({ ok: true });
+    }
     const tid = request.headers.get('x-tid') || 'team';
     if (!TID.test(tid)) return json({ error: 'bad team' }, 400);
     if (tid !== 'team') { const ok = await (await dir.fetch(new Request('https://team/dir/has?id=' + tid, { headers: h }))).json(); if (!ok.has) return json({ error: 'no such team' }, 404); }
@@ -94,6 +104,8 @@ export class TeamStore {
       if (p === 'invites' && m === 'GET') return this.invites();
       if (p === 'invites' && m === 'DELETE') { const id = url.searchParams.get('id') || ''; if (!/^[a-f0-9]{16}$/.test(id)) return json({ error: 'bad id' }, 400); for (const [k, v] of await this.s.list({ prefix: 'i:' })) if (k.slice(2, 18) === id) await this.s.delete(k); return json({ ok: true }); }
       if (p === 'approve' && m === 'POST') return this.approve(email, team, b);
+      if (p === 'rename' && m === 'POST') { const nm = str(b.name, 60); if (!nm) return json({ error: 'a name is needed' }, 400); const old = team.name; team.name = nm; await this.s.put('team', team); await this.log(email, 'rename', { name: nm, from: old }); return json({ ok: true }); }
+      if (p === 'wipe' && m === 'POST') { if (!owner || email !== owner) return json({ error: 'only the owner can delete a team' }, 403); if (typeof b.confirm !== 'string' || b.confirm.trim() !== team.name) return json({ error: 'type the team name to delete it' }, 409); await this.s.deleteAll(); return json({ ok: true }); }
       if (p === 'decline' && m === 'POST') { const q = await this.s.get('q:' + low(b.email)); if (!q) return json({ error: 'no request' }, 404); await this.s.delete('q:' + q.email); await this.log(email, 'decline', { who: q.email, name: q.name }); return json({ ok: true }); }
       if (p === 'role' && m === 'POST') return this.setRole(email, owner, b);
       if (p === 'remove' && m === 'POST') return this.remove(email, owner, team, b);
@@ -106,6 +118,7 @@ export class TeamStore {
     const ids = (await this.s.get('ids')) || [];
     if (p === 'list') return json({ ids });
     if (p === 'has') return json({ has: ids.includes(url.searchParams.get('id')) });
+    if (p === 'del') { await this.s.put('ids', ids.filter(function (x) { return x !== url.searchParams.get('id'); })); return json({ ok: true }); }
     if (p === 'add') { if (ids.length >= 50) return json({ error: 'too many teams' }, 409); const id = hex(crypto.getRandomValues(new Uint8Array(6))); ids.push(id); await this.s.put('ids', ids); return json({ id }); }
     return json({ error: 'not found' }, 404);
   }

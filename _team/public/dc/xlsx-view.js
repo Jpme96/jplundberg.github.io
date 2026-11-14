@@ -192,7 +192,7 @@
     rows[rows.length - 1].push(cur); return rows;
   }
   function open(opt) {
-    /* opt: { blob, title, edits, Z, start, cls, note, actions: [{ icon, label, run(close) }], onEdits(edits), download(blob) } */
+    /* opt: { blob, title, edits, Z, start, cls, note, actions: [{ icon, label, run(close) }], onEdits(edits), onFill(path, refs, bg) → text, download(blob) } */
     var box = document.createElement('div'); box.className = 'xv' + (opt.cls ? ' ' + opt.cls : '');   /* Team: dc-host, so its colours apply */
     box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
     var tb = function (a, icon, label, more) { return '<button type="button" class="xv-tb" data-xv="' + a + '" title="' + esc(label) + '" aria-label="' + esc(label) + '"' + (more || '') + '><i class="bi bi-' + icon + '"></i></button>'; };
@@ -219,7 +219,7 @@
       if (!opt.onEdits) { foot.innerHTML = esc(n ? k(n === 1 ? 'ui.xv-n-temp1' : 'ui.xv-n-temp', n === 1 ? '1 change – it goes into the download, nothing is saved here' : '{n} changes – they go into the download, nothing is saved here', { n: n }) : k('ui.xv-temp', 'Nothing is saved here – your changes go into the download.')) + (n ? ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : ''); return; }   /* a plan check keeps nothing */
       foot.innerHTML = n ? esc(k(n === 1 ? 'ui.xv-n-edits1' : 'ui.xv-n-edits', n === 1 ? '1 change of your own – kept on this device and in every download' : '{n} changes of your own – kept on this device and in every download', { n: n })) + ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : esc(k('ui.xv-hint', 'Your changes are kept on this device and go into every download.'));
     }
-    function save() { clearTimeout(saveT); saveT = setTimeout(function () { if (opt.onEdits) opt.onEdits(edits); showFoot(); }, 400); box.querySelector('[data-xv="undo"]').disabled = !undo.length; box.querySelector('[data-xv="redo"]').disabled = !redo.length; }
+    function save() { clearTimeout(saveT); saveT = setTimeout(function () { if (opt.onEdits) opt.onEdits(edits); if (!(flash.until > Date.now())) showFoot(); }, 400); box.querySelector('[data-xv="undo"]').disabled = !undo.length; box.querySelector('[data-xv="redo"]').disabled = !redo.length; }
     function paint(ref) { var t = td(ref); if (!t) return; var L = look(sh(), book.X, edits, ref); t.textContent = L.v; t.setAttribute('style', L.st); }
     /* every change goes through here: a list of { ref, e } with the new edit for each cell; one step on the undo list */
     function change(list, keep) {
@@ -267,7 +267,7 @@
       else rows.forEach(function (row, i) { row.forEach(function (v, j) { var ref = colName(g.c0 + j) + (g.r0 + i); if (td(ref)) list.push({ ref: ref, e: { v: v } }); }); });
       if (list.length) change(list); showSel();
     }
-    function flash(t) { foot.textContent = t; clearTimeout(flash.t); flash.t = setTimeout(showFoot, 2500); }
+    function flash(t) { foot.textContent = t; flash.until = Date.now() + 2500; clearTimeout(flash.t); flash.t = setTimeout(showFoot, 2500); }
     function close() { clearTimeout(saveT); if (opt.onEdits) opt.onEdits(edits); box.remove(); document.documentElement.classList.remove('xv-on'); document.removeEventListener('keydown', onKey, true); }
     function onKey(e) {
       if (!book) return; var mod = e.ctrlKey || e.metaKey, inBar = document.activeElement === inp;
@@ -326,7 +326,7 @@
     box.addEventListener('click', function (e) {
       var t = e.target, b;
       if ((b = t.closest('[data-xvs]'))) { cur = +b.dataset.xvs; drawTabs(); drawSheet(); return; }
-      if ((b = t.closest('[data-xvfill]'))) { var bg = b.dataset.xvfill; sw.hidden = true; if (A) { change(refs().map(function (r) { return { ref: r, e: { bg: bg } }; })); showSel(); } return; }
+      if ((b = t.closest('[data-xvfill]'))) { var bg = b.dataset.xvfill; sw.hidden = true; if (A) { var rs = refs(); change(rs.map(function (r) { return { ref: r, e: { bg: bg } }; })); showSel(); if (opt.onFill) { var said = opt.onFill(sh().path, rs, bg); if (said) flash(said); } } return; }   /* a status colour on a line's row can set its status (opt.onFill) */
       if ((b = t.closest('[data-xva]'))) { var ac = (opt.actions || [])[+b.dataset.xva]; if (ac) ac.run(close, edits); return; }
       if ((b = t.closest('[data-xv]'))) {
         var a = b.dataset.xv;

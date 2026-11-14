@@ -273,6 +273,16 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => !!document.querySelector('.t-tabs') && /Site team/.test(document.body.innerText), 15000), 'switching back opens the first team without unlocking again');
   await own.goto(U + '#meetings'); await sl(400);
   check(/MARK-SECRET-4/.test(await text(own)) && !/MARK-SECRET-5/.test(await text(own)), 'the first team shows only its own meetings');
+  /* rename (admins) and delete (only the owner, the name typed again) – on the second team */
+  check(await per.evaluate(t => fetch('/api/rename', { method: 'POST', headers: { 'x-team': '1', 'x-tid': t, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'x' }) }).then(r => r.status), tid2) === 403, 'a member who is not an admin cannot rename the team');
+  check(await own.evaluate(t => fetch('/api/rename', { method: 'POST', headers: { 'x-team': '1', 'x-tid': t, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Second site renamed' }) }).then(r => r.status), tid2) === 200, 'an admin renames the team');
+  check(await per.evaluate(() => fetch('/api/me', { headers: { 'x-tid': localStorage.getItem('team.cur') } }).then(r => r.json()).then(j => j.team.name)) === 'Second site renamed', 'everyone sees the new name');
+  check(await own.evaluate(t => fetch('/api/teams/delete', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ id: t, confirm: 'wrong' }) }).then(r => r.status), tid2) === 409, 'deleting needs the team name typed again');
+  check(await per.evaluate(t => fetch('/api/teams/delete', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ id: t, confirm: 'Second site renamed' }) }).then(r => r.status), tid2) === 403, 'only the owner can delete a team');
+  check(await own.evaluate(t => fetch('/api/teams/delete', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ id: t, confirm: 'Second site renamed' }) }).then(r => r.status), tid2) === 200, 'the owner deletes the second team');
+  const after = JSON.parse(await own.evaluate(() => fetch('/api/teams').then(r => r.text())));
+  check(after.teams.length === 1 && after.teams[0].id === 'team' && !JSON.parse((await raw('/__mem')).body).some(([k]) => k.startsWith(tid2 + '/')), 'it is gone from the list and its storage is empty; the first team is untouched');
+  check(await per.evaluate(t => fetch('/api/recs', { headers: { 'x-tid': t } }).then(r => r.status), tid2) === 404, 'its members get nothing any more');
   await own.evaluate(() => localStorage.setItem('team.cur', 'team'));
   await word(own, 'after switching teams');
   const all2 = (await raw('/__mem')).body;

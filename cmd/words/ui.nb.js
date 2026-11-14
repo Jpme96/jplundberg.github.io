@@ -1,5 +1,14 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-chk-new": ["New:", "Ny:"],
+  "ui.dc-chk-diff": ["Since the check on {d}: {f} fixed, {n} new", "Siden sjekken {d}: {f} rettet, {n} nye"],
+  "ui.dc-chk-send": ["Send to the contractor", "Send til entreprenøren"],
+  "ui.dc-chk-mail": ["Check of the document plan {f}", "Sjekk av dokumentplanen {f}"],
+  "ui.dc-chk-more": ["… and {n} more", "… og {n} til"],
+  "ui.dc-chk-see": ["See the attached Excel – each row is coloured and the Check column says what to fix.", "Se vedlagt Excel – hver rad er farget, og kolonnen Kontroll sier hva som må rettes."],
+  "ui.dc-chk-copied": ["The file is saved and the message copied – paste it into your email.", "Filen er lagret og meldingen kopiert – lim den inn i e-posten din."],
+  "ui.dc-x-st1": ["1 line is now: {s}", "1 linje er nå: {s}"],
+  "ui.dc-x-st": ["{n} lines are now: {s}", "{n} linjer er nå: {s}"],
   "ui.xv-drag": ["Drag to select more cells", "Dra for å velge flere celler"],
   "ui.dc-in-team": ["Projects with your team are in Team", "Prosjekter med teamet ditt ligger i Team"],
   "ui.dc-in-team-s": ["Shared, encrypted, the same tools – open Documents in Team", "Delt, kryptert, de samme verktøyene – åpne Dokumenter i Team"],
