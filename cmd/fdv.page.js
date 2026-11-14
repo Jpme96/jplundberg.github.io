@@ -101,6 +101,10 @@
     var body = fdvTab === 'findings' ? fdvDetail(r) : fdvTab === 'building' ? buildingTab(r) : fdvTab === 'conclusion' ? conclusionTab(r) : reportTab(r);
     return '<section class="card kit-card fdv-page" id="fdv">' + head + '<div class="fdv-body">' + body + '</div></section>';
   }
+  /* revisions (JP 2026-11-14): Rev. 01, 02 … with a date and what changed; the last one is the report's current revision */
+  function revs(r) { return (Array.isArray(r.revs) ? r.revs : []).filter(function (v) { return v && v.n; }); }
+  function nextRev(r) { var hi = revs(r).reduce(function (a, v) { return Math.max(a, parseInt(v.n, 10) || 0); }, 0); return (hi + 1 < 10 ? '0' : '') + (hi + 1); }
+  function curRev(r) { var l = revs(r); return l.length ? l[l.length - 1] : null; }
   function kvTable(rows) { rows = rows.filter(function (q) { return q[1] !== '' && q[1] != null; }); return rows.length ? '<table class="fdv-kv">' + rows.map(function (q) { return '<tr><th>' + esc(q[0]) + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' : ''; }
   function buildingTab(r) {
     var me = readJSON('dash.profile', {}) || {};
@@ -111,6 +115,8 @@
     return '<h3 class="fdv-h">' + esc(I18N.k('ui.fdv-the-inspection', 'The inspection')) + '</h3>' + kvTable(a) +
       '<h3 class="fdv-h">' + esc(I18N.k('ui.fdv-the-building', 'The building')) + '</h3>' + (bt || '<p class="muted">' + esc(I18N.k('ui.fdv-no-building', 'Nothing about the building yet – add year built, area, structure and more with Edit.')) + '</p>') +
       t.map(function (q) { return '<h3 class="fdv-h">' + esc(q[0]) + '</h3><p class="fdv-txt" data-noi18n>' + esc(q[1]).replace(/\n/g, '<br>') + '</p>'; }).join('') +
+      '<h3 class="fdv-h">' + esc(I18N.k('ui.fdv-revisions', 'Revisions')) + '</h3>' + (revs(r).length ? '<ul class="fdv-revs">' + revs(r).map(function (v) { return '<li><b>Rev. ' + esc(v.n) + '</b> <span class="muted">' + esc(fmt(v.date)) + '</span><span data-noi18n>' + esc(v.text || '') + '</span><button type="button" class="icon-btn sm" data-fdvrevdel="' + esc(r.id) + ':' + esc(v.id) + '" aria-label="Remove revision" data-t-aria-label="ui.fdv-rev-remove"><i class="bi bi-x"></i></button></li>'; }).join('') + '</ul>' : '<p class="muted fdv-chint">' + esc(I18N.k('ui.fdv-rev-help', 'When you send an updated report, add a revision – it shows on the cover and in the footer.')) + '</p>') +
+      '<form class="fdv-revadd" data-fdvrevadd="' + esc(r.id) + '"><input name="text" maxlength="160" placeholder="' + esc(I18N.k('ui.fdv-rev-ph', 'What changed, e.g. Added findings after the second visit')) + '" required><button type="submit" class="text-btn"><i class="bi bi-plus-lg"></i> ' + esc(I18N.k('ui.fdv-rev-add', 'Add Rev. {n}', { n: nextRev(r) })) + '</button></form>' +
       '<div class="fdv-acts"><button type="button" class="pill-btn" data-fdvedit="' + esc(r.id) + '"><i class="bi bi-pencil"></i> <span data-t="ui.edit">Edit</span></button></div>';
   }
   function conclusionTab(r) {
@@ -256,7 +262,7 @@
   function chartParts(f) {
     var rows = [], seen = {};
     f.forEach(function (x) { var k = x.code ? x.code.slice(0, 2) : ''; if (!seen[k]) { seen[k] = { k: k, n: {} }; rows.push(seen[k]); } seen[k].n[x.tg] = (seen[k].n[x.tg] || 0) + 1; });
-    if (!rows.length) return '';
+    if (rows.length < 2) return '';   /* one bar tells nothing the grade table doesn't */
     var tot = function (r) { return TGO.reduce(function (a, t) { return a + (r.n[t] || 0); }, 0); }, max = Math.max.apply(null, rows.map(tot));
     /* plain HTML rows (they reflow on a phone and print sharp): name, a quiet bar for the total, the count, the grades as text */
     return '<figure class="rp-chart rp-bars"><figcaption>' + esc(I18N.k('ui.fdv-chart-parts', 'Findings per building part')) + '</figcaption>' + rows.map(function (r) { var n = tot(r);
@@ -284,7 +290,8 @@
     var head = function (t) { return '<table class="rp-ctab"><thead><tr><th>' + esc(t) + '</th><th class="n">kr</th><th class="n">%</th></tr></thead><tbody>'; };
     return '<h3>' + esc(I18N.k('ui.fdv-cost-summary', 'Cost summary')) + '</h3><p class="rp-p">' + esc([I18N.k('ui.fdv-cost-l1', 'Estimated cost of the measures: {t} in total.', { t: kr(cost) }), soon ? I18N.k('ui.fdv-cost-l2', '{s} of it now or within a year.', { s: kr(soon) }) : '', hi ? I18N.k('ui.fdv-cost-l3', '{h} for high-priority findings.', { h: kr(hi) }) : '', withC.length === 1 ? I18N.k('ui.fdv-cost-l4a', 'One finding carries an estimate.') : I18N.k('ui.fdv-cost-l4', '{n} findings carry an estimate.', { n: withC.length })].filter(Boolean).join(' '))   /* no "0 kr now" parts */ +
       (noC ? ' ' + esc(I18N.k('ui.fdv-cost-missing', '{n} findings with TG 2–3 have no estimate yet.', { n: noC })) : '') + '</p>' +
-      '<div class="rp-ctabs">' + head(I18N.k('ui.when', 'When')) + when + '</tbody></table>' + head(I18N.k('ui.priority', 'Priority')) + pri + '</tbody></table>' + head(I18N.k('ui.building-part-ns-3451', 'Building part (NS 3451)')) + grp + '</tbody></table></div>' +
+      (function () { var n = function (h) { return (h.match(/<tr>/g) || []).length; }, t = [[I18N.k('ui.when', 'When'), when], [I18N.k('ui.priority', 'Priority'), pri], [I18N.k('ui.building-part-ns-3451', 'Building part (NS 3451)'), grp]].filter(function (q) { return n(q[1]) >= 2; });   /* a table with one row says nothing the sentence doesn't */
+        return t.length ? '<div class="rp-ctabs">' + t.map(function (q) { return head(q[0]) + q[1] + '</tbody></table>'; }).join('') : '<div>'; })() + '</div>' +
       '<p class="rp-cost">' + esc(I18N.k('ui.total-cost-estimate', 'Total cost estimate')) + ': <b>' + kr(cost) + '</b></p><p class="rp-small">' + esc(I18N.k('ui.fdv-cost-note', 'Estimates are rough and meant for planning; get prices before ordering work.')) + '</p>';
   }
   /* the report after NS 3424's order: 1 the assignment, 2 the conclusion, 3 the main report (by NS 3451 code), 4 appendices (photos, grades) */
@@ -313,11 +320,12 @@
       [L('ui.survey-level', 'Survey level (NS 3424)'), levelName(r.level || 1)], [L('ui.fdv-present', 'Present'), r.present], [L('ui.fdv-weather', 'Weather'), r.weather]].filter(function (q) { return q[1]; });
     var b1 = [[L('ui.fdv-btype', 'Type of building'), btName(r.btype)], [L('ui.fdv-built', 'Year built'), r.built], [L('ui.fdv-renov', 'Last renovated'), r.renov], [L('ui.fdv-area', 'Usable area (BRA)'), r.area ? nf.format(+r.area) + ' m²' : ''], [L('ui.fdv-floors', 'Floors'), r.floors],
       [L('ui.fdv-structure', 'Load-bearing structure'), r.structure], [L('ui.fdv-found', 'Foundation'), r.found], [L('ui.fdv-roofc', 'Roof covering'), r.roofc], [L('ui.fdv-heat', 'Heating and ventilation'), r.heat], [L('ui.fdv-gnr', 'Gnr/bnr'), r.gnr], [L('ui.fdv-owner', 'Owner'), r.owner]].filter(function (q) { return q[1] !== '' && q[1] != null; });
-    var h = '<div class="rp-cover"><header class="rp-head"><div><p class="rp-kick">' + L('ui.fdv-condition-report', 'Condition survey report') + (r.no ? ' · ' + esc(I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no })) : '') + '</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
+    var h = '<div class="rp-cover"><header class="rp-head"><div><p class="rp-kick">' + L('ui.fdv-condition-report', 'Condition survey report') + (r.no ? ' · ' + esc(I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no })) : '') + (curRev(r) ? ' · Rev. ' + esc(curRev(r).n) : '') + '</p><h1>' + esc(r.building || 'Inspection') + '</h1>' +
       (r.address ? '<p class="rp-addr">' + esc(r.address) + '</p>' : '') + '</div>' +
       (worst ? '<div class="rp-worst" style="--c:' + RC[worst] + '"><small data-t="ui.worst-grade">Worst grade</small><b>' + TG[worst][0] + '</b></div>' : '') + '</header>' +
-      '<table class="rp-cvt">' + [[L('ui.client', 'Client'), r.client], [L('ui.date', 'Date'), dt ? fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }) : ''], [L('ui.fdv-no', 'Report no.'), r.no], [L('ui.inspected-by', 'Inspected by'), who], [L('ui.company', 'Company'), me.employer], [L('ui.survey-level', 'Survey level (NS 3424)'), levelName(r.level || 1)]].filter(function (q) { return q[1]; }).map(function (q) { return '<tr><th>' + q[0] + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<table class="rp-cvt">' + [[L('ui.client', 'Client'), r.client], [L('ui.date', 'Date'), dt ? fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }) : ''], [L('ui.fdv-no', 'Report no.'), r.no], [L('ui.fdv-revision', 'Revision'), curRev(r) ? 'Rev. ' + curRev(r).n + ' – ' + fmt(curRev(r).date, { day: 'numeric', month: 'long', year: 'numeric' }) : ''], [L('ui.inspected-by', 'Inspected by'), who], [L('ui.company', 'Company'), me.employer], [L('ui.survey-level', 'Survey level (NS 3424)'), levelName(r.level || 1)]].filter(function (q) { return q[1]; }).map(function (q) { return '<tr><th>' + q[0] + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<p class="rp-std">' + L('ui.fdv-std-line', 'Building parts after NS 3451, condition and consequence grades after NS 3424.') + '</p>' +
+      (revs(r).length ? '<h2 class="rp-toch">' + L('ui.fdv-revisions', 'Revisions') + '</h2><table class="rp-grid rp-revt"><thead><tr><th>Rev.</th><th>' + L('ui.date', 'Date') + '</th><th>' + L('ui.fdv-rev-change', 'What changed') + '</th></tr></thead><tbody>' + revs(r).map(function (v) { return '<tr><td>' + esc(v.n) + '</td><td>' + esc(fmt(v.date, { day: 'numeric', month: 'short', year: 'numeric' })) + '</td><td data-noi18n>' + esc(v.text || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
       '<h2 class="rp-toch">' + L('ui.fdv-contents', 'Contents') + '</h2><ol class="rp-toc"><li>' + L('ui.fdv-s1', 'Assignment') + '</li><li>' + L('ui.fdv-s2', 'Conclusion') + '</li><li>' + L('ui.fdv-s3', 'Main report') + '</li><li>' + L('ui.fdv-s4', 'Appendices') + '</li></ol></div>' +
       '<section class="rp-sec"><h2>1 ' + L('ui.fdv-s1', 'Assignment') + '</h2><h3>1.1 ' + L('ui.fdv-the-inspection', 'The inspection') + '</h3><table class="rp-meta rp-kv">' + a1.map(function (q) { return '<tr><th>' + q[0] + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' +
         (b1.length || r.bnotes ? '<h3>' + n1x() + L('ui.fdv-the-building', 'The building') + '</h3>' + (b1.length ? '<table class="rp-meta rp-kv">' + b1.map(function (q) { return '<tr><th>' + q[0] + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' : '') + (r.bnotes ? '<p class="rp-p" data-noi18n>' + nl(r.bnotes) + '</p>' : '') : '') +
@@ -352,7 +360,7 @@
       /* 4 – appendices */
       '<section class="rp-sec rp-newpage"><h2>4 ' + L('ui.fdv-s4', 'Appendices') + '</h2>' +
         (ph.length ? '<h3>' + nx() + L('ui.photos', 'Photos') + '</h3><div class="rp-phs">' + ph.map(function (x, i) { return '<figure class="rp-fig"><img class="rp-ph" data-rph="' + esc(x.photo) + '" alt=""><figcaption data-noi18n><b>' + esc(I18N.k('ui.fdv-photo-n', 'Photo {n}', { n: i + 1 })) + '</b> · ' + esc(I18N.k('ui.fdv-finding-n', 'Finding {n}', { n: fno[x.id] })) + ' · ' + TG[x.tg][0] + ' · ' + esc(partLabel(x)) + ' – ' + esc(x.text) + '</figcaption></figure>'; }).join('') + '</div>' : '') +
-        (grid ? '<h3>' + nx() + L('ui.fdv-grade-table', 'Grades per main group (table)') + '</h3><table class="rp-grid"><thead><tr><th>' + L('ui.building-part-ns-3451', 'Building part (NS 3451)') + '</th>' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<th class="n">' + TG[t][0] + '</th>'; }).join('') + '</tr></thead><tbody>' + grid + '</tbody></table>' : '') +
+        ((grid.match(/<tr>/g) || []).length >= 3 ? '<h3>' + nx() + L('ui.fdv-grade-table', 'Grades per main group (table)') + '</h3><table class="rp-grid"><thead><tr><th>' + L('ui.building-part-ns-3451', 'Building part (NS 3451)') + '</th>' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<th class="n">' + TG[t][0] + '</th>'; }).join('') + '</tr></thead><tbody>' + grid + '</tbody></table>' : '') +
         '</section>' +
       '<footer class="rp-foot" data-noi18n>' + [esc([me.name, me.role].filter(Boolean).join(', ')), esc(me.employer || ''), r.no ? esc(I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no })) : '', esc(r.building || ''), dt, esc(me.email || ''), esc(me.phone || '')].filter(Boolean).join(' · ') + '</footer>';
     return h;
@@ -362,6 +370,17 @@
   document.addEventListener('input', function (e) {
     var ta = e.target.closest('textarea[data-fdvconcl]'); if (!ta) return;
     clearTimeout(ta._t); ta._t = setTimeout(function () { var v = ta.value.trim(); saveFdv(ta.dataset.fdvconcl, function (x) { x.conclusion = v; }); }, 500);
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('form[data-fdvrevadd]'); if (!f) return; e.preventDefault();
+    var t = f.text.value.trim(); if (!t) return;
+    saveFdv(f.dataset.fdvrevadd, function (x) { x.revs = revs(x).concat([{ id: uid(), n: nextRev(x), date: dkey(new Date()), text: t.slice(0, 160) }]); });
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fdvrevdel]'); if (!b) return;
+    var q = b.dataset.fdvrevdel.split(':'), gone = null;
+    saveFdv(q[0], function (x) { x.revs = revs(x).filter(function (v) { if (v.id === q[1]) { gone = v; return false; } return true; }); });
+    toast('<i class="bi bi-trash3"></i> ' + esc(I18N.k('ui.fdv-rev-removed', 'Revision removed')), function () { saveFdv(q[0], function (x) { x.revs = revs(x).concat([gone]).sort(function (a, c) { return (parseInt(a.n, 10) || 0) - (parseInt(c.n, 10) || 0); }); }); });
   });
   document.addEventListener('focusout', function (e) { if (e.target.matches && e.target.matches('textarea[data-fdvconcl]')) setTimeout(drawAll, 600); });
   document.addEventListener('click', function (e) {
@@ -419,7 +438,7 @@
         }
         return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
           var S = cv.width / doc.offsetWidth, PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true });
-          var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) : '', r.building].filter(Boolean).join('  ·  ');
+          var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) + (curRev(r) ? ' Rev. ' + curRev(r).n : '') : '', r.building].filter(Boolean).join('  ·  ');
           cuts.forEach(function (c, i) {
             if (i) pdf.addPage();
             var h = Math.max(1, Math.round((c[1] - c[0]) * S)), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = h;
