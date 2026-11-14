@@ -17,7 +17,7 @@ def used():
     names = json.load(open(os.path.join(SRC, 'bootstrap-icons.json')))      # name -> codepoint
     found = set()
     for root, dirs, files in os.walk(HERE):
-        if '/dist' in root or '/assets' in root: continue
+        if '/dist' in root or '/assets' in root or '/vendor' in root: continue   # vendor: other people's libraries (the PDF tools)
         for f in files:
             if not f.endswith(('.js', '.html', '.css')): continue
             t = open(os.path.join(root, f), encoding='utf-8').read()
@@ -56,7 +56,7 @@ def main():
     open(os.path.join(OUT, 'bi.css'), 'w').write(css)
     # point every cmd page at this set (versioned, so the app's cache picks up a new set)
     for root, dirs, files in os.walk(HERE):
-        if '/dist' in root or '/assets' in root: continue
+        if '/dist' in root or '/assets' in root or '/vendor' in root: continue   # vendor: other people's libraries (the PDF tools)
         for f in files:
             if f != 'index.html': continue
             fp = os.path.join(root, f); t = open(fp, encoding='utf-8').read()

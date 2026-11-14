@@ -35,10 +35,10 @@
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
     },
     work: {
-      tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.insp', 'Building inspection'), 'building-check', 'fdv'], ['doc', I18N.k('ui.doc-control', 'Document control'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],
-        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'notes'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today']],
-      feats: { today: ['flex', 'ptime', 'shutdown'], notes: ['meetings', 'fdv', 'prep'], plan: ['holiday', 'learning'] }
+        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today']],
+      feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning'] }
     }
   };
   var C = CONF[page], KEY = 'dash.ptab.' + page, all = /[?&]customize/.test(location.search);

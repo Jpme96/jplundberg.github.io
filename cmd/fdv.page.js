@@ -61,24 +61,69 @@
       img.onerror = rej; img.src = URL.createObjectURL(file);
     });
   }
-  var fdvOpen = null;
+  /* Work → Inspections (JP 2026-11-14): the list, and one inspection on a page of its own with a back button and tabs
+     (Findings, Building, Conclusion, Report). The page is #fdv=<id> in the address, so the phone's back gesture closes it. */
+  var fdvOpen = null, fdvTab = 'findings';
+  try { fdvTab = sessionStorage.getItem('dash.fdvTab') || 'findings'; } catch (e) {}
+  function hashId() { var m = location.hash.match(/^#fdv=([\w-]+)$/); return m ? m[1] : null; }
+  fdvOpen = hashId();
+  function openInsp(id, tab) { fdvEdit = null; fdvOpen = id; if (tab) setTab(tab); if (hashId() !== id) history.pushState({ fdv: id }, '', location.pathname + location.search + '#fdv=' + id); drawAll(); window.scrollTo(0, 0); }
+  function closeInsp() { if (hashId() && history.state && history.state.fdv) { history.back(); return; } fdvOpen = null; fdvEdit = null; history.replaceState(null, '', location.pathname + location.search); drawAll(); }
+  function setTab(t) { fdvTab = t; try { sessionStorage.setItem('dash.fdvTab', t); } catch (e) {} }
+  window.addEventListener('popstate', function () { var id = hashId(); if (id !== fdvOpen) { fdvOpen = id; fdvEdit = null; drawAll(); } });
+  function worstOf(r) { var f = r.findings || []; return ['3', '2', '1', '0'].filter(function (t) { return f.some(function (x) { return String(x.tg) === t; }); })[0]; }
   mount('fdv', function (el) {
     var list = (Fe.list('fdv') || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    /* from search: …/work/#fdv=<id> opens that inspection */
-    var hm = location.hash.match(/^#fdv=([\w-]+)$/), goTo = null;
-    if (hm && list.some(function (r) { return r.id === hm[1]; }) && document.documentElement.classList.contains('unlocked')) { fdvOpen = goTo = hm[1]; window.history.replaceState(null, '', location.pathname + location.search); }
+    /* typing the conclusion: never redraw under the finger */
+    var ae = document.activeElement; if (ae && el.contains(ae) && ae.matches('textarea[data-fdvconcl]')) return;
+    var r = fdvOpen && list.filter(function (x) { return x.id === fdvOpen; })[0];
+    if (fdvOpen && !r && document.documentElement.classList.contains('unlocked') && list.length) fdvOpen = null;
+    document.body.classList.toggle('fdv-full', !!r);
+    if (r) { el.innerHTML = fullView(r); fillPhotos(el); return; }
     var body = list.length ? '<ul class="kit-list">' + list.map(function (r) {
-      var f = r.findings || [], worst = ['3', '2', '1', '0'].filter(function (t) { return f.some(function (x) { return String(x.tg) === t; }); })[0];
-      var open = fdvOpen === r.id;
-      return '<li class="kit-item' + (open ? ' open' : '') + '"><button type="button" class="kit-main" data-fdvopen="' + esc(r.id) + '"><span class="kit-ic" style="--c:' + (worst ? TG[worst][2] : '#0891b2') + '"><i class="bi bi-building-check"></i></span>' +
+      var f = r.findings || [], worst = worstOf(r);
+      return '<li class="kit-item"><button type="button" class="kit-main" data-fdvopen="' + esc(r.id) + '"><span class="kit-ic" style="--c:' + (worst ? TG[worst][2] : '#0891b2') + '"><i class="bi bi-building-check"></i></span>' +
         '<span class="kit-x"><b>' + esc(r.building) + '</b><small>' + esc([r.no, fmt(r.date), r.address, f.length + ' finding' + (f.length === 1 ? '' : 's'), r.level ? 'NS 3424 ' + I18N.k('ui.level-n', 'level {n}', { n: r.level }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
-        (worst ? '<span class="kit-r"><span class="tg-b" style="--c:' + TG[worst][2] + '">' + TG[worst][0] + '</span></span>' : '') + '</button>' +
-        (open ? fdvDetail(r) : '') + '</li>';
+        (worst ? '<span class="kit-r"><span class="tg-b" style="--c:' + TG[worst][2] + '">' + TG[worst][0] + '</span></span>' : '') + '<i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.walk-a-building-note-each-finding-with-i">Walk a building, note each finding with its condition grade (TG) and a photo – and get a tidy summary you can send or paste into a report.</p>';
-    el.innerHTML = card('fdv', 'building-check', I18N.k('ui.fdv-inspection-notes', 'FDV inspection notes'), '<button type="button" class="text-btn" data-fdvnew><i class="bi bi-plus-lg"></i> <span data-t="ui.new"><span data-t="ui.new">New</span></span></button>', body, 'lp-fdv');
-    el.querySelectorAll('img[data-ph]').forEach(function (im) { getPhoto(im.dataset.ph).then(function (b) { if (b) im.src = URL.createObjectURL(b); else im.closest('.fdv-ph').remove(); }); });
-    if (goTo) { var li = el.querySelector('.kit-item.open'); if (li) setTimeout(function () { li.scrollIntoView({ behavior: 'smooth', block: 'start' }); li.classList.add('sr-flash'); setTimeout(function () { li.classList.remove('sr-flash'); }, 1600); }, 350); }
+    el.innerHTML = card('fdv', 'building-check', I18N.k('ui.insp', 'Building inspection'), '<button type="button" class="text-btn" data-fdvnew><i class="bi bi-plus-lg"></i> <span data-t="ui.new">New</span></button>', body, 'lp-fdv');
   });
+  function fillPhotos(el) { el.querySelectorAll('img[data-ph]').forEach(function (im) { getPhoto(im.dataset.ph).then(function (b) { if (b) im.src = URL.createObjectURL(b); else { var w = im.closest('.fdv-ph'); if (w) w.remove(); } }); });
+    el.querySelectorAll('img[data-rph]').forEach(function (im) { getPhoto(im.dataset.rph).then(function (b) { if (!b) return im.closest('figure') ? im.closest('figure').remove() : im.remove(); var fr = new FileReader(); fr.onload = function () { im.src = fr.result; }; fr.readAsDataURL(b); }); }); }
+  /* one inspection on its own page */
+  function fullView(r) {
+    var worst = worstOf(r), T = [['findings', I18N.k('ui.fdv-tab-findings', 'Findings'), 'clipboard-check'], ['building', I18N.k('ui.fdv-tab-building', 'Building'), 'building'], ['conclusion', I18N.k('ui.fdv-conclusion', 'Conclusion'), 'text-paragraph'], ['report', I18N.k('ui.fdv-tab-report', 'Report'), 'file-earmark-text']];
+    if (!T.some(function (t) { return t[0] === fdvTab; })) fdvTab = 'findings';
+    var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-fdvback><i class="bi bi-chevron-left"></i> <span data-t="ui.insp">Building inspection</span></button>' +
+      '<div class="fdv-title"><h2 data-noi18n>' + esc(r.building || '') + '</h2><small data-noi18n>' + esc([r.no, fmt(r.date), r.address].filter(Boolean).join(' · ')) + '</small></div>' +
+      (worst ? '<span class="tg-b" style="--c:' + TG[worst][2] + '">' + TG[worst][0] + '</span>' : '') + '</div>' +
+      '<nav class="fdv-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (t[0] === fdvTab) + '" data-fdvtab="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i> ' + esc(t[1]) + '</button>'; }).join('') + '</nav>';
+    var body = fdvTab === 'findings' ? fdvDetail(r) : fdvTab === 'building' ? buildingTab(r) : fdvTab === 'conclusion' ? conclusionTab(r) : reportTab(r);
+    return '<section class="card kit-card fdv-page" id="fdv">' + head + '<div class="fdv-body">' + body + '</div></section>';
+  }
+  function kvTable(rows) { rows = rows.filter(function (q) { return q[1] !== '' && q[1] != null; }); return rows.length ? '<table class="fdv-kv">' + rows.map(function (q) { return '<tr><th>' + esc(q[0]) + '</th><td data-noi18n>' + esc(q[1]) + '</td></tr>'; }).join('') + '</table>' : ''; }
+  function buildingTab(r) {
+    var me = readJSON('dash.profile', {}) || {};
+    var a = [[I18N.k('ui.fdv-no', 'Report no.'), r.no], [I18N.k('ui.client', 'Client'), r.client], [I18N.k('ui.address', 'Address'), r.address], [I18N.k('ui.date', 'Date'), r.date ? fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' }) : ''], [I18N.k('ui.inspected-by', 'Inspected by'), [me.name, me.role].filter(Boolean).join(', ')], [I18N.k('ui.survey-level', 'Survey level (NS 3424)'), levelName(r.level || 1)], [I18N.k('ui.fdv-present', 'Present'), r.present], [I18N.k('ui.fdv-weather', 'Weather'), r.weather]];
+    var b = [[I18N.k('ui.fdv-btype', 'Type of building'), btName(r.btype)], [I18N.k('ui.fdv-built', 'Year built'), r.built], [I18N.k('ui.fdv-renov', 'Last renovated'), r.renov], [I18N.k('ui.fdv-area', 'Usable area (BRA)'), r.area ? nf.format(+r.area) + ' m²' : ''], [I18N.k('ui.fdv-floors', 'Floors'), r.floors], [I18N.k('ui.fdv-structure', 'Load-bearing structure'), r.structure], [I18N.k('ui.fdv-found', 'Foundation'), r.found], [I18N.k('ui.fdv-roofc', 'Roof covering'), r.roofc], [I18N.k('ui.fdv-heat', 'Heating and ventilation'), r.heat], [I18N.k('ui.fdv-gnr', 'Gnr/bnr'), r.gnr], [I18N.k('ui.fdv-owner', 'Owner'), r.owner]];
+    var t = [[I18N.k('ui.fdv-bnotes', 'About the building'), r.bnotes], [I18N.k('ui.fdv-purpose', 'Purpose and scope'), r.purpose], [I18N.k('ui.fdv-limits', 'Not examined'), r.limits], [I18N.k('ui.fdv-docs', 'Documents received'), r.docs], [I18N.k('ui.notes', 'Notes'), r.notes]].filter(function (q) { return q[1]; });
+    var bt = kvTable(b);
+    return '<h3 class="fdv-h">' + esc(I18N.k('ui.fdv-the-inspection', 'The inspection')) + '</h3>' + kvTable(a) +
+      '<h3 class="fdv-h">' + esc(I18N.k('ui.fdv-the-building', 'The building')) + '</h3>' + (bt || '<p class="muted">' + esc(I18N.k('ui.fdv-no-building', 'Nothing about the building yet – add year built, area, structure and more with Edit.')) + '</p>') +
+      t.map(function (q) { return '<h3 class="fdv-h">' + esc(q[0]) + '</h3><p class="fdv-txt" data-noi18n>' + esc(q[1]).replace(/\n/g, '<br>') + '</p>'; }).join('') +
+      '<div class="fdv-acts"><button type="button" class="pill-btn" data-fdvedit="' + esc(r.id) + '"><i class="bi bi-pencil"></i> <span data-t="ui.edit">Edit</span></button></div>';
+  }
+  function conclusionTab(r) {
+    var f = r.findings || [], c = function (t) { return f.filter(function (x) { return String(x.tg) === t; }).length; }, cost = f.reduce(function (a, x) { return a + (+x.cost || 0); }, 0);
+    return '<p class="muted fdv-chint">' + esc(I18N.k('ui.fdv-concl-help', 'Your overall assessment – the state of the building and what matters most. It opens section 2 of the report.')) + '</p>' +
+      '<textarea class="fdv-concl" data-fdvconcl="' + esc(r.id) + '" rows="9" maxlength="6000" placeholder="' + esc(I18N.k('ui.fdv-conclusion-ph', 'Your overall assessment – the state of the building and what matters most')) + '">' + esc(r.conclusion || '') + '</textarea>' +
+      '<p class="fdv-csum">' + ['3', '2', '1', '0', 'iu'].map(function (t) { return '<span class="tg-b" style="--c:' + TG[t][2] + '">' + TG[t][0] + '</span> ' + c(t); }).join(' &nbsp; ') + (cost ? ' &nbsp;·&nbsp; ' + esc(I18N.k('ui.total-cost-estimate', 'Total cost estimate')) + ': <b>' + nf.format(cost) + ' kr</b>' : '') + '</p>';
+  }
+  function reportTab(r) {
+    return '<div class="fdv-rbar"><label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> <span data-t="ui.photos">Photos</span></label><span class="spacer"></span>' +
+      '<button type="button" class="pill-btn" data-fdvmkpdf="' + esc(r.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(I18N.k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
+      '<p class="fdv-pdfnote muted" hidden></p><article class="rp-doc rp-inline">' + report(r) + '</article>';
+  }
   function fdvDetail(r) {
     var f = (r.findings || []).slice().sort(byCode), ed = null, eq = fdvEdit && fdvEdit.split(':');
     if (eq && eq[0] === r.id) ed = (r.findings || []).filter(function (x) { return x.id === eq[1]; })[0] || null;
@@ -141,7 +186,7 @@
     { k: 'docs', label: I18N.k('ui.fdv-docs', 'Documents received'), type: 'textarea', rows: 2, ph: I18N.k('ui.fdv-docs-ph', 'Drawings, FDV documentation, earlier reports …') },
     { k: 'conclusion', label: I18N.k('ui.fdv-conclusion', 'Conclusion'), type: 'textarea', rows: 4, ph: I18N.k('ui.fdv-conclusion-ph', 'Your overall assessment – the state of the building and what matters most') },
     { k: 'notes', label: 'Notes', type: 'textarea', rows: 3 }],
-    beforeSave: function (it) { it.findings = it.findings || []; }, afterSave: function (it, isNew) { if (isNew) fdvOpen = it.id; },
+    beforeSave: function (it) { it.findings = it.findings || []; }, afterSave: function (it, isNew) { if (isNew) setTimeout(function () { openInsp(it.id, 'building'); }, 0); },
     onDelete: function (it) { (it.findings || []).forEach(function (x) { if (x.photo) delPhoto(x.photo); }); } };
   function saveFdv(id, fn) { var t = Fe.tools(); (t.fdv || []).forEach(function (r) { if (r.id === id) fn(r); }); Fe.saveTools(t); }
   document.addEventListener('click', function (e) {
@@ -150,7 +195,9 @@
     if ((b = e.target.closest('[data-fdvedit]')) && K) return K.edit(FDV_FIELDS, Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvedit; })[0]);
     if ((b = e.target.closest('[data-fdvfedit]'))) { fdvEdit = fdvEdit === b.dataset.fdvfedit ? null : b.dataset.fdvfedit; drawAll(); setTimeout(function () { var fm = document.querySelector('form.fdv-add.editing'); if (fm) { fm.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }, 80); return; }
     if (e.target.closest('[data-fdvfcancel]')) { fdvEdit = null; drawAll(); return; }
-    if ((b = e.target.closest('[data-fdvopen]'))) { fdvEdit = null; fdvOpen = fdvOpen === b.dataset.fdvopen ? null : b.dataset.fdvopen; drawAll(); return; }
+    if ((b = e.target.closest('[data-fdvopen]'))) { openInsp(b.dataset.fdvopen); return; }
+    if (e.target.closest('[data-fdvback]')) { closeInsp(); return; }
+    if ((b = e.target.closest('[data-fdvtab]'))) { setTab(b.dataset.fdvtab); fdvEdit = null; drawAll(); return; }
     if ((b = e.target.closest('[data-fdvdel]'))) {
       var q = b.dataset.fdvdel.split(':'), gone = null;
       saveFdv(q[0], function (r) { r.findings = (r.findings || []).filter(function (x) { if (x.id === q[1]) { gone = x; return false; } return true; }); });
@@ -310,58 +357,86 @@
       '<footer class="rp-foot" data-noi18n>' + [esc([me.name, me.role].filter(Boolean).join(', ')), esc(me.employer || ''), r.no ? esc(I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no })) : '', esc(r.building || ''), dt, esc(me.email || ''), esc(me.phone || '')].filter(Boolean).join(' · ') + '</footer>';
     return h;
   }
-  function openReport(r) {
-    var bg = document.createElement('div'); bg.className = 'rp-bg';
-    bg.innerHTML = '<div class="rp-bar"><button type="button" class="text-btn" data-rpclose><i class="bi bi-x-lg"></i> <span data-t="ui.close"><span data-t="ui.close">Close</span></span></button><span class="spacer"></span>' +
-      '<label class="rp-opt"><input type="checkbox" data-rpphotos' + (RP.photos ? ' checked' : '') + '> <span data-t="ui.photos"><span data-t="ui.photos">Photos</span></span></label>' +
-      '<button type="button" class="text-btn" data-rpintro><i class="bi bi-text-paragraph"></i> <span data-t="ui.fdv-conclusion">Conclusion</span></button>' +
-      '<button type="button" class="pill-btn" data-rpprint><i class="bi bi-file-earmark-pdf"></i> <span data-t="ui.save-as-pdf"><span data-t="ui.save-as-pdf">Save as PDF</span></span></button></div>' +
-      '<p class="rp-hint">In the print window, choose <b data-t="ui.save-as-pdf">Save as PDF</b> (on iPhone: pinch out on the preview, then Share).</p><textarea class="rp-introbox" rows="4" maxlength="4000" placeholder="Your overall assessment – the state of the building and what matters most" data-t-placeholder="ui.fdv-conclusion-ph" hidden></textarea><article class="rp-doc"></article>';
-    document.body.appendChild(bg); document.body.classList.add('rp-open');
-    var doc = bg.querySelector('.rp-doc');
-    /* your name, the report number, the building and the page number at the foot of every printed page (page margin boxes; where a browser has none, the footer at the end still has them) */
-    var me0 = readJSON('dash.profile', {}) || {}, cs = function (t) { return '"' + String(t).replace(/[\\"]/g, '\\$&').replace(/[\n\r]+/g, ' ') + '"'; };
-    var pst = document.createElement('style'); pst.id = 'rpPage';
-    function pageCss() { pst.textContent = '@media print { @page { margin: 14mm 14mm 16mm; @bottom-left { content: ' + cs([[me0.name, me0.role].filter(Boolean).join(', '), me0.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) : '', r.building, fmt(r.date, { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join(' · ')) + '; font: 8pt Helvetica, Arial, sans-serif; color: #5b636c; } @bottom-right { content: counter(page) " / " counter(pages); font: 8pt Helvetica, Arial, sans-serif; color: #5b636c; } } }'; }
-    pageCss(); document.head.appendChild(pst);
-    function draw() {
-      doc.innerHTML = report(r);
-      doc.querySelectorAll('img[data-rph]').forEach(function (im) {
-        getPhoto(im.dataset.rph).then(function (b) {
-          if (!b) return im.remove();
-          var fr = new FileReader(); fr.onload = function () { im.src = fr.result; }; fr.readAsDataURL(b);       // a data URL survives printing
+  /* the report tab: Photos on/off, the conclusion is typed in its own tab */
+  document.addEventListener('change', function (e) { if (e.target.matches('[data-rpphotos]') && e.target.closest('.fdv-page')) { RP.photos = e.target.checked; drawAll(); } });
+  document.addEventListener('input', function (e) {
+    var ta = e.target.closest('textarea[data-fdvconcl]'); if (!ta) return;
+    clearTimeout(ta._t); ta._t = setTimeout(function () { var v = ta.value.trim(); saveFdv(ta.dataset.fdvconcl, function (x) { x.conclusion = v; }); }, 500);
+  });
+  document.addEventListener('focusout', function (e) { if (e.target.matches && e.target.matches('textarea[data-fdvconcl]')) setTimeout(drawAll, 600); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fdvpdf]'); if (b) { openInsp(b.dataset.fdvpdf, 'report'); return; }
+    b = e.target.closest('[data-fdvmkpdf]'); if (!b) return;
+    if (b._pdf) { sharePdf(b._pdf); return; }   /* made already: a fresh tap shares it (the phone wants a tap of its own for the share sheet) */
+    var r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvmkpdf; })[0]; if (!r || b.disabled) return;
+    var note = document.querySelector('.fdv-pdfnote'), lbl = b.querySelector('span');
+    b.disabled = true; lbl.textContent = I18N.k('ui.fdv-making-pdf', 'Making the PDF …');
+    makePdf(r).then(function (file) {
+      b.disabled = false; b._pdf = file; lbl.textContent = I18N.k('ui.fdv-share-pdf', 'Share or save the PDF'); b.querySelector('i').className = 'bi bi-box-arrow-up';
+      if (note) { note.hidden = false; note.textContent = I18N.k('ui.fdv-pdf-ready', 'Ready: {f} ({n} pages). Tap the button to share it, save it to Files or mail it.', { f: file.name, n: file._pages }); }
+      if (!(navigator.canShare && navigator.canShare({ files: [file] }))) sharePdf(file);
+    }).catch(function (err) {
+      b.disabled = false; lbl.textContent = I18N.k('ui.fdv-make-pdf', 'Make PDF');
+      toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(I18N.k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).')));
+      try { console.warn('[fdv] pdf', err); } catch (e2) {}
+    });
+  });
+  function sharePdf(file) {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: file.name.replace(/\.pdf$/, '') }).catch(function () {}); return; }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  /* the PDF is made on the device: the report is laid out at A4 width, drawn to a picture (html2canvas), cut into pages between
+     paragraphs, rows and findings – never through a line – and put into a PDF (jsPDF) with your name, the report number and
+     the page number as real text at the foot of every page. The two tools are fetched only the first time (cmd/vendor). */
+  function loadJs(src) { return new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+  var LIBS = null;
+  function libs() { return LIBS || (LIBS = Promise.all([window.jspdf ? 1 : loadJs('/cmd/vendor/jspdf.umd.min.js?v=2.5.2'), window.html2canvas ? 1 : loadJs('/cmd/vendor/html2canvas.min.js?v=1.4.1')]).catch(function (e) { LIBS = null; throw e; })); }
+  function makePdf(r) {
+    return libs().then(function () {
+      var W = 700, MM = W / 182, PAGE = Math.floor(259 * MM);   /* A4 with 14 mm sides, 14 mm top and 24 mm for the footer */
+      var box = document.createElement('div'); box.className = 'rp-pdfbox';
+      box.innerHTML = '<article class="rp-doc rp-pdf">' + report(r) + '</article>'; document.body.appendChild(box);
+      var doc = box.firstChild;
+      var waits = [].map.call(doc.querySelectorAll('img[data-rph]'), function (im) { return getPhoto(im.dataset.rph).then(function (bl) { if (!bl) { (im.closest('figure') || im).remove(); return; } return new Promise(function (ok) { var fr = new FileReader(); fr.onload = function () { im.onload = ok; im.onerror = ok; im.src = fr.result; }; fr.readAsDataURL(bl); }); }); });
+      return Promise.all(waits).then(function () { return new Promise(function (ok) { setTimeout(ok, 120); }); }).then(function () {
+        var top0 = doc.getBoundingClientRect().top, Y = function (el, w) { var b = el.getBoundingClientRect(); return w ? b.bottom - top0 : b.top - top0; };
+        var total = doc.scrollHeight;
+        var atoms = [].slice.call(doc.querySelectorAll('h2, h3, p, tr, li, .rp-f, figure, .rp-bar1, .rp-mxt, .rp-tgt, .rp-head, .rp-cvt tr, footer')).map(function (e) { return [Y(e), Y(e, 1), /^H[23]$/.test(e.tagName)]; });
+        var forced = [].slice.call(doc.querySelectorAll('.rp-newpage')).map(function (e) { return Y(e); }).concat([].slice.call(doc.querySelectorAll('.rp-cover')).map(function (e) { return Y(e, 1) + 1; })).filter(function (y) { return y > 4; }).sort(function (a, b) { return a - b; });
+        var cuts = [], st = 0;
+        while (st < total - 2) {
+          var lim = st + PAGE, fb = forced.filter(function (y) { return y > st + 4 && y <= lim; })[0], end;
+          if (fb) end = fb;
+          else if (lim >= total) end = total;
+          else {
+            end = lim;
+            for (var y = lim; y > st + PAGE * .4; y--) { if (!atoms.some(function (a) { return a[0] < y && a[1] > y; })) { end = y; break; } }
+            /* a heading never ends a page alone */
+            atoms.forEach(function (a) { if (a[2] && a[0] >= st && a[1] <= end && end - a[1] < 40 && a[0] > st + 20) end = Math.min(end, a[0] - 2); });
+          }
+          cuts.push([st, end]); st = end;
+          while (st < total && !atoms.some(function (a) { return a[1] > st; })) st = total;
+        }
+        return window.html2canvas(doc, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: W + 40 }).then(function (cv) {
+          var S = cv.width / doc.offsetWidth, PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true });
+          var me = readJSON('dash.profile', {}) || {}, foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, r.no ? I18N.k('ui.fdv-report-no', 'Report no. {n}', { n: r.no }) : '', r.building].filter(Boolean).join('  ·  ');
+          cuts.forEach(function (c, i) {
+            if (i) pdf.addPage();
+            var h = Math.max(1, Math.round((c[1] - c[0]) * S)), pc = document.createElement('canvas'); pc.width = cv.width; pc.height = h;
+            var g = pc.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, pc.width, h); g.drawImage(cv, 0, Math.round(c[0] * S), cv.width, h, 0, 0, cv.width, h);
+            pdf.addImage(pc.toDataURL('image/jpeg', .9), 'JPEG', 14, 14, 182, (c[1] - c[0]) / MM, undefined, 'FAST');
+            pdf.setDrawColor(213, 218, 224); pdf.setLineWidth(.2); pdf.line(14, 284, 196, 284);
+            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7.5); pdf.setTextColor(110, 118, 128);
+            pdf.text(foot, 14, 288.5, { maxWidth: 160 }); pdf.text((i + 1) + ' / ' + cuts.length, 196, 288.5, { align: 'right' });
+          });
+          box.remove();
+          var name = ((r.no ? r.no + ' ' : '') + I18N.k('ui.fdv-file-name', 'Condition report') + ' ' + (r.building || '')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + '.pdf';
+          var file = new File([pdf.output('blob')], name, { type: 'application/pdf' }); file._pages = cuts.length;
+          return file;
         });
-      });
-    }
-    draw();
-    function close() { pst.remove(); bg.remove(); document.body.classList.remove('rp-open'); document.removeEventListener('keydown', key); }
-    function key(e) { if (e.key === 'Escape') close(); }
-    document.addEventListener('keydown', key);
-    var ib = bg.querySelector('.rp-introbox'); ib.value = r.conclusion || '';
-    ib.addEventListener('input', function () { r.conclusion = ib.value.trim(); clearTimeout(draw.t); draw.t = setTimeout(function () { draw(); saveFdv(r.id, function (x) { x.conclusion = r.conclusion; }); }, 400); });
-    bg.addEventListener('change', function (e) { if (e.target.matches('[data-rpphotos]')) { RP.photos = e.target.checked; draw(); } });
-    bg.addEventListener('click', function (e) {
-      if (e.target.closest('[data-rpclose]')) return close();
-      if (e.target.closest('[data-rpintro]')) { var ta = bg.querySelector('.rp-introbox'); ta.hidden = !ta.hidden; if (!ta.hidden) ta.focus(); return; }
-      if (e.target.closest('[data-rpprint]')) {
-        var imgs = [].slice.call(doc.querySelectorAll('img[data-rph]')).filter(function (im) { return !im.complete || !im.src; });
-        var title = document.title;
-        var go = function () {
-          document.title = ((r.no ? r.no + ' ' : '') + 'FDV ' + (r.building || '') + ' ' + (r.date || '')).trim();
-          document.body.classList.add('rp-printing');
-          var done = function () { document.body.classList.remove('rp-printing'); document.title = title; window.removeEventListener('afterprint', done); };
-          window.addEventListener('afterprint', done);
-          window.print();
-          setTimeout(done, 60000);
-        };
-        if (imgs.length) setTimeout(go, 400); else go();
-      }
+      }).catch(function (e) { box.remove(); throw e; });
     });
   }
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-fdvpdf]'); if (!b) return;
-    var r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvpdf; })[0];
-    if (r) openReport(r);
-  });
+  window.FdvPdf = { make: makePdf };
   drawAll();
 })();

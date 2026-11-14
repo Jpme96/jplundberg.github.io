@@ -141,7 +141,7 @@
     if (!host || host.hidden) return;
     var card = host.querySelector('.card'); if (!card) return;
     var el = card.querySelector('.fdv-sync');
-    if (!el) { el = document.createElement('p'); el.className = 'fdv-sync'; var hd = card.querySelector('.card-head'); hd.insertAdjacentElement('afterend', el); }
+    if (!el) { el = document.createElement('p'); el.className = 'fdv-sync'; var hd = card.querySelector('.card-head') || card.querySelector('.fdv-tabs'); if (!hd) return; hd.insertAdjacentElement('afterend', el); }
     var st = window.Vault.syncState ? window.Vault.syncState() : 'ok', off = !navigator.onLine || st === 'offline', n = pending();
     var h = off ? '<i class="bi bi-cloud-slash"></i> <b>Offline</b> – findings and photos are saved on this phone' + (n ? ' (' + n + ' new)' : '') + '. They sync by themselves when you’re back online.'
       : st === 'busy' && n ? '<i class="bi bi-arrow-repeat spin"></i> Back online – syncing …'
