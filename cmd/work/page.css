@@ -329,3 +329,5 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dc-teamlink span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dc-teamlink small { color: var(--muted, #9aa0a6); }
 .dc-xrow { margin: 12px 0 4px; }
+.xv-t { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.xv.xv-picking .xv-grid { touch-action: none; }

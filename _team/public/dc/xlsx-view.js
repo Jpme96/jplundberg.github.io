@@ -308,6 +308,21 @@
     grid.addEventListener('pointerdown', function (e) { var t = e.target.closest('[data-xvr]'); if (!t || e.button) return; pickRef(t.dataset.xvr, e.shiftKey); if (!touch) { drag = e.pointerType === 'mouse'; grid.focus({ preventScroll: true }); e.preventDefault(); } sw.hidden = true; });
     grid.addEventListener('pointermove', function (e) { if (!drag) return; var t = document.elementFromPoint(e.clientX, e.clientY); t = t && t.closest && t.closest('[data-xvr]'); if (t && t.dataset.xvr !== (F || A)) { F = t.dataset.xvr; showSel(); } });
     document.addEventListener('pointerup', function () { drag = false; });
+    /* on a phone: hold a cell, then drag to select more (scrolling is held while you select) */
+    var lp = 0, lp0 = null, lpSel = false;
+    grid.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) return; var t = e.target.closest('[data-xvr]'); if (!t) return;
+      lp0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; clearTimeout(lp);
+      lp = setTimeout(function () { lp = 0; lpSel = true; pickRef(t.dataset.xvr); box.classList.add('xv-picking'); if (navigator.vibrate) try { navigator.vibrate(10); } catch (x) {} flash(k('ui.xv-drag', 'Drag to select more cells')); }, 450);
+    }, { passive: true });
+    grid.addEventListener('touchmove', function (e) {
+      var t0 = e.touches[0];
+      if (!lpSel) { if (lp && lp0 && (Math.abs(t0.clientX - lp0.x) > 8 || Math.abs(t0.clientY - lp0.y) > 8)) { clearTimeout(lp); lp = 0; } return; }
+      e.preventDefault(); var el = document.elementFromPoint(t0.clientX, t0.clientY); el = el && el.closest && el.closest('[data-xvr]');
+      if (el && el.dataset.xvr !== (F || A)) { F = el.dataset.xvr; showSel(); }
+    }, { passive: false });
+    grid.addEventListener('touchend', function () { clearTimeout(lp); lp = 0; if (lpSel) { lpSel = false; box.classList.remove('xv-picking'); } });
+    grid.addEventListener('contextmenu', function (e) { if (e.target.closest('[data-xvr]')) e.preventDefault(); });
     box.addEventListener('click', function (e) {
       var t = e.target, b;
       if ((b = t.closest('[data-xvs]'))) { cur = +b.dataset.xvs; drawTabs(); drawSheet(); return; }

@@ -366,6 +366,7 @@
     svg.addEventListener('pointermove', function (e) { var r2 = svg.getBoundingClientRect(); if (!r2.width) return; st.lookAt = (e.clientX - r2.left) / r2.width * 400; st.lookT = performance.now(); if (!st.playing) wake(); });
     if (spec.pick) spec.pick(st);
     if (st.still) { st.t = LEN(); st.playing = false; st.now = 0; paint(); }
+    else if (window.SoftNav && SoftNav.busy && SoftNav.busy()) requestAnimationFrame(function () { setTimeout(function () { if (R.dead || !svg.isConnected) return; if (!back) paint(); if (io) io.observe(svg); wake(); }, 0); });   /* during a page change the new page shows first, the picture a moment later (it was ~50 ms of the change – JP 23:46) */
     else { paint(); if (io) io.observe(svg); wake(); }
     R.api = { play: play, at: function (t) { st.gen = null; st.pact = null; st.t = t; st.playing = t < len0; st.ll = 0; paint(); },
       act: function (id, t) { st.t = LEN(); st.gen = GEN[id] ? { id: id, t: t || 0 } : null; st.playing = !!st.gen; st.ll = 0; paint(); },

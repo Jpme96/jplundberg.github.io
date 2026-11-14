@@ -922,6 +922,12 @@
       { name: 'xl/styles.xml', text: styles }, { name: 'xl/worksheets/sheet1.xml', text: sheet }]);
   }
   var XZ = { zipEntries: zipEntries, inflate: inflate, packAll: packAll };
+  /* the Excel editor loads the first time it is used, not with the Work page (JP 23:46: Work was the heaviest page) */
+  var xvP = null;
+  function needXV() {
+    if (window.XlsxView) return Promise.resolve(window.XlsxView);
+    return xvP || (xvP = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = HOST ? '/dc/xlsx-view.js' : '/cmd/xlsx-view.js'; sc.onload = function () { ok(window.XlsxView); }; sc.onerror = function () { xvP = null; no(new Error('xlsx-view')); }; document.head.appendChild(sc); }));
+  }
   /* raw = the coloured file without your own cell edits (the viewer writes them in); else with them */
   /* ---------- check a document plan without making a project (JP 22:30): the plan against the client's checklist and the naming rules ---------- */
   function planIssues(l, R, have) {
@@ -968,6 +974,7 @@
         var title = k('ui.dc-chk-title', 'Check: {f}', { f: file.name });
         var note = '<b>' + esc(k('ui.dc-chk-sum', '{e} to fix · {w} to look at · {o} OK · {x} with no document type', { e: n.err, w: n.warn, o: n.ok, x: n.none })) + '</b>' + (R ? ' · ' + esc(k('ui.dc-chk-against', 'Checked against {f}', { f: R.name })) : ' · ' + esc(k('ui.dc-chk-noreq', 'No client checklist yet – import one under Document requirements to check the document types too.')));
         var start = res.heads.filter(function (h, i) { return res.lines.some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0];
+        return needXV().catch(function () { return null; }).then(function () {
         if (!window.XlsxView) { window.FdvPdf.share(new File([bl], file.name.replace(/\.xls[xm]$/i, '') + ' – ' + k('ui.dc-chk-file', 'checked') + '.xlsx', { type: bl.type })); return; }
         XlsxView.open({ blob: bl, title: title, edits: {}, Z: XZ, start: start, cls: HOST ? 'dc-host' : '', note: note,
           actions: [{ icon: 'folder-plus', label: k('ui.dc-chk-make', 'Make a project'), run: function (close) {
@@ -975,11 +982,12 @@
             close(); importPlan(id, file); go(id);
           } }],
           download: function (b2) { window.FdvPdf.share(new File([b2], file.name.replace(/\.xls[xm]$/i, '') + ' – ' + k('ui.dc-chk-file', 'checked') + '.xlsx', { type: b2.type })); } });
+        });
       });
     }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); try { console.warn('[dc] check', e); } catch (e2) {} });
   }
   function planXlsx(p, raw) {
-    if (!raw && window.XlsxView) return planXlsx(p, true).then(function (f) {
+    if (!raw) return Promise.all([planXlsx(p, true), needXV().catch(function () { return null; })]).then(function (x) { var f = x[0]; if (!x[1]) return f;
       return getBlob('xedit:' + p.id + (f._own ? '' : ':new')).then(function (ed) {
         if (!ed || !Object.keys(ed).length) return f;
         return f.arrayBuffer().then(function (buf) { return XlsxView.apply(buf, ed, XZ); }).then(function (bl) { var g = new File([bl], f.name, { type: f.type }); g._own = f._own; return g; });
@@ -1167,8 +1175,8 @@
     }
     if ((b = t.closest('[data-dcxcol]'))) {   /* Excel with colours: see it, change any cell, download (JP 21:47) */
       var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
-      planXlsx(px2, true).then(function (f) {
-        b.disabled = false;
+      Promise.all([planXlsx(px2, true), needXV().catch(function () { return null; })]).then(function (x) {
+        var f = x[0]; b.disabled = false;
         var ek = 'xedit:' + px2.id + (f._own ? '' : ':new');
         return getBlob(ek).then(function (ed) {
           if (!window.XlsxView) { window.FdvPdf.share(f); return; }

@@ -305,6 +305,10 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     document.querySelector('.xv').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
     out.paste = [tx('F11'), tx('G11'), tx('F12'), tx('G12')].join('|');
     out.undoOn = !document.querySelector('[data-xv="undo"]').disabled;
+    /* a phone: hold a cell, drag to another – the cells between are selected */
+    const tch = (type, ref) => { const el = document.querySelector('[data-xvr="' + ref + '"]'), r = el.getBoundingClientRect(), t = new Touch({ identifier: 1, target: el, clientX: r.left + 5, clientY: r.top + 5 }); el.dispatchEvent(new TouchEvent(type, { touches: type === 'touchend' ? [] : [t], targetTouches: type === 'touchend' ? [] : [t], changedTouches: [t], bubbles: true, cancelable: true })); };
+    tch('touchstart', 'B8'); await S(550); const orig = document.elementFromPoint; const c9 = document.querySelector('[data-xvr="C9"]'); document.elementFromPoint = () => c9; tch('touchmove', 'B8'); document.elementFromPoint = orig; tch('touchend', 'C9');
+    out.touch = document.querySelector('.xv-ref').textContent;
     /* the download has the bold, the fill and the pasted text */
     let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
     const cs = navigator.canShare; navigator.canShare = () => false; document.querySelector('[data-xv="dl"]').click();
@@ -317,7 +321,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   });
   check(xe.ref1 === 'H6' && xe.h6 === 'Zed' && xe.ref2 === 'H7' && xe.undone !== 'Zed' && xe.redone === 'Zed', 'the editor: arrow keys, start typing to replace, Enter moves down, undo and redo ' + JSON.stringify(xe));
   check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
-  check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn, 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
+  check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn && xe.touch === 'B8:C9', 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
   check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });

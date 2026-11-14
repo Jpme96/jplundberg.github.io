@@ -201,6 +201,7 @@ window.DC_NB = {
 "ui.xv-copied": "Kopiert",
 "ui.xv-copy": "Kopier",
 "ui.xv-download": "Last ned",
+"ui.xv-drag": "Dra for å velge flere celler",
 "ui.xv-fill": "Fyllfarge",
 "ui.xv-formula": "Denne cellen har en formel – det du skriver erstatter den",
 "ui.xv-green": "Grønn",
