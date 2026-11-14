@@ -95,6 +95,24 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(() => document.querySelector('[data-dctab="over"]').click()); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);
   check((await p.evaluate(() => Features.list('dctl')[0].lines.map(l => l.st).join())) === 'ok,recv,rej,recv,recv,missing', 'importing the plan again keeps the statuses');
+  /* names from the FDV system instead of files (2026-11-14): pasted, matched and checked the same way */
+  check(JSON.stringify(await p.evaluate(() => DocCtl.namesText('Documents\n1. 336 DA Skumanlegg Made-up\n336 DA Skumanlegg Made-up\nnot a name\n235\tDV Kledning\n235 DV Kledning Made-up.pdf'))) === JSON.stringify(['336 DA Skumanlegg Made-up', '235 DV Kledning Made-up.pdf']), 'a pasted list keeps the document names (numbering and doubles removed)');
+  await p.evaluate(() => document.querySelector('[data-dctab="files"]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dcpastebtn]').click()); await sl(200);
+  await p.evaluate(() => { const f = document.querySelector('form[data-dcpaste]'); f.t.value = '235 DV Kledning Made-up\n999 Unknown thing'; f.requestSubmit(); }); await sl(800);
+  const nmz = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { st: r.lines[5].st, nf: r.files.filter(f => f.nf).map(f => f.name + '|' + (f.line ? 'in' : 'out')).join(), shown: document.querySelectorAll('.dc-nf').length }; });
+  check(nmz.st === 'recv' && nmz.nf === '235 DV Kledning Made-up|in,999 Unknown thing|out' && nmz.shown === 2, 'pasted names are matched to the plan (235 becomes Received) and shown as "In the FDV system" ' + JSON.stringify(nmz));
+  /* quick check: buttons on each line, a second tap undoes */
+  await p.evaluate(() => document.querySelector('[data-dctab="docs"]').click()); await sl(300);
+  await p.evaluate(() => { document.querySelector('[data-dcfilt="all"]').click(); }); await sl(200);
+  await p.evaluate(() => { const c = document.querySelector('[data-dcquick]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  const lid = await p.evaluate(() => Features.list('dctl')[0].lines[5].id);
+  const qk = await p.evaluate(async id => { const w = ms => new Promise(r => setTimeout(r, ms)), n = document.querySelectorAll('.dc-qk').length;
+    document.querySelector('.dc-qk [data-dcst="' + id + ':ok"]').click(); await w(300); const a = Features.list('dctl')[0].lines[5].st;
+    document.querySelector('.dc-qk [data-dcst="' + id + ':ok"]').click(); await w(300); const b = Features.list('dctl')[0].lines[5].st;
+    const wide = [...document.querySelectorAll('.dc-qk *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length; return { n, a, b, wide }; }, lid);
+  check(qk.n === 6 && qk.a === 'ok' && qk.b === 'recv' && !qk.wide, 'Quick check puts Approved / Not approved / Not relevant on every line; tapping again undoes it ' + JSON.stringify(qk));
+  await p.evaluate(() => { const c = document.querySelector('[data-dcquick]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   /* back closes the project page */
   await p.evaluate(() => document.querySelector('[data-dcback]').click()); await sl(500);
   check(await p.evaluate(() => !document.body.classList.contains('dc-full') && !!document.querySelector('[data-dcopen]')), 'Back goes to the list of projects');

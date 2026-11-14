@@ -217,7 +217,8 @@
   function typeLabel(l) { return l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
   /* ---------- the page ---------- */
-  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false;
+  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false;
+  try { quick = sessionStorage.getItem('dash.dcQuick') === '1'; } catch (e) {}
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
@@ -307,6 +308,7 @@
     if (/^g\d$/.test(filt)) chips.unshift([filt, filt.slice(1) + ' ' + (grpName(filt.slice(1)) || ''), L.filter(matchesFilt).length]);
     var ql = q.toLowerCase(), shown = L.filter(function (l) { return matchesFilt(l) && (!ql || (l.code + ' ' + l.sys + ' ' + l.type + ' ' + l.planned + ' ' + (l.cmt || '')).toLowerCase().indexOf(ql) >= 0); });
     var h = '<div class="dc-chips" role="tablist">' + chips.map(function (x) { return '<button type="button" class="dc-chip" aria-pressed="' + (x[0] === filt) + '" data-dcfilt="' + x[0] + '">' + esc(x[1]) + ' <b>' + x[2] + '</b></button>'; }).join('') + '</div>' +
+      '<label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' +
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
     if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>';
     h += byGroup(shown).map(function (g) {
@@ -315,11 +317,12 @@
         var h2 = '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code">' + esc(l.code) + '</span>' +
           '<span class="dc-lx"><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi" title="' + esc(k('ui.dc-fire', 'Fire book')) + '"></i>' : '') + '</b><small data-noi18n>' + esc([typeLabel(l), l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' +
           (l.cmt && !isOpen ? '<small class="dc-cmt" data-noi18n>' + esc(l.cmt) + '</small>' : '') + '</span>' + chip(l.st) + '</button>';
+        if (quick && !isOpen) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + st(x[0])[3] + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
         if (isOpen) {
           h2 += '<div class="dc-ledit">' + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
             '<div class="dc-sts">' + ST.map(function (s) { return '<button type="button" class="dc-sb" style="--c:' + s[3] + '" aria-pressed="' + (l.st === s[0]) + '" data-dcst="' + esc(l.id) + ':' + s[0] + '"><i class="bi bi-' + s[4] + '"></i> ' + esc(k(s[1], s[2])) + '</button>'; }).join('') + '</div>' +
             '<textarea class="dc-ctext" data-dccmt="' + esc(l.id) + '" rows="2" maxlength="1000" placeholder="' + esc(k('ui.dc-comment-ph', 'Comment to the contractor, e.g. Missing the signed declaration')) + '">' + esc(l.cmt || '') + '</textarea>' +
-            (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li><button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>' + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
+            (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li>' + (f.nf ? '<span class="dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span>' : '<button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>') + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
             (looseFiles(p).length ? '<select class="dc-link" data-dclink="' + esc(l.id) + '"><option value="">' + esc(k('ui.dc-link-file', 'Link a file that wasn’t matched …')) + '</option>' + looseFiles(p).map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.name) + '</option>'; }).join('') + '</select>' : '') + '</div>';
         }
         return h2 + '</li>';
@@ -331,6 +334,10 @@
   function lineOf(p, id) { return (p.lines || []).filter(function (l) { return l.id === id; })[0]; }
   function files(p) {
     var F = (p.files || []).slice(), h = planBtns(p).replace('<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i>', '<label class="pill-btn dc-file" hidden><i class="bi bi-file-earmark-spreadsheet"></i>');
+    h = h.replace('</div>', '<label class="pill-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import', 'Import a list of names')) + '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden></label>' +
+      '<button type="button" class="pill-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></div>');
+    if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
+    h += '<p class="muted dc-help">' + esc(k('ui.dc-names-help', 'Is the documentation in the FDV system (e.g. Plania)? Export or copy the list of documents there – the names are matched and checked the same way.')) + '</p>';
     h += '<p class="muted dc-help">' + esc(k('ui.dc-files-help', 'Pick the files, or one .zip with everything. Each file is matched to the plan by its name, and the name is checked: 3-digit NS 3451 code, a document code (DA, DV, SE …) and a describing text – drawings as building-floor-discipline-code-type-number.')) + '</p>';
     if (!F.length) return h;
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
@@ -339,7 +346,7 @@
     h += '<p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>';
     h += '<ul class="dc-files">' + F.map(function (f) {
       var l = f.line && lineOf(p, f.line);
-      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + '"><div class="dc-fh"><button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>' +
+      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + '"><div class="dc-fh">' + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>') +
         '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div>' +
         ((f.iss || []).length ? '<ul class="dc-iss">' + f.iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>' : '') +
         (l ? '<p class="dc-to"><i class="bi bi-arrow-return-right"></i> <b>' + esc(l.code) + '</b> <span data-noi18n>' + esc(lineTitle(l)) + '</span> · ' + esc(typeLabel(l)) + '</p>' :
@@ -379,7 +386,7 @@
 
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
-    var ae = document.activeElement; if (ae && el.contains(ae) && ae.matches('textarea[data-dccmt], .dc-pform input')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && el.contains(ae) && ae.matches('textarea[data-dccmt], .dc-pform input, .dc-paste textarea')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     document.body.classList.toggle('dc-full', !!p);
@@ -415,8 +422,8 @@
   }
   var OKX = /\.(pdf|jpe?g|png|heic|heif|webp|gif|docx?|xlsx?|xlsm|odt|ods|txt|rtf|dwg|dxf|ifc|csv|msg|eml|mp4|mov|zip)$/i;
   function mime(n) { n = n.toLowerCase(); return /\.pdf$/.test(n) ? 'application/pdf' : /\.jpe?g$/.test(n) ? 'image/jpeg' : /\.png$/.test(n) ? 'image/png' : 'application/octet-stream'; }
-  function importFiles(id, list) {
-    var got = [];
+  function importFiles(id, list, names) {
+    var got = (names || []).map(function (n) { return { name: n, size: 0, blob: null, nf: true }; });
     list.reduce(function (pr, f) {
       return pr.then(function () {
         if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) {
@@ -427,18 +434,28 @@
       });
     }, Promise.resolve()).then(function () {
       var p0 = proj(id); if (!p0) return;
-      var have = {}; (p0.files || []).forEach(function (f) { have[f.name.toLowerCase() + '|' + f.size] = 1; });
-      var add = got.filter(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return false; have[key] = 1; return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob }; });
+      var have = {}; (p0.files || []).forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.nf ? 0 : f.size)] = 1; });
+      var add = got.filter(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return false; have[key] = 1; return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob, nf: g.nf || undefined }; });
       return add.reduce(function (pr, f) { return pr.then(function () { if (f.blob) return putBlob(f.id, f.blob); }); }, Promise.resolve()).then(function () {
         var matched = 0;
         saveP(id, function (p) {
           p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; return o; }));
           add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0], l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
         });
-        toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
+        toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         setTab('files'); draw();
       });
     }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-files-bad', 'Some files could not be read.'))); try { console.warn('[dc] files', e); } catch (e2) {} });
+  }
+  /* document names from the FDV system (Plania etc.): pasted text or an export (Excel/CSV) – every cell that looks like a document name */
+  function looksLikeName(c) { c = String(c || '').trim(); return c.length >= 4 && c.length <= 200 && (/^\d{3}(?:[.,]\d{1,3})?[\s_-]+\S/.test(c) || /^\d{3,6}-[A-Z0-9]{3}-[A-Z]-\d{3}-/.test(c) || /\.(pdf|docx?|xlsx?|dwg|dxf|ifc|jpe?g|png)$/i.test(c)); }
+  function namesFrom(sheets) { var out = [], seen = {}; sheets.forEach(function (sh) { sh.rows.forEach(function (r) { r.forEach(function (c) { c = String(c || '').trim(); if (looksLikeName(c) && !seen[c.toLowerCase()]) { seen[c.toLowerCase()] = 1; out.push(c); } }); }); }); return out; }
+  function namesText(t) { return namesFrom([{ rows: String(t || '').split(/\r?\n/).map(function (l) { l = l.replace(/^[\s\-*•·\d]+[.)]\s+(?=\d{3})/, '').trim(); return l.indexOf('\t') >= 0 ? l.split('\t') : [l]; }) }]); }
+  function importNames(id, file) {
+    (/\.xls[xm]$/i.test(file.name) ? file.arrayBuffer().then(readBook) : file.text().then(function (t) { return t.indexOf(';') >= 0 || t.indexOf('\t') >= 0 ? readCsv(t) : [{ rows: t.split(/\r?\n/).map(function (l) { return [l]; }) }]; })).then(function (sh) {
+      var n = namesFrom(sh); if (!n.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; }
+      importFiles(id, [], n);
+    }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); });
   }
   function link(p, lineId, fileId) {
     var f = (p.files || []).filter(function (x) { return x.id === fileId; })[0], l = lineOf(p, lineId); if (!f || !l) return;
@@ -463,7 +480,8 @@
     if ((b = t.closest('[data-dcfilt]'))) { filt = b.dataset.dcfilt; if (tab !== 'docs') setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcgrp]'))) { filt = 'g' + b.dataset.dcgrp; setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcline]'))) { openLine = openLine === b.dataset.dcline ? null : b.dataset.dcline; draw(); return; }
-    if ((b = t.closest('[data-dcst]'))) { var s = b.dataset.dcst.split(':'); saveP(open, function (p) { var l = lineOf(p, s[0]); if (l) l.st = s[1]; }); draw(); return; }
+    if ((b = t.closest('[data-dcst]'))) { var s = b.dataset.dcst.split(':'), tg = b.hasAttribute('data-dctoggle'); saveP(open, function (p) { var l = lineOf(p, s[0]); if (l) l.st = tg && l.st === s[1] ? ((l.files || []).length ? 'recv' : 'missing') : s[1]; }); draw(); return; }   /* a quick button tapped again undoes it */
+    if (t.closest('[data-dcpastebtn]')) { pasting = !pasting; draw(); var ta = document.querySelector('.dc-paste textarea'); if (ta) ta.focus(); return; }
     if ((b = t.closest('[data-dcunlink]'))) { var u = b.dataset.dcunlink.split(':'); saveP(open, function (p) { unlink(p, u[0], u[1]); }); draw(); return; }
     if ((b = t.closest('[data-dcview]'))) { var fid = b.dataset.dcview, w = null; try { w = window.open('', '_blank'); } catch (e2) {}
       getBlob(fid).then(function (bl) { if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
@@ -497,6 +515,8 @@
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl')) return;
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
+    if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
+    if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }
     if (t.dataset.dcflink && t.value) { var f = t.dataset.dcflink, l = t.value; saveP(open, function (p) { link(p, l, f); }); draw(); return; }
   });
@@ -507,7 +527,9 @@
     saveP(open, function (p) { var l = lineOf(p, id); if (l) { l.cmt = v; if (v && l.st === 'ok') l.st = 'cmt'; } }); setTimeout(draw, 300);
   });
   document.addEventListener('submit', function (e) {
-    var f = e.target; if (!f.matches || !f.matches('form[data-dcpform]')) return; e.preventDefault();
+    var f = e.target; if (!f.matches) return;
+    if (f.matches('form[data-dcpaste]')) { e.preventDefault(); var nn = namesText(f.t.value); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } pasting = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); importFiles(f.dataset.dcpaste, [], nn); return; }
+    if (!f.matches('form[data-dcpform]')) return; e.preventDefault();
     var v = { name: f.name.value.trim().slice(0, 120), no: f.no.value.trim().slice(0, 40), who: f.who.value.trim().slice(0, 120), trade: f.trade.value.trim().slice(0, 80), due: f.due.value };
     if (!v.name) return;
     var id = f.dataset.dcpform;
@@ -518,6 +540,6 @@
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   window.Vault.onUnlock(function () { setTimeout(draw, 80); });
-  window.DocCtl = { parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
+  window.DocCtl = { namesText: namesText, parseName: parseName, parsePlan: parsePlan, readBook: readBook, letters: letters, score: score };
   draw();
 })();

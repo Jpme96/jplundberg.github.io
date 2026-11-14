@@ -221,3 +221,14 @@ body.dc-full #wkDocCtl { display: block !important; }
 .rp-doc .dc-rt td { overflow-wrap: anywhere; }
 .rp-doc .dc-sumt td:first-child { overflow-wrap: normal; word-break: normal; }
 .rp-doc .dc-tot td { border-top: 1px solid #c9ced6; }
+
+.dc-quick { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin: 8px 0 0; }
+.dc-qk { display: flex; gap: 6px; padding: 0 0 10px 44px; }
+.dc-qb { flex: 1; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: none; color: var(--text); font: inherit; font-size: 12.5px; padding: 6px 4px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+.dc-qb i { color: var(--c); }
+.dc-qb[aria-pressed="true"] { background: var(--c); color: #fff; border-color: var(--c); }
+.dc-qb[aria-pressed="true"] i { color: #fff; }
+.dc-nf { display: inline-flex; gap: 6px; align-items: baseline; font-size: 13.5px; overflow-wrap: anywhere; min-width: 0; }
+.dc-paste textarea { width: 100%; font-size: 16px; }
+@media (max-width: 480px) { .dc-qk { padding-left: 0; } }
+.dc-quick input { width: auto; flex: 0 0 auto; margin: 0; }
