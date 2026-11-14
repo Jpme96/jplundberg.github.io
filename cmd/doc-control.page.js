@@ -211,8 +211,8 @@
   function stName(s) { var q = st(s); return k(q[1], q[2]); }
   function chip(s) { var q = st(s); return '<span class="dc-st" style="--c:' + q[3] + '"><i class="bi bi-' + q[4] + '"></i> ' + esc(stName(s)) + '</span>'; }
   function counts(lines) { var c = { all: lines.length }; ST.forEach(function (q) { c[q[0]] = 0; }); lines.forEach(function (l) { c[l.st] = (c[l.st] || 0) + 1; }); c.done = c.ok + c.cmt + c.na; return c; }
-  function grpName(d) { return LP && LP.nsName ? LP.nsName(d) : d; }
-  function codeName(c) { c = String(c || ''); var n = LP && LP.nsName ? LP.nsName(c.slice(0, 3)) || LP.nsName(c.slice(0, 2)) : ''; return n; }
+  function grpName(d) { if (/^1\d?$/.test(String(d))) return oneName(d); return LP && LP.nsName ? LP.nsName(d) : d; }
+  function codeName(c) { c = String(c || ''); if (/^1\d\d$/.test(c)) return oneName(c); var n = LP && LP.nsName ? LP.nsName(c.slice(0, 3)) || LP.nsName(c.slice(0, 2)) : ''; return n; }
   function lineTitle(l) { return l.sys || codeName(l.code) || ''; }
   function typeLabel(l) { return l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
@@ -427,6 +427,7 @@
      built-in ones below (only NS 3451 code numbers), and your own (dash.tools.dctypes). */
   var PTYPES = [
     ['new', 'New building – everything', 'Nybygg – alt', '*'],
+    ['one', 'General documents (1 series)', 'Øvrig dokumentasjon (1-serien)', '113 115 116 117 124 141 143 144 145 154 163 165 171 172 173 191 192 193 194'],
     ['bath', 'Bathroom renovation', 'Rehabilitering av bad', '242 244 246 253 255 256 274 291 312 314 315 316 322 324 362 364 411 412 433 442 453'],
     ['kitchen', 'Kitchen renovation', 'Rehabilitering av kjøkken', '242 246 255 256 273 312 314 315 362 364 411 433 442'],
     ['pods', 'Prefabricated bathrooms', 'Prefabrikkerte bad', '613 312 314 315 362 364 433 442 453'],
@@ -484,6 +485,22 @@
     L: ['Photos of hidden work, with location', 'Bilder av skjulte arbeider, med plassering'] };
   function defTypes(c) { c = String(c || ''); if (c.length < 3) return ''; if (/^[2-7]\d0$/.test(c)) return 'HK'; return DEF[c.slice(0, 2)] || ''; }
   function defHint(x) { var q = DEFX[x]; return q ? (I18N.lang === 'nb' ? q[1] : q[0]) : ''; }
+  /* NS 3456's own main group 1 – the documents for the whole property, not a building part (JP 12:09): headings only, in Norwegian
+     and English; one line each, with a short description of what it is in this app's own words */
+  var ONE = [['1', 'Øvrig dokumentasjon', 'General documentation'], ['11', 'Dokumenter for forvaltning', 'Documents for management'], ['111', 'Kjøpskontrakter', 'Purchase contracts'], ['112', 'Leiekontrakter', 'Lease contracts'],
+    ['113', 'Drifts-, vedlikeholds- og serviceavtaler', 'Operation, maintenance and service agreements'], ['114', 'Vedtekter for boligselskap', 'Articles of the housing company'], ['115', 'Garantidokumenter (lovpålagt eller avtalt)', 'Warranty documents (by law or agreed)'],
+    ['116', 'Protokoller (overtakelse, ettårsbefaring, garantitidens utløp)', 'Protocols (handover, one-year inspection, end of warranty)'], ['117', 'Adresselister (leverandører)', 'Address lists (suppliers)'], ['118', 'Forsikringer', 'Insurance'],
+    ['12', 'Juridiske og offentlige dokumenter', 'Legal and public documents'], ['121', 'Matrikkelinformasjon', 'Land register information'], ['122', 'Seksjoneringsplan', 'Sectioning plan'], ['123', 'Offentligrettslige betingelser for drift', 'Public conditions for running the property'], ['124', 'Ferdigattest og midlertidig brukstillatelse', 'Completion certificate and temporary use permit'],
+    ['13', 'Tomt', 'Site'], ['131', 'Tomtebefaring', 'Site inspection'], ['132', 'Beskyttelse av vegetasjon og vekstjord', 'Protection of vegetation and topsoil'], ['133', 'Målinger og rapporter', 'Measurements and reports'],
+    ['14', 'Dimensjonering', 'Design calculations'], ['141', 'Energiberegninger', 'Energy calculations'], ['142', 'Bærekraftsberegninger', 'Sustainability calculations'], ['143', 'Statiske beregninger', 'Structural calculations'], ['144', 'Inneklima (lys, luft, lyd, temperatur)', 'Indoor climate (light, air, sound, temperature)'], ['145', 'Målinger (lys, radon, tetthet)', 'Measurements (light, radon, airtightness)'], ['146', 'Tilpasningsdyktighet', 'Adaptability'],
+    ['15', 'Miljø', 'Environment'], ['151', 'Miljøkonsept', 'Environmental concept'], ['152', 'Miljøsertifisering', 'Environmental certification'], ['153', 'Klimaregnskap', 'Climate accounts'], ['154', 'Energiattest', 'Energy certificate'], ['155', 'Miljøkartlegging og sanering', 'Environmental survey and remediation'], ['156', 'Skadedyr', 'Pests'],
+    ['16', 'Tegninger, planer og kart', 'Drawings, plans and maps'], ['161', 'Offentlige plan- og reguleringsdokumenter', 'Public planning and zoning documents'], ['162', 'Situasjonsplan', 'Site plan'], ['163', '«Som bygget»-tegninger', 'As-built drawings'], ['164', 'Tegninger til byggesak', 'Drawings for the building application'], ['165', 'Modeller (BIM)', 'Models (BIM)'],
+    ['17', 'Branndokumentasjon', 'Fire documentation'], ['171', 'Brannkonsept «som bygget»', 'Fire concept as built'], ['172', 'Rømningsplan', 'Escape plan'], ['173', 'Orienteringsplan', 'Orientation plan'],
+    ['18', 'Sikkerhet', 'Safety'], ['181', 'Sikkerhet mot naturpåkjenninger', 'Safety against natural hazards'], ['182', 'Graderingsspesifikasjon', 'Security classification'], ['183', 'Andre sikkerhetsvurderinger', 'Other safety assessments'],
+    ['19', 'Drift og vedlikehold', 'Operation and maintenance'], ['191', 'Drifts- og vedlikeholdsplan for bygningen', 'Operation and maintenance plan for the building'], ['192', 'Opplæringsplaner (kvittert gjennomført)', 'Training plans (signed as done)'], ['193', 'Renholdsplaner', 'Cleaning plans'], ['194', 'Renovasjonsplan', 'Waste plan'], ['195', 'Prøvedrift', 'Trial operation'], ['196', 'Brøyteplan', 'Snow clearing plan'], ['197', 'Drifts- og vedlikeholdsplan utomhus', 'Operation and maintenance plan outdoors']];
+  var ONEM = {}; ONE.forEach(function (q) { ONEM[q[0]] = q; });
+  function oneName(c) { var q = ONEM[String(c)]; return q ? (I18N.lang === 'nb' ? q[1] : q[2]) : ''; }
+  var ONEX = { 163: 'K', 165: 'K', 162: 'K', 164: 'K', 172: 'K', 173: 'K', 116: 'I', 192: 'I' };
   /* 4-digit codes (JP 11:49): from your own NS 3451 list (Settings → Work), under their 3-digit code; they take the 3-digit code's types */
   function own4() { var m = LP && LP.ownMap ? LP.ownMap() : {}, o = {}; Object.keys(m).forEach(function (c) { if (/^\d{4}$/.test(c)) o[c] = m[c]; }); return o; }
   function kids4(c3) { return Object.keys(own4()).filter(function (c) { return c.indexOf(c3) === 0; }).sort(); }
@@ -493,7 +510,8 @@
   /* codes to pick from: the checklist's, else your own NS 3451 list, else the codes the project types use */
   function pickCodes() {
     var r = req(), out = {};
-    if (r) { Object.keys(r.codes).forEach(function (c) { out[c] = { n: r.codes[c].n, t: r.codes[c].t || (/^1/.test(c) ? '' : defTypes(c)) }; }); return out; }
+    ONE.forEach(function (q) { if (q[0].length === 3) out[q[0]] = { n: oneName(q[0]), t: ONEX[q[0]] || '' }; });
+    if (r) { Object.keys(r.codes).forEach(function (c) { out[c] = { n: r.codes[c].n, t: r.codes[c].t || (/^1/.test(c) ? ONEX[c] || '' : defTypes(c)) }; }); return out; }
     var own = LP && LP.ownMap ? LP.ownMap() : {}; Object.keys(own).forEach(function (c) { if (/^\d{3}$/.test(c)) out[c] = { n: own[c], t: defTypes(c) }; });
     PTYPES.forEach(function (t) { if (t[3] !== '*') t[3].split(' ').forEach(function (c) { if (!out[c]) out[c] = { n: codeName(c) || '', t: defTypes(c) }; }); });
     return out;
@@ -539,7 +557,7 @@
   function linesFor(codesList) {
     var r = req(), out = [];
     codesList.slice().sort().forEach(function (c) {
-      var q = r && (r.codes[c] || (c.length === 4 && r.codes[c.slice(0, 3)])), t = q && q.t ? q.t : /^1/.test(c) ? '' : defTypes(c), groups = [];
+      var q = r && (r.codes[c] || (c.length === 4 && r.codes[c.slice(0, 3)])), t = q && q.t ? q.t : /^1/.test(c) ? ONEX[c] || '' : defTypes(c), groups = [];
       if (!t) groups = [''];
       else { var bc = t.replace(/[^BC]/g, ''); t.split('').forEach(function (x) { if (x === 'B' || x === 'C') { if (groups.indexOf(bc) < 0) groups.push(bc); } else groups.push(x); }); }
       groups.forEach(function (g) {
@@ -788,7 +806,7 @@
     if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; if (rpicking && ropen && krav(ropen) && !(krav(ropen).lines || []).length) { rpicking = false; rback(); return; } rpicking = false; draw(); return; }
     if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; draw(); window.scrollTo(0, 0); return; }
     if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; lastType = ty.id === 'new' ? '' : ty.name; var CC = pickCodes();
-      (ty.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req(); }) : ty.codes.split(' ')).forEach(function (c) { if (CC[c]) ticks[c] = true; }); var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
+      (ty.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req() || /^1/.test(c); }) : ty.codes.split(' ')).forEach(function (c) { if (CC[c]) ticks[c] = true; }); var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
     if ((b = t.closest('[data-dcmake]')) && b.dataset.dcmake === 'req') {
       var cr = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cr.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
       var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); addr = nl.length; p.lines = (p.lines || []).concat(nl); if (lastType && !p.type) p.type = lastType; }, 'dckrav');

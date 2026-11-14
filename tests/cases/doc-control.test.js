@@ -127,6 +127,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up bathroom'; f.no.value = 'P-9'; f.bid.value = '99901'; f.bname.value = 'Made-up block A'; f.pname.value = 'Made-up estate'; f.pid.value = '1/2'; f.requestSubmit(); }); await sl(500);
   check(await p.evaluate(() => document.body.classList.contains('dr-full') && /^#dr=/.test(location.hash) && !!document.querySelector('.dc-pick')), 'new requirements open on their own page (#dr=…) with the system picker');
   const df = await p.evaluate(() => DocCtl.linesFor(['211', '330', '442']).map(l => l.code + ' ' + l.t + ' ' + (l.hint ? 1 : 0)).join());
+  const one = await p.evaluate(() => ({ chip: !!document.querySelector('[data-dcptype="one"]'), grp: !!document.querySelector('li[data-dcpc="163"]'), lines: DocCtl.linesFor(['115', '163']).map(l => l.code + ' ' + l.t + ' ' + l.sys).join() }));
+  check(one.chip && one.grp && one.lines === '115  Warranty documents (by law or agreed),163 K As-built drawings', 'NS 3456\'s 1 series (general documents) can be picked, with its own type chip (12:09) ' + JSON.stringify(one));
   check(df === '211 A 1,211 E 1,211 K 1,330 H 1,330 K 1,442 A 1,442 C 1,442 D 1,442 E 1,442 G 1,442 K 1', 'without a checklist each system still gets its suggested document types with a description (11:15) ' + df);
   await (await p.$('input[data-dcreq]')).uploadFile(reqF); await sl(1000);
   const rq = await p.evaluate(() => { const r = Features.tools().dcreq; return { n: Object.keys(r.codes).join(), t332: r.codes['332'].t, ex: r.codes['332'].ex, chips: document.querySelectorAll('[data-dcptype]').length }; });
