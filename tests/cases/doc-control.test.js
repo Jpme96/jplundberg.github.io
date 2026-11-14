@@ -111,7 +111,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     const bg = ref => getComputedStyle(document.querySelector('[data-xvr="' + ref + '"]')).backgroundColor, tx = ref => (document.querySelector('[data-xvr="' + ref + '"]') || {}).textContent;
     return { tabs, b5: bg('B5'), b3: bg('B3'), i3: tx('I3'), i5: tx('I5'), wide: document.querySelector('.xv').scrollWidth <= innerWidth + 1 };
   });
-  check(xv.tabs === 'Generelt|3 - VVS*|2 - Bygning' && xv.b5 === 'rgb(217, 234, 211)' && xv.b3 === 'rgb(231, 230, 230)' && xv.i3 === 'No document type chosen' && /^Approved/.test(xv.i5) && xv.wide,
+  check(xv.tabs === 'Generelt|3 - VVS*|2 - Bygning' && xv.b5 === 'rgb(217, 234, 211)' && xv.b3 === 'rgb(217, 217, 217)' && xv.i3 === 'No document type chosen' && /^Approved/.test(xv.i5) && xv.wide,
     'the viewer: the plan\'s sheets, approved green, a system with no document type grey with a note, nothing wider than the phone ' + JSON.stringify(xv));
   await p.click('[data-xvr="H5"]'); await p.evaluate(() => { const t = document.querySelector('.xv-in'); t.value = 'Made-up edit ÆØÅ'; t.dispatchEvent(new Event('input', { bubbles: true })); }); await sl(700);
   check(/1 change of your own/.test(await p.$eval('.xv-foot', e => e.textContent)) && (await p.$eval('[data-xvr="H5"]', e => e.textContent)) === 'Made-up edit ÆØÅ', 'a cell is changed by typing in the bar');

@@ -508,7 +508,7 @@ body.dr-full #wkDocReq { display: block !important; }
 .dc-xs li label { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 13.5px; cursor: pointer; }
 .dc-xs li input { width: auto; flex: 0 0 auto; margin: 2px 0 0; }
 .dc-chip[aria-pressed="true"] i { color: inherit; }
-.xv { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: var(--bg, #0e0f12); color: var(--text, #e8eaed); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.xv { position: fixed; inset: 0; margin: 0 !important; z-index: 2000; display: flex; flex-direction: column; background: var(--bg, #0e0f12); color: var(--text, #e8eaed); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .xv-top { display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px; }
 .xv-x { width: 44px; height: 44px; flex: none; border: 0; border-radius: 12px; background: var(--card, #1a1c20); color: inherit; font-size: 18px; cursor: pointer; }
 .xv-title { flex: 1; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

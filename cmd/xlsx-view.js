@@ -147,8 +147,8 @@
     return h + '</tbody></table>';
   }
   function open(opt) {
-    /* opt: { blob, title, edits, Z, start, onEdits(edits), download(blob) } */
-    var box = document.createElement('div'); box.className = 'xv'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+    /* opt: { blob, title, edits, Z, start, cls, onEdits(edits), download(blob) } */
+    var box = document.createElement('div'); box.className = 'xv' + (opt.cls ? ' ' + opt.cls : '');   /* Team: dc-host, so its colours apply */ box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
     box.innerHTML = '<div class="xv-top"><button type="button" class="xv-x" data-xv="close" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button><b class="xv-title">' + esc(opt.title || '') + '</b>' +
       '<button type="button" class="pill-btn xv-dl" data-xv="dl"><i class="bi bi-download"></i> <span>' + esc(k('ui.xv-download', 'Download')) + '</span></button></div>' +
       '<div class="xv-tabs" role="tablist"></div><div class="xv-bar"><span class="xv-ref">–</span><textarea class="xv-in" rows="1" disabled placeholder="' + esc(k('ui.xv-tap', 'Tap a cell to change it')) + '"></textarea></div>' +

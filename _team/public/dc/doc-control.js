@@ -768,7 +768,7 @@
       ['xl/worksheets/sheet1.xml', sheet]]);
   }
   /* ---------- the plan back as Excel, coloured by status (JP 2026-11-14): your own file when this device has it, else a new one ---------- */
-  var FILL = { missing: 'FFF4CCCC', rej: 'FFF4CCCC', recv: 'FFFFF2CC', cmt: 'FFFCE4D6', ok: 'FFD9EAD3', na: 'FFE7E6E6' };
+  var FILL = { missing: 'FFF4CCCC', rej: 'FFF4CCCC', recv: 'FFFFF2CC', cmt: 'FFFCE4D6', ok: 'FFD9EAD3', na: 'FFD9D9D9' };   /* grey 15 % – visible next to white rows (JP 22:17) */
   function colName(n) { var x = ''; while (n > 0) { var m = (n - 1) % 26; x = String.fromCharCode(65 + m) + x; n = Math.floor((n - 1) / 26); } return x; }
   function colNum(ref) { var m = String(ref || '').match(/^[A-Z]+/), n = 0; if (!m) return 0; for (var i = 0; i < m[0].length; i++) n = n * 26 + m[0].charCodeAt(i) - 64; return n; }
   /* what the check says on a line: its status, your comment and any file-name problems */
@@ -1097,7 +1097,7 @@
         return getBlob(ek).then(function (ed) {
           if (!window.XlsxView) { window.FdvPdf.share(f); return; }
           if (!f._own) toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
-          XlsxView.open({ blob: f, title: f.name, edits: ed || {}, Z: XZ, start: (px2.planSheets || []).filter(function (h, i) { return (h.none || []).length || (px2.lines || []).some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0],
+          XlsxView.open({ blob: f, title: f.name, edits: ed || {}, Z: XZ, cls: HOST ? 'dc-host' : '', start: (px2.planSheets || []).filter(function (h, i) { return (h.none || []).length || (px2.lines || []).some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0],
             onEdits: function (e) { putBlob(ek, e); }, download: function (bl) { window.FdvPdf.share(new File([bl], f.name, { type: f.type })); } });
         });
       }).catch(function (e) { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.'))); try { console.warn('[dc] xlsx', e); } catch (e2) {} });
