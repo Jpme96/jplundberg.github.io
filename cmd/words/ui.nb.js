@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.team-space": ["Team space", "Teamrom"],
+  "ui.team-space-about": ["Meetings, actions and documents with your team – a separate site, kept apart from your private dashboard.", "Møter, oppgaver og dokumenter med teamet ditt – et eget nettsted, holdt adskilt fra det private dashbordet ditt."],
+  "ui.open-team": ["Open Team", "Åpne Team"],
   "home.plan": ["Plan my day", "Planlegg dagen"],
   "ui.07-30-todays-events-tasks-and-bills-due": ["07:30 – today’s events, tasks and bills due", "07:30 – dagens hendelser, oppgaver og regninger som forfaller"],
   "ui.09-00-on-the-day": ["09:00 on the day", "09:00 på dagen"],

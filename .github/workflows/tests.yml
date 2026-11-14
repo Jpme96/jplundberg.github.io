@@ -6,7 +6,7 @@ name: tests
 on:
   push:
     branches: [main, next]
-    paths: ['cmd/**', '_cloudflare/**', 'tests/**', '.github/workflows/**', 'assets/**', 'index.html']
+    paths: ['cmd/**', '_cloudflare/**', '_team/**', 'tests/**', '.github/workflows/**', 'assets/**', 'index.html']
   pull_request:
   workflow_dispatch:
   schedule:

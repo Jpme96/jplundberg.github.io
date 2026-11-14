@@ -1,0 +1,26 @@
+// The Team Worker (work.jplundberg.com) – its own system, separate from /cmd (_cloudflare/).
+// Cloudflare builds and deploys it from this folder (Workers & Pages → team → Settings → Build, root directory _team).
+// It has none of /cmd's bindings: no VAULT, no DB, no FILES, no LIVE. Only ids and names here – no secrets.
+// Plain variables set in the dashboard (keep_vars leaves them alone): TEAM_DOMAIN, POLICY_AUD, OWNER, ORIGIN.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "team",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-28",
+  "keep_vars": true,
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "work.jplundberg.com", "custom_domain": true }
+  ],
+  // the app's own files; only /api/* runs the Worker
+  "assets": { "directory": "./public", "run_worker_first": ["/api/*"], "not_found_handling": "single-page-application" },
+  // one place for the team's data, so every change lands in order
+  "durable_objects": {
+    "bindings": [{ "name": "TEAM", "class_name": "TeamStore" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["TeamStore"] }
+  ],
+  "observability": { "enabled": true }
+}

@@ -261,9 +261,13 @@
           : '<ul class="cr-log">' + cm.map(function (x) { var msg = String((x.commit || {}).message || '').split('\n')[0], at = new Date(((x.commit || {}).author || {}).date || 0).getTime(); return '<li><i class="bi bi-dot"></i><span>' + esc(msg.slice(0, 110)) + '</span><small>' + ago(at) + '</small></li>'; }).join('') + '</ul>');
     }
     /* tabs: Overview · Website · System – cards follow your own order (Settings → Admin page) */
-    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage', 'clean'], shared: [] };
+    /* Team (work.jplundberg.com): its own site with its own Worker and storage – only links go from here, no team data */
+    var TU = 'https://work.jplundberg.com/';
+    C['team'] = card('team', 'people', L('Team', 'Team'), '', '<p class="muted">' + L('Members, invites, roles and the change log are managed in Team itself, so no team data ever comes into this dashboard. It uses the same sign-in as here.', 'Medlemmer, invitasjoner, roller og endringsloggen styres i Team selv, så ingen teamdata kommer inn i dette dashbordet. Den bruker samme innlogging som her.') + '</p>' +
+      '<div class="cr-team-links"><a class="pill-btn" href="' + TU + '#team">' + L('Members and invites', 'Medlemmer og invitasjoner') + ' <i class="bi bi-box-arrow-up-right"></i></a><a class="pill-btn" href="' + TU + '">' + L('Open Team', 'Åpne Team') + ' <i class="bi bi-box-arrow-up-right"></i></a></div>', true);
+    var TABS = { overview: ['site', 'content', 'todo', 'log'], website: ['links', 'preview', 'changes'], system: ['uptime', 'storage', 'clean'], shared: [], team: ['team'] };
     var ord = c.order || [], sortT = function (l) { return l.slice().sort(function (a, b) { var ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
-    var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')], ['shared', 'people', L('Shared home', 'Felles hjem')]].map(function (t) {
+    var tabbar = '<div class="cr-tabs" role="tablist">' + [['overview', 'grid-1x2', L('Overview', 'Oversikt')], ['website', 'globe2', L('Website', 'Nettsted')], ['system', 'cpu', L('System', 'System')], ['shared', 'house-heart', L('Shared home', 'Felles hjem')], ['team', 'people', L('Team', 'Team')]].map(function (t) {
       return '<button type="button" role="tab" data-crtab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '"><i class="bi bi-' + t[1] + '"></i> ' + t[2] + (t[0] === 'website' && pendingCount() ? ' <span class="hl-count">' + pendingCount() + '</span>' : '') + '</button>'; }).join('') + '</div>';
     var grid = (TAB === 'website' ? '<p class="cr-sec"><i class="bi bi-activity"></i> ' + L('Site health', 'Nettstedets helse') + '</p>' : '') + '<div class="cr-grid' + (TAB === 'website' ? ' cr-eq' : '') + '">' + sortT(TABS[TAB]).filter(function (k) { return c.panels[k] !== false; }).map(function (k) { return C[k] || ''; }).join('') + '</div>';
     var top = TAB === 'overview' ? html : html.replace(/<div class="cr-lights">[\s\S]*$/, '');
@@ -314,6 +318,7 @@
   if (wsHash) { TAB = 'website'; startEd = wsHash[1]; window.history.replaceState(null, '', location.pathname); }
   else if (location.hash === '#overview') { TAB = 'overview'; window.history.replaceState(null, '', location.pathname); }
   else if (location.hash === '#shared') { TAB = 'shared'; window.history.replaceState(null, '', location.pathname); }
+  else if (location.hash === '#team') { TAB = 'team'; window.history.replaceState(null, '', location.pathname); }
   else if (/^#(system|report)$/.test(location.hash)) { TAB = 'system'; var wantReport = location.hash === '#report'; window.history.replaceState(null, '', location.pathname); if (wantReport) window.Vault.onUnlock(function () { setTimeout(function () { if (window.DiagUI) window.DiagUI.report(''); }, 900); }); }
   var ED = [['sections', 'layout-text-sidebar', L('Front page', 'Forside')], ['announce', 'megaphone', L('Announcement', 'Kunngjøring')], ['featured', 'star', L('Featured', 'Fremhevet')], ['texts', 'fonts', L('Texts', 'Tekster')],
     ['cv', 'file-earmark-person', L('CV & experience', 'CV og erfaring')], ['courses', 'mortarboard', L('Courses', 'Kurs')], ['socials', 'share', L('Socials', 'Sosiale medier')], ['progress', 'bullseye', L('Project progress', 'Prosjektfremdrift')], ['content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter')]];

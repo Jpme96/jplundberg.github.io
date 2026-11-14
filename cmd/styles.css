@@ -4232,6 +4232,7 @@ html.hc-open { overflow: hidden; }
 /* Admin → Shared home: the shared space settings, at reading width */
 .cr-share { max-width: 760px; margin: 8px 0 40px; }
 .cr-share[hidden] { display: none; }
+.cr-team-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; } .cr-team-links .pill-btn { text-decoration: none; }
 /* four Admin tabs on a phone: icon over a short name, all fit */@media (max-width: 560px) {
   .cr-tabs { gap: 2px; }
   .cr-tabs button { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 2px; padding: 7px 2px; font-size: 12px; white-space: nowrap; }

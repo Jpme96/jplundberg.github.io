@@ -279,3 +279,7 @@ body.dr-full #wkDocReq { display: block !important; }
 .dc-xs li label { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 13.5px; cursor: pointer; }
 .dc-xs li input { width: auto; flex: 0 0 auto; margin: 2px 0 0; }
 .dc-chip[aria-pressed="true"] i { color: inherit; }
+
+/* Team space card: one tap to work.jplundberg.com (its data never comes here) */
+.tm-card .tm-about { margin: 4px 0 12px; }
+.tm-card .tm-open { width: 100%; text-decoration: none; }

@@ -123,6 +123,8 @@
       { i: 'link-45deg', t: L('Check for broken links', 'Sjekk etter brutte lenker'), s: 'Admin', run: go('#links'), x: 'broken links lenker sjekk' },
       { i: 'share', t: L('Test a link preview', 'Test en lenkeforhåndsvisning'), s: 'Admin', run: go('#preview'), x: 'link preview og linkedin share' },
       { i: 'clipboard2-pulse', t: L('Diagnostics', 'Diagnostikk'), s: 'Admin → System', run: function () { if (window.Diag) window.Diag.open('system'); }, x: 'diagnostics errors bugs feil diagnostikk system' },
-      { i: 'send', t: L('Report a problem', 'Rapporter et problem'), s: 'Admin', run: function () { if (window.Diag) window.Diag.open('report'); }, x: 'report problem bug feil rapport' }];
+      { i: 'send', t: L('Report a problem', 'Rapporter et problem'), s: 'Admin', run: function () { if (window.Diag) window.Diag.open('report'); }, x: 'report problem bug feil rapport' },
+      /* Team (work.jplundberg.com) is its own site: only a link goes from here */
+      { i: 'people', t: L('Open Team', 'Åpne Team'), s: 'work.jplundberg.com', run: function () { location.href = 'https://work.jplundberg.com/'; }, x: 'team work jobb møter meetings actions oppgaver referat' }];
   });
 })();
