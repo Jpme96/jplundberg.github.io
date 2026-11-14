@@ -38,6 +38,7 @@
   function ago(t) { if (!t) return L('Not yet', 'Ikke ennå'); var m = Math.round((Date.now() - t) / 60000); if (m < 10) return L('Now', 'Nå'); if (m < 60 * 20) return L('Today', 'I dag'); var dd = Math.round(m / 1440); return dd <= 1 ? L('Yesterday', 'I går') : L(dd + ' days ago', 'for ' + dd + ' dager siden'); }
   function rid() { return [].map.call(crypto.getRandomValues(new Uint8Array(10)), function (b) { return ('0' + b.toString(36)).slice(-2); }).join('').slice(0, 16); }
   function lines(s) { return String(s || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function nMembers(n) { return n === 1 ? L('1 member', '1 medlem') : L(n + ' members', n + ' medlemmer'); }
   function rank() { return S.me && S.me.member ? ROLES.indexOf(S.me.member.role) : -1; }
   function nameOf(em) { if (!em) return '—'; if (S.me && em === S.me.email) return L('You', 'Deg'); for (var i = 0; i < S.members.length; i++) if (S.members[i].email === em) return S.members[i].name; return em.split('@')[0]; }
   var toastT = 0;
@@ -301,7 +302,7 @@
     var t = today(), ms = meetings();
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
-    var out = head(S.me.team.name, L(S.members.length + ' members · your role: ', S.members.length + ' medlemmer · din rolle: ') + roleName(S.me.member.role));
+    var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
@@ -427,7 +428,7 @@
   /* ---------- the team: members, invites, requests, the change log ---------- */
   function viewTeam() {
     var adm = rank() >= 3;
-    var out = head(L('Team', 'Team'), (S.me.team.name !== 'Team' ? S.me.team.name + ' · ' : '') + L(S.members.length + ' members', S.members.length + ' medlemmer'));
+    var out = head(L('Team', 'Team'), (S.me.team.name !== 'Team' ? S.me.team.name + ' · ' : '') + nMembers(S.members.length));
     if (adm) out += '<button class="t-btn wide" type="button" data-act="invite">' + ic('plus') + L('Invite someone', 'Inviter noen') + '</button><p class="t-small">' + L('One link per person. It works once and runs out.', 'Én lenke per person. Den virker én gang og går ut.') + '</p>';
     if (adm && S.requests.length) {
       out += '<p class="t-h">' + L('Wants to join', 'Vil bli med') + '</p>';
