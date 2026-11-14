@@ -58,7 +58,6 @@ window.DC_NB = {
 "ui.dc-iss-abbr": "Ukjent dokumentkode «{a}»",
 "ui.dc-iss-drawing": "Tegningsnavnet følger ikke bygg-etasje-fag-kode-type-løpenr.",
 "ui.dc-iss-fag": "Ukjent fagbokstav «{a}» i tegningsnavnet",
-"ui.dc-iss-long": "Lengre enn 30 tegn ({n})",
 "ui.dc-iss-noabbr": "Mangler dokumentkode etter systemkoden (f.eks. DA, DV, SE)",
 "ui.dc-iss-nocode": "Starter ikke med en 3-sifret NS 3451-kode",
 "ui.dc-iss-notext": "Mangler beskrivende tekst etter kodene",

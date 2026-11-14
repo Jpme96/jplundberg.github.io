@@ -64,7 +64,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await go(p, 'work/', 2500);
   /* names on their own */
   const nm = await p.evaluate(() => ['442 DA taklampe korridor C20 Glamox.pdf', '11621-H02-V-332-P-01 – Rørplan.dwg', '11621-H02-V-332-P-01 – Rørplan rev B.pdf', 'Rørplan.pdf', '332 XX Sprinkler.pdf', '332.101 SE Sprinkler.pdf', 'IMG_0001.jpg'].map(n => { const r = DocCtl.parseName(n); return [r.code, r.abbr, r.kind, r.issues.map(i => i[1]).join('+')]; }));
-  check(JSON.stringify(nm) === JSON.stringify([['442', 'DA', 'doc', 'long'], ['332', 'K', 'drawing', ''], ['332', 'K', 'drawing', 'version'], ['', '', 'doc', 'nocode'], ['332', 'XX', 'doc', 'abbr'], ['332.101', 'SE', 'doc', ''], ['', '', 'doc', '']]), 'file names: code, document code, drawings, and the problems (long, version, no code, unknown code) ' + JSON.stringify(nm));
+  check(JSON.stringify(nm) === JSON.stringify([['442', 'DA', 'doc', ''], ['332', 'K', 'drawing', ''], ['332', 'K', 'drawing', 'version'], ['', '', 'doc', 'nocode'], ['332', 'XX', 'doc', 'abbr'], ['332.101', 'SE', 'doc', ''], ['', '', 'doc', '']]), 'file names: code, document code, drawings, and the problems (long, version, no code, unknown code) ' + JSON.stringify(nm));
   check((await p.evaluate(() => ['Drift, Vedlikehold', 'E', 'Kravoppnåelse', 'Tegning', 'A, F'].map(DocCtl.letters).join())) === 'BC,E,A,K,AF', 'document types become NS 3456 letters');
   /* the Team card shows under Today only (JP 20:38: Team links on every Work tab) */
   const tmv = await p.evaluate(async () => { const out = {}; for (const t of ['today', 'doc', 'req', 'insp']) { PageTabs.show(t); await new Promise(r => setTimeout(r, 60)); const el = document.getElementById('wkTeam'); out[t] = !!el && !el.hidden && el.offsetHeight > 0; } PageTabs.show('doc'); return out; });
@@ -82,7 +82,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* the files */
   await (await p.$('input[data-dcfiles]')).uploadFile(f1, f2, zf); await sl(1500);
   const fl = await p.evaluate(() => { const r = Features.list('dctl')[0], L = {}; r.lines.forEach(l => L[l.id] = l); return { n: r.files.length, m: r.files.map(f => [f.name, f.line ? L[f.line].t : '-', (f.iss || []).map(i => i[1]).join('+')].join('|')).sort(), st: r.lines.map(l => l.st).join(), tab: document.querySelector('.fdv-tabs [aria-selected="true"]').dataset.dctab, loose: document.querySelectorAll('.dc-files li.loose').length }; });
-  check(fl.n === 5 && fl.m.join(';') === '234 DA Vindu sørfasade modell X fra Made-up.pdf|E|long;332 DV Sprinkleranlegg.pdf|BC|;332 SE Sprinkleranlegg.pdf|A|;99999-H02-V-332-P-01 – Rørplan rev 2.pdf|K|version;random scan 7.pdf|-|nocode'
+  check(fl.n === 5 && fl.m.join(';') === '234 DA Vindu sørfasade modell X fra Made-up.pdf|E|;332 DV Sprinkleranlegg.pdf|BC|;332 SE Sprinkleranlegg.pdf|A|;99999-H02-V-332-P-01 – Rørplan rev 2.pdf|K|version;random scan 7.pdf|-|nocode'
     && fl.st === 'recv,recv,recv,missing,recv,missing' && fl.tab === 'files' && fl.loose === 1, 'files (also from a .zip, without __MACOSX) are matched by code + document code, checked by name, and their lines become Received ' + JSON.stringify(fl));
   /* link the loose one by hand to 336 */
   await p.evaluate(() => { const r = Features.list('dctl')[0], s = document.querySelector('select[data-dcflink]'); s.value = r.lines[3].id; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);

@@ -639,7 +639,6 @@ I18N.add({
   "ui.dc-in-fdv": ["In the FDV system", "I FDV-systemet"],
   "ui.dc-iss-abbr": ["Unknown document code “{a}”", "Ukjent dokumentkode «{a}»"],
   "ui.dc-iss-drawing": ["The drawing name doesn’t follow building-floor-discipline-code-type-number", "Tegningsnavnet følger ikke bygg-etasje-fag-kode-type-løpenr."],
-  "ui.dc-iss-long": ["Longer than 30 characters ({n})", "Lengre enn 30 tegn ({n})"],
   "ui.dc-iss-noabbr": ["No document code after the system code (e.g. DA, DV, SE)", "Mangler dokumentkode etter systemkoden (f.eks. DA, DV, SE)"],
   "ui.dc-iss-nocode": ["Doesn’t start with a 3-digit NS 3451 code", "Starter ikke med en 3-sifret NS 3451-kode"],
   "ui.dc-iss-notext": ["No describing text after the codes", "Mangler beskrivende tekst etter kodene"],

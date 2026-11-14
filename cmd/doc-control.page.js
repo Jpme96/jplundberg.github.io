@@ -66,7 +66,7 @@
       r.code = m[1]; r.text = m[2] || ''; if (!pic) r.issues.push(['warn', 'noabbr']);
     } else if (/^\d{4,6}-/.test(stem) || (/^\d{3,6}-/.test(stem) && /-[A-Z]-\d{3}-/.test(stem))) { r.kind = 'drawing'; r.why = tegWhy(stem); r.issues.push(['err', 'drawing']); var c = stem.match(/-[A-Z]-?(\d{3})-/) || stem.match(/-(\d{3})-[A-Z]-/); r.code = c ? c[1] : ''; }   /* starts with a building number: a drawing name that breaks the template – say which part (JP 23:13) */
     else if (!pic) r.issues.push(['err', 'nocode']);
-    if (!pic && r.kind === 'doc' && stem.length > 30) r.issues.push(['warn', 'long']);
+    /* no 30-character limit: JP's team doesn't follow BBY's 30 rule (JP 23:30) */
     if (r.kind === 'doc' && !r.text && r.code && !pic) r.issues.push(['warn', 'notext']);
     return r;
   }
@@ -84,7 +84,7 @@
   function issueText(q, f) {
     var p = f && f.p || {};
     return { version: k('ui.dc-iss-version', 'An as-built drawing has a version number in the name'), abbr: k('ui.dc-iss-abbr', 'Unknown document code “{a}”', { a: p.abbr }), noabbr: k('ui.dc-iss-noabbr', 'No document code after the system code (e.g. DA, DV, SE)'),
-      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), long: k('ui.dc-iss-long', 'Longer than 30 characters ({n})', { n: (p.stem || '').length }),
+      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), 
       notext: k('ui.dc-iss-notext', 'No describing text after the codes') }[q[1]] || q[1];
   }
 
