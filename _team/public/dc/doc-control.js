@@ -846,7 +846,9 @@
           if (!text) return; c.setAttribute('t', 'inlineStr');
           var is = doc.createElementNS(NS, 'is'), t = doc.createElementNS(NS, 't'); t.setAttribute('xml:space', 'preserve'); t.textContent = text; is.appendChild(t); c.appendChild(is);
         };
-        var ncol = h.w + 1, any = false;
+        /* the Check column goes right after the last column that has anything in it (empty formatted cells don't count) */
+        var used = h.last; [].forEach.call(doc.getElementsByTagNameNS(NS, 'c'), function (c) { if (c.firstElementChild) used = Math.max(used, colNum(c.getAttribute('r'))); });
+        var ncol = used + 1, any = false;
         (p.lines || []).forEach(function (l) {
           if (!l.src || l.src[0] !== si) return; any = true;
           var n = l.src[1] + 1, r = rowEl(n), st = FILL[l.st] ? l.st : 'missing';
