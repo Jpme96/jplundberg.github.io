@@ -270,9 +270,13 @@
   }
   /* the lines of one system together: the code and its name once, the document types under it (JP 11:38) */
   function byCode(lines) { var m = {}, order = []; lines.forEach(function (l) { var c = String(l.code); if (!m[c]) { m[c] = []; order.push(c); } m[c].push(l); }); return order.map(function (c) { return [c, lineTitle(m[c][0]), m[c]]; }); }
-  function hintText(l) { var h = l.hint || ''; return (l.t || '').length > 1 ? h : h.replace(/^[A-L]: /gm, ''); }
+  /* the description without the letters (JP 12:35): one type → just the text; Drift and Vedlikehold together → "Drift: … / Vedlikehold: …" */
+  function hintText(l) { var h = l.hint || ''; return (l.t || '').length > 1 ? h.replace(/^([A-L]): /gm, function (m, x) { return typeName(x) + ': '; }) : h.replace(/^[A-L]: /gm, ''); }
+  /* the order everywhere: by code, then the NS 3456 type (A, B/C, D … L) – also for lines added later */
+  var TORD = 'ABCDEFGHIKL';
+  function lineOrder(a, b) { var x = String(a.code), y = String(b.code); if (x !== y) return x < y ? -1 : 1; var p = TORD.indexOf((a.t || 'Z')[0]), q = TORD.indexOf((b.t || 'Z')[0]); return (p < 0 ? 99 : p) - (q < 0 ? 99 : q); }
   function byGroup(lines) {
-    var g = {}; lines.forEach(function (l) { var d = String(l.code).charAt(0) || '–'; (g[d] = g[d] || []).push(l); });
+    var g = {}; lines.slice().sort(lineOrder).forEach(function (l) { var d = String(l.code).charAt(0) || '–'; (g[d] = g[d] || []).push(l); });
     return Object.keys(g).sort().map(function (d) { return [d, g[d]]; });
   }
   function planBtns(p) {
@@ -323,7 +327,7 @@
     if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
     h += byGroup(shown).map(function (g) {
       var seen = {};
-      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].slice().sort(function (a, b) { return a.code < b.code ? -1 : a.code > b.code ? 1 : 0; }).map(function (l) {
+      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].slice().sort(lineOrder).map(function (l) {
         var sub = seen[l.code] ? '' : '<li class="dc-csub"><span class="dc-code">' + esc(l.code) + '</span><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi"></i>' : '') + '</b></li>'; seen[l.code] = 1;
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
         var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code"></span>' +
@@ -684,7 +688,7 @@
   function kravXlsx(p) {
     var rows = [[p.name + (p.no ? ' – ' + p.no : '')]].concat(SITE.filter(function (q) { return p[q[0]]; }).map(function (q) { return [{ bid: 'Bygningsnummer', bname: 'Bygningsnavn', pname: 'Eiendomsnavn', pid: 'Eiendomsnummer' }[q[0]], p[q[0]]]; }), [['Anleggsnummer', 'Anleggsnavn', 'Brannbok', 'Dokumenttype', 'Skal inneholde', 'Planlagt navngivning', 'Kommentar']]);
     var hdr = rows.length - 1, FIRE = /^(225|23[1-3]|244|263|291|33\d|443|542|546|733)$/;
-    (p.lines || []).slice().sort(function (a, b) { return a.code < b.code ? -1 : a.code > b.code ? 1 : 0; }).forEach(function (l) { rows.push([l.code, lineTitle(l), FIRE.test(String(l.code).slice(0, 3)) ? 'Ja' : 'Nei', l.t ? l.t.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : l.type, (l.hint || '').replace(/^[A-L]: /gm, ''), '', l.opt ? 'Hvis kontraktsfestet' : '']); });
+    (p.lines || []).slice().sort(lineOrder).forEach(function (l) { rows.push([l.code, lineTitle(l), FIRE.test(String(l.code).slice(0, 3)) ? 'Ja' : 'Nei', l.t ? l.t.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : l.type, hintText(l), '', l.opt ? 'Hvis kontraktsfestet' : '']); });
     var col = function (i) { return String.fromCharCode(65 + i); };
     var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="14" customWidth="1"/><col min="2" max="2" width="38" customWidth="1"/><col min="3" max="3" width="10" customWidth="1"/><col min="4" max="4" width="22" customWidth="1"/><col min="5" max="5" width="60" customWidth="1"/><col min="6" max="6" width="38" customWidth="1"/><col min="7" max="7" width="30" customWidth="1"/></cols><sheetData>' +
       rows.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return v === '' ? '' : '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === 0 || i === hdr ? ' s="1"' : '') + '><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; }).join('') + '</row>'; }).join('') + '</sheetData></worksheet>';
