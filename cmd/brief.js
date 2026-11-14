@@ -202,8 +202,8 @@
       });
       /* at this pace … (the same period as the Money card: the month, or payday to payday) */
       var pc = window.Budget && window.Budget.pace ? window.Budget.pace(d, now) : null;
-      if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', 'At this pace: ' + kr(-pc.end) + ' over by ' + (pc.per.byPayday ? 'payday' : 'the end of the month'),
-        'You spend about ' + kr(pc.perDay) + ' a day – ' + kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) + ' a day keeps you on budget', '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500) });
+      if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', I18N.k(pc.per.byPayday ? 'ui.pace-over-pd' : 'ui.pace-over-m', pc.per.byPayday ? 'At this pace: {n} over by payday' : 'At this pace: {n} over by the end of the month', { n: kr(-pc.end) }),
+        I18N.k('ui.pace-perday', 'You spend about {a} a day – {b} a day keeps you on budget', { a: kr(pc.perDay), b: kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) }), '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500) });
       recurring(add, d, now);
       if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', I18N.k('ui.set-up-your-monthly-budget', 'Set up your monthly budget'), 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
     }

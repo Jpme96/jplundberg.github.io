@@ -528,15 +528,15 @@ window.Budget.cardBills = function (d, now) {
     var fin = /\/cmd\/(?:index\.html)?$/.test(location.pathname) ? 'finance/' : '/cmd/finance/';
     var p = window.Budget.payPlan(d), into = p.per.days - p.per.daysLeft;
     if (p.per.income > 0 && p.open.length && into <= 6)
-      add(into <= 1 ? 11 : 19, 'list-check', '#11a597', 'Payday: ' + p.open.length + ' move' + (p.open.length === 1 ? '' : 's') + ' to do',
+      add(into <= 1 ? 11 : 19, 'list-check', '#11a597', I18N.k(p.open.length === 1 ? 'ui.payday-moves1' : 'ui.payday-moves', p.open.length === 1 ? 'Payday: 1 move to do' : 'Payday: {n} moves to do', { n: p.open.length }),
         p.open.slice(0, 2).map(function (m) { return nf.format(Math.round(m.amount)) + ' → ' + m.label.replace(/^Move to |^Put aside for /, ''); }).join(' · ') + (p.open.length > 2 ? ' …' : ''),
         fin + '#c=flow', { key: 'paymv:' + p.per.startKey + ':' + p.open.length, badge: into <= 1 });
     window.Budget.cardBills(d).forEach(function (c) {
       if (!c.due || c.paid || c.days > 3) return;
       var late = c.days < 0;
       add(late ? 5 : c.days === 0 ? 8 : 16, 'credit-card', late ? '#e66767' : '#c98500',
-        c.acct.label + ' bill ' + (late ? 'is ' + (-c.days) + ' day' + (c.days === -1 ? '' : 's') + ' overdue' : c.days === 0 ? 'is due today' : 'due in ' + c.days + ' day' + (c.days === 1 ? '' : 's')),
-        (c.amount ? 'About ' + nf.format(Math.round(c.amount)) + ' – ' : '') + 'pay it in full to avoid card interest', fin + '#c=flow', { key: 'cc:' + c.acct.id + ':' + c.month + (late ? ':late' : ''), badge: late || c.days === 0 });
+        late ? I18N.k(c.days === -1 ? 'ui.ccb-late1' : 'ui.ccb-late', c.days === -1 ? '{a} bill is 1 day overdue' : '{a} bill is {n} days overdue', { a: c.acct.label, n: -c.days }) : c.days === 0 ? I18N.k('ui.ccb-today', '{a} bill is due today', { a: c.acct.label }) : I18N.k(c.days === 1 ? 'ui.ccb-in1' : 'ui.ccb-in', c.days === 1 ? '{a} bill due in 1 day' : '{a} bill due in {n} days', { a: c.acct.label, n: c.days }),
+        (c.amount ? I18N.k('ui.about-n-dash', 'About {n} – ', { n: nf.format(Math.round(c.amount)) }) : '') + I18N.k('ui.ccb-pay-full', 'pay it in full to avoid card interest'), fin + '#c=flow', { key: 'cc:' + c.acct.id + ':' + c.month + (late ? ':late' : ''), badge: late || c.days === 0 });
     });
   });
 })();

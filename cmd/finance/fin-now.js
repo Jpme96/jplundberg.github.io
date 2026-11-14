@@ -39,17 +39,17 @@
     var paceLine = '';
     if (pc) {
       var endAt = real ? v - Math.max(0, pc.projected - pc.spent) : pc.end;
-      paceLine = pc.ok && endAt >= 0 ? '<p class="fh-pace ok"><i class="bi bi-check2-circle"></i> On track – about ' + money(endAt) + ' left at payday at the pace you spend (' + money(pc.perDay) + '/day)</p>'
-        : '<p class="fh-pace warn"><i class="bi bi-exclamation-triangle"></i> At this pace you end ' + money(Math.abs(endAt)) + (endAt < 0 ? ' short' : ' left') + ' – keep to ' + money(Math.max(0, perDay)) + ' a day</p>';
+      paceLine = pc.ok && endAt >= 0 ? '<p class="fh-pace ok"><i class="bi bi-check2-circle"></i> ' + I18N.k('ui.fh-ok', 'On track – about {n} left at payday at the pace you spend ({d}/day)', { n: money(endAt), d: money(pc.perDay) }) + '</p>'
+        : '<p class="fh-pace warn"><i class="bi bi-exclamation-triangle"></i> ' + I18N.k(endAt < 0 ? 'ui.fh-short' : 'ui.fh-left', endAt < 0 ? 'At this pace you end {n} short – keep to {d} a day' : 'At this pace you end with {n} left – keep to {d} a day', { n: money(Math.abs(endAt)), d: money(Math.max(0, perDay)) }) + '</p>';
     }
     var trust = [];
-    if (real && age != null) trust.push(age <= 1 ? 'balances up to date' : '<span class="' + (age > 7 ? 'soon' : '') + '">balances ' + age + ' days old</span>');
+    if (real && age != null) trust.push(age <= 1 ? I18N.k('ui.bal-fresh', 'balances up to date') : '<span class="' + (age > 7 ? 'soon' : '') + '">' + I18N.k('ui.bal-age', 'balances {n} days old', { n: age }) + '</span>');
     if (!real) trust.push('<button type="button" class="text-btn" data-fnupd data-t="ui.add-your-balances">Add your balances</button> for the real number');
-    trust.push(imp == null ? 'no import yet' : imp === 0 ? 'imported today' : 'last import ' + imp + ' day' + (imp === 1 ? '' : 's') + ' ago');
+    trust.push(imp == null ? I18N.k('ui.imp-none', 'no import yet') : imp === 0 ? I18N.k('ui.imp-today', 'imported today') : I18N.k(imp === 1 ? 'ui.imp-ago1' : 'ui.imp-ago', imp === 1 ? 'last import 1 day ago' : 'last import {n} days ago', { n: imp }));
     box.innerHTML =
-      '<p class="fh-k">' + (real ? 'Free to use ' : 'Left in your budget ') + (per.byPayday ? 'until payday' : 'this month') + '</p>' +
+      '<p class="fh-k">' + I18N.k((real ? 'ui.fh-free' : 'ui.fh-budget') + (per.byPayday ? '-pd' : '-m'), real ? (per.byPayday ? 'Free to use until payday' : 'Free to use this month') : (per.byPayday ? 'Left in your budget until payday' : 'Left in your budget this month')) + '</p>' +
       '<div class="fh-big ' + (v < 0 ? 'neg' : '') + '">' + money(v) + '</div>' +
-      '<p class="fh-sub">' + (v > 0 ? '<b>' + money(perDay) + '</b> a day · ' : v < 0 ? '<b class="neg">short</b> · ' : '') + per.daysLeft + ' day' + (per.daysLeft === 1 ? '' : 's') + ' left' +
+      '<p class="fh-sub">' + (v > 0 ? '<b>' + money(perDay) + '</b> ' + I18N.k('ui.a-day', 'a day') + ' · ' : v < 0 ? '<b class="neg">' + I18N.k('ui.short', 'short') + '</b> · ' : '') + I18N.k(per.daysLeft === 1 ? 'ui.days-left1' : 'ui.days-left', per.daysLeft === 1 ? '1 day left' : '{n} days left', { n: per.daysLeft }) +
         (pay ? ' · payday ' + esc(pay.days === 0 ? 'today' : pay.days === 1 ? 'tomorrow' : pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</p>' +
       '<div class="fh-parts">' + parts.map(function (x) { return '<span><small>' + x[0] + '</small>' + money(x[1], x[2]) + '</span>'; }).join('') + '</div>' +
       paceLine +
@@ -74,12 +74,12 @@
       } catch (e) {}
     }
     if (!m.known && (d.budget.income.length || d.budget.fixed.length)) out.push({ k: 'bal', icon: 'bank2', c: '#8a6fdf', t: 'Add what’s in your accounts', s: 'Then the number above is what you can really use, not just the plan', acts: '<button type="button" class="pill-btn sm" data-fnupd data-t="ui.add-balances">Add balances</button>' });
-    else if (m.known && m.oldest && daysAgo(m.oldest) > 7) out.push({ k: 'old', icon: 'clock-history', c: '#c98500', t: 'Your balances are ' + daysAgo(m.oldest) + ' days old', s: 'Import your bank files or type the new balances', acts: '<a class="pill-btn sm" href="#import" data-t="ui.import">Import</a><button type="button" class="text-btn" data-fnupd data-t="ui.update">Update</button>' });
+    else if (m.known && m.oldest && daysAgo(m.oldest) > 7) out.push({ k: 'old', icon: 'clock-history', c: '#c98500', t: I18N.k('ui.bal-old', 'Your balances are {n} days old', { n: daysAgo(m.oldest) }), s: I18N.k('ui.bal-old-s', 'Import your bank files or type the new balances'), acts: '<a class="pill-btn sm" href="#import" data-t="ui.import">Import</a><button type="button" class="text-btn" data-fnupd data-t="ui.update">Update</button>' });
     if (m.missing && m.missing.length && m.known) out.push({ k: 'miss', icon: 'question-circle', c: '#6b6d73', t: 'No balance for ' + esc(m.missing.map(function (a) { return a.label; }).join(', ')), s: 'They’re left out of the number above and your net worth', acts: '<button type="button" class="text-btn" data-fnupd data-t="ui.add">Add</button>' });
     list.filter(function (a) { return a.kind === 'credit' && !a.due; }).slice(0, 1).forEach(function (a) { out.push({ k: 'due:' + a.id, icon: 'credit-card', c: '#d95926', t: esc(I18N.k('ui.when-is-the-bill-due', 'When is the {n} bill due?', { n: a.label })), s: I18N.k('ui.then-you-get-a-reminder-14-days', 'Then you get a reminder and it shows in the next 14 days'), acts: '<button type="button" class="text-btn" data-fsopen="0" data-t="ui.set-the-day">Set the day</button>' }); });
     if (d.budget.income.length && !B.hasPayday(d)) out.push({ k: 'payday', icon: 'cash-stack', c: '#11a597', t: 'Give your salary a payday', s: 'The budget then runs from payday to payday', acts: '<button type="button" class="text-btn" data-fsopen="1">Set payday</button>' });
     var other = (d.expenses || []).filter(function (e) { return per.has(e.date) && (e.cat || 'other') === 'other'; });
-    if (other.length >= 3) out.push({ k: 'other:' + per.startKey, icon: 'tags', c: '#c98500', t: other.length + ' expenses are filed under Other', s: money(sum(other)) + ' this period – sort them to see where the money goes', acts: '<button type="button" class="text-btn" data-fnsort>Sort them</button>' });
+    if (other.length >= 3) out.push({ k: 'other:' + per.startKey, icon: 'tags', c: '#c98500', t: I18N.k('ui.other-n', '{n} expenses are filed under Other', { n: other.length }), s: I18N.k('ui.other-s', '{n} this period – sort them to see where the money goes', { n: money(sum(other)) }), acts: '<button type="button" class="text-btn" data-fnsort>Sort them</button>' });
     var lim = d.budget.limits || {}, sp = {};
     (d.expenses || []).forEach(function (e) { if (per.has(e.date)) sp[e.cat] = (sp[e.cat] || 0) + (+e.amount || 0); });
     Object.keys(lim).filter(function (c) { return +lim[c] > 0 && sp[c] > lim[c]; }).slice(0, 1).forEach(function (c) {
@@ -123,12 +123,12 @@
       if (!c.due || !c.date) return;
       var late = c.days < 0 && !c.paid;
       if (!(late || (c.date >= t0 && c.date <= end))) return;
-      ev.push({ dt: late ? t0 : c.date, real: c.date, kind: 'card', id: c.acct.id, paid: c.paid, late: late, name: c.acct.label + ' bill', amt: -c.amount, sub: c.paid ? 'paid in full' : 'pay the whole bill' + (c.owedNow ? ' · what you owe now' : '') });
+      ev.push({ dt: late ? t0 : c.date, real: c.date, kind: 'card', id: c.acct.id, paid: c.paid, late: late, name: I18N.k('ui.a-bill', '{a} bill', { a: c.acct.label }), amt: -c.amount, sub: c.paid ? I18N.k('ui.paid-full', 'paid in full') : I18N.k('ui.pay-whole', 'pay the whole bill') + (c.owedNow ? ' · ' + I18N.k('ui.owe-now', 'what you owe now') : '') });
     });
     /* paydays (with the checklist) */
     B.paydays(d, t0, end).forEach(function (x) {
       var p = B.payPlan(d, new Date(x.date.getTime() + 864e5 / 2));
-      ev.push({ dt: x.date, real: x.date, kind: 'pay', name: x.title, amt: x.net, sub: (x.src.name || 'Salary') + (p.moves.length ? ' · ' + p.moves.length + ' move' + (p.moves.length === 1 ? '' : 's') + ' on the checklist' : '') });
+      ev.push({ dt: x.date, real: x.date, kind: 'pay', name: x.title, amt: x.net, sub: (x.src.name || I18N.k('ui.salary', 'Salary')) + (p.moves.length ? ' · ' + I18N.k(p.moves.length === 1 ? 'ui.moves-check1' : 'ui.moves-check', p.moves.length === 1 ? '1 move on the checklist' : '{n} moves on the checklist', { n: p.moves.length }) : '') });
     });
     /* yearly costs that fall in this month / next month inside the window */
     (d.budget.yearly || []).forEach(function (y) {

@@ -193,16 +193,16 @@
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
       if (!fs || fs.ok === false) msg = '<i class="bi bi-' + (miss ? 'cloud-slash' : 'phone') + '"></i> ' + (miss ? '<b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' : '<b>All ' + files + ' files</b> are on this device. ') + (fs && fs.ok === false ? 'To sync them to your other devices, paste the new <b>worker.js</b> in Cloudflare.' : 'The details sync, the files don’t.');
-      else if (fs.ok && !miss && !wait) msg = '<i class="bi bi-cloud-check"></i> <b>All ' + files + ' files</b> are synced, encrypted, and on this device.';
+      else if (fs.ok && !miss && !wait) msg = '<i class="bi bi-cloud-check"></i> ' + I18N.k('ui.pa-synced', '<b>All {n} files</b> are synced, encrypted, and on this device.', { n: files });
       else if (fs.ok) msg = '<i class="bi bi-arrow-repeat"></i> <b>' + onSrv + ' of ' + files + ' files</b> synced' + (wait ? ' · ' + wait + ' uploading' : '') + (miss ? ' · ' + miss + ' only on the phone or computer ' + (miss === 1 ? 'it was' : 'they were') + ' added on – open Papers there once' : '') + '.';
       else msg = '<i class="bi bi-phone"></i> <b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' + (fs.error === 'offline' ? 'They sync when you’re online.' : 'Syncing …');
       if (files) h += '<p class="pa-note"><span>' + msg + '</span>' +
-        (kept === false ? ' <button type="button" class="text-btn" data-pakeep>Ask the browser to keep them</button>' : kept ? ' The browser has been asked to keep them.' : '') + '</p>';
+        (kept === false ? ' <button type="button" class="text-btn" data-pakeep>' + I18N.k('ui.pa-keep', 'Ask the browser to keep them') + '</button>' : kept ? ' ' + I18N.k('ui.pa-kept', 'The browser has been asked to keep them.') : '') + '</p>';
       return h;
     },
     row: function (x) {
       var k = kind(x.kind), s = status(x), n = (x.files || []).length, m = missing(x);
-      var sub = [x.who, s ? s.text : '', x.ref ? 'no. ' + x.ref : ''].filter(Boolean).map(esc).join(' · ');
+      var sub = [x.who, s ? s.text : '', x.ref ? I18N.k('ui.ref-no', 'no. {n}', { n: x.ref }) : ''].filter(Boolean).map(esc).join(' · ');
       sub += n ? ' <span class="pa-fc' + (m ? ' miss' : '') + '" title="' + (m ? m + ' not on this device yet' : 'On this device') + '"><i class="bi bi-' + (m === n ? 'cloud-arrow-down' : 'paperclip') + '"></i>' + n + '</span>' : ' <span class="pa-fc none"><i class="bi bi-paperclip"></i>no file</span>';
       var right = s && (s.soon || s.over) ? '<span class="pa-due' + (s.over && x.dateKind !== 'renews' ? ' over' : s.n <= 7 ? ' near' : '') + '">' + esc(s.rel) + '</span>' : '';
       return { icon: k[2], color: k[3], title: x.title, sub: sub, right: right, cls: 'pa-k-' + (x.kind || 'other') };

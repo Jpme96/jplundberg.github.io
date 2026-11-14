@@ -127,16 +127,16 @@
     if (!lines.length) mb += '<p class="empty kit-empty">Nothing shared in ' + esc(mName(ym, true)) + '. Bought something for the home together? Add it with <b data-t="ui.add-2"><span data-t="ui.add-2">+ Add</span></b>.</p>';
     else {
       mb += '<ul class="mp-list hs2-lines">' + lines.map(function (l) {
-        var pay = l.payer === 'me' ? 'you paid' : l.payer === p.id ? esc(p.name) + ' paid' : 'each paid their part', r = st[l.key];
-        var chip = r ? '<span class="hs2-st hs2-' + r.state + '">' + (r.state === 'paid' ? '<i class="bi bi-check2"></i> paid back' + (r.paidAt && r.paidAt !== r.date ? ' ' + esc(fmt(r.paidAt)) : '') : r.state === 'part' ? esc(kr(r.left)) + ' left' : (r.dir > 0 ? 'open' : 'you owe')) + '</span>' : '';
+        var pay = l.payer === 'me' ? I18N.k('ui.you-paid-l', 'you paid') : l.payer === p.id ? esc(I18N.k('ui.x-paid', '{a} paid', { a: p.name })) : I18N.k('ui.each-paid', 'each paid their part'), r = st[l.key];
+        var chip = r ? '<span class="hs2-st hs2-' + r.state + '">' + (r.state === 'paid' ? '<i class="bi bi-check2"></i> ' + I18N.k('ui.paid-back', 'paid back') + (r.paidAt && r.paidAt !== r.date ? ' ' + esc(fmt(r.paidAt)) : '') : r.state === 'part' ? esc(I18N.k('ui.n-left', '{n} left', { n: kr(r.left) })) : (r.dir > 0 ? I18N.k('ui.open-st', 'open') : I18N.k('ui.you-owe', 'you owe'))) + '</span>' : '';
         return '<li class="mp-row"><button type="button" class="kit-main" ' + (l.k === 'l' ? 'data-hs2plan' : l.k === 'b' ? 'data-hs2run' : 'data-hs2item') + '="' + esc(l.id) + '"><span class="kit-ic" style="--c:' + (CATC[l.cat] || CATC.other) + '"><i class="bi bi-' + (l.k === 'l' ? 'calendar2-check' : l.k === 'b' ? 'lightning-charge' : l.sub ? 'arrow-left-right' : l.work ? WORKI[l.work] : CATI[l.cat] || 'people') + '"></i></span>' +
           '<span class="kit-x"><b>' + esc(l.note) + '</b><small>' + esc(fmt(l.date)) + ' · ' + esc(kr(l.total)) + ' · ' + pay + (l.work ? ' · ' + esc(WORKN[l.work] || '') : '') + '</small>' + chip + '</span><span class="money">' + esc(kr(l.mine)) + '</span></button></li>';
       }).join('') + '</ul>' +
-      '<div class="hs2-sum"><div class="hs2-sumrow"><span>Together</span><b>' + money(m.total) + '</b></div>' +
-        '<div class="hs2-sumrow"><span data-t="ui.you-paid"><span data-t="ui.you-paid">You paid</span></span><b>' + money(m.paidMe) + '</b></div><div class="hs2-sumrow"><span>' + esc(p.name) + ' paid</span><b>' + money(m.paidThem) + '</b></div>' +
-        '<div class="hs2-sumrow"><span>Your part</span><b>' + money(m.mine) + '</b></div>' +
-        '<p class="hs2-even">' + (Math.abs(m.net) < 1 ? '<i class="bi bi-check2-circle"></i> This month evens out by itself' : '<i class="bi bi-arrow-left-right"></i> To even out ' + esc(mName(ym)) + ': <b>' + (m.net > 0 ? esc(p.name) + ' sends you ' + esc(kr(m.net)) : 'you send ' + esc(p.name) + ' ' + esc(kr(-m.net))) + '</b>') + '</p>' +
-        '<button type="button" class="text-btn" data-hs2copy><i class="bi bi-share"></i> Share the month</button></div>';
+      '<div class="hs2-sum"><div class="hs2-sumrow"><span>' + I18N.k('ui.together', 'Together') + '</span><b>' + money(m.total) + '</b></div>' +
+        '<div class="hs2-sumrow"><span data-t="ui.you-paid"><span data-t="ui.you-paid">You paid</span></span><b>' + money(m.paidMe) + '</b></div><div class="hs2-sumrow"><span>' + esc(I18N.k('ui.x-paid', '{a} paid', { a: p.name })) + '</span><b>' + money(m.paidThem) + '</b></div>' +
+        '<div class="hs2-sumrow"><span>' + I18N.k('ui.your-part', 'Your part') + '</span><b>' + money(m.mine) + '</b></div>' +
+        '<p class="hs2-even">' + (Math.abs(m.net) < 1 ? '<i class="bi bi-check2-circle"></i> ' + I18N.k('ui.evens-out', 'This month evens out by itself') : '<i class="bi bi-arrow-left-right"></i> ' + esc(I18N.k('ui.to-even', 'To even out {m}:', { m: mName(ym) })) + ' <b>' + esc(m.net > 0 ? I18N.k('ui.they-send', '{a} sends you {n}', { a: p.name, n: kr(m.net) }) : I18N.k('ui.you-send', 'you send {a} {n}', { a: p.name, n: kr(-m.net) })) + '</b>') + '</p>' +
+        '<button type="button" class="text-btn" data-hs2copy><i class="bi bi-share"></i> ' + I18N.k('ui.share-month', 'Share the month') + '</button></div>';
     }
     body += sec('month', I18N.k('ui.your-month-together', 'Your month together'), esc(mName(ym, true)) + ' · ' + esc(kr(m.total)) + ' together', mb);
     body += workSection(p, yr) + moveSection();

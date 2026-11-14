@@ -121,7 +121,7 @@
     var ins = l.filter(function (x) { return +x.cost > 0; }).reduce(function (a, x) { return a + (+x.cost); }, 0);
     var nofile = l.filter(function (x) { return !(x.files || []).length; }).length;
     el.hidden = false;
-    var h = heroTile('folder2-open', 'Papers', l.length, nofile ? nofile + ' without a file' : l.length ? 'all with a file' : 'none yet', '#papers', '#6b4bc4') +
+    var h = heroTile('folder2-open', 'Papers', l.length, nofile ? I18N.k('ui.pa-nofile', '{n} without a file', { n: nofile }) : l.length ? I18N.k('ui.pa-allfile', 'all with a file') : I18N.k('ui.none-yet', 'none yet'), '#papers', '#6b4bc4') +
       heroTile('calendar-event', I18N.k('ui.next-date', 'Next date'), u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? '#e8743b' : '#3987e5') +
       heroTile('cash-coin', I18N.k('ui.per-year', 'Per year'), ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
     if (el.innerHTML !== h) el.innerHTML = h;
