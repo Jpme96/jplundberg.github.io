@@ -484,6 +484,9 @@
     L: ['Photos of hidden work, with location', 'Bilder av skjulte arbeider, med plassering'] };
   function defTypes(c) { c = String(c || ''); if (c.length < 3) return ''; if (/^[2-7]\d0$/.test(c)) return 'HK'; return DEF[c.slice(0, 2)] || ''; }
   function defHint(x) { var q = DEFX[x]; return q ? (I18N.lang === 'nb' ? q[1] : q[0]) : ''; }
+  /* 4-digit codes (JP 11:49): from your own NS 3451 list (Settings → Work), under their 3-digit code; they take the 3-digit code's types */
+  function own4() { var m = LP && LP.ownMap ? LP.ownMap() : {}, o = {}; Object.keys(m).forEach(function (c) { if (/^\d{4}$/.test(c)) o[c] = m[c]; }); return o; }
+  function kids4(c3) { return Object.keys(own4()).filter(function (c) { return c.indexOf(c3) === 0; }).sort(); }
   function req() { var r = Fe.tools().dcreq; return r && r.codes ? r : null; }
   function ownTypes() { return Fe.list('dctypes'); }
   function allTypes() { var nbx = I18N.lang === 'nb'; return PTYPES.map(function (t) { return { id: t[0], name: nbx ? t[2] : t[1], codes: t[3] }; }).concat(ownTypes().map(function (t) { return { id: t.id, name: t.name, codes: (t.codes || []).join(' '), own: true }; })); }
@@ -536,11 +539,11 @@
   function linesFor(codesList) {
     var r = req(), out = [];
     codesList.slice().sort().forEach(function (c) {
-      var q = r && r.codes[c], t = q && q.t ? q.t : /^1/.test(c) ? '' : defTypes(c), groups = [];
+      var q = r && (r.codes[c] || (c.length === 4 && r.codes[c.slice(0, 3)])), t = q && q.t ? q.t : /^1/.test(c) ? '' : defTypes(c), groups = [];
       if (!t) groups = [''];
       else { var bc = t.replace(/[^BC]/g, ''); t.split('').forEach(function (x) { if (x === 'B' || x === 'C') { if (groups.indexOf(bc) < 0) groups.push(bc); } else groups.push(x); }); }
       groups.forEach(function (g) {
-        out.push({ id: uid() + out.length, code: c, sys: (q && q.n || codeName(c) || '').slice(0, 160), type: g ? g.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: g,
+        out.push({ id: uid() + out.length, code: c, sys: ((c.length === 4 ? own4()[c] : '') || q && q.n || codeName(c) || '').slice(0, 160), type: g ? g.split('').map(function (x) { return TYPES.filter(function (y) { return y[0] === x; })[0][1]; }).join(', ') : '', t: g,
           hint: g.split('').map(function (x) { var v = q && q.ex && q.ex[x] || defHint(x); return v ? x + ': ' + v : ''; }).filter(Boolean).join('\n').slice(0, 800) || undefined, opt: q && q.opt, planned: '', note: '', st: 'missing', files: [] });
       });
     });
@@ -556,12 +559,15 @@
     h += '<p class="muted dc-help">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</p>';
     h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-codes', 'Search code or system')) + '">';
     var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
+    if (!Object.keys(own4()).length) h += '<p class="muted dc-help">' + esc(k('ui.dc-no4', 'For 4-digit codes (e.g. 3321), import your NS 3451 list in Settings → Work – they then show under their 3-digit code.')) + '</p>';
     var lastMain = '';
     Object.keys(groups).sort().forEach(function (g) {
       if (g[0] !== lastMain) { lastMain = g[0]; h += '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3>'; }
       var n = groups[g].filter(function (c) { return ticks[c]; }).length;
       h += '<details class="dc-pg"' + (n ? ' open' : '') + '><summary><b>' + esc(g) + '</b> ' + esc(grpName(g) || '') + ' <span class="dc-pn" data-dcpn="' + g + '">' + (n ? n : '') + '</span></summary><ul>' + groups[g].map(function (c) {
-        return '<li data-dcpc="' + c + '"><label><input type="checkbox" data-dctick="' + c + '"' + (ticks[c] ? ' checked' : '') + '><span><b>' + c + '</b> <span data-noi18n>' + esc(C[c].n) + '</span>' + (C[c].t ? ' <small class="dc-lt">' + esc(C[c].t.split('').join(' ')) + '</small>' : '') + '</span></label></li>';
+        var K4 = kids4(c);
+        return '<li data-dcpc="' + c + '"><label><input type="checkbox" data-dctick="' + c + '"' + (ticks[c] ? ' checked' : '') + '><span><b>' + c + '</b> <span data-noi18n>' + esc(C[c].n) + '</span>' + (C[c].t ? ' <small class="dc-lt">' + esc(C[c].t.split('').join(' ')) + '</small>' : '') + '</span></label>' +
+          (K4.length ? '<ul class="dc-k4">' + K4.map(function (c4) { return '<li data-dcpc="' + c4 + '"><label><input type="checkbox" data-dctick="' + c4 + '"' + (ticks[c4] ? ' checked' : '') + '><span><b>' + c4 + '</b> <span data-noi18n>' + esc(own4()[c4]) + '</span></span></label></li>'; }).join('') + '</ul>' : '') + '</li>';
       }).join('') + '</ul></details>';
     });
     h += '<div class="dc-pbar"><span data-dcpcount>' + pickCount() + '</span><button type="button" class="pill-btn" data-dcmake="' + (kind || 'ctl') + '"><i class="bi bi-check2"></i> ' + esc(kind === 'req' ? k('ui.dr-make', 'Make the list') : k('ui.dc-make', 'Make the plan')) + '</button><button type="button" class="text-btn" data-dccancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div>';

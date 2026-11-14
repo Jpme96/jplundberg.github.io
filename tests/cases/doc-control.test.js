@@ -131,6 +131,11 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await (await p.$('input[data-dcreq]')).uploadFile(reqF); await sl(1000);
   const rq = await p.evaluate(() => { const r = Features.tools().dcreq; return { n: Object.keys(r.codes).join(), t332: r.codes['332'].t, ex: r.codes['332'].ex, chips: document.querySelectorAll('[data-dcptype]').length }; });
   check(rq.n === '330,331,332' && rq.t332 === 'ABC' && rq.ex.A === 'Made-up coverage and marking' && rq.chips >= 30, 'the checklist is read: codes, their NS 3456 types and the examples ("skal ikke benyttes" left out); the project types are offered ' + JSON.stringify(rq));
+  /* 4-digit codes from your own NS 3451 list show under their 3-digit code and take its types (11:49) */
+  await p.evaluate(() => { const t = Features.tools(); t.fdvcodes = [{ c: '3321', n: 'Made-up sprinkler central' }]; Features.saveTools(t); }); await sl(700);
+  const k4 = await p.evaluate(() => ({ nested: !!document.querySelector('li[data-dcpc="332"] .dc-k4 [data-dctick="3321"]'), lines: DocCtl.linesFor(['3321']).map(l => l.code + ' ' + l.t + ' ' + l.sys).join() }));
+  check(k4.nested && k4.lines === '3321 A Made-up sprinkler central,3321 BC Made-up sprinkler central', 'a 4-digit code shows under its 3-digit code and gets its document types ' + JSON.stringify(k4));
+  await p.evaluate(() => { const t = Features.tools(); t.fdvcodes = []; Features.saveTools(t); }); await sl(700);
   await tap('[data-dcptype="sprinkler"]'); await sl(300);
   const pk = await p.evaluate(() => ({ ticked: [...document.querySelectorAll('[data-dctick]:checked')].map(c => c.dataset.dctick).join(), count: document.querySelector('[data-dcpcount]').textContent }));
   check(pk.ticked === '330,331,332' && /3 systems · 5 documents/.test(pk.count), 'the Sprinkler type ticks its systems ' + JSON.stringify(pk));

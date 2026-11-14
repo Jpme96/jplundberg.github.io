@@ -527,6 +527,7 @@ I18N.add({
   "ui.dc-naming": ["File names", "Filnavn"],
   "ui.dc-no-plan": ["No plan yet", "Ingen plan ennå"],
   "ui.dc-no-plan-yet": ["No document plan yet – import it under Overview.", "Ingen dokumentplan ennå – importer den under Oversikt."],
+  "ui.dc-no4": ["For 4-digit codes (e.g. 3321), import your NS 3451 list in Settings → Work – they then show under their 3-digit code.", "For 4-sifrede koder (f.eks. 3321), importer NS 3451-listen din i Innstillinger → Jobb – da vises de under sin 3-sifrede kode."],
   "ui.dc-none-comments": ["No comments.", "Ingen anmerkninger."],
   "ui.dc-none-here": ["Nothing here.", "Ingenting her."],
   "ui.dc-none-missing": ["Nothing is missing.", "Ingenting mangler."],
