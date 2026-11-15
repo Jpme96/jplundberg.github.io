@@ -175,7 +175,7 @@
     else pumpkinG(par, sp.x, sp.y, sp.s || 1, D.lit ? 1 : g && g.id === 'pumpkin' && g.t >= 2.9 ? CL((g.t - 2.9) / .5) : 0);
   }
   /* walking to the season's prop and back, from wherever the page left him: where to stand, which way, how far */
-  var PHR = .0337;   /* walk phase per unit walked at size 1: the steps match the speed, so the feet never slide */
+  var PHR = .0416;   /* .0337 × .42/.34: the step got shorter (avatar-25d.js), so more steps per distance */   /* walk phase per unit walked at size 1: the steps match the speed, so the feet never slide */
   function trip(o, st, gap) { var sp = st.season, s = (sp && sp.s) || 1, from = o.cx, dir = sp && sp.x < from ? -1 : 1, stand = sp ? sp.x - dir * (gap || 27) * s : from; return { from: from, stand: stand, dir: dir, s: s, d: Math.abs(stand - from), sp: sp }; }
   /* where the page plants his feet or a hand (screen points), they go with him: shifted by how far he walked, and the
      planted feet let go while he walks (a normal step) */

@@ -143,7 +143,7 @@
         add(bg, 'circle', { cx: 206, cy: 58, r: 6, fill: '#eef0f4' }); add(bg, 'circle', { cx: 209.5, cy: 55.5, r: 5, fill: '#1b2338' });
         [[170, 52], [180, 76], [200, 84], [214, 74]].forEach(function (s) { add(bg, 'circle', { cx: s[0], cy: s[1], r: .9, fill: '#fff', opacity: .7 }); });
         add(bg, 'line', { x1: 330, y1: 0, x2: 330, y2: 30, stroke: '#2a1d16', 'stroke-width': 1.4 });
-        add(bg, 'path', { d: 'M316 42 Q316 30 330 30 Q344 30 344 42 Z', fill: '#e8743b' }); add(bg, 'ellipse', { cx: 330, cy: 43, rx: 9, ry: 2.5, fill: '#ffe2a8' });
+        add(bg, 'path', { d: 'M316 42 Q316 30 330 30 Q344 30 344 42 Z', fill: '#c98a62' });   /* a calmer shade (Phase G – loud colours only where they mean something) */ add(bg, 'ellipse', { cx: 330, cy: 43, rx: 9, ry: 2.5, fill: '#ffe2a8' });
         add(bg, 'path', { d: 'M318 44 L290 118 L370 118 L342 44 Z', fill: 'rgba(255,214,150,.06)' });
         var sh = add(bg, 'g', { class: 'hs-part' + (data.low ? ' hot' : ''), 'data-scgo': 'pantry' }), low = Math.min(4, data.low || 0);
         add(sh, 'rect', { x: 340, y: 92, width: 50, height: 3, rx: 1, fill: '#8a5a3c' });

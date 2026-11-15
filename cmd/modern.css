@@ -456,7 +456,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .hs-illu figcaption a:hover { background: rgba(var(--ink-rgb), .1); }
 .modern .hs-illu figcaption a.late { color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); background: rgba(var(--danger-rgb), var(--stt-bg)); }
 /* the picture's lowest strip is empty below the ground – the caption sits right under the ground instead */
-.modern .hs-illu:has(.sc25-ground, .sc25-lawn, .sc25-floor) figcaption { margin-top: -6.5%; position: relative; }   /* not where the ground fills the frame (a street, a hill) */
+.modern .hs-illu:has(.sc25-ground, .sc25-lawn) figcaption { margin-top: -6.5%; position: relative; }   /* not where the ground fills the frame (a street, a hill) */
 /* your accent colour on one prop per picture (the laptop's logo, the jar's lid, the front door) – status colours stay as they are */
 .modern .sc-acc { fill: var(--accent); }
 .modern .sc-lid { fill: color-mix(in srgb, var(--accent) 62%, var(--bg-solid)); }
@@ -491,3 +491,14 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
   .st-panel #stMenu .st-btn[aria-current="page"] .st-label { color: var(--heading); font-weight: 600; }
 }
 .st-label > .ft-new { justify-self: start; width: max-content; margin-left: 0; }   /* the "New" badge keeps its own width in the grid label */
+
+/* ---------- the scenes blend into the page (JP 2026-11-15): the picture fades out on all four sides, so a scene's own
+   walls, sky, hill or street never end in a hard edge – he walks in out of the fade ---------- */
+.modern .hs-illu svg.sc25 {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
+  mask-composite: intersect;
+}
+/* props: the stop sign keeps the ride's own colour, a little quieter beside the rest */
+.modern .sc-stop rect { opacity: .82; }

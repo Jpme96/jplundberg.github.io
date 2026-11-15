@@ -150,7 +150,6 @@
 }
 .fp-busy { opacity: .75; }
 .fp-busy .bi { margin-right: 4px; }
-.sc25-floor { fill: rgba(var(--ok-rgb), .16); }
 .sc25-moon { fill: #eef0f4; }
 .sc25-moonc { fill: var(--bg-solid); }
 .sc25-amt { fill: var(--text); font: 700 12px Inter, system-ui, sans-serif; }

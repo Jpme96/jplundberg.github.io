@@ -66,7 +66,7 @@
         var b2 = MIX(carryB, vB, pf), t2 = MIX(carryT, vT, pf), fg = el('g', {});
         add(fg, 'line', { x1: b2[0], y1: b2[1], x2: t2[0], y2: t2[1], stroke: '#d7dee3', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
         if (pf > .6) flag(fg, t2, s * (pf - .6) / .4, 1.5 * Math.sin(now / 160)); else add(fg, 'path', { d: 'M' + t2[0] + ' ' + t2[1] + ' l' + (-3 * s) + ' ' + (10 * s) + ' l' + (5 * s) + ' ' + (2 * s) + ' Z', fill: '#d93a3a' });
-        return [[H.s1.z - .15, fg]]; } });
+        return [[pf < .5 ? Math.min(H.s1.z - .15, -0.6) : H.s1.z - .15, fg]]; } });   /* carried: the pole lies behind his back and head, never across his face (JP 2026-11-15); raised to plant it, it is in his hand in front */
     } });
   };
 })();

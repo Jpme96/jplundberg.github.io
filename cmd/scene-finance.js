@@ -127,7 +127,7 @@
       back: function (sv) {
         /* the room: a soft floor glow, the moon, the calendar tile with the days left */
         var bg = add(sv, 'g', {});
-        add(bg, 'ellipse', { cx: 215, cy: 176, rx: 150, ry: 22, class: 'sc25-floor' });
+        add(bg, 'ellipse', { cx: 215, cy: GY + 4, rx: 182, ry: 12, class: 'sc25-ground', fill: 'rgba(0,0,0,.07)' });   /* the same ground as every page (Phase G), wide enough that he walks in on it */
         add(bg, 'circle', { cx: 112, cy: 50, r: 9, class: 'sc25-moon' }); add(bg, 'circle', { cx: 117, cy: 46, r: 7.5, class: 'sc25-moonc' });
         var cal = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'fin' });
         add(cal, 'rect', { x: 120, y: 127, width: 38, height: 38, rx: 5, class: 'sc-cal' });

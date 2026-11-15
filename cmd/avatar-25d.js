@@ -125,7 +125,7 @@
     var hb6 = (bob - SEAT) * .6 + SEAT;
     /* legs: thigh swings forward/back (z), the knee bends on the way forward, the foot points where he faces */
     [-1, 1].forEach(function (sd) {
-      var q = ph + (sd < 0 ? 0 : Math.PI), th = CHAIR ? Math.PI / 2 : w * 0.42 * Math.sin(q), kn = CHAIR ? Math.PI / 2 : w * 0.72 * Math.max(0, Math.cos(q - 0.35));
+      var q = ph + (sd < 0 ? 0 : Math.PI), th = CHAIR ? Math.PI / 2 : w * 0.34 * Math.sin(q), kn = CHAIR ? Math.PI / 2 : w * 0.58 * Math.max(0, Math.cos(q - 0.35));   /* a calmer step (JP 2026-11-15: the legs swung too far apart, a back leg kicked out) – PHR in scene25.js follows it */
       if (CRUTCH) { th *= .7; kn *= .8; }   /* a shorter, careful step between the crutches */   /* the knee bends while the leg swings forward (lifted), straight while it pushes back on the ground */
       var lo = pose[nearSide(sd) ? 'legNear' : 'legFar'];
       if (lo && lo.at) { var tb = toBody(lo.at, sd * 10), sl = ik(tb.y - (140 + bob), tb.z, 38, 36, 1); lo = { m: lo.m == null ? 1 : lo.m, th: sl[0], kn: sl[0] - sl[1] }; }   /* the foot goes where it must stand (a rung) */

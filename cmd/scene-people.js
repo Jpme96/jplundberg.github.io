@@ -66,7 +66,7 @@
         petW = (t > 1.5 && t < 3.6) || (t > 3.8 && t < 5.4) ? 1 : 0; petA = t < 3.7 ? -90 : 90; petHop = t > 5.6 && t < 6.4 ? 5 * Math.abs(Math.sin((t - 5.6) * 7.8)) : 0;
       } else if (t < 2.2) { me.cx = LERP(30, 232, SEG(t, 0, 2.2)); me.w = Math.min(1, t / .2, (2.2 - t) / .2); } else me.cx = 232;
       if (!st.pact) {
-      pa.face = t < 1.6 ? 0 : t < 2.0 ? -90 * E(SEG(t, 1.6, 2.0)) : t < 4.3 ? -90 : t < 4.7 ? -90 + 90 * E(SEG(t, 4.3, 4.7)) : 0;
+      pa.face = t < 1.4 ? 0 : t < 2.1 ? -90 * E(SEG(t, 1.4, 2.1)) : t < 4.3 ? -90 : t < 4.8 ? -90 + 90 * E(SEG(t, 4.3, 4.8)) : 0;   /* she turns to him over 0.7 s (it read as a snap at 0.4) */
       if (t >= 4.3 && t < 4.7) me.face = 90 - 90 * E(SEG(t, 4.3, 4.7)); else if (t >= 4.7) me.face = 0;
       [[me, -1, 90], [pa, 1, -90]].forEach(function (q) { var P = q[0], k2 = SIDE(q[1], q[2]), WV = B(44, 10);
         if (t >= 2.2 && t < 4.3) { P.pose[k2] = t < 2.5 ? GO(REST, WV, SEG(t, 2.2, 2.5)) : t < 3.4 ? HOLD(B(44, 10 + 9 * Math.sin((t - 2.5) * 16 + (q[1] > 0 ? 1 : 0)))) : t < 3.7 ? GO(WV, AT(MID), SEG(t, 3.4, 3.7), 2) : t < 3.9 ? HOLD(AT(MID)) : GO(AT(MID), REST, SEG(t, 3.9, 4.3));

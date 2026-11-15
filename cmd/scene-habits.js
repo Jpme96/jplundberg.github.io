@@ -26,7 +26,7 @@
       var now = st.now || 0, LIFE = window.Scene25.LIFE;   /* (a scene may use S for its own things) */
       function FIG(par, o) { o.st = st; o.k = o.k || .5; if (o.look === 'iago') o.look = 'partner'; return window.Scene25.FIG(par, o); }
       var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, stickIn = null, cs = Math.cos(face * Math.PI / 180);
-      function DB(sd) { return [200 + sd * 13 + 9, 193]; }   /* the dumbbells stay by the mat */
+      function DB(sd) { return [200 + sd * 9 + 9, 193]; }   /* closer to his feet, so he reaches down, not out to the sides (JP 2026-11-15) */   /* the dumbbells stay by the mat */
       /* the room: a streak chart on the wall, the rack with the barbell, the mat, a bottle */
       function bottle(x, y, deg) { var b = grp(x, y, deg || 0); add(b, 'rect', { x: -4.5, y: -9.5, width: 9, height: 19, rx: 3, fill: '#3987e5', opacity: .85 }); add(b, 'rect', { x: -3, y: -13.5, width: 6, height: 5, rx: 1.5, fill: '#e9eef2' }); return b; }
       var bIn = false, bTilt = 0, w = 0, expr = null, BOT = [266.5, 189.5];
@@ -43,7 +43,7 @@
         if (t >= 1.6 && t < 6.2) pose[hd2] = t < 2.2 ? GO(REST, AT(BOT), SEG(t, 1.6, 2.2), 2) : t < 2.8 ? GO(AT(BOT), LOW, SEG(t, 2.2, 2.8)) : t < 3.3 ? GO(LOW, MOU, SEG(t, 2.8, 3.3), 2) : t < 4.3 ? HOLD(MOU) : t < 4.7 ? GO(MOU, LOW, SEG(t, 4.3, 4.7), 2) : t < 5.6 ? GO(LOW, AT(BOT), SEG(t, 4.7, 5.6), 2) : GO(AT(BOT), REST, SEG(t, 5.6, 6.2));
         bIn = t >= 2.2 && t < 5.6; bTilt = t >= 3.3 && t < 4.3 ? -110 * Math.sin(Math.PI * SEG(t, 3.3, 4.3)) * .8 : 0;
         if (t >= 4.4 && t < 5.0) { lift = -1.5 * Math.sin(Math.PI * SEG(t, 4.4, 5.0)); expr = 'calm'; }   /* the sigh */
-        gy = 200 + 24 * cr; pose.lean = .55 * cr; var cs2 = Math.cos(face * Math.PI / 180);
+        gy = 200 + 19 * cr;   /* a squat that folds at the knees, not a drop into the mat */ pose.lean = .55 * cr; var cs2 = Math.cos(face * Math.PI / 180);
         if (cr > 0) [-1, 1].forEach(function (sd) { pose[LEG(sd, face)] = { m: 1, at: [cx + sd * 10 * cs2 * .5, 198] }; });   /* feet stay on the floor while he bends his knees */
       } else if (st.pact === 'jog') {   /* jogging on the spot, arms pumping; then a look at the watch */
         face = t < .4 ? 35 * (1 - E(SEG(t, 0, .4))) : t < 4.6 ? 0 : 35 * E(SEG(t, 4.9, 5.4));
@@ -74,7 +74,7 @@
       var gy;
       if (!st.pact) {
       held = t >= .7 && t < 5.0;
-      gy = 200 + 24 * cr;
+      gy = 200 + 19 * cr;   /* a squat that folds at the knees, not a drop into the mat */
       [-1, 1].forEach(function (sd) {
         var k2 = SIDE(sd, face); pose[LEG(sd, face)] = { m: 1, at: [cx + sd * 10 * cs * .5, 198] };
         var DN = B(150, 10), cu = t >= 1.3 && t < 4.3 ? (1 - Math.cos(2 * Math.PI * (t - 1.3))) / 2 : 0;
@@ -87,7 +87,7 @@
       });
       if (t >= 5.6 && t < 6.9) { var nr = SIDE(-1, face), BR = B(46, 24 - 12 * Math.sin(Math.PI * SEG(t, 6.0, 6.5))); pose[nr] = t < 6.0 ? GO(REST, B(46, 24), SEG(t, 5.6, 6.0)) : t < 6.5 ? HOLD(BR) : GO(B(46, 24), REST, SEG(t, 6.5, 6.9)); }
       if (t >= 7.3 && t < 8.3) lift = CHEER(t, 7.3, 1.0).lift;
-      pose.lean = .6 * cr;
+      pose.lean = .5 * cr;
       }
       pose.lift = lift; var ph = LIFE(st, pose, w);
       function dumb(x, y) { var d = grp(x, y, 0); add(d, 'line', { x1: -7, y1: 0, x2: 7, y2: 0, stroke: '#8f9ba5', 'stroke-width': 2.2 }); [-1, 1].forEach(function (s) { add(d, 'rect', { x: s * 7 - 2.5, y: -4.5, width: 5, height: 9, rx: 1.6, fill: '#2a2d33' }); }); return d; }

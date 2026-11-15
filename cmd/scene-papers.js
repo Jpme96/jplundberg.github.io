@@ -30,8 +30,9 @@
       function walkTo(a, b, t0, t1) { var f = SEG(t, t0, t1); cx = LERP(a, b, f); face = b > a ? 90 : -90; w = Math.min(1, (t - t0) / .2, (t1 - t) / .2); }
       if (st.pact) {
         var T1 = st.pact === 'dust' ? 6.4 : st.pact === 'stamp' ? 5.6 : 8.0;   /* when he heads back */
-        if (t < .3) { cx = 272; face = -90 * E(SEG(t, 0, .3)); } else if (t < 1.3) walkTo(272, 205, .3, 1.3); else if (t < T1) { cx = 205; face = -90; }
-        else if (t < T1 + .3) { cx = 205; face = -90 + 180 * E(SEG(t, T1, T1 + .3)); } else if (t < T1 + 1.0) walkTo(205, 272, T1 + .3, T1 + 1.0); else { cx = 272; face = 90 * (1 - E(SEG(t, T1 + 1.0, T1 + 1.4))); }
+        var SP = st.pact === 'dust' || st.pact === 'stamp' ? 205 : 234;   /* for the folder he stands back from where the drawer comes out */
+        if (t < .3) { cx = 272; face = -90 * E(SEG(t, 0, .3)); } else if (t < 1.3) walkTo(272, SP, .3, 1.3); else if (t < T1) { cx = SP; face = -90; }
+        else if (t < T1 + .3) { cx = SP; face = -90 + 180 * E(SEG(t, T1, T1 + .3)); } else if (t < T1 + 1.0) walkTo(SP, 272, T1 + .3, T1 + 1.0); else { cx = 272; face = 90 * (1 - E(SEG(t, T1 + 1.0, T1 + 1.4))); }
         var nr2 = SIDE(1, -90), fr2 = SIDE(-1, -90);
         if (st.pact === 'stamp') {
           var PP = [168, 106], ST0 = [178, 103], PK2 = B(150, 6), UPS = AT([168, 93]), DNS = AT([168, 102]);
@@ -51,7 +52,7 @@
           folderIn = t >= 2.8 && t < 5.9; expr = t > 3.6 && t < 5.4 ? 'calm' : null; lean = .15 * Math.sin(Math.PI * SEG(t, 1.3, 7.7));
         }
       } else {
-      if (t < .4) cx = 205; else if (t < 1.2) { cx = LERP(205, 230, E(SEG(t, .4, 1.2))); w = .35; } else if (t < 3.7) cx = 230; else if (t < 4.4) { cx = LERP(230, 205, E(SEG(t, 3.7, 4.4))); w = .35; } else cx = 205;
+      if (t < .4) cx = 205; else if (t < 1.2) { cx = LERP(205, 234, E(SEG(t, .4, 1.2))); w = .45; } else if (t < 3.7) cx = 234; else if (t < 4.4) { cx = LERP(234, 205, E(SEG(t, 3.7, 4.4))); w = .45; } else cx = 205;   /* he steps back as the drawer comes out, so it never runs into him (JP 2026-11-15) */
       p = t < .4 ? 0 : t < 1.2 ? 34 * E(SEG(t, .4, 1.2)) : t < 3.7 ? 34 : 34 * (1 - E(SEG(t, 3.7, 4.4)));
       if (t < 4.8) {
         var nr = SIDE(1, -90), fr = SIDE(-1, -90);
