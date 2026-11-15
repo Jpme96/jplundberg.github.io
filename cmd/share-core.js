@@ -165,7 +165,7 @@
     sx: ['date', 'note', 'total', 'payer', 'shares', 'cat'],
     pay: ['date', 'from', 'to', 'amount'],
     led: ['date', 'note', 'kind', 'payer', 'o', 'p', 'amount'],
-    ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location'],
+    ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location', 'inv'],   /* inv: an invite – 'o' the owner asks the other, 'p' the other asks the owner (2026-11-15) */
     plant: ['name', 'room', 'every', 'last'],
     mv: ['text', 'done'],
     meal: ['date', 'text'],
@@ -187,6 +187,7 @@
     idea: ['text', 'by', 'done'],                                            /* date-night ideas */
     tpk: ['trip', 'text', 'done', 'by'],                                     /* the shared packing list of a trip */
     ndg: ['text', 'at', 'by', 'for'],                                        /* a nudge: a reminder for the other, at a time */
+    rsvp: ['ev', 'a', 'by', 'at'],                                          /* an answer to an invite: yes, no or maybe for an event (either of you writes it) */
     guest: ['name', 'from', 'to', 'by'],                                     /* guests staying over */                                                     /* the pet you share (C10) – either of you picks it, the latest pick wins */
     pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
   };
@@ -218,6 +219,8 @@
       o.furn = (Array.isArray(o.furn) ? o.furn : []).slice(0, 80).map(function (x) { var q = (x && x.r) || []; return { name: String((x && x.name) || '').slice(0, 40), r: [n01(q[0]), n01(q[1]), n01(q[2]), n01(q[3])] }; });
       var cr = {}; Object.keys(o.cr && typeof o.cr === 'object' ? o.cr : {}).slice(0, 200).forEach(function (k) { var kk = sid(k), v = String(o.cr[k] || ''); if (kk && (v === 'all' || /^[\w-]{1,40}$/.test(v))) cr[kk] = v; }); o.cr = cr;
     }
+    if (c === 'ev' && o.inv) o.inv = o.inv === 'p' ? 'p' : 'o';
+    if (c === 'rsvp') { o.ev = String(o.ev || '').replace(/[^\w.-]/g, '').slice(0, 60) || undefined; o.a = ['yes', 'no', 'maybe'].indexOf(o.a) > -1 ? o.a : undefined; o.by = o.by === 'p' ? 'p' : 'o'; o.at = Math.max(0, +o.at || 0) || undefined; }
     if (o.v !== undefined) o.v = Math.max(0, Math.min(9999, Math.round(+o.v || 0))) || undefined;
     if (o.look) o.look = cleanLook(o.look) || undefined; if (o.olook) o.olook = cleanLook(o.olook) || undefined; if (o.pack) o.pack = cleanPack(o.pack);
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });

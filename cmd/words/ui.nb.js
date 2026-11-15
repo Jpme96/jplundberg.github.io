@@ -2801,5 +2801,17 @@ I18N.add({
   "ui.dc-due-on": ["Deadline {d}", "Frist {d}"],
   "ui.dc-due-late": ["Overdue {d}", "Forfalt {d}"],
   "ui.flex-team-h": ["From Team – your clocked hours", "Fra Team – timene du har stemplet"],
-  "ui.flex-from-team": ["From Team", "Fra Team"]
+  "ui.flex-from-team": ["From Team", "Fra Team"],
+  "ui.cal-invite": ["Invite {name} – they answer in their app", "Inviter {name} – svaret kommer i appen"],
+  "ui.inv-yes": ["{name}: yes", "{name}: ja"],
+  "ui.inv-no": ["{name}: no", "{name}: nei"],
+  "ui.inv-maybe": ["{name}: maybe", "{name}: kanskje"],
+  "ui.inv-wait": ["Waiting for {name}", "Venter på {name}"],
+  "ui.inv-asks": ["{name} invites you", "{name} inviterer deg"],
+  "ui.inv-you-yes": ["You: yes", "Du: ja"],
+  "ui.inv-you-no": ["You: no", "Du: nei"],
+  "ui.inv-you-maybe": ["You: maybe", "Du: kanskje"],
+  "ui.yes": ["Yes", "Ja"],
+  "ui.no": ["No", "Nei"],
+  "ui.maybe": ["Maybe", "Kanskje"]
 });

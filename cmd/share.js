@@ -41,7 +41,7 @@
   var PARTNER_ONLY = { pme: 1 };
   /* kinds either of you writes (together.js, Phase E): cmd's own changes wait in a small outbox until they're sent,
      and what's in the box is kept (never deleted just because this device's copy doesn't have it) */
-  var BOTH = { omw: 1, react: 1, cd: 1, idea: 1, tpk: 1, ndg: 1, guest: 1 };
+  var BOTH = { omw: 1, react: 1, cd: 1, idea: 1, tpk: 1, ndg: 1, guest: 1, rsvp: 1 };
   var TG = (function () { try { return JSON.parse(localStorage.getItem('dash.share.tg')) || {}; } catch (e) { return {}; } })();          /* records only the other person writes – never removed from here */
   var OFF_FIRST = { pantry: 1, recipes: 1 };
   /* what they may change, per area (view = they see it but can't change it) */
@@ -106,7 +106,7 @@
       var cd = t.choreDone || {}, since = dkey(new Date(Date.now() - 70 * 864e5));
       Object.keys(cd).forEach(function (k) { if (k.slice(0, 7) >= since.slice(0, 7)) put('cdone', k, { k: k, who: cd[k] }); });
     }
-    if (w.cal) (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && evShared(e) && e.id) put('ev', e.id, { title: String(e.title || '').slice(0, 120), date: e.date, end: e.end, allDay: !!e.allDay, start: e.start, stop: e.stop, repeat: e.repeat, until: e.until, location: String(e.location || '').slice(0, 160) }); });
+    if (w.cal) (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && evShared(e) && e.id) put('ev', e.id, evBox(e)); });   /* one place for an event's shared fields (evBox) – a copy here once dropped the invite */
     if (w.plants) (Array.isArray(t.plants) ? t.plants : []).forEach(function (x) { if (x && x.id) put('plant', x.id, { name: String(x.name || '').slice(0, 80), room: String(x.room || '').slice(0, 60), every: +x.every || 7, last: x.last || '' }); });
     if (w.meals) { var ms = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}, mf = dkey(new Date(Date.now() - 864e5)); Object.keys(ms).forEach(function (k) { if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k >= mf && ms[k]) put('meal', k, { date: k, text: String(ms[k]).slice(0, 80) }); }); }
     if (w.meals) { var vcut = dkey(new Date(Date.now() - 3 * 864e5)); (Array.isArray(t.votes) ? t.votes : []).filter(function (x) { return x && x.id && x.date >= vcut; }).forEach(function (x) { put('vote', x.id, { date: x.date, opts: x.opts || [], pick: x.pick, from: x.from === 'them' ? 'p' : 'o', at: x.at || 0 }); }); }
@@ -351,7 +351,7 @@
      (not shared) are never touched. */
   var EV = { boxL: rj('dash.share.box.ev', null), ops: rj('dash.share.ops.ev', {}) || {}, snap: rj('dash.share.snap.ev', null) };
   function evOn() { return direct('cal'); }
-  function evBox(e) { return SC.clean('ev', { title: String(e.title || '').slice(0, 120), date: e.date, end: e.end, allDay: !!e.allDay, start: e.start, stop: e.stop, repeat: e.repeat, until: e.until, location: String(e.location || '').slice(0, 160) }) || {}; }
+  function evBox(e) { return SC.clean('ev', { title: String(e.title || '').slice(0, 120), date: e.date, end: e.end, allDay: !!e.allDay, start: e.start, stop: e.stop, repeat: e.repeat, until: e.until, location: String(e.location || '').slice(0, 160), inv: e.inv }) || {}; }
   function evSave() { wj('dash.share.ops.ev', EV.ops); wj('dash.share.snap.ev', EV.snap); }
   function evMine() { var o = {}; (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && e.id && evShared(e)) o[e.id] = e; }); return o; }
   /* what you changed in the calendar since last time → changes for the box */
@@ -489,7 +489,7 @@
       var fresh = loc.filter(function (x) { return push[x.rid] && !push[x.rid].del && (!cache[x.rid] || cache[x.rid].del); }), lines = [];
       var me0 = owner() || 'Your partner', add1 = function (k, txt) { if (their[k]) lines.push(txt); };
       var items = fresh.filter(function (x) { return x.c === 'shop'; }).map(function (x) { return x.f.text; }); if (items.length) add1('list', me0 + ' added ' + items.slice(0, 4).join(', ') + (items.length > 4 ? ' …' : '') + ' to the list');
-      fresh.filter(function (x) { return x.c === 'ev'; }).forEach(function (x) { add1('events', me0 + ' added an event: ' + x.f.title); });
+      fresh.filter(function (x) { return x.c === 'ev'; }).forEach(function (x) { if (x.f.inv === 'o') lines.push(me0 + ' invites you: ' + x.f.title); else add1('events', me0 + ' added an event: ' + x.f.title); });   /* an invite always rings – it asks for an answer */
       fresh.filter(function (x) { return x.c === 'sx'; }).forEach(function (x) { add1('money', me0 + ' added a shared cost: ' + (x.f.note || '') + ' ' + kr(x.f.total)); });
       fresh.filter(function (x) { return x.c === 'pay'; }).forEach(function (x) { add1('money', me0 + ' settled up ' + kr(x.f.amount)); });
       fresh.filter(function (x) { return x.c === 'meal'; }).forEach(function (x) { add1('dinner', 'Dinner ' + new Date(x.f.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }) + ': ' + x.f.text); });
@@ -545,11 +545,17 @@
     var row = document.getElementById('clShareRow'), want = !!st() && what().cal;
     if (!row && want) {
       row = document.createElement('div'); row.className = 'cl-group'; row.id = 'clShareRow';
-      row.innerHTML = '<label class="st-row"><span><i class="bi bi-people"></i> <span id="clShareLbl"></span></span><input type="checkbox" class="switch" id="clShare"></label>';
+      row.innerHTML = '<label class="st-row"><span><i class="bi bi-people"></i> <span id="clShareLbl"></span></span><input type="checkbox" class="switch" id="clShare"></label>' +
+        '<label class="st-row" id="clInvRow"><span><i class="bi bi-calendar-check"></i> <span id="clInvLbl"></span></span><input type="checkbox" class="switch" id="clInvite"></label><div id="clInvAns" class="cl-invans" hidden></div>';   /* an invite: they answer yes, maybe or no in their app (2026-11-15) */
+      row.addEventListener('change', function (e) { if (e.target.id === 'clInvite' && e.target.checked) { var s2 = document.getElementById('clShare'); if (s2) s2.checked = true; } if (e.target.id === 'clShare' && !e.target.checked) { var i2 = document.getElementById('clInvite'); if (i2) i2.checked = false; } });
       var g = ed.querySelector('.cl-group-text'); if (g) ed.insertBefore(row, g); else ed.appendChild(row);
     }
-    if (row) { row.hidden = !want; var l = document.getElementById('clShareLbl'); if (l) l.textContent = 'Share with ' + pname(); }
+    if (row) { row.hidden = !want; var l = document.getElementById('clShareLbl'); if (l) l.textContent = 'Share with ' + pname(); var il = document.getElementById('clInvLbl'); if (il) il.textContent = window.I18N ? I18N.k('ui.cal-invite', 'Invite {name} – they answer in their app', { name: pname() }) : 'Invite ' + pname(); }
   }
+  /* invites (2026-11-15): an event with inv 'o' asks the other one, 'p' asks you; the answers are rsvp records (either of you
+     writes one, id = event id + '.' + who) – the latest per person counts */
+  function rsvpOf(evId, who) { var best = null; tgList('rsvp').forEach(function (r) { var f = r.f || r; if (f.ev === evId && (r.by || f.by) === who && (!best || (f.at || 0) >= (best.at || 0))) best = f; }); return best ? best.a : ''; }
+  function answer(evId, a) { if (!st() || ['yes', 'no', 'maybe'].indexOf(a) < 0) return; tgPut('rsvp', evId + '.o', { ev: evId, a: a, by: 'o', at: Date.now() }); window.dispatchEvent(new Event('cal:change')); }
   /* Travel → a trip's overview: "Share with …" (dates, packing list) */
   function tripRow() {
     var notes = document.getElementById('tpNotes'); if (!notes) return;
@@ -592,7 +598,7 @@
     var say = kind === 'hi5' ? (nb ? 'Husarbeid gjort i dag – high five, ' + p + '!' : 'Chores done today – high five, ' + p + '!') : (nb ? 'Du og ' + p + ' 💛' : 'You and ' + p + ' 💛');
     return { look: lk, kind: kind, say: say, pet: sharedPet(), w: 7 };
   };
-  window.ShareSpace = { list: function (c) { return tgList(c); }, put: function (c, id, f, del) { tgPut(c, id, f, del); }, ownerName: function () { return owner(); }, partnerName: function () { return pname(); }, sharedPet: function () { return sharedPet(); }, setPet: function (v) { setSt({ pet: v || 'none', petAt: Date.now() }); schedule(200); }, waiting: function () { if (!st()) return 0; var n = Object.keys(EV.ops || {}).length; Object.keys(DLISTS).forEach(function (k) { n += Object.keys(dl(k).ops || {}).length; }); return n; }, partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
+  window.ShareSpace = { list: function (c) { return tgList(c); }, put: function (c, id, f, del) { tgPut(c, id, f, del); }, ownerName: function () { return owner(); }, partnerName: function () { return pname(); }, sharedPet: function () { return sharedPet(); }, setPet: function (v) { setSt({ pet: v || 'none', petAt: Date.now() }); schedule(200); }, waiting: function () { if (!st()) return 0; var n = Object.keys(EV.ops || {}).length; Object.keys(DLISTS).forEach(function (k) { n += Object.keys(dl(k).ops || {}).length; }); return n; }, partnerLook: function () { return partnerLook(); }, evShared: function (e) { return !!st() && what().cal && evShared(e); }, kitRow: function (k) { return st() && what().house && KITS[k] ? 'Share with ' + pname() : ''; }, kitHelp: function (k) { return KITS[k] || ''; }, syncFiles: syncFiles, on: function () { return !!st(); }, name: pname, calRow: calRow, rsvp: rsvpOf, answer: answer, sync: sync, collect: collect, what: what, direct: function (k) { return direct(k); } };
 
   /* ---------- Settings → Shared space ---------- */
   var srvInfo = null, showing = null;

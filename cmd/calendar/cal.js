@@ -2,6 +2,13 @@
    Data and repeats come from cal-core.js (window.Cal). */
 (function () {
   "use strict";
+  /* an invite's answer as a status tag (2026-11-15): yours to them – their yes/maybe/no or waiting; theirs to you – asks you */
+  function invTag(e) {
+    var S = window.ShareSpace; if (!e || !e.inv || !S || !S.on() || !S.rsvp) return '';
+    var nm = S.name ? S.name() : '', K = function (k, en) { return I18N.k(k, en, { name: nm }); }, a;
+    if (e.inv === 'o') { a = S.rsvp(e.id, 'p'); return a === 'yes' ? '<span class="stt stt-ok">' + esc(K('ui.inv-yes', '{name}: yes')) + '</span>' : a === 'no' ? '<span class="stt stt-bad">' + esc(K('ui.inv-no', '{name}: no')) + '</span>' : a === 'maybe' ? '<span class="stt stt-soon">' + esc(K('ui.inv-maybe', '{name}: maybe')) + '</span>' : '<span class="stt stt-plan">' + esc(K('ui.inv-wait', 'Waiting for {name}')) + '</span>'; }
+    a = S.rsvp(e.id, 'o'); return a ? '<span class="stt ' + (a === 'yes' ? 'stt-ok' : a === 'no' ? 'stt-bad' : 'stt-soon') + '">' + esc(a === 'yes' ? K('ui.inv-you-yes', 'You: yes') : a === 'no' ? K('ui.inv-you-no', 'You: no') : K('ui.inv-you-maybe', 'You: maybe')) + '</span>' : '<span class="stt stt-cmt">' + esc(K('ui.inv-asks', '{name} invites you')) + '</span>';
+  }
   function shIc(o) { var e = o && o.ev && o.ev.own, S = window.ShareSpace; return e && S && S.on() && (S.evShared ? S.evShared(e) : e.share) ? '<i class="bi bi-people cl-sh" title="Shared" data-t-title="ui.shared"></i> ' : ''; }
 
   var C = window.Cal;
@@ -36,7 +43,7 @@
     else if (o.ev.rule) sub.push('<i class="bi bi-arrow-repeat"></i> Repeats');
     return '<li><button type="button" class="cl-ev" data-occ="' + (shown.length - 1) + '" style="--c:' + o.color + '">' +
       '<span class="t">' + C.timeLabel(o, onDay) + '</span><span class="bar"></span>' +
-      '<span class="x"><b>' + shIc(o) + esc(o.title) + '</b>' + (sub.length ? '<small>' + sub.join(' · ') + '</small>' : '') + '</span></button></li>';
+      '<span class="x"><b>' + shIc(o) + esc(o.title) + '</b>' + (sub.length ? '<small>' + sub.join(' · ') + '</small>' : '') + invTag(o.ev && o.ev.own) + '</span></button></li>';
   }
   /* which days (keys) an occurrence touches, within [from, to) */
   function daysOf(o, from, to) {
@@ -316,6 +323,11 @@
     weekScrolled = false;
     render();
   }
+  $('clEdit').addEventListener('click', function (e) {   /* your answer to their invite: saved at once, sent with the next sync */
+    var b = e.target.closest('[data-invans]'), box = $('clInvAns'); if (!b || !box || !window.ShareSpace || !window.ShareSpace.answer) return;
+    window.ShareSpace.answer(box.dataset.ev, b.dataset.invans);
+    Array.prototype.forEach.call(box.querySelectorAll('[data-invans]'), function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+  });
   $('clPrev').addEventListener('click', function () { step(-1); });
   $('clNext').addEventListener('click', function () { step(1); });
   $('clToday').addEventListener('click', function () { cur = day0(new Date()); sel = dkey(cur); weekScrolled = false; listDays = 42; render(); });
@@ -556,7 +568,10 @@
       $('clLoc').value = e ? (e.location || '') : '';
       $('clNotes').value = e ? (e.notes || '') : '';
       $('clDelBox').hidden = !e;
-      if (window.ShareSpace) { window.ShareSpace.calRow(); var shc = $('clShare'); if (shc) shc.checked = !!(e && e.share); }
+      if (window.ShareSpace) { window.ShareSpace.calRow(); var shc = $('clShare'); if (shc) shc.checked = !!(e && e.share);
+        var ivc = $('clInvite'), ivr = $('clInvRow'), iva = $('clInvAns'), theirs = !!(e && e.inv === 'p');
+        if (ivc) ivc.checked = !!(e && e.inv === 'o'); if (ivr) ivr.hidden = theirs;
+        if (iva) { iva.hidden = !theirs; if (theirs) { var my = window.ShareSpace.rsvp ? window.ShareSpace.rsvp(e.id, 'o') : ''; iva.innerHTML = '<p>' + esc(I18N.k('ui.inv-asks', '{name} invites you', { name: window.ShareSpace.name() })) + '</p><div class="seg">' + [['yes', I18N.k('ui.yes', 'Yes')], ['maybe', I18N.k('ui.maybe', 'Maybe')], ['no', I18N.k('ui.no', 'No')]].map(function (x) { return '<button type="button" class="pill-btn sm' + (my === x[0] ? ' on' : '') + '" data-invans="' + x[0] + '" aria-pressed="' + (my === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>'; iva.dataset.ev = e.id; } } }
       syncFields();
       $('clRoute').hidden = !$('clLoc').value.trim() || $('clAllDay').checked;
     }
@@ -598,6 +613,8 @@
     if (editing.own && editing.own.skip && ev.repeat) ev.skip = editing.own.skip;
     var shc = $('clShare'), shr = $('clShareRow');
     if (shc && shr && !shr.hidden) { if (shc.checked) ev.share = true; } else if (editing.own && editing.own.share) ev.share = true;   /* Shared space: "Share with …" */
+    var ivc2 = $('clInvite');   /* an invite: yours ('o') from the switch; one from them ('p') stays theirs */
+    if (editing.own && editing.own.inv === 'p') { ev.inv = 'p'; ev.share = true; } else if (ivc2 && shr && !shr.hidden && ivc2.checked) { ev.inv = 'o'; ev.share = true; } else if (!(shr && !shr.hidden) && editing.own && editing.own.inv) ev.inv = editing.own.inv; else delete ev.inv;
     var d = data();
     var i = d.events.findIndex(function (x) { return x.id === ev.id; });
     if (i > -1) d.events[i] = ev; else d.events.push(ev);

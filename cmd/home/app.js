@@ -154,7 +154,8 @@
     if (del) return;
     if (c === 'sx' && isNew) { k = 'cost'; txt = me0 + L(' added a shared cost: ', ' la til en felles utgift: ') + (f.note || '') + ' ' + kr(f.total); }
     else if (c === 'pay' && isNew) { k = 'settle'; txt = me0 + L(' settled up ', ' gjorde opp ') + kr(f.amount); }
-    else if (c === 'ev' && isNew) { k = 'event'; txt = me0 + L(' added an event: ', ' la til en hendelse: ') + f.title; }
+    else if (c === 'ev' && isNew) { k = 'event'; txt = me0 + (f.inv === 'p' ? L(' invites you: ', ' inviterer deg: ') : L(' added an event: ', ' la til en hendelse: ')) + f.title; if (f.inv === 'p') on = on.concat('event'); }   /* an invite always rings */
+    else if (c === 'rsvp' && f.a) { var iev = find('ev', f.ev); k = 'event'; on = on.concat('event'); txt = me0 + (f.a === 'yes' ? L(' says yes to: ', ' sier ja til: ') : f.a === 'no' ? L(' says no to: ', ' sier nei til: ') : L(' says maybe to: ', ' sier kanskje til: ')) + (iev ? iev.f.title : ''); }
     else if (c === 'shop' && isNew) { k = 'shop'; txt = me0 + L(' added ', ' la til ') + f.text + L(' to the list', ' på listen'); }
     else if (c === 'cdone') { var ch = find('chore', String(f.k || '').split('|')[1]); k = 'chore'; txt = me0 + L(' did: ', ' gjorde: ') + (ch ? ch.f.name : ''); }
     else if (c === 'note') { k = 'note'; txt = me0 + L(' wrote a note: ', ' skrev et notat: ') + (f.title || ''); }
@@ -186,7 +187,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 256;
+  var APPV = 257;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -596,8 +597,17 @@
     if ((info().what || {}).cal === false) return trips() || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
     var tk = today(), l = list('ev').map(function (r) { return { r: r, d: nextOf(r.f, tk) }; }).filter(function (x) { return x.d; }).sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : String(a.r.f.start || '') < String(b.r.f.start || '') ? -1 : 1; });
     return trips() + '<h2 class="h-h">' + L('Coming up', 'Kommer') + '</h2><button type="button" class="h-btn ghost wide" data-addev><i class="bi bi-plus-lg"></i> ' + L('Add an event', 'Legg til en hendelse') + '</button>' +
-      (l.length ? '<ul class="h-list">' + l.slice(0, 40).map(function (x) { var f = x.r.f; return '<li><span class="h-row"><span>' + esc(f.title) + '<small>' + esc(fdate(x.d) + (f.allDay ? '' : ' · ' + (f.start || '') + (f.stop ? '–' + f.stop : '')) + (f.location ? ' · ' + f.location : '') + (f.repeat ? ' · ↻' : '')) + '</small></span></span>' + (x.r.by === 'p' ? '<button type="button" class="h-x" data-evdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>'
+      (l.length ? '<ul class="h-list">' + l.slice(0, 40).map(function (x) { var f = x.r.f; return '<li><span class="h-row"><span>' + esc(f.title) + '<small>' + esc(fdate(x.d) + (f.allDay ? '' : ' · ' + (f.start || '') + (f.stop ? '–' + f.stop : '')) + (f.location ? ' · ' + f.location : '') + (f.repeat ? ' · ↻' : '')) + '</small></span></span>' + invRow(x.r) + (x.r.by === 'p' ? '<button type="button" class="h-x" data-evdel="' + esc(x.r.id) + '" aria-label="' + L('Remove', 'Fjern') + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>'; }).join('') + '</ul>'
         : '<p class="h-sum">' + L('Nothing coming up.', 'Ingenting som kommer.') + '</p>') + earlier();
+  }
+  /* invites (2026-11-15): inv 'o' – the owner asks you: yes / maybe / no right on the row; inv 'p' – you asked: their answer.
+     Answers are rsvp records, id = event id + '.' + who; the latest per person counts */
+  function rsvpOf(evId, who) { var best = null; list('rsvp').forEach(function (r) { var f = r.f || {}; if (f.ev === evId && (r.by || f.by) === who && (!best || (f.at || 0) >= (best.at || 0))) best = f; }); return best ? best.a : ''; }
+  function invRow(r) {
+    var f = r.f || {}, o = owner(); if (!f.inv) return '';
+    if (f.inv === 'p') { var a = rsvpOf(r.id, 'o'); return '<span class="h-chip' + (a === 'no' ? ' bad' : a === 'yes' ? '' : ' warn') + '">' + esc(a === 'yes' ? o + L(': yes', ': ja') : a === 'no' ? o + L(': no', ': nei') : a === 'maybe' ? o + L(': maybe', ': kanskje') : L('Waiting for ', 'Venter på ') + o) + '</span>'; }
+    var my = rsvpOf(r.id, 'p');
+    return '</li><li class="h-inv"><span class="h-small">' + esc(o + L(' invites you', ' inviterer deg')) + '</span><span class="h-invb">' + [['yes', L('Yes', 'Ja')], ['maybe', L('Maybe', 'Kanskje')], ['no', L('No', 'Nei')]].map(function (x) { return '<button type="button" class="h-btn sm' + (my === x[0] ? '' : ' ghost') + '" data-rsvp="' + esc(r.id) + '|' + x[0] + '" aria-pressed="' + (my === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</span>';
   }
   /* events that have been (one-off, last 30 days) – so one added for yesterday doesn't seem to vanish */
   var showEarlier = false;
@@ -640,9 +650,10 @@
   }
   function evSheet() {
     sheet('<h2>' + L('New event', 'Ny hendelse') + '</h2><input name="title" maxlength="120" placeholder="' + L('Title', 'Tittel') + '" required><input name="date" type="date" value="' + today() + '" required>' +
-      '<label class="h-check"><input type="checkbox" name="all"> ' + L('All day', 'Hele dagen') + '</label><div class="h-two"><input name="start" type="time" value="18:00"><input name="stop" type="time" value="19:00"></div><input name="loc" maxlength="160" placeholder="' + L('Where (optional)', 'Hvor (valgfritt)') + '">', function (f) {
+      '<label class="h-check"><input type="checkbox" name="all"> ' + L('All day', 'Hele dagen') + '</label><div class="h-two"><input name="start" type="time" value="18:00"><input name="stop" type="time" value="19:00"></div><input name="loc" maxlength="160" placeholder="' + L('Where (optional)', 'Hvor (valgfritt)') + '">' +
+      '<label class="h-check"><input type="checkbox" name="inv"> ' + esc(L('Invite ', 'Inviter ') + owner() + L(' – they answer yes or no', ' – svaret kommer som ja eller nei')) + '</label>', function (f) {
       if (!f.title.value.trim()) { f.title.focus(); return false; }
-      var ev = { title: f.title.value.trim(), date: f.date.value || today(), allDay: f.all.checked, location: f.loc.value.trim() };
+      var ev = { title: f.title.value.trim(), date: f.date.value || today(), allDay: f.all.checked, location: f.loc.value.trim() }; if (f.inv && f.inv.checked) ev.inv = 'p';
       if (!f.all.checked) { ev.start = f.start.value || '18:00'; ev.stop = f.stop.value || ''; }
       var id = 'h' + uid(); put('ev', id, ev); if (ev.date < today()) showEarlier = true; toast('<i class="bi bi-calendar-check"></i> ' + esc(ev.title) + (ev.date < today() ? ' · ' + L('under Earlier', 'under Tidligere') : ''), function () { put('ev', id, null, true); });
     });
@@ -866,6 +877,7 @@
     if (d.settle != null) { settleSheet(); return; }
     if (d.moneyall != null) { showAllMoney = !showAllMoney; draw(); return; }
     if (d.addev != null) { evSheet(); return; }
+    if (d.rsvp) { var rv = String(d.rsvp).split('|'), re = find('ev', rv[0]); if (re && ['yes', 'no', 'maybe'].indexOf(rv[1]) > -1) { put('rsvp', re.id + '.p', { ev: re.id, a: rv[1], by: 'p', at: Date.now() }); draw(); } return; }
     if (d.looked != null) { lookedNow(); draw(); return; }
     if (d.earlier != null) { showEarlier = !showEarlier; draw(); return; }
     var del = d.sxdel ? ['sx', d.sxdel] : d.paydel ? ['pay', d.paydel] : d.evdel ? ['ev', d.evdel] : null;

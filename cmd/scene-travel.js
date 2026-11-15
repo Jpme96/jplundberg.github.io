@@ -110,20 +110,20 @@
       /* ---- him ---- */
       var cx = -30, face = 90, w = 0, pose = {}, h = 0, inside = false, gone = false, suit = 'pull', sx = WAIT - 22, sitIn = null, carry = false, GND = 198;
       var PASS = B(100, 24), nh90 = SIDE(-1, 90), fh90 = SIDE(1, 90);
-      if (t < 2.4) { cx = LERP(-30, WAIT, SEG(t, 0, 2.4)); w = Math.min(1, t / .2, (2.4 - t) / .2); pose[fh90] = HOLD(B(150, -14)); }   /* pulling the suitcase by its handle all the way */
+      if (t < 2.4) { cx = LERP(-30, WAIT, SEG(t, 0, 2.4)); w = Math.min(1, t / .2, (2.4 - t) / .2); pose[fh90] = HOLD(B(148, -24)); }   /* pulling the suitcase by its handle all the way */
       else if (t < 7.4) { cx = WAIT; suit = t < 2.6 ? 'pull' : 'stand'; var SH = [WAIT - 20, 160];
-        if (t < 2.8) pose[fh90] = GO(B(150, -14), AT(SH), SEG(t, 2.4, 2.8)); else if (t < 3.1) pose[fh90] = GO(AT(SH), REST, SEG(t, 2.8, 3.1));
+        if (t < 2.8) pose[fh90] = GO(B(148, -24), AT(SH), SEG(t, 2.4, 2.8)); else if (t < 3.1) pose[fh90] = GO(AT(SH), REST, SEG(t, 2.8, 3.1));
         if (t >= 3.1 && t < 4.8) pose[nh90] = t < 3.5 ? GO(REST, PASS, SEG(t, 3.1, 3.5)) : t < 4.4 ? HOLD(PASS) : GO(PASS, REST, SEG(t, 4.4, 4.8));
         face = t < 4.8 ? 90 : t < 5.2 ? 90 * (1 - E(SEG(t, 4.8, 5.2))) : t < 7.0 ? 0 : 90 * E(SEG(t, 7.0, 7.4));
         if (t >= 7.0) { pose[SIDE(1, face)] = GO(REST, AT(SH), SEG(t, 7.0, 7.4)); suit = 'stand'; } }
       else {
         /* to the door / the stairs / the gangway */
         var BX = KIND === 'step' ? DX - 14 : KIND === 'stairs' ? 166 : vx - 36;
-        if (t < 8.4) { cx = LERP(WAIT, BX, SEG(t, 7.4, 8.4)); w = Math.min(1, (t - 7.4) / .2, (8.4 - t) / .2); pose[fh90] = t < 7.7 ? GO(AT([WAIT - 20, 160]), B(150, -14), SEG(t, 7.4, 7.7)) : HOLD(B(150, -14)); }   /* from the handle where he took it into the pulling hold – no snap */
+        if (t < 8.4) { cx = LERP(WAIT, BX, SEG(t, 7.4, 8.4)); w = Math.min(1, (t - 7.4) / .2, (8.4 - t) / .2); pose[fh90] = t < 7.7 ? GO(AT([WAIT - 20, 160]), B(148, -24), SEG(t, 7.4, 7.7)) : HOLD(B(148, -24)); }   /* from the handle where he took it into the pulling hold – no snap */
         else if (KIND === 'step') {
           /* the suitcase up first: stood upright in front of him, then lifted by its handle onto the floor inside the door */
           var UPR = [BX + 8, 151], INF = [DX + 6, FLOOR - 47];
-          if (t < 9.6) { cx = BX; pose[fh90] = t < 8.8 ? GO(B(150, -14), AT(UPR), SEG(t, 8.4, 8.8)) : t < 9.3 ? GO(AT(UPR), AT(INF), SEG(t, 8.8, 9.3), 8) : GO(AT(INF), REST, SEG(t, 9.3, 9.6));
+          if (t < 9.6) { cx = BX; pose[fh90] = t < 8.8 ? GO(B(148, -24), AT(UPR), SEG(t, 8.4, 8.8)) : t < 9.3 ? GO(AT(UPR), AT(INF), SEG(t, 8.8, 9.3), 8) : GO(AT(INF), REST, SEG(t, 9.3, 9.6));
             suit = t < 8.8 ? 'hand' : t < 9.3 ? 'hand' : 'in'; pose.lean = .25 * E(SEG(t, 8.4, 8.8)) * (1 - E(SEG(t, 9.3, 9.6))); }
           else if (t < 10.5) { suit = 'in'; var q1 = SEG(t, 9.6, 10.1), q2 = SEG(t, 10.1, 10.5); cx = LERP(BX, DX + 2, E(SEG(t, 9.6, 10.5))); h = 8 * E(q1) + (198 - FLOOR - 8) * E(q2); w = .5; inside = t > 9.95; }
           else if (t < 11.5) { suit = 'in'; inside = true; h = 198 - FLOOR; face = t < 10.9 ? 90 - 180 * E(SEG(t, 10.5, 10.9)) : -90; var SEAT = DX - 40; cx = t < 10.9 ? DX + 2 : LERP(DX + 2, SEAT, SEG(t, 10.9, 11.5)); w = t < 10.9 ? 0 : 1; }
@@ -131,7 +131,7 @@
             var wvk = SIDE(-1, 0), WV = B(44, 10); if (t >= 11.8 && t < 12.9) pose[wvk] = t < 12.1 ? GO(REST, WV, SEG(t, 11.8, 12.1)) : t < 12.6 ? HOLD(B(44, 10 + 9 * Math.sin((t - 12.1) * 16))) : GO(WV, REST, SEG(t, 12.6, 12.9)); }
         } else if (KIND === 'stairs') {
           /* picks the suitcase up by its handle and carries it up the stairs, waves at the top, goes in */
-          if (t < 8.8) { cx = BX; pose[fh90] = GO(B(150, -14), B(136, 12), SEG(t, 8.4, 8.8)); suit = 'carry'; }
+          if (t < 8.8) { cx = BX; pose[fh90] = GO(B(148, -24), B(136, 12), SEG(t, 8.4, 8.8)); suit = 'carry'; }
           else if (t < 10.6) { suit = 'carry'; cx = LERP(BX, 244, SEG(t, 8.8, 10.6)); w = .85 * Math.min(1, (t - 8.8) / .2, (10.6 - t) / .2); pose[fh90] = HOLD(B(136, 12)); pose.lean = .12; }
           else if (t < 11.8) { suit = 'carry'; cx = 244; face = t < 11.0 ? 90 * (1 - E(SEG(t, 10.6, 11.0))) : 0; pose[SIDE(1, face)] = HOLD(B(136, 12));
             var wk2 = SIDE(-1, 0), WV2 = B(44, 10); if (t >= 11.0) pose[wk2] = t < 11.2 ? GO(REST, WV2, SEG(t, 11.0, 11.2)) : t < 11.6 ? HOLD(B(44, 10 + 9 * Math.sin((t - 11.2) * 16))) : GO(WV2, REST, SEG(t, 11.6, 11.8)); }
@@ -139,7 +139,7 @@
           else gone = true;
         } else {
           /* up the gangway pulling the suitcase, onto the deck, to the rail, a wave */
-          if (t < 8.8) { cx = BX; pose[fh90] = GO(B(150, -14), B(136, 12), SEG(t, 8.4, 8.8)); suit = 'carry'; }
+          if (t < 8.8) { cx = BX; pose[fh90] = GO(B(148, -24), B(136, 12), SEG(t, 8.4, 8.8)); suit = 'carry'; }
           else if (t < 10.0) { suit = 'carry'; cx = LERP(BX, vx + 58, SEG(t, 8.8, 10.0)); w = .85; pose[fh90] = HOLD(B(136, 12)); pose.lean = .1; }
           else if (t < 10.6) { suit = 'carry'; cx = LERP(vx + 58, vx + 100, SEG(t, 10.0, 10.6)); w = Math.min(1, (10.6 - t) / .2); inside = true; pose[fh90] = HOLD(B(136, 12)); }
           else { inside = true; cx = vx + 100; face = t < 11.0 ? 90 * (1 - E(SEG(t, 10.6, 11.0))) : 0; suit = 'deck';
@@ -147,8 +147,8 @@
         }
         /* the journey: he goes with the vehicle; back home later */
         if (t >= 12.6 && KIND !== 'stairs' && inside) { cx = (KIND === 'step' ? DX - 40 : vx + 100); }
-        if (t >= 14.6) { inside = false; gone = false; sitIn = null; h = 0; suit = 'pull'; cx = LERP(430, 200, SEG(t, 14.6, 16.6)); face = -90; w = Math.min(1, (t - 14.6) / .2, (16.6 - t) / .2); pose = {}; pose[SIDE(-1, -90)] = HOLD(B(150, -14));
-          if (t >= 16.6) { cx = 200; face = -90 + 90 * E(SEG(t, 16.6, 17)); suit = 'stand'; sx = 222; pose = {}; if (t < 16.95) pose[SIDE(-1, face)] = GO(B(150, -14), REST, SEG(t, 16.6, 16.95)); } }   /* lets go of the handle, then turns to you */
+        if (t >= 14.6) { inside = false; gone = false; sitIn = null; h = 0; suit = 'pull'; cx = LERP(430, 200, SEG(t, 14.6, 16.6)); face = -90; w = Math.min(1, (t - 14.6) / .2, (16.6 - t) / .2); pose = {}; pose[SIDE(-1, -90)] = HOLD(B(148, -24));
+          if (t >= 16.6) { cx = 200; face = -90 + 90 * E(SEG(t, 16.6, 17)); suit = 'stand'; sx = 222; pose = {}; if (t < 16.95) pose[SIDE(-1, face)] = GO(B(148, -24), REST, SEG(t, 16.6, 16.95)); } }   /* lets go of the handle, then turns to you */
       }
       if (t >= 14.6) gone = false;
       var passIn = null, passOpen = 0, passStamp = 0, lift0 = 0, shirt = data.packLeft > 0 && !packedNow ? 'chair' : null, lid = 0, mapW = 0, mapF = 1, mapUp = 0;
@@ -189,6 +189,8 @@
       GND = groundAt(cx); if (KIND === 'stairs' && t >= 8.8 && t < 12.2) h = 198 - GND; if (KIND === 'ramp' && t >= 8.4 && t < 14.6) h = inside ? 198 - (142 + bob) : 198 - groundAt(cx);
       var ph = LIFE(st, pose, w); if (pt != null && st.pact === 'pack') ph = st.phpk || 0;   /* his steps follow the distance, so his feet never slide */
       function suitcase(x, y, deg, s) { var c = grp(x, y, deg, s || 1); add(c, 'rect', { x: -11, y: -33, width: 22, height: 31, rx: 4, fill: '#e38d87' }); add(c, 'rect', { x: -11, y: -21, width: 22, height: 3, fill: 'rgba(0,0,0,.18)' }); add(c, 'line', { x1: 0, y1: -33, x2: 0, y2: -47, stroke: '#3b414b', 'stroke-width': 2 }); add(c, 'rect', { x: -4, y: -49, width: 8, height: 3, rx: 1.5, fill: '#3b414b' }); add(c, 'circle', { cx: -7, cy: -1, r: 2.3, fill: '#2a2e36' }); add(c, 'circle', { cx: 7, cy: -1, r: 2.3, fill: '#2a2e36' }); return c; }
+      /* pulled on its wheels (JP 2026-11-15: it looked lifted): seen from the side – the wheel at the back corner on the ground, the handle up to his hand */
+      function pullCase(x, y, deg, dir) { var c = grp(x, y, deg), bx = dir > 0 ? -12 : -2, hx = dir > 0 ? -1 : 1; add(c, 'rect', { x: bx, y: -33, width: 14, height: 31, rx: 3.5, fill: '#e38d87' }); add(c, 'rect', { x: bx, y: -21, width: 14, height: 3, fill: 'rgba(0,0,0,.18)' }); add(c, 'line', { x1: hx, y1: -33, x2: hx, y2: -49, stroke: '#aeb6bf', 'stroke-width': 2, 'stroke-linecap': 'round' }); add(c, 'rect', { x: hx - 3.5, y: -51, width: 7, height: 3, rx: 1.5, fill: '#555c66' }); add(c, 'circle', { cx: 0, cy: -1.8, r: 2.6, fill: '#2a2e36' }); add(c, 'circle', { cx: 0, cy: -1.8, r: 1, fill: '#8e97a1' }); return c; }
       function carryCase(x, y) { var c = grp(x, y, 0); add(c, 'rect', { x: -4, y: -1, width: 8, height: 3, rx: 1.5, fill: '#3b414b' }); add(c, 'rect', { x: -10, y: 2, width: 20, height: 27, rx: 4, fill: '#e38d87' }); add(c, 'rect', { x: -10, y: 13, width: 20, height: 3, fill: 'rgba(0,0,0,.18)' }); return c; }
       /* the chair by the stop (only once he's home and has something left to pack) with the shirt waiting on it */
       function chairG(x) { var c = add(g, 'g', {}); add(c, 'rect', { x: x - 1, y: 150, width: 3, height: 48, rx: 1, fill: '#915534' }); add(c, 'rect', { x: x, y: 174, width: 22, height: 4, rx: 1.5, fill: '#c4875e' }); add(c, 'rect', { x: x + 19, y: 178, width: 2.6, height: 20, fill: '#915534' }); add(c, 'rect', { x: x + 1, y: 178, width: 2.6, height: 20, fill: '#915534' }); return c; }
@@ -213,8 +215,8 @@
         if (V === 'plane') add(cp, 'rect', { x: 190 + px, y: 22 + py, width: 280, height: 120 }); else add(cp, 'rect', { x: vx, y: 60, width: V === 'bus' ? 232 : 480, height: (V === 'bus' ? 188 : 186) - 60 });
         figPar = add(g, 'g', { 'clip-path': 'url(#tvClip)' }); }
       if (!gone) FIG(figPar, { cx: cx, gy: 200 - h, ground: 200 - h, face: face, ph: ph, w: w, pose: pose, noShadow: inside && KIND !== 'ramp', items: function (H) {
-        var out = [], hs = face > 0 ? H.s1 : H.sm;
-        if ((suit === 'pull') && hs) { var dir = face >= 0 ? 1 : -1, gw = groundAt(hs.X - dir * 30) + 1, c = Math.max(-1, Math.min(1, (gw - hs.Y) / 47)), th = Math.acos(c), wx = hs.X - dir * 47 * Math.sin(th); out.push([-100, suitcase(wx, gw, dir * th * 180 / Math.PI)]); }
+        var out = [], hs = face > 0 ? H.s1 : H.sm, hp = H[face >= 0 ? fh90 : SIDE(-1, -90)] || hs;   /* the pulling hand is the one the pose holds back (JP 2026-11-15: it went by the swinging hand and was lifted) */
+        if ((suit === 'pull') && hp) { hs = hp; var dir = face >= 0 ? 1 : -1, gw = 199 - h,   /* the wheels on the ground he walks on (200 - h) – GND follows the airport stairs and lifted the case to his waist */ c = Math.max(-1, Math.min(1, (gw - hs.Y) / 49)), th = Math.min(1.08, Math.acos(c)),   /* never lying flat: at most about 62° (a low hand, in the wheelchair) */ wx = hs.X - dir * 49 * Math.sin(th); out.push([hs.z - .04, pullCase(wx, gw, dir * th * 180 / Math.PI, dir)]); }
         if (suit === 'hand' && H.s1) out.push([H.s1.z - .05, suitcase(H.s1.X, H.s1.Y + 48, 0)]);
         var pph = passIn && H[passIn]; if (pph) { var pp2 = grp(pph.X, pph.Y - 4, -6), ow = 5 * passOpen; add(pp2, 'rect', { x: -5 - ow, y: -7, width: 10 + ow * 2, height: 13, rx: 1.5, fill: passOpen > .5 ? '#f4f1ea' : '#883635' }); if (passOpen <= .5) add(pp2, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); else { add(pp2, 'line', { x1: 0, y1: -7, x2: 0, y2: 6, stroke: 'rgba(0,0,0,.2)', 'stroke-width': .5 }); if (passStamp > 0) add(pp2, 'circle', { cx: 5, cy: -1, r: 1.2 + 2.2 * passStamp, fill: 'none', stroke: '#d6453f', 'stroke-width': 1.1, opacity: (.4 + .6 * passStamp).toFixed(2) }); } out.push([pph.z + .05, pp2]); }   /* the passport in his hand: shut, then open with the new stamp */
         var sh1 = H.s1; if (shirt === 'hand' && sh1) out.push([sh1.z + .05, shirtG(sh1.X, sh1.Y + 3)]);
