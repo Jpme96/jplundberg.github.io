@@ -86,7 +86,7 @@
   function topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY) {
     var BWs = function () { return L.bw || 1; };
     var t = TOPS[L.top] || {}, fr = Math.cos(a), front = fr > .15, line = function (p, q, col, wd, z) { parts.push([z || .02, el('line', { x1: p.X, y1: p.Y, x2: q.X, y2: q.Y, stroke: col, 'stroke-width': wd * k, 'stroke-linecap': 'round' })]); };
-    var clipId = POOL ? POOL.id + 't' : 'f25t' + (draw.n = (draw.n || 0) + 1), wrap = el('g', {}), cp = el('clipPath', { id: clipId }); cp.appendChild(el('path', { d: TD })); wrap.appendChild(cp); var g = el('g', { 'clip-path': 'url(#' + clipId + ')' }); wrap.appendChild(g);
+    var clipId = POOL ? POOL.id + 't' : 'f25t' + (function (str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); })(TD + L.top),   /* the same drawing gets the same id (a counter made every drawing different) */ wrap = el('g', {}), cp = el('clipPath', { id: clipId }); cp.appendChild(el('path', { d: TD })); wrap.appendChild(cp); var g = el('g', { 'clip-path': 'url(#' + clipId + ')' }); wrap.appendChild(g);
     var add = function (n, at) { g.appendChild(el(n, at)); }, W = hw * k;
     if (t.jacket) { add('path', { d: TD, fill: t.jacket }); if (front) { var v1 = P(-9, 80 + bob, 15), v2 = P(0, 112 + bob, 16), v3 = P(9, 80 + bob, 15); add('path', { d: 'M' + v1.X + ' ' + v1.Y + ' L' + v2.X + ' ' + v2.Y + ' L' + v3.X + ' ' + v3.Y + ' Z', fill: '#f4f4f2' }); var ti = P(0, 84 + bob, 16), tb = P(0, 108 + bob, 17); add('path', { d: 'M' + (ti.X - 2 * k) + ' ' + ti.Y + ' L' + (ti.X + 2 * k) + ' ' + ti.Y + ' L' + (tb.X + 2.4 * k) + ' ' + tb.Y + ' L' + tb.X + ' ' + (tb.Y + 3 * k) + ' L' + (tb.X - 2.4 * k) + ' ' + tb.Y + ' Z', fill: '#d42a2f' }); } }
     if (t.quilt) for (var qy = 1; qy <= 4; qy++) { var yy = t1.Y + (t2.Y - t1.Y) * qy / 5; add('path', { d: 'M' + (t1.X - W) + ' ' + yy + ' L' + (t1.X + W) + ' ' + yy, stroke: dk(L.topC, .75), 'stroke-width': 1.4 * k }); }
@@ -100,7 +100,7 @@
     if (t.buttons2 && front) [96, 110, 124].forEach(function (yy2) { [-5, 5].forEach(function (bx) { var bt = P(bx, yy2 + bob, 15); add('circle', { cx: bt.X, cy: bt.Y, r: 1.3 * k, fill: '#9aa3ad' }); }); });
     if (L.top === 'none' && front) { [-6, 6].forEach(function (nx) { var nb = P(nx, 100 + bob, 15); add('circle', { cx: nb.X, cy: nb.Y, r: .9 * k, fill: dk(L.skin, .7) }); }); }
     var GMt = GARM[L.top] || {}, dc = dk(L.topC, .8), around = function (r, y, t0, t1b, dz) { var pp = [], n = 14; for (var i = 0; i <= n; i++) { var tt = t0 + (t1b - t0) * i / n; if (Math.cos(tt + a) < -0.05) continue; var q = P(Math.sin(tt) * r, y + bob + (1 - Math.cos(tt)) * (dz || 0), Math.cos(tt) * r * .8 + 1); pp.push(q.X.toFixed(1) + ' ' + q.Y.toFixed(1)); } return pp.length > 1 ? 'M' + pp.join(' L') : ''; };
-    if (GMt.rib && L.top !== 'none') { var rb = P(0, botY - 5, 0); add('rect', { x: rb.X - 60 * k, y: rb.Y, width: 120 * k, height: 9 * k, fill: dk(L.topC, .84) }); }   /* a knitted band at the hem */
+
     if (GMt.pk === 'kanga' && front) { var kq = [P(-9, 118 + bob, 15.5), P(9, 118 + bob, 15.5), P(12, 136 + bob, 14.5), P(-12, 136 + bob, 14.5)]; add('path', { d: 'M' + kq.map(function (q) { return q.X.toFixed(1) + ' ' + q.Y.toFixed(1); }).join(' L') + ' Z', fill: dk(L.topC, .9), stroke: dk(L.topC, .72), 'stroke-width': 1 * k }); }   /* the front pocket */
     if (GMt.pk === 'hip' && fr > -0.3) [-1, 1].forEach(function (sd) { var h1 = P(sd * 12, 128 + bob, 14), h2 = P(sd * 18, 140 + bob, 12); if (rot(sd * 15, 13, a).z > 0) add('path', { d: 'M' + h1.X + ' ' + h1.Y + ' L' + h2.X + ' ' + h2.Y, stroke: dk(L.topC, .66), 'stroke-width': 1.4 * k, 'stroke-linecap': 'round' }); });   /* slanted hip pockets */
     if (GMt.pk === 'chest' && front) { var cp1 = P(-12, 96 + bob, 15.5), cp2 = P(-4, 96 + bob, 16); add('rect', { x: Math.min(cp1.X, cp2.X), y: cp1.Y, width: Math.abs(cp2.X - cp1.X), height: 8 * k, fill: 'none', stroke: dk(L.topC, .7), 'stroke-width': 1 * k }); }   /* a chest pocket */
@@ -181,7 +181,7 @@
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
       if (L.bottom === 'joggers') { var jc = P(knee[0], knee[1] + (ank[1] - knee[1]) * .78, knee[2] + (ank[2] - knee[2]) * .78); taper(jc, a3, 7.6 * LW, 7 * LW, cst(L.legsC), z + .002); }   /* gathered cuffs at the ankle */
-      if (L.bottom === 'trousers' && L.legsOn === 'full') limb(P(hip[0], hip[1] + 8, hip[2] + 9), P(ank[0], ank[1] - 3, ank[2] + 7), .8, cst(L.legsC), z + .002);   /* the crease down the front */
+      if (L.bottom === 'trousers' && L.legsOn === 'full' && k >= .8) limb(P(hip[0], hip[1] + 8, hip[2] + 9), P(ank[0], ank[1] - 3, ank[2] + 7), .8, cst(L.legsC), z + .002);   /* the crease down the front */
       if (L.bottom === 'jeans') [[.5, -1.5], [.56, 2]].forEach(function (rp) { var rk = P(knee[0] + rp[1] * .6, hip[1] + (knee[1] - hip[1]) * (rp[0] + .44), hip[2] + (knee[2] - hip[2]) * (rp[0] + .44) + 8.5); if (rot(sd * 8, 9, a).z > -2) parts.push([z + .003, el('ellipse', { cx: rk.X, cy: rk.Y, rx: 3.8 * k * Math.max(.4, Math.abs(Math.cos(a))), ry: 1.5 * k, fill: L.skin })]); });   /* the rips at the knee */
       if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 6, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 5); if (rot(sd * 7, 5, a).z > -6) { parts.push([z + .003, el('rect', { x: cpk.X - 4.6 * k, y: cpk.Y - 5 * k, width: 9.2 * k, height: 10.5 * k, rx: 1.4 * k, fill: mix(L.legsC, cst(L.legsC), .55) })]); parts.push([z + .0031, el('rect', { x: cpk.X - 4.8 * k, y: cpk.Y - 5.6 * k, width: 9.6 * k, height: 3 * k, rx: 1 * k, fill: cst(L.legsC) })]); } }   /* a pocket with a flap on the side of the thigh */
       var mid2 = P(ank[0], ank[1] + 3, ank[2] + 5); parts.push([z + 0.49, el('ellipse', { cx: mid2.X, cy: mid2.Y, rx: (8.6 * Math.abs(Math.cos(a)) + 4.4) * k, ry: 5.6 * k, fill: L.shoes === 'sandals' ? skc : C.shoe })]);   /* the shoe's width, seen from the front */
@@ -219,6 +219,8 @@
     var TD = 'M' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + side2(TR) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + side2(TLr) + ' Q' + f1(t1.X) + ' ' + f1(TL[0][1] - 2 * k) + ' ' + f1(TR[0][0]) + ' ' + f1(TR[0][1]) + ' Z';
     parts.push([0, el('path', { d: TD, fill: L.top === 'none' ? C.skin : C.top })]);
     topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY);
+    if ((GARM[L.top] || {}).rib) { var rbu = TL.length - 2, ruL = [TL[LN2][0] + (TL[rbu][0] - TL[LN2][0]) * .22, TL[LN2][1] + (TL[rbu][1] - TL[LN2][1]) * .22], ruR = [TR[LN2][0] + (TR[rbu][0] - TR[LN2][0]) * .22, TR[LN2][1] + (TR[rbu][1] - TR[LN2][1]) * .22];   /* the knitted band at the hem: along the trunk's own lower edge, no clip (scene-speed) */
+      parts.push([0.017, el('path', { d: 'M' + f1(ruL[0]) + ' ' + f1(ruL[1]) + ' Q' + f1(t2.X) + ' ' + f1(ruL[1] + 3 * k) + ' ' + f1(ruR[0]) + ' ' + f1(ruR[1]) + ' L' + f1(TR[LN2][0]) + ' ' + f1(TR[LN2][1]) + ' Q' + f1(t2.X) + ' ' + f1(t2.Y + 5 * k) + ' ' + f1(TL[LN2][0]) + ' ' + f1(TL[LN2][1]) + ' Z', fill: dk(L.topC, .84) })]); }
     if (L.top === 'none' && BP.mus && Math.cos(a) > .3) {   /* bare and fit: the chest and the stomach are drawn as soft lines that turn with him */
       var mc = dk(L.skin, .8), mo = (Math.min(1, (Math.cos(a) - .3) * 2) * (.35 + .15 * BP.mus)).toFixed(2), pecY = 98 + bob;
       [-1, 1].forEach(function (sd) { var pa1 = P(sd * 2, pecY, 15), pa2 = P(sd * 15 * BP.sh, pecY + 1, 13), pa3 = P(sd * 22 * BP.sh, pecY - 7, 10);
@@ -350,9 +352,10 @@
       var SL = HSL;
       for (var q = 0; q <= 9; q++) { var t = -Math.PI / 2 + q * (Math.PI / 2 + .2) / 9, yy = Math.sin(t), cc = Math.cos(t); SL.push([yy, Math.max(.04, cc), Math.max(.04, cc * .99), -.04 * cc]); }   /* the round skull, down to the cheekbones */
       SL.push([.42, .95, .9, .05], [.62, .9, .76, .12], [.84, .55, .5, .26], [.99, .24, .3, .4], [1.05, .15, .16, .46]);   /* the jaw: corner under the ear, a straight line to the chin, a short flat chin */
-      var Rt = [], Lt = [];
-      SL.forEach(function (sl) { var c = sl[3] * D * sa, e = Math.sqrt(Math.pow(sl[1] * W * ca, 2) + Math.pow(sl[2] * D * sa, 2)), y = cy + sl[0] * Hh; Rt.push((cx + c + e).toFixed(1) + ' ' + y.toFixed(1)); Lt.unshift((cx + c - e).toFixed(1) + ' ' + y.toFixed(1)); });
-      head.appendChild(el('path', { d: 'M' + Rt.join(' L') + ' L' + Lt.join(' L') + ' Z', fill: C.skin, 'stroke-linejoin': 'round' }));
+      head.appendChild(el('path', Object.assign(headPath('skull', 'sk|' + L.faceS + '|' + a.toFixed(4) + '|' + k.toFixed(4), function () {   /* kept from frame to frame while the turn, the size and the face shape are the same (scene-speed) */
+        var Rt = [], Lt = [];
+        SL.forEach(function (sl) { var c = sl[3] * D * sa, e = Math.sqrt(Math.pow(sl[1] * W * ca, 2) + Math.pow(sl[2] * D * sa, 2)), y = cy + sl[0] * Hh; Rt.push([cx + c + e, y]); Lt.unshift([cx + c - e, y]); });
+        return Rt.concat(Lt); }), { fill: C.skin, 'stroke-linejoin': 'round' })));
     })();
     function onHead(phi, y) { var c = Math.cos(phi + a), sq = Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2)));   /* a point on the head's surface: the same width (face shape) and depth as the 3D head */
       return { x: hc.X + (R * FS[0] * Math.sin(phi) * Math.cos(a) + R * .98 * Math.cos(phi) * Math.sin(a)) * sq, y: hc.Y + FS[2] * k + (y - 52) * k * FS[1], f: c }; }
@@ -389,11 +392,12 @@
     var eyes = [];
     [-0.62, 0.62].forEach(function (phi) { var e = onHead(phi * -1, 51); eyes.push(e); if (e.f > 0.05) { var ew = 4.6 * k * Math.max(.3, e.f);
       var wink = L.expr === 'wink' && phi > 0, open = !pose.blink && !wink && L.expr !== 'laugh';   /* open by default (JP 2026-11-15: eye colour never showed); laugh keeps the happy closed eyes */
-      if (open) { var ery = ({ wow: 3.4, cool: 1.7, calm: 1.9, smile: 2.45, shy: 2.3 }[L.expr] || 2.65) * k, erx = Math.max(1 * k, 3.6 * k * e.f), sx = Math.sin(a) * .9 * k * e.f, dy = L.expr === 'shy' ? .5 * k : 0;
-        head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: erx, ry: ery, fill: '#f4f1ea' }));
+      if (open && k < .8) { var ery = 2.4 * k, erx = Math.max(1 * k, 2.6 * k * e.f); head.appendChild(el('ellipse', { cx: e.x + Math.sin(a) * .5 * k * e.f, cy: e.y, rx: erx * .8, ry: ery, fill: mix(C.eye, '#1d2128', .45) })); }   /* small, in the page pictures: one dark eye in the eye colour (the white and the iris can't be seen at that size – scene-speed) */
+      else if (open) { var ery = ({ wow: 3.4, cool: 1.7, calm: 1.9, smile: 2.45, shy: 2.3 }[L.expr] || 2.65) * k, erx = Math.max(1 * k, 3.6 * k * e.f), sx = Math.sin(a) * .9 * k * e.f, dy = L.expr === 'shy' ? .5 * k : 0;
+        head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: erx, ry: ery, fill: '#f4f1ea', stroke: '#2a2e36', 'stroke-width': .8 * k }));   /* the white with its outline (one shape – scene-speed) */
         head.appendChild(el('ellipse', { cx: e.x + sx, cy: e.y + dy, rx: Math.min(erx * .7, 2.3 * k * Math.max(.45, e.f)), ry: Math.min(ery * .95, 2.3 * k), fill: C.eye }));
         head.appendChild(el('circle', { cx: e.x + sx * 1.2, cy: e.y + dy, r: Math.min(ery * .5, .95 * k), fill: '#1d2128' }));
-        head.appendChild(el('path', { d: 'M' + (e.x - erx * 1.05) + ' ' + (e.y + ery * .1) + ' Q' + e.x + ' ' + (e.y - ery * 1.45) + ' ' + (e.x + erx * 1.05) + ' ' + (e.y + ery * .1), fill: 'none', stroke: '#2a2e36', 'stroke-width': 1.1 * k, 'stroke-linecap': 'round' })); }   /* the upper lid */
+}
       else if (pose.blink || wink) head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + e.y + ' L' + (e.x + ew) + ' ' + e.y, stroke: C.eye, 'stroke-width': 1.8 * k, 'stroke-linecap': 'round' }));
       else head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + (e.y + 1 * k) + ' Q' + e.x + ' ' + (e.y - 3.4 * k) + ' ' + (e.x + ew) + ' ' + (e.y + 1 * k), fill: 'none', stroke: C.eye, 'stroke-width': 2 * k, 'stroke-linecap': 'round' }));   /* happy closed eyes, like your avatars */
       var br = onHead(phi * -1 * 1.05, 44), BM = BROWS[pose.brow || (L.expr === 'wow' ? 'up' : L.expr === 'shy' ? 'sad' : '')] || BROWS.none, inn = (hc.X - e.x) >= 0 ? 1 : -1, bo = BM[0] * k, bi = BM[1] * k;   /* the brow's mood (F6): both ends up (surprised), the inner end down (set on something), the inner end up (sorry, shy) */
