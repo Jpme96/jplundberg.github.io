@@ -8,7 +8,7 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl)$/;   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
 const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/;
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
@@ -107,7 +107,7 @@ export class TeamStore {
       if (p === 'priv' && m === 'POST') { if (!blob(b.priv)) return json({ error: 'bad key' }, 400); me.priv = b.priv; await this.s.put('m:' + email, me); return json({ ok: true }); }
       if (p === 'members' && m === 'GET') return this.members(isAdmin);
       if (p === 'recs' && m === 'GET') return this.recs(url, team);
-      if (p === 'rec' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b); }
+      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk') return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b); }
       if (p === 'batch' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
@@ -264,7 +264,7 @@ export class TeamStore {
   async putRec(email, me, team, b) {
     const r = await this.applyRec(email, me, team, b);
     if (r.error) return json(r, r.status);
-    await this.log(email, r.a, { k: b.k, id: b.id, s: logSum(b.s) });
+    if (b.k !== 'clk') await this.log(email, r.a, { k: b.k, id: b.id, s: logSum(b.s) });   /* clocking in and out stays out of the change log */
     this.nudge(email, me, team, [b.k]).catch(() => {});
     return json({ ok: true, v: r.v, seq: r.seq, t: r.t });
   }
@@ -286,6 +286,9 @@ export class TeamStore {
     if (lk && lk.until > Date.now() && lk.by !== email) return { error: 'someone is writing', by: lk.by, status: 423 };
     const old = await this.s.get('r:' + b.id);
     if (old && old.k !== b.k) return { error: 'bad record', status: 400 };
+    const rk = me ? ROLES.indexOf(me.role) : -1;
+    if (b.k === 'cfg' && rk < 3) return { error: 'admins only', status: 403 };                         /* team settings: admins */
+    if (b.k === 'clk' && old && old.by !== email && rk < 3) return { error: 'not yours', status: 403 };  /* your own clock entries: only you (and admins, to fix a forgotten one) */
     if ((old ? old.v : 0) !== (b.v | 0)) return { error: 'changed meanwhile', rec: old, status: 409 };
     if (old) await this.s.put('h:' + b.id + ':' + old.v, old);   /* history: nothing is truly gone */
     const seq = ((await this.s.get('seq')) || 0) + 1;
@@ -395,6 +398,7 @@ export class TeamStore {
     return json({ ok: true, on: true });
   }
   async nudge(by, me, team, kinds) {
+    kinds = (kinds || []).filter(k => k !== 'clk' && k !== 'cfg'); if (!kinds.length) return;   /* clocking in and settings are no news for the others */
     const subs = await this.s.list({ prefix: 'p:' }); if (!subs.size) return;
     const v = await this.vapid(), what = Array.from(new Set((kinds || []).map(k => ({ meeting: 'meeting', action: 'action', note: 'note', insp: 'inspection', file: 'file', upl: 'upload' })[k] || (/^dc/.test(k || '') ? 'document' : '')).filter(Boolean)));
     const body = (me && me.name ? me.name : 'Someone') + ' · ' + (what.length ? what.join(', ') : 'a change');

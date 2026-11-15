@@ -131,3 +131,17 @@ a.t-icon { text-decoration: none; }
 .t-upb { display: block !important; padding: 8px 0; }
 .t-upbh { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .t-upcount:empty { display: none; }
+/* clocking in (Phase G): a card on Overview with the running time; equal-width digits for numbers; status tags like cmd's */
+.t-num { font-variant-numeric: tabular-nums; }
+.t-clock .t-clockrow { display: flex; align-items: center; gap: 12px; }
+.t-clock .grow { display: grid; gap: 2px; min-width: 0; }
+.t-clock .grow small { color: var(--muted); font-size: 13px; }
+.t-clock.on { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }
+.t-clock .t-btn { flex: none; min-height: 44px; }
+.t-switch.t-inline { margin: 0; border: 0; padding: 6px 0; }
+.t-clockppl li { padding: 0; }
+.t-hours li { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.t-tag { display: inline-flex; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--acc-soft); color: var(--acc); vertical-align: middle; }
+.t-tag.ok { background: var(--acc-soft); color: var(--acc); }
+.t-tag.warn { background: var(--warn-soft); color: var(--warn); }
+.t-tag.bad { background: var(--bad-soft); color: var(--bad); }

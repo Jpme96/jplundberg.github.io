@@ -414,7 +414,7 @@
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
-    out += newsCard() + weekCard();
+    out += clockCard() + newsCard() + weekCard();
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
@@ -574,6 +574,7 @@
     }).join('') + '</ul>';
     if (adm) out += '<p class="t-small">' + L('Tap a person to change their role or remove them. Removing gives the team a new key at once.', 'Trykk på en person for å endre rolle eller fjerne dem. Når noen fjernes, får teamet en ny nøkkel med en gang.') + '</p>';
     if (adm && S.invites.length) out += '<p class="t-h">' + L('Open invites', 'Åpne invitasjoner') + '</p><ul class="t-list">' + S.invites.map(function (v) { return '<li><span class="grow"><span>' + esc(v.label || roleName(v.role)) + '</span><small>' + esc(L('Runs out ', 'Går ut ') + fmtTime(v.exp)) + '</small></span><button class="t-btn ghost sm" type="button" data-act="cancelInvite" data-id="' + v.id + '">' + L('Cancel', 'Avbryt') + '</button></li>'; }).join('') + '</ul>';
+    out += clockTeamCard();
     out += '<p class="t-h"><span>' + L('Change log', 'Endringslogg') + '</span><button class="t-btn ghost sm" type="button" data-act="log">' + L('Show', 'Vis') + '</button></p>' + (S.logOpen ? logHtml() : '');
     return out;
   }
@@ -654,6 +655,7 @@
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
       '<button class="t-btn ghost wide" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
+      clockAdmin() +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="backup">' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</button>' : '') +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="renameTeam">' + L('Rename the team', 'Gi teamet nytt navn') + '</button>' : '') +
       (S.me.isOwner ? '<button class="t-btn ghost wide t-danger" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
@@ -1085,6 +1087,48 @@
     return '<div class="t-card t-week"><h2>' + L('This week', 'Denne uka') + '</h2><ul>' + w.lines.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><p class="t-small">' + esc(L(w.who + (w.who === 1 ? ' person' : ' people') + ' did something the last 7 days', w.who + (w.who === 1 ? ' person' : ' personer') + ' gjorde noe de siste 7 dagene')) + '</p><button class="t-btn sm ghost" type="button" data-act="weekCopy">' + L('Copy as text', 'Kopier som tekst') + '</button></div>';
   }
 
+  /* ---------- clocking in and out (Phase G, JP 2026-11-15) ----------
+     Admins turn it on for the whole team and can switch it off person by person (record cfgclock, kind cfg – only
+     admins may save it, the server checks). Each clock-in is a clk record of your own (start, end, project), encrypted
+     like the rest; you only change your own. It shows on Overview as a card with the running time and this week's hours;
+     admins see everyone's week on the Team tab. */
+  function clockCfg() { var r = S.recs.cfgclock; var d = r && !r.del && r.d ? r.d : {}; return { on: !!d.on, off: Array.isArray(d.off) ? d.off : [] }; }
+  function clockFor(em) { var c = clockCfg(); return c.on && c.off.indexOf(em) < 0; }
+  function clks(em) { return list('clk').filter(function (r) { return (r.d.who || r.by) === em; }); }
+  function clockRun(em) { return clks(em).filter(function (r) { return r.d.start && !r.d.end; }).sort(function (a, b) { return b.d.start - a.d.start; })[0] || null; }
+  function monday() { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); }
+  function clockWeek(em) { var from = monday(), now = Date.now(); return clks(em).reduce(function (n, r) { var a = Math.max(r.d.start || 0, from), b = r.d.end || now; return b > a ? n + (b - a) : n; }, 0); }
+  function hm(ms) { var m = Math.max(0, Math.round(ms / 60000)); return Math.floor(m / 60) + ' t ' + String(m % 60).padStart(2, '0') + ' min'; }
+  function hmEn(ms) { var m = Math.max(0, Math.round(ms / 60000)); return Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; }
+  function dur(ms) { return nb ? hm(ms) : hmEn(ms); }
+  function clockCard() {
+    if (!S.me || !clockFor(S.me.email)) return '';
+    var run = clockRun(S.me.email), wk = clockWeek(S.me.email);
+    var at = run ? new Date(run.d.start).toLocaleTimeString(nb ? 'nb-NO' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+    return '<div class="t-card t-clock' + (run ? ' on' : '') + '"><div class="t-clockrow"><span class="grow"><b>' + (run ? L('In since ', 'Inne siden ') + esc(at) : L('Not clocked in', 'Ikke stemplet inn')) + '</b>' +
+      '<small class="t-num">' + (run ? esc(dur(Date.now() - run.d.start)) + ' · ' : '') + esc(L('this week ', 'denne uka ') + dur(wk)) + '</small></span>' +
+      '<button class="t-btn' + (run ? ' ghost' : '') + '" type="button" data-act="' + (run ? 'clockOut' : 'clockIn') + '">' + (run ? L('Clock out', 'Stemple ut') : L('Clock in', 'Stemple inn')) + '</button></div></div>';
+  }
+  setInterval(function () { if (S.me && S.me.member && S.tab && S.tab() === 'overview' && !S.sheet && !S.edit && !typing() && clockRun(S.me.email)) draw(); }, 60e3);   /* the running time on the card, once a minute */
+  async function clockIn() { if (clockRun(S.me.email)) return; var id = 'clk' + rid(); if (await putRec('clk', id, { who: S.me.email, start: Date.now(), end: 0 })) { draw(); toast(L('Clocked in', 'Stemplet inn')); } }
+  async function clockOut() { var r = clockRun(S.me.email); if (!r) return; if (await putRec('clk', r.id, Object.assign({}, r.d, { end: Date.now() }))) { draw(); toast(L('Clocked out · ', 'Stemplet ut · ') + dur(Date.now() - r.d.start)); } }
+  /* admins: the switch for the whole team and one per person */
+  function clockAdmin() {
+    if (rank() < 3) return '';
+    var c = clockCfg();
+    return '<p class="t-h">' + L('Clocking in', 'Stempling') + '</p>' +
+      '<label class="t-switch"><span><b>' + L('Clock in and out for the team', 'Stemple inn og ut for teamet') + '</b><small>' + (c.on ? L('On – choose below who can clock in.', 'På – velg under hvem som kan stemple.') : L('Off – nobody in the team sees the button.', 'Av – ingen i teamet ser knappen.')) + '</small></span><input type="checkbox" data-clockteam' + (c.on ? ' checked' : '') + '></label>' +
+      (c.on ? '<ul class="t-list t-clockppl">' + S.members.map(function (m) { var on = c.off.indexOf(m.email) < 0; return '<li><label class="t-switch t-inline"><span><b>' + esc(m.email === S.me.email ? L('You', 'Deg') : m.name) + '</b><small>' + esc(roleName(m.role)) + '</small></span><input type="checkbox" data-clockm="' + esc(m.email) + '"' + (on ? ' checked' : '') + ' aria-label="' + esc(L('Clocking for ', 'Stempling for ') + m.name) + '"></label></li>'; }).join('') + '</ul>' : '');
+  }
+  async function clockSet(patch) { var c = clockCfg(), d = { on: 'on' in patch ? patch.on : c.on, off: c.off.slice() }; if (patch.who) { var i = d.off.indexOf(patch.who); if (patch.allow && i > -1) d.off.splice(i, 1); if (!patch.allow && i < 0) d.off.push(patch.who); } if (await putRec('cfg', 'cfgclock', d, L('Clocking settings', 'Stempling'))) { if (S.sheet) settingsSheet(); draw(); } }
+  /* admins: everyone's hours this week (Team tab) */
+  function clockTeamCard() {
+    if (rank() < 3 || !clockCfg().on) return '';
+    var rows = S.members.filter(function (m) { return clockFor(m.email); }).map(function (m) { return { m: m, wk: clockWeek(m.email), run: clockRun(m.email) }; });
+    if (!rows.length) return '';
+    return '<p class="t-h">' + L('Hours this week', 'Timer denne uka') + '</p><div class="t-card"><ul class="t-list t-hours">' + rows.map(function (x) { return '<li><span class="grow">' + esc(x.m.email === S.me.email ? L('You', 'Deg') : x.m.name) + (x.run ? ' <span class="t-tag ok">' + L('in', 'inne') + '</span>' : '') + '</span><b class="t-num">' + esc(dur(x.wk)) + '</b></li>'; }).join('') + '</ul></div>';
+  }
+
   /* ---------- starting without signal: what was here last (still encrypted) is kept on this device ---------- */
   function saveCache() {
     clearTimeout(saveCache.t); saveCache.t = setTimeout(function () {
@@ -1122,6 +1166,8 @@
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'clockIn') return clockIn();
+    if (a === 'clockOut') return clockOut();
     if (a === 'teams') return teamsSheet();
     if (a === 'inspPdf') { var ir = S.recs[t.dataset.id]; if (!ir || !ir.d) return; docsReady(); docsP.then(function () { return window.PagedPdf.html(ir.d.html, [ir.d.name, S.me.team.name].join('  ·  '), (ir.d.no ? ir.d.no + ' ' : '') + ir.d.name + '.pdf'); }).then(function (f2) { window.PagedPdf.share(f2); }, function () { toast(L('The PDF could not be made.', 'PDF-en kunne ikke lages.')); }); return; }
     if (a === 'uplink') return uplinkSheet();
@@ -1169,6 +1215,8 @@
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.dataset.tick) return tick(t.dataset.tick, t.checked);
+    if (t.hasAttribute('data-clockteam')) return clockSet({ on: t.checked });
+    if (t.dataset.clockm) return clockSet({ who: t.dataset.clockm, allow: t.checked });
     if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }
     if (t.name === 'fproj') { S.fproj = t.value; return; }
     if (t.hasAttribute('data-fadd')) { var fs = Array.prototype.slice.call(t.files || []); t.value = ''; if (!fs.length) return; (async function () { var ok = 0; toast(L('Encrypting and sending …', 'Krypterer og sender …')); for (var i = 0; i < fs.length; i++) { try { if (await sendFile(fs[i], S.fproj || '')) ok++; } catch (x) { toast(failMsg(x)); break; } } if (ok) { toast(L(ok + (ok === 1 ? ' file shared' : ' files shared'), ok + (ok === 1 ? ' fil delt' : ' filer delt'))); draw(); } })(); return; }
