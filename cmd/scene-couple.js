@@ -29,8 +29,8 @@
       if (kind === 'hold') {
         /* in from each side, take hands, swing them a little, a heart */
         var inM = walkIn(me, 80, 176, 0, 1.4), inP = walkIn(pa, 320, 224, 0, 1.4);
-        if (!inM) { var tn = idle ? 1 : E(SEG(t, 1.4, 1.75)); me.face = 90 - 40 * tn; pa.face = -90 + 40 * tn;   /* they turn to each other, then take hands */ var sw = Math.sin(now / 1000 * 2.4) * 3, MID = [200 + sw, 150];
-          var f = SEG(t, 1.4, 1.9); me.pose[SIDE(1, 50)] = t < 1.9 && !idle ? GO(REST, AT(MID), f, 2) : HOLD(AT(MID)); pa.pose[SIDE(-1, -50)] = t < 1.9 && !idle ? GO(REST, AT(MID), f, 2) : HOLD(AT(MID)); }
+        if (!inM) { var tn = idle ? 1 : E(SEG(t, 1.4, 1.75)); me.face = 90 - 40 * tn; pa.face = -90 + 40 * tn;   /* they turn to each other, then take hands */ var sw = Math.sin(now / 1000 * 2.4) * 3, MID = [204 + sw, 150], MIDP = [196 + sw, 151];   /* each reaches a little past the middle, so the hands overlap – one clasped in the other – instead of two fists meeting (JP 2026-11-15) */
+          var f = SEG(t, 1.4, 1.9); me.pose[SIDE(1, 50)] = t < 1.9 && !idle ? GO(REST, AT(MID), f, 2) : HOLD(AT(MID)); pa.pose[SIDE(-1, -50)] = t < 1.9 && !idle ? GO(REST, AT(MIDP), f, 2) : HOLD(AT(MIDP)); }
         if (t > 2.2 || idle) hearts.push([200, 120, idle ? (now / 2600) % 1 : SEG(t, 2.2, 3.8)]);
       } else if (kind === 'hi5') {
         walkIn(me, 80, 174, 0, 1.4); walkIn(pa, 320, 226, 0, 1.4);
