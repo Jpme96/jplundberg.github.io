@@ -2083,6 +2083,7 @@ input::-webkit-date-and-time-value { text-align: left; }
 
 /* ---------- Text size and compact clock (Settings → Appearance / Dashboard) ---------- */
 html.text-lg body { zoom: 1.1; }
+html.text-xl body { zoom: 1.22; }   /* Larger (2026-11-15) – for reading without glasses */
 html.text-sm body { zoom: .94; }
 .clock-compact .hero {
   display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "date date" "clock greet" "quote quote";
@@ -4202,6 +4203,8 @@ button.sh-vis { border: 0; cursor: pointer; font: inherit; font-size: 11.5px; fo
 .kit-grp > .kit-r:not([hidden]) ~ .kit-r:not([hidden]) { border-top: 1px solid var(--line); }
 .kit-grp .kit-row input:not(.switch), .kit-grp .kit-row select { flex: 0 0 54%; width: 54%; max-width: 54%; text-align: right; }
 .kit-grp .kit-row select { text-align-last: right; }
+/* a long label wraps instead of pushing the field out of the box (phone, Norwegian) */
+.kit-grp .kit-row > span:first-child, .kit-grp .kit-row > .kit-l { min-width: 0; overflow-wrap: anywhere; }
 .kit-grp .kit-row:has(em) input:not(.switch) { flex-basis: calc(54% - 26px); width: calc(54% - 26px); }
 .kit-grp .kit-row em { width: 18px; margin-left: 0; }
 .kit-grp .kit-help { padding-top: 0; }@media (max-width: 380px) { .kit-grp .kit-row input:not(.switch), .kit-grp .kit-row select { flex-basis: 50%; width: 50%; max-width: 50%; } }

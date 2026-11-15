@@ -84,8 +84,8 @@
       storeFiles(files).then(function (r) {
         var t = Fe.tools(); (t.papers || []).forEach(function (x) { if (x.id === id) x.files = (x.files || []).concat(r.files); }); Fe.saveTools(t);
         loadHere();
-        if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved' + (syncs() ? ' – syncing to your other devices' : ' on this device'));
-        if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> Not added: ' + esc(r.bad.join(', ')));
+        if (r.files.length) toast('<i class="bi bi-check2"></i> ' + esc(r.files.length === 1 ? (syncs() ? I18N.k('ui.pa-saved1-sync', 'File saved – syncing to your other devices') : I18N.k('ui.pa-saved1', 'File saved on this device')) : (syncs() ? I18N.k('ui.pa-saved-sync', '{n} files saved – syncing to your other devices', { n: r.files.length }) : I18N.k('ui.pa-saved', '{n} files saved on this device', { n: r.files.length }))));
+        if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(I18N.k('ui.pa-not-added', 'Not added: {x}', { x: r.bad.join(', ') })));
       });
     },
     onDelete: function (it) { (it.files || []).forEach(function (f) { delF(f.id); }); setTimeout(loadHere, 50); } };
@@ -192,10 +192,10 @@
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
-      if (!fs || fs.ok === false) msg = '<i class="bi bi-' + (miss ? 'cloud-slash' : 'phone') + '"></i> ' + (miss ? '<b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' : '<b>All ' + files + ' files</b> are on this device. ') + (fs && fs.ok === false ? 'To sync them to your other devices, paste the new <b>worker.js</b> in Cloudflare.' : 'The details sync, the files don’t.');
+      if (!fs || fs.ok === false) msg = '<i class="bi bi-' + (miss ? 'cloud-slash' : 'phone') + '"></i> ' + (miss ? I18N.k('ui.pa-n-of-here', '<b>{a} of {b} files</b> are on this device.', { a: files - miss, b: files }) : I18N.k('ui.pa-all-here', '<b>All {n} files</b> are on this device.', { n: files })) + ' ' + (fs && fs.ok === false ? I18N.k('ui.pa-no-sync', 'The server can’t sync files yet.') : I18N.k('ui.pa-details-sync', 'The details sync, the files don’t.'));
       else if (fs.ok && !miss && !wait) msg = '<i class="bi bi-cloud-check"></i> ' + I18N.k('ui.pa-synced', '<b>All {n} files</b> are synced, encrypted, and on this device.', { n: files });
-      else if (fs.ok) msg = '<i class="bi bi-arrow-repeat"></i> <b>' + onSrv + ' of ' + files + ' files</b> synced' + (wait ? ' · ' + wait + ' uploading' : '') + (miss ? ' · ' + miss + ' only on the phone or computer ' + (miss === 1 ? 'it was' : 'they were') + ' added on – open Papers there once' : '') + '.';
-      else msg = '<i class="bi bi-phone"></i> <b>' + (files - miss) + ' of ' + files + ' files</b> are on this device. ' + (fs.error === 'offline' ? 'They sync when you’re online.' : 'Syncing …');
+      else if (fs.ok) msg = '<i class="bi bi-arrow-repeat"></i> ' + I18N.k('ui.pa-n-synced', '<b>{a} of {b} files</b> synced', { a: onSrv, b: files }) + (wait ? ' · ' + I18N.k('ui.pa-n-uploading', '{n} uploading', { n: wait }) : '') + (miss ? ' · ' + I18N.k('ui.pa-n-elsewhere', '{n} only on the device they were added on – open Papers there once', { n: miss }) : '') + '.';
+      else msg = '<i class="bi bi-phone"></i> ' + I18N.k('ui.pa-n-of-here', '<b>{a} of {b} files</b> are on this device.', { a: files - miss, b: files }) + ' ' + (fs.error === 'offline' ? I18N.k('ui.pa-sync-online', 'They sync when you’re online.') : I18N.k('ui.pa-syncing', 'Syncing …'));
       if (files) h += '<p class="pa-note"><span>' + msg + '</span>' +
         (kept === false ? ' <button type="button" class="text-btn" data-pakeep>' + I18N.k('ui.pa-keep', 'Ask the browser to keep them') + '</button>' : kept ? ' ' + I18N.k('ui.pa-kept', 'The browser has been asked to keep them.') : '') + '</p>';
       return h;
@@ -269,10 +269,10 @@
       if (!e.target.closest('[data-pbgo]')) return;
       var add = []; d.el.querySelectorAll('.pa-brow').forEach(function (li, i) { if (li.dataset.out) return; var nm = li.querySelector('[data-pbn]').value.trim() || cleanName(fl[i].name) || fl[i].name; add.push({ f: fl[i], title: nm, kind: li.querySelector('[data-pbk]').value }); });
       close(); if (!add.length) return;
-      toast('<i class="bi bi-arrow-repeat"></i> Adding ' + add.length + ' papers …');
+      toast('<i class="bi bi-arrow-repeat"></i> ' + esc(I18N.k('ui.pa-adding', 'Adding {n} papers …', { n: add.length })));
       add.reduce(function (p, a) { return p.then(function (done) { return storeFiles([a.f]).then(function (r) { if (r.files.length) done.push({ id: uid(), title: a.title.slice(0, 120), kind: a.kind, dateKind: (FORMS[a.kind] || {}).dk || 'expires', lead: '30', files: r.files, added: today() }); return done; }); }); }, Promise.resolve([]))
         .then(function (done) { var t = Fe.tools(); t.papers = (Array.isArray(t.papers) ? t.papers : []).concat(done); Fe.saveTools(t); loadHere();
-          toast('<i class="bi bi-check2"></i> ' + done.length + ' papers added – open one to add its dates', function () { var t2 = Fe.tools(), ids = done.map(function (x) { return x.id; }); done.forEach(function (x) { (x.files || []).forEach(function (fm) { delF(fm.id); }); }); t2.papers = (t2.papers || []).filter(function (x) { return ids.indexOf(x.id) < 0; }); Fe.saveTools(t2); }); });
+          toast('<i class="bi bi-check2"></i> ' + esc(I18N.k('ui.pa-added', '{n} papers added – open one to add its dates', { n: done.length })), function () { var t2 = Fe.tools(), ids = done.map(function (x) { return x.id; }); done.forEach(function (x) { (x.files || []).forEach(function (fm) { delF(fm.id); }); }); t2.papers = (t2.papers || []).filter(function (x) { return ids.indexOf(x.id) < 0; }); Fe.saveTools(t2); }); });
     });
   }
   /* scan with the camera: one photo per page, cleaned up (grey, more contrast, sized for reading) and put together into one PDF */
@@ -343,8 +343,8 @@
     storeFiles(files).then(function (r) {
       var t = Fe.tools(); (t.papers || []).forEach(function (x) { if (x.id === id) x.files = (x.files || []).concat(r.files); }); Fe.saveTools(t);
       loadHere();
-      if (r.files.length) toast('<i class="bi bi-check2"></i> ' + (r.files.length === 1 ? 'File' : r.files.length + ' files') + ' saved' + (syncs() ? ' – syncing to your other devices' : ' on this device'));
-      if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> Not added: ' + esc(r.bad.join(', ')));
+      if (r.files.length) toast('<i class="bi bi-check2"></i> ' + esc(r.files.length === 1 ? (syncs() ? I18N.k('ui.pa-saved1-sync', 'File saved – syncing to your other devices') : I18N.k('ui.pa-saved1', 'File saved on this device')) : (syncs() ? I18N.k('ui.pa-saved-sync', '{n} files saved – syncing to your other devices', { n: r.files.length }) : I18N.k('ui.pa-saved', '{n} files saved on this device', { n: r.files.length }))));
+      if (r.bad.length) toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(I18N.k('ui.pa-not-added', 'Not added: {x}', { x: r.bad.join(', ') })));
     });
   });
   document.addEventListener('click', function (e) {

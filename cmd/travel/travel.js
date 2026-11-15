@@ -10,6 +10,8 @@
     tram: ['#0b91ef', 'train-lightrail-front', 'Tram'], rail: ['#003087', 'train-front', 'Train'], water: ['#682c88', 'water', 'Boat'],
     air: ['#6b6d73', 'airplane', 'Flight'], foot: ['#6b6d73', 'person-walking', 'Walk']
   };
+  /* the line under the search – the answer can come after you've left the page (instant page changes) */
+  function tvMsg(t, html) { var el = document.getElementById('tvMsg'); if (!el) return; if (html) el.innerHTML = t; else el.textContent = t; }
   function pad(n) { return String(n).padStart(2, '0'); }
   function hm(s) { var d = new Date(s); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function dur(sec) {
@@ -71,8 +73,8 @@
 
   $('tvForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!from) { $('tvMsg').textContent = 'Choose where you’re travelling from.'; $('tvFrom').focus(); return; }
-    if (!to) { $('tvMsg').textContent = 'Choose where you’re going.'; $('tvTo').focus(); return; }
+    if (!from) { tvMsg(I18N.k('ui.tv-choose-where-you-re-travelling-from', 'Choose where you’re travelling from.')); $('tvFrom').focus(); return; }
+    if (!to) { tvMsg(I18N.k('ui.tv-choose-where-you-re-going', 'Choose where you’re going.')); $('tvTo').focus(); return; }
     go();
   });
 
@@ -84,7 +86,7 @@
   var seq = 0;
   function go(more) {
     var s = ++seq;
-    $('tvMsg').innerHTML = '<i class="bi bi-arrow-repeat spin-i"></i> Finding trips…';
+    tvMsg('<i class="bi bi-arrow-repeat spin-i"></i> ' + esc(I18N.k('ui.tv-finding', 'Finding trips…')), true);
     if (!more) { cursor = null; shown = []; $('tvTrips').innerHTML = ''; }
     $('tvMore').hidden = true;
     $('tvRecent').hidden = true;
@@ -96,12 +98,12 @@
       });
       shown = shown.concat(list);
       cursor = t.nextPageCursor || null;
-      $('tvMsg').textContent = shown.length ? '' : 'No trips found. Try another time or a nearby stop.';
+      tvMsg(shown.length ? '' : I18N.k('ui.tv-no-trips-found-try-another-time-or-a-nea', 'No trips found. Try another time or a nearby stop.'));
       render();
       $('tvMore').hidden = !cursor || !shown.length;
     }).catch(function () {
       if (s !== seq) return;
-      $('tvMsg').textContent = 'Couldn’t reach the travel planner right now. Check your connection and try again.';
+      tvMsg(I18N.k('ui.tv-couldn-t-reach-the-travel-planner-right-', 'Couldn’t reach the travel planner right now. Check your connection and try again.'));
     });
   }
   $('tvMore').addEventListener('click', function () { go(true); });
@@ -293,16 +295,16 @@
     var jobs = [];
     if (!q.to && q.toText) {
       $('tvTo').value = q.toText;
-      $('tvMsg').innerHTML = '<i class="bi bi-arrow-repeat spin-i"></i> Looking up “' + esc(q.toText) + '”…';
+      tvMsg('<i class="bi bi-arrow-repeat spin-i"></i> ' + esc(I18N.k('ui.tv-looking-up', 'Looking up “{x}”…', { x: q.toText })), true);
       jobs.push(window.Places.search(q.toText, { limit: 1 }).then(function (l) {
-        if (l && l[0]) { to = l[0]; toField.set(to); $('tvMsg').textContent = ''; }
-        else $('tvMsg').textContent = 'Couldn’t find “' + q.toText + '”. Pick the place in “To”.';
-      }).catch(function () { $('tvMsg').textContent = 'Couldn’t look up the place right now.'; }));
+        if (l && l[0]) { to = l[0]; toField.set(to); tvMsg(''); }
+        else tvMsg(I18N.k('ui.tv-not-found', 'Couldn’t find “{x}”. Pick the place in “To”.', { x: q.toText }));
+      }).catch(function () { tvMsg(I18N.k('ui.tv-couldn-t-look-up-the-place-right-now', 'Couldn’t look up the place right now.')); }));
     }
     if (!from) { var home = F.travel().places.home; if (home) { from = home; fromField.set(from); } }
     Promise.all(jobs).then(function () {
       if (from && to) go();
-      else if (!from) { $('tvMsg').textContent = 'Where are you starting from? Tip: set Home below and it’s filled in for you.'; $('tvFrom').focus(); }
+      else if (!from) { tvMsg(I18N.k('ui.tv-where-are-you-starting-from-tip-set-home', 'Where are you starting from? Tip: set Home below and it’s filled in for you.')); $('tvFrom').focus(); }
     });
     return true;
   }

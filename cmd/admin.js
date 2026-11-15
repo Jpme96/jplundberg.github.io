@@ -230,7 +230,7 @@
       C['content'] = card('content', 'journal-check', L('Articles & projects', 'Artikler og prosjekter'), (items ? '<span class="muted cr-count">' + rows.filter(function (r) { return r.on; }).length + ' / ' + rows.length + L(' live', ' live') + '</span>' : '') + '<button type="button" class="icon-btn sm" data-crnew="articles" aria-label="' + L('New article', 'Ny artikkel') + '"><i class="bi bi-pencil-square"></i></button><button type="button" class="icon-btn sm" data-crmanage aria-label="' + L('Show / hide', 'Vis / skjul') + '"><i class="bi bi-toggles"></i></button>',
         !S.content ? '<p class="muted">' + L('Loading …', 'Laster …') + '</p>' : !items ? '<p class="muted">' + L('Couldn’t load the list (GitHub key?).', 'Fikk ikke lastet listen (GitHub-nøkkel?).') + '</p>'
           : '<ul class="cr-items">' + rows.map(function (r) {
-            return '<li><i class="bi bi-' + (r.col === 'projects' ? 'kanban' : 'journal-text') + '"></i><span class="cr-it"><b>' + esc(r.title) + '</b><small>' + esc((r.date || '') + ' · ' + r.langs) + '</small></span>' +
+            return '<li><i class="bi bi-' + (r.col === 'projects' ? 'kanban' : 'journal-text') + '"></i><span class="cr-it"><b data-noi18n>' + esc(r.title) + '</b><small>' + esc((r.date || '') + ' · ' + r.langs) + '</small></span>' +
               '<span class="cr-pill' + (r.on ? ' on' : '') + '">' + (r.on ? L('Live', 'Live') : L('Hidden', 'Skjult')) + '</span><button type="button" class="icon-btn sm" data-credit="' + esc(r.col + '|' + r.ref) + '" aria-label="' + L('Edit', 'Rediger') + ' ' + esc(r.title) + '"><i class="bi bi-pencil"></i></button></li>';
           }).join('') + '</ul>', true);
     }

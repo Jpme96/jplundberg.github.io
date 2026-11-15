@@ -303,3 +303,5 @@
 .cl-todo .bi { color: #c98500; }
 .cl-todo.dragging { opacity: .4; }
 .cl-drop { position: absolute; left: 2px; right: 2px; border-radius: 8px; border: 2px dashed var(--accent); background: rgba(var(--accent-rgb), .12); color: var(--accent); font-size: 11.5px; font-weight: 700; padding: 2px 6px; pointer-events: none; z-index: 5; }
+/* Larger text on a phone: the views and the gear get their own row instead of running off the screen */
+@media (max-width: 759px) { html.text-xl .cl-bar { grid-template-columns: minmax(0, 1fr) auto; } html.text-xl .cl-views { grid-column: 1 / -1; justify-self: start; } }

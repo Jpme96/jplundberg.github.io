@@ -154,6 +154,7 @@
     root.classList.toggle('dens-compact', s.density === 'compact');
     root.classList.toggle('corners-sharp', s.corners === 'sharp');
     root.classList.toggle('text-lg', s.textSize === 'l');
+    root.classList.toggle('text-xl', s.textSize === 'xl');
     root.classList.toggle('text-sm', s.textSize === 's');
     root.classList.toggle('clock-compact', s.clock === 'compact');
     var meta = document.querySelector('meta[name="theme-color"]');

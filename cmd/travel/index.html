@@ -44,7 +44,7 @@
         if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
         if (s.density === 'compact') r.classList.add('dens-compact');
         if (s.corners === 'sharp') r.classList.add('corners-sharp');
-        if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 's') r.classList.add('text-sm');
+        if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 'xl') r.classList.add('text-xl'); else if (s.textSize === 's') r.classList.add('text-sm');
         if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
         /* which menu tabs show (Settings → Features) – decided before the first paint */
@@ -76,12 +76,12 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=cd7ab7b8c7" rel="stylesheet">
+  <link href="../styles.css?v=6316b5bb38" rel="stylesheet">
   <link href="page.css?v=ed85693129" rel="stylesheet">
   <link href="../modern.css?v=47d0859fa7" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
   <link href="../finance/fin.css?v=60c7531e79" rel="stylesheet">
-  <link href="../calendar/cal.css?v=d7b4b80a75" rel="stylesheet">
+  <link href="../calendar/cal.css?v=5852e3b0d7" rel="stylesheet">
   <link href="travel.css?v=0a3be171d7" rel="stylesheet">
 </head>
 <body>
@@ -525,7 +525,7 @@
           <div data-t-aria-label="ui.text-size" class="seg" role="group" aria-label="Text size">
             <button data-t="ui.small" type="button" data-textsize="s">Small</button>
             <button data-t="ui.normal" type="button" data-textsize="m">Normal</button>
-            <button data-t="ui.large" type="button" data-textsize="l">Large</button>
+            <button data-t="ui.large" type="button" data-textsize="l">Large</button><button data-t="ui.larger" type="button" data-textsize="xl">Larger</button>
           </div>
         </div>
       </section>
@@ -921,9 +921,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=05961df423"></script>
-  <script src="../dist/page-travel.js?v=2b9f1d43b6"></script>
-  <script src="../dist/tail.js?v=0340d4d208"></script>
+  <script src="../dist/head.js?v=4c341644e9"></script>
+  <script src="../dist/page-travel.js?v=0c9d2ac7d8"></script>
+  <script src="../dist/tail.js?v=7af33928be"></script>
   <!-- /scripts -->
 </body>
 </html>

@@ -183,13 +183,14 @@
     box.checked = !!p.on;
     $('ntMore').hidden = !p.on;
     var perm = 'Notification' in window ? Notification.permission : 'unsupported';
-    $('ntState').textContent = !supported() ? 'This browser can’t show notifications' : iosNotInstalled() ? 'Open the dashboard from its Home Screen icon to use this' :
-      !p.on ? 'Off' : perm === 'denied' ? 'Blocked – allow notifications for the app in the phone’s settings' :
-      'On · ' + (p.count != null ? p.count + ' reminder' + (p.count === 1 ? '' : 's') + ' planned for the next 7 days' : 'planning…');
+    var K = I18N.k;
+    $('ntState').textContent = !supported() ? K('ui.nt-st-none', 'This browser can’t show notifications') : iosNotInstalled() ? K('ui.nt-st-ios', 'Open the dashboard from its Home Screen icon to use this') :
+      !p.on ? K('ui.off', 'Off') : perm === 'denied' ? K('ui.nt-st-blocked', 'Blocked – allow notifications for the app in the phone’s settings') :
+      (p.count != null ? K(p.count === 1 ? 'ui.nt-st-on1' : 'ui.nt-st-on', p.count === 1 ? 'On · 1 reminder planned for the next 7 days' : 'On · {n} reminders planned for the next 7 days', { n: p.count }) : K('ui.nt-st-planning', 'On · planning…'));
     document.querySelectorAll('[data-ntev]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.ntev === +p.ev)); });
     document.querySelectorAll('[data-ntk]').forEach(function (c) { c.checked = !!p.k[c.dataset.ntk]; });
     document.querySelectorAll('[data-ntdetail]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.ntdetail === p.detail)); });
-    $('ntDetailNote').textContent = p.detail === 'full' ? 'Shows titles and amounts. They pass through your server to send them.' : 'No titles or amounts leave your device – “A bill is due today”.';
+    $('ntDetailNote').textContent = p.detail === 'full' ? I18N.k('ui.nt-detail-full', 'Shows titles and amounts. They pass through your server to send them.') : I18N.k('ui.nt-detail-short', 'No titles or amounts leave your device – “A bill is due today”.');
     $('ntHelp').textContent = I18N.k('ui.nt-help-planned-7-days', 'Reminders are planned 7 days ahead each time you open the dashboard. Haven’t opened it for a week? Then they pause until you do.');
     var sum = $('sumNotify'); if (sum) sum.textContent = p.on ? I18N.k('ui.notify-on-here', 'On on this device') : I18N.k('ui.off', 'Off');
   }

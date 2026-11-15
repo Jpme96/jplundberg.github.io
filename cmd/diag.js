@@ -195,10 +195,10 @@
       }
     } catch (e) {}
     beat(false);
-    var lastTick = Date.now(), lastVis = !document.hidden, closing = false;
+    var lastTick = Date.now(), lastVis = !document.hidden && (!document.hasFocus || document.hasFocus()), closing = false;
     setInterval(function () {
       if (closing) return;   /* leaving (also to another site, like Team): the goodbye beat must stay the last one */
-      var now = Date.now(), vis = !document.hidden, g = now - lastTick, lc = crumbs.length ? crumbs[crumbs.length - 1].t : 0;
+      var now = Date.now(), vis = !document.hidden && (!document.hasFocus || document.hasFocus()), g = now - lastTick,   /* a window behind others is visible but its timers are slowed (Firefox on a Mac): not a freeze */ lc = crumbs.length ? crumbs[crumbs.length - 1].t : 0;
       if (stuck(g, vis, lastVis, lastTick - lc)) log('freeze', 'The page was stuck for ' + Math.round(g / 1000) + ' s', crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '', { raw: true });
       lastTick = now; lastVis = vis; beat(false);
     }, 1000);

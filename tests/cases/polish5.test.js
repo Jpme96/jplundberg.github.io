@@ -62,6 +62,10 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   const fl = await p.evaluate(() => { const r = [...document.querySelectorAll('.sc25-back rect')].find(x => x.getAttribute('y') === '200' && x.getAttribute('width') === '400'); return r ? r.getAttribute('fill') : null; });
   check(fl && /^url\(#sc25fl/.test(fl), 'Calendar: the floor fades out at the ends (' + fl + ')');
 
+  /* the travel planner's answer can come after you've left the page: no error when its line is gone (seen on Finances 11 and 13 Nov) */
+  await go(p, 'travel/', 2500);
+  const tv = await p.evaluate(() => { const m = document.getElementById('tvMsg'), f = document.getElementById('tvForm'); if (!m || !f) return 'no form'; m.remove(); let err = ''; const h = e => { err = e.message; }; window.addEventListener('error', h); try { f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true })); } catch (e) { err = e.message; } window.removeEventListener('error', h); return err || 'ok'; });
+  check(tv === 'ok', 'Travel: a message for a line that is gone does not throw (' + tv + ')');
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();
