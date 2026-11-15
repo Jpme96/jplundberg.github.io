@@ -2799,5 +2799,7 @@ I18N.add({
   "ui.dc-who-ph": ["e.g. the plumber", "f.eks. rørleggeren"],
   "ui.dc-loc": ["en-GB", "nb-NO"],
   "ui.dc-due-on": ["Deadline {d}", "Frist {d}"],
-  "ui.dc-due-late": ["Overdue {d}", "Forfalt {d}"]
+  "ui.dc-due-late": ["Overdue {d}", "Forfalt {d}"],
+  "ui.flex-team-h": ["From Team – your clocked hours", "Fra Team – timene du har stemplet"],
+  "ui.flex-from-team": ["From Team", "Fra Team"]
 });

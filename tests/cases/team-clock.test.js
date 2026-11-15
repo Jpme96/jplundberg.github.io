@@ -48,6 +48,18 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const mem = (await raw('/__mem')).body;
   check(/"k":"clk"/.test(mem) && /"k":"cfg"/.test(mem) && !/owner@x\.no","start|"start":\d/.test(mem.replace(/"by":"owner@x\.no"/g, '')), 'the server keeps the clock entry and the setting, encrypted');
 
+  /* the owner's hours into cmd's flex (2026-11-15): a minute-long try gives no link; a real stretch does – date.in.out.id in the hash only */
+  check(!(await own.$('.t-clockcmd')), 'no "Add to my flex time" link for an entry shorter than a minute');
+  await click('[data-act=clockIn]'); await until(own, () => !!document.querySelector('.t-clock.on [data-act=clockOut]'), 8000);
+  await own.evaluate(() => { const o = Date.now.bind(Date); Date.now = () => o() + 2 * 36e5 + 6e5; });
+  await click('[data-act=clockOut]');
+  check(await until(own, () => !!document.querySelector('.t-clockcmd'), 8000), 'after clocking out: the owner gets "Add to my flex time in cmd"');
+  const href = await own.evaluate(() => (document.querySelector('.t-clockcmd') || {}).href || '');
+  const hm = /\/cmd\/work\/#teamhours=(\d{8}\.\d{4}\.\d{4}\.[0-9a-z]{4,10})$/.exec(href);
+  check(!!hm, 'the link goes to cmd Work with one entry in the hash ' + href.replace(/^.*#/, '#'));
+  check(!/owner|x\.no|Clock team|JP/i.test(href.split('#')[1] || ''), 'the link holds times only – no names, no team');
+  await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'), 15000);
+
   /* admins see the team's week on the Team tab */
   await own.goto(T + '#team'); await sl(800);
   const tt = await text();

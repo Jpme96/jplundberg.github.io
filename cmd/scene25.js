@@ -70,11 +70,11 @@
   /* part: 'face' (drawn once into the still layer), 'hands' (each frame), or both */
   function CLOCK(par, x, y, r, part) {
     var d = new Date(), hh = (d.getHours() % 12 + d.getMinutes() / 60) * 30, mm = (d.getMinutes() + d.getSeconds() / 60) * 6, ss = d.getSeconds() * 6;
-    if (part !== 'hands') { add(par, 'circle', { cx: x, cy: y, r: r, fill: '#f4f1ea', stroke: '#3a3f4a', 'stroke-width': 2.4 });
-    for (var i = 0; i < 12; i++) { var a0 = i * Math.PI / 6; add(par, 'circle', { cx: (x + Math.sin(a0) * r * .8).toFixed(1), cy: (y - Math.cos(a0) * r * .8).toFixed(1), r: .9, fill: '#8a8f99' }); }
+    if (part !== 'hands') { add(par, 'circle', { cx: x, cy: y, r: r, fill: '#f4f1ea', stroke: '#3b414b', 'stroke-width': 2.4 });
+    for (var i = 0; i < 12; i++) { var a0 = i * Math.PI / 6; add(par, 'circle', { cx: (x + Math.sin(a0) * r * .8).toFixed(1), cy: (y - Math.cos(a0) * r * .8).toFixed(1), r: .9, fill: '#8e97a1' }); }
     } if (part === 'face') return;
-    [[hh, r * .5, 2.4, '#2a2d33'], [mm, r * .76, 1.6, '#2a2d33'], [ss, r * .8, .8, '#d93a3a']].forEach(function (q) { var a = q[0] * Math.PI / 180; add(par, 'line', { x1: x, y1: y, x2: (x + Math.sin(a) * q[1]).toFixed(1), y2: (y - Math.cos(a) * q[1]).toFixed(1), stroke: q[3], 'stroke-width': q[2], 'stroke-linecap': 'round' }); });
-    add(par, 'circle', { cx: x, cy: y, r: 1.6, fill: '#2a2d33' });
+    [[hh, r * .5, 2.4, '#2a2e36'], [mm, r * .76, 1.6, '#2a2e36'], [ss, r * .8, .8, '#d6453f']].forEach(function (q) { var a = q[0] * Math.PI / 180; add(par, 'line', { x1: x, y1: y, x2: (x + Math.sin(a) * q[1]).toFixed(1), y2: (y - Math.cos(a) * q[1]).toFixed(1), stroke: q[3], 'stroke-width': q[2], 'stroke-linecap': 'round' }); });
+    add(par, 'circle', { cx: x, cy: y, r: 1.6, fill: '#2a2e36' });
   }
   /* the floor (Phase G – one stage for every scene): a soft ground ellipse under the people, in the theme's own
      colour (.sc25-ground in modern.css), instead of a strip that read as a box under him. A colour keeps a tinted
@@ -105,14 +105,14 @@
      Each starts and ends in the rest pose at the spot the page left you (no teleport); only the arms, the turn and a
      prop in the hand change. Picked with the page's own action, never the same twice in a row: a tap on you waves;
      the morning brings a coffee, rain an umbrella, 17 May a flag; at rest he looks round now and then. */
-  function cupG(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.4, y: -5.5, width: 8.8, height: 11, rx: 2, fill: '#f2f2f2' }); add(m, 'path', { d: 'M4.2 -3 q4.2 0 4.2 3 q0 3 -4.2 3', fill: 'none', stroke: '#f2f2f2', 'stroke-width': 1.6 }); add(m, 'rect', { x: -3.8, y: -5.5, width: 7.6, height: 1.5, fill: '#5a3424', opacity: .7 }); return m; }
+  function cupG(x, y, deg) { var m = grp(x, y, deg); add(m, 'rect', { x: -4.4, y: -5.5, width: 8.8, height: 11, rx: 2, fill: '#f4f1ea' }); add(m, 'path', { d: 'M4.2 -3 q4.2 0 4.2 3 q0 3 -4.2 3', fill: 'none', stroke: '#f4f1ea', 'stroke-width': 1.6 }); add(m, 'rect', { x: -3.8, y: -5.5, width: 7.6, height: 1.5, fill: '#5a3e2c', opacity: .7 }); return m; }
   function umbrellaG(x, y, s, open) { var u = el('g', {}), r = 34 * s * (.25 + .75 * open), top = y - 46 * s;
-    add(u, 'line', { x1: x, y1: y + 4 * s, x2: x, y2: top, stroke: '#3a3f4a', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
-    add(u, 'path', { d: 'M' + (x - r) + ' ' + (top + 10 * s * open) + ' Q' + x + ' ' + (top - 16 * s * open) + ' ' + (x + r) + ' ' + (top + 10 * s * open) + ' Q' + (x + r / 2) + ' ' + (top + 5 * s) + ' ' + x + ' ' + (top + 10 * s * open) + ' Q' + (x - r / 2) + ' ' + (top + 5 * s) + ' ' + (x - r) + ' ' + (top + 10 * s * open) + ' Z', fill: '#e8743b' });
+    add(u, 'line', { x1: x, y1: y + 4 * s, x2: x, y2: top, stroke: '#3b414b', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
+    add(u, 'path', { d: 'M' + (x - r) + ' ' + (top + 10 * s * open) + ' Q' + x + ' ' + (top - 16 * s * open) + ' ' + (x + r) + ' ' + (top + 10 * s * open) + ' Q' + (x + r / 2) + ' ' + (top + 5 * s) + ' ' + x + ' ' + (top + 10 * s * open) + ' Q' + (x - r / 2) + ' ' + (top + 5 * s) + ' ' + (x - r) + ' ' + (top + 10 * s * open) + ' Z', fill: '#e57a3c' });
     return u; }
-  function flagG(x, y, s, wave) { var f = el('g', {}), top = y - 30 * s; add(f, 'line', { x1: x, y1: y + 4 * s, x2: x, y2: top, stroke: '#d7dee3', 'stroke-width': 1.2 * s });
-    var w = 16 * s, h = 11 * s, x0 = x, y0 = top; add(f, 'path', { d: 'M' + x0 + ' ' + y0 + ' q' + (w / 2) + ' ' + (-2 * s + wave) + ' ' + w + ' 0 v' + h + ' q' + (-w / 2) + ' ' + (-2 * s - wave) + ' ' + (-w) + ' 0 Z', fill: '#ba0c2f' });
-    add(f, 'path', { d: 'M' + (x0 + 5 * s) + ' ' + y0 + ' v' + h + ' M' + x0 + ' ' + (y0 + h / 2) + ' h' + w, stroke: '#fff', 'stroke-width': 3 * s }); add(f, 'path', { d: 'M' + (x0 + 5 * s) + ' ' + y0 + ' v' + h + ' M' + x0 + ' ' + (y0 + h / 2) + ' h' + w, stroke: '#00205b', 'stroke-width': 1.5 * s }); return f; }
+  function flagG(x, y, s, wave) { var f = el('g', {}), top = y - 30 * s; add(f, 'line', { x1: x, y1: y + 4 * s, x2: x, y2: top, stroke: '#cdd3d9', 'stroke-width': 1.2 * s });
+    var w = 16 * s, h = 11 * s, x0 = x, y0 = top; add(f, 'path', { d: 'M' + x0 + ' ' + y0 + ' q' + (w / 2) + ' ' + (-2 * s + wave) + ' ' + w + ' 0 v' + h + ' q' + (-w / 2) + ' ' + (-2 * s - wave) + ' ' + (-w) + ' 0 Z', fill: '#d6453f' });
+    add(f, 'path', { d: 'M' + (x0 + 5 * s) + ' ' + y0 + ' v' + h + ' M' + x0 + ' ' + (y0 + h / 2) + ' h' + w, stroke: '#f4f1ea', 'stroke-width': 3 * s }); add(f, 'path', { d: 'M' + (x0 + 5 * s) + ' ' + y0 + ' v' + h + ' M' + x0 + ' ' + (y0 + h / 2) + ' h' + w, stroke: '#22355e', 'stroke-width': 1.5 * s }); return f; }
   /* ---------- seasons (F3): a small Christmas tree in December, a pumpkin from 20 October to Halloween ----------
      Each page that has room says where it stands (spec.season = { x, y, s }: the foot of the prop on the floor, a
      little behind his walking line, and its size). The prop is drawn first in the moving layer, so he passes in front
@@ -120,47 +120,47 @@
   function season() { if (window.__season != null) return window.__season; var d = new Date(), m = d.getMonth(); return m === 11 ? 'xmas' : m === 9 && d.getDate() >= 20 ? 'halloween' : m < 2 ? 'winter' : ''; }   /* January and February: a snowman, outdoors only (season.out) */
   var DECOR = {};
   function decor(st) { var k = (st.sid || '') + '|' + new Date().toDateString(); return DECOR[k] || (DECOR[k] = { n: 0, lit: false }); }
-  var HANG = [[8, -36, '#f2c94c'], [-7, -32, '#d93a3a'], [5, -46, '#3987e5'], [-5, -44, '#e8743b'], [11, -27, '#f2c94c']];   /* hung at chest height, where his hand reaches */
+  var HANG = [[8, -36, '#f2c94c'], [-7, -32, '#d6453f'], [5, -46, '#3d85dc'], [-5, -44, '#e57a3c'], [11, -27, '#f2c94c']];   /* hung at chest height, where his hand reaches */
   function treeG(par, x, y, s, n) {
     var g = add(par, 'g', { class: 'sc25-season' });
     add(g, 'ellipse', { cx: x, cy: y + .5, rx: 15 * s, ry: 2.4 * s, fill: 'rgba(0,0,0,.22)' });
-    add(g, 'rect', { x: x - 7 * s, y: y - 7 * s, width: 14 * s, height: 7 * s, rx: 1.6 * s, fill: '#a0673a' }); add(g, 'rect', { x: x + 1 * s, y: y - 7 * s, width: 6 * s, height: 7 * s, rx: 1.6 * s, fill: '#7a4b2e' });
-    add(g, 'rect', { x: x - 2.4 * s, y: y - 12 * s, width: 4.8 * s, height: 5.5 * s, fill: '#5a3a26' });
+    add(g, 'rect', { x: x - 7 * s, y: y - 7 * s, width: 14 * s, height: 7 * s, rx: 1.6 * s, fill: '#c4875e' }); add(g, 'rect', { x: x + 1 * s, y: y - 7 * s, width: 6 * s, height: 7 * s, rx: 1.6 * s, fill: '#915534' });
+    add(g, 'rect', { x: x - 2.4 * s, y: y - 12 * s, width: 4.8 * s, height: 5.5 * s, fill: '#5a3e2c' });
     [[10, 22, 21], [24, 20, 16.5], [37, 19, 12]].forEach(function (q) {   /* three tiers, the shade on the far (right) side */
       var b = y - q[0] * s, tp = b - q[1] * s, w = q[2] * s;
-      add(g, 'path', { d: 'M' + (x - w).toFixed(1) + ' ' + b.toFixed(1) + ' Q' + x + ' ' + (b + 2.4 * s).toFixed(1) + ' ' + (x + w).toFixed(1) + ' ' + b.toFixed(1) + ' L' + x + ' ' + tp.toFixed(1) + ' Z', fill: '#2f7a4a', 'stroke-linejoin': 'round', stroke: '#2f7a4a', 'stroke-width': 1.6 * s });
-      add(g, 'path', { d: 'M' + x + ' ' + (b + 1.2 * s).toFixed(1) + ' Q' + (x + w * .5).toFixed(1) + ' ' + (b + 1.4 * s).toFixed(1) + ' ' + (x + w).toFixed(1) + ' ' + b.toFixed(1) + ' L' + x + ' ' + tp.toFixed(1) + ' Z', fill: '#24603a' });
+      add(g, 'path', { d: 'M' + (x - w).toFixed(1) + ' ' + b.toFixed(1) + ' Q' + x + ' ' + (b + 2.4 * s).toFixed(1) + ' ' + (x + w).toFixed(1) + ' ' + b.toFixed(1) + ' L' + x + ' ' + tp.toFixed(1) + ' Z', fill: '#2f9d62', 'stroke-linejoin': 'round', stroke: '#2f9d62', 'stroke-width': 1.6 * s });
+      add(g, 'path', { d: 'M' + x + ' ' + (b + 1.2 * s).toFixed(1) + ' Q' + (x + w * .5).toFixed(1) + ' ' + (b + 1.4 * s).toFixed(1) + ' ' + (x + w).toFixed(1) + ' ' + b.toFixed(1) + ' L' + x + ' ' + tp.toFixed(1) + ' Z', fill: '#27694a' });
     });
     add(g, 'path', { d: 'M' + (x - 15 * s).toFixed(1) + ' ' + (y - 17 * s).toFixed(1) + ' Q' + x + ' ' + (y - 12 * s).toFixed(1) + ' ' + (x + 15 * s).toFixed(1) + ' ' + (y - 21 * s).toFixed(1), fill: 'none', stroke: '#f2c94c', 'stroke-width': .9 * s, opacity: .8 });   /* a garland */
-    [[-8, -15, '#d93a3a'], [6, -28, '#f2c94c'], [-4, -42, '#3987e5']].forEach(function (b) { add(g, 'circle', { cx: (x + b[0] * s).toFixed(1), cy: (y + b[1] * s).toFixed(1), r: 2.1 * s, fill: b[2] }); });
-    for (var i = 0; i < Math.min(n, HANG.length); i++) { var h = HANG[i]; add(g, 'line', { x1: (x + h[0] * s).toFixed(1), y1: (y + h[1] * s - 3.4 * s).toFixed(1), x2: (x + h[0] * s).toFixed(1), y2: (y + h[1] * s - 2 * s).toFixed(1), stroke: '#c9b48e', 'stroke-width': .5 * s }); add(g, 'circle', { cx: (x + h[0] * s).toFixed(1), cy: (y + h[1] * s).toFixed(1), r: 2.2 * s, fill: h[2] }); }
+    [[-8, -15, '#d6453f'], [6, -28, '#f2c94c'], [-4, -42, '#3d85dc']].forEach(function (b) { add(g, 'circle', { cx: (x + b[0] * s).toFixed(1), cy: (y + b[1] * s).toFixed(1), r: 2.1 * s, fill: b[2] }); });
+    for (var i = 0; i < Math.min(n, HANG.length); i++) { var h = HANG[i]; add(g, 'line', { x1: (x + h[0] * s).toFixed(1), y1: (y + h[1] * s - 3.4 * s).toFixed(1), x2: (x + h[0] * s).toFixed(1), y2: (y + h[1] * s - 2 * s).toFixed(1), stroke: '#d8c8a8', 'stroke-width': .5 * s }); add(g, 'circle', { cx: (x + h[0] * s).toFixed(1), cy: (y + h[1] * s).toFixed(1), r: 2.2 * s, fill: h[2] }); }
     STAR(g, x, y - 57 * s, 4.4 * s, '#f2c94c');
     return g;
   }
-  function baubleG(x, y, s, c) { var b = el('g', {}); add(b, 'circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: 2.2 * s, fill: c }); add(b, 'rect', { x: (x - .9 * s).toFixed(1), y: (y - 3.2 * s).toFixed(1), width: 1.8 * s, height: 1.3 * s, fill: '#c9b48e' }); return b; }
+  function baubleG(x, y, s, c) { var b = el('g', {}); add(b, 'circle', { cx: x.toFixed(1), cy: y.toFixed(1), r: 2.2 * s, fill: c }); add(b, 'rect', { x: (x - .9 * s).toFixed(1), y: (y - 3.2 * s).toFixed(1), width: 1.8 * s, height: 1.3 * s, fill: '#d8c8a8' }); return b; }
   function pumpkinG(par, x, y, s, lit) {
     var g = add(par, 'g', { class: 'sc25-season' });
     if (lit > 0) add(g, 'circle', { cx: x, cy: y - 7 * s, r: 19 * s, fill: '#ffd56b', opacity: (.16 * lit).toFixed(2) });
     add(g, 'ellipse', { cx: x, cy: y + .5, rx: 12 * s, ry: 2 * s, fill: 'rgba(0,0,0,.22)' });
-    add(g, 'rect', { x: x - 1.3 * s, y: y - 17 * s, width: 2.6 * s, height: 5 * s, rx: 1 * s, fill: '#5a7a3a' });
-    add(g, 'ellipse', { cx: x - 5.5 * s, cy: y - 7 * s, rx: 6.6 * s, ry: 7 * s, fill: '#e8743b' });
-    add(g, 'ellipse', { cx: x + 5.5 * s, cy: y - 7 * s, rx: 6.6 * s, ry: 7 * s, fill: '#c95f2c' });
-    add(g, 'ellipse', { cx: x - .5 * s, cy: y - 7.2 * s, rx: 6.4 * s, ry: 7.4 * s, fill: '#f08a45' });
-    var fc = lit > 0 ? '#ffd56b' : '#5a2a14', o2 = lit > 0 ? (.45 + .55 * lit).toFixed(2) : 1;
+    add(g, 'rect', { x: x - 1.3 * s, y: y - 17 * s, width: 2.6 * s, height: 5 * s, rx: 1 * s, fill: '#4a6a39' });
+    add(g, 'ellipse', { cx: x - 5.5 * s, cy: y - 7 * s, rx: 6.6 * s, ry: 7 * s, fill: '#e57a3c' });
+    add(g, 'ellipse', { cx: x + 5.5 * s, cy: y - 7 * s, rx: 6.6 * s, ry: 7 * s, fill: '#e57a3c' });
+    add(g, 'ellipse', { cx: x - .5 * s, cy: y - 7.2 * s, rx: 6.4 * s, ry: 7.4 * s, fill: '#e57a3c' });
+    var fc = lit > 0 ? '#ffd56b' : '#55291a', o2 = lit > 0 ? (.45 + .55 * lit).toFixed(2) : 1;
     add(g, 'path', { d: 'M' + (x - 5 * s) + ' ' + (y - 9 * s) + ' l' + (2 * s) + ' ' + (-3 * s) + ' l' + (2 * s) + ' ' + (3 * s) + ' Z M' + (x + 1 * s) + ' ' + (y - 9 * s) + ' l' + (2 * s) + ' ' + (-3 * s) + ' l' + (2 * s) + ' ' + (3 * s) + ' Z', fill: fc, opacity: o2 });
     add(g, 'path', { d: 'M' + (x - 5 * s) + ' ' + (y - 6 * s) + ' Q' + x + ' ' + (y - 1.5 * s) + ' ' + (x + 5 * s) + ' ' + (y - 6 * s) + ' Q' + x + ' ' + (y - 3.6 * s) + ' ' + (x - 5 * s) + ' ' + (y - 6 * s) + ' Z', fill: fc, opacity: o2 });
     return g;
   }
   /* a snowman (January and February, on the outdoor pages): three balls of snow lit from the left, coal eyes, a carrot, twig arms, a scarf – and the hat once he has put it on */
-  function hatG(x, y, s) { var h = el('g', {}); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 6.4 * s).toFixed(1), width: 6.8 * s, height: 6.4 * s, rx: .8 * s, fill: '#22262e' }); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 2.2 * s).toFixed(1), width: 6.8 * s, height: 1.5 * s, fill: '#d93a3a' }); add(h, 'rect', { x: (x - 5.6 * s).toFixed(1), y: (y - .7 * s).toFixed(1), width: 11.2 * s, height: 1.5 * s, rx: .7 * s, fill: '#22262e' }); return h; }
+  function hatG(x, y, s) { var h = el('g', {}); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 6.4 * s).toFixed(1), width: 6.8 * s, height: 6.4 * s, rx: .8 * s, fill: '#1d2128' }); add(h, 'rect', { x: (x - 3.4 * s).toFixed(1), y: (y - 2.2 * s).toFixed(1), width: 6.8 * s, height: 1.5 * s, fill: '#d6453f' }); add(h, 'rect', { x: (x - 5.6 * s).toFixed(1), y: (y - .7 * s).toFixed(1), width: 11.2 * s, height: 1.5 * s, rx: .7 * s, fill: '#1d2128' }); return h; }
   function snowmanG(par, x, y, s, hat) {
     var g = add(par, 'g', { class: 'sc25-season' });
     add(g, 'ellipse', { cx: x, cy: y + .5, rx: 13 * s, ry: 2.2 * s, fill: 'rgba(0,0,0,.22)' });
-    add(g, 'path', { d: 'M' + (x - 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (-9 * s).toFixed(1) + ' ' + (-5 * s).toFixed(1) + ' M' + (x + 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (9 * s).toFixed(1) + ' ' + (-6 * s).toFixed(1), fill: 'none', stroke: '#6b4a36', 'stroke-width': 1.2 * s, 'stroke-linecap': 'round' });
-    [[-10, 10.5], [-24, 7.6], [-34.5, 5.6]].forEach(function (q) { add(g, 'circle', { cx: x, cy: (y + q[0] * s).toFixed(1), r: q[1] * s, fill: '#c9d3df' }); add(g, 'circle', { cx: (x - q[1] * .14 * s).toFixed(1), cy: (y + q[0] * s - q[1] * .1 * s).toFixed(1), r: q[1] * .86 * s, fill: '#f4f7fa' }); });
-    add(g, 'path', { d: 'M' + (x - 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' Q' + x + ' ' + (y - 27.4 * s).toFixed(1) + ' ' + (x + 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' M' + (x + 3.4 * s).toFixed(1) + ' ' + (y - 29 * s).toFixed(1) + ' l' + (1.2 * s).toFixed(1) + ' ' + (6 * s).toFixed(1), fill: 'none', stroke: '#d93a3a', 'stroke-width': 2.2 * s, 'stroke-linecap': 'round' });   /* the scarf */
-    [[-2, -36], [2, -36], [0, -25], [0, -20]].forEach(function (q) { add(g, 'circle', { cx: (x + q[0] * s).toFixed(1), cy: (y + q[1] * s).toFixed(1), r: (q[1] < -30 ? .8 : .95) * s, fill: '#22262e' }); });
-    add(g, 'path', { d: 'M' + x + ' ' + (y - 34.6 * s).toFixed(1) + ' l' + (5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' l' + (-5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' Z', fill: '#e8743b' });
+    add(g, 'path', { d: 'M' + (x - 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (-9 * s).toFixed(1) + ' ' + (-5 * s).toFixed(1) + ' M' + (x + 6 * s).toFixed(1) + ' ' + (y - 24 * s).toFixed(1) + ' l' + (9 * s).toFixed(1) + ' ' + (-6 * s).toFixed(1), fill: 'none', stroke: '#5a3e2c', 'stroke-width': 1.2 * s, 'stroke-linecap': 'round' });
+    [[-10, 10.5], [-24, 7.6], [-34.5, 5.6]].forEach(function (q) { add(g, 'circle', { cx: x, cy: (y + q[0] * s).toFixed(1), r: q[1] * s, fill: '#cdd3d9' }); add(g, 'circle', { cx: (x - q[1] * .14 * s).toFixed(1), cy: (y + q[0] * s - q[1] * .1 * s).toFixed(1), r: q[1] * .86 * s, fill: '#f4f1ea' }); });
+    add(g, 'path', { d: 'M' + (x - 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' Q' + x + ' ' + (y - 27.4 * s).toFixed(1) + ' ' + (x + 5.4 * s).toFixed(1) + ' ' + (y - 30 * s).toFixed(1) + ' M' + (x + 3.4 * s).toFixed(1) + ' ' + (y - 29 * s).toFixed(1) + ' l' + (1.2 * s).toFixed(1) + ' ' + (6 * s).toFixed(1), fill: 'none', stroke: '#d6453f', 'stroke-width': 2.2 * s, 'stroke-linecap': 'round' });   /* the scarf */
+    [[-2, -36], [2, -36], [0, -25], [0, -20]].forEach(function (q) { add(g, 'circle', { cx: (x + q[0] * s).toFixed(1), cy: (y + q[1] * s).toFixed(1), r: (q[1] < -30 ? .8 : .95) * s, fill: '#1d2128' }); });
+    add(g, 'path', { d: 'M' + x + ' ' + (y - 34.6 * s).toFixed(1) + ' l' + (5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' l' + (-5.4 * s).toFixed(1) + ' ' + (1 * s).toFixed(1) + ' Z', fill: '#e57a3c' });
     if (hat) g.appendChild(hatG(x, y - 39.2 * s, s));
     return g;
   }

@@ -77,6 +77,29 @@
     t.flex = l;
     F.saveTools(t);
   }
+  /* hours from Team (2026-11-15): Team's "Add to my flex time" opens /cmd/work/#teamhours=YYYYMMDD.HHMM.HHMM.id,… – only in the
+     address's hash, so nothing reaches a server; it is kept for this tab and the hash is cleared at once. After unlocking, the
+     Flex time card offers them; each keeps its Team id (tid), so the same hours are never added twice. */
+  function teamGrab() { var m = /[#&]teamhours=([0-9a-z.,]{1,4000})/i.exec(location.hash || ''); if (!m) return false; try { sessionStorage.setItem('dash.teamhours', m[1]); } catch (e) {} try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {} return true; }
+  teamGrab();   /* Team's link always opens a new tab, so reading it once at start is enough (a hashchange listener here stopped the Journey's scene – scene-sizes) */
+  function teamHours() {
+    var s = ''; try { s = sessionStorage.getItem('dash.teamhours') || ''; } catch (e) {}
+    if (!s) return [];
+    var have = {}; F.list('flex').forEach(function (e) { if (e.tid) have[e.tid] = 1; });
+    return s.split(',').map(function (x) {
+      var m = /^(\d{4})(\d{2})(\d{2})\.(\d{2})(\d{2})\.(\d{2})(\d{2})\.([0-9a-z]{4,12})$/i.exec(x); if (!m) return null;
+      var hm = function (h, mi) { return +h < 24 && +mi < 60 ? h + ':' + mi : null; }, a = hm(m[4], m[5]), b = hm(m[6], m[7]);
+      if (!a || !b || b <= a || +m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31) return null;
+      return { date: m[1] + '-' + m[2] + '-' + m[3], in: a, out: b, tid: 'team:' + m[8].toLowerCase() };
+    }).filter(function (x) { return x && !have[x.tid]; }).slice(0, 60);
+  }
+  function teamDone() { try { sessionStorage.removeItem('dash.teamhours'); } catch (e) {} }
+  function teamBlock() {
+    var l = teamHours(); if (!l.length) { teamDone(); return ''; }
+    return '<div class="flex-cal flex-team"><p class="pa-h"><i class="bi bi-people"></i> ' + esc(I18N.k('ui.flex-team-h', 'From Team – your clocked hours')) + '</p><ul>' + l.map(function (x) {
+      return '<li><span><b>' + esc(fmt(x.date, { weekday: 'short', day: 'numeric', month: 'short' })) + '</b><small>' + esc(x.in + '–' + x.out) + '</small></span></li>';
+    }).join('') + '</ul><div class="flex-team-btns"><button type="button" class="pill-btn sm" data-flexteam>' + esc(l.length > 1 ? I18N.k('ui.flex-cal-all', 'Add all {n}', { n: l.length }) : I18N.k('ui.add', 'Add')) + '</button><button type="button" class="text-btn" data-flexteamno>' + esc(I18N.k('ui.not-now', 'Not now')) + '</button></div></div>';
+  }
   /* flex time from the calendar: weekdays of the last two weeks with work events but nothing logged – first start to last end */
   function calSuggest() {
     var C = window.Cal; if (!C || !C.occurrences) return [];
@@ -122,7 +145,7 @@
       return clockBlock(s) + '<div class="kit-tiles">' +
         tile(I18N.k('ui.flex-balance', 'Flex balance'), '<span class="' + (s.balance < 0 ? 'neg' : 'pos') + '">' + (s.balance > 0 ? '+' : '') + hms(s.balance) + '</span>', 'logged days') +
         tile(I18N.k('ui.this-week', 'This week'), hms(s.week), 'of ' + hms(s.weekTarget)) +
-        tile('Holiday ' + today().slice(0, 4), s.vac + ' <small>/ ' + c.vacation + '</small>', 'days used') + '</div>' + flexCal();
+        tile('Holiday ' + today().slice(0, 4), s.vac + ' <small>/ ' + c.vacation + '</small>', 'days used') + '</div>' + teamBlock() + flexCal();
     },
     row: function (e) {
       var isT = e.date === today(), w = worked(e, isT), lbl = FLEX_TYPES[e.type] || 'Work';
@@ -139,8 +162,14 @@
         '<div class="fr-bar"><span class="muted"><i class="bi bi-file-earmark-text"></i> <span data-t="ui.monthly-report">Monthly report</span></span><select class="fr-month" aria-label="Month for the report" data-t-aria-label="ui.month-for-the-report">' + reportMonths() + '</select>' +
         '<button type="button" class="text-btn" data-frcsv data-t="ui.csv"><span data-t="ui.csv">CSV</span></button><button type="button" class="text-btn" data-frpdf data-t="ui.pdf"><span data-t="ui.pdf">PDF</span></button></div>');
     },
-    onClick: function (e) {
+    onClick: function (e, redraw) {
       if (e.target.closest('[data-flex-clock]')) clock();
+      if (e.target.closest('[data-flexteamno]')) { teamDone(); if (redraw) redraw(); }
+      if (e.target.closest('[data-flexteam]')) {   /* the hours from Team into flex: one entry per clock-in; the break only on a day's first work entry */
+        var tt = F.tools(), tl = Array.isArray(tt.flex) ? tt.flex : [], tb = +(tt.flexcfg || {}).brk || 0;
+        teamHours().forEach(function (x) { var first = !tl.some(function (y) { return y.date === x.date && y.type === 'work'; }); tl.push({ id: K.uid(), date: x.date, type: 'work', in: x.in, out: x.out, brk: first ? tb : 0, note: I18N.k('ui.flex-from-team', 'From Team'), tid: x.tid }); });
+        tt.flex = tl; teamDone(); F.saveTools(tt);
+      }
       var fc = e.target.closest('[data-flexcal]'), fa = e.target.closest('[data-flexcalall]');
       if (fc || fa) {
         var t = F.tools(), l = Array.isArray(t.flex) ? t.flex : [], brk = +(t.flexcfg || {}).brk || 0;

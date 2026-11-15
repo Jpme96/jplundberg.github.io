@@ -118,7 +118,7 @@
         var cq = SEG(t, 4.0, 4.4), rq = E(SEG(t, 4.4, 5.2));
         r.pcoin = t < 4.0 ? null : t < 4.4 ? [148 + 2 * cq, 112 + (GY - 3 - 112) * cq * cq] : t < 5.5 ? [150 + (CO[0] - 150) * rq, GY - 3] : t < 6.6 ? 'hand' : null; r.pk = hk; r.expr = t > 3.5 && t < 4.6 ? 'wow' : t > 6.6 ? 'grin' : null; }
       return r; }
-    function pigG(x, y, deg) { var c = S.grp(x, y, deg || 0); add(c, 'ellipse', { cx: 0, cy: 0, rx: 9, ry: 6.5, fill: '#f2a3c4' }); add(c, 'ellipse', { cx: 2.5, cy: 1.5, rx: 6, ry: 4.4, fill: '#e58fb3' }); add(c, 'circle', { cx: -8.2, cy: .5, r: 2.6, fill: '#e58fb3' }); add(c, 'path', { d: 'M-5 -5.5 l1.5 -3.5 l2.5 3 Z', fill: '#e58fb3' }); add(c, 'circle', { cx: -5.4, cy: -1.6, r: .8, fill: '#3a2a2a' }); add(c, 'rect', { x: -1.5, y: -6.8, width: 5, height: 1.1, rx: .5, fill: '#7a3a55' }); [-4.5, 4.5].forEach(function (lx2) { add(c, 'rect', { x: lx2 - 1.2, y: 5, width: 2.4, height: 3, rx: 1, fill: '#e58fb3' }); }); return c; }
+    function pigG(x, y, deg) { var c = S.grp(x, y, deg || 0); add(c, 'ellipse', { cx: 0, cy: 0, rx: 9, ry: 6.5, fill: '#e895b7' }); add(c, 'ellipse', { cx: 2.5, cy: 1.5, rx: 6, ry: 4.4, fill: '#e895b7' }); add(c, 'circle', { cx: -8.2, cy: .5, r: 2.6, fill: '#e895b7' }); add(c, 'path', { d: 'M-5 -5.5 l1.5 -3.5 l2.5 3 Z', fill: '#e895b7' }); add(c, 'circle', { cx: -5.4, cy: -1.6, r: .8, fill: '#3a2a20' }); add(c, 'rect', { x: -1.5, y: -6.8, width: 5, height: 1.1, rx: .5, fill: '#93647b' }); [-4.5, 4.5].forEach(function (lx2) { add(c, 'rect', { x: lx2 - 1.2, y: 5, width: 2.4, height: 3, rx: 1, fill: '#e895b7' }); }); return c; }
     var run = S.run(svg, {
       acts: [{ id: 'polish', len: 7.0, w: function () { return idle ? 2.5 : 1; } }, { id: 'piggy', len: 10.6, w: function (d) { return !ok ? 2.5 : .8; } }],
       len: ok ? (AID ? XLEN : LEN) : idle ? CLEN : WLEN, data: data,
@@ -131,7 +131,7 @@
         add(bg, 'circle', { cx: 112, cy: 50, r: 9, class: 'sc25-moon' }); add(bg, 'circle', { cx: 117, cy: 46, r: 7.5, class: 'sc25-moonc' });
         var cal = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'fin' });
         add(cal, 'rect', { x: 120, y: 127, width: 38, height: 38, rx: 5, class: 'sc-cal' });
-        add(cal, 'path', { d: 'M120 132 Q120 127 125 127 L153 127 Q158 127 158 132 L158 136 L120 136 Z', fill: '#d96b6b' });
+        add(cal, 'path', { d: 'M120 132 Q120 127 125 127 L153 127 Q158 127 158 132 L158 136 L120 136 Z', fill: '#e38d87' });
         if (data.daysLeft != null) S.txt(cal, { x: 139, y: 157, 'text-anchor': 'middle', class: 'sc-calt' }, String(data.daysLeft));
         /* the jar: glass, the money level (its colour says how it goes), coins in the bottom, the lid with the slot, the amount */
         var jar = add(sv, 'g', { class: 'hs-part' + (ok ? '' : ' hot'), 'data-scgo': 'fin', 'data-scact': 'main' });   /* a tap on the jar: he goes to it (a coin in, or a worried look when money is short) */
@@ -139,38 +139,38 @@
         var lvl = 6 + 66 * ratio, top = JB - lvl;
         if (ratio > 0) add(jar, 'path', { d: 'M' + (JX0 + 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + top.toFixed(1) + ' L' + (JX0 + JW - 2) + ' ' + (JB - 10) + ' Q' + (JX0 + JW - 2) + ' ' + (JB - 2) + ' ' + (JX0 + JW - 10) + ' ' + (JB - 2) + ' L' + (JX0 + 10) + ' ' + (JB - 2) + ' Q' + (JX0 + 2) + ' ' + (JB - 2) + ' ' + (JX0 + 2) + ' ' + (JB - 10) + ' Z', class: 'sc-money ' + (data.state || 'ok') });
         /* a small pile of coins on the bottom (three rows, the top one shorter), under the amount */
-        for (var row = 0; row < 3; row++) for (var ci = 0; ci < 5 - row; ci++) { var cy = JB - 7 - row * 3.6; if (JB - cy < lvl - 3) add(jar, 'ellipse', { cx: JX0 + JW / 2 + (ci - (4 - row) / 2) * 11 + (row % 2) * 2, cy: cy, rx: 4.6, ry: 1.7, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .6 }); }
+        for (var row = 0; row < 3; row++) for (var ci = 0; ci < 5 - row; ci++) { var cy = JB - 7 - row * 3.6; if (JB - cy < lvl - 3) add(jar, 'ellipse', { cx: JX0 + JW / 2 + (ci - (4 - row) / 2) * 11 + (row % 2) * 2, cy: cy, rx: 4.6, ry: 1.7, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .6 }); }
         add(jar, 'path', { d: path, class: 'sc-jarg' });
         add(jar, 'rect', { x: JX0 + 13, y: JT, width: JW - 26, height: 13, rx: 4, class: 'sc-lid' });
-        add(jar, 'rect', { x: SL - 8, y: JT + 4, width: 16, height: 3.2, rx: 1.6, fill: '#2a1a12' });
+        add(jar, 'rect', { x: SL - 8, y: JT + 4, width: 16, height: 3.2, rx: 1.6, fill: '#1d2128' });
         if (data.left != null) S.txt(jar, { x: JX0 + JW / 2, y: JT + 46, 'text-anchor': 'middle', class: 'sc25-amt' }, S.kr(data.left));
         /* the ladder: far rail and rungs behind him, the near rail in front once he is on it */
         var lg = add(sv, 'g', {});
-        add(lg, 'line', { x1: LB[0] + 3, y1: LB[1], x2: LT[0] + 3, y2: LT[1], stroke: '#7d8690', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
-        for (var rr = 1; rr <= 4; rr++) { var hy = rr * RUNG, x = lx(hy); add(lg, 'line', { x1: x - 3, y1: LB[1] - hy, x2: x + 3, y2: LB[1] - hy, stroke: '#b9c1ca', 'stroke-width': 2.2, 'stroke-linecap': 'round' }); }
-        nearRail = el('line', { x1: LB[0] - 3, y1: LB[1], x2: LT[0] - 3, y2: LT[1], stroke: '#a7b0ba', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
+        add(lg, 'line', { x1: LB[0] + 3, y1: LB[1], x2: LT[0] + 3, y2: LT[1], stroke: '#6f7781', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
+        for (var rr = 1; rr <= 4; rr++) { var hy = rr * RUNG, x = lx(hy); add(lg, 'line', { x1: x - 3, y1: LB[1] - hy, x2: x + 3, y2: LB[1] - hy, stroke: '#aeb6bf', 'stroke-width': 2.2, 'stroke-linecap': 'round' }); }
+        nearRail = el('line', { x1: LB[0] - 3, y1: LB[1], x2: LT[0] - 3, y2: LT[1], stroke: '#aeb6bf', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
       },
       render: function (sv, t, st) {
         st.aid = AID; var r = st.pact === 'polish' ? polish(t, st) : st.pact === 'piggy' ? piggy(t, st) : ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
         if (!r.pig || r.pig === 'home') sv.appendChild(pigG(PIG[0], PIG[1]));   /* the piggy bank lives on the calendar block */
-        if (r.pcoin && typeof r.pcoin === 'object') add(sv, 'ellipse', { cx: r.pcoin[0].toFixed(1), cy: r.pcoin[1].toFixed(1), rx: 2.6, ry: 2.6 * Math.abs(Math.cos(r.pcoin[0] / 3)) + .5, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .7 });
+        if (r.pcoin && typeof r.pcoin === 'object') add(sv, 'ellipse', { cx: r.pcoin[0].toFixed(1), cy: r.pcoin[1].toFixed(1), rx: 2.6, ry: 2.6 * Math.abs(Math.cos(r.pcoin[0] / 3)) + .5, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 });
         /* him: the near rail goes in front of his far side, behind his near side */
         var gg = add(sv, 'g', { class: 'sc25-me' }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
         var look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h, k: K, ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY, shS: 1 - Math.min(.4, r.h / 120),
           extra: [[.45, nearRail]], items: function (H2) { var o2 = [], ph2 = r.pig && r.pig !== 'home' && H2[r.pig], ch2 = r.cloth && H2[r.cloth], kh = r.pcoin === 'hand' && H2[r.pk];
             if (ph2) o2.push([ph2.z + .05, pigG(ph2.X - 2, ph2.Y + 1, 8 * Math.sin(t * 19))]);
-            if (ch2) o2.push([ch2.z + .05, (function () { var c = S.grp(ch2.X, ch2.Y, 12); add(c, 'rect', { x: -5, y: -3.4, width: 10, height: 6.8, rx: 1.6, fill: '#9ad0e8' }); return c; })()]);
-            if (kh) o2.push([kh.z + .05, (function () { var c = el('g', {}); add(c, 'circle', { cx: kh.X.toFixed(1), cy: (kh.Y - 1).toFixed(1), r: 2.6, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .7 }); return c; })()]);
+            if (ch2) o2.push([ch2.z + .05, (function () { var c = S.grp(ch2.X, ch2.Y, 12); add(c, 'rect', { x: -5, y: -3.4, width: 10, height: 6.8, rx: 1.6, fill: '#a9cfe0' }); return c; })()]);
+            if (kh) o2.push([kh.z + .05, (function () { var c = el('g', {}); add(c, 'circle', { cx: kh.X.toFixed(1), cy: (kh.Y - 1).toFixed(1), r: 2.6, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 }); return c; })()]);
             return o2; } });
-        if (r.coin === 'hand' && H.near && r.fly == null && data.payday && !AID) { var bx = H.near.X - 1, by = H.near.Y + 5; add(sv, 'path', { d: 'M' + (bx - 6) + ' ' + (by + 5) + ' Q' + (bx - 8) + ' ' + (by - 4) + ' ' + (bx - 2.5) + ' ' + (by - 8) + ' L' + (bx + 2.5) + ' ' + (by - 8) + ' Q' + (bx + 8) + ' ' + (by - 4) + ' ' + (bx + 6) + ' ' + (by + 5) + ' Q' + bx + ' ' + (by + 8) + ' ' + (bx - 6) + ' ' + (by + 5) + ' Z', fill: '#c9a46a' }); add(sv, 'rect', { x: bx - 3, y: by - 9.4, width: 6, height: 2, rx: 1, fill: '#7a5a2e' }); add(sv, 'circle', { cx: bx, cy: by - 1, r: 2.2, fill: '#f2c94c' }); }   /* payday: a whole bag of coins hangs from his hand up the ladder */
-        else if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 });
+        if (r.coin === 'hand' && H.near && r.fly == null && data.payday && !AID) { var bx = H.near.X - 1, by = H.near.Y + 5; add(sv, 'path', { d: 'M' + (bx - 6) + ' ' + (by + 5) + ' Q' + (bx - 8) + ' ' + (by - 4) + ' ' + (bx - 2.5) + ' ' + (by - 8) + ' L' + (bx + 2.5) + ' ' + (by - 8) + ' Q' + (bx + 8) + ' ' + (by - 4) + ' ' + (bx + 6) + ' ' + (by + 5) + ' Q' + bx + ' ' + (by + 8) + ' ' + (bx - 6) + ' ' + (by + 5) + ' Z', fill: '#c09a74' }); add(sv, 'rect', { x: bx - 3, y: by - 9.4, width: 6, height: 2, rx: 1, fill: '#7a5a44' }); add(sv, 'circle', { cx: bx, cy: by - 1, r: 2.2, fill: '#f2c94c' }); }   /* payday: a whole bag of coins hangs from his hand up the ladder */
+        else if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .8 });
         /* the tossed coin: from where it left the hand, up over the lid and down through the slot */
         if (r.fly != null) { if (!st.rel && H.near) st.rel = [H.near.X, H.near.Y]; var A = st.rel || [TX - 22, GY - 92], q2 = Math.min(1, r.fly), cxp = A[0] + (SL - A[0]) * q2, cyp = A[1] + (JT + 2 - A[1]) * q2 - 46 * Math.sin(Math.PI * Math.min(1, q2 * 1.05));
-          if (q2 < 1) add(sv, 'ellipse', { cx: cxp.toFixed(1), cy: cyp.toFixed(1), rx: 3, ry: 3 * Math.abs(Math.cos(q2 * 9)) + .6, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }
+          if (q2 < 1) add(sv, 'ellipse', { cx: cxp.toFixed(1), cy: cyp.toFixed(1), rx: 3, ry: 3 * Math.abs(Math.cos(q2 * 9)) + .6, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .8 }); }
         else st.rel = null;
         st.H = H; st.r = r;
-        if (typeof r.coin === 'number') { (data.payday && !AID ? [0, .18, .36] : [0]).forEach(function (dl) { var q = Math.max(0, Math.min(1, r.coin * 1.36 - dl)); if (q > 0 && q < 1) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * q * q, rx: 3 * (1 - q * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); else if (!dl && !(data.payday && !AID)) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * r.coin * r.coin, rx: 3 * (1 - r.coin * .5), ry: 2, fill: '#f2c94c', stroke: '#c99a1a', 'stroke-width': .8 }); }); }   /* payday: three coins pour in, one after the other */
+        if (typeof r.coin === 'number') { (data.payday && !AID ? [0, .18, .36] : [0]).forEach(function (dl) { var q = Math.max(0, Math.min(1, r.coin * 1.36 - dl)); if (q > 0 && q < 1) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * q * q, rx: 3 * (1 - q * .5), ry: 2, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .8 }); else if (!dl && !(data.payday && !AID)) add(sv, 'ellipse', { cx: SL, cy: JT - 5 + 9 * r.coin * r.coin, rx: 3 * (1 - r.coin * .5), ry: 2, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .8 }); }); }   /* payday: three coins pour in, one after the other */
       }
     });
     return run;

@@ -12,12 +12,13 @@
     var STK = false; function st0() { return STK; }
     return S.run(svg, {
       back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
-      add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 6, fill: 'rgba(255,255,255,.08)', stroke: 'rgba(255,255,255,.25)' });
-      [14, 22, 18, 30, 26, 38, 44].forEach(function (v, i) { add(g, 'rect', { x: 56 + i * 11, y: 94 - v, width: 7, height: v, rx: 2, fill: i > 3 ? '#2fae6a' : 'rgba(255,255,255,.35)' }); });
-      [312, 368].forEach(function (x) { add(g, 'rect', { x: x - 2, y: 116, width: 4, height: 84, fill: '#5b636c' }); });
-      add(g, 'line', { x1: 296, y1: 126, x2: 384, y2: 126, stroke: '#9aa3ad', 'stroke-width': 3, 'stroke-linecap': 'round' });
-      [300, 380].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 114, width: 6, height: 24, rx: 2, fill: '#2a2d33' }); });
-      FLOOR(g); add(g, 'ellipse', { cx: 200, cy: 199, rx: 52, ry: 7, fill: '#3a7d6b', opacity: .55 });
+      add(g, 'path', { d: 'M54 45 L92 28 L130 45', fill: 'none', stroke: '#6f7781', 'stroke-width': 1.1 }); add(g, 'circle', { cx: 92, cy: 28, r: 1.8, fill: '#8e97a1' });   /* the streak chart hangs from a nail, like the other things on walls (props in one style, 2026-11-15) */
+      add(g, 'rect', { x: 46, y: 44, width: 92, height: 58, rx: 4, fill: '#3b414b' }); add(g, 'rect', { x: 49, y: 47, width: 86, height: 52, rx: 2.5, fill: '#2a2e36' });
+      [14, 22, 18, 30, 26, 38, 44].forEach(function (v, i) { add(g, 'rect', { x: 56 + i * 11, y: 94 - v, width: 7, height: v, rx: 2, fill: i > 3 ? '#2f9d62' : '#6f7781' }); });
+      [312, 368].forEach(function (x) { add(g, 'rect', { x: x - 2, y: 116, width: 4, height: 84, fill: '#555c66' }); });
+      add(g, 'line', { x1: 296, y1: 126, x2: 384, y2: 126, stroke: '#9ba6b5', 'stroke-width': 3, 'stroke-linecap': 'round' });
+      [300, 380].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 114, width: 6, height: 24, rx: 2, fill: '#2a2e36' }); });
+      FLOOR(g); add(g, 'ellipse', { cx: 200, cy: 199, rx: 52, ry: 7, fill: '#3a8a78', opacity: .55 });
       },
       /* the page's own actions (F3): a drink from the bottle and a big sigh, jogging on the spot then a look at the watch, a stretch down to the toes */
       acts: [{ id: 'bottle', len: 8.2, w: function () { return 2; } }, { id: 'jog', len: 5.6, w: function () { return 1.5; } }, { id: 'toes', len: 5.2, w: function () { return 1.5; } }, { id: 'sticker', len: 6.6, w: function () { return st0() ? 0 : 1.5; } }],   /* sticker: over to the streak chart, a star above today's bar, a small cheer */
@@ -28,7 +29,7 @@
       var g = add(sv, 'g', {}), cx = 200, face = 35, pose = {}, cr = 0, held = false, lift = 0, stickIn = null, cs = Math.cos(face * Math.PI / 180);
       function DB(sd) { return [200 + sd * 9 + 9, 193]; }   /* closer to his feet, so he reaches down, not out to the sides (JP 2026-11-15) */   /* the dumbbells stay by the mat */
       /* the room: a streak chart on the wall, the rack with the barbell, the mat, a bottle */
-      function bottle(x, y, deg) { var b = grp(x, y, deg || 0); add(b, 'rect', { x: -4.5, y: -9.5, width: 9, height: 19, rx: 3, fill: '#3987e5', opacity: .85 }); add(b, 'rect', { x: -3, y: -13.5, width: 6, height: 5, rx: 1.5, fill: '#e9eef2' }); return b; }
+      function bottle(x, y, deg) { var b = grp(x, y, deg || 0); add(b, 'rect', { x: -4.5, y: -9.5, width: 9, height: 19, rx: 3, fill: '#3d85dc', opacity: .85 }); add(b, 'rect', { x: -3, y: -13.5, width: 6, height: 5, rx: 1.5, fill: '#f4f1ea' }); return b; }
       var bIn = false, bTilt = 0, w = 0, expr = null, BOT = [266.5, 189.5];
       if (st.pact === 'bottle') {   /* over to the bottle, down for it, a long drink, a big sigh, put it back, back on the mat */
         var BX = 248, hd2;
@@ -90,14 +91,14 @@
       pose.lean = .5 * cr;
       }
       pose.lift = lift; var ph = LIFE(st, pose, w);
-      function dumb(x, y) { var d = grp(x, y, 0); add(d, 'line', { x1: -7, y1: 0, x2: 7, y2: 0, stroke: '#8f9ba5', 'stroke-width': 2.2 }); [-1, 1].forEach(function (s) { add(d, 'rect', { x: s * 7 - 2.5, y: -4.5, width: 5, height: 9, rx: 1.6, fill: '#2a2d33' }); }); return d; }
+      function dumb(x, y) { var d = grp(x, y, 0); add(d, 'line', { x1: -7, y1: 0, x2: 7, y2: 0, stroke: '#8e97a1', 'stroke-width': 2.2 }); [-1, 1].forEach(function (s) { add(d, 'rect', { x: s * 7 - 2.5, y: -4.5, width: 5, height: 9, rx: 1.6, fill: '#2a2e36' }); }); return d; }
       if (!held) [-1, 1].forEach(function (sd) { var p = DB(sd); g.appendChild(dumb(p[0], p[1] + 2)); });
       if (!bIn) g.appendChild(bottle(BOT[0], BOT[1]));
       FIG(g, { cx: cx, gy: gy, ground: 200, face: face, ph: ph, w: w, pose: pose, look: expr ? Object.assign({}, S.look(), { expr: expr }) : undefined, items: function (H) {
         if (stickIn && H[stickIn]) { var sg = el('g', {}); STAR(sg, H[stickIn].X, H[stickIn].Y - 3, 5, '#f2c94c', 1); return [[H[stickIn].z + .05, sg]]; }
         if (bIn) { var bh = H[SIDE(-1, face)]; return bh ? [[bh.z - .15, bottle(bh.X, bh.Y, bTilt)]] : []; }
         return held ? [H.s1, H.sm].filter(Boolean).map(function (h) { return [h.z - .15, dumb(h.X, h.Y)]; }) : []; } });
-      if (t >= 6.1 && t < 7.0 && st.pact !== 'sticker') { var q = SEG(t, 6.1, 7.0); add(g, 'path', { d: 'M' + (cx + 10) + ' ' + (126 + q * 50) + ' q-2.5 4 0 5.5 q2.5 -1.5 0 -5.5', fill: '#9ad0e8', opacity: (1 - q).toFixed(2) }); }
+      if (t >= 6.1 && t < 7.0 && st.pact !== 'sticker') { var q = SEG(t, 6.1, 7.0); add(g, 'path', { d: 'M' + (cx + 10) + ' ' + (126 + q * 50) + ' q-2.5 4 0 5.5 q2.5 -1.5 0 -5.5', fill: '#a9cfe0', opacity: (1 - q).toFixed(2) }); }
     } });
   };
 })();

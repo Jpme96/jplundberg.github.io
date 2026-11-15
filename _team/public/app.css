@@ -134,6 +134,8 @@ a.t-icon { text-decoration: none; }
 /* clocking in (Phase G): a card on Overview with the running time; equal-width digits for numbers; status tags like cmd's */
 .t-num { font-variant-numeric: tabular-nums; }
 .t-clock .t-clockrow { display: flex; align-items: center; gap: 12px; }
+.t-clock .t-clockcmd { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: .86em; color: var(--acc, currentColor); }
+.t-clock .t-clockcmd svg { width: 15px; height: 15px; flex: none; }
 .t-clock .grow { display: grid; gap: 2px; min-width: 0; }
 .t-clock .grow small { color: var(--muted); font-size: 13px; }
 .t-clock.on { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }

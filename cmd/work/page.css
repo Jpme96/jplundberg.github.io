@@ -351,3 +351,6 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dc-dwl .dc-late { color: var(--danger); font-weight: 600; }
 @media (max-width: 380px) { .dc-dw { grid-template-columns: 1fr; } }
 .rp-grid td.dc-late { color: #b4443c; font-weight: 600; }
+
+/* hours from Team in Flex time (2026-11-15) */
+.flex-team-btns { display: flex; align-items: center; gap: var(--sp-2, 8px); margin-top: 4px; }

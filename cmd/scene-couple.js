@@ -19,9 +19,9 @@
       if (data.pet && data.pet !== 'none') { var pg = add(g, 'g', { class: 'av-pet' }); pg.innerHTML = Fig25.petG(data.pet, -50, 336, 200, .6); }
       var idle = !st.playing, hearts = [], spark = -1, flash = 0, notes = false, steam = false, salt = false, extra = null, tfMe = null, tfPa = null;
       /* the room: a window with the night, a lamp, a plant, the floor */
-      add(g, 'rect', { x: 44, y: 36, width: 70, height: 62, rx: 6, fill: '#1b2338', stroke: 'rgba(255,240,220,.45)', 'stroke-width': 2 }); add(g, 'circle', { cx: 96, cy: 54, r: 6, fill: '#eef0f4' }); add(g, 'circle', { cx: 99.5, cy: 51.5, r: 5, fill: '#1b2338' });
-      add(g, 'rect', { x: 330, y: 92, width: 3, height: 106, fill: '#5b636c' }); add(g, 'path', { d: 'M318 92 L346 92 L340 72 L324 72 Z', fill: '#f2c94c', opacity: .85 }); add(g, 'ellipse', { cx: 332, cy: 120, rx: 40, ry: 50, fill: 'rgba(255,214,150,.06)' });
-      add(g, 'path', { d: 'M52 200 L68 200 L66 184 L54 184 Z', fill: '#c96a3c' }); [[-8, -10, -30], [8, -12, 30], [0, -20, 0]].forEach(function (lf) { add(g, 'ellipse', { cx: 60 + lf[0], cy: 184 + lf[1], rx: 4, ry: 9, fill: '#2f8a52', transform: 'rotate(' + lf[2] + ' ' + (60 + lf[0]) + ' ' + (184 + lf[1]) + ')' }); });
+      add(g, 'rect', { x: 44, y: 36, width: 70, height: 62, rx: 6, fill: '#1f2a40', stroke: 'rgba(255,240,220,.45)', 'stroke-width': 2 }); add(g, 'circle', { cx: 96, cy: 54, r: 6, fill: '#f4f1ea' }); add(g, 'circle', { cx: 99.5, cy: 51.5, r: 5, fill: '#1f2a40' });
+      add(g, 'rect', { x: 330, y: 92, width: 3, height: 106, fill: '#555c66' }); add(g, 'path', { d: 'M318 92 L346 92 L340 72 L324 72 Z', fill: '#f2c94c', opacity: .85 }); add(g, 'ellipse', { cx: 332, cy: 120, rx: 40, ry: 50, fill: 'rgba(255,214,150,.06)' });
+      add(g, 'path', { d: 'M52 200 L68 200 L66 184 L54 184 Z', fill: '#e57a3c' }); [[-8, -10, -30], [8, -12, 30], [0, -20, 0]].forEach(function (lf) { add(g, 'ellipse', { cx: 60 + lf[0], cy: 184 + lf[1], rx: 4, ry: 9, fill: '#2f9d62', transform: 'rotate(' + lf[2] + ' ' + (60 + lf[0]) + ' ' + (184 + lf[1]) + ')' }); });
       FLOOR(g);
       function walkIn(P, from, to, t0, t1) { if (t < t1) { P.cx = LERP(from, to, SEG(t, t0, t1)); P.w = Math.min(1, (t - t0) / .2, (t1 - t) / .2); P.face = to > from ? 90 : -90; return true; } P.cx = to; return false; }
       function wave(P, sd, t0, t1) { var k2 = SIDE(sd, P.face), WV = B(44, 10); if (t >= t0 && t < t1) P.pose[k2] = t < t0 + .3 ? GO(REST, WV, SEG(t, t0, t0 + .3)) : t < t1 - .3 ? HOLD(B(44, 10 + 9 * Math.sin((t - t0) * 16))) : GO(WV, REST, SEG(t, t1 - .3, t1)); }
@@ -59,7 +59,7 @@
         if (!idle && t >= 4.2) hearts.push([200, 84, SEG(t, 4.2, 5.8)]);
         var lean2 = idle ? 1 : E(SEG(t, .9, 1.4)); tfMe = 'rotate(' + (5 * lean2).toFixed(2) + ' 176 200)'; tfPa = 'rotate(' + (-5 * lean2).toFixed(2) + ' 224 200)';
         if (t >= 2.4 && t < 3.0 && !idle) flash = 1 - SEG(t, 2.4, 3.0);
-        extra = function (H) { return H.sm ? [[H.sm.z - .15, (function () { var p2 = grp(H.sm.X, H.sm.Y - 2, 6); add(p2, 'rect', { x: -5, y: -9, width: 10, height: 17, rx: 2, fill: '#1b1f27' }); add(p2, 'circle', { cx: -2, cy: -6, r: 1.3, fill: '#5b636c' }); return p2; })()]] : []; };
+        extra = function (H) { return H.sm ? [[H.sm.z - .15, (function () { var p2 = grp(H.sm.X, H.sm.Y - 2, 6); add(p2, 'rect', { x: -5, y: -9, width: 10, height: 17, rx: 2, fill: '#1d2128' }); add(p2, 'circle', { cx: -2, cy: -6, r: 1.3, fill: '#555c66' }); return p2; })()]] : []; };
       } else if (kind === 'dance') {
         /* they take turns: first she twirls under his raised hand, then he twirls under hers; then hands down, both to you */
         me.cx = 182; pa.cx = 224; notes = true;
@@ -86,7 +86,7 @@
         pa.pose[SIDE(-1, -25)] = idle ? REST : t < 1.2 ? GO(REST, AT(SH), SEG(t, .6, 1.2)) : t < 3.2 ? HOLD(AT(SH)) : GO(AT(SH), REST, SEG(t, 3.2, 3.6));
         if (t >= 3.6 || idle) { var lf = idle ? 1 : E(SEG(t, 3.6, 4.0)); me.face = 30 + 30 * lf; pa.face = -25 - 35 * lf; }
         if (t >= 4.0 && !idle) hearts.push([200, 80, SEG(t, 4.0, 5.6)]);
-        extra = function (H) { return (pa.pose[SIDE(-1, -25)] && pa.pose[SIDE(-1, -25)].at || sh) && H.sm ? [[H.sm.z - .15, (function () { var s2 = grp(H.sm.X, H.sm.Y - 3, 160); add(s2, 'rect', { x: -3, y: -5, width: 6, height: 10, rx: 2, fill: '#f4f1ea' }); add(s2, 'rect', { x: -3, y: -6.5, width: 6, height: 2.6, rx: 1, fill: '#9aa3ad' }); return s2; })()]] : []; };
+        extra = function (H) { return (pa.pose[SIDE(-1, -25)] && pa.pose[SIDE(-1, -25)].at || sh) && H.sm ? [[H.sm.z - .15, (function () { var s2 = grp(H.sm.X, H.sm.Y - 3, 160); add(s2, 'rect', { x: -3, y: -5, width: 6, height: 10, rx: 2, fill: '#f4f1ea' }); add(s2, 'rect', { x: -3, y: -6.5, width: 6, height: 2.6, rx: 1, fill: '#9ba6b5' }); return s2; })()]] : []; };
       } else if (kind === 'sofa') {
         /* sit down together, lean in, a blanket over the knees */
         me.cx = 182; pa.cx = 218; var sit = idle ? 1 : E(SEG(t, .2, 1.0)), drop = 15 * sit; me.gy = pa.gy = 200 + drop;
@@ -97,8 +97,8 @@
       if (!st.playing && kind !== 'sofa' && kind !== 'selfie' && kind !== 'cook' && kind !== 'dance') { me.face = me.face || 0; }
       var phm = LIFE(st, me.pose, me.w, 'me'), php = LIFE(st, pa.pose, pa.w, 'pa');
       /* the sofa / the counter behind them */
-      if (kind === 'sofa') { add(g, 'rect', { x: 120, y: 120, width: 160, height: 52, rx: 10, fill: '#5a6b8a' }); add(g, 'rect', { x: 112, y: 150, width: 18, height: 46, rx: 6, fill: '#4b5a76' }); add(g, 'rect', { x: 270, y: 150, width: 18, height: 46, rx: 6, fill: '#4b5a76' }); }
-      if (kind === 'cook') { add(g, 'rect', { x: 200 - 13, y: 128, width: 26, height: 18, rx: 3, fill: '#8e99a4' }); add(g, 'ellipse', { cx: 200, cy: 128, rx: 13, ry: 3.4, fill: '#f6f2e8' }); }
+      if (kind === 'sofa') { add(g, 'rect', { x: 120, y: 120, width: 160, height: 52, rx: 10, fill: '#5a6f8f' }); add(g, 'rect', { x: 112, y: 150, width: 18, height: 46, rx: 6, fill: '#404e64' }); add(g, 'rect', { x: 270, y: 150, width: 18, height: 46, rx: 6, fill: '#404e64' }); }
+      if (kind === 'cook') { add(g, 'rect', { x: 200 - 13, y: 128, width: 26, height: 18, rx: 3, fill: '#8e97a1' }); add(g, 'ellipse', { cx: 200, cy: 128, rx: 13, ry: 3.4, fill: '#f4f1ea' }); }
       var oPa = { look: 'partner', cx: pa.cx, gy: pa.gy, ground: 200, k: K6, face: pa.face, ph: php, w: pa.w, pose: pa.pose, tf: tfPa, items: kind === 'cook' ? extra : null, noShadow: kind === 'sofa' },
         oMe = { look: 'me', cx: me.cx, gy: me.gy, ground: 200, k: K6, face: me.face, ph: phm, w: me.w, pose: me.pose, tf: tfMe, items: kind === 'selfie' ? extra : null, noShadow: kind === 'sofa' };
       if (kind === 'dance' && extra) {
@@ -108,24 +108,24 @@
         FIG(g, second);
       } else { FIG(g, oPa); FIG(g, oMe); }
       /* in front of them: the counter with the hob, the sofa's seat and the blanket */
-      if (kind === 'cook') { var sp0 = me.pose[SIDE(1, 25)]; add(g, 'line', { x1: 200, y1: 140, x2: (Fig25.hand().s1 ? Fig25.hand().s1.X : 196), y2: (Fig25.hand().s1 ? Fig25.hand().s1.Y - 4 : 126), stroke: '#c58b5a', 'stroke-width': 2.2, 'stroke-linecap': 'round' });
-        add(g, 'path', { d: 'M187 128 L188 144 Q188 148 192 148 L208 148 Q212 148 212 144 L213 128 Q200 133 187 128 Z', fill: '#8e99a4' }); add(g, 'rect', { x: 140, y: 150, width: 120, height: 6, rx: 2, fill: '#c9b48e' }); add(g, 'rect', { x: 146, y: 156, width: 108, height: 44, fill: '#5d7f8f' }); add(g, 'rect', { x: 182, y: 146, width: 36, height: 4, rx: 1.5, fill: '#2a2d33' });
-        if (salt) for (var sd2 = 0; sd2 < 5; sd2++) { var q3 = ((now / 1000) * 3 + sd2 / 5) % 1; add(g, 'circle', { cx: 205 + (sd2 % 3) - 1, cy: 120 + q3 * 10, r: .7, fill: '#fff', opacity: 1 - q3 }); } }
+      if (kind === 'cook') { var sp0 = me.pose[SIDE(1, 25)]; add(g, 'line', { x1: 200, y1: 140, x2: (Fig25.hand().s1 ? Fig25.hand().s1.X : 196), y2: (Fig25.hand().s1 ? Fig25.hand().s1.Y - 4 : 126), stroke: '#c4875e', 'stroke-width': 2.2, 'stroke-linecap': 'round' });
+        add(g, 'path', { d: 'M187 128 L188 144 Q188 148 192 148 L208 148 Q212 148 212 144 L213 128 Q200 133 187 128 Z', fill: '#8e97a1' }); add(g, 'rect', { x: 140, y: 150, width: 120, height: 6, rx: 2, fill: '#d8c8a8' }); add(g, 'rect', { x: 146, y: 156, width: 108, height: 44, fill: '#6f7781' }); add(g, 'rect', { x: 182, y: 146, width: 36, height: 4, rx: 1.5, fill: '#2a2e36' });
+        if (salt) for (var sd2 = 0; sd2 < 5; sd2++) { var q3 = ((now / 1000) * 3 + sd2 / 5) % 1; add(g, 'circle', { cx: 205 + (sd2 % 3) - 1, cy: 120 + q3 * 10, r: .7, fill: '#f4f1ea', opacity: 1 - q3 }); } }
       if (kind === 'sofa') {
         /* the seat cushion's front edge, the sofa's feet on the floor, and the blanket laid over both laps: it follows their knees,
            falls over the front of the seat in soft folds and stops above the floor; their shoes stand on the floor under it */
-        add(g, 'rect', { x: 128, y: 170, width: 144, height: 20, rx: 6, fill: '#6a7c9c' }); [134, 266].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 190, width: 6, height: 8, rx: 1.5, fill: '#3a2a20' }); });
+        add(g, 'rect', { x: 128, y: 170, width: 144, height: 20, rx: 6, fill: '#5a6f8f' }); [134, 266].forEach(function (x) { add(g, 'rect', { x: x - 3, y: 190, width: 6, height: 8, rx: 1.5, fill: '#3a2a20' }); });
         add(g, 'ellipse', { cx: 200, cy: 199, rx: 82, ry: 3, fill: 'rgba(0,0,0,.25)' });
         var bl = 'M152 172 Q166 163 182 166 Q200 170 218 166 Q234 163 248 172 L252 191 Q245 195 238 191 Q228 196 218 191 Q209 196 200 191 Q191 196 182 191 Q172 196 162 191 Q155 195 148 191 Z';
-        add(g, 'path', { d: bl, fill: '#e8743b' }); add(g, 'path', { d: 'M152 172 Q166 163 182 166 Q200 170 218 166 Q234 163 248 172', fill: 'none', stroke: '#f2a066', 'stroke-width': 2, 'stroke-linecap': 'round' });
+        add(g, 'path', { d: bl, fill: '#e57a3c' }); add(g, 'path', { d: 'M152 172 Q166 163 182 166 Q200 170 218 166 Q234 163 248 172', fill: 'none', stroke: '#ebac85', 'stroke-width': 2, 'stroke-linecap': 'round' });
         [[170, 172, 168, 190], [200, 172, 200, 190], [230, 172, 232, 190]].forEach(function (f) { add(g, 'path', { d: 'M' + f[0] + ' ' + f[1] + ' Q' + (f[0] + 2) + ' ' + ((f[1] + f[3]) / 2) + ' ' + f[2] + ' ' + f[3], fill: 'none', stroke: 'rgba(0,0,0,.14)', 'stroke-width': 1.6 }); });
-        [[176, 'me'], [218, 'pa']].forEach(function (q) { [-4, 4].forEach(function (dx) { add(g, 'ellipse', { cx: q[0] + dx + (q[0] < 200 ? 6 : 0), cy: 197, rx: 5.5, ry: 3, fill: q[1] === 'me' ? '#2a2420' : '#7a5234' }); }); }); }
-      if (steam) for (var si = 0; si < 3; si++) { var p0 = ((now / 1000) * .6 + si / 3) % 1; add(g, 'path', { d: 'M' + (193 + si * 7) + ' ' + (122 - p0 * 24) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#fff', 'stroke-width': 1.6, 'stroke-linecap': 'round', opacity: (.5 * Math.sin(Math.PI * p0)).toFixed(2) }); }
+        [[176, 'me'], [218, 'pa']].forEach(function (q) { [-4, 4].forEach(function (dx) { add(g, 'ellipse', { cx: q[0] + dx + (q[0] < 200 ? 6 : 0), cy: 197, rx: 5.5, ry: 3, fill: q[1] === 'me' ? '#3b414b' : '#7a5a44' }); }); }); }
+      if (steam) for (var si = 0; si < 3; si++) { var p0 = ((now / 1000) * .6 + si / 3) % 1; add(g, 'path', { d: 'M' + (193 + si * 7) + ' ' + (122 - p0 * 24) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#f4f1ea', 'stroke-width': 1.6, 'stroke-linecap': 'round', opacity: (.5 * Math.sin(Math.PI * p0)).toFixed(2) }); }
       if (notes) for (var ni = 0; ni < 3; ni++) { var q4 = ((now / 1000) * .45 + ni / 3) % 1; var nt = add(g, 'text', { x: 150 + ni * 50 + 8 * Math.sin(q4 * 6), y: 110 - q4 * 60, 'font-size': 14, fill: '#f2c94c', opacity: (Math.sin(Math.PI * q4)).toFixed(2) }); nt.textContent = ni % 2 ? '♪' : '♫'; }
       hearts.forEach(function (hq) { var q = hq[2]; if (q <= 0 || q >= 1) return; var hx = hq[0] + 4 * Math.sin(q * 7), hy = hq[1] - 30 * q, sc = .6 + .6 * Math.min(1, q * 4);
-        add(g, 'path', { d: 'M0 3 C-6 -3 -3 -8 0 -4 C3 -8 6 -3 0 3 Z', fill: '#e5484d', transform: 'translate(' + hx.toFixed(1) + ' ' + hy.toFixed(1) + ') scale(' + (sc * 1.4).toFixed(2) + ')', opacity: (1 - q).toFixed(2) }); });
+        add(g, 'path', { d: 'M0 3 C-6 -3 -3 -8 0 -4 C3 -8 6 -3 0 3 Z', fill: '#d6453f', transform: 'translate(' + hx.toFixed(1) + ' ' + hy.toFixed(1) + ') scale(' + (sc * 1.4).toFixed(2) + ')', opacity: (1 - q).toFixed(2) }); });
       if (spark >= 0) for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4, r = 4 + 16 * spark; add(g, 'line', { x1: 200 + Math.cos(a) * r, y1: 92 + Math.sin(a) * r, x2: 200 + Math.cos(a) * (r + 5), y2: 92 + Math.sin(a) * (r + 5), stroke: '#f2c94c', 'stroke-width': 1.8, 'stroke-linecap': 'round', opacity: (1 - spark).toFixed(2) }); }
-      if (flash > 0) add(g, 'rect', { x: 0, y: 0, width: 400, height: 240, fill: '#fff', opacity: (.7 * flash).toFixed(2) });
+      if (flash > 0) add(g, 'rect', { x: 0, y: 0, width: 400, height: 240, fill: '#f4f1ea', opacity: (.7 * flash).toFixed(2) });
     } });
   };
 })();

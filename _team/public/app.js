@@ -1107,7 +1107,25 @@
     var at = run ? new Date(run.d.start).toLocaleTimeString(nb ? 'nb-NO' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
     return '<div class="t-card t-clock' + (run ? ' on' : '') + '"><div class="t-clockrow"><span class="grow"><b>' + (run ? L('In since ', 'Inne siden ') + esc(at) : L('Not clocked in', 'Ikke stemplet inn')) + '</b>' +
       '<small class="t-num">' + (run ? esc(dur(Date.now() - run.d.start)) + ' · ' : '') + esc(L('this week ', 'denne uka ') + dur(wk)) + '</small></span>' +
-      '<button class="t-btn' + (run ? ' ghost' : '') + '" type="button" data-act="' + (run ? 'clockOut' : 'clockIn') + '">' + (run ? L('Clock out', 'Stemple ut') : L('Clock in', 'Stemple inn')) + '</button></div></div>';
+      '<button class="t-btn' + (run ? ' ghost' : '') + '" type="button" data-act="' + (run ? 'clockOut' : 'clockIn') + '">' + (run ? L('Clock out', 'Stemple ut') : L('Clock in', 'Stemple inn')) + '</button></div>' + clockCmd() + '</div>';
+  }
+  /* your hours into cmd's flex time (2026-11-15, only for the owner – the one with cmd): finished clock-ins from the last 31
+     days go in the link's hash (date.in.out.id – no names, no projects; a hash never reaches a server); cmd asks before adding
+     and skips any it already has */
+  function clockLink(em) {
+    var from = Date.now() - 31 * 864e5, p2 = function (n) { return String(n).padStart(2, '0'); };
+    var l = clks(em).filter(function (r) { return r.d.start && r.d.end > r.d.start && r.d.start > from; }).sort(function (a, b) { return a.d.start - b.d.start; }).slice(-60).map(function (r) {
+      var a = new Date(r.d.start), b = new Date(r.d.end), sameDay = a.toDateString() === b.toDateString();
+      return a.getFullYear() + p2(a.getMonth() + 1) + p2(a.getDate()) + '.' + p2(a.getHours()) + p2(a.getMinutes()) + '.' + (sameDay ? p2(b.getHours()) + p2(b.getMinutes()) : '2359') + '.' + String(r.id).replace(/^clk/, '').replace(/[^0-9a-z]/gi, '').slice(-10).toLowerCase();
+    }).filter(function (x) { return !/\.(\d{4})\.\1\./.test(x) && /\.[0-9a-z]{4,}$/.test(x); });
+    if (!l.length) return '';
+    var base = /(^|\.)jplundberg\.com$/.test(location.hostname) ? 'https://jplundberg.com' : location.origin;
+    return base + '/cmd/work/#teamhours=' + l.join(',');
+  }
+  function clockCmd() {
+    if (!S.me || !S.me.isOwner) return '';
+    var u = clockLink(S.me.email); if (!u) return '';
+    return '<a class="t-link t-clockcmd" href="' + esc(u) + '" target="_blank" rel="noopener">' + ic('cal') + L('Add to my flex time in cmd', 'Legg til i fleksitiden min i cmd') + '</a>';
   }
   setInterval(function () { if (S.me && S.me.member && S.tab && S.tab() === 'overview' && !S.sheet && !S.edit && !typing() && clockRun(S.me.email)) draw(); }, 60e3);   /* the running time on the card, once a minute */
   async function clockIn() { if (clockRun(S.me.email)) return; var id = 'clk' + rid(); if (await putRec('clk', id, { who: S.me.email, start: Date.now(), end: 0 })) { draw(); toast(L('Clocked in', 'Stemplet inn')); } }

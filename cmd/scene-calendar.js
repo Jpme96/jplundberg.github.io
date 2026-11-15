@@ -11,8 +11,9 @@
     data = data || {};
     return S.run(svg, {
       back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
-      [['#f2c94c', 236, 52, -4], ['#f2a3c4', 262, 58, 5], ['#9ad0e8', 246, 82, -2]].forEach(function (n) { var s = grp(n[1], n[2], n[3]); g.appendChild(s); add(s, 'rect', { x: 0, y: 0, width: 20, height: 18, rx: 1.5, fill: n[0] }); add(s, 'line', { x1: 4, y1: 6, x2: 16, y2: 6, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); add(s, 'line', { x1: 4, y1: 11, x2: 13, y2: 11, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); });
-      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#5b636c' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6c757e' });
+      add(g, 'rect', { x: 224, y: 42, width: 74, height: 92, rx: 3, fill: '#7a5a44' }); add(g, 'rect', { x: 227, y: 45, width: 68, height: 86, rx: 2, fill: '#c09a74' });   /* the notes hang on a cork board, never loose on the wall (props in one style, 2026-11-15) */
+      [['#f2c94c', 236, 52, -4], ['#e895b7', 262, 58, 5], ['#a9cfe0', 246, 82, -2]].forEach(function (n) { var s = grp(n[1], n[2], n[3]); g.appendChild(s); add(s, 'rect', { x: 0, y: 0, width: 20, height: 18, rx: 1.5, fill: n[0] }); add(s, 'line', { x1: 4, y1: 6, x2: 16, y2: 6, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); add(s, 'line', { x1: 4, y1: 11, x2: 13, y2: 11, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.2 }); add(s, 'circle', { cx: 10, cy: 2.6, r: 1.6, fill: '#d6453f' }); });
+      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#555c66' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6f7781' });
       CLOCK(g, 330, 64, 17, 'face'); FLOOR(g);
       },
       /* the page's own actions (F3): a new note on the wall, and a look at the watch, then the clock – a hurried step */
@@ -47,24 +48,24 @@
       else { cx = 220; face = 0; var tu = SIDE(-1, 0), TU = B(96, 26); pose[tu] = t < 5.8 ? GO(REST, TU, SEG(t, 5.4, 5.8)) : t < 6.8 ? HOLD(TU) : GO(TU, REST, SEG(t, 6.8, 7.2)); }
       pose.lean = lean; pose.lift = lift; var ph = LIFE(st, pose, w);
       /* the calendar pad: today's page under yesterday's; yesterday's peels from its lower corner, tears off and is crumpled */
-      add(g, 'line', { x1: 175, y1: 84, x2: 175, y2: 96, stroke: '#8a8f99', 'stroke-width': 1.4 }); add(g, 'circle', { cx: 175, cy: 84, r: 1.8, fill: '#8a8f99' });
+      add(g, 'line', { x1: 175, y1: 84, x2: 175, y2: 96, stroke: '#8e97a1', 'stroke-width': 1.4 }); add(g, 'circle', { cx: 175, cy: 84, r: 1.8, fill: '#8e97a1' });
       add(g, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f4f1ea' });
-      function pageText(par, num, wd) { add(par, 'rect', { x: 151, y: 96, width: 48, height: 11, rx: 3, fill: '#d96b6b' }); var tw = add(par, 'text', { x: 175, y: 104.5, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: '#fff', 'font-family': 'Inter, system-ui, sans-serif' }); tw.textContent = wd;
-        var tn = add(par, 'text', { x: 175, y: 136, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#2a2d33', 'font-family': 'Inter, system-ui, sans-serif' }); tn.textContent = num; }
+      function pageText(par, num, wd) { add(par, 'rect', { x: 151, y: 96, width: 48, height: 11, rx: 3, fill: '#e38d87' }); var tw = add(par, 'text', { x: 175, y: 104.5, 'text-anchor': 'middle', 'font-size': 7.5, 'font-weight': 700, fill: '#f4f1ea', 'font-family': 'Inter, system-ui, sans-serif' }); tw.textContent = wd;
+        var tn = add(par, 'text', { x: 175, y: 136, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#2a2e36', 'font-family': 'Inter, system-ui, sans-serif' }); tn.textContent = num; }
       pageText(g, today, WD[d.getDay()]);
       var torn = tp >= 2.2, pulling = tp >= 1.6 && tp < 2.2;
-      if (tp < 1.6 || (!st.playing && tp < .01)) { var pg = add(g, 'g', {}); add(pg, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f8f6f0', stroke: 'rgba(0,0,0,.08)' }); pageText(pg, yday, WD[(d.getDay() + 6) % 7]); }
+      if (tp < 1.6 || (!st.playing && tp < .01)) { var pg = add(g, 'g', {}); add(pg, 'rect', { x: 151, y: 96, width: 48, height: 52, rx: 3, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.08)' }); pageText(pg, yday, WD[(d.getDay() + 6) % 7]); }
       else if (pulling) {   /* the page stays its own size: its lower corner folds up toward the hand, the cut runs further in as it's pulled */
         var pq = E(SEG(t, 1.6, 2.2)), cn = MIX(C0, PULL, pq), yc = 148 - 40 * pq, xc = 199 - 46 * pq;
         var pd = 'M151 96 L199 96 L199 ' + yc.toFixed(1) + ' L' + xc.toFixed(1) + ' 148 L151 148 Z', cp = add(g, 'clipPath', { id: 'cal25peel' }); add(cp, 'path', { d: pd });
-        var pg2 = add(g, 'g', { 'clip-path': 'url(#cal25peel)' }); add(pg2, 'path', { d: pd, fill: '#f8f6f0', stroke: 'rgba(0,0,0,.12)' });
+        var pg2 = add(g, 'g', { 'clip-path': 'url(#cal25peel)' }); add(pg2, 'path', { d: pd, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.12)' });
         pageText(pg2, yday, WD[(d.getDay() + 6) % 7]);   /* yesterday's date stays on the part of the page still hanging */
-        add(g, 'path', { d: 'M199 ' + yc.toFixed(1) + ' L' + (cn[0] + 3).toFixed(1) + ' ' + (cn[1] + 3).toFixed(1) + ' L' + xc.toFixed(1) + ' 148 Z', fill: '#ebe7de', stroke: 'rgba(0,0,0,.15)' });
+        add(g, 'path', { d: 'M199 ' + yc.toFixed(1) + ' L' + (cn[0] + 3).toFixed(1) + ' ' + (cn[1] + 3).toFixed(1) + ' L' + xc.toFixed(1) + ' 148 Z', fill: '#e6e1d6', stroke: 'rgba(0,0,0,.15)' });
       }
       var sheet = null;
       if (tp >= 2.2 && tp < 3.0) sheet = 1 - .78 * E(SEG(t, 2.2, 2.7));
-      function paper(x, y, s) { var p2 = grp(x, y, 0); if (s > .4) { add(p2, 'path', { d: 'M' + (-14 * s) + ' ' + (-2 * s) + ' L' + (12 * s) + ' ' + (-6 * s) + ' L' + (14 * s) + ' ' + (20 * s) + ' L' + (-10 * s) + ' ' + (22 * s) + ' Z', fill: '#f8f6f0', stroke: 'rgba(0,0,0,.15)' }); } else { add(p2, 'circle', { cx: 0, cy: 0, r: 4.2, fill: '#f1ede4', stroke: 'rgba(0,0,0,.2)' }); add(p2, 'path', { d: 'M-2 -1 L1 1 L-1 3 M1 -3 L2 0', fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': .7 }); } return p2; }
-      function note(x, y, deg, hrt) { var n = grp(x, y, deg); add(n, 'rect', { x: -9, y: -8, width: 18, height: 16, rx: 1.5, fill: hrt ? '#f2a3c4' : '#b5e3a8' }); if (hrt) { add(n, 'path', { d: 'M0 5 C-9 -1 -4 -7 0 -2.5 C4 -7 9 -1 0 5 Z', fill: '#d93a3a' }); return n; } add(n, 'line', { x1: -5, y1: -2, x2: 5, y2: -2, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); add(n, 'line', { x1: -5, y1: 3, x2: 2, y2: 3, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); return n; }
+      function paper(x, y, s) { var p2 = grp(x, y, 0); if (s > .4) { add(p2, 'path', { d: 'M' + (-14 * s) + ' ' + (-2 * s) + ' L' + (12 * s) + ' ' + (-6 * s) + ' L' + (14 * s) + ' ' + (20 * s) + ' L' + (-10 * s) + ' ' + (22 * s) + ' Z', fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)' }); } else { add(p2, 'circle', { cx: 0, cy: 0, r: 4.2, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.2)' }); add(p2, 'path', { d: 'M-2 -1 L1 1 L-1 3 M1 -3 L2 0', fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': .7 }); } return p2; }
+      function note(x, y, deg, hrt) { var n = grp(x, y, deg); add(n, 'rect', { x: -9, y: -8, width: 18, height: 16, rx: 1.5, fill: hrt ? '#e895b7' : '#a4c18a' }); add(n, 'circle', { cx: 0, cy: -5.6, r: 1.5, fill: '#d6453f' }); if (hrt) { add(n, 'path', { d: 'M0 5 C-9 -1 -4 -7 0 -2.5 C4 -7 9 -1 0 5 Z', fill: '#d6453f' }); return n; } add(n, 'line', { x1: -5, y1: -2, x2: 5, y2: -2, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); add(n, 'line', { x1: -5, y1: 3, x2: 2, y2: 3, stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1.1 }); return n; }
       if ((noteUp && !HN) || (st.pact !== 'note' && st.noteDone)) g.appendChild(note(NOTE1[0] + 2, NOTE1[1] - 2, 4));   /* the new note stays on the wall */
       if ((noteUp && HN) || (!HN && st.heartDone)) g.appendChild(note(NOTE2[0] + 2, NOTE2[1] - 2, -5, 1));
       if (st.pact === 'note' && noteUp) st.noteDone = true; if (HN && noteUp) st.heartDone = true;
@@ -72,7 +73,7 @@
       /* the ball flies into the bin */
       if (tp >= 3.0 && tp < 3.75) { var q = SEG(t, 3.0, 3.75), bp = MIX(TOSS, [118, 190], q); g.appendChild(paper(bp[0], bp[1] - 40 * Math.sin(Math.PI * Math.min(1, q * 1.08)), .2)); }
       /* the bin's front, drawn over the ball so it falls in and disappears */
-      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#5b636c' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6c757e' });
+      add(g, 'path', { d: 'M106 178 L130 178 L127 200 L109 200 Z', fill: '#555c66' }); add(g, 'rect', { x: 104, y: 175, width: 28, height: 4, rx: 1.5, fill: '#6f7781' });
     } });
   };
 })();

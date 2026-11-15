@@ -44,68 +44,68 @@
       }
       /* ---- the place: houses / a station / the airport / the harbour ---- */
       if (V === 'bus' || V === 'train') [[20, 70, 50], [76, 54, 40], [122, 80, 46], [324, 62, 56]].forEach(function (b2) { add(g, 'rect', { x: b2[0], y: b2[1], width: b2[2], height: 160 - b2[1], fill: 'rgba(255,255,255,.06)' }); });
-      if (V === 'bus') { add(g, 'rect', { x: 0, y: 160, width: 400, height: 34, fill: '#3a3f4a' }); add(g, 'rect', { x: 0, y: 176, width: 400, height: 2, fill: 'rgba(255,255,255,.25)' }); }
-      if (V === 'train') { add(g, 'rect', { x: 0, y: 164, width: 400, height: 30, fill: '#2a2d33' }); for (var sx2 = 4; sx2 < 400; sx2 += 12) add(g, 'rect', { x: sx2, y: 186, width: 6, height: 4, fill: '#5a4636' }); [188, 192].forEach(function (ry) { add(g, 'line', { x1: 0, y1: ry, x2: 400, y2: ry, stroke: '#9aa3ad', 'stroke-width': 1.4 }); }); }
-      if (V === 'plane') { add(g, 'rect', { x: 0, y: 70, width: 150, height: 92, fill: 'rgba(255,255,255,.07)' }); for (var tw = 8; tw < 146; tw += 14) add(g, 'rect', { x: tw, y: 80, width: 10, height: 50, fill: 'rgba(170,215,235,.12)' }); add(g, 'rect', { x: 0, y: 160, width: 400, height: 36, fill: '#3a3f4a' }); for (var lx2 = 10; lx2 < 400; lx2 += 40) add(g, 'rect', { x: lx2, y: 176, width: 20, height: 2, fill: '#f2c94c', opacity: .6 }); }
-      if (V === 'ferry') { add(g, 'path', { d: 'M0 128 Q60 110 120 124 T260 118 T400 126 L400 140 L0 140 Z', fill: 'rgba(255,255,255,.08)' }); add(g, 'rect', { x: 0, y: 136, width: 400, height: 60, fill: '#16324a' });
+      if (V === 'bus') { add(g, 'rect', { x: 0, y: 160, width: 400, height: 34, fill: '#3b414b' }); add(g, 'rect', { x: 0, y: 176, width: 400, height: 2, fill: 'rgba(255,255,255,.25)' }); }
+      if (V === 'train') { add(g, 'rect', { x: 0, y: 164, width: 400, height: 30, fill: '#2a2e36' }); for (var sx2 = 4; sx2 < 400; sx2 += 12) add(g, 'rect', { x: sx2, y: 186, width: 6, height: 4, fill: '#5a3e2c' }); [188, 192].forEach(function (ry) { add(g, 'line', { x1: 0, y1: ry, x2: 400, y2: ry, stroke: '#9ba6b5', 'stroke-width': 1.4 }); }); }
+      if (V === 'plane') { add(g, 'rect', { x: 0, y: 70, width: 150, height: 92, fill: 'rgba(255,255,255,.07)' }); for (var tw = 8; tw < 146; tw += 14) add(g, 'rect', { x: tw, y: 80, width: 10, height: 50, fill: 'rgba(170,215,235,.12)' }); add(g, 'rect', { x: 0, y: 160, width: 400, height: 36, fill: '#3b414b' }); for (var lx2 = 10; lx2 < 400; lx2 += 40) add(g, 'rect', { x: lx2, y: 176, width: 20, height: 2, fill: '#f2c94c', opacity: .6 }); }
+      if (V === 'ferry') { add(g, 'path', { d: 'M0 128 Q60 110 120 124 T260 118 T400 126 L400 140 L0 140 Z', fill: 'rgba(255,255,255,.08)' }); add(g, 'rect', { x: 0, y: 136, width: 400, height: 60, fill: '#1f2a40' });
         for (var wv = 0; wv < 6; wv++) { var wy = 146 + wv * 8, off = (now / 60 + wv * 23) % 40; add(g, 'path', { d: 'M' + (-40 + off) + ' ' + wy + ' q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0', fill: 'none', stroke: 'rgba(255,255,255,.12)', 'stroke-width': 1 }); } }
       /* the near pavement / platform / apron / quay */
-      add(g, 'rect', { x: 0, y: 194, width: 400, height: 46, fill: V === 'ferry' ? '#6b6f75' : '#6c757e' }); add(g, 'rect', { x: 0, y: 194, width: 400, height: 3, fill: V === 'train' ? '#f2c94c' : '#8f9ba5' });
+      add(g, 'rect', { x: 0, y: 194, width: 400, height: 46, fill: V === 'ferry' ? '#6f7781' : '#6f7781' }); add(g, 'rect', { x: 0, y: 194, width: 400, height: 3, fill: V === 'train' ? '#f2c94c' : '#8e97a1' });
       /* ---- the vehicles: each drawn as a back (inside, seen through the windows) and a wall with the windows and doors ---- */
       function holes(list) { return list.map(function (r) { return 'M' + r[0] + ' ' + r[1] + ' h' + r[2] + ' v' + r[3] + ' h' + (-r[2]) + ' Z'; }).join(' '); }
       function bus(layer) {
         var x = vx, W = [[x + 26, 78, 30, 48], [x + 60, 78, 30, 48], [x + 94, 78, 30, 48], [x + 162, 78, 28, 48], [x + 194, 78, 30, 48]], D = [x + 130, 76, 26, 110];
-        if (layer === 'back') { add(g, 'rect', { x: x, y: 68, width: 232, height: 120, rx: 8, fill: '#3a1216' }); [x + 30, x + 64, x + 98, x + 166, x + 198].forEach(function (s) { add(g, 'rect', { x: s, y: 112, width: 18, height: 20, rx: 3, fill: '#2f4a7a' }); }); add(g, 'rect', { x: D[0], y: 182, width: 26, height: 6, fill: '#55595f' }); return; }
-        add(g, 'path', { d: 'M' + (x + 8) + ' 66 H' + (x + 224) + ' Q' + (x + 232) + ' 66 ' + (x + 232) + ' 74 V188 H' + x + ' V74 Q' + x + ' 66 ' + (x + 8) + ' 66 Z ' + holes(W.concat([D])), fill: '#d42a2f', 'fill-rule': 'evenodd' });
-        add(g, 'rect', { x: x, y: 174, width: 130, height: 14, fill: '#a81f24' }); add(g, 'rect', { x: x + 156, y: 174, width: 76, height: 14, fill: '#a81f24' });
-        add(g, 'rect', { x: x + 1, y: 76, width: 18, height: 70, rx: 4, fill: 'rgba(30,40,55,.85)' }); add(g, 'rect', { x: x + 4, y: 69, width: 40, height: 7, rx: 1.5, fill: '#1b1f27' }); var nt = add(g, 'text', { x: x + 12, y: 75, 'font-size': 6.5, 'font-weight': 700, fill: '#f2a93b', 'font-family': 'Inter, system-ui, sans-serif' }); nt.textContent = '31';
+        if (layer === 'back') { add(g, 'rect', { x: x, y: 68, width: 232, height: 120, rx: 8, fill: '#55291a' }); [x + 30, x + 64, x + 98, x + 166, x + 198].forEach(function (s) { add(g, 'rect', { x: s, y: 112, width: 18, height: 20, rx: 3, fill: '#22355e' }); }); add(g, 'rect', { x: D[0], y: 182, width: 26, height: 6, fill: '#555c66' }); return; }
+        add(g, 'path', { d: 'M' + (x + 8) + ' 66 H' + (x + 224) + ' Q' + (x + 232) + ' 66 ' + (x + 232) + ' 74 V188 H' + x + ' V74 Q' + x + ' 66 ' + (x + 8) + ' 66 Z ' + holes(W.concat([D])), fill: '#d6453f', 'fill-rule': 'evenodd' });
+        add(g, 'rect', { x: x, y: 174, width: 130, height: 14, fill: '#d6453f' }); add(g, 'rect', { x: x + 156, y: 174, width: 76, height: 14, fill: '#d6453f' });
+        add(g, 'rect', { x: x + 1, y: 76, width: 18, height: 70, rx: 4, fill: 'rgba(30,40,55,.85)' }); add(g, 'rect', { x: x + 4, y: 69, width: 40, height: 7, rx: 1.5, fill: '#1d2128' }); var nt = add(g, 'text', { x: x + 12, y: 75, 'font-size': 6.5, 'font-weight': 700, fill: '#c8901e', 'font-family': 'Inter, system-ui, sans-serif' }); nt.textContent = '31';
         W.forEach(function (r) { add(g, 'rect', { x: r[0], y: r[1], width: r[2], height: r[3], rx: 2, fill: 'rgba(170,215,235,.2)' }); });
-        var dw = 13 * (1 - door); if (dw > .3) { add(g, 'rect', { x: D[0], y: D[1], width: dw, height: D[3], fill: 'rgba(60,70,90,.6)', stroke: '#2a2d33', 'stroke-width': .8 }); add(g, 'rect', { x: D[0] + 26 - dw, y: D[1], width: dw, height: D[3], fill: 'rgba(60,70,90,.6)', stroke: '#2a2d33', 'stroke-width': .8 }); }
-        add(g, 'rect', { x: x + 228, y: 150, width: 4, height: 12, fill: '#ff6a5a' });
-        [x + 42, x + 196].forEach(function (wx) { add(g, 'path', { d: 'M' + (wx - 14) + ' 188 a14 14 0 0 1 28 0 Z', fill: '#2a1012' }); add(g, 'circle', { cx: wx, cy: 189, r: 10, fill: '#1b1f27' }); add(g, 'circle', { cx: wx, cy: 189, r: 4, fill: '#8f9ba5' }); });
+        var dw = 13 * (1 - door); if (dw > .3) { add(g, 'rect', { x: D[0], y: D[1], width: dw, height: D[3], fill: 'rgba(60,70,90,.6)', stroke: '#2a2e36', 'stroke-width': .8 }); add(g, 'rect', { x: D[0] + 26 - dw, y: D[1], width: dw, height: D[3], fill: 'rgba(60,70,90,.6)', stroke: '#2a2e36', 'stroke-width': .8 }); }
+        add(g, 'rect', { x: x + 228, y: 150, width: 4, height: 12, fill: '#d6453f' });
+        [x + 42, x + 196].forEach(function (wx) { add(g, 'path', { d: 'M' + (wx - 14) + ' 188 a14 14 0 0 1 28 0 Z', fill: '#3a2a20' }); add(g, 'circle', { cx: wx, cy: 189, r: 10, fill: '#1d2128' }); add(g, 'circle', { cx: wx, cy: 189, r: 4, fill: '#8e97a1' }); });
       }
       function train(layer) {
         var x = vx, D = [x + 150, 72, 28, 110], W = []; for (var wx = x + 40; wx < x + 420; wx += 34) if (Math.abs(wx - (x + 150)) > 26 && wx + 26 < x + 470) W.push([wx, 82, 26, 38]);
-        if (layer === 'back') { add(g, 'rect', { x: x, y: 64, width: 480, height: 122, rx: 10, fill: '#2a2f3a' }); W.forEach(function (r) { add(g, 'rect', { x: r[0] + 4, y: 104, width: 18, height: 18, rx: 3, fill: '#7a2a2f' }); }); return; }
-        add(g, 'path', { d: 'M' + (x + 30) + ' 62 H' + (x + 480) + ' V186 H' + x + ' V100 Q' + x + ' 62 ' + (x + 30) + ' 62 Z ' + holes(W.concat([D])), fill: '#c8cdd4', 'fill-rule': 'evenodd' });
-        add(g, 'rect', { x: x, y: 146, width: 150, height: 10, fill: '#d42a2f' }); add(g, 'rect', { x: x + 178, y: 146, width: 302, height: 10, fill: '#d42a2f' });
+        if (layer === 'back') { add(g, 'rect', { x: x, y: 64, width: 480, height: 122, rx: 10, fill: '#2a2e36' }); W.forEach(function (r) { add(g, 'rect', { x: r[0] + 4, y: 104, width: 18, height: 18, rx: 3, fill: '#883635' }); }); return; }
+        add(g, 'path', { d: 'M' + (x + 30) + ' 62 H' + (x + 480) + ' V186 H' + x + ' V100 Q' + x + ' 62 ' + (x + 30) + ' 62 Z ' + holes(W.concat([D])), fill: '#cdd3d9', 'fill-rule': 'evenodd' });
+        add(g, 'rect', { x: x, y: 146, width: 150, height: 10, fill: '#d6453f' }); add(g, 'rect', { x: x + 178, y: 146, width: 302, height: 10, fill: '#d6453f' });
         add(g, 'path', { d: 'M' + (x + 4) + ' 104 Q' + (x + 4) + ' 74 ' + (x + 30) + ' 72 L' + (x + 30) + ' 112 L' + (x + 4) + ' 112 Z', fill: 'rgba(30,40,55,.85)' });
         W.forEach(function (r) { add(g, 'rect', { x: r[0], y: r[1], width: r[2], height: r[3], rx: 3, fill: 'rgba(170,215,235,.2)' }); });
-        var dw = 14 * (1 - door); if (dw > .3) { add(g, 'rect', { x: D[0], y: D[1], width: dw, height: D[3], fill: '#9aa3ad', stroke: '#6c757e', 'stroke-width': .8 }); add(g, 'rect', { x: D[0] + 28 - dw, y: D[1], width: dw, height: D[3], fill: '#9aa3ad', stroke: '#6c757e', 'stroke-width': .8 }); }
-        add(g, 'rect', { x: D[0] - 2, y: 182, width: 32, height: 4, fill: '#55595f' });
-        [x + 50, x + 80, x + 380, x + 410].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 188, r: 6, fill: '#1b1f27' }); });
+        var dw = 14 * (1 - door); if (dw > .3) { add(g, 'rect', { x: D[0], y: D[1], width: dw, height: D[3], fill: '#9ba6b5', stroke: '#6f7781', 'stroke-width': .8 }); add(g, 'rect', { x: D[0] + 28 - dw, y: D[1], width: dw, height: D[3], fill: '#9ba6b5', stroke: '#6f7781', 'stroke-width': .8 }); }
+        add(g, 'rect', { x: D[0] - 2, y: 182, width: 32, height: 4, fill: '#555c66' });
+        [x + 50, x + 80, x + 380, x + 410].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 188, r: 6, fill: '#1d2128' }); });
       }
       function plane(layer) {
         var pg = el('g', { transform: 'translate(' + px.toFixed(1) + ' ' + py.toFixed(1) + ') rotate(' + prot.toFixed(1) + ' 420 142)' }); g.appendChild(pg);
-        if (layer === 'back') { add(pg, 'path', { d: 'M300 132 L500 172 L520 168 L360 122 Z', fill: '#9aa3ad' }); add(pg, 'ellipse', { cx: 380, cy: 156, rx: 22, ry: 9, fill: '#c8cdd4' }); add(pg, 'path', { d: 'M650 44 L700 30 L712 34 L676 54 Z', fill: '#9aa3ad' });   /* the far wing and tail plane: the whole plane is drawn, so all of it flies when it takes off */ add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, fill: '#2a2f3a' }); return; }
-        add(pg, 'path', { d: 'M610 22 H232 Q190 22 186 70 Q184 118 216 142 H600 Q660 138 724 46 L724 30 Q680 22 610 22 Z M232 54 h30 v86 h-30 Z', fill: '#eef1f4', 'fill-rule': 'evenodd' });
-        add(pg, 'path', { d: 'M640 24 L690 -38 L716 -38 L708 30 Z', fill: '#d9dee3' }); add(pg, 'path', { d: 'M668 -10 L700 -38 L716 -38 L712 -10 Z', fill: '#2a5a9a' });   /* the tail fin */
-        add(pg, 'path', { d: 'M560 58 L620 46 L632 50 L590 66 Z', fill: '#c8cdd4' });   /* the near tail plane */
-        add(pg, 'path', { d: 'M216 142 H600 Q640 139 668 122 H196 Q204 136 216 142 Z', fill: '#c8cdd4' }); add(pg, 'rect', { x: 262, y: 74, width: 380, height: 6, fill: '#2a5a9a' }); add(pg, 'rect', { x: 186, y: 74, width: 46, height: 6, fill: '#2a5a9a' });
+        if (layer === 'back') { add(pg, 'path', { d: 'M300 132 L500 172 L520 168 L360 122 Z', fill: '#9ba6b5' }); add(pg, 'ellipse', { cx: 380, cy: 156, rx: 22, ry: 9, fill: '#cdd3d9' }); add(pg, 'path', { d: 'M650 44 L700 30 L712 34 L676 54 Z', fill: '#9ba6b5' });   /* the far wing and tail plane: the whole plane is drawn, so all of it flies when it takes off */ add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, fill: '#2a2e36' }); return; }
+        add(pg, 'path', { d: 'M610 22 H232 Q190 22 186 70 Q184 118 216 142 H600 Q660 138 724 46 L724 30 Q680 22 610 22 Z M232 54 h30 v86 h-30 Z', fill: '#f4f1ea', 'fill-rule': 'evenodd' });
+        add(pg, 'path', { d: 'M640 24 L690 -38 L716 -38 L708 30 Z', fill: '#cdd3d9' }); add(pg, 'path', { d: 'M668 -10 L700 -38 L716 -38 L712 -10 Z', fill: '#305b90' });   /* the tail fin */
+        add(pg, 'path', { d: 'M560 58 L620 46 L632 50 L590 66 Z', fill: '#cdd3d9' });   /* the near tail plane */
+        add(pg, 'path', { d: 'M216 142 H600 Q640 139 668 122 H196 Q204 136 216 142 Z', fill: '#cdd3d9' }); add(pg, 'rect', { x: 262, y: 74, width: 380, height: 6, fill: '#305b90' }); add(pg, 'rect', { x: 186, y: 74, width: 46, height: 6, fill: '#305b90' });
         add(pg, 'path', { d: 'M196 48 Q200 40 214 38 L222 38 L220 50 Z', fill: 'rgba(30,40,55,.85)' });
         for (var wx = 280; wx < 610; wx += 22) add(pg, 'rect', { x: wx, y: 56, width: 9, height: 12, rx: 4.5, fill: 'rgba(30,40,55,.7)' });
-        if (door < 1) add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86 * (1 - door), rx: 3, fill: '#e2e6ea', stroke: '#b9c1ca', 'stroke-width': 1 });
-        add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, rx: 3, fill: 'none', stroke: '#b9c1ca', 'stroke-width': 1.2 });
+        if (door < 1) add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86 * (1 - door), rx: 3, fill: '#e6e1d6', stroke: '#aeb6bf', 'stroke-width': 1 });
+        add(pg, 'rect', { x: 232, y: 54, width: 30, height: 86, rx: 3, fill: 'none', stroke: '#aeb6bf', 'stroke-width': 1.2 });
       }
       function stairs() {
-        if (stx < -250) return; var x = stx; add(g, 'rect', { x: x + 150, y: 184, width: 86, height: 10, rx: 2, fill: '#e8eaed' }); [x + 160, x + 226].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 195, r: 4, fill: '#1b1f27' }); });
-        add(g, 'path', { d: 'M' + (x + 168) + ' 198 L' + (x + 228) + ' 140 L' + (x + 238) + ' 140 L' + (x + 238) + ' 184 L' + (x + 196) + ' 184 Z', fill: '#d7dee3' });
-        for (var s = 0; s < 8; s++) { var sxx = x + 168 + s * 7.5, sy = 198 - s * 7.25; add(g, 'line', { x1: sxx, y1: sy, x2: sxx + 7.5, y2: sy, stroke: '#8f9ba5', 'stroke-width': 1.2 }); }
+        if (stx < -250) return; var x = stx; add(g, 'rect', { x: x + 150, y: 184, width: 86, height: 10, rx: 2, fill: '#f4f1ea' }); [x + 160, x + 226].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 195, r: 4, fill: '#1d2128' }); });
+        add(g, 'path', { d: 'M' + (x + 168) + ' 198 L' + (x + 228) + ' 140 L' + (x + 238) + ' 140 L' + (x + 238) + ' 184 L' + (x + 196) + ' 184 Z', fill: '#cdd3d9' });
+        for (var s = 0; s < 8; s++) { var sxx = x + 168 + s * 7.5, sy = 198 - s * 7.25; add(g, 'line', { x1: sxx, y1: sy, x2: sxx + 7.5, y2: sy, stroke: '#8e97a1', 'stroke-width': 1.2 }); }
       }
-      function stairsRail() { if (stx < -250) return; var x = stx; add(g, 'path', { d: 'M' + (x + 166) + ' 180 L' + (x + 228) + ' 120 L' + (x + 240) + ' 120', fill: 'none', stroke: '#9aa3ad', 'stroke-width': 1.8 }); add(g, 'line', { x1: x + 166, y1: 180, x2: x + 168, y2: 198, stroke: '#9aa3ad', 'stroke-width': 1.6 }); }
+      function stairsRail() { if (stx < -250) return; var x = stx; add(g, 'path', { d: 'M' + (x + 166) + ' 180 L' + (x + 228) + ' 120 L' + (x + 240) + ' 120', fill: 'none', stroke: '#9ba6b5', 'stroke-width': 1.8 }); add(g, 'line', { x1: x + 166, y1: 180, x2: x + 168, y2: 198, stroke: '#9ba6b5', 'stroke-width': 1.6 }); }
       function ferry(layer) {
         var x = vx, b = bob;
         if (layer === 'back') {
-          add(g, 'rect', { x: x + 60, y: 82 + b, width: 200, height: 58, rx: 4, fill: '#eef1f4' }); for (var wx = x + 70; wx < x + 250; wx += 26) add(g, 'rect', { x: wx, y: 92 + b, width: 18, height: 18, rx: 3, fill: 'rgba(30,40,55,.75)' });
-          add(g, 'rect', { x: x + 100, y: 62 + b, width: 80, height: 20, rx: 4, fill: '#dfe5ea' }); add(g, 'rect', { x: x + 108, y: 66 + b, width: 64, height: 9, rx: 2, fill: 'rgba(30,40,55,.8)' });
-          add(g, 'rect', { x: x + 200, y: 44 + b, width: 16, height: 20, fill: '#d42a2f' });
-          add(g, 'path', { d: 'M' + x + ' ' + (140 + b) + ' H' + (x + 330) + ' L' + (x + 310) + ' ' + (190 + b) + ' H' + (x + 16) + ' Z', fill: '#eef1f4' }); add(g, 'rect', { x: x + 8, y: 166 + b, width: 316, height: 7, fill: '#2a5a9a' });
+          add(g, 'rect', { x: x + 60, y: 82 + b, width: 200, height: 58, rx: 4, fill: '#f4f1ea' }); for (var wx = x + 70; wx < x + 250; wx += 26) add(g, 'rect', { x: wx, y: 92 + b, width: 18, height: 18, rx: 3, fill: 'rgba(30,40,55,.75)' });
+          add(g, 'rect', { x: x + 100, y: 62 + b, width: 80, height: 20, rx: 4, fill: '#e6e1d6' }); add(g, 'rect', { x: x + 108, y: 66 + b, width: 64, height: 9, rx: 2, fill: 'rgba(30,40,55,.8)' });
+          add(g, 'rect', { x: x + 200, y: 44 + b, width: 16, height: 20, fill: '#d6453f' });
+          add(g, 'path', { d: 'M' + x + ' ' + (140 + b) + ' H' + (x + 330) + ' L' + (x + 310) + ' ' + (190 + b) + ' H' + (x + 16) + ' Z', fill: '#f4f1ea' }); add(g, 'rect', { x: x + 8, y: 166 + b, width: 316, height: 7, fill: '#305b90' });
           return;
         }
         /* the rail on the deck, in front of anyone standing there – with a gap at the gangway */
-        add(g, 'line', { x1: x + 2, y1: 128 + b, x2: x + 48, y2: 128 + b, stroke: '#9aa3ad', 'stroke-width': 1.6 }); add(g, 'line', { x1: x + 62, y1: 128 + b, x2: x + 328, y2: 128 + b, stroke: '#9aa3ad', 'stroke-width': 1.6 });
-        for (var pxx = x + 4; pxx < x + 328; pxx += 10) if (pxx < x + 48 || pxx > x + 62) add(g, 'line', { x1: pxx, y1: 128 + b, x2: pxx, y2: 141 + b, stroke: '#9aa3ad', 'stroke-width': 1 });
-        if (t < 12.6) { add(g, 'path', { d: 'M' + (x - 30) + ' 199 L' + (x + 54) + ' 143 L' + (x + 60) + ' 143 L' + (x - 22) + ' 199 Z', fill: '#c8cdd4' }); add(g, 'line', { x1: x - 30, y1: 186, x2: x + 54, y2: 130, stroke: '#9aa3ad', 'stroke-width': 1.2 }); }
+        add(g, 'line', { x1: x + 2, y1: 128 + b, x2: x + 48, y2: 128 + b, stroke: '#9ba6b5', 'stroke-width': 1.6 }); add(g, 'line', { x1: x + 62, y1: 128 + b, x2: x + 328, y2: 128 + b, stroke: '#9ba6b5', 'stroke-width': 1.6 });
+        for (var pxx = x + 4; pxx < x + 328; pxx += 10) if (pxx < x + 48 || pxx > x + 62) add(g, 'line', { x1: pxx, y1: 128 + b, x2: pxx, y2: 141 + b, stroke: '#9ba6b5', 'stroke-width': 1 });
+        if (t < 12.6) { add(g, 'path', { d: 'M' + (x - 30) + ' 199 L' + (x + 54) + ' 143 L' + (x + 60) + ' 143 L' + (x - 22) + ' 199 Z', fill: '#cdd3d9' }); add(g, 'line', { x1: x - 30, y1: 186, x2: x + 54, y2: 130, stroke: '#9ba6b5', 'stroke-width': 1.2 }); }
       }
       /* ---- him ---- */
       var cx = -30, face = 90, w = 0, pose = {}, h = 0, inside = false, gone = false, suit = 'pull', sx = WAIT - 22, sitIn = null, carry = false, GND = 198;
@@ -188,15 +188,15 @@
       if (t < 7.4 || t >= 14.6 || (t >= 7.4 && t < 8.4)) { /* walking on the flat */ }
       GND = groundAt(cx); if (KIND === 'stairs' && t >= 8.8 && t < 12.2) h = 198 - GND; if (KIND === 'ramp' && t >= 8.4 && t < 14.6) h = inside ? 198 - (142 + bob) : 198 - groundAt(cx);
       var ph = LIFE(st, pose, w); if (pt != null && st.pact === 'pack') ph = st.phpk || 0;   /* his steps follow the distance, so his feet never slide */
-      function suitcase(x, y, deg, s) { var c = grp(x, y, deg, s || 1); add(c, 'rect', { x: -11, y: -33, width: 22, height: 31, rx: 4, fill: '#d96b6b' }); add(c, 'rect', { x: -11, y: -21, width: 22, height: 3, fill: 'rgba(0,0,0,.18)' }); add(c, 'line', { x1: 0, y1: -33, x2: 0, y2: -47, stroke: '#3a3f4a', 'stroke-width': 2 }); add(c, 'rect', { x: -4, y: -49, width: 8, height: 3, rx: 1.5, fill: '#3a3f4a' }); add(c, 'circle', { cx: -7, cy: -1, r: 2.3, fill: '#2a2d33' }); add(c, 'circle', { cx: 7, cy: -1, r: 2.3, fill: '#2a2d33' }); return c; }
-      function carryCase(x, y) { var c = grp(x, y, 0); add(c, 'rect', { x: -4, y: -1, width: 8, height: 3, rx: 1.5, fill: '#3a3f4a' }); add(c, 'rect', { x: -10, y: 2, width: 20, height: 27, rx: 4, fill: '#d96b6b' }); add(c, 'rect', { x: -10, y: 13, width: 20, height: 3, fill: 'rgba(0,0,0,.18)' }); return c; }
+      function suitcase(x, y, deg, s) { var c = grp(x, y, deg, s || 1); add(c, 'rect', { x: -11, y: -33, width: 22, height: 31, rx: 4, fill: '#e38d87' }); add(c, 'rect', { x: -11, y: -21, width: 22, height: 3, fill: 'rgba(0,0,0,.18)' }); add(c, 'line', { x1: 0, y1: -33, x2: 0, y2: -47, stroke: '#3b414b', 'stroke-width': 2 }); add(c, 'rect', { x: -4, y: -49, width: 8, height: 3, rx: 1.5, fill: '#3b414b' }); add(c, 'circle', { cx: -7, cy: -1, r: 2.3, fill: '#2a2e36' }); add(c, 'circle', { cx: 7, cy: -1, r: 2.3, fill: '#2a2e36' }); return c; }
+      function carryCase(x, y) { var c = grp(x, y, 0); add(c, 'rect', { x: -4, y: -1, width: 8, height: 3, rx: 1.5, fill: '#3b414b' }); add(c, 'rect', { x: -10, y: 2, width: 20, height: 27, rx: 4, fill: '#e38d87' }); add(c, 'rect', { x: -10, y: 13, width: 20, height: 3, fill: 'rgba(0,0,0,.18)' }); return c; }
       /* the chair by the stop (only once he's home and has something left to pack) with the shirt waiting on it */
-      function chairG(x) { var c = add(g, 'g', {}); add(c, 'rect', { x: x - 1, y: 150, width: 3, height: 48, rx: 1, fill: '#7a4b2e' }); add(c, 'rect', { x: x, y: 174, width: 22, height: 4, rx: 1.5, fill: '#a0673a' }); add(c, 'rect', { x: x + 19, y: 178, width: 2.6, height: 20, fill: '#7a4b2e' }); add(c, 'rect', { x: x + 1, y: 178, width: 2.6, height: 20, fill: '#7a4b2e' }); return c; }
-      function shirtG(x, y, sc) { var c = grp(x, y, 0, sc || 1); add(c, 'rect', { x: -7, y: -4, width: 14, height: 4.4, rx: 1.2, fill: '#3987e5' }); add(c, 'rect', { x: -7, y: -4, width: 14, height: 1.4, rx: .7, fill: '#5aa0f0' }); add(c, 'path', { d: 'M-2 -4 l2 1.6 l2 -1.6', fill: 'none', stroke: '#2a62ad', 'stroke-width': .7 }); return c; }
+      function chairG(x) { var c = add(g, 'g', {}); add(c, 'rect', { x: x - 1, y: 150, width: 3, height: 48, rx: 1, fill: '#915534' }); add(c, 'rect', { x: x, y: 174, width: 22, height: 4, rx: 1.5, fill: '#c4875e' }); add(c, 'rect', { x: x + 19, y: 178, width: 2.6, height: 20, fill: '#915534' }); add(c, 'rect', { x: x + 1, y: 178, width: 2.6, height: 20, fill: '#915534' }); return c; }
+      function shirtG(x, y, sc) { var c = grp(x, y, 0, sc || 1); add(c, 'rect', { x: -7, y: -4, width: 14, height: 4.4, rx: 1.2, fill: '#3d85dc' }); add(c, 'rect', { x: -7, y: -4, width: 14, height: 1.4, rx: .7, fill: '#8ab2e2' }); add(c, 'path', { d: 'M-2 -4 l2 1.6 l2 -1.6', fill: 'none', stroke: '#2c5ea8', 'stroke-width': .7 }); return c; }
       function mapG(x, y, wq, fq) { var W = 6 + 26 * wq, H = 8 + 13 * wq, c = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') scale(1 ' + fq.toFixed(2) + ')' });
         add(c, 'rect', { x: -W / 2, y: -H / 2, width: W, height: H, rx: .8, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.18)', 'stroke-width': .5 });
-        if (wq > .3) { add(c, 'path', { d: 'M' + (-W / 2 + 2) + ' ' + (H / 2 - 3) + ' q' + (W * .2) + ' ' + (-H * .5) + ' ' + (W * .45) + ' ' + (-H * .25) + ' t' + (W * .4) + ' ' + (-H * .4), fill: 'none', stroke: '#d93a3a', 'stroke-width': .8, 'stroke-dasharray': '1.4 1' });
-          add(c, 'circle', { cx: W * .3, cy: -H * .25, r: 3 * wq, fill: '#9ad0e8' }); add(c, 'rect', { x: -W * .38, y: -H * .4, width: W * .22, height: H * .3, fill: '#bfe0b0' });
+        if (wq > .3) { add(c, 'path', { d: 'M' + (-W / 2 + 2) + ' ' + (H / 2 - 3) + ' q' + (W * .2) + ' ' + (-H * .5) + ' ' + (W * .45) + ' ' + (-H * .25) + ' t' + (W * .4) + ' ' + (-H * .4), fill: 'none', stroke: '#d6453f', 'stroke-width': .8, 'stroke-dasharray': '1.4 1' });
+          add(c, 'circle', { cx: W * .3, cy: -H * .25, r: 3 * wq, fill: '#a9cfe0' }); add(c, 'rect', { x: -W * .38, y: -H * .4, width: W * .22, height: H * .3, fill: '#a4c18a' });
           [-1, 1].forEach(function (q) { add(c, 'line', { x1: q * W / 6, y1: -H / 2, x2: q * W / 6, y2: H / 2, stroke: 'rgba(0,0,0,.08)', 'stroke-width': .5 }); }); }
         return c; }
       if (t >= 14.6 && (data.packLeft > 0 || st.pact === 'pack')) { chairG(CHAIR); if (shirt === 'chair') g.appendChild(shirtG(CHAIR + 11, 174)); }
@@ -206,7 +206,7 @@
       else if (onScreen) drawV('back');
       if (V !== 'plane' && onScreen && !inside) drawV('wall');
       if (V === 'plane' && onScreen && !inside) plane('wall');
-      if (suit === 'stand') { g.appendChild(suitcase(sx, 199, 0)); if (lid > 0) add(g, 'path', { d: 'M' + (sx - 10) + ' 167 q10 ' + (-5 * lid).toFixed(1) + ' 20 0 Z', fill: '#2a1414', opacity: lid.toFixed(2) }); }   /* the zip open at the top */
+      if (suit === 'stand') { g.appendChild(suitcase(sx, 199, 0)); if (lid > 0) add(g, 'path', { d: 'M' + (sx - 10) + ' 167 q10 ' + (-5 * lid).toFixed(1) + ' 20 0 Z', fill: '#3a2a20', opacity: lid.toFixed(2) }); }   /* the zip open at the top */
       if (suit === 'in' && KIND === 'step' && onScreen && t < 14.6) g.appendChild(suitcase(DX + 6, FLOOR, 0));
       var figPar = g;
       if (inside && onScreen && KIND !== 'ramp') { var cpd = add(g, 'defs', {}), cp = add(cpd, 'clipPath', { id: 'tvClip' });
@@ -216,16 +216,16 @@
         var out = [], hs = face > 0 ? H.s1 : H.sm;
         if ((suit === 'pull') && hs) { var dir = face >= 0 ? 1 : -1, gw = groundAt(hs.X - dir * 30) + 1, c = Math.max(-1, Math.min(1, (gw - hs.Y) / 47)), th = Math.acos(c), wx = hs.X - dir * 47 * Math.sin(th); out.push([-100, suitcase(wx, gw, dir * th * 180 / Math.PI)]); }
         if (suit === 'hand' && H.s1) out.push([H.s1.z - .05, suitcase(H.s1.X, H.s1.Y + 48, 0)]);
-        var pph = passIn && H[passIn]; if (pph) { var pp2 = grp(pph.X, pph.Y - 4, -6), ow = 5 * passOpen; add(pp2, 'rect', { x: -5 - ow, y: -7, width: 10 + ow * 2, height: 13, rx: 1.5, fill: passOpen > .5 ? '#f4f1ea' : '#7a2e3a' }); if (passOpen <= .5) add(pp2, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); else { add(pp2, 'line', { x1: 0, y1: -7, x2: 0, y2: 6, stroke: 'rgba(0,0,0,.2)', 'stroke-width': .5 }); if (passStamp > 0) add(pp2, 'circle', { cx: 5, cy: -1, r: 1.2 + 2.2 * passStamp, fill: 'none', stroke: '#d93a3a', 'stroke-width': 1.1, opacity: (.4 + .6 * passStamp).toFixed(2) }); } out.push([pph.z + .05, pp2]); }   /* the passport in his hand: shut, then open with the new stamp */
+        var pph = passIn && H[passIn]; if (pph) { var pp2 = grp(pph.X, pph.Y - 4, -6), ow = 5 * passOpen; add(pp2, 'rect', { x: -5 - ow, y: -7, width: 10 + ow * 2, height: 13, rx: 1.5, fill: passOpen > .5 ? '#f4f1ea' : '#883635' }); if (passOpen <= .5) add(pp2, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); else { add(pp2, 'line', { x1: 0, y1: -7, x2: 0, y2: 6, stroke: 'rgba(0,0,0,.2)', 'stroke-width': .5 }); if (passStamp > 0) add(pp2, 'circle', { cx: 5, cy: -1, r: 1.2 + 2.2 * passStamp, fill: 'none', stroke: '#d6453f', 'stroke-width': 1.1, opacity: (.4 + .6 * passStamp).toFixed(2) }); } out.push([pph.z + .05, pp2]); }   /* the passport in his hand: shut, then open with the new stamp */
         var sh1 = H.s1; if (shirt === 'hand' && sh1) out.push([sh1.z + .05, shirtG(sh1.X, sh1.Y + 3)]);
         if (mapUp && st.mapAt && H.near) { var mh = H[st.mapHand]; if (st.mapIn && mh) out.push([mh.z + .05, mapG(mh.X, mh.Y + 1, 0, 1)]); else out.push([.6, mapG(st.mapAt[0], st.mapAt[1] - 1, mapW, mapF)]); }   /* folded in his hand; held up open between his hands */
         if (suit === 'carry' && H.s1) out.push([H.s1.z + (face > 100 ? -.05 : .05), carryCase(H.s1.X, H.s1.Y)]);
-        if (t >= 3.4 && t < 4.5 && H.sm) { var ps = grp(H.sm.X, H.sm.Y - 3, -8); if (V === 'plane') { add(ps, 'rect', { x: -5, y: -7, width: 10, height: 13, rx: 1.5, fill: '#7a2e3a' }); add(ps, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); } else { add(ps, 'rect', { x: -3.5, y: -6.5, width: 7, height: 13, rx: 1.5, fill: '#1b1f27' }); add(ps, 'rect', { x: -2.6, y: -5.5, width: 5.2, height: 10, rx: 1, fill: '#9ad0e8' }); } out.push([H.sm.z - .15, ps]); }
+        if (t >= 3.4 && t < 4.5 && H.sm) { var ps = grp(H.sm.X, H.sm.Y - 3, -8); if (V === 'plane') { add(ps, 'rect', { x: -5, y: -7, width: 10, height: 13, rx: 1.5, fill: '#883635' }); add(ps, 'circle', { cx: 0, cy: -1, r: 2.4, fill: 'none', stroke: '#f2c94c', 'stroke-width': .8 }); } else { add(ps, 'rect', { x: -3.5, y: -6.5, width: 7, height: 13, rx: 1.5, fill: '#1d2128' }); add(ps, 'rect', { x: -2.6, y: -5.5, width: 5.2, height: 10, rx: 1, fill: '#a9cfe0' }); } out.push([H.sm.z - .15, ps]); }
         return out; } });
       if (inside && onScreen) { if (V === 'plane') plane('wall'); else drawV('wall'); }
       if (V === 'plane') stairsRail();
       /* the stop sign stands on the near pavement, in front of the bus */
-      if (V === 'bus' && t < 14.6 || V === 'bus' && t >= 16.6) { add(g, 'rect', { x: 148, y: 120, width: 3, height: 78, fill: '#9aa3ad' }); add(g, 'circle', { cx: 149.5, cy: 116, r: 9, fill: '#3987e5' }); add(g, 'rect', { x: 144.5, y: 111, width: 10, height: 8, rx: 2, fill: '#fff' }); add(g, 'rect', { x: 145.5, y: 112, width: 8, height: 3.4, rx: .8, fill: '#3987e5' }); }
+      if (V === 'bus' && t < 14.6 || V === 'bus' && t >= 16.6) { add(g, 'rect', { x: 148, y: 120, width: 3, height: 78, fill: '#9ba6b5' }); add(g, 'circle', { cx: 149.5, cy: 116, r: 9, fill: '#3d85dc' }); add(g, 'rect', { x: 144.5, y: 111, width: 10, height: 8, rx: 2, fill: '#f4f1ea' }); add(g, 'rect', { x: 145.5, y: 112, width: 8, height: 3.4, rx: .8, fill: '#3d85dc' }); }
       if (V === 'ferry' && t >= 10.6 && t < 14.6 && onScreen) g.appendChild(suitcase(vx + 82, 142 + bob, 0, .9));
     } });
   };

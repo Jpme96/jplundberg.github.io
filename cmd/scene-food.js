@@ -123,11 +123,11 @@
       pose.lean = -.05 * Math.sin(Math.PI * SEG(t, .5, 3.4));
       return r;
     }
-    function shaker(x, y, deg) { var c = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (deg || 0) + ')' }); add(c, 'rect', { x: -2.6, y: -4, width: 5.2, height: 10, rx: 1.6, fill: '#eef0f2' }); add(c, 'rect', { x: -2.8, y: -6.4, width: 5.6, height: 3, rx: 1.2, fill: '#9aa3ad' }); return c; }
+    function shaker(x, y, deg) { var c = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (deg || 0) + ')' }); add(c, 'rect', { x: -2.6, y: -4, width: 5.2, height: 10, rx: 1.6, fill: '#f4f1ea' }); add(c, 'rect', { x: -2.8, y: -6.4, width: 5.6, height: 3, rx: 1.2, fill: '#9ba6b5' }); return c; }
     /* the milk carton: white with a blue band, a gable top, the spout on its right */
     function carton(x, y, deg) { var g = el('g', { transform: 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + deg.toFixed(1) + ')' });
-      add(g, 'rect', { x: -4.5, y: -8, width: 9, height: 17, rx: 1.2, fill: '#f7f7f4' }); add(g, 'rect', { x: -4.5, y: -1, width: 9, height: 5, fill: '#3987e5' });
-      add(g, 'path', { d: 'M-4.5 -8 L0 -12 L4.5 -8 Z', fill: '#e4e4df' }); add(g, 'rect', { x: 2, y: -12.5, width: 3, height: 2.4, rx: .6, fill: '#3987e5' }); return g; }
+      add(g, 'rect', { x: -4.5, y: -8, width: 9, height: 17, rx: 1.2, fill: '#f4f1ea' }); add(g, 'rect', { x: -4.5, y: -1, width: 9, height: 5, fill: '#3d85dc' });
+      add(g, 'path', { d: 'M-4.5 -8 L0 -12 L4.5 -8 Z', fill: '#e6e1d6' }); add(g, 'rect', { x: 2, y: -12.5, width: 3, height: 2.4, rx: .6, fill: '#3d85dc' }); return g; }
     function spout(x, y, deg) { var r = deg * Math.PI / 180, px = 3.5, py = -12; return [x + px * Math.cos(r) - py * Math.sin(r), y + px * Math.sin(r) + py * Math.cos(r)]; }
     var steamA = 0;
     return S.run(svg, {
@@ -138,81 +138,81 @@
         /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
         add(bg, 'ellipse', { cx: 210, cy: GY + 2, rx: 176, ry: 12, class: 'sc25-ground', fill: 'rgba(0,0,0,.07)' });   /* the same soft ground as every page (Phase G) */
         add(bg, 'ellipse', { cx: 210, cy: GY + 4, rx: 190, ry: 16, fill: 'rgba(255,190,120,.10)' });
-        add(bg, 'rect', { x: 160, y: 40, width: 62, height: 58, rx: 6, fill: '#1b2338', stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2.4 });
+        add(bg, 'rect', { x: 160, y: 40, width: 62, height: 58, rx: 6, fill: '#1f2a40', stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2.4 });
         add(bg, 'line', { x1: 191, y1: 40, x2: 191, y2: 98, stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2 });
-        add(bg, 'circle', { cx: 206, cy: 58, r: 6, fill: '#eef0f4' }); add(bg, 'circle', { cx: 209.5, cy: 55.5, r: 5, fill: '#1b2338' });
-        [[170, 52], [180, 76], [200, 84], [214, 74]].forEach(function (s) { add(bg, 'circle', { cx: s[0], cy: s[1], r: .9, fill: '#fff', opacity: .7 }); });
-        add(bg, 'line', { x1: 330, y1: 0, x2: 330, y2: 30, stroke: '#2a1d16', 'stroke-width': 1.4 });
-        add(bg, 'path', { d: 'M316 42 Q316 30 330 30 Q344 30 344 42 Z', fill: '#c98a62' });   /* a calmer shade (Phase G – loud colours only where they mean something) */ add(bg, 'ellipse', { cx: 330, cy: 43, rx: 9, ry: 2.5, fill: '#ffe2a8' });
+        add(bg, 'circle', { cx: 206, cy: 58, r: 6, fill: '#f4f1ea' }); add(bg, 'circle', { cx: 209.5, cy: 55.5, r: 5, fill: '#1f2a40' });
+        [[170, 52], [180, 76], [200, 84], [214, 74]].forEach(function (s) { add(bg, 'circle', { cx: s[0], cy: s[1], r: .9, fill: '#f4f1ea', opacity: .7 }); });
+        add(bg, 'line', { x1: 330, y1: 0, x2: 330, y2: 30, stroke: '#3a2a20', 'stroke-width': 1.4 });
+        add(bg, 'path', { d: 'M316 42 Q316 30 330 30 Q344 30 344 42 Z', fill: '#c4875e' });   /* a calmer shade (Phase G – loud colours only where they mean something) */ add(bg, 'ellipse', { cx: 330, cy: 43, rx: 9, ry: 2.5, fill: '#ffe2a8' });   /* the bulb under the shade */
         add(bg, 'path', { d: 'M318 44 L290 118 L370 118 L342 44 Z', fill: 'rgba(255,214,150,.06)' });
         var sh = add(bg, 'g', { class: 'hs-part' + (data.low ? ' hot' : ''), 'data-scgo': 'pantry' }), low = Math.min(4, data.low || 0);
-        add(sh, 'rect', { x: 340, y: 92, width: 50, height: 3, rx: 1, fill: '#8a5a3c' });
-        [['#c98500', 344], ['#e8743b', 356], ['#8a6fdf', 368], ['#22b35e', 380]].forEach(function (j, i) { var hh = 12 + (i % 2) * 3, f = i < low ? .25 : .65;   /* a jar running low: nearly empty */
+        add(sh, 'rect', { x: 340, y: 92, width: 50, height: 3, rx: 1, fill: '#915534' });
+        [['#c8901e', 344], ['#e57a3c', 356], ['#8a6fdf', 368], ['#2f9d62', 380]].forEach(function (j, i) { var hh = 12 + (i % 2) * 3, f = i < low ? .25 : .65;   /* a jar running low: nearly empty */
           add(sh, 'rect', { x: j[1], y: 92 - hh, width: 8, height: hh, rx: 2, fill: 'rgba(255,255,255,.18)', stroke: 'rgba(var(--ink-rgb), .4)', 'stroke-width': .7 });
           add(sh, 'rect', { x: j[1] + 1, y: 92 - hh * f, width: 6, height: hh * f - 1, rx: 1.4, fill: j[0] });
-          add(sh, 'rect', { x: j[1] - .5, y: 92 - hh - 2, width: 9, height: 2.6, rx: 1, fill: '#5a3a26' }); });
+          add(sh, 'rect', { x: j[1] - .5, y: 92 - hh - 2, width: 9, height: 2.6, rx: 1, fill: '#5a3e2c' }); });
         /* the counter: cabinet fronts, the top, the hob */
         var ct = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
-        add(ct, 'rect', { x: CX0, y: CT + 2, width: CX1 - CX0, height: GY - CT - 2, fill: '#5d7f8f' });
-        [CX0 + 6, CX0 + 52, CX0 + 98].forEach(function (x) { add(ct, 'rect', { x: x, y: CT + 9, width: 40, height: GY - CT - 16, rx: 3, fill: '#6c90a0' }); add(ct, 'rect', { x: x + 16, y: CT + 14, width: 8, height: 2.4, rx: 1.2, fill: '#d7dee3' }); });
-        add(ct, 'rect', { x: CX0 - 4, y: CT - 2, width: CX1 - CX0 + 8, height: 6, rx: 2, fill: '#c9b48e' });
-        add(ct, 'rect', { x: PX - 24, y: CT - 4, width: 48, height: 3, rx: 1.4, fill: '#2a2d33' });
+        add(ct, 'rect', { x: CX0, y: CT + 2, width: CX1 - CX0, height: GY - CT - 2, fill: '#6f7781' });
+        [CX0 + 6, CX0 + 52, CX0 + 98].forEach(function (x) { add(ct, 'rect', { x: x, y: CT + 9, width: 40, height: GY - CT - 16, rx: 3, fill: '#6f7781' }); add(ct, 'rect', { x: x + 16, y: CT + 14, width: 8, height: 2.4, rx: 1.2, fill: '#cdd3d9' }); });
+        add(ct, 'rect', { x: CX0 - 4, y: CT - 2, width: CX1 - CX0 + 8, height: 6, rx: 2, fill: '#c09a74' });
+        add(ct, 'rect', { x: PX - 24, y: CT - 4, width: 48, height: 3, rx: 1.4, fill: '#2a2e36' });
         /* the shopping bag on the floor by the counter, when there is something on the list */
         if (data.shop) { var bag = add(bg, 'g', { class: 'hs-part', 'data-scgo': 'shop' });
-          add(bag, 'path', { d: 'M140 200 L144 176 L164 176 L168 200 Z', fill: '#c9a26a' }); add(bag, 'path', { d: 'M148 176 Q154 166 160 176', fill: 'none', stroke: '#8a6a3c', 'stroke-width': 1.6 });
-          add(bag, 'rect', { x: 147, y: 170, width: 5, height: 8, rx: 1.4, fill: '#22b35e' }); add(bag, 'circle', { cx: 159, cy: 173, r: 3.4, fill: '#e8743b' }); }
+          add(bag, 'path', { d: 'M140 200 L144 176 L164 176 L168 200 Z', fill: '#ebac85' }); add(bag, 'path', { d: 'M148 176 Q154 166 160 176', fill: 'none', stroke: '#9a7258', 'stroke-width': 1.6 });
+          add(bag, 'rect', { x: 147, y: 170, width: 5, height: 8, rx: 1.4, fill: '#2f9d62' }); add(bag, 'circle', { cx: 159, cy: 173, r: 3.4, fill: '#e57a3c' }); }
       },
       render: function (sv, t, st) {
         var r = st.pact === 'list' ? listAt(t, st) : st.pact === 'taste' ? tasteAt(t, st) : st.pact === 'shelf' ? shelfAt(t, st) : cook ? cookAt(t, st) : lookAt(t, st), th = r.th;
         var hot = cook && (t > 9 || !st.playing); steamA += ((hot ? (r.stir >= 0 ? 1 : .75) : 0) - steamA) * (st.still ? 1 : Math.min(1, st.dt * 1.5));
         var now = st.now || 0;
-        if (hot) add(sv, 'ellipse', { cx: PX, cy: CT - 3, rx: 18, ry: 1.6, fill: '#ff6a3d', opacity: (.55 + .25 * Math.sin(now / 160)).toFixed(2) });
+        if (hot) add(sv, 'ellipse', { cx: PX, cy: CT - 3, rx: 18, ry: 1.6, fill: '#e57a3c', opacity: (.55 + .25 * Math.sin(now / 160)).toFixed(2) });
         /* the pot, its milk, the spoon (bowl in the pot, handle on the rim or in his hand), steam */
         var pot = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals' });
-        add(pot, 'ellipse', { cx: PX, cy: PT, rx: PR, ry: 4, fill: '#3b4148' });
-        if (r.fill > 0) add(pot, 'ellipse', { cx: PX, cy: PT + 1, rx: ((PR - 1.5) * (.6 + .4 * r.fill)).toFixed(1), ry: (3 * (.6 + .4 * r.fill)).toFixed(1), fill: '#f6f2e8', opacity: (.4 + .6 * r.fill).toFixed(2) });
+        add(pot, 'ellipse', { cx: PX, cy: PT, rx: PR, ry: 4, fill: '#3b414b' });
+        if (r.fill > 0) add(pot, 'ellipse', { cx: PX, cy: PT + 1, rx: ((PR - 1.5) * (.6 + .4 * r.fill)).toFixed(1), ry: (3 * (.6 + .4 * r.fill)).toFixed(1), fill: '#f4f1ea', opacity: (.4 + .6 * r.fill).toFixed(2) });
         var spoonTop = st.spoonTop || SPOON, bowl = [PX + (r.stir >= 0 ? -4 * Math.cos(r.stir) : 2), PT + 8];
-        add(pot, 'line', { x1: bowl[0].toFixed(1), y1: bowl[1], x2: (r.spoonHand ? spoonTop[0] : SPOON[0]).toFixed(1), y2: ((r.spoonHand ? spoonTop[1] : SPOON[1]) - 4).toFixed(1), stroke: '#c58b5a', 'stroke-width': 2.4, 'stroke-linecap': 'round' });
-        add(pot, 'path', { d: 'M' + (PX - PR) + ' ' + PT + ' L' + (PX - PR + 1) + ' ' + (PB - 3) + ' Q' + (PX - PR + 1) + ' ' + PB + ' ' + (PX - PR + 5) + ' ' + PB + ' L' + (PX + PR - 5) + ' ' + PB + ' Q' + (PX + PR - 1) + ' ' + PB + ' ' + (PX + PR - 1) + ' ' + (PB - 3) + ' L' + (PX + PR) + ' ' + PT + ' Z', fill: '#4a5058' });
+        add(pot, 'line', { x1: bowl[0].toFixed(1), y1: bowl[1], x2: (r.spoonHand ? spoonTop[0] : SPOON[0]).toFixed(1), y2: ((r.spoonHand ? spoonTop[1] : SPOON[1]) - 4).toFixed(1), stroke: '#c4875e', 'stroke-width': 2.4, 'stroke-linecap': 'round' });
+        add(pot, 'path', { d: 'M' + (PX - PR) + ' ' + PT + ' L' + (PX - PR + 1) + ' ' + (PB - 3) + ' Q' + (PX - PR + 1) + ' ' + PB + ' ' + (PX - PR + 5) + ' ' + PB + ' L' + (PX + PR - 5) + ' ' + PB + ' Q' + (PX + PR - 1) + ' ' + PB + ' ' + (PX + PR - 1) + ' ' + (PB - 3) + ' L' + (PX + PR) + ' ' + PT + ' Z', fill: '#3b414b' });
         add(pot, 'path', { d: 'M' + (PX - PR + 2) + ' ' + (PT + 4) + ' L' + (PX - PR + 3) + ' ' + (PB - 4), stroke: 'rgba(255,255,255,.35)', 'stroke-width': 2, 'stroke-linecap': 'round' });
-        [-1, 1].forEach(function (s) { add(pot, 'rect', { x: PX + s * (PR + 3) - 3, y: PT + 3, width: 6, height: 2.6, rx: 1.3, fill: '#5b636c' }); });
+        [-1, 1].forEach(function (s) { add(pot, 'rect', { x: PX + s * (PR + 3) - 3, y: PT + 3, width: 6, height: 2.6, rx: 1.3, fill: '#555c66' }); });
         if (steamA > .02) for (var si = 0; si < 3; si++) { var ph0 = ((now / 1000) * .6 + si / 3) % 1, sx = PX - 8 + si * 8, sy = PT - 4 - ph0 * 26;
-          add(sv, 'path', { d: 'M' + sx + ' ' + sy.toFixed(1) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#fff', 'stroke-width': 1.8, 'stroke-linecap': 'round', opacity: (steamA * .55 * Math.sin(Math.PI * ph0)).toFixed(2) }); }
+          add(sv, 'path', { d: 'M' + sx + ' ' + sy.toFixed(1) + ' q-3 -5 0 -9 q3 -4 0 -8', fill: 'none', stroke: '#f4f1ea', 'stroke-width': 1.8, 'stroke-linecap': 'round', opacity: (steamA * .55 * Math.sin(Math.PI * ph0)).toFixed(2) }); }
         /* the fridge: freezer drawer on top, the door below, its inside lit when open */
         var fr2 = add(sv, 'g', { class: 'hs-part', 'data-scgo': 'meals', 'data-scact': 'main' });   /* a tap on the fridge: he goes to it */
-        add(fr2, 'path', { d: 'M112 80 L121 86 L121 199 L112 199 Z', fill: '#a9b4bd' });
-        add(fr2, 'rect', { x: 40, y: 78, width: 72, height: 121, rx: 6, fill: '#dfe5ea' });
-        add(fr2, 'rect', { x: 48, y: 96, width: 22, height: 3, rx: 1.5, fill: '#9aa6b0' });
+        add(fr2, 'path', { d: 'M112 80 L121 86 L121 199 L112 199 Z', fill: '#aeb6bf' });
+        add(fr2, 'rect', { x: 40, y: 78, width: 72, height: 121, rx: 6, fill: '#e6e1d6' });
+        add(fr2, 'rect', { x: 48, y: 96, width: 22, height: 3, rx: 1.5, fill: '#9ba6b5' });
         if (th > .01) {
-          add(fr2, 'rect', { x: 43, y: 111, width: 66, height: 84, rx: 3, fill: '#fbf3dc' });
+          add(fr2, 'rect', { x: 43, y: 111, width: 66, height: 84, rx: 3, fill: '#f4f1ea' });
           add(fr2, 'rect', { x: 43, y: 111, width: 66, height: 84, rx: 3, fill: 'rgba(255,230,160,' + (.35 * th / D).toFixed(2) + ')' });
-          [140, 168].forEach(function (y) { add(fr2, 'rect', { x: 43, y: y, width: 66, height: 2, fill: '#d8d0bc' }); });
-          add(fr2, 'rect', { x: 56, y: 126, width: 10, height: 14, rx: 2.5, fill: '#e8743b' }); add(fr2, 'rect', { x: 55, y: 124, width: 12, height: 3, rx: 1, fill: '#7a5038' });
-          add(fr2, 'circle', { cx: 80, cy: 163, r: 4.6, fill: '#d94a4a' }); add(fr2, 'circle', { cx: 89, cy: 164, r: 4, fill: '#7fbf4a' });
-          add(fr2, 'rect', { x: 64, y: 176, width: 26, height: 14, rx: 3, fill: '#9ad0e8', opacity: .8 });
+          [140, 168].forEach(function (y) { add(fr2, 'rect', { x: 43, y: y, width: 66, height: 2, fill: '#d8c8a8' }); });
+          add(fr2, 'rect', { x: 56, y: 126, width: 10, height: 14, rx: 2.5, fill: '#e57a3c' }); add(fr2, 'rect', { x: 55, y: 124, width: 12, height: 3, rx: 1, fill: '#7a5a44' });
+          add(fr2, 'circle', { cx: 80, cy: 163, r: 4.6, fill: '#d6453f' }); add(fr2, 'circle', { cx: 89, cy: 164, r: 4, fill: '#6a9e45' });
+          add(fr2, 'rect', { x: 64, y: 176, width: 26, height: 14, rx: 3, fill: '#a9cfe0', opacity: .8 });
           if (r.milk === 'fridge') fr2.appendChild(carton(MILK0[0], MILK0[1], 0));
         }
         var fe = doorEdge(th), ftop = 110 + fe[1], fbot = 197 + fe[1], shadeD = Math.round(223 - 40 * Math.sin(th));
         add(fr2, 'path', { d: 'M40 110 L' + fe[0].toFixed(1) + ' ' + ftop.toFixed(1) + ' L' + fe[0].toFixed(1) + ' ' + fbot.toFixed(1) + ' L40 197 Z', fill: 'rgb(' + shadeD + ',' + (shadeD + 6) + ',' + (shadeD + 11) + ')', stroke: 'rgba(0,0,0,.12)', 'stroke-width': .8, 'stroke-linejoin': 'round' });
-        if (th > .05) add(fr2, 'path', { d: 'M' + fe[0].toFixed(1) + ' ' + ftop.toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (ftop - 1).toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (fbot - 1).toFixed(1) + ' L' + fe[0].toFixed(1) + ' ' + fbot.toFixed(1) + ' Z', fill: '#b9c3cb' });
-        var hd = handle(th); add(fr2, 'rect', { x: (hd[0] - 1.6).toFixed(1), y: (hd[1] - 15).toFixed(1), width: 3.2, height: 30, rx: 1.6, fill: '#8f9ba5' });
-        if (th < .01) add(fr2, 'line', { x1: 40, y1: 110, x2: 112, y2: 110, stroke: '#b7c1c9', 'stroke-width': 1.2 });
+        if (th > .05) add(fr2, 'path', { d: 'M' + fe[0].toFixed(1) + ' ' + ftop.toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (ftop - 1).toFixed(1) + ' L' + (fe[0] + 3 * Math.cos(th)).toFixed(1) + ' ' + (fbot - 1).toFixed(1) + ' L' + fe[0].toFixed(1) + ' ' + fbot.toFixed(1) + ' Z', fill: '#aeb6bf' });
+        var hd = handle(th); add(fr2, 'rect', { x: (hd[0] - 1.6).toFixed(1), y: (hd[1] - 15).toFixed(1), width: 3.2, height: 30, rx: 1.6, fill: '#8e97a1' });
+        if (th < .01) add(fr2, 'line', { x1: 40, y1: 110, x2: 112, y2: 110, stroke: '#aeb6bf', 'stroke-width': 1.2 });
         if (r.milk === 'counter') sv.appendChild(carton(DOWN[0], DOWN[1], 0));
         /* the shopping list on the fridge door: a line more each time he writes */
-        if (th < .01) { var nl = add(fr2, 'g', { class: 'hs-part', 'data-scgo': 'shop' }); add(nl, 'rect', { x: 86, y: 120, width: 20, height: 26, rx: 1.5, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(3 96 133)' }); add(nl, 'circle', { cx: 96, cy: 121, r: 1.6, fill: '#d93a3a' });
-          var nlines = Math.min(4, (data.shop ? 2 : 1) + (r.pen || 0)); for (var li = 0; li < nlines; li++) add(nl, 'rect', { x: 89, y: 126 + li * 4.5, width: li % 2 ? 10 : 14, height: 1.3, fill: '#5b636c', opacity: .7 }); }
+        if (th < .01) { var nl = add(fr2, 'g', { class: 'hs-part', 'data-scgo': 'shop' }); add(nl, 'rect', { x: 86, y: 120, width: 20, height: 26, rx: 1.5, fill: '#f4f1ea', stroke: 'rgba(0,0,0,.15)', transform: 'rotate(3 96 133)' }); add(nl, 'circle', { cx: 96, cy: 121, r: 1.6, fill: '#d6453f' });
+          var nlines = Math.min(4, (data.shop ? 2 : 1) + (r.pen || 0)); for (var li = 0; li < nlines; li++) add(nl, 'rect', { x: 89, y: 126 + li * 4.5, width: li % 2 ? 10 : 14, height: 1.3, fill: '#555c66', opacity: .7 }); }
         if (cook && r.salt !== 'hand') sv.appendChild(shaker(SHK[0], SHK[1] + 1));   /* the salt lives on the counter */
         /* him, with the carton at his hand's depth while he holds it */
         var gg = add(sv, 'g', { class: 'sc25-me' }), ph = S.LIFE(st, r.pose, r.w), look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY, k: K, ph: ph, w: r.w, pose: r.pose,
           items: function (H) { var h = Fig25.hand()['s-1'];
-            if (r.tspoon && h) { var ts = el('g', {}); add(ts, 'line', { x1: h.X.toFixed(1), y1: (h.Y + 2).toFixed(1), x2: (h.X + 7).toFixed(1), y2: (h.Y - 5).toFixed(1), stroke: '#c9ced6', 'stroke-width': 1.3, 'stroke-linecap': 'round' }); add(ts, 'ellipse', { cx: (h.X + 8).toFixed(1), cy: (h.Y - 6).toFixed(1), rx: 2.4, ry: 1.6, fill: '#c9ced6' }); return [[h.z + .05, ts]]; }
+            if (r.tspoon && h) { var ts = el('g', {}); add(ts, 'line', { x1: h.X.toFixed(1), y1: (h.Y + 2).toFixed(1), x2: (h.X + 7).toFixed(1), y2: (h.Y - 5).toFixed(1), stroke: '#cdd3d9', 'stroke-width': 1.3, 'stroke-linecap': 'round' }); add(ts, 'ellipse', { cx: (h.X + 8).toFixed(1), cy: (h.Y - 6).toFixed(1), rx: 2.4, ry: 1.6, fill: '#cdd3d9' }); return [[h.z + .05, ts]]; }
             if (r.salt === 'hand' && h) return [[h.z + .05, shaker(h.X, h.Y - 2, r.grains ? 150 : 0)]];
             return r.milk === 'hand' && h ? [[h.z - .15, carton(h.X, h.Y, r.tilt)]] : []; } });
-        if (r.grains && Fig25.hand()['s-1']) { var gh = Fig25.hand()['s-1']; for (var gi = 0; gi < 4; gi++) { var gq = ((now / 300) + gi / 4) % 1; add(sv, 'circle', { cx: (gh.X + (gi - 1.5) * 1.6).toFixed(1), cy: (gh.Y + 6 + gq * (PT - gh.Y - 6)).toFixed(1), r: .7, fill: '#fff', opacity: (1 - gq).toFixed(2) }); } }
+        if (r.grains && Fig25.hand()['s-1']) { var gh = Fig25.hand()['s-1']; for (var gi = 0; gi < 4; gi++) { var gq = ((now / 300) + gi / 4) % 1; add(sv, 'circle', { cx: (gh.X + (gi - 1.5) * 1.6).toFixed(1), cy: (gh.Y + 6 + gq * (PT - gh.Y - 6)).toFixed(1), r: .7, fill: '#f4f1ea', opacity: (1 - gq).toFixed(2) }); } }
         var hm = Fig25.hand()['s-1']; st.spoonTop = hm ? [hm.X, hm.Y] : SPOON; st.r = r;
         if (r.flow > 0 && hm) { var sp = spout(hm.X, hm.Y, r.tilt), wob = Math.sin(now / 60) * .8;
-          add(sv, 'path', { d: 'M' + sp[0].toFixed(1) + ' ' + sp[1].toFixed(1) + ' Q' + (sp[0] + 2 + wob).toFixed(1) + ' ' + ((sp[1] + PT) / 2).toFixed(1) + ' ' + (sp[0] + 1).toFixed(1) + ' ' + (PT + 1), fill: 'none', stroke: '#f6f2e8', 'stroke-width': (2.4 * r.flow).toFixed(2), 'stroke-linecap': 'round' }); }
+          add(sv, 'path', { d: 'M' + sp[0].toFixed(1) + ' ' + sp[1].toFixed(1) + ' Q' + (sp[0] + 2 + wob).toFixed(1) + ' ' + ((sp[1] + PT) / 2).toFixed(1) + ' ' + (sp[0] + 1).toFixed(1) + ' ' + (PT + 1), fill: 'none', stroke: '#f4f1ea', 'stroke-width': (2.4 * r.flow).toFixed(2), 'stroke-linecap': 'round' }); }
       }
     });
   };

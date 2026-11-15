@@ -17,10 +17,10 @@
       add(g, 'path', { d: 'M-10 170 L70 90 L120 130 L190 60 L260 140 L300 110 L410 170 Z', fill: 'rgba(255,255,255,.07)' });
       add(g, 'path', { d: 'M176 74 L190 60 L204 74 L197 72 L190 76 L183 72 Z', fill: 'rgba(255,255,255,.35)' });
       var hp = 'M0 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L400 108 L400 240 L0 240 Z';
-      add(g, 'path', { d: hp, fill: '#2f5a3c' });
+      add(g, 'path', { d: hp, fill: '#27694a' });
       var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L370 108';
-      add(g, 'path', { d: tr, fill: 'none', stroke: '#c9b48e', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
-      [[176, '#3987e5'], [252, '#e8743b']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#d7dee3', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
+      add(g, 'path', { d: tr, fill: 'none', stroke: '#d8c8a8', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
+      [[176, '#3d85dc'], [252, '#e57a3c']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#cdd3d9', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
       }, gen: { out: true },
       /* the page's own action (F3): a rest on the rock at the top, looking out over the view */
       acts: [{ id: 'sit', len: 6.6, w: function () { return 2; } }, { id: 'help', len: 7.0, w: function () { return 1.2; } }],
@@ -56,16 +56,16 @@
       var ch = !st.pact && t >= 8.8 && t < 10.0 ? CHEER(t, 8.8, 1.2) : null;
       if (ch) { lift = ch.lift; if (ch.on) { pose.near = { m: ch.on, s: 2.6, f: 3.0 }; pose.far = { m: ch.on, s: 2.6, f: 3.0 }; } }
       pose.lean = st.pact ? helpLean : .12 * E(SEG(t, .2, .6)) * (1 - E(SEG(t, 6.8, 7.2)));   /* leaning into the climb, eased in and out */ pose.lift = lift; var ph = LIFE(st, pose, w);
-      function flag(par, top, ss, wave) { add(par, 'path', { d: 'M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' q' + (8 * ss) + ' ' + (-3 * ss + wave) + ' ' + (16 * ss) + ' ' + (1 * ss) + ' l0 ' + (12 * ss) + ' q' + (-8 * ss) + ' ' + (-3 * ss - wave) + ' ' + (-16 * ss) + ' ' + (1 * ss) + ' Z', fill: '#d93a3a' }); }
+      function flag(par, top, ss, wave) { add(par, 'path', { d: 'M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' q' + (8 * ss) + ' ' + (-3 * ss + wave) + ' ' + (16 * ss) + ' ' + (1 * ss) + ' l0 ' + (12 * ss) + ' q' + (-8 * ss) + ' ' + (-3 * ss - wave) + ' ' + (-16 * ss) + ' ' + (1 * ss) + ' Z', fill: '#d6453f' }); }
       var PX = 335 + 15 * KS(335) / .5, PY = YG(335);
-      if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#d7dee3', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); }
-      if (st.pact === 'sit') { var rs = 1.4 * k / .5; add(g, 'path', { d: 'M' + (cx - 16 * rs) + ' ' + (gy + 1) + ' Q' + (cx - 15 * rs) + ' ' + (gy - 15 * rs) + ' ' + cx + ' ' + (gy - 16 * rs) + ' Q' + (cx + 16 * rs) + ' ' + (gy - 14 * rs) + ' ' + (cx + 15 * rs) + ' ' + (gy + 1) + ' Z', fill: '#6b6f78' }); }   /* the rock he sits on */
+      if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#cdd3d9', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); }
+      if (st.pact === 'sit') { var rs = 1.4 * k / .5; add(g, 'path', { d: 'M' + (cx - 16 * rs) + ' ' + (gy + 1) + ' Q' + (cx - 15 * rs) + ' ' + (gy - 15 * rs) + ' ' + cx + ' ' + (gy - 16 * rs) + ' Q' + (cx + 16 * rs) + ' ' + (gy - 14 * rs) + ' ' + (cx + 15 * rs) + ' ' + (gy + 1) + ' Z', fill: '#6f7781' }); }   /* the rock he sits on */
       if (kid) { var kg = add(g, 'g', { opacity: kid.op.toFixed(2) }), kph = LIFE(st, kid.pose, kid.w, 'kid'); FIG(kg, { who: 'kid', look: KID, cx: kid.cx, gy: YG(kid.cx), k: KS(kid.cx) * .74, face: kid.face, ph: kph, w: kid.w, pose: kid.pose }); }
       FIG(g, { cx: cx, gy: gy, k: k, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (planted || !H.s1) return [];
         var hx = H.s1.X, hy = H.s1.Y, carryB = [hx + 6 * s, hy + 12 * s], carryT = [hx - 26 * s, hy - 44 * s], vB = [hx, hy + 30 * s], vT = [hx, hy - 34 * s];
         var b2 = MIX(carryB, vB, pf), t2 = MIX(carryT, vT, pf), fg = el('g', {});
-        add(fg, 'line', { x1: b2[0], y1: b2[1], x2: t2[0], y2: t2[1], stroke: '#d7dee3', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
-        if (pf > .6) flag(fg, t2, s * (pf - .6) / .4, 1.5 * Math.sin(now / 160)); else add(fg, 'path', { d: 'M' + t2[0] + ' ' + t2[1] + ' l' + (-3 * s) + ' ' + (10 * s) + ' l' + (5 * s) + ' ' + (2 * s) + ' Z', fill: '#d93a3a' });
+        add(fg, 'line', { x1: b2[0], y1: b2[1], x2: t2[0], y2: t2[1], stroke: '#cdd3d9', 'stroke-width': 1.8 * s, 'stroke-linecap': 'round' });
+        if (pf > .6) flag(fg, t2, s * (pf - .6) / .4, 1.5 * Math.sin(now / 160)); else add(fg, 'path', { d: 'M' + t2[0] + ' ' + t2[1] + ' l' + (-3 * s) + ' ' + (10 * s) + ' l' + (5 * s) + ' ' + (2 * s) + ' Z', fill: '#d6453f' });
         return [[pf < .5 ? Math.min(H.s1.z - .15, -0.6) : H.s1.z - .15, fg]]; } });   /* carried: the pole lies behind his back and head, never across his face (JP 2026-11-15); raised to plant it, it is in his hand in front */
     } });
   };

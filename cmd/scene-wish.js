@@ -11,9 +11,9 @@
     data = data || {};
     return S.run(svg, {
       back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
-      add(g, 'rect', { x: 206, y: 128, width: 100, height: 4, rx: 1.5, fill: '#a87652' }); [212, 300].forEach(function (x) { add(g, 'path', { d: 'M' + x + ' 132 l0 10 l6 -10 Z', fill: '#8a5e44' }); });
-      add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3987e5' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e8743b' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2fae6a' });
-      add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c96a3c' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f8a52' });
+      add(g, 'rect', { x: 206, y: 128, width: 100, height: 4, rx: 1.5, fill: '#9a7258' }); [212, 300].forEach(function (x) { add(g, 'path', { d: 'M' + x + ' 132 l0 10 l6 -10 Z', fill: '#7a5a44' }); });
+      add(g, 'rect', { x: 262, y: 112, width: 6, height: 16, fill: '#3d85dc' }); add(g, 'rect', { x: 269, y: 114, width: 5, height: 14, fill: '#e57a3c' }); add(g, 'rect', { x: 275, y: 110, width: 6, height: 18, fill: '#2f9d62' });
+      add(g, 'path', { d: 'M286 128 L294 128 L293 118 L287 118 Z', fill: '#c4875e' }); add(g, 'ellipse', { cx: 290, cy: 114, rx: 6, ry: 5, fill: '#2f9d62' });
       FLOOR(g);
       },
       /* the page's own action (F3): he looks up, points – and a new wish star lights up and stays */
@@ -58,17 +58,17 @@
       gift = st.pact ? (gOv || 'cart') : t < 3.0 ? 'shelf' : t < 3.6 ? 'hand' : 'cart';
       if (ns > 0) { STAR(g, NS[0], NS[1] + 2 * Math.sin(now / 650), 7 * ns, '#f2c94c', .9); if (ns < 1) add(g, 'circle', { cx: NS[0], cy: NS[1], r: 16 * ns, fill: 'none', stroke: '#f2c94c', opacity: (1 - ns).toFixed(2) }); }   /* the new wish – it stays */
       pose.lift = lift; var ph = LIFE(st, pose, w);
-      function box(x, y) { var b2 = grp(x, y, 0); add(b2, 'rect', { x: -8, y: -7, width: 16, height: 14, rx: 2, fill: '#d93a3a' }); add(b2, 'rect', { x: -1.5, y: -7, width: 3, height: 14, fill: '#f2c94c' }); add(b2, 'rect', { x: -8, y: -1.5, width: 16, height: 3, fill: '#f2c94c' }); add(b2, 'path', { d: 'M0 -7 q-6 -6 -6 0 Z M0 -7 q6 -6 6 0 Z', fill: '#f2c94c' }); return b2; }
+      function box(x, y) { var b2 = grp(x, y, 0); add(b2, 'rect', { x: -8, y: -7, width: 16, height: 14, rx: 2, fill: '#d6453f' }); add(b2, 'rect', { x: -1.5, y: -7, width: 3, height: 14, fill: '#f2c94c' }); add(b2, 'rect', { x: -8, y: -1.5, width: 16, height: 3, fill: '#f2c94c' }); add(b2, 'path', { d: 'M0 -7 q-6 -6 -6 0 Z M0 -7 q6 -6 6 0 Z', fill: '#f2c94c' }); return b2; }
       if (gift === 'shelf') g.appendChild(box(GIFT0[0], GIFT0[1] + 1));
       /* the cart: the gift sits in its basket, behind the wire front */
       var c0 = cx + 20;
       if (gift === 'cart') g.appendChild(box(c0 + 22, 156));
-      add(g, 'path', { d: 'M' + c0 + ' 148 L' + (c0 + 48) + ' 148 L' + (c0 + 42) + ' 176 L' + (c0 + 6) + ' 176 Z', fill: 'rgba(200,210,220,.18)', stroke: '#b9c1ca', 'stroke-width': 1.6, 'stroke-linejoin': 'round' });
-      for (var i = 1; i < 5; i++) add(g, 'line', { x1: c0 + i * 9.6, y1: 148, x2: c0 + 6 + i * 7.2, y2: 176, stroke: '#b9c1ca', 'stroke-width': .8, opacity: .7 });
-      add(g, 'line', { x1: c0 + 3, y1: 162, x2: c0 + 45, y2: 162, stroke: '#b9c1ca', 'stroke-width': .8, opacity: .7 });
-      add(g, 'path', { d: 'M' + (c0 - 6) + ' 146 L' + c0 + ' 148 M' + (c0 + 8) + ' 176 L' + (c0 + 8) + ' 194 M' + (c0 + 40) + ' 176 L' + (c0 + 40) + ' 194 M' + (c0 + 2) + ' 192 L' + (c0 + 46) + ' 192', fill: 'none', stroke: '#9aa3ad', 'stroke-width': 1.8, 'stroke-linecap': 'round' });
-      [c0 + 8, c0 + 40].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 196.5, r: 3.5, fill: '#2a2d33' }); });
-      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (!(gift === 'hand' && H.sm)) return []; var bx = box(H.sm.X, H.sm.Y); if (tag) { add(bx, 'line', { x1: 8, y1: -3, x2: 12, y2: 2, stroke: '#c9b48e', 'stroke-width': .6 }); add(bx, 'rect', { x: 9.5, y: 2, width: 6, height: 8, rx: 1, fill: '#f4f1ea' }); add(bx, 'line', { x1: 11, y1: 6, x2: 14, y2: 6, stroke: '#8a8f99', 'stroke-width': .7 }); } return [[H.sm.z - .15, bx]]; }   /* the price tag hangs from the gift */ });
+      add(g, 'path', { d: 'M' + c0 + ' 148 L' + (c0 + 48) + ' 148 L' + (c0 + 42) + ' 176 L' + (c0 + 6) + ' 176 Z', fill: 'rgba(200,210,220,.18)', stroke: '#aeb6bf', 'stroke-width': 1.6, 'stroke-linejoin': 'round' });
+      for (var i = 1; i < 5; i++) add(g, 'line', { x1: c0 + i * 9.6, y1: 148, x2: c0 + 6 + i * 7.2, y2: 176, stroke: '#aeb6bf', 'stroke-width': .8, opacity: .7 });
+      add(g, 'line', { x1: c0 + 3, y1: 162, x2: c0 + 45, y2: 162, stroke: '#aeb6bf', 'stroke-width': .8, opacity: .7 });
+      add(g, 'path', { d: 'M' + (c0 - 6) + ' 146 L' + c0 + ' 148 M' + (c0 + 8) + ' 176 L' + (c0 + 8) + ' 194 M' + (c0 + 40) + ' 176 L' + (c0 + 40) + ' 194 M' + (c0 + 2) + ' 192 L' + (c0 + 46) + ' 192', fill: 'none', stroke: '#9ba6b5', 'stroke-width': 1.8, 'stroke-linecap': 'round' });
+      [c0 + 8, c0 + 40].forEach(function (wx) { add(g, 'circle', { cx: wx, cy: 196.5, r: 3.5, fill: '#2a2e36' }); });
+      FIG(g, { cx: cx, gy: 200, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (!(gift === 'hand' && H.sm)) return []; var bx = box(H.sm.X, H.sm.Y); if (tag) { add(bx, 'line', { x1: 8, y1: -3, x2: 12, y2: 2, stroke: '#d8c8a8', 'stroke-width': .6 }); add(bx, 'rect', { x: 9.5, y: 2, width: 6, height: 8, rx: 1, fill: '#f4f1ea' }); add(bx, 'line', { x1: 11, y1: 6, x2: 14, y2: 6, stroke: '#8e97a1', 'stroke-width': .7 }); } return [[H.sm.z - .15, bx]]; }   /* the price tag hangs from the gift */ });
       /* the wish: a star rises from the cart and joins the others */
       if (t >= 3.6 || st.pact === 'price' || st.pact === 'roll') { var q = st.pact === 'price' || st.pact === 'roll' ? 1 : SEG(t, 3.6, 4.8), sp = [LERP(c0 + 22, 250, E(q)), LERP(150, 40, E(q))]; STAR(g, sp[0], sp[1], 5 + 3 * E(q), '#f2c94c', q < 1 ? 1 : .55 + .35 * Math.sin(now / 400 + 4));
         if (q < .5) for (var r3 = 0; r3 < 6; r3++) { var a3 = r3 * Math.PI / 3, rr = 6 + 26 * q; add(g, 'circle', { cx: c0 + 22 + Math.cos(a3) * rr, cy: 152 + Math.sin(a3) * rr * .7, r: 1.4, fill: '#f2c94c', opacity: (1 - 2 * q).toFixed(2) }); } }
