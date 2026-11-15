@@ -262,10 +262,12 @@
       var l = Fe.list('people').map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0] && x[0].n <= 120; });
       if (window.PeoplePlus) l = l.concat(window.PeoplePlus.upcoming(120));          // name days and anniversaries
       l = l.sort(function (a, b) { return a[0].n - b[0].n || (a[0].kind ? 1 : 0) - (b[0].kind ? 1 : 0); }).slice(0, 8);
+      /* one birthday only = the same as the "Next birthday" number at the top – no card just to say it again */
+      if (l.length === 1 && !l[0][0].kind) { el.hidden = true; el.innerHTML = ''; return; }
       el.innerHTML = '<section class="card kit-card" id="pdates"><div class="card-head"><h2><i class="bi bi-balloon"></i> <span data-t="ui.coming-up">Coming up</span></h2></div>' +
         (l.length ? '<ul class="hl-dates">' + l.map(function (x) {
           var b = x[0], d = fromKey(b.next);
-          return '<li' + (b.n <= 7 ? ' class="soon"' : '') + '><span class="hl-day"><b>' + d.getDate() + '</b><small>' + esc(d.toLocaleDateString('en-GB', { month: 'short' })) + '</small></span>' +
+          return '<li' + (b.n <= 7 ? ' class="soon"' : '') + '><span class="hl-day"><b>' + d.getDate() + '</b><small>' + esc(d.toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { month: 'short' })) + '</small></span>' +
             '<span class="hl-dx"><b><span data-noi18n>' + esc(x[1].name) + '</span>' + (b.kind ? ' <span class="pp5-kind" style="--c:' + b.c + '"><i class="bi bi-' + b.icon + '"></i> ' + esc(b.label) + '</span>' : '') + '</b><small>' + esc(cap(inDays(b.n)) + (b.age ? ' · turns ' + b.age : '') + (b.years ? ' · ' + b.years + ' years' : '')) + (!b.kind && x[1].gifts ? ' · <i class="bi bi-gift"></i> ' + esc(String(x[1].gifts).split('\n')[0]) : '') + '</small></span></li>';
         }).join('') + '</ul>' : '<p class="empty kit-empty" data-t="ui.nothing-in-the-next-four-months-add-birt">Nothing in the next four months – add birthdays and other dates to the people in your list.</p>') + '</section>';
     }
@@ -315,9 +317,13 @@
         '<div class="head-actions">' + gear('food') + '<button type="button" class="icon-btn" data-mlwk="-1" aria-label="Previous week" data-t-aria-label="ui.previous-week"><i class="bi bi-chevron-left"></i></button>' +
         (ML.wk ? '<button type="button" class="text-btn" data-mlwk="0" data-t="ui.this-week"><span data-t="ui.this-week">This week</span></button>' : '') +
         '<button type="button" class="icon-btn" data-mlwk="1" aria-label="Next week" data-t-aria-label="ui.next-week"><i class="bi bi-chevron-right"></i></button></div></div>' +
-        voteHtml() + '<ul class="hl-meals">' + days.map(function (k) {
+        voteHtml() + '<ul class="hl-meals">' + (function () {
+          /* days gone by with no dinner fold into one line, so the week starts at today */
+          var gone = days.filter(function (k) { return k < tk && !m[k]; });
+          return gone.length && !ML.past ? '<li class="hl-gone"><button type="button" class="text-btn" data-mlpast><i class="bi bi-chevron-down"></i> ' + esc(I18N.k(gone.length === 1 ? 'ui.ml-gone1' : 'ui.ml-gone', gone.length === 1 ? '1 earlier day with no dinner – show' : '{n} earlier days with no dinner – show', { n: gone.length })) + '</button></li>' : '';
+        })() + days.filter(function (k) { return ML.past || !(k < tk && !m[k]); }).map(function (k) {
           var d = fromKey(k), r = recipeFor(m[k]);
-          return '<li class="' + (k === tk ? 'today' : '') + (k < tk ? ' past' : '') + '"><label for="ml-' + k + '"><b>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short' })) + '</b><small>' + d.getDate() + '.' + (d.getMonth() + 1) + '</small></label>' +
+          return '<li class="' + (k === tk ? 'today' : '') + (k < tk ? ' past' : '') + '"><label for="ml-' + k + '"><b>' + esc(d.toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { weekday: 'short' })) + '</b><small>' + d.getDate() + '.' + (d.getMonth() + 1) + '</small></label>' +
             '<input id="ml-' + k + '" data-ml="' + k + '" list="hlRecipes" value="' + esc(m[k] || '') + '" placeholder="' + (k === tk ? 'What’s for dinner?' : '–') + '" maxlength="80" autocomplete="off" enterkeyhint="next">' +
             (r ? '<button type="button" class="icon-btn sm" data-mlrec="' + esc(r.id) + '" aria-label="Open the recipe"><i class="bi bi-journal-text"></i></button>' : '<span class="hl-sp"></span>') + '</li>';
         }).join('') + '</ul><datalist id="hlRecipes">' + rs.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') + '</datalist>' +
@@ -348,6 +354,7 @@
         toast('<i class="bi bi-egg-fried"></i> ' + esc(v1.opts[v1.pick]) + ' it is' + (n ? ' · ' + n + ' thing' + (n === 1 ? '' : 's') + ' to the shopping list' : ''));
         return;
       }
+      if ((b = e.target.closest('[data-mlpast]'))) { ML.past = true; return draw(); }
       if ((b = e.target.closest('[data-mlwk]'))) { ML.wk = +b.dataset.mlwk === 0 ? 0 : ML.wk + (+b.dataset.mlwk); return draw(); }
       if ((b = e.target.closest('[data-mlrec]'))) { RC.open(b.dataset.mlrec); var c = $t('recipes'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if (e.target.closest('[data-mlshop]')) {

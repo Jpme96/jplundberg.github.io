@@ -24,7 +24,7 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('not found', { status: 404 });
     /* a contractor's upload link (jplundberg.com/upload/ → the /cmd Worker → here): no sign-in – the link itself is the permission,
        and what is uploaded is already encrypted with the link's key, which never reaches a server (it is in the #part of the link) */
-    const up = url.pathname.match(/^\/api\/up\/(team|[a-z0-9]{12})\/([a-f0-9]{16})\/(info|chunk|done)$/);
+    const up = url.pathname.match(/^\/api\/up\/(team|[a-z0-9]{12})\/([a-f0-9]{16})\/(info|list|chunk|done)$/);
     if (up) {
       if (up[1] !== 'team') { const ok = await (await env.TEAM.get(env.TEAM.idFromName('dir')).fetch(new Request('https://team/dir/has?id=' + up[1]))).json(); if (!ok.has) return json({ error: 'this link does not work' }, 404); }
       const body = request.method === 'GET' ? undefined : await request.text();
@@ -116,6 +116,7 @@ export class TeamStore {
       if (p === 'push' && m === 'GET') return json({ key: (await this.vapid()).pub });
       if (p === 'push' && m === 'POST') return this.pushSub(email, b);
       if (p === 'uploads' && m === 'GET') return this.uploads(url);
+      if (p === 'upkept' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = String(b.lid || ''), fids = Array.isArray(b.fids) ? b.fids.slice(0, 300) : []; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); for (const fid of fids) { if (!FID.test(String(fid))) continue; const k = 'uf:' + lid + ':' + fid, f = await this.s.get(k); if (f && !f.kept) { f.kept = Date.now(); await this.s.put(k, f); } } return json({ ok: true }); }
       if (p === 'uplink' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.upLink(email, b); }
       if (p === 'uplink' && m === 'DELETE') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); const l = await this.s.get('u:' + lid); if (l) { l.exp = Math.min(l.exp, Date.now()); l.off = 1; await this.s.put('u:' + lid, l); await this.log(email, 'uplink-off', {}); } return json({ ok: true }); }
       if (!isAdmin) return json({ error: 'admins only' }, 403);
@@ -332,13 +333,19 @@ export class TeamStore {
     const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400);
     const l = await this.s.get('u:' + lid); if (!l) return json({ files: [], exp: 0 });
     const out = [];
-    for (const fid of l.files) { const f = await this.s.get('uf:' + lid + ':' + fid); if (f && f.done) out.push({ fid, name: f.name, size: f.size, n: f.n, t: f.t }); }
+    for (const fid of l.files) { const f = await this.s.get('uf:' + lid + ':' + fid); if (f && f.done) out.push({ fid, name: f.name, size: f.size, n: f.n, t: f.t, kept: f.kept || 0 }); }
     return json({ files: out, exp: l.exp, off: !!l.off });
   }
   async upPublic(rest, m, request, url) {
     const [lid, what] = rest.split('/'), l = LID.test(lid || '') ? await this.s.get('u:' + lid) : null, team = await this.s.get('team');
     if (!l || !team || l.exp < Date.now()) return json({ error: 'this link has run out or was switched off' }, 410);
     if (what === 'info' && m === 'GET') return json({ ok: true, exp: l.exp, n: l.n, left: Math.max(0, LINKFILES - l.n) });
+    /* what was sent on this link – for the sender's own log (the names are opened in their browser with the link's key) */
+    if (what === 'list' && m === 'GET') {
+      const out = [];
+      for (const fid of l.files) { const f = await this.s.get('uf:' + lid + ':' + fid); if (f && f.done) out.push({ fid, name: f.name, size: f.size, t: f.t, kept: f.kept || 0 }); }
+      return json({ files: out, exp: l.exp });
+    }
     let b = {}; try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); }
     const fid = String(b.fid || ''); if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
     const fk = 'uf:' + lid + ':' + fid;
@@ -346,7 +353,7 @@ export class TeamStore {
     if (what === 'chunk' && m === 'PUT') {
       const n = b.n | 0;
       if (n < 0 || n >= MAXCHUNKS || !blob(b) || b.ct.length > MAXCHUNK) return json({ error: 'bad chunk' }, 400);
-      if (!f) { if (n !== 0 || !blob(b.name) || b.name.ct.length > 2000 || l.n >= LINKFILES) return json({ error: 'bad file' }, 400); f = { name: { iv: b.name.iv, ct: b.name.ct }, t: Date.now(), n: 0, size: 0, done: false }; l.files.push(fid); l.n++; }
+      if (!f) { if (n !== 0 || !blob(b.name) || b.name.ct.length > 8000 || l.n >= LINKFILES) return json({ error: 'bad file' }, 400); f = { name: { iv: b.name.iv, ct: b.name.ct }, t: Date.now(), n: 0, size: 0, done: false }; l.files.push(fid); l.n++; }
       if (f.done) return json({ error: 'already sent' }, 409);
       if (l.bytes + b.ct.length > LINKBYTES) return json({ error: 'the link is full' }, 507);
       const used = (await this.s.get('fbytes')) || 0; if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);

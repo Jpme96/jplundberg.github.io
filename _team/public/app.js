@@ -950,15 +950,26 @@
     }
     return new File(parts, d.name, { type: d.type || 'application/octet-stream' });
   }
+  /* open a file in Team: pictures, PDFs and text are shown right here; everything can be downloaded or shared */
+  var prevUrl = '';
+  function fileKind(t, n) { t = String(t || ''); n = String(n || '').toLowerCase(); return /^image\/(png|jpe?g|gif|webp|avif|bmp|svg)/.test(t) || /\.(png|jpe?g|gif|webp|avif)$/.test(n) ? 'img' : /pdf/.test(t) || /\.pdf$/.test(n) ? 'pdf' : /^text\/|json|csv/.test(t) || /\.(txt|csv|md|json|log)$/.test(n) ? 'text' : /^video\//.test(t) ? 'video' : 'other'; }
   function openFile(d) {
-    toast(L('Opening …', 'Åpner …'));
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = ''; }
+    var kind = fileKind(d.type, d.name), meta = [fsize(d.size), d.who ? L('from ', 'fra ') + d.who : '', d.at ? fmtTime(d.at) : ''].filter(Boolean).join(' · ');
+    openSheet('<h2 class="t-prevh">' + esc(d.name) + '</h2><p class="t-small">' + esc(meta) + '</p>' + (d.msg ? '<p class="t-prevmsg">' + esc(d.msg) + '</p>' : '') + '<div class="t-prev" id="prevBox"><p class="t-small">' + esc(L('Opening …', 'Åpner …')) + '</p></div>' +
+      '<div class="t-acts2"><button class="t-btn" type="button" data-act="fdl" disabled>' + L('Download', 'Last ned') + '</button>' + (navigator.share ? '<button class="t-btn ghost" type="button" data-act="fshare" disabled>' + L('Share', 'Del') + '</button>' : '') + '</div><button class="t-btn ghost wide" type="button" data-act="close">' + L('Close', 'Lukk') + '</button>', 'wide');
     getFile(d).then(function (f) {
-      var u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; a.rel = 'noopener';
-      var phone = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent);
-      if (/^(image\/|application\/pdf)/.test(f.type) && !phone) a.target = '_blank'; else if (phone && navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f] }).catch(function () {}); return; }
-      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
-    }, function () { toast(L('Could not open the file.', 'Klarte ikke å åpne filen.')); });
+      var box = document.getElementById('prevBox'); if (!box) return;
+      S.prevFile = f; prevUrl = URL.createObjectURL(f);
+      document.querySelectorAll('[data-act=fdl],[data-act=fshare]').forEach(function (b) { b.disabled = false; });
+      if (kind === 'img') box.innerHTML = '<img src="' + prevUrl + '" alt="' + esc(d.name) + '">';
+      else if (kind === 'pdf') box.innerHTML = '<iframe src="' + prevUrl + '#view=FitH" title="' + esc(d.name) + '"></iframe><p class="t-small t-noprint">' + L('Not showing? ', 'Vises ikke? ') + '<a href="' + prevUrl + '" target="_blank" rel="noopener">' + L('Open in a new tab', 'Åpne i ny fane') + '</a></p>';
+      else if (kind === 'video') box.innerHTML = '<video src="' + prevUrl + '" controls playsinline></video>';
+      else if (kind === 'text' && f.size < 6e6) f.text().then(function (t) { box.innerHTML = '<pre>' + esc(t.slice(0, 200000)) + '</pre>'; });
+      else box.innerHTML = '<p class="t-empty">' + esc(L('This kind of file can’t be shown here – download it to open it.', 'Denne filtypen kan ikke vises her – last den ned for å åpne den.')) + '</p>';
+    }, function () { var box = document.getElementById('prevBox'); if (box) box.innerHTML = '<p class="t-err">' + esc(L('Could not open the file.', 'Klarte ikke å åpne filen.')) + '</p>'; });
   }
+  function saveFile(f) { var u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000); }
   function projPick(name, cur) { return '<select name="' + name + '"><option value="">' + esc(L('No project', 'Uten prosjekt')) + '</option>' + projects().map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>'; }
   function links() { return list('upl').filter(function (r) { return r.d.exp > Date.now() - 30 * 864e5; }).sort(function (a, b) { return b.d.exp - a.d.exp; }); }
   function filesHtml() {
@@ -967,14 +978,14 @@
       '<button class="t-btn ghost wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
     var ls = links();
     if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off;
-      return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"><h2>' + esc(projName(r.d.pid) || r.d.label || L('Upload link', 'Opplastingslenke')) + '</h2><p class="t-small">' + esc(live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + '</p><ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul>' +
+      return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"><h2>' + esc(projName(r.d.pid) || r.d.label || L('Upload link', 'Opplastingslenke')) + ' <span class="t-chip t-upcount"></span></h2><p class="t-small">' + esc(live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + '</p><ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul>' +
         (live ? '<div class="t-acts2"><button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : '') + '</div>'; }).join('');
     fl.forEach(function (r) { var k = r.d.pid || ''; (by[k] = by[k] || []).push(r); });
     out += '<p class="t-h"><span>' + L('Shared files', 'Delte filer') + '</span><span>' + fl.length + '</span></p>';
     if (!fl.length) return out + '<p class="t-empty">' + L('No files yet. Files here are encrypted and shared with the team.', 'Ingen filer ennå. Filer her er kryptert og delt med teamet.') + '</p>';
     Object.keys(by).sort(function (a, b) { return (projName(a) || '~').localeCompare(projName(b) || '~'); }).forEach(function (k) {
       out += '<p class="t-sub">' + esc(projName(k) || L('No project', 'Uten prosjekt')) + '</p><ul class="t-list">' + by[k].map(function (r) {
-        return '<li><button class="t-row" type="button" data-act="fopen" data-id="' + esc(r.id) + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([fsize(r.d.size), nameOf(r.by), fmtTime(r.d.at || r.t), r.d.from ? L('from the upload link', 'fra opplastingslenken') : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (rank() >= 1 ? '<button class="t-icon" type="button" data-act="fdel" data-id="' + esc(r.id) + '" aria-label="' + esc(L('Delete', 'Slett')) + '">×</button>' : '') + '</li>';
+        return '<li><button class="t-row" type="button" data-act="fopen" data-id="' + esc(r.id) + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([fsize(r.d.size), r.d.from ? (r.d.who ? L('from ', 'fra ') + r.d.who : L('from the upload link', 'fra opplastingslenken')) : nameOf(r.by), fmtTime(r.d.at || r.t)].filter(Boolean).join(' · ')) + '</small></span></button>' + (rank() >= 1 ? '<button class="t-icon" type="button" data-act="fdel" data-id="' + esc(r.id) + '" aria-label="' + esc(L('Delete', 'Slett')) + '">×</button>' : '') + '</li>';
       }).join('') + '</ul>';
     });
     return out;
@@ -985,18 +996,33 @@
     for (var i = 0; i < ls.length; i++) {
       var r = ls[i], ul = document.querySelector('[data-ups="' + r.d.lid + '"]'); if (!ul) continue;
       try {
-        var j = await api('uploads?lid=' + r.d.lid), key = await C.importKey('raw', ub64(r.d.key), 'AES-GCM', false, ['decrypt']), kept = {};
+        var j = await api('uploads?lid=' + r.d.lid), key = await C.importKey('raw', ub64(r.d.key), 'AES-GCM', false, ['decrypt']), kept = {}, groups = {}, order = [], fresh = 0;
         files().forEach(function (x) { if (x.d.from === r.d.lid) kept[x.d.fid] = 1; });
-        var rows = [];
+        S.upMeta = S.upMeta || {};
         for (var k = 0; k < j.files.length; k++) {
           var u = j.files[k], meta = null;
           try { meta = JSON.parse(TD.decode(await C.decrypt({ name: 'AES-GCM', iv: ub64(u.name.iv), additionalData: TE.encode(r.d.lid + '|' + u.fid + '|name') }, key, ub64(u.name.ct)))); } catch (x) { meta = { name: L('(could not be read)', '(kunne ikke leses)') }; }
-          S.upMeta = S.upMeta || {}; S.upMeta[u.fid] = { fid: u.fid, n: u.n, name: String(meta.name || 'file').slice(0, 160), type: meta.type || '', size: meta.size || u.size, lid: r.d.lid, k: r.d.key, pid: r.d.pid, from: r.d.lid, at: u.t };
-          rows.push('<li><button class="t-row" type="button" data-act="upopen" data-fid="' + esc(u.fid) + '"><span class="grow"><span>' + esc(meta.name) + '</span><small>' + esc(fsize(meta.size || u.size) + ' · ' + fmtTime(u.t)) + '</small></span></button>' + (kept[u.fid] ? '<span class="t-chip">' + L('Kept', 'Lagt til') + '</span>' : rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="upkeep" data-fid="' + esc(u.fid) + '">' + L('Keep', 'Behold') + '</button>' : '') + '</li>');
+          var um = S.upMeta[u.fid] = { fid: u.fid, n: u.n, name: String(meta.name || 'file').slice(0, 160), type: meta.type || '', size: meta.size || u.size, lid: r.d.lid, k: r.d.key, pid: r.d.pid, from: r.d.lid, who: String(meta.who || '').slice(0, 120), msg: String(meta.msg || '').slice(0, 1000), at: u.t };
+          var g = meta.b || u.fid; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(um);
+          if (!kept[u.fid]) fresh++;
         }
-        ul.innerHTML = rows.length ? rows.join('') : '<li class="t-small">' + esc(L('Nothing sent yet.', 'Ingenting sendt ennå.')) + '</li>';
+        order.sort(function (a, b) { return groups[b][0].at - groups[a][0].at; });
+        var card = ul.closest('.t-upl'), cnt = card && card.querySelector('.t-upcount');
+        if (cnt) cnt.textContent = fresh ? L(fresh + ' new', fresh + ' nye') : '';
+        ul.innerHTML = order.length ? order.map(function (g) {
+          var l = groups[g], m0 = l[0], left = l.filter(function (x) { return !kept[x.fid]; });
+          return '<li class="t-upb"><div class="t-upbh"><b>' + esc(m0.who || L('Someone with the link', 'Noen med lenken')) + '</b><span class="t-small">' + esc(fmtTime(m0.at)) + '</span></div>' + (m0.msg ? '<p class="t-prevmsg">' + esc(m0.msg) + '</p>' : '') +
+            '<ul class="t-list">' + l.map(function (x) { return '<li><button class="t-row" type="button" data-act="upopen" data-fid="' + esc(x.fid) + '"><span class="grow"><span>' + esc(x.name) + '</span><small>' + esc(fsize(x.size)) + '</small></span></button>' + (kept[x.fid] ? '<span class="t-chip">' + L('Kept', 'Lagt til') + '</span>' : rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="upkeep" data-fid="' + esc(x.fid) + '">' + L('Keep', 'Behold') + '</button>' : '') + '</li>'; }).join('') + '</ul>' +
+            (left.length > 1 && rank() >= 1 ? '<button class="t-btn sm ghost" type="button" data-act="upkeepall" data-fids="' + esc(left.map(function (x) { return x.fid; }).join(',')) + '">' + L('Keep all ' + left.length, 'Behold alle ' + left.length) + '</button>' : '') + '</li>';
+        }).join('') : '<li class="t-small">' + esc(L('Nothing sent yet.', 'Ingenting sendt ennå.')) + '</li>';
       } catch (x) { ul.innerHTML = '<li class="t-small">' + esc(failMsg(x)) + '</li>'; }
     }
+  }
+  /* keep files from an upload link in the project's shared files – and tell the sender they were received */
+  async function keepUploads(fids) {
+    var done = [], lid = '';
+    for (var i = 0; i < fids.length; i++) { var uk = (S.upMeta || {})[fids[i]]; if (!uk) continue; lid = uk.lid; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name)) done.push(uk.fid); }
+    if (done.length) { api('upkept', { method: 'POST', body: { lid: lid, fids: done } }).catch(function () {}); toast(L(done.length === 1 ? 'Kept in the project files' : done.length + ' files kept in the project files', done.length === 1 ? 'Lagt i prosjektfilene' : done.length + ' filer lagt i prosjektfilene')); draw(); }
   }
   function linkUrl(d) { return 'https://jplundberg.com/upload/#' + S.tid + '.' + d.lid + '.' + d.key + '.' + encodeURIComponent(projName(d.pid) || d.label || ''); }
   function uplinkSheet() {
@@ -1067,9 +1093,9 @@
   }
 
   /* ---------- sheets ---------- */
-  function openSheet(html) {
+  function openSheet(html, cls) {
     closeSheet(true);
-    var bg = document.createElement('div'); bg.className = 't-sheetbg'; bg.innerHTML = '<div class="t-sheet" role="dialog" aria-modal="true">' + html + '</div>';
+    var bg = document.createElement('div'); bg.className = 't-sheetbg'; bg.innerHTML = '<div class="t-sheet' + (cls ? ' t-sheet-' + cls : '') + '" role="dialog" aria-modal="true">' + html + '</div>';
     document.body.appendChild(bg); S.sheet = bg;
     var f = bg.querySelector('input:not([readonly]), select'); if (f && !/Mobi/.test(navigator.userAgent)) f.focus();
   }
@@ -1101,7 +1127,10 @@
     if (a === 'fopen') { var fr = S.recs[t.dataset.id]; if (fr && fr.d) openFile(fr.d); return; }
     if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !confirm(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.'))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
     if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
-    if (a === 'upkeep') { var uk = (S.upMeta || {})[t.dataset.fid]; if (!uk) return; t.disabled = true; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name)) { toast(L('Kept in the project files', 'Lagt i prosjektfilene')); draw(); } else t.disabled = false; return; }
+    if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
+    if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }
+    if (a === 'fdl') { if (S.prevFile) saveFile(S.prevFile); return; }
+    if (a === 'fshare') { if (S.prevFile && navigator.canShare && navigator.canShare({ files: [S.prevFile] })) navigator.share({ files: [S.prevFile] }).catch(function () {}); else if (S.prevFile) saveFile(S.prevFile); return; }
     if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt(L('The link', 'Lenken'), lu); }); return; }
     if (a === 'upoff') { var lo = S.recs[t.dataset.id]; if (!lo || !lo.d || !confirm(L('Switch off this upload link? Files already sent stay.', 'Slå av denne opplastingslenken? Filer som er sendt, blir liggende.'))) return; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1, exp: Math.min(lo.d.exp, Date.now()) })); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt('', txt); }); return; }

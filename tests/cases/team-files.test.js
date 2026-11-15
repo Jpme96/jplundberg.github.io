@@ -54,6 +54,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => window.__blobs.some(x => x && x.size > 2.3e6), 20000), 'opening it brings back the whole file');
   const back = await own.evaluate(() => { const f = window.__blobs.filter(x => x && x.size > 2.3e6).pop(); return f.text().then(t => t.slice(0, 42) + '|' + f.size + '|' + f.name); });
   check(back.startsWith('made-up-file-content-made-up-file-content-') && back.endsWith('|report.txt'), 'and it is the same file (' + back.split('|').slice(1).join(' ') + ')');
+  check(await until(own, () => /made-up-file-content/.test((document.querySelector('#prevBox pre') || {}).textContent || ''), 10000), 'a text file is shown right in Team, no download needed');
+  check(await own.evaluate(() => !!document.querySelector('[data-act=fdl]') && !document.querySelector('[data-act=fdl]').disabled), 'with Download beside it');
+  await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
 
   /* an upload link, used by a contractor on the real /upload/ page (no account, no Team sign-in) */
   await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]');
@@ -75,18 +78,34 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await con.goto(SITE + 'upload/' + link.slice(link.indexOf('#')));
   check(await until(con, () => /Testveien 9/.test(document.body.innerText) && !!document.getElementById('pick'), 10000), 'the contractor sees the upload page for the project');
   const dwg = path.join(tmp, 'A-101 plan.pdf'); fs.writeFileSync(dwg, '%PDF-1.4 made-up drawing ' + 'x'.repeat(5000));
-  await (await con.$('#pick')).uploadFile(dwg);
-  check(await until(con, () => /1 file sent/.test(document.body.innerText), 15000), 'the contractor sends a file without signing in');
+  const photo = path.join(tmp, 'site photo.png'); fs.writeFileSync(photo, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+  await (await con.$('#pick')).uploadFile(dwg, photo);
+  await sl(400);
+  const staged = await con.evaluate(() => ({ rows: document.querySelectorAll('#list li').length, btn: document.getElementById('send').textContent, sent: /sent|sendt/i.test(document.getElementById('done').textContent) }));
+  check(staged.rows === 2 && /Send 2 files/.test(staged.btn) && !staged.sent, 'choosing files only lists them – nothing is sent before Send (' + staged.btn + ')');
+  await con.evaluate(() => document.querySelector('#list [data-rm]:last-of-type') && [...document.querySelectorAll('#list li')].find(li => /site photo/.test(li.textContent)).querySelector('[data-rm]').click());
+  check(await con.evaluate(() => document.querySelectorAll('#list li').length === 1), 'a chosen file can be taken off the list');
+  await con.click('#send'); await sl(300);
+  check(await con.evaluate(() => !document.getElementById('needWho').hidden), 'Send asks who you are first');
+  await con.type('#who', 'Kari Test, Bygg AS'); await con.type('#msg', 'Revised plan, rev. C');
+  await con.click('#send');
+  check(await until(con, () => /1 file was sent to Testveien 9/.test(document.body.innerText), 15000), 'the contractor sends the file without signing in');
+  check(await until(con, () => /Sent on this link/.test(document.body.innerText) && /A-101 plan\.pdf/.test(document.getElementById('log').innerText) && /Waiting for the team/.test(document.getElementById('log').innerText) && /Kari Test/.test(document.getElementById('log').innerText), 10000), 'the sender sees what was sent, by whom, and that the team has not taken it in yet');
   check((await raw('/api/up/team/0000000000000000/info', { cookie: 'noauth=1' })).status === 410, 'a made-up link id does not work');
 
   await own.goto(T + '#overview'); await own.goto(T + '#files');
   check(await until(own, () => /A-101 plan\.pdf/.test(document.body.innerText), 15000), 'the team sees the file name (opened with the link key on the device)');
-  await own.click('[data-act=upkeep]');
+  check(await own.evaluate(() => /Kari Test, Bygg AS/.test(document.body.innerText) && /Revised plan, rev\. C/.test(document.body.innerText)), 'the team sees who sent it and the message');
+  await own.evaluate(() => document.querySelector('[data-act=upkeep]').click());
   check(await until(own, () => [...document.querySelectorAll('[data-act=fopen]')].some(x => /A-101 plan\.pdf/.test(x.textContent)), 15000), '"Keep" puts it into the shared files');
   await own.evaluate(() => { window.__blobs = []; [...document.querySelectorAll('[data-act=fopen]')].find(x => /A-101/.test(x.textContent)).click(); });
   check(await until(own, () => window.__blobs.some(x => x && /A-101/.test(x.name || '')), 15000), 'and it opens');
   const got = await own.evaluate(() => window.__blobs.find(x => /A-101/.test(x.name || '')).text().then(t => t.slice(0, 25)));
   check(got === '%PDF-1.4 made-up drawing ', 'the uploaded file comes back as sent');
+  check(await own.evaluate(() => !!document.querySelector('#prevBox iframe')), 'a PDF is shown in Team');
+  await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
+  await con.reload(); 
+  check(await until(con, () => /Received/.test((document.getElementById('log') || {}).innerText || ''), 10000), 'the sender sees "Received" once the team has kept it');
   /* switching the link off */
   await own.evaluate(() => document.querySelector('[data-act=upoff]').click()); await sl(1200);
   const offInfo = await raw('/api/up/team/' + link.split('#')[1].split('.')[1] + '/info', { cookie: 'noauth=1' });

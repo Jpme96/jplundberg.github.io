@@ -82,7 +82,7 @@ export default {
 /* a contractor's upload link (jplundberg.com/upload/#…): passed on to the Team Worker, which checks the link. Nothing is read here –
    the files are encrypted in the contractor's browser with a key that only the link holds. */
 async function uploadProxy(request, env) {
-  const u = new URL(request.url), m = u.pathname.match(/^\/upload\/api\/((?:team|[a-z0-9]{12})\/[a-f0-9]{16}\/(?:info|chunk|done))$/);
+  const u = new URL(request.url), m = u.pathname.match(/^\/upload\/api\/((?:team|[a-z0-9]{12})\/[a-f0-9]{16}\/(?:info|list|chunk|done))$/);
   if (!m) return json({ error: 'not found' }, 404);
   if (!env.TEAMSVC) return json({ error: 'uploads are not set up' }, 503);
   if (!['GET', 'PUT', 'POST'].includes(request.method)) return json({ error: 'not found' }, 404);

@@ -2768,5 +2768,13 @@ I18N.add({
   "ui.pa-saved": ["{n} files saved on this device", "{n} filer lagret på denne enheten"],
   "ui.pa-not-added": ["Not added: {x}", "Ikke lagt til: {x}"],
   "ui.pa-adding": ["Adding {n} papers …", "Legger til {n} papirer …"],
-  "ui.pa-added": ["{n} papers added – open one to add its dates", "{n} papirer lagt til – åpne ett for å legge inn datoene"]
+  "ui.pa-added": ["{n} papers added – open one to add its dates", "{n} papirer lagt til – åpne ett for å legge inn datoene"],
+  "ui.encrypted-with-your-passcode-dot": ["Encrypted with your passcode ·", "Kryptert med koden din ·"],
+  "ui.ml-gone1": ["1 earlier day with no dinner – show", "1 tidligere dag uten middag – vis"],
+  "ui.ml-gone": ["{n} earlier days with no dinner – show", "{n} tidligere dager uten middag – vis"],
+  "ui.sh-bills-vis": ["Split bills visible to {x}", "Delte regninger synlig for {x}"],
+  "ui.sh-vis": ["Visible to {x}", "Synlig for {x}"],
+  "ui.sh-not-vis": ["Not visible to {x}", "Ikke synlig for {x}"],
+  "ui.sh-vis-tip": ["Visible to {x} – tap to stop sharing this", "Synlig for {x} – trykk for å slutte å dele"],
+  "ui.sh-not-vis-tip": ["Not visible to {x} – tap to share this", "Ikke synlig for {x} – trykk for å dele"]
 });

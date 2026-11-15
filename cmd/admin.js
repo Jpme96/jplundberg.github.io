@@ -43,6 +43,8 @@
     LOGW.forEach(function (p) { var i = t.indexOf(p[fr]); if (i === 0 || (i > 0 && p[fr].charAt(0) === ' ' && i === t.length - p[fr].length)) t = t.slice(0, i) + p[to] + t.slice(i + p[fr].length); });
     return t;
   }
+  /* the same thing done again and again is one line: "Ran all checks ×8" (with the newest time) */
+  function logGroups(lg) { var out = []; lg.forEach(function (x) { var t = logText(x.t), last = out[out.length - 1]; if (last && last.t === t) last.n++; else out.push({ t: t, i: x.i, at: x.at, n: 1 }); }); return out; }
   function todos() { var l = T().admintodo; return Array.isArray(l) ? l : []; }
 
   /* ---------- checks ---------- */
@@ -259,7 +261,7 @@
     /* activity log */
     if (P.log) {
       var lg = Array.isArray(T().adminlog) ? T().adminlog : [];
-      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="cr-log">' + lg.slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(logText(x.t)) + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
+      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="cr-log">' + logGroups(lg).slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(x.t) + (x.n > 1 ? ' <b class="cr-x">×' + x.n + '</b>' : '') + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
     }
     /* changelog */
     if (P.changes) {

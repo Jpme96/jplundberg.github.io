@@ -15,3 +15,24 @@ h1 { font-size: 26px; margin: 8px 0 4px; }
 .u-ok { color: var(--ok); } .u-bad { color: var(--danger); }
 .u-bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 4px; }
 .u-bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+h2 { font-size: 18px; margin: 26px 0 6px; }
+.u-lbl { display: grid; gap: 6px; margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+.u-lbl input, .u-lbl textarea { width: 100%; min-height: 48px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 16px; }
+.u-lbl textarea { resize: vertical; }
+.u-need { border-color: var(--danger) !important; }
+.u-drop { border: 1.5px dashed var(--line); border-radius: 14px; padding: 14px; margin: 4px 0 10px; text-align: center; transition: border-color .15s, background .15s; }
+.u-drop.on { border-color: var(--accent); background: rgba(139,116,230,.08); }
+.u-drop p { margin: 0 0 4px; color: var(--muted); font-size: 14px; }
+.u-two { display: flex; gap: 8px; flex-wrap: wrap; }
+.u-two .u-btn { flex: 1 1 140px; margin-top: 6px; }
+.u-btn:disabled { opacity: .45; cursor: default; }
+.u-th { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; flex: none; }
+.u-ic { width: 44px; height: 44px; display: grid; place-items: center; font-size: 22px; background: var(--bg); border-radius: 8px; flex: none; }
+.u-x { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; flex: none; }
+.u-small { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.u-batch { padding: 6px 0 10px; border-top: 1px solid var(--line); }
+.u-batch:first-of-type { border-top: 0; }
+.u-bh { margin: 6px 0 2px; font-size: 14px; }
+.u-msg { margin: 0 0 4px; font-size: 14px; color: var(--muted); white-space: pre-wrap; }
+.u-tag { flex: none; font-size: 12px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.u-tag.ok { color: var(--ok); border-color: rgba(34,179,94,.4); }

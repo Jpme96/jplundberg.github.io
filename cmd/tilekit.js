@@ -94,8 +94,17 @@
 
   /* draw on whatever appears or is redrawn */
   var queued = false;
+  /* a row of key numbers that are all 0 says nothing yet – it stays hidden until something is in it */
+  var ZERO = /^\s*(0|0 kr|kr 0|–|-|—|0\s*\/\s*\d+|0 %|0\s*\w{0,3})\s*$/;
+  function empties() {
+    document.querySelectorAll('.fp-tiles').forEach(function (box) {
+      var vals = Array.prototype.slice.call(box.querySelectorAll('.fp-tile .val, .fp-tile .num'));
+      var empty = vals.length > 1 && vals.every(function (v) { return ZERO.test(v.textContent.replace(/\u00a0/g, ' ')); });
+      if (box.classList.contains('tk-empty') !== empty) box.classList.toggle('tk-empty', empty);
+    });
+  }
   function scan() {
-    queued = false;
+    queued = false; empties();
     document.querySelectorAll(SEL).forEach(function (box) {
       if (tilesIn(box).some(function (t) { return !t.dataset.tkd; })) apply(box);
     });

@@ -523,9 +523,10 @@
       if (!on) { if (m) m.remove(); return; }
       if (!m) { m = document.createElement('button'); m.type = 'button'; m.className = 'sh-vis'; m.innerHTML = '<i class="bi bi-people"></i> <span></span>'; h.appendChild(m); }
       m.dataset.shcard = v[1]; m.classList.toggle('off', !shared);
-      var tx = shared ? (v[2] || 'Visible to ') + pname() : 'Share with ' + pname();
+      /* one wording everywhere (JP, 15 Nov): "Visible to Iago" – and "Not visible to Iago" when it isn't */
+      var tx = shared ? (v[2] ? I18N.k('ui.sh-bills-vis', 'Split bills visible to {x}', { x: pname() }) : I18N.k('ui.sh-vis', 'Visible to {x}', { x: pname() })) : I18N.k('ui.sh-not-vis', 'Not visible to {x}', { x: pname() });
       if (m.lastChild.textContent !== tx) m.lastChild.textContent = tx;
-      m.title = shared ? 'Shared with ' + pname() + ' – tap to stop sharing this' : 'Not shared – tap to share this with ' + pname();
+      m.title = shared ? I18N.k('ui.sh-vis-tip', 'Visible to {x} – tap to stop sharing this', { x: pname() }) : I18N.k('ui.sh-not-vis-tip', 'Not visible to {x} – tap to share this', { x: pname() });
       m.setAttribute('aria-pressed', String(!!shared));
     });
   }

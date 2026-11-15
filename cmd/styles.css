@@ -2230,6 +2230,7 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 #stLists .st-row { justify-content: flex-start; gap: 12px; } #stLists .st-label { flex: 1; }
 
 /* ---------- customizable tile groups (tilekit.js) ---------- */
+.fp-tiles.tk-empty { display: none; }   /* all key numbers are 0 – nothing to show yet */
 .tk-bar { display: flex; justify-content: flex-end; margin: -6px 0 10px; }
 /* Customize is a quiet extra, not a call to action */
 .tk-bar .tk-edit { color: var(--muted); font-size: 12px; }
@@ -2695,6 +2696,8 @@ body.rp-open { overflow: hidden; }
 .hl-day b { display: block; font-size: 17px; line-height: 1.1; } .hl-day small { font-size: 11px; color: var(--muted); text-transform: uppercase; }
 .hl-dx { min-width: 0; } .hl-dx b { display: block; font-size: 14px; } .hl-dx small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hl-meals { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.hl-meals li.hl-gone { display: block; padding: 2px 0 6px; }   /* days gone by with no dinner, folded */
+.hl-meals li.hl-gone .text-btn { font-size: 13px; color: var(--muted); }
 .hl-meals li { display: grid; grid-template-columns: 52px minmax(0, 1fr) 34px; align-items: center; gap: 8px; padding: 3px 0; }
 .hl-meals label { display: flex; flex-direction: column; line-height: 1.15; cursor: pointer; }
 .hl-meals label b { font-size: 13.5px; } .hl-meals label small { font-size: 11px; color: var(--muted); }
@@ -3086,6 +3089,8 @@ body.rp-open { overflow: hidden; }
 .sc-jarg { fill: rgba(255, 255, 255, .05); stroke: rgba(var(--ink-rgb), .45); stroke-width: 1.5; }
 /* the 2.5D scenes (scene25.js, Phase F2): 400 × 240, a little bigger on a computer */
 /* bigger on a tablet and a computer (JP 2026-11-12: "the figures were kinda small" – the phone size was right) */@media (min-width: 641px) { .hs-illu { width: 320px; } .hs-illu:has(.sc25) { width: 420px; } }@media (min-width: 1000px) { .hs-illu { width: 380px; } .hs-illu:has(.sc25) { width: 520px; } }@media (max-width: 640px) { .hs-illu:has(.sc25) { width: min(380px, 100%); } }
+/* a computer: the picture at the top takes less of the screen (JP 2026-11-15) – a little smaller, less room above and below */
+@media (min-width: 1000px) { .hs-illu:has(.sc25) { width: 440px; } .fp-hero.has-illu { padding-top: 4px; padding-bottom: 8px; } .fp-hero.has-illu h1 { margin-top: 0; } .fp-hero.has-illu .eyebrow, .fp-hero.has-illu .fp-eyebrow { margin-bottom: 2px; } }
 .hs-illu svg.sc25 { overflow: hidden; } .sc25 { cursor: pointer; } .sc25 .sc-calt { font-size: 15px; }
 .sc-jtxt { fill: #fff; font: 700 11px Inter, system-ui, sans-serif; paint-order: stroke; stroke: rgba(0, 0, 0, .35); stroke-width: 2px; }
 .sc-cal { fill: var(--bg-solid); stroke: rgba(var(--ink-rgb), .45); } .sc-calt { fill: var(--text); font: 700 14px Inter, system-ui, sans-serif; }
@@ -3358,6 +3363,7 @@ html.simple #stMenu [data-adv] { display: none; }
 .cr-tdf { margin-top: 10px; }
 .cr-log { list-style: none; margin: 0; padding: 0; } .cr-log li { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .cr-log li:last-child { border-bottom: 0; } .cr-log .bi { color: var(--accent); } .cr-log small { color: var(--muted); font-size: 11.5px; white-space: nowrap; } .cr-log span { min-width: 0; overflow-wrap: anywhere; }
+.cr-log .cr-x { margin-left: 4px; padding: 1px 7px; border-radius: 99px; background: rgba(var(--ink-rgb), .08); font-size: 11px; font-weight: 600; color: var(--muted); }   /* the same line again: ×8 */
 .mo-off .cr-pulse, .mo-reduced .cr-pulse { animation: none; }
 
 /* Admin tabs + Website workspace (admin.js) */
