@@ -174,7 +174,8 @@
     /* a human trunk (phase 1 of the avatar brief): the neck's base, sloping to round shoulders, a chest, a waist that narrows
        and hips – each level has its width from the front, its depth from the side and how far forward it sits (the chest
        forward, the bottom back), so the outline changes properly as he turns */
-    var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [87, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
+    var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [88.5, 28.5 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
+    if (!MUT) LV.splice(1, 0, [84, 17.5 * BP.sh, 10.5 * BP.d, 0]);   /* the slope from the neck down to the shoulder (the trapezius), so the shoulder is a curve, not a ball (JP 2026-11-15) */
     if (MUT) { LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]); LV[LV.length - 1][1] = 25 * BP.wa * (1.04 + .02 * MUT); }   /* the hips no wider than the waist goes on: a V down into the shorts, no flare that reads as belly fat (JP 2026-11-13) */   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
     var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
@@ -243,12 +244,12 @@
       var AW = L.bp.arm, SHW = BW * (L.bp.mus ? 1 + .55 * (L.bp.sh - 1) : L.bp.sh),   /* athletic/muscular: the width is in the shoulders' muscle, the arms still hang at the trunk's side (JP 2026-11-13: they stood out like balls) */ sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
       var hand = [sd * 29.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];   /* the hand comes in toward the thigh, not out to the side (JP 2026-11-15: "gorilla arms") */
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
-      var p1 = P(sh[0] - sd * 1.2 * (L.bp.mus || 0), sh[1] + 2.4 * (L.bp.mus || 0), sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
+      var p1 = P(sh[0] - sd * (1.2 * (L.bp.mus || 0) + 1), sh[1] + 2.4 * (L.bp.mus || 0) + 2.5, sh[2], 1)   /* the top of the arm tucks in under the shoulder's slope, never a ball above it */, p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
       var MU = L.bp.mus || 0, CAPX = -sd * 1.6 * MU * k;   /* the cap leans in onto the trunk */
       /* a human arm: a round shoulder, the upper arm fullest at the biceps, a forearm that swells below the elbow and narrows to the wrist.
          Athletic and muscular (MU) get a bigger shoulder cap, biceps and forearm */
       var skA = shade(far, C.skin2, C.skin), fm = P(elb[0] + (hand[0] - elb[0]) * .3, elb[1] + (hand[1] - elb[1]) * .3, elb[2] + (hand[2] - elb[2]) * .3, 1), bi2 = P(sh[0] + (elb[0] - sh[0]) * .42, sh[1] + (elb[1] - sh[1]) * .42, sh[2] + (elb[2] - sh[2]) * .42, 1);
-      var rS = (6.6 + .4 * MU) * AW, rB = (6.3 + .7 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
+      var rS = (6.0 + .4 * MU) * AW, rB = (6.3 + .7 * MU) * AW, rE = 5 * AW, rF = (5.3 + .5 * MU) * AW, rW = 3.9 * AW;
       function bareArm() { taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
         if (MU) parts.push([z + .001, el('ellipse', { cx: (p1.X + CAPX).toFixed(1), cy: (p1.Y + 1 * k).toFixed(1), rx: ((6.6 + .6 * MU) * AW * k).toFixed(1), ry: ((7.2 + .8 * MU) * AW * k).toFixed(1), fill: skA })]); }   /* the shoulder muscle */
       if (L.bare === 'arms' || L.top === 'none') bareArm();
