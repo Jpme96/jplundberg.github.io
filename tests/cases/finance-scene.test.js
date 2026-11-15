@@ -14,10 +14,15 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
     const w = mk('neg'); w.a.at(1.2); const worried = railFirst(w.sv);
     const c = mk('ok'); c.a.at(5.0); const climbing = railFirst(c.sv);
     const L = Object.assign({}, Avatar.look(), { topC: '#3d85dc' }), book = Avatar.figure(Object.assign({}, Avatar.MOMENTS.evening), L);
-    return { worried, climbing, bookRed: /#d6453f/i.test(book), bad: /NaN|undefined/.test(w.sv.innerHTML + c.sv.innerHTML) };
+    /* never walking backwards: while he steps (w > .05) and moves along x, he never faces away from where he goes */
+    const back = [];
+    [['neg', 7.4], ['ok', 13.2]].forEach(([st, len]) => { const m = mk(st); window.__scTrace = []; for (let t = 0; t < len; t += .05) m.a.at(t); const tr = window.__scTrace; window.__scTrace = null;
+      for (let i = 1; i < tr.length; i++) { const dx = tr[i][1] - tr[i - 1][1], f = tr[i][2] * Math.PI / 180; if (tr[i][3] > .05 && Math.abs(dx) > .05 && Math.sin(f) * dx < -1e-6 && Math.abs(Math.sin(f)) > .5) back.push(st + '@' + tr[i][0].toFixed(2)); } });
+    return { back, worried, climbing, bookRed: /#d6453f/i.test(book), bad: /NaN|undefined/.test(w.sv.innerHTML + c.sv.innerHTML) };
   });
   check(r.worried.rail > -1 && r.worried.body > -1 && r.worried.rail < r.worried.body, 'walking past the ladder, its near rail is drawn behind him ' + JSON.stringify(r.worried));
   check(r.climbing.rail > r.climbing.body, 'climbing for the coin, the near rail goes between his sides (after his far side) ' + JSON.stringify(r.climbing));
+  check(!r.back.length, 'he never walks backwards (facing one way, moving the other) ' + r.back.slice(0, 6).join(', '));
   check(r.bookRed, 'the evening book has a red cover – it shows on a blue top');
   check(!r.bad, 'no NaN/undefined in the Finances picture');
   check(!p.errs.length, 'no page errors ' + p.errs.join(' | ').slice(0, 200));

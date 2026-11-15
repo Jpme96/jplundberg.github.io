@@ -50,8 +50,8 @@
         r.pose.near = { m: 1, at: hp }; r.pose.lean = ln;
         if (u > .4 && u < .92) r.coin = 'hand'; else if (u >= .92 && u < 1.2) r.coin = (u - .92) / .28; }
       else if (t < T3) { var d = climbAt(CLIMB - (t - T2)); r.h = d.h; r.pose = d.pose; r.cx = lx(d.h) + 8; }
-      else if (t < T4) { r.cx = BASE + (HOME - BASE) * E((t - T3) / .5); r.w = .6 * Math.sin(Math.PI * (t - T3) / .5); }   /* the step starts and ends still – the arms don't snap into a swing */
-      else if (t < T5) { r.cx = HOME; r.face = -90 + 90 * E((t - T4) / .5); }
+      else if (t < T4) { var u4 = (t - T3) / .5, ua = CL(u4 * 2), ub = CL(u4 * 2 - 1); r.face = -90 + 90 * E(ua); r.cx = BASE + (HOME - BASE) * E(ub); r.w = .35 * Math.sin(Math.PI * ub); }   /* off the ladder he turns to you as he steps across – never walking backwards with the arms swinging forwards */   /* the step starts and ends still – the arms don't snap into a swing */
+      else if (t < T5) { r.cx = HOME; r.face = 0; }
       else if (t < T6) { r.cx = HOME; r.face = 0; var hp2 = (t - T5) / 1.0, on = E(CL(hp2 / .32)) * (1 - E(CL((hp2 - .7) / .3)));   /* the arms go up and come down, never snap */
         r.pose = { lift: hp2 < .2 ? -3 * Math.sin(hp2 / .2 * Math.PI) : hp2 < .65 ? 12 * Math.sin((hp2 - .2) / .45 * Math.PI) : 0, far: { m: on, b: [40, 10] }, near: { m: on, b: [40, 10] } }; r.expr = 'laugh'; }
       else Object.assign(r, rest(st));
@@ -65,8 +65,8 @@
       else if (t < W1) { r.cx = AT; r.w = Math.max(0, 1 - (t - W0) / .2); }
       else if (t < W2) { r.cx = AT; var f = E((t - W1) / .6); r.pose = { near: { m: f, b: [76, 18] }, lean: -.06 * f }; r.expr = 'shy'; }
       else if (t < W3) { r.cx = AT; r.face = -90 + 18 * Math.sin((t - W2) / 1.1 * Math.PI * 3) * Math.sin((t - W2) / 1.1 * Math.PI); r.pose = { near: { m: 1, b: [76, 18] }, lean: -.06 }; r.expr = 'shy'; }
-      else if (t < W4) { var g = E((t - W3) / .7); r.cx = AT + (HOME - AT) * g; r.w = .6 * Math.sin(Math.PI * (t - W3) / .7); r.pose = { near: { m: 1 - g, b: [76, 18] }, lean: -.06 * (1 - g) }; }
-      else if (t < W5) { r.cx = HOME; r.face = -90 + 90 * E((t - W4) / .5); }
+      else if (t < W4) { var g = E((t - W3) / .7); r.cx = AT; r.face = -90 + 90 * g; r.pose = { near: { m: 1 - g, b: [76, 18] }, lean: -.06 * (1 - g) }; }   /* turns to you first, the hand down from the chin (JP 2026-11-15: he walked backwards to his spot with his arms swinging forwards) */
+      else if (t < W5) { var g2 = SEG(t, W4, W5); r.cx = AT + (HOME - AT) * E(g2); r.face = 0; r.w = .35 * Math.sin(Math.PI * g2); }   /* a small step across to his spot, facing you */
       else Object.assign(r, rest(st));
       return r;
     }
@@ -152,6 +152,7 @@
       },
       render: function (sv, t, st) {
         st.aid = AID; var r = st.pact === 'polish' ? polish(t, st) : st.pact === 'piggy' ? piggy(t, st) : ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
+        if (window.__scTrace) window.__scTrace.push([t, r.cx == null ? HOME : r.cx, r.face, r.w || 0]);   /* tests only: where he is and which way he faces */
         if (!r.pig || r.pig === 'home') sv.appendChild(pigG(PIG[0], PIG[1]));   /* the piggy bank lives on the calendar block */
         if (r.pcoin && typeof r.pcoin === 'object') add(sv, 'ellipse', { cx: r.pcoin[0].toFixed(1), cy: r.pcoin[1].toFixed(1), rx: 2.6, ry: 2.6 * Math.abs(Math.cos(r.pcoin[0] / 3)) + .5, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 });
         /* him: the near rail goes in front of his far side, behind his near side */
