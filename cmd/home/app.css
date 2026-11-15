@@ -185,3 +185,34 @@ li.h-wait-ok .h-row { opacity: .75; }
 .h-btn.sm { padding: 7px 12px; font-size: 14px; width: auto; }
 .h-act .bi { color: var(--acc, #14b8a6); margin-right: 4px; }
 .h-more { display: block; width: 100%; margin: 6px 0 0; border: 0; background: none; color: var(--acc); font-weight: 600; min-height: 44px; cursor: pointer; }
+
+/* ---------- the new look (Phase G, JP 2026-11-15) – the same as cmd: Inter, a calm glow of your accent behind the top,
+   a smaller title with the date as a coloured kicker, one card rounding, equal-width numbers, a floating tab bar,
+   the same status colours ---------- */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/inter-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/inter-Medium.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600 650; font-display: swap; src: url("../assets/fonts/inter-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700 800; font-display: swap; src: url("../assets/fonts/inter-Bold.woff2") format("woff2"); }
+:root { --acc-rgb: 20, 184, 166; --r-card: 18px; --ok-c: var(--good); }
+:root[data-acc="blue"] { --acc-rgb: 37, 99, 235; } :root[data-acc="purple"] { --acc-rgb: 124, 58, 237; } :root[data-acc="pink"] { --acc-rgb: 219, 39, 119; }
+:root[data-acc="orange"] { --acc-rgb: 245, 158, 11; } :root[data-acc="green"] { --acc-rgb: 34, 197, 94; }
+body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: -.003em; -webkit-font-smoothing: antialiased;
+  background: radial-gradient(760px 360px at 18% -8%, rgba(var(--acc-rgb), .16), transparent 70%), radial-gradient(600px 320px at 96% -4%, rgba(var(--acc-rgb), .06), transparent 70%), var(--bg); background-attachment: fixed; }
+.h-top small { display: block; color: var(--acc); font-size: 12px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.h-top h1 { font-size: clamp(26px, 7vw, 32px); font-weight: 800; letter-spacing: -.025em; line-height: 1.1; }
+.h-list, .h-bal { border-radius: var(--r-card); }
+.h-list li { min-height: 58px; }
+.h-row b, .h-bal b, .h-tt h1 + * { font-variant-numeric: tabular-nums; }
+.h-bal b { font-weight: 750; letter-spacing: -.025em; }
+.h-h { font-size: 12px; font-weight: 650; letter-spacing: .08em; margin: 22px 4px 8px; }
+.h-menu button { font-size: 14px; font-weight: 500; }
+.h-btn { border-radius: 12px; font-weight: 650; }
+/* the tab bar floats, like cmd's */
+.h-tabs { left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 12px); padding: 6px; max-width: 520px; margin: 0 auto; border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, .12); background: color-mix(in srgb, var(--card) 88%, transparent); }
+.h-tabs button { border-radius: 16px; font-weight: 500; }
+.h-tabs button[aria-current="true"] { background: rgba(var(--acc-rgb), .12); font-weight: 650; }
+#app { padding-bottom: calc(env(safe-area-inset-bottom) + 108px); }
+/* status chips: the same colours as cmd's tags */
+.h-chip { background: rgba(31, 157, 85, .15); }
+.h-chip.warn { background: rgba(201, 133, 0, .15); } .h-chip.bad { background: rgba(224, 85, 85, .15); }
+@media (prefers-reduced-motion: reduce) { .h-tabs button { transition: none; } }

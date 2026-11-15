@@ -12,6 +12,20 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
     accent: !!document.getElementById('stAccents'), theme: !!document.querySelector('[data-theme-opt]'), size: !!document.querySelector('[data-textsize]')
   }));
   check(!st.rows.length && st.accent && st.theme && st.size, 'Appearance keeps theme, accent colour and text size, and has no Strength/Density/Corners/Card style/Glass ' + JSON.stringify(st));
+  /* Settings in two panes on a computer: the list stays on the left, the page you pick opens on the right, the list marks it */
+  const two = await p.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms)), vis = el => !!(el && el.getClientRects().length && getComputedStyle(el).display !== 'none');
+    document.getElementById('settingsBtn').click(); await w(700);
+    const home = document.querySelector('.st-page[data-page="home"]'), pick = document.querySelector('.st-pick');
+    const a = { home: vis(home), pick: vis(pick) };
+    document.querySelector('#stMenu [data-go="appearance"]').click(); await w(700);
+    const ap = document.querySelector('.st-page[data-page="appearance"]'), hr = home.getBoundingClientRect(), arr = ap.getBoundingClientRect();
+    const b = { home: vis(home), page: vis(ap), side: hr.right <= arr.left + 1, pick: vis(pick), cur: (document.querySelector('#stMenu [aria-current="page"]') || {}).dataset ? document.querySelector('#stMenu [aria-current="page"]').dataset.go : null };
+    document.getElementById('stClose').click(); await w(600);
+    return { a, b };
+  });
+  check(two.a.home && two.a.pick, 'Settings on a computer: the list on the left, "choose something" on the right ' + JSON.stringify(two.a));
+  check(two.b.home && two.b.page && two.b.side && !two.b.pick && two.b.cur === 'appearance', 'picking Appearance opens it beside the list, which marks it ' + JSON.stringify(two.b));
   await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); Object.assign(s, { density: 'compact', corners: 'sharp', cardStyle: 'glass', glass: true }); localStorage.setItem('dash.settings', JSON.stringify(s)); window.dispatchEvent(new Event('dash:local')); });
   await go(p, 'work/', 3000);
   const cls = await p.evaluate(() => ['dens-compact', 'corners-sharp', 'glass', 'card-soft', 'card-minimal', 'card-solid'].filter(c => document.documentElement.classList.contains(c)));
@@ -45,6 +59,14 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   /* the title block keeps together beside the picture */
   const gap = await p.evaluate(() => { const h = document.querySelector('.fp-hero'), t = h.querySelector('h1'), k = h.querySelector('.fp-kicker'), d = h.querySelector('p.muted'); if (!t || !k || !d) return null; return { k2t: t.getBoundingClientRect().top - k.getBoundingClientRect().bottom, t2d: d.getBoundingClientRect().top - t.getBoundingClientRect().bottom, kAbove: k.getBoundingClientRect().top < t.getBoundingClientRect().top }; });
   check(gap && gap.kAbove && gap.k2t < 24 && gap.t2d < 24, 'the kicker, title and line under it stay together ' + JSON.stringify(gap));
+  /* Iago's shared app has the same look: cmd's font, the accent glow, the floating tab bar */
+  const css = await p.evaluate(() => fetch('/cmd/home/app.css').then(r => r.text()));
+  check(/inter-Regular\.woff2/.test(css) && /rgba\(var\(--acc-rgb\), \.16\)/.test(css) && /\.h-tabs \{ left: 12px; right: 12px;/.test(css), 'the shared app uses Inter, the accent glow and the floating tab bar');
+  /* on a phone it stays one page at a time */
+  await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true }); await go(p, 'work/', 2500);
+  const one = await p.evaluate(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); document.getElementById('settingsBtn').click(); await w(700); document.querySelector('#stMenu [data-go="appearance"]').click(); await w(900);
+    const home = document.querySelector('.st-page[data-page="home"]'); const r = { homeShown: !!(home.getClientRects().length), back: !document.getElementById('stBack').hidden }; document.getElementById('stClose').click(); await w(500); return r; });
+  check(!one.homeShown && one.back, 'on a phone Settings stays one page at a time with Back ' + JSON.stringify(one));
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();

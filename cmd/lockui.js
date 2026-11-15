@@ -72,7 +72,7 @@
   function mountLook() {
     var bgTiles = $('stBgTiles'); if (!bgTiles || $('stLockLook')) return;
     var sec = bgTiles.closest('section'); if (!sec) return;
-    var head = document.createElement('p'); head.className = 'st-sub ap-sub'; head.innerHTML = '<i class="bi bi-lock"></i> Lock screen';
+    var head = document.createElement('p'); head.className = 'st-sub ap-sub'; head.innerHTML = '<i class="bi bi-lock"></i> <span data-t="ui.lock-screen">Lock screen</span>';
     var box = document.createElement('section'); box.className = 'st-group'; box.id = 'stLockLook';
     sec.parentNode.insertBefore(box, sec.nextSibling); sec.parentNode.insertBefore(head, box);
     function render() {
@@ -86,7 +86,7 @@
     loadPhoto().then(render);
     box.addEventListener('click', function (e) {
       var b = e.target.closest('[data-lkstyle]');
-      if (b) { var v = b.dataset.lkstyle; if (v === 'photo' && !photoUrl) { $('stLockFile').click(); return; } setS({ lockStyle: v || undefined }); render(); toast('<i class="bi bi-lock"></i> Lock screen updated'); return; }
+      if (b) { var v = b.dataset.lkstyle; if (v === 'photo' && !photoUrl) { $('stLockFile').click(); return; } setS({ lockStyle: v || undefined }); render(); toast('<i class="bi bi-lock"></i> ' + I18N.k('ui.lock-screen-updated', 'Lock screen updated')); return; }
       if (e.target.closest('[data-lkchange]')) $('stLockFile').click();
     });
     box.addEventListener('change', function (e) {
@@ -97,7 +97,7 @@
         return db('readwrite', function (st) { return st.put(blob, 'lock'); }).then(function () {
           if (photoUrl) URL.revokeObjectURL(photoUrl);
           photoUrl = URL.createObjectURL(blob); root.style.setProperty('--lock-photo', 'url("' + photoUrl + '")');
-          setS({ lockStyle: 'photo' }); render(); toast('<i class="bi bi-image"></i> Lock screen photo set');
+          setS({ lockStyle: 'photo' }); render(); toast('<i class="bi bi-image"></i> ' + I18N.k('ui.lock-screen-photo-set', 'Lock screen photo set'));
         });
       }).catch(function () { toast('That photo couldn’t be used. Try a JPEG or PNG.'); });
     });

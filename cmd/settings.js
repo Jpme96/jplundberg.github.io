@@ -251,6 +251,9 @@
   }
 
   /* ---------- pages (like iPhone Settings) ---------- */
+  /* Two panes on a computer (Phase G, JP 2026-11-15): from 1100 px the list stays on the left and the page you pick opens
+     on the right (CSS in modern.css, .st-panel at min-width 1100px); no sliding between pages there. */
+  function twoPane() { return !!(window.matchMedia && matchMedia('(min-width: 1100px)').matches); }
   var page = 'home';
   /* Pages slide like on a phone: the new one comes in from the right while the old one
      glides away to the left (and the other way round going back). */
@@ -259,7 +262,11 @@
     page = name;
     var old = document.querySelector('.st-page[data-page="' + prev + '"]');
     var cur = document.querySelector('.st-page[data-page="' + name + '"]');
-    var anim = old && old !== cur && !old.hidden && $('settings').classList.contains('open') &&
+    var two = twoPane();
+    panel.setAttribute('data-pg', name);
+    /* two panes (a computer): the list on the left marks the page that is open on the right */
+    document.querySelectorAll('#stMenu [data-go]').forEach(function (x) { if (x.dataset.go === name) x.setAttribute('aria-current', 'page'); else x.removeAttribute('aria-current'); });
+    var anim = !two && old && old !== cur && !old.hidden && $('settings').classList.contains('open') &&
       !document.documentElement.classList.contains('mo-off') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (anim) {
       old.style.top = (old.offsetTop - panel.scrollTop) + 'px';

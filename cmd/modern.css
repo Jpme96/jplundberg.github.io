@@ -472,3 +472,22 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .pa-due.over { background: rgba(var(--danger-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); }
 .modern .due.late { background: rgba(var(--danger-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); }
 .modern :is(.dc-st, .hl-chip) { color: color-mix(in srgb, var(--c) var(--stt-fg), var(--stt-mix)); }
+
+/* ---------- Settings in two panes on a computer (JP 2026-11-15) ---------- */
+.st-pick { display: none; }
+.st-row > span:first-child:not(.st-label) > small { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); font-weight: 400; }   /* a hint under a row's name, never glued to it */
+@media (min-width: 1100px) {
+  .st-panel { width: min(1040px, calc(100% - 24px)); padding: 0; overflow: hidden; display: grid; grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; }
+  .st-panel > * { grid-column: 2; min-width: 0; }
+  .st-panel > .st-head { grid-row: 1; padding: 18px 24px 0; margin-bottom: 12px; }
+  .st-panel > .st-head .st-back { visibility: hidden; }
+  .st-panel > .st-page[data-page="home"] { display: block !important; grid-column: 1; grid-row: 1 / -1; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px 24px; border-right: 1px solid var(--line); background: rgba(var(--ink-rgb), .02); }
+  .st-panel > .st-page:not([data-page="home"]) { grid-row: 2; overflow-y: auto; overscroll-behavior: contain; padding: 0 24px 28px; }
+  .st-panel > .st-page[hidden]:not([data-page="home"]) { display: none; }
+  .st-panel > .st-page.in-fwd, .st-panel > .st-page.in-back { animation: none; }
+  .st-panel[data-pg="home"] > .st-pick { display: flex; align-items: center; gap: 8px; grid-row: 2; align-self: start; margin: 40px 24px; font-size: var(--fs-m); }
+  .st-panel > .ws-bar, .st-panel > .st-msg { padding: 0 24px; }
+  .st-panel #stMenu .st-btn[aria-current="page"] { background: rgba(var(--accent-rgb), .12); border-radius: 12px; }
+  .st-panel #stMenu .st-btn[aria-current="page"] .st-label { color: var(--heading); font-weight: 600; }
+}
+.st-label > .ft-new { justify-self: start; width: max-content; margin-left: 0; }   /* the "New" badge keeps its own width in the grid label */

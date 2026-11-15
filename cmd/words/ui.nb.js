@@ -2790,5 +2790,9 @@ I18N.add({
   "ui.budget-runs-m": ["the budget runs by calendar month", "budsjettet følger kalendermåneden"],
   "ui.n-payday-moves-done": ["{n} payday moves done", "{n} lønningsflyttinger gjort"],
   "ui.checkin-sub": ["5 minutes: spending, the week ahead, focus and habits", "5 minutter: forbruk, uka som kommer, fokus og vaner"],
-  "ui.checkin-sub2": ["5 minutes: spending, the week ahead and habits", "5 minutter: forbruk, uka som kommer og vaner"]
+  "ui.checkin-sub2": ["5 minutes: spending, the week ahead and habits", "5 minutter: forbruk, uka som kommer og vaner"],
+  "ui.st-pick": ["Choose something on the left.", "Velg noe til venstre."],
+  "ui.lock-screen": ["Lock screen", "Låseskjerm"],
+  "ui.lock-screen-updated": ["Lock screen updated", "Låseskjermen er oppdatert"],
+  "ui.lock-screen-photo-set": ["Lock screen photo set", "Bilde på låseskjermen er satt"]
 });
