@@ -17,6 +17,8 @@
   var L = {}, C = {}, shadeOn = true;
   var DK = {};   /* darker shades, worked out once per colour */
   function dk(h, f) { var key = h + '|' + f, m = DK[key]; if (m) return m; return (DK[key] = dk0(h, f)); }
+  /* a lighter shade (the top of a dark shoe catching the light): mixed toward white, worked out once per colour */
+  function lt(h) { var key = h + '|lt', m = DK[key]; if (m) return m; var c = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888', n = parseInt(c.slice(1), 16), mix = function (v) { return Math.round(v + (255 - v) * .32); }; return (DK[key] = 'rgb(' + mix(n >> 16) + ',' + mix((n >> 8) & 255) + ',' + mix(n & 255) + ')'); }
   function dk0(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
   function colours() { C = { skin: L.skin, skin2: dk(L.skin, .87), hair: L.hairC, top: L.topC, top2: dk(L.topC, .8), legs: L.legsC, legs2: dk(L.legsC, .82), shoe: L.shoeC, eye: '#1b1f27', mouth: '#8a4a3a' }; }
   /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order. Pooled
@@ -154,7 +156,8 @@
       var mid2 = P(ank[0], ank[1] + 3, ank[2] + 5); parts.push([z + 0.49, el('ellipse', { cx: mid2.X, cy: mid2.Y, rx: (8.6 * Math.abs(Math.cos(a)) + 4.4) * k, ry: 5.6 * k, fill: L.shoes === 'sandals' ? skc : C.shoe })]);   /* the shoe's width, seen from the front */
       taper(P(ank[0], ank[1] + 2.5, ank[2] - 5), toe, 6.6, 6, L.shoes === 'sandals' ? skc : C.shoe, z + 0.5);
       if (L.shoes === 'sandals') limb(P(ank[0], ank[1] + 4, ank[2] + 3), P(ank[0], ank[1] + 4, ank[2] + 9), 3, '#8a5e44', z + .51);
-      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 6.4, ank[2] - 4), P(ank[0], ank[1] + 6.4, ank[2] + 21), 2.2, '#f4f4f2', z + .52);
+      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 7, ank[2] - 3), P(ank[0], ank[1] + 7, ank[2] + 20), 1.3, '#b9bec5', z + .52);   /* a thin sole – it read as a white stripe */
+      if (L.shoes !== 'sandals') limb(P(ank[0], ank[1] + .5, ank[2] + 2), P(ank[0], ank[1] + 2.5, ank[2] + 15), 1.1, lt(C.shoe), z + .515);   /* the top of the shoe catches the light, so a dark shoe has a shape */
       if (L.shoes === 'cleats') [-2, 8, 18].forEach(function (cz) { var st = P(ank[0], ank[1] + 8.6, ank[2] + cz); parts.push([z + .53, el('rect', { x: st.X - 1 * k, y: st.Y, width: 2 * k, height: 2.4 * k, fill: '#9aa3ad' })]); });
       if (L.shoes === 'hightops' || L.shoes === 'boots') taper(P(ank[0], ank[1] - 8, ank[2]), P(ank[0], ank[1] + 1, ank[2]), 7.4, 7, C.shoe, z + .5);
     });
@@ -232,13 +235,13 @@
       if (CHAIR && !ov) ov = { m: 1, b: [134 - 6 * Math.cos(ph * 1.2) * w, 4 + 14 * Math.sin(ph * 1.2) * w] };
       var cbusy = CRUTCH && !!ov && (ov.m == null || ov.m > .25);   /* the hand is doing something else: its crutch stays standing by his side */
       if (CRUTCH && !ov) ov = { m: 1, b: [148, 10 + 9 * Math.sin(ph) * w] };
-      var fb = sv + 0.15 + w * 0.25 * Math.max(0, Math.sin(q));
+      var fb = sv + 0.28 + w * 0.25 * Math.max(0, Math.sin(q));   /* a soft bend at the elbow when the arm hangs (JP 2026-11-15: they hung stiff) */
       var place = function (q) { return q.at ? unlean(toBody(q.at, sd * 32)) : { y: q.b[0] + bob, z: q.b[1] }; };
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
       if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1); ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[1] }; }   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
       var AW = L.bp.arm, SHW = BW * (L.bp.mus ? 1 + .55 * (L.bp.sh - 1) : L.bp.sh),   /* athletic/muscular: the width is in the shoulders' muscle, the arms still hang at the trunk's side (JP 2026-11-13: they stood out like balls) */ sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
-      var hand = [sd * 33.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];
+      var hand = [sd * 29.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];   /* the hand comes in toward the thigh, not out to the side (JP 2026-11-15: "gorilla arms") */
       var zz = rot(sd * 25, 0, a).z, far = zz < -2, z = far ? zz - 1 : zz + 1;
       var p1 = P(sh[0] - sd * 1.2 * (L.bp.mus || 0), sh[1] + 2.4 * (L.bp.mus || 0), sh[2], 1), p2 = P(elb[0], elb[1], elb[2], 1), p3 = P(hand[0], hand[1], hand[2], 1);
       var MU = L.bp.mus || 0, CAPX = -sd * 1.6 * MU * k;   /* the cap leans in onto the trunk */
@@ -260,10 +263,10 @@
       var fwd = Math.abs(Math.sin(a)) > .3 ? (Math.sin(a) > 0 ? 1 : -1) : -sd * (Math.cos(a) >= 0 ? 1 : -1), pxv = -uy, pyv = ux; if (pxv * fwd < 0) { pxv = -pxv; pyv = -pyv; }
       var hc2 = shade(far, C.skin2, C.skin), HG = el('g', {});
       if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': (8.2 * k).toFixed(1), 'stroke-linecap': 'round' }));
-      var tx = p3.X + ux * 2 * k + pxv * 5.4 * k, ty = p3.Y + uy * 2 * k + pyv * 5.4 * k;
-      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (2.8 * k).toFixed(1), ry: (4.4 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -28 : 28)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
+      var tx = p3.X + ux * 2.4 * k + pxv * 5.8 * k, ty = p3.Y + uy * 2.4 * k + pyv * 5.8 * k;   /* the thumb a little further out, so the hand reads as a hand */
+      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (3.1 * k).toFixed(1), ry: (4.6 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -34 : 34)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
       var mx = p3.X + ux * 4 * k, my = p3.Y + uy * 4 * k;
-      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (6.4 * k).toFixed(1), ry: (8.2 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
+      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (5.9 * k).toFixed(1), ry: (8.2 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
       parts.push([z + 0.1, HG]);
       HAND[nearSide(sd) ? 'near' : 'far'] = HAND['s' + sd] = { X: p3.X, Y: p3.Y, z: z + 0.2, busy: cbusy };
     });
