@@ -232,8 +232,9 @@
   function delBlobLocal(id) { return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
 
   /* ---------- statuses ---------- */
-  var ST = [['missing', 'ui.dc-st-missing', 'Missing', '#8a94a3', 'circle'], ['recv', 'ui.dc-st-recv', 'Received – to check', '#3b6fb6', 'inbox'], ['ok', 'ui.dc-st-ok', 'Approved', '#2f8a57', 'check-circle'],
-    ['cmt', 'ui.dc-st-cmt', 'Approved with comments', '#b7791f', 'chat-square-text'], ['rej', 'ui.dc-st-rej', 'Not approved – send back', '#b4443c', 'x-circle'], ['na', 'ui.dc-st-na', 'Not relevant', '#a0a7b1', 'dash-circle']];
+  /* one set of status colours everywhere (Phase G): missing and not approved red, received yellow, comments orange, approved green, not relevant grey – Team keeps the old colours as fallbacks */
+  var ST = [['missing', 'ui.dc-st-missing', 'Missing', 'var(--danger, #b4443c)', 'circle'], ['recv', 'ui.dc-st-recv', 'Received – to check', 'var(--warn, #b7791f)', 'inbox'], ['ok', 'ui.dc-st-ok', 'Approved', 'var(--ok, #2f8a57)', 'check-circle'],
+    ['cmt', 'ui.dc-st-cmt', 'Approved with comments', 'var(--orange, #c4581f)', 'chat-square-text'], ['rej', 'ui.dc-st-rej', 'Not approved – send back', 'var(--danger, #b4443c)', 'x-circle'], ['na', 'ui.dc-st-na', 'Not relevant', 'var(--slate, #8a94a3)', 'dash-circle']];
   function st(s) { return ST.filter(function (q) { return q[0] === s; })[0] || ST[0]; }
   function stName(s) { var q = st(s); return k(q[1], q[2]); }
   function chip(s) { var q = st(s); return '<span class="dc-st" style="--c:' + q[3] + '"><i class="bi bi-' + q[4] + '"></i> ' + esc(stName(s)) + '</span>'; }

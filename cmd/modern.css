@@ -463,3 +463,12 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .hs-door { fill: color-mix(in srgb, var(--accent) 60%, var(--bg-solid)); }
 /* the picture's facts are in the live line now – no second copy under the picture */
 .modern .fp-hero.has-live .hs-illu figcaption, .modern .tv-hero.has-live .hs-illu figcaption { display: none; }
+/* the other status chips use the same colours as the tags (House, Papers, due dates) */
+.modern .h-chip { background: rgba(var(--ok-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--ok) var(--stt-fg), var(--stt-mix)); }
+.modern .h-chip.warn { background: rgba(var(--warn-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--warn) var(--stt-fg), var(--stt-mix)); }
+.modern .h-chip.bad { background: rgba(var(--danger-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); }
+.modern .pa-due { background: rgba(var(--warn-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--warn) var(--stt-fg), var(--stt-mix)); }
+.modern .pa-due.near { background: rgba(var(--orange-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--orange) var(--stt-fg), var(--stt-mix)); }
+.modern .pa-due.over { background: rgba(var(--danger-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); }
+.modern .due.late { background: rgba(var(--danger-rgb), var(--stt-bg)); color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); }
+.modern :is(.dc-st, .hl-chip) { color: color-mix(in srgb, var(--c) var(--stt-fg), var(--stt-mix)); }

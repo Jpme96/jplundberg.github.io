@@ -21,7 +21,7 @@
       var p = h.querySelector('.fp-live'), inner = html(list);
       if (!p) {
         if (!inner) return;
-        p = document.createElement('p'); p.className = 'fp-live'; p.setAttribute('aria-live', 'polite');
+        p = document.createElement('p'); p.className = 'fp-live'; p.setAttribute('aria-live', 'polite'); p.setAttribute('data-noi18n', '');   /* its texts come in the page's language already */
         var t = h.querySelector('h1'); if (t && t.nextSibling) h.insertBefore(p, t.nextSibling); else h.appendChild(p);
       }
       if (p._h !== inner) { p._h = inner; p.innerHTML = inner; }

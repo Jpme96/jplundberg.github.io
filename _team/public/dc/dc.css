@@ -170,6 +170,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
   padding: 4px 6px;
   border-radius: 8px;
 }
+.text-btn.danger { color: var(--danger); }
 .pill-btn {
   flex-shrink: 0;
   border: 0;
