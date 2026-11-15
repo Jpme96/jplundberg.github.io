@@ -148,7 +148,7 @@
         if (need <= 0) return;
         var tight = need >= daysLeft - (doneToday ? 1 : 0);
         if (tight || daysLeft <= 3) add(tight ? 16 : 48, 'activity', '#d55181', h.name + ': ' + n4 + ' of ' + h.target + ' this week',
-          need + ' more · ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + ' left' + (doneToday ? '' : ' – today counts'), 'habits/');
+          I18N.k(daysLeft === 1 ? 'ui.hb-more1' : 'ui.hb-more', daysLeft === 1 ? '{n} more · 1 day left' : '{n} more · {d} days left', { n: need, d: daysLeft }) + (doneToday ? '' : ' – ' + I18N.k('ui.hb-today-counts', 'today counts')), 'habits/');
       });
     }
 

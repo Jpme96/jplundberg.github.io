@@ -354,8 +354,8 @@
     var low = keys.filter(function (k) { var v = D[k].sleep; return v != null && v > 0 && v < 2; });
     var sc0 = sleepCheck(lastIn()), li0 = lastIn();
     var sleepNote = sc0 && sc0.bad && li0 && li0.t && Date.now() - li0.t < 3 * 864e5 ? '<div class="ah-warn"><i class="bi bi-moon-stars"></i><span><b>' + esc(sc0.title) + '.</b> <a href="../?settings=ahealth">See what your iPhone sent and how to fix it</a></span></div>' : '';
-    var lowNote = low.length >= 2 ? '<div class="ah-warn"><i class="bi bi-exclamation-triangle"></i><span><b>Sleep under 2 hours on ' + low.length + ' days</b> – the Shortcut probably gets only part of the night. In the Shortcut’s sleep step (Find Health Samples, Type Sleep), switch <b>Limit</b> off.</span>' +
-      '<button type="button" class="text-btn" data-ahlowdel>Remove those ' + low.length + ' nights</button></div>' : '';
+    var lowNote = low.length >= 2 ? '<div class="ah-warn"><i class="bi bi-exclamation-triangle"></i><span>' + I18N.k('ui.ah-low', '<b>Sleep under 2 hours on {n} days</b> – the Shortcut probably gets only part of the night. In the Shortcut’s sleep step (Find Health Samples, Type Sleep), switch <b>Limit</b> off.', { n: low.length }) + '</span>' +
+      '<button type="button" class="text-btn" data-ahlowdel>' + I18N.k('ui.ah-low-del', 'Remove those {n} nights', { n: low.length }) + '</button></div>' : '';
     box.innerHTML = head + (lowNote || sleepNote) + '<div class="ah-tiles' + (editLayout ? ' editing' : '') + '">' + tiles + '</div>' + ctl + bars + dayBox +
       (ins.length ? '<p class="ah-ins">' + esc(ins.join(' · ')) + '</p>' : '') + short +
       '<div class="ah-foot muted"><span>' + (lastT ? 'Updated ' + esc(new Date(lastT).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '') + '</span>' + goalCtl + '</div>';

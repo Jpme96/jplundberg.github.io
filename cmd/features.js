@@ -174,13 +174,14 @@
   }
   var holCache = {};
   function holidays(y) {
-    if (holCache[y]) return holCache[y];
+    if (holCache[y]) return holCache[y].map(function (h) { return { date: h.date, name: window.I18N && I18N.lang === 'nb' ? h.no : h.en, no: h.no }; });   /* the name in your language (JP 01:16: English holiday names in Norwegian) */
     var E = easter(y), rel = function (n) { var d = new Date(E); d.setDate(d.getDate() + n); return dkey(d); };
     var l = [[y + '-01-01', 'New Year’s Day', 'Første nyttårsdag'], [rel(-3), 'Maundy Thursday', 'Skjærtorsdag'], [rel(-2), 'Good Friday', 'Langfredag'],
       [rel(0), 'Easter Sunday', 'Første påskedag'], [rel(1), 'Easter Monday', 'Andre påskedag'], [y + '-05-01', 'Labour Day', 'Arbeidernes dag'],
       [y + '-05-17', 'Constitution Day', '17. mai'], [rel(39), 'Ascension Day', 'Kristi himmelfartsdag'], [rel(49), 'Whit Sunday', 'Første pinsedag'],
       [rel(50), 'Whit Monday', 'Andre pinsedag'], [y + '-12-25', 'Christmas Day', 'Første juledag'], [y + '-12-26', 'Boxing Day', 'Andre juledag']];
-    return (holCache[y] = l.map(function (x) { return { date: x[0], name: x[1], no: x[2] }; }));
+    holCache[y] = l.map(function (x) { return { date: x[0], en: x[1], no: x[2] }; });
+    return holidays(y);
   }
   function holiday(k) {
     return holidays(+String(k).slice(0, 4)).filter(function (h) { return h.date === k; })[0] || null;

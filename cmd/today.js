@@ -217,7 +217,7 @@
   function planHint() {
     routine();
     var s = activeStop();
-    $('trFrom').placeholder = s ? 'From ' + s.name : 'From';
+    $('trFrom').placeholder = s ? I18N.k('ui.from-x', 'From {a}', { a: s.name }) : I18N.k('ui.from', 'From');
     $('trSub').hidden = !s;
   }
 
