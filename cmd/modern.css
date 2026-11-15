@@ -406,3 +406,38 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern.mo-full :is(.card, .fp-tile, .kit-tile) { transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease, box-shadow var(--dur-2) ease; }
 .modern .stt { transition: color var(--dur-2) ease, background-color var(--dur-2) ease; }
 .modern.mo-off .stt, .modern.mo-off :is(.card, .fp-tile, .kit-tile) { transition: none; }
+
+/* ---------- Phase G step 2: the page top, tabs, number tiles and cards – the same on every page ---------- */
+.modern .fp-hero { padding: 12px 2px 18px; }
+.modern .fp-kicker { margin: 0 0 6px; font-family: var(--font); font-size: var(--fs-s); font-weight: 650; letter-spacing: .08em; color: var(--accent); }
+.modern .fp-hero h1 { font-family: var(--font); font-weight: 800; font-size: clamp(30px, 6.5vw, 38px); letter-spacing: -.025em; line-height: 1.08; }
+.modern .fp-hero > p.muted { font-size: var(--fs-m); line-height: 1.45; margin: 6px 0 0; max-width: 62ch; }
+/* the live line: the most useful facts right now (PageLive.set) – the page's long description steps back when it's there */
+.fp-live { margin: 6px 0 0; font-size: var(--fs-m); color: var(--t2, var(--muted)); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.fp-live:empty { display: none; }
+.fp-live > span + span::before { content: "·"; margin-right: 10px; color: var(--muted); }
+.fp-live .neg { color: var(--danger); } .fp-live .pos { color: var(--ok); }
+.fp-live a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(var(--ink-rgb), .2); }
+.fp-hero.has-live > p.muted:not(.fp-live) { display: none; }
+.modern .fp-hero.has-illu { align-items: center; }
+/* tabs: one quiet bar, the chosen tab raised a little */
+.modern .fp-tabs { gap: 4px; padding: 4px; border-radius: 14px; background: rgba(var(--ink-rgb), .06); }
+.modern .fp-tabs button { border-radius: 10px; font-family: var(--font); transition: background-color var(--dur-1) ease, color var(--dur-1) ease; }
+.modern .fp-tabs button:not([aria-selected="true"]):hover { color: var(--text); }
+.modern .fp-tabs button[aria-selected="true"] { background: var(--bg-solid); box-shadow: 0 1px 2px rgba(0, 0, 0, .14); }
+@media (min-width: 640px) { .modern .fp-tabs button { min-height: 40px; font-size: 13.5px; font-weight: 500; } .modern .fp-tabs button[aria-selected="true"] { font-weight: 650; } }
+/* number tiles: the label small, the number big in equal-width digits */
+.modern :is(.fp-tile, .hl-tile) { border-radius: 16px; padding: 16px 18px; }
+.modern .fp-tile .lbl { font-size: var(--fs-s); font-weight: 500; }
+.modern .fp-tile .val { font-family: var(--font); font-weight: 750; font-size: clamp(22px, 5.6vw, var(--fs-num)); letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.modern .fp-tile .sub { font-size: var(--fs-s); }
+/* cards: the heading in the heading colour, the icon in the accent */
+.modern .card-head h2, .modern .card-head h2 i { font-size: 15px; }
+.modern .card-head h2 { color: var(--heading); font-weight: 650; }
+.modern.mo-off .fp-tabs button { transition: none; }
+/* the title block stays together beside the picture: the picture spans every row, the empty first and last rows take the extra height */
+@media (min-width: 641px) {
+  .modern :is(.fp-hero, .tv-hero).has-illu { grid-template-rows: 1fr auto auto auto auto 1fr; row-gap: 0; }
+  .modern :is(.fp-hero, .tv-hero).has-illu::before { content: ""; grid-column: 1; grid-row: 1; }
+  .modern :is(.fp-hero, .tv-hero).has-illu > .hs-illu { grid-row: 1 / -1; align-self: center; }
+}

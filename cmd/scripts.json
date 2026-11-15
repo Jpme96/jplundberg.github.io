@@ -8,6 +8,7 @@
     "lockui.js",
     "passkey.js",
     "features.js",
+    "pagelive.js",
     "sidenav.js",
     "keys.js",
     "softnav.js"

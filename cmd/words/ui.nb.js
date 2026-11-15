@@ -2776,5 +2776,8 @@ I18N.add({
   "ui.sh-vis": ["Visible to {x}", "Synlig for {x}"],
   "ui.sh-not-vis": ["Not visible to {x}", "Ikke synlig for {x}"],
   "ui.sh-vis-tip": ["Visible to {x} – tap to stop sharing this", "Synlig for {x} – trykk for å slutte å dele"],
-  "ui.sh-not-vis-tip": ["Not visible to {x} – tap to share this", "Ikke synlig for {x} – trykk for å dele"]
+  "ui.sh-not-vis-tip": ["Not visible to {x} – tap to share this", "Ikke synlig for {x} – trykk for å dele"],
+  "ui.tab-insp": ["Inspection", "Befaring"],
+  "ui.tab-req": ["Requirements", "Krav"],
+  "ui.tab-doc": ["Control", "Kontroll"]
 });
