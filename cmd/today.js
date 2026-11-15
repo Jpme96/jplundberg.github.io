@@ -224,7 +224,7 @@
   /* ================= Habits (this week) ================= */
   var hb = load('dash.habits', null) || { list: [{ id: uid(), name: 'Training', target: 3 }], log: {} };
   var editingHabit = null;
-  var DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  var NBL = window.I18N && I18N.lang === 'nb', DAYS = NBL ? ['M', 'T', 'O', 'T', 'F', 'L', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];   /* Norwegian weekday letters in Norwegian (2026-11-15) */
 
   function monday(d) {
     var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -237,7 +237,7 @@
     var days = [];
     for (var i = 0; i < 7; i++) { var d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
     var head = '<div class="hb-days hb-heads">' + days.map(function (d, i) {
-      return '<span class="hb-head' + (dkey(d) === tk ? ' today' : '') + '" title="' + d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + '">' + DAYS[i] + '</span>';
+      return '<span class="hb-head' + (dkey(d) === tk ? ' today' : '') + '" title="' + d.toLocaleDateString(NBL ? 'nb-NO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'short' }) + '">' + DAYS[i] + '</span>';
     }).join('') + '</div>';
     if (!hb.list.length) { $('hbWeek').innerHTML = '<p class="empty">Add a habit, like training three times a week.</p>'; return; }
     $('hbWeek').innerHTML = head + hb.list.map(function (h) {

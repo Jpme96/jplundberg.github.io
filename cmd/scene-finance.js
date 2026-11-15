@@ -59,13 +59,15 @@
     }
     /* the worried look: to the jar, eyes on the level, a hand to the chin, a slow shake of the head, back to you */
     var W0 = 1.8, W1 = W0 + .4, W2 = W1 + 1.4, W3 = W2 + 1.1, W4 = W3 + .7, W5 = W4 + .5, WLEN = W5 + 1.2;
+    /* the hand to the chin goes up the front of his body – the elbow bends as it rises – never out at arm's length or back over the top (JP 2026-11-15) */
+    function CHIN(f) { return f <= 0 ? null : { m: Math.min(1, f * 4), b: [150 - 74 * f, 10 + 8 * f + 12 * Math.sin(Math.PI * f)] }; }
     function worry(t, st) {
       var r = { h: 0, w: 0, face: -90, pose: {}, expr: 'calm' }, AT = 292;   /* just past the ladder, eyes on the jar */
       if (t < W0) Object.assign(r, walkIn(t, st, AT));
       else if (t < W1) { r.cx = AT; r.w = Math.max(0, 1 - (t - W0) / .2); }
-      else if (t < W2) { r.cx = AT; var f = E((t - W1) / .6); r.pose = { near: { m: f, b: [76, 18] }, lean: -.06 * f }; r.expr = 'shy'; }
+      else if (t < W2) { r.cx = AT; var f = E((t - W1) / .6); r.pose = { near: CHIN(f), lean: -.06 * f }; r.expr = 'shy'; }
       else if (t < W3) { r.cx = AT; r.face = -90 + 18 * Math.sin((t - W2) / 1.1 * Math.PI * 3) * Math.sin((t - W2) / 1.1 * Math.PI); r.pose = { near: { m: 1, b: [76, 18] }, lean: -.06 }; r.expr = 'shy'; }
-      else if (t < W4) { var g = E((t - W3) / .7); r.cx = AT; r.face = -90 + 90 * g; r.pose = { near: { m: 1 - g, b: [76, 18] }, lean: -.06 * (1 - g) }; }   /* turns to you first, the hand down from the chin (JP 2026-11-15: he walked backwards to his spot with his arms swinging forwards) */
+      else if (t < W4) { var g = E((t - W3) / .7); r.cx = AT; r.face = -90 + 90 * g; r.pose = { near: CHIN(1 - g), lean: -.06 * (1 - g) }; }   /* turns to you first, the hand down from the chin (JP 2026-11-15: he walked backwards to his spot with his arms swinging forwards) */
       else if (t < W5) { var g2 = SEG(t, W4, W5); r.cx = AT + (HOME - AT) * E(g2); r.face = 0; r.w = .35 * Math.sin(Math.PI * g2); }   /* a small step across to his spot, facing you */
       else Object.assign(r, rest(st));
       return r;

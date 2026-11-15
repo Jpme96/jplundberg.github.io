@@ -341,7 +341,7 @@
     var shown = showAll ? main.slice() : main.slice(0, 5);
     if (mode === 'fold' && tips.length) {
       shown.push({ fold: true, icon: 'lightbulb', color: '#c9a227', title: tips.length + ' tip' + (tips.length === 1 ? '' : 's'),
-        sub: tips.slice(0, 2).map(function (x) { return x.title; }).join(' · ') + (tips.length > 2 ? ' …' : '') });
+        sub: tips.slice(0, 2).map(function (x) { return window.I18N && I18N.t ? I18N.t(x.title) : x.title; }).join(' · ')   /* each title through the translator first – joined, the sentence list can't match them ("Moving om 25 dager · Ruter looks like a subscription", 2026-11-15) */ + (tips.length > 2 ? ' …' : '') });
       if (tipsOpen) shown = shown.concat(tips);
     }
     /* the app icon shows how many things need you right now (overdue bills, bills due today, expired documents) */

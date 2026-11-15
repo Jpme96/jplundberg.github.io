@@ -69,7 +69,7 @@
           var S = turnB ? me : pa, Hd = turnB ? pa : me, sSd = turnB ? 1 : -1, sFace = turnB ? 60 : -60;
           var upF = turnB ? E(SEG(t, 2.6, 3.0)) : E(SEG(t, .2, .8));
           S.pose[SIDE(sSd, sFace)] = upF < 1 ? GO(turnB ? AT(st.heldAt || [200, 92]) : REST, UPH, upF) : HOLD(UPH);   /* his hand rises from where it held hers */
-          if (spin > 0) { S.face = sFace + 360 * E(spin) * (turnB ? -1 : 1); S.pose.lift = 3 * Math.sin(Math.PI * spin); delete S.pose.near; delete S.pose.far; S.pose[SIDE(sSd, S.face)] = { m: 1, b: [40, 4] }; S.pose[SIDE(-sSd, S.face)] = { m: E(Math.min(1, spin / .25, (1 - spin) / .35)), b: [40, 4] }; }   /* the held hand stays up; the other joins it for the twirl, eased in and out – by side, as he turns */
+          if (spin > 0) { S.face = sFace + 360 * E(spin) * (turnB ? -1 : 1); S.pose.lift = 3 * Math.sin(Math.PI * spin); delete S.pose.near; delete S.pose.far; S.pose[SIDE(sSd, S.face)] = { m: 1, b: [40, 4] }; S.pose[SIDE(-sSd, S.face)] = { m: E(Math.min(1, spin / .4, (1 - spin) / .4)), b: [40, 4] }; }   /* the held hand stays up; the other joins it for the twirl, eased in and out – by side, as he turns */
           var beat = Math.sin(now / 1000 * 6); if (!spin) { me.pose.lift = 1.5 * Math.max(0, beat); pa.pose.lift = 1.5 * Math.max(0, -beat); } else Hd.pose.lift = 1.5 * Math.max(0, beat);
           extra = { spinner: S === me ? 'me' : 'pa', holdSd: turnB ? -1 : 1, holdFace: turnB ? -60 : 60, grab: turnB ? E(SEG(t, 2.7, 3.0)) : E(SEG(t, .5, 1.0)) };
         } else {

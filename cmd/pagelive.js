@@ -11,6 +11,7 @@
   function html(list) {
     return (list || []).filter(function (x) { return x && (typeof x === 'string' ? x.trim() : x.t); }).map(function (x) {
       if (typeof x === 'string') x = { t: x };
+      var T = window.I18N && window.I18N.t ? window.I18N.t(String(x.t)) : x.t; x = { t: T || x.t, c: x.c, href: x.href };   /* a fact a page made in English (House: "Read the meter") still comes out in Norwegian (2026-11-15) */
       var cls = x.c ? ' class="' + esc(x.c) + '"' : '';
       return x.href ? '<span' + cls + '><a href="' + esc(x.href) + '">' + esc(x.t) + '</a></span>' : '<span' + cls + '>' + esc(x.t) + '</span>';
     }).join('');

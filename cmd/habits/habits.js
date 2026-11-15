@@ -143,7 +143,7 @@
         for (var r = 0; r < 7; r++) {
           var d = addDays(wm, r), k = dkey(d), on = done(h.id, k), fut = k > tk;
           cells += '<button type="button" class="hp-day' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (fut ? ' future' : '') + '" data-h="' + h.id + '" data-d="' + k + '" aria-pressed="' + on + '"' + (fut ? ' disabled' : '') +
-            ' aria-label="' + esc(h.name) + ', ' + F_LONG.format(d) + (on ? ', done' : '') + '"><small>' + 'MTWTFSS'[r] + '</small><b>' + d.getDate() + '</b><i class="bi bi-check-lg"></i></button>';
+            ' aria-label="' + esc(h.name) + ', ' + F_LONG.format(d) + (on ? ', done' : '') + '"><small>' + (window.I18N && I18N.lang === 'nb' ? 'MTOTFLS' : 'MTWTFSS')[r] + '</small><b>' + d.getDate() + '</b><i class="bi bi-check-lg"></i></button>';
         }
         recent += '<div class="hp-recent-row"><span class="hp-recent-lbl">' + (wi ? 'This week' : 'Last week') + '<b>' + countWeek(h.id, wm) + '<small>/' + h.target + '</small></b></span><div class="hp-recent-days">' + cells + '</div></div>';
       });

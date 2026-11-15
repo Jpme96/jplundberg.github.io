@@ -305,6 +305,7 @@
       var w2 = document.createTreeWalker(main, 4), n2, lh = 0, sk = window.I18N.skip + ',.dgu code,.dg-errs,.rp-doc,.ad-log,[contenteditable]';
       while ((n2 = w2.nextNode()) && lh < 6) {
         var tv = (n2.nodeValue || '').trim(); if (tv.length < 3 || tv.length > 200 || !EN.test(tv)) continue;
+        if (/^tap$/i.test(tv.match(EN)[1]) && /[æøå]|\b(og|hva|ikke|er|på|til|som|med)\b/i.test(tv)) continue;   /* "tap" is also Norwegian (a loss) – a Norwegian sentence with it isn't English (Finances' tax list, 2026-11-15) */
         var pe2 = n2.parentElement; if (!pe2 || !pe2.offsetParent || pe2.closest(sk)) continue;
         var sg = 'l|' + tv.slice(0, 60);
         if (once(sg)) { lh++; log('lang', scrub(tv).slice(0, 90), spot(pe2), { raw: true }); found.push(sg); }

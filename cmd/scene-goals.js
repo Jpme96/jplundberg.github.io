@@ -16,9 +16,9 @@
       function KS(x) { return .5 - .17 * E(CL((x - 110) / 220)); }
       add(g, 'path', { d: 'M-10 170 L70 90 L120 130 L190 60 L260 140 L300 110 L410 170 Z', fill: 'rgba(255,255,255,.07)' });
       add(g, 'path', { d: 'M176 74 L190 60 L204 74 L197 72 L190 76 L183 72 Z', fill: 'rgba(255,255,255,.35)' });
-      var hp = 'M0 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L400 108 L400 240 L0 240 Z';
+      var hp = 'M8 204 Q8 200 24 200 L110 200'; for (var x = 110; x <= 330; x += 10) hp += ' L' + x + ' ' + YG(x).toFixed(1); hp += ' L362 108 Q388 108 393 150 Q397 200 386 204 Z';   /* a hill standing on the ground, rounded at both ends – no strip to the frame's edge (Phase G; it was cut off by the frame, 2026-11-15) */
       add(g, 'path', { d: hp, fill: '#27694a' });
-      var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L370 108';
+      var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L356 108';
       add(g, 'path', { d: tr, fill: 'none', stroke: '#d8c8a8', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
       [[176, '#3d85dc'], [252, '#e57a3c']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#cdd3d9', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
       }, gen: { out: true },

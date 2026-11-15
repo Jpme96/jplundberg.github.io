@@ -424,7 +424,7 @@
     svg += '<g class="sc-cartg">' + sceneMe(-14, 44, 52, 84, 'plain') + part('wishes', '', '<g class="sc-cart"><path d="M30 104 h8 l6 18 h22 l5 -14 h-30" class="sc-cartb"/><circle cx="48" cy="127" r="3" class="sc-wheel"/><circle cx="64" cy="127" r="3" class="sc-wheel"/></g>') + '</g>';
     var list = [];
     var fits = W && W.fit ? Fe.list('wishes').filter(function (w) { var f = W.fit(w); return f && f.now; }).length : 0;
-    if (l.length) list.push({ t: Fe.list('wishes').length + L(' wishes', ' ønsker') + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
+    var nW = Fe.list('wishes').length; if (l.length) list.push({ t: nW + (nW === 1 ? L(' wish', ' ønske') : L(' wishes', ' ønsker')) + (fits ? ' · ' + fits + L(' fit this month', ' passer denne måneden') : ''), h: '#wishes' });
     if (buy) list.push({ t: buy + L(' to buy', ' å kjøpe'), h: '#wbuy' });
     return { svg: svg, label: L('Your wishes', 'Ønskene dine'), list: list, empty: L('Add a wish and it floats up here.', 'Legg inn et ønske, så flyter det opp her.') };
   }

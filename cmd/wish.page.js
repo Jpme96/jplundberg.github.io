@@ -56,7 +56,7 @@
     summary: function (l) {
       if (!l.length) return '';
       var total = l.reduce(function (a, w) { return a + (+w.price || 0); }, 0), r = room(), fits = l.filter(function (w) { var f = fit(w, r); return f && f.now; }).length;
-      return '<span>' + l.length + (l.length === 1 ? ' wish' : ' wishes') + (total ? ' · ' + kr(total) + ' in all' : '') + '</span>' + (r ? '<span>' + fits + ' fit this month · ' + kr(r.left) + ' left until payday</span>' : '');
+      return '<span>' + l.length + (l.length === 1 ? ' wish' : ' wishes') + (total ? ' · ' + kr(total) + ' in all' : '') + '</span>' + (r ? '<span aria-hidden="true"> · </span><span>' + fits + ' fit this month · ' + kr(r.left) + ' left until payday</span>' : '');
     },
     row: function (w) {
       var p = prioOf(w.prio), f = forOf(w.for), fi = fit(w), cool = cooling(w), old = (+cfg().stale || 0) && daysSince(w.added) >= +cfg().stale;

@@ -40,7 +40,7 @@
     var mv = move();
     if (mv) {
       var days = -daysSince(mv.date), items = mv.items || [], left = items.filter(function (x) { return !x.done; }).length;
-      if (days >= 0 && days <= 45 && left) add(days <= 7 ? 14 : 45, 'house-door', '#a0673a', days === 0 ? 'Take-over day!' : 'Moving in ' + days + ' day' + (days === 1 ? '' : 's'), left + ' thing' + (left === 1 ? '' : 's') + ' left on the moving list', href, { key: 'move:' + mv.date + ':' + left, tip: days > 14 });
+      if (days >= 0 && days <= 45 && left) add(days <= 7 ? 14 : 45, 'house-door', '#a0673a', days === 0 ? 'Take-over day!' : (days === 1 ? I18N.k('ui.move-in-1', 'Moving in 1 day') : I18N.k('ui.move-in-n', 'Moving in {n} days', { n: days })), left + ' thing' + (left === 1 ? '' : 's') + ' left on the moving list', href, { key: 'move:' + mv.date + ':' + left, tip: days > 14 });
     }
   });
   (window.EventsExtra = window.EventsExtra || []).push(function () {

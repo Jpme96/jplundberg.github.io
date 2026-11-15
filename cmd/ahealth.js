@@ -37,7 +37,7 @@
     if (f === 'exercise') return Math.round(v) + ' min';
     if (f === 'weight') return nf1.format(v) + ' kg';
     if (f === 'distance') return nf1.format(v) + ' km';
-    if (f === 'stand') return Math.round(v) + ' h';
+    if (f === 'stand') return Math.round(v) + (STANDMIN ? ' min' : ' h');   /* some Shortcuts send stand minutes, not stand hours */
     if (f === 'hrv') return Math.round(v) + ' ms';
     if (f === 'vo2') return nf1.format(v);
     if (f === 'mindful' || f === 'daylight') return Math.round(v) + ' min';
@@ -47,10 +47,12 @@
   }
 
   /* 0 h sleep, 0 bpm or 0 kg means the Shortcut found nothing – treat it as no number, not a real one */
+  var STANDMIN = false;
   var ZERO_IS_EMPTY = { sleep: 1, hr: 1, rhr: 1, weight: 1, hrv: 1, vo2: 1 };
   function days() {
     var d = window.Vault.get() || {}, D = (d.health && d.health.days) || {}, out = {};
     Object.keys(D).forEach(function (k) { var x = {}; Object.keys(D[k]).forEach(function (f) { if (!(ZERO_IS_EMPTY[f] && D[k][f] === 0)) x[f] = D[k][f]; }); out[k] = x; });
+    STANDMIN = Object.keys(out).some(function (k) { return out[k].stand > 24; });   /* more than 24 in a day can only be minutes (JP's showed 26 h, 59 h on average – 2026-11-15) */
     return out;
   }
   /* put days in the vault, tick habits that follow a number, tell the rest of the dashboard */
@@ -223,7 +225,7 @@
   /* chart kind: a line shows a trend (weight going down), bars show daily totals */
   var LINE_DEF = { weight: 1, rhr: 1, hrv: 1, vo2: 1, hr: 1 };
   function chartKind(m) { var c = ((readJSON('dash.settings', {}) || {}).ahChart || {})[m]; return c || (LINE_DEF[m] ? 'line' : 'bars'); }
-  function goals() { var g = (readJSON('dash.settings', {}) || {}).ahGoals || {}, out = {}; Object.keys(GOAL_DEF).concat(Object.keys(g)).forEach(function (k) { out[k] = g[k] != null ? g[k] : GOAL_DEF[k]; }); return out; }
+  function goals() { var g = (readJSON('dash.settings', {}) || {}).ahGoals || {}, out = {}; Object.keys(GOAL_DEF).concat(Object.keys(g)).forEach(function (k) { out[k] = g[k] != null ? g[k] : GOAL_DEF[k]; }); if (STANDMIN && g.stand == null) out.stand = 60; return out; }
   function setGoal(m, v) { var st = readJSON('dash.settings', {}) || {}; st.ahGoals = st.ahGoals || {}; if (v) st.ahGoals[m] = v; else delete st.ahGoals[m]; writeJSON('dash.settings', st); }
   function dayName(k, today) {
     if (k === today) return 'Today';
@@ -273,7 +275,7 @@
         (spark ? sparkOf(m[0], D, today) + '</span>' : '') + '<b>' + esc(l ? fmt(m[0], l.v) : '–') + '</b>' +
         (pct != null ? '<span class="ah-prog' + (pct >= 100 ? ' full' : '') + '" title="' + Math.round(pct) + '% of ' + esc(fmt(m[0], g)) + '"><i style="width:' + pct.toFixed(1) + '%"></i></span>' : '') +
         '<small>' + (a != null ? '7-day avg ' + esc(fmt(m[0], a)) : '') +
-        (diff != null && Math.abs(diff) >= .05 ? ' <span class="' + (NEUTRAL[m[0]] ? 'nt' : (diff > 0) === !LOWER[m[0]] ? 'up' : 'dn') + '">' + (diff > 0 ? '+' : '−') + Math.round(Math.abs(diff) * 100) + '%</span>' : '') + '</small></button>';
+        (diff != null && Math.abs(diff) >= .05 ? ' <span class="' + (NEUTRAL[m[0]] ? 'nt' : (diff > 0) === !LOWER[m[0]] ? 'up' : 'dn') + '">' + (diff > 0 ? '+' : '−') + Math.round(Math.abs(diff) * 100) + '% ' + I18N.k('ui.ah-vs-week', 'vs last week') + '</span>' : '') + '</small></button>';
     };
     var tiles = LY.tile.map(function (k) { return tileOf(byKey[k]); }).join('');
     if (LY.stack.length) {
@@ -416,7 +418,7 @@
     var when = li.t ? new Date(li.t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     var got = Object.keys(li).filter(function (f) { return f !== 't' && f !== 'date'; }).map(function (f) { return '<code>' + esc(f) + '</code> ' + esc(f === 'sleep' ? li[f] + (hours(li[f]) ? ' → ' + fmt('sleep', hours(li[f])) : '') : li[f]); }).join(' · ');
     var sc = sleepCheck(li);
-    return '<div class="st-row ah-last"><span class="st-label">Last sending from your iPhone<small>' + esc(when) + (li.date ? ' · for ' + esc(li.date) : '') + '</small><small class="ah-got">' + (got || 'No numbers') + '</small>' +
+    return '<div class="st-row ah-last"><span class="st-label">' + I18N.k('ui.ah-last-send', 'Last sending from your iPhone') + '<small>' + esc(when) + (li.date ? ' · ' + I18N.k('ui.ah-for', 'for') + ' ' + esc(li.date) : '') + '</small><small class="ah-got">' + (got || I18N.k('ui.ah-no-numbers', 'No numbers')) + '</small>' +
       (sc ? '<small class="' + (sc.bad ? 'ah-bad' : 'ah-good') + '"><i class="bi bi-' + (sc.bad ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + esc(sc.title) + (sc.fix ? '</small><small class="ah-fix">' + sc.fix : '') + '</small>' : '') + '</span></div>';
   }
 

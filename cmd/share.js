@@ -608,10 +608,13 @@
   }
   function statusLine() {
     if (lastErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(lastErr);
-    if (applyErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(applyErr + ' change(s) from ' + pname() + ' couldn’t be added – Settings → Diagnostics has the details');
-    if (!lastOk) return '<i class="bi bi-arrow-repeat"></i> Syncing …';
-    var lastP = 0, prof = false, unread = 0, av = 0; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.by === 'p' && r.bad) unread++; if (r.c === 'pme' && !r.del) { prof = true; av = (r.f && +r.f.v) || 0; } });
-    if (unread) return '<i class="bi bi-exclamation-circle"></i> ' + esc(unread + ' change(s) from ' + pname() + ' can’t be read – their app has an old invite. Show the code again (Invite below) and let them scan it.');
+    if (applyErr) return '<i class="bi bi-exclamation-circle"></i> ' + esc(I18N.k('ui.sh-apply-err', '{n} change(s) from {p} couldn’t be added – Settings → Diagnostics has the details', { n: applyErr, p: pname() }));
+    if (!lastOk) return '<i class="bi bi-arrow-repeat"></i> ' + I18N.k('ui.sh-syncing', 'Syncing …');
+    var lastP = 0, prof = false, unread = 0, av = 0; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p') lastP = Math.max(lastP, r.t || 0); if (r.c === 'pme' && !r.del) { prof = true; av = (r.f && +r.f.v) || 0; } });
+    /* only unreadable changes newer than their last readable one count: older ones are left from before a new key (JP's showed 7 from 9 Nov while everything since read fine – 2026-11-15) */
+    var goodP = 0; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && !r.bad) goodP = Math.max(goodP, r.t || 0); });
+    Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.by === 'p' && r.bad && (r.t || 0) > goodP) unread++; });
+    if (unread) return '<i class="bi bi-exclamation-circle"></i> ' + esc(I18N.k('ui.sh-unread', '{n} change(s) from {p} can’t be read – their app has an old invite. Show the code again (Invite below) and let them scan it.', { n: unread, p: pname() }));
     return '<i class="bi bi-check2-circle"></i> In sync · ' + new Date(lastOk).toTimeString().slice(0, 5) + (srvInfo && !srvInfo.joined ? ' · waiting for ' + esc(pname()) + ' to scan the code' : srvInfo && srvInfo.joined ? ' · ' + esc(pname()) + ' has joined' : '') +
       (lastP ? '<br><small class="muted">' + esc('Last change from ' + pname() + ': ' + new Date(lastP).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + ' · ' + esc(prof ? 'profile and avatar received' : 'no profile yet') + (av ? ' · their app v' + av : prof ? ' · their app is out of date – they should reopen it' : '') + '</small>' : '');
   }
@@ -665,7 +668,7 @@
   function actSum(nm) { var l = actList(nm, ''), mine = l.filter(function (x) { return x.by === 'o'; }).length; return l.length ? 'Last 2 weeks: you ' + mine + ' · ' + nm + ' ' + (l.length - mine) : 'Nothing yet'; }
   function actItems(nm) {
     var l = actList(nm, actWho);
-    return l.length ? '<ul class="sh-act">' + l.map(function (x) { return '<li><i class="bi bi-' + x.icon + '" style="color:' + (x.by === 'o' ? '#22b35e' : '#3987e5') + '"></i><span>' + esc(x.text) + '</span><small>' + esc(new Date(x.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></li>'; }).join('') + '</ul>' : '<p class="st-note st-pad">Nothing in the last two weeks.</p>';
+    return l.length ? '<ul class="sh-act">' + l.map(function (x) { return '<li><i class="bi bi-' + x.icon + '" style="color:' + (x.by === 'o' ? '#22b35e' : '#3987e5') + '"></i><span>' + esc(x.text) + '</span><small>' + esc(new Date(x.t).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</small></li>'; }).join('') + '</ul>' : '<p class="st-note st-pad">' + I18N.k('ui.sh-nothing-2w', 'Nothing in the last two weeks.') + '</p>';
   }
   function actHtml(nm) {
     return '<div class="seg sh-actseg" role="group">' + [['', 'Both'], ['o', I18N.k('ui.you', 'You')], ['p', nm]].map(function (x) { return '<button type="button" data-shact="' + x[0] + '" aria-pressed="' + (actWho === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div><div id="shActList">' + actItems(nm) + '</div>';
@@ -736,7 +739,7 @@
   var noteEd = null;
   function notesHtml() {
     var l = Array.isArray(Fe.tools().homenotes) ? Fe.tools().homenotes : [];
-    return '<p class="st-note muted">Pinned at the top of the chat – bin days, the Wi-Fi name, who to call when something breaks. You both see and change these. Don’t put passwords here.</p>' +
+    return '<p class="st-note muted">' + I18N.k('ui.sh-notes-intro', 'Pinned at the top of the chat – bin days, the Wi-Fi name, who to call when something breaks. You both see and change these. Don’t put passwords here.') + '</p>' +
       l.map(function (n) {
         if (noteEd === n.id) return noteForm(n);
         return '<div class="st-row sh-note"><button type="button" class="sh-note-x" data-shnoteed="' + esc(n.id) + '"><b>' + esc(n.title || 'Note') + '</b><small>' + esc(String(n.text || '').split('\n')[0].slice(0, 80)) + '</small></button><button type="button" class="icon-btn sm" data-shnotedel="' + esc(n.id) + '" aria-label="Delete note"><i class="bi bi-trash3"></i></button></div>';
@@ -767,10 +770,10 @@
   /* ---------- Chat (cmd/chat.js): a button in the bar, a panel on the right (computer) or the whole screen (phone) ---------- */
   function chatSec(sw) {
     var T = window.HomeChat ? HomeChat.TTLS : [], cur = window.HomeChat ? HomeChat.ttl() : 0;
-    return '<button type="button" class="st-row st-btn" data-hcopen><span><i class="bi bi-chat-heart"></i> Open the chat<small class="st-rsub">Messages, photos and files – only your two phones can read them</small></span><i class="bi bi-chevron-right"></i></button>' +
-      '<div class="st-row sh-ttl"><span><i class="bi bi-stopwatch"></i> Messages disappear after<small class="st-rsub">For both of you – ' + esc(pname()) + ' sees when you change it</small></span></div><div class="sh-ttlb">' +
+    return '<button type="button" class="st-row st-btn" data-hcopen><span><i class="bi bi-chat-heart"></i> ' + I18N.k('ui.sh-open-chat', 'Open the chat') + '<small class="st-rsub">' + I18N.k('ui.sh-chat-sub', 'Messages, photos and files – only your two phones can read them') + '</small></span><i class="bi bi-chevron-right"></i></button>' +
+      '<div class="st-row sh-ttl"><span><i class="bi bi-stopwatch"></i> ' + I18N.k('ui.sh-ttl', 'Messages disappear after') + '<small class="st-rsub">' + esc(I18N.k('ui.sh-ttl-sub', 'For both of you – {n} sees when you change it', { n: pname() })) + '</small></span></div><div class="sh-ttlb">' +
       T.map(function (t) { return '<button type="button" class="lf-chip' + (cur === t[0] ? ' on' : '') + '" data-hcttl="' + t[0] + '" aria-pressed="' + (cur === t[0]) + '">' + esc(t[1]) + '</button>'; }).join('') + '</div>' +
-      (sw.notes ? '<p class="st-minor sh-pinh"><i class="bi bi-pin-angle"></i> Pinned</p><div id="shNotes">' + notesHtml() + '</div>' : '');
+      (sw.notes ? '<p class="st-minor sh-pinh"><i class="bi bi-pin-angle"></i> ' + I18N.k('ui.sh-pinned', 'Pinned') + '</p><div id="shNotes">' + notesHtml() + '</div>' : '');
   }
   function partnerLook() { var lk = null; Object.keys(cache).forEach(function (rid) { var r = cache[rid]; if (r.c === 'pme' && !r.del && r.f && r.f.look) lk = r.f.look; }); if (lk) return lk; var pp = (Fe.tools().people || []).filter(function (x) { return x && x.shp; })[0]; return pp && pp.look || null; }
   function faceOf(side) {

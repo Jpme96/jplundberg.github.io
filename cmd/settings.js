@@ -247,7 +247,7 @@
     if (window.I18N && window.I18N.lang === 'nb') { lockTxt = 'Låses etter ' + (m >= 1440 ? '1 dag' : m >= 60 ? (m / 60) + ' time' + (m > 60 ? 'r' : '') : m + ' min'); secBits = secBits.map(function (b) { return b === 'Face ID on' ? 'Face ID på' : 'gjenopprettingskode satt'; }); }
     $('sumSecurity').textContent = lockTxt + (secBits.length ? ' · ' + secBits.join(' · ') : '');
     var st = sync ? sync.className : '';
-    $('sumData').textContent = /sync-ok/.test(st) ? 'Synced' : /sync-busy/.test(st) ? 'Syncing…' : /offline/.test(st) ? 'Offline' : 'This device only';
+    $('sumData').textContent = /sync-ok/.test(st) ? I18N.k('ui.sum-synced', 'Synced') : /sync-busy/.test(st) ? I18N.k('ui.sum-syncing', 'Syncing…') : /offline/.test(st) ? I18N.k('ui.sum-offline', 'Offline') : I18N.k('ui.sum-device-only', 'This device only');
   }
 
   /* ---------- pages (like iPhone Settings) ---------- */
