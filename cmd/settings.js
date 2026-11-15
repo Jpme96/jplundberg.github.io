@@ -62,7 +62,7 @@
   }
   /* perceived brightness 0–255: light colours get dark text, dark colours white text */
   function bright(c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; }
-  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', bgStrength: null, name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, glass: false, glassStrength: 60, cardStyle: null, density: 'comfortable', corners: 'round', textSize: 'm', clock: 'big', tips: 'fold' };
+  var DEFAULTS = { theme: 'dark', accent: 'teal', bgType: 'moon', name: 'Lundberg', seconds: true, quotes: true, hide: {}, lockMins: 60, textSize: 'm', clock: 'big', tips: 'fold' };
 
   /* Your own photo is kept on this device only (IndexedDB), resized to save space. */
   var customUrl = null, customLoaded = false;
@@ -125,7 +125,6 @@
   var media = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
 
   var media2 = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
-  function cardStyleOf(s) { return ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid'); }
   function motionOf(s) { if (window.__safeMode) return 'off'; return s.motion || (media2 && media2.matches ? 'off' : 'full'); }   /* safe mode (diag.js): no animations */
   /* "Sun": light from sunrise to sunset in Oslo, dark after – rough times per month (local time) */
   function sunUp() { var n = new Date(), m = n.getMonth(), h = n.getHours() + n.getMinutes() / 60, R = [9.1, 8, 6.6, 6.3, 5, 4, 4.6, 5.9, 7.2, 8.4, 8.5, 9.3], S = [15.4, 16.9, 18.2, 20.6, 21.8, 22.7, 22.4, 21, 19.3, 17.6, 15.6, 15.2]; return h >= R[m] && h < S[m]; }
@@ -144,15 +143,7 @@
     var bg = s.bgType;
     if (bg === 'custom' && !customUrl) bg = 'moon';      // photo not on this device (yet)
     root.setAttribute('data-bg', bg);
-    if (s.bgStrength) root.style.setProperty('--bg-strength', s.bgStrength / 100);
-    else root.style.removeProperty('--bg-strength');
     root.classList.add('modern'); root.classList.remove('classic');
-    var cst = cardStyleOf(s);
-    ['solid', 'minimal', 'soft'].forEach(function (k) { root.classList.toggle('card-' + k, cst === k); });
-    root.classList.toggle('glass', cst === 'glass');
-    root.style.setProperty('--glass', (+s.glassStrength || 60) / 100);
-    root.classList.toggle('dens-compact', s.density === 'compact');
-    root.classList.toggle('corners-sharp', s.corners === 'sharp');
     root.classList.toggle('text-lg', s.textSize === 'l');
     root.classList.toggle('text-xl', s.textSize === 'xl');
     root.classList.toggle('text-sm', s.textSize === 's');
@@ -215,21 +206,10 @@
       ? (customUrl ? 'Your photo is saved on this device only.<button type="button" class="st-linkbtn" id="stBgChange">Change photo</button>'
                    : 'Your photo is on another device. Add it here too, or pick another background.')
       : '';
-    $('stStrengthRow').hidden = s.bgType === 'none';
-    var cst = cardStyleOf(s);
-    document.querySelectorAll('[data-cardstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cardstyle === cst)); });
-    document.querySelectorAll('[data-density]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.density === (s.density || 'comfortable'))); });
-    document.querySelectorAll('[data-corners]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.corners === (s.corners || 'round'))); });
     document.querySelectorAll('[data-textsize]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.textsize === (s.textSize || 'm'))); });
     document.querySelectorAll('[data-langopt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.langopt === (s.lang === 'nb' ? 'nb' : 'en'))); });
     document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.clockstyle === (s.clock || 'big'))); });
     document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tipsmode === (s.tips || 'fold'))); });
-    $('stGlassRow').hidden = cst !== 'glass';
-    if (document.activeElement !== $('stGlassStr')) $('stGlassStr').value = +s.glassStrength || 60;
-    $('stCardNote').textContent = { solid: 'Calm, dark cards – the original look.', glass: s.bgType === 'none' ? 'Frosted and see-through. Shows best on a background – pick one above.' : 'Frosted and see-through. Use the slider for how much.',
-      minimal: 'No boxes – just lines between sections.', soft: 'Raised cards with soft shadows, like phone widgets.' }[cst];
-    var cs = getComputedStyle(document.querySelector('.bg'));
-    $('stStrength').value = s.bgStrength || Math.round(parseFloat(cs.opacity) * 100) || 30;
     if (document.activeElement !== $('stName')) $('stName').value = s.name;
     $('stSeconds').checked = !!s.seconds;
     $('stQuotes').checked = !!s.quotes;
@@ -255,7 +235,7 @@
     /* One-line summaries on the main menu */
     var a = accentOf(s);
     var bgName = (BGS.filter(function (b) { return b[0] === s.bgType; })[0] || BGS[0])[1];
-    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto', sun: 'Follows the sun' }[s.theme] + ' · ' + a.name + ' · ' + bgName + ' · ' + { solid: 'Solid', glass: 'Glass', minimal: 'Minimal', soft: 'Soft' }[cardStyleOf(s)] + ' cards';
+    $('sumAppearance').textContent = { dark: 'Dark', light: 'Light', auto: 'Auto', sun: 'Follows the sun' }[s.theme] + ' · ' + a.name + ' · ' + bgName;
     var avail = CARDS.filter(function (c) { return featureOn(c[0]); });
     var shown = avail.filter(function (c) { return !s.hide[c[0]]; }).length;
     $('sumDashboard').textContent = shown + ' of ' + avail.length + ' cards' + (s.name ? ' · ' + s.name : '');
@@ -378,7 +358,7 @@
     if (!t) return;
     var k = t.dataset.bg;
     if (k === 'custom' && !customUrl) { $('stBgFile').click(); return; }
-    set({ bgType: k, bgStrength: null });
+    set({ bgType: k });
   });
   $('stBgNote').addEventListener('click', function (e) { if (e.target.id === 'stBgChange') $('stBgFile').click(); });
   $('stBgFile').addEventListener('change', function () {
@@ -389,21 +369,14 @@
     shrink(f).then(function (blob) {
       return bgDb('readwrite', function (st) { return st.put(blob, 'custom'); }).then(function () {
         useCustom(blob);
-        set({ bgType: 'custom', bgStrength: null });
+        set({ bgType: 'custom' });
       });
     }).catch(function () { $('stBgNote').textContent = 'That photo couldn’t be used. Try a JPEG or PNG.'; });
   });
-  $('stStrength').addEventListener('input', function () {
-    root.style.setProperty('--bg-strength', this.value / 100);
-  });
-  $('stStrength').addEventListener('change', function () { set({ bgStrength: +this.value }); });
   /* Glass: frosted, see-through cards. The slider previews live and saves when you let go. */
   /* once: the new look starts on the calm background (any background can still be picked) */
   /* Classic is gone: anyone still on it moves to Modern (their background is kept) */
   if (window.Vault) window.Vault.onUnlock(function () { var s = get(); if (!s.lookV) set({ lookV: 1, bgType: 'calm' }); else if (s.look === 'classic') set({ look: undefined }); });
-  $('stCardStyle').addEventListener('click', function (e) { var b = e.target.closest('[data-cardstyle]'); if (b) set({ cardStyle: b.dataset.cardstyle, glass: b.dataset.cardstyle === 'glass' }); });
-  document.querySelectorAll('[data-density]').forEach(function (b) { b.addEventListener('click', function () { set({ density: b.dataset.density }); }); });
-  document.querySelectorAll('[data-corners]').forEach(function (b) { b.addEventListener('click', function () { set({ corners: b.dataset.corners }); }); });
   document.querySelectorAll('[data-textsize]').forEach(function (b) { b.addEventListener('click', function () { set({ textSize: b.dataset.textsize }); }); });
   /* language: the page reloads in the new language (settings are saved and synced first) */
   /* a menu row can open a page at one section (Experience → the jobs on the CV page) */
@@ -436,8 +409,6 @@
   }); });
   document.querySelectorAll('[data-clockstyle]').forEach(function (b) { b.addEventListener('click', function () { set({ clock: b.dataset.clockstyle }); }); });
   document.querySelectorAll('[data-tipsmode]').forEach(function (b) { b.addEventListener('click', function () { set({ tips: b.dataset.tipsmode }); window.dispatchEvent(new Event('tips:change')); }); });
-  $('stGlassStr').addEventListener('input', function () { root.style.setProperty('--glass', this.value / 100); });
-  $('stGlassStr').addEventListener('change', function () { set({ glassStrength: +this.value }); });
   /* your name lives in two places (Settings and Profile) – change both, so it is the same everywhere (also for the person you share with) */
   $('stName').addEventListener('change', function () {
     var n = this.value.trim(); set({ name: n });

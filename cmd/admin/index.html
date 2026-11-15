@@ -38,12 +38,6 @@
         if (s.lockStyle) r.setAttribute('data-lock', s.lockStyle);   /* the lock screen's look (Settings → Appearance) */
         var bg = s.bgType || (s.bg === false ? 'none' : modern ? 'calm' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
-        if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
-        var cst = ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid');
-        r.classList.add(cst === 'glass' ? 'glass' : 'card-' + cst);
-        if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
-        if (s.density === 'compact') r.classList.add('dens-compact');
-        if (s.corners === 'sharp') r.classList.add('corners-sharp');
         if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 'xl') r.classList.add('text-xl'); else if (s.textSize === 's') r.classList.add('text-sm');
         if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
@@ -76,8 +70,8 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=5e1176ea50" rel="stylesheet">
-  <link href="../modern.css?v=47d0859fa7" rel="stylesheet">
+  <link href="../styles.css?v=045360ce2a" rel="stylesheet">
+  <link href="../modern.css?v=2287bad5b6" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
   <link href="../finance/fin.css?v=60c7531e79" rel="stylesheet">
   <link href="../calendar/cal.css?v=5852e3b0d7" rel="stylesheet">
@@ -243,39 +237,6 @@
           <div class="bg-tiles" id="stBgTiles"></div>
           <input type="file" id="stBgFile" accept="image/*" hidden>
           <p class="st-note" id="stBgNote"></p>
-        </div>
-        <div class="st-col" id="stStrengthRow">
-          <span data-t="ui.strength">Strength</span>
-          <div class="st-range"><i class="bi bi-circle"></i><input data-t-aria-label="ui.background-strength" type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
-        </div>
-      </section>
-
-      <p data-t="ui.cards" class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards</p>
-      <section class="st-group">
-        <div class="st-col">
-          <div data-t-aria-label="ui.card-style" class="cst-opts" id="stCardStyle" role="group" aria-label="Card style">
-            <button data-t="ui.solid" type="button" data-cardstyle="solid"><span class="cst-prev p-solid"><i></i><i></i></span>Solid</button>
-            <button data-t="ui.glass" type="button" data-cardstyle="glass"><span class="cst-prev p-glass"><i></i><i></i></span>Glass</button>
-            <button data-t="ui.minimal" type="button" data-cardstyle="minimal"><span class="cst-prev p-minimal"><i></i><i></i></span>Minimal</button>
-            <button data-t="ui.soft" type="button" data-cardstyle="soft"><span class="cst-prev p-soft"><i></i><i></i></span>Soft</button>
-          </div>
-          <p class="st-note" id="stCardNote"></p>
-        </div>
-        <div class="st-col" id="stGlassRow" hidden>
-          <span>Glass strength</span>
-          <div class="st-range"><i class="bi bi-square-fill"></i><input type="range" id="stGlassStr" min="10" max="100" step="1" aria-label="Glass strength"><i class="bi bi-droplet-half"></i></div>
-        </div>
-        <div class="st-row"><span data-t="ui.density">Density</span>
-          <div data-t-aria-label="ui.density" class="seg" role="group" aria-label="Density">
-            <button data-t="ui.comfortable" type="button" data-density="comfortable">Comfortable</button>
-            <button data-t="ui.compact" type="button" data-density="compact">Compact</button>
-          </div>
-        </div>
-        <div class="st-row"><span data-t="ui.corners">Corners</span>
-          <div data-t-aria-label="ui.corners" class="seg" role="group" aria-label="Corners">
-            <button data-t="ui.round" type="button" data-corners="round">Round</button>
-            <button data-t="ui.sharp" type="button" data-corners="sharp">Sharp</button>
-          </div>
         </div>
       </section>
 
@@ -687,8 +648,8 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=d97d785728"></script>
-  <script src="../dist/page-admin.js?v=c6c238264c"></script>
+  <script src="../dist/head.js?v=cf872cf217"></script>
+  <script src="../dist/page-admin.js?v=7b146c4d21"></script>
   <script src="../dist/tail.js?v=028949d12f"></script>
   <!-- /scripts -->
 </body>

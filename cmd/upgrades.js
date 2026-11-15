@@ -66,6 +66,14 @@
           if (own.length) { tl.fdvcodes = own; tl.fdvparts = keep; ch = true; } }
         if (ch) set('dash.tools', tl);
         return ch;
+      } },
+    { n: 5, what: 'Phase G (the new look): Strength, Density, Corners, Card style and Glass are gone from Settings – their saved values go too',
+      run: function (d, get, set) {
+        var s = get('dash.settings'); if (!obj(s)) return false;
+        var ch = false;
+        ['bgStrength', 'density', 'corners', 'cardStyle', 'glass', 'glassStrength'].forEach(function (k) { if (k in s) { delete s[k]; ch = true; } });
+        if (ch) set('dash.settings', s);
+        return ch;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;

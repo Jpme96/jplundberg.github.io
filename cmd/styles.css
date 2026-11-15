@@ -24,7 +24,7 @@
   --warn: #c98500; --warn-rgb: 201, 133, 0;
   --danger-rgb: 230, 103, 103;
   --orange: #e8743b; --orange-rgb: 232, 116, 59;
-  --blue: #3987e5; --gold: #d9a400; --pink: #d55181; --violet: #8a6fdf; --violet-rgb: 138, 111, 223; --slate: #5b6470;
+  --blue: #3987e5; --blue-rgb: 57, 135, 229; --gold: #d9a400; --pink: #d55181; --violet: #8a6fdf; --violet-rgb: 138, 111, 223; --slate: #5b6470; --slate-rgb: 91, 100, 112;
   --scheme: dark;
   --quote: rgba(var(--ink-rgb), .75);
   --moon-filter: grayscale(1);
@@ -1299,7 +1299,6 @@ select.st-wide { padding-right: 32px; }
 .st-card.dragging { opacity: .4; }
 .st-card.drop { box-shadow: inset 0 2px 0 var(--accent); }
 
-
 /* ---------- Settings: website texts ---------- */
 .tx-lang { display: flex; margin: 0 0 10px; }
 .tx-lang button { flex: 1; }
@@ -1568,22 +1567,6 @@ input:disabled { opacity: .55; }
 /* ---------- Glass (Settings → Appearance) ----------
    --glass goes from .1 (a hint) to 1 (very see-through): cards get more transparent,
    the frosting gets stronger and a light edge catches the top. */
-:root { --glass: .6; }
-.glass { --card: var(--glass-card); }
-.glass :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note) {
-  background: var(--card);
-  -webkit-backdrop-filter: blur(calc(12px + var(--glass) * 26px)) saturate(calc(1.05 + var(--glass) * .75));
-  backdrop-filter: blur(calc(12px + var(--glass) * 26px)) saturate(calc(1.05 + var(--glass) * .75));
-  border-color: var(--glass-edge);
-  box-shadow: var(--glass-shadow);
-}
-.glass .unlocked .tabbar, .glass.unlocked .tabbar, .glass.resuming .tabbar {
-  background: rgba(var(--card-rgb), calc(.82 - var(--glass) * .5));
-  -webkit-backdrop-filter: blur(calc(16px + var(--glass) * 20px)) saturate(1.6);
-  backdrop-filter: blur(calc(16px + var(--glass) * 20px)) saturate(1.6);
-}
-.glass .st-panel { background: rgba(var(--card-rgb), calc(.9 - var(--glass) * .35)); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
-.glass .cl-sheet { background: rgba(var(--card-rgb), calc(.92 - var(--glass) * .3)); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
 
 /* ---------- Card style, density and corners (Settings → Appearance → Cards) ---------- */
 .ap-sub { display: flex; align-items: center; gap: 7px; margin: 18px 4px 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
@@ -1609,55 +1592,15 @@ input:disabled { opacity: .55; }
 .p-soft { padding: 8px 9px; gap: 7px; }
 .p-soft i { background: color-mix(in srgb, rgb(var(--card-rgb)) 88%, white); border-radius: 10px; box-shadow: 0 6px 12px rgba(0, 0, 0, .45); }@media (max-width: 380px) { .cst-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* Minimal: no boxes, just lines between the sections */
-.card-minimal :is(.card, .fp-tile, .cl-lday, .tv-trip, .tv-nx, .tp-card, .dash-note) {
-  background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0;
-  -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; padding-left: 2px; padding-right: 2px;
-}
-.card-minimal :is(.cl-month, .cl-week) { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
-.card-minimal .kit-tile { background: transparent; border: 1px solid var(--line); }
-
-/* Soft: raised cards with soft shadows */
-.card-soft :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note) {
-  background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 24px;
-  box-shadow: var(--soft-shadow);
-}
-
-/* Compact: more on the screen */
-.dens-compact :is(.grid, .fin-grid, .kit-grid, .fp-grid, .fp-tiles, .kit-tiles) { gap: 9px; }
-.dens-compact :is(.card, .fp-tile, .tp-card) { padding: 13px 14px; }
-.dens-compact .card-head { margin-bottom: 8px; }
-.dens-compact .dash-sec + .dash-sec { margin-top: 20px; }
-.dens-compact .hero { padding-bottom: 8px; }
-.dens-compact .kit-main { padding: 7px 2px; }
-
-/* Sharp corners */
-.corners-sharp :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note, .st-group, .cl-sheet, .ws-tiles div) { border-radius: 8px; }
-.corners-sharp :is(.kit-tile, .kit-ic, .cl-chip, input, select, textarea) { border-radius: 6px; }
-.corners-sharp.card-soft :is(.card, .fp-tile) { border-radius: 10px; }
 [data-tool] > .kit-card { scroll-margin-top: 16px; }
 
 /* ---------- Icon badges: one shape everywhere ----------
    Round corners → round icons; Sharp corners → small squares. */
 :root { --ico-r: 50%; }
-.corners-sharp { --ico-r: 8px; }
+
 :root :is(.st-ico, .kit-ic, .me-soc-ic, .acc-ico, .tp-item .ic, .gl-next .ic, .doc-row .ic) { border-radius: var(--ico-r); }
 
 /* ---------- The settings panel follows Appearance too ---------- */
-.glass .st-group {
-  background: rgba(var(--card-rgb), calc(.6 - var(--glass) * .4));
-  border-color: rgba(255, 255, 255, calc(.05 + var(--glass) * .1));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(.03 + var(--glass) * .1));
-}
-.card-soft .st-group { background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 22px; box-shadow: var(--soft-shadow-sm); }
-.card-minimal .st-group { background: transparent; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding-left: 2px; padding-right: 2px; }
-.card-minimal .st-profile { background: transparent; border-color: var(--line); }
-.dens-compact .st-row { min-height: 42px; padding: 3px 0; }
-.dens-compact .st-group { margin-bottom: 10px; }
-.dens-compact .st-menu .st-row { min-height: 52px; }
-.corners-sharp :is(.cst-opts button, .bg-tile, .seg, .st-profile) { border-radius: 8px; }
-.corners-sharp .seg button { border-radius: 6px; }
-.corners-sharp .cst-prev { border-radius: 5px; }
 
 /* ---------- At a glance ---------- */
 .card.brief { grid-column: 1 / -1; }
@@ -1672,7 +1615,6 @@ input:disabled { opacity: .55; }
 .br-calm { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; padding: 6px 2px; }
 .br-calm .bi { color: var(--accent); font-size: 18px; }
 .br-more { margin: 4px 0 0 4px; }
-.dens-compact .br-item { padding: 5px 4px; }
 
 /* ---------- Search ---------- */
 .sr-sub { position: absolute; z-index: 36; top: max(16px, calc(env(safe-area-inset-top) + 26px)); right: calc(max(16px, calc((100% - 1120px) / 2)) + 50px); }
@@ -1683,7 +1625,7 @@ input:disabled { opacity: .55; }
 .sr-box { width: min(620px, 100%); max-height: min(78vh, 680px); display: flex; flex-direction: column; background: var(--bg-solid); border: 1px solid var(--line);
   border-radius: 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); overflow: hidden; transform: translateY(-8px); opacity: 0; transition: transform .2s var(--ease-out), opacity .18s; }
 .sr-bg.open .sr-box { transform: none; opacity: 1; }
-.glass .sr-box { background: rgba(var(--card-rgb), .82); -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5); }
+
 .sr-top { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; border-bottom: 1px solid var(--line); }
 .sr-top > .bi { color: var(--muted); }
 .sr-top input { flex: 1; border: 0; background: none; font-size: 16px; padding: 8px 0; outline: none; box-shadow: none; }
@@ -1793,11 +1735,7 @@ input:disabled { opacity: .55; }
    phone feel heavy. Solid, Minimal and Soft cards have no blur at all now; on touch screens the
    menu is solid and Glass cards are see-through without the blur. */@media (hover: none) {
   .unlocked .tabbar, .resuming .tabbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(var(--card-rgb), .96); }
-  .glass .unlocked .tabbar, .glass.unlocked .tabbar, .glass.resuming .tabbar { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); background: rgba(var(--card-rgb), calc(.86 - var(--glass) * .3)); }
-  .glass :is(.card, .fp-tile, .cl-month, .cl-week, .cl-lday, .tv-trip, .tv-nx, .tp-card, .st-profile, .dash-note) {
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-    background: rgba(var(--card-rgb), calc(.84 - var(--glass) * .5));
-  }
+
 }
 
 /* ---------- Money card (dashboard) ---------- */
@@ -1816,9 +1754,7 @@ input:disabled { opacity: .55; }
 .icon-btn.sm { width: 36px; height: 36px; font-size: 15px; }
 .head-actions .text-btn i { font-size: 11px; }
 /* phones and tablets: one flow of cards in a sensible order; wide screens: three columns that each stack their cards */
-.fin-cols .budget { order: 1; } .fin-cols .bills { order: 2; } .fin-cols .spending { order: 3; } .fin-cols .savings { order: 5; } .fin-cols .networth { order: 6; }@media (min-width: 760px) { .fp-fin .networth { grid-column: auto; } }@media (min-width: 1040px) {
-  .dens-compact .fin-cols .fin-col { gap: 9px; }
-}
+.fin-cols .budget { order: 1; } .fin-cols .bills { order: 2; } .fin-cols .spending { order: 3; } .fin-cols .savings { order: 5; } .fin-cols .networth { order: 6; }@media (min-width: 760px) { .fp-fin .networth { grid-column: auto; } }
 
 /* ---------- Folded (empty) cards ---------- */
 .card-folded > :not(.card-head) { display: none !important; }
@@ -1828,7 +1764,6 @@ input:disabled { opacity: .55; }
 .card-folded .card-head > .text-btn:not(.fold-hint), .card-folded .card-head > .head-actions { display: none; }
 .fold-hint { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; padding: 0; cursor: pointer; }
 .fold-hint i { font-size: 12px; color: var(--accent); }
-.card-minimal .card-folded { padding-top: 10px; padding-bottom: 10px; }
 
 /* ---------- Quick add ---------- */
 .qa-btn {
@@ -2351,18 +2286,10 @@ a.st-btn .st-label { flex: 1; }
 .ah-tile { transition: background .2s, box-shadow .2s; }
 .ah-tile:hover { background: rgba(var(--ink-rgb), .07); }
 .ah-tile.on { background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 75%, transparent); }
-.glass :is(.kit-tile, .ah-tile) { background: rgba(255, 255, 255, calc(.04 + var(--glass, .6) * .04)); }
-.glass .ah-tile.on { background: color-mix(in srgb, var(--c) 16%, transparent); }
-.card-soft :is(.kit-tile, .ah-tile) { border-radius: 16px; background: rgba(var(--ink-rgb), .05); }
-/* Minimal: no fill, a line on top – like the cards themselves */
-.card-minimal :is(.kit-tile, .ah-tile) { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 2px 4px; }
-.card-minimal .ah-tile.on { box-shadow: inset 0 2px 0 var(--c); background: transparent; }
-.card-minimal .ah-tile:hover { background: transparent; box-shadow: inset 0 2px 0 color-mix(in srgb, var(--c) 45%, transparent); }
-.corners-sharp :is(.kit-tile, .ah-tile) { border-radius: 8px; }
-.corners-sharp.card-minimal :is(.kit-tile, .ah-tile) { border-radius: 0; }
+
 /* the page's own key numbers (Finances, Health, Travel) keep the card style, with the same inner spacing everywhere */
 .fp-tile { padding: 14px 16px; }
-.dens-compact :is(.kit-tile, .ah-tile) { padding: 9px 11px; }
+
 /* every tile in a group the same height, row after row */
 .ah-tiles, .kit-tiles, .fp-tiles { grid-auto-rows: 1fr; }
 .ah-tiles.editing { grid-auto-rows: auto; }
@@ -2371,9 +2298,7 @@ a.st-btn .st-label { flex: 1; }
 .st-inv { list-style: none; margin: 0; padding: 6px 0; display: grid; gap: 8px; font-size: 14px; }
 .st-inv li { display: flex; gap: 10px; align-items: baseline; }
 .st-inv .bi { color: var(--accent); width: 16px; text-align: center; flex-shrink: 0; }
-/* Finances on wide screens: three columns that end on one line (fin.js shares the cards out) */@media (min-width: 1040px) {
-  .dens-compact .fin-even .fin-col { gap: 9px; }
-}
+/* Finances on wide screens: three columns that end on one line (fin.js shares the cards out) */
 
 /* ---------- Cards side by side are the same height (Oct 2026) ----------
    A short card next to a long one used to stop halfway down. Now every card in a row reaches the
@@ -3412,7 +3337,6 @@ html.simple #stMenu [data-adv] { display: none; }
 .ws-del, .wr-del { color: var(--muted); } .ws-del:hover, .wr-del:hover { color: var(--bad, var(--danger)); }
 .wr-gone { text-align: center; padding: 40px 10px; color: var(--muted); } .wr-gone > .bi { font-size: 28px; } .wr-gone p { margin: 8px 0 14px; }
 
-
 /* Website workspace, tidier: the parts as chips on top, editor and preview side by side; writing hides everything else */
 .aw { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .aw-nav { grid-column: 1 / -1; position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; }
@@ -3585,7 +3509,7 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .fp-tabs button[aria-selected="true"] { background: var(--bg-solid); color: var(--heading); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
 .fp-tabs button[aria-selected="true"] .bi { color: var(--accent); }@media (min-width: 640px) { .fp-tabs { display: inline-grid; grid-template-columns: repeat(var(--n, 4), auto); } .fp-tabs button { flex-direction: row; gap: 7px; padding: 8px 16px; font-size: 14px; } .fp-tabs button .bi { font-size: 15px; } }
 .fp-all .fp-tabs { display: none; }
-.dens-compact .fpt .fin-col { gap: 9px; }@media (min-width: 900px) { .fp-fin .fin-grid.fpt:not(.fpt-one) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .fp-fin .fin-grid.fpt:not(.fpt-one) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .fpt-one .card.spending, .fpt-one .card.networth { grid-column: 1 / -1; }
 
 /* payday plan */

@@ -451,9 +451,7 @@
 .hs-trip .x small { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hs-trip .a { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .hs-trip > .bi { color: var(--muted); font-size: 12px; }
-.glass .hs-year { background: var(--card); }
-.card-minimal .hs-year { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
-.card-soft .hs-year { background: rgb(var(--card-rgb)); border-color: transparent; border-radius: 22px; box-shadow: 0 10px 26px rgba(0, 0, 0, .26); }
+
 /* room for the search and profile buttons above the greeting on phones */
 @media (max-width: 759px) { .tv .tv-hero { padding-top: 50px; } }
 

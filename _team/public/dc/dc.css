@@ -24,7 +24,7 @@
   --warn: #c98500; --warn-rgb: 201, 133, 0;
   --danger-rgb: 230, 103, 103;
   --orange: #e8743b; --orange-rgb: 232, 116, 59;
-  --blue: #3987e5; --gold: #d9a400; --pink: #d55181; --violet: #8a6fdf; --violet-rgb: 138, 111, 223; --slate: #5b6470;
+  --blue: #3987e5; --blue-rgb: 57, 135, 229; --gold: #d9a400; --pink: #d55181; --violet: #8a6fdf; --violet-rgb: 138, 111, 223; --slate: #5b6470; --slate-rgb: 91, 100, 112;
   --scheme: dark;
   --quote: rgba(var(--ink-rgb), .75);
   --moon-filter: grayscale(1);

@@ -38,12 +38,6 @@
         if (s.lockStyle) r.setAttribute('data-lock', s.lockStyle);   /* the lock screen's look (Settings → Appearance) */
         var bg = s.bgType || (s.bg === false ? 'none' : modern ? 'calm' : 'moon');
         r.setAttribute('data-bg', bg === 'custom' ? 'moon' : bg);
-        if (s.bgStrength) r.style.setProperty('--bg-strength', s.bgStrength / 100);
-        var cst = ['solid', 'glass', 'minimal', 'soft'].indexOf(s.cardStyle) > -1 ? s.cardStyle : (s.glass ? 'glass' : 'solid');
-        r.classList.add(cst === 'glass' ? 'glass' : 'card-' + cst);
-        if (s.glassStrength) r.style.setProperty('--glass', s.glassStrength / 100);
-        if (s.density === 'compact') r.classList.add('dens-compact');
-        if (s.corners === 'sharp') r.classList.add('corners-sharp');
         if (s.textSize === 'l') r.classList.add('text-lg'); else if (s.textSize === 'xl') r.classList.add('text-xl'); else if (s.textSize === 's') r.classList.add('text-sm');
         if (s.clock === 'compact') r.classList.add('clock-compact');
         /* motion: Settings → Appearance (Full / Subtle / Off); "reduce motion" on the device means Off */
@@ -76,13 +70,13 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=5e1176ea50" rel="stylesheet">
+  <link href="../styles.css?v=045360ce2a" rel="stylesheet">
   <link href="page.css?v=ed85693129" rel="stylesheet">
-  <link href="../modern.css?v=47d0859fa7" rel="stylesheet">
+  <link href="../modern.css?v=2287bad5b6" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
   <link href="../finance/fin.css?v=60c7531e79" rel="stylesheet">
   <link href="../calendar/cal.css?v=5852e3b0d7" rel="stylesheet">
-  <link href="travel.css?v=0a3be171d7" rel="stylesheet">
+  <link href="travel.css?v=2d983ec644" rel="stylesheet">
 </head>
 <body>
   <nav data-t-aria-label="ui.pages" class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span data-t="ui.home">Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span data-t="ui.calendar">Calendar</span></a><a href="/cmd/travel/" data-pg="travel" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-signpost-split"></i><span data-t="ui.travel">Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span data-t="ui.finances">Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span data-t="ui.health">Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span data-t="ui.work">Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span data-t="ui.house">House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span data-t="ui.people">People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span data-t="ui.food">Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span data-t="ui.wishlist">Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span data-t="ui.goals">Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span data-t="ui.nav-papers">Papers</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
@@ -477,39 +471,6 @@
           <div class="bg-tiles" id="stBgTiles"></div>
           <input type="file" id="stBgFile" accept="image/*" hidden>
           <p class="st-note" id="stBgNote"></p>
-        </div>
-        <div class="st-col" id="stStrengthRow">
-          <span data-t="ui.strength">Strength</span>
-          <div class="st-range"><i class="bi bi-circle"></i><input data-t-aria-label="ui.background-strength" type="range" id="stStrength" min="5" max="90" step="1" aria-label="Background strength"><i class="bi bi-circle-fill"></i></div>
-        </div>
-      </section>
-
-      <p data-t="ui.cards" class="st-sub ap-sub"><i class="bi bi-grid-1x2"></i> Cards</p>
-      <section class="st-group">
-        <div class="st-col">
-          <div data-t-aria-label="ui.card-style" class="cst-opts" id="stCardStyle" role="group" aria-label="Card style">
-            <button data-t="ui.solid" type="button" data-cardstyle="solid"><span class="cst-prev p-solid"><i></i><i></i></span>Solid</button>
-            <button data-t="ui.glass" type="button" data-cardstyle="glass"><span class="cst-prev p-glass"><i></i><i></i></span>Glass</button>
-            <button data-t="ui.minimal" type="button" data-cardstyle="minimal"><span class="cst-prev p-minimal"><i></i><i></i></span>Minimal</button>
-            <button data-t="ui.soft" type="button" data-cardstyle="soft"><span class="cst-prev p-soft"><i></i><i></i></span>Soft</button>
-          </div>
-          <p class="st-note" id="stCardNote"></p>
-        </div>
-        <div class="st-col" id="stGlassRow" hidden>
-          <span>Glass strength</span>
-          <div class="st-range"><i class="bi bi-square-fill"></i><input type="range" id="stGlassStr" min="10" max="100" step="1" aria-label="Glass strength"><i class="bi bi-droplet-half"></i></div>
-        </div>
-        <div class="st-row"><span data-t="ui.density">Density</span>
-          <div data-t-aria-label="ui.density" class="seg" role="group" aria-label="Density">
-            <button data-t="ui.comfortable" type="button" data-density="comfortable">Comfortable</button>
-            <button data-t="ui.compact" type="button" data-density="compact">Compact</button>
-          </div>
-        </div>
-        <div class="st-row"><span data-t="ui.corners">Corners</span>
-          <div data-t-aria-label="ui.corners" class="seg" role="group" aria-label="Corners">
-            <button data-t="ui.round" type="button" data-corners="round">Round</button>
-            <button data-t="ui.sharp" type="button" data-corners="sharp">Sharp</button>
-          </div>
         </div>
       </section>
 
@@ -921,8 +882,8 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=d97d785728"></script>
-  <script src="../dist/page-travel.js?v=0c9d2ac7d8"></script>
+  <script src="../dist/head.js?v=cf872cf217"></script>
+  <script src="../dist/page-travel.js?v=3c92232761"></script>
   <script src="../dist/tail.js?v=028949d12f"></script>
   <!-- /scripts -->
 </body>

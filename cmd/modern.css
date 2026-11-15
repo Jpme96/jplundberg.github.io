@@ -24,8 +24,15 @@
   --t2: rgba(236, 236, 242, .78);
   --line: rgba(255, 255, 255, .065);
   --chip: rgba(255, 255, 255, .05);
-  --r-card: 22px;
+  --r-card: 18px;
   --r-ctl: 12px;
+  --r-chip: 999px;
+  /* Phase G – one spacing scale, three text sizes (+ the numbers and the page title), one pace for motion */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  --fs-s: 12px; --fs-m: 14px; --fs-l: 16px; --fs-num: 28px; --fs-title: 34px;
+  --dur-1: .15s; --dur-2: .25s;
+  /* status tags: the text a little lighter than the colour on dark, a little darker on light */
+  --stt-mix: white; --stt-fg: 62%; --stt-bg: .15;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --solid-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset;
   --mbar-shadow: 0 10px 34px rgba(0, 0, 0, .28);
@@ -46,9 +53,9 @@
   --chip: rgba(20, 22, 30, .045);
   --solid-shadow: 0 1px 2px rgba(20, 22, 30, .05), 0 6px 20px rgba(20, 22, 30, .04);
   --mbar-shadow: 0 8px 26px rgba(20, 22, 30, .08);
+  --stt-mix: black; --stt-fg: 78%; --stt-bg: .13;
   /* /tokens */
 }
-.modern.corners-sharp { --r-card: 10px; --r-ctl: 8px; }
 
 .modern body, .modern button, .modern input, .modern textarea, .modern select,
 .modern :is(h1, h2, h3, h4, .text-btn, .pill-btn, .tabbar a, .date, .sec-title, .seg button, .fp-hero *, .st-panel *) {
@@ -68,12 +75,12 @@
 }
 
 /* ---------- cards ---------- */
-.modern .card { border-radius: var(--r-card); padding: 20px; }
+.modern .card { border-radius: var(--r-card); padding: 20px; box-shadow: var(--solid-shadow); }
 .modern .card-head { margin-bottom: 14px; }
 .modern .card-head h2, .modern .card-head h2 i { font-size: 14px; }
 .modern .card-head h2 { color: var(--t2); font-weight: 600; letter-spacing: 0; }
 .modern .card-head h2 i { color: var(--accent); }
-.modern.card-solid .card { box-shadow: var(--solid-shadow); }
+
 @media (hover: hover) {
   .modern .dash .card { transition: transform .25s var(--ease-out), box-shadow .25s, border-color .25s; }
   .modern .dash .card:hover { border-color: rgba(var(--ink-rgb), .12); }
@@ -236,7 +243,6 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
 .mh-chip b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .mh-chip i { color: var(--accent); }
 a.mh-chip:hover { border-color: rgba(var(--accent-rgb), .45); }
-.glass .mh-chip { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 
 .mh-top3 { background: linear-gradient(160deg, rgba(var(--accent-rgb), .14), rgba(var(--card-rgb), .92) 58%); }
 .mh-top3 ul { list-style: none; margin: 0; padding: 0; }
@@ -383,3 +389,20 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 /* "N changes waiting" (lock.js): a small chip under the status bar on every page while sync isn't getting through */
 .wait-chip { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); z-index: 2000; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--card, #1b1f27) 92%, transparent); color: var(--text); font: 600 13px/1.2 inherit; box-shadow: 0 6px 18px rgba(0,0,0,.25); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; }
 .wait-chip i { color: var(--accent); }
+
+/* ---------- Phase G: the base pieces every page uses ---------- */
+/* numbers in equal-width digits, so they don't jump as they change */
+.modern :is(.tnum, .fp-tile b, .kit-tile b, .tk-v, .fp-hero .fp-big, table td, .rp-num) { font-variant-numeric: tabular-nums; }
+/* status tags – one set of colours everywhere: ok, soon, comment, missing/late, not relevant, planned */
+.stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;
+  --c: var(--slate); --c-rgb: var(--slate-rgb); color: color-mix(in srgb, var(--c) var(--stt-fg), var(--stt-mix)); background: rgba(var(--c-rgb), var(--stt-bg)); }
+.stt-ok { --c: var(--ok); --c-rgb: var(--ok-rgb); }
+.stt-soon { --c: var(--warn); --c-rgb: var(--warn-rgb); }
+.stt-cmt { --c: var(--orange); --c-rgb: var(--orange-rgb); }
+.stt-bad { --c: var(--danger); --c-rgb: var(--danger-rgb); }
+.stt-plan { --c: var(--blue); --c-rgb: var(--blue-rgb); }
+.stt-na { --c: var(--slate); --c-rgb: var(--slate-rgb); }
+/* calm motion: short fades, nothing bounces; off with reduced motion, still pictures and safe mode */
+.modern.mo-full :is(.card, .fp-tile, .kit-tile) { transition: background-color var(--dur-2) ease, border-color var(--dur-2) ease, box-shadow var(--dur-2) ease; }
+.modern .stt { transition: color var(--dur-2) ease, background-color var(--dur-2) ease; }
+.modern.mo-off .stt, .modern.mo-off :is(.card, .fp-tile, .kit-tile) { transition: none; }
