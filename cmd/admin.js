@@ -35,6 +35,14 @@
     if (!Fe) return; var tt = Fe.tools(), l = Array.isArray(tt.adminlog) ? tt.adminlog : [];
     l.unshift({ at: Date.now(), t: String(t).slice(0, 140), i: icon || 'dot' }); tt.adminlog = l.slice(0, +cfg().logLen || 80); Fe.saveTools(tt);
   }
+  /* lines are saved in the language used at the time – show the known ones in today's language */
+  var LOGW = [['Ran all checks', 'Kjørte alle sjekker'], ['Downloaded a backup', 'Lastet ned sikkerhetskopi'], ['Locked the dashboard', 'Låste dashbordet'],
+    ['Link check: all fine', 'Lenkesjekk: alt i orden'], ['Link check: ', 'Lenkesjekk: '], [' broken', ' brutte'], ['Done: ', 'Gjort: '], ['Showed ', 'Viste '], ['Hid ', 'Skjulte ']];
+  function logText(t) {
+    var to = I18N.lang === 'nb' ? 1 : 0, fr = 1 - to; t = String(t || '');
+    LOGW.forEach(function (p) { var i = t.indexOf(p[fr]); if (i === 0 || (i > 0 && p[fr].charAt(0) === ' ' && i === t.length - p[fr].length)) t = t.slice(0, i) + p[to] + t.slice(i + p[fr].length); });
+    return t;
+  }
   function todos() { var l = T().admintodo; return Array.isArray(l) ? l : []; }
 
   /* ---------- checks ---------- */
@@ -251,7 +259,7 @@
     /* activity log */
     if (P.log) {
       var lg = Array.isArray(T().adminlog) ? T().adminlog : [];
-      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="cr-log">' + lg.slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(x.t) + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
+      C['log'] = card('log', 'clock-history', L('Activity', 'Aktivitet'), '', lg.length ? '<ul class="cr-log">' + lg.slice(0, 10).map(function (x) { return '<li><i class="bi bi-' + esc(x.i || 'dot') + '"></i><span>' + esc(logText(x.t)) + '</span><small>' + ago(x.at) + '</small></li>'; }).join('') + '</ul>' : '<p class="muted">' + L('Publishing, switches and checks from here are listed as they happen.', 'Publisering, brytere og sjekker herfra listes når de skjer.') + '</p>');
     }
     /* changelog */
     if (P.changes) {

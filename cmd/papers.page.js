@@ -17,9 +17,9 @@
   var IS_PAGE = /\/cmd\/papers\/$/.test(location.pathname.replace(/index\.html$/, ''));
   var DATEK = [['expires', I18N.k('ui.expires', 'Expires')], ['renews', I18N.k('ui.renews', 'Renews')], ['ends', I18N.k('ui.ends-or-notice-by', 'Ends or notice by')], ['review', I18N.k('ui.look-at-it-again', 'Look at it again')]];
   var COMMON = [
-    ['Samboerkontrakt', 'home', ''], ['Purchase contract (kjøpekontrakt)', 'home', ''], ['Take-over protocol (overtakelsesprotokoll)', 'home', ''],
-    ['Home insurance (innbo)', 'insurance', 'renews'], ['Mortgage agreement', 'loan', ''], ['Work contract', 'work', ''],
-    ['Car insurance', 'insurance', 'renews'], ['Travel insurance', 'insurance', 'renews'], ['Tax return (skattemelding)', 'tax', ''], ['Will or power of attorney', 'other', '']];
+    ['Samboerkontrakt', 'home', ''], [I18N.k('ui.pa-c-purchase-contract', 'Purchase contract (kjøpekontrakt)'), 'home', ''], [I18N.k('ui.pa-c-take-over', 'Take-over protocol (overtakelsesprotokoll)'), 'home', ''],
+    [I18N.k('ui.pa-c-home-insurance', 'Home insurance (innbo)'), 'insurance', 'renews'], [I18N.k('ui.pa-c-mortgage', 'Mortgage agreement'), 'loan', ''], [I18N.k('ui.pa-c-work-contract', 'Work contract'), 'work', ''],
+    [I18N.k('ui.pa-c-car-insurance', 'Car insurance'), 'insurance', 'renews'], [I18N.k('ui.pa-c-travel-insurance', 'Travel insurance'), 'insurance', 'renews'], [I18N.k('ui.pa-c-tax-return', 'Tax return (skattemelding)'), 'tax', ''], [I18N.k('ui.pa-c-will', 'Will or power of attorney'), 'other', '']];
   function delF(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
   function shrink(file) {
     /* photos of papers have to stay readable: up to 2200 px on the long side */
@@ -173,7 +173,7 @@
   try { filt = sessionStorage.getItem('dash.paFilt') || 'all'; } catch (e) {}
   function tile(label, value, sub) { return '<div class="kit-tile" data-tk="' + esc(label) + '"><span>' + label + '</span><b>' + value + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
   var col = K && $t('papers') ? K.collection({
-    mount: $t('papers'), feature: 'papers', key: 'papers', icon: 'folder2-open', title: 'Papers', addLabel: 'Paper', limit: 80,
+    mount: $t('papers'), feature: 'papers', key: 'papers', icon: 'folder2-open', title: I18N.k('ui.nav-papers', 'Papers'), addLabel: I18N.k('ui.pa-paper', 'Paper'), limit: 80,
     addTitle: CFG.addTitle, editTitle: CFG.editTitle, fields: FIELDS, beforeSave: CFG.beforeSave, onDelete: CFG.onDelete, sort: sortPapers,
     empty: I18N.k('ui.add-the-papers-youd-hate-to-search-for-t', 'Add the papers you’d hate to search for – the samboerkontrakt, insurance, the loan agreement, your work contract – with the PDF, and get a reminder before they expire or renew.'),
     above: function (l) {
@@ -186,7 +186,7 @@
       if (l.length < 6) {
         var have = l.map(function (x) { return String(x.title || '').toLowerCase(); });
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
-        if (sug.length) h += '<div class="pa-sug"><span>' + (l.length ? 'Also worth keeping' : 'Start with') + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
+        if (sug.length) h += '<div class="pa-sug"><span>' + esc(l.length ? I18N.k('ui.pa-also-keep', 'Also worth keeping') : I18N.k('ui.pa-start-with', 'Start with')) + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
       h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
@@ -203,17 +203,17 @@
     row: function (x) {
       var k = kind(x.kind), s = status(x), n = (x.files || []).length, m = missing(x);
       var sub = [x.who, s ? s.text : '', x.ref ? I18N.k('ui.ref-no', 'no. {n}', { n: x.ref }) : ''].filter(Boolean).map(esc).join(' · ');
-      sub += n ? ' <span class="pa-fc' + (m ? ' miss' : '') + '" title="' + (m ? m + ' not on this device yet' : 'On this device') + '"><i class="bi bi-' + (m === n ? 'cloud-arrow-down' : 'paperclip') + '"></i>' + n + '</span>' : ' <span class="pa-fc none"><i class="bi bi-paperclip"></i>no file</span>';
+      sub += n ? ' <span class="pa-fc' + (m ? ' miss' : '') + '" title="' + esc(m ? I18N.k('ui.pa-not-here-n', '{n} not on this device yet', { n: m }) : I18N.k('ui.pa-on-device', 'On this device')) + '"><i class="bi bi-' + (m === n ? 'cloud-arrow-down' : 'paperclip') + '"></i>' + n + '</span>' : ' <span class="pa-fc none"><i class="bi bi-paperclip"></i>' + esc(I18N.k('ui.pa-no-file', 'no file')) + '</span>';
       var right = s && (s.soon || s.over) ? '<span class="pa-due' + (s.over && x.dateKind !== 'renews' ? ' over' : s.n <= 7 ? ' near' : '') + '">' + esc(s.rel) + '</span>' : '';
       return { icon: k[2], color: k[3], title: x.title, sub: sub, right: right, cls: 'pa-k-' + (x.kind || 'other') };
     },
     detail: function (x) {
       var s = status(x), ln = linkOf(x), files = x.files || [];
       var facts = [
-        ['tag', 'Kind', kind(x.kind)[1]], x.who ? ['building', 'From or with', x.who] : null, x.ref ? ['hash', 'Reference', x.ref] : null,
-        isKey(x.signed) ? ['pen', 'Signed', fmt(x.signed)] : null,
-        s ? ['calendar-event', DATEK.filter(function (d) { return d[0] === (x.dateKind || 'expires'); })[0][1], fmt(s.date) + ' · ' + s.rel + (+x.every ? ' · every ' + (+x.every === 1 ? 'year' : x.every + ' years') : '')] : null,
-        +x.cost ? ['cash-coin', 'Per year', kr(x.cost) + ' · ' + kr(x.cost / 12) + ' a month'] : null].filter(Boolean);
+        ['tag', I18N.k('ui.pa-f-kind', 'Kind'), kind(x.kind)[1]], x.who ? ['building', I18N.k('ui.pa-f-with', 'From or with'), x.who] : null, x.ref ? ['hash', I18N.k('ui.pa-f-ref', 'Reference'), x.ref] : null,
+        isKey(x.signed) ? ['pen', I18N.k('ui.pa-f-signed', 'Signed'), fmt(x.signed)] : null,
+        s ? ['calendar-event', DATEK.filter(function (d) { return d[0] === (x.dateKind || 'expires'); })[0][1], fmt(s.date) + ' · ' + s.rel + (+x.every ? ' · ' + (+x.every === 1 ? I18N.k('ui.pa-every-year', 'every year') : I18N.k('ui.pa-every-n-years', 'every {n} years', { n: x.every })) : '')] : null,
+        +x.cost ? ['cash-coin', I18N.k('ui.pa-f-per-year', 'Per year'), I18N.k('ui.pa-cost-s', '{y} · {m} a month', { y: kr(x.cost), m: kr(x.cost / 12) })] : null].filter(Boolean);
       return '<dl class="pa-facts">' + facts.map(function (f) { return '<div><dt><i class="bi bi-' + f[0] + '"></i> ' + esc(f[1]) + '</dt><dd>' + esc(f[2]) + '</dd></div>'; }).join('') + '</dl>' +
         (ln ? '<a class="text-btn pa-link" href="' + esc(ln.href) + '"><i class="bi bi-' + ln.icon + '"></i> ' + esc(ln.text) + ' <i class="bi bi-chevron-right"></i></a>' : '') +
         '<ul class="pa-files">' + files.map(function (f) {

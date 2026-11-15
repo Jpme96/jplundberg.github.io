@@ -26,11 +26,11 @@
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
   var KINDS = [
-    ['home', 'Home', 'house-door', '#a0673a'], ['contract', 'Contract', 'file-earmark-text', '#3987e5'], ['insurance', 'Insurance', 'shield-check', '#22b35e'],
-    ['loan', 'Loan & bank', 'bank', '#11a597'], ['work', 'Work', 'briefcase', '#e8743b'], ['id', 'ID & certificates', 'person-vcard', '#8a6fdf'],
-    ['car', 'Car', 'car-front', '#0891b2'], ['health', 'Health', 'heart-pulse', '#d55181'], ['tax', 'Tax', 'percent', '#6b6d73'], ['other', 'Other', 'folder2', '#7a8794']];
+    ['home', I18N.k('ui.pak-home', 'Home'), 'house-door', '#a0673a'], ['contract', I18N.k('ui.pak-contract', 'Contract'), 'file-earmark-text', '#3987e5'], ['insurance', I18N.k('ui.pak-insurance', 'Insurance'), 'shield-check', '#22b35e'],
+    ['loan', I18N.k('ui.pak-loan-bank', 'Loan & bank'), 'bank', '#11a597'], ['work', I18N.k('ui.pak-work', 'Work'), 'briefcase', '#e8743b'], ['id', I18N.k('ui.pak-id-certificates', 'ID & certificates'), 'person-vcard', '#8a6fdf'],
+    ['car', I18N.k('ui.pak-car', 'Car'), 'car-front', '#0891b2'], ['health', I18N.k('ui.pak-health', 'Health'), 'heart-pulse', '#d55181'], ['tax', I18N.k('ui.pak-tax', 'Tax'), 'percent', '#6b6d73'], ['other', I18N.k('ui.pak-other', 'Other'), 'folder2', '#7a8794']];
   function kind(k) { return KINDS.filter(function (x) { return x[0] === k; })[0] || KINDS[KINDS.length - 1]; }
-  var VERB = { expires: 'expires', renews: 'renews', ends: 'ends', review: 'look at it again' };
+  var VERB = { expires: I18N.k('ui.pa-w-expires', 'expires'), renews: I18N.k('ui.pa-w-renews', 'renews'), ends: I18N.k('ui.pa-w-ends', 'ends'), review: I18N.k('ui.pa-w-review', 'look at it again') };
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-papers', 1); r.onupgradeneeded = function () { r.result.createObjectStore('files'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })); }
   function putF(id, blob) { return db().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(blob, id); t.oncomplete = res; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); }; }); }); }
@@ -47,13 +47,14 @@
     return d;
   }
   function lead(x) { return x.lead === '' || x.lead == null ? 30 : +x.lead; }
-  function inDays(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n === -1 ? 'yesterday' : n < 0 ? (-n) + ' days ago' : n < 45 ? 'in ' + n + ' days' : n < 550 ? 'in ' + Math.round(n / 30.4) + ' months' : 'in ' + (n / 365).toFixed(1).replace('.', ',').replace(',0', '') + ' years'; }
+  function inDays(n) { var K = I18N.k; return n === 0 ? K('ui.pa-today', 'today') : n === 1 ? K('ui.pa-tomorrow', 'tomorrow') : n === -1 ? K('ui.pa-yesterday', 'yesterday') : n < 0 ? K('ui.pa-days-ago', '{n} days ago', { n: -n }) : n < 45 ? K('ui.pa-in-days', 'in {n} days', { n: n }) : n < 550 ? K('ui.pa-in-months', 'in {n} months', { n: Math.round(n / 30.4) }) : K('ui.pa-in-years', 'in {n} years', { n: (n / 365).toFixed(1).replace('.', ',').replace(',0', '') }); }
   function status(x) {
     var d = next(x); if (!d) return null;
-    var n = daysTo(d), v = VERB[x.dateKind] || 'expires';
-    var past = n < 0 ? (v === 'expires' ? 'expired' : v === 'renews' ? 'renewed' : v === 'ends' ? 'ended' : 'was due') : null;
+    var n = daysTo(d), v = VERB[x.dateKind] ? x.dateKind : 'expires', K = I18N.k;
+    var NOW = { expires: K('ui.pa-v-expires', 'Expires {d}', { d: fmt(d) }), renews: K('ui.pa-v-renews', 'Renews {d}', { d: fmt(d) }), ends: K('ui.pa-v-ends', 'Ends {d}', { d: fmt(d) }), review: K('ui.pa-v-review', 'Look at it again {d}', { d: fmt(d) }) };
+    var PAST = { expires: K('ui.pa-v-expired', 'Expired {d}', { d: fmt(d) }), renews: K('ui.pa-v-renewed', 'Renewed {d}', { d: fmt(d) }), ends: K('ui.pa-v-ended', 'Ended {d}', { d: fmt(d) }), review: K('ui.pa-v-was-due', 'Was due {d}', { d: fmt(d) }) };
     return { date: d, n: n, soon: n <= lead(x) && lead(x) > 0, over: n < 0,
-      text: past ? cap(past) + ' ' + fmt(d) : cap(v) + ' ' + fmt(d), rel: inDays(n) };
+      text: n < 0 ? PAST[v] : NOW[v], rel: inDays(n) };
   }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   var invDb = null;
@@ -84,8 +85,8 @@
   function travelDocs() { try { var t = JSON.parse(localStorage.getItem('dash.travel')) || {}; return Array.isArray(t.docs) ? t.docs : []; } catch (e) { return []; } }
   function upcoming(days) {
     var out = [];
-    Fe.list('papers').forEach(function (x) { var s = status(x); if (s && s.n >= -14 && s.n <= days) out.push({ date: s.date, n: s.n, title: x.title, what: VERB[x.dateKind] || 'expires', k: kind(x.kind), href: '#papers=' + x.id, renew: x.dateKind === 'renews' }); });
-    if (Fe.on('travel')) travelDocs().forEach(function (d) { if (isKey(d.expires)) { var n = daysTo(d.expires); if (n >= -14 && n <= days) out.push({ date: d.expires, n: n, title: d.name || 'Travel document', what: 'expires', k: ['', 'Travel', 'passport', '#0891b2'], href: '/cmd/travel/#docs', travel: true }); } });
+    Fe.list('papers').forEach(function (x) { var s = status(x); if (s && s.n >= -14 && s.n <= days) out.push({ date: s.date, n: s.n, title: x.title, what: VERB[x.dateKind] || VERB.expires, k: kind(x.kind), href: '#papers=' + x.id, renew: x.dateKind === 'renews' }); });
+    if (Fe.on('travel')) travelDocs().forEach(function (d) { if (isKey(d.expires)) { var n = daysTo(d.expires); if (n >= -14 && n <= days) out.push({ date: d.expires, n: n, title: d.name || I18N.k('ui.pa-travel-doc', 'Travel document'), what: VERB.expires, k: ['', I18N.k('ui.travel', 'Travel'), 'passport', '#0891b2'], href: '/cmd/travel/#docs', travel: true }); } });
     return out.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
   }
   function drawSoon() {
@@ -95,8 +96,8 @@
     var h = '<section class="card kit-card" id="pasoon"><div class="card-head"><h2><i class="bi bi-calendar-event"></i> <span data-t="ui.coming-up">Coming up</span></h2></div>' +
       (l.length ? '<ul class="pa-soon">' + l.map(function (u) {
         return '<li><a href="' + esc(u.href) + '"' + (u.travel ? '' : ' data-pago') + '><span class="pa-when' + (u.n < 0 && !u.renew ? ' over' : u.n <= 30 ? ' near' : '') + '"><b>' + esc(fromKey(u.date).getDate()) + '</b><small>' + esc(fmt(u.date, { month: 'short' })) + (fromKey(u.date).getFullYear() !== new Date().getFullYear() ? ' ' + fromKey(u.date).getFullYear() : '') + '</small></span>' +
-          '<span class="kit-ic" style="--c:' + u.k[3] + '"><i class="bi bi-' + u.k[2] + '"></i></span><span class="kit-x"><b>' + esc(u.title) + '</b><small>' + esc(cap(u.what) + ' ' + inDays(u.n) + (u.travel ? ' · Travel' : '')) + '</small></span></a></li>';
-      }).join('') + '</ul>' : '<p class="empty kit-empty">Nothing expires or renews in the next 12 months. Add a date to a paper to see it here.</p>') + '</section>';
+          '<span class="kit-ic" style="--c:' + u.k[3] + '"><i class="bi bi-' + u.k[2] + '"></i></span><span class="kit-x"><b>' + esc(u.title) + '</b><small>' + esc(cap(u.what) + ' ' + inDays(u.n) + (u.travel ? ' · ' + I18N.k('ui.travel', 'Travel') : '')) + '</small></span></a></li>';
+      }).join('') + '</ul>' : '<p class="empty kit-empty">' + esc(I18N.k('ui.pa-nothing-soon', 'Nothing expires or renews in the next 12 months. Add a date to a paper to see it here.')) + '</p>') + '</section>';
     if (el.innerHTML !== h) el.innerHTML = h;
   }
   function drawElse() {
@@ -121,7 +122,7 @@
     var ins = l.filter(function (x) { return +x.cost > 0; }).reduce(function (a, x) { return a + (+x.cost); }, 0);
     var nofile = l.filter(function (x) { return !(x.files || []).length; }).length;
     el.hidden = false;
-    var h = heroTile('folder2-open', 'Papers', l.length, nofile ? I18N.k('ui.pa-nofile', '{n} without a file', { n: nofile }) : l.length ? I18N.k('ui.pa-allfile', 'all with a file') : I18N.k('ui.none-yet', 'none yet'), '#papers', '#6b4bc4') +
+    var h = heroTile('folder2-open', I18N.k('ui.nav-papers', 'Papers'), l.length, nofile ? I18N.k('ui.pa-nofile', '{n} without a file', { n: nofile }) : l.length ? I18N.k('ui.pa-allfile', 'all with a file') : I18N.k('ui.none-yet', 'none yet'), '#papers', '#6b4bc4') +
       heroTile('calendar-event', I18N.k('ui.next-date', 'Next date'), u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? '#e8743b' : '#3987e5') +
       heroTile('cash-coin', I18N.k('ui.per-year', 'Per year'), ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
     if (el.innerHTML !== h) el.innerHTML = h;
@@ -131,18 +132,18 @@
     if (!on()) return;
     Fe.list('papers').map(function (x) { return [x, status(x)]; }).filter(function (p) { return p[1] && lead(p[0]) > 0 && p[1].n <= lead(p[0]) && p[1].n >= (p[0].dateKind === 'renews' ? 0 : -30); })
       .sort(function (a, b) { return a[1].n - b[1].n; }).slice(0, 3).forEach(function (p) {
-        var x = p[0], s = p[1], k = kind(x.kind), v = VERB[x.dateKind] || 'expires';
+        var x = p[0], s = p[1], k = kind(x.kind), dk = VERB[x.dateKind] ? x.dateKind : 'expires', v = VERB[dk], K = I18N.k;
         add(s.n < 0 ? 30 : s.n <= 7 ? 38 : 56, k[2], s.n < 0 ? '#e66767' : s.n <= 7 ? '#e8743b' : k[3],
-          x.title + ' ' + (s.n < 0 ? (v === 'expires' ? 'has expired' : v === 'ends' ? 'has ended' : 'was due') : v + ' ' + s.rel),
-          [fmt(s.date), x.who, x.dateKind === 'ends' ? 'cancel or renew before then' : x.dateKind === 'renews' ? 'check the price, or switch' : ''].filter(Boolean).join(' · '), '/cmd/papers/#papers=' + x.id);
+          x.title + ' ' + (s.n < 0 ? (dk === 'expires' ? K('ui.pa-has-expired', 'has expired') : dk === 'ends' ? K('ui.pa-has-ended', 'has ended') : K('ui.pa-was-due', 'was due')) : v + ' ' + s.rel),
+          [fmt(s.date), x.who, x.dateKind === 'ends' ? K('ui.pa-cancel-before', 'cancel or renew before then') : x.dateKind === 'renews' ? K('ui.pa-check-price', 'check the price, or switch') : ''].filter(Boolean).join(' · '), '/cmd/papers/#papers=' + x.id);
       });
   });
   (window.EventsExtra = window.EventsExtra || []).push(function () {
     if (!on()) return [];
     return Fe.list('papers').filter(function (x) { return isKey(x.date); }).map(function (x) {
       var k = kind(x.kind), ev = +x.every || 0;
-      var e = { id: 'rem:paper:' + x.id, title: x.title + ' ' + (VERB[x.dateKind] || 'expires'), allDay: true, start: fromKey(x.date), days: 1, color: k[3], readOnly: true, reminder: true,
-        link: '/cmd/papers/#papers=' + x.id, location: '', notes: [x.who, x.ref ? 'No. ' + x.ref : ''].filter(Boolean).join(' · '), exDays: {} };
+      var e = { id: 'rem:paper:' + x.id, title: x.title + ' ' + (VERB[x.dateKind] || VERB.expires), allDay: true, start: fromKey(x.date), days: 1, color: k[3], readOnly: true, reminder: true,
+        link: '/cmd/papers/#papers=' + x.id, location: '', notes: [x.who, x.ref ? I18N.k('ui.ref-no', 'no. {n}', { n: x.ref }) : ''].filter(Boolean).join(' · '), exDays: {} };
       if (ev) e.rule = { freq: 'YEARLY', interval: ev };
       return e;
     });

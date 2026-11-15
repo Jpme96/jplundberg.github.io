@@ -264,7 +264,7 @@
 .hm-loans small { color: var(--muted); font-size: 12px; }
 .hm-move { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 12px; padding: 12px; border-radius: 14px; border: 1px dashed rgba(var(--ink-rgb), .22); }
 .hm-move > .bi { font-size: 20px; color: var(--accent); }
-.hm-move span { display: grid; min-width: 0; }
+.hm-move > span { display: grid; min-width: 0; }   /* only the text block – the button's own label stays next to its icon */
 .hm-move small { color: var(--muted); font-size: 12px; }
 @media (max-width: 480px) {
   .hm-move { grid-template-columns: auto minmax(0, 1fr); }

@@ -18,7 +18,7 @@
 
   var CONF = {
     habits: {
-      tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', 'Body', 'apple'], ['care', 'Care', 'clipboard2-pulse']],
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', I18N.k('ui.tab-body', 'Body'), 'apple'], ['care', I18N.k('ui.tab-care', 'Care'), 'clipboard2-pulse']],
       map: [['#hpTiles', 'today'], ['#hsToday', 'today'], ['.hr-wrap', 'today'], ['#hpHabits', 'today'], ['#hpEmpty', 'today'],
         ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'], ['[data-tool="hwater"]', 'today'],
         ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care']],

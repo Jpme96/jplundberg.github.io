@@ -314,6 +314,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
+  min-height: 36px;               /* the same height with or without buttons – two cards side by side keep their titles on one line */
 }
 
 .text-btn {
@@ -2222,6 +2223,9 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
 
 /* ---------- customizable tile groups (tilekit.js) ---------- */
 .tk-bar { display: flex; justify-content: flex-end; margin: -6px 0 10px; }
+/* Customize is a quiet extra, not a call to action */
+.tk-bar .tk-edit { color: var(--muted); font-size: 12px; }
+@media (hover: hover) { .tk-bar .tk-edit:hover { color: var(--accent); } }
 .kit-tiles + .tk-bar { margin: -8px 0 8px; }
 .tk-edit { font-size: 13px; opacity: .75; }
 .tk-edit:hover, .tk-edit:focus-visible { opacity: 1; }
@@ -3315,7 +3319,7 @@ html.simple #stMenu [data-adv] { display: none; }
 }
 .cr-act { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(var(--card-rgb, 24, 25, 29), .5); color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; transition: border-color .15s, transform .1s; }
 .cr-act .bi { font-size: 17px; color: var(--accent); } .cr-act:active { transform: scale(.97); }@media (hover: hover) { .cr-act:hover { border-color: var(--accent); } }
-.cr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; margin-bottom: 14px; align-items: start; }
+.cr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; margin-bottom: 14px; align-items: start; }
 .cr-card { margin: 0; } .cr-wide { margin-bottom: 14px; }
 .cr-kpis { display: flex; gap: 18px; flex-wrap: wrap; margin: 2px 0 8px; } .cr-kpis b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; } .cr-kpis small { color: var(--muted); font-size: 12px; }
 .cr-bars { display: flex; align-items: flex-end; gap: 4px; height: 54px; margin: 6px 0 8px; } .cr-bars span { flex: 1; background: color-mix(in srgb, var(--accent) 70%, transparent); border-radius: 3px 3px 0 0; min-height: 3px; }

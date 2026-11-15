@@ -287,17 +287,17 @@
   function votes() { var cut = addDays(today(), -2); return Fe.list('votes').filter(function (v) { return v.date >= cut && Array.isArray(v.opts) && v.opts.length; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
   function voteHtml() {
     var pn = votePartner(); if (!pn) return '';
-    var dd = function (k) { return fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }); };
+    var LOC = I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', dd = function (k) { return fromKey(k).toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'short' }); };
     var h = votes().map(function (v) {
-      if (v.pick != null) return '<li class="hl-vote done"><i class="bi bi-check2-circle"></i><span>' + esc((v.from === 'me' ? pn + ' picked ' : 'You picked ') + v.opts[v.pick] + ' for ' + dd(v.date)) + '</span></li>';
-      if (v.from === 'me') return '<li class="hl-vote wait"><i class="bi bi-hourglass-split"></i><span>' + esc('Waiting for ' + pn + ' to pick for ' + dd(v.date) + ': ' + v.opts.join(' · ')) + '</span><button type="button" class="icon-btn sm" data-vtdel="' + esc(v.id) + '" aria-label="Cancel"><i class="bi bi-x"></i></button></li>';
-      return '<li class="hl-vote pick"><i class="bi bi-hand-index-thumb"></i><span>' + esc(pn + ' can’t decide – pick dinner for ' + dd(v.date)) + '</span><div class="hl-vopts">' + v.opts.map(function (o, i) { return '<button type="button" class="pill-btn sm" data-vtpick="' + esc(v.id) + '|' + i + '">' + esc(o) + '</button>'; }).join('') + '</div></li>';
+      if (v.pick != null) return '<li class="hl-vote done"><i class="bi bi-check2-circle"></i><span>' + esc(v.from === 'me' ? I18N.k('ui.vote-they-picked', '{x} picked {d} for {w}', { x: pn, d: v.opts[v.pick], w: dd(v.date) }) : I18N.k('ui.vote-you-picked', 'You picked {d} for {w}', { d: v.opts[v.pick], w: dd(v.date) })) + '</span></li>';
+      if (v.from === 'me') return '<li class="hl-vote wait"><i class="bi bi-hourglass-split"></i><span>' + esc(I18N.k('ui.vote-waiting', 'Waiting for {x} to pick for {w}: {o}', { x: pn, w: dd(v.date), o: v.opts.join(' · ') })) + '</span><button type="button" class="icon-btn sm" data-vtdel="' + esc(v.id) + '" aria-label="' + esc(I18N.k('ui.cancel', 'Cancel')) + '"><i class="bi bi-x"></i></button></li>';
+      return '<li class="hl-vote pick"><i class="bi bi-hand-index-thumb"></i><span>' + esc(I18N.k('ui.vote-pick', '{x} can’t decide – pick dinner for {w}', { x: pn, w: dd(v.date) })) + '</span><div class="hl-vopts">' + v.opts.map(function (o, i) { return '<button type="button" class="pill-btn sm" data-vtpick="' + esc(v.id) + '|' + i + '">' + esc(o) + '</button>'; }).join('') + '</div></li>';
     }).join('');
     var form = '';
     if (ML.voting) {
-      var opts = ''; for (var i = 0; i < 7; i++) { var k = addDays(today(), i); opts += '<option value="' + k + '"' + (meals()[k] ? '' : '') + '>' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : fromKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })) + (meals()[k] ? ' (planned)' : '') + '</option>'; }
-      form = '<form class="hl-vform" data-vtform><select name="d" aria-label="Which day">' + opts + '</select>' + [1, 2, 3].map(function (n) { return '<input name="o' + n + '" list="hlRecipes" maxlength="80" placeholder="' + (n === 3 ? 'Suggestion 3 (optional)' : 'Suggestion ' + n) + '" autocomplete="off"' + (n < 3 ? ' required' : '') + '>'; }).join('') +
-        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> Send to ' + esc(pn) + '</button></div></form>';
+      var LOC = I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', opts = ''; for (var i = 0; i < 7; i++) { var k = addDays(today(), i); opts += '<option value="' + k + '"' + (meals()[k] ? '' : '') + '>' + esc(i === 0 ? I18N.k('ui.today', 'Today') : i === 1 ? I18N.k('ui.tomorrow', 'Tomorrow') : fromKey(k).toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'short' })) + (meals()[k] ? ' (' + esc(I18N.k('ui.vote-planned', 'planned')) + ')' : '') + '</option>'; }
+      form = '<form class="hl-vform" data-vtform><select name="d" aria-label="' + esc(I18N.k('ui.which-day', 'Which day')) + '">' + opts + '</select>' + [1, 2, 3].map(function (n) { return '<input name="o' + n + '" list="hlRecipes" maxlength="80" placeholder="' + esc(n === 3 ? I18N.k('ui.vote-sug3', 'Suggestion 3 (optional)') : I18N.k('ui.vote-sug', 'Suggestion {n}', { n: n })) + '" autocomplete="off"' + (n < 3 ? ' required' : '') + '>'; }).join('') +
+        '<div class="form-actions"><button type="button" class="text-btn" data-vtcancel data-t="ui.cancel"><span data-t="ui.cancel">Cancel</span></button><span class="spacer"></span><button class="pill-btn" type="submit"><i class="bi bi-send"></i> ' + esc(I18N.k('ui.send-to-x', 'Send to {x}', { x: pn })) + '</button></div></form>';
     }
     return (h ? '<ul class="hl-votes">' + h + '</ul>' : '') + form;
   }
@@ -323,7 +323,7 @@
         }).join('') + '</ul><datalist id="hlRecipes">' + rs.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') + '</datalist>' +
         '<div class="hl-acts">' + (withR.length ? '<button type="button" class="pill-btn" data-mlshop><i class="bi bi-cart-plus"></i> Ingredients to the shopping list</button>' : '') +
         (rs.length && planned.length < 7 ? '<button type="button" class="text-btn" data-mlfill><i class="bi bi-shuffle"></i> <span data-t="ui.fill-the-empty-days">Fill the empty days</span></button>' : '') +
-        (votePartner() && !ML.voting ? '<button type="button" class="text-btn" data-vtnew><i class="bi bi-hand-index-thumb"></i> Let ' + esc(votePartner()) + ' choose</button>' : '') +
+        (votePartner() && !ML.voting ? '<button type="button" class="text-btn" data-vtnew><i class="bi bi-hand-index-thumb"></i> ' + esc(I18N.k('ui.let-x-choose', 'Let {x} choose', { x: votePartner() })) + '</button>' : '') +
         (planned.length ? '<span class="muted hl-small">' + planned.length + ' of 7 planned</span>' : '') + '</div></section>';
     }
     el.addEventListener('submit', function (e) {
@@ -331,7 +331,7 @@
       var o = [f.o1.value, f.o2.value, f.o3.value].map(function (x) { return x.trim(); }).filter(Boolean); if (o.length < 2) { (f.o2.value.trim() ? f.o1 : f.o2).focus(); return; }
       var t = Fe.tools(); t.votes = (Array.isArray(t.votes) ? t.votes : []).filter(function (v) { return v.date >= addDays(today(), -2); }).concat([{ id: 'v' + Date.now().toString(36), date: f.d.value, opts: o.slice(0, 3), from: 'me', at: Date.now() }]);
       ML.voting = false; if (document.activeElement && el.contains(document.activeElement)) document.activeElement.blur(); Fe.saveTools(t); draw();
-      toast('<i class="bi bi-send"></i> Sent to ' + esc(votePartner()) + ' – they pick one');
+      toast('<i class="bi bi-send"></i> ' + esc(I18N.k('ui.vote-sent', 'Sent to {x} – they pick one', { x: votePartner() })));
     });
     el.addEventListener('change', function (e) { var i = e.target.closest('[data-ml]'); if (i) { setMeal(i.dataset.ml, i.value.trim()); } });
     el.addEventListener('keydown', function (e) { var i = e.target.closest('[data-ml]'); if (i && e.key === 'Enter') { e.preventDefault(); var n = i.closest('li').nextElementSibling; if (n) n.querySelector('input').focus(); else i.blur(); } });

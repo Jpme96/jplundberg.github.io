@@ -8,14 +8,14 @@
 
   var HOME_TZ = 'Europe/Oslo';
   var WMO = {
-    0: ['Clear sky', 'sun'], 1: ['Mostly clear', 'sun'], 2: ['Partly cloudy', 'cloud-sun'], 3: ['Overcast', 'clouds'],
-    45: ['Fog', 'cloud-fog2'], 48: ['Freezing fog', 'cloud-fog2'], 51: ['Light drizzle', 'cloud-drizzle'], 53: ['Drizzle', 'cloud-drizzle'],
-    55: ['Heavy drizzle', 'cloud-drizzle'], 56: ['Freezing drizzle', 'cloud-sleet'], 57: ['Freezing drizzle', 'cloud-sleet'],
-    61: ['Light rain', 'cloud-rain'], 63: ['Rain', 'cloud-rain'], 65: ['Heavy rain', 'cloud-rain-heavy'], 66: ['Freezing rain', 'cloud-sleet'],
-    67: ['Freezing rain', 'cloud-sleet'], 71: ['Light snow', 'cloud-snow'], 73: ['Snow', 'cloud-snow'], 75: ['Heavy snow', 'snow'],
-    77: ['Snow grains', 'cloud-snow'], 80: ['Rain showers', 'cloud-rain'], 81: ['Rain showers', 'cloud-rain'], 82: ['Heavy showers', 'cloud-rain-heavy'],
-    85: ['Snow showers', 'cloud-snow'], 86: ['Snow showers', 'cloud-snow'], 95: ['Thunderstorm', 'cloud-lightning-rain'],
-    96: ['Thunderstorm', 'cloud-lightning-rain'], 99: ['Thunderstorm', 'cloud-lightning-rain']
+    0: [I18N.k('ui.wx-clear-sky', 'Clear sky'), 'sun'], 1: [I18N.k('ui.wx-mostly-clear', 'Mostly clear'), 'sun'], 2: [I18N.k('ui.wx-partly-cloudy', 'Partly cloudy'), 'cloud-sun'], 3: [I18N.k('ui.wx-overcast', 'Overcast'), 'clouds'],
+    45: [I18N.k('ui.wx-fog', 'Fog'), 'cloud-fog2'], 48: [I18N.k('ui.wx-freezing-fog', 'Freezing fog'), 'cloud-fog2'], 51: [I18N.k('ui.wx-light-drizzle', 'Light drizzle'), 'cloud-drizzle'], 53: [I18N.k('ui.wx-drizzle', 'Drizzle'), 'cloud-drizzle'],
+    55: [I18N.k('ui.wx-heavy-drizzle', 'Heavy drizzle'), 'cloud-drizzle'], 56: [I18N.k('ui.wx-freezing-drizzle', 'Freezing drizzle'), 'cloud-sleet'], 57: [I18N.k('ui.wx-freezing-drizzle', 'Freezing drizzle'), 'cloud-sleet'],
+    61: [I18N.k('ui.wx-light-rain', 'Light rain'), 'cloud-rain'], 63: [I18N.k('ui.wx-rain', 'Rain'), 'cloud-rain'], 65: [I18N.k('ui.wx-heavy-rain', 'Heavy rain'), 'cloud-rain-heavy'], 66: [I18N.k('ui.wx-freezing-rain', 'Freezing rain'), 'cloud-sleet'],
+    67: [I18N.k('ui.wx-freezing-rain', 'Freezing rain'), 'cloud-sleet'], 71: [I18N.k('ui.wx-light-snow', 'Light snow'), 'cloud-snow'], 73: [I18N.k('ui.wx-snow', 'Snow'), 'cloud-snow'], 75: [I18N.k('ui.wx-heavy-snow', 'Heavy snow'), 'snow'],
+    77: [I18N.k('ui.wx-snow-grains', 'Snow grains'), 'cloud-snow'], 80: [I18N.k('ui.wx-rain-showers', 'Rain showers'), 'cloud-rain'], 81: [I18N.k('ui.wx-rain-showers', 'Rain showers'), 'cloud-rain'], 82: [I18N.k('ui.wx-heavy-showers', 'Heavy showers'), 'cloud-rain-heavy'],
+    85: [I18N.k('ui.wx-snow-showers', 'Snow showers'), 'cloud-snow'], 86: [I18N.k('ui.wx-snow-showers', 'Snow showers'), 'cloud-snow'], 95: [I18N.k('ui.wx-thunderstorm', 'Thunderstorm'), 'cloud-lightning-rain'],
+    96: [I18N.k('ui.wx-thunderstorm', 'Thunderstorm'), 'cloud-lightning-rain'], 99: [I18N.k('ui.wx-thunderstorm', 'Thunderstorm'), 'cloud-lightning-rain']
   };
   function wmo(c) { return WMO[c] || ['–', 'cloud']; }
 

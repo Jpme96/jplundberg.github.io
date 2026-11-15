@@ -599,7 +599,7 @@
 }
 .fx-pair { display: grid; gap: var(--gap, 16px); }
 @media (min-width: 760px) {
-  .fx-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+  .fx-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }   /* no empty box next to a long card */
   .fx-pair > .card { margin: 0; }
 }
 .mn-trwarn { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--warn) !important; margin-top: 2px; }

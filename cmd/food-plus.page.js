@@ -30,6 +30,8 @@
     ['Butter', 'Smør', ['smør', 'butter']], ['Eggs', 'Egg', ['egg', 'eggs']], ['Milk', 'Melk', ['melk', 'milk']], ['Onions', 'Løk', ['løk', 'onion', 'onions']], ['Garlic', 'Hvitløk', ['hvitløk', 'garlic']],
     ['Tinned tomatoes', 'Hermetiske tomater', ['hakkede tomater', 'tomater på boks', 'tinned tomatoes', 'chopped tomatoes']], ['Stock cubes', 'Buljong', ['buljong', 'buljongterning', 'stock cube']], ['Soy sauce', 'Soyasaus', ['soyasaus', 'soy sauce']],
     ['Toilet paper', 'Dopapir', ['dopapir', 'toilet paper']], ['Washing-up liquid', 'Oppvaskmiddel', ['oppvaskmiddel', 'washing-up liquid']]];
+  /* a starter item keeps the name it got when it was added – show it in today's language */
+  function pName(nm) { var t = String(nm || ''), lo = t.toLowerCase(), b = BASICS.filter(function (x) { return x[0].toLowerCase() === lo || x[1].toLowerCase() === lo; })[0]; return b ? b[I18N.lang === 'nb' ? 1 : 0] : t; }
   function inList(text) { return pantry().filter(function (x) { return matches(x, text); })[0]; }
   function shopBtn(x) {
     if (!on() || inList(x.text)) return '';
@@ -47,12 +49,12 @@
     var sorted = function (arr) { return arr.slice().sort(function (x, y) { return String(x.name || '').localeCompare(String(y.name || ''), 'nb'); }); };
     var chip = function (x) {
       var lw = x.state === 'low';
-      if (editP) return '<span class="pn-chip edit" data-noi18n>' + esc(x.name) + '<button type="button" data-fpdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></span>';
+      if (editP) return '<span class="pn-chip edit" data-noi18n>' + esc(pName(x.name)) + '<button type="button" data-fpdel="' + esc(x.id) + '" aria-label="Remove ' + esc(x.name) + '"><i class="bi bi-x"></i></button></span>';
       return '<button type="button" class="pn-chip' + (lw ? ' low' : '') + '" ' + (lw ? 'data-fpok' : 'data-fplow') + '="' + esc(x.id) + '" data-pn="' + esc(String(x.name || '').toLowerCase()) + '" aria-label="' + esc(x.name) + (lw ? ' – on the shopping list, tap when you have it again' : ' – tap if it’s running out') + '">' +
-        (lw ? '<i class="bi bi-cart3"></i>' : '') + '<span data-noi18n>' + esc(x.name) + '</span></button>';
+        (lw ? '<i class="bi bi-cart3"></i>' : '') + '<span data-noi18n>' + esc(pName(x.name)) + '</span></button>';
     };
     var body = l.length ? (low.length && !editP ? '<div class="pn-low"><p><i class="bi bi-cart3"></i> <span data-t="ui.running-out-on-your-shopping-list">Running out · on your shopping list</span></p><div class="pn-chips">' + sorted(low).map(function (x) {
-        return '<button type="button" class="pn-chip low" data-fpok="' + esc(x.id) + '" aria-label="Got ' + esc(x.name) + ' again"><span data-noi18n>' + esc(x.name) + '</span><i class="bi bi-check2"></i></button>'; }).join('') + '</div><p class="pn-tip" data-t="ui.tap-when-its-back-in-the-cupboard">Tap when it’s back in the cupboard</p></div>' : '') +
+        return '<button type="button" class="pn-chip low" data-fpok="' + esc(x.id) + '" aria-label="Got ' + esc(x.name) + ' again"><span data-noi18n>' + esc(pName(x.name)) + '</span><i class="bi bi-check2"></i></button>'; }).join('') + '</div><p class="pn-tip" data-t="ui.tap-when-its-back-in-the-cupboard">Tap when it’s back in the cupboard</p></div>' : '') +
       '<div class="pn-groups">' + groups.map(function (a) {
         var A = HL.AISLE[a];
         return '<div class="pn-grp" data-pngrp><p class="pn-h" style="--c:' + A.c + '"><i class="bi bi-' + A.ic + '"></i> ' + esc(A.n) + ' <span>' + by[a].length + '</span></p><div class="pn-chips">' + sorted(by[a]).map(chip).join('') + '</div></div>';

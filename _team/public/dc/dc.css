@@ -158,6 +158,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
+  min-height: 36px;               /* the same height with or without buttons – two cards side by side keep their titles on one line */
 }
 .text-btn {
   border: 0;
