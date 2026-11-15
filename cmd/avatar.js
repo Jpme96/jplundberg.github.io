@@ -168,7 +168,7 @@
     /* light mode: the moment's colour becomes a soft tint instead of a dark night-sky box */
     if (m && m.bg && !m.plain && document.documentElement.getAttribute('data-theme') === 'light') m = Object.assign({}, m, { bg: shade(m.bg, .8) });
     var top = L.top === 'none' ? 'none' : m.k === 'gym' ? 'tee' : m.k === 'night' ? 'hoodie' : L.top;
-    var sky = m.sky === 'moon' ? '<circle cx="160" cy="34" r="10" fill="#e9edf5"/><circle cx="165" cy="30" r="9" fill="' + m.bg + '"/><g fill="#e9edf5" opacity=".7"><circle cx="30" cy="30" r="1.3"/><circle cx="48" cy="56" r="1"/><circle cx="178" cy="70" r="1.1"/></g>'
+    var sky = m.sky === 'moon' ? '<circle cx="140" cy="42" r="9" fill="#e9edf5"/><circle cx="144.5" cy="38.4" r="8.1" fill="' + m.bg + '"/><g fill="#e9edf5" opacity=".7"><circle cx="30" cy="30" r="1.3"/><circle cx="48" cy="56" r="1"/><circle cx="178" cy="70" r="1.1"/></g>'
       : m.sky === 'cloud' ? '<g fill="#7d838e"><circle cx="150" cy="36" r="10"/><circle cx="162" cy="32" r="12"/><circle cx="174" cy="38" r="9"/></g><g class="rain" stroke="rgba(170,200,230,.6)" stroke-width="2"><line x1="150" y1="52" x2="147" y2="62"/><line x1="166" y1="54" x2="163" y2="64"/><line x1="30" y1="40" x2="27" y2="50"/></g>'
         : '<circle cx="164" cy="34" r="11" fill="#f2c94c"/>';
     var ground = '<rect x="0" y="158" width="200" height="42" fill="rgba(34,179,94,.16)"/><ellipse cx="101" cy="160" rx="22" ry="3.5" fill="rgba(0,0,0,.25)"/>';

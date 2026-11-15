@@ -596,7 +596,7 @@
     if (kind === 'suitcase') { add('line', { x1: f(x), y1: f(y), x2: f(x), y2: f(y + 8 * k), stroke: '#3a3f4a', 'stroke-width': f(2 * k) }); add('rect', { x: f(x - 12 * k), y: f(y + 8 * k), width: f(24 * k), height: f(32 * k), rx: f(4 * k), fill: '#3987e5' }); add('rect', { x: f(x - 12 * k), y: f(y + 20 * k), width: f(24 * k), height: f(3 * k), fill: 'rgba(0,0,0,.18)' }); }
     if (kind === 'dumbbell') { add('line', { x1: f(x - 8 * k), y1: f(y), x2: f(x + 8 * k), y2: f(y), stroke: '#8f9ba5', 'stroke-width': f(2.4 * k) }); [-1, 1].forEach(function (sd) { add('rect', { x: f(x + sd * 8 * k - 2.6 * k), y: f(y - 5 * k), width: f(5.2 * k), height: f(10 * k), rx: f(1.6 * k), fill: '#2a2d33' }); }); }
     if (kind === 'phone') { add('rect', { x: f(x - 3.4 * k), y: f(y - 11 * k), width: f(6.8 * k), height: f(12 * k), rx: f(1.4 * k), fill: '#2b2f3a' }); }
-    if (kind === 'book') { add('rect', { x: f(x - 10 * k), y: f(y - 8 * k), width: f(20 * k), height: f(14 * k), rx: f(1.5 * k), fill: '#3987e5' }); add('line', { x1: f(x), y1: f(y - 8 * k), x2: f(x), y2: f(y + 6 * k), stroke: '#f4f1ea', 'stroke-width': f(1.2 * k) }); }
+    if (kind === 'book') { add('rect', { x: f(x - 15 * k), y: f(y - 12 * k), width: f(30 * k), height: f(21 * k), rx: f(1.8 * k), fill: '#d6453f' }); add('rect', { x: f(x - 14 * k), y: f(y - 12 * k), width: f(28 * k), height: f(3 * k), fill: '#f4f1ea' });   /* a red cover with the pages showing – a blue one vanished against a blue top (JP 2026-11-15: empty hands on Home) */ add('line', { x1: f(x), y1: f(y - 12 * k), x2: f(x), y2: f(y + 9 * k), stroke: '#883635', 'stroke-width': f(1.2 * k) }); }
     return g;
   }
   /* the figure (and what it holds, and its pet) as an SVG group string, for pictures that have their own frame */

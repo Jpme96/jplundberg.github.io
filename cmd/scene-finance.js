@@ -158,7 +158,7 @@
         var gg = add(sv, 'g', { class: 'sc25-me' }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
         var look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
         var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h, k: K, ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY, shS: 1 - Math.min(.4, r.h / 120),
-          extra: [[.45, nearRail]], items: function (H2) { var o2 = [], ph2 = r.pig && r.pig !== 'home' && H2[r.pig], ch2 = r.cloth && H2[r.cloth], kh = r.pcoin === 'hand' && H2[r.pk];
+          extra: [[st.pact == null && ok && !AID ? .45 : -99, nearRail]], items: function (H2) {   /* the near rail goes between his sides only when he climbs (the coin); walking past it to the piggy bank or the glass, it stays behind him (JP 2026-11-15: he walked through the ladder) */ var o2 = [], ph2 = r.pig && r.pig !== 'home' && H2[r.pig], ch2 = r.cloth && H2[r.cloth], kh = r.pcoin === 'hand' && H2[r.pk];
             if (ph2) o2.push([ph2.z + .05, pigG(ph2.X - 2, ph2.Y + 1, 8 * Math.sin(t * 19))]);
             if (ch2) o2.push([ch2.z + .05, (function () { var c = S.grp(ch2.X, ch2.Y, 12); add(c, 'rect', { x: -5, y: -3.4, width: 10, height: 6.8, rx: 1.6, fill: '#a9cfe0' }); return c; })()]);
             if (kh) o2.push([kh.z + .05, (function () { var c = el('g', {}); add(c, 'circle', { cx: kh.X.toFixed(1), cy: (kh.Y - 1).toFixed(1), r: 2.6, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 }); return c; })()]);
