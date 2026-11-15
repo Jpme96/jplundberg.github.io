@@ -52,7 +52,7 @@
           folderIn = t >= 2.8 && t < 5.9; expr = t > 3.6 && t < 5.4 ? 'calm' : null; lean = .15 * Math.sin(Math.PI * SEG(t, 1.3, 7.7));
         }
       } else {
-      if (t < .4) cx = 205; else if (t < 1.2) { cx = LERP(205, 234, E(SEG(t, .4, 1.2))); w = .45; } else if (t < 3.7) cx = 234; else if (t < 4.4) { cx = LERP(234, 205, E(SEG(t, 3.7, 4.4))); w = .45; } else cx = 205;   /* he steps back as the drawer comes out, so it never runs into him (JP 2026-11-15) */
+      if (t < .4) cx = 205; else if (t < 1.2) { cx = LERP(205, 234, E(SEG(t, .4, 1.2))); w = .35; } else if (t < 3.7) cx = 234; else if (t < 4.4) { cx = LERP(234, 205, E(SEG(t, 3.7, 4.4))); w = .35; } else cx = 205;   /* he steps back as the drawer comes out, so it never runs into him (JP 2026-11-15) */
       p = t < .4 ? 0 : t < 1.2 ? 34 * E(SEG(t, .4, 1.2)) : t < 3.7 ? 34 : 34 * (1 - E(SEG(t, 3.7, 4.4)));
       if (t < 4.8) {
         var nr = SIDE(1, -90), fr = SIDE(-1, -90);
