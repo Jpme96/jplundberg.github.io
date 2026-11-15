@@ -34,7 +34,8 @@ const BUDGET_KB = { total: 1634 };   /* +10 (2026-11-15 night, JP's list): a swi
    +13 kB on Work (2026-11-14 night): Check a plan (the plan against the client's checklist and the naming rules, no project) and the editor's tools – ranges, keys, undo/redo, copy/paste with Excel, bold, fill colours (+2 kB: the check's own footer text, the colour menu under its button, and drawing names checked part by part after BBY's template).
    −22 kB on Work (2026-11-14 night): the Excel editor (xlsx-view.js) loads the first time it is used, not with the page.
    +3 kB on Work (2026-11-15): Check a plan compares with the last check of the same plan and sends the result to the contractor; a status colour in the Excel sets the line's status; +2 kB: a checklist per client; +1 kB: DWG/PDF pairs; +1 kB: a building inspection sent to Team. */
-const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1634, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1305, 'house/index.html': 1619, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1403, 'wish/index.html': 1369, 'work/index.html': 1555 };
+   +3 kB on Work (2026-11-15 afternoon): a deadline and a responsible per document line – in the open line, the row (overdue in red) and the report's Missing documents.
+const PAGE_KB = { 'index.html': 1419, 'admin/index.html': 1341, 'calendar/index.html': 1270, 'finance/index.html': 1634, 'food/index.html': 1354, 'goals/index.html': 1286, 'habits/index.html': 1305, 'house/index.html': 1619, 'papers/index.html': 1301, 'people/index.html': 1352, 'travel/index.html': 1403, 'wish/index.html': 1369, 'work/index.html': 1558 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

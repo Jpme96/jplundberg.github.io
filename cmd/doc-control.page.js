@@ -241,6 +241,15 @@
     ['cmt', 'ui.dc-st-cmt', 'Approved with comments', '#b7791f', 'chat-square-text'], ['rej', 'ui.dc-st-rej', 'Not approved – send back', '#b4443c', 'x-circle'], ['na', 'ui.dc-st-na', 'Not relevant', '#a0a7b1', 'dash-circle']];
   function st(s) { return ST.filter(function (q) { return q[0] === s; })[0] || ST[0]; }
   function stName(s) { var q = st(s); return k(q[1], q[2]); }
+  /* deadline and responsible per line (JP 2026-11-15): the row says "Frist 1. des. · Rørlegger"; past the deadline and not
+     approved (missing, received, not approved) the deadline is red. Saved on the line (due: 'YYYY-MM-DD', who: text). */
+  function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function overdue(l) { return !!(l.due && l.due < ymd(new Date()) && ['missing', 'recv', 'rej'].indexOf(l.st || 'missing') > -1); }
+  function dueWho(l) {
+    if (!l.due && !l.who) return '';
+    var d = l.due ? new Date(l.due + 'T12:00:00') : null, dt = d && !isNaN(d) ? d.toLocaleDateString(k('ui.dc-loc', 'en-GB'), { day: 'numeric', month: 'short' }) : '';
+    return '<small class="dc-dwl">' + (dt ? '<span class="' + (overdue(l) ? 'dc-late' : '') + '">' + esc(k(overdue(l) ? 'ui.dc-due-late' : 'ui.dc-due-on', overdue(l) ? 'Overdue {d}' : 'Deadline {d}', { d: dt })) + '</span>' : '') + (dt && l.who ? ' · ' : '') + (l.who ? '<span data-noi18n>' + esc(l.who) + '</span>' : '') + '</small>';
+  }
   function chip(s) { var q = st(s); return '<span class="dc-st" style="--c:' + stc(s) + '"><i class="bi bi-' + q[4] + '"></i> ' + esc(stName(s)) + '</span>'; }
   function counts(lines) { var c = { all: lines.length }; ST.forEach(function (q) { c[q[0]] = 0; }); lines.forEach(function (l) { c[l.st] = (c[l.st] || 0) + 1; }); c.done = c.ok + c.cmt + c.na; return c; }
   function grpName(d) { if (/^1\d?$/.test(String(d))) return oneName(d); return LP && LP.nsName ? LP.nsName(d) : d; }
@@ -367,13 +376,14 @@
         var sub = seen[l.code] ? '' : '<li class="dc-csub"><span class="dc-code">' + esc(l.code) + '</span><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi"></i>' : '') + '</b></li>'; seen[l.code] = 1;
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
         var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code"></span>' +
-          '<span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</b><small data-noi18n>' + esc([l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' +
+          '<span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</b><small data-noi18n>' + esc([l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' + dueWho(l) +
           (l.cmt && !isOpen ? '<small class="dc-cmt" data-noi18n>' + esc(l.cmt) + '</small>' : '') + '</span>' + chip(l.st) + '</button>';
         if (quick && !isOpen) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + stc(x[0]) + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
         if (isOpen) {
           h2 += '<div class="dc-ledit">' + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
             (l.hint ? '<p class="dc-hint"><span class="muted">' + esc(k('ui.dc-should-contain', 'Should contain')) + ':</span> <span data-noi18n>' + esc(l.hint).replace(/\n/g, '<br>') + '</span></p>' : '') + (l.opt ? '<p class="muted dc-pnote">' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</p>' : '') +
             '<div class="dc-sts">' + ST.map(function (s) { return '<button type="button" class="dc-sb" style="--c:' + stc(s[0]) + '" aria-pressed="' + (l.st === s[0]) + '" data-dcst="' + esc(l.id) + ':' + s[0] + '"><i class="bi bi-' + s[4] + '"></i> ' + esc(k(s[1], s[2])) + '</button>'; }).join('') + '</div>' +
+            '<div class="dc-dw"><label><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input type="date" data-dcdue="' + esc(l.id) + '" value="' + esc(l.due || '') + '"></label><label><span>' + esc(k('ui.dc-who', 'Responsible')) + '</span><input data-dcwho="' + esc(l.id) + '" maxlength="60" value="' + esc(l.who || '') + '" placeholder="' + esc(k('ui.dc-who-ph', 'e.g. the plumber')) + '" autocomplete="off"></label></div>' +
             '<textarea class="dc-ctext" data-dccmt="' + esc(l.id) + '" rows="2" maxlength="1000" placeholder="' + esc(k('ui.dc-comment-ph', 'Comment to the contractor, e.g. Missing the signed declaration')) + '">' + esc(l.cmt || '') + '</textarea>' +
             (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li>' + (f.nf ? '<span class="dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span>' : '<button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>') + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
             (looseFiles(p).length ? '<select class="dc-link" data-dclink="' + esc(l.id) + '"><option value="">' + esc(k('ui.dc-link-file', 'Link a file that wasn’t matched …')) + '</option>' + looseFiles(p).map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.name) + '</option>'; }).join('') + '</select>' : '') +
@@ -431,8 +441,9 @@
       '<tr class="dc-tot"><td><b>' + esc(k('ui.total', 'Total')) + '</b></td>' + nc('<b>' + c.all + '</b>') + nc('<b>' + c.done + '</b>') + nc('<b>' + c.missing + '</b>') + '</tr></tbody></table>';
     var miss = L.filter(function (l) { return l.st === 'missing'; }), back = L.filter(function (l) { return l.st === 'rej' || l.st === 'cmt'; }), badF = F.filter(function (f) { return (f.iss || []).length; }), looseF = F.filter(function (f) { return !f.line; });
     var head4 = '<thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th></tr></thead>';
-    h += '<h2>2 ' + esc(k('ui.dc-missing-docs', 'Missing documents')) + '</h2>' + (miss.length ? '<table class="rp-grid dc-rt dr-rt"><thead><tr><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th></tr></thead><tbody>' +
-      byCode(miss).map(function (c) { return '<tr class="dr-crow"><td colspan="2"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</td></tr>' + c[2].map(function (l) { return '<tr><td>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td></tr>'; }).join(''); }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-missing', 'Nothing is missing.')) + '</p>');
+    var dw = miss.some(function (l) { return l.due || l.who; }), dloc = k('ui.dc-loc', 'en-GB'), dfmt = function (l) { var d = l.due ? new Date(l.due + 'T12:00:00') : null; return d && !isNaN(d) ? d.toLocaleDateString(dloc, { day: 'numeric', month: 'short', year: 'numeric' }) : ''; };   /* deadline and responsible, when any missing line has them */
+    h += '<h2>2 ' + esc(k('ui.dc-missing-docs', 'Missing documents')) + '</h2>' + (miss.length ? '<table class="rp-grid dc-rt dr-rt"><thead><tr><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th>' + (dw ? '<th>' + esc(k('ui.dc-due', 'Deadline')) + '</th><th>' + esc(k('ui.dc-who', 'Responsible')) + '</th>' : '') + '</tr></thead><tbody>' +
+      byCode(miss).map(function (c) { return '<tr class="dr-crow"><td colspan="' + (dw ? 4 : 2) + '"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</td></tr>' + c[2].map(function (l) { return '<tr><td>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td>' + (dw ? '<td' + (overdue(l) ? ' class="dc-late"' : '') + '>' + esc(dfmt(l)) + '</td><td>' + esc(l.who || '') + '</td>' : '') + '</tr>'; }).join(''); }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-missing', 'Nothing is missing.')) + '</p>');
     h += '<h2>3 ' + esc(k('ui.dc-with-comments', 'Not approved and comments')) + '</h2>' + (back.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.status', 'Status')) + '</th><th>' + esc(k('ui.dc-comment', 'Comment')) + '</th></tr></thead><tbody>' +
       back.map(function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l) + ' · ' + typeLabel(l)) + '</td><td>' + esc(stName(l.st)) + '</td><td>' + esc(l.cmt || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-comments', 'No comments.')) + '</p>');
     h += '<h2>4 ' + esc(k('ui.dc-naming', 'File names')) + '</h2>' + (badF.length || looseF.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-file', 'File')) + '</th><th>' + esc(k('ui.dc-problem', 'Problem')) + '</th></tr></thead><tbody>' +
@@ -446,7 +457,7 @@
 
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
-    var ae = document.activeElement; if (ae && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq]')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq]')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     if (p && p.req !== undefined && reqs().some(function (r) { return r.id === p.req; })) curReq = p.req; else if (p) curReq = ''; else { try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {} }   /* an open project is checked against its own checklist */
@@ -1291,6 +1302,11 @@
   document.addEventListener('input', function (e) { var t = e.target;
     if (t.matches && t.matches('[data-dcpq]')) { var qq = t.value.toLowerCase().trim(); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
     if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.matches || !t.matches('[data-dcdue], [data-dcwho]')) return;
+    var id = t.dataset.dcdue || t.dataset.dcwho, due = !!t.dataset.dcdue, v = due ? (/^\d{4}-\d{2}-\d{2}$/.test(t.value) ? t.value : '') : t.value.trim().slice(0, 60);
+    saveP(open, function (p) { var l = lineOf(p, id); if (l) { if (v) l[due ? 'due' : 'who'] = v; else delete l[due ? 'due' : 'who']; } }); setTimeout(draw, 300);
+  });
   document.addEventListener('focusout', function (e) {
     var t = e.target; if (!t.matches || !t.matches('textarea[data-dccmt]')) return;
     var id = t.dataset.dccmt, v = t.value.trim().slice(0, 1000);
