@@ -2794,5 +2794,10 @@ I18N.add({
   "ui.st-pick": ["Choose something on the left.", "Velg noe til venstre."],
   "ui.lock-screen": ["Lock screen", "Låseskjerm"],
   "ui.lock-screen-updated": ["Lock screen updated", "Låseskjermen er oppdatert"],
-  "ui.lock-screen-photo-set": ["Lock screen photo set", "Bilde på låseskjermen er satt"]
+  "ui.lock-screen-photo-set": ["Lock screen photo set", "Bilde på låseskjermen er satt"],
+  "ui.dc-who": ["Responsible", "Ansvarlig"],
+  "ui.dc-who-ph": ["e.g. the plumber", "f.eks. rørleggeren"],
+  "ui.dc-loc": ["en-GB", "nb-NO"],
+  "ui.dc-due-on": ["Deadline {d}", "Frist {d}"],
+  "ui.dc-due-late": ["Overdue {d}", "Forfalt {d}"]
 });

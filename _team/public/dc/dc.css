@@ -720,3 +720,12 @@ body.dr-full #wkDocReq { display: block !important; }
   .dc-lx b { font-size: 14.5px; }
 }
 .dc-code, .dc-lx small { font-variant-numeric: tabular-nums; }
+.dc-dw { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 8px; }
+.dc-dw label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.dc-dw input { min-height: 44px; font-size: 16px; }
+.dc-lx .dc-dwl { color: var(--muted); font-variant-numeric: tabular-nums; }
+.dc-dwl .dc-late { color: var(--danger); font-weight: 600; }
+@media (max-width: 380px) {
+  .dc-dw { grid-template-columns: 1fr; }
+}
+.rp-grid td.dc-late { color: #b4443c; font-weight: 600; }
