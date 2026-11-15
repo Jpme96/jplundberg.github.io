@@ -57,10 +57,10 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   check(/Kjørte alle sjekker/.test(ad.log) && /Lenkesjekk: 2 brutte/.test(ad.log) && !/Ran all checks|Link check/.test(ad.log), 'Admin: old log lines in today\'s language: ' + ad.log);
   check(ad.cols === 2, 'Admin at 1280 px: two columns, so titles fit (' + ad.cols + ')');
 
-  /* the scene floor fades at both ends */
+  /* the scene's ground is a soft oval, never a strip to the frame's edges (Phase G – one stage for every scene; before it was a strip that faded at both ends) */
   await go(p, 'calendar/', 2800);
-  const fl = await p.evaluate(() => { const r = [...document.querySelectorAll('.sc25-back rect')].find(x => x.getAttribute('y') === '200' && x.getAttribute('width') === '400'); return r ? r.getAttribute('fill') : null; });
-  check(fl && /^url\(#sc25fl/.test(fl), 'Calendar: the floor fades out at the ends (' + fl + ')');
+  const fl = await p.evaluate(() => { const e = document.querySelector('.sc25-back .sc25-ground'), strip = [...document.querySelectorAll('.sc25-back rect')].some(x => x.getAttribute('y') === '200' && x.getAttribute('width') === '400'); return e ? { rx: +e.getAttribute('rx'), fill: getComputedStyle(e).fill, strip } : null; });
+  check(fl && fl.rx > 100 && fl.rx < 200 && !fl.strip && fl.fill !== 'none', 'Calendar: the ground is a soft oval, not a strip ' + JSON.stringify(fl));
 
   /* the travel planner's answer can come after you've left the page: no error when its line is gone (seen on Finances 11 and 13 Nov) */
   await go(p, 'travel/', 2500);
