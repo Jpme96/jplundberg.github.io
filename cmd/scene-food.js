@@ -136,7 +136,7 @@
       acts: [{ id: 'list', len: 6.6, w: function (d) { return d.shop ? 3 : .6; } }, { id: 'taste', len: 8.4, w: function () { return cook ? 2 : 0; } }, { id: 'shelf', len: 5.0, w: function (d) { return d.low ? 2.5 : 0; } }],
       back: function (bg) {
         /* the room: the floor, a window with the night, the hanging lamp, a shelf of jars (the pantry) */
-        add(bg, 'rect', { x: 0, y: GY, width: 400, height: 40, fill: 'rgba(0,0,0,.22)' });
+        add(bg, 'ellipse', { cx: 210, cy: GY + 2, rx: 176, ry: 12, class: 'sc25-ground', fill: 'rgba(0,0,0,.07)' });   /* the same soft ground as every page (Phase G) */
         add(bg, 'ellipse', { cx: 210, cy: GY + 4, rx: 190, ry: 16, fill: 'rgba(255,190,120,.10)' });
         add(bg, 'rect', { x: 160, y: 40, width: 62, height: 58, rx: 6, fill: '#1b2338', stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2.4 });
         add(bg, 'line', { x1: 191, y1: 40, x2: 191, y2: 98, stroke: 'rgba(var(--ink-rgb), .45)', 'stroke-width': 2 });

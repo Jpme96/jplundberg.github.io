@@ -14,7 +14,7 @@
     function sleepLook() { var n = Date.now(); if (!SLK || n - SLT > 1000) { SLK = Object.assign({}, S.look(), { expr: 'calm' }); SLT = n; } return SLK; }   /* his eyes closed while he dozes (one look object a second, so the figure's cache holds) */
     return S.run(svg, {
       back: function (bg) { var g = bg;   /* the still scenery: drawn once (F4 – faster frames) */
-      add(g, 'rect', { x: 0, y: 190, width: 400, height: 50, fill: '#2f5a3c' });
+      add(g, 'ellipse', { cx: 200, cy: 200, rx: 212, ry: 18, class: 'sc25-lawn', fill: '#2f5a3c' });   /* the lawn as a soft oval on the stage (Phase G), not a block to the frame's edge */
       add(g, 'rect', { x: 66, y: 120, width: 8, height: 74, fill: '#5a3a26' }); add(g, 'circle', { cx: 70, cy: 104, r: 30, fill: '#2f7a4a' }); add(g, 'circle', { cx: 50, cy: 118, r: 18, fill: '#2a6e43' }); add(g, 'circle', { cx: 92, cy: 116, r: 20, fill: '#2a6e43' });
       add(g, 'rect', { x: 334, y: 170, width: 52, height: 5, rx: 2, fill: '#a87652' }); add(g, 'rect', { x: 334, y: 158, width: 52, height: 4, rx: 2, fill: '#a87652' }); [338, 382].forEach(function (x) { add(g, 'rect', { x: x - 1.5, y: 175, width: 3, height: 20, fill: '#5b636c' }); });
       add(g, 'rect', { x: 166, y: 70, width: 3, height: 124, fill: '#5b636c' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 6, fill: '#ffe2a8' }); add(g, 'circle', { cx: 167.5, cy: 68, r: 18, fill: 'rgba(255,226,168,.12)' });

@@ -33,6 +33,7 @@
   --dur-1: .15s; --dur-2: .25s;
   /* status tags: the text a little lighter than the colour on dark, a little darker on light */
   --stt-mix: white; --stt-fg: 62%; --stt-bg: .15;
+  --sc-ground: rgba(var(--ink-rgb), .07);
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --solid-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset;
   --mbar-shadow: 0 10px 34px rgba(0, 0, 0, .28);
@@ -54,6 +55,7 @@
   --solid-shadow: 0 1px 2px rgba(20, 22, 30, .05), 0 6px 20px rgba(20, 22, 30, .04);
   --mbar-shadow: 0 8px 26px rgba(20, 22, 30, .08);
   --stt-mix: black; --stt-fg: 78%; --stt-bg: .13;
+  --sc-ground: rgba(var(--accent-rgb), .12);
   /* /tokens */
 }
 
@@ -441,3 +443,21 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
   .modern :is(.fp-hero, .tv-hero).has-illu::before { content: ""; grid-column: 1; grid-row: 1; }
   .modern :is(.fp-hero, .tv-hero).has-illu > .hs-illu { grid-row: 1 / -1; align-self: center; }
 }
+
+/* ---------- Phase G step 3: one stage for every scene ---------- */
+/* the ground: the same soft ellipse on every page, in the theme's colour */
+.modern .sc25-ground { fill: var(--sc-ground); }
+/* the stage: a faint glow of your accent behind the picture, the same height on every page */
+.modern .hs-illu:has(.sc25) { position: relative; isolation: isolate; }
+.modern .hs-illu:has(.sc25)::before { content: ""; position: absolute; z-index: -1; inset: 6% 4% 16%; border-radius: 50%; background: radial-gradient(closest-side, rgba(var(--accent-rgb), .10), transparent); pointer-events: none; }
+/* the caption is a quiet chip, never a red underlined line */
+.modern .hs-illu figcaption { font-size: var(--fs-s); }
+.modern .hs-illu figcaption a { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: var(--r-chip); background: rgba(var(--ink-rgb), .06); color: var(--text); text-decoration: none; font-weight: 500; font-variant-numeric: tabular-nums; }
+.modern .hs-illu figcaption a:hover { background: rgba(var(--ink-rgb), .1); }
+.modern .hs-illu figcaption a.late { color: color-mix(in srgb, var(--danger) var(--stt-fg), var(--stt-mix)); background: rgba(var(--danger-rgb), var(--stt-bg)); }
+/* the picture's lowest strip is empty below the ground – the caption sits right under the ground instead */
+.modern .hs-illu:has(.sc25-ground, .sc25-lawn, .sc25-floor) figcaption { margin-top: -6.5%; position: relative; }   /* not where the ground fills the frame (a street, a hill) */
+/* your accent colour on one prop per picture (the laptop's logo, the jar's lid, the front door) – status colours stay as they are */
+.modern .sc-acc { fill: var(--accent); }
+.modern .sc-lid { fill: color-mix(in srgb, var(--accent) 62%, var(--bg-solid)); }
+.modern .hs-door { fill: color-mix(in srgb, var(--accent) 60%, var(--bg-solid)); }

@@ -76,11 +76,11 @@
     [[hh, r * .5, 2.4, '#2a2d33'], [mm, r * .76, 1.6, '#2a2d33'], [ss, r * .8, .8, '#d93a3a']].forEach(function (q) { var a = q[0] * Math.PI / 180; add(par, 'line', { x1: x, y1: y, x2: (x + Math.sin(a) * q[1]).toFixed(1), y2: (y - Math.cos(a) * q[1]).toFixed(1), stroke: q[3], 'stroke-width': q[2], 'stroke-linecap': 'round' }); });
     add(par, 'circle', { cx: x, cy: y, r: 1.6, fill: '#2a2d33' });
   }
-  /* the floor fades out at both ends, so it reads as a floor and not as a box under him */
+  /* the floor (Phase G – one stage for every scene): a soft ground ellipse under the people, in the theme's own
+     colour (.sc25-ground in modern.css), instead of a strip that read as a box under him. A colour keeps a tinted
+     ground for the scenes that want one. */
   function FLOOR(par, col) {
-    var id = 'sc25fl' + (col ? String(col).replace(/[^a-z0-9]/gi, '') : ''), g = add(par, 'linearGradient', { id: id, x1: 0, x2: 1, y1: 0, y2: 0 });
-    [[0, 0], [.16, 1], [.84, 1], [1, 0]].forEach(function (p) { add(g, 'stop', { offset: p[0], 'stop-color': col || '#000', 'stop-opacity': col ? p[1] : p[1] * .22 }); });
-    add(par, 'rect', { x: 0, y: 200, width: 400, height: 40, fill: 'url(#' + id + ')' });
+    add(par, 'ellipse', { cx: 200, cy: 202, rx: 172, ry: 12, class: 'sc25-ground', fill: col || 'rgba(0,0,0,.07)' });
   }
   function kr(n) { return (n < 0 ? '−' : '') + Math.abs(Math.round(n || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' kr'; }
 
