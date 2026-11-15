@@ -318,7 +318,7 @@
   function illu() {
     var hero = /\/cmd\/house\/$/.test(location.pathname) && document.querySelector('.fp-hero'); if (!hero) return;
     var box = document.getElementById('hsIllu');
-    if (!on() || !hcfg().illu) { if (box) box.remove(); hero.classList.remove('has-illu'); return; }
+    if (!on() || !hcfg().illu) { if (box) box.remove(); hero.classList.remove('has-illu'); if (window.PageLive) PageLive.set([]); return; }
     if (!box) { box = document.createElement('figure'); box.id = 'hsIllu'; box.className = 'hs-illu'; hero.appendChild(box); hero.classList.add('has-illu'); }
     var d = due(), sid = seasonOf()[0], n = Object.keys(d).reduce(function (a, k) { return a + d[k].length; }, 0);
     var hot = function (k) { return d[k].length ? ' hot' : ''; };
@@ -342,7 +342,9 @@
       badge('roof', 112, 18) + badge('door', 128, 64) + badge('window', 92, 78) + badge('meter', 176, 98) + badge('bins', 32, 96) + badge('garden', 222, 70) +
       '</svg>';
     var list = []; Object.keys(d).forEach(function (k) { d[k].forEach(function (x) { list.push(x); }); });
-    var cap = n ? list.slice(0, 3).map(function (x) { return '<a href="' + x.href + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (list.length > 3 ? ' · +' + (list.length - 3) : '') : 'Nothing due – the house is in good shape.';
+    var okTxt = I18N.k('ui.house-all-good', 'Nothing due – the house is in good shape.');
+    var cap = n ? list.slice(0, 3).map(function (x) { return '<a href="' + x.href + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (list.length > 3 ? ' · +' + (list.length - 3) : '') : esc(okTxt);
+    if (window.PageLive) PageLive.set(n ? list.slice(0, 3).map(function (x) { return { t: x.t, href: x.href, c: x.late ? 'neg' : '' }; }).concat(list.length > 3 ? ['+' + (list.length - 3)] : []) : [okTxt]);   /* the live line (Phase G) */
     var html = svg + '<figcaption>' + cap + '</figcaption>';
     if (box._h !== html) { box._h = html; box.innerHTML = html; }   /* compare with what we drew last time, not innerHTML: Safari writes the svg back differently, which redrew the picture on every change and restarted its animations */
   }

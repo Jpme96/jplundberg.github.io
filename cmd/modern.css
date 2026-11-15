@@ -420,7 +420,7 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .fp-live > span + span::before { content: "·"; margin-right: 10px; color: var(--muted); }
 .fp-live .neg { color: var(--danger); } .fp-live .pos { color: var(--ok); }
 .fp-live a { color: inherit; text-decoration: none; border-bottom: 1px solid rgba(var(--ink-rgb), .2); }
-.fp-hero.has-live > p.muted:not(.fp-live) { display: none; }
+:is(.fp-hero, .tv-hero).has-live > p.muted:not(.fp-live) { display: none; }
 .modern .fp-hero.has-illu { align-items: center; }
 /* tabs: one quiet bar, the chosen tab raised a little */
 .modern .fp-tabs { gap: 4px; padding: 4px; border-radius: 14px; background: rgba(var(--ink-rgb), .06); }
@@ -461,3 +461,5 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 .modern .sc-acc { fill: var(--accent); }
 .modern .sc-lid { fill: color-mix(in srgb, var(--accent) 62%, var(--bg-solid)); }
 .modern .hs-door { fill: color-mix(in srgb, var(--accent) 60%, var(--bg-solid)); }
+/* the picture's facts are in the live line now – no second copy under the picture */
+.modern .fp-hero.has-live .hs-illu figcaption, .modern .tv-hero.has-live .hs-illu figcaption { display: none; }

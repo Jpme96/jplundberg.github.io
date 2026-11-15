@@ -130,7 +130,7 @@
     if (p.k.checkin && window.Checkin) {
       var sun = new Date(); sun.setDate(sun.getDate() + (7 - sun.getDay()) % 7);
       var wk = window.Checkin.weekOf(sun);
-      if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), I18N.k('ui.weekly-check-in', 'Weekly check-in'), '5 minutes: spending, the week ahead and habits', '/cmd/#checkin');
+      if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), I18N.k('ui.weekly-check-in', 'Weekly check-in'), I18N.k('ui.checkin-sub2', '5 minutes: spending, the week ahead and habits'), '/cmd/#checkin');
     }
     /* document deadlines (JP 23:46): a week before and on the day, 08:00, while documents are still missing or not approved */
     if (Fe && Fe.list) (Fe.list('dctl') || []).forEach(function (pj) {

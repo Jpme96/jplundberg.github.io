@@ -44,13 +44,13 @@
     }
     var trust = [];
     if (real && age != null) trust.push(age <= 1 ? I18N.k('ui.bal-fresh', 'balances up to date') : '<span class="' + (age > 7 ? 'soon' : '') + '">' + I18N.k('ui.bal-age', 'balances {n} days old', { n: age }) + '</span>');
-    if (!real) trust.push('<button type="button" class="text-btn" data-fnupd data-t="ui.add-your-balances">Add your balances</button> for the real number');
+    if (!real) trust.push('<button type="button" class="text-btn" data-fnupd data-t="ui.add-your-balances">Add your balances</button> ' + I18N.k('ui.for-the-real-number', 'for the real number'));
     trust.push(imp == null ? I18N.k('ui.imp-none', 'no import yet') : imp === 0 ? I18N.k('ui.imp-today', 'imported today') : I18N.k(imp === 1 ? 'ui.imp-ago1' : 'ui.imp-ago', imp === 1 ? 'last import 1 day ago' : 'last import {n} days ago', { n: imp }));
     box.innerHTML =
       '<p class="fh-k">' + I18N.k((real ? 'ui.fh-free' : 'ui.fh-budget') + (per.byPayday ? '-pd' : '-m'), real ? (per.byPayday ? 'Free to use until payday' : 'Free to use this month') : (per.byPayday ? 'Left in your budget until payday' : 'Left in your budget this month')) + '</p>' +
       '<div class="fh-big ' + (v < 0 ? 'neg' : '') + '">' + money(v) + '</div>' +
       '<p class="fh-sub">' + (v > 0 ? '<b>' + money(perDay) + '</b> ' + I18N.k('ui.a-day', 'a day') + ' · ' : v < 0 ? '<b class="neg">' + I18N.k('ui.short', 'short') + '</b> · ' : '') + I18N.k(per.daysLeft === 1 ? 'ui.days-left1' : 'ui.days-left', per.daysLeft === 1 ? '1 day left' : '{n} days left', { n: per.daysLeft }) +
-        (pay ? ' · payday ' + esc(pay.days === 0 ? 'today' : pay.days === 1 ? 'tomorrow' : pay.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</p>' +
+        (pay ? ' · ' + esc(I18N.k('ui.payday-x', 'payday {d}', { d: pay.days === 0 ? I18N.k('ui.today-lc', 'today') : pay.days === 1 ? I18N.k('ui.tomorrow-lc', 'tomorrow') : pay.date.toLocaleDateString((I18N.lang === 'nb' ? 'nb-NO' : 'en-GB'), { weekday: 'short', day: 'numeric', month: 'short' }) })) : '') + '</p>' +
       '<div class="fh-parts">' + parts.map(function (x) { return '<span><small>' + x[0] + '</small>' + money(x[1], x[2]) + '</span>'; }).join('') + '</div>' +
       paceLine +
       '<div class="fh-foot"><span class="muted">' + trust.join(' · ') + '</span><span class="fh-acts"><button type="button" class="icon-btn sm" data-fnupd aria-label="Update balances" title="Update balances"><i class="bi bi-pencil"></i></button>' +

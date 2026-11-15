@@ -495,11 +495,13 @@
     var hero = document.querySelector('.fp-hero, .tv-hero'); if (!hero) return;
     var box = document.getElementById('scIllu');
     var ok = on(KEY) && Fe.on(FEAT) && document.documentElement.classList.contains('unlocked');
-    if (!ok) { if (box) box.remove(); hero.classList.remove('has-illu'); return; }
+    if (!ok) { if (box) box.remove(); hero.classList.remove('has-illu'); if (window.PageLive) PageLive.set([]); return; }
     var s; try { s = MAKE[PAGE](); } catch (e) { console.error(e); s = null; }
-    if (!s) { if (box) box.remove(); hero.classList.remove('has-illu'); return; }
+    if (!s) { if (box) box.remove(); hero.classList.remove('has-illu'); if (window.PageLive) PageLive.set([]); return; }
     if (!box) { box = document.createElement('figure'); box.id = 'scIllu'; box.className = 'hs-illu sc-illu'; box.setAttribute('data-noi18n', ''); hero.appendChild(box); hero.classList.add('has-illu'); }
     var cap = s.list.length ? s.list.slice(0, 3).map(function (x) { return '<a href="' + esc(x.h) + '"' + (x.late ? ' class="late"' : '') + '>' + esc(x.t) + '</a>'; }).join(' · ') + (s.list.length > 3 ? ' · +' + (s.list.length - 3) : '') : esc(s.empty || '');
+    /* the same facts are the page's live line under the title (Phase G); the caption under the picture then steps back */
+    if (window.PageLive) PageLive.set(s.list.length ? s.list.slice(0, 3).map(function (x) { return { t: x.t, href: x.h, c: x.late ? 'neg' : '' }; }).concat(s.list.length > 3 ? ['+' + (s.list.length - 3)] : []) : [s.empty || '']);
     /* a page with a 2.5D scene (F2) gets its frame from the start, so the picture never changes height when the scene takes over */
     var vb25 = window.Scene25 && window.SceneLive && window.SceneLive[PAGE] && !draw.broken;
     var html = '<svg viewBox="' + (vb25 ? '0 0 400 240' : '0 0 240 150') + '" role="img" aria-label="' + esc(s.label) + '">' + s.svg + '</svg><figcaption>' + cap + '</figcaption>';

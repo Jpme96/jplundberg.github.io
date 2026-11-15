@@ -2779,5 +2779,16 @@ I18N.add({
   "ui.sh-not-vis-tip": ["Not visible to {x} – tap to share this", "Ikke synlig for {x} – trykk for å dele"],
   "ui.tab-insp": ["Inspection", "Befaring"],
   "ui.tab-req": ["Requirements", "Krav"],
-  "ui.tab-doc": ["Control", "Kontroll"]
+  "ui.tab-doc": ["Control", "Kontroll"],
+  "ui.house-all-good": ["Nothing due – the house is in good shape.", "Ingenting å gjøre – huset er i god stand."],
+  "ui.for-the-real-number": ["for the real number", "for det ekte tallet"],
+  "ui.payday-x": ["payday {d}", "lønningsdag {d}"],
+  "ui.today-lc": ["today", "i dag"],
+  "ui.tomorrow-lc": ["tomorrow", "i morgen"],
+  "ui.next-payday-x": ["Next payday {d}", "Neste lønningsdag {d}"],
+  "ui.budget-runs-pd": ["the budget runs payday to payday", "budsjettet går fra lønning til lønning"],
+  "ui.budget-runs-m": ["the budget runs by calendar month", "budsjettet følger kalendermåneden"],
+  "ui.n-payday-moves-done": ["{n} payday moves done", "{n} lønningsflyttinger gjort"],
+  "ui.checkin-sub": ["5 minutes: spending, the week ahead, focus and habits", "5 minutter: forbruk, uka som kommer, fokus og vaner"],
+  "ui.checkin-sub2": ["5 minutes: spending, the week ahead and habits", "5 minutter: forbruk, uka som kommer og vaner"]
 });

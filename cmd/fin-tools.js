@@ -331,7 +331,7 @@
     var p = B.payPlan(d), k = p.per.startKey, open = p.moves.filter(function (m) { return !m.done; }); if (!open.length) return 0;
     d.budget.payDone = d.budget.payDone || {}; var m = d.budget.payDone[k] = d.budget.payDone[k] || {};
     open.forEach(function (x) { m[x.id] = true; }); window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
-    toast('<i class="bi bi-check2-all"></i> ' + open.length + ' payday moves done', function () { var d2 = window.Vault.get(), m2 = ((d2.budget || {}).payDone || {})[k] || {}; open.forEach(function (x) { delete m2[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); });
+    toast('<i class="bi bi-check2-all"></i> ' + I18N.k('ui.n-payday-moves-done', '{n} payday moves done', { n: open.length }), function () { var d2 = window.Vault.get(), m2 = ((d2.budget || {}).payDone || {})[k] || {}; open.forEach(function (x) { delete m2[x.id]; }); window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); });
     return open.length;
   }
   window.FinPayAll = payAll;

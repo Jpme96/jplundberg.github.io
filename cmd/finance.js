@@ -114,7 +114,7 @@
     var next = B.nextPayday(D);
     box.innerHTML =
       '<ul class="is-list">' + incRows + '<li class="is-tot"><span>Income ' + esc(monthName(key, true)) + '</span>' + money(inc.net) + '</li></ul>' +
-      (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> Next payday ' + esc(next.date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + ' · ' + esc(per.byPayday ? 'the budget runs payday to payday' : 'the budget runs by calendar month') + '</p>' : '') +
+      (next ? '<p class="muted is-p"><i class="bi bi-cash-stack"></i> ' + esc(I18N.k('ui.next-payday-x', 'Next payday {d}', { d: next.date.toLocaleDateString((I18N.lang === 'nb' ? 'nb-NO' : 'en-GB'), { weekday: 'short', day: 'numeric', month: 'short' }) })) + ' · ' + esc(per.byPayday ? I18N.k('ui.budget-runs-pd', 'the budget runs payday to payday') : I18N.k('ui.budget-runs-m', 'the budget runs by calendar month')) + '</p>' : '') +
       '<ul class="is-list is-fix"><li><button type="button" class="is-go" data-billsgo><span><span data-t="ui.bills">Bills</span><small>' + mine.length + ' bill' + (mine.length === 1 ? '' : 's') + (linked.length ? ' + ' + esc(linked.map(function (f) { return f.name.replace(/^Savings: /, ''); }).join(', ')) : '') + ' · see them all</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>' + money(fixed) + '</li>' +
         '<li class="is-tot"><span data-t="ui.left-after-bills">Left after bills</span>' + money(inc.net - fixed) + '</li></ul>' +
       '<div class="form-actions"><button type="button" class="text-btn" data-fsopen="1"><i class="bi bi-magic"></i> Step by step</button><span class="spacer"></span><button type="button" class="pill-btn" data-bopen>Edit income &amp; costs</button></div>';

@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function hero() { return document.querySelector('main.fp .fp-hero') || document.querySelector('.fp-hero'); }
+  function hero() { return document.querySelector('main.fp .fp-hero') || document.querySelector('.fp-hero, .tv-hero'); }
   function html(list) {
     return (list || []).filter(function (x) { return x && (typeof x === 'string' ? x.trim() : x.t); }).map(function (x) {
       if (typeof x === 'string') x = { t: x };

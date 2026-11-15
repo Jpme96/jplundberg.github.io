@@ -34,7 +34,7 @@
     if (!sunday && !monday) return null;
     var wk = weekOf(sunday ? now : addDays(now, -1));
     if (doneSet().indexOf(wk.key) > -1) return null;
-    return { key: wk.key, sub: '5 minutes: spending, the week ahead, focus and habits' };
+    return { key: wk.key, sub: I18N.k('ui.checkin-sub', '5 minutes: spending, the week ahead, focus and habits') };
   }
 
   /* ---------- the sheet ---------- */
