@@ -4,9 +4,9 @@
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
 <<<<<<< HEAD
-var CACHE = 'cmd-v1583e6211c';
+var CACHE = 'cmd-vec2228f457';
 =======
-var CACHE = 'cmd-v1583e6211c';
+var CACHE = 'cmd-vec2228f457';
 >>>>>>> next
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
