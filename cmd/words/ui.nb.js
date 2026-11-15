@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.xv-n-team1": ["1 change – shared with the team and in every download", "1 endring – delt med teamet og med i hver nedlasting"],
+  "ui.xv-n-team": ["{n} changes – shared with the team and in every download", "{n} endringer – delt med teamet og med i hver nedlasting"],
+  "ui.xv-team-hint": ["Changes here are shared with the team (encrypted) and go into every download.", "Endringer her deles med teamet (kryptert) og er med i hver nedlasting."],
   "ui.fdv-to-team": ["Send to Team", "Send til Team"],
   "ui.sr-team": ["Search Team for “{q}”", "Søk i Team etter «{q}»"],
   "ui.sr-team-s": ["Meetings, actions and documents with your team", "Møter, oppgaver og dokumenter med teamet ditt"],

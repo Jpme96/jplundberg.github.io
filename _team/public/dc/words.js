@@ -224,6 +224,8 @@ window.DC_NB = {
 "ui.xv-hint": "Endringene dine tas vare på på denne enheten og er med i hver nedlasting.",
 "ui.xv-n-edits": "{n} egne endringer – tas vare på på denne enheten og er med i hver nedlasting",
 "ui.xv-n-edits1": "1 egen endring – tas vare på på denne enheten og er med i hver nedlasting",
+"ui.xv-n-team": "{n} endringer – delt med teamet og med i hver nedlasting",
+"ui.xv-n-team1": "1 endring – delt med teamet og med i hver nedlasting",
 "ui.xv-n-temp": "{n} endringer – de er med i nedlastingen, ingenting lagres her",
 "ui.xv-n-temp1": "1 endring – den er med i nedlastingen, ingenting lagres her",
 "ui.xv-no-clip": "Nettleseren tillot det ikke – bruk Ctrl+C / Ctrl+V",
@@ -237,6 +239,7 @@ window.DC_NB = {
 "ui.xv-reset": "Angre alle",
 "ui.xv-reset-q": "Angre alle dine egne endringer i denne filen?",
 "ui.xv-tap": "Trykk på en celle for å endre den",
+"ui.xv-team-hint": "Endringer her deles med teamet (kryptert) og er med i hver nedlasting.",
 "ui.xv-temp": "Ingenting lagres her – endringene dine er med i nedlastingen.",
 "ui.xv-undo": "Angre",
 "ui.xv-yellow": "Gul"

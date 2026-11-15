@@ -1239,7 +1239,7 @@
           var ST4 = {}; Object.keys(FILL).forEach(function (s0) { if (s0 !== 'missing') ST4['#' + FILL[s0].slice(2).toUpperCase()] = s0; });   /* rej and missing share red: red = not approved */
           var rowLine = function (path, row) { var si = (px2.planSheets || []).map(function (h) { return h.path; }).indexOf(path); if (si < 0) return null; return (proj(px2.id).lines || []).filter(function (l) { return l.src && l.src[0] === si && l.src[1] + 1 === row; })[0] || null; };
           ed = ed || {}; Object.keys(ed).forEach(function (pa) { Object.keys(ed[pa] || {}).forEach(function (ref) { var e = ed[pa][ref]; if (e && typeof e === 'object' && e.bg && ST4[String(e.bg).toUpperCase()] && rowLine(pa, +ref.replace(/^[A-Z]+/, ''))) { delete e.bg; if (!Object.keys(e).length) delete ed[pa][ref]; } }); });   /* the file shows the current status already */
-          XlsxView.open({ blob: f, title: f.name, edits: ed, Z: XZ, cls: HOST ? 'dc-host' : '',
+          XlsxView.open({ blob: f, title: f.name, edits: ed, Z: XZ, cls: HOST ? 'dc-host' : '', shared: !!(HOST && HOST.store),
             onFill: f._own ? function (path, refs, bg) {
               var st0 = ST4[String(bg).toUpperCase()]; if (!st0) return '';
               var rows = {}; refs.forEach(function (r) { rows[+r.replace(/^[A-Z]+/, '')] = 1; });
