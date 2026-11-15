@@ -22,6 +22,7 @@
   /* two colours mixed (t of the second), worked out once – the short sides of a fade: the hair over the skin */
   function mix(h1, h2, t) { var key = h1 + '|' + h2 + '|' + t, m = DK[key]; if (m) return m; var hx = function (h) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }, A = hx(h1), Bq = hx(h2);
     return (DK[key] = '#' + A.map(function (v, i) { return ('0' + Math.round(v + (Bq[i] - v) * t).toString(16)).slice(-2); }).join('')); }
+  function cst(h) { var c = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888', n = parseInt(c.slice(1), 16), lum = (.3 * (n >> 16) + .59 * ((n >> 8) & 255) + .11 * (n & 255)) / 255; return lum < .32 ? mix(c, '#ffffff', .24) : dk(c, .78); }   /* seams, cuffs and pockets you can see on any colour */
   function dk0(h, f) { h = /^#[0-9a-f]{6}$/i.test(h || '') ? h : '#888888'; var n = parseInt(h.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; f = f || .82; return 'rgb(' + Math.round(r * f) + ',' + Math.round(g * f) + ',' + Math.round(b * f) + ')'; }
   function colours() { C = { skin: L.skin, skin2: dk(L.skin, .87), hair: L.hairC, top: L.topC, top2: dk(L.topC, .8), legs: L.legsC, legs2: dk(L.legsC, .82), shoe: L.shoeC, eye: '#1b1f27', mouth: '#8a4a3a' }; }
   /* a pool keeps one figure's elements from the last frame: the next frame reuses them in the same order. Pooled
@@ -46,9 +47,17 @@
   function ensureDefs() { if (DEFS && DEFS.isConnected) return; DEFS = document.getElementById('shHead'); if (DEFS) return; var s = document.createElementNS(NS, 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.setAttribute('aria-hidden', 'true'); s.style.position = 'absolute'; var d = document.createElementNS(NS, 'defs'); d.innerHTML = DEFS_HTML; s.appendChild(d); (document.body || document.documentElement).appendChild(s); DEFS = d.firstChild; }
 
   /* a cmd look → what the 2.5D body needs. Choices that share a shape are drawn by the same part. */
-  var TOPS = { tee: { bare: 'short' }, tank: { bare: 'arms' }, polo: { collar: 1, bare: 'short' }, sweater: {}, knit: {}, hoodie: {}, shirt: {}, jersey: { bare: 'short', stripe: 1 }, kit: { bare: 'short', stripe: 1 },
+  var TOPS = { tee: { bare: 'short' }, tank: { bare: 'arms' }, polo: { collar: 1, bare: 'short' }, sweater: {}, knit: {}, hoodie: {}, shirt: {}, jersey: { stripe: 1 }, kit: { bare: 'short' },
     varsity: { sleeve: '#f4f1ea' }, suit: { jacket: '#2e3340' }, puffer: { quilt: 1 }, rain: { hood: 1, zip: 1 }, jacket: { zip: 1 }, dress: { bare: 'short', skirt: 'knee' }, bunad: { band: 1, sleeve: '#f4f4f2' },
     scrubs: { vneck: 1, bare: 'short' }, chef: { buttons2: 1 }, pjs: { stripes: 1 }, robe: { wrap: 1 }, none: { bare: 'arms' } };
+  /* how each top is cut (JP 2026-11-15: clothes must fit the body, not be drawn on it): e = how loose round the body, hem = where it ends
+     (146 the hips, 170 mid-thigh, 182 the knee), neck = crew, v, stand (a collar band), hood, open; rib = a knitted band at the hem and cuffs;
+     se = how much fuller the sleeve is than the arm; pk = pockets (kanga, hip, chest) */
+  var GARM = { tee: { e: 1.02, neck: 'crew' }, tank: { e: 1.0, neck: 'crew' }, polo: { e: 1.03, placket: 1 }, sweater: { e: 1.05, hem: 148, neck: 'crew', rib: 1, se: .6, shirtCol: 1 }, knit: { e: 1.07, hem: 148, neck: 'crew', rib: 1, se: 1 },
+    hoodie: { e: 1.08, hem: 150, neck: 'hood', rib: 1, se: 1.2, pk: 'kanga' }, shirt: { e: 1.03, hem: 149, cuff: 1 }, jersey: { e: 1.03, neck: 'crew', cuff: 1 }, kit: { e: 1.03, neck: 'v', shoulder: 1 },
+    varsity: { e: 1.08, hem: 148, neck: 'stand', rib: 1, se: 1, pk: 'hip' }, suit: { e: 1.04, hem: 157, pk: 'hip', cuff: 1 }, puffer: { e: 1.18, hem: 151, neck: 'stand', se: 2.6, rib: 1 },
+    rain: { e: 1.12, hem: 171, neck: 'hood', se: 1.6, pk: 'hip' }, jacket: { e: 1.1, hem: 151, neck: 'stand', se: 1.2, pk: 'hip', rib: 1 }, dress: { e: 1.02, neck: 'crew' }, bunad: { e: 1.03, hem: 150 },
+    scrubs: { e: 1.05, pk: 'chest' }, chef: { e: 1.07, hem: 153, neck: 'stand', cuff: 1 }, pjs: { e: 1.05, hem: 149, neck: 'crew', cuff: 1 }, robe: { e: 1.1, hem: 183, se: 1.8 }, none: { e: 1 } };
   var SHOES = { sneakers: '#1a1a1a', hightops: '#d93a3a', boots: '#5b3a1e', sandals: '#8a5e44', slippers: '#e0559a', cleats: '#1a1a1a' };
   /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
      w = body width, d = depth (front to back), sh = shoulders, wa = waist, hp = hips, arm / leg = how thick */
@@ -75,6 +84,7 @@
   }
   /* the details that make each top what it is (the colour is the same standard for all since F0) */
   function topDetails(parts, a, k, t1, t2, hw, bob, P, TD, topY, botY) {
+    var BWs = function () { return L.bw || 1; };
     var t = TOPS[L.top] || {}, fr = Math.cos(a), front = fr > .15, line = function (p, q, col, wd, z) { parts.push([z || .02, el('line', { x1: p.X, y1: p.Y, x2: q.X, y2: q.Y, stroke: col, 'stroke-width': wd * k, 'stroke-linecap': 'round' })]); };
     var clipId = POOL ? POOL.id + 't' : 'f25t' + (draw.n = (draw.n || 0) + 1), wrap = el('g', {}), cp = el('clipPath', { id: clipId }); cp.appendChild(el('path', { d: TD })); wrap.appendChild(cp); var g = el('g', { 'clip-path': 'url(#' + clipId + ')' }); wrap.appendChild(g);
     var add = function (n, at) { g.appendChild(el(n, at)); }, W = hw * k;
@@ -83,14 +93,29 @@
     if (t.zip && front) { var z1 = P(0, 82 + bob, 16), z2 = P(0, 146 + bob, 17); add('path', { d: 'M' + z1.X + ' ' + z1.Y + ' L' + z2.X + ' ' + z2.Y, stroke: dk(L.topC, .65), 'stroke-width': 1.6 * k }); }
     if (t.stripe) { var sy = t1.Y + 20 * k; add('rect', { x: t1.X - W, y: sy, width: W * 2, height: 6 * k, fill: '#f4f1ea', opacity: .9 }); }
     if (t.band) { var by = t1.Y + 16 * k; add('rect', { x: t1.X - W, y: by, width: W * 2, height: 9 * k, fill: '#d42a2f' }); add('rect', { x: t1.X - W, y: by + 3 * k, width: W * 2, height: 3 * k, fill: '#f2c94c' }); }
-    if (t.stripes) for (var sx = -3; sx <= 3; sx++) { var px = t1.X + sx / 3.4 * W; add('path', { d: 'M' + px + ' ' + t1.Y + ' L' + px + ' ' + t2.Y, stroke: '#f4f1ea', 'stroke-width': 2 * k, opacity: .55 }); }
+    if (t.stripes) for (var sx = -5; sx <= 5; sx++) { var stt = sx * .3, s1p = P(Math.sin(stt) * 24 * BWs(), 82 + bob, Math.cos(stt) * 14), s2p = P(Math.sin(stt) * 25 * BWs(), botY, Math.cos(stt) * 13); if (Math.cos(stt + a) > .12) add('path', { d: 'M' + s1p.X + ' ' + s1p.Y + ' L' + s2p.X + ' ' + s2p.Y, stroke: '#f4f1ea', 'stroke-width': 2 * k * Math.cos(stt + a), opacity: .55 }); }   /* the stripes wrap round the body as he turns */
     if (t.wrap && front) { var w1 = P(-12, 80 + bob, 14), w2 = P(10, 132 + bob, 16); add('path', { d: 'M' + w1.X + ' ' + w1.Y + ' L' + w2.X + ' ' + w2.Y, stroke: dk(L.topC, .65), 'stroke-width': 2 * k }); var bl = t1.Y + 50 * k; add('rect', { x: t1.X - W, y: bl, width: W * 2, height: 5 * k, fill: dk(L.topC, .7) }); }
     if (t.vneck && front) { var n1 = P(-7, 80 + bob, 14), n2 = P(0, 94 + bob, 16), n3 = P(7, 80 + bob, 14); add('path', { d: 'M' + n1.X + ' ' + n1.Y + ' L' + n2.X + ' ' + n2.Y + ' L' + n3.X + ' ' + n3.Y, fill: L.skin, stroke: dk(L.topC, .7), 'stroke-width': 1.2 * k }); }
     if (t.collar && front) { var c1 = P(-8, 79 + bob, 12), c2 = P(0, 88 + bob, 13), c3 = P(8, 79 + bob, 12); add('path', { d: 'M' + c1.X + ' ' + c1.Y + ' L' + c2.X + ' ' + c2.Y + ' L' + c3.X + ' ' + c3.Y, fill: 'none', stroke: dk(L.topC, .65), 'stroke-width': 2.2 * k }); }
     if (t.buttons2 && front) [96, 110, 124].forEach(function (yy2) { [-5, 5].forEach(function (bx) { var bt = P(bx, yy2 + bob, 15); add('circle', { cx: bt.X, cy: bt.Y, r: 1.3 * k, fill: '#9aa3ad' }); }); });
     if (L.top === 'none' && front) { [-6, 6].forEach(function (nx) { var nb = P(nx, 100 + bob, 15); add('circle', { cx: nb.X, cy: nb.Y, r: .9 * k, fill: dk(L.skin, .7) }); }); }
+    var GMt = GARM[L.top] || {}, dc = dk(L.topC, .8), around = function (r, y, t0, t1b, dz) { var pp = [], n = 14; for (var i = 0; i <= n; i++) { var tt = t0 + (t1b - t0) * i / n; if (Math.cos(tt + a) < -0.05) continue; var q = P(Math.sin(tt) * r, y + bob + (1 - Math.cos(tt)) * (dz || 0), Math.cos(tt) * r * .8 + 1); pp.push(q.X.toFixed(1) + ' ' + q.Y.toFixed(1)); } return pp.length > 1 ? 'M' + pp.join(' L') : ''; };
+    if (GMt.rib && L.top !== 'none') { var rb = P(0, botY - 5, 0); add('rect', { x: rb.X - 60 * k, y: rb.Y, width: 120 * k, height: 9 * k, fill: dk(L.topC, .84) }); }   /* a knitted band at the hem */
+    if (GMt.pk === 'kanga' && front) { var kq = [P(-9, 118 + bob, 15.5), P(9, 118 + bob, 15.5), P(12, 136 + bob, 14.5), P(-12, 136 + bob, 14.5)]; add('path', { d: 'M' + kq.map(function (q) { return q.X.toFixed(1) + ' ' + q.Y.toFixed(1); }).join(' L') + ' Z', fill: dk(L.topC, .9), stroke: dk(L.topC, .72), 'stroke-width': 1 * k }); }   /* the front pocket */
+    if (GMt.pk === 'hip' && fr > -0.3) [-1, 1].forEach(function (sd) { var h1 = P(sd * 12, 128 + bob, 14), h2 = P(sd * 18, 140 + bob, 12); if (rot(sd * 15, 13, a).z > 0) add('path', { d: 'M' + h1.X + ' ' + h1.Y + ' L' + h2.X + ' ' + h2.Y, stroke: dk(L.topC, .66), 'stroke-width': 1.4 * k, 'stroke-linecap': 'round' }); });   /* slanted hip pockets */
+    if (GMt.pk === 'chest' && front) { var cp1 = P(-12, 96 + bob, 15.5), cp2 = P(-4, 96 + bob, 16); add('rect', { x: Math.min(cp1.X, cp2.X), y: cp1.Y, width: Math.abs(cp2.X - cp1.X), height: 8 * k, fill: 'none', stroke: dk(L.topC, .7), 'stroke-width': 1 * k }); }   /* a chest pocket */
+    if (GMt.placket && front) { var pl1 = P(0, 81 + bob, 14), pl2 = P(0, 96 + bob, 15.5); add('path', { d: 'M' + pl1.X + ' ' + pl1.Y + ' L' + pl2.X + ' ' + pl2.Y, stroke: dk(L.topC, .7), 'stroke-width': 1.2 * k }); [86, 92].forEach(function (yb) { var bt2 = P(0, yb + bob, 15); add('circle', { cx: bt2.X, cy: bt2.Y, r: .9 * k, fill: dk(L.topC, .6) }); }); }   /* the polo's buttons */
+    if (GMt.shoulder) [-1, 1].forEach(function (sd) { var so = P(sd * 20, 86 + bob, 4), so2 = P(sd * 26, 96 + bob, 3); add('path', { d: 'M' + so.X + ' ' + so.Y + ' L' + so2.X + ' ' + so2.Y, stroke: '#f4f1ea', 'stroke-width': 3 * k, 'stroke-linecap': 'round' }); });   /* the kit's shoulder stripes */
     if (g.childNodes.length) parts.push([0.018, wrap]);
-    if (t.hood) { var hb = P(0, 82 + bob, -8); parts.push([Math.cos(a) > 0 ? -0.2 : 0.3, el('ellipse', { cx: hb.X, cy: hb.Y, rx: Math.max(6, 16 * Math.abs(Math.cos(a)) + 8 * Math.abs(Math.sin(a))) * k, ry: 7 * k, fill: dk(L.topC, .85) })]); }
+    /* the neckline, round the neck itself – it turns with him */
+    if (GMt.neck === 'crew' && L.top !== 'none') { var cn = around(9.5, 81.2, -1.5, 1.5, 1.6); if (cn) parts.push([0.021, el('path', { d: cn, fill: 'none', stroke: dc, 'stroke-width': 1.8 * k, 'stroke-linecap': 'round' })]); }
+    if (GMt.shirtCol && front) { var sc1 = P(-7, 80.5 + bob, 11.5), sc2 = P(-1, 86.5 + bob, 13.5), sc3 = P(0, 82 + bob, 13), sc4 = P(7, 80.5 + bob, 11.5), sc5 = P(1, 86.5 + bob, 13.5); parts.push([0.022, el('path', { d: 'M' + sc1.X + ' ' + sc1.Y + ' L' + sc2.X + ' ' + sc2.Y + ' L' + sc3.X + ' ' + sc3.Y + ' Z M' + sc4.X + ' ' + sc4.Y + ' L' + sc5.X + ' ' + sc5.Y + ' L' + sc3.X + ' ' + sc3.Y + ' Z', fill: '#f4f1ea' })]); }   /* the shirt's collar over the sweater's neck */
+    if (GMt.neck === 'v' && front) { var vv1 = P(-6, 80.5 + bob, 12), vv2 = P(0, 90 + bob, 14.5), vv3 = P(6, 80.5 + bob, 12); parts.push([0.021, el('path', { d: 'M' + vv1.X + ' ' + vv1.Y + ' L' + vv2.X + ' ' + vv2.Y + ' L' + vv3.X + ' ' + vv3.Y, fill: L.skin, stroke: dc, 'stroke-width': 1.4 * k, 'stroke-linejoin': 'round' })]); }
+    if (GMt.neck === 'stand') { var sn = around(10, 79.4, -3.2, 3.2, 0); if (sn) parts.push([0.021, el('path', { d: sn, fill: 'none', stroke: dk(L.topC, .9), 'stroke-width': 4 * k, 'stroke-linecap': 'round' })]); }   /* a collar band standing round the neck */
+    if (GMt.neck === 'hood') {   /* the hood lies round the neck and down the back: its rim shows over the shoulders from the front, the hood itself from behind */
+      var hf = around(12, 80.5, -1.7, 1.7, 1.2), hbk = around(12.5, 79, 1.5, 4.8, -1.2); if (hbk) parts.push([-0.25, el('path', { d: hbk, fill: 'none', stroke: dk(L.topC, .85), 'stroke-width': 6.5 * k, 'stroke-linecap': 'round' })]);
+      if (hf) parts.push([0.021, el('path', { d: hf, fill: 'none', stroke: dk(L.topC, .86), 'stroke-width': 4.5 * k, 'stroke-linecap': 'round' })]); }
+    /* the hood: see GARM neck 'hood' above */
   }
 
   function draw(look, a, cx, gy, k, ph, w, pose) {
@@ -154,12 +179,14 @@
         parts.push([z + .0011, el('circle', { cx: a1.X.toFixed(1), cy: a1.Y.toFixed(1), r: (sr1 + 1.2 * k).toFixed(1), fill: lc })]); }
       if (L.legsOn === 'swim') { var sb = P(hip[0], hip[1] + 13, hip[2] + (knee[2] - hip[2]) * .3); taper(a1, sb, 11, 10.4, lc, z + .001); }
       if (L.bottom === 'jeans') limb(P(hip[0] + sd * 4, hip[1] + 6, hip[2] + 8), P(knee[0] + sd * 4, knee[1], knee[2] + 6), .9, 'rgba(242,201,76,.55)', z + .002);
-      if (L.bottom === 'joggers') parts.push([z + .002, el('circle', { cx: a3.X, cy: a3.Y - 1.5 * k, r: 4.6 * k, fill: dk(L.legsC, .78) })]);
-      if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 2, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 6); parts.push([z + .003, el('rect', { x: cpk.X - 4 * k, y: cpk.Y - 4 * k, width: 8 * k, height: 8 * k, rx: 1.5 * k, fill: dk(L.legsC, .85) })]); }
+      if (L.bottom === 'joggers') { var jc = P(knee[0], knee[1] + (ank[1] - knee[1]) * .84, knee[2] + (ank[2] - knee[2]) * .84); taper(jc, a3, 7.4 * LW, 6.8 * LW, cst(L.legsC), z + .002); }   /* gathered cuffs at the ankle */
+      if (L.bottom === 'trousers' && L.legsOn === 'full') limb(P(hip[0], hip[1] + 8, hip[2] + 9), P(ank[0], ank[1] - 3, ank[2] + 7), .8, cst(L.legsC), z + .002);   /* the crease down the front */
+      if (L.bottom === 'jeans') [[.5, -1.5], [.56, 2]].forEach(function (rp) { var rk = P(knee[0] + rp[1] * .6, hip[1] + (knee[1] - hip[1]) * (rp[0] + .44), hip[2] + (knee[2] - hip[2]) * (rp[0] + .44) + 8.5); if (rot(sd * 8, 9, a).z > -2) parts.push([z + .003, el('ellipse', { cx: rk.X, cy: rk.Y, rx: 3.2 * k * Math.max(.35, Math.abs(Math.cos(a))), ry: 1.1 * k, fill: L.skin })]); });   /* the rips at the knee */
+      if (L.bottom === 'cargo') { var cpk = P(knee[0] + sd * 6, hip[1] + (knee[1] - hip[1]) * .55, hip[2] + (knee[2] - hip[2]) * .55 + 5); if (rot(sd * 7, 5, a).z > -6) { parts.push([z + .003, el('rect', { x: cpk.X - 4.6 * k, y: cpk.Y - 5 * k, width: 9.2 * k, height: 10.5 * k, rx: 1.4 * k, fill: mix(L.legsC, cst(L.legsC), .55) })]); parts.push([z + .0031, el('rect', { x: cpk.X - 4.8 * k, y: cpk.Y - 5.6 * k, width: 9.6 * k, height: 3 * k, rx: 1 * k, fill: cst(L.legsC) })]); } }   /* a pocket with a flap on the side of the thigh */
       var mid2 = P(ank[0], ank[1] + 3, ank[2] + 5); parts.push([z + 0.49, el('ellipse', { cx: mid2.X, cy: mid2.Y, rx: (8.6 * Math.abs(Math.cos(a)) + 4.4) * k, ry: 5.6 * k, fill: L.shoes === 'sandals' ? skc : C.shoe })]);   /* the shoe's width, seen from the front */
       taper(P(ank[0], ank[1] + 2.5, ank[2] - 5), toe, 6.6, 6, L.shoes === 'sandals' ? skc : C.shoe, z + 0.5);
       if (L.shoes === 'sandals') limb(P(ank[0], ank[1] + 4, ank[2] + 3), P(ank[0], ank[1] + 4, ank[2] + 9), 3, '#8a5e44', z + .51);
-      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 7, ank[2] - 3), P(ank[0], ank[1] + 7, ank[2] + 20), 1.3, '#b9bec5', z + .52);   /* a thin sole – it read as a white stripe */
+      if (L.shoes === 'sneakers' || L.shoes === 'hightops' || L.shoes === 'cleats') limb(P(ank[0], ank[1] + 7, ank[2] - 3), P(ank[0], ank[1] + 7, ank[2] + 20), L.shoes === 'cleats' ? 1.3 : 2.4, L.shoes === 'cleats' ? '#aeb6bf' : '#e6e1d6', z + .52);   /* a thin sole – it read as a white stripe */
       if (L.shoes !== 'sandals') limb(P(ank[0], ank[1] + .5, ank[2] + 2), P(ank[0], ank[1] + 2.5, ank[2] + 15), 1.1, lt(C.shoe), z + .515);   /* the top of the shoe catches the light, so a dark shoe has a shape */
       if (L.shoes === 'cleats') [-2, 8, 18].forEach(function (cz) { var st = P(ank[0], ank[1] + 8.6, ank[2] + cz); parts.push([z + .53, el('rect', { x: st.X - 1 * k, y: st.Y, width: 2 * k, height: 2.4 * k, fill: '#9aa3ad' })]); });
       if (L.shoes === 'hightops' || L.shoes === 'boots') taper(P(ank[0], ank[1] - 8, ank[2]), P(ank[0], ank[1] + 1, ank[2]), 7.4, 7, C.shoe, z + .5);
@@ -180,6 +207,9 @@
     var MUT = BP.mus || 0, LV = [[81 - 1.6 * MUT, 8.5 + 2.4 * MUT, 8, 0], [91, 26 * BP.sh, 13.5 * BP.d, 0], [100, 15.5 * (BP.sh + BP.wa), 17 * BP.d, 2.6], [124, 25 * BP.wa, 12 * BP.d * (.5 + .5 * BP.wa), .8], [146, 26.5 * BP.hp, 12.5 * BP.d, -1.2]];
     if (!MUT) LV.splice(1, 0, [84.5, 19 * BP.sh, 10.5 * BP.d, 0], [87.2, 24 * BP.sh, 12.5 * BP.d, 0]);   /* the slope from the neck down to the shoulder (the trapezius), so the shoulder is a curve, not a ball (JP 2026-11-15) */
     if (MUT) { LV.splice(1, 0, [84 - .8 * MUT, 17 + 5 * MUT, 11 * BP.d, -1]); LV[LV.length - 1][1] = 25 * BP.wa * (1.04 + .02 * MUT); }   /* the hips no wider than the waist goes on: a V down into the shorts, no flare that reads as belly fat (JP 2026-11-13) */   /* athletic and muscular: the traps – a full slope from the neck out to the shoulders */
+    var GM = GARM[L.top] || { e: 1 }, GE = GM.e || 1;   /* the garment over the body: every level but the neck a little wider and deeper, and a long one goes on down */
+    if (GE !== 1) LV.forEach(function (q, qi) { if (qi) { q[1] *= GE; q[2] *= GE; } });
+    if (GM.hem && GM.hem > 147) { var lq = LV[LV.length - 1]; LV.push([GM.hem + bob - bob, lq[1] * (1 + (GM.hem - 146) * .006), lq[2] * (1 + (GM.hem - 146) * .004), lq[3]]); botY = GM.hem + bob; t2 = P(0, botY, 0); }
     var TL = [], TR = [], ca = Math.cos(a), sa0 = Math.sin(a), LN2 = LV.length - 1;
     LV.forEach(function (q) { var c0 = P(0, q[0] + bob, q[3] * (ca >= 0 ? 1 : 1)), hwq = Math.sqrt(Math.pow(q[1] * BW * ca, 2) + Math.pow(q[2] * sa0, 2)) * k; TL.push([c0.X - hwq, c0.Y]); TR.push([c0.X + hwq, c0.Y]); });
     function f1(v) { return v.toFixed(1); }
@@ -260,7 +290,8 @@
         taper(p1, bi2, rS, rB, skA, z); taper(bi2, p2, rB, rE, skA, z); taper(p2, fm, rE, rF, skA, z); taper(fm, p3, rF, rW, skA, z);
         taper(p1, mid, rS + 1.6 - .05 * MU, rB + 1, shade(far, C.top2, C.top), z + .01);
         if (MU) parts.push([z + .011, el('ellipse', { cx: (p1.X + CAPX).toFixed(1), cy: (p1.Y + 1 * k).toFixed(1), rx: ((7.4 + .4 * MU) * AW * k).toFixed(1), ry: ((8 + .6 * MU) * AW * k).toFixed(1), fill: shade(far, C.top2, C.top) })]); }   /* the short sleeve sits round the shoulder and the biceps */
-      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2; taper(p1, bi2, rS + 2.2, rB + 2, shade(far, slc2, slc), z); taper(bi2, p2, rB + 2, rE + 2.4, shade(far, slc2, slc), z); taper(p2, fm, rE + 2.4, rF + 2, shade(far, slc2, slc), z); taper(fm, p3, rF + 2, rW + 2.6, shade(far, slc2, slc), z);   /* a sleeve follows the arm inside it */
+      else { var slc = L.sleeve || C.top, slc2 = L.sleeve ? dk(L.sleeve, .82) : C.top2, GS = (GARM[L.top] || {}).se || 0, scol = shade(far, slc2, slc); taper(p1, bi2, rS + 2.2 + GS, rB + 2 + GS, scol, z); taper(bi2, p2, rB + 2 + GS, rE + 2.4 + GS, scol, z); taper(p2, fm, rE + 2.4 + GS, rF + 2 + GS, scol, z); taper(fm, p3, rF + 2 + GS, rW + 2.6 + GS * .8, scol, z);   /* a sleeve follows the arm inside it – fuller for a knit, a hoodie, a puffer (GARM se) */
+        if ((GARM[L.top] || {}).rib || (GARM[L.top] || {}).cuff) { var cf = P(elb[0] + (hand[0] - elb[0]) * .86, elb[1] + (hand[1] - elb[1]) * .86, elb[2] + (hand[2] - elb[2]) * .86, 1); taper(cf, P(elb[0] + (hand[0] - elb[0]) * .985, elb[1] + (hand[1] - elb[1]) * .985, elb[2] + (hand[2] - elb[2]) * .985, 1), rW + 2.55 + GS * .8, rW + 2.5 + GS * .8, shade(far, dk(slc2, .9), dk(slc, .88)), z + .002); }   /* the cuff at the wrist */
         if (L.aid === 'arm' && sd > 0) taper(P(elb[0] + (hand[0] - elb[0]) * .35, elb[1] + (hand[1] - elb[1]) * .35, elb[2] + (hand[2] - elb[2]) * .35, 1), p3, 5, 4.4, shade(far, '#7d8894', '#9aa3ad'), z + .02); }
       /* the hand: a mitten turned along the forearm, the thumb on the side toward the front, a cuff at the wrist */
       var fdx = p3.X - p2.X, fdy = p3.Y - p2.Y, fl = Math.hypot(fdx, fdy) || 1, ux = fdx / fl, uy = fdy / fl, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
@@ -398,7 +429,7 @@
       var qc = Math.acos(Math.max(-1, Math.min(1, Math.sin(a) * .8)));   /* where the front of the head is along the top arc, from this side */
       for (var i = 0; i <= N; i++) {
         var X = -1 + 2 * i / N, phi = Math.asin(X), facing = Math.cos(phi - a), side = Math.sin(phi - a);
-        var y = Hx[0] + (yS - Hx[0]) * sstep(.9, .5, facing) + (Hx[0] + Hx[1] - yS) * sstep(-.3, -.78, facing) + 2 * X * X + (L.hair === 'side' || L.hair === 'waves' ? 4 * Math.max(0, side) * Math.max(0, facing) : 0);
+        var LONGH = yS > 50, y = Hx[0] + (yS - Hx[0]) * (LONGH ? sstep(.55, .12, facing) : sstep(.9, .5, facing)) + (Hx[0] + Hx[1] - yS) * sstep(-.3, -.78, facing) + 2 * X * X + (L.hair === 'side' || L.hair === 'waves' ? 4 * Math.max(0, side) * Math.max(0, facing) : 0);
         if (top) y = Math.min(y, top);
         var sq = Math.sqrt(Math.max(0, 1 - X * X));
         y = Math.max(52 - 22 * sq + 1, Math.min(y, 52 + 22 * sq - 1.5));
