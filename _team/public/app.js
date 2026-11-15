@@ -1008,7 +1008,7 @@
         }
         order.sort(function (a, b) { return groups[b][0].at - groups[a][0].at; });
         var card = ul.closest('.t-upl'), cnt = card && card.querySelector('.t-upcount');
-        if (cnt) cnt.textContent = fresh ? L(fresh + ' new', fresh + ' nye') : '';
+        if (cnt) cnt.textContent = fresh ? L(fresh + ' new', fresh === 1 ? '1 ny' : fresh + ' nye') : '';
         ul.innerHTML = order.length ? order.map(function (g) {
           var l = groups[g], m0 = l[0], left = l.filter(function (x) { return !kept[x.fid]; });
           return '<li class="t-upb"><div class="t-upbh"><b>' + esc(m0.who || L('Someone with the link', 'Noen med lenken')) + '</b><span class="t-small">' + esc(fmtTime(m0.at)) + '</span></div>' + (m0.msg ? '<p class="t-prevmsg">' + esc(m0.msg) + '</p>' : '') +
