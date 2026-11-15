@@ -135,6 +135,25 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(/No signal/.test(await text()), 'and says it is showing what was saved');
   await own.setOfflineMode(false);
 
+  /* removing what came in on a link, deleting a switched-off link, emptying the change log (admin) */
+  await own.goto(T + '#overview'); await own.goto(T + '#files'); await sl(1500);
+  const rmBefore = await own.evaluate(() => document.querySelectorAll('[data-act=uprm]').length);
+  check(rmBefore >= 1, 'each uploaded file has a remove button (' + rmBefore + ')');
+  check(await own.evaluate(() => !!document.querySelector('[data-act=updel]')), 'a switched-off link can be deleted with what came in');
+  await own.evaluate(() => document.querySelector('[data-act=updel]').click()); await sl(1500);
+  check(await own.evaluate(() => !document.querySelector('.t-upl')), 'the link card is gone');
+  check(await own.evaluate(() => [...document.querySelectorAll('[data-act=fopen]')].some(x => /A-101/.test(x.textContent))), 'the file that was kept stays in the shared files');
+  await own.goto(T + '#team'); await sl(1500);
+  await own.evaluate(() => { const b = document.querySelector('[data-act=log]'); b && b.click(); }); await sl(1500);
+  const lr = await own.evaluate(() => !!document.querySelector('[data-act=logreset]'));
+  if (lr) { await own.evaluate(() => document.querySelector('[data-act=logreset]').click()); await sl(1500); }
+  const logN = (await raw('/__mem')).body.match(/"l:\d{9}"/g) || [];
+  check(lr && logN.length === 1, 'an admin can empty the change log – one line is left saying so (' + logN.length + ')');
+  /* deleting a project in Team */
+  await own.goto(T + '#docs'); await sl(1200);
+  const pid = await own.evaluate(() => { const a = [...document.querySelectorAll('a[href^="#dc="], [data-dcopen]')][0]; return a ? (a.getAttribute('href') || '').replace('#dc=', '') || a.dataset.dcopen : ''; });
+  if (pid) { await own.goto(T + '#dc=' + pid); await sl(1500); await own.evaluate(() => { const b = document.querySelector('[data-dcdel]'); b && b.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
+  check(pid && !/Testveien 9/.test(await own.evaluate(() => (document.querySelector('.t-projs') || {}).textContent || '')), 'a project can be deleted in Team (' + pid + ')');
   check(!errs.length, 'no errors ' + errs.join(' | ').slice(0, 400));
   await b.close(); srv.kill(); fs.rmSync(tmp, { recursive: true, force: true });
   await done();

@@ -121,6 +121,7 @@ HTML = []
 for d, _, fs in os.walk(HERE):
     if os.sep + 'dist' in d or os.sep + 'node_modules' in d: continue
     HTML += [os.path.join(d, f) for f in fs if f.endswith('.html')]
+HTML.append(os.path.join(ROOT, 'upload', 'index.html'))   # the contractors' upload page (2026-11-15: a cached old page sent files at once)
 for hp in sorted(HTML):
     html = io.open(hp, encoding='utf-8').read()
     def _stamp(m):

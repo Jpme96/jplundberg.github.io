@@ -116,6 +116,10 @@ export class TeamStore {
       if (p === 'push' && m === 'GET') return json({ key: (await this.vapid()).pub });
       if (p === 'push' && m === 'POST') return this.pushSub(email, b);
       if (p === 'uploads' && m === 'GET') return this.uploads(url);
+      /* remove what came in on a link (testing, or junk): a file already kept in the shared files is only taken off the list */
+      if (p === 'uprm' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.upRemove(email, b); }
+      /* the change log can be emptied by an admin (JP, while testing) – one line says who did it */
+      if (p === 'log' && m === 'DELETE') { if (rank < 3) return json({ error: 'admins only' }, 403); return this.logReset(email); }
       if (p === 'upkept' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = String(b.lid || ''), fids = Array.isArray(b.fids) ? b.fids.slice(0, 300) : []; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); for (const fid of fids) { if (!FID.test(String(fid))) continue; const k = 'uf:' + lid + ':' + fid, f = await this.s.get(k); if (f && !f.kept) { f.kept = Date.now(); await this.s.put(k, f); } } return json({ ok: true }); }
       if (p === 'uplink' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.upLink(email, b); }
       if (p === 'uplink' && m === 'DELETE') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); const l = await this.s.get('u:' + lid); if (l) { l.exp = Math.min(l.exp, Date.now()); l.off = 1; await this.s.put('u:' + lid, l); await this.log(email, 'uplink-off', {}); } return json({ ok: true }); }
@@ -409,6 +413,27 @@ export class TeamStore {
     await this.s.put('l:' + String(n).padStart(9, '0'), Object.assign({ n, t: Date.now(), by: email, a }, clean(x)));
     await this.s.put('lseq', n);
     if (n > MAXLOG) { const old = 'l:' + String(n - MAXLOG).padStart(9, '0'); await this.s.delete(old); }
+  }
+  async logReset(email) {
+    const all = await this.s.list({ prefix: 'l:' }); let n = 0;
+    for (const k of all.keys()) { await this.s.delete(k); n++; }
+    await this.s.put('lseq', 0); await this.log(email, 'log-reset', { n });
+    return json({ ok: true, removed: n });
+  }
+  async upRemove(email, b) {
+    const lid = String(b.lid || ''); if (!LID.test(lid)) return json({ error: 'bad link' }, 400);
+    const l = await this.s.get('u:' + lid); if (!l) return json({ ok: true });
+    const all = !!b.all, fids = all ? l.files.slice() : (Array.isArray(b.fids) ? b.fids.slice(0, 300) : []).filter(f => FID.test(String(f)));
+    let used = (await this.s.get('fbytes')) || 0, n = 0;
+    for (const fid of fids) {
+      const k = 'uf:' + lid + ':' + fid, f = await this.s.get(k); if (!f) continue;
+      if (!f.kept) for (let i = 0; i < (f.n || 0); i++) { const ck = 'f:' + fid + ':' + i, c = await this.s.get(ck); if (c) { used -= c.ct.length; await this.s.delete(ck); } }
+      await this.s.delete(k); l.files = l.files.filter(x => x !== fid); l.bytes = Math.max(0, l.bytes - (f.kept ? 0 : f.size || 0)); n++;
+    }
+    if (all) { l.off = 1; l.exp = Math.min(l.exp, Date.now()); }
+    await this.s.put('fbytes', Math.max(0, used)); await this.s.put('u:' + lid, l);
+    await this.log(email, 'upload-removed', { n });
+    return json({ ok: true, removed: n });
   }
   async logList(url) {
     const before = +url.searchParams.get('before') || 0, lim = Math.min(200, +url.searchParams.get('n') || 100);
