@@ -301,12 +301,19 @@
     function hatCoversLong() { return L.hat === 'beanie' && false; }
     head.appendChild(el('rect', { x: hc.X - 6.6 * k, y: hc.Y + 14 * k, width: 13.2 * k, height: 23 * k, rx: 5 * k, fill: C.skin2 }));   /* a neck you can see, down into the shoulders */
     var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
+    var HW = R * FS[0], HHh = R * FS[1], HD = R * .98, HCX = hc.X, HCY = hc.Y + FS[2] * k, HCA = Math.cos(a), HSA = Math.sin(a), HSL = [];
+    function hPt(yr, phi) {   /* a point on the 3D head's surface: yr down the face (0 middle, 1.05 chin), phi round it (0 the front of the face) */
+      var r0 = HSL[0], r1 = HSL[HSL.length - 1];
+      for (var q = 1; q < HSL.length; q++) if (HSL[q][0] >= yr) { r0 = HSL[q - 1]; r1 = HSL[q]; break; }
+      var u = r1[0] > r0[0] ? Math.max(0, Math.min(1, (yr - r0[0]) / (r1[0] - r0[0]))) : 0, rx = r0[1] + (r1[1] - r0[1]) * u, rz = r0[2] + (r1[2] - r0[2]) * u, cz = r0[3] + (r1[3] - r0[3]) * u;
+      var x = rx * HW * Math.sin(phi), z = (cz + rz * Math.cos(phi)) * HD; return { x: HCX + x * HCA + z * HSA, y: HCY + yr * HHh, f: Math.cos(phi + a) };
+    }
     (function () {   /* the head in 3D (JP 2026-11-15: a jawline like his reference, and the side view must follow the face): slices from the top of the
        skull down to the chin, each a half-width (of W), a half-depth (of D) and how far forward it sits; the outline is each slice's edges seen from
        this side, so the front shows the jaw corners and the profile shows the jaw running from under the ear to the chin. Straight lines below the
        cheekbone keep it angular in the flat style. */
       var W = R * FS[0], Hh = R * FS[1], D = R * .98, cx = hc.X, cy = hc.Y + FS[2] * k, ca = Math.cos(a), sa = Math.sin(a);
-      var SL = [];
+      var SL = HSL;
       for (var q = 0; q <= 9; q++) { var t = -Math.PI / 2 + q * (Math.PI / 2 + .2) / 9, yy = Math.sin(t), cc = Math.cos(t); SL.push([yy, Math.max(.04, cc), Math.max(.04, cc * .99), -.04 * cc]); }   /* the round skull, down to the cheekbones */
       SL.push([.42, .95, .9, .05], [.62, .9, .76, .12], [.84, .55, .5, .26], [.99, .24, .3, .4], [1.05, .15, .16, .46]);   /* the jaw: corner under the ear, a straight line to the chin, a short flat chin */
       var Rt = [], Lt = [];
@@ -317,20 +324,42 @@
       return { x: hc.X + (R * FS[0] * Math.sin(phi) * Math.cos(a) + R * .98 * Math.cos(phi) * Math.sin(a)) * sq, y: hc.Y + FS[2] * k + (y - 52) * k * FS[1], f: c }; }
     function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
     function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
-    /* beard: a band round the lower face, only where the face looks your way */
-    if (L.beard === 'full' || L.beard === 'short' || L.beard === 'stubble') {
-      var up = [], lo = [], top0 = L.beard === 'full' ? 57 : L.beard === 'short' ? 59 : 60;
-      for (var bi = 0; bi <= 20; bi++) { var ph2 = -1.5 + 3 * bi / 20, u = onHead(ph2, top0 + 5 * (1 - Math.cos(ph2))), dxh = u.x - hc.X; if (u.f > -0.02) { up.push([u.x, u.y]); lo.unshift([u.x, Math.max(u.y + 2 * k, hc.Y + Math.sqrt(Math.max(0, R * R - dxh * dxh)) * .97 + (L.beard === 'full' ? 3 * k * Math.max(0, u.f) : 0))]); } }   /* the lower edge follows the jaw (the head's outline at the same x), so it never sticks out as a point when he turns */
-      if (up.length > 1) head.appendChild(el('path', { d: poly(up.concat(lo)), fill: C.hair, opacity: L.beard === 'full' ? 1 : L.beard === 'short' ? .85 : .3 }));
+    /* beards (JP 2026-11-15: they looked like a mask, a blob, a wedge, an open mouth): drawn on the 3D head's surface in the hair colour – the lower
+       edge follows the jaw and the chin, the upper edge runs from the sideburn under the cheekbone to the moustache; the mouth is drawn over it.
+       Stubble is a light shading (the hair mixed into the skin), short is close, full a little fuller below the jaw */
+    function band(ph0, ph1, yTop, yBot, grow) {   /* a patch between two lines round the face, only the part that faces you */
+      var up = [], lo = [], N = 22;
+      for (var bi = 0; bi <= N; bi++) { var ph = ph0 + (ph1 - ph0) * bi / N; if (Math.cos(ph + a) < -0.02) continue; var u = hPt(yTop(ph), ph), b = hPt(yBot(ph), ph);
+        if (grow) { b.x = HCX + (b.x - HCX) * grow; b.y = HCY + (b.y - HCY) * (1 + (grow - 1) * .8); }
+        up.push([u.x, u.y]); lo.unshift([b.x, b.y]); }
+      return up.length > 1 ? poly(up.concat(lo)) : '';
     }
-    if (L.beard === 'goatee' || L.beard === 'moustache') { var gt = [], gN = 8, gy0 = L.beard === 'goatee' ? 63 : 59.5, gy1 = L.beard === 'goatee' ? 72 : 62.5, gw2 = L.beard === 'goatee' ? .32 : .42;
-      for (var gi = 0; gi <= gN; gi++) { var gp = onHead(-gw2 + 2 * gw2 * gi / gN, gy0); if (gp.f > .05) gt.push([gp.x, gp.y]); }
-      for (var gj = gN; gj >= 0; gj--) { var gq = onHead(-gw2 * .8 + 1.6 * gw2 * gj / gN, gy1 - (L.beard === 'goatee' ? 0 : 1.5 * Math.abs(gj / gN - .5))); if (gq.f > .05) gt.push([gq.x, gq.y]); }
-      if (gt.length > 4) head.appendChild(el('path', { d: poly(gt), fill: C.hair })); }
+    var JAW = function (ph) { var q = Math.abs(ph); return q < .35 ? 1.05 : q < 1.2 ? 1.05 - (q - .35) / .85 * .45 : .6 - (q - 1.2) / .38 * .32; };   /* chin, along the jaw line, up to the ear */
+    var BC = { stubble: mix(C.skin, C.hair, .17), short: C.hair, full: C.hair, goatee: C.hair, moustache: C.hair }[L.beard];
+    if (L.beard === 'full' || L.beard === 'short' || L.beard === 'stubble') {   /* upper edge round the face; lower edge down the jaw from the ear, under the chin and back up – the head's own sides, so it meets the outline */
+      var cheek = L.beard === 'full' ? .2 : .32, g2 = L.beard === 'full' ? 1.05 : 1.0;
+      [-1, 1].forEach(function (sd) {   /* each half: the edge from the sideburn to the middle, down the middle of the chin, under the chin and back up the jaw – so the front of the chin is covered from the side too */
+        var bp = [], push = function (yr, ph, gr) { if (Math.cos(ph + a) < -0.08) return; var q = hPt(yr, ph); if (gr && gr !== 1) { q.x = HCX + (q.x - HCX) * gr; q.y = HCY + (q.y - HCY) * (1 + (gr - 1) * .9); } bp.push([q.x, q.y]); };
+        for (var bi = 0; bi <= 12; bi++) { var qa = 1.55 * (1 - bi / 12); push(qa > 1.3 ? .1 + (1.55 - qa) * .4 : qa > .55 ? cheek + (1.3 - qa) * .28 : .5 - .02 * Math.cos(qa * 3), sd * qa, 1); }
+        [.62, .78, .92, 1.05].forEach(function (yr) { push(yr, 0, yr > .9 ? g2 : 1); });
+        for (var bj = 1; bj <= 6; bj++) push(1.05, sd * 1.57 * bj / 6, g2);
+        [.95, .84, .72, .6, .45, .3].forEach(function (yr) { push(yr, sd * 1.57, g2); });
+        if (bp.length > 4) head.appendChild(el('path', { d: poly(bp), fill: BC, stroke: BC, 'stroke-width': (.5 * k).toFixed(2), 'stroke-linejoin': 'round' }));
+      });
+      if (L.beard !== 'stubble') { var mo2 = band(-.52, .52, function () { return .27; }, function (ph) { return .42 - .05 * Math.abs(ph); }); if (mo2) head.appendChild(el('path', { d: mo2, fill: BC })); }   /* the moustache joins it */
+    }
+    if (L.beard === 'goatee' || L.beard === 'moustache') {
+      var mst = band(-.5, .5, function () { return .26; }, function (ph) { return .42 - .08 * Math.abs(ph); }); if (mst) head.appendChild(el('path', { d: mst, fill: BC }));   /* above the lip */
+      if (L.beard === 'goatee') { var gch = band(-.38, .38, function () { return .58; }, function (ph) { return 1.05 - .1 * Math.abs(ph); }); if (gch) head.appendChild(el('path', { d: gch, fill: BC })); }   /* the chin, below the lip */
+    }
     var eyes = [];
     [-0.62, 0.62].forEach(function (phi) { var e = onHead(phi * -1, 51); eyes.push(e); if (e.f > 0.05) { var ew = 4.6 * k * Math.max(.3, e.f);
-      var wink = L.expr === 'wink' && phi > 0, open = !pose.blink && !wink && (L.expr === 'grin' || L.expr === 'wow' || L.expr === 'cool');
-      if (open) head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: Math.max(.9 * k, (L.expr === 'wow' ? 2.6 : 2.1) * k * e.f), ry: (L.expr === 'wow' ? 3.2 : L.expr === 'cool' ? 1.5 : 2.6) * k, fill: C.eye }));
+      var wink = L.expr === 'wink' && phi > 0, open = !pose.blink && !wink && L.expr !== 'laugh';   /* open by default (JP 2026-11-15: eye colour never showed); laugh keeps the happy closed eyes */
+      if (open) { var ery = ({ wow: 3.4, cool: 1.7, calm: 1.9, smile: 2.45, shy: 2.3 }[L.expr] || 2.65) * k, erx = Math.max(1 * k, 3.6 * k * e.f), sx = Math.sin(a) * .9 * k * e.f, dy = L.expr === 'shy' ? .5 * k : 0;
+        head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: erx, ry: ery, fill: '#f4f1ea' }));
+        head.appendChild(el('ellipse', { cx: e.x + sx, cy: e.y + dy, rx: Math.min(erx * .7, 2.3 * k * Math.max(.45, e.f)), ry: Math.min(ery * .95, 2.3 * k), fill: C.eye }));
+        head.appendChild(el('circle', { cx: e.x + sx * 1.2, cy: e.y + dy, r: Math.min(ery * .5, .95 * k), fill: '#1d2128' }));
+        head.appendChild(el('path', { d: 'M' + (e.x - erx * 1.05) + ' ' + (e.y + ery * .1) + ' Q' + e.x + ' ' + (e.y - ery * 1.45) + ' ' + (e.x + erx * 1.05) + ' ' + (e.y + ery * .1), fill: 'none', stroke: '#2a2e36', 'stroke-width': 1.1 * k, 'stroke-linecap': 'round' })); }   /* the upper lid */
       else if (pose.blink || wink) head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + e.y + ' L' + (e.x + ew) + ' ' + e.y, stroke: C.eye, 'stroke-width': 1.8 * k, 'stroke-linecap': 'round' }));
       else head.appendChild(el('path', { d: 'M' + (e.x - ew) + ' ' + (e.y + 1 * k) + ' Q' + e.x + ' ' + (e.y - 3.4 * k) + ' ' + (e.x + ew) + ' ' + (e.y + 1 * k), fill: 'none', stroke: C.eye, 'stroke-width': 2 * k, 'stroke-linecap': 'round' }));   /* happy closed eyes, like your avatars */
       var br = onHead(phi * -1 * 1.05, 44), BM = BROWS[pose.brow || (L.expr === 'wow' ? 'up' : L.expr === 'shy' ? 'sad' : '')] || BROWS.none, inn = (hc.X - e.x) >= 0 ? 1 : -1, bo = BM[0] * k, bi = BM[1] * k;   /* the brow's mood (F6): both ends up (surprised), the inner end down (set on something), the inner end up (sorry, shy) */
@@ -402,7 +431,7 @@
           : L.glasses === 'aviator' ? el('path', { d: 'M' + (e.x - rw) + ' ' + (e.y - rh * .7) + ' L' + (e.x + rw) + ' ' + (e.y - rh * .7) + ' Q' + (e.x + rw) + ' ' + (e.y + rh * 1.1) + ' ' + e.x + ' ' + (e.y + rh) + ' Q' + (e.x - rw) + ' ' + (e.y + rh * 1.1) + ' ' + (e.x - rw) + ' ' + (e.y - rh * .7) + ' Z', fill: lens, stroke: fc, 'stroke-width': 1.3 * k })
           : L.glasses === 'cateye' ? el('path', { d: 'M' + (e.x - rw * 1.1) + ' ' + (e.y - rh) + ' L' + (e.x + rw * 1.1) + ' ' + (e.y - rh) + ' Q' + (e.x + rw) + ' ' + (e.y + rh) + ' ' + e.x + ' ' + (e.y + rh * .8) + ' Q' + (e.x - rw) + ' ' + (e.y + rh) + ' ' + (e.x - rw * 1.1) + ' ' + (e.y - rh) + ' Z', fill: lens, stroke: fc, 'stroke-width': 1.7 * k })
           : el('rect', { x: e.x - rw, y: e.y - rh * .85, width: rw * 2, height: rh * 1.7, rx: (L.glasses === 'sun' ? 2.4 : 1.6) * k, fill: lens, stroke: fc, 'stroke-width': 1.7 * k }));
-        var ear = ears[n]; if (Math.abs(ear.x - e.x) > 4 * k && ear.f < .6) head.appendChild(el('line', { x1: e.x + (ear.x > e.x ? rw : -rw), y1: e.y - 1 * k, x2: ear.x, y2: ear.y - 2 * k, stroke: gc, 'stroke-width': 1.4 * k })); });
+        var ear = ears[n]; if (Math.abs(ear.x - e.x) > 4 * k && ear.f > -.3) head.appendChild(el('line', { x1: e.x + (ear.x > e.x ? rw : -rw), y1: e.y - 1 * k, x2: ear.x, y2: ear.y - 2 * k, stroke: gc, 'stroke-width': 1.4 * k })); });
       if (eyes[0].f > .05 && eyes[1].f > .05) { var l0 = eyes[0].x < eyes[1].x ? eyes[0] : eyes[1], r0 = l0 === eyes[0] ? eyes[1] : eyes[0];
         head.appendChild(el('line', { x1: l0.x + 6 * k * Math.max(.3, l0.f), y1: l0.y - 1 * k, x2: r0.x - 6 * k * Math.max(.3, r0.f), y2: r0.y - 1 * k, stroke: gc, 'stroke-width': 1.4 * k })); }
     }
