@@ -298,7 +298,18 @@
     function hatCoversLong() { return L.hat === 'beanie' && false; }
     head.appendChild(el('rect', { x: hc.X - 6.6 * k, y: hc.Y + 14 * k, width: 13.2 * k, height: 23 * k, rx: 5 * k, fill: C.skin2 }));   /* a neck you can see, down into the shoulders */
     var FS = { oval: [.96, 1.05, 1], round: [1.16, .97, 0], long: [.87, 1.17, 3.6] }[L.faceS] || [1, 1, 0];   /* face shape: oval a little taller than wide, round full and wide, long narrow with the chin lower (JP: the shapes looked the same) */
-    head.appendChild(el('ellipse', { cx: hc.X, cy: hc.Y + FS[2] * k, rx: R * FS[0], ry: R * FS[1], fill: C.skin }));
+    (function () {   /* the head in 3D (JP 2026-11-15: a jawline like his reference, and the side view must follow the face): slices from the top of the
+       skull down to the chin, each a half-width (of W), a half-depth (of D) and how far forward it sits; the outline is each slice's edges seen from
+       this side, so the front shows the jaw corners and the profile shows the jaw running from under the ear to the chin. Straight lines below the
+       cheekbone keep it angular in the flat style. */
+      var W = R * FS[0], Hh = R * FS[1], D = R * .98, cx = hc.X, cy = hc.Y + FS[2] * k, ca = Math.cos(a), sa = Math.sin(a);
+      var SL = [];
+      for (var q = 0; q <= 9; q++) { var t = -Math.PI / 2 + q * (Math.PI / 2 + .2) / 9, yy = Math.sin(t), cc = Math.cos(t); SL.push([yy, Math.max(.04, cc), Math.max(.04, cc * .99), -.04 * cc]); }   /* the round skull, down to the cheekbones */
+      SL.push([.42, .95, .9, .05], [.62, .9, .76, .12], [.84, .55, .5, .26], [.99, .24, .3, .4], [1.05, .15, .16, .46]);   /* the jaw: corner under the ear, a straight line to the chin, a short flat chin */
+      var Rt = [], Lt = [];
+      SL.forEach(function (sl) { var c = sl[3] * D * sa, e = Math.sqrt(Math.pow(sl[1] * W * ca, 2) + Math.pow(sl[2] * D * sa, 2)), y = cy + sl[0] * Hh; Rt.push((cx + c + e).toFixed(1) + ' ' + y.toFixed(1)); Lt.unshift((cx + c - e).toFixed(1) + ' ' + y.toFixed(1)); });
+      head.appendChild(el('path', { d: 'M' + Rt.join(' L') + ' L' + Lt.join(' L') + ' Z', fill: C.skin, 'stroke-linejoin': 'round' }));
+    })();
     function onHead(phi, y) { var s = Math.sin(phi + a), c = Math.cos(phi + a); return { x: hc.X + s * R * Math.sqrt(Math.max(0, 1 - Math.pow((y - 52) / 22, 2))), y: hc.Y + (y - 52) * k, f: c }; }
     function sstep(e0, e1, x) { var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
     function poly(pts) { var s = 'M'; for (var i = 0; i < pts.length; i++) s += (i ? ' L' : '') + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1); return s + ' Z'; }
