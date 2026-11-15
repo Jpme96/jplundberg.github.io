@@ -50,6 +50,11 @@
       '.avp-bar button{flex:1;min-height:46px;padding:0 6px;white-space:nowrap;border-radius:14px;border:0;background:rgba(127,127,127,.16);color:inherit;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}.avp-bar button:disabled{opacity:.4}.avp-bar .hot{background:var(--accent,#8a5cf0);color:#fff}' +
       '.avp-ask{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);padding:14px;border-radius:16px;background:#232a38;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.4);display:grid;gap:10px}.avp-ask[hidden]{display:none}' +
       '.avp-ask div{display:flex;gap:8px;flex-wrap:wrap}.avp-ask button{flex:1;min-height:42px;border-radius:12px;border:0;font:inherit;font-weight:600;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}.avp-ask .hot{background:var(--accent,#8a5cf0)}' +
+      /* more room to choose (JP 2026-11-15): the picture, the turn buttons and the tabs stay at the top; once you scroll the picture shrinks so
+         more tiles show; the tabs wrap onto two rows instead of running off the edge */
+      '.avp-stage{position:sticky;top:0;z-index:3;background:var(--bg,#0e1117);padding-bottom:8px;border-bottom:1px solid rgba(127,127,127,.12)}@media (prefers-color-scheme:light){.avp-stage{background:var(--bg,#f6f4ef)}}' +
+      '.avp-fig{width:min(100%,300px,28vh);transition:width .2s ease}.avp-mini .avp-fig{width:min(100%,120px)}.avp-mini .avp-stage .avp-row button{min-height:32px;font-size:13px;padding:0 10px}' +
+      '.avp-stage .avp-tabs{position:static;flex-wrap:wrap;justify-content:center;overflow:visible;padding:4px 0 0;border:0;background:transparent;width:100%}.avp-stage .avp-tabs button{min-height:36px;padding:0 12px;font-size:14px}' +
       '@media (prefers-reduced-motion:reduce){.avp *{animation:none!important;transition:none!important}}';
     document.head.appendChild(st);
   }
@@ -89,6 +94,8 @@
       '<div class="avp-ask" hidden role="alertdialog"><b>' + esc(L('Save your changes?', 'Lagre endringene?')) + '</b><div><button type="button" class="hot" data-avp-save>' + esc(L('Save', 'Lagre')) + '</button><button type="button" data-avp-drop>' + esc(L('Don’t save', 'Ikke lagre')) + '</button><button type="button" data-avp-stay>' + esc(L('Keep editing', 'Fortsett')) + '</button></div></div>';
     document.body.appendChild(el);
     var fig = el.querySelector('.avp-fig'), pane = el.querySelector('.avp-pane'), nav = el.querySelector('.avp-tabs'), test = el.querySelector('.avp-test'), testW = el.querySelector('.avp-testw'), scroll = el.querySelector('.avp-scroll');
+    el.querySelector('.avp-stage').appendChild(nav);   /* the tabs live with the picture, so both stay in view */
+    scroll.addEventListener('scroll', function () { el.classList.toggle('avp-mini', scroll.scrollTop > 24); }, { passive: true });   /* the picture shrinks as you scroll */
     var prevOverflow = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden';
     function dirty() { return JSON.stringify(cur) !== saved; }
     function drawFig() {

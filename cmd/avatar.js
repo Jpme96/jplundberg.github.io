@@ -359,8 +359,8 @@
   MKO.hand = [['right', 'Right-handed', 'Høyrehendt'], ['left', 'Left-handed', 'Venstrehendt']];
   MKO.walk = [['calm', 'Calm', 'Rolig'], ['bouncy', 'Bouncy', 'Sprettende'], ['quick', 'Quick', 'Rask']];
   var MKC = {
-    skin: ['#fbe2cf', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
-    hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#a33d2b', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'],
+    skin: ['#ffeee2', '#f3d4bb', '#e3b893', '#c99a73', '#a8774f', '#82563a', '#5a3a27', '#3e2618'], eyeC: ['#2b211b', '#5b3a1e', '#3a6ea5', '#3f7d4e', '#7a8794'],
+    hairC: ['#1e140d', '#4a2f1b', '#7a4e2a', '#b5854a', '#e0bf7a', '#9b9b9b', '#b03a22', '#2f6fd6', '#e0559a', '#2fae6a', '#8a5cf0', '#eeeeee'],
     legs: ['#2a2f3a', '#3c5a7d', '#5b4b3a', '#6e6e6e', '#c9b48a', '#2f7a55', '#8a5cf0'],
     hatC: ['#e8743b', '#2e3340', '#d93a3a', '#3987e5', '#2f7a55', '#f2c94c', '#e0559a', '#8a5a2b', '#3b4d8a', '#f2f2f2'],
     topC: ['#2f7a55', '#2f5d8a', '#2e3340', '#d93a3a', '#e8743b', '#f2c94c', '#8a6fdf', '#e0559a', '#d9c7a8', '#b8b8b8', '#f2f2f2', '#5b4b3a']
@@ -391,7 +391,7 @@
     var none = MKNONE[k] && v === 'none';
     var pic = none ? '<svg class="avm-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 18.4 18.4 5.6"/></svg>'
       : k === 'scene' ? figure(MOMENTS.day, Object.assign(lk, { pet: 'none' }))
-      : mkCrop(figure(MKPLAIN, lk), MKFACE[k] ? '58 12 84 80' : k === 'pet' ? '8 14 172 156' : k === 'badge' ? '66 70 70 60' : k === 'hold' && v === 'balloon' ? '32 -14 136 184' : '32 10 136 160');
+      : mkCrop(figure(MKPLAIN, lk), MKFACE[k] ? '64 16 72 62' : (k === 'shoes' ? '50 138 100 62' : k === 'bottom' || k === 'legs' ? '45 92 110 108' : k === 'top' || k === 'topC' ? '45 44 110 104' : '') || (k === 'pet' ? '8 14 172 156' : k === 'badge' ? '66 70 70 60' : k === 'hold' && v === 'balloon' ? '32 -14 136 184' : '32 10 136 160'));
     var on = k === 'watch' || k === 'bag' ? cur[k] === 'yes' : (cur[k] || (MKO[k] && MKO[k][0][0])) === v;
     return '<button type="button" class="avm-t" data-avm-k="' + k + '" data-avm-v="' + esc(v) + '" aria-pressed="' + on + '"><span>' + pic + '</span><span>' + esc(label) + '</span></button>';
   }
