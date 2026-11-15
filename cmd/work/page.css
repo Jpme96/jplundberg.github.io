@@ -335,3 +335,11 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dc-xrow { margin: 12px 0 4px; }
 .xv-t { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .xv.xv-picking .xv-grid { touch-action: none; }
+/* Phase G: document lines read like a table on a computer – the group's heading stays in view, a row lights up under the pointer */
+@media (min-width: 900px) {
+  .dc-gh { position: sticky; top: 0; z-index: 1; background: var(--card-solid, rgb(var(--card-rgb))); padding: 8px 0 6px; margin-bottom: 0; }
+  .dc-lmain { padding: 10px 8px; border-radius: 10px; }
+  @media (hover: hover) { .dc-lmain:hover { background: rgba(var(--ink-rgb), .04); } }
+  .dc-lx b { font-size: 14.5px; }
+}
+.dc-code, .dc-lx small { font-variant-numeric: tabular-nums; }
