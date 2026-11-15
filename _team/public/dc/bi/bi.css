@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1196 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?abb8bb7d62") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1206 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?2c2eee1ce1") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -1052,8 +1052,18 @@
 .bi-snapchat::before{content:"\f665"}
 .bi-snow::before{content:"\f56d"}
 .bi-snow2::before{content:"\f56e"}
+.bi-sort-alpha-down::before{content:"\f571"}
+.bi-sort-alpha-down-alt::before{content:"\f570"}
+.bi-sort-alpha-up::before{content:"\f573"}
+.bi-sort-alpha-up-alt::before{content:"\f572"}
 .bi-sort-down::before{content:"\f575"}
 .bi-sort-down-alt::before{content:"\f574"}
+.bi-sort-numeric-down::before{content:"\f577"}
+.bi-sort-numeric-down-alt::before{content:"\f576"}
+.bi-sort-numeric-up::before{content:"\f579"}
+.bi-sort-numeric-up-alt::before{content:"\f578"}
+.bi-sort-up::before{content:"\f57b"}
+.bi-sort-up-alt::before{content:"\f57a"}
 .bi-speedometer::before{content:"\f57f"}
 .bi-speedometer2::before{content:"\f580"}
 .bi-spotify::before{content:"\f666"}

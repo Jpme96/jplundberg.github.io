@@ -1237,13 +1237,13 @@
           if (!window.XlsxView) { window.FdvPdf.share(f); return; }
           if (!f._own) toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-x-new', 'A new Excel with colours (the original plan is not on this device)')));
           var ST4 = {}; Object.keys(FILL).forEach(function (s0) { if (s0 !== 'missing') ST4['#' + FILL[s0].slice(2).toUpperCase()] = s0; });   /* rej and missing share red: red = not approved */
-          var rowLine = function (path, row) { var si = (px2.planSheets || []).map(function (h) { return h.path; }).indexOf(path); if (si < 0) return null; return (proj(px2.id).lines || []).filter(function (l) { return l.src && l.src[0] === si && l.src[1] + 1 === row; })[0] || null; };
-          ed = ed || {}; Object.keys(ed).forEach(function (pa) { Object.keys(ed[pa] || {}).forEach(function (ref) { var e = ed[pa][ref]; if (e && typeof e === 'object' && e.bg && ST4[String(e.bg).toUpperCase()] && rowLine(pa, +ref.replace(/^[A-Z]+/, ''))) { delete e.bg; if (!Object.keys(e).length) delete ed[pa][ref]; } }); });   /* the file shows the current status already */
+          var rowLine = function (path, row, eds) { if (eds && window.XlsxView.origRow) row = window.XlsxView.origRow(eds[path], row); if (row == null) return null; var si = (px2.planSheets || []).map(function (h) { return h.path; }).indexOf(path); if (si < 0) return null; return (proj(px2.id).lines || []).filter(function (l) { return l.src && l.src[0] === si && l.src[1] + 1 === row; })[0] || null; };
+          ed = ed || {}; Object.keys(ed).forEach(function (pa) { Object.keys(ed[pa] || {}).forEach(function (ref) { var e = ed[pa][ref]; if (e && typeof e === 'object' && e.bg && ST4[String(e.bg).toUpperCase()] && rowLine(pa, +ref.replace(/^[A-Z]+/, ''), ed)) { delete e.bg; if (!Object.keys(e).length) delete ed[pa][ref]; } }); });   /* the file shows the current status already */
           XlsxView.open({ blob: f, title: f.name, edits: ed, Z: XZ, cls: HOST ? 'dc-host' : '', shared: !!(HOST && HOST.store),
-            onFill: f._own ? function (path, refs, bg) {
+            onFill: f._own ? function (path, refs, bg, eds) {
               var st0 = ST4[String(bg).toUpperCase()]; if (!st0) return '';
               var rows = {}; refs.forEach(function (r) { rows[+r.replace(/^[A-Z]+/, '')] = 1; });
-              var ids = Object.keys(rows).map(function (r) { return rowLine(path, +r); }).filter(Boolean).map(function (l) { return l.id; }); if (!ids.length) return '';
+              var ids = Object.keys(rows).map(function (r) { return rowLine(path, +r, eds); }).filter(Boolean).map(function (l) { return l.id; }); if (!ids.length) return '';
               saveP(px2.id, function (p) { (p.lines || []).forEach(function (l) { if (ids.indexOf(l.id) >= 0) l.st = st0; }); });
               return k(ids.length === 1 ? 'ui.dc-x-st1' : 'ui.dc-x-st', ids.length === 1 ? '1 line is now: {s}' : '{n} lines are now: {s}', { n: ids.length, s: stName(st0) });
             } : null, start: (px2.planSheets || []).filter(function (h, i) { return (h.none || []).length || (px2.lines || []).some(function (l) { return l.src && l.src[0] === i; }); }).map(function (h) { return h.path; })[0],

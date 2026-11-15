@@ -1408,6 +1408,13 @@ select.st-wide { padding-right: 32px; }
 .kit-del { margin-top: 4px; }
 
 /* Flex time: clock in/out */
+/* flex time from the calendar (2026-11-15) */
+.flex-cal { margin: 4px 0 12px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--ink-rgb), .04); }
+.flex-cal ul { list-style: none; margin: 6px 0 4px; padding: 0; }
+.flex-cal li { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.flex-cal li:first-child { border-top: 0; }
+.flex-cal li > span { flex: 1; display: grid; min-width: 0; }
+.flex-cal small { color: var(--muted); font-size: 12px; }
 .flex-clock { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "now btn" "time btn" "lbl btn"; align-items: center; column-gap: 12px; margin: 2px 0 12px; }
 .fc-now { grid-area: now; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .fc-now b { color: var(--text); font-weight: 600; }
@@ -2324,6 +2331,12 @@ a.st-btn .st-label { flex: 1; }
 /* menu order rows */
 .st-nav-row .st-label { flex: 1; }
 .st-nav-row.is-fixed .st-ico { opacity: .7; }
+.st-nav-row > .switch { margin-left: auto; }
+.st-nav-row.is-off .st-label, .st-nav-row.is-off .st-ico { opacity: .55; }
+.st-nav-tabs { margin: -2px 0 6px 44px; border-left: 2px solid var(--line); }
+.st-nav-tab { min-height: 44px; padding-left: 12px; }
+.st-nav-tab .st-label { flex: 1; font-size: 14px; }
+.st-ico.sm { width: 26px; height: 26px; font-size: 13px; }
 
 /* ---------- One tile look in every card style (Oct 2026) ----------
    Number tiles inside a card (Apple Health, Training, Subscriptions …) were boxes with borders in

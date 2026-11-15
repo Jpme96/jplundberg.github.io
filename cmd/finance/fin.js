@@ -389,8 +389,11 @@
       cum.push(acc);
     }
     var expected = spendable > 0 ? spendable * today / dim : null;
+    /* one-off expenses (a sofa, a flight) are counted once, not spread over the rest of the month */
+    var Bu0 = window.Budget, mine = (ex || []).filter(function (e) { return String(e.date || '').slice(0, 7) === NOW && +String(e.date).slice(8, 10) <= today; });
+    var big = Bu0 && Bu0.oneOffs ? Bu0.oneOffs(mine, spendable) : [], bs = big.reduce(function (a, e) { return a + (+e.amount || 0); }, 0);
     /* where the month ends at this pace (from day 3, so one big day early on doesn't run away) */
-    var proj = today >= 3 && today < dim && acc > 0 ? acc / today * dim : null;
+    var proj = today >= 3 && today < dim && acc > 0 ? Math.max(acc, (acc - bs) / today * dim + bs) : null;
     $('fpPaceLead').innerHTML = spendable > 0
       ? (acc <= expected
         ? I18N.k('ui.fp-under', '<span class="up">{n} under</span> an even pace for {m}.', { n: money(expected - acc), m: esc(mName(NOW, true).split(' ')[0]) })
@@ -398,6 +401,7 @@
       : I18N.k('ui.fp-nobudget', 'Add income and fixed costs under Monthly budget to compare with a budget.');
     if (proj != null && spendable > 0) $('fpPaceLead').innerHTML += ' ' + (proj <= spendable
       ? I18N.k('ui.fp-end-left', 'At this pace you end the month with <span class="up">{n} left</span>.', { n: money(spendable - proj) }) : I18N.k('ui.fp-end-over', 'At this pace you end the month <span class="down">{n} over</span>.', { n: money(proj - spendable) }));
+    if (bs > 0 && spendable > 0) $('fpPaceLead').innerHTML += ' <span class="muted fp-oneoff">' + esc(big.length === 1 ? I18N.k('ui.fp-oneoff-1', '{n} was a one-off ({x}) – counted once, not as a daily pace.', { n: kr(bs), x: big[0].note || big[0].cat || '' }) : I18N.k('ui.fp-oneoff-n', '{c} one-offs ({n}) are counted once, not as a daily pace.', { c: big.length, n: kr(bs) })) + '</span>';
     if (!acc && !(spendable > 0)) { el.innerHTML = '<p class="fp-empty" data-t="ui.no-spending-this-month-yet">No spending this month yet.</p>'; return; }
 
     var W = Math.max(280, el.clientWidth || 500), H = 190;

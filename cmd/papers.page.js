@@ -188,7 +188,7 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + esc(l.length ? I18N.k('ui.pa-also-keep', 'Also worth keeping') : I18N.k('ui.pa-start-with', 'Start with')) + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
-      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
+      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><label class="pill-btn pa-scanb"><i class="bi bi-camera"></i> <span>' + esc(I18N.k('ui.pa-scan', 'Scan with the camera')) + '</span><input type="file" accept="image/*" capture="environment" hidden data-pascan></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
@@ -275,6 +275,58 @@
           toast('<i class="bi bi-check2"></i> ' + done.length + ' papers added – open one to add its dates', function () { var t2 = Fe.tools(), ids = done.map(function (x) { return x.id; }); done.forEach(function (x) { (x.files || []).forEach(function (fm) { delF(fm.id); }); }); t2.papers = (t2.papers || []).filter(function (x) { return ids.indexOf(x.id) < 0; }); Fe.saveTools(t2); }); });
     });
   }
+  /* scan with the camera: one photo per page, cleaned up (grey, more contrast, sized for reading) and put together into one PDF */
+  var scanPages = [], scanDlg = null;
+  function cleanScan(file) {
+    return new Promise(function (res, rej) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () {
+        var sc = Math.min(1, 2000 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        var x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        try {
+          var d = x.getImageData(0, 0, c.width, c.height), p = d.data, hist = new Uint32Array(256), n = p.length / 4, i, g;
+          for (i = 0; i < p.length; i += 4) { g = (p[i] * 299 + p[i + 1] * 587 + p[i + 2] * 114) / 1000 | 0; p[i] = g; hist[g]++; }
+          var lo = 0, hi = 255, acc = 0; for (i = 0; i < 256; i++) { acc += hist[i]; if (acc > n * .02) { lo = i; break; } } acc = 0; for (i = 255; i >= 0; i--) { acc += hist[i]; if (acc > n * .06) { hi = i; break; } }
+          var k = 255 / Math.max(30, hi - lo);
+          for (i = 0; i < p.length; i += 4) { g = Math.max(0, Math.min(255, (p[i] - lo) * k)); p[i] = p[i + 1] = p[i + 2] = g; }
+          x.putImageData(d, 0, 0);
+        } catch (e) {}
+        res({ url: c.toDataURL('image/jpeg', .82), w: c.width, h: c.height });
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); rej(new Error('photo')); }; img.src = u;
+    });
+  }
+  function jsPdf() { return window.jspdf ? Promise.resolve(window.jspdf) : new Promise(function (res, rej) { var sc = document.createElement('script'); sc.src = '/cmd/vendor/jspdf.umd.min.js?v=2.5.2'; sc.onload = function () { res(window.jspdf); }; sc.onerror = rej; document.head.appendChild(sc); }); }
+  function scanPdf(pages) {
+    return jsPdf().then(function (J) {
+      var pdf = null;
+      pages.forEach(function (pg) { var land = pg.w > pg.h, W = land ? 297 : 210, H = land ? 210 : 297, m = 6, r = Math.min((W - 2 * m) / pg.w, (H - 2 * m) / pg.h), w = pg.w * r, h = pg.h * r;
+        if (!pdf) pdf = new J.jsPDF({ unit: 'mm', format: 'a4', orientation: land ? 'l' : 'p', compress: true }); else pdf.addPage('a4', land ? 'l' : 'p');
+        pdf.addImage(pg.url, 'JPEG', (W - w) / 2, (H - h) / 2, w, h); });
+      var nm = I18N.k('ui.pa-scan-name', 'Scan {d}', { d: new Date().toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB') }) + '.pdf';
+      return new File([pdf.output('blob')], nm, { type: 'application/pdf' });
+    });
+  }
+  function scanView() {
+    var H = window.HomeLife; if (!H || !H.dialog) return;
+    var html = H.dhead('camera', I18N.k('ui.pa-scan', 'Scan with the camera'), I18N.k('ui.pa-scan-sub', 'One photo per page – they become one PDF.')) +
+      '<div class="pa-scan">' + scanPages.map(function (pg, i) { return '<figure><img src="' + pg.url + '" alt="' + esc(I18N.k('ui.pa-scan-page', 'Page {n}', { n: i + 1 })) + '"><figcaption>' + (i + 1) + '<button type="button" class="icon-btn sm" data-pasx="' + i + '" aria-label="' + esc(I18N.k('ui.remove', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></figcaption></figure>'; }).join('') + '</div>' +
+      '<div class="pa-bacts"><label class="pill-btn ghost"><i class="bi bi-plus-lg"></i> ' + esc(I18N.k('ui.pa-scan-more', 'Add a page')) + '<input type="file" accept="image/*" capture="environment" hidden data-pascan></label>' +
+      '<button type="button" class="pill-btn" data-pasdone' + (scanPages.length ? '' : ' disabled') + '><i class="bi bi-file-earmark-pdf"></i> ' + esc(I18N.k('ui.pa-scan-done', 'Make the PDF ({n} pages)', { n: scanPages.length })) + '</button></div>';
+    if (scanDlg && scanDlg.el.isConnected) { scanDlg.el.innerHTML = html; return; }
+    scanDlg = H.dialog(html, function (e, close) {
+      var x = e.target.closest('[data-pasx]'); if (x) { scanPages.splice(+x.dataset.pasx, 1); scanView(); return; }
+      if (e.target.closest('[data-pasdone]') && scanPages.length) {
+        var pg = scanPages.slice(); scanPages = []; close();
+        scanPdf(pg).then(function (file) { bulk([file]); }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(I18N.k('ui.pa-scan-fail', 'Could not make the PDF – try again'))); });
+      }
+    });
+  }
+  document.addEventListener('change', function (e) {
+    var i = e.target.closest('[data-pascan]'); if (!i || !i.files.length) return; var f = i.files[0]; i.value = '';
+    cleanScan(f).then(function (pg) { scanPages.push(pg); scanView(); }).catch(function () { toast(I18N.k('ui.only-pdfs-and-photos-can-be-added', 'Only PDFs and photos can be added')); });
+  });
+  window.__paScan = { clean: cleanScan, pdf: scanPdf };   /* for the tests */
   document.addEventListener('change', function (e) { var i = e.target.closest('[data-pabulk]'); if (!i || !i.files.length) return; var l = Array.prototype.slice.call(i.files); i.value = ''; bulk(l); });
   if (col) { var dz = $t('papers');
     dz.addEventListener('dragover', function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') > -1) { e.preventDefault(); dz.classList.add('pa-drop'); } });

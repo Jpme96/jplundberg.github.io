@@ -8,10 +8,11 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp)$/;   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl)$/;   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
 const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/;
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
+const FID = /^[a-f0-9]{20,32}$/, LID = /^[a-f0-9]{16}$/, MAXCHUNK = 1500000, MAXCHUNKS = 60, TEAMBYTES = 4e9, LINKBYTES = 1e9, LINKFILES = 300;
 
 function json(o, status = 200) {
   return new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
@@ -21,6 +22,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('not found', { status: 404 });
+    /* a contractor's upload link (jplundberg.com/upload/ → the /cmd Worker → here): no sign-in – the link itself is the permission,
+       and what is uploaded is already encrypted with the link's key, which never reaches a server (it is in the #part of the link) */
+    const up = url.pathname.match(/^\/api\/up\/(team|[a-z0-9]{12})\/([a-f0-9]{16})\/(info|chunk|done)$/);
+    if (up) {
+      if (up[1] !== 'team') { const ok = await (await env.TEAM.get(env.TEAM.idFromName('dir')).fetch(new Request('https://team/dir/has?id=' + up[1]))).json(); if (!ok.has) return json({ error: 'this link does not work' }, 404); }
+      const body = request.method === 'GET' ? undefined : await request.text();
+      if (body && body.length > 2200000) return json({ error: 'too big' }, 413);
+      return env.TEAM.get(env.TEAM.idFromName(up[1])).fetch(new Request('https://team/up/' + up[2] + '/' + up[3], { method: request.method, headers: { 'content-type': 'application/json' }, body }));
+    }
+    if (url.pathname.startsWith('/api/up/')) return json({ error: 'not found' }, 404);
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD || !env.OWNER) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
     if (!check.ok || !check.email) return json({ error: 'unauthorized', reason: check.reason || 'no email' }, 401);
@@ -77,6 +88,7 @@ export class TeamStore {
   async fetch(request) {
     const url = new URL(request.url), m = request.method, p = url.pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
     if (p.startsWith('/dir/')) return this.dir(p.slice(5), url);   /* only the Durable Object 'dir' is ever asked these */
+    if (p.startsWith('/up/')) { try { return await this.upPublic(p.slice(4), m, request, url); } catch (e) { return json({ error: 'server error' }, 500); } }
     const email = request.headers.get('x-email') || '', owner = request.headers.get('x-owner') || '';
     let b = {};
     if (m !== 'GET' && m !== 'DELETE') { try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); } }
@@ -99,6 +111,13 @@ export class TeamStore {
       if (p === 'batch' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
+      if (p === 'fchunk' && m === 'GET') return this.getChunk(url);
+      if (p === 'fchunk' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.putChunk(email, b); }
+      if (p === 'push' && m === 'GET') return json({ key: (await this.vapid()).pub });
+      if (p === 'push' && m === 'POST') return this.pushSub(email, b);
+      if (p === 'uploads' && m === 'GET') return this.uploads(url);
+      if (p === 'uplink' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.upLink(email, b); }
+      if (p === 'uplink' && m === 'DELETE') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); const l = await this.s.get('u:' + lid); if (l) { l.exp = Math.min(l.exp, Date.now()); l.off = 1; await this.s.put('u:' + lid, l); await this.log(email, 'uplink-off', {}); } return json({ ok: true }); }
       if (!isAdmin) return json({ error: 'admins only' }, 403);
       if (p === 'invites' && m === 'POST') return this.invite(email, b);
       if (p === 'invites' && m === 'GET') return this.invites();
@@ -119,6 +138,7 @@ export class TeamStore {
     if (p === 'list') return json({ ids });
     if (p === 'has') return json({ has: ids.includes(url.searchParams.get('id')) });
     if (p === 'del') { await this.s.put('ids', ids.filter(function (x) { return x !== url.searchParams.get('id'); })); return json({ ok: true }); }
+    if (p === 'vapid') return json(await makeVapid(this.s));
     if (p === 'add') { if (ids.length >= 50) return json({ error: 'too many teams' }, 409); const id = hex(crypto.getRandomValues(new Uint8Array(6))); ids.push(id); await this.s.put('ids', ids); return json({ id }); }
     return json({ error: 'not found' }, 404);
   }
@@ -240,6 +260,7 @@ export class TeamStore {
     const r = await this.applyRec(email, me, team, b);
     if (r.error) return json(r, r.status);
     await this.log(email, r.a, { k: b.k, id: b.id, s: logSum(b.s) });
+    this.nudge(email, me, team, [b.k]).catch(() => {});
     return json({ ok: true, v: r.v, seq: r.seq, t: r.t });
   }
   /* many records in one go (Document control: a project and its lines). Each is checked on its own; one log line. */
@@ -248,7 +269,7 @@ export class TeamStore {
     if (!list || !list.length || list.length > MAXBATCH) return json({ error: 'bad batch' }, 400);
     const out = []; let n = 0;
     for (const x of list) { const r = await this.applyRec(email, me, team, x || {}); out.push(r.error ? { id: x && x.id, error: r.error, status: r.status, rec: r.rec } : { id: x.id, v: r.v, seq: r.seq, t: r.t }); if (!r.error) n++; }
-    if (n) await this.log(email, 'batch', { k: String(list[0].k || ''), n, s: logSum(b.s) });
+    if (n) { await this.log(email, 'batch', { k: String(list[0].k || ''), n, s: logSum(b.s) }); this.nudge(email, me, team, list.map(x => x && x.k)).catch(() => {}); }
     return json({ ok: true, results: out });
   }
   async applyRec(email, me, team, b) {
@@ -279,6 +300,102 @@ export class TeamStore {
     return json({ ok: true, until: l.until });
   }
 
+  /* ---------- shared files: the bytes are encrypted on the device in chunks of about 1 MB; the name and type are in a 'file' record ---------- */
+  async putChunk(email, b) {
+    const n = b.n | 0;
+    if (!FID.test(String(b.fid || '')) || n < 0 || n >= MAXCHUNKS || !blob(b) || b.ct.length > MAXCHUNK) return json({ error: 'bad chunk' }, 400);
+    const used = (await this.s.get('fbytes')) || 0;
+    if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);
+    const k = 'f:' + b.fid + ':' + n, old = await this.s.get(k);
+    if (old && old.by !== email) return json({ error: 'bad chunk' }, 409);
+    await this.s.put(k, { iv: b.iv, ct: b.ct, by: email, t: Date.now() });
+    await this.s.put('fbytes', used + b.ct.length - (old ? old.ct.length : 0));
+    return json({ ok: true });
+  }
+  async getChunk(url) {
+    const fid = url.searchParams.get('fid') || '', n = +url.searchParams.get('n') | 0;
+    if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
+    const c = await this.s.get('f:' + fid + ':' + n);
+    return c ? json({ iv: c.iv, ct: c.ct }) : json({ error: 'not found' }, 404);
+  }
+
+  /* ---------- upload links: a contractor sends files to a project without an account ---------- */
+  async upLink(email, b) {
+    const lid = String(b.lid || ''), days = Math.min(60, Math.max(1, +b.days || 14));
+    if (!LID.test(lid)) return json({ error: 'bad link' }, 400);
+    if (await this.s.get('u:' + lid)) return json({ error: 'exists' }, 409);
+    await this.s.put('u:' + lid, { by: email, at: Date.now(), exp: Date.now() + days * 864e5, n: 0, bytes: 0, files: [] });
+    await this.log(email, 'uplink', { days });
+    return json({ ok: true, exp: Date.now() + days * 864e5 });
+  }
+  async uploads(url) {
+    const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400);
+    const l = await this.s.get('u:' + lid); if (!l) return json({ files: [], exp: 0 });
+    const out = [];
+    for (const fid of l.files) { const f = await this.s.get('uf:' + lid + ':' + fid); if (f && f.done) out.push({ fid, name: f.name, size: f.size, n: f.n, t: f.t }); }
+    return json({ files: out, exp: l.exp, off: !!l.off });
+  }
+  async upPublic(rest, m, request, url) {
+    const [lid, what] = rest.split('/'), l = LID.test(lid || '') ? await this.s.get('u:' + lid) : null, team = await this.s.get('team');
+    if (!l || !team || l.exp < Date.now()) return json({ error: 'this link has run out or was switched off' }, 410);
+    if (what === 'info' && m === 'GET') return json({ ok: true, exp: l.exp, n: l.n, left: Math.max(0, LINKFILES - l.n) });
+    let b = {}; try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); }
+    const fid = String(b.fid || ''); if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
+    const fk = 'uf:' + lid + ':' + fid;
+    let f = await this.s.get(fk);
+    if (what === 'chunk' && m === 'PUT') {
+      const n = b.n | 0;
+      if (n < 0 || n >= MAXCHUNKS || !blob(b) || b.ct.length > MAXCHUNK) return json({ error: 'bad chunk' }, 400);
+      if (!f) { if (n !== 0 || !blob(b.name) || b.name.ct.length > 2000 || l.n >= LINKFILES) return json({ error: 'bad file' }, 400); f = { name: { iv: b.name.iv, ct: b.name.ct }, t: Date.now(), n: 0, size: 0, done: false }; l.files.push(fid); l.n++; }
+      if (f.done) return json({ error: 'already sent' }, 409);
+      if (l.bytes + b.ct.length > LINKBYTES) return json({ error: 'the link is full' }, 507);
+      const used = (await this.s.get('fbytes')) || 0; if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);
+      const ck = 'f:' + fid + ':' + n, old = await this.s.get(ck);
+      await this.s.put(ck, { iv: b.iv, ct: b.ct, by: 'link:' + lid, t: Date.now() });
+      const grow = b.ct.length - (old ? old.ct.length : 0);
+      f.n = Math.max(f.n, n + 1); f.size += grow; l.bytes += grow;
+      await this.s.put('fbytes', used + grow); await this.s.put(fk, f); await this.s.put('u:' + lid, l);
+      return json({ ok: true });
+    }
+    if (what === 'done' && m === 'POST') {
+      if (!f || !(f.n > 0)) return json({ error: 'nothing was sent' }, 400);
+      f.done = true; f.t = Date.now(); await this.s.put(fk, f);
+      await this.log('link:' + lid, 'upload', {});
+      this.nudge('link:' + lid, { name: 'Upload link' }, team, ['upl']).catch(() => {});
+      return json({ ok: true });
+    }
+    return json({ error: 'not found' }, 404);
+  }
+
+  /* ---------- push when Team is closed: only "someone changed something" – never what was written ---------- */
+  async vapid() {
+    if (this.vp) return this.vp;
+    const dir = this.env && this.env.TEAM ? this.env.TEAM.get(this.env.TEAM.idFromName('dir')) : null;
+    if (dir) { const r = await dir.fetch(new Request('https://team/dir/vapid')).catch(() => null); if (r && r.ok) { this.vp = await r.json(); return this.vp; } }
+    return (this.vp = await makeVapid(this.s));
+  }
+  async pushSub(email, b) {
+    const sub = b.sub, ep = String((sub && sub.endpoint) || b.endpoint || '');
+    if (!/^https:\/\/[^\s]{10,700}$/.test(ep)) return json({ error: 'bad subscription' }, 400);
+    const k = 'p:' + email + ':' + (await sha(ep)).slice(0, 24);
+    if (b.on === false) { await this.s.delete(k); return json({ ok: true, on: false }); }
+    if (!sub.keys || typeof sub.keys.p256dh !== 'string' || typeof sub.keys.auth !== 'string') return json({ error: 'bad subscription' }, 400);
+    await this.s.put(k, { email, sub: { endpoint: ep, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, at: Date.now(), last: 0 });
+    return json({ ok: true, on: true });
+  }
+  async nudge(by, me, team, kinds) {
+    const subs = await this.s.list({ prefix: 'p:' }); if (!subs.size) return;
+    const v = await this.vapid(), what = Array.from(new Set((kinds || []).map(k => ({ meeting: 'meeting', action: 'action', note: 'note', insp: 'inspection', file: 'file', upl: 'upload' })[k] || (/^dc/.test(k || '') ? 'document' : '')).filter(Boolean)));
+    const body = (me && me.name ? me.name : 'Someone') + ' · ' + (what.length ? what.join(', ') : 'a change');
+    const now = Date.now();
+    for (const [k, x] of subs) {
+      if (x.email === by || now - (x.last || 0) < 180e3) continue;   /* not to the one who did it, at most every 3 minutes */
+      x.last = now; await this.s.put(k, x);
+      const r = await webPush(v, x.sub, { title: team.name, body, tag: 'team', url: '/' }).catch(() => null);
+      if (r && (r.status === 404 || r.status === 410)) await this.s.delete(k);
+    }
+  }
+
   /* the change log: only ever added to – there is no way to edit or remove a line */
   async log(email, a, x) {
     const n = ((await this.s.get('lseq')) || 0) + 1;
@@ -304,6 +421,37 @@ function logSum(s) { return blob(s) && s.ct.length < 2000 ? { e: s.e, iv: s.iv, 
 function clean(x) { const o = {}; for (const k in x) if (x[k] !== undefined) o[k] = x[k]; return o; }
 function hex(u) { return [...u].map(b => b.toString(16).padStart(2, '0')).join(''); }
 async function sha(s) { return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))); }
+
+/* ---- Web Push (RFC 8291 + VAPID), as in the /cmd Worker; the key pair is made once and kept in the 'dir' Durable Object ---- */
+async function makeVapid(s) {
+  const have = await s.get('vapid'); if (have) return have;
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const v = { jwk: await crypto.subtle.exportKey('jwk', kp.privateKey), pub: b64u(new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey))) };
+  await s.put('vapid', v); return v;
+}
+function b64u(u8) { let s = ''; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function cat(...parts) { const n = parts.reduce((a, p) => a + p.length, 0), out = new Uint8Array(n); let o = 0; parts.forEach(p => { out.set(p, o); o += p.length; }); return out; }
+async function hkdf(salt, ikm, info, len) { const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']); return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, len * 8)); }
+async function encryptPush(sub, text) {
+  const te = new TextEncoder(), uaPub = bytes(sub.keys.p256dh), auth = bytes(sub.keys.auth);
+  const as = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', as.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, as.privateKey, 256));
+  const ikm = await hkdf(auth, ecdh, cat(te.encode('WebPush: info\0'), uaPub, asPub), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, te.encode('Content-Encoding: aes128gcm\0'), 16), nonce = await hkdf(salt, ikm, te.encode('Content-Encoding: nonce\0'), 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, cat(te.encode(text), new Uint8Array([2]))));
+  return cat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([asPub.length]), asPub, ct);
+}
+async function webPush(v, sub, msg) {
+  const aud = new URL(sub.endpoint).origin, te = new TextEncoder();
+  const h = b64u(te.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))), p = b64u(te.encode(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 50 * 60, sub: 'https://work.jplundberg.com' })));
+  const key = await crypto.subtle.importKey('jwk', v.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, te.encode(h + '.' + p)));
+  return fetch(sub.endpoint, { method: 'POST', body: await encryptPush(sub, JSON.stringify(msg)), headers: { 'Authorization': 'vapid t=' + h + '.' + p + '.' + b64u(sig) + ', k=' + v.pub, 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', 'TTL': '3600', 'Urgency': 'normal' } });
+}
 
 /* ---- Cloudflare Access token check (RS256 JWT), as in the /cmd Worker ---- */
 let certCache = { at: 0, keys: [] };

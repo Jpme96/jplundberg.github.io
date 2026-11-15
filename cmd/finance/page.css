@@ -606,3 +606,13 @@
 .mn-trl.all { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; }
 .mn-trn[data-tredit] { cursor: pointer; }
 .mn-rules { margin-top: 6px; border-top: 1px dashed var(--line); }
+/* the subscription check (2026-11-15) */
+.sub-check { margin: 4px 0 12px; padding: 10px 12px; border-radius: 12px; background: rgba(var(--ink-rgb), .04); }
+.sub-check ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.sub-ck { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.sub-ck:first-child { border-top: 0; }
+.sub-ck > .bi { color: var(--muted); }
+.sub-ck.up > .bi { color: var(--warn); }
+.sub-ck > span { flex: 1; min-width: 0; display: grid; }
+.sub-ck small { color: var(--muted); font-size: 12px; }
+.fp-oneoff { display: block; margin-top: 4px; font-size: 13px; }

@@ -6,17 +6,27 @@
   var base = path.replace(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|admin)\/$/, '');          // the /cmd/ folder
   var page = (path.match(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|admin)\/$/) || [, 'home'])[1];
   var Fe = window.Features;
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   /* The menu is written into every page (so it's there from the very first frame and the
      highlight can glide between pages). Here it only follows Settings → Features. */
   var SHOWS = { calendar: ['calendar'], travel: ['travel', 'bucket'], finance: ['finance', 'subs', 'warranty'], habits: ['healthpage'], work: ['work'], house: ['house'], people: ['people'], food: ['food'], wish: ['wish'], goals: ['goals'], papers: ['papers'] };
   var nav = document.getElementById('tabbar');
+  /* a page you switched off in Settings → Menu & pages stays out of the menu, its features keep working elsewhere */
+  function sets() { try { return JSON.parse(localStorage.getItem('dash.settings')) || {}; } catch (e) { return {}; } }
+  function saveSets(fn) { var st = sets(); fn(st); try { localStorage.setItem('dash.settings', JSON.stringify(st)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
+  function navOff() { var o = sets().navOff; return Array.isArray(o) ? o : []; }
+  /* switching a page on whose features are all off turns on its main one */
+  var MAIN = { calendar: 'calendar', travel: 'travel', finance: 'finance', habits: 'habits', work: 'flex', house: 'house', people: 'people', food: 'food', wish: 'wish', goals: 'goals', papers: 'papers' };
+  function pageOn(k) { if (k === 'admin') return sets().admin ? sets().admin.tab !== false : true; return !!(Fe && SHOWS[k] && SHOWS[k].some(Fe.on)) && navOff().indexOf(k) < 0; }
   function draw() {
     if (!Fe) return;
-    Object.keys(SHOWS).forEach(function (k) { document.documentElement.classList.toggle('tab-off-' + k, !SHOWS[k].some(Fe.on)); });
+    var off = navOff();
+    Object.keys(SHOWS).forEach(function (k) { document.documentElement.classList.toggle('tab-off-' + k, !SHOWS[k].some(Fe.on) || off.indexOf(k) > -1); });
     var ad = {}; try { ad = (JSON.parse(localStorage.getItem('dash.settings')) || {}).admin || {}; } catch (e) {} document.documentElement.classList.toggle('tab-off-admin', ad.tab === false);
   }
   draw();
   window.addEventListener('features:change', draw);
+  window.addEventListener('dash:local', draw);
 
   /* ---------- your own menu order (Settings → Dashboard → Menu). Home stays first. ----------
      The head script sets --nav-<page> before the first frame; here the links are also put in that
@@ -37,9 +47,15 @@
     var ico = function (k) { return '<span class="st-ico" style="--c:var(--accent)"><i class="' + icon(k) + '"></i></span>'; };
     box.innerHTML = '<div class="st-row st-nav-row is-fixed">' + ico('home') + '<span class="st-label">' + name('home') + '<small data-t="ui.always-first"><span data-t="ui.always-first">Always first</span></small></span></div>' +
       list.map(function (k, i) {
-        return '<div class="st-row st-nav-row">' + ico(k) + '<span class="st-label">' + name(k) + '</span><span class="pk-mv">' +
+        var on = pageOn(k), tl = window.PageTabs && window.PageTabs.pages && window.PageTabs.pages.indexOf(k) > -1 ? window.PageTabs.list(k) : [], toff = tl.length ? window.PageTabs.off(k) : [];
+        var subs = on && tl.length > 1 ? '<div class="st-nav-tabs">' + tl.filter(function (t) { return !t.feat || (Fe && Fe.on(t.feat)); }).map(function (t) {
+          var tOn = toff.indexOf(t.id) < 0;
+          return '<label class="st-row st-nav-tab"><span class="st-ico sm"><i class="bi bi-' + t.icon + '"></i></span><span class="st-label">' + esc(t.name) + '</span><input type="checkbox" class="switch" data-navtab="' + k + '|' + t.id + '"' + (tOn ? ' checked' : '') + ' aria-label="' + esc(I18N.k('ui.nav-tab-show', 'Show the {x} tab', { x: t.name })) + '"></label>';
+        }).join('') + '</div>' : '';
+        return '<div class="st-row st-nav-row' + (on ? '' : ' is-off') + '">' + ico(k) + '<span class="st-label">' + name(k) + '</span>' +
+          '<input type="checkbox" class="switch" data-navon="' + k + '"' + (on ? ' checked' : '') + ' aria-label="' + esc(I18N.k('ui.nav-show', 'Show {x} in the menu', { x: name(k) })) + '"><span class="pk-mv">' +
           '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="-1" aria-label="' + I18N.k('ui.move-n-left', 'Move {n} left', { n: name(k) }) + '"' + (i ? '' : ' disabled') + '><i class="bi bi-arrow-up"></i></button>' +
-          '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="1" aria-label="' + I18N.k('ui.move-n-right', 'Move {n} right', { n: name(k) }) + '"' + (i < list.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>';
+          '<button type="button" class="icon-btn" data-navmove="' + k + '" data-d="1" aria-label="' + I18N.k('ui.move-n-right', 'Move {n} right', { n: name(k) }) + '"' + (i < list.length - 1 ? '' : ' disabled') + '><i class="bi bi-arrow-down"></i></button></span></div>' + subs;
       }).join('');
   }
   applyOrder();
@@ -55,6 +71,25 @@
     applyOrder.last = JSON.stringify(list); applyOrder(); window.dispatchEvent(new Event('dash:local'));
     var nb = document.querySelector('[data-navmove="' + b.dataset.navmove + '"][data-d="' + b.dataset.d + '"]'); if (nb && !nb.disabled) nb.focus();
   });
+  /* the switches: a page in or out of the menu, and the tabs on Work, Health and House */
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.navon) {
+      var k = t.dataset.navon, want = t.checked;
+      if (k === 'admin') saveSets(function (st) { st.admin = st.admin || {}; st.admin.tab = want; });
+      else {
+        saveSets(function (st) { var o = Array.isArray(st.navOff) ? st.navOff : []; o = o.filter(function (x) { return x !== k; }); if (!want) o.push(k); st.navOff = o; });
+        if (want && Fe && SHOWS[k] && !SHOWS[k].some(Fe.on) && MAIN[k]) Fe.set(MAIN[k], true);
+      }
+      draw(); applyOrder();
+      var nb = document.querySelector('[data-navon="' + k + '"]'); if (nb) nb.focus();
+    } else if (t.dataset && t.dataset.navtab) {
+      var p = t.dataset.navtab.split('|'), on = t.checked;
+      saveSets(function (st) { var m = st.tabOff || {}, l = Array.isArray(m[p[0]]) ? m[p[0]] : []; l = l.filter(function (x) { return x !== p[1]; }); if (!on) l.push(p[1]); if (l.length) m[p[0]] = l; else delete m[p[0]]; st.tabOff = m; });
+    }
+  });
+  window.addEventListener('pagetabs:ready', function () { setTimeout(applyOrder, 0); });
+  window.addEventListener('features:change', function () { setTimeout(applyOrder, 0); });
   document.documentElement.classList.add('has-tabbar');
 
   /* ---------- the highlight: one continuous slide to the page you tap ----------

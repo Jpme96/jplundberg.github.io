@@ -77,6 +77,29 @@
     t.flex = l;
     F.saveTools(t);
   }
+  /* flex time from the calendar: weekdays of the last two weeks with work events but nothing logged – first start to last end */
+  function calSuggest() {
+    var C = window.Cal; if (!C || !C.occurrences) return [];
+    var have = {}, out = [], pad = function (n) { return String(n).padStart(2, '0'); };
+    F.list('flex').forEach(function (e) { have[e.date] = 1; });
+    var now = new Date(), from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14), to = new Date(now.getFullYear(), now.getMonth(), now.getDate()), evs = [];
+    try { evs = C.occurrences(from, to) || []; } catch (e) { evs = []; }
+    var by = {};
+    evs.forEach(function (o) { var e = o && o.ev; if (!e || o.allDay || e.reminder || e.leave || e.cat !== 'work') return; var k = F.dkey(o.start); (by[k] = by[k] || []).push(o); });
+    Object.keys(by).sort().forEach(function (k) {
+      var g = F.fromKey(k).getDay(); if (have[k] || g === 0 || g === 6 || F.holiday(k)) return;
+      var a = by[k].reduce(function (m, o) { return o.start < m ? o.start : m; }, by[k][0].start), b = by[k].reduce(function (m, o) { return o.end > m ? o.end : m; }, by[k][0].end);
+      if (b - a < 30 * 6e4) return;
+      out.push([k, pad(a.getHours()) + ':' + pad(a.getMinutes()), pad(b.getHours()) + ':' + pad(b.getMinutes()), by[k].length]);
+    });
+    return out.slice(-5);
+  }
+  function flexCal() {
+    var l = calSuggest(); if (!l.length) return '';
+    return '<div class="flex-cal"><p class="pa-h"><i class="bi bi-calendar-week"></i> ' + esc(I18N.k('ui.flex-cal-h', 'Not logged – from your calendar')) + '</p><ul>' + l.map(function (x) {
+      return '<li><span><b>' + esc(fmt(x[0], { weekday: 'short', day: 'numeric', month: 'short' })) + '</b><small>' + esc(x[1] + '–' + x[2] + ' · ' + I18N.k('ui.flex-cal-n', '{n} work events', { n: x[3] })) + '</small></span><button type="button" class="pill-btn sm" data-flexcal="' + esc(x.slice(0, 3).join('|')) + '">' + esc(I18N.k('ui.add', 'Add')) + '</button></li>';
+    }).join('') + '</ul>' + (l.length > 1 ? '<button type="button" class="text-btn" data-flexcalall>' + esc(I18N.k('ui.flex-cal-all', 'Add all {n}', { n: l.length })) + '</button>' : '') + '</div>';
+  }
   function clockBlock(s) {
     return '<div class="flex-clock">' +
       '<div class="fc-now"><span class="fc-dot' + (s.open ? ' on' : '') + '"></span><span>' + (s.open ? I18N.k('ui.clocked-in-at', 'Clocked in at') + ' <b>' + esc(s.open.in) + '</b>' : I18N.k('ui.not-clocked-in', 'Not clocked in')) + '</span></div>' +
@@ -99,7 +122,7 @@
       return clockBlock(s) + '<div class="kit-tiles">' +
         tile(I18N.k('ui.flex-balance', 'Flex balance'), '<span class="' + (s.balance < 0 ? 'neg' : 'pos') + '">' + (s.balance > 0 ? '+' : '') + hms(s.balance) + '</span>', 'logged days') +
         tile(I18N.k('ui.this-week', 'This week'), hms(s.week), 'of ' + hms(s.weekTarget)) +
-        tile('Holiday ' + today().slice(0, 4), s.vac + ' <small>/ ' + c.vacation + '</small>', 'days used') + '</div>';
+        tile('Holiday ' + today().slice(0, 4), s.vac + ' <small>/ ' + c.vacation + '</small>', 'days used') + '</div>' + flexCal();
     },
     row: function (e) {
       var isT = e.date === today(), w = worked(e, isT), lbl = FLEX_TYPES[e.type] || 'Work';
@@ -118,6 +141,12 @@
     },
     onClick: function (e) {
       if (e.target.closest('[data-flex-clock]')) clock();
+      var fc = e.target.closest('[data-flexcal]'), fa = e.target.closest('[data-flexcalall]');
+      if (fc || fa) {
+        var t = F.tools(), l = Array.isArray(t.flex) ? t.flex : [], brk = +(t.flexcfg || {}).brk || 0;
+        (fa ? calSuggest() : [fc.dataset.flexcal.split('|')]).forEach(function (x) { if (!l.some(function (y) { return y.date === x[0]; })) l.push({ id: K.uid(), date: x[0], type: 'work', in: x[1], out: x[2], brk: brk, note: I18N.k('ui.flex-from-cal', 'From the calendar') }); });
+        t.flex = l; F.saveTools(t);
+      }
       var m = e.target.closest('.kit-card') && e.target.closest('.kit-card').querySelector('.fr-month');
       if (e.target.closest('[data-frcsv]') && m) reportCsv(m.value);
       if (e.target.closest('[data-frpdf]') && m) reportPdf(m.value);
@@ -523,7 +552,7 @@
       var m = act.reduce(function (a, s) { return a + (+s.amount || 0) * (PER_MONTH[s.period] || 1); }, 0);
       var next = act.slice().sort(function (a, b) { return F.nextRenewal(a) > F.nextRenewal(b) ? 1 : -1; })[0];
       return items.length ? '<div class="kit-tiles">' + tile(I18N.k('ui.per-month', 'Per month'), kr(m)) + tile(I18N.k('ui.per-year', 'Per year'), kr(m * 12)) +
-        (next ? tile('Next', esc(next.name), fmt(F.nextRenewal(next), { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' : '';
+        (next ? tile(I18N.k('ui.sub-next', 'Next'), esc(next.name), fmt(F.nextRenewal(next), { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' + (window.SubCheck ? window.SubCheck(act) : '') : '';
     },
     row: function (s) {
       var per = { monthly: '/ month', quarterly: '/ 3 months', yearly: '/ year' }[s.period] || '';

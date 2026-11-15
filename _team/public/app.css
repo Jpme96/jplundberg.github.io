@@ -106,3 +106,16 @@ body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
 .t-srch input { width: 100%; min-height: 44px; font-size: 16px; }
 a.t-icon { text-decoration: none; }
 .t-wait { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+/* files, upload links, push, projects and the week (2026-11-15) */
+.t-acts2 { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.t-acts2 > .t-btn { flex: 1 1 140px; }
+.t-sub { margin: 14px 4px 6px; font-size: 13px; color: var(--muted, #9aa0aa); font-weight: 600; }
+.t-upl h2 { margin-bottom: 2px; }
+.t-switch { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line, rgba(255,255,255,.1)); border-bottom: 1px solid var(--line, rgba(255,255,255,.1)); margin: 8px 0 12px; }
+.t-switch > span { flex: 1; display: grid; gap: 2px; }
+.t-switch small { color: var(--muted, #9aa0aa); font-size: 12px; }
+.t-switch input { width: 24px; height: 24px; min-height: 0; padding: 0; flex: none; accent-color: var(--acc); }
+.t-prog { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--line, rgba(255,255,255,.1)); overflow: hidden; }
+.t-prog i { display: block; height: 100%; background: var(--acc); }
+.t-pct { font-size: 13px; white-space: nowrap; }
+.t-week ul { margin: 6px 0 8px; padding-left: 18px; }

@@ -13,8 +13,12 @@
   // run the Worker near the database when that is faster (Cloudflare decides from real traffic)
   "placement": { "mode": "smart" },
   "routes": [
-    { "pattern": "jplundberg.com/cmd/api/*", "zone_name": "jplundberg.com" }
+    { "pattern": "jplundberg.com/cmd/api/*", "zone_name": "jplundberg.com" },
+    // contractors' upload links for Team (no sign-in: the link is the permission) – passed on to the Team Worker
+    { "pattern": "jplundberg.com/upload/api/*", "zone_name": "jplundberg.com" }
   ],
+  // the Team Worker (work.jplundberg.com), reached directly for the upload links
+  "services": [{ "binding": "TEAMSVC", "service": "team" }],
   "triggers": { "crons": ["*/5 * * * *"] },
   "kv_namespaces": [
     { "binding": "VAULT", "id": "684eb8ee40f44dc4a58c9e2f7db82d3f" }

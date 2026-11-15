@@ -15,7 +15,7 @@
   <link href="/cmd/manifest.webmanifest" rel="manifest">
   <link rel="preload" href="../assets/fonts/inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/inter-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
-  <link href="/cmd/assets/bi/bi.css?v=f47e6e30b2" rel="stylesheet">
+  <link href="/cmd/assets/bi/bi.css?v=a21c9e1049" rel="stylesheet">
   <script>
     /* Lock first, and apply the saved theme before anything is drawn. */
     (function (r) {
@@ -54,7 +54,7 @@
           habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) || on('ptime', false),
           house: on('house', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), admin: (s.admin || {}).tab !== false };
-        Object.keys(tabs).forEach(function (k) { if (!tabs[k]) r.classList.add('tab-off-' + k); });
+        var nvo = Array.isArray(s.navOff) ? s.navOff : []; Object.keys(tabs).forEach(function (k) { if (!tabs[k] || nvo.indexOf(k) > -1) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
         try { if (+localStorage.getItem('dash.until') > Date.now()) r.classList.add('resuming'); } catch (e) {}
@@ -76,7 +76,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=e4d3e3713d" rel="stylesheet">
+  <link href="../styles.css?v=cd7ab7b8c7" rel="stylesheet">
   <link href="page.css?v=dc1500f8cf" rel="stylesheet">
   <link href="../modern.css?v=47d0859fa7" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
@@ -346,7 +346,7 @@
       </div>
 
       <div data-t-data-title="ui.menu-pages" class="st-page ap-page" data-page="layout" data-title="Menu &amp; pages" hidden>
-      <p data-t="ui.menu" class="st-sub ap-sub"><i class="bi bi-menu-button-wide"></i> Menu <span data-t="ui.the-order-of-the-pages-in-the-menu" class="st-hint">The order of the pages in the menu</span></p>
+      <p data-t="ui.menu" class="st-sub ap-sub"><i class="bi bi-menu-button-wide"></i> Menu <span data-t="ui.the-order-of-the-pages-in-the-menu" class="st-hint">Which pages are in the menu, their order, and the tabs on Work, Health and House</span></p>
       <section class="st-group"><div id="stNav"></div></section>
       <p data-t="ui.pages" class="st-sub ap-sub"><i class="bi bi-layout-text-window-reverse"></i> Pages <span data-t="ui.order-the-sections-and-cards-on-each-pag" class="st-hint">Order the sections and cards on each page, and hide what you don’t use</span></p>
       <section class="st-group">
@@ -696,9 +696,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=51cfa51fb9"></script>
-  <script src="../dist/page-wish.js?v=6333d4760e"></script>
-  <script src="../dist/tail.js?v=e15cece296"></script>
+  <script src="../dist/head.js?v=05961df423"></script>
+  <script src="../dist/page-wish.js?v=00964923d6"></script>
+  <script src="../dist/tail.js?v=0340d4d208"></script>
   <!-- /scripts -->
 </body>
 </html>

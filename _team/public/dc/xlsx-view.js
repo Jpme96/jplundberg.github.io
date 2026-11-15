@@ -91,6 +91,21 @@
   /* ---------- writing your edits back ----------
      an edit is text (the old shape) or { v: text, bg: '#rrggbb' or '' (no fill), b: true/false (bold) } */
   function norm(e) { return e == null ? null : typeof e === 'object' ? e : { v: String(e) }; }
+  /* rows put in or taken out: edits[path]['@rows'] = [{ op: 'ins' | 'del', r }], in order; the cell edits use the rows as they are after them */
+  function rowOps(ed) { return ed && Array.isArray(ed['@rows']) ? ed['@rows'] : []; }
+  function mapRow(n, op) { return op.op === 'ins' ? (n >= op.r ? n + 1 : n) : (n === op.r ? null : n > op.r ? n - 1 : n); }
+  function origRow(ops, n) { for (var i = (ops || []).length - 1; i >= 0 && n != null; i--) { var op = ops[i]; n = op.op === 'ins' ? (n === op.r ? null : n > op.r ? n - 1 : n) : (n >= op.r ? n + 1 : n); } return n; }
+  /* a cell reference text (A1, $B$7, C3:D9) with its rows moved – for formulas and ranges in the same sheet */
+  function shiftRefs(txt, op) {
+    return String(txt).replace(/(^|[^A-Za-z0-9_!.'"])(\$?)([A-Z]{1,3})(\$?)(\d{1,7})(?![\d(A-Za-z_])/g, function (m0, pre, d1, col, d2, row) { var n = mapRow(+row, op); return pre + d1 + col + d2 + (n == null ? (op.r > 1 ? op.r - 1 : 1) : n); });
+  }
+  function shiftModel(sh, op) {
+    var cells = {}, rows = {};
+    Object.keys(sh.cells).forEach(function (ref) { var m = ref.match(/^([A-Z]+)(\d+)$/); if (!m) return; var n = mapRow(+m[2], op); if (n != null) cells[m[1] + n] = sh.cells[ref]; });
+    Object.keys(sh.rows).forEach(function (r) { var n = mapRow(+r, op); if (n != null) rows[n] = sh.rows[r]; });
+    sh.merges = sh.merges.map(function (g) { var a = mapRow(g[1], op), b = mapRow(g[3], op); if (op.op === 'del') { if (a == null && b == null) return null; if (a == null) a = op.r; if (b == null) b = op.r - 1; } return b >= a ? [g[0], a, g[2], b] : null; }).filter(Boolean);
+    sh.cells = cells; sh.rows = rows; sh.maxR = Math.max(1, sh.maxR + (op.op === 'ins' ? 1 : -1));
+  }
   function apply(buf, edits, Z) {
     var paths = Object.keys(edits || {}).filter(function (p) { return Object.keys(edits[p] || {}).length; });
     if (!paths.length) return Promise.resolve(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -122,6 +137,19 @@
       }
       paths.forEach(function (p, i) {
         var doc = xp.parseFromString(xml[i], 'application/xml'), NS = doc.documentElement.namespaceURI, data = one(doc, 'sheetData'); if (!data) return;
+        rowOps(edits[p]).forEach(function (op) {
+          kids(data, 'row').forEach(function (r) {
+            var n = mapRow(+r.getAttribute('r'), op);
+            if (n == null) { kids(r, 'c').forEach(function (c) { if (one(c, 'f')) dropCalc = true; }); data.removeChild(r); return; }
+            r.setAttribute('r', n); kids(r, 'c').forEach(function (c) { var cr = c.getAttribute('r'); if (cr) c.setAttribute('r', cr.replace(/\d+$/, n)); });
+          });
+          all(doc, 'f').forEach(function (fe) { var t0 = fe.textContent; if (t0) { var t1 = shiftRefs(t0, op); if (t1 !== t0) { fe.textContent = t1; dropCalc = true; } } if (fe.getAttribute('ref')) fe.setAttribute('ref', shiftRefs(fe.getAttribute('ref'), op)); });
+          all(doc, 'mergeCell').forEach(function (m) { var g = String(m.getAttribute('ref') || '').split(':'); if (g.length !== 2) return; var a = mapRow(+g[0].replace(/^[A-Z$]+/, ''), op), b = mapRow(+g[1].replace(/^[A-Z$]+/, ''), op); if (op.op === 'del') { if (a == null && b == null) { m.parentNode.removeChild(m); return; } if (a == null) a = op.r; if (b == null) b = op.r - 1; } if (b < a) { m.parentNode.removeChild(m); return; } m.setAttribute('ref', g[0].replace(/\d+$/, a) + ':' + g[1].replace(/\d+$/, b)); });
+          var mc = one(doc, 'mergeCells'); if (mc) { var nmc = kids(mc, 'mergeCell').length; if (nmc) mc.setAttribute('count', nmc); else mc.parentNode.removeChild(mc); }
+          ['conditionalFormatting', 'dataValidation', 'selection'].forEach(function (tag) { all(doc, tag).forEach(function (x) { if (x.getAttribute('sqref')) x.setAttribute('sqref', shiftRefs(x.getAttribute('sqref'), op)); }); });
+          all(doc, 'hyperlink').forEach(function (x) { if (x.getAttribute('ref')) x.setAttribute('ref', shiftRefs(x.getAttribute('ref'), op)); });
+          var dim = one(doc, 'dimension'); if (dim && dim.getAttribute('ref')) dim.setAttribute('ref', shiftRefs(dim.getAttribute('ref'), op));
+        });
         var rows = {}; kids(data, 'row').forEach(function (r) { rows[+r.getAttribute('r')] = r; });
         Object.keys(edits[p]).forEach(function (ref) {
           var m = ref.match(/^([A-Z]+)(\d+)$/), e = norm(edits[p][ref]); if (!m || !e) return;
@@ -162,16 +190,29 @@
     var al = x.al || (c && c.num && v !== '' && isFinite(+v) && !('v' in e) ? 'right' : ''); if (al === 'center' || al === 'right' || al === 'left') st.push('text-align:' + al);
     return { v: v, b: !!b, bg: bg || '', st: st.join(';'), wrap: !!x.wrap, f: !!(c && c.f && !('v' in e)) };
   }
-  function sheetHtml(sh, X, edits) {
-    var R = Math.max(sh.maxR, 1) + 3, C = Math.max(sh.maxC, 1) + 1, skip = {}, span = {};
-    sh.merges.forEach(function (m) { span[colName(m[0]) + m[1]] = ' colspan="' + (m[2] - m[0] + 1) + '" rowspan="' + (m[3] - m[1] + 1) + '"'; for (var r = m[1]; r <= m[3]; r++) for (var c = m[0]; c <= m[2]; c++) if (r !== m[1] || c !== m[0]) skip[colName(c) + r] = 1; });
+  /* the rows to show: all of them, or (sorting / filtering – the view only, the file keeps its order) the header first, then the rest */
+  function viewRows(sh, X, edits, vw) {
+    var R = Math.max(sh.maxR, 1) + 3, l = [], r;
+    for (r = 1; r <= R; r++) if (!(sh.rows[r] || {}).hidden) l.push(r);
+    if (!vw || (!vw.q && !vw.c)) return l;
+    var C = Math.max(sh.maxC, 1) + 1, text = function (r0) { var t = []; for (var c = 1; c <= C; c++) t.push(look(sh, X, edits, colName(c) + r0).v); return t; };
+    var head = l.filter(function (r0) { return text(r0).join('').trim(); })[0] || 1, body = l.filter(function (r0) { return r0 > head; });
+    if (vw.q) { var q = vw.q.toLowerCase(); body = body.filter(function (r0) { return text(r0).join(' ').toLowerCase().indexOf(q) > -1; }); }
+    else body = body.filter(function (r0) { return text(r0).join('').trim(); });
+    if (vw.c) body.sort(function (a, b) { var x = look(sh, X, edits, colName(vw.c) + a).v, y = look(sh, X, edits, colName(vw.c) + b).v, nx = parseFloat(String(x).replace(',', '.')), ny = parseFloat(String(y).replace(',', '.'));
+      var d = isFinite(nx) && isFinite(ny) && /^[\d\s.,-]+$/.test(x + y) ? nx - ny : String(x).localeCompare(String(y), 'nb', { numeric: true }); return (vw.dir || 1) * d || a - b; });
+    return l.filter(function (r0) { return r0 <= head; }).concat(body);
+  }
+  function sheetHtml(sh, X, edits, vw) {
+    var R = Math.max(sh.maxR, 1) + 3, C = Math.max(sh.maxC, 1) + 1, skip = {}, span = {}, rowsShown = viewRows(sh, X, edits, vw), plain = vw && (vw.q || vw.c);
+    if (!plain) sh.merges.forEach(function (m) { span[colName(m[0]) + m[1]] = ' colspan="' + (m[2] - m[0] + 1) + '" rowspan="' + (m[3] - m[1] + 1) + '"'; for (var r = m[1]; r <= m[3]; r++) for (var c = m[0]; c <= m[2]; c++) if (r !== m[1] || c !== m[0]) skip[colName(c) + r] = 1; });
     var h = '<table class="xv-t"><colgroup><col style="width:38px">';
     for (var c = 1; c <= C; c++) if (!sh.hideC[c]) h += '<col style="width:' + Math.round(Math.max(28, Math.min(480, (sh.cols[c] || 8.43) * 7 + 5))) + 'px">';
     h += '</colgroup><thead><tr><th></th>';
-    for (c = 1; c <= C; c++) if (!sh.hideC[c]) h += '<th>' + colName(c) + '</th>';
+    for (c = 1; c <= C; c++) if (!sh.hideC[c]) h += '<th data-xvc="' + c + '" title="' + esc(k('ui.xv-sort', 'Sort by this column (only the view)')) + '">' + colName(c) + (vw && vw.c === c ? ' <i class="bi bi-sort-' + (vw.dir < 0 ? 'down' : 'up') + '"></i>' : '') + '</th>';
     h += '</tr></thead><tbody>';
-    for (var r = 1; r <= R; r++) {
-      var row = sh.rows[r] || {}; if (row.hidden) continue;
+    for (var ri = 0; ri < rowsShown.length; ri++) {
+      var r = rowsShown[ri], row = sh.rows[r] || {};
       h += '<tr' + (row.ht ? ' style="height:' + Math.round(row.ht * 1.333) + 'px"' : '') + '><th>' + r + '</th>';
       for (c = 1; c <= C; c++) {
         if (sh.hideC[c]) continue; var ref = colName(c) + r; if (skip[ref]) continue;
@@ -203,17 +244,19 @@
       '<div class="xv-tabs" role="tablist"></div>' +
       '<div class="xv-tools" role="toolbar">' + tb('undo', 'arrow-counterclockwise', k('ui.xv-undo', 'Undo'), ' disabled') + tb('redo', 'arrow-clockwise', k('ui.xv-redo', 'Redo'), ' disabled') + '<span class="xv-sep"></span>' +
         tb('bold', 'type-bold', k('ui.xv-bold', 'Bold')) + tb('fill', 'paint-bucket', k('ui.xv-fill', 'Fill colour'), ' aria-haspopup="true"') + tb('clear', 'backspace', k('ui.xv-clear', 'Clear the cells')) + '<span class="xv-sep"></span>' +
-        tb('copy', 'copy', k('ui.xv-copy', 'Copy')) + tb('paste', 'clipboard', k('ui.xv-paste', 'Paste')) +
+        tb('copy', 'copy', k('ui.xv-copy', 'Copy')) + tb('paste', 'clipboard', k('ui.xv-paste', 'Paste')) + '<span class="xv-sep"></span>' +
+        tb('rowins', 'plus-square', k('ui.xv-row-ins', 'Insert a row above')) + tb('rowdel', 'dash-square', k('ui.xv-row-del', 'Delete the rows')) + '<span class="xv-sep"></span>' +
+        '<label class="xv-find"><i class="bi bi-funnel"></i><input type="search" data-xvq placeholder="' + esc(k('ui.xv-filter', 'Filter rows')) + '" aria-label="' + esc(k('ui.xv-filter', 'Filter rows')) + '"></label>' +
         '<div class="xv-sw" hidden>' + SW.map(function (w) { return '<button type="button" data-xvfill="' + w[0] + '" title="' + esc(k(w[1], w[2])) + '" aria-label="' + esc(k(w[1], w[2])) + '" style="--sw:' + (w[0] || 'transparent') + '"></button>'; }).join('') + '</div></div>' +
       '<div class="xv-bar"><span class="xv-ref">–</span><textarea class="xv-in" rows="1" disabled placeholder="' + esc(k('ui.xv-tap', 'Tap a cell to change it')) + '"></textarea></div>' +
       '<div class="xv-grid" tabindex="0"><p class="xv-wait">' + esc(k('ui.xv-reading', 'Reading the file …')) + '</p></div><p class="xv-foot"></p>';
     document.body.appendChild(box); document.documentElement.classList.add('xv-on');
-    var edits = JSON.parse(JSON.stringify(opt.edits || {})), book = null, cur = 0, saveT = 0, undo = [], redo = [], A = null, F = null, typing = null, drag = false;
+    var edits = JSON.parse(JSON.stringify(opt.edits || {})), book = null, cur = 0, vw = { q: '', c: 0, dir: 1 }, saveT = 0, undo = [], redo = [], A = null, F = null, typing = null, drag = false;
     var grid = box.querySelector('.xv-grid'), inp = box.querySelector('.xv-in'), refEl = box.querySelector('.xv-ref'), foot = box.querySelector('.xv-foot'), tabs = box.querySelector('.xv-tabs'), sw = box.querySelector('.xv-sw');
     var touch = matchMedia('(pointer: coarse)').matches;
     function sh() { return book.sheets[cur]; }
     function td(ref) { return grid.querySelector('[data-xvr="' + ref + '"]'); }
-    function nEdits() { return Object.keys(edits).reduce(function (a, p) { return a + Object.keys(edits[p] || {}).length; }, 0); }
+    function nEdits() { return Object.keys(edits).reduce(function (a, p) { return a + Object.keys(edits[p] || {}).filter(function (r) { return r !== '@rows'; }).length + rowOps(edits[p]).length; }, 0); }
     function showFoot() {
       var n = nEdits();
       if (!opt.onEdits) { foot.innerHTML = esc(n ? k(n === 1 ? 'ui.xv-n-temp1' : 'ui.xv-n-temp', n === 1 ? '1 change – it goes into the download, nothing is saved here' : '{n} changes – they go into the download, nothing is saved here', { n: n }) : k('ui.xv-temp', 'Nothing is saved here – your changes go into the download.')) + (n ? ' <button type="button" class="text-btn" data-xv="reset">' + esc(k('ui.xv-reset', 'Undo all')) + '</button>' : ''); return; }   /* a plan check keeps nothing */
@@ -237,6 +280,7 @@
     function back(fromList, toList, side) {
       var step = fromList.pop(); if (!step) return; toList.push(step);
       var si = book.sheets.map(function (s) { return s.path; }).indexOf(step.p); if (si >= 0 && si !== cur) { cur = si; drawTabs(); drawSheet(); }
+      if (step.rows) { var snap = step.rows[side]; edits[step.p] = JSON.parse(JSON.stringify(snap.ed)); book.sheets[si] = JSON.parse(JSON.stringify(snap.sh)); drawSheet(); save(); return; }
       var ed = edits[step.p] || (edits[step.p] = {});
       step.cells.forEach(function (c) { var v = c[side]; if (v === undefined) delete ed[c.ref]; else ed[c.ref] = JSON.parse(JSON.stringify(v)); paint(c.ref); });
       typing = null; pickRef(step.cells[0].ref); save();
@@ -260,7 +304,7 @@
       if (td(colName(c) + r)) pickRef(colName(c) + r, extend);
     }
     function drawTabs() { tabs.innerHTML = book.sheets.map(function (s, i) { return '<button type="button" role="tab" data-xvs="' + i + '" aria-selected="' + (i === cur) + '">' + esc(s.name) + '</button>'; }).join(''); }
-    function drawSheet() { grid.innerHTML = sheetHtml(sh(), book.X, edits); grid.scrollTop = 0; grid.scrollLeft = 0; A = F = null; typing = null; refEl.textContent = '–'; inp.value = ''; inp.disabled = true; }
+    function drawSheet(keepScroll) { var st0 = grid.scrollTop, sl0 = grid.scrollLeft; grid.innerHTML = sheetHtml(sh(), book.X, edits, vw); grid.scrollTop = keepScroll ? st0 : 0; grid.scrollLeft = keepScroll ? sl0 : 0; A = F = null; typing = null; refEl.textContent = '–'; inp.value = ''; inp.disabled = true; }
     function copyText() { var g = rng(); if (!g) return ''; var out = []; for (var r = g.r0; r <= g.r1; r++) { var row = []; for (var c = g.c0; c <= g.c1; c++) { var v = look(sh(), book.X, edits, colName(c) + r).v; row.push(/[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v); } out.push(row.join('\t')); } return out.join('\n'); }
     function pasteText(text) {
       if (!A) return; var rows = tsv(text), g = rng(), list = [];
@@ -290,6 +334,19 @@
       if (a === 'undo') return back(undo, redo, 'before');
       if (a === 'redo') return back(redo, undo, 'after');
       if (!A) { flash(k('ui.xv-pick', 'Pick a cell first')); return; }
+      if (a === 'rowins' || a === 'rowdel') {
+        if (vw.q || vw.c) { flash(k('ui.xv-rows-view', 'Clear the filter and sorting first')); return; }
+        var g0 = rng(), p0 = sh().path, before = { ed: JSON.parse(JSON.stringify(edits[p0] || {})), sh: JSON.parse(JSON.stringify(sh())) }, ed0 = edits[p0] || (edits[p0] = {});
+        var ops = a === 'rowins' ? [{ op: 'ins', r: g0.r0 }] : []; if (a === 'rowdel') for (var rr = g0.r1; rr >= g0.r0; rr--) ops.push({ op: 'del', r: rr });
+        ops.forEach(function (op) {
+          var moved = {}; Object.keys(ed0).forEach(function (ref) { if (ref === '@rows') return; var m = ref.match(/^([A-Z]+)(\d+)$/); if (!m) return; var n = mapRow(+m[2], op); if (n != null) moved[m[1] + n] = ed0[ref]; });
+          moved['@rows'] = rowOps(ed0).concat([op]); Object.keys(ed0).forEach(function (x) { delete ed0[x]; }); Object.assign(ed0, moved); shiftModel(sh(), op);
+        });
+        undo.push({ p: p0, cells: [], rows: { before: before, after: { ed: JSON.parse(JSON.stringify(ed0)), sh: JSON.parse(JSON.stringify(sh())) } } }); redo = [];
+        drawSheet(true); pickRef(colName(g0.c0) + g0.r0); save();
+        flash(a === 'rowins' ? k('ui.xv-row-added', 'A row was put in above') : k(ops.length === 1 ? 'ui.xv-row-gone1' : 'ui.xv-row-gone', ops.length === 1 ? '1 row deleted' : '{n} rows deleted', { n: ops.length }));
+        return;
+      }
       if (a === 'bold') { var b = !look(sh(), book.X, edits, A).b; change(refs().map(function (r) { return { ref: r, e: { b: b } }; })); showSel(); return; }
       if (a === 'clear') { change(refs().map(function (r) { return { ref: r, e: { v: '' } }; })); showSel(); return; }
       if (a === 'fill') { if (sw.hidden) { var rb = box.querySelector('[data-xv="fill"]').getBoundingClientRect(); sw.style.top = Math.round(rb.bottom + 6) + 'px'; sw.style.left = Math.round(Math.max(8, Math.min(innerWidth - 290, rb.left - 8))) + 'px'; } sw.hidden = !sw.hidden; return; }   /* fixed, so the scrolling toolbar doesn't cut it off */
@@ -301,6 +358,7 @@
     box.addEventListener('cut', function (e) { if (document.activeElement === inp || !A) return; e.preventDefault(); e.clipboardData.setData('text/plain', copyText()); act('clear'); });
     box.addEventListener('paste', function (e) { if (document.activeElement === inp || !A) return; e.preventDefault(); pasteText(e.clipboardData.getData('text/plain')); });
     inp.addEventListener('input', typed);
+    var qT = 0; box.querySelector('[data-xvq]').addEventListener('input', function (e) { var v = e.target.value.trim(); clearTimeout(qT); qT = setTimeout(function () { vw.q = v; if (book) drawSheet(); }, 150); });
     inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey && !e.altKey) { e.preventDefault(); typing = null; grid.focus({ preventScroll: true }); move(1, 0); }
       else if (e.key === 'Tab') { e.preventDefault(); typing = null; grid.focus({ preventScroll: true }); move(0, e.shiftKey ? -1 : 1); }
@@ -326,8 +384,9 @@
     grid.addEventListener('contextmenu', function (e) { if (e.target.closest('[data-xvr]')) e.preventDefault(); });
     box.addEventListener('click', function (e) {
       var t = e.target, b;
-      if ((b = t.closest('[data-xvs]'))) { cur = +b.dataset.xvs; drawTabs(); drawSheet(); return; }
-      if ((b = t.closest('[data-xvfill]'))) { var bg = b.dataset.xvfill; sw.hidden = true; if (A) { var rs = refs(); change(rs.map(function (r) { return { ref: r, e: { bg: bg } }; })); showSel(); if (opt.onFill) { var said = opt.onFill(sh().path, rs, bg); if (said) flash(said); } } return; }   /* a status colour on a line's row can set its status (opt.onFill) */
+      if ((b = t.closest('[data-xvs]'))) { cur = +b.dataset.xvs; vw.q = ''; vw.c = 0; var qi = box.querySelector('[data-xvq]'); if (qi) qi.value = ''; drawTabs(); drawSheet(); return; }
+      if ((b = t.closest('[data-xvc]'))) { var cc = +b.dataset.xvc; if (vw.c !== cc) { vw.c = cc; vw.dir = 1; } else if (vw.dir > 0) vw.dir = -1; else vw.c = 0; drawSheet(true); flash(vw.c ? k('ui.xv-sorted', 'Sorted – only the view, the file keeps its order') : k('ui.xv-unsorted', 'Back to the file’s order')); return; }
+      if ((b = t.closest('[data-xvfill]'))) { var bg = b.dataset.xvfill; sw.hidden = true; if (A) { var rs = refs(); change(rs.map(function (r) { return { ref: r, e: { bg: bg } }; })); showSel(); if (opt.onFill) { var said = opt.onFill(sh().path, rs, bg, edits); if (said) flash(said); } } return; }   /* a status colour on a line's row can set its status (opt.onFill) */
       if ((b = t.closest('[data-xva]'))) { var ac = (opt.actions || [])[+b.dataset.xva]; if (ac) ac.run(close, edits); return; }
       if ((b = t.closest('[data-xv]'))) {
         var a = b.dataset.xv;
@@ -338,10 +397,11 @@
       }
     });
     opt.blob.arrayBuffer().then(function (buf) { return read(buf, opt.Z); }).then(function (bk) {
-      book = bk; if (!book.sheets.length) { grid.innerHTML = '<p class="xv-wait">' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.')) + '</p>'; return; }
+      book = bk; book.sheets.forEach(function (s0) { rowOps(edits[s0.path]).forEach(function (op) { shiftModel(s0, op); }); });
+      if (!book.sheets.length) { grid.innerHTML = '<p class="xv-wait">' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.')) + '</p>'; return; }
       var st = book.sheets.map(function (s) { return s.path; }).indexOf(opt.start); cur = st >= 0 ? st : 0; drawTabs(); drawSheet(); showFoot();
     }).catch(function (er) { grid.innerHTML = '<p class="xv-wait">' + esc(k('ui.dc-x-failed', 'The Excel file could not be made.')) + '</p>'; try { console.warn('[xv]', er); } catch (e2) {} });
     return { close: close, box: box, edits: function () { return edits; } };
   }
-  window.XlsxView = { read: read, apply: apply, open: open };
+  window.XlsxView = { read: read, apply: apply, open: open, origRow: function (ed, n) { return origRow(rowOps(ed), n); }, rowOps: rowOps };
 })();

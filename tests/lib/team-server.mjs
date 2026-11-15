@@ -35,11 +35,11 @@ function storageFor(name) {
 }
 const env = { TEAM_DOMAIN: TEAM, POLICY_AUD: AUD, OWNER: 'owner@x.no', ORIGIN };
 const stores = new Map();
-let chain = Promise.resolve();   /* one request at a time, like a Durable Object */
+const chains = new Map();   /* one request at a time per Durable Object (one may call another, as the real ones can) */
 env.TEAM = { idFromName: n => n, get: n => {
   if (!stores.has(n)) stores.set(n, new mod.TeamStore({ storage: storageFor(n) }, env));
   const st = stores.get(n);
-  return { fetch: req => (chain = chain.then(() => st.fetch(req), () => st.fetch(req))) };
+  return { fetch: req => { const c = (chains.get(n) || Promise.resolve()).then(() => st.fetch(req), () => st.fetch(req)); chains.set(n, c); return c; } };
 } };
 
 const HDRS = {};

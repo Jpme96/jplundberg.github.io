@@ -14,7 +14,7 @@
   var $app = document.getElementById('app');
   var ROLES = ['read', 'edit', 'approve', 'admin'];
   function roleName(r) { return { read: L('Can read', 'Kan lese'), edit: L('Can edit', 'Kan redigere'), approve: L('Can approve', 'Kan godkjenne'), admin: L('Admin', 'Admin') }[r] || r; }
-  var S = { me: null, keys: {}, priv: null, recs: {}, seq: 0, locks: {}, members: [], requests: [], invites: [], log: [], edit: null, sheet: null, timer: 0, hb: 0 };
+  var S = { me: null, keys: {}, priv: null, recs: {}, raw: {}, seq: 0, locks: {}, members: [], requests: [], invites: [], log: [], edit: null, sheet: null, timer: 0, hb: 0 };
   window.__team = S;   /* for the tests */
   /* which team: ?t= in the link (invites carry it), else the last one used here, else the first team ('team') */
   var TID = /^(team|[a-z0-9]{12})$/;
@@ -136,11 +136,14 @@
     var q = new URLSearchParams(location.search);
     if (/^[a-f0-9]{32}$/.test(q.get('join') || '')) { try { sessionStorage.setItem('team.join', q.get('join')); } catch (e) {} }
     if (q.get('t') || q.get('join') || q.get('new')) history.replaceState(null, '', '/' + location.hash);
-    try { S.teams = (await api('teams')).teams || []; } catch (e) { S.teams = []; }
+    var cache = null;
+    try { S.teams = (await api('teams')).teams || []; } catch (e) { S.teams = []; if (e.offline) { cache = await kget('cache').catch(function () { return null; }); if (cache) { S.teams = cache.teams || []; S.offline = true; } } }
     /* the team kept here may be gone or not yours: go to one you are in (an invite link always wins) */
     if (!joinCode() && !S.newTeam && S.teams.length && !S.teams.some(function (t) { return t.id === S.tid; })) useTeam(S.teams[0].id);
     useTeam(S.tid);
-    try { S.me = await api('me'); } catch (e) { return screen('<h1>' + esc(L('Team', 'Team')) + '</h1><p>' + esc(failMsg(e)) + '</p><button class="t-btn" type="button" data-act="reload">' + L('Try again', 'Prøv igjen') + '</button>'); }
+    if (S.offline && !cache) cache = await kget('cache').catch(function () { return null; });
+    if (S.offline && cache && cache.me) { S.me = cache.me; S.cache = cache; return route(); }
+    try { S.me = await api('me'); } catch (e) { if (e.offline) { cache = await kget('cache').catch(function () { return null; }); if (cache && cache.me) { S.me = cache.me; S.cache = cache; S.offline = true; return route(); } } return screen('<h1>' + esc(L('Team', 'Team')) + '</h1><p>' + esc(failMsg(e)) + '</p><button class="t-btn" type="button" data-act="reload">' + L('Try again', 'Prøv igjen') + '</button>'); }
     route();
   }
   function joinCode() { try { return sessionStorage.getItem('team.join'); } catch (e) { return null; } }
@@ -241,7 +244,14 @@
   /* ---------- the app ---------- */
   async function startApp() {
     document.documentElement.classList.add('unlocked'); waitChip(); flush().catch(function () {});
-    await Promise.all([pull(true), loadMembers()]);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
+    try { await Promise.all([pull(true), loadMembers()]); S.offline = false; }
+    catch (e) {
+      var c = S.cache || await kget('cache').catch(function () { return null; });
+      if (!c || !e.offline) throw e;
+      S.offline = true; S.members = c.members || []; await fromRaw(c.raw || [], c.seq || 0);
+      toast(L('No signal – showing what was here last. Changes wait and are sent later.', 'Ingen dekning – viser det som var her sist. Endringer venter og sendes senere.'));
+    }
     draw();
     stopPoll();
     S.timer = setInterval(function () { if (document.visibilityState === 'visible') refresh(); }, 15000);
@@ -252,7 +262,7 @@
     try {
       flush().catch(function () {});
       var before = S.seq, ep = S.me.team.epoch;
-      await pull(false);
+      await pull(false); if (S.offline) { S.offline = false; S.me = await api('me').catch(function () { return S.me; }); }
       if (S.tab() === 'team' || rank() >= 3) await loadMembers();
       if (S.me.team.epoch !== ep) { S.me = await api('me'); await loadKeys(); await pull(true); }
       if (S.docsDirty) autoDone().catch(function () {});
@@ -260,11 +270,12 @@
       else if (!typing() && !S.sheet && !S.edit) draw(); else if (S.seq !== before) S.stale = true;
     } catch (e) { if (e.status === 403) { S.me = await api('me').catch(function () { return S.me; }); if (!S.me.member) { stopPoll(); route(); } } }
   }
-  async function pull(all) {
-    var j = await api('recs?since=' + (all ? 0 : S.seq));
-    if (all) S.recs = {};
+  async function fromRaw(raw, seq) { await pull(true, { recs: raw, seq: seq, epoch: S.me.team.epoch, locks: {} }, true); }
+  async function pull(all, given, quiet) {
+    var j = given || await api('recs?since=' + (all ? 0 : S.seq));
+    if (all) { S.recs = {}; S.raw = {}; }
     for (var i = 0; i < j.recs.length; i++) {
-      var r = j.recs[i];
+      var r = j.recs[i]; S.raw[r.id] = r;
       if (DK[r.k]) { S.docsDirty = true; S.docGen++; }
       if (r.del) { S.recs[r.id] = { id: r.id, k: r.k, v: r.v, t: r.t, by: r.by, del: 1 }; continue; }
       var d = await unseal(r, r.id + '|' + r.k + '|' + r.e, r.e);
@@ -273,9 +284,10 @@
     }
     S.seq = j.seq; S.locks = j.locks || {};
     if (j.epoch !== S.me.team.epoch) S.me.team.epoch = j.epoch;
+    if (!given) saveCache();
   }
   async function loadMembers() {
-    var j = await api('members'); S.members = j.members || []; S.requests = j.requests || [];
+    var j = await api('members'); S.members = j.members || []; S.requests = j.requests || []; saveCache();
     if (rank() >= 3) { try { S.invites = (await api('invites')).invites || []; } catch (e) {} }
   }
   function list(kind) { var out = []; for (var id in S.recs) { var r = S.recs[id]; if (r.k === kind && !r.del && r.d) out.push(r); } return out; }
@@ -320,6 +332,7 @@
     try {
       var res = await api('rec', { method: 'PUT', body: { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm } });
       S.recs[id] = { id: id, k: kind, v: res.v, t: res.t, by: S.me.email, e: e, d: data };
+      S.raw[id] = { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: res.v, t: res.t, by: S.me.email, seq: res.seq }; saveCache();
       S.seq = Math.max(S.seq, res.seq - 1);
       return true;
     } catch (err) {
@@ -330,12 +343,12 @@
   async function delRec(id, sum) {
     var cur = S.recs[id]; if (!cur) return false;
     var e = S.me.team.epoch, sm = sum ? Object.assign({ e: e }, await seal({ t: String(sum).slice(0, 200) }, 'log', e)) : undefined;
-    try { var res = await api('rec', { method: 'PUT', body: { id: id, k: cur.k, del: true, v: cur.v, s: sm } }); cur.del = 1; cur.v = res.v; return true; }
+    try { var res = await api('rec', { method: 'PUT', body: { id: id, k: cur.k, del: true, v: cur.v, s: sm } }); cur.del = 1; cur.v = res.v; if (S.raw[id]) { S.raw[id] = Object.assign({}, S.raw[id], { del: 1, v: res.v }); saveCache(); } return true; }
     catch (err) { if (err.offline) { enqueue({ id: id, k: cur.k, del: true, v: cur.v, s: sm }); cur.del = 1; return true; } toast(failMsg(err)); return false; }
   }
 
   /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
-  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h)) return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
+  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
   function draw() {
@@ -351,7 +364,7 @@
     $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
-    if (tab === 'docs' && !S.edit) docsReady();
+    if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }
   function head(title, sub, back) {
     return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : (S.me.isOwner ? '<a class="t-back" href="https://jplundberg.com/cmd/work/">' + ic('back') + '/cmd</a>' : '<small>work.jplundberg.com</small>')) +
@@ -401,12 +414,13 @@
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
-    out += newsCard();
+    out += newsCard() + weekCard();
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
     out += '<p class="t-h"><span>' + L('My open actions', 'Mine åpne oppgaver') + '</span><span>' + mine.length + '</span></p>';
     out += mine.length ? actionList(mine) : '<p class="t-empty">' + L('Nothing open for you.', 'Ingenting åpent for deg.') + '</p>';
+    out += projectsCard();
     return out;
   }
   function meetingCard(m) {
@@ -636,6 +650,7 @@
   function settingsSheet() {
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
+      '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
       '<button class="t-btn ghost wide" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="backup">' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</button>' : '') +
@@ -719,13 +734,14 @@
   var DK = { dcp: 1, dcl: 1, dct: 1, dcr: 1 };
   S.dtab = 'doc'; S.docBase = {}; S.docGen = 0;
   function viewDocs() {
-    if (/^#dr=/.test(location.hash)) S.dtab = 'req'; else if (/^#dc=/.test(location.hash)) S.dtab = 'doc';
+    if (/^#dr=/.test(location.hash)) S.dtab = 'req'; else if (/^#dc=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
     var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Document control and document requirements – the same tools as in /cmd.', 'Dokumentkontroll og dokumentkrav – de samme verktøyene som i /cmd.'));
-    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')], ['insp', L('Inspections', 'Befaringer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
+    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')], ['insp', L('Inspections', 'Befaringer')], ['files', L('Files', 'Filer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     if (rank() >= 1) out += '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document control or Document requirements → open it → Send to Team. Attached files stay on the device they were added on.', 'I /cmd: Jobb → Dokumentkontroll eller Dokumentkrav → åpne den → Send til Team. Vedlagte filer blir på enheten de ble lagt til på.') + '</p>';
     out += '</div>';
     out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
       '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>' +
+      '<section id="tFiles"' + (S.dtab === 'files' ? '' : ' hidden') + '>' + filesHtml() + '</section>' +
       '<section id="tInsp"' + (S.dtab === 'insp' ? '' : ' hidden') + '>' + (inspections().length ? '<ul class="t-list">' + inspections().map(function (r) { return '<li><a class="t-row" href="#in=' + r.id + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([r.d.no, r.d.date ? fmtDate(r.d.date) : '', r.d.address, (r.d.notes || []).length ? L((r.d.notes.length) + ' notes', (r.d.notes.length) + ' notater') : ''].filter(Boolean).join(' · ')) + '</small></span></a></li>'; }).join('') + '</ul>' : '<p class="t-empty">' + L('No inspections yet. In /cmd: Work → Building inspection → a report → Send to Team, then Import from /cmd here.', 'Ingen befaringer ennå. I /cmd: Jobb → Bygningsbefaring → en rapport → Send til Team, så Importer fra /cmd her.') + '</p>') + '</section>';
     return out;
   }
@@ -748,7 +764,7 @@
     docsP.then(function () { window.dispatchEvent(new Event('tools:change')); }, function () {});
   }
   function showDtab() {
-    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'), c = document.getElementById('tInsp'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req'; if (c) c.hidden = S.dtab !== 'insp';
+    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'), c = document.getElementById('tInsp'), d = document.getElementById('tFiles'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req'; if (c) c.hidden = S.dtab !== 'insp'; if (d) { d.hidden = S.dtab !== 'files'; if (!d.hidden) loadUploads(); }
     [].forEach.call(document.querySelectorAll('[data-dtab]'), function (x) { x.checked = x.dataset.dtab === S.dtab; });
   }
   var NSM = null;
@@ -848,7 +864,7 @@
       }
       try {
         var res = await api('batch', { method: 'PUT', body: { recs: recs, s: i ? undefined : sum } });
-        res.results.forEach(function (x) { var r = S.recs[x.id]; if (x.error) { failed++; return; } if (r) { r.v = x.v; r.t = x.t; r.by = S.me.email; r.e = e; } });
+        res.results.forEach(function (x) { var r = S.recs[x.id]; if (x.error) { failed++; return; } if (r) { r.v = x.v; r.t = x.t; r.by = S.me.email; r.e = e; } var r0 = recs.filter(function (q) { return q.id === x.id; })[0]; if (r0) S.raw[x.id] = r0.del ? Object.assign({}, S.raw[x.id] || { id: x.id, k: r0.k }, { del: 1, v: x.v }) : { id: x.id, k: r0.k, e: r0.e, iv: r0.iv, ct: r0.ct, v: x.v, t: x.t, by: S.me.email, seq: x.seq }; }); saveCache();
       } catch (err) {
         if (err.offline) { recs.forEach(function (r0) { enqueue(Object.assign({}, r0, { s: undefined })); }); continue; }   /* no signal: each change waits */
         toast(failMsg(err)); failed += part.length; if (err.status === 403) break;
@@ -908,6 +924,148 @@
     fr.readAsText(file);
   }
 
+  /* ---------- shared files (Documents → Files): encrypted on this device in chunks of 1 MB, the name in a 'file' record ---------- */
+  var CHUNK = 1000000, FMAX = 55e6;
+  function hexId(n) { return [].map.call(rnd(n), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  function fsize(b) { return b > 1e6 ? (b / 1e6).toFixed(1).replace('.', nb ? ',' : '.') + ' MB' : Math.max(1, Math.round((b || 0) / 1e3)) + ' kB'; }
+  function files() { return list('file').sort(function (a, b) { return (b.d.at || 0) - (a.d.at || 0); }); }
+  function projects() { return (docState().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
+  function projName(pid) { var p = projects().filter(function (x) { return x.id === pid; })[0]; return p ? p.name : ''; }
+  async function sendFile(file, pid) {
+    if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
+    var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
+    for (var i = 0; i < n; i++) {
+      var part = new Uint8Array(await file.slice(i * CHUNK, (i + 1) * CHUNK).arrayBuffer()), iv = rnd(12);
+      var ct = await C.encrypt({ name: 'AES-GCM', iv: iv, additionalData: TE.encode(fid + '|' + i + '|' + e) }, S.keys[e], part);
+      await api('fchunk', { method: 'PUT', body: { fid: fid, n: i, iv: b64(iv), ct: b64(ct) } });
+    }
+    return putRec('file', 'fl' + fid.slice(0, 20), { fid: fid, n: n, e: e, name: String(file.name || 'file').slice(0, 160), type: file.type || '', size: file.size, pid: pid || '', at: Date.now() }, L('File: ', 'Fil: ') + file.name);
+  }
+  async function getFile(d) {
+    var parts = [], key = d.k ? await C.importKey('raw', ub64(d.k), 'AES-GCM', false, ['decrypt']) : S.keys[d.e];
+    if (!key) throw new Error('key');
+    for (var i = 0; i < d.n; i++) {
+      var c = await api('fchunk?fid=' + d.fid + '&n=' + i);
+      parts.push(new Uint8Array(await C.decrypt({ name: 'AES-GCM', iv: ub64(c.iv), additionalData: TE.encode(d.k ? d.lid + '|' + d.fid + '|' + i : d.fid + '|' + i + '|' + d.e) }, key, ub64(c.ct))));
+    }
+    return new File(parts, d.name, { type: d.type || 'application/octet-stream' });
+  }
+  function openFile(d) {
+    toast(L('Opening …', 'Åpner …'));
+    getFile(d).then(function (f) {
+      var u = URL.createObjectURL(f), a = document.createElement('a'); a.href = u; a.download = f.name; a.rel = 'noopener';
+      var phone = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent);
+      if (/^(image\/|application\/pdf)/.test(f.type) && !phone) a.target = '_blank'; else if (phone && navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f] }).catch(function () {}); return; }
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
+    }, function () { toast(L('Could not open the file.', 'Klarte ikke å åpne filen.')); });
+  }
+  function projPick(name, cur) { return '<select name="' + name + '"><option value="">' + esc(L('No project', 'Uten prosjekt')) + '</option>' + projects().map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>'; }
+  function links() { return list('upl').filter(function (r) { return r.d.exp > Date.now() - 30 * 864e5; }).sort(function (a, b) { return b.d.exp - a.d.exp; }); }
+  function filesHtml() {
+    var fl = files(), by = {}, out = '';
+    if (rank() >= 1) out += '<div class="t-card t-noprint"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('fproj', S.fproj) + '</label><div class="t-acts2"><label class="t-btn">' + L('Add files', 'Legg til filer') + '<input type="file" multiple hidden data-fadd></label><label class="t-btn ghost">' + L('Take a photo', 'Ta et bilde') + '<input type="file" accept="image/*" capture="environment" hidden data-fadd></label></div>' +
+      '<button class="t-btn ghost wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
+    var ls = links();
+    if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off;
+      return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"><h2>' + esc(projName(r.d.pid) || r.d.label || L('Upload link', 'Opplastingslenke')) + '</h2><p class="t-small">' + esc(live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + '</p><ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul>' +
+        (live ? '<div class="t-acts2"><button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : '') + '</div>'; }).join('');
+    fl.forEach(function (r) { var k = r.d.pid || ''; (by[k] = by[k] || []).push(r); });
+    out += '<p class="t-h"><span>' + L('Shared files', 'Delte filer') + '</span><span>' + fl.length + '</span></p>';
+    if (!fl.length) return out + '<p class="t-empty">' + L('No files yet. Files here are encrypted and shared with the team.', 'Ingen filer ennå. Filer her er kryptert og delt med teamet.') + '</p>';
+    Object.keys(by).sort(function (a, b) { return (projName(a) || '~').localeCompare(projName(b) || '~'); }).forEach(function (k) {
+      out += '<p class="t-sub">' + esc(projName(k) || L('No project', 'Uten prosjekt')) + '</p><ul class="t-list">' + by[k].map(function (r) {
+        return '<li><button class="t-row" type="button" data-act="fopen" data-id="' + esc(r.id) + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([fsize(r.d.size), nameOf(r.by), fmtTime(r.d.at || r.t), r.d.from ? L('from the upload link', 'fra opplastingslenken') : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (rank() >= 1 ? '<button class="t-icon" type="button" data-act="fdel" data-id="' + esc(r.id) + '" aria-label="' + esc(L('Delete', 'Slett')) + '">×</button>' : '') + '</li>';
+      }).join('') + '</ul>';
+    });
+    return out;
+  }
+  /* what came in on each upload link: the names are opened here with the link's key */
+  async function loadUploads() {
+    var ls = links(); if (!ls.length) return;
+    for (var i = 0; i < ls.length; i++) {
+      var r = ls[i], ul = document.querySelector('[data-ups="' + r.d.lid + '"]'); if (!ul) continue;
+      try {
+        var j = await api('uploads?lid=' + r.d.lid), key = await C.importKey('raw', ub64(r.d.key), 'AES-GCM', false, ['decrypt']), kept = {};
+        files().forEach(function (x) { if (x.d.from === r.d.lid) kept[x.d.fid] = 1; });
+        var rows = [];
+        for (var k = 0; k < j.files.length; k++) {
+          var u = j.files[k], meta = null;
+          try { meta = JSON.parse(TD.decode(await C.decrypt({ name: 'AES-GCM', iv: ub64(u.name.iv), additionalData: TE.encode(r.d.lid + '|' + u.fid + '|name') }, key, ub64(u.name.ct)))); } catch (x) { meta = { name: L('(could not be read)', '(kunne ikke leses)') }; }
+          S.upMeta = S.upMeta || {}; S.upMeta[u.fid] = { fid: u.fid, n: u.n, name: String(meta.name || 'file').slice(0, 160), type: meta.type || '', size: meta.size || u.size, lid: r.d.lid, k: r.d.key, pid: r.d.pid, from: r.d.lid, at: u.t };
+          rows.push('<li><button class="t-row" type="button" data-act="upopen" data-fid="' + esc(u.fid) + '"><span class="grow"><span>' + esc(meta.name) + '</span><small>' + esc(fsize(meta.size || u.size) + ' · ' + fmtTime(u.t)) + '</small></span></button>' + (kept[u.fid] ? '<span class="t-chip">' + L('Kept', 'Lagt til') + '</span>' : rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="upkeep" data-fid="' + esc(u.fid) + '">' + L('Keep', 'Behold') + '</button>' : '') + '</li>');
+        }
+        ul.innerHTML = rows.length ? rows.join('') : '<li class="t-small">' + esc(L('Nothing sent yet.', 'Ingenting sendt ennå.')) + '</li>';
+      } catch (x) { ul.innerHTML = '<li class="t-small">' + esc(failMsg(x)) + '</li>'; }
+    }
+  }
+  function linkUrl(d) { return 'https://jplundberg.com/upload/#' + S.tid + '.' + d.lid + '.' + d.key + '.' + encodeURIComponent(projName(d.pid) || d.label || ''); }
+  function uplinkSheet() {
+    openSheet('<h2>' + L('Upload link for a contractor', 'Opplastingslenke til en entreprenør') + '</h2><p class="t-small">' + L('Anyone with the link can send files to the project – no account needed. The files are encrypted in their browser; only the team can open them. Nobody can see what is already there.', 'Alle med lenken kan sende filer til prosjektet – uten konto. Filene krypteres i nettleseren deres; bare teamet kan åpne dem. Ingen kan se det som allerede ligger der.') + '</p>' +
+      '<form class="t-form" data-form="uplink"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('pid', S.fproj) + '</label><label class="t-lbl">' + L('Works for', 'Virker i') + '<select name="days"><option value="7">' + L('1 week', '1 uke') + '</option><option value="14" selected>' + L('2 weeks', '2 uker') + '</option><option value="30">' + L('30 days', '30 dager') + '</option><option value="60">' + L('60 days', '60 dager') + '</option></select></label>' +
+      '<p class="t-err" id="err"></p><button class="t-btn wide" type="submit">' + L('Make the link', 'Lag lenken') + '</button><button class="t-btn ghost wide" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button></form>');
+  }
+  async function onUplink(f) {
+    busy(f, true);
+    try {
+      var lid = hexId(8), kraw = new Uint8Array(await C.exportKey('raw', await C.generateKey(AES, true, ['encrypt', 'decrypt']))), key = b64(kraw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      var j = await api('uplink', { method: 'POST', body: { lid: lid, days: +f.days.value } }), d = { lid: lid, key: key, pid: f.pid.value, label: projName(f.pid.value), exp: j.exp };
+      if (!(await putRec('upl', 'ul' + lid, d, L('Upload link: ', 'Opplastingslenke: ') + (d.label || '')))) { busy(f, false); return; }
+      var url = linkUrl(d);
+      openSheet('<h2>' + L('The link', 'Lenken') + '</h2><p class="t-small">' + L('Send it to the contractor. It works until ', 'Send den til entreprenøren. Den virker til ') + esc(fmtTime(d.exp)) + '.</p><input class="t-in" id="invLink" readonly value="' + esc(url) + '">' +
+        '<button class="t-btn wide" type="button" data-act="copyInvite">' + L('Copy', 'Kopier') + '</button>' + (navigator.share ? '<button class="t-btn ghost wide" type="button" data-act="shareInvite">' + L('Share', 'Del') + '</button>' : '') + '<button class="t-btn ghost wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
+    } catch (x) { setErr(failMsg(x)); busy(f, false); }
+  }
+
+  /* ---------- push when Team is closed (Settings): only "someone changed something" – never what was written ---------- */
+  function pushOn() { try { return localStorage.getItem('team.push.' + S.tid) === '1'; } catch (e) { return false; } }
+  function swReg() { return 'serviceWorker' in navigator ? navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }) : Promise.reject(new Error('sw')); }
+  async function setPush(on) {
+    try {
+      var reg = await swReg();
+      if (!on) { var s0 = await reg.pushManager.getSubscription(); if (s0) await api('push', { method: 'POST', body: { endpoint: s0.endpoint, on: false } }); localStorage.removeItem('team.push.' + S.tid); toast(L('Push is off for this team on this device', 'Push er av for dette teamet på denne enheten')); return; }
+      if (!window.Notification || !reg.pushManager) throw new Error('none');
+      if (Notification.permission !== 'granted' && (await Notification.requestPermission()) !== 'granted') { toast(L('Notifications are not allowed in this browser', 'Varsler er ikke tillatt i denne nettleseren')); return; }
+      var k = (await api('push')).key, sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: ub64(k) });
+      await api('push', { method: 'POST', body: { sub: sub.toJSON(), on: true } });
+      localStorage.setItem('team.push.' + S.tid, '1'); toast(L('Push is on – you hear about changes when Team is closed', 'Push er på – du får beskjed om endringer når Team er lukket'));
+    } catch (x) { toast(x && x.status ? failMsg(x) : L('This browser cannot get push notifications. On iPhone: add Team to the Home Screen first.', 'Denne nettleseren kan ikke få push-varsler. På iPhone: legg Team til på Hjem-skjermen først.')); }
+  }
+
+  /* ---------- the overview: all projects at a glance, and the week in short ---------- */
+  function projectsCard() {
+    var ps = docState().dctl || []; if (!ps.length) return '';
+    return '<p class="t-h"><span>' + L('Projects', 'Prosjekter') + '</span><span>' + ps.length + '</span></p><ul class="t-list t-projs">' + ps.map(function (p) {
+      var ls = (p.lines || []).filter(function (l) { return l.st !== 'na'; }), ok = ls.filter(function (l) { return l.st === 'ok'; }).length, bad = ls.filter(function (l) { return l.st === 'rej' || l.st === 'missing' || !l.st; }).length, pct = ls.length ? Math.round(ok / ls.length * 100) : 0;
+      var due = p.due || p.deadline || '', late = due && due < today() && ok < ls.length;
+      return '<li><a class="t-row" href="#dc=' + esc(p.id) + '"><span class="grow"><span>' + esc(p.name) + '</span><small>' + esc(L(ok + ' of ' + ls.length + ' approved', ok + ' av ' + ls.length + ' godkjent') + (bad ? L(' · ' + bad + ' missing or not approved', ' · ' + bad + ' mangler eller ikke godkjent') : '') + (due ? ' · ' + (late ? L('overdue ', 'forfalt ') : L('due ', 'frist ')) + fmtDate(due) : '')) + '</small><span class="t-prog"><i style="width:' + pct + '%"></i></span></span><b class="t-pct' + (late ? ' t-warn' : '') + '">' + pct + ' %</b></a></li>';
+    }).join('') + '</ul>';
+  }
+  function weekText() {
+    var from = Date.now() - 7 * 864e5, n = { meet: 0, done: 0, newA: 0, docs: {}, files: 0, people: {} };
+    for (var id in S.recs) { var r = S.recs[id]; if (!r.t || r.t < from || r.del || !r.d) continue; n.people[r.by] = 1;
+      if (r.k === 'meeting') n.meet++; else if (r.k === 'action') { if (r.d.done) n.done++; else n.newA++; } else if (r.k === 'file') n.files++;
+      else if (r.k === 'dcl' && r.d.l) { var pn = projName(r.d.pid) || '…'; n.docs[pn] = (n.docs[pn] || 0) + 1; } }
+    var out = [];
+    if (n.meet) out.push(L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings'), n.meet + (n.meet === 1 ? ' møte' : ' møter')));
+    if (n.done || n.newA) out.push(L(n.done + ' actions done, ' + n.newA + ' open or changed', n.done + ' oppgaver ferdige, ' + n.newA + ' åpne eller endret'));
+    Object.keys(n.docs).forEach(function (pn) { out.push(L(pn + ': ' + n.docs[pn] + ' documents changed', pn + ': ' + n.docs[pn] + ' dokumenter endret')); });
+    if (n.files) out.push(L(n.files + ' files added', n.files + ' filer lagt til'));
+    return { lines: out, who: Object.keys(n.people).length };
+  }
+  function weekCard() {
+    var w = weekText(); if (!w.lines.length) return '';
+    return '<div class="t-card t-week"><h2>' + L('This week', 'Denne uka') + '</h2><ul>' + w.lines.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><p class="t-small">' + esc(L(w.who + (w.who === 1 ? ' person' : ' people') + ' did something the last 7 days', w.who + (w.who === 1 ? ' person' : ' personer') + ' gjorde noe de siste 7 dagene')) + '</p><button class="t-btn sm ghost" type="button" data-act="weekCopy">' + L('Copy as text', 'Kopier som tekst') + '</button></div>';
+  }
+
+  /* ---------- starting without signal: what was here last (still encrypted) is kept on this device ---------- */
+  function saveCache() {
+    clearTimeout(saveCache.t); saveCache.t = setTimeout(function () {
+      var raw = []; for (var id in S.raw) raw.push(S.raw[id]);
+      kset('cache', { me: S.me, teams: S.teams, seq: S.seq, raw: raw, members: S.members.map(function (m) { return { email: m.email, name: m.name, role: m.role }; }), at: Date.now() }).catch(function () {});
+    }, 800);
+  }
+
   /* ---------- sheets ---------- */
   function openSheet(html) {
     closeSheet(true);
@@ -939,6 +1097,14 @@
     if (a === 'settings') return settingsSheet();
     if (a === 'teams') return teamsSheet();
     if (a === 'inspPdf') { var ir = S.recs[t.dataset.id]; if (!ir || !ir.d) return; docsReady(); docsP.then(function () { return window.PagedPdf.html(ir.d.html, [ir.d.name, S.me.team.name].join('  ·  '), (ir.d.no ? ir.d.no + ' ' : '') + ir.d.name + '.pdf'); }).then(function (f2) { window.PagedPdf.share(f2); }, function () { toast(L('The PDF could not be made.', 'PDF-en kunne ikke lages.')); }); return; }
+    if (a === 'uplink') return uplinkSheet();
+    if (a === 'fopen') { var fr = S.recs[t.dataset.id]; if (fr && fr.d) openFile(fr.d); return; }
+    if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !confirm(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.'))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
+    if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
+    if (a === 'upkeep') { var uk = (S.upMeta || {})[t.dataset.fid]; if (!uk) return; t.disabled = true; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name)) { toast(L('Kept in the project files', 'Lagt i prosjektfilene')); draw(); } else t.disabled = false; return; }
+    if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt(L('The link', 'Lenken'), lu); }); return; }
+    if (a === 'upoff') { var lo = S.recs[t.dataset.id]; if (!lo || !lo.d || !confirm(L('Switch off this upload link? Files already sent stay.', 'Slå av denne opplastingslenken? Filer som er sendt, blir liggende.'))) return; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1, exp: Math.min(lo.d.exp, Date.now()) })); draw(); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt('', txt); }); return; }
     if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
     if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
@@ -970,13 +1136,16 @@
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.dataset.tick) return tick(t.dataset.tick, t.checked);
+    if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }
+    if (t.name === 'fproj') { S.fproj = t.value; return; }
+    if (t.hasAttribute('data-fadd')) { var fs = Array.prototype.slice.call(t.files || []); t.value = ''; if (!fs.length) return; (async function () { var ok = 0; toast(L('Encrypting and sending …', 'Krypterer og sender …')); for (var i = 0; i < fs.length; i++) { try { if (await sendFile(fs[i], S.fproj || '')) ok++; } catch (x) { toast(failMsg(x)); break; } } if (ok) { toast(L(ok + (ok === 1 ? ' file shared' : ' files shared'), ok + (ok === 1 ? ' fil delt' : ' filer delt'))); draw(); } })(); return; }
     if (t.hasAttribute('data-dcimport')) { if (t.files && t.files[0]) importDoc(t.files[0]); t.value = ''; return; }
     if (t.hasAttribute('data-lang')) { try { localStorage.setItem('team.lang', t.value); } catch (x) {} location.reload(); }
   });
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, uplink: onUplink, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 

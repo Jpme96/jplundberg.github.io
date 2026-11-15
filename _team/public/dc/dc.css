@@ -685,6 +685,10 @@ body.dr-full #wkDocReq { display: block !important; }
 .xv-t td.w { white-space: pre-wrap; overflow-wrap: anywhere; vertical-align: top; }
 .xv-t td.on { outline: 2px solid #1a73e8; outline-offset: -2px; }
 .xv-foot { margin: 0; padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); font-size: 13px; color: var(--muted, #9aa0a6); }
+.xv-find { display: flex; align-items: center; gap: 6px; flex: 1 0 150px; min-width: 150px; height: 40px; padding: 0 10px; border-radius: 10px; background: var(--card, #1a1c20); color: var(--muted); }
+.xv-find input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.xv-t thead th[data-xvc] { cursor: pointer; }
+.xv-t thead th[data-xvc] .bi { font-size: 11px; color: var(--accent); }
 .xv-tools { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 12px 8px; overflow-x: auto; scrollbar-width: none; }
 .xv-tb { width: 40px; height: 40px; flex: none; border: 0; border-radius: 10px; background: var(--card, #1a1c20); color: inherit; font-size: 17px; cursor: pointer; }
 .xv-tb:disabled { opacity: .35; cursor: default; }

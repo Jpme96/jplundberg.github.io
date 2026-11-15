@@ -276,7 +276,8 @@
       "money-plus.page.js",
       "fin-tools.page.js",
       "home-shared.page.js",
-      "life-pages.page.js"
+      "life-pages.page.js",
+      "sub-check.page.js"
     ],
     "travel/index.html": [
       "life-pages.page.js"

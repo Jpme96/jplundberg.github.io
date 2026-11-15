@@ -9,7 +9,6 @@
   if (!window.Vault || !window.Features) return;
   var Fe = window.Features, main = document.getElementById('fp');
   var page = (location.pathname.match(/\/cmd\/(habits|house|work)\//) || [])[1];
-  if (!main || !page) return;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -41,12 +40,17 @@
       feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning'] }
     }
   };
+  /* tabs you switched off (Settings → Menu & pages): settings.tabOff = { work: ['insp', …] } – at least one tab always stays */
+  function offList(pg) { var t = (readJSON('dash.settings', {}) || {}).tabOff || {}; return Array.isArray(t[pg]) ? t[pg] : []; }
+  window.PageTabs = { show: function () {}, current: function () { return null; }, pages: Object.keys(CONF), list: function (pg) { return (CONF[pg] || { tabs: [] }).tabs.map(function (t) { return { id: t[0], name: t[1], icon: t[2], feat: t[3] || null }; }); }, off: offList };
+  window.dispatchEvent(new Event('pagetabs:ready'));
+  if (!main || !page) return;
   var C = CONF[page], KEY = 'dash.ptab.' + page, all = /[?&]customize/.test(location.search);
   var cur = (function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
   /* tabs that belong to a feature that's off aren't shown */
   function past() { var H = window.Homes; return !!(H && H.isPast(H.view())); }
   function fon(f) { return !f || (Array.isArray(f) ? f.some(function (x) { return Fe.on(x); }) : Fe.on(f)); }
-  function tabs() { var p = past(); return C.tabs.filter(function (t) { return fon(t[3]) && !(t[4] && p); }); }
+  function tabs() { var p = past(), off = offList(page), l = C.tabs.filter(function (t) { return fon(t[3]) && !(t[4] && p); }), k = l.filter(function (t) { return off.indexOf(t[0]) < 0; }); return k.length ? k : l; }
   /* tabs that were merged into another */
   var ALIAS = { claims: 'docs' };
   if (ALIAS[cur]) cur = ALIAS[cur];
@@ -102,7 +106,7 @@
   function suggest() {
     var ids = (C.feats[cur] || []).filter(function (id) { return Fe.byId && Fe.byId(id) && !Fe.on(id) && !(Fe.simple && Fe.simple() && (Fe.ADV || []).indexOf(id) > -1); });
     var shown = [].some.call(main.querySelectorAll('[data-ptab="' + cur + '"]'), function (el) { return !el.hidden && el.offsetHeight > 30 && !el.matches('#hlTiles, #hpTiles'); });
-    var html = (!shown && !all ? '<p class="pt-empty">Nothing here yet' + (ids.length ? ' – switch something on below.' : '.') + '</p>' : '') +
+    var html = (!shown && !all ? '<p class="pt-empty">' + esc(ids.length ? I18N.k('ui.pt-nothing-below', 'Nothing here yet – switch something on below.') : I18N.k('ui.pt-nothing', 'Nothing here yet.')) + '</p>' : '') +
       (ids.length && !all ? '<div class="pt-sug"><p>' + (shown ? I18N.k('ui.pt-also-fits', 'Also fits here') : I18N.k('ui.pt-fits', 'Fits here')) + '</p><div class="pt-chips">' + ids.map(function (id) {
         var f = Fe.byId(id); return '<button type="button" class="pt-chip" data-ptfeat="' + esc(id) + '"><i class="bi bi-' + esc(f.icon) + '" style="color:' + esc(f.c) + '"></i><span><b>' + esc(f.name) + '</b><small>' + esc(I18N.k('ui.ftd-' + f.id, f.desc)) + '</small></span><i class="bi bi-plus-lg"></i></button>';
       }).join('') + '</div></div>' : '');
@@ -111,7 +115,7 @@
   tail.addEventListener('click', function (e) {
     var b = e.target.closest('[data-ptfeat]'); if (!b) return;
     var f = Fe.byId(b.dataset.ptfeat); Fe.set(b.dataset.ptfeat, true);
-    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> ' + esc(f ? f.name : 'Feature') + ' is on', function () { Fe.set(b.dataset.ptfeat, false); });
+    if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check2"></i> ' + esc(I18N.k('ui.pt-is-on', '{x} is on', { x: f ? I18N.t(f.name) : '' })), function () { Fe.set(b.dataset.ptfeat, false); });
     setTimeout(draw, 60);
   });
   /* links to a card: open its tab */
@@ -125,10 +129,12 @@
   var tm = null;
   new MutationObserver(function () { if (assigning) return; clearTimeout(tm); tm = setTimeout(function () { assign(); suggest(); }, 40); }).observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   window.addEventListener('features:change', function () { setTimeout(draw, 80); });
+  var offWas = JSON.stringify(offList(page));
+  window.addEventListener('dash:local', function () { var o = JSON.stringify(offList(page)); if (o !== offWas) { offWas = o; setTimeout(draw, 30); } });
   window.addEventListener('homes:view', function () { setTimeout(draw, 30); });
   window.Vault.onUnlock(function () { setTimeout(function () { draw(); fromHash(); }, 60); });
   draw(); fromHash();
-  window.PageTabs = { show: show, current: function () { return cur; } };
+  window.PageTabs.show = show; window.PageTabs.current = function () { return cur; };
 
   /* ======================= Health → Today ======================= */
   if (page === 'habits') {

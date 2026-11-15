@@ -45,3 +45,9 @@
 .pa-brow input, .pa-brow select { min-width: 0; font-size: 14px; padding: 8px 10px; }
 .pa-bico { color: var(--muted); font-size: 18px; text-align: center; }
 .pa-bacts { display: flex; justify-content: flex-end; }
+/* scan with the camera (2026-11-15) */
+.pa-scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; margin: 10px 0 14px; }
+.pa-scan figure { margin: 0; border-radius: 10px; overflow: hidden; background: rgba(var(--ink-rgb), .06); }
+.pa-scan img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+.pa-scan figcaption { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 2px 8px; font-size: 12px; color: var(--muted); }
+.pa-scan + .pa-bacts { gap: 8px; flex-wrap: wrap; }

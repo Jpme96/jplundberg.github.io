@@ -68,6 +68,7 @@ const SOCIALS = { linkedin: 'linkedin.com', instagram: 'instagram.com', facebook
 export default {
   /* every request gets a clear JSON answer – also when GitHub, Cloudflare or a calendar is down */
   async fetch(request, env) {
+    if (new URL(request.url).pathname.startsWith('/upload/api/')) return uploadProxy(request, env).catch(() => json({ error: 'server error' }, 500));
     try { return await route(request, storage(env)); }
     catch (e) { console.log('error', request.method, new URL(request.url).pathname, e && e.stack || e); return json({ error: 'server error', detail: String(e && e.message || e).slice(0, 200) }, 500); }
   },
@@ -77,6 +78,18 @@ export default {
     ctx.waitUntil(Promise.all([sendDue(env, !!env.LIVE).catch(e => console.log('push', e)), weeklyBackup(env).catch(e => console.log('backup', e)), cronBeat(env).catch(e => console.log('beat', e)), r2Backup(env).catch(e => console.log('r2 backup', e))]));
   }
 };
+
+/* a contractor's upload link (jplundberg.com/upload/#…): passed on to the Team Worker, which checks the link. Nothing is read here –
+   the files are encrypted in the contractor's browser with a key that only the link holds. */
+async function uploadProxy(request, env) {
+  const u = new URL(request.url), m = u.pathname.match(/^\/upload\/api\/((?:team|[a-z0-9]{12})\/[a-f0-9]{16}\/(?:info|chunk|done))$/);
+  if (!m) return json({ error: 'not found' }, 404);
+  if (!env.TEAMSVC) return json({ error: 'uploads are not set up' }, 503);
+  if (!['GET', 'PUT', 'POST'].includes(request.method)) return json({ error: 'not found' }, 404);
+  const body = request.method === 'GET' ? undefined : await request.text();
+  if (body && body.length > 2200000) return json({ error: 'too big' }, 413);
+  return env.TEAMSVC.fetch(new Request('https://team/api/up/' + m[1], { method: request.method, headers: { 'content-type': 'application/json' }, body }));
+}
 
 /* the cron trigger leaves a mark (at most once an hour, to stay far under the free 1 000 writes a day),
    so Diagnostics can tell whether reminders are being sent at all */

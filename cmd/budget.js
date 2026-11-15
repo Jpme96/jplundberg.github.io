@@ -168,8 +168,10 @@ window.Budget = (function () {
     if (!(per.income > 0)) return null;
     var elapsed = per.days - per.daysLeft + 1, sp = spent(d, per), room = per.income - fixed;
     if (elapsed < 5 || per.daysLeft < 2) return null;
-    var projected = sp / elapsed * per.days;
-    return { per: per, spent: sp, room: room, projected: projected, end: room - projected, perDay: sp / elapsed, elapsed: elapsed, ok: projected <= room };
+    /* one big purchase (a sofa, a flight) is counted once – not spread over the rest of the month as if it came back every day */
+    var big = oneOffs(((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }), room), bs = big.reduce(function (a, e) { return a + (+e.amount || 0); }, 0);
+    var projected = (sp - bs) / elapsed * per.days + bs;
+    return { per: per, spent: sp, room: room, projected: projected, end: room - projected, perDay: (sp - bs) / elapsed, elapsed: elapsed, ok: projected <= room, big: bs, bigN: big.length };
   }
   /* a savings goal: what to put aside each month – your own amount, or worked out from "reach it by" */
   function saveMonthly(g, now) {
@@ -196,6 +198,8 @@ window.Budget = (function () {
     var d = new Date(now.getFullYear(), now.getMonth() + n, 1);
     return { months: n, date: d, label: n >= 600 ? '' : 'in ' + n + ' month' + (n === 1 ? '' : 's') + ' (' + d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) + ')' };
   }
+  /* one-off expenses: marked as one-off, or a single expense of at least 15 % of what you have to spend (and at least 2 500 kr) */
+  function oneOffs(list, room) { var lim = Math.max(2500, (+room || 0) * 0.15); return (list || []).filter(function (e) { return e.oneoff || (+e.amount || 0) >= lim; }); }
   function spent(d, per) { return ((d && d.expenses) || []).filter(function (e) { return per.has(e.date); }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0); }
   /* a fixed cost whose amount changes from month to month (power, phone bill …): f.vary = true,
      f.months = { 'YYYY-MM': kr } (what it was / will be – typed in or seen in a bank import), f.usual = the normal amount.
@@ -229,7 +233,7 @@ window.Budget = (function () {
   /* a bill with a first and a last month (f.from / f.until, 'YYYY-MM'): rent that stops when you move, a contract that ends.
      Bills outside their months wait in d.budget.later or rest in d.budget.ended (Links.syncDates), so nothing adds them up. */
   function activeIn(f, k) { return !!f && (!f.from || f.from <= k) && (!f.until || f.until >= k); }
-  return { activeIn: activeIn, fixedAmt: fixedAmt, fixedWhole: fixedWhole, splitPart: splitPart, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
+  return { activeIn: activeIn, fixedAmt: fixedAmt, fixedWhole: fixedWhole, splitPart: splitPart, varyAvg: varyAvg, mainIncome: mainIncome, saveMonthly: saveMonthly, saveForecast: saveForecast, period: period, spent: spent, pace: pace, oneOffs: oneOffs, slip: slip, yearSoFar: yearSoFar, rowFor: rowFor, ordinary: ordinary, incomeOf: incomeOf, income: income, paydays: paydays, nextPayday: nextPayday, hasPayday: hasPayday, ym: ym };
 })();
 
 /* Loans (annuity – the same payment every month, as most Norwegian mortgages and car loans):
