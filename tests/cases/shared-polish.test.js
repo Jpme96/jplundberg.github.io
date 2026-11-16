@@ -28,7 +28,8 @@ const { shared, sl, until } = require('../lib/browser'); const { check, done } =
   await tab('chores');
   check(await q.evaluate(() => !document.querySelector('.h-nudge[data-avatar]')), 'the other tabs don\'t repeat it');
   const txt = await q.evaluate(() => document.querySelector('.h-body').innerText);
-  check(/1 day late/.test(txt) && !/1 days late/.test(txt), 'a chore one day late says "1 day late": ' + JSON.stringify((txt.match(/\d+ days? late/g) || [])));
+  /* on a Monday yesterday's weekly chore belongs to last week (the chores week starts on Monday), so there is no "1 day late" to show – only the plural is checked then */
+  if (new Date().getDay() === 1) check(!/1 days late/.test(txt), 'no "1 days late" (Monday)'); else check(/1 day late/.test(txt) && !/1 days late/.test(txt), 'a chore one day late says "1 day late": ' + JSON.stringify((txt.match(/\d+ days? late/g) || [])));
   const who = await q.evaluate(() => { const t = document.querySelector('.h-body').innerText, m = t.match(/Last 2 weeks:[^\n]*/); return m ? m[0] : /Who did what\s*Nothing yet/i.test(t) ? 'Nothing yet.' : ''; });
   check((/you 0/.test(who) && !/Lundberg [2-9]/.test(who)) || who === 'Nothing yet.', '"Who did what" doesn\'t count setting chores up: ' + JSON.stringify(who));
   check(!/changed the chore/.test(txt), 'no "changed the chore" for chores that were only set up');
