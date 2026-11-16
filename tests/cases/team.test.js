@@ -418,6 +418,13 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(put && got.plan === 'MADE-UP-PLAN-BYTES' && got.edit === 'MADE-UP-EDIT', 'the plan file and Excel edits are shared in the team ' + JSON.stringify(got));
   check(!/MADE-UP-PLAN|MADE-UP-EDIT/.test((await raw('/__mem')).body), 'and the server only has them encrypted');
 
+  /* --- a big project stays quick (JP 2026-11-16 20:06: the Overview froze for ~20 s with ~3 000 document lines) --- */
+  await own.goto(U + '#docs'); await own.waitForSelector('#wkDocCtl', { timeout: 20000 }); await until(own, () => window.DocHost && DocHost.Fe.list('dctl').length > 0, 15000);
+  await own.evaluate(() => { const t = DocHost.Fe.tools(), p = t.dctl[0]; for (let i = 0; i < 2500; i++) p.lines.push({ id: 'big' + i, code: String(200 + (i % 500)), t: 'E', st: '' }); DocHost.Fe.saveTools(t); });
+  await sl(5000);
+  const ovBig = await own.evaluate(async () => { const t0 = performance.now(); location.hash = '#overview'; await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); return { ms: Math.round(performance.now() - t0), week: !!document.querySelector('.t-week'), projs: document.querySelectorAll('.t-projs li').length }; });
+  check(ovBig.ms < 1500 && ovBig.week && ovBig.projs >= 1, 'the Overview opens quickly with a 2 500-line project (the week and the projects are counted once, not per line) ' + JSON.stringify(ovBig));
+
   /* --- kept apart from /cmd --- */
   const wr = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
   check(!/kv_namespaces|d1_databases|r2_buckets|"VAULT"|"LIVE"|dashboard-sync/.test(wr) && /TeamStore/.test(wr) && /work\.jplundberg\.com/.test(wr), "Team's Worker has none of /cmd's bindings");

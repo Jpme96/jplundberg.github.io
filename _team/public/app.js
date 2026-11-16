@@ -449,7 +449,7 @@
     var out = head(L('Search', 'Søk'), '', ['overview', L('Overview', 'Oversikt')]) + '<form class="t-form t-srch" data-form="search"><input name="q" type="search" value="' + esc(q) + '" placeholder="' + esc(L('Search meetings, actions and documents', 'Søk i møter, oppgaver og dokumenter')) + '" autocomplete="off"></form>';
     if (!words.length) return out;
     var ms = meetings().filter(function (m) { return hit(m.d); }), as = actions().filter(function (a) { return hit(a.d); }), ds = [];
-    (docState().dctl || []).forEach(function (p) { var ls = (p.lines || []).filter(function (l) { return hit(l); }); if (hit({ n: p.name, no: p.no, who: p.who, t: p.trade }) || ls.length) ds.push({ p: p, n: ls.length }); });
+    (docRO().dctl || []).forEach(function (p) { var ls = (p.lines || []).filter(function (l) { return hit(l); }); if (hit({ n: p.name, no: p.no, who: p.who, t: p.trade }) || ls.length) ds.push({ p: p, n: ls.length }); });
     if (!ms.length && !as.length && !ds.length) return out + '<p class="t-empty">' + esc(L('Nothing found for “' + q + '”.', 'Fant ingenting for «' + q + '».')) + '</p>';
     if (ms.length) out += '<p class="t-h">' + L('Meetings', 'Møter') + '</p>' + ms.slice(0, 30).map(meetingCard).join('');
     if (as.length) out += '<p class="t-h">' + L('Actions', 'Oppgaver') + '</p>' + actionList(as.slice(0, 50), true);
@@ -562,7 +562,7 @@
     return out;
   }
   /* an action can point at a document line (JP 23:46): it closes by itself when that document is approved */
-  function docLines() { if (docLines.g === S.docGen && docLines.c) return docLines.c; var t = docState(), out = []; docLines.g = S.docGen; docLines.c = out; (t.dctl || []).forEach(function (p) { (p.lines || []).forEach(function (l) { out.push({ v: p.id + '|' + l.id, p: p, l: l }); }); }); return out; }
+  function docLines() { if (docLines.g === S.docGen && docLines.c) return docLines.c; var t = docRO(), out = []; docLines.g = S.docGen; docLines.c = out; (t.dctl || []).forEach(function (p) { (p.lines || []).forEach(function (l) { out.push({ v: p.id + '|' + l.id, p: p, l: l }); }); }); return out; }
   function docOf(v) { if (!v) return null; return docLines().filter(function (x) { return x.v === v; })[0] || null; }
   var DONE_ST = { ok: 1, cmt: 1, na: 1 };
   function docLabel(x) { return x.p.name + ' · ' + x.l.code + ' ' + (x.l.name || x.l.type || x.l.sys || ''); }
@@ -868,7 +868,7 @@
   };
   var DFe = {
     tools: function () { S.docBase = {}; return docState(S.docBase); },
-    list: function (k) { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t[k] || []; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return Array.isArray(t[k]) ? t[k] : []; },   /* read-only callers: cached until a document record changes */
+    list: function (k) { var t = docRO(); return Array.isArray(t[k]) ? t[k] : []; },   /* read-only callers: cached until a document record changes */
     saveTools: function (t) { saveDocs(t, S.docBase, true); }
   };
   function wanted(t) {
@@ -1014,8 +1014,11 @@
   function hexId(n) { return [].map.call(rnd(n), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
   function fsize(b) { return b > 1e6 ? (b / 1e6).toFixed(1).replace('.', nb ? ',' : '.') + ' MB' : Math.max(1, Math.round((b || 0) / 1e3)) + ' kB'; }
   function files() { return list('file').sort(function (a, b) { return (b.d.at || 0) - (a.d.at || 0); }); }
-  function projects() { return (docState().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
-  function projName(pid) { var p = projects().filter(function (x) { return x.id === pid; })[0]; return p ? p.name : ''; }
+  /* the documentation state for reading, built once per change (S.docGen). The Overview's week asked for a project's name once per line,
+     and each ask built the whole state again – with ~3 000 lines that froze Team for 20 s (JP 2026-11-16 20:06) */
+  function docRO() { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return t; }
+  function projects() { return (docRO().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
+  function projName(pid) { var t = docRO(); if (!t._names) { t._names = {}; (t.dctl || []).forEach(function (p) { t._names[p.id] = p.name; }); } return t._names[pid] || ''; }
   async function sendFile(file, pid) {
     if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
     var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
@@ -1145,7 +1148,7 @@
 
   /* ---------- the overview: all projects at a glance, and the week in short ---------- */
   function projectsCard() {
-    var ps = docState().dctl || []; if (!ps.length) return '';
+    var ps = docRO().dctl || []; if (!ps.length) return '';
     return '<p class="t-h"><span>' + L('Projects', 'Prosjekter') + '</span><span>' + ps.length + '</span></p><ul class="t-list t-projs">' + ps.map(function (p) {
       var ls = (p.lines || []).filter(function (l) { return l.st !== 'na'; }), ok = ls.filter(function (l) { return l.st === 'ok'; }).length, bad = ls.filter(function (l) { return l.st === 'rej' || l.st === 'missing' || !l.st; }).length, pct = ls.length ? Math.round(ok / ls.length * 100) : 0;
       var due = p.due || p.deadline || '', late = due && due < today() && ok < ls.length;
