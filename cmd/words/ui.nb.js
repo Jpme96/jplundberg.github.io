@@ -3076,5 +3076,6 @@ I18N.add({
   "ui.dcn-rules-tool": ["Naming rules", "Navneregler"],
   "ui.dcn-guess": ["Suggested – check it", "Forslag – sjekk det"],
   "ui.dx-bno": ["Building number (for drawings)", "Bygningsnummer (for tegninger)"],
-  "ui.dx-bno-ph": ["e.g. 11621", "f.eks. 11621"]
+  "ui.dx-bno-ph": ["e.g. 11621", "f.eks. 11621"],
+  "ui.dcn-bno-s": ["Used in every drawing name, and saved on the project", "Brukes i navnet på alle tegninger, og lagres på prosjektet"]
 });

@@ -199,6 +199,7 @@ window.DC_NB = {
 "ui.dcn-add-part": "Legg til en del",
 "ui.dcn-all": "Foreslå koder og sjekk {n} filer",
 "ui.dcn-as-rule": "Som regelen",
+"ui.dcn-bno-s": "Brukes i navnet på alle tegninger, og lagres på prosjektet",
 "ui.dcn-builtin": "Innebygd fra Boligbyggs FDVU-kravspesifikasjon – kopier den for å lage din egen.",
 "ui.dcn-case": "Bokstaver",
 "ui.dcn-cc": "Innholdssjekk",

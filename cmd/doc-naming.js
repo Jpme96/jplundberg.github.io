@@ -279,6 +279,9 @@
   function nfiles(p, F) {
     var h = '<datalist id="dcnCodes">' + codeList(p).map(function (c) { return '<option value="' + esc(c[0] + ' ' + c[1]) + '"></option>'; }).join('') + '</datalist>' + rulesHtml(p);
     var todo = F.filter(function (f) { return !f.nf && (!f.p.code || (ext(f.name) === '.pdf' && !f.cc)); }).length;
+    /* the building number goes into every drawing's name – asked once, right here, where the names are (JP 2026-11-16 21:50) */
+    var dw = F.some(function (f) { return !f.nf && ruleFor(p, f).parts.some(function (q) { return q.k === 'bno'; }); });
+    if (dw || p.bid) h += '<label class="dcn-fl dcn-bno"><span>' + esc(k('ui.dx-bno', 'Building number (for drawings)')) + '</span><input data-dcnbid value="' + esc(p.bid || '') + '" inputmode="numeric" maxlength="40" placeholder="' + esc(k('ui.dx-bno-ph', 'e.g. 11621')) + '"' + (dw && !p.bid ? ' class="dcn-need"' : '') + '><small>' + esc(k('ui.dcn-bno-s', 'Used in every drawing name, and saved on the project')) + '</small></label>';
     if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
     return h + '<ul class="dcn-files">' + F.map(function (f) { return nrow(p, f); }).join('') + '</ul>';
   }
@@ -302,6 +305,7 @@
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
       if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
+      if (t.hasAttribute('data-dcnbid')) { saveP(cur(), function (p) { p.bid = v.trim().slice(0, 40); }); draw(); return; }
       if (t.dataset.dcnuseK) { saveP(cur(), function (p) { p.nuse = Object.assign({}, p.nuse); p.nuse[t.dataset.dcnuseK] = v; }); draw(); return; }
       if (t.dataset.dcnr) { ruleEdit(function (r) { r[t.dataset.dcnr] = t.dataset.dcnr === 'n' ? v.slice(0, 60) || r.n : v; }); return; }
       if (t.dataset.dcnpr) { ruleEdit(function (r) { r.parts[+t.dataset.dcnpr].req = t.checked ? undefined : false; }); return; }
