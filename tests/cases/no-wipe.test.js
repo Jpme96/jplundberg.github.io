@@ -8,7 +8,7 @@ const { open, launch, page, until, sl } = require('../lib/browser'); const { che
 const U = 'http://localhost:' + (process.env.PORT || 8770) + '/cmd/';
 (async () => {
   const { b, p } = await open(1280);
-  await p.evaluate(() => { const d = Vault.get(); d.expenses = Array.from({ length: 60 }, (_, i) => ({ id: 'nw' + i, desc: 'Test expense ' + i, amt: -10 - i, date: '2026-11-1' + (i % 9), cat: 'other' })); Vault.save(d); });
+  await p.evaluate(() => { const d = Vault.get(); d.expenses = Array.from({ length: 60 }, (_, i) => ({ id: 'nw' + i, desc: 'Test expense ' + i, amt: -10 - i, date: '2026-11-1' + (i % 9), cat: 'other' })); d.nwNote = 'made-up text '.repeat(9000); Vault.save(d); });
   await sl(2500);
   const before = await p.evaluate(() => fetch('/cmd/api/vault', { cache: 'no-store' }).then(r => r.json()));
   check(before && before.rev > 0, 'the dashboard is on the server (rev ' + (before && before.rev) + ')');
@@ -20,6 +20,12 @@ const U = 'http://localhost:' + (process.env.PORT || 8770) + '/cmd/';
     return r.status;
   }, before);
   check(st === 423, 'the server refuses another dashboard over the synced one (' + st + ')');
+  /* the Worker: the same dashboard shrunk to under half its size is refused too (an old app version can't skip this) */
+  const st2 = await p.evaluate(async cur => {
+    const body = JSON.stringify({ v: 2, rev: cur.rev + 1, iter: cur.iter, salt: cur.salt, iv: cur.iv, ct: cur.ct.slice(0, 200), pc: [] });
+    return (await fetch('/cmd/api/vault', { method: 'PUT', headers: { 'content-type': 'application/json', 'X-Base-Rev': String(cur.rev) }, body })).status;
+  }, before);
+  check(st2 === 423, 'the server refuses a copy under half the size (' + st2 + ')');
 
   /* a second device with nothing saved, offline when the lock screen asks */
   const b2 = await launch(), q = await page(b2, 393);

@@ -891,7 +891,17 @@ async function vault(request, env) {
        restored backup, a new passcode – the device sends X-Replace) may do that. */
     if (cur && next.salt !== JSON.parse(cur).salt && request.headers.get('X-Replace') !== '1') return json({ error: 'another dashboard', other: true }, 423);
     /* every piece the new version points to must be here already */
-    if (next.v === 2) { const miss = []; for (const id of next.pc) if ((await env.VAULT.get(VP + id)) == null) miss.push(id); if (miss.length) return json({ error: 'missing pieces', missing: miss }, 412); }
+    let nextSize = next.ct.length;
+    if (next.v === 2) { const miss = []; for (const id of next.pc) { const pv = await env.VAULT.get(VP + id); if (pv == null) miss.push(id); else nextSize += pv.length; } if (miss.length) return json({ error: 'missing pieces', missing: miss }, 412); }
+    /* a save that leaves less than half of the dashboard's size is refused unless it is an on-purpose replace: the
+       Worker can't read the data, but an almost empty copy is much smaller (16 Nov 2026: a phone on an old version
+       saved an almost empty copy over the real one – same passcode). A device on any version gets "no" and keeps trying;
+       nothing is lost. */
+    if (cur && request.headers.get('X-Replace') !== '1') {
+      const c0 = JSON.parse(cur); let curSize = (c0.ct || '').length;
+      if (c0.v === 2 && Array.isArray(c0.pc)) for (const id of c0.pc) { const pv = await env.VAULT.get(VP + id); if (pv) curSize += pv.length; }
+      if (curSize > 60000 && nextSize < curSize * .5) return json({ error: 'shrink', shrink: true }, 423);
+    }
     /* first save of the day: keep yesterday's last version (30 days back) */
     if (cur) {
       const day = new Date().toISOString().slice(0, 10);
