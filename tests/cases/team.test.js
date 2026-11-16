@@ -186,7 +186,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
   await kari.goto(U + '#docs'); await kari.reload();
   check(await until(kari, () => !!document.querySelector('[data-dcopen]'), 20000), 'Kari sees the project');
-  await kari.click('[data-dcopen]'); await kari.waitForSelector('[data-dctab="docs"]'); await kari.click('[data-dctab="docs"]');
+  await kari.evaluate(() => document.querySelector('[data-dcopen]').scrollIntoView({ block: 'center' })); await kari.click('[data-dcopen]');   /* the tools on top push the list down: keep the row clear of the tab bar */
+  await kari.waitForSelector('[data-dctab="docs"]'); await kari.click('[data-dctab="docs"]');
   await kari.waitForSelector('[data-dcline="a2"]'); await kari.click('[data-dcline="a2"]');
   await kari.waitForSelector('[data-dcst="a2:ok"]'); await kari.click('[data-dcst="a2:ok"]'); await sl(800);
   check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'recv'), 'Can edit cannot mark a document Approved');
