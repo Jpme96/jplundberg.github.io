@@ -147,3 +147,13 @@ a.t-icon { text-decoration: none; }
 .t-tag.ok { background: var(--acc-soft); color: var(--acc); }
 .t-tag.warn { background: var(--warn-soft); color: var(--warn); }
 .t-tag.bad { background: var(--bad-soft); color: var(--bad); }
+/* Import from /cmd folded once Documents has content; short windows get a smaller top and tab bar (JP 2026-11-16 – heavy to use) */
+.t-imp { margin: 6px 0 10px; font-size: 14px; }
+.t-imp > summary { cursor: pointer; color: var(--acc); min-height: 32px; display: inline-flex; align-items: center; }
+.t-imp[open] > summary { margin-bottom: 6px; }
+@media (max-height: 720px) and (min-width: 700px) {
+  .t-title p { display: none; }
+  .t-title h1 { font-size: 24px; margin-bottom: 4px; }
+  .t-tabs { padding-top: 4px; padding-bottom: calc(env(safe-area-inset-bottom) + 4px); }
+  .t-tabs button { min-height: 40px; padding: 3px 0; font-size: 11.5px; }
+}

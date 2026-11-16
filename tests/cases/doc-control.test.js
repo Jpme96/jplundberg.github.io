@@ -212,7 +212,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const k4 = await p.evaluate(() => ({ nested: !!document.querySelector('li[data-dcpc="332"] .dc-k4 [data-dctick="3321"]'), lines: DocCtl.linesFor(['3321']).map(l => l.code + ' ' + l.t + ' ' + l.sys).join() }));
   check(k4.nested && k4.lines === '3321 A Made-up sprinkler central,3321 BC Made-up sprinkler central', 'a 4-digit code shows under its 3-digit code and gets its document types ' + JSON.stringify(k4));
   await p.evaluate(() => { const t = Features.tools(); t.fdvcodes = []; Features.saveTools(t); }); await sl(700);
-  await tap('[data-dcptype="sprinkler"]'); await sl(300);
+  await tap('.dc-ptg [data-dcptype="sprinkler"]'); await sl(300);
   await p.evaluate(() => document.querySelectorAll('[data-dcxtick]').forEach(c => { c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); })); await sl(100);   /* the type's specific documents are tested below */
   const pk = await p.evaluate(() => ({ ticked: [...document.querySelectorAll('[data-dctick]:checked')].map(c => c.dataset.dctick).join(), count: document.querySelector('[data-dcpcount]').textContent }));
   check(pk.ticked === '330,331,332' && /3 systems · 5 documents/.test(pk.count), 'the Sprinkler type ticks its systems ' + JSON.stringify(pk));
@@ -243,8 +243,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(() => document.querySelector('#ppView [data-ppclose]').click()); await sl(200);
   /* specific documents for a kind of project (13:05): the Facade type adds the completion certificate and more, on top of the NS 3456 types */
   await tap('[data-drpick]'); await sl(300);
-  await tap('[data-dcptype="facade"]'); await sl(300);
-  const xs = await p.evaluate(() => ({ list: [...document.querySelectorAll('[data-dcxtick]')].map(c => c.closest('li').textContent.trim()), pressed: document.querySelector('[data-dcptype="facade"]').getAttribute('aria-pressed') }));
+  await tap('.dc-ptg [data-dcptype="facade"]'); await sl(300);
+  const xs = await p.evaluate(() => ({ list: [...document.querySelectorAll('[data-dcxtick]')].map(c => c.closest('li').textContent.trim()), pressed: document.querySelector('.dc-ptg [data-dcptype="facade"]').getAttribute('aria-pressed') }));
   check(xs.pressed === 'true' && xs.list.some(t => /^124 Completion certificate/.test(t)) && xs.list.some(t => /^155 Environmental survey/.test(t)), 'the Facade type lists its specific documents (completion certificate, environmental survey …) ' + JSON.stringify(xs.list.slice(0, 4)));
   await p.evaluate(() => { const c = [...document.querySelectorAll('[data-dcxtick]')].find(x => /^155/.test(x.closest('li').textContent.trim())); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(100);
   await tap('[data-dcmake="req"]'); await sl(500);

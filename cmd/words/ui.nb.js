@@ -2981,5 +2981,20 @@ I18N.add({
   "ui.dcn-why-p1": ["also on page 1", "også på side 1"],
   "ui.dcn-why-text": ["found “{w}” {n}× in the text", "fant «{w}» {n}× i teksten"],
   "ui.dcn-load": ["The new file naming could not be loaded – check the connection.", "Den nye filnavngivingen kunne ikke lastes – sjekk tilkoblingen."],
-  "ui.dcn-loading": ["Loading the new file naming …", "Laster den nye filnavngivingen …"]
+  "ui.dcn-loading": ["Loading the new file naming …", "Laster den nye filnavngivingen …"],
+  "ui.dc-tg-whole": ["Whole building", "Hele bygget"],
+  "ui.dc-tg-rooms": ["Rooms and interior", "Rom og innvendig"],
+  "ui.dc-tg-body": ["Building envelope and structure", "Bygningskropp og konstruksjon"],
+  "ui.dc-tg-fire": ["Fire and security", "Brann og sikkerhet"],
+  "ui.dc-tg-hvac": ["Plumbing, heating and ventilation", "VVS – sanitær, varme og ventilasjon"],
+  "ui.dc-tg-el": ["Electrical and automation", "Elektro og automasjon"],
+  "ui.dc-tg-other": ["Lifts, waste and outdoors", "Heis, avfall og utendørs"],
+  "ui.dc-tg-own": ["Your own and others", "Egne og andre"],
+  "ui.dc-picked": ["Picked:", "Valgt:"],
+  "ui.dc-unpick": ["Remove {t}", "Fjern {t}"],
+  "ui.dc-search-types": ["Search a project type, code or system", "Søk etter prosjekttype, kode eller system"],
+  "ui.dc-gsum": ["{n} documents · {m} missing", "{n} dokumenter · {m} mangler"],
+  "ui.dc-gsum2": ["{c} systems · {n} documents", "{c} systemer · {n} dokumenter"],
+  "ui.dc-open-all": ["Open all groups", "Åpne alle grupper"],
+  "ui.dc-close-all": ["Close all groups", "Lukk alle grupper"]
 });

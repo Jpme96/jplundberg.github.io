@@ -502,3 +502,9 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
 }
 /* props: the stop sign keeps the ride's own colour, a little quieter beside the rest */
 .modern .sc-stop rect { opacity: .82; }
+/* Short windows (a laptop with a small browser window, ~500 px tall – JP 2026-11-16): the page top shrinks, so the cards start near the top */
+@media (max-height: 720px) and (min-width: 700px) {
+  .modern .fp-hero { padding: 2px 2px 8px; }
+  .modern .fp-hero .fp-kicker, .modern .fp-hero > p.muted:not(.fp-live) { display: none; }
+  .modern .fp-hero h1 { font-size: 26px; }
+}

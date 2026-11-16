@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1208 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?df4726a3f1") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1213 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?f5c275881e") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -81,8 +81,13 @@
 .bi-arrow-up-square-fill::before{content:"\f146"}
 .bi-arrows-angle-contract::before{content:"\f149"}
 .bi-arrows-angle-expand::before{content:"\f14a"}
+.bi-arrows-collapse::before{content:"\f14b"}
+.bi-arrows-collapse-vertical::before{content:"\f690"}
 .bi-arrows-expand::before{content:"\f14c"}
 .bi-arrows-expand-vertical::before{content:"\f695"}
+.bi-arrows-fullscreen::before{content:"\f14d"}
+.bi-arrows-move::before{content:"\f14e"}
+.bi-arrows-vertical::before{content:"\f698"}
 .bi-at::before{content:"\f152"}
 .bi-award::before{content:"\f154"}
 .bi-award-fill::before{content:"\f153"}

@@ -360,6 +360,13 @@
     if (filt === 'fire') return !!l.fire;
     return l.st === filt;
   }
+  /* folded NS groups in long lists: the group's heading with its counts; its lines are drawn only when it is open */
+  var gopen = {};
+  function foldHead(big, key, op, g, sub) {
+    var head = esc(g + ' ' + (grpName(g) || ''));
+    return big ? '<details class="dc-fold" data-dcg="' + esc(key) + '"' + (op ? ' open' : '') + '><summary class="fdv-h dc-gh">' + head + ' <small class="muted tnum">' + esc(sub) + '</small></summary>' : '<h3 class="fdv-h dc-gh">' + head + '</h3>';
+  }
+  function foldBar(pre, gs) { var all = gs.every(function (g) { return gopen[pre + ':' + g]; }); return '<div class="dc-foldbar"><button type="button" class="text-btn" data-dcgall="' + esc(pre) + '" data-gs="' + esc(gs.join(' ')) + '" data-on="' + (all ? '' : '1') + '"><i class="bi bi-arrows-' + (all ? 'collapse' : 'expand') + '"></i> ' + esc(all ? k('ui.dc-close-all', 'Close all groups') : k('ui.dc-open-all', 'Open all groups')) + '</button></div>'; }
   function docs(p) {
     var L = p.lines || []; if (!L.length) return '<p class="muted dc-help">' + esc(k('ui.dc-no-plan-yet', 'No document plan yet – import it under Overview.')) + '</p>' + planBtns(p);
     var F = {}; (p.files || []).forEach(function (f) { F[f.id] = f; });
@@ -371,9 +378,11 @@
       '<label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' +
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
     if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
+    var big = shown.length > 40 && !ql;   /* a long plan opens folded per NS group; only open groups are drawn (JP 13:48 – 800+ lines were one long page) */
+    if (big) h += foldBar('c:' + p.id, byGroup(shown).map(function (g) { return g[0]; }));
     h += byGroup(shown).map(function (g) {
-      var seen = {};
-      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dc-lines">' + g[1].slice().sort(lineOrder).map(function (l) {
+      var seen = {}, key = 'c:' + p.id + ':' + g[0], cg = counts(g[1]), op = !big || !!gopen[key] || g[1].some(function (l) { return l.id === openLine; });
+      return foldHead(big, key, op, g[0], k('ui.dc-gsum', '{n} documents · {m} missing', { n: cg.all, m: cg.missing })) + (!op ? '' : '<ul class="dc-lines">' + g[1].slice().sort(lineOrder).map(function (l) {
         var sub = seen[l.code] ? '' : '<li class="dc-csub"><span class="dc-code">' + esc(l.code) + '</span><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi"></i>' : '') + '</b></li>'; seen[l.code] = 1;
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
         var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code"></span>' +
@@ -391,7 +400,7 @@
             '<div class="dc-lrm"><button type="button" class="text-btn dc-del" data-dcldel="' + esc(l.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-remove-line', 'Remove the line')) + '</button></div></div>';
         }
         return h2 + '</li>';
-      }).join('') + '</ul>';
+      }).join('') + '</ul>') + (big ? '</details>' : '');
     }).join('');
     return h + addLineForm(p);
   }
@@ -480,13 +489,18 @@
     document.body.classList.toggle('dc-full', !!p);
     el.innerHTML = p ? full(p) : list();
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
+    clampHelp(el);
     var er = document.getElementById('wkDocReq'); if (!er) return;
     var rp = ropen && krav(ropen);
     if (ropen && !rp && document.documentElement.classList.contains('unlocked')) ropen = null;
     document.body.classList.toggle('dr-full', !!rp && !p);
     er.innerHTML = rp ? kravFull(rp) : kravList();
     if (window.I18N && I18N.apply) try { I18N.apply(er); } catch (e) {}
+    clampHelp(er);
   }
+  /* help texts: one line until tapped, unless they hold a button or a field (JP 13:48 – too many words) */
+  function clampHelp(root) { if (root) root.querySelectorAll('.dc-help').forEach(function (p) { if (!p.querySelector('button, label, select, a, input') && p.textContent.length > 70) p.classList.add('dc-clamp'); }); }
+  document.addEventListener('click', function (e) { var p = e.target.closest && e.target.closest('.dc-clamp'); if (p) p.classList.toggle('dc-more'); });
 
   /* ---------- the requirements checklist and project types (JP 2026-11-14) ----------
      The checklist (e.g. Boligbygg's "Sjekkliste for leveranse av FDVU-dokumentasjon", Vedlegg 2) says which NS 3456 types each
@@ -705,12 +719,12 @@
     var h = '<div class="dc-pick">';
     h += r ? '<p class="muted dc-help">' + (reqs().length > 1 ? reqPick('data-dcreqpick', r.id) + ' ' : '') + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label> · <label class="text-btn dc-file">' + esc(k('ui.dc-req-add', 'Another client’s checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreqadd hidden></label></p>'
       : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (e.g. Boligbygg’s Vedlegg 2 – which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p><div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>';
-    h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-chips dc-wrap">' + allTypes().map(function (t) { return '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div>';
-    h += '<p class="muted dc-help">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</p>';
-    var XS = xtras();
-    if (XS.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-specific', 'Specific to this kind of project')) + '</h3><p class="muted dc-help">' + esc(k('ui.dc-specific-help', 'Documents the project needs besides the NS 3456 types – untick what doesn’t apply.')) + '</p><ul class="dc-xs">' + XS.map(function (x) {
-      return '<li><label><input type="checkbox" data-dcxtick="' + esc(xKey(x)) + '"' + (xoff[xKey(x)] ? '' : ' checked') + '><span><b>' + esc(x[0]) + '</b> ' + esc(I18N.lang === 'nb' ? x[2] : x[3]) + (x[1] ? ' <small class="dc-lt">' + esc(typeName(x[1])) + '</small>' : '') + '</span></label></li>'; }).join('') + '</ul>';
-    h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-codes', 'Search code or system')) + '">';
+    h += '<div class="dc-psum" data-dcpsum>' + sumHtml() + '</div>';
+    h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-types', 'Search a project type, code or system')) + '">';
+    h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-ptg">' + typeGroups().map(function (g) {
+      return '<div class="dc-ptrow" data-dcptg><span class="dc-ptl">' + esc(g[0]) + '</span><div class="dc-chips dc-wrap">' + g[1].map(function (t) { return '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div>';
+    h += '<div data-dcxs>' + xsHtml() + '</div>';
     var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
     if (!Object.keys(own4()).length) h += '<p class="muted dc-help">' + esc(k('ui.dc-no4', 'For 4-digit codes (e.g. 3321), import your NS 3451 list in Settings → Work – they then show under their 3-digit code.')) + '</p>';
     var lastMain = '';
@@ -728,12 +742,41 @@
     if (ownTypes().length) h += '<p class="muted dc-help">' + ownTypes().map(function (t) { return '<button type="button" class="text-btn" data-dctdel="' + esc(t.id) + '"><i class="bi bi-x"></i> ' + esc(t.name) + '</button>'; }).join(' ') + '</p>';
     return h + '</div>';
   }
+  /* the project types in groups, so 35 equal chips read as six short rows (JP 13:32 – heavy to use) */
+  var TGRP = [['whole', 'ui.dc-tg-whole', 'Whole building', 'new one'], ['rooms', 'ui.dc-tg-rooms', 'Rooms and interior', 'bath kitchen pods inner floor fixed'], ['body', 'ui.dc-tg-body', 'Building envelope and structure', 'facade windows roof balcony stairs structure ground'],
+    ['fire', 'ui.dc-tg-fire', 'Fire and security', 'fire sprinkler firealarm security'], ['hvac', 'ui.dc-tg-hvac', 'Plumbing, heating and ventilation', 'plumbing heating vent cooling gas'], ['el', 'ui.dc-tg-el', 'Electrical and automation', 'el light ev solar reserve tele bms'], ['other', 'ui.dc-tg-other', 'Lifts, waste and outdoors', 'lift waste outdoor outva']];
+  function typeGroups() {
+    var T = allTypes(), used = {}, out = TGRP.map(function (g) { var L = g[3].split(' ').map(function (id) { return T.filter(function (t) { return t.id === id; })[0]; }).filter(Boolean); L.forEach(function (t) { used[t.id] = 1; }); return [k(g[1], g[2]), L]; }).filter(function (g) { return g[1].length; });
+    var rest = T.filter(function (t) { return !used[t.id]; }); if (rest.length) out.push([k('ui.dc-tg-own', 'Your own and others'), rest]);
+    return out;
+  }
+  /* what is picked, in one line – each type with an × */
+  function sumHtml() {
+    var on = allTypes().filter(function (t) { return xsel[t.id]; });
+    return on.length ? '<span class="muted">' + esc(k('ui.dc-picked', 'Picked:')) + '</span> ' + on.map(function (t) { return '<button type="button" class="dc-chip dc-on" data-dcptype="' + esc(t.id) + '" aria-label="' + esc(k('ui.dc-unpick', 'Remove {t}', { t: t.name })) + '">' + esc(t.name) + ' <i class="bi bi-x"></i></button>'; }).join('') + ' <span class="dc-pc" data-dcpcount2>' + pickCount() + '</span>'
+      : '<span class="muted">' + esc(k('ui.dc-ptype-help', 'A type ticks its systems – then tick more or untick what the project doesn’t have.')) + '</span>';
+  }
+  function xsHtml() {
+    var XS = xtras(); if (!XS.length) return '';
+    return '<h3 class="fdv-h">' + esc(k('ui.dc-specific', 'Specific to this kind of project')) + '</h3><p class="muted dc-help">' + esc(k('ui.dc-specific-help', 'Documents the project needs besides the NS 3456 types – untick what doesn’t apply.')) + '</p><ul class="dc-xs">' + XS.map(function (x) {
+      return '<li><label><input type="checkbox" data-dcxtick="' + esc(xKey(x)) + '"' + (xoff[xKey(x)] ? '' : ' checked') + '><span><b>' + esc(x[0]) + '</b> ' + esc(I18N.lang === 'nb' ? x[2] : x[3]) + (x[1] ? ' <small class="dc-lt">' + esc(typeName(x[1])) + '</small>' : '') + '</span></label></li>'; }).join('') + '</ul>';
+  }
+  /* a tap on a type changes only what it touches – no redraw of the 700+ boxes (250–380 ms a tap on JP's PC before) */
+  function pickSync() {
+    var root = document.querySelector('.dc-pick'); if (!root) { draw(); return; }
+    root.querySelectorAll('.dc-ptg [data-dcptype]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!xsel[b.dataset.dcptype])); });
+    root.querySelectorAll('[data-dctick]').forEach(function (i) { var on = !!ticks[i.dataset.dctick]; if (i.checked !== on) i.checked = on; });
+    root.querySelectorAll('details.dc-pg').forEach(function (d) { if (!d.open && d.querySelector('[data-dctick]:checked')) d.open = true; });
+    var xs = root.querySelector('[data-dcxs]'); if (xs) xs.innerHTML = xsHtml();
+    var sm = root.querySelector('[data-dcpsum]'); if (sm) sm.innerHTML = sumHtml();
+    updPick();
+  }
   function pickCount() {
     var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }), n = linesFor(cs).length + xtras().filter(function (x) { return !xoff[xKey(x)]; }).length;
     return esc(k('ui.dc-pick-count', '{c} systems · {n} documents', { c: cs.length, n: n }));
   }
   function updPick() {
-    var el = document.querySelector('[data-dcpcount]'); if (el) el.innerHTML = pickCount();
+    var el = document.querySelector('[data-dcpcount]'), el2 = document.querySelector('[data-dcpcount2]'); if (el) el.innerHTML = pickCount(); if (el2) el2.innerHTML = pickCount();
     document.querySelectorAll('[data-dcpn]').forEach(function (s) { var g = s.dataset.dcpn, n = Object.keys(ticks).filter(function (c) { return ticks[c] && c.slice(0, 2) === g; }).length; s.textContent = n || ''; });
   }
 
@@ -780,13 +823,16 @@
       '<button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button>' +
       '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="r:' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '</div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dr-excel-help', 'The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.')) + '</p>';
+    var big = L.length > 40;
+    if (big) h += foldBar('r:' + p.id, byGroup(L).map(function (g) { return g[0]; }));
     h += byGroup(L).map(function (g) {
-      return '<h3 class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h3><ul class="dr-syss">' + byCode(g[1]).map(function (c) {
+      var key = 'r:' + p.id + ':' + g[0], op = !big || !!gopen[key], ns = byCode(g[1]).length;
+      return foldHead(big, key, op, g[0], k('ui.dc-gsum2', '{c} systems · {n} documents', { c: ns, n: g[1].length })) + (!op ? '' : '<ul class="dr-syss">' + byCode(g[1]).map(function (c) {
         return '<li class="dr-sys"><div class="dr-sh"><span class="dc-code">' + esc(c[0]) + '</span><b data-noi18n>' + esc(c[1]) + '</b></div><ul class="dr-types">' + c[2].map(function (l) {
           return '<li class="dr-line"><span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + (l.opt ? ' <small>· ' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</small>' : '') + '</b>' +
             (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span><button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button></li>';
         }).join('') + '</ul></li>';
-      }).join('') + '</ul>';
+      }).join('') + '</ul>') + (big ? '</details>' : '');
     }).join('');
     h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drpick><i class="bi bi-ui-checks"></i> ' + esc(k('ui.dc-pick-more', 'Add from the checklist')) + '</button></div>' + addLineForm(p, 'req') +
       '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3>' + (redit ? '<form class="dc-pform" data-dredit>' + '<label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required value="' + esc(p.name) + '"></label><label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40" value="' + esc(p.no || '') + '"></label>' + siteFields(p) +
@@ -1242,7 +1288,7 @@
         tcodes(ty).forEach(function (c) { if (!keep[c]) delete ticks[c]; });
         var still = allTypes().filter(function (q) { return xsel[q.id] && q.id !== 'new'; }); lastType = still.length ? still[still.length - 1].name : '';
       } else { lastType = ty.id === 'new' ? '' : ty.name; xsel[ty.id] = true; tcodes(ty).forEach(function (c) { ticks[c] = true; }); }
-      var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
+      pickSync(); return; }
     if ((b = t.closest('[data-dcmake]')) && b.dataset.dcmake === 'req') {
       var cr = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cr.length && !xtras().length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
       var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); (p.lines || []).forEach(function (l) { if (l.name) have[l.code + '|' + l.name] = 1; });
@@ -1340,7 +1386,8 @@
     if (t.dataset.dcflink && t.value) { var f = t.dataset.dcflink, l = t.value; saveP(open, function (p) { link(p, l, f); }); draw(); return; }
   });
   document.addEventListener('input', function (e) { var t = e.target;
-    if (t.matches && t.matches('[data-dcpq]')) { var qq = t.value.toLowerCase().trim(); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
+    if (t.matches && t.matches('[data-dcpq]')) { var qq = t.value.toLowerCase().trim();
+      document.querySelectorAll('.dc-ptg [data-dcptg]').forEach(function (row) { var any2 = false; row.querySelectorAll('[data-dcptype]').forEach(function (b) { var on2 = !qq || b.textContent.toLowerCase().indexOf(qq) >= 0; b.hidden = !on2; any2 = any2 || on2; }); row.hidden = !any2; }); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
     if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.matches || !t.matches('[data-dcdue], [data-dcwho]')) return;
@@ -1370,6 +1417,15 @@
     else { var t = Fe.tools(); id = uid(); t.dctl = (t.dctl || []).concat([Object.assign({ id: id, made: new Date().toISOString(), lines: [], files: [] }, v)]); Fe.saveTools(t); }
     adding = false; editing = false; document.activeElement && document.activeElement.blur && document.activeElement.blur();
     if (open !== id) go(id); else draw();
+  });
+  document.addEventListener('toggle', function (e) {
+    var d = e.target; if (!d.matches || !d.matches('details[data-dcg]')) return; var key = d.dataset.dcg;
+    if (!!gopen[key] === d.open) return; gopen[key] = d.open;
+    if (d.open && !d.querySelector('ul')) { var y = window.scrollY; draw(); window.scrollTo(0, y); }   /* drawn now that it is open */
+  }, true);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-dcgall]'); if (!b) return;
+    var on = !!b.dataset.on; b.dataset.gs.split(' ').forEach(function (g) { gopen[b.dataset.dcgall + ':' + g] = on; }); var y = window.scrollY; draw(); window.scrollTo(0, y);
   });
   window.addEventListener('tools:change', function () { var ae = document.activeElement; if (ae && ae.matches && ae.matches('[data-dcq]')) return; draw(); });
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(draw, 80); });

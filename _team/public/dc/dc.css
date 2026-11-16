@@ -797,3 +797,25 @@ body.dr-full #wkDocReq { display: block !important; }
   .dcn-parts li { grid-template-columns: 22px 1fr; }
   .dcn-parts li > :nth-child(n+3) { grid-column: 2; }
 }
+.dc-psum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; font-size: 13px; }
+.dc-psum .dc-chip.dc-on { background: var(--text); color: var(--bg-solid, var(--card)); border-color: transparent; }
+.dc-pc { color: var(--muted); }
+.dc-ptg { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+.dc-ptrow { display: grid; grid-template-columns: 170px 1fr; gap: 6px 10px; align-items: start; }
+.dc-ptl { font-size: 12.5px; color: var(--muted); padding-top: 6px; }
+@media (max-width: 640px) {
+  .dc-ptrow { grid-template-columns: 1fr; gap: 4px; }
+  .dc-ptl { padding-top: 0; }
+}
+.dc-fold { border-bottom: 1px solid rgba(var(--ink-rgb), .08); }
+.dc-fold > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 0; margin: 0; }
+.dc-fold > summary::-webkit-details-marker { display: none; }
+.dc-fold > summary::before { content: "›"; display: inline-block; width: 12px; transition: transform var(--dur-1, .15s); color: var(--muted); }
+.dc-fold[open] > summary::before { transform: rotate(90deg); }
+.dc-fold > summary small { font-weight: 400; font-size: 12.5px; }
+.dc-foldbar { display: flex; justify-content: flex-end; margin: 4px 0; }
+.dc-help.dc-clamp { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+.dc-help.dc-clamp.dc-more { display: block; -webkit-line-clamp: unset; }
+@media (prefers-reduced-motion: reduce) {
+  .dc-fold > summary::before { transition: none; }
+}
