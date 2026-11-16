@@ -347,7 +347,7 @@
         ins.push(Math.abs(ch) < 1e-9 ? 'no change in ' + range + ' days' : (ch > 0 ? 'up ' : 'down ') + fmt(chartM, Math.abs(ch)) + ' in ' + range + ' days');
       }
       ins.push('average ' + fmt(chartM, avg));
-      if (withData.length > 1) ins.push((LOWER[chartM] ? 'lowest ' : 'best ') + new Date(best.k + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }) + ' ' + fmt(chartM, best.v));
+      if (withData.length > 1) ins.push(I18N.k(LOWER[chartM] ? 'ui.ah-lowest' : 'ui.ah-best', LOWER[chartM] ? 'lowest {v} ({d})' : 'best {v} ({d})', { v: fmt(chartM, best.v), d: new Date(best.k + 'T12:00').toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }));   /* "best 23 878 (lør. 7. nov.)" – the date and the number ran together ("best lør. 7. 23 878", 2026-11-16) */
     }
     var short = keys.length < range ? '<p class="muted ah-grow"><i class="bi bi-hourglass-split"></i> History builds up by itself – one more day every evening (since ' + esc(new Date(keys[0] + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) + ').</p>' : '';
     var lastT = (window.Vault.get().health || {}).last;
@@ -422,9 +422,44 @@
       (sc ? '<small class="' + (sc.bad ? 'ah-bad' : 'ah-good') + '"><i class="bi bi-' + (sc.bad ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + esc(sc.title) + (sc.fix ? '</small><small class="ah-fix">' + sc.fix : '') + '</small>' : '') + '</span></div>';
   }
 
+  /* the set-up steps (one place for every page; JP 2026-11-16: they were English in Norwegian). In Norwegian the Shortcut
+     actions are named the way a Norwegian iPhone shows them; Cloudflare's menus are English on every phone. */
+  function setupHtml() {
+    var nb = I18N.lang === 'nb', T = function (en, no) { return nb ? no : en; }, b = function (s) { return '<b>' + s + '</b>'; }, c = function (s) { return '<code>' + s + '</code>'; };
+    var keys = [['exercise', T('Exercise Minutes · Sum', 'Treningsminutter · Sum')], ['active', T('Active Energy · Sum', 'Aktiv energi · Sum')], ['stand', T('Stand Minutes · Sum', 'Ståminutter · Sum')],
+      ['distance', T('Walking + Running Distance · Sum', 'Gå- og løpedistanse · Sum')], ['flights', T('Flights Climbed · Sum', 'Etasjer gått · Sum')], ['daylight', T('Time in Daylight · Sum', 'Tid i dagslys · Sum')],
+      ['hr', T('Heart Rate · Average, today', 'Puls · Gjennomsnitt, i dag')], ['rhr', T('Resting Heart Rate · Average', 'Hvilepuls · Gjennomsnitt')], ['hrv', T('Heart Rate Variability · Average', 'Pulsvariasjon · Gjennomsnitt')],
+      ['vo2', T('Cardio Fitness (VO₂ max) · Average, last 30 days', 'Kondisjon (VO₂-maks) · Gjennomsnitt, siste 30 dager')], ['weight', T('Weight · Average, last 30 days', 'Vekt · Gjennomsnitt, siste 30 dager')],
+      ['mindful', T('Mindful Minutes · Sum', 'Mindfulness-minutter · Sum')], ['water', T('Water · Sum', 'Vann · Sum')]];
+    var FHS = b(T('Find Health Samples', 'Finn helseprøver')), CS = b(T('Calculate Statistics', 'Beregn statistikk'));
+    return '<p class="st-sub"><i class="bi bi-1-circle"></i> ' + T('Once, in Cloudflare (3 minutes)', 'Én gang, i Cloudflare (3 minutter)') + '</p><section class="st-group sc-steps"><ol>' +
+      '<li>' + T('Paste the newest ', 'Lim inn nyeste ') + c('worker.js') + T(' into the Worker, if you haven’t.', ' i Workeren, hvis du ikke har gjort det.') + '</li>' +
+      '<li>Zero Trust → ' + b('Access → Service auth → Create service token') + T('. Name: ', '. Navn: ') + '<i>iPhone Shortcut</i>' + T(', duration: non-expiring. Copy the ', ', varighet: utløper ikke. Kopier ') + b('Client ID') + T(' and ', ' og ') + b('Client Secret') + T(' straight into the Shortcut below – nowhere else.', ' rett inn i snarveien under – ikke noe annet sted.') + '</li>' +
+      '<li>' + b('Access → Applications') + T(' → your dashboard → ', ' → dashbordet ditt → ') + b('Policies → Add a policy') + T('. Action: ', '. Action: ') + b('Service Auth') + T('. Include: ', '. Include: ') + b('Service Token') + ' → <i>iPhone Shortcut</i>' + T('. Save.', '. Lagre.') + '</li>' +
+      '</ol><p class="muted">' + T('The token can only hand in health numbers – it can’t read or change anything else.', 'Tokenet kan bare levere helsetall – det kan ikke lese eller endre noe annet.') + '</p></section>' +
+      '<p class="st-sub"><i class="bi bi-2-circle"></i> ' + T('On your iPhone (5 minutes)', 'På iPhonen (5 minutter)') + '</p><section class="st-group sc-steps"><ol>' +
+      '<li>' + T('Shortcuts → ', 'Snarveier → ') + b('+') + T(', name it ', ', kall den ') + '<i>' + T('Health to dashboard', 'Helse til dashbord') + '</i>.</li>' +
+      '<li>' + FHS + T(' – Type: Steps, Start Date: is today. Then ', ' – Type: Skritt, Startdato: er i dag. Deretter ') + CS + ' → Sum.</li>' +
+      '<li>' + b(T('Sleep', 'Søvn')) + T(' (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):', ' (å summere «Varighet» virker ikke på alle iPhoner, så hver bit av natten tas fra start til slutt):') + '<ol type="a">' +
+        '<li>' + b(T('Adjust Date', 'Juster dato')) + T(': Subtract ', ': Trekk fra ') + b(T('24 hours', '24 timer')) + T(' from ', ' fra ') + b(T('Current Date', 'Gjeldende dato')) + '.</li>' +
+        '<li>' + FHS + T(' – Type: Sleep, Start Date: is in the last 1 day, ', ' – Type: Søvn, Startdato: er i løpet av siste 1 dag, ') + b(T('Value is not Awake', 'Verdi er ikke Våken')) + ', ' + b(T('is not In Bed', 'er ikke I seng')) + ', ' + b(T('is not Asleep', 'er ikke Sover')) +
+          T(' (keeps the Watch’s Core, Deep and REM, so nothing is counted twice). Limit off. No Watch – only In Bed in the Health app? Use one filter instead: ', ' (beholder klokkas kjerne-, dyp- og REM-søvn, så ingenting telles to ganger). Grense av. Ingen klokke – bare I seng i Helse-appen? Bruk ett filter i stedet: ') + b(T('Value is In Bed', 'Verdi er I seng')) + '.</li>' +
+        '<li>' + b(T('Repeat with Each', 'Gjenta med hver')) + T(' item in Health Samples → ', ' i Helseprøver → ') + b(T('If', 'Hvis')) + T(' Repeat Item’s Start Date ', ' Gjenta-objektets startdato ') + b(T('is after', 'er etter')) + T(' Adjusted Date → ', ' Justert dato → ') + b(T('Get Minutes between', 'Hent minutter mellom')) +
+          T(' Repeat Item’s Start Date and End Date → ', ' Gjenta-objektets startdato og sluttdato → ') + b(T('Otherwise', 'Ellers')) + ' → ' + b(T('Number', 'Tall')) + T(' 0 → End If → End Repeat.', ' 0 → Slutt hvis → Slutt gjenta.') + '</li>' +
+        '<li>' + CS + T(' → Sum of Repeat Results, renamed ', ' → Sum av Gjenta-resultater, kalt ') + '<i>' + T('Sleep sum', 'Søvnsum') + '</i>' + T('. That’s minutes – the dashboard turns it into hours.', '. Det er minutter – dashbordet gjør det om til timer.') + '</li></ol></li>' +
+      '<li>' + b(T('Get Contents of URL', 'Hent innhold i URL')) + ': <span class="sc-url" id="ahUrl">' + esc(location.origin + API) + '</span> <button type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> ' + T('Copy', 'Kopier') + '</button><br>' +
+        T('Method ', 'Metode ') + b('POST') + T('. Headers: ', '. Overskrifter: ') + c('CF-Access-Client-Id') + T(' and ', ' og ') + c('CF-Access-Client-Secret') + T(' with your two values. Request Body: ', ' med de to verdiene dine. Forespørselsinnhold: ') + b('JSON') + ' → ' + b(T('Number', 'Tall')) +
+        T(' fields ', '-felt ') + c('steps') + T(' and ', ' og ') + c('sleep') + T(', each set with ', ', hver satt med ') + b(T('Select Variable', 'Velg variabel')) + T(' → the blue ', ' → den blå ') + b('Sum') + T(' under its own Calculate action. No date needed – today’s is used.', ' under sin egen Beregn-handling. Ingen dato trengs – dagens brukes.') + '</li>' +
+      '<li>' + b(T('More numbers', 'Flere tall')) + T(' (optional): one ', ' (valgfritt): én ') + FHS + T(' (Start Date is today) + one ', ' (Startdato er i dag) + én ') + CS + T(' each, and a Number field with this name. Each gets its own tile, chart and goal.', ' hver, og et Tall-felt med dette navnet. Hvert får sin egen flis, graf og mål.') +
+        '<div class="ah-keys">' + keys.map(function (x) { return '<span>' + c(x[0]) + ' ' + esc(x[1]) + '</span>'; }).join('') + '</div></li>' +
+      '<li>' + T('Run it once. Open the dashboard – a note says what arrived.', 'Kjør den én gang. Åpne dashbordet – en melding sier hva som kom.') + '</li>' +
+      '<li>' + T('Shortcuts → ', 'Snarveier → ') + b(T('Automation → +', 'Automatisering → +')) + T(' → Time of Day, 22:30, Daily → ', ' → Tidspunkt, 22:30, Daglig → ') + b(T('Run Immediately', 'Kjør umiddelbart')) + T(' → Health to dashboard.', ' → Helse til dashbord.') + '</li>' +
+      '</ol><p class="muted">' + T('Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.', 'Søvn kan komme som timer, minutter eller sekunder – dashbordet finner ut av det. Tall som mangler, blir bare utelatt.') + '</p></section>';
+  }
   /* ---------- Settings → Apple Health ---------- */
   function settingsPage() {
     var box = $('ahSet'); if (!box) return;
+    var sb = $('ahSetupBody'); if (sb && sb.dataset.lang !== I18N.lang) { sb.innerHTML = setupHtml(); sb.dataset.lang = I18N.lang; }
     if ($('ahUrl')) $('ahUrl').textContent = location.origin + API;
     var hb = readJSON('dash.habits', { list: [] }), D = days(), n = Object.keys(D).length;
     $('ahStatus').textContent = n ? n + ' day' + (n === 1 ? '' : 's') + ' from Apple Health · last ' + new Date(((window.Vault.get() || {}).health || {}).last || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Nothing received yet';

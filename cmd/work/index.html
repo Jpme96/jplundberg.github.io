@@ -475,40 +475,7 @@
         <p data-t="ui.habits-that-tick-themselves" class="st-sub">Habits that tick themselves</p>
         <section class="st-group" id="ahHabits"></section>
         <details class="st-setup" id="ahSetup"><summary data-t="ui.how-to-set-it-up" class="st-sub"><i class="bi bi-tools"></i> How to set it up <span data-t="ui.about-10-minutes-once-cloudflare-first-t" class="st-hint">About 10 minutes, once – Cloudflare first, then your iPhone</span></summary>
-        <p data-t="ui.once-in-cloudflare-3-minutes" class="st-sub"><i class="bi bi-1-circle"></i> Once, in Cloudflare (3 minutes)</p>
-        <section class="st-group sc-steps">
-          <ol>
-            <li data-t="ui.paste-the-newest">Paste the newest <code>worker.js</code> <span data-t="ui.into-the-worker-if-you-havent">into the Worker, if you haven't.</span></li>
-            <li>Zero Trust → <b>Access → Service auth → Create service token</b><span data-t="ui.name">. Name:</span> <i>iPhone Shortcut</i><span data-t="ui.duration-non-expiring-copy-the">, duration: non-expiring. Copy the</span> <b>Client ID</b> <span data-t="ui.and">and</span> <b>Client Secret</b> <span data-t="ui.straight-into-the-shortcut-below-nowhere">straight into the Shortcut below – nowhere else.</span></li>
-            <li><b>Access → Applications</b> → your dashboard → <b>Policies → Add a policy</b><span data-t="ui.action">. Action:</span> <b>Service Auth</b><span data-t="ui.include">. Include:</span> <b>Service Token</b> → <i>iPhone Shortcut</i><span data-t="ui.save-2">. Save.</span></li>
-          </ol>
-          <p data-t="ui.the-token-can-only-hand-in-health-number" class="muted">The token can only hand in health numbers – it can't read or change anything else.</p>
-        </section>
-        <p data-t="ui.on-your-iphone-5-minutes" class="st-sub"><i class="bi bi-2-circle"></i> On your iPhone (5 minutes)</p>
-        <section class="st-group sc-steps">
-          <ol>
-            <li data-t="ui.shortcuts">Shortcuts → <b>+</b><span data-t="ui.name-it">, name it</span> <i>Health to dashboard</i>.</li>
-            <li data-t="ui.type-steps-start-date-is-today-then"><b>Find Health Samples</b> – Type: Steps, Start Date: is today. Then <b>Calculate Statistics</b> <span data-t="ui.sum">→ Sum.</span></li>
-            <li><b data-t="ui.sleep">Sleep</b> (summing “Duration” doesn’t work on every iPhone, so each piece of the night is timed from its start to its end):
-              <ol type="a">
-                <li><b>Adjust Date</b>: Subtract <b>24 hours</b> from <b>Current Date</b>.</li>
-                <li data-t="ui.type-sleep-start-date-is-in-the-last-1-d"><b>Find Health Samples</b> – Type: Sleep, Start Date: is in the last 1 day, <b>Value is not Awake</b>, <b>is not In Bed</b>, <b>is not Asleep</b> (keeps the Watch’s Core, Deep and REM, so nothing is counted twice). Limit off. No Watch – only In Bed in the Health app? Use one filter instead: <b>Value is In Bed</b>.</li>
-                <li><b>Repeat with Each</b> item in Health Samples → <b>If</b> Repeat Item’s Start Date <b>is after</b> Adjusted Date → <b>Get Minutes between</b> Repeat Item’s Start Date and End Date → <b>Otherwise</b> → <b>Number</b> 0 → End If → End Repeat.</li>
-                <li><b>Calculate Statistics</b> → Sum of Repeat Results, renamed <i>Sleep sum</i>. That’s minutes – the dashboard turns it into hours.</li>
-              </ol></li>
-            <li><b>Get Contents of URL</b>: <span class="sc-url" id="ahUrl"></span> <button data-t="ui.copy" type="button" class="text-btn" id="ahCopy"><i class="bi bi-copy"></i> Copy</button><br>Method <b>POST</b><span data-t="ui.headers">. Headers:</span> <code>CF-Access-Client-Id</code> <span data-t="ui.and">and</span> <code>CF-Access-Client-Secret</code> <span data-t="ui.with-your-two-values-request-body">with your two values. Request Body:</span> <b>JSON</b> → <b>Number</b> <span data-t="ui.fields">fields</span> <code>steps</code> <span data-t="ui.and">and</span> <code>sleep</code><span data-t="ui.each-set-with">, each set with</span> <b>Select Variable</b> <span data-t="ui.the-blue">→ the blue</span> <b>Sum</b> <span data-t="ui.under-its-own-calculate-action-no-date-n">under its own Calculate action. No date needed – today's is used.</span></li>
-            <li data-t="ui.optional-one"><b data-t="ui.more-numbers">More numbers</b> (optional): one <b>Find Health Samples</b> <span data-t="ui.start-date-is-today-one">(Start Date is today) + one</span> <b>Calculate Statistics</b> <span data-t="ui.each-and-a-number-field-with-this-name-e">each, and a Number field with this name. Each gets its own tile, chart and goal.</span>
-              <div class="ah-keys">
-                <span><code>exercise</code> Exercise Minutes · Sum</span><span><code>active</code> Active Energy · Sum</span><span><code>stand</code> Stand Hours · Sum</span>
-                <span><code>distance</code> Walking + Running Distance · Sum</span><span><code>flights</code> Flights Climbed · Sum</span><span><code>daylight</code> Time in Daylight · Sum</span>
-                <span><code>hr</code> Heart Rate · Average, today</span><span><code>rhr</code> Resting Heart Rate · Average</span><span><code>hrv</code> <span data-t="ui.ah-key-hrv">Heart Rate Variability · Average</span></span><span><code>vo2</code> <span data-t="ui.ah-key-vo2">Cardio Fitness (VO₂ max) · Average, last 30 days</span></span>
-                <span><code>weight</code> <span data-t="ui.ah-key-weight">Weight · Average, last 30 days</span></span><span><code>mindful</code> <span data-t="ui.ah-key-mindful">Mindful Minutes · Sum</span></span><span><code>water</code> <span data-t="ui.ah-key-water">Water · Sum</span></span>
-              </div></li>
-            <li data-t="ui.run-it-once-open-the-dashboard-a-note-sa">Run it once. Open the dashboard – a note says what arrived.</li>
-            <li data-t="ui.shortcuts">Shortcuts → <b>Automation → +</b> <span data-t="ui.time-of-day-22-30-daily">→ Time of Day, 22:30, Daily →</span> <b>Run Immediately</b> <span data-t="ui.health-to-dashboard">→ Health to dashboard.</span></li>
-          </ol>
-          <p data-t="ui.sleep-can-come-as-hours-minutes-or-secon" class="muted">Sleep can come as hours, minutes or seconds – the dashboard works it out. Missing numbers are simply left out.</p>
-        </section>
+        <div id="ahSetupBody" data-noi18n></div>   <!-- the steps come from ahealth.js (setupHtml), in English or Norwegian -->
         </details>
         <section class="st-group"><button class="st-row st-btn" id="ahClear" type="button"><span data-t="ui.remove-apple-health-data-from-the-dashbo" class="danger-txt"><i class="bi bi-trash3"></i> Remove Apple Health data from the dashboard</span><i class="bi bi-chevron-right"></i></button></section>
       </div>
@@ -668,9 +635,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=5ee0ff125d"></script>
-  <script src="../dist/page-work.js?v=e8ff461ca4"></script>
-  <script src="../dist/tail.js?v=8df947771f"></script>
+  <script src="../dist/head.js?v=e6b6fca5ed"></script>
+  <script src="../dist/page-work.js?v=0987e18f6b"></script>
+  <script src="../dist/tail.js?v=a06163568b"></script>
   <!-- /scripts -->
 </body>
 </html>

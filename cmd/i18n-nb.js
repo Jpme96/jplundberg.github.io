@@ -402,7 +402,7 @@
   /* optional features: Talk to add, Shutdown, Find time, Meeting prep, Trip budget, Rest day, Strømpris, Jars, FDV, Holiday planner, Gym log, Smart packing */
   (function (add) { for (var k in add) if (!(k in D)) D[k] = add[k]; })({
     'Talk to add': 'Snakk inn', 'Say it and it’s added – “149 Rema”, “gym tomorrow 7”': 'Si det, så legges det til – «149 Rema», «trening i morgen 7»', 'Say it, and it’s added': 'Si det, så legges det til',
-    'Find time': 'Finn tid', 'Finds a free slot this week for anything, and books it': 'Finner ledig tid denne uken til hva som helst, og booker den', 'A free slot this week for anything': 'Ledig tid denne uken til hva som helst',
+    'Find time': 'Finn tid', 'Finds a free slot this week for anything, and books it': 'Finner ledig tid denne uka til hva som helst, og booker den', 'A free slot this week for anything': 'Ledig tid denne uka til hva som helst',
     'Shutdown ritual': 'Avslutt arbeidsdagen', 'End the workday in one go: clock out, move what’s left, pick tomorrow’s top 3': 'Avslutt arbeidsdagen på én gang: stemple ut, flytt det som er igjen, velg morgendagens topp 3',
     'Meeting prep': 'Møteforberedelse', 'Before a meeting: notes and open action points from last time': 'Før et møte: notater og åpne oppgaver fra sist',
     'FDV inspection notes': 'FDV-befaringsnotater', 'Findings with TG per building part – and a tidy summary to send': 'Funn med TG per bygningsdel – og et ryddig sammendrag å sende',
@@ -417,7 +417,7 @@
     'Work time': 'Arbeidstid', 
     'Not now': 'Ikke nå', 'Move what’s left and pick tomorrow’s top 3': 'Flytt det som er igjen og velg morgendagens topp 3', 'Clock out, move what’s left, pick tomorrow’s top 3': 'Stemple ut, flytt det som er igjen, velg morgendagens topp 3',
     'Three is the limit – take one out first': 'Tre er maks – ta ut én først',
-    'What do you need time for?': 'Hva trenger du tid til?', 'Work hours': 'Arbeidstid', 'Evenings': 'Kvelder', 'Any time': 'Når som helst', 'This week': 'Denne uken', 'Next week': 'Neste uke', '2 weeks': '2 uker', 'Weekends too': 'Helger også',
+    'What do you need time for?': 'Hva trenger du tid til?', 'Work hours': 'Arbeidstid', 'Evenings': 'Kvelder', 'Any time': 'Når som helst', 'This week': 'Denne uka', 'Next week': 'Neste uke', '2 weeks': '2 uker', 'Weekends too': 'Helger også',
     
     'Ready': 'Klar', 'Meeting notes': 'Møtenotater', 'Notes in the event': 'Notater i hendelsen', 'notes ready': 'notater klare',
     'Take a rest day': 'Ta en hviledag', 'Go easy today': 'Ta det rolig i dag', 'Ready to train': 'Klar for trening', 'Slept well': 'Sov godt', 'HRV above your normal': 'HRV over det normale',
@@ -464,8 +464,8 @@
     'New': 'Ny', 'Clock in?': 'Stemple inn?', 'Not clocked in yet today': 'Ikke stemplet inn i dag', 'Saved': 'Lagret', 'Earlier versions': 'Tidligere versjoner', 
     'as it was at the start of the day': 'slik det var ved starten av dagen', 'Looking …': 'Ser etter …', 
     'Couldn’t get that version right now.': 'Fikk ikke hentet den versjonen nå.',
-    'Apple Health': 'Apple Health', 'Steps today': 'Skritt i dag', 'Steps this week': 'Skritt denne uken', 'Exercise minutes today': 'Treningsminutter i dag', 'Exercise minutes this week': 'Treningsminutter denne uken', 'Active calories today': 'Aktive kalorier i dag',
-    'Distance this week (km)': 'Distanse denne uken (km)', 'Sleep, 7-night average (h)': 'Søvn, snitt 7 netter (t)', 'Weight, latest (kg) – lower is better': 'Vekt, siste (kg) – lavere er bedre', 'Resting pulse, latest – lower is better': 'Hvilepuls, siste – lavere er bedre'
+    'Apple Health': 'Apple Health', 'Steps today': 'Skritt i dag', 'Steps this week': 'Skritt denne uka', 'Exercise minutes today': 'Treningsminutter i dag', 'Exercise minutes this week': 'Treningsminutter denne uka', 'Active calories today': 'Aktive kalorier i dag',
+    'Distance this week (km)': 'Distanse denne uka (km)', 'Sleep, 7-night average (h)': 'Søvn, snitt 7 netter (t)', 'Weight, latest (kg) – lower is better': 'Vekt, siste (kg) – lavere er bedre', 'Resting pulse, latest – lower is better': 'Hvilepuls, siste – lavere er bedre'
   });
   P.push(
     [/^Clock (in|out) (\d\d:\d\d)$/, function (m, a, t) { return (a === 'in' ? 'Stemple inn ' : 'Stemple ut ') + t; }], [/^Worked (\d+) h (\d+) min – clock out\?$/, 'Jobbet $1 t $2 min – stemple ut?'],
@@ -490,7 +490,7 @@
     [/^(.+) in (\d+) days?\.$/, function (m, a, n) { return a + ' om ' + n + (n === '1' ? ' dag.' : ' dager.'); }],
     [/^in (\d+) days?$/, function (m, n) { return 'om ' + n + (n === '1' ? ' dag' : ' dager'); }],
     [/^One more (.+) session hits your weekly goal\.$/, 'Én økt til med $1, så når du ukemålet.'],
-    [/^(\d+) more (.+) sessions this week to hit your goal\.$/, '$1 økter til med $2 denne uken for å nå målet.'],
+    [/^(\d+) more (.+) sessions this week to hit your goal\.$/, '$1 økter til med $2 denne uka for å nå målet.'],
     [/^week (\d+)$/, 'uke $1'], [/^(\d+) of (\d+) done$/, '$1 av $2 gjort'], [/^(\d+) min focused$/, '$1 min fokus']
   );
   /* Plan my day, gestures, keyboard, focus timer (only words not already above) */
@@ -499,7 +499,7 @@
     'Pick a task below, or type a new one': 'Velg en oppgave under, eller skriv en ny', 'Schedule': 'Sett av tid', 'Pick a slot': 'Velg et tidspunkt', 'Put it here': 'Legg den her',
     'Take it out of the calendar': 'Ta den ut av kalenderen', 'Tasks': 'Oppgaver', 
     'Your day': 'Dagen din', 'Fill my day': 'Fyll dagen', 'Habits today': 'Vaner i dag',
-    'Free': 'Ledig', 'Done': 'Ferdig', 'Not done': 'Ikke ferdig', 'Next week': 'Neste uke', 'No date': 'Ingen dato', 'Focus this week': 'Fokus denne uken', 'Not focus': 'Ikke fokus', 'Delete': 'Slett',
+    'Free': 'Ledig', 'Done': 'Ferdig', 'Not done': 'Ikke ferdig', 'Next week': 'Neste uke', 'No date': 'Ingen dato', 'Focus this week': 'Fokus denne uka', 'Not focus': 'Ikke fokus', 'Delete': 'Slett',
     'Top 3 done 🎉': 'Topp 3 ferdig 🎉', 'in your calendar': 'i kalenderen', 'Pick your top 3 and give them a time – 1 minute': 'Velg topp 3 og gi dem et tidspunkt – 1 minutt',
     'Plan my day: one place in the morning for what today holds – and what you\'ll get done.': 'Planlegg dagen: ett sted om morgenen for hva dagen bringer – og hva du skal få gjort.',
     'Top 3 is full – take one out in Plan my day': 'Topp 3 er full – ta ut én i Planlegg dagen',

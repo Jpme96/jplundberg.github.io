@@ -24,6 +24,12 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   });
   check(!home.heads || home.heads === 'MTOTFLS', 'Home\'s week has Norwegian weekday letters (' + home.heads + ')');
 
+  /* Settings → Apple Health: the set-up steps in Norwegian, with the iPhone's own Norwegian names (2026-11-16) */
+  const ah = await p.evaluate(async () => { document.getElementById('settingsBtn').click(); await new Promise(r => setTimeout(r, 700)); const g = document.querySelector('#stMenu [data-go="ahealth"]'); if (g) g.click(); await new Promise(r => setTimeout(r, 600));
+    const t = (document.getElementById('ahSetupBody') || {}).textContent || ''; document.getElementById('stClose').click(); await new Promise(r => setTimeout(r, 400)); return t; });
+  check(/Finn helseprøver/.test(ah) && /Beregn statistikk/.test(ah) && !/Find Health Samples|Repeat with Each/.test(ah), 'the Apple Health set-up steps are in Norwegian ' + ah.slice(0, 80));
+  /* Home → Money: "Åpne" and its arrow keep their space */
+  check(await p.evaluate(() => { const a = document.querySelector('a.text-btn[href="finance/"]'); return !a || /Åpne\s/.test(a.textContent); }), 'the Money card\'s Åpne keeps a space before its arrow');
   await go(p, 'wish/', 2500);
   const wish = await p.evaluate(() => document.body.innerText);
   const live = await p.evaluate(() => { PageLive.set(['Read the meter']); return (document.querySelector('.fp-live') || {}).textContent || ''; });

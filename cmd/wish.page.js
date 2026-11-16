@@ -173,7 +173,7 @@
     el.hidden = false;
     var l = Fe.list('wishes'), r = room(), fits = l.filter(function (w) { var f = fit(w, r); return f && f.now; }), total = l.reduce(function (a, w) { return a + (+w.price || 0); }, 0);
     var y = String(new Date().getFullYear()), by = Fe.list('wbought').filter(function (x) { return String(x.bought || '').slice(0, 4) === y; });
-    var h = tile('stars', I18N.k('ui.wishes', 'Wishes'), l.length, total ? kr(total) : I18N.k('ui.none-yet', 'none yet'), '#wishes', PURPLE) +
+    var h = tile('stars', I18N.k('ui.wishes', 'Wishes'), l.length, total ? kr(total) : l.length ? I18N.k('ui.wish-no-prices', 'no prices yet') : I18N.k('ui.none-yet', 'none yet'), '#wishes', PURPLE) +
       tile('check2-circle', I18N.k('ui.fit-this-month', 'Fit this month'), fits.length, r ? kr(r.left) + ' left until payday' : 'add your budget in Finances', '#wishes', GREEN) +
       tile('cart-check', I18N.k('ui.to-buy', 'To buy'), Fe.list('wbuy').length, 'small things', '#wbuy', BLUE) +
       tile('bag-check', 'Bought in ' + y, kr(by.reduce(function (a, x) { return a + (+x.paid || 0); }, 0)), by.length + (by.length === 1 ? ' thing' : ' things'), '#wbought', AMBER);

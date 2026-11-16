@@ -402,7 +402,7 @@
   if (!document.documentElement.dataset.role) document.documentElement.dataset.role = 'owner';
   /* the habit and goals the dashboard made for you at the start follow the language – only while they still have the starter name */
   function renameStarters(to) {
-    var N = [['Training', 'Trening'], ['Gym sessions this week', 'Treningsøkter denne uken'], ['Asset structure clean-up (%)', 'Opprydding i eiendelsstruktur (%)']];
+    var N = [['Training', 'Trening'], ['Gym sessions this week', 'Treningsøkter denne uka'], ['Asset structure clean-up (%)', 'Opprydding i eiendelsstruktur (%)']];
     var fix = function (key, listOf) { try { var v = JSON.parse(localStorage.getItem(key)); if (!v) return; var l = listOf(v), ch = false;
       (l || []).forEach(function (x) { N.forEach(function (n) { var from = to === 'nb' ? n[0] : n[1], dest = to === 'nb' ? n[1] : n[0]; if (x && x.name === from) { x.name = dest; ch = true; } }); });
       if (ch) localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} };
