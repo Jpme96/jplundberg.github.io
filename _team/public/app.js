@@ -1018,7 +1018,7 @@
      and each ask built the whole state again – with ~3 000 lines that froze Team for 20 s (JP 2026-11-16 20:06) */
   function docRO() { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return t; }
   function projects() { return (docRO().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
-  function projName(pid) { var t = docRO(); if (!t._names) { t._names = {}; (t.dctl || []).forEach(function (p) { t._names[p.id] = p.name; }); } return t._names[pid] || ''; }
+  function projName(pid, key) { var t = docRO(); if (!t._names) { t._names = {}; (t.dckrav || []).forEach(function (p) { t._names['dckrav|' + p.id] = p.name + ' (' + L('requirements', 'krav') + ')'; }); (t.dctl || []).forEach(function (p) { t._names[p.id] = t._names['dctl|' + p.id] = p.name; }); } return t._names[key ? key + '|' + pid : pid] || ''; }
   async function sendFile(file, pid) {
     if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
     var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
@@ -1169,7 +1169,8 @@
     for (var id in S.recs) { var r = S.recs[id]; if (!r.t || r.t < from || r.del || !r.d) continue; n.people[r.by] = 1;
       if (r.k === 'meeting') n.meet++; else if (r.k === 'action') { if (r.d.done) n.done++; else n.newA++; } else if (r.k === 'file') n.files++;
       else if (r.k === 'dcl' && r.d.l) {   /* a line made this week (version 1) was brought in or added; a later version is a real change – approved, rejected or other (JP 2026-11-16) */
-        var pn = projName(r.d.pid) || '…', dd = n.docs[pn] = n.docs[pn] || { add: 0, ok: 0, rej: 0, ch: 0 };
+        /* a requirements list's lines (dckrav) count under its own name too; lines whose project is gone are left out – they showed as "…" (JP 21:32) */
+        var pn = projName(r.d.pid, r.d.key); if (!pn) continue; var dd = n.docs[pn] = n.docs[pn] || { add: 0, ok: 0, rej: 0, ch: 0 };
         if ((r.v || 1) <= 1) dd.add++; else if (r.d.l.st === 'ok') dd.ok++; else if (r.d.l.st === 'rej') dd.rej++; else dd.ch++; } }
     var out = [];
     if (n.meet) out.push(L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings'), n.meet + (n.meet === 1 ? ' møte' : ' møter')));

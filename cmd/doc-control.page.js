@@ -333,6 +333,7 @@
     h += '<div class="dx-rsum"><span>' + esc(k('ui.dx-ren-sum', '{n} files · {r} renamed · {o} ready to rename', { n: F.length, r: moved, o: ok })) + (busy ? ' · <i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +
       '<span class="dx-rbtn">' + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
       '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl2', 'Download {n} files (.zip)', { n: F.length })) + '</span></button></span></div>';
+    if (F.some(function (f) { return /\.(dwg|dxf|ifc|rvt)$/i.test(f.name) || f.nk === 'drawing'; }) || p.bid) h += '<label class="dcn-fl dx-bno"><span>' + esc(k('ui.dx-bno', 'Building number (for drawings)')) + '</span><input data-dxbno value="' + esc(p.bid || '') + '" inputmode="numeric" maxlength="12" placeholder="' + esc(k('ui.dx-bno-ph', 'e.g. 11621')) + '"></label>';
     return h + N.files(p, F) + '</section>';
   }
   function renAdd(list) {
@@ -529,7 +530,8 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'cd574f491f';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '0c8b750869';   /* stamped by cmd/build.py from doc-naming.js */
+  var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
   var dcnLoading = null;
@@ -1271,7 +1273,6 @@
   }
   /* files with no line are matched again (after a new plan); a file you linked by hand stays */
   /* BBY wants drawings as both DWG and PDF, and documents as PDF (JP 23:46): checked across the delivered files */
-  var PAIR = ['nodwg', 'nopdf', 'notpdf'];
   function pairs(p) {
     var F = p.files || [], by = {};
     F.forEach(function (f) { var m = String(f.name).match(/^(.*)\.([a-z0-9]{2,5})$/i); if (!m) return; (by[m[1].toLowerCase()] = by[m[1].toLowerCase()] || {})[m[2].toLowerCase()] = 1; });
@@ -1509,6 +1510,7 @@
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq')) return;
     if (t.hasAttribute('data-dctfrom') && tform) { tformRead(); var fr = tformFrom(t.value); tform.from = t.value; tform.codes = fr.codes; tform.x = fr.x; blurIn(); draw(); return; }
     if (t.dataset.dctc && tform) { if (t.checked) tform.codes[t.dataset.dctc] = 1; else delete tform.codes[t.dataset.dctc]; var cn = document.querySelector('[data-dctn]'); if (cn) cn.textContent = k('ui.dx-n-picked', '{n} picked', { n: Object.keys(tform.codes).length }); var dd = t.closest('details'), sp = dd && dd.querySelector('.dc-pn'); if (sp) sp.textContent = dd.querySelectorAll('[data-dctc]:checked').length || ''; return; }
+    if (t.hasAttribute('data-dxbno')) { toolP().bid = t.value.trim().slice(0, 12); draw(); return; }
     if (t.hasAttribute('data-dxrenf')) { var fl = [].slice.call(t.files || []); t.value = ''; if (fl.length) renAdd(fl); return; }
     if (t.hasAttribute('data-dxfdvf')) { var ff = t.files && t.files[0]; t.value = ''; if (ff) (/\.xls[xm]$/i.test(ff.name) ? ff.arrayBuffer().then(readBook) : ff.text().then(function (x) { return x.indexOf(';') >= 0 || x.indexOf('\t') >= 0 ? readCsv(x) : [{ rows: x.split(/\r?\n/).map(function (l) { return [l]; }) }]; })).then(function (sh) { var nn = namesFrom(sh); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } fdvCheck(nn); }); return; }
     if (t.hasAttribute('data-dcchk')) { var cf = t.files && t.files[0]; t.value = ''; if (cf) checkPlan(cf); return; }

@@ -3073,5 +3073,8 @@ I18N.add({
   "ui.dx-ren-useall": ["Use the new name on {n} ready", "Bruk nytt navn på {n} klare"],
   "ui.dx-ren-dl2": ["Download {n} files (.zip)", "Last ned {n} filer (.zip)"],
   "ui.dx-ren-used": ["{n} files have their new name", "{n} filer har fått nytt navn"],
-  "ui.dcn-rules-tool": ["Naming rules", "Navneregler"]
+  "ui.dcn-rules-tool": ["Naming rules", "Navneregler"],
+  "ui.dcn-guess": ["Suggested – check it", "Forslag – sjekk det"],
+  "ui.dx-bno": ["Building number (for drawings)", "Bygningsnummer (for tegninger)"],
+  "ui.dx-bno-ph": ["e.g. 11621", "f.eks. 11621"]
 });

@@ -24,6 +24,16 @@
     ['OK', 'Avtaledokument', 'Agreement'], ['RF', 'Referat', 'Minutes'], ['MR', 'Månedsrapport', 'Monthly report'], ['PA', 'Prosjekteringsanvisning', 'Design guideline'], ['PD', 'Premissdokument', 'Premise document'], ['PP', 'Presentasjon', 'Presentation'], ['ST', 'Strategidokument', 'Strategy'], ['SD', 'Styringsdokument', 'Governing document']];
   function catName(a) { var c = CATN.filter(function (x) { return x[0] === a; })[0]; return c ? (nb() ? c[1] : c[2]) : ''; }
   var FLOORS = ['K02', 'K01', 'U02', 'U01', 'H01', 'H02', 'H03', 'H04', 'H05', 'L01', 'T01', '000'], DTYPES = ['B', 'D', 'F', 'O', 'P', 'S', 'T', 'U'];
+  /* what the letters mean – Boligbygg's FDVU specification, tables 8–11 (JP 2026-11-16 21:21 "make it easier to pick") */
+  var MEAN = {
+    floor: { K02: ['2. kjelleretasje', '2nd basement'], K01: ['1. kjelleretasje', '1st basement'], U02: ['2. underetasje', '2nd lower floor'], U01: ['1. underetasje', '1st lower floor'], H01: ['1. hovedetasje', '1st main floor'], H02: ['2. hovedetasje', '2nd main floor'], H03: ['3. hovedetasje', '3rd main floor'], H04: ['4. hovedetasje', '4th main floor'], H05: ['5. hovedetasje', '5th main floor'], L01: ['1. loftsetasje', '1st attic floor'], T01: ['Takplan (utvendig)', 'Roof plan (outside)'], '000': ['Generelt', 'General'] },
+    disc: { A: ['Arkitekt', 'Architect'], B: ['Byggeteknikk (RIB)', 'Structural (RIB)'], C: ['Akustikk', 'Acoustics'], E: ['Elektro (RIE)', 'Electrical (RIE)'], F: ['Brannrådgiver (RIBr)', 'Fire consultant (RIBr)'], I: ['Interiørarkitekt', 'Interior architect'], H: ['Heis', 'Lifts'], K: ['Konsulent (spesial)', 'Consultant (special)'], T: ['Tele og automatisering', 'Telecom and automation'], V: ['VVS – varme, ventilasjon, sanitær (RIV)', 'HVAC and plumbing (RIV)'],
+      G: ['Geoteknikk og grunnarbeider (RIG) – generell', 'Geotechnics and groundworks (RIG) – general'], L: ['Landskapsarkitekt (LARK) – generell', 'Landscape architect (LARK) – general'], M: ['Miljørådgiver (RIM) – generell', 'Environmental (RIM) – general'], R: ['Reguleringsarkitekt – generell', 'Zoning architect – general'], W: ['Vei og trafikk – generell', 'Roads and traffic – general'] },
+    dtype: { B: ['Bygningsmessige / utsparingstegninger', 'Builder’s work / openings'], D: ['Detalj(er)', 'Detail(s)'], F: ['Fasade', 'Facade'], O: ['Oppriss', 'Elevation'], P: ['Plan', 'Plan'], S: ['Snitt', 'Section'], T: ['Skjema', 'Schematic'], U: ['Utendørs / terrengarbeider', 'Outdoor / site works'] } };
+  function mean(key, x) { var m = MEAN[key] && MEAN[key][x]; return m ? (nb() ? m[0] : m[1]) : ''; }
+  /* a first guess when the name doesn't say: the discipline from the NS 3451 code, the drawing type from words in the name */
+  function guessDisc(code) { var c = String(code || ''); return /^62/.test(c) ? 'H' : /^2/.test(c) ? 'B' : /^3/.test(c) ? 'V' : /^4/.test(c) ? 'E' : /^5/.test(c) ? 'T' : /^7/.test(c) ? 'L' : ''; }
+  function guessDtype(n) { var t = String(n || '').toLowerCase(); return /snitt|section/.test(t) ? 'S' : /fasade|facade/.test(t) ? 'F' : /detalj|detail/.test(t) ? 'D' : /oppriss|elevation/.test(t) ? 'O' : /skjema|prinsipp|schematic|diagram/.test(t) ? 'T' : /utomhus|terreng|utendørs|site plan/.test(t) ? 'U' : /utsparing|hulltaking|bygningsmessig/.test(t) ? 'B' : /plan|rørplan|planteg/.test(t) ? 'P' : ''; }
   var NPART = { code: ['ui.dcn-p-code', 'NS 3451 code'], type: ['ui.dcn-p-type', 'Document type (letters)'], typename: ['ui.dcn-p-typename', 'Document type (name)'], proj: ['ui.dcn-p-proj', 'Project number'],
     bno: ['ui.dcn-p-bno', 'Building number'], unit: ['ui.dcn-p-unit', 'Property ID'], pname: ['ui.dcn-p-pname', 'Property name'], contractor: ['ui.dcn-p-contractor', 'Contractor', 1], desc: ['ui.dcn-p-desc', 'Description', 1],
     floor: ['ui.dcn-p-floor', 'Floor', 1], disc: ['ui.dcn-p-disc', 'Discipline', 1], dtype: ['ui.dcn-p-dtype', 'Drawing type', 1], room: ['ui.dcn-p-room', 'Flat or room number', 1], free: ['ui.dcn-p-free', 'Free text', 1], rev: ['ui.dcn-p-rev', 'Revision', 1],
@@ -49,7 +59,7 @@
       case 'proj': return p.no || ''; case 'bno': return p.bid || ''; case 'unit': return p.pid || ''; case 'pname': return p.pname || '';
       case 'contractor': return v.contractor != null ? v.contractor : p.who || '';
       case 'desc': return v.desc != null ? v.desc : f.p && f.p.text || '';
-      case 'floor': case 'disc': case 'dtype': return v[part.k] != null ? v[part.k] : d[part.k] || '';
+      case 'floor': case 'disc': case 'dtype': return v[part.k] != null ? v[part.k] : d[part.k] || (part.k === 'disc' ? guessDisc(f.p && f.p.code) : part.k === 'dtype' ? guessDtype(f.orig || f.name) : '');
       case 'rev': x = String(v.rev || '').trim(); return x ? 'Rev' + x : '';
       case 'date': var t = new Date(), y = t.getFullYear(), mo = pad(t.getMonth() + 1), da = pad(t.getDate()); return part.fmt === 'compact' ? '' + y + mo + da : part.fmt === 'no' ? da + '.' + mo + '.' + y : y + '-' + mo + '-' + da;
       case 'run': var n = 0, kd = fkind(f), c = f.p && f.p.code; (p.files || []).some(function (o) { if (fkind(o) === kd && (o.p && o.p.code) === c) n++; return o.id === f.id; }); return pad(Math.max(1, n));
@@ -195,7 +205,7 @@
   function tag(c, t) { return '<span class="dc-st" style="--c:' + c + '">' + esc(t) + '</span>'; }
   function nfield(p, f, key) {
     var id = 'dcn-' + f.id + '-' + key, v = nval(p, f, { k: key }), lab = '<label class="dcn-fl" for="' + id + '"><span>' + esc(partName(key)) + '</span>';
-    if (key === 'floor' || key === 'dtype' || key === 'disc') { var L = key === 'floor' ? FLOORS : key === 'dtype' ? DTYPES : FAG; return lab + '<select id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '"><option value=""></option>' + L.map(function (x) { return '<option' + (x === v ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>'; }
+    if (key === 'floor' || key === 'dtype' || key === 'disc') { var L = key === 'floor' ? FLOORS : key === 'dtype' ? DTYPES : FAG; return lab + '<select id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '"><option value=""></option>' + L.map(function (x) { var m = mean(key, x); return '<option value="' + x + '"' + (x === v ? ' selected' : '') + '>' + esc(x + (m ? ' – ' + m : '')) + '</option>'; }).join('') + '</select>' + (v && mean(key, v) && !(f.nv && f.nv[key] != null) && !drawn(f)[key] ? '<small class="dcn-gs">' + esc(k('ui.dcn-guess', 'Suggested – check it')) + '</small>' : '') + '</label>'; }
     if (key === 'rev') v = (f.nv || {}).rev || '';
     return lab + '<input id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '" value="' + esc(v) + '" maxlength="80"></label>';
   }

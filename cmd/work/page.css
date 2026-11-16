@@ -468,3 +468,4 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-rsum { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: 14px; }
 .dx-rbtn { display: flex; flex-wrap: wrap; gap: 6px; }
 .dx-fdvf textarea { min-width: 0; font-size: 16px; }
+.dcn-gs { display: block; margin-top: 2px; font-size: 12px; color: var(--blue); }

@@ -427,6 +427,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.evaluate(() => { const t = DocHost.Fe.tools(), p = t.dctl[0]; for (let i = 0; i < 2500; i++) p.lines.push({ id: 'big' + i, code: String(200 + (i % 500)), t: 'E', st: '' }); DocHost.Fe.saveTools(t); });
   await sl(5000);
   const ovBig = await own.evaluate(async () => { const t0 = performance.now(); location.hash = '#overview'; await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); return { ms: Math.round(performance.now() - t0), week: !!document.querySelector('.t-week'), projs: document.querySelectorAll('.t-projs .t-proj').length }; });
+  const wk = await own.evaluate(() => (document.querySelector('.t-week') || {}).innerText || '');
+  check(wk && !/…/.test(wk) && /\(requirements\)/.test(wk), 'the week names every project, requirements lists too – no “…” (JP 21:32) ' + JSON.stringify(wk.slice(0, 200)));
   check(ovBig.ms < 1500 && ovBig.week && ovBig.projs >= 1, 'the Overview opens quickly with a 2 500-line project (the week and the projects are counted once, not per line) ' + JSON.stringify(ovBig));
 
   /* --- kept apart from /cmd --- */
