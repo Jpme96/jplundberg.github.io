@@ -115,7 +115,7 @@
         var a = ids[f.acct] || main;
         var own = f.vary && f.months && f.months[k] != null && f.months[k] !== '';
         ev.push({ dt: late ? t0 : dt, real: dt, kind: 'bill', id: f.id, ym: k, paid: isPaid || auto, late: late, name: f.name, amt: -(B.fixedAmt ? B.fixedAmt(f, k) : +f.amount || 0), open: !f.src, vary: !!f.vary && !own,
-          sub: (a ? (a.kind === 'credit' ? 'on ' : 'from ') + a.label : '') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.vary ? (own ? ' · this month’s amount' : ' · varies, estimate') : '') + (f.split && B.fixedWhole ? ' · your part of ' + kr(B.fixedWhole(f, k)) : '') });
+          sub: (a ? (a.kind === 'credit' ? I18N.k('ui.fn-on-acct', 'on {a}', { a: a.label }) : I18N.k('ui.fn-from-acct', 'from {a}', { a: a.label })) : '') + (f.src === 'loan' ? ' · ' + I18N.k('ui.fn-loan', 'loan') : f.src === 'sub' ? ' · ' + I18N.k('ui.fn-subscription', 'subscription') : '') + (f.vary ? ' · ' + (own ? I18N.k('ui.fn-this-month-amt', 'this month’s amount') : I18N.k('ui.fn-varies', 'varies, estimate')) : '') + (f.split && B.fixedWhole ? ' · ' + I18N.k('ui.fn-your-part', 'your part of {a}', { a: kr(B.fixedWhole(f, k)) }) : '') });   /* every piece by name: joined, the sentence list missed them ("on Kredittkort", 2026-11-16) */
       });
     }
     /* credit card bills */

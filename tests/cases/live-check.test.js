@@ -31,6 +31,13 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   check(!/ønske\d/.test(wish), 'the wish line has a separator between its parts');
   check(!/\b1 ønsker\b/.test(wish), '"1 ønske", not "1 ønsker"');
 
+  /* Travel has the same page top as every page: kicker → title → live line (2026-11-16) */
+  await go(p, 'travel/', 2500);
+  const tv = await p.evaluate(() => { const h = document.querySelector('.fp-hero'); return h ? { kicker: !!h.querySelector('.fp-kicker'), title: (h.querySelector('h1') || {}).textContent } : null; });
+  check(tv && tv.kicker && /^Reise$/.test((tv.title || '').trim()), 'Travel\'s page top: kicker and title ' + JSON.stringify(tv));
+  /* People's tile: no "0 å holde kontakten med"; the 14 days list: no English "on" */
+  await go(p, 'people/', 2500);
+  check(await p.evaluate(() => !/\b0 å holde kontakten med\b/.test(document.body.innerText)), 'People: no "0 å holde kontakten med"');
   await go(p, 'habits/', 2800);
   const hl = await p.evaluate(() => { const tl = [...document.querySelectorAll('.ah-tile')].find(e => /person-standing/.test(e.innerHTML)); return tl ? tl.innerText : ''; });
   check(!hl || (/min/.test(hl) && !/\d+ h\b/.test(hl)), 'stand over 24 in a day is shown as minutes (' + hl.replace(/\n/g, ' ') + ')');

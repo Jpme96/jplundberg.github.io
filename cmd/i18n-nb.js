@@ -1246,7 +1246,7 @@
     'Last 4 weeks': 'Siste 4 uker',
     'One line a day is enough. Over time you’ll see how your weeks really were.': 'Én linje om dagen holder. Over tid ser du hvordan ukene egentlig var.',
     
-    'Client time today': 'Klienttid i dag',
+    'Client time today': 'Kundetid i dag',
     'Between you': 'Mellom dere',
     'nothing to settle': 'ingenting å gjøre opp',
     

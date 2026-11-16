@@ -1105,11 +1105,17 @@
     var from = Date.now() - 7 * 864e5, n = { meet: 0, done: 0, newA: 0, docs: {}, files: 0, people: {} };
     for (var id in S.recs) { var r = S.recs[id]; if (!r.t || r.t < from || r.del || !r.d) continue; n.people[r.by] = 1;
       if (r.k === 'meeting') n.meet++; else if (r.k === 'action') { if (r.d.done) n.done++; else n.newA++; } else if (r.k === 'file') n.files++;
-      else if (r.k === 'dcl' && r.d.l) { var pn = projName(r.d.pid) || '…'; n.docs[pn] = (n.docs[pn] || 0) + 1; } }
+      else if (r.k === 'dcl' && r.d.l) {   /* a line made this week (version 1) was brought in or added; a later version is a real change – approved, rejected or other (JP 2026-11-16) */
+        var pn = projName(r.d.pid) || '…', dd = n.docs[pn] = n.docs[pn] || { add: 0, ok: 0, rej: 0, ch: 0 };
+        if ((r.v || 1) <= 1) dd.add++; else if (r.d.l.st === 'ok') dd.ok++; else if (r.d.l.st === 'rej') dd.rej++; else dd.ch++; } }
     var out = [];
     if (n.meet) out.push(L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings'), n.meet + (n.meet === 1 ? ' møte' : ' møter')));
     if (n.done || n.newA) out.push(L(n.done + ' actions done, ' + n.newA + ' open or changed', n.done + ' oppgaver ferdige, ' + n.newA + ' åpne eller endret'));
-    Object.keys(n.docs).forEach(function (pn) { out.push(L(pn + ': ' + n.docs[pn] + ' documents changed', pn + ': ' + n.docs[pn] + ' dokumenter endret')); });
+    Object.keys(n.docs).forEach(function (pn) { var dd = n.docs[pn], bits = [];
+      if (dd.add && !dd.ok && !dd.rej && !dd.ch) { out.push(L(pn + ': imported (' + dd.add + ' documents)', pn + ': importert (' + dd.add + ' dokumenter)')); return; }
+      if (dd.ok) bits.push(L(dd.ok + ' approved', dd.ok + ' godkjent')); if (dd.rej) bits.push(L(dd.rej + ' not approved', dd.rej + ' ikke godkjent'));
+      if (dd.ch) bits.push(L(dd.ch + ' changed', dd.ch + ' endret')); if (dd.add) bits.push(L(dd.add + ' added', dd.add + ' lagt til'));
+      out.push(pn + ': ' + bits.join(', ')); });
     if (n.files) out.push(L(n.files + ' files added', n.files + ' filer lagt til'));
     return { lines: out, who: Object.keys(n.people).length };
   }

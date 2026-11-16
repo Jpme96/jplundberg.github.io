@@ -306,6 +306,8 @@
   function openPanel() {
     fill();
     go('home');
+    /* two panes: the right side opens on the first section instead of standing empty (JP 2026-11-16) */
+    if (twoPane()) { var first = document.querySelector('#stMenu [data-go]:not([data-go="profile"])'); if (first && document.querySelector('.st-page[data-page="' + first.dataset.go + '"]')) go(first.dataset.go); }
     $('settings').hidden = false;
     document.body.classList.add('st-open');
     requestAnimationFrame(function () { $('settings').classList.add('open'); });

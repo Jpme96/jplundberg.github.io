@@ -17,14 +17,14 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
     const w = ms => new Promise(r => setTimeout(r, ms)), vis = el => !!(el && el.getClientRects().length && getComputedStyle(el).display !== 'none');
     document.getElementById('settingsBtn').click(); await w(700);
     const home = document.querySelector('.st-page[data-page="home"]'), pick = document.querySelector('.st-pick');
-    const a = { home: vis(home), pick: vis(pick) };
+    const a = { home: vis(home), pick: vis(pick), first: (document.querySelector('#stMenu [aria-current="page"]') || { dataset: {} }).dataset.go || null };
     document.querySelector('#stMenu [data-go="appearance"]').click(); await w(700);
     const ap = document.querySelector('.st-page[data-page="appearance"]'), hr = home.getBoundingClientRect(), arr = ap.getBoundingClientRect();
     const b = { home: vis(home), page: vis(ap), side: hr.right <= arr.left + 1, pick: vis(pick), cur: (document.querySelector('#stMenu [aria-current="page"]') || {}).dataset ? document.querySelector('#stMenu [aria-current="page"]').dataset.go : null };
     document.getElementById('stClose').click(); await w(600);
     return { a, b };
   });
-  check(two.a.home && two.a.pick, 'Settings on a computer: the list on the left, "choose something" on the right ' + JSON.stringify(two.a));
+  check(two.a.home && !two.a.pick && two.a.first && two.a.first !== 'profile', 'Settings on a computer: the list on the left, the first section already open on the right – not an empty side (2026-11-16) ' + JSON.stringify(two.a));
   check(two.b.home && two.b.page && two.b.side && !two.b.pick && two.b.cur === 'appearance', 'picking Appearance opens it beside the list, which marks it ' + JSON.stringify(two.b));
   await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); Object.assign(s, { density: 'compact', corners: 'sharp', cardStyle: 'glass', glass: true }); localStorage.setItem('dash.settings', JSON.stringify(s)); window.dispatchEvent(new Event('dash:local')); });
   await go(p, 'work/', 3000);

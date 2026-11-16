@@ -11,6 +11,11 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.evaluate(() => { Features.set('fdv', true); const t = Features.tools(); t.fdv = [{ id: 'ins1', no: '2026-007', building: 'Testveien 1', address: 'Made-up street 1', date: '2026-11-12', client: 'Test client', level: '2', findings: [] }]; Features.saveTools(t); });
   await go(p, 'work/', 2500);
+  /* the new-inspection form on a phone: no field sticks out of its row (iPhone reported kf-heat, kf-level, kf-structure – 2026-11-16) */
+  const over = await p.evaluate(async () => { const nb = document.querySelector('[data-fdvnew]'); if (!nb) return ['no New']; nb.click(); await new Promise(r => setTimeout(r, 600));
+    const o = []; document.querySelectorAll('[id^="kf-"]').forEach(e => { const r = e.getBoundingClientRect(), pr = e.parentElement.getBoundingClientRect(); if (r.width && (r.right > pr.right + 1 || r.right > innerWidth)) o.push(e.id); });
+    const c = [...document.querySelectorAll('button')].find(x => /^Cancel$/.test(x.textContent.trim())); if (c) c.click(); await new Promise(r => setTimeout(r, 400)); return o; });
+  check(!over.length, 'the new-inspection form fits a phone: no field sticks out ' + over.join());
   await p.evaluate(() => { document.querySelector('[data-fdvopen="ins1"]').click(); }); await sl(300);
   const form = await p.evaluate(() => { const f = document.querySelector('form.fdv-add'); return !!f && { code: !!f.code, kg: !!f.kg, kt: !!f.kt, when: !!f.when, cost: !!f.cost, groups: f.code.querySelectorAll('optgroup').length, has23: !![...f.code.options].find(o => o.value === '23') }; });
   check(form && form.code && form.kg && form.kt && form.when && form.cost && form.groups === 6 && form.has23, 'the finding form has the NS 3451 code (6 main groups), TG, KG, consequence type, when and cost ' + JSON.stringify(form));

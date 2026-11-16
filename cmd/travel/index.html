@@ -70,13 +70,13 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=045360ce2a" rel="stylesheet">
+  <link href="../styles.css?v=50cae64b3f" rel="stylesheet">
   <link href="page.css?v=ed85693129" rel="stylesheet">
   <link href="../modern.css?v=26f7b72249" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
   <link href="../finance/fin.css?v=60c7531e79" rel="stylesheet">
   <link href="../calendar/cal.css?v=71dca2f6d9" rel="stylesheet">
-  <link href="travel.css?v=2d983ec644" rel="stylesheet">
+  <link href="travel.css?v=5b5aa1b8ae" rel="stylesheet">
 </head>
 <body>
   <nav data-t-aria-label="ui.pages" class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home"><i class="bi bi-house-door"></i><span data-t="ui.home">Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span data-t="ui.calendar">Calendar</span></a><a href="/cmd/travel/" data-pg="travel" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-signpost-split"></i><span data-t="ui.travel">Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span data-t="ui.finances">Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span data-t="ui.health">Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span data-t="ui.work">Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span data-t="ui.house">House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span data-t="ui.people">People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span data-t="ui.food">Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span data-t="ui.wishlist">Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span data-t="ui.goals">Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span data-t="ui.nav-papers">Papers</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
@@ -111,9 +111,10 @@
     <header class="fp-top">
       <a data-t="ui.dashboard" class="fp-back" href="../"><i class="bi bi-chevron-left"></i> Dashboard</a>
     </header>
-    <div class="tv-hero">
-      <p data-t="ui.good-morning" class="tv-hello" id="tvHello">Good morning,</p>
-      <h1 data-t="ui.where-do-you-want-to-go" id="tvHead">where do you want to go?</h1>
+    <div class="fp-hero tv-hero">
+      <p data-t="ui.private" class="fp-kicker"><i class="bi bi-signpost-split"></i> Private</p>
+      <h1 data-t="ui.travel">Travel</h1>
+      <p class="tv-hello" id="tvHello" hidden></p><p class="tv-sub" id="tvHead" hidden></p>   <!-- the old greeting, kept for travel.js; the page top is kicker → title → live line like every page (Phase G, 2026-11-16) -->
     </div>
 
     <!-- What's coming up: links the journey planner, your trips and your calendar -->
@@ -883,8 +884,8 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=e0314253e0"></script>
-  <script src="../dist/page-travel.js?v=24aa5d154c"></script>
+  <script src="../dist/head.js?v=5ee0ff125d"></script>
+  <script src="../dist/page-travel.js?v=d5cba61075"></script>
   <script src="../dist/tail.js?v=2bbf9aeda2"></script>
   <!-- /scripts -->
 </body>

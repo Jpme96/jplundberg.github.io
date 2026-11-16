@@ -280,7 +280,7 @@
     return heroTile('balloon', I18N.k('ui.next-birthday', 'Next birthday'), bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', '#d55181') +
       heroTile('chat-heart', I18N.k('ui.catch-up', 'Catch up'), due.length ? '<span class="neg">' + due.length + '</span>' : '0', due.length ? esc(due.slice(0, 3).map(function (p) { return p.name; }).join(', ')) : 'All in touch', '#people') +
       heroTile('calendar-heart', I18N.k('ui.this-month', 'This month'), mon.length, mon.length ? esc(mon.map(function (x) { return x[1].name; }).join(', ')) : 'No birthdays', '#pdates') +
-      heroTile('people', 'People', l.length, l.filter(function (p) { return +p.every; }).length + ' to keep in touch with', '#people');
+      heroTile('people', 'People', l.length, l.filter(function (p) { return +p.every; }).length ? I18N.k('ui.people-keep-n', '{n} you keep in touch with', { n: l.filter(function (p) { return +p.every; }).length }) : I18N.k('ui.people-keep-0', 'Set how often to keep in touch on a person', {}), '#people');
   };
   function setMeal(k, v) { var t = Fe.tools(); t.meals = meals(); if (v) t.meals[k] = v; else delete t.meals[k]; Object.keys(t.meals).forEach(function (x) { if (x < addDays(today(), -60)) delete t.meals[x]; }); Fe.saveTools(t); }
   function skippedNote() { var k = addShop.skipped || []; return k.length ? ' · ' + k.length + ' basic' + (k.length === 1 ? '' : 's') + ' skipped' : ''; }

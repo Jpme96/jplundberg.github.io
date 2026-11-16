@@ -21,12 +21,8 @@
     var h = Math.floor(min / 60), m = min % 60;
     return (neg ? '−' : '') + (h ? h + ' h' + (m ? ' ' + m + ' min' : '') : m + ' min');
   }
-  /* short form for the number tiles: 15 h 26 → "15h 26m" */
-  function hms(min) {
-    var neg = min < 0; min = Math.abs(Math.round(min));
-    var h = Math.floor(min / 60), m = min % 60;
-    return (neg ? '−' : '') + (h ? h + 'h' + (m ? ' ' + m + 'm' : '') : m + 'm');
-  }
+  /* the number tiles use the same form as everywhere else ("7 h 30 min") – the short "7h 30m" next to the page top's "7 h 30 min" looked like two things (JP 2026-11-16) */
+  function hms(min) { return hm(min); }
   function toMin(t) { var m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; }
   function nowHM() { var d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
