@@ -766,7 +766,7 @@
     var root = document.querySelector('.dc-pick'); if (!root) { draw(); return; }
     root.querySelectorAll('.dc-ptg [data-dcptype]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!xsel[b.dataset.dcptype])); });
     root.querySelectorAll('[data-dctick]').forEach(function (i) { var on = !!ticks[i.dataset.dctick]; if (i.checked !== on) i.checked = on; });
-    root.querySelectorAll('details.dc-pg').forEach(function (d) { if (!d.open && d.querySelector('[data-dctick]:checked')) d.open = true; });
+    root.querySelectorAll('details.dc-pg').forEach(function (d) { var on = !!d.querySelector('[data-dctick]:checked'); if (d.open !== on) d.open = on; });   /* open what has ticks, close what has none (JP 14:30 – a type taken off left its groups open) */
     var xs = root.querySelector('[data-dcxs]'); if (xs) xs.innerHTML = xsHtml();
     var sm = root.querySelector('[data-dcpsum]'); if (sm) sm.innerHTML = sumHtml();
     updPick();

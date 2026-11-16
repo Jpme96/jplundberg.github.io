@@ -14,6 +14,11 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const ids = await p.evaluate(() => [...document.querySelectorAll('.dc-ptg [data-dcptype]')].map(e => e.dataset.dcptype));
   const bad = [];
   for (const id of ids) { const a = await st(id); await tap(id); const on = await st(id); await tap(id); const off = await st(id); if (!(on.on === 'true' && off.on === 'false' && off.n === a.n)) bad.push([id, a.n, on.on, on.n, off.on, off.n]); }
+  const openLeft = await p.evaluate(() => document.querySelectorAll('details.dc-pg[open]').length);
+  check(openLeft === 0, 'with no type picked, every system group is folded again (JP 14:30) – open: ' + openLeft);
+  await tap('bath'); const opened = await p.evaluate(() => [...document.querySelectorAll('details.dc-pg')].every(d => d.open === !!d.querySelector('[data-dctick]:checked')));
+  await tap('bath'); const closed = await p.evaluate(() => document.querySelectorAll('details.dc-pg[open]').length);
+  check(opened && closed === 0, 'a type opens exactly the groups it ticks, and taking it off folds them ' + JSON.stringify({ opened, closed }));
   check(ids.length > 20 && !bad.length, 'every project type turns on, and off again with a second tap, unticking its systems ' + JSON.stringify(bad));
   /* two types sharing a system: turning one off keeps what the other wants */
   await tap('sprinkler'); await tap('fire'); const both = await st('fire'); await tap('sprinkler'); const left = await st('fire');
