@@ -19,7 +19,7 @@
   var root = document.documentElement, Fe = window.Features;
   function on(k) { return window.Delight ? window.Delight.on(k) : true; }
 
-  var START = { build: 'slim', bottom: 'trousers', skin: '#c99a73', hair: 'short', hairC: '#1e140d', beard: 'none', glasses: 'none', top: 'sweater', topC: '#3d85dc', legs: '#2a2f3a', extra: 'lanyard' };   /* the starting look (JP 2026-11-15: it looked bad): no stubble, open eyes (the new default), a lighter top from the scene palette so he stands out from the dark picture */
+  var START = { build: 'slim', bottom: 'trousers', skin: '#c99a73', hair: 'short', hairC: '#1e140d', beard: 'none', glasses: 'none', top: 'sweater', topC: '#3d85dc', legs: '#d8c8a8', extra: 'lanyard' };   /* the starting look (JP 2026-11-15: it looked bad): no stubble, open eyes (the new default), a lighter top from the scene palette so he stands out from the dark picture; light sand chinos (2026-11-16 – dark trousers vanished into the dark pictures) */
   function look() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, START, s.avatar || {}); }
   var OPTS = {
     build: { t: L('Body', 'Kropp'), o: [['slim', L('Slim', 'Slank')], ['regular', L('Regular', 'Vanlig')], ['athletic', L('Athletic', 'Atletisk')], ['muscular', L('Muscular', 'Muskuløs')], ['broad', L('Broad', 'Bred')]] },

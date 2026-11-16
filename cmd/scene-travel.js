@@ -134,7 +134,7 @@
           if (t < 8.8) { cx = BX; pose[fh90] = GO(B(148, -24), B(136, 12), SEG(t, 8.4, 8.8)); suit = 'carry'; }
           else if (t < 10.6) { suit = 'carry'; cx = LERP(BX, 244, SEG(t, 8.8, 10.6)); w = .85 * Math.min(1, (t - 8.8) / .2, (10.6 - t) / .2); pose[fh90] = HOLD(B(136, 12)); pose.lean = .12; }
           else if (t < 11.8) { suit = 'carry'; cx = 244; face = t < 11.0 ? 90 * (1 - E(SEG(t, 10.6, 11.0))) : 0; pose[SIDE(1, face)] = HOLD(B(136, 12));
-            var wk2 = SIDE(-1, 0), WV2 = B(44, 10); if (t >= 11.0) pose[wk2] = t < 11.2 ? GO(REST, WV2, SEG(t, 11.0, 11.2)) : t < 11.6 ? HOLD(B(44, 10 + 9 * Math.sin((t - 11.2) * 16))) : GO(WV2, REST, SEG(t, 11.6, 11.8)); }
+            var wk2 = SIDE(-1, 0), WV2 = B(44, 10); if (t >= 11.0) pose[wk2] = t < 11.3 ? GO(REST, WV2, SEG(t, 11.0, 11.3)) : t < 11.48 ? HOLD(B(44, 10 + 9 * Math.sin((t - 11.3) * 16))) : GO(B(44, 10 + 9 * Math.sin(.18 * 16)), REST, SEG(t, 11.48, 11.8)); }   /* the hand comes down over .35 s from where the wave left it (a .2 s drop jumped 7 px a frame – 2026-11-16) */
           else if (t < 12.2) { suit = 'carry'; face = 90 * E(SEG(t, 11.8, 12.2)); cx = LERP(244, 250, SEG(t, 12.0, 12.2)); inside = t > 12.1;   /* turns to the door (it was a quarter turn too far and too quick) */ pose[SIDE(1, face)] = HOLD(B(136, 12)); }
           else gone = true;
         } else {

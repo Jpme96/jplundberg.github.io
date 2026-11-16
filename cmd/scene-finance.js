@@ -72,7 +72,7 @@
       else Object.assign(r, rest(st));
       return r;
     }
-    var nearRail = null;
+    var nearRail = null, frontArt = null;
     /* in the wheelchair or on crutches the ladder is out: he goes to the jar's side, takes the coin from his pocket and
        tosses it up through the slot – a little wind-up, the coin's arc, it drops in – then turns to you and cheers */
     var X0 = 1.8, X1 = X0 + .25, X2 = X1 + .4, X3 = X2 + .3, X4 = X3 + .22, X5 = X4 + .65, X6 = X5 + .5, X7 = X6 + .5, X8 = X7 + 1.0, XLEN = X8 + 1.4, TX = 288;
@@ -109,6 +109,8 @@
         r.cloth = t >= 1.5 && t < 4.3 ? hk : null; r.pose.lean = .16 * Math.sin(Math.PI * SEG(t, 1.2, 4.5)) + .1 * Math.sin(Math.PI * SEG(t, 4.5, 5.4)); if (t > 4.5) r.expr = ok ? 'grin' : 'shy'; }
       return r; }
     function piggy(t, st) { var r = { h: 0, w: 0, face: 0, cx: HOME, pose: {}, pig: 'home' }, X1 = 166, hk = SIDE(1, -90), UP = B(104, 22), CO = [154, GY - 3];
+      /* on the way he goes behind the jar (a little further back: higher and smaller), not through it */
+      var BK = function () { var x = r.cx; return x >= HOME - 6 || x <= X1 ? 0 : x > HOME - 24 ? E((HOME - 6 - x) / 18) : x < X1 + 18 ? E((x - X1) / 18) : 1; };   /* 0 where he stands (home and the piggy bank) – no jump when he turns */
       if (t < .4) r.face = -90 * E(t / .4); else if (t < 2.6) walkP(r, t, HOME, X1, .4, 2.6); else if (t < 7.6) { r.cx = X1; r.face = -90; }
       else if (t < 7.9) { r.cx = X1; r.face = -90 + 180 * E(SEG(t, 7.6, 7.9)); } else if (t < 10.1) walkP(r, t, X1, HOME, 7.9, 10.1); else r.face = 90 * (1 - E(SEG(t, 10.1, 10.5)));
       if (t >= 2.6 && t < 7.6) {
@@ -119,6 +121,7 @@
         /* the coin: falls from the shaken pig, rolls along the floor, lies there, then in his hand and into the slot */
         var cq = SEG(t, 4.0, 4.4), rq = E(SEG(t, 4.4, 5.2));
         r.pcoin = t < 4.0 ? null : t < 4.4 ? [148 + 2 * cq, 112 + (GY - 3 - 112) * cq * cq] : t < 5.5 ? [150 + (CO[0] - 150) * rq, GY - 3] : t < 6.6 ? 'hand' : null; r.pk = hk; r.expr = t > 3.5 && t < 4.6 ? 'wow' : t > 6.6 ? 'grin' : null; }
+      r.back = (t >= .4 && t < 2.6) || (t >= 7.9 && t < 10.1) ? BK() : 0;
       return r; }
     function pigG(x, y, deg) { var c = S.grp(x, y, deg || 0); add(c, 'ellipse', { cx: 0, cy: 0, rx: 9, ry: 6.5, fill: '#e895b7' }); add(c, 'ellipse', { cx: 2.5, cy: 1.5, rx: 6, ry: 4.4, fill: '#e895b7' }); add(c, 'circle', { cx: -8.2, cy: .5, r: 2.6, fill: '#e895b7' }); add(c, 'path', { d: 'M-5 -5.5 l1.5 -3.5 l2.5 3 Z', fill: '#e895b7' }); add(c, 'circle', { cx: -5.4, cy: -1.6, r: .8, fill: '#3a2a20' }); add(c, 'rect', { x: -1.5, y: -6.8, width: 5, height: 1.1, rx: .5, fill: '#93647b' }); [-4.5, 4.5].forEach(function (lx2) { add(c, 'rect', { x: lx2 - 1.2, y: 5, width: 2.4, height: 3, rx: 1, fill: '#e895b7' }); }); return c; }
     var run = S.run(svg, {
@@ -151,6 +154,10 @@
         add(lg, 'line', { x1: LB[0] + 3, y1: LB[1], x2: LT[0] + 3, y2: LT[1], stroke: '#6f7781', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
         for (var rr = 1; rr <= 4; rr++) { var hy = rr * RUNG, x = lx(hy); add(lg, 'line', { x1: x - 3, y1: LB[1] - hy, x2: x + 3, y2: LB[1] - hy, stroke: '#aeb6bf', 'stroke-width': 2.2, 'stroke-linecap': 'round' }); }
         nearRail = el('line', { x1: LB[0] - 3, y1: LB[1], x2: LT[0] - 3, y2: LT[1], stroke: '#aeb6bf', 'stroke-width': 2.6, 'stroke-linecap': 'round' });
+        /* the jar and the ladder once more, for the frames where he walks behind them to the piggy bank (JP 2026-11-16: he walked
+           through the jar) – he is a little dimmer through the glass, so he reads as behind it; kept art, written into the picture once (__static) */
+        var fa = document.createElementNS('http://www.w3.org/2000/svg', 'g'); fa.setAttribute('pointer-events', 'none');
+        fa.innerHTML = (jar.outerHTML + lg.outerHTML).replace(/ data-sc(go|act)="[^"]*"/g, '') + nearRail.outerHTML; fa.__static = true; frontArt = fa;
       },
       render: function (sv, t, st) {
         st.aid = AID; var r = st.pact === 'polish' ? polish(t, st) : st.pact === 'piggy' ? piggy(t, st) : ok ? (AID ? toss(t, st) : coin(t, st)) : idle ? calm(t, st) : worry(t, st);
@@ -158,14 +165,16 @@
         if (!r.pig || r.pig === 'home') sv.appendChild(pigG(PIG[0], PIG[1]));   /* the piggy bank lives on the calendar block */
         if (r.pcoin && typeof r.pcoin === 'object') add(sv, 'ellipse', { cx: r.pcoin[0].toFixed(1), cy: r.pcoin[1].toFixed(1), rx: 2.6, ry: 2.6 * Math.abs(Math.cos(r.pcoin[0] / 3)) + .5, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 });
         /* him: the near rail goes in front of his far side, behind his near side */
-        var gg = add(sv, 'g', { class: 'sc25-me' }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
+        var gg = add(sv, 'g', { class: 'sc25-me', opacity: (1 - .38 * Math.max(0, (r.back || 0) * 2 - 1)).toFixed(2) }), pose = r.pose, ph = S.LIFE(st, pose, r.w);
         var look = S.look(); if (r.expr) look = Object.assign({}, look, { expr: r.expr });
-        var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h, k: K, ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY, shS: 1 - Math.min(.4, r.h / 120),
+        var bk = r.back || 0;
+        var H = S.FIG(gg, { st: st, look: look, face: r.face, cx: r.cx, gy: GY - r.h - 9 * bk, k: K * (1 - .06 * bk), ph: ph, w: r.w, pose: pose, shX: r.h > 0 ? lx(0) + 12 : r.cx, ground: GY - 9 * bk, shS: 1 - Math.min(.4, r.h / 120),
           extra: [[st.pact == null && ok && !AID ? .45 : -99, nearRail]], items: function (H2) {   /* the near rail goes between his sides only when he climbs (the coin); walking past it to the piggy bank or the glass, it stays behind him (JP 2026-11-15: he walked through the ladder) */ var o2 = [], ph2 = r.pig && r.pig !== 'home' && H2[r.pig], ch2 = r.cloth && H2[r.cloth], kh = r.pcoin === 'hand' && H2[r.pk];
             if (ph2) o2.push([ph2.z + .05, pigG(ph2.X - 2, ph2.Y + 1, 8 * Math.sin(t * 19))]);
             if (ch2) o2.push([ch2.z + .05, (function () { var c = S.grp(ch2.X, ch2.Y, 12); add(c, 'rect', { x: -5, y: -3.4, width: 10, height: 6.8, rx: 1.6, fill: '#a9cfe0' }); return c; })()]);
             if (kh) o2.push([kh.z + .05, (function () { var c = el('g', {}); add(c, 'circle', { cx: kh.X.toFixed(1), cy: (kh.Y - 1).toFixed(1), r: 2.6, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .7 }); return c; })()]);
             return o2; } });
+        if (bk > .5 && frontArt) sv.appendChild(frontArt);   /* behind the jar: the jar and the ladder in front of him */
         if (r.coin === 'hand' && H.near && r.fly == null && data.payday && !AID) { var bx = H.near.X - 1, by = H.near.Y + 5; add(sv, 'path', { d: 'M' + (bx - 6) + ' ' + (by + 5) + ' Q' + (bx - 8) + ' ' + (by - 4) + ' ' + (bx - 2.5) + ' ' + (by - 8) + ' L' + (bx + 2.5) + ' ' + (by - 8) + ' Q' + (bx + 8) + ' ' + (by - 4) + ' ' + (bx + 6) + ' ' + (by + 5) + ' Q' + bx + ' ' + (by + 8) + ' ' + (bx - 6) + ' ' + (by + 5) + ' Z', fill: '#c09a74' }); add(sv, 'rect', { x: bx - 3, y: by - 9.4, width: 6, height: 2, rx: 1, fill: '#7a5a44' }); add(sv, 'circle', { cx: bx, cy: by - 1, r: 2.2, fill: '#f2c94c' }); }   /* payday: a whole bag of coins hangs from his hand up the ladder */
         else if (r.coin === 'hand' && H.near && r.fly == null) add(sv, 'ellipse', { cx: H.near.X - 1, cy: H.near.Y - 3, rx: 3, ry: 3, fill: '#f2c94c', stroke: '#c8901e', 'stroke-width': .8 });
         /* the tossed coin: from where it left the hand, up over the lid and down through the slot */

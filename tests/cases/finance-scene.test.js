@@ -21,11 +21,16 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
     /* the worried hand to the chin rises in front of him (facing left: the hand is never right of his middle) – it
        swung back over the top before (JP 2026-11-15) */
     const behind = []; { const m = mk('neg'); for (let t = 2.2; t < 3.6; t += .02) { m.a.at(t); const f = m.a.state.figs, me = f[Object.keys(f)[0]]; ['R', 'L'].forEach(k => { if (me[k] && me[k][0] > me.cx - 1) behind.push(t.toFixed(2) + k + ' ' + (me[k][0] - me.cx).toFixed(1)); }); } }
-    return { behind, back, worried, climbing, bookRed: /#d6453f/i.test(book), bad: /NaN|undefined/.test(w.sv.innerHTML + c.sv.innerHTML) };
+    /* to the piggy bank he walks behind the jar (JP 2026-11-16: he walked through it): mid-way the jar is drawn over him; where he turns he is in front */
+    const pg = mk('ok'); pg.a.pact('piggy', 1.6); const mid = { back: pg.a.state.r.back, over: pg.sv.querySelectorAll('.sc25-front .sc-jarg').length };
+    pg.a.pact('piggy', 2.7); const turn = pg.a.state.r.back || 0;
+    const jar = { mid, turn };
+    return { jar, behind, back, worried, climbing, bookRed: /#d6453f/i.test(book), bad: /NaN|undefined/.test(w.sv.innerHTML + c.sv.innerHTML) };
   });
   check(r.worried.rail > -1 && r.worried.body > -1 && r.worried.rail < r.worried.body, 'walking past the ladder, its near rail is drawn behind him ' + JSON.stringify(r.worried));
   check(r.climbing.rail > r.climbing.body, 'climbing for the coin, the near rail goes between his sides (after his far side) ' + JSON.stringify(r.climbing));
   check(!r.back.length, 'he never walks backwards (facing one way, moving the other) ' + r.back.slice(0, 6).join(', '));
+  check(r.jar.mid.back === 1 && r.jar.mid.over === 1 && r.jar.turn === 0, 'to the piggy bank he goes behind the jar (it is drawn over him), in front where he turns ' + JSON.stringify(r.jar));
   check(!r.behind.length, 'the hand to the chin goes up in front of him, never behind ' + r.behind.slice(0, 6).join(', '));
   check(r.bookRed, 'the evening book has a red cover – it shows on a blue top');
   check(!r.bad, 'no NaN/undefined in the Finances picture');

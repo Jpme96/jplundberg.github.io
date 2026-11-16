@@ -442,7 +442,7 @@
     [-Math.PI / 2, Math.PI / 2].forEach(function (phi) { var e = onHead(phi * -1, 53); ears.push(e); if (e.f > -0.35) { head.appendChild(el('ellipse', { cx: e.x, cy: e.y, rx: 3.5 * k * Math.max(.4, Math.abs(Math.sin(phi * -1 + a))), ry: 5.5 * k, fill: C.skin2 }));
       if (L.aid === 'hearing') { head.appendChild(el('path', { d: 'M' + e.x + ' ' + (e.y - 6 * k) + ' q' + (3.6 * k) + ' ' + (2.4 * k) + ' ' + (1.2 * k) + ' ' + (9 * k), fill: 'none', stroke: '#8e97a1', 'stroke-width': 3.2 * k, 'stroke-linecap': 'round' })); head.appendChild(el('circle', { cx: e.x + .6 * k, cy: e.y + 1 * k, r: 1.4 * k, fill: '#555c66' })); }   /* the hearing aid behind the ear, its tip in the ear – you can see it */ } });
     /* hair */
-    var H = { short: [37, 30, 1.07, 1.16], quiff: [37, 30, 1.07, 1.16], fade: [39, 28, 1.03, 1.08], side: [36, 31, 1.05, 1.09], undercut: [36, 14, 1.06, 1.14], waves: [36, 31, 1.08, 1.11], bangs: [42, 26, 1.07, 1.12], curly: [35, 28, 1.16, 1.2], afro: [34, 26, 1.34, 1.42],
+    var H = { short: [37, 30, 1.07, 1.16], quiff: [37, 30, 1.07, 1.16], fade: [39, 28, 1.03, 1.08], side: [36, 31, 1.05, 1.09], undercut: [36, 14, 1.06, 1.14], waves: [36, 31, 1.08, 1.11], bangs: [42, 26, 1.07, 1.12], curly: [35, 28, 1.16, 1.2], afro: [34, 26, 1.1, 1.16],
       long: [37, 32, 1.06, 1.09], braids: [38, 31, 1.04, 1.07], dreads: [37, 32, 1.1, 1.12], pony: [38, 30, 1.02, 1.04], pigtails: [38, 30, 1.03, 1.05], bun: [38, 30, 1.02, 1.04], mohawk: [44, 22, 1.0, 1.0] }[L.hair];
     var hatCovers = L.hat === 'beanie' || L.hat === 'chef' || L.hat === 'bandana' || L.hat === 'santa' || L.hat === 'wizard' || L.hat === 'witch' || L.hat === 'cowboy';
     if (H && L.hair === 'mohawk' && !hatCovers) { var mh = []; for (var mi = 0; mi <= 12; mi++) { var mt = Math.PI * (.2 + .6 * mi / 12), mfz = Math.cos(mt) * 26, mfy = 52 - Math.sin(mt) * 24 - 6, mp = P(0, mfy + hb6, -mfz); mh.push([mp.X, mp.Y]); }
@@ -454,6 +454,9 @@
        fade and undercut have short sides (a lighter band of the hair over the skin) under a fuller top, the side part has its volume on one side,
        the quiff rises at the front, waves and curls bump along the top */
     var SIDE_Y = { long: 60, braids: 58, dreads: 60, pigtails: 52, pony: 47, bun: 47, bangs: 47, afro: 50, curly: 47 }[L.hair] || 45;
+    /* rounded corners: the cap's outline cut twice at each corner (Chaikin), so where the hairline meets the crown in profile it
+       curves instead of making a sharp point (JP 2026-11-16: the profile's top and back edge looked angular) */
+    function soft(pts, n) { for (var it = 0; it < (n || 2); it++) { var o = [], L2 = pts.length; for (var i = 0; i < L2; i++) { var p0 = pts[i], p1 = pts[(i + 1) % L2]; o.push([p0[0] * .75 + p1[0] * .25, p0[1] * .75 + p1[1] * .25], [p0[0] * .25 + p1[0] * .75, p0[1] * .25 + p1[1] * .75]); } pts = o; } return pts; }
     function capPts(Hx, yS, top) {
       var pts = [], N = 32, RR = Math.sqrt(Math.pow(R * FS[0] * Math.cos(a), 2) + Math.pow(R * .98 * Math.sin(a), 2)) * Hx[2], HY0 = hc.Y + FS[2] * k, VS = FS[1];
       var qc = Math.acos(Math.max(-1, Math.min(1, Math.sin(a) * .8)));   /* where the front of the head is along the top arc, from this side */
@@ -465,7 +468,7 @@
         y = Math.max(52 - 22 * sq + 1, Math.min(y, 52 + 22 * sq - 1.5));
         pts.push([hc.X + X * RR, HY0 + (y - 52) * k * VS]);
       }
-      for (var j = 1; j < N; j++) { var t = Math.PI * j / N, bump = L.hair === 'waves' ? 1 + .09 * Math.abs(Math.sin(t * 6)) : L.hair === 'curly' || L.hair === 'afro' ? 1 + (L.hair === 'afro' ? .07 : .05) * Math.abs(Math.sin(t * 9)) : L.hair === 'dreads' ? 1 + .04 * Math.abs(Math.sin(t * 14)) : 1;
+      for (var j = 1; j < N; j++) { var t = Math.PI * j / N, bump = L.hair === 'waves' ? 1 + .09 * Math.abs(Math.sin(t * 6)) : L.hair === 'afro' ? 1.03 + .03 * Math.cos(t * 14) : L.hair === 'curly' ? 1 + .05 * Math.abs(Math.sin(t * 9)) : L.hair === 'dreads' ? 1 + .04 * Math.abs(Math.sin(t * 14)) : 1;
         if (L.hair === 'side') bump *= 1 + .13 * Math.max(0, Math.cos(t - .55));   /* the volume swept to one side of the parting */
         if (L.hair === 'quiff' || (L.hair === 'undercut' && top)) bump *= 1 + (L.hair === 'quiff' ? .15 : .1) * Math.exp(-Math.pow((t - qc) / .55, 2));   /* rises at the front */
         pts.push([hc.X + Math.cos(t) * RR * bump, HY0 - Math.sin(t) * R * VS * Hx[3] * bump]); }
@@ -473,9 +476,14 @@
     }
     if (H && !hatCovers) {
       var hkey = L.hair + '|' + L.faceS + '|' + a.toFixed(4) + '|' + k.toFixed(4) + '|' + H.join(',');
+      var HY0c = hc.Y + FS[2] * k;
+      /* the afro (JP 2026-11-16: make it rounder): a round cloud of hair round the whole head, behind the face, its edge a soft
+         scallop; the cap on top only frames the forehead */
+      if (L.hair === 'afro') { var af = headPath('afro', hkey, function () { var ap = [], AN = 48, ax = R * 1.42 * FS[0], ay = R * 1.36, acy = HY0c - 6 * k; for (var ai = 0; ai < AN; ai++) { var at = Math.PI * 2 * ai / AN, wob = 1 + .028 * Math.cos(at * 12); ap.push([hc.X + Math.cos(at) * ax * wob, acy + Math.sin(at) * ay * wob]); } return ap; });
+        parts.push([behind(0, 52, -10) > 4 ? 0.56 : 0.49, el('path', Object.assign(af, { fill: C.hair }))]); }   /* seen from behind it covers the head */
       var SHORT = L.hair === 'fade' || L.hair === 'undercut';
-      head.appendChild(el('path', Object.assign(headPath('hair', hkey, function () { return capPts(SHORT ? [H[0], H[1] + 6, 1.02, 1.03] : H, SHORT ? 47 : SIDE_Y); }), { fill: SHORT ? mix(C.hair, C.skin, L.hair === 'undercut' ? .62 : .42) : C.hair })));
-      if (SHORT) head.appendChild(el('path', Object.assign(headPath('hairTop', hkey, function () { return capPts(H, 38, L.hair === 'undercut' ? 37 : 39); }), { fill: C.hair })));   /* the top over the short sides */
+      head.appendChild(el('path', Object.assign(headPath('hair', hkey, function () { return soft(capPts(SHORT ? [H[0], H[1] + 6, 1.02, 1.03] : H, SHORT ? 47 : SIDE_Y)); }), { fill: SHORT ? mix(C.hair, C.skin, L.hair === 'undercut' ? .62 : .42) : C.hair })));
+      if (SHORT) head.appendChild(el('path', Object.assign(headPath('hairTop', hkey, function () { return soft(capPts(H, 38, L.hair === 'undercut' ? 37 : 39)); }), { fill: C.hair })));   /* the top over the short sides */
       /* a swept fringe: the hair falls a little over the forehead on one side, wrapping round as he turns */
       /* the quiff is the cap's own rise at the front (capPts) */
       if (L.hair === 'short' || L.hair === 'side' || L.hair === 'bangs' || L.hair === 'waves' || L.hair === 'undercut') { var fN = 10, fr = headPath('fringe', hkey, function () { var fp = [];
