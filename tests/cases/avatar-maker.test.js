@@ -51,6 +51,18 @@ const OLD = require('../lib/avatar-old.json');
   check(await p.evaluate(() => !!document.querySelector('#avSet [data-avp-open]') && !document.querySelector('#avSet .avm-tiles')), 'Settings keeps one row for your avatar (no tiles crowding it)');
   await p.evaluate(() => document.querySelector('#avSet [data-avp-open]').click()); await sl(700);
   const tabs = await p.evaluate(() => [...document.querySelectorAll('.avp [data-avp-tab]')].map(x => x.textContent));
+  /* a short tab doesn't flicker (JP 2026-11-16, Iago's phone): scrolled to the bottom of Pet, the picture shrinks once and stays small */
+  const flick = await p.evaluate(async () => {
+    document.querySelector('.avp [data-avp-tab="pet"]').click(); await new Promise(r => setTimeout(r, 300));
+    const el = document.querySelector('.avp'), sc = el.querySelector('.avp-scroll'); let n = 0; sc.style.flex = 'none'; sc.style.height = (sc.scrollHeight - 70) + 'px';   /* like a phone where Pet only just scrolls */
+    let was = el.classList.contains('avp-mini'), on = true; const watch = () => { const m = el.classList.contains('avp-mini'); if (m !== was) { n++; was = m; } if (on) requestAnimationFrame(watch); }; requestAnimationFrame(watch);   /* every change between big and small, frame by frame */
+    for (let i = 0; i < 12; i++) { sc.scrollTo({ top: sc.scrollHeight, behavior: 'instant' }); sc.dispatchEvent(new Event('scroll')); await new Promise(r => requestAnimationFrame(r)); }
+    await new Promise(r => setTimeout(r, 600)); on = false;
+    const out = { flips: n, mini: el.classList.contains('avp-mini'), y: sc.scrollTop, room: sc.scrollHeight - sc.clientHeight };
+    sc.scrollTo({ top: 0, behavior: 'instant' }); sc.dispatchEvent(new Event('scroll')); await new Promise(r => setTimeout(r, 100)); out.back = !el.classList.contains('avp-mini'); sc.style.flex = sc.style.height = '';
+    return out;
+  });
+  check(flick.flips <= 1 && flick.mini && flick.back, 'a short tab (Pet) does not flicker: scrolled down the picture shrinks once and stays small, at the top it grows back ' + JSON.stringify(flick));
   check(tabs.length === 8, 'the avatar page has 8 tabs: ' + tabs.join(', '));
   const perTab = [];
   for (const t of ['face', 'hair', 'body', 'style', 'extras', 'pet', 'moves', 'settings']) {

@@ -53,7 +53,7 @@
       /* more room to choose (JP 2026-11-15): the picture, the turn buttons and the tabs stay at the top; once you scroll the picture shrinks so
          more tiles show; the tabs wrap onto two rows instead of running off the edge */
       '.avp-stage{position:sticky;top:0;z-index:3;background:var(--bg,#0e1117);padding-bottom:8px;border-bottom:1px solid rgba(127,127,127,.12)}@media (prefers-color-scheme:light){.avp-stage{background:var(--bg,#f6f4ef)}}' +
-      '.avp-fig{width:min(100%,300px,28vh);transition:width .2s ease}.avp-mini .avp-fig{width:min(100%,120px)}.avp-mini .avp-stage .avp-row button{min-height:32px;font-size:13px;padding:0 10px}' +
+      '.avp-fig{width:min(100%,300px,28vh)}.avp-mini .avp-fig{width:min(100%,120px)}.avp-mini .avp-stage .avp-row button{min-height:32px;font-size:13px;padding:0 10px}' +
       '.avp-stage .avp-tabs{position:static;flex-wrap:wrap;justify-content:center;overflow:visible;padding:4px 0 0;border:0;background:transparent;width:100%}.avp-stage .avp-tabs button{min-height:36px;padding:0 12px;font-size:14px}' +
       '@media (prefers-reduced-motion:reduce){.avp *{animation:none!important;transition:none!important}}';
     document.head.appendChild(st);
@@ -95,7 +95,17 @@
     document.body.appendChild(el);
     var fig = el.querySelector('.avp-fig'), pane = el.querySelector('.avp-pane'), nav = el.querySelector('.avp-tabs'), test = el.querySelector('.avp-test'), testW = el.querySelector('.avp-testw'), scroll = el.querySelector('.avp-scroll');
     el.querySelector('.avp-stage').appendChild(nav);   /* the tabs live with the picture, so both stay in view */
-    scroll.addEventListener('scroll', function () { el.classList.toggle('avp-mini', scroll.scrollTop > 24); }, { passive: true });   /* the picture shrinks as you scroll */
+    /* the picture shrinks as you scroll. On a short tab (Pet) shrinking made the page too short to stay scrolled, so the picture grew back,
+       which scrolled it again – it flickered (JP 2026-11-16, Iago's phone). Now the pane keeps the room the picture gave up while it is
+       small (padding = what it lost), and it only grows back near the very top. */
+    function mini(on) {
+      if (on === el.classList.contains('avp-mini')) return;
+      var st = el.querySelector('.avp-stage'), h0 = st.offsetHeight, y = scroll.scrollTop; el.classList.toggle('avp-mini', on);
+      if (!on) { pane.style.paddingBottom = ''; return; }
+      var lost = Math.max(0, h0 - st.offsetHeight); pane.style.paddingBottom = (lost + 48) + 'px';   /* room to stay scrolled past the line */
+      scroll.scrollTop = Math.max(41, y - lost);   /* the tiles stay where they were, and it stays small */
+    }
+    scroll.addEventListener('scroll', function () { var y = scroll.scrollTop; if (y > 40) mini(true); else if (y < 6) mini(false); }, { passive: true });
     var prevOverflow = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden';
     function dirty() { return JSON.stringify(cur) !== saved; }
     function drawFig() {
