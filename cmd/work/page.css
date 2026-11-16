@@ -515,3 +515,17 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-seg button { border: 0; background: none; color: inherit; font: inherit; min-width: 40px; min-height: 36px; padding: 0 10px; cursor: pointer; }
 .dcn-seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .dcn-addp .dc-chip { font-size: 13px; min-height: 32px; padding: 0 10px; }
+.dcn-pills { align-items: center; }
+.dcn-pill button { min-height: 32px; padding: 0 6px; }
+.dcn-pill .dcn-pname { font-size: 13px; padding: 0 10px; }
+.dcn-pill.on .dcn-pname { padding: 0 4px; }
+.dcn-padd { min-height: 32px; font-size: 13px; border-radius: 999px; border: 1px dashed rgba(var(--ink-rgb), .3); background: none; color: inherit; padding: 0 10px; max-width: 100%; }
+.dcn-ownf { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; border-radius: 8px; background: rgba(var(--accent-rgb), .08); width: 100%; box-sizing: border-box; }
+.dcn-ownf > b { width: 100%; font-size: 13px; }
+.dcn-ownf input:not([type]), .dcn-oadd input { flex: 1 1 140px; min-width: 0; }
+.dcn-oc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+.dcn-oc > span { font-size: 12px; color: var(--muted); width: 100%; }
+.dcn-ochip { font-size: 13px; gap: 4px; }
+.dcn-ochip button { border: 0; background: none; color: var(--muted); padding: 0 2px; cursor: pointer; }
+.dcn-oadd { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 10px; }
+.dcn-ed2 .dcn-padd { width: auto; flex: 0 0 auto; } .dcn-seg button { white-space: nowrap; }

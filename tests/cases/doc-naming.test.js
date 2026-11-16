@@ -69,7 +69,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   await p.evaluate(() => { const d = document.querySelector('[data-dcnrules]'); d.open = true; d.dispatchEvent(new Event('toggle')); }); await sl(100);
   await p.evaluate(() => document.querySelector('[data-dcncopy="bby-doc"]').click()); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dcnsepb="_"]').click()); await sl(300);
-  await p.evaluate(() => document.querySelector('[data-dcnpadd="proj"]').click()); await sl(300);
+  await p.evaluate(() => { const a = document.querySelector('[data-dcnpa]'); a.value = 'proj'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   const own = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { rules: (r.nrules || []).length, ex: document.querySelector('.dcn-prev code').textContent }; });
   check(own.rules === 1 && own.ex === '442_DA_taklampe korridor C20_P-9.pdf', 'a copied rule can be changed, and the example follows ' + JSON.stringify(own));
   await p.evaluate(() => { const r = Features.list('dctl')[0].nrules[0].id, s = document.querySelector('[data-dcnuse-k="doc"]'); s.value = r; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);

@@ -317,9 +317,15 @@
      only lives here (`TOOL.p`, never saved), so the file naming – suggestions from the name and the PDF's text, the naming rules for
      documents, photos and drawings – works on them as it does in Received; you download them renamed as a .zip */
   var TOOL = { p: null, blobs: {} };
-  function toolP() { if (!TOOL.p) { var R = [], seen = {}; projects().forEach(function (p) { (p.nrules || []).forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; R.push(JSON.parse(JSON.stringify(r))); } }); }); TOOL.p = { id: '__ren', name: '', tool: 1, files: [], lines: [], nrules: R, nuse: {} }; } return TOOL.p; }
+  /* the tool's own rules, codes and building number stay on this device between visits (localStorage – no files, no names of files) */
+  var TKEY = 'dcn.tool';
+  function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid })); } catch (e) {} }
+  function toolP() { if (!TOOL.p) { var st = {}; try { st = JSON.parse(localStorage.getItem(TKEY) || '{}') || {}; } catch (e) {}
+    var R = [], seen = {}, C = {}; (st.nrules || []).concat.apply(st.nrules || [], projects().map(function (p) { return p.nrules || []; })).forEach(function (r) { if (r && r.id && !seen[r.id]) { seen[r.id] = 1; R.push(JSON.parse(JSON.stringify(r))); } });
+    [st].concat(projects()).forEach(function (p) { Object.keys(p.ncodes || {}).forEach(function (key) { C[key] = C[key] || []; (p.ncodes[key] || []).forEach(function (y) { if (y && y[0] && !C[key].some(function (z) { return z[0] === y[0]; })) C[key].push([y[0], y[1] || '']); }); }); });
+    TOOL.p = { id: '__ren', name: '', tool: 1, files: [], lines: [], nrules: R.slice(0, 20), nuse: st.nuse || {}, ncodes: C, bid: st.bid || '' }; } return TOOL.p; }
   var TAPI = null;
-  function toolApi() { if (!TAPI) TAPI = Object.assign({}, DCN_API, { saveP: function (id, fn, key) { if (id === '__ren') { fn(toolP()); return; } saveP(id, fn, key); }, proj: function (id) { return id === '__ren' ? toolP() : proj(id); },
+  function toolApi() { if (!TAPI) TAPI = Object.assign({}, DCN_API, { saveP: function (id, fn, key) { if (id === '__ren') { fn(toolP()); toolKeep(); return; } saveP(id, fn, key); }, proj: function (id) { return id === '__ren' ? toolP() : proj(id); },
     getBlob: function (id) { return TOOL.blobs[id] ? Promise.resolve(TOOL.blobs[id]) : getBlob(id); }, cur: function () { return '__ren'; } }); return TAPI; }
   function renOn() { return xtool === 'ren' && !open; }
   function renPanel() {
@@ -333,7 +339,7 @@
     var busy = N.busy();
     h += '<div class="dx-rsum"><span>' + esc(k('ui.dx-ren-sum', '{n} files · {r} renamed · {o} ready to rename', { n: F.length, r: moved, o: ok })) + (busy ? ' · <i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +
       '<span class="dx-rbtn">' + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
-      '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl2', 'Download {n} files (.zip)', { n: F.length })) + '</span></button></span></div>';
+      '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl3', 'Download {n} files with the new names (.zip)', { n: F.length })) + '</span></button></span></div>';
     return h + N.files(p, F) + '</section>';
   }
   function renAdd(list) {
@@ -351,8 +357,8 @@
     });
   }
   function renDownload() {
-    var F = toolP().files, used = {};
-    return Promise.all(F.map(function (f) { return Promise.resolve(TOOL.blobs[f.id]).then(function (b) { return b ? b.arrayBuffer() : null; }).then(function (buf) { if (!buf) return null; var n = f.name, base = n, i = 2; while (used[n.toLowerCase()]) n = base.replace(/(\.[^.]+)?$/, ' (' + i++ + ')$1'); used[n.toLowerCase()] = 1; return [n, new Uint8Array(buf)]; }); }))
+    var N = naming(), p = toolP(), F = p.files, used = {};
+    return Promise.all(F.map(function (f) { return Promise.resolve(TOOL.blobs[f.id]).then(function (b) { return b ? b.arrayBuffer() : null; }).then(function (buf) { if (!buf) return null; var n = N ? N.newName(p, f) : f.name, base = n, i = 2; while (used[n.toLowerCase()]) n = base.replace(/(\.[^.]+)?$/, ' (' + i++ + ')$1'); used[n.toLowerCase()] = 1; return [n, new Uint8Array(buf)]; }); }))
       .then(function (files) { var blob = zipStore(files.filter(Boolean)), f = new File([blob], k('ui.dx-ren-zip', 'Renamed files') + ' ' + today() + '.zip', { type: 'application/zip' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f); else { var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); } return f; });
   }
   function fdvPanel() {
@@ -530,7 +536,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '91ac25b12c';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '9fbff4d861';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };

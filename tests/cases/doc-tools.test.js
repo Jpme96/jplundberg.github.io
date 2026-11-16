@@ -48,15 +48,21 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); const a = li.querySelector('[data-dcntype]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   const r2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); return { sug: li.querySelector('.dcn-sug code').textContent, btn: (document.querySelector('[data-dxrenuse]') || {}).textContent || '' }; });
   check(/^351 DA Datablad radiator\.pdf$/.test(r2.sug) && /Use the new name on \d+ ready/.test(r2.btn), 'the Boligbygg rule builds the new name, and the ready ones can be renamed in one go ' + JSON.stringify(r2));
-  await p.evaluate(() => document.querySelector('[data-dxrenuse]').click()); await sl(300);
   const z = await p.evaluate(async () => { let got = null; FdvPdf.share = f => { got = f; return Promise.resolve(); }; document.querySelector('[data-dxrendl]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); if (!got) return null;
     const E = DocCtl.zipEntries(await got.arrayBuffer()); return { name: got.name, files: E.map(e => e.name).sort().join('|'), size: E.map(e => e.size).join() }; });
-  check(z && /\.zip$/.test(z.name) && /351 DA Datablad radiator\.pdf/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /\d{5}-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 5 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the renamed ones with their new names, with their content ' + JSON.stringify(z));
+  check(z && /\.zip$/.test(z.name) && /351 DA Datablad radiator\.pdf/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /\d{5}-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 5 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the ready ones get their new names without pressing anything first (JP 22:30), with their content ' + JSON.stringify(z));
+  await p.evaluate(() => document.querySelector('[data-dxrenuse]').click()); await sl(300);
+  /* own codes and free text in the lists (JP 22:30) */
+  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); const d = li.querySelector('[data-dcnv$=":disc"]'); d.value = '__own'; d.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  await p.evaluate(() => { const f = document.querySelector('.dx-ren [data-dcnownf]'); f.querySelector('[data-dcnoc]').value = 'E2'; f.querySelector('[data-dcnom]').value = 'Made-up power'; f.querySelector('[data-dcnosave]').click(); }); await sl(300);
+  const oc = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)), d = li.querySelector('[data-dcnv$=":disc"]');
+    return { sel: d.selectedOptions[0].textContent, grp: d.selectedOptions[0].parentNode.label, sug: li.querySelector('.dcn-sug code').textContent, kept: /E2/.test(localStorage.getItem('dcn.tool') || '') }; });
+  check(oc.sel === 'E2 – Made-up power' && oc.grp === 'Your codes' && /-E2-332-/.test(oc.sug) && oc.kept, 'an own code is picked from the list, used in the name and kept for later ' + JSON.stringify(oc));
   /* naming rules (JP 22:00 "lackluster … messy with a lot of rules"): used for, your rules, Boligbygg's folded away, an editor built from parts */
   await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
   const e1 = await p.evaluate(() => ({ ed: !!document.querySelector('.dx-ren .dcn-ed2'), pills: [...document.querySelectorAll('.dx-ren .dcn-pill .dcn-pname')].map(b => b.textContent), bb: !document.querySelector('.dx-ren details.dcn-bbl').open, prev: document.querySelector('.dx-ren .dcn-prev code').textContent }));
   check(e1.ed && e1.pills.length === 3 && e1.bb && /^442 DA taklampe/.test(e1.prev), 'New rule opens the editor with three parts and a live example; Boligbygg’s rules are folded away ' + JSON.stringify(e1));
-  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnpadd="floor"]').click()); await sl(200);
+  await p.evaluate(() => { const a = document.querySelector('.dx-ren [data-dcnpa]'); a.value = 'floor'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnsepb="_"]').click()); await sl(200);
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnpm="3:-1"]').click()); await sl(200);
   const e2 = await p.evaluate(() => ({ prev: document.querySelector('.dx-ren .dcn-prev code').textContent, opt: !!document.querySelector('.dx-ren .dcn-popt') }));

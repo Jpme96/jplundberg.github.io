@@ -3071,7 +3071,6 @@ I18N.add({
   "ui.dx-ren-sum": ["{n} files · {r} renamed · {o} ready to rename", "{n} filer · {r} har fått nytt navn · {o} klare"],
   "ui.dx-ren-reading": ["reading the PDFs …", "leser PDF-ene …"],
   "ui.dx-ren-useall": ["Use the new name on {n} ready", "Bruk nytt navn på {n} klare"],
-  "ui.dx-ren-dl2": ["Download {n} files (.zip)", "Last ned {n} filer (.zip)"],
   "ui.dx-ren-used": ["{n} files have their new name", "{n} filer har fått nytt navn"],
   "ui.dcn-rules-tool": ["Naming rules", "Navneregler"],
   "ui.dcn-guess": ["Suggested – check it", "Forslag – sjekk det"],
@@ -3090,5 +3089,17 @@ I18N.add({
   "ui.dcn-bb-rules": ["Boligbygg’s rules ({n}) – copy one to start from it", "Boligbyggs regler ({n}) – kopier en for å starte fra den"],
   "ui.dcn-empty-rule": ["add a part below", "legg til en del under"],
   "ui.dcn-parts": ["The parts, in order", "Delene, i rekkefølge"],
-  "ui.dcn-parts-s": ["tap one for its settings", "trykk på en for innstillinger"]
+  "ui.dcn-parts-s": ["tap one to move, remove or set it", "trykk på en for å flytte, fjerne eller stille den"],
+  "ui.dx-ren-dl3": ["Download {n} files with the new names (.zip)", "Last ned {n} filer med nye navn (.zip)"],
+  "ui.dcn-own-codes": ["Your codes", "Dine koder"],
+  "ui.dcn-own-add": ["+ Own code or free text …", "+ Egen kode eller fritekst …"],
+  "ui.dcn-own-t": ["Own code or free text", "Egen kode eller fritekst"],
+  "ui.dcn-own-c": ["Code or text, e.g. E2", "Kode eller tekst, f.eks. E2"],
+  "ui.dcn-own-m": ["What it means (optional)", "Hva den betyr (valgfritt)"],
+  "ui.dcn-own-keep": ["Keep it in the list for later", "Behold den i lista til senere"],
+  "ui.dcn-own-use": ["Use it", "Bruk den"],
+  "ui.dcn-own-codes-s": ["extra choices in the lists – or pick “+ Own code” in a list", "ekstra valg i listene – eller velg «+ Egen kode» i en liste"],
+  "ui.dcn-own-for": ["For", "For"],
+  "ui.dcn-own-addb": ["Add", "Legg til"],
+  "ui.dcn-add-part2": ["+ Add a part …", "+ Legg til en del …"]
 });
