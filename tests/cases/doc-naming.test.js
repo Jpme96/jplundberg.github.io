@@ -38,7 +38,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   /* switch on (this device only) */
   await p.evaluate(() => { const s = document.querySelector('[data-dcnon]'); s.checked = true; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const on = await p.evaluate(() => ({ ls: localStorage.getItem('dash.dcNaming'), rows: document.querySelectorAll('.dcn-row').length, cols: [...document.querySelector('.dcn-row .dcn-g').children].map(c => c.className), dl: document.querySelectorAll('#dcnCodes option').length }));
-  check(on.ls === '1' && on.rows === 4 && on.cols.join() === 'dcn-c,dcn-c,dcn-n,dcn-t' && on.dl > 10, 'switched on: a row per file – code · type · current name · status, and a code list ' + JSON.stringify(on));
+  check(on.ls === '1' && on.rows === 4 && on.cols.join() === 'dcn-c,dcn-c,dcn-n,dcn-c dcn-kind,dcn-t' && on.dl > 10, 'switched on: a row per file – code · type · current name · kind · status, and a code list ' + JSON.stringify(on));
   const named0 = await p.evaluate(() => { const f = Features.list('dctl')[0].files.find(x => /^442/.test(x.name)), row = document.querySelector('[data-dcnf="' + f.id + '"]'); return { line: f.line, sug: row.querySelector('.dcn-sug code').textContent, follows: /Name follows the rule/.test(row.textContent) }; });
   check(named0.line === 'l3' && named0.sug === '442 DA taklampe korridor.pdf' && named0.follows, 'a file named by Boligbygg’s rule is on its line and follows the rule ' + JSON.stringify(named0));
   /* suggest codes and check the PDFs (pdf.js from cmd/vendor, read here) */
@@ -67,10 +67,10 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   check(await p.evaluate(id => { const f = Features.list('dctl')[0].files.find(x => x.id === id); return f.name === 'KANALVIFTE_K200EC.pdf' && !f.orig; }, fid), 'Back to the name it came with');
   /* your own rule: copy Boligbygg's, change it, use it for documents */
   await p.evaluate(() => { const d = document.querySelector('[data-dcnrules]'); d.open = true; d.dispatchEvent(new Event('toggle')); }); await sl(100);
-  await p.evaluate(() => document.querySelector('[data-dcncopy]').click()); await sl(300);
-  await p.evaluate(() => { const s = document.querySelector('[data-dcnr="sep"]'); s.value = '_'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
-  await p.evaluate(() => { const s = document.querySelector('[data-dcnpa]'); s.value = 'proj'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
-  const own = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { rules: (r.nrules || []).length, ex: document.querySelector('.dcn-ex code').textContent }; });
+  await p.evaluate(() => document.querySelector('[data-dcncopy="bby-doc"]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dcnsepb="_"]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dcnpadd="proj"]').click()); await sl(300);
+  const own = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { rules: (r.nrules || []).length, ex: document.querySelector('.dcn-prev code').textContent }; });
   check(own.rules === 1 && own.ex === '442_DA_taklampe korridor C20_P-9.pdf', 'a copied rule can be changed, and the example follows ' + JSON.stringify(own));
   await p.evaluate(() => { const r = Features.list('dctl')[0].nrules[0].id, s = document.querySelector('[data-dcnuse-k="doc"]'); s.value = r; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const used = await p.evaluate(id => document.querySelector('[data-dcnf="' + id + '"] .dcn-sug code').textContent, fid);

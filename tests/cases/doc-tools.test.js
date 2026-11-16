@@ -39,6 +39,8 @@ fs.writeFileSync(lone, '%PDF made up 4');
   /* a drawing: the letters say what they mean (Boligbygg's tables 8–11), the discipline comes from the code and the drawing type from the name (JP 21:21) */
   const dw = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); if (!li) return null; const sel = k => li.querySelector('[data-dcnv$=":' + k + '"]');
     return { disc: sel('disc') && sel('disc').selectedOptions[0].textContent, dtype: sel('dtype') && sel('dtype').selectedOptions[0].textContent, floors: sel('floor') && [...sel('floor').options].map(o => o.textContent).slice(1, 3), sug: li.querySelector('.dcn-sug code').textContent }; });
+  const dk = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); return { type: !!li.querySelector('[data-dcntype]'), kind: !!li.querySelector('.dcn-g > .dcn-kind'), code: !!li.querySelector('[data-dcncode]') }; });
+  check(!dk.type && dk.kind && dk.code, 'a drawing has its kind in the first row, keeps the NS code (it is in the drawing name) and has no document type (JP 22:02) ' + JSON.stringify(dk));
   check(dw && /^V – HVAC and plumbing/.test(dw.disc) && dw.dtype === 'P – Plan' && dw.floors[0] === 'K02 – 2nd basement' && /-V-332-P-\d\d – Rørplan sprinkler\.dwg$/.test(dw.sug), 'a drawing: the choices say what the letters mean, and the discipline (from 332) and type (from “rørplan”) are suggested ' + JSON.stringify(dw));
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   check(await p.evaluate(() => /^11621-/.test([...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
@@ -50,6 +52,20 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const z = await p.evaluate(async () => { let got = null; FdvPdf.share = f => { got = f; return Promise.resolve(); }; document.querySelector('[data-dxrendl]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); if (!got) return null;
     const E = DocCtl.zipEntries(await got.arrayBuffer()); return { name: got.name, files: E.map(e => e.name).sort().join('|'), size: E.map(e => e.size).join() }; });
   check(z && /\.zip$/.test(z.name) && /351 DA Datablad radiator\.pdf/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /\d{5}-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 5 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the renamed ones with their new names, with their content ' + JSON.stringify(z));
+  /* naming rules (JP 22:00 "lackluster … messy with a lot of rules"): used for, your rules, Boligbygg's folded away, an editor built from parts */
+  await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
+  const e1 = await p.evaluate(() => ({ ed: !!document.querySelector('.dx-ren .dcn-ed2'), pills: [...document.querySelectorAll('.dx-ren .dcn-pill .dcn-pname')].map(b => b.textContent), bb: !document.querySelector('.dx-ren details.dcn-bbl').open, prev: document.querySelector('.dx-ren .dcn-prev code').textContent }));
+  check(e1.ed && e1.pills.length === 3 && e1.bb && /^442 DA taklampe/.test(e1.prev), 'New rule opens the editor with three parts and a live example; Boligbygg’s rules are folded away ' + JSON.stringify(e1));
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnpadd="floor"]').click()); await sl(200);
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnsepb="_"]').click()); await sl(200);
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnpm="3:-1"]').click()); await sl(200);
+  const e2 = await p.evaluate(() => ({ prev: document.querySelector('.dx-ren .dcn-prev code').textContent, opt: !!document.querySelector('.dx-ren .dcn-popt') }));
+  check(e2.prev === '442_DA_H02_taklampe korridor C20.pdf' && e2.opt, 'adding a part, the separator and moving a part change the example at once ' + JSON.stringify(e2));
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcndone]').click()); await sl(200);
+  const e3 = await p.evaluate(() => ({ own: [...document.querySelectorAll('.dx-ren .dcn-rlist')][0].querySelectorAll('.dcn-rrow').length, opt: [...document.querySelectorAll('.dx-ren [data-dcnuse-k="doc"] optgroup')].map(g => g.label + ':' + g.children.length).join() }));
+  check(e3.own === 1 && /Your rules:1/.test(e3.opt), 'Done: the rule is listed under Your rules and can be chosen for documents ' + JSON.stringify(e3));
+  await p.evaluate(() => { document.querySelector('.dx-ren [data-dcndel]').click(); }); await sl(200);
+  check(await p.evaluate(() => !document.querySelector('.dx-ren [data-dcndel]')), 'a rule of your own can be deleted');
   /* many files (JP 21:55 "could be messy"): one line each, chips for what needs you / is ready / is done, a tap opens a row */
   for (const n of ['Made-up a.dwg', 'Made-up b.xlsx', '442 DA Made-up light.pdf', 'Made-up c.docx']) fs.writeFileSync(path.join(dir, n), 'made up ' + n);
   await (await p.$('input[data-dxrenf]')).uploadFile(...['Made-up a.dwg', 'Made-up b.xlsx', '442 DA Made-up light.pdf', 'Made-up c.docx'].map(n => path.join(dir, n))); await sl(2500);

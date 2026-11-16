@@ -481,3 +481,37 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-s-done { color: var(--ok); } .dcn-s-ready { color: var(--blue); } .dcn-s-todo { color: var(--warn); }
 .dcn-row:not(.dcn-c) > .dcn-sumb { margin: -10px -12px 4px; width: calc(100% + 24px); }
 .dcn-flt { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+/* naming rules (2026-11-16 22:00): used for, a short list, an editor built from parts */
+.dcn-rules > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; cursor: pointer; }
+.dcn-rules > summary small { flex-basis: 100%; color: var(--muted); font-size: 12.5px; padding-left: 22px; }
+.dcn-h { margin: 12px 0 6px; font-size: 13px; font-weight: 600; }
+.dcn-usegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.dcn-usegrid label { display: grid; gap: 3px; font-size: 12.5px; color: var(--muted); }
+.dcn-usegrid select { min-width: 0; font-size: 15px; }
+.dcn-rlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.dcn-rrow { border: 1px solid rgba(var(--ink-rgb), .1); border-radius: 10px; }
+.dcn-rrow.on { border-color: var(--accent); }
+.dcn-rhead { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.dcn-rn { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.dcn-rn code { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dcn-bb { font-size: 11px; font-weight: 600; color: var(--blue); }
+.dcn-ract { display: flex; gap: 2px; flex: none; }
+.dcn-bbl { margin-top: 10px; } .dcn-bbl > summary { cursor: pointer; font-size: 13.5px; color: var(--muted); margin-bottom: 6px; }
+.dcn-ed2 { padding: 4px 10px 12px; display: grid; gap: 8px; border-top: 1px dashed rgba(var(--ink-rgb), .12); }
+.dcn-prev { display: grid; gap: 3px; } .dcn-prev span { font-size: 12px; color: var(--muted); }
+.dcn-prev code { font-size: 14px; padding: 8px 10px; border-radius: 8px; background: rgba(var(--ink-rgb), .06); overflow-wrap: anywhere; }
+.dcn-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.dcn-pill { display: inline-flex; align-items: center; border: 1px solid rgba(var(--ink-rgb), .18); border-radius: 999px; overflow: hidden; }
+.dcn-pill.on { border-color: var(--accent); background: rgba(var(--accent-rgb), .1); }
+.dcn-pill.opt { border-style: dashed; }
+.dcn-pill button { border: 0; background: none; color: inherit; font: inherit; min-height: 36px; padding: 0 8px; cursor: pointer; }
+.dcn-pill .dcn-pname { font-weight: 600; font-size: 13.5px; padding: 0 6px; }
+.dcn-pill button i { font-size: 12px; color: var(--muted); }
+.dcn-popt { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 14px; padding: 8px 10px; border-radius: 8px; background: rgba(var(--ink-rgb), .05); }
+.dcn-addp { display: flex; flex-wrap: wrap; gap: 6px; }
+.dcn-segs { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.dcn-segs > div { display: grid; gap: 4px; } .dcn-segs > div > span { font-size: 12.5px; color: var(--muted); }
+.dcn-seg { display: inline-flex; border: 1px solid rgba(var(--ink-rgb), .18); border-radius: 10px; overflow: hidden; }
+.dcn-seg button { border: 0; background: none; color: inherit; font: inherit; min-width: 40px; min-height: 36px; padding: 0 10px; cursor: pointer; }
+.dcn-seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.dcn-addp .dc-chip { font-size: 13px; min-height: 32px; padding: 0 10px; }

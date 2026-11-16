@@ -3082,5 +3082,13 @@ I18N.add({
   "ui.dcn-f-todo": ["Needs you {n}", "Må fylles ut {n}"],
   "ui.dcn-f-ready": ["Ready {n}", "Klare {n}"],
   "ui.dcn-f-done": ["Done {n}", "Ferdige {n}"],
-  "ui.dcn-f-none": ["None here.", "Ingen her."]
+  "ui.dcn-f-none": ["None here.", "Ingen her."],
+  "ui.dcn-own": ["Your rules", "Dine regler"],
+  "ui.dcn-used-for": ["Used for", "Brukes for"],
+  "ui.dcn-edit": ["Change the rule", "Endre regelen"],
+  "ui.dcn-own-none": ["None yet – make one, or copy one of Boligbygg’s and change it.", "Ingen ennå – lag en, eller kopier en av Boligbyggs og endre den."],
+  "ui.dcn-bb-rules": ["Boligbygg’s rules ({n}) – copy one to start from it", "Boligbyggs regler ({n}) – kopier en for å starte fra den"],
+  "ui.dcn-empty-rule": ["add a part below", "legg til en del under"],
+  "ui.dcn-parts": ["The parts, in order", "Delene, i rekkefølge"],
+  "ui.dcn-parts-s": ["tap one for its settings", "trykk på en for innstillinger"]
 });
