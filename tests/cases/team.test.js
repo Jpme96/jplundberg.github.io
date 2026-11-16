@@ -189,19 +189,39 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.evaluate(() => document.querySelector('[data-dcopen]').scrollIntoView({ block: 'center' })); await kari.click('[data-dcopen]');   /* the tools on top push the list down: keep the row clear of the tab bar */
   await kari.waitForSelector('[data-dctab="docs"]'); await kari.click('[data-dctab="docs"]');
   await kari.waitForSelector('[data-dcline="a2"]'); await kari.click('[data-dcline="a2"]');
-  await kari.waitForSelector('[data-dcst="a2:ok"]'); await kari.click('[data-dcst="a2:ok"]'); await sl(800);
-  check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'recv'), 'Can edit cannot mark a document Approved');
-  await kari.click('[data-dcst="a2:rej"]'); await sl(1200);
+  await kari.waitForSelector('[data-dcst="a2:na"]');
+  check(await kari.evaluate(() => !document.querySelector('[data-dcst="a2:ok"]') && !document.querySelector('[data-dcst="a2:rej"]')), 'Can edit has no Approved / Not approved buttons (the access matrix: that is Can approve, JP 15:03)');
+  await kari.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a2').st = 'ok'; DocHost.Fe.saveTools(t); }); await sl(800);
+  check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'recv'), 'Can edit cannot mark a document Approved, even around the buttons');
+  await kari.click('[data-dcst="a2:na"]'); await sl(1200);
   /* at the same time the owner changes another line of the same project */
   await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a1').st = 'na'; DocHost.Fe.saveTools(t); }); await sl(1200);
   await kari.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a3').cmt = 'Missing the manual'; DocHost.Fe.saveTools(t); }); await sl(1200);
   await own.reload(); await own.waitForSelector('.t-tabs'); await until(own, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
   const ls = await own.evaluate(() => DocHost.Fe.list('dctl')[0].lines.map(l => l.id + ':' + l.st + ':' + (l.cmt || '')).join(','));
-  check(/a1:na:/.test(ls) && /a2:rej:/.test(ls) && /a3:missing:Missing the manual/.test(ls), 'two people changing the same project at once lose nothing (' + ls + ')');
+  check(/a1:na:/.test(ls) && /a2:na:/.test(ls) && /a3:missing:Missing the manual/.test(ls), 'two people changing the same project at once lose nothing (' + ls + ')');
   check(await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a2').st = 'ok'; DocHost.Fe.saveTools(t); return true; }) && await until(own, () => !Object.values(window.__team.recs).some(r => r.k === 'dcl' && r.v === 0)), 'the owner (Admin) can approve');
   await sl(800);
   await kari.reload(); await kari.waitForSelector('.t-tabs'); await until(kari, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
   check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'ok'), "and Kari sees the owner's approval");
+  /* --- Access (JP 2026-11-16): the admin's card – what each role can do, and who sees which projects --- */
+  await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('details[data-accd]', { timeout: 20000 });
+  await own.evaluate(() => { document.querySelector('details[data-accd]').open = true; });
+  const ac0 = await own.evaluate(() => ({ boxes: document.querySelectorAll('[data-accm]').length, people: document.querySelectorAll('[data-acctr]').length, cells: document.querySelectorAll('[data-accpp]').length, save: document.querySelector('[data-act="accsave"]').disabled }));
+  check(ac0.boxes === 36 && ac0.people >= 1 && ac0.cells >= ac0.people && ac0.save, 'the access card: 9 actions × 4 roles, a row per person who is not an admin, Save off until something changes ' + JSON.stringify(ac0));
+  const kname = await kari.evaluate(() => DocHost.Fe.list('dctl')[0].name);
+  await own.evaluate(nm => { const ths = [...document.querySelectorAll('.t-mxp thead th')], i = ths.findIndex(th => th.textContent === nm), row = document.querySelector('[data-accpp^="kari@y.no|"]').closest('tr'), s = row.children[i].querySelector('select'); s.value = 'none'; s.dispatchEvent(new Event('change', { bubbles: true })); }, kname); await sl(200);
+  await own.evaluate(() => { const c = document.querySelector('[data-accm="types:approve"]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
+  await own.evaluate(() => document.querySelector('[data-act="accsave"]').click()); await sl(1500);
+  const ac1 = await own.evaluate(() => fetch('/api/access', { headers: { 'x-team': '1' } }).then(r => r.json()));
+  check(ac1.m.types === 'approve' && Object.values(ac1.pp).some(o => Object.values(o).includes('none')), 'Save access stores the matrix and the project choice on the server ' + JSON.stringify(ac1).slice(0, 200));
+  await word(own, 'Team access');
+  /* Kari has no access to that project now: the server stops sending it to her */
+  await kari.reload(); await kari.waitForSelector('.t-tabs'); await sl(1500);
+  check(await kari.evaluate(() => !window.DocHost || DocHost.Fe.list('dctl').length === 0), 'Kari no longer gets the project she has no access to');
+  await own.evaluate(() => fetch('/api/access', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ m: {}, pp: {}, tr: {} }) }));   /* back to the standard for the rest */
+  await kari.reload(); await kari.waitForSelector('.t-tabs'); await until(kari, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
+
   const memDc = (await raw('/__mem')).body;
   check(!/SECRET-DC|SECRET-SYS|SECRET-REQ|Missing the manual|Lighting/.test(memDc), 'the server only has the projects as ciphertext');
 

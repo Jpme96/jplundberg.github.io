@@ -9,7 +9,12 @@
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
 const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
-const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/;
+const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/, GID = /^[a-z0-9]{4,40}$/;
+/* Access (JP 2026-11-16, Documentation): who may do what. ACTS = the lowest role each action needs by default (today's rules);
+   an admin can change them, and give a person another role – or none – on one project. A project is a group id (g) the app
+   puts on its records, so the Worker never needs to read them. Admins and the owner always have everything. */
+const ACTS = { newp: 'edit', delp: 'admin', edit: 'edit', send: 'edit', import: 'edit', na: 'edit', approve: 'approve', types: 'admin', rules: 'admin' };
+const PROLES = ['none'].concat(['read', 'edit', 'approve', 'admin']);
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
 const FID = /^[a-f0-9]{20,32}$/, LID = /^[a-f0-9]{16}$/, MAXCHUNK = 1500000, MAXCHUNKS = 60, TEAMBYTES = 4e9, LINKBYTES = 1e9, LINKFILES = 300;
@@ -106,9 +111,15 @@ export class TeamStore {
       await this.touch(me);
       if (p === 'priv' && m === 'POST') { if (!blob(b.priv)) return json({ error: 'bad key' }, 400); me.priv = b.priv; await this.s.put('m:' + email, me); return json({ ok: true }); }
       if (p === 'members' && m === 'GET') return this.members(isAdmin);
-      if (p === 'recs' && m === 'GET') return this.recs(url, team);
-      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk') return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b); }
-      if (p === 'batch' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b); }
+      const acc = await this.access();
+      const elev = !!(acc.pp[email] && Object.values(acc.pp[email]).some(r => ROLES.indexOf(r) >= 1));   /* someone with a project of their own to work on */
+      if (p === 'access' && m === 'GET') return json(isAdmin ? acc : { m: acc.m, pp: { [email]: acc.pp[email] || {} }, tr: { [email]: acc.tr[email] || '' } });
+      if (p === 'access' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); return this.setAccess(email, b); }
+      /* older Documentation records get their project's group id once (an admin's device knows it; the Worker can't read them) */
+      if (p === 'gtag' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); let n = 0; for (const id of Object.keys(b.g || {}).slice(0, 20000)) { const g = b.g[id]; if (!ID.test(id) || typeof g !== 'string' || !GID.test(g)) continue; const r = await this.s.get('r:' + id); if (r && !r.g && /^(dcp|dcl|dcf|dce)$/.test(r.k)) { r.g = g; await this.s.put('r:' + id, r); n++; } } return json({ ok: true, n }); }
+      if (p === 'recs' && m === 'GET') return this.recs(url, team, email, me, acc);
+      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk' && !elev) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b, acc); }
+      if (p === 'batch' && m === 'PUT') { if (rank < 1 && !elev) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b, acc); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
       if (p === 'fchunk' && m === 'GET') return this.getChunk(url);
@@ -231,6 +242,18 @@ export class TeamStore {
     await this.log(email, 'role', { who: t.email, name: t.name, role: b.role });
     return json({ ok: true });
   }
+  async access() { const a = (await this.s.get('acc')) || {}; return { m: Object.assign({}, ACTS, a.m || {}), pp: a.pp || {}, tr: a.tr || {} }; }
+  /* the role someone has where a record lives: their team role, or the one an admin gave them on that project ('none' = not there) */
+  roleIn(me, acc, g) { if (me.role === 'admin') return 'admin'; const pr = g && acc.pp[me.email] ? acc.pp[me.email][g] : ''; if (pr && PROLES.includes(pr)) return pr; return acc.tr[me.email] === 'none' ? 'none' : me.role; }
+  async setAccess(email, b) {
+    const m = {}, pp = {}, tr = {}, mem = {};
+    for (const [, v] of await this.s.list({ prefix: 'm:' })) mem[v.email] = v;
+    for (const a of Object.keys(ACTS)) { const r = b.m && b.m[a]; m[a] = ROLES.includes(r) ? r : ACTS[a]; }
+    for (const e of Object.keys(b.pp || {})) { if (!mem[e] || mem[e].role === 'admin') continue; const o = {}; let n = 0; for (const g of Object.keys(b.pp[e] || {})) { if (GID.test(g) && PROLES.includes(b.pp[e][g]) && ++n <= 500) o[g] = b.pp[e][g]; } if (n) pp[e] = o; }
+    for (const e of Object.keys(b.tr || {})) if (mem[e] && mem[e].role !== 'admin' && b.tr[e] === 'none') tr[e] = 'none';
+    await this.s.put('acc', { m, pp, tr }); await this.log(email, 'access', {});
+    return json({ ok: true, m, pp, tr });
+  }
   async admins() { let n = 0; for (const [, v] of await this.s.list({ prefix: 'm:' })) if (v.role === 'admin') n++; return n; }
 
   /* remove: they get nothing more at once, and the team moves to a new key that only the others get */
@@ -245,6 +268,7 @@ export class TeamStore {
     for (const [, v] of await this.s.list({ prefix: 'm:' })) if (v.email !== who) rest.push(v);
     for (const v of rest) if (!blob(r.keys[v.email])) return json({ error: 'the new key is missing for a member' }, 400);
     await this.s.delete('m:' + who);
+    { const ac = await this.s.get('acc'); if (ac && ((ac.pp && ac.pp[who]) || (ac.tr && ac.tr[who]))) { if (ac.pp) delete ac.pp[who]; if (ac.tr) delete ac.tr[who]; await this.s.put('acc', ac); } }   /* their access goes with them */
     for (const v of rest) { v.keys = Object.assign({}, v.keys, { [next]: r.keys[v.email] }); await this.s.put('m:' + v.email, v); }
     team.epoch = next; await this.s.put('team', team);
     for (const [k, v] of await this.s.list({ prefix: 'lock:' })) if (v.by === who) await this.s.delete(k);
@@ -252,32 +276,33 @@ export class TeamStore {
     return json({ ok: true, epoch: next });
   }
 
-  async recs(url, team) {
-    const since = +url.searchParams.get('since') || 0, out = [];
-    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) out.push(v);
+  async recs(url, team, email, me, acc) {
+    const since = +url.searchParams.get('since') || 0, out = [], hid = [];
+    /* only what the person may see: a project they have 'none' on – or, with no team access, everything but their own projects – never leaves the server */
+    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) { if (!/^(dct|dcr)$/.test(v.k) && this.roleIn(me, acc, v.g) === 'none') { hid.push(v.id); continue; } out.push(v); }   /* project types and client checklists are for everyone in the team */
     const locks = {}, now = Date.now();
     for (const [k, v] of await this.s.list({ prefix: 'lock:' })) if (v.until > now) locks[k.slice(5)] = v; else await this.s.delete(k);
-    return json({ seq: (await this.s.get('seq')) || 0, epoch: team.epoch, recs: out, locks });
+    return json({ seq: (await this.s.get('seq')) || 0, epoch: team.epoch, recs: out, locks, hid: since ? undefined : hid.length || undefined });
   }
 
   /* a record: saved only if nobody saved it since you read it (v), never while someone else is writing in it */
-  async putRec(email, me, team, b) {
-    const r = await this.applyRec(email, me, team, b);
+  async putRec(email, me, team, b, acc) {
+    const r = await this.applyRec(email, me, team, b, acc);
     if (r.error) return json(r, r.status);
     if (b.k !== 'clk') await this.log(email, r.a, { k: b.k, id: b.id, s: logSum(b.s) });   /* clocking in and out stays out of the change log */
     this.nudge(email, me, team, [b.k]).catch(() => {});
     return json({ ok: true, v: r.v, seq: r.seq, t: r.t });
   }
   /* many records in one go (Document control: a project and its lines). Each is checked on its own; one log line. */
-  async batch(email, me, team, b) {
+  async batch(email, me, team, b, acc) {
     const list = Array.isArray(b.recs) ? b.recs : null;
     if (!list || !list.length || list.length > MAXBATCH) return json({ error: 'bad batch' }, 400);
     const out = []; let n = 0;
-    for (const x of list) { const r = await this.applyRec(email, me, team, x || {}); out.push(r.error ? { id: x && x.id, error: r.error, status: r.status, rec: r.rec } : { id: x.id, v: r.v, seq: r.seq, t: r.t }); if (!r.error) n++; }
+    for (const x of list) { const r = await this.applyRec(email, me, team, x || {}, acc); out.push(r.error ? { id: x && x.id, error: r.error, status: r.status, rec: r.rec } : { id: x.id, v: r.v, seq: r.seq, t: r.t }); if (!r.error) n++; }
     if (n) { await this.log(email, 'batch', { k: String(list[0].k || ''), n, s: logSum(b.s) }); this.nudge(email, me, team, list.map(x => x && x.k)).catch(() => {}); }
     return json({ ok: true, results: out });
   }
-  async applyRec(email, me, team, b) {
+  async applyRec(email, me, team, b, acc) {
     if (typeof b.id !== 'string' || !ID.test(b.id) || typeof b.k !== 'string' || !KINDS.test(b.k)) return { error: 'bad record', status: 400 };
     const del = !!b.del;
     if (!del && (!blob(b) || b.ct.length > MAXREC)) return { error: 'bad record', status: 400 };
@@ -287,6 +312,15 @@ export class TeamStore {
     const old = await this.s.get('r:' + b.id);
     if (old && old.k !== b.k) return { error: 'bad record', status: 400 };
     const rk = me ? ROLES.indexOf(me.role) : -1;
+    if (b.g !== undefined && (typeof b.g !== 'string' || !GID.test(b.g))) return { error: 'bad record', status: 400 };
+    const g = old && old.g ? old.g : b.g;
+    if (acc) {   /* Documentation: the action this write is, against the role the person has where it lives (the access matrix) */
+      const act = b.k === 'dct' ? 'types' : b.k === 'dcr' ? 'rules' : b.k === 'dcp' ? (del ? 'delp' : old && !old.del ? 'edit' : 'newp') : /^(dcl|dcf|dce)$/.test(b.k) ? 'edit' : '';
+      const role = this.roleIn(me, acc, /^(dcp|dcl|dcf|dce)$/.test(b.k) ? g : '');
+      if (role === 'none') return { error: 'no access', status: 403 };
+      if (act && ROLES.indexOf(role) < ROLES.indexOf(acc.m[act] || ACTS[act])) return { error: 'your role does not allow this', status: 403 };
+      if (!act && b.k !== 'clk' && ROLES.indexOf(role) < 1) return { error: 'read only', status: 403 };
+    }
     if (b.k === 'cfg' && rk < 3) return { error: 'admins only', status: 403 };                         /* team settings: admins */
     if (b.k === 'clk' && old && old.by !== email && rk < 3) return { error: 'not yours', status: 403 };  /* your own clock entries: only you (and admins, to fix a forgotten one) */
     if ((old ? old.v : 0) !== (b.v | 0)) return { error: 'changed meanwhile', rec: old, status: 409 };
@@ -294,6 +328,7 @@ export class TeamStore {
     const seq = ((await this.s.get('seq')) || 0) + 1;
     const rec = del ? Object.assign({}, old || { id: b.id, k: b.k }, { del: 1, v: (old ? old.v : 0) + 1, t: Date.now(), by: email, seq })
       : { id: b.id, k: b.k, e: b.e, iv: b.iv, ct: b.ct, v: (old ? old.v : 0) + 1, t: Date.now(), by: email, seq };
+    if (g) rec.g = g;
     if (!del) delete rec.del;
     await this.s.put('r:' + b.id, rec); await this.s.put('seq', seq);
     return { v: rec.v, seq, t: rec.t, a: del ? 'del' : old ? (old.del ? 'restore' : 'edit') : 'new' };

@@ -157,3 +157,16 @@ a.t-icon { text-decoration: none; }
   .t-tabs { padding-top: 4px; padding-bottom: calc(env(safe-area-inset-bottom) + 4px); }
   .t-tabs button { min-height: 40px; padding: 3px 0; font-size: 11.5px; }
 }
+/* access (2026-11-16): what each role may do, and who sees which projects */
+.t-acc summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; list-style: none; }
+.t-acc summary::-webkit-details-marker { display: none; }
+.t-acc summary b { font-size: 16px; }
+.t-mxw { overflow-x: auto; margin: 0 -4px; }
+.t-mx { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.t-mx th, .t-mx td { padding: 6px 6px; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle; }
+.t-mx th:first-child, .t-mx td:first-child { text-align: left; }
+.t-mx thead th { font-size: 12px; font-weight: 600; opacity: .75; }
+.t-mx input[type=checkbox] { width: 18px; height: 18px; }
+.t-mxp td:first-child { white-space: nowrap; }
+.t-mxp select { font-size: 13px; padding: 4px; max-width: 150px; }
+.t-mxp select.set { outline: 2px solid currentColor; outline-offset: -2px; }

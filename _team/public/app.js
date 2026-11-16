@@ -245,7 +245,7 @@
   async function startApp() {
     document.documentElement.classList.add('unlocked'); waitChip(); flush().catch(function () {});
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
-    try { await Promise.all([pull(true), loadMembers()]); S.offline = false; }
+    try { await Promise.all([pull(true), loadMembers(), loadAccess()]); S.offline = false; }
     catch (e) {
       var c = S.cache || await kget('cache').catch(function () { return null; });
       if (!c || !e.offline) throw e;
@@ -264,6 +264,7 @@
       var before = S.seq, ep = S.me.team.epoch;
       await pull(false); if (S.offline) { S.offline = false; S.me = await api('me').catch(function () { return S.me; }); }
       if (S.tab() === 'team' || rank() >= 3) await loadMembers();
+      await loadAccess();
       if (S.me.team.epoch !== ep) { S.me = await api('me'); await loadKeys(); await pull(true); }
       if (S.docsDirty) autoDone().catch(function () {});
       if (S.tab() === 'docs' && !S.edit) { if (S.docsDirty) { S.docsDirty = false; window.dispatchEvent(new Event('tools:change')); } }
@@ -285,6 +286,52 @@
     S.seq = j.seq; S.locks = j.locks || {};
     if (j.epoch !== S.me.team.epoch) S.me.team.epoch = j.epoch;
     if (!given) saveCache();
+  }
+  /* ---------- access (JP 2026-11-16): what each role may do in Documentation, and someone's own role on one project. The Worker
+     checks the same rules on every write and sends nobody a project they have no access to; this only draws the buttons. ---------- */
+  var ACTS = [['newp', 'New projects', 'Lage nye prosjekter', 'edit'], ['delp', 'Delete projects', 'Slette prosjekter', 'admin'], ['edit', 'Choose types and change the list', 'Velge typer og endre listen', 'edit'],
+    ['send', 'Send requirements to the contractor', 'Sende krav til entreprenør', 'edit'], ['import', 'Import delivered files', 'Importere leverte filer', 'edit'], ['na', 'Mark “Not relevant”', 'Merke «Ikke relevant»', 'edit'],
+    ['approve', 'Approved / Not approved', 'Godkjent / Ikke godkjent', 'approve'],
+    ['types', 'Own project types', 'Egne prosjekttyper', 'admin'], ['rules', 'Client checklists and naming rules', 'Sjekklister og navneregler', 'admin']];
+  S.acc = { m: {}, pp: {}, tr: {} };
+  async function loadAccess() { try { var j = await api('access'); S.acc = { m: j.m || {}, pp: j.pp || {}, tr: j.tr || {} }; } catch (e) {} }
+  function accMin(a, A) { A = A || S.acc; var d = ACTS.filter(function (x) { return x[0] === a; })[0]; return (A.m && A.m[a]) || (d ? d[3] : 'edit'); }
+  function gOfRaw(raw) { return raw ? drid('g', raw) : ''; }
+  function roleIn(g) { var me = S.me && S.me.member; if (!me) return 'none'; if (me.role === 'admin') return 'admin'; var pp = S.acc.pp[S.me.email] || {}; if (g && pp[g]) return pp[g]; return S.acc.tr[S.me.email] === 'none' ? 'none' : me.role; }
+  function canDo(a, raw) { if (a === 'see' || a === 'tools') return true; var r = roleIn(gOfRaw(raw)); return r !== 'none' && ROLES.indexOf(r) >= ROLES.indexOf(accMin(a)); }
+  function ownProjectRole() { var pp = S.acc.pp[S.me.email] || {}; return Object.keys(pp).some(function (g) { return ROLES.indexOf(pp[g]) >= 1; }); }
+  /* the projects for the access card: one per group (requirements and their control project are one) */
+  function accProjects() {
+    var out = {}; Object.keys(S.recs).forEach(function (id) { var r = S.recs[id]; if (!r || r.del || r.k !== 'dcp' || !r.d || !r.d.p) return; var raw = r.d.key === 'dctl' && r.d.p.krav ? r.d.p.krav : r.d.p.id, g = gOfRaw(raw); if (!out[g] || r.d.key === 'dckrav') out[g] = { g: g, name: r.d.p.name || '—' }; });
+    return Object.keys(out).map(function (g) { return out[g]; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+  }
+  function accessCard() {
+    var E = S.accEdit || (S.accEdit = JSON.parse(JSON.stringify(S.acc))), roles = ROLES.slice(), P = accProjects(), ppl = S.members.filter(function (m) { return m.role !== 'admin'; });
+    var h = '<details class="t-card t-acc"' + (S.accOpen ? ' open' : '') + ' data-accd><summary><b>' + L('Access – who may do what', 'Tilgang – hvem kan gjøre hva') + '</b><small class="t-small">' + L('Documentation', 'Dokumentasjon') + '</small></summary>';
+    h += '<p class="t-h">' + L('What each role can do', 'Hva hver rolle kan') + '</p><div class="t-mxw"><table class="t-mx"><thead><tr><th></th>' + roles.map(function (r) { return '<th>' + roleName(r) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      '<tr><td>' + L('See projects, lists and files · use the one-off tools', 'Se prosjekter, lister og filer · bruke engangsverktøyene') + '</td>' + roles.map(function () { return '<td><input type="checkbox" checked disabled></td>'; }).join('') + '</tr>' +
+      ACTS.map(function (a) { var mn = ROLES.indexOf(accMin(a[0], E)); return '<tr><td>' + L(a[1], a[2]) + '</td>' + roles.map(function (r, i) { return '<td><input type="checkbox" data-accm="' + a[0] + ':' + r + '"' + (i >= mn ? ' checked' : '') + (r === 'admin' ? ' disabled' : '') + ' aria-label="' + esc(L(a[1], a[2]) + ' – ' + roleName(r)) + '"></td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+    h += '<p class="t-small">' + L('Admins can always do everything. A role that can do something can also do it with the roles above it.', 'Admin kan alltid alt. Det en rolle kan, kan også rollene over den.') + '</p>';
+    h += '<p class="t-h">' + L('Who sees which projects', 'Hvem ser hvilke prosjekter') + '</p>';
+    if (!ppl.length || !P.length) h += '<p class="t-small">' + (ppl.length ? L('No projects yet.', 'Ingen prosjekter ennå.') : L('Everyone in the team is an admin.', 'Alle i teamet er admin.')) + '</p>';
+    else h += '<div class="t-mxw"><table class="t-mx t-mxp"><thead><tr><th>' + L('Person', 'Person') + '</th><th>' + L('In the team', 'I teamet') + '</th>' + P.map(function (p) { return '<th>' + esc(p.name) + '</th>'; }).join('') + '</tr></thead><tbody>' + ppl.map(function (m) {
+      var tr = E.tr[m.email] === 'none', pp = E.pp[m.email] || {};
+      return '<tr><td>' + esc(m.name) + '</td><td><select data-acctr="' + esc(m.email) + '" aria-label="' + esc(m.name) + '"><option value="">' + roleName(m.role) + '</option><option value="none"' + (tr ? ' selected' : '') + '>' + L('Only their projects', 'Bare egne prosjekter') + '</option></select></td>' +
+        P.map(function (p) { var v = pp[p.g] || ''; return '<td><select data-accpp="' + esc(m.email) + '|' + p.g + '"' + (v ? ' class="set"' : '') + ' aria-label="' + esc(m.name + ' – ' + p.name) + '"><option value="">' + (tr ? L('No access', 'Ingen tilgang') : L('As in the team', 'Som i teamet')) + '</option>' + [['none', L('No access', 'Ingen tilgang')], ['read', roleName('read')], ['edit', roleName('edit')], ['approve', roleName('approve')]].filter(function (o) { return !(tr && o[0] === 'none'); }).map(function (o) { return '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div><p class="t-small">' + L('A contractor can have “Only their projects” in the team and Can edit on their own project – then they see only that project. The server checks this too, and never sends anyone a project they can’t see.', 'En entreprenør kan ha «Bare egne prosjekter» i teamet og Kan redigere på sitt prosjekt – da ser de bare det prosjektet. Serveren sjekker dette også, og sender aldri noen et prosjekt de ikke har tilgang til.') + '</p>';
+    var dirty = JSON.stringify(E) !== JSON.stringify(S.acc);
+    h += '<div class="t-btns"><button class="t-btn ghost sm" type="button" data-act="accstd">' + L('Back to the standard', 'Tilbake til standard') + '</button><button class="t-btn" type="button" data-act="accsave"' + (dirty ? '' : ' disabled') + '>' + L('Save access', 'Lagre tilgang') + '</button></div></details>';
+    return h;
+  }
+  async function saveAccess() {
+    /* older records learn their project first, so the Worker can keep them from people without access */
+    var tags = {}, n = 0; Object.keys(S.recs).forEach(function (id) { var r = S.recs[id], raw = S.raw[id]; if (!r || r.del || !r.d || (raw && raw.g) || !/^(dcp|dcl)$/.test(r.k)) return; var g = '';
+      if (r.k === 'dcp') g = gOfRaw(r.d.key === 'dctl' && r.d.p.krav ? r.d.p.krav : r.d.p.id); else { var pr = S.recs[drid('p', r.d.key, r.d.pid)]; g = gOfRaw(r.d.key === 'dctl' && pr && pr.d && pr.d.p.krav ? pr.d.p.krav : r.d.pid); }
+      if (g) { tags[id] = g; n++; } });
+    if (n) await api('gtag', { method: 'POST', body: { g: tags } });
+    Object.keys(tags).forEach(function (id) { if (S.raw[id]) S.raw[id].g = tags[id]; });
+    var j = await api('access', { method: 'POST', body: S.accEdit });
+    S.acc = { m: j.m || {}, pp: j.pp || {}, tr: j.tr || {} }; S.accEdit = null; draw(); toast(L('Access saved', 'Tilgang lagret'));
   }
   async function loadMembers() {
     var j = await api('members'); S.members = j.members || []; S.requests = j.requests || []; saveCache();
@@ -574,6 +621,7 @@
     }).join('') + '</ul>';
     if (adm) out += '<p class="t-small">' + L('Tap a person to change their role or remove them. Removing gives the team a new key at once.', 'Trykk på en person for å endre rolle eller fjerne dem. Når noen fjernes, får teamet en ny nøkkel med en gang.') + '</p>';
     if (adm && S.invites.length) out += '<p class="t-h">' + L('Open invites', 'Åpne invitasjoner') + '</p><ul class="t-list">' + S.invites.map(function (v) { return '<li><span class="grow"><span>' + esc(v.label || roleName(v.role)) + '</span><small>' + esc(L('Runs out ', 'Går ut ') + fmtTime(v.exp)) + '</small></span><button class="t-btn ghost sm" type="button" data-act="cancelInvite" data-id="' + v.id + '">' + L('Cancel', 'Avbryt') + '</button></li>'; }).join('') + '</ul>';
+    if (adm) out += accessCard();
     out += clockTeamCard();
     out += '<p class="t-h"><span>' + L('Change log', 'Endringslogg') + '</span><button class="t-btn ghost sm" type="button" data-act="log">' + L('Show', 'Vis') + '</button></p>' + (S.logOpen ? logHtml() : '');
     return out;
@@ -581,7 +629,7 @@
   async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
   function logHtml() {
     if (!S.log.length) return '<p class="t-empty">' + L('Nothing yet.', 'Ingenting ennå.') + '</p>';
-    var A = { 'log-reset': L('emptied the log', 'tømte loggen'), 'upload-removed': L('removed uploaded files', 'fjernet opplastede filer'), upload: L('sent a file on an upload link', 'sendte en fil med en opplastingslenke'), uplink: L('made an upload link', 'lagde en opplastingslenke'), 'uplink-off': L('switched off an upload link', 'slo av en opplastingslenke'), setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake'), rename: L('renamed the team to', 'ga teamet navnet') };
+    var A = { access: L('changed who may do what', 'endret hvem som kan gjøre hva'), 'log-reset': L('emptied the log', 'tømte loggen'), 'upload-removed': L('removed uploaded files', 'fjernet opplastede filer'), upload: L('sent a file on an upload link', 'sendte en fil med en opplastingslenke'), uplink: L('made an upload link', 'lagde en opplastingslenke'), 'uplink-off': L('switched off an upload link', 'slo av en opplastingslenke'), setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake'), rename: L('renamed the team to', 'ga teamet navnet') };
     return '<ul class="t-list t-log">' + S.log.map(function (l) {
       var what = l.sum || (l.k ? ({ meeting: L('a meeting', 'et møte'), action: L('an action', 'en oppgave') })[l.k] || '' : '');
       if (l.a === 'rename') return '<li><span class="grow"><span>' + esc(nameOf(l.by) + ' ' + A.rename + ' «' + (l.name || '') + '»') + '</span><small>' + esc(fmtTime(l.t)) + '</small></span></li>';
@@ -760,7 +808,7 @@
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
-      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); } };
+      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); } };
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');
@@ -829,8 +877,9 @@
       (t[key] || []).forEach(function (p) {
         if (!p || !p.id) return;
         var h = clone(p), ls = h.lines || []; delete h.lines;
-        want[drid('p', key, p.id)] = { k: 'dcp', d: { key: key, p: h } };
-        ls.forEach(function (l, i) { if (l && l.id) want[drid('l', key, p.id, l.id)] = { k: 'dcl', d: { key: key, pid: p.id, l: l, o: i } }; });
+        var g = gOfRaw(key === 'dctl' && p.krav ? p.krav : p.id);   /* the project's group id: requirements and their control project are one (access) */
+        want[drid('p', key, p.id)] = { k: 'dcp', d: { key: key, p: h }, g: g };
+        ls.forEach(function (l, i) { if (l && l.id) want[drid('l', key, p.id, l.id)] = { k: 'dcl', d: { key: key, pid: p.id, l: l, o: i }, g: g }; });
       });
     });
     (t.dctypes || []).forEach(function (ty) { if (ty && ty.id) want[drid('t', ty.id)] = { k: 'dct', d: { t: ty } }; });
@@ -840,14 +889,14 @@
   }
   /* save what changed: new and changed records, and deletes only of what was there when Document control read it */
   async function saveDocs(t, base, first) {
-    if (rank() < 1) { toast(L('Your role can only read.', 'Rollen din kan bare lese.')); window.dispatchEvent(new Event('tools:change')); return; }
+    if (rank() < 1 && !ownProjectRole()) { toast(L('Your role can only read.', 'Rollen din kan bare lese.')); window.dispatchEvent(new Event('tools:change')); return; }
     var want = wanted(t), ops = [], names = {}, blocked = 0;
     for (var id in want) {
       var cur = S.recs[id], w = want[id];
       if (cur && !cur.del && cur.d && JSON.stringify(cur.d) === JSON.stringify(w.d)) continue;
       /* approving a document is for Can approve and Admin */
-      if (w.k === 'dcl' && w.d.l.st === 'ok' && rank() < 2 && !(cur && cur.d && cur.d.l && cur.d.l.st === 'ok')) { if (cur && cur.d) w.d.l.st = cur.d.l.st; else w.d.l.st = 'recv'; blocked++; if (cur && cur.d && JSON.stringify(cur.d) === JSON.stringify(w.d)) continue; }
-      ops.push({ id: id, k: w.k, d: w.d });
+      if (w.k === 'dcl' && w.d.l.st === 'ok' && ROLES.indexOf(roleIn(w.g)) < ROLES.indexOf(accMin('approve')) && !(cur && cur.d && cur.d.l && cur.d.l.st === 'ok')) { if (cur && cur.d) w.d.l.st = cur.d.l.st; else w.d.l.st = 'recv'; blocked++; if (cur && cur.d && JSON.stringify(cur.d) === JSON.stringify(w.d)) continue; }
+      ops.push({ id: id, k: w.k, d: w.d, g: w.g });
       var pn = w.k === 'dcp' ? w.d.p.name : w.k === 'dcl' ? (want[drid('p', w.d.key, w.d.pid)] || { d: { p: {} } }).d.p.name : ''; if (pn) names[pn] = 1;
     }
     for (var rid2 in base) if (!want[rid2] && S.recs[rid2] && !S.recs[rid2].del) ops.push({ id: rid2, k: S.recs[rid2].k, del: true });
@@ -865,7 +914,7 @@
       for (var j = 0; j < part.length; j++) {
         var o = part[j], v = S.recs[o.id] ? S.recs[o.id].v || 0 : 0;
         if (o.del) recs.push({ id: o.id, k: o.k, del: true, v: v });
-        else { var sl = await seal(o.d, o.id + '|' + o.k + '|' + e, e); recs.push({ id: o.id, k: o.k, e: e, iv: sl.iv, ct: sl.ct, v: v }); }
+        else { var sl = await seal(o.d, o.id + '|' + o.k + '|' + e, e), rc = { id: o.id, k: o.k, e: e, iv: sl.iv, ct: sl.ct, v: v }; if (o.g && !(S.raw[o.id] && S.raw[o.id].g)) rc.g = o.g; recs.push(rc); }
       }
       try {
         var res = await api('batch', { method: 'PUT', body: { recs: recs, s: i ? undefined : sum } });
@@ -1228,6 +1277,8 @@
     if (a === 'teams') return teamsSheet();
     if (a === 'inspPdf') { var ir = S.recs[t.dataset.id]; if (!ir || !ir.d) return; docsReady(); docsP.then(function () { return window.PagedPdf.html(ir.d.html, [ir.d.name, S.me.team.name].join('  ·  '), (ir.d.no ? ir.d.no + ' ' : '') + ir.d.name + '.pdf'); }).then(function (f2) { window.PagedPdf.share(f2); }, function () { toast(L('The PDF could not be made.', 'PDF-en kunne ikke lages.')); }); return; }
     if (a === 'uplink') return uplinkSheet();
+    if (a === 'accsave') { t.disabled = true; try { await saveAccess(); } catch (e2) { t.disabled = false; toast(failMsg(e2)); } return; }
+    if (a === 'accstd') { if (S.accEdit) { S.accEdit.m = {}; S.accOpen = true; draw(); } return; }
     if (a === 'fopen') { var fr = S.recs[t.dataset.id]; if (fr && fr.d) openFile(fr.d); return; }
     if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !confirm(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.'))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
     if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
@@ -1272,6 +1323,9 @@
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.dataset.tick) return tick(t.dataset.tick, t.checked);
+    if (t.dataset.accm && S.accEdit) { var am = t.dataset.accm.split(':'), ai = ROLES.indexOf(am[1]); S.accEdit.m[am[0]] = t.checked ? am[1] : ROLES[Math.min(3, ai + 1)]; S.accOpen = true; draw(); return; }
+    if (t.dataset.acctr && S.accEdit) { if (t.value) S.accEdit.tr[t.dataset.acctr] = t.value; else delete S.accEdit.tr[t.dataset.acctr]; S.accOpen = true; draw(); return; }
+    if (t.dataset.accpp && S.accEdit) { var ap = t.dataset.accpp.split('|'), o = S.accEdit.pp[ap[0]] || (S.accEdit.pp[ap[0]] = {}); if (t.value) o[ap[1]] = t.value; else delete o[ap[1]]; if (!Object.keys(o).length) delete S.accEdit.pp[ap[0]]; S.accOpen = true; draw(); return; }
     if (t.hasAttribute('data-clockteam')) return clockSet({ on: t.checked });
     if (t.dataset.clockm) return clockSet({ who: t.dataset.clockm, allow: t.checked });
     if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }
