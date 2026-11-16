@@ -264,9 +264,12 @@
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
-  function go(id) { open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
-  function back() { if (hashId() && history.state && history.state.dc) { history.back(); return; } open = null; history.replaceState(null, '', location.pathname + location.search); draw(); }
-  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r) PageTabs.show('req', true); else if (id) PageTabs.show('doc', true); } draw(); } });
+  function go(id) { open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
+  /* "‹ Documentation" always goes to the list (one tab: the step before may be the project's Requirements) – a step back in the
+     browser's history only when that is where it leads */
+  function home0() { open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
+  function back() { var prev = history.state && history.state.from; if (hashId() && history.state && history.state.dc && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
+  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
   function setTab(t) { tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
@@ -286,26 +289,56 @@
       '<label><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input name="due" type="date" value="' + esc(p.due || '') + '"></label>' +
       '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dccancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
   }
-  function list() {
-    var L = projects().slice().sort(function (a, b) { return (b.made || '') < (a.made || '') ? -1 : 1; });
-    var body = adding ? projForm(null) : '';
-    body += L.length ? '<ul class="kit-list">' + L.map(function (p) {
-      var c = counts(p.lines || []), pc = c.all ? Math.round(c.done / c.all * 100) : 0;
-      return '<li class="kit-item"><button type="button" class="kit-main" data-dcopen="' + esc(p.id) + '"><span class="kit-ic" style="--c:#3b6fb6"><i class="bi bi-folder-check"></i></span>' +
-        '<span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who, c.all ? k('ui.dc-n-docs', '{n} documents', { n: c.all }) : k('ui.dc-no-plan', 'No plan yet'), c.missing ? k('ui.dc-n-missing', '{n} missing', { n: c.missing }) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
-        (c.all ? '<span class="kit-r"><b class="dc-pc">' + pc + ' %</b></span>' : '') + '<i class="bi bi-chevron-right fdv-go"></i></button></li>';
-    }).join('') + '</ul>' : (adding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dc-empty', 'Add a project, import its document plan (Excel) and the delivered files – you see at once what is missing, and check each document.')) + '</p>');
-    if (!adding && reqs().length > 1) body += '<p class="muted dc-help">' + esc(k('ui.dc-chk-with', 'Check a plan against:')) + ' ' + reqPick('data-dcreqpick', (req() || {}).id) + '</p>';
-    if (!HOST && !adding) body += '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dc-in-team', 'Projects with your team are in Team')) + '</b><small>' + esc(k('ui.dc-in-team-s', 'Shared, encrypted, the same tools – open Documents in Team')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>';   /* one home for team projects (JP 23:46): Team; this card is for your own */
-    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</h2>' + (adding ? '' : '<div class="head-actions"><label class="text-btn dc-file dc-chk"><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.dc-chk-btn', 'Check a plan')) + '<input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label><button type="button" class="text-btn" data-dcnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
+  /* ---------- one Documentation tab (JP 2026-11-16 15:19): one project list, a project goes Requirements → Received → Report;
+     a project is a control project (dctl) with its requirements (dckrav, linked by `krav`), or requirements not started yet.
+     Nothing is copied or joined in the data – the list and the steps read both. One-off tools sit on top. ---------- */
+  function kravOf(p) { return p && p.krav ? krav(p.krav) : null; }
+  function ctlOf(r) { return r ? projects().filter(function (x) { return x && x.krav === r.id; })[0] || null : null; }
+  function steps(cur, r, p) {
+    var c = p ? counts(p.lines || []) : null, S = [
+      ['krav', 1, k('ui.dx-krav', 'Requirements'), r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : k('ui.dx-no-krav', 'Started from a plan'), r ? 'data-dxkrav="' + esc(r.id) + '"' : ''],
+      ['mot', 2, k('ui.dx-mot', 'Received'), p ? k('ui.dx-recv', '{a} of {b} received', { a: c.all - c.missing, b: c.all }) : k('ui.dx-mot-next', 'When the list is ready'), p ? 'data-dxmot="' + esc(p.id) + '"' : r ? 'data-drstart' : ''],
+      ['rap', 3, k('ui.fdv-tab-report', 'Report'), p ? k('ui.dx-appr', '{a} of {b} approved', { a: c.done, b: c.all }) : k('ui.dx-last', 'At the end'), p ? 'data-dxrap="' + esc(p.id) + '"' : '']];
+    var at = ['krav', 'mot', 'rap'].indexOf(cur);
+    return '<nav class="dx-steps" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + S.map(function (q, i) {
+      var on = q[0] === cur, done = i < at || (i === 0 && !!p);
+      return '<button type="button" class="dx-step' + (done ? ' done' : '') + '"' + (on ? ' aria-current="step"' : q[4] ? ' ' + q[4] : ' disabled') + '><b><span class="dx-n">' + (done && !on ? '<i class="bi bi-check2"></i>' : q[1]) + '</span>' + esc(q[2]) + '</b><small>' + esc(q[3]) + '</small></button>';
+    }).join('') + '</nav>';
+  }
+  function rowsAll() {
+    var used = {}, out = [];
+    projects().forEach(function (p) { if (p.krav) used[p.krav] = 1; out.push({ p: p, r: kravOf(p), at: p.made || '' }); });
+    kravs().forEach(function (r) { if (!used[r.id]) out.push({ r: r, at: r.made || '' }); });
+    return out.sort(function (a, b) { return b.at < a.at ? -1 : 1; });
+  }
+  function home() {
+    var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
+    var body = adding ? projForm(null) : radding ? kravForm() : '';
+    if (!adding && !radding) body += '<div class="dx-tools"><label class="dx-tool dc-file"><i class="bi bi-clipboard2-check"></i><span><b>' + esc(k('ui.dx-t-plan', 'Check a document plan')) + '</b><small>' + esc(k('ui.dx-t-plan-s', 'The contractor’s plan against the checklist – nothing is saved')) + '</small></span><input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label></div>';
+    body += L.length ? '<ul class="kit-list dx-list">' + L.map(function (x) {
+      var p = x.p, r = x.r, c = p ? counts(p.lines || []) : null, o = p || r, tag;
+      if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
+      else if (c.all && c.done === c.all) tag = ['ok', k('ui.dx-st-done', 'Report · all approved')];
+      else tag = ['recv', c.all ? k('ui.dx-st-mot', 'Received · {a} of {b}', { a: c.all - c.missing, b: c.all }) : k('ui.dc-no-plan', 'No plan yet')];
+      return '<li class="kit-item"><button type="button" class="kit-main" ' + (p ? 'data-dcopen="' + esc(p.id) + '"' : 'data-dropen="' + esc(r.id) + '"') + '><span class="kit-ic" style="--c:' + (p ? '#3b6fb6' : '#2f8a57') + '"><i class="bi bi-' + (p ? 'folder-check' : 'clipboard2-check') + '"></i></span>' +
+        '<span class="kit-x"><b data-noi18n>' + esc(o.name) + '</b><small data-noi18n>' + esc([o.no, siteLine(o), p ? p.trade || (r && r.type) : r.type, p && p.who].filter(Boolean).join(' · ')) + '</small>' +
+        '<span class="dc-st" style="--c:' + (tag[0] === 'plan' ? 'var(--violet, #8a63d2)' : stc(tag[0])) + '">' + esc(tag[1]) + '</span></span><i class="bi bi-chevron-right fdv-go"></i></button></li>';
+    }).join('') + '</ul>' : (adding || radding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dx-empty', 'One project per building: pick what it should deliver (Requirements), take in what is delivered (Received) and see what is missing (Report).')) + '</p>');
+    if (!adding && !radding && reqs().length > 1) body += '<p class="muted dc-help">' + esc(k('ui.dc-chk-with', 'Check a plan against:')) + ' ' + reqPick('data-dcreqpick', (req() || {}).id) + '</p>';
+    /* cmd only: Team is the home for team projects and requirements (JP 08:06 / 23:46) – the same cards as before */
+    if (!HOST && !adding && !radding) body += moved
+      ? '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-in-team', 'Document requirements are in Team now')) + '</b><small>' + esc(k('ui.dr-in-team-s', 'Make and change lists there – the whole team uses the same ones')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>' +
+        (kravs().length ? '<p class="muted dc-help">' + esc(k('ui.dr-old-copies', 'Your old copies here (not updated):')) + ' <button type="button" class="text-btn" data-drmove>' + esc(k('ui.dr-move-again', 'Make the file for Team again')) + '</button></p>' : '')
+      : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>';
+    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.docu', 'Documentation')) + '</h2>' + (adding || radding ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
   }
   function full(p) {
-    var T = [['over', k('ui.dc-tab-over', 'Overview'), 'speedometer2'], ['docs', k('ui.dc-tab-docs', 'Documents'), 'list-check'], ['files', k('ui.dc-tab-files', 'Files'), 'files'], ['report', k('ui.fdv-tab-report', 'Report'), 'file-earmark-text']];
-    if (!T.some(function (t) { return t[0] === tab; })) tab = 'over';
+    var T = [['over', k('ui.dc-tab-over', 'Overview'), 'speedometer2'], ['docs', k('ui.dc-tab-docs', 'Documents'), 'list-check'], ['files', k('ui.dc-tab-files', 'Files'), 'files']];
+    if (tab !== 'report' && !T.some(function (t) { return t[0] === tab; })) tab = 'over';
     var c = counts(p.lines || []);
-    var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.doc-control', 'Document control')) + '</button>' +
+    var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div>' + (c.all ? '<b class="dc-pc">' + Math.round(c.done / c.all * 100) + ' %</b>' : '') + '</div>' +
-      '<nav class="fdv-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (t[0] === tab) + '" data-dctab="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i> ' + esc(t[1]) + '</button>'; }).join('') + '</nav>';
+      steps(tab === 'report' ? 'rap' : 'mot', kravOf(p), p) + (tab === 'report' ? '' : '<nav class="fdv-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (t[0] === tab) + '" data-dctab="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i> ' + esc(t[1]) + '</button>'; }).join('') + '</nav>');
     var body = tab === 'over' ? over(p) : tab === 'docs' ? docs(p) : tab === 'files' ? files(p) : reportTab(p);
     return '<div class="fdv-page dc-page">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
@@ -486,15 +519,17 @@
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     if (p && p.req !== undefined && reqs().some(function (r) { return r.id === p.req; })) curReq = p.req; else if (p) curReq = ''; else { try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {} }   /* an open project is checked against its own checklist */
+    var er = document.getElementById('wkDocReq'), rp = !p && ropen && krav(ropen);
+    if (ropen && !p && !rp && document.documentElement.classList.contains('unlocked')) ropen = null;
     document.body.classList.toggle('dc-full', !!p);
-    el.innerHTML = p ? full(p) : list();
+    document.body.classList.toggle('dr-full', !!rp);
+    el.classList.toggle('dc-gone', !!rp && !!er);
+    el.innerHTML = p ? full(p) : rp && er ? '' : home();
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
     clampHelp(el);
-    var er = document.getElementById('wkDocReq'); if (!er) return;
-    var rp = ropen && krav(ropen);
-    if (ropen && !rp && document.documentElement.classList.contains('unlocked')) ropen = null;
-    document.body.classList.toggle('dr-full', !!rp && !p);
-    er.innerHTML = rp ? kravFull(rp) : kravList();
+    if (!er) return;
+    er.classList.toggle('dc-gone', !rp);
+    er.innerHTML = rp ? kravFull(rp) : '';
     if (window.I18N && I18N.apply) try { I18N.apply(er); } catch (e) {}
     clampHelp(er);
   }
@@ -787,39 +822,22 @@
   var ropen = null, rpicking = false, radding = false, redit = false;
   function rHash() { var m = location.hash.match(/^#dr=([\w-]+)$/); return m ? m[1] : null; }
   ropen = rHash();
-  function rgo(id) { ropen = id; rpicking = false; if (rHash() !== id) history.pushState({ dr: id }, '', location.pathname + location.search + '#dr=' + id); draw(); window.scrollTo(0, 0); }
-  function rback() { if (rHash() && history.state && history.state.dr) { history.back(); return; } ropen = null; rpicking = false; history.replaceState(null, '', location.pathname + location.search); draw(); }
+  function rgo(id) { ropen = id; open = null; openLine = null; rpicking = false; if (rHash() !== id) history.pushState({ dr: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dr=' + id); draw(); window.scrollTo(0, 0); }
+  function rback() { var prev = history.state && history.state.from; if (rHash() && history.state && history.state.dr && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
   function kravs() { return Fe.list('dckrav'); }
   function krav(id) { return kravs().filter(function (x) { return x.id === id; })[0] || null; }
   function kravForm() {
     return '<form class="dc-pform" data-drform><label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required placeholder="' + esc(k('ui.dc-project-ph', 'e.g. Made-up school, new building')) + '"></label>' +
       '<label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40"></label>' + siteFields(null) +
-      '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dr-next', 'Next: pick the systems')) + '</button><button type="button" class="text-btn" data-drcancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
-  }
-  function kravList() {
-    var L = kravs().slice().sort(function (a, b) { return (b.made || '') < (a.made || '') ? -1 : 1; });
-    var body = radding ? kravForm() : '';
-    body += L.length ? '<ul class="kit-list">' + L.map(function (p) {
-      var sys = {}; (p.lines || []).forEach(function (l) { sys[l.code] = 1; });
-      return '<li class="kit-item"><button type="button" class="kit-main" data-dropen="' + esc(p.id) + '"><span class="kit-ic" style="--c:#2f8a57"><i class="bi bi-clipboard2-check"></i></span><span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' +
-        esc([p.no, siteLine(p), p.type, k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: (p.lines || []).length })].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-right fdv-go"></i></button></li>';
-    }).join('') + '</ul>' : (radding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dr-empty', 'At the start of a project: pick the project type and the systems, and get the documentation it should have after NS 3456 – to share with the contractor as PDF or Excel, and to check against later in Document control.')) + '</p>');
-    /* Team is the home for document requirements (JP 2026-11-16: everybody uses them): one file carries every list, the client
-       checklists and your own project types to Team; afterwards new lists are made there and these stay as old copies */
-    var moved = !HOST && !!Fe.tools().dcTeamAt;
-    if (!HOST && !radding) body = (moved
-      ? '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-in-team', 'Document requirements are in Team now')) + '</b><small>' + esc(k('ui.dr-in-team-s', 'Make and change lists there – the whole team uses the same ones')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>' +
-        (L.length ? '<p class="muted dc-help">' + esc(k('ui.dr-old-copies', 'Your old copies here (not updated):')) + ' <button type="button" class="text-btn" data-drmove>' + esc(k('ui.dr-move-again', 'Make the file for Team again')) + '</button></p>' : '')
-      : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>') + body;
-    return '<div class="card-head"><h2><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.doc-req', 'Document requirements')) + '</h2>' + (radding || moved ? '' : '<div class="head-actions"><button type="button" class="text-btn" data-drnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
+      '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dr-next', 'Next: pick the systems')) + '</button><button type="button" class="text-btn" data-drcancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div><p class="muted dc-help">' + esc(k('ui.dx-have-plan', 'Already have the contractor\u2019s document plan?')) + ' <button type="button" class="text-btn" data-dcnew>' + esc(k('ui.dx-start-plan', 'Start at Received')) + '</button></p></form>';
   }
   function kravFull(p) {
     var L = p.lines || [], sys = {}; L.forEach(function (l) { sys[l.code] = 1; });
-    var h = '<div class="fdv-page dc-page"><div class="fdv-top"><button type="button" class="fdv-back" data-drback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.doc-req', 'Document requirements')) + '</button>' +
-      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div><div class="fdv-body">';
+    var h = '<div class="fdv-page dc-page"><div class="fdv-top"><button type="button" class="fdv-back" data-drback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
+      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div>' + steps('krav', p, ctlOf(p)) + '<div class="fdv-body">';
     if (rpicking || !L.length) return h + picker(p, 'req') + '</div></div>';
     if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
-    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drstart><i class="bi bi-folder-check"></i> ' + esc(k('ui.dr-start', 'Start document control')) + '</button>' +
+    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button>' +
       '<button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button>' +
       '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="r:' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '</div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dr-excel-help', 'The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.')) + '</p>';
@@ -1278,7 +1296,7 @@
         window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */
       }).catch(function () { b.disabled = false; lb.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); }); return;
     }
-    if (t.closest('[data-dcnew]')) { adding = true; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
+    if (t.closest('[data-dcnew]')) { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); adding = true; radding = false; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
     if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; if (rpicking && ropen && krav(ropen) && !(krav(ropen).lines || []).length) { rpicking = false; rback(); return; } rpicking = false; draw(); return; }
     if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; xsel = {}; xoff = {}; draw(); window.scrollTo(0, 0); return; }
     if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; var CC = pickCodes();
@@ -1305,6 +1323,9 @@
     if ((b = t.closest('[data-dcldel]'))) { var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dcopen]'))) { go(b.dataset.dcopen); return; }
+    if ((b = t.closest('[data-dxkrav]'))) { if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); rgo(b.dataset.dxkrav); return; }
+    if ((b = t.closest('[data-dxmot]'))) { if (tab === 'report') setTab('docs'); if (open === b.dataset.dxmot) draw(); else go(b.dataset.dxmot); return; }
+    if ((b = t.closest('[data-dxrap]'))) { setTab('report'); if (open === b.dataset.dxrap) draw(); else go(b.dataset.dxrap); return; }
     if (t.closest('[data-dcback]')) { back(); return; }
     if ((b = t.closest('[data-dctab]'))) { setTab(b.dataset.dctab); openLine = null; editing = false; draw(); return; }
     if (t.closest('[data-dcedit]')) { editing = true; draw(); return; }

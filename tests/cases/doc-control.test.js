@@ -70,7 +70,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const tmv = await p.evaluate(async () => { const out = {}; for (const t of ['today', 'doc', 'req', 'insp']) { PageTabs.show(t); await new Promise(r => setTimeout(r, 60)); const el = document.getElementById('wkTeam'); out[t] = !!el && !el.hidden && el.offsetHeight > 0; } PageTabs.show('doc'); return out; });
   check(tmv.today && !tmv.doc && !tmv.req && !tmv.insp, 'the Team card is only under Today ' + JSON.stringify(tmv));
   /* a new project */
-  await tap('[data-dcnew]'); await sl(200);
+  /* one Documentation tab (JP 2026-11-16): New project starts at Requirements; "Start at Received" makes a control project from a plan */
+  await tap('[data-drnew]'); await sl(200); await tap('[data-dcnew]'); await sl(200);
   await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up school'; f.no.value = 'P-123'; f.who.value = 'Made-up Sprinkler AS'; f.trade.value = 'Sprinkler'; f.requestSubmit(); }); await sl(500);
   const pr = await p.evaluate(() => ({ n: Features.list('dctl').length, full: document.body.classList.contains('dc-full'), hash: location.hash }));
   check(pr.n === 1 && pr.full && /^#dc=/.test(pr.hash), 'a new project opens on its own page (#dc=…) ' + JSON.stringify(pr));
@@ -106,7 +107,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const ov = await p.evaluate(() => ({ grp: [...document.querySelectorAll('.dc-grp .dc-gn')].map(e => e.textContent.trim()), fire: (document.querySelector('.dc-note') || {}).textContent || '', bar: document.querySelectorAll('.dc-bar i').length }));
   check(ov.grp.length === 2 && /^2/.test(ov.grp[0]) && /^3/.test(ov.grp[1]) && /Fire book: 1 of 4/.test(ov.fire) && ov.bar > 2, 'the overview shows each NS 3451 group with a bar and the fire book ' + JSON.stringify(ov));
   /* report + PDF */
-  await tap('[data-dctab="report"]'); await sl(300);
+  await tap('[data-dxrap]'); await sl(300);
   const rp = await p.evaluate(() => { const d = document.querySelector('#wkDocCtl .rp-doc'); return { h2: [...d.querySelectorAll('h2')].map(h => h.textContent).join('|'), t: d.textContent }; });
   check(rp.h2 === '1 Summary|2 Missing documents|3 Not approved and comments|4 File names' && /235/.test(rp.t) && /Made-up: version number/.test(rp.t) && /random scan 7\.pdf/.test(rp.t), 'the report: summary, missing, not approved with the comment, and the file-name problems ' + JSON.stringify(rp.h2));
   const pdf = await p.evaluate(async () => { const r = Features.list('dctl')[0], f = await window.FdvPdf.html(document.querySelector('#wkDocCtl .rp-doc').innerHTML, 'Made-up foot', 'x.pdf'); const t = new TextDecoder().decode(new Uint8Array(await f.slice(0, 8).arrayBuffer())); return { pdf: t.slice(0, 5), pages: f._pages }; });
@@ -143,7 +144,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const kept = await p.evaluate(async () => { const f = await DocCtl.planXlsx(Features.list('dctl')[0]); const v = (await DocCtl.readBook(await f.arrayBuffer())).find(x => x.name === '3 - VVS'); return { closed: !document.querySelector('.xv'), h5: v.rows[4][7] }; });
   check(kept.closed && kept.h5 === 'Made-up edit ÆØÅ', 'your change is kept on this device and goes into the next file too');
   /* importing the plan again keeps the statuses */
-  await tap('[data-dctab="over"]'); await sl(300);
+  await tap('[data-dxmot]'); await sl(300); await tap('[data-dctab="over"]'); await sl(300);
   await (await p.$('input[data-dcplan]')).uploadFile(planF); await sl(1200);
   check((await p.evaluate(() => Features.list('dctl')[0].lines.map(l => l.st).join())) === 'ok,recv,rej,recv,recv,missing', 'importing the plan again keeps the statuses');
   /* Send to Team (work.jplundberg.com): a file with the plan and statuses, never the files themselves */
@@ -273,7 +274,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const bk = await p.evaluate(() => ({ dr: document.body.classList.contains('dr-full'), tab: PageTabs.current() }));
   await tap('[data-drstart]'); await sl(700);
   const n2 = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom').length);
-  check(bk.dr && bk.tab === 'req' && n2 === 1, 'Back returns to the requirements; starting again opens the same control project, not a second one (13:05) ' + JSON.stringify({ bk, n2 }));
+  check(bk.dr && bk.tab === 'doc' && n2 === 1, 'Back returns to the requirements; starting again opens the same control project, not a second one (13:05) ' + JSON.stringify({ bk, n2 }));
   check(st0.lines === '330 G missing,330 H missing,332 A missing,332 BC missing' && st0.full && !st0.dr && /Documents/.test(st0.tab), 'Start document control copies the list into a control project and opens it ' + JSON.stringify(st0));
   /* a line by hand, and removing one */
   await p.evaluate(() => { const f = document.querySelector('form[data-dcaddl]'); f.code.value = '274'; f.t.value = 'A'; f.name.value = 'Made-up membrane declaration'; f.requestSubmit(); }); await sl(400);
@@ -375,12 +376,12 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   for (let i = 0; i < 3 && await p.evaluate(() => !!document.querySelector('#wkDocReq [data-drback], #wkDocCtl [data-dcback]')); i++) { await p.evaluate(() => { const bk = document.querySelector('#wkDocReq [data-drback]') || document.querySelector('#wkDocCtl [data-dcback]'); bk.click(); }); await sl(500); }
   await p.evaluate(() => { PageTabs.show('req'); }); await sl(300);
   const mv = await p.evaluate(async () => {
-    const btn = document.querySelector('#wkDocReq [data-drmove]'); if (!btn) return { btn: false };
+    const btn = document.querySelector('#wkDocCtl [data-drmove]'); if (!btn) return { btn: false };
     let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { got = this; };
     btn.click(); HTMLAnchorElement.prototype.click = oc; await new Promise(r => setTimeout(r, 400));
     const j = got ? JSON.parse(await (await fetch(got.href)).text()) : null;
     return { btn: true, team: j && j.team, lists: j && j.krav.length, types: j && j.dctypes.length, req: !!(j && j.dcreq && j.dcreq.codes), noFiles: j && j.krav.every(x => !x.files && (x.lines || []).every(l => !l.files)),
-      have: Features.list('dckrav').length, link: !!document.querySelector('#wkDocReq a.dc-teamlink[href*="work.jplundberg.com"]'), noNew: !document.querySelector('#wkDocReq [data-drnew]'), flag: !!Features.tools().dcTeamAt };
+      have: Features.list('dckrav').length, link: !!document.querySelector('#wkDocCtl a.dc-teamlink[href*="work.jplundberg.com"]'), noNew: !document.querySelector('#wkDocCtl [data-drnew]'), flag: !!Features.tools().dcTeamAt };
   });
   check(mv.btn && mv.team === 'dcbundle' && mv.lists === mv.have && mv.have > 0 && mv.types >= 1 && mv.req && mv.noFiles, 'Move to Team makes one file with every list, the checklist and the project types (no files) ' + JSON.stringify(mv));
   check(mv.link && mv.noNew && mv.flag, 'afterwards the card points to Team and has no New button');

@@ -43,7 +43,8 @@ const BUDGET_KB = { total: 1661 };   /* +7 (2026-11-16, JP's list): the Apple He
 /* work +4 kB (2026-11-16, JP 13:48 "fix everything" – Work was heavy to use): the picker updates in place instead of redrawing 800 controls, project types in rows with a search and a picked line, long lists folded per NS group (an 881-line list went from ~80 000 px to ~1 500 px and Make the list from 0.9 s to 0.2 s at phone speed), help texts one line until tapped. */
 /* work +1 kB (2026-11-16, JP: file naming as a test): only the switch and the loader – the naming itself (cmd/doc-naming.js) and the PDF reader (cmd/vendor/pdf*.js) load only where it is switched on. */
 /* +1 kB (2026-11-16): rounded hair outlines, the round afro, Finance's walk behind the jar. */
-const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1594 };
+/* work +2 kB (2026-11-16, JP 15:19 – one Documentation tab): Requirements and Control become one tab with one project list, steps Requirements → Received → Report and the plan check on top; the two old lists are gone, the new words in both languages make up the rest. */
+const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1596 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

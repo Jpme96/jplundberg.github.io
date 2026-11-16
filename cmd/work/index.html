@@ -71,7 +71,7 @@
     })(document.documentElement);
   </script>
   <link href="../styles.css?v=60f9097844" rel="stylesheet">
-  <link href="page.css?v=513fb61cba" rel="stylesheet">
+  <link href="page.css?v=ff4f4095c3" rel="stylesheet">
   <link href="../modern.css?v=2eaa251230" rel="stylesheet">
   <link href="../sidenav.css?v=72d5d9fd02" rel="stylesheet">
   <link href="../finance/fin.css?v=60c7531e79" rel="stylesheet">
@@ -125,8 +125,8 @@
       <div data-tool="ptime" class="kit-wide" hidden></div>
       <div data-tool="fdv" class="kit-wide" hidden></div>
       <section class="card kit-card kit-wide tm-card" id="wkTeam"><div class="card-head"><h2><i class="bi bi-people"></i> <span data-t="ui.team-space">Team space</span></h2></div><p data-t="ui.team-space-about" class="muted tm-about">Meetings, actions and documents with your team – a separate site, kept apart from your private dashboard.</p><span class="tm-acts"><a class="pill-btn tm-open" href="https://work.jplundberg.com/" rel="noopener"><span data-t="ui.open-team">Open Team</span> <i class="bi bi-box-arrow-up-right"></i></a> <a class="text-btn tm-new" href="https://work.jplundberg.com/?new=1" rel="noopener"><i class="bi bi-plus-lg"></i> <span data-t="ui.new-team">New team</span></a></span></section>   <!-- work.jplundberg.com: its own Worker and storage; nothing of it is loaded here (JP 2026-11-14) -->
-      <section class="card kit-card kit-wide dc-card" id="wkDocReq"><div class="card-head"><h2><i class="bi bi-clipboard2-check"></i> <span data-t="ui.doc-req">Document requirements</span></h2></div></section>   <!-- drawn by doc-control.page.js (JP 2026-11-14) -->
-      <section class="card kit-card kit-wide dc-card" id="wkDocCtl"><div class="card-head"><h2><i class="bi bi-folder-check"></i> <span data-t="ui.doc-control">Document control</span></h2></div></section>   <!-- drawn by doc-control.page.js (JP 2026-11-14) -->
+      <section class="card kit-card kit-wide dc-card" id="wkDocCtl"><div class="card-head"><h2><i class="bi bi-folder-check"></i> <span data-t="ui.docu">Documentation</span></h2></div></section>   <!-- one Documentation tab, drawn by doc-control.page.js (JP 2026-11-16): the list, and a project's Received/Report -->
+      <section class="card kit-card kit-wide dc-card dc-gone" id="wkDocReq"></section>   <!-- a project's Requirements step -->
       <div data-tool="meetings" hidden></div>
       <div data-tool="holiday" hidden></div>
       <div data-tool="learning" hidden></div>
@@ -635,9 +635,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=9ce57a26a3"></script>
-  <script src="../dist/page-work.js?v=e2ff36fca6"></script>
-  <script src="../dist/tail.js?v=c3335560f9"></script>
+  <script src="../dist/head.js?v=8bea0ba1bf"></script>
+  <script src="../dist/page-work.js?v=798492fce6"></script>
+  <script src="../dist/tail.js?v=86c2772d86"></script>
   <!-- /scripts -->
 </body>
 </html>

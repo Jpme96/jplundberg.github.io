@@ -34,9 +34,9 @@
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
     },
     work: {
-      tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.tab-insp', 'Inspection'), 'building-check', 'fdv'], ['req', I18N.k('ui.tab-req', 'Requirements'), 'clipboard2-check'], ['doc', I18N.k('ui.tab-doc', 'Control'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.tab-insp', 'Inspection'), 'building-check', 'fdv'], ['doc', I18N.k('ui.tab-docu', 'Docs'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],
-        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'req'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
+        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'doc'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
       feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning'] }
     }
   };
@@ -52,7 +52,7 @@
   function fon(f) { return !f || (Array.isArray(f) ? f.some(function (x) { return Fe.on(x); }) : Fe.on(f)); }
   function tabs() { var p = past(), off = offList(page), l = C.tabs.filter(function (t) { return fon(t[3]) && !(t[4] && p); }), k = l.filter(function (t) { return off.indexOf(t[0]) < 0; }); return k.length ? k : l; }
   /* tabs that were merged into another */
-  var ALIAS = { claims: 'docs' };
+  var ALIAS = { claims: 'docs', req: 'doc' };   /* Requirements + Control → one Documentation tab (JP 2026-11-16) */
   if (ALIAS[cur]) cur = ALIAS[cur];
   function has(t) { return tabs().some(function (x) { return x[0] === t; }); }
   if (!has(cur)) cur = (tabs()[0] || C.tabs[0])[0];

@@ -421,3 +421,22 @@ html.xv-on, html.xv-on body { overflow: hidden; }
   .fdv-title h2 { font-size: 20px; }
   #wkDocReq, #wkDocCtl { padding-top: 10px; }
 }
+/* one Documentation tab (JP 2026-11-16): steps Requirements → Received → Report, one-off tools on top */
+.dc-card.dc-gone { display: none !important; }
+.dx-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin: 0 0 12px; border-radius: 14px; background: rgba(var(--ink-rgb), .05); }
+.dx-step { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; border: 0; background: none; color: var(--muted); font: inherit; text-align: left; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.dx-step b { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink); max-width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dx-step small { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.dx-step[aria-current] { background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.dx-step:disabled { cursor: default; opacity: .55; }
+.dx-n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11.5px; background: rgba(var(--ink-rgb), .1); }
+.dx-step[aria-current] .dx-n { background: var(--accent); color: #fff; }
+.dx-step.done .dx-n { background: rgba(var(--ok-rgb), .2); color: var(--ok); }
+.dx-tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 0 0 12px; }
+.dx-tool { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px dashed rgba(var(--ink-rgb), .22); border-radius: 12px; cursor: pointer; }
+.dx-tool > i { font-size: 20px; color: var(--accent); }
+.dx-tool span { display: flex; flex-direction: column; min-width: 0; }
+.dx-tool small { color: var(--muted); font-size: 12.5px; }
+.dx-tool:hover { background: rgba(var(--ink-rgb), .04); }
+.dx-list .kit-x .dc-st { justify-self: start; margin-top: 4px; white-space: nowrap; }
+@media (max-width: 520px) { .dx-step { padding: 8px 6px; align-items: center; } .dx-step b { font-size: 13px; } .dx-step small { display: none; } .dx-n { display: none; } .dx-step.done b { color: var(--ok); } }

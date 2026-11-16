@@ -137,8 +137,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   fs.writeFileSync(tmpf, JSON.stringify({ team: 'dctl', v: 1, p: { id: 'cmd1', name: 'School rehab SECRET-DC', no: 'P-1', made: '2026-11-14T10:00:00Z', files: [{ id: 'f1', name: 'x.pdf' }],
     lines: [{ id: 'a1', code: '442', sys: 'Lighting SECRET-SYS', type: 'Drift', t: 'B', st: 'missing', files: ['f1'] }, { id: 'a2', code: '442', sys: 'Lighting SECRET-SYS', type: 'Vedlikehold', t: 'C', st: 'recv' }, { id: 'a3', code: '320', sys: 'Heating', t: 'B', st: 'missing' }] } }));
   await own.goto(U + '#docs'); await own.reload();
-  check(await until(own, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000), 'Documents opens Document control (the same code as /cmd)');
-  check(await until(own, () => !!document.querySelector('#wkDocReq') && document.querySelector('#wkDocReq').innerHTML.length > 50), 'and Document requirements next to it');
+  check(await until(own, () => !!document.querySelector('#wkDocCtl [data-drnew]'), 20000), 'Documents opens Documentation (the same code as /cmd)');
+  check(await until(own, () => !!document.querySelector('#wkDocCtl .dx-tools [data-dcchk]') && !document.querySelector('[data-dtab="req"]')), 'one Documentation choice with the plan check on top (JP 2026-11-16)');
   const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
   check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
   check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');
@@ -167,8 +167,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => { const l = DocHost.Fe.list('dckrav'); return l.length === 3 && (l.find(x => /SECRET-B1/.test(x.name)) || { lines: [] }).lines.length === 2; }, 15000), 'imported again, a list is updated, not doubled');
   /* a new list made in Team: the project, then the systems (the same flow as /cmd) */
   await own.evaluate(() => { const t = document.querySelector('[data-dtab="req"]') || [...document.querySelectorAll('.t-pick button')].find(b => /requirements/i.test(b.textContent)); if (t) t.click(); }); await sl(600);
-  check(await until(own, () => !!document.querySelector('#wkDocReq [data-drnew]'), 10000), 'Team has New under Document requirements');
-  await own.evaluate(() => document.querySelector('#wkDocReq [data-drnew]').click()); await sl(300);
+  check(await until(own, () => !!document.querySelector('#wkDocCtl [data-drnew]'), 10000), 'Team has New project in Documentation');
+  await own.evaluate(() => document.querySelector('#wkDocCtl [data-drnew]').click()); await sl(300);
   await own.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up team list SECRET-T1'; f.requestSubmit(); }); await sl(800);
   check(await until(own, () => !!document.querySelector('#wkDocReq .dc-pick [data-dctick]'), 10000), 'it opens the system picker');
   await own.evaluate(() => { const c = document.querySelector('#wkDocReq [data-dctick="330"]') || document.querySelector('#wkDocReq [data-dctick]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
@@ -353,8 +353,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.goto(U + '#overview'); await kari.reload(); await kari.waitForSelector('.t-tabs');
   const nbt = await text(kari);
   check(/Oversikt/.test(nbt) && /Møter/.test(nbt) && /Dokumenter/.test(nbt) && !/Overview|Meetings/.test(nbt), 'Norwegian when chosen');
-  await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-dcnew]'), 20000);
-  check(/Dokumentkontroll/.test(await text(kari)) && !/Document control/.test(await text(kari)), 'Document control in Norwegian too');
+  await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-drnew], #wkDocCtl .dx-list'), 20000);
+  check(/Dokumentasjon/.test(await text(kari)) && !/Documentation|Document control/.test(await text(kari)), 'Documentation in Norwegian too');
   await word(kari, 'Norwegian overview');
   /* an action linked to a document line closes by itself when the document is approved (JP 23:46) */
   const dlink = await own.evaluate(async () => { const S = window.__team; const p = Object.values(S.recs).find(r => r.k === 'dcp' && !r.del && r.d && r.d.key === 'dctl'); if (!p) return null;

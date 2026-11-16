@@ -737,15 +737,15 @@
   var DK = { dcp: 1, dcl: 1, dct: 1, dcr: 1 };
   S.dtab = 'doc'; S.docBase = {}; S.docGen = 0;
   function viewDocs() {
-    if (/^#dr=/.test(location.hash)) S.dtab = 'req'; else if (/^#dc=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
-    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Document control and document requirements – the same tools as in /cmd.', 'Dokumentkontroll og dokumentkrav – de samme verktøyene som i /cmd.'));
-    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Document control', 'Dokumentkontroll')], ['req', L('Document requirements', 'Dokumentkrav')], ['insp', L('Inspections', 'Befaringer')], ['files', L('Files', 'Filer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
+    if (/^#d[rc]=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
+    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Documentation for each project – requirements, what is received and the report. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, mottak og rapport. De samme verktøyene som i /cmd.'));
+    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Documentation', 'Dokumentasjon')], ['insp', L('Inspections', 'Befaringer')], ['files', L('Files', 'Filer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     /* Import from /cmd: the big button and its help only while Documents is empty – after that one small fold (JP 13:48 – the page was heavy) */
     var dHas = DFe.list('dctl').length + DFe.list('dckrav').length > 0;
     if (rank() >= 1) out += dHas ? '<details class="t-imp t-noprint"><summary>' + L('Import from /cmd', 'Importer fra /cmd') + '</summary>' + '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>' + '</details>' : '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>';
     out += '</div>';
     out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
-      '<section class="card kit-card kit-wide dc-card" id="wkDocReq"' + (S.dtab === 'req' ? '' : ' hidden') + '></section></div>' +
+      '<section class="card kit-card kit-wide dc-card dc-gone" id="wkDocReq"' + (S.dtab === 'doc' ? '' : ' hidden') + '></section></div>' +
       '<section id="tFiles"' + (S.dtab === 'files' ? '' : ' hidden') + '>' + filesHtml() + '</section>' +
       '<section id="tInsp"' + (S.dtab === 'insp' ? '' : ' hidden') + '>' + (inspections().length ? '<ul class="t-list">' + inspections().map(function (r) { return '<li><a class="t-row" href="#in=' + r.id + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([r.d.no, r.d.date ? fmtDate(r.d.date) : '', r.d.address, (r.d.notes || []).length ? L((r.d.notes.length) + ' notes', (r.d.notes.length) + ' notater') : ''].filter(Boolean).join(' · ')) + '</small></span></a></li>'; }).join('') + '</ul>' : '<p class="t-empty">' + L('No inspections yet. In /cmd: Work → Building inspection → a report → Send to Team, then Import from /cmd here.', 'Ingen befaringer ennå. I /cmd: Jobb → Bygningsbefaring → en rapport → Send til Team, så Importer fra /cmd her.') + '</p>') + '</section>';
     return out;
@@ -759,7 +759,7 @@
       window.PAGED_PDF_VENDOR = '/dc/vendor/';
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
-      window.PageTabs = { show: function (t) { S.dtab = t === 'req' ? 'req' : 'doc'; showDtab(); } };
+      window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
       window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore };
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
@@ -769,7 +769,7 @@
     docsP.then(function () { window.dispatchEvent(new Event('tools:change')); }, function () {});
   }
   function showDtab() {
-    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'), c = document.getElementById('tInsp'), d = document.getElementById('tFiles'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'req'; if (c) c.hidden = S.dtab !== 'insp'; if (d) { d.hidden = S.dtab !== 'files'; if (!d.hidden) loadUploads(); }
+    var a = document.getElementById('wkDocCtl'), b = document.getElementById('wkDocReq'), c = document.getElementById('tInsp'), d = document.getElementById('tFiles'); if (a) a.hidden = S.dtab !== 'doc'; if (b) b.hidden = S.dtab !== 'doc'; if (c) c.hidden = S.dtab !== 'insp'; if (d) { d.hidden = S.dtab !== 'files'; if (!d.hidden) loadUploads(); }
     [].forEach.call(document.querySelectorAll('[data-dtab]'), function (x) { x.checked = x.dataset.dtab === S.dtab; });
   }
   var NSM = null;
@@ -924,7 +924,7 @@
       p.lines = p.lines.filter(function (l) { return l && typeof l === 'object'; }).slice(0, 3000).map(function (l) { l.files = []; l.id = l.id ? String(l.id).slice(0, 40) : nid + Math.random().toString(36).slice(2, 6); return l; });
       var t = DFe.tools(); t[key].push(p); saveDocs(t, S.docBase, true).then(function () {
         toast(L('Imported: ', 'Importert: ') + p.name);
-        S.dtab = key === 'dckrav' ? 'req' : 'doc'; location.hash = (key === 'dckrav' ? '#dr=' : '#dc=') + nid;
+        S.dtab = 'doc'; location.hash = (key === 'dckrav' ? '#dr=' : '#dc=') + nid;
       });
     };
     fr.readAsText(file);
@@ -956,7 +956,7 @@
     });
     saveDocs(t, S.docBase, true).then(function () {
       toast(L('Imported: {a} new and {b} updated lists, the checklists and the project types', 'Importert: {a} nye og {b} oppdaterte lister, sjekklistene og prosjekttypene').replace('{a}', nl).replace('{b}', nu));
-      S.dtab = 'req'; location.hash = '#docs'; draw();
+      S.dtab = 'doc'; location.hash = '#docs'; draw();
     });
   }
 

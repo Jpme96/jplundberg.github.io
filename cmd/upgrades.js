@@ -74,6 +74,13 @@
         ['bgStrength', 'density', 'corners', 'cardStyle', 'glass', 'glassStrength'].forEach(function (k) { if (k in s) { delete s[k]; ch = true; } });
         if (ch) set('dash.settings', s);
         return ch;
+      } },
+    { n: 6, what: 'Work: Requirements and Control are one Documentation tab – a switched-off tab stays off only if both were off',
+      run: function (d, get, set) {
+        var s = get('dash.settings'); if (!obj(s) || !obj(s.tabOff) || !Array.isArray(s.tabOff.work)) return false;
+        var w = s.tabOff.work, r = w.indexOf('req') > -1, c = w.indexOf('doc') > -1; if (!r && !c) return false;
+        w = w.filter(function (x) { return x !== 'req' && x !== 'doc'; }); if (r && c) w.push('doc');
+        s.tabOff.work = w; set('dash.settings', s); return true;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;
