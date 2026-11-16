@@ -40,8 +40,9 @@ const BUDGET_KB = { total: 1661 };   /* +7 (2026-11-16, JP's list): the Apple He
 /* +1 kB (2026-11-16): the figure keeps its head between frames (scene-speed: frames 20–30 % faster). */
 /* work +4 kB (2026-11-16): the PDF viewer (shown before sharing) and Move to Team for document requirements. */
 /* finance, work +1 kB (2026-11-16): finance row texts and People's tile by name, one flex time format. */
+/* work +1 kB (2026-11-16, JP: file naming as a test): only the switch and the loader – the naming itself (cmd/doc-naming.js) and the PDF reader (cmd/vendor/pdf*.js) load only where it is switched on. */
 /* +1 kB (2026-11-16): rounded hair outlines, the round afro, Finance's walk behind the jar. */
-const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1589 };
+const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1590 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

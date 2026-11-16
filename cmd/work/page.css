@@ -356,3 +356,41 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 
 /* hours from Team in Flex time (2026-11-15) */
 .flex-team-btns { display: flex; align-items: center; gap: var(--sp-2, 8px); margin-top: 4px; }
+/* Document control – file naming (a test, 2026-11-16): code · type · current name · status per file, the rules, the content check */
+.dcn-sw { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 10px 0 4px; color: var(--muted); }
+.dcn-files { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dcn-row { border: 1px solid rgba(var(--ink-rgb), .1); border-left: 3px solid var(--ok); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.dcn-row.dcn-warn { border-left-color: var(--warn); }
+.dcn-row.dcn-odd { border-left-color: var(--violet); }
+.dcn-g { display: grid; grid-template-columns: minmax(170px, 1.1fr) minmax(150px, 1fr) minmax(180px, 1.4fr) minmax(150px, .9fr); gap: 8px 12px; align-items: start; }
+.dcn-c, .dcn-fl { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 12px; color: var(--muted); }
+.dcn-c input, .dcn-c select, .dcn-fl input, .dcn-fl select { font: inherit; font-size: 14px; color: var(--ink); width: 100%; min-width: 0; }
+.dcn-n { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.dcn-n .text-btn, .dcn-n b { font-size: 13.5px; text-align: left; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.dcn-t { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; padding-top: 16px; }
+.dcn-why { margin: 0; font-size: 12.5px; color: var(--blue); }
+.dcn-s { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; border-top: 1px dashed rgba(var(--ink-rgb), .12); padding-top: 8px; }
+.dcn-s .dcn-fl { width: 150px; }
+.dcn-sug { flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
+.dcn-sug code, .dcn-ex code { font-size: 13px; color: var(--ink); background: rgba(var(--ink-rgb), .05); border-radius: 6px; padding: 5px 8px; overflow-wrap: anywhere; }
+.dcn-gap { color: var(--warn); font-style: normal; }
+.dcn-b { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dcn-cc { font-size: 13px; background: rgba(var(--ink-rgb), .04); border-radius: 8px; padding: 8px 10px; }
+.dcn-cc ul { margin: 6px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+.dcn-cc .w, .dcn-cc li.w { color: var(--warn); }
+.dcn-cc pre { white-space: pre-wrap; font-size: 12px; max-height: 220px; overflow: auto; margin: 6px 0 0; }
+.dcn-rules { border: 1px solid rgba(var(--ink-rgb), .1); border-radius: 10px; padding: 8px 12px; margin: 10px 0; }
+.dcn-rules summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.dcn-use { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 8px 0; }
+.dcn-use .dcn-fl { width: 220px; }
+.dcn-rl { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.dcn-ed { display: flex; flex-direction: column; gap: 8px; }
+.dcn-wide { max-width: 360px; }
+.dcn-parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.dcn-parts li { display: grid; grid-template-columns: 22px minmax(140px, 1fr) auto auto auto; gap: 8px; align-items: center; font-size: 13px; border: 1px solid rgba(var(--ink-rgb), .08); border-radius: 8px; padding: 5px 8px; }
+.dcn-pn { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dcn-req { display: flex; gap: 4px; align-items: center; white-space: nowrap; font-size: 12.5px; }
+.dcn-mv { display: flex; gap: 2px; }
+.dcn-ex { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); margin: 0; }
+@media (max-width: 700px) { .dcn-g { grid-template-columns: 1fr 1fr; } .dcn-n, .dcn-t { grid-column: 1 / -1; } .dcn-t { padding-top: 0; } }
+@media (max-width: 440px) { .dcn-g { grid-template-columns: 1fr; } .dcn-s .dcn-fl { width: 100%; } .dcn-parts li { grid-template-columns: 22px 1fr; } .dcn-parts li > :nth-child(n+3) { grid-column: 2; } }

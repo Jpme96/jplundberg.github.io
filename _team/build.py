@@ -7,8 +7,9 @@ requirements are the same code in cmd and in Team. Edit cmd's files, never _team
 
 What it makes:
   dc/doc-control.js   cmd/doc-control.page.js (it runs on Team's storage through window.DocHost)
+  dc/doc-naming.js    cmd/doc-naming.js (file naming and the content check, loaded only where switched on)
   dc/xlsx-view.js     cmd/xlsx-view.js (see and edit an Excel file)
-  dc/paged-pdf.js     cmd/paged-pdf.js (A4 PDFs on the device) + dc/vendor/ (jsPDF, html2canvas, fetched on first use)
+  dc/paged-pdf.js     cmd/paged-pdf.js (A4 PDFs on the device) + dc/vendor/ (jsPDF, html2canvas, pdf.js – fetched on first use)
   dc/ns.js            the NS 3451 names from cmd/life-pages.js (window.NS3451)
   dc/words.js         the Norwegian words those files use, from cmd/words/ui.nb.js (window.DC_NB)
   dc/dc.css           cmd's colour tokens (scoped to .dc-host) + the rules whose classes those files use
@@ -40,10 +41,12 @@ NOTE = '/* Copied from cmd/%s by _team/build.py – edit it there, not here. */\
 dc = rd(os.path.join(CMD, 'doc-control.page.js'))
 pdf = rd(os.path.join(CMD, 'paged-pdf.js'))
 put('doc-control.js', NOTE % 'doc-control.page.js' + dc)
+dn = rd(os.path.join(CMD, 'doc-naming.js'))
+put('doc-naming.js', NOTE % 'doc-naming.js' + dn)   # file naming, loaded only where it is switched on
 put('paged-pdf.js', NOTE % 'paged-pdf.js' + pdf)
 xv = rd(os.path.join(CMD, 'xlsx-view.js'))
 put('xlsx-view.js', NOTE % 'xlsx-view.js' + xv)
-for f in ('jspdf.umd.min.js', 'html2canvas.min.js'):
+for f in ('jspdf.umd.min.js', 'html2canvas.min.js', 'pdf.min.js', 'pdf.worker.min.js'):   # pdf.js: the content check reads a PDF's text on the device
     put('vendor/' + f, rd(os.path.join(CMD, 'vendor', f), True))
 
 # the NS 3451 table (codes and names, nothing personal)
@@ -53,7 +56,7 @@ if not m: sys.exit('no NS table in cmd/life-pages.js')
 put('ns.js', NOTE % 'life-pages.js (the NS 3451 table)' + 'window.NS3451 = ' + m.group(1) + ';\n')
 
 # the Norwegian words the two files use
-src = dc + pdf + xv
+src = dc + dn + pdf + xv
 keys = sorted(set(re.findall(r"""'(ui\.[a-z0-9.-]+)'""", src)))   # every text name in the two files (also those passed around in tables)
 wtxt = rd(os.path.join(CMD, 'words', 'ui.nb.js'))
 wm = re.search(r'I18N\.add\((\{.*\})\);?\s*$', wtxt, re.S)

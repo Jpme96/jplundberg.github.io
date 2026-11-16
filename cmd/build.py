@@ -35,6 +35,15 @@ def minify(text):
     return '/* Built by cmd/build.py – edit the source files listed in cmd/scripts.json, not this one. */\n' + r.stdout.decode('utf-8')
 
 
+# doc-control.page.js loads doc-naming.js only where file naming is switched on: its version is that file's hash
+_dcp = os.path.join(HERE, 'doc-control.page.js'); _dct = io.open(_dcp, encoding='utf-8').read()
+_dcn = re.sub(r"var DCN_V = '[0-9a-f]*';", "var DCN_V = '%s';" % hashlib.sha1(open(os.path.join(HERE, 'doc-naming.js'), 'rb').read()).hexdigest()[:10], _dct)
+_dcn_stale = _dcn != _dct and check
+if _dcn != _dct:
+    if check: print('out of date (version): cmd/doc-control.page.js (DCN_V)')
+    else: io.open(_dcp, 'w', encoding='utf-8').write(_dcn)
+
+
 def bundle(files, late=()):
     out = ['/* Built by cmd/build.py from: ' + ', '.join(list(files) + list(late)) + ' – edit those files, not this one. */']
     for f in files:
@@ -73,7 +82,7 @@ SETTINGS = ('  <!-- settings: copied from index.html by cmd/build.py – edit it
             re.sub(r'(href|src)="([^"]*)"', _abs, _m.group(1)) + '\n  <!-- /settings -->\n\n')
 SET_JS = M.get('settings', [])
 
-stale = False
+stale = _dcn_stale
 nb_v = write('nb.js', bundle(M['nb']))
 head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None

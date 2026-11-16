@@ -409,11 +409,13 @@
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
     h += '<p class="muted dc-help">' + esc(k('ui.dc-names-help', 'Is the documentation in the FDV system (e.g. Plania)? Export or copy the list of documents there – the names are matched and checked the same way.')) + '</p>';
     h += '<p class="muted dc-help">' + esc(k('ui.dc-files-help', 'Pick the files, or one .zip with everything. Each file is matched to the plan by its name, and the name is checked: 3-digit NS 3451 code, a document code (DA, DV, SE …) and a describing text – drawings as building-floor-discipline-code-type-number.')) + '</p>';
+    if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
     F.sort(function (a, b) { return rank(a) - rank(b) || (a.name < b.name ? -1 : 1); });
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
     h += '<p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>';
+    if (namingOn()) { var N = naming(); return h + (N ? N.files(p, F) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>'); }
     h += '<ul class="dc-files">' + F.map(function (f) {
       var l = f.line && lineOf(p, f.line);
       return '<li class="dc-frow' + (!f.line ? ' loose' : '') + '"><div class="dc-fh">' + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>') +
@@ -429,6 +431,19 @@
     return L.slice(0, 400).map(function (l) { return '<option value="' + esc(l.id) + '">' + esc(l.code + ' ' + lineTitle(l) + ' · ' + typeLabel(l)) + '</option>'; }).join('');
   }
 
+  /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
+  function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
+  function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
+  var DCN_V = '2b5f0bfc22';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
+    linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
+  var dcnLoading = null;
+  function naming() {
+    if (window.DocNaming) { if (window.DocNaming._api !== DCN_API) { window.DocNaming.use(DCN_API); window.DocNaming._api = DCN_API; } return window.DocNaming; }
+    if (!dcnLoading) dcnLoading = new Promise(function (res, rej) { var s = document.createElement('script'); s.src = (HOST ? '/dc/' : '/cmd/') + 'doc-naming.js?v=' + DCN_V; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
+      .then(function () { draw(); }, function () { dcnLoading = null; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dcn-load', 'The new file naming could not be loaded – check the connection.'))); });
+    return null;
+  }
   /* ---------- the report ---------- */
   function report(p) {
     var me = profile(), L = p.lines || [], c = counts(L), F = p.files || [];
@@ -1129,7 +1144,7 @@
         var matched = 0;
         saveP(id, function (p) {
           p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; return o; }));
-          add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0], l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
+          add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0]; if (namingOn() && naming()) naming().guess(x); var l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
           pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
@@ -1315,6 +1330,7 @@
     if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }
+    if (t.matches('[data-dcnon]')) { try { localStorage.setItem('dash.dcNaming', t.checked ? '1' : ''); } catch (e1) {} draw(); return; }
     if (t.dataset.dcflink && t.value) { var f = t.dataset.dcflink, l = t.value; saveP(open, function (p) { link(p, l, f); }); draw(); return; }
   });
   document.addEventListener('input', function (e) { var t = e.target;
