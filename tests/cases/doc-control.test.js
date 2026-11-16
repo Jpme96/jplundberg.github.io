@@ -233,6 +233,14 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(back && /P-9 Dokumentkrav Made-up bathroom\.xlsx$/.test(back.name) && back.lines === '330 G,330 H,332 A,332 BC', 'the Excel for the contractor is a document plan that Document control reads back ' + JSON.stringify(back));
   const kpdf = await p.evaluate(async () => { const b = document.querySelector('[data-drpdf]'); b.click(); for (let i = 0; i < 60 && !b._pdf; i++) await new Promise(r => setTimeout(r, 200)); return b._pdf ? b._pdf._pages : 0; });
   check(kpdf >= 1, 'the requirements become a PDF ' + kpdf);
+  /* the PDF is shown first – its pages, Share/Save/Close – nothing is shared or saved by itself (JP 2026-11-16) */
+  const pv = await p.evaluate(() => { const v = document.getElementById('ppView'); return v ? { imgs: v.querySelectorAll('img').length, save: !!v.querySelector('[data-ppsave]'), close: !!v.querySelector('[data-ppclose]') } : null; });
+  check(pv && pv.imgs === kpdf && pv.save && pv.close, 'the PDF opens in a viewer with its pages and Save / Close ' + JSON.stringify(pv));
+  await p.evaluate(() => document.querySelector('#ppView [data-ppclose]').click()); await sl(200);
+  check(await p.evaluate(() => !document.getElementById('ppView')), 'Close shuts the viewer');
+  await p.evaluate(() => document.querySelector('[data-drpdf]').click()); await sl(300);
+  check(await p.evaluate(() => !!document.getElementById('ppView')), 'tapping the button again shows it again');
+  await p.evaluate(() => document.querySelector('#ppView [data-ppclose]').click()); await sl(200);
   /* specific documents for a kind of project (13:05): the Facade type adds the completion certificate and more, on top of the NS 3456 types */
   await tap('[data-drpick]'); await sl(300);
   await tap('[data-dcptype="facade"]'); await sl(300);
@@ -361,6 +369,21 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
   check(await until(() => /Since the check on .*: 0 fixed, 0 new/.test((document.querySelector('.xv-note') || {}).textContent || '')), 'checking the same plan again compares it with the last check');
   await p.evaluate(() => document.querySelector('[data-xv="close"]').click());
+  /* Team is the home for document requirements (JP 2026-11-16): one file takes every list, the checklists and your project types;
+     afterwards the card points to Team and new lists are made there */
+  await p.evaluate(() => { PageTabs.show('req'); }); await sl(300);
+  for (let i = 0; i < 3 && await p.evaluate(() => !!document.querySelector('#wkDocReq [data-drback], #wkDocCtl [data-dcback]')); i++) { await p.evaluate(() => { const bk = document.querySelector('#wkDocReq [data-drback]') || document.querySelector('#wkDocCtl [data-dcback]'); bk.click(); }); await sl(500); }
+  await p.evaluate(() => { PageTabs.show('req'); }); await sl(300);
+  const mv = await p.evaluate(async () => {
+    const btn = document.querySelector('#wkDocReq [data-drmove]'); if (!btn) return { btn: false };
+    let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { got = this; };
+    btn.click(); HTMLAnchorElement.prototype.click = oc; await new Promise(r => setTimeout(r, 400));
+    const j = got ? JSON.parse(await (await fetch(got.href)).text()) : null;
+    return { btn: true, team: j && j.team, lists: j && j.krav.length, types: j && j.dctypes.length, req: !!(j && j.dcreq && j.dcreq.codes), noFiles: j && j.krav.every(x => !x.files && (x.lines || []).every(l => !l.files)),
+      have: Features.list('dckrav').length, link: !!document.querySelector('#wkDocReq a.dc-teamlink[href*="work.jplundberg.com"]'), noNew: !document.querySelector('#wkDocReq [data-drnew]'), flag: !!Features.tools().dcTeamAt };
+  });
+  check(mv.btn && mv.team === 'dcbundle' && mv.lists === mv.have && mv.have > 0 && mv.types >= 1 && mv.req && mv.noFiles, 'Move to Team makes one file with every list, the checklist and the project types (no files) ' + JSON.stringify(mv));
+  check(mv.link && mv.noNew && mv.flag, 'afterwards the card points to Team and has no New button');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });
   await b.close(); done();

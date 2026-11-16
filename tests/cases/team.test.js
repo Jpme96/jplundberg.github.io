@@ -150,6 +150,32 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await (await own.$('input[data-dcimport]')).uploadFile(tmpr);
   check(await until(own, () => /^#dr=/.test(location.hash) && !document.getElementById('wkDocReq').hidden && /Facade requirements SECRET-REQ/.test(document.getElementById('wkDocReq').innerText), 15000), 'a requirements list sent from /cmd opens under Document requirements');
   check(await own.evaluate(() => DocHost.Fe.list('dckrav').length === 1 && DocHost.Fe.list('dctl').length === 1), 'next to the project, kept apart');
+  /* everything from /cmd's Document requirements in one file (JP 2026-11-16: Team is the home): lists, the checklist and the project
+     types; imported again it updates instead of doubling */
+  const tmpb = path.join(__dirname, '..', '.tmp', 'team-bundle-' + process.pid + '.json');
+  const bundle = { team: 'dcbundle', v: 1, krav: [{ id: 'k1', name: 'Made-up school SECRET-B1', lines: [{ id: 'x1', code: '330', t: 'A', sys: 'Fire' }] }, { id: 'k2', name: 'Made-up hall SECRET-B2', lines: [] }],
+    dcreq: { name: 'Made-up client list', codes: { '330': { t: 'AH' } } }, dcreqs: [], dctypes: [{ id: 'own1', name: 'Made-up type', codes: ['330'] }] };
+  fs.writeFileSync(tmpb, JSON.stringify(bundle));
+  await own.goto(U + '#docs'); await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await (await own.$('input[data-dcimport]')).uploadFile(tmpb);
+  check(await until(own, () => DocHost.Fe.list('dckrav').length === 3, 15000), 'the bundle brings every list along');
+  const bt = await own.evaluate(() => { const t = DocHost.Fe.tools(); return { types: (t.dctypes || []).map(x => x.name).join(), req: !!(t.dcreq && t.dcreq.codes && t.dcreq.codes['330']) }; });
+  check(bt.types === 'Made-up type' && bt.req, 'and the client checklist and the project types ' + JSON.stringify(bt));
+  bundle.krav[0].lines.push({ id: 'x2', code: '330', t: 'H', sys: 'Fire' }); fs.writeFileSync(tmpb, JSON.stringify(bundle));
+  await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await (await own.$('input[data-dcimport]')).uploadFile(tmpb);
+  check(await until(own, () => { const l = DocHost.Fe.list('dckrav'); return l.length === 3 && (l.find(x => /SECRET-B1/.test(x.name)) || { lines: [] }).lines.length === 2; }, 15000), 'imported again, a list is updated, not doubled');
+  /* a new list made in Team: the project, then the systems (the same flow as /cmd) */
+  await own.evaluate(() => { const t = document.querySelector('[data-dtab="req"]') || [...document.querySelectorAll('.t-pick button')].find(b => /requirements/i.test(b.textContent)); if (t) t.click(); }); await sl(600);
+  check(await until(own, () => !!document.querySelector('#wkDocReq [data-drnew]'), 10000), 'Team has New under Document requirements');
+  await own.evaluate(() => document.querySelector('#wkDocReq [data-drnew]').click()); await sl(300);
+  await own.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up team list SECRET-T1'; f.requestSubmit(); }); await sl(800);
+  check(await until(own, () => !!document.querySelector('#wkDocReq .dc-pick [data-dctick]'), 10000), 'it opens the system picker');
+  await own.evaluate(() => { const c = document.querySelector('#wkDocReq [data-dctick="330"]') || document.querySelector('#wkDocReq [data-dctick]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
+  await own.evaluate(() => document.querySelector('#wkDocReq [data-dcmake="req"]').click()); await sl(1500);
+  check(await until(own, () => { const l = DocHost.Fe.list('dckrav').find(x => /SECRET-T1/.test(x.name)); return !!(l && l.lines.length); }, 10000), 'the new list has its documents, saved in Team');
+  const srvBundle = await raw('/__mem');
+  check(!/SECRET-T1|SECRET-B1|Made-up client list/.test(srvBundle.body || ''), 'the server never sees the lists in clear text');
   /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
   await kari.goto(U + '#docs'); await kari.reload();
   check(await until(kari, () => !!document.querySelector('[data-dcopen]'), 20000), 'Kari sees the project');

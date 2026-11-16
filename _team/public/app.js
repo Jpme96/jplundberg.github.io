@@ -914,6 +914,7 @@
     fr.onload = function () {
       var j = null; try { j = JSON.parse(fr.result); } catch (x) {}
       if (j && j.team === 'insp' && typeof j.html === 'string' && j.r) { importInsp(j); return; }
+      if (j && j.team === 'dcbundle' && Array.isArray(j.krav)) { importBundle(j); return; }
       if (!j || (j.team !== 'dctl' && j.team !== 'dckrav') || !j.p || typeof j.p.name !== 'string' || !Array.isArray(j.p.lines)) { toast(L('That is not a project file from /cmd.', 'Det er ikke en prosjektfil fra /cmd.')); return; }
       var key = j.team;   /* dctl = a Document control project, dckrav = a Document requirements list */
       var p = j.p, nid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -925,6 +926,36 @@
       });
     };
     fr.readAsText(file);
+  }
+
+  /* everything from /cmd's Document requirements in one file (JP 2026-11-16: Team is the home – everybody uses them): every
+     list, the client checklists and the project types. A list keeps where it came from (src), so importing the file again
+     updates it instead of adding a second copy; types and checklists are matched by their id. */
+  function importBundle(j) {
+    if (rank() < 1) { toast(L('Your role can only read.', 'Rollen din kan bare lese.')); return; }
+    var t = DFe.tools(), now = new Date().toISOString(), nl = 0, nu = 0;
+    var cleanP = function (p) { var q = JSON.parse(JSON.stringify(p)); q.files = []; q.name = String(q.name || '').slice(0, 120) || L('Untitled', 'Uten navn');
+      q.lines = (Array.isArray(q.lines) ? q.lines : []).filter(function (l) { return l && typeof l === 'object'; }).slice(0, 3000).map(function (l) { l.files = []; l.id = l.id ? String(l.id).slice(0, 40) : Math.random().toString(36).slice(2, 10); return l; }); return q; };
+    j.krav.slice(0, 300).forEach(function (p) {
+      if (!p || typeof p !== 'object' || typeof p.name !== 'string') return;
+      var q = cleanP(p), src = String(p.id || '').slice(0, 60), have = src ? t.dckrav.filter(function (x) { return x.src === src; })[0] : null;
+      q.src = src; q.made = q.made || now;
+      if (have) { q.id = have.id; t.dckrav = t.dckrav.map(function (x) { return x === have ? q : x; }); nu++; }
+      else { q.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); t.dckrav.push(q); nl++; }
+    });
+    var byId = function (list, x) { return (list || []).filter(function (y) { return y && y.id === x.id; })[0]; };
+    (Array.isArray(j.dctypes) ? j.dctypes : []).slice(0, 200).forEach(function (ty) { if (!ty || !ty.id || typeof ty.name !== 'string') return; var h = byId(t.dctypes, ty); if (h) t.dctypes = t.dctypes.map(function (x) { return x === h ? ty : x; }); else t.dctypes.push(ty); });
+    var reqs = [].concat(j.dcreq ? [j.dcreq] : [], Array.isArray(j.dcreqs) ? j.dcreqs : []).filter(function (r) { return r && typeof r === 'object' && r.codes; });
+    reqs.forEach(function (r, i) {
+      if (i === 0 && !t.dcreq) { t.dcreq = r; return; }   /* the first checklist becomes the team's default if it has none */
+      if (t.dcreq && JSON.stringify(t.dcreq.codes) === JSON.stringify(r.codes)) return;   /* the same checklist already */
+      var rr = Object.assign({}, r, { id: r.id || 'c' + fnv(JSON.stringify(r.codes)) }); t.dcreqs = t.dcreqs || [];
+      var h = byId(t.dcreqs, rr); if (h) t.dcreqs = t.dcreqs.map(function (x) { return x === h ? rr : x; }); else t.dcreqs.push(rr);
+    });
+    saveDocs(t, S.docBase, true).then(function () {
+      toast(L('Imported: {a} new and {b} updated lists, the checklists and the project types', 'Importert: {a} nye og {b} oppdaterte lister, sjekklistene og prosjekttypene').replace('{a}', nl).replace('{b}', nu));
+      S.dtab = 'req'; location.hash = '#docs'; draw();
+    });
   }
 
   /* ---------- shared files (Documents → Files): encrypted on this device in chunks of 1 MB, the name in a 'file' record ---------- */

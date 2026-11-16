@@ -38,7 +38,8 @@ const BUDGET_KB = { total: 1652 };   /* +1 (2026-11-15 late): the Norwegian text
 /* +1–2 kB per page (2026-11-15 late, JP's live check): Norwegian names for the Admin and Settings texts that showed in English, the live line and tips line through the translator, Norwegian weekday letters, stand minutes. */
 /* +2 kB (2026-11-16): the lock and sync guards that keep a device from wiping the synced dashboard (no-wipe) and their Norwegian texts. */
 /* +1 kB (2026-11-16): the figure keeps its head between frames (scene-speed: frames 20–30 % faster). */
-const PAGE_KB = { 'index.html': 1432, 'admin/index.html': 1348, 'calendar/index.html': 1278, 'finance/index.html': 1652, 'food/index.html': 1365, 'goals/index.html': 1296, 'habits/index.html': 1323, 'house/index.html': 1637, 'papers/index.html': 1317, 'people/index.html': 1364, 'travel/index.html': 1421, 'wish/index.html': 1381, 'work/index.html': 1576 };
+/* work +4 kB (2026-11-16): the PDF viewer (shown before sharing) and Move to Team for document requirements. */
+const PAGE_KB = { 'index.html': 1432, 'admin/index.html': 1348, 'calendar/index.html': 1278, 'finance/index.html': 1652, 'food/index.html': 1365, 'goals/index.html': 1296, 'habits/index.html': 1323, 'house/index.html': 1637, 'papers/index.html': 1317, 'people/index.html': 1364, 'travel/index.html': 1421, 'wish/index.html': 1381, 'work/index.html': 1580 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

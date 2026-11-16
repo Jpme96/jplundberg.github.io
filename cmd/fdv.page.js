@@ -398,14 +398,14 @@
       return;
     }
     b = e.target.closest('[data-fdvmkpdf]'); if (!b) return;
-    if (b._pdf) { window.PagedPdf.share(b._pdf); return; }   /* made already: a fresh tap shares it (the phone wants a tap of its own for the share sheet) */
+    if (b._pdf) { window.PagedPdf.view(b._pdf); return; }   /* made already: show it again */   /* made already: a fresh tap shares it (the phone wants a tap of its own for the share sheet) */
     var r = Fe.list('fdv').filter(function (x) { return x.id === b.dataset.fdvmkpdf; })[0]; if (!r || b.disabled) return;
     var note = document.querySelector('.fdv-pdfnote'), lbl = b.querySelector('span');
     b.disabled = true; lbl.textContent = I18N.k('ui.fdv-making-pdf', 'Making the PDF …');
     makePdf(r).then(function (file) {
-      b.disabled = false; b._pdf = file; lbl.textContent = I18N.k('ui.fdv-share-pdf', 'Share or save the PDF'); b.querySelector('i').className = 'bi bi-box-arrow-up';
-      if (note) { note.hidden = false; note.textContent = I18N.k('ui.fdv-pdf-ready', 'Ready: {f} ({n} pages). Tap the button to share it, save it to Files or mail it.', { f: file.name, n: file._pages }); }
-      if (!(navigator.canShare && navigator.canShare({ files: [file] }))) window.PagedPdf.share(file);
+      b.disabled = false; b._pdf = file; lbl.textContent = I18N.k('ui.fdv-show-pdf', 'Show the PDF'); b.querySelector('i').className = 'bi bi-file-earmark-pdf';
+      if (note) { note.hidden = false; note.textContent = I18N.k('ui.fdv-pdf-ready2', 'Ready: {f} ({n} pages).', { f: file.name, n: file._pages }); }
+      window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */
     }).catch(function (err) {
       b.disabled = false; lbl.textContent = I18N.k('ui.fdv-make-pdf', 'Make PDF');
       toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(I18N.k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).')));

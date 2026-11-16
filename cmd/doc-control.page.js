@@ -745,7 +745,14 @@
       return '<li class="kit-item"><button type="button" class="kit-main" data-dropen="' + esc(p.id) + '"><span class="kit-ic" style="--c:#2f8a57"><i class="bi bi-clipboard2-check"></i></span><span class="kit-x"><b data-noi18n>' + esc(p.name) + '</b><small data-noi18n>' +
         esc([p.no, siteLine(p), p.type, k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: (p.lines || []).length })].filter(Boolean).join(' · ')) + '</small></span><i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : (radding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dr-empty', 'At the start of a project: pick the project type and the systems, and get the documentation it should have after NS 3456 – to share with the contractor as PDF or Excel, and to check against later in Document control.')) + '</p>');
-    return '<div class="card-head"><h2><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.doc-req', 'Document requirements')) + '</h2>' + (radding ? '' : '<div class="head-actions"><button type="button" class="text-btn" data-drnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
+    /* Team is the home for document requirements (JP 2026-11-16: everybody uses them): one file carries every list, the client
+       checklists and your own project types to Team; afterwards new lists are made there and these stay as old copies */
+    var moved = !HOST && !!Fe.tools().dcTeamAt;
+    if (!HOST && !radding) body = (moved
+      ? '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-in-team', 'Document requirements are in Team now')) + '</b><small>' + esc(k('ui.dr-in-team-s', 'Make and change lists there – the whole team uses the same ones')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>' +
+        (L.length ? '<p class="muted dc-help">' + esc(k('ui.dr-old-copies', 'Your old copies here (not updated):')) + ' <button type="button" class="text-btn" data-drmove>' + esc(k('ui.dr-move-again', 'Make the file for Team again')) + '</button></p>' : '')
+      : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>') + body;
+    return '<div class="card-head"><h2><i class="bi bi-clipboard2-check"></i> ' + esc(k('ui.doc-req', 'Document requirements')) + '</h2>' + (radding || moved ? '' : '<div class="head-actions"><button type="button" class="text-btn" data-drnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.new', 'New')) + '</button></div>') + '</div>' + body;
   }
   function kravFull(p) {
     var L = p.lines || [], sys = {}; L.forEach(function (l) { sys[l.code] = 1; });
@@ -1154,6 +1161,16 @@
   document.addEventListener('click', function (e) {
     /* Send to Team (work.jplundberg.com): the project as a file you import there – the plan, statuses and comments, never
        the files themselves (they stay on this device). Nothing goes from this dashboard's storage to Team's. */
+    if (e.target.closest('[data-drmove]') && !HOST) {   /* every list, the client checklists and your own project types in one file for Team's "Import from /cmd" */
+      var tt0 = Fe.tools(), kl = JSON.parse(JSON.stringify(kravs())); kl.forEach(function (p) { delete p.files; (p.lines || []).forEach(function (l) { delete l.files; }); });
+      var bundle = { team: 'dcbundle', v: 1, at: new Date().toISOString(), krav: kl, dcreq: tt0.dcreq || null, dcreqs: tt0.dcreqs || [], dctypes: tt0.dctypes || [] };
+      var bf = new File([JSON.stringify(bundle)], k('ui.dr-bundle-name', 'Document requirements for Team') + '.json', { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [bf] })) navigator.share({ files: [bf], title: bf.name }).catch(function () {});
+      else { var ba = document.createElement('a'); ba.href = URL.createObjectURL(bf); ba.download = bf.name; document.body.appendChild(ba); ba.click(); setTimeout(function () { URL.revokeObjectURL(ba.href); ba.remove(); }, 4000); }
+      var tt1 = Fe.tools(); tt1.dcTeamAt = new Date().toISOString(); Fe.saveTools(tt1); draw();
+      toast('<i class="bi bi-people"></i> ' + esc(k('ui.dr-moved', 'Saved. In Team: Documents → Import from /cmd – {n} lists come along.', { n: kl.length })) + ' <a href="https://work.jplundberg.com/#docs">' + esc(k('ui.open-team', 'Open Team')) + '</a>');
+      return;
+    }
     var tb = e.target.closest('[data-dcteam]');
     if (tb) {
       var isKrav = /^r:/.test(tb.dataset.dcteam), tid = tb.dataset.dcteam.replace(/^r:/, ''), tp = isKrav ? krav(tid) : proj(tid); if (!tp) return;   /* r:<id> = document requirements */
@@ -1189,14 +1206,14 @@
         lines: (ps.lines || []).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }), files: [] }]); Fe.saveTools(tt2);
       rpicking = false; if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); setTab('docs'); go(nid); return; }
     if ((b = t.closest('[data-drpdf]'))) {
-      if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
+      if (b._pdf) { window.PagedPdf.view(b._pdf); return; }   /* made already: show it again */
       var pp = krav(ropen); if (!pp || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
       var note0 = document.querySelector('#wkDocReq .fdv-pdfnote'), lb = b.querySelector('span'), me0 = profile();
       b.disabled = true; lb.textContent = k('ui.fdv-making-pdf', 'Making the PDF …');
       window.FdvPdf.html(kravReport(pp), [[me0.name, me0.role].filter(Boolean).join(', '), me0.employer, k('ui.doc-req', 'Document requirements'), pp.no, pp.name].filter(Boolean).join('  ·  '), fileName(pp, k('ui.doc-req', 'Document requirements'), '.pdf')).then(function (file) {
-        b.disabled = false; b._pdf = file; lb.textContent = k('ui.fdv-share-pdf', 'Share or save the PDF'); b.querySelector('i').className = 'bi bi-box-arrow-up';
-        if (note0) { note0.hidden = false; note0.textContent = k('ui.fdv-pdf-ready', 'Ready: {f} ({n} pages). Tap the button to share it, save it to Files or mail it.', { f: file.name, n: file._pages }); }
-        if (!(navigator.canShare && navigator.canShare({ files: [file] }))) window.FdvPdf.share(file);
+        b.disabled = false; b._pdf = file; lb.textContent = k('ui.fdv-show-pdf', 'Show the PDF'); b.querySelector('i').className = 'bi bi-file-earmark-pdf';
+        if (note0) { note0.hidden = false; note0.textContent = k('ui.fdv-pdf-ready2', 'Ready: {f} ({n} pages).', { f: file.name, n: file._pages }); }
+        window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */
       }).catch(function () { b.disabled = false; lb.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); }); return;
     }
     if (t.closest('[data-dcnew]')) { adding = true; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
@@ -1268,16 +1285,16 @@
       return;
     }
     if ((b = t.closest('[data-dcpdf]'))) {
-      if (b._pdf) { window.FdvPdf.share(b._pdf); return; }
+      if (b._pdf) { window.PagedPdf.view(b._pdf); return; }   /* made already: show it again */
       var p2 = proj(b.dataset.dcpdf); if (!p2 || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
       var note = document.querySelector('#wkDocCtl .fdv-pdfnote'), lbl = b.querySelector('span'), me = profile();
       b.disabled = true; lbl.textContent = k('ui.fdv-making-pdf', 'Making the PDF …');
       var foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p2.no, p2.name].filter(Boolean).join('  ·  ');
       var nm = ([p2.no, k('ui.doc-control', 'Document control'), p2.name].filter(Boolean).join(' ')).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() + '.pdf';
       window.FdvPdf.html(report(p2), foot, nm).then(function (file) {
-        b.disabled = false; b._pdf = file; lbl.textContent = k('ui.fdv-share-pdf', 'Share or save the PDF'); b.querySelector('i').className = 'bi bi-box-arrow-up';
-        if (note) { note.hidden = false; note.textContent = k('ui.fdv-pdf-ready', 'Ready: {f} ({n} pages). Tap the button to share it, save it to Files or mail it.', { f: file.name, n: file._pages }); }
-        if (!(navigator.canShare && navigator.canShare({ files: [file] }))) window.FdvPdf.share(file);
+        b.disabled = false; b._pdf = file; lbl.textContent = k('ui.fdv-show-pdf', 'Show the PDF'); b.querySelector('i').className = 'bi bi-file-earmark-pdf';
+        if (note) { note.hidden = false; note.textContent = k('ui.fdv-pdf-ready2', 'Ready: {f} ({n} pages).', { f: file.name, n: file._pages }); }
+        window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */
       }).catch(function (err) { b.disabled = false; lbl.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); try { console.warn('[dc] pdf', err); } catch (e3) {} });
     }
   });
