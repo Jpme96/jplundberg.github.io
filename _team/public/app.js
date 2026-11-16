@@ -760,7 +760,7 @@
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
-      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore };
+      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); } };
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');

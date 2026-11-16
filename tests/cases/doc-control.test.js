@@ -224,11 +224,13 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     wide: [...document.querySelectorAll('#wkDocReq *')].filter(e => !e.closest('.dc-chips') && e.getBoundingClientRect().right > innerWidth + 1).length }; });
   check(kr.lines === '330 G,330 H,332 A,332 BC' && /^B: Made-up routines\nC: Maintenance instructions/.test(kr.hint) && kr.type === 'Sprinkler' && kr.types === 'Made-up type:330 332' && kr.shown === 4 && kr.hints === 4 && kr.sys === 2 && !kr.wide, 'Make the list: one line per type (B and C together), the example as the hint, the ticks saved as your own type ' + JSON.stringify(kr));
   /* a line added later sorts into its place, and the description has no letters (12:35) */
+  await p.evaluate(() => document.querySelector('#wkDocReq [data-drpen]').click()); await sl(300);   /* the list is changed with the pen on (JP 15:03) */
   await p.evaluate(() => { const f = document.querySelector('#wkDocReq form[data-dcaddl]'); f.code.value = '330'; f.t.value = 'A'; f.requestSubmit(); }); await sl(400);
   const ord = await p.evaluate(() => ({ codes: [...document.querySelectorAll('.dr-sys .dr-sh .dc-code')].map(e => e.textContent).join(), first: [...document.querySelectorAll('.dr-sys')][0].querySelectorAll('.dr-line b')[0].textContent, hint: [...document.querySelectorAll('.dr-hint')].map(e => e.textContent).find(t => /routines/.test(t)) }));
   check(ord.codes === '330,332' && /^Compliance/.test(ord.first) && /^Operation: Made-up routines/.test(ord.hint), 'a line added later sorts into its code and type order; Drift/Vedlikehold descriptions are named, not lettered ' + JSON.stringify(ord));
   await p.evaluate(() => { const r = Features.list('dckrav')[0], l = r.lines.filter(x => x.code === '330' && x.t === 'A')[0]; document.querySelector('[data-drldel="' + l.id + '"]').click(); }); await sl(400);
   /* the Excel reads back as a document plan */
+  await p.evaluate(() => document.querySelector('#wkDocReq [data-drsend]').click()); await sl(300);   /* PDF and Excel are in the Send sheet (JP 14:52) */
   const back = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-drxlsx]').click(); FdvPdf.share = old; if (!got) return null;
     const sh = await DocCtl.readBook(await got.arrayBuffer()); const res = DocCtl.parsePlan(sh); return { name: got.name, lines: res.lines.map(l => l.code + ' ' + l.t).join() }; });
   check(back && /P-9 Dokumentkrav Made-up bathroom\.xlsx$/.test(back.name) && back.lines === '330 G,330 H,332 A,332 BC', 'the Excel for the contractor is a document plan that Document control reads back ' + JSON.stringify(back));

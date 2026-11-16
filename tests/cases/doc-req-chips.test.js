@@ -47,6 +47,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const all = await p.evaluate(() => ({ g: document.querySelectorAll('#wkDocReq details.dc-fold').length, open: document.querySelectorAll('#wkDocReq details.dc-fold[open]').length, drawn: document.querySelectorAll('#wkDocReq .dr-line').length, n: Features.list('dckrav')[0].lines.length }));
   check(all.open === all.g && all.drawn === all.n, 'Open all groups draws every line ' + JSON.stringify(all));
   /* help texts: one line until tapped */
+  await p.evaluate(() => document.querySelector('#wkDocReq [data-drsend]').click()); await sl(300);   /* the long help is in the Send sheet now */
   const hp = await p.evaluate(() => { const h = document.querySelector('#wkDocReq .dc-help.dc-clamp'); if (!h) return null; const a = h.offsetHeight; h.click(); const b = h.offsetHeight; return { a, b, more: h.classList.contains('dc-more') }; });
   check(hp && hp.more && hp.b > hp.a, 'a long help text shows one line and opens when tapped ' + JSON.stringify(hp));
   check(!errs.length, 'no page errors ' + errs.join(' | '));

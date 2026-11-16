@@ -757,8 +757,10 @@
     h += '<div class="dc-psum" data-dcpsum>' + sumHtml() + '</div>';
     h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-types', 'Search a project type, code or system')) + '">';
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-ptg">' + typeGroups().map(function (g) {
-      return '<div class="dc-ptrow" data-dcptg><span class="dc-ptl">' + esc(g[0]) + '</span><div class="dc-chips dc-wrap">' + g[1].map(function (t) { return '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div></div>';
+      return '<div class="dc-ptrow" data-dcptg><span class="dc-ptl">' + esc(g[0]) + '</span><div class="dc-chips dc-wrap">' + g[1].map(function (t) { return tpen && t.own ? '<button type="button" class="dc-chip dx-tedit" data-dctedit="' + esc(t.id) + '"><i class="bi bi-pencil"></i> ' + esc(t.name) + '</button>' : '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div></div>';
     }).join('') + '</div>';
+    if (canAdmin()) h += '<div class="dx-trow"><button type="button" class="dc-chip dx-tnew" data-dctnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-type-new-b', 'New type')) + '</button>' + (ownTypes().length ? '<button type="button" class="dc-chip dx-pen" aria-pressed="' + tpen + '" data-dctpen title="' + esc(k('ui.dx-type-pen', 'Change your own types')) + '"><i class="bi bi-pencil"></i> ' + esc(tpen ? k('ui.dx-done', 'Done') : k('ui.dx-own-types', 'Your own types')) + '</button>' : '') + '</div>';
+    if (tform) h += typeForm();
     h += '<div data-dcxs>' + xsHtml() + '</div>';
     var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
     if (!Object.keys(own4()).length) h += '<p class="muted dc-help">' + esc(k('ui.dc-no4', 'For 4-digit codes (e.g. 3321), import your NS 3451 list in Settings → Work – they then show under their 3-digit code.')) + '</p>';
@@ -773,8 +775,7 @@
       }).join('') + '</ul></details>';
     });
     h += '<div class="dc-pbar"><span data-dcpcount>' + pickCount() + '</span><button type="button" class="pill-btn" data-dcmake="' + (kind || 'ctl') + '"><i class="bi bi-check2"></i> ' + esc(kind === 'req' ? k('ui.dr-make', 'Make the list') : k('ui.dc-make', 'Make the plan')) + '</button><button type="button" class="text-btn" data-dccancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div>';
-    h += '<form class="dc-tsave" data-dctsave><input name="n" maxlength="60" placeholder="' + esc(k('ui.dc-type-name', 'Save the ticks as a type, e.g. Bathroom, small')) + '"><button type="submit" class="text-btn"><i class="bi bi-bookmark-plus"></i> ' + esc(k('ui.save', 'Save')) + '</button></form>';
-    if (ownTypes().length) h += '<p class="muted dc-help">' + ownTypes().map(function (t) { return '<button type="button" class="text-btn" data-dctdel="' + esc(t.id) + '"><i class="bi bi-x"></i> ' + esc(t.name) + '</button>'; }).join(' ') + '</p>';
+    if (canAdmin()) h += '<form class="dc-tsave" data-dctsave><input name="n" maxlength="60" placeholder="' + esc(k('ui.dc-type-name', 'Save the ticks as a type, e.g. Bathroom, small')) + '"><button type="submit" class="text-btn"><i class="bi bi-bookmark-plus"></i> ' + esc(k('ui.save', 'Save')) + '</button></form>';
     return h + '</div>';
   }
   /* the project types in groups, so 35 equal chips read as six short rows (JP 13:32 – heavy to use) */
@@ -820,9 +821,52 @@
      plan, so the contractor's filled-in copy imports straight into Document control), and "Start document control" copies it
      over. Kept in dash.tools.dckrav. ---------- */
   var ropen = null, rpicking = false, radding = false, redit = false;
+  /* the Requirements step as approved in the preview (JP 15:03–15:19): the list is calm until the pen ✎ is on; "Send to the
+     contractor" makes the PDF / the Excel here and remembers what was sent, so a change afterwards shows; own project types get
+     "+ New type" and a pen – admin only in Team */
+  var rpen = false, rsend = false, tpen = false, tform = null, kpdf = null;
+  function blurIn() { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); }
+  function canAdmin() { return !HOST || !HOST.rank || HOST.rank() >= 3; }
+  function canEdit() { return !HOST || !HOST.rank || HOST.rank() >= 1; }
+  function linesKey(p) { var u = new TextEncoder().encode((p.lines || []).map(function (l) { return l.code + '|' + (l.t || '') + '|' + (l.name || ''); }).sort().join(';')); return crc(u).toString(36); }
+  function markSent(id, what) { var to = document.querySelector('form[data-drsendf] [name="to"]'); saveP(id, function (p) { var s0 = p.sent && p.sent.at === today() ? p.sent : {}; var w = (s0.what || '').split(',').filter(Boolean); if (w.indexOf(what) < 0) w.push(what);
+    p.sent = { to: (to ? to.value.trim() : (p.sent || {}).to || '').slice(0, 120), at: today(), n: (p.lines || []).length, key: linesKey(p), what: w.join(',') }; }, 'dckrav'); draw(); }
+  function sentHtml(p) {
+    var s = p.sent; if (!s) return ''; var ch = s.key !== linesKey(p), what = (s.what || '').split(',').filter(Boolean).map(function (w) { return w === 'pdf' ? 'PDF' : 'Excel'; }).join(', ');
+    return '<p class="dx-sent' + (ch ? ' dx-ch' : '') + '"><i class="bi bi-' + (ch ? 'exclamation-circle' : 'send-check') + '"></i> ' + esc(ch ? k('ui.dx-sent-ch', 'Changed after it was sent on {d} – send it again so {w} has the latest.', { d: fmt(s.at), w: s.to || k('ui.dx-contractor', 'the contractor') }) : k('ui.dx-sent', 'Sent to {w} on {d} ({x}) · {n} documents', { w: s.to || k('ui.dx-contractor', 'the contractor'), d: fmt(s.at), x: what, n: s.n })) + '</p>';
+  }
+  function sendForm(p) {
+    return '<form class="dc-pform dx-send" data-drsendf><h3 class="fdv-h">' + esc(k('ui.dx-send-h', 'Send the requirements to the contractor')) + '</h3>' +
+      '<label><span>' + esc(k('ui.dx-to', 'To')) + '</span><input name="to" maxlength="120" value="' + esc((p.sent || {}).to || '') + '" placeholder="' + esc(k('ui.dc-contractor-ph', 'Who delivers, e.g. the sprinkler contractor')) + '"></label>' +
+      '<div class="dc-facts"><button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.dx-send-pdf', 'PDF – the requirements')) + '</span></button>' +
+      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-xlsx', 'Excel – a document plan to fill in')) + '</button></div>' +
+      '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dx-send-help', 'Made on this device and shared from here (e-mail, Teams …) – nothing is sent from the server. The Excel is laid out like a document plan: the contractor fills in the planned names, and you check it with Check a document plan or import it in Received.')) + '</p>' +
+      '<div class="dc-facts"><button type="button" class="text-btn" data-drsendx>' + esc(k('ui.close', 'Close')) + '</button></div></form>';
+  }
+  /* + New type / a type to change (admin): name, start from, the systems (folded per group) and own documents */
+  function typeForm() {
+    var F = tform, C = pickCodes(), keys = Object.keys(C).filter(function (c) { return /^\d{3}$/.test(c); }).sort(), g = {}, n = Object.keys(F.codes).length;
+    keys.forEach(function (c) { (g[c[0]] = g[c[0]] || []).push(c); });
+    var from = '<option value="">' + esc(k('ui.dx-from-empty', 'Empty – I tick them myself')) + '</option>' + allTypes().filter(function (t) { return t.id !== F.id; }).map(function (t) { return '<option value="' + esc(t.id) + '"' + (F.from === t.id ? ' selected' : '') + '>' + esc((t.own ? '★ ' : '') + t.name) + '</option>'; }).join('');
+    return '<form class="dc-pform dx-tform" data-dctform><h3 class="fdv-h">' + esc(F.id ? k('ui.dx-type-edit', 'Change the project type') : k('ui.dx-type-new', 'New project type')) + '</h3>' +
+      '<label><span>' + esc(k('ui.dx-type-name', 'Name')) + '</span><input name="n" maxlength="60" required value="' + esc(F.name || '') + '" placeholder="' + esc(k('ui.dc-type-name-ph', 'e.g. Bathroom, small')) + '"></label>' +
+      '<label><span>' + esc(k('ui.dx-from', 'Start from')) + '</span><select name="from" data-dctfrom>' + from + '</select></label>' +
+      '<p class="dx-th"><b>' + esc(k('ui.dx-systems', 'Systems')) + '</b> <span class="muted" data-dctn>' + esc(k('ui.dx-n-picked', '{n} picked', { n: n })) + '</span></p>' +
+      Object.keys(g).sort().map(function (m) { var on = g[m].filter(function (c) { return F.codes[c]; }).length;
+        return '<details class="dc-pg"' + (on ? ' open' : '') + '><summary><b>' + esc(m) + '</b> ' + esc(grpName(m) || '') + ' <span class="dc-pn">' + (on || '') + '</span></summary><ul>' + g[m].map(function (c) {
+          return '<li><label><input type="checkbox" data-dctc="' + c + '"' + (F.codes[c] ? ' checked' : '') + '><span><b>' + c + '</b> <span data-noi18n>' + esc(C[c].n) + '</span>' + (C[c].t ? ' <small class="dc-lt">' + esc(C[c].t.split('').join(' ')) + '</small>' : '') + '</span></label></li>'; }).join('') + '</ul></details>'; }).join('') +
+      '<p class="dx-th"><b>' + esc(k('ui.dx-own-docs', 'Own documents')) + '</b> <span class="muted">' + esc(k('ui.dx-own-docs-s', '– what this kind of project always needs besides the NS 3456 types')) + '</span></p>' +
+      (F.x.length ? '<ul class="dc-xs">' + F.x.map(function (x, i) { return '<li><span><b>' + esc(x[0]) + '</b> ' + esc(I18N.lang === 'nb' ? x[2] : x[3] || x[2]) + '</span> <button type="button" class="icon-btn sm" data-dctxrm="' + i + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
+      '<div class="dx-xadd"><input name="xc" inputmode="numeric" maxlength="4" placeholder="' + esc(k('ui.dc-code', 'Code')) + '" aria-label="' + esc(k('ui.dc-code', 'Code')) + '"><input name="xt" maxlength="80" placeholder="' + esc(k('ui.dx-own-doc-ph', 'e.g. Wet room documentation')) + '" aria-label="' + esc(k('ui.dx-own-doc', 'The document')) + '"><button type="button" class="text-btn" data-dctxadd><i class="bi bi-plus-lg"></i> ' + esc(k('ui.add', 'Add')) + '</button></div>' +
+      '<p class="muted dc-help">' + esc(HOST ? k('ui.dx-type-team', 'Saved under your own types and shared with the team. Only admins make and change types. Projects already made from it don’t change.') : k('ui.dx-type-own', 'Saved under your own types. Projects already made from it don’t change.')) + '</p>' +
+      '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dx-type-save', 'Save the type')) + '</button><button type="button" class="text-btn" data-dctcancel>' + esc(k('ui.cancel', 'Cancel')) + '</button>' +
+      (F.id ? '<button type="button" class="text-btn dc-del" data-dctdel="' + esc(F.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dx-type-del', 'Delete the type')) + '</button>' : '') + '</div></form>';
+  }
+  function tformFrom(id) { var C = pickCodes(), ty = allTypes().filter(function (t) { return t.id === id; })[0], o = {}; if (ty) (ty.codes === '*' ? Object.keys(C) : String(ty.codes || '').split(/[ ,]+/).concat(Array.isArray(ty.codes) ? ty.codes : [])).forEach(function (c) { if (C[c] && /^\d{3}$/.test(c)) o[c] = 1; }); return { codes: o, x: ty ? (ty.own ? (ty.x || []) : XTRA[id] || []).map(function (x) { return x.slice(); }) : [] }; }
+  function tformRead() { var f = document.querySelector('form[data-dctform]'); if (f && tform) tform.name = f.n.value; }
   function rHash() { var m = location.hash.match(/^#dr=([\w-]+)$/); return m ? m[1] : null; }
   ropen = rHash();
-  function rgo(id) { ropen = id; open = null; openLine = null; rpicking = false; if (rHash() !== id) history.pushState({ dr: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dr=' + id); draw(); window.scrollTo(0, 0); }
+  function rgo(id) { ropen = id; open = null; rpen = false; rsend = false; openLine = null; rpicking = false; if (rHash() !== id) history.pushState({ dr: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dr=' + id); draw(); window.scrollTo(0, 0); }
   function rback() { var prev = history.state && history.state.from; if (rHash() && history.state && history.state.dr && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
   function kravs() { return Fe.list('dckrav'); }
   function krav(id) { return kravs().filter(function (x) { return x.id === id; })[0] || null; }
@@ -837,10 +881,11 @@
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div>' + steps('krav', p, ctlOf(p)) + '<div class="fdv-body">';
     if (rpicking || !L.length) return h + picker(p, 'req') + '</div></div>';
     if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
-    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button>' +
-      '<button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button>' +
-      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dr-excel', 'Excel for the contractor')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="r:' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '</div>' +
-      '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dr-excel-help', 'The Excel file is laid out like a document plan: the contractor fills in the planned names, and you import it in Document control.')) + '</p>';
+    h += '<div class="dc-facts">' + (canEdit() ? '<button type="button" class="pill-btn dx-pri" data-drsend><i class="bi bi-send"></i> ' + esc(p.sent && p.sent.key !== linesKey(p) ? k('ui.dx-send-again', 'Send again') : k('ui.dx-send', 'Send to the contractor')) + '</button>' : '') +
+      '<button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button></div>';
+    h += rsend ? sendForm(p) : '';
+    h += sentHtml(p);
+    h += '<div class="dx-lh"><h3 class="fdv-h">' + esc(k('ui.dx-the-list', 'The list')) + '</h3>' + (canEdit() ? '<button type="button" class="icon-btn sm dx-pen" aria-pressed="' + rpen + '" data-drpen aria-label="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '" title="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '"><i class="bi bi-' + (rpen ? 'check2' : 'pencil') + '"></i></button>' : '') + (rpen ? '<span class="muted dc-help">' + esc(k('ui.dx-pen-help', 'Remove lines or add new ones')) + '</span>' : '') + '</div>';
     var big = L.length > 40;
     if (big) h += foldBar('r:' + p.id, byGroup(L).map(function (g) { return g[0]; }));
     h += byGroup(L).map(function (g) {
@@ -848,14 +893,14 @@
       return foldHead(big, key, op, g[0], k('ui.dc-gsum2', '{c} systems · {n} documents', { c: ns, n: g[1].length })) + (!op ? '' : '<ul class="dr-syss">' + byCode(g[1]).map(function (c) {
         return '<li class="dr-sys"><div class="dr-sh"><span class="dc-code">' + esc(c[0]) + '</span><b data-noi18n>' + esc(c[1]) + '</b></div><ul class="dr-types">' + c[2].map(function (l) {
           return '<li class="dr-line"><span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + (l.opt ? ' <small>· ' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</small>' : '') + '</b>' +
-            (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span><button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button></li>';
+            (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span>' + (rpen ? '<button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
         }).join('') + '</ul></li>';
       }).join('') + '</ul>') + (big ? '</details>' : '');
     }).join('');
-    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-drpick><i class="bi bi-ui-checks"></i> ' + esc(k('ui.dc-pick-more', 'Add from the checklist')) + '</button></div>' + addLineForm(p, 'req') +
+    h += (rpen ? '<div class="dc-facts"><button type="button" class="pill-btn" data-drpick><i class="bi bi-ui-checks"></i> ' + esc(k('ui.dc-pick-more', 'Add from the checklist')) + '</button></div>' + addLineForm(p, 'req') : '') +
       '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3>' + (redit ? '<form class="dc-pform" data-dredit>' + '<label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required value="' + esc(p.name) + '"></label><label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40" value="' + esc(p.no || '') + '"></label>' + siteFields(p) +
         '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dreditx>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>' :
-        '<table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p)).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table><div class="fdv-acts"><button type="button" class="pill-btn" data-dredit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button></div>') +
+        '<table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p)).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table><div class="fdv-acts"><button type="button" class="pill-btn" data-dredit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="r:' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + '</div>') +
       '<div class="fdv-acts"><button type="button" class="text-btn" data-drreset><i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dr-reset', 'Reset the list')) + '</button><button type="button" class="text-btn dc-del" data-drdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dr-delete', 'Delete the requirements')) + '</button></div>';
     return h + '</div></div>';
   }
@@ -1276,7 +1321,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t8 = Fe.tools(); t8.dckrav = (t8.dckrav || []).map(function (x) { return x.id === kp.id ? kp : x; }); Fe.saveTools(t8); draw(); }); return; }
     if ((b = t.closest('[data-drdel]'))) { var did = b.dataset.drdel, allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])); var t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== did; }); Fe.saveTools(t9); rback();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); return; }
-    if (t.closest('[data-drxlsx]')) { var px = krav(ropen); if (!px) return; var fx = new File([kravXlsx(px)], fileName(px, 'Dokumentkrav', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fx); return; }
+    if (t.closest('[data-drxlsx]')) { var px = krav(ropen); if (!px) return; if (rsend) markSent(px.id, 'xlsx'); var fx = new File([kravXlsx(px)], fileName(px, 'Dokumentkrav', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fx); return; }
     if (t.closest('[data-drstart]')) { var ps = krav(ropen); if (!ps) return; var nid = uid(), tt2 = Fe.tools(), had = (tt2.dctl || []).filter(function (x) { return x && x.krav === ps.id; })[0];
       if (had) {   /* started before: open that one and add what is new in the requirements (JP 13:05 – a second tap made a second project) */
         var add0 = 0; saveP(had.id, function (p) { var hv = {}; (p.lines || []).forEach(function (l) { hv[l.code + '|' + l.t + '|' + (l.name || '')] = 1; }); (ps.lines || []).forEach(function (l, i) { if (!hv[l.code + '|' + l.t + '|' + (l.name || '')]) { add0++; p.lines.push(Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' })); } }); ['bid', 'bname', 'pname', 'pid', 'no'].forEach(function (f) { if (ps[f]) p[f] = ps[f]; }); rematch(p); });
@@ -1286,6 +1331,7 @@
         lines: (ps.lines || []).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }), files: [] }]); Fe.saveTools(tt2);
       rpicking = false; if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); setTab('docs'); go(nid); return; }
     if ((b = t.closest('[data-drpdf]'))) {
+      var pc0 = krav(ropen); if (!b._pdf && kpdf && pc0 && kpdf.id === pc0.id && kpdf.key === linesKey(pc0)) b._pdf = kpdf.file;   /* made already (the button was drawn again): show it again */
       if (b._pdf) { window.PagedPdf.view(b._pdf); return; }   /* made already: show it again */
       var pp = krav(ropen); if (!pp || b.disabled || !window.FdvPdf || !window.FdvPdf.html) return;
       var note0 = document.querySelector('#wkDocReq .fdv-pdfnote'), lb = b.querySelector('span'), me0 = profile();
@@ -1293,7 +1339,7 @@
       window.FdvPdf.html(kravReport(pp), [[me0.name, me0.role].filter(Boolean).join(', '), me0.employer, k('ui.doc-req', 'Document requirements'), pp.no, pp.name].filter(Boolean).join('  ·  '), fileName(pp, k('ui.doc-req', 'Document requirements'), '.pdf')).then(function (file) {
         b.disabled = false; b._pdf = file; lb.textContent = k('ui.fdv-show-pdf', 'Show the PDF'); b.querySelector('i').className = 'bi bi-file-earmark-pdf';
         if (note0) { note0.hidden = false; note0.textContent = k('ui.fdv-pdf-ready2', 'Ready: {f} ({n} pages).', { f: file.name, n: file._pages }); }
-        window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */
+        kpdf = { id: pp.id, key: linesKey(pp), file: file }; window.PagedPdf.view(file);   /* shown first – Share and Save are in the viewer (JP 2026-11-16) */ if (rsend) markSent(pp.id, 'pdf');
       }).catch(function () { b.disabled = false; lb.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); }); return;
     }
     if (t.closest('[data-dcnew]')) { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); adding = true; radding = false; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
@@ -1319,10 +1365,19 @@
       var added = 0; saveP(open, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cs).filter(function (l) { return !have[l.code + '|' + l.t]; }); added = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.dc-from-checklist', 'From the checklist'); p.planAt = today(); } rematch(p); });
       picking = false; ticks = {}; toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: added }))); setTab('docs'); filt = 'all'; draw(); window.scrollTo(0, 0); return;
     }
-    if ((b = t.closest('[data-dctdel]'))) { var tid = b.dataset.dctdel, tt = Fe.tools(), old = JSON.parse(JSON.stringify(tt.dctypes || [])); tt.dctypes = (tt.dctypes || []).filter(function (x) { return x.id !== tid; }); Fe.saveTools(tt); draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-type-removed', 'Project type removed')), function () { var t5 = Fe.tools(); t5.dctypes = old; Fe.saveTools(t5); draw(); }); return; }
+    if ((b = t.closest('[data-dctdel]'))) { if (!canAdmin()) return; tform = null; blurIn(); var tid = b.dataset.dctdel, tt = Fe.tools(), old = JSON.parse(JSON.stringify(tt.dctypes || [])); tt.dctypes = (tt.dctypes || []).filter(function (x) { return x.id !== tid; }); Fe.saveTools(tt); draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-type-removed', 'Project type removed')), function () { var t5 = Fe.tools(); t5.dctypes = old; Fe.saveTools(t5); draw(); }); return; }
     if ((b = t.closest('[data-dcldel]'))) { var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dcopen]'))) { go(b.dataset.dcopen); return; }
+    if (t.closest('[data-drsend]')) { rsend = !rsend; draw(); var to0 = document.querySelector('form[data-drsendf] [name="to"]'); if (to0 && rsend) to0.focus(); return; }
+    if (t.closest('[data-drsendx]')) { blurIn(); rsend = false; draw(); return; }
+    if (t.closest('[data-drpen]')) { rpen = !rpen; draw(); return; }
+    if (t.closest('[data-dctnew]')) { if (!canAdmin()) return; blurIn(); tpen = false; tform = { id: '', name: '', from: '', codes: {}, x: [] }; draw(); var tn0 = document.querySelector('form[data-dctform] [name="n"]'); if (tn0) tn0.focus(); return; }
+    if (t.closest('[data-dctpen]')) { blurIn(); tpen = !tpen; tform = null; draw(); return; }
+    if ((b = t.closest('[data-dctedit]'))) { var ot = ownTypes().filter(function (x) { return x.id === b.dataset.dctedit; })[0]; if (!ot || !canAdmin()) return; var o0 = tformFrom(ot.id); tform = { id: ot.id, name: ot.name, from: '', codes: o0.codes, x: o0.x }; draw(); return; }
+    if (t.closest('[data-dctcancel]')) { blurIn(); tform = null; draw(); return; }
+    if (t.closest('[data-dctxadd]')) { var tf = t.closest('form'), xc = tf.xc.value.trim(), xt = tf.xt.value.trim().slice(0, 80); if (!/^\d{3,4}$/.test(xc) || !xt) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dx-own-doc-need', 'Write a code (3 digits) and what the document is'))); return; } tformRead(); blurIn(); tform.x.push([xc, '', xt, xt, '', '']); tform.codes[xc.slice(0, 3)] = 1; draw(); return; }
+    if ((b = t.closest('[data-dctxrm]'))) { tformRead(); blurIn(); tform.x.splice(+b.dataset.dctxrm, 1); draw(); return; }
     if ((b = t.closest('[data-dxkrav]'))) { if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); rgo(b.dataset.dxkrav); return; }
     if ((b = t.closest('[data-dxmot]'))) { if (tab === 'report') setTab('docs'); if (open === b.dataset.dxmot) draw(); else go(b.dataset.dxmot); return; }
     if ((b = t.closest('[data-dxrap]'))) { setTab('report'); if (open === b.dataset.dxrap) draw(); else go(b.dataset.dxrap); return; }
@@ -1389,6 +1444,8 @@
   });
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq')) return;
+    if (t.hasAttribute('data-dctfrom') && tform) { tformRead(); var fr = tformFrom(t.value); tform.from = t.value; tform.codes = fr.codes; tform.x = fr.x; blurIn(); draw(); return; }
+    if (t.dataset.dctc && tform) { if (t.checked) tform.codes[t.dataset.dctc] = 1; else delete tform.codes[t.dataset.dctc]; var cn = document.querySelector('[data-dctn]'); if (cn) cn.textContent = k('ui.dx-n-picked', '{n} picked', { n: Object.keys(tform.codes).length }); var dd = t.closest('details'), sp = dd && dd.querySelector('.dc-pn'); if (sp) sp.textContent = dd.querySelectorAll('[data-dctc]:checked').length || ''; return; }
     if (t.hasAttribute('data-dcchk')) { var cf = t.files && t.files[0]; t.value = ''; if (cf) checkPlan(cf); return; }
     if (t.dataset.dcfromkrav && t.value) { var kk = krav(t.value), pid = t.dataset.dcfromkrav; if (!kk) return; var addk = 0;
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });
@@ -1422,6 +1479,9 @@
   });
   document.addEventListener('submit', function (e) {
     var f = e.target; if (!f.matches) return;
+    if (f.matches('form[data-dctform]')) { e.preventDefault(); if (!tform || !canAdmin()) return; var nm = f.n.value.trim().slice(0, 60), cs2 = Object.keys(tform.codes).sort(); if (!nm) return; if (!cs2.length && !tform.x.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dx-type-need', 'Tick at least one system'))); return; }
+      var tt9 = Fe.tools(), rec = { name: nm, codes: cs2, x: tform.x }; if (tform.id) tt9.dctypes = (tt9.dctypes || []).map(function (x) { return x.id === tform.id ? Object.assign({}, x, rec) : x; }); else tt9.dctypes = (tt9.dctypes || []).concat([Object.assign({ id: uid() }, rec)]);
+      Fe.saveTools(tt9); blurIn(); tform = null; tpen = false; draw(); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dx-type-saved', '“{n}” is under your own types', { n: nm }))); return; }
     if (f.matches('form[data-dcpaste]')) { e.preventDefault(); var nn = namesText(f.t.value); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } pasting = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); importFiles(f.dataset.dcpaste, [], nn); return; }
     if (f.matches('form[data-dredit]')) { e.preventDefault(); var ev = siteRead(f, { name: f.name.value.trim().slice(0, 120) || 'Project', no: f.no.value.trim().slice(0, 40) }); saveP(ropen, function (p) { Object.assign(p, ev); }, 'dckrav'); redit = false; document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
     if (f.matches('form[data-drform]')) { e.preventDefault(); var rn = f.name.value.trim().slice(0, 120); if (!rn) return; var rid = uid(), t11 = Fe.tools(); xsel = {}; xoff = {}; t11.dckrav = (t11.dckrav || []).concat([siteRead(f, { id: rid, name: rn, no: f.no.value.trim().slice(0, 40), made: new Date().toISOString(), lines: [] })]); Fe.saveTools(t11); radding = false; f.name.blur(); ticks = {}; lastType = ''; rgo(rid); return; }

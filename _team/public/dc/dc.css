@@ -851,3 +851,16 @@ body.dr-full #wkDocReq { display: block !important; }
   .dx-n { display: none; }
   .dx-step.done b { color: var(--ok); }
 }
+.dx-sent { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 10px; padding: 8px 12px; border-radius: 10px; font-size: 13.5px; background: rgba(var(--ok-rgb), .1); color: var(--ink); }
+.dx-sent > i { color: var(--ok); }
+.dx-sent.dx-ch { background: rgba(var(--warn-rgb), .14); }
+.dx-sent.dx-ch > i { color: var(--warn); }
+.dx-lh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.dx-lh .fdv-h { margin: 0; }
+.dx-pen[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.dx-trow { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.dx-tnew, .dx-tedit { border-style: dashed !important; }
+.dx-th { margin: 12px 0 4px; font-size: 14px; }
+.dx-xadd { display: grid; grid-template-columns: 80px 1fr auto; gap: 6px; align-items: center; }
+.dx-tform, .dx-send { margin: 8px 0 12px; padding: 12px; border: 1px solid rgba(var(--ink-rgb), .12); border-radius: 12px; }
+.dc-pick:has(.dx-tform) .dc-pbar { display: none; }

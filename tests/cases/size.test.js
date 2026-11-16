@@ -44,7 +44,8 @@ const BUDGET_KB = { total: 1661 };   /* +7 (2026-11-16, JP's list): the Apple He
 /* work +1 kB (2026-11-16, JP: file naming as a test): only the switch and the loader – the naming itself (cmd/doc-naming.js) and the PDF reader (cmd/vendor/pdf*.js) load only where it is switched on. */
 /* +1 kB (2026-11-16): rounded hair outlines, the round afro, Finance's walk behind the jar. */
 /* work +2 kB (2026-11-16, JP 15:19 – one Documentation tab): Requirements and Control become one tab with one project list, steps Requirements → Received → Report and the plan check on top; the two old lists are gone, the new words in both languages make up the rest. */
-const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1596 };
+/* work +9 kB (2026-11-16, JP 15:03–15:19 – the Requirements step as in the approved preview): the pen for the list, the Send sheet that remembers what was sent and shows a change afterwards, and "+ New type" with start from, systems and own documents (admin only in Team). */
+const PAGE_KB = { 'index.html': 1440, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1661, 'food/index.html': 1374, 'goals/index.html': 1304, 'habits/index.html': 1331, 'house/index.html': 1646, 'papers/index.html': 1325, 'people/index.html': 1372, 'travel/index.html': 1430, 'wish/index.html': 1389, 'work/index.html': 1605 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
