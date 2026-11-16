@@ -412,3 +412,12 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dc-help.dc-clamp { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
 .dc-help.dc-clamp.dc-more { display: block; -webkit-line-clamp: unset; }
 @media (prefers-reduced-motion: reduce) { .dc-fold > summary::before { transition: none; } }
+/* the picker's bottom bar: no room for a phone menu on a computer (the side menu from 1024 px) – and smaller on short windows */
+@media (min-width: 1024px) { .dc-pbar { bottom: 12px; } }
+@media (max-height: 720px) and (min-width: 700px) {
+  .dc-pbar { padding: 6px 10px; margin-top: 8px; }
+  .dc-pbar span { flex: 1 1 auto; }
+  .fdv-top { margin-bottom: 4px; }
+  .fdv-title h2 { font-size: 20px; }
+  #wkDocReq, #wkDocCtl { padding-top: 10px; }
+}

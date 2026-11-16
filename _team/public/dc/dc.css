@@ -819,3 +819,12 @@ body.dr-full #wkDocReq { display: block !important; }
 @media (prefers-reduced-motion: reduce) {
   .dc-fold > summary::before { transition: none; }
 }
+@media (min-width: 1024px) {
+  .dc-pbar { bottom: 12px; }
+}
+@media (max-height: 720px) and (min-width: 700px) {
+  .dc-pbar { padding: 6px 10px; margin-top: 8px; }
+  .dc-pbar span { flex: 1 1 auto; }
+  .fdv-top { margin-bottom: 4px; }
+  .fdv-title h2 { font-size: 20px; }
+}
