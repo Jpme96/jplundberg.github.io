@@ -886,6 +886,10 @@ async function vault(request, env) {
     /* an older version of cmd (one copy, v1) must not save over the newer form it can't read in full: it updates itself first */
     if (cur && next.v === 1 && JSON.parse(cur).v === 2 && base !== curRev) return json({ error: 'update', update: true }, 426);
     if (cur && base !== curRev) return new Response(cur, { status: 409, headers: hdrs() });
+    /* a dashboard made with another passcode salt is another dashboard: a phone that lost its copy and was offline
+       made a new, empty one and it replaced the real one (2026-11-16). Only an on-purpose replace (Start over, a
+       restored backup, a new passcode – the device sends X-Replace) may do that. */
+    if (cur && next.salt !== JSON.parse(cur).salt && request.headers.get('X-Replace') !== '1') return json({ error: 'another dashboard', other: true }, 423);
     /* every piece the new version points to must be here already */
     if (next.v === 2) { const miss = []; for (const id of next.pc) if ((await env.VAULT.get(VP + id)) == null) miss.push(id); if (miss.length) return json({ error: 'missing pieces', missing: miss }, 412); }
     /* first save of the day: keep yesterday's last version (30 days back) */

@@ -286,6 +286,9 @@
   /* what goes to the server: the core and the pieces it doesn't have yet */
   function toServer(local, k) {
     return open(local, k).then(function (obj) {
+      var wNow = weight(obj);
+      if (srvW >= 40 && wNow < srvW * .5 && !readJSON(REPLACE_KEY)) { var e0 = new Error('shrink'); e0.shrink = true; e0.w = wNow; e0.s = srvW; throw e0; }
+      local.__w = wNow;
       var sp = split(obj), map = {}, jobs = []; pcFor(k);
       Object.keys(sp.parts).forEach(function (n) {
         var str = JSON.stringify(sp.parts[n]), ph = fnv(str);
@@ -314,7 +317,20 @@
       });
     });
   }
-  window.__pieces = { split: split, join: join, count: function () { return Object.keys(pcMine).length; } };   /* for the tests */
+  /* how much is in a dashboard: list items everywhere (finances, widgets, every tool list) and Apple Health days.
+     An upload that would lose most of it is refused (16 Nov 2026: a phone saved an almost empty copy over the real one). */
+  function weight(o) {
+    var n = 0, cnt = function (v) { if (Array.isArray(v)) n += v.length; };
+    if (!isObj(o)) return 0;
+    Object.keys(o).forEach(function (k2) {
+      if (k2 === '_w' && isObj(o._w)) Object.keys(o._w).forEach(function (x) { if (x === 'dash.tools' && isObj(o._w[x])) Object.keys(o._w[x]).forEach(function (t) { cnt(o._w[x][t]); }); else cnt(o._w[x]); });
+      else cnt(o[k2]);
+    });
+    if (isObj(o.health) && isObj(o.health.days)) n += Object.keys(o.health.days).length;
+    return n;
+  }
+  var srvW = -1;   /* the weight of the newest copy this device has seen from the server (or put there) */
+  window.__pieces = { weight: weight, split: split, join: join, count: function () { return Object.keys(pcMine).length; } };   /* for the tests */
 
   /* ---------- lock screen UI ---------- */
   var mode = 'unlock';   // 'setup' | 'unlock' | 'reset'
@@ -435,6 +451,18 @@
     var wait = waitLeft();
     if (wait > 0) { msg('Too many tries. Wait ' + Math.ceil(wait / 1000) + ' s.'); shake(); return; }
 
+    if (mode === 'setup' && !setupChecked && !readJSON(REPLACE_KEY)) {
+      /* a new dashboard only when the server says there is none – a phone that lost its copy and was offline made an
+         empty one here and it replaced the real one (2026-11-16). Ask the server first; if it can't be reached, say so. */
+      busy(true);
+      Promise.race([getRemote(), new Promise(function (r) { setTimeout(function () { r(undefined); }, 8000); })]).then(function (v) {
+        busy(false);
+        if (v === null) { setupChecked = true; $('lockForm').requestSubmit(); return; }   /* the server is set up and empty: a real first time – go on with making it */
+        if (v) { remote = v; setMode('unlock'); msg(I18N.k('ui.found-your-synced-dashboard-enter-your-p', 'Found your synced dashboard. Enter your passcode.'), true); return; }
+        msg(I18N.k('ui.lock-no-server', 'Can’t reach your synced dashboard right now. Check the connection and try again – a new dashboard is only made when the server has none.')); shake();
+      });
+      return;
+    }
     if (mode === 'setup') {
       if (pass.length < 6) { msg('Use at least 6 characters.'); shake(); return; }
       if (pass !== $('lockConfirm').value) { msg('The two passcodes don’t match.'); shake(); return; }
@@ -470,6 +498,7 @@
       .then(function (obj) {
         key = k; salt = s;
         if (fromRemote) { memVault = null; writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
+        srvW = weight(obj);
         data = unpackKeep(obj, !fromRemote);
         busy(false);
         finishUnlock();
@@ -722,6 +751,7 @@
   var BASE_KEY = 'dash.syncBase';
   /* set by a restored backup or 'Erase and start over': the next upload replaces the server's copy instead of merging */
   var REPLACE_KEY = 'dash.syncReplace';
+  var setupChecked = false;   /* the server has said it holds no dashboard (see finishUnlock) */
   /* Settings, tool data, profile and travel are compared one level deeper (each setting, each tool),
      and Apple Health day by day – so a change on the phone to one setting doesn't undo a change made
      on the computer to another, and health numbers from two devices both stay. */
@@ -845,6 +875,7 @@
     var again = function () { setTimeout(function () { if (key && !pushing) sync(); }, 900); };
     return open(v, k).then(function (obj) {
       if (key !== k) return;
+      srvW = Math.max(srvW, weight(obj));   /* what the server holds: a merge that would lose most of it isn't uploaded */
       if (editSeq !== seq0 && !failNote) { again(); return; }
       return localChanges().catch(function () { return []; }).then(function (changed) {
         if (key !== k) return;
@@ -950,16 +981,23 @@
       /* save on top of the version this device last synced with – if the server has a newer one, it answers 409 and we merge */
       var base = readJSON(REPLACE_KEY) ? (remoteRev !== null ? remoteRev : -1) : syncedRev() >= 0 ? syncedRev() : (remoteRev !== null ? remoteRev : -1);
       /* in pieces when unlocked (the key is needed to cut it up); a whole copy otherwise – the server takes both */
-      return (pk ? toServer(v, pk).catch(function (e) { if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
+      return (pk ? toServer(v, pk).catch(function (e) {
+        if (e && e.shrink) {   /* most of the dashboard would go: nothing is uploaded – the server's copy stays as it is */
+          if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: an upload with most of the data gone (' + e.w + ' of ' + e.s + ')', 'lock.js');
+          setSync('off', I18N.k('ui.sync-shrink', 'Not saved to your other devices: most of your data is missing on this device. Your synced copy is kept – lock and unlock to get it back.'));
+          return null;
+        }
+        if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
         if (!body) return;
         return fetch(API, {
         method: 'PUT', credentials: 'same-origin', cache: 'no-store',
-        headers: { 'content-type': 'application/json', 'X-Base-Rev': String(base) },
+        headers: Object.assign({ 'content-type': 'application/json', 'X-Base-Rev': String(base) }, readJSON(REPLACE_KEY) ? { 'X-Replace': '1' } : {}),   /* only an on-purpose replace may put another dashboard over the server's (Worker answers 423 otherwise) */
         body: body
       }).then(function (r) {
-        if (r.ok) { missTry = 0; remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
+        if (r.ok) { if (v.__w != null) srvW = v.__w; missTry = 0; remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
         if (r.status === 412 && missTry < 2) { missTry++; return r.json().then(function (j) { (j.missing || []).forEach(function (id) { delete srvHas[id]; }); pushAgain = true; }); }
         if (r.status === 409) return r.json().then(withPieces).then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
+        if (r.status === 423) { available = false; setSync('off', I18N.k('ui.sync-other-dash', 'This device has a different dashboard than your synced one – it wasn’t saved over it. Lock and unlock with your passcode to get the synced one.')); if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: another dashboard (423)', 'lock.js'); return; }
         if (r.status === 401) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');
       });
@@ -1077,7 +1115,7 @@
         .then(function (k) {
           return seal(data, k, s, localRev() + 1).then(function (v) {
             recNext = undefined;
-            memVault = null; writeJSON(VAULT_KEY, v);
+            memVault = null; writeJSON(VAULT_KEY, v); writeJSON(REPLACE_KEY, 1);   /* a new passcode is a new salt: an on-purpose replace (X-Replace) */
             key = k; salt = s;
             remember();
             return push();
@@ -1104,7 +1142,7 @@
       throw new Error('locked');
     }
     return open(vault, rec.key).then(function (obj) {
-      key = rec.key; salt = unb64(vault.salt);
+      key = rec.key; salt = unb64(vault.salt); srvW = weight(obj);
       data = unpackKeep(obj, true);
       finishUnlock();
     });

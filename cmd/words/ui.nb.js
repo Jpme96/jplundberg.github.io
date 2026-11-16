@@ -2837,5 +2837,8 @@ I18N.add({
   "ui.split-picked": ["Picked for you on every new split", "Velges for deg på hver nye deling"],
   "ui.move-in-1": ["Moving in 1 day", "Flytter om 1 dag"],
   "ui.move-in-n": ["Moving in {n} days", "Flytter om {n} dager"],
-  "ui.sort-them": ["Sort them", "Sorter dem"]
+  "ui.sort-them": ["Sort them", "Sorter dem"],
+  "ui.sync-other-dash": ["This device has a different dashboard than your synced one – it wasn’t saved over it. Lock and unlock with your passcode to get the synced one.", "Denne enheten har et annet dashbord enn det synkroniserte – det ble ikke lagret over. Lås og lås opp med koden din for å hente det synkroniserte."],
+  "ui.sync-shrink": ["Not saved to your other devices: most of your data is missing on this device. Your synced copy is kept – lock and unlock to get it back.", "Ikke lagret til de andre enhetene: det meste av dataene mangler på denne enheten. Den synkroniserte kopien beholdes – lås og lås opp for å få den tilbake."],
+  "ui.lock-no-server": ["Can’t reach your synced dashboard right now. Check the connection and try again – a new dashboard is only made when the server has none.", "Får ikke kontakt med det synkroniserte dashbordet nå. Sjekk tilkoblingen og prøv igjen – et nytt dashbord lages bare når serveren ikke har noe."]
 });
