@@ -50,6 +50,17 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const z = await p.evaluate(async () => { let got = null; FdvPdf.share = f => { got = f; return Promise.resolve(); }; document.querySelector('[data-dxrendl]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); if (!got) return null;
     const E = DocCtl.zipEntries(await got.arrayBuffer()); return { name: got.name, files: E.map(e => e.name).sort().join('|'), size: E.map(e => e.size).join() }; });
   check(z && /\.zip$/.test(z.name) && /351 DA Datablad radiator\.pdf/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /\d{5}-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 5 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the renamed ones with their new names, with their content ' + JSON.stringify(z));
+  /* many files (JP 21:55 "could be messy"): one line each, chips for what needs you / is ready / is done, a tap opens a row */
+  for (const n of ['Made-up a.dwg', 'Made-up b.xlsx', '442 DA Made-up light.pdf', 'Made-up c.docx']) fs.writeFileSync(path.join(dir, n), 'made up ' + n);
+  await (await p.$('input[data-dxrenf]')).uploadFile(...['Made-up a.dwg', 'Made-up b.xlsx', '442 DA Made-up light.pdf', 'Made-up c.docx'].map(n => path.join(dir, n))); await sl(2500);
+  const m1 = await p.evaluate(() => ({ rows: document.querySelectorAll('.dx-ren .dcn-row').length, compact: document.querySelectorAll('.dx-ren .dcn-row.dcn-c').length, chips: [...document.querySelectorAll('.dx-ren [data-dcnflt]')].map(b => b.textContent), dwg: [...document.querySelectorAll('.dx-ren .dcn-sumt b')].some(b => /Made-up a\.dwg/.test(b.textContent)) }));
+  check(m1.rows === 9 && m1.compact === 9 && m1.chips.length === 4 && /^All 9$/.test(m1.chips[0]) && m1.dwg, 'nine files: one line each with chips; a .dwg, .xlsx and .docx are taken too ' + JSON.stringify(m1));
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt="todo"]').click()); await sl(200);
+  const m2 = await p.evaluate(() => ({ n: document.querySelectorAll('.dx-ren .dcn-row').length, all: [...document.querySelectorAll('.dx-ren .dcn-row')].every(li => li.classList.contains('dcn-warn')) }));
+  check(m2.n >= 1 && m2.n < 9 && m2.all, '"Needs you" shows only the files still missing something ' + JSON.stringify(m2));
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnexp]').click()); await sl(200);
+  check(await p.evaluate(() => !!document.querySelector('.dx-ren .dcn-row:not(.dcn-c) [data-dcncode]')), 'a tap opens the row with its fields');
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
   await p.evaluate(() => document.querySelector('.dx-ren [data-dxtool=""]').click()); await sl(300);
   /* FDV names */
   await p.evaluate(() => document.querySelector('[data-dxtool="fdv"]').click()); await sl(300);

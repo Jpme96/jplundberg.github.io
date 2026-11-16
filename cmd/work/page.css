@@ -472,3 +472,12 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-bno { margin: 8px 0; }
 .dcn-bno small { color: var(--muted); font-size: 12px; }
 .dcn-bno input.dcn-need { border-color: var(--warn); }
+/* many files: one line per file until opened */
+.dcn-row.dcn-c { padding: 0; }
+.dcn-sumb { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 8px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.dcn-sumt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.dcn-sumt b { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dcn-sumt small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dcn-s-done { color: var(--ok); } .dcn-s-ready { color: var(--blue); } .dcn-s-todo { color: var(--warn); }
+.dcn-row:not(.dcn-c) > .dcn-sumb { margin: -10px -12px 4px; width: calc(100% + 24px); }
+.dcn-flt { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }

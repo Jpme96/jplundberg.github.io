@@ -3077,5 +3077,10 @@ I18N.add({
   "ui.dcn-guess": ["Suggested – check it", "Forslag – sjekk det"],
   "ui.dx-bno": ["Building number (for drawings)", "Bygningsnummer (for tegninger)"],
   "ui.dx-bno-ph": ["e.g. 11621", "f.eks. 11621"],
-  "ui.dcn-bno-s": ["Used in every drawing name, and saved on the project", "Brukes i navnet på alle tegninger, og lagres på prosjektet"]
+  "ui.dcn-bno-s": ["Used in every drawing name, and saved on the project", "Brukes i navnet på alle tegninger, og lagres på prosjektet"],
+  "ui.dcn-f-all": ["All {n}", "Alle {n}"],
+  "ui.dcn-f-todo": ["Needs you {n}", "Må fylles ut {n}"],
+  "ui.dcn-f-ready": ["Ready {n}", "Klare {n}"],
+  "ui.dcn-f-done": ["Done {n}", "Ferdige {n}"],
+  "ui.dcn-f-none": ["None here.", "Ingen her."]
 });

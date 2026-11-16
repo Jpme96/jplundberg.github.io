@@ -188,6 +188,10 @@
 
   /* ---------- the Files tab with naming on ---------- */
   var nsel = '', nopen = false;
+  /* many files (JP 2026-11-16 21:55 "could be messy"): over 6 files each row is one line – the name now → the new name and where it
+     stands – and opens on a tap; chips show only what needs you, what is ready, or what is done */
+  var nexp = {}, nflt = '';
+  function fstate(p, f) { var b = nbuild(p, f); if (b.miss.length || (!f.p.code && fkind(f) !== 'photo') || (f.p.code && !f.p.abbr && fkind(f) === 'doc')) return 'todo'; return b.plain + ext(f.orig || f.name) === f.name ? 'done' : 'ready'; }
   function codeList(p) {
     var m = {}, add = function (c, n) { c = String(c); if (/^\d{2,4}$/.test(c) && !m[c]) m[c] = n || codeName(c) || ''; };
     (p.lines || []).forEach(function (l) { add(String(l.code).split('.')[0], lineTitle(l)); });
@@ -209,8 +213,15 @@
     if (key === 'rev') v = (f.nv || {}).rev || '';
     return lab + '<input id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '" value="' + esc(v) + '" maxlength="80"></label>';
   }
-  function nrow(p, f) {
+  function nrow(p, f, compact) {
     var r = ruleFor(p, f), b = nbuild(p, f, r), e = ext(f.orig || f.name), l = f.line && lineOf(p, f.line), kd = fkind(f), tags = [], lvl = 'ok';
+    if (compact) {
+      var st = fstate(p, f), ic = st === 'done' ? 'check2-circle' : st === 'ready' ? 'arrow-right-circle' : 'exclamation-circle', open = !!nexp[f.id];
+      var line = '<button type="button" class="dcn-sumb" data-dcnexp="' + esc(f.id) + '" aria-expanded="' + open + '"><i class="bi bi-' + ic + ' dcn-s-' + st + '"></i><span class="dcn-sumt"><b data-noi18n>' + esc(f.name) + '</b>' +
+        (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-' + (open ? 'up' : 'down') + '"></i></button>';
+      if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + '" data-dcnf="' + esc(f.id) + '">' + line + '</li>';
+      return nrow(p, f).replace('<div class="dcn-g">', line + '<div class="dcn-g">');
+    }
     if (!f.p.code && kd !== 'photo') { tags.push(tag('var(--warn)', k('ui.dcn-needs-code', 'Needs a code'))); lvl = 'warn'; }
     else if (f.p.code && !f.p.abbr && kd === 'doc') { tags.push(tag('var(--warn)', k('ui.dcn-needs-type', 'Needs a type'))); lvl = 'warn'; }
     if (l) tags.push(tag('var(--ok)', k('ui.dcn-on-line', 'On line {c}', { c: l.code + (f.p.abbr ? ' ' + f.p.abbr : '') })));
@@ -284,7 +295,10 @@
     var dw = F.some(function (f) { return !f.nf && ruleFor(p, f).parts.some(function (q) { return q.k === 'bno'; }); });
     if (dw || p.bid) h += '<label class="dcn-fl dcn-bno"><span>' + esc(k('ui.dx-bno', 'Building number (for drawings)')) + '</span><input data-dcnbid value="' + esc(p.bid || '') + '" inputmode="numeric" maxlength="40" placeholder="' + esc(k('ui.dx-bno-ph', 'e.g. 11621')) + '"' + (dw && !p.bid ? ' class="dcn-need"' : '') + '><small>' + esc(k('ui.dcn-bno-s', 'Used in every drawing name, and saved on the project')) + '</small></label>';
     if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
-    return h + '<ul class="dcn-files">' + F.map(function (f) { return nrow(p, f); }).join('') + '</ul>';
+    var many = F.length > 6, cnt = { todo: 0, ready: 0, done: 0 }; if (many) F.forEach(function (f) { cnt[fstate(p, f)]++; });
+    if (many) h += '<div class="dcn-flt" role="group">' + [['', k('ui.dcn-f-all', 'All {n}', { n: F.length })], ['todo', k('ui.dcn-f-todo', 'Needs you {n}', { n: cnt.todo })], ['ready', k('ui.dcn-f-ready', 'Ready {n}', { n: cnt.ready })], ['done', k('ui.dcn-f-done', 'Done {n}', { n: cnt.done })]].map(function (c) { return '<button type="button" class="dc-chip" aria-pressed="' + (nflt === c[0]) + '" data-dcnflt="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
+    var G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F;
+    return h + '<ul class="dcn-files">' + G.map(function (f) { return nrow(p, f, many); }).join('') + '</ul>' + (many && !G.length ? '<p class="muted">' + esc(k('ui.dcn-f-none', 'None here.')) + '</p>' : '');
   }
   /* suggest a code and type from the name for every file, then read every PDF that hasn't been read (one at a time) */
   function suggestAll(pid) {
@@ -325,6 +339,8 @@
       if ((b = t.closest('[data-dcncc]'))) { ccRun(cur(), b.dataset.dcncc); return; }
       if ((b = t.closest('[data-dcnuset], [data-dcnusec]'))) { var id4 = b.dataset.dcnuset || b.dataset.dcnusec, isT = !!b.dataset.dcnuset; saveP(cur(), function (p) { var f = fileOf(p, id4); if (!f || !f.cc) return; if (isT && f.cc.t) f.p.abbr = f.cc.t[0]; if (!isT && f.cc.c) f.p.code = f.cc.c[0]; relink(p, f); }); draw(); return; }
       if (t.closest('[data-dcnall]')) { suggestAll(cur()); return; }
+      if ((b = t.closest('[data-dcnexp]'))) { var xi = b.dataset.dcnexp; if (nexp[xi]) delete nexp[xi]; else nexp[xi] = 1; draw(); return; }
+      if ((b = t.closest('[data-dcnflt]'))) { nflt = b.dataset.dcnflt; draw(); return; }
       if ((b = t.closest('[data-dcnsel]'))) { nsel = b.dataset.dcnsel; nopen = true; draw(); return; }
       if (t.closest('[data-dcnnew], [data-dcncopy]')) { var src = t.closest('[data-dcncopy]') ? nrule(proj(cur()), nsel) || NRULES[0] : NRULES[0], nr = JSON.parse(JSON.stringify(src)); nr.id = 'own-' + uid(); nr.n = t.closest('[data-dcncopy]') ? k('ui.dcn-copy-of', 'Copy of {r}', { r: rname(src) }) : k('ui.dcn-my-rule', 'My rule'); delete nr.b; nsel = nr.id; nopen = true;
         saveP(cur(), function (p) { p.nrules = (p.nrules || []).concat([nr]).slice(0, 20); }); draw(); return; }
