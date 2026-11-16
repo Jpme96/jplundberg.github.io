@@ -2,7 +2,7 @@
    the page's data): the scene takes the picture over, its things still open their cards, stepping through it at 60
    frames a second nothing jumps (body, hands – each hand by side, whichever way he faces), the end of the action
    is the rest that follows, a replay is smooth too, no "NaN"/"undefined" in any frame, and in the wheelchair it plays
-   without errors. Pages are added here as they move to 2.5D. Made-up data only. */
+   without errors. Pages are added here as they move to 2.5D (Finances 2026-11-16). Made-up data only. */
 const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const DAY = "const k = new Date(), key = k.getFullYear() + '-' + String(k.getMonth() + 1).padStart(2, '0') + '-' + String(k.getDate()).padStart(2, '0');";
 const PAGES = [
@@ -16,6 +16,9 @@ const PAGES = [
   { page: 'goals', go: ['glActive'], versions: [{ name: 'up the trail with the flag', len: [10, 11.5], setup: "['flex','meetings','fdv','ptime','healthpage','habits','training','papers','calendar','goals','wish','people','work'].forEach(f => { try { Features.set(f, true); } catch (e) {} });" }] },
   { page: 'wish', go: ['wishes', 'wbuy'], versions: [{ name: 'the gift from the shelf into the cart', len: [6, 7.5], setup: "['flex','meetings','fdv','ptime','healthpage','habits','training','papers','calendar','goals','wish','people','work'].forEach(f => { try { Features.set(f, true); } catch (e) {} });" }] },
   { page: 'people', go: ['people'], versions: [{ name: 'walk over, wave, a high five', len: [7, 8], setup: "const t0 = Features.tools(); t0.people = [{ id: 'tp1', name: 'Ada Test', rel: 'friend' }]; Features.saveTools(t0); ['flex','meetings','fdv','ptime','healthpage','habits','training','papers','calendar','goals','wish','people','work'].forEach(f => { try { Features.set(f, true); } catch (e) {} });" }] },
+  { page: 'finance', go: ['fin'], versions: [
+    { name: 'money left: polish the jar, up the ladder with a coin, the piggy bank', len: [12.5, 13.6], setup: "Features.set('finance', true); const d = Vault.get(); d.budget = { income: [{ id: 'i1', name: 'Salary (made up)', amount: 41000, day: 25 }], fixed: [{ id: 'f1', name: 'Rent (made up)', amount: 12500, day: 1 }] }; Vault.save(d);" },
+    { name: 'over budget: to the jar, then back to you', len: [3.4, 7.4], setup: "Features.set('finance', true); const d = Vault.get(); d.budget = { income: [{ id: 'i1', name: 'Salary (made up)', amount: 41000, day: 25 }], fixed: [{ id: 'f1', name: 'Rent (made up)', amount: 50000, day: 1 }] }; Vault.save(d);" }] },
   { page: 'travel', go: ['trips'], versions: [{ name: 'a trip: suitcase to the plane, up the stairs, a wave, home again', len: [16, 18], setup: "Features.set('travel', true); const d = new Date(), k = n => { const x = new Date(d.getTime() + n * 864e5); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); }; const tv = JSON.parse(localStorage.getItem('dash.travel') || '{}'); tv.trips = [{ id: 'tt1', name: 'Test trip', dest: 'Testby', start: k(3), end: k(6), pack: [] }]; localStorage.setItem('dash.travel', JSON.stringify(tv)); try { sessionStorage.setItem('dash.travelTab', 'trips'); } catch (e) {}" }] }
 ];
 (async () => {
@@ -48,7 +51,7 @@ const PAGES = [
     await look({ aid: 'chair' }); await sl(1200); await go(p, P.page + '/', 3000); await until(p, () => !!document.querySelector('#scIllu svg.sc25'), 10000);
     await p.evaluate(() => { window.__sceneSpeed = 0.00001; });
     const c = await sweep();
-    check(!c.bad && c.body < 4.5, P.page + ' – ' + V.name + ': in the wheelchair too');
+    check(!c.bad && c.body < 4.5 && c.hand < 7, P.page + ' – ' + V.name + ': in the wheelchair too, the hands never jump (body ' + c.body.toFixed(2) + ', hands ' + c.hand.toFixed(2) + ' at ' + c.at + ')');   /* a pose only partly on jumped off the rim (2026-11-16) */
     await look(null);
   }
   check(!p.errs.length, 'no errors ' + JSON.stringify(p.errs).slice(0, 300));

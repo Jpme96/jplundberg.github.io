@@ -275,13 +275,16 @@
     var UA = 35, FA = 32;
     [-1, 1].forEach(function (sd) {
       var q = ph + (sd < 0 ? Math.PI : 0), sv = w * 0.38 * Math.sin(q), ov = pose[nearSide(sd) ? 'near' : 'far'];
-      if (CHAIR && !ov) ov = { m: 1, b: [134 - 6 * Math.cos(ph * 1.2) * w, 4 + 14 * Math.sin(ph * 1.2) * w] };
+      var aidRest = CHAIR ? { m: 1, b: [134 - 6 * Math.cos(ph * 1.2) * w, 4 + 14 * Math.sin(ph * 1.2) * w] } : CRUTCH ? { m: 1, b: [148, 10 + 9 * Math.sin(ph) * w] } : null;   /* where the hand rests in the wheelchair (the rim) or on crutches (the grip) */
+      if (CHAIR && !ov) ov = aidRest;
       var cbusy = CRUTCH && !!ov && (ov.m == null || ov.m > .25);   /* the hand is doing something else: its crutch stays standing by his side */
-      if (CRUTCH && !ov) ov = { m: 1, b: [148, 10 + 9 * Math.sin(ph) * w] };
+      if (CRUTCH && !ov) ov = aidRest;
       var fb = sv + 0.28 + w * 0.25 * Math.max(0, Math.sin(q));   /* a soft bend at the elbow when the arm hangs (JP 2026-11-15: they hung stiff) */
-      var place = function (q) { return q.at ? unlean(toBody(q.at, sd * 32)) : { y: q.b[0] + bob, z: q.b[1] }; };
+      var place = function (q) { if (q.rest && aidRest) q = aidRest; return q.at ? unlean(toBody(q.at, sd * 32)) : { y: q.b[0] + bob, z: q.b[1] }; };
       if (ov && ov.path) { var A0 = place(ov.path[0]), B0 = place(ov.path[1]), fq = ov.f; ov = { m: 1, b: null, at: null, hb: { y: A0.y + (B0.y - A0.y) * fq - ov.up / k * Math.sin(Math.PI * fq), z: A0.z + (B0.z - A0.z) * fq } }; }
-      if (ov && (ov.at || ov.b || ov.hb)) { var hb = ov.hb || place(ov), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1), rel = sa[1] - sa[0]; while (rel < -1.8) rel += 2 * Math.PI; while (rel > 2 * Math.PI - 1.8) rel -= 2 * Math.PI;   /* the turn-over point sits in the middle of the angles an elbow can't make, so a near-straight arm never flips between frames */ ov = { m: ov.m == null ? 1 : ov.m, s: sa[0], f: sa[0] + rel }; }   /* an elbow only bends forward: the forearm's angle is taken that way round, so a hand rising to the chin comes up in front, never swings back over the top (JP 2026-11-15) */   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
+      var solve = function (o) { var hb = o.hb || place(o), sa = ik(hb.y - (88 + bob), hb.z, UA, FA, -1), rel = sa[1] - sa[0]; while (rel < -1.8) rel += 2 * Math.PI; while (rel > 2 * Math.PI - 1.8) rel -= 2 * Math.PI; return { m: o.m == null ? 1 : o.m, s: sa[0], f: sa[0] + rel }; };   /* the turn-over point sits in the middle of the angles an elbow can't make, so a near-straight arm never flips between frames */
+      if (ov && ov !== aidRest && aidRest && ov.m != null && ov.m < 1) { var ar = solve(aidRest); sv = ar.s; fb = ar.f; }   /* a pose only partly on starts from the rim or the grip, not from a hanging arm – no jump as it fades in or out (2026-11-16) */
+      if (ov && (ov.at || ov.b || ov.hb)) { ov = solve(ov); }   /* an elbow only bends forward: the forearm's angle is taken that way round, so a hand rising to the chin comes up in front, never swings back over the top (JP 2026-11-15) */   /* a pose without m (like a plain resting place) is fully on */   /* the hand goes where it must hold (a rail, the slot) */
       if (ov) { sv = sv * (1 - ov.m) + ov.s * ov.m; fb = fb * (1 - ov.m) + ov.f * ov.m; }   /* a keyed pose, blended in */
       var AW = L.bp.arm, SHW = BW * (L.bp.mus ? 1 + .55 * (L.bp.sh - 1) : L.bp.sh),   /* athletic/muscular: the width is in the shoulders' muscle, the arms still hang at the trunk's side (JP 2026-11-13: they stood out like balls) */ sh = [sd * 31 * SHW, 88 + bob, 0], elb = [sd * 33.5 * SHW, sh[1] + UA * Math.cos(sv), UA * Math.sin(sv)];
       var hand = [sd * 29.5 * SHW, elb[1] + FA * Math.cos(fb), elb[2] + FA * Math.sin(fb)];   /* the hand comes in toward the thigh, not out to the side (JP 2026-11-15: "gorilla arms") */

@@ -89,9 +89,14 @@
         }
         return cuts;
       }
+      /* html2canvas copies the whole page before it draws – the scenes, cards and menus too. Only the report is copied (the
+         head keeps the styles), and the pages are drawn with a pause between them, so the phone never freezes for seconds
+         (iPhone 2026-11-14: "stuck for 5 s" after Make PDF) */
+      var ign = function (el) { return el.parentNode === document.body && el !== box; };
+      var rest = function (v) { return new Promise(function (ok) { setTimeout(function () { ok(v); }, 0); }); };
       return Promise.all(waits).then(function () { return document.fonts && document.fonts.ready; }).then(function () { return new Promise(function (ok) { setTimeout(ok, 120); }); }).then(function () {
         var cuts = null;
-        return window.html2canvas(box, { scale: .05, backgroundColor: '#ffffff', logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
+        return window.html2canvas(box, { scale: .05, backgroundColor: '#ffffff', logging: false, ignoreElements: ign, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
           onclone: function (d) { var bx = d.querySelector('.rp-pdfbox'), ar = bx && bx.firstElementChild; if (!ar) return; cuts = measure(ar); bx.style.height = '1px'; bx.style.overflow = 'hidden'; } }).then(function () {
         if (!cuts || !cuts.length) cuts = measure(doc);   /* the copy had no report: measure here instead */
         /* drawn a few pages at a time (JP 13:05 – a long report stopped half way on the iPhone: Safari draws nothing past ~16 million
@@ -100,9 +105,9 @@
         cuts.forEach(function (c, i) { if (!cur || c[1] - cur.a > 2400) { cur = { a: c[0], b: c[1], ix: [] }; chunks.push(cur); } cur.b = c[1]; cur.ix.push(i); });
         var PDF = window.jspdf.jsPDF, pdf = new PDF({ unit: 'mm', format: 'a4', compress: true }), W0 = doc.offsetWidth;
         return chunks.reduce(function (pr, ch) {
-          return pr.then(function () {
+          return pr.then(rest).then(function () {
             var H = Math.ceil(ch.b - ch.a);
-            return window.html2canvas(box, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
+            return window.html2canvas(box, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false, ignoreElements: ign, windowWidth: document.documentElement.clientWidth, windowHeight: window.innerHeight,
               onclone: function (d) { var bx = d.querySelector('.rp-pdfbox'), ar = bx && bx.firstElementChild; if (!ar) return; bx.style.height = H + 'px'; bx.style.overflow = 'hidden'; ar.style.setProperty('margin-top', (-ch.a) + 'px', 'important'); } }   /* the same width the pages were measured at – on a phone it used to draw at desktop width, so the cuts landed in the wrong places (an empty page after a heading) */).then(function (cv) {
               var S = cv.width / W0;
               ch.ix.forEach(function (i) {

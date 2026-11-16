@@ -315,7 +315,8 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .fdv-photo.has { color: var(--ok); }
 .fdv-acts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 10px; }
 .note .body .nl { display: block; }
-.rp-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
+.rp-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); min-width: 0; line-height: 1.25; }
+.rp-opt input { flex: none; width: auto; margin: 0; }
 .rp-doc { max-width: 794px; margin: 0 auto; background: #fff; color: #1d2228; border-radius: 6px; padding: 48px 52px; font: 13px/1.5 Inter, system-ui, sans-serif; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); }
 .rp-doc * { font-family: inherit !important; letter-spacing: normal !important; }
 .rp-doc h1 { font-size: 24px; margin: 2px 0 2px; font-weight: 700; color: #111; }
