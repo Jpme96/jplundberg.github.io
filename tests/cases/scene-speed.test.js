@@ -48,6 +48,20 @@ const PAGES = ['finance', 'food', 'work', 'habits', 'papers', 'calendar', 'goals
     const k1 = pool.key; Fig25.draw(look, .2, 200, 200, .5, 0, 0, { breath: .4 }, pool);
     return { same: a.length === b2.length && a.every((x, i) => x[1] === b2[i][1]), moved: pool.key !== k1 }; });
   check(rest.same, 'the same pose again gives the same parts back');
+  /* walking: the head is kept between frames and only moved (and scaled a little) – it must land exactly where a fresh
+     drawing puts it; each hand is one shape (2026-11-16) */
+  const walk = await p.evaluate(() => {
+    const NS = 'http://www.w3.org/2000/svg', look = Scene25.look();
+    const real = n => { const e = document.createElementNS(NS, n.nodeName); const a = n._a; if (a) for (const k in a) e.setAttribute(k, a[k]); else for (const at of n.attributes || []) e.setAttribute(at.name, at.value); for (const c of n.childNodes) e.appendChild(c.nodeType === 1 ? real(c) : c.cloneNode()); return e; };
+    const box = parts => { const sv = document.createElementNS(NS, 'svg'); sv.setAttribute('width', 400); sv.setAttribute('height', 400); document.body.appendChild(sv); const g = document.createElementNS(NS, 'g'); sv.appendChild(g); parts.filter(x => x[0] >= .45 && x[0] < .6).forEach(x => g.appendChild(real(x[1]))); const b = g.getBBox(); sv.remove(); return [b.x, b.y, b.width, b.height]; };
+    const p1 = Fig25.pool(); Fig25.draw(look, .3, 200, 260, .5, 0, 1, {}, p1); const kept = Fig25.draw(look, .3, 206, 262, .53, .7, 1, {}, p1);
+    const fresh = Fig25.draw(look, .3, 206, 262, .53, .7, 1, {}, Fig25.pool());
+    const a = box(kept), b = box(fresh), d = Math.max(...a.map((v, i) => Math.abs(v - b[i])));
+    const hands = fresh.filter(x => x[1].nodeName === 'g' && x[1].childNodes.length === 2 && [...x[1].childNodes].some(c => c.nodeName === 'path')).length;
+    return { reused: !!(p1.memo && p1.memo.head && !p1.memo.head.miss), d, hands };
+  });
+  check(walk.reused, 'a walking figure keeps its head between frames');
+  check(walk.d < .8, 'the kept head lands where a fresh drawing puts it (' + walk.d.toFixed(2) + ' px)');
   check(rest.moved, 'a new pose is drawn again');
   check(!p.errs.length, 'no errors ' + JSON.stringify(p.errs).slice(0, 400));
   await done(b);

@@ -40,6 +40,8 @@
   }
   function rot(x, z, a) { return { x: x * Math.cos(a) + z * Math.sin(a), z: -x * Math.sin(a) + z * Math.cos(a) }; }
   function shade(on, a, b) { return on ? a : b; }
+  /* an ellipse turned by deg round its middle, as a path (so several can share one element) */
+  function oval(cx, cy, rx, ry, deg) { var t = deg * Math.PI / 180, c = Math.cos(t), sn = Math.sin(t), r = rx.toFixed(1) + ' ' + ry.toFixed(1) + ' ' + deg.toFixed(0) + ' 1 0 '; var x1 = (cx - ry * sn).toFixed(1), y1 = (cy + ry * c).toFixed(1), x2 = (cx + ry * sn).toFixed(1), y2 = (cy - ry * c).toFixed(1); return 'M' + x1 + ' ' + y1 + ' A' + r + x2 + ' ' + y2 + ' A' + r + x1 + ' ' + y1 + ' Z'; }
   /* the light: from the upper left – a soft highlight and a shade, the same whichever way he faces. One copy per page. */
   var DEFS_HTML = '<radialGradient id="shHead" cx="34%" cy="30%" r="78%"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient>' +
     '<linearGradient id="shBody" x1="0" y1="0" x2="1" y2=".25"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>';
@@ -149,8 +151,12 @@
       var r1s = r1.toFixed(1), r2s = r2.toFixed(1), s1 = (p1.X + ax * r1).toFixed(1) + ' ' + (p1.Y + ay * r1).toFixed(1);
       var dd = 'M' + s1 + ' L' + (p2.X + ax * r2).toFixed(1) + ' ' + (p2.Y + ay * r2).toFixed(1) + ' A' + r2s + ' ' + r2s + ' 0 0 0 ' + (p2.X + bx * r2).toFixed(1) + ' ' + (p2.Y + by * r2).toFixed(1) +
         ' L' + (p1.X + bx * r1).toFixed(1) + ' ' + (p1.Y + by * r1).toFixed(1) + ' A' + r1s + ' ' + r1s + ' 0 0 0 ' + s1 + ' Z';
-      parts.push([z, el('path', { d: dd, fill: col })]);
+      /* the next piece of the same limb (same colour, same depth, nothing drawn between) goes into the last piece's
+         path: an arm is one shape, not four (fewer elements and attribute writes a frame – scene-speed) */
+      if (LT && LT.col === col && LT.z === z && LT.n === parts.length) { if (LT.a) LT.a.d += ' ' + dd; else LT.e.setAttribute('d', LT.e.getAttribute('d') + ' ' + dd); return; }
+      var te = el('path', { d: dd, fill: col }); parts.push([z, te]); LT = { e: te, a: POOL ? te._a : null, col: col, z: z, n: parts.length };
     }
+    var LT = null;
     var CHAIR = L.aid === 'chair', SEAT = CHAIR ? 38 : 0, CRUTCH = L.aid === 'crutches';
     var bob = (CHAIR ? 0 : w * (Math.cos(2 * ph) * 1.6 - 1.2)) - (pose.lift || 0) - (pose.breath || 0) + SEAT; HY = 140 + bob;
     var hb6 = (bob - SEAT) * .6 + SEAT;
@@ -304,9 +310,9 @@
       var hc2 = shade(far, C.skin2, C.skin), HG = el('g', {});
       if (!L.bare && L.top !== 'none') HG.appendChild(el('line', { x1: (p3.X - ux * 3.4 * k).toFixed(1), y1: (p3.Y - uy * 3.4 * k).toFixed(1), x2: (p3.X - ux * .6 * k).toFixed(1), y2: (p3.Y - uy * .6 * k).toFixed(1), stroke: dk(L.sleeve || L.topC, far ? .7 : .8), 'stroke-width': (8.2 * k).toFixed(1), 'stroke-linecap': 'round' }));
       var tx = p3.X + ux * 2.4 * k + pxv * 5.8 * k, ty = p3.Y + uy * 2.4 * k + pyv * 5.8 * k;   /* the thumb a little further out, so the hand reads as a hand */
-      HG.appendChild(el('ellipse', { cx: tx.toFixed(1), cy: ty.toFixed(1), rx: (3.1 * k).toFixed(1), ry: (4.6 * k).toFixed(1), fill: hc2, transform: 'rotate(' + (ang + (pxv * uy - pyv * ux > 0 ? -34 : 34)).toFixed(0) + ' ' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ')' }));
       var mx = p3.X + ux * 4 * k, my = p3.Y + uy * 4 * k;
-      HG.appendChild(el('ellipse', { cx: mx.toFixed(1), cy: my.toFixed(1), rx: (5.9 * k).toFixed(1), ry: (8.2 * k).toFixed(1), fill: hc2, transform: 'rotate(' + ang.toFixed(0) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')' }));
+      /* the thumb and the mitten as one shape (two turned ellipses as arcs): one element and one attribute a frame instead of two of each with a transform (scene-speed) */
+      HG.appendChild(el('path', { d: oval(tx, ty, 3.1 * k, 4.6 * k, ang + (pxv * uy - pyv * ux > 0 ? -34 : 34)) + ' ' + oval(mx, my, 5.9 * k, 8.2 * k, ang), fill: hc2 }));
       parts.push([z + 0.1, HG]);
       HAND[nearSide(sd) ? 'near' : 'far'] = HAND['s' + sd] = { X: p3.X, Y: p3.Y, z: z + 0.2, busy: cbusy };
     });
@@ -314,6 +320,22 @@
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
     var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin2 })]);
+    /* the head kept between frames (scene-speed, 2026-11-16): everything from here to the wrap below only moves with
+       the head while the turn, the size, the lean, the face and the look are the same – walking or breathing just
+       moves it. A frame like that re-uses the same pooled elements and only shifts their wrapper (translate). */
+    var HKEY = null, HM = null, hpv0 = P(0, 74 + hb6, 0);
+    if (POOL) {
+      HM = (POOL.memo || (POOL.memo = {})).head;
+      var lks = HM && HM.lref === look ? HM.lstr : JSON.stringify(look);
+      HKEY = [a.toFixed(4), k >= .8 ? 1 : 0, (pose.lean || 0).toFixed(3), pose.mouth || '', pose.brow || '', pose.blink ? 1 : 0, CHAIR ? 1 : 0, L.hair === 'pony' ? ph.toFixed(3) + '|' + w : '', shadeOn ? 1 : 0, lks].join('|');
+      var hr = HM ? k / HM.k : 1;   /* a little bigger or smaller (walking toward you, climbing): the same head, scaled round its own point – P() is even in k */
+      if (HM && HM.key === HKEY && HM.i0 === POOL.i && Math.abs(hr - 1) < .2) {
+        var htr = Math.abs(hr - 1) < 1e-4 ? 'translate(' + (hpv0.X - HM.x).toFixed(1) + ' ' + (hpv0.Y - HM.y).toFixed(1) + ') ' : 'translate(' + hpv0.X.toFixed(1) + ' ' + hpv0.Y.toFixed(1) + ') scale(' + hr.toFixed(4) + ') translate(' + (-HM.x).toFixed(1) + ' ' + (-HM.y).toFixed(1) + ') ';
+        for (var hq = 0; hq < HM.parts.length; hq++) { var hp = HM.parts[hq]; hp[1]._a = { transform: htr + hp[2] }; parts.push([hp[0], hp[1]]); }
+        POOL.i = HM.i0 + HM.n; HM.lref = look;
+      } else HM = { key: HKEY, i0: POOL.i, lref: look, lstr: lks, miss: true };
+    }
+    if (!HM || HM.miss) {
     var hStart = parts.length;   /* everything of the head from here is drawn smaller round the chin: he is about 5.5 heads tall (JP chose between real proportions and the larger head) */
     var hc = P(0, 52 + hb6, 0), R = 22 * k;
     /* a shape that only moves with the head (the hair): its path is built round the head's middle and kept from the last
@@ -526,6 +548,8 @@
       parts.push([bz > 0 ? 0.57 : 0.45, el('ellipse', { cx: hc.X + (b0 + b9) / 2 * k, cy: byy, rx: Math.max(3, (b9 - b0) / 2) * k, ry: 3.2 * k, fill: dk(L.hatC, .85) })]); }
     var HSC = .73, pv = P(0, 74 + hb6, 0), HT = 'translate(' + pv.X.toFixed(1) + ' ' + pv.Y.toFixed(1) + ') scale(' + HSC + ') translate(' + (-pv.X).toFixed(1) + ' ' + (-pv.Y).toFixed(1) + ')';
     for (var hi = hStart; hi < parts.length; hi++) { var hwr = el('g', { transform: HT }); hwr.appendChild(parts[hi][1]); parts[hi][1] = hwr; }
+    if (HM && HM.miss) { HM.miss = false; HM.n = POOL.i - HM.i0; HM.x = hpv0.X; HM.y = hpv0.Y; HM.k = k; HM.parts = parts.slice(hStart).map(function (q) { return [q[0], q[1], q[1]._a.transform]; }); POOL.memo.head = HM; }
+    }
     if (CHAIR) {
       /* a manual wheelchair: big wheels with hand rims at his sides, a seat, a backrest behind him, small front wheels */
       var whR = 30, spin = ph * 1.2;
