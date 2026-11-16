@@ -176,6 +176,13 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => { const l = DocHost.Fe.list('dckrav').find(x => /SECRET-T1/.test(x.name)); return !!(l && l.lines.length); }, 10000), 'the new list has its documents, saved in Team');
   const srvBundle = await raw('/__mem');
   check(!/SECRET-T1|SECRET-B1|Made-up client list/.test(srvBundle.body || ''), 'the server never sees the lists in clear text');
+  /* the overview: a project without a plan says so (not "0 of 0 approved · 0 %"); not-relevant lines are counted apart (JP's Team, 2026-11-16) */
+  await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl.push({ id: 'emptyp', name: 'Made-up empty project', made: new Date().toISOString(), lines: [] }); DocHost.Fe.saveTools(t); }); await sl(1200);
+  await own.goto(U + '#home'); await own.reload(); await sl(2500);
+  const ov = await own.evaluate(() => { const li = [...document.querySelectorAll('.t-projs li')].find(x => /Made-up empty project/.test(x.innerText)); return li ? li.innerText : ''; });
+  check(/No document plan yet/.test(ov) && !/0 %/.test(ov) && !/0 of 0/.test(ov), 'a project without a plan says so on the overview ' + JSON.stringify(ov));
+  await own.goto(U + '#docs'); await own.reload(); await until(own, () => !!window.DocHost && DocHost.Fe.list('dctl').length > 0, 20000);
+  await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl = t.dctl.filter(p => p.id !== 'emptyp'); DocHost.Fe.saveTools(t); }); await sl(1200);
   /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
   await kari.goto(U + '#docs'); await kari.reload();
   check(await until(kari, () => !!document.querySelector('[data-dcopen]'), 20000), 'Kari sees the project');
