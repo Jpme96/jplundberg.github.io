@@ -179,8 +179,12 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   /* the overview: a project without a plan says so (not "0 of 0 approved · 0 %"); not-relevant lines are counted apart (JP's Team, 2026-11-16) */
   await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl.push({ id: 'emptyp', name: 'Made-up empty project', made: new Date().toISOString(), lines: [] }); DocHost.Fe.saveTools(t); }); await sl(1200);
   await own.goto(U + '#home'); await own.reload(); await sl(2500);
-  const ov = await own.evaluate(() => { const li = [...document.querySelectorAll('.t-projs li')].find(x => /Made-up empty project/.test(x.innerText)); return li ? li.innerText : ''; });
+  const ov = await own.evaluate(() => { const li = [...document.querySelectorAll('.t-projs .t-proj')].find(x => /Made-up empty project/.test(x.innerText)); return li ? li.innerText : ''; });
   check(/No document plan yet/.test(ov) && !/0 %/.test(ov) && !/0 of 0/.test(ov), 'a project without a plan says so on the overview ' + JSON.stringify(ov));
+  /* a project with a plan: the share approved, one bar split by status and the counts (JP 2026-11-16 20:36) */
+  const ovp = await own.evaluate(() => { const a = [...document.querySelectorAll('.t-projs .t-proj')].find(x => x.querySelector('.t-pbar')); if (!a) return null; const cs = getComputedStyle(a);
+    return { big: a.querySelector('.t-pbig b').textContent, segs: a.querySelectorAll('.t-pbar i').length, keys: [...a.querySelectorAll('.t-pkeys span')].map(s => s.textContent), under: cs.textDecorationLine, w: Math.round(a.querySelector('.t-pbar').getBoundingClientRect().width / a.getBoundingClientRect().width * 100) }; });
+  check(ovp && /^\d+ %$/.test(ovp.big) && ovp.segs >= 1 && ovp.keys.length >= 1 && ovp.under === 'none' && ovp.w > 85, 'a project on the overview: the share approved, a full-width bar split by status, the counts, no underline ' + JSON.stringify(ovp));
   await own.goto(U + '#docs'); await own.reload(); await until(own, () => !!window.DocHost && DocHost.Fe.list('dctl').length > 0, 20000);
   await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl = t.dctl.filter(p => p.id !== 'emptyp'); DocHost.Fe.saveTools(t); }); await sl(1200);
   /* Kari (Can edit) opens it, cannot approve, but marks a line Not approved */
@@ -422,7 +426,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.goto(U + '#docs'); await own.waitForSelector('#wkDocCtl', { timeout: 20000 }); await until(own, () => window.DocHost && DocHost.Fe.list('dctl').length > 0, 15000);
   await own.evaluate(() => { const t = DocHost.Fe.tools(), p = t.dctl[0]; for (let i = 0; i < 2500; i++) p.lines.push({ id: 'big' + i, code: String(200 + (i % 500)), t: 'E', st: '' }); DocHost.Fe.saveTools(t); });
   await sl(5000);
-  const ovBig = await own.evaluate(async () => { const t0 = performance.now(); location.hash = '#overview'; await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); return { ms: Math.round(performance.now() - t0), week: !!document.querySelector('.t-week'), projs: document.querySelectorAll('.t-projs li').length }; });
+  const ovBig = await own.evaluate(async () => { const t0 = performance.now(); location.hash = '#overview'; await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); return { ms: Math.round(performance.now() - t0), week: !!document.querySelector('.t-week'), projs: document.querySelectorAll('.t-projs .t-proj').length }; });
   check(ovBig.ms < 1500 && ovBig.week && ovBig.projs >= 1, 'the Overview opens quickly with a 2 500-line project (the week and the projects are counted once, not per line) ' + JSON.stringify(ovBig));
 
   /* --- kept apart from /cmd --- */

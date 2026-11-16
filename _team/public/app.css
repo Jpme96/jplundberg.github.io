@@ -115,9 +115,6 @@ a.t-icon { text-decoration: none; }
 .t-switch > span { flex: 1; display: grid; gap: 2px; }
 .t-switch small { color: var(--muted, #9aa0aa); font-size: 12px; }
 .t-switch input { width: 24px; height: 24px; min-height: 0; padding: 0; flex: none; accent-color: var(--acc); }
-.t-prog { display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--line, rgba(255,255,255,.1)); overflow: hidden; }
-.t-prog i { display: block; height: 100%; background: var(--acc); }
-.t-pct { font-size: 13px; white-space: nowrap; }
 .t-week ul { margin: 6px 0 8px; padding-left: 18px; }
 /* opening a file in place, and the upload inbox (2026-11-15) */
 .t-sheet-wide { max-width: min(960px, 100vw); width: 100%; }
@@ -170,3 +167,26 @@ a.t-icon { text-decoration: none; }
 .t-mxp td:first-child { white-space: nowrap; }
 .t-mxp select { font-size: 13px; padding: 4px; max-width: 150px; }
 .t-mxp select.set { outline: 2px solid currentColor; outline-offset: -2px; }
+
+/* projects at a glance (2026-11-16): a card per project, a bar split by status and the counts behind it */
+.t-projs { display: grid; gap: 10px; }
+.t-proj { display: grid; gap: 10px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; color: var(--ink); text-decoration: none; }
+.t-proj:hover { border-color: var(--acc); }
+.t-proj:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.t-ptop { display: flex; align-items: flex-start; gap: 12px; }
+.t-ptop .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.t-ptop .grow b { font-size: 16px; overflow-wrap: anywhere; }
+.t-ptop small, .t-pbig small { color: var(--muted); font-size: 13px; }
+.t-pbig { display: grid; justify-items: end; flex: none; line-height: 1.15; }
+.t-pbig b { font-size: 22px; }
+.t-pbig.all b { color: var(--acc); }
+.t-num { font-variant-numeric: tabular-nums; }
+.t-pbar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; gap: 2px; background: var(--card2); }
+.t-pbar i, .t-pkeys i { display: block; min-width: 3px; }
+.t-pkeys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.t-pkeys span { display: inline-flex; align-items: center; gap: 6px; }
+.t-pkeys b { color: var(--ink); font-weight: 600; }
+.t-pkeys i { width: 9px; height: 9px; border-radius: 3px; min-width: 0; }
+.s-ok { background: var(--acc); } .s-cmt { background: color-mix(in srgb, var(--acc) 55%, var(--warn)); } .s-recv { background: var(--blue); } .s-rej { background: var(--bad); } .s-missing { background: rgba(127, 127, 127, .35); } .s-na { background: transparent; border: 1px solid rgba(127, 127, 127, .5); }
+.t-pdue { font-size: 13px; color: var(--muted); }
+.t-pdue.t-warn { color: var(--warn); font-weight: 600; }

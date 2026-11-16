@@ -39,7 +39,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   /* overview: all projects at a glance, and the week */
   await own.goto(T + '#overview'); await sl(1200);
   const ov = await text();
-  check(/Testveien 9/.test(ov) && /1 of 3 approved/.test(ov) && /33 %/.test(ov), 'Overview lists the projects with how far they are');
+  check(/Testveien 9/.test(ov) && /1 of 3/.test(ov) && /1\s*approved/.test(ov) && /33 %/.test(ov), 'Overview lists the projects with how far they are ' + JSON.stringify(ov.slice(ov.indexOf('PROJ'), ov.indexOf('PROJ') + 300)));
   check(/This week/.test(ov) && /Testveien 9: imported \(3 documents\)/.test(ov), 'Overview has "This week" in short – a project brought in says imported, not changed (2026-11-16)');
 
   /* a shared file: 2.4 MB in three encrypted chunks */

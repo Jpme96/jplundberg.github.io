@@ -1147,13 +1147,22 @@
   }
 
   /* ---------- the overview: all projects at a glance, and the week in short ---------- */
+  /* the projects at a glance (JP 2026-11-16 20:36 "needs to be better to visualize"): a card per project – name and what tells the
+     same names apart, the share approved as a big number, one bar split by status, and the counts behind it */
   function projectsCard() {
     var ps = docRO().dctl || []; if (!ps.length) return '';
-    return '<p class="t-h"><span>' + L('Projects', 'Prosjekter') + '</span><span>' + ps.length + '</span></p><ul class="t-list t-projs">' + ps.map(function (p) {
-      var ls = (p.lines || []).filter(function (l) { return l.st !== 'na'; }), ok = ls.filter(function (l) { return l.st === 'ok'; }).length, bad = ls.filter(function (l) { return l.st === 'rej' || l.st === 'missing' || !l.st; }).length, pct = ls.length ? Math.round(ok / ls.length * 100) : 0;
-      var due = p.due || p.deadline || '', late = due && due < today() && ok < ls.length;
-      return '<li><a class="t-row" href="#dc=' + esc(p.id) + '"><span class="grow"><span>' + esc(p.name) + '</span><small>' + esc((!(p.lines || []).length ? L('No document plan yet', 'Ingen dokumentplan ennå') : L(ok + ' of ' + ls.length + ' approved', ok + ' av ' + ls.length + ' godkjent') + (p.lines.length > ls.length ? L(' · ' + (p.lines.length - ls.length) + ' not relevant', ' · ' + (p.lines.length - ls.length) + ' ikke relevant') : '')) + (bad ? L(' · ' + bad + ' missing or not approved', ' · ' + bad + ' mangler eller ikke godkjent') : '') + (due ? ' · ' + (late ? L('overdue ', 'forfalt ') : L('due ', 'frist ')) + fmtDate(due) : '')) + '</small><span class="t-prog"><i style="width:' + pct + '%"></i></span></span>' + ((p.lines || []).length ? '<b class="t-pct' + (late ? ' t-warn' : '') + '">' + pct + ' %</b>' : '') + '</a></li>';
-    }).join('') + '</ul>';
+    var SEG = [['ok', L('approved', 'godkjent')], ['cmt', L('approved with comments', 'godkjent med merknad')], ['recv', L('to check', 'til kontroll')], ['rej', L('not approved', 'ikke godkjent')], ['missing', L('missing', 'mangler')]];
+    return '<p class="t-h"><span>' + L('Projects', 'Prosjekter') + '</span><span>' + ps.length + '</span></p><div class="t-projs">' + ps.map(function (p) {
+      var all = p.lines || [], ls = all.filter(function (l) { return l.st !== 'na'; }), c = { ok: 0, cmt: 0, recv: 0, rej: 0, missing: 0 };
+      ls.forEach(function (l) { c[c[l.st] != null ? l.st : 'missing']++; });
+      var done = c.ok + c.cmt, pct = ls.length ? Math.round(done / ls.length * 100) : 0, due = p.due || p.deadline || '', late = due && due < today() && done < ls.length;
+      var sub = [p.no, p.trade || p.type, p.site || p.addr, p.who].filter(Boolean).join(' · ');
+      var bar = ls.length ? '<span class="t-pbar" role="img" aria-label="' + esc(SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return c[g[0]] + ' ' + g[1]; }).join(', ')) + '">' + SEG.map(function (g) { return c[g[0]] ? '<i class="s-' + g[0] + '" style="flex:' + c[g[0]] + '"></i>' : ''; }).join('') + '</span>' : '';
+      var keys = ls.length ? '<span class="t-pkeys">' + SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return '<span><i class="s-' + g[0] + '"></i><b class="t-num">' + c[g[0]] + '</b> ' + g[1] + '</span>'; }).join('') + (all.length > ls.length ? '<span><i class="s-na"></i><b class="t-num">' + (all.length - ls.length) + '</b> ' + L('not relevant', 'ikke relevant') + '</span>' : '') + '</span>' : '<span class="t-small">' + L('No document plan yet', 'Ingen dokumentplan ennå') + '</span>';
+      return '<a class="t-proj" href="#dc=' + esc(p.id) + '"><span class="t-ptop"><span class="grow"><b>' + esc(p.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
+        (ls.length ? '<span class="t-pbig' + (pct === 100 ? ' all' : '') + '"><b class="t-num">' + pct + ' %</b><small>' + L(done + ' of ' + ls.length, done + ' av ' + ls.length) + '</small></span>' : '') + '</span>' + bar + keys +
+        (due ? '<span class="t-pdue' + (late ? ' t-warn' : '') + '">' + esc((late ? L('Overdue ', 'Forfalt ') : L('Due ', 'Frist ')) + fmtDate(due)) + '</span>' : '') + '</a>';
+    }).join('') + '</div>';
   }
   function weekText() {
     var from = Date.now() - 7 * 864e5, n = { meet: 0, done: 0, newA: 0, docs: {}, files: 0, people: {} };
