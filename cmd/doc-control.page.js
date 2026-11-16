@@ -1234,8 +1234,14 @@
     if (t.closest('[data-dcnew]')) { adding = true; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
     if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; if (rpicking && ropen && krav(ropen) && !(krav(ropen).lines || []).length) { rpicking = false; rback(); return; } rpicking = false; draw(); return; }
     if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; xsel = {}; xoff = {}; draw(); window.scrollTo(0, 0); return; }
-    if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; lastType = ty.id === 'new' ? '' : ty.name; xsel[ty.id] = true; var CC = pickCodes();
-      (ty.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req() || /^1/.test(c); }) : ty.codes.split(' ')).forEach(function (c) { if (CC[c]) ticks[c] = true; }); var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
+    if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; var CC = pickCodes();
+      var tcodes = function (q) { return (q.codes === '*' ? Object.keys(CC).filter(function (c) { return CC[c].t || !req() || /^1/.test(c); }) : String(q.codes || '').split(' ')).filter(function (c) { return CC[c]; }); };
+      if (xsel[ty.id]) {   /* tapped again: the type is off, and the systems only it ticked are unticked (JP 13:08 – it stayed on) */
+        delete xsel[ty.id]; var keep = {}; allTypes().forEach(function (q) { if (xsel[q.id]) tcodes(q).forEach(function (c) { keep[c] = 1; }); });
+        tcodes(ty).forEach(function (c) { if (!keep[c]) delete ticks[c]; });
+        var still = allTypes().filter(function (q) { return xsel[q.id] && q.id !== 'new'; }); lastType = still.length ? still[still.length - 1].name : '';
+      } else { lastType = ty.id === 'new' ? '' : ty.name; xsel[ty.id] = true; tcodes(ty).forEach(function (c) { ticks[c] = true; }); }
+      var y = window.scrollY; draw(); window.scrollTo(0, y); return; }
     if ((b = t.closest('[data-dcmake]')) && b.dataset.dcmake === 'req') {
       var cr = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cr.length && !xtras().length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
       var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); (p.lines || []).forEach(function (l) { if (l.name) have[l.code + '|' + l.name] = 1; });
