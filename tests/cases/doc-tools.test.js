@@ -18,7 +18,7 @@ function zip(files, deflate) {
 }
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dctools-'));
 const zf = path.join(dir, 'Made-up delivery.zip'), lone = path.join(dir, 'scan 7.pdf');
-fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up 1'], ['FDV/Datablad pumpe.pdf', '%PDF made up 2'], ['FDV/99999-H02-V-332-P-01 – Rørplan.pdf', '%PDF made up 3'], ['__MACOSX/._x', 'x']], true));
+fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up 1'], ['FDV/Datablad radiator.pdf', '%PDF made up 2'], ['FDV/99999-H02-V-332-P-01 – Rørplan.pdf', '%PDF made up 3'], ['__MACOSX/._x', 'x']], true));
 fs.writeFileSync(lone, '%PDF made up 4');
 (async () => {
   const { b, p } = await open(393);
@@ -29,20 +29,22 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const t0 = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dx-tools .dx-tool b')].map(x => x.textContent).join('|'));
   check(t0 === 'Check a document plan|Give files the right names|Check names from the FDV system', 'three one-off tools on top ' + t0);
   const before = await p.evaluate(() => JSON.stringify(Features.tools()).length);
-  /* rename */
+  /* rename: the file naming (suggestions from the name and the PDF text, the naming rules) on files outside any project (JP 20:43) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
-  await (await p.$('input[data-dxrenf]')).uploadFile(zf, lone); await sl(1200);
-  const r1 = await p.evaluate(() => [...document.querySelectorAll('.dx-ren')].map(li => li.querySelector('.dx-rold').textContent + ' → ' + li.querySelector('.dx-rnew span').textContent + (li.querySelector('.dx-rnew.dx-bad') ? ' !' : '')));
-  check(r1.length === 4 && r1.some(x => /^332 DV Sprinkleranlegg\.pdf → 332 DV Sprinkleranlegg\.pdf$/.test(x)) && r1.some(x => /Rørplan\.pdf → 99999-H02-V-332-P-01 – Rørplan\.pdf$/.test(x)) && r1.some(x => /^Datablad pumpe\.pdf → Datablad pumpe\.pdf !$/.test(x)), 'files and the .zip are read: a good name stays, a drawing after the template is kept, a name without code is marked ' + JSON.stringify(r1));
-  const dl0 = await p.evaluate(() => document.querySelector('[data-dxrenn]').textContent);
-  check(/Download 2 of 4/.test(dl0), 'the download counts only the files that are ready ' + dl0);
-  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren')].find(x => /Datablad pumpe/.test(x.querySelector('.dx-rold').textContent)); const c = li.querySelector('[data-dxrc]'); c.value = '351'; c.dispatchEvent(new Event('input', { bubbles: true })); const a = li.querySelector('[data-dxra]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); const t = li.querySelector('[data-dxrt]'); t.value = 'Made-up pump'; t.dispatchEvent(new Event('input', { bubbles: true })); });
-  await sl(200);
-  const r2 = await p.evaluate(() => ({ n: document.querySelector('[data-dxrenn]').textContent, row: [...document.querySelectorAll('.dx-rnew span')].map(s => s.textContent).find(x => /pump/.test(x)) }));
-  check(/Download 3 of 4/.test(r2.n) && r2.row === '351 DA Made-up pump.pdf', 'typing the code, picking the document code and the text gives the new name at once ' + JSON.stringify(r2));
+  await (await p.$('input[data-dxrenf]')).uploadFile(zf, lone); await sl(2500);
+  const r1 = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.dx-ren .dcn-row')].map(li => li.querySelector('.dcn-n').textContent.replace(/\s+/g, ' ').trim()), rules: !!document.querySelector('.dx-ren .dcn-rules'), sum: (document.querySelector('.dx-rsum') || {}).textContent || '',
+    sugg: [...document.querySelectorAll('.dx-ren .dcn-row')].filter(li => /Datablad radiator/.test(li.textContent)).map(li => li.querySelector('[data-dcncode]').value)[0], plan: /Not in the plan/.test(document.querySelector('.dx-ren').textContent) }));
+  check(r1.rows.length === 4 && r1.rules && !r1.plan && /4 files/.test(r1.sum), 'files and the .zip become rows with the naming rules (no plan talk outside a project) ' + JSON.stringify(r1));
+  check(/^325/.test(r1.sugg || ''), 'a file named after what it is gets a suggested code from its name (Datablad radiator → 325) ' + JSON.stringify(r1.sugg));
+  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); const c = li.querySelector('[data-dcncode]'); c.value = '351 Made-up'; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); const a = li.querySelector('[data-dcntype]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  const r2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); return { sug: li.querySelector('.dcn-sug code').textContent, btn: (document.querySelector('[data-dxrenuse]') || {}).textContent || '' }; });
+  check(/^351 DA Datablad radiator\.pdf$/.test(r2.sug) && /Use the new name on \d+ ready/.test(r2.btn), 'the Boligbygg rule builds the new name, and the ready ones can be renamed in one go ' + JSON.stringify(r2));
+  await p.evaluate(() => document.querySelector('[data-dxrenuse]').click()); await sl(300);
   const z = await p.evaluate(async () => { let got = null; FdvPdf.share = f => { got = f; return Promise.resolve(); }; document.querySelector('[data-dxrendl]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); if (!got) return null;
     const E = DocCtl.zipEntries(await got.arrayBuffer()); return { name: got.name, files: E.map(e => e.name).sort().join('|'), size: E.map(e => e.size).join() }; });
-  check(z && /\.zip$/.test(z.name) && z.files === '332 DV Sprinkleranlegg.pdf|351 DA Made-up pump.pdf|99999-H02-V-332-P-01 – Rørplan.pdf' && z.size.split(',').every(n => +n > 5), 'the .zip has the ready files with their new names and their content ' + JSON.stringify(z));
+  check(z && /\.zip$/.test(z.name) && /351 DA Datablad radiator\.pdf/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /99999-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 4 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the renamed ones with their new names, with their content ' + JSON.stringify(z));
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dxtool=""]').click()); await sl(300);
   /* FDV names */
   await p.evaluate(() => document.querySelector('[data-dxtool="fdv"]').click()); await sl(300);
   await p.evaluate(() => { const f = document.querySelector('form[data-dxfdv]'); f.t.value = '332 SE Sprinkleranlegg\n442 XX Lys\nRørplan\n'; f.requestSubmit(); }); await sl(300);

@@ -312,37 +312,48 @@
     return out.sort(function (a, b) { return b.at < a.at ? -1 : 1; });
   }
   /* ---------- one-off tools (JP 14:39 – "a one time thing"): nothing is saved, everything stays on this device ---------- */
-  var xtool = null, ren = [], fdvRes = null;
-  function newName(r) { if (r.keep) return r.name; var t = String(r.text || '').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim(); return [r.code, r.abbr, t].filter(Boolean).join(' ') + (r.ext ? '.' + r.ext : ''); }
-  function renOk(r) { return r.keep || (/^\d{3}(\.\d{1,3})?$/.test(r.code) && !!r.abbr && !!String(r.text || '').trim()); }
-  function renRow(r, i) {
-    return '<li class="dx-ren" data-dxri="' + i + '"><div class="dx-rold" data-noi18n>' + esc(r.name) + '</div>' + (r.keep ? '<small class="muted">' + esc(k('ui.dx-ren-keep', 'A drawing named after the template – kept as it is')) + '</small>' :
-      '<div class="dx-rgrid"><input data-dxrc="' + i + '" value="' + esc(r.code) + '" inputmode="decimal" maxlength="7" placeholder="' + esc(k('ui.dc-code', 'Code')) + '" aria-label="' + esc(k('ui.dx-ns-code', 'NS 3451 code')) + '">' +
-      '<select data-dxra="' + i + '" aria-label="' + esc(k('ui.dx-doc-code', 'Document code')) + '"><option value="">' + esc(k('ui.dx-doc-code', 'Document code')) + '</option>' + Object.keys(ABBR).sort().map(function (a) { return '<option value="' + a + '"' + (r.abbr === a ? ' selected' : '') + '>' + a + (ABBR[a] ? ' – ' + esc(ABBR[a].split('').map(typeName).join(', ')) : '') + '</option>'; }).join('') + '</select>' +
-      '<input data-dxrt="' + i + '" value="' + esc(r.text) + '" maxlength="120" placeholder="' + esc(k('ui.dx-ren-text', 'What it is, e.g. Sprinkler central')) + '" aria-label="' + esc(k('ui.dx-ren-text', 'What it is, e.g. Sprinkler central')) + '"></div>') +
-      '<div class="dx-rnew' + (renOk(r) ? '' : ' dx-bad') + '" data-dxrn="' + i + '"><i class="bi bi-arrow-return-right"></i> <span data-noi18n>' + esc(newName(r)) + '</span></div></li>';
-  }
+  var xtool = null, fdvRes = null;
+  /* Give files the right names (JP 2026-11-16 20:43 – "we had an automatic namer earlier"): the files sit in a project of their own that
+     only lives here (`TOOL.p`, never saved), so the file naming – suggestions from the name and the PDF's text, the naming rules for
+     documents, photos and drawings – works on them as it does in Received; you download them renamed as a .zip */
+  var TOOL = { p: null, blobs: {} };
+  function toolP() { if (!TOOL.p) { var R = [], seen = {}; projects().forEach(function (p) { (p.nrules || []).forEach(function (r) { if (!seen[r.id]) { seen[r.id] = 1; R.push(JSON.parse(JSON.stringify(r))); } }); }); TOOL.p = { id: '__ren', name: '', tool: 1, files: [], lines: [], nrules: R, nuse: {} }; } return TOOL.p; }
+  var TAPI = null;
+  function toolApi() { if (!TAPI) TAPI = Object.assign({}, DCN_API, { saveP: function (id, fn, key) { if (id === '__ren') { fn(toolP()); return; } saveP(id, fn, key); }, proj: function (id) { return id === '__ren' ? toolP() : proj(id); },
+    getBlob: function (id) { return TOOL.blobs[id] ? Promise.resolve(TOOL.blobs[id]) : getBlob(id); }, cur: function () { return '__ren'; } }); return TAPI; }
+  function renOn() { return xtool === 'ren' && !open; }
   function renPanel() {
-    var ok = ren.filter(renOk).length;
-    return '<section class="dx-panel"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
-      '<p class="muted dc-help">' + esc(k('ui.dx-ren-help', 'Pick the files or one .zip. Each file gets the 3-digit NS 3451 code, a document code and what it is – then download them with the new names. Nothing is saved or sent.')) + '</p>' +
-      '<div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-files"></i> ' + esc(ren.length ? k('ui.dx-ren-more', 'Add more files') : k('ui.dx-ren-pick', 'Pick files or a .zip')) + '<input type="file" multiple data-dxrenf hidden></label>' + (ren.length ? '<button type="button" class="text-btn" data-dxrenclr>' + esc(k('ui.dx-clear', 'Start again')) + '</button>' : '') + '</div>' +
-      (ren.length ? '<ul class="dx-rlist">' + ren.map(renRow).join('') + '</ul><div class="dc-facts"><button type="button" class="pill-btn dx-pri" data-dxrendl' + (ok ? '' : ' disabled') + '><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl', 'Download {n} of {m} renamed (.zip)', { n: ok, m: ren.length })) + '</span></button></div>' : '') + '</section>';
+    var N = naming(), p = toolP(), F = p.files, ok = 0, moved = 0;
+    if (N) F.forEach(function (f) { if (f.orig && f.orig !== f.name) moved++; else if (N.ready(p, f)) ok++; });
+    var h = '<section class="dx-panel dx-ren"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      '<p class="muted dc-help">' + esc(k('ui.dx-ren-help2', 'Pick the files or one .zip. Each file gets a suggested NS 3451 code and document type from its name and – for PDFs – its text; the naming rules (documents, photos, drawings) build the new name. Check, fix, then download them renamed. Nothing is saved or sent.')) + '</p>' +
+      '<div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-files"></i> ' + esc(F.length ? k('ui.dx-ren-more', 'Add more files') : k('ui.dx-ren-pick', 'Pick files or a .zip')) + '<input type="file" multiple data-dxrenf hidden></label>' + (F.length ? '<button type="button" class="text-btn" data-dxrenclr>' + esc(k('ui.dx-clear', 'Start again')) + '</button>' : '') + '</div>';
+    if (!F.length) return h + '</section>';
+    if (!N) return h + '<p class="muted">' + esc(k('ui.dx-ren-loading', 'Loading the file naming …')) + '</p></section>';
+    var busy = N.busy();
+    h += '<div class="dx-rsum"><span>' + esc(k('ui.dx-ren-sum', '{n} files · {r} renamed · {o} ready to rename', { n: F.length, r: moved, o: ok })) + (busy ? ' · <i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +
+      '<span class="dx-rbtn">' + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
+      '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl2', 'Download {n} files (.zip)', { n: F.length })) + '</span></button></span></div>';
+    return h + N.files(p, F) + '</section>';
   }
   function renAdd(list) {
-    var out = [];
-    return Promise.all([].map.call(list, function (f) {
-      if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) { zipEntries(buf).forEach(function (z) { var nm = z.name.split('/').pop(); if (!nm || /^__MACOSX\//.test(z.name) || /^\./.test(nm) || /\/$/.test(z.name)) return; out.push({ name: nm, z: z }); }); }).catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-zip-bad', 'Could not read {f}', { f: f.name }))); });
-      out.push({ name: f.name, f: f }); return null;
-    })).then(function () {
-      out.forEach(function (o) { var q = parseName(o.name); o.code = q.code; o.abbr = q.abbr in ABBR ? q.abbr : ''; o.text = q.code ? q.text : q.stem; o.ext = q.ext; o.keep = q.kind === 'drawing' && !q.issues.length; ren.push(o); });
-      draw();
+    var got = [];
+    return list.reduce(function (pr, f) { return pr.then(function () {
+      if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) { var Z = zipEntries(buf).filter(function (z) { return !/\/$/.test(z.name) && !/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db|desktop\.ini)(\/|$)/i.test(z.name) && !/(^|\/)\._/.test(z.name); });
+        return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!nm || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, size: z.size, blob: new Blob([u]) }); }); }); }, Promise.resolve()); })
+        .catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-zip-bad', 'Could not read {f}', { f: f.name }))); });
+      got.push({ name: f.name, size: f.size, blob: f });
+    }); }, Promise.resolve()).then(function () {
+      var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + f.size] = 1; });
+      got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
+        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
+      draw(); var N = naming(); if (N) N.suggestAll('__ren').then(function () { draw(); });
     });
   }
   function renDownload() {
-    var L = ren.filter(renOk), used = {};
-    return Promise.all(L.map(function (r) { return (r.f ? r.f.arrayBuffer().then(function (b) { return new Uint8Array(b); }) : inflate(r.z)).then(function (d) { var n = newName(r), base = n, i = 2; while (used[n.toLowerCase()]) { n = base.replace(/(\.[^.]+)?$/, ' (' + i++ + ')$1'); } used[n.toLowerCase()] = 1; return [n, d]; }); }))
-      .then(function (files) { var blob = zipStore(files), f = new File([blob], k('ui.dx-ren-zip', 'Renamed files') + ' ' + today() + '.zip', { type: 'application/zip' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f); else { var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); } return f; });
+    var F = toolP().files, used = {};
+    return Promise.all(F.map(function (f) { return Promise.resolve(TOOL.blobs[f.id]).then(function (b) { return b ? b.arrayBuffer() : null; }).then(function (buf) { if (!buf) return null; var n = f.name, base = n, i = 2; while (used[n.toLowerCase()]) n = base.replace(/(\.[^.]+)?$/, ' (' + i++ + ')$1'); used[n.toLowerCase()] = 1; return [n, new Uint8Array(buf)]; }); }))
+      .then(function (files) { var blob = zipStore(files.filter(Boolean)), f = new File([blob], k('ui.dx-ren-zip', 'Renamed files') + ' ' + today() + '.zip', { type: 'application/zip' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f); else { var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); } return f; });
   }
   function fdvPanel() {
     var R = fdvRes || [], bad = R.filter(function (x) { return x.iss.length; });
@@ -519,12 +530,13 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '2b5f0bfc22';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = 'cd574f491f';   /* stamped by cmd/build.py from doc-naming.js */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
   var dcnLoading = null;
   function naming() {
-    if (window.DocNaming) { if (window.DocNaming._api !== DCN_API) { window.DocNaming.use(DCN_API); window.DocNaming._api = DCN_API; } return window.DocNaming; }
+    var want = renOn() ? toolApi() : DCN_API;
+    if (window.DocNaming) { if (window.DocNaming._api !== want) { window.DocNaming.use(want); window.DocNaming._api = want; } return window.DocNaming; }
     if (!dcnLoading) dcnLoading = new Promise(function (res, rej) { var s = document.createElement('script'); s.src = (HOST ? '/dc/' : '/cmd/') + 'doc-naming.js?v=' + DCN_V; s.onload = res; s.onerror = rej; document.head.appendChild(s); })
       .then(function () { draw(); }, function () { dcnLoading = null; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dcn-load', 'The new file naming could not be loaded – check the connection.'))); });
     return null;
@@ -1415,7 +1427,8 @@
     if ((b = t.closest('[data-dcldel]'))) { var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
-    if (t.closest('[data-dxrenclr]')) { ren = []; draw(); return; }
+    if (t.closest('[data-dxrenclr]')) { TOOL = { p: null, blobs: {} }; draw(); return; }
+    if (t.closest('[data-dxrenuse]')) { var N9 = naming(); if (N9) { var nn9 = N9.useAll('__ren'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-ren-used', '{n} files have their new name', { n: nn9 }))); } return; }
     if ((b = t.closest('[data-dxrendl]'))) { if (b.disabled) return; b.disabled = true; renDownload().then(function () { b.disabled = false; }, function () { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-ren-fail', 'The files could not be packed – try fewer at a time.'))); }); return; }
     if (t.closest('[data-dxfdvcopy]')) { copyText((fdvRes || []).filter(function (x) { return x.iss.length; }).map(function (x) { return x.n + '\t' + x.iss.join(' · '); }).join('\n')); return; }
     if ((b = t.closest('[data-dcopen]'))) { go(b.dataset.dcopen); return; }
@@ -1441,7 +1454,8 @@
     if (t.closest('[data-dcpastebtn]')) { pasting = !pasting; draw(); var ta = document.querySelector('.dc-paste textarea'); if (ta) ta.focus(); return; }
     if ((b = t.closest('[data-dcunlink]'))) { var u = b.dataset.dcunlink.split(':'); saveP(open, function (p) { unlink(p, u[0], u[1]); }); draw(); return; }
     if ((b = t.closest('[data-dcview]'))) { var fid = b.dataset.dcview, w = null; try { w = window.open('', '_blank'); } catch (e2) {}
-      getBlob(fid).then(function (bl) { if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
+      (renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid)).then(function (bl) { if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
+    if ((b = t.closest('[data-dcfdel]')) && renOn()) { var rid = b.dataset.dcfdel; toolP().files = toolP().files.filter(function (x) { return x.id !== rid; }); delete TOOL.blobs[rid]; draw(); return; }
     if ((b = t.closest('[data-dcfdel]'))) {
       var id = b.dataset.dcfdel, pr = proj(open), keep = JSON.parse(JSON.stringify(pr));
       saveP(open, function (p) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f && f.line) unlink(p, f.line, id); p.files = (p.files || []).filter(function (x) { return x.id !== id; }); });
@@ -1515,16 +1529,7 @@
     if (t.matches('[data-dcnon]')) { try { localStorage.setItem('dash.dcNaming', t.checked ? '1' : ''); } catch (e1) {} draw(); return; }
     if (t.dataset.dcflink && t.value) { var f = t.dataset.dcflink, l = t.value; saveP(open, function (p) { link(p, l, f); }); draw(); return; }
   });
-  /* the rename tool: a field changes only its own row's new name and the download button – no redraw under the finger */
-  function renField(t) {
-    var i = t.dataset.dxrc || t.dataset.dxra || t.dataset.dxrt; if (i == null || !ren[+i]) return false; var r = ren[+i];
-    if (t.dataset.dxrc != null) r.code = t.value.trim().replace(',', '.'); else if (t.dataset.dxra != null) r.abbr = t.value; else r.text = t.value;
-    var nn = document.querySelector('[data-dxrn="' + i + '"]'); if (nn) { nn.classList.toggle('dx-bad', !renOk(r)); nn.querySelector('span').textContent = newName(r); }
-    var ok = ren.filter(renOk).length, bt = document.querySelector('[data-dxrendl]'), lb = document.querySelector('[data-dxrenn]'); if (bt) bt.disabled = !ok; if (lb) lb.textContent = k('ui.dx-ren-dl', 'Download {n} of {m} renamed (.zip)', { n: ok, m: ren.length });
-    return true;
-  }
-  document.addEventListener('change', function (e) { var t = e.target; if (t.dataset && t.dataset.dxra != null) renField(t); });
-  document.addEventListener('input', function (e) { var t = e.target; if (t.dataset && (t.dataset.dxrc != null || t.dataset.dxrt != null) && renField(t)) return;
+  document.addEventListener('input', function (e) { var t = e.target;
     if (t.matches && t.matches('[data-dcpq]')) { var qq = t.value.toLowerCase().trim();
       document.querySelectorAll('.dc-ptg [data-dcptg]').forEach(function (row) { var any2 = false; row.querySelectorAll('[data-dcptype]').forEach(function (b) { var on2 = !qq || b.textContent.toLowerCase().indexOf(qq) >= 0; b.hidden = !on2; any2 = any2 || on2; }); row.hidden = !any2; }); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
     if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });

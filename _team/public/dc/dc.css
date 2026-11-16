@@ -869,20 +869,13 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-panel { margin: 0 0 14px; padding: 12px; border: 1px solid rgba(var(--ink-rgb), .12); border-radius: 12px; }
 .dx-ph { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dx-ph .fdv-h { margin: 0; }
-.dx-rlist, .dx-flist { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
-.dx-ren { padding: 8px 0; border-top: 1px solid rgba(var(--ink-rgb), .08); display: grid; gap: 6px; }
-.dx-rold { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
-.dx-rgrid { display: grid; grid-template-columns: 76px minmax(0, 150px) 1fr; gap: 6px; }
-.dx-rgrid input, .dx-rgrid select, .dx-fdvf textarea { min-width: 0; font-size: 16px; }
+.dx-flist { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
 .dx-fdvf textarea { width: 100%; box-sizing: border-box; }
-.dx-rnew { font-size: 13.5px; overflow-wrap: anywhere; color: var(--ok); }
-.dx-rnew.dx-bad { color: var(--warn); }
 .dx-flist li { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
 .dx-flist li > i { color: var(--ok); }
 .dx-flist li.dx-bad > i { color: var(--warn); }
 .dx-flist li span { display: grid; min-width: 0; overflow-wrap: anywhere; }
 .dx-flist small { color: var(--muted); }
-@media (max-width: 520px) {
-  .dx-rgrid { grid-template-columns: 76px 1fr; }
-  .dx-rgrid input[data-dxrt] { grid-column: 1 / -1; }
-}
+.dx-rsum { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: 14px; }
+.dx-rbtn { display: flex; flex-wrap: wrap; gap: 6px; }
+.dx-fdvf textarea { min-width: 0; font-size: 16px; }
