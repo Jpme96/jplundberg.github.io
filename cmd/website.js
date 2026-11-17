@@ -407,7 +407,7 @@
         saved = j.settings; sha = j.sha; draft = clone(saved);
         fill(); summary(); bar();
         status(I18N.k('ui.published-live-on-jplundberg-com-in-abou-2', 'Published ✓ Live on jplundberg.com in about a minute'));
-        try { window.dispatchEvent(new CustomEvent('site:published', { detail: (PART[current] ? PART[current][1].toLowerCase() : 'website settings') })); } catch (e) {}
+        try { window.dispatchEvent(new CustomEvent('site:published', { detail: (PART[current] ? I18N.k('ui.ws-part-' + current, PART[current][1]).toLowerCase() : I18N.k('ui.ws-settings', 'website settings')) })); } catch (e) {}
       } else if (j._status === 409) {
         loading = null;
         status(I18N.k('ui.the-settings-changed-somewhere-else-load', 'The settings changed somewhere else. Loading the newest version…'), true);
@@ -556,7 +556,7 @@
       if (!keys.length) {
         busyRef = ''; stage = {}; drawItems();
         stMsg(failed ? 'Some changes didn’t go through – try again.' : done + (done === 1 ? ' change' : ' changes') + ' published ✓ Live on jplundberg.com in about a minute', !failed);
-        try { window.dispatchEvent(new CustomEvent('site:published', { detail: done + ' article/project switch' + (done === 1 ? '' : 'es') })); } catch (x) {}
+        try { window.dispatchEvent(new CustomEvent('site:published', { detail: I18N.k(done === 1 ? 'ui.ws-pub-sw1' : 'ui.ws-pub-sw', done === 1 ? '1 article/project switch' : '{n} article/project switches', { n: done }) })); } catch (x) {}
         return;
       }
       var k = keys.shift(), q = k.split(':'), on = stage[k]; busyRef = k; drawItems();
@@ -584,7 +584,7 @@
           try { localStorage.removeItem('dash.writer:' + col + '|' + ref); } catch (x) {}
           var msg = (col === 'projects' ? 'Project' : 'Article') + ' deleted – gone from jplundberg.com in about a minute';
           stMsg(msg, true); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-trash3"></i> ' + msg);
-          try { window.dispatchEvent(new CustomEvent('site:published', { detail: 'deleted “' + g.title + '”' })); } catch (x) {}
+          try { window.dispatchEvent(new CustomEvent('site:published', { detail: I18N.k('ui.ws-deleted', 'deleted “{t}”', { t: g.title }) })); } catch (x) {}
           if (done) done(true);
         } else {
           drawItems(); var em = j.error === 'old-worker' || j._s === 405 ? 'Update the Worker first (paste the newest worker.js in Cloudflare)' : 'Couldn’t delete (' + (j.error || j._s) + ')';

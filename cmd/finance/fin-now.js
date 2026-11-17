@@ -37,11 +37,8 @@
       : [['Income', per.income, ''], ['Fixed costs', -p.fixed, 'neg'], ['Spent', -p.spent, 'neg']];
     parts = parts.filter(function (x) { return x[1]; });
     var paceLine = '';
-    if (pc) {
-      var endAt = real ? v - Math.max(0, pc.projected - pc.spent) : pc.end;
-      paceLine = pc.ok && endAt >= 0 ? '<p class="fh-pace ok"><i class="bi bi-check2-circle"></i> ' + I18N.k('ui.fh-ok', 'On track – about {n} left at payday at the pace you spend ({d}/day)', { n: money(endAt), d: money(pc.perDay) }) + '</p>'
-        : '<p class="fh-pace warn"><i class="bi bi-exclamation-triangle"></i> ' + I18N.k(endAt < 0 ? 'ui.fh-short' : 'ui.fh-left', endAt < 0 ? 'At this pace you end {n} short – keep to {d} a day' : 'At this pace you end with {n} left – keep to {d} a day', { n: money(Math.abs(endAt)), d: money(Math.max(0, perDay)) }) + '</p>';
-    }
+    var fc = B.forecast ? B.forecast(d) : null;
+    if (fc) paceLine = '<p class="fh-pace ' + (fc.ok ? 'ok' : 'warn') + '"><i class="bi bi-' + (fc.ok ? 'check2-circle' : 'exclamation-triangle') + '"></i> ' + B.advice(fc, money) + '</p>';
     var trust = [];
     if (real && age != null) trust.push(age <= 1 ? I18N.k('ui.bal-fresh', 'balances up to date') : '<span class="' + (age > 7 ? 'soon' : '') + '">' + I18N.k('ui.bal-age', 'balances {n} days old', { n: age }) + '</span>');
     if (!real) trust.push('<button type="button" class="text-btn" data-fnupd data-t="ui.add-your-balances">Add your balances</button> ' + I18N.k('ui.for-the-real-number', 'for the real number'));

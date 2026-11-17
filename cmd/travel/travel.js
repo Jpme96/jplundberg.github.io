@@ -92,7 +92,7 @@
     $('tvRecent').hidden = true;
     remember();
     window.Places.trips(from, to, whenObj(), more ? cursor : null).then(function (t) {
-      if (s !== seq) return;
+      if (s !== seq || !$('tvTrips')) return;   /* the answer came after you left the page */
       var list = (t.tripPatterns || []).filter(function (p) {
         return !shown.some(function (x) { return x.expectedStartTime === p.expectedStartTime && x.duration === p.duration; });
       });
@@ -102,7 +102,7 @@
       render();
       $('tvMore').hidden = !cursor || !shown.length;
     }).catch(function () {
-      if (s !== seq) return;
+      if (s !== seq || !$('tvTrips')) return;
       tvMsg(I18N.k('ui.tv-couldn-t-reach-the-travel-planner-right-', 'Couldn’t reach the travel planner right now. Check your connection and try again.'));
     });
   }

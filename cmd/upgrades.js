@@ -38,7 +38,7 @@
       } },
     { n: 3, what: 'F0: the avatar settings and choices JP took out are removed from saved looks (yours and your people\'s)',
       run: function (d, get, set) {
-        var A = window.Avatar; if (!A || !A.trimLook) throw new Error('avatar code not loaded yet');   /* tried again next time */
+        var A = window.Avatar; if (!A || !A.trimLook) throw later('avatar code not loaded yet');   /* tried again a moment later, quietly */
         var ch = false, same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
         var s = get('dash.settings'); if (obj(s) && obj(s.avatar)) { var t = A.trimLook(s.avatar); if (!same(t, s.avatar)) { s.avatar = t; set('dash.settings', s); ch = true; } }
         var tl = get('dash.tools'); if (obj(tl) && Array.isArray(tl.people)) { var pc = false;
@@ -85,6 +85,8 @@
   ];
   var LAST = STEPS[STEPS.length - 1].n;
 
+  function later(m) { var e = new Error(m); e.later = true; return e; }
+  var tries = 0;
   /* run(d): brings the vault data up to date. Returns the steps that changed something; d.dv is the last step passed. */
   function run(d, io) {
     if (!obj(d)) return [];
@@ -95,11 +97,14 @@
       var st = STEPS[i]; if (st.n <= from) continue;
       /* a step that fails stops here (the later ones wait), and is tried again next time */
       try { if (st.run(d, get, set)) done.push(st.n); }
-      catch (e) { if (window.Diag && window.Diag.log) window.Diag.log('upgrade', 'Data step ' + st.n + ' failed: ' + (e && e.message), 'upgrades.js'); break; }
+      catch (e) {
+        /* waiting for code not loaded yet: quietly, a moment later */
+        if (e && e.later) { if (!io && tries < 20) { tries++; setTimeout(function () { var v = window.Vault && window.Vault.get && window.Vault.get(); if (!v) return; var dv = +v.dv || 0; run(v); if ((+v.dv || 0) !== dv) window.Vault.save(v); }, 1500); } break; }
+        if (window.Diag && window.Diag.log) window.Diag.log('upgrade', 'Data step ' + st.n + ' failed: ' + (e && e.message), 'upgrades.js'); break; }
       d.dv = st.n;
     }
     if (done.length && window.Diag && window.Diag.log) window.Diag.log('upgrade', 'Data brought up to date: step ' + done.join(', '), 'upgrades.js', { raw: true });
     return done;
   }
-  window.Upgrades = { run: run, last: LAST, steps: STEPS.map(function (s) { return { n: s.n, what: s.what }; }) };
+  window.Upgrades = { run: run, later: later, last: LAST, steps: STEPS.map(function (s) { return { n: s.n, what: s.what }; }) };
 })();

@@ -40,9 +40,8 @@
     /* where the period ends up at this pace, and what today has cost */
     var pc = B.pace ? B.pace(d, now) : null, tk = key + '-' + String(now.getDate()).padStart(2, '0');
     var todaySum = sum((d.expenses || []).filter(function (e) { return e.date === tk; }));
-    var paceHtml = !pc || left < 0 ? '' : pc.ok
-      ? '<p class="mo-pace ok"><i class="bi bi-check-circle"></i><span>' + I18N.k(per.byPayday ? 'ui.mo-ok-pd' : 'ui.mo-ok-m', per.byPayday ? 'On track – about {n} left at payday' : 'On track – about {n} left at the end of the month', { n: money(pc.end) }) + '</span></p>'
-      : '<p class="mo-pace warn"><i class="bi bi-speedometer2"></i><span>' + I18N.k(per.byPayday ? 'ui.mo-over-pd' : 'ui.mo-over-m', per.byPayday ? 'At this pace {n} over by payday · keep to {d}/day' : 'At this pace {n} over this month · keep to {d}/day', { n: money(-pc.end), d: money(Math.max(0, (pc.room - pc.spent) / per.daysLeft)) }) + '</span></p>';
+    var fc = B.forecast ? B.forecast(d, now) : null;
+    var paceHtml = !fc ? '' : '<p class="mo-pace ' + (fc.ok ? 'ok' : 'warn') + '"><i class="bi bi-' + (fc.ok ? 'check-circle' : 'speedometer2') + '"></i><span>' + B.advice(fc, money) + '</span></p>';
     /* a small chart: spending so far, an even pace to the budget, and where this pace ends */
     var spark = '';
     if (pc && pc.room > 0) {

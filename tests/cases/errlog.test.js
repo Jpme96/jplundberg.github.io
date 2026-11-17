@@ -35,6 +35,10 @@ const { shared, sl } = require('../lib/browser'); const { check, done } = requir
   /* freezes (14 Nov 2026): only a gap right after someone used the page counts – a Mac resting Firefox at night is not a freeze */
   const st = await p.evaluate(() => [Diag.stuck(60000, true, true, 90000), Diag.stuck(60000, true, true, 3000), Diag.stuck(6000, true, true, 500), Diag.stuck(3000, true, true, 500), Diag.stuck(60000, false, true, 500), Diag.stuck(200000, true, true, 500)].join());
   check(st === 'false,true,true,false,false,false', 'a long gap counts as a freeze only soon after a tap, while visible, under 2 minutes ' + st);
+  /* a real freeze is told apart from a sleeping computer by a worker that keeps ticking (JP 2026-11-17: Firefox on a Mac, 25–100 s "freezes") */
+  const wd = await p.evaluate(async () => { await new Promise(r => setTimeout(r, 2500)); const a = Date.now(); while (Date.now() - a < 5000) {} const z = Date.now(); await new Promise(r => setTimeout(r, 600));
+    return { busy: window.__wdBlocked(a, z), asleep: window.__wdBlocked(z + 60000, z + 120000) }; });
+  check(wd.busy === true && wd.asleep === false, 'a page that is busy counts as stuck; a gap where the worker paused too does not ' + JSON.stringify(wd));
   /* leaving the page (also to another site, like Team) is a goodbye, never "stopped responding" */
   await p.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))); await sl(1600);
   const hb = await p.evaluate(() => JSON.parse(sessionStorage.getItem('dash.hb') || 'null'));

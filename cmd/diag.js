@@ -195,11 +195,19 @@
       }
     } catch (e) {}
     beat(false);
+    var WD = null, wdT = [];
+    try { WD = new Worker(URL.createObjectURL(new Blob(['setInterval(function(){postMessage(Date.now())},1000)'], { type: 'text/javascript' }))); WD.onmessage = function (e) { wdT.push(e.data); if (wdT.length > 200) wdT.splice(0, 50); }; } catch (e) { WD = null; }
+    var blockedIn = function (a, b) { var n = wdT.filter(function (t) { return t > a + 500 && t < b - 500; }).length; return n >= Math.max(2, (b - a) / 1000 * .5); };
+    window.__wdBlocked = blockedIn;   /* for the test */
     var lastTick = Date.now(), lastVis = !document.hidden && (!document.hasFocus || document.hasFocus()), closing = false;
     setInterval(function () {
       if (closing) return;   /* leaving (also to another site, like Team): the goodbye beat must stay the last one */
       var now = Date.now(), vis = !document.hidden && (!document.hasFocus || document.hasFocus()), g = now - lastTick,   /* a window behind others is visible but its timers are slowed (Firefox on a Mac): not a freeze */ lc = crumbs.length ? crumbs[crumbs.length - 1].t : 0;
-      if (stuck(g, vis, lastVis, lastTick - lc)) log('freeze', 'The page was stuck for ' + Math.round(g / 1000) + ' s', crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '', { raw: true });
+      if (stuck(g, vis, lastVis, lastTick - lc)) {
+        var from = lastTick, msg = 'The page was stuck for ' + Math.round(g / 1000) + ' s', at = crumbs.length ? L('after ', 'etter ') + crumbs.slice(-3).map(function (x) { return x.a; }).join(' › ') : '';
+        /* a real freeze only if the worker kept ticking (a sleeping Mac paused it too – 2026-11-17) */
+        setTimeout(function () { if (!WD || blockedIn(from, now)) log('freeze', msg, at, { raw: true }); }, 400);
+      }
       lastTick = now; lastVis = vis; beat(false);
     }, 1000);
     document.addEventListener('visibilitychange', function () { lastTick = Date.now(); lastVis = !document.hidden; beat(false); });
@@ -321,12 +329,17 @@
   function scanLayout(found) {
     var iw = innerWidth, over = root().scrollWidth - iw;
     if (over > 4 && !overlayOpen()) {
-      var cul = null, els = (document.querySelector('main') || document.body).getElementsByTagName('*');
-      for (var i = 0; i < els.length && i < 4000; i++) {
-        var r = els[i].getBoundingClientRect(); if (!r.width || r.right <= iw + 4) continue;
-        var p = els[i].parentElement, pr = p && p.getBoundingClientRect();
-        if (!pr || pr.right <= iw + 1) { cul = els[i]; break; }
-      }
+      var cul = null;
+      [document.querySelector('main'), document.body].forEach(function (box) {
+        if (cul || !box) return;
+        var els = box.getElementsByTagName('*');
+        for (var i = 0; i < els.length && i < 6000; i++) {
+          var r = els[i].getBoundingClientRect(); if (!r.width || r.right <= iw + 4) continue;
+          var cs = getComputedStyle(els[i]); if (cs.position === 'fixed' || cs.visibility === 'hidden') continue;
+          var p = els[i].parentElement, pr = p && p.getBoundingClientRect();
+          if (!pr || pr.right <= iw + 1) { cul = els[i]; break; }
+        }
+      });
       var sig = 'w|' + (cul ? label(cul) : '');
       if (once(sig)) { log('layout', 'The page is ' + over + ' px wider than the screen', cul ? label(cul) + ' · ' + spot(cul) : '', { raw: true }); found.push(sig); }
     }

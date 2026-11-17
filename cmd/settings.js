@@ -691,7 +691,7 @@
 
   $('stBackup').addEventListener('click', function () {
     window.Vault.backup().then(function () {
-      stMsg('Backup downloaded. It’s encrypted, so only your passcode can open it.', true);
+      stMsg(I18N.k('ui.st-backup-done', 'Backup downloaded. It’s encrypted, so only your passcode can open it.'), true);
     });
   });
 

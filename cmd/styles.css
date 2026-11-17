@@ -1464,7 +1464,7 @@ select.st-wide { padding-right: 32px; }
 .me-av.xl { width: 84px; height: 84px; }
 .me-av.xl b { font-size: 28px; }
 .me-av.xl .bi { font-size: 34px; }
-.fp { position: relative; }
+.fp { position: relative; overflow-x: clip; }   /* nothing in a page may make it wider than the screen (Work at 960–1150 px, 2026-11-16) – wide tables scroll in their own box */
 .me-sub:not(.me-in) { position: absolute; z-index: 36; top: max(16px, calc(env(safe-area-inset-top) + 26px)); right: max(16px, calc((100% - 1120px) / 2)); }
 .locked:not(.resuming) .me-sub { display: none; }
 .st-profile {

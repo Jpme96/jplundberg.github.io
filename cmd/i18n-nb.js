@@ -1539,7 +1539,7 @@
   }
   window.I18N.t = function (s) { return tr(s); };
   /* never touch your own words */
-  var SKIP = '[data-tool="people"] .kit-x b,.pp5-t b,script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b';
+  var SKIP = '[data-tool="people"] .kit-x b,.pp5-t b,script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b,#cr-content,.cr-content';
   window.I18N.skip = SKIP;
   var ATTR = ['placeholder', 'aria-label', 'title', 'data-title'];
   /* texts by name: data-t="key" (the element's own text) and data-t-<attribute>="key" – no sentence matching for them */

@@ -576,6 +576,26 @@ window.Budget.real = function (d, now) {
     per: per, oldest: m.oldest, money: m };
 };
 
+/* the one "at this pace" forecast (Home, Money card, Finances – 2026-11-17): have = free now, end = have − what's still to come */
+window.Budget.forecast = function (d, now) {
+  "use strict";
+  var B = window.Budget, pc = B.pace ? B.pace(d, now) : null; if (!pc) return null;
+  var real = B.real ? B.real(d, now) : null, left = Math.max(1, pc.per.daysLeft);
+  var have = real ? real.free : pc.room - pc.spent, future = Math.max(0, pc.projected - pc.spent), end = have - future;
+  var saved = real && real.money ? +real.money.saved || 0 : 0;
+  return { per: pc.per, pc: pc, real: !!real, have: have, end: end, ok: end >= 0, perDay: pc.perDay, keep: have > 0 ? have / left : 0,
+    short: have < 0 ? -have : 0, cover: have < 0 && saved >= -have };
+};
+window.Budget.advice = function (f, money) {
+  "use strict";
+  var K = function (k, en, o) { return window.I18N && I18N.k ? I18N.k(k, en, o) : en.replace(/\{(\w+)\}/g, function (m, x) { return o[x]; }); };
+  if (!f) return '';
+  if (f.short) return f.cover ? K('ui.fc-short-cover', 'You’re already {n} short – move it from savings, then spend only on what you must', { n: money(f.short) })
+    : K('ui.fc-short', 'You’re already {n} short – spend only on what you must until payday', { n: money(f.short) });
+  if (!f.ok) return K('ui.fc-keep', 'At this pace you end {n} short – keep to {d} a day', { n: money(-f.end), d: money(f.keep) });
+  return K('ui.fc-ok', 'On track – about {n} left at payday at the pace you spend ({d}/day)', { n: money(f.end), d: money(f.perDay) });
+};
+
 /* things bought in parts (delbetaling – a loan with a.plan) show in the calendar on each due day until they're paid off */
 (function () {
   "use strict";

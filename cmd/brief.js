@@ -201,9 +201,9 @@
           add(58, 'graph-up-arrow', '#e8743b', NAMES[c] + ': ' + Math.round((now_ / expected - 1) * 100) + '% more than usual', kr(now_) + ' so far this month · usually about ' + kr(expected) + ' by now', '#fin', { key: 'sp:' + c + ':' + ym, tip: true });
       });
       /* at this pace … (the same period as the Money card: the month, or payday to payday) */
-      var pc = window.Budget && window.Budget.pace ? window.Budget.pace(d, now) : null;
-      if (pc && !pc.ok && pc.room > 0) add(24, 'speedometer2', '#e8743b', I18N.k(pc.per.byPayday ? 'ui.pace-over-pd' : 'ui.pace-over-m', pc.per.byPayday ? 'At this pace: {n} over by payday' : 'At this pace: {n} over by the end of the month', { n: kr(-pc.end) }),
-        I18N.k('ui.pace-perday', 'You spend about {a} a day – {b} a day keeps you on budget', { a: kr(pc.perDay), b: kr(Math.max(0, (pc.room - pc.spent) / pc.per.daysLeft)) }), '#fin', { key: 'pace:' + pc.per.startKey + ':' + Math.round(-pc.end / 500) });
+      var fc = window.Budget && window.Budget.forecast ? window.Budget.forecast(d, now) : null;
+      if (fc && !fc.ok && fc.pc.room > 0) add(24, 'speedometer2', '#e8743b', I18N.k(fc.per.byPayday ? 'ui.pace-over-pd' : 'ui.pace-over-m', fc.per.byPayday ? 'At this pace: {n} over by payday' : 'At this pace: {n} over by the end of the month', { n: kr(-fc.end) }),
+        fc.short ? window.Budget.advice(fc, kr) : I18N.k('ui.pace-perday', 'You spend about {a} a day – {b} a day keeps you on budget', { a: kr(fc.perDay), b: kr(fc.keep) }), '#fin', { key: 'pace:' + fc.per.startKey + ':' + Math.round(-fc.end / 500) });
       recurring(add, d, now);
       if (!income && !(d.expenses || []).length) add(90, 'pie-chart', '#11a597', I18N.k('ui.set-up-your-monthly-budget', 'Set up your monthly budget'), 'Then you’ll see what you can spend each day', '#fin', { key: 'setup:budget', tip: true });
     }

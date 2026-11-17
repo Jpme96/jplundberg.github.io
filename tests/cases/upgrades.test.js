@@ -49,6 +49,12 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(after.dv >= 1 && after.a.extra === 'none' && after.a.hat === 'cap', 'after unlocking the saved look is upgraded ' + JSON.stringify({ dv: after.dv, extra: after.a.extra, hat: after.a.hat }));
   check(after.a.oldCap === 1, 'and it is drawn exactly as before (the old cap style is kept)');
   check(after.log, 'Diagnostics notes the upgrade');
+  /* a step whose code isn't loaded yet waits quietly and runs a moment later – no "failed" line (phone, 2026-11-16) */
+  const lt = await p.evaluate(async () => { const A = window.Avatar; window.Avatar = null; const before = JSON.parse(localStorage.getItem('dash.errlog') || '[]').length;
+    const d = { dv: 2 }; const r = Upgrades.run(d, { get: () => null, set: () => {} }); window.Avatar = A;
+    const errs = JSON.parse(localStorage.getItem('dash.errlog') || '[]').slice(before).filter(x => /failed/.test(x.m || ''));
+    return { dv: d.dv, errs: errs.length, later: !!(Upgrades.later && Upgrades.later('x').later) }; });
+  check(lt.dv === 2 && lt.errs === 0 && lt.later, 'a step waiting for the avatar code stops quietly and keeps its place ' + JSON.stringify(lt));
   check(!p.errs.length, 'no page errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();
