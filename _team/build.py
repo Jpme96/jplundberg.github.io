@@ -44,6 +44,8 @@ put('doc-control.js', NOTE % 'doc-control.page.js' + dc)
 dn = rd(os.path.join(CMD, 'doc-naming.js'))
 put('doc-naming.js', NOTE % 'doc-naming.js' + dn)   # file naming, loaded only where it is switched on
 put('paged-pdf.js', NOTE % 'paged-pdf.js' + pdf)
+fd = rd(os.path.join(CMD, 'filedrop.js'))
+put('filedrop.js', NOTE % 'filedrop.js' + fd)   # every file picker opens the drop popup (JP 2026-11-17 21:02)
 xv = rd(os.path.join(CMD, 'xlsx-view.js'))
 put('xlsx-view.js', NOTE % 'xlsx-view.js' + xv)
 for f in ('jspdf.umd.min.js', 'html2canvas.min.js', 'pdf.min.js', 'pdf.worker.min.js'):   # pdf.js: the content check reads a PDF's text on the device
@@ -56,7 +58,7 @@ if not m: sys.exit('no NS table in cmd/life-pages.js')
 put('ns.js', NOTE % 'life-pages.js (the NS 3451 table)' + 'window.NS3451 = ' + m.group(1) + ';\n')
 
 # the Norwegian words the two files use
-src = dc + dn + pdf + xv
+src = dc + dn + pdf + xv + fd
 keys = sorted(set(re.findall(r"""'(ui\.[a-z0-9.-]+)'""", src)))   # every text name in the two files (also those passed around in tables)
 wtxt = rd(os.path.join(CMD, 'words', 'ui.nb.js'))
 wm = re.search(r'I18N\.add\((\{.*\})\);?\s*$', wtxt, re.S)

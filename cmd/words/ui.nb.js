@@ -3174,5 +3174,15 @@ I18N.add({
   "ui.dx-pl-pick": ["Pick document plans (.xlsx)", "Velg dokumentplaner (.xlsx)"],
   "ui.dx-pl-drop-t": ["Add document plans", "Legg til dokumentplaner"],
   "ui.dx-pl-drop-here": ["Drop the document plans here", "Slipp dokumentplanene her"],
-  "ui.dx-pl-drop-help": ["Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.", "Excel-filer (.xlsx) – så mange du vil. Hver sjekkes mot byggherrens sjekkliste og blir liggende til den slettes."]
+  "ui.dx-pl-drop-help": ["Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.", "Excel-filer (.xlsx) – så mange du vil. Hver sjekkes mot byggherrens sjekkliste og blir liggende til den slettes."],
+  "ui.fdz-t": ["Add files", "Legg til filer"],
+  "ui.fdz-t1": ["Add a file", "Legg til en fil"],
+  "ui.fdz-here": ["Drop the files here", "Slipp filene her"],
+  "ui.fdz-here1": ["Drop the file here", "Slipp filen her"],
+  "ui.fdz-pick1": ["Choose a file", "Velg en fil"],
+  "ui.fdz-any": ["Any kind of file", "Alle slags filer"],
+  "ui.fdz-photos": ["photos", "bilder"],
+  "ui.fdz-videos": ["videos", "videoer"],
+  "ui.fdz-text": ["text", "tekst"],
+  "ui.fdz-wrong": ["That kind of file doesn’t fit here – {k}", "Den filtypen passer ikke her – {k}"]
 });

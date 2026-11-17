@@ -238,6 +238,13 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .line .area { fill: url(#nwGrad); }
 .line circle { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
 .line text { fill: var(--muted); font-size: 10px; font-family: "Roboto", sans-serif; }
+.acc {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 8px; margin: 0 -8px;
+  border-radius: 12px; cursor: pointer;
+  transition: background .2s;
+}
+.acc:hover { background: rgba(var(--ink-rgb), .04); }
 .foot i { color: var(--accent); }
 .foot { line-height: 1.9; }
 .sync { cursor: pointer; }
