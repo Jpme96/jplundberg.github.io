@@ -3134,5 +3134,8 @@ I18N.add({
   "ui.dx-fv-loading": ["Opening …", "Åpner …"],
   "ui.dx-fv-none": ["No preview for this kind of file – download it to open it.", "Ingen forhåndsvisning for denne filtypen – last den ned for å åpne den."],
   "ui.dx-fv-more": ["Showing the first {n} of {t} pages – download for the rest.", "Viser de første {n} av {t} sidene – last ned for resten."],
-  "ui.dx-fv-bad": ["Could not show this PDF – download it to open it.", "Kunne ikke vise denne PDF-en – last den ned for å åpne den."]
+  "ui.dx-fv-bad": ["Could not show this PDF – download it to open it.", "Kunne ikke vise denne PDF-en – last den ned for å åpne den."],
+  "ui.dcn-prev": ["The file before", "Forrige fil"],
+  "ui.dcn-next": ["The next file", "Neste fil"],
+  "ui.dcn-fpos": ["File {i} of {n}", "Fil {i} av {n}"]
 });

@@ -32,30 +32,33 @@ fs.writeFileSync(lone, '%PDF made up 4');
   /* rename: the file naming (suggestions from the name and the PDF text, the naming rules) on files outside any project (JP 20:43) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   await (await p.$('input[data-dxrenf]')).uploadFile(zf, lone); await sl(2500);
-  const r1 = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.dx-ren .dcn-row')].map(li => li.querySelector('.dcn-n').textContent.replace(/\s+/g, ' ').trim()), rules: !!document.querySelector('.dx-ren .dcn-rules'), sum: (document.querySelector('.dx-rsum') || {}).textContent || '',
-    sugg: [...document.querySelectorAll('.dx-ren .dcn-row')].filter(li => /Datablad radiator/.test(li.textContent)).map(li => li.querySelector('[data-dcncode]').value)[0], plan: /Not in the plan/.test(document.querySelector('.dx-ren').textContent) }));
+  /* a file opens in a popup (JP 2026-11-17 08:07): R(/name/) opens it and gives its full row */
+  const defR = () => p.evaluate(() => { window.R = async re => { const c = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => re.test(x.textContent)); if (c) { c.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 350)); } return document.querySelector('.dcn-fpop .dcn-row'); }; });
+  await defR();
+  const r1 = await p.evaluate(async () => ({ rows: [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].map(li => li.textContent.replace(/\s+/g, ' ').trim()), rules: !!document.querySelector('.dx-ren .dcn-rules'), sum: (document.querySelector('.dx-rsum') || {}).textContent || '',
+    sugg: ((await R(/Datablad radiator/)) || { querySelector: () => ({}) }).querySelector('[data-dcncode]').value, plan: /Not in the plan/.test(document.querySelector('.dx-ren').textContent) }));
   check(r1.rows.length === 5 && r1.rules && !r1.plan && /5 files/.test(r1.sum), 'files and the .zip become rows with the naming rules (no plan talk outside a project) ' + JSON.stringify(r1));
   check(/^325/.test(r1.sugg || ''), 'a file named after what it is gets a suggested code from its name (Datablad radiator → 325) ' + JSON.stringify(r1.sugg));
   /* a drawing: the letters say what they mean (Boligbygg's tables 8–11), the discipline comes from the code and the drawing type from the name (JP 21:21) */
-  const dw = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); if (!li) return null; const sel = k => li.querySelector('[data-dcnv$=":' + k + '"]');
+  const dw = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); if (!li) return null; const sel = k => li.querySelector('[data-dcnv$=":' + k + '"]');
     return { disc: sel('disc') && sel('disc').selectedOptions[0].textContent, dtype: sel('dtype') && sel('dtype').selectedOptions[0].textContent, floors: sel('floor') && [...sel('floor').options].map(o => o.textContent).slice(1, 3), sug: li.querySelector('.dcn-sug code').textContent }; });
-  const dk = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); return { type: !!li.querySelector('[data-dcntype]'), kind: !!li.querySelector('.dcn-g > .dcn-kind'), code: !!li.querySelector('[data-dcncode]') }; });
+  const dk = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); return { type: !!li.querySelector('[data-dcntype]'), kind: !!li.querySelector('.dcn-g > .dcn-kind'), code: !!li.querySelector('[data-dcncode]') }; });
   check(!dk.type && dk.kind && dk.code, 'a drawing has its kind in the first row, keeps the NS code (it is in the drawing name) and has no document type (JP 22:02) ' + JSON.stringify(dk));
   check(dw && /^V – HVAC and plumbing/.test(dw.disc) && dw.dtype === 'P – Plan' && dw.floors[0] === 'K02 – 2nd basement' && /-V-332-P-\d\d – Rørplan sprinkler\.dwg$/.test(dw.sug), 'a drawing: the choices say what the letters mean, and the discipline (from 332) and type (from “rørplan”) are suggested ' + JSON.stringify(dw));
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
-  check(await p.evaluate(() => /^11621-/.test([...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
-  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); const c = li.querySelector('[data-dcncode]'); c.value = [...c.options].map(o => o.value).find(v => /^3[0-9]{2}$/.test(v) && v !== '325' && v !== '332') || ''; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
-  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); const a = li.querySelector('[data-dcntype]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
-  const r2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Datablad radiator/.test(x.textContent)); return { sug: li.querySelector('.dcn-sug code').textContent, btn: (document.querySelector('[data-dxrenuse]') || {}).textContent || '' }; });
+  check(await p.evaluate(async () => /^11621-/.test((await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
+  await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); const c = li.querySelector('[data-dcncode]'); c.value = [...c.options].map(o => o.value).find(v => /^3[0-9]{2}$/.test(v) && v !== '325' && v !== '332') || ''; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); const a = li.querySelector('[data-dcntype]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  const r2 = await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); return { sug: li.querySelector('.dcn-sug code').textContent, btn: (document.querySelector('[data-dxrenuse]') || {}).textContent || '' }; });
   check(/^3\d\d DA Datablad radiator\.pdf$/.test(r2.sug) && !/^325/.test(r2.sug) && /Use the new name on \d+ ready/.test(r2.btn), 'the Boligbygg rule builds the new name, and the ready ones can be renamed in one go ' + JSON.stringify(r2));
   const z = await p.evaluate(async () => { let got = null; FdvPdf.share = f => { got = f; return Promise.resolve(); }; document.querySelector('[data-dxrendl]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); if (!got) return null;
     const E = DocCtl.zipEntries(await got.arrayBuffer()); return { name: got.name, files: E.map(e => e.name).sort().join('|'), size: E.map(e => e.size).join() }; });
   check(z && /\.zip$/.test(z.name) && /3\d\d DA Datablad radiator\.pdf/.test(z.files) && !/325 DA Datablad/.test(z.files) && /332 DV Sprinkleranlegg\.pdf/.test(z.files) && /\d{5}-H02-V-332-P-01 – Rørplan\.pdf/.test(z.files) && z.files.split('|').length === 5 && z.size.split(',').every(n => +n > 5), 'the .zip has every file, the ready ones get their new names without pressing anything first (JP 22:30), with their content ' + JSON.stringify(z));
   await p.evaluate(() => document.querySelector('[data-dxrenuse]').click()); await sl(300);
   /* own codes and free text in the lists (JP 22:30) */
-  await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)); const d = li.querySelector('[data-dcnv$=":disc"]'); d.value = '__own'; d.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
-  await p.evaluate(() => { const f = document.querySelector('.dx-ren [data-dcnownf]'); f.querySelector('[data-dcnoc]').value = 'E2'; f.querySelector('[data-dcnom]').value = 'Made-up power'; f.querySelector('[data-dcnosave]').click(); }); await sl(300);
-  const oc = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /Rørplan sprinkler/.test(x.textContent)), d = li.querySelector('[data-dcnv$=":disc"]');
+  await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); const d = li.querySelector('[data-dcnv$=":disc"]'); d.value = '__own'; d.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
+  await p.evaluate(() => { const f = document.querySelector('.dcn-fpop [data-dcnownf]'); f.querySelector('[data-dcnoc]').value = 'E2'; f.querySelector('[data-dcnom]').value = 'Made-up power'; f.querySelector('[data-dcnosave]').click(); }); await sl(300);
+  const oc = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), d = li.querySelector('[data-dcnv$=":disc"]');
     return { sel: d.selectedOptions[0].textContent, grp: d.selectedOptions[0].parentNode.label, sug: li.querySelector('.dcn-sug code').textContent, kept: /E2/.test(localStorage.getItem('dcn.tool') || '') }; });
   check(oc.sel === 'E2 – Made-up power' && oc.grp === 'Your codes' && /-E2-332-/.test(oc.sug) && oc.kept, 'an own code is picked from the list, used in the name and kept for later ' + JSON.stringify(oc));
   /* naming rules (JP 22:00 "lackluster … messy with a lot of rules"): used for, your rules, Boligbygg's folded away, an editor built from parts */
@@ -81,7 +84,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const m2 = await p.evaluate(() => ({ n: document.querySelectorAll('.dx-ren .dcn-row').length, all: [...document.querySelectorAll('.dx-ren .dcn-row')].every(li => li.classList.contains('dcn-warn')) }));
   check(m2.n >= 1 && m2.n < 9 && m2.all, '"Needs you" shows only the files still missing something ' + JSON.stringify(m2));
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnexp]').click()); await sl(200);
-  check(await p.evaluate(() => !!document.querySelector('.dx-ren .dcn-row:not(.dcn-c) [data-dcncode]')), 'a tap opens the row with its fields');
+  check(await p.evaluate(() => !!document.querySelector('.dcn-fpop [data-dcncode]')), 'a tap opens the row with its fields');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
   /* the add button opens a popup to drop files on (JP 07:50); a drop there adds them and closes it */
   await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200);
@@ -94,24 +97,24 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(await p.evaluate(() => !document.querySelector('.dx-drop')), 'Escape closes the drop popup');
   /* Open shows the file in a popup over the page, not a new tab (JP 07:53) */
   const pages0 = (await b.pages()).length;
-  await p.evaluate(() => { const o = document.querySelector('.dx-ren .dcn-open'); if (o) o.click(); else { const e = document.querySelector('.dx-ren [data-dcnexp]'); e.click(); } }); await sl(300);
-  await p.evaluate(() => { const o = document.querySelector('.dx-ren .dcn-open'); if (o && !document.querySelector('.dx-fv')) o.click(); }); await sl(600);
+  await p.evaluate(() => { const e = document.querySelector('.dx-ren [data-dcnexp]'); e.click(); }); await sl(300);
+  await p.evaluate(() => { const o = document.querySelector('.dcn-fpop .dcn-open'); if (o && !document.querySelector('.dx-fv')) o.click(); }); await sl(600);
   const fv = await p.evaluate(() => { const o = document.querySelector('.dx-fv'); return o ? { body: o.parentNode === document.body, dl: !!o.querySelector('a[download]') } : null; });
   check(fv && fv.body && fv.dl && (await b.pages()).length === pages0, 'Open shows the file in a popup with Download – no new tab ' + JSON.stringify(fv));
   await p.keyboard.press('Escape'); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.dx-fv')), 'Escape closes the file popup');
   /* JP 06:38: ¤ in names, the type before a code, the row inside its box, the name further down with its own Open button, Start again asks */
   await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); dt.items.add(new File(['made up text'], 'TDS¤71¤MADEUP Oljemaling¤Nor¤NO.pdf', { type: 'application/pdf' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(2000);
-  const tz = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /MADEUP/.test(x.textContent)); if (!li) return null;
+  const tz = await p.evaluate(async () => { const li = (await R(/MADEUP/)); if (!li) return null;
     if (li.classList.contains('dcn-c')) { li.querySelector('[data-dcnexp]').click(); }
     return true; }); await sl(300);
-    const t2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row:not(.dcn-c)')].find(x => /MADEUP/.test(x.textContent)), ty = li.querySelector('[data-dcntype]'), lr = li.getBoundingClientRect();
+    const t2 = await p.evaluate(async () => { const li = (await R(/MADEUP/)), ty = li.querySelector('[data-dcntype]'), lr = li.getBoundingClientRect();
     const out = [...li.querySelectorAll('input, select, button, label')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > lr.right + 1 || r.left < lr.left - 1); }).map(e => e.tagName + '.' + e.className);
     const n = li.querySelector('.dcn-s .dcn-n'), d = li.querySelector('[data-dcnv$=":desc"]');
     return { typeOn: !!ty && !ty.disabled && ty.options.length > 5, code: (li.querySelector('[data-dcncode]') || {}).value, desc: d ? d.value : '', out, nameDown: !!n && !!n.querySelector('.dcn-open') && !li.querySelector('.dcn-g [data-dcview]'), first: li.querySelector('.dcn-g > *').classList.contains('dcn-kind') }; });
   check(tz && t2.typeOn && !/^71/.test(t2.code) && !/¤/.test(t2.desc) && t2.out.length === 0 && t2.nameDown && t2.first, 'a ¤ name: no 2-digit code, words split; the type can be picked before the code; nothing sticks out; kind first; the name sits lower with its own Open button ' + JSON.stringify(t2));
   await p.setViewport({ width: 600, height: 900, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);
-  check(await p.evaluate(() => [...document.querySelectorAll('.dx-ren .dcn-row:not(.dcn-c)')].every(li => { const lr = li.getBoundingClientRect(); return [...li.querySelectorAll('select, input')].every(e => { const r = e.getBoundingClientRect(); return !r.width || r.right <= lr.right + 1; }); })), 'at 600 px (Team’s column) the fields stay inside the row');
+  check(await p.evaluate(() => [...document.querySelectorAll('.dcn-fpop .dcn-row')].every(li => { const lr = li.getBoundingClientRect(); return [...li.querySelectorAll('select, input')].every(e => { const r = e.getBoundingClientRect(); return !r.width || r.right <= lr.right + 1; }); })), 'at 600 px (Team’s column) the fields stay inside the row');
   await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);
   /* New rule opens a popup on top of the page; Escape closes it */
   await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
@@ -123,10 +126,10 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const hb = await p.evaluate(() => { const b = document.querySelector('.dx-ren .pill-btn'); return Math.round(b.getBoundingClientRect().height); });
   check(hb >= 44, 'the buttons are at least 44 px tall: ' + hb);
   /* code names (JP 07:48): an unnamed code is just its number; names pasted from your own copy show in the list, kept on this device */
-  const nm0 = await p.evaluate(() => { const s = document.querySelector('.dx-ren [data-dcncode]'); const o = s && s.querySelector('option[value="413"]'); return o ? o.textContent : null; });
+  const nm0 = await p.evaluate(async () => { const s = (await R(/./)).querySelector('[data-dcncode]'); const o = s && s.querySelector('option[value="413"]'); return o ? o.textContent : null; });
   await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('[data-dcnnsp]').click(); }); await sl(200);
   await p.evaluate(() => { document.querySelector('[data-dcnnst]').value = '412 Made-up wiring\n413\tMade-up cables\n#skip'; document.querySelector('[data-dcnnss]').click(); }); await sl(300);
-  const nm1 = await p.evaluate(() => { const s = document.querySelector('.dx-ren [data-dcncode]'); return { a: s.querySelector('option[value="412"]').textContent, b: s.querySelector('option[value="413"]').textContent, kept: Object.keys(JSON.parse(localStorage.getItem('dcn.nsnames') || '{}')).length }; });
+  const nm1 = await p.evaluate(async () => { const s = (await R(/./)).querySelector('[data-dcncode]'); return { a: s.querySelector('option[value="412"]').textContent, b: s.querySelector('option[value="413"]').textContent, kept: Object.keys(JSON.parse(localStorage.getItem('dcn.nsnames') || '{}')).length }; });
   check(nm0 === '413' && nm1.a === '412 Made-up wiring' && nm1.b === '413 Made-up cables' && nm1.kept === 2, 'codes without a name show only the number; pasted names show in the list ' + JSON.stringify({ nm0, nm1 }));
   await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(200);
   check(await p.evaluate(() => document.querySelectorAll('.dx-ren .dcn-row').length > 0 && /again/i.test(document.querySelector('[data-dxrenclr]').textContent)), 'Start again asks first – the files are still there');
