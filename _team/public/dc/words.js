@@ -417,6 +417,8 @@ window.DC_NB = {
 "ui.dx-own-docs": "Egne dokumenter",
 "ui.dx-own-docs-s": "– det denne typen prosjekt alltid skal ha i tillegg til NS 3456-typene",
 "ui.dx-own-types": "Egne typer",
+"ui.dx-part-krav": "(krav)",
+"ui.dx-part-mot": "(mottak)",
 "ui.dx-pen": "Endre listen",
 "ui.dx-pen-done": "Ferdig med å endre listen",
 "ui.dx-pen-help": "Fjern linjer eller legg til nye",

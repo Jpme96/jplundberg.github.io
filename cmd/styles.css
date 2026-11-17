@@ -4261,3 +4261,4 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 /* every popup blurs what is behind it a little (JP 2026-11-17 21:43) */
 :is(.tb-sheet-bg, .sr-bg, .qa-bg, .fo-bg, .kb-bg, .rp-bg, .spv-sheet, .dgu-sheet, .sh-prev-bg, .fv-bg, .dp-bg, .hc-popbg) { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.hl-tiles > .hl-none { grid-column: 1 / -1; margin: 0; padding: 2px; font-size: 14px; }

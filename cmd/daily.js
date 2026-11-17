@@ -97,7 +97,7 @@
     });
     if (!placed) html += '<li class="tl-now"><span class="tl-t">' + hm(now) + '</span><span class="tl-nowline"></span></li>';
     var empty = !r.list.length && !r.allDay.length, eve = now.getHours() >= 17 ? evening(now) : '';
-    card.innerHTML = '<div class="card-head"><h2><i class="bi bi-list-columns-reverse"></i> <span data-t="ui.today">Today</span></h2><span class="muted tl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>' +
+    card.innerHTML = '<div class="card-head"><h2><i class="bi bi-list-columns-reverse"></i> <span data-t="ui.tl-your-day">Your day</span></h2><span class="muted tl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>' +
       (r.allDay.length ? '<div class="tl-all">' + r.allDay.map(function (x) { return '<a class="tl-chip" href="' + esc(x.href) + '" style="--c:' + esc(x.c) + '"><i class="bi bi-' + x.icon + '"></i>' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') +
       (empty ? '<p class="empty" data-t="ui.a-free-day-nothing-in-the-calendar-no-bi">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>') + eve;
     clearTimeout(keepSnap.t); keepSnap.t = setTimeout(keepSnap, 500);

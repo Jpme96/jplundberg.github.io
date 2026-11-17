@@ -31,12 +31,23 @@
   function heroTile(icon, label, value, sub, href, c) {
     return '<a class="fp-tile hl-tile" href="' + href + '"' + (c ? ' style="--c:' + c + '"' : '') + '><div class="lbl"><i class="bi bi-' + icon + '"></i>' + label + '</div><div class="val">' + value + '</div><div class="sub">' + (sub || '&nbsp;') + '</div></a>';
   }
+  /* Food: no field takes the focus by itself when the page opens – on the phone that popped the keyboard up (JP's list, point 15) */
+  if (PAGE === 'food') (function () { var t0 = Date.now(), touched = false, stop = function () { touched = true; };
+    ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, stop, { capture: true, once: true }); });
+    document.addEventListener('focusin', function f(e) { if (Date.now() - t0 > 4000) { document.removeEventListener('focusin', f, true); return; } if (!touched && e.target.matches && e.target.matches('input, textarea')) e.target.blur(); }, true);
+    var a0 = document.activeElement; if (a0 && a0.matches && a0.matches('input, textarea')) a0.blur();
+  })();
   var heroes = {};
   function drawHero() {
     var el = document.getElementById('hlTiles'); if (!el || !PAGE || !heroes[PAGE]) return;
     if (!on(PAGE)) { el.innerHTML = ''; el.hidden = true; return; }
     el.hidden = false;
-    var h = heroes[PAGE](); if (el.innerHTML !== h) el.innerHTML = h;
+    var h = heroes[PAGE]();
+    /* a tile that says 0 waits until it has something; all of them 0 → one line instead (JP's list, point 11) */
+    var box = document.createElement('div'); box.innerHTML = h;
+    [].forEach.call(box.querySelectorAll('.hl-tile'), function (t) { var v = (t.querySelector('.val') || {}).textContent || ''; if (/^\s*(0|0 ?(min|h|kr|%)|0 h 00 min|[–—-])\s*$/.test(v)) t.remove(); });
+    h = box.querySelector('.hl-tile') ? box.innerHTML : '<p class="muted hl-none">' + esc(I18N.k('ui.hl-nothing-yet', 'Nothing to count yet – the numbers show up here as you add things.')) + '</p>';
+    if (el.innerHTML !== h) el.innerHTML = h;
   }
   ['tools:change', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(drawHero.t); drawHero.t = setTimeout(drawHero, 20); }); });
   window.Vault.onUnlock(drawHero);
@@ -686,10 +697,7 @@
   })();
   heroes.work = function () {
     var out = [], tk = today();
-    if (on('flex') && window.FlexTime) {
-      var st = window.FlexTime.stats(), sg = st.balance < 0 ? '−' : st.balance > 0 ? '+' : '', h = window.FlexTime.dur(Math.abs(st.balance));
-      out.push(heroTile('stopwatch', I18N.k('ui.flex-balance', 'Flex balance'), '<span class="' + (st.balance < 0 ? 'neg' : 'pos') + '">' + sg + esc(h) + '</span>', esc(window.FlexTime.dur(st.week)) + ' this week', '#flex', '#e8743b'));
-    }
+    /* the flex balance is in the Flex card right below – not again as a tile (JP's list, point 12) */
     if (on('ptime')) {
       var m0 = monday(0), mins = ptList().filter(function (x) { return x.date >= m0 && x.date <= tk; }).reduce(function (a, x) { return a + (+x.mins || 0); }, 0), r = run();
       out.push(heroTile('hourglass-split', I18N.k('ui.client-time', 'Client time'), esc(hm(mins)), r ? 'Timer running: ' + esc(proj(r.pid).name) : 'this week', '#ptime'));

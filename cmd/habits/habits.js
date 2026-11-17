@@ -160,15 +160,39 @@
   }
 
   /* Tap a day to fill in or undo */
+  function toggle(hid, dk) {
+    var l = hb.log[dk] || (hb.log[dk] = []);
+    var i = l.indexOf(hid);
+    if (i > -1) l.splice(i, 1); else l.push(hid);
+    if (!l.length) delete hb.log[dk];
+    save();
+    render();
+  }
+  /* On a phone the small squares are too small to hit: a tap opens that week with seven big days (JP's list, point 18) */
+  var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  function weekPop(hid, dk) {
+    var h0 = (hb.list || []).filter(function (x) { return x.id === hid; })[0], d0 = new Date(dk + 'T12:00'), mon = addDays(d0, -((d0.getDay() + 6) % 7)), tk = dkey(new Date());
+    var old = document.querySelector('.hp-wkpop'); if (old) old.remove();
+    var ov = document.createElement('div'); ov.className = 'hp-wkpop';
+    var draw = function () {
+      var cells = '';
+      for (var r = 0; r < 7; r++) { var d = addDays(mon, r), k = dkey(d), on = done(hid, k), fut = k > tk;
+        cells += '<button type="button" class="hp-day' + (on ? ' on' : '') + (k === tk ? ' today' : '') + (fut ? ' future' : '') + '" data-wk="' + k + '" aria-pressed="' + on + '"' + (fut ? ' disabled' : '') + ' aria-label="' + esc(F_LONG.format(d)) + (on ? ', done' : '') + '"><small>' + (window.I18N && I18N.lang === 'nb' ? 'MTOTFLS' : 'MTWTFSS')[r] + '</small><b>' + d.getDate() + '</b><i class="bi bi-check-lg"></i></button>'; }
+      ov.innerHTML = '<div class="hp-wksheet" role="dialog" aria-modal="true"><div class="hp-wkhead"><b>' + esc((h0 && h0.name) || '') + '<small>' + esc(F_LONG.format(mon)) + ' –</small></b><button type="button" class="icon-btn" data-wkx aria-label="' + esc(I18N.k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div><div class="hp-recent-days">' + cells + '</div></div>';
+    };
+    draw();
+    var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+    ov.addEventListener('click', function (e) {
+      if ((e.target === ov && dn === ov) || e.target.closest('[data-wkx]')) { ov.remove(); return; }
+      var b = e.target.closest('[data-wk]'); if (b && !b.disabled) { toggle(hid, b.dataset.wk); draw(); }
+    });
+    document.body.appendChild(ov);
+  }
   $('hpHabits').addEventListener('click', function (e) {
     var c = e.target.closest('.hp-cell, .hp-day');
     if (!c || c.disabled) return;
-    var l = hb.log[c.dataset.d] || (hb.log[c.dataset.d] = []);
-    var i = l.indexOf(c.dataset.h);
-    if (i > -1) l.splice(i, 1); else l.push(c.dataset.h);
-    if (!l.length) delete hb.log[c.dataset.d];
-    save();
-    render();
+    if (touch && c.classList.contains('hp-cell')) { weekPop(c.dataset.h, c.dataset.d); return; }
+    toggle(c.dataset.h, c.dataset.d);
   });
   $('hpHabits').addEventListener('change', function (e) {
     var sel = e.target.closest('[data-hprange]'); if (!sel) return;

@@ -201,7 +201,7 @@
     t.shop = l; Fe.saveTools(t); return n;
   }
   var AISLES = [
-    ['veg', 'Fruit & veg', 'apple', '#22b35e', /eple|banan|appelsin|sitron|lime|frukt|bær|druer|avokado|tomat|agurk|salat|paprika|løk|hvitløk|potet|gulrot|brokkoli|blomkål|kål|spinat|sopp|squash|mais|ingefær|chili|urter|basilikum|koriander|persille|purre|selleri|fruit|apple|banana|lemon|berr|grape|avocado|tomato|cucumber|lettuce|pepper|onion|garlic|potato|carrot|broccoli|cabbage|mushroom|herb/],
+    ['veg', 'Fruit & veg', 'apple', '#22b35e', /pære|pear|fersken|peach|plomme|plum|nektarin|nectarine|mango|kiwi|ananas|pineapple|melon|klementin|clementine|mandarin|grapefrukt|grapefruit|aprikos|apricot|eple|banan|appelsin|sitron|lime|frukt|bær|druer|avokado|tomat|agurk|salat|paprika|løk|hvitløk|potet|gulrot|brokkoli|blomkål|kål|spinat|sopp|squash|mais|ingefær|chili|urter|basilikum|koriander|persille|purre|selleri|fruit|apple|banana|lemon|berr|grape|avocado|tomato|cucumber|lettuce|pepper|onion|garlic|potato|carrot|broccoli|cabbage|mushroom|herb/],
     ['bread', 'Bread', 'basket', '#c98500', /brød|rundstykk|baguett|lompe|tortilla|wraps?|knekkebrød|boller|croissant|pita|bread|bun|roll|bagel|crispbread/],
     ['dairy', 'Dairy & eggs', 'egg', '#3987e5', /melk|fløte|rømme|yoghurt|skyr|smør|margarin|ost|egg|kesam|cottage|crème|creme|milk|cream|butter|cheese|yogurt/],
     ['meat', 'Meat & fish', 'fire', '#e66767', /kjøtt|kylling|svin|storfe|lam|bacon|pølse|skinke|karbonade|kjøttdeig|fisk|laks|torsk|sei|reker|tunfisk|makrell|chicken|beef|pork|lamb|sausage|ham|mince|fish|salmon|cod|shrimp|prawn|tuna/],
@@ -209,7 +209,7 @@
     ['dry', 'Pasta, rice & tins', 'box-seam', '#8a6fdf', /pasta|spaghetti|ris|nudler|mel|sukker|havre|gryn|müsli|musli|frokostblanding|bønner|linser|kikerter|hermetikk|tomater på boks|buljong|kokosmelk|olje|eddik|nøtter|rice|noodle|flour|sugar|oat|cereal|beans|lentil|chickpea|tin|stock|oil|vinegar|nut/],
     ['spice', 'Spices & sauces', 'droplet-half', '#c98500', /salt|pepper\b|krydder|kanel|paprikapulver|karri|soya|ketchup|sennep|majones|dressing|saus|sauce|spice|curry|mustard|mayo/],
     ['frozen', 'Frozen', 'snow', '#3987e5', /frys|frossen|is\b|iskrem|frozen|ice ?cream|peas|erter/],
-    ['drink', 'Drinks', 'cup-straw', '#0891b2', /kaffe|te\b|brus|cola|vann|øl|vin|saft|coffee|tea|soda|water|beer|wine|squash/],
+    ['drink', 'Drinks', 'cup-straw', '#0891b2', /guarana|energidrikk|energy drink|\biste\b|iced tea|mineralvann|farris|kaffe|te\b|brus|cola|vann|øl|vin|saft|coffee|tea|soda|water|beer|wine|squash/],
     ['snack', 'Snacks & sweets', 'cookie', '#d55181', /sjokolade|godteri|chips|kjeks|snacks|popcorn|nøtteblanding|chocolate|candy|sweets|crisps|biscuit|cookie/],
     ['home', 'Household', 'house', '#7a8794', /dopapir|tørkerull|oppvask|vaskemiddel|såpe|søppelpose|poser|folie|bakepapir|batteri|lyspære|servietter|toilet paper|kitchen roll|washing-up|dish|detergent|soap|bin bags|foil|battery|napkin/],
     ['care', 'Toiletries & pharmacy', 'bandaid', '#d55181', /sjampo|balsam|tannkrem|tannbørste|deodorant|bind|tamponger|bleier|plaster|paracet|ibux|vitamin|shampoo|toothpaste|toothbrush|deo|nappies|diaper|plaster|painkiller/],

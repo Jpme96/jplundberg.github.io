@@ -53,7 +53,8 @@ const BUDGET_KB = { total: 1671 };   /* +1 (2026-11-17 21:45): popups beside the
 /* +3 kB Work (2026-11-17 12:53): a searchable code list; redraws from elsewhere wait while you choose */
 /* +2 kB Work (2026-11-17, JP 07:48/07:50): the NS code dropdown with names imported on the device, and the drop popup in the rename tool */
 /* +8 kB every page (2026-11-17 21:02, JP): filedrop.js in head – every file picker opens the same drop popup */
-const PAGE_KB = { 'index.html': 1449, 'admin/index.html': 1366, 'calendar/index.html': 1296, 'finance/index.html': 1671, 'food/index.html': 1383, 'goals/index.html': 1314, 'habits/index.html': 1341, 'house/index.html': 1655, 'papers/index.html': 1335, 'people/index.html': 1382, 'travel/index.html': 1439, 'wish/index.html': 1399, 'work/index.html': 1636 };
+/* +1–2 kB (2026-11-17 22:45, JP's list 9–22): moving-in wording, hidden calendar kinds, tiles at 0 wait, the week popup on Habits, Norwegian words */
+const PAGE_KB = { 'index.html': 1450, 'admin/index.html': 1367, 'calendar/index.html': 1296, 'finance/index.html': 1671, 'food/index.html': 1384, 'goals/index.html': 1314, 'habits/index.html': 1343, 'house/index.html': 1656, 'papers/index.html': 1335, 'people/index.html': 1383, 'travel/index.html': 1440, 'wish/index.html': 1399, 'work/index.html': 1637 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

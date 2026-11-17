@@ -260,6 +260,8 @@
     if (!keys.length) { box.innerHTML = head + '<p class="muted ah-empty">Steps, sleep, resting heart rate and exercise from your iPhone – sent by a Shortcut every evening, kept encrypted with the rest. <a href="/cmd/?settings=ahealth" data-t="ui.set-it-up"><span data-t="ui.set-it-up">Set it up</span></a> (about 10 minutes, once).</p>'; return; }
     var w = stats(addDays(today, -6), today), pw = stats(addDays(today, -13), addDays(today, -7));
     var have = METRICS.filter(function (m) { return keys.some(function (k) { return D[k][m[0]] != null; }); });
+    /* Energy waits until a real number comes in – the Shortcut sent only a few kcal (JP's list, point 22) */
+    if (!keys.some(function (k) { return +D[k].active >= 50; })) have = have.filter(function (m) { return m[0] !== 'active'; });
     if (!have.some(function (m) { return m[0] === chartM; })) chartM = have[0] ? have[0][0] : 'steps';
     var M = METRICS.filter(function (m) { return m[0] === chartM; })[0], goal = G[chartM] || null;
 

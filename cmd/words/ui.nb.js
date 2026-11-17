@@ -3184,5 +3184,13 @@ I18N.add({
   "ui.fdz-photos": ["photos", "bilder"],
   "ui.fdz-videos": ["videos", "videoer"],
   "ui.fdz-text": ["text", "tekst"],
-  "ui.fdz-wrong": ["That kind of file doesn’t fit here – {k}", "Den filtypen passer ikke her – {k}"]
+  "ui.fdz-wrong": ["That kind of file doesn’t fit here – {k}", "Den filtypen passer ikke her – {k}"],
+  "ui.hm-moving-in": ["Moving in {d} – in {n} days", "Flytter inn {d} – om {n} dager"],
+  "ui.hm-money-later": ["Money for this home shows here from the day you move in.", "Penger for dette hjemmet vises her fra dagen du flytter inn."],
+  "ui.cl-n-hidden": ["{n} kinds hidden", "{n} typer skjult"],
+  "ui.hl-nothing-yet": ["Nothing to count yet – the numbers show up here as you add things.", "Ingenting å telle ennå – tallene dukker opp her når du legger til ting."],
+  "ui.hm-nothing-yet": ["No claims, projects or documents for this home yet.", "Ingen reklamasjoner, prosjekter eller dokumenter for dette hjemmet ennå."],
+  "ui.tl-your-day": ["Your day", "Dagen din"],
+  "ui.dx-part-mot": ["(received)", "(mottak)"],
+  "ui.dx-part-krav": ["(requirements)", "(krav)"]
 });

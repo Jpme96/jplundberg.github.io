@@ -68,7 +68,7 @@
     /* one row: a Filter button that says what's shown, and the hidden calendars as chips to bring back.
        Everything else lives in the filter panel (switches, "Only" and Show all / Hide all). */
     var shown = items.filter(function (it) { return !d.hidden[it.id]; }), off = items.filter(function (it) { return d.hidden[it.id]; });
-    var label = !off.length ? I18N.k('ui.all-calendars', 'All calendars') : shown.length === 1 ? 'Only ' + shown[0].name : !shown.length ? 'Nothing shown' : shown.length + ' of ' + items.length;
+    var label = !off.length ? I18N.k('ui.all-calendars', 'All calendars') : shown.length === 1 ? 'Only ' + shown[0].name : !shown.length ? 'Nothing shown' : I18N.k('ui.cl-n-hidden', '{n} kinds hidden', { n: off.length });   /* say what is hidden, not "3 of 8" (JP's list, point 10) */
     var row = function (it) {
       return '<div class="clf-row' + (d.hidden[it.id] ? ' off' : '') + '" style="--c:' + it.color + '"><i class="dot"></i>' + (it.feed ? '<i class="bi bi-phone"></i>' : it.icon ? '<i class="bi bi-' + it.icon + '"></i>' : '') +
         '<span class="clf-name">' + esc(it.name) + '</span><button type="button" class="text-btn clf-only" data-only="' + esc(it.id) + '">Only</button>' +
@@ -77,6 +77,7 @@
     var groups = [['Your calendars', items.filter(function (it) { return C.CATS[it.id]; })], ['From the dashboard', items.filter(function (it) { return /^(travel|reminders|holidays)$/.test(it.id); })], ['Phone calendars', items.filter(function (it) { return it.feed; })]];
     $('clCats').innerHTML = '<button type="button" class="cl-filter' + (off.length ? ' on' : '') + '" data-clfilter aria-expanded="' + filterOpen + '"><i class="bi bi-funnel' + (off.length ? '-fill' : '') + '"></i> ' + esc(label) + ' <i class="bi bi-chevron-' + (filterOpen ? 'up' : 'down') + '"></i></button>' +
       off.map(function (it) { return '<button type="button" class="cl-cat" data-cat="' + esc(it.id) + '" aria-pressed="false" style="--c:' + it.color + '" title="Show ' + esc(it.name) + '"><i class="dot"></i>' + esc(it.name) + '</button>'; }).join('') +
+      (off.length ? '<button type="button" class="text-btn cl-showall" data-clall="show">' + esc(I18N.k('ui.show-all', 'Show all')) + '</button>' : '') +
       (filterOpen ? '<div class="clf-panel" role="group" aria-label="Filter calendars" data-t-aria-label="ui.filter-calendars"><div class="clf-top"><button type="button" class="text-btn" data-clall="show" data-t="ui.show-all">Show all</button><button type="button" class="text-btn" data-clall="hide" data-t="ui.hide-all">Hide all</button></div>' +
         groups.filter(function (g) { return g[1].length; }).map(function (g) { return '<p class="clf-h">' + g[0] + '</p>' + g[1].map(row).join(''); }).join('') + '</div>' : '');
     renderCats.items = items;
