@@ -314,6 +314,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     return { left: t.left === 0 && t.width < 260 && t.height > 600, wide: a.width > 900, over: a.left >= t.right, cols: c.length === 2 && c[1].getBoundingClientRect().left > c[0].getBoundingClientRect().left + 200, fits: document.documentElement.scrollWidth <= innerWidth }; });
   check(Object.values(lay).every(Boolean), 'on a computer: menu on the left, a wide page, two columns ' + JSON.stringify(lay));
   if (process.env.SHOT) await kari2.screenshot({ path: path.join(__dirname, '..', '.tmp', 'team-pc.png') });
+  await kari2.goto(U + '#team'); await sl(400);
+  check(await kari2.evaluate(() => { const c = document.querySelectorAll('.t-tcols > .t-col'); return c.length === 2 && c[1].getBoundingClientRect().left > c[0].getBoundingClientRect().right; }), 'the Team tab is two columns on a computer (JP 2026-11-17 20:11)');
   await kari2.goto(U + '#meetings'); await sl(300);
   check(/MARK-SECRET-1/.test(await text(kari2)) && /MARK-SECRET-4/.test(await text(kari2)), 'she reads meetings from before and after the new key');
 

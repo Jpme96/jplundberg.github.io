@@ -389,12 +389,14 @@
         return '<li class="' + (x.iss.length ? 'dx-bad' : '') + '"><i class="bi bi-' + (x.iss.length ? 'exclamation-circle' : 'check2') + '"></i><span><b data-noi18n>' + esc(x.n) + '</b>' + (x.iss.length ? '<small>' + esc(x.iss.join(' · ')) + '</small>' : '') + '</span></li>'; }).join('') + '</ul>' : '') + '</section>';
   }
   function fdvCheck(names) { fdvRes = names.map(function (n) { var q = parseName(n); return { n: n, iss: q.issues.map(function (x) { return issueText(x, { p: q }); }) }; }); draw(); }
+  /* the one-off tools open in a popup over the list instead of pushing it down – less scrolling (JP 2026-11-17 20:11) */
+  function toolPop(h) { return h ? '<div class="dx-tov" data-dxtov><div class="dx-tsheet" role="dialog" aria-modal="true">' + h + '</div></div>' : ''; }
   function home() {
     var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
     var body = adding ? projForm(null) : radding ? kravForm() : '';
     if (!adding && !radding) body += '<div class="dx-tools"><button type="button" class="dx-tool" data-dxtool="plan" aria-pressed="' + (xtool === 'plan') + '"><i class="bi bi-clipboard2-check"></i><span><b>' + esc(k('ui.dx-t-plans', 'Document plans')) + '</b><small>' + esc(k('ui.dx-t-plans-s', 'The contractors’ plans checked against the checklist – kept until you delete them')) + '</small></span></button>' +
       '<button type="button" class="dx-tool" data-dxtool="ren" aria-pressed="' + (xtool === 'ren') + '"><i class="bi bi-input-cursor-text"></i><span><b>' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</b><small>' + esc(k('ui.dx-t-ren-s', 'NS code and document code per file, download them renamed')) + '</small></span></button>' +
-      '<button type="button" class="dx-tool" data-dxtool="fdv" aria-pressed="' + (xtool === 'fdv') + '"><i class="bi bi-list-check"></i><span><b>' + esc(k('ui.dx-t-fdv', 'Check names from the FDV system')) + '</b><small>' + esc(k('ui.dx-t-fdv-s', 'Paste or import names and see which break the rules')) + '</small></span></button></div>' + (xtool === 'ren' ? renPanel() : xtool === 'fdv' ? fdvPanel() : xtool === 'plan' ? planPanel() : '');
+      '<button type="button" class="dx-tool" data-dxtool="fdv" aria-pressed="' + (xtool === 'fdv') + '"><i class="bi bi-list-check"></i><span><b>' + esc(k('ui.dx-t-fdv', 'Check names from the FDV system')) + '</b><small>' + esc(k('ui.dx-t-fdv-s', 'Paste or import names and see which break the rules')) + '</small></span></button></div>' + toolPop(xtool === 'ren' ? renPanel() : xtool === 'fdv' ? fdvPanel() : xtool === 'plan' ? planPanel() : '');
     body += L.length ? '<ul class="kit-list dx-list">' + L.map(function (x) {
       var p = x.p, r = x.r, c = p ? counts(p.lines || []) : null, o = p || r, tag;
       if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
@@ -603,6 +605,10 @@
   /* redraws that come by themselves (each saved file, each finished check, a sync) are gathered: at most one every 0.8 s, the last one always
      comes – uploading many files made the page flicker (JP 2026-11-17 13:32); what you do yourself still draws at once */
   var lastDraw = 0, drawT = 0;
+  var tovDown = null;
+  document.addEventListener('pointerdown', function (e) { tovDown = e.target; }, true);
+  document.addEventListener('click', function (e) { var o = e.target; if (o && o.matches && o.matches('[data-dxtov]') && tovDown === o && xtool) { xtool = null; draw(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && xtool && document.querySelector('[data-dxtov]') && !document.querySelector('.dcn-ov, .xv')) { xtool = null; draw(); } });
   ['pointerdown', 'click', 'keydown', 'change', 'input', 'drop'].forEach(function (ev) { document.addEventListener(ev, function () { window.__dcUser = Date.now(); }, true); });
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
@@ -620,7 +626,10 @@
     document.body.classList.toggle('dc-full', !!p);
     document.body.classList.toggle('dr-full', !!rp);
     el.classList.toggle('dc-gone', !!rp && !!er);
+    var ts0 = el.querySelector('.dx-tsheet'), tsTop = ts0 ? ts0.scrollTop : 0;
     el.innerHTML = p ? full(p) : rp && er ? '' : home();
+    var ts1 = el.querySelector('.dx-tsheet'); if (ts1 && tsTop) ts1.scrollTop = tsTop;   /* a redraw keeps the popup where you were */
+    document.documentElement.classList.toggle('dcn-modal', !!ts1 || !!document.querySelector('.dcn-ov'));
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
     clampHelp(el);
     if (!er) return;

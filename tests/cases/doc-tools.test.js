@@ -31,6 +31,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const before = await p.evaluate(() => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; return JSON.stringify(t).length; });
   /* rename: the file naming (suggestions from the name and the PDF text, the naming rules) on files outside any project (JP 20:43) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
+  check(await p.evaluate(() => { const o = document.querySelector('#wkDocCtl .dx-tov'); return !!o && getComputedStyle(o).position === 'fixed' && !!o.querySelector('.dx-ren'); }), 'a tool opens in a popup over the list, not in the page (JP 2026-11-17 20:11)');
   await (await p.$('input[data-dxrenf]')).uploadFile(zf, lone); await sl(2500);
   /* a file opens in a popup (JP 2026-11-17 08:07): R(/name/) opens it and gives its full row */
   const defR = () => p.evaluate(() => { window.R = async re => { const c = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => re.test(x.textContent)); if (c) { c.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 350)); } return document.querySelector('.dcn-fpop .dcn-row'); }; });

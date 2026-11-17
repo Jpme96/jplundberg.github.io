@@ -207,3 +207,9 @@ a.t-icon { text-decoration: none; }
 
 /* the empty Requirements card stays hidden until a project's Requirements step is open (JP 2026-11-17 19:49) */
 #wkDocReq.dc-gone, #wkDocCtl.dc-gone { display: none !important; }
+/* Team tab on a computer: two columns, a smaller Invite button (JP 2026-11-17 20:11) */
+@media (min-width: 1000px) {
+  .t-tcols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+  .t-tcols .t-inv { width: auto; display: inline-flex; padding: 0 22px; }
+  .t-tcols .t-col > .t-card:first-child, .t-tcols .t-col > details:first-child { margin-top: 0; }
+}
