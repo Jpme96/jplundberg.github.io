@@ -279,7 +279,7 @@ export class TeamStore {
   async recs(url, team, email, me, acc) {
     const since = +url.searchParams.get('since') || 0, out = [], hid = [];
     /* only what the person may see: a project they have 'none' on – or, with no team access, everything but their own projects – never leaves the server */
-    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) { if (!/^(dct|dcr)$/.test(v.k) && this.roleIn(me, acc, v.g) === 'none') { hid.push(v.id); continue; } out.push(v); }   /* project types and client checklists are for everyone in the team */
+    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) { if (!/^(dct|dcr|cfg)$/.test(v.k) && this.roleIn(me, acc, v.g) === 'none') { hid.push(v.id); continue; } out.push(v); }   /* project types and client checklists are for everyone in the team */
     const locks = {}, now = Date.now();
     for (const [k, v] of await this.s.list({ prefix: 'lock:' })) if (v.until > now) locks[k.slice(5)] = v; else await this.s.delete(k);
     return json({ seq: (await this.s.get('seq')) || 0, epoch: team.epoch, recs: out, locks, hid: since ? undefined : hid.length || undefined });

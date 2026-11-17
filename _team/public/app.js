@@ -808,7 +808,9 @@
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
       window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
-      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: function () { return {}; } }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); } };
+      window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: teamNs },
+        /* NS code names for the whole team (JP 2026-11-17 09:37): one encrypted settings record (cfgnsnames), written by admins */
+        nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); } };
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');
@@ -821,7 +823,9 @@
     [].forEach.call(document.querySelectorAll('[data-dtab]'), function (x) { x.checked = x.dataset.dtab === S.dtab; });
   }
   var NSM = null;
+  function teamNs() { var r = S.recs.cfgnsnames; return r && !r.del && r.d && r.d.m && typeof r.d.m === 'object' ? r.d.m : {}; }
   function nsName(code) {
+    var tn = teamNs()[String(code || '')]; if (tn) return tn;
     if (!NSM) { NSM = {}; (window.NS3451 || []).forEach(function (q) { NSM[q[0]] = q; }); }
     code = String(code || ''); var q = NSM[code] || NSM[code.slice(0, 2)] || NSM[code.slice(0, 1)]; return q ? (nb ? q[2] : q[1]) : '';
   }

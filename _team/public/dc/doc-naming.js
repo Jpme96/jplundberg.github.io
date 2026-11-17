@@ -14,7 +14,7 @@
   function cur() { return I.cur(); }
   function use(api) {
     I = api; esc = api.esc; k = api.k; toast = api.toast; uid = api.uid; saveP = api.saveP; proj = api.proj; draw = function () { var r = api.draw.apply(this, arguments); lift(); return r; }; getBlob = api.getBlob; lineOf = api.lineOf; unlink = api.unlink; bestLine = api.bestLine;
-    parseName = api.parseName; pairs = api.pairs; issueText = api.issueText; linkOpts = api.linkOpts; codeName = function (c) { var c3 = String(c || '').slice(0, 3), n = nsNames()[c3]; return n || api.codeName(c); }; lineTitle = api.lineTitle; ABBR = api.ABBR; TEG = api.TEG; FAG = api.FAG; PAIR = api.PAIR; today = api.today; pad = api.pad; LP = api.LP; HOST = api.HOST;
+    parseName = api.parseName; pairs = api.pairs; issueText = api.issueText; linkOpts = api.linkOpts; codeName = function (c) { var c3 = String(c || '').slice(0, 3), own = LP && LP.ownMap ? LP.ownMap() : {}, n = nsNames()[c3] || own[c3]; return n || api.codeName(c); }; lineTitle = api.lineTitle; ABBR = api.ABBR; TEG = api.TEG; FAG = api.FAG; PAIR = api.PAIR; today = api.today; pad = api.pad; LP = api.LP; HOST = api.HOST;
     ON.forEach(function (x) { document.removeEventListener(x[0], x[1], x[2]); }); ON = []; listen();   /* the page may run again (instant page changes): one set of listeners, on its newest helpers */
   }
   function nb() { return window.I18N && I18N.lang === 'nb'; }
@@ -255,7 +255,7 @@
   }
   function codeOpts(p, f) {
     var v = String(f.p.code || ''), L = codeList(p), names = {}, groups = [];
-    var NN = nsNames(); owns(p, 'code').forEach(function (y) { if (y[1]) NN[y[0]] = NN[y[0]] || y[1]; });
+    var NN = Object.assign({}, LP && LP.ownMap ? LP.ownMap() : {}, nsNames()); owns(p, 'code').forEach(function (y) { if (y[1]) NN[y[0]] = NN[y[0]] || y[1]; });
     L.forEach(function (c) { names[c[0]] = c[1]; if (c[0].length === 2) groups.push(c[0]); });
     Object.keys(NN).forEach(function (c) { if (c.length >= 3 && !names[c]) L.push([c, NN[c]]); names[c] = names[c] || NN[c]; });
     L.forEach(function (c) { var g = c[0].slice(0, 2); if (c[0].length >= 3 && groups.indexOf(g) < 0) groups.push(g); });
@@ -378,15 +378,28 @@
     else h += '</details>';
     return h;
   }
+  /* where the code names live: Team – one record for the whole team (admins import); cmd – your own codes in the vault (synced to your devices);
+     else this device only (JP 2026-11-17 09:37 "saved … to my colleagues") */
+  function nsWhere() { return HOST && HOST.nsShared ? 'team' : !HOST && window.Features && window.Features.tools ? 'me' : 'here'; }
+  function nsCount() { var o = Object.assign({}, nsNames(), LP && LP.ownMap ? LP.ownMap() : {}); return Object.keys(o).length; }
   function nsBox() {
-    var n = Object.keys(nsNames()).length;
-    return '<div class="dcn-nsimp"><span><b>' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '</b><small class="muted">' + esc(n ? k('ui.dcn-ns-n', '{n} names on this device', { n: n }) : k('ui.dcn-ns-none', 'From your own copy of the standard – a file, or lines like “231 Bærende yttervegger”. Kept on this device only.')) + '</small></span>' +
-      '<span class="dcn-b"><label class="dc-chip"><i class="bi bi-upload"></i> ' + esc(k('ui.dcn-ns-file', 'Import from a file')) + '<input type="file" accept=".txt,.csv,.tsv,text/plain,text/csv" data-dcnnsf hidden></label>' +
-      '<button type="button" class="dc-chip" data-dcnnsp><i class="bi bi-clipboard"></i> ' + esc(k('ui.dcn-ns-paste', 'Paste')) + '</button>' + (n ? '<button type="button" class="dc-chip" data-dcnnsx><i class="bi bi-trash3"></i> ' + esc(k('ui.dcn-ns-clear', 'Remove the names')) + '</button>' : '') + '</span>' +
-      (nsp ? '<textarea data-dcnnst rows="6" maxlength="300000" placeholder="231 Bærende yttervegger&#10;232 Ikke-bærende yttervegger" aria-label="' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '"></textarea><span class="dcn-b"><button type="button" class="pill-btn" data-dcnnss><i class="bi bi-check2"></i> ' + esc(k('ui.dcn-ns-save', 'Save the names')) + '</button></span>' : '') + '</div>';
+    var n = nsCount(), w = nsWhere(), can = w !== 'team' || (HOST.nsCan && HOST.nsCan());
+    var where = w === 'team' ? k('ui.dcn-ns-team', 'Shared with everyone in the team') : w === 'me' ? k('ui.dcn-ns-me', 'Saved with your codes – on all your devices') : k('ui.dcn-ns-here', 'Kept on this device only');
+    return '<div class="dcn-nsimp"><span><b>' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '</b><small class="muted">' + esc((n ? k('ui.dcn-ns-n2', '{n} names', { n: n }) + ' · ' : k('ui.dcn-ns-from', 'From your own copy of the standard – a file, or lines like “231 Bærende yttervegger”.') + ' ') + where + (can ? '' : ' · ' + k('ui.dcn-ns-admin', 'an admin imports them'))) + '</small></span>' +
+      (can ? '<span class="dcn-b"><label class="dc-chip"><i class="bi bi-upload"></i> ' + esc(k('ui.dcn-ns-file', 'Import from a file')) + '<input type="file" accept=".txt,.csv,.tsv,text/plain,text/csv" data-dcnnsf hidden></label>' +
+      '<button type="button" class="dc-chip" data-dcnnsp><i class="bi bi-clipboard"></i> ' + esc(k('ui.dcn-ns-paste', 'Paste')) + '</button>' + (n && w !== 'me' ? '<button type="button" class="dc-chip" data-dcnnsx><i class="bi bi-trash3"></i> ' + esc(k('ui.dcn-ns-clear', 'Remove the names')) + '</button>' : '') + '</span>' : '') +
+      (nsp && can ? '<textarea data-dcnnst rows="6" maxlength="300000" placeholder="231 Bærende yttervegger&#10;232 Ikke-bærende yttervegger" aria-label="' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '"></textarea><span class="dcn-b"><button type="button" class="pill-btn" data-dcnnss><i class="bi bi-check2"></i> ' + esc(k('ui.dcn-ns-save', 'Save the names')) + '</button></span>' : '') + '</div>';
   }
   var nsp = false;
-  function nsSave(m) { var o = nsNames(), n = 0; Object.keys(m).forEach(function (c) { o[c] = m[c]; n++; }); try { localStorage.setItem(NSK, JSON.stringify(o)); } catch (e) {} toast('<i class="bi bi-check2"></i> ' + esc(n ? k('ui.dcn-ns-saved', '{n} code names saved', { n: n }) : k('ui.dcn-ns-nothing', 'No codes with names found'))); }
+  function nsSave(m) {
+    var n = Object.keys(m).length, w = nsWhere(), done = function () { toast('<i class="bi bi-check2"></i> ' + esc(n ? k('ui.dcn-ns-saved', '{n} code names saved', { n: n }) : k('ui.dcn-ns-nothing', 'No codes with names found'))); draw(); };
+    if (!n) { done(); return; }
+    if (w === 'team') { Promise.resolve(HOST.nsSave(m)).then(done); return; }
+    if (w === 'me') { var Fe0 = window.Features, t = Fe0.tools(), mm = {}; (Array.isArray(t.fdvcodes) ? t.fdvcodes : []).forEach(function (c) { if (c && c.c) mm[c.c] = c; }); Object.keys(m).forEach(function (c) { mm[c] = { c: c, n: m[c] }; });
+      t.fdvcodes = Object.keys(mm).sort().map(function (c) { return mm[c]; }).slice(0, 3000); Fe0.saveTools(t); done(); return; }
+    var o = nsNames(); Object.keys(m).forEach(function (c) { o[c] = m[c]; }); try { localStorage.setItem(NSK, JSON.stringify(o)); } catch (e) {} done();
+  }
+  function nsClear() { if (nsWhere() === 'team') { Promise.resolve(HOST.nsSave(null)).then(function () { draw(); }); return; } try { localStorage.removeItem(NSK); } catch (e) {} draw(); }
   function ownCodes(p) {
     var h = nsBox() + '<p class="dcn-h">' + esc(k('ui.dcn-own-codes', 'Your codes')) + ' <span class="muted">' + esc(k('ui.dcn-own-codes-s', 'extra choices in the lists – or pick “+ Own code” in a list')) + '</span></p>', any = 0;
     OWNK.forEach(function (x) { var O = owns(p, x[0]); if (!O.length) return; any = 1; h += '<div class="dcn-oc"><span>' + esc(k(x[1], x[2])) + '</span>' + O.map(function (y) { return '<span class="dc-chip dcn-ochip"><b data-noi18n>' + esc(y[0]) + '</b>' + (y[1] ? ' <span data-noi18n>' + esc(y[1]) + '</span>' : '') + '<button type="button" data-dcnodel="' + esc(x[0] + ':' + y[0]) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-x-lg"></i></button></span>'; }).join('') + '</div>'; });
@@ -477,7 +490,7 @@
       if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) delete f.sg.c; relink(p, f); }); draw(); return; }
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
-      if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); draw(); }; rd.readAsText(t.files[0]); t.value = ''; return; }
+      if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); }; rd.readAsText(t.files[0]); t.value = ''; return; }
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
       if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
@@ -501,8 +514,8 @@
       if ((b = t.closest('[data-dcnuset], [data-dcnusec]'))) { var id4 = b.dataset.dcnuset || b.dataset.dcnusec, isT = !!b.dataset.dcnuset; saveP(cur(), function (p) { var f = fileOf(p, id4); if (!f || !f.cc) return; if (isT && f.cc.t) f.p.abbr = f.cc.t[0]; if (!isT && f.cc.c) f.p.code = f.cc.c[0]; relink(p, f); }); draw(); return; }
       var unfocus = function () { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); };   /* a page draw waits while a field has focus */
       if (t.closest('[data-dcnnsp]')) { nsp = !nsp; draw(); return; }
-      if (t.closest('[data-dcnnss]')) { var ta = document.querySelector('[data-dcnnst]'); nsSave(parseNS(ta ? ta.value : '')); nsp = false; unfocus(); draw(); return; }
-      if (t.closest('[data-dcnnsx]')) { try { localStorage.removeItem(NSK); } catch (e) {} draw(); return; }
+      if (t.closest('[data-dcnnss]')) { var ta = document.querySelector('[data-dcnnst]'); nsp = false; unfocus(); nsSave(parseNS(ta ? ta.value : '')); return; }
+      if (t.closest('[data-dcnnsx]')) { nsClear(); return; }
       if ((b = t.closest('[data-dcnpick]'))) { var pk = b.dataset.dcnpick.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pk[0]); if (!f) return; if (pk[1] === 'code') { f.p.code = pk[2]; if (f.sg) delete f.sg.c; } else { f.p.abbr = pk[2]; if (f.sg) delete f.sg.t; } relink(p, f); }); draw(); return; }
       if (t.closest('[data-dcnocan]')) { nown = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnosave]'))) { var fw = b.closest('[data-dcnownf]'), oa = fw.dataset.dcnownf.split(':'), oc = nclean(fw.querySelector('[data-dcnoc]').value).slice(0, 40), om = fw.querySelector('[data-dcnom]').value.trim().slice(0, 60), keep = fw.querySelector('[data-dcnor]').checked;

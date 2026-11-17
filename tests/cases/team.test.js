@@ -161,6 +161,12 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => DocHost.Fe.list('dckrav').length === 3, 15000), 'the bundle brings every list along');
   const bt = await own.evaluate(() => { const t = DocHost.Fe.tools(); return { types: (t.dctypes || []).map(x => x.name).join(), req: !!(t.dcreq && t.dcreq.codes && t.dcreq.codes['330']) }; });
   check(bt.types === 'Made-up type' && bt.req, 'and the client checklist and the project types ' + JSON.stringify(bt));
+  /* NS code names for the whole team (JP 2026-11-17): an admin imports them once, everyone gets them (encrypted settings record cfgns) */
+  const nsOk = await own.evaluate(async () => { const r = [!!DocHost.nsShared, DocHost.nsCan && DocHost.nsCan()]; let ok; try { ok = await DocHost.nsSave({ '412': 'Made-up wiring name' }); } catch (e) { ok = 'err ' + e.message; } r.push(ok); return r; });
+  const nsGot = await until(own, () => DocHost.LP.ownMap()['412'] === 'Made-up wiring name' && DocHost.LP.nsName('412') === 'Made-up wiring name', 8000);
+  check(nsOk[0] && nsOk[1] && nsOk[2] && nsGot, 'an admin saves NS code names for the team ' + JSON.stringify(nsOk) + ' ' + nsGot);
+  await kari.goto(U + '#docs'); await kari.reload(); await sl(2500);
+  check(await until(kari, () => !!(window.DocHost && DocHost.LP.ownMap()['412'] === 'Made-up wiring name'), 20000), 'and a colleague sees them');
   bundle.krav[0].lines.push({ id: 'x2', code: '330', t: 'H', sys: 'Fire' }); fs.writeFileSync(tmpb, JSON.stringify(bundle));
   await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
   await (await own.$('input[data-dcimport]')).uploadFile(tmpb);
