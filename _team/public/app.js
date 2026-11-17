@@ -410,9 +410,11 @@
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
     var dKey = function (d) { var sm = d.querySelector('summary'); return d.className + '|' + (sm ? sm.textContent.trim() : ''); }, dWas = {};
     [].forEach.call($app.querySelectorAll('details'), function (d) { if (!d.closest('.dc-host, #wkDocCtl, #wkDocReq')) dWas[dKey(d)] = d.open; });   /* a box you opened or closed stays that way when the page is drawn again (JP 2026-11-17 19:59) */
-    $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
+    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
+    if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
+    S.lastHtml = html; $app.innerHTML = html;
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }
