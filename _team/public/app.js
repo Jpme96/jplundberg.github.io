@@ -408,9 +408,12 @@
     else if (/^in=/.test(h)) body = viewInsp(h.slice(3));
     else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.tab()]();
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
+    var dKey = function (d) { var sm = d.querySelector('summary'); return d.className + '|' + (sm ? sm.textContent.trim() : ''); }, dWas = {};
+    [].forEach.call($app.querySelectorAll('details'), function (d) { if (!d.closest('.dc-host, #wkDocCtl, #wkDocReq')) dWas[dKey(d)] = d.open; });   /* a box you opened or closed stays that way when the page is drawn again (JP 2026-11-17 19:59) */
     $app.innerHTML = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
+    [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }
   function head(title, sub, back) {
