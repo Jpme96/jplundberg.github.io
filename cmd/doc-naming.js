@@ -12,7 +12,7 @@
   function on(t, f, c) { document.addEventListener(t, f, c); ON.push([t, f, c]); }
   function cur() { return I.cur(); }
   function use(api) {
-    I = api; esc = api.esc; k = api.k; toast = api.toast; uid = api.uid; saveP = api.saveP; proj = api.proj; draw = function () { var r = api.draw.apply(this, arguments); lift(); return r; }; getBlob = api.getBlob; lineOf = api.lineOf; unlink = api.unlink; bestLine = api.bestLine;
+    I = api; esc = api.esc; k = api.k; toast = api.toast; uid = api.uid; saveP = api.saveP; proj = api.proj; draw = function () { window.__dcUser = Date.now(); var r = api.draw.apply(this, arguments); lift(); return r; }; drawBg = function () { var r = api.draw.apply(this, arguments); lift(); return r; }; getBlob = api.getBlob; lineOf = api.lineOf; unlink = api.unlink; bestLine = api.bestLine;
     parseName = api.parseName; pairs = api.pairs; issueText = api.issueText; linkOpts = api.linkOpts; codeName = function (c) { var c3 = String(c || '').slice(0, 3), own = LP && LP.ownMap ? LP.ownMap() : {}, n = nsNames()[c3] || own[c3]; return n || api.codeName(c); }; lineTitle = api.lineTitle; ABBR = api.ABBR; TEG = api.TEG; FAG = api.FAG; PAIR = api.PAIR; today = api.today; pad = api.pad; LP = api.LP; HOST = api.HOST;
     ON.forEach(function (x) { document.removeEventListener(x[0], x[1], x[2]); }); ON = []; listen();   /* the page may run again (instant page changes): one set of listeners, on its newest helpers */
   }
@@ -216,7 +216,7 @@
       var code = e && e.here ? 'here' : e && e.name === 'PasswordException' ? 'locked' : e && e.name === 'InvalidPDFException' ? 'broken' : e && e.message === 'load' ? 'lib' : 'read';
       if (code === 'here' || code === 'lib') toast('<i class="bi bi-info-circle"></i> ' + esc(code === 'here' ? k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.') : k('ui.dcn-lib', 'The PDF reader could not be loaded – check the connection (it is fetched the first time).')));
       else saveP(pid, function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.cc = { at: today(), e: code }; });
-    }).then(function () { delete ccBusy[fid]; draw(); });
+    }).then(function () { delete ccBusy[fid]; drawBg(); });   /* a check finishing in the background must not close a list you have open */
   }
   function splitStem(n) { return String(n).replace(/\.[a-z0-9]{2,5}$/i, ''); }
   /* after the code or type changed: the file goes to the plan line that fits it now */
@@ -234,6 +234,7 @@
   var nsel = '', nopen = false;
   /* many files (JP 2026-11-16 21:55 "could be messy"): over 6 files each row is one line – the name now → the new name and where it
      stands – and opens on a tap; chips show only what needs you, what is ready, or what is done */
+  var drawBg = function () {};
   var nexp = {}, nflt = '', nfo = '';   /* nfo: the file open in the popup (nopen is the rules box) */
   function fstate(p, f) { var b = nbuild(p, f); if (b.miss.length || (!f.p.code && fkind(f) !== 'photo') || (f.p.code && !f.p.abbr && fkind(f) === 'doc')) return 'todo'; return b.plain + ext(f.orig || f.name) === f.name ? 'done' : 'ready'; }
   var CGRP = { '0': ['Felles', 'Common'], '1': ['Felleskostnader', 'Shared costs'], '2': ['Bygning', 'Building'], '3': ['VVS', 'HVAC and plumbing'], '4': ['Elkraft', 'Electrical power'], '5': ['Tele og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
@@ -252,6 +253,34 @@
     });
     return out;
   }
+  /* a searchable list for the code (JP 2026-11-17 12:53 "make it searchable"): opens over the page, filters by number or name as you type;
+     built from the hidden select, which still does the saving */
+  function cpick(sel) {
+    var old = document.querySelector('.dcn-cpk'); if (old) old.remove();
+    var items = [], grp = '';
+    [].forEach.call(sel.querySelectorAll('option, optgroup'), function (n) { if (n.tagName === 'OPTGROUP') { grp = n.label; return; } if (n.value) items.push({ v: n.value, t: n.textContent, g: n.parentNode.tagName === 'OPTGROUP' ? n.parentNode.label : '', on: n.value === sel.value }); });
+    var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dcn-cpk';
+    ov.innerHTML = '<div class="dcn-sheet dcn-cpks" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dcn-code', 'NS 3451 code')) + '"><div class="dcn-shead"><b>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</b><button type="button" class="icon-btn" data-cpx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      '<input type="search" class="dcn-cpq" placeholder="' + esc(k('ui.dcn-cp-q', 'Search a number or a word – e.g. 36 or ventilasjon')) + '" aria-label="' + esc(k('ui.dcn-cp-q', 'Search a number or a word – e.g. 36 or ventilasjon')) + '" autocomplete="off"><ul class="dcn-cpl"></ul></div>';
+    var q = ov.querySelector('.dcn-cpq'), ul = ov.querySelector('.dcn-cpl'), dn = null;
+    var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
+    var pick = function (v) { close(); sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    var draw1 = function () {
+      var w = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean), last = '', h = '', n = 0;
+      items.forEach(function (it) { var hay = (it.t + ' ' + it.g).toLowerCase(); if (w.some(function (x) { return /^\d+$/.test(x) ? it.v.indexOf(x) !== 0 && it.g.indexOf(x) !== 0 : hay.indexOf(x) < 0; })) return;
+        if (it.g !== last) { last = it.g; h += '<li class="dcn-cpg">' + esc(it.g || '') + '</li>'; }
+        if (n++ < 400) h += '<li><button type="button" data-cpv="' + esc(it.v) + '"' + (it.on ? ' class="on" aria-current="true"' : '') + '>' + esc(it.t) + '</button></li>'; });
+      ul.innerHTML = h || '<li class="dcn-cpg">' + esc(k('ui.dcn-cp-none', 'Nothing found – pick “+ Own code or free text” to write it yourself')) + '</li>';
+    };
+    var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && document.activeElement === q) { e.preventDefault(); var b = ul.querySelector('[data-cpv]'); if (b) pick(b.dataset.cpv); } };
+    ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+    ov.addEventListener('click', function (e) { var b = e.target.closest('[data-cpv]'); if (b) { pick(b.dataset.cpv); return; } if ((e.target === ov && dn === ov) || e.target.closest('[data-cpx]')) close(); });
+    q.addEventListener('input', draw1);
+    document.addEventListener('keydown', ek, true); document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
+    draw1(); var on = ul.querySelector('.on'); if (on) on.scrollIntoView({ block: 'center' });
+    if (!matchMedia('(pointer: coarse)').matches) q.focus();
+    return ov;
+  }
   function codeOpts(p, f) {
     var v = String(f.p.code || ''), L = codeList(p), names = {}, groups = [];
     var NN = Object.assign({}, LP && LP.ownMap ? LP.ownMap() : {}, nsNames()); owns(p, 'code').forEach(function (y) { if (y[1]) NN[y[0]] = NN[y[0]] || y[1]; });
@@ -260,12 +289,17 @@
     L.forEach(function (c) { var g = c[0].slice(0, 2); if (c[0].length >= 3 && groups.indexOf(g) < 0) groups.push(g); });
     groups.sort();
     var known = [], h = '<option value="">' + esc(k('ui.dcn-choose-code', 'Choose a code')) + '</option>';
+    var anyName = Object.keys(NN).filter(function (c) { return c.length >= 3; }).length >= 20;   /* a real list of names was imported */
     groups.forEach(function (g) {
       var gn = names[g] || (CGRP[g[0]] ? (nb() ? CGRP[g[0]][0] : CGRP[g[0]][1]) : ''), list = [];
-      for (var d = 1; d <= 9; d++) list.push(g + d);
+      for (var d = 0; d <= 9; d++) list.push(g + d);
       L.forEach(function (c) { if (c[0].length > 3 && c[0].slice(0, 2) === g && list.indexOf(c[0]) < 0) list.push(c[0]); });
-      /* once the names are known, a code without one is reserved in the standard – leave it out (JP 2026-11-17 11:25: 747, 748 had no name) */
-      if (list.some(function (c) { return names[c]; })) list = list.filter(function (c) { return names[c] || c === v; });
+      /* once names are known (anywhere), a code without one is reserved in the standard – left out (JP 11:25, 12:53: 747, 791–799);
+         x0 (the group itself) only when it has a name; 4-digit codes right after their 3-digit code (JP 12:53 "not properly sorted") */
+      var named = anyName || list.some(function (c) { return names[c]; });
+      list = list.filter(function (c) { return named ? names[c] || c === v : c.slice(-1) !== '0' || c.length > 3 || c === v; });
+      list.sort(function (a, b) { return a.slice(0, 3) === b.slice(0, 3) ? a.length - b.length || (a < b ? -1 : 1) : a < b ? -1 : 1; });
+      if (!list.length) return;
       h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
     });
     return h + ownOpts(p, 'code', v, known);
@@ -312,7 +346,8 @@
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
     var h = '<li class="dcn-row dcn-' + lvl + '" data-dcnf="' + esc(f.id) + '"><div class="dcn-g">' +
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
-      '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '">' + codeOpts(p, f) + '</select></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
+      '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
+        '<button type="button" class="dcn-cbtn" data-dcncpick="' + esc(f.id) + '"><span>' + esc(f.p.code ? f.p.code + (codeName(f.p.code) ? ' ' + codeName(f.p.code) : '') : k('ui.dcn-choose-code', 'Choose a code')) + '</span><i class="bi bi-search"></i></button></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
       (kd === 'doc' ? '<label class="dcn-c"><span>' + esc(k('ui.dcn-type', 'Document type')) + '</span><select data-dcntype="' + esc(f.id) + '">' + typeOpts(p, f) + '</select></label>' + (nown === f.id + ':type' ? ownForm(f.id, 'type') : '') : '') +
       '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
@@ -517,6 +552,7 @@
       if (t.closest('[data-dcnnsp]')) { nsp = !nsp; draw(); return; }
       if (t.closest('[data-dcnnss]')) { var ta = document.querySelector('[data-dcnnst]'); nsp = false; unfocus(); nsSave(parseNS(ta ? ta.value : '')); return; }
       if (t.closest('[data-dcnnsx]')) { nsClear(); return; }
+      if ((b = t.closest('[data-dcncpick]'))) { var sel0 = b.parentNode.querySelector('select[data-dcncode]'); if (sel0) cpick(sel0); return; }
       if ((b = t.closest('[data-dcnpick]'))) { var pk = b.dataset.dcnpick.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pk[0]); if (!f) return; if (pk[1] === 'code') { f.p.code = pk[2]; if (f.sg) delete f.sg.c; } else { f.p.abbr = pk[2]; if (f.sg) delete f.sg.t; } relink(p, f); }); draw(); return; }
       if (t.closest('[data-dcnocan]')) { nown = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnosave]'))) { var fw = b.closest('[data-dcnownf]'), oa = fw.dataset.dcnownf.split(':'), oc = nclean(fw.querySelector('[data-dcnoc]').value).slice(0, 40), om = fw.querySelector('[data-dcnom]').value.trim().slice(0, 60), keep = fw.querySelector('[data-dcnor]').checked;

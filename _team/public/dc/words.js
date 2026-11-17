@@ -235,6 +235,8 @@ window.DC_NB = {
 "ui.dcn-code": "NS 3451-kode",
 "ui.dcn-copy": "Kopier denne regelen",
 "ui.dcn-copy-of": "Kopi av {r}",
+"ui.dcn-cp-none": "Fant ingenting – velg «+ Egen kode eller fritekst» for å skrive den selv",
+"ui.dcn-cp-q": "Søk et nummer eller et ord – f.eks. 36 eller ventilasjon",
 "ui.dcn-cs-keep": "Som skrevet",
 "ui.dcn-current": "Filnavn nå",
 "ui.dcn-del": "Slett regelen",

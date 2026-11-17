@@ -3150,5 +3150,7 @@ I18N.add({
   "ui.dcn-ns-here": ["Kept on this device only", "Lagres bare på denne enheten"],
   "ui.dcn-ns-n2": ["{n} names", "{n} navn"],
   "ui.dcn-ns-from": ["From your own copy of the standard – a file, or lines like “231 Bærende yttervegger”.", "Fra ditt eget eksemplar av standarden – en fil, eller linjer som «231 Bærende yttervegger»."],
-  "ui.dcn-ns-admin": ["an admin imports them", "en admin importerer dem"]
+  "ui.dcn-ns-admin": ["an admin imports them", "en admin importerer dem"],
+  "ui.dcn-cp-q": ["Search a number or a word – e.g. 36 or ventilasjon", "Søk et nummer eller et ord – f.eks. 36 eller ventilasjon"],
+  "ui.dcn-cp-none": ["Nothing found – pick “+ Own code or free text” to write it yourself", "Fant ingenting – velg «+ Egen kode eller fritekst» for å skrive den selv"]
 });

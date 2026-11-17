@@ -101,6 +101,11 @@ fs.writeFileSync(lone, '%PDF made up 4');
     const f = li.querySelector('[data-dcnpv="pid"]'); f.value = '3-999'; f.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 400));
     const li2 = await R(/IMG_0001/); return { top, inPop, sug: li2.querySelector('.dcn-sug code').textContent, kept: /3-999/.test(localStorage.getItem('dcn.tool') || '') }; });
   check(pv.top && pv.inPop && /^3-999[–-]/.test(pv.sug) && pv.kept, 'the property ID can be filled in, goes into the photo’s name and is kept ' + JSON.stringify(pv));
+  /* a redraw from elsewhere waits while you are choosing in a list of the popup, then comes when you leave it (JP 12:54 "boxes close so fast") */
+  const bgd = await p.evaluate(async () => { const li = await R(/./), sel = li.querySelector('select'); await new Promise(r => setTimeout(r, 600)); sel.focus(); const before = document.querySelector('.dcn-fpop');
+    DocCtl.draw(); await new Promise(r => setTimeout(r, 300)); const same = document.querySelector('.dcn-fpop') === before && document.activeElement === sel;
+    sel.blur(); await new Promise(r => setTimeout(r, 400)); return { same, after: document.querySelector('.dcn-fpop') !== before }; });
+  check(bgd.same && bgd.after, 'a redraw from elsewhere waits while a list in the popup is in use ' + JSON.stringify(bgd));
   /* selecting text and letting go outside the box doesn't close it; a tap on the dimmed background does (JP 08:48) */
   const bg = await p.evaluate(async () => { await R(/./); const ov = document.querySelector('.dcn-fpop'), inp = ov.querySelector('input, select');
     inp.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); await new Promise(r => setTimeout(r, 300));
@@ -144,6 +149,13 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => { document.querySelector('[data-dcnnst]').value = '412 Made-up wiring\n413\tMade-up cables\n#skip'; document.querySelector('[data-dcnnss]').click(); }); await sl(300);
   const nm1 = await p.evaluate(async () => { const s = (await R(/./)).querySelector('[data-dcncode]'); return { gone: !s.querySelector('option[value="414"]'), a: s.querySelector('option[value="412"]').textContent, b: s.querySelector('option[value="413"]').textContent, kept: (Features.tools().fdvcodes || []).filter(c => /^41[23]$/.test(c.c)).length, where: document.querySelector('.dcn-nsimp small').textContent }; });
   check(nm0 === '413' && nm1.gone && nm1.a === '412 Made-up wiring' && nm1.b === '413 Made-up cables' && nm1.kept === 2 && /all your devices/.test(nm1.where), 'codes without a name show only the number; pasted names show in the list and are saved with your codes (synced) ' + JSON.stringify({ nm0, nm1 }));
+  /* the code is searchable (JP 12:53) */
+  const sr = await p.evaluate(async () => { const li = await R(/./); li.querySelector('[data-dcncpick]').click(); await new Promise(r => setTimeout(r, 200));
+    const q = document.querySelector('.dcn-cpk .dcn-cpq'); q.value = '41'; q.dispatchEvent(new Event('input')); const all = [...document.querySelectorAll('.dcn-cpk [data-cpv]')].map(b => b.dataset.cpv);
+    q.value = 'made-up wiring'; q.dispatchEvent(new Event('input')); const w = [...document.querySelectorAll('.dcn-cpk [data-cpv]')].map(b => b.dataset.cpv);
+    document.querySelector('.dcn-cpk [data-cpv="412"]').click(); await new Promise(r => setTimeout(r, 500));
+    const li2 = await R(/./); return { all: all.every(v => v.startsWith('41')) && all.length > 0, w: w.join(), gone: !document.querySelector('.dcn-cpk'), now: li2.querySelector('[data-dcncode]').value }; });
+  check(sr.all && sr.w === '412' && sr.gone && sr.now === '412', 'search the code by number or by words, and pick it ' + JSON.stringify(sr));
   await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(200);
   check(await p.evaluate(() => document.querySelectorAll('.dx-ren .dcn-row').length > 0 && /again/i.test(document.querySelector('[data-dxrenclr]').textContent)), 'Start again asks first – the files are still there');
   await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(300);

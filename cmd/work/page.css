@@ -598,3 +598,17 @@ html.dcn-modal { overflow: hidden; }
 .dcn-fsheet .dcn-files { list-style: none; margin: 0; padding: 0; }
 .dcn-fsheet .dcn-row { border: 0; border-left: 0; padding: 0; }
 .dcn-files > .dcn-row.dcn-c .dcn-sumb { min-height: 52px; }
+/* the searchable code list */
+.dcn-hsel { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.dcn-c { position: relative; }
+.dcn-cbtn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, transparent); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.dcn-cbtn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.dcn-cbtn > i { color: var(--muted); flex: 0 0 auto; }
+.dcn-cpks { width: min(620px, 100%); height: min(720px, calc(100dvh - 32px)); display: flex; flex-direction: column; gap: 10px; }
+.dcn-cpq { width: 100%; box-sizing: border-box; min-height: 46px; font-size: 16px; }
+.dcn-cpl { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; overscroll-behavior: contain; }
+.dcn-cpl .dcn-cpg { position: sticky; top: 0; background: var(--bg); font-size: 12.5px; font-weight: 700; color: var(--muted); padding: 10px 4px 4px; }
+.dcn-cpl button { width: 100%; text-align: left; min-height: 40px; padding: 6px 10px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; font-size: 14.5px; cursor: pointer; }
+.dcn-cpl button:hover, .dcn-cpl button:focus-visible { background: rgba(var(--ink-rgb, 255, 255, 255), .07); }
+.dcn-cpl button.on { color: var(--accent); font-weight: 600; }
+@media (max-width: 560px) { .dcn-cpks { height: 88dvh; } }
