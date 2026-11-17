@@ -48,7 +48,8 @@ const BUDGET_KB = { total: 1663 };   /* +2 (2026-11-17): see PAGE_KB */   /* +7 
 /* work +9 kB (2026-11-16, JP 14:39 "a one time thing" – step 3 of the Documentation tab): the two one-off tools, Give files the right names (files or a .zip in, a renamed .zip out) and Check names from the FDV system – nothing saved. */
 /* work +2 kB (2026-11-16, JP 21:21): what the drawing letters mean (Boligbygg tables 8–11), discipline and drawing type suggested, a building number for drawings in the rename tool. */
 /* +2 kB per page (2026-11-17, JP's list 1–8): one money forecast for Home, the Money card and Finances (budget.js), the freeze watchdog worker and the wider wide-page search (diag.js), the quiet wait in upgrades */
-const PAGE_KB = { 'index.html': 1442, 'admin/index.html': 1359, 'calendar/index.html': 1288, 'finance/index.html': 1663, 'food/index.html': 1376, 'goals/index.html': 1306, 'habits/index.html': 1333, 'house/index.html': 1648, 'papers/index.html': 1327, 'people/index.html': 1374, 'travel/index.html': 1432, 'wish/index.html': 1391, 'work/index.html': 1618 };
+/* +2 kB Work (2026-11-17, JP 07:48/07:50): the NS code dropdown with names imported on the device, and the drop popup in the rename tool */
+const PAGE_KB = { 'index.html': 1442, 'admin/index.html': 1359, 'calendar/index.html': 1288, 'finance/index.html': 1663, 'food/index.html': 1376, 'goals/index.html': 1306, 'habits/index.html': 1333, 'house/index.html': 1648, 'papers/index.html': 1327, 'people/index.html': 1374, 'travel/index.html': 1432, 'wish/index.html': 1391, 'work/index.html': 1620 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

@@ -14,7 +14,7 @@
   function cur() { return I.cur(); }
   function use(api) {
     I = api; esc = api.esc; k = api.k; toast = api.toast; uid = api.uid; saveP = api.saveP; proj = api.proj; draw = function () { var r = api.draw.apply(this, arguments); lift(); return r; }; getBlob = api.getBlob; lineOf = api.lineOf; unlink = api.unlink; bestLine = api.bestLine;
-    parseName = api.parseName; pairs = api.pairs; issueText = api.issueText; linkOpts = api.linkOpts; codeName = api.codeName; lineTitle = api.lineTitle; ABBR = api.ABBR; TEG = api.TEG; FAG = api.FAG; PAIR = api.PAIR; today = api.today; pad = api.pad; LP = api.LP; HOST = api.HOST;
+    parseName = api.parseName; pairs = api.pairs; issueText = api.issueText; linkOpts = api.linkOpts; codeName = function (c) { var c3 = String(c || '').slice(0, 3), n = nsNames()[c3]; return n || api.codeName(c); }; lineTitle = api.lineTitle; ABBR = api.ABBR; TEG = api.TEG; FAG = api.FAG; PAIR = api.PAIR; today = api.today; pad = api.pad; LP = api.LP; HOST = api.HOST;
     ON.forEach(function (x) { document.removeEventListener(x[0], x[1], x[2]); }); ON = []; listen();   /* the page may run again (instant page changes): one set of listeners, on its newest helpers */
   }
   function nb() { return window.I18N && I18N.lang === 'nb'; }
@@ -37,7 +37,7 @@
   function ownMean(p, key, x) { var o = owns(p, key).filter(function (y) { return y[0] === x; })[0]; return o ? o[1] || '' : ''; }
   var nown = '';
   function ownOpts(p, key, v, known) {
-    var O = owns(p, key), free = v && known.indexOf(v) < 0 && !O.some(function (y) { return y[0] === v; }), o = function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === v ? ' selected' : '') + '>' + esc(x[0] + (x[1] ? ' – ' + x[1] : '')) + '</option>'; };
+    var O = owns(p, key).filter(function (y) { return known.indexOf(y[0]) < 0; }), free = v && known.indexOf(v) < 0 && !O.some(function (y) { return y[0] === v; }), o = function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === v ? ' selected' : '') + '>' + esc(x[0] + (x[1] ? ' – ' + x[1] : '')) + '</option>'; };
     return (O.length ? '<optgroup label="' + esc(k('ui.dcn-own-codes', 'Your codes')) + '">' + O.map(o).join('') + '</optgroup>' : '') + (free ? '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>' : '') +
       '<option value="__own">' + esc(k('ui.dcn-own-add', '+ Own code or free text …')) + '</option>';
   }
@@ -148,6 +148,29 @@
     PDFJS.catch(function () { PDFJS = null; });
     return PDFJS;
   }
+  /* see a file in a popup over the page instead of a new tab (JP 2026-11-17 07:53): PDF pages drawn with pdf.js (first 40), pictures, text; others offer Download */
+  function view(blob, name) {
+    var old = document.querySelector('.dx-fv'); if (old) old.remove();
+    var url = URL.createObjectURL(blob), e0 = ext(name), pdf = e0 === '.pdf' || blob.type === 'application/pdf', img = /^\.(jpe?g|png|gif|webp|heic|heif|bmp|svg)$/.test(e0) || /^image\//.test(blob.type), txt = /^\.(txt|csv|tsv|xml|json|md)$/.test(e0);
+    var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-fv';
+    ov.innerHTML = '<div class="dcn-sheet dx-fvs" role="dialog" aria-modal="true" aria-label="' + esc(name) + '"><div class="dcn-shead"><b data-noi18n>' + esc(name) + '</b><span class="dcn-b"><a class="dc-chip" href="' + url + '" download="' + esc(name) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</a>' +
+      '<button type="button" class="icon-btn" data-dxfvx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></span></div><div class="dx-fvb">' +
+      (img ? '<img src="' + url + '" alt="">' : pdf || txt ? '<p class="muted">' + esc(k('ui.dx-fv-loading', 'Opening …')) + '</p>' : '<p class="muted">' + esc(k('ui.dx-fv-none', 'No preview for this kind of file – download it to open it.')) + '</p>') + '</div></div>';
+    var close = function () { ov.remove(); URL.revokeObjectURL(url); document.removeEventListener('keydown', ek, true); document.documentElement.classList.remove('dcn-modal'); };
+    var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-dxfvx]')) close(); });
+    document.addEventListener('keydown', ek, true); document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
+    var body = ov.querySelector('.dx-fvb'), bt = ov.querySelector('[data-dxfvx]'); if (bt) bt.focus();
+    if (txt) blob.text().then(function (t) { var pre = document.createElement('pre'); pre.textContent = t.slice(0, 200000); body.innerHTML = ''; body.appendChild(pre); });
+    if (pdf) blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (doc) {
+      body.innerHTML = ''; var W = Math.min(body.clientWidth || 800, 900), n = Math.min(doc.numPages, 40), chain = Promise.resolve();
+      for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { if (!ov.isConnected) return; return doc.getPage(i).then(function (pg) {
+        var v1 = pg.getViewport({ scale: 1 }), dpr = Math.min(window.devicePixelRatio || 1, 2), sc = W / v1.width, vp = pg.getViewport({ scale: sc * dpr }), c = document.createElement('canvas');
+        c.width = vp.width; c.height = vp.height; c.style.width = Math.round(vp.width / dpr) + 'px'; body.appendChild(c); return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; }); }); })(i);
+      chain.then(function () { if (doc.numPages > n && ov.isConnected) { var m = document.createElement('p'); m.className = 'muted'; m.textContent = k('ui.dx-fv-more', 'Showing the first {n} of {t} pages – download for the rest.', { n: n, t: doc.numPages }); body.appendChild(m); } });
+    }).catch(function () { body.innerHTML = '<p class="muted">' + esc(k('ui.dx-fv-bad', 'Could not show this PDF – download it to open it.')) + '</p>'; });
+    return ov;
+  }
   function pdfText(blob) {
     return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) {
       var n = Math.min(pdf.numPages, 40), pages = [], title = '', th = 0, chain = Promise.resolve();
@@ -216,9 +239,24 @@
   var CGRP = { '0': ['Felles', 'Common'], '1': ['Felleskostnader', 'Shared costs'], '2': ['Bygning', 'Building'], '3': ['VVS', 'HVAC and plumbing'], '4': ['Elkraft', 'Electrical power'], '5': ['Tele og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
   /* every code as a dropdown, grouped by its two-digit part (JP 2026-11-17 07:22 "why free text?"). The three-digit names aren't in the
      public code (licence), so a code shows its own name when the plan or your own codes know it, else its group's name. */
+  var NSK = 'dcn.nsnames';
+  function nsNames() { try { var o = JSON.parse(localStorage.getItem(NSK) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+  function parseNS(txt) {
+    var out = {};
+    String(txt || '').split(/\r?\n/).forEach(function (ln) {
+      ln = ln.trim(); if (!ln || ln[0] === '#') return; var code = '', name = '', m;
+      if (/[|\t;]/.test(ln)) ln.split(/[|\t;]/).map(function (x) { return x.trim(); }).forEach(function (x) { var q = x.match(/^(\d{2,4})(?:[.,]0+)?$/); if (q) { if (q[1].length >= code.length) code = q[1]; } else if (x && !name) name = x; });
+      else if ((m = ln.match(/^(\d{2,4})(?:[.,]0+)?\s*[-–:.]?\s*(.+)$/))) { code = m[1]; name = m[2]; }
+      name = name.replace(/\s+/g, ' ').replace(/\.$/, '').trim();
+      if (code && name && !/^\(?reservert\)?$/i.test(name)) out[code] = name.slice(0, 100);
+    });
+    return out;
+  }
   function codeOpts(p, f) {
     var v = String(f.p.code || ''), L = codeList(p), names = {}, groups = [];
+    var NN = nsNames(); owns(p, 'code').forEach(function (y) { if (y[1]) NN[y[0]] = NN[y[0]] || y[1]; });
     L.forEach(function (c) { names[c[0]] = c[1]; if (c[0].length === 2) groups.push(c[0]); });
+    Object.keys(NN).forEach(function (c) { if (c.length >= 3 && !names[c]) L.push([c, NN[c]]); names[c] = names[c] || NN[c]; });
     L.forEach(function (c) { var g = c[0].slice(0, 2); if (c[0].length >= 3 && groups.indexOf(g) < 0) groups.push(g); });
     groups.sort();
     var known = [], h = '<option value="">' + esc(k('ui.dcn-choose-code', 'Choose a code')) + '</option>';
@@ -226,7 +264,7 @@
       var gn = names[g] || (CGRP[g[0]] ? (nb() ? CGRP[g[0]][0] : CGRP[g[0]][1]) : ''), list = [];
       for (var d = 1; d <= 9; d++) list.push(g + d);
       L.forEach(function (c) { if (c[0].length > 3 && c[0].slice(0, 2) === g && list.indexOf(c[0]) < 0) list.push(c[0]); });
-      h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + ' ' + (names[c] || '· ' + gn)) + '</option>'; }).join('') + '</optgroup>';
+      h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
     });
     return h + ownOpts(p, 'code', v, known);
   }
@@ -338,8 +376,17 @@
     else h += '</details>';
     return h;
   }
+  function nsBox() {
+    var n = Object.keys(nsNames()).length;
+    return '<div class="dcn-nsimp"><span><b>' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '</b><small class="muted">' + esc(n ? k('ui.dcn-ns-n', '{n} names on this device', { n: n }) : k('ui.dcn-ns-none', 'From your own copy of the standard – a file, or lines like “231 Bærende yttervegger”. Kept on this device only.')) + '</small></span>' +
+      '<span class="dcn-b"><label class="dc-chip"><i class="bi bi-upload"></i> ' + esc(k('ui.dcn-ns-file', 'Import from a file')) + '<input type="file" accept=".txt,.csv,.tsv,text/plain,text/csv" data-dcnnsf hidden></label>' +
+      '<button type="button" class="dc-chip" data-dcnnsp><i class="bi bi-clipboard"></i> ' + esc(k('ui.dcn-ns-paste', 'Paste')) + '</button>' + (n ? '<button type="button" class="dc-chip" data-dcnnsx><i class="bi bi-trash3"></i> ' + esc(k('ui.dcn-ns-clear', 'Remove the names')) + '</button>' : '') + '</span>' +
+      (nsp ? '<textarea data-dcnnst rows="6" maxlength="300000" placeholder="231 Bærende yttervegger&#10;232 Ikke-bærende yttervegger" aria-label="' + esc(k('ui.dcn-ns-names', 'Names for the NS 3451 codes')) + '"></textarea><span class="dcn-b"><button type="button" class="pill-btn" data-dcnnss><i class="bi bi-check2"></i> ' + esc(k('ui.dcn-ns-save', 'Save the names')) + '</button></span>' : '') + '</div>';
+  }
+  var nsp = false;
+  function nsSave(m) { var o = nsNames(), n = 0; Object.keys(m).forEach(function (c) { o[c] = m[c]; n++; }); try { localStorage.setItem(NSK, JSON.stringify(o)); } catch (e) {} toast('<i class="bi bi-check2"></i> ' + esc(n ? k('ui.dcn-ns-saved', '{n} code names saved', { n: n }) : k('ui.dcn-ns-nothing', 'No codes with names found'))); }
   function ownCodes(p) {
-    var h = '<p class="dcn-h">' + esc(k('ui.dcn-own-codes', 'Your codes')) + ' <span class="muted">' + esc(k('ui.dcn-own-codes-s', 'extra choices in the lists – or pick “+ Own code” in a list')) + '</span></p>', any = 0;
+    var h = nsBox() + '<p class="dcn-h">' + esc(k('ui.dcn-own-codes', 'Your codes')) + ' <span class="muted">' + esc(k('ui.dcn-own-codes-s', 'extra choices in the lists – or pick “+ Own code” in a list')) + '</span></p>', any = 0;
     OWNK.forEach(function (x) { var O = owns(p, x[0]); if (!O.length) return; any = 1; h += '<div class="dcn-oc"><span>' + esc(k(x[1], x[2])) + '</span>' + O.map(function (y) { return '<span class="dc-chip dcn-ochip"><b data-noi18n>' + esc(y[0]) + '</b>' + (y[1] ? ' <span data-noi18n>' + esc(y[1]) + '</span>' : '') + '<button type="button" data-dcnodel="' + esc(x[0] + ':' + y[0]) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-x-lg"></i></button></span>'; }).join('') + '</div>'; });
     return h + '<div class="dcn-oadd"><select data-dcnoa aria-label="' + esc(k('ui.dcn-own-for', 'For')) + '">' + OWNK.map(function (x) { return '<option value="' + x[0] + '">' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select>' +
       '<input data-dcnoc maxlength="40" placeholder="' + esc(k('ui.dcn-own-c', 'Code or text, e.g. E2')) + '" aria-label="' + esc(k('ui.dcn-own-c', 'Code or text, e.g. E2')) + '"><input data-dcnom maxlength="60" placeholder="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '" aria-label="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '">' +
@@ -406,6 +453,7 @@
       if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) delete f.sg.c; relink(p, f); }); draw(); return; }
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
+      if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); draw(); }; rd.readAsText(t.files[0]); t.value = ''; return; }
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
       if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
@@ -428,6 +476,9 @@
       if ((b = t.closest('[data-dcncc]'))) { ccRun(cur(), b.dataset.dcncc); return; }
       if ((b = t.closest('[data-dcnuset], [data-dcnusec]'))) { var id4 = b.dataset.dcnuset || b.dataset.dcnusec, isT = !!b.dataset.dcnuset; saveP(cur(), function (p) { var f = fileOf(p, id4); if (!f || !f.cc) return; if (isT && f.cc.t) f.p.abbr = f.cc.t[0]; if (!isT && f.cc.c) f.p.code = f.cc.c[0]; relink(p, f); }); draw(); return; }
       var unfocus = function () { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); };   /* a page draw waits while a field has focus */
+      if (t.closest('[data-dcnnsp]')) { nsp = !nsp; draw(); return; }
+      if (t.closest('[data-dcnnss]')) { var ta = document.querySelector('[data-dcnnst]'); nsSave(parseNS(ta ? ta.value : '')); nsp = false; unfocus(); draw(); return; }
+      if (t.closest('[data-dcnnsx]')) { try { localStorage.removeItem(NSK); } catch (e) {} draw(); return; }
       if ((b = t.closest('[data-dcnpick]'))) { var pk = b.dataset.dcnpick.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pk[0]); if (!f) return; if (pk[1] === 'code') { f.p.code = pk[2]; if (f.sg) delete f.sg.c; } else { f.p.abbr = pk[2]; if (f.sg) delete f.sg.t; } relink(p, f); }); draw(); return; }
       if (t.closest('[data-dcnocan]')) { nown = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnosave]'))) { var fw = b.closest('[data-dcnownf]'), oa = fw.dataset.dcnownf.split(':'), oc = nclean(fw.querySelector('[data-dcnoc]').value).slice(0, 40), om = fw.querySelector('[data-dcnom]').value.trim().slice(0, 60), keep = fw.querySelector('[data-dcnor]').checked;
@@ -453,5 +504,5 @@
       if ((b = t.closest('[data-dcnpd]'))) { ruleEdit(function (r) { r.parts.splice(+b.dataset.dcnpd, 1); }); return; }
     });
   }
-  window.DocNaming = { use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
+  window.DocNaming = { view: view, use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
 })();

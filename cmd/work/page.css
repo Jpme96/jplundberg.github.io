@@ -574,3 +574,19 @@ html.dcn-modal { overflow: hidden; }
   .dx-ren .dcn-all, .dx-ren [data-dcnall] { margin-left: auto; margin-right: auto; }
 }
 .dx-ren .pill-btn, .dx-ren .dc-chip, .dcn-ov .pill-btn { white-space: normal; max-width: 100%; padding-top: 8px; padding-bottom: 8px; box-sizing: border-box; }   /* long labels wrap inside the button, never past the edge */
+.dcn-nsimp { display: flex; flex-direction: column; gap: 10px; padding: 12px; margin: 12px 0; border: 1px dashed rgba(var(--ink-rgb), .2); border-radius: 12px; }
+.dcn-nsimp > span:first-child { display: flex; flex-direction: column; gap: 4px; }
+.dcn-nsimp textarea { width: 100%; box-sizing: border-box; font: 13px/1.4 ui-monospace, monospace; }
+/* the drop popup */
+.dx-dz { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 220px; padding: 24px; margin: 6px 0 12px; border: 2px dashed rgba(var(--ink-rgb), .25); border-radius: 16px; text-align: center; cursor: pointer; transition: background var(--dur-1, .15s), border-color var(--dur-1, .15s); }
+.dx-dz > i { font-size: 40px; color: var(--accent); }
+.dx-dz > b { font-size: 17px; }
+.dx-dz.on, .dx-ren.dx-dragon { border-color: var(--accent); background: rgba(var(--accent-rgb, 20, 184, 166), .08); }
+.dx-dz .pill-btn { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; }
+/* the file popup */
+.dx-fvs { width: min(980px, 100%); height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.dx-fvs .dcn-shead b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dx-fvb { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 4px 0 12px; }
+.dx-fvb canvas, .dx-fvb img { max-width: 100%; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 4px 18px rgba(0, 0, 0, .3); }
+.dx-fvb pre { align-self: stretch; white-space: pre-wrap; font: 12.5px/1.45 ui-monospace, monospace; margin: 0; }
+@media (max-width: 560px) { .dx-fvs { height: 92dvh; } }

@@ -83,6 +83,23 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnexp]').click()); await sl(200);
   check(await p.evaluate(() => !!document.querySelector('.dx-ren .dcn-row:not(.dcn-c) [data-dcncode]')), 'a tap opens the row with its fields');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
+  /* the add button opens a popup to drop files on (JP 07:50); a drop there adds them and closes it */
+  await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200);
+  const dp = await p.evaluate(async () => { const o = document.querySelector('.dx-drop'); if (!o || o.parentNode !== document.body) return 'no popup';
+    const n0 = document.querySelectorAll('.dx-ren .dcn-row').length, dt = new DataTransfer(); dt.items.add(new File(['made up'], 'Made-up dropped.pdf'));
+    o.querySelector('.dx-dz').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })); await new Promise(r => setTimeout(r, 1500));
+    return { gone: !document.querySelector('.dx-drop'), added: document.querySelectorAll('.dx-ren .dcn-row').length - n0, there: [...document.querySelectorAll('.dx-ren .dcn-row')].some(x => /Made-up dropped/.test(x.textContent)) }; });
+  check(dp.gone && dp.there, 'files dropped on the popup are added and the popup closes ' + JSON.stringify(dp));
+  await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200); await p.keyboard.press('Escape'); await sl(200);
+  check(await p.evaluate(() => !document.querySelector('.dx-drop')), 'Escape closes the drop popup');
+  /* Open shows the file in a popup over the page, not a new tab (JP 07:53) */
+  const pages0 = (await b.pages()).length;
+  await p.evaluate(() => { const o = document.querySelector('.dx-ren .dcn-open'); if (o) o.click(); else { const e = document.querySelector('.dx-ren [data-dcnexp]'); e.click(); } }); await sl(300);
+  await p.evaluate(() => { const o = document.querySelector('.dx-ren .dcn-open'); if (o && !document.querySelector('.dx-fv')) o.click(); }); await sl(600);
+  const fv = await p.evaluate(() => { const o = document.querySelector('.dx-fv'); return o ? { body: o.parentNode === document.body, dl: !!o.querySelector('a[download]') } : null; });
+  check(fv && fv.body && fv.dl && (await b.pages()).length === pages0, 'Open shows the file in a popup with Download – no new tab ' + JSON.stringify(fv));
+  await p.keyboard.press('Escape'); await sl(200);
+  check(await p.evaluate(() => !document.querySelector('.dx-fv')), 'Escape closes the file popup');
   /* JP 06:38: ¤ in names, the type before a code, the row inside its box, the name further down with its own Open button, Start again asks */
   await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); dt.items.add(new File(['made up text'], 'TDS¤71¤MADEUP Oljemaling¤Nor¤NO.pdf', { type: 'application/pdf' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(2000);
   const tz = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /MADEUP/.test(x.textContent)); if (!li) return null;
@@ -105,6 +122,12 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => { const r = [...document.querySelectorAll('.dx-ren [data-dcndel]')]; r.forEach(b => b.click()); }); await sl(300);
   const hb = await p.evaluate(() => { const b = document.querySelector('.dx-ren .pill-btn'); return Math.round(b.getBoundingClientRect().height); });
   check(hb >= 44, 'the buttons are at least 44 px tall: ' + hb);
+  /* code names (JP 07:48): an unnamed code is just its number; names pasted from your own copy show in the list, kept on this device */
+  const nm0 = await p.evaluate(() => { const s = document.querySelector('.dx-ren [data-dcncode]'); const o = s && s.querySelector('option[value="413"]'); return o ? o.textContent : null; });
+  await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('[data-dcnnsp]').click(); }); await sl(200);
+  await p.evaluate(() => { document.querySelector('[data-dcnnst]').value = '412 Made-up wiring\n413\tMade-up cables\n#skip'; document.querySelector('[data-dcnnss]').click(); }); await sl(300);
+  const nm1 = await p.evaluate(() => { const s = document.querySelector('.dx-ren [data-dcncode]'); return { a: s.querySelector('option[value="412"]').textContent, b: s.querySelector('option[value="413"]').textContent, kept: Object.keys(JSON.parse(localStorage.getItem('dcn.nsnames') || '{}')).length }; });
+  check(nm0 === '413' && nm1.a === '412 Made-up wiring' && nm1.b === '413 Made-up cables' && nm1.kept === 2, 'codes without a name show only the number; pasted names show in the list ' + JSON.stringify({ nm0, nm1 }));
   await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(200);
   check(await p.evaluate(() => document.querySelectorAll('.dx-ren .dcn-row').length > 0 && /again/i.test(document.querySelector('[data-dxrenclr]').textContent)), 'Start again asks first – the files are still there');
   await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(300);
