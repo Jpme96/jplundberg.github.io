@@ -204,3 +204,6 @@ a.t-icon { text-decoration: none; }
   .t-screen p, .t-form { max-width: 420px; }
 }
 @media (min-width: 1400px) { .t-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
+
+/* the empty Requirements card stays hidden until a project's Requirements step is open (JP 2026-11-17 19:49) */
+#wkDocReq.dc-gone, #wkDocCtl.dc-gone { display: none !important; }

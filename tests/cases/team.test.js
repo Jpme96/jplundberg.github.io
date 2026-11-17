@@ -139,6 +139,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.goto(U + '#docs'); await own.reload();
   check(await until(own, () => !!document.querySelector('#wkDocCtl [data-drnew]'), 20000), 'Documents opens Documentation (the same code as /cmd)');
   check(await until(own, () => !!document.querySelector('#wkDocCtl .dx-tools [data-dxtool="plan"]') && !document.querySelector('[data-dtab="req"]')), 'one Documentation choice with the plan check on top (JP 2026-11-16)');
+  check(await own.evaluate(() => { const r = document.getElementById('wkDocReq'); return !r || r.offsetHeight === 0; }), 'no empty Requirements card under the list (JP 2026-11-17 19:49)');
   const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
   check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
   check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');
