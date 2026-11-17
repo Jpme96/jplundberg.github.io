@@ -391,6 +391,9 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
   .card-head > h2 { min-width: 0; }
   .card-head > :not(h2) { flex-shrink: 0; }
 }
+:where(.pill-btn:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; text-decoration: none; box-sizing: border-box; }
+.pill-btn { height: auto; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
+.pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 .fdv-list li > .icon-btn + .icon-btn { margin-left: -6px; }
 .fdv-list li.fdv-on { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 10px; }
 .fdv-list .fdv-meta { color: var(--text); opacity: .75; }
@@ -1058,3 +1061,5 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
   .dx-tsheet { border-radius: 18px 18px 0 0; max-height: 92dvh; }
   .dx-tsheet > .dx-panel { padding-bottom: max(22px, env(safe-area-inset-bottom)); }
 }
+.dx-panel .dc-chip, .dx-panel label.dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; box-sizing: border-box; cursor: pointer; }
+.dx-panel .dc-facts { gap: 12px; }

@@ -115,7 +115,7 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
 .modern .icon-btn { border-radius: var(--r-ctl); background: var(--chip); border-color: transparent; }
 .modern .icon-btn:hover { background: var(--accent-soft); border-color: transparent; }
 .modern .pill-btn { border-radius: var(--r-ctl); font-weight: 600; }
-.modern .pill-btn.wide { border-radius: 999px; }
+.modern .pill-btn.wide { border-radius: var(--r-ctl); }
 .modern :is(input, textarea, select) { border-radius: var(--r-ctl); }
 .modern .seg { border-radius: var(--r-ctl); }
 

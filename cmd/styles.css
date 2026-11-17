@@ -4254,3 +4254,8 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .icon-btn > i.bi, .fold-btn > i.bi, .pill-btn.sm > i.bi:only-child { display: block; line-height: 1; width: 1em; height: 1em; }
 .icon-btn > i.bi::before, .fold-btn > i.bi::before, .pill-btn.sm > i.bi:only-child::before { display: block; vertical-align: 0; line-height: 1; }
 .wp-crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .wp-cdet > summary { cursor: pointer; font-size: 13px; color: var(--muted); margin: 6px 0; } .wp-cdet textarea { width: 100%; }
+/* one button look everywhere (JP 2026-11-17 20:39): 44 px high, 12 px corners, 15 px words in the middle, an icon beside them */
+:where(.pill-btn:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; text-decoration: none; box-sizing: border-box; }
+.pill-btn { height: auto; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
+.pill-btn.wide { border-radius: 12px; }
+.pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }

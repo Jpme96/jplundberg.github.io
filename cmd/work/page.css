@@ -651,3 +651,6 @@ html.dcn-modal { overflow: hidden; }
 .dx-tsheet > .dx-panel { margin: 0; border: 0; border-radius: 0; background: none; padding: 18px 20px 22px; }
 .dx-tsheet .dx-ph { position: sticky; top: 0; z-index: 2; background: var(--bg); margin: -18px -20px 0; padding: 18px 20px 8px; }
 @media (max-width: 560px) { .dx-tov { align-items: flex-end; padding: 0; } .dx-tsheet { border-radius: 18px 18px 0 0; max-height: 92dvh; } .dx-tsheet > .dx-panel { padding-bottom: max(22px, env(safe-area-inset-bottom)); } }
+/* every tool's secondary buttons the same size as its main one (JP 2026-11-17 20:39) */
+.dx-panel .dc-chip, .dx-panel label.dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; box-sizing: border-box; cursor: pointer; }
+.dx-panel .dc-facts { gap: 12px; }
