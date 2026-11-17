@@ -1020,3 +1020,5 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-cpl button.l4 { padding-left: 46px; font-size: 13.5px; color: var(--muted); }
 .dcn-cpl button.l4 b { font-weight: 500; min-width: 3.6em; }
 .dcn-cpl button.on, .dcn-cpl button.l4.on { color: var(--accent); font-weight: 600; }
+.dcn-ov a.dc-chip, .dcn-ov .dcn-shead .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; text-decoration: none; color: inherit; line-height: 1; box-sizing: border-box; }
+.dcn-ov .dcn-shead .dcn-b { display: inline-flex; align-items: center; gap: 10px; }
