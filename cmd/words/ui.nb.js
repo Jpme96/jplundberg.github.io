@@ -3165,10 +3165,14 @@ I18N.add({
   "ui.dx-pl-nor": ["No checklist from the client yet – the document types aren’t checked", "Ingen sjekkliste fra byggherren ennå – dokumenttypene sjekkes ikke"],
   "ui.dx-pl-help-t": ["Each plan is checked against the client’s checklist when you add it. They stay here for the whole team until someone deletes them.", "Hver plan sjekkes mot byggherrens sjekkliste når du legger den til. De ligger her for hele teamet til noen sletter dem."],
   "ui.dx-pl-help": ["Each plan is checked against the client’s checklist when you add it. They stay here until you delete them.", "Hver plan sjekkes mot byggherrens sjekkliste når du legger den til. De ligger her til du sletter dem."],
-  "ui.dx-pl-add": ["Add plans (.xlsx) – several at once", "Legg til planer (.xlsx) – flere på en gang"],
   "ui.dx-pl-busy": ["Checking {n} …", "Sjekker {n} …"],
   "ui.dx-pl-none": ["No plans yet – add one or more, or drop them here.", "Ingen planer ennå – legg til en eller flere, eller slipp dem her."],
   "ui.dx-pl-here": ["file on the device that added it", "filen ligger på enheten som la den til"],
   "ui.dx-pl-open": ["Open the check", "Åpne sjekken"],
-  "ui.dx-pl-sure": ["Delete the plan? Tap again", "Slette planen? Trykk igjen"]
+  "ui.dx-pl-sure": ["Delete the plan? Tap again", "Slette planen? Trykk igjen"],
+  "ui.dx-pl-more": ["Add more plans", "Legg til flere planer"],
+  "ui.dx-pl-pick": ["Pick document plans (.xlsx)", "Velg dokumentplaner (.xlsx)"],
+  "ui.dx-pl-drop-t": ["Add document plans", "Legg til dokumentplaner"],
+  "ui.dx-pl-drop-here": ["Drop the document plans here", "Slipp dokumentplanene her"],
+  "ui.dx-pl-drop-help": ["Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.", "Excel-filer (.xlsx) – så mange du vil. Hver sjekkes mot byggherrens sjekkliste og blir liggende til den slettes."]
 });

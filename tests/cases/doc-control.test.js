@@ -376,7 +376,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(() => { PageTabs.show('doc'); }); await sl(300);
   for (let i = 0; i < 3 && await p.evaluate(() => !!document.querySelector('#wkDocCtl [data-dcback]')); i++) { await p.evaluate(() => document.querySelector('#wkDocCtl [data-dcback]').click()); await sl(300); }
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-dxtool="plan"]').click()); await sl(400);
-  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)), i = document.querySelector('input[data-dxplanf]'), dt = new DataTransfer();
+  await p.evaluate(() => document.querySelector('.dx-plans [data-dxplanadd]').click()); await sl(150);
+  check(await p.evaluate(() => !!document.querySelector('.dx-drop .dx-dz input[accept*="xlsx"]') && getComputedStyle(document.querySelector('.dx-plans [data-dxplanadd]')).minHeight === '44px'), 'the plans box is like the rename box: a big button that opens the drop popup');
+  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)), i = document.querySelector('.dx-drop input[type=file]'), dt = new DataTransfer();
     dt.items.add(new File([u], 'Made-up plan D.xlsx')); dt.items.add(new File([u], 'Made-up plan E.xlsx')); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }, book2.toString('base64'));
   check(await until(() => document.querySelectorAll('.dx-plans .dx-pli').length === 2 && !document.querySelector('.xv-note')), 'two plans added at once – listed, no viewer taking the screen');
   const plS = await p.evaluate(() => [...document.querySelectorAll('.dx-plans .dx-pli')].map(li => li.querySelector('.dx-pls').textContent.replace(/\s+/g, ' ')));

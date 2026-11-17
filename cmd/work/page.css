@@ -640,3 +640,8 @@ html.dcn-modal { overflow: hidden; }
 .dx-tag.na { background: rgba(var(--ink-rgb, 255, 255, 255), .08); color: var(--muted); }
 @media (min-width: 900px) { .dx-pli { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) auto; align-items: center; } .dx-plb .dx-clr { margin-left: 0; } }
 @media (max-width: 700px) { .dx-plb { justify-content: center; } .dx-plb .dx-clr { margin-left: 0; } .dx-plans .dc-facts { justify-content: center; } }
+/* Document plans look like "Give files the right names" (JP 2026-11-17 19:05) */
+.dx-plans .pill-btn, .dx-plans .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; white-space: normal; max-width: 100%; box-sizing: border-box; }
+.dx-plans .dc-facts { gap: 12px; margin: 12px 0; }
+.dx-plans .icon-btn.sm { width: 40px; height: 40px; }
+.dx-plans.dx-dragon { border-color: var(--accent); background: rgba(var(--accent-rgb, 20, 184, 166), .08); }

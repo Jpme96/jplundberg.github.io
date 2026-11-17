@@ -343,15 +343,16 @@
     return h + N.files(p, F) + '</section>';
   }
   /* a popup to drop files on, or pick them (JP 2026-11-17 07:50); the panel itself takes dropped files too */
-  function renDrop() {
+  function renDrop(o) {
+    o = o || {};
     if (document.querySelector('.dx-drop')) return;
     var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-drop';
-    ov.innerHTML = '<div class="dcn-sheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '"><div class="dcn-shead"><b>' + esc(k('ui.dx-drop-t', 'Add files')) + '</b><button type="button" class="icon-btn" data-dxdx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
-      '<label class="dx-dz"><i class="bi bi-cloud-arrow-up"></i><b>' + esc(k('ui.dx-drop-here', 'Drop the files or a .zip here')) + '</b><small class="muted">' + esc(k('ui.dx-drop-or', 'or')) + '</small><span class="pill-btn"><i class="bi bi-folder2-open"></i> ' + esc(k('ui.dx-drop-pick', 'Choose files')) + '</span><input type="file" multiple hidden></label>' +
-      '<p class="muted dc-help">' + esc(k('ui.dx-drop-help', 'PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.')) + '</p></div>';
+    ov.innerHTML = '<div class="dcn-sheet" role="dialog" aria-modal="true" aria-label="' + esc(o.label || k('ui.dx-t-ren', 'Give files the right names')) + '"><div class="dcn-shead"><b>' + esc(o.title || k('ui.dx-drop-t', 'Add files')) + '</b><button type="button" class="icon-btn" data-dxdx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      '<label class="dx-dz"><i class="bi bi-cloud-arrow-up"></i><b>' + esc(o.here || k('ui.dx-drop-here', 'Drop the files or a .zip here')) + '</b><small class="muted">' + esc(k('ui.dx-drop-or', 'or')) + '</small><span class="pill-btn"><i class="bi bi-folder2-open"></i> ' + esc(k('ui.dx-drop-pick', 'Choose files')) + '</span><input type="file" multiple' + (o.accept ? ' accept="' + esc(o.accept) + '"' : '') + ' hidden></label>' +
+      '<p class="muted dc-help">' + esc(o.help || k('ui.dx-drop-help', 'PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.')) + '</p></div>';
     var close = function () { ov.remove(); document.removeEventListener('keydown', esc1); document.documentElement.classList.remove('dcn-modal'); };
     var esc1 = function (e) { if (e.key === 'Escape') close(); };
-    var take = function (fl) { fl = [].slice.call(fl || []); if (fl.length) { close(); renAdd(fl); } };
+    var take = function (fl) { fl = [].slice.call(fl || []); if (fl.length) { close(); (o.take || renAdd)(fl); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });   /* a press that starts in the box and ends outside it doesn't close it */
     ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxdx]')) close(); });
     ov.addEventListener('change', function (e) { if (e.target.type === 'file') take(e.target.files); });
@@ -1310,7 +1311,7 @@
     var L0 = plList();
     var h = '<section class="dx-panel dx-plans"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-plans', 'Document plans')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="muted dc-help">' + esc(HOST && HOST.team ? k('ui.dx-pl-help-t', 'Each plan is checked against the client’s checklist when you add it. They stay here for the whole team until someone deletes them.') : k('ui.dx-pl-help', 'Each plan is checked against the client’s checklist when you add it. They stay here until you delete them.')) + '</p>' +
-      '<div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-plus"></i> ' + esc(k('ui.dx-pl-add', 'Add plans (.xlsx) – several at once')) + '<input type="file" multiple accept=".xlsx,.xlsm" data-dxplanf hidden></label>' + (plBusy ? '<span class="muted"><i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-pl-busy', 'Checking {n} …', { n: plBusy })) + '</span>' : '') + '</div>';
+      '<div class="dc-facts"><button type="button" class="pill-btn dc-file" data-dxplanadd><i class="bi bi-files"></i> ' + esc(L0.length ? k('ui.dx-pl-more', 'Add more plans') : k('ui.dx-pl-pick', 'Pick document plans (.xlsx)')) + '</button><input type="file" multiple accept=".xlsx,.xlsm" data-dxplanf hidden>' + (plBusy ? '<span class="muted"><i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-pl-busy', 'Checking {n} …', { n: plBusy })) + '</span>' : '') + '</div>';
     if (!L0.length) return h + '<p class="muted">' + esc(PLS ? k('ui.dx-pl-none', 'No plans yet – add one or more, or drop them here.') : k('ui.loading', 'Loading …')) + '</p></section>';
     h += '<ul class="dx-pl">' + L0.map(function (e) {
       return '<li class="dx-pli"><div class="dx-pln"><b data-noi18n>' + esc(e.name) + '</b><small class="muted">' + esc(fmt(String(e.chk || e.at).slice(0, 10))) + (e.by ? ' · ' + esc(e.by) : '') + (e.here ? ' · ' + esc(k('ui.dx-pl-here', 'file on the device that added it')) : '') + '</small></div>' +
@@ -1517,6 +1518,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if (t.closest('[data-dxplanadd]')) { renDrop({ label: k('ui.dx-t-plans', 'Document plans'), title: k('ui.dx-pl-drop-t', 'Add document plans'), here: k('ui.dx-pl-drop-here', 'Drop the document plans here'), accept: '.xlsx,.xlsm', help: k('ui.dx-pl-drop-help', 'Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.'), take: function (fl) { plAdd(fl.filter(function (f) { return /\.xls[xm]$/i.test(f.name); })); } }); return; }
     if ((b = t.closest('[data-dxplopen]'))) { plOpen(b.dataset.dxplopen); return; }
     if ((b = t.closest('[data-dxpldl]'))) { var pe = plList().filter(function (x) { return x.id === b.dataset.dxpldl; })[0]; if (pe) plFile(pe).then(function (f) { if (f) window.FdvPdf.share(f); }); return; }
     var pd = t.closest('[data-dxpldel]'); if (pd) { if (!pd.classList.contains('sure')) { pd.classList.add('sure'); pd.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-pl-sure', 'Delete the plan? Tap again')); setTimeout(function () { if (pd.isConnected) { pd.classList.remove('sure'); pd.innerHTML = '<i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')); } }, 4000); return; } plDel(pd.dataset.dxpldel); return; }
@@ -1606,8 +1608,9 @@
   /* files dropped straight on the rename panel */
   document.addEventListener('dragover', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (r) { e.preventDefault(); r.classList.add('dx-dragon'); } });
   document.addEventListener('dragleave', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (r && !r.contains(e.relatedTarget)) r.classList.remove('dx-dragon'); });
-  document.addEventListener('drop', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp) { e.preventDefault(); plAdd((e.dataTransfer && e.dataTransfer.files) || []); return; } });
-  document.addEventListener('dragover', function (e) { if (e.target.closest && e.target.closest('.dx-plans')) e.preventDefault(); });
+  document.addEventListener('drop', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp) { e.preventDefault(); pp.classList.remove('dx-dragon'); plAdd((e.dataTransfer && e.dataTransfer.files) || []); return; } });
+  document.addEventListener('dragover', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp) { e.preventDefault(); pp.classList.add('dx-dragon'); } });
+  document.addEventListener('dragleave', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp && !pp.contains(e.relatedTarget)) pp.classList.remove('dx-dragon'); });
   document.addEventListener('drop', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (!r || (e.target.closest && e.target.closest('.dx-drop'))) return; e.preventDefault(); r.classList.remove('dx-dragon'); var fl = [].slice.call((e.dataTransfer && e.dataTransfer.files) || []); if (fl.length) renAdd(fl); });
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov')) return;
