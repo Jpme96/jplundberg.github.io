@@ -60,14 +60,14 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(oc.sel === 'E2 – Made-up power' && oc.grp === 'Your codes' && /-E2-332-/.test(oc.sug) && oc.kept, 'an own code is picked from the list, used in the name and kept for later ' + JSON.stringify(oc));
   /* naming rules (JP 22:00 "lackluster … messy with a lot of rules"): used for, your rules, Boligbygg's folded away, an editor built from parts */
   await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
-  const e1 = await p.evaluate(() => ({ ed: !!document.querySelector('.dx-ren .dcn-ed2'), pills: [...document.querySelectorAll('.dx-ren .dcn-pill .dcn-pname')].map(b => b.textContent), bb: !document.querySelector('.dx-ren details.dcn-bbl').open, prev: document.querySelector('.dx-ren .dcn-prev code').textContent }));
+  const e1 = await p.evaluate(() => ({ ed: !!document.querySelector('.dcn-ov .dcn-ed2'), pills: [...document.querySelectorAll('.dcn-ov .dcn-pill .dcn-pname')].map(b => b.textContent), bb: !document.querySelector('.dx-ren details.dcn-bbl').open, prev: document.querySelector('.dcn-ov .dcn-prev code').textContent }));
   check(e1.ed && e1.pills.length === 3 && e1.bb && /^442 DA taklampe/.test(e1.prev), 'New rule opens the editor with three parts and a live example; Boligbygg’s rules are folded away ' + JSON.stringify(e1));
-  await p.evaluate(() => { const a = document.querySelector('.dx-ren [data-dcnpa]'); a.value = 'floor'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
-  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnsepb="_"]').click()); await sl(200);
-  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnpm="3:-1"]').click()); await sl(200);
-  const e2 = await p.evaluate(() => ({ prev: document.querySelector('.dx-ren .dcn-prev code').textContent, opt: !!document.querySelector('.dx-ren .dcn-popt') }));
+  await p.evaluate(() => { const a = document.querySelector('.dcn-ov [data-dcnpa]'); a.value = 'floor'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
+  await p.evaluate(() => document.querySelector('.dcn-ov [data-dcnsepb="_"]').click()); await sl(200);
+  await p.evaluate(() => document.querySelector('.dcn-ov [data-dcnpm="3:-1"]').click()); await sl(200);
+  const e2 = await p.evaluate(() => ({ prev: document.querySelector('.dcn-ov .dcn-prev code').textContent, opt: !!document.querySelector('.dcn-ov .dcn-popt') }));
   check(e2.prev === '442_DA_H02_taklampe korridor C20.pdf' && e2.opt, 'adding a part, the separator and moving a part change the example at once ' + JSON.stringify(e2));
-  await p.evaluate(() => document.querySelector('.dx-ren [data-dcndone]').click()); await sl(200);
+  await p.evaluate(() => document.querySelector('.dcn-ov [data-dcndone]').click()); await sl(200);
   const e3 = await p.evaluate(() => ({ own: [...document.querySelectorAll('.dx-ren .dcn-rlist')][0].querySelectorAll('.dcn-rrow').length, opt: [...document.querySelectorAll('.dx-ren [data-dcnuse-k="doc"] optgroup')].map(g => g.label + ':' + g.children.length).join() }));
   check(e3.own === 1 && /Your rules:1/.test(e3.opt), 'Done: the rule is listed under Your rules and can be chosen for documents ' + JSON.stringify(e3));
   await p.evaluate(() => { document.querySelector('.dx-ren [data-dcndel]').click(); }); await sl(200);
@@ -83,6 +83,32 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnexp]').click()); await sl(200);
   check(await p.evaluate(() => !!document.querySelector('.dx-ren .dcn-row:not(.dcn-c) [data-dcncode]')), 'a tap opens the row with its fields');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
+  /* JP 06:38: ¤ in names, the type before a code, the row inside its box, the name further down with its own Open button, Start again asks */
+  await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); dt.items.add(new File(['made up text'], 'TDS¤71¤MADEUP Oljemaling¤Nor¤NO.pdf', { type: 'application/pdf' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(2000);
+  const tz = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row')].find(x => /MADEUP/.test(x.textContent)); if (!li) return null;
+    if (li.classList.contains('dcn-c')) { li.querySelector('[data-dcnexp]').click(); }
+    return true; }); await sl(300);
+    const t2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.dx-ren .dcn-row:not(.dcn-c)')].find(x => /MADEUP/.test(x.textContent)), ty = li.querySelector('[data-dcntype]'), lr = li.getBoundingClientRect();
+    const out = [...li.querySelectorAll('input, select, button, label')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > lr.right + 1 || r.left < lr.left - 1); }).map(e => e.tagName + '.' + e.className);
+    const n = li.querySelector('.dcn-s .dcn-n'), d = li.querySelector('[data-dcnv$=":desc"]');
+    return { typeOn: !!ty && !ty.disabled && ty.options.length > 5, code: (li.querySelector('[data-dcncode]') || {}).value, desc: d ? d.value : '', out, nameDown: !!n && !!n.querySelector('.dcn-open') && !li.querySelector('.dcn-g [data-dcview]'), first: li.querySelector('.dcn-g > *').classList.contains('dcn-kind') }; });
+  check(tz && t2.typeOn && !/^71/.test(t2.code) && !/¤/.test(t2.desc) && t2.out.length === 0 && t2.nameDown && t2.first, 'a ¤ name: no 2-digit code, words split; the type can be picked before the code; nothing sticks out; kind first; the name sits lower with its own Open button ' + JSON.stringify(t2));
+  await p.setViewport({ width: 600, height: 900, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);
+  check(await p.evaluate(() => [...document.querySelectorAll('.dx-ren .dcn-row:not(.dcn-c)')].every(li => { const lr = li.getBoundingClientRect(); return [...li.querySelectorAll('select, input')].every(e => { const r = e.getBoundingClientRect(); return !r.width || r.right <= lr.right + 1; }); })), 'at 600 px (Team’s column) the fields stay inside the row');
+  await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);
+  /* New rule opens a popup on top of the page; Escape closes it */
+  await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
+  const pop = await p.evaluate(() => { const o = document.querySelector('.dcn-ov'); return { body: !!o && o.parentNode === document.body, fixed: !!o && getComputedStyle(o).position === 'fixed', h: o ? Math.round(o.querySelector('.dcn-sheet').getBoundingClientRect().bottom) : 0 }; });
+  check(pop.body && pop.fixed && pop.h <= 852, 'New rule opens as a popup on top of the page ' + JSON.stringify(pop));
+  await p.keyboard.press('Escape'); await sl(300);
+  check(await p.evaluate(() => !document.querySelector('.dcn-ov')), 'Escape closes the popup');
+  await p.evaluate(() => { const r = [...document.querySelectorAll('.dx-ren [data-dcndel]')]; r.forEach(b => b.click()); }); await sl(300);
+  const hb = await p.evaluate(() => { const b = document.querySelector('.dx-ren .pill-btn'); return Math.round(b.getBoundingClientRect().height); });
+  check(hb >= 44, 'the buttons are at least 44 px tall: ' + hb);
+  await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(200);
+  check(await p.evaluate(() => document.querySelectorAll('.dx-ren .dcn-row').length > 0 && /again/i.test(document.querySelector('[data-dxrenclr]').textContent)), 'Start again asks first – the files are still there');
+  await p.evaluate(() => document.querySelector('[data-dxrenclr]').click()); await sl(300);
+  check(await p.evaluate(() => !document.querySelector('.dx-ren .dcn-row')), 'a second tap starts again');
   await p.evaluate(() => document.querySelector('.dx-ren [data-dxtool=""]').click()); await sl(300);
   /* FDV names */
   await p.evaluate(() => document.querySelector('[data-dxtool="fdv"]').click()); await sl(300);

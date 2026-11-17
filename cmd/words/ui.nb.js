@@ -3110,5 +3110,10 @@ I18N.add({
   "ui.ws-part-socials": ["Socials", "Sosiale medier"],
   "ui.ws-part-courses": ["Courses & certificates", "Kurs og sertifikater"],
   "ui.ws-part-progress": ["Project progress", "Prosjektframdrift"],
-  "ui.ws-part-cv": ["CV", "CV"]
+  "ui.ws-part-cv": ["CV", "CV"],
+  "ui.dcn-closest": ["closest match in the text – check it", "nærmeste treff i teksten – sjekk det"],
+  "ui.dcn-cc-type-pick": ["Type unclear – pick one:", "Uklar type – velg en:"],
+  "ui.dcn-cc-code-pick": ["System unclear – pick one:", "Uklart system – velg en:"],
+  "ui.dcn-open": ["Open", "Åpne"],
+  "ui.dx-clear-sure": ["Remove all files? Tap again", "Fjerne alle filene? Trykk igjen"]
 });

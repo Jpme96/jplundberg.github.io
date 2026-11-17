@@ -38,7 +38,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   /* switch on (this device only) */
   await p.evaluate(() => { const s = document.querySelector('[data-dcnon]'); s.checked = true; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const on = await p.evaluate(() => ({ ls: localStorage.getItem('dash.dcNaming'), rows: document.querySelectorAll('.dcn-row').length, cols: [...document.querySelector('.dcn-row .dcn-g').children].map(c => c.className), dl: document.querySelectorAll('#dcnCodes option').length }));
-  check(on.ls === '1' && on.rows === 4 && on.cols.join() === 'dcn-c,dcn-c,dcn-n,dcn-c dcn-kind,dcn-t' && on.dl > 10, 'switched on: a row per file – code · type · current name · kind · status, and a code list ' + JSON.stringify(on));
+  check(on.ls === '1' && on.rows === 4 && on.cols.join() === 'dcn-c dcn-kind,dcn-c,dcn-c,dcn-t' && on.dl > 10, 'switched on: a row per file – code · type · current name · kind · status, and a code list ' + JSON.stringify(on));
   const named0 = await p.evaluate(() => { const f = Features.list('dctl')[0].files.find(x => /^442/.test(x.name)), row = document.querySelector('[data-dcnf="' + f.id + '"]'); return { line: f.line, sug: row.querySelector('.dcn-sug code').textContent, follows: /Name follows the rule/.test(row.textContent) }; });
   check(named0.line === 'l3' && named0.sug === '442 DA taklampe korridor.pdf' && named0.follows, 'a file named by Boligbygg’s rule is on its line and follows the rule ' + JSON.stringify(named0));
   /* suggest codes and check the PDFs (pdf.js from cmd/vendor, read here) */

@@ -529,3 +529,39 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-ochip button { border: 0; background: none; color: var(--muted); padding: 0 2px; cursor: pointer; }
 .dcn-oadd { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 10px; }
 .dcn-ed2 .dcn-padd { width: auto; flex: 0 0 auto; } .dcn-seg button { white-space: nowrap; }
+/* File naming, calmer and roomier (JP 2026-11-17): the row's grid fits its box at any width (Team's column too), the kind of file comes first,
+   the current name sits above the new one with its own Open button, buttons are taller with room for their words, the rule editor is a popup */
+.dcn-g { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px 14px; }
+.dcn-g > .dcn-t { grid-column: 1 / -1; }
+.dcn-row { gap: 12px; padding: 14px 16px; }
+.dcn-s { gap: 12px 14px; padding-top: 12px; }
+.dcn-n { width: 100%; font-size: 12.5px; }
+.dcn-nrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dcn-nrow b { font-size: 14px; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
+.dcn-open { flex: 0 0 auto; }
+.dx-ren .pill-btn, .dcn-ov .pill-btn, .dx-ren .dc-chip, .dcn-ov .dc-chip { min-height: 44px; padding: 0 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
+.dx-ren .dc-chip.dcn-pk { min-height: 36px; padding: 0 12px; font-size: 13.5px; margin: 4px 6px 0 0; }
+.dcn-pk.on { border-color: var(--accent); color: var(--accent); }
+.dx-ren .dc-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
+.dx-clr { margin-left: auto; background: none; border: 1px solid rgba(var(--danger-rgb), .45); color: var(--danger); }
+.dx-clr.sure { background: rgba(var(--danger-rgb), .14); }
+.dx-rsum { gap: 12px; margin: 14px 0; }
+.dx-rbtn { display: flex; flex-wrap: wrap; gap: 10px; }
+.dcn-b { gap: 10px; }
+.dcn-newb { margin: 10px 0 14px; }
+.dcn-rules > summary { padding: 4px 0; }
+.dcn-rules .dcn-h { margin-top: 16px; }
+.dx-ren .icon-btn.sm { width: 40px; height: 40px; }
+/* the rule editor popup */
+.dcn-ov { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, .55); }
+.dcn-sheet { width: min(620px, 100%); max-height: calc(100dvh - 32px); overflow: auto; overscroll-behavior: contain; background: var(--bg); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, .45); }
+.dcn-shead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.dcn-shead b { font-size: 17px; }
+.dcn-sheet .dcn-ed2 { border: 0; padding: 0; margin: 0; }
+.dcn-sheet .dcn-pill .dcn-pname { font-size: 14px; min-height: 40px; }
+.dcn-sheet .dcn-pill button { min-height: 40px; }
+.dcn-sheet .dcn-padd { min-height: 40px; font-size: 14px; }
+html.dcn-modal { overflow: hidden; }
+@media (max-width: 560px) { .dcn-ov { align-items: flex-end; padding: 0; } .dcn-sheet { border-radius: 18px 18px 0 0; max-height: 92dvh; padding-bottom: max(20px, env(safe-area-inset-bottom)); } }
+.dcn-ov.dc-host { margin: 0; }   /* in Team the popup carries the colour names of .dc-host */
+.dcn-s .dcn-fl:has([data-dcnv$=":desc"]) { width: min(100%, 440px); }   /* the description gets room for its words */
