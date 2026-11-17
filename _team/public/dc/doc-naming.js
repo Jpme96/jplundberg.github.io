@@ -270,7 +270,7 @@
       var w = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean), last = '', h = '', n = 0;
       items.forEach(function (it) { var hay = (it.t + ' ' + it.g).toLowerCase(); if (w.some(function (x) { return /^\d+$/.test(x) ? it.v.indexOf(x) !== 0 && it.g.indexOf(x) !== 0 : hay.indexOf(x) < 0; })) return;
         if (it.g !== last) { last = it.g; h += '<li class="dcn-cpg">' + esc(it.g || '') + '</li>'; }
-        if (n++ < 400) h += '<li><button type="button" data-cpv="' + esc(it.v) + '"' + (it.on ? ' class="on" aria-current="true"' : '') + '>' + esc(it.t) + '</button></li>'; });
+        if (n++ < 3000) h += '<li><button type="button" data-cpv="' + esc(it.v) + '"' + (it.on ? ' class="on" aria-current="true"' : '') + '>' + esc(it.t) + '</button></li>'; });
       ul.innerHTML = h || '<li class="dcn-cpg">' + esc(k('ui.dcn-cp-none', 'Nothing found – pick “+ Own code or free text” to write it yourself')) + '</li>';
     };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && document.activeElement === q) { e.preventDefault(); var b = ul.querySelector('[data-cpv]'); if (b) pick(b.dataset.cpv); } };
