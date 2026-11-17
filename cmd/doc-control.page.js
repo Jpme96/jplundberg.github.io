@@ -318,11 +318,11 @@
   var TOOL = { p: null, blobs: {} };
   /* the tool's own rules, codes and building number stay on this device between visits (localStorage – no files, no names of files) */
   var TKEY = 'dcn.tool';
-  function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid })); } catch (e) {} }
+  function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid, pid: p.pid, pname: p.pname, no: p.no })); } catch (e) {} }
   function toolP() { if (!TOOL.p) { var st = {}; try { st = JSON.parse(localStorage.getItem(TKEY) || '{}') || {}; } catch (e) {}
     var R = [], seen = {}, C = {}; (st.nrules || []).concat.apply(st.nrules || [], projects().map(function (p) { return p.nrules || []; })).forEach(function (r) { if (r && r.id && !seen[r.id]) { seen[r.id] = 1; R.push(JSON.parse(JSON.stringify(r))); } });
     [st].concat(projects()).forEach(function (p) { Object.keys(p.ncodes || {}).forEach(function (key) { C[key] = C[key] || []; (p.ncodes[key] || []).forEach(function (y) { if (y && y[0] && !C[key].some(function (z) { return z[0] === y[0]; })) C[key].push([y[0], y[1] || '']); }); }); });
-    TOOL.p = { id: '__ren', name: '', tool: 1, files: [], lines: [], nrules: R.slice(0, 20), nuse: st.nuse || {}, ncodes: C, bid: st.bid || '' }; } return TOOL.p; }
+    TOOL.p = { id: '__ren', name: '', tool: 1, files: [], lines: [], nrules: R.slice(0, 20), nuse: st.nuse || {}, ncodes: C, bid: st.bid || '', pid: st.pid || '', pname: st.pname || '', no: st.no || '' }; } return TOOL.p; }
   var TAPI = null;
   function toolApi() { if (!TAPI) TAPI = Object.assign({}, DCN_API, { saveP: function (id, fn, key) { if (id === '__ren') { fn(toolP()); toolKeep(); return; } saveP(id, fn, key); }, proj: function (id) { return id === '__ren' ? toolP() : proj(id); },
     getBlob: function (id) { return TOOL.blobs[id] ? Promise.resolve(TOOL.blobs[id]) : getBlob(id); }, cur: function () { return '__ren'; } }); return TAPI; }
@@ -555,7 +555,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'baa65f713f';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '4c684dbb1d';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };

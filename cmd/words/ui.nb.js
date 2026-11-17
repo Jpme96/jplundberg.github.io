@@ -3137,5 +3137,12 @@ I18N.add({
   "ui.dx-fv-bad": ["Could not show this PDF – download it to open it.", "Kunne ikke vise denne PDF-en – last den ned for å åpne den."],
   "ui.dcn-prev": ["The file before", "Forrige fil"],
   "ui.dcn-next": ["The next file", "Neste fil"],
-  "ui.dcn-fpos": ["File {i} of {n}", "Fil {i} av {n}"]
+  "ui.dcn-fpos": ["File {i} of {n}", "Fil {i} av {n}"],
+  "ui.dx-pid": ["Property ID", "Eiendoms-ID"],
+  "ui.dx-pid-ph": ["e.g. 3-1234", "f.eks. 3-1234"],
+  "ui.dx-pname": ["Property name", "Eiendomsnavn"],
+  "ui.dx-pname-ph": ["e.g. Made-up school", "f.eks. Eksempel skole"],
+  "ui.dx-pno": ["Project number", "Prosjektnummer"],
+  "ui.dx-pno-ph": ["e.g. P-123", "f.eks. P-123"],
+  "ui.dcn-pv-s": ["Used in every name that has it, and kept for the next files", "Brukes i alle navn som har den, og huskes til neste filer"]
 });

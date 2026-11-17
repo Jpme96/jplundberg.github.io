@@ -315,6 +315,7 @@
       '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
     h += '<div class="dcn-s">';
+    r.parts.forEach(function (q) { if (PV[q.k] && !p[PV[q.k][0]]) h += pvField(p, q.k, true, false); });
     r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; h += nfield(p, f, q.k); } });
     var cur0 = '<div class="dcn-n"><span>' + esc(k('ui.dcn-current', 'Current file name')) + '</span><span class="dcn-nrow"><b data-noi18n>' + esc(f.name) + '</b>' + (f.nf ? '' : '<button type="button" class="dc-chip dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</span>' + (f.orig && f.orig !== f.name ? '<small class="muted" data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</small>' : '') + '</div>';
     h += cur0 + '<div class="dcn-sug"><span>' + esc(k('ui.dcn-name-from', 'Name from “{r}”', { r: rname(r) })) + '</span><code data-noi18n>' + b.html + esc(e) + '</code></div>' +
@@ -420,12 +421,20 @@
       '<div class="dcn-b"><button type="button" class="pill-btn dx-pri" data-dcndone><i class="bi bi-check2"></i> ' + esc(k('ui.dx-done', 'Done')) + '</button></div></div>';
     return h;
   }
+  var PV = { bno: ['bid', 'ui.dx-bno', 'Building number (for drawings)', 'ui.dx-bno-ph', 'e.g. 11621', 'numeric'], unit: ['pid', 'ui.dx-pid', 'Property ID', 'ui.dx-pid-ph', 'e.g. 3-1234', ''],
+    pname: ['pname', 'ui.dx-pname', 'Property name', 'ui.dx-pname-ph', 'e.g. Made-up school', ''], proj: ['no', 'ui.dx-pno', 'Project number', 'ui.dx-pno-ph', 'e.g. P-123', ''] };
+  function pvField(p, key, needed, big) {
+    var d = PV[key], v = p[d[0]] || '';
+    return '<label class="dcn-fl dcn-bno"><span>' + esc(k(d[1], d[2])) + '</span><input data-dcnpv="' + d[0] + '"' + (key === 'bno' ? ' data-dcnbid' : '') + ' value="' + esc(v) + '" maxlength="60"' + (d[5] ? ' inputmode="' + d[5] + '"' : '') + ' placeholder="' + esc(k(d[3], d[4])) + '"' + (needed && !v ? ' class="dcn-need"' : '') + '>' +
+      (big ? '<small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' : '') + '</label>';
+  }
   function nfiles(p, F) {
     var h = rulesHtml(p);
     var todo = F.filter(function (f) { return !f.nf && (!f.p.code || (ext(f.name) === '.pdf' && !f.cc)); }).length;
-    /* the building number goes into every drawing's name – asked once, right here, where the names are (JP 2026-11-16 21:50) */
-    var dw = F.some(function (f) { return !f.nf && ruleFor(p, f).parts.some(function (q) { return q.k === 'bno'; }); });
-    if (dw || p.bid) h += '<label class="dcn-fl dcn-bno"><span>' + esc(k('ui.dx-bno', 'Building number (for drawings)')) + '</span><input data-dcnbid value="' + esc(p.bid || '') + '" inputmode="numeric" maxlength="40" placeholder="' + esc(k('ui.dx-bno-ph', 'e.g. 11621')) + '"' + (dw && !p.bid ? ' class="dcn-need"' : '') + '><small>' + esc(k('ui.dcn-bno-s', 'Used in every drawing name, and saved on the project')) + '</small></label>';
+    /* values for the whole batch (building number, property ID, property name, project number) – asked once, right here, where the names are
+       (JP 2026-11-16 21:50 building number; 2026-11-17 09:18 "I cannot put the eiendoms-id") */
+    var need = {}; F.forEach(function (f) { if (!f.nf) ruleFor(p, f).parts.forEach(function (q) { if (PV[q.k]) need[q.k] = 1; }); });
+    Object.keys(PV).forEach(function (key) { if (need[key] || p[PV[key][0]]) h += pvField(p, key, !!need[key], true); });
     if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
     var many = F.length > 1, cnt = { todo: 0, ready: 0, done: 0 }; if (many) F.forEach(function (f) { cnt[fstate(p, f)]++; });
     if (many) h += '<div class="dcn-flt" role="group">' + [['', k('ui.dcn-f-all', 'All {n}', { n: F.length })], ['todo', k('ui.dcn-f-todo', 'Needs you {n}', { n: cnt.todo })], ['ready', k('ui.dcn-f-ready', 'Ready {n}', { n: cnt.ready })], ['done', k('ui.dcn-f-done', 'Done {n}', { n: cnt.done })]].map(function (c) { return '<button type="button" class="dc-chip" aria-pressed="' + (nflt === c[0]) + '" data-dcnflt="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
@@ -471,7 +480,7 @@
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
       if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
-      if (t.hasAttribute('data-dcnbid')) { saveP(cur(), function (p) { p.bid = v.trim().slice(0, 40); }); draw(); return; }
+      if (t.dataset.dcnpv) { var pf = t.dataset.dcnpv; saveP(cur(), function (p) { p[pf] = v.trim().slice(0, 60); }); if (document.activeElement === t) t.blur(); draw(); return; }
       if (t.dataset.dcnuseK) { saveP(cur(), function (p) { p.nuse = Object.assign({}, p.nuse); p.nuse[t.dataset.dcnuseK] = v; }); draw(); return; }
       if (t.dataset.dcnr) { ruleEdit(function (r) { r[t.dataset.dcnr] = t.dataset.dcnr === 'n' ? v.slice(0, 60) || r.n : v; }); return; }
       if (t.dataset.dcnpr) { ruleEdit(function (r) { r.parts[+t.dataset.dcnpr].req = t.checked ? undefined : false; }); return; }

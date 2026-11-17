@@ -95,6 +95,12 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(dp.gone && dp.there, 'files dropped on the popup are added and the popup closes ' + JSON.stringify(dp));
   await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200); await p.keyboard.press('Escape'); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.dx-drop')), 'Escape closes the drop popup');
+  /* a photo's name needs the property ID: asked at the top and in the file's popup, kept for the next files (JP 09:18) */
+  await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); dt.items.add(new File(['made up'], 'IMG_0001.jpeg', { type: 'image/jpeg' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(1500);
+  const pv = await p.evaluate(async () => { const top = !!document.querySelector('.dx-ren [data-dcnpv="pid"]'), li = await R(/IMG_0001/), inPop = !!(li && li.querySelector('[data-dcnpv="pid"]'));
+    const f = li.querySelector('[data-dcnpv="pid"]'); f.value = '3-999'; f.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 400));
+    const li2 = await R(/IMG_0001/); return { top, inPop, sug: li2.querySelector('.dcn-sug code').textContent, kept: /3-999/.test(localStorage.getItem('dcn.tool') || '') }; });
+  check(pv.top && pv.inPop && /^3-999[–-]/.test(pv.sug) && pv.kept, 'the property ID can be filled in, goes into the photo’s name and is kept ' + JSON.stringify(pv));
   /* selecting text and letting go outside the box doesn't close it; a tap on the dimmed background does (JP 08:48) */
   const bg = await p.evaluate(async () => { await R(/./); const ov = document.querySelector('.dcn-fpop'), inp = ov.querySelector('input, select');
     inp.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); await new Promise(r => setTimeout(r, 300));
