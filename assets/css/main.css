@@ -194,9 +194,12 @@ h6 {
   width: 300px;
   transition: all ease-in-out 0.3s;
   overflow-y: auto;
+  scrollbar-width: none;   /* the side menu still scrolls on a short screen, but shows no scroll bar with arrows (JP 2026-11-17) */
   z-index: 997;
   border-right: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
 }
+
+.header::-webkit-scrollbar { display: none; }
 
 .header .profile-img img {
   margin: 15px auto;
