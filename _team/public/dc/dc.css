@@ -1013,3 +1013,10 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 @media (max-width: 560px) {
   .dcn-cpks { height: 88dvh; }
 }
+.dcn-cpl .dcn-cp1 { position: sticky; top: 0; z-index: 2; background: var(--bg); font-size: 15px; font-weight: 700; color: var(--ink, inherit); padding: 14px 4px 6px; border-bottom: 1px solid var(--line); }
+.dcn-cpl .dcn-cpg { top: 38px; z-index: 1; padding-left: 10px; color: var(--accent); font-size: 13px; }
+.dcn-cpl button { padding-left: 20px; }
+.dcn-cpl button b { display: inline-block; min-width: 3.2em; font-variant-numeric: tabular-nums; }
+.dcn-cpl button.l4 { padding-left: 46px; font-size: 13.5px; color: var(--muted); }
+.dcn-cpl button.l4 b { font-weight: 500; min-width: 3.6em; }
+.dcn-cpl button.on, .dcn-cpl button.l4.on { color: var(--accent); font-weight: 600; }

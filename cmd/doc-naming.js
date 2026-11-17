@@ -237,7 +237,7 @@
   var drawBg = function () {};
   var nexp = {}, nflt = '', nfo = '';   /* nfo: the file open in the popup (nopen is the rules box) */
   function fstate(p, f) { var b = nbuild(p, f); if (b.miss.length || (!f.p.code && fkind(f) !== 'photo') || (f.p.code && !f.p.abbr && fkind(f) === 'doc')) return 'todo'; return b.plain + ext(f.orig || f.name) === f.name ? 'done' : 'ready'; }
-  var CGRP = { '0': ['Felles', 'Common'], '1': ['Felleskostnader', 'Shared costs'], '2': ['Bygning', 'Building'], '3': ['VVS', 'HVAC and plumbing'], '4': ['Elkraft', 'Electrical power'], '5': ['Tele og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
+  var CGRP = { '0': ['Felles', 'Common'], '1': ['Felleskostnader', 'Shared costs'], '2': ['Bygning', 'Building'], '3': ['VVS-installasjoner', 'HVAC and plumbing'], '4': ['Elkraftinstallasjoner', 'Electrical power'], '5': ['Ekom og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
   /* every code as a dropdown, grouped by its two-digit part (JP 2026-11-17 07:22 "why free text?"). The three-digit names aren't in the
      public code (licence), so a code shows its own name when the plan or your own codes know it, else its group's name. */
   var NSK = 'dcn.nsnames';
@@ -267,9 +267,13 @@
     var pick = function (v) { close(); sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
     var draw1 = function () {
       var w = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean), last = '', h = '', n = 0;
+      var last1 = '';
       items.forEach(function (it) { var hay = (it.t + ' ' + it.g).toLowerCase(); if (w.some(function (x) { return /^\d+$/.test(x) ? it.v.indexOf(x) !== 0 && it.g.indexOf(x) !== 0 : hay.indexOf(x) < 0; })) return;
+        var d1 = /^\d{3,4}$/.test(it.v) ? it.v[0] : '';
+        if (d1 && d1 !== last1) { last1 = d1; var c1 = CGRP[d1]; h += '<li class="dcn-cp1">' + esc(d1 + ' ' + (c1 ? (nb() ? c1[0] : c1[1]) : '')) + '</li>'; }
         if (it.g !== last) { last = it.g; h += '<li class="dcn-cpg">' + esc(it.g || '') + '</li>'; }
-        if (n++ < 3000) h += '<li><button type="button" data-cpv="' + esc(it.v) + '"' + (it.on ? ' class="on" aria-current="true"' : '') + '>' + esc(it.t) + '</button></li>'; });
+        var lv = it.v.length >= 4 && /^\d+$/.test(it.v) ? ' l4' : '';
+        if (n++ < 3000) h += '<li><button type="button" data-cpv="' + esc(it.v) + '" class="' + lv + (it.on ? ' on' : '') + '"' + (it.on ? ' aria-current="true"' : '') + '><b>' + esc(it.v) + '</b> ' + esc(it.t.replace(/^\s*\S+\s*/, '')) + '</button></li>'; });
       ul.innerHTML = h || '<li class="dcn-cpg">' + esc(k('ui.dcn-cp-none', 'Nothing found – pick “+ Own code or free text” to write it yourself')) + '</li>';
     };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter' && document.activeElement === q) { e.preventDefault(); var b = ul.querySelector('[data-cpv]'); if (b) pick(b.dataset.cpv); } };
@@ -300,7 +304,7 @@
       list = list.filter(function (c) { return named ? names[c] || c === v : c.slice(-1) !== '0' || c.length > 3 || c === v; });
       list.sort(function (a, b) { return a.slice(0, 3) === b.slice(0, 3) ? a.length - b.length || (a < b ? -1 : 1) : a < b ? -1 : 1; });
       if (!list.length) return;
-      h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
+      h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + (c.length > 3 ? '\u2003\u2003' : '') + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
     });
     return h + ownOpts(p, 'code', v, known);
   }
