@@ -402,7 +402,7 @@
     if (!S.me || !S.me.member) return;
     S.stale = false;
     var h = location.hash.slice(1), body;
-    if (S.edit) body = viewEdit();
+    if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? viewMeetings() : viewMeeting(S.edit.id)) + '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
     else if (/^search=/.test(h)) body = viewSearch(decodeURIComponent(h.slice(7)));
     else if (/^in=/.test(h)) body = viewInsp(h.slice(3));
@@ -415,6 +415,7 @@
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
     S.lastHtml = html; $app.innerHTML = html;
+    document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }

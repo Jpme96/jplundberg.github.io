@@ -125,6 +125,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   /* --- Kari ticks her action; a later meeting carries open ones over --- */
   await kari.goto(U + '#overview'); await kari.waitForSelector('[data-tick]');
   await own.goto(U + '#meetings'); await own.click('[data-act=newMeeting]'); await own.waitForSelector('form[data-form=meeting]');
+  check(await own.evaluate(() => { const o = document.querySelector('.t-edov'); return !!o && getComputedStyle(o).position === 'fixed' && !!o.querySelector('form[data-form=meeting]') && !!document.querySelector('.t-tabs'); }), 'New meeting opens as a popup over the Meetings page (JP 2026-11-17 21:39)');
   await own.type('input[name=title]', 'Next week MARK-SECRET-3'); await own.$eval('input[name=date]', e => { e.value = '2026-11-18'; });
   await own.click('form[data-form=meeting] button[type=submit]');
   check(await until(own, () => /Carried over from earlier meetings/i.test(document.body.innerText) && /SECRET-2/.test(document.body.innerText)), 'an open action is carried over into the next meeting');

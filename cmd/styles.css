@@ -4259,3 +4259,5 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .pill-btn { height: auto; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
 .pill-btn.wide { border-radius: 12px; }
 .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
+/* every popup blurs what is behind it a little (JP 2026-11-17 21:43) */
+:is(.tb-sheet-bg, .sr-bg, .qa-bg, .fo-bg, .kb-bg, .rp-bg, .spv-sheet, .dgu-sheet, .sh-prev-bg, .fv-bg, .dp-bg, .hc-popbg) { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }

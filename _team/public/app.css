@@ -215,3 +215,14 @@ a.t-icon { text-decoration: none; }
 }
 .t-logall { margin-top: 10px; }
 .t-sheet-log .t-log { max-height: 60vh; overflow: auto; }
+/* the meeting editor as a popup (JP 2026-11-17 21:39); popups leave the menu free and blur what is behind them (21:39/21:43) */
+.t-edov { position: fixed; inset: 0; z-index: 15; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow: auto; overscroll-behavior: contain; background: rgba(0, 0, 0, .45); }
+.t-edsheet { width: min(640px, 100%); margin: auto 0; background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 6px 20px 22px; box-shadow: 0 20px 60px rgba(0, 0, 0, .45); }
+.t-edsheet .t-form { max-width: none; }
+.t-edsheet .t-top { margin-bottom: 0; }
+html.t-modal { overflow: hidden; }
+@media (max-width: 699px) { .t-edov { padding: 0; } .t-edsheet { border-radius: 0; border: 0; min-height: 100%; padding-bottom: calc(env(safe-area-inset-bottom) + 24px); } }
+.t-edov, .t-sheetbg, .dcn-ov, .dx-tov, .fdz-ov { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+@media (min-width: 1000px) {
+  .t-edov, .t-sheetbg, .dcn-ov, .dx-tov, .fdz-ov { padding-left: calc(208px + 16px) !important; }
+}

@@ -179,6 +179,9 @@
   wide.addEventListener && wide.addEventListener('change', fitSoon);
   if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(fitSoon);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fitSoon); else fitSoon();
+  /* measured again once the fonts and pictures are in – the first measure could see the list too tall and show the "more below" row (JP 2026-11-17 21:43) */
+  window.addEventListener('load', fitSoon);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
   document.addEventListener('scroll', function (e) { if (e.target && e.target.classList && e.target.classList.contains('tabbar')) { if (e.target === fitted) keepTop = e.target.scrollTop; edges(); } }, true);
 
   window.SideNav = { mode: mode, set: go, on: active, fit: fit };

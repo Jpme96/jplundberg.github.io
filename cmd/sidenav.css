@@ -134,3 +134,8 @@
 }
 /* no animation when motion is off */
 :root.mo-off.side-nav body, :root.mo-off.side-nav .mbar, :root.mo-off .sn-fold i { transition: none !important; }
+
+/* popups stay beside the side bar, never over it (JP 2026-11-17 21:39) */
+@media (min-width: 760px) {
+  :root.side-nav:is(.unlocked, .resuming) :is(.tb-sheet-bg, .sr-bg, .qa-bg, .fo-bg, .kb-bg, .rp-bg, .spv-sheet, .dgu-sheet, .sh-prev-bg, .fv-bg, .dcn-ov, .dx-tov, .fdz-ov, .dp-bg) { padding-left: calc(var(--sn-pad, 0px) + 16px) !important; }
+}

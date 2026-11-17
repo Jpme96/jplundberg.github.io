@@ -85,5 +85,13 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
     check(Math.abs(after - pick.top) <= 2, 'after tapping ' + pick.path + ' the list stays where it was: ' + pick.top + ' → ' + after);
   }
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
+  /* a popup stays beside the side bar, never over it (JP 2026-11-17 21:39) */
+  await p.setViewport({ width: 1280, height: 900 }); await sl(400);
+  const pop = await p.evaluate(async () => { const i = document.createElement('input'); i.type = 'file'; i.click(); await new Promise(r => setTimeout(r, 150));
+    const sh = document.querySelector('.fdz-sh'), bar = document.querySelector('.mbar'); if (!sh || !bar) return { sh: !!sh, bar: !!bar, side: document.documentElement.classList.contains('side-nav') };
+    const r = { left: Math.round(sh.getBoundingClientRect().left), bar: Math.round(bar.getBoundingClientRect().right), side: document.documentElement.classList.contains('side-nav'), blur: getComputedStyle(document.querySelector('.fdz-ov')).backdropFilter };
+    document.querySelector('.fdz-ov [data-fdzx]').click(); return r; });
+  check(!pop.side || pop.left >= pop.bar, 'a popup stays beside the side bar ' + JSON.stringify(pop));
+  check(/blur/.test(pop.blur || ''), 'a popup blurs what is behind it ' + JSON.stringify(pop));
   await done(b);
 })();
