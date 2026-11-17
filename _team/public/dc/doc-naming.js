@@ -265,6 +265,8 @@
       var gn = names[g] || (CGRP[g[0]] ? (nb() ? CGRP[g[0]][0] : CGRP[g[0]][1]) : ''), list = [];
       for (var d = 1; d <= 9; d++) list.push(g + d);
       L.forEach(function (c) { if (c[0].length > 3 && c[0].slice(0, 2) === g && list.indexOf(c[0]) < 0) list.push(c[0]); });
+      /* once the names are known, a code without one is reserved in the standard – leave it out (JP 2026-11-17 11:25: 747, 748 had no name) */
+      if (list.some(function (c) { return names[c]; })) list = list.filter(function (c) { return names[c] || c === v; });
       h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
     });
     return h + ownOpts(p, 'code', v, known);
