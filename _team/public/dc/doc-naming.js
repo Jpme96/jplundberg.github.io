@@ -158,7 +158,8 @@
       (img ? '<img src="' + url + '" alt="">' : pdf || txt ? '<p class="muted">' + esc(k('ui.dx-fv-loading', 'Opening …')) + '</p>' : '<p class="muted">' + esc(k('ui.dx-fv-none', 'No preview for this kind of file – download it to open it.')) + '</p>') + '</div></div>';
     var close = function () { ov.remove(); URL.revokeObjectURL(url); document.removeEventListener('keydown', ek, true); document.documentElement.classList.remove('dcn-modal'); };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
-    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-dxfvx]')) close(); });
+    var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+    ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxfvx]')) close(); });
     document.addEventListener('keydown', ek, true); document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
     var body = ov.querySelector('.dx-fvb'), bt = ov.querySelector('[data-dxfvx]'); if (bt) bt.focus();
     if (txt) blob.text().then(function (t) { var pre = document.createElement('pre'); pre.textContent = t.slice(0, 200000); body.innerHTML = ''; body.appendChild(pre); });
@@ -455,7 +456,10 @@
   function newName(p, f) { var b = nbuild(p, f); return b.miss.length ? f.name : b.plain + ext(f.orig || f.name); }
   function busy() { return Object.keys(ccBusy).length; }
   function ruleEdit(fn) { saveP(cur(), function (p) { var r = (p.nrules || []).filter(function (x) { return x.id === nsel; })[0]; if (r) fn(r, p); }); draw(); }
+  var downAt = null;
+  function bgClick(t) { return t && t.classList && t.classList.contains('dcn-ov') && downAt === t; }
   function listen() {
+    on('pointerdown', function (e) { downAt = e.target; }, true);
     on('keydown', function (e) { if (e.key !== 'Escape' || !document.querySelector('.dcn-ov')) return; if (nsel) { nsel = ''; npi = -1; draw(); } else if (nfo) { nfo = ''; draw(); } });
     /* naming events (the Files tab) */
     on('change', function (e) {
@@ -501,11 +505,11 @@
       if (t.closest('[data-dcnall]')) { suggestAll(cur()); return; }
       if ((b = t.closest('[data-dcnexp]'))) { nfo = b.dataset.dcnexp; draw(); return; }
       if ((b = t.closest('[data-dcnfgo]'))) { if (b.dataset.dcnfgo) { nfo = b.dataset.dcnfgo; unfocus(); draw(); } return; }
-      if (t.closest('[data-dcnfx]') || (t.matches && t.matches('[data-dcnov2]'))) { nfo = ''; unfocus(); draw(); return; }
+      if (t.closest('[data-dcnfx]') || (t.matches && t.matches('[data-dcnov2]') && bgClick(t))) { nfo = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnflt]'))) { nflt = b.dataset.dcnflt; draw(); return; }
       if ((b = t.closest('[data-dcnsel]'))) { nsel = b.dataset.dcnsel; nopen = true; draw(); return; }
       if ((b = t.closest('[data-dcnedit]'))) { nfo = ''; nsel = nsel === b.dataset.dcnedit ? '' : b.dataset.dcnedit; npi = -1; nopen = true; draw(); return; }
-      if (t.closest('[data-dcndone]') || (t.matches && t.matches('[data-dcnov]'))) { nsel = ''; npi = -1; draw(); return; }
+      if (t.closest('[data-dcndone]') || (t.matches && t.matches('[data-dcnov]') && bgClick(t))) { nsel = ''; npi = -1; draw(); return; }
       if ((b = t.closest('[data-dcnpsel]'))) { npi = npi === +b.dataset.dcnpsel ? -1 : +b.dataset.dcnpsel; draw(); return; }
       if ((b = t.closest('[data-dcnpadd]'))) { var pk = b.dataset.dcnpadd; ruleEdit(function (r) { r.parts.push(pk === 'date' ? { k: pk, fmt: 'iso' } : { k: pk }); npi = r.parts.length - 1; }); return; }
       if ((b = t.closest('[data-dcnsepb]'))) { var sv = b.dataset.dcnsepb; ruleEdit(function (r) { r.sep = sv; }); return; }

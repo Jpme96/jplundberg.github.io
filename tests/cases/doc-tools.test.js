@@ -95,6 +95,13 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(dp.gone && dp.there, 'files dropped on the popup are added and the popup closes ' + JSON.stringify(dp));
   await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200); await p.keyboard.press('Escape'); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.dx-drop')), 'Escape closes the drop popup');
+  /* selecting text and letting go outside the box doesn't close it; a tap on the dimmed background does (JP 08:48) */
+  const bg = await p.evaluate(async () => { await R(/./); const ov = document.querySelector('.dcn-fpop'), inp = ov.querySelector('input, select');
+    inp.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); await new Promise(r => setTimeout(r, 300));
+    const stays = !!document.querySelector('.dcn-fpop'); const ov2 = document.querySelector('.dcn-fpop');
+    ov2.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); ov2.dispatchEvent(new MouseEvent('click', { bubbles: true })); await new Promise(r => setTimeout(r, 300));
+    return { stays, closes: !document.querySelector('.dcn-fpop') }; });
+  check(bg.stays && bg.closes, 'a drag that ends outside keeps the popup; a tap outside closes it ' + JSON.stringify(bg));
   /* Open shows the file in a popup over the page, not a new tab (JP 07:53) */
   const pages0 = (await b.pages()).length;
   await p.evaluate(() => { const e = document.querySelector('.dx-ren [data-dcnexp]'); e.click(); }); await sl(300);
