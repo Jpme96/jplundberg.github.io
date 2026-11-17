@@ -305,6 +305,12 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(kari2, () => /Wrong passcode/.test(document.body.innerText)), 'a wrong passcode is caught');
   await kari2.$eval('input[name=pass]', e => { e.value = ''; e.disabled = false; }); await kari2.type('input[name=pass]', 'kari-pass-1'); await kari2.click('button[type=submit]');
   check(await until(kari2, () => !!document.querySelector('.t-tabs')), 'the right passcode opens Team on the new device');
+  /* on a computer: the menu on the left, the page wide, the Overview in two columns (JP 2026-11-17 11:43) */
+  await kari2.goto(U + '#overview'); await sl(600);
+  const lay = await kari2.evaluate(() => { const t = document.querySelector('.t-tabs').getBoundingClientRect(), a = document.querySelector('#app').getBoundingClientRect(), c = document.querySelectorAll('.t-cols > .t-col');
+    return { left: t.left === 0 && t.width < 260 && t.height > 600, wide: a.width > 900, over: a.left >= t.right, cols: c.length === 2 && c[1].getBoundingClientRect().left > c[0].getBoundingClientRect().left + 200, fits: document.documentElement.scrollWidth <= innerWidth }; });
+  check(Object.values(lay).every(Boolean), 'on a computer: menu on the left, a wide page, two columns ' + JSON.stringify(lay));
+  if (process.env.SHOT) await kari2.screenshot({ path: path.join(__dirname, '..', '.tmp', 'team-pc.png') });
   await kari2.goto(U + '#meetings'); await sl(300);
   check(/MARK-SECRET-1/.test(await text(kari2)) && /MARK-SECRET-4/.test(await text(kari2)), 'she reads meetings from before and after the new key');
 

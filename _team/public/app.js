@@ -461,13 +461,13 @@
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
-    out += clockCard() + newsCard() + weekCard();
+    out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard() + weekCard();
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
     out += '<p class="t-h"><span>' + L('My open actions', 'Mine åpne oppgaver') + '</span><span>' + mine.length + '</span></p>';
     out += mine.length ? actionList(mine) : '<p class="t-empty">' + L('Nothing open for you.', 'Ingenting åpent for deg.') + '</p>';
-    out += projectsCard();
+    out += '</div><div class="t-col">' + projectsCard() + '</div></div>';   /* two columns on a computer (JP 2026-11-17 11:43) */
     return out;
   }
   function meetingCard(m) {

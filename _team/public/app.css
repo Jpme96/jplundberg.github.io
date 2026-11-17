@@ -191,3 +191,16 @@ a.t-icon { text-decoration: none; }
 .s-ok { background: var(--acc); } .s-cmt { background: color-mix(in srgb, var(--acc) 55%, var(--warn)); } .s-recv { background: var(--blue); } .s-rej { background: var(--bad); } .s-missing { background: rgba(127, 127, 127, .35); } .s-na { background: transparent; border: 1px solid rgba(127, 127, 127, .5); }
 .t-pdue { font-size: 13px; color: var(--muted); }
 .t-pdue.t-warn { color: var(--warn); font-weight: 600; }
+/* A computer gets a computer layout (JP 2026-11-17 11:43 "looks like it's for the phone"): the tabs become a menu on the left,
+   the page uses the width (up to 1200 px), the Overview has two columns, Documents its full width. The phone is unchanged. */
+.t-cols { display: block; }
+@media (min-width: 1000px) {
+  #app { max-width: 1200px; margin: 0 auto 0 max(232px, calc((100vw - 1200px) / 2 + 116px)); padding: 28px 32px 48px; }
+  .t-tabs { top: 0; bottom: 0; left: 0; right: auto; width: 208px; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 88px 12px 16px; border-top: 0; border-right: 1px solid var(--line); background: var(--bg); }
+  .t-tabs button { flex: 0 0 auto; max-width: none; width: 100%; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 44px; padding: 0 14px; font-size: 15px; }
+  .t-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+  .t-col > .t-h:first-child { margin-top: 0; }
+  .t-toast { bottom: 24px; left: calc(50% + 104px); }
+  .t-screen p, .t-form { max-width: 420px; }
+}
+@media (min-width: 1400px) { .t-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); } }
