@@ -138,7 +138,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     lines: [{ id: 'a1', code: '442', sys: 'Lighting SECRET-SYS', type: 'Drift', t: 'B', st: 'missing', files: ['f1'] }, { id: 'a2', code: '442', sys: 'Lighting SECRET-SYS', type: 'Vedlikehold', t: 'C', st: 'recv' }, { id: 'a3', code: '320', sys: 'Heating', t: 'B', st: 'missing' }] } }));
   await own.goto(U + '#docs'); await own.reload();
   check(await until(own, () => !!document.querySelector('#wkDocCtl [data-drnew]'), 20000), 'Documents opens Documentation (the same code as /cmd)');
-  check(await until(own, () => !!document.querySelector('#wkDocCtl .dx-tools [data-dcchk]') && !document.querySelector('[data-dtab="req"]')), 'one Documentation choice with the plan check on top (JP 2026-11-16)');
+  check(await until(own, () => !!document.querySelector('#wkDocCtl .dx-tools [data-dxtool="plan"]') && !document.querySelector('[data-dtab="req"]')), 'one Documentation choice with the plan check on top (JP 2026-11-16)');
   const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
   check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
   check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');

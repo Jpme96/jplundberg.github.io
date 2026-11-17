@@ -392,9 +392,9 @@
   function home() {
     var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
     var body = adding ? projForm(null) : radding ? kravForm() : '';
-    if (!adding && !radding) body += '<div class="dx-tools"><label class="dx-tool dc-file"><i class="bi bi-clipboard2-check"></i><span><b>' + esc(k('ui.dx-t-plan', 'Check a document plan')) + '</b><small>' + esc(k('ui.dx-t-plan-s', 'The contractor’s plan against the checklist – nothing is saved')) + '</small></span><input type="file" accept=".xlsx,.xlsm" data-dcchk hidden></label>' +
+    if (!adding && !radding) body += '<div class="dx-tools"><button type="button" class="dx-tool" data-dxtool="plan" aria-pressed="' + (xtool === 'plan') + '"><i class="bi bi-clipboard2-check"></i><span><b>' + esc(k('ui.dx-t-plans', 'Document plans')) + '</b><small>' + esc(k('ui.dx-t-plans-s', 'The contractors’ plans checked against the checklist – kept until you delete them')) + '</small></span></button>' +
       '<button type="button" class="dx-tool" data-dxtool="ren" aria-pressed="' + (xtool === 'ren') + '"><i class="bi bi-input-cursor-text"></i><span><b>' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</b><small>' + esc(k('ui.dx-t-ren-s', 'NS code and document code per file, download them renamed')) + '</small></span></button>' +
-      '<button type="button" class="dx-tool" data-dxtool="fdv" aria-pressed="' + (xtool === 'fdv') + '"><i class="bi bi-list-check"></i><span><b>' + esc(k('ui.dx-t-fdv', 'Check names from the FDV system')) + '</b><small>' + esc(k('ui.dx-t-fdv-s', 'Paste or import names and see which break the rules')) + '</small></span></button></div>' + (xtool === 'ren' ? renPanel() : xtool === 'fdv' ? fdvPanel() : '');
+      '<button type="button" class="dx-tool" data-dxtool="fdv" aria-pressed="' + (xtool === 'fdv') + '"><i class="bi bi-list-check"></i><span><b>' + esc(k('ui.dx-t-fdv', 'Check names from the FDV system')) + '</b><small>' + esc(k('ui.dx-t-fdv-s', 'Paste or import names and see which break the rules')) + '</small></span></button></div>' + (xtool === 'ren' ? renPanel() : xtool === 'fdv' ? fdvPanel() : xtool === 'plan' ? planPanel() : '');
     body += L.length ? '<ul class="kit-list dx-list">' + L.map(function (x) {
       var p = x.p, r = x.r, c = p ? counts(p.lines || []) : null, o = p || r, tag;
       if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
@@ -1207,12 +1207,12 @@
     return { err: err, warn: warn };
   }
   function copyText(t) { (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('<i class="bi bi-clipboard-check"></i> ' + esc(k('ui.dc-chk-copied', 'The file is saved and the message copied – paste it into your email.'))); }, function () {}); }
-  function checkPlan(file) {
-    if (!/\.xls[xm]$/i.test(file.name)) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-chk-xlsx', 'Pick the plan as an Excel file (.xlsx).'))); return; }
+  function checkPlan(file, quiet) {
+    if (!/\.xls[xm]$/i.test(file.name)) { if (quiet) return Promise.resolve(null); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-chk-xlsx', 'Pick the plan as an Excel file (.xlsx).'))); return; }
     var R = req(), buf0;
-    file.arrayBuffer().then(function (buf) { buf0 = buf; return readBook(buf.slice(0)); }).then(function (sheets) {
+    return file.arrayBuffer().then(function (buf) { buf0 = buf; return readBook(buf.slice(0)); }).then(function (sheets) {
       var res = parsePlan(sheets);
-      if (!res.lines.length && !res.heads.some(function (h) { return h.none.length; })) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-plan-none', 'No document lines found – the plan needs a column for the system code and one for the document type or the planned name.'))); return; }
+      if (!res.lines.length && !res.heads.some(function (h) { return h.none.length; })) { if (quiet) return null; toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-plan-none', 'No document lines found – the plan needs a column for the system code and one for the document type or the planned name.'))); return; }
       var have = { named: {} }; res.lines.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; if (l.sys) have.named[c3] = 1; });   /* a code named anywhere in the plan is the client's own */
       var n = { err: 0, warn: 0, ok: 0, none: 0 };
       res.lines.forEach(function (l) {
@@ -1244,6 +1244,7 @@
       }
       H = H.filter(function (h) { return h.name !== file.name; }); H.unshift({ name: file.name, at: today(), keys: cur }); H = H.slice(0, 6);
       try { localStorage.setItem('dash.dcchks', JSON.stringify(H)); } catch (e) {}
+      if (quiet) return { e: n.err, w: n.warn, o: n.ok, x: n.none, diff: diff ? { f: diff.fixed, n: diff.fresh, at: diff.at } : null, R: !!R };
       var pseudo = { id: 'check', name: file.name.replace(/\.xls[xm]$/i, ''), lines: res.lines, files: [], planSheets: res.heads };
       return colourOwn(pseudo, buf0).then(function (bl) {
         var title = k('ui.dc-chk-title', 'Check: {f}', { f: file.name });
@@ -1270,7 +1271,55 @@
           download: function (b2) { window.FdvPdf.share(new File([b2], file.name.replace(/\.xls[xm]$/i, '') + ' – ' + k('ui.dc-chk-file', 'checked') + '.xlsx', { type: b2.type })); } });
         });
       });
-    }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); try { console.warn('[dc] check', e); } catch (e2) {} });
+    }).catch(function (e) { if (quiet) return null; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-plan-bad', 'The file could not be read – use .xlsx or .csv.'))); try { console.warn('[dc] check', e); } catch (e2) {} });
+  }
+  /* Document plans that stay (JP 2026-11-17 15:25): several at once, each with its summary (to fix · to look at · OK · no type) in the list,
+     opened in the viewer only when you ask, kept until you delete them. The list and the files are 'plan:' keys – shared with the team in Team
+     (encrypted records), on this device in cmd. A plan bigger than Team's record limit stays on the device that added it. */
+  var PLS = null, plBusy = 0;
+  function plList() { return PLS || []; }
+  window.addEventListener('tools:change', function () { if (PLS && xtool === 'plan') plLoad().then(function () { draw(); }); });
+  function plLoad() { return getBlob('plan:index').then(function (v) { PLS = v && Array.isArray(v.list) ? v.list : []; return PLS; }).catch(function () { PLS = PLS || []; return PLS; }); }
+  function plSave() { return putBlob('plan:index', { list: PLS || [] }); }
+  function plAdd(list) {
+    var F = [].slice.call(list || []).filter(function (f) { return /\.xls[xm]$/i.test(f.name); });
+    if (!F.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-chk-xlsx', 'Pick the plan as an Excel file (.xlsx).'))); return Promise.resolve(); }
+    plBusy += F.length; draw();
+    var who = HOST && HOST.profile ? (HOST.profile() || {}).name || '' : '';
+    return plLoad().then(function () { return F.reduce(function (pr, f) { return pr.then(function () {
+      return checkPlan(f, true).then(function (sum) {
+        var id = uid(), e = { id: id, name: f.name, at: new Date().toISOString(), by: who, size: f.size, sum: sum || null };
+        return putBlob('plan:f:' + id, f).then(function (ok) { if (ok === false) { e.here = 1; return putBlobLocal('plan:f:' + id, f); } }).then(function () { PLS = [e].concat(plList().filter(function (x) { return x.name !== f.name || x.at.slice(0, 10) !== e.at.slice(0, 10); })); });
+      }).then(function () { plBusy--; draw(); }, function () { plBusy--; draw(); });
+    }); }, Promise.resolve()); }).then(function () { return plSave(); }).then(function () { toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-pl-added', '{n} plans checked and kept', { n: F.length }))); draw(); });
+  }
+  function plFile(e) { return getBlob('plan:f:' + e.id).then(function (b) { return b || getBlobLocal('plan:f:' + e.id); }).then(function (b) { return b ? new File([b], e.name, { type: b.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }) : null; }); }
+  function plOpen(id) { var e = plList().filter(function (x) { return x.id === id; })[0]; if (!e) return;
+    plFile(e).then(function (f) { if (!f) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dx-pl-gone', 'This plan’s file is only on the device that added it.'))); return; }
+      checkPlan(f, true).then(function (sum) { if (sum) { e.sum = sum; e.chk = new Date().toISOString(); plSave(); draw(); } checkPlan(f); }); }); }
+  function plDel(id) { PLS = plList().filter(function (x) { return x.id !== id; }); delBlob('plan:f:' + id); delBlobLocal('plan:f:' + id); return plSave().then(function () { draw(); }); }
+  function plSumHtml(s0) {
+    if (!s0) return '<span class="dx-tag na">' + esc(k('ui.dx-pl-nosum', 'Not checked – open it')) + '</span>';
+    return (s0.e ? '<span class="dx-tag bad">' + esc(k('ui.dx-pl-e', '{n} to fix', { n: s0.e })) + '</span>' : '') + (s0.w ? '<span class="dx-tag soon">' + esc(k('ui.dx-pl-w', '{n} to look at', { n: s0.w })) + '</span>' : '') +
+      '<span class="dx-tag ok">' + esc(k('ui.dx-pl-o', '{n} OK', { n: s0.o })) + '</span>' + (s0.x ? '<span class="dx-tag na">' + esc(k('ui.dx-pl-x', '{n} with no document type', { n: s0.x })) + '</span>' : '') +
+      (s0.diff ? '<small class="muted">' + esc(k('ui.dc-chk-diff', 'Since the check on {d}: {f} fixed, {n} new', { d: fmt(s0.diff.at), f: s0.diff.f, n: s0.diff.n })) + '</small>' : '') +
+      (!s0.R ? '<small class="muted">' + esc(k('ui.dx-pl-nor', 'No checklist from the client yet – the document types aren’t checked')) + '</small>' : '');
+  }
+  function planPanel() {
+    if (!PLS) { plLoad().then(function () { draw(); }); }
+    var L0 = plList();
+    var h = '<section class="dx-panel dx-plans"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-plans', 'Document plans')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      '<p class="muted dc-help">' + esc(HOST && HOST.team ? k('ui.dx-pl-help-t', 'Each plan is checked against the client’s checklist when you add it. They stay here for the whole team until someone deletes them.') : k('ui.dx-pl-help', 'Each plan is checked against the client’s checklist when you add it. They stay here until you delete them.')) + '</p>' +
+      '<div class="dc-facts"><label class="pill-btn dc-file"><i class="bi bi-file-earmark-plus"></i> ' + esc(k('ui.dx-pl-add', 'Add plans (.xlsx) – several at once')) + '<input type="file" multiple accept=".xlsx,.xlsm" data-dxplanf hidden></label>' + (plBusy ? '<span class="muted"><i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-pl-busy', 'Checking {n} …', { n: plBusy })) + '</span>' : '') + '</div>';
+    if (!L0.length) return h + '<p class="muted">' + esc(PLS ? k('ui.dx-pl-none', 'No plans yet – add one or more, or drop them here.') : k('ui.loading', 'Loading …')) + '</p></section>';
+    h += '<ul class="dx-pl">' + L0.map(function (e) {
+      return '<li class="dx-pli"><div class="dx-pln"><b data-noi18n>' + esc(e.name) + '</b><small class="muted">' + esc(fmt(String(e.chk || e.at).slice(0, 10))) + (e.by ? ' · ' + esc(e.by) : '') + (e.here ? ' · ' + esc(k('ui.dx-pl-here', 'file on the device that added it')) : '') + '</small></div>' +
+        '<div class="dx-pls">' + plSumHtml(e.sum) + '</div>' +
+        '<div class="dx-plb"><button type="button" class="pill-btn" data-dxplopen="' + esc(e.id) + '"><i class="bi bi-table"></i> ' + esc(k('ui.dx-pl-open', 'Open the check')) + '</button>' +
+        '<button type="button" class="dc-chip" data-dxpldl="' + esc(e.id) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</button>' +
+        '<button type="button" class="dc-chip dx-clr" data-dxpldel="' + esc(e.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')) + '</button></div></li>';
+    }).join('') + '</ul>';
+    return h + '</section>';
   }
   function planXlsx(p, raw) {
     if (!raw) return Promise.all([planXlsx(p, true), needXV().catch(function () { return null; })]).then(function (x) { var f = x[0]; if (!x[1]) return f;
@@ -1468,6 +1517,9 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if ((b = t.closest('[data-dxplopen]'))) { plOpen(b.dataset.dxplopen); return; }
+    if ((b = t.closest('[data-dxpldl]'))) { var pe = plList().filter(function (x) { return x.id === b.dataset.dxpldl; })[0]; if (pe) plFile(pe).then(function (f) { if (f) window.FdvPdf.share(f); }); return; }
+    var pd = t.closest('[data-dxpldel]'); if (pd) { if (!pd.classList.contains('sure')) { pd.classList.add('sure'); pd.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-pl-sure', 'Delete the plan? Tap again')); setTimeout(function () { if (pd.isConnected) { pd.classList.remove('sure'); pd.innerHTML = '<i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')); } }, 4000); return; } plDel(pd.dataset.dxpldel); return; }
     var b0 = t.closest('[data-dxrenclr]'); if (b0) { if (!b0.classList.contains('sure')) { b0.classList.add('sure'); b0.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-clear-sure', 'Remove all files? Tap again')); setTimeout(function () { if (b0.isConnected) { b0.classList.remove('sure'); b0.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-clear', 'Start again')); } }, 4000); return; }
       TOOL = { p: null, blobs: {} }; draw(); return; }
     if (t.closest('[data-dxrenuse]')) { var N9 = naming(); if (N9) { var nn9 = N9.useAll('__ren'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-ren-used', '{n} files have their new name', { n: nn9 }))); } return; }
@@ -1554,6 +1606,8 @@
   /* files dropped straight on the rename panel */
   document.addEventListener('dragover', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (r) { e.preventDefault(); r.classList.add('dx-dragon'); } });
   document.addEventListener('dragleave', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (r && !r.contains(e.relatedTarget)) r.classList.remove('dx-dragon'); });
+  document.addEventListener('drop', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp) { e.preventDefault(); plAdd((e.dataTransfer && e.dataTransfer.files) || []); return; } });
+  document.addEventListener('dragover', function (e) { if (e.target.closest && e.target.closest('.dx-plans')) e.preventDefault(); });
   document.addEventListener('drop', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (!r || (e.target.closest && e.target.closest('.dx-drop'))) return; e.preventDefault(); r.classList.remove('dx-dragon'); var fl = [].slice.call((e.dataTransfer && e.dataTransfer.files) || []); if (fl.length) renAdd(fl); });
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov')) return;
@@ -1561,6 +1615,7 @@
     if (t.dataset.dctc && tform) { if (t.checked) tform.codes[t.dataset.dctc] = 1; else delete tform.codes[t.dataset.dctc]; var cn = document.querySelector('[data-dctn]'); if (cn) cn.textContent = k('ui.dx-n-picked', '{n} picked', { n: Object.keys(tform.codes).length }); var dd = t.closest('details'), sp = dd && dd.querySelector('.dc-pn'); if (sp) sp.textContent = dd.querySelectorAll('[data-dctc]:checked').length || ''; return; }
     if (t.hasAttribute('data-dxrenf')) { var fl = [].slice.call(t.files || []); t.value = ''; if (fl.length) renAdd(fl); return; }
     if (t.hasAttribute('data-dxfdvf')) { var ff = t.files && t.files[0]; t.value = ''; if (ff) (/\.xls[xm]$/i.test(ff.name) ? ff.arrayBuffer().then(readBook) : ff.text().then(function (x) { return x.indexOf(';') >= 0 || x.indexOf('\t') >= 0 ? readCsv(x) : [{ rows: x.split(/\r?\n/).map(function (l) { return [l]; }) }]; })).then(function (sh) { var nn = namesFrom(sh); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } fdvCheck(nn); }); return; }
+    if (t.hasAttribute('data-dxplanf')) { var pf = [].slice.call(t.files || []); t.value = ''; plAdd(pf); return; }
     if (t.hasAttribute('data-dcchk')) { var cf = t.files && t.files[0]; t.value = ''; if (cf) checkPlan(cf); return; }
     if (t.dataset.dcfromkrav && t.value) { var kk = krav(t.value), pid = t.dataset.dcfromkrav; if (!kk) return; var addk = 0;
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });

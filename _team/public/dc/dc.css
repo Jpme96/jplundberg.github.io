@@ -1022,3 +1022,26 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-cpl button.on, .dcn-cpl button.l4.on { color: var(--accent); font-weight: 600; }
 .dcn-ov a.dc-chip, .dcn-ov .dcn-shead .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; text-decoration: none; color: inherit; line-height: 1; box-sizing: border-box; }
 .dcn-ov .dcn-shead .dcn-b { display: inline-flex; align-items: center; gap: 10px; }
+.dx-pl { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.dx-pli { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; }
+.dx-pln { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dx-pln b { overflow-wrap: anywhere; }
+.dx-pls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.dx-pls small { width: 100%; }
+.dx-plb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.dx-plb .pill-btn, .dx-plb .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; }
+.dx-plb .dx-clr { margin-left: auto; }
+.dx-tag { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.dx-tag.bad { background: rgba(var(--danger-rgb, 229, 72, 77), .16); color: var(--danger, #e5484d); }
+.dx-tag.soon { background: rgba(var(--warn-rgb, 245, 166, 35), .16); color: var(--warn, #f5a623); }
+.dx-tag.ok { background: rgba(var(--ok-rgb, 48, 164, 108), .16); color: var(--ok, #30a46c); }
+.dx-tag.na { background: rgba(var(--ink-rgb, 255, 255, 255), .08); color: var(--muted); }
+@media (min-width: 900px) {
+  .dx-pli { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) auto; align-items: center; }
+  .dx-plb .dx-clr { margin-left: 0; }
+}
+@media (max-width: 700px) {
+  .dx-plb { justify-content: center; }
+  .dx-plb .dx-clr { margin-left: 0; }
+  .dx-plans .dc-facts { justify-content: center; }
+}

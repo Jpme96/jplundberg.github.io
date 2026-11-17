@@ -27,7 +27,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await go(p, 'work/', 2500);
   await p.evaluate(() => PageTabs.show('doc')); await sl(300);
   const t0 = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dx-tools .dx-tool b')].map(x => x.textContent).join('|'));
-  check(t0 === 'Check a document plan|Give files the right names|Check names from the FDV system', 'three one-off tools on top ' + t0);
+  check(t0 === 'Document plans|Give files the right names|Check names from the FDV system', 'three tools on top (document plans now stay) ' + t0);
   const before = await p.evaluate(() => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; return JSON.stringify(t).length; });
   /* rename: the file naming (suggestions from the name and the PDF text, the naming rules) on files outside any project (JP 20:43) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);

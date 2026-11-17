@@ -10,7 +10,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const tabs = await p.evaluate(() => PageTabs.list('work').map(t => t.id).join());
   check(/doc/.test(tabs) && !/req/.test(tabs), 'Work has one Documentation tab, no separate Requirements tab ' + tabs);
   await p.evaluate(() => PageTabs.show('req')); await sl(300);
-  const h0 = await p.evaluate(() => ({ cur: PageTabs.current(), tool: !!document.querySelector('#wkDocCtl .dx-tools input[data-dcchk]'), reqGone: document.getElementById('wkDocReq').classList.contains('dc-gone'), title: document.querySelector('#wkDocCtl .card-head h2').textContent.trim() }));
+  const h0 = await p.evaluate(() => ({ cur: PageTabs.current(), tool: !!document.querySelector('#wkDocCtl .dx-tools [data-dxtool="plan"]'), reqGone: document.getElementById('wkDocReq').classList.contains('dc-gone'), title: document.querySelector('#wkDocCtl .card-head h2').textContent.trim() }));
   check(h0.cur === 'doc' && h0.tool && h0.reqGone && /Documentation/.test(h0.title), 'the old Requirements tab opens Documentation: the plan check on top, one list ' + JSON.stringify(h0));
   /* a project: Requirements first */
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-drnew]').click()); await sl(300);

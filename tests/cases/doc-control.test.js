@@ -372,6 +372,26 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan B.xlsx')); }, book2.toString('base64'));
   check(await until(() => /Since the check on .*: 0 fixed, 0 new/.test((document.querySelector('.xv-note') || {}).textContent || '')), 'checking the same plan again compares it with the last check');
   await p.evaluate(() => document.querySelector('[data-xv="close"]').click());
+  /* Document plans that stay (JP 2026-11-17 15:25): several at once, the summary in the list, the viewer only when asked, deleted when you say so */
+  await p.evaluate(() => { PageTabs.show('doc'); }); await sl(300);
+  for (let i = 0; i < 3 && await p.evaluate(() => !!document.querySelector('#wkDocCtl [data-dcback]')); i++) { await p.evaluate(() => document.querySelector('#wkDocCtl [data-dcback]').click()); await sl(300); }
+  await p.evaluate(() => document.querySelector('#wkDocCtl [data-dxtool="plan"]').click()); await sl(400);
+  await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)), i = document.querySelector('input[data-dxplanf]'), dt = new DataTransfer();
+    dt.items.add(new File([u], 'Made-up plan D.xlsx')); dt.items.add(new File([u], 'Made-up plan E.xlsx')); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }, book2.toString('base64'));
+  check(await until(() => document.querySelectorAll('.dx-plans .dx-pli').length === 2 && !document.querySelector('.xv-note')), 'two plans added at once – listed, no viewer taking the screen');
+  const plS = await p.evaluate(() => [...document.querySelectorAll('.dx-plans .dx-pli')].map(li => li.querySelector('.dx-pls').textContent.replace(/\s+/g, ' ')));
+  check(plS.every(x => /2 to fix/.test(x) && /4 to look at/.test(x) && /2 OK/.test(x) && /2 with no document type/.test(x)), 'each plan shows its summary in the list ' + JSON.stringify(plS));
+  await p.reload({ waitUntil: 'domcontentloaded' }); await sl(2500); await p.evaluate(() => PageTabs.show('doc')); await sl(300);
+  await p.evaluate(() => document.querySelector('#wkDocCtl [data-dxtool="plan"]').click());
+  check(await until(() => document.querySelectorAll('.dx-plans .dx-pli').length === 2), 'they are still there after a reload');
+  await p.evaluate(() => document.querySelector('[data-dxplopen]').click());
+  check(await until(() => /^Check: Made-up plan [DE]\.xlsx/.test((document.querySelector('.xv-title, .xv-head b, .xv-h b') || {}).textContent || document.title) || !!document.querySelector('.xv-note')), 'Open the check opens the viewer');
+  await p.evaluate(() => { const c = document.querySelector('[data-xv="close"]'); if (c) c.click(); }); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dxpldel]').click()); await sl(150);
+  check(await p.evaluate(() => document.querySelectorAll('.dx-plans .dx-pli').length === 2), 'delete asks first');
+  await p.evaluate(() => document.querySelector('[data-dxpldel]').click());
+  check(await until(() => document.querySelectorAll('.dx-plans .dx-pli').length === 1), 'a second tap deletes it');
+  await p.evaluate(() => document.querySelector('#wkDocCtl [data-dxtool="plan"]').click()); await sl(200);
   /* Team is the home for document requirements (JP 2026-11-16): one file takes every list, the checklists and your project types;
      afterwards the card points to Team and new lists are made there */
   await p.evaluate(() => { PageTabs.show('req'); }); await sl(300);
