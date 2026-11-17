@@ -320,7 +320,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(/MARK-SECRET-1/.test(await text(kari2)) && /MARK-SECRET-4/.test(await text(kari2)), 'she reads meetings from before and after the new key');
 
   /* --- the change log, shown to members, decrypted on the device --- */
-  await own.goto(U + '#team'); await own.click('[data-act=log]');
+  await own.goto(U + '#team'); await own.click('[data-act=log]'); await until(own, () => !!document.querySelector('[data-act=logall]')); await own.click('[data-act=logall]');
   check(await until(own, () => /approved Kari/.test(document.body.innerText) && /removed Ola/.test(document.body.innerText) && /MARK-SECRET-1/.test(document.body.innerText) && /Documents: School rehab SECRET-DC/.test(document.body.innerText)), 'the change log shows who did what');
   await word(own, 'the team tab');
 

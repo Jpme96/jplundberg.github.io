@@ -213,3 +213,5 @@ a.t-icon { text-decoration: none; }
   .t-tcols .t-inv { width: auto; display: inline-flex; padding: 0 22px; }
   .t-tcols .t-col > .t-card:first-child, .t-tcols .t-col > details:first-child { margin-top: 0; }
 }
+.t-logall { margin-top: 10px; }
+.t-sheet-log .t-log { max-height: 60vh; overflow: auto; }

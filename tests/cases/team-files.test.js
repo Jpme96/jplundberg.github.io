@@ -145,6 +145,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await own.evaluate(() => [...document.querySelectorAll('[data-act=fopen]')].some(x => /A-101/.test(x.textContent))), 'the file that was kept stays in the shared files');
   await own.goto(T + '#team'); await sl(1500);
   await own.evaluate(() => { const b = document.querySelector('[data-act=log]'); b && b.click(); }); await sl(1500);
+  check(await own.evaluate(() => document.querySelectorAll('.t-log li').length <= 5 && !document.querySelector('.t-log ~ .t-small')), 'the change log shows the newest five on the page (JP 2026-11-17 21:20)');
+  await own.evaluate(() => { const b = document.querySelector('[data-act=logall]'); b && b.click(); }); await sl(400);
+  check(await own.evaluate(() => !!document.querySelector('.t-sheet-log .t-log')), 'Show all opens the whole log in a popup');
   const lr = await own.evaluate(() => !!document.querySelector('[data-act=logreset]'));
   if (lr) { await own.evaluate(() => document.querySelector('[data-act=logreset]').click()); await sl(1500); }
   const logN = (await raw('/__mem')).body.match(/"l:\d{9}"/g) || [];

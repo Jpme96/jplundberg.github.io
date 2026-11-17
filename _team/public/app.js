@@ -627,20 +627,21 @@
     out += '</div><div class="t-col">';
     if (adm) out += accessCard();
     out += clockTeamCard();
-    out += '<p class="t-h"><span>' + L('Change log', 'Endringslogg') + '</span><button class="t-btn ghost sm" type="button" data-act="log">' + L('Show', 'Vis') + '</button></p>' + (S.logOpen ? logHtml() : '') + '</div></div>';
+    out += '<p class="t-h"><span>' + L('Change log', 'Endringslogg') + '</span><button class="t-btn ghost sm" type="button" data-act="log">' + (S.logOpen ? L('Hide', 'Skjul') : L('Show', 'Vis')) + '</button></p>' +
+      (S.logOpen ? logHtml(5) + (S.log.length > 5 || (S.log.length && rank() >= 3) ? '<button class="t-btn ghost sm t-logall" type="button" data-act="logall">' + L('Show all ({n})', 'Vis alle ({n})').replace('{n}', S.log.length) + '</button>' : '') : '') + '</div></div>';   /* the newest five here, the whole log in a popup (JP 2026-11-17 21:20) */
     return out;
   }
   async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
-  function logHtml() {
+  function logHtml(n) {
     if (!S.log.length) return '<p class="t-empty">' + L('Nothing yet.', 'Ingenting ennå.') + '</p>';
     var A = { access: L('changed who may do what', 'endret hvem som kan gjøre hva'), 'log-reset': L('emptied the log', 'tømte loggen'), 'upload-removed': L('removed uploaded files', 'fjernet opplastede filer'), upload: L('sent a file on an upload link', 'sendte en fil med en opplastingslenke'), uplink: L('made an upload link', 'lagde en opplastingslenke'), 'uplink-off': L('switched off an upload link', 'slo av en opplastingslenke'), setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake'), rename: L('renamed the team to', 'ga teamet navnet') };
-    return '<ul class="t-list t-log">' + S.log.map(function (l) {
+    return '<ul class="t-list t-log">' + (n ? S.log.slice(0, n) : S.log).map(function (l) {
       var what = l.sum || (l.k ? ({ meeting: L('a meeting', 'et møte'), action: L('an action', 'en oppgave') })[l.k] || '' : '');
       if (l.a === 'rename') return '<li><span class="grow"><span>' + esc(nameOf(l.by) + ' ' + A.rename + ' «' + (l.name || '') + '»') + '</span><small>' + esc(fmtTime(l.t)) + '</small></span></li>';
       var who = l.who ? ' ' + (l.who === S.me.email ? nameOf(l.who) : l.name || nameOf(l.who)) + (l.role ? ' (' + roleName(l.role) + ')' : '') : (l.a === 'role' || l.a === 'invite') && l.role ? ' (' + roleName(l.role) + ')' : '';
       return '<li><span class="grow"><span>' + esc(nameOf(l.by) + ' ' + (A[l.a] || l.a) + who + (what ? ' – ' + what : '')) + '</span><small>' + esc(fmtTime(l.t)) + '</small></span></li>';
-    }).join('') + '</ul><p class="t-small">' + L('Nobody can change a line in the log. An admin can empty it – that is written down too.', 'Ingen kan endre en linje i loggen. En admin kan tømme den – det blir også skrevet ned.') + '</p>' +
-      (rank() >= 3 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="logreset">' + L('Empty the log', 'Tøm loggen') + '</button>' : '');
+    }).join('') + '</ul>' + (n ? '' : '<p class="t-small">' + L('Nobody can change a line in the log. An admin can empty it – that is written down too.', 'Ingen kan endre en linje i loggen. En admin kan tømme den – det blir også skrevet ned.') + '</p>' +
+      (rank() >= 3 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="logreset">' + L('Empty the log', 'Tøm loggen') + '</button>' : ''));
   }
   async function loadLog() {
     var j = await api('log?n=100');
@@ -1306,7 +1307,7 @@
     if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
     if (a === 'uprm') { if (!confirm(L('Remove this file from the list? If it was kept, it stays in the shared files.', 'Fjerne denne filen fra listen? Er den lagt til, blir den liggende i de delte filene.'))) return; t.disabled = true; try { await api('uprm', { method: 'POST', body: { lid: t.dataset.lid, fids: [t.dataset.fid] } }); toast(L('Removed', 'Fjernet')); draw(); } catch (x) { t.disabled = false; toast(failMsg(x)); } return; }
     if (a === 'updel') { var ld = S.recs[t.dataset.id]; if (!ld || !ld.d || !confirm(L('Delete this upload link and everything that came in on it? Files you kept stay in the shared files.', 'Slette denne opplastingslenken og alt som kom inn med den? Filer du har lagt til, blir liggende i de delte filene.'))) return; try { await api('uprm', { method: 'POST', body: { lid: ld.d.lid, all: true } }); await delRec(ld.id, L('Upload link', 'Opplastingslenke')); toast(L('Deleted', 'Slettet')); draw(); } catch (x) { toast(failMsg(x)); } return; }
-    if (a === 'logreset') { if (!confirm(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.'))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'logreset') { if (!confirm(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.'))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); closeSheet(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }
     if (a === 'fdl') { if (S.prevFile) saveFile(S.prevFile); return; }
     if (a === 'fshare') { if (S.prevFile && navigator.canShare && navigator.canShare({ files: [S.prevFile] })) navigator.share({ files: [S.prevFile] }).catch(function () {}); else if (S.prevFile) saveFile(S.prevFile); return; }
@@ -1336,6 +1337,7 @@
     if (a === 'decline') { if (!confirm(L('Decline this request?', 'Avslå denne forespørselen?'))) return; try { await api('decline', { method: 'POST', body: { email: t.dataset.email } }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'member') return memberSheet(t.dataset.email);
     if (a === 'remove') return removeMember(t.dataset.email, t);
+    if (a === 'logall') { openSheet('<h2>' + L('Change log', 'Endringslogg') + '</h2>' + logHtml() + '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Close', 'Lukk') + '</button></div>', 'log'); return; }
     if (a === 'log') { S.logOpen = !S.logOpen; if (S.logOpen) { try { await loadLog(); } catch (x) { toast(failMsg(x)); } } draw(); return; }
     if (a === 'withdraw') { try { await api('join', { method: 'DELETE' }); await kclear(); S.me = await api('me'); stopPoll(); route(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'changePass') return passSheet();
