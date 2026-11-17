@@ -967,3 +967,10 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 }
 .dcn-ov.dc-host { margin: 0; }
 .dcn-s .dcn-fl:has([data-dcnv$=":desc"]) { width: min(100%, 440px); }
+.dx-ren label.pill-btn, .dx-ren .pill-btn, .dcn-ov .pill-btn, .dx-ren .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+@media (max-width: 700px) {
+  .dx-clr { margin-left: 0; }
+  .dx-rsum { flex-direction: column; align-items: center; text-align: center; }
+  .dx-ren .dcn-all, .dx-ren [data-dcnall] { margin-left: auto; margin-right: auto; }
+}
+.dx-ren .pill-btn, .dx-ren .dc-chip, .dcn-ov .pill-btn { white-space: normal; max-width: 100%; padding-top: 8px; padding-bottom: 8px; box-sizing: border-box; }

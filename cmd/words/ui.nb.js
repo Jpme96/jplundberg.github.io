@@ -3115,5 +3115,6 @@ I18N.add({
   "ui.dcn-cc-type-pick": ["Type unclear – pick one:", "Uklar type – velg en:"],
   "ui.dcn-cc-code-pick": ["System unclear – pick one:", "Uklart system – velg en:"],
   "ui.dcn-open": ["Open", "Åpne"],
-  "ui.dx-clear-sure": ["Remove all files? Tap again", "Fjerne alle filene? Trykk igjen"]
+  "ui.dx-clear-sure": ["Remove all files? Tap again", "Fjerne alle filene? Trykk igjen"],
+  "ui.dcn-choose-code": ["Choose a code", "Velg kode"]
 });

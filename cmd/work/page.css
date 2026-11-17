@@ -565,3 +565,12 @@ html.dcn-modal { overflow: hidden; }
 @media (max-width: 560px) { .dcn-ov { align-items: flex-end; padding: 0; } .dcn-sheet { border-radius: 18px 18px 0 0; max-height: 92dvh; padding-bottom: max(20px, env(safe-area-inset-bottom)); } }
 .dcn-ov.dc-host { margin: 0; }   /* in Team the popup carries the colour names of .dc-host */
 .dcn-s .dcn-fl:has([data-dcnv$=":desc"]) { width: min(100%, 440px); }   /* the description gets room for its words */
+/* buttons: their words in the middle, and on a phone the buttons themselves in the middle (JP 2026-11-17 07:22) */
+.dx-ren label.pill-btn, .dx-ren .pill-btn, .dcn-ov .pill-btn, .dx-ren .dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+@media (max-width: 700px) {
+  .dx-ren .dc-facts, .dx-rbtn, .dx-ren .dcn-b, .dcn-newb, .dcn-ov .dcn-b, .dx-ren .dcn-tools { justify-content: center; }
+  .dx-clr { margin-left: 0; }
+  .dx-rsum { flex-direction: column; align-items: center; text-align: center; }
+  .dx-ren .dcn-all, .dx-ren [data-dcnall] { margin-left: auto; margin-right: auto; }
+}
+.dx-ren .pill-btn, .dx-ren .dc-chip, .dcn-ov .pill-btn { white-space: normal; max-width: 100%; padding-top: 8px; padding-bottom: 8px; box-sizing: border-box; }   /* long labels wrap inside the button, never past the edge */

@@ -31,7 +31,7 @@
     dtype: { B: ['Bygningsmessige / utsparingstegninger', 'Builder’s work / openings'], D: ['Detalj(er)', 'Detail(s)'], F: ['Fasade', 'Facade'], O: ['Oppriss', 'Elevation'], P: ['Plan', 'Plan'], S: ['Snitt', 'Section'], T: ['Skjema', 'Schematic'], U: ['Utendørs / terrengarbeider', 'Outdoor / site works'] } };
   function mean(key, x, p) { var m = MEAN[key] && MEAN[key][x]; return m ? (nb() ? m[0] : m[1]) : p ? ownMean(p, key, x) : ''; }
   /* your own codes (JP 2026-11-16 22:30 "custom code in the drop down … or free text"): p.ncodes[part] = [[code, meaning]] – shown in the lists under "Your codes" */
-  var OWNK = [['type', 'ui.dcn-type', 'Document type'], ['floor', 'ui.dcn-p-floor', 'Floor'], ['disc', 'ui.dcn-p-disc', 'Discipline'], ['dtype', 'ui.dcn-p-dtype', 'Drawing type']];
+  var OWNK = [['code', 'ui.dcn-code', 'NS 3451 code'], ['type', 'ui.dcn-type', 'Document type'], ['floor', 'ui.dcn-p-floor', 'Floor'], ['disc', 'ui.dcn-p-disc', 'Discipline'], ['dtype', 'ui.dcn-p-dtype', 'Drawing type']];
   function owns(p, key) { return ((p && p.ncodes) || {})[key] || []; }
   function ownMean(p, key, x) { var o = owns(p, key).filter(function (y) { return y[0] === x; })[0]; return o ? o[1] || '' : ''; }
   var nown = '';
@@ -212,6 +212,23 @@
      stands – and opens on a tap; chips show only what needs you, what is ready, or what is done */
   var nexp = {}, nflt = '';
   function fstate(p, f) { var b = nbuild(p, f); if (b.miss.length || (!f.p.code && fkind(f) !== 'photo') || (f.p.code && !f.p.abbr && fkind(f) === 'doc')) return 'todo'; return b.plain + ext(f.orig || f.name) === f.name ? 'done' : 'ready'; }
+  var CGRP = { '0': ['Felles', 'Common'], '1': ['Felleskostnader', 'Shared costs'], '2': ['Bygning', 'Building'], '3': ['VVS', 'HVAC and plumbing'], '4': ['Elkraft', 'Electrical power'], '5': ['Tele og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
+  /* every code as a dropdown, grouped by its two-digit part (JP 2026-11-17 07:22 "why free text?"). The three-digit names aren't in the
+     public code (licence), so a code shows its own name when the plan or your own codes know it, else its group's name. */
+  function codeOpts(p, f) {
+    var v = String(f.p.code || ''), L = codeList(p), names = {}, groups = [];
+    L.forEach(function (c) { names[c[0]] = c[1]; if (c[0].length === 2) groups.push(c[0]); });
+    L.forEach(function (c) { var g = c[0].slice(0, 2); if (c[0].length >= 3 && groups.indexOf(g) < 0) groups.push(g); });
+    groups.sort();
+    var known = [], h = '<option value="">' + esc(k('ui.dcn-choose-code', 'Choose a code')) + '</option>';
+    groups.forEach(function (g) {
+      var gn = names[g] || (CGRP[g[0]] ? (nb() ? CGRP[g[0]][0] : CGRP[g[0]][1]) : ''), list = [];
+      for (var d = 1; d <= 9; d++) list.push(g + d);
+      L.forEach(function (c) { if (c[0].length > 3 && c[0].slice(0, 2) === g && list.indexOf(c[0]) < 0) list.push(c[0]); });
+      h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(c + ' ' + (names[c] || '· ' + gn)) + '</option>'; }).join('') + '</optgroup>';
+    });
+    return h + ownOpts(p, 'code', v, known);
+  }
   function codeList(p) {
     var m = {}, add = function (c, n) { c = String(c); if (/^\d{2,4}$/.test(c) && !m[c]) m[c] = n || codeName(c) || ''; };
     (p.lines || []).forEach(function (l) { add(String(l.code).split('.')[0], lineTitle(l)); });
@@ -254,7 +271,7 @@
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
     var h = '<li class="dcn-row dcn-' + lvl + '" data-dcnf="' + esc(f.id) + '"><div class="dcn-g">' +
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
-      '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><input list="dcnCodes" data-dcncode="' + esc(f.id) + '" value="' + esc(code.trim()) + '" title="' + esc(code.trim()) + '" placeholder="' + esc(k('ui.dcn-code-ph', 'Type 332 or sprinkler')) + '" autocomplete="off"></label>' +
+      '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '">' + codeOpts(p, f) + '</select></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
       (kd === 'doc' ? '<label class="dcn-c"><span>' + esc(k('ui.dcn-type', 'Document type')) + '</span><select data-dcntype="' + esc(f.id) + '">' + typeOpts(p, f) + '</select></label>' + (nown === f.id + ':type' ? ownForm(f.id, 'type') : '') : '') +
       '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
@@ -356,7 +373,7 @@
     return h;
   }
   function nfiles(p, F) {
-    var h = '<datalist id="dcnCodes">' + codeList(p).map(function (c) { return '<option value="' + esc(c[0] + ' ' + c[1]) + '"></option>'; }).join('') + '</datalist>' + rulesHtml(p);
+    var h = rulesHtml(p);
     var todo = F.filter(function (f) { return !f.nf && (!f.p.code || (ext(f.name) === '.pdf' && !f.cc)); }).length;
     /* the building number goes into every drawing's name – asked once, right here, where the names are (JP 2026-11-16 21:50) */
     var dw = F.some(function (f) { return !f.nf && ruleFor(p, f).parts.some(function (q) { return q.k === 'bno'; }); });
@@ -382,11 +399,10 @@
   function listen() {
     on('keydown', function (e) { if (e.key === 'Escape' && nsel && document.querySelector('.dcn-ov')) { nsel = ''; npi = -1; draw(); } });
     /* naming events (the Files tab) */
-    on('focusin', function (e) { var t = e.target; if (!t.matches || !t.matches('[data-dcncode]')) return; t.setAttribute('data-prev', t.value); if (t.value) { t.placeholder = k('ui.dcn-now', 'Now: {c} – type a code or a word', { c: t.value }); t.value = ''; } });   /* empty while picking, so the list shows every code (JP 11:54) */
-    on('focusout', function (e) { var t = e.target; if (!t.matches || !t.matches('[data-dcncode]')) return; if (!t.value.trim()) t.value = t.getAttribute('data-prev') || ''; t.placeholder = k('ui.dcn-code-ph', 'Type 332 or sprinkler'); });
     on('change', function (e) {
       var t = e.target; if (!t.matches || !t.closest('#wkDocCtl, .dcn-ov')) return; var v = t.value, fid;
-      if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4})\b/.exec(v); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) delete f.sg.c; relink(p, f); }); draw(); return; }
+      if (v === '__own' && t.dataset.dcncode) { nown = t.dataset.dcncode + ':code'; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
+      if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) delete f.sg.c; relink(p, f); }); draw(); return; }
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
@@ -415,7 +431,7 @@
       if (t.closest('[data-dcnocan]')) { nown = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnosave]'))) { var fw = b.closest('[data-dcnownf]'), oa = fw.dataset.dcnownf.split(':'), oc = nclean(fw.querySelector('[data-dcnoc]').value).slice(0, 40), om = fw.querySelector('[data-dcnom]').value.trim().slice(0, 60), keep = fw.querySelector('[data-dcnor]').checked;
         if (!oc) { fw.querySelector('[data-dcnoc]').focus(); return; }
-        saveP(cur(), function (p) { var f = fileOf(p, oa[0]); if (keep) addOwn(p, oa[1], oc, om); if (!f) return; if (oa[1] === 'type') { f.p.abbr = oc; if (f.sg) delete f.sg.t; relink(p, f); } else { f.nv = f.nv || {}; f.nv[oa[1]] = oc; } }); nown = ''; unfocus(); draw(); return; }
+        saveP(cur(), function (p) { var f = fileOf(p, oa[0]); if (keep) addOwn(p, oa[1], oc, om); if (!f) return; if (oa[1] === 'type') { f.p.abbr = oc; if (f.sg) delete f.sg.t; relink(p, f); } else if (oa[1] === 'code') { f.p.code = oc; if (f.sg) delete f.sg.c; relink(p, f); } else { f.nv = f.nv || {}; f.nv[oa[1]] = oc; } }); nown = ''; unfocus(); draw(); return; }
       if ((b = t.closest('[data-dcnodel]'))) { var od = b.dataset.dcnodel.split(':'); saveP(cur(), function (p) { if (p.ncodes && p.ncodes[od[0]]) p.ncodes[od[0]] = p.ncodes[od[0]].filter(function (y) { return y[0] !== od.slice(1).join(':'); }); }); draw(); return; }
       if ((b = t.closest('[data-dcnoadd]'))) { var fa = b.closest('.dcn-oadd'), ak = fa.querySelector('[data-dcnoa]').value, ac = nclean(fa.querySelector('[data-dcnoc]').value).slice(0, 40), am = fa.querySelector('[data-dcnom]').value.trim().slice(0, 60);
         if (!ac) { fa.querySelector('[data-dcnoc]').focus(); return; } saveP(cur(), function (p) { addOwn(p, ak, ac, am); }); unfocus(); draw(); return; }

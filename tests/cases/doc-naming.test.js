@@ -37,7 +37,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   check(await p.evaluate(() => document.querySelectorAll('.dcn-row').length === 0 && document.querySelectorAll('.dc-frow').length === 4), 'with the switch off, files show as before');
   /* switch on (this device only) */
   await p.evaluate(() => { const s = document.querySelector('[data-dcnon]'); s.checked = true; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
-  const on = await p.evaluate(() => ({ ls: localStorage.getItem('dash.dcNaming'), rows: document.querySelectorAll('.dcn-row').length, cols: [...document.querySelector('.dcn-row .dcn-g').children].map(c => c.className), dl: document.querySelectorAll('#dcnCodes option').length }));
+  const on = await p.evaluate(() => ({ ls: localStorage.getItem('dash.dcNaming'), rows: document.querySelectorAll('.dcn-row').length, cols: [...document.querySelector('.dcn-row .dcn-g').children].map(c => c.className), dl: document.querySelectorAll('.dcn-row [data-dcncode] option').length }));
   check(on.ls === '1' && on.rows === 4 && on.cols.join() === 'dcn-c dcn-kind,dcn-c,dcn-c,dcn-t' && on.dl > 10, 'switched on: a row per file – code · type · current name · kind · status, and a code list ' + JSON.stringify(on));
   const named0 = await p.evaluate(() => { const f = Features.list('dctl')[0].files.find(x => /^442/.test(x.name)), row = document.querySelector('[data-dcnf="' + f.id + '"]'); return { line: f.line, sug: row.querySelector('.dcn-sug code').textContent, follows: /Name follows the rule/.test(row.textContent) }; });
   check(named0.line === 'l3' && named0.sug === '442 DA taklampe korridor.pdf' && named0.follows, 'a file named by Boligbygg’s rule is on its line and follows the rule ' + JSON.stringify(named0));
@@ -58,11 +58,11 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   const rn = await p.evaluate(id => { const f = Features.list('dctl')[0].files.find(x => x.id === id); return { name: f.name, orig: f.orig, line: f.line, follows: /Name follows the rule/.test(document.querySelector('[data-dcnf="' + id + '"]').textContent) }; }, fid);
   check(/^365 DA KANALVIFTE K200EC .*\.pdf$/.test(rn.name) && rn.orig === 'KANALVIFTE_K200EC.pdf' && rn.line === 'l1' && rn.follows, 'Use this name renames it after the rule and keeps the name it came with ' + JSON.stringify(rn));
   /* change the code by hand: the box empties while picking (JP 11:54), and the file moves */
-  await p.evaluate(id => { const i = document.querySelector('[data-dcncode="' + id + '"]'); i.focus(); }, fid); await sl(100);
-  const empt = await p.evaluate(id => document.querySelector('[data-dcncode="' + id + '"]').value, fid);
-  await p.evaluate(id => { const i = document.querySelector('[data-dcncode="' + id + '"]'); i.value = '542 Made-up'; i.dispatchEvent(new Event('change', { bubbles: true })); i.blur(); }, fid); await sl(400);
+  /* the code is a dropdown grouped by the main parts, like the other choices (JP 2026-11-17 07:22), with your own code / free text last */
+  const empt = await p.evaluate(id => { const s = document.querySelector('[data-dcncode="' + id + '"]'); return s.tagName === 'SELECT' && s.querySelectorAll('optgroup').length >= 3 && !!s.querySelector('option[value="542"]') && s.options[s.options.length - 1].value === '__own' ? '' : 'no'; }, fid);
+  await p.evaluate(id => { const i = document.querySelector('[data-dcncode="' + id + '"]'); i.value = '542'; i.dispatchEvent(new Event('change', { bubbles: true })); }, fid); await sl(400);
   const moved = await p.evaluate(id => { const r = Features.list('dctl')[0], f = r.files.find(x => x.id === id); return { code: f.p.code, line: f.line, l1: r.lines[0].files.length }; }, fid);
-  check(empt === '' && moved.code === '542' && moved.l1 === 0, 'the code box shows every code while picking, and a new code takes the file off the old line ' + JSON.stringify({ empt, moved }));
+  check(empt === '' && moved.code === '542' && moved.l1 === 0, 'the code is a grouped dropdown, and a new code takes the file off the old line ' + JSON.stringify({ empt, moved }));
   await p.evaluate(id => document.querySelector('[data-dcnorig="' + id + '"]').click(), fid); await sl(400);
   check(await p.evaluate(id => { const f = Features.list('dctl')[0].files.find(x => x.id === id); return f.name === 'KANALVIFTE_K200EC.pdf' && !f.orig; }, fid), 'Back to the name it came with');
   /* your own rule: copy Boligbygg's, change it, use it for documents */
