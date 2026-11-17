@@ -599,9 +599,17 @@
   var drawLater = false;
   function busyField() { var ae = document.activeElement; return !!(ae && /^(SELECT|INPUT|TEXTAREA)$/.test(ae.tagName) && ae.closest('.dcn-ov, .dcn-files, .dcn-rules, .dx-ren') && Date.now() - (window.__dcUser || 0) > 400); }
   document.addEventListener('focusout', function () { if (drawLater) setTimeout(function () { if (drawLater && !busyField()) { drawLater = false; draw(); } }, 60); });
+  /* redraws that come by themselves (each saved file, each finished check, a sync) are gathered: at most one every 0.8 s, the last one always
+     comes – uploading many files made the page flicker (JP 2026-11-17 13:32); what you do yourself still draws at once */
+  var lastDraw = 0, drawT = 0;
+  ['pointerdown', 'click', 'keydown', 'change', 'input', 'drop'].forEach(function (ev) { document.addEventListener(ev, function () { window.__dcUser = Date.now(); }, true); });
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
     if (busyField()) { drawLater = true; return; }
+    var now = Date.now(), mine = now - (window.__dcUser || 0) < 400;
+    if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
+    if (drawT) { clearTimeout(drawT); drawT = 0; }
+    lastDraw = now;
     var ae = document.activeElement; if (ae && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
