@@ -115,6 +115,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   /* Excel with colours opens the file to see and edit (JP 21:47): sheet tabs, the colours, systems with no document type in grey, any cell changed, kept and downloaded */
   await tap('[data-dcxcol]');
   check(await until(() => !!document.querySelector('.xv .xv-t td')), 'the coloured plan opens in the viewer');
+  check(await p.evaluate(() => { if (innerWidth < 760) return true; const r = document.querySelector('.xv').getBoundingClientRect(), m = document.querySelector('.mbar'), side = document.documentElement.classList.contains('side-nav') && m; return r.top >= 10 && r.right <= innerWidth - 10 && (!side || r.left >= m.getBoundingClientRect().right); }), 'the plan check is a popup beside the menu, not over the whole page (JP 2026-11-18 07:08)');
   const xv = await p.evaluate(() => {
     const tabs = [...document.querySelectorAll('.xv-tabs button')].map(b => b.textContent + (b.getAttribute('aria-selected') === 'true' ? '*' : '')).join('|');
     const bg = ref => getComputedStyle(document.querySelector('[data-xvr="' + ref + '"]')).backgroundColor, tx = ref => (document.querySelector('[data-xvr="' + ref + '"]') || {}).textContent;

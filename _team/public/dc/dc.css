@@ -1072,3 +1072,6 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-panel .dc-facts { gap: 12px; }
 .dcn-ov, .dx-tov { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .dx-part { font-size: 13px; font-weight: 500; color: var(--muted); }
+@media (min-width: 760px) {
+  .xv { inset: 20px 20px 20px calc(var(--sn-pad, 0px) + 20px); border: 1px solid var(--line, rgba(255,255,255,.1)); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); padding: 0; }
+}

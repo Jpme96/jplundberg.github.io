@@ -656,3 +656,8 @@ html.dcn-modal { overflow: hidden; }
 .dx-panel .dc-facts { gap: 12px; }
 .dcn-ov, .dx-tov { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
 .dx-part { font-size: 13px; font-weight: 500; color: var(--muted); }
+/* checking a plan: a big popup beside the menu, not over the whole page (JP 2026-11-18 07:08) */
+@media (min-width: 760px) {
+  .xv { inset: 20px 20px 20px calc(var(--sn-pad, 0px) + 20px); border: 1px solid var(--line, rgba(255,255,255,.1)); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); padding: 0; }
+  html.xv-on::after { content: ''; position: fixed; inset: 0; z-index: 1999; background: rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); pointer-events: none; }
+}

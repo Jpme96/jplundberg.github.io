@@ -226,3 +226,6 @@ html.t-modal { overflow: hidden; }
 @media (min-width: 1000px) {
   .t-edov, .t-sheetbg, .dcn-ov, .dx-tov, .fdz-ov { padding-left: calc(208px + 16px) !important; }
 }
+/* the side menu's width for popups that share cmd's rules (the plan check, 2026-11-18) */
+@media (min-width: 1000px) { :root { --sn-pad: 208px; } }
+@media (min-width: 760px) { html.xv-on::after { content: ""; position: fixed; inset: 0; z-index: 1999; background: rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); pointer-events: none; } }
