@@ -564,5 +564,9 @@ window.DC_NB = {
 "ui.xv-temp": "Ingenting lagres her – endringene dine er med i nedlastingen.",
 "ui.xv-undo": "Angre",
 "ui.xv-unsorted": "Tilbake til filens rekkefølge",
-"ui.xv-yellow": "Gul"
+"ui.xv-yellow": "Gul",
+"ui.xv-zoom": "Zoom",
+"ui.xv-zoom-100": "Tilbake til 100 %",
+"ui.xv-zoom-in": "Zoom inn",
+"ui.xv-zoom-out": "Zoom ut"
 };

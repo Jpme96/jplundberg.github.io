@@ -3192,5 +3192,9 @@ I18N.add({
   "ui.hm-nothing-yet": ["No claims, projects or documents for this home yet.", "Ingen reklamasjoner, prosjekter eller dokumenter for dette hjemmet ennå."],
   "ui.tl-your-day": ["Your day", "Dagen din"],
   "ui.dx-part-mot": ["(received)", "(mottak)"],
-  "ui.dx-part-krav": ["(requirements)", "(krav)"]
+  "ui.dx-part-krav": ["(requirements)", "(krav)"],
+  "ui.xv-zoom": ["Zoom", "Zoom"],
+  "ui.xv-zoom-out": ["Zoom out", "Zoom ut"],
+  "ui.xv-zoom-in": ["Zoom in", "Zoom inn"],
+  "ui.xv-zoom-100": ["Back to 100 %", "Tilbake til 100 %"]
 });

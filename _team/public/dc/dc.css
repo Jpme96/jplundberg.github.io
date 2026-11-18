@@ -1075,3 +1075,6 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 @media (min-width: 760px) {
   .xv { inset: 20px 20px 20px calc(var(--sn-pad, 0px) + 20px); border: 1px solid var(--line, rgba(255,255,255,.1)); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); padding: 0; }
 }
+.xv-grid .xv-t { zoom: var(--xvz, 1); }
+.xv-zoom { display: inline-flex; align-items: center; gap: 4px; }
+.xv-tb.xv-zv { width: auto; min-width: 64px; padding: 0 8px; font: 600 13px/1 inherit; font-variant-numeric: tabular-nums; }

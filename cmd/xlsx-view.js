@@ -245,6 +245,7 @@
         tb('bold', 'type-bold', k('ui.xv-bold', 'Bold')) + tb('fill', 'paint-bucket', k('ui.xv-fill', 'Fill colour'), ' aria-haspopup="true"') + tb('clear', 'backspace', k('ui.xv-clear', 'Clear the cells')) + '<span class="xv-sep"></span>' +
         tb('copy', 'copy', k('ui.xv-copy', 'Copy')) + tb('paste', 'clipboard', k('ui.xv-paste', 'Paste')) + '<span class="xv-sep"></span>' +
         tb('rowins', 'plus-square', k('ui.xv-row-ins', 'Insert a row above')) + tb('rowdel', 'dash-square', k('ui.xv-row-del', 'Delete the rows')) + '<span class="xv-sep"></span>' +
+        '<span class="xv-zoom" role="group" aria-label="' + esc(k('ui.xv-zoom', 'Zoom')) + '">' + tb('zout', 'zoom-out', k('ui.xv-zoom-out', 'Zoom out')) + '<button type="button" class="xv-tb xv-zv" data-xv="z100" title="' + esc(k('ui.xv-zoom-100', 'Back to 100 %')) + '">100 %</button>' + tb('zin', 'zoom-in', k('ui.xv-zoom-in', 'Zoom in')) + '</span><span class="xv-sep"></span>' +
         '<label class="xv-find"><i class="bi bi-funnel"></i><input type="search" data-xvq placeholder="' + esc(k('ui.xv-filter', 'Filter rows')) + '" aria-label="' + esc(k('ui.xv-filter', 'Filter rows')) + '"></label>' +
         '<div class="xv-sw" hidden>' + SW.map(function (w) { return '<button type="button" data-xvfill="' + w[0] + '" title="' + esc(k(w[1], w[2])) + '" aria-label="' + esc(k(w[1], w[2])) + '" style="--sw:' + (w[0] || 'transparent') + '"></button>'; }).join('') + '</div></div>' +
       '<div class="xv-bar"><span class="xv-ref">–</span><textarea class="xv-in" rows="1" disabled placeholder="' + esc(k('ui.xv-tap', 'Tap a cell to change it')) + '"></textarea></div>' +
@@ -318,6 +319,7 @@
       if (e.key === 'Escape') { if (!sw.hidden) { sw.hidden = true; e.preventDefault(); return; } if (!inBar) { e.preventDefault(); close(); } return; }
       if (mod && (e.key === 'z' || e.key === 'Z') && !inBar) { e.preventDefault(); if (e.shiftKey) back(redo, undo, 'after'); else back(undo, redo, 'before'); return; }
       if (mod && (e.key === 'y' || e.key === 'Y') && !inBar) { e.preventDefault(); back(redo, undo, 'after'); return; }
+      if (mod && (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '0')) { e.preventDefault(); if (e.key === '0') setZoom(1); else stepZoom(e.key === '-' ? -1 : 1); return; }   /* the sheet zooms, not the page */
       if (inBar || !A || !box.contains(document.activeElement)) return;
       if (mod && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); act('bold'); return; }
       if (mod) return;   /* copy and paste come as events */
@@ -329,7 +331,22 @@
       if (e.key.length === 1 && !e.altKey) { e.preventDefault(); inp.focus(); inp.value = e.key; typed(); }   /* start typing = replace the cell, as in Excel */
     }
     function typed() { if (!A) return; change([{ ref: A, e: { v: inp.value } }], 'type:' + A + ':' + (typing || (typing = Date.now()))); }
+    /* zoom the sheet itself, not the page (JP 2026-11-18 07:21): the buttons, Ctrl/⌘ + wheel and Ctrl/⌘ + − / + / 0 */
+    var ZS = [.5, .67, .75, .9, 1, 1.1, 1.25, 1.5, 1.75, 2], zoom = 1;
+    try { zoom = +localStorage.getItem('dash.xvZoom') || 1; } catch (e) {}
+    function setZoom(z) {
+      zoom = Math.max(.5, Math.min(2, Math.round(z * 100) / 100));
+      grid.style.setProperty('--xvz', zoom);
+      var zv = box.querySelector('.xv-zv'); if (zv) zv.textContent = Math.round(zoom * 100) + ' %';
+      try { localStorage.setItem('dash.xvZoom', String(zoom)); } catch (e) {}
+    }
+    function stepZoom(d) { var i = 0; while (i < ZS.length - 1 && ZS[i] < zoom - .001) i++; if (d > 0) setZoom(ZS[Math.min(ZS.length - 1, ZS[i] > zoom + .001 ? i : i + 1)]); else setZoom(ZS[Math.max(0, i - 1)]); }
+    setZoom(zoom);
+    grid.addEventListener('wheel', function (e) { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); stepZoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
     function act(a) {
+      if (a === 'zin') return stepZoom(1);
+      if (a === 'zout') return stepZoom(-1);
+      if (a === 'z100') return setZoom(1);
       if (a === 'undo') return back(undo, redo, 'before');
       if (a === 'redo') return back(redo, undo, 'after');
       if (!A) { flash(k('ui.xv-pick', 'Pick a cell first')); return; }
