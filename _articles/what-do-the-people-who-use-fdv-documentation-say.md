@@ -47,7 +47,7 @@ The transition from construction to operations is another well-known problem. Ev
 <figure class="project-card chart chart--split" data-aos="fade-up" data-chart="{&quot;type&quot;: &quot;split&quot;, &quot;title&quot;: &quot;Are there routines for FDVU documentation?&quot;, &quot;points&quot;: [{&quot;label&quot;: &quot;Yes, but they aren&#x27;t followed in practice&quot;, &quot;value&quot;: 6}, {&quot;label&quot;: &quot;Yes, clear and well-known routines&quot;, &quot;value&quot;: 2}]}" data-parts="null" data-lang="en" data-i18n="{&quot;total&quot;: &quot;Total&quot;, &quot;chart_table&quot;: &quot;Chart data&quot;}"><figcaption><h4>Are there routines for FDVU documentation?</h4></figcaption><div class="chart-body"></div></figure>
 </div>
 
-Only 2 out of 8 think there are clear and well-known routines. The other 6 say the routines exist but aren't followed in practice. That may be the most important finding: the problem isn't that nobody has thought about it, but that the routines aren't sufficiently embedded.
+Only 2 out of 8 think there are clear and well-known routines. The other 6 say the routines exist but aren't followed in practice. To me that may be the most important finding. The routines are written down; they just haven't become part of how people work.
 
 <div class="project article-figure">
 <figure class="project-card chart chart--bars" data-aos="fade-up" data-chart="{&quot;type&quot;: &quot;bars&quot;, &quot;title&quot;: &quot;Why isn&#x27;t the documentation better structured?&quot;, &quot;description&quot;: &quot;Number who chose each cause. Several answers were allowed.&quot;, &quot;points&quot;: [{&quot;label&quot;: &quot;Lack of routines and guidelines&quot;, &quot;value&quot;: 6}, {&quot;label&quot;: &quot;Lack of expertise&quot;, &quot;value&quot;: 5}, {&quot;label&quot;: &quot;Lack of time&quot;, &quot;value&quot;: 4}, {&quot;label&quot;: &quot;Lack of resources and budget&quot;, &quot;value&quot;: 3}, {&quot;label&quot;: &quot;Low priority from management&quot;, &quot;value&quot;: 3}, {&quot;label&quot;: &quot;Unclear responsibilities&quot;, &quot;value&quot;: 2}, {&quot;label&quot;: &quot;Lack of digital tools&quot;, &quot;value&quot;: 2}]}" data-parts="null" data-lang="en" data-i18n="{&quot;total&quot;: &quot;Total&quot;, &quot;chart_table&quot;: &quot;Chart data&quot;}"><figcaption><h4>Why isn&#x27;t the documentation better structured?</h4><p>Number who chose each cause. Several answers were allowed.</p></figcaption><div class="chart-body"></div></figure>
@@ -59,14 +59,14 @@ The same theme recurs in the comments. Plenty of documentation is delivered, but
 
 Almost everyone thinks this matters. Asked how important it is to digitalise and structure FDVU documentation better, they gave an average of **8.6 out of 10**. 6 out of 8 answered 8 or higher, and half gave the top score.
 
-When they ranked what matters most in a future solution, the answer was clear: **easy access** and **searchability** came first, ahead of security and backup. Mobile access and low cost came last. People first and foremost want to find what they need, quickly.
+When they ranked what matters most in a future solution, easy access and searchability came first, ahead of security and backup. Mobile access and low cost came last. People first and foremost want to find what they need, quickly.
 
 ## My reflections
 
-The survey confirms what I see in my own work. The challenge is rarely that the documentation doesn't exist. It's that it isn't structured, isn't up to date and can't be trusted. That's why I believe three things are essential:
+The answers match what I see in my own work. Usually the documentation does exist; the trouble is that it isn't structured, isn't up to date and can't be trusted. I keep coming back to three things:
 
-- **A shared structure** that everyone follows, based on standards such as NS 3451 and NS 3456.
-- **Quality control** of what is delivered, not just a check that something has been delivered.
-- **Routines that are actually used**, with clear responsibilities and training.
+- A shared structure that everyone follows, based on standards such as NS 3451 and NS 3456.
+- Quality control of what is delivered, not just a check that something has been delivered.
+- Routines that are actually used, with clear responsibilities and training.
 
 The gains are time, fewer errors and better decisions. Read more about what digitalising FDVU can save in the article [Why digitalising FDVU pays off](/articles/why-digitalising-fdvu-pays-off/).

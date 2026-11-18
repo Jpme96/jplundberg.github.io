@@ -45,7 +45,7 @@ Overgangen fra bygg til drift er et annet kjent problem. Alle som hadde erfaring
 <figure class="project-card chart chart--split" data-aos="fade-up" data-chart="{&quot;type&quot;: &quot;split&quot;, &quot;title&quot;: &quot;Finnes det rutiner for FDVU-dokumentasjon?&quot;, &quot;points&quot;: [{&quot;label&quot;: &quot;Ja, men de følges ikke i praksis&quot;, &quot;value&quot;: 6}, {&quot;label&quot;: &quot;Ja, klare og kjente rutiner&quot;, &quot;value&quot;: 2}]}" data-parts="null" data-lang="nb" data-i18n="{&quot;total&quot;: &quot;Totalt&quot;, &quot;chart_table&quot;: &quot;Data i diagrammet&quot;}"><figcaption><h4>Finnes det rutiner for FDVU-dokumentasjon?</h4></figcaption><div class="chart-body"></div></figure>
 </div>
 
-Bare 2 av 8 mener det finnes klare og kjente rutiner. De andre 6 svarer at rutinene finnes, men ikke følges i praksis. Det er kanskje det viktigste funnet: problemet er ikke at ingen har tenkt på det, men at rutinene ikke er godt nok forankret.
+Bare 2 av 8 mener det finnes klare og kjente rutiner. De andre 6 svarer at rutinene finnes, men ikke følges i praksis. For meg er det kanskje det viktigste funnet. Rutinene er skrevet ned; de har bare ikke blitt en del av hvordan folk jobber.
 
 <div class="project article-figure">
 <figure class="project-card chart chart--bars" data-aos="fade-up" data-chart="{&quot;type&quot;: &quot;bars&quot;, &quot;title&quot;: &quot;Hvorfor er ikke dokumentasjonen bedre strukturert?&quot;, &quot;description&quot;: &quot;Antall som valgte hver årsak. Flere svar var mulig.&quot;, &quot;points&quot;: [{&quot;label&quot;: &quot;Mangel på rutiner og retningslinjer&quot;, &quot;value&quot;: 6}, {&quot;label&quot;: &quot;Mangel på kompetanse&quot;, &quot;value&quot;: 5}, {&quot;label&quot;: &quot;Mangel på tid&quot;, &quot;value&quot;: 4}, {&quot;label&quot;: &quot;Mangel på ressurser og budsjett&quot;, &quot;value&quot;: 3}, {&quot;label&quot;: &quot;Lav prioritet fra ledelsen&quot;, &quot;value&quot;: 3}, {&quot;label&quot;: &quot;Uklar ansvarsfordeling&quot;, &quot;value&quot;: 2}, {&quot;label&quot;: &quot;Mangel på digitale verktøy&quot;, &quot;value&quot;: 2}]}" data-parts="null" data-lang="nb" data-i18n="{&quot;total&quot;: &quot;Totalt&quot;, &quot;chart_table&quot;: &quot;Data i diagrammet&quot;}"><figcaption><h4>Hvorfor er ikke dokumentasjonen bedre strukturert?</h4><p>Antall som valgte hver årsak. Flere svar var mulig.</p></figcaption><div class="chart-body"></div></figure>
@@ -57,14 +57,14 @@ Det samme går igjen i kommentarene. Det leveres mye dokumentasjon, men det er i
 
 Nesten alle mener dette er viktig. På spørsmålet om hvor viktig det er å digitalisere og strukturere FDVU-dokumentasjonen bedre, ga de i snitt **8,6 av 10**. 6 av 8 svarte 8 eller høyere, og halvparten ga full score.
 
-Når de rangerte hva som er viktigst i en fremtidig løsning, var svaret tydelig: **enkel tilgang** og **søkbarhet** kom på topp, foran sikkerhet og backup. Mobiltilgang og lav kostnad havnet nederst. Folk vil først og fremst finne det de trenger, raskt.
+Når de rangerte hva som er viktigst i en fremtidig løsning, kom enkel tilgang og søkbarhet på topp, foran sikkerhet og backup. Mobiltilgang og lav kostnad havnet nederst. Folk vil først og fremst finne det de trenger, raskt.
 
 ## Mine refleksjoner
 
-Undersøkelsen bekrefter det jeg ser i arbeidet mitt. Utfordringen er sjelden at dokumentasjonen ikke finnes. Den er at den ikke er strukturert, ikke er oppdatert og ikke er til å stole på. Derfor mener jeg tre ting er avgjørende:
+Svarene stemmer med det jeg ser i arbeidet mitt. Som regel finnes dokumentasjonen; problemet er at den ikke er strukturert, ikke er oppdatert og ikke er til å stole på. Jeg kommer stadig tilbake til tre ting:
 
-- **En felles struktur** som alle følger, basert på standarder som NS 3451 og NS 3456.
-- **Kvalitetskontroll** av det som leveres, ikke bare kontroll av at noe er levert.
-- **Rutiner som faktisk brukes**, med tydelig ansvar og opplæring.
+- En felles struktur som alle følger, basert på standarder som NS 3451 og NS 3456.
+- Kvalitetskontroll av det som leveres, ikke bare kontroll av at noe er levert.
+- Rutiner som faktisk brukes, med tydelig ansvar og opplæring.
 
 Gevinsten er tid, færre feil og bedre beslutninger. Les gjerne mer om hva digitalisering av FDVU kan spare i artikkelen [Derfor lønner det seg å digitalisere FDVU](/articles/derfor-lonner-det-seg-a-digitalisere-fdvu/).
