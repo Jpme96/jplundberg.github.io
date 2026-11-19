@@ -142,7 +142,7 @@
     var per = {}, df = {};
     Object.keys(all).forEach(function (c) { if (!/^\d{3,4}$/.test(c)) return; var k3 = c.slice(0, 3);
       String(all[c] || '').toLowerCase().split(/[^a-zæøåäöü]+/).forEach(function (w) { if (w.length < 5 || STOPW.indexOf(' ' + w + ' ') >= 0) return; per[k3] = per[k3] || {}; if (!per[k3][w]) { per[k3][w] = 1; df[w] = (df[w] || 0) + 1; } }); });
-    NKW = {}; Object.keys(per).forEach(function (k3) { var L = Object.keys(per[k3]).filter(function (w) { return df[w] < 4; }).map(function (w) { return [w, 2]; }); if (L.length) NKW[k3] = L; });
+    NKW = {}; Object.keys(per).forEach(function (k3) { var L = Object.keys(per[k3]).filter(function (w) { return df[w] < 4; }).map(function (w) { return [w, 1]; });   /* a word from a name counts less than a hand-picked code word (fasade in “Fasade- og takvask” must not beat oljemaling – JP 2026-11-19) */ if (L.length) NKW[k3] = L; });
     NKWk = key; return NKW;
   }
   /* learned codes: words from the file names you corrected → the code you chose. Team: one shared record (DStore 'nslearn'); cmd: your tools (synced); else this device */
@@ -183,7 +183,7 @@
   /* a file without a code or type: guess from words in its name (marked as suggested until you say it looks right) */
   function guessName(f) {
     if (fkind(f) === 'photo') return; var low = String(f.p && f.p.stem || f.name).toLowerCase().replace(/[_]+/g, ' ');
-    if (!f.p.code) { var lc = learnedFor(f.orig || f.name), cs = lc ? [] : scoreCodes(low, ''), c = lc || strong(cs) || (cs.length === 1 ? cs[0] : null);
+    if (!f.p.code) { var lc = learnedFor(f.orig || f.name), cs = lc ? [] : scoreCodes(low, ''), c = lc || strong(cs) || (cs[0] && (!cs[1] || cs[0].s >= cs[1].s * 2) ? cs[0] : null);
       if (c) { f.p.code = c.k; f.sg = Object.assign({}, f.sg, { c: lc ? whyL(lc) : why(c, 'n') }); if (f.sg.alt) delete f.sg.alt; }
       else if (cs.length > 1) f.sg = Object.assign({}, f.sg, { alt: cs.slice(0, 2).map(function (x) { return [x.k, why(x, 'n')]; }) }); }
     if (f.p.code && !f.p.abbr) { var t = scoreKw(TKW, low, '')[0]; if (t && t.s >= 3) { f.p.abbr = t.k; f.sg = Object.assign({}, f.sg, { t: why(t, 'n') }); } }

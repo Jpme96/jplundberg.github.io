@@ -5,19 +5,22 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
 (async () => {
   const { b, p } = await open(1060);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.evaluate(() => { const t = Features.tools(); t.dckrav = []; t.dctl = []; delete t.fdvlearn; Features.saveTools(t); localStorage.setItem('dcn.nsnames', JSON.stringify({ '311': 'Grunnledninger madeup', '3111': 'Grunnledninger for madeupvann' })); });
+  await p.evaluate(() => { const t = Features.tools(); t.dckrav = []; t.dctl = []; delete t.fdvlearn; Features.saveTools(t); localStorage.setItem('dcn.nsnames', JSON.stringify({ '311': 'Grunnledninger madeup', '3111': 'Grunnledninger for madeupvann', '627': 'Fasade- og madeupvask' })); });
   await go(p, 'work/', 2500);
   await p.evaluate(() => PageTabs.show('doc')); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   const add = async names => { await p.evaluate(n => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); n.forEach(x => dt.items.add(new File(['made up ' + x], x))); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }, names); await sl(1200); };
   const pop = async re => p.evaluate(src => { document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); const r = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => new RegExp(src).test(x.textContent)); if (!r) return null; const line = r.textContent; r.querySelector('button').click(); return line; }, re.source);
   const inPop = () => p.evaluate(() => { const f = document.querySelector('.dcn-fpop'); return f && { code: (f.querySelector('.dcn-cbtn span') || {}).textContent || '', alt: [...f.querySelectorAll('.dcn-altb b')].map(x => x.textContent), why: (f.querySelector('.dcn-why') || {}).textContent || '' }; });
-  await add(['MADEUP grunnledninger.docx', 'MADEUP sprinkler heis.docx', 'MADEUP Zetabeis plan.docx']);
+  await add(['MADEUP grunnledninger.docx', 'MADEUP sprinkler heis.docx', 'MADEUP Zetabeis plan.docx', 'MADEUP oljemaling fasade.docx']);
 
   await pop(/grunnledninger/); await sl(200);
   const a = await inPop();
   check(a && /^311/.test(a.code), 'your own code names count as words: “grunnledninger” → 311 ' + JSON.stringify(a));
 
+  await pop(/oljemaling fasade/); await sl(200);
+  const o = await inPop();
+  check(o && /^235/.test(o.code), 'a hand-picked code word beats a word from a name: oljemaling fasade → 235, not 627 ' + JSON.stringify(o));
   const line = await pop(/sprinkler heis/); await sl(200);
   const c = await inPop();
   check(/Choose code: (332 or 621|621 or 332)/.test(line || '') && c && c.alt.length === 2 && c.alt.some(x => /^332/.test(x)) && c.alt.some(x => /^621/.test(x)) && !/^\d/.test(c.code), 'two codes as close: no guess, both to choose from ' + JSON.stringify({ line, c }));
