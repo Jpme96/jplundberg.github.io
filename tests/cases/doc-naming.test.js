@@ -17,6 +17,7 @@ function pdf(lines) {
   return Buffer.from(out, 'latin1');
 }
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dcn-'));
+const paint = path.join(dir, 'MADEUP_Oljemaling_Nor.pdf'); fs.writeFileSync(paint, pdf(['Teknisk datablad', 'Madeup Oljemaling', 'Produktbeskrivelse: oljemaling for beskyttelse av utvendig treverk.', 'Anbefales paa nytt treverk og tidligere dekkbeiset underlag. Oljemaling gir lange vedlikeholdsintervaller.', 'Sproyting: dyse 0,017 og viftevinkel 40 grader.']));   /* JP 2026-11-19: a paint datasheet got 365 from the word viftevinkel */
 const fan = path.join(dir, 'KANALVIFTE_K200EC.pdf'); fs.writeFileSync(fan, pdf(['K200 EC', 'Datablad', 'Kanalvifte for runde kanaler, EC-motor', 'Produsent: Eksempel Luft AS', 'Tekniske data: 230 V og 120 W. Merking: Drift', 'Viften skal monteres av fagfolk og filteret skal byttes med jevne mellomrom.', 'Det er viktig at viften ikke blir tildekket, og at den rengjøres to ganger i året av eier eller driftspersonell.', 'Ved feil skal strømmen kobles fra før dekselet tas av, og som eier må du melde fra til leverandøren.']));
 const decl = path.join(dir, 'Made-up 7.pdf'); fs.writeFileSync(decl, pdf(['EU-samsvarserklaering', 'Samsvarserklaering for brannsentral BS-1 til brannalarm', 'Vi erklaerer at produktet er i samsvar med kravene.', 'Produsent: Eksempel Sikring AS']));
 const scan = path.join(dir, 'scan 12.pdf'); fs.writeFileSync(scan, pdf(['.']));
@@ -33,14 +34,14 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   /* off by default: the old Files tab, with the switch */
   const off = await p.evaluate(() => ({ sw: !!document.querySelector('[data-dcnon]'), on: document.querySelector('[data-dcnon]') && document.querySelector('[data-dcnon]').checked, rows: document.querySelectorAll('.dcn-row').length }));
   check(off.sw && !off.on && off.rows === 0, 'naming is off by default – the switch is there, the old Files tab shows ' + JSON.stringify(off));
-  await (await p.$('input[data-dcfiles]')).uploadFile(fan, decl, scan, named); await sl(1500);
-  check(await p.evaluate(() => document.querySelectorAll('.dcn-row').length === 0 && document.querySelectorAll('.dc-frow').length === 4), 'with the switch off, files show as before');
+  await (await p.$('input[data-dcfiles]')).uploadFile(fan, decl, scan, named, paint); await sl(1500);
+  check(await p.evaluate(() => document.querySelectorAll('.dcn-row').length === 0 && document.querySelectorAll('.dc-frow').length === 5), 'with the switch off, files show as before');
   /* switch on (this device only) */
   await p.evaluate(() => { const s = document.querySelector('[data-dcnon]'); s.checked = true; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const op = id => p.evaluate(id => { const b = document.querySelector('[data-dcnexp="' + id + '"]'); if (b) b.click(); }, id).then(() => sl(300));   /* a file opens in a popup (JP 2026-11-17 08:07) */
   await p.evaluate(() => document.querySelector('[data-dcnexp]').click()); await sl(300);
   const on = await p.evaluate(() => ({ ls: localStorage.getItem('dash.dcNaming'), rows: document.querySelectorAll('.dcn-row').length, pop: !!document.querySelector('body > .dcn-fpop'), cols: [...document.querySelector('.dcn-fpop .dcn-row .dcn-g').children].map(c => c.className), dl: document.querySelectorAll('.dcn-fpop [data-dcncode] option').length, compact: document.querySelectorAll('#wkDocCtl .dcn-row.dcn-c').length }));
-  check(on.ls === '1' && on.compact === 4 && on.pop && on.cols.join() === 'dcn-c dcn-kind,dcn-c,dcn-c,dcn-t' && on.dl > 10, 'switched on: one line per file; a tap opens it in a popup – kind · code · type · status, and a code list ' + JSON.stringify(on));
+  check(on.ls === '1' && on.compact === 5 && on.pop && on.cols.join() === 'dcn-c dcn-kind,dcn-c,dcn-c,dcn-t' && on.dl > 10, 'switched on: one line per file; a tap opens it in a popup – kind · code · type · status, and a code list ' + JSON.stringify(on));
   await op(await p.evaluate(() => Features.list('dctl')[0].files.find(x => /^442/.test(x.name)).id));
   const named0 = await p.evaluate(() => { const f = Features.list('dctl')[0].files.find(x => /^442/.test(x.name)), row = document.querySelector('[data-dcnf="' + f.id + '"]'); return { line: f.line, sug: row.querySelector('.dcn-sug code').textContent, follows: /Name follows the rule/.test(row.textContent) }; });
   check(named0.line === 'l3' && named0.sug === '442 DA taklampe korridor.pdf' && named0.follows, 'a file named by Boligbygg’s rule is on its line and follows the rule ' + JSON.stringify(named0));
@@ -50,6 +51,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   const cc = await p.evaluate(() => Features.list('dctl')[0].files.map(f => ({ n: f.name, code: f.p.code, abbr: f.p.abbr, line: f.line, desc: (f.nv || {}).desc, cc: f.cc && { t: f.cc.t && f.cc.t[0], c: f.cc.c && f.cc.c[0], w: f.cc.w, e: f.cc.e, mk: f.cc.mk, lang: f.cc.lang }, sg: f.sg })));
   const F = n => cc.find(x => x.n.indexOf(n) === 0);
   check(read, 'every PDF was read on the device ' + JSON.stringify(cc));
+  check(F('MADEUP_Oljemaling') && F('MADEUP_Oljemaling').code === '235', 'a paint datasheet is not a fan because it says viftevinkel – it gets 235 (outside cladding and surface) ' + JSON.stringify(F('MADEUP_Oljemaling')));
   check(F('KANALVIFTE').code === '365' && F('KANALVIFTE').abbr === 'DA' && F('KANALVIFTE').line === 'l1' && /^KANALVIFTE K200EC\b/.test(F('KANALVIFTE').desc) && /Eksempel Luft/.test(F('KANALVIFTE').desc) && F('KANALVIFTE').sg,
     'a fan datasheet: code 365 and DA suggested, on its line, and the description keeps every word of the file name (JP 11:43) ' + JSON.stringify(F('KANALVIFTE')));
   check(F('Made-up 7').code === '542' && F('Made-up 7').abbr === 'SE' && F('Made-up 7').line === 'l2', 'a declaration about a fire alarm: 542 SE from its content ' + JSON.stringify(F('Made-up 7')));
@@ -89,7 +91,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   check(!wide.length, 'nothing wider than the phone ' + JSON.stringify(wide));
   /* switch off again: back to the old view, the data stays */
   await p.evaluate(() => { const s = document.querySelector('[data-dcnon]'); s.checked = false; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
-  check(await p.evaluate(() => !document.querySelector('.dcn-row') && document.querySelectorAll('.dc-frow').length === 4 && !localStorage.getItem('dash.dcNaming')), 'switched off: the old view again');
+  check(await p.evaluate(() => !document.querySelector('.dcn-row') && document.querySelectorAll('.dc-frow').length === 5 && !localStorage.getItem('dash.dcNaming')), 'switched off: the old view again');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   fs.rmSync(dir, { recursive: true, force: true });
   await b.close(); done();

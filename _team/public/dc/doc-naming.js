@@ -114,16 +114,20 @@
     443: ['nødlys', 'ledelys', 'emergency light'], 433: ['sikringsskap', 'el-tavle', 'fordelingstavle', 'stikkontakt', 'jordfeilbryter'], 436: ['ladestasjon', 'elbillader', 'ladeboks'],
     314: ['blandebatteri', 'termostatventil'], 315: ['servant', 'toalett', 'klosett', 'dusj', 'varmtvannsbereder', 'bereder'], 312: ['vannrør', 'tappevann', 'rør-i-rør', 'avløpsrør'],
     322: ['gulvvarme', 'varmerør', 'vannbåren'], 325: ['radiator', 'varmepumpe'], 234: ['vindu', 'vinduer', 'window', 'ytterdør', 'balkongdør'], 244: ['innerdør', 'innvendig dør'],
-    262: ['takbelegg', 'taktekking', 'takpapp', 'roof membrane'], 263: ['røykluke', 'takluke', 'takvindu'], 273: ['kjøkkeninnredning'], 274: ['baderomsinnredning', 'våtromsinnredning'] };
+    235: ['utvendig treverk', 'oljemaling', 'dekkbeis', 'fasademaling', 'utvendig kledning', 'trekledning', 'utvendig overflate'], 262: ['takbelegg', 'taktekking', 'takpapp', 'roof membrane'], 263: ['røykluke', 'takluke', 'takvindu'], 273: ['kjøkkeninnredning'], 274: ['baderomsinnredning', 'våtromsinnredning'] };
   function cnt(t, w) { var n = 0, i = 0; if (!t) return 0; while ((i = t.indexOf(w, i)) >= 0) { n++; i += w.length; } return n; }
-  function scoreKw(tab, text, first) {
+  /* a code word counts as the whole word or the END of a compound, with Norwegian/English endings: "kanalvifte", "vifter" yes –
+     "viftevinkel" (a spray gun's fan angle in a paint datasheet) no: in a compound the last part says what the thing is (JP 2026-11-19) */
+  var RXC = {};
+  function cntW(t, w) { if (!t) return 0; var rx = RXC[w] || (RXC[w] = new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:e|er|en|ene|et|a|s|ne|r|n|ar|ane)?(?![a-zæøåäöü])', 'g')), m = t.match(rx); return m ? m.length : 0; }
+  function scoreKw(tab, text, first, words) {
     var out = []; Object.keys(tab).forEach(function (key) { var sc = 0, hits = [];
-      tab[key].forEach(function (e) { var w = typeof e === 'string' ? e : e[0], wt = typeof e === 'string' ? 3 : e[1], n = cnt(text, w), p1 = cnt(first, w); if (n) { sc += wt * Math.min(n, 4) + (p1 ? wt * 2 : 0); hits.push([w, n, p1 > 0]); } });
+      tab[key].forEach(function (e) { var w = typeof e === 'string' ? e : e[0], wt = typeof e === 'string' ? 3 : e[1], f = words ? cntW : cnt, n = f(text, w), p1 = f(first, w); if (n) { sc += wt * Math.min(n, 4) + (p1 ? wt * 2 : 0); hits.push([w, n, p1 > 0]); } });
       if (sc) out.push({ k: key, s: sc, h: hits.sort(function (a, b) { return b[1] - a[1]; }) }); });
     return out.sort(function (a, b) { return b.s - a.s; });
   }
   function scoreCodes(text, first) {
-    var s = scoreKw(CKW, text, first), re = /(?:^|[\s=+])(\d{3})\.\d{3}\b/g, m, tf = {};   /* TFM tags (=332.001) */
+    var s = scoreKw(CKW, text, first, 1), re = /(?:^|[\s=+])(\d{3})\.\d{3}\b/g, m, tf = {};   /* TFM tags (=332.001) */
     while ((m = re.exec(text))) tf[m[1]] = (tf[m[1]] || 0) + 1;
     Object.keys(tf).forEach(function (c) { var e = s.filter(function (x) { return x.k === c; })[0], hit = ['TFM ' + c + '.xxx', tf[c], false]; if (e) { e.s += 8 * Math.min(tf[c], 3); e.h.unshift(hit); } else s.push({ k: c, s: 8 * Math.min(tf[c], 3), h: [hit] }); });
     return s.sort(function (a, b) { return b.s - a.s; });
@@ -196,7 +200,7 @@
       return pdfText(bl);
     }).then(function (r) {
       var all = r.pages.join('\n'), low = all.toLowerCase(), first = (r.pages[0] || '').toLowerCase(), chars = all.replace(/\s/g, '').length;
-      var ty = scoreKw(TKW, low, first), co = scoreCodes(low, first), st = strong(ty), sc = strong(co);
+      var ty = scoreKw(TKW, low, first), co = scoreCodes(low, first).filter(function (x) { return x.h.reduce(function (a, h) { return a + h[1]; }, 0) >= 2 || /^TFM/.test(x.h[0][0]); }), st = strong(ty), sc = strong(co);   /* a code from the text needs the word at least twice (or a TFM tag) – one mention in a long datasheet is not what the document is about */
       var pl = /^(?:produkt(?:navn)?|product(?: name)?|modell?|model|typebetegnelse)\s*[:\-–]\s*(.{3,80})$/im.exec(all), d = (pl ? pl[1] : r.title || '').replace(/\s+/g, ' ').trim();
       [].concat(TKW.SE, TKW.DA, TKW.DV, TKW.FB).forEach(function (e) { d = d.replace(new RegExp('\\S*' + e[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\S*', 'ig'), '');   /* the whole word: EU-samsvarserklæring goes, not just its middle */ });
       d = d.replace(/[-–:|]+/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 6).join(' ');
