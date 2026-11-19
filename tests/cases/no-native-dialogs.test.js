@@ -49,6 +49,19 @@ files.push(path.join(ROOT, '_team/public/app.js'));
   check(r.txt === 'xyz' && r.nul === null, 'Ask.prompt gives the text, or null on Cancel');
   check(r.alertOne === 1 && !r.modal, 'Ask.alert has one button, and the page scrolls again after');
 
+  /* tap tips: on a touch screen a tap on something with a title shows it; a button with a title does not */
+  const tp = await p.evaluate(async () => {
+    const d = document.createElement('div'); d.title = '64 % of 2 L'; d.textContent = 'x'; d.style.cssText = 'position:fixed;top:300px;left:20px;width:60px;height:30px;z-index:9';
+    const bt = document.createElement('button'); bt.title = 'Not a tip'; bt.textContent = 'b'; bt.style.cssText = 'position:fixed;top:360px;left:20px;z-index:9';
+    document.body.append(d, bt);
+    d.click(); const t1 = document.querySelector('.tap-tip'); const txt = t1 && t1.textContent; const box = t1 && t1.getBoundingClientRect();
+    bt.click(); const t2 = document.querySelector('.tap-tip');
+    d.remove(); bt.remove();
+    return { txt, inView: box && box.left >= 0 && box.right <= innerWidth && box.top >= 0, btn: !!t2 };
+  });
+  check(tp.txt === '64 % of 2 L' && tp.inView, 'a tap shows a title as a tip on the phone, inside the screen');
+  check(!tp.btn, 'a button with a title does its job without a tip');
+
   /* Norwegian buttons */
   await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; localStorage.setItem('dash.settings', JSON.stringify(s)); });
   await go(p, 'finance/', 1800);

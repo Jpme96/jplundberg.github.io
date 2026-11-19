@@ -84,6 +84,7 @@
     '.ask-bt{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.ask-bt button{min-height:44px;padding:8px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1px solid var(--line,rgba(127,127,127,.35));background:none;color:inherit}' +
     '.ask-bt .ask-ok{border-color:transparent;background:var(--accent,var(--acc,#14b8a6));color:var(--on-accent,var(--acc-ink,#04201c))}.ask-bt .ask-ok.ask-dg{background:var(--danger,var(--bad,#e66767));color:#fff}' +
     '@media (max-width:560px){.ask-bt button{flex:1}}' +
+    '.tap-tip{position:fixed;z-index:2147482500;max-width:min(280px,calc(100vw - 24px));padding:7px 11px;border-radius:10px;background:var(--text,var(--ink,#e7e7ea));color:var(--bg-solid,var(--bg,#0e0f11));font-size:14px;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;white-space:pre-line}' +
     '@media (max-width:560px){.fdz-ov{align-items:flex-end;padding:0}.fdz-sh{border-radius:18px 18px 0 0;max-height:92dvh;padding-bottom:max(20px,env(safe-area-inset-bottom))}.fdz-dz{min-height:180px}}';
   var CLOUD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5H7z"/><path d="M12 15V10m0 0-2.5 2.5M12 10l2.5 2.5"/></svg>',
     FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2h9A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
@@ -164,10 +165,45 @@
       if (inp) { inp.focus(); try { inp.select(); } catch (e) {} } else { var f = ov.querySelector(o.danger ? '.ask-no' : '.ask-ok') || ov.querySelector('.ask-ok'); if (f) f.focus(); }
     });
   }
+
+  /* ---------- Tap tips (2026-11-19, plan Part 3 A3) ----------
+     A title="…" on a number, bar or cell is a hover tip – on a phone nobody sees it. With a touch screen a tap on such a
+     thing (not a button, link or field – those do their own job) shows the same words in a small tip for a few seconds.
+     SVG shapes with a <title> child work the same way. */
+  var tipEl = null, tipT = 0;
+  function hideTip() { clearTimeout(tipT); if (tipEl) { tipEl.remove(); tipEl = null; } }
+  function showTip(el, txt) {
+    hideTip(); style();
+    tipEl = document.createElement('div'); tipEl.className = 'tap-tip'; tipEl.setAttribute('role', 'status'); tipEl.textContent = txt;
+    document.body.appendChild(tipEl);
+    var r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight, vw = document.documentElement.clientWidth;
+    var x = Math.max(12, Math.min(vw - w - 12, r.left + r.width / 2 - w / 2)), y = r.top - h - 8;
+    if (y < 8) y = r.bottom + 8;
+    tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+    tipT = setTimeout(hideTip, 3000);
+  }
+  function tipText(t) {
+    for (var el = t; el && el !== document.body && el.nodeType === 1; el = el.parentNode) {
+      if (el.closest && el.closest('button, a[href], input, select, textarea, label, summary, [role=button], [role=tab], [contenteditable], .fdz-ov, [data-notip]')) return null;
+      var tt = el.getAttribute && el.getAttribute('title');
+      if (tt && tt.trim()) return { el: el, t: tt.trim() };
+      var st = el.namespaceURI === 'http://www.w3.org/2000/svg' && el.querySelector && el.querySelector(':scope > title');
+      if (st && st.textContent.trim()) return { el: el, t: st.textContent.trim() };
+    }
+    return null;
+  }
+  var coarse = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : null;
+  document.addEventListener('click', function (e) {
+    if (tipEl && !e.defaultPrevented) hideTip();
+    if (!coarse || !coarse.matches || e.defaultPrevented) return;
+    var f = tipText(e.target); if (f) showTip(f.el, f.t);
+  });
+  window.addEventListener('scroll', hideTip, { passive: true, capture: true });
   window.Ask = {
     confirm: function (msg, o) { return ask('confirm', msg, null, o); },
     prompt: function (msg, val, o) { return ask('prompt', msg, val, o); },
-    alert: function (msg, o) { return ask('alert', msg, null, o); }
+    alert: function (msg, o) { return ask('alert', msg, null, o); },
+    tip: showTip
   };
   window.FileDrop = { open: open, give: give, kinds: kinds };
 })();
