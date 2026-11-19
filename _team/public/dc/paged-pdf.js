@@ -10,7 +10,9 @@
   if (window.PagedPdf) return;
   var P = window.PagedPdf = { vendor: window.PAGED_PDF_VENDOR || '/cmd/vendor/', photo: null };
   function sharePdf(file) {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: file.name.replace(/\.(pdf|xlsx)$/, '') }).catch(function (e) { if (!e || e.name !== 'AbortError') save(file); }); return; }   /* the browser refused (the tap was too long ago): save it instead (JP 21:31) */
+    /* on a computer a download is just a download (JP 2026-11-19: Windows opened its Share sheet); the share sheet is for phones and tablets */
+    var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    if (touch && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: file.name.replace(/\.(pdf|xlsx)$/, '') }).catch(function (e) { if (!e || e.name !== 'AbortError') save(file); }); return; }   /* the browser refused (the tap was too long ago): save it instead (JP 21:31) */
     save(file);
   }
   /* see the PDF before it goes anywhere (JP 2026-11-16: it was shared or saved straight away): its pages as they are in the

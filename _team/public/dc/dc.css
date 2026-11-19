@@ -1136,3 +1136,12 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-dllist li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
 .dx-dllist li > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .dx-dllist small { font-size: 12.5px; }
+.dc-chip.dcn-pk[aria-pressed="true"], .dc-chip.dcn-pk.on { background: var(--accent-soft, rgba(var(--accent-rgb), .12)); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.dcn-row.dcn-c { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 4px; padding-left: 4px; }
+.dcn-row.dcn-c > .dcn-sumb { width: auto; flex: 1 1 auto; }
+.dcn-pkc input, .dcn-pkh .dcn-pkc input { appearance: none; -webkit-appearance: none; width: 22px; height: 22px; min-height: 22px; margin: 0; padding: 0; border: 2px solid rgba(var(--ink-rgb), .45); border-radius: 6px; background: var(--bg-solid, transparent); display: inline-grid; place-content: center; cursor: pointer; transition: background .12s, border-color .12s; }
+.dcn-pkc input:hover { border-color: var(--accent); }
+.dcn-pkc input:checked { background: var(--accent); border-color: var(--accent); }
+.dcn-pkc input:checked::after { content: ''; width: 11px; height: 6px; border: solid var(--on-accent, #fff); border-width: 0 0 2.5px 2.5px; transform: translateY(-1px) rotate(-45deg); }
+.dcn-pkc input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dcn-row.dcn-pkd { background: rgba(var(--accent-rgb), .10); box-shadow: inset 3px 0 0 var(--accent); }

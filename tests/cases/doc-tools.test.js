@@ -38,7 +38,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await defR();
   const r1 = await p.evaluate(async () => ({ rows: [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].map(li => li.textContent.replace(/\s+/g, ' ').trim()), rules: !!document.querySelector('.dx-ren .dcn-rules'), sum: (document.querySelector('.dx-rsum') || {}).textContent || '',
     sugg: ((await R(/Datablad radiator/)) || { querySelector: () => ({}) }).querySelector('[data-dcncode]').value, plan: /Not in the plan/.test(document.querySelector('.dx-ren').textContent) }));
-  check(r1.rows.length === 5 && r1.rules && !r1.plan && /5 files/.test(r1.sum), 'files and the .zip become rows with the naming rules (no plan talk outside a project) ' + JSON.stringify(r1));
+  check(r1.rows.length === 5 && r1.rules && !r1.plan && !/5 files/.test(r1.sum) && /Download/.test(r1.sum), 'files and the .zip become rows with the naming rules (no plan talk outside a project) ' + JSON.stringify(r1));
   check(/^325/.test(r1.sugg || ''), 'a file named after what it is gets a suggested code from its name (Datablad radiator → 325) ' + JSON.stringify(r1.sugg));
   /* a drawing: the letters say what they mean (Boligbygg's tables 8–11), the discipline comes from the code and the drawing type from the name (JP 21:21) */
   const dw = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); if (!li) return null; const sel = k => li.querySelector('[data-dcnv$=":' + k + '"]');

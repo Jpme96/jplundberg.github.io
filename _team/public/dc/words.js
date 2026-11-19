@@ -527,7 +527,6 @@ window.DC_NB = {
 "ui.dx-ren-more": "Legg til flere filer",
 "ui.dx-ren-pick": "Velg filer eller en .zip",
 "ui.dx-ren-reading": "leser PDF-ene …",
-"ui.dx-ren-sum": "{n} filer · {r} har fått nytt navn · {o} klare",
 "ui.dx-ren-useall": "Bruk nytt navn på {n} klare",
 "ui.dx-ren-used": "{n} filer har fått nytt navn",
 "ui.dx-ren-zip": "Filer med nye navn",
