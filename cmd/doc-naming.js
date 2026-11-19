@@ -126,17 +126,66 @@
     return out.sort(function (a, b) { return b.s - a.s; });
   }
   function scoreCodes(text, first) {
-    var s = scoreKw(CKW, text, first, 1), re = /(?:^|[\s=+])(\d{3})\.\d{3}\b/g, m, tf = {};   /* TFM tags (=332.001) */
+    var s = scoreKw(CKW, text, first, 1), s2 = scoreKw(nsKw(), text, first, 1), re = /(?:^|[\s=+])(\d{3})\.\d{3}\b/g, m, tf = {};   /* TFM tags (=332.001) */
+    s2.forEach(function (y) { var e = s.filter(function (x) { return x.k === y.k; })[0]; if (e) { e.s += y.s; e.h = e.h.concat(y.h); } else s.push(y); });
     while ((m = re.exec(text))) tf[m[1]] = (tf[m[1]] || 0) + 1;
     Object.keys(tf).forEach(function (c) { var e = s.filter(function (x) { return x.k === c; })[0], hit = ['TFM ' + c + '.xxx', tf[c], false]; if (e) { e.s += 8 * Math.min(tf[c], 3); e.h.unshift(hit); } else s.push({ k: c, s: 8 * Math.min(tf[c], 3), h: [hit] }); });
     return s.sort(function (a, b) { return b.s - a.s; });
   }
+  /* ---------- better code suggestions (JP 2026-11-19): your names from the standard as words, codes learned from your choices, two options when unsure ---------- */
+  var STOPW = ' andre annet øvrige øvrig generelt generell felles diverse system systemer anlegg anlegget utstyr deler delen bygning bygninger installasjoner installasjon komponenter ' +
+    'tilhørende inklusive spesielle spesiell eventuelt komplett komplette other general common including ';
+  var NKW = null, NKWk = '';
+  function nsKw() {   /* each code's name split into words (5+ letters); a word that is in 4 or more codes' names says too little to count */
+    var all = Object.assign({}, nsNames(), LP && LP.ownMap ? LP.ownMap() : {}), key = Object.keys(all).length + ':' + JSON.stringify(all).length;
+    if (NKW && NKWk === key) return NKW;
+    var per = {}, df = {};
+    Object.keys(all).forEach(function (c) { if (!/^\d{3,4}$/.test(c)) return; var k3 = c.slice(0, 3);
+      String(all[c] || '').toLowerCase().split(/[^a-zæøåäöü]+/).forEach(function (w) { if (w.length < 5 || STOPW.indexOf(' ' + w + ' ') >= 0) return; per[k3] = per[k3] || {}; if (!per[k3][w]) { per[k3][w] = 1; df[w] = (df[w] || 0) + 1; } }); });
+    NKW = {}; Object.keys(per).forEach(function (k3) { var L = Object.keys(per[k3]).filter(function (w) { return df[w] < 4; }).map(function (w) { return [w, 2]; }); if (L.length) NKW[k3] = L; });
+    NKWk = key; return NKW;
+  }
+  /* learned codes: words from the file names you corrected → the code you chose. Team: one shared record (DStore 'nslearn'); cmd: your tools (synced); else this device */
+  var LKEY = 'dcn.nslearn', LRN = null, LRNat = 0;
+  var NOTW = /^(pdf|docx?|xlsx?|dwg|nor|nob|eng|tds|fdv|fdvu|datablad|teknisk|technical|data|sheet|produkt|product|dokument|document|versjon|version|norsk|english|final|ferdig|kopi|copy|scan|skann)$/;
+  function lrnWhere() { return HOST && HOST.team && HOST.store ? 'team' : !HOST && window.Features && window.Features.tools ? 'me' : 'here'; }
+  function lrnGet() {
+    var w = lrnWhere();
+    if (w === 'team') { if (!LRN || Date.now() - LRNat > 10000) { LRNat = Date.now(); LRN = LRN || { w: {} }; Promise.resolve(HOST.store.get('nslearn')).then(function (o) { if (o && o.w) LRN = o; }).catch(function () {}); } return LRN; }
+    if (LRN) return LRN;
+    LRN = { w: {} };
+    try { if (w === 'me') { var t = window.Features.tools(); if (t.fdvlearn && t.fdvlearn.w) LRN = JSON.parse(JSON.stringify(t.fdvlearn)); } else { var o = JSON.parse(localStorage.getItem(LKEY) || 'null'); if (o && o.w) LRN = o; } } catch (e) {}
+    return LRN;
+  }
+  function lrnSave() {
+    var L = lrnGet(), W = Object.keys(L.w); if (W.length > 3000) W.slice(0, W.length - 3000).forEach(function (x) { delete L.w[x]; });
+    var w = lrnWhere();
+    if (w === 'team') { HOST.store.put('nslearn', L); return; }
+    if (w === 'me') { var Fe0 = window.Features, t = Fe0.tools(); t.fdvlearn = L; Fe0.saveTools(t); return; }
+    try { localStorage.setItem(LKEY, JSON.stringify(L)); } catch (e) {}
+  }
+  function lwords(name) { var seen = {}; return String(name || '').toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '').split(/[^a-zæøåäöü]+/).filter(function (w) { if (w.length < 4 || NOTW.test(w) || STOPW.indexOf(' ' + w + ' ') >= 0 || seen[w]) return false; seen[w] = 1; return true; }).slice(0, 8); }
+  function learn(f, code) {
+    if (!f || !/^\d{3}/.test(code || '')) return;
+    var L = lrnGet(); lwords(f.orig || f.name).forEach(function (w) { var e = L.w[w] = L.w[w] || {}; e[code] = (e[code] || 0) + 1; });
+    lrnSave();
+  }
+  function learnedFor(name) {
+    var L = lrnGet(), sc = {}, hit = {};
+    lwords(name).forEach(function (w) { var e = L.w[w]; if (!e) return; Object.keys(e).forEach(function (c) { sc[c] = (sc[c] || 0) + e[c]; if (!hit[c] || e[c] > hit[c][1]) hit[c] = [w, e[c]]; }); });
+    var o = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
+    if (!o.length || (o[1] && sc[o[0]] < sc[o[1]] * 2)) return null;
+    return { k: o[0], s: sc[o[0]], w: hit[o[0]][0] };
+  }
+  function whyL(x) { return k('ui.dcn-why-learned', 'learned from earlier choices (“{w}”)', { w: x.w }); }
   function strong(l) { return l[0] && l[0].s >= 5 && (!l[1] || l[0].s >= l[1].s * 1.5) ? l[0] : null; }
   function why(x, src) { var h = x.h[0]; return (src === 'n' ? k('ui.dcn-why-name', 'the file name has “{w}”', { w: h[0] }) : k('ui.dcn-why-text', 'found “{w}” {n}× in the text', { w: h[0], n: h[1] })) + (h[2] ? ' · ' + k('ui.dcn-why-p1', 'also on page 1') : ''); }
   /* a file without a code or type: guess from words in its name (marked as suggested until you say it looks right) */
   function guessName(f) {
     if (fkind(f) === 'photo') return; var low = String(f.p && f.p.stem || f.name).toLowerCase().replace(/[_]+/g, ' ');
-    if (!f.p.code) { var c = scoreCodes(low, '')[0]; if (c) { f.p.code = c.k; f.sg = Object.assign({}, f.sg, { c: why(c, 'n') }); } }
+    if (!f.p.code) { var lc = learnedFor(f.orig || f.name), cs = lc ? [] : scoreCodes(low, ''), c = lc || strong(cs) || (cs.length === 1 ? cs[0] : null);
+      if (c) { f.p.code = c.k; f.sg = Object.assign({}, f.sg, { c: lc ? whyL(lc) : why(c, 'n') }); if (f.sg.alt) delete f.sg.alt; }
+      else if (cs.length > 1) f.sg = Object.assign({}, f.sg, { alt: cs.slice(0, 2).map(function (x) { return [x.k, why(x, 'n')]; }) }); }
     if (f.p.code && !f.p.abbr) { var t = scoreKw(TKW, low, '')[0]; if (t && t.s >= 3) { f.p.abbr = t.k; f.sg = Object.assign({}, f.sg, { t: why(t, 'n') }); } }
   }
   /* keep every word of the file name, add only what the content adds (K200 EC is already in K200EC – JP 11:43) */
@@ -205,13 +254,18 @@
       d = d.replace(/[-–:|]+/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 6).join(' ');
       var mm = /\b([A-ZÆØÅ][\wÆØÅæøå&.-]{1,25}(?:\s[A-ZÆØÅ][\wÆØÅæøå&.-]{1,25})?)\s(AS|ASA|AB|GmbH|Oy|A\/S|Ltd|Inc)\b/.exec(all); if (mm && d.toLowerCase().indexOf(mm[1].toLowerCase()) < 0) d = (d ? d + ' ' : '') + mm[1];
       ccText[fid] = all.slice(0, 1500);
-      var cc = { at: today(), pg: r.n, ch: chars, t: st ? [st.k, why(st, 't')] : null, c: sc ? [sc.k, why(sc, 't')] : null, tt: ty.slice(0, 3).map(function (x) { return x.k; }), cs: co.slice(0, 3).map(function (x) { return x.k; }), d: d.slice(0, 80),
+      var cc = { at: today(), pg: r.n, ch: chars, t: st ? [st.k, why(st, 't')] : null, c: sc ? [sc.k, why(sc, 't')] : null, ca: !sc && co.length > 1 ? co.slice(0, 2).map(function (x) { return [x.k, why(x, 't')]; }) : null, tt: ty.slice(0, 3).map(function (x) { return x.k; }), cs: co.slice(0, 3).map(function (x) { return x.k; }), d: d.slice(0, 80),
         lang: chars > 200 ? langOf(low) : '', mk: ['Bruker', 'Drift', 'Prosjekt'].filter(function (w) { return new RegExp('(^|[^A-Za-zæøå])' + w + '([^a-zæøå]|$)').test(all); }), w: [] };
       if (chars < 40 * Math.min(r.n, 40)) cc.w.push(chars ? 'little' : 'notext');
       saveP(pid, function (p) {
         var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.cc = cc;
         var weak = k('ui.dcn-closest', 'closest match in the text – check it');
-        if (!f.p.code && (cc.c || cc.cs.length)) { f.p.code = cc.c ? cc.c[0] : cc.cs[0]; f.sg = Object.assign({}, f.sg, { c: cc.c ? cc.c[1] : weak }); }
+        if (!f.p.code) { var lc = learnedFor(f.orig || f.name);   /* your earlier choices first, then a clear match in the text; close calls are two options to choose from */
+          if (lc) { f.p.code = lc.k; f.sg = Object.assign({}, f.sg, { c: whyL(lc) }); }
+          else if (cc.c) { f.p.code = cc.c[0]; f.sg = Object.assign({}, f.sg, { c: cc.c[1] }); }
+          else if (cc.ca) f.sg = Object.assign({}, f.sg, { alt: cc.ca });
+          else if (cc.cs.length) { f.p.code = cc.cs[0]; f.sg = Object.assign({}, f.sg, { c: weak }); }
+          if (f.p.code && f.sg && f.sg.alt) delete f.sg.alt; }
         if (!f.p.abbr && (cc.t || cc.tt.length)) { f.p.abbr = cc.t ? cc.t[0] : cc.tt[0]; f.sg = Object.assign({}, f.sg, { t: cc.t ? cc.t[1] : weak }); }
         if (cc.d && splitStem(f.name) !== nbuild(p, f).plain) { f.nv = Object.assign({}, f.nv, { desc: mergeDesc(nval(p, f, { k: 'desc' }), cc.d) }); }
         relink(p, f);
@@ -339,7 +393,7 @@
     if (compact) {
       var st = fstate(p, f), ic = st === 'done' ? 'check2-circle' : st === 'ready' ? 'arrow-right-circle' : 'exclamation-circle', open = !!nexp[f.id];
       var line = '<button type="button" class="dcn-sumb" data-dcnexp="' + esc(f.id) + '" aria-expanded="' + open + '"><i class="bi bi-' + ic + ' dcn-s-' + st + '"></i><span class="dcn-sumt"><b data-noi18n>' + esc(f.name) + '</b>' +
-        (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
+        (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(!f.p.code && f.sg && f.sg.alt ? k('ui.dcn-alt-short', 'Choose code: {a}', { a: f.sg.alt.map(function (a) { return a[0]; }).join(k('ui.dcn-or', ' or ')) }) : k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
       if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + '" data-dcnc="' + esc(f.id) + '">' + line + '</li>';
       return nrow(p, f).replace('<div class="dcn-g">', line + '<div class="dcn-g">');
     }
@@ -356,6 +410,7 @@
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
       '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
         '<button type="button" class="dcn-cbtn" data-dcncpick="' + esc(f.id) + '"><span>' + esc(f.p.code ? f.p.code + (codeName(f.p.code) ? ' ' + codeName(f.p.code) : '') : k('ui.dcn-choose-code', 'Choose a code')) + '</span><i class="bi bi-search"></i></button></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
+      (!f.p.code && f.sg && f.sg.alt ? '<div class="dcn-alt"><span>' + esc(k('ui.dcn-alt', 'Not sure – choose one:')) + '</span>' + f.sg.alt.map(function (a) { return '<button type="button" class="dc-chip dcn-altb" data-dcnalt="' + esc(f.id + '|' + a[0]) + '"><b data-noi18n>' + esc(a[0] + (codeName(a[0]) ? ' ' + codeName(a[0]) : '')) + '</b><small>' + esc(a[1]) + '</small></button>'; }).join('') + '</div>' : '') +
       (kd === 'doc' ? '<label class="dcn-c"><span>' + esc(k('ui.dcn-type', 'Document type')) + '</span><select data-dcntype="' + esc(f.id) + '">' + typeOpts(p, f) + '</select></label>' + (nown === f.id + ':type' ? ownForm(f.id, 'type') : '') : '') +
       '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
@@ -416,7 +471,7 @@
       '<p class="dcn-h">' + esc(k('ui.dcn-own', 'Your rules')) + ' <span class="muted">' + own.length + '</span></p>' +
       (own.length ? '<ul class="dcn-rlist">' + own.map(row).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-own-none', 'None yet – make one, or copy one of Boligbygg’s and change it.')) + '</p>') +
       
-      ownCodes(p) +
+      ownCodes(p) + lrnBox() +
       '<details class="dcn-bbl"><summary>' + esc(k('ui.dcn-bb-rules', 'Boligbygg’s rules ({n}) – copy one to start from it', { n: R.length - own.length })) + '</summary><ul class="dcn-rlist">' + R.filter(function (r) { return r.b; }).map(row).join('') + '</ul></details>';
     if (sel && !sel.b) h += '</details><div class="dcn-ov dc-host" data-dcnov><div class="dcn-sheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dcn-edit', 'Change the rule')) + '"><div class="dcn-shead"><b>' + esc(rname(sel)) + '</b><button type="button" class="icon-btn" data-dcndone aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + editor(p, sel) + '</div></div>';
     else h += '</details>';
@@ -444,6 +499,13 @@
     var o = nsNames(); Object.keys(m).forEach(function (c) { o[c] = m[c]; }); try { localStorage.setItem(NSK, JSON.stringify(o)); } catch (e) {} done();
   }
   function nsClear() { if (nsWhere() === 'team') { Promise.resolve(HOST.nsSave(null)).then(function () { draw(); }); return; } try { localStorage.removeItem(NSK); } catch (e) {} draw(); }
+  function lrnBox() {
+    var L = lrnGet(), W = Object.keys(L.w || {}), w = lrnWhere();
+    var best = function (x) { var e = L.w[x], c = Object.keys(e).sort(function (a, b) { return e[b] - e[a]; })[0]; return c; };
+    return '<details class="dcn-bbl dcn-lrn"><summary>' + esc(k('ui.dcn-lrn-t', 'Learned codes ({n})', { n: W.length })) + '</summary><p class="muted dc-help">' + esc(k('ui.dcn-lrn-help', 'When you change a suggested code, the words in the file name are remembered with the code you chose, and similar files get it first next time. Remove anything that was learned wrong.')) + ' ' +
+      esc(w === 'team' ? k('ui.dcn-ns-team', 'Shared with everyone in the team') : w === 'me' ? k('ui.dcn-ns-me', 'Saved with your codes – on all your devices') : k('ui.dcn-ns-here', 'Kept on this device only')) + '</p>' +
+      (W.length ? '<ul class="dcn-lrnl">' + W.sort().slice(0, 300).map(function (x) { var c = best(x); return '<li><span><b data-noi18n>' + esc(x) + '</b> → <span data-noi18n>' + esc(c + (codeName(c) ? ' ' + codeName(c) : '')) + '</span></span><button type="button" class="icon-btn sm" data-dcnlrx="' + esc(x) + '" aria-label="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '" title="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-lrn-none', 'Nothing learned yet.')) + '</p>') + '</details>';
+  }
   function ownCodes(p) {
     var h = nsBox() + '<p class="dcn-h">' + esc(k('ui.dcn-own-codes', 'Your codes')) + ' <span class="muted">' + esc(k('ui.dcn-own-codes-s', 'extra choices in the lists – or pick “+ Own code” in a list')) + '</span></p>', any = 0;
     OWNK.forEach(function (x) { var O = owns(p, x[0]); if (!O.length) return; any = 1; h += '<div class="dcn-oc"><span>' + esc(k(x[1], x[2])) + '</span>' + O.map(function (y) { return '<span class="dc-chip dcn-ochip"><b data-noi18n>' + esc(y[0]) + '</b>' + (y[1] ? ' <span data-noi18n>' + esc(y[1]) + '</span>' : '') + '<button type="button" data-dcnodel="' + esc(x[0] + ':' + y[0]) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-x-lg"></i></button></span>'; }).join('') + '</div>'; });
@@ -531,7 +593,7 @@
     on('change', function (e) {
       var t = e.target; if (!t.matches || !t.closest('#wkDocCtl, .dcn-ov')) return; var v = t.value, fid;
       if (v === '__own' && t.dataset.dcncode) { nown = t.dataset.dcncode + ':code'; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
-      if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) delete f.sg.c; relink(p, f); }); draw(); return; }
+      if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) { delete f.sg.c; delete f.sg.alt; } learn(f, m[1]); relink(p, f); }); draw(); return; }
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
       if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); }; rd.readAsText(t.files[0]); t.value = ''; return; }
@@ -553,6 +615,8 @@
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
       if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) rename(p, f, nb2.plain + ext(f.orig || f.name)); }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
       if ((b = t.closest('[data-dcnorig]'))) { var id2 = b.dataset.dcnorig; saveP(cur(), function (p) { var f = fileOf(p, id2); if (f && f.orig) { rename(p, f, f.orig); delete f.orig; } }); draw(); return; }
+      if ((b = t.closest('[data-dcnalt]'))) { var pa = b.dataset.dcnalt.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pa[0]); if (!f) return; f.p.code = pa[1]; if (f.sg) { delete f.sg.alt; delete f.sg.c; } learn(f, pa[1]); relink(p, f); }); draw(); return; }
+      if ((b = t.closest('[data-dcnlrx]'))) { var L0 = lrnGet(); delete L0.w[b.dataset.dcnlrx]; lrnSave(); draw(); return; }
       if ((b = t.closest('[data-dcnok]'))) { var id3 = b.dataset.dcnok; saveP(cur(), function (p) { var f = fileOf(p, id3); if (f) delete f.sg; }); draw(); return; }
       if ((b = t.closest('[data-dcncc]'))) { ccRun(cur(), b.dataset.dcncc); return; }
       if ((b = t.closest('[data-dcnuset], [data-dcnusec]'))) { var id4 = b.dataset.dcnuset || b.dataset.dcnusec, isT = !!b.dataset.dcnuset; saveP(cur(), function (p) { var f = fileOf(p, id4); if (!f || !f.cc) return; if (isT && f.cc.t) f.p.abbr = f.cc.t[0]; if (!isT && f.cc.c) f.p.code = f.cc.c[0]; relink(p, f); }); draw(); return; }

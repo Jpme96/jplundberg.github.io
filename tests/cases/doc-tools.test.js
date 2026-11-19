@@ -28,7 +28,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => PageTabs.show('doc')); await sl(300);
   const t0 = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dx-tools .dx-tool b')].map(x => x.textContent).join('|'));
   check(t0 === 'Document plans|Give files the right names|Check names from the FDV system', 'three tools on top (document plans now stay) ' + t0);
-  const before = await p.evaluate(() => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; return JSON.stringify(t).length; });
+  const before = await p.evaluate(() => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; delete t.fdvlearn; return JSON.stringify(t).length; });
   /* rename: the file naming (suggestions from the name and the PDF text, the naming rules) on files outside any project (JP 20:43) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   check(await p.evaluate(() => { const o = document.querySelector('#wkDocCtl .dx-tov'); return !!o && getComputedStyle(o).position === 'fixed' && !!o.querySelector('.dx-ren'); }), 'a tool opens in a popup over the list, not in the page (JP 2026-11-17 20:11)');
@@ -172,7 +172,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => { const f = document.querySelector('form[data-dxfdv]'); f.t.value = '332 SE Sprinkleranlegg\n442 XX Lys\nRørplan\n'; f.requestSubmit(); }); await sl(300);
   const f1 = await p.evaluate(() => ({ sum: document.querySelector('.dx-sum b').textContent, bad: [...document.querySelectorAll('.dx-flist li.dx-bad')].map(li => li.textContent), ok: document.querySelectorAll('.dx-flist li:not(.dx-bad)').length }));
   check(/1 of 3 names follow the rules/.test(f1.sum) && f1.bad.length === 2 && f1.bad.some(x => /442 XX Lys.*Unknown document code/.test(x)) && f1.ok === 1, 'pasted names are checked: OK, or what is wrong ' + JSON.stringify(f1));
-  check(await p.evaluate(b => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; return JSON.stringify(t).length === b; }, before), 'the tools saved nothing (but the NS code names you imported)');
+  check(await p.evaluate(b => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; delete t.fdvlearn; return JSON.stringify(t).length === b; }, before), 'the tools saved nothing (but the NS code names you imported)');
   /* duplicates: only the same content is grouped, nothing goes by itself, a person picks (JP 2026-11-19) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   await p.evaluate(() => { const c = document.querySelector('[data-dxrenclr]'); if (c) { c.click(); c.click(); } }); await sl(300);

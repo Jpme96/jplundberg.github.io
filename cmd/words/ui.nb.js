@@ -3208,5 +3208,13 @@ I18N.add({
   "ui.dx-dup-next": ["Next group", "Neste gruppe"],
   "ui.dx-dup-done": ["{n} removed from the list – {m} files left. The files on your computer are untouched.", "{n} fjernet fra listen – {m} filer igjen. Filene på maskinen din er urørt."],
   "ui.dx-dup-bar": ["{n} files are here more than once (same content) – {g} groups to check", "{n} filer finnes flere ganger (samme innhold) – {g} grupper å sjekke"],
-  "ui.dx-dup-go": ["Check them", "Gå gjennom"]
+  "ui.dx-dup-go": ["Check them", "Gå gjennom"],
+  "ui.dcn-why-learned": ["learned from earlier choices (“{w}”)", "lært fra tidligere valg («{w}»)"],
+  "ui.dcn-alt": ["Not sure – choose one:", "Usikker – velg en:"],
+  "ui.dcn-alt-short": ["Choose code: {a}", "Velg kode: {a}"],
+  "ui.dcn-or": [" or ", " eller "],
+  "ui.dcn-lrn-t": ["Learned codes ({n})", "Lærte koder ({n})"],
+  "ui.dcn-lrn-help": ["When you change a suggested code, the words in the file name are remembered with the code you chose, and similar files get it first next time. Remove anything that was learned wrong.", "Når du endrer en foreslått kode, huskes ordene i filnavnet sammen med koden du valgte, og lignende filer får den først neste gang. Fjern det som er lært feil."],
+  "ui.dcn-lrn-x": ["Forget this", "Glem dette"],
+  "ui.dcn-lrn-none": ["Nothing learned yet.", "Ingenting lært ennå."]
 });
