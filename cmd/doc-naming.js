@@ -619,8 +619,9 @@
     var G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F;
     pkFix(p);
     if (many) { var nNo = F.filter(function (f) { return !f.nf && !f.p.code; }).length, nPk = pkN(), allOn = G.length && G.every(function (f) { return pkOn(f.id); });
-      h += '<div class="dcn-pkh"><label class="dcn-pkc"><input type="checkbox" data-dcnpkall' + (allOn ? ' checked' : '') + ' aria-label="' + esc(k('ui.dcn-pk-all', 'Select all')) + '"></label><span class="muted">' + esc(k('ui.dcn-pk-pick', 'Select:')) + '</span>' +
-        '<button type="button" class="dc-chip" data-dcnpks="all">' + esc(k('ui.dcn-pk-alle', 'All')) + '</button>' + (nNo ? '<button type="button" class="dc-chip" data-dcnpks="nocode">' + esc(k('ui.dcn-pk-nocode', 'All without a code ({n})', { n: nNo })) + '</button>' : '') + (nPk ? '<button type="button" class="dc-chip" data-dcnpks="none">' + esc(k('ui.dcn-pk-none', 'None')) + '</button>' : '') + '</div>'; }
+      /* one box for all / none, with its words beside it (JP 2026-11-19 21:39: the box and "All" did the same) */
+      h += '<div class="dcn-pkh"><label class="dcn-pkc dcn-pkall"><input type="checkbox" data-dcnpkall' + (allOn ? ' checked' : '') + '><span>' + esc(k('ui.dcn-pk-all-n', 'Select all ({n})', { n: G.length })) + '</span></label>' +
+        (nNo ? '<button type="button" class="dc-chip" data-dcnpks="nocode">' + esc(k('ui.dcn-pk-nocode2', 'Only those without a code ({n})', { n: nNo })) + '</button>' : '') + '</div>'; }
     h += '<ul class="dcn-files">' + G.map(function (f) { return nrow(p, f, many); }).join('') + '</ul>' + (many && !G.length ? '<p class="muted">' + esc(k('ui.dcn-f-none', 'None here.')) + '</p>' : '');
     if (many && pkN()) h += '<div class="dcn-pkact" role="toolbar" aria-label="' + esc(k('ui.dcn-pk-bar', 'Selected files')) + '"><b>' + esc(k('ui.dcn-pk-n', '{n} selected', { n: pkN() })) + '</b>' +
       '<button type="button" class="pill-btn" data-dcnpka="code">' + esc(k('ui.dcn-pk-code', 'Change code')) + '</button><button type="button" class="dc-chip" data-dcnpka="type">' + esc(k('ui.dcn-pk-type', 'Change type')) + '</button>' +

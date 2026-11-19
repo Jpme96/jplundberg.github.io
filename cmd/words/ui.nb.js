@@ -3268,5 +3268,7 @@ I18N.add({
   "ui.dx-dl-tkeep": ["Keeps the name", "Beholder navnet"],
   "ui.dx-dl-go1": ["Download the file", "Last ned filen"],
   "ui.dx-dl-go": ["Download {n} files (.zip)", "Last ned {n} filer (.zip)"],
-  "ui.dx-ren-dl4": ["Download …", "Last ned …"]
+  "ui.dx-ren-dl4": ["Download …", "Last ned …"],
+  "ui.dcn-pk-all-n": ["Select all ({n})", "Velg alle ({n})"],
+  "ui.dcn-pk-nocode2": ["Only those without a code ({n})", "Bare de uten kode ({n})"]
 });
