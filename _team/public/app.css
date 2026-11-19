@@ -251,3 +251,15 @@ html.t-modal { overflow: hidden; }
 @keyframes t-sw-pop { from { opacity: 0; transform: scale(.6); } }
 @keyframes t-sw-up { from { opacity: 0; transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) { .t-sw, .t-sw.out, .t-sw-ring, .t-sw-mark b, .t-sw-name span { animation: none; } .t-sw-ring { stroke-dashoffset: 60; } }
+/* Settings in groups (JP 2026-11-19 22:55) */
+.t-seth { margin: 16px 0 8px; }
+.t-setsec { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 2px; }
+.t-setsec .t-h { font-size: 12.5px; }
+.t-set2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+@media (max-width: 420px) { .t-set2 { grid-template-columns: 1fr; } }
+.t-setrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.t-setrow > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.t-setrow small { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.t-setbtns > .t-btn { flex: 0 1 auto; }
+.t-setdel { margin-top: 10px; }
+.t-setfoot { margin: 18px 0 12px; }

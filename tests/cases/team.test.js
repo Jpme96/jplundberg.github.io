@@ -462,6 +462,10 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const cmdJs = fs.readdirSync(path.join(__dirname, '..', '..', 'cmd')).filter(f => f.endsWith('.js')).map(f => fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', f), 'utf8')).join('\n');
   check(!/team-keys|\/api\/recs|TeamStore/.test(cmdJs), '/cmd has no Team data or keys');
 
+  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(400);
+  const st = await own.evaluate(() => ({ heads: [...document.querySelectorAll('.t-seth')].map(x => x.textContent), name: !!document.querySelector('.t-setrow [data-act=renameTeam]') }));
+  check(st.heads.length === 3 && st.name, 'Settings in three groups, the team name with Change for admins (JP 2026-11-19 22:55) ' + JSON.stringify(st));
+  await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); if (c) c.click(); }); await sl(300);
   /* an admin can switch the three Documents tabs off for the whole team (JP 2026-11-19 21:42) */
   await own.goto(U + '#docs'); await sl(800);
   const dt0 = await own.evaluate(() => [...document.querySelectorAll('[data-dtab]')].map(x => x.dataset.dtab).join(','));

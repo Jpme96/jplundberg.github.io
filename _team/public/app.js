@@ -735,20 +735,23 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     } catch (e) { btn.disabled = false; setErr(e.status === 409 ? L('The owner cannot be removed, and the team needs an admin.', 'Eieren kan ikke fjernes, og teamet trenger en admin.') : failMsg(e)); }
   }
 
+  /* Settings in three groups – you, the team (admins), your account – so it is calmer (JP 2026-11-19 22:55) */
   function settingsSheet() {
+    var adm = rank() >= 3, sec = function (t) { return '<p class="t-h t-seth">' + t + '</p>'; };
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
+      sec(L('You', 'Deg')) + '<div class="t-set2">' +
       '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
-      '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
+      '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
-      '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
-      '<button class="t-btn ghost wide" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
-      clockAdmin() + dtabsAdmin() +
-      (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="backup">' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</button>' : '') +
-      (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="renameTeam">' + L('Rename the team', 'Gi teamet nytt navn') + '</button>' : '') +
-      (S.me.isOwner ? '<button class="t-btn ghost wide t-danger" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
-      '<button class="t-btn ghost wide" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button>' +
-      '<a class="t-btn ghost wide" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a>' +
-      '<p class="t-small">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>' +
+      '<button class="t-btn ghost wide sm" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
+      (adm ? '<div class="t-setsec">' + sec(L('The team', 'Teamet')) +
+        '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
+        dtabsAdmin() + clockAdmin() +
+        '<div class="t-setrow"><span><b>' + L('Backup', 'Sikkerhetskopi') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div></div>' : '') +
+      '<div class="t-setsec">' + sec(L('Account', 'Konto')) +
+        '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
+        (S.me.isOwner ? '<button class="t-btn ghost sm t-danger t-setdel" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') + '</div>' +
+      '<p class="t-small t-setfoot">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
