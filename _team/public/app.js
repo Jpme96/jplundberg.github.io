@@ -356,7 +356,7 @@
   function waitChip() {
     var n = queue().length, el = document.getElementById('tWait');
     if (!n) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.id = 'tWait'; el.className = 't-wait'; document.body.appendChild(el); }
+    if (!el) { el = document.createElement('div'); el.id = 'tWait'; el.className = 't-qwait'; document.body.appendChild(el); }
     el.textContent = L(n === 1 ? '1 change waiting for the connection' : n + ' changes waiting for the connection', n === 1 ? '1 endring venter på forbindelse' : n + ' endringer venter på forbindelse');
   }
   var flushing = false;

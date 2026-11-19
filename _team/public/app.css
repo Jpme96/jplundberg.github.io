@@ -110,7 +110,7 @@ body.dc-full .t-dhead, body.dr-full .t-dhead { display: none; }
 .t-news .t-btn { margin-top: 8px; }
 .t-srch input { width: 100%; min-height: 44px; font-size: 16px; }
 a.t-icon { text-decoration: none; }
-.t-wait { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.t-qwait { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; white-space: nowrap; }
 /* files, upload links, push, projects and the week (2026-11-15) */
 .t-acts2 { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 .t-acts2 + .t-btn { margin-top: 12px; }   /* the upload-link button stands apart from Add files / Take a photo (JP 2026-11-17) */

@@ -221,6 +221,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.evaluate(() => { document.querySelector('details[data-accd]').open = true; });
   await own.evaluate(() => window.dispatchEvent(new HashChangeEvent('hashchange'))); await sl(200);
   check(await own.evaluate(() => document.querySelector('details[data-accd]').open), 'an opened box stays open when the page is drawn again (JP 2026-11-17 19:59)');
+  check(await own.evaluate(() => { const p = document.createElement('p'); p.className = 't-wait'; p.textContent = 'Team'; document.body.appendChild(p); const st = getComputedStyle(p), ok = st.position !== 'fixed' && st.borderTopStyle === 'none'; p.remove(); return ok; }), 'the loading word is plain text, not the orange "changes waiting" chip (JP 2026-11-19 21:04)');
   const th = await own.evaluate(() => { const r = getComputedStyle(document.documentElement); const a = { theme: document.documentElement.dataset.theme, acc: r.getPropertyValue('--acc').trim() };
     localStorage.setItem('team.theme', 'dark'); window.__teamTheme(); a.dark = document.documentElement.dataset.theme; a.acc2 = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); localStorage.removeItem('team.theme'); window.__teamTheme(); return a; });
   check(th.theme === 'light' && th.acc === '#9d174d' && th.dark === 'dark' && th.acc2 === '#f06595', 'Team is light with the deep berry accent by default; dark (pink) is a choice (JP 2026-11-19) ' + JSON.stringify(th));
