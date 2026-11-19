@@ -395,7 +395,7 @@
       var st = fstate(p, f), ic = st === 'done' ? 'check2-circle' : st === 'ready' ? 'arrow-right-circle' : 'exclamation-circle', open = !!nexp[f.id];
       var line = '<button type="button" class="dcn-sumb" data-dcnexp="' + esc(f.id) + '" aria-expanded="' + open + '"><i class="bi bi-' + ic + ' dcn-s-' + st + '"></i><span class="dcn-sumt"><b data-noi18n>' + esc(f.name) + '</b>' +
         (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(!f.p.code && f.sg && f.sg.alt ? k('ui.dcn-alt-short', 'Choose code: {a}', { a: f.sg.alt.map(function (a) { return a[0]; }).join(k('ui.dcn-or', ' or ')) }) : k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
-      if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + '" data-dcnc="' + esc(f.id) + '">' + line + '</li>';
+      if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + (pkOn(f.id) ? ' dcn-pkd' : '') + '" data-dcnc="' + esc(f.id) + '"><label class="dcn-pkc"><input type="checkbox" data-dcnpk="' + esc(f.id) + '"' + (pkOn(f.id) ? ' checked' : '') + ' aria-label="' + esc(k('ui.dcn-pk-one', 'Select {f}', { f: f.name })) + '"></label>' + line + '</li>';
       return nrow(p, f).replace('<div class="dcn-g">', line + '<div class="dcn-g">');
     }
     if (!f.p.code && kd !== 'photo') { tags.push(tag('var(--warn)', k('ui.dcn-needs-code', 'Needs a code'))); lvl = 'warn'; }
@@ -549,6 +549,64 @@
     return '<label class="dcn-fl dcn-bno"><span>' + esc(k(d[1], d[2])) + '</span><input data-dcnpv="' + d[0] + '"' + (key === 'bno' ? ' data-dcnbid' : '') + ' value="' + esc(v) + '" maxlength="60"' + (d[5] ? ' inputmode="' + d[5] + '"' : '') + ' placeholder="' + esc(k(d[3], d[4])) + '"' + (needed && !v ? ' class="dcn-need"' : '') + '>' +
       (big ? '<small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' : '') + '</label>';
   }
+  /* ---------- several files at once (JP 2026-11-19): a checkbox on each line, a bar with the changes, one popup per change, Undo ---------- */
+  var PKS = {}, pkP = '';
+  function pkOn(id) { return pkP === cur() && !!PKS[id]; }
+  function pkN() { return pkP === cur() ? Object.keys(PKS).length : 0; }
+  function pkFix(p) { if (pkP !== cur()) { PKS = {}; pkP = cur(); } var have = {}; (p.files || []).forEach(function (f) { have[f.id] = 1; }); Object.keys(PKS).forEach(function (id) { if (!have[id]) delete PKS[id]; }); }
+  function pkSet(ids, on) { if (pkP !== cur()) { PKS = {}; pkP = cur(); } ids.forEach(function (id) { if (on) PKS[id] = 1; else delete PKS[id]; }); }
+  function picked() { var p = proj(cur()) || {}; pkFix(p); return (p.files || []).filter(function (f) { return PKS[f.id]; }).map(function (f) { return f.id; }); }
+  function bulkPop(kind) {
+    var p = proj(cur()); if (!p) return; var F = (p.files || []).filter(function (f) { return PKS[f.id] && !f.nf; }); if (!F.length) return;
+    var old = document.querySelector('.dcn-bulk'); if (old) old.remove();
+    var docs = kind === 'type' ? F.filter(function (f) { return fkind(f) === 'doc'; }) : F;
+    var own = kind === 'code' ? docs.filter(function (f) { return f.p.code && !(f.sg && f.sg.c); }) : kind === 'type' ? docs.filter(function (f) { return f.p.abbr && !(f.sg && f.sg.t); }) : [];
+    var ready = kind === 'name' ? F.filter(function (f) { var b = nbuild(p, f); return !b.miss.length && b.plain + ext(f.orig || f.name) !== f.name; }) : [];
+    var val = '', over = false, ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dcn-bulk';
+    var title = { code: k('ui.dcn-bk-code-t', 'Change the code for {n} files', { n: F.length }), type: k('ui.dcn-bk-type-t', 'Change the type for {n} files', { n: F.length }), name: k('ui.dcn-bk-name-t', 'Use the new name on {n} files', { n: F.length }), rm: k('ui.dcn-bk-rm-t', 'Remove {n} files from the list', { n: F.length }) }[kind];
+    var names = function (L) { return esc(L.slice(0, 3).map(function (f) { return f.name; }).join(' · ')) + (L.length > 3 ? ' ' + esc(k('ui.dcn-bk-more', 'and {n} more', { n: L.length - 3 })) : ''); };
+    var render = function () {
+      var tgt = docs.filter(function (f) { return over || own.indexOf(f) < 0; }), label = val ? (kind === 'code' ? val + (codeName(val) ? ' ' + codeName(val) : '') : val + (catName(val) ? ' ' + catName(val) : '')) : '';
+      var h = '<div class="dcn-sheet dcn-bksheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><div class="dcn-shead"><b>' + esc(title) + '</b><button type="button" class="icon-btn" data-bkx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>';
+      if (kind === 'code') h += '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-bksel class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, { p: { code: val } }) + '</select><button type="button" class="dcn-cbtn" data-bkpick><span>' + esc(label || k('ui.dcn-choose-code', 'Choose a code')) + '</span><i class="bi bi-search"></i></button></label>';
+      if (kind === 'type') h += '<label class="dcn-c"><span>' + esc(k('ui.dcn-type', 'Document type')) + '</span><select data-bksel>' + typeOpts(p, { p: { abbr: val } }) + '</select></label>';
+      if (kind === 'code' || kind === 'type') {
+        h += '<div class="dcn-bkbox">' + (val ? '<b>' + esc(k('ui.dcn-bk-get', 'These {n} get {v}:', { n: tgt.length, v: label })) + '</b><span>' + names(tgt) + '</span>' : '<span class="muted">' + esc(kind === 'code' ? k('ui.dcn-bk-pickc', 'Choose the code first.') : k('ui.dcn-bk-pickt', 'Choose the type first.')) + '</span>') +
+          '<small class="muted">' + esc(kind === 'code' ? k('ui.dcn-bk-only-c', 'Only the code changes – the type and the description stay as they are.') : k('ui.dcn-bk-only-t', 'Only the type changes – the code and the description stay as they are.')) + (kind === 'type' && docs.length < F.length ? ' ' + esc(k('ui.dcn-bk-notdoc', '{n} are photos or drawings and are left out.', { n: F.length - docs.length })) : '') + '</small></div>';
+        if (own.length) h += '<label class="dcn-bkown"><input type="checkbox" data-bkover' + (over ? ' checked' : '') + '><span><b>' + esc(k('ui.dcn-bk-own', '{n} have one you set yourself', { n: own.length })) + '</b><small>' + esc(k('ui.dcn-bk-over', 'Overwrite them too ({v})', { v: own.slice(0, 4).map(function (f) { return kind === 'code' ? f.p.code : f.p.abbr; }).join(', ') + (own.length > 4 ? ' …' : '') })) + '</small></span></label>';
+        h += '<div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo' + (val && tgt.length ? '' : ' disabled') + '>' + esc(val ? k('ui.dcn-bk-go', 'Set {v} on {n} files', { v: val, n: tgt.length }) : k('ui.dcn-bk-go0', 'Set it')) + '</button></div>';
+      }
+      if (kind === 'name') h += '<div class="dcn-bkbox"><b>' + esc(k('ui.dcn-bk-name', '{r} of the {n} are ready and get the new name.', { r: ready.length, n: F.length })) + '</b>' + (ready.length ? '<span>' + names(ready) + '</span>' : '') + (F.length > ready.length ? '<small class="muted">' + esc(k('ui.dcn-bk-name-no', 'The others still miss something, or already have it.')) + '</small>' : '') + '</div><div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo' + (ready.length ? '' : ' disabled') + '>' + esc(k('ui.dcn-bk-name-go', 'Rename {n}', { n: ready.length })) + '</button></div>';
+      if (kind === 'rm') h += '<div class="dcn-bkbox"><span>' + names(F) + '</span><small class="muted">' + esc(k('ui.dcn-bk-rm', 'They only leave this list and the download – the files on your computer are not touched.')) + '</small></div><div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo>' + esc(k('ui.dcn-bk-rm-go', 'Remove {n}', { n: F.length })) + '</button></div>';
+      ov.innerHTML = h + '</div>';
+    };
+    render();
+    var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
+    var ek = function (e) { if (e.key === 'Escape' && !document.querySelector('.dcn-cpk')) { e.stopPropagation(); close(); } };
+    var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+    ov.addEventListener('change', function (e) { if (e.target.matches('[data-bksel]')) { val = /^\s*([0-9A-Za-z.]+)/.exec(e.target.value || '') ? /^\s*([0-9A-Za-z.]+)/.exec(e.target.value)[1] : ''; render(); } else if (e.target.matches('[data-bkover]')) { over = e.target.checked; render(); } });
+    ov.addEventListener('click', function (e) {
+      var t = e.target;
+      if ((t === ov && dn === ov) || t.closest('[data-bkx]')) { close(); return; }
+      if (t.closest('[data-bkpick]')) { cpick(ov.querySelector('[data-bksel]')); return; }
+      var go = t.closest('[data-bkgo]'); if (!go || go.disabled) return;
+      var ids = (kind === 'name' ? ready : kind === 'rm' ? F : docs.filter(function (f) { return over || own.indexOf(f) < 0; })).map(function (f) { return f.id; }), before = {}, n = 0;
+      saveP(cur(), function (p2) {
+        if (kind === 'rm') { before.__files = (p2.files || []).slice(); p2.files = (p2.files || []).filter(function (f) { return ids.indexOf(f.id) < 0; }); n = ids.length; return; }
+        (p2.files || []).forEach(function (f) { if (ids.indexOf(f.id) < 0) return; before[f.id] = JSON.stringify({ p: f.p, sg: f.sg, name: f.name, orig: f.orig, iss: f.iss });
+          if (kind === 'code') { f.p.code = val; if (f.sg) { delete f.sg.c; delete f.sg.alt; } learn(f, val); relink(p2, f); }
+          else if (kind === 'type') { f.p.abbr = val; if (f.sg) delete f.sg.t; relink(p2, f); }
+          else if (kind === 'name') { var b = nbuild(p2, f); rename(p2, f, b.plain + ext(f.orig || f.name)); }
+          n++; });
+      });
+      if (kind === 'rm') { pkSet(ids, false); if (I.removed) I.removed(ids); }
+      close(); draw();
+      var undo = function () { saveP(cur(), function (p3) { if (before.__files) { p3.files = before.__files; return; } (p3.files || []).forEach(function (f) { if (!before[f.id]) return; var o = JSON.parse(before[f.id]); f.p = o.p; if (o.sg) f.sg = o.sg; else delete f.sg; f.name = o.name; if (o.orig) f.orig = o.orig; else delete f.orig; f.iss = o.iss; relink(p3, f); }); }); draw(); };
+      toast('<i class="bi bi-check2"></i> ' + esc(kind === 'rm' ? k('ui.dcn-bk-rm-done', '{n} removed from the list', { n: n }) : k('ui.dcn-bk-done', '{n} files changed', { n: n })), undo);
+    });
+    document.addEventListener('keydown', ek, true);
+    document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
+  }
   function nfiles(p, F) {
     var h = rulesHtml(p);
     var todo = F.filter(function (f) { return !f.nf && (!f.p.code || (ext(f.name) === '.pdf' && !f.cc)); }).length;
@@ -560,7 +618,15 @@
     var many = F.length > 1, cnt = { todo: 0, ready: 0, done: 0 }; if (many) F.forEach(function (f) { cnt[fstate(p, f)]++; });
     if (many) h += '<div class="dcn-flt" role="group">' + [['', k('ui.dcn-f-all', 'All {n}', { n: F.length })], ['todo', k('ui.dcn-f-todo', 'Needs you {n}', { n: cnt.todo })], ['ready', k('ui.dcn-f-ready', 'Ready {n}', { n: cnt.ready })], ['done', k('ui.dcn-f-done', 'Done {n}', { n: cnt.done })]].map(function (c) { return '<button type="button" class="dc-chip" aria-pressed="' + (nflt === c[0]) + '" data-dcnflt="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
     var G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F;
+    pkFix(p);
+    if (many) { var nNo = F.filter(function (f) { return !f.nf && !f.p.code; }).length, nPk = pkN(), allOn = G.length && G.every(function (f) { return pkOn(f.id); });
+      h += '<div class="dcn-pkh"><label class="dcn-pkc"><input type="checkbox" data-dcnpkall' + (allOn ? ' checked' : '') + ' aria-label="' + esc(k('ui.dcn-pk-all', 'Select all')) + '"></label><span class="muted">' + esc(k('ui.dcn-pk-pick', 'Select:')) + '</span>' +
+        '<button type="button" class="dc-chip" data-dcnpks="all">' + esc(k('ui.dcn-pk-alle', 'All')) + '</button>' + (nNo ? '<button type="button" class="dc-chip" data-dcnpks="nocode">' + esc(k('ui.dcn-pk-nocode', 'All without a code ({n})', { n: nNo })) + '</button>' : '') + (nPk ? '<button type="button" class="dc-chip" data-dcnpks="none">' + esc(k('ui.dcn-pk-none', 'None')) + '</button>' : '') + '</div>'; }
     h += '<ul class="dcn-files">' + G.map(function (f) { return nrow(p, f, many); }).join('') + '</ul>' + (many && !G.length ? '<p class="muted">' + esc(k('ui.dcn-f-none', 'None here.')) + '</p>' : '');
+    if (many && pkN()) h += '<div class="dcn-pkact" role="toolbar" aria-label="' + esc(k('ui.dcn-pk-bar', 'Selected files')) + '"><b>' + esc(k('ui.dcn-pk-n', '{n} selected', { n: pkN() })) + '</b>' +
+      '<button type="button" class="pill-btn" data-dcnpka="code">' + esc(k('ui.dcn-pk-code', 'Change code')) + '</button><button type="button" class="dc-chip" data-dcnpka="type">' + esc(k('ui.dcn-pk-type', 'Change type')) + '</button>' +
+      '<button type="button" class="dc-chip" data-dcnpka="name">' + esc(k('ui.dcn-pk-name', 'Use the new name')) + '</button>' + (p.tool ? '<button type="button" class="dc-chip" data-dcnpka="rm">' + esc(k('ui.dcn-pk-rm', 'Remove from the list')) + '</button>' : '') +
+      '<button type="button" class="icon-btn" data-dcnpks="none" aria-label="' + esc(k('ui.dcn-pk-clear', 'Clear the selection')) + '"><i class="bi bi-x-lg"></i></button></div>';
     /* one file at a time in a popup over the list, with the one before / after (JP 2026-11-17 08:07: "lose control what is what") */
     var L2 = G.some(function (f) { return f.id === nfo; }) ? G : F, ix = -1; L2.forEach(function (f, i) { if (f.id === nfo) ix = i; });
     if (many && ix > -1) { var f0 = L2[ix], pv = L2[ix - 1], nx = L2[ix + 1];
@@ -594,6 +660,8 @@
     on('change', function (e) {
       var t = e.target; if (!t.matches || !t.closest('#wkDocCtl, .dcn-ov')) return; var v = t.value, fid;
       if (v === '__own' && t.dataset.dcncode) { nown = t.dataset.dcncode + ':code'; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
+      if (t.matches && t.matches('[data-dcnpk]')) { pkSet([t.dataset.dcnpk], t.checked); draw(); return; }
+      if (t.matches && t.matches('[data-dcnpkall]')) { var pq = proj(cur()) || {}, FQ = (pq.files || []).filter(function (f) { return !f.nf && (!nflt || fstate(pq, f) === nflt); }); pkSet(FQ.map(function (f) { return f.id; }), t.checked); draw(); return; }
       if ((fid = t.dataset.dcncode)) { var m = /^\s*(\d{3,4}(?:\.\d+)?)\b/.exec(v) || (v.trim() ? [0, v.trim()] : null); if (!m) return; saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.code = m[1]; if (f.sg) { delete f.sg.c; delete f.sg.alt; } learn(f, m[1]); relink(p, f); }); draw(); return; }
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
@@ -635,6 +703,9 @@
       if ((b = t.closest('[data-dcnoadd]'))) { var fa = b.closest('.dcn-oadd'), ak = fa.querySelector('[data-dcnoa]').value, ac = nclean(fa.querySelector('[data-dcnoc]').value).slice(0, 40), am = fa.querySelector('[data-dcnom]').value.trim().slice(0, 60);
         if (!ac) { fa.querySelector('[data-dcnoc]').focus(); return; } saveP(cur(), function (p) { addOwn(p, ak, ac, am); }); unfocus(); draw(); return; }
       if (t.closest('[data-dcnall]')) { suggestAll(cur()); return; }
+      if ((b = t.closest('[data-dcnpks]'))) { var pp = proj(cur()) || {}, FF = (pp.files || []).filter(function (f) { return !f.nf; }), wk = b.dataset.dcnpks; pkFix(pp);
+        if (wk === 'none') PKS = {}; else pkSet((wk === 'nocode' ? FF.filter(function (f) { return !f.p.code; }) : (nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF)).map(function (f) { return f.id; }), true); draw(); return; }
+      if ((b = t.closest('[data-dcnpka]'))) { bulkPop(b.dataset.dcnpka); return; }
       if ((b = t.closest('[data-dcnexp]'))) { nfo = b.dataset.dcnexp; draw(); return; }
       if ((b = t.closest('[data-dcnfgo]'))) { if (b.dataset.dcnfgo) { nfo = b.dataset.dcnfgo; unfocus(); draw(); } return; }
       if (t.closest('[data-dcnfx]') || (t.matches && t.matches('[data-dcnov2]') && bgClick(t))) { nfo = ''; unfocus(); draw(); return; }
@@ -653,5 +724,5 @@
       if ((b = t.closest('[data-dcnpd]'))) { ruleEdit(function (r) { r.parts.splice(+b.dataset.dcnpd, 1); }); return; }
     });
   }
-  window.DocNaming = { view: view, use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
+  window.DocNaming = { picked: picked, view: view, use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
 })();

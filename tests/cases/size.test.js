@@ -55,7 +55,8 @@ const BUDGET_KB = { total: 1671 };   /* +1 (2026-11-17 21:45): popups beside the
 /* +8 kB every page (2026-11-17 21:02, JP): filedrop.js in head – every file picker opens the same drop popup */
 /* +1–2 kB (2026-11-17 22:45, JP's list 9–22): moving-in wording, hidden calendar kinds, tiles at 0 wait, the week popup on Habits, Norwegian words */
 /* +5 kB Work (2026-11-19, JP): duplicates in Give files the right names – same content found in the browser, a person checks each group */
-const PAGE_KB = { 'index.html': 1450, 'admin/index.html': 1367, 'calendar/index.html': 1296, 'finance/index.html': 1671, 'food/index.html': 1384, 'goals/index.html': 1314, 'habits/index.html': 1343, 'house/index.html': 1656, 'papers/index.html': 1335, 'people/index.html': 1383, 'travel/index.html': 1440, 'wish/index.html': 1399, 'work/index.html': 1642 };
+/* +6 kB Work (2026-11-19, JP): better code suggestions (names, learning, two options) and several files at once with the download popup */
+const PAGE_KB = { 'index.html': 1450, 'admin/index.html': 1367, 'calendar/index.html': 1296, 'finance/index.html': 1671, 'food/index.html': 1384, 'goals/index.html': 1314, 'habits/index.html': 1343, 'house/index.html': 1656, 'papers/index.html': 1335, 'people/index.html': 1383, 'travel/index.html': 1440, 'wish/index.html': 1399, 'work/index.html': 1648 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

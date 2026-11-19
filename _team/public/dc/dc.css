@@ -231,6 +231,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .note .body { flex: 1; white-space: pre-wrap; word-break: break-word; }
 .note a { color: var(--accent); }
 .foot { text-align: center; margin: 22px 0 0; }
+.fin { max-width: 1120px; margin: 34px auto 0; }
 #nwSub .up { color: #3ddc97; }
 #nwSub .down { color: #ef8a6a; }
 .line { width: 100%; display: block; margin: 14px 0 4px; overflow: visible; }
@@ -1102,3 +1103,34 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-altb small { font-size: 12px; color: var(--muted); font-weight: 400; }
 .dcn-lrnl { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow: auto; }
 .dcn-lrnl li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.dcn-pkh { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 2px 0 6px; }
+.dcn-pkh .dc-chip { min-height: 34px; padding: 4px 10px; font-size: 13.5px; }
+.dcn-pkc { width: 40px; height: 44px; flex: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.dcn-pkc input { width: 19px; height: 19px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.dcn-row.dcn-c { display: flex; align-items: center; }
+.dcn-row.dcn-c > .dcn-sumb { flex: 1; min-width: 0; }
+.dcn-row.dcn-pkd { background: rgba(var(--accent-rgb, 20, 184, 166), .08); }
+.dcn-pkact { position: sticky; bottom: 8px; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px auto 0; padding: 10px 12px 10px 16px; width: fit-content; max-width: 100%; box-sizing: border-box; border-radius: 16px; background: var(--bg-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(0, 0, 0, .45); }
+.dcn-pkact > b { margin-right: 6px; white-space: nowrap; }
+.dcn-pkact .dc-chip { min-height: 44px; padding: 8px 14px; border-radius: 12px; font-size: 15px; }
+.dcn-bulk, .dx-dlpop { background: rgba(0, 0, 0, .62); }
+.dcn-bksheet, .dx-dlsheet { border: 1px solid rgba(255, 255, 255, .22); }
+.dcn-bksheet { width: min(580px, 100%); display: flex; flex-direction: column; gap: 12px; }
+.dcn-bkbox { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
+.dcn-bkown { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(var(--warn-rgb, 240, 170, 60), .10); border: 1px solid rgba(var(--warn-rgb, 240, 170, 60), .35); cursor: pointer; }
+.dcn-bkown input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--warn); }
+.dcn-bkown span { display: flex; flex-direction: column; gap: 2px; }
+.dcn-bkbtns, .dx-dlbtns { justify-content: flex-end; }
+.dx-dlsheet { width: min(780px, 100%); height: min(620px, calc(100dvh - 32px)); display: flex; flex-direction: column; gap: 12px; }
+.dx-dlh { display: flex; flex-direction: column; gap: 2px; }
+.dx-dlopts { display: flex; flex-wrap: wrap; gap: 8px; }
+.dx-dlopt { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; font-weight: 500; }
+.dx-dlopt.on { border: 2px solid var(--accent); background: rgba(var(--accent-rgb, 20, 184, 166), .12); font-weight: 600; }
+.dx-dlopt input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.dx-dlsum { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background: rgba(127, 127, 127, .08); }
+.dx-dlsum .spacer { flex: 1; }
+.dx-dlcap { margin: 0; font-size: 13px; }
+.dx-dllist { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 120px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+.dx-dllist li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.dx-dllist li > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.dx-dllist small { font-size: 12.5px; }
