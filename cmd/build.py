@@ -3,6 +3,7 @@
 
     python3 cmd/build.py          build cmd/dist/*.js and point the pages at them
     python3 cmd/build.py --check  exit 1 if a bundle is out of date (run before committing)
+    python3 cmd/build.py --report how many kB each file adds to head.js and tail.js (minified)
 
 The source files stay where they are – edit those, never cmd/dist/.
 Which files each page uses, and in which order, is in cmd/scripts.json:
@@ -81,6 +82,14 @@ def _abs(m):
 SETTINGS = ('  <!-- settings: copied from index.html by cmd/build.py – edit it there -->\n' +
             re.sub(r'(href|src)="([^"]*)"', _abs, _m.group(1)) + '\n  <!-- /settings -->\n\n')
 SET_JS = M.get('settings', [])
+
+if '--report' in sys.argv:
+    # how big each file in the shared bundles is once minified (2026-11-19, plan Part 1) – no files are written
+    for part in ('head', 'tail'):
+        rows = sorted(((len(minify(open(os.path.join(HERE, f), encoding='utf-8').read()).encode('utf-8')) // 1024, f) for f in M[part] if os.path.exists(os.path.join(HERE, f))), reverse=True)
+        print('%s.js: %d kB from %d files' % (part, sum(r[0] for r in rows), len(rows)))
+        for kb, f in rows: print('  %4d kB  %s' % (kb, f))
+    sys.exit(0)
 
 stale = _dcn_stale
 nb_v = write('nb.js', bundle(M['nb']))
