@@ -805,6 +805,7 @@
 
   $('nwAddBtn').addEventListener('click', function () { $('nwForm').hidden ? openAcc(null) : closeAcc(); });
   $('nwCancel').addEventListener('click', closeAcc);
+  var nwHomeOk = null;   /* the home value the person said is right after the "half the loan" question */
   $('nwForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var bal = num($('nwBal').value);
@@ -841,7 +842,14 @@
       /* the home the loan is for: your part of its value counts in net worth (shared loans) */
       var hv = $('nwShared').checked ? num($('nwHome').value) : NaN;
       /* a home worth less than half its loan is almost always a missing zero */
-      if (hv > 0 && hv < rec.balance / 2 && !confirm('The home value (' + kr(hv) + ') is less than half the loan (' + kr(rec.balance) + '). Is a zero missing?\n\nOK = save it anyway · Cancel = fix it')) { $('nwHome').focus(); $('nwHome').select(); return; }
+      if (hv > 0 && hv < rec.balance / 2 && nwHomeOk !== Math.round(hv)) {
+        var hv0 = Math.round(hv);
+        window.Ask.confirm(I18N.k('ui.nw-home-low', 'The home value ({v}) is less than half the loan ({l}). Is a zero missing?', { v: kr(hv), l: kr(rec.balance) }), { ok: I18N.k('ui.nw-save-anyway', 'Save it anyway'), cancel: I18N.k('ui.nw-fix-it', 'Fix it') }).then(function (ok) {
+          if (ok) { nwHomeOk = hv0; $('nwForm').requestSubmit(); } else { $('nwHome').focus(); $('nwHome').select(); }
+        });
+        return;
+      }
+      nwHomeOk = null;
       if (hv > 0) { var own = num($('nwOwn').value), sc = num($('nwSaleCost').value), oh = od && od.home; rec.home = { value: Math.round(hv), own: own > 0 && own <= 100 ? own : 50, costs: sc >= 0 && sc < 20 ? sc : 2.5, at: oh && +oh.value === Math.round(hv) ? oh.at : today() };
         /* the own money each of you put in (egenkapital), and how a sale is settled */
         var eqM = num($('nwEqMe').value), eqT = num($('nwEqThem').value); if (eqM > 0) rec.home.eqMe = Math.round(eqM); if (eqT > 0) rec.home.eqThem = Math.round(eqT); if ($('nwSplit').value === 'eq') rec.home.split = 'eq'; }

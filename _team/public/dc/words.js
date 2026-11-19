@@ -582,6 +582,7 @@ window.DC_NB = {
 "ui.fdz-videos": "videoer",
 "ui.fdz-wrong": "Den filtypen passer ikke her – {k}",
 "ui.loading": "Laster …",
+"ui.ok": "OK",
 "ui.open-team": "Åpne Team",
 "ui.pp-no-preview": "Ingen forhåndsvisning – lagre eller del PDF-en for å se den.",
 "ui.pp-pages": "{n} sider",

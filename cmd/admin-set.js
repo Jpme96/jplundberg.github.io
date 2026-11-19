@@ -78,10 +78,12 @@
       return;
     }
     if (b.hasAttribute('data-crclear')) {
-      if (!confirm(L('Clear the activity log and the check history?', 'Tømme aktivitetsloggen og sjekkhistorikken?'))) return;
-      var F2 = window.Features; if (F2) { var tt = F2.tools(); tt.adminlog = []; F2.saveTools(tt); }
-      try { localStorage.removeItem('dash.adminChecks'); } catch (x) {}
-      window.dispatchEvent(new Event('admin:cfg'));
+      window.Ask.confirm(L('Clear the activity log and the check history?', 'Tømme aktivitetsloggen og sjekkhistorikken?'), { ok: L('Clear', 'Tøm'), danger: true }).then(function (ok) {
+        if (!ok) return;
+        var F2 = window.Features; if (F2) { var tt = F2.tools(); tt.adminlog = []; F2.saveTools(tt); }
+        try { localStorage.removeItem('dash.adminChecks'); } catch (x) {}
+        window.dispatchEvent(new Event('admin:cfg'));
+      });
     }
   });
   window.addEventListener('st:page', function (e) { if (e.detail === 'adminset') fill(); });

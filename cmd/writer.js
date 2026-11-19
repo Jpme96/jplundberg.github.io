@@ -431,8 +431,9 @@
     if (ds.wbdel) {
       var ks = ds.wbdel.split('.'), idx = +ks.pop(), arr = getAt(ks.join('.'));
       var what = ks[ks.length - 1];
-      if (what !== 'points' && !confirm(L('Remove this?', 'Fjerne denne?'))) return;
-      arr.splice(idx, 1); autosave(); draw(); return;
+      if (what === 'points') { arr.splice(idx, 1); autosave(); draw(); return; }
+      window.Ask.confirm(L('Remove this?', 'Fjerne denne?'), { ok: L('Remove', 'Fjern'), danger: true }).then(function (ok) { if (ok) { arr.splice(idx, 1); autosave(); draw(); } });
+      return;
     }
     if (ds.wbmv) { var k2 = ds.wbmv.split('.'), i2 = +k2.pop(), a2 = getAt(k2.join('.')), j2 = i2 + (+ds.d); if (j2 >= 0 && j2 < a2.length) { var x = a2[i2]; a2[i2] = a2[j2]; a2[j2] = x; autosave(); draw(); } return; }
     if (ds.wbtype) {
@@ -446,16 +447,18 @@
       var w = ds.wrt;
       if (w === 'h2') line(ta, '## '); else if (w === 'h3') line(ta, '### '); else if (w === 'ul') line(ta, '- '); else if (w === 'ol') line(ta, '1. '); else if (w === 'q') line(ta, '> ');
       else if (w === 'b') wrap(ta, '**', '**', L('bold', 'fet')); else if (w === 'i') wrap(ta, '*', '*', L('italic', 'kursiv'));
-      else if (w === 'a') { var u = prompt(L('Link address', 'Lenkeadresse'), 'https://'); if (u) wrap(ta, '[', '](' + u + ')', L('link text', 'lenketekst')); }
+      else if (w === 'a') { window.Ask.prompt(L('Link address', 'Lenkeadresse'), 'https://', { ok: L('Add', 'Legg til') }).then(function (u) { if (u && u !== 'https://') wrap(ta, '[', '](' + u + ')', L('link text', 'lenketekst')); }); }
       else if (w === 'img') upload(function (u) { block(ta, '![' + L('description', 'beskrivelse') + '](' + u + ')'); });
       else if (w === 'chart') { var d = D(); d.charts.push(newChart('line')); block(ta, '[chart ' + d.charts.length + ']'); autosave(); draw(); openSec('charts'); var cards = document.querySelectorAll('#wrStudio .wb-chart'); if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' }); msg(L('Chart added – fill it in below the summary', 'Diagram lagt til – fyll det ut under sammendraget')); }
       else if (w === 'src') {
-        var s = prompt(L('The source: author, year, title (or paste a link)', 'Kilden: forfatter, år, tittel (eller lim inn en lenke)')); if (!s) return;
+        var pos0 = ta.selectionStart;
+        window.Ask.prompt(L('The source: author, year, title (or paste a link)', 'Kilden: forfatter, år, tittel (eller lim inn en lenke)'), '', { ok: L('Add', 'Legg til') }).then(function (s) { if (!s || !(s = s.trim())) return;
         var v = ta.value, head = NB || W.lang === 'nb' ? '## Kilder' : '## Sources', re = /\n## (Kilder|Sources)\s*\n/;
         var nums = (v.split(re).pop().match(/^\d+\./gm) || []).length, n = re.test(v) ? nums + 1 : 1, entry = n + '. ' + (/^https?:\/\//.test(s) ? '[' + s.replace(/^https?:\/\/(www\.)?/, '').split('/')[0] + '](' + s + ')' : s);
-        var pos = ta.selectionStart; ta.value = v.slice(0, pos) + ' [' + n + ']' + v.slice(pos);
+        var pos = pos0; ta.value = v.slice(0, pos) + ' [' + n + ']' + v.slice(pos);
         ta.value = re.test(ta.value) ? ta.value.replace(/\s*$/, '') + '\n' + entry + '\n' : ta.value.replace(/\s*$/, '') + '\n\n' + head + '\n\n' + entry + '\n';
         ta.dispatchEvent(new Event('input', { bubbles: true })); msg(L('Source ' + n + ' added at the end', 'Kilde ' + n + ' lagt til nederst'));
+        });
       }
       return;
     }
@@ -470,8 +473,10 @@
   /* ---------- start over (new) / discard changes (existing) ---------- */
   function reset() {
     var isNew = W.isNew;
-    if (!confirm(isNew ? L('Start over? Everything you’ve written here (both languages) is cleared.', 'Starte på nytt? Alt du har skrevet her (begge språk) slettes.')
-      : L('Discard your unpublished changes and go back to the saved version?', 'Forkaste de upubliserte endringene og gå tilbake til den lagrede versjonen?'))) return;
+    window.Ask.confirm(isNew ? L('Start over? Everything you’ve written here (both languages) is cleared.', 'Starte på nytt? Alt du har skrevet her (begge språk) slettes.')
+      : L('Discard your unpublished changes and go back to the saved version?', 'Forkaste de upubliserte endringene og gå tilbake til den lagrede versjonen?'), { ok: isNew ? L('Start over', 'Start på nytt') : L('Discard', 'Forkast'), danger: true }).then(function (ok) { if (ok && W) resetGo(isNew); });
+  }
+  function resetGo(isNew) {
     try { localStorage.removeItem(key()); } catch (x) {}
     if (isNew) { var col = W.col, lang = W.lang; W = { col: col, ref: '', isNew: true, lang: lang, view: 'write', en: blank(col, 'en'), nb: blank(col, 'nb'), loading: false }; draw(); var t = document.querySelector('#wrStudio .wr-title'); if (t) t.focus(); }
     else open({ col: W.col, ref: W.ref });

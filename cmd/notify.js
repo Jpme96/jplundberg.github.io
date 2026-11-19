@@ -42,8 +42,9 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-sccopy]'); if (!b) return;
     var t = b.dataset.sccopy, done = function () { b.innerHTML = '<i class="bi bi-check-lg"></i> Copied'; setTimeout(function () { b.innerHTML = '<i class="bi bi-copy"></i> Copy'; }, 1600); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt('Copy this link', t); });
-    else window.prompt('Copy this link', t);
+    var show = function () { window.Ask.prompt(I18N.k('ui.copy-this-link', 'Copy this link'), t, { ok: I18N.k('ui.close', 'Close') }); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, show);
+    else show();
   });
 
   /* ================= what to remind you of ================= */

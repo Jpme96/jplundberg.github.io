@@ -1,5 +1,13 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.ok": ["OK", "OK"],
+  "ui.nw-home-low": ["The home value ({v}) is less than half the loan ({l}). Is a zero missing?", "Boligverdien ({v}) er under halvparten av lånet ({l}). Mangler det en 0 på slutten?"],
+  "ui.nw-save-anyway": ["Save it anyway", "Lagre likevel"],
+  "ui.nw-fix-it": ["Fix it", "Rett det"],
+  "ui.pa-remove-q": ["Remove {a}? Fixed costs paid from it move to your salary account. Expenses imported from it stay in Spending.", "Fjerne {a}? Faste kostnader som betales fra den, flyttes til lønnskontoen. Utgifter importert fra den blir liggende i Forbruk."],
+  "ui.fa-salary-needed": ["Your salary has to land somewhere – change another account to “Salary account” first.", "Lønnen må komme inn et sted – gjør en annen konto til «Lønnskonto» først."],
+  "ui.copy-this-link": ["Copy this link", "Kopier denne lenken"],
+  "ui.invite-link": ["Invite link", "Invitasjonslenke"],
   "ui.hb-more1": ["{n} more · 1 day left", "{n} til · 1 dag igjen"],
   "ui.hb-more": ["{n} more · {d} days left", "{n} til · {d} dager igjen"],
   "ui.hb-today-counts": ["today counts", "i dag teller"],

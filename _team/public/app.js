@@ -35,6 +35,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   'use strict';
   var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();
   function L(en, no) { return nb ? no : en; }
+  /* the app's own popups instead of the browser's grey boxes (window.Ask from /dc/filedrop.js – 2026-11-19) */
+  function sure(msg) { return window.Ask ? window.Ask.confirm(msg, { danger: true }) : Promise.resolve(window.confirm(msg)); }   /* native-ok: only if Ask is missing */
+  function showText(msg, val) { if (window.Ask) window.Ask.prompt(msg, val, { ok: L('Close', 'Lukk') }); else window.prompt(msg, val); }   /* native-ok */
   document.documentElement.lang = nb ? 'nb' : 'en';
   var $app = document.getElementById('app');
   var ROLES = ['read', 'edit', 'approve', 'admin'];
@@ -724,7 +727,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   async function removeMember(email, btn) {
     var m = S.members.filter(function (x) { return x.email === email; })[0]; if (!m) return;
-    if (!confirm(L('Remove ' + m.name + '? They lose access at once, and the team gets a new key.', 'Fjerne ' + m.name + '? De mister tilgangen med en gang, og teamet får en ny nøkkel.'))) return;
+    if (!(await sure(L('Remove ' + m.name + '? They lose access at once, and the team gets a new key.', 'Fjerne ' + m.name + '? De mister tilgangen med en gang, og teamet får en ny nøkkel.')))) return;
     btn.disabled = true;
     try {
       var next = S.me.team.epoch + 1, nk = await C.generateKey(AES, true, ['encrypt', 'decrypt']), keys = {};
@@ -771,7 +774,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   async function onDelTeam(f) {
     if (f.name.value.trim() !== S.me.team.name) return setErr(L('The name does not match.', 'Navnet stemmer ikke.'));
-    if (!confirm(L('Delete ' + S.me.team.name + ' for everyone? This cannot be undone.', 'Slette ' + S.me.team.name + ' for alle? Dette kan ikke angres.'))) return;
+    if (!(await sure(L('Delete ' + S.me.team.name + ' for everyone? This cannot be undone.', 'Slette ' + S.me.team.name + ' for alle? Dette kan ikke angres.')))) return;
     busy(f, true);
     try { await api('teams/delete', { method: 'POST', body: { id: S.tid, confirm: f.name.value.trim() } }); await kclear().catch(function () {}); try { localStorage.removeItem('team.cur'); } catch (x) {} location.href = '/'; }
     catch (e) { busy(f, false); setErr(failMsg(e)); }
@@ -1351,18 +1354,18 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'accsave') { t.disabled = true; try { await saveAccess(); } catch (e2) { t.disabled = false; toast(failMsg(e2)); } return; }
     if (a === 'accstd') { if (S.accEdit) { S.accEdit.m = {}; S.accOpen = true; draw(); } return; }
     if (a === 'fopen') { var fr = S.recs[t.dataset.id]; if (fr && fr.d) openFile(fr.d); return; }
-    if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !confirm(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.'))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
+    if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !(await sure(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.')))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
     if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
     if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
-    if (a === 'uprm') { if (!confirm(L('Remove this file from the list? If it was kept, it stays in the shared files.', 'Fjerne denne filen fra listen? Er den lagt til, blir den liggende i de delte filene.'))) return; t.disabled = true; try { await api('uprm', { method: 'POST', body: { lid: t.dataset.lid, fids: [t.dataset.fid] } }); toast(L('Removed', 'Fjernet')); draw(); } catch (x) { t.disabled = false; toast(failMsg(x)); } return; }
-    if (a === 'updel') { var ld = S.recs[t.dataset.id]; if (!ld || !ld.d || !confirm(L('Delete this upload link and everything that came in on it? Files you kept stay in the shared files.', 'Slette denne opplastingslenken og alt som kom inn med den? Filer du har lagt til, blir liggende i de delte filene.'))) return; try { await api('uprm', { method: 'POST', body: { lid: ld.d.lid, all: true } }); await delRec(ld.id, L('Upload link', 'Opplastingslenke')); toast(L('Deleted', 'Slettet')); draw(); } catch (x) { toast(failMsg(x)); } return; }
-    if (a === 'logreset') { if (!confirm(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.'))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); closeSheet(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'uprm') { if (!(await sure(L('Remove this file from the list? If it was kept, it stays in the shared files.', 'Fjerne denne filen fra listen? Er den lagt til, blir den liggende i de delte filene.')))) return; t.disabled = true; try { await api('uprm', { method: 'POST', body: { lid: t.dataset.lid, fids: [t.dataset.fid] } }); toast(L('Removed', 'Fjernet')); draw(); } catch (x) { t.disabled = false; toast(failMsg(x)); } return; }
+    if (a === 'updel') { var ld = S.recs[t.dataset.id]; if (!ld || !ld.d || !(await sure(L('Delete this upload link and everything that came in on it? Files you kept stay in the shared files.', 'Slette denne opplastingslenken og alt som kom inn med den? Filer du har lagt til, blir liggende i de delte filene.')))) return; try { await api('uprm', { method: 'POST', body: { lid: ld.d.lid, all: true } }); await delRec(ld.id, L('Upload link', 'Opplastingslenke')); toast(L('Deleted', 'Slettet')); draw(); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'logreset') { if (!(await sure(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.')))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); closeSheet(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }
     if (a === 'fdl') { if (S.prevFile) saveFile(S.prevFile); return; }
     if (a === 'fshare') { if (S.prevFile && navigator.canShare && navigator.canShare({ files: [S.prevFile] })) navigator.share({ files: [S.prevFile] }).catch(function () {}); else if (S.prevFile) saveFile(S.prevFile); return; }
-    if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt(L('The link', 'Lenken'), lu); }); return; }
-    if (a === 'upoff') { var lo = S.recs[t.dataset.id]; if (!lo || !lo.d || !confirm(L('Switch off this upload link? Files already sent stay.', 'Slå av denne opplastingslenken? Filer som er sendt, blir liggende.'))) return; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1, exp: Math.min(lo.d.exp, Date.now()) })); draw(); } catch (x) { toast(failMsg(x)); } return; }
-    if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { prompt('', txt); }); return; }
+    if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText(L('The link', 'Lenken'), lu); }); return; }
+    if (a === 'upoff') { var lo = S.recs[t.dataset.id]; if (!lo || !lo.d || !(await sure(L('Switch off this upload link? Files already sent stay.', 'Slå av denne opplastingslenken? Filer som er sendt, blir liggende.')))) return; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1, exp: Math.min(lo.d.exp, Date.now()) })); draw(); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText('', txt); }); return; }
     if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
     if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
@@ -1373,7 +1376,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'newMeeting') return startEdit(rid(), true);
     if (a === 'edit') return startEdit(t.dataset.id);
     if (a === 'cancelEdit') { var wasNew = S.edit && S.edit.isNew; endEdit(); if (wasNew) location.hash = '#meetings'; return; }
-    if (a === 'delMeeting') { if (!confirm(L('Delete this meeting? It stays in the history.', 'Slette dette møtet? Det blir liggende i historikken.'))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); } return; }
+    if (a === 'delMeeting') { if (!(await sure(L('Delete this meeting? It stays in the history.', 'Slette dette møtet? Det blir liggende i historikken.')))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); } return; }
     if (a === 'print') return window.print();
     if (a === 'newAction') return actionSheet(null, t.dataset.meeting);
     if (a === 'editAction') return actionSheet(t.dataset.id);
@@ -1383,14 +1386,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'copyInvite') { var inp = document.getElementById('invLink'); inp.select(); (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { document.execCommand('copy'); toast(L('Copied', 'Kopiert')); }); return; }
     if (a === 'cancelInvite') { try { await api('invites?id=' + t.dataset.id, { method: 'DELETE' }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'approve') return approve(t.dataset.email, t);
-    if (a === 'decline') { if (!confirm(L('Decline this request?', 'Avslå denne forespørselen?'))) return; try { await api('decline', { method: 'POST', body: { email: t.dataset.email } }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
+    if (a === 'decline') { if (!(await sure(L('Decline this request?', 'Avslå denne forespørselen?')))) return; try { await api('decline', { method: 'POST', body: { email: t.dataset.email } }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'member') return memberSheet(t.dataset.email);
     if (a === 'remove') return removeMember(t.dataset.email, t);
     if (a === 'logall') { openSheet('<h2>' + L('Change log', 'Endringslogg') + '</h2>' + logHtml() + '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Close', 'Lukk') + '</button></div>', 'log'); return; }
     if (a === 'log') { S.logOpen = !S.logOpen; if (S.logOpen) { try { await loadLog(); } catch (x) { toast(failMsg(x)); } } draw(); return; }
     if (a === 'withdraw') { try { await api('join', { method: 'DELETE' }); await kclear(); S.me = await api('me'); stopPoll(); route(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'changePass') return passSheet();
-    if (a === 'forget') { if (!confirm(L('Forget Team on this device? You need your passcode to open it here again.', 'Glemme Team på denne enheten? Du trenger koden for å åpne den her igjen.'))) return; await kclear(); S.keys = {}; closeSheet(true); stopPoll(); route(); return; }
+    if (a === 'forget') { if (!(await sure(L('Forget Team on this device? You need your passcode to open it here again.', 'Glemme Team på denne enheten? Du trenger koden for å åpne den her igjen.')))) return; await kclear(); S.keys = {}; closeSheet(true); stopPoll(); route(); return; }
   });
   document.addEventListener('change', function (e) {
     var t = e.target;

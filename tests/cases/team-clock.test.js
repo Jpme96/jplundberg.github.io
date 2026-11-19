@@ -20,7 +20,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   await own.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
   await own.setCookie({ name: 'who', value: 'owner%40x.no', domain: 'localhost', path: '/' });
   own.on('pageerror', e => errs.push(e.message));
-  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); window.confirm = () => true; });
+  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); });
   const text = () => own.evaluate(() => document.body.innerText);
   const click = sel => own.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
 

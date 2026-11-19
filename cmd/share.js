@@ -863,7 +863,7 @@
         function () { q.innerHTML = '<p class="muted" data-t="ui.couldnt-make-the-code-use-copy-the-invit">Couldn’t make the code – use Copy the invite link.</p>'; });
       return;
     }
-    if (b.id === 'shCopy') { var L = link(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(L) : Promise.reject()).then(function () { toast('<i class="bi bi-link-45deg"></i> Invite link copied'); }, function () { prompt('Invite link', L); }); return; }
+    if (b.id === 'shCopy') { var L = link(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(L) : Promise.reject()).then(function () { toast('<i class="bi bi-link-45deg"></i> Invite link copied'); }, function () { window.Ask.prompt(I18N.k('ui.invite-link', 'Invite link'), L, { ok: I18N.k('ui.close', 'Close') }); }); return; }
     if (b.id === 'shPeek') { peek(); return; }
     if (b.id === 'shSaveEmail') {
       var e2 = document.getElementById('shEmail').value.trim();

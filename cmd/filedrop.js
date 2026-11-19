@@ -2,7 +2,8 @@
    A head module (runs once): it catches a tap on a file field's label, a click on the field itself and a script's
    input.click(), opens the popup, and hands the chosen or dropped files back to the original field (input + change
    events), so every feature keeps its own code. Not for camera fields (capture=…), fields marked data-nodrop or the
-   popup's own field. Also loaded by Team (copied to /dc/ by _team/build.py). */
+   popup's own field. Also loaded by Team (copied to /dc/ by _team/build.py).
+   It also holds window.Ask – the app's own confirm/prompt/alert popups (2026-11-19), in the same look. */
 (function () {
   'use strict';
   if (window.FileDrop) return;
@@ -20,7 +21,9 @@
     'ui.fdz-videos': ['videos', 'videoer'],
     'ui.fdz-text': ['text', 'tekst'],
     'ui.fdz-wrong': ['That kind of file doesn’t fit here – {k}', 'Den filtypen passer ikke her – {k}'],
-    'ui.close': ['Close', 'Lukk']
+    'ui.close': ['Close', 'Lukk'],
+    'ui.ok': ['OK', 'OK'],
+    'ui.cancel': ['Cancel', 'Avbryt']
   };
   function nb() { return /^(nb|no|nn)/i.test(document.documentElement.lang || ''); }
   function t(key, o) {
@@ -76,6 +79,11 @@
     '.fdz-pk svg{width:18px;height:18px;color:inherit}' +
     '.fdz-help{margin:12px 2px 0;font-size:14px;line-height:1.45;color:var(--muted,#a3a3aa)}.fdz-bad{margin:10px 2px 0;font-size:14px;color:var(--danger,var(--bad,#e66767))}' +
     'html.fdz-modal{overflow:hidden}' +
+    '.ask-sh{width:min(440px,100%)}.ask-msg{margin:4px 2px 0;font-size:16px;line-height:1.5;white-space:pre-line}' +
+    '.ask-in{width:100%;box-sizing:border-box;margin-top:14px;min-height:44px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(127,127,127,.35));background:transparent;color:inherit;font-size:16px}' +
+    '.ask-bt{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.ask-bt button{min-height:44px;padding:8px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1px solid var(--line,rgba(127,127,127,.35));background:none;color:inherit}' +
+    '.ask-bt .ask-ok{border-color:transparent;background:var(--accent,var(--acc,#14b8a6));color:var(--on-accent,var(--acc-ink,#04201c))}.ask-bt .ask-ok.ask-dg{background:var(--danger,var(--bad,#e66767));color:#fff}' +
+    '@media (max-width:560px){.ask-bt button{flex:1}}' +
     '@media (max-width:560px){.fdz-ov{align-items:flex-end;padding:0}.fdz-sh{border-radius:18px 18px 0 0;max-height:92dvh;padding-bottom:max(20px,env(safe-area-inset-bottom))}.fdz-dz{min-height:180px}}';
   var CLOUD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5H7z"/><path d="M12 15V10m0 0-2.5 2.5M12 10l2.5 2.5"/></svg>',
     FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2h9A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
@@ -116,5 +124,50 @@
     e.preventDefault();
     open(inp);
   }, true);
+
+  /* ---------- Ask: the app's own "Are you sure?", "Type a value" and notice (2026-11-19) ----------
+     Instead of the browser's own grey boxes (confirm, prompt, alert), which can't be styled, are English-only in places
+     and block the page. Each returns a Promise: Ask.confirm(msg, {ok, danger, title}) → true/false,
+     Ask.prompt(msg, value, {ok, ph}) → the text or null, Ask.alert(msg) → undefined. Test: no-native-dialogs. */
+  function ask(kind, msg, val, o) {
+    o = o || {};
+    return new Promise(function (done) {
+      style();
+      var ov = document.createElement('div'); ov.className = 'fdz-ov ask-ov';
+      var title = o.title ? '<div class="fdz-hd"><b>' + esc(o.title) + '</b></div>' : '';
+      ov.innerHTML = '<div class="fdz-sh ask-sh" role="' + (kind === 'alert' ? 'alertdialog' : 'dialog') + '" aria-modal="true">' + title +
+        '<p class="ask-msg">' + esc(msg) + '</p>' +
+        (kind === 'prompt' ? '<input class="ask-in" type="text" autocomplete="off"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + ' value="' + esc(val == null ? '' : val) + '">' : '') +
+        '<div class="ask-bt">' + (kind === 'alert' ? '' : '<button type="button" class="ask-no">' + esc(o.cancel || t('ui.cancel')) + '</button>') +
+        '<button type="button" class="ask-ok' + (o.danger ? ' ask-dg' : '') + '">' + esc(o.ok || t('ui.ok')) + '</button></div></div>';
+      var back = document.activeElement, inp = ov.querySelector('.ask-in'), fin = false;
+      var close = function (r) {
+        if (fin) return; fin = true;
+        ov.remove(); document.removeEventListener('keydown', key, true);
+        if (!document.querySelector('.fdz-ov')) document.documentElement.classList.remove('fdz-modal');
+        try { if (back && back.focus && document.contains(back)) back.focus(); } catch (e) {}
+        done(r);
+      };
+      var yes = function () { close(kind === 'prompt' ? inp.value : kind === 'confirm' ? true : undefined); };
+      var no = function () { close(kind === 'prompt' ? null : kind === 'confirm' ? false : undefined); };
+      var key = function (e) {
+        if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); no(); }
+        else if (e.key === 'Enter' && kind === 'prompt' && e.target === inp) { e.stopPropagation(); e.preventDefault(); yes(); }
+      };
+      var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+      ov.addEventListener('click', function (e) {
+        if (e.target.closest('.ask-ok')) yes();
+        else if (e.target.closest('.ask-no') || (e.target === ov && dn === ov)) no();
+      });
+      document.addEventListener('keydown', key, true);
+      document.body.appendChild(ov); document.documentElement.classList.add('fdz-modal');
+      if (inp) { inp.focus(); try { inp.select(); } catch (e) {} } else { var f = ov.querySelector(o.danger ? '.ask-no' : '.ask-ok') || ov.querySelector('.ask-ok'); if (f) f.focus(); }
+    });
+  }
+  window.Ask = {
+    confirm: function (msg, o) { return ask('confirm', msg, null, o); },
+    prompt: function (msg, val, o) { return ask('prompt', msg, val, o); },
+    alert: function (msg, o) { return ask('alert', msg, null, o); }
+  };
   window.FileDrop = { open: open, give: give, kinds: kinds };
 })();

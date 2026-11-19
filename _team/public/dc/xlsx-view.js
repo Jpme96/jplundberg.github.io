@@ -408,7 +408,7 @@
       if ((b = t.closest('[data-xv]'))) {
         var a = b.dataset.xv;
         if (a === 'close') return close();
-        if (a === 'reset') { if (!confirm(k('ui.xv-reset-q', 'Undo all your own changes in this file?'))) return; edits = {}; undo = []; redo = []; if (opt.onEdits) opt.onEdits(edits); save(); drawSheet(); showFoot(); return; }
+        if (a === 'reset') { window.Ask.confirm(k('ui.xv-reset-q', 'Undo all your own changes in this file?'), { danger: true }).then(function (ok) { if (!ok) return; edits = {}; undo = []; redo = []; if (opt.onEdits) opt.onEdits(edits); save(); drawSheet(); showFoot(); }); return; }
         if (a === 'dl') { clearTimeout(saveT); if (opt.onEdits) opt.onEdits(edits); b.disabled = true; opt.blob.arrayBuffer().then(function (buf) { return apply(buf, edits, opt.Z); }).then(function (bl) { b.disabled = false; opt.download(bl); }, function (er) { b.disabled = false; foot.textContent = k('ui.dc-x-failed', 'The Excel file could not be made.'); try { console.warn('[xv]', er); } catch (e2) {} }); return; }
         act(a);
       }

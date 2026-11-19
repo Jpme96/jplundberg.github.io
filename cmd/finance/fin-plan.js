@@ -334,7 +334,10 @@
     var del = e.target.closest('[data-padel]');
     if (del) {
       var id = del.dataset.padel, a = window.Accts.get(d, id); if (!a) return;
-      if (!confirm('Remove ' + a.label + '? Fixed costs paid from it move to your salary account. Expenses imported from it stay in Spending.')) return;
+      window.Ask.confirm(I18N.k('ui.pa-remove-q', 'Remove {a}? Fixed costs paid from it move to your salary account. Expenses imported from it stay in Spending.', { a: a.label }), { ok: I18N.k('ui.remove', 'Remove'), danger: true }).then(function (ok) { if (!ok) return; var d2 = data(), a2 = d2 && window.Accts.get(d2, id); if (a2) paRemove(d2, id, a2); });
+      return;
+    }
+    function paRemove(d, id, a) {
       if (a.builtin) setAcct(d, id, { off: true, name: '' }); else d.budget.acctList = (d.budget.acctList || []).filter(function (x) { return x.id !== id; });
       var to = (window.Accts.list(d).filter(function (x) { return x.kind === 'salary'; })[0] || { id: 'salary' }).id;
       d.budget.fixed.forEach(function (f) { if (f.acct === id) f.acct = to; });

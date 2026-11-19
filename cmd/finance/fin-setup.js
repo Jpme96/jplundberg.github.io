@@ -204,7 +204,7 @@
     var del = t.closest('[data-fadel]');
     if (del) {
       var a = draft.accts[+del.dataset.fadel];
-      if (a.kind === 'salary' && draft.accts.filter(function (x) { return x.kind === 'salary'; }).length < 2) { alert('Your salary has to land somewhere – change another account to “Salary account” first.'); return; }
+      if (a.kind === 'salary' && draft.accts.filter(function (x) { return x.kind === 'salary'; }).length < 2) { window.Ask.alert(I18N.k('ui.fa-salary-needed', 'Your salary has to land somewhere – change another account to “Salary account” first.')); return; }
       draft.accts.splice(+del.dataset.fadel, 1); draw(); return;
     }
     var q = t.closest('[data-ffq]');

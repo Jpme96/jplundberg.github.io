@@ -572,8 +572,9 @@
     var g = grouped(col).filter(function (x) { return x.ref === ref; })[0] || { title: ref, langs: [] };
     var nb = document.documentElement.lang === 'nb' || (window.I18N && window.I18N.lang === 'nb');
     var what = col === 'projects' ? (nb ? 'prosjektet' : 'project') : (nb ? 'artikkelen' : 'article');
-    if (!confirm(nb ? 'Slette ' + what + ' «' + g.title + '»' + (mine.length > 1 ? ' (begge språk)' : '') + '?\n\nDen fjernes fra jplundberg.com om ca. ett minutt. Dette kan ikke angres herfra.'
-      : 'Delete the ' + what + ' “' + g.title + '”' + (mine.length > 1 ? ' (both languages)' : '') + '?\n\nIt’s removed from jplundberg.com in about a minute. This can’t be undone from here.')) return;
+    window.Ask.confirm(nb ? 'Slette ' + what + ' «' + g.title + '»' + (mine.length > 1 ? ' (begge språk)' : '') + '?\n\nDen fjernes fra jplundberg.com om ca. ett minutt. Dette kan ikke angres herfra.'
+      : 'Delete the ' + what + ' “' + g.title + '”' + (mine.length > 1 ? ' (both languages)' : '') + '?\n\nIt’s removed from jplundberg.com in about a minute. This can’t be undone from here.', { ok: nb ? 'Slett' : 'Delete', danger: true }).then(function (ok) { if (ok) delGo(); });
+    function delGo() {
     var key = col + ':' + ref; busyRef = key; delete stage[key]; drawItems();
     fetch('/cmd/api/article', { method: 'DELETE', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths: mine.map(function (i) { return i.path; }) }) })
       .then(function (r) { return r.json().then(function (j) { j._s = r.status; return j; }, function () { return { _s: r.status, error: r.status === 404 ? 'old-worker' : 'bad answer' }; }); })
@@ -592,6 +593,7 @@
           if (done) done(false);
         }
       }).catch(function () { busyRef = ''; drawItems(); stMsg(I18N.k('ui.no-connection-nothing-was-deleted', 'No connection – nothing was deleted'), false); if (done) done(false); });
+    }
   }
   window.WebsiteItems = { reload: function () { items = null; loadItems(); }, list: function () { return items; }, remove: removeItem };
   function stMsg(t, ok) { var m = document.getElementById('stMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
