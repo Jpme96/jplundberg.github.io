@@ -51,9 +51,10 @@ async function go(p, path, wait = 2500) {
 async function shared(W2 = 393) {
   const { b, p } = await open(1280);
   /* on a slow machine the vault may still be opening (CI, 2026-11-17: Vault.get() was null) */
-  for (let i = 0; i < 100 && !(await p.evaluate(() => !!(window.Vault && Vault.get && Vault.get())).catch(() => false)); i++) await sl(150);
+  for (let i = 0; i < 240 && !(await p.evaluate(() => !!(window.Vault && Vault.get && Vault.get())).catch(() => false)); i++) await sl(150);   /* up to 36 s – CI 2026-11-19 needed more than 15 */
   const key = await p.evaluate(async () => {
     await fetch('/cmd/api/share', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ partner: 'iago@x.no', name: 'Iago' }) });
+    for (let i = 0; i < 100 && !Vault.get(); i++) await new Promise(r => setTimeout(r, 150));
     const d = Vault.get(); d.share = Object.assign({}, d.share || {}, { key: ShareCore.genKey(), on: true, name: 'Iago', since: Features.dkey(new Date()) }); Vault.save(d); return d.share.key;
   });
   await sl(1500); await p.evaluate(() => ShareSpace.sync()); await sl(3000);
