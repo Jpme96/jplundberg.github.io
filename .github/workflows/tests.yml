@@ -63,6 +63,29 @@ jobs:
           HOME: /root
         run: node webkit/smoke.js
 
+  firefox:
+    # The same smoke check in Firefox (2026-11-19, plan Part 4 – the avatar freeze on 13–14 Nov happened in Firefox on
+    # the Mac). Report only for now: it is not in promote's needs, so a red Firefox run shows but doesn't stop a release.
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.49.1-noble
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-audit --no-fund playwright@1.49.1
+      - name: Firefox check
+        working-directory: tests
+        env:
+          HOME: /root
+          ENGINE: firefox
+        run: node webkit/smoke.js
+
   # Only green changes reach main (and so the live site and the Worker)
   promote:
     if: github.event_name == 'push' && github.ref == 'refs/heads/next'

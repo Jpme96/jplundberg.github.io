@@ -2,6 +2,8 @@
 window.DC_NB = {
 "ui.add": "Legg til",
 "ui.all": "Alle",
+"ui.awake-off": "Hold skjermen på",
+"ui.awake-on": "Skjermen holdes på",
 "ui.cancel": "Avbryt",
 "ui.close": "Lukk",
 "ui.date": "Dato",

@@ -1,5 +1,7 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.awake-off": ["Keep screen on", "Hold skjermen på"],
+  "ui.awake-on": ["Screen stays on", "Skjermen holdes på"],
   "ui.ok": ["OK", "OK"],
   "ui.nw-home-low": ["The home value ({v}) is less than half the loan ({l}). Is a zero missing?", "Boligverdien ({v}) er under halvparten av lånet ({l}). Mangler det en 0 på slutten?"],
   "ui.nw-save-anyway": ["Save it anyway", "Lagre likevel"],

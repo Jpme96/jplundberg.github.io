@@ -431,7 +431,7 @@
       if (done.length) body += '<li class="sh-donehead"><button type="button" class="text-btn" data-shdonetog aria-expanded="' + shDoneOpen + '"><i class="bi bi-chevron-' + (shDoneOpen ? 'down' : 'right') + '"></i> In the cart · ' + done.length + '</button></li>' + (shDoneOpen ? done.map(row).join('') : '');
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
-        '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
+        '<div class="head-actions">' + (open.length && window.Awake ? window.Awake.btn() : '') + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
         (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> <span data-t="ui.clear-done">Clear done</span></button>' : '') + '</div></div>' +
         '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" data-t-placeholder="ui.add-milk-eggs-coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
         (l.length ? '<ul class="hl-shop">' + body + '</ul>'
@@ -502,7 +502,7 @@
         (r.steps ? '<p class="kit-notes hl-pre">' + esc(r.steps) + '</p>' : '') +
         '<div class="hl-acts"><button type="button" class="pill-btn" data-rctoday="' + esc(r.id) + '"><i class="bi bi-calendar-check"></i> <span data-t="ui.dinner-today">Dinner today</span></button>' +
         (ing.length ? '<button type="button" class="text-btn" data-rcshop="' + esc(r.id) + '"><i class="bi bi-cart-plus"></i> To the list</button>' : '') +
-        (link ? '<a class="text-btn" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <span data-t="ui.open">Open</span></a>' : '') + '</div>';
+        (link ? '<a class="text-btn" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> <span data-t="ui.open">Open</span></a>' : '') + (window.Awake ? window.Awake.btn() : '') + '</div>';
     },
     onClick: function (e) {
       var b, r;

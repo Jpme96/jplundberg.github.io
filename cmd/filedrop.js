@@ -23,7 +23,9 @@
     'ui.fdz-wrong': ['That kind of file doesn’t fit here – {k}', 'Den filtypen passer ikke her – {k}'],
     'ui.close': ['Close', 'Lukk'],
     'ui.ok': ['OK', 'OK'],
-    'ui.cancel': ['Cancel', 'Avbryt']
+    'ui.cancel': ['Cancel', 'Avbryt'],
+    'ui.awake-off': ['Keep screen on', 'Hold skjermen på'],
+    'ui.awake-on': ['Screen stays on', 'Skjermen holdes på']
   };
   function nb() { return /^(nb|no|nn)/i.test(document.documentElement.lang || ''); }
   function t(key, o) {
@@ -199,6 +201,42 @@
     var f = tipText(e.target); if (f) showTip(f.el, f.t);
   });
   window.addEventListener('scroll', hideTip, { passive: true, capture: true });
+
+  /* ---------- Keep the screen on (2026-11-19, plan Part 4) ----------
+     While cooking from a recipe or shopping from the list the phone shouldn't lock. Awake.btn() gives a toggle button
+     (empty where the browser has no Wake Lock); it asks for a screen wake lock, takes it again when the tab comes back,
+     and lets go when you leave the page (instant page change too) or tap it again. */
+  var awakeWant = false, awakeLock = null;
+  function awakeSync() {
+    [].forEach.call(document.querySelectorAll('[data-awake]'), function (b) {
+      b.setAttribute('aria-pressed', awakeWant ? 'true' : 'false');
+      var s = b.querySelector('span'); if (s) s.textContent = t(awakeWant ? 'ui.awake-on' : 'ui.awake-off');
+      var i = b.querySelector('i'); if (i) i.className = 'bi bi-' + (awakeWant ? 'brightness-alt-high-fill' : 'brightness-alt-high');
+    });
+  }
+  function awakeGet() {
+    if (!awakeWant || awakeLock || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    navigator.wakeLock.request('screen').then(function (l) {
+      awakeLock = l; l.addEventListener('release', function () { awakeLock = null; });
+      if (!awakeWant) { l.release().catch(function () {}); }
+    }, function () { awakeWant = false; awakeSync(); });
+  }
+  function awakeSet(on) {
+    awakeWant = !!on; awakeSync();
+    if (awakeWant) awakeGet(); else if (awakeLock) { var l = awakeLock; awakeLock = null; l.release().catch(function () {}); }
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-awake]'); if (b) { e.preventDefault(); awakeSet(!awakeWant); } });
+  document.addEventListener('visibilitychange', awakeGet);
+  window.addEventListener('softnav:swap', function () { awakeSet(false); });
+  window.addEventListener('pagehide', function () { awakeSet(false); });
+  window.Awake = {
+    on: function () { return awakeWant; },
+    set: awakeSet,
+    btn: function () {
+      if (!('wakeLock' in navigator)) return '';
+      return '<button type="button" class="text-btn" data-awake aria-pressed="' + awakeWant + '"><i class="bi bi-brightness-alt-high' + (awakeWant ? '-fill' : '') + '"></i> <span>' + esc(t(awakeWant ? 'ui.awake-on' : 'ui.awake-off')) + '</span></button>';
+    }
+  };
   window.Ask = {
     confirm: function (msg, o) { return ask('confirm', msg, null, o); },
     prompt: function (msg, val, o) { return ask('prompt', msg, val, o); },
