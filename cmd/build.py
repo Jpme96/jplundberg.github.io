@@ -97,6 +97,24 @@ head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None
 tail_v = write('tail.js', bundle(M['tail']))
 stale |= head_v is None or tail_v is None
+# ---------- Content-Security-Policy (2026-11-19, plan Part 4) ----------
+# GitHub Pages can't send headers, so each page carries the policy as a <meta> tag: only cmd's own scripts (plus the
+# hash of each page's inline start-up script and Leaflet for the travel map) may run, and fetches go only to the
+# services cmd uses. A new outside service goes into CSP_CONNECT; the csp test opens every page and fails on a block.
+CSP_CONNECT = ['https://api.entur.io', 'https://api.open-meteo.com', 'https://geocoding-api.open-meteo.com', 'https://archive-api.open-meteo.com',
+               'https://api.frankfurter.app', 'https://nominatim.openstreetmap.org', 'https://api.github.com', 'https://raw.githubusercontent.com',
+               'https://www.hvakosterstrommen.no', 'https://data.norges-bank.no', 'https://cdn.jsdelivr.net', 'https://work.jplundberg.com']
+def csp(html):
+    import base64
+    hashes = ["'sha256-%s'" % base64.b64encode(hashlib.sha256(m.encode('utf-8')).digest()).decode() for m in re.findall(r'<script>(.*?)</script>', html, re.S)]
+    pol = ("default-src 'self'; script-src 'self' %s https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+           "img-src 'self' data: blob: https://server.arcgisonline.com; font-src 'self' data:; connect-src 'self' %s; worker-src 'self' blob:; "
+           "frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'") % (' '.join(hashes), ' '.join(CSP_CONNECT))
+    tag = '<meta http-equiv="Content-Security-Policy" content="%s">' % pol
+    if '<meta http-equiv="Content-Security-Policy"' in html:
+        return re.sub(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">', lambda m: tag, html, count=1)
+    return html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  ' + tag, 1)
+
 for page, files in M['pages'].items():
     name = 'page-' + (os.path.dirname(page) or 'home') + '.js'
     if os.path.dirname(page): files = files + [f for f in SET_JS if f not in files]
@@ -114,6 +132,7 @@ for page, files in M['pages'].items():
     if os.path.dirname(page):
         new = re.sub(r'  <!-- settings: copied.*?<!-- /settings -->\n\n', '', new, flags=re.S)
         new = new.replace('  <!-- scripts: built by cmd/build.py', SETTINGS + '  <!-- scripts: built by cmd/build.py', 1)
+    new = csp(new)
     if new == html and '<!-- scripts:' not in html:
         print('no script block in', page); stale = True; continue
     if new != html:
