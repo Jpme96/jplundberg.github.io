@@ -234,3 +234,20 @@ html.t-modal { overflow: hidden; }
 /* the side menu's width for popups that share cmd's rules (the plan check, 2026-11-18) */
 @media (min-width: 1000px) { :root { --sn-pad: 208px; } }
 @media (min-width: 760px) { html.xv-on::after { content: ""; position: fixed; inset: 0; z-index: 1999; background: rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); pointer-events: none; } }
+/* switching team (JP 2026-11-19 21:41) */
+.t-sw { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: var(--bg); animation: t-sw-in .25s ease both; }
+.t-sw.out { animation: t-sw-out .4s ease both; pointer-events: none; }
+.t-sw-mark { position: relative; width: 112px; height: 112px; display: grid; place-items: center; }
+.t-sw-mark svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.t-sw-bg { fill: var(--acc-soft); stroke: none; }
+.t-sw-ring { fill: none; stroke: var(--acc); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 327; stroke-dashoffset: 327; animation: t-sw-draw .9s cubic-bezier(.65, 0, .35, 1) .05s forwards, t-sw-spin 1.4s linear 1s infinite; transform-origin: 60px 60px; }
+.t-sw-mark b { position: relative; font-size: 34px; font-weight: 700; letter-spacing: -.02em; color: var(--acc); animation: t-sw-pop .5s cubic-bezier(.2, .9, .3, 1.3) .15s both; }
+.t-sw-name { margin: 0; font-size: 24px; font-weight: 700; color: var(--head); letter-spacing: -.01em; text-align: center; padding: 0 20px; }
+.t-sw-name span { display: inline-block; animation: t-sw-up .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(.25s + var(--i) * 28ms); }
+@keyframes t-sw-in { from { opacity: 0; } }
+@keyframes t-sw-out { to { opacity: 0; transform: scale(1.03); } }
+@keyframes t-sw-draw { to { stroke-dashoffset: 60; } }
+@keyframes t-sw-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes t-sw-pop { from { opacity: 0; transform: scale(.6); } }
+@keyframes t-sw-up { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .t-sw, .t-sw.out, .t-sw-ring, .t-sw-mark b, .t-sw-name span { animation: none; } .t-sw-ring { stroke-dashoffset: 60; } }

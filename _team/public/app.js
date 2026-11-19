@@ -7,6 +7,21 @@
      makes a new team key (a new "epoch") that only the others get.
    No part of /cmd is loaded here. */
 /* the look: light by default, dark or "like the device" as a choice (JP 2026-11-19) – set before anything is drawn */
+/* switching team (JP 2026-11-19 21:41): a short transition – the team's initials in a ring that draws itself, its name coming in letter by letter –
+   shown on the click, kept through the reload (sessionStorage, the name only) and faded out once the new team is on screen */
+window.__teamSwitch = function (name) {
+  var old = document.getElementById('tSwitch'); if (old) old.remove();
+  var nm = String(name || 'Team').slice(0, 60), ini = nm.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase() || 'T';
+  var esc = function (x) { return String(x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var el = document.createElement('div'); el.id = 'tSwitch'; el.className = 't-sw'; el.setAttribute('role', 'status');
+  el.innerHTML = '<div class="t-sw-mark" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="t-sw-bg" cx="60" cy="60" r="52"></circle><circle class="t-sw-ring" cx="60" cy="60" r="52"></circle></svg><b>' + esc(ini) + '</b></div>' +
+    '<p class="t-sw-name">' + nm.split('').map(function (c, i) { return '<span style="--i:' + i + '">' + (c === ' ' ? '&nbsp;' : esc(c)) + '</span>'; }).join('') + '</p>';
+  document.body.appendChild(el);
+  return el;
+};
+window.__teamSwitchDone = function () { var el = document.getElementById('tSwitch'); if (!el) return; if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
+(function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); } catch (e) {}
+  if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 9000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
   theme(); window.__teamTheme = theme; if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
@@ -27,7 +42,12 @@
   S.newTeam = new URLSearchParams(location.search).get('new') === '1';
   S.teams = [];
   function useTeam(id) { S.tid = id; try { localStorage.setItem('team.cur', id); } catch (e) {} }
-  function goTeam(id) { useTeam(id); location.href = '/?t=' + id; }
+  function goTeam(id) {
+    var t = (S.teams || []).filter(function (x) { return x.id === id; })[0], nm = (t && t.name) || 'Team';
+    try { sessionStorage.setItem('team.switch', nm); } catch (e) {}
+    useTeam(id); closeSheet(); window.__teamSwitch(nm);
+    setTimeout(function () { location.href = '/?t=' + id; }, window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650);
+  }
 
   /* ---------- icons (inline, so nothing is fetched from elsewhere) ---------- */
   var IC = {
@@ -165,7 +185,7 @@
     if (joinCode()) return screenJoin();
     screen('<h1>' + esc(me.team.name) + '</h1><p>' + L('You are signed in as ', 'Du er logget inn som ') + '<b>' + esc(me.email) + '</b>.</p><p>' + L('You are not in this team. Ask an admin for an invite link.', 'Du er ikke med i dette teamet. Be en admin om en invitasjonslenke.') + '</p>');
   }
-  function screen(html) { stopPoll(); $app.innerHTML = '<div class="t-screen">' + html + '</div>'; }
+  function screen(html) { stopPoll(); $app.innerHTML = '<div class="t-screen">' + html + '</div>'; if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 250); }
   function passFields() {
     return '<label class="t-lbl">' + L('Choose a passcode (at least 8 characters)', 'Velg en kode (minst 8 tegn)') + '<input name="pass" type="password" autocomplete="new-password" minlength="8" required></label>' +
       '<label class="t-lbl">' + L('Passcode again', 'Koden en gang til') + '<input name="pass2" type="password" autocomplete="new-password" minlength="8" required></label>' +
@@ -400,7 +420,7 @@
   }
 
   /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
-  S.tab = function () { var h = location.hash.slice(1); if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
+  S.tab = function () { var h = location.hash.slice(1); if (/^(docs|files|d[cr]=|in=)/.test(h) && !dtabsOn().length) return 'overview'; if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
   function draw() {
@@ -415,11 +435,11 @@
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
     var dKey = function (d) { var sm = d.querySelector('summary'); return d.className + '|' + (sm ? sm.textContent.trim() : ''); }, dWas = {};
     [].forEach.call($app.querySelectorAll('details'), function (d) { if (!d.closest('.dc-host, #wkDocCtl, #wkDocReq')) dWas[dKey(d)] = d.open; });   /* a box you opened or closed stays that way when the page is drawn again (JP 2026-11-17 19:59) */
-    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].map(function (t) {
+    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].filter(function (t) { return t[0] !== 'docs' || dtabsOn().length; }).map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
-    S.lastHtml = html; $app.innerHTML = html;
+    S.lastHtml = html; $app.innerHTML = html; if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
     document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
@@ -717,7 +737,7 @@
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
       '<button class="t-btn ghost wide" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
-      clockAdmin() +
+      clockAdmin() + dtabsAdmin() +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="backup">' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</button>' : '') +
       (rank() >= 3 ? '<button class="t-btn ghost wide" type="button" data-act="renameTeam">' + L('Rename the team', 'Gi teamet nytt navn') + '</button>' : '') +
       (S.me.isOwner ? '<button class="t-btn ghost wide t-danger" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
@@ -800,8 +820,9 @@
   S.dtab = 'doc'; S.docBase = {}; S.docGen = 0;
   function viewDocs() {
     if (/^#d[rc]=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
+    var DT = dtabsOn(); if (DT.length && !DT.some(function (t) { return t[0] === S.dtab; })) S.dtab = DT[0][0];
     var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Documentation for each project – requirements, what is received and the report. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, mottak og rapport. De samme verktøyene som i /cmd.'));
-    out += '<div class="t-pick t-noprint" role="group">' + [['doc', L('Documentation', 'Dokumentasjon')], ['insp', L('Inspections', 'Befaringer')], ['files', L('Files', 'Filer')]].map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
+    out += '<div class="t-pick t-noprint" role="group">' + DT.map(function (t) { return [t[0], L(t[1], t[2])]; }).map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     /* Import from /cmd: always one small fold (JP 13:48 – the page was heavy; 2026-11-17 20:11 – less scrolling) */
     var dHas = DFe.list('dctl').length + DFe.list('dckrav').length > 0;
     if (rank() >= 1) out += (dHas || true) ? '<details class="t-imp t-noprint"><summary>' + L('Import from /cmd', 'Importer fra /cmd') + '</summary>' + '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>' + '</details>' : '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>';
@@ -1211,6 +1232,17 @@
      admins may save it, the server checks). Each clock-in is a clk record of your own (start, end, project), encrypted
      like the rest; you only change your own. It shows on Overview as a card with the running time and this week's hours;
      admins see everyone's week on the Team tab. */
+  /* the three Documents tabs can be switched off for the whole team by an admin (JP 2026-11-19 21:42); all three off = no Documents in the menu */
+  var DTABS = [['doc', 'Documentation', 'Dokumentasjon'], ['insp', 'Inspections', 'Befaringer'], ['files', 'Files', 'Filer']];
+  function dtabsOff() { var r = (S.recs || {}).cfgdoctabs; var d = r && !r.del && r.d ? r.d : {}; return Array.isArray(d.off) ? d.off.filter(function (x) { return /^(doc|insp|files)$/.test(x); }) : []; }
+  function dtabsOn() { var off = dtabsOff(); return DTABS.filter(function (t) { return off.indexOf(t[0]) < 0; }); }
+  async function dtabsSet(key, on) { var off = dtabsOff().filter(function (x) { return x !== key; }); if (!on) off.push(key); if (await putRec('cfg', 'cfgdoctabs', { off: off }, L('Documents tabs', 'Faner i Dokumenter'))) { if (S.sheet) settingsSheet(); draw(); } }
+  function dtabsAdmin() {
+    if (rank() < 3) return '';
+    var off = dtabsOff();
+    return '<p class="t-h">' + L('Documents for the team', 'Dokumenter for teamet') + '</p>' + DTABS.map(function (t) { var on = off.indexOf(t[0]) < 0; return '<label class="t-switch"><span><b>' + L(t[1], t[2]) + '</b><small>' + (on ? L('On for everyone in the team', 'På for alle i teamet') : L('Off – nobody sees this tab', 'Av – ingen ser denne fanen')) + '</small></span><input type="checkbox" data-dtoff="' + t[0] + '"' + (on ? ' checked' : '') + '></label>'; }).join('') +
+      (off.length === 3 ? '<p class="t-small">' + L('All three are off, so Documents is gone from the menu.', 'Alle tre er av, så Dokumenter er borte fra menyen.') + '</p>' : '');
+  }
   function clockCfg() { var r = S.recs.cfgclock; var d = r && !r.del && r.d ? r.d : {}; return { on: !!d.on, off: Array.isArray(d.off) ? d.off : [] }; }
   function clockFor(em) { var c = clockCfg(); return c.on && c.off.indexOf(em) < 0; }
   function clks(em) { return list('clk').filter(function (r) { return (r.d.who || r.by) === em; }); }
@@ -1358,6 +1390,7 @@
     if (t.dataset.accm && S.accEdit) { var am = t.dataset.accm.split(':'), ai = ROLES.indexOf(am[1]); S.accEdit.m[am[0]] = t.checked ? am[1] : ROLES[Math.min(3, ai + 1)]; S.accOpen = true; draw(); return; }
     if (t.dataset.acctr && S.accEdit) { if (t.value) S.accEdit.tr[t.dataset.acctr] = t.value; else delete S.accEdit.tr[t.dataset.acctr]; S.accOpen = true; draw(); return; }
     if (t.dataset.accpp && S.accEdit) { var ap = t.dataset.accpp.split('|'), o = S.accEdit.pp[ap[0]] || (S.accEdit.pp[ap[0]] = {}); if (t.value) o[ap[1]] = t.value; else delete o[ap[1]]; if (!Object.keys(o).length) delete S.accEdit.pp[ap[0]]; S.accOpen = true; draw(); return; }
+    if (t.hasAttribute('data-dtoff')) return dtabsSet(t.dataset.dtoff, t.checked);
     if (t.hasAttribute('data-clockteam')) return clockSet({ on: t.checked });
     if (t.dataset.clockm) return clockSet({ who: t.dataset.clockm, allow: t.checked });
     if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }

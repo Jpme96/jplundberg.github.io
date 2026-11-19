@@ -222,6 +222,8 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.evaluate(() => window.dispatchEvent(new HashChangeEvent('hashchange'))); await sl(200);
   check(await own.evaluate(() => document.querySelector('details[data-accd]').open), 'an opened box stays open when the page is drawn again (JP 2026-11-17 19:59)');
   check(await own.evaluate(() => { const p = document.createElement('p'); p.className = 't-wait'; p.textContent = 'Team'; document.body.appendChild(p); const st = getComputedStyle(p), ok = st.position !== 'fixed' && st.borderTopStyle === 'none'; p.remove(); return ok; }), 'the loading word is plain text, not the orange "changes waiting" chip (JP 2026-11-19 21:04)');
+  const sw = await own.evaluate(async () => { const el = window.__teamSwitch('Made-up Team'); const a = { on: !!document.getElementById('tSwitch'), ini: el.querySelector('b').textContent, letters: el.querySelectorAll('.t-sw-name span').length }; window.__teamSwitchDone(); await new Promise(r => setTimeout(r, 500)); a.gone = !document.getElementById('tSwitch'); return a; });
+  check(sw.on && sw.ini === 'MT' && sw.letters === 12 && sw.gone, 'switching team shows the team’s initials and name, then fades away (JP 2026-11-19 21:41) ' + JSON.stringify(sw));
   const th = await own.evaluate(() => { const r = getComputedStyle(document.documentElement); const a = { theme: document.documentElement.dataset.theme, acc: r.getPropertyValue('--acc').trim() };
     localStorage.setItem('team.theme', 'dark'); window.__teamTheme(); a.dark = document.documentElement.dataset.theme; a.acc2 = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); localStorage.removeItem('team.theme'); window.__teamTheme(); return a; });
   check(th.theme === 'light' && th.acc === '#9d174d' && th.dark === 'dark' && th.acc2 === '#f06595', 'Team is light with the deep berry accent by default; dark (pink) is a choice (JP 2026-11-19) ' + JSON.stringify(th));
@@ -460,6 +462,18 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const cmdJs = fs.readdirSync(path.join(__dirname, '..', '..', 'cmd')).filter(f => f.endsWith('.js')).map(f => fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', f), 'utf8')).join('\n');
   check(!/team-keys|\/api\/recs|TeamStore/.test(cmdJs), '/cmd has no Team data or keys');
 
+  /* an admin can switch the three Documents tabs off for the whole team (JP 2026-11-19 21:42) */
+  await own.goto(U + '#docs'); await sl(800);
+  const dt0 = await own.evaluate(() => [...document.querySelectorAll('[data-dtab]')].map(x => x.dataset.dtab).join(','));
+  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(400);
+  await own.evaluate(() => { const i = document.querySelector('input[data-dtoff="insp"]'); i.click(); }); 
+  const dt1 = await until(own, () => [...document.querySelectorAll('[data-dtab]')].map(x => x.dataset.dtab).join(',') === 'doc,files');
+  check(dt0 === 'doc,insp,files' && dt1, 'switching Inspections off takes the tab away for the team ' + dt0);
+  await own.evaluate(() => { document.querySelector('input[data-dtoff="doc"]').click(); }); await sl(1200);
+  await own.evaluate(() => { document.querySelector('input[data-dtoff="files"]').click(); });
+  check(await until(own, () => !document.querySelector('.t-tabs [data-go="docs"]')), 'all three off: Documents leaves the menu');
+  for (const k of ['doc', 'insp', 'files']) { await own.evaluate(x => { const i = document.querySelector('input[data-dtoff="' + x + '"]'); if (i && !i.checked) i.click(); }, k); await sl(1200); }
+  check(await until(own, () => !!document.querySelector('.t-tabs [data-go="docs"]')), 'and back on again');
   check(!errs.length, 'no page errors or CSP violations ' + errs.join(' | ').slice(0, 400));
   srv.kill();
   await done(b);
