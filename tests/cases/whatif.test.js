@@ -1,6 +1,6 @@
 /* "What if?" on Finances → Insights (2026-11-19, plan Part 2): the maths month by month against hand-worked numbers,
    and the card – today's line, adding and removing changes, the warning, phone width, Norwegian. Made-up data only. */
-const { open, go, sl } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(393);
   await go(p, 'finance/', 2500);
@@ -35,7 +35,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
     d.accounts = [{ id: 'a1', kind: 'asset', name: 'Savings', balance: 60000 }, { id: 'a2', kind: 'debt', name: 'Car loan', balance: 200000, rate: 6, pay: 4000, day: 20 }];
     Vault.save(d); const t = Features.tools(); delete t.whatif; Features.saveTools(t);
   });
+  await sl(1500);   /* the vault is saved (encrypted) before the page changes – slower on GitHub */
   await go(p, 'finance/', 2500);
+  await until(p, () => { const t = document.querySelector('[data-ftab-go="insights"]'); if (t) t.click(); return !!document.querySelector('#wiCard .wi-sum'); }, 15000);
   await p.evaluate(() => { const t = document.querySelector('[data-ftab-go="insights"]'); if (t) t.click(); });
   await sl(500);
   const c1 = await p.evaluate(() => { const c = document.getElementById('wiCard'); return { shown: c && !c.hidden && c.offsetHeight > 0, sum: c && c.querySelector('.wi-sum') && c.querySelector('.wi-sum').textContent, svg: !!(c && c.querySelector('svg.wi-chart path.wi-base')), types: c ? c.querySelectorAll('[data-witype]').length : 0 }; });
