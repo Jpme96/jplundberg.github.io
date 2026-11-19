@@ -171,7 +171,7 @@
       }
       ht.hidden = !rows.length;
       ht.innerHTML = '<div class="card-head"><h2><i class="bi bi-sun"></i> <span data-t="ui.today">Today</span></h2></div><ul class="pt-rows">' + rows.map(function (r) {
-        return '<li><button type="button" class="pt-row" data-ptjump="' + esc(r[5]) + '"><span class="pt-ic" style="--c:' + r[1] + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + esc(r[2]) + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
+        return '<li><button type="button" class="pt-row" data-ptjump="' + esc(r[5]) + '"><span class="pt-ic" style="--c:' + Tok(r[1]) + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + esc(r[2]) + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
       }).join('') + '</ul>';
     };
     ['health:change', 'habits:change', 'tools:change', 'dash:local', 'features:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawH, 30); }); });
@@ -219,7 +219,7 @@
       }
       wt.hidden = !rows.length;
       wt.innerHTML = '<div class="card-head"><h2><i class="bi bi-briefcase"></i> <span data-t="ui.today-at-work">Today at work</span></h2></div><ul class="pt-rows">' + rows.map(function (r) {
-        return '<li><button type="button" class="pt-row"' + (r[5] ? ' data-ptjump="' + esc(r[5]) + '"' : ' data-ptcal') + '><span class="pt-ic" style="--c:' + r[1] + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + r[2] + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
+        return '<li><button type="button" class="pt-row"' + (r[5] ? ' data-ptjump="' + esc(r[5]) + '"' : ' data-ptcal') + '><span class="pt-ic" style="--c:' + Tok(r[1]) + '"><i class="bi bi-' + r[0] + '"></i></span><span class="pt-t"><small>' + r[2] + '</small><b>' + esc(r[3]) + '</b></span><span class="pt-x">' + r[4] + '</span></button></li>';
       }).join('') + '</ul>';
     };
     ['tools:change', 'dash:local', 'features:change', 'cal:change'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawW, 30); }); });

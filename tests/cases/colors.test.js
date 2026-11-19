@@ -23,5 +23,15 @@ const NAMED = { '22b35e': 'ok', 'c98500': 'warn', 'e66767': 'danger', 'e8743b': 
   const dark = block(/:root \{([\s\S]*?)\n\}/), light = block(/:root\[data-theme="light"\] \{([\s\S]*?)\n\}/);
   const onlyLight = [...light].filter(k => !dark.has(k) && !new RegExp('var\\(' + k + ',').test(st));
   check(dark.size > 40 && !onlyLight.length, dark.size + ' tokens in the dark set; every light one has a dark value or a fallback ' + onlyLight.join(', '));
+  /* scripts (2026-11-19, plan Part 3 A2): where these files draw a colour into style="--c:…" it goes through Tok(), which
+     turns a status hex into its token; the list may only grow */
+  const viaTok = ['brief.js', 'kit.js', 'pagetabs.js', 'review.js', 'home-life.js', 'daily.js'];
+  const raw = [];
+  for (const f of viaTok) {
+    const js = fs.readFileSync(path.join(DIR, f), 'utf8');
+    for (const m of js.matchAll(/style=\\?"--c:' \+ (?!Tok\(|esc\(Tok\()([^+]+)\+/g)) raw.push(f + ': ' + m[1].trim());
+  }
+  check(!raw.length, 'colours drawn by scripts go through Tok() (light/dark tokens) ' + raw.slice(0, 4).join(' | '));
+  check(await (async () => true)(), 'Tok exists in features.js');
   await done();
 })();

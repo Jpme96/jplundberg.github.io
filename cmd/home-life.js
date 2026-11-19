@@ -66,7 +66,7 @@
   function dhead(icon, title, sub) { return '<div class="lf-head"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3><button type="button" class="icon-btn sm" data-hlclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' + (sub ? '<p class="muted lf-sub">' + esc(sub) + '</p>' : ''); }
   function picker(icon, title, sub, opts, pick) {
     dialog(dhead(icon, title, sub) + '<div class="hl-pick">' + opts.map(function (o, i) {
-      return '<button type="button" data-hlpick="' + i + '" style="--c:' + o.c + '"><span class="kit-ic" style="--c:' + o.c + '"><i class="bi bi-' + o.i + '"></i></span><span><b>' + esc(o.n) + '</b>' + (o.s ? '<small>' + esc(o.s) + '</small>' : '') + '</span></button>';
+      return '<button type="button" data-hlpick="' + i + '" style="--c:' + Tok(o.c) + '"><span class="kit-ic" style="--c:' + Tok(o.c) + '"><i class="bi bi-' + o.i + '"></i></span><span><b>' + esc(o.n) + '</b>' + (o.s ? '<small>' + esc(o.s) + '</small>' : '') + '</span></button>';
     }).join('') + '</div>', function (e, close) { var b = e.target.closest('[data-hlpick]'); if (b) { close(); setTimeout(function () { pick(opts[+b.dataset.hlpick]); }, 120); } });
   }
   function nextDue(it) { return isKey(it.last) ? addMonths(it.last, +it.every || 12) : today(); }

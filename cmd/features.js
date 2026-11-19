@@ -6,6 +6,11 @@
 (function () {
   "use strict";
 
+  /* Colours as tokens in scripts (2026-11-19, plan Part 3 A2): a status hex written in a script becomes its token when it
+     is drawn, so it follows light/dark like the CSS does. Use Tok(colour) where a colour goes into style="--c:…". */
+  var TOK = { '22b35e': 'ok', 'c98500': 'warn', 'e66767': 'danger', 'e8743b': 'orange', '3987e5': 'blue', 'd9a400': 'gold', 'c9a227': 'gold', 'd55181': 'pink', '8a6fdf': 'violet', '5b6470': 'slate' };
+  window.Tok = function (c) { var m = typeof c === 'string' && /^#([0-9a-f]{6})$/i.exec(c.trim()); return m && TOK[m[1].toLowerCase()] ? 'var(--' + TOK[m[1].toLowerCase()] + ')' : c; };
+
   var LIST = [
     { id: 'calendar', group: 'Everyday', name: 'Calendar', icon: 'calendar3', c: '#3987e5', desc: 'Events, repeats and your phone calendar', def: true },
     { id: 'travel', group: 'Everyday', name: 'Travel', icon: 'signpost-split', c: '#0891b2', desc: 'Departures, journey planner, trips and documents', def: true },

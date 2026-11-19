@@ -80,7 +80,7 @@
     } catch (e) {}
     var top = todos.filter(function (t) { return !t.done && t.due === dkey(t1); }).slice(0, 3);
     tm.sort(function (a, b) { return (a.t ? +a.t : 0) - (b.t ? +b.t : 0); });
-    var list = tm.slice(0, 4).map(function (x) { return '<li style="--c:' + esc(x.c || 'var(--accent)') + '"><span class="tl-t">' + (x.t ? hm(x.t) : 'All day') + '</span><i class="bi bi-' + x.icon + '"></i><span>' + esc(x.title) + '</span></li>'; }).join('') +
+    var list = tm.slice(0, 4).map(function (x) { return '<li style="--c:' + esc(Tok(x.c || 'var(--accent)')) + '"><span class="tl-t">' + (x.t ? hm(x.t) : 'All day') + '</span><i class="bi bi-' + x.icon + '"></i><span>' + esc(x.title) + '</span></li>'; }).join('') +
       top.map(function (t) { return '<li style="--c:#22b35e"><span class="tl-t" data-t="ui.task"><span data-t="ui.task">Task</span></span><i class="bi bi-check2-square"></i><span>' + esc(t.text) + '</span></li>'; }).join('');
     return '<div class="tl-eve">' + (bits.length ? '<p class="tl-done">' + bits.join('') + '</p>' : '') +
       '<p class="tl-sub"><i class="bi bi-sunrise"></i> Tomorrow, ' + esc(t1.toLocaleDateString('en-GB', { weekday: 'long' })) + '</p>' +
@@ -92,13 +92,13 @@
     r.list.forEach(function (x) {
       if (!placed && x.t > now) { html += '<li class="tl-now"><span class="tl-t">' + hm(now) + '</span><span class="tl-nowline"></span></li>'; placed = true; }
       var past = x.t < now && !(x.kind === 'timer' || (x.kind === 'flex' && /Clocked in/.test(x.title)));
-      html += '<li class="tl-it' + (past ? ' past' : '') + '" style="--c:' + esc(x.c || 'var(--accent)') + '"><span class="tl-t">' + hm(x.t) + '</span><span class="tl-dot"><i class="bi bi-' + x.icon + '"></i></span>' +
+      html += '<li class="tl-it' + (past ? ' past' : '') + '" style="--c:' + esc(Tok(x.c || 'var(--accent)')) + '"><span class="tl-t">' + hm(x.t) + '</span><span class="tl-dot"><i class="bi bi-' + x.icon + '"></i></span>' +
         '<a class="tl-x" href="' + esc(x.href || '#') + '"><b>' + esc(x.title) + '</b>' + (x.sub ? '<small>' + esc(x.sub) + '</small>' : '') + '</a></li>';
     });
     if (!placed) html += '<li class="tl-now"><span class="tl-t">' + hm(now) + '</span><span class="tl-nowline"></span></li>';
     var empty = !r.list.length && !r.allDay.length, eve = now.getHours() >= 17 ? evening(now) : '';
     card.innerHTML = '<div class="card-head"><h2><i class="bi bi-list-columns-reverse"></i> <span data-t="ui.tl-your-day">Your day</span></h2><span class="muted tl-date">' + esc(now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></div>' +
-      (r.allDay.length ? '<div class="tl-all">' + r.allDay.map(function (x) { return '<a class="tl-chip" href="' + esc(x.href) + '" style="--c:' + esc(x.c) + '"><i class="bi bi-' + x.icon + '"></i>' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') +
+      (r.allDay.length ? '<div class="tl-all">' + r.allDay.map(function (x) { return '<a class="tl-chip" href="' + esc(x.href) + '" style="--c:' + esc(Tok(x.c)) + '"><i class="bi bi-' + x.icon + '"></i>' + esc(x.title) + '</a>'; }).join('') + '</div>' : '') +
       (empty ? '<p class="empty" data-t="ui.a-free-day-nothing-in-the-calendar-no-bi">A free day – nothing in the calendar, no bins, no birthdays.</p>' : '<ol class="tl">' + html + '</ol>') + eve;
     clearTimeout(keepSnap.t); keepSnap.t = setTimeout(keepSnap, 500);
   }

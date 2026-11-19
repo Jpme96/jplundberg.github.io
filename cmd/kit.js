@@ -178,7 +178,7 @@
           r = { icon: r.icon, color: r.color, cls: r.cls, title: tidyOut(r.title == null ? '' : String(r.title)), sub: tidyOut(r.sub), right: tidyOut(r.right) };
           return '<li class="kit-item' + (r.cls ? ' ' + r.cls : '') + (openId === it.id ? ' open' : '') + '" data-id="' + esc(it.id) + '">' +
             '<button type="button" class="kit-main" data-kit-' + (cfg.detail ? 'toggle' : 'edit') + '="' + esc(it.id) + '">' +
-            (r.icon ? '<span class="kit-ic" style="--c:' + (r.color || 'var(--accent)') + '"><i class="bi bi-' + r.icon + '"></i></span>' : '') +
+            (r.icon ? '<span class="kit-ic" style="--c:' + Tok(r.color || 'var(--accent)') + '"><i class="bi bi-' + r.icon + '"></i></span>' : '') +
             '<span class="kit-x"><b>' + esc(r.title) + (it.share && window.ShareSpace && window.ShareSpace.kitRow && window.ShareSpace.kitRow(cfg.key) ? ' <i class="bi bi-people sh-ic" title="Shared" data-t-title="ui.shared"></i>' : '') + '</b>' + (r.sub ? '<small>' + r.sub + '</small>' : '') + '</span>' +
             (r.right ? '<span class="kit-r">' + r.right + '</span>' : '') + '</button>' +
             (cfg.detail && openId === it.id ? '<div class="kit-detail">' + safe(cfg.detail, [it], '', kw) + '<button type="button" class="text-btn" data-kit-edit="' + esc(it.id) + '"><i class="bi bi-pencil"></i> <span data-t="ui.edit">Edit</span></button></div>' : '') +

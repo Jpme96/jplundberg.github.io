@@ -73,7 +73,7 @@
 
   /* ---------- building blocks ---------- */
   function big(icon, color, value, label, sub) {
-    return '<div class="rv-big" style="--c:' + color + '"><i class="bi bi-' + icon + '"></i><b>' + value + '</b><span>' + esc(label) + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+    return '<div class="rv-big" style="--c:' + Tok(color) + '"><i class="bi bi-' + icon + '"></i><b>' + value + '</b><span>' + esc(label) + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
   }
   function section(title, icon, body) { return body ? '<section class="rv-sec"><h3><i class="bi bi-' + icon + '"></i> ' + esc(title) + '</h3>' + body + '</section>' : ''; }
   function bars(rows, max) {

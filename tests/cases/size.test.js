@@ -58,7 +58,8 @@ const BUDGET_KB = { total: 1676 };   /* +1 kB every page (2026-11-19 night, plan
 /* +6 kB Work (2026-11-19, JP): better code suggestions (names, learning, two options) and several files at once with the download popup */
 /* +3 kB every page (2026-11-19 night, plan Part 3 A1): window.Ask in filedrop.js – the app's own confirm/prompt/alert popups instead of the browser's grey boxes */
 /* +1 kB every page (2026-11-19 night, plan Part 3 A3): tap tips – on a phone a tap on a number or bar with a title shows it */
-const PAGE_KB = { 'index.html': 1455, 'admin/index.html': 1372, 'calendar/index.html': 1301, 'finance/index.html': 1676, 'food/index.html': 1389, 'goals/index.html': 1319, 'habits/index.html': 1347, 'house/index.html': 1661, 'papers/index.html': 1340, 'people/index.html': 1387, 'travel/index.html': 1444, 'wish/index.html': 1404, 'work/index.html': 1651 };
+/* +1 kB (2026-11-19 night, plan Part 3 A2): Tok() – status colours from scripts follow light/dark */
+const PAGE_KB = { 'index.html': 1455, 'admin/index.html': 1372, 'calendar/index.html': 1301, 'finance/index.html': 1676, 'food/index.html': 1389, 'goals/index.html': 1319, 'habits/index.html': 1348, 'house/index.html': 1662, 'papers/index.html': 1340, 'people/index.html': 1388, 'travel/index.html': 1445, 'wish/index.html': 1404, 'work/index.html': 1651 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
