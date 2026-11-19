@@ -137,7 +137,7 @@
       "profile.js",
       "links.js",
       "tidy.js",
-      "scene-finance.js"
+      "whatif.js", "whatif.page.js", "scene-finance.js"
     ],
     "habits/index.html": [
       "budget.js",

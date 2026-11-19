@@ -615,3 +615,34 @@
 .sub-ck > span { flex: 1; min-width: 0; display: grid; }
 .sub-ck small { color: var(--muted); font-size: 12px; }
 .fp-oneoff { display: block; margin-top: 4px; font-size: 13px; }
+
+/* What if? (2026-11-19, plan Part 2) */
+.whatif .wi-yrs { min-height: 36px; border-radius: var(--r-ctl, 10px); }
+.wi-sum { margin: 2px 0 6px; font-size: var(--fs-m, 15px); }
+.wi-warn { margin: 4px 0 8px; }
+.wi-chart { display: block; width: 100%; height: auto; margin: 6px 0 2px; }
+.wi-chart .wi-grid { stroke: var(--line); stroke-width: 1; }
+.wi-chart .wi-zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; opacity: .6; }
+.wi-chart .wi-base { fill: none; stroke: var(--muted); stroke-width: 2.5; stroke-linejoin: round; }
+.wi-chart .wi-base.wi-dim { stroke-dasharray: 5 5; opacity: .8; }
+.wi-chart .wi-plan { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linejoin: round; }
+.wi-chart .wi-low { fill: var(--danger); }
+.wi-chart .wi-ax { font-size: 19px; fill: var(--muted); }
+.wi-key { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--fs-s, 13px); color: var(--muted); margin: 0 0 8px; }
+.wi-k { display: inline-block; width: 18px; height: 3px; border-radius: 2px; margin-left: 6px; }
+.wi-k-base { background: var(--muted); } .wi-k-plan { background: var(--accent); }
+.wi-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.wi-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-ctl, 10px); }
+.wi-list li > i { color: var(--accent); }
+.wi-list li span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wi-list small { color: var(--muted); }
+.wi-types { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 6px; }
+.wi-type { min-height: 44px; padding: 8px 14px; border-radius: var(--r-chip, 999px); border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.wi-type i { color: var(--accent); }
+.wi-add { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-card, 14px); }
+.wi-add-h { margin: 0 0 8px; font-weight: 600; }
+.wi-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.wi-lb { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-s, 13px); color: var(--muted); }
+.wi-lb input, .wi-lb select { min-height: 44px; font-size: 16px; color: var(--text); }
+.wi-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+.wi-note { font-size: var(--fs-s, 13px); margin: 8px 0 0; }
