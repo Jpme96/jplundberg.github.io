@@ -294,7 +294,7 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .xv-dl { flex: none; }
 .xv-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 12px 8px; scrollbar-width: none; }
 .xv-tabs button { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line, #2a2d33); background: none; color: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.xv-tabs button[aria-selected="true"] { background: var(--accent, #14b8a6); border-color: transparent; color: #04211d; font-weight: 600; }
+.xv-tabs button[aria-selected="true"] { background: var(--accent, #14b8a6); border-color: transparent; color: var(--on-accent, #04211d); font-weight: 600; }
 .xv-bar { display: flex; align-items: stretch; gap: 8px; padding: 0 12px 8px; }
 .xv-ref { flex: none; min-width: 56px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--card, #1a1c20); font: 600 13px ui-monospace, monospace; }
 .xv-in { flex: 1; min-width: 0; min-height: 44px; max-height: 120px; resize: vertical; border-radius: 10px; border: 1px solid var(--line, #2a2d33); background: var(--card, #1a1c20); color: inherit; padding: 10px 12px; font: 16px/1.35 inherit; }
@@ -315,7 +315,7 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .xv-tools { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 12px 8px; overflow-x: auto; scrollbar-width: none; }
 .xv-tb { width: 40px; height: 40px; flex: none; border: 0; border-radius: 10px; background: var(--card, #1a1c20); color: inherit; font-size: 17px; cursor: pointer; }
 .xv-tb:disabled { opacity: .35; cursor: default; }
-.xv-tb[aria-pressed="true"] { background: var(--accent, #14b8a6); color: #04211d; }
+.xv-tb[aria-pressed="true"] { background: var(--accent, #14b8a6); color: var(--on-accent, #04211d); }
 .xv-sep { width: 1px; height: 24px; flex: none; margin: 0 4px; background: var(--line, #2a2d33); }
 .xv-sw { position: fixed; top: 0; left: 0; z-index: 2010; display: flex; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg-solid, #17181b); border: 1px solid var(--line, #2a2d33); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .xv-sw[hidden] { display: none; }

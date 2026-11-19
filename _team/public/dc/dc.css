@@ -1,6 +1,40 @@
 /* Built by _team/build.py from cmd/styles.css and cmd/work/page.css – only what Document control uses. Edit those, not this. */
 .dc-host {
   /* tokens */
+  --bg: #f2f3f5;
+  --ink-rgb: 24, 26, 31;
+  --card-rgb: 255, 255, 255;
+  --card: rgba(255, 255, 255, .9);
+  --text: #1d1f24;
+  --heading: #0e0f11;
+  --muted: rgba(24, 26, 31, .62);
+  --line: rgba(24, 26, 31, .1);
+  --bg-solid: #ffffff;
+  --bg-opacity: .1;
+  --danger: #d14343;
+  --danger-rgb: 209, 67, 67;
+  --scheme: light;
+  --glow: rgba(var(--accent-rgb), .22);
+  --quote: rgba(24, 26, 31, .72);
+  --moon-filter: grayscale(1) invert(1);
+  --preview-bg: linear-gradient(135deg, #9fd8d1, #b9bdf0 60%, #f0b9cd);
+  --glass-card: rgba(255, 255, 255, calc(.8 - var(--glass) * .55));
+  --glass-edge: rgba(255, 255, 255, calc(.45 + var(--glass) * .35));
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 10px 30px rgba(24, 26, 31, calc(.06 + var(--glass) * .08));
+  --soft-shadow: 0 1px 2px rgba(24, 26, 31, .06), 0 12px 30px rgba(24, 26, 31, .1);
+  --soft-shadow-sm: 0 1px 2px rgba(24, 26, 31, .06), 0 10px 24px rgba(24, 26, 31, .08);
+  --wx-rain: rgba(60, 100, 150, .14); --wx-snow-filter: invert(.6); --wx-stars: none;
+  --calm-a: .16; --calm-b: .06;
+  --paper: #fff;
+  --sc-plane: #4f5d70; --sc-plane-shadow: none; --sc-route: rgba(60, 72, 90, .55);
+  --sc-cloud: rgba(120, 140, 170, .28); --hs-smoke: rgba(90, 100, 115, .22); --sc-cup: #fff; --sc-cup-line: rgba(40, 45, 55, .35); --sc-cuph: rgba(40, 45, 55, .45);
+  --sc-steam: rgba(60, 70, 85, .35); --sc-bubs: rgba(255, 255, 255, .75); --sc-wheel: #6b7280;
+  --sc-wheel2: #5b616c; --sc-lane: rgba(255, 255, 255, .9); --sc-vglass: #2c3e55;
+  /* /tokens */
+  color-scheme: light;
+}
+:root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov {
+  /* tokens */
   --bg: #0e0f11;
   --ink-rgb: 231, 231, 234;
   --card-rgb: 23, 24, 27;
@@ -44,40 +78,7 @@
   /* /tokens */
   color-scheme: dark;
 }
-@media (prefers-color-scheme: light) { .dc-host {
-  /* tokens */
-  --bg: #f2f3f5;
-  --ink-rgb: 24, 26, 31;
-  --card-rgb: 255, 255, 255;
-  --card: rgba(255, 255, 255, .9);
-  --text: #1d1f24;
-  --heading: #0e0f11;
-  --muted: rgba(24, 26, 31, .62);
-  --line: rgba(24, 26, 31, .1);
-  --bg-solid: #ffffff;
-  --bg-opacity: .1;
-  --danger: #d14343;
-  --danger-rgb: 209, 67, 67;
-  --scheme: light;
-  --glow: rgba(var(--accent-rgb), .22);
-  --quote: rgba(24, 26, 31, .72);
-  --moon-filter: grayscale(1) invert(1);
-  --preview-bg: linear-gradient(135deg, #9fd8d1, #b9bdf0 60%, #f0b9cd);
-  --glass-card: rgba(255, 255, 255, calc(.8 - var(--glass) * .55));
-  --glass-edge: rgba(255, 255, 255, calc(.45 + var(--glass) * .35));
-  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 10px 30px rgba(24, 26, 31, calc(.06 + var(--glass) * .08));
-  --soft-shadow: 0 1px 2px rgba(24, 26, 31, .06), 0 12px 30px rgba(24, 26, 31, .1);
-  --soft-shadow-sm: 0 1px 2px rgba(24, 26, 31, .06), 0 10px 24px rgba(24, 26, 31, .08);
-  --wx-rain: rgba(60, 100, 150, .14); --wx-snow-filter: invert(.6); --wx-stars: none;
-  --calm-a: .16; --calm-b: .06;
-  --paper: #fff;
-  --sc-plane: #4f5d70; --sc-plane-shadow: none; --sc-route: rgba(60, 72, 90, .55);
-  --sc-cloud: rgba(120, 140, 170, .28); --hs-smoke: rgba(90, 100, 115, .22); --sc-cup: #fff; --sc-cup-line: rgba(40, 45, 55, .35); --sc-cuph: rgba(40, 45, 55, .45);
-  --sc-steam: rgba(60, 70, 85, .35); --sc-bubs: rgba(255, 255, 255, .75); --sc-wheel: #6b7280;
-  --sc-wheel2: #5b616c; --sc-lane: rgba(255, 255, 255, .9); --sc-vglass: #2c3e55;
-  /* /tokens */
-  color-scheme: light;
-} }
+.dc-host, :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --accent: var(--acc); --accent-rgb: var(--acc-rgb); --on-accent: var(--acc-ink); --accent-soft: var(--acc-soft); --glow: rgba(var(--acc-rgb), .3); --danger: var(--bad); --muted: var(--t-muted); --blue: var(--neutral); --violet: var(--neutral); --pink: var(--acc); }
 [data-bg="moon"] .bg { filter: var(--moon-filter); }
 .bg {
   position: fixed;
@@ -707,7 +708,7 @@ body.dr-full #wkDocReq { display: block !important; }
 .xv-dl { flex: none; }
 .xv-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 12px 8px; scrollbar-width: none; }
 .xv-tabs button { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line, #2a2d33); background: none; color: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.xv-tabs button[aria-selected="true"] { background: var(--accent, #14b8a6); border-color: transparent; color: #04211d; font-weight: 600; }
+.xv-tabs button[aria-selected="true"] { background: var(--accent, #14b8a6); border-color: transparent; color: var(--on-accent, #04211d); font-weight: 600; }
 .xv-bar { display: flex; align-items: stretch; gap: 8px; padding: 0 12px 8px; }
 .xv-ref { flex: none; min-width: 56px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--card, #1a1c20); font: 600 13px ui-monospace, monospace; }
 .xv-in { flex: 1; min-width: 0; min-height: 44px; max-height: 120px; resize: vertical; border-radius: 10px; border: 1px solid var(--line, #2a2d33); background: var(--card, #1a1c20); color: inherit; padding: 10px 12px; font: 16px/1.35 inherit; }
@@ -728,7 +729,7 @@ body.dr-full #wkDocReq { display: block !important; }
 .xv-tools { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 12px 8px; overflow-x: auto; scrollbar-width: none; }
 .xv-tb { width: 40px; height: 40px; flex: none; border: 0; border-radius: 10px; background: var(--card, #1a1c20); color: inherit; font-size: 17px; cursor: pointer; }
 .xv-tb:disabled { opacity: .35; cursor: default; }
-.xv-tb[aria-pressed="true"] { background: var(--accent, #14b8a6); color: #04211d; }
+.xv-tb[aria-pressed="true"] { background: var(--accent, #14b8a6); color: var(--on-accent, #04211d); }
 .xv-sep { width: 1px; height: 24px; flex: none; margin: 0 4px; background: var(--line, #2a2d33); }
 .xv-sw { position: fixed; top: 0; left: 0; z-index: 2010; display: flex; gap: 6px; padding: 8px; border-radius: 12px; background: var(--bg-solid, #17181b); border: 1px solid var(--line, #2a2d33); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .xv-sw[hidden] { display: none; }

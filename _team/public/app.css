@@ -1,11 +1,16 @@
-/* Team – the same calm look as /cmd (dark by default, light with the phone), its own file */
+/* Team – its own calm look: light by default, dark as a choice (Settings → Appearance), its own file */
 @font-face { font-family: Inter; src: url(/fonts/inter-Regular.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: Inter; src: url(/fonts/inter-Medium.woff2) format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: Inter; src: url(/fonts/inter-SemiBold.woff2) format('woff2'); font-weight: 600; font-display: swap; }
 @font-face { font-family: Inter; src: url(/fonts/inter-Bold.woff2) format('woff2'); font-weight: 700; font-display: swap; }
-:root { --bg: #0e0f11; --card: #17181b; --card2: #1f2125; --ink: #e7e7ea; --head: #ffffff; --muted: #a3a3aa; --line: rgba(231, 231, 234, .1);
-  --acc: #14b8a6; --acc-ink: #04201c; --acc-soft: rgba(20, 184, 166, .14); --warn: #e0a030; --warn-soft: rgba(224, 160, 48, .15); --bad: #e66767; --bad-soft: rgba(230, 103, 103, .14); --blue: #6ea8ff; color-scheme: dark; }
-@media (prefers-color-scheme: light) { :root { --bg: #f4f5f7; --card: #ffffff; --card2: #eef0f3; --ink: #17181b; --head: #0b0c0e; --muted: #5f636b; --line: rgba(0, 0, 0, .09); --acc: #0f8f80; --acc-ink: #ffffff; --acc-soft: rgba(15, 143, 128, .12); --warn: #9a6200; --warn-soft: rgba(201, 133, 0, .14); --bad: #c03b3b; --bad-soft: rgba(192, 59, 59, .1); --blue: #2563eb; color-scheme: light; } }
+:root { --bg: #f5f5f7; --card: #ffffff; --card2: #eeeff2; --ink: #18181b; --head: #0b0c0e; --muted: #575762; --t-muted: #575762; --line: rgba(0, 0, 0, .1);
+  --acc: #9d174d; --acc-rgb: 157, 23, 77; --acc-ink: #ffffff; --acc-soft: rgba(157, 23, 77, .09); --warn: #9a4b00; --warn-soft: rgba(201, 120, 0, .13); --bad: #b93a0b; --bad-soft: rgba(185, 58, 11, .1);
+  --ok: #17723f; --ok-soft: rgba(23, 114, 63, .11); --neutral: #4b4b55; --neutral-soft: rgba(0, 0, 0, .06); --blue: #4b4b55; color-scheme: light; }
+/* Team's look (JP 2026-11-19, option C): light by default with a deep berry accent; dark is a choice in Settings, with a lighter pink.
+   The accent is for the one main action, the chosen menu item and tab; the error colour leans orange so it is never mistaken for the pink. */
+:root[data-theme="dark"] { --bg: #0e0f11; --card: #17181c; --card2: #1f2125; --ink: #ededf0; --head: #ffffff; --muted: #b3b3bd; --t-muted: #b3b3bd; --line: rgba(237, 237, 240, .11);
+  --acc: #f06595; --acc-rgb: 240, 101, 149; --acc-ink: #2b0716; --acc-soft: rgba(240, 101, 149, .15); --warn: #fbc25a; --warn-soft: rgba(251, 194, 90, .14); --bad: #ff8a5c; --bad-soft: rgba(255, 138, 92, .14);
+  --ok: #5ee08f; --ok-soft: rgba(94, 224, 143, .13); --neutral: #c4c4cc; --neutral-soft: rgba(255, 255, 255, .07); --blue: #c4c4cc; color-scheme: dark; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; min-height: 100vh; }

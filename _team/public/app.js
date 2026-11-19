@@ -6,6 +6,11 @@
    - An admin's device wraps the team key for a new member's public key when it approves them. Removing someone
      makes a new team key (a new "epoch") that only the others get.
    No part of /cmd is loaded here. */
+/* the look: light by default, dark or "like the device" as a choice (JP 2026-11-19) – set before anything is drawn */
+(function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
+  theme(); window.__teamTheme = theme; if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
+
 (function () {
   'use strict';
   var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();
@@ -707,6 +712,7 @@
 
   function settingsSheet() {
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
+      '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
       '<button class="t-btn ghost wide" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button>' +
@@ -1358,6 +1364,7 @@
     if (t.name === 'fproj') { S.fproj = t.value; return; }
     if (t.hasAttribute('data-fadd')) { var fs = Array.prototype.slice.call(t.files || []); t.value = ''; if (!fs.length) return; (async function () { var ok = 0; toast(L('Encrypting and sending …', 'Krypterer og sender …')); for (var i = 0; i < fs.length; i++) { try { if (await sendFile(fs[i], S.fproj || '')) ok++; } catch (x) { toast(failMsg(x)); break; } } if (ok) { toast(L(ok + (ok === 1 ? ' file shared' : ' files shared'), ok + (ok === 1 ? ' fil delt' : ' filer delt'))); draw(); } })(); return; }
     if (t.hasAttribute('data-dcimport')) { if (t.files && t.files[0]) importDoc(t.files[0]); t.value = ''; return; }
+    if (t.hasAttribute('data-themepick')) { try { localStorage.setItem('team.theme', t.value); } catch (x) {} if (window.__teamTheme) window.__teamTheme(); return; }
     if (t.hasAttribute('data-lang')) { try { localStorage.setItem('team.lang', t.value); } catch (x) {} location.reload(); }
   });
   document.addEventListener('submit', function (e) {

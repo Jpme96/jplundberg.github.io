@@ -221,6 +221,9 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.evaluate(() => { document.querySelector('details[data-accd]').open = true; });
   await own.evaluate(() => window.dispatchEvent(new HashChangeEvent('hashchange'))); await sl(200);
   check(await own.evaluate(() => document.querySelector('details[data-accd]').open), 'an opened box stays open when the page is drawn again (JP 2026-11-17 19:59)');
+  const th = await own.evaluate(() => { const r = getComputedStyle(document.documentElement); const a = { theme: document.documentElement.dataset.theme, acc: r.getPropertyValue('--acc').trim() };
+    localStorage.setItem('team.theme', 'dark'); window.__teamTheme(); a.dark = document.documentElement.dataset.theme; a.acc2 = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); localStorage.removeItem('team.theme'); window.__teamTheme(); return a; });
+  check(th.theme === 'light' && th.acc === '#9d174d' && th.dark === 'dark' && th.acc2 === '#f06595', 'Team is light with the deep berry accent by default; dark (pink) is a choice (JP 2026-11-19) ' + JSON.stringify(th));
   check(await own.evaluate(async () => { const a = document.querySelector('.t-tabs'); window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.t-tabs') === a; }), 'a redraw with nothing new leaves the page alone – no stutter (JP 2026-11-17 21:35)');
   const ac0 = await own.evaluate(() => ({ boxes: document.querySelectorAll('[data-accm]').length, people: document.querySelectorAll('[data-acctr]').length, cells: document.querySelectorAll('[data-accpp]').length, save: document.querySelector('[data-act="accsave"]').disabled }));
   check(ac0.boxes === 36 && ac0.people >= 1 && ac0.cells >= ac0.people && ac0.save, 'the access card: 9 actions × 4 roles, a row per person who is not an admin, Save off until something changes ' + JSON.stringify(ac0));
