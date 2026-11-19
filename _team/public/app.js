@@ -16,12 +16,17 @@ window.__teamSwitch = function (name) {
   var el = document.createElement('div'); el.id = 'tSwitch'; el.className = 't-sw'; el.setAttribute('role', 'status');
   el.innerHTML = '<div class="t-sw-mark" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="t-sw-bg" cx="60" cy="60" r="52"></circle><circle class="t-sw-ring" cx="60" cy="60" r="52"></circle></svg><b>' + esc(ini) + '</b></div>' +
     '<p class="t-sw-name">' + nm.split('').map(function (c, i) { return '<span style="--i:' + i + '">' + (c === ' ' ? '&nbsp;' : esc(c)) + '</span>'; }).join('') + '</p>';
+  el._t0 = Date.now();
+  el.addEventListener('click', function () { el._skip = true; window.__teamSwitchDone(); });   /* a tap skips it */
   document.body.appendChild(el);
   return el;
 };
-window.__teamSwitchDone = function () { var el = document.getElementById('tSwitch'); if (!el) return; if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
-(function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); } catch (e) {}
-  if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 9000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
+/* it stays at least 5 s when the page opens (JP 2026-11-19 22:32) – a tap skips it; tests (webdriver) don't wait */
+var SW_MIN = navigator.webdriver ? 0 : 5000;
+window.__teamSwitchDone = function () { var el = document.getElementById('tSwitch'); if (!el) return;
+  if (!el._skip && !el.classList.contains('out')) { var left = SW_MIN - (Date.now() - (el._t0 || 0)); if (left > 0) { clearTimeout(el._wait); el._wait = setTimeout(window.__teamSwitchDone, left); return; } } if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
+(function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); if (!n && !/[?&#](join|j)=/.test(location.href)) n = localStorage.getItem('team.lastName') || 'Team'; } catch (e) {}
+  if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 12000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
   theme(); window.__teamTheme = theme; if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
@@ -439,7 +444,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
-    S.lastHtml = html; $app.innerHTML = html; if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
+    S.lastHtml = html; $app.innerHTML = html; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
     document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
